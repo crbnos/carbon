@@ -334,6 +334,7 @@ export const JobOperation = ({
     showOptimizeProgress,
     backgroundOptimizing,
     optimizeFailed,
+    canRetry,
     optimizeQueued,
     retry: onModelRetry,
     retryLabel: modelRetryLabel,
@@ -1800,7 +1801,7 @@ export const JobOperation = ({
                 }
                 mode={mode}
                 className="rounded-none"
-                onRetry={onModelRetry}
+                onRetry={canRetry ? onModelRetry : undefined}
                 retryLabel={modelRetryLabel}
               />
             ) : (

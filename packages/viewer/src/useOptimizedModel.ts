@@ -4,6 +4,7 @@ import {
 } from "@carbon/utils";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { isRawRenderable } from "./raw/formats";
 
 export type ModelArtifacts = {
   optimizedModelPath: string | null;
@@ -150,9 +151,19 @@ export function useOptimizedModel({
   const optimizeInFlight =
     artifacts?.optimizeStatus === "Queued" ||
     artifacts?.optimizeStatus === "Processing";
+  // Match ModelPreview's `useRawTier` eligibility exactly, so the hook never
+  // suppresses the blocking progress UI for a raw the renderer won't mount:
+  // require a KNOWN size within the cap (an unknown size must not pass via
+  // `?? 0`) AND a format the in-browser loaders actually speak.
+  const artifactRawName = artifacts?.rawPath?.split("/").pop() ?? "";
   const rawRenderable = Boolean(
-    (artifacts?.rawPath && (artifacts.size ?? 0) <= MODEL_RAW_KEEP_MAX_BYTES) ||
-      (file && file.size <= MODEL_RAW_KEEP_MAX_BYTES)
+    (artifacts?.rawPath &&
+      artifacts.size != null &&
+      artifacts.size <= MODEL_RAW_KEEP_MAX_BYTES &&
+      isRawRenderable(artifactRawName)) ||
+      (file &&
+        file.size <= MODEL_RAW_KEEP_MAX_BYTES &&
+        isRawRenderable(file.name))
   );
 
   // Bridges the fire -> job-visible gap: the row status takes a couple of
@@ -257,6 +268,11 @@ export function useOptimizedModel({
     artifacts?.optimizeStatus === "Failed" &&
     artifacts?.optimizerAvailable !== false;
 
+  // Whether a manual retry can possibly succeed. When the optimiser isn't
+  // configured, hosts must not wire `onRetry` — otherwise ModelPreview's
+  // settled/no-preview state renders a retry button advertising a dead action.
+  const canRetry = artifacts?.optimizerAvailable !== false;
+
   return {
     artifacts,
     modelUploadId,
@@ -267,6 +283,7 @@ export function useOptimizedModel({
     showOptimizeProgress,
     backgroundOptimizing,
     optimizeFailed,
+    canRetry,
     /** Overlay's first step reads as waiting until the job is picked up. */
     optimizeQueued: artifacts?.optimizeStatus !== "Processing",
     retry,

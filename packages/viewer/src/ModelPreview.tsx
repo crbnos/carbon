@@ -129,7 +129,9 @@ export function ModelPreview({
   return (
     <div
       ref={containerRef}
-      role="img"
+      // `group`, not `img`: the container holds interactive controls (retry,
+      // download, reset, delete) — an `img` role hides those descendants from AT.
+      role="group"
       aria-label="3D model preview"
       className={cn(
         "relative h-full min-h-[400px] w-full overflow-hidden rounded-lg border border-border bg-gradient-to-bl from-card from-50% via-card to-background shadow-md dark:border-none",

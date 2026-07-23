@@ -80,6 +80,7 @@ const CadModel = ({
     showOptimizeProgress: optimizeProgressActive,
     backgroundOptimizing,
     optimizeFailed,
+    canRetry,
     optimizeQueued,
     retry: onRetry,
     retryLabel,
@@ -252,7 +253,7 @@ const CadModel = ({
                 }
                 mode={mode}
                 className={viewerClassName}
-                onRetry={modelPath ? onRetry : undefined}
+                onRetry={modelPath && canRetry ? onRetry : undefined}
                 retryLabel={retryLabel}
                 onCancelWait={modelPath ? onCancelWait : undefined}
                 onDelete={canDelete ? deleteModal.onOpen : undefined}
