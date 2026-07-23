@@ -27,6 +27,18 @@ export async function action({ request }: ActionFunctionArgs) {
     return data({ success: false }, { status: 404 });
   }
 
+  // `get_part_details` prefers `item.thumbnailPath` over the model's, so a
+  // stale/manual item thumbnail (a deleted file shows as a broken image) would
+  // mask the regeneration and revert on reload. "Regenerate" is an explicit
+  // "use the model's thumbnail" action, so clear the item override → the fresh
+  // `modelUpload.thumbnailPath` (written by model-thumbnail) surfaces, and any
+  // broken item path stops rendering immediately.
+  await client
+    .from("item")
+    .update({ thumbnailPath: null })
+    .eq("modelUploadId", modelUploadId)
+    .eq("companyId", companyId);
+
   await trigger("model-thumbnail", { modelId: modelUploadId, companyId });
   return { success: true };
 }
