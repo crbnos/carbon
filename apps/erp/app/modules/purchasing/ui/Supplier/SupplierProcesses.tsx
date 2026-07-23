@@ -136,7 +136,8 @@ const SupplierProccesses = ({ processes }: SupplierProccessesProps) => {
       minimumCost: EditableNumber(onCellEdit, {
         formatOptions: {
           style: "currency",
-          currency: baseCurrency
+          currency: baseCurrency,
+          maximumFractionDigits: 5
         }
       }),
       leadTime: EditableNumber(onCellEdit)

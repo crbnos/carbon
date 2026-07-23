@@ -118,7 +118,8 @@ const PurchaseOrderDeliveryForm = forwardRef<
               minValue={0}
               formatOptions={{
                 style: "currency",
-                currency: currencyCode
+                currency: currencyCode,
+                maximumFractionDigits: 5
               }}
               ref={shippingCostRef}
             />

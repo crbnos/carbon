@@ -440,7 +440,8 @@ const LinePricingOptions = ({
                     value={overridePricing.supplierUnitPrice}
                     formatOptions={{
                       style: "currency",
-                      currency: quoteCurrency
+                      currency: quoteCurrency,
+                      maximumFractionDigits: 5
                     }}
                     onChange={(unitPrice) =>
                       setOverridePricing((v) => ({
@@ -464,7 +465,8 @@ const LinePricingOptions = ({
                     value={overridePricing.supplierShippingCost}
                     formatOptions={{
                       style: "currency",
-                      currency: quoteCurrency
+                      currency: quoteCurrency,
+                      maximumFractionDigits: 5
                     }}
                     onChange={(shippingCost) =>
                       setOverridePricing((v) => ({
@@ -513,7 +515,8 @@ const LinePricingOptions = ({
                     value={overridePricing.supplierTaxAmount}
                     formatOptions={{
                       style: "currency",
-                      currency: quoteCurrency
+                      currency: quoteCurrency,
+                      maximumFractionDigits: 5
                     }}
                     onChange={(taxAmount) =>
                       setOverridePricing((v) => ({

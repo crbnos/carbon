@@ -225,7 +225,9 @@ const SupplierQuoteLinePricing = ({
                       value={price}
                       formatOptions={{
                         style: "currency",
-                        currency: routeData?.quote?.currencyCode ?? baseCurrency
+                        currency:
+                          routeData?.quote?.currencyCode ?? baseCurrency,
+                        maximumFractionDigits: 5
                       }}
                       minValue={0}
                       isEditable={isEditable}
@@ -280,7 +282,9 @@ const SupplierQuoteLinePricing = ({
                       value={shippingCost}
                       formatOptions={{
                         style: "currency",
-                        currency: routeData?.quote?.currencyCode ?? baseCurrency
+                        currency:
+                          routeData?.quote?.currencyCode ?? baseCurrency,
+                        maximumFractionDigits: 5
                       }}
                       minValue={0}
                       isEditable={isEditable}
@@ -308,7 +312,9 @@ const SupplierQuoteLinePricing = ({
                       value={taxAmount}
                       formatOptions={{
                         style: "currency",
-                        currency: routeData?.quote?.currencyCode ?? baseCurrency
+                        currency:
+                          routeData?.quote?.currencyCode ?? baseCurrency,
+                        maximumFractionDigits: 5
                       }}
                       minValue={0}
                       isEditable={isEditable}
