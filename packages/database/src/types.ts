@@ -75571,6 +75571,14 @@ export type Database = {
         Args: { p_new: Json; p_old: Json; p_operation: string; p_table: string }
         Returns: undefined
       }
+      recompute_service_line_fulfillment: {
+        Args: {
+          p_company_id: string
+          p_sales_order_line_id: string
+          p_user_id: string
+        }
+        Returns: undefined
+      }
       resolve_shelf_life_start_for_receipt: {
         Args: { p_item_id: string; p_receipt_id: string }
         Returns: string
@@ -75782,6 +75790,10 @@ export type Database = {
         Returns: undefined
       }
       sync_job_complete_or_canceled: {
+        Args: { p_new: Json; p_old: Json; p_operation: string; p_table: string }
+        Returns: undefined
+      }
+      sync_job_recompute_service_line: {
         Args: { p_new: Json; p_old: Json; p_operation: string; p_table: string }
         Returns: undefined
       }
