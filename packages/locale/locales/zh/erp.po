@@ -12988,8 +12988,14 @@ msgstr "至 {0}"
 msgid "Thumbnail"
 msgstr "缩略图"
 
+msgid "Thumbnail is still generating"
+msgstr ""
+
 msgid "Thumbnail removed"
 msgstr "缩略图已移除"
+
+msgid "Thumbnail updated"
+msgstr ""
 
 msgid "Thumbnail uploaded"
 msgstr "缩略图已上传"

@@ -12988,8 +12988,14 @@ msgstr "{0}까지"
 msgid "Thumbnail"
 msgstr "썸네일"
 
+msgid "Thumbnail is still generating"
+msgstr ""
+
 msgid "Thumbnail removed"
 msgstr "썸네일 삭제됨"
+
+msgid "Thumbnail updated"
+msgstr ""
 
 msgid "Thumbnail uploaded"
 msgstr "썸네일 업로드됨"

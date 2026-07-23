@@ -12988,8 +12988,14 @@ msgstr "До {0}"
 msgid "Thumbnail"
 msgstr "Миниатюра"
 
+msgid "Thumbnail is still generating"
+msgstr ""
+
 msgid "Thumbnail removed"
 msgstr "Миниатюра удалена"
+
+msgid "Thumbnail updated"
+msgstr ""
 
 msgid "Thumbnail uploaded"
 msgstr "Миниатюра загружена"

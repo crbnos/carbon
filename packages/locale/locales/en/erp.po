@@ -12988,8 +12988,14 @@ msgstr "Through {0}"
 msgid "Thumbnail"
 msgstr "Thumbnail"
 
+msgid "Thumbnail is still generating"
+msgstr "Thumbnail is still generating"
+
 msgid "Thumbnail removed"
 msgstr "Thumbnail removed"
+
+msgid "Thumbnail updated"
+msgstr "Thumbnail updated"
 
 msgid "Thumbnail uploaded"
 msgstr "Thumbnail uploaded"

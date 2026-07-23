@@ -12988,8 +12988,14 @@ msgstr "{0}まで"
 msgid "Thumbnail"
 msgstr "サムネイル"
 
+msgid "Thumbnail is still generating"
+msgstr ""
+
 msgid "Thumbnail removed"
 msgstr "サムネイルが削除されました"
+
+msgid "Thumbnail updated"
+msgstr ""
 
 msgid "Thumbnail uploaded"
 msgstr "サムネイルがアップロードされました"

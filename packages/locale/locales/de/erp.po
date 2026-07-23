@@ -12988,8 +12988,14 @@ msgstr "Bis {0}"
 msgid "Thumbnail"
 msgstr "Miniaturansicht"
 
+msgid "Thumbnail is still generating"
+msgstr ""
+
 msgid "Thumbnail removed"
 msgstr "Vorschaubild entfernt"
+
+msgid "Thumbnail updated"
+msgstr ""
 
 msgid "Thumbnail uploaded"
 msgstr "Miniaturansicht hochgeladen"
