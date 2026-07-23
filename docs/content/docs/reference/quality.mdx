@@ -46,3 +46,25 @@ The module also covers **gauges and calibration** (with calibration-due tracking
     A quality document can require sign-off before it goes Active.
   </Card>
 </Cards>
+
+<AgentContext>
+## Troubleshooting
+
+### "Cannot modify a closed issue. Reopen it first."
+**Closed** issues are read-only — dispositions, tasks, and fields are all frozen. Use the reopen action on the issue to bring it back to *In Progress*, make the change, then close it again.
+
+### "Cannot move entities between different NCRs"
+Tracked entities can only be moved or split between item rows of the **same** issue. To handle material under a different issue, add the item to that issue and assign the entities there.
+
+### "No linked entities to split"
+The item row being split has no tracked entities (serials/batches) linked to it yet. Assign entities to the row first, then split.
+
+### "Split quantity exceeds the linked entity quantity"
+The quantity entered for the split is more than the selected entity carries. Enter a quantity at or below the entity's linked quantity.
+
+### "Duplicate entity in split selection"
+The same serial or batch was selected twice in the split dialog. Each entity can appear only once — deselect the duplicate.
+
+### "Failed to accept lot" / "Failed to reject lot"
+The inbound-inspection disposition failed. Usual causes: the lot was already dispositioned by someone else, or its tracked entities changed state (consumed, moved) since the page loaded. Refresh the inspection and check its current status before retrying.
+</AgentContext>

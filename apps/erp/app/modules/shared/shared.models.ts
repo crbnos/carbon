@@ -266,6 +266,12 @@ export const feedbackValidator = z.object({
   location: z.string()
 });
 
+export const processTypes = [
+  "Inside",
+  "Outside",
+  "Inside and Outside"
+] as const;
+
 export const suggestionValidator = z.object({
   suggestion: z.string().min(1, { message: "Suggestion is required" }),
   emoji: z.string().default("💡"),

@@ -1,8 +1,64 @@
 {
-  "generated": "2026-07-23T04:31:48.873Z",
-  "totalTools": 1391,
+  "generated": "2026-07-23T04:36:33.420Z",
+  "totalTools": 1394,
   "modules": 15,
   "tools": [
+    {
+      "name": "account_getNotificationPreferences",
+      "module": "account",
+      "classification": "READ",
+      "description": "get notification preferences",
+      "paramCount": 0,
+      "serviceParams": [
+        "client",
+        "userId",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    {
+      "name": "account_upsertNotificationPreference",
+      "module": "account",
+      "classification": "WRITE",
+      "description": "upsert notification preference",
+      "paramCount": 3,
+      "serviceParams": [
+        "client",
+        "preference"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "topic": {
+            "type": "string"
+          },
+          "channel": {
+            "type": "string",
+            "enum": [
+              "email",
+              "slack"
+            ]
+          },
+          "enabled": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "topic",
+          "channel",
+          "enabled"
+        ]
+      }
+    },
     {
       "name": "account_deleteUserAttributeValue",
       "module": "account",
@@ -21217,6 +21273,35 @@
         "required": [
           "sourceId",
           "targetId"
+        ]
+      }
+    },
+    {
+      "name": "production_pullJobMaterialMakeMethod",
+      "module": "production",
+      "classification": "WRITE",
+      "description": "pull job material make method",
+      "paramCount": 2,
+      "serviceParams": [
+        "client",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "jobMaterialId": {
+            "type": "string"
+          },
+          "itemId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "jobMaterialId",
+          "itemId"
         ]
       }
     },

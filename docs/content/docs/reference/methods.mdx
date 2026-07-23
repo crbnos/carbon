@@ -65,3 +65,19 @@ is frozen so jobs already running against it don't shift mid-build.
     How the replenishment system pairs with a part's reordering policy.
   </Card>
 </Cards>
+
+<AgentContext>
+## Troubleshooting
+
+### "An item cannot be added to itself."
+A bill of materials line was set to the same item as the parent being made — a self-reference. Pick a different component item.
+
+### "Method tree not found"
+Creating a job or quote method found no method to copy: the item has no **Active** make method. Open the item's methods, activate a version, and retry.
+
+### "Cannot override method of configured item"
+The target item requires configuration, so a plain method copy can't overwrite its (generated) method. Change the method through the item's configuration instead, or clear the requires-configuration flag if it's set by mistake.
+
+### "Failed to get make methods"
+The source item for a method copy has no make method to copy from. Create and activate a method on the source item first.
+</AgentContext>

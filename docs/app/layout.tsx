@@ -66,7 +66,7 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  themeColor: "#F5F5F2"
+  themeColor: "#F5F5F5"
 };
 
 // Prerender likely-next pages on hover (~200ms) so in-site navigation feels instant.

@@ -24,9 +24,9 @@ export function SiteHeader() {
     <header
       className="site-header fixed top-0 left-0 right-0 z-[201] flex justify-center"
       style={{
-        background: "#F5F5F2",
+        background: "#F5F5F5",
         borderBottom: "1px solid",
-        borderColor: "#E8E7E6",
+        borderColor: "#E8E8E8",
         boxShadow: "0 1px 0 0 #fff",
       }}
     >

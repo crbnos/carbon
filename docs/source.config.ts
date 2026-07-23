@@ -31,8 +31,36 @@ export const guide = defineDocs({
   },
 });
 
+// Remove <AgentContext> blocks from the MDX AST before fumadocs' remark-structure
+// runs. AgentContext is agent-only: this keeps its content out of the rendered page
+// AND out of the site search index (structuredData). The in-app agent still receives
+// it — scripts/generate-agent-kb.ts reads the raw MDX source, not the compiled tree.
+// fumadocs splices user remarkPlugins before remarkStructure, so this runs first.
+function remarkStripAgentContext() {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return (tree: any) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const walk = (node: any) => {
+      if (!node || !Array.isArray(node.children)) return;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      node.children = node.children.filter(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (child: any) =>
+          !(
+            (child.type === "mdxJsxFlowElement" ||
+              child.type === "mdxJsxTextElement") &&
+            child.name === "AgentContext"
+          )
+      );
+      for (const child of node.children) walk(child);
+    };
+    walk(tree);
+  };
+}
+
 export default defineConfig({
   mdxOptions: {
+    remarkPlugins: [remarkStripAgentContext],
     // Dark code blocks everywhere, themed with Night Owl. Provide BOTH themes
     // explicitly (same theme) so fumadocs replaces its default github-light/github-dark-default
     // pair — a single `theme` leaves the default light theme referenced and shiki throws

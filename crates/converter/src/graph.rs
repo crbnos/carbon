@@ -93,8 +93,19 @@ pub fn detect_source_unit(text: &str) -> String {
     let si =
         SI.get_or_init(|| Regex::new(r"SI_UNIT\s*\(\s*(?:\.(\w+)\.|\$)\s*,\s*\.METRE\.").unwrap());
 
+    // Lossy decoding expands invalid bytes to 3-byte `�`, so a byte-capped read
+    // can decode to MORE than `cap` bytes — floor to a char boundary or the
+    // slice panics mid-replacement-char (seen on binary xbf heads).
     let cap = 32 * 1024 * 1024;
-    let text = if text.len() > cap { &text[..cap] } else { text };
+    let text = if text.len() > cap {
+        let mut end = cap;
+        while !text.is_char_boundary(end) {
+            end -= 1;
+        }
+        &text[..end]
+    } else {
+        text
+    };
 
     for m in stmt.captures_iter(text) {
         let body = &m[1];
@@ -262,5 +273,16 @@ mod tests {
             detect_source_unit("#5=( LENGTH_UNIT() NAMED_UNIT(*) SI_UNIT(.MILLI.,.METRE.) );"),
             "mm"
         );
+    }
+
+    #[test]
+    fn source_unit_truncation_respects_char_boundaries() {
+        // A lossy-decoded binary head can exceed the 32MB byte cap (invalid
+        // bytes expand to 3-byte `�`) with a multi-byte char straddling the cap
+        // — slicing at the raw cap used to panic (prod convert on xbf raws).
+        let cap = 32 * 1024 * 1024;
+        let mut text = "a".repeat(cap - 1);
+        text.push('\u{FFFD}'); // bytes cap-1..cap+2 — cap is not a boundary
+        assert_eq!(detect_source_unit(&text), "mm");
     }
 }

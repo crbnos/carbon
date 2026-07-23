@@ -1,4 +1,5 @@
 import { Badge, Card, CardContent, HStack } from "@carbon/react";
+import { Trans } from "@lingui/react/macro";
 import { memo } from "react";
 
 type IntercompanyMatchingSummaryProps = {
@@ -15,15 +16,21 @@ const IntercompanyMatchingSummary = memo(
           <HStack spacing={6}>
             <HStack spacing={2}>
               <Badge variant="yellow">{unmatched}</Badge>
-              <span className="text-sm text-muted-foreground">Unmatched</span>
+              <span className="text-sm text-muted-foreground">
+                <Trans>Unmatched</Trans>
+              </span>
             </HStack>
             <HStack spacing={2}>
               <Badge variant="green">{matched}</Badge>
-              <span className="text-sm text-muted-foreground">Matched</span>
+              <span className="text-sm text-muted-foreground">
+                <Trans>Matched</Trans>
+              </span>
             </HStack>
             <HStack spacing={2}>
               <Badge variant="gray">{eliminated}</Badge>
-              <span className="text-sm text-muted-foreground">Eliminated</span>
+              <span className="text-sm text-muted-foreground">
+                <Trans>Eliminated</Trans>
+              </span>
             </HStack>
           </HStack>
         </CardContent>

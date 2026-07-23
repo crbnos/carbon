@@ -96,9 +96,6 @@ msgstr "Mir zugewiesen"
 msgid "Assignee"
 msgstr "Zugewiesener"
 
-msgid "Attach File"
-msgstr "Datei anhängen"
-
 msgid "Authentication Error"
 msgstr "Authentifizierungsfehler"
 
@@ -359,9 +356,6 @@ msgstr "Datei konnte nicht hochgeladen werden: {0}"
 msgid "Failed to upload image"
 msgstr "Bild konnte nicht hochgeladen werden"
 
-msgid "Feedback"
-msgstr "Feedback"
-
 msgid "File size exceeds 10MB limit"
 msgstr "Dateigröße überschreitet das Limit von 10 MB"
 
@@ -390,9 +384,6 @@ msgstr "Vergessen auszustempeln?"
 msgid "Go back to operation"
 msgstr "Zurück zur Operation"
 
-msgid "Have a technical issue? Contact <0>Carbon Support.</0>"
-msgstr "Haben Sie ein technisches Problem? Kontaktieren Sie den <0>Carbon Support.</0>"
-
 msgid "How many were actually picked?"
 msgstr "Wie viele wurden tatsächlich gepickt?"
 
@@ -401,9 +392,6 @@ msgstr "Ich verstehe und möchte ohne Ausgabe abschließen"
 
 msgid "I'm Still Working"
 msgstr "Ich arbeite noch"
-
-msgid "Ideas, suggestions or problems with this page?"
-msgstr "Ideen, Vorschläge oder Probleme mit dieser Seite?"
 
 msgid "Ideas, suggestions or problems?"
 msgstr "Ideen, Vorschläge oder Probleme?"

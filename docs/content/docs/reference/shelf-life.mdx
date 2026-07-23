@@ -123,3 +123,16 @@ Setting a shelf-life policy is only allowed on **Serial** or **Batch** items. Fu
     The other inventory guard: validate transactions instead of dating stock.
   </Card>
 </Cards>
+
+<AgentContext>
+## Troubleshooting
+
+### "Cannot consume expired tracked entity" / "Cannot consume expired tracked entities"
+The expired-entity policy is **Block** (the default) and a material issue, stock transfer, or maintenance consumption touched a batch past its date. Options: pick a non-expired lot (FEFO ordering surfaces the oldest valid stock first), correct the expiration date on the entity (reason required), or switch the policy to *Warn* or *BlockWithOverride* in Settings → Inventory.
+
+### "Cannot post shipment with expired batch"
+The shipping counterpart of the block above — the full message names the batch id. Allocate a different batch, fix the entity's expiration date, or relax the company rule to Warn.
+
+### "Cannot edit expiry of a consumed tracked entity"
+Expiry can only be overridden on live stock. A **Consumed** entity's date is history and stays as recorded.
+</AgentContext>

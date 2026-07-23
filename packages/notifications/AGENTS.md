@@ -27,7 +27,7 @@ pnpm --filter @carbon/notifications typecheck  # tsgo --noEmit
 
 ## Key Patterns
 
-- **Enums only** — `NotificationEvent`, `NotificationTopic`, `NotificationDestination`
+- **Enums + pure mapping helpers, no I/O** — `NotificationEvent`, `NotificationTopic`, `NotificationDestination`; `getNotificationTopic`, email heading/CTA helpers, and `USER_FACING_NOTIFICATION_TOPICS` (display order for the account notification-settings page — when adding a `NotificationTopic`, add it here too or it won't appear on that page)
 - **inApp is always included** — regardless of caller-specified destinations
 - **Single export**: `@carbon/notifications` barrel from `src/index.ts`
 

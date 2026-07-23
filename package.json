@@ -52,6 +52,7 @@
     "dev:packages": "turbo run dev --filter=./packages/*",
     "dev:starter": "turbo run dev --filter=./apps/starter --filter=./packages/",
     "format": "biome format --write",
+    "generate:agent-kb": "tsx scripts/generate-agent-kb.ts",
     "generate:mcp": "tsx scripts/generate-mcp.ts",
     "generate:swagger": "tsx scripts/generate-swagger-docs.ts && pnpm exec biome format ./packages/database/src/swagger-docs-schema.ts --write --files-max-size=5000000",
     "generate:types": "tsx scripts/generate-db-types.ts",

@@ -324,6 +324,10 @@ export const JobOperation = ({
       : null;
 
   const modelPath = operation.itemModelPath ?? job.modelPath ?? null;
+  // Prefer the authoritative id (mirrors the modelPath precedence) over deriving
+  // it from the path — legacy paths whose basename isn't the id would otherwise
+  // resolve a phantom id and 404 the artifacts/reoptimise lookups.
+  const modelUploadId = operation.itemModelId ?? job.modelId ?? null;
   const {
     artifacts,
     awaitingModel: modelPending,
@@ -333,7 +337,7 @@ export const JobOperation = ({
     retryLabel: modelRetryLabel,
     cancel: onModelCancel,
     actionBusy: modelActionBusy
-  } = useOptimizedModel({ modelPath, companyId });
+  } = useOptimizedModel({ modelPath, modelUploadId, companyId });
 
   const fetcher = useFetcher<Result>();
 

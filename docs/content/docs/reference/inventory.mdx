@@ -46,3 +46,24 @@ Inventory value is on-hand quantity times the item's unit cost, summed per item 
     How goods enter inventory in the first place.
   </Card>
 </Cards>
+
+<AgentContext>
+## Troubleshooting
+
+### "Insufficient quantity for negative adjustment"
+The decrease (or *Set Quantity* reduction) exceeds what's on hand in that storage unit. Manual adjustments are the one movement guarded against overdraw. Check on-hand for the exact item/location/storage unit (and lot, if tracked) and adjust by no more than that.
+
+### "Serial number not found"
+The serial or batch number entered for a negative adjustment doesn't exist in the selected storage unit. Verify the number and the storage unit — the stock may sit in a different bin.
+
+### "Multiple tracked entities in this storage unit — select a specific row to adjust"
+A negative adjustment on a tracked item was ambiguous: several lots/serials sit in that storage unit. Select the specific tracked-entity row (or enter its number) so Carbon knows which one to reduce.
+
+### "Cannot edit expiry of a consumed tracked entity"
+Expiration dates can't be changed on stock that's already **Consumed**. Only live entities (Available, On Hold) accept an expiry override.
+
+### Storage unit hierarchy errors
+- "Parent storage unit … is in location …, but this unit is in location …; they must match" — parent and child bins must share a location; pick a parent in the same location.
+- "Cannot change locationId of storage unit … because it has child units" — move or delete the children first, then move the parent.
+- "Cycle detected in storage unit hierarchy at …" — the chosen parent is a descendant of this unit; pick one that doesn't loop back.
+</AgentContext>

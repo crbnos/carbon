@@ -15,6 +15,12 @@ msgstr ""
 msgid " A supplier is a business or person who sells you parts or services."
 msgstr " 공급업체는 귀사에 부품이나 서비스를 판매하는 회사 또는 개인입니다."
 
+msgid ", {residual}% residual"
+msgstr ", {residual}% 잔존"
+
+msgid ", {years}yr"
+msgstr ", {years}년"
+
 #. placeholder {0}: fieldDef?.label ?? condition.field
 msgid "\"{0}\" isn't available on the selected surface(s). Pick another field."
 msgstr "\"{0}\"은(는) 선택한 표면(들)에서 사용할 수 없습니다. 다른 필드를 선택하세요."
@@ -137,6 +143,9 @@ msgstr "미실사 라인 {uncounted}개"
 
 msgid "{variances, plural, one {# line differs from the expected quantity} other {# lines differ from the expected quantity}}"
 msgstr "예상 수량과 다른 라인 {variances}개"
+
+msgid "{years}yr"
+msgstr "{years}년"
 
 msgid "/month/user"
 msgstr "/월/사용자"
@@ -596,6 +605,9 @@ msgstr "행 추가"
 msgid "Add a step"
 msgstr "단계 추가"
 
+msgid "Add Account"
+msgstr "계정 추가"
+
 msgid "Add Actions"
 msgstr "조치 추가"
 
@@ -625,6 +637,9 @@ msgstr "조건 추가"
 
 msgid "Add Contractor"
 msgstr "계약직 추가"
+
+msgid "Add cost center"
+msgstr "원가 센터 추가"
 
 msgid "Add Entry"
 msgstr "항목 추가"
@@ -803,6 +818,9 @@ msgstr "모든 감사 로그"
 
 msgid "All changes to auditable entities are being recorded."
 msgstr "감사 대상 개체에 대한 모든 변경 사항이 기록되고 있습니다."
+
+msgid "All Companies"
+msgstr "모든 회사"
 
 msgid "All Customers"
 msgstr "모든 고객"
@@ -1023,6 +1041,9 @@ msgstr "승인 요구사항"
 msgid "Approval Rules"
 msgstr "승인 규칙"
 
+msgid "Approvals"
+msgstr "승인"
+
 msgid "Approve"
 msgstr "승인"
 
@@ -1128,6 +1149,7 @@ msgstr "이 사용자를 비활성화하시겠습니까?"
 msgid "Are you sure you want to delete {0} from this operation? This cannot be undone."
 msgstr "이 공정작업에서 {0}을(를) 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다."
 
+#. placeholder {0}: selectedEntry.journalEntryId
 #. placeholder {0}: selectedGroup.name
 msgid "Are you sure you want to delete {0}?"
 msgstr "{0}을(를) 삭제하시겠습니까?"
@@ -1160,6 +1182,10 @@ msgstr "계정 {0}{1}을(를) 삭제하시겠습니까? 이 작업은 되돌릴 
 #. placeholder {0}: apiKey.name
 msgid "Are you sure you want to delete the API key: {0}? This cannot be undone."
 msgstr "API 키 {0}을(를) 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다."
+
+#. placeholder {0}: selectedClass.name
+msgid "Are you sure you want to delete the asset class: {0}? This cannot be undone."
+msgstr "자산 클래스: {0}를 삭제하시겠습니까? 이 작업은 실행 취소할 수 없습니다."
 
 #. placeholder {0}: requiredAction.name
 msgid "Are you sure you want to delete the change order action: {0}? This cannot be undone."
@@ -1511,6 +1537,9 @@ msgstr "처분 시 자산 원가"
 msgid "Asset Cost on Disposal (default)"
 msgstr "처분 시 자산 원가(기본값)"
 
+msgid "Asset ID"
+msgstr "자산 ID"
+
 msgid "Assets"
 msgstr "자산"
 
@@ -1751,6 +1780,9 @@ msgstr "배치 추적"
 msgid "Batch Tracking"
 msgstr "배치 추적"
 
+msgid "Beginning"
+msgstr "시작"
+
 #. placeholder {0}: successorItem.readableIdWithRevision
 msgid "Being phased out — successor: <0>{0}</0>"
 msgstr "단계적으로 폐지 중 — 후속: <0>{0}</0>"
@@ -1824,6 +1856,9 @@ msgstr "가이드 도입에 대해 상담 예약"
 
 msgid "Book a call with Carbon"
 msgstr "Carbon과 상담 예약"
+
+msgid "Book Depreciation"
+msgstr "장부 감가상각"
 
 msgid "Breadcrumb"
 msgstr "이동 경로"
@@ -2871,6 +2906,9 @@ msgstr "원가센터"
 msgid "Cost Center"
 msgstr "원가센터"
 
+msgid "Cost Center Name"
+msgstr "원가 센터 이름"
+
 msgid "cost centers"
 msgstr "원가센터"
 
@@ -3059,6 +3097,9 @@ msgstr "생성된 변경 주문 유형"
 msgid "Created consumable"
 msgstr "소모품 생성됨"
 
+msgid "Created cost center"
+msgstr "원가 센터 생성됨"
+
 msgid "Created customer portal"
 msgstr "고객 포털 생성됨"
 
@@ -3169,6 +3210,10 @@ msgstr "품목 생성 중..."
 msgid "Credit"
 msgstr "대변"
 
+#. placeholder {0}: parentCurrency ?? "Translated"
+msgid "Credit ({0})"
+msgstr "대변 ({0})"
+
 msgid "Credit / Debit Memos"
 msgstr "대변/차변 메모"
 
@@ -3186,6 +3231,9 @@ msgstr "제조 비용이 진행 중인 작업(WIP)에 흡수될 때 사용되는
 
 msgid "Credit Memo"
 msgstr "대변전표"
+
+msgid "Credits"
+msgstr "대변"
 
 msgid "Credits & Debits"
 msgstr "대변 및 차변"
@@ -3527,11 +3575,18 @@ msgstr "마감 유형"
 msgid "Debit"
 msgstr "차변"
 
+#. placeholder {0}: parentCurrency ?? "Translated"
+msgid "Debit ({0})"
+msgstr "차변 ({0})"
+
 msgid "Debit Account"
 msgstr "차변 계정"
 
 msgid "Debit Memo"
 msgstr "차변전표"
+
+msgid "Debits"
+msgstr "차변"
 
 msgid "Decide what an operator sees if they try to issue a batch or serial that's already expired."
 msgstr "작업자가 이미 만료된 배치 또는 일련번호를 출고하려 할 때 표시할 내용을 결정하세요."
@@ -3683,6 +3738,12 @@ msgstr "작업 삭제"
 msgid "Delete API Key"
 msgstr "API 키 삭제"
 
+msgid "Delete Asset"
+msgstr "자산 삭제"
+
+msgid "Delete Asset Class"
+msgstr "자산 클래스 삭제"
+
 msgid "Delete Assignment"
 msgstr "배정 삭제"
 
@@ -3725,6 +3786,9 @@ msgstr "고객 유형 삭제"
 msgid "Delete Department"
 msgstr "부서 삭제"
 
+msgid "Delete Dimension"
+msgstr "차원 삭제"
+
 msgid "Delete Dispatch"
 msgstr "작업지시 삭제"
 
@@ -3751,6 +3815,12 @@ msgstr "이슈 삭제"
 
 msgid "Delete Item Group"
 msgstr "품목 그룹 삭제"
+
+msgid "Delete Journal Entry"
+msgstr "분개장 항목 삭제"
+
+msgid "Delete line"
+msgstr "행 삭제"
 
 msgid "Delete Line"
 msgstr "라인 삭제"
@@ -4129,6 +4199,9 @@ msgstr "처분"
 msgid "Dispose Asset"
 msgstr "자산 처분"
 
+msgid "Disposed"
+msgstr "폐기됨"
+
 msgid "Disposition"
 msgstr "처리"
 
@@ -4350,6 +4423,9 @@ msgstr "API 키 수정"
 msgid "Edit Approval Rule"
 msgstr "승인 규칙 수정"
 
+msgid "Edit Asset"
+msgstr "자산 편집"
+
 msgid "Edit Asset Class"
 msgstr "자산 분류 수정"
 
@@ -4382,6 +4458,9 @@ msgstr "담당자 수정"
 
 msgid "Edit Contractor"
 msgstr "계약직 수정"
+
+msgid "Edit Cost Center"
+msgstr "원가 센터 편집"
 
 msgid "Edit Count"
 msgstr "카운트 수정"
@@ -4445,6 +4524,9 @@ msgstr ""
 
 msgid "Edit Item Group"
 msgstr "품목 그룹 수정"
+
+msgid "Edit Journal Entry"
+msgstr "분개장 항목 편집"
 
 msgid "Edit Kanban"
 msgstr "칸반 수정"
@@ -4638,11 +4720,20 @@ msgstr "웹훅 수정"
 msgid "Edit Work Center"
 msgstr "작업장 수정"
 
+msgid "Eliminated"
+msgstr "제거됨"
+
+msgid "email"
+msgstr "이메일"
+
 msgid "Email"
 msgstr "이메일"
 
 msgid "Email Address"
 msgstr "이메일 주소"
+
+msgid "Email notifications are not included in your company's current plan; email preferences will apply if they are enabled."
+msgstr "이메일 알림은 귀사의 현재 플랜에 포함되지 않습니다. 이메일 알림이 활성화되면 이메일 환경설정이 적용됩니다."
 
 msgid "Email notifications not configured"
 msgstr "이메일 알림이 설정되지 않음"
@@ -4742,6 +4833,13 @@ msgstr "지난 분기 말"
 
 msgid "End Time"
 msgstr "종료 시간"
+
+msgid "Ending"
+msgstr "종료"
+
+#. placeholder {0}: parentCurrency ?? "Translated"
+msgid "Ending ({0})"
+msgstr "종료 ({0})"
 
 msgid "Enforce — edits are blocked"
 msgstr "강제 — 편집이 차단되었습니다."
@@ -5114,6 +5212,10 @@ msgid "Failed to create consumable: {0}"
 msgstr "소모품 생성 실패: {0}"
 
 #. placeholder {0}: fetcher.data.error.message
+msgid "Failed to create cost center: {0}"
+msgstr "원가 센터 생성 실패: {0}"
+
+#. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create customer portal: {0}"
 msgstr "고객 포털 생성 실패: {0}"
 
@@ -5310,6 +5412,10 @@ msgstr "공급업체 부품 세부정보를 불러오지 못했습니다"
 msgid "Failed to load tracked entities"
 msgstr "추적 개체를 불러오지 못했습니다"
 
+#. placeholder {0}: fetcher.data.error.message
+msgid "Failed to move account: {0}"
+msgstr "계정 이동 실패: {0}"
+
 msgid "Failed to remove image: {errorMessage}"
 msgstr "이미지를 삭제하지 못했습니다: {errorMessage}"
 
@@ -5435,9 +5541,6 @@ msgstr "도면에서 제안된 기능 값"
 
 msgid "Features"
 msgstr "기능"
-
-msgid "Feedback"
-msgstr "피드백"
 
 msgid "Fees"
 msgstr "수수료"
@@ -5630,6 +5733,9 @@ msgstr "금요일"
 msgid "From {0}"
 msgstr "{0}부터"
 
+msgid "From / To"
+msgstr "출발지 / 도착지"
+
 msgid "From customer"
 msgstr "고객으로부터"
 
@@ -5644,6 +5750,9 @@ msgstr "출발 저장 단위"
 
 msgid "Fulfillment Location"
 msgstr "이행 위치"
+
+msgid "Fully Depreciated"
+msgstr "완전 감가상각"
 
 msgid "Fully trained for"
 msgstr "다음에 대해 완전히 교육됨"
@@ -5692,6 +5801,9 @@ msgstr "측정기"
 
 msgid "Genealogy"
 msgstr "계보"
+
+msgid "General"
+msgstr "일반"
 
 msgid "General ledger"
 msgstr "총계정원장"
@@ -6153,9 +6265,6 @@ msgstr "아직 작업 중입니다"
 msgid "ID"
 msgstr "ID"
 
-msgid "Ideas, suggestions or problems with this page?"
-msgstr "이 페이지에 대한 아이디어, 제안, 또는 문제가 있으신가요?"
-
 msgid "Ideas, suggestions or problems?"
 msgstr "아이디어, 제안, 또는 문제가 있으신가요?"
 
@@ -6249,6 +6358,12 @@ msgstr "재고만"
 msgid "In the loop together"
 msgstr "함께 정보 공유하기"
 
+msgid "In-app notifications are always delivered. Choose which topics also reach you by email or Slack."
+msgstr "인앱 알림은 항상 전달됩니다. 이메일 또는 Slack으로도 전달받을 주제를 선택하세요."
+
+msgid "In-app notifications are always delivered. Choose which topics also reach you by email."
+msgstr "인앱 알림은 항상 전달됩니다. 이메일로도 전달받을 주제를 선택하세요."
+
 msgid "Inactive"
 msgstr "비활성"
 
@@ -6302,6 +6417,9 @@ msgstr "인프라"
 
 msgid "Inherit From Materials"
 msgstr "자재로부터 상속"
+
+msgid "Inherited"
+msgstr "상속됨"
 
 msgid "Inherited from parent"
 msgstr "상위 항목에서 상속됨"
@@ -6392,6 +6510,12 @@ msgstr "여기에 명시되지 않은 연동"
 
 msgid "Intercompany"
 msgstr "회사 간"
+
+msgid "Intercompany Balances"
+msgstr "회사 간 잔액"
+
+msgid "Intercompany Transactions"
+msgstr "회사 간 거래"
 
 msgid "Intercompany transactions involving this company that are still Unmatched should be matched and eliminated, so consolidated results don't double-count activity between entities."
 msgstr "이 회사가 관련된 회사 간 거래 중 아직 미대응되는 것들은 대응 및 제거되어야 연결 결과에서 회사 간 거래가 중복 계산되지 않습니다."
@@ -6906,6 +7030,9 @@ msgstr "라이트 모드"
 msgid "Likelihood"
 msgstr "가능성"
 
+msgid "Line description (optional)"
+msgstr "행 설명 (선택 사항)"
+
 msgid "Line Item Comparison"
 msgstr "라인 항목 비교"
 
@@ -6988,6 +7115,9 @@ msgstr "불러오는 중..."
 
 msgid "Loading…"
 msgstr "불러오는 중…"
+
+msgid "Local"
+msgstr "로컬"
 
 msgid "location"
 msgstr "위치"
@@ -7103,6 +7233,9 @@ msgstr "기계, 셀, 스테이션"
 
 msgid "MACRS"
 msgstr "MACRS"
+
+msgid "MACRS {cls}-Year"
+msgstr "MACRS {cls}-년"
 
 msgid "MACRS Convention"
 msgstr "MACRS 컨벤션"
@@ -7305,6 +7438,9 @@ msgstr "하나라도 일치(OR)"
 
 msgid "Match none"
 msgstr "일치 안 함"
+
+msgid "Matched"
+msgstr "일치함"
 
 msgid "matches"
 msgstr "일치"
@@ -7588,6 +7724,9 @@ msgstr "대부분의 문제는 여기서 발견되고 해결됩니다. 명확하
 msgid "Move"
 msgstr "이동"
 
+msgid "Move {accountName}"
+msgstr "{accountName} 이동"
+
 msgid "Move entities"
 msgstr "개체 이동"
 
@@ -7603,6 +7742,9 @@ msgstr "MRB가 각 부분을 별도로 판정할 수 있도록(예: 일부는 �
 msgid "Move to"
 msgstr "이동 대상"
 
+msgid "Move to Group"
+msgstr "그룹으로 이동"
+
 msgid "Move to Trash"
 msgstr "휴지통으로 이동"
 
@@ -7610,6 +7752,9 @@ msgstr "휴지통으로 이동"
 #. placeholder {1}: targetBucket === "parts" ? "Parts" : "Opportunity"
 msgid "Moved {0} to {1} bucket"
 msgstr "{0}을(를) {1} 버킷으로 이동함"
+
+msgid "Moved account"
+msgstr "이동된 계정"
 
 msgid "Movements"
 msgstr "이동"
@@ -7668,6 +7813,9 @@ msgstr "음수 조정"
 msgid "Net book value"
 msgstr "순장부가액"
 
+msgid "Net Book Value"
+msgstr "순 장부 가치"
+
 msgid "Net Change"
 msgstr "순변동"
 
@@ -7715,6 +7863,9 @@ msgstr "신규 소모품"
 
 msgid "New Contractor"
 msgstr "신규 계약직"
+
+msgid "New Cost Center"
+msgstr "새 비용 센터"
 
 msgid "New Credit / Debit Memo"
 msgstr "신규 대변/차변 메모"
@@ -8226,6 +8377,9 @@ msgstr "설정된 프린터가 없습니다"
 msgid "No printers configured. Click \"Add Printer\" to create one."
 msgstr "설정된 프린터가 없습니다. \"프린터 추가\"를 클릭하여 생성하세요."
 
+msgid "No process selected"
+msgstr "프로세스를 선택하지 않았습니다"
+
 msgid "No Quote"
 msgstr "견적 없음"
 
@@ -8517,6 +8671,12 @@ msgstr "미결 작업지시"
 msgid "Open in Carbon"
 msgstr "Carbon에서 열기"
 
+msgid "Open in change order {ids}. Release it to create new versions or revisions."
+msgstr ""
+
+msgid "Open in change orders {ids}. Release them to create new versions or revisions."
+msgstr ""
+
 msgid "Open in MES"
 msgstr "MES에서 열기"
 
@@ -8801,6 +8961,9 @@ msgstr "파라미터"
 msgid "Parent cost center"
 msgstr "상위 원가센터"
 
+msgid "Parent Cost Center"
+msgstr "상위 비용 센터"
+
 msgid "Parent Department"
 msgstr "상위 부서"
 
@@ -8962,6 +9125,9 @@ msgstr "저비용 평가에 적합"
 
 msgid "Period"
 msgstr "기간"
+
+msgid "Period End"
+msgstr "기간 종료"
 
 msgid "Periodic depreciation expense for fixed assets"
 msgstr "고정자산에 대한 정기 감가상각비"
@@ -9764,6 +9930,9 @@ msgstr "문제는 일찍, 명확하게 제기하세요. 2주 차에 언급된 �
 msgid "Rate Limit"
 msgstr "요청 제한"
 
+msgid "Ratio"
+msgstr "비율"
+
 msgid "Raw Materials"
 msgstr "원자재"
 
@@ -10048,6 +10217,9 @@ msgstr "제거"
 msgid "Remove {0}"
 msgstr "{0} 제거"
 
+msgid "Remove {label}"
+msgstr "제거 {label}"
+
 msgid "Remove condition"
 msgstr "조건 제거"
 
@@ -10308,6 +10480,9 @@ msgstr "매입자 납부 판매세(기본값)"
 msgid "Reverse the related journal entries"
 msgstr "관련 분개 취소"
 
+msgid "Reversed"
+msgstr "역순됨"
+
 msgid "Review each item's changes, then confirm — releasing can't be undone."
 msgstr "각 항목의 변경 사항을 검토한 후 확인하세요 — 릴리스는 실행 취소할 수 없습니다."
 
@@ -10443,6 +10618,9 @@ msgstr "실습 세션을 진행하고 팀의 승인을 받으세요"
 
 msgid "Run hands-on sessions with your champions"
 msgstr "핵심 담당자와 함께 실습 세션을 진행하세요"
+
+msgid "Run ID"
+msgstr "실행 ID"
 
 msgid "Run month-end close and standard reconciliations"
 msgstr "월마감 및 표준 조정 작업을 수행하세요"
@@ -10782,12 +10960,18 @@ msgstr "문서 선택"
 msgid "Select a new owner"
 msgstr "새 소유자 선택"
 
+msgid "Select a new parent group for this account."
+msgstr "이 계정의 새 상위 그룹을 선택하세요."
+
 msgid "Select a plan"
 msgstr "플랜 선택"
 
 #. placeholder {0}: plans[0].stripeTrialPeriodDays
 msgid "Select a plan to get started. You won't be charged for the first {0} days. Switch or cancel anytime."
 msgstr "시작하려면 플랜을 선택하세요. 처음 {0}일 동안은 요금이 청구되지 않습니다. 언제든지 변경하거나 취소할 수 있습니다."
+
+msgid "Select a process first to choose its supplier."
+msgstr "공급자를 선택하려면 먼저 프로세스를 선택하세요."
 
 msgid "Select a project"
 msgstr "프로젝트 선택"
@@ -10812,6 +10996,9 @@ msgstr "먼저 재질을 선택하면 사용 가능한 옵션이 표시됩니다
 
 msgid "Select a team"
 msgstr "팀 선택"
+
+msgid "Select account"
+msgstr "계정 선택"
 
 msgid "Select all"
 msgstr "전체 선택"
@@ -11351,6 +11538,9 @@ msgstr "릴리즈되었지만 시작되지 않은 상태를 건너뜁니다 — 
 
 msgid "Skipped"
 msgstr "건너뜀"
+
+msgid "Slack"
+msgstr "Slack"
 
 msgid "Smoke-test the core daily flows end to end"
 msgstr "핵심 일일 업무 흐름을 처음부터 끝까지 스모크 테스트하세요"
@@ -13023,6 +13213,9 @@ msgstr "공구"
 msgid "Top-level classification (asset / liability / equity / revenue / expense); set only on root groups, inherited by children."
 msgstr "최상위 분류(자산/부채/자본/수익/비용)로, 루트 그룹에만 설정하며 하위 항목에 상속됩니다."
 
+msgid "Topic"
+msgstr "주제"
+
 msgid "Total"
 msgstr "합계"
 
@@ -13316,6 +13509,9 @@ msgstr "잠금 해제"
 
 msgid "Unmapped Extracted Lines"
 msgstr "매핑되지 않은 추출 라인"
+
+msgid "Unmatched"
+msgstr "일치하지 않음"
 
 msgid "Unpick"
 msgstr "피킹 취소"
@@ -13648,6 +13844,9 @@ msgstr "활성 견적 보기"
 msgid "View All"
 msgstr "전체 보기"
 
+msgid "View Asset"
+msgstr "자산 보기"
+
 msgid "View Assigned Jobs"
 msgstr "배정된 작업 보기"
 
@@ -13692,6 +13891,9 @@ msgstr "이슈 보기"
 
 msgid "View Item Master"
 msgstr "품목 마스터 보기"
+
+msgid "View Journal Entry"
+msgstr "분개 보기"
 
 msgid "View Lists"
 msgstr "목록 보기"
@@ -13767,6 +13969,9 @@ msgstr "입고 보기"
 
 msgid "View Receivables"
 msgstr "매출채권 보기"
+
+msgid "View Run"
+msgstr "실행 보기"
 
 msgid "View Scheduled"
 msgstr "예정 정비 보기"

@@ -43,6 +43,10 @@ import { getNextRevision } from "~/modules/items";
 import type { ItemType } from "~/modules/shared";
 import { path } from "~/utils/path";
 import { getReadableIdWithRevision } from "~/utils/string";
+import {
+  ItemChangeOrderLock,
+  useItemOpenChangeOrders
+} from "../ChangeOrder/ItemChangeOrderLock";
 import { getPathToMakeMethod } from "../Methods/utils";
 import RevisionForm from "./RevisionForm";
 
@@ -199,6 +203,12 @@ export function RevisionsItem({
   const revisionDisclosure = useDisclosure();
   const defaultDisclosure = useDisclosure();
 
+  // Block manual revision creation while an open change order owns this item —
+  // the CO authors revisions. The button stays visible but disabled, with a
+  // tooltip pointing at the change order(s).
+  const openChangeOrders = useItemOpenChangeOrders(node.key, itemId);
+  const isChangeOrderLocked = openChangeOrders.length > 0;
+
   const [selectedRevision, setSelectedRevision] = useState<{
     id?: string;
     copyFromId?: string;
@@ -236,27 +246,42 @@ export function RevisionsItem({
             )}
           </div>
         </button>
-        {permissions.can("create", "parts") && (
-          <IconButton
-            size="sm"
-            variant="secondary"
-            icon={<LuPlus />}
-            aria-label={t`Create`}
-            className="size-5 absolute right-2 top-1.5"
-            onClick={() => {
-              flushSync(() => {
-                setSelectedRevision({
-                  copyFromId: itemId,
-                  type: node.key as "Part",
-                  revision: hasSizesInsteadOfRevisions
-                    ? ""
-                    : getNextRevision(maxRevision)
+        {permissions.can("create", "parts") &&
+          (isChangeOrderLocked ? (
+            <ItemChangeOrderLock
+              changeOrders={openChangeOrders}
+              className="absolute right-2 top-1.5"
+            >
+              <IconButton
+                size="sm"
+                variant="secondary"
+                icon={<LuPlus />}
+                aria-label={t`Create`}
+                className="size-5"
+                isDisabled
+              />
+            </ItemChangeOrderLock>
+          ) : (
+            <IconButton
+              size="sm"
+              variant="secondary"
+              icon={<LuPlus />}
+              aria-label={t`Create`}
+              className="size-5 absolute right-2 top-1.5"
+              onClick={() => {
+                flushSync(() => {
+                  setSelectedRevision({
+                    copyFromId: itemId,
+                    type: node.key as "Part",
+                    revision: hasSizesInsteadOfRevisions
+                      ? ""
+                      : getNextRevision(maxRevision)
+                  });
+                  revisionDisclosure.onOpen();
                 });
-                revisionDisclosure.onOpen();
-              });
-            }}
-          />
-        )}
+              }}
+            />
+          ))}
       </div>
       {isExpanded && (
         <div className="flex flex-col w-full relative ">

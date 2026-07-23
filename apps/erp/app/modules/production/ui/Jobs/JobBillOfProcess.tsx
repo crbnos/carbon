@@ -2395,8 +2395,10 @@ function PreviewStepRecords({ attribute }: { attribute: JobOperationStep }) {
   const { formatRelativeTime } = useDateFormatter();
   if (
     !attribute.jobOperationStepRecord ||
-    !Array.isArray(attribute.jobOperationStepRecord)
+    !Array.isArray(attribute.jobOperationStepRecord) ||
+    attribute.jobOperationStepRecord.length === 0
   ) {
+    // No records yet — don't render the empty bordered box (it shows as a stray line).
     return null;
   }
 

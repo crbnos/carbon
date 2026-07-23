@@ -1,4 +1,5 @@
 import { Badge, MenuIcon, MenuItem } from "@carbon/react";
+import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
 import {
@@ -22,6 +23,7 @@ type DimensionsTableProps = {
 };
 
 const DimensionsTable = memo(({ data, count }: DimensionsTableProps) => {
+  const { t } = useLingui();
   const [params] = useUrlParams();
   const navigate = useNavigate();
   const permissions = usePermissions();
@@ -30,7 +32,7 @@ const DimensionsTable = memo(({ data, count }: DimensionsTableProps) => {
     const defaultColumns: ColumnDef<Dimension>[] = [
       {
         accessorKey: "name",
-        header: "Name",
+        header: t`Name`,
         cell: ({ row }) => (
           <Hyperlink to={`${row.original.id}?${params.toString()}`}>
             {row.original.name}
@@ -42,7 +44,7 @@ const DimensionsTable = memo(({ data, count }: DimensionsTableProps) => {
       },
       {
         accessorKey: "entityType",
-        header: "Entity Type",
+        header: t`Entity Type`,
         cell: (item) => <Enumerable value={item.getValue<string>()} />,
         meta: {
           filter: {
@@ -57,7 +59,7 @@ const DimensionsTable = memo(({ data, count }: DimensionsTableProps) => {
       },
       {
         id: "valuesCount",
-        header: "Values",
+        header: t`Values`,
         cell: ({ row }) => {
           if (row.original.entityType === "Custom") {
             const values =
@@ -74,7 +76,11 @@ const DimensionsTable = memo(({ data, count }: DimensionsTableProps) => {
               </div>
             );
           }
-          return <Badge variant="gray">Inherited</Badge>;
+          return (
+            <Badge variant="gray">
+              <Trans>Inherited</Trans>
+            </Badge>
+          );
         },
         meta: {
           icon: <LuShapes />
@@ -82,7 +88,7 @@ const DimensionsTable = memo(({ data, count }: DimensionsTableProps) => {
       }
     ];
     return defaultColumns;
-  }, [params]);
+  }, [params, t]);
 
   const renderContextMenu = useCallback(
     (row: Dimension) => {
@@ -95,7 +101,7 @@ const DimensionsTable = memo(({ data, count }: DimensionsTableProps) => {
             }}
           >
             <MenuIcon icon={<LuPencil />} />
-            Edit Dimension
+            <Trans>Edit Dimension</Trans>
           </MenuItem>
           <MenuItem
             disabled={!permissions.can("delete", "accounting")}
@@ -106,7 +112,7 @@ const DimensionsTable = memo(({ data, count }: DimensionsTableProps) => {
             }}
           >
             <MenuIcon icon={<LuTrash />} />
-            Delete Dimension
+            <Trans>Delete Dimension</Trans>
           </MenuItem>
         </>
       );
@@ -121,11 +127,11 @@ const DimensionsTable = memo(({ data, count }: DimensionsTableProps) => {
       count={count}
       primaryAction={
         permissions.can("create", "accounting") && (
-          <New label="Dimension" to={`new?${params.toString()}`} />
+          <New label={t`Dimension`} to={`new?${params.toString()}`} />
         )
       }
       renderContextMenu={renderContextMenu}
-      title="Dimensions"
+      title={t`Dimensions`}
     />
   );
 });

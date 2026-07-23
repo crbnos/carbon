@@ -15,6 +15,12 @@ msgstr ""
 msgid " A supplier is a business or person who sells you parts or services."
 msgstr "供应商是向您销售零件或服务的企业或个人。"
 
+msgid ", {residual}% residual"
+msgstr ", {residual}% 残差"
+
+msgid ", {years}yr"
+msgstr ", {years}年"
+
 #. placeholder {0}: fieldDef?.label ?? condition.field
 msgid "\"{0}\" isn't available on the selected surface(s). Pick another field."
 msgstr "\"{0}\"在选定的表面上不可用。请选择另一个字段。"
@@ -137,6 +143,9 @@ msgstr "{uncounted, plural, one {# 未计数行} other {# 未计数行}}"
 
 msgid "{variances, plural, one {# line differs from the expected quantity} other {# lines differ from the expected quantity}}"
 msgstr "{variances, plural, one {# 行与预期数量不同} other {# 行与预期数量不同}}"
+
+msgid "{years}yr"
+msgstr "{years}年"
 
 msgid "/month/user"
 msgstr "/月/用户"
@@ -596,6 +605,9 @@ msgstr "添加一行"
 msgid "Add a step"
 msgstr "添加步骤"
 
+msgid "Add Account"
+msgstr "添加账户"
+
 msgid "Add Actions"
 msgstr "添加操作"
 
@@ -625,6 +637,9 @@ msgstr "添加条件"
 
 msgid "Add Contractor"
 msgstr "添加承包商"
+
+msgid "Add cost center"
+msgstr "添加成本中心"
 
 msgid "Add Entry"
 msgstr "添加条目"
@@ -803,6 +818,9 @@ msgstr "所有审计日志"
 
 msgid "All changes to auditable entities are being recorded."
 msgstr "所有可审计实体的更改都正在被记录。"
+
+msgid "All Companies"
+msgstr "所有公司"
 
 msgid "All Customers"
 msgstr "所有客户"
@@ -1023,6 +1041,9 @@ msgstr "批准要求"
 msgid "Approval Rules"
 msgstr "审批规则"
 
+msgid "Approvals"
+msgstr "审批"
+
 msgid "Approve"
 msgstr "批准"
 
@@ -1128,6 +1149,7 @@ msgstr "你确定要停用此用户吗？"
 msgid "Are you sure you want to delete {0} from this operation? This cannot be undone."
 msgstr "你确定要从此操作中删除 {0} 吗？此操作无法撤销。"
 
+#. placeholder {0}: selectedEntry.journalEntryId
 #. placeholder {0}: selectedGroup.name
 msgid "Are you sure you want to delete {0}?"
 msgstr "你确定要删除 {0} 吗？"
@@ -1160,6 +1182,10 @@ msgstr "您确定要删除账户：{0}{1}吗？此操作无法撤销。"
 #. placeholder {0}: apiKey.name
 msgid "Are you sure you want to delete the API key: {0}? This cannot be undone."
 msgstr "您确定要删除 API 密钥：{0}？此操作无法撤销。"
+
+#. placeholder {0}: selectedClass.name
+msgid "Are you sure you want to delete the asset class: {0}? This cannot be undone."
+msgstr "确定要删除资产类别: {0}吗?此操作无法撤销。"
 
 #. placeholder {0}: requiredAction.name
 msgid "Are you sure you want to delete the change order action: {0}? This cannot be undone."
@@ -1511,6 +1537,9 @@ msgstr "处置时资产成本"
 msgid "Asset Cost on Disposal (default)"
 msgstr "处置时资产成本（默认）"
 
+msgid "Asset ID"
+msgstr "资产ID"
+
 msgid "Assets"
 msgstr "资产"
 
@@ -1751,6 +1780,9 @@ msgstr "批次追踪"
 msgid "Batch Tracking"
 msgstr "批次追踪"
 
+msgid "Beginning"
+msgstr "开始"
+
 #. placeholder {0}: successorItem.readableIdWithRevision
 msgid "Being phased out — successor: <0>{0}</0>"
 msgstr "正在逐步淘汰 — 后继产品：<0>{0}</0>"
@@ -1824,6 +1856,9 @@ msgstr "预约通话讨论引导式实施"
 
 msgid "Book a call with Carbon"
 msgstr "与 Carbon 预约通话"
+
+msgid "Book Depreciation"
+msgstr "账面折旧"
 
 msgid "Breadcrumb"
 msgstr "面包屑"
@@ -2871,6 +2906,9 @@ msgstr "成本中心"
 msgid "Cost Center"
 msgstr "成本中心"
 
+msgid "Cost Center Name"
+msgstr "成本中心名称"
+
 msgid "cost centers"
 msgstr "成本中心"
 
@@ -3059,6 +3097,9 @@ msgstr "已创建变更单类型"
 msgid "Created consumable"
 msgstr "已创建易耗品"
 
+msgid "Created cost center"
+msgstr "已创建成本中心"
+
 msgid "Created customer portal"
 msgstr "已创建客户门户"
 
@@ -3169,6 +3210,10 @@ msgstr "正在创建零件..."
 msgid "Credit"
 msgstr "信用"
 
+#. placeholder {0}: parentCurrency ?? "Translated"
+msgid "Credit ({0})"
+msgstr "贷方 ({0})"
+
 msgid "Credit / Debit Memos"
 msgstr "贷项/借项备忘录"
 
@@ -3186,6 +3231,9 @@ msgstr "制造成本吸收到在产品中时使用的贷方科目"
 
 msgid "Credit Memo"
 msgstr "贷方备忘录"
+
+msgid "Credits"
+msgstr "贷方"
 
 msgid "Credits & Debits"
 msgstr "贷项和借项"
@@ -3527,11 +3575,18 @@ msgstr "截止日期类型"
 msgid "Debit"
 msgstr "借方"
 
+#. placeholder {0}: parentCurrency ?? "Translated"
+msgid "Debit ({0})"
+msgstr "借方 ({0})"
+
 msgid "Debit Account"
 msgstr "借方账户"
 
 msgid "Debit Memo"
 msgstr "借方备忘录"
+
+msgid "Debits"
+msgstr "借方"
 
 msgid "Decide what an operator sees if they try to issue a batch or serial that's already expired."
 msgstr "决定操作员在尝试发放已过期的批次或序列号时看到的内容。"
@@ -3683,6 +3738,12 @@ msgstr "删除操作"
 msgid "Delete API Key"
 msgstr "删除 API 密钥"
 
+msgid "Delete Asset"
+msgstr "删除资产"
+
+msgid "Delete Asset Class"
+msgstr "删除资产类别"
+
 msgid "Delete Assignment"
 msgstr "删除分配"
 
@@ -3725,6 +3786,9 @@ msgstr "删除客户类型"
 msgid "Delete Department"
 msgstr "删除部门"
 
+msgid "Delete Dimension"
+msgstr "删除维度"
+
 msgid "Delete Dispatch"
 msgstr "删除派工"
 
@@ -3751,6 +3815,12 @@ msgstr "删除问题"
 
 msgid "Delete Item Group"
 msgstr "删除物品组"
+
+msgid "Delete Journal Entry"
+msgstr "删除日记账条目"
+
+msgid "Delete line"
+msgstr "删除行"
 
 msgid "Delete Line"
 msgstr "删除行"
@@ -4129,6 +4199,9 @@ msgstr "处置"
 msgid "Dispose Asset"
 msgstr "处置资产"
 
+msgid "Disposed"
+msgstr "已处置"
+
 msgid "Disposition"
 msgstr "处置"
 
@@ -4350,6 +4423,9 @@ msgstr "编辑 API 密钥"
 msgid "Edit Approval Rule"
 msgstr "编辑审批规则"
 
+msgid "Edit Asset"
+msgstr "编辑资产"
+
 msgid "Edit Asset Class"
 msgstr "编辑资产类别"
 
@@ -4382,6 +4458,9 @@ msgstr "编辑联系人"
 
 msgid "Edit Contractor"
 msgstr "编辑承包商"
+
+msgid "Edit Cost Center"
+msgstr "编辑成本中心"
 
 msgid "Edit Count"
 msgstr "编辑计数"
@@ -4445,6 +4524,9 @@ msgstr ""
 
 msgid "Edit Item Group"
 msgstr "编辑项目组"
+
+msgid "Edit Journal Entry"
+msgstr "编辑日记账条目"
 
 msgid "Edit Kanban"
 msgstr "编辑看板"
@@ -4638,11 +4720,20 @@ msgstr "编辑 Webhook"
 msgid "Edit Work Center"
 msgstr "编辑工作中心"
 
+msgid "Eliminated"
+msgstr "已消除"
+
+msgid "email"
+msgstr "邮件"
+
 msgid "Email"
 msgstr "电子邮件"
 
 msgid "Email Address"
 msgstr "电子邮件地址"
+
+msgid "Email notifications are not included in your company's current plan; email preferences will apply if they are enabled."
+msgstr "电子邮件通知不包含在贵公司的当前计划中；如果启用电子邮件偏好设置，这些偏好将适用。"
 
 msgid "Email notifications not configured"
 msgstr "电子邮件通知未配置"
@@ -4742,6 +4833,13 @@ msgstr "上一季度末"
 
 msgid "End Time"
 msgstr "结束时间"
+
+msgid "Ending"
+msgstr "结束"
+
+#. placeholder {0}: parentCurrency ?? "Translated"
+msgid "Ending ({0})"
+msgstr "结束 ({0})"
 
 msgid "Enforce — edits are blocked"
 msgstr "强制执行—编辑被阻止"
@@ -5114,6 +5212,10 @@ msgid "Failed to create consumable: {0}"
 msgstr "创建耗材失败：{0}"
 
 #. placeholder {0}: fetcher.data.error.message
+msgid "Failed to create cost center: {0}"
+msgstr "创建成本中心失败: {0}"
+
+#. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create customer portal: {0}"
 msgstr "创建客户门户失败：{0}"
 
@@ -5310,6 +5412,10 @@ msgstr "未能加载供应商零件详情"
 msgid "Failed to load tracked entities"
 msgstr "加载跟踪实体失败"
 
+#. placeholder {0}: fetcher.data.error.message
+msgid "Failed to move account: {0}"
+msgstr "移动账户失败: {0}"
+
 msgid "Failed to remove image: {errorMessage}"
 msgstr "删除图像失败：{errorMessage}"
 
@@ -5435,9 +5541,6 @@ msgstr "从绘图中建议的特征值"
 
 msgid "Features"
 msgstr "功能"
-
-msgid "Feedback"
-msgstr "反馈"
 
 msgid "Fees"
 msgstr "费用"
@@ -5630,6 +5733,9 @@ msgstr "星期五"
 msgid "From {0}"
 msgstr "从 {0}"
 
+msgid "From / To"
+msgstr "从/到"
+
 msgid "From customer"
 msgstr "来自客户"
 
@@ -5644,6 +5750,9 @@ msgstr "从存储单位"
 
 msgid "Fulfillment Location"
 msgstr "履行地点"
+
+msgid "Fully Depreciated"
+msgstr "完全折旧"
 
 msgid "Fully trained for"
 msgstr "完全培训"
@@ -5692,6 +5801,9 @@ msgstr "量规"
 
 msgid "Genealogy"
 msgstr "总分类账"
+
+msgid "General"
+msgstr "常规"
 
 msgid "General ledger"
 msgstr "捕获外协加工操作成本差异的GL账户。"
@@ -6153,9 +6265,6 @@ msgstr "我仍在工作"
 msgid "ID"
 msgstr "ID"
 
-msgid "Ideas, suggestions or problems with this page?"
-msgstr "有什么想法、建议或问题吗？"
-
 msgid "Ideas, suggestions or problems?"
 msgstr "想法、建议或问题？"
 
@@ -6249,6 +6358,12 @@ msgstr "仅库存"
 msgid "In the loop together"
 msgstr "一起保持沟通"
 
+msgid "In-app notifications are always delivered. Choose which topics also reach you by email or Slack."
+msgstr "应用内通知始终会被传递。选择哪些主题也通过电子邮件或 Slack 发送给您。"
+
+msgid "In-app notifications are always delivered. Choose which topics also reach you by email."
+msgstr "应用内通知始终会被传递。选择哪些主题也通过电子邮件发送给您。"
+
 msgid "Inactive"
 msgstr "未激活"
 
@@ -6302,6 +6417,9 @@ msgstr "基础设施"
 
 msgid "Inherit From Materials"
 msgstr "从材料继承"
+
+msgid "Inherited"
+msgstr "已继承"
 
 msgid "Inherited from parent"
 msgstr "从父级继承"
@@ -6392,6 +6510,12 @@ msgstr "此处未命名的集成"
 
 msgid "Intercompany"
 msgstr "公司间"
+
+msgid "Intercompany Balances"
+msgstr "公司间余额"
+
+msgid "Intercompany Transactions"
+msgstr "公司间交易"
 
 msgid "Intercompany transactions involving this company that are still Unmatched should be matched and eliminated, so consolidated results don't double-count activity between entities."
 msgstr "涉及本公司且仍未匹配的公司间交易应进行匹配和消除，以便合并结果不会重复计算实体之间的交易。"
@@ -6906,6 +7030,9 @@ msgstr "浅色模式"
 msgid "Likelihood"
 msgstr "可能性"
 
+msgid "Line description (optional)"
+msgstr "行描述(可选)"
+
 msgid "Line Item Comparison"
 msgstr "行项目比较"
 
@@ -6988,6 +7115,9 @@ msgstr "加载中..."
 
 msgid "Loading…"
 msgstr "加载中…"
+
+msgid "Local"
+msgstr "本地"
 
 msgid "location"
 msgstr "位置"
@@ -7103,6 +7233,9 @@ msgstr "机器、单元、工作站"
 
 msgid "MACRS"
 msgstr "MACRS"
+
+msgid "MACRS {cls}-Year"
+msgstr "MACRS {cls}年"
 
 msgid "MACRS Convention"
 msgstr "MACRS公约"
@@ -7305,6 +7438,9 @@ msgstr "匹配任意项 (OR)"
 
 msgid "Match none"
 msgstr "不匹配任何条件"
+
+msgid "Matched"
+msgstr "已匹配"
 
 msgid "matches"
 msgstr "匹配"
@@ -7588,6 +7724,9 @@ msgstr "大多数问题在这里都会被发现和解决。直言不讳地说出
 msgid "Move"
 msgstr "移动"
 
+msgid "Move {accountName}"
+msgstr "移动 {accountName}"
+
 msgid "Move entities"
 msgstr "移动实体"
 
@@ -7603,6 +7742,9 @@ msgstr "将部分数量移至新的处置行，以便 MRB 可以分别决定每�
 msgid "Move to"
 msgstr "移至"
 
+msgid "Move to Group"
+msgstr "移至分组"
+
 msgid "Move to Trash"
 msgstr "移至垃圾箱"
 
@@ -7610,6 +7752,9 @@ msgstr "移至垃圾箱"
 #. placeholder {1}: targetBucket === "parts" ? "Parts" : "Opportunity"
 msgid "Moved {0} to {1} bucket"
 msgstr "已将 {0} 移至 {1} 存储桶"
+
+msgid "Moved account"
+msgstr "已移动账户"
 
 msgid "Movements"
 msgstr "移动"
@@ -7668,6 +7813,9 @@ msgstr "负调整"
 msgid "Net book value"
 msgstr "净账面价值"
 
+msgid "Net Book Value"
+msgstr "账面净值"
+
 msgid "Net Change"
 msgstr "净变化"
 
@@ -7715,6 +7863,9 @@ msgstr "新消耗品"
 
 msgid "New Contractor"
 msgstr "新承包商"
+
+msgid "New Cost Center"
+msgstr "新建成本中心"
 
 msgid "New Credit / Debit Memo"
 msgstr "新的贷项/借项备忘录"
@@ -8226,6 +8377,9 @@ msgstr "未配置打印机"
 msgid "No printers configured. Click \"Add Printer\" to create one."
 msgstr "未配置打印机。点击\"添加打印机\"创建一个。"
 
+msgid "No process selected"
+msgstr "未选择工艺"
+
 msgid "No Quote"
 msgstr "无报价"
 
@@ -8517,6 +8671,12 @@ msgstr "未结派工单"
 msgid "Open in Carbon"
 msgstr "在 Carbon 中打开"
 
+msgid "Open in change order {ids}. Release it to create new versions or revisions."
+msgstr ""
+
+msgid "Open in change orders {ids}. Release them to create new versions or revisions."
+msgstr ""
+
 msgid "Open in MES"
 msgstr "在MES中打开"
 
@@ -8801,6 +8961,9 @@ msgstr "参数"
 msgid "Parent cost center"
 msgstr "零件"
 
+msgid "Parent Cost Center"
+msgstr "父成本中心"
+
 msgid "Parent Department"
 msgstr "上级部门"
 
@@ -8962,6 +9125,9 @@ msgstr "非常适合低成本评估"
 
 msgid "Period"
 msgstr "期间"
+
+msgid "Period End"
+msgstr "期末"
 
 msgid "Periodic depreciation expense for fixed assets"
 msgstr "拣选按最早过期日期优先提供跟踪实体，因此最快过期的库存默认首先出库。"
@@ -9764,6 +9930,9 @@ msgstr "尽早提出问题，直言不讳地提出。第2周发现的问题很�
 msgid "Rate Limit"
 msgstr "速率限制"
 
+msgid "Ratio"
+msgstr "比率"
+
 msgid "Raw Materials"
 msgstr "原材料"
 
@@ -10048,6 +10217,9 @@ msgstr "移除"
 msgid "Remove {0}"
 msgstr "删除 {0}"
 
+msgid "Remove {label}"
+msgstr "移除 {label}"
+
 msgid "Remove condition"
 msgstr "移除条件"
 
@@ -10308,6 +10480,9 @@ msgstr "反向收费销售税 (默认)"
 msgid "Reverse the related journal entries"
 msgstr "反转相关日记账分录"
 
+msgid "Reversed"
+msgstr "已冲销"
+
 msgid "Review each item's changes, then confirm — releasing can't be undone."
 msgstr "审查每个项目的更改，然后确认 — 发布无法撤销。"
 
@@ -10443,6 +10618,9 @@ msgstr "进行实践培训课程并获得团队的批准"
 
 msgid "Run hands-on sessions with your champions"
 msgstr "与您的冠军用户进行实践培训课程"
+
+msgid "Run ID"
+msgstr "运行ID"
 
 msgid "Run month-end close and standard reconciliations"
 msgstr "运行月末结账和标准对账"
@@ -10782,12 +10960,18 @@ msgstr "选择文件"
 msgid "Select a new owner"
 msgstr "选择新的所有者"
 
+msgid "Select a new parent group for this account."
+msgstr "为此账户选择新的父分组。"
+
 msgid "Select a plan"
 msgstr "选择计划"
 
 #. placeholder {0}: plans[0].stripeTrialPeriodDays
 msgid "Select a plan to get started. You won't be charged for the first {0} days. Switch or cancel anytime."
 msgstr "选择一个计划开始使用。前 {0} 天不会收费。随时可以切换或取消。"
+
+msgid "Select a process first to choose its supplier."
+msgstr "请先选择工艺以选择其供应商。"
 
 msgid "Select a project"
 msgstr "选择一个项目"
@@ -10812,6 +10996,9 @@ msgstr "请先选择物质以查看可用选项"
 
 msgid "Select a team"
 msgstr "选择一个团队"
+
+msgid "Select account"
+msgstr "选择账户"
 
 msgid "Select all"
 msgstr "全选"
@@ -11351,6 +11538,9 @@ msgstr "跳过已发布但未启动的状态 - 扫描时工作立即开始。"
 
 msgid "Skipped"
 msgstr "已跳过"
+
+msgid "Slack"
+msgstr "Slack"
 
 msgid "Smoke-test the core daily flows end to end"
 msgstr "端到端烟雾测试核心日常流程"
@@ -13023,6 +13213,9 @@ msgstr "工具"
 msgid "Top-level classification (asset / liability / equity / revenue / expense); set only on root groups, inherited by children."
 msgstr "顶级分类（资产/负债/权益/收益/费用）；仅在根组上设置，由子组继承。"
 
+msgid "Topic"
+msgstr "主题"
+
 msgid "Total"
 msgstr "总计"
 
@@ -13316,6 +13509,9 @@ msgstr "解锁"
 
 msgid "Unmapped Extracted Lines"
 msgstr "未映射的提取行"
+
+msgid "Unmatched"
+msgstr "未匹配"
 
 msgid "Unpick"
 msgstr "取消拣选"
@@ -13648,6 +13844,9 @@ msgstr "查看活跃报价"
 msgid "View All"
 msgstr "查看全部"
 
+msgid "View Asset"
+msgstr "查看资产"
+
 msgid "View Assigned Jobs"
 msgstr "查看分配的工作"
 
@@ -13692,6 +13891,9 @@ msgstr "查看问题"
 
 msgid "View Item Master"
 msgstr "查看物料主数据"
+
+msgid "View Journal Entry"
+msgstr "查看日记账分录"
 
 msgid "View Lists"
 msgstr "查看列表"
@@ -13767,6 +13969,9 @@ msgstr "查看收据"
 
 msgid "View Receivables"
 msgstr "查看应收账款"
+
+msgid "View Run"
+msgstr "查看运行"
 
 msgid "View Scheduled"
 msgstr "查看已排期"

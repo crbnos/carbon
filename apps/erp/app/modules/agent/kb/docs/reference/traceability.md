@@ -1,0 +1,34 @@
+# Traceability
+
+> Serial and batch tracking, and the genealogy that links what went into what.
+
+For items that need it, Carbon tracks individual units and lots as **tracked entities**, and records every consume-and-produce as it happens, so you can prove what went into a finished unit, and trace a suspect lot forward to everything it touched.
+
+## Tracked entities
+
+A **tracked entity** is a tracked quantity of an item. A **Serial** item gets one entity per unit (quantity 1); a **Batch** item gets one entity per lot. The serial or batch number, and where it came from, live on the entity's attributes. An entity carries a status as it moves:
+
+  - **Available**: In stock, free to pick or consume.
+  - **Reserved**: Allocated: e.g. a job's output before it's made.
+  - **On Hold**: Received but not yet released (awaiting inspection).
+  - **Consumed**: Issued to a job or shipped out.
+  - **Rejected**: Failed inspection.
+
+## Where entities come from
+
+Receiving a tracked item creates entities **On Hold**; posting the receipt releases them to **Available**, unless the item needs inspection. Then they stay On Hold until it clears, or become **Rejected** if it fails. On the make side, a job reserves its output entity up front and flips it to **Available** when the unit is produced.
+
+## Genealogy
+
+Every material event (consume, produce, split, ship) is recorded as an **activity** with **inputs** (what was consumed) and **outputs** (what was produced). Parent and child link through the activity, so the genealogy graph is built as work happens and walked later to trace a unit's ancestry or descendants. Consuming part of a batch records a **split**, linking the original lot to the consumed portion and the remainder.
+
+There are no separate serial-number or batch-number tables — one tracked-entity model represents both, and the number itself is an attribute. Genealogy isn't a stored parent pointer; it's reconstructed by walking the activity graph from a unit outward.
+
+## Shelf life
+
+Tracked items can carry a **shelf life**: a fixed duration, a date set at receipt, or one calculated from the earliest-expiring component consumed. Carbon stamps the resulting expiration date on the entity, and picking favors the earliest expiry first (FEFO). Shelf life applies only to Serial and Batch items. There has to be a per-unit record to stamp.
+
+## Related
+
+  - Jobs Where entities are consumed and produced as a job runs.
+  - Quality Inspection holds and rejects tracked entities.

@@ -33,6 +33,7 @@ import {
 import {
   applyBootstrapSql,
   applyMigrations,
+  ensureConfigRow,
   ensureSmokeTestUser,
   waitForPostgres,
   waitForStorageReady,
@@ -525,6 +526,19 @@ async function runDatabaseMigrations(
           title: "Skip database migrations (--no-migrate)",
           task: async () => "skipped"
         },
+    // Gated on shouldMigrate: with --no-migrate on a fresh volume the
+    // "config" table doesn't exist yet and the upsert would abort the boot.
+    ...(cfg.shouldMigrate
+      ? [
+          {
+            title: "Seed pg_net config row",
+            task: async () => {
+              await ensureConfigRow(ctx.ports.PORT_DB, ctx.jwt.anonKey);
+              return "config row upserted";
+            }
+          }
+        ]
+      : []),
     ...(cfg.shouldRegen
       ? [
           {

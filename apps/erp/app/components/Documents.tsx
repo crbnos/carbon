@@ -21,7 +21,11 @@ import {
   Tr,
   toast
 } from "@carbon/react";
-import { convertKbToString, MODEL_RAW_KEEP_MAX_BYTES } from "@carbon/utils";
+import {
+  convertKbToString,
+  isModelRawDownloadable,
+  MODEL_RAW_KEEP_MAX_BYTES
+} from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ChangeEvent } from "react";
 import { useCallback } from "react";
@@ -328,11 +332,13 @@ const Documents = ({
                           />
                         </DropdownMenuTrigger>
                         <DropdownMenuContent>
-                          <DropdownMenuItem
-                            onClick={() => downloadModel(modelUpload)}
-                          >
-                            <Trans>Download</Trans>
-                          </DropdownMenuItem>
+                          {isModelRawDownloadable(modelUpload.modelPath) && (
+                            <DropdownMenuItem
+                              onClick={() => downloadModel(modelUpload)}
+                            >
+                              <Trans>Download</Trans>
+                            </DropdownMenuItem>
+                          )}
                           <DropdownMenuItem asChild>
                             <Link
                               to={

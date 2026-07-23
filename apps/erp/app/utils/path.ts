@@ -44,6 +44,10 @@ export const path = {
     api: {
       abilities: `${api}/resources/abilities`,
       accounts: `${api}/accounting/accounts`,
+      agentChat: `${api}/agent/chat`,
+      agentFeedback: `${api}/agent/feedback`,
+      agentThread: (id: string) => `${api}/agent/thread/${id}`,
+      agentThreads: `${api}/agent/threads`,
       assemblyForItem: (itemId: string) =>
         generatePath(`${api}/production/assembly-for-item/${itemId}`),
       assemblyInstructions: (itemId: string) =>
@@ -244,7 +248,7 @@ export const path = {
         generatePath(`${api}/purchasing/supplier-contacts/${id}`),
       supplierLocations: (id: string) =>
         generatePath(`${api}/purchasing/supplier-locations/${id}`),
-      supplierProcesses: (id?: string) =>
+      supplierProcesses: (id: string) =>
         generatePath(`${api}/purchasing/supplier-processes/${id}`),
       supplierTypes: `${api}/purchasing/supplier-types`,
       tags: (table?: string) =>
@@ -877,7 +881,6 @@ export const path = {
     failureMode: (id: string) =>
       generatePath(`${x}/resources/failure-modes/${id}`),
     failureModes: `${x}/resources/failure-modes`,
-    feedback: `${x}/feedback`,
     file: {
       cadModel: (id: string) => generatePath(`${file}/model/${id}`),
       jobTraveler: (id: string) => generatePath(`${file}/traveler/${id}.pdf`),

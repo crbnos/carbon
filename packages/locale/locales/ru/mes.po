@@ -96,9 +96,6 @@ msgstr "Назначенные мне"
 msgid "Assignee"
 msgstr "Исполнитель"
 
-msgid "Attach File"
-msgstr "Прикрепить файл"
-
 msgid "Authentication Error"
 msgstr "Ошибка аутентификации"
 
@@ -359,9 +356,6 @@ msgstr "Не удалось загрузить файл: {0}"
 msgid "Failed to upload image"
 msgstr "Не удалось загрузить изображение"
 
-msgid "Feedback"
-msgstr "Обратная связь"
-
 msgid "File size exceeds 10MB limit"
 msgstr "Размер файла превышает ограничение в 10 МБ"
 
@@ -390,9 +384,6 @@ msgstr "Забыли отметить уход?"
 msgid "Go back to operation"
 msgstr "Вернуться к операции"
 
-msgid "Have a technical issue? Contact <0>Carbon Support.</0>"
-msgstr "Возникла техническая проблема? Обратитесь в <0>службу поддержки Carbon.</0>"
-
 msgid "How many were actually picked?"
 msgstr "Сколько было фактически собрано?"
 
@@ -401,9 +392,6 @@ msgstr "Я понимаю и хочу завершить без выдачи"
 
 msgid "I'm Still Working"
 msgstr "Я ещё работаю"
-
-msgid "Ideas, suggestions or problems with this page?"
-msgstr "Идеи, предложения или проблемы с этой страницей?"
 
 msgid "Ideas, suggestions or problems?"
 msgstr "Идеи, предложения или проблемы?"

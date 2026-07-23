@@ -1,0 +1,59 @@
+# Planning (MRP)
+
+> How demand turns into suggested jobs and purchase orders — and where that ends and scheduling begins.
+
+Planning answers one question: *what should we make or buy, and how much?* Carbon's MRP looks at everything you owe and everything you have coming, and turns the gap into suggested orders that you choose to act on.
+
+Without planning you'd reorder by hand. MRP nets demand against supply across the whole bill of materials, so a shortfall on a top-level robot surfaces as the right quantity of every component, offset for its lead time — before you're caught short.
+
+## Two stages
+
+Planning runs in two distinct passes, and conflating them is the usual mistake:
+
+1. **MRP, explode and net.** The engine explodes demand through bills of material, nets it against on-hand plus open jobs and purchase orders, and writes period-bucketed demand and supply forecasts. It does **not** apply reorder points and does **not** create orders.
+2. **Planning views, suggest a quantity.** The production and purchasing planning pages read those forecasts, project running stock week by week, and apply each item's **reorder policy** to propose a quantity to order.
+
+MRP **suggests, it never auto-orders.** The engine only writes forecasts; turning a suggestion into a real job or PO is an explicit action you take on the planning page.
+
+## What feeds it
+
+| Input | Source |
+| --- | --- |
+| Customer demand | Open sales-order lines, by promised date. |
+| Production demand | Job material still to issue, offset by lead time. |
+| Forecast demand | Manually entered demand projections. |
+| Open supply | Open jobs and open purchase-order lines. |
+| On hand | The item ledger balance. |
+
+## Reorder policy
+
+Each item, per location, carries a **reordering policy** that decides how a suggestion is sized: *Manual Reorder* (suggests nothing), *Demand-Based Reorder* (the default), *Fixed Reorder Quantity*, or *Maximum Quantity*. Each is tuned by reorder point, order quantity, accumulation period, and min/max/multiple rounding. See `docs/reference/reordering` for the parameters in full.
+
+## From suggestion to order
+
+An item's **replenishment system** routes where its shortfall shows up: *Make* items surface on the production planning page as suggested jobs, *Buy* items on the purchasing page as suggested POs. Choosing **Order** creates a real job or purchase order at status **"Planned"** — persisted from planning, but not yet released into the normal lifecycle.
+
+**"Planned"** is a real, saved job or PO that came from a planning suggestion and is waiting to be released — distinct from a hand-started **"Draft"**.
+
+## Planning vs scheduling
+
+Planning decides *what and how much*; **scheduling** decides *when and where*. Once a job exists, the scheduling engine places its operations onto work centers and computes their dates — it never changes quantities. The two are separate subsystems that meet at the job: planning finalizes it, scheduling sequences it onto the floor.
+
+## Related
+
+  - Reordering The replenishment policies and parameters that size a suggestion.
+  - Jobs What a Make suggestion becomes once you order it.
+
+## Troubleshooting
+
+### "Manufacturing is blocked for item …"
+Ordering a suggested job was stopped because that item's planning settings have manufacturing blocked. Clear the flag on the item, then order again from planning.
+
+### "Manufacturing requires configuration for item …"
+The item is configurable, and planning can't supply a configuration. Create the job from a context that sets the configuration (for example the sales order line) instead of from the planning page.
+
+### "Failed to create job method for item …"
+The job was created but copying the item's method into it failed — usually the item has no **Active** make method. Activate a method on the item, then delete and re-order the job (or run Get Method on it).
+
+### "Failed to load any locations"
+Planning needs at least one location. Create one in settings and set a default.

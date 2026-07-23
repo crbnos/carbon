@@ -241,12 +241,7 @@ export const calculateTotalQuantity = (
   return quantity;
 };
 
-export const generateBomIds = (
-  nodes:
-    | FlatTreeItem<QuoteMethod>[]
-    | FlatTreeItem<Method>[]
-    | FlatTreeItem<JobMethod>[]
-): string[] => {
+export const generateBomIds = (nodes: FlatTreeItem<unknown>[]): string[] => {
   const ids = new Array(nodes.length);
   const levelCounters = new Map<number, number>();
 

@@ -14,5 +14,6 @@ export { default as ChangeOrdersTable } from "./ChangeOrdersTable";
 export { default as CreateChangeOrderModal } from "./CreateChangeOrderModal";
 export type { ChangeOrderImpactItem } from "./ImpactPanel";
 export { default as ImpactPanel } from "./ImpactPanel";
+export * from "./ItemChangeOrderLock";
 export { default as ItemChangeOrders } from "./ItemChangeOrders";
 export { default as ItemOpenChangeOrderAlert } from "./ItemOpenChangeOrderAlert";

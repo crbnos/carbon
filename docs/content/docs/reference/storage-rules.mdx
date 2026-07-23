@@ -124,3 +124,17 @@ plans the screen shows an upgrade prompt and no rules are evaluated.
     The other inventory guard: date tracked stock and block it once expired.
   </Card>
 </Cards>
+
+<AgentContext>
+## Troubleshooting
+
+Storage-rule violations carry **custom, company-authored messages** — there is no fixed error string to match. If a user pastes an unfamiliar error from posting a receipt, shipment, transfer, adjustment, pick, or a shop-floor operation step, and it reads like a business rule ("must be stored in cold storage", "lot number is required", quantities named in the text), it is very likely a storage rule firing.
+
+How to resolve one:
+1. Find the rule: **Inventory → Storage Rules** — the rule's *Message* column will match the pasted text (token values like the item id filled in).
+2. If the transaction is wrong, fix the data the rule checks: the storage unit chosen, the missing lot number, the quantity.
+3. If the rule is wrong or too strict, edit its conditions, change its severity from `error` to `warn`, or toggle it off (*Active*).
+4. A `warn`-severity violation isn't an error — the user can acknowledge the dialog and resubmit; it goes through.
+
+A violation ending in "…is required" means the rule checked a field that has no value on the line (see the presence-check callout above) — supply the value rather than changing the rule.
+</AgentContext>

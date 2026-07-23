@@ -1,4 +1,3 @@
-import { Button, cn, Progress, VStack } from "@carbon/react";
 import {
   LuCircleCheck,
   LuCirclePlay,
@@ -7,12 +6,21 @@ import {
 } from "react-icons/lu";
 import type { LoaderFunctionArgs } from "react-router";
 import { Link, useParams } from "react-router";
+import { Breadcrumb } from "~/components/Breadcrumb";
+import { GlossaryText } from "~/components/GlossaryText";
+import { LessonThumb } from "~/components/LessonThumb";
 import { modules } from "~/config";
 import { useProgress } from "~/hooks";
+import { useOptionalUser } from "~/hooks/useUser";
 import { path } from "~/utils/path";
+import {
+  getCourseProgress,
+  getNextLessonInCourse,
+  toProgressSets
+} from "~/utils/progress";
 import { formatDuration } from "~/utils/video";
 
-export const loader = async ({ request, params }: LoaderFunctionArgs) => {
+export const loader = async ({ params }: LoaderFunctionArgs) => {
   const { courseId } = params;
 
   if (!courseId) {
@@ -24,6 +32,7 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
 
 export default function CourseRoute() {
   const { lessonCompletions, challengeAttempts } = useProgress();
+  const isSignedIn = useOptionalUser() !== null;
 
   const { moduleId, courseId } = useParams();
   const module = modules.find((module) => module.id === moduleId);
@@ -41,11 +50,10 @@ export default function CourseRoute() {
       return acc + (topic.challenge === undefined ? 0 : 1);
     }, 0) ?? 0;
 
-  if (!course) {
+  if (!course || !module) {
     throw new Error("Course not found");
   }
 
-  // Filter data for current course
   const completedLessons = lessonCompletions
     .filter((completion) => completion.courseId === course.id)
     .map((completion) => completion.lessonId);
@@ -65,205 +73,221 @@ export default function CourseRoute() {
       return acc;
     }, {});
 
-  const completionPercentage = Math.min(
-    Math.round((completedChallenges.length / totalChallenges) * 100),
-    100
+  const { completedLessonIds, passedTopicIds } = toProgressSets(
+    lessonCompletions,
+    challengeAttempts
   );
+  const progress = getCourseProgress(
+    course,
+    completedLessonIds,
+    passedTopicIds
+  );
+  const nextInCourse = getNextLessonInCourse(course, completedLessonIds);
 
   return (
-    <VStack spacing={4} className="w-full">
-      <div className="flex flex-col w-full">
-        <div
-          className="border rounded-lg rounded-b-none px-8 py-3"
-          style={{
-            backgroundColor: module?.background,
-            color: module?.foreground
-          }}
-        >
-          <div className="flex flex-col items-start">
-            <span className="text-[10px] uppercase font-display font-bold opacity-80">
-              Section
-            </span>
-            <span className="uppercase text-sm font-display font-bold">
-              {module?.name}
-            </span>
-          </div>
-        </div>
-        <div className="border border-b-0 border-t-0 p-8">
-          <div className="flex flex-col gap-4">
-            <div className="flex items-start gap-4">
-              <div
-                className="flex-shrink-0 size-12 text-2xl p-3 rounded-lg"
-                style={{
-                  backgroundColor: module?.background,
-                  color: module?.foreground
-                }}
-              >
-                {course.icon}
-              </div>
-              <div className="flex flex-col">
-                <h1 className="uppercase text-[10px] font-display font-bold text-muted-foreground">
-                  Course
-                </h1>
-                <h2 className="text-2xl font-display tracking-tight">
-                  {course.name}
-                </h2>
-              </div>
-            </div>
-            <p className="text-sm">{course.description}</p>
-          </div>
-        </div>
-        <div className="border rounded-lg rounded-t-none px-8 py-3">
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-4 text-xs">
-              <div className="flex items-center gap-1">
-                <span className="font-bold">Length:</span>
-                <span className="text-muted-foreground">
-                  {formatDuration(totalDuration)}
-                </span>
-              </div>
-              <div className="flex items-center gap-1">
-                <span className="font-bold">Challenges:</span>
-                <span className="text-muted-foreground">{totalChallenges}</span>
-              </div>
-            </div>
-            <div className="flex items-center gap-1 text-xs">
-              <span className="font-bold text-emerald-500">
-                {completionPercentage}%
-              </span>
-              <Progress value={completionPercentage} />
-            </div>
-          </div>
+    <article className="max-w-190">
+      <Breadcrumb
+        items={[
+          { label: "Courses", href: path.to.root },
+          { label: module.name }
+        ]}
+      />
+
+      <div className="mt-4 flex items-start gap-3">
+        <span className="mt-1 shrink-0 text-2xl text-ed-ink/60">
+          {course.icon}
+        </span>
+        <div className="min-w-0">
+          <h1 className="reference-title">{course.name}</h1>
         </div>
       </div>
+      <p className="reference-desc mt-3">
+        <GlossaryText>{course.description}</GlossaryText>
+      </p>
 
-      <div className="flex flex-col w-full">
+      <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-3 border-t border-ed-hairline pt-5">
+        <div className="flex items-center gap-5 font-mono text-ed-12 text-ed-ink/70">
+          <span>{formatDuration(totalDuration)}</span>
+          <span>
+            {progress.lessonsTotal} lesson
+            {progress.lessonsTotal === 1 ? "" : "s"}
+          </span>
+          <span>
+            {totalChallenges} challenge{totalChallenges === 1 ? "" : "s"}
+          </span>
+        </div>
+        {isSignedIn && (
+          <div className="ml-auto flex min-w-[160px] flex-1 items-center gap-3">
+            <div className="h-[3px] flex-1 overflow-hidden rounded-full bg-ed-hairline">
+              <div
+                className="h-full rounded-full bg-ed-brand transition-[width] duration-500"
+                style={{ width: `${progress.percent}%` }}
+              />
+            </div>
+            <span className="font-mono text-ed-12 text-ed-ink/60">
+              {progress.percent}%
+            </span>
+          </div>
+        )}
+      </div>
+
+      {isSignedIn && !progress.complete && nextInCourse && (
+        <div className="mt-6">
+          <Link
+            to={path.to.lesson(nextInCourse.id)}
+            className="group relative inline-flex h-10 items-center justify-center gap-2 rounded-lg px-4 no-underline"
+          >
+            <span
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-0 rounded-lg cta-btn-dark"
+            />
+            <span
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-0 rounded-lg btn-dark-hover opacity-0 transition-opacity duration-200 ease-out group-hover:opacity-100"
+            />
+            <span className="text-on-dark relative z-10 inline-flex items-center gap-2 text-ed-14 font-book tracking-[0.15px]">
+              <LuCirclePlay className="size-3.5" />
+              {progress.lessonsDone > 0 ? "Continue course" : "Start course"}
+            </span>
+          </Link>
+        </div>
+      )}
+
+      <div className="mt-4 flex flex-col">
         {course.topics.map((topic, index) => {
           const hasChallenge = topic.challenge && topic.challenge.length > 0;
           const isChallengeCompleted =
             hasChallenge && completedChallenges.includes(topic.id);
           const isChallengeAttempted =
             hasChallenge && attemptsByTopic[topic.id];
-          const challengeAttempts = attemptsByTopic[topic.id] ?? 0;
-          const isFirst = index === 0;
-          const isLast = index === course.topics.length - 1;
+          const challengeAttemptCount = attemptsByTopic[topic.id] ?? 0;
+
           return (
-            <div
+            <section
               key={topic.id}
-              className={cn(
-                "border p-8 w-full",
-                isFirst && "rounded-t-lg",
-                isLast && "rounded-b-lg",
-                isFirst && !isLast && "rounded-b-none",
-                isLast && !isFirst && "border-t-0 rounded-t-none"
-              )}
+              id={topic.id}
+              className="mt-8 scroll-mt-24 border-t border-ed-hairline pt-8 first:mt-6"
             >
-              <div className="grid grid-cols-2 gap-12">
-                <div className="flex flex-col gap-1">
-                  <h3 className="text-[10px] uppercase font-display font-bold text-muted-foreground">
-                    Topic
-                  </h3>
-                  <h2 className="text-xl font-display tracking-tight">
-                    {topic.name}
-                  </h2>
-                  <p className="text-sm">{topic.description}</p>
-                </div>
-                <div className="flex flex-col gap-4 py-8 w-full text-sm">
-                  <div className="flex flex-col gap-0">
-                    {topic.lessons.map((lesson) => {
-                      const isCompleted = completedLessons.includes(lesson.id);
-                      return (
-                        <Link
-                          key={lesson.id}
-                          to={path.to.lesson(lesson.id)}
-                          className="flex items-center justify-between gap-2 w-full rounded-md py-1.5 px-3 hover:bg-accent"
-                        >
-                          <div className="flex items-center gap-2">
-                            {isCompleted ? (
-                              <LuCircleCheck className="size-4 flex-shrink-0 text-emerald-500" />
-                            ) : (
-                              <LuCirclePlay className="size-4 flex-shrink-0 text-muted-foreground" />
-                            )}
-                            <span>{lesson.name}</span>
-                          </div>
-                          <span className="text-muted-foreground text-xs">
-                            {formatDuration(lesson.duration)}
-                          </span>
-                        </Link>
-                      );
-                    })}
+              <p className="font-mono text-ed-10 font-semibold uppercase tracking-[0.08em] text-ed-ink/50">
+                Topic {String(index + 1).padStart(2, "0")}
+              </p>
+              <h2 className="mt-1.5 text-ed-20 font-semi text-ed-ink">
+                {topic.name}
+              </h2>
+              <p className="mt-2 max-w-2xl text-ed-15 leading-[1.6] text-ed-ink-78">
+                <GlossaryText>{topic.description}</GlossaryText>
+              </p>
+
+              <div className="mt-5 flex flex-col gap-0.5">
+                {topic.lessons.map((lesson) => (
+                  <LessonRow
+                    key={lesson.id}
+                    lessonId={lesson.id}
+                    name={lesson.name}
+                    duration={lesson.duration}
+                    completed={completedLessons.includes(lesson.id)}
+                    tocAnchor
+                  />
+                ))}
+              </div>
+
+              {topic.supplemental && topic.supplemental.length > 0 && (
+                <div className="mt-5">
+                  <p className="mb-1.5 px-3 font-mono text-ed-10 font-semibold uppercase tracking-[0.08em] text-ed-ink/45">
+                    Supplemental videos
+                  </p>
+                  <div className="flex flex-col gap-0.5">
+                    {topic.supplemental.map((lesson) => (
+                      <LessonRow
+                        key={lesson.id}
+                        lessonId={lesson.id}
+                        name={lesson.name}
+                        duration={lesson.duration}
+                        completed={completedLessons.includes(lesson.id)}
+                      />
+                    ))}
                   </div>
-                  {hasChallenge ? (
-                    isChallengeCompleted ? (
-                      <Button
-                        variant="primary"
-                        leftIcon={
-                          <LuCircleCheck className="size-4 flex-shrink-0 text-emerald-500" />
-                        }
-                      >
-                        Topic Challenge Completed
-                      </Button>
-                    ) : (
-                      <Button
-                        variant="secondary"
-                        leftIcon={
-                          isChallengeAttempted ? <LuRotateCcw /> : <LuFlag />
-                        }
-                        asChild
-                      >
-                        <Link to={path.to.challenge(topic.id)}>
-                          {isChallengeAttempted ? (
-                            <span>
-                              Retake Topic Challenge{" "}
-                              <span className="text-xs text-muted-foreground italic">
-                                {challengeAttempts} attempt
-                                {challengeAttempts === 1 ? "" : "s"} made
-                              </span>
-                            </span>
-                          ) : (
-                            "Take Topic Challenge"
-                          )}
-                        </Link>
-                      </Button>
-                    )
-                  ) : null}
-                  {topic.supplemental && topic.supplemental.length > 0 && (
-                    <div className="flex flex-col gap-0">
-                      <h3 className="text-[10px] uppercase font-display font-bold text-muted-foreground">
-                        Supplemental Videos
-                      </h3>
-                      {topic.supplemental?.map((lesson) => {
-                        const isCompleted = completedLessons.includes(
-                          lesson.id
-                        );
-                        return (
-                          <Link
-                            key={lesson.id}
-                            to={path.to.lesson(lesson.id)}
-                            className="flex items-center justify-between gap-2 w-full rounded-md py-1.5 px-3 hover:bg-accent"
-                          >
-                            <div className="flex items-center gap-2">
-                              {isCompleted ? (
-                                <LuCircleCheck className="size-4 flex-shrink-0 text-emerald-500" />
-                              ) : (
-                                <LuCirclePlay className="size-4 flex-shrink-0 text-muted-foreground" />
-                              )}
-                              <span>{lesson.name}</span>
-                            </div>
-                            <span className="text-muted-foreground text-xs">
-                              {formatDuration(lesson.duration)}
-                            </span>
-                          </Link>
-                        );
-                      })}
+                </div>
+              )}
+
+              {hasChallenge ? (
+                <div className="mt-5">
+                  {isChallengeCompleted ? (
+                    <div className="callout-box inline-flex items-center gap-2 px-4 py-2.5 text-ed-14 font-book text-ed-ink-78">
+                      <LuCircleCheck className="size-4 shrink-0 text-ed-green-strong" />
+                      Challenge completed
                     </div>
+                  ) : (
+                    <Link
+                      to={path.to.challenge(topic.id)}
+                      className="group relative inline-flex h-10 items-center justify-center gap-2 rounded-lg px-4 no-underline"
+                    >
+                      <span
+                        aria-hidden="true"
+                        className="pointer-events-none absolute inset-0 rounded-lg cta-btn-dark"
+                      />
+                      <span
+                        aria-hidden="true"
+                        className="pointer-events-none absolute inset-0 rounded-lg btn-dark-hover opacity-0 transition-opacity duration-200 ease-out group-hover:opacity-100"
+                      />
+                      <span className="text-on-dark relative z-10 inline-flex items-center gap-2 text-ed-14 font-book tracking-[0.15px]">
+                        {isChallengeAttempted ? (
+                          <LuRotateCcw className="size-3.5" />
+                        ) : (
+                          <LuFlag className="size-3.5" />
+                        )}
+                        {isChallengeAttempted
+                          ? "Retake topic challenge"
+                          : "Take topic challenge"}
+                        {isChallengeAttempted ? (
+                          <span className="text-white/55">
+                            {challengeAttemptCount} attempt
+                            {challengeAttemptCount === 1 ? "" : "s"}
+                          </span>
+                        ) : null}
+                      </span>
+                    </Link>
                   )}
                 </div>
-              </div>
-            </div>
+              ) : null}
+            </section>
           );
         })}
       </div>
-    </VStack>
+    </article>
+  );
+}
+
+function LessonRow({
+  lessonId,
+  name,
+  duration,
+  completed,
+  tocAnchor
+}: {
+  lessonId: string;
+  name: string;
+  duration: number;
+  completed: boolean;
+  tocAnchor?: boolean;
+}) {
+  return (
+    <Link
+      to={path.to.lesson(lessonId)}
+      id={tocAnchor ? `lesson-${lessonId}` : undefined}
+      data-toc-lesson={tocAnchor ? "" : undefined}
+      data-toc-title={tocAnchor ? name : undefined}
+      className="flex scroll-mt-24 items-center justify-between gap-3 rounded-lg px-2 py-2 no-underline transition-colors hover:bg-ed-ink/[0.03]"
+    >
+      <span className="flex min-w-0 items-center gap-3">
+        <LessonThumb completed={completed} className="w-16" />
+        <span className="truncate text-ed-15 font-book text-ed-ink-78">
+          {name}
+        </span>
+      </span>
+      <span className="shrink-0 font-mono text-ed-12 text-ed-ink/60">
+        {formatDuration(duration)}
+      </span>
+    </Link>
   );
 }
