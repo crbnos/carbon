@@ -1,16 +1,13 @@
 import { getLogger } from "@carbon/logger";
 
+export { stripSpecialCharacters } from "@carbon/utils";
+
 const logger = getLogger("erp", "utils", "string");
 
 export const capitalize = (words: string) => {
   const [first, ...otherLetters] = words;
   return [first.toLocaleUpperCase(), ...otherLetters].join("");
 };
-
-export function stripSpecialCharacters(inputString: string) {
-  // Keep only characters that are valid for S3 keys
-  return inputString?.replace(/[^a-zA-Z0-9/!_\-.*'() &$@=;:+,?]/g, "");
-}
 
 export const snakeToCamel = (str: string) =>
   str.replace(/([-_][a-z])/g, (group: string) =>

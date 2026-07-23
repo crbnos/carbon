@@ -204,7 +204,13 @@ export async function up(opts: UpOpts = {}) {
   await ensureDepsInstalled(root);
   await ensureSkillsInstalled(root);
 
-  const ctx = await provisionSlot(root, slug, portless, borrowedEntry);
+  const ctx = await provisionSlot(
+    root,
+    slug,
+    portless,
+    selectedApps.includes("assembler"),
+    borrowedEntry
+  );
   if (borrowedEntry) {
     await waitForServices(ctx);
   } else {
@@ -336,6 +342,7 @@ async function provisionSlot(
   root: string,
   slug: string,
   portless: boolean,
+  includeAssembler: boolean,
   borrowedEntry?: { ports: PortMap; redisDb: number; jwt: JwtCreds }
 ): Promise<Ctx> {
   let ctx!: Ctx;
@@ -373,7 +380,16 @@ async function provisionSlot(
 
         ctx = { root, slug, branchPrefix, ...slot };
 
-        writeEnv(root, renderEnv({ slug, portless, branchPrefix, ...slot }));
+        writeEnv(
+          root,
+          renderEnv({
+            slug,
+            portless,
+            branchPrefix,
+            includeAssembler,
+            ...slot
+          })
+        );
         syncAppPortlessConfigs(root);
         // Use override: true so freshly written .env.local values replace any
         // stale values already in process.env from the initial load at startup.

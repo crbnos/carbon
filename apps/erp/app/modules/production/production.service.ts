@@ -2352,13 +2352,21 @@ export async function updateJobStatus(
 ) {
   const { id, status, assignee, updatedBy } = params;
 
+  // Reopening a job (leaving a completed state) must clear completedDate so it
+  // isn't left stale. Done in the same UPDATE as status so the job event
+  // interceptor (sync_job_recompute_service_line) fires once and re-derives the
+  // linked service line's fulfillment. Setting a completed state here does not
+  // set completedDate — that is the complete route's / complete_job_to_inventory's job.
+  const clearsCompletion = !["Completed", "Closed"].includes(status);
+
   return client
     .from("job")
     .update({
       status,
       assignee,
       updatedBy,
-      updatedAt: new Date().toISOString()
+      updatedAt: new Date().toISOString(),
+      ...(clearsCompletion ? { completedDate: null } : {})
     })
     .eq("id", id);
 }

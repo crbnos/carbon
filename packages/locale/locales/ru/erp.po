@@ -5416,6 +5416,9 @@ msgstr "Не удалось загрузить отслеживаемые сущ
 msgid "Failed to move account: {0}"
 msgstr "Не удалось переместить счет: {0}"
 
+msgid "Failed to regenerate thumbnail"
+msgstr ""
+
 msgid "Failed to remove image: {errorMessage}"
 msgstr "Не удалось удалить изображение: {errorMessage}"
 
@@ -10141,6 +10144,12 @@ msgstr "Обновить"
 msgid "Refresh exchange rate"
 msgstr "Обновить курс обмена"
 
+msgid "Regenerate"
+msgstr ""
+
+msgid "Regenerating thumbnail…"
+msgstr ""
+
 msgid "Register"
 msgstr "Зарегистрировать существующий актив"
 
@@ -11144,6 +11153,9 @@ msgstr "Отправить приглашения"
 
 msgid "Send RFQ to Suppliers"
 msgstr "Отправить РФП поставщикам"
+
+msgid "Send to Carbon"
+msgstr "Отправить в Carbon"
 
 msgid "Send Via"
 msgstr "Отправить через"
@@ -13090,8 +13102,14 @@ msgstr "До {0}"
 msgid "Thumbnail"
 msgstr "Миниатюра"
 
+msgid "Thumbnail is still generating"
+msgstr ""
+
 msgid "Thumbnail removed"
 msgstr "Миниатюра удалена"
+
+msgid "Thumbnail updated"
+msgstr ""
 
 msgid "Thumbnail uploaded"
 msgstr "Миниатюра загружена"

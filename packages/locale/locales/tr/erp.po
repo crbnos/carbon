@@ -5416,6 +5416,9 @@ msgstr "Takip edilen varlıklar yüklenemedi"
 msgid "Failed to move account: {0}"
 msgstr "Hesap taşınamadı: {0}"
 
+msgid "Failed to regenerate thumbnail"
+msgstr ""
+
 msgid "Failed to remove image: {errorMessage}"
 msgstr "Görsel kaldırılamadı: {errorMessage}"
 
@@ -10141,6 +10144,12 @@ msgstr "Yenile"
 msgid "Refresh exchange rate"
 msgstr "Döviz kurunu yenile"
 
+msgid "Regenerate"
+msgstr ""
+
+msgid "Regenerating thumbnail…"
+msgstr ""
+
 msgid "Register"
 msgstr "Mevcut Varlığı Kayıt Yap"
 
@@ -11144,6 +11153,9 @@ msgstr "Davet Gönder"
 
 msgid "Send RFQ to Suppliers"
 msgstr "Tedarikçilere RFQ Gönder"
+
+msgid "Send to Carbon"
+msgstr "Carbon'a Gönder"
 
 msgid "Send Via"
 msgstr "Gönderim Yolu"
@@ -13090,8 +13102,14 @@ msgstr "Şu tarihe kadar {0}"
 msgid "Thumbnail"
 msgstr "Küçük Resim"
 
+msgid "Thumbnail is still generating"
+msgstr ""
+
 msgid "Thumbnail removed"
 msgstr "Küçük resim kaldırıldı"
+
+msgid "Thumbnail updated"
+msgstr ""
 
 msgid "Thumbnail uploaded"
 msgstr "Küçük resim yüklendi"

@@ -5416,6 +5416,9 @@ msgstr "Fehler beim Laden von verfolgten Entitäten"
 msgid "Failed to move account: {0}"
 msgstr "Konto konnte nicht verschoben werden: {0}"
 
+msgid "Failed to regenerate thumbnail"
+msgstr ""
+
 msgid "Failed to remove image: {errorMessage}"
 msgstr "Fehler beim Entfernen des Bildes: {errorMessage}"
 
@@ -10141,6 +10144,12 @@ msgstr "Aktualisieren"
 msgid "Refresh exchange rate"
 msgstr "Wechselkurs aktualisieren"
 
+msgid "Regenerate"
+msgstr ""
+
+msgid "Regenerating thumbnail…"
+msgstr ""
+
 msgid "Register"
 msgstr "Vorhandenes Vermögen registrieren"
 
@@ -11144,6 +11153,9 @@ msgstr "Einladungen senden"
 
 msgid "Send RFQ to Suppliers"
 msgstr "RFQ an Lieferanten senden"
+
+msgid "Send to Carbon"
+msgstr "An Carbon senden"
 
 msgid "Send Via"
 msgstr "Senden über"
@@ -13090,8 +13102,14 @@ msgstr "Bis {0}"
 msgid "Thumbnail"
 msgstr "Miniaturansicht"
 
+msgid "Thumbnail is still generating"
+msgstr ""
+
 msgid "Thumbnail removed"
 msgstr "Vorschaubild entfernt"
+
+msgid "Thumbnail updated"
+msgstr ""
 
 msgid "Thumbnail uploaded"
 msgstr "Miniaturansicht hochgeladen"

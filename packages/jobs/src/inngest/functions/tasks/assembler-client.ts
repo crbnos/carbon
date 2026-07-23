@@ -35,6 +35,20 @@ export const assemblerAuthHeaders: Record<string, string> =
     ? { Authorization: `Bearer ${ASSEMBLER_SERVICE_API_KEY}` }
     : {};
 
+// Shared bounded concurrency queue for EVERY assembler-backed function
+// (optimize, compact, convert, plan). They all park on the assembler completion
+// event (`runAssemblerJob` → `step.waitForEvent`, up to 15 min), and a parked run
+// holds its concurrency slot the whole wait — so without a cap a burst (e.g. the
+// viewer's per-view optimise auto-fire) exhausts account concurrency and starves
+// the `event-queue` drainer + its handlers. One shared `env`-scoped key across all
+// four functions bounds the TOTAL in flight, leaving the rest of the account free.
+// The cap ≈ how many assembler jobs should run at once (the service 429s past its
+// real capacity, so more parked runs buy nothing); the WASM raw tier renders while
+// an optimise waits, so a low cap never blocks a user from viewing a model.
+export const ASSEMBLER_CONCURRENCY: [
+  { scope: "env"; key: string; limit: number }
+] = [{ scope: "env", key: '"assembler"', limit: 6 }];
+
 /**
  * The assembler feature flag IS the config: unset `ASSEMBLER_SERVICE_URL` means
  * the whole pipeline is off. Gate the Inngest functions on this so triggered
@@ -50,6 +64,29 @@ export function assemblerBaseUrl(): string {
     throw new Error("ASSEMBLER_SERVICE_URL is not configured");
   }
   return ASSEMBLER_SERVICE_URL;
+}
+
+// Where a retained raw lands: uploads/compaction stage in `temp-staging`
+// (EPHEMERAL, 2.5 GB), and the retained raw is relocated to `private` (DURABLE,
+// 50 MB served cap) so it survives — or pruned when it can't fit and a GLB
+// preview already exists. The 50 MB gate is `MODEL_RAW_KEEP_MAX_BYTES`.
+export const RAW_STAGING_BUCKET = "temp-staging";
+export const RAW_DURABLE_BUCKET = "private";
+
+/**
+ * Relocate a staged object into the durable bucket, same key, server-side (no
+ * download — storage-js `move` with `destinationBucket`). Idempotent-ish: if the
+ * source is already gone (previously moved) it returns the storage error string,
+ * which callers treat as "already durable". Returns null on success.
+ */
+export async function moveRawToDurable(
+  client: SupabaseClient<Database>,
+  path: string
+): Promise<string | null> {
+  const { error } = await client.storage
+    .from(RAW_STAGING_BUCKET)
+    .move(path, path, { destinationBucket: RAW_DURABLE_BUCKET });
+  return error ? error.message : null;
 }
 
 /**

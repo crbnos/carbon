@@ -25,7 +25,7 @@ pub struct PartMesh {
 
 impl PartMesh {
     pub fn new(positions: Vec<[f32; 3]>, indices: Vec<[u32; 3]>, is_proxy: bool) -> Self {
-        let geometry_hash = geometry_hash(&positions, &indices);
+        let geometry_hash = geometry_hash(&positions);
         PartMesh {
             positions,
             indices,

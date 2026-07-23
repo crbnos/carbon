@@ -1,23 +1,39 @@
-//! Stable nodeId derivation — byte-identical to `app/convert.py`
-//! (`_geometry_hash`, `_node_id`). Existing stored graphs/plans reference these
-//! IDs, so they must match Python exactly.
+//! Stable nodeId derivation.
+//!
+//! Identity comes from the part's quantized vertex positions ONLY — never from
+//! the triangulation topology. BRepMesh's Delaunay breaks near-co-circular
+//! quads by an epsilon comparison in UV space, so the chosen diagonal can flip
+//! on last-ulp parametrization noise (e.g. a BinXCAF raw roundtrip) while the
+//! 3D vertices stay bit-identical. Hashing indices made identity depend on
+//! that tie — a compacted raw re-read would silently rename a handful of
+//! parts. Positions are micron-quantized ints sorted into a canonical order,
+//! so the hash is also immune to vertex-emission-order ties.
+//!
+//! (v1 of this hash matched the retired Python pipeline byte-for-byte and
+//! included raw indices; changing the recipe renames every nodeId once —
+//! stored graphs/plans/mappings regenerate on re-conversion.)
 
 use sha1::{Digest, Sha1};
 
-/// `_geometry_hash`: sha1 over quantized positions (mm×1000, round-half-even to
-/// int64) then uint32 indices, both little-endian row-major — matching numpy
-/// `.astype(float64)*1000`, `np.round` (rint = ties-to-even), `.tobytes()`.
-pub fn geometry_hash(positions: &[[f32; 3]], indices: &[[u32; 3]]) -> String {
+/// sha1 over the part's quantized vertex positions (mm×1000, round-half-even
+/// to int64, little-endian), sorted as (x, y, z) triples. Triangle indices are
+/// deliberately excluded — see module docs.
+pub fn geometry_hash(positions: &[[f32; 3]]) -> String {
+    let mut quantized: Vec<[i64; 3]> = positions
+        .iter()
+        .map(|p| {
+            [
+                (p[0] as f64 * 1000.0).round_ties_even() as i64,
+                (p[1] as f64 * 1000.0).round_ties_even() as i64,
+                (p[2] as f64 * 1000.0).round_ties_even() as i64,
+            ]
+        })
+        .collect();
+    quantized.sort_unstable();
     let mut hasher = Sha1::new();
-    for p in positions {
-        for &c in p {
-            let q = (c as f64 * 1000.0).round_ties_even() as i64;
-            hasher.update(q.to_le_bytes());
-        }
-    }
-    for tri in indices {
-        for &i in tri {
-            hasher.update(i.to_le_bytes());
+    for q in &quantized {
+        for &c in q {
+            hasher.update(c.to_le_bytes());
         }
     }
     hex(&hasher.finalize())
@@ -44,18 +60,35 @@ mod tests {
     use super::*;
 
     #[test]
-    fn geometry_hash_matches_python() {
-        // Reference values captured from app.convert._geometry_hash.
+    fn geometry_hash_ignores_vertex_order() {
+        let a = [[0.0f32, 0.0, 0.0], [1.0, 0.0, 0.0], [0.0, 1.0, 0.0]];
+        let b = [[1.0f32, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 0.0]];
+        assert_eq!(geometry_hash(&a), geometry_hash(&b));
+    }
+
+    #[test]
+    fn geometry_hash_distinguishes_geometry() {
+        let a = [[0.0f32, 0.0, 0.0], [1.0, 0.0, 0.0], [0.0, 1.0, 0.0]];
+        let b = [[0.0f32, 0.0, 0.0], [1.0, 0.0, 0.0], [0.0, 1.0, 0.5]];
+        assert_ne!(geometry_hash(&a), geometry_hash(&b));
+        // Sub-half-micron wiggle quantizes away.
+        let c = [[0.0002f32, 0.0, 0.0], [1.0, 0.0, 0.0], [0.0, 1.0, 0.0]];
+        assert_eq!(geometry_hash(&a), geometry_hash(&c));
+    }
+
+    #[test]
+    fn geometry_hash_stable_value() {
+        // Pinned so an accidental recipe change (quantization, sort, endian)
+        // is loud — this exact value is what stored graphs reference from now.
         let pos = [
             [0.0f32, 0.0, 0.0],
             [1.0, 0.0, 0.0],
             [0.0, 1.0, 0.0],
             [1.0, 1.0, 1.0],
         ];
-        let idx = [[0u32, 1, 2], [1, 3, 2]];
         assert_eq!(
-            geometry_hash(&pos, &idx),
-            "9e21fed301a9b2683e3e381282e35ac1bb0576fb"
+            geometry_hash(&pos),
+            "23ddd092dc128b8467a7e243e0a58e9865dd4357"
         );
     }
 

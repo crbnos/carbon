@@ -78,6 +78,9 @@ const CadModel = ({
     artifacts,
     awaitingModel,
     showOptimizeProgress: optimizeProgressActive,
+    backgroundOptimizing,
+    optimizeFailed,
+    canRetry,
     optimizeQueued,
     retry: onRetry,
     retryLabel,
@@ -221,6 +224,8 @@ const CadModel = ({
               <ModelPreview
                 key={modelPath}
                 awaitingModel={awaitingModel}
+                optimizing={backgroundOptimizing}
+                optimizeFailed={optimizeFailed}
                 optimizedUrl={
                   artifacts?.optimizedModelPath
                     ? getPrivateUrl(artifacts.optimizedModelPath)
@@ -248,7 +253,7 @@ const CadModel = ({
                 }
                 mode={mode}
                 className={viewerClassName}
-                onRetry={modelPath ? onRetry : undefined}
+                onRetry={modelPath && canRetry ? onRetry : undefined}
                 retryLabel={retryLabel}
                 onCancelWait={modelPath ? onCancelWait : undefined}
                 onDelete={canDelete ? deleteModal.onOpen : undefined}

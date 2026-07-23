@@ -5416,6 +5416,9 @@ msgstr "No se pudieron cargar las entidades rastreadas"
 msgid "Failed to move account: {0}"
 msgstr "Error al mover cuenta: {0}"
 
+msgid "Failed to regenerate thumbnail"
+msgstr ""
+
 msgid "Failed to remove image: {errorMessage}"
 msgstr "Error al eliminar la imagen: {errorMessage}"
 
@@ -10141,6 +10144,12 @@ msgstr "Actualizar"
 msgid "Refresh exchange rate"
 msgstr "Actualizar tipo de cambio"
 
+msgid "Regenerate"
+msgstr ""
+
+msgid "Regenerating thumbnail…"
+msgstr ""
+
 msgid "Register"
 msgstr "Registrar Activo Existente"
 
@@ -11144,6 +11153,9 @@ msgstr "Enviar invitaciones"
 
 msgid "Send RFQ to Suppliers"
 msgstr "Enviar RFQ a Proveedores"
+
+msgid "Send to Carbon"
+msgstr "Enviar a Carbon"
 
 msgid "Send Via"
 msgstr "Enviar por"
@@ -13090,8 +13102,14 @@ msgstr "Hasta {0}"
 msgid "Thumbnail"
 msgstr "Miniatura"
 
+msgid "Thumbnail is still generating"
+msgstr ""
+
 msgid "Thumbnail removed"
 msgstr "Miniatura eliminada"
+
+msgid "Thumbnail updated"
+msgstr ""
 
 msgid "Thumbnail uploaded"
 msgstr "Miniatura cargada"

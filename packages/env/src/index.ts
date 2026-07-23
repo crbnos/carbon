@@ -7,6 +7,7 @@ declare global {
       AUTH_PROVIDERS: string;
       CARBON_EDITION: string;
       CARBON_API_URL: string;
+      CARBON_SLACK_ENABLED: string;
       CLOUDFLARE_TURNSTILE_SITE_KEY: string;
       CONTROLLED_ENVIRONMENT: string;
       ERP_URL: string;
@@ -260,6 +261,9 @@ export const RESEND_DOMAIN =
 export const SLACK_BOT_TOKEN = getEnv("SLACK_BOT_TOKEN", {
   isRequired: false
 });
+export const CARBON_SLACK_ENABLED = isBrowser
+  ? window.env?.CARBON_SLACK_ENABLED === "true"
+  : Boolean(SLACK_BOT_TOKEN);
 export const SLACK_CLIENT_ID = getEnv("SLACK_CLIENT_ID", {
   isRequired: false
 });
@@ -449,6 +453,7 @@ export function getBrowserEnv() {
     AUTH_PROVIDERS,
     CARBON_API_URL,
     CARBON_EDITION,
+    CARBON_SLACK_ENABLED: CARBON_SLACK_ENABLED ? "true" : "",
     CLOUDFLARE_TURNSTILE_SITE_KEY,
     CONTROLLED_ENVIRONMENT,
     DEFAULT_LANGUAGE,
