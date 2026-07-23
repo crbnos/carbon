@@ -9,7 +9,6 @@ import {
   saveUserMessage,
   streamChat
 } from "~/modules/agent";
-import { getCompanySettings } from "~/modules/settings";
 
 function extractText(message: unknown): string {
   const m = message as
@@ -31,11 +30,6 @@ function extractText(message: unknown): string {
 export async function action({ request }: ActionFunctionArgs) {
   const { client, companyId, companyGroupId, userId } =
     await requirePermissions(request, {});
-
-  const settings = await getCompanySettings(client, companyId);
-  if (!settings.data?.aiAgentEnabled) {
-    throw new Response("Agent disabled", { status: 403 });
-  }
 
   const allowed = await companyHasPlan(client, companyId, {
     feature: "AI_AGENT"

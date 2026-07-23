@@ -786,9 +786,6 @@ msgstr "Agree on the scope"
 msgid "Agree who owns what and set a working rhythm"
 msgstr "Agree who owns what and set a working rhythm"
 
-msgid "AI Agent"
-msgstr "AI Agent"
-
 msgid "AI Tokens"
 msgstr "AI Tokens"
 

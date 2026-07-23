@@ -95,6 +95,9 @@ export function AgentPanel() {
                   setShowHistory(false);
                   loadThread(id);
                 }}
+                onDelete={(id) => {
+                  if (id === threadId) newThread();
+                }}
               />
             </PopoverContent>
           </Popover>

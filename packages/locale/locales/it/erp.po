@@ -786,9 +786,6 @@ msgstr "Concordare sull'ambito"
 msgid "Agree who owns what and set a working rhythm"
 msgstr "Concordare chi possiede cosa e stabilire un ritmo di lavoro"
 
-msgid "AI Agent"
-msgstr ""
-
 msgid "AI Tokens"
 msgstr "Token AI"
 

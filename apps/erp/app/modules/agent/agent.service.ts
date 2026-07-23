@@ -144,8 +144,19 @@ export async function getThreads(
     .select("id, title, createdAt")
     .eq("companyId", args.companyId)
     .eq("userId", args.userId)
-    .is("archivedAt", null)
     .order("createdAt", { ascending: false });
+}
+
+export async function deleteThread(
+  client: SupabaseClient<Database>,
+  args: { threadId: string; companyId: string; userId: string }
+) {
+  return client
+    .from("agentThread")
+    .delete()
+    .eq("id", args.threadId)
+    .eq("companyId", args.companyId)
+    .eq("userId", args.userId);
 }
 
 export async function getMessages(

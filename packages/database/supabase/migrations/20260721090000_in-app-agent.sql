@@ -6,7 +6,6 @@ CREATE TABLE "agentThread" (
     "title" TEXT,
     "modelId" TEXT NOT NULL DEFAULT 'claude-sonnet-4-6',
     "lastContext" JSONB,
-    "archivedAt" TIMESTAMP WITH TIME ZONE,
     "createdBy" TEXT NOT NULL REFERENCES "user"("id"),
     "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     "updatedBy" TEXT REFERENCES "user"("id"),
@@ -129,6 +128,3 @@ CREATE POLICY "UPDATE" ON "public"."agentMessagePart" FOR UPDATE USING (
               WHERE m."id" = "agentMessagePart"."messageId" AND m."companyId" = "agentMessagePart"."companyId"
               AND t."userId" = auth.uid()::text)
 );
-
--- Company-level enable toggle (default TRUE; Cloud is additionally plan-gated in app code)
-ALTER TABLE "companySettings" ADD COLUMN "aiAgentEnabled" BOOLEAN NOT NULL DEFAULT TRUE;

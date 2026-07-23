@@ -1,5 +1,4 @@
 import { z } from "zod";
-import { zfd } from "zod-form-data";
 import type { BrowsingContext } from "./types";
 
 export const browsingContext = z.object({
@@ -23,8 +22,4 @@ export const feedbackValidator = z.object({
   threadId: z.string(),
   feedback: z.enum(["up", "down"]),
   note: z.string().optional()
-});
-
-export const aiAgentSettingsValidator = z.object({
-  aiAgentEnabled: zfd.checkbox()
 });

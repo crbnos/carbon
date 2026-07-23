@@ -786,9 +786,6 @@ msgstr "Uzgodnij zakres"
 msgid "Agree who owns what and set a working rhythm"
 msgstr "Uzgodnij, kto za co odpowiada i ustal rytm pracy"
 
-msgid "AI Agent"
-msgstr ""
-
 msgid "AI Tokens"
 msgstr "Tokeny AI"
 

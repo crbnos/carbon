@@ -786,9 +786,6 @@ msgstr "Kapsamda anlaş"
 msgid "Agree who owns what and set a working rhythm"
 msgstr "Kimin neyi sahip olduğunu belirleyin ve çalışma ritmi oluşturun"
 
-msgid "AI Agent"
-msgstr ""
-
 msgid "AI Tokens"
 msgstr "Yapay Zeka Jetonları"
 

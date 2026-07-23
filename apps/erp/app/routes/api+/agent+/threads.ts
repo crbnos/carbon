@@ -1,6 +1,6 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { createThread, getThreads } from "~/modules/agent";
+import { createThread, deleteThread, getThreads } from "~/modules/agent";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId, userId } = await requirePermissions(request, {});
@@ -15,12 +15,8 @@ export async function action({ request }: ActionFunctionArgs) {
     const form = await request.formData();
     const threadId = String(form.get("threadId") ?? "");
     if (threadId) {
-      await client
-        .from("agentThread")
-        .update({ archivedAt: new Date().toISOString() })
-        .eq("id", threadId)
-        .eq("companyId", companyId)
-        .eq("userId", userId);
+      // Hard delete — messages and parts cascade, freeing storage.
+      await deleteThread(client, { threadId, companyId, userId });
     }
     return { success: true };
   }
