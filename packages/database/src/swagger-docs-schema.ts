@@ -20259,6 +20259,222 @@ export default {
         tags: ["supplierType"]
       }
     },
+    "/agentMessage": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.agentMessage.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.agentMessage.threadId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.agentMessage.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.agentMessage.role"
+          },
+          {
+            $ref: "#/parameters/rowFilter.agentMessage.context"
+          },
+          {
+            $ref: "#/parameters/rowFilter.agentMessage.feedback"
+          },
+          {
+            $ref: "#/parameters/rowFilter.agentMessage.feedbackNote"
+          },
+          {
+            $ref: "#/parameters/rowFilter.agentMessage.finishReason"
+          },
+          {
+            $ref: "#/parameters/rowFilter.agentMessage.inputTokens"
+          },
+          {
+            $ref: "#/parameters/rowFilter.agentMessage.outputTokens"
+          },
+          {
+            $ref: "#/parameters/rowFilter.agentMessage.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.agentMessage.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.agentMessage.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.agentMessage.updatedAt"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/agentMessage"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["agentMessage"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.agentMessage"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["agentMessage"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.agentMessage.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.agentMessage.threadId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.agentMessage.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.agentMessage.role"
+          },
+          {
+            $ref: "#/parameters/rowFilter.agentMessage.context"
+          },
+          {
+            $ref: "#/parameters/rowFilter.agentMessage.feedback"
+          },
+          {
+            $ref: "#/parameters/rowFilter.agentMessage.feedbackNote"
+          },
+          {
+            $ref: "#/parameters/rowFilter.agentMessage.finishReason"
+          },
+          {
+            $ref: "#/parameters/rowFilter.agentMessage.inputTokens"
+          },
+          {
+            $ref: "#/parameters/rowFilter.agentMessage.outputTokens"
+          },
+          {
+            $ref: "#/parameters/rowFilter.agentMessage.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.agentMessage.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.agentMessage.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.agentMessage.updatedAt"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["agentMessage"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.agentMessage.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.agentMessage.threadId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.agentMessage.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.agentMessage.role"
+          },
+          {
+            $ref: "#/parameters/rowFilter.agentMessage.context"
+          },
+          {
+            $ref: "#/parameters/rowFilter.agentMessage.feedback"
+          },
+          {
+            $ref: "#/parameters/rowFilter.agentMessage.feedbackNote"
+          },
+          {
+            $ref: "#/parameters/rowFilter.agentMessage.finishReason"
+          },
+          {
+            $ref: "#/parameters/rowFilter.agentMessage.inputTokens"
+          },
+          {
+            $ref: "#/parameters/rowFilter.agentMessage.outputTokens"
+          },
+          {
+            $ref: "#/parameters/rowFilter.agentMessage.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.agentMessage.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.agentMessage.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.agentMessage.updatedAt"
+          },
+          {
+            $ref: "#/parameters/body.agentMessage"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["agentMessage"]
+      }
+    },
     "/customers": {
       get: {
         parameters: [
@@ -49134,6 +49350,258 @@ export default {
         tags: ["salesOrderStatusHistory"]
       }
     },
+    "/agentMessagePart": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.agentMessagePart.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.agentMessagePart.messageId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.agentMessagePart.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.agentMessagePart.orderIndex"
+          },
+          {
+            $ref: "#/parameters/rowFilter.agentMessagePart.type"
+          },
+          {
+            $ref: "#/parameters/rowFilter.agentMessagePart.textContent"
+          },
+          {
+            $ref: "#/parameters/rowFilter.agentMessagePart.toolName"
+          },
+          {
+            $ref: "#/parameters/rowFilter.agentMessagePart.toolClassification"
+          },
+          {
+            $ref: "#/parameters/rowFilter.agentMessagePart.toolCallId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.agentMessagePart.toolInput"
+          },
+          {
+            $ref: "#/parameters/rowFilter.agentMessagePart.toolOutput"
+          },
+          {
+            $ref: "#/parameters/rowFilter.agentMessagePart.toolState"
+          },
+          {
+            $ref: "#/parameters/rowFilter.agentMessagePart.toolDurationMs"
+          },
+          {
+            $ref: "#/parameters/rowFilter.agentMessagePart.errorMessage"
+          },
+          {
+            $ref: "#/parameters/rowFilter.agentMessagePart.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.agentMessagePart.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.agentMessagePart.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.agentMessagePart.updatedAt"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/agentMessagePart"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["agentMessagePart"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.agentMessagePart"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["agentMessagePart"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.agentMessagePart.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.agentMessagePart.messageId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.agentMessagePart.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.agentMessagePart.orderIndex"
+          },
+          {
+            $ref: "#/parameters/rowFilter.agentMessagePart.type"
+          },
+          {
+            $ref: "#/parameters/rowFilter.agentMessagePart.textContent"
+          },
+          {
+            $ref: "#/parameters/rowFilter.agentMessagePart.toolName"
+          },
+          {
+            $ref: "#/parameters/rowFilter.agentMessagePart.toolClassification"
+          },
+          {
+            $ref: "#/parameters/rowFilter.agentMessagePart.toolCallId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.agentMessagePart.toolInput"
+          },
+          {
+            $ref: "#/parameters/rowFilter.agentMessagePart.toolOutput"
+          },
+          {
+            $ref: "#/parameters/rowFilter.agentMessagePart.toolState"
+          },
+          {
+            $ref: "#/parameters/rowFilter.agentMessagePart.toolDurationMs"
+          },
+          {
+            $ref: "#/parameters/rowFilter.agentMessagePart.errorMessage"
+          },
+          {
+            $ref: "#/parameters/rowFilter.agentMessagePart.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.agentMessagePart.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.agentMessagePart.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.agentMessagePart.updatedAt"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["agentMessagePart"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.agentMessagePart.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.agentMessagePart.messageId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.agentMessagePart.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.agentMessagePart.orderIndex"
+          },
+          {
+            $ref: "#/parameters/rowFilter.agentMessagePart.type"
+          },
+          {
+            $ref: "#/parameters/rowFilter.agentMessagePart.textContent"
+          },
+          {
+            $ref: "#/parameters/rowFilter.agentMessagePart.toolName"
+          },
+          {
+            $ref: "#/parameters/rowFilter.agentMessagePart.toolClassification"
+          },
+          {
+            $ref: "#/parameters/rowFilter.agentMessagePart.toolCallId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.agentMessagePart.toolInput"
+          },
+          {
+            $ref: "#/parameters/rowFilter.agentMessagePart.toolOutput"
+          },
+          {
+            $ref: "#/parameters/rowFilter.agentMessagePart.toolState"
+          },
+          {
+            $ref: "#/parameters/rowFilter.agentMessagePart.toolDurationMs"
+          },
+          {
+            $ref: "#/parameters/rowFilter.agentMessagePart.errorMessage"
+          },
+          {
+            $ref: "#/parameters/rowFilter.agentMessagePart.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.agentMessagePart.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.agentMessagePart.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.agentMessagePart.updatedAt"
+          },
+          {
+            $ref: "#/parameters/body.agentMessagePart"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["agentMessagePart"]
+      }
+    },
     "/inspectionDocument": {
       get: {
         parameters: [
@@ -51376,6 +51844,159 @@ export default {
           }
         },
         tags: ["userAttributeValue"]
+      }
+    },
+    "/notificationPreference": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.notificationPreference.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.notificationPreference.userId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.notificationPreference.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.notificationPreference.channel"
+          },
+          {
+            $ref: "#/parameters/rowFilter.notificationPreference.topic"
+          },
+          {
+            $ref: "#/parameters/rowFilter.notificationPreference.enabled"
+          },
+          {
+            $ref: "#/parameters/rowFilter.notificationPreference.updatedAt"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/notificationPreference"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["notificationPreference"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.notificationPreference"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["notificationPreference"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.notificationPreference.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.notificationPreference.userId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.notificationPreference.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.notificationPreference.channel"
+          },
+          {
+            $ref: "#/parameters/rowFilter.notificationPreference.topic"
+          },
+          {
+            $ref: "#/parameters/rowFilter.notificationPreference.enabled"
+          },
+          {
+            $ref: "#/parameters/rowFilter.notificationPreference.updatedAt"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["notificationPreference"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.notificationPreference.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.notificationPreference.userId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.notificationPreference.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.notificationPreference.channel"
+          },
+          {
+            $ref: "#/parameters/rowFilter.notificationPreference.topic"
+          },
+          {
+            $ref: "#/parameters/rowFilter.notificationPreference.enabled"
+          },
+          {
+            $ref: "#/parameters/rowFilter.notificationPreference.updatedAt"
+          },
+          {
+            $ref: "#/parameters/body.notificationPreference"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["notificationPreference"]
       }
     },
     "/fiscalYearSettings": {
@@ -57625,6 +58246,186 @@ export default {
           }
         },
         tags: ["changeOrderActionTask"]
+      }
+    },
+    "/agentThread": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.agentThread.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.agentThread.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.agentThread.userId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.agentThread.title"
+          },
+          {
+            $ref: "#/parameters/rowFilter.agentThread.modelId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.agentThread.lastContext"
+          },
+          {
+            $ref: "#/parameters/rowFilter.agentThread.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.agentThread.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.agentThread.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.agentThread.updatedAt"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/agentThread"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["agentThread"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.agentThread"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["agentThread"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.agentThread.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.agentThread.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.agentThread.userId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.agentThread.title"
+          },
+          {
+            $ref: "#/parameters/rowFilter.agentThread.modelId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.agentThread.lastContext"
+          },
+          {
+            $ref: "#/parameters/rowFilter.agentThread.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.agentThread.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.agentThread.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.agentThread.updatedAt"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["agentThread"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.agentThread.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.agentThread.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.agentThread.userId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.agentThread.title"
+          },
+          {
+            $ref: "#/parameters/rowFilter.agentThread.modelId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.agentThread.lastContext"
+          },
+          {
+            $ref: "#/parameters/rowFilter.agentThread.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.agentThread.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.agentThread.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.agentThread.updatedAt"
+          },
+          {
+            $ref: "#/parameters/body.agentThread"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["agentThread"]
       }
     },
     "/tools": {
@@ -103147,6 +103948,82 @@ export default {
       },
       type: "object"
     },
+    agentMessage: {
+      required: [
+        "id",
+        "threadId",
+        "companyId",
+        "role",
+        "createdBy",
+        "createdAt"
+      ],
+      properties: {
+        id: {
+          default: "public.id('agm'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        threadId: {
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        role: {
+          format: "text",
+          type: "string"
+        },
+        context: {
+          format: "jsonb"
+        },
+        feedback: {
+          format: "text",
+          type: "string"
+        },
+        feedbackNote: {
+          format: "text",
+          type: "string"
+        },
+        finishReason: {
+          format: "text",
+          type: "string"
+        },
+        inputTokens: {
+          format: "integer",
+          type: "integer"
+        },
+        outputTokens: {
+          format: "integer",
+          type: "integer"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        }
+      },
+      type: "object"
+    },
     customers: {
       properties: {
         id: {
@@ -116648,6 +117525,99 @@ export default {
       },
       type: "object"
     },
+    agentMessagePart: {
+      required: [
+        "id",
+        "messageId",
+        "companyId",
+        "orderIndex",
+        "type",
+        "createdBy",
+        "createdAt"
+      ],
+      properties: {
+        id: {
+          default: "public.id('agp'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        messageId: {
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        orderIndex: {
+          default: 0,
+          format: "integer",
+          type: "integer"
+        },
+        type: {
+          format: "text",
+          type: "string"
+        },
+        textContent: {
+          format: "text",
+          type: "string"
+        },
+        toolName: {
+          format: "text",
+          type: "string"
+        },
+        toolClassification: {
+          format: "text",
+          type: "string"
+        },
+        toolCallId: {
+          format: "text",
+          type: "string"
+        },
+        toolInput: {
+          format: "jsonb"
+        },
+        toolOutput: {
+          format: "jsonb"
+        },
+        toolState: {
+          format: "text",
+          type: "string"
+        },
+        toolDurationMs: {
+          format: "integer",
+          type: "integer"
+        },
+        errorMessage: {
+          format: "text",
+          type: "string"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        }
+      },
+      type: "object"
+    },
     inspectionDocument: {
       required: [
         "id",
@@ -117582,6 +118552,56 @@ export default {
         },
         valueFile: {
           format: "text",
+          type: "string"
+        }
+      },
+      type: "object"
+    },
+    notificationPreference: {
+      required: [
+        "id",
+        "userId",
+        "companyId",
+        "channel",
+        "topic",
+        "enabled",
+        "updatedAt"
+      ],
+      properties: {
+        id: {
+          default: "public.xid()",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        userId: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        channel: {
+          format: "text",
+          type: "string"
+        },
+        topic: {
+          format: "text",
+          type: "string"
+        },
+        enabled: {
+          default: false,
+          format: "boolean",
+          type: "boolean"
+        },
+        updatedAt: {
+          default: "now()",
+          format: "timestamp with time zone",
           type: "string"
         }
       },
@@ -120738,6 +121758,70 @@ export default {
           description:
             "Note:\nThis is a Foreign Key to `changeOrderRequiredAction.id`.<fk table='changeOrderRequiredAction' column='id'/>",
           format: "text",
+          type: "string"
+        }
+      },
+      type: "object"
+    },
+    agentThread: {
+      required: [
+        "id",
+        "companyId",
+        "userId",
+        "modelId",
+        "createdBy",
+        "createdAt"
+      ],
+      properties: {
+        id: {
+          default: "public.id('agt'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        userId: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        title: {
+          format: "text",
+          type: "string"
+        },
+        modelId: {
+          default: "claude-sonnet-4-6",
+          format: "text",
+          type: "string"
+        },
+        lastContext: {
+          format: "jsonb"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
           type: "string"
         }
       },
@@ -144130,6 +145214,99 @@ export default {
       in: "query",
       type: "string"
     },
+    "body.agentMessage": {
+      name: "agentMessage",
+      description: "agentMessage",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/agentMessage"
+      }
+    },
+    "rowFilter.agentMessage.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.agentMessage.threadId": {
+      name: "threadId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.agentMessage.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.agentMessage.role": {
+      name: "role",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.agentMessage.context": {
+      name: "context",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.agentMessage.feedback": {
+      name: "feedback",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.agentMessage.feedbackNote": {
+      name: "feedbackNote",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.agentMessage.finishReason": {
+      name: "finishReason",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.agentMessage.inputTokens": {
+      name: "inputTokens",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.agentMessage.outputTokens": {
+      name: "outputTokens",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.agentMessage.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.agentMessage.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.agentMessage.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.agentMessage.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.customers": {
       name: "customers",
       description: "customers",
@@ -159078,6 +160255,123 @@ export default {
       in: "query",
       type: "string"
     },
+    "body.agentMessagePart": {
+      name: "agentMessagePart",
+      description: "agentMessagePart",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/agentMessagePart"
+      }
+    },
+    "rowFilter.agentMessagePart.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.agentMessagePart.messageId": {
+      name: "messageId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.agentMessagePart.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.agentMessagePart.orderIndex": {
+      name: "orderIndex",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.agentMessagePart.type": {
+      name: "type",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.agentMessagePart.textContent": {
+      name: "textContent",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.agentMessagePart.toolName": {
+      name: "toolName",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.agentMessagePart.toolClassification": {
+      name: "toolClassification",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.agentMessagePart.toolCallId": {
+      name: "toolCallId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.agentMessagePart.toolInput": {
+      name: "toolInput",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.agentMessagePart.toolOutput": {
+      name: "toolOutput",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.agentMessagePart.toolState": {
+      name: "toolState",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.agentMessagePart.toolDurationMs": {
+      name: "toolDurationMs",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.agentMessagePart.errorMessage": {
+      name: "errorMessage",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.agentMessagePart.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.agentMessagePart.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.agentMessagePart.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.agentMessagePart.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.inspectionDocument": {
       name: "inspectionDocument",
       description: "inspectionDocument",
@@ -160119,6 +161413,57 @@ export default {
     },
     "rowFilter.userAttributeValue.valueFile": {
       name: "valueFile",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "body.notificationPreference": {
+      name: "notificationPreference",
+      description: "notificationPreference",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/notificationPreference"
+      }
+    },
+    "rowFilter.notificationPreference.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.notificationPreference.userId": {
+      name: "userId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.notificationPreference.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.notificationPreference.channel": {
+      name: "channel",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.notificationPreference.topic": {
+      name: "topic",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.notificationPreference.enabled": {
+      name: "enabled",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.notificationPreference.updatedAt": {
+      name: "updatedAt",
       required: false,
       in: "query",
       type: "string"
@@ -163661,6 +165006,75 @@ export default {
     },
     "rowFilter.changeOrderActionTask.actionTypeId": {
       name: "actionTypeId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "body.agentThread": {
+      name: "agentThread",
+      description: "agentThread",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/agentThread"
+      }
+    },
+    "rowFilter.agentThread.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.agentThread.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.agentThread.userId": {
+      name: "userId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.agentThread.title": {
+      name: "title",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.agentThread.modelId": {
+      name: "modelId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.agentThread.lastContext": {
+      name: "lastContext",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.agentThread.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.agentThread.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.agentThread.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.agentThread.updatedAt": {
+      name: "updatedAt",
       required: false,
       in: "query",
       type: "string"
