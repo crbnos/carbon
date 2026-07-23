@@ -12988,8 +12988,14 @@ msgstr "Şu tarihe kadar {0}"
 msgid "Thumbnail"
 msgstr "Küçük Resim"
 
+msgid "Thumbnail is still generating"
+msgstr ""
+
 msgid "Thumbnail removed"
 msgstr "Küçük resim kaldırıldı"
+
+msgid "Thumbnail updated"
+msgstr ""
 
 msgid "Thumbnail uploaded"
 msgstr "Küçük resim yüklendi"

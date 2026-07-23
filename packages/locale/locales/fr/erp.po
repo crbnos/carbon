@@ -12988,8 +12988,14 @@ msgstr "Jusqu'au {0}"
 msgid "Thumbnail"
 msgstr "Miniature"
 
+msgid "Thumbnail is still generating"
+msgstr ""
+
 msgid "Thumbnail removed"
 msgstr "Miniature supprimée"
+
+msgid "Thumbnail updated"
+msgstr ""
 
 msgid "Thumbnail uploaded"
 msgstr "Miniature téléchargée"

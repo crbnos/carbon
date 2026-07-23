@@ -12988,8 +12988,14 @@ msgstr "{0} तक"
 msgid "Thumbnail"
 msgstr "थंबनेल"
 
+msgid "Thumbnail is still generating"
+msgstr ""
+
 msgid "Thumbnail removed"
 msgstr "थंबनेल हटाया गया"
+
+msgid "Thumbnail updated"
+msgstr ""
 
 msgid "Thumbnail uploaded"
 msgstr "थंबनेल अपलोड किया गया"
