@@ -5488,9 +5488,6 @@ msgstr "从绘图中建议的特征值"
 msgid "Features"
 msgstr "功能"
 
-msgid "Feedback"
-msgstr "反馈"
-
 msgid "Fees"
 msgstr "费用"
 
@@ -6213,9 +6210,6 @@ msgstr "我仍在工作"
 
 msgid "ID"
 msgstr "ID"
-
-msgid "Ideas, suggestions or problems with this page?"
-msgstr "有什么想法、建议或问题吗？"
 
 msgid "Ideas, suggestions or problems?"
 msgstr "想法、建议或问题？"
@@ -8328,6 +8322,9 @@ msgstr "未配置打印机"
 
 msgid "No printers configured. Click \"Add Printer\" to create one."
 msgstr "未配置打印机。点击\"添加打印机\"创建一个。"
+
+msgid "No process selected"
+msgstr "未选择工艺"
 
 msgid "No Quote"
 msgstr "无报价"
@@ -10882,6 +10879,9 @@ msgstr "选择计划"
 #. placeholder {0}: plans[0].stripeTrialPeriodDays
 msgid "Select a plan to get started. You won't be charged for the first {0} days. Switch or cancel anytime."
 msgstr "选择一个计划开始使用。前 {0} 天不会收费。随时可以切换或取消。"
+
+msgid "Select a process first to choose its supplier."
+msgstr "请先选择工艺以选择其供应商。"
 
 msgid "Select a project"
 msgstr "选择一个项目"

@@ -5488,9 +5488,6 @@ msgstr "Значения функции предложены на основе �
 msgid "Features"
 msgstr "Функции"
 
-msgid "Feedback"
-msgstr "Обратная связь"
-
 msgid "Fees"
 msgstr "Сборы"
 
@@ -6213,9 +6210,6 @@ msgstr "Я всё ещё работаю"
 
 msgid "ID"
 msgstr "ID"
-
-msgid "Ideas, suggestions or problems with this page?"
-msgstr "Идеи, предложения или проблемы на этой странице?"
 
 msgid "Ideas, suggestions or problems?"
 msgstr "Идеи, предложения или проблемы?"
@@ -8328,6 +8322,9 @@ msgstr "Принтер не настроен"
 
 msgid "No printers configured. Click \"Add Printer\" to create one."
 msgstr "Принтеры не настроены. Нажмите «Добавить принтер» для создания."
+
+msgid "No process selected"
+msgstr "Процесс не выбран"
 
 msgid "No Quote"
 msgstr "Нет предложения"
@@ -10882,6 +10879,9 @@ msgstr "Выберите план"
 #. placeholder {0}: plans[0].stripeTrialPeriodDays
 msgid "Select a plan to get started. You won't be charged for the first {0} days. Switch or cancel anytime."
 msgstr "Выберите план для начала работы. Вам не будет выставлен счет за первые {0} дней. Переключайтесь или отменяйте в любое время."
+
+msgid "Select a process first to choose its supplier."
+msgstr "Сначала выберите процесс, чтобы выбрать его поставщика."
 
 msgid "Select a project"
 msgstr "Выберите проект"

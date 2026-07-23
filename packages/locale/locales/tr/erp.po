@@ -5488,9 +5488,6 @@ msgstr "Çizimden önerilen özellik değerleri"
 msgid "Features"
 msgstr "Özellikler"
 
-msgid "Feedback"
-msgstr "Geri bildirim"
-
 msgid "Fees"
 msgstr "Ücretler"
 
@@ -6213,9 +6210,6 @@ msgstr "Hala Çalışıyorum"
 
 msgid "ID"
 msgstr "Kimlik"
-
-msgid "Ideas, suggestions or problems with this page?"
-msgstr "Bu sayfa hakkında fikirleriniz, önerileriniz veya sorunlarınız mı var?"
 
 msgid "Ideas, suggestions or problems?"
 msgstr "Fikirler, öneriler veya sorunlar?"
@@ -8328,6 +8322,9 @@ msgstr "Yazıcı yapılandırılmadı"
 
 msgid "No printers configured. Click \"Add Printer\" to create one."
 msgstr "Yapılandırılmış yazıcı yok. Bir tane oluşturmak için \"Yazıcı Ekle\"'ye tıklayın."
+
+msgid "No process selected"
+msgstr "Hiçbir işlem seçilmedi"
 
 msgid "No Quote"
 msgstr "Teklif Yok"
@@ -10882,6 +10879,9 @@ msgstr "Bir plan seçin"
 #. placeholder {0}: plans[0].stripeTrialPeriodDays
 msgid "Select a plan to get started. You won't be charged for the first {0} days. Switch or cancel anytime."
 msgstr "Başlamak için bir plan seçin. İlk {0} gün ücretlendirilmeyeceksiniz. İstediğiniz zaman değiştirin veya iptal edin."
+
+msgid "Select a process first to choose its supplier."
+msgstr "Tedarikçisini seçmek için önce bir işlem seçin."
 
 msgid "Select a project"
 msgstr "Bir proje seçin"

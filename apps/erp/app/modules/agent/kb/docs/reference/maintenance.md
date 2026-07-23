@@ -1,0 +1,45 @@
+# Maintenance
+
+> Keeping work centers running: reactive and preventive maintenance dispatches.
+
+Maintenance in Carbon keeps the machines on the floor running. The unit of work is a **dispatch**, a work-order-like record raised against a **work center**, raised either reactively when something breaks or on a recurring preventive schedule. Execution happens on the floor in MES; authoring and reporting live in the back office under Resources.
+
+## Dispatches
+
+A **maintenance dispatch** is one job of upkeep: what's wrong, which work center, who's on it, and the time and parts it took. It moves through a short lifecycle:
+
+  - **Open**: Raised, not yet picked up.
+  - **Assigned**: Given to someone.
+  - **In Progress**: Being worked, with the clock running.
+  - **Completed**: Done. Any running time entries are closed automatically.
+  - **Cancelled**: Dropped without completing.
+
+Every dispatch carries a **priority** (Low, Medium, High, Critical) and a **source** that says where it came from: **Reactive** (a breakdown, the default), **Scheduled** (generated from a preventive schedule), or **Non-Conformance** (raised from a quality issue). Time is tracked as events against the dispatch, and parts as dispatch items.
+
+## What it's against
+
+A dispatch is attached to a **work center** and its location — the machine being maintained.
+
+Maintenance targets a **work center**, not a fixed asset or an equipment record. The same physical machine may also be a depreciable fixed asset, but Carbon keeps those independent. Maintenance is about keeping the *production resource* available, not about the asset's book value.
+
+## Preventive schedules
+
+Recurring upkeep is defined as a **maintenance schedule**: a work center, a **frequency** (Daily, Weekly, Monthly, Quarterly, Annual), the parts it needs, and how far in advance to raise the work. A daily background job reads the active schedules and, when one is due within the advance window, generates an **Open** dispatch, tagged `Scheduled` and `Preventive`, with the schedule's parts copied onto it. Daily schedules honor per-weekday flags and can skip holidays.
+
+## Blocking and OEE impact
+
+Each dispatch declares its **OEE impact**: `Down`, `Planned`, `Impact`, or `No Impact`. This is an **availability gate**, not a metric.
+
+A dispatch marked **Down** or **Planned** blocks its work center: on the floor, a blocked work center **cannot start a production operation** until the maintenance clears. There is no OEE percentage or uptime ratio in Carbon. The impact value exists to gate work, not to score it. Maintenance analytics are reliability KPIs (MTTR, MTBF, spare-part cost) computed from dispatch event durations.
+
+## Material and cost
+
+Parts used in maintenance are issued from inventory, drawing stock down through the item ledger as a *Maintenance Consumption* movement.
+
+Maintenance material is an **inventory movement only**. It posts to the item ledger but writes **no** general-ledger entry, regardless of whether accounting is enabled. It reduces what's on hand; it doesn't hit the books.
+
+## Related
+
+  - Work centers The machine a dispatch maintains — and that a Down dispatch blocks.
+  - Jobs The production a blocked work center can't run until maintenance clears.
+  - Quality Where a Non-Conformance dispatch originates.

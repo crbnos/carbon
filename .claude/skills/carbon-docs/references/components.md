@@ -131,6 +131,30 @@ reader hits cold, especially where the page names a concept it doesn't stop to d
 
 ---
 
+## Both surfaces — `<AgentContext>` (agent-only, invisible to readers)
+
+Wrap content that should reach the **in-app agent** but never the human docs site.
+
+```mdx
+<AgentContext>
+Licensing tiers are enforced in `packages/ee`, gated by the `company.plan` column;
+the paywall check lives in `requireLicense()`.
+</AgentContext>
+```
+
+- **Renders nothing** on the published page, and a `remark` plugin (`source.config.ts`)
+  strips it from the MDX AST before `remark-structure` runs — so it's also **excluded
+  from site search**. Readers never see it.
+- `scripts/generate-agent-kb.ts` **unwraps** it into the agent KB
+  (`apps/erp/app/modules/agent/kb/<slug>.md`) — the in-app agent *does* read it.
+- Use it for extra code/behavior detail that helps the agent answer accurately but
+  would clutter or over-disclose to a human reader (internal table names, service
+  functions, edge cases). Author normal markdown inside. Works on Guide and Reference.
+- Regenerate the KB after editing (`pnpm run generate:agent-kb`) — same commit-time
+  rule as any `docs/content` change (see `.claude/rules/agent-knowledge-base.md`).
+
+---
+
 ## Choosing a component
 
 | You want to… | Guide | Reference |

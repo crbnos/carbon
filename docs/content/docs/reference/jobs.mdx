@@ -107,3 +107,22 @@ Releasing a job copies the part's method into a job-specific copy. Editing that 
     The stations and rates that cost and schedule its operations.
   </Card>
 </Cards>
+
+<AgentContext>
+## Troubleshooting
+
+### "Manufacturing is blocked"
+Releasing the job was stopped because the item's planning settings have manufacturing blocked. Open the item, clear the manufacturing-blocked flag under its planning settings, then release the job again.
+
+### "Cannot modify a locked job. Reopen it first."
+The job is **Completed**, **Closed**, or **Cancelled** — locked, as the status callout above describes. A Completed job can be reopened if books haven't been settled; a Closed job's costs are final.
+
+### "No location found"
+Creating the job needs a location and the company has none (or no default). Add a location in settings, or set the user's default location.
+
+### "Tracked entity not found"
+Completing the job to inventory referenced a serial or batch that no longer exists — usually consumed or deleted since the job's output was recorded. Re-check the job's tracked outputs and materials before completing again.
+
+### "Failed to schedule job"
+The scheduling engine errored while placing the job's operations. Check that every operation has a work center (inside operations) or supplier process (outside operations) and that the job has a due date, then retry from the job's status menu.
+</AgentContext>

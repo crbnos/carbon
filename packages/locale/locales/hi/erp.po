@@ -5488,9 +5488,6 @@ msgstr "ड्राइंग से सुझाए गए फीचर मा�
 msgid "Features"
 msgstr "विशेषताएं"
 
-msgid "Feedback"
-msgstr "प्रतिक्रिया"
-
 msgid "Fees"
 msgstr "शुल्क"
 
@@ -6213,9 +6210,6 @@ msgstr "मैं अभी भी काम कर रहा हूँ"
 
 msgid "ID"
 msgstr "आईडी"
-
-msgid "Ideas, suggestions or problems with this page?"
-msgstr "इस पृष्ठ के बारे में विचार, सुझाव या समस्याएं?"
 
 msgid "Ideas, suggestions or problems?"
 msgstr "विचार, सुझाव या समस्याएं?"
@@ -8328,6 +8322,9 @@ msgstr "कोई प्रिंटर कॉन्फ़िगर नहीं
 
 msgid "No printers configured. Click \"Add Printer\" to create one."
 msgstr "कोई प्रिंटर कॉन्फ़िगर नहीं किया गया है। एक बनाने के लिए \"प्रिंटर जोड़ें\" पर क्लिक करें।"
+
+msgid "No process selected"
+msgstr "कोई प्रक्रिया चयनित नहीं है"
 
 msgid "No Quote"
 msgstr "कोई उद्धरण नहीं"
@@ -10882,6 +10879,9 @@ msgstr "एक योजना चुनें"
 #. placeholder {0}: plans[0].stripeTrialPeriodDays
 msgid "Select a plan to get started. You won't be charged for the first {0} days. Switch or cancel anytime."
 msgstr "एक योजना चुनें शुरुआत करने के लिए। आपको पहले {0} दिनों के लिए चार्ज नहीं किया जाएगा। किसी भी समय स्विच या रद्द करें।"
+
+msgid "Select a process first to choose its supplier."
+msgstr "आपूर्तिकर्ता चुनने के लिए पहले एक प्रक्रिया चुनें।"
 
 msgid "Select a project"
 msgstr "एक प्रोजेक्ट चुनें"

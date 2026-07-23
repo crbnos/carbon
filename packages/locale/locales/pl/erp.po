@@ -5488,9 +5488,6 @@ msgstr "Wartości funkcji sugerowane z rysunku"
 msgid "Features"
 msgstr "Funkcje"
 
-msgid "Feedback"
-msgstr "Opinia"
-
 msgid "Fees"
 msgstr "Opłaty"
 
@@ -6213,9 +6210,6 @@ msgstr "Wciąż pracuję"
 
 msgid "ID"
 msgstr "ID"
-
-msgid "Ideas, suggestions or problems with this page?"
-msgstr "Pomysły, sugestie lub problemy na tej stronie?"
 
 msgid "Ideas, suggestions or problems?"
 msgstr "Pomysly, sugestie lub problemy?"
@@ -8328,6 +8322,9 @@ msgstr "Brak skonfigurowanej drukarki"
 
 msgid "No printers configured. Click \"Add Printer\" to create one."
 msgstr "Brak skonfigurowanych drukarek. Kliknij „Dodaj drukarkę\", aby utworzyć jedną."
+
+msgid "No process selected"
+msgstr "Nie wybrano procesu"
 
 msgid "No Quote"
 msgstr "Brak oferty"
@@ -10882,6 +10879,9 @@ msgstr "Wybierz plan"
 #. placeholder {0}: plans[0].stripeTrialPeriodDays
 msgid "Select a plan to get started. You won't be charged for the first {0} days. Switch or cancel anytime."
 msgstr "Wybierz plan, aby rozpocząć. Nie będziesz obciążony opłatą przez pierwsze {0} dni. Możesz zmienić lub anulować w dowolnym momencie."
+
+msgid "Select a process first to choose its supplier."
+msgstr "Najpierw wybierz proces, aby wybrać jego dostawcę."
 
 msgid "Select a project"
 msgstr "Wybierz projekt"

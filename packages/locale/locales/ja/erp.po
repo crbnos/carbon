@@ -5488,9 +5488,6 @@ msgstr "図面から提案された機能値"
 msgid "Features"
 msgstr "機能"
 
-msgid "Feedback"
-msgstr "フィードバック"
-
 msgid "Fees"
 msgstr "手数料"
 
@@ -6213,9 +6210,6 @@ msgstr "まだ働いています"
 
 msgid "ID"
 msgstr "ID"
-
-msgid "Ideas, suggestions or problems with this page?"
-msgstr "このページについてのアイデア、提案、または問題はありますか？"
 
 msgid "Ideas, suggestions or problems?"
 msgstr "アイデア、提案、または問題はありますか？"
@@ -8328,6 +8322,9 @@ msgstr "プリンターが設定されていません"
 
 msgid "No printers configured. Click \"Add Printer\" to create one."
 msgstr "プリンターが設定されていません。「プリンターを追加」をクリックして作成してください。"
+
+msgid "No process selected"
+msgstr "プロセスが選択されていません"
 
 msgid "No Quote"
 msgstr "見積なし"
@@ -10882,6 +10879,9 @@ msgstr "プランを選択"
 #. placeholder {0}: plans[0].stripeTrialPeriodDays
 msgid "Select a plan to get started. You won't be charged for the first {0} days. Switch or cancel anytime."
 msgstr "プランを選択して開始します。最初の{0}日間は料金がかかりません。いつでも切り替えまたはキャンセルできます。"
+
+msgid "Select a process first to choose its supplier."
+msgstr "サプライヤーを選択するには、まずプロセスを選択してください。"
 
 msgid "Select a project"
 msgstr "プロジェクトを選択"

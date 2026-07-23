@@ -25,7 +25,7 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { nanoid } from "nanoid";
 import type { ChangeEvent } from "react";
 import React, { Suspense, useEffect, useRef, useState } from "react";
-import { LuImage } from "react-icons/lu";
+import { LuImage, LuMegaphone } from "react-icons/lu";
 import { useFetcher, useLocation } from "react-router";
 import { useUser } from "~/hooks";
 import { suggestionValidator } from "~/modules/shared";
@@ -119,7 +119,11 @@ const Suggestion = () => {
   return (
     <Popover>
       <PopoverTrigger ref={popoverTriggerRef} asChild>
-        <Button variant="secondary" className="hover:scale-100">
+        <Button
+          variant="secondary"
+          className="hover:scale-100"
+          leftIcon={<LuMegaphone />}
+        >
           <Trans>Suggestion</Trans>
         </Button>
       </PopoverTrigger>

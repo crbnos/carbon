@@ -5488,9 +5488,6 @@ msgstr "도면에서 제안된 기능 값"
 msgid "Features"
 msgstr "기능"
 
-msgid "Feedback"
-msgstr "피드백"
-
 msgid "Fees"
 msgstr "수수료"
 
@@ -6213,9 +6210,6 @@ msgstr "아직 작업 중입니다"
 
 msgid "ID"
 msgstr "ID"
-
-msgid "Ideas, suggestions or problems with this page?"
-msgstr "이 페이지에 대한 아이디어, 제안, 또는 문제가 있으신가요?"
 
 msgid "Ideas, suggestions or problems?"
 msgstr "아이디어, 제안, 또는 문제가 있으신가요?"
@@ -8328,6 +8322,9 @@ msgstr "설정된 프린터가 없습니다"
 
 msgid "No printers configured. Click \"Add Printer\" to create one."
 msgstr "설정된 프린터가 없습니다. \"프린터 추가\"를 클릭하여 생성하세요."
+
+msgid "No process selected"
+msgstr "프로세스를 선택하지 않았습니다"
 
 msgid "No Quote"
 msgstr "견적 없음"
@@ -10882,6 +10879,9 @@ msgstr "플랜 선택"
 #. placeholder {0}: plans[0].stripeTrialPeriodDays
 msgid "Select a plan to get started. You won't be charged for the first {0} days. Switch or cancel anytime."
 msgstr "시작하려면 플랜을 선택하세요. 처음 {0}일 동안은 요금이 청구되지 않습니다. 언제든지 변경하거나 취소할 수 있습니다."
+
+msgid "Select a process first to choose its supplier."
+msgstr "공급자를 선택하려면 먼저 프로세스를 선택하세요."
 
 msgid "Select a project"
 msgstr "프로젝트 선택"

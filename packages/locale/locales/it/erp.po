@@ -5488,9 +5488,6 @@ msgstr "Valori delle caratteristiche suggeriti dal disegno"
 msgid "Features"
 msgstr "Funzionalità"
 
-msgid "Feedback"
-msgstr "Feedback"
-
 msgid "Fees"
 msgstr "Commissioni"
 
@@ -6213,9 +6210,6 @@ msgstr "Sto ancora lavorando"
 
 msgid "ID"
 msgstr "ID"
-
-msgid "Ideas, suggestions or problems with this page?"
-msgstr "Idee, suggerimenti o problemi con questa pagina?"
 
 msgid "Ideas, suggestions or problems?"
 msgstr "Idee, suggerimenti o problemi?"
@@ -8328,6 +8322,9 @@ msgstr "Nessuna stampante configurata"
 
 msgid "No printers configured. Click \"Add Printer\" to create one."
 msgstr "Nessuna stampante configurata. Fai clic su \"Aggiungi stampante\" per crearne una."
+
+msgid "No process selected"
+msgstr "Nessun processo selezionato"
 
 msgid "No Quote"
 msgstr "Nessuna offerta"
@@ -10882,6 +10879,9 @@ msgstr "Seleziona un piano"
 #. placeholder {0}: plans[0].stripeTrialPeriodDays
 msgid "Select a plan to get started. You won't be charged for the first {0} days. Switch or cancel anytime."
 msgstr "Seleziona un piano per iniziare. Non ti verrà addebitato alcun costo per i primi {0} giorni. Cambia o annulla in qualsiasi momento."
+
+msgid "Select a process first to choose its supplier."
+msgstr "Seleziona prima un processo per scegliere il suo fornitore."
 
 msgid "Select a project"
 msgstr "Seleziona un progetto"
