@@ -6,10 +6,10 @@ import { data } from "react-router";
 // Re-fires the eager optimise for an already-uploaded model — the raw still lives
 // in `temp-staging`, so no re-upload is needed. Backs the viewer's "Retry" action
 // when a model settled with no GLB (optimise failed / was skipped).
+// Any authenticated employee may fire it: the preview auto-generates on
+// view (viewing is the intent), which must not require part-edit rights.
 export async function action({ request }: ActionFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "parts"
-  });
+  const { client, companyId, userId } = await requirePermissions(request, {});
 
   const formData = await request.formData();
   const modelUploadId = formData.get("modelUploadId") as string | null;

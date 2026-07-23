@@ -150,6 +150,7 @@ export const path = {
         generatePath(`${api}/model/artifacts/${modelUploadId}`),
       modelConvertStatus: (modelUploadId: string) =>
         generatePath(`${api}/model/convert-status/${modelUploadId}`),
+      modelOptimizeCancel: `${api}/model/optimize-cancel`,
       modelReoptimize: `${api}/model/reoptimize`,
       modelUpload: `${api}/model/upload`,
       mrp: (locationId?: string) =>
@@ -242,7 +243,7 @@ export const path = {
         generatePath(`${api}/purchasing/supplier-contacts/${id}`),
       supplierLocations: (id: string) =>
         generatePath(`${api}/purchasing/supplier-locations/${id}`),
-      supplierProcesses: (id?: string) =>
+      supplierProcesses: (id: string) =>
         generatePath(`${api}/purchasing/supplier-processes/${id}`),
       supplierTypes: `${api}/purchasing/supplier-types`,
       tags: (table?: string) =>

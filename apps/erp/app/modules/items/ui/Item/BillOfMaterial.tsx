@@ -719,6 +719,18 @@ function MaterialForm({
       item.data.item?.replenishmentSystem ?? replenishmentSystem ?? "Buy"
   });
 
+  // methodType/sourcingType are read-only mirrors of the component item
+  // (see method-material-sourcing rule). Re-sync them when the loader row
+  // changes — e.g. after the properties panel updates the default method type —
+  // since the useState initializer above only runs at mount.
+  useEffect(() => {
+    setItemData((d) => ({
+      ...d,
+      methodType: item.data.methodType ?? "Pull from Inventory",
+      sourcingType: item.data.sourcingType ?? "Specified"
+    }));
+  }, [item.data.methodType, item.data.sourcingType]);
+
   const onTypeChange = (value: MethodItemType | "Item") => {
     if (value === itemType) return;
     setItemType(value as MethodItemType);

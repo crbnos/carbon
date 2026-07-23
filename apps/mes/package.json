@@ -3,6 +3,7 @@
   "type": "module",
   "dependencies": {
     "@carbon/auth": "workspace:*",
+    "@tanstack/react-query": "5.97.0",
     "@carbon/database": "workspace:*",
     "@carbon/documents": "workspace:*",
     "@carbon/ee": "workspace:*",

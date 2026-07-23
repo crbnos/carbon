@@ -24,6 +24,16 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     .eq("companyId", companyId)
     .maybeSingle();
 
+  // A real query failure is a 5xx, not a 404 — don't mask a backend error as
+  // "no such model".
+  if (model.error) throw new Response("Internal error", { status: 500 });
+  // No such model for this tenant → 404, don't fabricate an all-nulls body. An
+  // all-nulls 200 is indistinguishable from "exists but not optimised", so the
+  // viewer's reuse guard can't tell the two apart and would auto-fire an
+  // optimise against an id that doesn't exist (→ a reoptimise 404 loop). The
+  // client query treats this 404 as "no artifacts", and never auto-fires.
+  if (!model.data) throw new Response("Not found", { status: 404 });
+
   // Raw-source pointer for the viewer's WASM fallback tier (renders the original
   // upload when no artifact exists). `.zst`-compacted raws are skipped — they
   // only exist after a successful optimise, which means an artifact exists too.

@@ -9,6 +9,7 @@ import {
   TabsList,
   TabsTrigger
 } from "@carbon/react";
+import { msg } from "@lingui/core/macro";
 import { useCallback } from "react";
 import type { LoaderFunctionArgs } from "react-router";
 import { Outlet, redirect, useLoaderData, useNavigate } from "react-router";
@@ -23,7 +24,7 @@ import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
 export const handle: Handle = {
-  breadcrumb: "Cost Centers",
+  breadcrumb: msg`Cost Centers`,
   to: path.to.costCenters
 };
 

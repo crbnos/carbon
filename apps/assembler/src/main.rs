@@ -396,7 +396,7 @@ async fn worker_events(
     }
     let urls = run::upload_urls(&spec);
 
-    match state.jobs.existing_active(&job_id).await.as_deref() {
+    match state.jobs.internal_active(&job_id).await.as_deref() {
         Some("pending") => {
             if let Err(m) = run::spawn_from_spec(&state, &job_id, &action, &spec) {
                 state.jobs.set_error(&job_id, "invalid_input", m.clone()).await;

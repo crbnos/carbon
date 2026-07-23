@@ -1128,7 +1128,7 @@ function AttributesForm({
       </div>
 
       {steps.length > 0 && (
-        <div className="border bg-card rounded-lg">
+        <div className="border rounded-lg">
           <Reorder.Group
             axis="y"
             values={sortOrder}
@@ -1153,9 +1153,11 @@ function AttributesForm({
                       isDisabled={isDisabled}
                       dragControls={dragControls}
                       itemMentions={itemMentions}
-                      className={
-                        index === sortOrder.length - 1 ? "border-none" : ""
-                      }
+                      className={cn(
+                        index === 0 && "rounded-t-lg",
+                        index === sortOrder.length - 1 &&
+                          "rounded-b-lg border-none"
+                      )}
                     />
                   )}
                 </DraggableStepItem>
@@ -1285,7 +1287,7 @@ function AttributesListItem({
   if (!id) return null;
 
   return (
-    <div className={cn("border-b p-6", className)}>
+    <div className={cn("border-b p-6 bg-card", className)}>
       {disclosure.isOpen ? (
         <ValidatedForm
           action={path.to.quoteOperationStep(id)}
@@ -1594,7 +1596,7 @@ function ParametersForm({
       </div>
 
       {parameters.length > 0 && (
-        <div className="border bg-card rounded-lg">
+        <div className="border rounded-lg">
           {[...parameters]
             .sort((a, b) =>
               String(a.id ?? "").localeCompare(String(b.id ?? ""))
@@ -1604,7 +1606,10 @@ function ParametersForm({
                 key={p.id}
                 parameter={p}
                 operationId={operationId}
-                className={index === parameters.length - 1 ? "border-none" : ""}
+                className={cn(
+                  index === 0 && "rounded-t-lg",
+                  index === parameters.length - 1 && "rounded-b-lg border-none"
+                )}
               />
             ))}
         </div>
@@ -1644,7 +1649,7 @@ function ParametersListItem({
   if (!id) return null;
 
   return (
-    <div className={cn("border-b p-6", className)}>
+    <div className={cn("border-b p-6 bg-card", className)}>
       {disclosure.isOpen ? (
         <ValidatedForm
           action={path.to.quoteOperationParameter(id)}
@@ -2715,7 +2720,10 @@ function ToolsForm({
                 key={t.id}
                 tool={t}
                 operationId={operationId}
-                className={index === tools.length - 1 ? "border-none" : ""}
+                className={cn(
+                  index === 0 && "rounded-t-lg",
+                  index === tools.length - 1 && "rounded-b-lg border-none"
+                )}
               />
             ))}
         </div>

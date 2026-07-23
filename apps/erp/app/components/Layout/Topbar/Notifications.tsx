@@ -25,6 +25,7 @@ import {
   LuCirclePlay,
   LuClipboardCheck,
   LuDollarSign,
+  LuGitPullRequestArrow,
   LuGraduationCap,
   LuHammer,
   LuInbox,
@@ -33,6 +34,7 @@ import {
   LuLoader,
   LuMailCheck,
   LuMessageSquare,
+  LuPackageSearch,
   LuShieldAlert,
   LuShieldX,
   LuShoppingCart,
@@ -208,6 +210,16 @@ function GenericNotification({
           {...props}
         />
       );
+    case NotificationEvent.ChangeOrderStarted:
+    case NotificationEvent.ChangeOrderImplementation:
+    case NotificationEvent.ChangeOrderDone:
+      return (
+        <Notification
+          icon={<LuGitPullRequestArrow />}
+          to={path.to.changeOrderDetails(id)}
+          {...props}
+        />
+      );
     case NotificationEvent.DigitalQuoteResponse:
       return (
         <Notification
@@ -287,6 +299,14 @@ function GenericNotification({
         <Notification
           icon={<LuShoppingCart />}
           to={path.to.purchaseInvoiceDetails(id)}
+          {...props}
+        />
+      );
+    case NotificationEvent.PurchasingRfqAssignment:
+      return (
+        <Notification
+          icon={<LuPackageSearch />}
+          to={path.to.purchasingRfq(id)}
           {...props}
         />
       );

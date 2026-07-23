@@ -3,14 +3,10 @@ import { $ } from "execa";
 import { client } from "./client";
 import type { Workspace } from "./deploy";
 
-// Deploys the assembler stack (apps/assembler/sst.config.ts) per workspace:
-// one Lambda + API Gateway (plus optional ECS overflow) in each workspace's
-// AWS account. Gated on the `assembler` column ALONE — independent of `aws`
-// (which means "deploy ERP/MES via SST/ECS", i.e. GovCloud/ITAR). The main
-// carbon.ms cloud runs its apps on Vercel (aws unset) but still wants the
-// assembler in AWS, so the assembler must not depend on the `aws` flag. A row
-// opts in by setting `assembler = true` plus its own aws_account_id / aws_region
-// / redis_url — without turning on `aws`.
+// Deploys the assembler stack (apps/assembler/sst.config.ts) per workspace,
+// mirroring deploy.ts. Gated on `assembler` ALONE, not `aws`: `aws` means
+// "deploy ERP/MES via SST" (GovCloud/ITAR), but the main cloud runs its apps
+// on Vercel yet still wants the assembler in AWS — so the two are independent.
 
 async function deploy(): Promise<void> {
   console.log("✅ 🌱 Starting assembler deployment");
@@ -22,7 +18,10 @@ async function deploy(): Promise<void> {
   }
   console.log(`✅ 🏷️ Using image tag: ${imageTag}`);
 
-  const stage = process.env.STAGE ?? "prod";
+  // `||` not `??`: on push events the workflow's `inputs.stage` is empty, so
+  // STAGE arrives as "" — `??` would pass that through and sst would deploy a
+  // fresh empty-named stage (colliding on the account-global custom domain).
+  const stage = process.env.STAGE || "prod";
 
   const { data: workspaces, error } = await client
     .from("workspaces")
@@ -64,8 +63,7 @@ async function deploy(): Promise<void> {
       continue;
     }
 
-    // Reuses the workspace app redis as the assembler job store — must be
-    // reachable from Lambda over the public internet.
+    // The job store must be reachable from Lambda over the public internet.
     if (!redis_url) {
       console.log(`🔴 🍳 Missing Redis URL for ${id}`);
       continue;
@@ -81,12 +79,10 @@ async function deploy(): Promise<void> {
         IMAGE_TAG: imageTag,
         ASSEMBLER_SERVICE_API_KEY: assembler_api_key,
         REDIS_URL: redis_url,
-        // Optional — enables the custom domain when set (else the raw
-        // execute-api URL; sst.config.ts defaults the host to assembler.carbon.ms).
+        // Without a cert the stack falls back to the raw execute-api URL.
         ASSEMBLER_CERT_ARN: cert_arn_assembler ?? undefined,
         ASSEMBLER_DOMAIN: assembler_domain ?? undefined,
       },
-      // Run SST from the assembler app where its sst.config.ts is located
       cwd: "../apps/assembler",
       stdio: "inherit",
     });

@@ -15,6 +15,12 @@ msgstr ""
 msgid " A supplier is a business or person who sells you parts or services."
 msgstr "Un proveedor es una empresa o persona que te vende piezas o servicios."
 
+msgid ", {residual}% residual"
+msgstr ", {residual}% residual"
+
+msgid ", {years}yr"
+msgstr ", {years}yr"
+
 #. placeholder {0}: fieldDef?.label ?? condition.field
 msgid "\"{0}\" isn't available on the selected surface(s). Pick another field."
 msgstr "\"{0}\" no está disponible en la(s) superficie(s) seleccionada(s). Elige otro campo."
@@ -137,6 +143,9 @@ msgstr "{uncounted, plural, one {# línea sin contar} other {# líneas sin conta
 
 msgid "{variances, plural, one {# line differs from the expected quantity} other {# lines differ from the expected quantity}}"
 msgstr "{variances, plural, one {# línea difiere de la cantidad esperada} other {# líneas difieren de la cantidad esperada}}"
+
+msgid "{years}yr"
+msgstr "{years}yr"
 
 msgid "/month/user"
 msgstr "/mes/usuario"
@@ -596,6 +605,9 @@ msgstr "Agregar una fila"
 msgid "Add a step"
 msgstr "Agregar un paso"
 
+msgid "Add Account"
+msgstr "Agregar Cuenta"
+
 msgid "Add Actions"
 msgstr "Agregar Acciones"
 
@@ -625,6 +637,9 @@ msgstr "Agregar condición"
 
 msgid "Add Contractor"
 msgstr "Agregar Contratista"
+
+msgid "Add cost center"
+msgstr "Agregar centro de costos"
 
 msgid "Add Entry"
 msgstr "Agregar entrada"
@@ -794,6 +809,9 @@ msgstr "Todos los Registros de Auditoría"
 
 msgid "All changes to auditable entities are being recorded."
 msgstr "Todos los cambios en entidades auditables se están registrando."
+
+msgid "All Companies"
+msgstr "Todas las Empresas"
 
 msgid "All Customers"
 msgstr "Todos los Clientes"
@@ -1014,6 +1032,9 @@ msgstr "Requisitos de Aprobación"
 msgid "Approval Rules"
 msgstr "Reglas de Aprobación"
 
+msgid "Approvals"
+msgstr "Aprobaciones"
+
 msgid "Approve"
 msgstr "Aprobar"
 
@@ -1119,6 +1140,7 @@ msgstr "¿Estás seguro de que deseas desactivar este usuario?"
 msgid "Are you sure you want to delete {0} from this operation? This cannot be undone."
 msgstr "¿Está seguro de que desea eliminar {0} de esta operación? Esto no se puede deshacer."
 
+#. placeholder {0}: selectedEntry.journalEntryId
 #. placeholder {0}: selectedGroup.name
 msgid "Are you sure you want to delete {0}?"
 msgstr "¿Estás seguro de que deseas eliminar {0}?"
@@ -1151,6 +1173,10 @@ msgstr "¿Estás seguro de que deseas eliminar la cuenta: {0}{1}? Esta acción n
 #. placeholder {0}: apiKey.name
 msgid "Are you sure you want to delete the API key: {0}? This cannot be undone."
 msgstr "¿Estás seguro de que deseas eliminar la clave API: {0}? Esto no se puede deshacer."
+
+#. placeholder {0}: selectedClass.name
+msgid "Are you sure you want to delete the asset class: {0}? This cannot be undone."
+msgstr "¿Está seguro de que desea eliminar la clase de activos: {0}? Esto no se puede deshacer."
 
 #. placeholder {0}: requiredAction.name
 msgid "Are you sure you want to delete the change order action: {0}? This cannot be undone."
@@ -1499,6 +1525,9 @@ msgstr "Costo de activos en la disposición"
 msgid "Asset Cost on Disposal (default)"
 msgstr "Costo de activos en la disposición (predeterminado)"
 
+msgid "Asset ID"
+msgstr "ID de Activo"
+
 msgid "Assets"
 msgstr "Activos"
 
@@ -1730,6 +1759,9 @@ msgstr "Seguimiento de lotes"
 msgid "Batch Tracking"
 msgstr "Seguimiento de Lotes"
 
+msgid "Beginning"
+msgstr "Inicio"
+
 #. placeholder {0}: successorItem.readableIdWithRevision
 msgid "Being phased out — successor: <0>{0}</0>"
 msgstr "Siendo descontinuado — sucesor: <0>{0}</0>"
@@ -1803,6 +1835,9 @@ msgstr "Reserva una llamada para discutir la implementación guiada"
 
 msgid "Book a call with Carbon"
 msgstr "Reserva una llamada con Carbon"
+
+msgid "Book Depreciation"
+msgstr "Depreciación de Libro"
 
 msgid "Breadcrumb"
 msgstr "Migas de pan"
@@ -2832,6 +2867,9 @@ msgstr "Centro de Costos"
 msgid "Cost Center"
 msgstr "Centro de Costos"
 
+msgid "Cost Center Name"
+msgstr "Nombre del Centro de Costos"
+
 msgid "cost centers"
 msgstr "centros de costos"
 
@@ -3023,6 +3061,9 @@ msgstr "Tipo de orden de cambio creado"
 msgid "Created consumable"
 msgstr "Consumible creado"
 
+msgid "Created cost center"
+msgstr "Centro de costos creado"
+
 msgid "Created customer portal"
 msgstr "Portal de cliente creado"
 
@@ -3133,6 +3174,10 @@ msgstr "Creando parte..."
 msgid "Credit"
 msgstr "Crédito"
 
+#. placeholder {0}: parentCurrency ?? "Translated"
+msgid "Credit ({0})"
+msgstr "Crédito ({0})"
+
 msgid "Credit / Debit Memos"
 msgstr "Memorandos de Crédito / Débito"
 
@@ -3150,6 +3195,9 @@ msgstr "Cuentas de crédito utilizadas cuando los costos de fabricación se abso
 
 msgid "Credit Memo"
 msgstr "Nota de Crédito"
+
+msgid "Credits"
+msgstr "Créditos"
 
 msgid "Credits & Debits"
 msgstr "Créditos y Débitos"
@@ -3491,11 +3539,18 @@ msgstr "Tipo de Plazo"
 msgid "Debit"
 msgstr "Débito"
 
+#. placeholder {0}: parentCurrency ?? "Translated"
+msgid "Debit ({0})"
+msgstr "Débito ({0})"
+
 msgid "Debit Account"
 msgstr "Cuenta Deudora"
 
 msgid "Debit Memo"
 msgstr "Nota de Débito"
+
+msgid "Debits"
+msgstr "Débitos"
 
 msgid "Decide what an operator sees if they try to issue a batch or serial that's already expired."
 msgstr "Decide qué ve un operador si intenta emitir un lote o número de serie que ya ha expirado."
@@ -3647,6 +3702,12 @@ msgstr "Eliminar acción"
 msgid "Delete API Key"
 msgstr "Eliminar clave API"
 
+msgid "Delete Asset"
+msgstr "Eliminar Activo"
+
+msgid "Delete Asset Class"
+msgstr "Eliminar Clase de Activos"
+
 msgid "Delete Assignment"
 msgstr "Eliminar Asignación"
 
@@ -3689,6 +3750,9 @@ msgstr "Eliminar Tipo de Cliente"
 msgid "Delete Department"
 msgstr "Eliminar Departamento"
 
+msgid "Delete Dimension"
+msgstr "Eliminar Dimensión"
+
 msgid "Delete Dispatch"
 msgstr "Eliminar Despacho"
 
@@ -3715,6 +3779,12 @@ msgstr "Eliminar Problema"
 
 msgid "Delete Item Group"
 msgstr "Eliminar grupo de artículos"
+
+msgid "Delete Journal Entry"
+msgstr "Eliminar Asiento de Diario"
+
+msgid "Delete line"
+msgstr "Eliminar línea"
 
 msgid "Delete Line"
 msgstr "Eliminar Línea"
@@ -4093,6 +4163,9 @@ msgstr "Desechar"
 msgid "Dispose Asset"
 msgstr "Desechar Activo"
 
+msgid "Disposed"
+msgstr "Desechado"
+
 msgid "Disposition"
 msgstr "Disposición"
 
@@ -4311,6 +4384,9 @@ msgstr "Editar Clave API"
 msgid "Edit Approval Rule"
 msgstr "Editar Regla de Aprobación"
 
+msgid "Edit Asset"
+msgstr "Editar Activo"
+
 msgid "Edit Asset Class"
 msgstr "Editar Clase de Activo"
 
@@ -4343,6 +4419,9 @@ msgstr "Editar Contacto"
 
 msgid "Edit Contractor"
 msgstr "Editar Contratista"
+
+msgid "Edit Cost Center"
+msgstr "Editar Centro de Costos"
 
 msgid "Edit Count"
 msgstr "Editar Conteo"
@@ -4406,6 +4485,9 @@ msgstr "Editar Documento de Inspección"
 
 msgid "Edit Item Group"
 msgstr "Editar Grupo de Artículos"
+
+msgid "Edit Journal Entry"
+msgstr "Editar Asiento de Diario"
 
 msgid "Edit Kanban"
 msgstr "Editar Kanban"
@@ -4599,11 +4681,20 @@ msgstr "Editar Webhook"
 msgid "Edit Work Center"
 msgstr "Editar Centro de Trabajo"
 
+msgid "Eliminated"
+msgstr "Eliminado"
+
+msgid "email"
+msgstr "Correo electrónico"
+
 msgid "Email"
 msgstr "Correo electrónico"
 
 msgid "Email Address"
 msgstr "Dirección de Correo Electrónico"
+
+msgid "Email notifications are not included in your company's current plan; email preferences will apply if they are enabled."
+msgstr "Las notificaciones por correo electrónico no se incluyen en el plan actual de su empresa; las preferencias de correo electrónico se aplicarán si se habilitan."
 
 msgid "Email notifications not configured"
 msgstr "Notificaciones por correo electrónico no configuradas"
@@ -4703,6 +4794,13 @@ msgstr "Fin del Trimestre Anterior"
 
 msgid "End Time"
 msgstr "Hora de Finalización"
+
+msgid "Ending"
+msgstr "Final"
+
+#. placeholder {0}: parentCurrency ?? "Translated"
+msgid "Ending ({0})"
+msgstr "Final ({0})"
 
 msgid "Enforce — edits are blocked"
 msgstr "Aplicar — las ediciones están bloqueadas"
@@ -5072,6 +5170,10 @@ msgid "Failed to create consumable: {0}"
 msgstr "Error al crear consumible: {0}"
 
 #. placeholder {0}: fetcher.data.error.message
+msgid "Failed to create cost center: {0}"
+msgstr "Error al crear centro de costos: {0}"
+
+#. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create customer portal: {0}"
 msgstr "Error al crear el portal del cliente: {0}"
 
@@ -5267,6 +5369,10 @@ msgstr "Error al cargar los detalles de la pieza del proveedor"
 
 msgid "Failed to load tracked entities"
 msgstr "No se pudieron cargar las entidades rastreadas"
+
+#. placeholder {0}: fetcher.data.error.message
+msgid "Failed to move account: {0}"
+msgstr "Error al mover cuenta: {0}"
 
 msgid "Failed to remove image: {errorMessage}"
 msgstr "Error al eliminar la imagen: {errorMessage}"
@@ -5573,6 +5679,9 @@ msgstr "Viernes"
 msgid "From {0}"
 msgstr "Desde {0}"
 
+msgid "From / To"
+msgstr "De / A"
+
 msgid "From customer"
 msgstr "Del cliente"
 
@@ -5587,6 +5696,9 @@ msgstr "Desde Unidad de Almacenamiento"
 
 msgid "Fulfillment Location"
 msgstr "Ubicación de Cumplimiento"
+
+msgid "Fully Depreciated"
+msgstr "Totalmente Depreciado"
 
 msgid "Fully trained for"
 msgstr "Completamente capacitado para"
@@ -5635,6 +5747,9 @@ msgstr "Medidores"
 
 msgid "Genealogy"
 msgstr "Libro Mayor"
+
+msgid "General"
+msgstr "General"
 
 msgid "General ledger"
 msgstr "Cuenta GL que captura diferencias de costos en operaciones de procesamiento externo."
@@ -6183,8 +6298,17 @@ msgstr "en el período seleccionado"
 msgid "In stock"
 msgstr "En stock"
 
+msgid "In stock only"
+msgstr "Solo en stock"
+
 msgid "In the loop together"
 msgstr "En el ciclo juntos"
+
+msgid "In-app notifications are always delivered. Choose which topics also reach you by email or Slack."
+msgstr "Las notificaciones en la aplicación siempre se entregan. Elija qué temas también le llegan por correo electrónico o Slack."
+
+msgid "In-app notifications are always delivered. Choose which topics also reach you by email."
+msgstr "Las notificaciones en la aplicación siempre se entregan. Elija qué temas también le llegan por correo electrónico."
 
 msgid "Inactive"
 msgstr "Inactivo"
@@ -6248,6 +6372,9 @@ msgstr "Infraestructura"
 
 msgid "Inherit From Materials"
 msgstr "Heredar de Materiales"
+
+msgid "Inherited"
+msgstr "Heredado"
 
 msgid "Inherited from parent"
 msgstr "Heredado del padre"
@@ -6329,6 +6456,12 @@ msgstr "Integraciones no mencionadas aquí"
 
 msgid "Intercompany"
 msgstr "Intercompañía"
+
+msgid "Intercompany Balances"
+msgstr "Saldos Intercompañía"
+
+msgid "Intercompany Transactions"
+msgstr "Transacciones Intercompañía"
 
 msgid "Intercompany transactions involving this company that are still Unmatched should be matched and eliminated, so consolidated results don't double-count activity between entities."
 msgstr "Las transacciones intercompañía que involucran a esta empresa que aún no están Coincididas deben ser coincididas y eliminadas, para que los resultados consolidados no cuenten doblemente la actividad entre entidades."
@@ -6843,6 +6976,9 @@ msgstr "Modo Claro"
 msgid "Likelihood"
 msgstr "Probabilidad"
 
+msgid "Line description (optional)"
+msgstr "Descripción de línea (opcional)"
+
 msgid "Line Item Comparison"
 msgstr "Comparación de Artículos de Línea"
 
@@ -6925,6 +7061,9 @@ msgstr "Cargando..."
 
 msgid "Loading…"
 msgstr "Cargando…"
+
+msgid "Local"
+msgstr "Local"
 
 msgid "location"
 msgstr "ubicación"
@@ -7040,6 +7179,9 @@ msgstr "Máquinas, celdas, estaciones"
 
 msgid "MACRS"
 msgstr "MACRS"
+
+msgid "MACRS {cls}-Year"
+msgstr "MACRS {cls}-Año"
 
 msgid "MACRS Convention"
 msgstr "Convención MACRS"
@@ -7242,6 +7384,9 @@ msgstr "Coincidir con cualquiera (O)"
 
 msgid "Match none"
 msgstr "No coincide ninguno"
+
+msgid "Matched"
+msgstr "Emparejado"
 
 msgid "matches"
 msgstr "coincide"
@@ -7525,6 +7670,9 @@ msgstr "La mayoría de las cosas se detectan y resuelven aquí. Nómbralo claram
 msgid "Move"
 msgstr "Mover"
 
+msgid "Move {accountName}"
+msgstr "Mover {accountName}"
+
 msgid "Move entities"
 msgstr "Mover entidades"
 
@@ -7540,6 +7688,9 @@ msgstr "Mueve parte de la cantidad a una nueva fila de disposición para que MRB
 msgid "Move to"
 msgstr "Mover a"
 
+msgid "Move to Group"
+msgstr "Mover a Grupo"
+
 msgid "Move to Trash"
 msgstr "Mover a la papelera"
 
@@ -7547,6 +7698,9 @@ msgstr "Mover a la papelera"
 #. placeholder {1}: targetBucket === "parts" ? "Parts" : "Opportunity"
 msgid "Moved {0} to {1} bucket"
 msgstr "Movido {0} al bucket {1}"
+
+msgid "Moved account"
+msgstr "Cuenta movida"
 
 msgid "Movements"
 msgstr "Movimientos"
@@ -7605,6 +7759,9 @@ msgstr "Ajuste Negativo"
 msgid "Net book value"
 msgstr "Valor en Libros Neto"
 
+msgid "Net Book Value"
+msgstr "Valor Neto en Libros"
+
 msgid "Net Change"
 msgstr "Cambio Neto"
 
@@ -7652,6 +7809,9 @@ msgstr "Nuevo Consumible"
 
 msgid "New Contractor"
 msgstr "Nuevo Contratista"
+
+msgid "New Cost Center"
+msgstr "Nuevo Centro de Costos"
 
 msgid "New Credit / Debit Memo"
 msgstr "Nuevo Memorándum de Crédito / Débito"
@@ -8157,6 +8317,9 @@ msgstr "Sin impresora configurada"
 msgid "No printers configured. Click \"Add Printer\" to create one."
 msgstr "No hay impresoras configuradas. Haz clic en \"Agregar impresora\" para crear una."
 
+msgid "No process selected"
+msgstr "Ningún proceso seleccionado"
+
 msgid "No Quote"
 msgstr "Sin Cotización"
 
@@ -8439,6 +8602,12 @@ msgstr "Despachos Abiertos"
 msgid "Open in Carbon"
 msgstr "Abrir en Carbon"
 
+msgid "Open in change order {ids}. Release it to create new versions or revisions."
+msgstr ""
+
+msgid "Open in change orders {ids}. Release them to create new versions or revisions."
+msgstr ""
+
 msgid "Open in MES"
 msgstr "Abrir en MES"
 
@@ -8720,6 +8889,9 @@ msgstr "Parámetros"
 msgid "Parent cost center"
 msgstr "pieza"
 
+msgid "Parent Cost Center"
+msgstr "Centro de Costos Principal"
+
 msgid "Parent Department"
 msgstr "Departamento Principal"
 
@@ -8881,6 +9053,9 @@ msgstr "Perfecto para evaluación de bajo costo"
 
 msgid "Period"
 msgstr "Período"
+
+msgid "Period End"
+msgstr "Fin del Período"
 
 msgid "Periodic depreciation expense for fixed assets"
 msgstr "La selección ofrece entidades rastreadas en orden de vencimiento más antiguo primero, por lo que el inventario que expira más pronto se agota primero de forma predeterminada."
@@ -9677,6 +9852,9 @@ msgstr "plantéalo temprano y plantéalo claramente. Un problema identificado en
 msgid "Rate Limit"
 msgstr "Límite de Velocidad"
 
+msgid "Ratio"
+msgstr "Relación"
+
 msgid "Raw Materials"
 msgstr "Materias Primas"
 
@@ -9961,6 +10139,9 @@ msgstr "Eliminar"
 msgid "Remove {0}"
 msgstr "Eliminar {0}"
 
+msgid "Remove {label}"
+msgstr "Eliminar {label}"
+
 msgid "Remove condition"
 msgstr "Eliminar condición"
 
@@ -10215,6 +10396,9 @@ msgstr "Impuesto a las ventas de cargo inverso (predeterminado)"
 msgid "Reverse the related journal entries"
 msgstr "Revertir los asientos de diario relacionados"
 
+msgid "Reversed"
+msgstr "Revertido"
+
 msgid "Review each item's changes, then confirm — releasing can't be undone."
 msgstr "Revisa los cambios de cada elemento y confirma — liberar no se puede deshacer."
 
@@ -10350,6 +10534,9 @@ msgstr "Ejecutar sesiones prácticas y aprobar a tu equipo"
 
 msgid "Run hands-on sessions with your champions"
 msgstr "Realizar sesiones prácticas con sus campeones"
+
+msgid "Run ID"
+msgstr "ID de Ejecución"
 
 msgid "Run month-end close and standard reconciliations"
 msgstr "Ejecutar cierre de fin de mes y conciliaciones estándar"
@@ -10677,12 +10864,18 @@ msgstr "Selecciona un aprobador predeterminado"
 msgid "Select a new owner"
 msgstr "Selecciona un nuevo propietario"
 
+msgid "Select a new parent group for this account."
+msgstr "Selecciona un nuevo grupo principal para esta cuenta."
+
 msgid "Select a plan"
 msgstr "Selecciona un plan"
 
 #. placeholder {0}: plans[0].stripeTrialPeriodDays
 msgid "Select a plan to get started. You won't be charged for the first {0} days. Switch or cancel anytime."
 msgstr "Selecciona un plan para comenzar. No se te cobrará durante los primeros {0} días. Cambia o cancela en cualquier momento."
+
+msgid "Select a process first to choose its supplier."
+msgstr "Seleccione primero un proceso para elegir su proveedor."
 
 msgid "Select a project"
 msgstr "Selecciona un proyecto"
@@ -10707,6 +10900,9 @@ msgstr "Selecciona primero una sustancia para ver las opciones disponibles"
 
 msgid "Select a team"
 msgstr "Selecciona un equipo"
+
+msgid "Select account"
+msgstr "Seleccionar cuenta"
 
 msgid "Select all"
 msgstr "Seleccionar todo"
@@ -11246,6 +11442,9 @@ msgstr "Omita el estado liberado pero no iniciado: el trabajo comienza inmediata
 
 msgid "Skipped"
 msgstr "Omitido"
+
+msgid "Slack"
+msgstr "Slack"
 
 msgid "Smoke-test the core daily flows end to end"
 msgstr "Prueba de humo de los flujos diarios principales de principio a fin"
@@ -12906,6 +13105,9 @@ msgstr "Herramientas"
 msgid "Top-level classification (asset / liability / equity / revenue / expense); set only on root groups, inherited by children."
 msgstr "Clasificación de nivel superior (activo/pasivo/patrimonio/ingresos/gastos); establecido solo en grupos raíz, heredado por hijos."
 
+msgid "Topic"
+msgstr "Tema"
+
 msgid "Total"
 msgstr "Total"
 
@@ -13200,6 +13402,9 @@ msgstr "Desbloquear"
 msgid "Unmapped Extracted Lines"
 msgstr "Líneas Extraídas Sin Asignar"
 
+msgid "Unmatched"
+msgstr "Sin emparejar"
+
 msgid "Unpick"
 msgstr "Desmarcar"
 
@@ -13486,6 +13691,9 @@ msgstr "Varianza por ajustes de conteo de inventario físico"
 msgid "Variance in outside processing costs"
 msgstr "Varianza en los costos de procesamiento externo"
 
+msgid "Variance only"
+msgstr "Solo varianza"
+
 msgid "VAT Number"
 msgstr "Número de IVA"
 
@@ -13527,6 +13735,9 @@ msgstr "Ver Cotizaciones Activas"
 
 msgid "View All"
 msgstr "Ver todo"
+
+msgid "View Asset"
+msgstr "Ver Activo"
 
 msgid "View Assigned Jobs"
 msgstr "Ver trabajos asignados"
@@ -13572,6 +13783,9 @@ msgstr "Ver Problema"
 
 msgid "View Item Master"
 msgstr "Ver Maestro de Artículos"
+
+msgid "View Journal Entry"
+msgstr "Ver Asiento de Diario"
 
 msgid "View Lists"
 msgstr "Ver Listas"
@@ -13647,6 +13861,9 @@ msgstr "Ver Recepción"
 
 msgid "View Receivables"
 msgstr "Ver Cuentas por Cobrar"
+
+msgid "View Run"
+msgstr "Ver Ejecución"
 
 msgid "View Scheduled"
 msgstr "Ver Programado"

@@ -86,6 +86,8 @@ export async function action({ request }: ActionFunctionArgs) {
 
 function getNotificationEvent(table: string): NotificationEvent | null {
   switch (table) {
+    case "purchasingRfq":
+      return NotificationEvent.PurchasingRfqAssignment;
     case "salesRfq":
       return NotificationEvent.SalesRfqAssignment;
     case "quote":

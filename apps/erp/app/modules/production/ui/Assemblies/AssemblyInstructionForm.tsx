@@ -18,6 +18,7 @@ import { LuCircleCheck, LuInfo, LuTriangleAlert } from "react-icons/lu";
 import type { z } from "zod";
 import { Hidden, Item, Submit } from "~/components/Form";
 import { usePermissions } from "~/hooks";
+import type { MethodItemType } from "~/modules/shared";
 import { path } from "~/utils/path";
 import {
   assemblyInstructionFromItemValidator,
@@ -50,6 +51,8 @@ const AssemblyInstructionForm = ({
   const [modelStatus, setModelStatus] = useState<ModelStatus>({
     state: "idle"
   });
+
+  const [itemType, setItemType] = useState<MethodItemType | "Item">("Item");
 
   // Mirrors getModelForItem on the server: conversion is lazy, so any STEP
   // model is usable — the state just tells the user what will happen on save
@@ -174,7 +177,8 @@ const AssemblyInstructionForm = ({
                   <Item
                     name="itemId"
                     label="Item"
-                    type="Item"
+                    type={itemType}
+                    onTypeChange={setItemType}
                     replenishmentSystem="Make"
                     onChange={(selected) => {
                       checkModel(selected?.value ?? "");

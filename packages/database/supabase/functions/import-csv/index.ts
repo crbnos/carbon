@@ -23,6 +23,7 @@ const importCsvValidator = z.object({
     "material",
     "bom",
     "operations",
+    "partWithMethod",
     "part",
     "supplier",
     "supplierContact",
@@ -2272,7 +2273,8 @@ serve(async (req: Request) => {
         break;
       }
       case "bom":
-      case "operations": {
+      case "operations":
+      case "partWithMethod": {
         await importMethods(db, {
           table,
           mappedRecords,

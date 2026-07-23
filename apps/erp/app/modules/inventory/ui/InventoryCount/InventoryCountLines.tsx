@@ -1,4 +1,4 @@
-import { Badge, HStack, Skeleton, toast, VStack } from "@carbon/react";
+import { Badge, HStack, Skeleton, Switch, toast, VStack } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
 import type { PostgrestSingleResponse } from "@supabase/supabase-js";
 import type { ColumnDef } from "@tanstack/react-table";
@@ -27,10 +27,18 @@ import { EditableNumber } from "~/components/Editable";
 import { Enumerable } from "~/components/Enumerable";
 import { useStorageUnits } from "~/components/Form/StorageUnit";
 import { useFilters } from "~/components/Table/components/Filter/useFilters";
+import { useUrlParams } from "~/hooks";
 import type { InventoryCountLine } from "~/modules/inventory";
 import { inventoryItemTypes } from "~/modules/inventory";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
+
+// Quick-filter toggles write full `filter` URL params (column:operator:value)
+// so the loader's generic query filters apply them server-side — required
+// because pagination is server-side. `useFilters().addFilter` can't express
+// these operators (it hardcodes eq/contains), so the raw strings are toggled.
+const IN_STOCK_FILTER = "systemQuantity:gt:0";
+const VARIANCE_FILTER = "variance:neq:0";
 
 type InventoryCountLinesProps = {
   lines: InventoryCountLine[];
@@ -107,6 +115,38 @@ const InventoryCountLines = ({
     "materialSubstanceId"
   )?.[0];
   const materialFormId = activeFilters.getFilter("materialFormId")?.[0];
+
+  const [params, setParams] = useUrlParams();
+  const filterParams = params.getAll("filter").filter(Boolean);
+  const toggleQuickFilter = (filter: string) => {
+    setParams({
+      filter: filterParams.includes(filter)
+        ? filterParams.filter((f) => f !== filter)
+        : filterParams.concat(filter),
+      // Changing the result set invalidates the current page — reset paging
+      // the same way SearchFilter does.
+      offset: null
+    });
+  };
+
+  // Both quick filters derive from the withheld System Qty, so blind counts
+  // (hideSystemQuantity) get no toggles at all.
+  const quickFilters = hideSystemQuantity ? undefined : (
+    <HStack spacing={2} className="pl-2">
+      <Switch
+        variant="small"
+        label={t`In stock only`}
+        checked={filterParams.includes(IN_STOCK_FILTER)}
+        onCheckedChange={() => toggleQuickFilter(IN_STOCK_FILTER)}
+      />
+      <Switch
+        variant="small"
+        label={t`Variance only`}
+        checked={filterParams.includes(VARIANCE_FILTER)}
+        onCheckedChange={() => toggleQuickFilter(VARIANCE_FILTER)}
+      />
+    </HStack>
+  );
 
   // Inline edits persist one line at a time through the `lines.update` route
   // action, which enforces the Draft-only guard server-side and stamps the count
@@ -631,6 +671,7 @@ const InventoryCountLines = ({
             : undefined
         }
         primaryAction={primaryAction}
+        headerActions={quickFilters}
         title={title ?? t`Lines`}
         titleBadge={titleBadge}
         withInlineEditing={!isReadOnly}

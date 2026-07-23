@@ -3218,6 +3218,48 @@ export async function upsertJobMaterialMakeMethod(
   return { data: null, error: null };
 }
 
+/**
+ * Resolve a job material's child make-method id and pull its source item's
+ * method (BOM + operations) into it. Shared by the job-material create and edit
+ * routes: both flip a material to "Make to Order" and must populate the newly
+ * created child make method.
+ */
+export async function pullJobMaterialMakeMethod(
+  client: SupabaseClient<Database>,
+  args: {
+    jobMaterialId: string;
+    itemId: string;
+    companyId: string;
+    userId: string;
+  }
+) {
+  const materialMakeMethod = await client
+    .from("jobMaterialWithMakeMethodId")
+    .select("jobMaterialMakeMethodId")
+    .eq("id", args.jobMaterialId)
+    .eq("companyId", args.companyId)
+    .single();
+
+  if (
+    materialMakeMethod.error ||
+    !materialMakeMethod.data?.jobMaterialMakeMethodId
+  ) {
+    return {
+      data: null,
+      error: (materialMakeMethod.error ?? {
+        message: "Failed to resolve job material make method"
+      }) as PostgrestError
+    };
+  }
+
+  return upsertJobMaterialMakeMethod(client, {
+    sourceId: args.itemId,
+    targetId: materialMakeMethod.data.jobMaterialMakeMethodId,
+    companyId: args.companyId,
+    userId: args.userId
+  });
+}
+
 export async function upsertMakeMethodFromJob(
   client: SupabaseClient<Database>,
   jobMethod: {

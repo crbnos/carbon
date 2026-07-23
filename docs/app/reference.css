@@ -19,7 +19,7 @@
 .reference-desc {
   font-size: 1.0625rem !important;
   line-height: 1.6;
-  color: rgba(38, 35, 35, 0.62) !important;
+  color: rgba(38, 35, 35, 0.78) !important;
 }
 
 /* ── Body headings ─────────────────────────────────────────────────────────── */
@@ -41,7 +41,7 @@
 .prose :where(p, li):not(:where([class~="not-prose"] *)) {
   font-size: 0.97rem;
   line-height: 1.72;
-  color: rgba(38, 35, 35, 0.78);
+  color: rgba(38, 35, 35, 0.86);
 }
 
 /* ── Custom dot bullets (matches the Guide's list style) ───────────────────── */

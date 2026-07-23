@@ -6,6 +6,7 @@ import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import {
   jobMaterialValidator,
+  pullJobMaterialMakeMethod,
   recalculateJobMakeMethodRequirements,
   recalculateJobOperationDependencies,
   upsertJobMaterial
@@ -34,6 +35,26 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (validation.error) {
     return validationError(validation.error);
   }
+
+  // Capture the previous methodType so we only pull the subassembly's method on
+  // the transition INTO "Make to Order" (not on every save of a material that is
+  // already Make to Order — that would re-pull and wipe existing edits).
+  const existingMaterial = await client
+    .from("jobMaterial")
+    .select("methodType")
+    .eq("id", id)
+    .eq("companyId", companyId)
+    .single();
+  if (existingMaterial.error) {
+    return data(
+      { id: null },
+      await flash(
+        request,
+        error(existingMaterial.error, "Failed to load job material")
+      )
+    );
+  }
+  const wasMakeToOrder = existingMaterial.data?.methodType === "Make to Order";
 
   const updateJobMaterial = await upsertJobMaterial(client, {
     jobId,
@@ -66,6 +87,28 @@ export async function action({ request, params }: ActionFunctionArgs) {
         error(updateJobMaterial, "Failed to update job material")
       )
     );
+  }
+
+  // On transition Pull/Purchase → Make to Order, pull the subassembly's method
+  // (BOM + operations) into the newly-created child make method, mirroring the
+  // create route. Without this the material flips to Make to Order but stays empty.
+  // `client` here is already service-role (requirePermissions bypassRls).
+  if (validation.data.methodType === "Make to Order" && !wasMakeToOrder) {
+    const makeMethod = await pullJobMaterialMakeMethod(client, {
+      jobMaterialId,
+      itemId: validation.data.itemId,
+      companyId,
+      userId
+    });
+    if (makeMethod.error) {
+      return data(
+        { id: jobMaterialId },
+        await flash(
+          request,
+          error(makeMethod.error, "Failed to insert job material make method")
+        )
+      );
+    }
   }
 
   if (validation.data.methodType === "Make to Order") {

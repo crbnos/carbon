@@ -205,7 +205,10 @@ const Subheading = ({ children, className }: ComponentProps<"p">) => (
 const ModuleCard = ({ module }: { module: Authenticated<NavItem> }) => (
   <Link
     to={module.to}
-    prefetch="intent"
+    prefetch={module.external ? "none" : "intent"}
+    {...(module.external
+      ? { target: "_blank", rel: "noopener noreferrer" }
+      : {})}
     className="flex items-center gap-4 p-4 bg-card/70 backdrop-blur-md rounded-lg border border-border group hover:bg-accent/40 hover:border-foreground/20 cursor-pointer transition-colors duration-200"
   >
     <div className="shrink-0 p-2.5 rounded-lg border border-border group-hover:border-foreground/20 transition-colors">

@@ -1,6 +1,13 @@
 import { supportedLanguages } from "@carbon/locale";
+import { NotificationTopic } from "@carbon/notifications";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
+
+export const notificationPreferenceValidator = z.object({
+  topic: z.nativeEnum(NotificationTopic),
+  channel: z.enum(["email", "slack"]),
+  enabled: z.enum(["true", "false"])
+});
 
 export const onboardingUserValidator = z.object({
   firstName: z.string().min(1, { message: "First name is required" }),

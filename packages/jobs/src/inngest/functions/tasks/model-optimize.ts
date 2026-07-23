@@ -5,6 +5,7 @@ import { inngest } from "../../client";
 import {
   assemblerEnabled,
   internalizeStorageUrl,
+  resolveModelSourceBucket,
   runAssemblerJob
 } from "./assembler-client";
 
@@ -23,10 +24,8 @@ export const modelOptimizeFunction = inngest.createFunction(
   {
     id: "model-optimize",
     retries: 2,
-    // The assembler is CPU-bound; keep per-company fan-out from starving tenants.
-    concurrency: [{ limit: 4 }, { key: "event.data.companyId", limit: 2 }],
     onFailure: async ({ event }) => {
-      const { modelUploadId } = event.data.event.data;
+      const { modelUploadId, companyId } = event.data.event.data;
       const client = getCarbonServiceRole();
       await client
         .from("modelUpload")
@@ -35,6 +34,12 @@ export const modelOptimizeFunction = inngest.createFunction(
           optimizeError: event.data.error.message
         })
         .eq("id", modelUploadId);
+      // A failed optimise must not strand the fat raw for the prune — compact
+      // is cheaper than optimise (no simplify ladder) and often still succeeds.
+      await inngest.send({
+        name: "carbon/model-compact",
+        data: { modelUploadId, companyId }
+      });
     }
   },
   { event: "carbon/model-optimize" },
@@ -54,7 +59,7 @@ export const modelOptimizeFunction = inngest.createFunction(
       const client = getCarbonServiceRole();
       const upload = await client
         .from("modelUpload")
-        .select("id, modelPath")
+        .select("id, modelPath, optimizeStatus, optimizedModelPath")
         .eq("id", modelUploadId)
         .eq("companyId", companyId)
         .single();
@@ -62,6 +67,17 @@ export const modelOptimizeFunction = inngest.createFunction(
         throw new Error(
           `Model upload ${modelUploadId} not found or has no file`
         );
+      }
+      // Already optimised → reuse it, never redo. An optimise is deterministic,
+      // so a successful one is final; only a Failed row is worth re-firing
+      // (that's what the viewer's Retry does). Guards against any caller —
+      // client auto-fire, an errant retry — re-running the assembler on a model
+      // that already has its GLB.
+      if (
+        upload.data.optimizeStatus === "Success" &&
+        upload.data.optimizedModelPath
+      ) {
+        return { alreadyOptimized: true as const };
       }
       // Derive the source format from the stored file, not the caller — every
       // attach point (part/quote/rfq create, generic upload) then triggers with
@@ -74,8 +90,33 @@ export const modelOptimizeFunction = inngest.createFunction(
           .update({ optimizeStatus: "Processing", optimizeError: null })
           .eq("id", modelUploadId);
       }
-      return { modelPath: upload.data.modelPath, format };
+      // Legacy (pre-assembler) raws live in `private`, current ones in
+      // `temp-staging` — signing the wrong bucket 404s.
+      const sourceBucket = await resolveModelSourceBucket(
+        client,
+        upload.data.modelPath
+      );
+      return {
+        modelPath: upload.data.modelPath,
+        format,
+        sourceBucket,
+        alreadyOptimized: false as const
+      };
     });
+
+    if (model.alreadyOptimized) {
+      // Still fire compact — legacy rows optimised before the compact pipeline
+      // (or after a compact failure) may hold an uncompacted fat raw; the
+      // compact function no-ops on already-`.zst` paths.
+      await step.sendEvent("compact", {
+        name: "carbon/model-compact",
+        data: { modelUploadId, companyId }
+      });
+      logger.info("model optimise skipped — already optimised", {
+        modelUploadId
+      });
+      return { modelUploadId, status: "AlreadyOptimized" as const };
+    }
 
     if (!model.format) {
       logger.info("model optimise skipped — not an optimisable mesh format", {
@@ -102,10 +143,9 @@ export const modelOptimizeFunction = inngest.createFunction(
       logger,
       buildBody: async () => {
         const client = getCarbonServiceRole();
-        // Raw source lands in `temp-staging` (2.5 GB cap); optimised artifacts are
-        // written to `private` (50 MB served cap) below.
+        // Optimised artifacts are written to `private` (50 MB served cap) below.
         const source = await client.storage
-          .from("temp-staging")
+          .from(model.sourceBucket)
           .createSignedUrl(model.modelPath, SIGNED_URL_EXPIRY);
         if (source.error) {
           throw new Error(`Failed to sign source URL: ${source.error.message}`);
@@ -156,89 +196,14 @@ export const modelOptimizeFunction = inngest.createFunction(
         .eq("id", modelUploadId);
     });
 
-    // Compact the retained raw so it never lingers as the fat upload. Every
-    // optimisable source (any size) is zstd-compressed IN ITS ORIGINAL FORMAT —
-    // `raw.<ext>.zst` stays a valid STEP/glTF/… that the download route
-    // decompresses back to the source file, and the assembler reads it back
-    // transparently (zstd-decoded on fetch), so plan/convert/reoptimise need no
-    // change. Already-compacted (`.zst`) raws are skipped. Best-effort: a
-    // compaction failure must not fail the already-succeeded optimise (the
-    // scheduled big-raw TTL prune is the safety net).
-    const alreadyCompacted = model.modelPath.toLowerCase().endsWith(".zst");
-    if (!alreadyCompacted) {
-      // Flat, mirroring the original raw (`${id}.step` → `${id}.step.zst`), so the
-      // model id stays recoverable from the path (CadModel's `modelIdFromPath`)
-      // and the download route resolves the underlying format from the extension.
-      const compactPath = `${companyId}/models/${modelUploadId}.${format}.zst`;
-      const compactJobId = `compact-${modelUploadId}`;
-      try {
-        const compact = await runAssemblerJob(step, {
-          idPrefix: "compact",
-          action: "compact",
-          jobId: compactJobId,
-          maxWaitMs: MAX_OPTIMIZE_WAIT_MS,
-          logger,
-          buildBody: async () => {
-            const client = getCarbonServiceRole();
-            const source = await client.storage
-              .from("temp-staging")
-              .createSignedUrl(model.modelPath, SIGNED_URL_EXPIRY);
-            if (source.error) {
-              throw new Error(`sign source: ${source.error.message}`);
-            }
-            return {
-              source: { url: internalizeStorageUrl(source.data.signedUrl) },
-              mode: "zstd",
-              output: { path: compactPath }
-            };
-          },
-          mintUploadUrls: async () => {
-            const client = getCarbonServiceRole();
-            const upload = await client.storage
-              .from("temp-staging")
-              .createSignedUploadUrl(compactPath, { upsert: true });
-            const urls: Record<string, string> = {};
-            if (upload.data)
-              urls.raw = internalizeStorageUrl(upload.data.signedUrl);
-            return urls;
-          }
-        });
-        const compactedSize =
-          (compact.stats as { outputBytes?: number } | null)?.outputBytes ??
-          null;
-
-        await step.run("compact-persist", async () => {
-          const client = getCarbonServiceRole();
-          // Repoint modelPath at the compacted raw and record its (compressed)
-          // stored size so the files list reflects what's actually on disk, then
-          // drop the fat original. Freeze the as-uploaded bytes into
-          // originalSize first (rows from before the column exist with null) —
-          // the viewer's reduction badge compares the ORIGINAL, not the .zst.
-          const existing = await client
-            .from("modelUpload")
-            .select("size, originalSize")
-            .eq("id", modelUploadId)
-            .maybeSingle();
-          await client
-            .from("modelUpload")
-            .update({
-              modelPath: compactPath,
-              ...(existing.data && existing.data.originalSize == null
-                ? { originalSize: existing.data.size }
-                : {}),
-              ...(compactedSize != null ? { size: compactedSize } : {})
-            })
-            .eq("id", modelUploadId);
-          await client.storage.from("temp-staging").remove([model.modelPath]);
-        });
-        logger.info("raw compacted", { modelUploadId, compactPath });
-      } catch (err) {
-        logger.warn("raw compaction skipped", {
-          modelUploadId,
-          error: (err as Error).message
-        });
-      }
-    }
+    // Compact the retained raw (STEP → `.xbf.zst`, mesh → `.{ext}.zst`) in its
+    // own function with its own retries — decoupled so this optimise's outcome
+    // never decides whether the raw survives (see model-compact.ts; onFailure
+    // fires the same event).
+    await step.sendEvent("compact", {
+      name: "carbon/model-compact",
+      data: { modelUploadId, companyId }
+    });
 
     logger.info("model optimise finalized", { modelUploadId, stats });
     return { modelUploadId, status: "Success" as const };

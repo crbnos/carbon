@@ -254,6 +254,61 @@ const JobEstimatesVsActuals = ({
     return notes;
   };
 
+  const getProcessesTotals = () => {
+    let totalEstimated = 0;
+    let totalActual = 0;
+    let totalComplete = 0;
+    let totalScrap = 0;
+
+    operations.forEach((op) => {
+      if (op.operationType !== "Outside") {
+        const est = getEstimatedTime(op);
+        const act = getActualTime(op);
+        totalEstimated += est.total;
+        totalActual += act.total;
+        totalComplete += getCompleteQuantity(op);
+        totalScrap += getScrapQuantity(op);
+      }
+    });
+
+    return {
+      estimated: totalEstimated,
+      actual: totalActual,
+      percentage: totalEstimated > 0 ? totalActual / totalEstimated : 0,
+      complete: totalComplete,
+      scrap: totalScrap
+    };
+  };
+
+  const getMaterialsTotals = () => {
+    let totalEstimatedQty = 0;
+    let totalActualQty = 0;
+    let totalEstimatedCost = 0;
+    let totalActualCost = 0;
+
+    materials?.forEach((m) => {
+      if (m.methodType !== "Make to Order") {
+        totalEstimatedQty += m.estimatedQuantity ?? 0;
+        totalActualQty += m.quantityIssued ?? 0;
+        const currentCost = currentUnitCosts[m.itemId] ?? 0;
+        totalEstimatedCost += (m.estimatedQuantity ?? 0) * (m.unitCost ?? 0);
+        totalActualCost += (m.quantityIssued ?? 0) * currentCost;
+      }
+    });
+
+    return {
+      estimatedQty: totalEstimatedQty,
+      actualQty: totalActualQty,
+      percentage:
+        totalEstimatedQty > 0 ? totalActualQty / totalEstimatedQty : 0,
+      estimatedCost: totalEstimatedCost,
+      actualCost: totalActualCost
+    };
+  };
+
+  const processesTotals = getProcessesTotals();
+  const materialsTotals = getMaterialsTotals();
+
   return (
     <Tabs defaultValue="processes" className="w-full">
       <Card>
@@ -514,14 +569,36 @@ const JobEstimatesVsActuals = ({
                 })}
               </Tbody>
               <Tfoot>
-                {/* <Tr className="font-bold">
-              <Td className="border-r border-border" />
-              {types.map((type) => (
-                <Td key={type}>
-                  <Button variant="secondary"><Trans>Add</Trans></Button>
-                </Td>
-              ))}
-            </Tr> */}
+                <Tr className="font-bold bg-muted/50">
+                  <Td className="border-r border-border px-2">
+                    <Trans>Total</Trans>
+                  </Td>
+                  <Td className="px-2">
+                    {formatDurationMilliseconds(processesTotals.estimated)}
+                  </Td>
+                  <Td
+                    className={cn(
+                      "px-2",
+                      processesTotals.actual > processesTotals.estimated &&
+                        "text-red-500"
+                    )}
+                  >
+                    {formatDurationMilliseconds(processesTotals.actual)}
+                  </Td>
+                  <Td
+                    className={cn(
+                      processesTotals.actual > processesTotals.estimated &&
+                        "text-red-500"
+                    )}
+                  >
+                    {processesTotals.estimated > 0
+                      ? percentFormatter.format(processesTotals.percentage)
+                      : null}
+                  </Td>
+                  <Td className="px-2">{processesTotals.complete}</Td>
+                  <Td className="px-2">{processesTotals.scrap}</Td>
+                  <Td className="px-2" />
+                </Tr>
               </Tfoot>
             </Table>
           </TabsContent>
@@ -628,6 +705,54 @@ const JobEstimatesVsActuals = ({
                   );
                 })}
               </Tbody>
+              <Tfoot>
+                <Tr className="font-bold bg-muted/50">
+                  <Td className="border-r border-border">
+                    <Trans>Total</Trans>
+                  </Td>
+                  <Td>{materialsTotals.estimatedQty || null}</Td>
+                  <Td
+                    className={cn(
+                      materialsTotals.actualQty >
+                        materialsTotals.estimatedQty && "text-red-500"
+                    )}
+                  >
+                    {materialsTotals.actualQty || null}
+                  </Td>
+                  <Td
+                    className={cn(
+                      materialsTotals.actualQty >
+                        materialsTotals.estimatedQty && "text-red-500"
+                    )}
+                  >
+                    {materialsTotals.estimatedQty > 0
+                      ? percentFormatter.format(materialsTotals.percentage)
+                      : null}
+                  </Td>
+                  <Td>
+                    <VStack spacing={0} className="py-1">
+                      <span className="text-sm">
+                        {currencyFormatter.format(
+                          materialsTotals.estimatedCost
+                        )}
+                      </span>
+                    </VStack>
+                  </Td>
+                  <Td>
+                    <VStack spacing={0} className="py-1">
+                      <span
+                        className={cn(
+                          "text-sm",
+                          materialsTotals.actualCost >
+                            materialsTotals.estimatedCost && "text-red-500"
+                        )}
+                      >
+                        {currencyFormatter.format(materialsTotals.actualCost)}
+                      </span>
+                    </VStack>
+                  </Td>
+                </Tr>
+              </Tfoot>
             </Table>
           </TabsContent>
         </CardContent>

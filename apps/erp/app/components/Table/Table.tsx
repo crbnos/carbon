@@ -102,6 +102,9 @@ interface TableProps<T extends object> {
     label: string;
   }[];
   primaryAction?: ReactNode;
+  // Optional controls rendered in the toolbar row next to the search/filter
+  // (e.g. quick filter toggles that write their own `filter` URL params).
+  headerActions?: ReactNode;
   table?: string;
   title?: string;
   // Optional node rendered immediately after the title (e.g. a status badge).
@@ -252,6 +255,7 @@ const Table = <T extends object>({
   editableComponents,
   importCSV,
   primaryAction,
+  headerActions,
   table: tableName,
   title,
   titleBadge,
@@ -985,6 +989,7 @@ const Table = <T extends object>({
         importCSV={importCSV}
         pagination={pagination}
         primaryAction={primaryAction}
+        headerActions={headerActions}
         renderActions={renderActions}
         selectedRows={selectedRows}
         setColumnOrder={setColumnOrder}
