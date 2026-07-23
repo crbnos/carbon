@@ -1,5 +1,9 @@
 import type { CalendarDate } from "@internationalized/date";
-import { isSameMonth } from "@internationalized/date";
+import {
+  getLocalTimeZone,
+  isToday as isDateToday,
+  isSameMonth
+} from "@internationalized/date";
 import { useCalendarCell } from "@react-aria/calendar";
 import type {
   CalendarState,
@@ -32,9 +36,10 @@ export const CalendarCell = ({
   } = useCalendarCell({ date }, state, ref);
 
   const isOutsideMonth = !isSameMonth(currentMonth, date);
+  const isToday = isDateToday(date, getLocalTimeZone());
 
   return (
-    <Td {...cellProps} className="border-none text-center p-1">
+    <Td {...cellProps} className="border-none text-center p-1 relative">
       <Button
         {...buttonProps}
         ref={ref}
@@ -58,6 +63,17 @@ export const CalendarCell = ({
       >
         {formattedDate}
       </Button>
+      {isToday && !isOutsideMonth && (
+        <span
+          className={clsx(
+            "absolute w-1 h-1 bottom-1 rounded-full left-1/2 transform -translate-x-1/2",
+            {
+              "bg-primary-foreground": isSelected,
+              "bg-primary": !isSelected
+            }
+          )}
+        />
+      )}
     </Td>
   );
 };
