@@ -30,7 +30,7 @@ RETURNS TABLE (
     "kit" BOOLEAN,
     "revision" TEXT,
     "externalId" JSONB,
-    "version" NUMERIC(10,2),
+    "version" NUMERIC,
     "storageUnitId" TEXT,
     "materialTrackingType" "itemTrackingType"
 ) AS $$

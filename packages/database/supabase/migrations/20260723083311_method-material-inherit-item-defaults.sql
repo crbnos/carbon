@@ -1,4 +1,5 @@
--- Single owner for the "inherit unless overridden" invariant on INSERT.
+-- Single owner for the "inherit unless overridden" invariant on INSERT, plus
+-- the tracking-override guard on both INSERT and UPDATE.
 --
 -- methodMaterial's mirror columns (sourcingType, replenishmentSystem,
 -- itemTrackingType) must equal the component item's values unless the matching
@@ -13,10 +14,19 @@
 -- every insert path is correct by construction. methodType is deliberately NOT
 -- touched: on copy-backs it encodes tree structure (a Make to Order line owns a
 -- sub-method via materialMakeMethodId), so it is writer-owned, not a mirror.
--- UPDATE paths are also untouched: upsertMethodMaterial re-derives on edit, and
--- the item->line cascades already guard per-field; an UPDATE trigger would
--- re-sync lines on frozen (Active/Archived) methods as a side effect of
--- unrelated edits.
+--
+-- The tracking override is only valid between Inventory and Non-Inventory: a
+-- Serial/Batch component must mirror the item (the BoM editor hides the
+-- control), and a line can never be made Serial/Batch on its own. The app layer
+-- honors this, but a direct write (API/MCP upsert) could set
+-- "itemTrackingTypeOverridden" = true with a value the issue function would act
+-- on — e.g. a Serial component treated as Non-Inventory, skipping its stock
+-- ledger entry. So the function clamps illegal tracking overrides (clamp, not
+-- reject: pre-existing insert paths rely on this trigger to fix their values)
+-- and a second, narrow BEFORE UPDATE OF trigger applies the same clamp on
+-- edits. The UPDATE path stops at the clamp — upsertMethodMaterial re-derives
+-- mirrors on edit, and re-syncing here would touch lines on frozen
+-- (Active/Archived) methods as a side effect of unrelated edits.
 
 CREATE OR REPLACE FUNCTION public.method_material_inherit_item_defaults()
 RETURNS TRIGGER AS $$
@@ -27,12 +37,6 @@ BEGIN
     RETURN NEW;
   END IF;
 
-  IF NEW."sourcingTypeOverridden"
-     AND NEW."replenishmentSystemOverridden"
-     AND NEW."itemTrackingTypeOverridden" THEN
-    RETURN NEW;
-  END IF;
-
   SELECT "sourcingType", "replenishmentSystem", "itemTrackingType"
     INTO v_item
     FROM "item"
@@ -40,6 +44,18 @@ BEGIN
      AND "companyId" = NEW."companyId";
 
   IF NOT FOUND THEN
+    RETURN NEW;
+  END IF;
+
+  -- Tracking-override guard: overrides are only valid between Inventory and
+  -- Non-Inventory. Runs on both INSERT and UPDATE.
+  IF v_item."itemTrackingType" IN ('Serial', 'Batch')
+     OR NEW."itemTrackingType" IN ('Serial', 'Batch') THEN
+    NEW."itemTrackingType" := v_item."itemTrackingType";
+    NEW."itemTrackingTypeOverridden" := false;
+  END IF;
+
+  IF TG_OP = 'UPDATE' THEN
     RETURN NEW;
   END IF;
 
@@ -63,19 +79,34 @@ CREATE TRIGGER "methodMaterialInheritItemDefaults"
   FOR EACH ROW
   EXECUTE FUNCTION public.method_material_inherit_item_defaults();
 
+-- Narrow UPDATE trigger: only fires when the tracking columns are written, so
+-- unrelated edits on frozen (Active/Archived) methods never re-sync anything.
+DROP TRIGGER IF EXISTS "methodMaterialTrackingOverrideGuard" ON "methodMaterial";
+CREATE TRIGGER "methodMaterialTrackingOverrideGuard"
+  BEFORE UPDATE OF "itemTrackingType", "itemTrackingTypeOverridden" ON "methodMaterial"
+  FOR EACH ROW
+  EXECUTE FUNCTION public.method_material_inherit_item_defaults();
+
 -- Repair rows already written by the pre-trigger insert paths. Tracking type
 -- re-syncs on every method status (no interlock, live-mirror semantics — the
--- issue function used to read the live item). sourcingType/replenishmentSystem
--- re-sync Draft methods only: they are interlocked with the Draft-gated
--- methodType, and updating them on a frozen method would create pairs
--- getValidMethodTypes forbids. Overridden fields are untouched.
+-- issue function used to read the live item), and any illegal override (flag
+-- set on a Serial/Batch component, or a line claiming Serial/Batch) is reset
+-- to inherit. sourcingType/replenishmentSystem re-sync Draft methods only:
+-- they are interlocked with the Draft-gated methodType, and updating them on a
+-- frozen method would create pairs getValidMethodTypes forbids. Legal
+-- overridden fields are untouched.
 UPDATE "methodMaterial" mm
-SET "itemTrackingType" = i."itemTrackingType"
+SET "itemTrackingType" = i."itemTrackingType",
+    "itemTrackingTypeOverridden" = mm."itemTrackingTypeOverridden"
+      AND i."itemTrackingType" NOT IN ('Serial', 'Batch')
+      AND mm."itemTrackingType" NOT IN ('Serial', 'Batch')
 FROM "item" i
 WHERE i."id" = mm."itemId"
   AND i."companyId" = mm."companyId"
-  AND NOT mm."itemTrackingTypeOverridden"
-  AND mm."itemTrackingType" IS DISTINCT FROM i."itemTrackingType";
+  AND (
+    (NOT mm."itemTrackingTypeOverridden" AND mm."itemTrackingType" IS DISTINCT FROM i."itemTrackingType") OR
+    (mm."itemTrackingTypeOverridden" AND (i."itemTrackingType" IN ('Serial', 'Batch') OR mm."itemTrackingType" IN ('Serial', 'Batch')))
+  );
 
 UPDATE "methodMaterial" mm
 SET "sourcingType" = CASE WHEN mm."sourcingTypeOverridden" THEN mm."sourcingType" ELSE i."sourcingType" END,
