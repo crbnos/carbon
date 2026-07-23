@@ -1,8 +1,12 @@
 import {
+  Badge,
   IconButton,
   Popover,
   PopoverContent,
-  PopoverTrigger
+  PopoverTrigger,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger
 } from "@carbon/react";
 import posthog from "posthog-js";
 import { useEffect, useState } from "react";
@@ -66,7 +70,20 @@ export function AgentPanel() {
       }`}
     >
       <div className="flex items-center justify-between px-3 h-11 border-b shrink-0">
-        <span className="text-sm font-semibold">Ask a question</span>
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-semibold">Ask a question</span>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Badge variant="blue" className="cursor-default">
+                Beta
+              </Badge>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">
+              This assistant is in beta and constantly improving — answers may
+              be incomplete.
+            </TooltipContent>
+          </Tooltip>
+        </div>
         <div className="flex items-center gap-1">
           <AgentBlockViewer setMessages={setMessages} />
           <IconButton
