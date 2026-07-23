@@ -115,6 +115,8 @@ const JobTravelerPDF = ({
   job,
   jobMakeMethod,
   jobOperations,
+  includeMaterials,
+  jobMaterials,
   customer,
   item,
   batchNumber,
@@ -165,6 +167,8 @@ const JobTravelerPDF = ({
         company={company}
         job={job}
         jobOperations={jobOperations}
+        includeMaterials={includeMaterials}
+        jobMaterials={jobMaterials}
         customer={customer}
         item={item}
         batchNumber={batchNumber}

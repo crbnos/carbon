@@ -1477,11 +1477,13 @@ export async function getJobMaterialsByMethodId(
  */
 export async function getJobMaterialsForTraveler(
   client: SupabaseClient<Database>,
+  companyId: string,
   jobMakeMethodId: string
 ) {
   return client
     .from("jobMaterial")
     .select("*, item(readableIdWithRevision, name)")
+    .eq("companyId", companyId)
     .eq("jobMakeMethodId", jobMakeMethodId)
     .order("order", { ascending: true });
 }

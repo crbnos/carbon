@@ -121,7 +121,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
           .eq("id", makeMethod.itemId ?? "")
           .single(),
         includeMaterials
-          ? getJobMaterialsForTraveler(serviceRole, makeMethod.id)
+          ? getJobMaterialsForTraveler(serviceRole, companyId, makeMethod.id)
           : Promise.resolve({ data: [], error: null })
       ]);
 

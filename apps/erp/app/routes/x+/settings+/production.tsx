@@ -95,10 +95,18 @@ export async function action({ request }: ActionFunctionArgs) {
       enabled
     );
 
-    if (update.error) return { success: false, message: update.error.message };
+    // Report the authoritative persisted value back so the client can reconcile
+    // its optimistic switch state: on failure the setting is unchanged (!enabled).
+    if (update.error)
+      return {
+        success: false,
+        enabled: !enabled,
+        message: update.error.message
+      };
 
     return {
       success: true,
+      enabled,
       message: enabled
         ? "Materials will be included on the job traveler"
         : "Materials will not be included on the job traveler"
@@ -142,13 +150,23 @@ export default function ProductionSettingsRoute() {
   );
 
   useEffect(() => {
-    if (toggleFetcher.data?.success === true && toggleFetcher?.data?.message) {
-      toast.success(toggleFetcher.data.message);
+    const data = toggleFetcher.data;
+    if (!data) return;
+
+    if (data.success === true && data.message) {
+      toast.success(data.message);
     }
-    if (toggleFetcher.data?.success === false && toggleFetcher?.data?.message) {
-      toast.error(toggleFetcher.data.message);
+    if (data.success === false && data.message) {
+      toast.error(data.message);
     }
-  }, [toggleFetcher.data?.message, toggleFetcher.data?.success]);
+
+    // Reconcile the optimistic switch with the value the server actually
+    // persisted (unchanged on failure), so a failed write can't leave the
+    // toggle displaying a state that was never saved.
+    if ("enabled" in data && typeof data.enabled === "boolean") {
+      setIncludeMaterialsOnTraveler(data.enabled);
+    }
+  }, [toggleFetcher.data]);
 
   return (
     <ScrollArea className="w-full h-[calc(100dvh-49px)]">

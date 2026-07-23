@@ -594,7 +594,7 @@ msgid "Add a custom pricing row to override quantity, price, shipping, lead time
 msgstr "Agregue una fila de precios personalizada para anular cantidad, precio, envío, tiempo de entrega e impuestos"
 
 msgid "Add a materials section to the job traveler PDF listing the required parts and quantities for each make method."
-msgstr ""
+msgstr "Agregue una sección de materiales al PDF del viajero de trabajo que enumere las piezas y cantidades necesarias para cada método de fabricación."
 
 msgid "Add a printer in the printing settings to print labels directly."
 msgstr "Añade una impresora en la configuración de impresión para imprimir etiquetas directamente."
@@ -6341,7 +6341,7 @@ msgid "Include Inactive"
 msgstr "Incluir Inactivos"
 
 msgid "Include Materials"
-msgstr ""
+msgstr "Incluir materiales"
 
 msgid "Included"
 msgstr "Incluido"
@@ -6773,7 +6773,7 @@ msgid "Job Operations"
 msgstr "Operaciones de Trabajo"
 
 msgid "Job Traveler"
-msgstr ""
+msgstr "Viajero de trabajo"
 
 msgid "Jobs"
 msgstr "Trabajos"
