@@ -3,6 +3,7 @@ export type {
   BlockRenderer,
   JobOperationWithSteps,
   JobTravelerData,
-  JobTravelerMaterial
+  JobTravelerMaterial,
+  MaterialsLabels
 } from "./types";
 export { buildJobTravelerVars } from "./vars";

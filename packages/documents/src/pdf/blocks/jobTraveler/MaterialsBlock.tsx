@@ -11,10 +11,12 @@ export function MaterialsBlock({ data }: { data: JobTravelerData }) {
   const materials = data.jobMaterials ?? [];
   if (!data.includeMaterials || materials.length === 0) return null;
 
+  const labels = data.materialsLabels;
+
   return (
     <View style={tw("mb-6 text-xs")}>
       <Text style={tw("text-[9px] font-bold text-gray-600 uppercase mb-2")}>
-        Materials
+        {labels?.heading ?? "Materials"}
       </Text>
 
       <View
@@ -22,9 +24,15 @@ export function MaterialsBlock({ data }: { data: JobTravelerData }) {
           "flex flex-row justify-between items-center py-3 px-[6px] border-t border-b border-gray-300 font-bold uppercase page-break-inside-avoid gap-x-6"
         )}
       >
-        <Text style={tw("w-4/12 text-left")}>Material</Text>
-        <Text style={tw("w-5/12 text-left")}>Description</Text>
-        <Text style={tw("w-3/12 text-right")}>Quantity</Text>
+        <Text style={tw("w-4/12 text-left")}>
+          {labels?.material ?? "Material"}
+        </Text>
+        <Text style={tw("w-5/12 text-left")}>
+          {labels?.description ?? "Description"}
+        </Text>
+        <Text style={tw("w-3/12 text-right")}>
+          {labels?.quantity ?? "Quantity"}
+        </Text>
       </View>
 
       {materials.map((material) => {

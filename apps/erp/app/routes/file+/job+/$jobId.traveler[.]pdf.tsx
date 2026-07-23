@@ -4,7 +4,8 @@ import {
   ensureFont,
   Footer,
   getSafeFontFamily,
-  JobTravelerPageContent
+  JobTravelerPageContent,
+  type MaterialsLabels
 } from "@carbon/documents/pdf";
 import {
   collectSectionIds,
@@ -40,6 +41,7 @@ import {
   resolveSections
 } from "~/modules/settings";
 import { getBase64ImageFromSupabase } from "~/modules/shared";
+import { getMaterialsTravelerLabels } from "~/services/lingui.server";
 
 const logger = getLogger("erp", "job-traveler", "pdf");
 
@@ -96,6 +98,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const includeMaterials =
     (companySettings.data as { includeMaterialsOnTraveler?: boolean } | null)
       ?.includeMaterialsOnTraveler ?? false;
+
+  // Resolve the materials-section labels against the request locale so the
+  // opt-in section isn't hardcoded to English. Only built when enabled; falls
+  // back to the source (English) strings when a catalog entry is missing.
+  const materialsLabels: MaterialsLabels | undefined = includeMaterials
+    ? await getMaterialsTravelerLabels(request, locale)
+    : undefined;
 
   const customer = await serviceRole
     .from("customer")
@@ -242,6 +251,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
             jobOperations={data.operations}
             includeMaterials={includeMaterials}
             jobMaterials={data.materials as any}
+            materialsLabels={materialsLabels}
             customer={customer.data}
             item={data.item}
             batchNumber={data.batchNumber}

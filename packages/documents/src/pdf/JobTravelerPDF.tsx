@@ -11,7 +11,8 @@ import {
 import type { PDF } from "../types";
 import type {
   JobTravelerData,
-  JobTravelerMaterial
+  JobTravelerMaterial,
+  MaterialsLabels
 } from "./blocks/jobTraveler";
 import {
   buildJobTravelerVars,
@@ -34,6 +35,7 @@ interface JobTravelerProps extends PDF {
   jobOperations: JobOperationWithSteps[];
   includeMaterials?: boolean;
   jobMaterials?: JobTravelerMaterial[];
+  materialsLabels?: MaterialsLabels;
   customer: Database["public"]["Tables"]["customer"]["Row"] | null;
   item: Database["public"]["Tables"]["item"]["Row"];
   batchNumber: string | undefined;
@@ -71,6 +73,7 @@ function buildData(
     jobOperations: props.jobOperations,
     includeMaterials: props.includeMaterials,
     jobMaterials: props.jobMaterials,
+    materialsLabels: props.materialsLabels,
     customer: props.customer,
     item: props.item,
     batchNumber: props.batchNumber,
@@ -117,6 +120,7 @@ const JobTravelerPDF = ({
   jobOperations,
   includeMaterials,
   jobMaterials,
+  materialsLabels,
   customer,
   item,
   batchNumber,
@@ -169,6 +173,7 @@ const JobTravelerPDF = ({
         jobOperations={jobOperations}
         includeMaterials={includeMaterials}
         jobMaterials={jobMaterials}
+        materialsLabels={materialsLabels}
         customer={customer}
         item={item}
         batchNumber={batchNumber}

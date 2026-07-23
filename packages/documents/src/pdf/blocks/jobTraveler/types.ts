@@ -24,6 +24,18 @@ export type JobTravelerMaterial =
     } | null;
   };
 
+/**
+ * Localized labels for the materials section. The documents package stays
+ * presentation-only: the app's i18n layer resolves these against the request
+ * locale and passes them in, defaulting to English when omitted.
+ */
+export interface MaterialsLabels {
+  heading: string;
+  material: string;
+  description: string;
+  quantity: string;
+}
+
 /** Everything a Job Traveler block renderer might need. */
 export interface JobTravelerData {
   company: Company;
@@ -34,6 +46,8 @@ export interface JobTravelerData {
   includeMaterials?: boolean;
   /** BOM lines for this make method; only populated when `includeMaterials` is set. */
   jobMaterials?: JobTravelerMaterial[];
+  /** Localized materials-section labels; English defaults apply when omitted. */
+  materialsLabels?: MaterialsLabels;
   customer: Database["public"]["Tables"]["customer"]["Row"] | null;
   item: Database["public"]["Tables"]["item"]["Row"];
   batchNumber?: string;
