@@ -59,6 +59,13 @@ export const terms = {
     definition: msg`How an item is replenished overall (Buy, Make, or Buy and Make), set per item, unlike the per-line method type.`,
     href: "/docs/reference/methods#method-type-vs-replenishment-system"
   },
+  "sourcing-type": {
+    term: msg`Sourcing type`,
+    definition: msg`Where a BOM line's part comes from.
+Specified — arrives inside its parent; this line triggers no purchase or stock pull.
+Ship from Inventory — taken from your own stock.
+Drop Ship — a supplier ships it directly for the order.`
+  },
   method: {
     term: msg`Method`,
     definition: msg`Carbon's name for a bill of material and bill of process (routing): the components plus the operations that make a part.`,

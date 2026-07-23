@@ -10146,6 +10146,9 @@ msgstr "Сброс PIN"
 msgid "Reset PIN for {0} {1}"
 msgstr "Сброс PIN для {0} {1}"
 
+msgid "Reset to item default"
+msgstr ""
+
 msgid "Reset View"
 msgstr "Сбросить вид"
 
@@ -11312,6 +11315,9 @@ msgstr "Исходная версия"
 
 msgid "Sourcing"
 msgstr "Источник"
+
+msgid "Sourcing type"
+msgstr ""
 
 msgid "Sourcing Type"
 msgstr "Тип источника"
@@ -14018,6 +14024,13 @@ msgstr "Когда вы обязались доставить; планиров�
 
 msgid "When your fiscal and tax years start"
 msgstr "Когда начинаются ваши финансовый и налоговый годы"
+
+msgid ""
+"Where a BOM line's part comes from.\n"
+"Specified — arrives inside its parent; this line triggers no purchase or stock pull.\n"
+"Ship from Inventory — taken from your own stock.\n"
+"Drop Ship — a supplier ships it directly for the order."
+msgstr ""
 
 msgid "Where an operation runs; carries labor and quoting rates, with overhead the difference between them."
 msgstr "Где работает операция; несет ставки труда и предложения, накладные расходы - разница между ними."

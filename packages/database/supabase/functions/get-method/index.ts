@@ -856,6 +856,12 @@ serve(async (req: Request) => {
                 child.data.itemTrackingType === "Serial";
               let requiresBatchTracking =
                 child.data.itemTrackingType === "Batch";
+              // Per-line tracking-type snapshot: the BoM line's overridable
+              // itemTrackingType (Inventory/Non-Inventory), used by the issue
+              // edge function to decide whether consumption writes a stock
+              // ledger entry. Falls back to the item's live value.
+              let itemTrackingType =
+                child.data.materialTrackingType ?? child.data.itemTrackingType;
 
               // Supersession swap (Buy/Pick lines only). A Make-to-Order line
               // would need its successor's own sub-method re-exploded (a later
@@ -893,6 +899,9 @@ serve(async (req: Request) => {
                     item.data.itemTrackingType === "Serial";
                   requiresBatchTracking =
                     item.data.itemTrackingType === "Batch";
+                  // A substituted line follows the successor item's own
+                  // tracking type (the original line's override does not carry).
+                  itemTrackingType = item.data.itemTrackingType;
                 } else {
                   itemId = child.data.itemId;
                 }
@@ -946,6 +955,7 @@ serve(async (req: Request) => {
                   : undefined,
                 requiresSerialTracking,
                 requiresBatchTracking,
+                itemTrackingType,
                 unitOfMeasureCode,
                 unitCost: unitCost ?? 0,
                 itemScrapPercentage,
@@ -1471,6 +1481,9 @@ serve(async (req: Request) => {
                 requiresBatchTracking: child.data.itemTrackingType === "Batch",
                 requiresSerialTracking:
                   child.data.itemTrackingType === "Serial",
+                itemTrackingType:
+                  child.data.materialTrackingType ??
+                  child.data.itemTrackingType,
                 unitOfMeasureCode: child.data.unitOfMeasureCode,
                 unitCost: child.data.unitCost,
                 itemScrapPercentage,
@@ -1525,6 +1538,7 @@ serve(async (req: Request) => {
               m.unitCost = sup.unitCost ?? m.unitCost;
               m.requiresSerialTracking = sup.requiresSerialTracking;
               m.requiresBatchTracking = sup.requiresBatchTracking;
+              m.itemTrackingType = sup.itemTrackingType;
               m.quantity = (m.quantity ?? 0) * sup.factor;
               m.estimatedQuantity = (m.estimatedQuantity ?? 0) * sup.factor;
               m.scrapQuantity = (m.scrapQuantity ?? 0) * sup.factor;
@@ -2146,17 +2160,22 @@ serve(async (req: Request) => {
 
               // TODO: if the methodType is Make and the default value is not Make, we need to do itemToQuoteMakeMethod for that material
 
+              // Per-line tracking-type snapshot (see jobMaterial.itemTrackingType).
+              let itemTrackingType =
+                child.data.materialTrackingType ?? child.data.itemTrackingType;
+
               if (itemId !== child.data.itemId) {
                 const item = await client
                   .from("item")
                   .select(
-                    "readableIdWithRevision, readableId, type, name, itemCost(unitCost)"
+                    "readableIdWithRevision, readableId, type, name, itemTrackingType, itemCost(unitCost)"
                   )
                   .eq("id", itemId)
                   .eq("companyId", companyId)
                   .single();
                 if (item.data) {
                   itemType = item.data.type;
+                  itemTrackingType = item.data.itemTrackingType;
                   unitCost =
                     item.data.itemCost[0]?.unitCost ?? child.data.unitCost;
                   if (description === child.data.description) {
@@ -2180,6 +2199,7 @@ serve(async (req: Request) => {
                 methodType,
                 description,
                 quantity,
+                itemTrackingType,
                 storageUnitId: quoteLocationId
                   ? // @ts-ignore: storageUnitIds is a dynamic object with location keys
                     (child.data.storageUnitIds?.[quoteLocationId] as string) || null
@@ -2614,6 +2634,8 @@ serve(async (req: Request) => {
               order: child.data.order,
               description: child.data.description,
               quantity: child.data.quantity,
+              itemTrackingType:
+                child.data.materialTrackingType ?? child.data.itemTrackingType,
               storageUnitId: (child.data as any).storageUnitId || null, // @ts-ignore: storageUnitId field exists in database but types may not be updated
               unitOfMeasureCode: child.data.unitOfMeasureCode,
               unitCost: child.data.unitCost ?? 0,
@@ -4455,6 +4477,12 @@ serve(async (req: Request) => {
                     child.data.itemTrackingType === "Batch",
                   requiresSerialTracking:
                     child.data.itemTrackingType === "Serial",
+                  // Per-line snapshot (quoteMaterial.itemTrackingType via the
+                  // tree's materialTrackingType) wins; legacy quote lines fall
+                  // back to the item's live value.
+                  itemTrackingType:
+                    child.data.materialTrackingType ??
+                    child.data.itemTrackingType,
                   unitOfMeasureCode: child.data.unitOfMeasureCode,
                   companyId,
                   createdBy: userId,
@@ -4504,6 +4532,7 @@ serve(async (req: Request) => {
                   m.unitCost = sup.unitCost ?? m.unitCost;
                   m.requiresSerialTracking = sup.requiresSerialTracking;
                   m.requiresBatchTracking = sup.requiresBatchTracking;
+                  m.itemTrackingType = sup.itemTrackingType;
                   m.quantity = (m.quantity ?? 0) * sup.factor;
                   m.estimatedQuantity = (m.estimatedQuantity ?? 0) * sup.factor;
                   m.scrapQuantity = (m.scrapQuantity ?? 0) * sup.factor;
@@ -4795,6 +4824,8 @@ serve(async (req: Request) => {
                         ],
                   quantity: child.data.quantity,
                   storageUnitId: child.data.storageUnitId,
+                  // Copy the source line's snapshot verbatim (null = inherit).
+                  itemTrackingType: child.data.materialTrackingType,
                   unitOfMeasureCode: child.data.unitOfMeasureCode,
                   unitCost: child.data.unitCost, // TODO: get unit cost
                   companyId,
@@ -5283,6 +5314,8 @@ serve(async (req: Request) => {
                           ],
                     quantity: child.data.quantity,
                     storageUnitId: child.data.storageUnitId,
+                    // Copy the source line's snapshot verbatim (null = inherit).
+                    itemTrackingType: child.data.materialTrackingType,
                     unitCost: child.data.unitCost, // TODO: get unit cost
                     unitOfMeasureCode: child.data.unitOfMeasureCode,
                     companyId,
@@ -5612,6 +5645,7 @@ async function swapMadeSubAssembly(opts: {
       unitCost: successorItem.data.itemCost?.[0]?.unitCost ?? 0,
       requiresSerialTracking: successorItem.data.itemTrackingType === "Serial",
       requiresBatchTracking: successorItem.data.itemTrackingType === "Batch",
+      itemTrackingType: successorItem.data.itemTrackingType,
       quantity: (material?.quantity ?? 0) * madeRedirect.factor,
       estimatedQuantity:
         (material?.estimatedQuantity ?? 0) * madeRedirect.factor,
@@ -5655,6 +5689,7 @@ async function resolveJobMaterialSupersession(
   unitCost: number | null;
   requiresSerialTracking: boolean;
   requiresBatchTracking: boolean;
+  itemTrackingType: Database["public"]["Enums"]["itemTrackingType"];
 } | null> {
   if (line.methodType === "Make to Order") return null;
   const r = redirect.get(line.itemId);
@@ -5675,6 +5710,8 @@ async function resolveJobMaterialSupersession(
     unitCost: successor.data.itemCost?.[0]?.unitCost ?? null,
     requiresSerialTracking: successor.data.itemTrackingType === "Serial",
     requiresBatchTracking: successor.data.itemTrackingType === "Batch",
+    // A substituted line follows the successor item's own tracking type.
+    itemTrackingType: successor.data.itemTrackingType,
   };
 }
 

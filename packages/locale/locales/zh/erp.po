@@ -10146,6 +10146,9 @@ msgstr "重置PIN"
 msgid "Reset PIN for {0} {1}"
 msgstr "重置 {0} {1} 的 PIN"
 
+msgid "Reset to item default"
+msgstr ""
+
 msgid "Reset View"
 msgstr "重置视图"
 
@@ -11312,6 +11315,9 @@ msgstr "源版本"
 
 msgid "Sourcing"
 msgstr "采购"
+
+msgid "Sourcing type"
+msgstr ""
 
 msgid "Sourcing Type"
 msgstr "采购类型"
@@ -14018,6 +14024,13 @@ msgstr "当您承诺交货时;计划将其视为履行的需求到期日期。"
 
 msgid "When your fiscal and tax years start"
 msgstr "您的会计年度和税务年度的开始时间"
+
+msgid ""
+"Where a BOM line's part comes from.\n"
+"Specified — arrives inside its parent; this line triggers no purchase or stock pull.\n"
+"Ship from Inventory — taken from your own stock.\n"
+"Drop Ship — a supplier ships it directly for the order."
+msgstr ""
 
 msgid "Where an operation runs; carries labor and quoting rates, with overhead the difference between them."
 msgstr "操作执行的位置。carries劳动和报价费率,开销是它们之间的差异。"

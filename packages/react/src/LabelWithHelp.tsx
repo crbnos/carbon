@@ -72,7 +72,7 @@ export function LabelWithHelp({
         <TooltipContent
           side="top"
           align="start"
-          className="max-w-xs text-pretty leading-relaxed text-muted-foreground"
+          className="max-w-xs whitespace-pre-line text-pretty leading-relaxed text-muted-foreground"
         >
           {translatedDefinition}
           {showLearnMore && (
