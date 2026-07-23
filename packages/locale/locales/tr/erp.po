@@ -8600,10 +8600,10 @@ msgid "Open in Carbon"
 msgstr "Carbon'da Aç"
 
 msgid "Open in change order {ids}. Release it to create new versions or revisions."
-msgstr ""
+msgstr "Değişim emrinde {ids} aç. Yeni sürümler veya revizyonlar oluşturmak için bunu yayınla."
 
 msgid "Open in change orders {ids}. Release them to create new versions or revisions."
-msgstr ""
+msgstr "Değişim emirlerinde {ids} aç. Yeni sürümler veya revizyonlar oluşturmak için bunları yayınla."
 
 msgid "Open in MES"
 msgstr "MES'te Aç"
@@ -10319,7 +10319,7 @@ msgid "Reset PIN for {0} {1}"
 msgstr "PIN'i sıfırla {0} {1}"
 
 msgid "Reset to item default"
-msgstr ""
+msgstr "Madde varsayılanına sıfırla"
 
 msgid "Reset View"
 msgstr "Görünümü Sıfırla"
@@ -11507,7 +11507,7 @@ msgid "Sourcing"
 msgstr "Kaynak"
 
 msgid "Sourcing type"
-msgstr ""
+msgstr "Kaynak türü"
 
 msgid "Sourcing Type"
 msgstr "Kaynak Türü"
@@ -14236,6 +14236,10 @@ msgid ""
 "Ship from Inventory — taken from your own stock.\n"
 "Drop Ship — a supplier ships it directly for the order."
 msgstr ""
+"BOM satırının parçasının nereden geldiğini belirtir.\n"
+"Belirtilen — üst öğesinin içinde gelir; bu satır hiçbir satın alma veya stok çekişini tetiklemez.\n"
+"Envanterde kargo — kendi stok yönetiminizden alınır.\n"
+"Doğrudan Teslimat — bir tedarikçi bunu doğrudan sipariş için gönderir."
 
 msgid "Where an operation runs; carries labor and quoting rates, with overhead the difference between them."
 msgstr "Bir operasyonun nerede çalıştırıldığı; işçilik ve teklif oranlarını taşır, genel giderler aralarındaki fark."

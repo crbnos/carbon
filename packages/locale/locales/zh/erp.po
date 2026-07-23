@@ -8600,10 +8600,10 @@ msgid "Open in Carbon"
 msgstr "在 Carbon 中打开"
 
 msgid "Open in change order {ids}. Release it to create new versions or revisions."
-msgstr ""
+msgstr "在变更单 {ids} 中打开。发布它以创建新版本或修订版本。"
 
 msgid "Open in change orders {ids}. Release them to create new versions or revisions."
-msgstr ""
+msgstr "在变更单 {ids} 中打开。发布它们以创建新版本或修订版本。"
 
 msgid "Open in MES"
 msgstr "在MES中打开"
@@ -10319,7 +10319,7 @@ msgid "Reset PIN for {0} {1}"
 msgstr "重置 {0} {1} 的 PIN"
 
 msgid "Reset to item default"
-msgstr ""
+msgstr "重置为物料默认值"
 
 msgid "Reset View"
 msgstr "重置视图"
@@ -11507,7 +11507,7 @@ msgid "Sourcing"
 msgstr "采购"
 
 msgid "Sourcing type"
-msgstr ""
+msgstr "采购类型"
 
 msgid "Sourcing Type"
 msgstr "采购类型"
@@ -14236,6 +14236,10 @@ msgid ""
 "Ship from Inventory — taken from your own stock.\n"
 "Drop Ship — a supplier ships it directly for the order."
 msgstr ""
+"物料清单行物料的来源。\n"
+"指定——在其父项内到达；此行不触发采购或库存提取。\n"
+"从库存发货——从您自己的库存中取出。\n"
+"代发——供应商直接为订单发货。"
 
 msgid "Where an operation runs; carries labor and quoting rates, with overhead the difference between them."
 msgstr "操作执行的位置。carries劳动和报价费率,开销是它们之间的差异。"

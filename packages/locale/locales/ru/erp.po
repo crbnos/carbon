@@ -8600,10 +8600,10 @@ msgid "Open in Carbon"
 msgstr "Открыть в Carbon"
 
 msgid "Open in change order {ids}. Release it to create new versions or revisions."
-msgstr ""
+msgstr "Открыть в заказе на изменение {ids}. Отпустите его для создания новых версий или редакций."
 
 msgid "Open in change orders {ids}. Release them to create new versions or revisions."
-msgstr ""
+msgstr "Открыть в заказах на изменение {ids}. Отпустите их для создания новых версий или редакций."
 
 msgid "Open in MES"
 msgstr "Открыть в MES"
@@ -10319,7 +10319,7 @@ msgid "Reset PIN for {0} {1}"
 msgstr "Сброс PIN для {0} {1}"
 
 msgid "Reset to item default"
-msgstr ""
+msgstr "Сбросить на значение по умолчанию для товара"
 
 msgid "Reset View"
 msgstr "Сбросить вид"
@@ -11507,7 +11507,7 @@ msgid "Sourcing"
 msgstr "Источник"
 
 msgid "Sourcing type"
-msgstr ""
+msgstr "Тип закупки"
 
 msgid "Sourcing Type"
 msgstr "Тип источника"
@@ -14236,6 +14236,10 @@ msgid ""
 "Ship from Inventory — taken from your own stock.\n"
 "Drop Ship — a supplier ships it directly for the order."
 msgstr ""
+"Откуда поступает деталь строки БОМ.\n"
+"Указано — поступает в составе родительского товара; эта строка не требует покупки или отбора со склада.\n"
+"Отправка со склада — берется с вашего собственного запаса.\n"
+"Прямая поставка — поставщик отправляет её напрямую для заказа."
 
 msgid "Where an operation runs; carries labor and quoting rates, with overhead the difference between them."
 msgstr "Где работает операция; несет ставки труда и предложения, накладные расходы - разница между ними."

@@ -8600,10 +8600,10 @@ msgid "Open in Carbon"
 msgstr "Carbon에서 열기"
 
 msgid "Open in change order {ids}. Release it to create new versions or revisions."
-msgstr ""
+msgstr "변경 요청 {ids}에서 열기. 새 버전 또는 개정을 생성하려면 해제하세요."
 
 msgid "Open in change orders {ids}. Release them to create new versions or revisions."
-msgstr ""
+msgstr "변경 요청 {ids}에서 열기. 새 버전 또는 개정을 생성하려면 해제하세요."
 
 msgid "Open in MES"
 msgstr "MES에서 열기"
@@ -10319,7 +10319,7 @@ msgid "Reset PIN for {0} {1}"
 msgstr "{0} {1}의 PIN 재설정"
 
 msgid "Reset to item default"
-msgstr ""
+msgstr "항목 기본값으로 재설정"
 
 msgid "Reset View"
 msgstr "보기 초기화"
@@ -11507,7 +11507,7 @@ msgid "Sourcing"
 msgstr "소싱"
 
 msgid "Sourcing type"
-msgstr ""
+msgstr "소싱 유형"
 
 msgid "Sourcing Type"
 msgstr "소싱 유형"
@@ -14236,6 +14236,10 @@ msgid ""
 "Ship from Inventory — taken from your own stock.\n"
 "Drop Ship — a supplier ships it directly for the order."
 msgstr ""
+"BOM 라인의 부품이 출처하는 위치입니다.\n"
+"지정됨 — 상위 항목 내에 도착합니다. 이 라인은 구매 또는 재고 인출을 트리거하지 않습니다.\n"
+"재고에서 배송 — 자신의 재고에서 취득됩니다.\n"
+"드롭 배송 — 공급업체가 주문에 대해 직접 배송합니다."
 
 msgid "Where an operation runs; carries labor and quoting rates, with overhead the difference between them."
 msgstr "공정작업이 실행되는 곳으로, 노무 및 견적 요율을 가지며 두 요율의 차이가 간접비입니다."

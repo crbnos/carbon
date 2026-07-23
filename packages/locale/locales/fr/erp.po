@@ -8600,10 +8600,10 @@ msgid "Open in Carbon"
 msgstr "Ouvrir dans Carbon"
 
 msgid "Open in change order {ids}. Release it to create new versions or revisions."
-msgstr ""
+msgstr "Ouvrir dans l'ordre de modification {ids}. Libérez-le pour créer de nouvelles versions ou révisions."
 
 msgid "Open in change orders {ids}. Release them to create new versions or revisions."
-msgstr ""
+msgstr "Ouvrir dans les ordres de modification {ids}. Libérez-les pour créer de nouvelles versions ou révisions."
 
 msgid "Open in MES"
 msgstr "Ouvrir dans MES"
@@ -10319,7 +10319,7 @@ msgid "Reset PIN for {0} {1}"
 msgstr "Réinitialiser le PIN pour {0} {1}"
 
 msgid "Reset to item default"
-msgstr ""
+msgstr "Réinitialiser à la valeur par défaut de l'article"
 
 msgid "Reset View"
 msgstr "Réinitialiser la vue"
@@ -11507,7 +11507,7 @@ msgid "Sourcing"
 msgstr "Approvisionnement"
 
 msgid "Sourcing type"
-msgstr ""
+msgstr "Type d'approvisionnement"
 
 msgid "Sourcing Type"
 msgstr "Type d'approvisionnement"
@@ -14236,6 +14236,10 @@ msgid ""
 "Ship from Inventory — taken from your own stock.\n"
 "Drop Ship — a supplier ships it directly for the order."
 msgstr ""
+"Indique la provenance de la pièce d'une ligne de nomenclature.\n"
+"Spécifiée — arrive intégrée à son composant parent ; cette ligne ne déclenche ni achat ni prélèvement de stock.\n"
+"Expédié depuis l'inventaire — prélevé dans votre propre stock.\n"
+"Expédition directe — un fournisseur l'expédie directement pour la commande."
 
 msgid "Where an operation runs; carries labor and quoting rates, with overhead the difference between them."
 msgstr "Où un opération s'exécute ; porte les taux de travail et de devis, avec frais généraux la différence entre eux."
