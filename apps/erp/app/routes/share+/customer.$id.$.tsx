@@ -6,6 +6,7 @@ import { supportedModelTypes } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import { getJobByOperationId } from "~/modules/production";
 import { getCustomerPortal } from "~/modules/shared/shared.service";
+import { parseJobFilePath } from "~/utils/supabase";
 
 const supportedFileTypes: Record<string, string> = {
   pdf: "application/pdf",
@@ -84,19 +85,15 @@ export let loader = async ({ params, request }: LoaderFunctionArgs) => {
 
   path = decodeURIComponent(path);
 
-  const pathMatch = params["*"]?.match(/^([^/]+)\/job\/([^/]+)\/[^/]+$/);
-  const companyId = pathMatch?.[1];
-  const operationId = pathMatch?.[2];
+  const jobFile = parseJobFilePath(path);
 
   const fileType = path.split(".").pop()?.toLowerCase();
 
-  if (companyId !== customer.data.companyId) {
+  if (!jobFile || jobFile.companyId !== customer.data.companyId) {
     return new Response(null, { status: 403 });
   }
 
-  if (!operationId) {
-    return new Response(null, { status: 403 });
-  }
+  const { operationId } = jobFile;
 
   const job = await getJobByOperationId(serviceRole, operationId);
 
@@ -120,10 +117,6 @@ export let loader = async ({ params, request }: LoaderFunctionArgs) => {
   )
     throw new Error(`File type ${fileType} not supported`);
   const contentType = supportedFileTypes[fileType];
-
-  if (!path.includes(customer.data.companyId)) {
-    return new Response(null, { status: 403 });
-  }
 
   async function downloadFile() {
     const result = await serviceRole.storage.from(bucket!).download(`${path}`);
