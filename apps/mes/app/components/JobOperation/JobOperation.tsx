@@ -332,6 +332,8 @@ export const JobOperation = ({
     artifacts,
     awaitingModel: modelPending,
     showOptimizeProgress,
+    backgroundOptimizing,
+    optimizeFailed,
     optimizeQueued,
     retry: onModelRetry,
     retryLabel: modelRetryLabel,
@@ -1772,6 +1774,8 @@ export const JobOperation = ({
               <ModelPreview
                 key={modelPath}
                 awaitingModel={modelPending}
+                optimizing={backgroundOptimizing}
+                optimizeFailed={optimizeFailed}
                 optimizedUrl={
                   artifacts?.optimizedModelPath
                     ? getPrivateUrl(artifacts.optimizedModelPath)

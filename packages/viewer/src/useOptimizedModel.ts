@@ -4,7 +4,6 @@ import {
 } from "@carbon/utils";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { WASM_RAW_ENABLED } from "./ModelPreview";
 
 export type ModelArtifacts = {
   optimizedModelPath: string | null;
@@ -15,6 +14,9 @@ export type ModelArtifacts = {
    *  resolved bucket (temp-staging for current uploads, private for old rows). */
   rawPath: string | null;
   rawBucket: string;
+  /** Whether the optimiser (assembler) is configured server-side. When false, the
+   *  viewer hides the failed-retry affordance and never auto-fires an optimise. */
+  optimizerAvailable?: boolean;
   optimizeStatus:
     | "Idle"
     | "Queued"
@@ -148,13 +150,10 @@ export function useOptimizedModel({
   const optimizeInFlight =
     artifacts?.optimizeStatus === "Queued" ||
     artifacts?.optimizeStatus === "Processing";
-  const rawRenderable =
-    WASM_RAW_ENABLED &&
-    Boolean(
-      (artifacts?.rawPath &&
-        (artifacts.size ?? 0) <= MODEL_RAW_KEEP_MAX_BYTES) ||
-        (file && file.size <= MODEL_RAW_KEEP_MAX_BYTES)
-    );
+  const rawRenderable = Boolean(
+    (artifacts?.rawPath && (artifacts.size ?? 0) <= MODEL_RAW_KEEP_MAX_BYTES) ||
+      (file && file.size <= MODEL_RAW_KEEP_MAX_BYTES)
+  );
 
   // Bridges the fire -> job-visible gap: the row status takes a couple of
   // polls to flip, and without this the progress overlay wouldn't appear
@@ -192,6 +191,8 @@ export function useOptimizedModel({
   useEffect(() => {
     if (!enabled || !artifacts || !modelUploadId || !modelPath) return;
     if (autoFiredRef.current === modelUploadId) return;
+    // No optimiser configured → firing reoptimise just no-ops server-side; skip it.
+    if (artifacts.optimizerAvailable === false) return;
     if (
       hasInteractive ||
       optimizeInFlight ||
@@ -241,6 +242,21 @@ export function useOptimizedModel({
     !hasInteractive &&
     !rawRenderable;
 
+  // Optimise running behind a rendered raw tier — drives the viewer's small
+  // "Optimizing" chip (as opposed to the full-screen preparing overlay above).
+  const backgroundOptimizing =
+    (optimizeInFlight || optimisticOptimize) &&
+    !hasInteractive &&
+    rawRenderable;
+
+  // Last optimise Failed (auto-fire deliberately won't re-run it) — drives the
+  // viewer's "Optimize failed · Retry" chip so a WASM-rendered model still has a
+  // retry affordance instead of silently sitting on a failed optimise. Suppressed
+  // when the optimiser isn't configured — a retry would just fail again.
+  const optimizeFailed =
+    artifacts?.optimizeStatus === "Failed" &&
+    artifacts?.optimizerAvailable !== false;
+
   return {
     artifacts,
     modelUploadId,
@@ -249,6 +265,8 @@ export function useOptimizedModel({
     rawRenderable,
     optimizeInFlight,
     showOptimizeProgress,
+    backgroundOptimizing,
+    optimizeFailed,
     /** Overlay's first step reads as waiting until the job is picked up. */
     optimizeQueued: artifacts?.optimizeStatus !== "Processing",
     retry,

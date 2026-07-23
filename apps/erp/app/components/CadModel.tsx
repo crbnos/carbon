@@ -78,6 +78,8 @@ const CadModel = ({
     artifacts,
     awaitingModel,
     showOptimizeProgress: optimizeProgressActive,
+    backgroundOptimizing,
+    optimizeFailed,
     optimizeQueued,
     retry: onRetry,
     retryLabel,
@@ -221,6 +223,8 @@ const CadModel = ({
               <ModelPreview
                 key={modelPath}
                 awaitingModel={awaitingModel}
+                optimizing={backgroundOptimizing}
+                optimizeFailed={optimizeFailed}
                 optimizedUrl={
                   artifacts?.optimizedModelPath
                     ? getPrivateUrl(artifacts.optimizedModelPath)

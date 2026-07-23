@@ -3,6 +3,7 @@ import type { Json } from "@carbon/database";
 import { modelPathOptimizeFormat } from "@carbon/utils";
 import { inngest } from "../../client";
 import {
+  ASSEMBLER_CONCURRENCY,
   assemblerEnabled,
   internalizeStorageUrl,
   resolveModelSourceBucket,
@@ -24,6 +25,13 @@ export const modelOptimizeFunction = inngest.createFunction(
   {
     id: "model-optimize",
     retries: 2,
+    concurrency: ASSEMBLER_CONCURRENCY,
+    // Collapse the viewer's per-view auto-fire: while one optimise for a model is
+    // in flight, duplicate triggers (repeated views, drag re-attach) are skipped
+    // rather than spawning redundant runs. A later Retry after it settles still
+    // runs (nothing in flight). The `alreadyOptimized` guard covers re-fires on an
+    // already-optimised model; this covers the in-flight duplicates.
+    singleton: { key: "event.data.modelUploadId", mode: "skip" },
     onFailure: async ({ event }) => {
       const { modelUploadId, companyId } = event.data.event.data;
       const client = getCarbonServiceRole();
@@ -48,7 +56,14 @@ export const modelOptimizeFunction = inngest.createFunction(
 
     // Feature-gated: no assembler configured -> skip before touching the row,
     // so the viewer just serves the raw model tier (optimizeStatus stays null).
+    // Still fire model-compact: it relocates the raw from ephemeral staging to
+    // the durable bucket (no assembler needed for a plain relocation) so an
+    // assembler-off model isn't lost when staging is cleared.
     if (!assemblerEnabled()) {
+      await step.sendEvent("compact", {
+        name: "carbon/model-compact",
+        data: { modelUploadId, companyId }
+      });
       logger.info("model optimise skipped — assembler is not configured", {
         modelUploadId
       });
