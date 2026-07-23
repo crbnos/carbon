@@ -11,6 +11,8 @@ export function parseJobFilePath(
   if (!path) return null;
   const [companyId, kind, operationId, ...rest] = path.split("/");
   if (kind !== "job" || !companyId || !operationId) return null;
-  if (rest.length === 0 || rest.some((segment) => !segment)) return null;
+  if (rest.length !== 1 && rest.length !== 3) return null;
+  if (rest.some((segment) => !segment || segment === "." || segment === ".."))
+    return null;
   return { companyId, operationId };
 }

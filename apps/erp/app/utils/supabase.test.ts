@@ -34,6 +34,16 @@ describe("parseJobFilePath", () => {
     expect(parseJobFilePath("/job/op456/file.png")).toBeNull();
   });
 
+  it("rejects depths other than the two known layouts", () => {
+    expect(parseJobFilePath("co123/job/op456/extra/file.png")).toBeNull();
+    expect(parseJobFilePath("co123/job/op456/a/b/c/file.png")).toBeNull();
+  });
+
+  it("rejects dot segments", () => {
+    expect(parseJobFilePath("co123/job/op456/../op789/file.png")).toBeNull();
+    expect(parseJobFilePath("co123/job/op456/./x/file.png")).toBeNull();
+  });
+
   it("rejects empty and undefined input", () => {
     expect(parseJobFilePath(undefined)).toBeNull();
     expect(parseJobFilePath("")).toBeNull();
