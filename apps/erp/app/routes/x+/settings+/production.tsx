@@ -10,18 +10,24 @@ import {
   CardHeader,
   CardTitle,
   Heading,
+  HStack,
   Label,
   ScrollArea,
+  Switch,
   toast,
   VStack
 } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { redirect, useFetcher, useLoaderData } from "react-router";
 import { Users } from "~/components/Form";
-import { getCompanySettings, jobCompletedValidator } from "~/modules/settings";
+import {
+  getCompanySettings,
+  jobCompletedValidator,
+  updateIncludeMaterialsOnTravelerSetting
+} from "~/modules/settings";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -80,6 +86,25 @@ export async function action({ request }: ActionFunctionArgs) {
     return { success: true, message: "Job notification settings updated" };
   }
 
+  if (intent === "includeMaterialsOnTraveler") {
+    const enabled = formData.get("enabled") === "true";
+
+    const update = await updateIncludeMaterialsOnTravelerSetting(
+      client,
+      companyId,
+      enabled
+    );
+
+    if (update.error) return { success: false, message: update.error.message };
+
+    return {
+      success: true,
+      message: enabled
+        ? "Materials will be included on the job traveler"
+        : "Materials will not be included on the job traveler"
+    };
+  }
+
   return { success: false, message: "Unknown intent" };
 }
 
@@ -97,6 +122,33 @@ export default function ProductionSettingsRoute() {
       toast.error(fetcher.data.message);
     }
   }, [fetcher.data?.message, fetcher.data?.success]);
+
+  const toggleFetcher = useFetcher<typeof action>();
+
+  const [includeMaterialsOnTraveler, setIncludeMaterialsOnTraveler] = useState(
+    (companySettings as { includeMaterialsOnTraveler?: boolean })
+      .includeMaterialsOnTraveler ?? false
+  );
+
+  const handleIncludeMaterialsOnTravelerToggle = useCallback(
+    (checked: boolean) => {
+      setIncludeMaterialsOnTraveler(checked);
+      toggleFetcher.submit(
+        { intent: "includeMaterialsOnTraveler", enabled: checked.toString() },
+        { method: "POST" }
+      );
+    },
+    [toggleFetcher]
+  );
+
+  useEffect(() => {
+    if (toggleFetcher.data?.success === true && toggleFetcher?.data?.message) {
+      toast.success(toggleFetcher.data.message);
+    }
+    if (toggleFetcher.data?.success === false && toggleFetcher?.data?.message) {
+      toast.error(toggleFetcher.data.message);
+    }
+  }, [toggleFetcher.data?.message, toggleFetcher.data?.success]);
 
   return (
     <ScrollArea className="w-full h-[calc(100dvh-49px)]">
@@ -164,6 +216,33 @@ export default function ProductionSettingsRoute() {
               </Submit>
             </CardFooter>
           </ValidatedForm>
+        </Card>
+
+        <p className="mt-4 text-xxs text-foreground/70 uppercase font-light tracking-wide">
+          <Trans>Job Traveler</Trans>
+        </p>
+
+        <Card>
+          <CardHeader>
+            <HStack className="justify-between items-center">
+              <div>
+                <CardTitle>
+                  <Trans>Include Materials</Trans>
+                </CardTitle>
+                <CardDescription>
+                  <Trans>
+                    Add a materials section to the job traveler PDF listing the
+                    required parts and quantities for each make method.
+                  </Trans>
+                </CardDescription>
+              </div>
+              <Switch
+                checked={includeMaterialsOnTraveler}
+                onCheckedChange={handleIncludeMaterialsOnTravelerToggle}
+                disabled={toggleFetcher.state !== "idle"}
+              />
+            </HStack>
+          </CardHeader>
         </Card>
       </VStack>
     </ScrollArea>

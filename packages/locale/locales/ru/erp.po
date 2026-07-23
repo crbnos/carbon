@@ -593,6 +593,9 @@ msgstr "Добавить комментарий..."
 msgid "Add a custom pricing row to override quantity, price, shipping, lead time, and tax"
 msgstr "Добавьте пользовательскую строку ценообразования для переопределения количества, цены, доставки, времени выполнения заказа и налога"
 
+msgid "Add a materials section to the job traveler PDF listing the required parts and quantities for each make method."
+msgstr ""
+
 msgid "Add a printer in the printing settings to print labels directly."
 msgstr "Добавьте принтер в параметры печати, чтобы печатать этикетки напрямую."
 
@@ -6337,6 +6340,9 @@ msgstr "Включить дополнительные детали в отпра
 msgid "Include Inactive"
 msgstr "Включить неактивные"
 
+msgid "Include Materials"
+msgstr ""
+
 msgid "Included"
 msgstr "Включено"
 
@@ -6765,6 +6771,9 @@ msgstr "Операция задания"
 
 msgid "Job Operations"
 msgstr "Операции задания"
+
+msgid "Job Traveler"
+msgstr ""
 
 msgid "Jobs"
 msgstr "Работы"

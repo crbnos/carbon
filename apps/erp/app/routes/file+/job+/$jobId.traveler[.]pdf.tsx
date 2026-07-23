@@ -28,12 +28,14 @@ import {
 import type { LoaderFunctionArgs } from "react-router";
 import {
   getJob,
+  getJobMaterialsForTraveler,
   getJobMethodTree,
   getJobOperationsByMethodId,
   getTrackedEntityByJobId
 } from "~/modules/production/production.service";
 import {
   getCompany,
+  getCompanySettings,
   getDocumentTemplate,
   resolveSections
 } from "~/modules/settings";
@@ -82,6 +84,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     throw new Error("Failed to load company");
   }
 
+  // Opt-in company setting: whether the traveler renders a materials section.
+  const companySettings = await getCompanySettings(serviceRole, companyId);
+  const includeMaterials =
+    (companySettings.data as { includeMaterialsOnTraveler?: boolean } | null)
+      ?.includeMaterialsOnTraveler ?? false;
+
   const customer = await serviceRole
     .from("customer")
     .select("*")
@@ -105,19 +113,29 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   // For each make method, get operations and item data
   const makeMethodsWithData = await Promise.all(
     jobMakeMethods.data.map(async (makeMethod) => {
-      const [operations, item] = await Promise.all([
+      const [operations, item, materials] = await Promise.all([
         getJobOperationsByMethodId(serviceRole, makeMethod.id),
         serviceRole
           .from("item")
           .select("*, modelUpload(thumbnailPath)")
           .eq("id", makeMethod.itemId ?? "")
-          .single()
+          .single(),
+        includeMaterials
+          ? getJobMaterialsForTraveler(serviceRole, makeMethod.id)
+          : Promise.resolve({ data: [], error: null })
       ]);
 
       if (operations.error || !operations.data) {
         logger.error("Failed to load operations", { error: operations.error });
         throw new Error(
           `Failed to load operations for make method ${makeMethod.id}`
+        );
+      }
+
+      if (materials.error) {
+        logger.error("Failed to load materials", { error: materials.error });
+        throw new Error(
+          `Failed to load materials for make method ${makeMethod.id}`
         );
       }
 
@@ -153,6 +171,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       return {
         makeMethod,
         operations: operations.data,
+        materials: materials.data ?? [],
         item: item.data,
         thumbnail,
         batchNumber,
@@ -214,6 +233,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
             company={company.data as any}
             job={job.data}
             jobOperations={data.operations}
+            includeMaterials={includeMaterials}
+            jobMaterials={data.materials as any}
             customer={customer.data}
             item={data.item}
             batchNumber={data.batchNumber}

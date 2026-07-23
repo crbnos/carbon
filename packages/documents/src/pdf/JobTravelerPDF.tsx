@@ -9,11 +9,15 @@ import {
   resolveTemplate
 } from "../template";
 import type { PDF } from "../types";
-import type { JobTravelerData } from "./blocks/jobTraveler";
+import type {
+  JobTravelerData,
+  JobTravelerMaterial
+} from "./blocks/jobTraveler";
 import {
   buildJobTravelerVars,
   jobTravelerBlockRegistry
 } from "./blocks/jobTraveler";
+import { MaterialsBlock } from "./blocks/jobTraveler/MaterialsBlock";
 import { tw } from "./blocks/jobTraveler/tw";
 import { Template } from "./components";
 
@@ -28,6 +32,8 @@ interface JobTravelerProps extends PDF {
   job: Database["public"]["Views"]["jobs"]["Row"];
   jobMakeMethod?: Database["public"]["Tables"]["jobMakeMethod"]["Row"];
   jobOperations: JobOperationWithSteps[];
+  includeMaterials?: boolean;
+  jobMaterials?: JobTravelerMaterial[];
   customer: Database["public"]["Tables"]["customer"]["Row"] | null;
   item: Database["public"]["Tables"]["item"]["Row"];
   batchNumber: string | undefined;
@@ -63,6 +69,8 @@ function buildData(
     locale: props.locale,
     job: props.job,
     jobOperations: props.jobOperations,
+    includeMaterials: props.includeMaterials,
+    jobMaterials: props.jobMaterials,
     customer: props.customer,
     item: props.item,
     batchNumber: props.batchNumber,
@@ -97,6 +105,7 @@ export const JobTravelerPageContent = (props: PageContentProps) => {
         if (!render) return null;
         return <Fragment key={block.id}>{render({ block, data })}</Fragment>;
       })}
+      <MaterialsBlock data={data} />
     </View>
   );
 };
