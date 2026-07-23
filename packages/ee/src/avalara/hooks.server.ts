@@ -1,14 +1,9 @@
-import {
-  AVALARA_ACCOUNT_ID,
-  AVALARA_CLIENT_ID,
-  AVALARA_CLIENT_SECRET,
-  AVALARA_LICENSE_KEY
-} from "@carbon/auth";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { redis } from "@carbon/kv";
 import { AvalaraSettingsSchema } from "./config";
 import { AvataxApi } from "./lib/avatax";
-import { AvalaraHttp } from "./lib/client";
+import { buildAvalaraHttp, isAvalaraConfigured } from "./lib/env.server";
+import type { Avalara } from "./lib/types";
 
 /**
  * Server-only lifecycle hooks for the Avalara integration, registered in
@@ -16,22 +11,11 @@ import { AvalaraHttp } from "./lib/client";
  * consumers call it at request/job time), so there is no event-system wiring.
  */
 
-function envConfigured(): boolean {
-  return !!AVALARA_ACCOUNT_ID && !!AVALARA_LICENSE_KEY;
-}
-
 function buildAvatax(
-  environment: "sandbox" | "production",
+  environment: Avalara.Environment,
   companyCode: string
 ): AvataxApi {
-  const http = new AvalaraHttp({
-    environment,
-    accountId: AVALARA_ACCOUNT_ID!,
-    licenseKey: AVALARA_LICENSE_KEY!,
-    clientId: AVALARA_CLIENT_ID || undefined,
-    clientSecret: AVALARA_CLIENT_SECRET || undefined
-  });
-  return new AvataxApi(http, companyCode);
+  return new AvataxApi(buildAvalaraHttp(environment), companyCode);
 }
 
 /**
@@ -44,7 +28,7 @@ export async function avalaraHealthcheck(
   _companyId: string,
   metadata: Record<string, unknown>
 ): Promise<boolean> {
-  if (!envConfigured()) return false;
+  if (!isAvalaraConfigured()) return false;
 
   const parsed = AvalaraSettingsSchema.safeParse(metadata ?? {});
   if (!parsed.success) return false;
@@ -74,7 +58,7 @@ export async function avalaraHealthcheck(
  * that need it (e.g. ListNexus) have it available.
  */
 export async function avalaraOnInstall(companyId: string): Promise<void> {
-  if (!envConfigured()) return;
+  if (!isAvalaraConfigured()) return;
 
   const client = getCarbonServiceRole();
   const row = await client
@@ -84,14 +68,30 @@ export async function avalaraOnInstall(companyId: string): Promise<void> {
     .eq("id", "avalara")
     .maybeSingle();
 
-  if (row.error) return;
+  if (row.error) {
+    console.error(
+      "Avalara onInstall: failed to read companyIntegration row for",
+      companyId
+    );
+    return;
+  }
 
   const parsed = AvalaraSettingsSchema.safeParse(row.data?.metadata ?? {});
-  if (!parsed.success) return;
+  if (!parsed.success) {
+    console.error("Avalara onInstall: settings failed validation");
+    return;
+  }
 
   const avatax = buildAvatax(parsed.data.environment, parsed.data.companyCode);
   const company = await avatax.getCompanyByCode(parsed.data.companyCode);
-  if (company.error || !company.data) return;
+  if (company.error || !company.data) {
+    console.error(
+      `Avalara onInstall: company resolution failed: ${
+        company.error?.kind ?? "no company data"
+      }`
+    );
+    return;
+  }
 
   const existing = (row.data?.metadata ?? {}) as Record<string, unknown>;
   await client

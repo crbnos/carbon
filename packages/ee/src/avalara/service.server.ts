@@ -1,15 +1,10 @@
-import {
-  AVALARA_ACCOUNT_ID,
-  AVALARA_CLIENT_ID,
-  AVALARA_CLIENT_SECRET,
-  AVALARA_LICENSE_KEY
-} from "@carbon/auth";
 import type { Database } from "@carbon/database";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { type AvalaraSettings, AvalaraSettingsSchema } from "./config";
 import { AvataxApi } from "./lib/avatax";
-import { AvalaraError, AvalaraHttp } from "./lib/client";
+import { AvalaraError } from "./lib/client";
 import { EinvoicingApi } from "./lib/einvoicing";
+import { buildAvalaraHttp, isAvalaraConfigured } from "./lib/env.server";
 import type { Avalara } from "./lib/types";
 
 /**
@@ -27,20 +22,7 @@ export type AvalaraClientBundle = {
   config: AvalaraSettings;
 };
 
-/** Whether env-level Avalara credentials are present (AvaTax auth). */
-export function isAvalaraConfigured(): boolean {
-  return !!AVALARA_ACCOUNT_ID && !!AVALARA_LICENSE_KEY;
-}
-
-function buildHttp(environment: Avalara.Environment): AvalaraHttp {
-  return new AvalaraHttp({
-    environment,
-    accountId: AVALARA_ACCOUNT_ID!,
-    licenseKey: AVALARA_LICENSE_KEY!,
-    clientId: AVALARA_CLIENT_ID || undefined,
-    clientSecret: AVALARA_CLIENT_SECRET || undefined
-  });
-}
+export { isAvalaraConfigured };
 
 async function readInstalledConfig(
   client: SupabaseClient<Database>,
@@ -125,7 +107,7 @@ export async function getAvalaraClient(
     };
   }
 
-  const http = buildHttp(config.environment);
+  const http = buildAvalaraHttp(config.environment);
   return {
     data: {
       avatax: new AvataxApi(http, config.companyCode),
@@ -180,7 +162,7 @@ export async function listAvalaraCompanies(
   const environment: Avalara.Environment =
     metadata.environment === "production" ? "production" : "sandbox";
 
-  const http = buildHttp(environment);
+  const http = buildAvalaraHttp(environment);
   // companyCode is irrelevant for listing; pass empty string.
   const avatax = new AvataxApi(http, "");
   return avatax.listCompanies();
