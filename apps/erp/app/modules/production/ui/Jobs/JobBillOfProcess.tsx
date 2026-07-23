@@ -2798,7 +2798,6 @@ function OperationForm({
   const machineDisclosure = useDisclosure();
   const laborDisclosure = useDisclosure();
   const assemblyDisclosure = useDisclosure();
-  const inspectionDisclosure = useDisclosure();
   const [assemblyWasChanged, setAssemblyWasChanged] = useState(false);
   const assemblySyncDisclosure = useDisclosure();
   const setupDisclosure = useDisclosure();
@@ -3654,51 +3653,26 @@ function OperationForm({
 
           {processData.operationType === "Inspection" && (
             <div className="border border-border rounded-md shadow-sm p-4 flex flex-col gap-4">
-              <HStack
-                className="w-full justify-between cursor-pointer"
-                onClick={inspectionDisclosure.onToggle}
-              >
+              <HStack className="w-full justify-between">
                 <HStack>
                   <OperationTypeIcon type="Inspection" />
-                  <Label>Inspection Document</Label>
+                  <Label>Inspection Plan</Label>
                 </HStack>
-                <HStack>
-                  {processData.inspectionDocumentId && (
-                    <Badge variant="secondary">
-                      <OperationTypeIcon
-                        type="Inspection"
-                        className="h-3 w-3 mr-1"
-                      />
-                      Inspection Document
-                    </Badge>
-                  )}
-                  <IconButton
-                    icon={<LuChevronRight />}
-                    aria-label={
-                      inspectionDisclosure.isOpen
-                        ? "Collapse Inspection Document"
-                        : "Expand Inspection Document"
-                    }
-                    variant="ghost"
-                    size="md"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      inspectionDisclosure.onToggle();
-                    }}
-                    className={`transition-transform ${
-                      inspectionDisclosure.isOpen ? "rotate-90" : ""
-                    }`}
-                  />
-                </HStack>
+                {processData.inspectionDocumentId && (
+                  <Badge variant="secondary">
+                    <OperationTypeIcon
+                      type="Inspection"
+                      className="h-3 w-3 mr-1"
+                    />
+                    Inspection Plan
+                  </Badge>
+                )}
               </HStack>
-              <div
-                className={`grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-1 pb-4 ${
-                  inspectionDisclosure.isOpen ? "" : "hidden"
-                }`}
-              >
+              <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-1 pb-4">
                 <InspectionDocument
                   name="inspectionDocumentId"
-                  label={t`Inspection Document`}
+                  label={t`Inspection Plan`}
+                  isOptional={false}
                   itemId={itemId}
                   value={processData.inspectionDocumentId}
                   onChange={(value) => {

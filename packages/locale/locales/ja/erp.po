@@ -1333,8 +1333,8 @@ msgstr "この変更指示を削除してもよろしいですか？"
 msgid "Are you sure you want to delete this gauge?"
 msgstr "このゲージを削除してもよろしいですか？"
 
-msgid "Are you sure you want to delete this inspection document?"
-msgstr "このインスペクションドキュメントを削除してもよろしいですか？"
+msgid "Are you sure you want to delete this inspection plan?"
+msgstr ""
 
 msgid "Are you sure you want to delete this issue workflow?"
 msgstr "このイシューワークフローを削除してもよろしいですか？"
@@ -2128,8 +2128,8 @@ msgstr "変更"
 msgid "Change Document"
 msgstr "ドキュメント変更"
 
-msgid "Change Inspection Document"
-msgstr "検査ドキュメントを変更"
+msgid "Change Inspection Plan"
+msgstr ""
 
 msgid "Change order"
 msgstr "変更オーダー"
@@ -2174,9 +2174,6 @@ msgid "Changing type resets this item's draft edits."
 msgstr "種類を変更すると、このアイテムのドラフト編集がリセットされます。"
 
 msgid "Characteristic"
-msgstr "特性"
-
-msgid "Characteristics"
 msgstr "特性"
 
 msgid "Chart of accounts"
@@ -2311,9 +2308,6 @@ msgstr "折りたたむ"
 
 msgid "Collapse all"
 msgstr "すべて折りたたむ"
-
-msgid "Collapse characteristics"
-msgstr "特性を折りたたむ"
 
 msgid "Collapse Costs"
 msgstr "コストを折りたたむ"
@@ -4229,8 +4223,8 @@ msgstr "ドラッグして並べ替え"
 msgid "Drag to resize diagram and features"
 msgstr "図と機能をリサイズするにはドラッグしてください"
 
-msgid "Drag to resize drawing and characteristics"
-msgstr "描画と特性をサイズ変更するにはドラッグしてください"
+msgid "Drag to resize drawing and features"
+msgstr "ドラッグして図面と機能のサイズを変更してください"
 
 msgid "Drag to zoom"
 msgstr "ズームするにはドラッグしてください"
@@ -4446,8 +4440,8 @@ msgstr "グループを編集"
 msgid "Edit Holiday"
 msgstr "休日を編集"
 
-msgid "Edit Inspection Document"
-msgstr "検査文書を編集"
+msgid "Edit Inspection Plan"
+msgstr ""
 
 msgid "Edit Item Group"
 msgstr "アイテムグループを編集"
@@ -4978,9 +4972,6 @@ msgstr "展開 {0}"
 
 msgid "Expand all"
 msgstr "すべて展開"
-
-msgid "Expand characteristics"
-msgstr "特性を展開"
 
 msgid "Expand Costs"
 msgstr "コストを展開"
@@ -6348,17 +6339,17 @@ msgstr "次のアイテムを検査"
 msgid "Inspection"
 msgstr "検査"
 
-msgid "Inspection Document"
-msgstr "検査ドキュメント"
-
-msgid "Inspection Document Assignments"
-msgstr "検査ドキュメント割り当て"
-
-msgid "Inspection Documents"
-msgstr "検査ドキュメント"
-
 msgid "Inspection Level"
 msgstr "検査レベル"
+
+msgid "Inspection Plan"
+msgstr ""
+
+msgid "Inspection Plan Assignments"
+msgstr ""
+
+msgid "Inspection Plans"
+msgstr ""
 
 msgid "Inspection Status"
 msgstr "検査ステータス"
@@ -7776,8 +7767,8 @@ msgstr "新しい休日"
 msgid "New IC Transaction"
 msgstr "新しいIC取引"
 
-msgid "New Inspection Document"
-msgstr "新しい検査文書"
+msgid "New Inspection Plan"
+msgstr ""
 
 msgid "New Inventory Count"
 msgstr "新しい在庫数"
@@ -8148,8 +8139,8 @@ msgstr "グループが割り当てられていません"
 msgid "No image"
 msgstr "画像なし"
 
-msgid "No inspection documents"
-msgstr "検査ドキュメントなし"
+msgid "No inspection plans"
+msgstr ""
 
 msgid "No issue types configured"
 msgstr "問題タイプが設定されていません"
@@ -10060,9 +10051,6 @@ msgstr "{0}を削除"
 msgid "Remove condition"
 msgstr "条件を削除"
 
-msgid "Remove feature"
-msgstr "機能を削除"
-
 msgid "Remove filter"
 msgstr "フィルターを削除"
 
@@ -11569,8 +11557,8 @@ msgstr "ステップ"
 msgid "Steps are inherited from the assembly instruction."
 msgstr "ステップは組立指示から継承されます。"
 
-msgid "Steps are inherited from the inspection document."
-msgstr "ステップは検査ドキュメントから継承されます。"
+msgid "Steps are inherited from the inspection plan."
+msgstr ""
 
 msgid "Stock Transfer ID"
 msgstr "在庫移動ID"
@@ -12265,8 +12253,8 @@ msgstr "顧客への見積もりから支払い回収までのエンドツーエ
 msgid "The endpoint that receives a POST request with the updated data when the table is updated"
 msgstr "テーブルが更新されたときに、更新されたデータを含むPOSTリクエストを受け取るエンドポイント"
 
-msgid "The engineering drawing this inspection document is tied to; inspections recorded against this part reference back to this drawing."
-msgstr "このインスペクションドキュメントが結合されているエンジニアリング図面。この部品参照に対して記録された検査は、この図面を参照します。"
+msgid "The engineering drawing this inspection plan is tied to; inspections recorded against this part reference back to this drawing."
+msgstr ""
 
 msgid "The expected percentage of this item's output lost during production; planning multiplies demand by 1 / (1 − scrap) to compensate."
 msgstr "生産中に失われるこのアイテムの出力の予想パーセンテージ。計画は補償するために需要に1 / (1 −スクラップ)を乗じます。"

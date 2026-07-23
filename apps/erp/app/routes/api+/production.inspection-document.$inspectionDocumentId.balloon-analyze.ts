@@ -32,7 +32,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const inspectionDocumentId = params.inspectionDocumentId;
   if (!inspectionDocumentId) {
     return data(
-      { success: false as const, message: "Missing inspection document id" },
+      { success: false as const, message: "Missing inspection plan id" },
       { status: 400 }
     );
   }
@@ -42,17 +42,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return data(
       {
         success: false as const,
-        message: getErrorMessage(
-          docResult.error,
-          "Inspection document not found"
-        )
+        message: getErrorMessage(docResult.error, "Inspection plan not found")
       },
       { status: 404 }
     );
   }
   if (docResult.data.companyId !== companyId) {
     return data(
-      { success: false as const, message: "Inspection document not found" },
+      { success: false as const, message: "Inspection plan not found" },
       { status: 404 }
     );
   }

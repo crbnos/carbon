@@ -1,6 +1,10 @@
 import { useCarbon } from "@carbon/auth";
 import {
   Button,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
   HStack,
   IconButton,
   Input,
@@ -29,6 +33,7 @@ import {
   LuChevronLeft,
   LuChevronRight,
   LuChevronUp,
+  LuEllipsisVertical,
   LuFileDown,
   LuLoader,
   LuMinus,
@@ -2414,35 +2419,8 @@ export default function InspectionDocumentEditor({
         header: t`Actions`,
         size: 148,
         cell: ({ row }) => (
-          <HStack spacing={0} className="items-center">
-            <IconButton
-              type="button"
-              variant="ghost"
-              size="sm"
-              aria-label={t`Remove feature`}
-              icon={<LuTrash2 className="h-4 w-4 text-destructive" />}
-              onClick={(e) => {
-                e.stopPropagation();
-                handleDeleteFeature(row.original.featureId);
-              }}
-            />
-            <span
-              className="mx-1.5 h-5 w-px shrink-0 bg-foreground/20 dark:bg-white/30"
-              aria-hidden
-            />
-            {row.original.balloonId ? (
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleUnballoon(row.original.featureId);
-                }}
-              >
-                {t`Unballoon`}
-              </Button>
-            ) : (
+          <HStack spacing={1} className="items-center">
+            {!row.original.balloonId && (
               <Button
                 type="button"
                 variant="outline"
@@ -2457,6 +2435,35 @@ export default function InspectionDocumentEditor({
                 {t`Balloon`}
               </Button>
             )}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <IconButton
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  aria-label={t`More actions`}
+                  icon={<LuEllipsisVertical />}
+                  onClick={(e) => e.stopPropagation()}
+                />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                {row.original.balloonId && (
+                  <DropdownMenuItem
+                    onClick={() => handleUnballoon(row.original.featureId)}
+                  >
+                    <LuRectangleHorizontal className="mr-2 size-4" />
+                    {t`Unballoon`}
+                  </DropdownMenuItem>
+                )}
+                <DropdownMenuItem
+                  destructive
+                  onClick={() => handleDeleteFeature(row.original.featureId)}
+                >
+                  <LuTrash2 className="mr-2 size-4" />
+                  {t`Delete`}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </HStack>
         )
       }

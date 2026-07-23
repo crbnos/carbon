@@ -1333,8 +1333,8 @@ msgstr "您确定要删除此变更单吗？"
 msgid "Are you sure you want to delete this gauge?"
 msgstr "你确定要删除此量规吗？"
 
-msgid "Are you sure you want to delete this inspection document?"
-msgstr "你确定要删除此检验文件吗？"
+msgid "Are you sure you want to delete this inspection plan?"
+msgstr ""
 
 msgid "Are you sure you want to delete this issue workflow?"
 msgstr "你确定要删除此问题工作流吗？"
@@ -2128,8 +2128,8 @@ msgstr "更改"
 msgid "Change Document"
 msgstr "变更文档"
 
-msgid "Change Inspection Document"
-msgstr "更改检验文件"
+msgid "Change Inspection Plan"
+msgstr ""
 
 msgid "Change order"
 msgstr "变更单"
@@ -2174,9 +2174,6 @@ msgid "Changing type resets this item's draft edits."
 msgstr "更改类型将重置此项目的草稿编辑。"
 
 msgid "Characteristic"
-msgstr "特征"
-
-msgid "Characteristics"
 msgstr "特征"
 
 msgid "Chart of accounts"
@@ -2311,9 +2308,6 @@ msgstr "折叠"
 
 msgid "Collapse all"
 msgstr "全部折叠"
-
-msgid "Collapse characteristics"
-msgstr "收起特征"
 
 msgid "Collapse Costs"
 msgstr "折叠成本"
@@ -4229,8 +4223,8 @@ msgstr "拖动以重新排序"
 msgid "Drag to resize diagram and features"
 msgstr "拖动以调整图表和功能的大小"
 
-msgid "Drag to resize drawing and characteristics"
-msgstr "拖动调整绘图和特征的大小"
+msgid "Drag to resize drawing and features"
+msgstr "拖动以调整绘图和功能的大小"
 
 msgid "Drag to zoom"
 msgstr "拖动以缩放"
@@ -4446,8 +4440,8 @@ msgstr "编辑组"
 msgid "Edit Holiday"
 msgstr "编辑假期"
 
-msgid "Edit Inspection Document"
-msgstr "编辑检验文件"
+msgid "Edit Inspection Plan"
+msgstr ""
 
 msgid "Edit Item Group"
 msgstr "编辑项目组"
@@ -4978,9 +4972,6 @@ msgstr "展开 {0}"
 
 msgid "Expand all"
 msgstr "全部展开"
-
-msgid "Expand characteristics"
-msgstr "展开特征"
 
 msgid "Expand Costs"
 msgstr "展开成本"
@@ -6348,17 +6339,17 @@ msgstr "检查下一项"
 msgid "Inspection"
 msgstr "检验"
 
-msgid "Inspection Document"
-msgstr "检验文件"
-
-msgid "Inspection Document Assignments"
-msgstr "检验文件分配"
-
-msgid "Inspection Documents"
-msgstr "检验文件"
-
 msgid "Inspection Level"
 msgstr "检验水平"
+
+msgid "Inspection Plan"
+msgstr ""
+
+msgid "Inspection Plan Assignments"
+msgstr ""
+
+msgid "Inspection Plans"
+msgstr ""
 
 msgid "Inspection Status"
 msgstr "检验状态"
@@ -7776,8 +7767,8 @@ msgstr "新假期"
 msgid "New IC Transaction"
 msgstr "新IC事务"
 
-msgid "New Inspection Document"
-msgstr "新检验文件"
+msgid "New Inspection Plan"
+msgstr ""
 
 msgid "New Inventory Count"
 msgstr "新库存盘点"
@@ -8148,8 +8139,8 @@ msgstr "未分配任何组"
 msgid "No image"
 msgstr "没有图像"
 
-msgid "No inspection documents"
-msgstr "没有检验文件"
+msgid "No inspection plans"
+msgstr ""
 
 msgid "No issue types configured"
 msgstr "未配置问题类型"
@@ -10060,9 +10051,6 @@ msgstr "删除 {0}"
 msgid "Remove condition"
 msgstr "移除条件"
 
-msgid "Remove feature"
-msgstr "删除功能"
-
 msgid "Remove filter"
 msgstr "移除筛选"
 
@@ -11569,8 +11557,8 @@ msgstr "步骤"
 msgid "Steps are inherited from the assembly instruction."
 msgstr "步骤继承自装配说明。"
 
-msgid "Steps are inherited from the inspection document."
-msgstr "步骤继承自检验文件。"
+msgid "Steps are inherited from the inspection plan."
+msgstr ""
 
 msgid "Stock Transfer ID"
 msgstr "库存转移ID"
@@ -12265,8 +12253,8 @@ msgstr "从客户报价到收款的端到端商业流程：询价到报价到销
 msgid "The endpoint that receives a POST request with the updated data when the table is updated"
 msgstr "接收表格更新时包含更新数据的POST请求的端点"
 
-msgid "The engineering drawing this inspection document is tied to; inspections recorded against this part reference back to this drawing."
-msgstr "该检查文件链接到的工程图纸；针对此零件参考记录的检查会引用此图纸。"
+msgid "The engineering drawing this inspection plan is tied to; inspections recorded against this part reference back to this drawing."
+msgstr ""
 
 msgid "The expected percentage of this item's output lost during production; planning multiplies demand by 1 / (1 − scrap) to compensate."
 msgstr "生产期间此项目的预期产出百分比丢失；规划将需求乘以1 / (1 −废料)来补偿。"

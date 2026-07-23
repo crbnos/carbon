@@ -74,7 +74,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
     throw redirect(
       path.to.toolQuality(itemId),
-      await flash(request, success("Inspection document assignment updated"))
+      await flash(request, success("Inspection plan assignment updated"))
     );
   }
 
@@ -107,7 +107,7 @@ export default function ToolQualityRoute() {
   const { itemId } = useParams();
   if (!itemId) throw new Error("itemId is required");
   return (
-    <div className="p-4">
+    <div className="p-4 w-full">
       <ItemQualityView
         itemId={itemId}
         actionPath={path.to.toolQuality(itemId)}

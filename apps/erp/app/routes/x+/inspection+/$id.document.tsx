@@ -36,6 +36,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   throw redirect(
     path.to.inspection(id),
-    await flash(request, success("Inspection document updated"))
+    await flash(request, success("Inspection plan updated"))
   );
 }

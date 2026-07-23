@@ -1333,8 +1333,8 @@ msgstr "이 변경주문을 삭제하시겠습니까?"
 msgid "Are you sure you want to delete this gauge?"
 msgstr "이 측정기를 삭제하시겠습니까?"
 
-msgid "Are you sure you want to delete this inspection document?"
-msgstr "이 검사 문서를 삭제하시겠습니까?"
+msgid "Are you sure you want to delete this inspection plan?"
+msgstr ""
 
 msgid "Are you sure you want to delete this issue workflow?"
 msgstr "이 이슈 워크플로를 삭제하시겠습니까?"
@@ -2128,8 +2128,8 @@ msgstr "변경"
 msgid "Change Document"
 msgstr "문서 변경"
 
-msgid "Change Inspection Document"
-msgstr "검사 문서 변경"
+msgid "Change Inspection Plan"
+msgstr ""
 
 msgid "Change order"
 msgstr "변경 주문"
@@ -2175,9 +2175,6 @@ msgstr "유형을 변경하면 이 항목의 초안 편집이 재설정됩니다
 
 msgid "Characteristic"
 msgstr "특성"
-
-msgid "Characteristics"
-msgstr "특성들"
 
 msgid "Chart of accounts"
 msgstr "계정과목표"
@@ -2311,9 +2308,6 @@ msgstr "접기"
 
 msgid "Collapse all"
 msgstr "모두 접기"
-
-msgid "Collapse characteristics"
-msgstr "특성 축소"
 
 msgid "Collapse Costs"
 msgstr "원가 접기"
@@ -4229,8 +4223,8 @@ msgstr "드래그하여 순서 변경"
 msgid "Drag to resize diagram and features"
 msgstr "드래그하여 다이어그램과 피처 크기 조정"
 
-msgid "Drag to resize drawing and characteristics"
-msgstr "그리기 및 특성을 크기 조정하려면 끌기"
+msgid "Drag to resize drawing and features"
+msgstr "드래그하여 드로잉 및 기능의 크기를 조정"
 
 msgid "Drag to zoom"
 msgstr "드래그하여 확대/축소"
@@ -4446,8 +4440,8 @@ msgstr "그룹 수정"
 msgid "Edit Holiday"
 msgstr "휴일 수정"
 
-msgid "Edit Inspection Document"
-msgstr "검사 문서 수정"
+msgid "Edit Inspection Plan"
+msgstr ""
 
 msgid "Edit Item Group"
 msgstr "품목 그룹 수정"
@@ -4978,9 +4972,6 @@ msgstr "{0} 펼치기"
 
 msgid "Expand all"
 msgstr "모두 펼치기"
-
-msgid "Expand characteristics"
-msgstr "특성 확장"
 
 msgid "Expand Costs"
 msgstr "원가 펼치기"
@@ -6348,17 +6339,17 @@ msgstr "다음 품목 검사"
 msgid "Inspection"
 msgstr "검사"
 
-msgid "Inspection Document"
-msgstr "검사 문서"
-
-msgid "Inspection Document Assignments"
-msgstr "검사 문서 할당"
-
-msgid "Inspection Documents"
-msgstr "검사 문서"
-
 msgid "Inspection Level"
 msgstr "검사 수준"
+
+msgid "Inspection Plan"
+msgstr ""
+
+msgid "Inspection Plan Assignments"
+msgstr ""
+
+msgid "Inspection Plans"
+msgstr ""
 
 msgid "Inspection Status"
 msgstr "검사 상태"
@@ -7776,8 +7767,8 @@ msgstr "신규 휴일"
 msgid "New IC Transaction"
 msgstr "신규 IC 거래"
 
-msgid "New Inspection Document"
-msgstr "신규 검사 문서"
+msgid "New Inspection Plan"
+msgstr ""
 
 msgid "New Inventory Count"
 msgstr "신규 재고 실사"
@@ -8148,8 +8139,8 @@ msgstr "배정된 그룹이 없습니다"
 msgid "No image"
 msgstr "이미지 없음"
 
-msgid "No inspection documents"
-msgstr "검사 문서 없음"
+msgid "No inspection plans"
+msgstr ""
 
 msgid "No issue types configured"
 msgstr "설정된 이슈 유형이 없습니다"
@@ -10060,9 +10051,6 @@ msgstr "{0} 제거"
 msgid "Remove condition"
 msgstr "조건 제거"
 
-msgid "Remove feature"
-msgstr "기능 제거"
-
 msgid "Remove filter"
 msgstr "필터 제거"
 
@@ -11569,8 +11557,8 @@ msgstr "단계"
 msgid "Steps are inherited from the assembly instruction."
 msgstr "단계는 조립 지시사항에서 상속됩니다."
 
-msgid "Steps are inherited from the inspection document."
-msgstr "단계는 검사 문서에서 상속됩니다."
+msgid "Steps are inherited from the inspection plan."
+msgstr ""
 
 msgid "Stock Transfer ID"
 msgstr "재고 이동 ID"
@@ -12265,8 +12253,8 @@ msgstr "고객 견적부터 대금 회수까지 이어지는 전체 상거래 �
 msgid "The endpoint that receives a POST request with the updated data when the table is updated"
 msgstr "테이블이 업데이트될 때 변경된 데이터를 담은 POST 요청을 수신하는 엔드포인트"
 
-msgid "The engineering drawing this inspection document is tied to; inspections recorded against this part reference back to this drawing."
-msgstr "이 검사 문서가 연결된 설계 도면입니다. 이 품목에 대해 기록되는 검사는 이 도면을 참조합니다."
+msgid "The engineering drawing this inspection plan is tied to; inspections recorded against this part reference back to this drawing."
+msgstr ""
 
 msgid "The expected percentage of this item's output lost during production; planning multiplies demand by 1 / (1 − scrap) to compensate."
 msgstr "생산 중 손실될 것으로 예상되는 이 품목 산출물의 비율입니다. 계획은 이를 보정하기 위해 수요에 1 / (1 − 스크랩율)을 곱합니다."

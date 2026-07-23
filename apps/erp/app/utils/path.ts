@@ -305,16 +305,10 @@ export const path = {
       generatePath(`${x}/assembly/${id}/model/invalidate`),
     assemblyPlanRerun: (id: string) =>
       generatePath(`${x}/assembly/${id}/plan/rerun`),
-    assemblyStandardNote: (noteId: string) =>
-      generatePath(`${x}/assembly/standard-notes/${noteId}`),
     assemblyStepMaterial: (id: string, materialId: string) =>
       generatePath(`${x}/assembly/${id}/materials/${materialId}`),
     assemblyStepMaterialOrder: (id: string) =>
       generatePath(`${x}/assembly/${id}/materials/order`),
-    assemblyStepRequirement: (id: string, requirementId: string) =>
-      generatePath(`${x}/assembly/${id}/requirements/${requirementId}`),
-    assemblyStepRequirementOrder: (id: string) =>
-      generatePath(`${x}/assembly/${id}/requirements/order`),
     assemblySyncBop: (id: string) =>
       generatePath(`${x}/assembly/${id}/sync-bop`),
     assetClass: (id: string) =>
@@ -537,12 +531,12 @@ export const path = {
       generatePath(`${x}/assembly/delete/${id}`),
     deleteAssemblyInstructionStep: (id: string, stepId: string) =>
       generatePath(`${x}/assembly/${id}/steps/delete/${stepId}`),
-    deleteAssemblyStandardNote: (noteId: string) =>
-      generatePath(`${x}/assembly/standard-notes/delete/${noteId}`),
     deleteAssemblyStepMaterial: (id: string, materialId: string) =>
       generatePath(`${x}/assembly/${id}/materials/delete/${materialId}`),
-    deleteAssemblyStepRequirement: (id: string, requirementId: string) =>
-      generatePath(`${x}/assembly/${id}/requirements/delete/${requirementId}`),
+    deleteAssemblyStepSlide: (id: string, slideId: string) =>
+      generatePath(`${x}/assembly/${id}/slides/delete/${slideId}`),
+    deleteAssemblyStepTool: (id: string, toolId: string) =>
+      generatePath(`${x}/assembly/${id}/tools/delete/${toolId}`),
     deleteAssemblyUnit: (id: string, unitId: string) =>
       generatePath(`${x}/assembly/${id}/units/delete/${unitId}`),
     deleteAssetClass: (id: string) =>
@@ -1370,11 +1364,12 @@ export const path = {
     newAssemblyInstruction: `${x}/production/assemblies/new`,
     newAssemblyInstructionStep: (id: string) =>
       generatePath(`${x}/assembly/${id}/steps/new`),
-    newAssemblyStandardNote: `${x}/assembly/standard-notes/new`,
     newAssemblyStepMaterial: (id: string) =>
       generatePath(`${x}/assembly/${id}/materials/new`),
-    newAssemblyStepRequirement: (id: string) =>
-      generatePath(`${x}/assembly/${id}/requirements/new`),
+    newAssemblyStepSlide: (id: string) =>
+      generatePath(`${x}/assembly/${id}/slides/new`),
+    newAssemblyStepTool: (id: string) =>
+      generatePath(`${x}/assembly/${id}/tools/new`),
     newAssemblyUnit: (id: string) =>
       generatePath(`${x}/assembly/${id}/units/new`),
     newAssetClass: `${x}/accounting/asset-classes/new`,

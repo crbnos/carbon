@@ -1177,7 +1177,7 @@ export const terms = {
   // ── Quality: Inspection document (InspectionDocumentForm) ───────────────
   "inspection-document-drawing-number": {
     term: msg`Drawing Number`,
-    definition: msg`The engineering drawing this inspection document is tied to; inspections recorded against this part reference back to this drawing.`
+    definition: msg`The engineering drawing this inspection plan is tied to; inspections recorded against this part reference back to this drawing.`
   },
 
   // ── Quality: Issue (IssueForm + IssueProperties) ────────────────────────

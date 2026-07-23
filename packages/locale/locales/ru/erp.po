@@ -1333,8 +1333,8 @@ msgstr "Вы уверены, что хотите удалить этот при�
 msgid "Are you sure you want to delete this gauge?"
 msgstr "Вы уверены, что хотите удалить этот манометр?"
 
-msgid "Are you sure you want to delete this inspection document?"
-msgstr "Вы уверены, что хотите удалить этот документ проверки?"
+msgid "Are you sure you want to delete this inspection plan?"
+msgstr ""
 
 msgid "Are you sure you want to delete this issue workflow?"
 msgstr "Вы уверены, что хотите удалить этот рабочий процесс проблемы?"
@@ -2128,8 +2128,8 @@ msgstr "Изменить"
 msgid "Change Document"
 msgstr "Изменить документ"
 
-msgid "Change Inspection Document"
-msgstr "Изменить документ контроля"
+msgid "Change Inspection Plan"
+msgstr ""
 
 msgid "Change order"
 msgstr "Приказ об изменении"
@@ -2175,9 +2175,6 @@ msgstr "Изменение типа сбрасывает черновые ред
 
 msgid "Characteristic"
 msgstr "Характеристика"
-
-msgid "Characteristics"
-msgstr "Характеристики"
 
 msgid "Chart of accounts"
 msgstr "План счетов"
@@ -2311,9 +2308,6 @@ msgstr "Свернуть"
 
 msgid "Collapse all"
 msgstr "Свернуть все"
-
-msgid "Collapse characteristics"
-msgstr "Свернуть характеристики"
 
 msgid "Collapse Costs"
 msgstr "Свернуть затраты"
@@ -4229,8 +4223,8 @@ msgstr "Перетащите для переупорядочивания"
 msgid "Drag to resize diagram and features"
 msgstr "Перетащите, чтобы изменить размер диаграммы и функций"
 
-msgid "Drag to resize drawing and characteristics"
-msgstr "Перетащите для изменения размера чертежа и характеристик"
+msgid "Drag to resize drawing and features"
+msgstr "Перетащите, чтобы изменить размер рисунка и функций"
 
 msgid "Drag to zoom"
 msgstr "Перетащите для масштабирования"
@@ -4446,8 +4440,8 @@ msgstr "Редактировать группу"
 msgid "Edit Holiday"
 msgstr "Редактировать праздник"
 
-msgid "Edit Inspection Document"
-msgstr "Редактировать документ проверки"
+msgid "Edit Inspection Plan"
+msgstr ""
 
 msgid "Edit Item Group"
 msgstr "Редактировать группу товаров"
@@ -4978,9 +4972,6 @@ msgstr "Развернуть {0}"
 
 msgid "Expand all"
 msgstr "Развернуть все"
-
-msgid "Expand characteristics"
-msgstr "Развернуть характеристики"
 
 msgid "Expand Costs"
 msgstr "Развернуть затраты"
@@ -6348,17 +6339,17 @@ msgstr "Проверить следующий элемент"
 msgid "Inspection"
 msgstr "Проверка"
 
-msgid "Inspection Document"
-msgstr "Документ проверки"
-
-msgid "Inspection Document Assignments"
-msgstr "Назначения документов контроля"
-
-msgid "Inspection Documents"
-msgstr "Документы проверки"
-
 msgid "Inspection Level"
 msgstr "Уровень проверки"
+
+msgid "Inspection Plan"
+msgstr ""
+
+msgid "Inspection Plan Assignments"
+msgstr ""
+
+msgid "Inspection Plans"
+msgstr ""
 
 msgid "Inspection Status"
 msgstr "Статус проверки"
@@ -7776,8 +7767,8 @@ msgstr "Новый праздник"
 msgid "New IC Transaction"
 msgstr "Новая транзакция IC"
 
-msgid "New Inspection Document"
-msgstr "Новый документ проверки"
+msgid "New Inspection Plan"
+msgstr ""
 
 msgid "New Inventory Count"
 msgstr "Новый подсчет инвентаря"
@@ -8148,8 +8139,8 @@ msgstr "Нет назначенных групп"
 msgid "No image"
 msgstr "Нет изображения"
 
-msgid "No inspection documents"
-msgstr "Нет документов контроля"
+msgid "No inspection plans"
+msgstr ""
 
 msgid "No issue types configured"
 msgstr "Типы проблем не настроены"
@@ -10060,9 +10051,6 @@ msgstr "Удалить {0}"
 msgid "Remove condition"
 msgstr "Удалить условие"
 
-msgid "Remove feature"
-msgstr "Удалить функцию"
-
 msgid "Remove filter"
 msgstr "Удалить фильтр"
 
@@ -11569,8 +11557,8 @@ msgstr "Шаги"
 msgid "Steps are inherited from the assembly instruction."
 msgstr "Этапы наследуются из инструкции по сборке."
 
-msgid "Steps are inherited from the inspection document."
-msgstr "Этапы наследуются из документа контроля."
+msgid "Steps are inherited from the inspection plan."
+msgstr ""
 
 msgid "Stock Transfer ID"
 msgstr "ID передачи запасов"
@@ -12265,8 +12253,8 @@ msgstr "Сквозной коммерческий процесс от предл
 msgid "The endpoint that receives a POST request with the updated data when the table is updated"
 msgstr "Конечная точка, которая получает POST-запрос с обновленными данными при обновлении таблицы"
 
-msgid "The engineering drawing this inspection document is tied to; inspections recorded against this part reference back to this drawing."
-msgstr "Технический чертеж, к которому привязан этот документ проверки; проверки, записанные в отношении этого обозначения детали, ссылаются на этот чертеж."
+msgid "The engineering drawing this inspection plan is tied to; inspections recorded against this part reference back to this drawing."
+msgstr ""
 
 msgid "The expected percentage of this item's output lost during production; planning multiplies demand by 1 / (1 − scrap) to compensate."
 msgstr "Ожидаемый процент выпуска этого товара, потерянный во время производства; планирование умножает спрос на 1 / (1 − отход) для компенсации."

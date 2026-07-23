@@ -47,9 +47,7 @@ export default function InspectionDocumentForm({
         >
           <DrawerHeader>
             <DrawerTitle>
-              {isEditing
-                ? t`Edit Inspection Document`
-                : t`New Inspection Document`}
+              {isEditing ? t`Edit Inspection Plan` : t`New Inspection Plan`}
             </DrawerTitle>
           </DrawerHeader>
           <DrawerBody>

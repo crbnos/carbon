@@ -43,8 +43,6 @@ import {
 } from "./inspectionDocumentDb";
 import type {
   assemblyInstructionStatuses,
-  assemblyNoteSeverities,
-  assemblyRequirementTypes,
   assemblyStepStatuses,
   deadlineTypes,
   failureModeValidator,
@@ -4801,7 +4799,7 @@ export async function deleteAssemblyInstructionStep(
   return client.from("assemblyInstructionStep").delete().eq("id", id);
 }
 
-export async function getAssemblyInstructionStepRequirements(
+export async function getAssemblyInstructionStepSlides(
   client: SupabaseClient<Database>,
   stepIds: string[]
 ) {
@@ -4809,23 +4807,68 @@ export async function getAssemblyInstructionStepRequirements(
     return { data: [], error: null };
   }
   return client
-    .from("assemblyInstructionStepRequirement")
+    .from("assemblyInstructionStepSlide")
+    .select("*")
+    .in("stepId", stepIds)
+    .order("sortOrder", { ascending: true });
+}
+
+export async function upsertAssemblyInstructionStepSlide(
+  client: SupabaseClient<Database>,
+  slide:
+    | (Omit<z.infer<typeof operationStepSlideValidator>, "id"> & {
+        companyId: string;
+        createdBy: string;
+      })
+    | (Omit<z.infer<typeof operationStepSlideValidator>, "id"> & {
+        id: string;
+        updatedBy: string;
+        updatedAt: string;
+      })
+) {
+  if ("createdBy" in slide) {
+    return client
+      .from("assemblyInstructionStepSlide")
+      .insert(slide)
+      .select("id")
+      .single();
+  }
+
+  return client
+    .from("assemblyInstructionStepSlide")
+    .update(sanitize(slide))
+    .eq("id", slide.id)
+    .select("id")
+    .single();
+}
+
+export async function deleteAssemblyInstructionStepSlide(
+  client: SupabaseClient<Database>,
+  id: string
+) {
+  return client.from("assemblyInstructionStepSlide").delete().eq("id", id);
+}
+
+export async function getAssemblyInstructionStepTools(
+  client: SupabaseClient<Database>,
+  stepIds: string[]
+) {
+  if (stepIds.length === 0) {
+    return { data: [], error: null };
+  }
+  return client
+    .from("assemblyInstructionStepTool")
     .select("*, item(id, name, readableIdWithRevision)")
     .in("stepId", stepIds)
     .order("sortOrder", { ascending: true });
 }
 
-export async function upsertAssemblyInstructionStepRequirement(
+export async function upsertAssemblyInstructionStepTool(
   client: SupabaseClient<Database>,
   data: {
     id?: string;
     stepId: string;
-    type: (typeof assemblyRequirementTypes)[number];
-    itemId?: string | null;
-    name?: string | null;
-    text?: string | null;
-    severity?: (typeof assemblyNoteSeverities)[number] | null;
-    filePath?: string | null;
+    itemId: string;
     quantity?: number;
     sortOrder?: number;
     companyId: string;
@@ -4833,28 +4876,12 @@ export async function upsertAssemblyInstructionStepRequirement(
     updatedBy?: string;
   }
 ) {
-  // Snapshot the catalog item name so display never needs a join and
-  // survives item deletion
-  let name = data.name ?? null;
-  if (!name && data.itemId) {
-    const item = await client
-      .from("item")
-      .select("name")
-      .eq("id", data.itemId)
-      .single();
-    name = item.data?.name ?? null;
-  }
-
   if (data.id) {
     return client
-      .from("assemblyInstructionStepRequirement")
+      .from("assemblyInstructionStepTool")
       .update({
-        itemId: data.itemId ?? null,
-        name,
-        text: data.text ?? null,
-        severity: data.severity ?? null,
-        ...(data.filePath !== undefined ? { filePath: data.filePath } : {}),
-        ...(data.quantity !== undefined ? { quantity: data.quantity } : {}),
+        itemId: data.itemId,
+        quantity: data.quantity ?? 1,
         ...(data.sortOrder !== undefined ? { sortOrder: data.sortOrder } : {}),
         updatedBy: data.updatedBy ?? data.createdBy,
         updatedAt: new Date().toISOString()
@@ -4865,18 +4892,13 @@ export async function upsertAssemblyInstructionStepRequirement(
   }
 
   return client
-    .from("assemblyInstructionStepRequirement")
+    .from("assemblyInstructionStepTool")
     .insert({
       stepId: data.stepId,
-      type: data.type,
-      itemId: data.itemId ?? null,
-      name,
-      text: data.text ?? null,
-      severity: data.severity ?? null,
-      filePath: data.filePath ?? null,
+      itemId: data.itemId,
       quantity: data.quantity ?? 1,
       sortOrder:
-        data.sortOrder ?? (await getNextRequirementSortOrder(client, data)),
+        data.sortOrder ?? (await getNextStepToolSortOrder(client, data)),
       companyId: data.companyId,
       createdBy: data.createdBy
     })
@@ -4884,15 +4906,14 @@ export async function upsertAssemblyInstructionStepRequirement(
     .single();
 }
 
-async function getNextRequirementSortOrder(
+async function getNextStepToolSortOrder(
   client: SupabaseClient<Database>,
-  data: { stepId: string; type: (typeof assemblyRequirementTypes)[number] }
+  data: { stepId: string }
 ) {
   const last = await client
-    .from("assemblyInstructionStepRequirement")
+    .from("assemblyInstructionStepTool")
     .select("sortOrder")
     .eq("stepId", data.stepId)
-    .eq("type", data.type)
     .order("sortOrder", { ascending: false })
     .limit(1)
     .maybeSingle();
@@ -4900,40 +4921,11 @@ async function getNextRequirementSortOrder(
   return (last.data?.sortOrder ?? 0) + 1;
 }
 
-export async function getAssemblyInstructionStepRequirement(
+export async function deleteAssemblyInstructionStepTool(
   client: SupabaseClient<Database>,
   id: string
 ) {
-  return client
-    .from("assemblyInstructionStepRequirement")
-    .select("*")
-    .eq("id", id)
-    .single();
-}
-
-export async function updateAssemblyInstructionStepRequirementOrder(
-  db: Kysely<KyselyDatabase>,
-  updates: { id: string; sortOrder: number; updatedBy: string }[]
-) {
-  return db.transaction().execute(async (trx) => {
-    for (const { id, sortOrder, updatedBy } of updates) {
-      await trx
-        .updateTable("assemblyInstructionStepRequirement")
-        .set({ sortOrder, updatedBy, updatedAt: new Date().toISOString() })
-        .where("id", "=", id)
-        .execute();
-    }
-  });
-}
-
-export async function deleteAssemblyInstructionStepRequirement(
-  client: SupabaseClient<Database>,
-  id: string
-) {
-  return client
-    .from("assemblyInstructionStepRequirement")
-    .delete()
-    .eq("id", id);
+  return client.from("assemblyInstructionStepTool").delete().eq("id", id);
 }
 
 export async function getAssemblyInstructionStepMaterials(
@@ -5190,64 +5182,6 @@ export async function syncAssemblyStepMaterialsFromMappings(
 
   const insert = await insertAssemblyStepMaterialSeeds(client, seeds, args);
   return { created: insert.error ? 0 : seeds.length };
-}
-
-export async function getAssemblyStandardNotes(
-  client: SupabaseClient<Database>,
-  companyId: string
-) {
-  return client
-    .from("assemblyStandardNote")
-    .select("*")
-    .eq("companyId", companyId)
-    .order("name", { ascending: true });
-}
-
-export async function upsertAssemblyStandardNote(
-  client: SupabaseClient<Database>,
-  data: {
-    id?: string;
-    name: string;
-    content: string;
-    severity: (typeof assemblyNoteSeverities)[number];
-    companyId: string;
-    createdBy: string;
-    updatedBy?: string;
-  }
-) {
-  if (data.id) {
-    return client
-      .from("assemblyStandardNote")
-      .update({
-        name: data.name,
-        content: data.content,
-        severity: data.severity,
-        updatedBy: data.updatedBy ?? data.createdBy,
-        updatedAt: new Date().toISOString()
-      })
-      .eq("id", data.id)
-      .select("id")
-      .single();
-  }
-
-  return client
-    .from("assemblyStandardNote")
-    .insert({
-      name: data.name,
-      content: data.content,
-      severity: data.severity,
-      companyId: data.companyId,
-      createdBy: data.createdBy
-    })
-    .select("id")
-    .single();
-}
-
-export async function deleteAssemblyStandardNote(
-  client: SupabaseClient<Database>,
-  id: string
-) {
-  return client.from("assemblyStandardNote").delete().eq("id", id);
 }
 
 export async function getAssemblyUnits(
@@ -5802,6 +5736,52 @@ export async function syncAssemblyInstructionToOperation(
       materialsByStep.set(material.stepId, list);
     }
 
+    const sourceSlides = await trx
+      .selectFrom("assemblyInstructionStepSlide")
+      .select([
+        "stepId",
+        "imagePath",
+        "modelUploadId",
+        "caption",
+        "sortOrder",
+        "size",
+        "annotations"
+      ])
+      .where("companyId", "=", companyId)
+      .where(
+        "stepId",
+        "in",
+        sourceSteps.map((step) => step.id)
+      )
+      .orderBy("sortOrder", "asc")
+      .execute();
+    const slidesByStep = new Map<string, typeof sourceSlides>();
+    for (const slide of sourceSlides) {
+      const list = slidesByStep.get(slide.stepId) ?? [];
+      list.push(slide);
+      slidesByStep.set(slide.stepId, list);
+    }
+
+    const sourceTools = await trx
+      .selectFrom("assemblyInstructionStepTool")
+      .select(["stepId", "itemId", "quantity"])
+      .where("companyId", "=", companyId)
+      .where(
+        "stepId",
+        "in",
+        sourceSteps.map((step) => step.id)
+      )
+      .execute();
+    const toolsByStep = new Map<
+      string,
+      { itemId: string; quantity: number }[]
+    >();
+    for (const tool of sourceTools) {
+      const list = toolsByStep.get(tool.stepId) ?? [];
+      list.push({ itemId: tool.itemId, quantity: tool.quantity ?? 1 });
+      toolsByStep.set(tool.stepId, list);
+    }
+
     // The target operation's own BOM lines, keyed by item — instruction step
     // materials are itemIds; the link table wants the material row on THIS
     // operation (a link to another operation's material never shows in the MES).
@@ -5836,6 +5816,8 @@ export async function syncAssemblyInstructionToOperation(
     let created = 0;
     let updated = 0;
     const syncedTargetIds: string[] = [];
+    // source assembly step id → synced job step id, for slide/tool copying
+    const targetIdBySource = new Map<string, string>();
     const linkPairs: { materialId: string; stepId: string }[] = [];
     let partsUnmatched = 0;
 
@@ -5884,6 +5866,7 @@ export async function syncAssemblyInstructionToOperation(
         created++;
       }
       syncedTargetIds.push(targetStepId);
+      targetIdBySource.set(source.id, targetStepId);
 
       for (const itemId of materialsByStep.get(source.id) ?? []) {
         const materialId = materialIdByItemId.get(itemId);
@@ -5928,30 +5911,137 @@ export async function syncAssemblyInstructionToOperation(
         .execute();
     }
 
-    // Attach the instruction's 3D model as a model slide on each synced step that
-    // doesn't already have it (updates keep their step ids, so slides persist).
-    if (instruction.modelUploadId) {
-      const existingSlides = await trx
-        .selectFrom(slideTable)
-        .select(["stepId"])
-        .where("stepId", "in", syncedTargetIds)
-        .where("modelUploadId", "=", instruction.modelUploadId)
-        .execute();
-      const stepsWithModel = new Set(
-        existingSlides.map((slide) => slide.stepId)
-      );
-      const slideRows = syncedTargetIds
-        .filter((stepId) => !stepsWithModel.has(stepId))
-        .map((stepId) => ({
-          stepId,
+    // Refresh slides on the synced steps only (hand-authored steps keep theirs):
+    // the instruction's 3D model leads as a model slide, followed by the step's
+    // authored slides. Delete + recreate mirrors the jobMaterialStep refresh —
+    // the assembly instruction is authoritative for what a synced step shows.
+    await trx
+      .deleteFrom(slideTable)
+      .where("stepId", "in", syncedTargetIds)
+      .execute();
+    const slideRows: {
+      stepId: string;
+      imagePath: string | null;
+      modelUploadId: string | null;
+      caption: string | null;
+      sortOrder: number;
+      size: string;
+      annotations: string;
+      companyId: string;
+      createdBy: string;
+    }[] = [];
+    for (const source of sourceSteps) {
+      const targetStepId = targetIdBySource.get(source.id);
+      if (!targetStepId) continue;
+      const authored = slidesByStep.get(source.id) ?? [];
+      if (
+        instruction.modelUploadId &&
+        !authored.some(
+          (slide) => slide.modelUploadId === instruction.modelUploadId
+        )
+      ) {
+        slideRows.push({
+          stepId: targetStepId,
+          imagePath: null,
           modelUploadId: instruction.modelUploadId,
-          sortOrder: 1,
+          caption: null,
+          sortOrder: 0,
+          size: "medium",
+          annotations: JSON.stringify([]),
           companyId,
           createdBy: userId
-        }));
-      if (slideRows.length > 0) {
-        await trx.insertInto(slideTable).values(slideRows).execute();
+        });
       }
+      for (const slide of authored) {
+        slideRows.push({
+          stepId: targetStepId,
+          imagePath: slide.imagePath,
+          modelUploadId: slide.modelUploadId,
+          caption: slide.caption,
+          sortOrder: slide.sortOrder ?? 1,
+          size: slide.size ?? "medium",
+          annotations: JSON.stringify(slide.annotations ?? []),
+          companyId,
+          createdBy: userId
+        });
+      }
+    }
+    if (slideRows.length > 0) {
+      await trx.insertInto(slideTable).values(slideRows).execute();
+    }
+
+    // Tools: ensure a jobOperationTool row per distinct tool item, then refresh
+    // the step links on the synced steps. Operation-level tool rows are never
+    // deleted (no provenance column) and quantities only ratchet up, so
+    // hand-added tools survive a re-sync.
+    const existingTools = await trx
+      .selectFrom("jobOperationTool")
+      .select(["id", "toolId", "quantity"])
+      .where("operationId", "=", operationId)
+      .where("companyId", "=", companyId)
+      .execute();
+    const toolRowIdByItemId = new Map(
+      existingTools.map((tool) => [tool.toolId, tool.id])
+    );
+    const maxQuantityByItemId = new Map<string, number>();
+    for (const tool of sourceTools) {
+      maxQuantityByItemId.set(
+        tool.itemId,
+        Math.max(maxQuantityByItemId.get(tool.itemId) ?? 0, tool.quantity ?? 1)
+      );
+    }
+    for (const [itemId, quantity] of maxQuantityByItemId) {
+      const existingId = toolRowIdByItemId.get(itemId);
+      if (!existingId) {
+        const inserted = await trx
+          .insertInto("jobOperationTool")
+          .values({
+            operationId,
+            toolId: itemId,
+            quantity,
+            companyId,
+            createdBy: userId
+          })
+          .returning("id")
+          .executeTakeFirstOrThrow();
+        toolRowIdByItemId.set(itemId, inserted.id);
+      } else {
+        const existing = existingTools.find((tool) => tool.id === existingId);
+        if ((existing?.quantity ?? 1) < quantity) {
+          await trx
+            .updateTable("jobOperationTool")
+            .set({ quantity, updatedBy: userId, updatedAt: now })
+            .where("id", "=", existingId)
+            .execute();
+        }
+      }
+    }
+    await trx
+      .deleteFrom("jobOperationToolStep")
+      .where("jobOperationStepId", "in", syncedTargetIds)
+      .execute();
+    const toolLinkRows: {
+      jobOperationToolId: string;
+      jobOperationStepId: string;
+    }[] = [];
+    for (const source of sourceSteps) {
+      const targetStepId = targetIdBySource.get(source.id);
+      if (!targetStepId) continue;
+      for (const tool of toolsByStep.get(source.id) ?? []) {
+        const jobOperationToolId = toolRowIdByItemId.get(tool.itemId);
+        if (jobOperationToolId) {
+          toolLinkRows.push({
+            jobOperationToolId,
+            jobOperationStepId: targetStepId
+          });
+        }
+      }
+    }
+    if (toolLinkRows.length > 0) {
+      await trx
+        .insertInto("jobOperationToolStep")
+        .values(toolLinkRows)
+        .execute();
     }
 
     // Point the operation at its instruction (also how the re-sync UI knows
@@ -5972,7 +6062,9 @@ export async function syncAssemblyInstructionToOperation(
       updated,
       deleted: staleIds.length,
       partsLinked: linkPairs.length,
-      partsUnmatched
+      partsUnmatched,
+      slidesSynced: slideRows.length,
+      toolsLinked: toolLinkRows.length
     };
   });
 }
@@ -6548,7 +6640,7 @@ export async function upsertInspectionDocument(
       return {
         data: null,
         error: {
-          message: "companyId is required to update inspection document"
+          message: "companyId is required to update inspection plan"
         }
       };
     }
@@ -6564,7 +6656,7 @@ export async function upsertInspectionDocument(
       return {
         data: null,
         error: {
-          message: "Inspection document not found"
+          message: "Inspection plan not found"
         }
       };
     }
@@ -6572,7 +6664,7 @@ export async function upsertInspectionDocument(
       return {
         data: null,
         error: {
-          message: "Inspection document does not belong to this company"
+          message: "Inspection plan does not belong to this company"
         }
       };
     }
@@ -6614,7 +6706,7 @@ export async function upsertInspectionDocument(
   if (!companyId) {
     return {
       data: null,
-      error: { message: "companyId is required to create inspection document" }
+      error: { message: "companyId is required to create inspection plan" }
     };
   }
 
@@ -6680,7 +6772,7 @@ export async function deleteInspectionDocument(
   if (!existingResult.data) {
     return {
       data: null,
-      error: { message: "Inspection document not found" }
+      error: { message: "Inspection plan not found" }
     };
   }
 

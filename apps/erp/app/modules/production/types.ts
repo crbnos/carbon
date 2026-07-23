@@ -4,10 +4,10 @@ import type {
   getAssemblyComponentMappings,
   getAssemblyInstruction,
   getAssemblyInstructionStepMaterials,
-  getAssemblyInstructionStepRequirements,
+  getAssemblyInstructionStepSlides,
   getAssemblyInstructionSteps,
+  getAssemblyInstructionStepTools,
   getAssemblyInstructions,
-  getAssemblyStandardNotes,
   getAssemblyUnits,
   getBalloons,
   getFailureMode,
@@ -208,16 +208,16 @@ export type AssemblyInstructionStepRow = NonNullable<
   Awaited<ReturnType<typeof getAssemblyInstructionSteps>>["data"]
 >[number];
 
-export type AssemblyStepRequirement = NonNullable<
-  Awaited<ReturnType<typeof getAssemblyInstructionStepRequirements>>["data"]
->[number];
-
 export type AssemblyStepMaterial = NonNullable<
   Awaited<ReturnType<typeof getAssemblyInstructionStepMaterials>>["data"]
 >[number];
 
-export type AssemblyStandardNote = NonNullable<
-  Awaited<ReturnType<typeof getAssemblyStandardNotes>>["data"]
+export type AssemblyStepSlide = NonNullable<
+  Awaited<ReturnType<typeof getAssemblyInstructionStepSlides>>["data"]
+>[number];
+
+export type AssemblyStepTool = NonNullable<
+  Awaited<ReturnType<typeof getAssemblyInstructionStepTools>>["data"]
 >[number];
 
 export type AssemblyUnit = NonNullable<

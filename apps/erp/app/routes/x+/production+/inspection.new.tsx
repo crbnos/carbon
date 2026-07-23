@@ -40,14 +40,14 @@ export async function action({ request }: ActionFunctionArgs) {
       path.to.inspectionDocuments,
       await flash(
         request,
-        error(result.error, "Failed to create inspection document")
+        error(result.error, "Failed to create inspection plan")
       )
     );
   }
 
   throw redirect(
     path.to.inspectionDocument(result.data.id),
-    await flash(request, success("Inspection document created"))
+    await flash(request, success("Inspection plan created"))
   );
 }
 

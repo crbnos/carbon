@@ -10,7 +10,7 @@ import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
 
 export const handle: Handle = {
-  breadcrumb: msg`Inspection Documents`,
+  breadcrumb: msg`Inspection Plans`,
   to: path.to.inspectionDocuments
 };
 

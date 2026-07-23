@@ -160,13 +160,13 @@ const InspectionDocumentTable = memo(
           primaryAction={
             permissions.can("create", "quality") && (
               <New
-                label={t`Inspection Document`}
+                label={t`Inspection Plan`}
                 to={`${path.to.newInspectionDocument}?${params?.toString()}`}
               />
             )
           }
           renderContextMenu={renderContextMenu}
-          title={t`Inspection Documents`}
+          title={t`Inspection Plans`}
         />
         {deleteDisclosure.isOpen && selectedDiagram && (
           <ConfirmDelete
@@ -181,7 +181,7 @@ const InspectionDocumentTable = memo(
               deleteDisclosure.onClose();
             }}
             name={selectedDiagram.name}
-            text={t`Are you sure you want to delete this inspection document?`}
+            text={t`Are you sure you want to delete this inspection plan?`}
           />
         )}
       </>

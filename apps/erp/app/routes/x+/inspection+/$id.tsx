@@ -2,6 +2,7 @@ import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
+import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { data, redirect, useLoaderData } from "react-router";
 import invariant from "tiny-invariant";
@@ -24,7 +25,15 @@ import type {
 } from "~/modules/quality/types";
 import InspectionView from "~/modules/quality/ui/Inspections/InspectionView";
 import { getCompanySettings } from "~/modules/settings";
+import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
+
+export const handle: Handle = {
+  breadcrumb: detailBreadcrumb(
+    { breadcrumb: msg`Inspections`, to: path.to.inspections },
+    (data) => data?.inspection?.inspectionId
+  )
+};
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId, userId } = await requirePermissions(request, {

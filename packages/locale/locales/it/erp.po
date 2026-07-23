@@ -1333,8 +1333,8 @@ msgstr "Sei sicuro di voler eliminare questo ordine di modifica?"
 msgid "Are you sure you want to delete this gauge?"
 msgstr "Sei sicuro di voler eliminare questo calibro?"
 
-msgid "Are you sure you want to delete this inspection document?"
-msgstr "Sei sicuro di voler eliminare questo documento di ispezione?"
+msgid "Are you sure you want to delete this inspection plan?"
+msgstr ""
 
 msgid "Are you sure you want to delete this issue workflow?"
 msgstr "Sei sicuro di voler eliminare questo flusso di lavoro dei problemi?"
@@ -2128,8 +2128,8 @@ msgstr "Cambia"
 msgid "Change Document"
 msgstr "Modifica Documento"
 
-msgid "Change Inspection Document"
-msgstr "Cambia Documento di Ispezione"
+msgid "Change Inspection Plan"
+msgstr ""
 
 msgid "Change order"
 msgstr "Ordine di modifica"
@@ -2175,9 +2175,6 @@ msgstr "Cambiare il tipo ripristina le modifiche in bozza di questo elemento."
 
 msgid "Characteristic"
 msgstr "Caratteristica"
-
-msgid "Characteristics"
-msgstr "Caratteristiche"
 
 msgid "Chart of accounts"
 msgstr "Piano dei conti"
@@ -2311,9 +2308,6 @@ msgstr "Comprimi"
 
 msgid "Collapse all"
 msgstr "Comprimi tutto"
-
-msgid "Collapse characteristics"
-msgstr "Comprimi caratteristiche"
 
 msgid "Collapse Costs"
 msgstr "Comprimi Costi"
@@ -4229,8 +4223,8 @@ msgstr "Trascina per riordinare"
 msgid "Drag to resize diagram and features"
 msgstr "Trascinare per ridimensionare il diagramma e le funzioni"
 
-msgid "Drag to resize drawing and characteristics"
-msgstr "Trascina per ridimensionare il disegno e le caratteristiche"
+msgid "Drag to resize drawing and features"
+msgstr "Trascina per ridimensionare il disegno e le funzionalità"
 
 msgid "Drag to zoom"
 msgstr "Trascina per ingrandire"
@@ -4446,8 +4440,8 @@ msgstr "Modifica Gruppo"
 msgid "Edit Holiday"
 msgstr "Modifica Festività"
 
-msgid "Edit Inspection Document"
-msgstr "Modifica Documento di Ispezione"
+msgid "Edit Inspection Plan"
+msgstr ""
 
 msgid "Edit Item Group"
 msgstr "Modifica Gruppo Articoli"
@@ -4978,9 +4972,6 @@ msgstr "Espandi {0}"
 
 msgid "Expand all"
 msgstr "Espandi tutto"
-
-msgid "Expand characteristics"
-msgstr "Espandi caratteristiche"
 
 msgid "Expand Costs"
 msgstr "Espandi Costi"
@@ -6348,17 +6339,17 @@ msgstr "Ispeziona Elemento Successivo"
 msgid "Inspection"
 msgstr "Ispezione"
 
-msgid "Inspection Document"
-msgstr "Documento di Ispezione"
-
-msgid "Inspection Document Assignments"
-msgstr "Assegnazioni di Documenti di Ispezione"
-
-msgid "Inspection Documents"
-msgstr "Documenti di Ispezione"
-
 msgid "Inspection Level"
 msgstr "Livello di Ispezione"
+
+msgid "Inspection Plan"
+msgstr ""
+
+msgid "Inspection Plan Assignments"
+msgstr ""
+
+msgid "Inspection Plans"
+msgstr ""
 
 msgid "Inspection Status"
 msgstr "Stato di Ispezione"
@@ -7776,8 +7767,8 @@ msgstr "Nuova Festività"
 msgid "New IC Transaction"
 msgstr "Nuova Transazione IC"
 
-msgid "New Inspection Document"
-msgstr "Nuovo Documento di Ispezione"
+msgid "New Inspection Plan"
+msgstr ""
 
 msgid "New Inventory Count"
 msgstr "Nuovo Conteggio Inventario"
@@ -8148,8 +8139,8 @@ msgstr "Nessun gruppo assegnato"
 msgid "No image"
 msgstr "Nessuna immagine"
 
-msgid "No inspection documents"
-msgstr "Nessun documento di ispezione"
+msgid "No inspection plans"
+msgstr ""
 
 msgid "No issue types configured"
 msgstr "Nessun tipo di problema configurato"
@@ -10060,9 +10051,6 @@ msgstr "Rimuovi {0}"
 msgid "Remove condition"
 msgstr "Rimuovi condizione"
 
-msgid "Remove feature"
-msgstr "Rimuovi funzione"
-
 msgid "Remove filter"
 msgstr "Rimuovi filtro"
 
@@ -11569,8 +11557,8 @@ msgstr "Passaggi"
 msgid "Steps are inherited from the assembly instruction."
 msgstr "I passaggi vengono ereditati dalle istruzioni di montaggio."
 
-msgid "Steps are inherited from the inspection document."
-msgstr "I passaggi vengono ereditati dal documento di ispezione."
+msgid "Steps are inherited from the inspection plan."
+msgstr ""
 
 msgid "Stock Transfer ID"
 msgstr "ID Trasferimento Magazzino"
@@ -12265,8 +12253,8 @@ msgstr "Il flusso commerciale end-to-end dal preventivo del cliente alla riscoss
 msgid "The endpoint that receives a POST request with the updated data when the table is updated"
 msgstr "L'endpoint che riceve una richiesta POST con i dati aggiornati quando la tabella viene aggiornata"
 
-msgid "The engineering drawing this inspection document is tied to; inspections recorded against this part reference back to this drawing."
-msgstr "Il disegno tecnico a cui è legato questo documento di ispezione; le ispezioni registrate rispetto a questo riferimento pezzo fanno riferimento a questo disegno."
+msgid "The engineering drawing this inspection plan is tied to; inspections recorded against this part reference back to this drawing."
+msgstr ""
 
 msgid "The expected percentage of this item's output lost during production; planning multiplies demand by 1 / (1 − scrap) to compensate."
 msgstr "La percentuale attesa della produzione di questo articolo persa durante la produzione; la pianificazione moltiplica la domanda per 1 / (1 − scarto) per compensare."

@@ -14,7 +14,7 @@ import {
   getInspectionFeatures
 } from "~/modules/production";
 import type { InspectionDocumentContent } from "~/modules/production/types";
-import { detailBreadcrumb, type Handle } from "~/utils/handle";
+import type { BreadcrumbSegment, Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
 const InspectionDocumentEditor = lazy(
@@ -25,11 +25,15 @@ const InspectionDocumentEditor = lazy(
 );
 
 export const handle: Handle = {
-  breadcrumb: detailBreadcrumb(
-    { breadcrumb: msg`Inspection Document`, to: path.to.inspectionDocuments },
-    (data) => data?.diagram?.name
-  ),
-  module: "quality"
+  breadcrumb: (_params: unknown, data: any): BreadcrumbSegment[] => {
+    const segments: BreadcrumbSegment[] = [
+      { breadcrumb: msg`Production`, to: path.to.production },
+      { breadcrumb: msg`Inspection Plans`, to: path.to.inspectionDocuments }
+    ];
+    const name = data?.diagram?.name;
+    return name ? [...segments, { breadcrumb: name }] : segments;
+  },
+  module: "production"
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -54,7 +58,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       path.to.inspectionDocuments,
       await flash(
         request,
-        error(diagram.error, "Failed to load inspection document")
+        error(diagram.error, "Failed to load inspection plan")
       )
     );
   }

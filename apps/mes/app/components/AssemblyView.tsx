@@ -5,6 +5,7 @@ import {
   AccordionItem,
   AccordionTrigger,
   Badge,
+  BarProgress,
   BottomSheet,
   BottomSheetBody,
   BottomSheetContent,
@@ -197,7 +198,7 @@ type AssemblyPlayback = {
 
 const playerMotionTypes = ["linear", "L", "helix", "path", "none"];
 
-// DB row → @carbon/viewer AssemblyStep (mirrors JobOperation/components/Assembly.tsx).
+// DB row → @carbon/viewer AssemblyStep.
 function toViewerStep(step: AssemblyPlayback["steps"][number]): AssemblyStep {
   const motion = step.motion as Motion | null;
   const warnings = step.warnings as { flagged?: boolean } | null;
@@ -481,7 +482,8 @@ export function AssemblyView({
   canOverrideComplete = false,
   modelPath,
   slideModels,
-  assemblyPlayback
+  assemblyPlayback,
+  productionQuantities = { scrap: 0, production: 0, rework: 0 }
 }: Props) {
   const user = useUser();
   const mode = useMode();
@@ -519,9 +521,6 @@ export function AssemblyView({
   >("all");
   // For non-tracked material inline issue
   const [selectedMaterial, setSelectedMaterial] = useState<any | null>(null);
-
-  // Cumulative timer progress from all production events
-  const progress = useCumulativeProgress(events);
 
   // Live sync — refresh loader data when this operation's events, step records,
   // job, or tracked entities change (incl. edits from the operation view).
@@ -726,6 +725,39 @@ export function AssemblyView({
 
   const isStepDone = (step: Step) =>
     (step.jobOperationStepRecord ?? []).some((r) => r.index === activeIndex);
+  // A recorded step whose value FAILS its acceptance criteria for a given unit:
+  // a Measurement out of [min, max], or a pass/fail step (Inspection) recorded as
+  // not passing. Mirrors the out-of-spec red styling in the operation view's Step
+  // component. Drives the red bar/badge and the red unit indicators below.
+  const isStepBadResultAtIndex = (step: Step, index: number) => {
+    const record = (step.jobOperationStepRecord ?? []).find(
+      (r) => r.index === index
+    );
+    if (!record) return false;
+    if (step.type === "Measurement") {
+      const value = record.numericValue;
+      if (value == null) return false;
+      return (
+        (step.minValue != null && value < step.minValue) ||
+        (step.maxValue != null && value > step.maxValue)
+      );
+    }
+    if (step.type === "Inspection") return record.booleanValue === false;
+    return false;
+  };
+  const isStepBadResult = (step: Step) =>
+    isStepBadResultAtIndex(step, activeIndex);
+  // Does any step have an out-of-spec record for this unit? Flags the unit red in
+  // the sidebar navigator so a bad build is visible without opening each unit.
+  const unitHasBadResult = (index: number) =>
+    steps.some((s) => isStepBadResultAtIndex(s, index));
+  // Every step recorded for this unit — flags a fully-built unit green in the
+  // navigator (mirrors `allStepsRecorded`, but for an arbitrary unit index).
+  const unitIsRecorded = (index: number) =>
+    steps.length > 0 &&
+    steps.every((s) =>
+      (s.jobOperationStepRecord ?? []).some((r) => r.index === index)
+    );
   const doneCount = steps.filter(isStepDone).length;
   // All steps recorded for the current unit — drives the "Steps are missing"
   // warning in the complete/finish flow (soft warning, mirrors operation view).
@@ -1159,7 +1191,9 @@ export function AssemblyView({
                   className={cn(
                     "h-1.5 flex-1 rounded-full transition-colors",
                     isStepDone(s)
-                      ? "bg-emerald-500"
+                      ? isStepBadResult(s)
+                        ? "bg-red-500"
+                        : "bg-emerald-500"
                       : i === currentStep
                         ? "bg-foreground"
                         : "bg-border hover:bg-muted-foreground/40"
@@ -1207,11 +1241,12 @@ export function AssemblyView({
           <span className="whitespace-nowrap text-xs tabular-nums text-muted-foreground">
             {currentStep + 1} / {steps.length}
           </span>
-          {/* Unit pager (always visible; the left-panel Quantity bar is lg+ only).
-              Assembly builds one at a time, but the operator can page back to review
-              or fix a prior unit's step records — mirrors the operation view. */}
+          {/* Unit pager — fallback for narrow screens (< lg) where the left sidebar
+              is hidden; on lg+ the richer sidebar UnitNavigator takes over. Assembly
+              builds one at a time, but the operator can page back to review or fix a
+              prior unit's step records — mirrors the operation view. */}
           {isMultiQuantity && (
-            <div className="flex items-center gap-0.5">
+            <div className="flex items-center gap-0.5 lg:hidden">
               <IconButton
                 aria-label="Previous unit"
                 variant="ghost"
@@ -1244,7 +1279,8 @@ export function AssemblyView({
       <div className="flex flex-1 flex-col overflow-y-auto lg:flex-row lg:overflow-hidden">
         {/* ── LEFT PANEL: part detail + timer + containment ── */}
         <aside className="hidden w-[220px] shrink-0 flex-col overflow-hidden border-r border-border bg-card lg:flex xl:w-[280px]">
-          {/* Part info */}
+          {/* Part info. For a multi-quantity build the tracked-entity identity moves
+              into the dedicated Units section below the timers. */}
           <div className="shrink-0 border-b border-border px-3 py-2.5">
             <p className="truncate text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
               {job?.itemReadableIdWithRevision ?? "—"}
@@ -1254,7 +1290,7 @@ export function AssemblyView({
                 {operation.itemDescription}
               </p>
             )}
-            {currentEntity && (
+            {!isMultiQuantity && currentEntity ? (
               <div className="mt-1.5 flex items-center gap-1.5">
                 <Badge variant="secondary" className="font-mono text-[10px]">
                   {requiresBatchTracking ? "Batch" : "S/N"}
@@ -1263,47 +1299,30 @@ export function AssemblyView({
                   {currentEntity.readableId ?? currentEntity.id.slice(-8)}
                 </span>
               </div>
-            )}
+            ) : null}
           </div>
 
           {/* Cumulative timer — click a row to choose which clock the play
               button tracks. Only work types this operation uses are shown. */}
           <div className="flex shrink-0 flex-col gap-3 border-b border-border px-3 py-3">
             <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-              Time
+              Progress
             </p>
-            {(operation?.setupDuration ?? 0) > 0 && (
-              <TimerRow
-                icon={<LuTimer className="size-3" />}
-                label="Setup"
-                elapsed={progress.setup}
-                total={operation?.setupDuration ?? 0}
-                selected={selectedWorkType === "Setup"}
-                onSelect={() => setSelectedWorkType("Setup")}
-              />
-            )}
-            {(operation?.laborDuration ?? 0) > 0 && (
-              <TimerRow
-                icon={<LuHardHat className="size-3" />}
-                label="Labor"
-                elapsed={progress.labor}
-                total={operation?.laborDuration ?? 0}
-                selected={selectedWorkType === "Labor"}
-                onSelect={() => setSelectedWorkType("Labor")}
-              />
-            )}
-            {(operation?.machineDuration ?? 0) > 0 && (
-              <TimerRow
-                icon={<LuHammer className="size-3" />}
-                label="Machine"
-                elapsed={progress.machine}
-                total={operation?.machineDuration ?? 0}
-                selected={selectedWorkType === "Machine"}
-                onSelect={() => setSelectedWorkType("Machine")}
-              />
-            )}
-            {/* Quantity progress — units completed of the operation quantity.
-                Only shown when building more than one (single-qty stays lean). */}
+            {/* The live tick lives inside TimeRows so the per-second re-render is
+                scoped to the timer display — it must NOT re-render the whole view,
+                which would disrupt an open RecordModal's in-progress number entry. */}
+            <TimeRows
+              events={events}
+              setupDuration={operation?.setupDuration ?? 0}
+              laborDuration={operation?.laborDuration ?? 0}
+              machineDuration={operation?.machineDuration ?? 0}
+              selectedWorkType={selectedWorkType}
+              onSelectWorkType={setSelectedWorkType}
+            />
+            {/* Quantity progress — units completed / reworked / scrapped of the
+                operation quantity. Segments mirror the operation view: completed
+                (emerald), reworked (yellow), scrapped (red). Only shown when
+                building more than one (single-qty stays lean). */}
             {isMultiQuantity && (
               <div className="flex flex-col gap-1">
                 <div className="flex items-center justify-between">
@@ -1314,14 +1333,24 @@ export function AssemblyView({
                     {Math.min(quantityComplete, unitCount)}/{unitCount}
                   </span>
                 </div>
-                <div className="h-1 w-full overflow-hidden rounded-full bg-border">
-                  <div
-                    className="h-full rounded-full bg-emerald-500 transition-all"
-                    style={{
-                      width: `${unitCount ? (Math.min(quantityComplete, unitCount) / unitCount) * 100 : 0}%`
-                    }}
-                  />
-                </div>
+                <BarProgress
+                  max={unitCount || 1}
+                  progress={quantityComplete}
+                  segments={[
+                    {
+                      value: Math.min(quantityComplete, unitCount),
+                      className: "bg-emerald-500"
+                    },
+                    {
+                      value: productionQuantities.rework,
+                      className: "bg-yellow-500"
+                    },
+                    {
+                      value: productionQuantities.scrap,
+                      className: "bg-red-500"
+                    }
+                  ]}
+                />
               </div>
             )}
             {/* Steps done count */}
@@ -1335,17 +1364,24 @@ export function AssemblyView({
                     {doneCount}/{steps.length}
                   </span>
                 </div>
-                <div className="h-1 w-full overflow-hidden rounded-full bg-border">
-                  <div
-                    className="h-full rounded-full bg-emerald-500 transition-all"
-                    style={{
-                      width: `${steps.length ? (doneCount / steps.length) * 100 : 0}%`
-                    }}
-                  />
-                </div>
+                <BarProgress max={steps.length || 1} progress={doneCount} />
               </div>
             )}
           </div>
+
+          {/* Units — the full, scrollable list of every unit/serial being built,
+              with its own section header + compact pager. Sits under Time. */}
+          {isMultiQuantity && (
+            <UnitNavigator
+              units={units}
+              currentUnitIndex={currentUnitIndex}
+              isTracked={isTracked}
+              trackingLabel={requiresBatchTracking ? "Batch" : "S/N"}
+              unitHasBadResult={unitHasBadResult}
+              unitIsRecorded={unitIsRecorded}
+              onSelectUnit={goToUnit}
+            />
+          )}
 
           {/* Containment actions (NCR-driven) — collapsible accordion at the
               bottom of the left panel. Click a row to expand/collapse. */}
@@ -1678,7 +1714,12 @@ export function AssemblyView({
                       <span className="flex size-7 items-center justify-center rounded-full bg-foreground text-xs font-bold text-background">
                         {currentStep + 1}
                       </span>
-                      {isStepDone(step) && <Badge variant="green">Done</Badge>}
+                      {isStepDone(step) &&
+                        (isStepBadResult(step) ? (
+                          <Badge variant="red">Out of spec</Badge>
+                        ) : (
+                          <Badge variant="green">Done</Badge>
+                        ))}
                       {step.type ? (
                         <Badge variant="secondary" className="normal-case">
                           {step.type}
@@ -2539,6 +2580,117 @@ function StepCompleteAction({
   );
 }
 
+// Units section for the left sidebar — its own labeled section (like Time), sitting
+// directly below the timers. A compact prev/next pager sits top-right by the label,
+// and the full, scrollable list of EVERY unit gives full visibility: a serial/batch
+// parent lists its entities by readableId, an untracked parent lists "Unit 1 / Unit
+// 2 / …". The list auto-scrolls to keep the current unit in view; units with an
+// out-of-spec measurement (or a failed inspection) are flagged red, fully-recorded
+// units green.
+function UnitNavigator({
+  units,
+  currentUnitIndex,
+  isTracked,
+  trackingLabel,
+  unitHasBadResult,
+  unitIsRecorded,
+  onSelectUnit
+}: {
+  units: {
+    index: number;
+    entity: { id: string; readableId?: string | null } | null;
+  }[];
+  currentUnitIndex: number;
+  isTracked: boolean;
+  trackingLabel: string;
+  unitHasBadResult: (index: number) => boolean;
+  unitIsRecorded: (index: number) => boolean;
+  onSelectUnit: (index: number) => void;
+}) {
+  const unitCount = units.length;
+  const labelFor = (u: (typeof units)[number]) =>
+    isTracked && u.entity
+      ? (u.entity.readableId ?? u.entity.id.slice(-8))
+      : `Unit ${u.index + 1}`;
+
+  // Keep the selected unit visible as the operator pages/jumps between units.
+  // currentUnitIndex is a real dep: the ref points at a different row after it
+  // changes, so re-run the scroll even though the body only reads the ref.
+  const currentRef = useRef<HTMLButtonElement>(null);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: scroll on unit change
+  useEffect(() => {
+    currentRef.current?.scrollIntoView({ block: "nearest" });
+  }, [currentUnitIndex]);
+
+  return (
+    <div className="flex shrink-0 flex-col border-b border-border">
+      {/* Section header: label + compact pager grouped top-right. */}
+      <div className="flex items-center justify-between px-3 pb-1.5 pt-3">
+        <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+          {isTracked ? trackingLabel : "Units"}
+        </p>
+        <div className="flex items-center gap-0.5">
+          <IconButton
+            aria-label="Previous unit"
+            variant="ghost"
+            size="sm"
+            icon={<LuChevronLeft />}
+            isDisabled={currentUnitIndex <= 0}
+            onClick={() => onSelectUnit(currentUnitIndex - 1)}
+          />
+          <IconButton
+            aria-label="Next unit"
+            variant="ghost"
+            size="sm"
+            icon={<LuChevronRight />}
+            isDisabled={currentUnitIndex >= unitCount - 1}
+            onClick={() => onSelectUnit(currentUnitIndex + 1)}
+          />
+        </div>
+      </div>
+
+      {/* Full, scrollable, full-bleed list — bounded so it never crowds out the
+          rest of the sidebar. No inner box/rounding; the section border divides it
+          from the next section like every other card section. */}
+      <div className="max-h-48 overflow-y-auto pb-2">
+        {units.map((u) => {
+          const isCurrent = u.index === currentUnitIndex;
+          const bad = unitHasBadResult(u.index);
+          const recorded = unitIsRecorded(u.index);
+          return (
+            <button
+              key={u.index}
+              type="button"
+              ref={isCurrent ? currentRef : undefined}
+              aria-pressed={isCurrent}
+              onClick={() => onSelectUnit(u.index)}
+              className={cn(
+                "flex w-full items-center gap-2 px-3 py-2 text-left font-mono text-xs transition-colors",
+                isCurrent
+                  ? "bg-accent font-semibold text-foreground"
+                  : "text-muted-foreground hover:bg-muted/60",
+                bad && "text-red-500"
+              )}
+            >
+              <span
+                className={cn(
+                  "size-1.5 shrink-0 rounded-full",
+                  bad
+                    ? "bg-red-500"
+                    : recorded
+                      ? "bg-emerald-500"
+                      : "bg-transparent"
+                )}
+              />
+              <span className="truncate">{labelFor(u)}</span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 // Compact tab button for the main panel (Details / Model / Chat).
 function TabButton({
   active,
@@ -2626,6 +2778,63 @@ function useCumulativeProgress(events: ProductionEvent[]) {
   return totals;
 }
 
+// The Setup/Labor/Machine timer rows. Isolated into its own component so the
+// per-second `useCumulativeProgress` tick re-renders ONLY these rows — not the
+// entire AssemblyView. A whole-view re-render every second was resetting an open
+// RecordModal's react-aria number input back to its default while the operator
+// was mid-edit (the "measurement keeps going to 0" bug).
+function TimeRows({
+  events,
+  setupDuration,
+  laborDuration,
+  machineDuration,
+  selectedWorkType,
+  onSelectWorkType
+}: {
+  events: ProductionEvent[];
+  setupDuration: number;
+  laborDuration: number;
+  machineDuration: number;
+  selectedWorkType: "Setup" | "Labor" | "Machine";
+  onSelectWorkType: (type: "Setup" | "Labor" | "Machine") => void;
+}) {
+  const progress = useCumulativeProgress(events);
+  return (
+    <>
+      {setupDuration > 0 && (
+        <TimerRow
+          icon={<LuTimer className="size-3" />}
+          label="Setup"
+          elapsed={progress.setup}
+          total={setupDuration}
+          selected={selectedWorkType === "Setup"}
+          onSelect={() => onSelectWorkType("Setup")}
+        />
+      )}
+      {laborDuration > 0 && (
+        <TimerRow
+          icon={<LuHardHat className="size-3" />}
+          label="Labor"
+          elapsed={progress.labor}
+          total={laborDuration}
+          selected={selectedWorkType === "Labor"}
+          onSelect={() => onSelectWorkType("Labor")}
+        />
+      )}
+      {machineDuration > 0 && (
+        <TimerRow
+          icon={<LuHammer className="size-3" />}
+          label="Machine"
+          elapsed={progress.machine}
+          total={machineDuration}
+          selected={selectedWorkType === "Machine"}
+          onSelect={() => onSelectWorkType("Machine")}
+        />
+      )}
+    </>
+  );
+}
+
 // Single timer row: icon · "3s / 6m" · progress bar
 function TimerRow({
   icon,
@@ -2643,7 +2852,6 @@ function TimerRow({
   onSelect?: () => void;
 }) {
   const overrun = total > 0 && elapsed > total;
-  const pct = total > 0 ? Math.min((elapsed / total) * 100, 100) : 0;
 
   return (
     <button
@@ -2686,15 +2894,11 @@ function TimerRow({
           )}
         </span>
       </div>
-      <div className="h-1 w-full overflow-hidden rounded-full bg-border">
-        <div
-          className={cn(
-            "h-full rounded-full transition-all",
-            overrun ? "bg-red-500" : "bg-emerald-500"
-          )}
-          style={{ width: `${pct}%` }}
-        />
-      </div>
+      <BarProgress
+        max={total || 1}
+        progress={total > 0 ? elapsed : 0}
+        activeClassName={overrun ? "bg-red-500" : "bg-emerald-500"}
+      />
     </button>
   );
 }

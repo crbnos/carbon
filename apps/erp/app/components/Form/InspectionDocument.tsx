@@ -22,7 +22,7 @@ const InspectionDocument = ({
       isOptional={props?.isOptional ?? true}
       isLoading={loading}
       {...props}
-      label={props?.label ?? "Inspection Document"}
+      label={props?.label ?? "Inspection Plan"}
     />
   );
 };

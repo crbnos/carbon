@@ -3,29 +3,26 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { deleteAssemblyStandardNote } from "~/modules/production";
+import { deleteAssemblyInstructionStepTool } from "~/modules/production";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   const { client } = await requirePermissions(request, {
     delete: "production"
   });
 
-  const { noteId } = params;
-  if (!noteId) throw new Error("noteId is not found");
+  const { toolId } = params;
+  if (!toolId) throw new Error("toolId is not found");
 
-  const deleteNote = await deleteAssemblyStandardNote(client, noteId);
-  if (deleteNote.error) {
+  const deleteTool = await deleteAssemblyInstructionStepTool(client, toolId);
+  if (deleteTool.error) {
     return data(
       { success: false },
-      await flash(
-        request,
-        error(deleteNote.error, "Failed to delete standard note")
-      )
+      await flash(request, error(deleteTool.error, "Failed to delete tool"))
     );
   }
 
   return data(
     { success: true },
-    await flash(request, success("Successfully deleted standard note"))
+    await flash(request, success("Successfully deleted tool"))
   );
 }

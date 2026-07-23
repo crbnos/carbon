@@ -23,7 +23,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       path.to.inspectionDocuments,
       await flash(
         request,
-        error(result.error, "Failed to delete inspection document")
+        error(result.error, "Failed to delete inspection plan")
       )
     );
   }
@@ -36,6 +36,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   throw redirect(
     path.to.inspectionDocuments,
-    await flash(request, success("Inspection document deleted"))
+    await flash(request, success("Inspection plan deleted"))
   );
 }

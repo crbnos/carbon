@@ -74,7 +74,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
     throw redirect(
       path.to.partQuality(itemId),
-      await flash(request, success("Inspection document assignment updated"))
+      await flash(request, success("Inspection plan assignment updated"))
     );
   }
 
@@ -107,13 +107,15 @@ export default function PartQualityRoute() {
   const { itemId } = useParams();
   if (!itemId) throw new Error("itemId is required");
   return (
-    <ItemQualityView
-      itemId={itemId}
-      actionPath={path.to.partQuality(itemId)}
-      standard={samplingStandard}
-      plan={plan ?? undefined}
-      documents={documents}
-      assignments={assignments}
-    />
+    <div className="p-4 w-full">
+      <ItemQualityView
+        itemId={itemId}
+        actionPath={path.to.partQuality(itemId)}
+        standard={samplingStandard}
+        plan={plan ?? undefined}
+        documents={documents}
+        assignments={assignments}
+      />
+    </div>
   );
 }

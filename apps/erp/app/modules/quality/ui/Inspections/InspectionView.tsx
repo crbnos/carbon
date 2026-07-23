@@ -573,7 +573,7 @@ const InspectionView = ({
               <div
                 role="separator"
                 aria-orientation="horizontal"
-                aria-label={t`Drag to resize drawing and characteristics`}
+                aria-label={t`Drag to resize drawing and features`}
                 aria-valuenow={Math.round(pdfPaneHeightPx)}
                 className={`group flex h-2 shrink-0 cursor-row-resize touch-none items-center justify-center rounded-md px-2 hover:bg-muted/80 ${
                   isResizingSplit ? "bg-muted" : ""
@@ -584,7 +584,7 @@ const InspectionView = ({
               </div>
             ) : null}
 
-            {/* Characteristics grid — collapsible bottom panel */}
+            {/* Features grid — collapsible bottom panel */}
             <div
               className={
                 gridExpanded
@@ -624,8 +624,8 @@ const InspectionView = ({
                       aria-expanded={gridExpanded}
                       aria-label={
                         gridExpanded
-                          ? t`Collapse characteristics`
-                          : t`Expand characteristics`
+                          ? t`Collapse features table`
+                          : t`Expand features table`
                       }
                       icon={
                         gridExpanded ? (
@@ -866,7 +866,7 @@ function DocumentSwitchModal({
       <ModalContent>
         <ModalHeader>
           <ModalTitle>
-            <Trans>Change Inspection Document</Trans>
+            <Trans>Change Inspection Plan</Trans>
           </ModalTitle>
         </ModalHeader>
         <ModalBody>

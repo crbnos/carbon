@@ -73,7 +73,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       await flash(
         request,
         success(
-          `Synced ${summary.created + summary.updated} steps to the BOP (${summary.created} new, ${summary.updated} updated, ${summary.deleted} removed)${unmatched}`
+          `Synced ${summary.created + summary.updated} steps to the BOP (${summary.created} new, ${summary.updated} updated, ${summary.deleted} removed, ${summary.slidesSynced} slides, ${summary.toolsLinked} tool links)${unmatched}`
         )
       )
     );

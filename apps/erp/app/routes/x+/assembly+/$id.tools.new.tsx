@@ -5,8 +5,8 @@ import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import {
-  assemblyStepRequirementValidator,
-  upsertAssemblyInstructionStepRequirement
+  assemblyStepToolValidator,
+  upsertAssemblyInstructionStepTool
 } from "~/modules/production";
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -18,36 +18,21 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { id: assemblyInstructionId } = params;
   if (!assemblyInstructionId) throw new Error("id is not found");
 
-  const validation = await validator(assemblyStepRequirementValidator).validate(
+  const validation = await validator(assemblyStepToolValidator).validate(
     await request.formData()
   );
 
   if (validation.error) {
     return data(
       { success: false },
-      await flash(
-        request,
-        error(validation.error, "Failed to create requirement")
-      )
+      await flash(request, error(validation.error, "Failed to add tool"))
     );
-  }
-
-  // Media uploads must live under this company's path for this instruction
-  const { filePath } = validation.data;
-  if (filePath) {
-    const expectedPrefix = `${companyId}/assembly/${assemblyInstructionId}/`;
-    if (!filePath.startsWith(expectedPrefix) || filePath.includes("..")) {
-      return data(
-        { success: false },
-        await flash(request, error(null, "Invalid file path"))
-      );
-    }
   }
 
   // biome-ignore lint/correctness/noUnusedVariables: id is never set on create
   const { id, ...rest } = validation.data;
 
-  const create = await upsertAssemblyInstructionStepRequirement(client, {
+  const create = await upsertAssemblyInstructionStepTool(client, {
     ...rest,
     companyId,
     createdBy: userId
@@ -55,7 +40,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (create.error) {
     return data(
       { success: false },
-      await flash(request, error(create.error, "Failed to insert requirement"))
+      await flash(request, error(create.error, "Failed to insert tool"))
     );
   }
 

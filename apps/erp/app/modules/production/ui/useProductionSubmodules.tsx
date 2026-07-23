@@ -66,17 +66,17 @@ export default function useProductionSubmodules() {
           role: "employee"
         },
         {
+          name: t`Inspection Plans`,
+          to: path.to.inspectionDocuments,
+          icon: <IoBalloonOutline />,
+          permission: "quality"
+        },
+        {
           name: t`Procedures`,
           to: path.to.procedures,
           icon: <LuListChecks />,
           table: "procedure",
           role: "employee"
-        },
-        {
-          name: t`Inspection Documents`,
-          to: path.to.inspectionDocuments,
-          icon: <IoBalloonOutline />,
-          permission: "quality"
         }
       ]
     },

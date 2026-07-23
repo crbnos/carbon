@@ -193,7 +193,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
         success: false,
         message: getErrorMessage(
           rpcResult.error,
-          "Failed to save inspection document"
+          "Failed to save inspection plan"
         )
       },
       { status: 400 }

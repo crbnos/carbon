@@ -614,6 +614,18 @@ export const quoteOperationValidator = z
       message: "Labor rate is required",
       path: ["laborRate"]
     }
+  )
+  .refine(
+    (data) => {
+      if (data.operationType === "Inspection") {
+        return !!data.inspectionDocumentId;
+      }
+      return true;
+    },
+    {
+      message: "Inspection Plan is required",
+      path: ["inspectionDocumentId"]
+    }
   );
 
 export const quoteFinalizeValidator = z

@@ -6404,6 +6404,40 @@ async function insertAssemblyDataForJobOperation(
   );
   if (sourceSteps.length === 0) return;
 
+  const sourceStepIds = sourceSteps.map((step) => step.id);
+  const [sourceSlides, sourceTools] = await Promise.all([
+    client
+      .from("assemblyInstructionStepSlide")
+      .select(
+        "stepId, imagePath, modelUploadId, caption, sortOrder, size, annotations"
+      )
+      .in("stepId", sourceStepIds)
+      .eq("companyId", companyId)
+      .order("sortOrder", { ascending: true }),
+    client
+      .from("assemblyInstructionStepTool")
+      .select("stepId, itemId, quantity")
+      .in("stepId", sourceStepIds)
+      .eq("companyId", companyId),
+  ]);
+  const slidesByStep = new Map<
+    string,
+    NonNullable<typeof sourceSlides.data>
+  >();
+  for (const slide of sourceSlides.data ?? []) {
+    const list = slidesByStep.get(slide.stepId) ?? [];
+    list.push(slide);
+    slidesByStep.set(slide.stepId, list);
+  }
+  const toolsByStep = new Map<string, { itemId: string; quantity: number }[]>();
+  for (const tool of sourceTools.data ?? []) {
+    const list = toolsByStep.get(tool.stepId) ?? [];
+    list.push({ itemId: tool.itemId, quantity: tool.quantity ?? 1 });
+    toolsByStep.set(tool.stepId, list);
+  }
+
+  // Correlate inserted job steps back to their source steps via the provenance
+  // column, not row order.
   const insertedSteps = await trx
     .insertInto("jobOperationStep")
     .values(
@@ -6424,22 +6458,116 @@ async function insertAssemblyDataForJobOperation(
         createdBy: userId,
       }))
     )
-    .returning(["id"])
+    .returning(["id", "assemblyInstructionStepId"])
     .execute();
+  const targetIdBySource = new Map(
+    insertedSteps.map((step) => [step.assemblyInstructionStepId, step.id])
+  );
 
-  if (instruction.data?.modelUploadId) {
-    await trx
-      .insertInto("jobOperationStepSlide")
+  // Per-step slides: the instruction's 3D model leads as a model slide,
+  // followed by the step's authored slides (image XOR model, with captions,
+  // sizes, and annotation pins).
+  const slideRows: {
+    stepId: string;
+    imagePath: string | null;
+    modelUploadId: string | null;
+    caption: string | null;
+    sortOrder: number;
+    size: string;
+    annotations: string;
+    companyId: string;
+    createdBy: string;
+  }[] = [];
+  for (const source of sourceSteps) {
+    const targetStepId = targetIdBySource.get(source.id);
+    if (!targetStepId) continue;
+    const authored = slidesByStep.get(source.id) ?? [];
+    const modelUploadId = instruction.data?.modelUploadId;
+    if (
+      modelUploadId &&
+      !authored.some((slide) => slide.modelUploadId === modelUploadId)
+    ) {
+      slideRows.push({
+        stepId: targetStepId,
+        imagePath: null,
+        modelUploadId,
+        caption: null,
+        sortOrder: 0,
+        size: "medium",
+        annotations: JSON.stringify([]),
+        companyId,
+        createdBy: userId,
+      });
+    }
+    for (const slide of authored) {
+      slideRows.push({
+        stepId: targetStepId,
+        imagePath: slide.imagePath,
+        modelUploadId: slide.modelUploadId,
+        caption: slide.caption,
+        sortOrder: slide.sortOrder ?? 1,
+        size: slide.size ?? "medium",
+        annotations: JSON.stringify(slide.annotations ?? []),
+        companyId,
+        createdBy: userId,
+      });
+    }
+  }
+  if (slideRows.length > 0) {
+    await trx.insertInto("jobOperationStepSlide").values(slideRows).execute();
+  }
+
+  // Per-step tools: one jobOperationTool row per distinct tool item (quantity =
+  // max across steps) plus the tool ↔ step scope links.
+  const maxQuantityByItemId = new Map<string, number>();
+  for (const tools of toolsByStep.values()) {
+    for (const tool of tools) {
+      maxQuantityByItemId.set(
+        tool.itemId,
+        Math.max(maxQuantityByItemId.get(tool.itemId) ?? 0, tool.quantity)
+      );
+    }
+  }
+  if (maxQuantityByItemId.size > 0) {
+    const insertedTools = await trx
+      .insertInto("jobOperationTool")
       .values(
-        insertedSteps.map((step) => ({
-          stepId: step.id,
-          modelUploadId: instruction.data.modelUploadId,
-          sortOrder: 1,
+        [...maxQuantityByItemId.entries()].map(([itemId, quantity]) => ({
+          operationId,
+          toolId: itemId,
+          quantity,
           companyId,
           createdBy: userId,
         }))
       )
+      .returning(["id", "toolId"])
       .execute();
+    const toolRowIdByItemId = new Map(
+      insertedTools.map((tool) => [tool.toolId, tool.id])
+    );
+    const toolLinkRows: {
+      jobOperationToolId: string;
+      jobOperationStepId: string;
+    }[] = [];
+    for (const source of sourceSteps) {
+      const targetStepId = targetIdBySource.get(source.id);
+      if (!targetStepId) continue;
+      for (const tool of toolsByStep.get(source.id) ?? []) {
+        const jobOperationToolId = toolRowIdByItemId.get(tool.itemId);
+        if (jobOperationToolId) {
+          toolLinkRows.push({
+            jobOperationToolId,
+            jobOperationStepId: targetStepId,
+          });
+        }
+      }
+    }
+    if (toolLinkRows.length > 0) {
+      await trx
+        .insertInto("jobOperationToolStep")
+        .values(toolLinkRows)
+        .execute();
+    }
   }
 }
 

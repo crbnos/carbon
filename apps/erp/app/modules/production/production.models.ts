@@ -482,6 +482,18 @@ export const jobOperationValidator = baseJobOperationValidator
       message: "Labor rate is required",
       path: ["laborRate"]
     }
+  )
+  .refine(
+    (data) => {
+      if (data.operationType === "Inspection") {
+        return !!data.inspectionDocumentId;
+      }
+      return true;
+    },
+    {
+      message: "Inspection Plan is required",
+      path: ["inspectionDocumentId"]
+    }
   );
 
 export const jobOperationValidatorForReleasedJob = baseJobOperationValidator
@@ -658,6 +670,18 @@ export const jobOperationValidatorForReleasedJob = baseJobOperationValidator
     {
       message: "Labor rate is required",
       path: ["laborRate"]
+    }
+  )
+  .refine(
+    (data) => {
+      if (data.operationType === "Inspection") {
+        return !!data.inspectionDocumentId;
+      }
+      return true;
+    },
+    {
+      message: "Inspection Plan is required",
+      path: ["inspectionDocumentId"]
     }
   );
 
@@ -1058,16 +1082,6 @@ export const planConfidences = ["high", "low", "manual"] as const;
 
 export const assemblyStepStatuses = ["Todo", "Review", "Done"] as const;
 
-export const assemblyRequirementTypes = [
-  "Tool",
-  "Fixture",
-  "Consumable",
-  "Note",
-  "Media"
-] as const;
-
-export const assemblyNoteSeverities = ["Info", "Caution", "Warning"] as const;
-
 const vector3 = z.tuple([z.number(), z.number(), z.number()]);
 const quaternion = z.tuple([z.number(), z.number(), z.number(), z.number()]);
 
@@ -1375,51 +1389,16 @@ export const assemblyStepMaterialValidator = z.object({
   sortOrder: zfd.numeric(z.number().min(0).optional())
 });
 
-export const assemblyStepRequirementValidator = z
-  .object({
-    id: zfd.text(z.string().optional()),
-    stepId: z.string().min(1),
-    type: z.enum(assemblyRequirementTypes),
-    itemId: zfd.text(z.string().optional()),
-    name: zfd.text(z.string().optional()),
-    text: zfd.text(z.string().optional()),
-    severity: zfd.text(z.enum(assemblyNoteSeverities).optional()),
-    filePath: zfd.text(z.string().optional()),
-    quantity: zfd.numeric(z.number().int().positive().optional())
-  })
-  .superRefine((data, ctx) => {
-    if (data.type === "Note" && !data.text?.trim()) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ["text"],
-        message: "Note text is required"
-      });
-    }
-    if (data.type === "Media" && !data.filePath?.trim()) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ["filePath"],
-        message: "A file is required"
-      });
-    }
-    if (
-      ["Tool", "Fixture", "Consumable"].includes(data.type) &&
-      !data.itemId?.trim() &&
-      !data.name?.trim()
-    ) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ["name"],
-        message: "Pick a catalog item or enter a name"
-      });
-    }
-  });
-
-export const assemblyStandardNoteValidator = z.object({
+/**
+ * Tools used at a step. itemId is a tool-type item — the same target
+ * jobOperationTool.toolId references, so the BOP sync maps rows 1:1.
+ */
+export const assemblyStepToolValidator = z.object({
   id: zfd.text(z.string().optional()),
-  name: z.string().min(1, { message: "Name is required" }),
-  content: z.string().min(1, { message: "Content is required" }),
-  severity: z.enum(assemblyNoteSeverities)
+  stepId: z.string().min(1),
+  itemId: z.string().min(1, { message: "Tool is required" }),
+  quantity: zfd.numeric(z.number().int().positive().optional()),
+  sortOrder: zfd.numeric(z.number().min(0).optional())
 });
 
 // An assembly unit: model leaf nodes the planner treats as one rigid body — a

@@ -1333,8 +1333,8 @@ msgstr "Bu değişiklik emrini silmek istediğinizden emin misiniz?"
 msgid "Are you sure you want to delete this gauge?"
 msgstr "Bu kalibratörü silmek istediğinizden emin misiniz?"
 
-msgid "Are you sure you want to delete this inspection document?"
-msgstr "Bu muayene belgesini silmek istediğinizden emin misiniz?"
+msgid "Are you sure you want to delete this inspection plan?"
+msgstr ""
 
 msgid "Are you sure you want to delete this issue workflow?"
 msgstr "Bu iş akışını silmek istediğinizden emin misiniz?"
@@ -2128,8 +2128,8 @@ msgstr "Değiştir"
 msgid "Change Document"
 msgstr "Belgeyi Değiştir"
 
-msgid "Change Inspection Document"
-msgstr "İnceleme Belgesini Değiştir"
+msgid "Change Inspection Plan"
+msgstr ""
 
 msgid "Change order"
 msgstr "Değişiklik emri"
@@ -2175,9 +2175,6 @@ msgstr "Türü değiştirmek bu öğenin taslak düzenlemelerini sıfırlar."
 
 msgid "Characteristic"
 msgstr "Özellik"
-
-msgid "Characteristics"
-msgstr "Özellikler"
 
 msgid "Chart of accounts"
 msgstr "Muhasebe planı"
@@ -2311,9 +2308,6 @@ msgstr "Daralt"
 
 msgid "Collapse all"
 msgstr "Tümünü daralt"
-
-msgid "Collapse characteristics"
-msgstr "Özellikleri Daralt"
 
 msgid "Collapse Costs"
 msgstr "Maliyetleri Daralt"
@@ -4229,7 +4223,7 @@ msgstr "Yeniden sıralamak için sürükleyin"
 msgid "Drag to resize diagram and features"
 msgstr "Şemayı ve özellikleri yeniden boyutlandırmak için sürükleyin"
 
-msgid "Drag to resize drawing and characteristics"
+msgid "Drag to resize drawing and features"
 msgstr "Çizim ve özellikleri yeniden boyutlandırmak için sürükleyin"
 
 msgid "Drag to zoom"
@@ -4446,8 +4440,8 @@ msgstr "Grubu Düzenle"
 msgid "Edit Holiday"
 msgstr "Tatil Düzenle"
 
-msgid "Edit Inspection Document"
-msgstr "Muayene Belgesini Düzenle"
+msgid "Edit Inspection Plan"
+msgstr ""
 
 msgid "Edit Item Group"
 msgstr "Ürün Grubunu Düzenle"
@@ -4978,9 +4972,6 @@ msgstr "Genişlet {0}"
 
 msgid "Expand all"
 msgstr "Tümünü genişlet"
-
-msgid "Expand characteristics"
-msgstr "Özellikleri Genişlet"
 
 msgid "Expand Costs"
 msgstr "Maliyetleri Genişlet"
@@ -6348,17 +6339,17 @@ msgstr "Sonraki Öğeyi İncele"
 msgid "Inspection"
 msgstr "Kontrol"
 
-msgid "Inspection Document"
-msgstr "Muayene Belgesi"
-
-msgid "Inspection Document Assignments"
-msgstr "İnceleme Belgesi Atamalar"
-
-msgid "Inspection Documents"
-msgstr "Muayene Belgeleri"
-
 msgid "Inspection Level"
 msgstr "Muayene Seviyesi"
+
+msgid "Inspection Plan"
+msgstr ""
+
+msgid "Inspection Plan Assignments"
+msgstr ""
+
+msgid "Inspection Plans"
+msgstr ""
 
 msgid "Inspection Status"
 msgstr "Kontrol Durumu"
@@ -7776,8 +7767,8 @@ msgstr "Yeni Tatil"
 msgid "New IC Transaction"
 msgstr "Yeni IC İşlemi"
 
-msgid "New Inspection Document"
-msgstr "Yeni Muayene Belgesi"
+msgid "New Inspection Plan"
+msgstr ""
 
 msgid "New Inventory Count"
 msgstr "Yeni Envanter Sayımı"
@@ -8148,8 +8139,8 @@ msgstr "Atanmış grup yok"
 msgid "No image"
 msgstr "Resim yok"
 
-msgid "No inspection documents"
-msgstr "İnceleme belgesi yok"
+msgid "No inspection plans"
+msgstr ""
 
 msgid "No issue types configured"
 msgstr "Hiçbir sorun türü yapılandırılmamış"
@@ -10060,9 +10051,6 @@ msgstr "Kaldır {0}"
 msgid "Remove condition"
 msgstr "Koşulu kaldır"
 
-msgid "Remove feature"
-msgstr "Özelliği kaldır"
-
 msgid "Remove filter"
 msgstr "Filtreyi kaldır"
 
@@ -11569,8 +11557,8 @@ msgstr "Adımlar"
 msgid "Steps are inherited from the assembly instruction."
 msgstr "Adımlar montaj talimatından devralınır."
 
-msgid "Steps are inherited from the inspection document."
-msgstr "Adımlar inceleme belgesinden devralınır."
+msgid "Steps are inherited from the inspection plan."
+msgstr ""
 
 msgid "Stock Transfer ID"
 msgstr "Stok Transfer Kimliği"
@@ -12265,8 +12253,8 @@ msgstr "Müşteriye fiyat teklifi vermekten ödeme tahsilatına kadar uçtan uca
 msgid "The endpoint that receives a POST request with the updated data when the table is updated"
 msgstr "Tablo güncellendiğinde güncellenmiş verilerle bir POST isteği alan uç nokta"
 
-msgid "The engineering drawing this inspection document is tied to; inspections recorded against this part reference back to this drawing."
-msgstr "Bu denetim belgesinin bağlı olduğu mühendislik çizimi; bu parça referansına karşı kaydedilen denetimler bu çizime başvur."
+msgid "The engineering drawing this inspection plan is tied to; inspections recorded against this part reference back to this drawing."
+msgstr ""
 
 msgid "The expected percentage of this item's output lost during production; planning multiplies demand by 1 / (1 − scrap) to compensate."
 msgstr "Bu öğenin üretim sırasında kaybedilen çıkışının beklenen yüzdesi; planlama telafi etmek için talebi 1 / (1 - hurda) ile çarpar."

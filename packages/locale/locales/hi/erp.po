@@ -1333,8 +1333,8 @@ msgstr "क्या आप इस परिवर्तन आदेश को 
 msgid "Are you sure you want to delete this gauge?"
 msgstr "क्या आप सुनिश्चित हैं कि आप इस गेज को हटाना चाहते हैं?"
 
-msgid "Are you sure you want to delete this inspection document?"
-msgstr "क्या आप सुनिश्चित हैं कि आप इस निरीक्षण दस्तावेज़ को हटाना चाहते हैं?"
+msgid "Are you sure you want to delete this inspection plan?"
+msgstr ""
 
 msgid "Are you sure you want to delete this issue workflow?"
 msgstr "क्या आप सुनिश्चित हैं कि आप इस समस्या वर्कफ़्लो को हटाना चाहते हैं?"
@@ -2128,8 +2128,8 @@ msgstr "बदलें"
 msgid "Change Document"
 msgstr "परिवर्तन दस्तावेज़"
 
-msgid "Change Inspection Document"
-msgstr "निरीक्षण दस्तावेज़ बदलें"
+msgid "Change Inspection Plan"
+msgstr ""
 
 msgid "Change order"
 msgstr "परिवर्तन आदेश"
@@ -2175,9 +2175,6 @@ msgstr "प्रकार बदलने से इस आइटम के ड
 
 msgid "Characteristic"
 msgstr "विशेषता"
-
-msgid "Characteristics"
-msgstr "विशेषताएं"
 
 msgid "Chart of accounts"
 msgstr "खातों की चार्ट"
@@ -2311,9 +2308,6 @@ msgstr "संक्षिप्त करें"
 
 msgid "Collapse all"
 msgstr "सभी को संक्षिप्त करें"
-
-msgid "Collapse characteristics"
-msgstr "विशेषताओं को संक्षिप्त करें"
 
 msgid "Collapse Costs"
 msgstr "लागत को संक्षिप्त करें"
@@ -4229,7 +4223,7 @@ msgstr "पुनः व्यवस्थित करने के लिए �
 msgid "Drag to resize diagram and features"
 msgstr "आरेख और सुविधाओं को पुनः आकार देने के लिए खींचें"
 
-msgid "Drag to resize drawing and characteristics"
+msgid "Drag to resize drawing and features"
 msgstr "ड्राइंग और विशेषताओं को आकार बदलने के लिए खींचें"
 
 msgid "Drag to zoom"
@@ -4446,8 +4440,8 @@ msgstr "समूह संपादित करें"
 msgid "Edit Holiday"
 msgstr "छुट्टी संपादित करें"
 
-msgid "Edit Inspection Document"
-msgstr "निरीक्षण दस्तावेज़ संपादित करें"
+msgid "Edit Inspection Plan"
+msgstr ""
 
 msgid "Edit Item Group"
 msgstr "आइटम ग्रुप संपादित करें"
@@ -4978,9 +4972,6 @@ msgstr "विस्तार करें {0}"
 
 msgid "Expand all"
 msgstr "सभी को विस्तृत करें"
-
-msgid "Expand characteristics"
-msgstr "विशेषताओं को विस्तारित करें"
 
 msgid "Expand Costs"
 msgstr "लागत विस्तृत करें"
@@ -6348,17 +6339,17 @@ msgstr "अगली वस्तु का निरीक्षण करे�
 msgid "Inspection"
 msgstr "निरीक्षण"
 
-msgid "Inspection Document"
-msgstr "निरीक्षण दस्तावेज़"
-
-msgid "Inspection Document Assignments"
-msgstr "निरीक्षण दस्तावेज़ असाइनमेंट"
-
-msgid "Inspection Documents"
-msgstr "निरीक्षण दस्तावेज़"
-
 msgid "Inspection Level"
 msgstr "निरीक्षण स्तर"
+
+msgid "Inspection Plan"
+msgstr ""
+
+msgid "Inspection Plan Assignments"
+msgstr ""
+
+msgid "Inspection Plans"
+msgstr ""
 
 msgid "Inspection Status"
 msgstr "निरीक्षण स्थिति"
@@ -7776,8 +7767,8 @@ msgstr "नई छुट्टी"
 msgid "New IC Transaction"
 msgstr "नया IC लेनदेन"
 
-msgid "New Inspection Document"
-msgstr "नया निरीक्षण दस्तावेज़"
+msgid "New Inspection Plan"
+msgstr ""
 
 msgid "New Inventory Count"
 msgstr "नई इन्वेंटरी गणना"
@@ -8148,8 +8139,8 @@ msgstr "कोई समूह असाइन नहीं किया गय�
 msgid "No image"
 msgstr "कोई छवि नहीं"
 
-msgid "No inspection documents"
-msgstr "कोई निरीक्षण दस्तावेज़ नहीं"
+msgid "No inspection plans"
+msgstr ""
 
 msgid "No issue types configured"
 msgstr "कोई समस्या प्रकार कॉन्फ़िगर नहीं किया गया"
@@ -10060,9 +10051,6 @@ msgstr "{0} को हटाएं"
 msgid "Remove condition"
 msgstr "शर्त हटाएं"
 
-msgid "Remove feature"
-msgstr "सुविधा हटाएं"
-
 msgid "Remove filter"
 msgstr "फ़िल्टर हटाएं"
 
@@ -11569,8 +11557,8 @@ msgstr "चरण"
 msgid "Steps are inherited from the assembly instruction."
 msgstr "चरण विधानसभा निर्देश से विरासत में मिले हैं।"
 
-msgid "Steps are inherited from the inspection document."
-msgstr "चरण निरीक्षण दस्तावेज़ से विरासत में मिले हैं।"
+msgid "Steps are inherited from the inspection plan."
+msgstr ""
 
 msgid "Stock Transfer ID"
 msgstr "स्टॉक ट्रांसफर आईडी"
@@ -12265,8 +12253,8 @@ msgstr "ग्राहक को उद्धृत करने से भु�
 msgid "The endpoint that receives a POST request with the updated data when the table is updated"
 msgstr "वह एंडपॉइंट जो तालिका अपडेट होने पर अपडेट किए गए डेटा के साथ POST अनुरोध प्राप्त करता है"
 
-msgid "The engineering drawing this inspection document is tied to; inspections recorded against this part reference back to this drawing."
-msgstr "इंजीनियरिंग ड्राइंग जिससे यह निरीक्षण दस्तावेज़ जुड़ा है; इस भाग संदर्भ के विरुद्ध दर्ज किए गए निरीक्षण इस ड्राइंग को संदर्भित करते हैं।"
+msgid "The engineering drawing this inspection plan is tied to; inspections recorded against this part reference back to this drawing."
+msgstr ""
 
 msgid "The expected percentage of this item's output lost during production; planning multiplies demand by 1 / (1 − scrap) to compensate."
 msgstr "उत्पादन के दौरान इस आइटम के उत्पादन का अपेक्षित प्रतिशत खो गया; योजना नुकसान की भरपाई के लिए मांग को 1 / (1 - स्क्रैप) से गुणा करता है।"

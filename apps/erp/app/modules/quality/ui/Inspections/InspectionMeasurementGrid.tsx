@@ -623,7 +623,11 @@ const InspectionMeasurementGrid = ({
         getRowClassName={(row) =>
           row.featureId === activeFeatureId ? "bg-accent/40" : undefined
         }
-        title={t`Characteristics`}
+        titleBadge={
+          <span className="min-w-0 truncate text-sm font-medium text-foreground">
+            {t`Features`} ({rows.length})
+          </span>
+        }
         primaryAction={primaryAction}
         withInlineEditing={!isReadOnly}
         forceEditMode={!isReadOnly}

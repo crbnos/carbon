@@ -1333,8 +1333,8 @@ msgstr "Möchten Sie diese Änderungsanweisung wirklich löschen?"
 msgid "Are you sure you want to delete this gauge?"
 msgstr "Sind Sie sicher, dass Sie dieses Messinstrument löschen möchten?"
 
-msgid "Are you sure you want to delete this inspection document?"
-msgstr "Sind Sie sicher, dass Sie dieses Inspektionsdokument löschen möchten?"
+msgid "Are you sure you want to delete this inspection plan?"
+msgstr ""
 
 msgid "Are you sure you want to delete this issue workflow?"
 msgstr "Sind Sie sicher, dass Sie diesen Issue-Workflow löschen möchten?"
@@ -2128,8 +2128,8 @@ msgstr "Ändern"
 msgid "Change Document"
 msgstr "Dokument ändern"
 
-msgid "Change Inspection Document"
-msgstr "Inspektionsdokument ändern"
+msgid "Change Inspection Plan"
+msgstr ""
 
 msgid "Change order"
 msgstr "Änderungsauftrag"
@@ -2175,9 +2175,6 @@ msgstr "Das Ändern des Typs setzt die Entwurfsbearbeitungen dieses Elements zur
 
 msgid "Characteristic"
 msgstr "Merkmal"
-
-msgid "Characteristics"
-msgstr "Merkmale"
 
 msgid "Chart of accounts"
 msgstr "Kontenplan"
@@ -2311,9 +2308,6 @@ msgstr "Einklappen"
 
 msgid "Collapse all"
 msgstr "Alle einklappen"
-
-msgid "Collapse characteristics"
-msgstr "Merkmale einklappen"
 
 msgid "Collapse Costs"
 msgstr "Kosten ausblenden"
@@ -4229,8 +4223,8 @@ msgstr "Zum Neuordnen ziehen"
 msgid "Drag to resize diagram and features"
 msgstr "Ziehen Sie, um das Diagramm und die Funktionen zu ändern"
 
-msgid "Drag to resize drawing and characteristics"
-msgstr "Ziehen zum Ändern der Größe von Zeichnung und Merkmalen"
+msgid "Drag to resize drawing and features"
+msgstr "Zum Vergrößern von Zeichnung und Funktionen ziehen"
 
 msgid "Drag to zoom"
 msgstr "Zum Zoomen ziehen"
@@ -4446,8 +4440,8 @@ msgstr "Gruppe bearbeiten"
 msgid "Edit Holiday"
 msgstr "Feiertag bearbeiten"
 
-msgid "Edit Inspection Document"
-msgstr "Inspektionsdokument bearbeiten"
+msgid "Edit Inspection Plan"
+msgstr ""
 
 msgid "Edit Item Group"
 msgstr "Artikelgruppe bearbeiten"
@@ -4978,9 +4972,6 @@ msgstr "Erweitern {0}"
 
 msgid "Expand all"
 msgstr "Alle erweitern"
-
-msgid "Expand characteristics"
-msgstr "Merkmale ausklappen"
 
 msgid "Expand Costs"
 msgstr "Kosten erweitern"
@@ -6348,17 +6339,17 @@ msgstr "Nächstes Element prüfen"
 msgid "Inspection"
 msgstr "Inspektion"
 
-msgid "Inspection Document"
-msgstr "Inspektionsdokument"
-
-msgid "Inspection Document Assignments"
-msgstr "Inspektionsdokument-Zuweisungen"
-
-msgid "Inspection Documents"
-msgstr "Inspektionsdokumente"
-
 msgid "Inspection Level"
 msgstr "Inspektionsstufe"
+
+msgid "Inspection Plan"
+msgstr ""
+
+msgid "Inspection Plan Assignments"
+msgstr ""
+
+msgid "Inspection Plans"
+msgstr ""
 
 msgid "Inspection Status"
 msgstr "Inspektionsstatus"
@@ -7776,8 +7767,8 @@ msgstr "Neuer Feiertag"
 msgid "New IC Transaction"
 msgstr "Neue IC-Transaktion"
 
-msgid "New Inspection Document"
-msgstr "Neues Inspektionsdokument"
+msgid "New Inspection Plan"
+msgstr ""
 
 msgid "New Inventory Count"
 msgstr "Neue Bestandszählung"
@@ -8148,8 +8139,8 @@ msgstr "Keine Gruppen zugewiesen"
 msgid "No image"
 msgstr "Kein Bild"
 
-msgid "No inspection documents"
-msgstr "Keine Inspektionsdokumente"
+msgid "No inspection plans"
+msgstr ""
 
 msgid "No issue types configured"
 msgstr "Keine Problemtypen konfiguriert"
@@ -10060,9 +10051,6 @@ msgstr "Entfernen {0}"
 msgid "Remove condition"
 msgstr "Bedingung entfernen"
 
-msgid "Remove feature"
-msgstr "Feature entfernen"
-
 msgid "Remove filter"
 msgstr "Filter entfernen"
 
@@ -11569,8 +11557,8 @@ msgstr "Schritte"
 msgid "Steps are inherited from the assembly instruction."
 msgstr "Die Schritte werden von der Montageanleitungen geerbt."
 
-msgid "Steps are inherited from the inspection document."
-msgstr "Die Schritte werden vom Inspektionsdokument geerbt."
+msgid "Steps are inherited from the inspection plan."
+msgstr ""
 
 msgid "Stock Transfer ID"
 msgstr "Lagerbestandstransfer-ID"
@@ -12265,8 +12253,8 @@ msgstr "Der durchgängige Geschäflauf vom Angebot an einen Kunden bis zur Zahlu
 msgid "The endpoint that receives a POST request with the updated data when the table is updated"
 msgstr "Der Endpunkt, der eine POST-Anfrage mit den aktualisierten Daten empfängt, wenn die Tabelle aktualisiert wird"
 
-msgid "The engineering drawing this inspection document is tied to; inspections recorded against this part reference back to this drawing."
-msgstr "Die technische Zeichnung, an die dieses Inspektionsdokument gebunden ist; gegen diesen Teilbezug aufgezeichnete Inspektionen verweisen auf diese Zeichnung."
+msgid "The engineering drawing this inspection plan is tied to; inspections recorded against this part reference back to this drawing."
+msgstr ""
 
 msgid "The expected percentage of this item's output lost during production; planning multiplies demand by 1 / (1 − scrap) to compensate."
 msgstr "Der erwartete Prozentsatz der Produktion dieses Teils, der während der Produktion verloren geht; die Planung multipliziert die Nachfrage mit 1 / (1 − Ausschuss) zur Kompensation."

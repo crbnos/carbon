@@ -5,4 +5,6 @@ export { default as AssemblyInstructionProperties } from "./AssemblyInstructionP
 export { default as AssemblyInstructionStatus } from "./AssemblyInstructionStatus";
 export { default as AssemblyInstructionsTable } from "./AssemblyInstructionsTable";
 export { default as AssemblyStepMaterials } from "./AssemblyStepMaterials";
+export { default as AssemblyStepSlides } from "./AssemblyStepSlides";
+export { default as AssemblyStepTools } from "./AssemblyStepTools";
 export { ModelConvertProgress } from "./ModelConvertProgress";

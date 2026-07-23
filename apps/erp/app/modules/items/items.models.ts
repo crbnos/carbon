@@ -588,6 +588,18 @@ export const methodOperationValidator = z
       message: "Machine time is required",
       path: ["machineTime"]
     }
+  )
+  .refine(
+    (data) => {
+      if (data.operationType === "Inspection") {
+        return !!data.inspectionDocumentId;
+      }
+      return true;
+    },
+    {
+      message: "Inspection Plan is required",
+      path: ["inspectionDocumentId"]
+    }
   );
 
 export const itemCostValidator = z.object({

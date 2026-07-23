@@ -59,15 +59,17 @@ const ItemQualityView = ({
   const newDocumentDisclosure = useDisclosure();
 
   return (
-    <VStack spacing={4} className="w-full max-w-3xl">
+    <VStack spacing={4} className="w-full">
       <Card>
-        <CardHeader>
-          <CardTitle>
-            <Trans>Inspection Documents</Trans>
-          </CardTitle>
-          <CardDescription>
-            <Trans>Ballooned drawings with inspection characteristics.</Trans>
-          </CardDescription>
+        <HStack className="w-full justify-between items-start">
+          <CardHeader>
+            <CardTitle>
+              <Trans>Inspection Plans</Trans>
+            </CardTitle>
+            <CardDescription>
+              <Trans>Ballooned drawings with inspection characteristics.</Trans>
+            </CardDescription>
+          </CardHeader>
           <CardAction>
             {permissions.can("create", "quality") && (
               <Button
@@ -75,15 +77,15 @@ const ItemQualityView = ({
                 leftIcon={<LuPlus />}
                 onClick={newDocumentDisclosure.onOpen}
               >
-                <Trans>New Inspection Document</Trans>
+                <Trans>New</Trans>
               </Button>
             )}
           </CardAction>
-        </CardHeader>
+        </HStack>
         <CardContent>
           {documents.length === 0 ? (
             <p className="py-4 text-center text-sm text-muted-foreground">
-              <Trans>No inspection documents</Trans>
+              <Trans>No inspection plans</Trans>
             </p>
           ) : (
             <VStack spacing={0} className="w-full">
@@ -110,7 +112,7 @@ const ItemQualityView = ({
       <Card>
         <CardHeader>
           <CardTitle>
-            <Trans>Inspection Document Assignments</Trans>
+            <Trans>Inspection Plan Assignments</Trans>
           </CardTitle>
           <CardDescription>
             <Trans>
