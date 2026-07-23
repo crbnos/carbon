@@ -5,6 +5,7 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { nanoid } from "nanoid";
 import type { ChangeEvent } from "react";
 import { useCallback, useEffect, useState } from "react";
+import { LuRefreshCw } from "react-icons/lu";
 import { useUser } from "~/hooks";
 import { getPrivateUrl } from "~/utils/path";
 
@@ -71,6 +72,27 @@ export function ItemThumbnailUpload({
 
     toast.success(t`Thumbnail removed`);
   }, [carbon, itemId, modelId, t]);
+
+  const [isRegenerating, setIsRegenerating] = useState(false);
+  const onRegenerate = useCallback(async () => {
+    if (!modelId) return;
+    setIsRegenerating(true);
+    try {
+      const body = new FormData();
+      body.append("modelUploadId", modelId);
+      const res = await fetch("/api/model/thumbnail", {
+        method: "POST",
+        body
+      });
+      if (!res.ok) throw new Error(`thumbnail ${res.status}`);
+      // The render is async — the new thumbnail lands after the job runs.
+      toast.success(t`Regenerating thumbnail…`);
+    } catch {
+      toast.error(t`Failed to regenerate thumbnail`);
+    } finally {
+      setIsRegenerating(false);
+    }
+  }, [modelId, t]);
 
   const onFileChange = useCallback(
     async (e: ChangeEvent<HTMLInputElement>) => {
@@ -175,6 +197,19 @@ export function ItemThumbnailUpload({
       )}
       {!isReadOnly && (
         <HStack className="absolute bottom-2 right-2">
+          {modelId && (
+            <Button
+              variant="secondary"
+              className="bg-card opacity-100"
+              size="sm"
+              leftIcon={<LuRefreshCw />}
+              isLoading={isRegenerating}
+              isDisabled={isRegenerating}
+              onClick={onRegenerate}
+            >
+              <Trans>Regenerate</Trans>
+            </Button>
+          )}
           {thumbnailPath && (
             <Button
               variant="secondary"

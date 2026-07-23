@@ -220,6 +220,16 @@ export const modelOptimizeFunction = inngest.createFunction(
       data: { modelUploadId, companyId }
     });
 
+    // Generate the preview thumbnail now that the optimised GLB exists — the
+    // thumbnail renderer (/file/model/:id) draws only the assembler GLB, so
+    // firing this at upload time (before the GLB) always failed. Chaining it to
+    // optimise success means it has something to render, and a re-optimise
+    // (viewer Retry / regenerate) refreshes the thumbnail for free.
+    await step.sendEvent("thumbnail", {
+      name: "carbon/model-thumbnail",
+      data: { modelId: modelUploadId, companyId }
+    });
+
     logger.info("model optimise finalized", { modelUploadId, stats });
     return { modelUploadId, status: "Success" as const };
   }

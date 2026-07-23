@@ -5371,6 +5371,9 @@ msgstr "Failed to load tracked entities"
 msgid "Failed to move account: {0}"
 msgstr "Failed to move account: {0}"
 
+msgid "Failed to regenerate thumbnail"
+msgstr "Failed to regenerate thumbnail"
+
 msgid "Failed to remove image: {errorMessage}"
 msgstr "Failed to remove image: {errorMessage}"
 
@@ -10059,6 +10062,12 @@ msgstr "Refresh"
 
 msgid "Refresh exchange rate"
 msgstr "Refresh exchange rate"
+
+msgid "Regenerate"
+msgstr "Regenerate"
+
+msgid "Regenerating thumbnail…"
+msgstr "Regenerating thumbnail…"
 
 msgid "Register"
 msgstr "Register"
