@@ -1,4 +1,5 @@
 import { cn, ScrollArea } from "@carbon/react";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { memo, useMemo, useRef } from "react";
 import {
   LuChevronDown,
@@ -141,6 +142,7 @@ const TrialBalanceTree = memo(
     search,
     ledgerPath
   }: TrialBalanceTreeProps) => {
+    const { t } = useLingui();
     useRealtime("journal");
     const navigate = useNavigate();
     const [params] = useUrlParams();
@@ -186,17 +188,29 @@ const TrialBalanceTree = memo(
     return (
       <ScrollArea className="h-[calc(100dvh-var(--header-height)-61px)] w-full">
         <div className="sticky top-0 z-10 flex h-11 items-center pr-4 text-sm font-medium text-foreground/80 border-b border-border bg-card">
-          <div className="flex-1 px-4">Account</div>
-          <span className="w-28 text-right px-4">Beginning</span>
-          <span className="w-28 text-right px-4">Debits</span>
-          <span className="w-28 text-right px-4">Credits</span>
-          <span className="w-28 text-right px-4">Ending</span>
+          <div className="flex-1 px-4">
+            <Trans>Account</Trans>
+          </div>
+          <span className="w-28 text-right px-4">
+            <Trans>Beginning</Trans>
+          </span>
+          <span className="w-28 text-right px-4">
+            <Trans>Debits</Trans>
+          </span>
+          <span className="w-28 text-right px-4">
+            <Trans>Credits</Trans>
+          </span>
+          <span className="w-28 text-right px-4">
+            <Trans>Ending</Trans>
+          </span>
           {showTranslated && (
             <span className="w-28 text-right px-4">
-              Ending ({parentCurrency ?? "Translated"})
+              {t`Ending (${parentCurrency ?? "Translated"})`}
             </span>
           )}
-          <span className="w-16 text-right px-4">Ratio</span>
+          <span className="w-16 text-right px-4">
+            <Trans>Ratio</Trans>
+          </span>
         </div>
         <TreeView<TrialBalanceChart>
           tree={tree}

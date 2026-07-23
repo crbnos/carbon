@@ -135,7 +135,8 @@ function useModuleDefinitions(): ModuleDefinition[] {
       name: t`Shop Floor`,
       to: path.to.external.mes,
       icon: LuTvMinimalPlay,
-      role: "employee"
+      role: "employee",
+      external: true
     },
     {
       key: "users",

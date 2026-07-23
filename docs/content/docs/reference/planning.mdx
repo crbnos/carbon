@@ -54,3 +54,19 @@ Planning decides *what and how much*; **scheduling** decides *when and where*. O
     What a Make suggestion becomes once you order it.
   </Card>
 </Cards>
+
+<AgentContext>
+## Troubleshooting
+
+### "Manufacturing is blocked for item …"
+Ordering a suggested job was stopped because that item's planning settings have manufacturing blocked. Clear the flag on the item, then order again from planning.
+
+### "Manufacturing requires configuration for item …"
+The item is configurable, and planning can't supply a configuration. Create the job from a context that sets the configuration (for example the sales order line) instead of from the planning page.
+
+### "Failed to create job method for item …"
+The job was created but copying the item's method into it failed — usually the item has no **Active** make method. Activate a method on the item, then delete and re-order the job (or run Get Method on it).
+
+### "Failed to load any locations"
+Planning needs at least one location. Create one in settings and set a default.
+</AgentContext>

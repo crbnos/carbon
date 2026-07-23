@@ -94,6 +94,7 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 | Audit log system | `.claude/rules/audit-log-system.md` |
 | Shipments / receipts UI | `.claude/rules/shipments-receipts-ui-patterns.md` |
 | AI chat / SDK | `.claude/rules/chat-ai-sdk-info.md` |
+| In-app agent knowledge base (docs → agent) | `.claude/rules/agent-knowledge-base.md` |
 | **Integrations** | |
 | Jira integration | `.claude/rules/jira-integration.md` |
 | Linear integration | `.claude/rules/linear-integration.md` |

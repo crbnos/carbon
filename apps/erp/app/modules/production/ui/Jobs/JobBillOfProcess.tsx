@@ -1389,9 +1389,11 @@ function StepsForm({
                       isDisabled={isDisabled}
                       dragControls={dragControls}
                       itemMentions={itemMentions}
-                      className={
-                        index === sortOrder.length - 1 ? "border-none" : ""
-                      }
+                      className={cn(
+                        index === 0 && "rounded-t-lg",
+                        index === sortOrder.length - 1 &&
+                          "rounded-b-lg border-none"
+                      )}
                     />
                   )}
                 </DraggableStepItem>
@@ -1528,7 +1530,7 @@ function StepsListItem({
   if (!id) return null;
 
   return (
-    <div className={cn("border-b p-6", className)}>
+    <div className={cn("border-b p-6 bg-card", className)}>
       {disclosure.isOpen ? (
         <ValidatedForm
           action={path.to.jobOperationStep(id)}
@@ -1764,8 +1766,10 @@ function PreviewStepRecords({ attribute }: { attribute: JobOperationStep }) {
   const { formatRelativeTime } = useDateFormatter();
   if (
     !attribute.jobOperationStepRecord ||
-    !Array.isArray(attribute.jobOperationStepRecord)
+    !Array.isArray(attribute.jobOperationStepRecord) ||
+    attribute.jobOperationStepRecord.length === 0
   ) {
+    // No records yet — don't render the empty bordered box (it shows as a stray line).
     return null;
   }
 
@@ -3244,7 +3248,10 @@ function ToolsForm({
                 key={t.id}
                 tool={t}
                 operationId={operationId}
-                className={index === tools.length - 1 ? "border-none" : ""}
+                className={cn(
+                  index === 0 && "rounded-t-lg",
+                  index === tools.length - 1 && "rounded-b-lg border-none"
+                )}
               />
             ))}
         </div>

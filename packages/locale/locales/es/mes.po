@@ -96,9 +96,6 @@ msgstr "Asignado a mí"
 msgid "Assignee"
 msgstr "Responsable"
 
-msgid "Attach File"
-msgstr "Adjuntar archivo"
-
 msgid "Authentication Error"
 msgstr "Error de autenticación"
 
@@ -359,9 +356,6 @@ msgstr "Error al subir el archivo: {0}"
 msgid "Failed to upload image"
 msgstr "Error al subir la imagen"
 
-msgid "Feedback"
-msgstr "Comentarios"
-
 msgid "File size exceeds 10MB limit"
 msgstr "El tamaño del archivo excede el límite de 10MB"
 
@@ -390,9 +384,6 @@ msgstr "¿Olvidó registrar la salida?"
 msgid "Go back to operation"
 msgstr "Volver a la operación"
 
-msgid "Have a technical issue? Contact <0>Carbon Support.</0>"
-msgstr "¿Tiene un problema técnico? Contacte al <0>Soporte de Carbon.</0>"
-
 msgid "How many were actually picked?"
 msgstr "¿Cuántos se recogieron realmente?"
 
@@ -401,9 +392,6 @@ msgstr "Entiendo y deseo completar sin emitir"
 
 msgid "I'm Still Working"
 msgstr "Sigo trabajando"
-
-msgid "Ideas, suggestions or problems with this page?"
-msgstr "¿Ideas, sugerencias o problemas con esta página?"
 
 msgid "Ideas, suggestions or problems?"
 msgstr "¿Ideas, sugerencias o problemas?"

@@ -96,9 +96,6 @@ msgstr "Assigné à moi"
 msgid "Assignee"
 msgstr "Assigné à"
 
-msgid "Attach File"
-msgstr "Joindre un fichier"
-
 msgid "Authentication Error"
 msgstr "Erreur d'authentification"
 
@@ -359,9 +356,6 @@ msgstr "Échec du téléversement du fichier : {0}"
 msgid "Failed to upload image"
 msgstr "Échec du téléversement de l'image"
 
-msgid "Feedback"
-msgstr "Commentaires"
-
 msgid "File size exceeds 10MB limit"
 msgstr "La taille du fichier dépasse la limite de 10 Mo"
 
@@ -390,9 +384,6 @@ msgstr "Oubli de pointer la sortie ?"
 msgid "Go back to operation"
 msgstr "Revenir à l'opération"
 
-msgid "Have a technical issue? Contact <0>Carbon Support.</0>"
-msgstr "Vous avez un problème technique ? Contactez le <0>Support Carbon.</0>"
-
 msgid "How many were actually picked?"
 msgstr "Combien ont réellement été prélevés ?"
 
@@ -401,9 +392,6 @@ msgstr "Je comprends et souhaite terminer sans distribuer"
 
 msgid "I'm Still Working"
 msgstr "Je travaille encore"
-
-msgid "Ideas, suggestions or problems with this page?"
-msgstr "Des idées, suggestions ou problèmes avec cette page ?"
 
 msgid "Ideas, suggestions or problems?"
 msgstr "Des idées, suggestions ou problèmes ?"

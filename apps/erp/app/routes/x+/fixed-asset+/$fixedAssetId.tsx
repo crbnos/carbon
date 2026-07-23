@@ -19,6 +19,7 @@ import {
   useDisclosure
 } from "@carbon/react";
 import { formatDate } from "@carbon/utils";
+import { msg } from "@lingui/core/macro";
 import {
   LuChevronDown,
   LuCircleX,
@@ -59,7 +60,7 @@ import { path } from "~/utils/path";
 
 export const handle: Handle = {
   breadcrumb: detailBreadcrumb(
-    { breadcrumb: "Fixed Assets", to: path.to.fixedAssets },
+    { breadcrumb: msg`Fixed Assets`, to: path.to.fixedAssets },
     (data) => data?.asset?.fixedAssetId
   )
 };

@@ -7,19 +7,33 @@ paths:
 
 # Event System
 
-Carbon's async event-processing infra: Postgres triggers + PGMQ + **Inngest** (not Trigger.dev — that was the old design). DB writes enqueue events; an Inngest cron drains the queue and fans out to handlers.
+Carbon's async event-processing infra: Postgres triggers + PGMQ + **Inngest** (not Trigger.dev — that was the old design). DB writes enqueue events; the database **pushes** a wake to Inngest and the `event-queue` function drains the queue (no polling cron since `20260721184852_event-queue-wake.sql`).
 
 ## Flow
 
-```
+```text
 DB write → AFTER STATEMENT trigger → dispatch_event_batch() → pgmq.send_batch('event_system')
-                                                                      ↓
-            event-queue (Inngest cron, * * * * *) reads pgmq.read('event_system', 30, 100)
-                                                                      ↓
+                                          → util.wake_event_queue()  [pg_net POST, once per txn]
+                                                  ↓
+            edge fn event-wake → Inngest event "carbon/event-queue.process"
+                                                  ↓
+            event-queue (Inngest, event-triggered, concurrency 1)
+            loops pgmq.read('event_system', 30, 100) until empty (max 10 passes, re-wakes if more)
+                                                  ↓
             groups by handlerType → step.sendEvent("carbon/event-<handler>") → handler fn
-                                                                      ↓
+                                                  ↓
             pgmq.delete() the processed msg_ids
+
+pg_cron 'event-queue-sweeper' (* * * * *, in-DB): if visible messages exist → util.wake_event_queue()
+  (safety net for lost pushes; no queue → no HTTP → no Inngest run)
 ```
+
+The wake path (`20260721184852_event-queue-wake.sql`) — both helpers live in the internal `util` schema (like `util.process_embeddings`), NOT `public`:
+- `util.wake_event_queue()` — SECURITY DEFINER; reads `apiUrl`/`anonKey` from the singleton `config` table (same as the webhook triggers) and `net.http_post`s to `/functions/v1/event-wake`. Error-swallowed and no-ops when `config` is unseeded — OLTP writes never fail on push failure. pg_net queues the request transactionally, so the wake fires only after commit.
+- `dispatch_event_batch()` calls it at most **once per transaction** via the txn-local GUC `carbon.event_wake_sent` (`set_config(..., true)`).
+- `util.sweep_event_queue()` — pg_cron job `event-queue-sweeper` re-wakes every minute while *visible* messages (`vt <= clock_timestamp()`) sit in `pgmq.q_event_system`.
+- **Why `util`, not `public`:** a public function is auto-exposed as a PostgREST RPC, and a non-superuser reference to a function that transitively calls `net.http_post` segfaults the backend (pg_net 0.20 / PG15) — a remote-DoS surface a `REVOKE` can't close because the crash precedes the privilege check. anon/authenticated have no `USAGE` on `util`, so the API can't reach it. The trigger and pg_cron call it as the owner (superuser), where the pg_net path is safe.
+- Edge fn `packages/database/supabase/functions/event-wake/index.ts` forwards the doorbell via `sendInngestEvent("carbon/event-queue.process", {})` (`functions/lib/inngest.ts`).
 
 ## Database (migrations)
 
@@ -48,7 +62,7 @@ Zod schemas + helpers. `QueueMessage` = `{ subscriptionId, triggerType: ROW|STAT
 
 ## Handlers — `packages/jobs/src/inngest/functions/events/`
 
-`queue.ts` is the cron dispatcher (id `event-queue`); it groups the batch and sends one Inngest event per handler type. Each handler is an Inngest function listening on `carbon/event-<name>`:
+`queue.ts` is the drainer (id `event-queue`), triggered by `carbon/event-queue.process` with `concurrency: 1`; it loops read → dispatch → delete until the queue is empty (max 10 passes of 100, then re-wakes itself). Burst coalescing is handled upstream — the trigger wakes at most once per transaction — not by `debounce` (the local Inngest dev server, v1.19.4, fails to unmarshal debounce items). Each handler is an Inngest function listening on `carbon/event-<name>`:
 
 | handlerType | event name | file | purpose |
 |---|---|---|---|
@@ -62,6 +76,7 @@ Zod schemas + helpers. `QueueMessage` = `{ subscriptionId, triggerType: ROW|STAT
 All handlers (incl. `eventQueueFunction`) are exported from `events/index.ts` and registered in `packages/jobs/src/inngest/functions/index.ts`. Inngest client comes from `@carbon/lib/inngest`.
 
 ## Notes
-- Latency: up to ~1 min (cron cadence). Use sync interceptors, not subscriptions, for data-integrity / real-time needs.
+- Latency: typically ~3–5s (sub-second wake + the multi-step drain run). Worst case ~1 min if a push is lost (dead pg_net worker, edge fn down) — the pg_cron sweeper re-wakes while messages are pending. Still async: use sync interceptors, not subscriptions, for data-integrity / real-time needs.
+- The wake path depends on a seeded `config` row (`apiUrl`, `anonKey`). Dev seeds it automatically (`ensureConfigRow` in `packages/dev/src/services/migrations.ts`, apiUrl `http://kong:8000`). **Unseeded config (e.g. self-hosted) = events never process** — both the push and the sweeper wake no-op.
 - Webhook/workflow handlers use `idempotency: event.data.msgId` and per-record concurrency keys.
 - Don't hand-edit generated DB types; read the newest migration for schema truth.

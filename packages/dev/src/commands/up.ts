@@ -33,6 +33,7 @@ import {
 import {
   applyBootstrapSql,
   applyMigrations,
+  ensureConfigRow,
   ensureSmokeTestUser,
   waitForPostgres,
   waitForStorageReady,
@@ -203,7 +204,13 @@ export async function up(opts: UpOpts = {}) {
   await ensureDepsInstalled(root);
   await ensureSkillsInstalled(root);
 
-  const ctx = await provisionSlot(root, slug, portless, borrowedEntry);
+  const ctx = await provisionSlot(
+    root,
+    slug,
+    portless,
+    selectedApps.includes("assembler"),
+    borrowedEntry
+  );
   if (borrowedEntry) {
     await waitForServices(ctx);
   } else {
@@ -335,6 +342,7 @@ async function provisionSlot(
   root: string,
   slug: string,
   portless: boolean,
+  includeAssembler: boolean,
   borrowedEntry?: { ports: PortMap; redisDb: number; jwt: JwtCreds }
 ): Promise<Ctx> {
   let ctx!: Ctx;
@@ -372,7 +380,16 @@ async function provisionSlot(
 
         ctx = { root, slug, branchPrefix, ...slot };
 
-        writeEnv(root, renderEnv({ slug, portless, branchPrefix, ...slot }));
+        writeEnv(
+          root,
+          renderEnv({
+            slug,
+            portless,
+            branchPrefix,
+            includeAssembler,
+            ...slot
+          })
+        );
         syncAppPortlessConfigs(root);
         // Use override: true so freshly written .env.local values replace any
         // stale values already in process.env from the initial load at startup.
@@ -525,6 +542,19 @@ async function runDatabaseMigrations(
           title: "Skip database migrations (--no-migrate)",
           task: async () => "skipped"
         },
+    // Gated on shouldMigrate: with --no-migrate on a fresh volume the
+    // "config" table doesn't exist yet and the upsert would abort the boot.
+    ...(cfg.shouldMigrate
+      ? [
+          {
+            title: "Seed pg_net config row",
+            task: async () => {
+              await ensureConfigRow(ctx.ports.PORT_DB, ctx.jwt.anonKey);
+              return "config row upserted";
+            }
+          }
+        ]
+      : []),
     ...(cfg.shouldRegen
       ? [
           {

@@ -49,7 +49,6 @@ export const path = {
     convertEntity: (id: string) => generatePath(`${x}/entity/${id}/convert`),
     endOperation: (id: string) => generatePath(`${x}/end/${id}`),
     endShift: `${x}/end-shift`,
-    feedback: `${x}/feedback`,
     file: {
       jobTraveler: (id: string) => `${getAppUrl()}${file}/traveler/${id}.pdf`,
       operationLabelsPdf: (

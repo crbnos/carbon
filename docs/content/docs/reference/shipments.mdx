@@ -38,3 +38,36 @@ Posting decrements inventory and bumps the source line's sent quantity; a sales 
     The document a sales shipment advances.
   </Card>
 </Cards>
+
+<AgentContext>
+## Troubleshooting
+
+Exact errors users hit when posting, voiding, or picking shipments.
+
+### "Shipment is empty"
+The post dialog blocks posting when no line has a shipped quantity above zero (and no fixed-asset line is marked shipped). Enter the shipped quantity on at least one line first.
+
+### "Tracked entity is not available"
+A batch assigned to a shipment line isn't in **Available** status — it may be Reserved, On Hold (for example pending inbound inspection), Consumed, or Rejected. Free it up (clear the hold, finish the inspection) or allocate a different batch.
+
+### "Serial numbers are missing or unavailable"
+A serial-tracked line doesn't have enough available serial units to cover the shipped quantity. Allocate more available serials or reduce the shipped quantity.
+
+### "Cannot post shipment with expired batch"
+The full message names the batch id. The company's expired-entity rule is **Block** and a batch on the shipment is past its expiration date. Options: allocate a different batch, correct the expiration date on the tracked entity (reason required), or change the expired-entity rule in Settings → Inventory to Warn. See [Shelf life](/docs/reference/shelf-life).
+
+### "Posted shipment with expired batch"
+The Warn-policy counterpart of the error above — the shipment posted, this is informational. Switch the company rule to Block if this should stop future posts.
+
+### "Batch has insufficient quantity"
+The quantity allocated to the line exceeds what that batch has on hand. Reduce the allocation or pick an additional batch.
+
+### "Can only void posted shipments"
+Voiding applies only to a shipment at **"Posted"**. A Draft or Pending shipment can be edited or deleted instead.
+
+### "Cannot delete a posted shipment"
+A posted shipment can't be deleted — void it instead, which writes reversing entries.
+
+### "Failed to post shipment"
+Generic wrapper when the posting function fails. Common underlying causes: the [accounting period](/docs/reference/accounting) for the posting date is closed or locked, or default accounts are missing ("Error getting account defaults"). Ask the user for the full error text if available.
+</AgentContext>

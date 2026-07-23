@@ -156,12 +156,13 @@ const itemCostImportFields = {
   }
 } as const;
 
-// Method (BOM/BOP) import — one row-type-multiplexed format (ADR-0002). The focused
-// BOM file carries BOM rows; the Operations file carries BOP/STEP/TOOL/PARAM rows,
-// each naming its parent part explicitly so multi-level BOMs need no positional Level
-// column. Field-level `required` here is kept loose because a column's necessity
-// depends on the row kind — the authoritative per-row validation lives in the
-// import-csv edge function (ADR-0001).
+// Method (BOM/BOP) import — one row-type-multiplexed format (ADR-0002). A single
+// CSV may carry six row kinds discriminated by `Row Type`; each non-PART row names
+// its parent part explicitly, so multi-level BOMs need no positional Level column.
+// The combined `partWithMethod` file is the union of every group below (wide,
+// mostly-empty rows); the focused BOM / Operations files carry a subset. Field-level
+// `required` here is kept loose because a column's necessity depends on the row kind —
+// the authoritative per-row validation lives in the import-csv edge function (ADR-0001).
 const methodRowTypes = ["PART", "BOM", "BOP", "STEP", "TOOL", "PARAM"] as const;
 
 const unitOfMeasureFetcher = async (
@@ -450,7 +451,8 @@ const methodParamFields = {
   }
 } as const;
 
-// Part import fields for the standalone `part` import.
+// Part import fields, hoisted so the combined `partWithMethod` entry can reuse the
+// exact same columns the standalone `part` import uses.
 const partImportFields = {
   id: {
     label: "Unique ID",
@@ -1398,6 +1400,19 @@ export const fieldMappings = {
     ...methodToolFields,
     ...methodParamFields
   },
+  // Combined file — creates parts and their full BOM + BOP together. The union of
+  // every row type's columns, so most cells are blank on any given row.
+  partWithMethod: {
+    ...partImportFields,
+    ...methodParentKeyFields,
+    rowType: { ...methodParentKeyFields.rowType, required: true },
+    ...methodOpNoField,
+    ...methodBomFields,
+    ...methodBopFields,
+    ...methodStepFields,
+    ...methodToolFields,
+    ...methodParamFields
+  },
   workCenter: {
     id: {
       label: "Unique ID",
@@ -1595,6 +1610,7 @@ export const importPermissions: Record<keyof typeof fieldMappings, string> = {
   material: "parts",
   bom: "parts",
   operations: "parts",
+  partWithMethod: "parts",
   tool: "parts",
   fixture: "parts",
   consumable: "parts",
@@ -1651,6 +1667,25 @@ const methodOpSchema = {
   paramKey: z.string().optional(),
   paramValue: z.string().optional()
 };
+const methodPartSchema = {
+  id: z.string().optional(),
+  readableId: z.string().optional(),
+  revision: z.string().optional(),
+  name: z.string().optional(),
+  active: z.string().optional(),
+  replenishmentSystem: z.string().optional(),
+  defaultMethodType: z.string().optional(),
+  itemTrackingType: z.string().optional(),
+  supplierId: z.string().optional(),
+  supplierPartId: z.string().optional(),
+  supplierUnitOfMeasureCode: z.string().optional(),
+  minimumOrderQuantity: z.string().optional(),
+  orderMultiple: z.string().optional(),
+  conversionFactor: z.string().optional(),
+  unitPrice: z.string().optional(),
+  leadTime: z.string().optional()
+};
+
 export const importSchemas: Record<
   keyof typeof fieldMappings,
   z.ZodObject<any>
@@ -2108,6 +2143,16 @@ export const importSchemas: Record<
       .string()
       .min(1, { message: "Op No is required" })
       .describe("The operation number, unique within the parent part")
+  }),
+  partWithMethod: z.object({
+    ...methodPartSchema,
+    ...methodParentKeySchema,
+    rowType: z
+      .string()
+      .min(1, { message: "Row Type is required" })
+      .describe("PART, BOM, BOP, STEP, TOOL, or PARAM"),
+    ...methodBomSchema,
+    ...methodOpSchema
   }),
   workCenter: z.object({
     id: z

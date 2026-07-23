@@ -96,9 +96,6 @@ msgstr "分配给我"
 msgid "Assignee"
 msgstr "负责人"
 
-msgid "Attach File"
-msgstr "附加文件"
-
 msgid "Authentication Error"
 msgstr "认证错误"
 
@@ -359,9 +356,6 @@ msgstr "文件上传失败：{0}"
 msgid "Failed to upload image"
 msgstr "图片上传失败"
 
-msgid "Feedback"
-msgstr "反馈"
-
 msgid "File size exceeds 10MB limit"
 msgstr "文件大小超过 10MB 限制"
 
@@ -390,9 +384,6 @@ msgstr "忘记打卡下班了？"
 msgid "Go back to operation"
 msgstr "返回操作"
 
-msgid "Have a technical issue? Contact <0>Carbon Support.</0>"
-msgstr "遇到技术问题？联系<0>Carbon 支持。</0>"
-
 msgid "How many were actually picked?"
 msgstr "实际上捡了多少个？"
 
@@ -401,9 +392,6 @@ msgstr "我理解并希望在不发放物料的情况下完成"
 
 msgid "I'm Still Working"
 msgstr "我还在工作"
-
-msgid "Ideas, suggestions or problems with this page?"
-msgstr "对此页面有想法、建议或问题？"
 
 msgid "Ideas, suggestions or problems?"
 msgstr "有想法、建议或问题？"

@@ -2,11 +2,16 @@ import { error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { useLingui } from "@lingui/react/macro";
-import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
+import type {
+  ActionFunctionArgs,
+  ClientActionFunctionArgs,
+  LoaderFunctionArgs
+} from "react-router";
 import { redirect, useLoaderData, useNavigate, useParams } from "react-router";
 import { Confirm } from "~/components/Modals";
 import { getProcess, processDeactivate } from "~/modules/resources";
 import { path } from "~/utils/path";
+import { getCompanyId, processesQuery } from "~/utils/react-query";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client } = await requirePermissions(request, {
@@ -61,6 +66,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
     path.to.processes,
     await flash(request, success("Successfully deactivated process"))
   );
+}
+
+export async function clientAction({ serverAction }: ClientActionFunctionArgs) {
+  window.clientCache?.setQueryData(
+    processesQuery(getCompanyId()).queryKey,
+    null
+  );
+  return await serverAction();
 }
 
 export default function DeactivateProcessRoute() {

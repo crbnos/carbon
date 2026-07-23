@@ -1485,7 +1485,7 @@ serve(async (req: Request) => {
                   child.data.materialTrackingType ??
                   child.data.itemTrackingType,
                 unitOfMeasureCode: child.data.unitOfMeasureCode,
-                unitCost: child.data.unitCost,
+                unitCost: child.data.unitCost ?? 0,
                 itemScrapPercentage,
                 storageUnitId: await getStorageUnitId(
                   trx,
@@ -4827,7 +4827,7 @@ serve(async (req: Request) => {
                   // Copy the source line's snapshot verbatim (null = inherit).
                   itemTrackingType: child.data.materialTrackingType,
                   unitOfMeasureCode: child.data.unitOfMeasureCode,
-                  unitCost: child.data.unitCost, // TODO: get unit cost
+                  unitCost: child.data.unitCost ?? 0, // TODO: get real unit cost
                   companyId,
                   createdBy: userId,
                   customFields: {},
@@ -5316,7 +5316,7 @@ serve(async (req: Request) => {
                     storageUnitId: child.data.storageUnitId,
                     // Copy the source line's snapshot verbatim (null = inherit).
                     itemTrackingType: child.data.materialTrackingType,
-                    unitCost: child.data.unitCost, // TODO: get unit cost
+                    unitCost: child.data.unitCost ?? 0, // TODO: get real unit cost
                     unitOfMeasureCode: child.data.unitOfMeasureCode,
                     companyId,
                     createdBy: userId,

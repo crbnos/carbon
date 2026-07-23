@@ -11,7 +11,11 @@ import {
   ensureDockerRunning,
   stopStack
 } from "../services/compose.js";
-import { applyMigrations, waitForPostgres } from "../services/migrations.js";
+import {
+  applyMigrations,
+  ensureConfigRow,
+  waitForPostgres
+} from "../services/migrations.js";
 import { branchToPrefix } from "../services/portless.js";
 import {
   ensureSlugAvailable,
@@ -71,6 +75,15 @@ async function migrateAgainstRunningDb(
         const r = await applyMigrations(root, portDb);
         applied = r.applied;
         return r.applied ? "migrations applied" : "schema already up to date";
+      }
+    },
+    {
+      title: "Seed pg_net config row",
+      task: async () => {
+        const anonKey = process.env.SUPABASE_ANON_KEY;
+        if (!anonKey) return "skipped (SUPABASE_ANON_KEY not set)";
+        await ensureConfigRow(portDb, anonKey);
+        return "config row upserted";
       }
     },
     ...(shouldRegen
@@ -152,6 +165,15 @@ async function migrateStandalone(
         task: async () => {
           const r = await applyMigrations(root, portDb);
           return r.applied ? "migrations applied" : "schema already up to date";
+        }
+      },
+      {
+        title: "Seed pg_net config row",
+        task: async () => {
+          const anonKey = process.env.SUPABASE_ANON_KEY;
+          if (!anonKey) return "skipped (SUPABASE_ANON_KEY not set)";
+          await ensureConfigRow(portDb, anonKey);
+          return "config row upserted";
         }
       },
       ...(shouldRegen

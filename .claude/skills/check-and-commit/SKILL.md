@@ -27,6 +27,11 @@ staged UI/`.po` files slip past `I18N_RELEVANT` and skip Gate 6. From the change
 paths, derive:
 
 - `SCHEMA_CHANGED` — any file under `packages/database/supabase/migrations/`
+- `AGENT_KB_RELEVANT` — the diff touches `docs/content/**` or
+  `scripts/generate-agent-kb.ts`. When true, Gate 1b regenerates the agent's doc
+  corpus (`apps/erp/app/modules/agent/kb/`) so the generated copy ships in this same
+  commit instead of drifting behind the docs (same model as the `.po` files —
+  see `.ai/rules/agent-knowledge-base.md`).
 - `I18N_RELEVANT` — the diff adds/edits UI source that can introduce new
   translatable strings (`apps/erp/app/**`, `apps/mes/app/**`,
   `packages/react/src/**`) **or** touches any `packages/locale/locales/**/*.po`.
@@ -54,6 +59,11 @@ Stop on failure, apply the fix policy (Step 3), re-run the failed gate.
 # Gate 1 — types (only if SCHEMA_CHANGED)
 pnpm run generate:types
 # then include the regenerated files in the commit
+
+# Gate 1b — agent knowledge base (only if AGENT_KB_RELEVANT)
+pnpm run generate:agent-kb
+# then include the regenerated apps/erp/app/modules/agent/kb/** in the commit
+# (runs before biome so the regenerated manifest.json gets formatted too)
 
 # Gate 2 — format + lint (auto-fixes in place)
 pnpm exec biome check --write --no-errors-on-unmatched <changed paths>

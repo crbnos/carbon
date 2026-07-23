@@ -27,7 +27,11 @@ import {
   toast,
   VStack
 } from "@carbon/react";
-import { convertKbToString, MODEL_RAW_KEEP_MAX_BYTES } from "@carbon/utils";
+import {
+  convertKbToString,
+  isModelRawDownloadable,
+  MODEL_RAW_KEEP_MAX_BYTES
+} from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { FileObject } from "@supabase/storage-js";
 import type { ChangeEvent } from "react";
@@ -519,11 +523,13 @@ const OpportunityLineDocuments = ({
                                 <Trans>View</Trans>
                               </Link>
                             </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() => downloadModel(modelUpload)}
-                            >
-                              <Trans>Download</Trans>
-                            </DropdownMenuItem>
+                            {isModelRawDownloadable(modelUpload.modelPath) && (
+                              <DropdownMenuItem
+                                onClick={() => downloadModel(modelUpload)}
+                              >
+                                <Trans>Download</Trans>
+                              </DropdownMenuItem>
+                            )}
                             <DropdownMenuItem
                               destructive
                               disabled={!canDelete}

@@ -53,6 +53,8 @@ function resolve(
       return path.to.supplierQuote(documentId);
     case NotificationEvent.SalesOrderAssignment:
       return path.to.salesOrder(documentId);
+    case NotificationEvent.PurchasingRfqAssignment:
+      return path.to.purchasingRfq(documentId);
     case NotificationEvent.SalesRfqAssignment:
     case NotificationEvent.SalesRfqReady:
       return path.to.salesRfq(documentId);
@@ -63,10 +65,9 @@ function resolve(
       return path.to.gauge(documentId);
     case NotificationEvent.NonConformanceAssignment:
       return path.to.issue(documentId);
-    case NotificationEvent.ChangeOrderApproved:
-    case NotificationEvent.ChangeOrderRejected:
-    case NotificationEvent.ChangeOrderReleased:
-    case NotificationEvent.ChangeOrderSubmittedForReview:
+    case NotificationEvent.ChangeOrderStarted:
+    case NotificationEvent.ChangeOrderImplementation:
+    case NotificationEvent.ChangeOrderDone:
       return path.to.changeOrderDetails(documentId);
     case NotificationEvent.RiskAssignment:
       return path.to.risk(documentId);
@@ -106,15 +107,21 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const documentType = url.searchParams.get(
     "documentType"
   ) as ApprovalDocumentType | null;
+  const page = url.searchParams.get("page");
 
   const companyId = url.searchParams.get("companyId");
 
-  if (!event || !documentId) {
-    throw redirect(path.to.authenticatedRoot);
+  let redirectTo: string;
+  if (page === "notification-settings") {
+    // Email footer link — no document, but the company-switch below still applies.
+    redirectTo = path.to.notificationSettings;
+  } else {
+    if (!event || !documentId) {
+      throw redirect(path.to.authenticatedRoot);
+    }
+    const link = resolve(event, documentId, documentType ?? undefined);
+    redirectTo = link ?? path.to.authenticatedRoot;
   }
-
-  const link = resolve(event, documentId, documentType ?? undefined);
-  const redirectTo = link ?? path.to.authenticatedRoot;
 
   // The notification points at a document in a specific company, but the
   // recipient may currently be viewing a different one. If the linked company

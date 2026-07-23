@@ -2337,13 +2337,21 @@ export async function updateJobStatus(
 ) {
   const { id, status, assignee, updatedBy } = params;
 
+  // Reopening a job (leaving a completed state) must clear completedDate so it
+  // isn't left stale. Done in the same UPDATE as status so the job event
+  // interceptor (sync_job_recompute_service_line) fires once and re-derives the
+  // linked service line's fulfillment. Setting a completed state here does not
+  // set completedDate — that is the complete route's / complete_job_to_inventory's job.
+  const clearsCompletion = !["Completed", "Closed"].includes(status);
+
   return client
     .from("job")
     .update({
       status,
       assignee,
       updatedBy,
-      updatedAt: new Date().toISOString()
+      updatedAt: new Date().toISOString(),
+      ...(clearsCompletion ? { completedDate: null } : {})
     })
     .eq("id", id);
 }
@@ -3216,6 +3224,48 @@ export async function upsertJobMaterialMakeMethod(
   }
 
   return { data: null, error: null };
+}
+
+/**
+ * Resolve a job material's child make-method id and pull its source item's
+ * method (BOM + operations) into it. Shared by the job-material create and edit
+ * routes: both flip a material to "Make to Order" and must populate the newly
+ * created child make method.
+ */
+export async function pullJobMaterialMakeMethod(
+  client: SupabaseClient<Database>,
+  args: {
+    jobMaterialId: string;
+    itemId: string;
+    companyId: string;
+    userId: string;
+  }
+) {
+  const materialMakeMethod = await client
+    .from("jobMaterialWithMakeMethodId")
+    .select("jobMaterialMakeMethodId")
+    .eq("id", args.jobMaterialId)
+    .eq("companyId", args.companyId)
+    .single();
+
+  if (
+    materialMakeMethod.error ||
+    !materialMakeMethod.data?.jobMaterialMakeMethodId
+  ) {
+    return {
+      data: null,
+      error: (materialMakeMethod.error ?? {
+        message: "Failed to resolve job material make method"
+      }) as PostgrestError
+    };
+  }
+
+  return upsertJobMaterialMakeMethod(client, {
+    sourceId: args.itemId,
+    targetId: materialMakeMethod.data.jobMaterialMakeMethodId,
+    companyId: args.companyId,
+    userId: args.userId
+  });
 }
 
 export async function upsertMakeMethodFromJob(

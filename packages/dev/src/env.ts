@@ -12,8 +12,25 @@ export function renderEnv(opts: {
   portless: boolean;
   /** Required when portless is true. e.g. "dev" for branch "dev". */
   branchPrefix?: string;
+  /**
+   * Whether the assembler was selected to run. `ASSEMBLER_SERVICE_URL` IS the
+   * pipeline's feature flag (`assemblerEnabled()` in @carbon/jobs) — writing it
+   * with no service behind it turns clean job skips into dead-URL failures that
+   * stamp model rows Failed. Omitted → written (migrate regenerates the env
+   * without knowing the selection; only `up` passes false). A remote assembler
+   * pinned in `.env` via `#force` wins regardless.
+   */
+  includeAssembler?: boolean;
 }): string {
-  const { slug, ports, redisDb, jwt, portless, branchPrefix } = opts;
+  const {
+    slug,
+    ports,
+    redisDb,
+    jwt,
+    portless,
+    branchPrefix,
+    includeAssembler = true
+  } = opts;
 
   const host = (sub: string) => `${sub}.${branchPrefix}.dev`;
   const local = (port: number) => `http://localhost:${port}`;
@@ -96,11 +113,16 @@ export function renderEnv(opts: {
   // `erp.main.dev` host the SDK URL points at).
   lines.push(`INNGEST_TLS_HOST=${portless ? host("erp") : "localhost"}`);
   lines.push("");
-  lines.push("# Assembler service (CAD conversion + motion planning)");
-  lines.push(
-    `ASSEMBLER_SERVICE_URL=${portless ? `https://${host("assembler")}` : local(ports.PORT_ASSEMBLER)}`
-  );
-  lines.push("ASSEMBLER_SERVICE_API_KEY=dev-local-key");
+  if (includeAssembler) {
+    lines.push("# Assembler service (CAD conversion + motion planning)");
+    lines.push(
+      `ASSEMBLER_SERVICE_URL=${portless ? `https://${host("assembler")}` : local(ports.PORT_ASSEMBLER)}`
+    );
+    lines.push("ASSEMBLER_SERVICE_API_KEY=dev-local-key");
+  } else {
+    lines.push("# Assembler not selected this run — URL omitted so the CAD");
+    lines.push("# pipeline skips cleanly (assemblerEnabled() gates on it).");
+  }
   lines.push("");
   lines.push("# Dev auth bypass");
   lines.push("DEV_BYPASS_EMAIL=test@carbon.ms");

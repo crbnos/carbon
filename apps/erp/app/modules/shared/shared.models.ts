@@ -222,12 +222,6 @@ export const processTypes = [
   "Inside and Outside"
 ] as const;
 
-export const feedbackValidator = z.object({
-  feedback: z.string().min(1, { message: "" }),
-  attachmentPath: z.string().optional(),
-  location: z.string()
-});
-
 export const suggestionValidator = z.object({
   suggestion: z.string().min(1, { message: "Suggestion is required" }),
   emoji: z.string().default("💡"),

@@ -15,6 +15,12 @@ msgstr ""
 msgid " A supplier is a business or person who sells you parts or services."
 msgstr "サプライヤーは、あなたに部品またはサービスを販売する企業または個人です。"
 
+msgid ", {residual}% residual"
+msgstr ", {residual}% 残存価額"
+
+msgid ", {years}yr"
+msgstr ", {years}年"
+
 #. placeholder {0}: fieldDef?.label ?? condition.field
 msgid "\"{0}\" isn't available on the selected surface(s). Pick another field."
 msgstr "「{0}」は選択されたサーフェス上で利用できません。別のフィールドを選択してください。"
@@ -137,6 +143,9 @@ msgstr "{uncounted, plural, one {# 未計数行} other {# 未計数行}}"
 
 msgid "{variances, plural, one {# line differs from the expected quantity} other {# lines differ from the expected quantity}}"
 msgstr "{variances, plural, one {# 行が予想数量と異なります} other {# 行が予想数量と異なります}}"
+
+msgid "{years}yr"
+msgstr "{years}年"
 
 msgid "/month/user"
 msgstr "/月/ユーザー"
@@ -596,6 +605,9 @@ msgstr "行を追加"
 msgid "Add a step"
 msgstr "ステップを追加"
 
+msgid "Add Account"
+msgstr "勘定科目を追加"
+
 msgid "Add Actions"
 msgstr "アクションを追加"
 
@@ -625,6 +637,9 @@ msgstr "条件を追加"
 
 msgid "Add Contractor"
 msgstr "契約業者を追加"
+
+msgid "Add cost center"
+msgstr "コスト センターを追加"
 
 msgid "Add Entry"
 msgstr "エントリを追加"
@@ -791,6 +806,9 @@ msgstr "すべての監査ログ"
 
 msgid "All changes to auditable entities are being recorded."
 msgstr "監査対象エンティティへのすべての変更が記録されています。"
+
+msgid "All Companies"
+msgstr "すべての会社"
 
 msgid "All Customers"
 msgstr "すべての顧客"
@@ -1011,6 +1029,9 @@ msgstr "承認要件"
 msgid "Approval Rules"
 msgstr "承認ルール"
 
+msgid "Approvals"
+msgstr "承認"
+
 msgid "Approve"
 msgstr "承認"
 
@@ -1116,6 +1137,7 @@ msgstr "このユーザーを無効化してもよろしいですか？"
 msgid "Are you sure you want to delete {0} from this operation? This cannot be undone."
 msgstr "{0}をこの操作から削除してもよろしいですか?これは元に戻すことができません。"
 
+#. placeholder {0}: selectedEntry.journalEntryId
 #. placeholder {0}: selectedGroup.name
 msgid "Are you sure you want to delete {0}?"
 msgstr "{0}を削除してもよろしいですか？"
@@ -1148,6 +1170,10 @@ msgstr "本当にアカウント {0}{1} を削除してもよろしいですか�
 #. placeholder {0}: apiKey.name
 msgid "Are you sure you want to delete the API key: {0}? This cannot be undone."
 msgstr "API キー: {0} を削除してもよろしいですか？この操作は取り消せません。"
+
+#. placeholder {0}: selectedClass.name
+msgid "Are you sure you want to delete the asset class: {0}? This cannot be undone."
+msgstr "資産クラス {0} を削除してもよろしいですか。この操作は元に戻せません。"
 
 #. placeholder {0}: requiredAction.name
 msgid "Are you sure you want to delete the change order action: {0}? This cannot be undone."
@@ -1496,6 +1522,9 @@ msgstr "処分時の資産原価"
 msgid "Asset Cost on Disposal (default)"
 msgstr "処分時の資産原価（デフォルト）"
 
+msgid "Asset ID"
+msgstr "資産 ID"
+
 msgid "Assets"
 msgstr "資産"
 
@@ -1727,6 +1756,9 @@ msgstr "バッチ追跡"
 msgid "Batch Tracking"
 msgstr "バッチ追跡"
 
+msgid "Beginning"
+msgstr "開始"
+
 #. placeholder {0}: successorItem.readableIdWithRevision
 msgid "Being phased out — successor: <0>{0}</0>"
 msgstr "段階的に廃止予定 — 後継品: <0>{0}</0>"
@@ -1800,6 +1832,9 @@ msgstr "ガイド付き実装について相談する通話を予約する"
 
 msgid "Book a call with Carbon"
 msgstr "Carbonとの通話を予約する"
+
+msgid "Book Depreciation"
+msgstr "簿価償却"
 
 msgid "Breadcrumb"
 msgstr "パンくずリスト"
@@ -2829,6 +2864,9 @@ msgstr "コストセンター"
 msgid "Cost Center"
 msgstr "コストセンター"
 
+msgid "Cost Center Name"
+msgstr "コスト センター名"
+
 msgid "cost centers"
 msgstr "コストセンター"
 
@@ -3020,6 +3058,9 @@ msgstr "変更指示タイプを作成"
 msgid "Created consumable"
 msgstr "消耗品を作成しました"
 
+msgid "Created cost center"
+msgstr "コスト センターを作成しました"
+
 msgid "Created customer portal"
 msgstr "顧客ポータルを作成しました"
 
@@ -3130,6 +3171,10 @@ msgstr "パーツを作成中..."
 msgid "Credit"
 msgstr "クレジット"
 
+#. placeholder {0}: parentCurrency ?? "Translated"
+msgid "Credit ({0})"
+msgstr "クレジット ({0})"
+
 msgid "Credit / Debit Memos"
 msgstr "貸方/借方メモ"
 
@@ -3147,6 +3192,9 @@ msgstr "製造原価がWIPに吸収される場合に使用されるクレジッ
 
 msgid "Credit Memo"
 msgstr "貸方メモ"
+
+msgid "Credits"
+msgstr "クレジット"
 
 msgid "Credits & Debits"
 msgstr "クレジット＆デビット"
@@ -3488,11 +3536,18 @@ msgstr "期限タイプ"
 msgid "Debit"
 msgstr "デビット"
 
+#. placeholder {0}: parentCurrency ?? "Translated"
+msgid "Debit ({0})"
+msgstr "デビット ({0})"
+
 msgid "Debit Account"
 msgstr "デビット勘定"
 
 msgid "Debit Memo"
 msgstr "借方メモ"
+
+msgid "Debits"
+msgstr "デビット"
 
 msgid "Decide what an operator sees if they try to issue a batch or serial that's already expired."
 msgstr "オペレーターが既に期限切れのバッチまたはシリアルを発行しようとした場合に表示される内容を決定します。"
@@ -3644,6 +3699,12 @@ msgstr "アクションを削除"
 msgid "Delete API Key"
 msgstr "APIキーを削除"
 
+msgid "Delete Asset"
+msgstr "資産を削除"
+
+msgid "Delete Asset Class"
+msgstr "資産クラスを削除"
+
 msgid "Delete Assignment"
 msgstr "割り当てを削除"
 
@@ -3686,6 +3747,9 @@ msgstr "顧客タイプを削除"
 msgid "Delete Department"
 msgstr "部門を削除"
 
+msgid "Delete Dimension"
+msgstr "分析軸を削除"
+
 msgid "Delete Dispatch"
 msgstr "ディスパッチを削除"
 
@@ -3712,6 +3776,12 @@ msgstr "問題を削除"
 
 msgid "Delete Item Group"
 msgstr "アイテムグループを削除"
+
+msgid "Delete Journal Entry"
+msgstr "仕訳帳エントリを削除"
+
+msgid "Delete line"
+msgstr "行を削除"
 
 msgid "Delete Line"
 msgstr "行を削除"
@@ -4090,6 +4160,9 @@ msgstr "処分する"
 msgid "Dispose Asset"
 msgstr "資産を処分"
 
+msgid "Disposed"
+msgstr "廃棄済み"
+
 msgid "Disposition"
 msgstr "処置"
 
@@ -4308,6 +4381,9 @@ msgstr "APIキーを編集"
 msgid "Edit Approval Rule"
 msgstr "承認ルールを編集"
 
+msgid "Edit Asset"
+msgstr "資産を編集"
+
 msgid "Edit Asset Class"
 msgstr "資産クラスを編集"
 
@@ -4340,6 +4416,9 @@ msgstr "連絡先を編集"
 
 msgid "Edit Contractor"
 msgstr "契約者を編集"
+
+msgid "Edit Cost Center"
+msgstr "コスト センターを編集"
 
 msgid "Edit Count"
 msgstr "カウントを編集"
@@ -4403,6 +4482,9 @@ msgstr "検査文書を編集"
 
 msgid "Edit Item Group"
 msgstr "アイテムグループを編集"
+
+msgid "Edit Journal Entry"
+msgstr "仕訳帳エントリを編集"
 
 msgid "Edit Kanban"
 msgstr "カンバンを編集"
@@ -4596,11 +4678,20 @@ msgstr "Webhookを編集"
 msgid "Edit Work Center"
 msgstr "ワークセンターを編集"
 
+msgid "Eliminated"
+msgstr "削除済み"
+
+msgid "email"
+msgstr "メール"
+
 msgid "Email"
 msgstr "メール"
 
 msgid "Email Address"
 msgstr "メールアドレス"
+
+msgid "Email notifications are not included in your company's current plan; email preferences will apply if they are enabled."
+msgstr "メール通知はあなたの会社の現在のプランに含まれていません。メール設定が有効になっている場合は適用されます。"
 
 msgid "Email notifications not configured"
 msgstr "メール通知が設定されていません"
@@ -4700,6 +4791,13 @@ msgstr "前四半期末"
 
 msgid "End Time"
 msgstr "終了時刻"
+
+msgid "Ending"
+msgstr "終了"
+
+#. placeholder {0}: parentCurrency ?? "Translated"
+msgid "Ending ({0})"
+msgstr "終了 ({0})"
 
 msgid "Enforce — edits are blocked"
 msgstr "強制 - 編集はブロックされます"
@@ -5069,6 +5167,10 @@ msgid "Failed to create consumable: {0}"
 msgstr "消耗品の作成に失敗しました: {0}"
 
 #. placeholder {0}: fetcher.data.error.message
+msgid "Failed to create cost center: {0}"
+msgstr "コスト センターの作成に失敗しました: {0}"
+
+#. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create customer portal: {0}"
 msgstr "顧客ポータルの作成に失敗しました: {0}"
 
@@ -5265,6 +5367,10 @@ msgstr "サプライヤー部品の詳細の読み込みに失敗しました"
 msgid "Failed to load tracked entities"
 msgstr "追跡対象エンティティの読み込みに失敗しました"
 
+#. placeholder {0}: fetcher.data.error.message
+msgid "Failed to move account: {0}"
+msgstr "勘定科目の移動に失敗しました: {0}"
+
 msgid "Failed to remove image: {errorMessage}"
 msgstr "画像の削除に失敗しました: {errorMessage}"
 
@@ -5378,9 +5484,6 @@ msgstr "図面から提案された機能値"
 
 msgid "Features"
 msgstr "機能"
-
-msgid "Feedback"
-msgstr "フィードバック"
 
 msgid "Fees"
 msgstr "手数料"
@@ -5573,6 +5676,9 @@ msgstr "金曜日"
 msgid "From {0}"
 msgstr "{0}から"
 
+msgid "From / To"
+msgstr "開始 / 終了"
+
 msgid "From customer"
 msgstr "顧客から"
 
@@ -5587,6 +5693,9 @@ msgstr "保管場所から"
 
 msgid "Fulfillment Location"
 msgstr "履行場所"
+
+msgid "Fully Depreciated"
+msgstr "完全償却済み"
 
 msgid "Fully trained for"
 msgstr "完全に訓練済み"
@@ -5635,6 +5744,9 @@ msgstr "ゲージ"
 
 msgid "Genealogy"
 msgstr "総勘定元帳"
+
+msgid "General"
+msgstr "一般"
 
 msgid "General ledger"
 msgstr "外部処理操作のコスト差異をキャプチャするGLアカウント。"
@@ -6096,9 +6208,6 @@ msgstr "まだ働いています"
 msgid "ID"
 msgstr "ID"
 
-msgid "Ideas, suggestions or problems with this page?"
-msgstr "このページについてのアイデア、提案、または問題はありますか？"
-
 msgid "Ideas, suggestions or problems?"
 msgstr "アイデア、提案、または問題はありますか？"
 
@@ -6192,6 +6301,12 @@ msgstr "在庫のみ"
 msgid "In the loop together"
 msgstr "一緒にループの中にいる"
 
+msgid "In-app notifications are always delivered. Choose which topics also reach you by email or Slack."
+msgstr "アプリ内通知は常に配信されます。どのトピックがメールまたはSlackでも届くかを選択してください。"
+
+msgid "In-app notifications are always delivered. Choose which topics also reach you by email."
+msgstr "アプリ内通知は常に配信されます。どのトピックがメールでも届くかを選択してください。"
+
 msgid "Inactive"
 msgstr "非アクティブ"
 
@@ -6254,6 +6369,9 @@ msgstr "インフラストラクチャ"
 
 msgid "Inherit From Materials"
 msgstr "材料から継承"
+
+msgid "Inherited"
+msgstr "継承済み"
 
 msgid "Inherited from parent"
 msgstr "親から継承"
@@ -6335,6 +6453,12 @@ msgstr "ここで名前が挙げられていない統合"
 
 msgid "Intercompany"
 msgstr "企業間"
+
+msgid "Intercompany Balances"
+msgstr "企業間残高"
+
+msgid "Intercompany Transactions"
+msgstr "企業間取引"
 
 msgid "Intercompany transactions involving this company that are still Unmatched should be matched and eliminated, so consolidated results don't double-count activity between entities."
 msgstr "この会社が関係する会社間取引がまだ未照合の場合は、照合して消去する必要があります。連結結果がエンティティ間の活動を二重に計算しないようにするため。"
@@ -6849,6 +6973,9 @@ msgstr "ライトモード"
 msgid "Likelihood"
 msgstr "可能性"
 
+msgid "Line description (optional)"
+msgstr "行の説明 (オプション)"
+
 msgid "Line Item Comparison"
 msgstr "明細項目の比較"
 
@@ -6931,6 +7058,9 @@ msgstr "読み込み中..."
 
 msgid "Loading…"
 msgstr "読み込み中…"
+
+msgid "Local"
+msgstr "ローカル"
 
 msgid "location"
 msgstr "場所"
@@ -7046,6 +7176,9 @@ msgstr "機械、セル、ステーション"
 
 msgid "MACRS"
 msgstr "MACRS"
+
+msgid "MACRS {cls}-Year"
+msgstr "MACRS {cls} 年"
 
 msgid "MACRS Convention"
 msgstr "MACRS規約"
@@ -7248,6 +7381,9 @@ msgstr "任意に一致 (OR)"
 
 msgid "Match none"
 msgstr "いずれにも一致しない"
+
+msgid "Matched"
+msgstr "照合済み"
 
 msgid "matches"
 msgstr "一致する"
@@ -7531,6 +7667,9 @@ msgstr "ほとんどのことはここで発見され、解決されます。明
 msgid "Move"
 msgstr "移動"
 
+msgid "Move {accountName}"
+msgstr "{accountName} を移動"
+
 msgid "Move entities"
 msgstr "エンティティを移動"
 
@@ -7546,6 +7685,9 @@ msgstr "数量の一部を新しい処分行に移動して、MRBが各部分を
 msgid "Move to"
 msgstr "移動先"
 
+msgid "Move to Group"
+msgstr "グループに移動"
+
 msgid "Move to Trash"
 msgstr "ゴミ箱に移動"
 
@@ -7553,6 +7695,9 @@ msgstr "ゴミ箱に移動"
 #. placeholder {1}: targetBucket === "parts" ? "Parts" : "Opportunity"
 msgid "Moved {0} to {1} bucket"
 msgstr "{0}を{1}バケットに移動しました"
+
+msgid "Moved account"
+msgstr "移動されたアカウント"
 
 msgid "Movements"
 msgstr "移動"
@@ -7611,6 +7756,9 @@ msgstr "負の調整"
 msgid "Net book value"
 msgstr "純簿価額"
 
+msgid "Net Book Value"
+msgstr "純簿価額"
+
 msgid "Net Change"
 msgstr "純変化"
 
@@ -7658,6 +7806,9 @@ msgstr "新しい消耗品"
 
 msgid "New Contractor"
 msgstr "新しい契約者"
+
+msgid "New Cost Center"
+msgstr "新しいコストセンター"
 
 msgid "New Credit / Debit Memo"
 msgstr "新しい貸方/借方メモ"
@@ -8163,6 +8314,9 @@ msgstr "プリンターが設定されていません"
 msgid "No printers configured. Click \"Add Printer\" to create one."
 msgstr "プリンターが設定されていません。「プリンターを追加」をクリックして作成してください。"
 
+msgid "No process selected"
+msgstr "プロセスが選択されていません"
+
 msgid "No Quote"
 msgstr "見積なし"
 
@@ -8445,6 +8599,12 @@ msgstr "オープンディスパッチ"
 msgid "Open in Carbon"
 msgstr "Carbonで開く"
 
+msgid "Open in change order {ids}. Release it to create new versions or revisions."
+msgstr ""
+
+msgid "Open in change orders {ids}. Release them to create new versions or revisions."
+msgstr ""
+
 msgid "Open in MES"
 msgstr "MESで開く"
 
@@ -8726,6 +8886,9 @@ msgstr "パラメータ"
 msgid "Parent cost center"
 msgstr "部品"
 
+msgid "Parent Cost Center"
+msgstr "親コストセンター"
+
 msgid "Parent Department"
 msgstr "親部門"
 
@@ -8887,6 +9050,9 @@ msgstr "低コスト評価に最適"
 
 msgid "Period"
 msgstr "期間"
+
+msgid "Period End"
+msgstr "期間終了"
 
 msgid "Periodic depreciation expense for fixed assets"
 msgstr "ピッキングは追跡対象エンティティを最も早い有効期限順に提供するため、デフォルトで最初に期限切れになる在庫が最初に出庫されます。"
@@ -9683,6 +9849,9 @@ msgstr "早期に報告し、明確に報告してください。2週目に特�
 msgid "Rate Limit"
 msgstr "レート制限"
 
+msgid "Ratio"
+msgstr "比率"
+
 msgid "Raw Materials"
 msgstr "原材料"
 
@@ -9967,6 +10136,9 @@ msgstr "削除"
 msgid "Remove {0}"
 msgstr "{0}を削除"
 
+msgid "Remove {label}"
+msgstr "{label}を削除"
+
 msgid "Remove condition"
 msgstr "条件を削除"
 
@@ -10224,6 +10396,9 @@ msgstr "逆請求売上税 (既定)"
 msgid "Reverse the related journal entries"
 msgstr "関連する仕訳エントリを取り消す"
 
+msgid "Reversed"
+msgstr "反転"
+
 msgid "Review each item's changes, then confirm — releasing can't be undone."
 msgstr "各アイテムの変更をレビューしてから確認してください。リリースは取り消せません。"
 
@@ -10359,6 +10534,9 @@ msgstr "実践的なセッションを実施してチームの承認を得る"
 
 msgid "Run hands-on sessions with your champions"
 msgstr "チャンピオンとのハンズオンセッションを実施する"
+
+msgid "Run ID"
+msgstr "実行ID"
 
 msgid "Run month-end close and standard reconciliations"
 msgstr "月末クローズと標準的な照合を実行"
@@ -10686,12 +10864,18 @@ msgstr "デフォルト承認者を選択"
 msgid "Select a new owner"
 msgstr "新しい所有者を選択"
 
+msgid "Select a new parent group for this account."
+msgstr "このアカウントの新しい親グループを選択してください。"
+
 msgid "Select a plan"
 msgstr "プランを選択"
 
 #. placeholder {0}: plans[0].stripeTrialPeriodDays
 msgid "Select a plan to get started. You won't be charged for the first {0} days. Switch or cancel anytime."
 msgstr "プランを選択して開始します。最初の{0}日間は料金がかかりません。いつでも切り替えまたはキャンセルできます。"
+
+msgid "Select a process first to choose its supplier."
+msgstr "サプライヤーを選択するには、まずプロセスを選択してください。"
 
 msgid "Select a project"
 msgstr "プロジェクトを選択"
@@ -10716,6 +10900,9 @@ msgstr "物質を先に選択すると、利用可能なオプションが表示
 
 msgid "Select a team"
 msgstr "チームを選択"
+
+msgid "Select account"
+msgstr "アカウントを選択"
 
 msgid "Select all"
 msgstr "すべて選択"
@@ -11255,6 +11442,9 @@ msgstr "リリースされたが開始していない状態をスキップしま
 
 msgid "Skipped"
 msgstr "スキップ"
+
+msgid "Slack"
+msgstr "Slack"
 
 msgid "Smoke-test the core daily flows end to end"
 msgstr "コア日次フローのスモークテストを端から端まで実施"
@@ -12918,6 +13108,9 @@ msgstr "ツール"
 msgid "Top-level classification (asset / liability / equity / revenue / expense); set only on root groups, inherited by children."
 msgstr "トップレベルの分類（資産/負債/資本/収益/費用）。ルートグループにのみ設定され、子に継承されます。"
 
+msgid "Topic"
+msgstr "トピック"
+
 msgid "Total"
 msgstr "合計"
 
@@ -13211,6 +13404,9 @@ msgstr "ロック解除"
 
 msgid "Unmapped Extracted Lines"
 msgstr "マップされていない抽出行"
+
+msgid "Unmatched"
+msgstr "不一致"
 
 msgid "Unpick"
 msgstr "ピック解除"
@@ -13543,6 +13739,9 @@ msgstr "アクティブな見積もりを表示"
 msgid "View All"
 msgstr "すべて表示"
 
+msgid "View Asset"
+msgstr "資産を表示"
+
 msgid "View Assigned Jobs"
 msgstr "割り当てられたジョブを表示"
 
@@ -13587,6 +13786,9 @@ msgstr "問題を表示"
 
 msgid "View Item Master"
 msgstr "アイテムマスターを表示"
+
+msgid "View Journal Entry"
+msgstr "仕訳帳エントリを表示"
 
 msgid "View Lists"
 msgstr "リストを表示"
@@ -13662,6 +13864,9 @@ msgstr "領収書を表示"
 
 msgid "View Receivables"
 msgstr "売掛金を表示"
+
+msgid "View Run"
+msgstr "実行を表示"
 
 msgid "View Scheduled"
 msgstr "スケジュール済みを表示"
