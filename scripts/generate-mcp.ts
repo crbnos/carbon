@@ -140,18 +140,44 @@ function findMatchingBrace(content: string, openPos: number): number {
   return i - 1;
 }
 
+// Token-aware delimiter tracking. We split TypeScript type annotations and zod
+// validator bodies, both of which mix three kinds of angle bracket:
+//   • generic arguments — `Record<K, V>`, `z.infer<typeof x>`  (real delimiters)
+//   • the `>` of an arrow function — `(v) => …`                (not a delimiter)
+//   • comparison operators — `.refine((v) => v > 0)`           (not a delimiter)
+// A naive `"({[<".includes(ch)` counter miscounts the latter two as closers,
+// which corrupts the depth and makes a following comma/colon look top-level. So
+// we keep an explicit stack: `<` is pushed only when it opens a generic (i.e. it
+// abuts an identifier or a preceding `>`, unlike a spaced comparison `a < b`),
+// and `>` pops only a matching `<`. Parens/braces/brackets pop only their own
+// opener. Everything else — arrow `>`, comparison `<`/`>` — is left untouched.
+function isGenericOpen(str: string, i: number): boolean {
+  const prev = str[i - 1];
+  return prev !== undefined && /[A-Za-z0-9_>]/.test(prev);
+}
+
+function updateDelimiterStack(stack: string[], str: string, i: number): void {
+  const ch = str[i];
+  if (ch === "(" || ch === "{" || ch === "[") {
+    stack.push(ch);
+  } else if (ch === "<" && isGenericOpen(str, i)) {
+    stack.push(ch);
+  } else if (ch === ")" || ch === "}" || ch === "]") {
+    const open = ch === ")" ? "(" : ch === "}" ? "{" : "[";
+    if (stack[stack.length - 1] === open) stack.pop();
+  } else if (ch === ">") {
+    if (stack[stack.length - 1] === "<") stack.pop();
+  }
+}
+
 function splitAtTopLevel(str: string, delimiter: string): string[] {
   const parts: string[] = [];
-  let depth = 0;
+  const stack: string[] = [];
   let current = "";
   for (let i = 0; i < str.length; i++) {
     const ch = str[i];
-    if ("({[<".includes(ch)) depth++;
-    // The `>` in an arrow function (`=>`) is not a closing bracket — ignore it,
-    // otherwise it corrupts the depth counter (e.g. a zod `errorMap: () => ({…})`
-    // would swallow every field that follows it).
-    else if (")}]>".includes(ch) && !(ch === ">" && str[i - 1] === "=")) depth--;
-    if (ch === delimiter && depth === 0) {
+    updateDelimiterStack(stack, str, i);
+    if (ch === delimiter && stack.length === 0) {
       parts.push(current.trim());
       current = "";
     } else {
@@ -163,13 +189,10 @@ function splitAtTopLevel(str: string, delimiter: string): string[] {
 }
 
 function findTopLevelColon(str: string): number {
-  let depth = 0;
+  const stack: string[] = [];
   for (let i = 0; i < str.length; i++) {
-    const ch = str[i];
-    if ("({[<".includes(ch)) depth++;
-    // Ignore the `>` in an arrow function (`=>`); see splitAtTopLevel.
-    else if (")}]>".includes(ch) && !(ch === ">" && str[i - 1] === "=")) depth--;
-    if (ch === ":" && depth === 0) return i;
+    updateDelimiterStack(stack, str, i);
+    if (str[i] === ":" && stack.length === 0) return i;
   }
   return -1;
 }
