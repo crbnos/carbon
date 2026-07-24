@@ -10,7 +10,9 @@ import type { ReactNode } from "react";
 import { LuLanguages, LuSearch, LuX } from "react-icons/lu";
 import { PeriodSelector } from "~/components";
 import { useUrlParams } from "~/hooks";
+import type { ReportView } from "~/modules/accounting";
 import CompanySelector from "./CompanySelector";
+import ReportViewsMenu from "./ReportViewsMenu";
 
 type Company = {
   id: string;
@@ -29,6 +31,9 @@ type ReportFiltersProps = {
   showCompare?: boolean;
   // Right-aligned actions (Export CSV, Download PDF).
   actions?: ReactNode;
+  // Saved report views (personal). When both are set, the Views menu renders.
+  report?: string;
+  views?: ReportView[];
   search: string;
   onSearchChange: (value: string) => void;
 };
@@ -43,6 +48,8 @@ const ReportFilters = ({
   fiscalStartMonth,
   showCompare = false,
   actions,
+  report,
+  views,
   search,
   onSearchChange
 }: ReportFiltersProps) => {
@@ -55,6 +62,7 @@ const ReportFilters = ({
   return (
     <div className="flex px-4 py-3 items-center space-x-4 justify-between bg-card border-b border-border w-full">
       <HStack>
+        {report && views && <ReportViewsMenu report={report} views={views} />}
         <InputGroup size="sm" className="w-64">
           <InputLeftElement>
             <LuSearch className="h-4 w-4 text-muted-foreground" />

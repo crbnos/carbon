@@ -4138,6 +4138,9 @@ msgstr "タイプを削除"
 msgid "Delete Unit of Measure"
 msgstr "測定単位を削除"
 
+msgid "Delete view"
+msgstr ""
+
 msgid "Delete View"
 msgstr "ビューを削除"
 
@@ -8719,6 +8722,12 @@ msgstr "ここに行はありません。"
 msgid "No rules assigned"
 msgstr "ルールが割り当てられていません"
 
+msgid "No samples inspected yet."
+msgstr "まだサンプルが検査されていません。"
+
+msgid "No saved views"
+msgstr ""
+
 msgid "No single, trusted number for inventory or job status"
 msgstr "在庫またはジョブステータスの単一の信頼できる数値がない"
 
@@ -11164,8 +11173,14 @@ msgstr "アプリケーションを保存"
 msgid "Save contacts"
 msgstr "連絡先を保存"
 
+msgid "Save current view…"
+msgstr ""
+
 msgid "Save Method"
 msgstr "メソッドを保存"
+
+msgid "Save view"
+msgstr ""
 
 msgid "Save View"
 msgstr "ビューを保存"
@@ -14355,6 +14370,9 @@ msgstr "メモを表示"
 msgid "View missing values"
 msgstr "欠落値を表示"
 
+msgid "View name"
+msgstr ""
+
 msgid "View notes"
 msgstr "ノートを表示"
 
@@ -14444,6 +14462,9 @@ msgstr "トレーサビリティグラフを表示"
 
 msgid "View Transfer"
 msgstr "転送を表示"
+
+msgid "Views"
+msgstr ""
 
 msgid "Visibilities"
 msgstr "可視性"

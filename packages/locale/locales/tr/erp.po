@@ -4138,6 +4138,9 @@ msgstr "Türü Sil"
 msgid "Delete Unit of Measure"
 msgstr "Ölçü Birimini Sil"
 
+msgid "Delete view"
+msgstr ""
+
 msgid "Delete View"
 msgstr "Görünümü Sil"
 
@@ -8719,6 +8722,12 @@ msgstr "Burada satır yok."
 msgid "No rules assigned"
 msgstr "Atanmış kural yok"
 
+msgid "No samples inspected yet."
+msgstr "Henüz örnek incelenmedi."
+
+msgid "No saved views"
+msgstr ""
+
 msgid "No single, trusted number for inventory or job status"
 msgstr "Envanter veya iş durumu için tek bir güvenilir sayı yok"
 
@@ -11164,8 +11173,14 @@ msgstr "Uygulamaları kaydet"
 msgid "Save contacts"
 msgstr "Kişileri kaydet"
 
+msgid "Save current view…"
+msgstr ""
+
 msgid "Save Method"
 msgstr "Yöntemi Kaydet"
+
+msgid "Save view"
+msgstr ""
 
 msgid "Save View"
 msgstr "Görünümü Kaydet"
@@ -14355,6 +14370,9 @@ msgstr "Memo Görüntüle"
 msgid "View missing values"
 msgstr "Eksik değerleri görüntüle"
 
+msgid "View name"
+msgstr ""
+
 msgid "View notes"
 msgstr "Notları görüntüle"
 
@@ -14444,6 +14462,9 @@ msgstr "İzlenebilirlik Grafiğini Görüntüle"
 
 msgid "View Transfer"
 msgstr "Transferi Görüntüle"
+
+msgid "Views"
+msgstr ""
 
 msgid "Visibilities"
 msgstr "Görünürlükler"

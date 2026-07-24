@@ -4138,6 +4138,9 @@ msgstr "删除类型"
 msgid "Delete Unit of Measure"
 msgstr "删除计量单位"
 
+msgid "Delete view"
+msgstr ""
+
 msgid "Delete View"
 msgstr "删除视图"
 
@@ -8719,6 +8722,12 @@ msgstr "这里没有行。"
 msgid "No rules assigned"
 msgstr "未分配规则"
 
+msgid "No samples inspected yet."
+msgstr "还没有检查任何样品。"
+
+msgid "No saved views"
+msgstr ""
+
 msgid "No single, trusted number for inventory or job status"
 msgstr "没有单一的、可信的库存或工作状态数字"
 
@@ -11164,8 +11173,14 @@ msgstr "保存应用"
 msgid "Save contacts"
 msgstr "保存联系人"
 
+msgid "Save current view…"
+msgstr ""
+
 msgid "Save Method"
 msgstr "保存方法"
+
+msgid "Save view"
+msgstr ""
 
 msgid "Save View"
 msgstr "保存视图"
@@ -14355,6 +14370,9 @@ msgstr "查看备忘录"
 msgid "View missing values"
 msgstr "查看缺失值"
 
+msgid "View name"
+msgstr ""
+
 msgid "View notes"
 msgstr "查看备注"
 
@@ -14444,6 +14462,9 @@ msgstr "查看可追溯性图表"
 
 msgid "View Transfer"
 msgstr "查看转移"
+
+msgid "Views"
+msgstr ""
 
 msgid "Visibilities"
 msgstr "可见性"

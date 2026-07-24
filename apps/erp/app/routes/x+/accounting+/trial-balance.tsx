@@ -12,6 +12,7 @@ import {
   getConsolidatedBalances,
   getFinancialStatementBalances,
   getFiscalYearSettings,
+  getReportViews,
   getTrialBalance,
   translateCompanyBalances
 } from "~/modules/accounting";
@@ -33,13 +34,11 @@ export const handle: Handle = {
 export const shouldRevalidate = revalidateIgnoringOffset;
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId, companyGroupId } = await requirePermissions(
-    request,
-    {
+  const { client, companyId, companyGroupId, userId } =
+    await requirePermissions(request, {
       view: "accounting",
       role: "employee"
-    }
-  );
+    });
 
   const url = new URL(request.url);
   const searchParams = new URLSearchParams(url.search);
@@ -48,10 +47,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const endDate = searchParams.get("endDate") || null;
   const showTranslated = searchParams.get("showTranslated") === "true";
 
-  const [companies, fiscalYearSettings] = await Promise.all([
+  const [companies, fiscalYearSettings, reportViews] = await Promise.all([
     getCompaniesInGroup(client, companyGroupId),
-    getFiscalYearSettings(client, companyId)
+    getFiscalYearSettings(client, companyId),
+    getReportViews(client, companyId, userId, "trial-balance")
   ]);
+  const views = reportViews.data;
   const fiscalStartMonth =
     months.indexOf(fiscalYearSettings.data?.startMonth ?? "January") + 1;
   const companiesList = companies.data ?? [];
@@ -90,7 +91,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
       isMultiCompany: true,
       isForeignCurrency: false,
       parentCurrency,
-      fiscalStartMonth
+      fiscalStartMonth,
+      views
     };
   }
 
@@ -134,7 +136,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
       isMultiCompany: false,
       isForeignCurrency,
       parentCurrency,
-      fiscalStartMonth
+      fiscalStartMonth,
+      views
     };
   }
 
@@ -201,7 +204,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
     isMultiCompany: false,
     isForeignCurrency,
     parentCurrency,
-    fiscalStartMonth
+    fiscalStartMonth,
+    views
   };
 }
 
@@ -216,7 +220,8 @@ export default function TrialBalanceRoute() {
     isMultiCompany,
     isForeignCurrency,
     parentCurrency,
-    fiscalStartMonth
+    fiscalStartMonth,
+    views
   } = useLoaderData<typeof loader>();
   const [search, setSearch] = useState("");
 
@@ -229,6 +234,8 @@ export default function TrialBalanceRoute() {
         isForeignCurrency={isForeignCurrency}
         parentCurrency={parentCurrency}
         fiscalStartMonth={fiscalStartMonth}
+        report="trial-balance"
+        views={views}
         search={search}
         onSearchChange={setSearch}
       />

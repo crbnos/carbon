@@ -4138,6 +4138,9 @@ msgstr "Supprimer le type"
 msgid "Delete Unit of Measure"
 msgstr "Supprimer l'unité de mesure"
 
+msgid "Delete view"
+msgstr ""
+
 msgid "Delete View"
 msgstr "Supprimer la vue"
 
@@ -8719,6 +8722,12 @@ msgstr "Pas de lignes ici."
 msgid "No rules assigned"
 msgstr "Aucune règle assignée"
 
+msgid "No samples inspected yet."
+msgstr "Aucun échantillon inspecté pour le moment."
+
+msgid "No saved views"
+msgstr ""
+
 msgid "No single, trusted number for inventory or job status"
 msgstr "Pas de chiffre unique et fiable pour l'inventaire ou le statut du travail"
 
@@ -11164,8 +11173,14 @@ msgstr "Enregistrer les applications"
 msgid "Save contacts"
 msgstr "Enregistrer les contacts"
 
+msgid "Save current view…"
+msgstr ""
+
 msgid "Save Method"
 msgstr "Enregistrer la méthode"
+
+msgid "Save view"
+msgstr ""
 
 msgid "Save View"
 msgstr "Enregistrer la vue"
@@ -14355,6 +14370,9 @@ msgstr "Afficher le mémo"
 msgid "View missing values"
 msgstr "Afficher les valeurs manquantes"
 
+msgid "View name"
+msgstr ""
+
 msgid "View notes"
 msgstr "Afficher les notes"
 
@@ -14444,6 +14462,9 @@ msgstr "Afficher le graphique de traçabilité"
 
 msgid "View Transfer"
 msgstr "Afficher le transfert"
+
+msgid "Views"
+msgstr ""
 
 msgid "Visibilities"
 msgstr "Visibilités"

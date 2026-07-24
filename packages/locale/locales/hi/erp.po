@@ -4138,6 +4138,9 @@ msgstr "प्रकार हटाएं"
 msgid "Delete Unit of Measure"
 msgstr "माप की इकाई हटाएं"
 
+msgid "Delete view"
+msgstr ""
+
 msgid "Delete View"
 msgstr "दृश्य हटाएं"
 
@@ -8719,6 +8722,12 @@ msgstr "यहाँ कोई पंक्तियाँ नहीं है�
 msgid "No rules assigned"
 msgstr "कोई नियम असाइन नहीं किया गया"
 
+msgid "No samples inspected yet."
+msgstr "अभी तक कोई नमूना निरीक्षण नहीं किया गया है।"
+
+msgid "No saved views"
+msgstr ""
+
 msgid "No single, trusted number for inventory or job status"
 msgstr "इन्वेंटरी या जॉब स्थिति के लिए कोई एकल, विश्वसनीय संख्या नहीं"
 
@@ -11164,8 +11173,14 @@ msgstr "आवेदन सहेजें"
 msgid "Save contacts"
 msgstr "संपर्क सहेजें"
 
+msgid "Save current view…"
+msgstr ""
+
 msgid "Save Method"
 msgstr "विधि सहेजें"
+
+msgid "Save view"
+msgstr ""
 
 msgid "Save View"
 msgstr "दृश्य सहेजें"
@@ -14355,6 +14370,9 @@ msgstr "मेमो देखें"
 msgid "View missing values"
 msgstr "लापता मानों को देखें"
 
+msgid "View name"
+msgstr ""
+
 msgid "View notes"
 msgstr "नोट्स देखें"
 
@@ -14444,6 +14462,9 @@ msgstr "ट्रेसेबिलिटी ग्राफ देखें"
 
 msgid "View Transfer"
 msgstr "ट्रांसफर देखें"
+
+msgid "Views"
+msgstr ""
 
 msgid "Visibilities"
 msgstr "दृश्यता"

@@ -10,10 +10,12 @@ import {
   getCashFlowStatement,
   getCompaniesInGroup,
   getConsolidatedCashFlowStatement,
-  getFiscalYearSettings
+  getFiscalYearSettings,
+  getReportViews
 } from "~/modules/accounting";
 import {
   CashFlowStatement,
+  DownloadPdfButton,
   ExportReportButton,
   ReportFilters
 } from "~/modules/accounting/ui/Reports";
@@ -30,13 +32,11 @@ export const handle: Handle = {
 export const shouldRevalidate = revalidateIgnoringOffset;
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId, companyGroupId } = await requirePermissions(
-    request,
-    {
+  const { client, companyId, companyGroupId, userId } =
+    await requirePermissions(request, {
       view: "accounting",
       role: "employee"
-    }
-  );
+    });
 
   const url = new URL(request.url);
   const searchParams = new URLSearchParams(url.search);
@@ -44,10 +44,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const startDate = searchParams.get("startDate") || null;
   const endDate = searchParams.get("endDate") || null;
 
-  const [companies, fiscalYearSettings] = await Promise.all([
+  const [companies, fiscalYearSettings, reportViews] = await Promise.all([
     getCompaniesInGroup(client, companyGroupId),
-    getFiscalYearSettings(client, companyId)
+    getFiscalYearSettings(client, companyId),
+    getReportViews(client, companyId, userId, "cash-flow")
   ]);
+  const views = reportViews.data;
   const fiscalStartMonth =
     months.indexOf(fiscalYearSettings.data?.startMonth ?? "January") + 1;
   const companiesList = companies.data ?? [];
@@ -91,7 +93,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
       parentCurrency,
       startDate,
       endDate,
-      fiscalStartMonth
+      fiscalStartMonth,
+      views
     };
   }
 
@@ -121,7 +124,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
     parentCurrency: null as string | null,
     startDate,
     endDate,
-    fiscalStartMonth
+    fiscalStartMonth,
+    views
   };
 }
 
@@ -134,7 +138,8 @@ export default function CashFlowRoute() {
     parentCurrency,
     startDate,
     endDate,
-    fiscalStartMonth
+    fiscalStartMonth,
+    views
   } = useLoaderData<typeof loader>();
   const [search, setSearch] = useState("");
 
@@ -213,7 +218,14 @@ export default function CashFlowRoute() {
         parentCurrency={parentCurrency}
         periodVariant="range"
         fiscalStartMonth={fiscalStartMonth}
-        actions={<ExportReportButton rows={csvRows} filename={csvName} />}
+        report="cash-flow"
+        views={views}
+        actions={
+          <>
+            <ExportReportButton rows={csvRows} filename={csvName} />
+            <DownloadPdfButton />
+          </>
+        }
         search={search}
         onSearchChange={setSearch}
       />

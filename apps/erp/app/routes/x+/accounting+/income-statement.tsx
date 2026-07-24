@@ -13,10 +13,12 @@ import {
   getConsolidatedBalances,
   getFinancialStatementBalances,
   getFiscalYearSettings,
+  getReportViews,
   translateCompanyBalances
 } from "~/modules/accounting";
 import { getComparisonWindow } from "~/modules/accounting/accounting.utils";
 import {
+  DownloadPdfButton,
   ExportReportButton,
   FinancialStatementTree,
   ReportFilters
@@ -34,13 +36,11 @@ export const handle: Handle = {
 export const shouldRevalidate = revalidateIgnoringOffset;
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId, companyGroupId } = await requirePermissions(
-    request,
-    {
+  const { client, companyId, companyGroupId, userId } =
+    await requirePermissions(request, {
       view: "accounting",
       role: "employee"
-    }
-  );
+    });
 
   const url = new URL(request.url);
   const searchParams = new URLSearchParams(url.search);
@@ -53,10 +53,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
     | "priorPeriod"
     | "priorYear";
 
-  const [companies, fiscalYearSettings] = await Promise.all([
+  const [companies, fiscalYearSettings, reportViews] = await Promise.all([
     getCompaniesInGroup(client, companyGroupId),
-    getFiscalYearSettings(client, companyId)
+    getFiscalYearSettings(client, companyId),
+    getReportViews(client, companyId, userId, "income-statement")
   ]);
+  const views = reportViews.data;
   const fiscalStartMonth =
     months.indexOf(fiscalYearSettings.data?.startMonth ?? "January") + 1;
   const companiesList = companies.data ?? [];
@@ -98,7 +100,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
       isForeignCurrency: false,
       parentCurrency,
       fiscalStartMonth,
-      comparison: undefined as Record<string, number> | undefined
+      comparison: undefined as Record<string, number> | undefined,
+      views
     };
   }
 
@@ -190,7 +193,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
     isForeignCurrency,
     parentCurrency,
     fiscalStartMonth,
-    comparison
+    comparison,
+    views
   };
 }
 
@@ -204,7 +208,8 @@ export default function IncomeStatementRoute() {
     isForeignCurrency,
     parentCurrency,
     fiscalStartMonth,
-    comparison
+    comparison,
+    views
   } = useLoaderData<typeof loader>();
   const [search, setSearch] = useState("");
   const [params] = useUrlParams();
@@ -227,11 +232,16 @@ export default function IncomeStatementRoute() {
         parentCurrency={parentCurrency}
         fiscalStartMonth={fiscalStartMonth}
         showCompare={!isMultiCompany}
+        report="income-statement"
+        views={views}
         actions={
-          <ExportReportButton
-            rows={csvRows}
-            filename={`income-statement-${endDate}.csv`}
-          />
+          <>
+            <ExportReportButton
+              rows={csvRows}
+              filename={`income-statement-${endDate}.csv`}
+            />
+            <DownloadPdfButton />
+          </>
         }
         search={search}
         onSearchChange={setSearch}
