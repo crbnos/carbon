@@ -69,7 +69,6 @@ import {
   LuListFilter,
   LuPause,
   LuPlay,
-  LuQrCode,
   LuSkipForward,
   LuTimer,
   LuTrash,
@@ -83,6 +82,7 @@ import {
   useRevalidator,
   useSearchParams
 } from "react-router";
+import { TrackingTypeIcon } from "~/components/Icons";
 import { ImageZoomViewer } from "~/components/ImageZoomViewer";
 import { OperationChat } from "~/components/JobOperation/components/Chat";
 import { IssueMaterialModal } from "~/components/JobOperation/components/IssueMaterialModal";
@@ -270,7 +270,12 @@ type Props = {
   tools: {
     quantity: number;
     jobOperationStepIds?: string[];
-    item: { id: string; name: string; type: string } | null;
+    item: {
+      id: string;
+      name: string;
+      type: string;
+      readableId?: string | null;
+    } | null;
   }[];
   ncrs: any[];
   requiresSerialTracking: boolean;
@@ -584,15 +589,24 @@ export function AssemblyView({
       (operation?.machineDuration ?? 0) > 0 ? "Machine" : null
     ] as const
   ).filter(Boolean) as ("Setup" | "Labor" | "Machine")[];
-  const [selectedWorkType, setSelectedWorkType] = useState<
-    "Setup" | "Labor" | "Machine"
-  >(workTypes[0] ?? "Labor");
-  // Open (running) event for the selected work type, derived from events.
-  const openEventForType =
-    events.find((e) => e.type === selectedWorkType && !e.endTime) ??
-    (selectedWorkType === "Labor" ? openEvent : null);
+  // Each available work type gets its own header clock button. If the operation
+  // has no configured durations, still surface a single Labor clock so time can
+  // always be recorded.
+  const headerWorkTypes: ("Setup" | "Labor" | "Machine")[] =
+    workTypes.length > 0 ? workTypes : ["Labor"];
+  // Open (running) event for a work type, derived from events. A freshly-started
+  // Labor event may not be in `events` yet (the realtime channel keeps the
+  // `openEvent` prop fresher), so fall back to it for Labor.
+  const openEventForWorkType = (type: "Setup" | "Labor" | "Machine") =>
+    events.find((e) => e.type === type && !e.endTime) ??
+    (type === "Labor" ? openEvent : null);
 
   const isTracked = requiresSerialTracking || requiresBatchTracking;
+  // Only serial parents rotate a distinct tracked entity per unit, so only they
+  // navigate the unit axis by ?trackedEntityId. A batch parent shares ONE lot across
+  // every unit — like an untracked parent it pages by ?unit index and rolls forward
+  // on quantityComplete; the lot still binds to every unit (materials + completion).
+  const navigatesByEntity = requiresSerialTracking;
 
   // Source location for material issuing — same source the Operation view uses. FIX-7:
   // the issue modal needs it (and the work center) to resolve a stock source, which most
@@ -628,19 +642,24 @@ export function AssemblyView({
   const step = steps[currentStep] ?? null;
 
   // Part ↔ step (many-to-many): a part is shown ONLY on the step(s) it's assigned to. Parts
-  // with NO step link are unassigned and show on every step ("General"). Quantity and issuing
-  // live on the jobMaterial (the part), so showing it on several assigned steps never
-  // multiplies the requirement — issuing it once marks it fulfilled everywhere.
+  // with NO step link are unassigned ("General") and show on the FIRST step only — loose
+  // untracked parts are backflushed when the unit's first step is recorded, so that's
+  // where the operator sees and handles them; repeating them on every step just buries
+  // the step-specific parts. Quantity and issuing live on the jobMaterial (the part), so
+  // a part on several assigned steps never multiplies the requirement.
   const stepNumberById = new Map(steps.map((s, i) => [s.id, i + 1] as const));
   const allMaterials: any[] = materials?.materials ?? [];
   const isGeneralMaterial = (m: any) =>
     (m.jobOperationStepIds ?? []).length === 0;
   const isOnCurrentStep = (m: any) =>
     step?.id != null && (m.jobOperationStepIds ?? []).includes(step.id);
-  // Visible here = parts assigned to the current step + unassigned (General) parts. Parts
-  // assigned only to other steps are hidden. Assigned parts sort first, General after.
+  // Visible here = parts assigned to the current step, plus (first step only) the
+  // unassigned General parts. Parts assigned only to other steps are hidden. Assigned
+  // parts sort first, General after.
   const visibleMaterials: any[] = allMaterials
-    .filter((m) => isOnCurrentStep(m) || isGeneralMaterial(m))
+    .filter(
+      (m) => isOnCurrentStep(m) || (currentStep === 0 && isGeneralMaterial(m))
+    )
     .sort((a, b) => {
       const r = (isOnCurrentStep(a) ? 0 : 1) - (isOnCurrentStep(b) ? 0 : 1);
       if (r !== 0) return r;
@@ -648,8 +667,6 @@ export function AssemblyView({
       const bt = TYPE_ORDER.indexOf(b.itemType ?? "");
       return (at < 0 ? 99 : at) - (bt < 0 ? 99 : bt);
     });
-  // Drives the tracked-scan pre-select below (a part still needing issue).
-  const rawMaterials: any[] = visibleMaterials;
 
   // Phase 2 (tool ↔ step, many-to-many): show only the tools involved in the current step —
   // a tool scoped to steps (jobOperationStepIds) appears on those steps; operation-level tools
@@ -660,17 +677,6 @@ export function AssemblyView({
     // No links = operation-level (every step); otherwise only the linked steps.
     return ids.length === 0 || (step?.id != null && ids.includes(step.id));
   });
-
-  // Material the generic "Scan" button pre-selects. Prefer a tracked material
-  // that still NEEDS issuing (otherwise the modal opens straight into the
-  // "Unconsume" view because that material is already fully consumed).
-  const isTrackedMat = (m: any) =>
-    m.requiresSerialTracking || m.requiresBatchTracking;
-  const remainingToIssue = (m: any) =>
-    (m.estimatedQuantity ?? m.quantity ?? 0) - (m.quantityIssued ?? 0);
-  const firstTrackedMaterial =
-    rawMaterials.find((m) => isTrackedMat(m) && remainingToIssue(m) > 0) ??
-    rawMaterials.find(isTrackedMat);
 
   // FIX-1: quantity-centric unit axis — pages "Unit X of N" for EVERY tracking type.
   // operationQuantity is the unit count; unit i carries trackedEntities[i] ?? null, so
@@ -704,20 +710,24 @@ export function AssemblyView({
   const hasUnitParam =
     Number.isInteger(unitParam) && unitParam >= 0 && unitParam < units.length;
   const currentUnitIndex = (() => {
-    if (trackedEntityId) {
+    if (navigatesByEntity && trackedEntityId) {
       const i = units.findIndex((u) => u.entity?.id === trackedEntityId);
       if (i >= 0) return i;
     }
     if (hasUnitParam) return unitParam;
     // No explicit unit: land on the next unit still to build (quantityComplete)
-    // rather than an already-finished unit 0. Untracked parents page purely by
-    // index, so this is safe; tracked parents resolve by entity above.
-    if (!isTracked)
+    // rather than an already-finished unit 0. Batch + untracked parents page by
+    // index, so this is safe; serial parents resolve by entity above.
+    if (!navigatesByEntity)
       return Math.min(quantityComplete, Math.max(0, units.length - 1));
     return 0;
   })();
   const currentUnit = units[currentUnitIndex] ?? units[0];
-  const currentEntity = currentUnit?.entity ?? undefined;
+  // Serial binds the per-unit entity; batch shares one lot across all units, so the
+  // sole tracked entity binds to every unit (unit i > 0 has no entity of its own).
+  const currentEntity = requiresBatchTracking
+    ? (axisEntities[0] ?? undefined)
+    : (currentUnit?.entity ?? undefined);
 
   // Step records key off the unit index for ALL tracking types, identical to the
   // Operation view (FIX-1 / FIX-5) — this is what isolates unit i's records.
@@ -762,6 +772,53 @@ export function AssemblyView({
   // All steps recorded for the current unit — drives the "Steps are missing"
   // warning in the complete/finish flow (soft warning, mirrors operation view).
   const allStepsRecorded = steps.length > 0 && doneCount === steps.length;
+
+  // Per-material issue state for the current step + unit, computed once so the
+  // Parts cards and the completion gate agree. `issuedIsPerUnit`/`issuedOverride`
+  // mirror the props the rows receive (serial parents report per-unit consumption
+  // for tracked parts; loose untracked parts are backflushed on the first step).
+  const firstStep = steps[0];
+  const visibleMaterialsWithState = visibleMaterials.map((m) => {
+    const stepNumbers = ((m.jobOperationStepIds ?? []) as string[])
+      .map((id) => stepNumberById.get(id))
+      .filter((n): n is number => n != null)
+      .sort((a, b) => a - b);
+    const isTrackedMat = m.requiresSerialTracking || m.requiresBatchTracking;
+    const isLoose = !isTrackedMat && stepNumbers.length === 0;
+    // The loader returns a per-unit quantityIssued for tracked materials under BOTH
+    // serial parents (attributed by the unit's own entity) and batch parents
+    // (attributed by the "Unit" stamp), so render it raw — no per-unit heuristic.
+    const issuedIsPerUnit =
+      (requiresSerialTracking || requiresBatchTracking) && isTrackedMat;
+    const issuedOverride =
+      isLoose && firstStep
+        ? isStepDone(firstStep)
+          ? (m.quantity ?? 0)
+          : 0
+        : undefined;
+    const state = getIssuedForUnit(m, {
+      unitIndex: currentUnitIndex,
+      issuedIsPerUnit,
+      issuedOverride
+    });
+    return {
+      m,
+      stepNumbers,
+      isTrackedMat,
+      issuedIsPerUnit,
+      issuedOverride,
+      state
+    };
+  });
+
+  // Tracked parts assigned to the current step that still need scanning for THIS
+  // unit. They soft-gate the step: the operator can still Skip, but the primary
+  // Mark done / Record action is disabled until they're issued. Non-tracked/loose
+  // parts never gate — they're backflushed when the step is recorded.
+  const pendingScanMaterials = visibleMaterialsWithState.filter(
+    (v) => v.isTrackedMat && !v.state.fullyIssued
+  );
+  const hasPendingScans = pendingScanMaterials.length > 0;
 
   // Open production events per work type (to pass to the complete flow so it
   // can close them on completion).
@@ -920,6 +977,9 @@ export function AssemblyView({
       fd.set("timezone", getLocalTimeZone());
       fd.set("type", "Labor");
       fd.set("action", "Start");
+      // Recording the first step means hands-on build has begun: end any open
+      // Setup clock and switch to Labor (auto-transition).
+      fd.set("exclusive", "true");
       if (operation.workCenterId)
         fd.set("workCenterId", operation.workCenterId);
       const entityId = isTracked ? currentEntity?.id : undefined;
@@ -1004,11 +1064,11 @@ export function AssemblyView({
       action: path.to.complete
     });
 
-    // Untracked parents track the unit-being-built by quantityComplete (they page
-    // purely by index), so drop any explicit ?unit and let currentUnitIndex fall
-    // back to quantityComplete — which the completion rolls forward. Serial/batch
-    // completions redirect to a fresh entity instead, so leave their params be.
-    if (!isTracked && hasUnitParam) {
+    // Batch + untracked parents track the unit-being-built by quantityComplete (they
+    // page by index), so drop any explicit ?unit and let currentUnitIndex fall back to
+    // quantityComplete — which the completion rolls forward. Serial completions redirect
+    // to a fresh entity instead, so leave their params be.
+    if (!navigatesByEntity && hasUnitParam) {
       setSearchParams(
         (prev) => {
           const next = new URLSearchParams(prev);
@@ -1059,10 +1119,11 @@ export function AssemblyView({
     navigate(url.pathname + url.search);
   }
 
-  // Navigate to a unit by its axis position (the prev/next pager). Tracked units key
-  // off their entity so the loader refetches that entity's materials; untracked units
-  // key off ?unit (no entity to scan — FIX-3/FIX-4). The unit-change effect above then
-  // moves the step cursor to that unit's first incomplete step.
+  // Navigate to a unit by its axis position (the prev/next pager). Serial units key
+  // off their entity so the loader refetches that entity's materials; batch + untracked
+  // units key off ?unit (batch shares one lot, untracked has no entity to scan —
+  // FIX-3/FIX-4). The unit-change effect above then moves the step cursor to that unit's
+  // first incomplete step.
   function goToUnit(n: number) {
     const clamped = Math.max(0, Math.min(n, Math.max(0, unitCount - 1)));
     if (clamped === currentUnitIndex) return;
@@ -1070,7 +1131,7 @@ export function AssemblyView({
     setSearchParams(
       (prev) => {
         const next = new URLSearchParams(prev);
-        if (isTracked && entity?.id) {
+        if (navigatesByEntity && entity?.id) {
           next.set("trackedEntityId", entity.id);
           next.delete("unit");
         } else {
@@ -1150,14 +1211,17 @@ export function AssemblyView({
           </button>
         ) : null}
 
-        {operation ? (
-          <TimerControl
-            operation={operation}
-            openEvent={openEventForType}
-            workType={selectedWorkType}
-            trackedEntityId={isTracked ? currentEntity?.id : undefined}
-          />
-        ) : null}
+        {operation
+          ? headerWorkTypes.map((wt) => (
+              <TimerControl
+                key={wt}
+                operation={operation}
+                openEvent={openEventForWorkType(wt)}
+                workType={wt}
+                trackedEntityId={isTracked ? currentEntity?.id : undefined}
+              />
+            ))
+          : null}
       </header>
 
       {/* ── STEPS BAR (segmented, click to jump; green = done) ── */}
@@ -1189,7 +1253,7 @@ export function AssemblyView({
                   aria-label={`Go to step ${i + 1}`}
                   onClick={() => goToStep(i)}
                   className={cn(
-                    "h-1.5 flex-1 rounded-full transition-colors",
+                    "h-3 flex-1 rounded-[2px] transition-colors",
                     isStepDone(s)
                       ? isStepBadResult(s)
                         ? "bg-red-500"
@@ -1316,8 +1380,6 @@ export function AssemblyView({
               setupDuration={operation?.setupDuration ?? 0}
               laborDuration={operation?.laborDuration ?? 0}
               machineDuration={operation?.machineDuration ?? 0}
-              selectedWorkType={selectedWorkType}
-              onSelectWorkType={setSelectedWorkType}
             />
             {/* Quantity progress — units completed / reworked / scrapped of the
                 operation quantity. Segments mirror the operation view: completed
@@ -1326,10 +1388,10 @@ export function AssemblyView({
             {isMultiQuantity && (
               <div className="flex flex-col gap-1">
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] text-muted-foreground">
+                  <span className="text-xs text-muted-foreground">
                     Quantity
                   </span>
-                  <span className="text-[10px] tabular-nums text-muted-foreground">
+                  <span className="text-xs tabular-nums text-muted-foreground">
                     {Math.min(quantityComplete, unitCount)}/{unitCount}
                   </span>
                 </div>
@@ -1357,10 +1419,8 @@ export function AssemblyView({
             {steps.length > 0 && (
               <div className="flex flex-col gap-1">
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] text-muted-foreground">
-                    Steps
-                  </span>
-                  <span className="text-[10px] tabular-nums text-muted-foreground">
+                  <span className="text-xs text-muted-foreground">Steps</span>
+                  <span className="text-xs tabular-nums text-muted-foreground">
                     {doneCount}/{steps.length}
                   </span>
                 </div>
@@ -1376,6 +1436,7 @@ export function AssemblyView({
               units={units}
               currentUnitIndex={currentUnitIndex}
               isTracked={isTracked}
+              labelByEntity={requiresSerialTracking}
               trackingLabel={requiresBatchTracking ? "Batch" : "S/N"}
               unitHasBadResult={unitHasBadResult}
               unitIsRecorded={unitIsRecorded}
@@ -1445,7 +1506,7 @@ export function AssemblyView({
                 <StatusRow label="Operation" value={operation.description} />
               )}
               <StatusRow
-                label="State"
+                label="Status"
                 value={
                   operation.jobStatus === "Paused"
                     ? "Paused"
@@ -1755,29 +1816,29 @@ export function AssemblyView({
                 once with its part-level quantity/issue status and chips for the step(s) it's
                 assigned to; the current step's chip is highlighted. Rendering once keeps the
                 requirement from ever being double-counted. */}
-            {visibleMaterials.length > 0 ? (
+            {visibleMaterialsWithState.length > 0 ? (
               <SidebarSection title="Parts" scrollable>
                 <div className="flex flex-col gap-1.5">
-                  {visibleMaterials.map((m, i) => {
-                    const stepNumbers = (
-                      (m.jobOperationStepIds ?? []) as string[]
-                    )
-                      .map((id) => stepNumberById.get(id))
-                      .filter((n): n is number => n != null)
-                      .sort((a, b) => a - b);
-                    return (
+                  {visibleMaterialsWithState.map(
+                    (
+                      { m, stepNumbers, issuedIsPerUnit, issuedOverride },
+                      i
+                    ) => (
                       <MaterialRow
                         key={m.id ?? i}
                         material={m}
                         stepNumbers={stepNumbers}
                         currentStepNumber={currentStep + 1}
+                        unitIndex={currentUnitIndex}
+                        issuedIsPerUnit={issuedIsPerUnit}
+                        issuedOverride={issuedOverride}
                         onIssue={() => {
                           setSelectedMaterial(m);
                           issueModal.onOpen();
                         }}
                       />
-                    );
-                  })}
+                    )
+                  )}
                 </div>
               </SidebarSection>
             ) : (
@@ -1790,60 +1851,56 @@ export function AssemblyView({
 
             {stepTools.length > 0 && (
               <SidebarSection title="Tools" scrollable>
-                {stepTools.map((t, i) => {
-                  // Pin sequence number(s) on the current slide that point at this tool.
-                  const seq = t.item?.id
-                    ? pinSeqByToolId.get(t.item.id)
-                    : undefined;
-                  return (
-                    <div
-                      key={t.item?.id ?? i}
-                      className="flex items-center gap-2 py-1"
-                    >
-                      {seq && seq.length > 0 ? (
-                        <span className="flex shrink-0 items-center gap-0.5">
-                          {seq.map((n) => (
-                            <span
-                              key={n}
-                              className="flex size-4 items-center justify-center rounded-full bg-foreground text-[9px] font-bold text-background"
-                            >
-                              {n}
+                {/* Tools mirror the Parts cards — a bordered row with a leading
+                    wrench (in place of the part's issue-status dot), the name +
+                    type stacked, and the count/pin badges hard-right. */}
+                <div className="flex flex-col gap-1.5">
+                  {stepTools.map((t, i) => {
+                    // Pin sequence number(s) on the current slide that point at this tool.
+                    const seq = t.item?.id
+                      ? pinSeqByToolId.get(t.item.id)
+                      : undefined;
+                    return (
+                      <div
+                        key={t.item?.id ?? i}
+                        className="flex w-full items-start gap-2.5 rounded-lg border border-border bg-accent/30 px-3 py-2.5 text-left"
+                      >
+                        <LuWrench className="mt-0.5 size-3.5 shrink-0 text-muted-foreground" />
+                        {/* Name + readableId stacked; each stays on a single line
+                            (mirrors the Parts card's description + item id). */}
+                        <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+                          <span className="truncate text-sm font-medium leading-snug text-foreground">
+                            {t.item?.name ?? "Unknown tool"}
+                          </span>
+                          {t.item?.readableId && (
+                            <span className="truncate font-mono text-[10px] text-muted-foreground">
+                              {t.item.readableId}
                             </span>
-                          ))}
-                        </span>
-                      ) : (
-                        <LuWrench className="size-3 shrink-0 text-muted-foreground" />
-                      )}
-                      <span className="flex-1 text-xs">
-                        {t.item?.name ?? "Unknown tool"}
-                      </span>
-                      {t.quantity > 1 && (
-                        <span className="text-xs text-muted-foreground">
-                          ×{t.quantity}
-                        </span>
-                      )}
-                    </div>
-                  );
-                })}
-              </SidebarSection>
-            )}
-
-            {isTracked && firstTrackedMaterial && (
-              <SidebarSection title="Scan Part">
-                <Button
-                  variant="primary"
-                  size="lg"
-                  className="w-full"
-                  leftIcon={<LuQrCode />}
-                  onClick={() => {
-                    // Pre-select a tracked material so the modal opens directly
-                    // into the serial/batch scan view (same as the per-row QR).
-                    setSelectedMaterial(firstTrackedMaterial);
-                    issueModal.onOpen();
-                  }}
-                >
-                  Scan
-                </Button>
+                          )}
+                        </div>
+                        {/* Count hard-right, with any pin-sequence badges tucked
+                            beneath it (mirrors the tracking badges on Parts). */}
+                        <div className="flex shrink-0 flex-col items-end gap-1">
+                          <span className="text-xs tabular-nums text-muted-foreground">
+                            ×{t.quantity}
+                          </span>
+                          {seq && seq.length > 0 && (
+                            <div className="flex flex-wrap items-center justify-end gap-1">
+                              {seq.map((n) => (
+                                <span
+                                  key={n}
+                                  className="flex size-4 items-center justify-center rounded-full bg-foreground text-[9px] font-bold text-background"
+                                >
+                                  {n}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               </SidebarSection>
             )}
 
@@ -1882,27 +1939,40 @@ export function AssemblyView({
             ) : null}
           </div>
 
-          {/* ── ACTIONS: Complete Step + Skip, side by side ── */}
-          <div className="flex w-full shrink-0 items-stretch gap-2 border-t border-border p-3">
-            {step && (
-              <div className="min-w-0 flex-1">
-                <StepCompleteAction
-                  step={step}
-                  activeIndex={activeIndex}
-                  done={isStepDone(step)}
-                />
-              </div>
+          {/* ── ACTIONS: Complete Step + Skip ── Tracked parts assigned to this
+              step must be scanned before the step can be completed; Skip is always
+              available as the escape hatch when the operator can't finish it. */}
+          <div className="flex w-full shrink-0 flex-col gap-2 border-t border-border p-3">
+            {hasPendingScans && step && !isStepDone(step) && (
+              <p className="flex items-center gap-1.5 text-xs text-foreground">
+                <LuCircleDot className="size-3.5 shrink-0 text-amber-500" />
+                Scan {pendingScanMaterials.length} part
+                {pendingScanMaterials.length > 1 ? "s" : ""} to complete this
+                step
+              </p>
             )}
-            <Button
-              variant="outline"
-              size="lg"
-              className="shrink-0"
-              rightIcon={<LuSkipForward />}
-              isDisabled={isLastStep}
-              onClick={() => goToStep(currentStep + 1)}
-            >
-              Skip
-            </Button>
+            <div className="flex w-full items-stretch gap-2">
+              {step && (
+                <div className="min-w-0 flex-1">
+                  <StepCompleteAction
+                    step={step}
+                    activeIndex={activeIndex}
+                    done={isStepDone(step)}
+                    disabled={hasPendingScans}
+                  />
+                </div>
+              )}
+              <Button
+                variant="outline"
+                size="lg"
+                className="shrink-0"
+                rightIcon={<LuSkipForward />}
+                isDisabled={isLastStep}
+                onClick={() => goToStep(currentStep + 1)}
+              >
+                Skip
+              </Button>
+            </div>
           </div>
         </aside>
       </div>
@@ -1910,12 +1980,23 @@ export function AssemblyView({
       {issueModal.isOpen && (
         <IssueMaterialModal
           operationId={operationId}
+          // Assembly builds one unit at a time: each scan issues one unit's
+          // worth (issuePerUnit), so the pick order can never be attributed
+          // to the unit on screen — never pre-select tracked entities; the
+          // operator scans what goes into THIS unit.
+          allowPrefill={false}
+          issuePerUnit
           expiredEntityPolicy={expiredEntityPolicy}
           locationId={locationId}
           workCenterId={operation?.workCenterId ?? undefined}
           material={selectedMaterial ?? undefined}
           parentId={currentEntity?.id ?? ""}
           parentIdIsSerialized={requiresSerialTracking}
+          // Stamp the current step + 1-based unit onto the consume so issued
+          // quantities can be attributed per-unit even for a batch parent (where
+          // all units share one lot). See the loader's batch attribution.
+          jobOperationStepId={step?.id}
+          unitNumber={currentUnitIndex + 1}
           trackedInputs={materials?.trackedInputs ?? []}
           onClose={() => {
             setSelectedMaterial(null);
@@ -2146,9 +2227,9 @@ export function AssemblyView({
         <AutoTimer
           operationId={operationId}
           enabled={autoStartOperationTimer}
-          workType={selectedWorkType}
+          workType={headerWorkTypes[0]}
           workCenterId={operation.workCenterId ?? undefined}
-          openEvent={openEventForType ?? null}
+          openEvent={openEventForWorkType(headerWorkTypes[0])}
           trackedEntityId={isTracked ? currentEntity?.id : undefined}
         />
       )}
@@ -2192,6 +2273,7 @@ function AutoTimer({
     fd.set("timezone", getLocalTimeZone());
     fd.set("type", workType);
     fd.set("action", "Start");
+    fd.set("exclusive", "true");
     if (workCenterId) fd.set("workCenterId", workCenterId);
     if (trackedEntityId) fd.set("trackedEntityId", trackedEntityId);
     fetcher.submit(fd, { method: "post", action: path.to.productionEvent });
@@ -2261,6 +2343,8 @@ function TimerControl({
       <input type="hidden" name="jobOperationId" value={operation.id} />
       <input type="hidden" name="timezone" value={getLocalTimeZone()} />
       <input type="hidden" name="type" value={workType} />
+      {/* Single-phase clocking: starting this type ends any other open type. */}
+      <input type="hidden" name="exclusive" value="true" />
       <input type="hidden" name="action" value={openEvent ? "End" : "Start"} />
       {operation.workCenterId ? (
         <input
@@ -2333,29 +2417,70 @@ function SidebarSection({
   );
 }
 
+// Per-unit issue state for a material. Assembly builds unit-by-unit, so the
+// requirement is ALWAYS the per-unit BOM quantity (`quantity`), never the job
+// total. Serial parents already report per-unit consumption for tracked parts;
+// batch/untracked parents report a job-wide total, so we derive this unit's share
+// by assuming prior units each consumed their per-unit quantity. `issuedOverride`
+// short-circuits both (loose parts backflushed on the unit's first step record).
+// Shared by MaterialRow and the step's scan gate so they never diverge.
+function getIssuedForUnit(
+  material: any,
+  {
+    unitIndex,
+    issuedIsPerUnit,
+    issuedOverride
+  }: {
+    unitIndex: number;
+    issuedIsPerUnit: boolean;
+    issuedOverride?: number;
+  }
+) {
+  const required = material.quantity ?? material.estimatedQuantity ?? 0;
+  const totalIssued = material.quantityIssued ?? 0;
+  const issued =
+    issuedOverride !== undefined
+      ? issuedOverride
+      : issuedIsPerUnit
+        ? totalIssued
+        : Math.min(required, Math.max(0, totalIssued - unitIndex * required));
+  const fullyIssued = required > 0 && issued >= required;
+  return { required, issued, fullyIssued };
+}
+
 function MaterialRow({
   material,
   onIssue,
   stepNumbers = [],
-  currentStepNumber
+  currentStepNumber,
+  unitIndex = 0,
+  issuedIsPerUnit = false,
+  issuedOverride
 }: {
   material: any;
   onIssue?: () => void;
   // 1-based step numbers where this part is used ("where used"); empty = General.
   stepNumbers?: number[];
   currentStepNumber?: number;
+  // 0-based unit currently being built; attributes job-total issued
+  // quantities to the unit on screen.
+  unitIndex?: number;
+  // True when material.quantityIssued is already scoped to the current unit
+  // (serial parent + tracked material — the service recomputes it from the
+  // parent entity's consumed inputs). Otherwise it's a job-wide total.
+  issuedIsPerUnit?: boolean;
+  // When set, use this as the unit's issued quantity instead of deriving it —
+  // loose (untracked, step-unassigned) parts are backflushed when the unit's
+  // first step is recorded, so their status mirrors that trigger directly.
+  issuedOverride?: number;
 }) {
   const isTracked =
     material.requiresSerialTracking || material.requiresBatchTracking;
-  // Tracked sub-assemblies are issued PER UNIT, so the requirement is the
-  // per-unit `quantity` (e.g. 1), not `estimatedQuantity` (the total across all
-  // units, e.g. 20). Non-tracked materials use the total estimated quantity.
-  // Mirrors the operation view (issued/quantity for tracked, total otherwise).
-  const required = isTracked
-    ? (material.quantity ?? material.estimatedQuantity ?? 0)
-    : (material.estimatedQuantity ?? material.quantity ?? 0);
-  const issued = material.quantityIssued ?? 0;
-  const fullyIssued = required > 0 && issued >= required;
+  const { required, issued, fullyIssued } = getIssuedForUnit(material, {
+    unitIndex,
+    issuedIsPerUnit,
+    issuedOverride
+  });
   const partiallyIssued = issued > 0 && !fullyIssued;
 
   // Leading status dot: issued (green check) · partially issued (amber) · not issued (hollow).
@@ -2432,10 +2557,14 @@ function MaterialRow({
         {isTracked && (
           <div className="flex flex-wrap items-center justify-end gap-1">
             {material.requiresSerialTracking && (
-              <Badge variant="blue">S/N</Badge>
+              <Badge variant="secondary">
+                <TrackingTypeIcon type="Serial" className="shrink-0" />
+              </Badge>
             )}
             {material.requiresBatchTracking && (
-              <Badge variant="purple">Batch</Badge>
+              <Badge variant="secondary">
+                <TrackingTypeIcon type="Batch" className="shrink-0" />
+              </Badge>
             )}
             {!fullyIssued && <Badge variant="orange">Requires Scan</Badge>}
           </div>
@@ -2450,11 +2579,15 @@ function MaterialRow({
 function StepCompleteAction({
   step,
   activeIndex,
-  done
+  done,
+  disabled = false
 }: {
   step: Step;
   activeIndex: number;
   done: boolean;
+  // Soft gate: the step's tracked parts aren't fully issued for this unit, so
+  // block completion (Mark done / Record) until they're scanned. Skip bypasses.
+  disabled?: boolean;
 }) {
   const fetcher = useFetcher();
   const user = useUser();
@@ -2550,6 +2683,7 @@ function StepCompleteAction({
         size="lg"
         leftIcon={<LuCheck />}
         isLoading={busy}
+        isDisabled={disabled}
         className="w-full"
         onClick={markTaskDone}
       >
@@ -2564,6 +2698,7 @@ function StepCompleteAction({
         variant="primary"
         size="lg"
         leftIcon={<LuCheck />}
+        isDisabled={disabled}
         className="w-full"
         onClick={recordModal.onOpen}
       >
@@ -2582,15 +2717,17 @@ function StepCompleteAction({
 
 // Units section for the left sidebar — its own labeled section (like Time), sitting
 // directly below the timers. A compact prev/next pager sits top-right by the label,
-// and the full, scrollable list of EVERY unit gives full visibility: a serial/batch
-// parent lists its entities by readableId, an untracked parent lists "Unit 1 / Unit
-// 2 / …". The list auto-scrolls to keep the current unit in view; units with an
-// out-of-spec measurement (or a failed inspection) are flagged red, fully-recorded
-// units green.
+// and the full, scrollable list of EVERY unit gives full visibility. A serial parent
+// binds a distinct entity per unit, so it lists those by readableId; a batch parent
+// binds a single lot to unit 0 (the rest are null), so listing that one id is more
+// noise than signal — batch and untracked parents both list "Unit 1 / Unit 2 / …".
+// The list auto-scrolls to keep the current unit in view; units with an out-of-spec
+// measurement (or a failed inspection) are flagged red, fully-recorded units green.
 function UnitNavigator({
   units,
   currentUnitIndex,
   isTracked,
+  labelByEntity,
   trackingLabel,
   unitHasBadResult,
   unitIsRecorded,
@@ -2602,14 +2739,17 @@ function UnitNavigator({
   }[];
   currentUnitIndex: number;
   isTracked: boolean;
+  labelByEntity: boolean;
   trackingLabel: string;
   unitHasBadResult: (index: number) => boolean;
   unitIsRecorded: (index: number) => boolean;
   onSelectUnit: (index: number) => void;
 }) {
   const unitCount = units.length;
+  const isEntityLabel = (u: (typeof units)[number]) =>
+    labelByEntity && !!u.entity;
   const labelFor = (u: (typeof units)[number]) =>
-    isTracked && u.entity
+    labelByEntity && u.entity
       ? (u.entity.readableId ?? u.entity.id.slice(-8))
       : `Unit ${u.index + 1}`;
 
@@ -2633,7 +2773,7 @@ function UnitNavigator({
           <IconButton
             aria-label="Previous unit"
             variant="ghost"
-            size="sm"
+            size="lg"
             icon={<LuChevronLeft />}
             isDisabled={currentUnitIndex <= 0}
             onClick={() => onSelectUnit(currentUnitIndex - 1)}
@@ -2641,7 +2781,7 @@ function UnitNavigator({
           <IconButton
             aria-label="Next unit"
             variant="ghost"
-            size="sm"
+            size="lg"
             icon={<LuChevronRight />}
             isDisabled={currentUnitIndex >= unitCount - 1}
             onClick={() => onSelectUnit(currentUnitIndex + 1)}
@@ -2665,7 +2805,7 @@ function UnitNavigator({
               aria-pressed={isCurrent}
               onClick={() => onSelectUnit(u.index)}
               className={cn(
-                "flex w-full items-center gap-2 px-3 py-2 text-left font-mono text-xs transition-colors",
+                "flex w-full items-center gap-2 px-3 py-2 text-left text-xs transition-colors",
                 isCurrent
                   ? "bg-accent font-semibold text-foreground"
                   : "text-muted-foreground hover:bg-muted/60",
@@ -2682,7 +2822,9 @@ function UnitNavigator({
                       : "bg-transparent"
                 )}
               />
-              <span className="truncate">{labelFor(u)}</span>
+              <span className={cn("truncate", isEntityLabel(u) && "font-mono")}>
+                {labelFor(u)}
+              </span>
             </button>
           );
         })}
@@ -2729,12 +2871,10 @@ function StatusRow({
 }) {
   return (
     <div className="flex items-center justify-between gap-2">
-      <span className="shrink-0 text-[10px] text-muted-foreground">
-        {label}
-      </span>
+      <span className="shrink-0 text-xs text-muted-foreground">{label}</span>
       <span
         className={cn(
-          "min-w-0 truncate text-[11px] font-medium text-foreground",
+          "min-w-0 truncate text-xs font-medium text-foreground",
           mono && "font-mono"
         )}
       >
@@ -2787,18 +2927,18 @@ function TimeRows({
   events,
   setupDuration,
   laborDuration,
-  machineDuration,
-  selectedWorkType,
-  onSelectWorkType
+  machineDuration
 }: {
   events: ProductionEvent[];
   setupDuration: number;
   laborDuration: number;
   machineDuration: number;
-  selectedWorkType: "Setup" | "Labor" | "Machine";
-  onSelectWorkType: (type: "Setup" | "Labor" | "Machine") => void;
 }) {
   const progress = useCumulativeProgress(events);
+  // A work type is "running" when it has an open (un-ended) event. Control lives
+  // in the header clock buttons now; these rows are a live read-out.
+  const isRunning = (type: "Setup" | "Labor" | "Machine") =>
+    events.some((e) => e.type === type && !e.endTime);
   return (
     <>
       {setupDuration > 0 && (
@@ -2807,8 +2947,7 @@ function TimeRows({
           label="Setup"
           elapsed={progress.setup}
           total={setupDuration}
-          selected={selectedWorkType === "Setup"}
-          onSelect={() => onSelectWorkType("Setup")}
+          running={isRunning("Setup")}
         />
       )}
       {laborDuration > 0 && (
@@ -2817,8 +2956,7 @@ function TimeRows({
           label="Labor"
           elapsed={progress.labor}
           total={laborDuration}
-          selected={selectedWorkType === "Labor"}
-          onSelect={() => onSelectWorkType("Labor")}
+          running={isRunning("Labor")}
         />
       )}
       {machineDuration > 0 && (
@@ -2827,58 +2965,45 @@ function TimeRows({
           label="Machine"
           elapsed={progress.machine}
           total={machineDuration}
-          selected={selectedWorkType === "Machine"}
-          onSelect={() => onSelectWorkType("Machine")}
+          running={isRunning("Machine")}
         />
       )}
     </>
   );
 }
 
-// Single timer row: icon · "3s / 6m" · progress bar
+// Single timer row: running dot · icon · "3s / 6m" · progress bar
 function TimerRow({
   icon,
   label,
   elapsed,
   total,
-  selected,
-  onSelect
+  running
 }: {
   icon: React.ReactNode;
   label: string;
   elapsed: number;
   total: number;
-  selected?: boolean;
-  onSelect?: () => void;
+  running?: boolean;
 }) {
   const overrun = total > 0 && elapsed > total;
 
   return (
-    <button
-      type="button"
-      onClick={onSelect}
-      aria-pressed={selected}
-      className={cn(
-        "flex w-full flex-col gap-1 rounded-md px-1.5 py-1 text-left transition-colors",
-        onSelect && "hover:bg-muted/60"
-      )}
-    >
+    <div className="flex w-full flex-col gap-1 px-1.5 py-1 text-left">
       <div className="flex items-center justify-between gap-1">
         <span
           className={cn(
             "flex items-center gap-1 text-[10px]",
-            selected ? "font-semibold text-foreground" : "text-muted-foreground"
+            running ? "font-semibold text-foreground" : "text-muted-foreground"
           )}
         >
-          {/* selected indicator dot */}
-          {onSelect && (
-            <span
-              className={cn(
-                "size-1.5 shrink-0 rounded-full",
-                selected ? "bg-emerald-500" : "bg-muted-foreground/40"
-              )}
-            />
-          )}
+          {/* running indicator dot */}
+          <span
+            className={cn(
+              "size-1.5 shrink-0 rounded-full",
+              running ? "bg-emerald-500" : "bg-muted-foreground/40"
+            )}
+          />
           {icon}
           {label}
         </span>
@@ -2899,6 +3024,6 @@ function TimerRow({
         progress={total > 0 ? elapsed : 0}
         activeClassName={overrun ? "bg-red-500" : "bg-emerald-500"}
       />
-    </button>
+    </div>
   );
 }

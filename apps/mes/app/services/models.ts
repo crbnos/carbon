@@ -148,7 +148,11 @@ export const productionEventValidator = z.object({
     })
   }),
   workCenterId: zfd.text(z.string().optional()),
-  trackedEntityId: zfd.text(z.string().optional())
+  trackedEntityId: zfd.text(z.string().optional()),
+  // Assembly clocking is single-phase: when set, starting this work type ends
+  // any other open work type for the operator on this operation (so Setup and
+  // Labor can never run at once). Omitted by the operation view.
+  exclusive: zfd.text(z.string().optional())
 });
 
 export const finishValidator = z.object({
@@ -169,6 +173,11 @@ export const issueTrackedEntityValidator = z.object({
       quantity: z.number()
     })
   ),
+  // Assembly view only: the step + unit the operator was on when scanning, so the
+  // consume can be attributed per-unit (and per-step) even for a batch parent where
+  // every unit shares one lot entity. `unitNumber` is 1-based (currentUnitIndex + 1).
+  jobOperationStepId: z.string().optional(),
+  unitNumber: z.number().int().positive().optional(),
   // Set when policy is BlockWithOverride and operator typed a reason.
   overrideExpired: z.boolean().optional(),
   overrideReason: z.string().optional()

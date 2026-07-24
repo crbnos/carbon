@@ -167,20 +167,41 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const entityIndex = trackedEntityId
     ? navEntities.findIndex((te) => te.id === trackedEntityId)
     : -1;
+  // Must match AssemblyView.currentUnitIndex: with no explicit ?unit, an index-paged
+  // (batch/untracked) parent lands on the NEXT unit still to build, not unit 0 — the
+  // component deletes ?unit after completing a unit and rolls forward on quantityComplete.
+  // Material issue attribution keys off this unit, so a stale 0 here would credit an
+  // earlier unit's consumes to the unit on screen.
+  const quantityComplete = Math.max(
+    0,
+    Math.round((op.quantityComplete as number) ?? 0)
+  );
+  const defaultUnitIndex =
+    (jobMakeMethod.data?.requiresSerialTracking ?? false)
+      ? 0
+      : Math.min(quantityComplete, Math.max(0, opQty - 1));
   const unitIndex =
     entityIndex >= 0
       ? entityIndex
       : Number.isInteger(unitParam) && unitParam >= 0 && unitParam < opQty
         ? unitParam
-        : 0;
-  const effectiveEntityId = navEntities[unitIndex]?.id;
+        : defaultUnitIndex;
+  // A batch parent shares ONE lot across every unit, so its lot entity binds to all
+  // units regardless of the unit index; a serial parent binds a distinct entity per
+  // unit (navEntities[unitIndex]).
+  const effectiveEntityId =
+    (jobMakeMethod.data?.requiresBatchTracking ?? false)
+      ? navEntities[0]?.id
+      : navEntities[unitIndex]?.id;
 
   const [materials, openEvent] = await Promise.all([
     getJobMaterialsByOperationId(serviceRole, {
       operation: op,
       trackedEntityId: effectiveEntityId,
       requiresSerialTracking:
-        jobMakeMethod.data?.requiresSerialTracking ?? false
+        jobMakeMethod.data?.requiresSerialTracking ?? false,
+      requiresBatchTracking: jobMakeMethod.data?.requiresBatchTracking ?? false,
+      unitIndex
     }),
     // Open Labor production event for this operator+operation drives the timer.
     serviceRole

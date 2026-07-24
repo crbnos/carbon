@@ -29,6 +29,8 @@ export async function action({ request }: ActionFunctionArgs) {
     itemId,
     parentTrackedEntityId,
     children,
+    jobOperationStepId,
+    unitNumber,
     overrideExpired,
     overrideReason
   } = validation.data;
@@ -42,6 +44,8 @@ export async function action({ request }: ActionFunctionArgs) {
       itemId,
       parentTrackedEntityId,
       children,
+      jobOperationStepId,
+      unitNumber,
       overrideExpired,
       overrideReason,
       companyId,

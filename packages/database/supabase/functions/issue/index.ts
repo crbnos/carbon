@@ -857,6 +857,11 @@ const payloadValidator = z.discriminatedUnion("type", [
         quantity: z.number(),
       })
     ),
+    // Assembly view: the step + 1-based unit the operator was on, stamped onto the
+    // Consume activity so issued quantities can be attributed per-unit/per-step even
+    // for a batch parent (all units share one lot entity).
+    jobOperationStepId: z.string().optional(),
+    unitNumber: z.number().int().positive().optional(),
     overrideExpired: z.boolean().optional(),
     overrideReason: z.string().optional(),
     companyId: z.string(),
@@ -1802,6 +1807,8 @@ serve(async (req: Request) => {
           itemId,
           parentTrackedEntityId,
           children,
+          jobOperationStepId,
+          unitNumber,
           overrideExpired,
           overrideReason,
           companyId,
@@ -2084,6 +2091,13 @@ serve(async (req: Request) => {
                 "Job Make Method": jobMaterial?.jobMakeMethodId!,
                 "Job Material": jobMaterial?.id!,
                 Employee: userId,
+                // Assembly view: which step + 1-based unit this consume was for, so
+                // the MES can attribute issued quantities per-unit even for a batch
+                // parent (where all units share one lot entity).
+                ...(jobOperationStepId
+                  ? { "Job Operation Step": jobOperationStepId }
+                  : {}),
+                ...(unitNumber !== undefined ? { Unit: unitNumber } : {}),
               },
               companyId,
               createdBy: userId,

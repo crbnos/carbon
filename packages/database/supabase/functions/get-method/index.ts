@@ -811,6 +811,12 @@ serve(async (req: Request) => {
                     procedureId,
                   } = operation;
 
+                  // Tool ids already inserted by the assembly-instruction
+                  // copy — the method tool copy below must skip these or the
+                  // job gets the same tool twice (once step-linked, once
+                  // unlinked → the MES shows it on every step AND its step).
+                  let assemblyToolIds: Set<string> = new Set();
+
                   if (procedureId) {
                     await insertProcedureDataForJobOperation(trx, client, {
                       operationId,
@@ -849,12 +855,17 @@ serve(async (req: Request) => {
                       // instruction (the method only carries the pointer);
                       // material ↔ step links are flushed after the
                       // jobMaterial rows exist.
-                      await insertAssemblyDataForJobOperation(trx, client, {
-                        operationId,
-                        assemblyInstructionId: operation.assemblyInstructionId,
-                        companyId,
-                        userId,
-                      });
+                      assemblyToolIds = await insertAssemblyDataForJobOperation(
+                        trx,
+                        client,
+                        {
+                          operationId,
+                          assemblyInstructionId:
+                            operation.assemblyInstructionId,
+                          companyId,
+                          userId,
+                        }
+                      );
                       assemblyOperationsToLink.push({
                         operationId,
                         assemblyInstructionId: operation.assemblyInstructionId,
@@ -917,16 +928,19 @@ serve(async (req: Request) => {
 
                   // Tools after steps (Phase 2): the method-step -> job-step map is now
                   // populated, so a tool scoped to steps carries those links onto the job via
-                  // jobOperationToolStep. Mirrors the material part ↔ step copy above.
+                  // jobOperationToolStep. Mirrors the material part ↔ step copy above. Tools
+                  // the assembly-instruction copy already inserted are skipped (see above).
+                  const toolsToCopy = (
+                    Array.isArray(methodOperationTool) ? methodOperationTool : []
+                  ).filter((tool: { toolId: string }) => !assemblyToolIds.has(tool.toolId));
                   if (
                     (!node.data.isRoot || parts.tools) &&
-                    Array.isArray(methodOperationTool) &&
-                    methodOperationTool.length > 0
+                    toolsToCopy.length > 0
                   ) {
                     const insertedTools = await trx
                       .insertInto("jobOperationTool")
                       .values(
-                        methodOperationTool.map((tool) => ({
+                        toolsToCopy.map((tool) => ({
                           toolId: tool.toolId,
                           quantity: tool.quantity,
                           operationId,
@@ -938,9 +952,9 @@ serve(async (req: Request) => {
                       .execute();
 
                     // Tool ↔ step links (Phase 2, many-to-many). Bulk insert preserves order,
-                    // so insertedTools[i] ↔ methodOperationTool[i]. A tool with no links applies
+                    // so insertedTools[i] ↔ toolsToCopy[i]. A tool with no links applies
                     // to the whole operation (shown on every step in the MES).
-                    const toolStepRows = methodOperationTool.flatMap((tool, i) => {
+                    const toolStepRows = toolsToCopy.flatMap((tool, i) => {
                       const jobOperationToolId = insertedTools[i]?.id;
                       if (!jobOperationToolId) return [];
                       const oldStepIds = (
@@ -1591,6 +1605,12 @@ serve(async (req: Request) => {
                     procedureId,
                   } = operation;
 
+                  // Tool ids already inserted by the assembly-instruction
+                  // copy — the method tool copy below must skip these or the
+                  // job gets the same tool twice (once step-linked, once
+                  // unlinked → the MES shows it on every step AND its step).
+                  let assemblyToolIds: Set<string> = new Set();
+
                   if (procedureId) {
                     await insertProcedureDataForJobOperation(trx, client, {
                       operationId,
@@ -1623,12 +1643,17 @@ serve(async (req: Request) => {
                       // instruction (the method only carries the pointer);
                       // material ↔ step links are flushed after the
                       // jobMaterial rows exist.
-                      await insertAssemblyDataForJobOperation(trx, client, {
-                        operationId,
-                        assemblyInstructionId: operation.assemblyInstructionId,
-                        companyId,
-                        userId,
-                      });
+                      assemblyToolIds = await insertAssemblyDataForJobOperation(
+                        trx,
+                        client,
+                        {
+                          operationId,
+                          assemblyInstructionId:
+                            operation.assemblyInstructionId,
+                          companyId,
+                          userId,
+                        }
+                      );
                       assemblyOperationsToLink.push({
                         operationId,
                         assemblyInstructionId: operation.assemblyInstructionId,
@@ -1679,16 +1704,16 @@ serve(async (req: Request) => {
 
                   // Tools after steps (Phase 2): the method-step -> job-step map is now
                   // populated, so a tool scoped to steps carries those links onto the job via
-                  // jobOperationToolStep. Mirrors the material part ↔ step copy above.
-                  if (
-                    parts.tools &&
-                    Array.isArray(methodOperationTool) &&
-                    methodOperationTool.length > 0
-                  ) {
+                  // jobOperationToolStep. Mirrors the material part ↔ step copy above. Tools
+                  // the assembly-instruction copy already inserted are skipped (see above).
+                  const toolsToCopy = (
+                    Array.isArray(methodOperationTool) ? methodOperationTool : []
+                  ).filter((tool: { toolId: string }) => !assemblyToolIds.has(tool.toolId));
+                  if (parts.tools && toolsToCopy.length > 0) {
                     const insertedTools = await trx
                       .insertInto("jobOperationTool")
                       .values(
-                        methodOperationTool.map((tool) => ({
+                        toolsToCopy.map((tool) => ({
                           toolId: tool.toolId,
                           quantity: tool.quantity,
                           operationId,
@@ -1700,9 +1725,9 @@ serve(async (req: Request) => {
                       .execute();
 
                     // Tool ↔ step links (Phase 2, many-to-many). Bulk insert preserves order,
-                    // so insertedTools[i] ↔ methodOperationTool[i]. A tool with no links applies
+                    // so insertedTools[i] ↔ toolsToCopy[i]. A tool with no links applies
                     // to the whole operation (shown on every step in the MES).
-                    const toolStepRows = methodOperationTool.flatMap((tool, i) => {
+                    const toolStepRows = toolsToCopy.flatMap((tool, i) => {
                       const jobOperationToolId = insertedTools[i]?.id;
                       if (!jobOperationToolId) return [];
                       const oldStepIds = (
@@ -3370,9 +3395,11 @@ serve(async (req: Request) => {
 
                   if (
                     parts.steps &&
-                    // Assembly ops inherit steps from the linked instruction —
-                    // never copy materialized steps back onto a template.
+                    // Assembly ops and inspection ops inherit their steps from
+                    // the linked instruction/document — never copy materialized
+                    // steps back onto a template.
                     !operation.assemblyInstructionId &&
+                    !operation.inspectionDocumentId &&
                     Array.isArray(jobOperationStep) &&
                     jobOperationStep.length > 0
                   ) {
@@ -3689,9 +3716,11 @@ serve(async (req: Request) => {
 
                   if (
                     parts.steps &&
-                    // Assembly ops inherit steps from the linked instruction —
-                    // never copy materialized steps back onto a template.
+                    // Assembly ops and inspection ops inherit their steps from
+                    // the linked instruction/document — never copy materialized
+                    // steps back onto a template.
                     !operation.assemblyInstructionId &&
+                    !operation.inspectionDocumentId &&
                     Array.isArray(jobOperationStep) &&
                     jobOperationStep.length > 0
                   ) {
@@ -6397,12 +6426,12 @@ async function insertAssemblyDataForJobOperation(
     .eq("companyId", companyId)
     .single();
 
-  if (instruction.error) return;
+  if (instruction.error) return new Set<string>();
 
   const sourceSteps = (instruction.data?.assemblyInstructionStep ?? []).sort(
     (a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0)
   );
-  if (sourceSteps.length === 0) return;
+  if (sourceSteps.length === 0) return new Set<string>();
 
   const sourceStepIds = sourceSteps.map((step) => step.id);
   const [sourceSlides, sourceTools] = await Promise.all([
@@ -6529,22 +6558,38 @@ async function insertAssemblyDataForJobOperation(
     }
   }
   if (maxQuantityByItemId.size > 0) {
-    const insertedTools = await trx
-      .insertInto("jobOperationTool")
-      .values(
-        [...maxQuantityByItemId.entries()].map(([itemId, quantity]) => ({
-          operationId,
-          toolId: itemId,
-          quantity,
-          companyId,
-          createdBy: userId,
-        }))
-      )
-      .returning(["id", "toolId"])
+    // The operation may already carry rows for these tools (the quote → job
+    // direction copies quoteOperationTool BEFORE this runs). Link steps to the
+    // existing row instead of inserting a duplicate the MES would list twice.
+    const existingTools = await trx
+      .selectFrom("jobOperationTool")
+      .select(["id", "toolId"])
+      .where("operationId", "=", operationId)
       .execute();
     const toolRowIdByItemId = new Map(
-      insertedTools.map((tool) => [tool.toolId, tool.id])
+      existingTools.map((tool) => [tool.toolId, tool.id])
     );
+    const missingTools = [...maxQuantityByItemId.entries()].filter(
+      ([itemId]) => !toolRowIdByItemId.has(itemId)
+    );
+    if (missingTools.length > 0) {
+      const insertedTools = await trx
+        .insertInto("jobOperationTool")
+        .values(
+          missingTools.map(([itemId, quantity]) => ({
+            operationId,
+            toolId: itemId,
+            quantity,
+            companyId,
+            createdBy: userId,
+          }))
+        )
+        .returning(["id", "toolId"])
+        .execute();
+      for (const tool of insertedTools) {
+        toolRowIdByItemId.set(tool.toolId, tool.id);
+      }
+    }
     const toolLinkRows: {
       jobOperationToolId: string;
       jobOperationStepId: string;
@@ -6569,6 +6614,10 @@ async function insertAssemblyDataForJobOperation(
         .execute();
     }
   }
+  // Tool ids the instruction accounts for — the method → job copy paths filter
+  // methodOperationTool by this set so the same tool isn't inserted a second
+  // time (unlinked, so the MES would show it on every step AND on its step).
+  return new Set(maxQuantityByItemId.keys());
 }
 
 // Post-materials pass: link the assembly-materialized job steps to the job's

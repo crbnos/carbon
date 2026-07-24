@@ -568,9 +568,22 @@ export async function getJobMaterialsByOperationId(
     operation: BaseOperationWithDetails;
     trackedEntityId: string | undefined;
     requiresSerialTracking: boolean;
+    // Batch parents share ONE lot entity across every unit, so consumed inputs
+    // can't be attributed per-unit by the parent entity alone. When the operator
+    // scanned from the assembly view we stamped the 1-based unit onto the Consume
+    // activity ("Unit" attribute); pass the 0-based unit being viewed so we can
+    // attribute issued quantities to it. Defaults keep the operation view unchanged.
+    requiresBatchTracking?: boolean;
+    unitIndex?: number;
   }
 ) {
-  const { operation, trackedEntityId, requiresSerialTracking } = args;
+  const {
+    operation,
+    trackedEntityId,
+    requiresSerialTracking,
+    requiresBatchTracking = false,
+    unitIndex = 0
+  } = args;
 
   const [materials, trackedInputs] = await Promise.all([
     client
@@ -720,6 +733,58 @@ export async function getJobMaterialsByOperationId(
         }) ?? [],
       trackedInputs: trackedInputs.data ?? []
     };
+  } else if (requiresBatchTracking) {
+    // Batch parent: every unit shares one lot entity, so trackedInputs are ALL the
+    // serials/batches consumed into that lot across every unit. Attribute the current
+    // unit's issued quantity from the "Unit" attribute we stamp at issue time (1-based).
+    // Consumes made before that stamp existed carry no "Unit" — fall back to the
+    // job-wide-minus-earlier-units heuristic for those only. The returned quantityIssued
+    // is per-unit (the component renders it directly, no clamp).
+    const currentUnitNumber = unitIndex + 1;
+    return {
+      materials:
+        materials.data?.map((material) => {
+          const hasExpiredConsumed = consumedExpiredFor(material.id);
+          const picked = pickedFor(material.id);
+          if (
+            !material.requiresSerialTracking &&
+            !material.requiresBatchTracking
+          )
+            return { ...material, hasExpiredConsumed, ...picked };
+
+          const forMaterial = (trackedInputs.data ?? []).filter(
+            (input) =>
+              (input.activityAttributes as TrackedActivityAttributes)?.[
+                "Job Material"
+              ] === material.id
+          );
+          const unitAttr = (input: (typeof forMaterial)[number]) =>
+            (input.activityAttributes as TrackedActivityAttributes)?.Unit;
+
+          const issuedThisUnit = forMaterial
+            .filter((input) => Number(unitAttr(input)) === currentUnitNumber)
+            .reduce((acc, input) => acc + input.quantity, 0);
+
+          // Legacy (unstamped) consumes → distribute with the old per-unit heuristic.
+          const legacyTotal = forMaterial
+            .filter((input) => unitAttr(input) == null)
+            .reduce((acc, input) => acc + input.quantity, 0);
+          const requiredPerUnit =
+            material.quantity ?? material.estimatedQuantity ?? 0;
+          const legacyShare = Math.min(
+            requiredPerUnit,
+            Math.max(0, legacyTotal - unitIndex * requiredPerUnit)
+          );
+
+          return {
+            ...material,
+            quantityIssued: issuedThisUnit + legacyShare,
+            hasExpiredConsumed,
+            ...picked
+          };
+        }) ?? [],
+      trackedInputs: trackedInputs.data ?? []
+    };
   } else {
     return {
       materials: (materials.data ?? []).map((material) => ({
@@ -730,6 +795,116 @@ export async function getJobMaterialsByOperationId(
       trackedInputs: trackedInputs.data ?? []
     };
   }
+}
+
+/**
+ * Backflush "loose" materials — not serial/batch tracked and not assigned to
+ * any step — when a unit's FIRST step is recorded. Units are built one at a
+ * time; parts that aren't tied to a step are consumed as the unit is built,
+ * so recording the first step issues one unit's worth automatically instead
+ * of making the operator issue them by hand (tracked parts still require a
+ * scan). Idempotent by construction: the target is
+ * (distinct units with a first-step record) × per-unit quantity, and only
+ * the shortfall vs quantityIssued is issued — re-records, undo/redo, manual
+ * issues, and the completion-time backflush (backflush_job_materials, which
+ * tops up to completed × per-unit) can all overlap without double-issuing.
+ * Eligibility mirrors backflush_job_materials (Material/Part/Consumable,
+ * not Make to Order, untracked) plus the no-step-assignment scope. Issue
+ * failures (e.g. insufficient stock) are collected, not thrown — the part
+ * simply stays unissued and manually issuable.
+ */
+export async function backflushLooseMaterialsAtFirstStep(
+  client: SupabaseClient<Database>,
+  args: { jobOperationStepId: string; companyId: string; userId: string }
+) {
+  const step = await client
+    .from("jobOperationStep")
+    .select("id, operationId")
+    .eq("id", args.jobOperationStepId)
+    .single();
+  if (step.error || !step.data.operationId) return { error: step.error };
+
+  // Only the operation's first step triggers the backflush.
+  const firstStep = await client
+    .from("jobOperationStep")
+    .select("id")
+    .eq("operationId", step.data.operationId)
+    .order("sortOrder", { ascending: true })
+    .order("id", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+  if (firstStep.error || firstStep.data?.id !== step.data.id) {
+    return { error: firstStep.error };
+  }
+
+  const [records, operation] = await Promise.all([
+    client
+      .from("jobOperationStepRecord")
+      .select("index")
+      .eq("jobOperationStepId", step.data.id),
+    client
+      .from("jobOperation")
+      .select("id, jobMakeMethodId")
+      .eq("id", step.data.operationId)
+      .single()
+  ]);
+  const unitsStarted = new Set((records.data ?? []).map((r) => r.index)).size;
+  if (unitsStarted === 0 || !operation.data?.jobMakeMethodId) {
+    return { error: records.error ?? operation.error };
+  }
+
+  const materials = await client
+    .from("jobMaterial")
+    .select("id, itemId, quantity, quantityIssued, methodType")
+    .eq("jobMakeMethodId", operation.data.jobMakeMethodId)
+    .eq("companyId", args.companyId)
+    .in("itemType", ["Material", "Part", "Consumable"])
+    .neq("methodType", "Make to Order")
+    .eq("requiresSerialTracking", false)
+    .eq("requiresBatchTracking", false);
+  if (materials.error || !materials.data?.length) {
+    return { error: materials.error };
+  }
+
+  const stepAssigned = await client
+    .from("jobMaterialStep")
+    .select("jobMaterialId")
+    .in(
+      "jobMaterialId",
+      materials.data.map((m) => m.id)
+    );
+  if (stepAssigned.error) return { error: stepAssigned.error };
+  const assigned = new Set(stepAssigned.data?.map((l) => l.jobMaterialId));
+
+  const failures: string[] = [];
+  for (const material of materials.data) {
+    if (assigned.has(material.id)) continue;
+    const perUnit = material.quantity ?? 0;
+    if (perUnit <= 0) continue;
+    const delta = unitsStarted * perUnit - (material.quantityIssued ?? 0);
+    if (delta <= 0) continue;
+    const issue = await client.functions.invoke("issue", {
+      body: {
+        id: operation.data.id,
+        type: "partToOperation",
+        itemId: material.itemId,
+        materialId: material.id,
+        quantity: delta,
+        adjustmentType: "Negative Adjmt.",
+        companyId: args.companyId,
+        userId: args.userId
+      }
+    });
+    if (issue.error) failures.push(material.itemId);
+  }
+
+  return {
+    error: failures.length
+      ? new Error(
+          `Backflush failed for ${failures.length} material(s): ${failures.join(", ")}`
+        )
+      : null
+  };
 }
 
 export async function getJobOperationsAssignedToEmployee(
@@ -855,7 +1030,12 @@ export async function getToolsByOperationId(
   type Tool = {
     quantity: number;
     jobOperationStepIds: string[];
-    item: { id: string; name: string; type: string } | null;
+    item: {
+      id: string;
+      name: string;
+      type: string;
+      readableId: string | null;
+    } | null;
   };
 
   // Read the job's OWN tools (jobOperationTool), not the method template. This carries the
@@ -866,19 +1046,46 @@ export async function getToolsByOperationId(
   const result = await client
     .from("jobOperationTool")
     .select(
-      "quantity, item:toolId(id, name, type), jobOperationToolStep(jobOperationStepId)"
+      "quantity, item:toolId(id, name, type, readableId), jobOperationToolStep(jobOperationStepId)"
     )
     .eq("operationId", operationId);
 
+  const tools = (result.data ?? []).map((t) => ({
+    quantity: (t as { quantity: number }).quantity,
+    item: (t as { item: Tool["item"] }).item,
+    jobOperationStepIds: (
+      (t as { jobOperationToolStep?: { jobOperationStepId: string }[] })
+        .jobOperationToolStep ?? []
+    ).map((s) => s.jobOperationStepId)
+  })) as Tool[];
+
+  // Merge duplicate rows for the same tool (union step links, max quantity).
+  // Older get-method copies inserted assembly-instruction tools AND method
+  // tools separately, leaving e.g. one step-linked row plus one unlinked row —
+  // which the MES would show on every step AND twice on the linked step.
+  const merged = new Map<string, Tool>();
+  for (const tool of tools) {
+    const key = tool.item?.id;
+    if (!key) {
+      merged.set(`__no_item_${merged.size}`, tool);
+      continue;
+    }
+    const existing = merged.get(key);
+    if (!existing) {
+      merged.set(key, tool);
+    } else {
+      existing.quantity = Math.max(existing.quantity, tool.quantity);
+      existing.jobOperationStepIds = [
+        ...new Set([
+          ...existing.jobOperationStepIds,
+          ...tool.jobOperationStepIds
+        ])
+      ];
+    }
+  }
+
   return {
-    data: (result.data ?? []).map((t) => ({
-      quantity: (t as { quantity: number }).quantity,
-      item: (t as { item: Tool["item"] }).item,
-      jobOperationStepIds: (
-        (t as { jobOperationToolStep?: { jobOperationStepId: string }[] })
-          .jobOperationToolStep ?? []
-      ).map((s) => s.jobOperationStepId)
-    })) as Tool[],
+    data: [...merged.values()],
     error: result.error
   };
 }
