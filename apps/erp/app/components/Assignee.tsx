@@ -37,6 +37,12 @@ export type AssigneeProps = Omit<
   isReadOnly?: boolean;
   placeholder?: string;
   variant?: AssigneeVariants;
+  /**
+   * When true, only shop employees (those who can run production operations) are
+   * offered. Use for operation-assignee pickers so office staff who cannot
+   * execute operations (e.g. bookkeepers) are excluded.
+   */
+  shopEmployeesOnly?: boolean;
   onChange?: (selected: string) => void;
 };
 
@@ -50,6 +56,7 @@ const Assign = forwardRef<HTMLButtonElement, AssigneeProps>(
       isReadOnly,
       placeholder,
       variant = "button",
+      shopEmployeesOnly = false,
       onChange,
       className,
       ...props
@@ -79,6 +86,7 @@ const Assign = forwardRef<HTMLButtonElement, AssigneeProps>(
       const base =
         people
           .filter((person) => person.id !== user.id)
+          .filter((person) => !shopEmployeesOnly || person.shopEmployee !== false)
           .map((person) => ({
             value: person.id,
             label: person.name
@@ -89,7 +97,7 @@ const Assign = forwardRef<HTMLButtonElement, AssigneeProps>(
         { value: user.id, label: `${user.firstName} ${user.lastName}` },
         ...base
       ];
-    }, [people, user, t]);
+    }, [people, user, t, shopEmployeesOnly]);
 
     return (
       <VStack spacing={2}>

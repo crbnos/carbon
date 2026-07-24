@@ -4,6 +4,7 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
 import type { z } from "zod";
 import {
+  Boolean,
   CustomFormFields,
   DatePicker,
   Employee,
@@ -51,6 +52,11 @@ const PersonJob = ({ initialValues }: PersonJobProps) => {
               label={t`Shift`}
             />
             <Employee name="managerId" label={t`Manager`} />
+            <Boolean
+              name="shopEmployee"
+              label={t`Shop Employee`}
+              description={t`Can be assigned to production operations`}
+            />
             <Hidden name="intent" value="job" />
             <CustomFormFields table="employeeJob" />
           </div>

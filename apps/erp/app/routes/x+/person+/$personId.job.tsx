@@ -78,6 +78,7 @@ export default function PersonJobRoute() {
     locationId: job.locationId ?? "",
     shiftId: job.shiftId ?? "",
     managerId: job.managerId ?? "",
+    shopEmployee: job.shopEmployee ?? true,
     ...getCustomFields(job.customFields)
   };
 
