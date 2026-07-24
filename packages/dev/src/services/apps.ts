@@ -260,6 +260,33 @@ export function assertAssemblerDepsBuilt(): void {
   }
 }
 
+const auxChildren = new Set<ExecaChildProcess>();
+
+function trackAuxChild(child: ExecaChildProcess): void {
+  auxChildren.add(child);
+  child.once("exit", () => auxChildren.delete(child));
+}
+
+export function stopAuxApps(): void {
+  for (const child of auxChildren) {
+    if (child.exitCode !== null || !child.pid) continue;
+    try {
+      process.kill(-child.pid, "SIGTERM");
+    } catch {
+      try {
+        child.kill("SIGTERM");
+        // biome-ignore lint/suspicious/noEmptyBlockStatements: best-effort kill
+      } catch {}
+    }
+  }
+}
+
+export function whenAuxAppExits(): Promise<void> {
+  return new Promise<void>((resolve) => {
+    for (const child of auxChildren) child.once("exit", () => resolve());
+  });
+}
+
 export function spawnAssembler(opts: {
   root: string;
   ports: PortMap;
@@ -320,16 +347,8 @@ export function spawnAssembler(opts: {
   pipe(child.stdout, process.stdout);
   pipe(child.stderr, process.stderr);
 
-  onShutdown(() => {
-    if (child.exitCode !== null || !child.pid) return;
-    try {
-      process.kill(-child.pid, "SIGTERM");
-    } catch {
-      try {
-        child.kill("SIGTERM");
-      } catch {}
-    }
-  });
+  trackAuxChild(child);
+  onShutdown(() => stopAuxApps());
 
   return child;
 }
@@ -365,11 +384,16 @@ function isEmailStartupLine(line: string): boolean {
 export function spawnEmailPreview(opts: {
   root: string;
   ports: PortMap;
+  command?: () => { file: string; args: string[] };
 }): ExecaChildProcess {
-  const { root, ports } = opts;
+  const { root, ports, command } = opts;
   const port = ports.PORT_EMAIL;
+  const { file, args } = command?.() ?? {
+    file: "pnpm",
+    args: ["run", "email:previews"]
+  };
 
-  const child = execa("pnpm", ["run", "email:previews"], {
+  const child = execa(file, args, {
     cwd: join(root, "packages", "documents"),
     env: { ...process.env, EMAIL_DEV_PORT: String(port) },
     reject: false,
@@ -390,17 +414,8 @@ export function spawnEmailPreview(opts: {
   pipe(child.stdout, process.stdout);
   pipe(child.stderr, process.stderr);
 
-  onShutdown(() => {
-    if (child.exitCode !== null || !child.pid) return;
-    try {
-      process.kill(-child.pid, "SIGTERM");
-    } catch {
-      try {
-        child.kill("SIGTERM");
-        // biome-ignore lint/suspicious/noEmptyBlockStatements: best-effort kill
-      } catch {}
-    }
-  });
+  trackAuxChild(child);
+  onShutdown(() => stopAuxApps());
 
   return child;
 }

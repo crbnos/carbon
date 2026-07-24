@@ -199,7 +199,9 @@ async function backfillMissingPorts(
   slug: string,
   entry: RegistryEntry
 ): Promise<void> {
-  const missing = PORT_NAMES.filter((n) => entry.ports[n] === undefined);
+  const missing = OPTIONAL_PORT_NAMES.filter(
+    (n) => entry.ports[n] === undefined
+  );
   if (missing.length === 0) return;
   const { claimedPorts } = collectClaims(registry, slug);
   // Also avoid this slot's own existing ports.

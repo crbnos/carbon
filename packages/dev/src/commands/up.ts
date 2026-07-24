@@ -16,7 +16,9 @@ import {
   spawnAssembler,
   spawnEmailPreview,
   spawnStripeListener,
-  syncEnvSymlinks
+  stopAuxApps,
+  syncEnvSymlinks,
+  whenAuxAppExits
 } from "../services/apps.js";
 import {
   allImagesPresentLocally,
@@ -677,11 +679,13 @@ async function runAppsThenTeardown(
   if (apps.length === 0) {
     // Only aux apps selected (assembler / email preview) — nothing for
     // spawnApps to supervise, and it would resolve immediately and tear the
-    // freshly booted stack down. Wait for Ctrl+C instead; the aux spawners'
-    // own onShutdown handlers kill their children on the same signal.
-    await new Promise<void>((resolve) => {
-      onShutdown(() => resolve());
-    });
+    // freshly booted stack down.
+    await Promise.race([
+      new Promise<void>((resolve) => {
+        onShutdown(() => resolve());
+      }),
+      whenAuxAppExits()
+    ]);
   } else {
     await spawnApps({ root, apps, ports, portless });
   }
@@ -787,6 +791,7 @@ async function runAppsThenCommand(
   } finally {
     controller.abort(); // stop the app supervisors
     await appsDone;
+    stopAuxApps();
     killStripe(stripeChild);
     await down({ silent: true, volumes: cleanVolumes });
     detach();

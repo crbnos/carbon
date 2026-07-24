@@ -10,7 +10,12 @@ import { tmpdir } from "node:os";
 import { join } from "pathe";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { PortMap } from "../worktree.js";
-import { spawnApps } from "./apps.js";
+import {
+  spawnApps,
+  spawnEmailPreview,
+  stopAuxApps,
+  whenAuxAppExits
+} from "./apps.js";
 
 // A stand-in "dev server": a real child process we can make crash on demand.
 // It appends its app id to a shared log on every launch (so the test can count
@@ -173,5 +178,50 @@ describe("spawnApps supervisor (integration)", () => {
     // Real exponential backoff means it can't have given up faster than
     // 500 + 1000 + 2000 ms.
     expect(elapsed).toBeGreaterThanOrEqual(3_400);
+  }, 20_000);
+});
+
+describe("aux app lifecycle", () => {
+  let root: string;
+  let script: string;
+
+  beforeEach(() => {
+    root = mkdtempSync(join(tmpdir(), "carbon-aux-"));
+    mkdirSync(join(root, "packages", "documents"), { recursive: true });
+    script = join(root, "aux.cjs");
+    writeFileSync(script, "setInterval(() => {}, 1 << 30);\n");
+  });
+
+  afterEach(() => {
+    stopAuxApps();
+    rmSync(root, { recursive: true, force: true });
+  });
+
+  const spawnFake = (args: string[] = [script]) =>
+    spawnEmailPreview({
+      root,
+      ports: { PORT_EMAIL: 39003 } as unknown as PortMap,
+      command: () => ({ file: process.execPath, args })
+    });
+
+  it("stopAuxApps kills a running aux child (the --run teardown path)", async () => {
+    const child = spawnFake();
+    await waitFor(() => typeof child.pid === "number");
+    expect(child.exitCode).toBeNull();
+
+    stopAuxApps();
+
+    await waitFor(() => child.exitCode !== null || child.signalCode !== null);
+    expect(child.killed || child.signalCode !== null).toBe(true);
+  }, 20_000);
+
+  it("whenAuxAppExits resolves when an aux child dies on its own", async () => {
+    const exited = (async () => {
+      const child = spawnFake(["-e", "setTimeout(() => process.exit(3), 150)"]);
+      await waitFor(() => typeof child.pid === "number");
+      return whenAuxAppExits();
+    })();
+
+    await expect(exited).resolves.toBeUndefined();
   }, 20_000);
 });
