@@ -1,9 +1,9 @@
-import { Badge, Button, cn, HStack, toast } from "@carbon/react";
+import { Badge, Button, cn, toast } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
 import type { PostgrestSingleResponse } from "@supabase/supabase-js";
 import type { ColumnDef } from "@tanstack/react-table";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { LuPlus } from "react-icons/lu";
+import { LuCheck, LuPlus, LuX } from "react-icons/lu";
 import { Table } from "~/components";
 import type { EditableTableCellComponentProps } from "~/components/Editable";
 import { EditableNumber } from "~/components/Editable";
@@ -375,6 +375,7 @@ const InspectionMeasurementGrid = ({
       cols.push({
         accessorKey: key,
         header,
+        meta: { headerClassName: "justify-center" },
         cell: ({ row }) => {
           const original = row.original;
           const enabled = i < original.sampleSize;
@@ -401,35 +402,60 @@ const InspectionMeasurementGrid = ({
               </span>
             );
           }
+          // Attribute pass/fail: a segmented, color-coded toggle. Each half is
+          // a full-height tap target (shop-floor friendly), green ✓ for pass /
+          // red ✗ for fail, filled when selected and tinted on hover otherwise.
+          const passed = status === "Passed";
+          const failed = status === "Failed";
           return (
-            <HStack data-sample-col={i} spacing={1} className="justify-center">
-              <Button
-                size="sm"
-                variant={status === "Passed" ? "primary" : "secondary"}
-                className="h-6 px-1.5 text-[10px]"
-                isDisabled={isReadOnly}
-                tabIndex={-1}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  persistCell(original, i, { passed: "true" });
-                }}
-              >
-                P
-              </Button>
-              <Button
-                size="sm"
-                variant={status === "Failed" ? "destructive" : "secondary"}
-                className="h-6 px-1.5 text-[10px]"
-                isDisabled={isReadOnly}
-                tabIndex={-1}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  persistCell(original, i, { passed: "false" });
-                }}
-              >
-                F
-              </Button>
-            </HStack>
+            <div
+              data-sample-col={i}
+              className="-mx-4 -my-2 flex justify-center px-1.5 py-1"
+            >
+              {/* Negative margins cancel the cell's px-4 py-2 so the segmented
+                  control fills the full cell for a large, finger-friendly
+                  target; a shared divider splits pass / fail. */}
+              <div className="flex h-10 w-full min-w-[92px] max-w-[152px] items-stretch overflow-hidden rounded-lg border border-border bg-background">
+                <button
+                  type="button"
+                  aria-label={t`Pass`}
+                  aria-pressed={passed}
+                  disabled={isReadOnly}
+                  tabIndex={-1}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    persistCell(original, i, { passed: "true" });
+                  }}
+                  className={cn(
+                    "flex flex-1 items-center justify-center transition-transform active:scale-[0.96] disabled:pointer-events-none disabled:opacity-50",
+                    passed
+                      ? "bg-emerald-500 text-white"
+                      : "text-muted-foreground hover:bg-emerald-500/10 hover:text-emerald-600"
+                  )}
+                >
+                  <LuCheck className="h-5 w-5" />
+                </button>
+                <button
+                  type="button"
+                  aria-label={t`Fail`}
+                  aria-pressed={failed}
+                  disabled={isReadOnly}
+                  tabIndex={-1}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    persistCell(original, i, { passed: "false" });
+                  }}
+                  className={cn(
+                    "flex flex-1 items-center justify-center border-l border-border transition-transform active:scale-[0.96] disabled:pointer-events-none disabled:opacity-50",
+                    failed
+                      ? "bg-red-500 text-white"
+                      : "text-muted-foreground hover:bg-red-500/10 hover:text-red-600"
+                  )}
+                >
+                  <LuX className="h-5 w-5" />
+                </button>
+              </div>
+            </div>
           );
         }
       });

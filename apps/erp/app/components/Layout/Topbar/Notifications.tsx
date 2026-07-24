@@ -603,7 +603,7 @@ const Notifications = () => {
           value={activeTab}
           onValueChange={setActiveTab}
         >
-          <TabsList className="w-full border-b py-6 rounded-none bg-muted/50">
+          <TabsList className="w-full border-b py-2 rounded-none bg-muted/50">
             <TabsTrigger value="inbox" className="font-normal">
               <Trans>Inbox</Trans>
             </TabsTrigger>
