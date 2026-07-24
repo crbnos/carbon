@@ -8,7 +8,7 @@ export default function WeeklyReminderPreview() {
       preview={"You have 3 outstanding trainings"}
       heading={"Your weekly reminders"}
       message={"You have 3 outstanding trainings to complete."}
-      recipientName={"Naveen"}
+      recipientName={"John Doe"}
       items={[
         {
           title: "Anti-Bribery",

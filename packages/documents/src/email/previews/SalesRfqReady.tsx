@@ -9,7 +9,7 @@ export default function SalesRfqReadyPreview() {
       preview={"RFQ ready for quote"}
       message={"RFQ RFQ-0007 is ready for quote"}
       reference={"RFQ-0007"}
-      recipientName={"Naveen"}
+      recipientName={"John Doe"}
       ctaLabel={"View details"}
       ctaUrl={"https://app.carbon.ms/x/sales-rfq/1"}
       details={[

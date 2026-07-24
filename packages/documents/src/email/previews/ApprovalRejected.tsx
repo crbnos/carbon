@@ -9,7 +9,7 @@ export default function ApprovalRejectedPreview() {
       preview={"Your request was rejected"}
       message={"Purchase order PO-00099 was rejected"}
       reference={"PO-00099"}
-      recipientName={"Naveen"}
+      recipientName={"John Doe"}
       ctaLabel={"View decision"}
       ctaUrl={"https://app.carbon.ms/x/purchase-order/1"}
       details={[

@@ -7,7 +7,7 @@
 -- constraint is (readableId, revision, companyId, type), a Part and a
 -- Consumable can legitimately share a readableId — so the revisions list
 -- on the Part detail page ended up showing Consumable rows as if they
--- were sibling revisions, which is what Naveen observed as "2 versions
+-- were sibling revisions, which was reported as "2 versions
 -- of the same part in the item master."
 --
 -- Fix: add `AND i."type" = '<Type>'` to each CTE so revisions are scoped

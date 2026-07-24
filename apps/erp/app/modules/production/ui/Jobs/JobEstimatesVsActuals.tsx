@@ -261,7 +261,7 @@ const JobEstimatesVsActuals = ({
     let totalScrap = 0;
 
     operations.forEach((op) => {
-      if (op.operationType !== "Outside") {
+      if (op.operationType !== "Outside Processing") {
         const est = getEstimatedTime(op);
         const act = getActualTime(op);
         totalEstimated += est.total;

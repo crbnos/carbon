@@ -9,7 +9,7 @@ export default function PurchaseInvoiceAssignmentPreview() {
       preview={"Purchase invoice assigned to you"}
       message={"Purchase Invoice PINV-0031 assigned to you"}
       reference={"PINV-0031"}
-      recipientName={"Naveen"}
+      recipientName={"John Doe"}
       ctaLabel={"View details"}
       ctaUrl={"https://app.carbon.ms/x/purchase-invoice/1"}
       details={[

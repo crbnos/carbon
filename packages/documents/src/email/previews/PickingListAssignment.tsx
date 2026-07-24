@@ -9,7 +9,7 @@ export default function PickingListAssignmentPreview() {
       preview={"Picking list assigned to you"}
       message={"Picking List PL-0008 assigned to you"}
       reference={"PL-0008"}
-      recipientName={"Naveen"}
+      recipientName={"John Doe"}
       ctaLabel={"View details"}
       ctaUrl={"https://app.carbon.ms/x/picking-list/1"}
       details={[
