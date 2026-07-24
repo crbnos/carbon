@@ -242,7 +242,7 @@ export default function JobDetailsRoute() {
   const methodId = makeMethod?.id;
 
   return (
-    <div className="h-full w-full items-start overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent">
+    <div className="h-full w-full items-start overflow-y-auto scrollbar-hide">
       <VStack spacing={2} className="p-2">
         <JobMakeMethodTools makeMethod={makeMethod ?? undefined} />
 
