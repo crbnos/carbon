@@ -1232,7 +1232,7 @@ msgstr "您确定要删除物料组：{0}？此操作无法撤销。"
 
 #. placeholder {0}: legalSeries.name
 msgid "Are you sure you want to delete the legal series: {0}? This cannot be undone."
-msgstr ""
+msgstr "您确定要删除法定系列 {0} 吗？此操作无法撤销。"
 
 #. placeholder {0}: line.customerPartId
 #. placeholder {0}: line.description
@@ -2949,7 +2949,7 @@ msgid "Country"
 msgstr "国家"
 
 msgid "Country Code"
-msgstr ""
+msgstr "国家代码"
 
 msgid "Create"
 msgstr "创建"
@@ -3788,7 +3788,7 @@ msgid "Delete Journal Entry"
 msgstr "删除日记账条目"
 
 msgid "Delete Legal Series"
-msgstr ""
+msgstr "删除法定系列"
 
 msgid "Delete line"
 msgstr "删除行"
@@ -4500,7 +4500,7 @@ msgid "Edit Kanban"
 msgstr "编辑看板"
 
 msgid "Edit Legal Series"
-msgstr ""
+msgstr "编辑法定系列"
 
 msgid "Edit Line"
 msgstr "编辑行"
@@ -5385,7 +5385,7 @@ msgid "Failed to move account: {0}"
 msgstr "移动账户失败: {0}"
 
 msgid "Failed to regenerate thumbnail"
-msgstr ""
+msgstr "缩略图重新生成失败"
 
 msgid "Failed to remove image: {errorMessage}"
 msgstr "删除图像失败：{errorMessage}"
@@ -5664,7 +5664,7 @@ msgid "Format"
 msgstr "格式"
 
 msgid "Format locked after first use"
-msgstr ""
+msgstr "首次使用后格式被锁定"
 
 msgid "Foundation"
 msgstr "基础"
@@ -6948,7 +6948,7 @@ msgid "Leftover Parts Detected"
 msgstr "检测到剩余零件"
 
 msgid "Legal Series"
-msgstr ""
+msgstr "法定系列"
 
 msgid "Less manual work"
 msgstr "更少的手动工作"
@@ -7112,7 +7112,7 @@ msgid "Locked"
 msgstr "已锁定"
 
 msgid "Locked after first use"
-msgstr ""
+msgstr "首次使用后被锁定"
 
 msgid "Locking makes the period read-only for operational documents (receipts, shipments, invoices) while still allowing accounting adjustments like depreciation and disposals. A period must be locked before it can be closed."
 msgstr "锁定使期间对于业务单据（收据、装运、发票）为只读，同时仍允许进行折旧和处置等会计调整。期间在结束前必须被锁定。"
@@ -7905,7 +7905,7 @@ msgid "New Kanban"
 msgstr "新看板"
 
 msgid "New Legal Series"
-msgstr ""
+msgstr "新法定系列"
 
 msgid "New Line"
 msgstr "新行"
@@ -10089,10 +10089,10 @@ msgid "Refresh exchange rate"
 msgstr "刷新汇率"
 
 msgid "Regenerate"
-msgstr ""
+msgstr "重新生成"
 
 msgid "Regenerating thumbnail…"
-msgstr ""
+msgstr "正在重新生成缩略图…"
 
 msgid "Register"
 msgstr "注册现有资产"
@@ -10104,7 +10104,7 @@ msgid "Registered"
 msgstr "重新订购点"
 
 msgid "Registration Ref"
-msgstr ""
+msgstr "注册参考"
 
 msgid "Reject"
 msgstr "拒绝"
@@ -13020,13 +13020,13 @@ msgid "Thumbnail"
 msgstr "缩略图"
 
 msgid "Thumbnail is still generating"
-msgstr ""
+msgstr "缩略图仍在生成中"
 
 msgid "Thumbnail removed"
 msgstr "缩略图已移除"
 
 msgid "Thumbnail updated"
-msgstr ""
+msgstr "缩略图已更新"
 
 msgid "Thumbnail uploaded"
 msgstr "缩略图已上传"

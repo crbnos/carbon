@@ -1232,7 +1232,7 @@ msgstr "Sind Sie sicher, dass Sie die Artikelgruppe: {0} löschen möchten? Dies
 
 #. placeholder {0}: legalSeries.name
 msgid "Are you sure you want to delete the legal series: {0}? This cannot be undone."
-msgstr ""
+msgstr "Sind Sie sicher, dass Sie die juristische Serie {0} löschen möchten? Dies kann nicht rückgängig gemacht werden."
 
 #. placeholder {0}: line.customerPartId
 #. placeholder {0}: line.description
@@ -2949,7 +2949,7 @@ msgid "Country"
 msgstr "Land"
 
 msgid "Country Code"
-msgstr ""
+msgstr "Ländercode"
 
 msgid "Create"
 msgstr "Erstellen"
@@ -3788,7 +3788,7 @@ msgid "Delete Journal Entry"
 msgstr "Journaleintrag löschen"
 
 msgid "Delete Legal Series"
-msgstr ""
+msgstr "Juristische Serie löschen"
 
 msgid "Delete line"
 msgstr "Zeile löschen"
@@ -4500,7 +4500,7 @@ msgid "Edit Kanban"
 msgstr "Kanban bearbeiten"
 
 msgid "Edit Legal Series"
-msgstr ""
+msgstr "Juristische Serie bearbeiten"
 
 msgid "Edit Line"
 msgstr "Zeile bearbeiten"
@@ -5385,7 +5385,7 @@ msgid "Failed to move account: {0}"
 msgstr "Konto konnte nicht verschoben werden: {0}"
 
 msgid "Failed to regenerate thumbnail"
-msgstr ""
+msgstr "Fehler beim Regenerieren der Miniaturansicht"
 
 msgid "Failed to remove image: {errorMessage}"
 msgstr "Fehler beim Entfernen des Bildes: {errorMessage}"
@@ -5664,7 +5664,7 @@ msgid "Format"
 msgstr "Format"
 
 msgid "Format locked after first use"
-msgstr ""
+msgstr "Format nach der ersten Verwendung gesperrt"
 
 msgid "Foundation"
 msgstr "Grundlagen"
@@ -6948,7 +6948,7 @@ msgid "Leftover Parts Detected"
 msgstr "Überschüssige Teile erkannt"
 
 msgid "Legal Series"
-msgstr ""
+msgstr "Juristische Serie"
 
 msgid "Less manual work"
 msgstr "Weniger manuelle Arbeit"
@@ -7112,7 +7112,7 @@ msgid "Locked"
 msgstr "Gesperrt"
 
 msgid "Locked after first use"
-msgstr ""
+msgstr "Nach der ersten Verwendung gesperrt"
 
 msgid "Locking makes the period read-only for operational documents (receipts, shipments, invoices) while still allowing accounting adjustments like depreciation and disposals. A period must be locked before it can be closed."
 msgstr "Das Sperren macht die Periode schreibgeschützt für operative Dokumente (Eingänge, Versände, Rechnungen), erlaubt aber weiterhin Buchhaltungsanpassungen wie Abschreibungen und Ausrangierungen. Eine Periode muss gesperrt werden, bevor sie geschlossen werden kann."
@@ -7905,7 +7905,7 @@ msgid "New Kanban"
 msgstr "Neuer Kanban"
 
 msgid "New Legal Series"
-msgstr ""
+msgstr "Neue juristische Serie"
 
 msgid "New Line"
 msgstr "Neue Zeile"
@@ -10089,10 +10089,10 @@ msgid "Refresh exchange rate"
 msgstr "Wechselkurs aktualisieren"
 
 msgid "Regenerate"
-msgstr ""
+msgstr "Regenerieren"
 
 msgid "Regenerating thumbnail…"
-msgstr ""
+msgstr "Miniaturansicht wird regeneriert…"
 
 msgid "Register"
 msgstr "Vorhandenes Vermögen registrieren"
@@ -10104,7 +10104,7 @@ msgid "Registered"
 msgstr "Bestellpunkt"
 
 msgid "Registration Ref"
-msgstr ""
+msgstr "Registrierungsreferenz"
 
 msgid "Reject"
 msgstr "Ablehnen"
@@ -13020,13 +13020,13 @@ msgid "Thumbnail"
 msgstr "Miniaturansicht"
 
 msgid "Thumbnail is still generating"
-msgstr ""
+msgstr "Miniaturansicht wird noch generiert"
 
 msgid "Thumbnail removed"
 msgstr "Vorschaubild entfernt"
 
 msgid "Thumbnail updated"
-msgstr ""
+msgstr "Miniaturansicht aktualisiert"
 
 msgid "Thumbnail uploaded"
 msgstr "Miniaturansicht hochgeladen"

@@ -1232,7 +1232,7 @@ msgstr "Ürün grubunu silmek istediğinizden emin misiniz: {0}? Bu geri alınam
 
 #. placeholder {0}: legalSeries.name
 msgid "Are you sure you want to delete the legal series: {0}? This cannot be undone."
-msgstr ""
+msgstr "Yasal seriyi silmek istediğinizden emin misiniz: {0}? Bu işlem geri alınamaz."
 
 #. placeholder {0}: line.customerPartId
 #. placeholder {0}: line.description
@@ -2949,7 +2949,7 @@ msgid "Country"
 msgstr "Ülke"
 
 msgid "Country Code"
-msgstr ""
+msgstr "Ülke Kodu"
 
 msgid "Create"
 msgstr "Oluştur"
@@ -3788,7 +3788,7 @@ msgid "Delete Journal Entry"
 msgstr "Yevmiye Kaydını Sil"
 
 msgid "Delete Legal Series"
-msgstr ""
+msgstr "Yasal Seriyi Sil"
 
 msgid "Delete line"
 msgstr "Satırı Sil"
@@ -4500,7 +4500,7 @@ msgid "Edit Kanban"
 msgstr "Kanban Düzenle"
 
 msgid "Edit Legal Series"
-msgstr ""
+msgstr "Yasal Seriyi Düzenle"
 
 msgid "Edit Line"
 msgstr "Satırı Düzenle"
@@ -5385,7 +5385,7 @@ msgid "Failed to move account: {0}"
 msgstr "Hesap taşınamadı: {0}"
 
 msgid "Failed to regenerate thumbnail"
-msgstr ""
+msgstr "Küçük resim yeniden oluşturulamadı"
 
 msgid "Failed to remove image: {errorMessage}"
 msgstr "Görsel kaldırılamadı: {errorMessage}"
@@ -5664,7 +5664,7 @@ msgid "Format"
 msgstr "Biçim"
 
 msgid "Format locked after first use"
-msgstr ""
+msgstr "Format ilk kullanımdan sonra kilitlendi"
 
 msgid "Foundation"
 msgstr "Temel"
@@ -6948,7 +6948,7 @@ msgid "Leftover Parts Detected"
 msgstr "Artık Parçalar Tespit Edildi"
 
 msgid "Legal Series"
-msgstr ""
+msgstr "Yasal Seri"
 
 msgid "Less manual work"
 msgstr "Daha az manuel çalışma"
@@ -7112,7 +7112,7 @@ msgid "Locked"
 msgstr "Kilitli"
 
 msgid "Locked after first use"
-msgstr ""
+msgstr "İlk kullanımdan sonra kilitlendi"
 
 msgid "Locking makes the period read-only for operational documents (receipts, shipments, invoices) while still allowing accounting adjustments like depreciation and disposals. A period must be locked before it can be closed."
 msgstr "Dönemin kilitlenmesi, işletme belgelerine (makbuzlar, sevkiyatlar, faturalar) yönelik olarak salt okunur hale getirirken, amortisman ve elden çıkarma gibi muhasebe düzeltmelerine izin vermeye devam eder. Dönem kapatılmadan önce kilitlenmesi gerekir."
@@ -7905,7 +7905,7 @@ msgid "New Kanban"
 msgstr "Yeni Kanban"
 
 msgid "New Legal Series"
-msgstr ""
+msgstr "Yeni Yasal Seri"
 
 msgid "New Line"
 msgstr "Yeni Satır"
@@ -10089,10 +10089,10 @@ msgid "Refresh exchange rate"
 msgstr "Döviz kurunu yenile"
 
 msgid "Regenerate"
-msgstr ""
+msgstr "Yeniden Oluştur"
 
 msgid "Regenerating thumbnail…"
-msgstr ""
+msgstr "Küçük resim yeniden oluşturuluyor…"
 
 msgid "Register"
 msgstr "Mevcut Varlığı Kayıt Yap"
@@ -10104,7 +10104,7 @@ msgid "Registered"
 msgstr "Kayıtlı"
 
 msgid "Registration Ref"
-msgstr ""
+msgstr "Kayıt Referansı"
 
 msgid "Reject"
 msgstr "Reddet"
@@ -13020,13 +13020,13 @@ msgid "Thumbnail"
 msgstr "Küçük Resim"
 
 msgid "Thumbnail is still generating"
-msgstr ""
+msgstr "Küçük resim hala oluşturuluyor"
 
 msgid "Thumbnail removed"
 msgstr "Küçük resim kaldırıldı"
 
 msgid "Thumbnail updated"
-msgstr ""
+msgstr "Küçük resim güncellendi"
 
 msgid "Thumbnail uploaded"
 msgstr "Küçük resim yüklendi"

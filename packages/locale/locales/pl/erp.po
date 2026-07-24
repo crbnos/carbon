@@ -1232,7 +1232,7 @@ msgstr "Czy na pewno chcesz usunąć grupę pozycji: {0}? Tej czynności nie mo�
 
 #. placeholder {0}: legalSeries.name
 msgid "Are you sure you want to delete the legal series: {0}? This cannot be undone."
-msgstr ""
+msgstr "Czy na pewno chcesz usunąć serię prawną: {0}? Tej operacji nie można cofnąć."
 
 #. placeholder {0}: line.customerPartId
 #. placeholder {0}: line.description
@@ -2949,7 +2949,7 @@ msgid "Country"
 msgstr "Kraj"
 
 msgid "Country Code"
-msgstr ""
+msgstr "Kod Kraju"
 
 msgid "Create"
 msgstr "Utwórz"
@@ -3788,7 +3788,7 @@ msgid "Delete Journal Entry"
 msgstr "Usuń wpis dziennika"
 
 msgid "Delete Legal Series"
-msgstr ""
+msgstr "Usuń Serię Prawną"
 
 msgid "Delete line"
 msgstr "Usuń linię"
@@ -4500,7 +4500,7 @@ msgid "Edit Kanban"
 msgstr "Edytuj Kanban"
 
 msgid "Edit Legal Series"
-msgstr ""
+msgstr "Edytuj Serię Prawną"
 
 msgid "Edit Line"
 msgstr "Edytuj linię"
@@ -5385,7 +5385,7 @@ msgid "Failed to move account: {0}"
 msgstr "Nie udało się przenieść konta: {0}"
 
 msgid "Failed to regenerate thumbnail"
-msgstr ""
+msgstr "Nie udało się ponownie wygenerować miniatury"
 
 msgid "Failed to remove image: {errorMessage}"
 msgstr "Nie udało się usunąć obrazu: {errorMessage}"
@@ -5664,7 +5664,7 @@ msgid "Format"
 msgstr "Format"
 
 msgid "Format locked after first use"
-msgstr ""
+msgstr "Format zablokowany po pierwszym użyciu"
 
 msgid "Foundation"
 msgstr "Fundament"
@@ -6948,7 +6948,7 @@ msgid "Leftover Parts Detected"
 msgstr "Wykryte nadmiarowe części"
 
 msgid "Legal Series"
-msgstr ""
+msgstr "Seria Prawna"
 
 msgid "Less manual work"
 msgstr "Mniej pracy ręcznej"
@@ -7112,7 +7112,7 @@ msgid "Locked"
 msgstr "Zablokowany"
 
 msgid "Locked after first use"
-msgstr ""
+msgstr "Zablokowany po pierwszym użyciu"
 
 msgid "Locking makes the period read-only for operational documents (receipts, shipments, invoices) while still allowing accounting adjustments like depreciation and disposals. A period must be locked before it can be closed."
 msgstr "Zablokowanie uczynia okres tylko do odczytu dla dokumentów operacyjnych (pokwitowania, przesyłki, faktury), jednocześnie umożliwiając korekty księgowe, takie jak amortyzacja i zbycie. Okres musi być zablokowany, zanim będzie można go zamknąć."
@@ -7905,7 +7905,7 @@ msgid "New Kanban"
 msgstr "Nowy Kanban"
 
 msgid "New Legal Series"
-msgstr ""
+msgstr "Nowa Seria Prawna"
 
 msgid "New Line"
 msgstr "Nowa linia"
@@ -10089,10 +10089,10 @@ msgid "Refresh exchange rate"
 msgstr "Odśwież kurs wymiany"
 
 msgid "Regenerate"
-msgstr ""
+msgstr "Ponownie wygeneruj"
 
 msgid "Regenerating thumbnail…"
-msgstr ""
+msgstr "Ponowne generowanie miniatury…"
 
 msgid "Register"
 msgstr "Zarejestruj Istniejący Majątek"
@@ -10104,7 +10104,7 @@ msgid "Registered"
 msgstr "Punkt Ponownego Zamówienia"
 
 msgid "Registration Ref"
-msgstr ""
+msgstr "Odniesienie Rejestracyjne"
 
 msgid "Reject"
 msgstr "Odrzuć"
@@ -13020,13 +13020,13 @@ msgid "Thumbnail"
 msgstr "Miniatura"
 
 msgid "Thumbnail is still generating"
-msgstr ""
+msgstr "Miniatura jest jeszcze generowana"
 
 msgid "Thumbnail removed"
 msgstr "Miniatura usunięta"
 
 msgid "Thumbnail updated"
-msgstr ""
+msgstr "Miniatura zaktualizowana"
 
 msgid "Thumbnail uploaded"
 msgstr "Miniatura przesłana"

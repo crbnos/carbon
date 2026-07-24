@@ -1232,7 +1232,7 @@ msgstr "क्या आप सुनिश्चित हैं कि आप 
 
 #. placeholder {0}: legalSeries.name
 msgid "Are you sure you want to delete the legal series: {0}? This cannot be undone."
-msgstr ""
+msgstr "क्या आप वाकई कानूनी श्रृंखला को हटाना चाहते हैं: {0}? यह पूर्ववत नहीं किया जा सकता।"
 
 #. placeholder {0}: line.customerPartId
 #. placeholder {0}: line.description
@@ -2949,7 +2949,7 @@ msgid "Country"
 msgstr "देश"
 
 msgid "Country Code"
-msgstr ""
+msgstr "देश कोड"
 
 msgid "Create"
 msgstr "बनाएं"
@@ -3788,7 +3788,7 @@ msgid "Delete Journal Entry"
 msgstr "पत्रिका प्रविष्टि हटाएं"
 
 msgid "Delete Legal Series"
-msgstr ""
+msgstr "कानूनी श्रृंखला हटाएं"
 
 msgid "Delete line"
 msgstr "पंक्ति हटाएं"
@@ -4500,7 +4500,7 @@ msgid "Edit Kanban"
 msgstr "कनबन संपादित करें"
 
 msgid "Edit Legal Series"
-msgstr ""
+msgstr "कानूनी श्रृंखला संपादित करें"
 
 msgid "Edit Line"
 msgstr "लाइन संपादित करें"
@@ -5385,7 +5385,7 @@ msgid "Failed to move account: {0}"
 msgstr "खाता स्थानांतरित करने में विफल: {0}"
 
 msgid "Failed to regenerate thumbnail"
-msgstr ""
+msgstr "थंबनेल पुनः उत्पन्न करने में विफल"
 
 msgid "Failed to remove image: {errorMessage}"
 msgstr "छवि हटाने में विफल: {errorMessage}"
@@ -5664,7 +5664,7 @@ msgid "Format"
 msgstr "प्रारूप"
 
 msgid "Format locked after first use"
-msgstr ""
+msgstr "पहले उपयोग के बाद प्रारूप लॉक हो गया"
 
 msgid "Foundation"
 msgstr "आधार"
@@ -6948,7 +6948,7 @@ msgid "Leftover Parts Detected"
 msgstr "बचे हुए पार्ट्स का पता चला"
 
 msgid "Legal Series"
-msgstr ""
+msgstr "कानूनी श्रृंखला"
 
 msgid "Less manual work"
 msgstr "कम मैनुअल काम"
@@ -7112,7 +7112,7 @@ msgid "Locked"
 msgstr "लॉक किया गया"
 
 msgid "Locked after first use"
-msgstr ""
+msgstr "पहले उपयोग के बाद लॉक हो गया"
 
 msgid "Locking makes the period read-only for operational documents (receipts, shipments, invoices) while still allowing accounting adjustments like depreciation and disposals. A period must be locked before it can be closed."
 msgstr "लॉकिंग अवधि को परिचालन दस्तावेज़ों (रसीदें, शिपमेंट, चालान) के लिए केवल-पढ़ने योग्य बनाता है जबकि मूल्यह्रास और निस्तारण जैसे लेखा समायोजन की अनुमति देता है। अवधि को बंद किए जाने से पहले उसे लॉक किया जाना चाहिए।"
@@ -7905,7 +7905,7 @@ msgid "New Kanban"
 msgstr "नया कानबन"
 
 msgid "New Legal Series"
-msgstr ""
+msgstr "नई कानूनी श्रृंखला"
 
 msgid "New Line"
 msgstr "नई लाइन"
@@ -10089,10 +10089,10 @@ msgid "Refresh exchange rate"
 msgstr "विनिमय दर को ताज़ा करें"
 
 msgid "Regenerate"
-msgstr ""
+msgstr "पुनः उत्पन्न करें"
 
 msgid "Regenerating thumbnail…"
-msgstr ""
+msgstr "थंबनेल पुनः उत्पन्न किया जा रहा है…"
 
 msgid "Register"
 msgstr "मौजूदा संपत्ति पंजीकृत करें"
@@ -10104,7 +10104,7 @@ msgid "Registered"
 msgstr "पुन: आदेश बिंदु"
 
 msgid "Registration Ref"
-msgstr ""
+msgstr "पंजीकरण संदर्भ"
 
 msgid "Reject"
 msgstr "अस्वीकार करें"
@@ -13020,13 +13020,13 @@ msgid "Thumbnail"
 msgstr "थंबनेल"
 
 msgid "Thumbnail is still generating"
-msgstr ""
+msgstr "थंबनेल अभी भी उत्पन्न किया जा रहा है"
 
 msgid "Thumbnail removed"
 msgstr "थंबनेल हटाया गया"
 
 msgid "Thumbnail updated"
-msgstr ""
+msgstr "थंबनेल अपडेट किया गया"
 
 msgid "Thumbnail uploaded"
 msgstr "थंबनेल अपलोड किया गया"
