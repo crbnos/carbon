@@ -8320,6 +8320,9 @@ msgstr "Keine Drucker konfiguriert. Klicken Sie auf „Drucker hinzufügen\", um
 msgid "No process selected"
 msgstr "Kein Prozess ausgewählt"
 
+msgid "No production events recorded for this operation yet"
+msgstr "Für diesen Vorgang wurden noch keine Produktionsereignisse aufgezeichnet"
+
 msgid "No Quote"
 msgstr "Kein Angebot"
 

@@ -8320,6 +8320,9 @@ msgstr "설정된 프린터가 없습니다. \"프린터 추가\"를 클릭하�
 msgid "No process selected"
 msgstr "프로세스를 선택하지 않았습니다"
 
+msgid "No production events recorded for this operation yet"
+msgstr "이 공정작업에 대해 아직 기록된 생산 이벤트가 없습니다"
+
 msgid "No Quote"
 msgstr "견적 없음"
 

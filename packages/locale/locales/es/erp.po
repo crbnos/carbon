@@ -8320,6 +8320,9 @@ msgstr "No hay impresoras configuradas. Haz clic en \"Agregar impresora\" para c
 msgid "No process selected"
 msgstr "Ningún proceso seleccionado"
 
+msgid "No production events recorded for this operation yet"
+msgstr "Aún no se han registrado eventos de producción para esta operación"
+
 msgid "No Quote"
 msgstr "Sin Cotización"
 

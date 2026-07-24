@@ -8320,6 +8320,9 @@ msgstr "未配置打印机。点击\"添加打印机\"创建一个。"
 msgid "No process selected"
 msgstr "未选择工艺"
 
+msgid "No production events recorded for this operation yet"
+msgstr "此操作尚未记录任何生产事件"
+
 msgid "No Quote"
 msgstr "无报价"
 

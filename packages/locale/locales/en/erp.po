@@ -8320,6 +8320,9 @@ msgstr "No printers configured. Click \"Add Printer\" to create one."
 msgid "No process selected"
 msgstr "No process selected"
 
+msgid "No production events recorded for this operation yet"
+msgstr "No production events recorded for this operation yet"
+
 msgid "No Quote"
 msgstr "No Quote"
 

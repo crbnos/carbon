@@ -8320,6 +8320,9 @@ msgstr "Nessuna stampante configurata. Fai clic su \"Aggiungi stampante\" per cr
 msgid "No process selected"
 msgstr "Nessun processo selezionato"
 
+msgid "No production events recorded for this operation yet"
+msgstr "Nessun evento di produzione ancora registrato per questa operazione"
+
 msgid "No Quote"
 msgstr "Nessuna offerta"
 

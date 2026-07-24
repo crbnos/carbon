@@ -1,9 +1,9 @@
 import { Badge, MenuIcon, MenuItem, useDisclosure } from "@carbon/react";
 import { formatDurationMilliseconds } from "@carbon/utils";
-import { useLingui } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo, useState } from "react";
-import { LuPencil, LuTrash } from "react-icons/lu";
+import { LuPencil, LuTimer, LuTrash } from "react-icons/lu";
 import { useNavigate, useParams } from "react-router";
 import {
   EmployeeAvatar,
@@ -219,6 +219,33 @@ const ProductionEventsTable = memo(
     );
     const [params] = useUrlParams();
 
+    // When arriving from a job's Estimates vs Actual view, the table is
+    // pre-filtered to a single operation (`filter=jobOperationId:eq:...`). An
+    // operation with no recorded time yet is a normal, expected state — not a
+    // failed search — so show a plain message instead of the generic
+    // "No results found / Remove Filters" empty state, which would imply the
+    // filter is the problem.
+    //
+    // Only override when the operation filter is the *sole* narrowing: if the
+    // user has also applied an employee/type filter or a search, "Remove
+    // Filters" is genuinely useful, so keep the generic empty state for those.
+    const activeFilters = params.getAll("filter");
+    const isFilteredToOperation =
+      !params.get("search") &&
+      activeFilters.length === 1 &&
+      activeFilters[0].startsWith("jobOperationId:");
+
+    const emptyState = isFilteredToOperation ? (
+      <>
+        <div className="flex justify-center items-center h-12 w-12 rounded-full bg-muted text-muted-foreground -mt-[10dvh]">
+          <LuTimer className="h-6 w-6 shrink-0" />
+        </div>
+        <span className="text-xs font-mono font-light text-muted-foreground uppercase text-center max-w-xs text-balance">
+          <Trans>No production events recorded for this operation yet</Trans>
+        </span>
+      </>
+    ) : undefined;
+
     return (
       <>
         <Table<ProductionEvent>
@@ -226,6 +253,7 @@ const ProductionEventsTable = memo(
           count={count}
           columns={columns}
           data={data}
+          emptyState={emptyState}
           primaryAction={
             permissions.can("update", "accounting") && (
               <New

@@ -8320,6 +8320,9 @@ msgstr "कोई प्रिंटर कॉन्फ़िगर नहीं
 msgid "No process selected"
 msgstr "कोई प्रक्रिया चयनित नहीं है"
 
+msgid "No production events recorded for this operation yet"
+msgstr "इस ऑपरेशन के लिए अभी तक कोई उत्पादन घटना रिकॉर्ड नहीं की गई है"
+
 msgid "No Quote"
 msgstr "कोई उद्धरण नहीं"
 

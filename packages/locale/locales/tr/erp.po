@@ -8320,6 +8320,9 @@ msgstr "Yapılandırılmış yazıcı yok. Bir tane oluşturmak için \"Yazıcı
 msgid "No process selected"
 msgstr "Hiçbir işlem seçilmedi"
 
+msgid "No production events recorded for this operation yet"
+msgstr "Bu işlem için henüz üretim etkinliği kaydedilmedi"
+
 msgid "No Quote"
 msgstr "Teklif Yok"
 

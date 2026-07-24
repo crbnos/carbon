@@ -8320,6 +8320,9 @@ msgstr "Принтеры не настроены. Нажмите «Добави�
 msgid "No process selected"
 msgstr "Процесс не выбран"
 
+msgid "No production events recorded for this operation yet"
+msgstr "Для этой операции еще не записано ни одного производственного события"
+
 msgid "No Quote"
 msgstr "Нет предложения"
 
