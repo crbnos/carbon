@@ -6,12 +6,9 @@ Time to build. You release the first production job, the first 30 robots, to the
 
 ## The schedule
 
-The released work lands on the schedule, a board you arrange, not a Gantt chart you fight. Carbon gives you two views of it:
+The released work lands on the MES "Schedule" board, a Kanban with one column per work center. Each column holds the operations queued at that center, sorted by dispatch priority so the operator always sees what to run next. The Display popover lets each station tune its own board, toggling empty work centers on or off and showing or hiding the customer, description, due date, duration, progress, status, sales order, and thumbnail on each card. Filters narrow it further, by work center, process, tag, or assignee.
 
-- By work center: operations sit in columns, one per work center. Drag an operation to a different center, or reorder it within a column to set its priority. The only constraint is that the center can actually run that process.
-- By date: jobs sit in columns by week or month. Drag a job to a different week and Carbon reschedules it in the background.
-
-Carbon lays every released operation where it belongs and lets you rebalance by hand, dragging the week-one robots and their subassemblies into an order the floor can actually run.
+The MES board is a live read of the schedule, so operators can filter and focus but they don't drag work to reschedule it. Rebalancing the plan, moving an operation to a different work center or shifting a job's dates so Carbon reschedules it, happens on the `guides/plan`, where a planner owns the sequence. What lands here is the result.
 
 ## Operations & work centers
 
@@ -30,14 +27,16 @@ On the shop-floor view, an operator doesn't see a spreadsheet — they see rich 
 
 ## At the station
 
-When the operator opens their operation on the MES, the controls feel physical, closer to a machine panel than a form. Everything they do here flows straight back to the job:
+When the operator opens their operation on the MES, the controls feel physical, closer to a machine panel than a form. A big Play button reads "Start"; press it and it becomes "Pause". Everything they do here flows straight back to the job:
 
-- Clock time with the Setup, Labor, and Machine toggles, each of which starts and stops a production event, so the operation's estimated hours meet the actual ones.
-- Issue Material to pull the operation's components onto the job as they're consumed.
-- Log Completed, Log Scrap with a reason, or Log Rework as pieces come off the operation.
-- Finish to close the operation. It ends every active production event in one move.
+- Clock time with the "Setup", "Labor", and "Machine" toggles, each of which starts and stops a production event, so the operation's estimated hours meet the actual ones.
+- "Issue Material" to issue the operation's components onto the job as they're consumed.
+- "Log Completed" for good units, "Log Scrap" with a scrap reason, or "Log Rework" as pieces come off the operation. "Complete All" reports the whole remaining quantity in one tap.
+- "Finish" to close the operation. It ends every active production event in one move and flips the operation to "Done".
 
-Logged hours multiply by the work center's labor and machine rates; issued material posts at its cost. By the time the operation reads Done, the job already knows `guides/job-costing`.
+Logged hours multiply by the work center's labor and machine rates; issued material posts at its cost. By the time the operation reads "Done", the job already knows `guides/job-costing`.
+
+"Finish" closes one operation for good. "End Operations", from the sidebar, is the end-of-shift move: it stops every production event you have running without completing or finishing any of them, so the clock stops but the work stays open for the next person to pick up. If time cards are turned on, clocking out does the same to your labor clock.
 
 ## Backflush & issue
 

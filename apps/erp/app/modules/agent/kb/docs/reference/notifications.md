@@ -1,0 +1,144 @@
+# Notifications
+
+> Assignments, approvals, expirations, and reminders reach the right people over in-app, email, and Slack, with per-user channel opt-outs by topic.
+
+A notification tells one person that something needs their attention: a job was assigned to them, an
+approval is waiting, a gauge's calibration lapsed, a quote expired. Carbon raises these from across the
+system and fans each one out to up to three channels: the **in-app inbox** (the bell in the top bar),
+**email**, and **Slack**. In-app is always on; email and Slack are extras a user can mute per topic.
+
+Say a purchasing manager assigns a purchase order to a buyer. The buyer gets a row in their in-app inbox
+immediately, an email if the company has email notifications, and a Slack DM if the company connected Slack
+and the buyer hasn't muted purchasing on Slack. If that buyer sent the assignment to themselves, they get
+nothing — Carbon never notifies you about your own action.
+
+## What raises a notification
+
+Every notification starts as a `carbon/notify` event with a specific type. The type
+falls into one of three shapes:
+
+  - **Assignments**: Someone is put on a record: a job, job operation, sales order, purchase order, RFQ, purchase invoice, supplier quote, issue, risk, procedure, picking list, stock transfer, maintenance dispatch, or training. The assignee is the recipient.
+  - **State changes & responses**: A record's state moved in a way someone should know about: an approval was **requested**, **approved**, or **rejected**; a job **completed**; a change order entered a new stage; a quote **expired**; a customer or supplier responded to a digital quote or supplier quote.
+  - **Expirations & reminders**: Time-driven, raised by scheduled jobs rather than a user action: a **gauge calibration expired**, a **maintenance dispatch** was auto-created for a work center, or a weekly **training reminder** rolls up a person's outstanding trainings.
+
+The full set of event types lives in `NotificationEvent` (`packages/notifications/src/index.ts:7`). Adding a
+notification anywhere in Carbon means dispatching one of these — there's no free-form "send a message"
+path.
+
+Notifications are informational, not a workflow. Marking one read doesn't change any record, and there's no
+"acknowledge" or "accept" on a notification itself. The action lives on the underlying document (approve the
+PO, complete the job) — the notification just points you there.
+
+## Topics
+
+Every event maps to exactly one **topic** — a coarse bucket used for grouping the inbox and for the per-user
+channel opt-outs. There are twelve, and the mapping is fixed in code
+(`getNotificationTopic`, `packages/notifications/src/index.ts:114`):
+
+| Topic | Example events |
+| --- | --- |
+| Approval | Approval requested / approved / rejected |
+| Job | Job assignment, job operation assignment, job operation message, job completed |
+| Sales | Sales order assignment, sales RFQ assignment, RFQ ready |
+| Quote | Quote assignment, quote expired, digital quote response, supplier quote assignment / response |
+| Purchasing | Purchase order, purchasing RFQ, and purchase invoice assignments |
+| Inventory | Picking list and stock transfer assignments |
+| Quality | Issue assignment, risk assignment |
+| Maintenance | Maintenance dispatch (assigned or created), gauge calibration expired |
+| Training | Training and procedure assignments, resource training, training reminder |
+| Suggestion | Suggestion response |
+| Items | Change order started / in implementation / complete |
+| General | Anything without a specific bucket |
+
+The topic string is **stored** on every notification (`notification.topic`). It's what a user's opt-out row
+matches on, so a topic is not just a label — it's the grouping key for muting. Eleven of the twelve topics are
+user-facing on the settings page; only **Items** is not offered as a toggle.
+
+## Channels
+
+A single notification can go to three destinations, defined in `NotificationDestination`
+(`packages/notifications/src/index.ts:108`):
+
+  - **In-app**: The bell in the top bar. **Always written** for every recipient, on every event. It cannot be turned off — the fan-out adds it regardless of what the caller requests (`notify.ts:210`).
+  - **Email**: A per-notification email with a heading, a short description, and a **View** button linking to the record. Sent only when the company's plan includes email notifications.
+  - **Slack**: A direct message in the connected Slack workspace. Sent only when the company has an active Slack integration and the recipient has a matching Slack account.
+
+Each event has default channels (most assignments default to email + Slack), and the caller can override them
+per dispatch. In-app is the constant: it's the one channel a user can never silence and the one the top bar
+always reflects.
+
+Email is **plan-gated.** The fan-out checks the `EMAIL_NOTIFICATIONS` plan feature and skips the email
+channel entirely for companies without it (`notify.ts:509`). Slack has no plan gate — it only needs the
+integration connected. See `docs/platform/licensing` for what each plan includes.
+
+## Per-user preferences
+
+Each user controls their own email and Slack delivery under **Account → Notifications**. The settings page is
+a grid: one row per user-facing topic, a column per channel, a switch in each cell. In-app has no switch —
+it's not something a user opts out of.
+
+Preferences are stored as **opt-out** rows, one per `(user, company, channel, topic)`
+(`notificationPreference` table). The default is **on**: no row means the channel is enabled for that topic.
+Flipping a switch off writes a row with `enabled = false`, which mutes that one topic on that one channel.
+Flipping it back on removes the mute. The fan-out reads these rows and drops muted recipients from the email
+and Slack lists before sending (`notify.ts:302`); the in-app row is never filtered.
+
+Muting is **per topic and per channel**, scoped to the current company. Muting Purchasing on Slack still
+leaves you Purchasing emails, still leaves you Slack DMs for Sales, and doesn't carry over to another company
+you belong to. And whatever you mute, the in-app inbox still gets every notification.
+
+The Slack column only appears when the company has Slack connected. The email column always shows; if the
+company's plan doesn't include email notifications, the page notes that email won't be delivered even with the
+switch on.
+
+## Who receives an expiration or reminder
+
+Assignments and responses have an obvious recipient — the assignee, or the person who raised the request. The
+time-driven events don't, so each resolves its own audience:
+
+  - **Gauge calibration expired**: Goes to a company-configured list of users — the `gaugeCalibrationExpiredNotificationGroup` array on company settings — not to a role or a single owner. Set it under gauge/calibration settings so the right people hear when a gauge lapses.
+  - **Maintenance dispatch created**: Goes to every employee attached to the dispatch's work center. Auto-created dispatches notify whoever staffs that station.
+  - **Training reminder**: A weekly digest per person, rolling that individual's outstanding trainings into one notification rather than one per course.
+
+There's no general "notification group" entity. Only gauge-calibration expiry uses a configured user list;
+everything else derives recipients from the record itself — the assignee, the approvers, the work center's
+staff, or the person with outstanding trainings.
+
+## The inbox
+
+The bell in the top bar opens the in-app inbox. It shows recent notifications newest-first with an unread
+count, each row carrying an icon for its event, a short description, who it came from, and a timestamp. Click a
+row's link to jump to the record; mark a row read with its **mark read** button.
+
+Recurring reminders don't nag forever. A repeating email notification for the same document stops after a few
+successful deliveries (`MAX_NOTIFICATION_DELIVERIES`, `packages/notifications/src/index.ts:90`) — currently
+only the weekly training reminder is recurring. The in-app row still stands until you read it.
+
+## Related
+
+  - Approvals Approval requested, approved, and rejected each raise a notification to the approvers or the requester.
+  - Calibration A lapsed gauge calibration notifies the company's configured calibration group.
+  - Maintenance Auto-created dispatches notify the work center's staff.
+  - Webhooks For machine-to-machine events — an HTTP POST on record insert, update, or delete — rather than a person's inbox.
+
+## Troubleshooting
+
+Delivery questions are almost always a missing precondition on the email or Slack channel — the in-app inbox always works.
+
+### Why am I not getting email notifications?
+Email is **plan-gated.** The fan-out checks the `EMAIL_NOTIFICATIONS` plan feature and skips the email channel entirely for companies without it — regardless of the per-user switch. Check the company's plan first. If the plan includes it, then confirm the topic isn't muted for email (a `notificationPreference` row with `enabled = false` for that topic/channel) and that the specific event actually defaults to the email channel.
+
+### Why am I not getting Slack DMs?
+Slack has no plan gate, but it needs two things: the company must have an **active Slack integration** connected, and *you* must have a **matching Slack account** in that workspace. Users without a matching Slack account are silently skipped. Also confirm you haven't muted the topic on Slack under Account → Notifications.
+
+### I muted a topic but I'm still getting in-app notifications
+Expected — in-app is **always written** for every recipient on every event and cannot be turned off. The mute switches only affect email and Slack; the fan-out never filters the in-app row. The bell always reflects every notification.
+
+### I turned a channel on but it still doesn't deliver
+Preferences default to **on** (no row = enabled), so flipping a switch on just removes the mute — it doesn't override the channel's own preconditions. Email still requires the `EMAIL_NOTIFICATIONS` plan; Slack still requires the integration + a matching account. The settings page notes when email won't be delivered even with the switch on because the plan doesn't include it.
+
+### I did something myself and got no notification
+Carbon never notifies you about your own action — the sender is filtered out of the recipient list. If you assigned a record to yourself, that's why there's nothing in your inbox.
+
+### A recurring reminder stopped arriving
+Repeating email notifications for the same document stop after a few successful deliveries (`MAX_NOTIFICATION_DELIVERIES`) — currently only the weekly training reminder is recurring. The in-app row still stands until you mark it read.

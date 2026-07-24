@@ -14,7 +14,7 @@ A **maintenance dispatch** is one job of upkeep: what's wrong, which work center
   - **Completed**: Done. Any running time entries are closed automatically.
   - **Cancelled**: Dropped without completing.
 
-Every dispatch carries a **priority** (Low, Medium, High, Critical) and a **source** that says where it came from: **Reactive** (a breakdown, the default), **Scheduled** (generated from a preventive schedule), or **Non-Conformance** (raised from a quality issue). Time is tracked as events against the dispatch, and parts as dispatch items.
+Every dispatch carries a **priority** (Low, Medium, High, Critical) and a **source** that says where it came from: **Reactive** (a breakdown, the default), **Scheduled** (generated from a preventive schedule), or **Non-Conformance** (raised from a quality issue). It also carries a **severity** that says who handles it: **Preventive**, **Operator Performed**, **Support Required**, or **OEM Required**. Time is tracked as events against the dispatch, and parts as dispatch items.
 
 ## What it's against
 

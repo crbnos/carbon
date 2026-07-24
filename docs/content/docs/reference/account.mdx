@@ -1,0 +1,136 @@
+---
+title: Your account
+description: Personal, self-service settings for profile, passkeys, notification preferences, theme, and language, kept separate from the company-wide settings an admin controls.
+---
+
+Everything on the **Account** screen is yours alone. Your name and photo, the passkeys you sign in with,
+which topics reach you by email, the theme you look at all day: these are personal preferences, scoped to
+your user, and changing them touches nothing for anyone else on the team. That's the line to keep in mind.
+Company-wide switches (locations, integrations, defaults, who can do what) live under **Settings** and are
+gated by admin permissions. Your account settings need no special permission at all.
+
+Open it from your avatar in the top bar. The sidebar has two sections, **Profile** and **Notifications**
+(`apps/erp/app/modules/account/ui/useAccountSubmodules.tsx:9`); landing on `/x/account` redirects you
+straight to Profile (`apps/erp/app/routes/x+/account+/_index.tsx:4`).
+
+## Profile
+
+Profile is the one card everyone shares. The description on it says it plainly: *"This information will be
+visible to all users, so be careful what you share."* (`.../ui/Profile/ProfileForm.tsx:44`).
+
+<FieldTable>
+  <Field name="First name / Last name" required>Your display name across Carbon. Both are required.</Field>
+  <Field name="Phone">Optional. A phone-formatted field, blank by default.</Field>
+  <Field name="About">A short bio, capped at 160 characters (`ProfileForm.tsx:62`).</Field>
+  <Field name="Photo">Your avatar. Uploading routes the image through Carbon's `image-resizer` before it's saved (`.../ui/Profile/ProfilePhotoForm.tsx`); you can also remove it and fall back to your initials.</Field>
+  <Field name="Email">Shown, but **read-only** — the field is disabled (`ProfileForm.tsx:53`). You can't change your sign-in email from here.</Field>
+</FieldTable>
+
+Saving writes only to your own `user` row (`updatePublicAccount`, `.../account.service.ts:161`), so the
+edit is always self-scoped.
+
+<Callout type="note" title="Email is your identity, not a profile field">
+Your email is how you sign in and how Carbon addresses notifications to you, so it isn't editable as a
+casual profile field. Changing it is an identity change handled outside these self-service settings.
+</Callout>
+
+## Signing in — passkeys
+
+Carbon supports several sign-in methods, and which ones are available is a deployment-wide choice, not a
+per-user one. The `AUTH_PROVIDERS` environment variable turns them on and off; the default set is
+`email,google,azure` (`packages/env/src/index.ts:114`). That covers a **magic link** to your email, and
+**Google** and **Microsoft (Azure)** OAuth. There's no password field on this screen — Carbon signs you in
+by magic link or OAuth, not by a stored password you type each time.
+
+<Callout type="note" title="There's no password on the account screen">
+The codebase carries a password-change form, but it isn't wired into any account route today — the Account
+sidebar only exposes Profile and Notifications. Password management isn't a live self-service control here.
+Sign-in is magic link, OAuth, or a passkey.
+</Callout>
+
+The one sign-in control you manage yourself is **passkeys**, and its card only appears when the `passkey`
+provider is enabled (`isAuthProviderEnabled("passkey")`, `.../account+/profile.tsx:214`). A passkey lets you
+sign in with biometrics — Face ID, Touch ID, or your device PIN — instead of waiting on a magic-link email.
+From the Profile page you can:
+
+<FieldTable>
+  <Field name="Add a passkey">Registers a new credential through your browser's WebAuthn prompt (`onAddPasskey`, `profile.tsx:220`). You can hold more than one — a laptop and a phone, say.</Field>
+  <Field name="Rename a passkey">Give a credential a recognizable name (up to 100 characters) so you can tell your devices apart.</Field>
+  <Field name="Remove a passkey">Deletes it; that device can no longer sign you in. Each row shows when it was added, when it was last used, and whether it's synced across your devices.</Field>
+</FieldTable>
+
+<Callout type="tip" title="Keep more than one way in">
+A passkey is tied to a device. If you register only one and lose that device, fall back to the magic-link
+email or your OAuth provider to get back in — then add a fresh passkey. Registering a second passkey up
+front saves the round trip.
+</Callout>
+
+## Notification preferences
+
+Which alerts reach you, and on which channel, is set on the **Notifications** page — and it's per-user.
+In-app notifications (the bell in the top bar) are **always delivered**; the toggles only govern the extra
+channels, **email** and, when your company has connected Slack, **Slack** (`.../account+/notifications.tsx`).
+Each row is a topic — Approvals, Jobs, Inventory, Purchasing, Quality, and so on — with a switch per channel.
+
+The default is *on*: an absent preference row counts as enabled (`notifications.tsx:130`), so you're opting
+**out** of a channel for a topic, not opting in. Two things gate what you see:
+
+- The **Slack** column appears only if an admin connected the Slack integration for the company
+  (`slackActive`, `notifications.tsx:47`).
+- **Email** notifications depend on your company's plan. If the `EMAIL_NOTIFICATIONS` feature isn't in the
+  plan, Carbon tells you so, and your email preferences are stored but only take effect once it's enabled
+  (`notifications.tsx:49`, `:175`).
+
+For the full picture of what raises a notification and how Carbon fans it out across channels, see the
+[notifications reference](/docs/reference/notifications). This page is where you tune it for yourself.
+
+## Theme and language
+
+Carbon lets you pick a color theme; the choice is stored in a cookie on your browser, not in the database
+(`.../account+/theme.tsx`), so it follows you per-device and applies to nobody else. That's the personal
+end of theming. Company-wide branding — the logo, the default look a new user starts with — is an admin
+setting elsewhere, not something you set from your account.
+
+<Callout type="note" title="Language selection">
+Carbon ships a translated interface across many locales, and a per-user language preference is part of the
+account model. In the current build the language picker isn't surfaced on the Account sidebar — the
+interface follows the app's resolved locale. Treat language as a preference Carbon carries for you rather
+than a live toggle on this screen.
+</Callout>
+
+## Personal attributes
+
+Beyond the shared profile, your company can define **user attributes** — structured fields like a
+certification date, a shirt size, or a shift preference — grouped into categories. Whether a given
+attribute lands on your public profile or stays admin-only depends on its category being public, and whether
+*you* can edit your own value depends on it being marked <Term id="attribute-self-managed">self-managed</Term>.
+When it is, you can set the value yourself; when it isn't, only an admin can
+(`.../account+/$userId.attribute.tsx:48`). Attribute types range from text and numbers to dates, booleans,
+and pick-lists.
+
+Your account is the small surface you own on a shared system: a profile the team can see, the keys you sign
+in with, the alerts you let through, and the theme you stare at. None of it reaches past you. For the
+switches that do — the ones that shape how the whole company works — see the company settings under
+**Settings**, and read the [notifications reference](/docs/reference/notifications) for how alerts are
+raised in the first place.
+
+<AgentContext>
+## Troubleshooting
+
+Why some sign-in controls aren't editable here — these are preconditions, not error messages.
+
+### Can't change your email from the Account screen
+The Email field on Profile is shown but **read-only** (disabled). Your email is your sign-in identity and how Carbon addresses your notifications, so it isn't editable as a profile field. Changing it is an identity change handled outside these self-service settings, not something you do here.
+
+### There's no password to change
+Carbon signs you in by magic link, OAuth, or a passkey — there's no stored password you type each time. A password-change form exists in the codebase but isn't wired into any account route, so password management is not a live control on this screen.
+
+### The passkey card isn't showing
+Passkeys appear only when the `passkey` sign-in provider is enabled for the deployment. Which sign-in methods exist is a deployment-wide choice set by the `AUTH_PROVIDERS` environment variable (default `email,google,azure`), not a per-user setting. If passkey isn't in that set, the card won't render — sign in by magic link or OAuth instead.
+
+### There's no language picker
+A per-user language preference is part of the account model, but in the current build the picker isn't surfaced on the Account sidebar — the interface follows the app's resolved locale. Treat language as a preference Carbon carries for you, not a live toggle here.
+
+### The Slack or Email notification column is missing
+The **Slack** column appears only if an admin connected the Slack integration for the company. **Email** notifications depend on your company's plan — without the `EMAIL_NOTIFICATIONS` feature, preferences are stored but only take effect once it's enabled.
+</AgentContext>

@@ -3,7 +3,7 @@ title: Invoices
 description: The billing documents — what you charge customers, and what suppliers charge you.
 ---
 
-An **invoice** records money owed. Carbon has two kinds that behave almost identically: a **sales invoice** is what you bill a customer, and a **purchase invoice** is the bill a supplier sends you. Both are drawn from an upstream document, both post to the ledger, and in both, payment is a state on the invoice rather than a separate record.
+An **invoice** records money owed. Carbon has two kinds that behave almost identically: a **sales invoice** is what you bill a customer, and a **purchase invoice** is the bill a supplier sends you. Both are drawn from an upstream document, both post to the ledger, and both are settled by a **separate posted transaction** — a <Term id="payment">payment</Term> or a <Term id="credit-memo">credit or debit memo</Term> applied to the invoice, not a field you flip.
 
 ## Where they come from
 
@@ -15,7 +15,7 @@ A purchase invoice reconciles on the **purchase order line**, not on a <Term id=
 
 ## Status lifecycle
 
-Both start at **Draft** and lock the moment they leave it — numbers that have entered the books can't be edited in place.
+Both start at **Draft** and lock the moment they leave it — numbers that have entered the books can't be edited in place. The two sides share a shape but name a few states differently.
 
 | | Sales invoice | Purchase invoice |
 | --- | --- | --- |
@@ -23,22 +23,55 @@ Both start at **Draft** and lock the moment they leave it — numbers that have 
 | Posted | **Submitted** | **Open** |
 | Paying | Partially Paid → Paid | Partially Paid → Paid |
 | Reversed | Voided | Voided |
-| Credit | Credit Note Issued | Debit Note Issued, Return |
+| Memo applied | Credit Note Issued | Debit Note Issued |
 | Past due | Overdue | Overdue |
 
-The posted state has a different name on each side, **Submitted** for sales and **Open** for purchase, but means the same thing: posted to the ledger, awaiting payment. **Overdue** isn't set by hand; it's computed when an unpaid invoice passes its due date.
+The posted state has a different name on each side, **Submitted** for sales and **Open** for purchase, but means the same thing: posted to the ledger, awaiting payment. **Overdue**, **Partially Paid**, and **Paid** aren't set by hand; they're computed from the invoice's settlements and due date. An unpaid invoice past its `dateDue` reads **Overdue**; once settlements cover the whole balance it reads **Paid**.
+
+## Line types
+
+An invoice line is one of a handful of types, most of which pull an item's details in for you. The two sides differ in one place:
+
+| Type | Sales invoice | Purchase invoice |
+| --- | --- | --- |
+| Part, Service, Material, Tool, Consumable | Yes | Yes |
+| Comment (a note, no charge) | Yes | Yes |
+| Fixed Asset | Yes | — |
+| G/L Account (charge straight to an account) | — | Yes |
+
+A **G/L Account** line lets a purchase invoice book a cost directly to a ledger account with a description — freight, a fee, anything without an item behind it. Sales invoices don't offer it; they carry a **Fixed Asset** line instead, for billing a capitalized asset.
 
 ## Posting
 
 <Term id="posting">Posting</Term> an invoice writes its general-ledger entries, but only when accounting is enabled for the company: receivables against sales for a sale, payables against inventory or WIP for a purchase. Posting also bumps the invoiced quantity on each order line and stamps the posting date.
 
 <Callout type="warn">
-Posting never marks an invoice **Paid** — it lands on **Submitted** or **Open**. Recording payment is a separate, deliberate step. A posted invoice can't be deleted either; to undo one you **void** it, which writes reversing entries rather than erasing history.
+Posting never marks an invoice **Paid** — it lands on **Submitted** or **Open**. Settling it is a separate, deliberate step. A posted invoice can't be deleted either; to undo one you **void** it, which writes reversing entries rather than erasing history.
 </Callout>
 
-## Payment
+## Settling an invoice
 
-Payment in Carbon is **field-based**: an invoice carries its own status, paid date, and balance. There's no separate payment transaction. Marking an invoice **Paid** stamps the date and settles the balance. That keeps the whole money story on one record, from draft through posted to paid.
+A posted invoice is settled by a separate posted document applied to it, never by flipping a field. Two kinds of document do the settling, and an **invoice settlement** is the row that links one to an invoice for a given amount.
+
+A **<Term id="payment">payment</Term>** moves cash. A **Receipt** is money in from a customer (it settles sales invoices); a **Disbursement** is money out to a supplier (it settles purchase invoices). A payment carries a bank account, a date, a currency, and a total, and moves **Draft → Posted → Voided** like the invoice itself. While it's **Draft** you stage which invoices it applies to and for how much; posting it books the cash to the ledger — bank against the receivables or payables control account — and freezes those applications.
+
+A **<Term id="credit-memo">credit or debit memo</Term>** settles without cash. It's a party, an amount, and a reason: a **Credit** memo lowers what a customer owes (a return or allowance) or raises what you owe a supplier; a **Debit** memo does the reverse. Its offset is a general-ledger reason account, not the bank. A memo posts **Draft → Posted → Voided** too, and posting an applied credit against a customer invoice is what flips that invoice to **Credit Note Issued** (a supplier invoice reads **Debit Note Issued**). A memo belongs to exactly one party — a customer or a supplier, never both.
+
+<Callout type="note">
+An **invoice settlement** carries three amounts, not one: **applied** (cash or credit that reduces the balance), **discount** (an early-payment discount you're granting), and **write-off** (a tiny remainder you're forgiving to the write-off account). At least one has to be positive. A memo-sourced settlement can only carry an applied amount — discounts and write-offs are for cash payments.
+</Callout>
+
+### What if a payment overpays?
+
+Applying **more than an invoice's open balance** is blocked per-invoice — a settlement can't exceed what's left to collect on that invoice. But a payment's **cash total can exceed everything it applies**: the excess stays on the party's account as an unapplied credit, ready to apply to a later invoice. You can also run the reverse — a payment with **zero cash** that only applies the party's existing posted credits to open invoices. Applying more credit than the party actually has, though, errors out.
+
+### Voiding and dust
+
+Void reverses, it doesn't erase. Voiding a posted payment or memo writes a mirror-image journal and moves it to **Voided**. You can't void an invoice that still has payments applied — reverse (or unapply) those first. And you can't edit a payment's applications once it's posted; to change how a posted payment lands, void it and re-enter it.
+
+<Callout type="success">
+Carbon forgives **dust**. When settlements leave a balance under one cent — smaller than the currency can represent — the invoice is treated as fully **Paid** and its balance reads zero, rather than sitting forever a fraction of a cent short.
+</Callout>
 
 ## Related
 

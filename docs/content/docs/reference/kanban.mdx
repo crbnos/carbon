@@ -1,0 +1,104 @@
+---
+title: Kanban
+description: Scan-based pull replenishment. A kanban card ties an item to a bin, and scanning it fires a purchase order or a job.
+---
+
+A <Term>kanban</Term> in Carbon is a physical pull signal: a printed card (or QR code) that lives with the stock it replenishes. It ties one item to a location and storage unit, carries a reorder quantity, and — when someone scans it — creates the downstream order to refill that bin. Nobody watches a number; the card *is* the trigger.
+
+This is deliberately different from a [reordering policy](/docs/reference/reordering). A policy runs inside the planning engine and reasons about on-hand levels, demand, and reorder points. A kanban is manual and physical: a person empties a bin, scans the card, and an order appears. Use a policy for planned, calculated replenishment; use a kanban for two-bin shop-floor pull where a scan should just *do the thing*.
+
+## What a kanban holds
+
+Each kanban is a small record: an item, where it lives, how much to reorder, and how to reorder it.
+
+<FieldTable>
+  <Field name="Item" required>The part, material, tool, or consumable this card replenishes.</Field>
+  <Field name="Quantity" required>How much to reorder each time the card is scanned (at least 1).</Field>
+  <Field name="Replenishment system" required>How the scan replenishes: `Buy` (raise a purchase order) or `Make` (create a job). See <Term>replenishment system</Term>.</Field>
+  <Field name="Location" required>The location whose stock this card refills.</Field>
+  <Field name="Storage unit">The bin the reordered stock lands in. Defaults from the item's pick method for that location if left blank.</Field>
+  <Field name="Supplier">Who to buy from. **Required for `Buy` kanbans.**</Field>
+  <Field name="Purchase unit of measure / Conversion factor">The unit you buy in and how many stock units that equals — applied to the PO line. (`Buy` only.)</Field>
+  <Field name="Auto Release">On a `Make` scan, release the created job to the floor immediately instead of leaving it in draft. (`Make` only.)</Field>
+  <Field name="Auto Start Job">On a `Make` scan, drop the operator straight into the first operation in MES. Requires Auto Release. (`Make` only.)</Field>
+  <Field name="Completion Barcode">The code operators scan to mark the job complete; auto-generated when left blank. (`Make` only.)</Field>
+</FieldTable>
+
+<Callout type="note">
+The replenishment system enum has three values (`Buy`, `Make`, `Buy and Make`), but the kanban form only offers **Buy** and **Make**. A kanban set to `Buy and Make` is rejected at scan time — a single card fires one clear action, not both.
+</Callout>
+
+## The scan flow
+
+Every kanban card carries three scan targets, one per **action**: `order`, `start`, and `complete`. Scanning opens a URL that runs the action and redirects you into the resulting document. The QR codes are color-coded so the right one is obvious on the floor: order is black, start is emerald, complete is blue.
+
+The **order** scan (the create signal) branches on the replenishment system:
+
+<StatusFlow>
+  <Status name="Buy" accent>The scan finds an open (`Draft` or `Planned`) purchase order for that supplier and adds a line for the kanban's quantity — or creates a new draft PO if none exists — then drops you on the purchase order. It applies the kanban's conversion factor, purchase unit, and storage unit to the line.</Status>
+  <Status name="Make">The scan creates a <Term id="job">job</Term> for the item at the kanban's quantity, copies the item's method onto it, and links the job back to the card. With **Auto Release** on, it also runs planning and scheduling and marks the job `Ready`; with **Auto Start Job** on, it sends the operator straight into the first operation in MES.</Status>
+</StatusFlow>
+
+**Start** and **complete** scans only apply to `Make` kanbans. They resolve the linked job's active operation and hand off to the MES operation start / complete screens, so an operator can drive the whole build from the same card that created the job.
+
+<Callout type="warning">
+A `Make` kanban links to the job it created (`jobId`). If you scan **order** again while that job is still open, Carbon doesn't create a duplicate — it routes you to a collision screen that shows the existing job and offers to remove the link so a fresh scan can start over. Once the job is completed or cancelled, the link clears automatically and the card is free to fire again.
+</Callout>
+
+## Output format
+
+How a card is rendered is a per-company setting, **Kanban Output**, with three modes:
+
+| Mode | What a card is |
+| --- | --- |
+| QR code | A scannable QR code (the default), color-coded per action. |
+| Label | A printed PDF label — six to a page — with the QR, item thumbnail, name, storage unit, quantity, and supplier. |
+| URL | A copyable link that hits the same scan endpoint directly. |
+
+For `Make` kanbans, the list view also surfaces the **start** and **complete** affordances; `Buy` kanbans show only the order signal, since there's no job to start.
+
+## Kanban vs. reordering policy
+
+Both replenish stock, but they're different tools:
+
+<Callout type="info" title="A kanban is a signal, not a plan">
+A [reordering policy](/docs/reference/reordering) is evaluated by the planning engine, which computes suggested orders from on-hand, demand, and reorder points. A kanban skips all of that: a human scan creates a real purchase order or job on the spot. Reach for a kanban when the shop floor pulls material by hand and you want the refill to be one scan away.
+</Callout>
+
+## Related
+
+<Cards>
+  <Card title="Inventory & locations" href="/docs/reference/inventory">
+    Where stock lives, the storage units a kanban refills, and how on-hand is tracked.
+  </Card>
+  <Card title="Reordering policy" href="/docs/reference/reordering">
+    The planning-driven alternative — when and how much each part replenishes automatically.
+  </Card>
+</Cards>
+
+<AgentContext>
+## Troubleshooting
+
+Exact errors from scanning kanban cards.
+
+### "… is not supported"
+The **order** scan hit a kanban whose replenishment system is **`Buy and Make`**. A single card fires one clear action, so only `Buy` and `Make` are supported at scan. Set the kanban to `Buy` or `Make`.
+
+### "Supplier is required"
+A `Buy` kanban has no supplier. The order scan needs to know who to raise the purchase order against — set the supplier on the kanban.
+
+### "Quantity must be at least 1"
+The reorder quantity is below 1. Each scan reorders a fixed amount, which must be at least one stock unit.
+
+### "There's already a job for this kanban."
+You scanned **order** on a `Make` kanban that already created a job (it's linked by `jobId`). Carbon won't make a duplicate — it routes you to the collision screen showing the existing job, where you can view it or remove the link so a fresh scan can start over. The link clears automatically once the job is completed or cancelled.
+
+### "No job found for kanban"
+A **start** or **complete** scan ran on a kanban that has no linked job yet. Those actions only work on `Make` kanbans after an **order** scan has created the job — scan order first.
+
+### "Kanban is not active"
+The scanned card isn't found or belongs to a different company. Confirm the card is current and scoped to your company.
+
+### The list view shows no Start / Complete affordances
+Only `Make` kanbans surface **start** and **complete**; `Buy` kanbans show just the order signal, because there's no job to start. How cards render (QR code, Label, or URL) is the per-company **Kanban Output** setting.
+</AgentContext>

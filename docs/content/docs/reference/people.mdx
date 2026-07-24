@@ -1,0 +1,136 @@
+---
+title: People
+description: The HR master data a company sets up — employees, departments, shifts, holidays, custom attributes, and time cards.
+---
+
+**People** is where you manage the human side of a company: the employees who work there, how they're organized, when they're scheduled, and the custom fields you track against each one. It sits alongside identity and access — an employee record is the org-and-scheduling layer, while login, roles, and what someone is *allowed* to do live in [permissions](/docs/reference/permissions).
+
+A person in Carbon is one record split across three tables. The `user` is the global login identity. The `employee` is that user's membership in *this* company. The `employeeJob` holds their org placement — title, location, department, shift, and manager. They share the same id and are always scoped to a company, so the same person can be an employee of more than one company with a different title and manager in each.
+
+## Employees
+
+The **Employees** directory (under **Manage**) lists everyone in the company. Each row shows first and last name, email, employee type, location, and a **Status** of **"Active"**, **"Invited"**, or **"Inactive"** — derived from the employee record and any pending invite, not stored as a field. Open a person to see their **Profile**, **Job**, and **Notes**, plus a tab per attribute category and a **Timecards** tab when time cards are enabled.
+
+The **Job** section is the employee master data you edit here:
+
+<FieldTable>
+  <Field name="Title" type="text">The person's job title within this company. This is *not* their permission role — see the callout below.</Field>
+  <Field name="Start Date" type="date">When they started.</Field>
+  <Field name="Location" type="reference">The site they're based at.</Field>
+  <Field name="Shift" type="reference">Their assigned work schedule (optional).</Field>
+  <Field name="Manager" type="reference">Who they report to; another employee.</Field>
+</FieldTable>
+
+<Callout type="warn">
+"Job" here means a job *title*, not a production job. The `employeeJob` table is org placement — completely separate from the `job` table that holds work orders on the floor. And a person's title is separate again from what they can *do*: access is granted by their **employee type**, covered in [permissions](/docs/reference/permissions).
+</Callout>
+
+Adding and removing people (invites, deactivation) is part of the identity and access flow, not this master data. Deactivating a person tears down their membership — it removes them from the company, deletes their job placement, and revokes their access — so treat it as an access action, not an edit here.
+
+## Departments
+
+A **department** is an organizational unit. Each has a name and an optional <Term id="department-parent">Parent Department</Term>, so departments form a hierarchy you can roll headcount up through. Employees attach to a department via their job placement.
+
+<FieldTable>
+  <Field name="Department Name" type="text">Unique within the company.</Field>
+  <Field name="Parent Department" type="reference">The department this one rolls up under; leave empty for a top-level department.</Field>
+</FieldTable>
+
+Departments are configuration, so they live under **Configure**. Deleting a department is a hard delete — check that no one is assigned to it first, since removing it leaves those job placements without a department.
+
+## Shifts
+
+A **shift** is a named work schedule tied to a location: a start time, an end time, and the days of the week it runs. You assign a shift to an employee through their **Job** section, and Carbon uses shift membership to answer *who's scheduled today* — it reads each employee's shift and checks whether today's day-of-week flag is on.
+
+<FieldTable>
+  <Field name="Shift Name" type="text">What the schedule is called.</Field>
+  <Field name="Location" type="reference">The site the shift belongs to. Required.</Field>
+  <Field name="Start Time" type="time">When the shift begins.</Field>
+  <Field name="End Time" type="time">When it ends.</Field>
+  <Field name="Days" type="booleans">Monday through Sunday toggles — the days the shift runs.</Field>
+</FieldTable>
+
+<Callout type="note">
+Shifts are an employee-and-location concept, not a work-center one. A shift is never bound to a [work center](/docs/reference/work-centers); it schedules *people*, and a work center's load comes from the operations scheduled onto it, not from who's on shift.
+</Callout>
+
+Deleting a shift is a soft delete — the record is marked inactive rather than removed, so historical assignments stay intact.
+
+## Holidays
+
+A **holiday** is a company non-working day: a name and a date. The year is derived from the date automatically, and the list groups by year so you can review one calendar year at a time.
+
+<FieldTable>
+  <Field name="Holiday Name" type="text">What the day is called.</Field>
+  <Field name="Date" type="date">The calendar date. Its year is computed from this.</Field>
+</FieldTable>
+
+## Attributes
+
+**Attributes** are custom fields you track against people — things Carbon doesn't model natively, like a certification expiry, a badge number, or a t-shirt size. They're organized in two layers: an **attribute category** groups related fields, and each **attribute** inside it is one field with a data type.
+
+A category carries a name, an emoji, and a <Term id="attribute-category-public">Public</Term> toggle that controls whether its attributes show on a person's public profile or stay admin-only.
+
+Each attribute defines:
+
+<FieldTable>
+  <Field name="Name" type="text">What the field is called.</Field>
+  <Field name="Data Type" type="enum">The kind of value it accepts. See below.</Field>
+  <Field name="List Options" type="text[]">The allowed values, only when the data type is *List*.</Field>
+  <Field name="Self Managed" type="boolean">When on, employees can edit this value on their own profile; otherwise only admins can.</Field>
+</FieldTable>
+
+The <Term id="attribute-data-type">Data Type</Term> comes from a fixed set: **"Text"**, **"Numeric"**, **"Yes/No"**, **"Date"**, **"List"**, and **"User"** (the same list also powers customer and supplier custom fields, which add **"Customer"**, **"Supplier"**, and **"File"**). A **"List"** attribute pulls its choices from its <Term id="attribute-list-options">List Options</Term>.
+
+<Callout type="note">
+Pick the data type when you create the attribute — it's fixed once the attribute has recorded values. Category and attribute deletes are soft deletes (marked inactive), so an attribute you retire won't erase the values already collected against it.
+</Callout>
+
+## Time cards
+
+A **time card** is a clock-in / clock-out record for an employee. Time tracking is off by default and turns on per company with a **`timeCardEnabled`** setting; once on, the **Timecards** tab appears on each person and a company-wide list shows up under **Manage**.
+
+Each entry captures the employee, a clock-in time, an optional clock-out time, and a note. An entry with no clock-out is still open — Carbon derives its **Status** from that:
+
+<StatusFlow>
+  <Status name="Active" accent>Clocked in with no clock-out yet — the employee is on the clock.</Status>
+  <Status name="Complete" terminal>Clocked out. The entry is closed and its duration is fixed.</Status>
+</StatusFlow>
+
+Status is computed, not a stored field, and there is **no approval step** — a completed time card is final, not pending sign-off. Duration is calculated from clock-in to clock-out (or to *now* while still active), and weekly hours roll up from the current week's entries. You can also add, edit, or delete entries directly, so a missed punch can be corrected after the fact.
+
+<Callout type="note">
+These are the office-side time card records. On the shop floor, operators clock time against specific job operations in the [MES](/docs/reference/mes) — that production time is a separate mechanism from an employee's clock-in/clock-out day.
+</Callout>
+
+## Related
+
+<Cards>
+  <Card title="Permissions" href="/docs/reference/permissions">Employee types, roles, and what a person is allowed to do.</Card>
+  <Card title="MES" href="/docs/reference/mes">Clocking time against job operations on the floor.</Card>
+  <Card title="Work centers" href="/docs/reference/work-centers">Where operations run, and how they're scheduled and costed.</Card>
+</Cards>
+
+<AgentContext>
+## Troubleshooting
+
+Validation and lifecycle rules for shifts, holidays, departments, and time cards.
+
+### "Location is required"
+Every shift must belong to a location — the `locationId` field is required on the shift form, unlike an employee's own shift assignment, which is optional. Pick a location before saving the shift.
+
+### "Start time is required" / "End time is required"
+A shift needs both a start and an end time; neither can be blank. Fill both time fields before saving.
+
+### "Date is required"
+Saving a holiday without a date fails. The year is derived from the date, so the date is mandatory (the name is required too — "Name is required").
+
+### Deleting a department fails or orphans people
+Department deletion is a **hard delete** — the row is removed outright. Reassign anyone whose job placement points at that department first, otherwise their placements are left with no department. This differs from shifts and attributes, which are soft-deleted (marked inactive) so historical assignments survive.
+
+### The Timecards tab / time card list isn't showing
+Time tracking is off by default. It only appears once a company turns on the `timeCardEnabled` setting; until then there is no Timecards tab on a person and no company-wide list under Manage.
+
+### Looking for a time card approval / sign-off step
+There isn't one. A time card's status ("Active" while clocked in, "Complete" once clocked out) is computed, not stored, and a completed entry is final — there is no pending-approval workflow. Correct a mistake by editing or deleting the entry directly.
+</AgentContext>

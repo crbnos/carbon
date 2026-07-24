@@ -1,0 +1,101 @@
+# Import and export
+
+> Bring records into Carbon from a CSV, and download any table's current view as a CSV.
+
+Carbon moves data both ways through CSV. Every data table can **export** its current view to a file with one click, and a set of core entities can be bulk **imported** from a CSV you upload, map, and submit. The two paths are unrelated in the code: export is a browser-side download of the rows already on screen, while import runs a guided wizard that hands the file to a privileged background function to insert or update records inside a transaction.
+
+## Exporting a table to CSV
+
+Open any data table (a parts list, a sales order dashboard, an inventory grid) and look for the dashed **Download CSV** button in the header. There is no setting to turn it on: every table built on Carbon's shared data grid gets the button automatically.
+
+The download reflects **what you are currently looking at**, not a full server dump:
+
+- Only the **rows on the current page / result set** are written. Filter or search first to widen or narrow what lands in the file, then export.
+- Only the **columns visible in your current saved view** are included, in the order you've arranged them. Hidden columns are left out; the synthetic select, expand, and actions columns never export.
+- The CSV headers are the same human labels shown in the grid.
+
+For id-bearing columns like item, supplier, employee, and customer, the export substitutes the readable **name** for the raw id so the file is legible. A few columns are marked export-only: they stay hidden in the grid but are always written to the CSV.
+
+Export builds the file entirely in your browser and downloads it as `data.csv` with no server round-trip. Rename it after downloading if you're exporting several tables.
+
+## What you can import
+
+Bulk import is deliberately scoped. A **Bulk Import** menu appears in the table header only on the tables that opt into it, so you import an entity from its own list screen:
+
+  - **Customers**: From the customers list. Optionally rides address, payment term, and contact-style fields on the same row.
+  - **Suppliers**: From the suppliers list. Also carries address, payment term, shipping method, and incoterm fields.
+  - **Parts, Materials, Tools, Consumables, Fixtures**: From each item type's list. A single row can optionally create a supplier-part link, set purchasing lead time, and seed unit cost alongside the item.
+  - **Work Centers**: From the work centers list, including labor, machine, and overhead rates and a location.
+  - **Processes**: From the processes list.
+
+Beyond these table buttons, the importer also understands three **method** formats used to load bills of materials and operations against parts: a focused BOM file, a focused Operations file, and a combined part-with-method file that creates parts and their full BOM and routing together. These are richer, row-typed CSVs (each row is tagged `PART`, `BOM`, `BOP`, `STEP`, `TOOL`, or `PARAM`) driven from the method-building UI rather than a plain list screen.
+
+The models list a `fixedAsset` import shape, but the import function's own table list omits it, so a fixed-asset CSV is rejected. Individual BOM material lines (`methodMaterial`) are likewise not wired up. Import the entities above; create assets and one-off BOM lines in the app.
+
+## The import flow
+
+Importing is a four-step wizard, then a background write.
+
+**Upload.** Click **Bulk Import**, pick the entity, and drop your CSV. Carbon parses it in the browser to read the header row, and uploads the file to your company's private storage. You can download a **template** for the entity first: it's a one-row CSV whose header is every field label and whose single data row is a hint marking each column `REQUIRED` or `optional` and listing valid enum values. Overwrite that hint row with your data and re-upload.
+
+**Map columns.** Match each of your CSV columns to a Carbon field. Required fields must be mapped; anything you leave as **N/A** is skipped. For enum fields (like replenishment system or tracking type), you also map your raw values to Carbon's, and the wizard fuzzy-matches obvious ones for you (a CSV `"B"` proposes `"Buy"`). Some lookups can be created inline: a type or status that doesn't exist yet can be added without leaving the wizard.
+
+**Validate.** The mapped data is checked against the entity's schema. Missing a required field or an unparseable value surfaces before anything is written.
+
+**Import.** Submitting posts your mappings to Carbon, which invokes a privileged **import** function. It re-downloads the file from storage, applies your column and enum mappings, decides insert-versus-update per row, and writes the results inside a database transaction.
+
+When a CSV value has no mapping to a Carbon enum, the row imports with that field's configured **default** rather than failing. An unmapped `"Replenishment System"` cell, for example, lands as `"Buy and Make"`. Map your values deliberately if the default isn't what you want.
+
+## Insert, update, or skip
+
+The importer is **idempotent**: re-importing the same file updates records rather than duplicating them. It decides each row's fate before writing:
+
+  - **Insert**: The row is new. No existing record matches its Unique ID or its Name, so Carbon creates it and records a CSV id mapping for next time.
+  - **Update**: An existing record matches. Carbon matches first by the CSV's Unique ID (via a stored CSV-to-record mapping), then falls back to matching by Name, and updates that record in place.
+  - **Skip**: The row is a duplicate of another row in the same file (same id, or same name) and is dropped as informational.
+  - **Error**: The row is missing required data, most often a blank Name. It's reported so you can fix and re-import.
+
+Matching by Unique ID uses a shared external-mapping table keyed to the `csv` source, so the second import of a file with the same ids takes the update path instead of creating duplicates. If a record was created in the app and you later import a CSV using the same **Name**, the name fallback catches it and updates rather than duplicates.
+
+Import writes the entity's standard fields plus its documented side-tables (address, payment, supplier-part, cost). It does **not** map into per-company custom fields. Set those in the app after importing, or via the record's own form.
+
+## Errors and partial failures
+
+Import is **row-level tolerant**. A bad row doesn't abort the whole file: it's collected and reported while the good rows still import. The results come back as four numbers plus two lists:
+
+- **inserted** and **updated** — counts of records written.
+- **errors** — rows you should fix and re-import (missing required data), each with its row number, a reason, and the original cell values.
+- **skipped** — rows intentionally not written (in-file duplicates, already-existing), same shape.
+
+Because the results carry each failed row's original cells, the wizard's results view shows you exactly which rows to fix without re-parsing your file. A hard failure (the file can't be downloaded, or an unexpected database error) is the only case that fails the whole import and returns an error message instead of a per-row report.
+
+The import function writes with a privileged database connection that bypasses RLS, so your **permission to import is checked once**, up front, when you submit: sales for customers, purchasing for suppliers, parts for items and methods, production for work centers and processes. If you lack that module's update permission, the import is refused before any write.
+
+## Related
+
+  - Items The part, material, tool, consumable, and fixture records the item importers create.
+  - Methods Bills of materials and routings, loaded by the BOM, Operations, and combined method imports.
+  - Suppliers and customers The partner records the customer and supplier importers create, including their addresses and terms.
+  - Work centers The capacity records the work-center importer creates.
+
+## Troubleshooting
+
+The gates and quiet defaults that surprise people during an import.
+
+### "Table not found in the list of supported tables"
+The import URL's `tableId` isn't a key of `importPermissions`, so the route rejects it before any work (`import.$tableId.tsx:16-17`). Import from the entity's own list-screen **Bulk Import** button, which only appears on supported tables, rather than hitting the route directly.
+
+### The import is refused before any row is written
+The importer bypasses row-level security, so your **module update permission is checked once, up front** on submit (`import.$tableId.tsx:20-22`): sales for customers, purchasing for suppliers, parts for items and methods, production for work centers and processes. Without that module's update permission the whole import is refused. Get the permission, then re-submit.
+
+### A fixed-asset CSV is rejected
+`fixedAsset` has a models entry but is **not** in the import edge function's own table enum (`packages/database/supabase/functions/import-csv/index.ts:18-33`), so it's rejected. Create fixed assets in the app. Individual BOM material lines (`methodMaterial`) are likewise not wired up — use the BOM/method imports or the app.
+
+### An enum column imported as the wrong value
+When a CSV value has no mapping to a Carbon enum, the row imports with that field's configured **default** rather than failing — an unmapped Replenishment System, for example, lands as `"Buy and Make"`. In the **Map columns** step, map your raw values deliberately (the wizard fuzzy-matches obvious ones) so the default doesn't silently win.
+
+### Re-importing created duplicates — or didn't update what I expected
+The importer matches by the CSV's Unique ID first (via a stored `csv`-source mapping), then falls back to Name. If neither matches an existing record, the row is inserted. Records created in the app with no CSV mapping are matched by **Name** — a name mismatch (or a blank Name, which errors) breaks the update and can create a new row instead.
+
+### My custom fields are blank after import
+Import writes standard fields plus documented side-tables (address, payment, supplier-part, cost) only — it does **not** map into per-company custom fields. Set those on the record's form after importing.

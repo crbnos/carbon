@@ -36,6 +36,8 @@ A job's status drives what you can do with it and what the floor sees.
 
 A **Completed**, **Closed**, or **Cancelled** job is locked. Its method, quantity, and dates can no longer be edited. Closing is what makes a job's work-in-process provably zero.
 
+In the Jobs list, the **Ready** status is labelled **"Released"** — the underlying value is still `Ready`. Note also the spelling: a job is **Cancelled** (two L's), but a job *operation* is **Canceled** (one L). Different enums, different spelling.
+
 ## Operations
 
 The job's routing is copied into job-specific **operations** on release, each a process on a work center, carrying its own setup, labor, and machine time. The floor runs the job by running its operations, and each carries its own status. A job reads **"In Progress"** the moment any single operation does.

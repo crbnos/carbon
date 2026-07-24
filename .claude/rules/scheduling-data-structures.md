@@ -25,7 +25,9 @@ first match.
   `assembly-handler.ts`, `resource-manager.ts`, `types.ts`).
 - **ERP authoring boards** (`apps/erp/app/routes/x+/schedule+/`): `operations.tsx`
   (ops Kanban; drag → `operations.update.tsx` writes `jobOperation.workCenterId` +
-  `priority`, no reschedule) and `dates.tsx` (jobs-by-due-date Kanban; drag →
+  `priority`, no reschedule — the board header carries a tooltip: *"Reorders dispatch
+  sequence and work center only — does not reschedule. Change dates on the Dates board."*;
+  only the Dates board calls `triggerJobSchedule`) and `dates.tsx` (jobs-by-due-date Kanban; drag →
   `dates.update.tsx` writes `job.dueDate` + `priority`, **then calls
   `triggerJobSchedule(...)`** to re-run the engine).
 - **MES display** (`apps/mes/app/routes/x+/operations.tsx`): the "Schedule" page is
