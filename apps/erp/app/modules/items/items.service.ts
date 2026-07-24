@@ -12,7 +12,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { nanoid } from "nanoid";
 import type { z } from "zod";
 import type { GenericQueryFilters } from "~/utils/query";
-import { setGenericQueryFilters } from "~/utils/query";
+import { setGenericQueryFilters, setSearchFilter } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
 import type { nonConformancePriority } from "../quality/quality.models";
 import type {
@@ -520,11 +520,13 @@ export async function getConsumables(
     })
     .eq("companyId", companyId);
 
-  if (args.search) {
-    query = query.or(
-      `readableIdWithRevision.ilike.%${args.search}%,name.ilike.%${args.search}%,description.ilike.%${args.search}%,supplierIds.ilike.%${args.search}%,mpn.ilike.%${args.search}%`
-    );
-  }
+  query = setSearchFilter(query, args.search, [
+    "readableIdWithRevision",
+    "name",
+    "description",
+    "supplierIds",
+    "mpn"
+  ]);
 
   if (args.supplierId) {
     query = query.contains("supplierIds", [args.supplierId]);
@@ -1206,11 +1208,13 @@ export async function getMaterials(
     })
     .or(`companyId.eq.${companyId},companyId.is.null`);
 
-  if (args.search) {
-    query = query.or(
-      `readableIdWithRevision.ilike.%${args.search}%,name.ilike.%${args.search}%,description.ilike.%${args.search}%,supplierIds.ilike.%${args.search}%,mpn.ilike.%${args.search}%`
-    );
-  }
+  query = setSearchFilter(query, args.search, [
+    "readableIdWithRevision",
+    "name",
+    "description",
+    "supplierIds",
+    "mpn"
+  ]);
 
   if (args.supplierId) {
     query = query.contains("supplierIds", [args.supplierId]);
@@ -1727,11 +1731,13 @@ export async function getParts(
     })
     .eq("companyId", companyId);
 
-  if (args.search) {
-    query = query.or(
-      `readableIdWithRevision.ilike.%${args.search}%,name.ilike.%${args.search}%,description.ilike.%${args.search}%,supplierIds.ilike.%${args.search}%,mpn.ilike.%${args.search}%`
-    );
-  }
+  query = setSearchFilter(query, args.search, [
+    "readableIdWithRevision",
+    "name",
+    "description",
+    "supplierIds",
+    "mpn"
+  ]);
 
   if (args.supplierId) {
     query = query.contains("supplierIds", [args.supplierId]);
@@ -1966,11 +1972,12 @@ export async function getServices(
     })
     .eq("companyId", companyId);
 
-  if (args.search) {
-    query = query.or(
-      `readableIdWithRevision.ilike.%${args.search}%,name.ilike.%${args.search}%,description.ilike.%${args.search}%,supplierIds.ilike.%${args.search}%`
-    );
-  }
+  query = setSearchFilter(query, args.search, [
+    "readableIdWithRevision",
+    "name",
+    "description",
+    "supplierIds"
+  ]);
 
   if (args.group) {
     query = query.eq("itemPostingGroupId", args.group);
@@ -2059,11 +2066,13 @@ export async function getTools(
     })
     .eq("companyId", companyId);
 
-  if (args.search) {
-    query = query.or(
-      `readableIdWithRevision.ilike.%${args.search}%,name.ilike.%${args.search}%,description.ilike.%${args.search}%,supplierIds.ilike.%${args.search}%,mpn.ilike.%${args.search}%`
-    );
-  }
+  query = setSearchFilter(query, args.search, [
+    "readableIdWithRevision",
+    "name",
+    "description",
+    "supplierIds",
+    "mpn"
+  ]);
 
   if (args.supplierId) {
     query = query.contains("supplierIds", [args.supplierId]);
