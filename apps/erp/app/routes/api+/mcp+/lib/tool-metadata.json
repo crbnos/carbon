@@ -1,6 +1,6 @@
 {
-  "generated": "2026-07-31T05:48:08.334Z",
-  "totalTools": 1405,
+  "generated": "2026-07-30T19:33:13.963Z",
+  "totalTools": 1408,
   "modules": 15,
   "tools": [
     {
@@ -3513,6 +3513,156 @@
         },
         "required": [
           "data"
+        ]
+      }
+    },
+    {
+      "name": "accounting_getActivationReadiness",
+      "module": "accounting",
+      "classification": "READ",
+      "description": "get activation readiness",
+      "paramCount": 0,
+      "serviceParams": [
+        "client",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    {
+      "name": "accounting_buildOpeningBalanceProposal",
+      "module": "accounting",
+      "classification": "WRITE",
+      "description": "build opening balance proposal",
+      "paramCount": 2,
+      "serviceParams": [
+        "client",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "cutoverDate": {
+            "type": "string"
+          },
+          "section": {}
+        },
+        "required": [
+          "cutoverDate",
+          "section"
+        ]
+      }
+    },
+    {
+      "name": "accounting_importOpeningTrialBalance",
+      "module": "accounting",
+      "classification": "WRITE",
+      "description": "import opening trial balance",
+      "paramCount": 2,
+      "serviceParams": [
+        "client",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "cutoverDate": {
+            "type": "string"
+          },
+          "rows: Array<{\n      accountNumber: string;\n      description": {}
+        },
+        "required": [
+          "cutoverDate"
+        ]
+      }
+    },
+    {
+      "name": "accounting_validateOpeningBalance",
+      "module": "accounting",
+      "classification": "WRITE",
+      "description": "validate opening balance",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "journalId": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    {
+      "name": "accounting_closePreCutoverPeriods",
+      "module": "accounting",
+      "classification": "WRITE",
+      "description": "close pre cutover periods",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "db",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "cutoverDate": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "cutoverDate"
+        ]
+      }
+    },
+    {
+      "name": "accounting_activateAccounting",
+      "module": "accounting",
+      "classification": "WRITE",
+      "description": "activate accounting",
+      "paramCount": 2,
+      "serviceParams": [
+        "client",
+        "db",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "confirmation": {
+            "type": "string"
+          },
+          "cutoverDate": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "confirmation",
+          "cutoverDate"
         ]
       }
     },
@@ -22255,89 +22405,6 @@
         "required": [
           "id",
           "data"
-        ]
-      }
-    },
-    {
-      "name": "production_getAssemblyInstructionVersions",
-      "module": "production",
-      "classification": "READ",
-      "description": "get assembly instruction versions",
-      "paramCount": 2,
-      "serviceParams": [
-        "client",
-        "instruction"
-      ],
-      "injectAuth": [
-        "companyId"
-      ],
-      "schema": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "rootInstructionId": {
-            "type": [
-              "string",
-              "null"
-            ]
-          }
-        },
-        "required": [
-          "id"
-        ]
-      }
-    },
-    {
-      "name": "production_copyAssemblyInstructionAsVersion",
-      "module": "production",
-      "classification": "WRITE",
-      "description": "copy assembly instruction as version",
-      "paramCount": 1,
-      "serviceParams": [
-        "client",
-        "args"
-      ],
-      "injectAuth": [
-        "companyId",
-        "createdBy",
-        "updatedBy"
-      ],
-      "schema": {
-        "type": "object",
-        "properties": {
-          "copyFromId": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "copyFromId"
-        ]
-      }
-    },
-    {
-      "name": "production_activateAssemblyInstructionVersion",
-      "module": "production",
-      "classification": "WRITE",
-      "description": "activate assembly instruction version",
-      "paramCount": 1,
-      "serviceParams": [
-        "client",
-        "args"
-      ],
-      "injectAuth": [
-        "companyId"
-      ],
-      "schema": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "id"
         ]
       }
     },

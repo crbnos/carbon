@@ -4,6 +4,7 @@ import { flash } from "@carbon/auth/session.server";
 import { ValidatedForm, validationError, validator } from "@carbon/form";
 import {
   Badge,
+  Button,
   Card,
   CardContent,
   CardDescription,
@@ -17,11 +18,12 @@ import {
   toast,
   VStack
 } from "@carbon/react";
+import { formatDate } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import { useCallback, useEffect } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { redirect, useFetcher, useLoaderData } from "react-router";
+import { Link, redirect, useFetcher, useLoaderData } from "react-router";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import {
@@ -62,9 +64,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
     view: "settings"
   });
 
-  const [companySettings, accountDefaults] = await Promise.all([
+  const [companySettings, accountDefaults, company] = await Promise.all([
     getCompanySettings(client, companyId),
-    getDefaultAccounts(client, companyId)
+    getDefaultAccounts(client, companyId),
+    (client.from("company") as any)
+      .select("accountingActivatedAt")
+      .eq("id", companyId)
+      .single()
   ]);
 
   if (!companySettings.data)
@@ -78,7 +84,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   return {
     companySettings: companySettings.data,
-    accountDefaults: accountDefaults.data
+    accountDefaults: accountDefaults.data,
+    accountingActivatedAt:
+      (company.data as { accountingActivatedAt: string | null } | null)
+        ?.accountingActivatedAt ?? null
   };
 }
 
@@ -154,7 +163,8 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export default function AccountingSettingsRoute() {
-  const { companySettings, accountDefaults } = useLoaderData<typeof loader>();
+  const { companySettings, accountDefaults, accountingActivatedAt } =
+    useLoaderData<typeof loader>();
   const fetcher = useFetcher<typeof action>();
   const taxFetcher = useFetcher<typeof action>();
   const { isInternal } = useFlags();
@@ -264,6 +274,42 @@ export default function AccountingSettingsRoute() {
                 onCheckedChange={handleAccountingToggle}
                 disabled={!isInternal}
               />
+            </HStack>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              <Trans>Cutover</Trans>
+            </CardTitle>
+            <CardDescription>
+              <Trans>
+                Activate accounting for this company: post opening balances,
+                close pre-cutover periods, and lock the base currency and fiscal
+                calendar. Activation is one-way.
+              </Trans>
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <HStack className="justify-between items-center">
+              <span className="text-sm text-muted-foreground">
+                {accountingActivatedAt ? (
+                  <Trans>
+                    Accounting was activated on{" "}
+                    {formatDate(accountingActivatedAt)}.
+                  </Trans>
+                ) : (
+                  <Trans>Accounting has not been activated yet.</Trans>
+                )}
+              </span>
+              {!accountingActivatedAt && (
+                <Button variant="secondary" asChild>
+                  <Link to={path.to.accountingActivation}>
+                    <Trans>Activate accounting</Trans>
+                  </Link>
+                </Button>
+              )}
             </HStack>
           </CardContent>
         </Card>

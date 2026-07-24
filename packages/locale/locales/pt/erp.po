@@ -173,6 +173,9 @@ msgstr "1 lançamento de diário em rascunho"
 msgid "1 unposted document"
 msgstr "1 documento não lançado"
 
+msgid "1. Readiness"
+msgstr ""
+
 msgid "12 monthly periods"
 msgstr "12 períodos mensais"
 
@@ -182,8 +185,14 @@ msgstr "13+ semanas"
 msgid "1Y"
 msgstr "1 ano"
 
+msgid "2. Opening balances"
+msgstr ""
+
 msgid "2h"
 msgstr "2h"
+
+msgid "3. Validation"
+msgstr ""
 
 msgid "30D"
 msgstr "30 dias"
@@ -193,6 +202,9 @@ msgstr "Modelo 3D"
 
 msgid "3h"
 msgstr "3h"
+
+msgid "4. Activate"
+msgstr ""
 
 msgid "4h"
 msgstr "4h"
@@ -497,6 +509,12 @@ msgstr "contabilidade"
 msgid "Accounting"
 msgstr "Contabilidade"
 
+msgid "Accounting has not been activated yet."
+msgstr ""
+
+msgid "Accounting is activated"
+msgstr ""
+
 msgid "Accounting is disabled"
 msgstr "A contabilidade está desativada"
 
@@ -508,6 +526,10 @@ msgstr "Período contábil"
 
 msgid "Accounting Periods"
 msgstr "Períodos Contábeis"
+
+#. placeholder {0}: formatDate(accountingActivatedAt)
+msgid "Accounting was activated on {0}."
+msgstr ""
 
 msgid "Accounting: GL, AR, AP, and month-end close"
 msgstr "Contabilidade: GL, AR, AP e encerramento mensal"
@@ -584,14 +606,31 @@ msgstr "Ativar"
 msgid "Activate {name}"
 msgstr "Ativar {name}"
 
+msgid "Activate accounting"
+msgstr ""
+
+msgid "Activate Accounting"
+msgstr ""
+
+msgid "Activate accounting for this company: post opening balances, close pre-cutover periods, and lock the base currency and fiscal calendar. Activation is one-way."
+msgstr ""
+
 msgid "Activate Process"
 msgstr "Ativar Processo"
 
 msgid "Activate Work Center"
 msgstr "Ativar Centro de Trabalho"
 
+#. placeholder {0}: readiness.activatedAt ? formatDate(readiness.activatedAt) : ""
+#. placeholder {1}: readiness.cutoverDate ? formatDate(readiness.cutoverDate) : ""
+msgid "Activated on {0}. The cutover date is {1}. Base currency and fiscal settings are now locked."
+msgstr ""
+
 msgid "Activation fee · we advise"
 msgstr "Taxa de ativação · aconselhamos"
+
+msgid "Activation is one-way. It posts an opening balance journal dated the day before cutover, closes every earlier period, and locks the base currency and fiscal calendar."
+msgstr ""
 
 msgid "Active"
 msgstr "Ativo"
@@ -1965,6 +2004,9 @@ msgstr "Criar materiais de treinamento baseados em funções"
 msgid "Build tailored, role-based training materials"
 msgstr "Criar materiais de treinamento personalizados baseados em funções"
 
+msgid "Build the opening balances to validate."
+msgstr ""
+
 msgid "Built and costed as its own method"
 msgstr "Construído e calculado como seu próprio método"
 
@@ -2291,6 +2333,9 @@ msgstr "Plano de Contas"
 
 msgid "Chat"
 msgstr "Chat"
+
+msgid "Check"
+msgstr ""
 
 msgid "Check the item ledger for any items with a negative on-hand quantity as of period end — usually a missing receipt or an out-of-order posting that distorts inventory value and cost of goods sold. Mark it done once reviewed, or skip with a reason."
 msgstr "Verifique o razão de itens para qualquer item com quantidade em mão negativa até o final do período — geralmente um recebimento faltante ou um lançamento fora de ordem que distorce o valor do estoque e o custo dos bens vendidos. Marque como concluído após revisado ou pule com um motivo."
@@ -3541,8 +3586,14 @@ msgstr "Migrar para o Carbon e congelar o sistema antigo"
 msgid "Cut over, freeze the old system, and confirm you're live on Carbon."
 msgstr "Migre, congele o sistema antigo e confirme que você está ativo no Carbon."
 
+msgid "Cutover"
+msgstr ""
+
 msgid "Cutover checklist"
 msgstr "Lista de verificação de transição"
+
+msgid "Cutover date"
+msgstr ""
 
 msgid "Cutover step"
 msgstr "Etapa de transição"
@@ -5184,6 +5235,9 @@ msgstr "Tipo de Evento"
 msgid "Events"
 msgstr "Eventos"
 
+msgid "Every check must pass before you can activate. The cutover date can only fall on the first day of a fiscal period."
+msgstr ""
+
 msgid "Every condition must match"
 msgstr "Todas as condições devem corresponder"
 
@@ -5844,6 +5898,9 @@ msgstr "Variância de amortização de custo fixo quando o tamanho do lote difer
 msgid "Fixed Asset"
 msgstr "Ativo Fixo"
 
+msgid "Fixed assets"
+msgstr ""
+
 msgid "Fixed Assets"
 msgstr "Ativos Fixos"
 
@@ -6493,11 +6550,23 @@ msgstr "Líder de Implementação"
 msgid "Implementation Support"
 msgstr "Suporte de Implementação"
 
+msgid "Import"
+msgstr ""
+
 msgid "Import {label} CSV"
 msgstr "Importar {label} CSV"
 
+msgid "Import closing trial balance"
+msgstr ""
+
 msgid "Import results"
 msgstr "Resultados da Importação"
+
+msgid "Import trial balance"
+msgstr ""
+
+msgid "Import Trial Balance"
+msgstr ""
 
 msgid "Import your BOM"
 msgstr "Importe seu BOM"
@@ -7045,6 +7114,9 @@ msgstr "Juntar-se a {0}"
 
 msgid "Journal"
 msgstr "Diário"
+
+msgid "Journal balances"
+msgstr ""
 
 msgid "Journal Entries"
 msgstr "Lançamentos no Diário"
@@ -8382,6 +8454,9 @@ msgstr "Nenhuma habilidade adicionada"
 msgid "No Access"
 msgstr "Sem Acesso"
 
+msgid "No account rows found in the file."
+msgstr ""
+
 msgid "No action needed"
 msgstr "Nenhuma ação necessária"
 
@@ -8559,6 +8634,8 @@ msgstr "Nenhum pedido aberto para este item está disponível para vincular."
 
 msgid "No open sales order lines"
 msgstr "Nenhuma linha de pedido de venda aberta"
+msgid "No opening balance lines yet."
+msgstr ""
 
 msgid "No operations require picking at this location"
 msgstr "Nenhuma operação requer picking neste local"
@@ -8730,6 +8807,9 @@ msgstr "Não é uma tabela, mas um saldo do livro-razão geral: o custo se acumu
 
 msgid "Not enough jobs to cover quantity"
 msgstr "Não há trabalhos suficientes para cobrir a quantidade"
+
+msgid "Not ready"
+msgstr ""
 
 msgid "Not referenced anywhere yet."
 msgstr "Não referenciado em lugar nenhum ainda."
@@ -9898,6 +9978,12 @@ msgstr "Data Prometida"
 msgid "Properties"
 msgstr "Propriedades"
 
+msgid "Propose"
+msgstr ""
+
+msgid "Propose each section from your subledgers, or import a closing trial balance. Add cash, loans, and equity as journal lines until the entry balances."
+msgstr ""
+
 msgid "Protect the go-live date"
 msgstr "Proteja a data de ativação"
 
@@ -10218,6 +10304,9 @@ msgstr "Matérias-Primas (padrão)"
 msgid "Re-keying between quoting, the floor, and finance"
 msgstr "Re-digitação entre orçamento, chão de fábrica e finanças"
 
+msgid "Re-validate"
+msgstr ""
+
 msgid "Reactivate"
 msgstr "Reativar"
 
@@ -10486,6 +10575,9 @@ msgstr "Restante"
 msgid "Remaining after split stays on the original row."
 msgstr "Restante após divisão permanece na linha original."
 
+msgid "Remaining to balance"
+msgstr ""
+
 msgid "Remember this PIN. You will need it to exit console mode on MES terminals."
 msgstr "Lembre-se deste PIN. Você precisará dele para sair do modo console nos terminais MES."
 
@@ -10693,6 +10785,9 @@ msgstr "Valor residual"
 msgid "Residual Value %"
 msgstr "Valor residual %"
 
+msgid "Resolve every failing readiness check first."
+msgstr ""
+
 msgid "Resolve these before completing the NCR: every row must have a non-Pending disposition, and its linked entity quantities must match the row quantity."
 msgstr "Resolva estes antes de concluir a NCR: cada linha deve ter uma disposição não-Pendente e suas quantidades de entidades vinculadas devem corresponder à quantidade da linha."
 
@@ -10870,6 +10965,9 @@ msgstr "Roteiro"
 
 msgid "rows"
 msgstr "linhas"
+
+msgid "rows parsed"
+msgstr ""
 
 msgid "Rule"
 msgstr "Regra"
@@ -12730,6 +12828,9 @@ msgstr "A taxa fiscal padrão aplicada às linhas de cotação e ordem de venda 
 msgid "The department this one rolls up under for reporting and headcount hierarchies; leave empty for a top-level department."
 msgstr "O departamento sob o qual este se acumula para relatórios e hierarquias de contagem de cabeçalho; deixar em branco para um departamento de nível superior."
 
+msgid "The draft journal must balance and tie out to each subledger within 0.01."
+msgstr ""
+
 msgid "The eight-disciplines quality method, modeled with the nonconformance workflow's tasks rather than hard-coded."
 msgstr "O método de qualidade das oito disciplinas, modelado com as tarefas do fluxo de trabalho de não conformidade em vez de codificado."
 
@@ -13276,6 +13377,8 @@ msgstr "Este aviso de mudança está sendo implementado, portanto suas alteraç�
 
 msgid "This change notice is closed, so its changes are read-only."
 msgstr "Este aviso de mudança está fechado, portanto suas alterações são somente leitura."
+msgid "This cannot be undone. Type the company name to confirm."
+msgstr ""
 
 msgid "This completes the Discovery step."
 msgstr "Isto completa a etapa de Descoberta."
@@ -13476,6 +13579,9 @@ msgstr "Fuso Horário"
 
 msgid "Title"
 msgstr "Título"
+
+msgid "to confirm"
+msgstr ""
 
 msgid "To Location"
 msgstr "Para Localização"
@@ -13726,6 +13832,9 @@ msgstr "Lixo"
 msgid "Trial Balance"
 msgstr "Balancete de Verificação"
 
+msgid "Trial balance CSV"
+msgstr ""
+
 msgid "Triggers"
 msgstr "Acionadores"
 
@@ -13964,6 +14073,9 @@ msgstr "Atualize para desbloquear histórico de auditoria"
 
 msgid "Upload"
 msgstr "Carregar"
+
+msgid "Upload a CSV with account number, description, debit, and credit columns. Rows map to Carbon accounts by number."
+msgstr ""
 
 msgid "Upload a PDF first"
 msgstr "Carregue um PDF primeiro"

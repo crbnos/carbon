@@ -16,6 +16,8 @@ export const path = {
     ability: (id: string) => generatePath(`${x}/resources/ability/${id}`),
     account: `${x}/account`,
     accounting: `${x}/accounting`,
+    accountingActivation: `${x}/accounting/activation`,
+    accountingActivationImport: `${x}/accounting/activation/import`,
     accountingDefaults: `${x}/accounting/defaults`,
     accountingGroupsBankAccounts: `${x}/accounting/groups/bank-accounts`,
     accountingGroupsFixedAssets: `${x}/accounting/groups/fixed-assets`,
