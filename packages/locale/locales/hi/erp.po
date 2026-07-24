@@ -2218,6 +2218,9 @@ msgstr ""
 msgid "Cash Flow"
 msgstr ""
 
+msgid "Cash Flow Activity"
+msgstr ""
+
 msgid "Categories that classify how stock is stored"
 msgstr "स्टॉक को कैसे संग्रहीत किया जाता है, इसे वर्गीकृत करने वाली श्रेणियां"
 
@@ -3719,6 +3722,9 @@ msgstr "घटती शेष राशि"
 
 msgid "Default"
 msgstr "डिफ़ॉल्ट"
+
+msgid "Default (from account type)"
+msgstr ""
 
 msgid "Default account for posting sales revenue from invoices"
 msgstr "चालान से बिक्री राजस्व पोस्ट करने के लिए डिफ़ॉल्ट खाता"
@@ -6416,6 +6422,11 @@ msgstr "नमूना आकार कैसे तय किया जात�
 
 msgid "How this gauge is used — Standard (regular checks) or Master (calibrates other gauges)."
 msgstr "यह गेज कैसे उपयोग किया जाता है — मानक (नियमित जांच) या मास्टर (अन्य गेज को कैलिब्रेट करता है)।"
+msgid "How this account's period change is classified on the statement of cash flows. Default derives from the account type."
+msgstr ""
+
+msgid "How this gauge is used — Standard (regular checks), Master (calibrates other gauges), or Reference (audit-only)."
+msgstr "इस गेज का उपयोग कैसे किया जाता है — मानक (नियमित जांच), मास्टर (अन्य गेज को कैलिब्रेट करता है), या संदर्भ (केवल ऑडिट)।"
 
 msgid "How this price was calculated"
 msgstr "इस कीमत की गणना कैसे की गई"
@@ -6613,6 +6624,9 @@ msgstr "आय / बैलेंस (विरासत में मिला)"
 
 msgid "Income Statement"
 msgstr "आय विवरण"
+
+msgid "Income statement activity for the current fiscal year (computed, not posted)"
+msgstr ""
 
 msgid "Income/Balance"
 msgstr "आय/शेष"
@@ -9680,6 +9694,9 @@ msgstr "पोस्ट किया गया"
 
 msgid "Posted At"
 msgstr "पोस्ट किया गया"
+
+msgid "Posted balance plus prior fiscal years' net income (computed, not posted)"
+msgstr ""
 
 msgid "Posted By"
 msgstr "द्वारा पोस्ट किया गया"

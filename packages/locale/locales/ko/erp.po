@@ -2218,6 +2218,9 @@ msgstr ""
 msgid "Cash Flow"
 msgstr ""
 
+msgid "Cash Flow Activity"
+msgstr ""
+
 msgid "Categories that classify how stock is stored"
 msgstr "재고 보관 방식을 분류하는 카테고리"
 
@@ -3719,6 +3722,9 @@ msgstr "정률법"
 
 msgid "Default"
 msgstr "기본값"
+
+msgid "Default (from account type)"
+msgstr ""
 
 msgid "Default account for posting sales revenue from invoices"
 msgstr "인보이스의 매출 수익을 전기할 기본 계정"
@@ -6416,6 +6422,11 @@ msgstr "샘플 크기를 결정하는 방식 — 전수 검사, 처음 N개 검�
 
 msgid "How this gauge is used — Standard (regular checks) or Master (calibrates other gauges)."
 msgstr "이 게이지의 사용 방식으로서, 표준(정기적인 점검) 또는 마스터(다른 게이지 교정)입니다."
+msgid "How this account's period change is classified on the statement of cash flows. Default derives from the account type."
+msgstr ""
+
+msgid "How this gauge is used — Standard (regular checks), Master (calibrates other gauges), or Reference (audit-only)."
+msgstr "이 측정기가 사용되는 방식 — 표준(정기 점검), 마스터(다른 측정기 교정), 또는 기준(감사 전용)."
 
 msgid "How this price was calculated"
 msgstr "이 가격이 계산된 방식"
@@ -6613,6 +6624,9 @@ msgstr "손익/재무상태(상속됨)"
 
 msgid "Income Statement"
 msgstr "손익계산서"
+
+msgid "Income statement activity for the current fiscal year (computed, not posted)"
+msgstr ""
 
 msgid "Income/Balance"
 msgstr "손익/재무상태"
@@ -9680,6 +9694,9 @@ msgstr "전기됨"
 
 msgid "Posted At"
 msgstr "전기 일시"
+
+msgid "Posted balance plus prior fiscal years' net income (computed, not posted)"
+msgstr ""
 
 msgid "Posted By"
 msgstr "전기자"

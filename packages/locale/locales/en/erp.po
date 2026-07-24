@@ -2218,6 +2218,9 @@ msgstr "Cash at end of period"
 msgid "Cash Flow"
 msgstr "Cash Flow"
 
+msgid "Cash Flow Activity"
+msgstr "Cash Flow Activity"
+
 msgid "Categories that classify how stock is stored"
 msgstr "Categories that classify how stock is stored"
 
@@ -3719,6 +3722,9 @@ msgstr "Declining balance"
 
 msgid "Default"
 msgstr "Default"
+
+msgid "Default (from account type)"
+msgstr "Default (from account type)"
 
 msgid "Default account for posting sales revenue from invoices"
 msgstr "Default account for posting sales revenue from invoices"
@@ -6416,6 +6422,11 @@ msgstr "How the sample size is decided — Inspect All, Inspect First N, Percent
 
 msgid "How this gauge is used — Standard (regular checks) or Master (calibrates other gauges)."
 msgstr "How this gauge is used — Standard (regular checks) or Master (calibrates other gauges)."
+msgid "How this account's period change is classified on the statement of cash flows. Default derives from the account type."
+msgstr "How this account's period change is classified on the statement of cash flows. Default derives from the account type."
+
+msgid "How this gauge is used — Standard (regular checks), Master (calibrates other gauges), or Reference (audit-only)."
+msgstr "How this gauge is used — Standard (regular checks), Master (calibrates other gauges), or Reference (audit-only)."
 
 msgid "How this price was calculated"
 msgstr "How this price was calculated"
@@ -6613,6 +6624,9 @@ msgstr "Income / Balance (inherited)"
 
 msgid "Income Statement"
 msgstr "Income Statement"
+
+msgid "Income statement activity for the current fiscal year (computed, not posted)"
+msgstr "Income statement activity for the current fiscal year (computed, not posted)"
 
 msgid "Income/Balance"
 msgstr "Income/Balance"
@@ -9680,6 +9694,9 @@ msgstr "Posted"
 
 msgid "Posted At"
 msgstr "Posted At"
+
+msgid "Posted balance plus prior fiscal years' net income (computed, not posted)"
+msgstr "Posted balance plus prior fiscal years' net income (computed, not posted)"
 
 msgid "Posted By"
 msgstr "Posted By"

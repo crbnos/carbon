@@ -2218,6 +2218,9 @@ msgstr ""
 msgid "Cash Flow"
 msgstr ""
 
+msgid "Cash Flow Activity"
+msgstr ""
+
 msgid "Categories that classify how stock is stored"
 msgstr "Stokun nasıl depolandığını sınıflandıran kategoriler"
 
@@ -3719,6 +3722,9 @@ msgstr "Azalan Bakiye"
 
 msgid "Default"
 msgstr "Varsayılan"
+
+msgid "Default (from account type)"
+msgstr ""
 
 msgid "Default account for posting sales revenue from invoices"
 msgstr "Faturalardan satış gelirini kaydetmek için varsayılan hesap"
@@ -6416,6 +6422,11 @@ msgstr "Örnek boyutu nasıl kararlaştırılır — Tümünü İncele, İlk N'y
 
 msgid "How this gauge is used — Standard (regular checks) or Master (calibrates other gauges)."
 msgstr "Bu göstergenin nasıl kullanıldığı — Standart (düzenli kontroller) veya Ana (diğer göstergeleri kalibre eder)."
+msgid "How this account's period change is classified on the statement of cash flows. Default derives from the account type."
+msgstr ""
+
+msgid "How this gauge is used — Standard (regular checks), Master (calibrates other gauges), or Reference (audit-only)."
+msgstr "Bu ölçü nasıl kullanılır — Standart (düzenli kontroller), Ana (diğer ölçümleri kalibre eder) veya Referans (yalnızca denetim)."
 
 msgid "How this price was calculated"
 msgstr "Bu fiyat nasıl hesaplandı"
@@ -6613,6 +6624,9 @@ msgstr "Gelir / Bakiye (Devralınan)"
 
 msgid "Income Statement"
 msgstr "Gelir Tablosu"
+
+msgid "Income statement activity for the current fiscal year (computed, not posted)"
+msgstr ""
 
 msgid "Income/Balance"
 msgstr "Gelir/Bakiye"
@@ -9680,6 +9694,9 @@ msgstr "Yayınlandı"
 
 msgid "Posted At"
 msgstr "Gönderilen Tarih"
+
+msgid "Posted balance plus prior fiscal years' net income (computed, not posted)"
+msgstr ""
 
 msgid "Posted By"
 msgstr "Gönderen"

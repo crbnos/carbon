@@ -1,9 +1,10 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { VStack } from "@carbon/react";
+import { Alert, AlertDescription, AlertTitle, VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import { useState } from "react";
+import { LuTriangleAlert } from "react-icons/lu";
 import type { LoaderFunctionArgs } from "react-router";
 import { Outlet, redirect, useLoaderData } from "react-router";
 import type { Chart } from "~/modules/accounting";
@@ -95,7 +96,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
       isMultiCompany: true,
       isForeignCurrency: false,
       parentCurrency,
-      fiscalStartMonth
+      fiscalStartMonth,
+      warnings: [] as string[]
     };
   }
 
@@ -176,7 +178,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
     isMultiCompany: false,
     isForeignCurrency,
     parentCurrency,
-    fiscalStartMonth
+    fiscalStartMonth,
+    warnings: balances.warnings ?? []
   };
 }
 
@@ -189,7 +192,8 @@ export default function BalanceSheetRoute() {
     isMultiCompany,
     isForeignCurrency,
     parentCurrency,
-    fiscalStartMonth
+    fiscalStartMonth,
+    warnings
   } = useLoaderData<typeof loader>();
   const [search, setSearch] = useState("");
 
@@ -206,6 +210,17 @@ export default function BalanceSheetRoute() {
         search={search}
         onSearchChange={setSearch}
       />
+      {warnings.includes("no-retained-earnings-account") && (
+        <Alert variant="warning" className="rounded-none border-x-0">
+          <LuTriangleAlert className="h-4 w-4" />
+          <AlertTitle>No Retained Earnings account found</AlertTitle>
+          <AlertDescription>
+            Prior-year income is shown inside Net Income. Add an account with
+            type Retained Earnings to split retained earnings from current-year
+            income.
+          </AlertDescription>
+        </Alert>
+      )}
       <FinancialStatementTree
         data={balanceSheet}
         measure="balanceAtDate"

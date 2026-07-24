@@ -2218,6 +2218,9 @@ msgstr ""
 msgid "Cash Flow"
 msgstr ""
 
+msgid "Cash Flow Activity"
+msgstr ""
+
 msgid "Categories that classify how stock is stored"
 msgstr "Catégories qui classifient la façon dont le stock est stocké"
 
@@ -3719,6 +3722,9 @@ msgstr "Amortissement dégressif"
 
 msgid "Default"
 msgstr "Par défaut"
+
+msgid "Default (from account type)"
+msgstr ""
 
 msgid "Default account for posting sales revenue from invoices"
 msgstr "Compte par défaut pour comptabiliser les revenus des ventes sur factures"
@@ -6416,6 +6422,11 @@ msgstr "Comment la taille de l'échantillon est décidée — Inspecter Tout, In
 
 msgid "How this gauge is used — Standard (regular checks) or Master (calibrates other gauges)."
 msgstr "Comment cet instrument de mesure est utilisé — Standard (contrôles réguliers) ou Maître (étalonner d'autres instruments)."
+msgid "How this account's period change is classified on the statement of cash flows. Default derives from the account type."
+msgstr ""
+
+msgid "How this gauge is used — Standard (regular checks), Master (calibrates other gauges), or Reference (audit-only)."
+msgstr "Comment cet appareil de mesure est utilisé — Standard (contrôles réguliers), Maître (étales d'autres appareils) ou Référence (audit uniquement)."
 
 msgid "How this price was calculated"
 msgstr "Comment ce prix a été calculé"
@@ -6613,6 +6624,9 @@ msgstr "Revenu / Bilan (hérité)"
 
 msgid "Income Statement"
 msgstr "Compte de résultat"
+
+msgid "Income statement activity for the current fiscal year (computed, not posted)"
+msgstr ""
 
 msgid "Income/Balance"
 msgstr "Revenu/Solde"
@@ -9680,6 +9694,9 @@ msgstr "Publié"
 
 msgid "Posted At"
 msgstr "Publié à"
+
+msgid "Posted balance plus prior fiscal years' net income (computed, not posted)"
+msgstr ""
 
 msgid "Posted By"
 msgstr "Publié par"

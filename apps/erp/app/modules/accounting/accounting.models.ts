@@ -164,7 +164,8 @@ export const accountValidator = z
       })
     }),
     consolidatedRate: z.enum(consolidatedRateTypes),
-    cashFlowActivity: z.enum(cashFlowActivities).optional()
+    // Empty string (the "Default" option) coerces to undefined via zfd.text.
+    cashFlowActivity: zfd.text(z.enum(cashFlowActivities).optional())
   })
   .refine(
     (data) => {

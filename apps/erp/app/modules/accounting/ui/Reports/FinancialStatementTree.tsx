@@ -1,4 +1,10 @@
-import { cn, ScrollArea } from "@carbon/react";
+import {
+  cn,
+  ScrollArea,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger
+} from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { memo, useMemo, useRef } from "react";
 import {
@@ -18,6 +24,9 @@ import { NET_INCOME_ACCOUNT_ID } from "../../types";
 type TranslatedChart = Chart & {
   translatedBalance?: number;
   exchangeRate?: number;
+  // Set on the augmented Retained Earnings leaf (posted balance + prior years'
+  // income) by getFinancialStatementBalances.
+  isComputed?: boolean;
 };
 
 type FinancialStatementTreeProps = {
@@ -252,8 +261,20 @@ const FinancialStatementTree = memo(
                     </span>
                   )}
                   <span className="truncate">{account.name}</span>
-                  {account.id === NET_INCOME_ACCOUNT_ID && (
-                    <LuCalculator className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                  {(account.id === NET_INCOME_ACCOUNT_ID ||
+                    account.isComputed) && (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <span className="shrink-0">
+                          <LuCalculator className="h-3.5 w-3.5 text-muted-foreground" />
+                        </span>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        {account.id === NET_INCOME_ACCOUNT_ID
+                          ? t`Income statement activity for the current fiscal year (computed, not posted)`
+                          : t`Posted balance plus prior fiscal years' net income (computed, not posted)`}
+                      </TooltipContent>
+                    </Tooltip>
                   )}
                 </div>
 

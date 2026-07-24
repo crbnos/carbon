@@ -17,10 +17,10 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { useEffect, useState } from "react";
 import { useFetcher } from "react-router";
 import type { z } from "zod";
-import { Combobox, Hidden, Input, Submit } from "~/components/Form";
+import { Combobox, Hidden, Input, Select, Submit } from "~/components/Form";
 import { usePermissions } from "~/hooks";
 import { path } from "~/utils/path";
-import { accountValidator } from "../../accounting.models";
+import { accountValidator, cashFlowActivities } from "../../accounting.models";
 import type { AccountClass, AccountIncomeBalance } from "../../types";
 
 type GroupAccount = {
@@ -163,6 +163,23 @@ const ChartOfAccountForm = ({
                       </label>
                       <p className="text-sm">{accountClass}</p>
                     </div>
+                    {incomeBalance === "Balance Sheet" && (
+                      <Select
+                        name="cashFlowActivity"
+                        label={t`Cash Flow Activity`}
+                        helperText={t`How this account's period change is classified on the statement of cash flows. Default derives from the account type.`}
+                        options={[
+                          {
+                            value: "",
+                            label: t`Default (from account type)`
+                          },
+                          ...cashFlowActivities.map((v) => ({
+                            value: v,
+                            label: v
+                          }))
+                        ]}
+                      />
+                    )}
                   </>
                 )}
               </VStack>
