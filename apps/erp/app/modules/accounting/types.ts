@@ -1,5 +1,8 @@
 import type { Database, Json } from "@carbon/database";
-import type { periodCloseStatuses } from "./accounting.models";
+import type {
+  cashFlowActivities,
+  periodCloseStatuses
+} from "./accounting.models";
 import type {
   getAccount,
   getAccountingPeriods,
@@ -395,6 +398,111 @@ export type TranslatedBalance = {
 export type TranslatedTransaction = Transaction & {
   translatedBalance?: number;
   exchangeRate?: number;
+};
+
+// -- Financial reporting: cash flow, GL detail, trial balance, saved views --
+
+export type CashFlowActivity = (typeof cashFlowActivities)[number];
+
+// Leaf-account input to the pure cash flow builder.
+export type CashFlowAccountInput = {
+  id: string;
+  number: string | null;
+  name: string;
+  class: AccountClass;
+  incomeBalance: AccountIncomeBalance;
+  accountType: AccountType | null;
+  cashFlowActivity: CashFlowActivity | null;
+};
+
+export type CashFlowLine = {
+  accountId: string;
+  number: string | null;
+  name: string;
+  amount: number; // signed cash effect for the period
+};
+
+export type CashFlowStatement = {
+  netIncome: number;
+  operating: CashFlowLine[]; // excludes the Net Income line
+  investing: CashFlowLine[];
+  financing: CashFlowLine[];
+  unclassified: CashFlowLine[];
+  operatingTotal: number; // netIncome + Σ operating
+  investingTotal: number;
+  financingTotal: number;
+  unclassifiedTotal: number;
+  netChangeInCash: number; // Σ Bank/Cash netChange (flows only in consolidated)
+  beginningCash: number;
+  endingCash: number;
+  unreconciledDifference: number; // 0 when the identity holds
+  // Consolidated only: translated ending − beginning − translated net flows.
+  effectOfExchangeRates?: number;
+};
+
+// One company's cash flow already translated to the parent currency, fed to
+// mergeTranslatedCashFlows to produce the consolidated statement + FX plug.
+export type TranslatedCompanyFlow = {
+  netIncome: number;
+  operating: CashFlowLine[];
+  investing: CashFlowLine[];
+  financing: CashFlowLine[];
+  unclassified: CashFlowLine[];
+  beginningCash: number;
+  endingCash: number;
+};
+
+// GL detail row: a journalLine with its journal header embedded.
+export type GeneralLedgerLine = {
+  id: string;
+  accountId: string | null;
+  amount: number;
+  description: string | null;
+  companyId: string;
+  createdAt: string;
+  journal: {
+    id: string;
+    journalEntryId: string;
+    postingDate: string;
+    status: Database["public"]["Enums"]["journalEntryStatus"];
+    sourceType: Database["public"]["Enums"]["journalEntrySourceType"];
+    description: string | null;
+  } | null;
+};
+
+// Four-column trialBalance RPC row (committed types don't know the new columns).
+export type TrialBalanceRow = {
+  accountId: string;
+  accountNumber: string;
+  accountName: string;
+  accountClass: AccountClass;
+  incomeBalance: AccountIncomeBalance;
+  openingDebit: number;
+  openingCredit: number;
+  periodDebits: number;
+  periodCredits: number;
+  debitBalance: number; // closing
+  creditBalance: number; // closing
+  netChange: number;
+};
+
+export type ReportView = {
+  id: string;
+  userId: string;
+  companyId: string;
+  report: string;
+  name: string;
+  params: Record<string, string>;
+};
+
+// Flattened statement row for the PDF package (depth-indented tree).
+export type StatementRow = {
+  name: string;
+  number: string | null;
+  depth: number;
+  amount: number;
+  isGroup: boolean;
+  isComputed?: boolean;
 };
 
 export type JournalEntry = NonNullable<

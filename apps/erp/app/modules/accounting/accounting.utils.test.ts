@@ -786,3 +786,288 @@ describe("buildDepreciationLines", () => {
     expect(lines[0].taxAmount!).toBeGreaterThan(lines[0].amount);
   });
 });
+
+// ---------------------------------------------------------------------------
+// Financial reporting — cash flow, fiscal year, comparison window, FX merge
+// ---------------------------------------------------------------------------
+
+import {
+  buildCashFlowStatement,
+  getCashFlowActivityForAccountType,
+  getComparisonWindow,
+  getFiscalYearStartDate,
+  mergeTranslatedCashFlows
+} from "./accounting.utils";
+import type { CashFlowAccountInput, TranslatedCompanyFlow } from "./types";
+
+describe("getCashFlowActivityForAccountType", () => {
+  it("maps each account-type group to its default bucket", () => {
+    expect(getCashFlowActivityForAccountType("Bank")).toBe("Excluded");
+    expect(getCashFlowActivityForAccountType("Cash")).toBe("Excluded");
+    expect(getCashFlowActivityForAccountType("Accounts Receivable")).toBe(
+      "Operating"
+    );
+    expect(getCashFlowActivityForAccountType("Accumulated Depreciation")).toBe(
+      "Operating"
+    );
+    expect(getCashFlowActivityForAccountType("Fixed Asset")).toBe("Investing");
+    expect(getCashFlowActivityForAccountType("Investments")).toBe("Investing");
+    expect(getCashFlowActivityForAccountType("Long Term Liability")).toBe(
+      "Financing"
+    );
+    expect(getCashFlowActivityForAccountType("Retained Earnings")).toBe(
+      "Financing"
+    );
+  });
+
+  it("returns null for income-statement and unknown types", () => {
+    expect(getCashFlowActivityForAccountType("Income")).toBeNull();
+    expect(getCashFlowActivityForAccountType("Expense")).toBeNull();
+    expect(getCashFlowActivityForAccountType(null)).toBeNull();
+  });
+});
+
+describe("getFiscalYearStartDate", () => {
+  it("defaults to the calendar year (January) when startMonth is missing", () => {
+    expect(getFiscalYearStartDate(null, "2026-07-15")).toBe("2026-01-01");
+    expect(getFiscalYearStartDate(undefined, "2026-01-01")).toBe("2026-01-01");
+  });
+
+  it("resolves a mid-year fiscal start relative to the as-of date", () => {
+    expect(getFiscalYearStartDate("April", "2026-03-31")).toBe("2025-04-01");
+    expect(getFiscalYearStartDate("April", "2026-04-01")).toBe("2026-04-01");
+    expect(getFiscalYearStartDate("April", "2026-12-31")).toBe("2026-04-01");
+  });
+});
+
+describe("buildCashFlowStatement", () => {
+  // Cash sale 100 (Bank +100 / Revenue +100), credit sale 50 (AR +50 /
+  // Revenue +50), depreciation 20 (Expense +20 / AccumDep −20).
+  const accounts: CashFlowAccountInput[] = [
+    {
+      id: "rev",
+      number: "4000",
+      name: "Sales",
+      class: "Revenue",
+      incomeBalance: "Income Statement",
+      accountType: "Income",
+      cashFlowActivity: null
+    },
+    {
+      id: "exp",
+      number: "6100",
+      name: "Depreciation Expense",
+      class: "Expense",
+      incomeBalance: "Income Statement",
+      accountType: "Expense",
+      cashFlowActivity: null
+    },
+    {
+      id: "ar",
+      number: "1200",
+      name: "Accounts Receivable",
+      class: "Asset",
+      incomeBalance: "Balance Sheet",
+      accountType: "Accounts Receivable",
+      cashFlowActivity: null
+    },
+    {
+      id: "accdep",
+      number: "1510",
+      name: "Accumulated Depreciation",
+      class: "Asset",
+      incomeBalance: "Balance Sheet",
+      accountType: "Accumulated Depreciation",
+      cashFlowActivity: null
+    },
+    {
+      id: "bank",
+      number: "1000",
+      name: "Bank",
+      class: "Asset",
+      incomeBalance: "Balance Sheet",
+      accountType: "Bank",
+      cashFlowActivity: null
+    }
+  ];
+  const balances = new Map([
+    ["rev", { balanceAtDate: 150, netChange: 150 }],
+    ["exp", { balanceAtDate: 20, netChange: 20 }],
+    ["ar", { balanceAtDate: 50, netChange: 50 }],
+    ["accdep", { balanceAtDate: -20, netChange: -20 }],
+    ["bank", { balanceAtDate: 100, netChange: 100 }]
+  ]);
+
+  it("computes net income, operating adjustments, and ties out to cash", () => {
+    const cf = buildCashFlowStatement(accounts, balances);
+    expect(cf.netIncome).toBe(130);
+    const arLine = cf.operating.find((l) => l.accountId === "ar");
+    const depLine = cf.operating.find((l) => l.accountId === "accdep");
+    expect(arLine?.amount).toBe(-50);
+    expect(depLine?.amount).toBe(20);
+    expect(cf.operatingTotal).toBe(100);
+    expect(cf.netChangeInCash).toBe(100);
+    expect(cf.beginningCash).toBe(0);
+    expect(cf.endingCash).toBe(100);
+    expect(cf.unreconciledDifference).toBe(0);
+  });
+
+  it("routes untyped accounts to Unclassified while preserving the identity", () => {
+    const withUntyped: CashFlowAccountInput[] = [
+      {
+        id: "bank",
+        number: "1000",
+        name: "Bank",
+        class: "Asset",
+        incomeBalance: "Balance Sheet",
+        accountType: "Bank",
+        cashFlowActivity: null
+      },
+      {
+        id: "mystery",
+        number: "2900",
+        name: "Mystery Liability",
+        class: "Liability",
+        incomeBalance: "Balance Sheet",
+        accountType: null,
+        cashFlowActivity: null
+      }
+    ];
+    const bal = new Map([
+      ["bank", { balanceAtDate: 200, netChange: 200 }],
+      ["mystery", { balanceAtDate: 200, netChange: 200 }]
+    ]);
+    const cf = buildCashFlowStatement(withUntyped, bal);
+    expect(cf.unclassified).toHaveLength(1);
+    expect(cf.unclassified[0].amount).toBe(200);
+    expect(cf.unclassifiedTotal).toBe(200);
+    expect(cf.netChangeInCash).toBe(200);
+    expect(cf.unreconciledDifference).toBe(0);
+  });
+
+  it("honors a per-account cashFlowActivity override", () => {
+    const overridden: CashFlowAccountInput[] = [
+      {
+        id: "bank",
+        number: "1000",
+        name: "Bank",
+        class: "Asset",
+        incomeBalance: "Balance Sheet",
+        accountType: "Bank",
+        cashFlowActivity: null
+      },
+      {
+        id: "loan",
+        number: "2900",
+        name: "Line of Credit",
+        class: "Liability",
+        incomeBalance: "Balance Sheet",
+        accountType: "Other Current Liability", // default Operating
+        cashFlowActivity: "Financing" // override
+      }
+    ];
+    const bal = new Map([
+      ["bank", { balanceAtDate: 200, netChange: 200 }],
+      ["loan", { balanceAtDate: 200, netChange: 200 }]
+    ]);
+    const cf = buildCashFlowStatement(overridden, bal);
+    expect(cf.operating).toHaveLength(0);
+    expect(cf.financing).toHaveLength(1);
+    expect(cf.financingTotal).toBe(200);
+    expect(cf.unreconciledDifference).toBe(0);
+  });
+});
+
+describe("getComparisonWindow", () => {
+  it("returns null for compare=none", () => {
+    expect(
+      getComparisonWindow("none", "2026-01-01", "2026-03-31", "range")
+    ).toBeNull();
+  });
+
+  it("shifts an income-statement range by one year", () => {
+    expect(
+      getComparisonWindow("priorYear", "2026-01-01", "2026-03-31", "range")
+    ).toEqual({ startDate: "2025-01-01", endDate: "2025-03-31" });
+  });
+
+  it("builds a same-length prior period ending the day before start", () => {
+    const w = getComparisonWindow(
+      "priorPeriod",
+      "2026-02-01",
+      "2026-02-28",
+      "range"
+    );
+    expect(w?.endDate).toBe("2026-01-31");
+    // Length preserved: 27 days between 2026-02-01 and 2026-02-28.
+    expect(w?.startDate).toBe("2026-01-04");
+  });
+
+  it("disables comparison for an inception (null start) income statement", () => {
+    expect(
+      getComparisonWindow("priorPeriod", null, "2026-03-31", "range")
+    ).toBeNull();
+  });
+
+  it("shifts a balance-sheet as-of date by month or year", () => {
+    expect(
+      getComparisonWindow("priorPeriod", null, "2026-06-30", "asOf")
+    ).toEqual({ startDate: null, endDate: "2026-05-30" });
+    expect(
+      getComparisonWindow("priorYear", null, "2026-06-30", "asOf")
+    ).toEqual({ startDate: null, endDate: "2025-06-30" });
+  });
+});
+
+describe("mergeTranslatedCashFlows", () => {
+  it("sums same-currency companies with exactly zero FX effect", () => {
+    const companies: TranslatedCompanyFlow[] = [
+      {
+        netIncome: 100,
+        operating: [
+          { accountId: "ar", number: "1200", name: "AR", amount: -30 }
+        ],
+        investing: [],
+        financing: [],
+        unclassified: [],
+        beginningCash: 0,
+        endingCash: 70
+      },
+      {
+        netIncome: 50,
+        operating: [
+          { accountId: "ar", number: "1200", name: "AR", amount: -10 }
+        ],
+        investing: [],
+        financing: [],
+        unclassified: [],
+        beginningCash: 20,
+        endingCash: 60
+      }
+    ];
+    const cf = mergeTranslatedCashFlows(companies);
+    expect(cf.netIncome).toBe(150);
+    expect(cf.operating[0].amount).toBe(-40);
+    expect(cf.operatingTotal).toBe(110);
+    expect(cf.effectOfExchangeRates).toBe(0);
+  });
+
+  it("computes the FX plug so Beginning + flows + FX = Ending", () => {
+    // Raw foreign company (netIncome 100, operating -30, beginning 50, ending
+    // 120) translated: flows/NI × 1.1, beginning × 1.0, ending × 1.2.
+    const company: TranslatedCompanyFlow = {
+      netIncome: 110,
+      operating: [{ accountId: "ar", number: "1200", name: "AR", amount: -33 }],
+      investing: [],
+      financing: [],
+      unclassified: [],
+      beginningCash: 50,
+      endingCash: 144
+    };
+    const cf = mergeTranslatedCashFlows([company]);
+    expect(cf.effectOfExchangeRates).toBeCloseTo(17, 6);
+    expect(
+      cf.beginningCash + cf.netChangeInCash + (cf.effectOfExchangeRates ?? 0)
+    ).toBeCloseTo(cf.endingCash, 6);
+  });
+});

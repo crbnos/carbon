@@ -68,6 +68,24 @@ export const accountClassTypes = [
   "Expense"
 ] as const;
 
+// Statement of cash flows classification. A nullable per-account override on
+// `account` (QuickBooks Desktop "Classify Cash" pattern); NULL derives the
+// bucket from `accountType` at read time (see getCashFlowActivityForAccountType).
+export const cashFlowActivities = [
+  "Operating",
+  "Investing",
+  "Financing"
+] as const;
+
+// Report screens that support saved views (reportView.report).
+export const reportViewReports = [
+  "balance-sheet",
+  "income-statement",
+  "cash-flow",
+  "trial-balance",
+  "general-ledger"
+] as const;
+
 export const groupAccountValidator = z
   .object({
     id: zfd.text(z.string().optional()),
@@ -145,7 +163,8 @@ export const accountValidator = z
         message: "Class is required"
       })
     }),
-    consolidatedRate: z.enum(consolidatedRateTypes)
+    consolidatedRate: z.enum(consolidatedRateTypes),
+    cashFlowActivity: z.enum(cashFlowActivities).optional()
   })
   .refine(
     (data) => {
@@ -753,4 +772,15 @@ export const fixedAssetUsageLogValidator = z.object({
 
 export const fixedAssetDisposalValidator = z.object({
   disposalDate: z.string().min(1, { message: "Disposal date is required" })
+});
+
+// Saved report views (personal, per-user filter sets). `params` is the
+// JSON-stringified URL search-param set from the client.
+export const reportViewValidator = z.object({
+  id: zfd.text(z.string().optional()),
+  report: z.enum(reportViewReports, {
+    errorMap: () => ({ message: "Report is required" })
+  }),
+  name: z.string().min(1, { message: "Name is required" }),
+  params: z.string()
 });

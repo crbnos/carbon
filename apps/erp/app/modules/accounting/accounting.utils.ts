@@ -1,4 +1,11 @@
 import { credit, debit, toStoredAmount } from "@carbon/utils";
+import type {
+  CashFlowAccountInput,
+  CashFlowActivity,
+  CashFlowLine,
+  CashFlowStatement,
+  TranslatedCompanyFlow
+} from "./types";
 
 /**
  * Gain/(loss) on disposal of a fixed asset = sale proceeds − net book value
@@ -641,4 +648,317 @@ export function buildDepreciationLines(
   }
 
   return lines;
+}
+
+// ----------------------------------------------------------------------------
+// Financial reporting — pure helpers (statement of cash flows, fiscal year,
+// comparative windows, consolidated FX merge). No DB access; unit-tested.
+// ----------------------------------------------------------------------------
+
+const MONTH_NAMES = [
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December"
+] as const;
+
+/**
+ * Default cash flow bucket for an `accountType` when the account has no explicit
+ * `cashFlowActivity` override. "Excluded" = Bank/Cash (the reconciliation target,
+ * not a flow line). NULL/unknown/income-statement types → null (unclassified —
+ * income-statement activity rolls into the Net Income line, never bucketed here).
+ */
+export function getCashFlowActivityForAccountType(
+  accountType: string | null
+): CashFlowActivity | "Excluded" | null {
+  switch (accountType) {
+    case "Bank":
+    case "Cash":
+      return "Excluded";
+    case "Accounts Receivable":
+    case "Inventory":
+    case "Other Current Asset":
+    case "Accumulated Depreciation":
+    case "Accounts Payable":
+    case "Other Current Liability":
+    case "Tax":
+      return "Operating";
+    case "Fixed Asset":
+    case "Other Asset":
+    case "Investments":
+      return "Investing";
+    case "Long Term Liability":
+    case "Equity - No Close":
+    case "Equity - Close":
+    case "Retained Earnings":
+      return "Financing";
+    default:
+      return null;
+  }
+}
+
+/**
+ * Fiscal year start date (YYYY-MM-DD) for the fiscal year containing `asOfDate`.
+ * `startMonth` is the month name from fiscalYearSettings ("January".."December");
+ * null/undefined/unknown falls back to January (calendar year). The start is the
+ * most recent occurrence of that month's 1st on or before `asOfDate`.
+ */
+export function getFiscalYearStartDate(
+  startMonth: string | null | undefined,
+  asOfDate: string
+): string {
+  const monthIndex = startMonth
+    ? MONTH_NAMES.indexOf(startMonth as (typeof MONTH_NAMES)[number]) + 1
+    : 1;
+  const startMonthNumber = monthIndex >= 1 ? monthIndex : 1;
+
+  const [year, month] = asOfDate.split("-").map((p) => Number.parseInt(p, 10));
+  // The 1st of startMonthNumber in `year` is on/before asOfDate iff the asOf
+  // month is >= the start month; otherwise the FY started the previous year.
+  const fiscalYear = month >= startMonthNumber ? year : year - 1;
+  const mm = String(startMonthNumber).padStart(2, "0");
+  return `${fiscalYear}-${mm}-01`;
+}
+
+/**
+ * Pure indirect-method statement of cash flows builder.
+ * - `accounts` = leaf accounts (balance-sheet + income-statement).
+ * - `balances` = accountId → { balanceAtDate, netChange } for the report window.
+ *
+ * Net income = Σ income-statement leaves of rootSign(class) × netChange
+ * (Revenue +, Expense −). Cash effect of a non-cash balance-sheet leaf =
+ * class === "Asset" ? −netChange : +netChange. Bank/Cash leaves ("Excluded")
+ * feed the cash reconciliation instead of a flow line. Lines with amount 0 are
+ * omitted. unreconciledDifference is 0 when double-entry holds and every
+ * balance-sheet account is bucketed (the Unclassified section preserves it).
+ */
+export function buildCashFlowStatement(
+  accounts: CashFlowAccountInput[],
+  balances: Map<string, { balanceAtDate: number; netChange: number }>
+): CashFlowStatement {
+  let netIncome = 0;
+  let beginningCash = 0;
+  let netChangeInCash = 0;
+  const operating: CashFlowLine[] = [];
+  const investing: CashFlowLine[] = [];
+  const financing: CashFlowLine[] = [];
+  const unclassified: CashFlowLine[] = [];
+
+  for (const account of accounts) {
+    const b = balances.get(account.id);
+    if (!b) continue;
+    const { balanceAtDate, netChange } = b;
+
+    if (account.incomeBalance === "Income Statement") {
+      const sign =
+        account.class === "Revenue" ? 1 : account.class === "Expense" ? -1 : 0;
+      netIncome += sign * netChange;
+      continue;
+    }
+
+    // Balance-sheet leaf.
+    const activity =
+      account.cashFlowActivity ??
+      getCashFlowActivityForAccountType(account.accountType);
+
+    if (activity === "Excluded") {
+      beginningCash += balanceAtDate - netChange;
+      netChangeInCash += netChange;
+      continue;
+    }
+
+    const amount = account.class === "Asset" ? -netChange : netChange;
+    if (amount === 0) continue;
+
+    const line: CashFlowLine = {
+      accountId: account.id,
+      number: account.number,
+      name: account.name,
+      amount
+    };
+    if (activity === "Operating") operating.push(line);
+    else if (activity === "Investing") investing.push(line);
+    else if (activity === "Financing") financing.push(line);
+    else unclassified.push(line);
+  }
+
+  const sum = (lines: CashFlowLine[]) =>
+    lines.reduce((total, l) => total + l.amount, 0);
+  const operatingTotal = netIncome + sum(operating);
+  const investingTotal = sum(investing);
+  const financingTotal = sum(financing);
+  const unclassifiedTotal = sum(unclassified);
+  const endingCash = beginningCash + netChangeInCash;
+  const unreconciledDifference =
+    operatingTotal +
+    investingTotal +
+    financingTotal +
+    unclassifiedTotal -
+    netChangeInCash;
+
+  return {
+    netIncome,
+    operating,
+    investing,
+    financing,
+    unclassified,
+    operatingTotal,
+    investingTotal,
+    financingTotal,
+    unclassifiedTotal,
+    netChangeInCash,
+    beginningCash,
+    endingCash,
+    unreconciledDifference
+  };
+}
+
+// -- Comparative windows (income statement / balance sheet) --
+
+function ymd(date: Date): string {
+  return date.toISOString().split("T")[0];
+}
+
+function parseYmd(s: string): { y: number; m: number; d: number } {
+  const [y, m, d] = s.split("-").map((p) => Number.parseInt(p, 10));
+  return { y, m, d };
+}
+
+function addDays(s: string, n: number): string {
+  const { y, m, d } = parseYmd(s);
+  return ymd(new Date(Date.UTC(y, m - 1, d + n)));
+}
+
+function addMonths(s: string, n: number): string {
+  const { y, m, d } = parseYmd(s);
+  return ymd(new Date(Date.UTC(y, m - 1 + n, d)));
+}
+
+function addYears(s: string, n: number): string {
+  return addMonths(s, n * 12);
+}
+
+function daysBetween(a: string, b: string): number {
+  const pa = parseYmd(a);
+  const pb = parseYmd(b);
+  return Math.round(
+    (Date.UTC(pb.y, pb.m - 1, pb.d) - Date.UTC(pa.y, pa.m - 1, pa.d)) /
+      86_400_000
+  );
+}
+
+/**
+ * Comparison window for a report's compare selector.
+ * - mode "range" (income statement): priorPeriod = same-length window ending the
+ *   day before startDate; priorYear = both dates minus one year. Null startDate
+ *   (inception) disables comparison (returns null).
+ * - mode "asOf" (balance sheet): priorPeriod = endDate − 1 month; priorYear =
+ *   endDate − 1 year; startDate passes through unchanged. Null endDate → today.
+ */
+export function getComparisonWindow(
+  compare: "none" | "priorPeriod" | "priorYear",
+  startDate: string | null,
+  endDate: string | null,
+  mode: "range" | "asOf"
+): { startDate: string | null; endDate: string | null } | null {
+  if (compare === "none") return null;
+
+  const resolvedEnd = endDate ?? ymd(new Date());
+
+  if (mode === "asOf") {
+    const compEnd =
+      compare === "priorYear"
+        ? addYears(resolvedEnd, -1)
+        : addMonths(resolvedEnd, -1);
+    return { startDate, endDate: compEnd };
+  }
+
+  // Income statement (range): both bounds required.
+  if (!startDate) return null;
+
+  if (compare === "priorYear") {
+    return {
+      startDate: addYears(startDate, -1),
+      endDate: addYears(resolvedEnd, -1)
+    };
+  }
+
+  // priorPeriod: same-length window immediately before startDate.
+  const length = daysBetween(startDate, resolvedEnd);
+  const compEnd = addDays(startDate, -1);
+  const compStart = addDays(compEnd, -length);
+  return { startDate: compStart, endDate: compEnd };
+}
+
+// -- Consolidated cash flow merge + FX-effect plug --
+
+/**
+ * Merge per-company cash flow statements — already translated to the parent
+ * currency (flows/netIncome at the average rate, cash at closing rates) — into
+ * one consolidated statement. Section lines are summed by accountId. The
+ * "Effect of exchange rate changes on cash" is the standard plug:
+ *   FX = Σ endingCash − Σ beginningCash − Σ net flows.
+ * netChangeInCash is reported flows-only so Beginning + Net change + FX = Ending.
+ */
+export function mergeTranslatedCashFlows(
+  perCompany: TranslatedCompanyFlow[]
+): CashFlowStatement {
+  const mergeLines = (
+    selector: (c: TranslatedCompanyFlow) => CashFlowLine[]
+  ): CashFlowLine[] => {
+    const byAccount = new Map<string, CashFlowLine>();
+    for (const company of perCompany) {
+      for (const line of selector(company)) {
+        const existing = byAccount.get(line.accountId);
+        if (existing) existing.amount += line.amount;
+        else byAccount.set(line.accountId, { ...line });
+      }
+    }
+    return [...byAccount.values()].filter((l) => l.amount !== 0);
+  };
+
+  const operating = mergeLines((c) => c.operating);
+  const investing = mergeLines((c) => c.investing);
+  const financing = mergeLines((c) => c.financing);
+  const unclassified = mergeLines((c) => c.unclassified);
+
+  const netIncome = perCompany.reduce((t, c) => t + c.netIncome, 0);
+  const beginningCash = perCompany.reduce((t, c) => t + c.beginningCash, 0);
+  const endingCash = perCompany.reduce((t, c) => t + c.endingCash, 0);
+
+  const sum = (lines: CashFlowLine[]) =>
+    lines.reduce((total, l) => total + l.amount, 0);
+  const operatingTotal = netIncome + sum(operating);
+  const investingTotal = sum(investing);
+  const financingTotal = sum(financing);
+  const unclassifiedTotal = sum(unclassified);
+
+  const netFlows =
+    operatingTotal + investingTotal + financingTotal + unclassifiedTotal;
+  const effectOfExchangeRates = endingCash - beginningCash - netFlows;
+
+  return {
+    netIncome,
+    operating,
+    investing,
+    financing,
+    unclassified,
+    operatingTotal,
+    investingTotal,
+    financingTotal,
+    unclassifiedTotal,
+    netChangeInCash: netFlows,
+    beginningCash,
+    endingCash,
+    unreconciledDifference: 0,
+    effectOfExchangeRates
+  };
 }
