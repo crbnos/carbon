@@ -40,6 +40,10 @@ source ./setup.sh   # adds crbn to PATH + installs shell wrapper
 | `crbn status` | Port assignment + container health. |
 | `crbn migrate` | Apply DB migrations against the running stack. |
 
+`CARBON_DEV_APPS` skips the picker: `CARBON_DEV_APPS=erp,mes,email crbn up`.
+Comma-separated, from `erp`, `mes`, `assembler`, `email` — unrecognized names
+are dropped silently. Shell-level only; it is not read from `.env.local`.
+
 ### Files
 
 | Command | Description |
