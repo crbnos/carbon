@@ -5978,6 +5978,11 @@ msgstr "पूरी तरह प्रशिक्षित"
 msgid "FX G/L"
 msgstr "FX G/L"
 
+#. placeholder {0}: p.fiscalYear
+#. placeholder {1}: p.periodNumber
+msgid "FY{0} · P{1}"
+msgstr ""
+
 msgid "Gain on Disposal"
 msgstr "निपटान पर लाभ"
 
@@ -9490,6 +9495,9 @@ msgstr ""
 
 msgid "Period End"
 msgstr "अवधि का अंत"
+
+msgid "Period…"
+msgstr ""
 
 msgid "Periodic depreciation expense for fixed assets"
 msgstr "पिकिंग ट्रैक किए गए इकाइयों को सबसे पहले समाप्ति के क्रम में प्रदान करती है, इसलिए सबसे जल्दी समाप्त होने वाला स्टॉक डिफ़ॉल्ट रूप से पहले छोड़ा जाता है।"

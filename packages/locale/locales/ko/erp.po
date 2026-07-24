@@ -5978,6 +5978,11 @@ msgstr "다음에 대해 완전히 교육됨"
 msgid "FX G/L"
 msgstr "외환 손익"
 
+#. placeholder {0}: p.fiscalYear
+#. placeholder {1}: p.periodNumber
+msgid "FY{0} · P{1}"
+msgstr ""
+
 msgid "Gain on Disposal"
 msgstr "처분 이익"
 
@@ -9490,6 +9495,9 @@ msgstr ""
 
 msgid "Period End"
 msgstr "기간 종료"
+
+msgid "Period…"
+msgstr ""
 
 msgid "Periodic depreciation expense for fixed assets"
 msgstr "고정자산에 대한 정기 감가상각비"

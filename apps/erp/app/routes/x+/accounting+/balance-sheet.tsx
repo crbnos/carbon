@@ -14,6 +14,7 @@ import {
   getConsolidatedBalances,
   getFinancialStatementBalances,
   getFiscalYearSettings,
+  getReportingPeriods,
   getReportViews,
   translateCompanyBalances
 } from "~/modules/accounting";
@@ -53,12 +54,15 @@ export async function loader({ request }: LoaderFunctionArgs) {
     | "priorPeriod"
     | "priorYear";
 
-  const [companies, fiscalYearSettings, reportViews] = await Promise.all([
-    getCompaniesInGroup(client, companyGroupId),
-    getFiscalYearSettings(client, companyId),
-    getReportViews(client, companyId, userId, "balance-sheet")
-  ]);
+  const [companies, fiscalYearSettings, reportViews, reportPeriods] =
+    await Promise.all([
+      getCompaniesInGroup(client, companyGroupId),
+      getFiscalYearSettings(client, companyId),
+      getReportViews(client, companyId, userId, "balance-sheet"),
+      getReportingPeriods(client, companyId)
+    ]);
   const views = reportViews.data;
+  const periods = reportPeriods.data;
   const fiscalStartMonth =
     months.indexOf(fiscalYearSettings.data?.startMonth ?? "January") + 1;
   const companiesList = companies.data ?? [];
@@ -108,7 +112,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
       fiscalStartMonth,
       warnings: [] as string[],
       comparison: undefined as Record<string, number> | undefined,
-      views
+      views,
+      periods
     };
   }
 
@@ -215,7 +220,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
     fiscalStartMonth,
     warnings: balances.warnings ?? [],
     comparison,
-    views
+    views,
+    periods
   };
 }
 
@@ -231,7 +237,8 @@ export default function BalanceSheetRoute() {
     fiscalStartMonth,
     warnings,
     comparison,
-    views
+    views,
+    periods
   } = useLoaderData<typeof loader>();
   const [search, setSearch] = useState("");
   const [params] = useUrlParams();
@@ -257,6 +264,7 @@ export default function BalanceSheetRoute() {
         showCompare={!isMultiCompany}
         report="balance-sheet"
         views={views}
+        periods={periods}
         actions={
           <>
             <ExportReportButton

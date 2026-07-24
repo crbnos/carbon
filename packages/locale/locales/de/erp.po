@@ -5978,6 +5978,11 @@ msgstr "Vollständig geschult für"
 msgid "FX G/L"
 msgstr "FX G/L"
 
+#. placeholder {0}: p.fiscalYear
+#. placeholder {1}: p.periodNumber
+msgid "FY{0} · P{1}"
+msgstr ""
+
 msgid "Gain on Disposal"
 msgstr "Gewinn aus Veräußerung"
 
@@ -9490,6 +9495,9 @@ msgstr ""
 
 msgid "Period End"
 msgstr "Periodenende"
+
+msgid "Period…"
+msgstr ""
 
 msgid "Periodic depreciation expense for fixed assets"
 msgstr "Kommissionierung bietet verfolgten Einheiten mit frühestem Verfallsdatum zuerst an, sodass das am schnellsten ablaufende Lager standardmäßig zuerst ausgeht."

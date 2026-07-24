@@ -5978,6 +5978,11 @@ msgstr "Fully trained for"
 msgid "FX G/L"
 msgstr "FX G/L"
 
+#. placeholder {0}: p.fiscalYear
+#. placeholder {1}: p.periodNumber
+msgid "FY{0} · P{1}"
+msgstr "FY{0} · P{1}"
+
 msgid "Gain on Disposal"
 msgstr "Gain on Disposal"
 
@@ -9490,6 +9495,9 @@ msgstr "Period Debits"
 
 msgid "Period End"
 msgstr "Period End"
+
+msgid "Period…"
+msgstr "Period…"
 
 msgid "Periodic depreciation expense for fixed assets"
 msgstr "Periodic depreciation expense for fixed assets"

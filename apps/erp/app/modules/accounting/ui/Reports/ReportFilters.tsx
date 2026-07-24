@@ -10,7 +10,7 @@ import type { ReactNode } from "react";
 import { LuLanguages, LuSearch, LuX } from "react-icons/lu";
 import { PeriodSelector } from "~/components";
 import { useUrlParams } from "~/hooks";
-import type { ReportView } from "~/modules/accounting";
+import type { ReportingPeriod, ReportView } from "~/modules/accounting";
 import CompanySelector from "./CompanySelector";
 import ReportViewsMenu from "./ReportViewsMenu";
 
@@ -34,6 +34,8 @@ type ReportFiltersProps = {
   // Saved report views (personal). When both are set, the Views menu renders.
   report?: string;
   views?: ReportView[];
+  // Report-by-period picker (reads period-closing's periods). Hidden when empty.
+  periods?: ReportingPeriod[];
   search: string;
   onSearchChange: (value: string) => void;
 };
@@ -50,6 +52,7 @@ const ReportFilters = ({
   actions,
   report,
   views,
+  periods,
   search,
   onSearchChange
 }: ReportFiltersProps) => {
@@ -81,6 +84,27 @@ const ReportFilters = ({
           variant={periodVariant}
           fiscalStartMonth={fiscalStartMonth}
         />
+        {periods && periods.length > 0 && (
+          <select
+            className="h-8 rounded-md border border-input bg-background px-2 text-sm"
+            defaultValue=""
+            onChange={(e) => {
+              const period = periods.find((p) => p.id === e.target.value);
+              if (period)
+                setParams({
+                  startDate: period.startDate,
+                  endDate: period.endDate
+                });
+            }}
+          >
+            <option value="">{t`Period…`}</option>
+            {periods.map((p) => (
+              <option key={p.id} value={p.id}>
+                {t`FY${p.fiscalYear} · P${p.periodNumber}`}
+              </option>
+            ))}
+          </select>
+        )}
         {showCompare && (
           <select
             className="h-8 rounded-md border border-input bg-background px-2 text-sm"

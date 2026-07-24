@@ -5978,6 +5978,11 @@ msgstr "Entièrement formé pour"
 msgid "FX G/L"
 msgstr "G/P de change"
 
+#. placeholder {0}: p.fiscalYear
+#. placeholder {1}: p.periodNumber
+msgid "FY{0} · P{1}"
+msgstr ""
+
 msgid "Gain on Disposal"
 msgstr "Gain à la cession"
 
@@ -9490,6 +9495,9 @@ msgstr ""
 
 msgid "Period End"
 msgstr "Fin de période"
+
+msgid "Period…"
+msgstr ""
 
 msgid "Periodic depreciation expense for fixed assets"
 msgstr "Le prélèvement offre des entités suivies dans l'ordre d'expiration le plus proche d'abord, de sorte que le stock qui expire le plus tôt est épuisé en premier par défaut."
