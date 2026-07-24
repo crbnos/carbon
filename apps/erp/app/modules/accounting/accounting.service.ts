@@ -2206,7 +2206,11 @@ export async function getLegalSeries(
     .eq("companyId", companyId);
 
   if (args.search) {
-    query = query.or(`code.ilike.%${args.search}%,name.ilike.%${args.search}%`);
+    // Double-quote the value so PostgREST treats reserved characters (`,`, `(`,
+    // `)`, `.`, `:`, `*`) as literals rather than splitting the `.or()` filter;
+    // escape any embedded backslash / double-quote first.
+    const escaped = args.search.replace(/["\\]/g, "\\$&");
+    query = query.or(`code.ilike."%${escaped}%",name.ilike."%${escaped}%"`);
   }
 
   query = setGenericQueryFilters(query, args, [

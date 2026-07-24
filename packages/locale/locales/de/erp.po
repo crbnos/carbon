@@ -1232,7 +1232,7 @@ msgstr "Sind Sie sicher, dass Sie die Artikelgruppe: {0} löschen möchten? Dies
 
 #. placeholder {0}: legalSeries.name
 msgid "Are you sure you want to delete the legal series: {0}? This cannot be undone."
-msgstr "Sind Sie sicher, dass Sie die juristische Serie {0} löschen möchten? Dies kann nicht rückgängig gemacht werden."
+msgstr "Sind Sie sicher, dass Sie den Belegnummernkreis {0} löschen möchten? Dies kann nicht rückgängig gemacht werden."
 
 #. placeholder {0}: line.customerPartId
 #. placeholder {0}: line.description
@@ -3788,7 +3788,7 @@ msgid "Delete Journal Entry"
 msgstr "Journaleintrag löschen"
 
 msgid "Delete Legal Series"
-msgstr "Juristische Serie löschen"
+msgstr "Belegnummernkreis löschen"
 
 msgid "Delete line"
 msgstr "Zeile löschen"
@@ -4500,7 +4500,7 @@ msgid "Edit Kanban"
 msgstr "Kanban bearbeiten"
 
 msgid "Edit Legal Series"
-msgstr "Juristische Serie bearbeiten"
+msgstr "Belegnummernkreis bearbeiten"
 
 msgid "Edit Line"
 msgstr "Zeile bearbeiten"
@@ -6948,7 +6948,7 @@ msgid "Leftover Parts Detected"
 msgstr "Überschüssige Teile erkannt"
 
 msgid "Legal Series"
-msgstr "Juristische Serie"
+msgstr "Belegnummernkreis"
 
 msgid "Less manual work"
 msgstr "Weniger manuelle Arbeit"
@@ -7905,7 +7905,7 @@ msgid "New Kanban"
 msgstr "Neuer Kanban"
 
 msgid "New Legal Series"
-msgstr "Neue juristische Serie"
+msgstr "Neuer Belegnummernkreis"
 
 msgid "New Line"
 msgstr "Neue Zeile"

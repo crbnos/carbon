@@ -26,13 +26,19 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const { limit, offset, sorts, filters } =
     getGenericQueryFilters(searchParams);
 
-  return await getLegalSeries(client, companyId, {
+  const legalSeries = await getLegalSeries(client, companyId, {
     search,
     limit,
     offset,
     sorts,
     filters
   });
+
+  if (legalSeries.error) {
+    throw new Error(legalSeries.error.message ?? "Failed to load legal series");
+  }
+
+  return legalSeries;
 }
 
 export default function LegalSeriesRoute() {

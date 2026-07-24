@@ -147,7 +147,10 @@ function splitAtTopLevel(str: string, delimiter: string): string[] {
   for (let i = 0; i < str.length; i++) {
     const ch = str[i];
     if ("({[<".includes(ch)) depth++;
-    else if (")}]>".includes(ch)) depth--;
+    // The `>` in an arrow function (`=>`) is not a closing bracket — ignore it,
+    // otherwise it corrupts the depth counter (e.g. a zod `errorMap: () => ({…})`
+    // would swallow every field that follows it).
+    else if (")}]>".includes(ch) && !(ch === ">" && str[i - 1] === "=")) depth--;
     if (ch === delimiter && depth === 0) {
       parts.push(current.trim());
       current = "";
@@ -164,7 +167,8 @@ function findTopLevelColon(str: string): number {
   for (let i = 0; i < str.length; i++) {
     const ch = str[i];
     if ("({[<".includes(ch)) depth++;
-    else if (")}]>".includes(ch)) depth--;
+    // Ignore the `>` in an arrow function (`=>`); see splitAtTopLevel.
+    else if (")}]>".includes(ch) && !(ch === ">" && str[i - 1] === "=")) depth--;
     if (ch === ":" && depth === 0) return i;
   }
   return -1;
@@ -425,7 +429,9 @@ function zodExprToJsonSchema(expr: string): Record<string, unknown> {
   if (e.includes("z.any()")) return {};
   if (e.startsWith("zfd.numeric(")) return { type: "number" };
   if (e.startsWith("z.preprocess(")) {
-    if (e.includes("z.enum(")) return zodExprToJsonSchema(e);
+    // An inline-array enum (`z.enum([...])`) is already handled above; a
+    // non-inline enum (`z.enum(someConstArray)`) can't be resolved to values
+    // here, so fall through to string rather than recursing on the same expr.
     if (e.includes("z.number()")) return { type: "number" };
     return { type: "string" };
   }

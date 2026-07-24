@@ -23,9 +23,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!legalSeriesId) throw notFound("legalSeriesId not found");
 
   const legalSeries = await getLegalSeriesById(client, legalSeriesId);
+  if (legalSeries.error || !legalSeries.data) {
+    throw notFound("Legal series not found");
+  }
 
   return {
-    legalSeries: legalSeries?.data ?? null
+    legalSeries: legalSeries.data
   };
 }
 

@@ -38,14 +38,6 @@ type LegalSeriesFormProps = {
   onClose: () => void;
 };
 
-const documentTypeLabels: Record<
-  (typeof legalSeriesDocumentTypes)[number],
-  string
-> = {
-  salesInvoice: "Sales Invoice",
-  creditMemo: "Credit Memo"
-};
-
 const LegalSeriesForm = ({
   initialValues,
   formatLocked = false,
@@ -56,6 +48,14 @@ const LegalSeriesForm = ({
   const { t } = useLingui();
   const permissions = usePermissions();
   const fetcher = useFetcher();
+
+  const documentTypeLabels: Record<
+    (typeof legalSeriesDocumentTypes)[number],
+    string
+  > = {
+    salesInvoice: t`Sales Invoice`,
+    creditMemo: t`Credit Memo`
+  };
 
   const isEditing = initialValues.id !== undefined;
   const isDisabled = isEditing

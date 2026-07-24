@@ -117,10 +117,13 @@ export function getDraftDocumentPlaceholder(id: string): string {
 // Resolve what to display for an accounting document number: the assigned legal
 // number once posted, or the draft placeholder while the number column is still
 // null. Use everywhere `invoiceId` / `paymentId` / `memoId` / `journalEntryId`
-// is rendered so a number-less draft never shows a blank.
+// is rendered so a number-less draft never shows a blank. Empty or
+// whitespace-only values fall back too — they are not readable identifiers.
 export function getDocumentReadableId(
   documentNumber: string | null | undefined,
   id: string
 ): string {
-  return documentNumber ?? getDraftDocumentPlaceholder(id);
+  return documentNumber?.trim()
+    ? documentNumber
+    : getDraftDocumentPlaceholder(id);
 }

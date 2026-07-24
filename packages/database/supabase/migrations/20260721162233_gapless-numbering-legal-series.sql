@@ -102,7 +102,10 @@ DECLARE
   v_size integer;
 BEGIN
   IF session_user = 'authenticator' THEN
-    IF NOT (has_role('employee', company_id) OR has_valid_api_key_for_company(company_id)) THEN
+    IF NOT (
+      company_id = ANY ((SELECT get_companies_with_employee_role())::text[])
+      OR has_valid_api_key_for_company(company_id)
+    ) THEN
       RAISE EXCEPTION 'Insufficient permissions';
     END IF;
   END IF;
@@ -157,7 +160,10 @@ DECLARE
   v_size integer;
 BEGIN
   IF session_user = 'authenticator' THEN
-    IF NOT (has_role('employee', company_id) OR has_valid_api_key_for_company(company_id)) THEN
+    IF NOT (
+      company_id = ANY ((SELECT get_companies_with_employee_role())::text[])
+      OR has_valid_api_key_for_company(company_id)
+    ) THEN
       RAISE EXCEPTION 'Insufficient permissions';
     END IF;
   END IF;
@@ -312,25 +318,35 @@ CREATE UNIQUE INDEX IF NOT EXISTS "memo_legalNumber_key"
 -- allocation to post time (Decision 15); the approvals spec (#1032) later widens
 -- the permissive side of each CHECK to include its parked status.
 -- ============================================================================
+-- ADD CONSTRAINT ... NOT VALID skips the full-table validation scan (which holds
+-- a lock that blocks concurrent DML for its duration); the follow-up VALIDATE
+-- CONSTRAINT re-checks existing rows under a lighter lock that does not block
+-- reads/writes. Every existing row already satisfies the predicate (all rows are
+-- numbered today), so validation succeeds immediately.
 ALTER TABLE "journal" ALTER COLUMN "journalEntryId" DROP NOT NULL;
 ALTER TABLE "journal" ADD CONSTRAINT "journal_posted_requires_number"
-  CHECK ("status" = 'Draft' OR "journalEntryId" IS NOT NULL);
+  CHECK ("status" = 'Draft' OR "journalEntryId" IS NOT NULL) NOT VALID;
+ALTER TABLE "journal" VALIDATE CONSTRAINT "journal_posted_requires_number";
 
 ALTER TABLE "payment" ALTER COLUMN "paymentId" DROP NOT NULL;
 ALTER TABLE "payment" ADD CONSTRAINT "payment_posted_requires_number"
-  CHECK ("status" = 'Draft' OR "paymentId" IS NOT NULL);
+  CHECK ("status" = 'Draft' OR "paymentId" IS NOT NULL) NOT VALID;
+ALTER TABLE "payment" VALIDATE CONSTRAINT "payment_posted_requires_number";
 
 ALTER TABLE "memo" ALTER COLUMN "memoId" DROP NOT NULL;
 ALTER TABLE "memo" ADD CONSTRAINT "memo_posted_requires_number"
-  CHECK ("status" = 'Draft' OR "memoId" IS NOT NULL);
+  CHECK ("status" = 'Draft' OR "memoId" IS NOT NULL) NOT VALID;
+ALTER TABLE "memo" VALIDATE CONSTRAINT "memo_posted_requires_number";
 
 ALTER TABLE "salesInvoice" ALTER COLUMN "invoiceId" DROP NOT NULL;
 ALTER TABLE "salesInvoice" ADD CONSTRAINT "salesInvoice_posted_requires_number"
-  CHECK ("status" = 'Draft' OR "invoiceId" IS NOT NULL);
+  CHECK ("status" = 'Draft' OR "invoiceId" IS NOT NULL) NOT VALID;
+ALTER TABLE "salesInvoice" VALIDATE CONSTRAINT "salesInvoice_posted_requires_number";
 
 ALTER TABLE "purchaseInvoice" ALTER COLUMN "invoiceId" DROP NOT NULL;
 ALTER TABLE "purchaseInvoice" ADD CONSTRAINT "purchaseInvoice_posted_requires_number"
-  CHECK ("status" = 'Draft' OR "invoiceId" IS NOT NULL);
+  CHECK ("status" = 'Draft' OR "invoiceId" IS NOT NULL) NOT VALID;
+ALTER TABLE "purchaseInvoice" VALIDATE CONSTRAINT "purchaseInvoice_posted_requires_number";
 
 -- ============================================================================
 -- 5. Forward-only cutover stamp

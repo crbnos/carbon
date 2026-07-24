@@ -1232,7 +1232,7 @@ msgstr "품목 그룹 {0}을(를) 삭제하시겠습니까? 이 작업은 되돌
 
 #. placeholder {0}: legalSeries.name
 msgid "Are you sure you want to delete the legal series: {0}? This cannot be undone."
-msgstr "정말로 법적 시리즈를 삭제하시겠습니까: {0}? 이를 실행 취소할 수 없습니다."
+msgstr "법적 시리즈 {0}을(를) 정말로 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다."
 
 #. placeholder {0}: line.customerPartId
 #. placeholder {0}: line.description
@@ -10104,7 +10104,7 @@ msgid "Registered"
 msgstr "등록됨"
 
 msgid "Registration Ref"
-msgstr "등록 참고"
+msgstr "등록 참조"
 
 msgid "Reject"
 msgstr "반려"

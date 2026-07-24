@@ -31,10 +31,12 @@ describe("getDocumentReadableId", () => {
     );
   });
 
-  it("does not treat an empty string as a valid number", () => {
-    // An empty string is not a legal number — nullish coalescing keeps it, so
-    // callers must pass null/undefined for unassigned. Documented here so the
-    // behavior is intentional rather than surprising.
-    expect(getDocumentReadableId("", "inv_123456")).toBe("");
+  it("falls back to the draft placeholder for an empty string", () => {
+    // An empty string is not a legal number — treat it as unassigned.
+    expect(getDocumentReadableId("", "inv_123456")).toBe("Draft-123456");
+  });
+
+  it("falls back to the draft placeholder for a whitespace-only string", () => {
+    expect(getDocumentReadableId("   ", "inv_123456")).toBe("Draft-123456");
   });
 });
