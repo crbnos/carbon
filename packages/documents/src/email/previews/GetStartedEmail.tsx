@@ -6,7 +6,7 @@ import GetStartedEmail from "../GetStartedEmail";
 export default function GetStartedEmailPreview() {
   return (
     <GetStartedEmail
-      firstName={"Jane"}
+      firstName={"John"}
       academyUrl={"https://learn.carbon.ms"}
     />
   );

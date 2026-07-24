@@ -7,15 +7,35 @@ export default function ChangeOrderImplementationPreview() {
     <NotificationEmail
       heading={"Change order in implementation"}
       preview={"Change order in implementation"}
-      message={"Change order ECO-00042 has moved to implementation"}
-      reference={"ECO-00042"}
-      recipientName={"Jane Doe"}
+      message={"Change order ECO-000012 has moved to implementation"}
+      reference={"ECO-000012"}
+      recipientName={"John Doe"}
       ctaLabel={"View change order"}
       ctaUrl={"https://app.carbon.ms/x/items/change-order/1/details"}
       details={[
         {
+          label: "Name",
+          value: "Bracket tolerance fix"
+        },
+        {
+          label: "Type",
+          value: "Engineering"
+        },
+        {
+          label: "Priority",
+          value: "High"
+        },
+        {
+          label: "Due",
+          value: "Aug 14, 2026"
+        },
+        {
           label: "Status",
           value: "Implementation"
+        },
+        {
+          label: "Assignee",
+          value: "Jane Doe"
         }
       ]}
     />

@@ -1119,9 +1119,11 @@ async function buildEventContent(
       }
 
       // documentId may be the row id (co_…) or the readable id (ECO-…) — try both.
+      const changeOrderColumns =
+        "changeOrderId, name, type, priority, status, dueDate, assignee";
       const rowLookup = await client
         .from("changeOrder")
-        .select("changeOrderId, status")
+        .select(changeOrderColumns)
         .eq("id", documentId)
         .eq("companyId", companyId)
         .maybeSingle();
@@ -1134,7 +1136,7 @@ async function buildEventContent(
       if (!changeOrderData) {
         const readableIdLookup = await client
           .from("changeOrder")
-          .select("changeOrderId, status")
+          .select(changeOrderColumns)
           .eq("changeOrderId", documentId)
           .eq("companyId", companyId)
           .maybeSingle();
@@ -1152,11 +1154,29 @@ async function buildEventContent(
       const readableId = changeOrderData.changeOrderId;
       const description = changeOrderStageDescription(type, readableId);
 
+      let assigneeName: string | null = null;
+      if (changeOrderData.assignee) {
+        const assignee = await client
+          .from("user")
+          .select("fullName")
+          .eq("id", changeOrderData.assignee)
+          .maybeSingle();
+        if (assignee.error) {
+          console.error("Failed to get change order assignee", assignee.error);
+        }
+        assigneeName = assignee.data?.fullName ?? null;
+      }
+
       return {
         description,
         reference: readableId ?? undefined,
         details: buildDetails([
-          { label: "Status", value: changeOrderData?.status }
+          { label: "Name", value: changeOrderData.name },
+          { label: "Type", value: changeOrderData.type },
+          { label: "Priority", value: changeOrderData.priority },
+          { label: "Due", value: formatDetailDate(changeOrderData.dueDate) },
+          { label: "Status", value: changeOrderData.status },
+          { label: "Assignee", value: assigneeName }
         ])
       };
     }

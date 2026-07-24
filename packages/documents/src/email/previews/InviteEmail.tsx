@@ -7,8 +7,8 @@ import InviteEmail from "../InviteEmail";
 export default function InviteEmailPreview() {
   return (
     <InviteEmail
-      email={"jane.doe@tombstone.ms"}
-      name={"Jane Doe"}
+      email={"john.doe@tombstone.ms"}
+      name={"John Doe"}
       invitedByEmail={"tom@sawyer.com"}
       invitedByName={"Tom Sawyer"}
       companyName={"Tombstone Machine Works"}

@@ -9,7 +9,7 @@ export default function PurchasingRfqAssignmentPreview() {
       preview={"Purchasing RFQ assigned to you"}
       message={"Purchasing RFQ PRFQ-0004 assigned to you"}
       reference={"PRFQ-0004"}
-      recipientName={"Jane Doe"}
+      recipientName={"John Doe"}
       ctaLabel={"View details"}
       ctaUrl={"https://app.carbon.ms/x/purchasing-rfq/1"}
       details={[

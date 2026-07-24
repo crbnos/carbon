@@ -9,7 +9,7 @@ export default function SalesOrderAssignmentPreview() {
       preview={"Sales order assigned to you"}
       message={"Sales Order SO-00045 assigned to you"}
       reference={"SO-00045"}
-      recipientName={"Jane Doe"}
+      recipientName={"John Doe"}
       ctaLabel={"View details"}
       ctaUrl={"https://app.carbon.ms/x/sales-order/1"}
       details={[

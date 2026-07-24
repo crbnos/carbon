@@ -8603,10 +8603,10 @@ msgid "Open in Carbon"
 msgstr "Carbon में खोलें"
 
 msgid "Open in change order {ids}. Release it to create new versions or revisions."
-msgstr ""
+msgstr "{ids} में परिवर्तन आदेश खोलें। नई संस्करणें या संशोधन बनाने के लिए इसे जारी करें।"
 
 msgid "Open in change orders {ids}. Release them to create new versions or revisions."
-msgstr ""
+msgstr "{ids} में परिवर्तन आदेश खोलें। नई संस्करणें या संशोधन बनाने के लिए उन्हें जारी करें।"
 
 msgid "Open in MES"
 msgstr "MES में खोलें"
