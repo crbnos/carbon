@@ -6,10 +6,10 @@ ALTER TABLE "employeeJob"
   ADD COLUMN "shopEmployee" BOOLEAN NOT NULL DEFAULT TRUE;
 
 -- Surface the flag on the employees view (the source for the people store that
--- backs the assignee dropdown). COALESCE keeps employees without a job record
+-- backs the assignee dropdown). CREATE OR REPLACE (no DROP) keeps the existing
+-- column order and appends "shopEmployee" at the end, preserving the view's
+-- grants and any dependents. COALESCE keeps employees without a job record
 -- assignable by default.
-DROP VIEW IF EXISTS "employees";
-
 CREATE OR REPLACE VIEW "employees" WITH(SECURITY_INVOKER=true) AS
   SELECT
     u.id,
@@ -23,7 +23,6 @@ CREATE OR REPLACE VIEW "employees" WITH(SECURITY_INVOKER=true) AS
     e."active",
     ej."locationId",
     l."name" AS "locationName",
-    COALESCE(ej."shopEmployee", TRUE) AS "shopEmployee",
     CASE
       WHEN e."active" = TRUE THEN 'Active'
       WHEN EXISTS (
@@ -35,7 +34,8 @@ CREATE OR REPLACE VIEW "employees" WITH(SECURITY_INVOKER=true) AS
           AND i."revokedAt" IS NULL
       ) THEN 'Invited'
       ELSE 'Inactive'
-    END AS "status"
+    END AS "status",
+    COALESCE(ej."shopEmployee", TRUE) AS "shopEmployee"
   FROM "user" u
   INNER JOIN "employee" e
     ON e.id = u.id

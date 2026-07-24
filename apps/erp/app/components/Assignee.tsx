@@ -92,9 +92,19 @@ const Assign = forwardRef<HTMLButtonElement, AssigneeProps>(
             label: person.name
           })) ?? [];
 
+      // In shop-only mode, don't offer the current user unless they are a shop
+      // employee — otherwise an office-only user (e.g. a bookkeeper) could still
+      // assign an operation to themselves. Unknown (not yet hydrated) is treated
+      // as allowed, matching the `!== false` convention used above.
+      const selfIsAssignable =
+        !shopEmployeesOnly ||
+        people.find((person) => person.id === user.id)?.shopEmployee !== false;
+
       return [
         { value: "", label: t`Unassigned` },
-        { value: user.id, label: `${user.firstName} ${user.lastName}` },
+        ...(selfIsAssignable
+          ? [{ value: user.id, label: `${user.firstName} ${user.lastName}` }]
+          : []),
         ...base
       ];
     }, [people, user, t, shopEmployeesOnly]);
