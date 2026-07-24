@@ -147,13 +147,56 @@ function findMatchingBrace(content: string, openPos: number): number {
 //   • comparison operators — `.refine((v) => v > 0)`           (not a delimiter)
 // A naive `"({[<".includes(ch)` counter miscounts the latter two as closers,
 // which corrupts the depth and makes a following comma/colon look top-level. So
-// we keep an explicit stack: `<` is pushed only when it opens a generic (i.e. it
-// abuts an identifier or a preceding `>`, unlike a spaced comparison `a < b`),
-// and `>` pops only a matching `<`. Parens/braces/brackets pop only their own
-// opener. Everything else — arrow `>`, comparison `<`/`>` — is left untouched.
+// we keep an explicit stack: `<` is pushed only when it opens a generic, and `>`
+// pops only a matching `<`. Parens/braces/brackets pop only their own opener.
+// Everything else — arrow `>`, comparison `<`/`>` — is left untouched.
+
+// A `<` opens a generic only if a balanced `>` closes it later in the string;
+// a comparison (`v < 10`, `v<10`, `v<=10`, `x=>y<z`) has no matching close.
+// Character adjacency alone can't tell `Record<K, V>` from `v<w`, so we scan
+// forward (ignoring arrow `=>` and nested brackets) for the matching `>`.
+function hasGenericClose(str: string, openPos: number): boolean {
+  let angle = 0;
+  let round = 0;
+  let square = 0;
+  let curly = 0;
+  for (let j = openPos; j < str.length; j++) {
+    const c = str[j];
+    if (c === "<") {
+      angle++;
+    } else if (c === ">") {
+      if (str[j - 1] === "=") continue; // arrow `=>`, not a generic close
+      angle--;
+      if (angle === 0 && round === 0 && square === 0 && curly === 0) return true;
+    } else if (c === "(") {
+      round++;
+    } else if (c === ")") {
+      if (round === 0) return false; // closes outside our `<` → it was a comparison
+      round--;
+    } else if (c === "[") {
+      square++;
+    } else if (c === "]") {
+      if (square === 0) return false;
+      square--;
+    } else if (c === "{") {
+      curly++;
+    } else if (c === "}") {
+      if (curly === 0) return false;
+      curly--;
+    } else if (c === ";") {
+      return false; // statement boundary — not a type
+    }
+  }
+  return false;
+}
+
 function isGenericOpen(str: string, i: number): boolean {
   const prev = str[i - 1];
-  return prev !== undefined && /[A-Za-z0-9_>]/.test(prev);
+  // A generic abuts a type name or a closing generic — rules out spaced `a < b`.
+  if (prev === undefined || !/[A-Za-z0-9_>]/.test(prev)) return false;
+  // `<=` is always a comparison.
+  if (str[i + 1] === "=") return false;
+  return hasGenericClose(str, i);
 }
 
 function updateDelimiterStack(stack: string[], str: string, i: number): void {
