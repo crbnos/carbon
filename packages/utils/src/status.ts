@@ -102,8 +102,10 @@ export const getSalesOrderJobStatus = (
   const isMade = line.methodType === "Make to Order";
   const saleQuantity = line.saleQuantity ?? 0;
 
+  // Exclude cancelled jobs from production totals - they don't contribute to coverage
   const totalProduction = filteredJobs.reduce(
-    (acc, job) => acc + (job.productionQuantity ?? 0),
+    (acc, job) =>
+      acc + (job.status === "Cancelled" ? 0 : (job.productionQuantity ?? 0)),
     0
   );
   // A job's quantityComplete persists after the job is reopened, so completion
@@ -118,8 +120,13 @@ export const getSalesOrderJobStatus = (
         : 0),
     0
   );
+  // A job is "released" if it's not in planning/draft AND not cancelled
   const totalReleased = filteredJobs.reduce((acc, job) => {
-    if (job.status !== "Planned" && job.status !== "Draft") {
+    if (
+      job.status !== "Planned" &&
+      job.status !== "Draft" &&
+      job.status !== "Cancelled"
+    ) {
       return acc + (job.productionQuantity ?? 0);
     }
     return acc;
@@ -197,11 +204,14 @@ export const hasIncompleteJobs = (
 
   for (const line of makeLines) {
     const lineJobs = jobs.filter((job) => job.salesOrderLineId === line.id);
-    if (lineJobs.length === 0) {
+    // Filter out cancelled jobs - they don't contribute to completion
+    const activeLineJobs = lineJobs.filter((job) => job.status !== "Cancelled");
+    if (activeLineJobs.length === 0) {
       return true;
     }
 
-    const totalCompleted = lineJobs.reduce(
+    // Only count completed quantity from active (non-cancelled) jobs
+    const totalCompleted = activeLineJobs.reduce(
       (acc, job) => acc + (job.quantityComplete ?? 0),
       0
     );
