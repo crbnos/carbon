@@ -74,10 +74,15 @@ service role included). Allocation is a single atomic `UPDATE … RETURNING`
 (`get_next_sequence_atomic`; the shared edge-function helper `getNextSequence`
 does the same), so concurrent posts can't duplicate and a rolled-back post leaves
 no gap. `sequence."gaplessFrom"` records the per-company forward-only cutover.
-NOTE (as of #1038): the migration ships the substrate; moving document-number
-allocation from draft-creation to posting time, the `get_next_sequence` RPC guard,
-and the nullable-draft-number UI are the coordinated follow-up wave (Decision 15,
-needs regenerated types).
+The atomic allocators are REVOKEd from PostgREST roles (migration
+`20260724161500`) so only in-transaction posters reach them. `legalSeries` has a
+CRUD service (`getLegalSeries` / `getLegalSeriesById` / `getLegalSeriesList` /
+`upsertLegalSeries` / `deleteLegalSeries`) and an accounting-settings UI; the
+sequences settings form locks format fields once a legal sequence is used.
+`getDocumentReadableId` (`@carbon/utils`) renders `Draft-{id6}` for number-less
+drafts. NOTE (as of #1038): moving document-number allocation from draft-creation
+to posting time and the `get_next_sequence` RPC guard remain the coordinated
+follow-up wave (Decision 15, DB-gated; call-site map in `.ai/runs/1038/status.md`).
 
 ## Key Service Functions
 
@@ -98,6 +103,7 @@ needs regenerated types).
 - `getCostCenters` / `getCostCentersTree` — cost center hierarchy
 - `getFixedAssets` / `insertFixedAsset` / `insertDepreciationRun` — fixed asset lifecycle
 - `createIntercompanyTransaction` / `runIntercompanyMatching` / `generateEliminations` — IC processing
+- `getLegalSeries` / `getLegalSeriesById` / `getLegalSeriesList` / `upsertLegalSeries` / `deleteLegalSeries` — legal-series CRUD (cast-based until `legalSeries` lands in generated types)
 
 ## Key Exports
 
