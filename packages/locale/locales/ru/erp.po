@@ -849,6 +849,9 @@ msgstr "Все пользователи"
 msgid "All Work Centers"
 msgstr "Все рабочие центры"
 
+msgid "Allow entering purchase order unit prices with more decimal places, to match extended-precision pricing from suppliers."
+msgstr ""
+
 msgid "Allows acknowledge & continue"
 msgstr "Позволяет подтвердить и продолжить"
 
@@ -9610,6 +9613,9 @@ msgstr "Строка заказа на покупку"
 msgid "Purchase Order Location"
 msgstr "Местоположение заказа на покупку"
 
+msgid "Purchase Order Precision Pricing"
+msgstr ""
+
 msgid "Purchase order removed successfully"
 msgstr "Заказ на покупку успешно удален"
 
@@ -13377,6 +13383,9 @@ msgstr "Цена за единицу"
 
 msgid "Unit Price"
 msgstr "Цена за единицу"
+
+msgid "Unit price decimal places"
+msgstr ""
 
 msgid "Unit Sale Price"
 msgstr "Цена продажи за единицу"

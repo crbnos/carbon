@@ -849,6 +849,9 @@ msgstr "모든 사용자"
 msgid "All Work Centers"
 msgstr "모든 작업장"
 
+msgid "Allow entering purchase order unit prices with more decimal places, to match extended-precision pricing from suppliers."
+msgstr ""
+
 msgid "Allows acknowledge & continue"
 msgstr "확인 후 계속 진행 허용"
 
@@ -9610,6 +9613,9 @@ msgstr "구매주문 라인"
 msgid "Purchase Order Location"
 msgstr "구매주문 위치"
 
+msgid "Purchase Order Precision Pricing"
+msgstr ""
+
 msgid "Purchase order removed successfully"
 msgstr "구매주문이 삭제되었습니다"
 
@@ -13377,6 +13383,9 @@ msgstr "단가"
 
 msgid "Unit Price"
 msgstr "단가"
+
+msgid "Unit price decimal places"
+msgstr ""
 
 msgid "Unit Sale Price"
 msgstr "단위 판매가"

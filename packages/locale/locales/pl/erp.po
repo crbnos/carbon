@@ -849,6 +849,9 @@ msgstr "Wszyscy użytkownicy"
 msgid "All Work Centers"
 msgstr "Wszystkie Centra Pracy"
 
+msgid "Allow entering purchase order unit prices with more decimal places, to match extended-precision pricing from suppliers."
+msgstr ""
+
 msgid "Allows acknowledge & continue"
 msgstr "Umożliwia potwierdzenie i kontynuację"
 
@@ -9610,6 +9613,9 @@ msgstr "Linia Zamówienia Zakupu"
 msgid "Purchase Order Location"
 msgstr "Lokalizacja Zamówienia Zakupu"
 
+msgid "Purchase Order Precision Pricing"
+msgstr ""
+
 msgid "Purchase order removed successfully"
 msgstr "Zamówienie zakupu zostało pomyślnie usunięte"
 
@@ -13377,6 +13383,9 @@ msgstr "Cena jednostkowa"
 
 msgid "Unit Price"
 msgstr "Cena jednostkowa"
+
+msgid "Unit price decimal places"
+msgstr ""
 
 msgid "Unit Sale Price"
 msgstr "Cena sprzedaży jednostkowej"

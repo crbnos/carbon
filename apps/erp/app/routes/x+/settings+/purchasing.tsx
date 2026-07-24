@@ -38,6 +38,8 @@ import {
   defaultSupplierCcValidator,
   getAccountsPayableBillingAddress,
   getCompanySettings,
+  purchaseOrderPricePrecisionTypes,
+  purchaseOrderPricePrecisionValidator,
   purchasePriceUpdateTimingTypes,
   purchasePriceUpdateTimingValidator,
   supplierQuoteNotificationValidator,
@@ -45,6 +47,7 @@ import {
   updateAccountsPayableBillingAddress,
   updateDefaultSupplierCc,
   updateLeadTimesOnReceiptSetting,
+  updatePurchaseOrderPricePrecisionSetting,
   updatePurchasePriceUpdateTimingSetting,
   updateShowSupplierReadableIdSetting,
   updateSupplierQuoteNotificationSetting
@@ -148,6 +151,39 @@ export async function action({ request }: ActionFunctionArgs) {
       return {
         success: true,
         message: "Purchase price update timing updated"
+      };
+
+    case "purchaseOrderPricePrecision":
+      const precisionValidation = await validator(
+        purchaseOrderPricePrecisionValidator
+      ).validate(formData);
+
+      if (precisionValidation.error) {
+        return { success: false, message: "Invalid form data" };
+      }
+
+      const precisionResult = await updatePurchaseOrderPricePrecisionSetting(
+        client,
+        companyId,
+        precisionValidation.data.purchaseOrderPricePrecision
+      );
+
+      if (precisionResult.error) {
+        logger.error(
+          "Failed to update purchase order price precision setting",
+          {
+            error: precisionResult.error
+          }
+        );
+        return {
+          success: false,
+          message: precisionResult.error.message
+        };
+      }
+
+      return {
+        success: true,
+        message: "Purchase order price precision updated"
       };
 
     case "updateLeadTimesOnReceipt":
@@ -558,6 +594,58 @@ export default function PurchasingSettingsRoute() {
                   fetcher.state !== "idle" &&
                   fetcher.formData?.get("intent") ===
                     "purchasePriceUpdateTiming"
+                }
+              >
+                <Trans>Save</Trans>
+              </Submit>
+            </CardFooter>
+          </ValidatedForm>
+        </Card>
+        <Card>
+          <ValidatedForm
+            method="post"
+            validator={purchaseOrderPricePrecisionValidator}
+            defaultValues={{
+              purchaseOrderPricePrecision:
+                (companySettings as any).purchaseOrderPricePrecision ?? 2
+            }}
+            fetcher={fetcher}
+          >
+            <input
+              type="hidden"
+              name="intent"
+              value="purchaseOrderPricePrecision"
+            />
+            <CardHeader>
+              <CardTitle>
+                <Trans>Purchase Order Precision Pricing</Trans>
+              </CardTitle>
+              <CardDescription>
+                <Trans>
+                  Allow entering purchase order unit prices with more decimal
+                  places, to match extended-precision pricing from suppliers.
+                </Trans>
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-col gap-8 max-w-[400px]">
+                <Select
+                  name="purchaseOrderPricePrecision"
+                  label={t`Unit price decimal places`}
+                  options={purchaseOrderPricePrecisionTypes.map((n) => ({
+                    label: n === 2 ? `${n} (default)` : `${n}`,
+                    value: n.toString()
+                  }))}
+                />
+              </div>
+            </CardContent>
+            <CardFooter>
+              <Submit
+                isDisabled={fetcher.state !== "idle"}
+                isLoading={
+                  fetcher.state !== "idle" &&
+                  fetcher.formData?.get("intent") ===
+                    "purchaseOrderPricePrecision"
                 }
               >
                 <Trans>Save</Trans>

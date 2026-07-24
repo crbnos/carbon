@@ -25,6 +25,7 @@ import { MethodIcon, SupplierAvatar } from "~/components";
 import { useAccounts } from "~/components/Form/Account";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
 import {
+  useCompanySettings,
   useCurrencyFormatter,
   useDateFormatter,
   usePercentFormatter,
@@ -420,12 +421,17 @@ const PurchaseOrderSummary = ({
   const isEditable = !isPurchaseOrderLocked(routeData?.purchaseOrder?.status);
 
   const { locale } = useLocale();
-  const formatter = useCurrencyFormatter();
+  const companySettings = useCompanySettings();
+  const unitPricePrecision = companySettings?.purchaseOrderPricePrecision ?? 2;
+  const formatter = useCurrencyFormatter({
+    maximumFractionDigits: unitPricePrecision
+  });
   const presentationCurrencyFormatter = useCurrencyFormatter({
     currency:
       routeData?.purchaseOrder?.currencyCode ??
       company?.baseCurrencyCode ??
-      "USD"
+      "USD",
+    maximumFractionDigits: unitPricePrecision
   });
 
   const shouldConvertCurrency =

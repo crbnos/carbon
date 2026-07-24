@@ -849,6 +849,9 @@ msgstr "Tous les utilisateurs"
 msgid "All Work Centers"
 msgstr "Tous les centres de travail"
 
+msgid "Allow entering purchase order unit prices with more decimal places, to match extended-precision pricing from suppliers."
+msgstr ""
+
 msgid "Allows acknowledge & continue"
 msgstr "Permet d'accuser réception et de continuer"
 
@@ -9610,6 +9613,9 @@ msgstr "Ligne de bon de commande"
 msgid "Purchase Order Location"
 msgstr "Localisation de la commande d'achat"
 
+msgid "Purchase Order Precision Pricing"
+msgstr ""
+
 msgid "Purchase order removed successfully"
 msgstr "Bon de commande supprimé avec succès"
 
@@ -13377,6 +13383,9 @@ msgstr "Prix unitaire"
 
 msgid "Unit Price"
 msgstr "Prix unitaire"
+
+msgid "Unit price decimal places"
+msgstr ""
 
 msgid "Unit Sale Price"
 msgstr "Prix de vente unitaire"

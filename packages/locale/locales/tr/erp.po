@@ -849,6 +849,9 @@ msgstr "Tüm kullanıcılar"
 msgid "All Work Centers"
 msgstr "Tüm İş Merkezleri"
 
+msgid "Allow entering purchase order unit prices with more decimal places, to match extended-precision pricing from suppliers."
+msgstr ""
+
 msgid "Allows acknowledge & continue"
 msgstr "Onaylayıp devam etmeye izin verir"
 
@@ -9610,6 +9613,9 @@ msgstr "Satın Alma Siparişi Kalemi"
 msgid "Purchase Order Location"
 msgstr "Satın Alma Siparişi Konumu"
 
+msgid "Purchase Order Precision Pricing"
+msgstr ""
+
 msgid "Purchase order removed successfully"
 msgstr "Satın alma siparişi başarıyla kaldırıldı"
 
@@ -13377,6 +13383,9 @@ msgstr "Birim fiyatı"
 
 msgid "Unit Price"
 msgstr "Birim Fiyatı"
+
+msgid "Unit price decimal places"
+msgstr ""
 
 msgid "Unit Sale Price"
 msgstr "Birim Satış Fiyatı"

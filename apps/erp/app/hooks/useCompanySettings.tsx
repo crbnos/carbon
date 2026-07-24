@@ -4,6 +4,7 @@ import { path } from "~/utils/path";
 type CompanySettings = {
   showSupplierReadableId?: boolean | null;
   showCustomerReadableId?: boolean | null;
+  purchaseOrderPricePrecision?: number | null;
 } & Record<string, unknown>;
 
 export function useCompanySettings(): CompanySettings | undefined {

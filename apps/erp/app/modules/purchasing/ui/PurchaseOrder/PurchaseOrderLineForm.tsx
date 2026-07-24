@@ -55,6 +55,7 @@ import {
 } from "~/components/Form";
 import { itemTypeLabel } from "~/components/Form/itemTypeLabel";
 import {
+  useCompanySettings,
   useCurrencyFormatter,
   usePercentFormatter,
   usePermissions,
@@ -316,6 +317,8 @@ const PurchaseOrderLineForm = ({
     : !permissions.can("create", "purchasing");
 
   const deleteDisclosure = useDisclosure();
+  const companySettings = useCompanySettings();
+  const unitPricePrecision = companySettings?.purchaseOrderPricePrecision ?? 2;
   const currencyFormatter = useCurrencyFormatter();
   const percentFormatter = usePercentFormatter();
 
@@ -728,7 +731,8 @@ const PurchaseOrderLineForm = ({
                             style: "currency",
                             currency:
                               routeData?.purchaseOrder?.currencyCode ??
-                              company.baseCurrencyCode
+                              company.baseCurrencyCode,
+                            maximumFractionDigits: unitPricePrecision
                           }}
                           onChange={(value) =>
                             setItemData((d) => ({
@@ -1018,7 +1022,8 @@ const PurchaseOrderLineForm = ({
                               style: "currency",
                               currency:
                                 routeData?.purchaseOrder?.currencyCode ??
-                                company.baseCurrencyCode
+                                company.baseCurrencyCode,
+                              maximumFractionDigits: unitPricePrecision
                             }}
                             onChange={(value) =>
                               setIndirectData((d) => ({

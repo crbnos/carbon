@@ -33,6 +33,8 @@ export const purchasePriceUpdateTimingTypes = [
   "Purchase Order Finalize"
 ] as const;
 
+export const purchaseOrderPricePrecisionTypes = [2, 3, 4] as const;
+
 /** All permission modules with their available CRUD actions */
 export const apiKeyPermissionModules = {
   accounting: ["view", "create", "update"],
@@ -154,6 +156,12 @@ export const plmReleaseControlValidator = z.object({
 
 export const purchasePriceUpdateTimingValidator = z.object({
   purchasePriceUpdateTiming: z.enum(purchasePriceUpdateTimingTypes)
+});
+
+export const purchaseOrderPricePrecisionValidator = z.object({
+  purchaseOrderPricePrecision: zfd.numeric(
+    z.union([z.literal(2), z.literal(3), z.literal(4)])
+  )
 });
 
 export const calculatedShelfLifeInputScopes = [

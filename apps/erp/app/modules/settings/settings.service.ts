@@ -29,6 +29,7 @@ import type {
   apiKeyValidator,
   companyValidator,
   kanbanOutputTypes,
+  purchaseOrderPricePrecisionTypes,
   purchasePriceUpdateTimingTypes,
   sequenceValidator,
   subsidiaryValidator,
@@ -1041,6 +1042,16 @@ export async function updatePurchasePriceUpdateTimingSetting(
   return client
     .from("companySettings")
     .update(sanitize({ purchasePriceUpdateTiming }))
+    .eq("id", companyId);
+}
+
+export async function updatePurchaseOrderPricePrecisionSetting(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  purchaseOrderPricePrecision: (typeof purchaseOrderPricePrecisionTypes)[number]
+) {
+  return (client.from("companySettings") as any)
+    .update(sanitize({ purchaseOrderPricePrecision }))
     .eq("id", companyId);
 }
 

@@ -849,6 +849,9 @@ msgstr "すべてのユーザー"
 msgid "All Work Centers"
 msgstr "すべての作業センター"
 
+msgid "Allow entering purchase order unit prices with more decimal places, to match extended-precision pricing from suppliers."
+msgstr ""
+
 msgid "Allows acknowledge & continue"
 msgstr "確認して続行できます"
 
@@ -9610,6 +9613,9 @@ msgstr "購買注文行"
 msgid "Purchase Order Location"
 msgstr "購入注文の場所"
 
+msgid "Purchase Order Precision Pricing"
+msgstr ""
+
 msgid "Purchase order removed successfully"
 msgstr "購買注文が正常に削除されました"
 
@@ -13377,6 +13383,9 @@ msgstr "単価"
 
 msgid "Unit Price"
 msgstr "単価"
+
+msgid "Unit price decimal places"
+msgstr ""
 
 msgid "Unit Sale Price"
 msgstr "単価販売価格"

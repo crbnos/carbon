@@ -849,6 +849,9 @@ msgstr "所有用户"
 msgid "All Work Centers"
 msgstr "所有工作中心"
 
+msgid "Allow entering purchase order unit prices with more decimal places, to match extended-precision pricing from suppliers."
+msgstr ""
+
 msgid "Allows acknowledge & continue"
 msgstr "允许确认并继续"
 
@@ -9610,6 +9613,9 @@ msgstr "采购订单行"
 msgid "Purchase Order Location"
 msgstr "采购订单位置"
 
+msgid "Purchase Order Precision Pricing"
+msgstr ""
+
 msgid "Purchase order removed successfully"
 msgstr "采购订单已成功删除"
 
@@ -13377,6 +13383,9 @@ msgstr "单价"
 
 msgid "Unit Price"
 msgstr "单价"
+
+msgid "Unit price decimal places"
+msgstr ""
 
 msgid "Unit Sale Price"
 msgstr "单位销售价格"

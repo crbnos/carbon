@@ -46,6 +46,7 @@ import { usePaymentTerm } from "~/components/Form/PaymentTerm";
 import { useShippingMethod } from "~/components/Form/ShippingMethod";
 import { ConfirmDelete } from "~/components/Modals";
 import {
+  useCompanySettings,
   useCurrencyFormatter,
   useDateFormatter,
   usePermissions,
@@ -71,7 +72,12 @@ const PurchaseOrdersTable = memo(
 
     const { t } = useLingui();
     const permissions = usePermissions();
-    const currencyFormatter = useCurrencyFormatter();
+    const companySettings = useCompanySettings();
+    const unitPricePrecision =
+      companySettings?.purchaseOrderPricePrecision ?? 2;
+    const currencyFormatter = useCurrencyFormatter({
+      maximumFractionDigits: unitPricePrecision
+    });
     const { formatDate } = useDateFormatter();
 
     const [selectedPurchaseOrder, setSelectedPurchaseOrder] =

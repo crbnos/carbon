@@ -849,6 +849,9 @@ msgstr "सभी उपयोगकर्ता"
 msgid "All Work Centers"
 msgstr "सभी कार्य केंद्र"
 
+msgid "Allow entering purchase order unit prices with more decimal places, to match extended-precision pricing from suppliers."
+msgstr ""
+
 msgid "Allows acknowledge & continue"
 msgstr "स्वीकार करने और जारी रखने की अनुमति देता है"
 
@@ -9610,6 +9613,9 @@ msgstr "क्रय आदेश पंक्ति"
 msgid "Purchase Order Location"
 msgstr "क्रय आदेश स्थान"
 
+msgid "Purchase Order Precision Pricing"
+msgstr ""
+
 msgid "Purchase order removed successfully"
 msgstr "क्रय आदेश सफलतापूर्वक हटा दिया गया"
 
@@ -13377,6 +13383,9 @@ msgstr "इकाई मूल्य"
 
 msgid "Unit Price"
 msgstr "यूनिट मूल्य"
+
+msgid "Unit price decimal places"
+msgstr ""
 
 msgid "Unit Sale Price"
 msgstr "यूनिट विक्रय मूल्य"

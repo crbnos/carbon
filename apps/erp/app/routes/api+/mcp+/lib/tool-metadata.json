@@ -1,6 +1,6 @@
 {
-  "generated": "2026-07-23T20:18:33.549Z",
-  "totalTools": 1377,
+  "generated": "2026-07-24T22:44:31.138Z",
+  "totalTools": 1378,
   "modules": 15,
   "tools": [
     {
@@ -39877,6 +39877,33 @@
         },
         "required": [
           "purchasePriceUpdateTiming"
+        ]
+      }
+    },
+    {
+      "name": "settings_updatePurchaseOrderPricePrecisionSetting",
+      "module": "settings",
+      "classification": "WRITE",
+      "description": "update purchase order price precision setting",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "purchaseOrderPricePrecision"
+      ],
+      "injectAuth": [
+        "companyId",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "purchaseOrderPricePrecision": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "purchaseOrderPricePrecision"
         ]
       }
     },
