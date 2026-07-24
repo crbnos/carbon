@@ -495,6 +495,16 @@ export type ReportView = {
   params: Record<string, string>;
 };
 
+// Reporting period for the ReportFilters "Period" picker (reads period-closing's
+// fiscalYear/periodNumber columns; rows missing either are filtered out).
+export type ReportingPeriod = {
+  id: string;
+  startDate: string;
+  endDate: string;
+  fiscalYear: number;
+  periodNumber: number;
+};
+
 // Flattened statement row for the PDF package (depth-indented tree).
 export type StatementRow = {
   name: string;

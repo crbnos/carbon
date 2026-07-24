@@ -38,10 +38,25 @@ import type {
   periodCloseTaskTypes,
   taxDepreciationMethods
 } from "./accounting.models";
+import {
+  buildCashFlowStatement,
+  getFiscalYearStartDate,
+  mergeTranslatedCashFlows
+} from "./accounting.utils";
 import type {
+  AccountClass,
+  AccountIncomeBalance,
   AccountLedgerLine,
+  AccountType,
+  CashFlowAccountInput,
+  CashFlowActivity,
+  CashFlowStatement,
+  GeneralLedgerLine,
+  ReportingPeriod,
+  ReportView,
   Transaction,
-  TranslatedBalance
+  TranslatedBalance,
+  TranslatedCompanyFlow
 } from "./types";
 import { NET_INCOME_ACCOUNT_ID } from "./types";
 
@@ -279,8 +294,14 @@ export async function getFinancialStatementBalances(
       ...account,
       netChange: balancesByAccountId[account.id]?.netChange ?? 0,
       balance: balancesByAccountId[account.id]?.balance ?? 0,
-      balanceAtDate: balancesByAccountId[account.id]?.balanceAtDate ?? 0
+      balanceAtDate: balancesByAccountId[account.id]?.balanceAtDate ?? 0,
+      // Set on the augmented Retained Earnings leaf and the synthetic Net Income
+      // row so the report tree can render a "computed" affordance.
+      isComputed: false as boolean
     }));
+
+  // Report-level warnings surfaced to the UI (e.g. no Retained Earnings account).
+  const warnings: string[] = [];
 
   // Undistributed net income lives only in income-statement accounts until it is
   // closed. A balance sheet at any date must carry it inside equity, or
@@ -298,45 +319,511 @@ export async function getFinancialStatementBalances(
         a.class === "Equity" && a.isGroup && a.parentId === balanceSheetRoot?.id
     );
     if (balanceSheetRoot && equityGroup) {
-      // Net income = Revenue − Expenses over income-statement LEAF accounts,
-      // signed exactly like the Income Statement report's bottom line.
-      let balance = 0;
-      let balanceAtDate = 0;
-      let netChange = 0;
+      // Report-window income-statement totals (Revenue − Expenses over LEAF
+      // accounts, signed like the Income Statement's bottom line). Added to the
+      // Equity group subtotal so the Balance Sheet root nets to ~0 — identical
+      // to the pre-split behavior, since the RE/Net Income split below only
+      // redistributes this total between two children of the same Equity group.
+      let reportBalance = 0;
+      let reportBalanceAtDate = 0;
+      let reportNetChange = 0;
       for (const a of mapped) {
         if (a.incomeBalance !== "Income Statement" || a.isGroup) continue;
         const sign = rootSignMultiplier(a.class);
-        balance += sign * a.balance;
-        balanceAtDate += sign * a.balanceAtDate;
-        netChange += sign * a.netChange;
+        reportBalance += sign * a.balance;
+        reportBalanceAtDate += sign * a.balanceAtDate;
+        reportNetChange += sign * a.netChange;
       }
-      // Roll into the Equity group subtotal so the section ties out;
-      // applyRootSignCorrection recomputes the Balance Sheet root from its
-      // direct children, so the root nets to ~0.
-      equityGroup.balance += balance;
-      equityGroup.balanceAtDate += balanceAtDate;
-      equityGroup.netChange += netChange;
-      // Clone the Equity group to inherit every account column the report needs,
-      // then override identity + balances. Must NOT be isSystem — a system row
-      // is treated as a root by applyRootSignCorrection and recomputed to zero.
+      equityGroup.balance += reportBalance;
+      equityGroup.balanceAtDate += reportBalanceAtDate;
+      equityGroup.netChange += reportNetChange;
+
+      // Fiscal-year split (NetSuite/QBO/Xero computed model): prior fiscal years'
+      // income folds into the Retained Earnings row; the current fiscal year shows
+      // as Net Income. One extra balance call over [fiscalYearStart, endDate]:
+      // its netChange = current-year earnings; the remainder is prior years'.
+      const endDate = args.endDate ?? new Date().toISOString().split("T")[0];
+      let currentYearEarnings = reportBalanceAtDate; // legacy fallback
+      if (companyId) {
+        const settingsResult = await getFiscalYearSettings(client, companyId);
+        const fiscalYearStart = getFiscalYearStartDate(
+          settingsResult.data?.startMonth ?? null,
+          endDate
+        );
+        const fyBalances = await client.rpc("accountTreeBalancesByCompany", {
+          p_company_group_id: companyGroupId,
+          p_company_id: companyId,
+          from_date: fiscalYearStart,
+          to_date: endDate
+        });
+        if (!fyBalances.error) {
+          const fyByAccountId = (
+            fyBalances.data as unknown as (Transaction & {
+              accountId: string;
+            })[]
+          ).reduce<Record<string, number>>((acc, row) => {
+            acc[row.accountId] = row.netChange;
+            return acc;
+          }, {});
+          let cye = 0;
+          for (const a of mapped) {
+            if (a.incomeBalance !== "Income Statement" || a.isGroup) continue;
+            const fyNetChange = fyByAccountId[a.id];
+            if (fyNetChange === undefined) continue;
+            cye += rootSignMultiplier(a.class) * fyNetChange;
+          }
+          currentYearEarnings = cye;
+        }
+      }
+      // Derived so RE + Net Income always sum to the group total exactly.
+      let priorYearsEarnings = reportBalanceAtDate - currentYearEarnings;
+
+      const retainedEarnings = mapped.find(
+        (a) =>
+          !a.isGroup &&
+          (a as unknown as { accountType: string | null }).accountType ===
+            "Retained Earnings"
+      );
+      if (retainedEarnings) {
+        if (priorYearsEarnings !== 0) {
+          retainedEarnings.balance += priorYearsEarnings;
+          retainedEarnings.balanceAtDate += priorYearsEarnings;
+          retainedEarnings.isComputed = true;
+        }
+      } else {
+        // No Retained Earnings account: prior-year income has nowhere to fold —
+        // keep today's single all-inception Net Income line and warn the UI.
+        warnings.push("no-retained-earnings-account");
+        currentYearEarnings = reportBalanceAtDate;
+        priorYearsEarnings = 0;
+      }
+
+      // Net Income leaf = current fiscal-year earnings. Cloned from the Equity
+      // group so it inherits every column the report needs; must NOT be isSystem
+      // (system rows are treated as roots and recomputed to zero).
       mapped.push({
         ...equityGroup,
         id: NET_INCOME_ACCOUNT_ID,
         name: "Net Income",
         isGroup: false,
         isSystem: false,
+        isComputed: true,
         parentId: equityGroup.id,
-        balance,
-        balanceAtDate,
-        netChange
+        balance: currentYearEarnings,
+        balanceAtDate: currentYearEarnings,
+        netChange: reportNetChange
       });
     }
   }
 
   return {
     data: applyRootSignCorrection(mapped),
+    warnings,
     error: null
   };
+}
+
+/**
+ * Indirect-method statement of cash flows for a single company in its local
+ * currency. Reuses accountTreeBalancesByCompany over [startDate, endDate] plus
+ * the accounts list; the pure buildCashFlowStatement does the classification.
+ */
+export async function getCashFlowStatement(
+  client: SupabaseClient<Database>,
+  companyGroupId: string,
+  companyId: string,
+  args: { startDate: string | null; endDate: string | null }
+): Promise<{ data: CashFlowStatement | null; error: PostgrestError | null }> {
+  const accountsQuery = client
+    .from("accounts")
+    .select("*")
+    .eq("companyGroupId", companyGroupId)
+    .eq("active", true)
+    .eq("isGroup", false)
+    .order("number", { ascending: true });
+
+  const balancesQuery = client.rpc("accountTreeBalancesByCompany", {
+    p_company_group_id: companyGroupId,
+    p_company_id: companyId,
+    from_date:
+      args.startDate ?? getDateNYearsAgo(50).toISOString().split("T")[0],
+    to_date: args.endDate ?? new Date().toISOString().split("T")[0]
+  });
+
+  const [accountsResponse, balancesResponse] = await Promise.all([
+    accountsQuery,
+    balancesQuery
+  ]);
+
+  if (accountsResponse.error)
+    return { data: null, error: accountsResponse.error };
+  if (balancesResponse.error)
+    return { data: null, error: balancesResponse.error };
+
+  const balancesMap = new Map<
+    string,
+    { balanceAtDate: number; netChange: number }
+  >();
+  for (const row of balancesResponse.data as unknown as (Transaction & {
+    accountId: string;
+  })[]) {
+    balancesMap.set(row.accountId, {
+      balanceAtDate: row.balanceAtDate,
+      netChange: row.netChange
+    });
+  }
+
+  const accountInputs: CashFlowAccountInput[] = (accountsResponse.data ?? [])
+    .filter((a): a is typeof a & { id: string } => a.id !== null)
+    .map((a) => ({
+      id: a.id,
+      number: a.number,
+      name: a.name ?? "",
+      class: a.class as AccountClass,
+      incomeBalance: a.incomeBalance as AccountIncomeBalance,
+      accountType: (a as unknown as { accountType: AccountType | null })
+        .accountType,
+      cashFlowActivity: (
+        a as unknown as { cashFlowActivity: CashFlowActivity | null }
+      ).cashFlowActivity
+    }));
+
+  return {
+    data: buildCashFlowStatement(accountInputs, balancesMap),
+    error: null
+  };
+}
+
+/**
+ * Scalar exchange rates for a currency over a window, mirroring
+ * translateTrialBalance's fallback chain (average → closing → 1). Beginning cash
+ * translates at the closing rate as of the window start, ending cash at the
+ * closing rate as of the window end, flows at the window average.
+ */
+export async function getCurrencyRatesForWindow(
+  client: SupabaseClient<Database>,
+  companyGroupId: string,
+  currencyCode: string,
+  args: { startDate: string | null; endDate: string | null }
+): Promise<{
+  data: { average: number; closingAtStart: number; closingAtEnd: number };
+  error: PostgrestError | null;
+}> {
+  const endDate = args.endDate ?? new Date().toISOString().split("T")[0];
+  const [ey, em, ed] = endDate.split("-").map((p) => Number.parseInt(p, 10));
+  const avgFrom =
+    args.startDate ??
+    new Date(Date.UTC(ey - 1, em - 1, ed)).toISOString().split("T")[0];
+
+  const table = () =>
+    client
+      .from("exchangeRateHistory")
+      .select("rate, effectiveDate")
+      .eq("currencyCode", currencyCode)
+      .eq("companyGroupId", companyGroupId);
+
+  const [avgResponse, closeStartResponse, closeEndResponse] = await Promise.all(
+    [
+      table().gte("effectiveDate", avgFrom).lte("effectiveDate", endDate),
+      args.startDate
+        ? table()
+            .lte("effectiveDate", args.startDate)
+            .order("effectiveDate", { ascending: false })
+            .limit(1)
+            .maybeSingle()
+        : Promise.resolve({ data: null, error: null }),
+      table()
+        .lte("effectiveDate", endDate)
+        .order("effectiveDate", { ascending: false })
+        .limit(1)
+        .maybeSingle()
+    ]
+  );
+
+  if (avgResponse.error)
+    return {
+      data: { average: 1, closingAtStart: 1, closingAtEnd: 1 },
+      error: avgResponse.error
+    };
+
+  const rates = (avgResponse.data ?? []).map((r) => Number(r.rate));
+  const average =
+    rates.length > 0 ? rates.reduce((a, b) => a + b, 0) / rates.length : null;
+  const closingAtStart = closeStartResponse.data
+    ? Number((closeStartResponse.data as { rate: number }).rate)
+    : null;
+  const closingAtEnd = closeEndResponse.data
+    ? Number((closeEndResponse.data as { rate: number }).rate)
+    : null;
+
+  return {
+    data: {
+      average: average ?? closingAtEnd ?? 1,
+      closingAtStart: closingAtStart ?? 1,
+      closingAtEnd: closingAtEnd ?? 1
+    },
+    error: null
+  };
+}
+
+function translateCompanyFlow(
+  cf: CashFlowStatement,
+  average: number,
+  closingAtStart: number,
+  closingAtEnd: number
+): TranslatedCompanyFlow {
+  const scale = (lines: CashFlowStatement["operating"]) =>
+    lines.map((l) => ({ ...l, amount: l.amount * average }));
+  return {
+    netIncome: cf.netIncome * average,
+    operating: scale(cf.operating),
+    investing: scale(cf.investing),
+    financing: scale(cf.financing),
+    unclassified: scale(cf.unclassified),
+    beginningCash: cf.beginningCash * closingAtStart,
+    endingCash: cf.endingCash * closingAtEnd
+  };
+}
+
+/**
+ * Consolidated statement of cash flows: each company's SCF (local currency)
+ * translated to the parent currency (flows/net income at the average rate, cash
+ * at closing rates), merged by account id, with the standard "Effect of exchange
+ * rate changes on cash" plug (see mergeTranslatedCashFlows).
+ */
+export async function getConsolidatedCashFlowStatement(
+  client: SupabaseClient<Database>,
+  companyGroupId: string,
+  companyIds: string[],
+  parentCurrency: string,
+  args: { startDate: string | null; endDate: string | null },
+  companyCurrencies?: { id: string; baseCurrencyCode: string | null }[]
+): Promise<{ data: CashFlowStatement | null; error: PostgrestError | null }> {
+  const currencyByCompany = new Map<string, string>();
+  if (companyCurrencies) {
+    for (const c of companyCurrencies)
+      currencyByCompany.set(c.id, c.baseCurrencyCode ?? parentCurrency);
+  } else {
+    const companiesResponse = await client
+      .from("company")
+      .select("id, baseCurrencyCode")
+      .in("id", companyIds);
+    if (companiesResponse.error)
+      return { data: null, error: companiesResponse.error };
+    for (const c of companiesResponse.data ?? [])
+      currencyByCompany.set(c.id, c.baseCurrencyCode ?? parentCurrency);
+  }
+
+  const perCompany: TranslatedCompanyFlow[] = [];
+  for (const id of companyIds) {
+    const cf = await getCashFlowStatement(client, companyGroupId, id, args);
+    if (cf.error) return { data: null, error: cf.error };
+    if (!cf.data) continue;
+
+    const currency = currencyByCompany.get(id) ?? parentCurrency;
+    if (currency === parentCurrency) {
+      perCompany.push(translateCompanyFlow(cf.data, 1, 1, 1));
+      continue;
+    }
+    const rates = await getCurrencyRatesForWindow(
+      client,
+      companyGroupId,
+      currency,
+      args
+    );
+    const { average, closingAtStart, closingAtEnd } = rates.data;
+    perCompany.push(
+      translateCompanyFlow(cf.data, average, closingAtStart, closingAtEnd)
+    );
+  }
+
+  return { data: mergeTranslatedCashFlows(perCompany), error: null };
+}
+
+/**
+ * GL detail: journal lines with their journal header, filtered by account, date
+ * range, and journal status (default Posted + Reversed), paginated. Ordered by
+ * posting date ascending so the running-balance column composes correctly.
+ */
+export async function getGeneralLedgerLines(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: GenericQueryFilters & {
+    accountId: string | null;
+    startDate: string | null;
+    endDate: string | null;
+    status: string[] | null;
+  }
+) {
+  let query = client
+    .from("journalLine")
+    .select(
+      "id, accountId, amount, description, companyId, createdAt, journal!inner(id, journalEntryId, postingDate, status, sourceType, description)",
+      { count: "exact" }
+    )
+    .eq("companyId", companyId);
+
+  if (args.accountId) query = query.eq("accountId", args.accountId);
+  if (args.startDate) query = query.gte("journal.postingDate", args.startDate);
+  if (args.endDate) query = query.lte("journal.postingDate", args.endDate);
+  query = query.in(
+    "journal.status",
+    (args.status ?? ["Posted", "Reversed"]) as (
+      | "Draft"
+      | "Posted"
+      | "Reversed"
+    )[]
+  );
+
+  query = setGenericQueryFilters(query, args, [
+    { column: "postingDate", ascending: true, foreignTable: "journal" }
+  ]);
+
+  return query as unknown as Promise<{
+    data: GeneralLedgerLine[] | null;
+    count: number | null;
+    error: PostgrestError | null;
+  }>;
+}
+
+/**
+ * Opening balance for a single account strictly before `beforeDate` — the
+ * running-balance seed for the GL detail report. Uses the same balance RPC the
+ * statements use, so the drill-down ties out.
+ */
+export async function getGeneralLedgerOpeningBalance(
+  client: SupabaseClient<Database>,
+  companyGroupId: string,
+  companyId: string,
+  accountId: string,
+  beforeDate: string
+): Promise<{ data: number; error: PostgrestError | null }> {
+  const balances = await client.rpc("accountTreeBalancesByCompany", {
+    p_company_group_id: companyGroupId,
+    p_company_id: companyId,
+    from_date: beforeDate,
+    to_date: beforeDate
+  });
+  if (balances.error) return { data: 0, error: balances.error };
+  const row = (
+    balances.data as unknown as (Transaction & { accountId: string })[]
+  ).find((b) => b.accountId === accountId);
+  // balanceAtDate includes postings on beforeDate; netChange (from=to=beforeDate)
+  // isolates that day — the difference is the balance strictly before beforeDate.
+  return {
+    data: (row?.balanceAtDate ?? 0) - (row?.netChange ?? 0),
+    error: null
+  };
+}
+
+/**
+ * Reporting periods for the "Period" picker. Reads period-closing's
+ * fiscalYear/periodNumber via cast; rows missing either are filtered out, so the
+ * picker hides gracefully when the period-closing migration hasn't been applied.
+ */
+export async function getReportingPeriods(
+  client: SupabaseClient<Database>,
+  companyId: string
+): Promise<{ data: ReportingPeriod[]; error: PostgrestError | null }> {
+  const result = await client
+    .from("accountingPeriod")
+    .select("*")
+    .eq("companyId", companyId)
+    .order("startDate", { ascending: false });
+  if (result.error) return { data: [], error: result.error };
+  const rows = (result.data ?? []) as unknown as {
+    id: string;
+    startDate: string;
+    endDate: string;
+    fiscalYear: number | null;
+    periodNumber: number | null;
+  }[];
+  return {
+    data: rows
+      .filter((r) => r.fiscalYear != null && r.periodNumber != null)
+      .map((r) => ({
+        id: r.id,
+        startDate: r.startDate,
+        endDate: r.endDate,
+        fiscalYear: r.fiscalYear as number,
+        periodNumber: r.periodNumber as number
+      })),
+    error: null
+  };
+}
+
+// -- Saved report views (personal; owner-scoped RLS + defensive userId scoping).
+// reportView is absent from committed DB types — cast at the boundary.
+
+export async function getReportViews(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  userId: string,
+  report: string
+): Promise<{ data: ReportView[]; error: PostgrestError | null }> {
+  const result = await (client as any)
+    .from("reportView")
+    .select("*")
+    .eq("companyId", companyId)
+    .eq("userId", userId)
+    .eq("report", report)
+    .order("name", { ascending: true });
+  if (result.error) return { data: [], error: result.error };
+  const rows = (result.data ?? []) as {
+    id: string;
+    userId: string;
+    companyId: string;
+    report: string;
+    name: string;
+    params: Record<string, string> | null;
+  }[];
+  return {
+    data: rows.map((r) => ({ ...r, params: r.params ?? {} })),
+    error: null
+  };
+}
+
+export async function upsertReportView(
+  client: SupabaseClient<Database>,
+  view: {
+    id?: string;
+    userId: string;
+    companyId: string;
+    report: string;
+    name: string;
+    params: Record<string, string>;
+  }
+) {
+  if (view.id) {
+    return (client as any)
+      .from("reportView")
+      .update({
+        name: view.name,
+        params: view.params,
+        updatedAt: new Date().toISOString()
+      })
+      .eq("id", view.id)
+      .eq("userId", view.userId);
+  }
+  return (client as any).from("reportView").insert({
+    userId: view.userId,
+    companyId: view.companyId,
+    report: view.report,
+    name: view.name,
+    params: view.params
+  });
+}
+
+export async function deleteReportView(
+  client: SupabaseClient<Database>,
+  id: string,
+  userId: string
+) {
+  return (client as any)
+    .from("reportView")
+    .delete()
+    .eq("id", id)
+    .eq("userId", userId);
 }
 
 export async function getCompaniesInGroup(
@@ -3128,7 +3615,9 @@ export async function getJournalEntry(
 ) {
   return client
     .from("journal")
-    .select("*, journalLine(*, account!journalLine_accountId_fkey(class))")
+    .select(
+      "*, journalLine(*, account!journalLine_accountId_fkey(number, name, class))"
+    )
     .eq("id", id)
     .single();
 }
