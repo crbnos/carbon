@@ -6,6 +6,7 @@ import { msg } from "@lingui/core/macro";
 import { useState } from "react";
 import type { LoaderFunctionArgs } from "react-router";
 import { Outlet, redirect, useLoaderData } from "react-router";
+import { useUrlParams } from "~/hooks";
 import type { Chart } from "~/modules/accounting";
 import {
   getCompaniesInGroup,
@@ -14,7 +15,9 @@ import {
   getFiscalYearSettings,
   translateCompanyBalances
 } from "~/modules/accounting";
+import { getComparisonWindow } from "~/modules/accounting/accounting.utils";
 import {
+  ExportReportButton,
   FinancialStatementTree,
   ReportFilters
 } from "~/modules/accounting/ui/Reports";
@@ -45,6 +48,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const startDate = searchParams.get("startDate") || null;
   const endDate = searchParams.get("endDate") || null;
   const showTranslated = searchParams.get("showTranslated") === "true";
+  const compare = (searchParams.get("compare") ?? "none") as
+    | "none"
+    | "priorPeriod"
+    | "priorYear";
 
   const [companies, fiscalYearSettings] = await Promise.all([
     getCompaniesInGroup(client, companyGroupId),
@@ -90,7 +97,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
       isMultiCompany: true,
       isForeignCurrency: false,
       parentCurrency,
-      fiscalStartMonth
+      fiscalStartMonth,
+      comparison: undefined as Record<string, number> | undefined
     };
   }
 
@@ -154,6 +162,25 @@ export async function loader({ request }: LoaderFunctionArgs) {
     }
   }
 
+  // Comparative column: re-run the same balance call over the shifted window.
+  let comparison: Record<string, number> | undefined;
+  const compWindow = getComparisonWindow(compare, startDate, endDate, "range");
+  if (compWindow) {
+    const compBalances = await getFinancialStatementBalances(
+      client,
+      companyGroupId,
+      selectedCompanyId,
+      { startDate: compWindow.startDate, endDate: compWindow.endDate }
+    );
+    if (!compBalances.error) {
+      comparison = {};
+      for (const a of compBalances.data ?? []) {
+        if (a.incomeBalance === "Income Statement")
+          comparison[a.id] = a.netChange;
+      }
+    }
+  }
+
   return {
     incomeStatement: incomeStatementAccounts,
     companies: companiesList,
@@ -162,7 +189,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
     isMultiCompany: false,
     isForeignCurrency,
     parentCurrency,
-    fiscalStartMonth
+    fiscalStartMonth,
+    comparison
   };
 }
 
@@ -175,9 +203,19 @@ export default function IncomeStatementRoute() {
     isMultiCompany,
     isForeignCurrency,
     parentCurrency,
-    fiscalStartMonth
+    fiscalStartMonth,
+    comparison
   } = useLoaderData<typeof loader>();
   const [search, setSearch] = useState("");
+  const [params] = useUrlParams();
+  const endDate =
+    params.get("endDate") || new Date().toISOString().split("T")[0];
+  const csvRows = incomeStatement.map((a) => ({
+    number: a.number ?? "",
+    name: a.name ?? "",
+    netChange: a.netChange ?? 0,
+    comparison: comparison?.[a.id] ?? ""
+  }));
 
   return (
     <VStack spacing={0} className="h-full">
@@ -188,6 +226,13 @@ export default function IncomeStatementRoute() {
         isForeignCurrency={isForeignCurrency}
         parentCurrency={parentCurrency}
         fiscalStartMonth={fiscalStartMonth}
+        showCompare={!isMultiCompany}
+        actions={
+          <ExportReportButton
+            rows={csvRows}
+            filename={`income-statement-${endDate}.csv`}
+          />
+        }
         search={search}
         onSearchChange={setSearch}
       />
@@ -198,6 +243,7 @@ export default function IncomeStatementRoute() {
         parentCurrency={parentCurrency}
         search={search}
         ledgerPath={path.to.incomeStatementLedger}
+        comparison={comparison}
       />
       <Outlet />
     </VStack>

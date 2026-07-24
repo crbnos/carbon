@@ -154,6 +154,9 @@ msgstr "{years}ano"
 msgid "/month/user"
 msgstr "/mês/utilizador"
 
+msgid "%"
+msgstr ""
+
 msgid "% of Total"
 msgstr "% do Total"
 
@@ -2518,6 +2521,9 @@ msgstr "Comparar Cotações"
 
 msgid "Compare Supplier Quotes"
 msgstr "Comparar Cotações de Fornecedores"
+
+msgid "Comparison"
+msgstr ""
 
 msgid "Complete"
 msgstr "Concluir"
@@ -8503,6 +8509,9 @@ msgstr "Nenhuma mudança ainda."
 msgid "No comments yet. Be the first to add a comment."
 msgstr "Sem comentários ainda. Seja o primeiro a adicionar um comentário."
 
+msgid "No comparison"
+msgstr ""
+
 msgid "No completed jobs within range"
 msgstr "Nenhum trabalho concluído no intervalo"
 
@@ -9769,6 +9778,11 @@ msgstr "Página anterior"
 
 msgid "Previous step"
 msgstr "Etapa anterior"
+msgid "Previous period"
+msgstr ""
+
+msgid "Previous year"
+msgstr ""
 
 msgid "Price break actions"
 msgstr "Ações de quebra de preço"

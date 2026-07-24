@@ -154,6 +154,9 @@ msgstr "{years}년"
 msgid "/month/user"
 msgstr "/월/사용자"
 
+msgid "%"
+msgstr ""
+
 msgid "% of Total"
 msgstr "전체의 %"
 
@@ -2518,6 +2521,9 @@ msgstr "견적 비교"
 
 msgid "Compare Supplier Quotes"
 msgstr "공급업체 견적 비교"
+
+msgid "Comparison"
+msgstr ""
 
 msgid "Complete"
 msgstr "완료"
@@ -8503,6 +8509,9 @@ msgstr "아직 변경사항이 없습니다."
 msgid "No comments yet. Be the first to add a comment."
 msgstr "아직 댓글이 없습니다. 첫 댓글을 남겨보세요."
 
+msgid "No comparison"
+msgstr ""
+
 msgid "No completed jobs within range"
 msgstr "해당 기간 내 완료된 작업이 없습니다"
 
@@ -9769,6 +9778,11 @@ msgstr "이전 페이지"
 
 msgid "Previous step"
 msgstr "이전 단계"
+msgid "Previous period"
+msgstr ""
+
+msgid "Previous year"
+msgstr ""
 
 msgid "Price break actions"
 msgstr "가격 구간 작업"

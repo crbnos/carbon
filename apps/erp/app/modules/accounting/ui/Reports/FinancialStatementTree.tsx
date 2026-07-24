@@ -44,6 +44,8 @@ type FinancialStatementTreeProps = {
   search: string;
   /** When provided, clicking a leaf account opens its ledger drill-down */
   ledgerPath?: (accountId: string) => string;
+  /** accountId → comparison-window measure; renders variance columns when set. */
+  comparison?: Record<string, number>;
 };
 
 function accountsToFlatTree(
@@ -130,7 +132,8 @@ const FinancialStatementTree = memo(
     showTranslated = false,
     parentCurrency,
     search,
-    ledgerPath
+    ledgerPath,
+    comparison
   }: FinancialStatementTreeProps) => {
     const { t } = useLingui();
     const measureLabel = measure === "netChange" ? t`Net Change` : t`Balance`;
@@ -180,6 +183,13 @@ const FinancialStatementTree = memo(
             <span className="w-32 text-right px-4">
               {parentCurrency ?? "Translated"}
             </span>
+          )}
+          {comparison && (
+            <>
+              <span className="w-32 text-right px-4">{t`Comparison`}</span>
+              <span className="w-28 text-right px-4">{t`Variance`}</span>
+              <span className="w-20 text-right px-4">{t`%`}</span>
+            </>
           )}
         </div>
         <TreeView<TranslatedChart>
@@ -297,6 +307,32 @@ const FinancialStatementTree = memo(
                       : "-"}
                   </span>
                 )}
+
+                {/* Comparison + variance columns */}
+                {comparison &&
+                  (() => {
+                    const primary = account[measure] ?? 0;
+                    const hasComp = account.id in comparison;
+                    const comp = comparison[account.id] ?? 0;
+                    const variance = primary - comp;
+                    const pct =
+                      comp === 0
+                        ? "—"
+                        : `${((variance / Math.abs(comp)) * 100).toFixed(1)}%`;
+                    return (
+                      <>
+                        <span className="w-32 text-right tabular-nums shrink-0 text-muted-foreground">
+                          {hasComp ? formatCurrency(comp) : "—"}
+                        </span>
+                        <span className="w-28 text-right tabular-nums shrink-0 text-muted-foreground">
+                          {hasComp ? formatCurrency(variance) : "—"}
+                        </span>
+                        <span className="w-20 text-right tabular-nums shrink-0 text-muted-foreground">
+                          {hasComp ? pct : "—"}
+                        </span>
+                      </>
+                    );
+                  })()}
               </div>
             );
           }}

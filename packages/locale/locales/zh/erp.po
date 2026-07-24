@@ -154,6 +154,9 @@ msgstr "{years}年"
 msgid "/month/user"
 msgstr "/月/用户"
 
+msgid "%"
+msgstr ""
+
 msgid "% of Total"
 msgstr "占总数的 %"
 
@@ -2518,6 +2521,9 @@ msgstr "比较报价"
 
 msgid "Compare Supplier Quotes"
 msgstr "比较供应商报价"
+
+msgid "Comparison"
+msgstr ""
 
 msgid "Complete"
 msgstr "完成"
@@ -8503,6 +8509,9 @@ msgstr "还没有变更。"
 msgid "No comments yet. Be the first to add a comment."
 msgstr "还没有评论。成为第一个添加评论的人。"
 
+msgid "No comparison"
+msgstr ""
+
 msgid "No completed jobs within range"
 msgstr "范围内没有已完成的工作"
 
@@ -9769,6 +9778,11 @@ msgstr "上一页"
 
 msgid "Previous step"
 msgstr "上一步"
+msgid "Previous period"
+msgstr ""
+
+msgid "Previous year"
+msgstr ""
 
 msgid "Price break actions"
 msgstr "价格阶梯操作"

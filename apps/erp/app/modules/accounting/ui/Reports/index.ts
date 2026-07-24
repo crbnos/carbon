@@ -1,6 +1,7 @@
 export { default as AccountLedgerDrawer } from "./AccountLedgerDrawer";
 export { default as CashFlowStatement } from "./CashFlowStatement";
 export { default as CompanySelector } from "./CompanySelector";
+export { default as ExportReportButton } from "./ExportReportButton";
 export { default as FinancialStatementTree } from "./FinancialStatementTree";
 export { default as ReportFilters } from "./ReportFilters";
 export { default as TrialBalanceTable } from "./TrialBalanceTable";

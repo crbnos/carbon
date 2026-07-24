@@ -154,6 +154,9 @@ msgstr "{years}年"
 msgid "/month/user"
 msgstr "/月/ユーザー"
 
+msgid "%"
+msgstr ""
+
 msgid "% of Total"
 msgstr "総量比"
 
@@ -2518,6 +2521,9 @@ msgstr "見積もりを比較"
 
 msgid "Compare Supplier Quotes"
 msgstr "サプライヤー見積もりを比較"
+
+msgid "Comparison"
+msgstr ""
 
 msgid "Complete"
 msgstr "完了"
@@ -8503,6 +8509,9 @@ msgstr "まだ変更がありません。"
 msgid "No comments yet. Be the first to add a comment."
 msgstr "まだコメントがありません。最初のコメントを追加してください。"
 
+msgid "No comparison"
+msgstr ""
+
 msgid "No completed jobs within range"
 msgstr "範囲内に完了したジョブがありません"
 
@@ -9769,6 +9778,11 @@ msgstr "前のページ"
 
 msgid "Previous step"
 msgstr "前のステップ"
+msgid "Previous period"
+msgstr ""
+
+msgid "Previous year"
+msgstr ""
 
 msgid "Price break actions"
 msgstr "価格ブレークアクション"

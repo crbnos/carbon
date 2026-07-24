@@ -14,6 +14,7 @@ import {
 } from "~/modules/accounting";
 import {
   CashFlowStatement,
+  ExportReportButton,
   ReportFilters
 } from "~/modules/accounting/ui/Reports";
 import { months } from "~/modules/shared";
@@ -137,6 +138,72 @@ export default function CashFlowRoute() {
   } = useLoaderData<typeof loader>();
   const [search, setSearch] = useState("");
 
+  const csvRows: { section: string; name: string; amount: number }[] = [
+    { section: "Operating", name: "Net Income", amount: statement.netIncome },
+    ...statement.operating.map((l) => ({
+      section: "Operating",
+      name: l.name,
+      amount: l.amount
+    })),
+    {
+      section: "Operating",
+      name: "Net cash from operating activities",
+      amount: statement.operatingTotal
+    },
+    ...statement.investing.map((l) => ({
+      section: "Investing",
+      name: l.name,
+      amount: l.amount
+    })),
+    {
+      section: "Investing",
+      name: "Net cash from investing activities",
+      amount: statement.investingTotal
+    },
+    ...statement.financing.map((l) => ({
+      section: "Financing",
+      name: l.name,
+      amount: l.amount
+    })),
+    {
+      section: "Financing",
+      name: "Net cash from financing activities",
+      amount: statement.financingTotal
+    },
+    ...statement.unclassified.map((l) => ({
+      section: "Unclassified",
+      name: l.name,
+      amount: l.amount
+    })),
+    ...(statement.effectOfExchangeRates !== undefined
+      ? [
+          {
+            section: "FX",
+            name: "Effect of exchange rate changes on cash",
+            amount: statement.effectOfExchangeRates
+          }
+        ]
+      : []),
+    {
+      section: "Cash",
+      name: "Net change in cash",
+      amount: statement.netChangeInCash
+    },
+    {
+      section: "Cash",
+      name: "Cash at beginning of period",
+      amount: statement.beginningCash
+    },
+    {
+      section: "Cash",
+      name: "Cash at end of period",
+      amount: statement.endingCash
+    }
+  ];
+  const csvName = `cash-flow-${
+    endDate || new Date().toISOString().split("T")[0]
+  }.csv`;
+
   return (
     <VStack spacing={0} className="h-full">
       <ReportFilters
@@ -146,6 +213,7 @@ export default function CashFlowRoute() {
         parentCurrency={parentCurrency}
         periodVariant="range"
         fiscalStartMonth={fiscalStartMonth}
+        actions={<ExportReportButton rows={csvRows} filename={csvName} />}
         search={search}
         onSearchChange={setSearch}
       />
