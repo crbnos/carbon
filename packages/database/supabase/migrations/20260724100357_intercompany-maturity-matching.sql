@@ -318,15 +318,22 @@ BEGIN
     RAISE EXCEPTION 'Insufficient permissions to generate elimination entries';
   END IF;
 
+  -- Process each unordered company pair once. matchIntercompanyTransactions marks
+  -- BOTH directional rows (A→B and B→A) as 'Matched', and each row already carries
+  -- both sides of the pair (sourceJournalLineId + targetJournalLineId). Iterating
+  -- over the raw (sourceCompanyId, targetCompanyId) tuples would reverse every
+  -- physical journal line twice, in two separate elimination journals — normalize
+  -- with LEAST/GREATEST so a pair is eliminated exactly once, then mark both
+  -- directional rows Eliminated with the same journal below.
   FOR v_rec IN
     SELECT DISTINCT
-      ict."sourceCompanyId",
-      ict."targetCompanyId"
+      LEAST(ict."sourceCompanyId", ict."targetCompanyId")    AS "companyA",
+      GREATEST(ict."sourceCompanyId", ict."targetCompanyId") AS "companyB"
     FROM "intercompanyTransaction" ict
     WHERE ict."companyGroupId" = p_company_group_id
       AND ict."status" = 'Matched'
   LOOP
-    v_lca_id := "findLowestCommonParent"(v_rec."sourceCompanyId", v_rec."targetCompanyId");
+    v_lca_id := "findLowestCommonParent"(v_rec."companyA", v_rec."companyB");
 
     SELECT c."id" INTO v_elim_id
     FROM "company" c
@@ -347,11 +354,44 @@ BEGIN
       RAISE EXCEPTION 'No elimination entity found for company group %', p_company_group_id;
     END IF;
 
+    -- Resolve the elimination entity's current accounting period. Mirror the
+    -- get-or-create idiom the other posting RPCs use (get-accounting-period /
+    -- service-job-completion-cogs): "status" = 'Active' is the current-period
+    -- pointer, a separate axis from the closeStatus lifecycle. This guarantees a
+    -- non-NULL period so the elimination journal is never left unperiodized; a
+    -- Closed current period is rejected by the check_accounting_period_open
+    -- trigger on INSERT rather than silently posting.
     SELECT "id" INTO v_period_id
     FROM "accountingPeriod"
     WHERE "companyId" = v_elim_id
+      AND "startDate" <= CURRENT_DATE
+      AND "endDate" >= CURRENT_DATE
       AND "status" = 'Active'
     LIMIT 1;
+
+    IF v_period_id IS NULL THEN
+      UPDATE "accountingPeriod"
+      SET "status" = 'Inactive'
+      WHERE "status" = 'Active' AND "companyId" = v_elim_id;
+
+      UPDATE "accountingPeriod"
+      SET "status" = 'Active'
+      WHERE "companyId" = v_elim_id
+        AND "startDate" <= CURRENT_DATE
+        AND "endDate" >= CURRENT_DATE
+      RETURNING "id" INTO v_period_id;
+
+      IF v_period_id IS NULL THEN
+        INSERT INTO "accountingPeriod" (
+          "startDate", "endDate", "companyId", "status", "createdBy"
+        ) VALUES (
+          date_trunc('month', CURRENT_DATE)::DATE,
+          (date_trunc('month', CURRENT_DATE) + INTERVAL '1 month' - INTERVAL '1 day')::DATE,
+          v_elim_id, 'Active', 'system'
+        )
+        RETURNING "id" INTO v_period_id;
+      END IF;
+    END IF;
 
     -- journalEntryId is NOT NULL with no default — assign the next readable
     -- sequence for the elimination entity (the original RPC omitted it and would
@@ -361,7 +401,7 @@ BEGIN
     INSERT INTO "journal" ("journalEntryId", "description", "accountingPeriodId", "companyId", "postingDate")
     VALUES (
       v_journal_entry_id,
-      'IC Elimination: ' || v_rec."sourceCompanyId" || ' ↔ ' || v_rec."targetCompanyId",
+      'IC Elimination: ' || v_rec."companyA" || ' ↔ ' || v_rec."companyB",
       v_period_id,
       v_elim_id,
       CURRENT_DATE
@@ -391,8 +431,8 @@ BEGIN
     INNER JOIN "journalLine" jl ON jl."id" = ict."sourceJournalLineId"
     WHERE ict."companyGroupId" = p_company_group_id
       AND ict."status" = 'Matched'
-      AND ict."sourceCompanyId" = v_rec."sourceCompanyId"
-      AND ict."targetCompanyId" = v_rec."targetCompanyId";
+      AND ict."sourceCompanyId" = v_rec."companyA"
+      AND ict."targetCompanyId" = v_rec."companyB";
 
     -- Reverse the matched counterpart lines
     INSERT INTO "journalLine" (
@@ -412,8 +452,8 @@ BEGIN
     INNER JOIN "journalLine" jl ON jl."id" = ict."targetJournalLineId"
     WHERE ict."companyGroupId" = p_company_group_id
       AND ict."status" = 'Matched'
-      AND ict."sourceCompanyId" = v_rec."sourceCompanyId"
-      AND ict."targetCompanyId" = v_rec."targetCompanyId"
+      AND ict."sourceCompanyId" = v_rec."companyA"
+      AND ict."targetCompanyId" = v_rec."companyB"
       AND ict."targetJournalLineId" IS NOT NULL;
 
     -- Difference plug: post the journal residual so it balances by construction.
@@ -440,21 +480,23 @@ BEGIN
       VALUES (
         v_journal_id,
         v_diff_account,
-        'IC difference: ' || v_rec."sourceCompanyId" || ' ↔ ' || v_rec."targetCompanyId",
+        'IC difference: ' || v_rec."companyA" || ' ↔ ' || v_rec."companyB",
         -v_residual,
         'ic-elim-diff-' || v_journal_id,
         v_elim_id
       );
     END IF;
 
+    -- Mark BOTH directional rows (A→B and B→A) of this pair Eliminated with the
+    -- single elimination journal, so neither is reprocessed.
     UPDATE "intercompanyTransaction"
     SET "status" = 'Eliminated',
         "eliminationJournalId" = v_journal_id,
         "updatedAt" = NOW()
     WHERE "companyGroupId" = p_company_group_id
       AND "status" = 'Matched'
-      AND "sourceCompanyId" = v_rec."sourceCompanyId"
-      AND "targetCompanyId" = v_rec."targetCompanyId";
+      AND LEAST("sourceCompanyId", "targetCompanyId") = v_rec."companyA"
+      AND GREATEST("sourceCompanyId", "targetCompanyId") = v_rec."companyB";
 
   END LOOP;
 
