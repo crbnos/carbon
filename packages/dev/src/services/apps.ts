@@ -334,6 +334,66 @@ export function spawnAssembler(opts: {
   return child;
 }
 
+const EMAIL_PREFIX = pc.green(pc.bold("eml | "));
+
+/**
+ * Spawn the email gallery server (`email:gallery --serve` in
+ * @carbon/documents) on the worktree's PORT_EMAIL — every template + preview
+ * fixture rendered on ONE page; refresh re-renders edited templates. A host
+ * process like the app dev servers, not a compose service — inbucket ("mail")
+ * shows received messages, this renders the templates themselves. (The
+ * interactive one-at-a-time react-email UI is still available manually via
+ * `pnpm --filter @carbon/documents email:previews`.) The script loads the
+ * repo .env* stack itself for ERP_URL; EMAIL_DEV_PORT is passed explicitly so
+ * it never falls back to the script's :3030 default and collides across
+ * worktrees.
+ */
+export function spawnEmailPreview(opts: {
+  root: string;
+  ports: PortMap;
+}): ExecaChildProcess {
+  const { root, ports } = opts;
+  const port = ports.PORT_EMAIL;
+  process.stderr.write(
+    `${EMAIL_PREFIX}${pc.dim(`email gallery server on :${port}`)}\n`
+  );
+
+  const child = execa("pnpm", ["run", "email:gallery", "--serve"], {
+    cwd: join(root, "packages", "documents"),
+    env: { ...process.env, EMAIL_DEV_PORT: String(port) },
+    reject: false,
+    stdin: "ignore",
+    detached: true
+  });
+
+  const pipe = (
+    stream: NodeJS.ReadableStream | null,
+    sink: NodeJS.WriteStream
+  ) => {
+    if (!stream) return;
+    readLines(stream, (line) => {
+      if (isNoiseLine(line)) return;
+      sink.write(`${EMAIL_PREFIX}${line}\n`);
+    });
+  };
+  pipe(child.stdout, process.stdout);
+  pipe(child.stderr, process.stderr);
+
+  onShutdown(() => {
+    if (child.exitCode !== null || !child.pid) return;
+    try {
+      process.kill(-child.pid, "SIGTERM");
+    } catch {
+      try {
+        child.kill("SIGTERM");
+        // biome-ignore lint/suspicious/noEmptyBlockStatements: best-effort kill
+      } catch {}
+    }
+  });
+
+  return child;
+}
+
 // Detached + reject:false so the caller owns the lifecycle: kill the whole
 // process group on teardown (apps mode) or `unref()` it to outlive crbn
 // (services-only mode). Previously fire-and-forget `.unref()`, which orphaned
@@ -406,11 +466,15 @@ export async function installSkills(root: string): Promise<boolean> {
 // processes hold the worktree's ports and block the next `crbn up`.
 // ---------------------------------------------------------------------------
 
-// Kill processes listening on PORT_ERP / PORT_MES. Port-based lookup is
-// reliable since ports are unique per worktree (allocated in the slot
-// registry). Best-effort — silently skips ports with nothing listening.
+// Kill processes listening on PORT_ERP / PORT_MES / PORT_EMAIL. Port-based
+// lookup is reliable since ports are unique per worktree (allocated in the
+// slot registry). Best-effort — silently skips ports with nothing listening.
+// PORT_EMAIL may be missing on legacy registry entries (added later; only
+// backfilled on `crbn up`), hence the filter.
 export async function killOrphanedApps(ports: PortMap): Promise<void> {
-  const appPorts = [ports.PORT_ERP, ports.PORT_MES];
+  const appPorts = [ports.PORT_ERP, ports.PORT_MES, ports.PORT_EMAIL].filter(
+    (p) => typeof p === "number"
+  );
   for (const port of appPorts) {
     const r = await execa("lsof", ["-ti", `:${port}`], { reject: false });
     if (r.exitCode !== 0) continue;

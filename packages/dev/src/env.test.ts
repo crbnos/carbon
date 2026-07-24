@@ -10,7 +10,8 @@ const ports: PortMap = {
   PORT_INNGEST: 54004,
   PORT_ERP: 54005,
   PORT_MES: 54006,
-  PORT_ASSEMBLER: 54007
+  PORT_ASSEMBLER: 54007,
+  PORT_EMAIL: 54008
 };
 
 const jwt: JwtCreds = {
@@ -65,6 +66,8 @@ describe("renderEnv (portless disabled)", () => {
     expect(out).toContain("PORT_INNGEST=54004");
     expect(out).toContain("PORT_ERP=54005");
     expect(out).toContain("PORT_MES=54006");
+    expect(out).toContain("PORT_EMAIL=54008");
+    expect(out).toContain("EMAIL_DEV_PORT=54008");
   });
 
   it("places redis db index in REDIS_URL", () => {
@@ -136,6 +139,8 @@ describe("renderEnv (portless enabled)", () => {
     expect(out).toContain("PORT_INNGEST=54004");
     expect(out).toContain("PORT_ERP=54005");
     expect(out).toContain("PORT_MES=54006");
+    expect(out).toContain("PORT_EMAIL=54008");
+    expect(out).toContain("EMAIL_DEV_PORT=54008");
   });
 
   it("places redis db index in REDIS_URL", () => {

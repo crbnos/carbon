@@ -23,9 +23,17 @@ export const PORT_NAMES = [
   "PORT_INNGEST",
   "PORT_ERP",
   "PORT_MES",
-  "PORT_ASSEMBLER"
+  "PORT_ASSEMBLER",
+  "PORT_EMAIL"
 ] as const;
 type PortName = (typeof PORT_NAMES)[number];
+
+// Ports added after slots were first minted. Legacy registry entries lack
+// them; `parseRegistryEntry` accepts those entries anyway and `resolveSlot`
+// backfills just the missing ports — dropping the whole entry would
+// re-allocate every port and mint fresh JWT creds, breaking running stacks
+// and invalidating sessions.
+const OPTIONAL_PORT_NAMES: readonly PortName[] = ["PORT_EMAIL"];
 
 export type PortMap = Record<PortName, number>;
 export type JwtCreds = { secret: string; anonKey: string; serviceKey: string };
@@ -158,6 +166,7 @@ export async function resolveSlot(
   // Fast path: registry entry is valid, points at this worktree, and all
   // ports are still available (no stale processes holding them).
   if (existing && sameWorktreePath(existing.worktreeRoot, worktreeRoot)) {
+    await backfillMissingPorts(registry, slug, existing);
     const allFree = await portsAvailable(Object.values(existing.ports));
     if (allFree) {
       return {
@@ -180,6 +189,25 @@ export async function resolveSlot(
   registry[slug] = { worktreeRoot, ports, redisDb, jwt };
   writeRegistry(registry);
   return { ports, redisDb, jwt };
+}
+
+// Allocate ports that were added to PORT_NAMES after this slot was minted
+// (see OPTIONAL_PORT_NAMES), keeping everything else — including JWT creds
+// and the redis db — exactly as-is.
+async function backfillMissingPorts(
+  registry: Registry,
+  slug: string,
+  entry: RegistryEntry
+): Promise<void> {
+  const missing = PORT_NAMES.filter((n) => entry.ports[n] === undefined);
+  if (missing.length === 0) return;
+  const { claimedPorts } = collectClaims(registry, slug);
+  // Also avoid this slot's own existing ports.
+  for (const p of Object.values(entry.ports)) claimedPorts.add(p);
+  for (const name of missing) {
+    entry.ports[name] = await pickFreePort(claimedPorts);
+  }
+  writeRegistry(registry);
 }
 
 function collectClaims(
@@ -274,6 +302,7 @@ function isPortMap(v: unknown): v is PortMap {
   if (!v || typeof v !== "object") return false;
   const o = v as Record<string, unknown>;
   for (const name of PORT_NAMES) {
+    if (o[name] === undefined && OPTIONAL_PORT_NAMES.includes(name)) continue;
     if (typeof o[name] !== "number" || !Number.isInteger(o[name])) return false;
   }
   return true;

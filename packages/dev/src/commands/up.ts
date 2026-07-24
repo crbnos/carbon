@@ -14,6 +14,7 @@ import {
   installSkills,
   spawnApps,
   spawnAssembler,
+  spawnEmailPreview,
   spawnStripeListener,
   syncEnvSymlinks
 } from "../services/apps.js";
@@ -236,6 +237,10 @@ export async function up(opts: UpOpts = {}) {
     spawnAssembler({ root, ports: ctx.ports });
   }
 
+  if (selectedApps.includes("email")) {
+    spawnEmailPreview({ root, ports: ctx.ports });
+  }
+
   const summary = summaryLines(
     ctx.ports,
     selectedApps,
@@ -364,12 +369,14 @@ async function provisionSlot(
           ? {
               // Backend ports (DB, API, Studio, Inbucket, Inngest) come from the
               // borrowed stack — apps talk to those running containers.
-              // App ports (ERP, MES) come from our own slot — dev servers bind here,
-              // so they don't conflict with the borrowed stack's dev servers.
+              // App ports (ERP, MES, email preview) come from our own slot — dev
+              // servers bind here, so they don't conflict with the borrowed
+              // stack's dev servers.
               ports: {
                 ...borrowedEntry.ports,
                 PORT_ERP: ownSlot.ports.PORT_ERP,
-                PORT_MES: ownSlot.ports.PORT_MES
+                PORT_MES: ownSlot.ports.PORT_MES,
+                PORT_EMAIL: ownSlot.ports.PORT_EMAIL
               } as PortMap,
               redisDb: borrowedEntry.redisDb,
               jwt: borrowedEntry.jwt
@@ -653,6 +660,12 @@ async function ensureHostsFile() {
   await syncHostsFile();
 }
 
+// Apps that spawnApps runs as `react-router dev` servers. The assembler and
+// email preview have their own spawners (invoked before the summary box).
+function reactRouterApps(selectedApps: AppId[]): AppId[] {
+  return selectedApps.filter((id) => id !== "assembler" && id !== "email");
+}
+
 async function runAppsThenTeardown(
   root: string,
   selectedApps: AppId[],
@@ -660,8 +673,18 @@ async function runAppsThenTeardown(
   portless: boolean,
   stripeChild?: ExecaChildProcess
 ) {
-  const reactRouterApps = selectedApps.filter((id) => id !== "assembler");
-  await spawnApps({ root, apps: reactRouterApps, ports, portless });
+  const apps = reactRouterApps(selectedApps);
+  if (apps.length === 0) {
+    // Only aux apps selected (assembler / email preview) — nothing for
+    // spawnApps to supervise, and it would resolve immediately and tear the
+    // freshly booted stack down. Wait for Ctrl+C instead; the aux spawners'
+    // own onShutdown handlers kill their children on the same signal.
+    await new Promise<void>((resolve) => {
+      onShutdown(() => resolve());
+    });
+  } else {
+    await spawnApps({ root, apps, ports, portless });
+  }
 
   // Apps exit on Ctrl+C; auto-`down` so compose stack isn't orphaned.
   // Swallow further signals so a second Ctrl+C during teardown doesn't
@@ -742,7 +765,7 @@ async function runAppsThenCommand(
   const controller = new AbortController();
   const appsDone = spawnApps({
     root,
-    apps: selectedApps,
+    apps: reactRouterApps(selectedApps),
     ports,
     portless,
     signal: controller.signal

@@ -25,6 +25,9 @@ packages/locale/locales/**/*.mjs
 # Generated PDF font data (woff base64) — built on postinstall + turbo build
 packages/documents/src/pdf/fonts.data.ts
 
+# Rendered email gallery (pnpm --filter @carbon/documents email:gallery)
+packages/documents/.email-gallery
+
 scripts/migrations/data
 scripts/paperless-test.ts
 scripts/test-get-stripe-customer.ts
