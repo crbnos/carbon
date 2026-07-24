@@ -1230,6 +1230,10 @@ msgstr "Sei sicuro di voler eliminare il tipo di problema: {0}? Questa azione no
 msgid "Are you sure you want to delete the item group: {0}? This cannot be undone."
 msgstr "Sei sicuro di voler eliminare il gruppo articoli: {0}? Questa azione non può essere annullata."
 
+#. placeholder {0}: legalSeries.name
+msgid "Are you sure you want to delete the legal series: {0}? This cannot be undone."
+msgstr ""
+
 #. placeholder {0}: line.customerPartId
 #. placeholder {0}: line.description
 #. placeholder {0}: line.itemReadableId
@@ -5658,6 +5662,9 @@ msgstr "Hai dimenticato di timbrare l'uscita?"
 
 msgid "Format"
 msgstr "Formato"
+
+msgid "Format locked after first use"
+msgstr ""
 
 msgid "Foundation"
 msgstr "Fondamenti"

@@ -25,9 +25,13 @@ type SequenceFormProps = {
   initialValues: z.infer<typeof sequenceValidator> & {
     name: string;
   };
+  formatLocked?: boolean;
 };
 
-const SequenceForm = ({ initialValues }: SequenceFormProps) => {
+const SequenceForm = ({
+  initialValues,
+  formatLocked = false
+}: SequenceFormProps) => {
   const { t } = useLingui();
   const permissions = usePermissions();
   const navigate = useNavigate();
@@ -70,9 +74,15 @@ const SequenceForm = ({ initialValues }: SequenceFormProps) => {
             <VStack spacing={4}>
               <Heading size="h2">{makePreview()}</Heading>
 
+              {formatLocked && (
+                <p className="text-muted-foreground text-sm">
+                  <Trans>Format locked after first use</Trans>
+                </p>
+              )}
               <Input
                 name="prefix"
                 label={t`Prefix`}
+                isDisabled={formatLocked}
                 onChange={(e) => setPrefix(e.target.value)}
               />
               <Number
@@ -86,6 +96,7 @@ const SequenceForm = ({ initialValues }: SequenceFormProps) => {
                 minValue={0}
                 maxValue={30}
                 label={t`Size`}
+                isDisabled={formatLocked}
                 onChange={setSize}
               />
               <Number
@@ -93,10 +104,12 @@ const SequenceForm = ({ initialValues }: SequenceFormProps) => {
                 minValue={0}
                 maxValue={10000}
                 label={t`Step`}
+                isDisabled={formatLocked}
               />
               <Input
                 name="suffix"
                 label={t`Suffix`}
+                isDisabled={formatLocked}
                 onChange={(e) => setSuffix(e.target.value)}
               />
               <VStack spacing={0}>

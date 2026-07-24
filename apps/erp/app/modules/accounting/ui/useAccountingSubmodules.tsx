@@ -14,6 +14,7 @@ import {
   LuFileSpreadsheet,
   LuHandCoins,
   LuLayers,
+  LuReceipt,
   LuScale,
   LuSheet,
   LuTrendingUp
@@ -146,6 +147,12 @@ export default function useAccountingSubmodules() {
             to: path.to.fiscalYears,
             role: "employee",
             icon: <LuCalendar1 />
+          },
+          {
+            name: t`Legal Series`,
+            to: path.to.legalSeries,
+            role: "employee",
+            icon: <LuReceipt />
           },
           {
             name: t`Payment Terms`,

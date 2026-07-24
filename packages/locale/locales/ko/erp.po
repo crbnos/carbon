@@ -1230,6 +1230,10 @@ msgstr "이슈 유형 {0}을(를) 삭제하시겠습니까? 이 작업은 되돌
 msgid "Are you sure you want to delete the item group: {0}? This cannot be undone."
 msgstr "품목 그룹 {0}을(를) 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다."
 
+#. placeholder {0}: legalSeries.name
+msgid "Are you sure you want to delete the legal series: {0}? This cannot be undone."
+msgstr ""
+
 #. placeholder {0}: line.customerPartId
 #. placeholder {0}: line.description
 #. placeholder {0}: line.itemReadableId
@@ -5658,6 +5662,9 @@ msgstr "퇴근 체크를 잊으셨나요?"
 
 msgid "Format"
 msgstr "형식"
+
+msgid "Format locked after first use"
+msgstr ""
 
 msgid "Foundation"
 msgstr "파운데이션"
