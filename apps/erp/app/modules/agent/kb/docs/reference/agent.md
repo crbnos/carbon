@@ -36,10 +36,9 @@ A long conversation is trimmed to its most recent messages before each reply, so
 
 ## Limits and availability
 
-The assistant is a paid feature and is metered.
+The assistant is a paid feature.
 
 - **Plan.** It is available on the Business plan on Carbon Cloud. See `docs/platform/licensing` for how plans and editions work. Self-hosted deployments follow the licensing boundary rather than a runtime plan gate.
-- **Rate limit.** To keep usage fair, sends are capped at **30 messages per 5 minutes** per person. Hit the cap and the assistant asks you to wait a moment before trying again.
 - **Beta.** The panel is labelled **Beta**: it is improving constantly, and an answer can be incomplete or wrong. Treat it as a fast way to find the right doc and the right page, not as the final word — the linked documentation is the source of truth.
 
 ## Troubleshooting
