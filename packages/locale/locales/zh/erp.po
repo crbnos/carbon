@@ -48,6 +48,10 @@ msgstr "(已为此客户排除)"
 msgid "{0, plural, one {This part is on 1 open change notice} other {This part is on # open change notices}}"
 msgstr "{0, plural, one {此零件包含在1个开放的更改单中} other {此零件包含在#个开放的更改单中}}"
 
+#. placeholder {0}: statement.unclassified.length
+msgid "{0} accounts have no cash flow activity — set an account type or override"
+msgstr ""
+
 #. placeholder {0}: ar.count
 msgid "{0} customers with a balance"
 msgstr "{0}个有余额的客户"
@@ -854,6 +858,9 @@ msgstr "全部"
 
 msgid "All {total} phases are done. Nice work — your team is up and running."
 msgstr "所有 {total} 个阶段已完成。做得很好——你的团队已启动并运行。"
+
+msgid "All accounts"
+msgstr ""
 
 msgid "All actions selected"
 msgstr "所有操作已选中"
@@ -2202,6 +2209,15 @@ msgstr "承运人账户"
 msgid "Cash & Banking"
 msgstr "现金和银行"
 
+msgid "Cash at beginning of period"
+msgstr ""
+
+msgid "Cash at end of period"
+msgstr ""
+
+msgid "Cash Flow"
+msgstr ""
+
 msgid "Categories that classify how stock is stored"
 msgstr "分类库存存储方式"
 
@@ -2397,6 +2413,12 @@ msgstr "关闭日期"
 
 msgid "Closing"
 msgstr "结余"
+
+msgid "Closing Credit"
+msgstr ""
+
+msgid "Closing Debit"
+msgstr ""
 
 msgid "Closure blocked"
 msgstr "关闭被阻止"
@@ -3674,10 +3696,6 @@ msgstr "截止日期类型"
 msgid "Debit"
 msgstr "借方"
 
-#. placeholder {0}: parentCurrency ?? "Translated"
-msgid "Debit ({0})"
-msgstr "借方 ({0})"
-
 msgid "Debit Account"
 msgstr "借方账户"
 
@@ -4867,6 +4885,9 @@ msgstr "编辑 Webhook"
 msgid "Edit Work Center"
 msgstr "编辑工作中心"
 
+msgid "Effect of exchange rate changes on cash"
+msgstr ""
+
 msgid "Eliminated"
 msgstr "已消除"
 
@@ -5774,6 +5795,8 @@ msgstr "完成"
 
 msgid "Finalizing a fiscal month through the Open → Locked → Closed lifecycle; a closed period is frozen and its balances snapshotted, reversible only by explicit reopen."
 msgstr "通过打开 → 锁定 → 关闭生命周期完成财政月份；关闭的期间被冻结并其余额快照，仅可通过显式重新打开来反转。"
+msgid "Financing Activities"
+msgstr ""
 
 msgid "finish"
 msgstr "成品"
@@ -6143,6 +6166,9 @@ msgstr "GL反向资产账户，随每期折旧过账而贷记；资产出售或�
 
 msgid "GL contra-asset account that accumulates depreciation booked against fixed assets."
 msgstr "累积对固定资产计提的折旧的GL反向资产账户。"
+
+msgid "GL Detail"
+msgstr ""
 
 msgid "GL equity account (CTA reserve) that holds unrealized FX differences from re-translating foreign-currency balances at period-end; separate from realized FX gain/loss in P&L."
 msgstr "GL权益账户（CTA准备金），在期末对外币余额重新转换产生的未实现外汇差异；与P&L中实现的外汇收益/损失分开。"
@@ -6564,6 +6590,8 @@ msgstr "收件箱"
 
 msgid "Include a materials (bill of materials) section on the job traveler PDF with item numbers and quantities."
 msgstr "在工作单据 PDF 中包含物料清单（BOM）部分，列出物料号和数量。"
+msgid "Include drafts"
+msgstr ""
 
 msgid "Include extra parts in shipment"
 msgstr "在发货中包含额外零件"
@@ -6792,6 +6820,9 @@ msgstr "库存计量单位"
 
 msgid "Inventory Valuation"
 msgstr "库存估值"
+
+msgid "Investing Activities"
+msgstr ""
 
 msgid "Invite"
 msgstr "邀请"
@@ -8041,8 +8072,26 @@ msgstr "净账面价值"
 msgid "Net Book Value"
 msgstr "账面净值"
 
+msgid "Net cash from financing activities"
+msgstr ""
+
+msgid "Net cash from investing activities"
+msgstr ""
+
+msgid "Net cash from operating activities"
+msgstr ""
+
+msgid "Net cash from unclassified activities"
+msgstr ""
+
 msgid "Net Change"
 msgstr "净变化"
+
+msgid "Net change in cash"
+msgstr ""
+
+msgid "Net Income"
+msgstr ""
 
 msgid "Never"
 msgstr "永不"
@@ -8986,6 +9035,15 @@ msgstr "期初"
 msgid "Opening balance of depreciation already booked before this asset was added to Carbon (use 0 for new acquisitions)."
 msgstr "在将此资产添加到Carbon之前已入账的折旧的期初余额（新购置的情况下使用0）。"
 
+msgid "Opening Credit"
+msgstr ""
+
+msgid "Opening Debit"
+msgstr ""
+
+msgid "Operating Activities"
+msgstr ""
+
 msgid "Operating Expenses"
 msgstr "运营费用"
 
@@ -9392,6 +9450,11 @@ msgstr "期间"
 
 msgid "Period close"
 msgstr "期间关闭"
+msgid "Period Credits"
+msgstr ""
+
+msgid "Period Debits"
+msgstr ""
 
 msgid "Period End"
 msgstr "期末"
@@ -10919,6 +10982,9 @@ msgstr "运行验收清单直到通过"
 msgid "Run the floor on tablets: clock labor, report progress, see instructions"
 msgstr "在平板电脑上运行车间：记录劳动力、报告进度、查看说明"
 
+msgid "Running Balance"
+msgstr ""
+
 msgid "Running inventory after each week's supply and demand — the line."
 msgstr "每周供应和需求后运行的库存 — 该行。"
 
@@ -12000,6 +12066,9 @@ msgstr "开始于"
 
 msgid "State / Province"
 msgstr "州/省"
+
+msgid "Statement of Cash Flows"
+msgstr ""
 
 #. placeholder {0}: lotEntities.length
 #. placeholder {1}: Math.max(0, lotEntities.length - inspected)
@@ -13870,6 +13939,9 @@ msgstr "未过账单据"
 
 msgid "Unreceived POs"
 msgstr "未收到的采购订单"
+
+msgid "Unreconciled difference"
+msgstr ""
 
 msgid "Unsaved changes"
 msgstr "未保存的更改"

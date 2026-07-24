@@ -48,6 +48,10 @@ msgstr "(bu müşteri için hariç tutulmuş)"
 msgid "{0, plural, one {This part is on 1 open change notice} other {This part is on # open change notices}}"
 msgstr "{0, plural, one {Bu parça 1 açık değişiklik bildirisinde yer alıyor} other {Bu parça # açık değişiklik bildirisinde yer alıyor}}"
 
+#. placeholder {0}: statement.unclassified.length
+msgid "{0} accounts have no cash flow activity — set an account type or override"
+msgstr ""
+
 #. placeholder {0}: ar.count
 msgid "{0} customers with a balance"
 msgstr "{0} müşteri bakiye ile"
@@ -854,6 +858,9 @@ msgstr "Tümü"
 
 msgid "All {total} phases are done. Nice work — your team is up and running."
 msgstr "Tüm {total} aşama tamamlandı. Harika iş — ekibiniz çalışmaya başladı."
+
+msgid "All accounts"
+msgstr ""
 
 msgid "All actions selected"
 msgstr "Tüm eylemler seçildi"
@@ -2202,6 +2209,15 @@ msgstr "Taşıyıcı Hesap"
 msgid "Cash & Banking"
 msgstr "Nakit ve Bankacılık"
 
+msgid "Cash at beginning of period"
+msgstr ""
+
+msgid "Cash at end of period"
+msgstr ""
+
+msgid "Cash Flow"
+msgstr ""
+
 msgid "Categories that classify how stock is stored"
 msgstr "Stokun nasıl depolandığını sınıflandıran kategoriler"
 
@@ -2397,6 +2413,12 @@ msgstr "Kapatma Tarihi"
 
 msgid "Closing"
 msgstr "Kapanış"
+
+msgid "Closing Credit"
+msgstr ""
+
+msgid "Closing Debit"
+msgstr ""
 
 msgid "Closure blocked"
 msgstr "Kapanış engellendi"
@@ -3674,10 +3696,6 @@ msgstr "Son Teslim Tarihi Türü"
 msgid "Debit"
 msgstr "Borç"
 
-#. placeholder {0}: parentCurrency ?? "Translated"
-msgid "Debit ({0})"
-msgstr "Borç ({0})"
-
 msgid "Debit Account"
 msgstr "Borç Hesabı"
 
@@ -4867,6 +4885,9 @@ msgstr "Webhook Düzenle"
 msgid "Edit Work Center"
 msgstr "İş Merkezi Düzenle"
 
+msgid "Effect of exchange rate changes on cash"
+msgstr ""
+
 msgid "Eliminated"
 msgstr "Ortadan Kaldırılmış"
 
@@ -5774,6 +5795,8 @@ msgstr "Onayla"
 
 msgid "Finalizing a fiscal month through the Open → Locked → Closed lifecycle; a closed period is frozen and its balances snapshotted, reversible only by explicit reopen."
 msgstr "Mali bir ayı Açık → Kilitli → Kapalı yaşam döngüsü aracılığıyla sonlandırma; kapalı bir dönem donmuştur ve bakiyeleri anlık görüntülenmiş, yalnızca açık yeniden açılarak tersine çevrilebilir."
+msgid "Financing Activities"
+msgstr ""
 
 msgid "finish"
 msgstr "Bitmiş ürünler"
@@ -6143,6 +6166,9 @@ msgstr "Her dönem birikmiş amortisman kaydedildikçe alacaklandırılan ve var
 
 msgid "GL contra-asset account that accumulates depreciation booked against fixed assets."
 msgstr "Sabit varlıklara karşı kaydedilen amortismanı biriken GL contra-aktif hesabı."
+
+msgid "GL Detail"
+msgstr ""
 
 msgid "GL equity account (CTA reserve) that holds unrealized FX differences from re-translating foreign-currency balances at period-end; separate from realized FX gain/loss in P&L."
 msgstr "Öz sermaye GL hesabı (CTA rezervi) dönem sonunda yabancı para birimi bakiyelerinin retradüksiyonundan kaynaklanan gerçekleşmemiş FX farklarını tutar; P&L'deki gerçekleşmiş FX kazancı/kaybından ayrı."
@@ -6564,6 +6590,8 @@ msgstr "Gelen Kutusu"
 
 msgid "Include a materials (bill of materials) section on the job traveler PDF with item numbers and quantities."
 msgstr "İş yolcu PDF'sine malzemeleri (malzeme listesi) bölümü, madde numaraları ve miktarlarıyla birlikte ekleyin."
+msgid "Include drafts"
+msgstr ""
 
 msgid "Include extra parts in shipment"
 msgstr "Fazla parçaları sevkiyata dahil et"
@@ -6792,6 +6820,9 @@ msgstr "Stok Birimi"
 
 msgid "Inventory Valuation"
 msgstr "Envanter Değerlemesi"
+
+msgid "Investing Activities"
+msgstr ""
 
 msgid "Invite"
 msgstr "Davet et"
@@ -8041,8 +8072,26 @@ msgstr "Net Defter Değeri"
 msgid "Net Book Value"
 msgstr "Net Defter Değeri"
 
+msgid "Net cash from financing activities"
+msgstr ""
+
+msgid "Net cash from investing activities"
+msgstr ""
+
+msgid "Net cash from operating activities"
+msgstr ""
+
+msgid "Net cash from unclassified activities"
+msgstr ""
+
 msgid "Net Change"
 msgstr "Net Değişim"
+
+msgid "Net change in cash"
+msgstr ""
+
+msgid "Net Income"
+msgstr ""
 
 msgid "Never"
 msgstr "Asla"
@@ -8986,6 +9035,15 @@ msgstr "Açılış"
 msgid "Opening balance of depreciation already booked before this asset was added to Carbon (use 0 for new acquisitions)."
 msgstr "Bu varlık Carbon'a eklenmeden önce zaten deftere geçirilmiş amortismanın açılış bakiyesi (yeni satın almalar için 0 kullanın)."
 
+msgid "Opening Credit"
+msgstr ""
+
+msgid "Opening Debit"
+msgstr ""
+
+msgid "Operating Activities"
+msgstr ""
+
 msgid "Operating Expenses"
 msgstr "İşletme Giderleri"
 
@@ -9392,6 +9450,11 @@ msgstr "Dönem"
 
 msgid "Period close"
 msgstr "Dönem Kapanışı"
+msgid "Period Credits"
+msgstr ""
+
+msgid "Period Debits"
+msgstr ""
 
 msgid "Period End"
 msgstr "Dönem Sonu"
@@ -10919,6 +10982,9 @@ msgstr "Kabul kontrol listesini başarıyla tamamlayın"
 msgid "Run the floor on tablets: clock labor, report progress, see instructions"
 msgstr "Tabletlerde üretim katını yönetin: işçi saatini kaydedin, ilerlemeyi bildirin, talimatları görüntüleyin"
 
+msgid "Running Balance"
+msgstr ""
+
 msgid "Running inventory after each week's supply and demand — the line."
 msgstr "Her haftalık arz ve talep sonrası çalışan envanter — satır."
 
@@ -12000,6 +12066,9 @@ msgstr "Başlangıç"
 
 msgid "State / Province"
 msgstr "Eyalet / İl"
+
+msgid "Statement of Cash Flows"
+msgstr ""
 
 #. placeholder {0}: lotEntities.length
 #. placeholder {1}: Math.max(0, lotEntities.length - inspected)
@@ -13870,6 +13939,9 @@ msgstr "Deftere Geçmemiş Belgeler"
 
 msgid "Unreceived POs"
 msgstr "Alınmamış PO'lar"
+
+msgid "Unreconciled difference"
+msgstr ""
 
 msgid "Unsaved changes"
 msgstr "Kaydedilmemiş değişiklikler"

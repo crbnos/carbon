@@ -658,7 +658,7 @@ export async function getGeneralLedgerLines(
   let query = client
     .from("journalLine")
     .select(
-      "id, accountId, amount, description, companyId, createdAt, journal!inner(id, journalEntryId, postingDate, status, sourceType, description)",
+      "id, accountId, amount, description, companyId, createdAt, journal!inner(id, journalEntryId, postingDate, status, sourceType, description), account!journalLine_accountId_fkey(number, name, class)",
       { count: "exact" }
     )
     .eq("companyId", companyId);

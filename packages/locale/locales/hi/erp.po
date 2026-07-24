@@ -48,6 +48,10 @@ msgstr "(इस ग्राहक के लिए बाहर रखा ग�
 msgid "{0, plural, one {This part is on 1 open change notice} other {This part is on # open change notices}}"
 msgstr "{0, plural, one {यह भाग 1 खुली परिवर्तन सूचना पर है} other {यह भाग # खुली परिवर्तन सूचनाओं पर है}}"
 
+#. placeholder {0}: statement.unclassified.length
+msgid "{0} accounts have no cash flow activity — set an account type or override"
+msgstr ""
+
 #. placeholder {0}: ar.count
 msgid "{0} customers with a balance"
 msgstr "{0} ग्राहकों के साथ शेष"
@@ -854,6 +858,9 @@ msgstr "सभी"
 
 msgid "All {total} phases are done. Nice work — your team is up and running."
 msgstr "सभी {total} चरण पूरे हो गए। शानदार काम — आपकी टीम चल रही है।"
+
+msgid "All accounts"
+msgstr ""
 
 msgid "All actions selected"
 msgstr "सभी कार्य चयनित"
@@ -2202,6 +2209,15 @@ msgstr "वाहक खाता"
 msgid "Cash & Banking"
 msgstr "नकद और बैंकिंग"
 
+msgid "Cash at beginning of period"
+msgstr ""
+
+msgid "Cash at end of period"
+msgstr ""
+
+msgid "Cash Flow"
+msgstr ""
+
 msgid "Categories that classify how stock is stored"
 msgstr "स्टॉक को कैसे संग्रहीत किया जाता है, इसे वर्गीकृत करने वाली श्रेणियां"
 
@@ -2397,6 +2413,12 @@ msgstr "बंद तारीख"
 
 msgid "Closing"
 msgstr "समापन"
+
+msgid "Closing Credit"
+msgstr ""
+
+msgid "Closing Debit"
+msgstr ""
 
 msgid "Closure blocked"
 msgstr "बंद करना अवरुद्ध"
@@ -3674,10 +3696,6 @@ msgstr "समय सीमा प्रकार"
 msgid "Debit"
 msgstr "डेबिट"
 
-#. placeholder {0}: parentCurrency ?? "Translated"
-msgid "Debit ({0})"
-msgstr "नामे ({0})"
-
 msgid "Debit Account"
 msgstr "डेबिट खाता"
 
@@ -4867,6 +4885,9 @@ msgstr "वेबहुक संपादित करें"
 msgid "Edit Work Center"
 msgstr "कार्य केंद्र संपादित करें"
 
+msgid "Effect of exchange rate changes on cash"
+msgstr ""
+
 msgid "Eliminated"
 msgstr "समाप्त किया गया"
 
@@ -5774,6 +5795,8 @@ msgstr "अंतिम रूप दें"
 
 msgid "Finalizing a fiscal month through the Open → Locked → Closed lifecycle; a closed period is frozen and its balances snapshotted, reversible only by explicit reopen."
 msgstr "खुली → लॉक की गई → बंद जीवनचक्र के माध्यम से एक वित्तीय माह को अंतिम रूप देना; एक बंद अवधि जमी हुई है और इसके संतुलन को स्नैपशॉट किया गया है, केवल स्पष्ट पुनः खुलने से उलटा है।"
+msgid "Financing Activities"
+msgstr ""
 
 msgid "finish"
 msgstr "तैयार माल"
@@ -6143,6 +6166,9 @@ msgstr "GL विरोधी-संपत्ति खाता जो हर �
 
 msgid "GL contra-asset account that accumulates depreciation booked against fixed assets."
 msgstr "GL विरोधी-संपत्ति खाता जो निश्चित संपत्तियों के खिलाफ बुक किए गए मूल्यह्रास को जमा करता है।"
+
+msgid "GL Detail"
+msgstr ""
 
 msgid "GL equity account (CTA reserve) that holds unrealized FX differences from re-translating foreign-currency balances at period-end; separate from realized FX gain/loss in P&L."
 msgstr "GL इक्विटी खाता (CTA रिजर्व) जो विदेशी मुद्रा की शेष राशि को पुनः अनुवाद करने से अवास्तविक विदेशी मुद्रा अंतर रखता है अवधि के अंत में; P&L में महसूस की गई विदेशी मुद्रा लाभ/हानि से अलग।"
@@ -6564,6 +6590,8 @@ msgstr "इनबॉक्स"
 
 msgid "Include a materials (bill of materials) section on the job traveler PDF with item numbers and quantities."
 msgstr "जॉब ट्रैवलर PDF में आइटम नंबर और मात्राओं के साथ बिल ऑफ मटेरियल्स अनुभाग शामिल करें।"
+msgid "Include drafts"
+msgstr ""
 
 msgid "Include extra parts in shipment"
 msgstr "शिपमेंट में अतिरिक्त पार्ट्स शामिल करें"
@@ -6792,6 +6820,9 @@ msgstr "इन्वेंटरी माप की इकाई"
 
 msgid "Inventory Valuation"
 msgstr "इन्वेंटरी मूल्यांकन"
+
+msgid "Investing Activities"
+msgstr ""
 
 msgid "Invite"
 msgstr "आमंत्रित करें"
@@ -8041,8 +8072,26 @@ msgstr "शुद्ध पुस्तक मूल्य"
 msgid "Net Book Value"
 msgstr "नेट बुक वैल्यू"
 
+msgid "Net cash from financing activities"
+msgstr ""
+
+msgid "Net cash from investing activities"
+msgstr ""
+
+msgid "Net cash from operating activities"
+msgstr ""
+
+msgid "Net cash from unclassified activities"
+msgstr ""
+
 msgid "Net Change"
 msgstr "शुद्ध परिवर्तन"
+
+msgid "Net change in cash"
+msgstr ""
+
+msgid "Net Income"
+msgstr ""
 
 msgid "Never"
 msgstr "कभी नहीं"
@@ -8986,6 +9035,15 @@ msgstr "शुरुआती"
 msgid "Opening balance of depreciation already booked before this asset was added to Carbon (use 0 for new acquisitions)."
 msgstr "अवक्षयण का खाता खोलने के संतुलन को पहले ही बुक किया गया है इससे पहले कि यह संपत्ति Carbon में जोड़ी गई थी (नई खरीद के लिए 0 का उपयोग करें)।"
 
+msgid "Opening Credit"
+msgstr ""
+
+msgid "Opening Debit"
+msgstr ""
+
+msgid "Operating Activities"
+msgstr ""
+
 msgid "Operating Expenses"
 msgstr "परिचालन व्यय"
 
@@ -9392,6 +9450,11 @@ msgstr "अवधि"
 
 msgid "Period close"
 msgstr "अवधि बंद"
+msgid "Period Credits"
+msgstr ""
+
+msgid "Period Debits"
+msgstr ""
 
 msgid "Period End"
 msgstr "अवधि का अंत"
@@ -10919,6 +10982,9 @@ msgstr "स्वीकृति चेकलिस्ट को पास क�
 msgid "Run the floor on tablets: clock labor, report progress, see instructions"
 msgstr "टैबलेट पर फ़्लोर चलाएं: श्रम घड़ी, प्रगति रिपोर्ट करें, निर्देश देखें"
 
+msgid "Running Balance"
+msgstr ""
+
 msgid "Running inventory after each week's supply and demand — the line."
 msgstr "प्रत्येक सप्ताह की आपूर्ति और मांग के बाद चलाई जाने वाली इन्वेंटरी — पंक्ति।"
 
@@ -12000,6 +12066,9 @@ msgstr "शुरू किया गया"
 
 msgid "State / Province"
 msgstr "राज्य / प्रांत"
+
+msgid "Statement of Cash Flows"
+msgstr ""
 
 #. placeholder {0}: lotEntities.length
 #. placeholder {1}: Math.max(0, lotEntities.length - inspected)
@@ -13870,6 +13939,9 @@ msgstr "अपोस्ट किए गए दस्तावेज़"
 
 msgid "Unreceived POs"
 msgstr "अप्राप्त POs"
+
+msgid "Unreconciled difference"
+msgstr ""
 
 msgid "Unsaved changes"
 msgstr "असहेजे परिवर्तन"

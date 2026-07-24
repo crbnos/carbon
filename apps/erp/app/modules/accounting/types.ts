@@ -452,7 +452,7 @@ export type TranslatedCompanyFlow = {
   endingCash: number;
 };
 
-// GL detail row: a journalLine with its journal header embedded.
+// GL detail row: a journalLine with its journal header + account embedded.
 export type GeneralLedgerLine = {
   id: string;
   accountId: string | null;
@@ -467,6 +467,11 @@ export type GeneralLedgerLine = {
     status: Database["public"]["Enums"]["journalEntryStatus"];
     sourceType: Database["public"]["Enums"]["journalEntrySourceType"];
     description: string | null;
+  } | null;
+  account: {
+    number: string | null;
+    name: string | null;
+    class: AccountClass | null;
   } | null;
 };
 

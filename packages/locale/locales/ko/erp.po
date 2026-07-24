@@ -48,6 +48,10 @@ msgstr "(이 고객에게는 제외됨)"
 msgid "{0, plural, one {This part is on 1 open change notice} other {This part is on # open change notices}}"
 msgstr "{0, plural, one {이 부품은 1개의 미완료 변경 공지에 포함되어 있습니다} other {이 부품은 #개의 미완료 변경 공지에 포함되어 있습니다}}"
 
+#. placeholder {0}: statement.unclassified.length
+msgid "{0} accounts have no cash flow activity — set an account type or override"
+msgstr ""
+
 #. placeholder {0}: ar.count
 msgid "{0} customers with a balance"
 msgstr "잔액이 있는 고객 {0}명"
@@ -854,6 +858,9 @@ msgstr "전체"
 
 msgid "All {total} phases are done. Nice work — your team is up and running."
 msgstr "{total}단계가 모두 완료되었습니다. 수고하셨습니다 — 팀이 이제 정상 가동 중입니다."
+
+msgid "All accounts"
+msgstr ""
 
 msgid "All actions selected"
 msgstr "모든 조치가 선택됨"
@@ -2202,6 +2209,15 @@ msgstr "운송업체 계정"
 msgid "Cash & Banking"
 msgstr "현금 및 은행"
 
+msgid "Cash at beginning of period"
+msgstr ""
+
+msgid "Cash at end of period"
+msgstr ""
+
+msgid "Cash Flow"
+msgstr ""
+
 msgid "Categories that classify how stock is stored"
 msgstr "재고 보관 방식을 분류하는 카테고리"
 
@@ -2397,6 +2413,12 @@ msgstr "종료일"
 
 msgid "Closing"
 msgstr "마감"
+
+msgid "Closing Credit"
+msgstr ""
+
+msgid "Closing Debit"
+msgstr ""
 
 msgid "Closure blocked"
 msgstr "마감 차단됨"
@@ -3674,10 +3696,6 @@ msgstr "마감 유형"
 msgid "Debit"
 msgstr "차변"
 
-#. placeholder {0}: parentCurrency ?? "Translated"
-msgid "Debit ({0})"
-msgstr "차변 ({0})"
-
 msgid "Debit Account"
 msgstr "차변 계정"
 
@@ -4867,6 +4885,9 @@ msgstr "웹훅 수정"
 msgid "Edit Work Center"
 msgstr "작업장 수정"
 
+msgid "Effect of exchange rate changes on cash"
+msgstr ""
+
 msgid "Eliminated"
 msgstr "제거됨"
 
@@ -5774,6 +5795,8 @@ msgstr "확정"
 
 msgid "Finalizing a fiscal month through the Open → Locked → Closed lifecycle; a closed period is frozen and its balances snapshotted, reversible only by explicit reopen."
 msgstr "열림 → 잠김 → 종료 라이프사이클을 통해 회계 월을 마무리하는 것으로서, 종료된 기간은 고정되고 잔액은 스냅샷되며 명시적 재개를 통해서만 취소할 수 있습니다."
+msgid "Financing Activities"
+msgstr ""
 
 msgid "finish"
 msgstr "마감"
@@ -6143,6 +6166,9 @@ msgstr "매 기간 감가상각이 계상될 때 대변에 기록되고, 자산�
 
 msgid "GL contra-asset account that accumulates depreciation booked against fixed assets."
 msgstr "고정자산에 대해 계상된 감가상각이 누적되는 총계정원장 자산 차감 계정입니다."
+
+msgid "GL Detail"
+msgstr ""
 
 msgid "GL equity account (CTA reserve) that holds unrealized FX differences from re-translating foreign-currency balances at period-end; separate from realized FX gain/loss in P&L."
 msgstr "기말에 외화 잔액을 재환산할 때 발생하는 미실현 외환 차이를 보관하는 총계정원장 자본 계정(CTA 적립금)으로, 손익계산서상 실현 외환손익과는 구분됩니다."
@@ -6564,6 +6590,8 @@ msgstr "받은함"
 
 msgid "Include a materials (bill of materials) section on the job traveler PDF with item numbers and quantities."
 msgstr "작업 이동 PDF에 품목번호와 수량이 포함된 자재(부자재명세서) 섹션을 포함하세요."
+msgid "Include drafts"
+msgstr ""
 
 msgid "Include extra parts in shipment"
 msgstr "출하에 여분 부품 포함"
@@ -6792,6 +6820,9 @@ msgstr "재고 측정 단위"
 
 msgid "Inventory Valuation"
 msgstr "재고 평가"
+
+msgid "Investing Activities"
+msgstr ""
 
 msgid "Invite"
 msgstr "초대"
@@ -8041,8 +8072,26 @@ msgstr "순장부가액"
 msgid "Net Book Value"
 msgstr "순 장부 가치"
 
+msgid "Net cash from financing activities"
+msgstr ""
+
+msgid "Net cash from investing activities"
+msgstr ""
+
+msgid "Net cash from operating activities"
+msgstr ""
+
+msgid "Net cash from unclassified activities"
+msgstr ""
+
 msgid "Net Change"
 msgstr "순변동"
+
+msgid "Net change in cash"
+msgstr ""
+
+msgid "Net Income"
+msgstr ""
 
 msgid "Never"
 msgstr "안 함"
@@ -8986,6 +9035,15 @@ msgstr "기초"
 msgid "Opening balance of depreciation already booked before this asset was added to Carbon (use 0 for new acquisitions)."
 msgstr "이 자산이 Carbon에 등록되기 전에 이미 계상된 감가상각의 기초 잔액입니다(신규 취득 자산은 0을 사용하세요)."
 
+msgid "Opening Credit"
+msgstr ""
+
+msgid "Opening Debit"
+msgstr ""
+
+msgid "Operating Activities"
+msgstr ""
+
 msgid "Operating Expenses"
 msgstr "영업비용"
 
@@ -9392,6 +9450,11 @@ msgstr "기간"
 
 msgid "Period close"
 msgstr "기간 종료"
+msgid "Period Credits"
+msgstr ""
+
+msgid "Period Debits"
+msgstr ""
 
 msgid "Period End"
 msgstr "기간 종료"
@@ -10919,6 +10982,9 @@ msgstr "인수 체크리스트를 통과할 때까지 진행하세요"
 msgid "Run the floor on tablets: clock labor, report progress, see instructions"
 msgstr "태블릿으로 현장을 운영하세요: 근무 시간 기록, 진행 상황 보고, 작업 지시 확인"
 
+msgid "Running Balance"
+msgstr ""
+
 msgid "Running inventory after each week's supply and demand — the line."
 msgstr "매주 공급과 수요를 반영해 갱신되는 재고 — 그 라인입니다."
 
@@ -12000,6 +12066,9 @@ msgstr "시작됨"
 
 msgid "State / Province"
 msgstr "주/도"
+
+msgid "Statement of Cash Flows"
+msgstr ""
 
 #. placeholder {0}: lotEntities.length
 #. placeholder {1}: Math.max(0, lotEntities.length - inspected)
@@ -13870,6 +13939,9 @@ msgstr "미전기 문서"
 
 msgid "Unreceived POs"
 msgstr "미입고 구매주문"
+
+msgid "Unreconciled difference"
+msgstr ""
 
 msgid "Unsaved changes"
 msgstr "저장되지 않은 변경 사항"

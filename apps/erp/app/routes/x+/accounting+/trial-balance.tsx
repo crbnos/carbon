@@ -6,16 +6,18 @@ import { msg } from "@lingui/core/macro";
 import { useState } from "react";
 import type { LoaderFunctionArgs } from "react-router";
 import { Outlet, redirect, useLoaderData } from "react-router";
-import type { Chart } from "~/modules/accounting";
+import type { Chart, TrialBalanceRow } from "~/modules/accounting";
 import {
   getCompaniesInGroup,
   getConsolidatedBalances,
   getFinancialStatementBalances,
   getFiscalYearSettings,
+  getTrialBalance,
   translateCompanyBalances
 } from "~/modules/accounting";
 import {
   ReportFilters,
+  TrialBalanceTable,
   TrialBalanceTree
 } from "~/modules/accounting/ui/Reports";
 import { months } from "~/modules/shared";
@@ -76,10 +78,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
     );
 
     return {
+      mode: "tree" as const,
       trialBalance: consolidated.data as (Chart & {
         translatedBalance?: number;
         exchangeRate?: number;
       })[],
+      trialBalanceRows: [] as TrialBalanceRow[],
       companies: companiesList,
       selectedCompanyIds,
       showTranslated: true,
@@ -92,6 +96,48 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   // Single company
   const selectedCompanyId = selectedCompanyIds[0];
+  const selectedCompany = companiesList.find((c) => c.id === selectedCompanyId);
+  const isForeignCurrency =
+    !!parentCurrency &&
+    !!selectedCompany?.baseCurrencyCode &&
+    selectedCompany.baseCurrencyCode !== parentCurrency;
+
+  // Default single-company view: the four-column trial balance (SAP F0996 handoff
+  // form) from the extended RPC. The grouped tree is kept only for the translated
+  // view, which the flat four-column RPC does not compute.
+  if (!(showTranslated && isForeignCurrency)) {
+    const rows = await getTrialBalance(
+      client,
+      companyGroupId,
+      selectedCompanyId,
+      {
+        startDate,
+        endDate
+      }
+    );
+    if (rows.error) {
+      throw redirect(
+        path.to.accounting,
+        await flash(request, error(rows.error, "Failed to load trial balance"))
+      );
+    }
+    return {
+      mode: "table" as const,
+      trialBalance: [] as (Chart & {
+        translatedBalance?: number;
+        exchangeRate?: number;
+      })[],
+      trialBalanceRows: (rows.data ?? []) as unknown as TrialBalanceRow[],
+      companies: companiesList,
+      selectedCompanyIds,
+      showTranslated: false,
+      isMultiCompany: false,
+      isForeignCurrency,
+      parentCurrency,
+      fiscalStartMonth
+    };
+  }
+
   const balances = await getFinancialStatementBalances(
     client,
     companyGroupId,
@@ -108,12 +154,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
       )
     );
   }
-
-  const selectedCompany = companiesList.find((c) => c.id === selectedCompanyId);
-  const isForeignCurrency =
-    !!parentCurrency &&
-    !!selectedCompany?.baseCurrencyCode &&
-    selectedCompany.baseCurrencyCode !== parentCurrency;
 
   let accounts = (balances.data ?? []) as (Chart & {
     translatedBalance?: number;
@@ -152,7 +192,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
 
   return {
+    mode: "tree" as const,
     trialBalance: accounts,
+    trialBalanceRows: [] as TrialBalanceRow[],
     companies: companiesList,
     selectedCompanyIds,
     showTranslated: showTranslated && isForeignCurrency,
@@ -165,7 +207,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export default function TrialBalanceRoute() {
   const {
+    mode,
     trialBalance,
+    trialBalanceRows,
     companies,
     selectedCompanyIds,
     showTranslated,
@@ -188,13 +232,20 @@ export default function TrialBalanceRoute() {
         search={search}
         onSearchChange={setSearch}
       />
-      <TrialBalanceTree
-        data={trialBalance}
-        showTranslated={showTranslated}
-        parentCurrency={parentCurrency}
-        search={search}
-        ledgerPath={path.to.trialBalanceLedger}
-      />
+      {mode === "table" ? (
+        <TrialBalanceTable
+          data={trialBalanceRows}
+          count={trialBalanceRows.length}
+        />
+      ) : (
+        <TrialBalanceTree
+          data={trialBalance}
+          showTranslated={showTranslated}
+          parentCurrency={parentCurrency}
+          search={search}
+          ledgerPath={path.to.trialBalanceLedger}
+        />
+      )}
       <Outlet />
     </VStack>
   );

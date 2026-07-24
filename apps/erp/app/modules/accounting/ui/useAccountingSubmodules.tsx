@@ -26,7 +26,9 @@ const multiCompanyRoutes = new Set<string>([path.to.intercompany]);
 const accountingOnlyRoutes = new Set<string>([
   path.to.balanceSheet,
   path.to.incomeStatement,
+  path.to.cashFlowStatement,
   path.to.trialBalance,
+  path.to.generalLedger,
   path.to.intercompany,
   path.to.accountingJournals,
   path.to.accountingPeriods,
@@ -54,6 +56,12 @@ export default function useAccountingSubmodules() {
             icon: <LuTrendingUp />
           },
           {
+            name: t`Cash Flow`,
+            to: path.to.cashFlowStatement,
+            role: "employee",
+            icon: <LuHandCoins />
+          },
+          {
             name: t`Trial Balance`,
             to: path.to.trialBalance,
             role: "employee",
@@ -64,6 +72,12 @@ export default function useAccountingSubmodules() {
       {
         name: t`General Ledger`,
         routes: [
+          {
+            name: t`GL Detail`,
+            to: path.to.generalLedger,
+            role: "employee",
+            icon: <LuBookOpen />
+          },
           {
             name: t`Intercompany`,
             to: path.to.intercompany,

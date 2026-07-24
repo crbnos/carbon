@@ -48,6 +48,10 @@ msgstr "(このお客様では除外されています)"
 msgid "{0, plural, one {This part is on 1 open change notice} other {This part is on # open change notices}}"
 msgstr "{0, plural, one {このパーツは1つの開いた変更通知に含まれています} other {このパーツは#つの開いた変更通知に含まれています}}"
 
+#. placeholder {0}: statement.unclassified.length
+msgid "{0} accounts have no cash flow activity — set an account type or override"
+msgstr ""
+
 #. placeholder {0}: ar.count
 msgid "{0} customers with a balance"
 msgstr "{0}件の残高のある顧客"
@@ -854,6 +858,9 @@ msgstr "すべて"
 
 msgid "All {total} phases are done. Nice work — your team is up and running."
 msgstr "すべての{total}フェーズが完了しました。素晴らしい仕事です。チームが稼働しています。"
+
+msgid "All accounts"
+msgstr ""
 
 msgid "All actions selected"
 msgstr "すべてのアクションが選択されました"
@@ -2202,6 +2209,15 @@ msgstr "キャリアアカウント"
 msgid "Cash & Banking"
 msgstr "現金と銀行"
 
+msgid "Cash at beginning of period"
+msgstr ""
+
+msgid "Cash at end of period"
+msgstr ""
+
+msgid "Cash Flow"
+msgstr ""
+
 msgid "Categories that classify how stock is stored"
 msgstr "在庫がどのように保管されるかを分類するカテゴリ"
 
@@ -2397,6 +2413,12 @@ msgstr "終了日"
 
 msgid "Closing"
 msgstr "終了残高"
+
+msgid "Closing Credit"
+msgstr ""
+
+msgid "Closing Debit"
+msgstr ""
 
 msgid "Closure blocked"
 msgstr "完了がブロックされています"
@@ -3674,10 +3696,6 @@ msgstr "期限タイプ"
 msgid "Debit"
 msgstr "デビット"
 
-#. placeholder {0}: parentCurrency ?? "Translated"
-msgid "Debit ({0})"
-msgstr "デビット ({0})"
-
 msgid "Debit Account"
 msgstr "デビット勘定"
 
@@ -4867,6 +4885,9 @@ msgstr "Webhookを編集"
 msgid "Edit Work Center"
 msgstr "ワークセンターを編集"
 
+msgid "Effect of exchange rate changes on cash"
+msgstr ""
+
 msgid "Eliminated"
 msgstr "削除済み"
 
@@ -5774,6 +5795,8 @@ msgstr "確定"
 
 msgid "Finalizing a fiscal month through the Open → Locked → Closed lifecycle; a closed period is frozen and its balances snapshotted, reversible only by explicit reopen."
 msgstr "開始 → ロック → クローズ ライフサイクルを通じて会計月をファイナライズします。クローズされた期間は凍結され、残高がスナップショットされ、明示的な再開でのみ取り消せます。"
+msgid "Financing Activities"
+msgstr ""
 
 msgid "finish"
 msgstr "完成品"
@@ -6143,6 +6166,9 @@ msgstr "各期に減価償却が計上されるたびに貸方記入され、資
 
 msgid "GL contra-asset account that accumulates depreciation booked against fixed assets."
 msgstr "固定資産に対して記録された減価償却を累積するGL反対資産勘定。"
+
+msgid "GL Detail"
+msgstr ""
 
 msgid "GL equity account (CTA reserve) that holds unrealized FX differences from re-translating foreign-currency balances at period-end; separate from realized FX gain/loss in P&L."
 msgstr "GL株主資本勘定（CTA準備金）は、期末時点で外貨残高を再変換することから生じる未実現FX差異を保有しています。 P&Lの実現FX利得/損失とは別。"
@@ -6564,6 +6590,8 @@ msgstr "受信トレイ"
 
 msgid "Include a materials (bill of materials) section on the job traveler PDF with item numbers and quantities."
 msgstr "ジョブトラベラーPDFに品目番号と数量を含む材料（部品表）セクションを含める。"
+msgid "Include drafts"
+msgstr ""
 
 msgid "Include extra parts in shipment"
 msgstr "出荷に追加部品を含める"
@@ -6792,6 +6820,9 @@ msgstr "在庫単位"
 
 msgid "Inventory Valuation"
 msgstr "在庫評価"
+
+msgid "Investing Activities"
+msgstr ""
 
 msgid "Invite"
 msgstr "招待"
@@ -8041,8 +8072,26 @@ msgstr "純簿価額"
 msgid "Net Book Value"
 msgstr "純簿価額"
 
+msgid "Net cash from financing activities"
+msgstr ""
+
+msgid "Net cash from investing activities"
+msgstr ""
+
+msgid "Net cash from operating activities"
+msgstr ""
+
+msgid "Net cash from unclassified activities"
+msgstr ""
+
 msgid "Net Change"
 msgstr "純変化"
+
+msgid "Net change in cash"
+msgstr ""
+
+msgid "Net Income"
+msgstr ""
 
 msgid "Never"
 msgstr "なし"
@@ -8986,6 +9035,15 @@ msgstr "開始残高"
 msgid "Opening balance of depreciation already booked before this asset was added to Carbon (use 0 for new acquisitions)."
 msgstr "このアセットがCarbonに追加される前に既に予約されていた減価償却の期首残高（新規取得の場合は0を使用してください）。"
 
+msgid "Opening Credit"
+msgstr ""
+
+msgid "Opening Debit"
+msgstr ""
+
+msgid "Operating Activities"
+msgstr ""
+
 msgid "Operating Expenses"
 msgstr "営業費"
 
@@ -9392,6 +9450,11 @@ msgstr "期間"
 
 msgid "Period close"
 msgstr "期間クローズ"
+msgid "Period Credits"
+msgstr ""
+
+msgid "Period Debits"
+msgstr ""
 
 msgid "Period End"
 msgstr "期間終了"
@@ -10919,6 +10982,9 @@ msgstr "受け入れチェックリストを実行してパスする"
 msgid "Run the floor on tablets: clock labor, report progress, see instructions"
 msgstr "タブレットでフロアを運用：労働時間を記録、進捗を報告、指示を確認"
 
+msgid "Running Balance"
+msgstr ""
+
 msgid "Running inventory after each week's supply and demand — the line."
 msgstr "毎週の需給の後に実行されるインベントリ — ラインです。"
 
@@ -12000,6 +12066,9 @@ msgstr "開始"
 
 msgid "State / Province"
 msgstr "都道府県"
+
+msgid "Statement of Cash Flows"
+msgstr ""
 
 #. placeholder {0}: lotEntities.length
 #. placeholder {1}: Math.max(0, lotEntities.length - inspected)
@@ -13870,6 +13939,9 @@ msgstr "未転記書類"
 
 msgid "Unreceived POs"
 msgstr "未受領PO"
+
+msgid "Unreconciled difference"
+msgstr ""
 
 msgid "Unsaved changes"
 msgstr "未保存の変更"

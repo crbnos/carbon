@@ -48,6 +48,10 @@ msgstr "(excluded for this customer)"
 msgid "{0, plural, one {This part is on 1 open change notice} other {This part is on # open change notices}}"
 msgstr "{0, plural, one {This part is on 1 open change notice} other {This part is on # open change notices}}"
 
+#. placeholder {0}: statement.unclassified.length
+msgid "{0} accounts have no cash flow activity — set an account type or override"
+msgstr "{0} accounts have no cash flow activity — set an account type or override"
+
 #. placeholder {0}: ar.count
 msgid "{0} customers with a balance"
 msgstr "{0} customers with a balance"
@@ -854,6 +858,9 @@ msgstr "All"
 
 msgid "All {total} phases are done. Nice work — your team is up and running."
 msgstr "All {total} phases are done. Nice work — your team is up and running."
+
+msgid "All accounts"
+msgstr "All accounts"
 
 msgid "All actions selected"
 msgstr "All actions selected"
@@ -2202,6 +2209,15 @@ msgstr "Carrier Account"
 msgid "Cash & Banking"
 msgstr "Cash & Banking"
 
+msgid "Cash at beginning of period"
+msgstr "Cash at beginning of period"
+
+msgid "Cash at end of period"
+msgstr "Cash at end of period"
+
+msgid "Cash Flow"
+msgstr "Cash Flow"
+
 msgid "Categories that classify how stock is stored"
 msgstr "Categories that classify how stock is stored"
 
@@ -2397,6 +2413,12 @@ msgstr "Closed Date"
 
 msgid "Closing"
 msgstr "Closing"
+
+msgid "Closing Credit"
+msgstr "Closing Credit"
+
+msgid "Closing Debit"
+msgstr "Closing Debit"
 
 msgid "Closure blocked"
 msgstr "Closure blocked"
@@ -3674,10 +3696,6 @@ msgstr "Deadline Type"
 msgid "Debit"
 msgstr "Debit"
 
-#. placeholder {0}: parentCurrency ?? "Translated"
-msgid "Debit ({0})"
-msgstr "Debit ({0})"
-
 msgid "Debit Account"
 msgstr "Debit Account"
 
@@ -4867,6 +4885,9 @@ msgstr "Edit Webhook"
 msgid "Edit Work Center"
 msgstr "Edit Work Center"
 
+msgid "Effect of exchange rate changes on cash"
+msgstr "Effect of exchange rate changes on cash"
+
 msgid "Eliminated"
 msgstr "Eliminated"
 
@@ -5774,6 +5795,8 @@ msgstr "Finalize"
 
 msgid "Finalizing a fiscal month through the Open → Locked → Closed lifecycle; a closed period is frozen and its balances snapshotted, reversible only by explicit reopen."
 msgstr "Finalizing a fiscal month through the Open → Locked → Closed lifecycle; a closed period is frozen and its balances snapshotted, reversible only by explicit reopen."
+msgid "Financing Activities"
+msgstr "Financing Activities"
 
 msgid "finish"
 msgstr "finish"
@@ -6143,6 +6166,9 @@ msgstr "GL contra-asset account credited as depreciation posts each period and d
 
 msgid "GL contra-asset account that accumulates depreciation booked against fixed assets."
 msgstr "GL contra-asset account that accumulates depreciation booked against fixed assets."
+
+msgid "GL Detail"
+msgstr "GL Detail"
 
 msgid "GL equity account (CTA reserve) that holds unrealized FX differences from re-translating foreign-currency balances at period-end; separate from realized FX gain/loss in P&L."
 msgstr "GL equity account (CTA reserve) that holds unrealized FX differences from re-translating foreign-currency balances at period-end; separate from realized FX gain/loss in P&L."
@@ -6564,6 +6590,8 @@ msgstr "Inbox"
 
 msgid "Include a materials (bill of materials) section on the job traveler PDF with item numbers and quantities."
 msgstr "Include a materials (bill of materials) section on the job traveler PDF with item numbers and quantities."
+msgid "Include drafts"
+msgstr "Include drafts"
 
 msgid "Include extra parts in shipment"
 msgstr "Include extra parts in shipment"
@@ -6792,6 +6820,9 @@ msgstr "Inventory Unit of Measure"
 
 msgid "Inventory Valuation"
 msgstr "Inventory Valuation"
+
+msgid "Investing Activities"
+msgstr "Investing Activities"
 
 msgid "Invite"
 msgstr "Invite"
@@ -8041,8 +8072,26 @@ msgstr "Net book value"
 msgid "Net Book Value"
 msgstr "Net Book Value"
 
+msgid "Net cash from financing activities"
+msgstr "Net cash from financing activities"
+
+msgid "Net cash from investing activities"
+msgstr "Net cash from investing activities"
+
+msgid "Net cash from operating activities"
+msgstr "Net cash from operating activities"
+
+msgid "Net cash from unclassified activities"
+msgstr "Net cash from unclassified activities"
+
 msgid "Net Change"
 msgstr "Net Change"
+
+msgid "Net change in cash"
+msgstr "Net change in cash"
+
+msgid "Net Income"
+msgstr "Net Income"
 
 msgid "Never"
 msgstr "Never"
@@ -8986,6 +9035,15 @@ msgstr "Opening"
 msgid "Opening balance of depreciation already booked before this asset was added to Carbon (use 0 for new acquisitions)."
 msgstr "Opening balance of depreciation already booked before this asset was added to Carbon (use 0 for new acquisitions)."
 
+msgid "Opening Credit"
+msgstr "Opening Credit"
+
+msgid "Opening Debit"
+msgstr "Opening Debit"
+
+msgid "Operating Activities"
+msgstr "Operating Activities"
+
 msgid "Operating Expenses"
 msgstr "Operating Expenses"
 
@@ -9392,6 +9450,11 @@ msgstr "Period"
 
 msgid "Period close"
 msgstr "Period close"
+msgid "Period Credits"
+msgstr "Period Credits"
+
+msgid "Period Debits"
+msgstr "Period Debits"
 
 msgid "Period End"
 msgstr "Period End"
@@ -10919,6 +10982,9 @@ msgstr "Run the acceptance checklist to a pass"
 msgid "Run the floor on tablets: clock labor, report progress, see instructions"
 msgstr "Run the floor on tablets: clock labor, report progress, see instructions"
 
+msgid "Running Balance"
+msgstr "Running Balance"
+
 msgid "Running inventory after each week's supply and demand — the line."
 msgstr "Running inventory after each week's supply and demand — the line."
 
@@ -12000,6 +12066,9 @@ msgstr "Started"
 
 msgid "State / Province"
 msgstr "State / Province"
+
+msgid "Statement of Cash Flows"
+msgstr "Statement of Cash Flows"
 
 #. placeholder {0}: lotEntities.length
 #. placeholder {1}: Math.max(0, lotEntities.length - inspected)
@@ -13870,6 +13939,9 @@ msgstr "Unposted Documents"
 
 msgid "Unreceived POs"
 msgstr "Unreceived POs"
+
+msgid "Unreconciled difference"
+msgstr "Unreconciled difference"
 
 msgid "Unsaved changes"
 msgstr "Unsaved changes"

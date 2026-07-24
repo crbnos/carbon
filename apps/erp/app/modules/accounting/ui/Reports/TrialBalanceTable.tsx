@@ -2,159 +2,98 @@ import { useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useMemo } from "react";
 import { LuHash, LuText } from "react-icons/lu";
+import { Link } from "react-router";
 import { Table } from "~/components";
-
-type TrialBalanceRow = {
-  accountId: string;
-  accountNumber: string | null;
-  accountName: string | null;
-  accountClass: string | null;
-  incomeBalance: string | null;
-  debitBalance: number;
-  creditBalance: number;
-  netChange: number;
-  translatedDebit?: number;
-  translatedCredit?: number;
-};
+import { useUrlParams } from "~/hooks";
+import { path } from "~/utils/path";
+import type { TrialBalanceRow } from "../../types";
 
 type TrialBalanceTableProps = {
   data: TrialBalanceRow[];
   count: number;
-  showTranslated?: boolean;
-  parentCurrency?: string | null;
 };
 
 function formatCurrency(value: number): string {
-  if (value === 0) return "-";
+  if (!value) return "-";
   return value.toLocaleString(undefined, {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2
   });
 }
 
-const TrialBalanceTable = memo(
-  ({
-    data,
-    count,
-    showTranslated = false,
-    parentCurrency
-  }: TrialBalanceTableProps) => {
-    const { t } = useLingui();
-    const columns = useMemo<ColumnDef<TrialBalanceRow>[]>(() => {
-      const cols: ColumnDef<TrialBalanceRow>[] = [
-        {
-          accessorKey: "accountNumber",
-          header: t`Account`,
-          cell: ({ row }) => (
-            <span className="font-mono text-muted-foreground">
-              {row.original.accountNumber}
-            </span>
-          ),
-          size: 100,
-          meta: {
-            icon: <LuHash />
-          }
-        },
-        {
-          accessorKey: "accountName",
-          header: t`Name`,
-          cell: ({ row }) => row.original.accountName,
-          meta: {
-            icon: <LuText />
-          }
-        },
-        {
-          accessorKey: "debitBalance",
-          header: t`Debit`,
-          cell: ({ row }) => (
-            <span className="tabular-nums">
-              {formatCurrency(row.original.debitBalance)}
-            </span>
-          ),
-          size: 150,
-          meta: {
-            renderTotal: true,
-            formatter: (val) => formatCurrency(Number(val))
-          }
-        },
-        {
-          accessorKey: "creditBalance",
-          header: t`Credit`,
-          cell: ({ row }) => (
-            <span className="tabular-nums">
-              {formatCurrency(row.original.creditBalance)}
-            </span>
-          ),
-          size: 150,
-          meta: {
-            renderTotal: true,
-            formatter: (val) => formatCurrency(Number(val))
-          }
-        }
-      ];
+// Four-column trial balance (SAP F0996 handoff form): Opening | Period | Closing
+// balance pairs, each debit/credit column footing to an equal total. Rendered on
+// the shared Table so CSV export is automatic.
+const TrialBalanceTable = memo(({ data, count }: TrialBalanceTableProps) => {
+  const { t } = useLingui();
+  const [params] = useUrlParams();
 
-      if (showTranslated) {
-        cols.push(
-          {
-            accessorKey: "translatedDebit",
-            header: t`Debit (${parentCurrency ?? "Translated"})`,
-            cell: ({ row }) => (
-              <span className="tabular-nums">
-                {formatCurrency(row.original.translatedDebit ?? 0)}
-              </span>
-            ),
-            size: 150,
-            meta: {
-              renderTotal: true,
-              formatter: (val) => formatCurrency(Number(val))
-            }
-          },
-          {
-            accessorKey: "translatedCredit",
-            header: t`Credit (${parentCurrency ?? "Translated"})`,
-            cell: ({ row }) => (
-              <span className="tabular-nums">
-                {formatCurrency(row.original.translatedCredit ?? 0)}
-              </span>
-            ),
-            size: 150,
-            meta: {
-              renderTotal: true,
-              formatter: (val) => formatCurrency(Number(val))
-            }
-          }
-        );
+  const columns = useMemo<ColumnDef<TrialBalanceRow>[]>(() => {
+    const window = new URLSearchParams(params);
+    window.delete("offset");
+    const qs = window.toString();
+
+    const amountColumn = (
+      key: keyof TrialBalanceRow,
+      header: string
+    ): ColumnDef<TrialBalanceRow> => ({
+      accessorKey: key as string,
+      header,
+      cell: ({ row }) => (
+        <span className="tabular-nums">
+          {formatCurrency(Number(row.original[key] ?? 0))}
+        </span>
+      ),
+      size: 130,
+      meta: {
+        renderTotal: true,
+        formatter: (val) => formatCurrency(Number(val))
       }
+    });
 
-      cols.push({
-        accessorKey: "netChange",
-        header: t`Net Change`,
+    return [
+      {
+        accessorKey: "accountNumber",
+        header: t`Account`,
         cell: ({ row }) => (
-          <span className="tabular-nums">
-            {formatCurrency(row.original.netChange)}
-          </span>
+          <Link
+            to={`${path.to.generalLedger}?accountId=${row.original.accountId}${
+              qs ? `&${qs}` : ""
+            }`}
+            className="font-mono text-muted-foreground hover:text-foreground hover:underline"
+          >
+            {row.original.accountNumber}
+          </Link>
         ),
-        size: 150,
-        meta: {
-          renderTotal: true,
-          formatter: (val) => formatCurrency(Number(val))
-        }
-      });
+        size: 100,
+        meta: { icon: <LuHash /> }
+      },
+      {
+        accessorKey: "accountName",
+        header: t`Name`,
+        cell: ({ row }) => row.original.accountName,
+        meta: { icon: <LuText /> }
+      },
+      amountColumn("openingDebit", t`Opening Debit`),
+      amountColumn("openingCredit", t`Opening Credit`),
+      amountColumn("periodDebits", t`Period Debits`),
+      amountColumn("periodCredits", t`Period Credits`),
+      amountColumn("debitBalance", t`Closing Debit`),
+      amountColumn("creditBalance", t`Closing Credit`),
+      amountColumn("netChange", t`Net Change`)
+    ];
+  }, [params, t]);
 
-      return cols;
-    }, [showTranslated, parentCurrency, t]);
-
-    return (
-      <Table<TrialBalanceRow>
-        data={data}
-        columns={columns}
-        count={count}
-        withSimpleSorting={false}
-        title={t`Trial Balance`}
-      />
-    );
-  }
-);
+  return (
+    <Table<TrialBalanceRow>
+      data={data}
+      columns={columns}
+      count={count}
+      withSimpleSorting={false}
+      title={t`Trial Balance`}
+    />
+  );
+});
 
 TrialBalanceTable.displayName = "TrialBalanceTable";
 export default TrialBalanceTable;
