@@ -336,6 +336,22 @@ export function spawnAssembler(opts: {
 
 const EMAIL_PREFIX = pc.green(pc.bold("eml | "));
 
+// react-email's own boot banner. The summary box already shows the URL, so
+// these lines add nothing — anything else the server says (compile errors,
+// warnings) still comes through.
+const EMAIL_STARTUP_PATTERNS: RegExp[] = [
+  /^\s*React Email\b/,
+  /^\s*Running preview at:/,
+  /Getting react-email preview server ready/,
+  /^\s*[✔✓]\s*Ready in\b/
+];
+
+function isEmailStartupLine(line: string): boolean {
+  // biome-ignore lint/suspicious/noControlCharactersInRegex: strip SGR codes
+  const plain = line.replace(/\x1b\[[0-9;]*m/g, "");
+  return EMAIL_STARTUP_PATTERNS.some((re) => re.test(plain));
+}
+
 /**
  * Spawn the react-email preview server (`email:previews` in @carbon/documents)
  * on the worktree's PORT_EMAIL, pointed at `src/email/previews` — one fixture
@@ -352,13 +368,12 @@ export function spawnEmailPreview(opts: {
 }): ExecaChildProcess {
   const { root, ports } = opts;
   const port = ports.PORT_EMAIL;
-  process.stderr.write(
-    `${EMAIL_PREFIX}${pc.dim(`email preview server on :${port}`)}\n`
-  );
 
   const child = execa("pnpm", ["run", "email:previews"], {
     cwd: join(root, "packages", "documents"),
-    env: { ...process.env, EMAIL_DEV_PORT: String(port) },
+    // CRBN_MANAGED silences email-dev.mjs's own banner — the summary box
+    // already prints the URL, so repeating it here is noise.
+    env: { ...process.env, CRBN_MANAGED: "1", EMAIL_DEV_PORT: String(port) },
     reject: false,
     stdin: "ignore",
     detached: true
@@ -370,7 +385,7 @@ export function spawnEmailPreview(opts: {
   ) => {
     if (!stream) return;
     readLines(stream, (line) => {
-      if (isNoiseLine(line)) return;
+      if (isNoiseLine(line) || isEmailStartupLine(line)) return;
       sink.write(`${EMAIL_PREFIX}${line}\n`);
     });
   };
