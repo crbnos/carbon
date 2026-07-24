@@ -2944,6 +2944,9 @@ msgstr "प्रतिपक्ष"
 msgid "Country"
 msgstr "देश"
 
+msgid "Country Code"
+msgstr ""
+
 msgid "Create"
 msgstr "बनाएं"
 
@@ -3780,6 +3783,9 @@ msgstr "आइटम समूह हटाएं"
 msgid "Delete Journal Entry"
 msgstr "पत्रिका प्रविष्टि हटाएं"
 
+msgid "Delete Legal Series"
+msgstr ""
+
 msgid "Delete line"
 msgstr "पंक्ति हटाएं"
 
@@ -4488,6 +4494,9 @@ msgstr "पत्रिका प्रविष्टि संपादित 
 
 msgid "Edit Kanban"
 msgstr "कनबन संपादित करें"
+
+msgid "Edit Legal Series"
+msgstr ""
 
 msgid "Edit Line"
 msgstr "लाइन संपादित करें"
@@ -6931,6 +6940,9 @@ msgstr "बाईं ओर की वस्तु"
 msgid "Leftover Parts Detected"
 msgstr "बचे हुए पार्ट्स का पता चला"
 
+msgid "Legal Series"
+msgstr ""
+
 msgid "Less manual work"
 msgstr "कम मैनुअल काम"
 
@@ -7091,6 +7103,9 @@ msgstr "अवधि को लॉक करें"
 
 msgid "Locked"
 msgstr "लॉक किया गया"
+
+msgid "Locked after first use"
+msgstr ""
 
 msgid "Locking makes the period read-only for operational documents (receipts, shipments, invoices) while still allowing accounting adjustments like depreciation and disposals. A period must be locked before it can be closed."
 msgstr "लॉकिंग अवधि को परिचालन दस्तावेज़ों (रसीदें, शिपमेंट, चालान) के लिए केवल-पढ़ने योग्य बनाता है जबकि मूल्यह्रास और निस्तारण जैसे लेखा समायोजन की अनुमति देता है। अवधि को बंद किए जाने से पहले उसे लॉक किया जाना चाहिए।"
@@ -7881,6 +7896,9 @@ msgstr "नया आइटम समूह"
 
 msgid "New Kanban"
 msgstr "नया कानबन"
+
+msgid "New Legal Series"
+msgstr ""
 
 msgid "New Line"
 msgstr "नई लाइन"
@@ -10077,6 +10095,9 @@ msgstr "पंजीकृत"
 
 msgid "Registered"
 msgstr "पुन: आदेश बिंदु"
+
+msgid "Registration Ref"
+msgstr ""
 
 msgid "Reject"
 msgstr "अस्वीकार करें"

@@ -2944,6 +2944,9 @@ msgstr "거래처"
 msgid "Country"
 msgstr "국가"
 
+msgid "Country Code"
+msgstr ""
+
 msgid "Create"
 msgstr "생성"
 
@@ -3780,6 +3783,9 @@ msgstr "품목 그룹 삭제"
 msgid "Delete Journal Entry"
 msgstr "분개장 항목 삭제"
 
+msgid "Delete Legal Series"
+msgstr ""
+
 msgid "Delete line"
 msgstr "행 삭제"
 
@@ -4488,6 +4494,9 @@ msgstr "분개장 항목 편집"
 
 msgid "Edit Kanban"
 msgstr "칸반 수정"
+
+msgid "Edit Legal Series"
+msgstr ""
 
 msgid "Edit Line"
 msgstr "라인 수정"
@@ -6931,6 +6940,9 @@ msgstr "왼쪽 품목"
 msgid "Leftover Parts Detected"
 msgstr "잔여 부품 발견됨"
 
+msgid "Legal Series"
+msgstr ""
+
 msgid "Less manual work"
 msgstr "수작업 감소"
 
@@ -7091,6 +7103,9 @@ msgstr "기간 잠금"
 
 msgid "Locked"
 msgstr "잠금"
+
+msgid "Locked after first use"
+msgstr ""
 
 msgid "Locking makes the period read-only for operational documents (receipts, shipments, invoices) while still allowing accounting adjustments like depreciation and disposals. A period must be locked before it can be closed."
 msgstr "잠금하면 기간이 운영 문서(수령, 배송, 송장)에 대해 읽기 전용이 되며 감가상각 및 처분과 같은 회계 조정은 여전히 허용됩니다. 기간을 종료하려면 먼저 잠금해야 합니다."
@@ -7881,6 +7896,9 @@ msgstr "새 품목 그룹"
 
 msgid "New Kanban"
 msgstr "새 칸반"
+
+msgid "New Legal Series"
+msgstr ""
 
 msgid "New Line"
 msgstr "새 라인"
@@ -10077,6 +10095,9 @@ msgstr "기존 자산 등록"
 
 msgid "Registered"
 msgstr "등록됨"
+
+msgid "Registration Ref"
+msgstr ""
 
 msgid "Reject"
 msgstr "반려"

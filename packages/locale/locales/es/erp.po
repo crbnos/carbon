@@ -2944,6 +2944,9 @@ msgstr "Contraparte"
 msgid "Country"
 msgstr "País"
 
+msgid "Country Code"
+msgstr ""
+
 msgid "Create"
 msgstr "Crear"
 
@@ -3780,6 +3783,9 @@ msgstr "Eliminar grupo de artículos"
 msgid "Delete Journal Entry"
 msgstr "Eliminar Asiento de Diario"
 
+msgid "Delete Legal Series"
+msgstr ""
+
 msgid "Delete line"
 msgstr "Eliminar línea"
 
@@ -4488,6 +4494,9 @@ msgstr "Editar Asiento de Diario"
 
 msgid "Edit Kanban"
 msgstr "Editar Kanban"
+
+msgid "Edit Legal Series"
+msgstr ""
 
 msgid "Edit Line"
 msgstr "Editar Línea"
@@ -6931,6 +6940,9 @@ msgstr "Elemento izquierdo"
 msgid "Leftover Parts Detected"
 msgstr "Piezas Sobrantes Detectadas"
 
+msgid "Legal Series"
+msgstr ""
+
 msgid "Less manual work"
 msgstr "Menos trabajo manual"
 
@@ -7091,6 +7103,9 @@ msgstr "Bloquear Período"
 
 msgid "Locked"
 msgstr "Bloqueado"
+
+msgid "Locked after first use"
+msgstr ""
 
 msgid "Locking makes the period read-only for operational documents (receipts, shipments, invoices) while still allowing accounting adjustments like depreciation and disposals. A period must be locked before it can be closed."
 msgstr "El bloqueo hace que el período sea de solo lectura para documentos operativos (recibos, envíos, facturas) mientras permite ajustes contables como depreciación y disposiciones. Un período debe bloquearse antes de poder cerrarse."
@@ -7881,6 +7896,9 @@ msgstr "Nuevo Grupo de Artículos"
 
 msgid "New Kanban"
 msgstr "Nuevo Kanban"
+
+msgid "New Legal Series"
+msgstr ""
 
 msgid "New Line"
 msgstr "Nueva Línea"
@@ -10077,6 +10095,9 @@ msgstr "Registrado"
 
 msgid "Registered"
 msgstr "Punto de Reorden"
+
+msgid "Registration Ref"
+msgstr ""
 
 msgid "Reject"
 msgstr "Rechazar"

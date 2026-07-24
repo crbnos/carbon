@@ -2944,6 +2944,9 @@ msgstr "Kontrahent"
 msgid "Country"
 msgstr "Kraj"
 
+msgid "Country Code"
+msgstr ""
+
 msgid "Create"
 msgstr "Utwórz"
 
@@ -3780,6 +3783,9 @@ msgstr "Usuń grupę artykułów"
 msgid "Delete Journal Entry"
 msgstr "Usuń wpis dziennika"
 
+msgid "Delete Legal Series"
+msgstr ""
+
 msgid "Delete line"
 msgstr "Usuń linię"
 
@@ -4488,6 +4494,9 @@ msgstr "Edytuj wpis dziennika"
 
 msgid "Edit Kanban"
 msgstr "Edytuj Kanban"
+
+msgid "Edit Legal Series"
+msgstr ""
 
 msgid "Edit Line"
 msgstr "Edytuj linię"
@@ -6931,6 +6940,9 @@ msgstr "Element po lewej stronie"
 msgid "Leftover Parts Detected"
 msgstr "Wykryte nadmiarowe części"
 
+msgid "Legal Series"
+msgstr ""
+
 msgid "Less manual work"
 msgstr "Mniej pracy ręcznej"
 
@@ -7091,6 +7103,9 @@ msgstr "Zablokuj okres"
 
 msgid "Locked"
 msgstr "Zablokowany"
+
+msgid "Locked after first use"
+msgstr ""
 
 msgid "Locking makes the period read-only for operational documents (receipts, shipments, invoices) while still allowing accounting adjustments like depreciation and disposals. A period must be locked before it can be closed."
 msgstr "Zablokowanie uczynia okres tylko do odczytu dla dokumentów operacyjnych (pokwitowania, przesyłki, faktury), jednocześnie umożliwiając korekty księgowe, takie jak amortyzacja i zbycie. Okres musi być zablokowany, zanim będzie można go zamknąć."
@@ -7881,6 +7896,9 @@ msgstr "Nowa Grupa Pozycji"
 
 msgid "New Kanban"
 msgstr "Nowy Kanban"
+
+msgid "New Legal Series"
+msgstr ""
 
 msgid "New Line"
 msgstr "Nowa linia"
@@ -10077,6 +10095,9 @@ msgstr "Zarejestrowany"
 
 msgid "Registered"
 msgstr "Punkt Ponownego Zamówienia"
+
+msgid "Registration Ref"
+msgstr ""
 
 msgid "Reject"
 msgstr "Odrzuć"

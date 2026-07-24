@@ -2944,6 +2944,9 @@ msgstr "交易对手"
 msgid "Country"
 msgstr "国家"
 
+msgid "Country Code"
+msgstr ""
+
 msgid "Create"
 msgstr "创建"
 
@@ -3780,6 +3783,9 @@ msgstr "删除物品组"
 msgid "Delete Journal Entry"
 msgstr "删除日记账条目"
 
+msgid "Delete Legal Series"
+msgstr ""
+
 msgid "Delete line"
 msgstr "删除行"
 
@@ -4488,6 +4494,9 @@ msgstr "编辑日记账条目"
 
 msgid "Edit Kanban"
 msgstr "编辑看板"
+
+msgid "Edit Legal Series"
+msgstr ""
 
 msgid "Edit Line"
 msgstr "编辑行"
@@ -6931,6 +6940,9 @@ msgstr "左项"
 msgid "Leftover Parts Detected"
 msgstr "检测到剩余零件"
 
+msgid "Legal Series"
+msgstr ""
+
 msgid "Less manual work"
 msgstr "更少的手动工作"
 
@@ -7091,6 +7103,9 @@ msgstr "锁定期间"
 
 msgid "Locked"
 msgstr "已锁定"
+
+msgid "Locked after first use"
+msgstr ""
 
 msgid "Locking makes the period read-only for operational documents (receipts, shipments, invoices) while still allowing accounting adjustments like depreciation and disposals. A period must be locked before it can be closed."
 msgstr "锁定使期间对于业务单据（收据、装运、发票）为只读，同时仍允许进行折旧和处置等会计调整。期间在结束前必须被锁定。"
@@ -7881,6 +7896,9 @@ msgstr "新建项目组"
 
 msgid "New Kanban"
 msgstr "新看板"
+
+msgid "New Legal Series"
+msgstr ""
 
 msgid "New Line"
 msgstr "新行"
@@ -10077,6 +10095,9 @@ msgstr "已注册"
 
 msgid "Registered"
 msgstr "重新订购点"
+
+msgid "Registration Ref"
+msgstr ""
 
 msgid "Reject"
 msgstr "拒绝"

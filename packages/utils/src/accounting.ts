@@ -103,3 +103,24 @@ export function fiscalYearAndPeriodFor(
 export function formatPeriodLabel(startDate: string, locale?: string): string {
   return formatDate(startDate, { year: "numeric", month: "long" }, locale);
 }
+
+// A draft accounting document (journal, payment, credit/debit memo, sales /
+// purchase invoice) carries no legal number until it is posted — the number
+// columns are nullable (gapless-numbering migration 20260721162233). Until a
+// number is assigned in the posting transaction, the UI shows a stable,
+// searchable placeholder derived from the internal id: `Draft-{last 6 of id}`.
+// Route URLs already use the internal id, so this is display-only.
+export function getDraftDocumentPlaceholder(id: string): string {
+  return `Draft-${id.slice(-6)}`;
+}
+
+// Resolve what to display for an accounting document number: the assigned legal
+// number once posted, or the draft placeholder while the number column is still
+// null. Use everywhere `invoiceId` / `paymentId` / `memoId` / `journalEntryId`
+// is rendered so a number-less draft never shows a blank.
+export function getDocumentReadableId(
+  documentNumber: string | null | undefined,
+  id: string
+): string {
+  return documentNumber ?? getDraftDocumentPlaceholder(id);
+}

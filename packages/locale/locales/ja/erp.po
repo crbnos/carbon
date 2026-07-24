@@ -2944,6 +2944,9 @@ msgstr "相手先"
 msgid "Country"
 msgstr "国"
 
+msgid "Country Code"
+msgstr ""
+
 msgid "Create"
 msgstr "作成"
 
@@ -3780,6 +3783,9 @@ msgstr "アイテムグループを削除"
 msgid "Delete Journal Entry"
 msgstr "仕訳帳エントリを削除"
 
+msgid "Delete Legal Series"
+msgstr ""
+
 msgid "Delete line"
 msgstr "行を削除"
 
@@ -4488,6 +4494,9 @@ msgstr "仕訳帳エントリを編集"
 
 msgid "Edit Kanban"
 msgstr "カンバンを編集"
+
+msgid "Edit Legal Series"
+msgstr ""
 
 msgid "Edit Line"
 msgstr "行を編集"
@@ -6931,6 +6940,9 @@ msgstr "左側の項目"
 msgid "Leftover Parts Detected"
 msgstr "余剰部品が検出されました"
 
+msgid "Legal Series"
+msgstr ""
+
 msgid "Less manual work"
 msgstr "手作業を減らす"
 
@@ -7091,6 +7103,9 @@ msgstr "期間をロック"
 
 msgid "Locked"
 msgstr "ロック済み"
+
+msgid "Locked after first use"
+msgstr ""
 
 msgid "Locking makes the period read-only for operational documents (receipts, shipments, invoices) while still allowing accounting adjustments like depreciation and disposals. A period must be locked before it can be closed."
 msgstr "ロックにより、当期は運用書類（受領書、出荷、請求書）に対して読み取り専用になりますが、減価償却や処分などの会計調整は引き続き可能です。期間は終了する前にロックする必要があります。"
@@ -7881,6 +7896,9 @@ msgstr "新しいアイテムグループ"
 
 msgid "New Kanban"
 msgstr "新しいカンバン"
+
+msgid "New Legal Series"
+msgstr ""
 
 msgid "New Line"
 msgstr "新しい行"
@@ -10077,6 +10095,9 @@ msgstr "登録済み"
 
 msgid "Registered"
 msgstr "再注文点"
+
+msgid "Registration Ref"
+msgstr ""
 
 msgid "Reject"
 msgstr "却下"

@@ -1,6 +1,6 @@
 {
-  "generated": "2026-07-23T20:18:33.549Z",
-  "totalTools": 1377,
+  "generated": "2026-07-24T17:16:32.671Z",
+  "totalTools": 1382,
   "modules": 15,
   "tools": [
     {
@@ -1890,6 +1890,152 @@
         "required": [
           "name",
           "calculationMethod"
+        ]
+      }
+    },
+    {
+      "name": "accounting_getLegalSeries",
+      "module": "accounting",
+      "classification": "READ",
+      "description": "get legal series",
+      "paramCount": 3,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "args": {
+            "type": "object",
+            "properties": {
+              "limit": {
+                "type": "integer",
+                "default": 100
+              },
+              "offset": {
+                "type": "integer",
+                "default": 0
+              },
+              "search": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "accounting_getLegalSeriesById",
+      "module": "accounting",
+      "classification": "READ",
+      "description": "get legal series by id",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "id"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      }
+    },
+    {
+      "name": "accounting_getLegalSeriesList",
+      "module": "accounting",
+      "classification": "READ",
+      "description": "get legal series list",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "documentType"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "documentType": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    {
+      "name": "accounting_upsertLegalSeries",
+      "module": "accounting",
+      "classification": "WRITE",
+      "description": "upsert legal series",
+      "paramCount": 3,
+      "serviceParams": [
+        "client",
+        "legalSeries"
+      ],
+      "injectAuth": [
+        "companyId",
+        "createdBy",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "countryCode": {
+            "type": "string"
+          },
+          "documentType": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "countryCode",
+          "documentType"
+        ]
+      }
+    },
+    {
+      "name": "accounting_deleteLegalSeries",
+      "module": "accounting",
+      "classification": "DESTRUCTIVE",
+      "description": "delete legal series",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "id"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
         ]
       }
     },
