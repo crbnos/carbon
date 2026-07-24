@@ -61,14 +61,15 @@ reach up.
 
 ## The decision
 
-The pending document shows **Approve** and **Reject** on its header, each opening a confirm dialog with an
-optional note. Approving runs the document's transition in one step; rejecting moves it to its rejected
-state (a quality document simply stays in **"Draft"**). The person who raised the request can also **cancel**
-it while it's still pending.
+The pending document shows **Approve** and **Reject** on its header, each opening a confirm dialog.
+Supplier and quality decisions can carry an optional note; the purchase-order dialog has no note field.
+Approving runs the document's transition in one step; rejecting moves it to its rejected state (a quality
+document simply stays in **"Draft"**). The person who raised the request can withdraw it while it's still
+pending: on a purchase order that surfaces as **Delete** (only the requester can delete a pending order).
 
 Carbon notifies the resolved approvers when a request is raised, and the requester when it's decided, over
-**email, Slack, and in-app**. For purchase orders, approvers of lower tiers are also notified so they can see
-spend that cleared above their level.
+**email, Slack, and in-app**. When a purchase order is decided, approvers of lower tiers are notified too, so
+they can see spend that cleared above their level.
 
 <Callout type="warn">
 Approval is **single-step, not a chain.** One matching rule is selected and **one** approver's decision

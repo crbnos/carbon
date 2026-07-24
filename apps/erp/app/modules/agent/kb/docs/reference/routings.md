@@ -12,10 +12,11 @@ nothing to estimate run time from. The routing is the bridge between *what* you'
 
 ## Fields
 
-  - **Operation**: The step performed, in sequence (e.g. *Cut*, *Weld*, *Inspect*).
+  - **Operation**: The step performed (its description, e.g. *Cut*, *Weld*, *Inspect*).
   - **Work center**: Where the operation runs; supplies the rates used for scheduling.
   - **Setup time**: Fixed time to prepare the operation, independent of quantity.
-  - **Run time**: Time per unit produced.
+  - **Labor time**: Operator time per unit, in the operation's standard factor unit.
+  - **Machine time**: Machine time per unit, in the operation's standard factor unit.
   - **Sequence**: Order of operations; lower runs first.
 
 ## Per-revision routings

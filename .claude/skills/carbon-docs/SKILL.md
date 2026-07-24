@@ -19,8 +19,9 @@ or change docs **in that system, in its house style, grounded in real Carbon cod
 **Announce at start:** "Using the carbon-docs skill — authoring docs for {topic}."
 
 > The single biggest mistake is writing plausible ERP-generic prose. Carbon's behavior is specific and
-> often counterintuitive (WIP is a GL balance not a table; payment is a field not an entity; overhead is
-> not absorbed; fixed-asset disposal is scrapping-only). **Every claim is grounded in source.** See the
+> often counterintuitive (WIP is a GL balance not a table; a payment is a posted entity applied via
+> settlements; overhead IS absorbed into WIP per production event; fixed-asset disposal is
+> scrapping-only). **Every claim is grounded in source.** See the
 > prime directive below — it overrides everything.
 
 > **What Carbon is:** a manufacturing system — **ERP** (the office) + **MES** (the floor), one platform over

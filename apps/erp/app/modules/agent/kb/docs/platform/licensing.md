@@ -20,7 +20,7 @@ Most of the repository is the **open core**, licensed under AGPLv3. A defined sl
 
 Everything under `packages/ee` and every file whose name contains `.ee` is Enterprise code. From the LICENSE: *"All content that resides under [...]/packages/ee and all files that contains a `.ee` in this repository require the purchase of a commercial license."*
 
-That slice is the first-party **integrations** (Slack, Jira, Linear, Xero, OnShape, Zapier) plus other Enterprise features: API keys, webhooks, the audit log, customer portals, storage rules, and email notifications. **Email** and **Exchange Rates** are the exceptions: they're available on every edition. See `docs/integrations` for the catalog.
+That slice is the first-party **integrations** (Slack, Jira, Linear, Xero, OnShape) plus other Enterprise features: API keys, webhooks, item rules, the audit log, customer portals, storage rules, email notifications, and the AI agent. **Email** and **Exchange Rates** are the exceptions: they're available on every edition. See `docs/integrations` for the catalog.
 
 ## The AGPL obligation
 

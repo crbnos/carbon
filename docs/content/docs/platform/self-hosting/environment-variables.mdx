@@ -25,14 +25,14 @@ Platform-wide behavior and edition.
 
 ## Database — Supabase
 
-Carbon's single Postgres database. All five are required.
+Carbon's single Postgres database. The first four are required and crash boot if missing.
 
 <EnvVars>
 <EnvVar name="SUPABASE_URL" type="url" required>Supabase project URL.</EnvVar>
 <EnvVar name="SUPABASE_ANON_KEY" type="string" required>Public anon key, browser-safe.</EnvVar>
 <EnvVar name="SUPABASE_SERVICE_ROLE_KEY" type="string" required>Service-role key, server only, never exposed to the client.</EnvVar>
 <EnvVar name="SUPABASE_DB_URL" type="url" required>Direct Postgres connection string.</EnvVar>
-<EnvVar name="SUPABASE_JWT_SECRET" type="string" required>Secret used to sign and verify session JWTs.</EnvVar>
+<EnvVar name="SUPABASE_JWT_SECRET" type="string">Secret used to sign and verify session JWTs. Optional to the app, but the Supabase data plane needs it, so the self-hosting recipes always generate one.</EnvVar>
 </EnvVars>
 
 ## Auth & sessions

@@ -22,13 +22,13 @@ Requests per window allowed against the API.
 
 ## Database — Supabase
 
-Carbon's single Postgres database. All five are required.
+Carbon's single Postgres database. The first four are required and crash boot if missing.
 
 Supabase project URL.
 Public anon key, browser-safe.
 Service-role key, server only, never exposed to the client.
 Direct Postgres connection string.
-Secret used to sign and verify session JWTs.
+Secret used to sign and verify session JWTs. Optional to the app, but the Supabase data plane needs it, so the self-hosting recipes always generate one.
 
 ## Auth & sessions
 

@@ -245,6 +245,25 @@
       ]
     },
     {
+      "slug": "docs/reference/agent",
+      "title": "In-app assistant",
+      "description": "A read-only chat assistant inside the ERP that answers questions about how Carbon works from the product documentation and points you to the right page.",
+      "keywords": ["in-app", "assistant", "docs", "reference", "agent"],
+      "headings": [
+        "What it can do",
+        "Where it appears",
+        "Threads and messages",
+        "Limits and availability",
+        "Troubleshooting",
+        "\"Rate limit exceeded. Please wait a moment.\"",
+        "\"Upgrade required\"",
+        "\"Failed to create thread\"",
+        "\"I couldn't find that in the docs\"",
+        "Why can't I see the assistant?",
+        "The assistant says it can't read my data"
+      ]
+    },
+    {
       "slug": "docs/reference/api-keys",
       "title": "API keys",
       "description": "A scoped secret that lets an external system call the Carbon API on your behalf, with its own permissions and rate limit.",
@@ -276,6 +295,27 @@
         "Who can approve",
         "The decision",
         "Related"
+      ]
+    },
+    {
+      "slug": "docs/reference/audit-log",
+      "title": "Audit log",
+      "description": "A per-company change history for key business entities. What gets recorded, how to view and filter it, and how old entries are archived.",
+      "keywords": ["audit", "log", "docs", "reference"],
+      "headings": [
+        "Turning it on",
+        "What gets logged",
+        "Viewing and filtering",
+        "Retention and archives",
+        "Related",
+        "Troubleshooting",
+        "\"Upgrade to Business to enable audit logging\"",
+        "\"Upgrade to unlock audit history\"",
+        "\"Audit logging is not enabled\"",
+        "\"Failed to enable audit logging\" / \"Failed to disable audit logging\"",
+        "\"Failed to generate download URL\"",
+        "Empty history for a record you expected to see changes on",
+        "An older change is missing from the live log"
       ]
     },
     {
@@ -505,6 +545,26 @@
         "Extraction returned nothing for a scanned PDF",
         "A field I expected wasn't pre-filled from the PDF",
         "The extraction row shows `failed`, or nothing happened"
+      ]
+    },
+    {
+      "slug": "docs/reference/financial-reports",
+      "title": "Financial statement reports",
+      "description": "The Balance Sheet, Income Statement, and Trial Balance built from posted journals by account class.",
+      "keywords": ["financial", "statement", "reports", "docs", "reference"],
+      "headings": [
+        "The three statements",
+        "How a balance is built",
+        "Period and date selection",
+        "What the reports do not slice",
+        "Related",
+        "Troubleshooting",
+        "\"Why are all my numbers zero\"",
+        "\"Why do my numbers look too low / an entry is missing\"",
+        "\"Why is my Balance Sheet out of balance / Assets ≠ Liabilities + Equity\"",
+        "\"Why doesn't my dimension filter change the totals\"",
+        "\"Balance Sheet has no start date field\"",
+        "Preconditions to check first"
       ]
     },
     {
@@ -1045,6 +1105,32 @@
       ]
     },
     {
+      "slug": "docs/reference/printing",
+      "title": "Printing & labels",
+      "description": "Printer routing, ZPL and PDF labels, and the print-job queue that turns a receipt or a finished job into a label on a shelf.",
+      "keywords": ["printing", "labels", "docs", "reference"],
+      "headings": [
+        "Two renderers, one queue",
+        "Printer routes",
+        "Assignments: which printer, in which context",
+        "The print-job queue",
+        "Auto-print behavior",
+        "Print vs download",
+        "Label sizes",
+        "Troubleshooting",
+        "My label didn't print (no error shown)",
+        "Nothing printed after posting, and there's no print job at all",
+        "\"Print jobs already exist for … …\"",
+        "\"Document type \"…\" requires a BinderyPress template.\"",
+        "\"Rendering failed: …\"",
+        "\"Delivery timed out — content may have been printed. …\"",
+        "\"Print job not found: …\" / \"Print job has no content\"",
+        "\"ProxyBox delivery failed: … … — …\"",
+        "\"Test print is only supported for ZPL label printers with a media size configured.\"",
+        "\"Cannot reprint a job with no content\" / \"Cannot reprint a job that is still generating\""
+      ]
+    },
+    {
       "slug": "docs/reference/purchase-orders",
       "title": "Purchase orders",
       "description": "A commitment to a supplier: what to receive, and what you'll be billed for.",
@@ -1348,7 +1434,7 @@
         "Related",
         "Troubleshooting",
         "\"Cannot edit a protected customer type\" / \"Cannot edit a protected supplier type\"",
-        "\"Cannot finalize: supplier is not approved (Active)\""
+        "The purchase order's Finalize button is greyed out"
       ]
     },
     {
@@ -1362,6 +1448,27 @@
         "Genealogy",
         "Shelf life",
         "Related"
+      ]
+    },
+    {
+      "slug": "docs/reference/training",
+      "title": "Training",
+      "description": "Training programs, quiz questions, group assignments, per-period completion tracking, and the weekly reminder digest.",
+      "keywords": ["training", "docs", "reference"],
+      "headings": [
+        "The training catalog",
+        "Quiz questions",
+        "Assigning training to groups",
+        "Completion and status",
+        "The weekly reminder",
+        "Abilities are a separate system",
+        "Troubleshooting",
+        "\"Training is required\"",
+        "\"At least one group is required\"",
+        "\"Training assignment is required\" / \"Employee is required\"",
+        "\"Why didn't a reminder send?\"",
+        "\"Why can't I mark someone complete / assign a training?\"",
+        "\"A completed training re-appeared as Pending\""
       ]
     },
     {

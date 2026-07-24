@@ -13,8 +13,8 @@ Routing operations are scheduled onto work centers, and a work center's rates pr
   - **Labor rate**: Cost per labor hour.
   - **Machine rate**: Cost per machine hour.
   - **Overhead rate**: Cost per hour of overhead.
-  - **Default standard factor**: How time is expressed (e.g. *Minutes/Piece*).
-  - **Required ability**: A skill an operator must hold to run it.
+  - **Department**: The department the work center rolls up to.
+  - **Default unit**: The standard factor time is expressed in (e.g. *Minutes/Piece*).
 
 ## Processes
 

@@ -14,10 +14,11 @@ nothing to estimate run time from. The routing is the bridge between *what* you'
 ## Fields
 
 <FieldTable>
-  <Field name="Operation" type="text">The step performed, in sequence (e.g. *Cut*, *Weld*, *Inspect*).</Field>
+  <Field name="Operation" type="text">The step performed (its description, e.g. *Cut*, *Weld*, *Inspect*).</Field>
   <Field name="Work center" type="reference">Where the operation runs; supplies the rates used for scheduling.</Field>
-  <Field name="Setup time" type="minutes">Fixed time to prepare the operation, independent of quantity.</Field>
-  <Field name="Run time" type="minutes/unit">Time per unit produced.</Field>
+  <Field name="Setup time" type="time">Fixed time to prepare the operation, independent of quantity.</Field>
+  <Field name="Labor time" type="time/unit">Operator time per unit, in the operation's standard factor unit.</Field>
+  <Field name="Machine time" type="time/unit">Machine time per unit, in the operation's standard factor unit.</Field>
   <Field name="Sequence" type="number">Order of operations; lower runs first.</Field>
 </FieldTable>
 

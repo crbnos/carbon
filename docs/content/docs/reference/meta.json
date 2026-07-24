@@ -30,6 +30,7 @@
     "invoices",
     "payments",
     "accounting",
+    "financial-reports",
     "period-close",
     "dimensions",
     "intercompany",
@@ -46,16 +47,20 @@
     "shelf-life",
     "traceability",
     "company-settings",
+    "printing",
     "custom-fields",
+    "audit-log",
     "sequences",
     "import-export",
     "documents",
     "api-keys",
     "people",
+    "training",
     "permissions",
     "account",
     "onboarding",
     "sharing",
+    "agent",
     "notifications"
   ]
 }

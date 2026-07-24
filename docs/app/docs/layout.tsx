@@ -79,6 +79,7 @@ const REFERENCE_GROUPS: { label: string; slugs: string[] }[] = [
     label: "Accounting",
     slugs: [
       "accounting",
+      "financial-reports",
       "period-close",
       "dimensions",
       "intercompany",
@@ -110,17 +111,22 @@ const REFERENCE_GROUPS: { label: string; slugs: string[] }[] = [
     label: "Configurations",
     slugs: [
       "company-settings",
+      "printing",
       "custom-fields",
+      "audit-log",
       "sequences",
       "import-export",
       "documents",
       "api-keys",
     ],
   },
-  { label: "People & access", slugs: ["people", "permissions", "account"] },
+  {
+    label: "People & access",
+    slugs: ["people", "training", "permissions", "account"],
+  },
   {
     label: "System",
-    slugs: ["onboarding", "sharing", "approvals", "notifications"],
+    slugs: ["onboarding", "sharing", "agent", "approvals", "notifications"],
   },
 ];
 
