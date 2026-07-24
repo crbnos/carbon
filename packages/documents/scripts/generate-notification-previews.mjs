@@ -107,6 +107,49 @@ const previews = [
     ]
   },
   {
+    // Not in content.ts's assignmentEvents set, so getActorLabel returns null
+    // and no "Assigned by" row is appended — unlike the other *Assignment
+    // events below.
+    name: "PurchasingRfqAssignment",
+    heading: "Purchasing RFQ assigned to you",
+    message: "Purchasing RFQ PRFQ-0004 assigned to you",
+    reference: "PRFQ-0004",
+    cta: "View details",
+    url: "https://app.carbon.ms/x/purchasing-rfq/1",
+    details: [
+      { label: "RFQ date", value: "Jul 6, 2026" },
+      { label: "Expires", value: "Aug 14, 2026" },
+      { label: "Status", value: "Requested" }
+    ]
+  },
+  {
+    name: "ChangeOrderStarted",
+    heading: "Change order started",
+    message: "Change order ECO-00042 has started",
+    reference: "ECO-00042",
+    cta: "View change order",
+    url: "https://app.carbon.ms/x/items/change-order/1/details",
+    details: [{ label: "Status", value: "Start" }]
+  },
+  {
+    name: "ChangeOrderImplementation",
+    heading: "Change order in implementation",
+    message: "Change order ECO-00042 has moved to implementation",
+    reference: "ECO-00042",
+    cta: "View change order",
+    url: "https://app.carbon.ms/x/items/change-order/1/details",
+    details: [{ label: "Status", value: "Implementation" }]
+  },
+  {
+    name: "ChangeOrderDone",
+    heading: "Change order complete",
+    message: "Change order ECO-00042 is complete",
+    reference: "ECO-00042",
+    cta: "View change order",
+    url: "https://app.carbon.ms/x/items/change-order/1/details",
+    details: [{ label: "Status", value: "Done" }]
+  },
+  {
     name: "JobAssignment",
     heading: "Job assigned to you",
     message: "Job J00105 assigned to you",
@@ -444,7 +487,7 @@ export default function ${p.name}Preview() {
       heading={${j(p.heading)}}
       preview={${j(p.heading)}}
       message={${j(p.message)}}${referenceProp}
-      recipientName={"Naveen"}
+      recipientName={"Jane Doe"}
       ctaLabel={${j(p.cta)}}
       ctaUrl={${j(p.url)}}${detailsProp}
     />

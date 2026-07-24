@@ -9,7 +9,7 @@ export default function MaintenanceDispatchAssignmentPreview() {
       preview={"Maintenance dispatch assigned to you"}
       message={"Maintenance dispatch MD-0012 for CNC Mill 1 assigned to you"}
       reference={"MD-0012"}
-      recipientName={"Naveen"}
+      recipientName={"Jane Doe"}
       ctaLabel={"View details"}
       ctaUrl={"https://app.carbon.ms/x/maintenance/1"}
       details={[

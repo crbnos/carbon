@@ -20,7 +20,7 @@ export const APP_CHOICES = [
   {
     value: "email",
     label: "Email previews",
-    hint: "all email templates rendered on one page"
+    hint: "react-email server for every email template"
   }
 ] as const;
 export type AppId = (typeof APP_CHOICES)[number]["value"];

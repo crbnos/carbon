@@ -27,7 +27,7 @@ source ./setup.sh   # adds crbn to PATH + installs shell wrapper
 
 | Command | Description |
 |---|---|
-| `crbn up` | Boot compose stack + apps. Picker includes opt-in apps: Assembler, Email previews (all email templates on one page at `email.<branch>.dev`). |
+| `crbn up` | Boot compose stack + apps. Picker includes opt-in apps: Assembler, Email previews (react-email server for every email template at `email.<branch>.dev`). |
 | `crbn up --all` | Launch all apps without the picker (ERP, MES, email previews; assembler when its OCCT build exists). |
 | `crbn up --no-portless` | Localhost mode: fixed ports (API `:54321`, ERP `:3000`, MES `:3001`). |
 | `crbn up --borrow` | Reuse another worktree's running containers (DB, API, etc). |

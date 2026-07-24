@@ -103,9 +103,9 @@ export default function SalesInvoiceEmailPreview() {
         email: "tom.sawyer@globex.com"
       }}
       sender={{
-        firstName: "Naveen",
-        lastName: "Kashyap",
-        email: "naveen@tombstone.ms"
+        firstName: "Jane",
+        lastName: "Doe",
+        email: "jane.doe@tombstone.ms"
       }}
     />
   );

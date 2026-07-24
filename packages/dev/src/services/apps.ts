@@ -337,16 +337,14 @@ export function spawnAssembler(opts: {
 const EMAIL_PREFIX = pc.green(pc.bold("eml | "));
 
 /**
- * Spawn the email gallery server (`email:gallery --serve` in
- * @carbon/documents) on the worktree's PORT_EMAIL — every template + preview
- * fixture rendered on ONE page; refresh re-renders edited templates. A host
+ * Spawn the react-email preview server (`email:previews` in @carbon/documents)
+ * on the worktree's PORT_EMAIL, pointed at `src/email/previews` — one fixture
+ * per email, so the sidebar lists every template that actually ships. A host
  * process like the app dev servers, not a compose service — inbucket ("mail")
- * shows received messages, this renders the templates themselves. (The
- * interactive one-at-a-time react-email UI is still available manually via
- * `pnpm --filter @carbon/documents email:previews`.) The script loads the
- * repo .env* stack itself for ERP_URL; EMAIL_DEV_PORT is passed explicitly so
- * it never falls back to the script's :3030 default and collides across
- * worktrees.
+ * shows received messages, this renders the templates themselves. The script
+ * loads the repo .env* stack itself for ERP_URL; EMAIL_DEV_PORT is passed
+ * explicitly so it never falls back to the script's :3030 default and collides
+ * across worktrees.
  */
 export function spawnEmailPreview(opts: {
   root: string;
@@ -355,10 +353,10 @@ export function spawnEmailPreview(opts: {
   const { root, ports } = opts;
   const port = ports.PORT_EMAIL;
   process.stderr.write(
-    `${EMAIL_PREFIX}${pc.dim(`email gallery server on :${port}`)}\n`
+    `${EMAIL_PREFIX}${pc.dim(`email preview server on :${port}`)}\n`
   );
 
-  const child = execa("pnpm", ["run", "email:gallery", "--serve"], {
+  const child = execa("pnpm", ["run", "email:previews"], {
     cwd: join(root, "packages", "documents"),
     env: { ...process.env, EMAIL_DEV_PORT: String(port) },
     reject: false,
