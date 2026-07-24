@@ -355,9 +355,6 @@ export function spawnAssembler(opts: {
 
 const EMAIL_PREFIX = pc.green(pc.bold("eml | "));
 
-// react-email's own boot banner. The summary box already shows the URL, so
-// these lines add nothing — anything else the server says (compile errors,
-// warnings) still comes through.
 const EMAIL_STARTUP_PATTERNS: RegExp[] = [
   /^\s*React Email\b/,
   /^\s*Running preview at:/,
@@ -371,16 +368,6 @@ function isEmailStartupLine(line: string): boolean {
   return EMAIL_STARTUP_PATTERNS.some((re) => re.test(plain));
 }
 
-/**
- * Spawn the react-email preview server (`email:previews` in @carbon/documents)
- * on the worktree's PORT_EMAIL, pointed at `src/email/previews` — one fixture
- * per email, so the sidebar lists every template that actually ships. A host
- * process like the app dev servers, not a compose service — inbucket ("mail")
- * shows received messages, this renders the templates themselves. The script
- * loads the repo .env* stack itself for ERP_URL; EMAIL_DEV_PORT is passed
- * explicitly so it never falls back to the script's :3030 default and collides
- * across worktrees.
- */
 export function spawnEmailPreview(opts: {
   root: string;
   ports: PortMap;
@@ -492,11 +479,9 @@ export async function installSkills(root: string): Promise<boolean> {
 // processes hold the worktree's ports and block the next `crbn up`.
 // ---------------------------------------------------------------------------
 
-// Kill processes listening on PORT_ERP / PORT_MES / PORT_EMAIL. Port-based
-// lookup is reliable since ports are unique per worktree (allocated in the
-// slot registry). Best-effort — silently skips ports with nothing listening.
-// PORT_EMAIL may be missing on legacy registry entries (added later; only
-// backfilled on `crbn up`), hence the filter.
+// Kill processes listening on PORT_ERP / PORT_MES. Port-based lookup is
+// reliable since ports are unique per worktree (allocated in the slot
+// registry). Best-effort — silently skips ports with nothing listening.
 export async function killOrphanedApps(ports: PortMap): Promise<void> {
   const appPorts = [ports.PORT_ERP, ports.PORT_MES, ports.PORT_EMAIL].filter(
     (p) => typeof p === "number"

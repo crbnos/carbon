@@ -1,11 +1,6 @@
 import type { Database } from "@carbon/database";
 import SalesInvoiceEmail from "../SalesInvoiceEmail";
 
-// Preview fixture — renders the SalesInvoiceEmail template with realistic
-// inline sample data so it works without a database. Only the fields the
-// template and its helpers actually read are provided; the heavy view-row
-// props are cast. Not shipped (not exported from index.ts).
-
 const company = {
   name: "Tombstone Machine Works",
   logoLightIcon: null,

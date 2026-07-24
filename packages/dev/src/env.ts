@@ -112,9 +112,6 @@ export function renderEnv(opts: {
   // which is why we can't reuse ${DOMAIN} (e.g. `main.dev` won't match the
   // `erp.main.dev` host the SDK URL points at).
   lines.push(`INNGEST_TLS_HOST=${portless ? host("erp") : "localhost"}`);
-  // react-email preview server port — read by packages/documents/scripts/
-  // email-dev.mjs, whether spawned by `crbn up` (email app selected) or run
-  // manually via `pnpm --filter @carbon/documents email:previews`.
   lines.push(`EMAIL_DEV_PORT=${ports.PORT_EMAIL}`);
   lines.push("");
   if (includeAssembler) {

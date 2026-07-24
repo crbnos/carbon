@@ -2,11 +2,6 @@ import type { Database } from "@carbon/database";
 import type { CompanySettings } from "../../types";
 import QuoteEmail from "../QuoteEmail";
 
-// Preview fixture — renders the QuoteEmail template with realistic inline
-// sample data so it works without a database. digitalQuoteEnabled +
-// externalLinkId are set so the digital quote button path renders. Not
-// shipped (not exported from index.ts).
-
 const company = {
   name: "Tombstone Machine Works",
   logoLightIcon: null,

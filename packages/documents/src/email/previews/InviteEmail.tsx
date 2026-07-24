@@ -1,9 +1,5 @@
 import InviteEmail from "../InviteEmail";
 
-// Preview fixture — mirrors the invite sent by the user-admin job
-// (packages/jobs/.../tasks/user-admin.ts) when an employee/supplier/customer
-// user is created or an invite is resent. Not shipped (not exported from
-// index.ts).
 export default function InviteEmailPreview() {
   return (
     <InviteEmail

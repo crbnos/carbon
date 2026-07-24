@@ -371,9 +371,8 @@ async function provisionSlot(
           ? {
               // Backend ports (DB, API, Studio, Inbucket, Inngest) come from the
               // borrowed stack — apps talk to those running containers.
-              // App ports (ERP, MES, email preview) come from our own slot — dev
-              // servers bind here, so they don't conflict with the borrowed
-              // stack's dev servers.
+              // App ports (ERP, MES) come from our own slot — dev servers bind here,
+              // so they don't conflict with the borrowed stack's dev servers.
               ports: {
                 ...borrowedEntry.ports,
                 PORT_ERP: ownSlot.ports.PORT_ERP,
@@ -662,8 +661,6 @@ async function ensureHostsFile() {
   await syncHostsFile();
 }
 
-// Apps that spawnApps runs as `react-router dev` servers. The assembler and
-// email preview have their own spawners (invoked before the summary box).
 function reactRouterApps(selectedApps: AppId[]): AppId[] {
   return selectedApps.filter((id) => id !== "assembler" && id !== "email");
 }
@@ -677,9 +674,6 @@ async function runAppsThenTeardown(
 ) {
   const apps = reactRouterApps(selectedApps);
   if (apps.length === 0) {
-    // Only aux apps selected (assembler / email preview) — nothing for
-    // spawnApps to supervise, and it would resolve immediately and tear the
-    // freshly booted stack down.
     await Promise.race([
       new Promise<void>((resolve) => {
         onShutdown(() => resolve());

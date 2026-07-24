@@ -407,9 +407,6 @@ const previews = [
     ]
   },
   {
-    // Not in content.ts's assignmentEvents set, so getActorLabel returns null
-    // and no "Assigned by" row is appended — unlike the other *Assignment
-    // events here.
     name: "PurchasingRfqAssignment",
     heading: "Purchasing RFQ assigned to you",
     message: "Purchasing RFQ PRFQ-0004 assigned to you",

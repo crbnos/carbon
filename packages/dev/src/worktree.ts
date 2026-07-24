@@ -28,11 +28,6 @@ export const PORT_NAMES = [
 ] as const;
 type PortName = (typeof PORT_NAMES)[number];
 
-// Ports added after slots were first minted. Legacy registry entries lack
-// them; `parseRegistryEntry` accepts those entries anyway and `resolveSlot`
-// backfills just the missing ports — dropping the whole entry would
-// re-allocate every port and mint fresh JWT creds, breaking running stacks
-// and invalidating sessions.
 const OPTIONAL_PORT_NAMES: readonly PortName[] = ["PORT_EMAIL"];
 
 export type PortMap = Record<PortName, number>;
@@ -191,9 +186,6 @@ export async function resolveSlot(
   return { ports, redisDb, jwt };
 }
 
-// Allocate ports that were added to PORT_NAMES after this slot was minted
-// (see OPTIONAL_PORT_NAMES), keeping everything else — including JWT creds
-// and the redis db — exactly as-is.
 async function backfillMissingPorts(
   registry: Registry,
   slug: string,
@@ -204,7 +196,6 @@ async function backfillMissingPorts(
   );
   if (missing.length === 0) return;
   const { claimedPorts } = collectClaims(registry, slug);
-  // Also avoid this slot's own existing ports.
   for (const p of Object.values(entry.ports)) claimedPorts.add(p);
   for (const name of missing) {
     entry.ports[name] = await pickFreePort(claimedPorts);

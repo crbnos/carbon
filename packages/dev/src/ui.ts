@@ -36,8 +36,6 @@ export function portsTable(
   for (const n of PORT_NAMES) {
     t.push([
       pc.cyan(n.replace("PORT_", "").toLowerCase()),
-      // Legacy slots may lack ports added later (e.g. PORT_EMAIL) until the
-      // next `crbn up` backfills them.
       ports[n] === undefined ? pc.dim("—") : pc.bold(String(ports[n]))
     ]);
   }

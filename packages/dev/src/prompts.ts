@@ -56,10 +56,6 @@ export async function pickApps(): Promise<AppId[]> {
       .map((s) => s.trim())
       .filter((s): s is AppId => APP_CHOICES.some((c) => c.value === s));
   }
-  // Opt-in apps are never selected by default: the assembler needs a one-time
-  // native OCCT build, and the email preview server is an extra Next.js
-  // process most boots don't need. Select them in the picker, via
-  // CARBON_DEV_APPS, or with `--all`.
   const optInApps: readonly AppId[] = ["assembler", "email"];
   const defaultApps = APP_CHOICES.filter(
     (c) => !optInApps.includes(c.value)
