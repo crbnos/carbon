@@ -75,13 +75,13 @@ RETURNS TABLE (
   "accountName" TEXT,
   "accountClass" "glAccountClass",
   "incomeBalance" "glIncomeBalance",
-  "openingDebit" NUMERIC(19, 4),
-  "openingCredit" NUMERIC(19, 4),
-  "periodDebits" NUMERIC(19, 4),
-  "periodCredits" NUMERIC(19, 4),
-  "debitBalance" NUMERIC(19, 4),
-  "creditBalance" NUMERIC(19, 4),
-  "netChange" NUMERIC(19, 4)
+  "openingDebit" NUMERIC,
+  "openingCredit" NUMERIC,
+  "periodDebits" NUMERIC,
+  "periodCredits" NUMERIC,
+  "debitBalance" NUMERIC,
+  "creditBalance" NUMERIC,
+  "netChange" NUMERIC
 )
 LANGUAGE "plpgsql" SECURITY INVOKER SET search_path = public
 AS $$
@@ -124,25 +124,25 @@ BEGIN
     CASE
       WHEN a."class" IN ('Asset', 'Expense') AND (b."balanceAtDate" - b."netChange") > 0 THEN (b."balanceAtDate" - b."netChange")
       WHEN a."class" IN ('Liability', 'Equity', 'Revenue') AND (b."balanceAtDate" - b."netChange") < 0 THEN ABS(b."balanceAtDate" - b."netChange")
-      ELSE 0::NUMERIC(19, 4)
+      ELSE 0::NUMERIC
     END AS "openingDebit",
     CASE
       WHEN a."class" IN ('Liability', 'Equity', 'Revenue') AND (b."balanceAtDate" - b."netChange") >= 0 THEN (b."balanceAtDate" - b."netChange")
       WHEN a."class" IN ('Asset', 'Expense') AND (b."balanceAtDate" - b."netChange") < 0 THEN ABS(b."balanceAtDate" - b."netChange")
-      ELSE 0::NUMERIC(19, 4)
+      ELSE 0::NUMERIC
     END AS "openingCredit",
-    COALESCE(m."periodDebits", 0)::NUMERIC(19, 4) AS "periodDebits",
-    COALESCE(m."periodCredits", 0)::NUMERIC(19, 4) AS "periodCredits",
+    COALESCE(m."periodDebits", 0)::NUMERIC AS "periodDebits",
+    COALESCE(m."periodCredits", 0)::NUMERIC AS "periodCredits",
     -- Closing (existing semantics, unchanged)
     CASE
       WHEN a."class" IN ('Asset', 'Expense') AND b."balanceAtDate" > 0 THEN b."balanceAtDate"
       WHEN a."class" IN ('Liability', 'Equity', 'Revenue') AND b."balanceAtDate" < 0 THEN ABS(b."balanceAtDate")
-      ELSE 0::NUMERIC(19, 4)
+      ELSE 0::NUMERIC
     END AS "debitBalance",
     CASE
       WHEN a."class" IN ('Liability', 'Equity', 'Revenue') AND b."balanceAtDate" >= 0 THEN b."balanceAtDate"
       WHEN a."class" IN ('Asset', 'Expense') AND b."balanceAtDate" < 0 THEN ABS(b."balanceAtDate")
-      ELSE 0::NUMERIC(19, 4)
+      ELSE 0::NUMERIC
     END AS "creditBalance",
     b."netChange"
   FROM "account" a
