@@ -112,6 +112,8 @@ import ReleaseLockAlert, { getReleaseLockFlags } from "./ReleaseLockAlert";
 
 type Material = z.infer<typeof methodMaterialValidator> & {
   description: string;
+  // present on loader rows (select *); absent on unsaved temporary items
+  updatedAt?: string | null;
   item: {
     name: string;
     itemTrackingType: Database["public"]["Enums"]["itemTrackingType"];
@@ -479,7 +481,11 @@ const BillOfMaterial = ({
                             delay: 0.15
                           }}
                         >
+                          {/* keyed on the row version: when the saved row
+                              changes (save, item-default cascade), remount so
+                              local state re-seeds — no sync effect needed */}
                           <MaterialForm
+                            key={`${item.id}:${item.data.updatedAt ?? ""}`}
                             configurable={configurable}
                             isReadOnly={isReadOnly}
                             item={item}
@@ -624,6 +630,59 @@ const BillOfMaterial = ({
 
 export default BillOfMaterial;
 
+type MaterialFormState = {
+  itemId: string;
+  methodType: MethodType;
+  sourcingType: SourcingType;
+  replenishmentSystem: string;
+  itemTrackingType: Database["public"]["Enums"]["itemTrackingType"];
+  replenishmentSystemOverridden: boolean;
+  methodTypeOverridden: boolean;
+  sourcingTypeOverridden: boolean;
+  itemTrackingTypeOverridden: boolean;
+  description: string;
+  unitOfMeasureCode: string;
+  methodOperationId: string | undefined;
+  quantity: number;
+  kit: boolean;
+  storageUnitIds: Record<string, string>;
+  requiresBatchTracking: boolean;
+  requiresSerialTracking: boolean;
+};
+
+function seedMaterialFormState(
+  item: ItemWithData,
+  replenishmentSystem?: string
+): MaterialFormState {
+  return {
+    itemId: item.data.itemId ?? "",
+    methodType: item.data.methodType ?? "Pull from Inventory",
+    sourcingType: item.data.sourcingType ?? "Specified",
+    replenishmentSystem:
+      item.data.replenishmentSystem ??
+      item.data.item?.replenishmentSystem ??
+      replenishmentSystem ??
+      "Buy",
+    itemTrackingType:
+      item.data.itemTrackingType ??
+      item.data.item?.itemTrackingType ??
+      "Inventory",
+    replenishmentSystemOverridden:
+      item.data.replenishmentSystemOverridden ?? false,
+    methodTypeOverridden: item.data.methodTypeOverridden ?? false,
+    sourcingTypeOverridden: item.data.sourcingTypeOverridden ?? false,
+    itemTrackingTypeOverridden: item.data.itemTrackingTypeOverridden ?? false,
+    description: item.data.description ?? "",
+    unitOfMeasureCode: item.data.unitOfMeasureCode ?? "EA",
+    methodOperationId: item.data.methodOperationId ?? undefined,
+    quantity: item.data.quantity ?? 1,
+    kit: item.data.kit ?? false,
+    storageUnitIds: item.data.storageUnitIds ?? {},
+    requiresBatchTracking: item.data.item?.itemTrackingType === "Batch",
+    requiresSerialTracking: item.data.item?.itemTrackingType === "Serial"
+  };
+}
+
 function MaterialForm({
   configurable,
   isReadOnly,
@@ -701,66 +760,9 @@ function MaterialForm({
   }, [item.id, methodMaterialFetcher.data, setTemporaryItems, onSubmit]);
 
   const [itemType, setItemType] = useState<MethodItemType>(item.data.itemType);
-  const [itemData, setItemData] = useState<{
-    itemId: string;
-    methodType: MethodType;
-    sourcingType: SourcingType;
-    replenishmentSystem: string;
-    itemTrackingType: Database["public"]["Enums"]["itemTrackingType"];
-    replenishmentSystemOverridden: boolean;
-    methodTypeOverridden: boolean;
-    sourcingTypeOverridden: boolean;
-    itemTrackingTypeOverridden: boolean;
-    description: string;
-    unitOfMeasureCode: string;
-    methodOperationId: string | undefined;
-    quantity: number;
-    kit: boolean;
-    storageUnitIds: Record<string, string>;
-    requiresBatchTracking: boolean;
-    requiresSerialTracking: boolean;
-    itemReplenishmentSystem: string;
-  }>({
-    itemId: item.data.itemId ?? "",
-    methodType: item.data.methodType ?? "Pull from Inventory",
-    sourcingType: item.data.sourcingType ?? "Specified",
-    replenishmentSystem:
-      item.data.replenishmentSystem ??
-      item.data.item?.replenishmentSystem ??
-      replenishmentSystem ??
-      "Buy",
-    itemTrackingType:
-      item.data.itemTrackingType ??
-      item.data.item?.itemTrackingType ??
-      "Inventory",
-    replenishmentSystemOverridden:
-      item.data.replenishmentSystemOverridden ?? false,
-    methodTypeOverridden: item.data.methodTypeOverridden ?? false,
-    sourcingTypeOverridden: item.data.sourcingTypeOverridden ?? false,
-    itemTrackingTypeOverridden: item.data.itemTrackingTypeOverridden ?? false,
-    description: item.data.description ?? "",
-    unitOfMeasureCode: item.data.unitOfMeasureCode ?? "EA",
-    methodOperationId: item.data.methodOperationId ?? undefined,
-    quantity: item.data.quantity ?? 1,
-    kit: item.data.kit ?? false,
-    storageUnitIds: item.data.storageUnitIds ?? {},
-    requiresBatchTracking: item.data.item?.itemTrackingType === "Batch",
-    requiresSerialTracking: item.data.item?.itemTrackingType === "Serial",
-    itemReplenishmentSystem:
-      item.data.item?.replenishmentSystem ?? replenishmentSystem ?? "Buy"
-  });
-
-  // methodType/sourcingType are read-only mirrors of the component item
-  // (see method-material-sourcing rule). Re-sync them when the loader row
-  // changes — e.g. after the properties panel updates the default method type —
-  // since the useState initializer above only runs at mount.
-  useEffect(() => {
-    setItemData((d) => ({
-      ...d,
-      methodType: item.data.methodType ?? "Pull from Inventory",
-      sourcingType: item.data.sourcingType ?? "Specified"
-    }));
-  }, [item.data.methodType, item.data.sourcingType]);
+  const [itemData, setItemData] = useState<MaterialFormState>(() =>
+    seedMaterialFormState(item, replenishmentSystem)
+  );
 
   const onTypeChange = (value: MethodItemType | "Item") => {
     if (value === itemType) return;
@@ -783,8 +785,7 @@ function MaterialForm({
       storageUnitIds: {},
       methodOperationId: undefined,
       requiresBatchTracking: false,
-      requiresSerialTracking: false,
-      itemReplenishmentSystem: replenishmentSystem ?? "Buy"
+      requiresSerialTracking: false
     });
   };
 
@@ -826,8 +827,7 @@ function MaterialForm({
       itemTrackingTypeOverridden: false,
       kit: false,
       requiresBatchTracking: item.data?.itemTrackingType === "Batch",
-      requiresSerialTracking: item.data?.itemTrackingType === "Serial",
-      itemReplenishmentSystem: item.data?.replenishmentSystem ?? "Buy"
+      requiresSerialTracking: item.data?.itemTrackingType === "Serial"
     }));
     if (item.data?.type) {
       setItemType(item.data.type as MethodItemType);
