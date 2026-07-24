@@ -51,7 +51,6 @@
   "scripts": {
     "build": "node ./scripts/generate-fonts.mjs",
     "clean": "rimraf .turbo node_modules dist",
-    "email": "node ./scripts/email-dev.mjs ./src/email",
     "email:previews": "node ./scripts/email-dev.mjs ./src/email/previews",
     "lint": "biome lint --write ",
     "test": "vitest run",

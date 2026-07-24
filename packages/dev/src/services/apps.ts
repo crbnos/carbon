@@ -371,9 +371,7 @@ export function spawnEmailPreview(opts: {
 
   const child = execa("pnpm", ["run", "email:previews"], {
     cwd: join(root, "packages", "documents"),
-    // CRBN_MANAGED silences email-dev.mjs's own banner — the summary box
-    // already prints the URL, so repeating it here is noise.
-    env: { ...process.env, CRBN_MANAGED: "1", EMAIL_DEV_PORT: String(port) },
+    env: { ...process.env, EMAIL_DEV_PORT: String(port) },
     reject: false,
     stdin: "ignore",
     detached: true

@@ -8,29 +8,13 @@ import { fileURLToPath } from "node:url";
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
 // loadEnvFile never overwrites existing keys — .env.local first so it wins.
-const loadedEnvFiles = [];
 for (const file of [".env.local", ".env"]) {
   const path = resolve(repoRoot, file);
-  if (existsSync(path)) {
-    process.loadEnvFile(path);
-    loadedEnvFiles.push(file);
-  }
+  if (existsSync(path)) process.loadEnvFile(path);
 }
 
-const [dir = "./src/email"] = process.argv.slice(2);
+const [dir = "./src/email/previews"] = process.argv.slice(2);
 const port = process.env.EMAIL_DEV_PORT || "3030";
-
-// Skipped under `crbn up` (CRBN_MANAGED=1): its summary box already prints the
-// Email URL, and the whole banner would just be repeated in the `eml |` log.
-if (process.env.CRBN_MANAGED !== "1") {
-  console.log(`
-  Email preview server
-  ➜ URL:       http://localhost:${port}
-  ➜ Templates: ${dir}
-  ➜ Env files: ${loadedEnvFiles.join(", ") || "none found"}
-  ➜ ERP_URL:   ${process.env.ERP_URL || "(not set — asset URLs will be broken)"}
-`);
-}
 
 const result = spawnSync("email", ["dev", "--dir", dir, "--port", port], {
   stdio: "inherit"
