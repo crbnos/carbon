@@ -28,6 +28,7 @@ export interface PurchaseOrderData {
   sections: Record<string, ResolvedSection>;
   currencyCode: string | null;
   numberFormatter: Intl.NumberFormat;
+  unitPriceFormatter: Intl.NumberFormat;
   vars: Record<string, string>;
   headerOptions: HeaderOptions;
 }

@@ -56,6 +56,13 @@ const PurchaseOrderPDF = ({
     minimumFractionDigits: 2,
     maximumFractionDigits: 2
   });
+  // Unit prices support up to 5 decimal places (see issue #1203); line totals and
+  // other extended values stay at the 2-decimal default via numberFormatter.
+  const unitPriceFormatter = new Intl.NumberFormat(locale, {
+    style: "decimal",
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 5
+  });
 
   const headerTitle = purchaseOrder?.purchaseOrderId
     ? `${title}: ${purchaseOrder.purchaseOrderId}`
@@ -99,6 +106,7 @@ const PurchaseOrderPDF = ({
     sections,
     currencyCode,
     numberFormatter,
+    unitPriceFormatter,
     vars,
     headerOptions
   };

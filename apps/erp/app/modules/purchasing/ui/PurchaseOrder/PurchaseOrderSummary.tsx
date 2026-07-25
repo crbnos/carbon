@@ -199,7 +199,7 @@ const LineItems = ({
                           </Badge>
                         )}
                         <Badge variant="green">
-                          {formatter.format(line.unitPrice ?? 0)}{" "}
+                          {unitPriceFormatter.format(line.unitPrice ?? 0)}{" "}
                           {
                             unitOfMeasures.find(
                               (uom) =>
