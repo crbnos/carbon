@@ -45,6 +45,8 @@ const LineItems = ({
   currencyCode,
   presentationCurrencyFormatter,
   formatter,
+  unitPriceFormatter,
+  presentationUnitPriceFormatter,
   locale,
   lines,
   shouldConvertCurrency
@@ -52,6 +54,8 @@ const LineItems = ({
   currencyCode: string;
   presentationCurrencyFormatter: Intl.NumberFormat;
   formatter: Intl.NumberFormat;
+  unitPriceFormatter: Intl.NumberFormat;
+  presentationUnitPriceFormatter: Intl.NumberFormat;
   locale: string;
   lines: PurchaseOrderLine[];
   shouldConvertCurrency: boolean;
@@ -309,10 +313,12 @@ const LineItems = ({
                       <Td>Unit Price</Td>
                       <Td className="text-right">
                         <VStack spacing={0} className="items-end">
-                          <span>{formatter.format(line.unitPrice ?? 0)}</span>
+                          <span>
+                            {unitPriceFormatter.format(line.unitPrice ?? 0)}
+                          </span>
                           {shouldConvertCurrency && (
                             <span className="text-muted-foreground text-xs">
-                              {presentationCurrencyFormatter.format(
+                              {presentationUnitPriceFormatter.format(
                                 line.supplierUnitPrice ?? 0
                               )}
                             </span>
@@ -427,6 +433,20 @@ const PurchaseOrderSummary = ({
       company?.baseCurrencyCode ??
       "USD"
   });
+  // Unit prices support up to 5 decimal places (see issue #1203); totals stay at
+  // the currency default (2). Keep minimumFractionDigits at 2 for a normal look.
+  const unitPriceFormatter = useCurrencyFormatter({
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 5
+  });
+  const presentationUnitPriceFormatter = useCurrencyFormatter({
+    currency:
+      routeData?.purchaseOrder?.currencyCode ??
+      company?.baseCurrencyCode ??
+      "USD",
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 5
+  });
 
   const shouldConvertCurrency =
     routeData?.purchaseOrder?.currencyCode !== company?.baseCurrencyCode;
@@ -497,6 +517,8 @@ const PurchaseOrderSummary = ({
           currencyCode={company?.baseCurrencyCode ?? "USD"}
           presentationCurrencyFormatter={presentationCurrencyFormatter}
           formatter={formatter}
+          unitPriceFormatter={unitPriceFormatter}
+          presentationUnitPriceFormatter={presentationUnitPriceFormatter}
           locale={locale}
           lines={routeData?.lines ?? []}
           shouldConvertCurrency={shouldConvertCurrency}
