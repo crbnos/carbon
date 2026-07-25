@@ -152,6 +152,10 @@ export function setGenericQueryFilters<
 // Commas, parentheses, and backslashes are treated as word delimiters: they are
 // structural in a PostgREST `.or(...)` filter and must never leak into a value.
 // A blank/whitespace-only search adds no filter.
+//
+// A word may still contain PostgREST-reserved characters (`.`, `:`, `*`, `"`)
+// that survive splitting; those are wrapped in double quotes so PostgREST reads
+// the pattern as a literal value (see `buildIlikeValue`).
 export function setSearchFilter<
   T extends GenericSchema,
   U extends Record<string, unknown>,
@@ -165,11 +169,31 @@ export function setSearchFilter<
 ): PostgrestFilterBuilder<T, U, V> {
   const words = search.split(/[\s,()\\]+/).filter(Boolean);
   for (const word of words) {
+    const value = buildIlikeValue(word);
     query = query.or(
-      columns.map((column) => `${column}.ilike.%${word}%`).join(",")
+      columns.map((column) => `${column}.ilike.${value}`).join(",")
     );
   }
   return query;
+}
+
+// PostgREST reserved characters inside a filter value: `,` `.` `:` `*` `(` `)`.
+// (`,`/`(`/`)` are already stripped by the splitter, but the full set keeps the
+// check correct if splitting ever changes.)
+const POSTGREST_RESERVED = /[,.:*()]/;
+
+// Build the value half of a `column.ilike.<value>` PostgREST clause for one word.
+// When the word contains a reserved character, the `%word%` pattern is wrapped in
+// double quotes (with embedded `\` and `"` backslash-escaped) so PostgREST parses
+// it as a single literal value. Raw quotes are emitted — not `%22` — because
+// supabase-js percent-encodes the query string for us.
+export function buildIlikeValue(word: string): string {
+  const pattern = `%${word}%`;
+  if (!POSTGREST_RESERVED.test(word) && !word.includes('"')) {
+    return pattern;
+  }
+  const escaped = pattern.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+  return `"${escaped}"`;
 }
 
 const getSafeNumber = (value: string) => {

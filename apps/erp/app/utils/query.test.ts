@@ -65,4 +65,39 @@ describe("setSearchFilter", () => {
     setSearchFilter(query as any, "   ", ["name"]);
     expect(query.orCalls).toEqual([]);
   });
+
+  it("wraps a word containing a dot in double quotes (M8.5)", () => {
+    const query = makeMockQuery();
+    setSearchFilter(query as any, "M8.5", ["name", "readableIdWithRevision"]);
+    expect(query.orCalls).toEqual([
+      'name.ilike."%M8.5%",readableIdWithRevision.ilike."%M8.5%"'
+    ]);
+  });
+
+  it("wraps a word containing a colon in double quotes (DIN:934)", () => {
+    const query = makeMockQuery();
+    setSearchFilter(query as any, "DIN:934", ["name"]);
+    expect(query.orCalls).toEqual(['name.ilike."%DIN:934%"']);
+  });
+
+  it("escapes embedded double quotes and wraps the value", () => {
+    const query = makeMockQuery();
+    setSearchFilter(query as any, 'quote"test', ["name"]);
+    expect(query.orCalls).toEqual(['name.ilike."%quote\\"test%"']);
+  });
+
+  it("quotes only the reserved-character words in a multi-word search", () => {
+    const query = makeMockQuery();
+    setSearchFilter(query as any, "M8.5 Washer", ["name"]);
+    expect(query.orCalls).toEqual([
+      'name.ilike."%M8.5%"',
+      "name.ilike.%Washer%"
+    ]);
+  });
+
+  it("leaves plain alphanumeric words unquoted", () => {
+    const query = makeMockQuery();
+    setSearchFilter(query as any, "M8", ["name"]);
+    expect(query.orCalls).toEqual(["name.ilike.%M8%"]);
+  });
 });
