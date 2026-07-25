@@ -1,6 +1,12 @@
+import { lingui } from "@lingui/vite-plugin";
+import babelMacros from "vite-plugin-babel-macros";
 import { defineConfig } from "vitest/config";
 
 export default defineConfig({
+  // Some util/service modules transitively import the @carbon/auth barrel, which
+  // pulls @carbon/glossary's Lingui `msg` macro. Transform macros so those
+  // modules can be imported (and unit-tested) under vitest.
+  plugins: [babelMacros(), lingui()],
   resolve: {
     tsconfigPaths: true,
   },

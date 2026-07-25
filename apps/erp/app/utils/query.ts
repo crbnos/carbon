@@ -141,6 +141,37 @@ export function setGenericQueryFilters<
   return query;
 }
 
+// Multi-word, order-independent search across one or more columns.
+//
+// The query is trimmed and split into words; EACH word must match at least one
+// of `columns` (via ILIKE substring), and ALL words must match for a row to
+// qualify. PostgREST ANDs chained `.or(...)` calls together, so one `.or(...)`
+// per word yields `(colA~w1 OR colB~w1) AND (colA~w2 OR colB~w2) ...` — which
+// lets "M8 Washer" find "Washer, Flat, M8".
+//
+// Commas, parentheses, and backslashes are treated as word delimiters: they are
+// structural in a PostgREST `.or(...)` filter and must never leak into a value.
+// A blank/whitespace-only search adds no filter.
+export function setSearchFilter<
+  T extends GenericSchema,
+  U extends Record<string, unknown>,
+  V
+>(
+  // @ts-expect-error TS2707 - TODO: fix type
+  query: PostgrestFilterBuilder<T, U, V>,
+  search: string,
+  columns: string[]
+  // @ts-expect-error TS2707 - TODO: fix type
+): PostgrestFilterBuilder<T, U, V> {
+  const words = search.split(/[\s,()\\]+/).filter(Boolean);
+  for (const word of words) {
+    query = query.or(
+      columns.map((column) => `${column}.ilike.%${word}%`).join(",")
+    );
+  }
+  return query;
+}
+
 const getSafeNumber = (value: string) => {
   const number = Number(value);
   return Number.isNaN(number) ? value : number;
