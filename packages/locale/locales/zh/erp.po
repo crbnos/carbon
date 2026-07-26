@@ -3553,7 +3553,7 @@ msgid "Decide what an operator sees if they try to issue a batch or serial that'
 msgstr "决定操作员在尝试发放已过期的批次或序列号时看到的内容。"
 
 msgid "Decimal places"
-msgstr ""
+msgstr "小数位数"
 
 msgid "Decimal Places"
 msgstr "小数位数"
@@ -8474,7 +8474,7 @@ msgid "Number"
 msgstr "数字"
 
 msgid "Number of decimal places kept for purchase order unit prices. Increase this when suppliers quote fractional prices (e.g. metals or high-precision parts) so they aren't rounded."
-msgstr ""
+msgstr "采购订单单价保留的小数位数。当供应商报出带小数的价格（例如金属或高精度零件）时，请增大此值，以免被四舍五入。"
 
 msgid "Number of inventory units per purchase unit"
 msgstr "每个采购单位的库存单位数"
@@ -13385,7 +13385,7 @@ msgid "Unit Price"
 msgstr "单价"
 
 msgid "Unit Price Precision"
-msgstr ""
+msgstr "单价精度"
 
 msgid "Unit Sale Price"
 msgstr "单位销售价格"

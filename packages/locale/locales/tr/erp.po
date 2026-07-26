@@ -3553,7 +3553,7 @@ msgid "Decide what an operator sees if they try to issue a batch or serial that'
 msgstr "Operatörün zaten süresi dolmuş bir parti veya seri çıkarmaya çalışması durumunda ne göreceğini belirleyin."
 
 msgid "Decimal places"
-msgstr ""
+msgstr "Ondalık basamaklar"
 
 msgid "Decimal Places"
 msgstr "Ondalık Basamaklar"
@@ -8474,7 +8474,7 @@ msgid "Number"
 msgstr "Numara"
 
 msgid "Number of decimal places kept for purchase order unit prices. Increase this when suppliers quote fractional prices (e.g. metals or high-precision parts) so they aren't rounded."
-msgstr ""
+msgstr "Satın alma siparişi birim fiyatları için tutulan ondalık basamak sayısı. Tedarikçiler kesirli fiyatlar belirttiğinde (örneğin metaller veya yüksek hassasiyetli parçalar) yuvarlanmamaları için bu değeri artırın."
 
 msgid "Number of inventory units per purchase unit"
 msgstr "Satın alma birimi başına envanter birimi sayısı"
@@ -13385,7 +13385,7 @@ msgid "Unit Price"
 msgstr "Birim Fiyatı"
 
 msgid "Unit Price Precision"
-msgstr ""
+msgstr "Birim Fiyat Hassasiyeti"
 
 msgid "Unit Sale Price"
 msgstr "Birim Satış Fiyatı"

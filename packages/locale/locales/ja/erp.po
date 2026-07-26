@@ -3553,7 +3553,7 @@ msgid "Decide what an operator sees if they try to issue a batch or serial that'
 msgstr "オペレーターが既に期限切れのバッチまたはシリアルを発行しようとした場合に表示される内容を決定します。"
 
 msgid "Decimal places"
-msgstr ""
+msgstr "小数点以下の桁数"
 
 msgid "Decimal Places"
 msgstr "小数位数"
@@ -8474,7 +8474,7 @@ msgid "Number"
 msgstr "数字"
 
 msgid "Number of decimal places kept for purchase order unit prices. Increase this when suppliers quote fractional prices (e.g. metals or high-precision parts) so they aren't rounded."
-msgstr ""
+msgstr "発注書の単価に保持する小数点以下の桁数です。サプライヤーが端数のある価格（金属や高精度部品など）を提示する場合は、丸められないようにこの値を増やしてください。"
 
 msgid "Number of inventory units per purchase unit"
 msgstr "購買単位あたりの在庫単位数"
@@ -13385,7 +13385,7 @@ msgid "Unit Price"
 msgstr "単価"
 
 msgid "Unit Price Precision"
-msgstr ""
+msgstr "単価の精度"
 
 msgid "Unit Sale Price"
 msgstr "単価販売価格"

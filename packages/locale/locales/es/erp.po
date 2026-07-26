@@ -3553,7 +3553,7 @@ msgid "Decide what an operator sees if they try to issue a batch or serial that'
 msgstr "Decide qué ve un operador si intenta emitir un lote o número de serie que ya ha expirado."
 
 msgid "Decimal places"
-msgstr ""
+msgstr "Decimales"
 
 msgid "Decimal Places"
 msgstr "Lugares Decimales"
@@ -8474,7 +8474,7 @@ msgid "Number"
 msgstr "Número"
 
 msgid "Number of decimal places kept for purchase order unit prices. Increase this when suppliers quote fractional prices (e.g. metals or high-precision parts) so they aren't rounded."
-msgstr ""
+msgstr "Número de decimales que se conservan para los precios unitarios de las órdenes de compra. Auméntelo cuando los proveedores coticen precios fraccionarios (por ejemplo, metales o piezas de alta precisión) para que no se redondeen."
 
 msgid "Number of inventory units per purchase unit"
 msgstr "Número de unidades de inventario por unidad de compra"
@@ -13385,7 +13385,7 @@ msgid "Unit Price"
 msgstr "Precio Unitario"
 
 msgid "Unit Price Precision"
-msgstr ""
+msgstr "Precisión del precio unitario"
 
 msgid "Unit Sale Price"
 msgstr "Precio de Venta Unitario"

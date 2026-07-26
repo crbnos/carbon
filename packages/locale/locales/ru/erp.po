@@ -3553,7 +3553,7 @@ msgid "Decide what an operator sees if they try to issue a batch or serial that'
 msgstr "Решите, что видит оператор при попытке выдать партию или серийный номер, срок действия которого уже истек."
 
 msgid "Decimal places"
-msgstr ""
+msgstr "Десятичные знаки"
 
 msgid "Decimal Places"
 msgstr "Десятичные разряды"
@@ -8474,7 +8474,7 @@ msgid "Number"
 msgstr "Число"
 
 msgid "Number of decimal places kept for purchase order unit prices. Increase this when suppliers quote fractional prices (e.g. metals or high-precision parts) so they aren't rounded."
-msgstr ""
+msgstr "Количество десятичных знаков, сохраняемых для цен за единицу в заказах на закупку. Увеличьте это значение, когда поставщики указывают дробные цены (например, для металлов или высокоточных деталей), чтобы они не округлялись."
 
 msgid "Number of inventory units per purchase unit"
 msgstr "Количество единиц запасов на единицу закупки"
@@ -13385,7 +13385,7 @@ msgid "Unit Price"
 msgstr "Цена за единицу"
 
 msgid "Unit Price Precision"
-msgstr ""
+msgstr "Точность цены за единицу"
 
 msgid "Unit Sale Price"
 msgstr "Цена продажи за единицу"
