@@ -74,11 +74,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const op = operation.data?.[0];
 
-  // Redirect guard (ADR-0005): each view has its own route. If this operation is an
-  // Assembly, send it to the assembly route. Inspection falls through to the Operation
-  // view until its route ships (Phase 3) — never redirect it here, or we'd loop.
+  // Redirect guard (ADR-0005): each view has its own route. Guards only
+  // redirect kinds they don't serve, so no loop.
   if (resolveOperationView(op?.operationType) === "assembly") {
     throw redirect(path.to.assembly(operationId) + url.search);
+  }
+  if (resolveOperationView(op?.operationType) === "inspection") {
+    throw redirect(path.to.inspection(operationId) + url.search);
   }
 
   const [

@@ -45,6 +45,15 @@ msgstr "{0} Scrapped"
 msgid "About"
 msgstr "About"
 
+msgid "Accept"
+msgstr "Accept"
+
+msgid "Accept Lot"
+msgstr "Accept Lot"
+
+msgid "Accept lot?"
+msgstr "Accept lot?"
+
 msgid "Account Settings"
 msgstr "Account Settings"
 
@@ -65,6 +74,9 @@ msgstr "Add a printer in the printing settings to print labels directly."
 
 msgid "Add Inventory"
 msgstr "Add Inventory"
+
+msgid "Add Sample"
+msgstr "Add Sample"
 
 msgid "Add Spare Part"
 msgstr "Add Spare Part"
@@ -140,6 +152,9 @@ msgstr "Carbon Logo"
 msgid "Cards"
 msgstr "Cards"
 
+msgid "Characteristic"
+msgstr "Characteristic"
+
 msgid "Chat"
 msgstr "Chat"
 
@@ -164,6 +179,9 @@ msgstr "Clock Out"
 #. placeholder {0}: formatTime(openEntry.clockIn, locale)
 msgid "Clocked in since {0}"
 msgstr "Clocked in since {0}"
+
+msgid "Close"
+msgstr "Close"
 
 #. placeholder {0}: active.data.current.column.title
 #. placeholder {1}: overColumnPosition + 1
@@ -337,6 +355,9 @@ msgstr "Expires {date}"
 msgid "Expiring first"
 msgstr "Expiring first"
 
+msgid "Failed characteristics"
+msgstr "Failed characteristics"
+
 msgid "Failed to complete inventory adjustment"
 msgstr "Failed to complete inventory adjustment"
 
@@ -348,6 +369,12 @@ msgstr "Failed to fetch active operations"
 
 msgid "Failed to fetch storageUnits"
 msgstr "Failed to fetch storageUnits"
+
+msgid "Failed to save measurement"
+msgstr "Failed to save measurement"
+
+msgid "Failed to save result"
+msgstr "Failed to save result"
 
 #. placeholder {0}: fileUpload.name
 msgid "Failed to upload file: {0}"
@@ -404,6 +431,12 @@ msgstr "Imperial"
 
 msgid "In Progress"
 msgstr "In Progress"
+
+msgid "Inspect Item"
+msgstr "Inspect Item"
+
+msgid "inspected"
+msgstr "inspected"
 
 msgid "Insufficient quantity"
 msgstr "Insufficient quantity"
@@ -498,6 +531,9 @@ msgstr "Log scrap for {0}"
 msgid "Login"
 msgstr "Login"
 
+msgid "Lot"
+msgstr "Lot"
+
 msgid "Machine"
 msgstr "Machine"
 
@@ -530,6 +566,9 @@ msgstr "Metric"
 
 msgid "Model"
 msgstr "Model"
+
+msgid "More actions"
+msgstr "More actions"
 
 msgid "More Actions"
 msgstr "More Actions"
@@ -595,6 +634,9 @@ msgstr "No files"
 msgid "No Impact"
 msgstr "No Impact"
 
+msgid "No issue types configured"
+msgstr "No issue types configured"
+
 msgid "No maintenance scheduled for today"
 msgstr "No maintenance scheduled for today"
 
@@ -625,6 +667,9 @@ msgstr "No printer configured"
 msgid "No recent operations"
 msgstr "No recent operations"
 
+msgid "No remaining entities to inspect."
+msgstr "No remaining entities to inspect."
+
 msgid "No results"
 msgstr "No results"
 
@@ -633,6 +678,9 @@ msgstr "No results exist"
 
 msgid "No results found"
 msgstr "No results found"
+
+msgid "No samples required."
+msgstr "No samples required."
 
 msgid "No scheduled time"
 msgstr "No scheduled time"
@@ -683,6 +731,9 @@ msgstr "Oops. You shouldn't see this page. Eventually it will be a landing page.
 msgid "Open"
 msgstr "Open"
 
+msgid "Open an NCR for MRB disposition"
+msgstr "Open an NCR for MRB disposition"
+
 msgid "Open Jobs"
 msgstr "Open Jobs"
 
@@ -697,6 +748,9 @@ msgstr "Operator Performed"
 
 msgid "Optional"
 msgstr "Optional"
+
+msgid "Overall result"
+msgstr "Overall result"
 
 msgid "Parameters"
 msgstr "Parameters"
@@ -798,6 +852,12 @@ msgstr "Record"
 msgid "Record {0}"
 msgstr "Record {0}"
 
+msgid "Reject"
+msgstr "Reject"
+
+msgid "Reject Lot"
+msgstr "Reject Lot"
+
 msgid "Remove"
 msgstr "Remove"
 
@@ -809,6 +869,9 @@ msgstr "Remove Inventory"
 
 msgid "Remove part"
 msgstr "Remove part"
+
+msgid "Result"
+msgstr "Result"
 
 msgid "Rework"
 msgstr "Rework"
@@ -825,14 +888,23 @@ msgstr "Save"
 msgid "Scan"
 msgstr "Scan"
 
+msgid "Scan a tracked entity to add the first sample column."
+msgstr "Scan a tracked entity to add the first sample column."
+
 msgid "Scan or enter serial number"
 msgstr "Scan or enter serial number"
+
+msgid "Scan or enter tracked entity ID, serial, or batch"
+msgstr "Scan or enter tracked entity ID, serial, or batch"
 
 msgid "Scan or enter tracking number"
 msgstr "Scan or enter tracking number"
 
 msgid "Scan or search serial number..."
 msgstr "Scan or search serial number..."
+
+msgid "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
+msgstr "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
 
 msgid "Schedule"
 msgstr "Schedule"
@@ -873,6 +945,9 @@ msgstr "Select a scrap quantity and reason"
 msgid "Select a serial number to continue with this operation"
 msgstr "Select a serial number to continue with this operation"
 
+msgid "Select an issue type"
+msgstr "Select an issue type"
+
 msgid "Select an item and specify the quantity to issue"
 msgstr "Select an item and specify the quantity to issue"
 
@@ -895,6 +970,9 @@ msgstr "Select Serial Number"
 
 msgid "Select the operation to go back to. All operations from that point to the current operation will be redone."
 msgstr "Select the operation to go back to. All operations from that point to the current operation will be redone."
+
+msgid "Selected"
+msgstr "Selected"
 
 msgid "Send"
 msgstr "Send"
@@ -975,6 +1053,10 @@ msgstr "Station User"
 msgid "Station: {stationName}"
 msgstr "Station: {stationName}"
 
+#. placeholder {0}: inspection.lotSize
+msgid "Statistical acceptance failed, so the entire lot of {0} is considered non-conforming (ISO 9001:2015 §8.7) — {passes} sampled pass(es) and {fails} failure(s)."
+msgstr "Statistical acceptance failed, so the entire lot of {0} is considered non-conforming (ISO 9001:2015 §8.7) — {passes} sampled pass(es) and {fails} failure(s)."
+
 msgid "Status"
 msgstr "Status"
 
@@ -1012,6 +1094,12 @@ msgstr "Tag"
 msgid "The completed quantity for this operation is less than the required quantity of {0}."
 msgstr "The completed quantity for this operation is less than the required quantity of {0}."
 
+msgid "The lot will be marked Passed. {fails} sampled failure(s) are recorded for your records."
+msgstr "The lot will be marked Passed. {fails} sampled failure(s) are recorded for your records."
+
+msgid "The lot will still be rejected, but an NCR cannot be created until at least one Issue Type is configured."
+msgstr "The lot will still be rejected, but an NCR cannot be created until at least one Issue Type is configured."
+
 msgid "There are serial or batch tracked materials on the bill of material that have not been fully issued. Completing without issuing may result in incorrect traceability records."
 msgstr "There are serial or batch tracked materials on the bill of material that have not been fully issued. Completing without issuing may result in incorrect traceability records."
 
@@ -1044,6 +1132,9 @@ msgstr "Total time: {0}"
 #. placeholder {0}: formatTotalHours(entries)
 msgid "Total: {0}"
 msgstr "Total: {0}"
+
+msgid "Tracked Entity"
+msgstr "Tracked Entity"
 
 msgid "Tracking"
 msgstr "Tracking"

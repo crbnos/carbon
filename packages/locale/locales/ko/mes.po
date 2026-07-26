@@ -45,6 +45,15 @@ msgstr "{0} 스크랩됨"
 msgid "About"
 msgstr "정보"
 
+msgid "Accept"
+msgstr "수락"
+
+msgid "Accept Lot"
+msgstr "로트 수락"
+
+msgid "Accept lot?"
+msgstr "로트를 수락하시겠습니까?"
+
 msgid "Account Settings"
 msgstr "계정 설정"
 
@@ -65,6 +74,9 @@ msgstr "라벨을 직접 출력하려면 인쇄 설정에서 프린터를 추가
 
 msgid "Add Inventory"
 msgstr "재고 추가"
+
+msgid "Add Sample"
+msgstr "샘플 추가"
 
 msgid "Add Spare Part"
 msgstr "예비 부품 추가"
@@ -140,6 +152,9 @@ msgstr "Carbon 로고"
 msgid "Cards"
 msgstr "카드"
 
+msgid "Characteristic"
+msgstr "특성"
+
 msgid "Chat"
 msgstr "채팅"
 
@@ -164,6 +179,9 @@ msgstr "퇴근"
 #. placeholder {0}: formatTime(openEntry.clockIn, locale)
 msgid "Clocked in since {0}"
 msgstr "{0}부터 출근 중"
+
+msgid "Close"
+msgstr "닫기"
 
 #. placeholder {0}: active.data.current.column.title
 #. placeholder {1}: overColumnPosition + 1
@@ -337,6 +355,9 @@ msgstr "{date}에 만료"
 msgid "Expiring first"
 msgstr "먼저 만료되는 순"
 
+msgid "Failed characteristics"
+msgstr "실패한 특성"
+
 msgid "Failed to complete inventory adjustment"
 msgstr "재고 조정을 완료하지 못했습니다"
 
@@ -348,6 +369,12 @@ msgstr "진행 중인 공정작업을 불러오지 못했습니다"
 
 msgid "Failed to fetch storageUnits"
 msgstr "저장 단위를 불러오지 못했습니다"
+
+msgid "Failed to save measurement"
+msgstr "측정값 저장 실패"
+
+msgid "Failed to save result"
+msgstr "결과 저장 실패"
 
 #. placeholder {0}: fileUpload.name
 msgid "Failed to upload file: {0}"
@@ -404,6 +431,12 @@ msgstr "야드파운드법"
 
 msgid "In Progress"
 msgstr "진행 중"
+
+msgid "Inspect Item"
+msgstr "항목 검사"
+
+msgid "inspected"
+msgstr "검사됨"
 
 msgid "Insufficient quantity"
 msgstr "수량 부족"
@@ -498,6 +531,9 @@ msgstr "{0} 스크랩 기록"
 msgid "Login"
 msgstr "로그인"
 
+msgid "Lot"
+msgstr "로트"
+
 msgid "Machine"
 msgstr "기계"
 
@@ -530,6 +566,9 @@ msgstr "미터법"
 
 msgid "Model"
 msgstr "모델"
+
+msgid "More actions"
+msgstr "더 많은 작업"
 
 msgid "More Actions"
 msgstr "추가 작업"
@@ -595,6 +634,9 @@ msgstr "파일 없음"
 msgid "No Impact"
 msgstr "영향 없음"
 
+msgid "No issue types configured"
+msgstr "구성된 문제 유형이 없음"
+
 msgid "No maintenance scheduled for today"
 msgstr "오늘 예정된 유지보수가 없습니다"
 
@@ -625,6 +667,9 @@ msgstr "설정된 프린터가 없습니다"
 msgid "No recent operations"
 msgstr "최근 공정작업이 없습니다"
 
+msgid "No remaining entities to inspect."
+msgstr "검사할 나머지 엔터티가 없습니다."
+
 msgid "No results"
 msgstr "결과 없음"
 
@@ -633,6 +678,9 @@ msgstr "결과가 없습니다"
 
 msgid "No results found"
 msgstr "결과가 없습니다"
+
+msgid "No samples required."
+msgstr "필요한 샘플이 없습니다."
 
 msgid "No scheduled time"
 msgstr "예정된 시간 없음"
@@ -683,6 +731,9 @@ msgstr "이런. 이 페이지가 보이면 안 됩니다. 나중에 랜딩 페�
 msgid "Open"
 msgstr "열림"
 
+msgid "Open an NCR for MRB disposition"
+msgstr "MRB 처리를 위한 NCR 열기"
+
 msgid "Open Jobs"
 msgstr "진행 중인 작업"
 
@@ -697,6 +748,9 @@ msgstr "작업자 수행"
 
 msgid "Optional"
 msgstr "선택 사항"
+
+msgid "Overall result"
+msgstr "전체 결과"
 
 msgid "Parameters"
 msgstr "파라미터"
@@ -798,6 +852,12 @@ msgstr "기록"
 msgid "Record {0}"
 msgstr "{0} 기록"
 
+msgid "Reject"
+msgstr "거부"
+
+msgid "Reject Lot"
+msgstr "로트 거부"
+
 msgid "Remove"
 msgstr "제거"
 
@@ -809,6 +869,9 @@ msgstr "재고 제거"
 
 msgid "Remove part"
 msgstr "품목 제거"
+
+msgid "Result"
+msgstr "결과"
 
 msgid "Rework"
 msgstr "재작업"
@@ -825,14 +888,23 @@ msgstr "저장"
 msgid "Scan"
 msgstr "스캔"
 
+msgid "Scan a tracked entity to add the first sample column."
+msgstr "추적된 엔터티를 스캔하여 첫 번째 샘플 열을 추가하세요."
+
 msgid "Scan or enter serial number"
 msgstr "일련번호를 스캔하거나 입력하세요"
+
+msgid "Scan or enter tracked entity ID, serial, or batch"
+msgstr "추적된 엔터티 ID, 일련번호 또는 배치를 스캔하거나 입력하세요"
 
 msgid "Scan or enter tracking number"
 msgstr "추적 번호를 스캔하거나 입력하세요"
 
 msgid "Scan or search serial number..."
 msgstr "일련번호를 스캔하거나 검색하세요..."
+
+msgid "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
+msgstr "이 로트에서 추적된 엔터티를 스캔하거나 선택하여 샘플 열로 추가한 다음 그리드에 그 결과를 기록하세요."
 
 msgid "Schedule"
 msgstr "일정"
@@ -873,6 +945,9 @@ msgstr "스크랩 수량과 사유를 선택하세요"
 msgid "Select a serial number to continue with this operation"
 msgstr "이 공정작업을 계속하려면 일련번호를 선택하세요"
 
+msgid "Select an issue type"
+msgstr "문제 유형 선택"
+
 msgid "Select an item and specify the quantity to issue"
 msgstr "품목을 선택하고 출고할 수량을 지정하세요"
 
@@ -895,6 +970,9 @@ msgstr "일련번호 선택"
 
 msgid "Select the operation to go back to. All operations from that point to the current operation will be redone."
 msgstr "되돌아갈 공정작업을 선택하세요. 해당 시점부터 현재 공정작업까지 모두 다시 진행됩니다."
+
+msgid "Selected"
+msgstr "선택됨"
 
 msgid "Send"
 msgstr "전송"
@@ -975,6 +1053,10 @@ msgstr "스테이션 사용자"
 msgid "Station: {stationName}"
 msgstr "스테이션: {stationName}"
 
+#. placeholder {0}: inspection.lotSize
+msgid "Statistical acceptance failed, so the entire lot of {0} is considered non-conforming (ISO 9001:2015 §8.7) — {passes} sampled pass(es) and {fails} failure(s)."
+msgstr "통계적 수락에 실패했으므로 {0}의 전체 로트는 부적합으로 간주됩니다(ISO 9001:2015 §8.7) — {passes}개의 샘플 통과 및 {fails}개의 불합격."
+
 msgid "Status"
 msgstr "상태"
 
@@ -1012,6 +1094,12 @@ msgstr "태그"
 msgid "The completed quantity for this operation is less than the required quantity of {0}."
 msgstr "이 공정작업의 완료 수량이 필요 수량 {0}보다 적습니다."
 
+msgid "The lot will be marked Passed. {fails} sampled failure(s) are recorded for your records."
+msgstr "로트는 통과로 표시됩니다. {fails}개의 샘플 불합격이 기록됩니다."
+
+msgid "The lot will still be rejected, but an NCR cannot be created until at least one Issue Type is configured."
+msgstr "로트는 여전히 거부되지만 하나 이상의 문제 유형이 구성될 때까지 NCR을 만들 수 없습니다."
+
 msgid "There are serial or batch tracked materials on the bill of material that have not been fully issued. Completing without issuing may result in incorrect traceability records."
 msgstr "자재명세서(BOM)에 아직 완전히 출고되지 않은 일련번호 또는 배치 추적 자재가 있습니다. 출고하지 않고 완료하면 이력추적 기록이 부정확해질 수 있습니다."
 
@@ -1044,6 +1132,9 @@ msgstr "총 시간: {0}"
 #. placeholder {0}: formatTotalHours(entries)
 msgid "Total: {0}"
 msgstr "합계: {0}"
+
+msgid "Tracked Entity"
+msgstr "추적된 엔터티"
 
 msgid "Tracking"
 msgstr "추적"

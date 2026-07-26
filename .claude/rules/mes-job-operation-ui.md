@@ -11,6 +11,13 @@ steps/parameters, files, serials, and scrap/rework/finish actions.
 
 ## Route & data flow
 
+Execution views are routed by `jobOperation.operationType` via
+`resolveOperationView` (`apps/mes/app/utils/operationView.ts`): `Assembly` →
+`/x/assembly/:id` (`AssemblyView`), `Inspection` → `/x/inspection/:id`
+(`components/Inspection/InspectionView`, see `inspection-system.md`), everything
+else → this operation view. Each route opens with a redirect guard that only
+redirects kinds it does not serve (no loops).
+
 - **Route:** `apps/mes/app/routes/x+/operation.$operationId.tsx` — `/x/operation/:operationId`.
 - **Loader** (uses `getCarbonServiceRole()`, not the user client) fetches via
   `~/services/operations.service`: `getJobOperationById`, `getJobByOperationId`,

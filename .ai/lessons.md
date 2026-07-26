@@ -537,3 +537,13 @@ Format: `Context → Problem → Rule → Applies to`
 **Rule:** When a loader and its component both compute the same "current X" and one feeds data the other renders, their resolution logic — including the no-param default — must be identical. For the assembly loader, mirror `AssemblyView.currentUnitIndex`: index-paged (batch/untracked) parents default to `min(quantityComplete, opQty-1)`, serial parents to `0`. If you make a loader-computed index load-bearing for attribution, re-derive it the exact same way the UI does.
 
 **Applies to:** `apps/mes/app/routes/x+/assembly.$operationId.tsx` (`unitIndex`) ↔ `apps/mes/app/components/AssemblyView.tsx` (`currentUnitIndex`); any loader/component pair where one computes an index the other renders.
+
+## Node-side re-exports from the Deno functions tree must dodge lib/database.ts
+
+**Context:** `@carbon/database` re-exports code from `packages/database/supabase/functions/` into the node world (`src/client.ts` → `lib/postgres/index.ts`). The shared inspection engine (`src/quality.ts`) needed `getNextSequence` from `supabase/functions/shared/get-next-sequence.ts`, which imported its `DB` type from `../lib/database.ts`.
+
+**Problem:** `lib/database.ts` imports `./driver.ts` — the Deno-postgres driver whose types (`queryObject`, deno `Pool`) don't typecheck under the node tsconfig. Pulling any `shared/*.ts` helper that touches `lib/database.ts` into a `src/*` file breaks `pnpm --filter @carbon/database typecheck`, even though the runtime graph would have been fine.
+
+**Rule:** When making a Deno-tree helper importable from `packages/database/src/*`, its type-only imports must come from `../lib/postgres/index.ts` (node-clean, already the `src/client.ts` re-export source), never `../lib/database.ts`. `import type { KyselyDatabase as DB } from "../lib/postgres/index.ts"` is behavior-neutral for Deno. Check the full import chain (`lib/utils.ts` is safe; `lib/database.ts`/`lib/driver.ts` are not) before re-exporting.
+
+**Applies to:** `packages/database/src/{client,sampling,quality}.ts`; any future node-side re-export of `packages/database/supabase/functions/{shared,lib}/*`.

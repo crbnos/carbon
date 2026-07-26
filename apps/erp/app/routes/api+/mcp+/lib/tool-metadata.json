@@ -1,5 +1,5 @@
 {
-  "generated": "2026-07-24T11:36:04.952Z",
+  "generated": "2026-07-26T21:40:42.990Z",
   "totalTools": 1394,
   "modules": 15,
   "tools": [
@@ -1636,7 +1636,7 @@
       "module": "accounting",
       "classification": "WRITE",
       "description": "update default income accounts",
-      "paramCount": 27,
+      "paramCount": 28,
       "serviceParams": [
         "client",
         "defaultAccounts"
@@ -1661,6 +1661,9 @@
             "type": "string"
           },
           "inventoryAdjustmentVarianceAccount": {
+            "type": "string"
+          },
+          "scrapAccount": {
             "type": "string"
           },
           "materialVarianceAccount": {

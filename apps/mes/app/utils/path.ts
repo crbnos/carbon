@@ -123,6 +123,16 @@ export const path = {
     },
     finish: `${x}/finish`,
     health: "/health",
+    inspection: (operationId: string) =>
+      generatePath(`${x}/inspection/${operationId}`),
+    inspectionAccept: (id: string) =>
+      generatePath(`${x}/inspection-lot/${id}/accept`),
+    inspectionMeasurement: (id: string) =>
+      generatePath(`${x}/inspection-lot/${id}/measurement`),
+    inspectionReject: (id: string) =>
+      generatePath(`${x}/inspection-lot/${id}/reject`),
+    inspectionSample: (id: string) =>
+      generatePath(`${x}/inspection-lot/${id}/sample`),
     inspectionSteps: `${x}/steps/inspection`,
     inventoryAdjustment: `${x}/adjustment`,
     issue: `${x}/issue`,

@@ -45,6 +45,15 @@ msgstr "{0} Hurdaya Çıkarılmış"
 msgid "About"
 msgstr "Hakkında"
 
+msgid "Accept"
+msgstr "Kabul Et"
+
+msgid "Accept Lot"
+msgstr "Lotu Kabul Et"
+
+msgid "Accept lot?"
+msgstr "Lotu kabul et?"
+
 msgid "Account Settings"
 msgstr "Hesap Ayarları"
 
@@ -65,6 +74,9 @@ msgstr "Etiketleri doğrudan yazdırmak için yazdırma ayarlarında bir yazıc�
 
 msgid "Add Inventory"
 msgstr "Envantere Ekle"
+
+msgid "Add Sample"
+msgstr "Örnek Ekle"
 
 msgid "Add Spare Part"
 msgstr "Yedek Parça Ekle"
@@ -140,6 +152,9 @@ msgstr "Carbon Logosu"
 msgid "Cards"
 msgstr "Kartlar"
 
+msgid "Characteristic"
+msgstr "Özellik"
+
 msgid "Chat"
 msgstr "Sohbet"
 
@@ -164,6 +179,9 @@ msgstr "Çıkış Yap"
 #. placeholder {0}: formatTime(openEntry.clockIn, locale)
 msgid "Clocked in since {0}"
 msgstr "Giriş yapıldı: {0}"
+
+msgid "Close"
+msgstr "Kapat"
 
 #. placeholder {0}: active.data.current.column.title
 #. placeholder {1}: overColumnPosition + 1
@@ -337,6 +355,9 @@ msgstr "Son kullanma tarihi {date}'de"
 msgid "Expiring first"
 msgstr "İlk süresi dolacak"
 
+msgid "Failed characteristics"
+msgstr "Başarısız özellikler"
+
 msgid "Failed to complete inventory adjustment"
 msgstr "Envanter ayarlaması tamamlanamadı"
 
@@ -348,6 +369,12 @@ msgstr "Aktif operasyonlar alınamadı"
 
 msgid "Failed to fetch storageUnits"
 msgstr "Depolama birimlerini almak başarısız oldu"
+
+msgid "Failed to save measurement"
+msgstr "Ölçüm kaydedilemedi"
+
+msgid "Failed to save result"
+msgstr "Sonuç kaydedilemedi"
 
 #. placeholder {0}: fileUpload.name
 msgid "Failed to upload file: {0}"
@@ -404,6 +431,12 @@ msgstr "İmparatorluk"
 
 msgid "In Progress"
 msgstr "Devam Ediyor"
+
+msgid "Inspect Item"
+msgstr "Ürünü İncele"
+
+msgid "inspected"
+msgstr "incelendi"
 
 msgid "Insufficient quantity"
 msgstr "Yetersiz miktar"
@@ -498,6 +531,9 @@ msgstr "Hata için kayıt yap {0}"
 msgid "Login"
 msgstr "Giriş Yap"
 
+msgid "Lot"
+msgstr "Lot"
+
 msgid "Machine"
 msgstr "Makine"
 
@@ -530,6 +566,9 @@ msgstr "Metrik"
 
 msgid "Model"
 msgstr "Model"
+
+msgid "More actions"
+msgstr "Daha fazla işlem"
 
 msgid "More Actions"
 msgstr "Daha Fazla İşlem"
@@ -595,6 +634,9 @@ msgstr "Dosya yok"
 msgid "No Impact"
 msgstr "Etki Yok"
 
+msgid "No issue types configured"
+msgstr "Sorun türü yapılandırılmadı"
+
 msgid "No maintenance scheduled for today"
 msgstr "Bugün planlanmış bakım yok"
 
@@ -625,6 +667,9 @@ msgstr "Yazıcı yapılandırılmadı"
 msgid "No recent operations"
 msgstr "Son yakın işlemler yok"
 
+msgid "No remaining entities to inspect."
+msgstr "İncelenecek kalan varlık yok."
+
 msgid "No results"
 msgstr "Sonuç bulunamadı"
 
@@ -633,6 +678,9 @@ msgstr "Sonuç bulunamadı"
 
 msgid "No results found"
 msgstr "Sonuç bulunamadı"
+
+msgid "No samples required."
+msgstr "Örnek gerekli değil."
 
 msgid "No scheduled time"
 msgstr "Planlanmış zaman yok"
@@ -683,6 +731,9 @@ msgstr "Üzgünüz. Bu sayfayı görmemelisiniz. Sonunda bir açılış sayfası
 msgid "Open"
 msgstr "Açık"
 
+msgid "Open an NCR for MRB disposition"
+msgstr "MRB kararı için NCR aç"
+
 msgid "Open Jobs"
 msgstr "Açık İşler"
 
@@ -697,6 +748,9 @@ msgstr "Operatör Tarafından Yapıldı"
 
 msgid "Optional"
 msgstr "İsteğe bağlı"
+
+msgid "Overall result"
+msgstr "Genel sonuç"
 
 msgid "Parameters"
 msgstr "Parametreler"
@@ -798,6 +852,12 @@ msgstr "Kaydet"
 msgid "Record {0}"
 msgstr "Kayıt {0}"
 
+msgid "Reject"
+msgstr "Reddet"
+
+msgid "Reject Lot"
+msgstr "Lotu Reddet"
+
 msgid "Remove"
 msgstr "Kaldır"
 
@@ -809,6 +869,9 @@ msgstr "Stoktan Çıkar"
 
 msgid "Remove part"
 msgstr "Parçayı kaldır"
+
+msgid "Result"
+msgstr "Sonuç"
 
 msgid "Rework"
 msgstr "Revizyon"
@@ -825,14 +888,23 @@ msgstr "Kaydet"
 msgid "Scan"
 msgstr "Tarama"
 
+msgid "Scan a tracked entity to add the first sample column."
+msgstr "İlk örnek sütununu eklemek için izlenen bir varlığı tarayın."
+
 msgid "Scan or enter serial number"
 msgstr "Seri numarası tarayın veya girin"
+
+msgid "Scan or enter tracked entity ID, serial, or batch"
+msgstr "İzlenen varlık kimliğini, seri numarasını veya grubunu tarayın veya girin"
 
 msgid "Scan or enter tracking number"
 msgstr "Takip numarasını tarayın veya girin"
 
 msgid "Scan or search serial number..."
 msgstr "Seri numaras tarayın veya arayın..."
+
+msgid "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
+msgstr "Bu lottan izlenen bir varlığı tarayın veya seçin, onu bir örnek sütunu olarak ekleyin ve sonucunu ızgarada kaydedin."
 
 msgid "Schedule"
 msgstr "Planlama"
@@ -873,6 +945,9 @@ msgstr "Bir hurda miktarı ve nedeni seçin"
 msgid "Select a serial number to continue with this operation"
 msgstr "Bu işlemle devam etmek için bir seri numarası seçin"
 
+msgid "Select an issue type"
+msgstr "Bir sorun türü seçin"
+
 msgid "Select an item and specify the quantity to issue"
 msgstr "Bir parça seçin ve çıkarılacak miktarı belirtin"
 
@@ -895,6 +970,9 @@ msgstr "Seri Numarası Seçin"
 
 msgid "Select the operation to go back to. All operations from that point to the current operation will be redone."
 msgstr "Geri dönülecek işlemi seçin. O noktadan mevcut işleme kadar olan tüm işlemler yeniden yapılacaktır."
+
+msgid "Selected"
+msgstr "Seçildi"
 
 msgid "Send"
 msgstr "Gönder"
@@ -975,6 +1053,10 @@ msgstr "İstasyon Kullanıcısı"
 msgid "Station: {stationName}"
 msgstr "İstasyon: {stationName}"
 
+#. placeholder {0}: inspection.lotSize
+msgid "Statistical acceptance failed, so the entire lot of {0} is considered non-conforming (ISO 9001:2015 §8.7) — {passes} sampled pass(es) and {fails} failure(s)."
+msgstr "İstatistiksel kabul başarısız oldu, bu nedenle {0} boyutundaki tüm lot uygun olmayan olarak kabul edilir (ISO 9001:2015 §8.7) — {passes} örnek geçti ve {fails} başarısızlık(lar)."
+
 msgid "Status"
 msgstr "Durum"
 
@@ -1012,6 +1094,12 @@ msgstr "Etiket"
 msgid "The completed quantity for this operation is less than the required quantity of {0}."
 msgstr "Bu işlem için tamamlanan miktar, gerekli miktar olan {0}'dan azdır."
 
+msgid "The lot will be marked Passed. {fails} sampled failure(s) are recorded for your records."
+msgstr "Lot Geçti olarak işaretlenecek. {fails} örnek başarısızlık(ları) kayıtlarınız için kaydedildi."
+
+msgid "The lot will still be rejected, but an NCR cannot be created until at least one Issue Type is configured."
+msgstr "Lot yine reddedilecek, ancak en az bir Sorun Türü yapılandırılana kadar NCR oluşturulamaz."
+
 msgid "There are serial or batch tracked materials on the bill of material that have not been fully issued. Completing without issuing may result in incorrect traceability records."
 msgstr "Malzeme listesindeki seri veya parti takipli malzemeler tam olarak verilmemiş. Vermeden tamamlamak, yanlış izlenebilirlik kayıtlarına neden olabilir."
 
@@ -1044,6 +1132,9 @@ msgstr "Toplam süre: {0}"
 #. placeholder {0}: formatTotalHours(entries)
 msgid "Total: {0}"
 msgstr "Toplam: {0}"
+
+msgid "Tracked Entity"
+msgstr "İzlenen Varlık"
 
 msgid "Tracking"
 msgstr "Takip"

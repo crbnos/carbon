@@ -45,6 +45,15 @@ msgstr "{0} 已报废"
 msgid "About"
 msgstr "关于"
 
+msgid "Accept"
+msgstr "接收"
+
+msgid "Accept Lot"
+msgstr "接收批次"
+
+msgid "Accept lot?"
+msgstr "接收批次？"
+
 msgid "Account Settings"
 msgstr "账户设置"
 
@@ -65,6 +74,9 @@ msgstr "在打印设置中添加打印机以直接打印标签。"
 
 msgid "Add Inventory"
 msgstr "添加库存"
+
+msgid "Add Sample"
+msgstr "添加样本"
 
 msgid "Add Spare Part"
 msgstr "添加备件"
@@ -140,6 +152,9 @@ msgstr "Carbon 标志"
 msgid "Cards"
 msgstr "卡片"
 
+msgid "Characteristic"
+msgstr "特性"
+
 msgid "Chat"
 msgstr "聊天"
 
@@ -164,6 +179,9 @@ msgstr "下班打卡"
 #. placeholder {0}: formatTime(openEntry.clockIn, locale)
 msgid "Clocked in since {0}"
 msgstr "自 {0} 起已打卡上班"
+
+msgid "Close"
+msgstr "关闭"
 
 #. placeholder {0}: active.data.current.column.title
 #. placeholder {1}: overColumnPosition + 1
@@ -337,6 +355,9 @@ msgstr "过期时间 {date}"
 msgid "Expiring first"
 msgstr "即将过期优先"
 
+msgid "Failed characteristics"
+msgstr "失败的特性"
+
 msgid "Failed to complete inventory adjustment"
 msgstr "库存调整失败"
 
@@ -348,6 +369,12 @@ msgstr "获取活跃工序失败"
 
 msgid "Failed to fetch storageUnits"
 msgstr "获取存储单位失败"
+
+msgid "Failed to save measurement"
+msgstr "无法保存测量"
+
+msgid "Failed to save result"
+msgstr "无法保存结果"
 
 #. placeholder {0}: fileUpload.name
 msgid "Failed to upload file: {0}"
@@ -404,6 +431,12 @@ msgstr "英制"
 
 msgid "In Progress"
 msgstr "进行中"
+
+msgid "Inspect Item"
+msgstr "检验物品"
+
+msgid "inspected"
+msgstr "已检验"
 
 msgid "Insufficient quantity"
 msgstr "数量不足"
@@ -498,6 +531,9 @@ msgstr "记录 {0} 的报废"
 msgid "Login"
 msgstr "登录"
 
+msgid "Lot"
+msgstr "批次"
+
 msgid "Machine"
 msgstr "机器"
 
@@ -530,6 +566,9 @@ msgstr "公制"
 
 msgid "Model"
 msgstr "模型"
+
+msgid "More actions"
+msgstr "更多操作"
 
 msgid "More Actions"
 msgstr "更多操作"
@@ -595,6 +634,9 @@ msgstr "无文件"
 msgid "No Impact"
 msgstr "无影响"
 
+msgid "No issue types configured"
+msgstr "未配置问题类型"
+
 msgid "No maintenance scheduled for today"
 msgstr "今天没有计划的维护"
 
@@ -625,6 +667,9 @@ msgstr "未配置打印机"
 msgid "No recent operations"
 msgstr "无近期工序"
 
+msgid "No remaining entities to inspect."
+msgstr "没有剩余实体要检验。"
+
 msgid "No results"
 msgstr "无结果"
 
@@ -633,6 +678,9 @@ msgstr "无结果"
 
 msgid "No results found"
 msgstr "未找到结果"
+
+msgid "No samples required."
+msgstr "不需要样本。"
 
 msgid "No scheduled time"
 msgstr "无排定时间"
@@ -683,6 +731,9 @@ msgstr "抱歉，您不应该看到此页面。此页面最终将成为首页。
 msgid "Open"
 msgstr "打开"
 
+msgid "Open an NCR for MRB disposition"
+msgstr "为 MRB 处置打开 NCR"
+
 msgid "Open Jobs"
 msgstr "开放工作"
 
@@ -697,6 +748,9 @@ msgstr "操作员执行"
 
 msgid "Optional"
 msgstr "可选"
+
+msgid "Overall result"
+msgstr "总体结果"
 
 msgid "Parameters"
 msgstr "参数"
@@ -798,6 +852,12 @@ msgstr "记录"
 msgid "Record {0}"
 msgstr "记录 {0}"
 
+msgid "Reject"
+msgstr "退收"
+
+msgid "Reject Lot"
+msgstr "退收批次"
+
 msgid "Remove"
 msgstr "移除"
 
@@ -809,6 +869,9 @@ msgstr "移除库存"
 
 msgid "Remove part"
 msgstr "移除零件"
+
+msgid "Result"
+msgstr "结果"
 
 msgid "Rework"
 msgstr "返工"
@@ -825,14 +888,23 @@ msgstr "保存"
 msgid "Scan"
 msgstr "扫描"
 
+msgid "Scan a tracked entity to add the first sample column."
+msgstr "扫描跟踪实体以添加第一个样本列。"
+
 msgid "Scan or enter serial number"
 msgstr "扫描或输入序列号"
+
+msgid "Scan or enter tracked entity ID, serial, or batch"
+msgstr "扫描或输入跟踪实体 ID、序列号或批次"
 
 msgid "Scan or enter tracking number"
 msgstr "扫描或输入追踪号"
 
 msgid "Scan or search serial number..."
 msgstr "扫描或搜索序列号..."
+
+msgid "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
+msgstr "从此批次扫描或选择跟踪实体以将其添加为样本列，然后在网格中记录其结果。"
 
 msgid "Schedule"
 msgstr "排程"
@@ -873,6 +945,9 @@ msgstr "选择报废数量和原因"
 msgid "Select a serial number to continue with this operation"
 msgstr "选择一个序列号以继续此工序"
 
+msgid "Select an issue type"
+msgstr "选择问题类型"
+
 msgid "Select an item and specify the quantity to issue"
 msgstr "选择物料并指定发放数量"
 
@@ -895,6 +970,9 @@ msgstr "选择序列号"
 
 msgid "Select the operation to go back to. All operations from that point to the current operation will be redone."
 msgstr "选择要返回的操作。从该点到当前操作的所有操作都将重新进行。"
+
+msgid "Selected"
+msgstr "已选择"
 
 msgid "Send"
 msgstr "发送"
@@ -975,6 +1053,10 @@ msgstr "工位用户"
 msgid "Station: {stationName}"
 msgstr "工位：{stationName}"
 
+#. placeholder {0}: inspection.lotSize
+msgid "Statistical acceptance failed, so the entire lot of {0} is considered non-conforming (ISO 9001:2015 §8.7) — {passes} sampled pass(es) and {fails} failure(s)."
+msgstr "统计接收失败，因此整个 {0} 批次被视为不符合（ISO 9001:2015 §8.7）— {passes} 个样本通过，{fails} 个失败。"
+
 msgid "Status"
 msgstr "状态"
 
@@ -1012,6 +1094,12 @@ msgstr "标签"
 msgid "The completed quantity for this operation is less than the required quantity of {0}."
 msgstr "此工序的完成数量小于所需数量 {0}。"
 
+msgid "The lot will be marked Passed. {fails} sampled failure(s) are recorded for your records."
+msgstr "批次将被标记为通过。 {fails} 个样本失败被记录以供您参考。"
+
+msgid "The lot will still be rejected, but an NCR cannot be created until at least one Issue Type is configured."
+msgstr "批次仍将被拒绝，但在至少配置一个问题类型之前无法创建 NCR。"
+
 msgid "There are serial or batch tracked materials on the bill of material that have not been fully issued. Completing without issuing may result in incorrect traceability records."
 msgstr "物料清单中有序列号或批次追踪的物料尚未完全发放。不发放即完成可能导致追溯记录不正确。"
 
@@ -1044,6 +1132,9 @@ msgstr "总时间：{0}"
 #. placeholder {0}: formatTotalHours(entries)
 msgid "Total: {0}"
 msgstr "合计：{0}"
+
+msgid "Tracked Entity"
+msgstr "跟踪实体"
 
 msgid "Tracking"
 msgstr "追踪"

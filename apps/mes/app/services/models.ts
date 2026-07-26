@@ -152,6 +152,11 @@ export const productionEventValidator = z.object({
   }),
   workCenterId: zfd.text(z.string().optional()),
   trackedEntityId: zfd.text(z.string().optional()),
+  // The 0-based unit-axis position this event is building — identical to the key
+  // written to jobOperationStepRecord.index. Recorded on the tracked activity so
+  // traceability can isolate this unit's step records from the operation's other
+  // units. Omitted by the operation view (no unit paging).
+  unitIndex: zfd.numeric(z.number().optional()),
   // Assembly clocking is single-phase: when set, starting this work type ends
   // any other open work type for the operator on this operation (so Setup and
   // Labor can never run at once). Omitted by the operation view.
@@ -266,4 +271,35 @@ export const maintenanceDispatchIssueTrackedEntityValidator = z.object({
       quantity: z.number()
     })
   )
+});
+
+// Inspection execution (mirrors the ERP quality module's validators — the
+// shared engine in @carbon/database/quality consumes these shapes).
+export const inspectionSampleValidator = z.object({
+  inspectionId: z.string().min(1, { message: "Inspection is required" }),
+  // Optional: update an existing sample in place (the grid's "Overall result"
+  // row re-toggles an anonymous non-serial column). Serial parts upsert by the
+  // tracked entity instead, so they don't need it.
+  sampleId: zfd.text(z.string().optional()),
+  // Optional: serial parts scan a discrete tracked entity; batch / inventory /
+  // non-inventory parts record pass/fail without one.
+  trackedEntityId: zfd.text(z.string().optional()),
+  // "Pending" registers a sample without a verdict (identify-only scan when an
+  // inspection document drives per-feature measurements).
+  status: z.enum(["Pending", "Passed", "Failed"], {
+    errorMap: () => ({ message: "Status is required" })
+  }),
+  notes: zfd.text(z.string().optional())
+});
+
+export const inspectionMeasurementValidator = z.object({
+  inspectionId: z.string().min(1, { message: "Inspection is required" }),
+  // Absent = create an anonymous sample (non-serial grid columns).
+  sampleId: zfd.text(z.string().optional()),
+  inspectionFeatureId: z.string().min(1, { message: "Feature is required" }),
+  // Numeric string for Measurement features; empty clears the reading.
+  value: zfd.text(z.string().optional()),
+  // Attribute (non-numeric) features toggle pass/fail instead of a value.
+  passed: zfd.text(z.enum(["true", "false"]).optional()),
+  notes: zfd.text(z.string().optional())
 });

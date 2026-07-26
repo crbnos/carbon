@@ -1,3 +1,8 @@
+import workerSrc from "pdfjs-dist/build/pdf.worker.min.mjs?url";
+import { pdfjs } from "react-pdf";
+
+pdfjs.GlobalWorkerOptions.workerSrc = workerSrc;
+
 import { ensureLoggingConfigured } from "@carbon/logger/config.client";
 import { Fragment, startTransition } from "react";
 import { hydrateRoot } from "react-dom/client";

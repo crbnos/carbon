@@ -278,7 +278,7 @@ Each execution view gets its own route:
 ```
 /x/operation/:id    → JobOperation    (operationType = Process / Outside Processing, the default)
 /x/assembly/:id     → AssemblyView    (operationType = Assembly)
-/x/inspection/:id   → InspectionView  (operationType = Inspection — Phase 3)
+/x/inspection/:id   → InspectionView  (operationType = Inspection — shipped 2026-07-26)
 ```
 (Originally keyed on `operationKind`; re-keyed on the consolidated `operationType` —
 see 2026-07-20-operation-type-consolidation.md. The value reaches the routes via
@@ -331,7 +331,20 @@ features; a one-time lenient backfill parses existing TEXT where clean and leave
 (the backfill must never fail the migration). Numeric is authoritative for pass/fail, TEXT for
 display; consistency is the extraction/save path's responsibility.
 
-### 5.4 Inspection execution: explicit plan link and a dedicated result record (accepted)
+### 5.4 Inspection execution: explicit plan link and a dedicated result record (plan link accepted; result record SUPERSEDED)
+
+> **Superseded (result record), 2026-07-26.** The `jobOperationInspectionRecord`
+> table was never built. After this spec, the quality module's inspection system
+> was unified and made source-generic (`20260722132135_inspections-refactor.sql`:
+> `inspection` / `inspectionSample` / `inspectionSamplingPlan` /
+> `inspectionMeasurement` with `sourceDocument` = 'Receipt' | 'Job Operation').
+> The shipped MES Inspection view executes against those tables — a lot per
+> job operation created lazily on first open (`getOrCreateJobOperationInspection`
+> in `@carbon/database/quality`), per-characteristic AQL sampling, measurements
+> in `inspectionMeasurement`, Accept/Reject disposition, reject → MES NCR.
+> The **plan-link half of this ADR stands**: `inspectionDocumentId` FK on
+> method/quote/job operations, propagated by get-method. See
+> `.claude/rules/inspection-system.md` for the live model.
 **Plan link — explicit FK, not resolve-by-item.** A nullable `inspectionDocumentId` FK is added
 to `methodOperation` / `jobOperation` / `quoteOperation` and propagated through `get-method`
 (added in the Inspection workstream, not the `operationKind` migration, to keep the keystone
@@ -379,8 +392,9 @@ omitting either silently breaks propagation.
 - Content authoring: image resize/grid in the editor; annotation; tool hotspots.
 - MES UX: navigate/filter incomplete steps; swipe between serials; hands-free advance.
 - Quality: NCR → step link; parts/tools on NCR.
-- Inspection view (Phase 3 of the execution-views plan): route + guard, plan link, result
-  record, pass/fail evaluator, gauge picker.
+- ~~Inspection view (Phase 3 of the execution-views plan): route + guard, plan link, result
+  record, pass/fail evaluator, gauge picker.~~ ✅ Shipped 2026-07-26 on the unified
+  inspection tables (see §5.4 supersession note); gauge picker deferred.
 - Suggested (low priority): revision history, copy/clone steps, operator dashboard, step
   sign-off, rework flag, NCR trend, first-pass rate.
 

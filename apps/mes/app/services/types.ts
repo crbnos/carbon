@@ -1,3 +1,4 @@
+import type { Database } from "@carbon/database";
 import type { FileObject } from "@supabase/storage-js";
 import type {
   getJobByOperationId,
@@ -14,6 +15,11 @@ import type {
   getTrackedEntitiesByMakeMethodId,
   getTrackedInputs
 } from "./operations.service";
+import type {
+  getInspectionMeasurements,
+  getInspectionSamplingPlans,
+  getIssueTypesList
+} from "./quality.service";
 
 export type BaseOperation = NonNullable<
   Awaited<ReturnType<typeof getRecentJobOperationsByEmployee>>["data"]
@@ -96,4 +102,31 @@ export type TrackedInput = NonNullable<
 
 export type WorkCenter = NonNullable<
   Awaited<ReturnType<typeof getJobOperationsByWorkCenter>>["data"]
+>[number];
+
+export type Inspection = Database["public"]["Tables"]["inspection"]["Row"];
+
+export type InspectionStatus =
+  Database["public"]["Enums"]["inspectionStatusType"];
+
+export type InspectionTrackedEntity = Pick<
+  Database["public"]["Tables"]["trackedEntity"]["Row"],
+  "id" | "readableId" | "attributes" | "status" | "sourceDocumentReadableId"
+>;
+
+export type InspectionSample =
+  Database["public"]["Tables"]["inspectionSample"]["Row"] & {
+    trackedEntity: InspectionTrackedEntity | null;
+  };
+
+export type InspectionSamplingPlan = NonNullable<
+  Awaited<ReturnType<typeof getInspectionSamplingPlans>>["data"]
+>[number];
+
+export type InspectionMeasurement = NonNullable<
+  Awaited<ReturnType<typeof getInspectionMeasurements>>["data"]
+>[number];
+
+export type IssueTypeListItem = NonNullable<
+  Awaited<ReturnType<typeof getIssueTypesList>>["data"]
 >[number];

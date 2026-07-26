@@ -45,6 +45,15 @@ msgstr "{0} स्क्रैप किया गया"
 msgid "About"
 msgstr "के बारे में"
 
+msgid "Accept"
+msgstr "स्वीकार करें"
+
+msgid "Accept Lot"
+msgstr "लॉट स्वीकार करें"
+
+msgid "Accept lot?"
+msgstr "लॉट स्वीकार करें?"
+
 msgid "Account Settings"
 msgstr "खाता सेटिंग्स"
 
@@ -65,6 +74,9 @@ msgstr "प्रिंटिंग सेटिंग्स में एक �
 
 msgid "Add Inventory"
 msgstr "इन्वेंटरी जोड़ें"
+
+msgid "Add Sample"
+msgstr "नमूना जोड़ें"
 
 msgid "Add Spare Part"
 msgstr "स्पेयर पार्ट जोड़ें"
@@ -140,6 +152,9 @@ msgstr "कार्बन लोगो"
 msgid "Cards"
 msgstr "कार्ड"
 
+msgid "Characteristic"
+msgstr "विशेषता"
+
 msgid "Chat"
 msgstr "चैट"
 
@@ -164,6 +179,9 @@ msgstr "घड़ी बंद करें"
 #. placeholder {0}: formatTime(openEntry.clockIn, locale)
 msgid "Clocked in since {0}"
 msgstr "Clocked in since {0}"
+
+msgid "Close"
+msgstr "बंद करें"
 
 #. placeholder {0}: active.data.current.column.title
 #. placeholder {1}: overColumnPosition + 1
@@ -337,6 +355,9 @@ msgstr "समाप्त होता है {date}"
 msgid "Expiring first"
 msgstr "पहले समाप्त होने वाले"
 
+msgid "Failed characteristics"
+msgstr "विफल विशेषताएं"
+
 msgid "Failed to complete inventory adjustment"
 msgstr "इन्वेंटरी समायोजन पूरा करने में विफल"
 
@@ -348,6 +369,12 @@ msgstr "सक्रिय संचालन प्राप्त करने
 
 msgid "Failed to fetch storageUnits"
 msgstr "storageUnits को प्राप्त करने में विफल"
+
+msgid "Failed to save measurement"
+msgstr "माप को सहेजने में विफल"
+
+msgid "Failed to save result"
+msgstr "परिणाम को सहेजने में विफल"
 
 #. placeholder {0}: fileUpload.name
 msgid "Failed to upload file: {0}"
@@ -404,6 +431,12 @@ msgstr "इंपीरियल"
 
 msgid "In Progress"
 msgstr "प्रगति में"
+
+msgid "Inspect Item"
+msgstr "आइटम का निरीक्षण करें"
+
+msgid "inspected"
+msgstr "निरीक्षण किया गया"
 
 msgid "Insufficient quantity"
 msgstr "अपर्याप्त मात्रा"
@@ -498,6 +531,9 @@ msgstr "{0} के लिए स्क्रैप लॉग करें"
 msgid "Login"
 msgstr "लॉगिन"
 
+msgid "Lot"
+msgstr "लॉट"
+
 msgid "Machine"
 msgstr "मशीन"
 
@@ -530,6 +566,9 @@ msgstr "मीट्रिक"
 
 msgid "Model"
 msgstr "मॉडल"
+
+msgid "More actions"
+msgstr "अधिक क्रियाएं"
 
 msgid "More Actions"
 msgstr "अधिक क्रियाएं"
@@ -595,6 +634,9 @@ msgstr "कोई फ़ाइलें नहीं"
 msgid "No Impact"
 msgstr "कोई प्रभाव नहीं"
 
+msgid "No issue types configured"
+msgstr "कोई समस्या प्रकार कॉन्फ़िगर नहीं किया गया"
+
 msgid "No maintenance scheduled for today"
 msgstr "आज के लिए कोई रखरखाव निर्धारित नहीं है"
 
@@ -625,6 +667,9 @@ msgstr "कोई प्रिंटर कॉन्फ़िगर नहीं
 msgid "No recent operations"
 msgstr "कोई हाल के संचालन नहीं"
 
+msgid "No remaining entities to inspect."
+msgstr "निरीक्षण करने के लिए कोई शेष इकाई नहीं है।"
+
 msgid "No results"
 msgstr "कोई परिणाम नहीं"
 
@@ -633,6 +678,9 @@ msgstr "कोई परिणाम मौजूद नहीं है"
 
 msgid "No results found"
 msgstr "कोई परिणाम नहीं मिला"
+
+msgid "No samples required."
+msgstr "कोई नमूना आवश्यक नहीं है।"
 
 msgid "No scheduled time"
 msgstr "कोई निर्धारित समय नहीं"
@@ -683,6 +731,9 @@ msgstr "अरे। आपको यह पृष्ठ नहीं देख�
 msgid "Open"
 msgstr "खुला"
 
+msgid "Open an NCR for MRB disposition"
+msgstr "एमआरबी डिस्पोजिशन के लिए एनसीआर खोलें"
+
 msgid "Open Jobs"
 msgstr "खुली नौकरियां"
 
@@ -697,6 +748,9 @@ msgstr "ऑपरेटर द्वारा निष्पादित"
 
 msgid "Optional"
 msgstr "वैकल्पिक"
+
+msgid "Overall result"
+msgstr "समग्र परिणाम"
 
 msgid "Parameters"
 msgstr "पैरामीटर"
@@ -798,6 +852,12 @@ msgstr "रिकॉर्ड"
 msgid "Record {0}"
 msgstr "रिकॉर्ड {0}"
 
+msgid "Reject"
+msgstr "अस्वीकार करें"
+
+msgid "Reject Lot"
+msgstr "लॉट अस्वीकार करें"
+
 msgid "Remove"
 msgstr "हटाएं"
 
@@ -809,6 +869,9 @@ msgstr "इन्वेंटरी हटाएं"
 
 msgid "Remove part"
 msgstr "भाग हटाएं"
+
+msgid "Result"
+msgstr "परिणाम"
 
 msgid "Rework"
 msgstr "रीवर्क"
@@ -825,14 +888,23 @@ msgstr "सहेजें"
 msgid "Scan"
 msgstr "स्कैन करें"
 
+msgid "Scan a tracked entity to add the first sample column."
+msgstr "पहले नमूना कॉलम जोड़ने के लिए ट्रैक की गई इकाई को स्कैन करें।"
+
 msgid "Scan or enter serial number"
 msgstr "स्कैन करें या सीरियल नंबर दर्ज करें"
+
+msgid "Scan or enter tracked entity ID, serial, or batch"
+msgstr "ट्रैक की गई इकाई आईडी, सीरियल, या बैच को स्कैन या दर्ज करें"
 
 msgid "Scan or enter tracking number"
 msgstr "स्कैन करें या ट्रैकिंग नंबर दर्ज करें"
 
 msgid "Scan or search serial number..."
 msgstr "सीरियल नंबर स्कैन या खोजें..."
+
+msgid "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
+msgstr "इस लॉट से ट्रैक की गई इकाई को स्कैन या चुनें इसे नमूना कॉलम के रूप में जोड़ने के लिए, फिर ग्रिड में इसके परिणाम को रिकॉर्ड करें।"
 
 msgid "Schedule"
 msgstr "शेड्यूल"
@@ -873,6 +945,9 @@ msgstr "स्क्रैप मात्रा और कारण चुन�
 msgid "Select a serial number to continue with this operation"
 msgstr "इस ऑपरेशन को जारी रखने के लिए एक सीरियल नंबर चुनें"
 
+msgid "Select an issue type"
+msgstr "समस्या प्रकार चुनें"
+
 msgid "Select an item and specify the quantity to issue"
 msgstr "एक आइटम चुनें और जारी करने के लिए मात्रा निर्दिष्ट करें"
 
@@ -895,6 +970,9 @@ msgstr "सीरियल नंबर चुनें"
 
 msgid "Select the operation to go back to. All operations from that point to the current operation will be redone."
 msgstr "उस ऑपरेशन को चुनें जिस पर वापस जाना है। उस बिंदु से वर्तमान ऑपरेशन तक के सभी ऑपरेशन फिर से किए जाएंगे।"
+
+msgid "Selected"
+msgstr "चयनित"
 
 msgid "Send"
 msgstr "भेजें"
@@ -975,6 +1053,10 @@ msgstr "स्टेशन उपयोगकर्ता"
 msgid "Station: {stationName}"
 msgstr "स्टेशन: {stationName}"
 
+#. placeholder {0}: inspection.lotSize
+msgid "Statistical acceptance failed, so the entire lot of {0} is considered non-conforming (ISO 9001:2015 §8.7) — {passes} sampled pass(es) and {fails} failure(s)."
+msgstr "सांख्यिकीय स्वीकृति विफल रही, इसलिए {0} का पूरा लॉट गैर-अनुरूप माना जाता है (ISO 9001:2015 §8.7) — {passes} नमूना पास(es) और {fails} विफलता(एं)।"
+
 msgid "Status"
 msgstr "स्थिति"
 
@@ -1012,6 +1094,12 @@ msgstr "टैग"
 msgid "The completed quantity for this operation is less than the required quantity of {0}."
 msgstr "इस ऑपरेशन के लिए पूर्ण मात्रा आवश्यक मात्रा {0} से कम है।"
 
+msgid "The lot will be marked Passed. {fails} sampled failure(s) are recorded for your records."
+msgstr "लॉट को पास के रूप में चिह्नित किया जाएगा। {fails} नमूना विफलता(एं) आपके रिकॉर्ड के लिए दर्ज की गई हैं।"
+
+msgid "The lot will still be rejected, but an NCR cannot be created until at least one Issue Type is configured."
+msgstr "लॉट को अभी भी अस्वीकार किया जाएगा, लेकिन कम से कम एक समस्या प्रकार कॉन्फ़िगर होने तक एनसीआर नहीं बनाया जा सकता।"
+
 msgid "There are serial or batch tracked materials on the bill of material that have not been fully issued. Completing without issuing may result in incorrect traceability records."
 msgstr "बिल ऑफ मेटेरियल पर सीरियल या बैच ट्रैक किए गए मेटेरियल हैं जो पूरी तरह से जारी नहीं किए गए हैं। जारी किए बिना पूरा करने से गलत ट्रेसेबिलिटी रिकॉर्ड हो सकते हैं।"
 
@@ -1044,6 +1132,9 @@ msgstr "कुल समय: {0}"
 #. placeholder {0}: formatTotalHours(entries)
 msgid "Total: {0}"
 msgstr "कुल: {0}"
+
+msgid "Tracked Entity"
+msgstr "ट्रैक की गई इकाई"
 
 msgid "Tracking"
 msgstr "ट्रैकिंग"

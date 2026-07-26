@@ -20,6 +20,12 @@ existing human-only disposition + NCR flow. The view is built as a reusable
 component so the same UI can be attached to job operations in MES next
 (AssemblyView pattern; that attachment is out of scope here).
 
+> **Update 2026-07-26:** the MES attachment shipped. Job operations with
+> `operationType = 'Inspection'` execute at `/x/inspection/{jobOperationId}` in
+> apps/mes against the same (now source-generic) inspection tables; the engine
+> moved to `@carbon/database/quality` so both apps share it. See
+> `.claude/rules/inspection-system.md` → "Job Operation → inspection flow".
+
 ## Problem Statement
 
 Today an inspector receiving parts gets a lot drawer with anonymous Pass/Fail

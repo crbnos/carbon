@@ -45,6 +45,15 @@ msgstr "{0} Списано"
 msgid "About"
 msgstr "О системе"
 
+msgid "Accept"
+msgstr "Принять"
+
+msgid "Accept Lot"
+msgstr "Принять партию"
+
+msgid "Accept lot?"
+msgstr "Принять партию?"
+
 msgid "Account Settings"
 msgstr "Настройки аккаунта"
 
@@ -65,6 +74,9 @@ msgstr "Добавьте принтер в параметры печати, чт
 
 msgid "Add Inventory"
 msgstr "Добавить запас"
+
+msgid "Add Sample"
+msgstr "Добавить образец"
 
 msgid "Add Spare Part"
 msgstr "Добавить запасную часть"
@@ -140,6 +152,9 @@ msgstr "Логотип Carbon"
 msgid "Cards"
 msgstr "Карточки"
 
+msgid "Characteristic"
+msgstr "Характеристика"
+
 msgid "Chat"
 msgstr "Чат"
 
@@ -164,6 +179,9 @@ msgstr "Отметить уход"
 #. placeholder {0}: formatTime(openEntry.clockIn, locale)
 msgid "Clocked in since {0}"
 msgstr "На смене с {0}"
+
+msgid "Close"
+msgstr "Закрыть"
 
 #. placeholder {0}: active.data.current.column.title
 #. placeholder {1}: overColumnPosition + 1
@@ -337,6 +355,9 @@ msgstr "Истекает {date}"
 msgid "Expiring first"
 msgstr "Истекает первым"
 
+msgid "Failed characteristics"
+msgstr "Неудачные характеристики"
+
 msgid "Failed to complete inventory adjustment"
 msgstr "Не удалось выполнить корректировку запасов"
 
@@ -348,6 +369,12 @@ msgstr "Не удалось загрузить активные операции
 
 msgid "Failed to fetch storageUnits"
 msgstr "Не удалось получить единицы хранения"
+
+msgid "Failed to save measurement"
+msgstr "Не удалось сохранить измерение"
+
+msgid "Failed to save result"
+msgstr "Не удалось сохранить результат"
 
 #. placeholder {0}: fileUpload.name
 msgid "Failed to upload file: {0}"
@@ -404,6 +431,12 @@ msgstr "Имперская"
 
 msgid "In Progress"
 msgstr "В работе"
+
+msgid "Inspect Item"
+msgstr "Проверить элемент"
+
+msgid "inspected"
+msgstr "проверенный"
 
 msgid "Insufficient quantity"
 msgstr "Недостаточное количество"
@@ -498,6 +531,9 @@ msgstr "Записать брак для {0}"
 msgid "Login"
 msgstr "Вход"
 
+msgid "Lot"
+msgstr "Партия"
+
 msgid "Machine"
 msgstr "Станок"
 
@@ -530,6 +566,9 @@ msgstr "Метрическая"
 
 msgid "Model"
 msgstr "Модель"
+
+msgid "More actions"
+msgstr "Дополнительные действия"
 
 msgid "More Actions"
 msgstr "Дополнительные действия"
@@ -595,6 +634,9 @@ msgstr "Нет файлов"
 msgid "No Impact"
 msgstr "Без влияния"
 
+msgid "No issue types configured"
+msgstr "Типы проблем не настроены"
+
 msgid "No maintenance scheduled for today"
 msgstr "На сегодня обслуживание не запланировано"
 
@@ -625,6 +667,9 @@ msgstr "Принтер не настроен"
 msgid "No recent operations"
 msgstr "Нет недавних операций"
 
+msgid "No remaining entities to inspect."
+msgstr "Нет оставшихся объектов для проверки."
+
 msgid "No results"
 msgstr "Нет результатов"
 
@@ -633,6 +678,9 @@ msgstr "Результаты отсутствуют"
 
 msgid "No results found"
 msgstr "Ничего не найдено"
+
+msgid "No samples required."
+msgstr "Образцы не требуются."
 
 msgid "No scheduled time"
 msgstr "Нет запланированного времени"
@@ -683,6 +731,9 @@ msgstr "Ой. Вы не должны видеть эту страницу. Со 
 msgid "Open"
 msgstr "Открытые"
 
+msgid "Open an NCR for MRB disposition"
+msgstr "Открыть NCR для решения MRB"
+
 msgid "Open Jobs"
 msgstr "Открытые задания"
 
@@ -697,6 +748,9 @@ msgstr "Выполнено оператором"
 
 msgid "Optional"
 msgstr "Опционально"
+
+msgid "Overall result"
+msgstr "Общий результат"
 
 msgid "Parameters"
 msgstr "Параметры"
@@ -798,6 +852,12 @@ msgstr "Записать"
 msgid "Record {0}"
 msgstr "Запись {0}"
 
+msgid "Reject"
+msgstr "Отклонить"
+
+msgid "Reject Lot"
+msgstr "Отклонить партию"
+
 msgid "Remove"
 msgstr "Удалить"
 
@@ -809,6 +869,9 @@ msgstr "Списать запас"
 
 msgid "Remove part"
 msgstr "Удалить деталь"
+
+msgid "Result"
+msgstr "Результат"
 
 msgid "Rework"
 msgstr "Переделка"
@@ -825,14 +888,23 @@ msgstr "Сохранить"
 msgid "Scan"
 msgstr "Сканировать"
 
+msgid "Scan a tracked entity to add the first sample column."
+msgstr "Отсканируйте отслеживаемый объект, чтобы добавить первый столбец образца."
+
 msgid "Scan or enter serial number"
 msgstr "Сканируйте или введите серийный номер"
+
+msgid "Scan or enter tracked entity ID, serial, or batch"
+msgstr "Отсканируйте или введите ID отслеживаемого объекта, серийный номер или партию"
 
 msgid "Scan or enter tracking number"
 msgstr "Отсканируйте или введите номер отслеживания"
 
 msgid "Scan or search serial number..."
 msgstr "Сканируйте или ищите серийный номер..."
+
+msgid "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
+msgstr "Отсканируйте или выберите отслеживаемый объект из этой партии, чтобы добавить его в качестве столбца образца, затем запишите его результат в сетку."
 
 msgid "Schedule"
 msgstr "Расписание"
@@ -873,6 +945,9 @@ msgstr "Выберите количество брака и причину"
 msgid "Select a serial number to continue with this operation"
 msgstr "Выберите серийный номер для продолжения операции"
 
+msgid "Select an issue type"
+msgstr "Выберите тип проблемы"
+
 msgid "Select an item and specify the quantity to issue"
 msgstr "Выберите номенклатуру и укажите количество для выдачи"
 
@@ -895,6 +970,9 @@ msgstr "Выберите серийный номер"
 
 msgid "Select the operation to go back to. All operations from that point to the current operation will be redone."
 msgstr "Выберите операцию, к которой нужно вернуться. Все операции от этой точки до текущей операции будут повторены."
+
+msgid "Selected"
+msgstr "Выбрано"
 
 msgid "Send"
 msgstr "Отправить"
@@ -975,6 +1053,10 @@ msgstr "Пользователь станции"
 msgid "Station: {stationName}"
 msgstr "Станция: {stationName}"
 
+#. placeholder {0}: inspection.lotSize
+msgid "Statistical acceptance failed, so the entire lot of {0} is considered non-conforming (ISO 9001:2015 §8.7) — {passes} sampled pass(es) and {fails} failure(s)."
+msgstr "Статистическое приемо не пройдено, поэтому вся партия из {0} считается несоответствующей (ISO 9001:2015 §8.7) — {passes} образец(цов) принято(ы) и {fails} отказ(ов)."
+
 msgid "Status"
 msgstr "Статус"
 
@@ -1012,6 +1094,12 @@ msgstr "Тег"
 msgid "The completed quantity for this operation is less than the required quantity of {0}."
 msgstr "Количество готовой продукции по этой операции меньше требуемого количества {0}."
 
+msgid "The lot will be marked Passed. {fails} sampled failure(s) are recorded for your records."
+msgstr "Партия будет помечена как Пройдено. {fails} образец(цов) отказа(ов) записано(ы) для ваших записей."
+
+msgid "The lot will still be rejected, but an NCR cannot be created until at least one Issue Type is configured."
+msgstr "Партия все еще будет отклонена, но NCR не может быть создана, пока не будет настроен хотя бы один тип проблемы."
+
 msgid "There are serial or batch tracked materials on the bill of material that have not been fully issued. Completing without issuing may result in incorrect traceability records."
 msgstr "В спецификации есть материалы с серийным или партионным учётом, которые не были полностью выданы. Завершение без выдачи может привести к некорректным записям прослеживаемости."
 
@@ -1044,6 +1132,9 @@ msgstr "Общее время: {0}"
 #. placeholder {0}: formatTotalHours(entries)
 msgid "Total: {0}"
 msgstr "Итого: {0}"
+
+msgid "Tracked Entity"
+msgstr "Отслеживаемый объект"
 
 msgid "Tracking"
 msgstr "Отслеживание"

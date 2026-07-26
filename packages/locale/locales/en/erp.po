@@ -2208,9 +2208,6 @@ msgstr "Changing this will update the part ID"
 msgid "Changing type resets this item's draft edits."
 msgstr "Changing type resets this item's draft edits."
 
-msgid "Characteristic"
-msgstr "Characteristic"
-
 msgid "Chart of accounts"
 msgstr "Chart of accounts"
 
@@ -5452,6 +5449,9 @@ msgstr "Failed to save measurement"
 msgid "Failed to save parts"
 msgstr "Failed to save parts"
 
+msgid "Failed to save result"
+msgstr "Failed to save result"
+
 msgid "Failed to save slides"
 msgstr "Failed to save slides"
 
@@ -6454,9 +6454,6 @@ msgstr "Inspect First N"
 msgid "Inspect Item"
 msgstr "Inspect Item"
 
-msgid "Inspect Next Item"
-msgstr "Inspect Next Item"
-
 msgid "Inspection"
 msgstr "Inspection"
 
@@ -6486,9 +6483,6 @@ msgstr "Inspections, Nonconformance, CAPA"
 
 msgid "Inspections: Require Different Inspector"
 msgstr "Inspections: Require Different Inspector"
-
-msgid "Inspector"
-msgstr "Inspector"
 
 msgid "Install"
 msgstr "Install"
@@ -7403,14 +7397,8 @@ msgstr "Mark Done"
 msgid "Mark Light Mode"
 msgstr "Mark Light Mode"
 
-msgid "Mark lot as partial?"
-msgstr "Mark lot as partial?"
-
 msgid "Mark not done"
 msgstr "Mark not done"
-
-msgid "Mark Partial"
-msgstr "Mark Partial"
 
 msgid "Mark scope as agreed"
 msgstr "Mark scope as agreed"
@@ -8413,9 +8401,6 @@ msgstr "No rows here."
 msgid "No rules assigned"
 msgstr "No rules assigned"
 
-msgid "No samples inspected yet."
-msgstr "No samples inspected yet."
-
 msgid "No single, trusted number for inventory or job status"
 msgstr "No single, trusted number for inventory or job status"
 
@@ -8876,6 +8861,9 @@ msgstr "Outside operation"
 msgid "Over-applied by"
 msgstr "Over-applied by"
 
+msgid "Overall result"
+msgstr "Overall result"
+
 msgid "Overdue"
 msgstr "Overdue"
 
@@ -9002,9 +8990,6 @@ msgstr "Part Number"
 
 msgid "Part Supersession"
 msgstr "Part Supersession"
-
-msgid "Partial"
-msgstr "Partial"
 
 msgid "Partner"
 msgstr "Partner"
@@ -10105,9 +10090,6 @@ msgstr "Record deleted"
 msgid "Record inspections tied to a part and a job"
 msgstr "Record inspections tied to a part and a job"
 
-msgid "Record the inspection result for this sample."
-msgstr "Record the inspection result for this sample."
-
 msgid "Recorded that follow-up is needed after this calibration; surfaces this gauge on the open-actions queue."
 msgstr "Recorded that follow-up is needed after this calibration; surfaces this gauge on the open-actions queue."
 
@@ -10764,10 +10746,6 @@ msgstr "Same as Book"
 msgid "Sample"
 msgstr "Sample"
 
-#. placeholder {0}: idx + 1
-msgid "Sample {0}"
-msgstr "Sample {0}"
-
 msgid "Sample Size"
 msgstr "Sample Size"
 
@@ -10819,11 +10797,8 @@ msgstr "Scan or enter tracking number"
 msgid "Scan or search..."
 msgstr "Scan or search..."
 
-msgid "Scan or select a tracked entity from this lot and record the inspection result."
-msgstr "Scan or select a tracked entity from this lot and record the inspection result."
-
-msgid "Scan or select a tracked entity from this lot to add it as a sample column. Its result is derived from the recorded measurements."
-msgstr "Scan or select a tracked entity from this lot to add it as a sample column. Its result is derived from the recorded measurements."
+msgid "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
+msgstr "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
 
 msgid "Scan the tracking ID for this line"
 msgstr "Scan the tracking ID for this line"
@@ -10866,6 +10841,9 @@ msgstr "Scopes"
 
 msgid "Scrap"
 msgstr "Scrap"
+
+msgid "Scrap / Cost of Quality"
+msgstr "Scrap / Cost of Quality"
 
 msgid "Scrap Percent"
 msgstr "Scrap Percent"
@@ -12599,9 +12577,6 @@ msgstr "The logos shown on your printed and emailed documents"
 msgid "The lot identifier for this stock; one row per batch, quantity is the on-hand for that lot."
 msgstr "The lot identifier for this stock; one row per batch, quantity is the on-hand for that lot."
 
-msgid "The lot stays open so you can keep inspecting and disposition later. Sampled outcomes are preserved."
-msgstr "The lot stays open so you can keep inspecting and disposition later. Sampled outcomes are preserved."
-
 msgid "The lot will be marked Passed. {fails} sampled failure(s) are recorded for your records."
 msgstr "The lot will be marked Passed. {fails} sampled failure(s) are recorded for your records."
 
@@ -13425,9 +13400,6 @@ msgstr "Type:"
 
 msgid "Types"
 msgstr "Types"
-
-msgid "Un-sampled entities will remain On Hold so you can keep inspecting and disposition later. Sampled outcomes are preserved."
-msgstr "Un-sampled entities will remain On Hold so you can keep inspecting and disposition later. Sampled outcomes are preserved."
 
 msgid "Unapplied"
 msgstr "Unapplied"
@@ -14580,6 +14552,9 @@ msgstr "Write-Off Account"
 #. placeholder {0}: r.invoiceId
 msgid "Write-off for {0}"
 msgstr "Write-off for {0}"
+
+msgid "Write-off of stock scrapped or returned via inspection rejects and NCR dispositions"
+msgstr "Write-off of stock scrapped or returned via inspection rejects and NCR dispositions"
 
 msgid "Writing an asset's value down over its life — a monthly batch you create, review as a draft, then post."
 msgstr "Writing an asset's value down over its life — a monthly batch you create, review as a draft, then post."
