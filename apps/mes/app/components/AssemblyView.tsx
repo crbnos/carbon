@@ -69,6 +69,7 @@ import {
   LuListFilter,
   LuPause,
   LuPlay,
+  LuPlus,
   LuSkipForward,
   LuTimer,
   LuTrash,
@@ -716,11 +717,10 @@ export function AssemblyView({
     }
     if (hasUnitParam) return unitParam;
     // No explicit unit: land on the next unit still to build (quantityComplete)
-    // rather than an already-finished unit 0. Batch + untracked parents page by
-    // index, so this is safe; serial parents resolve by entity above.
-    if (!navigatesByEntity)
-      return Math.min(quantityComplete, Math.max(0, units.length - 1));
-    return 0;
+    // rather than an already-finished unit 0 — for EVERY tracking type. A serial
+    // parent normally resolves by entity above (the loader seeds trackedEntityId
+    // to this same unit); this is the fallback when no entity is resolvable.
+    return Math.min(quantityComplete, Math.max(0, units.length - 1));
   })();
   const currentUnit = units[currentUnitIndex] ?? units[0];
   // Serial binds the per-unit entity; batch shares one lot across all units, so the
@@ -814,9 +814,10 @@ export function AssemblyView({
   // Tracked parts assigned to the current step that still need scanning for THIS
   // unit. They soft-gate the step: the operator can still Skip, but the primary
   // Mark done / Record action is disabled until they're issued. Non-tracked/loose
-  // parts never gate — they're backflushed when the step is recorded.
+  // parts never gate — they're backflushed when the step is recorded. Unplanned
+  // extras (required 0) never gate either — there's no requirement to satisfy.
   const pendingScanMaterials = visibleMaterialsWithState.filter(
-    (v) => v.isTrackedMat && !v.state.fullyIssued
+    (v) => v.isTrackedMat && v.state.required > 0 && !v.state.fullyIssued
   );
   const hasPendingScans = pendingScanMaterials.length > 0;
 
@@ -1592,6 +1593,9 @@ export function AssemblyView({
                           autoPlay
                           loop
                           readOnly
+                          // Shop floor: the step name/description is shown in the
+                          // details panel below, so the in-player caption is redundant.
+                          hideCaption
                           mode={mode}
                           className="h-full"
                         />
@@ -1816,8 +1820,25 @@ export function AssemblyView({
                 once with its part-level quantity/issue status and chips for the step(s) it's
                 assigned to; the current step's chip is highlighted. Rendering once keeps the
                 requirement from ever being double-counted. */}
-            {visibleMaterialsWithState.length > 0 ? (
-              <SidebarSection title="Parts" scrollable>
+            <SidebarSection
+              title="Parts"
+              scrollable={visibleMaterialsWithState.length > 0}
+              action={
+                <IconButton
+                  aria-label="Issue material"
+                  variant="ghost"
+                  size="sm"
+                  icon={<LuPlus />}
+                  onClick={() => {
+                    // Clear any per-row selection so the modal opens in
+                    // "pick any item" mode → issue a part not on the BOM.
+                    setSelectedMaterial(null);
+                    issueModal.onOpen();
+                  }}
+                />
+              }
+            >
+              {visibleMaterialsWithState.length > 0 ? (
                 <div className="flex flex-col gap-1.5">
                   {visibleMaterialsWithState.map(
                     (
@@ -1840,14 +1861,12 @@ export function AssemblyView({
                     )
                   )}
                 </div>
-              </SidebarSection>
-            ) : (
-              <SidebarSection title="Parts">
+              ) : (
                 <p className="text-xs text-muted-foreground">
                   No materials assigned
                 </p>
-              </SidebarSection>
-            )}
+              )}
+            </SidebarSection>
 
             {stepTools.length > 0 && (
               <SidebarSection title="Tools" scrollable>
@@ -2385,11 +2404,14 @@ function TimerControl({
 function SidebarSection({
   title,
   children,
-  scrollable
+  scrollable,
+  action
 }: {
   title: string;
   children: React.ReactNode;
   scrollable?: boolean;
+  // Optional right-aligned control in the section header (e.g. an "add" button).
+  action?: React.ReactNode;
 }) {
   return (
     <div
@@ -2402,9 +2424,12 @@ function SidebarSection({
       )}
     >
       <Separator />
-      <h3 className="shrink-0 px-3.5 pb-1 pt-2.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-        {title}
-      </h3>
+      <div className="flex shrink-0 items-center justify-between gap-2 px-3.5 pb-1 pt-2.5">
+        <h3 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+          {title}
+        </h3>
+        {action}
+      </div>
       <div
         className={cn(
           "px-3.5 pb-2.5",
@@ -2443,7 +2468,12 @@ function getIssuedForUnit(
       ? issuedOverride
       : issuedIsPerUnit
         ? totalIssued
-        : Math.min(required, Math.max(0, totalIssued - unitIndex * required));
+        : // An unplanned/extra part has no per-unit requirement (required 0), so the
+          // per-unit derivation would clamp it to 0 — surface the raw issued total
+          // instead. Planned parts derive this unit's share from the job-wide total.
+          required === 0
+          ? totalIssued
+          : Math.min(required, Math.max(0, totalIssued - unitIndex * required));
   const fullyIssued = required > 0 && issued >= required;
   return { required, issued, fullyIssued };
 }
@@ -2481,22 +2511,28 @@ function MaterialRow({
     issuedIsPerUnit,
     issuedOverride
   });
-  const partiallyIssued = issued > 0 && !fullyIssued;
+  // An unplanned/extra part (issued from the shop floor, not on the BOM) has no
+  // required quantity. Once any quantity is issued it's "done" — there's nothing
+  // outstanding — so it reads as issued rather than perpetually "partial".
+  const isExtra = required === 0;
+  const extraIssued = isExtra && issued > 0;
+  const partiallyIssued = !isExtra && issued > 0 && !fullyIssued;
 
   // Leading status dot: issued (green check) · partially issued (amber) · not issued (hollow).
-  const issueStatus = fullyIssued
-    ? { icon: LuCircleCheck, className: "text-emerald-500", label: "Issued" }
-    : partiallyIssued
-      ? {
-          icon: LuCircleDot,
-          className: "text-amber-500",
-          label: "Partially issued"
-        }
-      : {
-          icon: LuCircle,
-          className: "text-muted-foreground/50",
-          label: "Not issued"
-        };
+  const issueStatus =
+    fullyIssued || extraIssued
+      ? { icon: LuCircleCheck, className: "text-emerald-500", label: "Issued" }
+      : partiallyIssued
+        ? {
+            icon: LuCircleDot,
+            className: "text-amber-500",
+            label: "Partially issued"
+          }
+        : {
+            icon: LuCircle,
+            className: "text-muted-foreground/50",
+            label: "Not issued"
+          };
   const StatusIcon = issueStatus.icon;
 
   const usedHere =
@@ -2540,7 +2576,7 @@ function MaterialRow({
       </div>
       {/* Count hard-right, with the tracking badges tucked beneath it. */}
       <div className="flex shrink-0 flex-col items-end gap-1">
-        {fullyIssued ? (
+        {fullyIssued || extraIssued ? (
           <span className="flex items-center gap-1 text-[11px] font-medium tabular-nums text-emerald-500">
             {issued}/{required}
             <LuCheck className="size-3" />
@@ -2554,6 +2590,8 @@ function MaterialRow({
             ×{required}
           </span>
         )}
+        {/* Distinguish an unplanned part (issued from the floor, not on the BOM). */}
+        {isExtra && <Badge variant="outline">Added</Badge>}
         {isTracked && (
           <div className="flex flex-wrap items-center justify-end gap-1">
             {material.requiresSerialTracking && (
