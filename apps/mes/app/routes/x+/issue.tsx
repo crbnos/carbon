@@ -23,8 +23,14 @@ export async function action({ request }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const { jobOperationId, materialId, itemId, quantity, adjustmentType } =
-    validation.data;
+  const {
+    jobOperationId,
+    materialId,
+    jobOperationStepId,
+    itemId,
+    quantity,
+    adjustmentType
+  } = validation.data;
 
   const serviceRole = await getCarbonServiceRole();
   const acknowledged = formData.get("acknowledged") === "true";
@@ -83,6 +89,7 @@ export async function action({ request }: ActionFunctionArgs) {
       type: "partToOperation",
       itemId,
       materialId,
+      jobOperationStepId,
       quantity,
       adjustmentType,
       companyId,

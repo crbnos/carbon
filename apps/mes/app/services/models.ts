@@ -112,6 +112,9 @@ export const issueValidator = z.object({
   itemId: z.string().min(1, { message: "Item is required" }),
   jobOperationId: z.string().min(1, { message: "Job Operation is required" }),
   materialId: zfd.text(z.string().optional()),
+  // When issuing an unplanned part from the shop floor (no materialId), scope the
+  // newly-created jobMaterial to the step it was issued on so it shows on that step.
+  jobOperationStepId: zfd.text(z.string().optional()),
   quantity: zfd.numeric(z.number()),
   adjustmentType: z.enum(["Set Quantity", "Positive Adjmt.", "Negative Adjmt."])
 });

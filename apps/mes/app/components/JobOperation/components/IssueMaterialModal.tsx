@@ -1190,6 +1190,14 @@ export function IssueMaterialModal({
               <ModalBody>
                 <Hidden name="jobOperationId" />
                 <Hidden name="materialId" />
+                {/* Scope an unplanned part (no materialId) to the step it's
+                    issued on so the assembly view shows it on that step. */}
+                {!material?.id && jobOperationStepId && (
+                  <Hidden
+                    name="jobOperationStepId"
+                    value={jobOperationStepId}
+                  />
+                )}
                 {material?.id && (
                   <Hidden name="adjustmentType" value="Negative Adjmt." />
                 )}
