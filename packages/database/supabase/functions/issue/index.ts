@@ -834,6 +834,9 @@ const payloadValidator = z.discriminatedUnion("type", [
       "Negative Adjmt.",
     ]),
     materialId: z.string().optional(),
+    // Assembly view: when issuing an unplanned part (no materialId), scope the new
+    // jobMaterial to this step so it surfaces on that step in the operator view.
+    jobOperationStepId: z.string().optional(),
     companyId: z.string(),
     userId: z.string(),
   }),
@@ -1331,6 +1334,7 @@ serve(async (req: Request) => {
           itemId,
           quantity,
           materialId,
+          jobOperationStepId,
           adjustmentType,
         } = validatedPayload;
 
@@ -1525,7 +1529,7 @@ serve(async (req: Request) => {
               .select("unitCost")
               .executeTakeFirst();
 
-            await trx
+            const newJobMaterial = await trx
               .insertInto("jobMaterial")
               .values({
                 companyId,
@@ -1543,7 +1547,21 @@ serve(async (req: Request) => {
                 quantityIssued: Number(quantity ?? 0),
                 unitCost: itemCost?.unitCost ?? 0,
               })
+              .returning("id")
               .executeTakeFirst();
+
+            // Scope this unplanned part to the step it was issued on (assembly
+            // view), so it shows on that step rather than as a General material.
+            if (jobOperationStepId && newJobMaterial?.id) {
+              await trx
+                .insertInto("jobMaterialStep")
+                .values({
+                  jobMaterialId: newJobMaterial.id,
+                  jobOperationStepId,
+                })
+                .onConflict((oc) => oc.doNothing())
+                .execute();
+            }
 
             if (itemLedgerInserts.length > 0) {
               await trx
@@ -2032,6 +2050,19 @@ serve(async (req: Request) => {
               .executeTakeFirstOrThrow();
 
             actualMaterialId = newJobMaterial.id!;
+
+            // Scope this unplanned tracked part to the step it was issued on
+            // (assembly view), so it shows on that step rather than as General.
+            if (jobOperationStepId) {
+              await trx
+                .insertInto("jobMaterialStep")
+                .values({
+                  jobMaterialId: actualMaterialId,
+                  jobOperationStepId,
+                })
+                .onConflict((oc) => oc.doNothing())
+                .execute();
+            }
 
             // Fetch the newly created jobMaterial
             jobMaterial = await trx
