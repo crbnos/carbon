@@ -8474,7 +8474,7 @@ msgid "Number"
 msgstr "Zahl"
 
 msgid "Number of decimal places kept for purchase order unit prices. Increase this when suppliers quote fractional prices (e.g. metals or high-precision parts) so they aren't rounded."
-msgstr "Anzahl der Dezimalstellen, die für Stückpreise von Bestellungen beibehalten werden. Erhöhen Sie diesen Wert, wenn Lieferanten Bruchpreise angeben (z. B. für Metalle oder hochpräzise Teile), damit diese nicht gerundet werden."
+msgstr "Anzahl der Dezimalstellen, die für Stückpreise in Bestellungen beibehalten werden. Erhöhen Sie diesen Wert, wenn Lieferanten Preise mit mehreren Dezimalstellen angeben (z. B. bei Metallen oder hochpräzisen Teilen), damit sie nicht gerundet werden."
 
 msgid "Number of inventory units per purchase unit"
 msgstr "Anzahl der Bestandseinheiten pro Kaufeinheit"
