@@ -119,7 +119,10 @@ const PurchaseOrderLineForm = ({
 
   const routeData = useRouteData<{
     purchaseOrder: PurchaseOrder;
+    purchaseOrderUnitPricePrecision?: number;
   }>(path.to.purchaseOrder(orderId));
+
+  const unitPricePrecision = routeData?.purchaseOrderUnitPricePrecision ?? 5;
 
   const isOutsideProcessing =
     routeData?.purchaseOrder?.purchaseOrderType === "Outside Processing";
@@ -730,7 +733,7 @@ const PurchaseOrderLineForm = ({
                               routeData?.purchaseOrder?.currencyCode ??
                               company.baseCurrencyCode,
                             minimumFractionDigits: 2,
-                            maximumFractionDigits: 5
+                            maximumFractionDigits: unitPricePrecision
                           }}
                           onChange={(value) =>
                             setItemData((d) => ({
@@ -1022,7 +1025,7 @@ const PurchaseOrderLineForm = ({
                                 routeData?.purchaseOrder?.currencyCode ??
                                 company.baseCurrencyCode,
                               minimumFractionDigits: 2,
-                              maximumFractionDigits: 5
+                              maximumFractionDigits: unitPricePrecision
                             }}
                             onChange={(value) =>
                               setIndirectData((d) => ({

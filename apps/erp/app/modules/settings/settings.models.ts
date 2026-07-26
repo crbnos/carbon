@@ -156,6 +156,22 @@ export const purchasePriceUpdateTimingValidator = z.object({
   purchasePriceUpdateTiming: z.enum(purchasePriceUpdateTimingTypes)
 });
 
+export const purchaseOrderUnitPricePrecisions = [2, 3, 4, 5] as const;
+
+export const purchaseOrderUnitPricePrecisionValidator = z.object({
+  purchaseOrderUnitPricePrecision: zfd.numeric(
+    z
+      .number()
+      .int()
+      .refine(
+        (value) => purchaseOrderUnitPricePrecisions.includes(value as any),
+        {
+          message: "Precision must be between 2 and 5"
+        }
+      )
+  )
+});
+
 export const calculatedShelfLifeInputScopes = [
   "AllInputs",
   "ManagedInputsOnly"

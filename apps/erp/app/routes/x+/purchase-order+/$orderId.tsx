@@ -517,7 +517,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     canReopen,
     canDelete,
     defaultCc,
-    resolvedAttachments
+    resolvedAttachments,
+    purchaseOrderUnitPricePrecision:
+      (
+        companySettings.data as {
+          purchaseOrderUnitPricePrecision?: number;
+        } | null
+      )?.purchaseOrderUnitPricePrecision ?? 5
   };
 }
 

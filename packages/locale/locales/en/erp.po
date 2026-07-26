@@ -3552,6 +3552,9 @@ msgstr "Debits"
 msgid "Decide what an operator sees if they try to issue a batch or serial that's already expired."
 msgstr "Decide what an operator sees if they try to issue a batch or serial that's already expired."
 
+msgid "Decimal places"
+msgstr "Decimal places"
+
 msgid "Decimal Places"
 msgstr "Decimal Places"
 
@@ -8470,6 +8473,9 @@ msgstr "Notifications"
 msgid "Number"
 msgstr "Number"
 
+msgid "Number of decimal places kept for purchase order unit prices. Increase this when suppliers quote fractional prices (e.g. metals or high-precision parts) so they aren't rounded."
+msgstr "Number of decimal places kept for purchase order unit prices. Increase this when suppliers quote fractional prices (e.g. metals or high-precision parts) so they aren't rounded."
+
 msgid "Number of inventory units per purchase unit"
 msgstr "Number of inventory units per purchase unit"
 
@@ -13377,6 +13383,9 @@ msgstr "Unit price"
 
 msgid "Unit Price"
 msgstr "Unit Price"
+
+msgid "Unit Price Precision"
+msgstr "Unit Price Precision"
 
 msgid "Unit Sale Price"
 msgstr "Unit Sale Price"

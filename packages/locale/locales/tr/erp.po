@@ -3552,6 +3552,9 @@ msgstr "Borçlar"
 msgid "Decide what an operator sees if they try to issue a batch or serial that's already expired."
 msgstr "Operatörün zaten süresi dolmuş bir parti veya seri çıkarmaya çalışması durumunda ne göreceğini belirleyin."
 
+msgid "Decimal places"
+msgstr ""
+
 msgid "Decimal Places"
 msgstr "Ondalık Basamaklar"
 
@@ -8470,6 +8473,9 @@ msgstr "Bildirimler"
 msgid "Number"
 msgstr "Numara"
 
+msgid "Number of decimal places kept for purchase order unit prices. Increase this when suppliers quote fractional prices (e.g. metals or high-precision parts) so they aren't rounded."
+msgstr ""
+
 msgid "Number of inventory units per purchase unit"
 msgstr "Satın alma birimi başına envanter birimi sayısı"
 
@@ -13377,6 +13383,9 @@ msgstr "Birim fiyatı"
 
 msgid "Unit Price"
 msgstr "Birim Fiyatı"
+
+msgid "Unit Price Precision"
+msgstr ""
 
 msgid "Unit Sale Price"
 msgstr "Birim Satış Fiyatı"

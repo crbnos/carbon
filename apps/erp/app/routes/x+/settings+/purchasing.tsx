@@ -38,6 +38,8 @@ import {
   defaultSupplierCcValidator,
   getAccountsPayableBillingAddress,
   getCompanySettings,
+  purchaseOrderUnitPricePrecisions,
+  purchaseOrderUnitPricePrecisionValidator,
   purchasePriceUpdateTimingTypes,
   purchasePriceUpdateTimingValidator,
   supplierQuoteNotificationValidator,
@@ -45,6 +47,7 @@ import {
   updateAccountsPayableBillingAddress,
   updateDefaultSupplierCc,
   updateLeadTimesOnReceiptSetting,
+  updatePurchaseOrderUnitPricePrecisionSetting,
   updatePurchasePriceUpdateTimingSetting,
   updateShowSupplierReadableIdSetting,
   updateSupplierQuoteNotificationSetting
@@ -148,6 +151,37 @@ export async function action({ request }: ActionFunctionArgs) {
       return {
         success: true,
         message: "Purchase price update timing updated"
+      };
+
+    case "purchaseOrderUnitPricePrecision":
+      const precisionValidation = await validator(
+        purchaseOrderUnitPricePrecisionValidator
+      ).validate(formData);
+
+      if (precisionValidation.error) {
+        return { success: false, message: "Invalid form data" };
+      }
+
+      const precisionResult =
+        await updatePurchaseOrderUnitPricePrecisionSetting(
+          client,
+          companyId,
+          precisionValidation.data.purchaseOrderUnitPricePrecision
+        );
+
+      if (precisionResult.error) {
+        logger.error("Failed to update unit price precision setting", {
+          error: precisionResult.error
+        });
+        return {
+          success: false,
+          message: precisionResult.error.message
+        };
+      }
+
+      return {
+        success: true,
+        message: "Purchase order unit price precision updated"
       };
 
     case "updateLeadTimesOnReceipt":
@@ -321,6 +355,10 @@ export default function PurchasingSettingsRoute() {
 
   const [showSupplierReadableIdEnabled, setShowSupplierReadableIdEnabled] =
     useState(companySettings.showSupplierReadableId ?? false);
+
+  const unitPricePrecision =
+    (companySettings as { purchaseOrderUnitPricePrecision?: number })
+      .purchaseOrderUnitPricePrecision ?? 5;
 
   const handleShowSupplierReadableIdToggle = useCallback(
     (checked: boolean) => {
@@ -507,6 +545,68 @@ export default function PurchasingSettingsRoute() {
             </ValidatedForm>
           </Card>
         )}
+
+        <p className="mt-4 text-xxs text-foreground/70 uppercase font-light tracking-wide">
+          <Trans>Pricing</Trans>
+        </p>
+
+        <Card>
+          <ValidatedForm
+            method="post"
+            validator={purchaseOrderUnitPricePrecisionValidator}
+            defaultValues={{
+              // Select matches option values by string; store the default as a
+              // string even though the validator coerces it back to a number.
+              purchaseOrderUnitPricePrecision:
+                unitPricePrecision.toString() as unknown as number
+            }}
+            fetcher={fetcher}
+          >
+            <input
+              type="hidden"
+              name="intent"
+              value="purchaseOrderUnitPricePrecision"
+            />
+            <CardHeader>
+              <CardTitle>
+                <Trans>Unit Price Precision</Trans>
+              </CardTitle>
+              <CardDescription>
+                <Trans>
+                  Number of decimal places kept for purchase order unit prices.
+                  Increase this when suppliers quote fractional prices (e.g.
+                  metals or high-precision parts) so they aren't rounded.
+                </Trans>
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-col gap-8 max-w-[400px]">
+                <Select
+                  name="purchaseOrderUnitPricePrecision"
+                  label={t`Decimal places`}
+                  options={purchaseOrderUnitPricePrecisions.map(
+                    (precision) => ({
+                      label: precision.toString(),
+                      value: precision.toString()
+                    })
+                  )}
+                />
+              </div>
+            </CardContent>
+            <CardFooter>
+              <Submit
+                isDisabled={fetcher.state !== "idle"}
+                isLoading={
+                  fetcher.state !== "idle" &&
+                  fetcher.formData?.get("intent") ===
+                    "purchaseOrderUnitPricePrecision"
+                }
+              >
+                <Trans>Save</Trans>
+              </Submit>
+            </CardFooter>
+          </ValidatedForm>
+        </Card>
 
         <p className="mt-4 text-xxs text-foreground/70 uppercase font-light tracking-wide">
           <Trans>Automatic Updates</Trans>

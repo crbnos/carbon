@@ -3552,6 +3552,9 @@ msgstr "Belastungen"
 msgid "Decide what an operator sees if they try to issue a batch or serial that's already expired."
 msgstr "Entscheiden Sie, was ein Bediener sieht, wenn er versucht, einen Batch oder eine Seriennummer auszugeben, die bereits abgelaufen ist."
 
+msgid "Decimal places"
+msgstr ""
+
 msgid "Decimal Places"
 msgstr "Dezimalstellen"
 
@@ -8470,6 +8473,9 @@ msgstr "Benachrichtigungen"
 msgid "Number"
 msgstr "Zahl"
 
+msgid "Number of decimal places kept for purchase order unit prices. Increase this when suppliers quote fractional prices (e.g. metals or high-precision parts) so they aren't rounded."
+msgstr ""
+
 msgid "Number of inventory units per purchase unit"
 msgstr "Anzahl der Bestandseinheiten pro Kaufeinheit"
 
@@ -13377,6 +13383,9 @@ msgstr "Stückpreis"
 
 msgid "Unit Price"
 msgstr "Stückpreis"
+
+msgid "Unit Price Precision"
+msgstr ""
 
 msgid "Unit Sale Price"
 msgstr "Einheitlicher Verkaufspreis"

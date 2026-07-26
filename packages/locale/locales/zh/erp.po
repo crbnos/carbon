@@ -3552,6 +3552,9 @@ msgstr "借方"
 msgid "Decide what an operator sees if they try to issue a batch or serial that's already expired."
 msgstr "决定操作员在尝试发放已过期的批次或序列号时看到的内容。"
 
+msgid "Decimal places"
+msgstr ""
+
 msgid "Decimal Places"
 msgstr "小数位数"
 
@@ -8470,6 +8473,9 @@ msgstr "通知"
 msgid "Number"
 msgstr "数字"
 
+msgid "Number of decimal places kept for purchase order unit prices. Increase this when suppliers quote fractional prices (e.g. metals or high-precision parts) so they aren't rounded."
+msgstr ""
+
 msgid "Number of inventory units per purchase unit"
 msgstr "每个采购单位的库存单位数"
 
@@ -13377,6 +13383,9 @@ msgstr "单价"
 
 msgid "Unit Price"
 msgstr "单价"
+
+msgid "Unit Price Precision"
+msgstr ""
 
 msgid "Unit Sale Price"
 msgstr "单位销售价格"

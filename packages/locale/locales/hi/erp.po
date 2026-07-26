@@ -3552,6 +3552,9 @@ msgstr "नामे"
 msgid "Decide what an operator sees if they try to issue a batch or serial that's already expired."
 msgstr "तय करें कि यदि कोई ऑपरेटर एक बैच या सीरियल जारी करने का प्रयास करता है जो पहले से ही समाप्त हो गया है तो वह क्या देखता है।"
 
+msgid "Decimal places"
+msgstr ""
+
 msgid "Decimal Places"
 msgstr "दशमलव स्थान"
 
@@ -8470,6 +8473,9 @@ msgstr "सूचनाएं"
 msgid "Number"
 msgstr "संख्या"
 
+msgid "Number of decimal places kept for purchase order unit prices. Increase this when suppliers quote fractional prices (e.g. metals or high-precision parts) so they aren't rounded."
+msgstr ""
+
 msgid "Number of inventory units per purchase unit"
 msgstr "प्रति क्रय इकाई इन्वेंटरी इकाइयों की संख्या"
 
@@ -13377,6 +13383,9 @@ msgstr "इकाई मूल्य"
 
 msgid "Unit Price"
 msgstr "यूनिट मूल्य"
+
+msgid "Unit Price Precision"
+msgstr ""
 
 msgid "Unit Sale Price"
 msgstr "यूनिट विक्रय मूल्य"

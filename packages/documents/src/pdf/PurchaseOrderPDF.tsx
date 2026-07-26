@@ -56,12 +56,19 @@ const PurchaseOrderPDF = ({
     minimumFractionDigits: 2,
     maximumFractionDigits: 2
   });
-  // Unit prices support up to 5 decimal places (see issue #1203); line totals and
-  // other extended values stay at the 2-decimal default via numberFormatter.
+  // Unit prices honor the company's configured precision (see issue #1236); line
+  // totals and other extended values stay at the 2-decimal default via
+  // numberFormatter.
+  const unitPricePrecision =
+    (
+      companySettings as {
+        purchaseOrderUnitPricePrecision?: number;
+      } | null
+    )?.purchaseOrderUnitPricePrecision ?? 5;
   const unitPriceFormatter = new Intl.NumberFormat(locale, {
     style: "decimal",
     minimumFractionDigits: 2,
-    maximumFractionDigits: 5
+    maximumFractionDigits: unitPricePrecision
   });
 
   const headerTitle = purchaseOrder?.purchaseOrderId

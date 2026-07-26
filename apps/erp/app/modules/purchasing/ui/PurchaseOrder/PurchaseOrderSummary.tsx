@@ -421,7 +421,10 @@ const PurchaseOrderSummary = ({
     lines: PurchaseOrderLine[];
     purchaseOrderDelivery: PurchaseOrderDelivery;
     supplier: Supplier;
+    purchaseOrderUnitPricePrecision?: number;
   }>(path.to.purchaseOrder(orderId));
+
+  const unitPricePrecision = routeData?.purchaseOrderUnitPricePrecision ?? 5;
 
   const isEditable = !isPurchaseOrderLocked(routeData?.purchaseOrder?.status);
 
@@ -433,11 +436,12 @@ const PurchaseOrderSummary = ({
       company?.baseCurrencyCode ??
       "USD"
   });
-  // Unit prices support up to 5 decimal places (see issue #1203); totals stay at
-  // the currency default (2). Keep minimumFractionDigits at 2 for a normal look.
+  // Unit prices honor the company's configured precision (see issue #1236);
+  // totals stay at the currency default (2). Keep minimumFractionDigits at 2 for
+  // a normal look.
   const unitPriceFormatter = useCurrencyFormatter({
     minimumFractionDigits: 2,
-    maximumFractionDigits: 5
+    maximumFractionDigits: unitPricePrecision
   });
   const presentationUnitPriceFormatter = useCurrencyFormatter({
     currency:
@@ -445,7 +449,7 @@ const PurchaseOrderSummary = ({
       company?.baseCurrencyCode ??
       "USD",
     minimumFractionDigits: 2,
-    maximumFractionDigits: 5
+    maximumFractionDigits: unitPricePrecision
   });
 
   const shouldConvertCurrency =
