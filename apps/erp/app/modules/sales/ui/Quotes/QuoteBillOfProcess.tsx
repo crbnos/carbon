@@ -1030,8 +1030,8 @@ function AttributesForm({
             operationId
           }}
           onSubmit={() => {
-            setType("Value");
-            setDescription([]);
+            setType("Task");
+            setDescription({});
           }}
           className="w-full"
         >

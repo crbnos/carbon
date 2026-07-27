@@ -296,7 +296,7 @@ export const operationStepValidator = z
     },
     {
       message: "List options are required",
-      path: ["listOptions"]
+      path: ["listValues"]
     }
   )
   .refine(

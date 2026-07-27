@@ -1257,7 +1257,7 @@ function StepsForm({
               operationId
             }}
             onSubmit={() => {
-              setType("Value");
+              setType("Task");
               setDescription({});
             }}
             className="w-full"

@@ -28,6 +28,7 @@ import {
 } from "./internal/hooks";
 import type { MultiValueMap } from "./internal/MultiValueMap";
 import { useMultiValueMap } from "./internal/MultiValueMap";
+import { getCenteredScrollTop } from "./internal/scrollIntoView";
 import type { SyncedFormProps } from "./internal/state/createFormStore";
 import { useRootFormStore } from "./internal/state/createFormStore";
 import { useFormStore } from "./internal/state/storeHooks";
@@ -136,12 +137,19 @@ const scrollIntoView = (element?: HTMLElement) => {
   // try the container route first as scrollIntoView sometimes have side effects by moving the wrong container
   const container = element.closest(".overflow-hidden > .h-full");
   if (container) {
-    // Get the position of the target relative to the container
-    const offsetTop = element.offsetTop;
+    const elementRect = element.getBoundingClientRect();
+    const containerRect = container.getBoundingClientRect();
 
     // Scroll the container only
     container.scrollTo({
-      top: offsetTop,
+      top: getCenteredScrollTop({
+        element: { top: elementRect.top, height: elementRect.height },
+        container: {
+          top: containerRect.top,
+          height: container.clientHeight,
+          scrollTop: container.scrollTop
+        }
+      }),
       behavior: "smooth" // use 'auto' if you don't want smooth scrolling
     });
   } else {
