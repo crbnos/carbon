@@ -1124,8 +1124,6 @@ function StepsForm({
       .map((step) => step.id || "")
   );
 
-  const disclosure = useDisclosure();
-
   // Update sort order when steps change
   useEffect(() => {
     if (steps && steps.length > 0) {
@@ -1223,7 +1221,7 @@ function StepsForm({
           <Trans>Cannot add steps to unsaved operation</Trans>
         </AlertTitle>
         <AlertDescription>
-          Please save the operation before adding steps.
+          <Trans>Please save the operation before adding steps.</Trans>
         </AlertDescription>
       </Alert>
     );
@@ -1234,7 +1232,7 @@ function StepsForm({
       className="flex flex-col gap-6"
       isLoading={fetcher.state !== "idle"}
     >
-      {disclosure.isOpen ? (
+      {!isDisabled && (
         <div className="p-6 border rounded-lg bg-card mb-6">
           <ValidatedForm
             action={path.to.newJobOperationStep}
@@ -1354,12 +1352,6 @@ function StepsForm({
               </Submit>
             </VStack>
           </ValidatedForm>
-        </div>
-      ) : (
-        <div className="flex justify-end mb-4">
-          <Button onClick={disclosure.onOpen} leftIcon={<LuCirclePlus />}>
-            Add Step
-          </Button>
         </div>
       )}
 
@@ -1922,7 +1914,7 @@ function ParametersForm({
           <Trans>Cannot add parameters to unsaved operation</Trans>
         </AlertTitle>
         <AlertDescription>
-          Please save the operation before adding parameters.
+          <Trans>Please save the operation before adding parameters.</Trans>
         </AlertDescription>
       </Alert>
     );
@@ -1977,7 +1969,10 @@ function ParametersForm({
                 key={p.id}
                 parameter={p}
                 operationId={operationId}
-                className={index === parameters.length - 1 ? "border-none" : ""}
+                className={cn(
+                  index === 0 && "rounded-t-lg",
+                  index === parameters.length - 1 && "rounded-b-lg border-none"
+                )}
               />
             ))}
         </div>
@@ -3196,7 +3191,7 @@ function ToolsForm({
           <Trans>Cannot add tools to unsaved operation</Trans>
         </AlertTitle>
         <AlertDescription>
-          Please save the operation before adding tools.
+          <Trans>Please save the operation before adding tools.</Trans>
         </AlertDescription>
       </Alert>
     );
@@ -3204,38 +3199,44 @@ function ToolsForm({
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="p-6 border rounded-lg bg-card">
-        <ValidatedForm
-          action={path.to.newJobOperationTool}
-          method="post"
-          validator={operationToolValidator}
-          fetcher={fetcher}
-          resetAfterSubmit
-          defaultValues={{
-            id: undefined,
-            toolId: "",
-            quantity: 1,
-            operationId
-          }}
-          className="w-full"
-        >
-          <Hidden name="operationId" />
-          <VStack spacing={4}>
-            <div className="w-full grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
-              <Tool name="toolId" label={t`Tool`} autoFocus />
-              <Number name="quantity" label={t`Quantity`} />
-            </div>
+      {!isDisabled && (
+        <div className="p-6 border rounded-lg bg-card">
+          <ValidatedForm
+            action={path.to.newJobOperationTool}
+            method="post"
+            validator={operationToolValidator}
+            fetcher={fetcher}
+            resetAfterSubmit
+            defaultValues={{
+              id: undefined,
+              toolId: "",
+              quantity: 1,
+              operationId
+            }}
+            className="w-full"
+          >
+            <Hidden name="operationId" />
+            <VStack spacing={4}>
+              <div className="w-full grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
+                <Tool
+                  name="toolId"
+                  label={t`Tool`}
+                  autoFocus={tools.length === 0}
+                />
+                <Number name="quantity" label={t`Quantity`} />
+              </div>
 
-            <Submit
-              leftIcon={<LuCirclePlus />}
-              isDisabled={isDisabled || fetcher.state !== "idle"}
-              isLoading={fetcher.state !== "idle"}
-            >
-              Save Tool
-            </Submit>
-          </VStack>
-        </ValidatedForm>
-      </div>
+              <Submit
+                leftIcon={<LuCirclePlus />}
+                isDisabled={isDisabled || fetcher.state !== "idle"}
+                isLoading={fetcher.state !== "idle"}
+              >
+                Save Tool
+              </Submit>
+            </VStack>
+          </ValidatedForm>
+        </div>
+      )}
 
       {tools.length > 0 && (
         <div className="border rounded-lg">
