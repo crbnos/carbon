@@ -38,6 +38,7 @@ import { useDateFormatter, usePermissions, useUser } from "~/hooks";
 import type { ItemType, OptimisticFileObject } from "~/modules/shared";
 import { getDocumentType } from "~/modules/shared";
 import type { ModelUpload } from "~/types";
+import { downloadModelFile } from "~/utils/download";
 import { path } from "~/utils/path";
 import { stripSpecialCharacters } from "~/utils/string";
 import type { ItemFile } from "../../types";
@@ -364,31 +365,11 @@ export const useItemDocuments = ({ itemId, type }: Props) => {
 
   const downloadModel = useCallback(
     async (model: ModelUpload) => {
-      if (!model.modelPath || !model.modelName) {
-        toast.error(t`Model data is missing`);
-        return;
-      }
-
-      if (!model.modelPath || !model.modelName) {
-        toast.error(t`Model data is missing`);
-        return;
-      }
-
-      const url = path.to.file.previewFile(`temp-staging/${model.modelPath}`);
-      try {
-        const response = await fetch(url);
-        const blob = await response.blob();
-        const blobUrl = window.URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        document.body.appendChild(a);
-        a.href = blobUrl;
-        a.download = model.modelName;
-        a.click();
-        window.URL.revokeObjectURL(blobUrl);
-        document.body.removeChild(a);
-      } catch (error) {
+      const result = await downloadModelFile(model);
+      if (result === "unavailable") {
+        toast.error(t`The original model file is no longer available`);
+      } else if (result === "error") {
         toast.error(t`Error downloading file`);
-        logger.error("Error", { error: error });
       }
     },
 

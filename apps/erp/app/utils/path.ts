@@ -150,6 +150,8 @@ export const path = {
         generatePath(`${api}/model/artifacts/${modelUploadId}`),
       modelConvertStatus: (modelUploadId: string) =>
         generatePath(`${api}/model/convert-status/${modelUploadId}`),
+      modelDownload: (modelUploadId: string) =>
+        generatePath(`${api}/model/download/${modelUploadId}`),
       modelOptimizeCancel: `${api}/model/optimize-cancel`,
       modelReoptimize: `${api}/model/reoptimize`,
       modelUpload: `${api}/model/upload`,

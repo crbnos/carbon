@@ -558,6 +558,13 @@ pub fn optimize_opts(out: &Value, q: &Value) -> actions::optimize::Opts {
                 .unwrap_or(optimize::DEFAULT_AUTO_ERROR as f64) as f32,
         )
         .filter(|&e| e > 0.0),
+        // Size-adaptive quality applies only when the caller pinned no explicit
+        // quality knob (the eager-optimise job's case). Any explicit ladder /
+        // simplify / tolerance / auto_error is a full override and disables it.
+        auto_scale: q["ladder"].is_null()
+            && q["simplify"].is_null()
+            && q["tolerance_mm"].is_null()
+            && q["auto_error"].is_null(),
         draco_bits: (
             q["draco_position_bits"].as_i64().unwrap_or(14) as i32,
             q["draco_normal_bits"].as_i64().unwrap_or(10) as i32,

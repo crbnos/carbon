@@ -43,6 +43,10 @@ export async function action({ request }: ActionFunctionArgs) {
     // Frozen as-uploaded bytes: `size` is later overwritten with the compacted
     // (.zst) stored size, but the viewer's reduction badge compares the original.
     originalSize: size,
+    // Frozen as-uploaded path: `modelPath` is later repointed at the compacted
+    // artifact (STEP → `.xbf.zst`), but downloads must serve the original bytes.
+    // Mesh compaction nulls this again (its `.zst` decompresses to the original).
+    originalPath: modelPath,
     companyId,
     createdBy: userId
   });

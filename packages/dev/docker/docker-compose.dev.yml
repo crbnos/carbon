@@ -296,6 +296,9 @@ services:
       # edge container itself).
       INNGEST_DEV: "1"
       INNGEST_BASE_URL: http://inngest:8288
+      # Local Chromium for the `thumbnail` edge fn (the `chrome` profile below).
+      # Prod reads no env → falls back to the remote browserless box.
+      BROWSERLESS_WS_URL: ws://chrome:3000
     volumes:
       - ./packages/database/supabase/functions:/home/deno/functions:ro
       - ./packages/database/src:/home/src:ro
@@ -371,6 +374,33 @@ services:
     volumes:
       - inngest:/data
       - ${HOME}/.portless/ca.pem:/etc/ssl/certs/portless-ca.pem:ro
+
+  # Local headless Chromium for the `thumbnail` edge fn — opt-in
+  # (`crbn up --thumbnails` enables this profile). v1 browserless (swiftshader
+  # WebGL, so the GLB render works) is compatible with the edge fn's puppeteer
+  # 16.2.0. edge-runtime reaches it at ws://chrome:3000; it in turn renders the
+  # portless ERP host (VERCEL_URL, e.g. erp.<prefix>.dev) through the portless
+  # proxy on the host — the same host-gateway path the inngest service uses. The
+  # raw ERP dev port only binds 127.0.0.1, so it is NOT container-reachable; the
+  # proxy is. The edge fn connects with ignoreHTTPSErrors for the self-signed CA.
+  chrome:
+    image: browserless/chrome:1-puppeteer-21.3.6
+    restart: unless-stopped
+    profiles: ["chrome"]
+    deploy:
+      resources:
+        limits:
+          memory: ${MEM_CHROME:-1g}
+          cpus: ${CPU_CHROME:-1}
+    environment:
+      # Match the edge fn's connect URL (ws://chrome:3000, no token).
+      TOKEN: ""
+      CONNECTION_TIMEOUT: "60000"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+      # Resolve the portless erp host (erp.<prefix>.dev) to the host, so the
+      # rendered VERCEL_URL reaches the portless proxy — mirrors inngest.
+      - "${INNGEST_TLS_HOST}:host-gateway"
 
 volumes:
   pgdata:

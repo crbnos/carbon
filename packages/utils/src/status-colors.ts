@@ -238,7 +238,8 @@ export const statusColorMaps = {
   shipment: SHIPMENT_STATUS_COLOR_MAP,
   maintenanceDispatch: MAINTENANCE_DISPATCH_STATUS_COLOR_MAP,
   fixedAsset: FIXED_ASSET_STATUS_COLOR_MAP,
-  trackedEntity: TRACKED_ENTITY_STATUS_COLOR_MAP
+  trackedEntity: TRACKED_ENTITY_STATUS_COLOR_MAP,
+  supplierQuote: SUPPLIER_QUOTE_STATUS_COLOR_MAP
 } as const;
 
 export type StatusEntity = keyof typeof statusColorMaps;
