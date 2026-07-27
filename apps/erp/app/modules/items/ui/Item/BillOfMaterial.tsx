@@ -29,7 +29,7 @@ import {
 } from "@carbon/react";
 import { getItemReadableId } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { AnimatePresence, LayoutGroup, motion } from "framer-motion";
+import { motion } from "framer-motion";
 import { nanoid } from "nanoid";
 import type { Dispatch, SetStateAction } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -44,10 +44,8 @@ import {
   LuGitPullRequestCreate,
   LuGitPullRequestCreateArrow,
   LuLock,
-  LuSettings2,
   LuSquareFunction,
-  LuTruck,
-  LuX
+  LuTruck
 } from "react-icons/lu";
 import {
   Link,
@@ -83,7 +81,12 @@ import type {
   Item as SortableItem,
   SortableItemRenderProps
 } from "~/components/SortableList";
-import { SortableList, SortableListItem } from "~/components/SortableList";
+import {
+  SortableList,
+  SortableListItem,
+  SortableListItemPanel,
+  SortableListItemToggle
+} from "~/components/SortableList";
 import { usePermissions, useUrlParams, useUser } from "~/hooks";
 import type {
   MethodItemType,
@@ -393,111 +396,42 @@ const BillOfMaterial = ({
         onRemoveItem={onRemoveItem}
         handleDrag={onCloseOnDrag}
         renderExtra={(item) => (
-          <div key={`${isOpen}`}>
-            <motion.button
-              layout
-              onClick={
-                isOpen
-                  ? () => {
-                      onSelectItem(null);
-                    }
-                  : () => {
-                      onSelectItem(item.id);
-                    }
-              }
-              key="collapse"
-              className={cn("absolute right-3 top-3 z-10")}
-            >
-              {isOpen ? (
-                <motion.span
-                  initial={{ opacity: 0, filter: "blur(4px)" }}
-                  animate={{ opacity: 1, filter: "blur(0px)" }}
-                  exit={{ opacity: 1, filter: "blur(0px)" }}
-                  transition={{
-                    type: "spring",
-                    duration: 1.95
-                  }}
-                >
-                  <LuX className="h-5 w-5 text-foreground" />
-                </motion.span>
-              ) : (
-                <motion.span
-                  initial={{ opacity: 0, filter: "blur(4px)" }}
-                  animate={{ opacity: 1, filter: "blur(0px)" }}
-                  exit={{ opacity: 1, filter: "blur(0px)" }}
-                  transition={{
-                    type: "spring",
-                    duration: 0.95
-                  }}
-                >
-                  <LuSettings2 className="stroke-1 h-5 w-5 text-foreground/80 hover:stroke-primary/70" />
-                </motion.span>
-              )}
-            </motion.button>
-
-            <LayoutGroup id={`${item.id}`}>
-              <AnimatePresence mode="popLayout">
-                {isOpen ? (
-                  <motion.div className="flex w-full flex-col ">
-                    <div className=" w-full p-2">
-                      <motion.div
-                        initial={{
-                          y: 0,
-                          opacity: 0,
-                          filter: "blur(4px)"
-                        }}
-                        animate={{
-                          y: 0,
-                          opacity: 1,
-                          filter: "blur(0px)"
-                        }}
-                        transition={{
-                          type: "spring",
-                          duration: 0.15
-                        }}
-                        layout
-                        className="w-full "
-                      >
-                        <motion.div
-                          initial={{ opacity: 0, filter: "blur(4px)" }}
-                          animate={{ opacity: 1, filter: "blur(0px)" }}
-                          transition={{
-                            type: "spring",
-                            bounce: 0.2,
-                            duration: 0.75,
-                            delay: 0.15
-                          }}
-                        >
-                          <MaterialForm
-                            configurable={configurable}
-                            isReadOnly={isReadOnly}
-                            item={item}
-                            methodOperations={operations}
-                            orderState={orderState}
-                            temporaryItems={temporaryItems}
-                            rulesByField={rulesByField}
-                            onConfigure={onConfigure}
-                            replenishmentSystem={replenishmentSystem}
-                            parentItemId={parentItemId}
-                            setOrderState={setOrderState}
-                            setSelectedItemId={setSelectedItemId}
-                            setTemporaryItems={setTemporaryItems}
-                            onSubmit={() => {
-                              setSelectedItemId(null);
-                              addItemButtonRef.current?.scrollIntoView({
-                                behavior: "smooth",
-                                block: "nearest",
-                                inline: "center"
-                              });
-                            }}
-                          />
-                        </motion.div>
-                      </motion.div>
-                    </div>
-                  </motion.div>
-                ) : null}
-              </AnimatePresence>
-            </LayoutGroup>
+          <div>
+            <SortableListItemToggle
+              isOpen={isOpen}
+              onToggle={() => {
+                if (isOpen) {
+                  onSelectItem(null);
+                } else {
+                  onSelectItem(item.id);
+                }
+              }}
+            />
+            <SortableListItemPanel isOpen={isOpen}>
+              <MaterialForm
+                configurable={configurable}
+                isReadOnly={isReadOnly}
+                item={item}
+                methodOperations={operations}
+                orderState={orderState}
+                temporaryItems={temporaryItems}
+                rulesByField={rulesByField}
+                onConfigure={onConfigure}
+                replenishmentSystem={replenishmentSystem}
+                parentItemId={parentItemId}
+                setOrderState={setOrderState}
+                setSelectedItemId={setSelectedItemId}
+                setTemporaryItems={setTemporaryItems}
+                onSubmit={() => {
+                  setSelectedItemId(null);
+                  addItemButtonRef.current?.scrollIntoView({
+                    behavior: "smooth",
+                    block: "nearest",
+                    inline: "center"
+                  });
+                }}
+              />
+            </SortableListItemPanel>
           </div>
         )}
       />

@@ -39,13 +39,7 @@ import { Editor } from "@carbon/react/Editor";
 import { getLocalTimeZone, today } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { DragControls } from "framer-motion";
-import {
-  AnimatePresence,
-  LayoutGroup,
-  motion,
-  Reorder,
-  useDragControls
-} from "framer-motion";
+import { motion, Reorder, useDragControls } from "framer-motion";
 import { nanoid } from "nanoid";
 import type { Dispatch, ReactNode, SetStateAction } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -63,10 +57,8 @@ import {
   LuLock,
   LuMaximize2,
   LuMinimize2,
-  LuSettings2,
   LuSquareFunction,
-  LuTriangleAlert,
-  LuX
+  LuTriangleAlert
 } from "react-icons/lu";
 import { useFetcher, useFetchers, useParams } from "react-router";
 import { z } from "zod";
@@ -102,7 +94,12 @@ import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
 import { ProcedureStepTypeIcon } from "~/components/Icons";
 import { ConfirmDelete } from "~/components/Modals";
 import type { Item, SortableItemRenderProps } from "~/components/SortableList";
-import { SortableList, SortableListItem } from "~/components/SortableList";
+import {
+  SortableList,
+  SortableListItem,
+  SortableListItemPanel,
+  SortableListItemToggle
+} from "~/components/SortableList";
 import { useDateFormatter, usePermissions, useUser } from "~/hooks";
 import { useTags } from "~/hooks/useTags";
 import type {
@@ -495,37 +492,26 @@ const BillOfProcess = ({
         label: t`Details`,
         content: (
           <div className="flex w-full flex-col pr-2 py-2">
-            <motion.div
-              initial={{ opacity: 0, filter: "blur(4px)" }}
-              animate={{ opacity: 1, filter: "blur(0px)" }}
-              transition={{
-                type: "spring",
-                bounce: 0.2,
-                duration: 0.75,
-                delay: 0.15
+            <OperationForm
+              isReadOnly={isReadOnly}
+              configurable={configurable}
+              item={item}
+              rulesByField={rulesByField}
+              workInstruction={workInstructions[item.id] ?? {}}
+              temporaryItems={temporaryItems}
+              onConfigure={onConfigure}
+              setSelectedItemId={setSelectedItemId}
+              setTemporaryItems={setTemporaryItems}
+              setWorkInstructions={setWorkInstructions}
+              onSubmit={() => {
+                setSelectedItemId(null);
+                addOperationButtonRef.current?.scrollIntoView({
+                  behavior: "smooth",
+                  block: "nearest",
+                  inline: "center"
+                });
               }}
-            >
-              <OperationForm
-                isReadOnly={isReadOnly}
-                configurable={configurable}
-                item={item}
-                rulesByField={rulesByField}
-                workInstruction={workInstructions[item.id] ?? {}}
-                temporaryItems={temporaryItems}
-                onConfigure={onConfigure}
-                setSelectedItemId={setSelectedItemId}
-                setTemporaryItems={setTemporaryItems}
-                setWorkInstructions={setWorkInstructions}
-                onSubmit={() => {
-                  setSelectedItemId(null);
-                  addOperationButtonRef.current?.scrollIntoView({
-                    behavior: "smooth",
-                    block: "nearest",
-                    inline: "center"
-                  });
-                }}
-              />
-            </motion.div>
+            />
           </div>
         )
       },
@@ -723,84 +709,18 @@ const BillOfProcess = ({
         onRemoveItem={onRemoveItem}
         handleDrag={() => setSelectedItemId(null)}
         renderExtra={(item) => (
-          <div key={`${isOpen}`}>
-            <motion.button
-              layout
-              onClick={
-                isOpen
-                  ? () => {
-                      setSelectedItemId(null);
-                    }
-                  : () => {
-                      setSelectedItemId(item.id);
-                    }
-              }
-              key="collapse"
-              className={cn("absolute right-3 top-3 z-10")}
-            >
-              {isOpen ? (
-                <motion.span
-                  initial={{ opacity: 0, filter: "blur(4px)" }}
-                  animate={{ opacity: 1, filter: "blur(0px)" }}
-                  exit={{ opacity: 1, filter: "blur(0px)" }}
-                  transition={{
-                    type: "spring",
-                    duration: 1.95
-                  }}
-                >
-                  <LuX className="h-5 w-5 text-foreground" />
-                </motion.span>
-              ) : (
-                <motion.span
-                  initial={{ opacity: 0, filter: "blur(4px)" }}
-                  animate={{ opacity: 1, filter: "blur(0px)" }}
-                  exit={{ opacity: 1, filter: "blur(0px)" }}
-                  transition={{
-                    type: "spring",
-                    duration: 0.95
-                  }}
-                >
-                  <LuSettings2 className="stroke-1 h-5 w-5 text-foreground/80  hover:stroke-primary/70 " />
-                </motion.span>
-              )}
-            </motion.button>
-
-            <LayoutGroup id={`${item.id}`}>
-              <AnimatePresence mode="popLayout">
-                {isOpen ? (
-                  <motion.div className="flex w-full flex-col ">
-                    <div className=" w-full p-2">
-                      <motion.div
-                        initial={{
-                          y: 0,
-                          opacity: 0,
-                          filter: "blur(4px)"
-                        }}
-                        animate={{
-                          y: 0,
-                          opacity: 1,
-                          filter: "blur(0px)"
-                        }}
-                        transition={{
-                          type: "spring",
-                          duration: 0.15
-                        }}
-                        layout
-                        className="w-full "
-                      >
-                        <DirectionAwareTabs
-                          className="mr-auto"
-                          tabs={tabs}
-                          onChange={() =>
-                            setTabChangeRerender(tabChangeRerender + 1)
-                          }
-                        />
-                      </motion.div>
-                    </div>
-                  </motion.div>
-                ) : null}
-              </AnimatePresence>
-            </LayoutGroup>
+          <div>
+            <SortableListItemToggle
+              isOpen={isOpen}
+              onToggle={() => setSelectedItemId(isOpen ? null : item.id)}
+            />
+            <SortableListItemPanel isOpen={isOpen}>
+              <DirectionAwareTabs
+                className="mr-auto"
+                tabs={tabs}
+                onChange={() => setTabChangeRerender(tabChangeRerender + 1)}
+              />
+            </SortableListItemPanel>
           </div>
         )}
       />
