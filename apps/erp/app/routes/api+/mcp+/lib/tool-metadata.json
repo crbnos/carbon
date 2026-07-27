@@ -1,6 +1,6 @@
 {
-  "generated": "2026-07-23T20:18:33.549Z",
-  "totalTools": 1377,
+  "generated": "2026-07-27T16:12:01.088Z",
+  "totalTools": 1376,
   "modules": 15,
   "tools": [
     {
@@ -27023,31 +27023,6 @@
         },
         "required": [
           "nonConformanceWorkflowId"
-        ]
-      }
-    },
-    {
-      "name": "quality_getIssueAction",
-      "module": "quality",
-      "classification": "READ",
-      "description": "get issue action",
-      "paramCount": 1,
-      "serviceParams": [
-        "client",
-        "id"
-      ],
-      "injectAuth": [
-        "companyId"
-      ],
-      "schema": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "id"
         ]
       }
     },

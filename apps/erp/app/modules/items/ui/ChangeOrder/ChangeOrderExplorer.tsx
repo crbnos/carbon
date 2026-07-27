@@ -16,7 +16,7 @@ import { LuCirclePlus, LuEllipsisVertical, LuTrash } from "react-icons/lu";
 import { Link, useFetcher, useParams } from "react-router";
 import { Empty, ItemThumbnail, MethodItemTypeIcon } from "~/components";
 import { useRouteData } from "~/hooks";
-import { canEditChangeOrder } from "~/modules/items";
+import { canEditChangeOrderEngineering } from "~/modules/items";
 import { getLinkToItemDetails } from "~/modules/items/ui/Item/ItemForm";
 import type { ItemType } from "~/modules/shared";
 import { useItems } from "~/stores";
@@ -40,10 +40,12 @@ export default function ChangeOrderExplorer() {
   const routeData = useRouteData<{
     changeOrder: ChangeOrder;
     affectedItems: AffectedItemDraft[];
-  }>(path.to.changeOrder(id));
+  }>(path.to.changeNotice(id));
 
   const affectedItems = routeData?.affectedItems ?? [];
-  const isDisabled = !canEditChangeOrder(routeData?.changeOrder?.status);
+  const isDisabled = !canEditChangeOrderEngineering(
+    routeData?.changeOrder?.status
+  );
 
   const disclosure = useDisclosure();
 
@@ -136,7 +138,7 @@ function AffectedItemRow({
   return (
     <VStack spacing={0} className="border-b">
       <Link
-        to={path.to.changeOrderAffectedItem(changeOrderId, item.id)}
+        to={path.to.changeNoticeAffectedItem(changeOrderId, item.id)}
         prefetch="intent"
         className="w-full"
       >
@@ -190,7 +192,7 @@ function AffectedItemRow({
                         {},
                         {
                           method: "post",
-                          action: path.to.deleteChangeOrderAffected(
+                          action: path.to.deleteChangeNoticeAffected(
                             changeOrderId,
                             item.id
                           )

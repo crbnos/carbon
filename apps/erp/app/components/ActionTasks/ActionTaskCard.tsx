@@ -27,7 +27,7 @@ export type ActionTaskStatus =
   | "Skipped";
 
 // The Start/Complete/Reopen transition, shared by every action-task surface
-// (Quality issues + Change Orders).
+// (Quality issues + Change Notices).
 export const actionTaskStatusActions: Record<
   ActionTaskStatus,
   { action: string; icon: ReactElement; next: ActionTaskStatus }
@@ -43,7 +43,7 @@ export const actionTaskStatusActions: Record<
 };
 
 // The single, shared presentational card for an action task — used by both the
-// Quality issue actions and the Change Order actions so the two look identical.
+// Quality issue actions and the Change Notice actions so the two look identical.
 // Purely presentational: persistence (notes save, status route, integrations)
 // lives in the calling wrapper and is threaded in via callbacks + slots.
 export function ActionTaskCard({

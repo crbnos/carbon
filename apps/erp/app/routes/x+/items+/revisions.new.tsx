@@ -60,7 +60,7 @@ export async function action({ request }: ActionFunctionArgs) {
     }
   })();
 
-  // newItemId lets the caller (e.g. the new-revision modal's "open change order"
+  // newItemId lets the caller (e.g. the new-revision modal's "open change notice"
   // option) act on the created revision without parsing it out of `link`.
   return { success: true, link, newItemId: result.data.id };
 }

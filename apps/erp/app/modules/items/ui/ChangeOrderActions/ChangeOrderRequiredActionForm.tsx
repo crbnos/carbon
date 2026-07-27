@@ -44,10 +44,10 @@ const ChangeOrderRequiredActionForm = ({
 
     if (fetcher.state === "loading" && fetcher.data?.data) {
       onClose?.();
-      toast.success(t`Created change order action`);
+      toast.success(t`Created change notice action`);
     } else if (fetcher.state === "idle" && fetcher.data?.error) {
       toast.error(
-        `Failed to create change order action: ${fetcher.data.error.message}`
+        `Failed to create change notice action: ${fetcher.data.error.message}`
       );
     }
   }, [fetcher.data, fetcher.state, onClose, type, t]);
@@ -71,8 +71,8 @@ const ChangeOrderRequiredActionForm = ({
             method="post"
             action={
               isEditing
-                ? path.to.changeOrderRequiredAction(initialValues.id!)
-                : path.to.newChangeOrderRequiredAction
+                ? path.to.changeNoticeRequiredAction(initialValues.id!)
+                : path.to.newChangeNoticeRequiredAction
             }
             defaultValues={initialValues}
             fetcher={fetcher}
@@ -81,8 +81,8 @@ const ChangeOrderRequiredActionForm = ({
             <ModalDrawerHeader>
               <ModalDrawerTitle>
                 {isEditing
-                  ? t`Edit Change Order Action`
-                  : t`New Change Order Action`}
+                  ? t`Edit Change Notice Action`
+                  : t`New Change Notice Action`}
               </ModalDrawerTitle>
             </ModalDrawerHeader>
             <ModalDrawerBody>

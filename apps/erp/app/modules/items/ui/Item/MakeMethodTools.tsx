@@ -114,7 +114,7 @@ const MakeMethodTools = ({
     (type === "Part" || type === "Tool") && permissions.can("create", "parts");
   const itemLink = type && itemId ? getLinkToItemDetails(type, itemId) : null;
 
-  // Version creation is locked while an open change order owns this item
+  // Version creation is locked while an open change notice owns this item
   const openChangeOrders = useItemOpenChangeOrders(type, itemId);
   const isChangeOrderLocked = openChangeOrders.length > 0;
 
@@ -371,7 +371,7 @@ const MakeMethodTools = ({
                   {canCreateChangeOrder && (
                     <DropdownMenuItem onClick={changeOrderModal.onOpen}>
                       <DropdownMenuIcon icon={<LuGitPullRequestArrow />} />
-                      New Change Order
+                      <Trans>New Change Notice</Trans>
                     </DropdownMenuItem>
                   )}
                 </>

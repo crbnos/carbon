@@ -45,7 +45,7 @@ import {
 //
 // A single change-type Select drives the body: Version / Revision / Replacement
 // Part pick an EXISTING Part; New Part reveals a create-new-part mini-form (mints
-// a brand-new part under the change order). Change orders operate on Parts only —
+// a brand-new part under the change notice). Change notices operate on Parts only —
 // no Tool selection. The two modes are separate ValidatedForms (each with its own
 // validator); the Select carries `changeType` so the route action can tell them
 // apart.
@@ -102,7 +102,7 @@ export default function AffectedItemForm({
       onClose();
       if (fetcher.data.id) {
         navigate(
-          path.to.changeOrderAffectedItem(changeOrderId, fetcher.data.id)
+          path.to.changeNoticeAffectedItem(changeOrderId, fetcher.data.id)
         );
       }
     }
@@ -192,7 +192,7 @@ export default function AffectedItemForm({
               key="new-part"
               validator={changeOrderNewPartValidator}
               method="post"
-              action={path.to.changeOrderAffected(changeOrderId)}
+              action={path.to.changeNoticeAffected(changeOrderId)}
               defaultValues={{
                 changeOrderId,
                 changeType: "New Part",
@@ -249,7 +249,7 @@ export default function AffectedItemForm({
               key="existing-item"
               validator={changeOrderAffectedItemValidator}
               method="post"
-              action={path.to.changeOrderAffected(changeOrderId)}
+              action={path.to.changeNoticeAffected(changeOrderId)}
               defaultValues={{
                 changeOrderId,
                 itemId: "",
@@ -301,7 +301,7 @@ export default function AffectedItemForm({
                       <AlertDescription>
                         <Trans>
                           Your changes go into a new draft version released with
-                          this change order.
+                          this change notice.
                         </Trans>
                       </AlertDescription>
                     </Alert>

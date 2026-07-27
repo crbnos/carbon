@@ -216,7 +216,7 @@ function GenericNotification({
       return (
         <Notification
           icon={<LuGitPullRequestArrow />}
-          to={path.to.changeOrderDetails(id)}
+          to={path.to.changeNoticeDetails(id)}
           {...props}
         />
       );

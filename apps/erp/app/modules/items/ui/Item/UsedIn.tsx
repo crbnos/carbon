@@ -203,9 +203,9 @@ export function RevisionsItem({
   const revisionDisclosure = useDisclosure();
   const defaultDisclosure = useDisclosure();
 
-  // Block manual revision creation while an open change order owns this item —
+  // Block manual revision creation while an open change notice owns this item —
   // the CO authors revisions. The button stays visible but disabled, with a
-  // tooltip pointing at the change order(s).
+  // tooltip pointing at the change notice(s).
   const openChangeOrders = useItemOpenChangeOrders(node.key, itemId);
   const isChangeOrderLocked = openChangeOrders.length > 0;
 

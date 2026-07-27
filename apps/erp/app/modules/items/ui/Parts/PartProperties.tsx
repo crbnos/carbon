@@ -79,7 +79,7 @@ type PartPropertiesProps = {
   // rows of the part detail sidebar. "form" = standard labeled form fields (used
   // by the CO card). Only affects presentation — persistence is unchanged.
   layout?: "sidebar" | "form";
-  // Read-only: every field/control is non-editable (used when the change order
+  // Read-only: every field/control is non-editable (used when the change notice
   // is released/locked). Defaults to editable.
   isReadOnly?: boolean;
   // The change-order change type this card is embedded for (a CO line). A
@@ -724,7 +724,7 @@ const PartProperties = ({
           />
         ))}
       </VStack>
-      {/* Active is a lifecycle flag the change order controls at release — not a
+      {/* Active is a lifecycle flag the change notice controls at release — not a
           user-editable attribute in the CO card. Keep it on the part page only. */}
       {!embedded && (
         <ValidatedForm

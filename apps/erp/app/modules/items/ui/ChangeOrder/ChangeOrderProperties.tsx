@@ -24,7 +24,7 @@ import { Assignee, EmployeeAvatar } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { Combobox, CreatableCombobox } from "~/components/Form";
 import { usePermissions, useRouteData } from "~/hooks";
-import type { action } from "~/routes/x+/items+/change-order+/update";
+import type { action } from "~/routes/x+/items+/change-notice+/update";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
 import { copyToClipboard } from "~/utils/string";
@@ -89,7 +89,7 @@ const ChangeOrderProperties = () => {
       nonConformanceId: string;
       name: string;
     } | null;
-  }>(path.to.changeOrder(id));
+  }>(path.to.changeNotice(id));
 
   const changeOrder = routeData?.changeOrder;
   const types = routeData?.types ?? [];
@@ -117,7 +117,7 @@ const ChangeOrderProperties = () => {
       formData.append("value", value?.toString() ?? "");
       fetcher.submit(formData, {
         method: "post",
-        action: path.to.updateChangeOrder
+        action: path.to.updateChangeNotice
       });
     },
     [id]
@@ -162,7 +162,7 @@ const ChangeOrderProperties = () => {
                 className="p-1"
                 onClick={() =>
                   copyToClipboard(
-                    window.location.origin + path.to.changeOrder(id)
+                    window.location.origin + path.to.changeNotice(id)
                   )
                 }
               >
@@ -170,7 +170,7 @@ const ChangeOrderProperties = () => {
               </Button>
             </TooltipTrigger>
             <TooltipContent>
-              <Trans>Copy link to change order</Trans>
+              <Trans>Copy link to change notice</Trans>
             </TooltipContent>
           </Tooltip>
         </HStack>
@@ -290,7 +290,7 @@ const ChangeOrderProperties = () => {
             // Typing a new name creates the issue via the full new-issue form
             // (with the name prefilled + this CO passed as context) rather than
             // guessing the required type/location/priority; on save it links the
-            // new issue back to this change order and returns here.
+            // new issue back to this change notice and returns here.
             onCreateOption={(name) =>
               navigate(
                 `${path.to.newIssue}?name=${encodeURIComponent(

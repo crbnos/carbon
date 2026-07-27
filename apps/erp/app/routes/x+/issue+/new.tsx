@@ -166,7 +166,7 @@ export async function action({ request }: ActionFunctionArgs) {
     logger.error("Failed to send notifications", { error });
   }
 
-  // Created from a change order's "Linked Issue" combobox: link the new issue
+  // Created from a change notice's "Linked Issue" combobox: link the new issue
   // back onto the CO and return there instead of the issue detail. The user
   // `client` update is RLS-scoped, so it only lands if they can edit the CO.
   const changeOrderId = url.searchParams.get("changeOrderId");
@@ -178,17 +178,17 @@ export async function action({ request }: ActionFunctionArgs) {
     });
     if (linkResult.error) {
       throw redirect(
-        path.to.changeOrder(changeOrderId),
+        path.to.changeNotice(changeOrderId),
         await flash(
           request,
           error(
             linkResult.error,
-            "Issue created but failed to link to change order"
+            "Issue created but failed to link to change notice"
           )
         )
       );
     }
-    throw redirect(path.to.changeOrder(changeOrderId));
+    throw redirect(path.to.changeNotice(changeOrderId));
   }
 
   throw redirect(path.to.issue(ncrId!));
@@ -211,7 +211,7 @@ export default function IssueNewRoute() {
   const salesOrderLineId = params.get("salesOrderLineId");
   const shipmentLineId = params.get("shipmentLineId");
   const operationSupplierProcessId = params.get("operationSupplierProcessId");
-  // Prefilled when a change order's "Linked Issue" combobox creates a new issue.
+  // Prefilled when a change notice's "Linked Issue" combobox creates a new issue.
   const name = params.get("name");
 
   const initialValues = {

@@ -68,7 +68,7 @@ function resolve(
     case NotificationEvent.ChangeOrderStarted:
     case NotificationEvent.ChangeOrderImplementation:
     case NotificationEvent.ChangeOrderDone:
-      return path.to.changeOrderDetails(documentId);
+      return path.to.changeNoticeDetails(documentId);
     case NotificationEvent.RiskAssignment:
       return path.to.risk(documentId);
     case NotificationEvent.ProcedureAssignment:

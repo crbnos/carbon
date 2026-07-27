@@ -30,7 +30,7 @@ type SupplierPartsProps = {
   compact?: boolean;
   deleteSupplierPath?: (id: string) => string;
   // Suppresses the add row + delete column regardless of permissions — for
-  // read-only contexts like a locked (Done/Cancelled) change order.
+  // read-only contexts like a locked (Done/Cancelled) change notice.
   isReadOnly?: boolean;
 };
 

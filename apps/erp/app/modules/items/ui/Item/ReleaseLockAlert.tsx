@@ -3,7 +3,7 @@ import { Trans } from "@lingui/react/macro";
 import { LuTriangleAlert } from "react-icons/lu";
 import type { itemRevisionStatus, plmReleaseControl } from "../../items.models";
 
-// A released (Production) revision should flow changes through a change order.
+// A released (Production) revision should flow changes through a change notice.
 // Only `enforce` hard-locks editing; `warn` keeps editing enabled and shows an
 // advisory; `off` does nothing.
 export type ReleaseLockProps = {
@@ -42,13 +42,13 @@ const ReleaseLockAlert = ({ isLocked, className }: ReleaseLockAlertProps) => (
     <AlertDescription>
       {isLocked ? (
         <Trans>
-          This revision is released (Production). Open a change order to modify
+          This revision is released (Production). Open a change notice to modify
           it.
         </Trans>
       ) : (
         <Trans>
           This revision is released (Production). Changes should normally flow
-          through a change order.
+          through a change notice.
         </Trans>
       )}
     </AlertDescription>

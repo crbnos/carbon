@@ -70,7 +70,7 @@ export const terms = {
     href: "/docs/reference/methods"
   },
   "change-order": {
-    term: msg`Change order`,
+    term: msg`Change notice`,
     definition: msg`An engineering change: the affected items whose methods are revised on a draft and released together, superseding the versions they replace.`
   },
   wip: {

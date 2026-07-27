@@ -231,11 +231,11 @@ export function getNotificationEmailHeading(event: NotificationEvent): string {
     case NotificationEvent.ApprovalRejected:
       return "Your request was rejected";
     case NotificationEvent.ChangeOrderStarted:
-      return "Change order started";
+      return "Change notice started";
     case NotificationEvent.ChangeOrderImplementation:
-      return "Change order in implementation";
+      return "Change notice in implementation";
     case NotificationEvent.ChangeOrderDone:
-      return "Change order complete";
+      return "Change notice complete";
     default:
       return "You have a new notification";
   }
@@ -253,7 +253,7 @@ export function getNotificationEmailCtaLabel(event: NotificationEvent): string {
     case NotificationEvent.ChangeOrderStarted:
     case NotificationEvent.ChangeOrderImplementation:
     case NotificationEvent.ChangeOrderDone:
-      return "View change order";
+      return "View change notice";
     case NotificationEvent.JobCompleted:
       return "View job";
     case NotificationEvent.SuggestionResponse:

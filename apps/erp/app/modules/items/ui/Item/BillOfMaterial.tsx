@@ -134,6 +134,11 @@ type BillOfMaterialProps = {
   configurationRules?: ConfigurationRule[];
   replenishmentSystem?: string;
   parentItemId?: string;
+  // Extra read-only reason from the embedding surface (e.g. a change notice whose
+  // engineering content is frozen at Implementation).
+  isDisabled?: boolean;
+  // What to tell the user when isDisabled is what made this read-only.
+  disabledReason?: string;
 } & ReleaseLockProps;
 
 type OrderState = {
@@ -172,7 +177,9 @@ const BillOfMaterial = ({
   replenishmentSystem,
   parentItemId,
   revisionStatus,
-  releaseControl
+  releaseControl,
+  isDisabled = false,
+  disabledReason
 }: BillOfMaterialProps) => {
   const permissions = usePermissions();
   const { t } = useLingui();
@@ -183,7 +190,8 @@ const BillOfMaterial = ({
   const isReadOnly =
     permissions.can("update", "parts") === false ||
     makeMethod.status !== "Draft" ||
-    isReleaseLocked;
+    isReleaseLocked ||
+    isDisabled;
 
   const addItemButtonRef = useRef<HTMLButtonElement>(null);
 
@@ -467,6 +475,8 @@ const BillOfMaterial = ({
                       This method version is read-only. Create a new version
                       from the method menu to make changes.
                     </Trans>
+                  ) : isDisabled && disabledReason ? (
+                    disabledReason
                   ) : (
                     <Trans>
                       You don't have permission to edit this bill of material.

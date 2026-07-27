@@ -1,24 +1,60 @@
 # Lifecycle & release
 
-> The five change-order stages, the impact panel, the diff review, and exactly what release does when a change order reaches Done.
+> The five change-notice stages, the Implementation lock and Reopen, the impact panel, the diff review, and exactly what release does when a change notice reaches Done.
 
-A change order advances forward one stage at a time. There's no approval toggle and no going back — the
-stages *are* the workflow, and the change order is its own release gate.
+A change notice advances forward one stage at a time. There's no approval toggle — the stages *are* the
+workflow, and the change notice is its own release gate. The only way back is **Reopen** at Implementation
+(below); everything else moves forward.
 
 ## The five stages
 
-  - **Draft**: The change order is being written. Pick affected items, set change types, and edit each draft method. Nothing is broadcast.
+  - **Draft**: The change notice is being written. Pick affected items, set change types, and edit each draft method. Nothing is broadcast.
   - **Start**: Work is underway. Advancing to Start broadcasts a notification to the team.
   - **Engineering Complete**: The design edits are finished and ready for implementation review. Silent, no broadcast.
-  - **Implementation**: The release stage. The **"Release"** action is available here; it reviews every affected item's diff and applies the change. Advancing here broadcasts.
-  - **Done**: Released and locked. The change order becomes a read-only historical record; broadcasts on entry.
+  - **Implementation**: The release stage. The engineering content freezes here, and the **"Release"** action becomes available; it reviews every affected item's diff and applies the change. Advancing here broadcasts.
+  - **Done**: Released and locked. The change notice becomes a read-only historical record; broadcasts on entry.
 
 The **"Start"**, **"Implementation"**, and **"Done"** transitions each notify the team; **"Engineering
-Complete"** is silent. Once a change order reaches **"Done"** it is locked — every editor is read-only.
+Complete"** is silent. Once a change notice reaches **"Done"** it is locked — every editor is read-only.
+
+## Implementation freezes the engineering content
+
+Advancing to **"Implementation"** means "we are now rolling this out." From that moment the *engineering*
+content is read-only, so what's being implemented can't shift underneath the people implementing it. The
+*workflow* content stays editable, because coordinating the rollout is exactly the work that happens at this
+stage.
+
+| Locked at Implementation (engineering) | Still editable at Implementation (workflow) |
+| --- | --- |
+| Adding or removing affected items | Action tasks — add, complete, skip, reorder, delete |
+| Changing an affected item's change type | Assignee |
+| The staged **Bill of Material** and **Bill of Process** drafts | Due date |
+| The cutover config (supersession mode, discontinuation date, successor effectivity date) | Priority |
+| **Reason for Change** and **Description of Change** | Category |
+
+The lock is enforced on the server, not just greyed out in the UI. If a stale tab tries to write a frozen
+field you get *"Cannot modify a change notice that is being implemented. Reopen it to make changes."*
+
+Freezing only blocks writes. The **Changes** rollup, each affected item's diff, and the impact panel all stay
+visible at Implementation — you can read the whole change, you just can't edit it.
+
+## Reopen
+
+If review at Implementation turns up something that has to change, use **Reopen** in the **⋮** menu next to
+the change notice id. It sends the notice back one stage to **"Engineering Complete"**, which unfreezes the
+affected items, the drafts, the cutover config, and the narrative fields. Nothing you've already done is
+discarded — the drafts, diffs, and action tasks are exactly as you left them. Edit, then advance to
+Implementation again.
+
+Reopen exists only at **"Implementation"**, before release. Releasing to **"Done"** has already activated the
+new method versions, revealed the new items, and written the supersessions that downstream MRP and Get Method
+are now acting on. Un-doing that would mean retracting live planning decisions, so Carbon doesn't offer it. To
+change the same parts again, raise a new change notice — the released methods and items are its starting
+point.
 
 ## The impact panel
 
-Alongside the affected items, a change order shows an **Impact** panel: a where-used tree for each affected
+Alongside the affected items, a change notice shows an **Impact** panel: a where-used tree for each affected
 item across jobs, job materials, method materials, purchase orders, receipts, quotes, issues, maintenance,
 and assembly instructions.
 
@@ -28,13 +64,13 @@ nothing here blocks releasing."*
 
 ## Review the changes, then release
 
-You don't have to wait for release to see what a change order does. The overview page carries a **Changes**
+You don't have to wait for release to see what a change notice does. The overview page carries a **Changes**
 card, between the description and the action tasks, that rolls up **every** affected item's diff as you author
 it — each item labeled with its change type, its diff rendered read-only. It's the same view the release dialog
 shows, available the whole time so you can check your work before you commit. An item with nothing edited yet
 reads *"No changes yet."*
 
-Release itself lives on the change order at **"Implementation"**. The **"Release change order"** dialog lays out
+Release itself lives on the change notice at **"Implementation"**. The **"Release change notice"** dialog lays out
 that same per-item diff one more time before you commit — *"Review each item's changes, then confirm —
 releasing can't be undone."*
 
@@ -58,19 +94,19 @@ On confirm, Carbon walks the affected items and, per `docs/reference/change-orde
 1. **Activates the draft method** — it becomes the new **Active** version and the prior Active version is
    **Archived** (kept as history, never deleted).
 2. **Reveals the new item** — for a Revision or New Part, the newly created item is switched live and stamped
-   with the change order id. A Version has no new item.
+   with the change notice id. A Version has no new item.
 3. **Writes the supersession** — for a Revision or New Part, from the old item to the new one, using that
    affected item's cutover settings. See `docs/reference/change-orders/supersession`.
 
-When every affected item is processed, the change order flips to **"Done"**.
+When every affected item is processed, the change notice flips to **"Done"**.
 
-Each affected item is marked done the moment its draft's change-order id is cleared, so a re-run skips items
+Each affected item is marked done the moment its draft's change-notice id is cleared, so a re-run skips items
 already released and resumes at the first unreleased one. The final flip to **"Done"** is a compare-and-swap
 on the **"Implementation"** status, so two people releasing at once can't double-apply.
 
-## Parallel change orders on the same part
+## Parallel change notices on the same part
 
-Two change orders can revise the same part at once. Each drafts its own method version, and Carbon steps
+Two change notices can revise the same part at once. Each drafts its own method version, and Carbon steps
 around version collisions so they don't clobber each other. Whichever releases second activates on top of the
 first, and the earlier version is archived as history rather than overwritten — so no work is lost. There's no
 merge-conflict step to resolve.
@@ -82,8 +118,14 @@ merge-conflict step to resolve.
 
 ## Troubleshooting
 
-### "Cannot modify a completed change order."
-The change order is at **"Done"** (or cancelled) and is a locked, read-only historical record — nothing reopens it. To make further changes to the same parts, raise a new change order; the released methods and items are its starting point.
+### "Cannot modify a change notice that is being implemented. Reopen it to make changes."
+The change notice is at **"Implementation"**, where the engineering content is frozen — affected items, the BoM/BoP drafts, the cutover config, and the Reason for Change / Description fields. Use **Reopen** in the **⋮** menu next to the change notice id to send it back to **"Engineering Complete"**, make the edit, then advance to Implementation again. Nothing is lost in the round trip. Action tasks, assignee, due date, and priority are *not* frozen — if one of those is refusing to save, the cause is something else (permissions, or the notice is closed).
+
+### "Cannot modify a completed change notice."
+The change notice is at **"Done"** (or cancelled) and is a locked, read-only historical record. **Reopen is not available from Done** — releasing already activated the new methods and wrote the supersessions that planning is acting on. To make further changes to the same parts, raise a new change notice; the released methods and items are its starting point.
 
 ### Release button not available
-The **"Release"** action only appears at the **"Implementation"** stage. If the user can't find it, check the change order's current stage — it must be advanced (one stage at a time, no skipping) to Implementation first.
+The **"Release"** action only appears at the **"Implementation"** stage. If the user can't find it, check the change notice's current stage — it must be advanced (one stage at a time, no skipping) to Implementation first.
+
+### Can't find Reopen
+**Reopen** sits in the **⋮** menu beside the change notice id, and appears once the notice is at **"Implementation"**. It is not offered at Draft, Start, or Engineering Complete (nothing is frozen at those stages, so there's nothing to unlock), nor at Done (terminal). Editing also requires the `parts` update permission.

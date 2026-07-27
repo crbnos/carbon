@@ -1,4 +1,5 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { isActionTaskEntityType } from "@carbon/ee/action-task-entity";
 import {
   getCompanyEmployees,
   getLinearClient,
@@ -41,8 +42,7 @@ export const linearSyncFunction = inngest.createFunction(
     // Look up the action task via the mapping table
     const mapping = await carbon
       .from("externalIntegrationMapping")
-      .select("entityId")
-      .eq("entityType", "nonConformanceActionTask")
+      .select("entityId, entityType")
       .eq("integration", "linear")
       .eq("externalId", payload.event.data.id)
       .eq("companyId", payload.companyId)
@@ -56,6 +56,19 @@ export const linearSyncFunction = inngest.createFunction(
       return {
         success: false,
         message: `No linked action found for Linear issue ID ${payload.event.data.id}`
+      };
+    }
+
+    const mappedEntityType = mapping.data!.entityType;
+
+    if (!isActionTaskEntityType(mappedEntityType)) {
+      logger.info("Ignoring Linear mapping for non-action-task entity", {
+        entityType: mappedEntityType,
+        externalId: payload.event.data.id
+      });
+      return {
+        success: false,
+        message: `Mapping for Linear issue ID ${payload.event.data.id} is not an action task (entityType: ${mappedEntityType})`
       };
     }
 
@@ -88,6 +101,7 @@ export const linearSyncFunction = inngest.createFunction(
 
     const updated = await linkActionToLinearIssue(carbon, payload.companyId, {
       actionId: action.data.id,
+      entityType: mappedEntityType,
       issue: fullIssue,
       assignee,
       syncNotes: true

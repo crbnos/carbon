@@ -42,7 +42,7 @@ const ChangeOrderHeader = () => {
   if (!id) throw new Error("id not found");
 
   const routeData = useRouteData<{ changeOrder: ChangeOrder }>(
-    path.to.changeOrder(id)
+    path.to.changeNotice(id)
   );
 
   const status = routeData?.changeOrder?.status ?? "Draft";
@@ -71,7 +71,7 @@ const ChangeOrderHeader = () => {
       <div className="flex flex-shrink-0 items-center justify-between px-4 py-2 bg-card border-b border-border h-[50px] overflow-x-auto scrollbar-hide dark:border-none dark:shadow-[inset_0_0_1px_rgb(255_255_255_/_0.24),_0_0_0_0.5px_rgb(0,0,0,1),0px_0px_4px_rgba(0,_0,_0,_0.08)]">
         <VStack spacing={0}>
           <HStack>
-            <Link to={path.to.changeOrderDetails(id)}>
+            <Link to={path.to.changeNoticeDetails(id)}>
               <Heading size="h4" className="flex items-center gap-2">
                 <span>{routeData?.changeOrder?.changeOrderId}</span>
               </Heading>
@@ -102,7 +102,33 @@ const ChangeOrderHeader = () => {
                         { id, fromStatus: status, status: "Draft" },
                         {
                           method: "post",
-                          action: path.to.changeOrderStatus(id)
+                          action: path.to.changeNoticeStatus(id)
+                        }
+                      );
+                    }}
+                  >
+                    <DropdownMenuIcon icon={<LuLoaderCircle />} />
+                    {t`Reopen`}
+                  </DropdownMenuItem>
+                )}
+                {/* Reopen from Implementation goes back one stage so the
+                    engineering content unlocks without losing progress. */}
+                {status === "Implementation" && (
+                  <DropdownMenuItem
+                    disabled={
+                      statusFetcher.state !== "idle" ||
+                      !permissions.can("update", "parts")
+                    }
+                    onClick={() => {
+                      statusFetcher.submit(
+                        {
+                          id,
+                          fromStatus: status,
+                          status: "Engineering Complete"
+                        },
+                        {
+                          method: "post",
+                          action: path.to.changeNoticeStatus(id)
                         }
                       );
                     }}
@@ -120,7 +146,7 @@ const ChangeOrderHeader = () => {
                   onClick={deleteModal.onOpen}
                 >
                   <DropdownMenuIcon icon={<LuTrash />} />
-                  {t`Delete Change Order`}
+                  {t`Delete Change Notice`}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -152,7 +178,7 @@ const ChangeOrderHeader = () => {
           {nextStatus && nextStatus !== "Done" && !isLocked && (
             <statusFetcher.Form
               method="post"
-              action={path.to.changeOrderStatus(id)}
+              action={path.to.changeNoticeStatus(id)}
             >
               <input type="hidden" name="id" value={id} />
               <input type="hidden" name="fromStatus" value={status} />
@@ -186,7 +212,7 @@ const ChangeOrderHeader = () => {
       </div>
       {deleteModal.isOpen && (
         <ConfirmDelete
-          action={path.to.deleteChangeOrder(id)}
+          action={path.to.deleteChangeNotice(id)}
           isOpen={deleteModal.isOpen}
           name={routeData?.changeOrder?.changeOrderId ?? ""}
           text={t`Are you sure you want to delete ${
@@ -198,12 +224,12 @@ const ChangeOrderHeader = () => {
       )}
       {cancelModal.isOpen && (
         <Confirm
-          action={path.to.changeOrderStatus(id)}
-          title={t`Cancel change order`}
+          action={path.to.changeNoticeStatus(id)}
+          title={t`Cancel change notice`}
           text={t`Are you sure you want to cancel ${
             routeData?.changeOrder?.changeOrderId ?? ""
           }? It will be closed and read-only until you reopen it.`}
-          confirmText={t`Cancel Change Order`}
+          confirmText={t`Cancel Change Notice`}
           cancelText={t`Keep Open`}
           confirmVariant="destructive"
           onCancel={cancelModal.onClose}

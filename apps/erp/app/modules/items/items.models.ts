@@ -973,13 +973,13 @@ export const itemRevisionStatus = [
 // companySettings.plmReleaseControl
 export const plmReleaseControl = ["off", "warn", "enforce"] as const;
 
-// Error shape returned by the change order service functions: either a real
+// Error shape returned by the change notice service functions: either a real
 // Supabase PostgrestError or a hand-built message (sequence/lookup failures that
 // don't originate from a query). One alias so callers get a consistent contract.
 export type ChangeOrderError = PostgrestError | { message: string };
 
 // =============================================================================
-// Change Orders — validators, enums, and the stage state machine.
+// Change Notices — validators, enums, and the stage state machine.
 //
 // A sub-area of the Items module, modeled on Quality. The header evolves the
 // existing `changeOrder` table. v2: a CO's per-affected-item edits live on a
@@ -1066,7 +1066,8 @@ export const changeOrderStatusTransitions: Record<
   Draft: ["Start", "Cancelled"],
   Start: ["Engineering Complete", "Cancelled"],
   "Engineering Complete": ["Implementation", "Cancelled"],
-  Implementation: ["Done", "Cancelled"],
+  // Last entry is the reopen edge — "Done" stays first so the header still advances/releases.
+  Implementation: ["Done", "Cancelled", "Engineering Complete"],
   Done: [],
   // Reopen a closed CO back to Draft (fully editable). Done stays terminal.
   Cancelled: ["Draft"]
@@ -1104,9 +1105,27 @@ export function isChangeOrderLocked(
   return status === "Done" || status === "Cancelled";
 }
 
-// Content (reason/description/products/BOM changes/actions) is editable until
-// the CO is closed.
-export function canEditChangeOrder(status: string | null | undefined): boolean {
+// Engineering content — affected items, BOM/BOP drafts, cutover, reason/description.
+// Frozen from Implementation onward: what is being implemented must not shift underneath.
+export function canEditChangeOrderEngineering(
+  status: string | null | undefined
+): boolean {
+  return !isChangeOrderLocked(status) && status !== "Implementation";
+}
+
+// Why a change notice is locked, for whichever surface is asking: server guards
+// flash it, the affected-item UI shows it in the read-only tooltip. One wording,
+// so the two never drift.
+export function changeOrderLockedMessage(status: string | null | undefined) {
+  return status === "Implementation"
+    ? "This change notice is being implemented, so its changes are locked. Reopen it to make changes."
+    : "This change notice is closed, so its changes are read-only.";
+}
+
+// Workflow content — action tasks, assignee, dates, priority. Editable until closed.
+export function canEditChangeOrderWorkflow(
+  status: string | null | undefined
+): boolean {
   return !isChangeOrderLocked(status);
 }
 
@@ -1154,7 +1173,7 @@ export const changeOrderStatusValidator = z.object({
 // CO-owned Draft make method per the change type (service side).
 export const changeOrderAffectedItemValidator = z.object({
   id: zfd.text(z.string().optional()),
-  changeOrderId: z.string().min(1, { message: "Change order is required" }),
+  changeOrderId: z.string().min(1, { message: "Change notice is required" }),
   itemId: z.string().min(1, { message: "Item is required" }),
   changeType: z.enum(changeOrderChangeTypes).default("Version"),
   // Optional revision label for a Revision change (e.g. "A"). Blank → the next
@@ -1166,7 +1185,7 @@ export const changeOrderAffectedItemValidator = z.object({
 // mints a brand-new inactive Part and adds it as a New Part affected item. Always
 // a Part (no Part/Tool choice in the modal).
 export const changeOrderNewPartValidator = z.object({
-  changeOrderId: z.string().min(1, { message: "Change order is required" }),
+  changeOrderId: z.string().min(1, { message: "Change notice is required" }),
   // The route branches on this raw FormData value; also seeds the change-type
   // Select so it reads "New Part" after the form remounts (see AffectedItemForm).
   changeType: z.enum(changeOrderChangeTypes).default("New Part"),
@@ -1201,7 +1220,7 @@ export const changeOrderActionStatusValidator = z.object({
 });
 
 // Configurable default actions (changeOrderRequiredAction templates) — the
-// per-company set a new change order is seeded from. Configured like Issue Types.
+// per-company set a new change notice is seeded from. Configured like Issue Types.
 export const changeOrderRequiredActionValidator = z.object({
   id: zfd.text(z.string().optional()),
   name: z.string().min(1, { message: "Name is required" }),
@@ -1253,7 +1272,7 @@ export type ChangeOrderItemDiff = {
 };
 
 // -----------------------------------------------------------------------------
-// Change Order Types (the "Category" lookup — configured like Issue Types)
+// Change Notice Types (the "Category" lookup — configured like Issue Types)
 // -----------------------------------------------------------------------------
 export const changeOrderTypeValidator = z.object({
   id: zfd.text(z.string().optional()),

@@ -29,7 +29,7 @@ const CreateChangeOrderModal = ({
   useEffect(() => {
     if (loadedRef.current) return;
     loadedRef.current = true;
-    typesFetcher.load(path.to.newChangeOrder);
+    typesFetcher.load(path.to.newChangeNotice);
   }, [typesFetcher]);
 
   const initialValues = {

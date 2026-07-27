@@ -55,11 +55,14 @@ const changeTypeOptions = changeOrderChangeTypes.map((c) => ({
 export default function AffectedItemDetail({
   changeOrderId,
   affected,
-  isDisabled
+  isDisabled,
+  disabledReason
 }: {
   changeOrderId: string;
   affected: AffectedItemDraft;
   isDisabled: boolean;
+  // Why the change notice is locked, surfaced by the read-only affordances.
+  disabledReason?: string;
 }) {
   const { t } = useLingui();
 
@@ -225,7 +228,7 @@ export default function AffectedItemDetail({
           supplierParts={affected.partData.supplierParts}
           isReadOnly={isDisabled}
           deleteSupplierPath={(supplierPartId) =>
-            path.to.changeOrderDeleteSupplierPart(
+            path.to.changeNoticeDeleteSupplierPart(
               changeOrderId,
               affectedItem.id,
               supplierPartId
@@ -251,6 +254,8 @@ export default function AffectedItemDetail({
               replenishmentSystem={label?.replenishmentSystem ?? undefined}
               revisionStatus={affected.revisionStatus}
               releaseControl={affected.releaseControl ?? undefined}
+              isDisabled={isDisabled}
+              disabledReason={disabledReason}
             />
             <BillOfProcess
               key={`bop:${affected.makeMethod.id}`}
@@ -264,6 +269,8 @@ export default function AffectedItemDetail({
               tags={affected.tags}
               revisionStatus={affected.revisionStatus}
               releaseControl={affected.releaseControl ?? undefined}
+              isDisabled={isDisabled}
+              disabledReason={disabledReason}
             />
           </>
         ) : (
@@ -355,7 +362,10 @@ function ChangeTypeControl({
     <ValidatedForm
       fetcher={fetcher}
       method="post"
-      action={path.to.changeOrderAffectedChangeType(changeOrderId, affected.id)}
+      action={path.to.changeNoticeAffectedChangeType(
+        changeOrderId,
+        affected.id
+      )}
       validator={changeOrderAffectedItemChangeTypeValidator}
       defaultValues={{ id: affected.id, changeType: affected.changeType }}
       className="w-full"
@@ -410,7 +420,7 @@ function CutoverControl({
     <ValidatedForm
       fetcher={fetcher}
       method="post"
-      action={path.to.changeOrderAffectedCutover(changeOrderId, affected.id)}
+      action={path.to.changeNoticeAffectedCutover(changeOrderId, affected.id)}
       validator={changeOrderAffectedItemCutoverValidator}
       defaultValues={{
         id: affected.id,

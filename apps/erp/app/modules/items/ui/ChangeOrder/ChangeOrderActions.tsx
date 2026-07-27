@@ -1,4 +1,5 @@
 import { useCarbon } from "@carbon/auth";
+import { getLogger } from "@carbon/logger";
 import {
   IconButton,
   type JSONContent,
@@ -17,13 +18,18 @@ import {
 } from "~/components/ActionTasks/ActionTaskCard";
 import { ActionTaskList } from "~/components/ActionTasks/ActionTaskList";
 import { ActionTaskStatusButton } from "~/components/ActionTasks/ActionTaskStatusButton";
+import { JiraIssueDialog } from "~/components/ActionTasks/Jira/IssueDialog";
+import { LinearIssueDialog } from "~/components/ActionTasks/Linear/IssueDialog";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
+import { useIntegrations } from "~/hooks/useIntegrations";
 import type { ListItem } from "~/types";
 import { getPrivateUrl, path } from "~/utils/path";
 import type { ChangeOrderActionTask } from "../../types";
 
+const logger = getLogger("erp", "changeorderactions");
+
 // Change-order actions — a thin wrapper over the shared ActionTaskList (same
-// component the Quality issue uses). Adding picks from the change order's
+// component the Quality issue uses). Adding picks from the change notice's
 // configured required-action templates via the "Add Actions" modal and writes
 // back through the reconcile route (`$id.action`), which instantiates the union
 // of the current tasks and the newly-picked templates. Each row is an ActionItem
@@ -39,7 +45,7 @@ export default function ChangeOrderActions({
   isDisabled: boolean;
 }) {
   const routeData = useRouteData<{ requiredActions: ListItem[] }>(
-    path.to.changeOrder(changeOrderId)
+    path.to.changeNotice(changeOrderId)
   );
   const addFetcher = useFetcher<{ success: boolean }>();
 
@@ -56,7 +62,7 @@ export default function ChangeOrderActions({
       formData.append("actionIds", merged.join(","));
       addFetcher.submit(formData, {
         method: "post",
-        action: path.to.changeOrderAction(changeOrderId)
+        action: path.to.changeNoticeAction(changeOrderId)
       });
     },
     [actions, changeOrderId, addFetcher]
@@ -65,7 +71,7 @@ export default function ChangeOrderActions({
   return (
     <ActionTaskList
       tasks={actions}
-      reorderAction={path.to.changeOrderActionOrder(changeOrderId)}
+      reorderAction={path.to.changeNoticeActionOrder(changeOrderId)}
       templates={routeData?.requiredActions ?? []}
       onAdd={onAdd}
       isAddSubmitting={addFetcher.state !== "idle"}
@@ -98,6 +104,7 @@ function ActionItem({
 }) {
   const { t } = useLingui();
   const permissions = usePermissions();
+  const integrations = useIntegrations();
   const {
     id: userId,
     company: { id: companyId }
@@ -121,12 +128,49 @@ function ActionItem({
     return getPrivateUrl(result.data.path);
   };
 
+  const hasLinearLink = !!action.linearIssue;
+  const hasJiraLink = !!action.jiraIssue;
+
   const onUpdateContent = useDebounce(
     async (value: JSONContent) => {
       await carbon
         ?.from("changeOrderActionTask")
         .update({ notes: value, updatedBy: userId })
         .eq("id", action.id);
+
+      if (hasLinearLink) {
+        try {
+          await fetch(path.to.api.linearSyncNotes, {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: new URLSearchParams({
+              actionId: action.id,
+              entityType: "changeOrderActionTask",
+              notes: JSON.stringify(value)
+            })
+          });
+        } catch (e) {
+          // Silently fail Linear sync - not critical
+          logger.error("Failed to sync notes to Linear", { error: e });
+        }
+      }
+
+      if (hasJiraLink) {
+        try {
+          await fetch(path.to.api.jiraSyncNotes, {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: new URLSearchParams({
+              actionId: action.id,
+              entityType: "changeOrderActionTask",
+              notes: JSON.stringify(value)
+            })
+          });
+        } catch (e) {
+          // Silently fail Jira sync - not critical
+          logger.error("Failed to sync notes to Jira", { error: e });
+        }
+      }
     },
     2500,
     true
@@ -139,7 +183,7 @@ function ActionItem({
     formData.append("status", next);
     statusFetcher.submit(formData, {
       method: "post",
-      action: path.to.changeOrderActionStatus(changeOrderId, action.id)
+      action: path.to.changeNoticeActionStatus(changeOrderId, action.id)
     });
   };
 
@@ -149,7 +193,7 @@ function ActionItem({
       {},
       {
         method: "post",
-        action: path.to.deleteChangeOrderAction(changeOrderId, action.id)
+        action: path.to.deleteChangeNoticeAction(changeOrderId, action.id)
       }
     );
   };
@@ -180,15 +224,31 @@ function ActionItem({
         />
       }
       headerExtras={
-        canEdit ? (
-          <IconButton
-            aria-label={t`Delete action`}
-            icon={<LuTrash2 />}
-            variant="ghost"
-            onClick={onDelete}
-            isDisabled={deleteFetcher.state !== "idle"}
-          />
-        ) : undefined
+        <>
+          {integrations.has("linear") && (
+            <LinearIssueDialog
+              entityType="changeOrderActionTask"
+              taskId={action.id}
+              linkedIssue={action.linearIssue}
+            />
+          )}
+          {integrations.has("jira") && (
+            <JiraIssueDialog
+              entityType="changeOrderActionTask"
+              taskId={action.id}
+              linkedIssue={action.jiraIssue}
+            />
+          )}
+          {canEdit && (
+            <IconButton
+              aria-label={t`Delete action`}
+              icon={<LuTrash2 />}
+              variant="ghost"
+              onClick={onDelete}
+              isDisabled={deleteFetcher.state !== "idle"}
+            />
+          )}
+        </>
       }
       footerExtras={
         action.dueDate ? (

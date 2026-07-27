@@ -13,13 +13,14 @@ import { Editor } from "@carbon/react/Editor";
 import { useLingui } from "@lingui/react/macro";
 import { nanoid } from "nanoid";
 import { useState } from "react";
+import { useFetcher } from "react-router";
 import { usePermissions, useUser } from "~/hooks";
-import { getPrivateUrl } from "~/utils/path";
+import { getPrivateUrl, path } from "~/utils/path";
 
 // The two rich-text columns on the changeOrder header (reasonForChange +
 // description). Both are stored as JSON and read/written the same way; the
-// debounced writer targets the matching column directly through the
-// request-scoped supabase client (mirrors IssueContent). Rendered as full Cards
+// debounced writer posts to $id.content so the engineering lock is enforced
+// server-side (a direct supabase write had no such gate). Rendered as full Cards
 // on the top-level CO detail route; `embedded` drops the Card chrome for callers
 // that supply their own frame.
 export function ChangeOrderContentSection({
@@ -40,12 +41,12 @@ export function ChangeOrderContentSection({
   embedded?: boolean;
 }) {
   const {
-    id: userId,
     company: { id: companyId }
   } = useUser();
   const { carbon } = useCarbon();
   const { t } = useLingui();
   const permissions = usePermissions();
+  const fetcher = useFetcher<{}>();
 
   const [content, setContent] = useState(initialContent ?? {});
 
@@ -68,14 +69,11 @@ export function ChangeOrderContentSection({
   };
 
   const onUpdateContent = useDebounce(
-    async (value: JSONContent) => {
-      await carbon
-        ?.from("changeOrder")
-        .update({
-          [field]: value,
-          updatedBy: userId
-        })
-        .eq("id", id);
+    (value: JSONContent) => {
+      fetcher.submit(
+        { field, content: JSON.stringify(value) },
+        { method: "post", action: path.to.changeNoticeContent(id) }
+      );
     },
     2500,
     true

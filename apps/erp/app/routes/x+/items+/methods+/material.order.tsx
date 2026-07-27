@@ -29,7 +29,7 @@ export async function action({ request }: ActionFunctionArgs) {
   );
 
   // Release-lock gate: block edits to a released (Production) revision unless a
-  // change order is used. All materials in a reorder share one make method.
+  // change notice is used. All materials in a reorder share one make method.
   const lock = await checkRevisionLock(client, {
     kind: "material",
     id: updates[0]?.id,

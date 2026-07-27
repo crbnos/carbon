@@ -13,7 +13,7 @@ type ItemChangeOrdersProps = {
   types: ListItem[];
 };
 
-// Part → CO traceability (4b): a history card of every change order that
+// Part → CO traceability (4b): a history card of every change notice that
 // references this part (across all its revisions). Newest first (the G6 query
 // orders it). Done rows are de-emphasized. Renders nothing when empty.
 const ItemChangeOrders = ({ changeOrders, types }: ItemChangeOrdersProps) => {
@@ -23,7 +23,7 @@ const ItemChangeOrders = ({ changeOrders, types }: ItemChangeOrdersProps) => {
     <Card>
       <CardHeader>
         <CardTitle>
-          <Trans>Change Orders</Trans>
+          <Trans>Change Notices</Trans>
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -35,7 +35,7 @@ const ItemChangeOrders = ({ changeOrders, types }: ItemChangeOrdersProps) => {
             return (
               <Link
                 key={co.id}
-                to={path.to.changeOrder(co.id)}
+                to={path.to.changeNotice(co.id)}
                 className={cn(
                   "flex items-center justify-between gap-4 py-2 hover:bg-accent/50 rounded-md px-2 -mx-2 transition-colors",
                   isDone && "opacity-60"

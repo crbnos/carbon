@@ -22,7 +22,7 @@ import type {
 import { DiffBadge } from "./diff-ui";
 
 // -----------------------------------------------------------------------------
-// Read-only Change Order diff viewer (authoring-time). Renders the CO-owned draft
+// Read-only Change Notice diff viewer (authoring-time). Renders the CO-owned draft
 // method vs the base Active method it was copied from as a git-style, tree-shaped
 // redline: BOM and BOP as SEPARATE sections plus an Attributes section. Each entry
 // is a top-level TREE NODE (a BOM component / a BOP operation) whose children are

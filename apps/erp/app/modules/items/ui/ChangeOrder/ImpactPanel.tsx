@@ -14,7 +14,7 @@ type UsedInChild = UsedInNode["children"][number];
 
 // Where an affected item is referenced across the system (jobs, POs, sales,
 // receipts, methods, NCRs, …) — the same shape the part detail page's "Used In"
-// tree consumes. One entry per affected item on the change order.
+// tree consumes. One entry per affected item on the change notice.
 export type ChangeOrderImpactItem = {
   itemId: string;
   readableIdWithRevision: string;

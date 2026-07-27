@@ -96,7 +96,7 @@ const ToolHeader = () => {
                   onClick={changeOrderModal.onOpen}
                 >
                   <DropdownMenuIcon icon={<LuGitPullRequestArrow />} />
-                  <Trans>Create Change Order</Trans>
+                  <Trans>Create Change Notice</Trans>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem

@@ -5,12 +5,12 @@ import { NotificationEmail } from "../NotificationEmail";
 export default function ChangeOrderImplementationPreview() {
   return (
     <NotificationEmail
-      heading={"Change order in implementation"}
-      preview={"Change order in implementation"}
-      message={"Change order ECO-000012 has moved to implementation"}
+      heading={"Change notice in implementation"}
+      preview={"Change notice in implementation"}
+      message={"Change notice ECO-000012 has moved to implementation"}
       reference={"ECO-000012"}
       recipientName={"John Doe"}
-      ctaLabel={"View change order"}
+      ctaLabel={"View change notice"}
       ctaUrl={"https://app.carbon.ms/x/items/change-order/1/details"}
       details={[
         {

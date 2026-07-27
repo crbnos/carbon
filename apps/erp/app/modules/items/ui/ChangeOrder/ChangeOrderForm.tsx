@@ -70,7 +70,7 @@ const ChangeOrderForm = ({
     <>
       <Hidden name="id" />
       <Hidden name="changeOrderId" />
-      {/* Linked NCR is set by the source (e.g. "Create Change Order" from an
+      {/* Linked NCR is set by the source (e.g. "Create Change Notice" from an
           Issue) and carried silently — not a user-editable field. */}
       <Hidden name="nonConformanceId" />
       {/* Affected Parts are added on the CO detail page (top-to-bottom flow), not
@@ -150,7 +150,7 @@ const ChangeOrderForm = ({
           <ModalDrawerContent>
             <ValidatedForm
               method="post"
-              action={path.to.newChangeOrder}
+              action={path.to.newChangeNotice}
               validator={changeOrderValidator}
               defaultValues={initialValues}
               fetcher={fetcher}
@@ -158,7 +158,7 @@ const ChangeOrderForm = ({
             >
               <ModalDrawerHeader>
                 <ModalDrawerTitle>
-                  <Trans>New Change Order</Trans>
+                  <Trans>New Change Notice</Trans>
                 </ModalDrawerTitle>
               </ModalDrawerHeader>
               <ModalDrawerBody>{fields}</ModalDrawerBody>
@@ -188,15 +188,15 @@ const ChangeOrderForm = ({
         <CardHeader>
           <CardTitle>
             {isEditing ? (
-              <Trans>Change Order</Trans>
+              <Trans>Change Notice</Trans>
             ) : (
-              <Trans>New Change Order</Trans>
+              <Trans>New Change Notice</Trans>
             )}
           </CardTitle>
           {!isEditing && (
             <CardDescription>
               <Trans>
-                A change order tracks a controlled engineering or manufacturing
+                A change notice tracks a controlled engineering or manufacturing
                 change through review and implementation.
               </Trans>
             </CardDescription>

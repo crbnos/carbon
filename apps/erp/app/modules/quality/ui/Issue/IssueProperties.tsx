@@ -557,13 +557,13 @@ const IssueProperties = () => {
       {changeOrders.length > 0 && (
         <VStack spacing={2}>
           <h3 className="text-xs text-muted-foreground">
-            <Trans>Change Orders</Trans>
+            <Trans>Change Notices</Trans>
           </h3>
           <VStack spacing={1}>
             {changeOrders.map((co) => (
               <Link
                 key={co.id}
-                to={path.to.changeOrder(co.id)}
+                to={path.to.changeNotice(co.id)}
                 className="flex items-center justify-between gap-2 w-full hover:bg-accent/50 rounded-md px-2 -mx-2 py-1 transition-colors"
               >
                 <span className="text-sm text-primary hover:underline truncate">

@@ -1,4 +1,8 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
+import {
+  actionTaskPermissions,
+  isActionTaskEntityType
+} from "@carbon/ee/action-task-entity";
 import type { TiptapDocument } from "@carbon/ee/linear.server";
 import {
   getLinearClient,
@@ -14,19 +18,27 @@ const logger = getLogger("erp", "integrations-linear-issue-sync-notes");
 const linear = getLinearClient();
 
 export const action: ActionFunction = async ({ request }) => {
-  const { companyId, client } = await requirePermissions(request, {});
-
   if (request.method !== "POST") {
     return data({ success: false, message: "Method not allowed" }, 405);
   }
 
   const form = await request.formData();
   const actionId = form.get("actionId") as string;
+  const entityType = form.get("entityType") as string | null;
   const notesStr = form.get("notes") as string;
 
   if (!actionId) {
     return data({ success: false, message: "Missing actionId" }, 400);
   }
+
+  if (!isActionTaskEntityType(entityType)) {
+    return data({ success: false, message: "Invalid entityType" }, 400);
+  }
+
+  const { companyId, client } = await requirePermissions(
+    request,
+    actionTaskPermissions(entityType)
+  );
 
   // Parse the notes JSON
   let notes: TiptapDocument | null = null;
@@ -37,7 +49,12 @@ export const action: ActionFunction = async ({ request }) => {
   }
 
   // Get the linked Linear issue
-  const issue = await getLinearIssueFromExternalId(client, companyId, actionId);
+  const issue = await getLinearIssueFromExternalId(
+    client,
+    companyId,
+    actionId,
+    entityType
+  );
 
   if (!issue) {
     return { success: true, message: "No linked Linear issue" };

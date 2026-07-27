@@ -48,7 +48,7 @@ const RevisionForm = ({
     : !permissions.can("create", "parts");
 
   const [openChangeOrder, setOpenChangeOrder] = useState(false);
-  // Offer the "open a change order" shortcut only when creating a new revision of
+  // Offer the "open a change notice" shortcut only when creating a new revision of
   // a make part/tool (CO affected items are Parts/Tools; the CO route coerces
   // Buy items to a Revision change type).
   const canOpenChangeOrder =
@@ -58,7 +58,7 @@ const RevisionForm = ({
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   useEffect(() => {
-    // The "open a change order" path posts straight to the create+attach route
+    // The "open a change notice" path posts straight to the create+attach route
     // (see the form action below), which redirects to the new CO — so it never
     // returns here. This only handles the plain new-revision submit.
     if (fetcher.data?.success) {
@@ -86,7 +86,7 @@ const RevisionForm = ({
               isEditing
                 ? path.to.revision(initialValues.id!)
                 : openChangeOrder && initialValues.copyFromId
-                  ? path.to.newChangeOrderFromItem(initialValues.copyFromId)
+                  ? path.to.newChangeNoticeFromItem(initialValues.copyFromId)
                   : path.to.newRevision
             }
             defaultValues={initialValues}
@@ -129,8 +129,8 @@ const RevisionForm = ({
                 {canOpenChangeOrder && (
                   <Boolean
                     name="openChangeOrder"
-                    label={t`Open a change order`}
-                    description={t`Create a change order for the new revision and open it`}
+                    label={t`Open a change notice`}
+                    description={t`Create a change notice for the new revision and open it`}
                     bordered
                     onChange={setOpenChangeOrder}
                   />

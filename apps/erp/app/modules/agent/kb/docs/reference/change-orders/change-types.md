@@ -3,7 +3,7 @@
 > Version, Revision, and New Part — the per-affected-item choice that decides what you can edit and what release creates.
 
 Change type is set per affected item (default **Version**) and is the most load-bearing field on the whole
-change order. It decides two things at once: what you're allowed to edit on the draft, and what release
+change notice. It decides two things at once: what you're allowed to edit on the draft, and what release
 creates from it.
 
 ## The three types
@@ -51,9 +51,9 @@ you would on a live part.
 A draft item starts with **no** supplier parts — the source item's suppliers aren't copied onto the draft. If a
 purchased Revision or New Part releases with an empty grid, the new part is stocked but has no way to buy it,
 so a purchase order can't reference it. Fill the grid on the line first. The suppliers you add show up in the
-change order's `docs/reference/change-orders/lifecycle` as additions.
+change notice's `docs/reference/change-orders/lifecycle` as additions.
 
 ## Related
 
   - Lifecycle & release What release does with each change type.
-  - Methods & sourcing Method versions and the Draft/Active/Archived states a change order drives.
+  - Methods & sourcing Method versions and the Draft/Active/Archived states a change notice drives.

@@ -126,11 +126,11 @@ function changeOrderStageDescription(
 ): string {
   switch (type) {
     case NotificationEvent.ChangeOrderStarted:
-      return `Change order ${readableId} has started`;
+      return `Change notice ${readableId} has started`;
     case NotificationEvent.ChangeOrderImplementation:
-      return `Change order ${readableId} has moved to implementation`;
+      return `Change notice ${readableId} has moved to implementation`;
     default:
-      return `Change order ${readableId} is complete`;
+      return `Change notice ${readableId} is complete`;
   }
 }
 
@@ -1114,7 +1114,7 @@ async function buildEventContent(
       const companyId = opts?.companyId;
       if (!companyId) {
         throw new Error(
-          `companyId is required to resolve change order ${documentId}`
+          `companyId is required to resolve change notice ${documentId}`
         );
       }
 
@@ -1148,7 +1148,7 @@ async function buildEventContent(
       }
 
       if (!changeOrderData) {
-        throw new Error(`Change order not found for documentId ${documentId}`);
+        throw new Error(`Change notice not found for documentId ${documentId}`);
       }
 
       const readableId = changeOrderData.changeOrderId;
@@ -1162,7 +1162,7 @@ async function buildEventContent(
           .eq("id", changeOrderData.assignee)
           .maybeSingle();
         if (assignee.error) {
-          console.error("Failed to get change order assignee", assignee.error);
+          console.error("Failed to get change notice assignee", assignee.error);
         }
         assigneeName = assignee.data?.fullName ?? null;
       }

@@ -45,8 +45,8 @@ msgid "(excluded for this customer)"
 msgstr "(bu müşteri için hariç tutulmuş)"
 
 #. placeholder {0}: open.length
-msgid "{0, plural, one {This part is on 1 open change order} other {This part is on # open change orders}}"
-msgstr "{0, plural, one {Bu parça 1 açık değişiklik emrinde} other {Bu parça # açık değişiklik emrinde}}"
+msgid "{0, plural, one {This part is on 1 open change notice} other {This part is on # open change notices}}"
+msgstr "{0, plural, one {Bu parça 1 açık değişiklik bildirisinde yer alıyor} other {Bu parça # açık değişiklik bildirisinde yer alıyor}}"
 
 #. placeholder {0}: ar.count
 msgid "{0} customers with a balance"
@@ -224,8 +224,8 @@ msgstr "90G"
 msgid "A Carbon-run data migration — you load your own data"
 msgstr "Bir Carbon tarafından yönetilen veri taşıması — kendi verilerinizi yüklersiniz"
 
-msgid "A change order tracks a controlled engineering or manufacturing change through review and implementation."
-msgstr "Değişiklik emri, kontrollü bir mühendislik veya üretim değişikliğini inceleme ve uygulanmasında takip eder."
+msgid "A change notice tracks a controlled engineering or manufacturing change through review and implementation."
+msgstr "Bir değişiklik bildirisi, gözden geçirme ve uygulamadan geçen kontrollü bir mühendislik veya üretim değişikliğini izler."
 
 msgid "A clearing account holding the value of goods received but not yet billed; the supplier invoice clears it."
 msgstr "Alınan ancak henüz faturalanmayan malların değerini tutan bir takas hesabı; tedarikçi faturası bunu temizler."
@@ -1176,12 +1176,12 @@ msgid "Are you sure you want to delete the asset class: {0}? This cannot be undo
 msgstr "Varlık Sınıfını silmek istediğinizden emin misiniz: {0}? Bu işlem geri alınamaz."
 
 #. placeholder {0}: requiredAction.name
-msgid "Are you sure you want to delete the change order action: {0}? This cannot be undone."
-msgstr "Değişiklik emri işlemini silmek istediğinizden emin misiniz: {0}? Bu geri alınamaz."
+msgid "Are you sure you want to delete the change notice action: {0}? This cannot be undone."
+msgstr "{0} değişiklik bildirisi işlemini silmek istediğinizden emin misiniz? Bu işlem geri alınamaz."
 
 #. placeholder {0}: changeOrderType.name
-msgid "Are you sure you want to delete the change order category: {0}? This cannot be undone."
-msgstr "Değişiklik emri kategorisini silmek istediğinizden emin misiniz: {0}? Bu işlem geri alınamaz."
+msgid "Are you sure you want to delete the change notice category: {0}? This cannot be undone."
+msgstr "{0} değişiklik bildirisi kategorisini silmek istediğinizden emin misiniz? Bu işlem geri alınamaz."
 
 msgid "Are you sure you want to delete the contractor: {name}? This cannot be undone."
 msgstr "Yükleniciyi silmek istediğinizden emin misiniz: {name}? Bu geri alınamaz."
@@ -1341,8 +1341,8 @@ msgstr "Webhook'u silmek istediğinizden emin misiniz: {0}? Bu geri alınamaz."
 msgid "Are you sure you want to delete this approval rule? This cannot be undone."
 msgstr "Bu onay kuralını silmek istediğinizden emin misiniz? Bu geri alınamaz."
 
-msgid "Are you sure you want to delete this change order?"
-msgstr "Bu değişiklik emrini silmek istediğinizden emin misiniz?"
+msgid "Are you sure you want to delete this change notice?"
+msgstr "Bu değişiklik bildirisini silmek istediğinizden emin misiniz?"
 
 msgid "Are you sure you want to delete this gauge?"
 msgstr "Bu kalibratörü silmek istediğinizden emin misiniz?"
@@ -1965,11 +1965,11 @@ msgstr "Bu dosya indirilemiyor"
 msgid "Cancel"
 msgstr "İptal"
 
-msgid "Cancel change order"
-msgstr "Değişiklik emrini iptal et"
+msgid "Cancel change notice"
+msgstr "Değişiklik bildirisini iptal et"
 
-msgid "Cancel Change Order"
-msgstr "Değişiklik Emrini İptal Et"
+msgid "Cancel Change Notice"
+msgstr "Değişiklik Bildirisini İptal Et"
 
 msgid "Cancel Job"
 msgstr "İşi İptal Et"
@@ -2133,20 +2133,20 @@ msgstr "Şampiyonlar"
 msgid "Change"
 msgstr "Değiştir"
 
-msgid "Change order"
-msgstr "Değişiklik emri"
+msgid "Change notice"
+msgstr "Değişiklik bildirisi"
 
-msgid "Change Order"
-msgstr "Değişiklik Emri"
+msgid "Change Notice"
+msgstr "Değişiklik Bildirisi"
 
-msgid "Change Order Actions"
-msgstr "Değişiklik Emri İşlemleri"
+msgid "Change Notice Actions"
+msgstr "Değişiklik Bildirisi İşlemleri"
 
-msgid "Change Order Types"
-msgstr "Değişiklik Emri Türleri"
+msgid "Change Notice Types"
+msgstr "Değişiklik Bildirisi Türleri"
 
-msgid "Change Orders"
-msgstr "Değişiklik Emirleri"
+msgid "Change Notices"
+msgstr "Değişiklik Bildirimleri"
 
 msgid "Change status"
 msgstr "Durum değiştir"
@@ -2735,8 +2735,8 @@ msgstr "İş Numarasını Kopyala"
 msgid "Copy link"
 msgstr "Bağlantıyı kopyala"
 
-msgid "Copy link to change order"
-msgstr "Değişiklik emri bağlantısını kopyala"
+msgid "Copy link to change notice"
+msgstr "Değişiklik bildirisi bağlantısını kopyala"
 
 msgid "Copy link to consumable"
 msgstr "Tüketilebilir bağlantısını kopyala"
@@ -2959,8 +2959,8 @@ msgstr "{0} değerleri oluştur"
 msgid "Create & Snapshot"
 msgstr "Oluştur & Anlık Görüntü"
 
-msgid "Create a change order for the new revision and open it"
-msgstr "Yeni revizyon için bir değişiklik emri oluşturun ve açın"
+msgid "Create a change notice for the new revision and open it"
+msgstr "Yeni revizyon için bir değişiklik bildirisi oluştur ve aç"
 
 msgid "Create a new kanban card for scan-based replenishment."
 msgstr "Tarama tabanlı ikmal için yeni bir kanban kartı oluştur."
@@ -2989,8 +2989,8 @@ msgstr "Satın alma siparişleri oluşturun ve onaylayın"
 msgid "Create audit trail entries"
 msgstr "Denetim izi girdileri oluştur"
 
-msgid "Create Change Order"
-msgstr "Değişiklik Emri Oluştur"
+msgid "Create Change Notice"
+msgstr "Değişiklik Bildirisi Oluştur"
 
 msgid "Create Issue"
 msgstr "Sorun Oluştur"
@@ -3049,11 +3049,11 @@ msgstr "Oluşturulma Tarihi"
 msgid "Created By"
 msgstr "Oluşturan"
 
-msgid "Created change order action"
-msgstr "Oluşturulan değişiklik emri işlemi"
+msgid "Created change notice action"
+msgstr "Oluşturulan değişiklik bildirisi işlemi"
 
-msgid "Created change order type"
-msgstr "Oluşturulan değişiklik emri türü"
+msgid "Created change notice type"
+msgstr "Oluşturulan değişiklik bildirisi türü"
 
 msgid "Created consumable"
 msgstr "Tüketilebilir malzeme oluşturuldu"
@@ -3717,8 +3717,8 @@ msgstr "Özniteliği Sil"
 msgid "Delete Category"
 msgstr "Kategoriyi Sil"
 
-msgid "Delete Change Order"
-msgstr "Değişiklik Emrini Sil"
+msgid "Delete Change Notice"
+msgstr "Değişiklik Bildirisini Sil"
 
 msgid "Delete Consumable"
 msgstr "Tüketilebilir Malı Sil"
@@ -4399,14 +4399,14 @@ msgstr "Öznitelik Kategorisini Düzenle"
 msgid "Edit Category"
 msgstr "Kategoriyi Düzenle"
 
-msgid "Edit Change Order"
-msgstr "Değişiklik Emrini Düzenle"
+msgid "Edit Change Notice"
+msgstr "Değişiklik Bildirisini Düzenle"
 
-msgid "Edit Change Order Action"
-msgstr "Değişiklik Emri İşlemini Düzenle"
+msgid "Edit Change Notice Action"
+msgstr "Değişiklik Bildirisi İşlemini Düzenle"
 
-msgid "Edit Change Order Type"
-msgstr "Değişiklik Emri Türünü Düzenle"
+msgid "Edit Change Notice Type"
+msgstr "Değişiklik Bildirisi Türünü Düzenle"
 
 msgid "Edit column visibility"
 msgstr "Sütun görünürlüğünü düzenle"
@@ -5372,7 +5372,7 @@ msgid "Failed to move account: {0}"
 msgstr "Hesap taşınamadı: {0}"
 
 msgid "Failed to regenerate thumbnail"
-msgstr ""
+msgstr "Küçük resim yeniden oluşturulamadı"
 
 msgid "Failed to remove image: {errorMessage}"
 msgstr "Görsel kaldırılamadı: {errorMessage}"
@@ -7795,14 +7795,14 @@ msgstr "Yeni Öznitelik"
 msgid "New Attribute Category"
 msgstr "Yeni Öznitelik Kategorisi"
 
-msgid "New Change Order"
-msgstr "Yeni Değişiklik Emri"
+msgid "New Change Notice"
+msgstr "Yeni Değişiklik Bildirisi"
 
-msgid "New Change Order Action"
-msgstr "Yeni Değişiklik Emri İşlemi"
+msgid "New Change Notice Action"
+msgstr "Yeni Değişiklik Bildirisi İşlemi"
 
-msgid "New Change Order Type"
-msgstr "Yeni Değişiklik Emri Türü"
+msgid "New Change Notice Type"
+msgstr "Yeni Değişiklik Bildirisi Türü"
 
 msgid "New Consumable"
 msgstr "Yeni Sarf Malzemesi"
@@ -8572,8 +8572,8 @@ msgstr "Üzgünüz! Erişim sağlamaya çalıştığınız bağlantı geçerli d
 msgid "Open"
 msgstr "Aç"
 
-msgid "Open a change order"
-msgstr "Bir değişiklik emri açın"
+msgid "Open a change notice"
+msgstr "Bir değişiklik bildirisi aç"
 
 msgid "Open Actions"
 msgstr "Açık Aksiyonlar"
@@ -8590,8 +8590,8 @@ msgstr "Açık AR"
 msgid "Open Audit Log"
 msgstr "Denetim Kaydını Aç"
 
-msgid "Open change orders affecting this part"
-msgstr "Bu parçayı etkileyen açık değişiklik emirleri"
+msgid "Open change notices affecting this part"
+msgstr "Bu parçayı etkileyen açık değişiklik bildirimlerini aç"
 
 msgid "Open Date"
 msgstr "Açılış Tarihi"
@@ -8602,11 +8602,11 @@ msgstr "Açık Görevler"
 msgid "Open in Carbon"
 msgstr "Carbon'da Aç"
 
-msgid "Open in change order {ids}. Release it to create new versions or revisions."
-msgstr "Değişiklik emrinde {ids} açın. Yeni sürümler veya revizyonlar oluşturmak için yayınlayın."
+msgid "Open in change notice {ids}. Release it to create new versions or revisions."
+msgstr "{ids} değişiklik bildirisinde aç. Yeni sürümler veya revizyonlar oluşturmak için bunu yayınlayın."
 
-msgid "Open in change orders {ids}. Release them to create new versions or revisions."
-msgstr "Değişiklik emirlerinde {ids} açın. Yeni sürümler veya revizyonlar oluşturmak için yayınlayın."
+msgid "Open in change notices {ids}. Release them to create new versions or revisions."
+msgstr "{ids} değişiklik bildirimlerinde aç. Yeni sürümler veya revizyonlar oluşturmak için bunları yayınlayın."
 
 msgid "Open in MES"
 msgstr "MES'te Aç"
@@ -10064,10 +10064,10 @@ msgid "Refresh exchange rate"
 msgstr "Döviz kurunu yenile"
 
 msgid "Regenerate"
-msgstr ""
+msgstr "Yeniden Oluştur"
 
 msgid "Regenerating thumbnail…"
-msgstr ""
+msgstr "Küçük resim yeniden oluşturuluyor…"
 
 msgid "Register"
 msgstr "Mevcut Varlığı Kayıt Yap"
@@ -10108,8 +10108,8 @@ msgstr "Göreceli zaman çizelgesi · tarihler onaylanacak"
 msgid "Release"
 msgstr "Serbest Bırakma"
 
-msgid "Release change order"
-msgstr "Değişim emrini yayınla"
+msgid "Release change notice"
+msgstr "Değişiklik bildirisini yayınla"
 
 msgid "Release control"
 msgstr "Yayın kontrolü"
@@ -12846,6 +12846,12 @@ msgstr "Bu işler bu iş merkezine atanmış işlemlere sahiptir:"
 msgid "These journal entries are still Draft, so their debits and credits aren't in the ledger for this period. Post each one, or re-date it into a later open period."
 msgstr "Bu muhasebe kayıtları hâlâ Taslak durumundadır, bu nedenle borç ve alacakları bu dönem için defteri kebir'de değildir. Her birini deftere geçirin veya daha sonraki bir açık döneme yeniden tarihlendiriniz."
 
+msgid "This change notice is being implemented, so its changes are locked. Reopen it to edit."
+msgstr "Bu değişiklik bildirimi uygulanmakta olduğundan, değişiklikleri kilitlidir. Düzenlemek için yeniden açın."
+
+msgid "This change notice is closed, so its changes are read-only."
+msgstr "Bu değişiklik bildirimi kapalı olduğundan, değişiklikleri salt okunurdur."
+
 msgid "This completes the Discovery step."
 msgstr "Bu, Keşif adımını tamamlar."
 
@@ -12927,11 +12933,11 @@ msgstr "Bu döneme nakledilen günlük girişi yoktur ve kalıcı olarak silineb
 msgid "This Quarter"
 msgstr "Bu Çeyrek"
 
-msgid "This revision is released (Production). Changes should normally flow through a change order."
-msgstr "Bu revizyon yayımlandı (Üretim). Değişiklikler normalde bir değişiklik siparişi aracılığıyla akmalıdır."
+msgid "This revision is released (Production). Changes should normally flow through a change notice."
+msgstr "Bu revizyon yayınlanmıştır (Üretim). Değişiklikler normalde bir değişiklik bildirisi yoluyla akmalıdır."
 
-msgid "This revision is released (Production). Open a change order to modify it."
-msgstr "Bu revizyon yayımlandı (Üretim). Bunu değiştirmek için bir değişiklik siparişi açın."
+msgid "This revision is released (Production). Open a change notice to modify it."
+msgstr "Bu revizyon yayınlanmıştır (Üretim). Bunu değiştirmek için bir değişiklik bildirisi açın."
 
 msgid "This sales order has associated jobs. Choose what to do with them."
 msgstr "Bu satış siparişi ilgili işlere sahiptir. Onlarla ne yapılacağına karar verin."
@@ -12992,13 +12998,13 @@ msgid "Thumbnail"
 msgstr "Küçük Resim"
 
 msgid "Thumbnail is still generating"
-msgstr ""
+msgstr "Küçük resim hâlâ oluşturuluyor"
 
 msgid "Thumbnail removed"
 msgstr "Küçük resim kaldırıldı"
 
 msgid "Thumbnail updated"
-msgstr ""
+msgstr "Küçük resim güncellendi"
 
 msgid "Thumbnail uploaded"
 msgstr "Küçük resim yüklendi"
@@ -14513,6 +14519,9 @@ msgstr "Sipariş edilen miktardan {leftoverQuantity} fazla {0} tamamladınız. F
 msgid "You don't have permission to edit this bill of material."
 msgstr "Bu malzeme listesini düzenleme izniniz yok."
 
+msgid "You don't have permission to edit this bill of process."
+msgstr "Bu proses faturasını düzenlemek için izniniz yok."
+
 msgid "You drive it; we make sure it's done right. Expert eyes on your setup, data, and go-live."
 msgstr "Siz yönetirsiniz; biz doğru yapıldığından emin oluruz. Kurulumunuz, verileriniz ve canlı yayına geçişiniz üzerinde uzman gözler."
 
@@ -14547,8 +14556,8 @@ msgstr "Ne kadar süredir giriş yaptınız? Çıkış yapmayı unuttunuz mu?"
 msgid "Your books and how money flows."
 msgstr "Muhasebe defterleriniz ve paranın akışı."
 
-msgid "Your changes go into a new draft version released with this change order."
-msgstr "Değişiklikleriniz bu değişiklik emri ile yayınlanan yeni bir taslak sürüme girecektir."
+msgid "Your changes go into a new draft version released with this change notice."
+msgstr "Değişiklikleriniz bu değişiklik bildirisi ile yayınlanan yeni taslak sürüme girer."
 
 msgid "Your Console PIN"
 msgstr "Konsol PIN'iniz"

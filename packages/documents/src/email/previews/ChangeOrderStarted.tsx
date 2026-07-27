@@ -5,12 +5,12 @@ import { NotificationEmail } from "../NotificationEmail";
 export default function ChangeOrderStartedPreview() {
   return (
     <NotificationEmail
-      heading={"Change order started"}
-      preview={"Change order started"}
-      message={"Change order ECO-000012 has started"}
+      heading={"Change notice started"}
+      preview={"Change notice started"}
+      message={"Change notice ECO-000012 has started"}
       reference={"ECO-000012"}
       recipientName={"John Doe"}
-      ctaLabel={"View change order"}
+      ctaLabel={"View change notice"}
       ctaUrl={"https://app.carbon.ms/x/items/change-order/1/details"}
       details={[
         {

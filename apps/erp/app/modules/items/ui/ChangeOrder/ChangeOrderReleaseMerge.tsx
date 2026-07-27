@@ -76,7 +76,7 @@ export default function ChangeOrderReleaseMerge({
       <ModalContent className="flex h-[90vh] w-[90vw] flex-col p-0 sm:max-w-3xl">
         <ModalHeader className="px-6 pt-6">
           <ModalTitle>
-            <Trans>Release change order</Trans>
+            <Trans>Release change notice</Trans>
           </ModalTitle>
           <ModalDescription>
             <Trans>
@@ -119,7 +119,7 @@ export default function ChangeOrderReleaseMerge({
             </Button>
             <fetcher.Form
               method="post"
-              action={path.to.changeOrderStatus(changeOrderId)}
+              action={path.to.changeNoticeStatus(changeOrderId)}
             >
               <input type="hidden" name="id" value={changeOrderId} />
               <input type="hidden" name="fromStatus" value="Implementation" />

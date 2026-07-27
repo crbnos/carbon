@@ -76,7 +76,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const releaseControl = revisionLock.releaseControl;
 
   // Include CO-owned draft methods so a revision/new-part item created by an open
-  // Change Order still shows its BOM/BOP on the item master. The draft is the same
+  // Change Notice still shows its BOM/BOP on the item master. The draft is the same
   // makeMethod the CO edits, so the two surfaces stay in sync. Active is still
   // preferred below, so a Version CO's item keeps its live method as the default.
   const selectable = makeMethods.data ?? [];

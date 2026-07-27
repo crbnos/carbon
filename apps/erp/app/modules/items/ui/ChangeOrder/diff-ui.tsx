@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 import type { MethodDiffEntry } from "../../items.models";
 
 // -----------------------------------------------------------------------------
-// Shared Change Order diff-UI helpers.
+// Shared Change Notice diff-UI helpers.
 //
 // The BOM / BOP / BOP-children editors all render staged rows keyed against a
 // per-entry diff (added / modified / removed). These helpers centralize the

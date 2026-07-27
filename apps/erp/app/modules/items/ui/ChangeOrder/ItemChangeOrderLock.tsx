@@ -51,8 +51,8 @@ export function ItemChangeOrderLock({
       </TooltipTrigger>
       <TooltipContent>
         {changeOrders.length === 1
-          ? t`Open in change order ${ids}. Release it to create new versions or revisions.`
-          : t`Open in change orders ${ids}. Release them to create new versions or revisions.`}
+          ? t`Open in change notice ${ids}. Release it to create new versions or revisions.`
+          : t`Open in change notices ${ids}. Release them to create new versions or revisions.`}
       </TooltipContent>
     </Tooltip>
   );

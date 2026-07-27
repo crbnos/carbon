@@ -81,9 +81,9 @@ const ChangeOrdersTable = memo(
       const defaultColumns: ColumnDef<ChangeOrderListItem>[] = [
         {
           accessorKey: "changeOrderId",
-          header: t`Change Order`,
+          header: t`Change Notice`,
           cell: ({ row }) => (
-            <Hyperlink to={path.to.changeOrder(row.original.id!)}>
+            <Hyperlink to={path.to.changeNotice(row.original.id!)}>
               <div className="flex flex-col gap-0">
                 <span className="text-sm font-medium">
                   {row.original.changeOrderId}
@@ -271,11 +271,11 @@ const ChangeOrdersTable = memo(
             <MenuItem
               disabled={!permissions.can("update", "parts")}
               onClick={() => {
-                navigate(path.to.changeOrder(row.id!));
+                navigate(path.to.changeNotice(row.id!));
               }}
             >
               <MenuIcon icon={<LuPencil />} />
-              {t`Edit Change Order`}
+              {t`Edit Change Notice`}
             </MenuItem>
             <MenuItem
               destructive
@@ -288,7 +288,7 @@ const ChangeOrdersTable = memo(
               }}
             >
               <MenuIcon icon={<LuTrash />} />
-              {t`Delete Change Order`}
+              {t`Delete Change Notice`}
             </MenuItem>
           </>
         );
@@ -304,20 +304,20 @@ const ChangeOrdersTable = memo(
           count={count}
           primaryAction={
             permissions.can("create", "parts") && (
-              <New label={t`Change Order`} to={path.to.newChangeOrder} />
+              <New label={t`Change Notice`} to={path.to.newChangeNotice} />
             )
           }
           renderContextMenu={renderContextMenu}
           renderExpandedRow={renderExpandedRow}
           canExpandRow={canExpandRow}
           defaultColumnVisibility={{ itemIds: false }}
-          title={t`Change Orders`}
+          title={t`Change Notices`}
           table="changeOrder"
           withSavedView
         />
         {deleteDisclosure.isOpen && selectedChangeOrder && (
           <ConfirmDelete
-            action={path.to.deleteChangeOrder(selectedChangeOrder.id!)}
+            action={path.to.deleteChangeNotice(selectedChangeOrder.id!)}
             isOpen
             onCancel={() => {
               setSelectedChangeOrder(null);
@@ -327,8 +327,8 @@ const ChangeOrdersTable = memo(
               setSelectedChangeOrder(null);
               deleteDisclosure.onClose();
             }}
-            name={selectedChangeOrder.name ?? "change order"}
-            text={t`Are you sure you want to delete this change order?`}
+            name={selectedChangeOrder.name ?? "change notice"}
+            text={t`Are you sure you want to delete this change notice?`}
           />
         )}
       </>

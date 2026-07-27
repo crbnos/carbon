@@ -23,7 +23,7 @@ type ActionTaskRow = {
   status: ActionTaskStatus;
 };
 
-// The shared action-task list shell used by Quality issues and Change Orders:
+// The shared action-task list shell used by Quality issues and Change Notices:
 // a collapsible card with a progress header, a drag-to-reorder list, and the
 // "Add Actions" template picker. Entity specifics — how a row renders and where
 // reorder/add post — are injected, so both surfaces share one implementation.
@@ -42,7 +42,7 @@ export function ActionTaskList<T extends ActionTaskRow>({
   renderItem: (task: T, dragControls: DragControls) => ReactNode;
   reorderAction: string;
   // Add-from-template is opt-in: pass `onAdd` (and its templates) to show the
-  // "Add Actions" picker. Omit it — as Change Orders do — and there's no add
+  // "Add Actions" picker. Omit it — as Change Notices do — and there's no add
   // affordance at all; the list is seeded elsewhere.
   templates?: ListItem[];
   onAdd?: (selectedIds: string[]) => void;

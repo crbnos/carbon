@@ -180,7 +180,7 @@ export async function createRevision(
     revision: string;
     createdBy: string;
     // Change-order draft revisions are created inactive so they don't surface
-    // in item pickers/production until the change order is released. Manual
+    // in item pickers/production until the change notice is released. Manual
     // "New Revision" keeps the default (active).
     active?: boolean;
   }
@@ -4890,7 +4890,7 @@ export async function getSupplierPartPriceBreaks(
   }));
 }
 // =============================================================================
-// Change Orders — header CRUD, stage transitions, list, and CO Types config.
+// Change Notices — header CRUD, stage transitions, list, and CO Types config.
 // =============================================================================
 
 // -----------------------------------------------------------------------------
@@ -5054,7 +5054,7 @@ export async function deleteChangeOrder(
 ) {
   // Discard each affected item's CO-owned Draft first (the Draft make method for
   // a Version, or the revealed inactive item for a Revision/New Part). These are
-  // NOT FK children of the change order, so the cascade below won't remove them —
+  // NOT FK children of the change notice, so the cascade below won't remove them —
   // only the changeOrderAffectedItem rows cascade. Without this, deleting a CO
   // orphans its drafts (mirrors removeChangeOrderAffectedItem's cleanup).
   const affected = await client
@@ -5131,7 +5131,7 @@ export async function updateChangeOrderStatus(
       data: null,
       error: {
         message:
-          "The change order was updated by someone else. Refresh and try again."
+          "The change notice was updated by someone else. Refresh and try again."
       }
     };
   }
@@ -5139,7 +5139,7 @@ export async function updateChangeOrderStatus(
 }
 
 // -----------------------------------------------------------------------------
-// Change Order Types (the "Category" lookup — configured like Issue Types)
+// Change Notice Types (the "Category" lookup — configured like Issue Types)
 // -----------------------------------------------------------------------------
 export async function getChangeOrderTypes(
   client: SupabaseClient<Database>,
@@ -6190,12 +6190,12 @@ export async function removeChangeOrderAffectedItem(
 }
 
 // =============================================================================
-// Change Orders — item traceability reads (part/tool ↔ CO) and the linked-NCR
+// Change Notices — item traceability reads (part/tool ↔ CO) and the linked-NCR
 // reverse view. Split out of changeOrder.service.ts to keep each file focused
 // and under the module's 1000-line budget (G4).
 // =============================================================================
 
-// G6 — the SINGLE canonical "change orders referencing this item" query,
+// G6 — the SINGLE canonical "change notices referencing this item" query,
 // parameterized by status. The item-detail history (all COs), the open-CO alert
 // (open statuses), and the single-open-CO guard all call this — no forked
 // implementations. Spans every way a CO references an item in the top-to-bottom
@@ -6319,7 +6319,7 @@ export async function findChangeOrdersForItem(
   return { data: result.data ?? [], error: null };
 }
 
-// Reverse of the Linked-NCR cross-link (4a): every change order that references
+// Reverse of the Linked-NCR cross-link (4a): every change notice that references
 // a given non-conformance. Read-only, minimal columns; rendered on the Issue
 // detail. Flat select (no embeds — TS2589 budget).
 export async function getChangeOrdersForNonConformance(
@@ -6335,8 +6335,8 @@ export async function getChangeOrdersForNonConformance(
     .order("createdAt", { ascending: false });
 }
 
-// Single-open-CO-per-part guard (V1 — no parallel change orders): the OTHER
-// open change orders that already reference a part, excluding the current CO.
+// Single-open-CO-per-part guard (V1 — no parallel change notices): the OTHER
+// open change notices that already reference a part, excluding the current CO.
 // Reuses the canonical G6 query at the open-status filter. A non-empty result
 // means adding the part here would create a parallel open CO — the routes (and
 // the staging service) reject it.
@@ -6352,7 +6352,7 @@ export async function findOtherOpenChangeOrdersForItem(
   return data.filter((co) => co.id !== args.excludeChangeOrderId);
 }
 
-// Loader data for the "Change Orders" history section + open-CO alert on an
+// Loader data for the "Change Notices" history section + open-CO alert on an
 // item detail page (part/tool/material) — the CO history for the item plus the
 // type lookup used to label rows. One shared source so the detail routes don't
 // each re-implement the pair of reads.
@@ -6372,7 +6372,7 @@ export async function getItemChangeOrderData(
 }
 
 // =============================================================================
-// Change Orders — Actions (freeform tasks; reuse changeOrderActionTask). Any
+// Change Notices — Actions (freeform tasks; reuse changeOrderActionTask). Any
 // user, any stage; non-gating. Split out of changeOrder.service.ts to keep
 // each file focused and under the module's 1000-line budget (G4).
 // =============================================================================
@@ -6381,13 +6381,56 @@ export async function getChangeOrderActions(
   changeOrderId: string,
   companyId: string
 ) {
-  return client
+  const result = await client
     .from("changeOrderActionTask")
     .select("*")
     .eq("changeOrderId", changeOrderId)
     .eq("companyId", companyId)
     .order("sortOrder", { ascending: true })
     .order("createdAt", { ascending: true });
+
+  if (result.error || !result.data) {
+    return result;
+  }
+
+  const taskIds = result.data.map((t) => t.id);
+  let linearMappings: Map<string, unknown> = new Map();
+  let jiraMappings: Map<string, unknown> = new Map();
+
+  if (taskIds.length > 0) {
+    const [{ data: linearData }, { data: jiraData }] = await Promise.all([
+      client
+        .from("externalIntegrationMapping")
+        .select("entityId, metadata")
+        .eq("entityType", "changeOrderActionTask")
+        .eq("integration", "linear")
+        .eq("companyId", companyId)
+        .in("entityId", taskIds),
+      client
+        .from("externalIntegrationMapping")
+        .select("entityId, metadata")
+        .eq("entityType", "changeOrderActionTask")
+        .eq("integration", "jira")
+        .eq("companyId", companyId)
+        .in("entityId", taskIds)
+    ]);
+
+    linearMappings = new Map(
+      (linearData ?? []).map((m) => [m.entityId, m.metadata])
+    );
+    jiraMappings = new Map(
+      (jiraData ?? []).map((m) => [m.entityId, m.metadata])
+    );
+  }
+
+  return {
+    ...result,
+    data: result.data.map((task) => ({
+      ...task,
+      linearIssue: linearMappings.get(task.id) ?? null,
+      jiraIssue: jiraMappings.get(task.id) ?? null
+    }))
+  };
 }
 
 export async function updateChangeOrderActionStatus(
@@ -6436,8 +6479,8 @@ export async function updateChangeOrderActionOrder(
 }
 
 // =============================================================================
-// Change Order Required Actions (the configurable default-action templates the
-// config CRUD page manages, and the source new change orders are seeded from).
+// Change Notice Required Actions (the configurable default-action templates the
+// config CRUD page manages, and the source new change notices are seeded from).
 // =============================================================================
 export async function getChangeOrderRequiredActions(
   client: SupabaseClient<Database>,
@@ -6527,7 +6570,7 @@ export async function deleteChangeOrderRequiredAction(
   return client.from("changeOrderRequiredAction").delete().eq("id", id);
 }
 
-// Reconcile a change order's action tasks to a chosen set of required-action
+// Reconcile a change notice's action tasks to a chosen set of required-action
 // templates — the sidebar's editable "Required Actions" multiselect (mirrors
 // Quality's requiredActionIds field). Templates newly selected are instantiated
 // (appended); templates deselected have their task removed. Tasks with no
@@ -6594,7 +6637,7 @@ export async function setChangeOrderActionTasks(
 
 // Instantiate one changeOrderActionTask per active template onto a new change
 // order. Called by insertChangeOrder; non-gating, so callers ignore a soft
-// failure rather than roll back the change order.
+// failure rather than roll back the change notice.
 export async function seedDefaultChangeOrderActions(
   client: SupabaseClient<Database>,
   input: { changeOrderId: string; companyId: string; userId: string }
@@ -6619,7 +6662,7 @@ export async function seedDefaultChangeOrderActions(
 }
 
 // =============================================================================
-// Change Orders — the reusable method-diff engine (Q5 git-style end-state).
+// Change Notices — the reusable method-diff engine (Q5 git-style end-state).
 //
 // `diffMethod` is a PURE function (no DB access, unit-testable): it compares two
 // method snapshots (a `base` = the current live method, a `target` = the CO's

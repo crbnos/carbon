@@ -301,7 +301,7 @@ export const auditConfig = {
     },
 
     changeOrder: {
-      label: "Change Order",
+      label: "Change Notice",
       tables: {
         changeOrder: { role: "root" },
         changeOrderAffectedItem: { entityIdColumn: "changeOrderId" },

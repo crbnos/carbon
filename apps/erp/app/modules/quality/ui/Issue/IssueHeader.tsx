@@ -78,13 +78,13 @@ const IssueHeader = () => {
                 >
                   <Link
                     to={`${
-                      path.to.newChangeOrder
+                      path.to.newChangeNotice
                     }?sourceType=nonConformance&sourceId=${id}&name=${encodeURIComponent(
                       routeData?.nonConformance?.nonConformanceId ?? ""
                     )}`}
                   >
                     <DropdownMenuIcon icon={<LuGitPullRequestArrow />} />
-                    <Trans>Create Change Order</Trans>
+                    <Trans>Create Change Notice</Trans>
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem

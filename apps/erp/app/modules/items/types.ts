@@ -1,6 +1,7 @@
 import type { Database } from "@carbon/database";
 import type {
   getChangeOrder,
+  getChangeOrderActions,
   getChangeOrders,
   getChangeOrderTypes,
   getConfigurationParameters,
@@ -42,7 +43,7 @@ import type {
 export type ItemRevisionStatus =
   Database["public"]["Enums"]["itemRevisionStatus"];
 
-// The single change order (base table, NOT-NULL columns) — the shape detail
+// The single change notice (base table, NOT-NULL columns) — the shape detail
 // routes and the properties/header/explorer components consume via useRouteData.
 export type ChangeOrder = NonNullable<
   Awaited<ReturnType<typeof getChangeOrder>>["data"]
@@ -62,8 +63,10 @@ export type ChangeOrderType = NonNullable<
 export type ChangeOrderStatus =
   Database["public"]["Enums"]["changeOrderStatus"];
 
-export type ChangeOrderActionTask =
-  Database["public"]["Tables"]["changeOrderActionTask"]["Row"];
+// Includes the `linearIssue` / `jiraIssue` mappings that `getChangeOrderActions` hydrates.
+export type ChangeOrderActionTask = NonNullable<
+  Awaited<ReturnType<typeof getChangeOrderActions>>["data"]
+>[number];
 
 export type ChangeOrderRequiredAction =
   Database["public"]["Tables"]["changeOrderRequiredAction"]["Row"];

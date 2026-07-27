@@ -52,7 +52,7 @@ const ChangeOrderRequiredActionsTable = memo(
               disabled={!permissions.can("update", "parts")}
               onClick={() => {
                 navigate(
-                  `${path.to.changeOrderRequiredAction(
+                  `${path.to.changeNoticeRequiredAction(
                     row.id
                   )}?${params.toString()}`
                 );
@@ -66,7 +66,7 @@ const ChangeOrderRequiredActionsTable = memo(
               disabled={!permissions.can("delete", "parts")}
               onClick={() => {
                 navigate(
-                  `${path.to.deleteChangeOrderRequiredAction(
+                  `${path.to.deleteChangeNoticeRequiredAction(
                     row.id
                   )}?${params.toString()}`
                 );
@@ -90,12 +90,12 @@ const ChangeOrderRequiredActionsTable = memo(
           permissions.can("create", "parts") && (
             <New
               label={t`Action`}
-              to={`${path.to.newChangeOrderRequiredAction}?${params.toString()}`}
+              to={`${path.to.newChangeNoticeRequiredAction}?${params.toString()}`}
             />
           )
         }
         renderContextMenu={renderContextMenu}
-        title={t`Change Order Actions`}
+        title={t`Change Notice Actions`}
       />
     );
   }

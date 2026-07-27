@@ -47,7 +47,7 @@ const ChangeOrderTypesTable = memo(
               disabled={!permissions.can("update", "parts")}
               onClick={() => {
                 navigate(
-                  `${path.to.changeOrderType(row.id)}?${params.toString()}`
+                  `${path.to.changeNoticeType(row.id)}?${params.toString()}`
                 );
               }}
             >
@@ -59,7 +59,7 @@ const ChangeOrderTypesTable = memo(
               disabled={!permissions.can("delete", "parts")}
               onClick={() => {
                 navigate(
-                  `${path.to.deleteChangeOrderType(
+                  `${path.to.deleteChangeNoticeType(
                     row.id
                   )}?${params.toString()}`
                 );
@@ -83,12 +83,12 @@ const ChangeOrderTypesTable = memo(
           permissions.can("create", "parts") && (
             <New
               label={t`Type`}
-              to={`${path.to.newChangeOrderType}?${params.toString()}`}
+              to={`${path.to.newChangeNoticeType}?${params.toString()}`}
             />
           )
         }
         renderContextMenu={renderContextMenu}
-        title={t`Change Order Types`}
+        title={t`Change Notice Types`}
       />
     );
   }

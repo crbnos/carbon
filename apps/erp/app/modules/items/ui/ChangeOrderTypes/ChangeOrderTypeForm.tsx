@@ -44,10 +44,10 @@ const ChangeOrderTypeForm = ({
 
     if (fetcher.state === "loading" && fetcher.data?.data) {
       onClose?.();
-      toast.success(t`Created change order type`);
+      toast.success(t`Created change notice type`);
     } else if (fetcher.state === "idle" && fetcher.data?.error) {
       toast.error(
-        `Failed to create change order type: ${fetcher.data.error.message}`
+        `Failed to create change notice type: ${fetcher.data.error.message}`
       );
     }
   }, [fetcher.data, fetcher.state, onClose, type, t]);
@@ -71,8 +71,8 @@ const ChangeOrderTypeForm = ({
             method="post"
             action={
               isEditing
-                ? path.to.changeOrderType(initialValues.id!)
-                : path.to.newChangeOrderType
+                ? path.to.changeNoticeType(initialValues.id!)
+                : path.to.newChangeNoticeType
             }
             defaultValues={initialValues}
             fetcher={fetcher}
@@ -81,8 +81,8 @@ const ChangeOrderTypeForm = ({
             <ModalDrawerHeader>
               <ModalDrawerTitle>
                 {isEditing
-                  ? t`Edit Change Order Type`
-                  : t`New Change Order Type`}
+                  ? t`Edit Change Notice Type`
+                  : t`New Change Notice Type`}
               </ModalDrawerTitle>
             </ModalDrawerHeader>
             <ModalDrawerBody>

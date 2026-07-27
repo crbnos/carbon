@@ -30,6 +30,8 @@ import {
   type ActionTaskStatus
 } from "~/components/ActionTasks/ActionTaskCard";
 import { ActionTaskStatusButton } from "~/components/ActionTasks/ActionTaskStatusButton";
+import { JiraIssueDialog } from "~/components/ActionTasks/Jira/IssueDialog";
+import { LinearIssueDialog } from "~/components/ActionTasks/Linear/IssueDialog";
 import { useProcesses } from "~/components/Form/Process";
 import SupplierAvatar from "~/components/SupplierAvatar";
 import {
@@ -48,12 +50,10 @@ import type {
 } from "~/modules/quality";
 import { useSuppliers } from "~/stores";
 import { getPrivateUrl, path } from "~/utils/path";
-import { JiraIssueDialog } from "./Jira/IssueDialog";
-import { LinearIssueDialog } from "./Linear/IssueDialog";
 
 const logger = getLogger("erp", "issuetask");
 
-// TaskProgress moved to the shared ActionTasks folder (SSOT with Change Orders);
+// TaskProgress moved to the shared ActionTasks folder (SSOT with Change Notices);
 // re-exported here so existing `~/modules/quality/ui/Issue` importers keep working.
 export { ActionTaskProgress as TaskProgress } from "~/components/ActionTasks/ActionTaskProgress";
 
@@ -303,10 +303,20 @@ export function TaskItem({
       }
       headerExtras={
         <>
-          {/* @ts-expect-error TS2322 */}
-          {integrations.has("linear") && <LinearIssueDialog task={task} />}
-          {/* @ts-expect-error TS2322 */}
-          {integrations.has("jira") && <JiraIssueDialog task={task} />}
+          {integrations.has("linear") && (
+            <LinearIssueDialog
+              entityType="nonConformanceActionTask"
+              taskId={task.id!}
+              linkedIssue={(task as IssueActionTask).linearIssue}
+            />
+          )}
+          {integrations.has("jira") && (
+            <JiraIssueDialog
+              entityType="nonConformanceActionTask"
+              taskId={task.id!}
+              linkedIssue={(task as IssueActionTask).jiraIssue}
+            />
+          )}
         </>
       }
       footerExtras={

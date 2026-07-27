@@ -50,7 +50,7 @@ type ItemDocumentsProps = {
   modelUpload?: ModelUpload;
   type: ItemType;
   // Read-only: hide the upload affordances and disable delete. Used when the
-  // owning record is closed (e.g. a completed/cancelled change order). Defaults
+  // owning record is closed (e.g. a completed/cancelled change notice). Defaults
   // to editable so the part detail page is unchanged.
   isReadOnly?: boolean;
 };
