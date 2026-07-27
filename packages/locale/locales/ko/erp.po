@@ -5371,6 +5371,9 @@ msgstr "추적 개체를 불러오지 못했습니다"
 msgid "Failed to move account: {0}"
 msgstr "계정 이동 실패: {0}"
 
+msgid "Failed to regenerate thumbnail"
+msgstr ""
+
 msgid "Failed to remove image: {errorMessage}"
 msgstr "이미지를 삭제하지 못했습니다: {errorMessage}"
 
@@ -8600,10 +8603,10 @@ msgid "Open in Carbon"
 msgstr "Carbon에서 열기"
 
 msgid "Open in change order {ids}. Release it to create new versions or revisions."
-msgstr ""
+msgstr "변경 요청 {ids}에서 열기. 이를 릴리스하여 새로운 버전 또는 개정판을 생성합니다."
 
 msgid "Open in change orders {ids}. Release them to create new versions or revisions."
-msgstr ""
+msgstr "변경 요청 {ids}에서 열기. 이들을 릴리스하여 새로운 버전 또는 개정판을 생성합니다."
 
 msgid "Open in MES"
 msgstr "MES에서 열기"
@@ -10060,6 +10063,12 @@ msgstr "새로고침"
 msgid "Refresh exchange rate"
 msgstr "환율 새로고침"
 
+msgid "Regenerate"
+msgstr ""
+
+msgid "Regenerating thumbnail…"
+msgstr ""
+
 msgid "Register"
 msgstr "등록"
 
@@ -11045,6 +11054,9 @@ msgstr "초대 보내기"
 
 msgid "Send RFQ to Suppliers"
 msgstr "공급업체에 RFQ 전송"
+
+msgid "Send to Carbon"
+msgstr "Carbon에 보내기"
 
 msgid "Send Via"
 msgstr "전송 방법"
@@ -12979,8 +12991,14 @@ msgstr "{0}까지"
 msgid "Thumbnail"
 msgstr "썸네일"
 
+msgid "Thumbnail is still generating"
+msgstr ""
+
 msgid "Thumbnail removed"
 msgstr "썸네일 삭제됨"
+
+msgid "Thumbnail updated"
+msgstr ""
 
 msgid "Thumbnail uploaded"
 msgstr "썸네일 업로드됨"

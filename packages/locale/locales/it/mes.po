@@ -902,6 +902,9 @@ msgstr "Seleziona l'operazione a cui tornare. Tutte le operazioni da quel punto 
 msgid "Send"
 msgstr "Invia"
 
+msgid "Send to Carbon"
+msgstr "Invia a Carbon"
+
 msgid "Serial"
 msgstr "Seriale"
 

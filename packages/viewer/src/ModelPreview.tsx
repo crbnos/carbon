@@ -5,7 +5,9 @@ import {
   LuChevronDown,
   LuDownload,
   LuMaximize,
-  LuTrash2
+  LuRotateCw,
+  LuTrash2,
+  LuTriangleAlert
 } from "react-icons/lu";
 import type { ModelMetrics } from "./ModelCanvas";
 import { isRawRenderable } from "./raw/formats";
@@ -16,23 +18,18 @@ const ModelCanvas = lazy(() =>
   import("./ModelCanvas").then((m) => ({ default: m.ModelCanvas }))
 );
 
-// Build-time switch for the in-browser raw-CAD (WASM) fallback tier: renders the
-// user's original upload (GLB/STL directly; STEP/IGES via occt-import-js) when
-// no assembler artifact exists. ON by default; a deployment that relies purely on
-// assembler artifacts opts out with VITE_CAD_VIEWER_USE_SERVER=true, and the
-// exact `import.meta.env.X` form is statically replaced by Vite so the whole
-// tier — occt WASM included — is then dead-code-eliminated from the build.
-// Exported so hosts can align their fallback logic (e.g. CadModel only treats
-// a small raw as renderable when the tier actually shipped in this build).
-export const WASM_RAW_ENABLED =
-  import.meta.env.VITE_CAD_VIEWER_USE_SERVER !== "true";
-const RawModelCanvas = WASM_RAW_ENABLED
-  ? lazy(() =>
-      import("./raw/RawModelCanvas").then((m) => ({
-        default: m.RawModelCanvas
-      }))
-    )
-  : null;
+// The in-browser raw-CAD (WASM) fallback tier renders the user's original upload
+// (GLB/STL directly; STEP/IGES via occt-import-js) whenever no assembler artifact
+// exists yet — a not-yet-optimised legacy model, or the window while an optimise
+// runs. It is ALWAYS the fallback, independent of whether the assembler is
+// configured: server artifacts stay strictly preferred (`hasServerModel` wins
+// below), the raw tier only renders when there is no server GLB. `RawModelCanvas`
+// is a `lazy()` chunk, so its occt WASM only downloads when a raw actually mounts.
+const RawModelCanvas = lazy(() =>
+  import("./raw/RawModelCanvas").then((m) => ({
+    default: m.RawModelCanvas
+  }))
+);
 
 export type ModelPreviewProps = {
   /** True while a server GLB might still arrive (upload / optimise in flight).
@@ -47,8 +44,15 @@ export type ModelPreviewProps = {
   /** Static poster image (thumbnail PNG) shown before any 3D loads. */
   thumbnailUrl?: string | null;
   /** The raw uploaded file's auth-proxied URL — the WASM fallback tier renders
-   *  it in-browser when no assembler artifact exists (build-flag gated). */
+   *  it in-browser when no assembler artifact exists yet. */
   rawUrl?: string | null;
+  /** A background optimise is running while the raw tier renders — shows a small
+   *  non-blocking "Optimizing" chip so the user knows a better GLB is coming. */
+  optimizing?: boolean;
+  /** The last optimise Failed and won't auto-retry — surfaces a small "Optimize
+   *  failed · Retry" chip over the raw tier so the user can re-fire it (otherwise
+   *  a Failed model that renders via WASM has no retry affordance at all). */
+  optimizeFailed?: boolean;
   /** A just-dropped local File for the same tier — instant preview while the
    *  upload / optimise is still in flight. */
   rawFile?: File | null;
@@ -83,6 +87,8 @@ export function ModelPreview({
   glbUrl = null,
   thumbnailUrl = null,
   rawUrl = null,
+  optimizing = false,
+  optimizeFailed = false,
   rawFile = null,
   downloadName,
   onRetry,
@@ -113,20 +119,19 @@ export function ModelPreview({
   const showLodLayer = Boolean(lodUrl && interactiveUrl && !fullLoaded);
   const mainUrl = interactiveUrl ?? lodUrl;
   const hasServerModel = Boolean(mainUrl);
-  // Raw (WASM) fallback tier — only when compiled in, no artifact exists, and
-  // the raw source's format is one the in-browser loaders speak.
+  // Raw (WASM) fallback tier — no server artifact exists yet, and the raw
+  // source's format is one the in-browser loaders speak.
   const rawFilename = rawFile?.name ?? rawUrl?.split("?")[0] ?? "";
   const useRawTier = Boolean(
-    !hasServerModel &&
-      RawModelCanvas &&
-      (rawFile || rawUrl) &&
-      isRawRenderable(rawFilename)
+    !hasServerModel && (rawFile || rawUrl) && isRawRenderable(rawFilename)
   );
 
   return (
     <div
       ref={containerRef}
-      role="img"
+      // `group`, not `img`: the container holds interactive controls (retry,
+      // download, reset, delete) — an `img` role hides those descendants from AT.
+      role="group"
       aria-label="3D model preview"
       className={cn(
         "relative h-full min-h-[400px] w-full overflow-hidden rounded-lg border border-border bg-gradient-to-bl from-card from-50% via-card to-background shadow-md dark:border-none",
@@ -165,7 +170,7 @@ export function ModelPreview({
                 className="absolute inset-0 transition-opacity duration-300"
                 style={{ opacity: fullLoaded || !showLodLayer ? 1 : 0 }}
               >
-                {useRawTier && RawModelCanvas ? (
+                {useRawTier ? (
                   <RawModelCanvas
                     url={rawUrl}
                     file={rawFile}
@@ -188,6 +193,53 @@ export function ModelPreview({
                 )}
               </div>
             </Suspense>
+          )}
+
+          {/* Background optimise running behind the raw tier — a small,
+              non-blocking hint that a better GLB is on its way. Swaps out for the
+              "Optimized GLB" size badge once the server model arrives. */}
+          {optimizing && useRawTier && (
+            <div className="pointer-events-none absolute bottom-2 left-2 z-20 flex items-center gap-1.5 rounded-md border border-border bg-popover px-2 py-1 text-xs text-muted-foreground shadow-sm">
+              <svg
+                className="size-3 shrink-0 animate-spin"
+                viewBox="0 0 24 24"
+                fill="none"
+                aria-hidden
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                />
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                />
+              </svg>
+              <span>Optimizing…</span>
+            </div>
+          )}
+
+          {/* The optimise Failed and won't auto-retry — the raw tier still renders,
+              but without this the user has no way to re-fire the optimise. Mutually
+              exclusive with the Optimizing chip (hidden once a retry is in flight). */}
+          {onRetry && optimizeFailed && !optimizing && useRawTier && (
+            <div className="absolute bottom-2 left-2 z-20 flex items-center gap-1.5 rounded-md border border-border bg-popover px-2 py-1 text-xs text-muted-foreground shadow-sm">
+              <LuTriangleAlert className="size-3 shrink-0 text-amber-500" />
+              <span>Optimize failed</span>
+              <button
+                type="button"
+                onClick={onRetry}
+                className="flex items-center gap-1 font-medium text-foreground underline-offset-2 hover:underline"
+              >
+                <LuRotateCw className="size-3" />
+                Retry
+              </button>
+            </div>
           )}
 
           {/* Measurements + unit toggle (top-left), like the WASM viewer. */}

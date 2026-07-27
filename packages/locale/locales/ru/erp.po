@@ -5371,6 +5371,9 @@ msgstr "Не удалось загрузить отслеживаемые сущ
 msgid "Failed to move account: {0}"
 msgstr "Не удалось переместить счет: {0}"
 
+msgid "Failed to regenerate thumbnail"
+msgstr ""
+
 msgid "Failed to remove image: {errorMessage}"
 msgstr "Не удалось удалить изображение: {errorMessage}"
 
@@ -8600,10 +8603,10 @@ msgid "Open in Carbon"
 msgstr "Открыть в Carbon"
 
 msgid "Open in change order {ids}. Release it to create new versions or revisions."
-msgstr ""
+msgstr "Открыть в заказе изменений {ids}. Выпустите его, чтобы создать новые версии или редакции."
 
 msgid "Open in change orders {ids}. Release them to create new versions or revisions."
-msgstr ""
+msgstr "Открыть в заказах изменений {ids}. Выпустите их, чтобы создать новые версии или редакции."
 
 msgid "Open in MES"
 msgstr "Открыть в MES"
@@ -10060,6 +10063,12 @@ msgstr "Обновить"
 msgid "Refresh exchange rate"
 msgstr "Обновить курс обмена"
 
+msgid "Regenerate"
+msgstr ""
+
+msgid "Regenerating thumbnail…"
+msgstr ""
+
 msgid "Register"
 msgstr "Зарегистрировать существующий актив"
 
@@ -11045,6 +11054,9 @@ msgstr "Отправить приглашения"
 
 msgid "Send RFQ to Suppliers"
 msgstr "Отправить РФП поставщикам"
+
+msgid "Send to Carbon"
+msgstr "Отправить в Carbon"
 
 msgid "Send Via"
 msgstr "Отправить через"
@@ -12979,8 +12991,14 @@ msgstr "До {0}"
 msgid "Thumbnail"
 msgstr "Миниатюра"
 
+msgid "Thumbnail is still generating"
+msgstr ""
+
 msgid "Thumbnail removed"
 msgstr "Миниатюра удалена"
+
+msgid "Thumbnail updated"
+msgstr ""
 
 msgid "Thumbnail uploaded"
 msgstr "Миниатюра загружена"

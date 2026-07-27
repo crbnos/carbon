@@ -285,7 +285,25 @@ export const notifyFunction = inngest.createFunction(
       }
       // Don't notify the sender about their own action.
       if (payload.from) ids = ids.filter((id) => id !== payload.from);
-      return [...new Set(ids)];
+      ids = [...new Set(ids)];
+
+      if (ids.length > 0) {
+        const members = await client
+          .from("userToCompany")
+          .select("userId")
+          .eq("companyId", payload.companyId)
+          .in("userId", ids);
+        if (members.error) {
+          console.error(
+            "Failed to filter recipients by company membership",
+            members.error
+          );
+          throw members.error;
+        }
+        const memberIds = new Set(members.data.map((m) => m.userId));
+        ids = ids.filter((id) => memberIds.has(id));
+      }
+      return ids;
     });
 
     if (userIds.length === 0) {

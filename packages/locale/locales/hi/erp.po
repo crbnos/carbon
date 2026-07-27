@@ -5371,6 +5371,9 @@ msgstr "ट्रैक किए गए इकाइयों को लोड 
 msgid "Failed to move account: {0}"
 msgstr "खाता स्थानांतरित करने में विफल: {0}"
 
+msgid "Failed to regenerate thumbnail"
+msgstr ""
+
 msgid "Failed to remove image: {errorMessage}"
 msgstr "छवि हटाने में विफल: {errorMessage}"
 
@@ -8600,10 +8603,10 @@ msgid "Open in Carbon"
 msgstr "Carbon में खोलें"
 
 msgid "Open in change order {ids}. Release it to create new versions or revisions."
-msgstr ""
+msgstr "{ids} में परिवर्तन आदेश खोलें। नई संस्करणें या संशोधन बनाने के लिए इसे जारी करें।"
 
 msgid "Open in change orders {ids}. Release them to create new versions or revisions."
-msgstr ""
+msgstr "{ids} में परिवर्तन आदेश खोलें। नई संस्करणें या संशोधन बनाने के लिए उन्हें जारी करें।"
 
 msgid "Open in MES"
 msgstr "MES में खोलें"
@@ -10060,6 +10063,12 @@ msgstr "ताज़ा करें"
 msgid "Refresh exchange rate"
 msgstr "विनिमय दर को ताज़ा करें"
 
+msgid "Regenerate"
+msgstr ""
+
+msgid "Regenerating thumbnail…"
+msgstr ""
+
 msgid "Register"
 msgstr "मौजूदा संपत्ति पंजीकृत करें"
 
@@ -11045,6 +11054,9 @@ msgstr "आमंत्रण भेजें"
 
 msgid "Send RFQ to Suppliers"
 msgstr "आपूर्तिकर्ताओं को RFQ भेजें"
+
+msgid "Send to Carbon"
+msgstr "Carbon को भेजें"
 
 msgid "Send Via"
 msgstr "के माध्यम से भेजें"
@@ -12979,8 +12991,14 @@ msgstr "{0} तक"
 msgid "Thumbnail"
 msgstr "थंबनेल"
 
+msgid "Thumbnail is still generating"
+msgstr ""
+
 msgid "Thumbnail removed"
 msgstr "थंबनेल हटाया गया"
+
+msgid "Thumbnail updated"
+msgstr ""
 
 msgid "Thumbnail uploaded"
 msgstr "थंबनेल अपलोड किया गया"

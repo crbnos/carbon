@@ -5371,6 +5371,9 @@ msgstr "追跡対象エンティティの読み込みに失敗しました"
 msgid "Failed to move account: {0}"
 msgstr "勘定科目の移動に失敗しました: {0}"
 
+msgid "Failed to regenerate thumbnail"
+msgstr ""
+
 msgid "Failed to remove image: {errorMessage}"
 msgstr "画像の削除に失敗しました: {errorMessage}"
 
@@ -8600,10 +8603,10 @@ msgid "Open in Carbon"
 msgstr "Carbonで開く"
 
 msgid "Open in change order {ids}. Release it to create new versions or revisions."
-msgstr ""
+msgstr "変更注文 {ids} で開きます。新しいバージョンまたはリビジョンを作成するためにリリースしてください。"
 
 msgid "Open in change orders {ids}. Release them to create new versions or revisions."
-msgstr ""
+msgstr "変更注文 {ids} で開きます。新しいバージョンまたはリビジョンを作成するためにそれらをリリースしてください。"
 
 msgid "Open in MES"
 msgstr "MESで開く"
@@ -10060,6 +10063,12 @@ msgstr "更新"
 msgid "Refresh exchange rate"
 msgstr "為替レートを更新"
 
+msgid "Regenerate"
+msgstr ""
+
+msgid "Regenerating thumbnail…"
+msgstr ""
+
 msgid "Register"
 msgstr "既存資産を登録"
 
@@ -11045,6 +11054,9 @@ msgstr "招待を送信"
 
 msgid "Send RFQ to Suppliers"
 msgstr "RFQをサプライヤーに送信"
+
+msgid "Send to Carbon"
+msgstr "Carbon に送信"
 
 msgid "Send Via"
 msgstr "経由で送信"
@@ -12979,8 +12991,14 @@ msgstr "{0}まで"
 msgid "Thumbnail"
 msgstr "サムネイル"
 
+msgid "Thumbnail is still generating"
+msgstr ""
+
 msgid "Thumbnail removed"
 msgstr "サムネイルが削除されました"
+
+msgid "Thumbnail updated"
+msgstr ""
 
 msgid "Thumbnail uploaded"
 msgstr "サムネイルがアップロードされました"

@@ -902,6 +902,9 @@ msgstr "戻る操作を選択してください。その時点から現在の操
 msgid "Send"
 msgstr "送信"
 
+msgid "Send to Carbon"
+msgstr "Carbonに送信"
+
 msgid "Serial"
 msgstr "シリアル"
 

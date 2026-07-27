@@ -5371,6 +5371,9 @@ msgstr "加载跟踪实体失败"
 msgid "Failed to move account: {0}"
 msgstr "移动账户失败: {0}"
 
+msgid "Failed to regenerate thumbnail"
+msgstr ""
+
 msgid "Failed to remove image: {errorMessage}"
 msgstr "删除图像失败：{errorMessage}"
 
@@ -8600,10 +8603,10 @@ msgid "Open in Carbon"
 msgstr "在 Carbon 中打开"
 
 msgid "Open in change order {ids}. Release it to create new versions or revisions."
-msgstr ""
+msgstr "在更改订单 {ids} 中打开。释放它以创建新版本或修订。"
 
 msgid "Open in change orders {ids}. Release them to create new versions or revisions."
-msgstr ""
+msgstr "在更改订单 {ids} 中打开。释放它们以创建新版本或修订。"
 
 msgid "Open in MES"
 msgstr "在MES中打开"
@@ -10060,6 +10063,12 @@ msgstr "刷新"
 msgid "Refresh exchange rate"
 msgstr "刷新汇率"
 
+msgid "Regenerate"
+msgstr ""
+
+msgid "Regenerating thumbnail…"
+msgstr ""
+
 msgid "Register"
 msgstr "注册现有资产"
 
@@ -11045,6 +11054,9 @@ msgstr "发送邀请"
 
 msgid "Send RFQ to Suppliers"
 msgstr "向供应商发送询价单"
+
+msgid "Send to Carbon"
+msgstr "发送至 Carbon"
 
 msgid "Send Via"
 msgstr "通过以下方式发送"
@@ -12979,8 +12991,14 @@ msgstr "至 {0}"
 msgid "Thumbnail"
 msgstr "缩略图"
 
+msgid "Thumbnail is still generating"
+msgstr ""
+
 msgid "Thumbnail removed"
 msgstr "缩略图已移除"
+
+msgid "Thumbnail updated"
+msgstr ""
 
 msgid "Thumbnail uploaded"
 msgstr "缩略图已上传"

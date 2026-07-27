@@ -9,7 +9,7 @@ export default function SupplierQuoteAssignmentPreview() {
       preview={"Supplier quote assigned to you"}
       message={"Supplier Quote SQ-0014 assigned to you"}
       reference={"SQ-0014"}
-      recipientName={"Naveen"}
+      recipientName={"John Doe"}
       ctaLabel={"View details"}
       ctaUrl={"https://app.carbon.ms/x/supplier-quote/1"}
       details={[

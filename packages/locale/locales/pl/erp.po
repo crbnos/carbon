@@ -5371,6 +5371,9 @@ msgstr "Nie udało się załadować śledzonych jednostek"
 msgid "Failed to move account: {0}"
 msgstr "Nie udało się przenieść konta: {0}"
 
+msgid "Failed to regenerate thumbnail"
+msgstr ""
+
 msgid "Failed to remove image: {errorMessage}"
 msgstr "Nie udało się usunąć obrazu: {errorMessage}"
 
@@ -8600,10 +8603,10 @@ msgid "Open in Carbon"
 msgstr "Otwórz w Carbon"
 
 msgid "Open in change order {ids}. Release it to create new versions or revisions."
-msgstr ""
+msgstr "Otwórz w rozkazie zmian {ids}. Zwolnij je, aby utworzyć nowe wersje lub rewizje."
 
 msgid "Open in change orders {ids}. Release them to create new versions or revisions."
-msgstr ""
+msgstr "Otwórz w rokazach zmian {ids}. Zwolnij je, aby utworzyć nowe wersje lub rewizje."
 
 msgid "Open in MES"
 msgstr "Otwórz w MES"
@@ -10060,6 +10063,12 @@ msgstr "Odśwież"
 msgid "Refresh exchange rate"
 msgstr "Odśwież kurs wymiany"
 
+msgid "Regenerate"
+msgstr ""
+
+msgid "Regenerating thumbnail…"
+msgstr ""
+
 msgid "Register"
 msgstr "Zarejestruj Istniejący Majątek"
 
@@ -11045,6 +11054,9 @@ msgstr "Wyślij zaproszenia"
 
 msgid "Send RFQ to Suppliers"
 msgstr "Wyślij zapytanie ofertowe do dostawców"
+
+msgid "Send to Carbon"
+msgstr "Wyślij do Carbon"
 
 msgid "Send Via"
 msgstr "Wyślij przez"
@@ -12979,8 +12991,14 @@ msgstr "Do {0}"
 msgid "Thumbnail"
 msgstr "Miniatura"
 
+msgid "Thumbnail is still generating"
+msgstr ""
+
 msgid "Thumbnail removed"
 msgstr "Miniatura usunięta"
+
+msgid "Thumbnail updated"
+msgstr ""
 
 msgid "Thumbnail uploaded"
 msgstr "Miniatura przesłana"

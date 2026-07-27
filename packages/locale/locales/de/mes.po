@@ -902,6 +902,9 @@ msgstr "Wählen Sie den Vorgang aus, zu dem Sie zurückkehren möchten. Alle Vor
 msgid "Send"
 msgstr "Senden"
 
+msgid "Send to Carbon"
+msgstr "An Carbon senden"
+
 msgid "Serial"
 msgstr "Serie"
 

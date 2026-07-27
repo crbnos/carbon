@@ -902,6 +902,9 @@ msgstr "Wybierz operację, do której chcesz wrócić. Wszystkie operacje od teg
 msgid "Send"
 msgstr "Wyślij"
 
+msgid "Send to Carbon"
+msgstr "Wyślij do Carbon"
+
 msgid "Serial"
 msgstr "Seryjny"
 
