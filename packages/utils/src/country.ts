@@ -1,16 +1,5 @@
-/**
- * Per-country compliance profile. One entry per country we have facts about;
- * everything country-specific (which fields exist, and later labels/formats)
- * belongs here rather than in per-feature lists scattered across the app.
- *
- * The master country *list* (names + alpha-2 codes for pickers) is DB-owned
- * (`country` table) — this map only records capability facts, which are
- * universal, not tenant data.
- */
 type CountryProfile = {
-  /** Country participates in the EORI customs scheme (EU + GB). */
   eori?: boolean;
-  /** Companies carry an official registration number (e.g. Companies House). */
   registrationNumber?: boolean;
 };
 
