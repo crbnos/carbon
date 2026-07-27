@@ -8146,6 +8146,9 @@ msgstr "No se encontraron entidades rastreadas disponibles"
 msgid "No BOM input has a shelf-life policy"
 msgstr "Ninguna entrada de BOM tiene una política de vida útil"
 
+msgid "No CAD model to preview."
+msgstr "No hay modelo CAD para previsualizar."
+
 msgid "No calibration records found"
 msgstr "No se encontraron registros de calibración"
 

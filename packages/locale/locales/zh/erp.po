@@ -8146,6 +8146,9 @@ msgstr "未找到可用的追踪实体"
 msgid "No BOM input has a shelf-life policy"
 msgstr "没有物料清单输入具有保质期政策"
 
+msgid "No CAD model to preview."
+msgstr "没有CAD模型可预览。"
+
 msgid "No calibration records found"
 msgstr "未找到校准记录"
 

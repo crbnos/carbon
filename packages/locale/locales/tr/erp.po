@@ -8146,6 +8146,9 @@ msgstr "Kullanılabilir izlenen varlık bulunamadı"
 msgid "No BOM input has a shelf-life policy"
 msgstr "Hiçbir BOM girdisi raf ömrü politikasına sahip değil"
 
+msgid "No CAD model to preview."
+msgstr "Önizlemek için CAD modeli yok."
+
 msgid "No calibration records found"
 msgstr "Kalibrasyon kaydı bulunamadı"
 

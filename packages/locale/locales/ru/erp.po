@@ -8146,6 +8146,9 @@ msgstr "Не найдено доступных отслеживаемых объ
 msgid "No BOM input has a shelf-life policy"
 msgstr "Ни один вход BOM не имеет политики срока хранения"
 
+msgid "No CAD model to preview."
+msgstr "Нет модели CAD для предпросмотра."
+
 msgid "No calibration records found"
 msgstr "Записи о калибровке не найдены"
 

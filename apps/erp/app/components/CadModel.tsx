@@ -26,6 +26,7 @@ import {
 import { ModelPreview } from "@carbon/viewer/model-preview";
 import { OptimizeProgress } from "@carbon/viewer/optimize-progress";
 import { useOptimizedModel } from "@carbon/viewer/use-optimized-model";
+import { Trans } from "@lingui/react/macro";
 import { nanoid } from "nanoid";
 import { useState } from "react";
 import { useDropzone } from "react-dropzone";
@@ -48,6 +49,8 @@ type CadModelProps = {
     jobId?: string;
   };
   title?: string;
+  // Rendered beside the title when the embedding surface locked this card.
+  titleExtras?: React.ReactNode;
   uploadClassName?: string;
   viewerClassName?: string;
   isReadOnly?: boolean;
@@ -58,6 +61,7 @@ const CadModel = ({
   metadata,
   modelPath,
   title,
+  titleExtras,
   uploadClassName,
   viewerClassName
 }: CadModelProps) => {
@@ -339,6 +343,8 @@ const CadModel = ({
             className={uploadClassName}
             file={file}
             title={title}
+            isReadOnly={isReadOnly}
+            titleExtras={titleExtras}
             onFileChange={onFileChange}
           />
         );
@@ -351,6 +357,7 @@ export default CadModel;
 
 type CadModelUploadProps = {
   title?: string;
+  titleExtras?: React.ReactNode;
   file: File | null;
   className?: string;
   isReadOnly?: boolean;
@@ -359,6 +366,7 @@ type CadModelUploadProps = {
 
 const CadModelUpload = ({
   title,
+  titleExtras,
   file,
   isReadOnly,
   className,
@@ -401,8 +409,33 @@ const CadModelUpload = ({
     }
   });
 
+  // Read-only with no model yet: keep the section (and its title) so the reader
+  // knows it exists, but drop the drop zone entirely.
   if (isReadOnly) {
-    return null;
+    return (
+      <div
+        className={cn(
+          "flex h-full flex-col flex-grow rounded-lg border border-border bg-gradient-to-bl from-card from-50% via-card to-background dark:border-none dark:shadow-[inset_0_0.5px_0_rgb(255_255_255_/_0.08),_inset_0_0_1px_rgb(255_255_255_/_0.24),_0_0_0_0.5px_rgb(0,0,0,1),0px_0px_4px_rgba(0,_0,_0,_0.08)] text-card-foreground shadow-sm w-full min-h-[400px] ",
+          className
+        )}
+      >
+        <div className="relative flex flex-col flex-1 min-h-0 w-full p-4">
+          {title && (
+            <CardHeader className="absolute top-0 left-0 z-10">
+              <CardTitle className="flex flex-row items-center gap-2">
+                {title}
+                {titleExtras}
+              </CardTitle>
+            </CardHeader>
+          )}
+          <div className="flex flex-col flex-grow items-center justify-center gap-2 p-6">
+            <p className="text-base text-muted-foreground">
+              <Trans>No CAD model to preview.</Trans>
+            </p>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (

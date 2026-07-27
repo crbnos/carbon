@@ -8146,6 +8146,9 @@ msgstr "Nie znaleziono dostępnych śledzonych jednostek"
 msgid "No BOM input has a shelf-life policy"
 msgstr "Żadne wejście BOM nie ma polityki przydatności do spożycia"
 
+msgid "No CAD model to preview."
+msgstr "Brak modelu CAD do podglądu."
+
 msgid "No calibration records found"
 msgstr "Nie znaleziono rekordów kalibracji"
 

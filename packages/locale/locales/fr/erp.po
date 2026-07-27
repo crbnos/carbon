@@ -8146,6 +8146,9 @@ msgstr "Aucune entité suivie disponible trouvée"
 msgid "No BOM input has a shelf-life policy"
 msgstr "Aucune entrée de nomenclature n'a de politique de durée de vie"
 
+msgid "No CAD model to preview."
+msgstr "Aucun modèle CAD à prévisualiser."
+
 msgid "No calibration records found"
 msgstr "Aucun enregistrement d'étalonnage trouvé"
 

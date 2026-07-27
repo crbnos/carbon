@@ -8146,6 +8146,9 @@ msgstr "कोई उपलब्ध ट्रैक किए गए इका�
 msgid "No BOM input has a shelf-life policy"
 msgstr "कोई BOM इनपुट शेल्फ-लाइफ नीति नहीं है"
 
+msgid "No CAD model to preview."
+msgstr "पूर्वावलोकन के लिए कोई CAD मॉडल नहीं है।"
+
 msgid "No calibration records found"
 msgstr "कोई अंशांकन रिकॉर्ड नहीं मिला"
 

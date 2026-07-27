@@ -6,10 +6,14 @@ import {
   CardTitle,
   HStack,
   Status,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
+import { LuLock } from "react-icons/lu";
 import { useFetcher } from "react-router";
 import { CadModel, DeferredFiles } from "~/components";
 import { DatePicker, Hidden, Select, Submit } from "~/components/Form";
@@ -44,6 +48,19 @@ const changeTypeOptions = changeOrderChangeTypes.map((c) => ({
   value: c,
   label: c
 }));
+
+// Matches the lock affordance on the BillOfMaterial / BillOfProcess cards, so
+// every card frozen by the change notice reads the same way.
+function LockedHint({ reason }: { reason?: string }) {
+  return (
+    <Tooltip>
+      <TooltipTrigger tabIndex={-1} className="text-muted-foreground">
+        <LuLock className="size-3.5" />
+      </TooltipTrigger>
+      <TooltipContent className="max-w-xs">{reason}</TooltipContent>
+    </Tooltip>
+  );
+}
 
 // The affected-item line detail: everything about the ONE selected affected item,
 // unwrapped from a single card into as many standalone cards as the change needs
@@ -119,7 +136,7 @@ export default function AffectedItemDetail({
       <Card>
         <CardHeader>
           <HStack className="justify-between w-full">
-            <CardTitle>
+            <CardTitle className="flex flex-row items-center gap-2">
               <ItemLink
                 itemId={affectedItem.itemId}
                 type={label?.type}
@@ -129,6 +146,7 @@ export default function AffectedItemDetail({
                   label?.readableId ??
                   affectedItem.itemId}
               </ItemLink>
+              {isDisabled && <LockedHint reason={disabledReason} />}
             </CardTitle>
             {/* Single combined change-type + draft-version badge (e.g. "Version 2"
                 / "Revision 2" / "New"), replacing the old delete icon here.
@@ -167,8 +185,9 @@ export default function AffectedItemDetail({
       {showCutover && (
         <Card>
           <CardHeader>
-            <CardTitle>
+            <CardTitle className="flex flex-row items-center gap-2">
               <Trans>Part Supersession</Trans>
+              {isDisabled && <LockedHint reason={disabledReason} />}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -198,8 +217,9 @@ export default function AffectedItemDetail({
       {showAttributes && (
         <Card>
           <CardHeader>
-            <CardTitle>
+            <CardTitle className="flex flex-row items-center gap-2">
               <Trans>Properties</Trans>
+              {isDisabled && <LockedHint reason={disabledReason} />}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -227,6 +247,9 @@ export default function AffectedItemDetail({
         <SupplierParts
           supplierParts={affected.partData.supplierParts}
           isReadOnly={isDisabled}
+          titleExtras={
+            isDisabled ? <LockedHint reason={disabledReason} /> : undefined
+          }
           deleteSupplierPath={(supplierPartId) =>
             path.to.changeNoticeDeleteSupplierPart(
               changeOrderId,
@@ -298,11 +321,19 @@ export default function AffectedItemDetail({
                   modelUpload={partData.partSummary ?? undefined}
                   type="Part"
                   isReadOnly={isDisabled}
+                  titleExtras={
+                    isDisabled ? (
+                      <LockedHint reason={disabledReason} />
+                    ) : undefined
+                  }
                 />
               )}
             </DeferredFiles>
             <CadModel
               isReadOnly={isDisabled}
+              titleExtras={
+                isDisabled ? <LockedHint reason={disabledReason} /> : undefined
+              }
               metadata={{ itemId: partData.itemId }}
               modelPath={partData.partSummary?.modelPath ?? null}
               title={t`CAD Model`}

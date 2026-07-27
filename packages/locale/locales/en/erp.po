@@ -8146,6 +8146,9 @@ msgstr "No available tracked entities found"
 msgid "No BOM input has a shelf-life policy"
 msgstr "No BOM input has a shelf-life policy"
 
+msgid "No CAD model to preview."
+msgstr "No CAD model to preview."
+
 msgid "No calibration records found"
 msgstr "No calibration records found"
 

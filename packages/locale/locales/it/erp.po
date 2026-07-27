@@ -8146,6 +8146,9 @@ msgstr "Nessuna entità tracciata disponibile trovata"
 msgid "No BOM input has a shelf-life policy"
 msgstr "Nessun input della distinta base ha una politica di shelf-life"
 
+msgid "No CAD model to preview."
+msgstr "Nessun modello CAD da visualizzare."
+
 msgid "No calibration records found"
 msgstr "Nessun record di calibrazione trovato"
 

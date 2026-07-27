@@ -8146,6 +8146,9 @@ msgstr "利用可能な追跡対象エンティティが見つかりません"
 msgid "No BOM input has a shelf-life policy"
 msgstr "BOMインプットに棚卸資産有効期限ポリシーがありません"
 
+msgid "No CAD model to preview."
+msgstr "プレビューするCADモデルがありません。"
+
 msgid "No calibration records found"
 msgstr "キャリブレーション記録が見つかりません"
 

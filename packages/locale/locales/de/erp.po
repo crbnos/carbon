@@ -8146,6 +8146,9 @@ msgstr "Keine verfügbaren verfolgten Entitäten gefunden"
 msgid "No BOM input has a shelf-life policy"
 msgstr "Keine BOM-Eingabe hat eine Shelf-Life-Richtlinie"
 
+msgid "No CAD model to preview."
+msgstr "Kein CAD-Modell zum Vorschau verfügbar."
+
 msgid "No calibration records found"
 msgstr "Keine Kalibrierungsdatensätze gefunden"
 
