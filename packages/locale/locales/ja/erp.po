@@ -12735,7 +12735,7 @@ msgid "The ordered sequence of operations a job runs through, copied from the me
 msgstr "メソッドのプロセス一覧から コピーされた、ジョブが実行される操作の順序付きシーケンス。"
 
 msgid "The original model file is no longer available"
-msgstr ""
+msgstr "元のモデルファイルは利用できなくなりました"
 
 msgid "The outbound posting document that takes goods out of stock to a customer, posting COGS as it goes."
 msgstr "在庫から顧客に商品を取り出す発信転記文書。転記時にCOGSを転記します。"

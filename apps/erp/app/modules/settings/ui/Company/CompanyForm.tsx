@@ -1,4 +1,4 @@
-import { ValidatedForm } from "@carbon/form";
+import { useControlField, ValidatedForm } from "@carbon/form";
 import { VStack } from "@carbon/react";
 import { isEoriCountry, isRegistrationNumberCountry } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -10,6 +10,32 @@ import { path } from "~/utils/path";
 
 type CompanyFormProps = {
   company: z.infer<typeof companyValidator>;
+};
+
+// Reads the live countryCode so picking a new country in AddressAutocomplete
+// shows or hides these immediately, rather than waiting for a save + reload.
+const CountrySpecificFields = () => {
+  const { t } = useLingui();
+  const [countryCode] = useControlField<string>("countryCode");
+
+  return (
+    <>
+      {isEoriCountry(countryCode) && (
+        <Input
+          name="eori"
+          label={t`EORI`}
+          placeholder={t`e.g. GB123456789000`}
+        />
+      )}
+      {isRegistrationNumberCountry(countryCode) && (
+        <Input
+          name="registrationNumber"
+          label={t`Registration Number`}
+          placeholder={t`e.g. 01234567`}
+        />
+      )}
+    </>
+  );
 };
 
 const CompanyForm = ({ company }: CompanyFormProps) => {
@@ -41,20 +67,7 @@ const CompanyForm = ({ company }: CompanyFormProps) => {
               label={t`VAT Number`}
               placeholder={t`e.g. GB123456789`}
             />
-            {isEoriCountry(company.countryCode) && (
-              <Input
-                name="eori"
-                label={t`EORI`}
-                placeholder={t`e.g. GB123456789000`}
-              />
-            )}
-            {isRegistrationNumberCountry(company.countryCode) && (
-              <Input
-                name="registrationNumber"
-                label={t`Registration Number`}
-                placeholder={t`e.g. 01234567`}
-              />
-            )}
+            <CountrySpecificFields />
             <AddressAutocomplete variant="grid" />
             <Currency
               name="baseCurrencyCode"

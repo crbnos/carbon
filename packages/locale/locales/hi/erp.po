@@ -12735,7 +12735,7 @@ msgid "The ordered sequence of operations a job runs through, copied from the me
 msgstr "संचालन का क्रमित क्रम जो एक काम चलाता है, विधि के बिल ऑफ प्रोसेस से कॉपी किया गया।"
 
 msgid "The original model file is no longer available"
-msgstr ""
+msgstr "मूल मॉडल फ़ाइल अब उपलब्ध नहीं है"
 
 msgid "The outbound posting document that takes goods out of stock to a customer, posting COGS as it goes."
 msgstr "बाहरी पोस्टिंग दस्तावेज़ जो स्टॉक से माल को ग्राहक के पास ले जाता है, रास्ते में COGS पोस्ट करता है।"

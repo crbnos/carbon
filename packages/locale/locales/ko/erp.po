@@ -12735,7 +12735,7 @@ msgid "The ordered sequence of operations a job runs through, copied from the me
 msgstr "작업이 거쳐가는 공정작업의 순서로, 방법의 공정(BOP)에서 복사됩니다."
 
 msgid "The original model file is no longer available"
-msgstr ""
+msgstr "원본 모델 파일을 더 이상 사용할 수 없습니다"
 
 msgid "The outbound posting document that takes goods out of stock to a customer, posting COGS as it goes."
 msgstr "재화를 재고에서 고객에게 출고시키는 출고 전표로, 진행되면서 매출원가(COGS)를 계상합니다."

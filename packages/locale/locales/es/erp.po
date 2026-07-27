@@ -12735,7 +12735,7 @@ msgid "The ordered sequence of operations a job runs through, copied from the me
 msgstr "La secuencia ordenada de operaciones que ejecuta un trabajo, copiada de la lista de procesos del método."
 
 msgid "The original model file is no longer available"
-msgstr ""
+msgstr "El archivo de modelo original ya no está disponible"
 
 msgid "The outbound posting document that takes goods out of stock to a customer, posting COGS as it goes."
 msgstr "El documento de contabilización de salida que saca bienes del inventario a un cliente, contabilizando COGS en el camino."

@@ -4406,16 +4406,16 @@ msgid "Duration"
 msgstr "Czas trwania"
 
 msgid "e.g. +1 555 123 4567"
-msgstr "np. +1 555 123 4567"
+msgstr "np. +48 22 123 45 67"
 
 msgid "e.g. +1 555 123 4568"
-msgstr "np. +1 555 123 4568"
+msgstr "np. +48 22 123 45 68"
 
 msgid "e.g. 01234567"
 msgstr "np. 01234567"
 
 msgid "e.g. 1 Industrial Way"
-msgstr "np. 1 Industrial Way"
+msgstr "np. ul. Przemysłowa 1"
 
 msgid "e.g. 12-3456789"
 msgstr "np. 12-3456789"
@@ -4424,13 +4424,13 @@ msgid "e.g. 2h"
 msgstr "np. 2h"
 
 msgid "e.g. 48201"
-msgstr "np. 48201"
+msgstr "np. 00-001"
 
 msgid "e.g. Acme Manufacturing"
 msgstr "np. Acme Manufacturing"
 
 msgid "e.g. Detroit"
-msgstr "np. Detroit"
+msgstr "np. Warszawa"
 
 msgid "e.g. DWG-1234"
 msgstr "np. DWG-1234"
@@ -4448,10 +4448,10 @@ msgid "e.g. Marco + the area leads"
 msgstr "np. Marco + liderzy obszarów"
 
 msgid "e.g. MI"
-msgstr "np. MI"
+msgstr "np. mazowieckie"
 
 msgid "e.g. Suite 200"
-msgstr "np. Suite 200"
+msgstr "np. lok. 200"
 
 msgid "e.g. the first 3 to 4 weeks"
 msgstr "np. pierwsze 3 do 4 tygodnie"
@@ -12735,7 +12735,7 @@ msgid "The ordered sequence of operations a job runs through, copied from the me
 msgstr "Uporządkowana sekwencja operacji, przez którą przechodzi zadanie, skopiowana z listy procesów metody."
 
 msgid "The original model file is no longer available"
-msgstr ""
+msgstr "Oryginalny plik modelu nie jest już dostępny"
 
 msgid "The outbound posting document that takes goods out of stock to a customer, posting COGS as it goes."
 msgstr "Dokument buchowania wychodzącego, który wyjmuje towary z magazynu do klienta, księgując COGS w drodze."

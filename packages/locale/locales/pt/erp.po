@@ -4406,40 +4406,40 @@ msgid "Duration"
 msgstr "Duração"
 
 msgid "e.g. +1 555 123 4567"
-msgstr "ex. +1 555 123 4567"
+msgstr "p. ex. +1 555 123 4567"
 
 msgid "e.g. +1 555 123 4568"
-msgstr "ex. +1 555 123 4568"
+msgstr "p. ex. +1 555 123 4568"
 
 msgid "e.g. 01234567"
-msgstr "ex. 01234567"
+msgstr "p. ex. 01234567"
 
 msgid "e.g. 1 Industrial Way"
-msgstr "ex. 1 Industrial Way"
+msgstr "p. ex. 1 Industrial Way"
 
 msgid "e.g. 12-3456789"
-msgstr "ex. 12-3456789"
+msgstr "p. ex. 12-3456789"
 
 msgid "e.g. 2h"
 msgstr "p.ex. 2h"
 
 msgid "e.g. 48201"
-msgstr "ex. 48201"
+msgstr "p. ex. 48201"
 
 msgid "e.g. Acme Manufacturing"
-msgstr "ex. Acme Manufacturing"
+msgstr "p. ex. Acme Manufacturing"
 
 msgid "e.g. Detroit"
-msgstr "ex. Detroit"
+msgstr "p. ex. Detroit"
 
 msgid "e.g. DWG-1234"
 msgstr "p.ex. DWG-1234"
 
 msgid "e.g. GB123456789"
-msgstr "ex. GB123456789"
+msgstr "p. ex. GB123456789"
 
 msgid "e.g. GB123456789000"
-msgstr "ex. GB123456789000"
+msgstr "p. ex. GB123456789000"
 
 msgid "e.g. Jane Smith"
 msgstr "p. ex. Jane Smith"
@@ -4448,10 +4448,10 @@ msgid "e.g. Marco + the area leads"
 msgstr "p. ex. Marco + os líderes da área"
 
 msgid "e.g. MI"
-msgstr "ex. MI"
+msgstr "p. ex. MI"
 
 msgid "e.g. Suite 200"
-msgstr "ex. Suite 200"
+msgstr "p. ex. Suite 200"
 
 msgid "e.g. the first 3 to 4 weeks"
 msgstr "p.ex. as primeiras 3 a 4 semanas"
@@ -12735,7 +12735,7 @@ msgid "The ordered sequence of operations a job runs through, copied from the me
 msgstr "A sequência ordenada de operações que um trabalho executa, copiada da lista de processos do método."
 
 msgid "The original model file is no longer available"
-msgstr ""
+msgstr "O arquivo de modelo original não está mais disponível"
 
 msgid "The outbound posting document that takes goods out of stock to a customer, posting COGS as it goes."
 msgstr "O documento de contabilização de saída que remove bens do estoque para um cliente, contabilizando o COGS no processo."
