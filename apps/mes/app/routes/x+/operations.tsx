@@ -191,11 +191,13 @@ export async function loader({ context, request }: LoaderFunctionArgs) {
   }
 
   if (search) {
+    const searchLower = search.toLowerCase();
     filteredOperations = filteredOperations.filter(
       (op) =>
-        op.jobReadableId.toLowerCase().includes(search.toLowerCase()) ||
-        op.itemReadableId.toLowerCase().includes(search.toLowerCase()) ||
-        op.description?.toLowerCase().includes(search.toLowerCase())
+        op.jobReadableId.toLowerCase().includes(searchLower) ||
+        op.itemReadableId.toLowerCase().includes(searchLower) ||
+        op.description?.toLowerCase().includes(searchLower) ||
+        op.itemDescription?.toLowerCase().includes(searchLower)
     );
   }
 
