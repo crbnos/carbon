@@ -1,4 +1,4 @@
-import { Transaction } from "kysely";
+import { sql, Transaction } from "kysely";
 import { DB } from "../lib/database.ts";
 import { interpolateSequenceDate } from "../lib/utils.ts";
 
@@ -7,33 +7,45 @@ export async function getNextSequence(
   tableName: string,
   companyId: string
 ) {
-  // get current purchase invoice sequence number
-  const sequence = await trx
-    .selectFrom("sequence")
-    .selectAll()
-    .where("table", "=", tableName)
-    .where("companyId", "=", companyId)
-    .executeTakeFirstOrThrow();
+  // Atomic allocation: a single UPDATE...RETURNING. The ordinary row lock this
+  // UPDATE takes is the serialization point — concurrent allocators for the same
+  // company+table queue behind it instead of reading the same "next" and both
+  // writing it (the old SELECT-then-UPDATE duplicate race is gone by
+  // construction, in one round trip). Running on the caller's transaction means a
+  // rollback reverts the increment together with the document, so a failed post
+  // leaves no gap. "firstUsedAt" is stamped so the sequence-immutability trigger
+  // can freeze legal sequences after first use.
+  const result = await sql<{
+    prefix: string | null;
+    suffix: string | null;
+    next: number;
+    size: number;
+  }>`
+    UPDATE "sequence"
+       SET "next" = "next" + "step",
+           "firstUsedAt" = COALESCE("firstUsedAt", NOW()),
+           "updatedAt" = NOW(),
+           "updatedBy" = 'system'
+     WHERE "table" = ${tableName}
+       AND "companyId" = ${companyId}
+     RETURNING "prefix", "suffix", "next", "size"
+  `.execute(trx);
 
-  const { prefix, suffix, next, size, step } = sequence;
-  if (!Number.isInteger(step)) throw new Error("Next is not an integer");
-  if (!Number.isInteger(step)) throw new Error("Step is not an integer");
+  const row = result.rows[0];
+  if (!row) {
+    throw new Error(
+      `Sequence not found for table ${tableName} and company ${companyId}`
+    );
+  }
+
+  const { prefix, suffix, next, size } = row;
   if (!Number.isInteger(size)) throw new Error("Size is not an integer");
 
-  const nextValue = next! + step!;
-  const nextSequence = nextValue.toString().padStart(size!, "0");
+  // "next" is the already-incremented value; format identically to before so
+  // issued numbers stay byte-for-byte stable.
+  const nextSequence = next.toString().padStart(size, "0");
   const derivedPrefix = interpolateSequenceDate(prefix);
   const derivedSuffix = interpolateSequenceDate(suffix);
-
-  await trx
-    .updateTable("sequence")
-    .set({
-      next: nextValue,
-      updatedBy: "system",
-    })
-    .where("table", "=", tableName)
-    .where("companyId", "=", companyId)
-    .execute();
 
   return `${derivedPrefix}${nextSequence}${derivedSuffix}`;
 }

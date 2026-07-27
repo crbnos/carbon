@@ -61,6 +61,23 @@ pnpm --filter @carbon/erp test -- --testPathPattern=accounting
 | `fixedAssetDisposal` / `fixedAssetUsageLog` | Asset disposal and usage tracking |
 | `intercompanyTransaction` | Cross-company transaction matching |
 | `fiscalYearSettings` | Fiscal and tax year configuration |
+| `legalSeries` | Statutory gapless-series substrate for customer-facing docs (sales invoice / credit memo), per company × country × document type. Allocated by `get_next_legal_series_number` inside the posting transaction; immutable after first use. Table + allocator + `legalSeriesValidator` only — series selection/issuance wiring is #1054. |
+
+## Gapless Document Numbering
+
+The six accounting document sequences (`journalEntry`, `payment`, `creditMemo`,
+`debitMemo`, `salesInvoice`, `purchaseInvoice`) are marked `isLegalSequence` on
+the `sequence` table and are **immutable after first use** (a `BEFORE UPDATE OR
+DELETE` trigger, `sequenceImmutabilityCheck`, freezes prefix/suffix/size/step and
+blocks rewinding `next` or deleting a used legal sequence — for every role,
+service role included). Allocation is a single atomic `UPDATE … RETURNING`
+(`get_next_sequence_atomic`; the shared edge-function helper `getNextSequence`
+does the same), so concurrent posts can't duplicate and a rolled-back post leaves
+no gap. `sequence."gaplessFrom"` records the per-company forward-only cutover.
+NOTE (as of #1038): the migration ships the substrate; moving document-number
+allocation from draft-creation to posting time, the `get_next_sequence` RPC guard,
+and the nullable-draft-number UI are the coordinated follow-up wave (Decision 15,
+needs regenerated types).
 
 ## Key Service Functions
 
