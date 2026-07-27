@@ -61,6 +61,28 @@ pnpm --filter @carbon/erp test -- --testPathPattern=accounting
 | `fixedAssetDisposal` / `fixedAssetUsageLog` | Asset disposal and usage tracking |
 | `intercompanyTransaction` | Cross-company transaction matching |
 | `fiscalYearSettings` | Fiscal and tax year configuration |
+| `legalSeries` | Statutory gapless-series substrate for customer-facing docs (sales invoice / credit memo), per company × country × document type. Allocated by `get_next_legal_series_number` inside the posting transaction; immutable after first use. Table + allocator + `legalSeriesValidator` only — series selection/issuance wiring is #1054. |
+
+## Gapless Document Numbering
+
+The six accounting document sequences (`journalEntry`, `payment`, `creditMemo`,
+`debitMemo`, `salesInvoice`, `purchaseInvoice`) are marked `isLegalSequence` on
+the `sequence` table and are **immutable after first use** (a `BEFORE UPDATE OR
+DELETE` trigger, `sequenceImmutabilityCheck`, freezes prefix/suffix/size/step and
+blocks rewinding `next` or deleting a used legal sequence — for every role,
+service role included). Allocation is a single atomic `UPDATE … RETURNING`
+(`get_next_sequence_atomic`; the shared edge-function helper `getNextSequence`
+does the same), so concurrent posts can't duplicate and a rolled-back post leaves
+no gap. `sequence."gaplessFrom"` records the per-company forward-only cutover.
+The atomic allocators are REVOKEd from PostgREST roles (migration
+`20260724161500`) so only in-transaction posters reach them. `legalSeries` has a
+CRUD service (`getLegalSeries` / `getLegalSeriesById` / `getLegalSeriesList` /
+`upsertLegalSeries` / `deleteLegalSeries`) and an accounting-settings UI; the
+sequences settings form locks format fields once a legal sequence is used.
+`getDocumentReadableId` (`@carbon/utils`) renders `Draft-{id6}` for number-less
+drafts. NOTE (as of #1038): moving document-number allocation from draft-creation
+to posting time and the `get_next_sequence` RPC guard remain the coordinated
+follow-up wave (Decision 15, DB-gated; call-site map in `.ai/runs/1038/status.md`).
 
 ## Key Service Functions
 
@@ -81,6 +103,7 @@ pnpm --filter @carbon/erp test -- --testPathPattern=accounting
 - `getCostCenters` / `getCostCentersTree` — cost center hierarchy
 - `getFixedAssets` / `insertFixedAsset` / `insertDepreciationRun` — fixed asset lifecycle
 - `createIntercompanyTransaction` / `runIntercompanyMatching` / `generateEliminations` — IC processing
+- `getLegalSeries` / `getLegalSeriesById` / `getLegalSeriesList` / `upsertLegalSeries` / `deleteLegalSeries` — legal-series CRUD (cast-based until `legalSeries` lands in generated types)
 
 ## Key Exports
 

@@ -1230,6 +1230,10 @@ msgstr "Tem a certeza de que deseja eliminar o tipo de problema: {0}? Esta açã
 msgid "Are you sure you want to delete the item group: {0}? This cannot be undone."
 msgstr "Tem a certeza de que deseja eliminar o grupo de artigos: {0}? Esta ação não pode ser desfeita."
 
+#. placeholder {0}: legalSeries.name
+msgid "Are you sure you want to delete the legal series: {0}? This cannot be undone."
+msgstr "Tem certeza de que deseja excluir a série legal: {0}? Isso não pode ser desfeito."
+
 #. placeholder {0}: line.customerPartId
 #. placeholder {0}: line.description
 #. placeholder {0}: line.itemReadableId
@@ -2944,6 +2948,9 @@ msgstr "Contraparte"
 msgid "Country"
 msgstr "País"
 
+msgid "Country Code"
+msgstr "Código do País"
+
 msgid "Create"
 msgstr "Criar"
 
@@ -3780,6 +3787,9 @@ msgstr "Excluir grupo de itens"
 msgid "Delete Journal Entry"
 msgstr "Deletar Lançamento no Diário"
 
+msgid "Delete Legal Series"
+msgstr "Excluir Série Legal"
+
 msgid "Delete line"
 msgstr "Deletar linha"
 
@@ -4488,6 +4498,9 @@ msgstr "Editar Lançamento no Diário"
 
 msgid "Edit Kanban"
 msgstr "Editar Kanban"
+
+msgid "Edit Legal Series"
+msgstr "Editar Série Legal"
 
 msgid "Edit Line"
 msgstr "Editar Linha"
@@ -5372,7 +5385,7 @@ msgid "Failed to move account: {0}"
 msgstr "Falha ao mover conta: {0}"
 
 msgid "Failed to regenerate thumbnail"
-msgstr ""
+msgstr "Falha ao regenerar miniatura"
 
 msgid "Failed to remove image: {errorMessage}"
 msgstr "Falha ao remover imagem: {errorMessage}"
@@ -5649,6 +5662,9 @@ msgstr "Esqueceu de Registrar a Saída?"
 
 msgid "Format"
 msgstr "Formato"
+
+msgid "Format locked after first use"
+msgstr "Formato bloqueado após o primeiro uso"
 
 msgid "Foundation"
 msgstr "Fundação"
@@ -6931,6 +6947,9 @@ msgstr "Item esquerdo"
 msgid "Leftover Parts Detected"
 msgstr "Peças Excedentes Detectadas"
 
+msgid "Legal Series"
+msgstr "Série Legal"
+
 msgid "Less manual work"
 msgstr "Menos trabalho manual"
 
@@ -7091,6 +7110,9 @@ msgstr "Bloquear Período"
 
 msgid "Locked"
 msgstr "Bloqueado"
+
+msgid "Locked after first use"
+msgstr "Bloqueado após o primeiro uso"
 
 msgid "Locking makes the period read-only for operational documents (receipts, shipments, invoices) while still allowing accounting adjustments like depreciation and disposals. A period must be locked before it can be closed."
 msgstr "O bloqueio torna o período somente leitura para documentos operacionais (recebimentos, remessas, faturas) enquanto ainda permite ajustes contábeis como depreciação e alienações. Um período deve ser bloqueado antes de poder ser fechado."
@@ -7881,6 +7903,9 @@ msgstr "Novo Grupo de Itens"
 
 msgid "New Kanban"
 msgstr "Novo Kanban"
+
+msgid "New Legal Series"
+msgstr "Nova Série Legal"
 
 msgid "New Line"
 msgstr "Nova Linha"
@@ -10064,10 +10089,10 @@ msgid "Refresh exchange rate"
 msgstr "Atualizar taxa de câmbio"
 
 msgid "Regenerate"
-msgstr ""
+msgstr "Regenerar"
 
 msgid "Regenerating thumbnail…"
-msgstr ""
+msgstr "Regenerando miniatura…"
 
 msgid "Register"
 msgstr "Registrar Ativo Existente"
@@ -10077,6 +10102,9 @@ msgstr "Registrado"
 
 msgid "Registered"
 msgstr "Ponto de Reabastecimento"
+
+msgid "Registration Ref"
+msgstr "Ref. de Registro"
 
 msgid "Reject"
 msgstr "Rejeitar"
@@ -12992,13 +13020,13 @@ msgid "Thumbnail"
 msgstr "Miniatura"
 
 msgid "Thumbnail is still generating"
-msgstr ""
+msgstr "A miniatura ainda está sendo gerada"
 
 msgid "Thumbnail removed"
 msgstr "Miniatura removida"
 
 msgid "Thumbnail updated"
-msgstr ""
+msgstr "Miniatura atualizada"
 
 msgid "Thumbnail uploaded"
 msgstr "Miniatura enviada"

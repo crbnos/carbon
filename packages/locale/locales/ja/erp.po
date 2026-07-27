@@ -1230,6 +1230,10 @@ msgstr "本当に問題タイプ: {0} を削除してもよろしいですか？
 msgid "Are you sure you want to delete the item group: {0}? This cannot be undone."
 msgstr "本当にアイテムグループ: {0} を削除してもよろしいですか？この操作は取り消せません。"
 
+#. placeholder {0}: legalSeries.name
+msgid "Are you sure you want to delete the legal series: {0}? This cannot be undone."
+msgstr "法定シリーズ：{0}を削除してもよろしいですか？このアクションは取り消せません。"
+
 #. placeholder {0}: line.customerPartId
 #. placeholder {0}: line.description
 #. placeholder {0}: line.itemReadableId
@@ -2944,6 +2948,9 @@ msgstr "相手先"
 msgid "Country"
 msgstr "国"
 
+msgid "Country Code"
+msgstr "国コード"
+
 msgid "Create"
 msgstr "作成"
 
@@ -3780,6 +3787,9 @@ msgstr "アイテムグループを削除"
 msgid "Delete Journal Entry"
 msgstr "仕訳帳エントリを削除"
 
+msgid "Delete Legal Series"
+msgstr "法定シリーズを削除"
+
 msgid "Delete line"
 msgstr "行を削除"
 
@@ -4488,6 +4498,9 @@ msgstr "仕訳帳エントリを編集"
 
 msgid "Edit Kanban"
 msgstr "カンバンを編集"
+
+msgid "Edit Legal Series"
+msgstr "法定シリーズを編集"
 
 msgid "Edit Line"
 msgstr "行を編集"
@@ -5372,7 +5385,7 @@ msgid "Failed to move account: {0}"
 msgstr "勘定科目の移動に失敗しました: {0}"
 
 msgid "Failed to regenerate thumbnail"
-msgstr ""
+msgstr "サムネイルの再生成に失敗しました"
 
 msgid "Failed to remove image: {errorMessage}"
 msgstr "画像の削除に失敗しました: {errorMessage}"
@@ -5649,6 +5662,9 @@ msgstr "時刻記録を忘れましたか？"
 
 msgid "Format"
 msgstr "フォーマット"
+
+msgid "Format locked after first use"
+msgstr "最初の使用後にフォーマットがロックされます"
 
 msgid "Foundation"
 msgstr "基礎"
@@ -6931,6 +6947,9 @@ msgstr "左側の項目"
 msgid "Leftover Parts Detected"
 msgstr "余剰部品が検出されました"
 
+msgid "Legal Series"
+msgstr "法定シリーズ"
+
 msgid "Less manual work"
 msgstr "手作業を減らす"
 
@@ -7091,6 +7110,9 @@ msgstr "期間をロック"
 
 msgid "Locked"
 msgstr "ロック済み"
+
+msgid "Locked after first use"
+msgstr "最初の使用後にロックされます"
 
 msgid "Locking makes the period read-only for operational documents (receipts, shipments, invoices) while still allowing accounting adjustments like depreciation and disposals. A period must be locked before it can be closed."
 msgstr "ロックにより、当期は運用書類（受領書、出荷、請求書）に対して読み取り専用になりますが、減価償却や処分などの会計調整は引き続き可能です。期間は終了する前にロックする必要があります。"
@@ -7881,6 +7903,9 @@ msgstr "新しいアイテムグループ"
 
 msgid "New Kanban"
 msgstr "新しいカンバン"
+
+msgid "New Legal Series"
+msgstr "新しい法定シリーズ"
 
 msgid "New Line"
 msgstr "新しい行"
@@ -10064,10 +10089,10 @@ msgid "Refresh exchange rate"
 msgstr "為替レートを更新"
 
 msgid "Regenerate"
-msgstr ""
+msgstr "再生成"
 
 msgid "Regenerating thumbnail…"
-msgstr ""
+msgstr "サムネイルを再生成中…"
 
 msgid "Register"
 msgstr "既存資産を登録"
@@ -10077,6 +10102,9 @@ msgstr "登録済み"
 
 msgid "Registered"
 msgstr "再注文点"
+
+msgid "Registration Ref"
+msgstr "登録参照"
 
 msgid "Reject"
 msgstr "却下"
@@ -12992,13 +13020,13 @@ msgid "Thumbnail"
 msgstr "サムネイル"
 
 msgid "Thumbnail is still generating"
-msgstr ""
+msgstr "サムネイルはまだ生成中です"
 
 msgid "Thumbnail removed"
 msgstr "サムネイルが削除されました"
 
 msgid "Thumbnail updated"
-msgstr ""
+msgstr "サムネイルが更新されました"
 
 msgid "Thumbnail uploaded"
 msgstr "サムネイルがアップロードされました"

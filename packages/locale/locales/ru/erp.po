@@ -1230,6 +1230,10 @@ msgstr "Вы уверены, что хотите удалить тип проб�
 msgid "Are you sure you want to delete the item group: {0}? This cannot be undone."
 msgstr "Вы уверены, что хотите удалить группу товаров: {0}? Это действие невозможно отменить."
 
+#. placeholder {0}: legalSeries.name
+msgid "Are you sure you want to delete the legal series: {0}? This cannot be undone."
+msgstr "Вы уверены, что хотите удалить правовую серию: {0}? Это действие невозможно отменить."
+
 #. placeholder {0}: line.customerPartId
 #. placeholder {0}: line.description
 #. placeholder {0}: line.itemReadableId
@@ -2944,6 +2948,9 @@ msgstr "Контрагент"
 msgid "Country"
 msgstr "Страна"
 
+msgid "Country Code"
+msgstr "Код страны"
+
 msgid "Create"
 msgstr "Создать"
 
@@ -3780,6 +3787,9 @@ msgstr "Удалить группу позиций"
 msgid "Delete Journal Entry"
 msgstr "Удалить запись журнала"
 
+msgid "Delete Legal Series"
+msgstr "Удалить правовую серию"
+
 msgid "Delete line"
 msgstr "Удалить строку"
 
@@ -4488,6 +4498,9 @@ msgstr "Изменить запись журнала"
 
 msgid "Edit Kanban"
 msgstr "Редактировать Kanban"
+
+msgid "Edit Legal Series"
+msgstr "Изменить правовую серию"
 
 msgid "Edit Line"
 msgstr "Редактировать строку"
@@ -5372,7 +5385,7 @@ msgid "Failed to move account: {0}"
 msgstr "Не удалось переместить счет: {0}"
 
 msgid "Failed to regenerate thumbnail"
-msgstr ""
+msgstr "Ошибка при регенерации миниатюры"
 
 msgid "Failed to remove image: {errorMessage}"
 msgstr "Не удалось удалить изображение: {errorMessage}"
@@ -5649,6 +5662,9 @@ msgstr "Забыли отметить уход?"
 
 msgid "Format"
 msgstr "Формат"
+
+msgid "Format locked after first use"
+msgstr "Формат заблокирован после первого использования"
 
 msgid "Foundation"
 msgstr "Основа"
@@ -6931,6 +6947,9 @@ msgstr "Левый элемент"
 msgid "Leftover Parts Detected"
 msgstr "Обнаружены лишние детали"
 
+msgid "Legal Series"
+msgstr "Правовая серия"
+
 msgid "Less manual work"
 msgstr "Меньше ручной работы"
 
@@ -7091,6 +7110,9 @@ msgstr "Заблокировать период"
 
 msgid "Locked"
 msgstr "Заблокирован"
+
+msgid "Locked after first use"
+msgstr "Заблокировано после первого использования"
 
 msgid "Locking makes the period read-only for operational documents (receipts, shipments, invoices) while still allowing accounting adjustments like depreciation and disposals. A period must be locked before it can be closed."
 msgstr "Блокировка делает период доступным только для чтения для операционных документов (приёмки, отгрузки, счета-фактуры), при этом по-прежнему позволяя учётные корректировки, такие как амортизация и выбытие. Период должен быть заблокирован перед его закрытием."
@@ -7881,6 +7903,9 @@ msgstr "Новая группа товаров"
 
 msgid "New Kanban"
 msgstr "Новый Kanban"
+
+msgid "New Legal Series"
+msgstr "Новая правовая серия"
 
 msgid "New Line"
 msgstr "Новая строка"
@@ -10064,10 +10089,10 @@ msgid "Refresh exchange rate"
 msgstr "Обновить курс обмена"
 
 msgid "Regenerate"
-msgstr ""
+msgstr "Регенерировать"
 
 msgid "Regenerating thumbnail…"
-msgstr ""
+msgstr "Регенерирование миниатюры…"
 
 msgid "Register"
 msgstr "Зарегистрировать существующий актив"
@@ -10077,6 +10102,9 @@ msgstr "Зарегистрирован"
 
 msgid "Registered"
 msgstr "Точка переза́каза"
+
+msgid "Registration Ref"
+msgstr "Регистрационный номер"
 
 msgid "Reject"
 msgstr "Отклонить"
@@ -12992,13 +13020,13 @@ msgid "Thumbnail"
 msgstr "Миниатюра"
 
 msgid "Thumbnail is still generating"
-msgstr ""
+msgstr "Миниатюра все еще создается"
 
 msgid "Thumbnail removed"
 msgstr "Миниатюра удалена"
 
 msgid "Thumbnail updated"
-msgstr ""
+msgstr "Миниатюра обновлена"
 
 msgid "Thumbnail uploaded"
 msgstr "Миниатюра загружена"

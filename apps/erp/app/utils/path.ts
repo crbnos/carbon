@@ -656,6 +656,8 @@ export const path = {
       generatePath(`${x}/journal-entry/${id}/delete`),
     deleteKanban: (id: string) =>
       generatePath(`${x}/inventory/kanbans/delete/${id}`),
+    deleteLegalSeries: (id: string) =>
+      generatePath(`${x}/accounting/legal-series/delete/${id}`),
     deleteLocation: (id: string) =>
       generatePath(`${x}/resources/locations/delete/${id}`),
     deleteMaintenanceDispatch: (id: string) =>
@@ -1238,6 +1240,9 @@ export const path = {
       privacyPolicy: "https://carbon.ms/privacy",
       termsAndConditions: "https://carbon.ms/terms"
     },
+    legalSeries: `${x}/accounting/legal-series`,
+    legalSeriesById: (id: string) =>
+      generatePath(`${x}/accounting/legal-series/${id}`),
     location: (id: string) => generatePath(`${x}/resources/locations/${id}`),
     locations: `${x}/resources/locations`,
     login: "/login",
@@ -1428,6 +1433,7 @@ export const path = {
     newJobOperationTool: `${x}/job/methods/operation/tool/new`,
     newJournalEntry: `${x}/accounting/journals/new`,
     newKanban: `${x}/inventory/kanbans/new`,
+    newLegalSeries: `${x}/accounting/legal-series/new`,
     newLocation: `${x}/resources/locations/new`,
     newMaintenanceDispatch: `${x}/maintenance/new`,
     newMaintenanceDispatchEvent: (dispatchId: string) =>

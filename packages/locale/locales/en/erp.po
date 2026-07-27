@@ -1230,6 +1230,10 @@ msgstr "Are you sure you want to delete the issue type: {0}? This cannot be undo
 msgid "Are you sure you want to delete the item group: {0}? This cannot be undone."
 msgstr "Are you sure you want to delete the item group: {0}? This cannot be undone."
 
+#. placeholder {0}: legalSeries.name
+msgid "Are you sure you want to delete the legal series: {0}? This cannot be undone."
+msgstr "Are you sure you want to delete the legal series: {0}? This cannot be undone."
+
 #. placeholder {0}: line.customerPartId
 #. placeholder {0}: line.description
 #. placeholder {0}: line.itemReadableId
@@ -2944,6 +2948,9 @@ msgstr "Counterparty"
 msgid "Country"
 msgstr "Country"
 
+msgid "Country Code"
+msgstr "Country Code"
+
 msgid "Create"
 msgstr "Create"
 
@@ -3780,6 +3787,9 @@ msgstr "Delete Item Group"
 msgid "Delete Journal Entry"
 msgstr "Delete Journal Entry"
 
+msgid "Delete Legal Series"
+msgstr "Delete Legal Series"
+
 msgid "Delete line"
 msgstr "Delete line"
 
@@ -4488,6 +4498,9 @@ msgstr "Edit Journal Entry"
 
 msgid "Edit Kanban"
 msgstr "Edit Kanban"
+
+msgid "Edit Legal Series"
+msgstr "Edit Legal Series"
 
 msgid "Edit Line"
 msgstr "Edit Line"
@@ -5649,6 +5662,9 @@ msgstr "Forgot to Clock Out?"
 
 msgid "Format"
 msgstr "Format"
+
+msgid "Format locked after first use"
+msgstr "Format locked after first use"
 
 msgid "Foundation"
 msgstr "Foundation"
@@ -6931,6 +6947,9 @@ msgstr "Left item"
 msgid "Leftover Parts Detected"
 msgstr "Leftover Parts Detected"
 
+msgid "Legal Series"
+msgstr "Legal Series"
+
 msgid "Less manual work"
 msgstr "Less manual work"
 
@@ -7091,6 +7110,9 @@ msgstr "Lock Period"
 
 msgid "Locked"
 msgstr "Locked"
+
+msgid "Locked after first use"
+msgstr "Locked after first use"
 
 msgid "Locking makes the period read-only for operational documents (receipts, shipments, invoices) while still allowing accounting adjustments like depreciation and disposals. A period must be locked before it can be closed."
 msgstr "Locking makes the period read-only for operational documents (receipts, shipments, invoices) while still allowing accounting adjustments like depreciation and disposals. A period must be locked before it can be closed."
@@ -7881,6 +7903,9 @@ msgstr "New Item Group"
 
 msgid "New Kanban"
 msgstr "New Kanban"
+
+msgid "New Legal Series"
+msgstr "New Legal Series"
 
 msgid "New Line"
 msgstr "New Line"
@@ -10077,6 +10102,9 @@ msgstr "Register Existing Asset"
 
 msgid "Registered"
 msgstr "Registered"
+
+msgid "Registration Ref"
+msgstr "Registration Ref"
 
 msgid "Reject"
 msgstr "Reject"

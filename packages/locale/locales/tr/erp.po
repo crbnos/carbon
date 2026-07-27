@@ -1230,6 +1230,10 @@ msgstr "Üye türünü silmek istediğinizden emin misiniz: {0}? Bu geri alınam
 msgid "Are you sure you want to delete the item group: {0}? This cannot be undone."
 msgstr "Ürün grubunu silmek istediğinizden emin misiniz: {0}? Bu geri alınamaz."
 
+#. placeholder {0}: legalSeries.name
+msgid "Are you sure you want to delete the legal series: {0}? This cannot be undone."
+msgstr "Yasal seriyi silmek istediğinizden emin misiniz: {0}? Bu işlem geri alınamaz."
+
 #. placeholder {0}: line.customerPartId
 #. placeholder {0}: line.description
 #. placeholder {0}: line.itemReadableId
@@ -2944,6 +2948,9 @@ msgstr "Karşı Taraf"
 msgid "Country"
 msgstr "Ülke"
 
+msgid "Country Code"
+msgstr "Ülke Kodu"
+
 msgid "Create"
 msgstr "Oluştur"
 
@@ -3780,6 +3787,9 @@ msgstr "Öğe Grubunu Sil"
 msgid "Delete Journal Entry"
 msgstr "Yevmiye Kaydını Sil"
 
+msgid "Delete Legal Series"
+msgstr "Yasal Seriyi Sil"
+
 msgid "Delete line"
 msgstr "Satırı Sil"
 
@@ -4488,6 +4498,9 @@ msgstr "Yevmiye Kaydını Düzenle"
 
 msgid "Edit Kanban"
 msgstr "Kanban Düzenle"
+
+msgid "Edit Legal Series"
+msgstr "Yasal Seriyi Düzenle"
 
 msgid "Edit Line"
 msgstr "Satırı Düzenle"
@@ -5372,7 +5385,7 @@ msgid "Failed to move account: {0}"
 msgstr "Hesap taşınamadı: {0}"
 
 msgid "Failed to regenerate thumbnail"
-msgstr ""
+msgstr "Küçük resim yeniden oluşturulamadı"
 
 msgid "Failed to remove image: {errorMessage}"
 msgstr "Görsel kaldırılamadı: {errorMessage}"
@@ -5649,6 +5662,9 @@ msgstr "Çıkış yapmayı unuttunuz mu?"
 
 msgid "Format"
 msgstr "Biçim"
+
+msgid "Format locked after first use"
+msgstr "Format ilk kullanımdan sonra kilitlendi"
 
 msgid "Foundation"
 msgstr "Temel"
@@ -6931,6 +6947,9 @@ msgstr "Sol öğe"
 msgid "Leftover Parts Detected"
 msgstr "Artık Parçalar Tespit Edildi"
 
+msgid "Legal Series"
+msgstr "Yasal Seri"
+
 msgid "Less manual work"
 msgstr "Daha az manuel çalışma"
 
@@ -7091,6 +7110,9 @@ msgstr "Dönemi Kilitle"
 
 msgid "Locked"
 msgstr "Kilitli"
+
+msgid "Locked after first use"
+msgstr "İlk kullanımdan sonra kilitlendi"
 
 msgid "Locking makes the period read-only for operational documents (receipts, shipments, invoices) while still allowing accounting adjustments like depreciation and disposals. A period must be locked before it can be closed."
 msgstr "Dönemin kilitlenmesi, işletme belgelerine (makbuzlar, sevkiyatlar, faturalar) yönelik olarak salt okunur hale getirirken, amortisman ve elden çıkarma gibi muhasebe düzeltmelerine izin vermeye devam eder. Dönem kapatılmadan önce kilitlenmesi gerekir."
@@ -7881,6 +7903,9 @@ msgstr "Yeni Ürün Grubu"
 
 msgid "New Kanban"
 msgstr "Yeni Kanban"
+
+msgid "New Legal Series"
+msgstr "Yeni Yasal Seri"
 
 msgid "New Line"
 msgstr "Yeni Satır"
@@ -10064,10 +10089,10 @@ msgid "Refresh exchange rate"
 msgstr "Döviz kurunu yenile"
 
 msgid "Regenerate"
-msgstr ""
+msgstr "Yeniden Oluştur"
 
 msgid "Regenerating thumbnail…"
-msgstr ""
+msgstr "Küçük resim yeniden oluşturuluyor…"
 
 msgid "Register"
 msgstr "Mevcut Varlığı Kayıt Yap"
@@ -10077,6 +10102,9 @@ msgstr "Kayıtlı"
 
 msgid "Registered"
 msgstr "Kayıtlı"
+
+msgid "Registration Ref"
+msgstr "Kayıt Referansı"
 
 msgid "Reject"
 msgstr "Reddet"
@@ -12992,13 +13020,13 @@ msgid "Thumbnail"
 msgstr "Küçük Resim"
 
 msgid "Thumbnail is still generating"
-msgstr ""
+msgstr "Küçük resim hala oluşturuluyor"
 
 msgid "Thumbnail removed"
 msgstr "Küçük resim kaldırıldı"
 
 msgid "Thumbnail updated"
-msgstr ""
+msgstr "Küçük resim güncellendi"
 
 msgid "Thumbnail uploaded"
 msgstr "Küçük resim yüklendi"

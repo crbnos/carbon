@@ -28,6 +28,7 @@ import type {
   intercompanyTransactionValidator,
   journalEntryLineValidator,
   journalEntryValidator,
+  legalSeriesValidator,
   macrsConventions,
   macrsPropertyClasses,
   paymentTermValidator,
@@ -2159,6 +2160,164 @@ export async function upsertPaymentTerm(
     .eq("id", paymentTerm.id)
     .select("id")
     .single();
+}
+
+// ---------------------------------------------------------------------------
+// Legal series (statutory gapless-series substrate, #1038 / spec §4)
+//
+// The `legalSeries` table is not yet in the generated `@carbon/database` types
+// (regenerate with `pnpm run generate:types` once the migration is applied to a
+// live DB). Until then we access it through an `any`-typed client and return the
+// hand-written row shape below, so callers still get typed `data`. `next` /
+// `firstUsedAt` are system-managed by `get_next_legal_series_number` at posting
+// time and are never written from these CRUD helpers.
+// ---------------------------------------------------------------------------
+export type LegalSeries = {
+  id: string;
+  companyId: string;
+  countryCode: string;
+  documentType: string;
+  code: string;
+  name: string;
+  prefix: string;
+  size: number;
+  next: number;
+  validFrom: string;
+  validTo: string | null;
+  isDefault: boolean;
+  isActive: boolean;
+  firstUsedAt: string | null;
+  registrationRef: string | null;
+  createdBy: string;
+  createdAt: string;
+  updatedBy: string | null;
+  updatedAt: string | null;
+  customFields: Json | null;
+};
+
+export async function getLegalSeries(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: GenericQueryFilters & { search: string | null }
+) {
+  let query = (client as SupabaseClient<any>)
+    .from("legalSeries")
+    .select("*", { count: "exact" })
+    .eq("companyId", companyId);
+
+  if (args.search) {
+    // Double-quote the value so PostgREST treats reserved characters (`,`, `(`,
+    // `)`, `.`, `:`, `*`) as literals rather than splitting the `.or()` filter;
+    // escape any embedded backslash / double-quote first.
+    const escaped = args.search.replace(/["\\]/g, "\\$&");
+    query = query.or(`code.ilike."%${escaped}%",name.ilike."%${escaped}%"`);
+  }
+
+  query = setGenericQueryFilters(query, args, [
+    { column: "code", ascending: true }
+  ]);
+
+  return query as unknown as Promise<{
+    data: LegalSeries[] | null;
+    error: PostgrestError | null;
+    count: number | null;
+  }>;
+}
+
+export async function getLegalSeriesById(
+  client: SupabaseClient<Database>,
+  id: string
+) {
+  return (client as SupabaseClient<any>)
+    .from("legalSeries")
+    .select("*")
+    .eq("id", id)
+    .single() as unknown as Promise<{
+    data: LegalSeries | null;
+    error: PostgrestError | null;
+  }>;
+}
+
+// Active series for a company, optionally narrowed to one document type — the
+// unpaginated form the e-invoicing series selector (#1054) reads.
+export async function getLegalSeriesList(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  documentType?: string
+) {
+  let query = (client as SupabaseClient<any>)
+    .from("legalSeries")
+    .select("id, code, name, documentType, countryCode, isDefault")
+    .eq("companyId", companyId)
+    .eq("isActive", true);
+
+  if (documentType) {
+    query = query.eq("documentType", documentType);
+  }
+
+  return query.order("code", { ascending: true }) as unknown as Promise<{
+    data:
+      | Pick<
+          LegalSeries,
+          "id" | "code" | "name" | "documentType" | "countryCode" | "isDefault"
+        >[]
+      | null;
+    error: PostgrestError | null;
+  }>;
+}
+
+export async function upsertLegalSeries(
+  client: SupabaseClient<Database>,
+  legalSeries:
+    | (Omit<z.infer<typeof legalSeriesValidator>, "id"> & {
+        companyId: string;
+        createdBy: string;
+        customFields?: Json;
+      })
+    | (Omit<z.infer<typeof legalSeriesValidator>, "id"> & {
+        id: string;
+        updatedBy: string;
+        customFields?: Json;
+      })
+) {
+  const c = client as SupabaseClient<any>;
+  if ("createdBy" in legalSeries) {
+    return c
+      .from("legalSeries")
+      .insert([legalSeries])
+      .select("id")
+      .single() as unknown as Promise<{
+      data: { id: string } | null;
+      error: PostgrestError | null;
+    }>;
+  }
+  // The immutability trigger freezes format columns and blocks rewinding `next`
+  // once the series has been used; `sanitize` leaves `next` untouched (it isn't
+  // in the validator), so a used series can still be deactivated / relabeled.
+  return c
+    .from("legalSeries")
+    .update(sanitize(legalSeries))
+    .eq("id", legalSeries.id)
+    .select("id")
+    .single() as unknown as Promise<{
+    data: { id: string } | null;
+    error: PostgrestError | null;
+  }>;
+}
+
+export async function deleteLegalSeries(
+  client: SupabaseClient<Database>,
+  id: string
+) {
+  // The DB trigger rejects deleting a used series (firstUsedAt set) — the route
+  // surfaces that error; unused series delete cleanly.
+  return (client as SupabaseClient<any>)
+    .from("legalSeries")
+    .delete()
+    .eq("id", id) as unknown as Promise<{
+    data: null;
+    error: PostgrestError | null;
+  }>;
 }
 
 export async function deleteCostCenter(

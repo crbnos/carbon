@@ -1230,6 +1230,10 @@ msgstr "이슈 유형 {0}을(를) 삭제하시겠습니까? 이 작업은 되돌
 msgid "Are you sure you want to delete the item group: {0}? This cannot be undone."
 msgstr "품목 그룹 {0}을(를) 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다."
 
+#. placeholder {0}: legalSeries.name
+msgid "Are you sure you want to delete the legal series: {0}? This cannot be undone."
+msgstr "법적 시리즈 {0}을(를) 정말로 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다."
+
 #. placeholder {0}: line.customerPartId
 #. placeholder {0}: line.description
 #. placeholder {0}: line.itemReadableId
@@ -2944,6 +2948,9 @@ msgstr "거래처"
 msgid "Country"
 msgstr "국가"
 
+msgid "Country Code"
+msgstr "국가 코드"
+
 msgid "Create"
 msgstr "생성"
 
@@ -3780,6 +3787,9 @@ msgstr "품목 그룹 삭제"
 msgid "Delete Journal Entry"
 msgstr "분개장 항목 삭제"
 
+msgid "Delete Legal Series"
+msgstr "법적 시리즈 삭제"
+
 msgid "Delete line"
 msgstr "행 삭제"
 
@@ -4488,6 +4498,9 @@ msgstr "분개장 항목 편집"
 
 msgid "Edit Kanban"
 msgstr "칸반 수정"
+
+msgid "Edit Legal Series"
+msgstr "법적 시리즈 편집"
 
 msgid "Edit Line"
 msgstr "라인 수정"
@@ -5372,7 +5385,7 @@ msgid "Failed to move account: {0}"
 msgstr "계정 이동 실패: {0}"
 
 msgid "Failed to regenerate thumbnail"
-msgstr ""
+msgstr "썸네일 재생성 실패"
 
 msgid "Failed to remove image: {errorMessage}"
 msgstr "이미지를 삭제하지 못했습니다: {errorMessage}"
@@ -5649,6 +5662,9 @@ msgstr "퇴근 체크를 잊으셨나요?"
 
 msgid "Format"
 msgstr "형식"
+
+msgid "Format locked after first use"
+msgstr "첫 사용 후 형식 잠금"
 
 msgid "Foundation"
 msgstr "파운데이션"
@@ -6931,6 +6947,9 @@ msgstr "왼쪽 품목"
 msgid "Leftover Parts Detected"
 msgstr "잔여 부품 발견됨"
 
+msgid "Legal Series"
+msgstr "법적 시리즈"
+
 msgid "Less manual work"
 msgstr "수작업 감소"
 
@@ -7091,6 +7110,9 @@ msgstr "기간 잠금"
 
 msgid "Locked"
 msgstr "잠금"
+
+msgid "Locked after first use"
+msgstr "첫 사용 후 잠금"
 
 msgid "Locking makes the period read-only for operational documents (receipts, shipments, invoices) while still allowing accounting adjustments like depreciation and disposals. A period must be locked before it can be closed."
 msgstr "잠금하면 기간이 운영 문서(수령, 배송, 송장)에 대해 읽기 전용이 되며 감가상각 및 처분과 같은 회계 조정은 여전히 허용됩니다. 기간을 종료하려면 먼저 잠금해야 합니다."
@@ -7881,6 +7903,9 @@ msgstr "새 품목 그룹"
 
 msgid "New Kanban"
 msgstr "새 칸반"
+
+msgid "New Legal Series"
+msgstr "새 법적 시리즈"
 
 msgid "New Line"
 msgstr "새 라인"
@@ -10064,10 +10089,10 @@ msgid "Refresh exchange rate"
 msgstr "환율 새로고침"
 
 msgid "Regenerate"
-msgstr ""
+msgstr "재생성"
 
 msgid "Regenerating thumbnail…"
-msgstr ""
+msgstr "썸네일을 재생성 중…"
 
 msgid "Register"
 msgstr "등록"
@@ -10077,6 +10102,9 @@ msgstr "기존 자산 등록"
 
 msgid "Registered"
 msgstr "등록됨"
+
+msgid "Registration Ref"
+msgstr "등록 참조"
 
 msgid "Reject"
 msgstr "반려"
@@ -12992,13 +13020,13 @@ msgid "Thumbnail"
 msgstr "썸네일"
 
 msgid "Thumbnail is still generating"
-msgstr ""
+msgstr "썸네일을 생성 중입니다"
 
 msgid "Thumbnail removed"
 msgstr "썸네일 삭제됨"
 
 msgid "Thumbnail updated"
-msgstr ""
+msgstr "썸네일이 업데이트되었습니다"
 
 msgid "Thumbnail uploaded"
 msgstr "썸네일 업로드됨"

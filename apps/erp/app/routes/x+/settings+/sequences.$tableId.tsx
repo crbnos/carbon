@@ -71,6 +71,14 @@ export async function action({ request }: ActionFunctionArgs) {
 export default function EditSequenceRoute() {
   const { sequence } = useLoaderData<typeof loader>();
 
+  // `isLegalSequence` / `firstUsedAt` come from the full row (`select("*")`) but
+  // are not yet in the generated types — read them through a cast. A legal
+  // sequence is format-locked once it has been used (mirrors the DB trigger).
+  const { isLegalSequence, firstUsedAt } =
+    (sequence as { isLegalSequence?: boolean; firstUsedAt?: string | null }) ??
+    {};
+  const formatLocked = Boolean(isLegalSequence && firstUsedAt);
+
   const initialValues = {
     table: sequence?.table ?? "",
     name: sequence?.name ?? "",
@@ -82,6 +90,10 @@ export default function EditSequenceRoute() {
   };
 
   return (
-    <SequenceForm key={initialValues.table} initialValues={initialValues} />
+    <SequenceForm
+      key={initialValues.table}
+      initialValues={initialValues}
+      formatLocked={formatLocked}
+    />
   );
 }

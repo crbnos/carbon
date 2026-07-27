@@ -1,6 +1,6 @@
 {
-  "generated": "2026-07-23T20:18:33.549Z",
-  "totalTools": 1377,
+  "generated": "2026-07-24T19:07:10.296Z",
+  "totalTools": 1382,
   "modules": 15,
   "tools": [
     {
@@ -1354,7 +1354,7 @@
       "module": "accounting",
       "classification": "WRITE",
       "description": "upsert period close task definition",
-      "paramCount": 3,
+      "paramCount": 9,
       "serviceParams": [
         "client",
         "definition"
@@ -1374,11 +1374,32 @@
             "type": "string"
           },
           "taskType": {
+            "type": "string"
+          },
+          "autoCheckKey": {
+            "type": "string"
+          },
+          "sortOrder": {
             "type": "number"
+          },
+          "required": {
+            "type": "string"
+          },
+          "severity": {
+            "type": "string"
+          },
+          "active": {
+            "type": "string"
+          },
+          "defaultAssigneeId": {
+            "type": "string"
           }
         },
         "required": [
-          "name"
+          "name",
+          "taskType",
+          "required",
+          "active"
         ]
       }
     },
@@ -1765,7 +1786,7 @@
       "module": "accounting",
       "classification": "WRITE",
       "description": "update fiscal year settings",
-      "paramCount": 1,
+      "paramCount": 2,
       "serviceParams": [
         "client",
         "fiscalYearSettings"
@@ -1779,10 +1800,14 @@
         "properties": {
           "startMonth": {
             "type": "string"
+          },
+          "taxStartMonth": {
+            "type": "string"
           }
         },
         "required": [
-          "startMonth"
+          "startMonth",
+          "taxStartMonth"
         ]
       }
     },
@@ -1890,6 +1915,185 @@
         "required": [
           "name",
           "calculationMethod"
+        ]
+      }
+    },
+    {
+      "name": "accounting_getLegalSeries",
+      "module": "accounting",
+      "classification": "READ",
+      "description": "get legal series",
+      "paramCount": 3,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "args": {
+            "type": "object",
+            "properties": {
+              "limit": {
+                "type": "integer",
+                "default": 100
+              },
+              "offset": {
+                "type": "integer",
+                "default": 0
+              },
+              "search": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "accounting_getLegalSeriesById",
+      "module": "accounting",
+      "classification": "READ",
+      "description": "get legal series by id",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "id"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      }
+    },
+    {
+      "name": "accounting_getLegalSeriesList",
+      "module": "accounting",
+      "classification": "READ",
+      "description": "get legal series list",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "documentType"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "documentType": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    {
+      "name": "accounting_upsertLegalSeries",
+      "module": "accounting",
+      "classification": "WRITE",
+      "description": "upsert legal series",
+      "paramCount": 12,
+      "serviceParams": [
+        "client",
+        "legalSeries"
+      ],
+      "injectAuth": [
+        "companyId",
+        "createdBy",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "countryCode": {
+            "type": "string"
+          },
+          "documentType": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "prefix": {
+            "type": "string"
+          },
+          "size": {
+            "type": "number"
+          },
+          "validFrom": {
+            "type": "string"
+          },
+          "validTo": {
+            "type": "string"
+          },
+          "registrationRef": {
+            "type": "string"
+          },
+          "isDefault": {
+            "type": "string"
+          },
+          "isActive": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "countryCode",
+          "documentType",
+          "code",
+          "name",
+          "prefix",
+          "validFrom",
+          "isDefault",
+          "isActive"
+        ]
+      }
+    },
+    {
+      "name": "accounting_deleteLegalSeries",
+      "module": "accounting",
+      "classification": "DESTRUCTIVE",
+      "description": "delete legal series",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "id"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
         ]
       }
     },
@@ -6721,7 +6925,7 @@
       "module": "inventory",
       "classification": "WRITE",
       "description": "upsert shipping method",
-      "paramCount": 3,
+      "paramCount": 5,
       "serviceParams": [
         "client",
         "shippingMethod"
@@ -6742,10 +6946,17 @@
           },
           "carrier": {
             "type": "string"
+          },
+          "carrierAccountId": {
+            "type": "string"
+          },
+          "trackingUrl": {
+            "type": "string"
           }
         },
         "required": [
-          "name"
+          "name",
+          "carrier"
         ]
       }
     },
@@ -13655,7 +13866,7 @@
       "module": "items",
       "classification": "WRITE",
       "description": "update item",
-      "paramCount": 5,
+      "paramCount": 13,
       "serviceParams": [
         "client",
         "item"
@@ -13681,12 +13892,39 @@
           },
           "replenishmentSystem": {
             "type": "string"
+          },
+          "defaultMethodType": {
+            "type": "string"
+          },
+          "itemTrackingType": {
+            "type": "string"
+          },
+          "postingGroupId": {
+            "type": "string"
+          },
+          "unitOfMeasureCode": {
+            "type": "string"
+          },
+          "unitCost": {
+            "type": "number"
+          },
+          "shelfLifeDays": {
+            "type": "number"
+          },
+          "shelfLifeTriggerProcessId": {
+            "type": "string"
+          },
+          "requiresInspection": {
+            "type": "string"
           }
         },
         "required": [
           "id",
           "name",
-          "replenishmentSystem"
+          "replenishmentSystem",
+          "defaultMethodType",
+          "itemTrackingType",
+          "unitOfMeasureCode"
         ]
       }
     },
@@ -13695,7 +13933,7 @@
       "module": "items",
       "classification": "WRITE",
       "description": "upsert item cost",
-      "paramCount": 3,
+      "paramCount": 4,
       "serviceParams": [
         "client",
         "itemCost"
@@ -13715,6 +13953,9 @@
             "type": "string"
           },
           "costingMethod": {
+            "type": "string"
+          },
+          "unitCost": {
             "type": "number"
           }
         },
@@ -14083,7 +14324,7 @@
       "module": "items",
       "classification": "WRITE",
       "description": "upsert method material",
-      "paramCount": 4,
+      "paramCount": 12,
       "serviceParams": [
         "client",
         "methodMaterial"
@@ -14107,11 +14348,40 @@
           },
           "itemType": {
             "type": "string"
+          },
+          "kit": {
+            "type": "string"
+          },
+          "methodType": {
+            "type": "string"
+          },
+          "sourcingType": {
+            "type": "string"
+          },
+          "itemId": {
+            "type": "string"
+          },
+          "methodOperationId": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "number"
+          },
+          "unitOfMeasureCode": {
+            "type": "string"
+          },
+          "storageUnitIds": {
+            "type": "string"
           }
         },
         "required": [
           "id",
-          "makeMethodId"
+          "makeMethodId",
+          "itemType",
+          "methodType",
+          "sourcingType",
+          "unitOfMeasureCode",
+          "storageUnitIds"
         ]
       }
     },
@@ -24429,7 +24699,7 @@
       "module": "purchasing",
       "classification": "WRITE",
       "description": "insert supplier",
-      "paramCount": 4,
+      "paramCount": 9,
       "serviceParams": [
         "client",
         "supplier"
@@ -24453,11 +24723,25 @@
           },
           "supplierStatus": {
             "type": "string"
+          },
+          "supplierTypeId": {
+            "type": "string"
+          },
+          "accountManagerId": {
+            "type": "string"
+          },
+          "currencyCode": {
+            "type": "string"
+          },
+          "purchasingContactId": {
+            "type": "string"
+          },
+          "website": {
+            "type": "string"
           }
         },
         "required": [
-          "name",
-          "supplierStatus"
+          "name"
         ]
       }
     },
@@ -25356,7 +25640,7 @@
       "module": "purchasing",
       "classification": "WRITE",
       "description": "upsert supplier",
-      "paramCount": 4,
+      "paramCount": 9,
       "serviceParams": [
         "client",
         "supplier"
@@ -25380,11 +25664,25 @@
           },
           "supplierStatus": {
             "type": "string"
+          },
+          "supplierTypeId": {
+            "type": "string"
+          },
+          "accountManagerId": {
+            "type": "string"
+          },
+          "currencyCode": {
+            "type": "string"
+          },
+          "purchasingContactId": {
+            "type": "string"
+          },
+          "website": {
+            "type": "string"
           }
         },
         "required": [
-          "name",
-          "supplierStatus"
+          "name"
         ]
       }
     },
@@ -28601,7 +28899,7 @@
       "module": "quality",
       "classification": "WRITE",
       "description": "upsert issue workflow",
-      "paramCount": 3,
+      "paramCount": 7,
       "serviceParams": [
         "client",
         "nonConformanceWorkflow"
@@ -28622,10 +28920,25 @@
           },
           "content": {
             "type": "string"
+          },
+          "priority": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string"
+          },
+          "requiredActionIds": {
+            "type": "string"
+          },
+          "approvalRequirements": {
+            "type": "string"
           }
         },
         "required": [
-          "name"
+          "name",
+          "content",
+          "priority",
+          "source"
         ]
       }
     },
@@ -28758,7 +29071,7 @@
       "module": "quality",
       "classification": "WRITE",
       "description": "upsert risk",
-      "paramCount": 6,
+      "paramCount": 12,
       "serviceParams": [
         "client",
         "risk"
@@ -28788,10 +29101,33 @@
           },
           "notes": {
             "type": "string"
+          },
+          "severity": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string"
+          },
+          "sourceId": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
           }
         },
         "required": [
-          "likelihood"
+          "likelihood",
+          "severity",
+          "source",
+          "status",
+          "title",
+          "type"
         ]
       }
     },
@@ -32144,7 +32480,7 @@
       "module": "resources",
       "classification": "WRITE",
       "description": "upsert work center",
-      "paramCount": 4,
+      "paramCount": 10,
       "serviceParams": [
         "client",
         "workCenter"
@@ -32167,12 +32503,32 @@
             "type": "string"
           },
           "defaultStandardFactor": {
+            "type": "string"
+          },
+          "departmentId": {
+            "type": "string"
+          },
+          "laborRate": {
             "type": "number"
+          },
+          "locationId": {
+            "type": "string"
+          },
+          "machineRate": {
+            "type": "number"
+          },
+          "overheadRate": {
+            "type": "number"
+          },
+          "processes": {
+            "type": "string"
           }
         },
         "required": [
           "name",
-          "description"
+          "description",
+          "defaultStandardFactor",
+          "locationId"
         ]
       }
     },
@@ -36674,7 +37030,7 @@
       "module": "sales",
       "classification": "WRITE",
       "description": "upsert quote line",
-      "paramCount": 5,
+      "paramCount": 16,
       "serviceParams": [
         "client",
         "quotationLine"
@@ -36701,11 +37057,46 @@
           },
           "status": {
             "type": "string"
-          }
+          },
+          "estimatorId": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "methodType": {
+            "type": "string"
+          },
+          "customerPartId": {
+            "type": "string"
+          },
+          "customerPartRevision": {
+            "type": "string"
+          },
+          "unitOfMeasureCode": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "array"
+          },
+          "modelUploadId": {
+            "type": "string"
+          },
+          "noQuoteReason": {
+            "type": "string"
+          },
+          "taxPercent": {
+            "type": "number"
+          },
+          "configuration": {}
         },
         "required": [
           "quoteId",
-          "itemId"
+          "itemId",
+          "status",
+          "description",
+          "methodType",
+          "quantity"
         ]
       }
     },
