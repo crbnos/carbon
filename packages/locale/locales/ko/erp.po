@@ -8708,10 +8708,6 @@ msgid "Open in change order {ids}. Release it to create new versions or revision
 msgstr "변경 주문 {ids}에서 열기. 새 버전 또는 개정을 만들려면 릴리스하세요."
 
 msgid "Open in change orders {ids}. Release them to create new versions or revisions."
-msgstr "변경 주문 {ids}에서 열기. 새 버전 또는 개정을 만들려면 릴리스하세요."
-msgstr "변경 요청 {ids}에서 열기. 이를 릴리스하여 새로운 버전 또는 개정판을 생성합니다."
-
-msgid "Open in change orders {ids}. Release them to create new versions or revisions."
 msgstr "변경 요청 {ids}에서 열기. 이들을 릴리스하여 새로운 버전 또는 개정판을 생성합니다."
 
 msgid "Open in MES"

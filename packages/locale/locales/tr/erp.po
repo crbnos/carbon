@@ -8708,10 +8708,6 @@ msgid "Open in change order {ids}. Release it to create new versions or revision
 msgstr "Değişiklik emrinde {ids} açılmış. Yeni versiyonlar veya revizyonlar oluşturmak için bunu yayınlayın."
 
 msgid "Open in change orders {ids}. Release them to create new versions or revisions."
-msgstr "Değişiklik emirlerinde {ids} açılmış. Yeni versiyonlar veya revizyonlar oluşturmak için bunları yayınlayın."
-msgstr "Değişiklik emrinde {ids} açın. Yeni sürümler veya revizyonlar oluşturmak için yayınlayın."
-
-msgid "Open in change orders {ids}. Release them to create new versions or revisions."
 msgstr "Değişiklik emirlerinde {ids} açın. Yeni sürümler veya revizyonlar oluşturmak için yayınlayın."
 
 msgid "Open in MES"

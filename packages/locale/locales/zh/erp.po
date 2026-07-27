@@ -8708,10 +8708,6 @@ msgid "Open in change order {ids}. Release it to create new versions or revision
 msgstr "在变更单 {ids} 中打开。发放它以创建新的版本或修订版本。"
 
 msgid "Open in change orders {ids}. Release them to create new versions or revisions."
-msgstr "在变更单 {ids} 中打开。发放它们以创建新的版本或修订版本。"
-msgstr "在更改订单 {ids} 中打开。释放它以创建新版本或修订。"
-
-msgid "Open in change orders {ids}. Release them to create new versions or revisions."
 msgstr "在更改订单 {ids} 中打开。释放它们以创建新版本或修订。"
 
 msgid "Open in MES"
