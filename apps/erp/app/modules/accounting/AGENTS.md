@@ -60,6 +60,9 @@ pnpm --filter @carbon/erp test -- --testPathPattern=accounting
 | `depreciationRun` / `depreciationRunLine` | Batch depreciation processing |
 | `fixedAssetDisposal` / `fixedAssetUsageLog` | Asset disposal and usage tracking |
 | `intercompanyTransaction` | Cross-company transaction matching |
+| `intercompanyNettingStatement` / `intercompanyNettingStatementLine` | Netting workbench statements (data-model foundation; lifecycle RPCs/UI pending) |
+| `intercompanyDocumentLink` | PO→SO / invoice mirror links + status machine (foundation; mirror job/UI pending) |
+| `intercompanyItemLink` | Cross-company item map for mirroring, auto-seeded by `readableIdWithRevision` |
 | `fiscalYearSettings` | Fiscal and tax year configuration |
 
 ## Key Service Functions
