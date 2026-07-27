@@ -4333,17 +4333,53 @@ msgstr "...को डुप्लिकेट करें"
 msgid "Duration"
 msgstr "अवधि"
 
+msgid "e.g. +1 555 123 4567"
+msgstr "उदा. +1 555 123 4567"
+
+msgid "e.g. +1 555 123 4568"
+msgstr "उदा. +1 555 123 4568"
+
+msgid "e.g. 01234567"
+msgstr "उदा. 01234567"
+
+msgid "e.g. 1 Industrial Way"
+msgstr "उदा. 1 Industrial Way"
+
+msgid "e.g. 12-3456789"
+msgstr "उदा. 12-3456789"
+
 msgid "e.g. 2h"
 msgstr "उदा. 2h"
 
+msgid "e.g. 48201"
+msgstr "उदा. 48201"
+
+msgid "e.g. Acme Manufacturing"
+msgstr "उदा. Acme Manufacturing"
+
+msgid "e.g. Detroit"
+msgstr "उदा. Detroit"
+
 msgid "e.g. DWG-1234"
 msgstr "उदा. DWG-1234"
+
+msgid "e.g. GB123456789"
+msgstr "उदा. GB123456789"
+
+msgid "e.g. GB123456789000"
+msgstr "उदा. GB123456789000"
 
 msgid "e.g. Jane Smith"
 msgstr "उदाहरण के लिए Jane Smith"
 
 msgid "e.g. Marco + the area leads"
 msgstr "उदा. मार्को + क्षेत्र के नेता"
+
+msgid "e.g. MI"
+msgstr "उदा. MI"
+
+msgid "e.g. Suite 200"
+msgstr "उदा. Suite 200"
 
 msgid "e.g. the first 3 to 4 weeks"
 msgstr "उदाहरण के लिए पहले 3 से 4 सप्ताह"
@@ -10077,6 +10113,9 @@ msgstr "पंजीकृत"
 
 msgid "Registered"
 msgstr "पुन: आदेश बिंदु"
+
+msgid "Registration Number"
+msgstr "पंजीकरण संख्या"
 
 msgid "Reject"
 msgstr "अस्वीकार करें"

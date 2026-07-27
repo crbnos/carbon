@@ -1971,7 +1971,6 @@ export type Database = {
       }
       agentThread: {
         Row: {
-          archivedAt: string | null
           companyId: string
           createdAt: string
           createdBy: string
@@ -1984,7 +1983,6 @@ export type Database = {
           userId: string
         }
         Insert: {
-          archivedAt?: string | null
           companyId: string
           createdAt?: string
           createdBy: string
@@ -1997,7 +1995,6 @@ export type Database = {
           userId: string
         }
         Update: {
-          archivedAt?: string | null
           companyId?: string
           createdAt?: string
           createdBy?: string
@@ -6044,6 +6041,7 @@ export type Database = {
           parentCompanyId: string | null
           phone: string | null
           postalCode: string | null
+          registrationNumber: string | null
           selectedModules: string[] | null
           slackChannel: string | null
           stateProvince: string | null
@@ -6080,6 +6078,7 @@ export type Database = {
           parentCompanyId?: string | null
           phone?: string | null
           postalCode?: string | null
+          registrationNumber?: string | null
           selectedModules?: string[] | null
           slackChannel?: string | null
           stateProvince?: string | null
@@ -6116,6 +6115,7 @@ export type Database = {
           parentCompanyId?: string | null
           phone?: string | null
           postalCode?: string | null
+          registrationNumber?: string | null
           selectedModules?: string[] | null
           slackChannel?: string | null
           stateProvince?: string | null
@@ -6660,7 +6660,6 @@ export type Database = {
           accountsPayableEmail: string | null
           accountsReceivableAddress: boolean | null
           accountsReceivableEmail: string | null
-          aiAgentEnabled: boolean
           assetTaxDepreciationEnabled: boolean
           assetTaxRate: number | null
           consoleEnabled: boolean
@@ -6705,7 +6704,6 @@ export type Database = {
           accountsPayableEmail?: string | null
           accountsReceivableAddress?: boolean | null
           accountsReceivableEmail?: string | null
-          aiAgentEnabled?: boolean
           assetTaxDepreciationEnabled?: boolean
           assetTaxRate?: number | null
           consoleEnabled?: boolean
@@ -6750,7 +6748,6 @@ export type Database = {
           accountsPayableEmail?: string | null
           accountsReceivableAddress?: boolean | null
           accountsReceivableEmail?: string | null
-          aiAgentEnabled?: boolean
           assetTaxDepreciationEnabled?: boolean
           assetTaxRate?: number | null
           consoleEnabled?: boolean
@@ -57362,11 +57359,14 @@ export type Database = {
           companyId: string | null
           countryCode: string | null
           createdAt: string | null
+          customIndustryDescription: string | null
           email: string | null
           employeeType: string | null
           eori: string | null
           fax: string | null
+          featureRequests: string | null
           id: string | null
+          industryId: string | null
           isEliminationEntity: boolean | null
           logoDark: string | null
           logoDarkIcon: string | null
@@ -57378,7 +57378,9 @@ export type Database = {
           parentCompanyId: string | null
           phone: string | null
           postalCode: string | null
+          registrationNumber: string | null
           role: Database["public"]["Enums"]["role"] | null
+          selectedModules: string[] | null
           slackChannel: string | null
           stateProvince: string | null
           suggestionNotificationGroup: string[] | null
@@ -57436,6 +57438,13 @@ export type Database = {
             columns: ["companyGroupId"]
             isOneToOne: false
             referencedRelation: "companyGroup"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "company_industryId_fkey"
+            columns: ["industryId"]
+            isOneToOne: false
+            referencedRelation: "industry"
             referencedColumns: ["id"]
           },
           {
@@ -63188,14 +63197,14 @@ export type Database = {
           },
           {
             foreignKeyName: "partner_id_fkey"
-            columns: ["supplierLocationId"]
+            columns: ["id"]
             isOneToOne: false
             referencedRelation: "supplierLocation"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "partner_id_fkey"
-            columns: ["id"]
+            columns: ["supplierLocationId"]
             isOneToOne: false
             referencedRelation: "supplierLocation"
             referencedColumns: ["id"]
@@ -64835,14 +64844,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["supplierCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["supplierCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -68221,13 +68230,6 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["shipmentCountryCode"]
-            isOneToOne: false
-            referencedRelation: "country"
-            referencedColumns: ["alpha2"]
-          },
-          {
-            foreignKeyName: "address_countryCode_fkey"
             columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
@@ -68236,6 +68238,13 @@ export type Database = {
           {
             foreignKeyName: "address_countryCode_fkey"
             columns: ["invoiceCountryCode"]
+            isOneToOne: false
+            referencedRelation: "country"
+            referencedColumns: ["alpha2"]
+          },
+          {
+            foreignKeyName: "address_countryCode_fkey"
+            columns: ["shipmentCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -74157,6 +74166,14 @@ export type Database = {
         Args: { p_new: Json; p_old: Json; p_operation: string; p_table: string }
         Returns: undefined
       }
+      recompute_service_line_fulfillment: {
+        Args: {
+          p_company_id: string
+          p_sales_order_line_id: string
+          p_user_id: string
+        }
+        Returns: undefined
+      }
       resolve_shelf_life_start_for_receipt: {
         Args: { p_item_id: string; p_receipt_id: string }
         Returns: string
@@ -74368,6 +74385,10 @@ export type Database = {
         Returns: undefined
       }
       sync_job_complete_or_canceled: {
+        Args: { p_new: Json; p_old: Json; p_operation: string; p_table: string }
+        Returns: undefined
+      }
+      sync_job_recompute_service_line: {
         Args: { p_new: Json; p_old: Json; p_operation: string; p_table: string }
         Returns: undefined
       }

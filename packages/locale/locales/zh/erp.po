@@ -4333,17 +4333,53 @@ msgstr "复制到..."
 msgid "Duration"
 msgstr "时长"
 
+msgid "e.g. +1 555 123 4567"
+msgstr "例：+1 555 123 4567"
+
+msgid "e.g. +1 555 123 4568"
+msgstr "例：+1 555 123 4568"
+
+msgid "e.g. 01234567"
+msgstr "例：01234567"
+
+msgid "e.g. 1 Industrial Way"
+msgstr "例：1 Industrial Way"
+
+msgid "e.g. 12-3456789"
+msgstr "例：12-3456789"
+
 msgid "e.g. 2h"
 msgstr "例如 2小时"
 
+msgid "e.g. 48201"
+msgstr "例：48201"
+
+msgid "e.g. Acme Manufacturing"
+msgstr "例：Acme Manufacturing"
+
+msgid "e.g. Detroit"
+msgstr "例：Detroit"
+
 msgid "e.g. DWG-1234"
 msgstr "例如 DWG-1234"
+
+msgid "e.g. GB123456789"
+msgstr "例：GB123456789"
+
+msgid "e.g. GB123456789000"
+msgstr "例：GB123456789000"
 
 msgid "e.g. Jane Smith"
 msgstr "例如 Jane Smith"
 
 msgid "e.g. Marco + the area leads"
 msgstr "例如 Marco + 地区负责人"
+
+msgid "e.g. MI"
+msgstr "例：MI"
+
+msgid "e.g. Suite 200"
+msgstr "例：Suite 200"
 
 msgid "e.g. the first 3 to 4 weeks"
 msgstr "例如前3到4周"
@@ -10077,6 +10113,9 @@ msgstr "已注册"
 
 msgid "Registered"
 msgstr "重新订购点"
+
+msgid "Registration Number"
+msgstr "注册号"
 
 msgid "Reject"
 msgstr "拒绝"

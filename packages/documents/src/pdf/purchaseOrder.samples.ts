@@ -13,7 +13,8 @@ export const SAMPLE_PURCHASE_ORDER = {
     logoLight: null,
     logoLightIcon: null,
     logoWatermark: null,
-    eori: null
+    eori: null,
+    registrationNumber: null
   },
   purchaseOrder: {
     purchaseOrderId: "PO-001042",

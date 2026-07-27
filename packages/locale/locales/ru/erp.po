@@ -4333,17 +4333,53 @@ msgstr "Дублировать в..."
 msgid "Duration"
 msgstr "Продолжительность"
 
+msgid "e.g. +1 555 123 4567"
+msgstr "например +1 555 123 4567"
+
+msgid "e.g. +1 555 123 4568"
+msgstr "например +1 555 123 4568"
+
+msgid "e.g. 01234567"
+msgstr "например 01234567"
+
+msgid "e.g. 1 Industrial Way"
+msgstr "например 1 Industrial Way"
+
+msgid "e.g. 12-3456789"
+msgstr "например 12-3456789"
+
 msgid "e.g. 2h"
 msgstr "например, 2ч"
 
+msgid "e.g. 48201"
+msgstr "например 48201"
+
+msgid "e.g. Acme Manufacturing"
+msgstr "например Acme Manufacturing"
+
+msgid "e.g. Detroit"
+msgstr "например Detroit"
+
 msgid "e.g. DWG-1234"
 msgstr "например, DWG-1234"
+
+msgid "e.g. GB123456789"
+msgstr "например GB123456789"
+
+msgid "e.g. GB123456789000"
+msgstr "например GB123456789000"
 
 msgid "e.g. Jane Smith"
 msgstr "например, Джейн Смит"
 
 msgid "e.g. Marco + the area leads"
 msgstr "например, Марко + руководители отделов"
+
+msgid "e.g. MI"
+msgstr "например MI"
+
+msgid "e.g. Suite 200"
+msgstr "например Suite 200"
 
 msgid "e.g. the first 3 to 4 weeks"
 msgstr "например, первые 3-4 недели"
@@ -10077,6 +10113,9 @@ msgstr "Зарегистрирован"
 
 msgid "Registered"
 msgstr "Точка переза́каза"
+
+msgid "Registration Number"
+msgstr "Регистрационный номер"
 
 msgid "Reject"
 msgstr "Отклонить"
