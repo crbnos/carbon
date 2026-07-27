@@ -21,6 +21,10 @@ msgstr "{0} - Zestaw {1}"
 msgid "{0} Active"
 msgstr "{0} Aktywnych"
 
+#. placeholder {0}: members.length
+msgid "{0} jobs · {totalQuantity}"
+msgstr ""
+
 #. placeholder {0}: operation.quantityComplete
 #. placeholder {0}: serialIndex + 1
 #. placeholder {1}: operation.operationQuantity
@@ -41,6 +45,9 @@ msgstr "{0} z {1} ukończonych"
 #. placeholder {0}: item.quantityScrapped
 msgid "{0} Scrapped"
 msgstr "{0} Odrzuconych"
+
+msgid "A previous completion did not finish. Retrying resumes the remaining steps — quantities are not double-counted."
+msgstr ""
 
 msgid "About"
 msgstr "O programie"
@@ -200,6 +207,9 @@ msgstr "Ukończ"
 msgid "Complete All"
 msgstr "Uzupełnij wszystko"
 
+msgid "Complete Batch"
+msgstr ""
+
 msgid "Completed"
 msgstr "Ukończone"
 
@@ -317,6 +327,9 @@ msgstr "Adres e-mail"
 
 msgid "Empty work centers"
 msgstr "Puste centra pracy"
+
+msgid "End Batch"
+msgstr ""
 
 msgid "End Operations"
 msgstr "Zakończ operacje"
@@ -825,6 +838,9 @@ msgstr "Usuń zapasy"
 msgid "Remove part"
 msgstr "Usuń część"
 
+msgid "Retry Completion"
+msgstr ""
+
 msgid "Rework"
 msgstr "Przeróbka"
 
@@ -984,6 +1000,9 @@ msgstr "Użyte części zamienne"
 msgid "Start"
 msgstr "Start"
 
+msgid "Start Batch"
+msgstr ""
+
 msgid "Station User"
 msgstr "Użytkownik stacji"
 
@@ -1035,6 +1054,9 @@ msgstr "Ta partia wygasła i nie można jej pobrać."
 
 msgid "Thumbnail"
 msgstr "Miniatura"
+
+msgid "Time and cost split across jobs proportionally to quantity."
+msgstr ""
 
 msgid "Time Entries"
 msgstr "Wpisy czasu pracy"

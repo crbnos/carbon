@@ -25,10 +25,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const serviceRole = await getCarbonServiceRole();
 
-  // 1. Slice events + record quantities + finish members + close batch (one txn).
+  // The edge function owns the whole completion: slice events + record quantities
+  // (phase 1, one txn), then issue each member's BOM + flip members Done + post GL
+  // (phase 2, idempotent). A phase-2 failure leaves the batch 'Completing'; the
+  // operator re-submitting this form re-invokes and resumes without double effects.
   const completeResult = await serviceRole.functions.invoke<{
     memberIds?: string[];
-    eventIds?: string[];
     error?: string;
   }>("batch-operations", {
     body: {
@@ -48,45 +50,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
         error(
           completeResult.error ?? completeResult.data?.error,
           "Failed to complete batch"
-        )
-      )
-    );
-  }
-
-  // 2. Issue materials per member via each job's own BOM (mirrors complete.tsx).
-  const issueFailures: string[] = [];
-  for (const member of validation.data.members) {
-    if (member.quantity <= 0) continue;
-    const issue = await serviceRole.functions.invoke("issue", {
-      body: {
-        id: member.jobOperationId,
-        type: "jobOperation",
-        quantity: member.quantity,
-        companyId,
-        userId
-      }
-    });
-    if (issue.error) issueFailures.push(member.jobOperationId);
-  }
-
-  // 3. Post GL per sliced event (mirrors finishJobOperation's loop).
-  const eventIds = completeResult.data?.eventIds ?? [];
-  await Promise.all(
-    eventIds.map((productionEventId) =>
-      serviceRole.functions.invoke("post-production-event", {
-        body: { productionEventId, userId, companyId }
-      })
-    )
-  );
-
-  if (issueFailures.length > 0) {
-    return redirect(
-      path.to.operations,
-      await flash(
-        request,
-        error(
-          `Batch completed, but material issue failed for ${issueFailures.length} job(s)`,
-          "Partial completion"
         )
       )
     );

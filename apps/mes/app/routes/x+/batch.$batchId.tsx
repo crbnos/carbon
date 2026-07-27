@@ -4,6 +4,7 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { Hidden, NumberControlled, Submit, ValidatedForm } from "@carbon/form";
 import {
+  Badge,
   Card,
   CardContent,
   CardHeader,
@@ -18,8 +19,10 @@ import {
   Tr,
   VStack
 } from "@carbon/react";
+import { formatDurationMilliseconds } from "@carbon/utils";
 import { getLocalTimeZone, now } from "@internationalized/date";
-import { useState } from "react";
+import { Trans, useLingui } from "@lingui/react/macro";
+import { useCallback, useEffect, useState } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, redirect, useLoaderData } from "react-router";
 import { z } from "zod";
@@ -120,12 +123,44 @@ export async function action({ request, params }: ActionFunctionArgs) {
 }
 
 export default function BatchRoute() {
+  const { t } = useLingui();
   const { batch, hasOpenEvent } = useLoaderData<typeof loader>();
   const members = batch.operations ?? [];
   const totalQuantity = members.reduce(
     (sum, m) => sum + (m.operationQuantity ?? 0),
     0
   );
+
+  const status = (batch as { status?: string }).status ?? "Active";
+  const isCompleted = status === "Completed";
+  const isCancelled = status === "Cancelled";
+  // 'Completing' is an in-flight state: a prior completion committed the slice but
+  // a post-commit step (issue / Done / GL) failed. Hide the Start/End timer, but
+  // keep the Complete form enabled so the operator can retry (it resumes).
+  const isCompleting = status === "Completing";
+  const canRunTimer = status === "Active";
+  const completeDisabled = isCompleted || isCancelled;
+
+  // Live batch elapsed: sum every recorded window; the open (running) one ticks
+  // to the current time.
+  const computeElapsed = useCallback(() => {
+    let ms = 0;
+    for (const e of batch.events ?? []) {
+      if (!e.startTime) continue;
+      const start = Date.parse(e.startTime);
+      const end = e.endTime ? Date.parse(e.endTime) : Date.now();
+      ms += Math.max(0, end - start);
+    }
+    return ms;
+  }, [batch.events]);
+
+  const [elapsed, setElapsed] = useState(computeElapsed());
+  useEffect(() => {
+    setElapsed(computeElapsed());
+    if (!hasOpenEvent) return;
+    const id = setInterval(() => setElapsed(computeElapsed()), 1000);
+    return () => clearInterval(id);
+  }, [computeElapsed, hasOpenEvent]);
 
   const initialValues = {
     batchId: batch.id as string,
@@ -159,36 +194,69 @@ export default function BatchRoute() {
         <Card>
           <CardHeader>
             <HStack className="w-full justify-between">
-              <CardTitle>
-                {(batch as { readableId?: string }).readableId}
-              </CardTitle>
+              <HStack spacing={2}>
+                <CardTitle>
+                  {(batch as { readableId?: string }).readableId}
+                </CardTitle>
+                <Badge
+                  variant={
+                    isCompleted
+                      ? "green"
+                      : isCompleting
+                        ? "yellow"
+                        : "secondary"
+                  }
+                >
+                  {status}
+                </Badge>
+              </HStack>
               <Heading size="h4">
-                {members.length} jobs · {totalQuantity}
+                <Trans>
+                  {members.length} jobs · {totalQuantity}
+                </Trans>
               </Heading>
             </HStack>
           </CardHeader>
-          <CardContent>
-            <HStack spacing={2}>
-              <ValidatedForm
-                method="post"
-                validator={z.object({ intent: z.string() })}
-                defaultValues={{ intent: hasOpenEvent ? "stop" : "start" }}
-                action={path.to.batch(batch.id as string)}
-              >
-                <Hidden name="intent" value={hasOpenEvent ? "stop" : "start"} />
-                <Submit variant={hasOpenEvent ? "destructive" : "primary"}>
-                  {hasOpenEvent ? "Stop" : "Start"}
-                </Submit>
-              </ValidatedForm>
-            </HStack>
-          </CardContent>
+          {canRunTimer && (
+            <CardContent>
+              <HStack className="w-full justify-between" spacing={2}>
+                <span className="font-mono text-lg">
+                  {formatDurationMilliseconds(elapsed)}
+                </span>
+                <ValidatedForm
+                  method="post"
+                  validator={z.object({ intent: z.string() })}
+                  defaultValues={{ intent: hasOpenEvent ? "stop" : "start" }}
+                  action={path.to.batch(batch.id as string)}
+                >
+                  <Hidden
+                    name="intent"
+                    value={hasOpenEvent ? "stop" : "start"}
+                  />
+                  <Submit variant={hasOpenEvent ? "destructive" : "primary"}>
+                    {hasOpenEvent ? t`End Batch` : t`Start Batch`}
+                  </Submit>
+                </ValidatedForm>
+              </HStack>
+            </CardContent>
+          )}
         </Card>
 
         <Card>
           <CardHeader>
-            <CardTitle>Complete Batch</CardTitle>
+            <CardTitle>
+              <Trans>Complete Batch</Trans>
+            </CardTitle>
           </CardHeader>
           <CardContent>
+            {isCompleting && (
+              <p className="pb-2 text-xs text-yellow-600 dark:text-yellow-500">
+                <Trans>
+                  A previous completion did not finish. Retrying resumes the
+                  remaining steps — quantities are not double-counted.
+                </Trans>
+              </p>
+            )}
             <ValidatedForm
               method="post"
               validator={completeJobOperationBatchValidator}
@@ -199,10 +267,18 @@ export default function BatchRoute() {
               <Table>
                 <Thead>
                   <Tr>
-                    <Th>Job</Th>
-                    <Th>Item</Th>
-                    <Th className="text-right">Quantity</Th>
-                    <Th className="text-right">Scrap</Th>
+                    <Th>
+                      <Trans>Job</Trans>
+                    </Th>
+                    <Th>
+                      <Trans>Item</Trans>
+                    </Th>
+                    <Th className="text-right">
+                      <Trans>Quantity</Trans>
+                    </Th>
+                    <Th className="text-right">
+                      <Trans>Scrap</Trans>
+                    </Th>
                   </Tr>
                 </Thead>
                 <Tbody>
@@ -219,6 +295,7 @@ export default function BatchRoute() {
                           name={`members[${i}].quantity`}
                           label=""
                           minValue={0}
+                          isDisabled={completeDisabled}
                           value={rows[i]?.quantity ?? 0}
                           onChange={(v) => setRow(i, "quantity", v)}
                         />
@@ -228,6 +305,7 @@ export default function BatchRoute() {
                           name={`members[${i}].scrapQuantity`}
                           label=""
                           minValue={0}
+                          isDisabled={completeDisabled}
                           value={rows[i]?.scrapQuantity ?? 0}
                           onChange={(v) => setRow(i, "scrapQuantity", v)}
                         />
@@ -237,9 +315,13 @@ export default function BatchRoute() {
                 </Tbody>
               </Table>
               <p className="py-2 text-xs text-muted-foreground">
-                Time and cost split across jobs proportionally to quantity.
+                <Trans>
+                  Time and cost split across jobs proportionally to quantity.
+                </Trans>
               </p>
-              <Submit>Complete Batch</Submit>
+              <Submit isDisabled={completeDisabled}>
+                {isCompleting ? t`Retry Completion` : t`Complete Batch`}
+              </Submit>
             </ValidatedForm>
           </CardContent>
         </Card>

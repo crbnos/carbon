@@ -21,6 +21,10 @@ msgstr "{0} - セット {1}"
 msgid "{0} Active"
 msgstr "{0} アクティブ"
 
+#. placeholder {0}: members.length
+msgid "{0} jobs · {totalQuantity}"
+msgstr ""
+
 #. placeholder {0}: operation.quantityComplete
 #. placeholder {0}: serialIndex + 1
 #. placeholder {1}: operation.operationQuantity
@@ -41,6 +45,9 @@ msgstr "{0} / {1} 完了済み"
 #. placeholder {0}: item.quantityScrapped
 msgid "{0} Scrapped"
 msgstr "{0} スクラップ"
+
+msgid "A previous completion did not finish. Retrying resumes the remaining steps — quantities are not double-counted."
+msgstr ""
 
 msgid "About"
 msgstr "バージョン情報"
@@ -200,6 +207,9 @@ msgstr "完了"
 msgid "Complete All"
 msgstr "すべて完了"
 
+msgid "Complete Batch"
+msgstr ""
+
 msgid "Completed"
 msgstr "完了済み"
 
@@ -317,6 +327,9 @@ msgstr "メールアドレス"
 
 msgid "Empty work centers"
 msgstr "空の作業センター"
+
+msgid "End Batch"
+msgstr ""
 
 msgid "End Operations"
 msgstr "工程を終了"
@@ -825,6 +838,9 @@ msgstr "在庫削除"
 msgid "Remove part"
 msgstr "パーツを削除"
 
+msgid "Retry Completion"
+msgstr ""
+
 msgid "Rework"
 msgstr "リワーク"
 
@@ -984,6 +1000,9 @@ msgstr "使用済みスペアパーツ"
 msgid "Start"
 msgstr "開始"
 
+msgid "Start Batch"
+msgstr ""
+
 msgid "Station User"
 msgstr "ステーションユーザー"
 
@@ -1035,6 +1054,9 @@ msgstr "このロットは期限切れであり、ピックできません。"
 
 msgid "Thumbnail"
 msgstr "サムネイル"
+
+msgid "Time and cost split across jobs proportionally to quantity."
+msgstr ""
 
 msgid "Time Entries"
 msgstr "タイムエントリー"

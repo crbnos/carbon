@@ -21,6 +21,10 @@ msgstr "{0} - Ayarla {1}"
 msgid "{0} Active"
 msgstr "{0} Aktif"
 
+#. placeholder {0}: members.length
+msgid "{0} jobs · {totalQuantity}"
+msgstr ""
+
 #. placeholder {0}: operation.quantityComplete
 #. placeholder {0}: serialIndex + 1
 #. placeholder {1}: operation.operationQuantity
@@ -41,6 +45,9 @@ msgstr "{0} adet tamamlandı"
 #. placeholder {0}: item.quantityScrapped
 msgid "{0} Scrapped"
 msgstr "{0} Hurdaya Çıkarılmış"
+
+msgid "A previous completion did not finish. Retrying resumes the remaining steps — quantities are not double-counted."
+msgstr ""
 
 msgid "About"
 msgstr "Hakkında"
@@ -200,6 +207,9 @@ msgstr "Tamamla"
 msgid "Complete All"
 msgstr "Tümünü Tamamla"
 
+msgid "Complete Batch"
+msgstr ""
+
 msgid "Completed"
 msgstr "Tamamlandı"
 
@@ -317,6 +327,9 @@ msgstr "E-posta Adresi"
 
 msgid "Empty work centers"
 msgstr "Boş iş merkezleri"
+
+msgid "End Batch"
+msgstr ""
 
 msgid "End Operations"
 msgstr "Operasyonları Sonlandır"
@@ -825,6 +838,9 @@ msgstr "Stoktan Çıkar"
 msgid "Remove part"
 msgstr "Parçayı kaldır"
 
+msgid "Retry Completion"
+msgstr ""
+
 msgid "Rework"
 msgstr "Revizyon"
 
@@ -984,6 +1000,9 @@ msgstr "Kullanılan Yedek Parçalar"
 msgid "Start"
 msgstr "Başlat"
 
+msgid "Start Batch"
+msgstr ""
+
 msgid "Station User"
 msgstr "İstasyon Kullanıcısı"
 
@@ -1035,6 +1054,9 @@ msgstr "Bu parti süresi dolmuş ve alınamaz."
 
 msgid "Thumbnail"
 msgstr "Küçük Resim"
+
+msgid "Time and cost split across jobs proportionally to quantity."
+msgstr ""
 
 msgid "Time Entries"
 msgstr "Zaman Girişleri"

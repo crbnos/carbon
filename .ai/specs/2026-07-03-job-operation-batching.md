@@ -142,7 +142,7 @@ process "Brake Press"  (batchable = false)  → its operations never batch
 | Material consumption | Per member via the existing `issue` edge fn (`type: "jobOperation"`, member's produced quantity) at batch completion — each job consumes per **its own BOM**; `jobMaterial`/`jobMakeMethod` never rewritten | Nesting write-back pattern (research §5); reuses the exact machinery MES per-op completion uses today; cross-item batches make "split one consumed number" ill-defined |
 | Membership lifecycle | `create` (≥1 op), `add`, `remove` while no production event exists; `dissolve` deletes the batch and clears members (blocked after any event — error names the recovery: complete the batch); removing the last member dissolves | Drag-and-drop planning implies incremental add/remove; all pre-start operations are pure FK writes with nothing to unwind |
 | Work center | Batch carries nullable `workCenterId`; assigning it (at create or later) writes it to all member operations; adding an op to a batch with a work center sets the op's `workCenterId` | Physically true — batching puts the job on that machine. Same write the schedule board's drag already performs. Members need NOT pre-match |
-| Completion mechanism | One transaction: slice events → insert quantities → multi-row `Done` → batch `Completed`; caller then issues material + posts GL per event | `trg_event_sync_jobOperation` is BEFORE/FOR EACH ROW (re-verified 2026-07-03), so each member's downstream op releases independently; no cross-job dependency edges anywhere |
+| Completion mechanism | **Two-phase, resumable** (`Active → Completing → Completed`). Phase 1 (one txn, `FOR UPDATE`): slice events → insert quantities → `Active → Completing`. Phase 2 (post-commit, idempotent, owned by the edge fn): issue BOM → multi-row `Done` → post GL per event → `Completing → Completed`. A Phase-2 failure leaves the batch `Completing`; re-invoking resumes | `sync_finish_job_operation` is BEFORE/FOR EACH ROW, so each member's downstream op releases independently. The old single-txn design left the batch `Completed` with unissued materials / unposted GL and no recovery on a partial failure; `Completing` + backflush-capped `issue` + `postedToGL`-skipping GL make the post-commit steps idempotent and retryable |
 | Planning integration | Manual board only in v1; no MRP/scheduler auto-suggestions | APS auto-grouping is solver territory (v2); manual composer matches the MES precedent (Critical Manufacturing) |
 | Multi-tenancy (heuristic 1) | `jobOperationBatch` composite PK `("id","companyId")`, `id` TEXT default `id()`, `companyId` on every query | Carbon convention |
 | Service shape (heuristic 2) | `(client, ...) → {data, error}` wrappers in `production.service.ts`; multi-row mutations via a `batch-operations` edge function (Kysely transaction) | `.ai/rules/conventions-services.md`; one service/models file per module |
@@ -160,7 +160,9 @@ ALTER TABLE "process" ADD COLUMN "batchable" BOOLEAN NOT NULL DEFAULT false;
 -- Recreate the "processes" view from its NEWEST definition including the column.
 
 -- 2. The operation batch
-CREATE TYPE "jobOperationBatchStatus" AS ENUM ('Active', 'Completed', 'Cancelled');
+CREATE TYPE "jobOperationBatchStatus" AS ENUM ('Active', 'Completing', 'Completed', 'Cancelled');
+-- 'Completing' added by a later migration (ADD VALUE ... BEFORE 'Completed'); it
+-- is the durable resume marker for the two-phase completion (see Completion mechanism).
 
 CREATE TABLE "jobOperationBatch" (
     "id" TEXT NOT NULL DEFAULT id(),
@@ -253,14 +255,26 @@ module-scope Kysely pool, one transaction per request. Payload types:
   production event exists (error: "production has been recorded — complete the
   batch instead"); clears all members; deletes the batch.
 - `{ type: "complete", batchId, members: [{ jobOperationId, quantity, scrapQuantity? }], companyId, userId }`
-  — in one transaction: close open batch-tagged `productionEvent`s (`endTime = NOW()`);
-  slice every batch-tagged event into contiguous per-member events with durations
-  ∝ member `operationQuantity` (update the original row to the first slice, insert
-  the rest; slices keep `jobOperationBatchId`, `postedToGL = false`); insert
-  `productionQuantity` rows per member (`Production` + optional `Scrap`);
-  multi-row `UPDATE ... SET status = 'Done'` on members (per-row interceptor
-  releases each job's next operation); set batch `Completed`. Returns
-  `{ memberIds, eventIds }` for the caller's follow-ups.
+  — **two-phase, resumable** (status `Active → Completing → Completed`). The edge
+  fn owns the whole completion (issue + Done + GL moved in from the MES route).
+  - **Phase 1** (one Kysely transaction, `SELECT ... FOR UPDATE` on the batch to
+    serialize completers): `planBatchCompletion(status)` returns `"slice"` for
+    `Active` or `"resume"` for `Completing` (throws for `Completed`/terminal). On
+    `"slice"`: validate the submitted members against actual membership
+    (`assertBatchCompletionMembership`), reject any still-open timer, slice every
+    recorded batch event into per-member events ∝ `operationQuantity`
+    (`buildBatchCompletionPlan`; delete the aggregate rows, insert per-member
+    slices with `postedToGL = false`), insert `productionQuantity` rows per member
+    (`Production` + optional `Scrap`), then guarded flip `Active → Completing`
+    (`WHERE status = 'Active'`, rollback if 0 rows). On `"resume"`: reload the
+    already-sliced events; do NOT re-slice.
+  - **Phase 2** (post-commit, idempotent): per member, `issue` its own BOM
+    (backflush-capped, so a resume re-issue is a no-op); multi-row `Done` skipping
+    already-`Done` (per-row interceptor releases each job's next op); `post-production-event`
+    per sliced event skipping `postedToGL = true`, propagating errors.
+  - **Finalize**: guarded flip `Completing → Completed`. Any Phase-2 throw leaves
+    the batch `Completing`; re-invoking with the same payload resumes without
+    double effects. Returns `{ completed, memberIds, eventIds }`.
 
 ### `production.service.ts` additions (`apps/erp/app/modules/production/`)
 
@@ -280,9 +294,12 @@ remove/dissolve intents), `completeJobOperationBatchValidator` (member rows with
 int quantities ≥ 0). **No max-size validation anywhere.**
 
 MES (`apps/mes/app/services/`): `getJobOperationBatch`, batch completion
-validator in `models.ts`; the complete action invokes `batch-operations` then,
-per member, the existing `issue` (`type: "jobOperation"`) and, per returned
-event, `post-production-event` — mirroring `finishJobOperation`'s GL pattern.
+validator in `models.ts`; the complete action is a single
+`invoke("batch-operations", { type: "complete" })` — the edge fn owns issue + Done
++ GL (the two-phase workflow above). A failed completion leaves the batch
+`Completing`; re-submitting the form resumes it. The MES batch page surfaces the
+status (Badge: yellow `Completing`), gates the Start/End timer to `Active`, and
+relabels the submit "Retry Completion" while `Completing`.
 
 ### `resources` module
 

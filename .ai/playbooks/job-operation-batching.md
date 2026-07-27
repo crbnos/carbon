@@ -56,13 +56,18 @@ MES (untested here): /x/batch/$batchId
 - Auth: MES login only sends magic links (no dev bypass) — establish the ERP
   session first (bypass), the cookie is shared across `*.<infix>.dev`; then hit
   `https://mes.<infix>.dev/x/batch/<id>` directly.
-- Batch view renders member table + Start/Complete; Start → batch-tagged Machine
-  event (button flips to Stop); Stop → event ends. Complete Batch form pre-fills
-  each member's `operationQuantity`; submit → `batch.$batchId.complete` → edge fn
-  `complete` slices events ∝ quantity (verified 12s:50s = 5:20), records
-  `productionQuantity`, finishes members, completes the batch. Per-member `issue`
-  + `post-production-event` run after (issue no-ops w/o tracked materials; GL
-  needs a work center + accounting).
+- Batch view renders member table + status Badge + Start/Complete; Start →
+  batch-tagged Machine event (button flips to Stop); Stop → event ends. Complete
+  Batch form pre-fills each member's `operationQuantity`; submit →
+  `batch.$batchId.complete` → single `invoke("batch-operations", { complete })`.
+  The edge fn runs the **two-phase** completion: Phase 1 (one txn, `FOR UPDATE`)
+  slices events ∝ quantity (verified 12s:50s = 5:20), records `productionQuantity`,
+  flips `Active → Completing`; Phase 2 (idempotent) issues each member's BOM,
+  finishes members, posts GL per event, flips `Completing → Completed`.
+- **Resume**: if Phase 2 fails (e.g. GL/accounting not configured), the batch
+  stays `Completing` — the page shows a yellow Badge and the button relabels
+  "Retry Completion"; re-submitting resumes without double issue/GL. The Start/End
+  timer is hidden once the batch leaves `Active`.
 
 ## Selector Notes
 - Carbon custom table has no native `<th>`; read column headers from body text

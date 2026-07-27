@@ -21,6 +21,10 @@ msgstr "{0} - Set {1}"
 msgid "{0} Active"
 msgstr "{0} Attivi"
 
+#. placeholder {0}: members.length
+msgid "{0} jobs · {totalQuantity}"
+msgstr ""
+
 #. placeholder {0}: operation.quantityComplete
 #. placeholder {0}: serialIndex + 1
 #. placeholder {1}: operation.operationQuantity
@@ -41,6 +45,9 @@ msgstr "{0} di {1} completati"
 #. placeholder {0}: item.quantityScrapped
 msgid "{0} Scrapped"
 msgstr "{0} Scartati"
+
+msgid "A previous completion did not finish. Retrying resumes the remaining steps — quantities are not double-counted."
+msgstr ""
 
 msgid "About"
 msgstr "Informazioni"
@@ -200,6 +207,9 @@ msgstr "Completa"
 msgid "Complete All"
 msgstr "Completa tutto"
 
+msgid "Complete Batch"
+msgstr ""
+
 msgid "Completed"
 msgstr "Completato"
 
@@ -317,6 +327,9 @@ msgstr "Indirizzo Email"
 
 msgid "Empty work centers"
 msgstr "Centri di lavoro vuoti"
+
+msgid "End Batch"
+msgstr ""
 
 msgid "End Operations"
 msgstr "Termina Operazioni"
@@ -825,6 +838,9 @@ msgstr "Rimuovi Inventario"
 msgid "Remove part"
 msgstr "Rimuovi componente"
 
+msgid "Retry Completion"
+msgstr ""
+
 msgid "Rework"
 msgstr "Rielaborazione"
 
@@ -984,6 +1000,9 @@ msgstr "Ricambi Utilizzati"
 msgid "Start"
 msgstr "Avvia"
 
+msgid "Start Batch"
+msgstr ""
+
 msgid "Station User"
 msgstr "Utente Stazione"
 
@@ -1035,6 +1054,9 @@ msgstr "Questo lotto è scaduto e non può essere prelevato."
 
 msgid "Thumbnail"
 msgstr "Miniatura"
+
+msgid "Time and cost split across jobs proportionally to quantity."
+msgstr ""
 
 msgid "Time Entries"
 msgstr "Registrazioni Orarie"

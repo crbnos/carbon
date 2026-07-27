@@ -70082,7 +70082,11 @@ export type Database = {
         | "Service"
         | "Consumable"
         | "Fixture"
-      jobOperationBatchStatus: "Active" | "Completed" | "Cancelled"
+      jobOperationBatchStatus:
+        | "Active"
+        | "Completing"
+        | "Completed"
+        | "Cancelled"
       jobOperationStatus:
         | "Canceled"
         | "Done"
@@ -71421,7 +71425,12 @@ export const Constants = {
         "Consumable",
         "Fixture",
       ],
-      jobOperationBatchStatus: ["Active", "Completed", "Cancelled"],
+      jobOperationBatchStatus: [
+        "Active",
+        "Completing",
+        "Completed",
+        "Cancelled",
+      ],
       jobOperationStatus: [
         "Canceled",
         "Done",

@@ -21,6 +21,10 @@ msgstr "{0} - 组 {1}"
 msgid "{0} Active"
 msgstr "{0} 个活跃"
 
+#. placeholder {0}: members.length
+msgid "{0} jobs · {totalQuantity}"
+msgstr ""
+
 #. placeholder {0}: operation.quantityComplete
 #. placeholder {0}: serialIndex + 1
 #. placeholder {1}: operation.operationQuantity
@@ -41,6 +45,9 @@ msgstr "{0} / {1} 已完成"
 #. placeholder {0}: item.quantityScrapped
 msgid "{0} Scrapped"
 msgstr "{0} 已报废"
+
+msgid "A previous completion did not finish. Retrying resumes the remaining steps — quantities are not double-counted."
+msgstr ""
 
 msgid "About"
 msgstr "关于"
@@ -200,6 +207,9 @@ msgstr "完成"
 msgid "Complete All"
 msgstr "全部完成"
 
+msgid "Complete Batch"
+msgstr ""
+
 msgid "Completed"
 msgstr "已完成"
 
@@ -317,6 +327,9 @@ msgstr "电子邮箱"
 
 msgid "Empty work centers"
 msgstr "空的工作中心"
+
+msgid "End Batch"
+msgstr ""
 
 msgid "End Operations"
 msgstr "结束工序"
@@ -825,6 +838,9 @@ msgstr "移除库存"
 msgid "Remove part"
 msgstr "移除零件"
 
+msgid "Retry Completion"
+msgstr ""
+
 msgid "Rework"
 msgstr "返工"
 
@@ -984,6 +1000,9 @@ msgstr "已使用备件"
 msgid "Start"
 msgstr "开始"
 
+msgid "Start Batch"
+msgstr ""
+
 msgid "Station User"
 msgstr "工位用户"
 
@@ -1035,6 +1054,9 @@ msgstr "此批次已过期，无法领取。"
 
 msgid "Thumbnail"
 msgstr "缩略图"
+
+msgid "Time and cost split across jobs proportionally to quantity."
+msgstr ""
 
 msgid "Time Entries"
 msgstr "工时记录"

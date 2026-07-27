@@ -924,6 +924,7 @@ export const scheduleJobUpdateValidator = z.object({
 // .ai/specs/2026-07-03-job-operation-batching.md.
 export const jobOperationBatchStatus = [
   "Active",
+  "Completing",
   "Completed",
   "Cancelled"
 ] as const;
