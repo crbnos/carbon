@@ -83,7 +83,7 @@ From the issue header you can also spin up a `docs/reference/change-orders` dire
   - Quality The module overview: issues, inbound inspection, gauges, documents.
   - Calibration Gauges and calibration-due tracking, the other side of quality.
   - Risk register Risks and opportunities tracked by source, alongside non-conformances.
-  - Change orders Turn an issue into an engineering change.
+  - Change notices Turn an issue into an engineering change.
 
 ## Troubleshooting
 

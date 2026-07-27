@@ -11,7 +11,7 @@ export default function ChangeOrderImplementationPreview() {
       reference={"ECO-000012"}
       recipientName={"John Doe"}
       ctaLabel={"View change notice"}
-      ctaUrl={"https://app.carbon.ms/x/items/change-order/1/details"}
+      ctaUrl={"https://app.carbon.ms/x/items/change-notice/1/details"}
       details={[
         {
           label: "Name",

@@ -1313,7 +1313,7 @@
     {
       "slug": "docs/reference/sequences",
       "title": "Numbering sequences",
-      "description": "The per-company generator behind every readable document number — jobs, change orders, payments, and more.",
+      "description": "The per-company generator behind every readable document number — jobs, change notices, payments, and more.",
       "keywords": ["numbering", "sequences", "docs", "reference"],
       "headings": [
         "What a sequence is",

@@ -1,14 +1,14 @@
 # Numbering sequences
 
-> The per-company generator behind every readable document number — jobs, change orders, payments, and more.
+> The per-company generator behind every readable document number — jobs, change notices, payments, and more.
 
-Every document Carbon creates gets a human-readable number: a job is `J000001`, an engineering change order is `ECO-000001`, a payment is `PAY-2026-07-000001`. Those numbers come from sequences — one small counter per document type, per company. Each sequence knows its prefix, its suffix, how wide the number is, how much to step by, and what value comes next. When a document is created, Carbon reads the sequence, formats the next value, and advances the counter.
+Every document Carbon creates gets a human-readable number: a job is `J000001`, an engineering change notice is `CN-000001`, a payment is `PAY-2026-07-000001`. Those numbers come from sequences — one small counter per document type, per company. Each sequence knows its prefix, its suffix, how wide the number is, how much to step by, and what value comes next. When a document is created, Carbon reads the sequence, formats the next value, and advances the counter.
 
 Sequences live under **Settings → Sequences**. Every company gets a full set seeded when it's created, and you can retune any of them — change the prefix, restart the counter, widen the padding — without touching code.
 
 ## What a sequence is
 
-A sequence is a row in the `sequence` table, keyed by `("table", "companyId")` — one counter per document type per company (`packages/database/supabase/migrations/20230525025310_sequences.sql:1`, primary key moved to `("table", "companyId")` in `20240704105128_rfq.sql:120`). The `table` column names the document type it counts (`"job"`, `"changeOrder"`, `"payment"`), and `name` is the label you see in the UI ("Job", "Change Order", "Payment").
+A sequence is a row in the `sequence` table, keyed by `("table", "companyId")` — one counter per document type per company (`packages/database/supabase/migrations/20230525025310_sequences.sql:1`, primary key moved to `("table", "companyId")` in `20240704105128_rfq.sql:120`). The `table` column names the document type it counts (`"job"`, `"changeOrder"`, `"payment"`), and `name` is the label you see in the UI ("Job", "Change Notice", "Payment").
 
 When something needs a new number, Carbon assembles it from three parts:
 
@@ -66,7 +66,7 @@ A new company is seeded with a sequence for every numbered document type (`packa
 | Stock transfer | `stockTransfer` | `ST` | `ST000001` |
 | Picking list | `pickingList` | `PL` | `PL000001` |
 | Inventory count | `inventoryCount` | `IC` | `IC000001` |
-| Change order | `changeOrder` | `ECO-` | `ECO-000001` |
+| Change notice | `changeOrder` | `CN-` | `CN-000001` |
 | Issue (NCR) | `nonConformance` | `NCR` | `NCR000001` |
 | Inbound inspection | `inboundInspection` | `II` | `II000001` |
 | Gauge | `gauge` | `G` | `G00001` |
@@ -83,6 +83,8 @@ A new company is seeded with a sequence for every numbered document type (`packa
 Payments are a good example of the pattern in action. A `payment`, a `creditMemo`, and a `debitMemo` each have their own sequence; the payment-creation path picks the right one by the memo's direction, so a credit memo draws from `CR-` and a debit memo from `DR-` (`packages/database/supabase/migrations/20260630093809_ar-ap-payments.sql:567`).
 
 The seed table above is what a brand-new company gets. When some sequences were added after launch, the migration that backfilled them for existing companies used a different prefix — jobs, for instance, were backfilled as `WO` for older companies (`packages/database/supabase/migrations/20240909194622_jobs.sql:363`) even though new companies seed as `J`. If a prefix on your company doesn't match the table above, it's likely one of these backfilled defaults. Either way, you can change it under **Settings → Sequences**.
+
+Change notices are the reverse case: their sequence was re-prefixed from `ECO-` to `CN-` for every company during the rename, so only *new* records get `CN-000001`. Ids already minted as `ECO-000001` are left exactly as they were.
 
 ## How a number gets assigned
 

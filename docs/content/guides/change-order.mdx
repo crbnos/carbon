@@ -10,50 +10,50 @@ flowIndex: 4
 
 The robot's arm bracket needs a thicker wall and one fewer fastener. In a lot of systems that means editing
 the live part and hoping nothing in flight notices. Carbon makes you do it deliberately: you open a
-<Term>change order</Term>, edit a hidden draft of the part's method, review exactly what changed, and release
+<Term id="change-order">change notice</Term>, edit a hidden draft of the part's method, review exactly what changed, and release
 when it's ready. Until that moment, every job, plan, and cost calculation still sees the old bracket.
 
-> A change order is the paper trail and the workbench at once. You revise on a draft that no one else can
+> A change notice is the paper trail and the workbench at once. You revise on a draft that no one else can
 > see, and release turns that draft into the new truth.
 
 ## Start with the parts, not the change
 
-You can start from **Items → Change Orders → New**, but you'll usually start from the bracket itself. Its part
-header has a **"Create Change Order"** action, its row in the parts table has the same, and the method's
-version menu — the one with **New Version** — offers **New Change Order** right where you're looking at the
+You can start from **Items → Change Notices → New**, but you'll usually start from the bracket itself. Its part
+header has a **"Create Change Notice"** action, its row in the parts table has the same, and the method's
+version menu — the one with **New Version** — offers **New Change Notice** right where you're looking at the
 recipe. Each of those pre-attaches the bracket as the first affected item. A change can even start from a
-quality issue, which links the non-conformance to the change order so the fix traces back to the problem.
+quality issue, which links the non-conformance to the change notice so the fix traces back to the problem.
 
-However you start, the header form is short: a **"Name"**, a **"Category"** (your change-order types, seeded
+However you start, the header form is short: a **"Name"**, a **"Category"** (your change-notice types, seeded
 with a starter set like *Design Improvement*, *Cost Reduction*, and *Obsolescence / End-of-Life*), a **"Reason for Change"** and **"Description
 of Change"**, an **"Owner"**, **"Priority"**, and dates. If you started from a quality issue, that
 non-conformance rides along as the linked issue. The affected item is the unit of work, and once you're on the
-change order the **Add Affected Item** picker is deliberately narrow: **Parts only**. A material, consumable,
+change notice the **Add Affected Item** picker is deliberately narrow: **Parts only**. A material, consumable,
 or service doesn't carry an engineering revision, so it never appears.
 
 Before you touch the bracket, though, its own page already warned you this was coming. A part that's on an
-open change order shows a heading right on its detail page — *"This part is on 1 open change order"* — with the
-change order linked, so nobody revises a design that's already mid-change. The alert informs rather than
-blocks: a second change order on the same part is allowed, and Carbon keeps their draft versions from
+open change notice shows a heading right on its detail page — *"This part is on 1 open change notice"* — with the
+change notice linked, so nobody revises a design that's already mid-change. The alert informs rather than
+blocks: a second change notice on the same part is allowed, and Carbon keeps their draft versions from
 colliding, so a deliberate parallel change is fine.
 
-<Screenshot label="New change order form" caption="Name, category, reason, owner, and priority. The header before any affected item is added." ratio="wide" />
+<Screenshot label="New change notice form" caption="Name, category, reason, owner, and priority. The header before any affected item is added." ratio="wide" />
 
 <Callout tone="blue" badge="TOP-DOWN, NOT BOTTOM-UP" title="You pick the parts first, then edit them in place.">
 Carbon doesn't ask you to describe a change as a list of add-this, delete-that rows. You select the affected
-part and then edit its actual bill of materials and bill of process inside the change order. The change is
+part and then edit its actual bill of materials and bill of process inside the change notice. The change is
 whatever the finished draft says it is.
 </Callout>
 
 ## Draft the change in place
 
 Add the bracket and Carbon quietly snapshots its live <Term id="bom">method</Term> into a new **Draft**
-version stamped to this change order. That draft is invisible everywhere else — it won't show in a version
+version stamped to this change notice. That draft is invisible everywhere else — it won't show in a version
 switcher, a copy-target list, or anything MRP, jobs, or costing read. You edit it with the same **Bill of
 Material** and **Bill of Process** editors you'd use on the part directly.
 
 Before you edit, pick a **change type** on the affected item. It's the most consequential choice on the whole
-change order, because it decides both what you can touch and what release will create. You can switch it
+change notice, because it decides both what you can touch and what release will create. You can switch it
 later, but not for free: switching discards the draft and mints a fresh one from the live method, so any
 edits you'd made are reset. Decide the type first, then edit.
 
@@ -89,12 +89,12 @@ supplier, part number, price, and order quantities on the line before you releas
 
 ## Review the diff
 
-Advance the change order through its stages: **Draft**, then **"Start"**, then **"Engineering Complete"**,
+Advance the change notice through its stages: **Draft**, then **"Start"**, then **"Engineering Complete"**,
 then **"Implementation"**. It only moves forward, one step at a time, and **"Start"**, **"Implementation"**,
 and **"Done"** each notify the team. There's no separate approval step to configure — the stages are the
-workflow, and the change order is its own gate. If the change doesn't pan out, you're not trapped in the
+workflow, and the change notice is its own gate. If the change doesn't pan out, you're not trapped in the
 forward march either: a **"Cancel"** action sits in the header at every open stage. Cancelling locks the
-change order but keeps every draft, and **"Reopen"** takes it back to **Draft** later with your edits
+change notice but keeps every draft, and **"Reopen"** takes it back to **Draft** later with your edits
 intact, so shelving a change costs nothing.
 
 You don't have to reach Implementation to see what you've done. The overview page carries a **Changes** card
@@ -105,7 +105,7 @@ At **"Implementation"** the **"Release"** action opens. It doesn't just apply th
 affected item's change as a read-only diff first. Materials added and removed, operations and their steps
 changed, attributes that moved — laid out line by line against the method you snapshotted from.
 
-<Screenshot label="Release change order — diff review" caption="The dropped fastener line and the thicker-wall attribute, shown as a diff before you confirm." ratio="tall" />
+<Screenshot label="Release change notice — diff review" caption="The dropped fastener line and the thicker-wall attribute, shown as a diff before you confirm." ratio="tall" />
 
 <Callout tone="neutral" badge="EXACT BY CONSTRUCTION" title="The diff is real because the draft is real.">
 There's no shadow copy of your edits to drift out of sync. You edited an actual draft method, so the diff is
@@ -116,7 +116,7 @@ simply that draft compared against the live one it came from. What you review is
 
 Confirm the release and Carbon walks the affected items. For the bracket revision it activates the draft
 method, archives the prior version, reveals the new revision as a live item, and writes a
-<Term>supersession</Term> from the old revision to the new one. When every item is done, the change order
+<Term>supersession</Term> from the old revision to the new one. When every item is done, the change notice
 flips to **"Done"** and locks as a read-only record.
 
 You never wrote that supersession by hand. You only chose *how* it phases over, through the affected item's
@@ -139,6 +139,6 @@ That's what makes releasing safe on a busy floor.
 
 <Divider />
 
-Afterward the new revision carries a *"Created by ECO-…"* back-link to the change order that made it, and the
+Afterward the new revision carries a *"Created by CN-…"* back-link to the change notice that made it, and the
 bracket's page shows its full change history. The trail from "the wall was too thin" to the released revision
 is one click, and the floor never built a single bracket against a design that wasn't done.
