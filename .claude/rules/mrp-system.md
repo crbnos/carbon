@@ -40,7 +40,9 @@ Deno edge function** — NOT Trigger.dev, and not inline in the app server.
    - **Periods**: generates/fetches weekly `period` rows ~18 weeks (126 days)
      forward from today (`"Week"` granularity). <!-- UNVERIFIED: exact week count not re-confirmed line-by-line; old doc said 72, code comment said 18 -->
    - **Inputs (demand)**: views `openSalesOrderLines`, `openJobMaterialLines`,
-     plus `demandProjection`/`demandProjection` forecast netting.
+     plus the user-entered `demandProjection` for forecast netting. Don't conflate it
+     with the output: MRP **consumes `demandProjection`** (user-entered) and **writes
+     `demandForecast`** (rebuilt each run — see Outputs below).
    - **Inputs (supply)**: views `openProductionOrders`, `openPurchaseOrderLines`.
    - **BOM explosion**: for `Make` items, explodes the active make method to
      derive child demand with low-level-code ordering, per-period inventory

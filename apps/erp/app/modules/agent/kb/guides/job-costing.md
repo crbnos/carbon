@@ -2,7 +2,7 @@
 
 > Where a job's cost comes from, and how it piles up in work-in-process.
 
-The `guides/order` built robots. This flow follows the money those jobs spend. As a job is worked, Carbon accumulates its cost (materials consumed, labor and machine time) into work-in-process, then releases that cost into finished-goods inventory when the job completes. Every figure here is grounded in real ledger postings, so it's worth being precise about what posts, when, and to which account.
+The `guides/order` built robots. This flow follows the money those jobs spend. As a job is worked, Carbon accumulates its cost (materials consumed, plus labor, machine, and overhead time) into work-in-process, then releases that cost into finished-goods inventory when the job completes. Every figure here is grounded in real ledger postings, so it's worth being precise about what posts, when, and to which account.
 
 ## Accounting is a switch
 
@@ -16,9 +16,9 @@ As the job runs, cost flows **into** its work-in-process. Two streams feed it.
 
 **Material.** When a job consumes a part (issued to an operation, or backflushed at completion), Carbon moves that part's cost out of inventory and into WIP. The ledger entry is a debit to the work-in-process account and a credit to inventory, tagged *Job Consumption*.
 
-**Labor and machine.** Every production event a worker or machine logs carries a duration. Carbon prices it (hours times the **work center's** labor or machine rate) and posts it in real time: a debit to WIP, a credit to a labor-absorption account, tagged *Production Event*. The rate comes from the work center, not from the operation's estimate.
+**Labor, machine, and overhead.** Every production event a worker or machine logs carries a duration. Carbon prices it against the **work center's** rates and posts it in real time: a debit to WIP, a credit to an absorption account, tagged *Production Event*. Labor and machine time each post at their own rate (hours times the rate); if the work center also carries an overhead rate, the event books a second pair, a debit to WIP and a credit to an overhead-absorption account, at that rate. All three rates come from the work center, not from the operation's estimate.
 
-Only material and the labor/machine event rates post to WIP. Overhead rates exist on work centers and operations, but they drive estimating and quoting; Carbon does not absorb overhead into a job's actual cost. WIP is the sum of real material plus real time.
+WIP is the sum of consumed material and the priced production events. Each event posts labor and machine at the work center's rates, and when the work center has an overhead rate, that too is absorbed into WIP alongside the time, gated on the overhead-absorption account being configured. WIP is real material plus real time, not a standard estimate.
 
 ## Issued or backflushed
 

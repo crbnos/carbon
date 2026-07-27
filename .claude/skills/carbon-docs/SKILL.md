@@ -19,8 +19,9 @@ or change docs **in that system, in its house style, grounded in real Carbon cod
 **Announce at start:** "Using the carbon-docs skill — authoring docs for {topic}."
 
 > The single biggest mistake is writing plausible ERP-generic prose. Carbon's behavior is specific and
-> often counterintuitive (WIP is a GL balance not a table; payment is a field not an entity; overhead is
-> not absorbed; fixed-asset disposal is scrapping-only). **Every claim is grounded in source.** See the
+> often counterintuitive (WIP is a GL balance not a table; a payment is a posted entity applied via
+> settlements; overhead IS absorbed into WIP per production event; fixed-asset disposal is
+> scrapping-only). **Every claim is grounded in source.** See the
 > prime directive below — it overrides everything.
 
 > **What Carbon is:** a manufacturing system — **ERP** (the office) + **MES** (the floor), one platform over
@@ -119,7 +120,8 @@ flowIndex: 1          # order of the flow in the subnav (0 = first)
 - `<Divider />` — closes a chapter before its wrap-up line.
 - `<Term>make to order</Term>` — inline glossary term: dotted-underline; click/tap opens a popover with a
   grounded one-line definition + an optional "Learn more" link. Same component on both surfaces; definitions
-  live in `docs/lib/glossary.ts`. See "Interlinking & the glossary" below.
+  live in `@carbon/glossary` (`packages/glossary/src/terms.ts`), rendered by
+  `docs/components/editorial/glossary.tsx`. See "Interlinking & the glossary" below.
 
 Each `##` heading becomes a sidebar rail entry — so structure chapters as 3–5 `##` sections.
 
@@ -208,6 +210,12 @@ Each `##` heading becomes a sidebar rail entry — so structure chapters as 3–
   concept.
 - **Callouts carry the counterintuitive truth** — the thing people get wrong. Title is a claim, body is the
   why. ("Quotes are optional — the opportunity is the thread.")
+- **Answer the reader's cross-question where it arises.** Every claim raises a next question in the reader's
+  head ("what if the job already started?", "does this touch existing orders?", "can I undo it?"). Anticipate
+  the one or two most likely at each step and answer them **inline, at that point in the prose** — a short
+  sentence, a Callout, or a `<Term>` gloss — never deferred to a separate FAQ section or page. Ground the
+  answer in source like any other claim; if you can't answer it from code, that's a research gap, not a
+  skip. A section that leaves its obvious "but what about…" hanging isn't done.
 - **Explain the why, name the mistake, point to the next step.** If a paragraph does none of those, cut it.
 - **Interlink** at natural seams (`[make-to-order tour](/guides/order)`).
 - **Lead, don't label.** Don't open a page with a generic, repeated heading — no `## Introduction` on guide
@@ -236,7 +244,9 @@ a page that links out *and* glosses its jargon is worth more than the same prose
   - `<Term>make to order</Term>` slugifies the text to find the entry; `<Term id="make-to-order">made</Term>`
     when the display text differs from the slug.
   - **First occurrence per page only** — not every instance. Underlining every "order" is noise.
-  - Definitions are a single source of truth: `docs/lib/glossary.ts` (`slug → { term, definition, href? }`).
+  - Definitions are a single source of truth: `@carbon/glossary` (`packages/glossary/src/terms.ts`),
+    where each entry is `slug → { term, definition }` with `term`/`definition` as Lingui `msg` descriptors
+    (rendered by `docs/components/editorial/glossary.tsx`).
     Add the entry there *before* you use a new term, and **ground the definition in source** (the prime
     directive applies — exact enum values, real behavior). Omit `href` when there's no dedicated page yet (the
     popover still shows the definition); the "Learn more" link auto-hides when it would point at the page

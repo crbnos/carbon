@@ -121,6 +121,10 @@ const ProductionPlanningTable = ({
     {}
   );
 
+  const [ordersByItemId, setOrdersByItemId] = useState<
+    Map<string, ProductionOrder[]>
+  >(new Map());
+
   // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const onBulkUpdate = useCallback(
     (selectedRows: typeof data, action: "order") => {
@@ -129,34 +133,38 @@ const ProductionPlanningTable = ({
         items: selectedRows
           .filter((row) => row.id)
           .map((row) => {
-            const ordersWithPeriods = (ordersMap[row.id!] || []).map(
-              (order) => {
-                // If no due date or due date is before first period, use first period
-                if (
-                  !order.dueDate ||
-                  parseDate(order.dueDate) < parseDate(periods[0].startDate)
-                ) {
-                  return {
-                    ...order,
-                    periodId: periods[0].id
-                  };
-                }
-
-                // Find matching period based on due date
-                const period = periods.find((p) => {
-                  const dueDate = parseDate(order.dueDate!);
-                  const startDate = parseDate(p.startDate);
-                  const endDate = parseDate(p.endDate);
-                  return dueDate >= startDate && dueDate <= endDate;
-                });
-
-                // If no matching period found (date is after last period), use last period
+            // Drawer edits win (even an emptied list); fall back to
+            // auto-computed orders only for items never opened in the drawer
+            const sourceOrders =
+              row.id! in ordersMap
+                ? ordersMap[row.id!]!
+                : (ordersByItemId.get(row.id!) ?? []);
+            const ordersWithPeriods = sourceOrders.map((order) => {
+              // If no due date or due date is before first period, use first period
+              if (
+                !order.dueDate ||
+                parseDate(order.dueDate) < parseDate(periods[0].startDate)
+              ) {
                 return {
                   ...order,
-                  periodId: period?.id ?? periods[periods.length - 1].id
+                  periodId: periods[0].id
                 };
               }
-            );
+
+              // Find matching period based on due date
+              const period = periods.find((p) => {
+                const dueDate = parseDate(order.dueDate!);
+                const startDate = parseDate(p.startDate);
+                const endDate = parseDate(p.endDate);
+                return dueDate >= startDate && dueDate <= endDate;
+              });
+
+              // If no matching period found (date is after last period), use last period
+              return {
+                ...order,
+                periodId: period?.id ?? periods[periods.length - 1].id
+              };
+            });
 
             return {
               id: row.id,
@@ -172,7 +180,7 @@ const ProductionPlanningTable = ({
       });
     },
 
-    [bulkUpdateFetcher, locationId, ordersMap]
+    [bulkUpdateFetcher, locationId, ordersMap, ordersByItemId]
   );
 
   const [selectedItem, setSelectedItem] =
@@ -190,9 +198,6 @@ const ProductionPlanningTable = ({
     []
   );
 
-  const [ordersByItemId, setOrdersByItemId] = useState<
-    Map<string, ProductionOrder[]>
-  >(new Map());
   const [isPending, startTransition] = useTransition();
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
@@ -450,7 +455,7 @@ const ProductionPlanningTable = ({
             disabled={bulkUpdateFetcher.state !== "idle"}
           >
             <DropdownMenuIcon icon={<LuSquareChartGantt />} />
-            Order Parts
+            <Trans>Create Jobs</Trans>
           </DropdownMenuItem>
         </DropdownMenuContent>
       );

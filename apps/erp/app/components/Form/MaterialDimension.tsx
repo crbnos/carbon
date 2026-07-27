@@ -60,7 +60,7 @@ const MaterialDimension = (props: MaterialDimensionSelectProps) => {
     return (materialDimensionsLoader.data?.data ?? []).map((c) => ({
       value: c.id,
       label: c.name,
-      helper: c.companyId === null ? "Standard" : undefined
+      helper: c.companyId === null ? "Standard" : "Custom"
     }));
   }, [materialDimensionsLoader.data?.data]);
 

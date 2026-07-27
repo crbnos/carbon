@@ -18,7 +18,7 @@ An issue doesn't just sit there — it runs a workflow you define. A classic 8D 
 - Verification: prove the fix actually worked.
 - Communication: keep the customer in the loop.
 
-A review step gates what happens to the non-conforming arms: use, rework, or scrap. Nothing is dispositioned on a hunch; the decision is recorded against the issue alongside its actions.
+A review step gates what happens to the non-conforming arms: use as is, rework, scrap, or return to the supplier. Nothing is dispositioned on a hunch; the decision is recorded against the issue alongside its actions.
 
 ## Versioned procedures
 
@@ -34,7 +34,7 @@ One click, or one scan of the robot's QR label, answers the question every audit
 
 ## Ship & invoice
 
-Week one's 30 robots are done. You create a `guides/order-to-cash` against the sales order. It drafts its lines from what's outstanding, you pick and post it, then invoice that same 30. Because the order line stays open at "To Ship and Invoice," it simply carries the remaining 60 forward; the completed count rolls up as each batch ships.
+Week one's 30 robots are done. You create a `guides/order-to-cash` against the sales order. It drafts its lines from what's outstanding, you pick and post it, then invoice that same 30. Because the order still has units to ship, it stays at "To Ship and Invoice" and simply carries the remaining 60 forward; the line's completed count rolls up as each batch ships.
 
 Carbon ties the invoice straight into your accounting system, so the build that started at the `guides/quote-to-cash` closes on the books — partial quantity and all.
 

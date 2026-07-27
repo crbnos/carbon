@@ -24,7 +24,7 @@ Receive an item flagged for inspection and its tracked units come in **"On Hold"
 
 Suppliers rarely sell in your stock unit. You might buy fasteners by the thousand-count box but stock and issue them as eaches. Every purchase order line carries a **conversion factor** between the two units, so the price and quantity you agree with the supplier stay in *their* terms while inventory moves in *yours*.
 
-Posting the receipt does the translation: the quantity the supplier shipped is converted through the factor before it lands in stock, while the line's received count stays in the purchase unit. You reconcile against the supplier in the unit you ordered, and the floor pulls stock in the unit it builds with. Neither side has to do the arithmetic in its head.
+Posting the receipt does the translation: the outstanding purchase quantity is multiplied by the factor, so the receipt lands stock, and moves the item ledger, in your *inventory* unit. You still agree the order with the supplier in *their* unit, and the floor pulls stock in the unit it builds with. Neither side has to do the arithmetic in its head.
 
 ## The supplier bill
 
@@ -38,8 +38,8 @@ Order, receipt, and bill are reconciled through the quantities on their shared p
 
 Posting the purchase invoice writes the payable side of the ledger, all gated on accounting being enabled: credit Accounts Payable, debit inventory or WIP, reverse the GR/IR clearing the receipt set up, and send any price difference to variance. It bumps each order line's `quantityInvoiced`, flips `invoicedComplete`, and recomputes the order's status. The invoice itself lands on **"Open"**.
 
-Note what posting does *not* do: it never marks the invoice **"Paid"**. As on the sales side, payment in Carbon is field-based, a status and a paid date on the invoice, not a separate transaction. Voiding a posted invoice writes reversing entries rather than deleting it.
+Note what posting does *not* do: it never marks the invoice **"Paid"**. As on the sales side, a payment is its own posted entity, not a field. You record a **payment** (a **"Disbursement"** for cash out) and apply it to the bill through a **settlement** that carries the principal plus any discount or write-off; a **debit memo** settles the same way without cash. The bill's status is *derived* from what's applied: **"Partially Paid"** part-way, **"Paid"** once covered, **"Overdue"** if the due date passes first. Voiding a posted invoice writes reversing entries rather than deleting it.
 
-Posting settles the accounting against the order and receipt; it doesn't disburse cash. The invoice waits at **"Open"** until it's marked paid, the deliberate act that records the outflow.
+Posting settles the accounting against the order and receipt; it doesn't disburse cash. The bill waits at **"Open"** until you post a payment (a **"Disbursement"**) and apply it via a settlement, which is what records the outflow and flips the bill to **"Paid"**.
 
 That's RFQ to bill end to end: one part shopped to several suppliers, ordered from the best, received into stock, and billed against the very same order line — the buy-side mirror of quote to cash, reconciled on the order, not on paperwork.

@@ -40,7 +40,7 @@ The share link lives on each supplier quote, so every supplier responds in their
 
 ## Into a purchase order
 
-Convert the winning supplier quote and Carbon builds a <Term>purchase order</Term> from it — carrying the supplier, the lines, the negotiated pricing (converted through the line's <Term>conversion factor</Term> and exchange rate), and the same supplier-interaction thread. A PO can also be one of three kinds: a plain **"Purchase"**, a **"Return"**, or **<Term id="outside-operation">"Outside Processing"</Term>** for sending parts out to a vendor for a step.
+Convert the winning supplier quote and Carbon builds a <Term>purchase order</Term> from it — carrying the supplier, the lines, the negotiated pricing (converted through the line's <Term>conversion factor</Term> and exchange rate), and the same supplier-interaction thread. A PO is one of two kinds: a plain **"Purchase"**, or **<Term id="outside-operation">"Outside Processing"</Term>** for sending parts out to a vendor for a step.
 
 A purchase order's status is never typed in by hand. Carbon computes it from the state of its lines. Finalize a fresh order and it lands at **"To Receive and Invoice"**: nothing has arrived, nothing has been billed. If the order's value crosses an approval threshold, it stops at **"Needs Approval"** until someone signs off.
 

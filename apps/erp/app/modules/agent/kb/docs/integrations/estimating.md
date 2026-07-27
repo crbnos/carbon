@@ -20,13 +20,13 @@ changes, and the secret verifies those calls).
   
   ### Set import defaults
 
-  On connect you also set the defaults Carbon applies to items it imports: **method type**, **tracking type**, and whether to use the Paperless order number (below).
+  On connect you also set the defaults Carbon applies to items it imports: **material method type**, **material tracking type**, and whether to use the Paperless order number (below).
   
 
   - **API key**: Authenticates Carbon to Paperless Parts.
   - **Webhook signing secret**: Verifies inbound webhooks from Paperless Parts.
-  - **Method type**: Default for imported items: **Purchase to Order** or **Pull from Inventory**.
-  - **Tracking type**: Default for imported items: **Inventory**, **Non-Inventory**, or **Batch**.
+  - **Material Method Type**: Default method type for imported items: **Purchase to Order** or **Pull from Inventory** (defaults to **Pull from Inventory**).
+  - **Material Tracking Type**: Default tracking type for imported items: **Inventory**, **Non-Inventory**, or **Batch** (defaults to **Inventory**).
   - **Use Paperless order number**: Whether to carry the Paperless order number onto the Carbon document.
 
 Imported quotes and BOMs land as Carbon records, ready to turn into sales orders and jobs.

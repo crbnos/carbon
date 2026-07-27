@@ -19,14 +19,17 @@ recipe. Each of those pre-attaches the bracket as the first affected item. A cha
 quality issue, which links the non-conformance to the change order so the fix traces back to the problem.
 
 However you start, the header form is short: a **"Name"**, a **"Category"** (your change-order types, seeded
-with *Design improvement*, *Obsolescence*, and *Cost reduction*), a **"Reason for Change"** and **"Description
-of Change"**, an **"Owner"**, **"Priority"**, dates, and an optional **"Linked NCR"**. The affected item is
-the unit of work, and the picker is deliberately narrow: **Parts and Tools only**. A raw material or a service
-doesn't carry an engineering revision, so it never appears.
+with a starter set like *Design Improvement*, *Cost Reduction*, and *Obsolescence / End-of-Life*), a **"Reason for Change"** and **"Description
+of Change"**, an **"Owner"**, **"Priority"**, and dates. If you started from a quality issue, that
+non-conformance rides along as the linked issue. The affected item is the unit of work, and once you're on the
+change order the **Add Affected Item** picker is deliberately narrow: **Parts only**. A material, consumable,
+or service doesn't carry an engineering revision, so it never appears.
 
 Before you touch the bracket, though, its own page already warned you this was coming. A part that's on an
 open change order shows a heading right on its detail page — *"This part is on 1 open change order"* — with the
-change order linked, so nobody revises a design that's already mid-change.
+change order linked, so nobody revises a design that's already mid-change. The alert informs rather than
+blocks: a second change order on the same part is allowed, and Carbon keeps their draft versions from
+colliding, so a deliberate parallel change is fine.
 
 Carbon doesn't ask you to describe a change as a list of add-this, delete-that rows. You select the affected
 part and then edit its actual bill of materials and bill of process inside the change order. The change is
@@ -40,19 +43,24 @@ switcher, a copy-target list, or anything MRP, jobs, or costing read. You edit i
 Material** and **Bill of Process** editors you'd use on the part directly.
 
 Before you edit, pick a **change type** on the affected item. It's the most consequential choice on the whole
-change order, because it decides both what you can touch and what release will create.
+change order, because it decides both what you can touch and what release will create. You can switch it
+later, but not for free: switching discards the draft and mints a fresh one from the live method, so any
+edits you'd made are reset. Decide the type first, then edit.
 
 - Version revises how the *same* part is made. You edit its BoM and
   BoP; release publishes a new method version and archives the old one. No new part, nothing superseded.
-- **Revision** mints a new revision of the part (same Part ID, next revision letter). You edit its attributes,
-  documents, and method; release reveals the new revision.
-- **New Part** derives a brand-new part number from this one. Release reveals it and points the old part at it.
+- **Revision** mints a new revision of the part (same Part ID, next revision). You edit its attributes,
+  documents, and method; release reveals the new revision and supersedes the old one.
+- **Replacement Part** derives a brand-new part *number* from this one. Release reveals it and supersedes the
+  old part with it. The 1:1 replacement.
+- **New Part** introduces a genuinely new part with no old part behind it. Release reveals it, but supersedes
+  nothing, because there's no predecessor to phase out.
 
 This trips people up. A **Version** bumps the recipe on the existing bracket, so existing stock and history
-stay put and nothing is superseded. A **Revision** or a **New Part** creates a new item alongside the old
-one, which is why each of those auto-writes a supersession at release. Pick the wrong type and you either
-strand stock or fail to phase it over. A purchased part has no method to version, so adding a **Buy** item
-lands on **Revision** automatically.
+stay put and nothing is superseded. A **Revision** and a **Replacement Part** each derive a new item *from* the
+old one, so each auto-writes a supersession at release. A **New Part** is net-new — there's no old part to
+phase out, so it supersedes nothing. Pick the wrong type and you either strand stock or fail to phase it over.
+A purchased part has no method to version, so adding a **Buy** item lands on **Revision** automatically.
 
 For the bracket we want the wall change to carry a new drawing revision and phase over cleanly, so this is a
 **Revision**. You thicken the wall in the attributes, drop the extra fastener line from the BoM, and attach
@@ -68,7 +76,10 @@ supplier, part number, price, and order quantities on the line before you releas
 Advance the change order through its stages: **Draft**, then **"Start"**, then **"Engineering Complete"**,
 then **"Implementation"**. It only moves forward, one step at a time, and **"Start"**, **"Implementation"**,
 and **"Done"** each notify the team. There's no separate approval step to configure — the stages are the
-workflow, and the change order is its own gate.
+workflow, and the change order is its own gate. If the change doesn't pan out, you're not trapped in the
+forward march either: a **"Cancel"** action sits in the header at every open stage. Cancelling locks the
+change order but keeps every draft, and **"Reopen"** takes it back to **Draft** later with your edits
+intact, so shelving a change costs nothing.
 
 You don't have to reach Implementation to see what you've done. The overview page carries a **Changes** card
 that rolls up every affected item's diff as you edit — the dropped fastener, the thicker wall, any supplier you
@@ -97,9 +108,11 @@ immediately. Once the successor is effective, MRP redirects planned demand to th
 Method** substitutes it onto new jobs, recording where the substitution came from.
 
 Existing stock stays on the old bracket, and any job already created keeps the exact material and method
-version it was built against. Supersession only touches forward planning — a job cut after the effectivity
-date picks up the new revision, one cut before it does not. That's what makes releasing safe on a busy floor.
+version it was built against. The same goes for paperwork: an open purchase order or quote line that names
+the old revision keeps it, and nothing warns or rewrites it at release. Supersession only touches forward
+planning — a job cut after the effectivity date picks up the new revision, one cut before it does not.
+That's what makes releasing safe on a busy floor.
 
-Afterward the new revision carries a *"Created by CN-…"* back-link to the change order that made it, and the
+Afterward the new revision carries a *"Created by ECO-…"* back-link to the change order that made it, and the
 bracket's page shows its full change history. The trail from "the wall was too thin" to the released revision
 is one click, and the floor never built a single bracket against a design that wasn't done.

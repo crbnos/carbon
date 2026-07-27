@@ -104,10 +104,14 @@ as `sourceId`:
   (`source="Supplier"`), route `x+/supplier+/$supplierId.risks.tsx`.
 
 Cards filter on `source` AND `sourceId`. Items additionally populate the dedicated
-`itemId` FK column (in addition to `sourceId`). <!-- UNVERIFIED: no dedicated Job /
-Quote Line / Work Center entity card found — those riskSource values exist in the
-enum but only General/Item/Customer/Supplier appear to have wired-up UI entry points
-(Work Center is surfaced only via the riskRegisters view join). -->
+`itemId` FK column (in addition to `sourceId`). Two more entity cards exist:
+- Job → `modules/production/ui/Jobs/JobRiskRegister.tsx` (`source="Job"`, also passes `itemId`).
+- Quote Line → `modules/sales/ui/Quotes/QuoteLineRiskRegister.tsx` (`source="Quote Line"`).
+
+The `riskSource` enum (`quality.models.ts`) is
+`Customer | General | Item | Job | Quote Line | Supplier | Work Center`. All have a
+wired-up entity card **except `Work Center`**, which is surfaced only via the
+`riskRegisters` view join (no dedicated card/route).
 
 ## Gotchas
 

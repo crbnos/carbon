@@ -1,15 +1,22 @@
 # Supersession & cutover
 
-> How a released Revision or New Part phases over, the cutover fields you tune per item, and how MRP and Get Method honor supersession downstream.
+> How a released Revision or Replacement Part phases over, the cutover fields you tune per item, and how MRP and Get Method honor supersession downstream.
 
-For every **Revision** and **New Part** affected item, release auto-writes a supersession from
+For a **Revision** or **Replacement Part** affected item, release auto-writes a supersession from
 the old item to the new one. You don't create it by hand — you only tune *how* the phase-over behaves, per
-affected item, through the cutover fields. A **Version** change type supersedes nothing, because it's the same
-item.
+affected item, through the cutover fields.
+
+A **Version** supersedes nothing, because it edits the same item. A **New Part** supersedes nothing either,
+because it's net-new — there's no predecessor to phase out. Only the two change types that derive a new item
+*from* an existing one write a supersession.
+
+The rule is the predecessor: a Revision phases the old revision over to the new one, and a Replacement Part
+phases the affected part over to the new number. Version and New Part have no old item to redirect, so release
+skips supersession for them entirely.
 
 ## Cutover fields
 
-Set these on the affected item before you release.
+Set these on a Revision or Replacement Part affected item before you release.
 
   - **Supersession Mode**: How planning treats the old item. See the modes below. Defaults to **Consume First**.
   - **Discontinuation Date**: When the old item stops being usable. Empty means no planned discontinuation.
@@ -40,11 +47,12 @@ Once a supersession is effective (on or after its successor-effectivity date), t
   created, recording the source item so the substitution is traceable.
 
 Existing stock stays on the old item, and jobs already created keep the exact materials and method version
-they were built against. Supersession only steers *forward* planning — a job created after the successor's
-effectivity date picks up the new item; one created before it does not shift. That's what makes releasing safe
-on a busy floor.
+they were built against. Open documents follow the same rule: a purchase order, sales order, or quote line
+that names the old item keeps it; nothing warns or rewrites it at release. Supersession only steers *forward*
+planning — a job created after the successor's effectivity date picks up the new item; one created before it
+does not shift. That's what makes releasing safe on a busy floor.
 
 ## Related
 
   - Reordering & planning How the replenishment system and reordering policy read supersession.
-  - Change types Which change types write a supersession, and which don't.
+  - Change types Which change types write a supersession (Revision and Replacement Part), and which don't.

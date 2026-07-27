@@ -8,7 +8,7 @@ flowName: Quote to cash
 flowIndex: 1
 ---
 
-You have a <Term>sales order</Term> sitting at **"To Ship and Invoice"**. Cash is four moves away: fulfill the lines, post a <Term>shipment</Term>, raise an invoice, record payment. None of them auto-chain. Each is a discrete, posted step you take when the work is actually ready.
+You have a <Term>sales order</Term> sitting at **"To Ship and Invoice"**. Cash is four moves away: fulfill the lines, post a <Term>shipment</Term>, raise an invoice, apply a payment against it. None of them auto-chain. Each is a discrete, posted step you take when the work is actually ready.
 
 <Figure illustration="cash-cycle" caption="Four posted moves carry a confirmed order to recorded cash. None of them auto-chains." />
 
@@ -52,14 +52,16 @@ The invoice opens at **"Draft"**, fully editable. The moment it leaves "Draft" i
 
 ## Post and get paid
 
-Posting the invoice writes the general ledger (Accounts Receivable against Sales, and COGS against Inventory), but only when accounting is switched on for the company. Posting also bumps each line's `quantityInvoiced`, stamps the posting date, and sets the invoice to **"Submitted"**. Note what it is *not*: posting never marks an invoice **"Paid"**.
+Posting the invoice writes the general ledger (Accounts Receivable against Sales, and COGS against Inventory), but only when accounting is switched on for the company. Posting also bumps each line's `quantityInvoiced`, stamps the posting date, and moves the invoice to **"Submitted"**. Note what it is *not*: posting never marks an invoice **"Paid"**.
 
-Payment isn't a separate record in Carbon. It's the invoice's own state: its status, `datePaid`, and `balance`. When you mark the invoice **"Paid"**, Carbon stamps the payment date. Need to undo a posted invoice? Voiding writes compensating reversing entries; you can't simply delete it.
+Payment is its own posted entity now, not a checkbox on the invoice. You record a **<Term>payment</Term>** (a **"Receipt"** on the sales side) and apply it to one or more invoices through a **<Term id="invoice-settlement">settlement</Term>**. Each settlement line carries the principal it applies, plus any early-payment discount or write-off. A **credit memo** works the same way: it's a posted balance you apply via a settlement rather than cash. The payment itself moves through **"Draft"**, **"Posted"**, **"Voided"**, and posting it writes the cash-account and Accounts-Receivable entries.
 
-<Callout tone="green" badge="PAYMENT IS A FIELD" title="There's no payment entity: settlement lives on the invoice.">
-The invoice carries its own status, paid date, and balance. Posting lands it on **"Submitted"**; moving it to **"Paid"** is the deliberate act that records the cash. All ledger postings along the way are gated on accounting being enabled.
+The invoice's paid status is *derived* from those settlements, not stored by hand. Once applied settlements cover the total the invoice reads **"Paid"**; part-way there it reads **"Partially Paid"**; past its due date and unsettled it reads **"Overdue"**. Need to undo a posted invoice? Voiding writes compensating reversing entries; you can't simply delete it.
+
+<Callout tone="green" badge="PAYMENT IS AN ENTITY" title="Settlement is a posted payment applied to the invoice, not a field.">
+There's a real payment record (a **"Receipt"** for cash in) that you apply to invoices through settlements, and credit memos settle the same way. The invoice's **"Paid"** / **"Partially Paid"** status is computed from what's been applied, so the ledger and the balance always agree. All postings are gated on accounting being enabled.
 </Callout>
 
 <Divider />
 
-That's quote to cash end to end: an opportunity priced into a quote, accepted into an order, shipped, invoiced, and settled, each step its own posted move, each leaving a trail you can stand behind.
+That's quote to cash end to end: an opportunity priced into a quote, accepted into an order, shipped, invoiced, and settled by an applied payment, each step its own posted move, each leaving a trail you can stand behind.

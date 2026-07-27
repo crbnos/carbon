@@ -11,7 +11,7 @@ Every part carries a **reordering policy** that tells planning how to replenish 
 | Policy | Triggers when | Orders |
 | --- | --- | --- |
 | Manual Reorder | never automatically | nothing: you order by hand |
-| Demand-Based Reorder | demand appears | exactly what demand needs, grouped by the demand accumulation period |
+| Demand-Based Reorder | demand appears in an accumulation window | enough to cover that window's demand (plus any safety stock), grouped by the demand accumulation period |
 | Fixed Reorder Quantity | on-hand falls to the reorder point | a fixed reorder quantity |
 | Maximum Quantity | on-hand falls to the reorder point | enough to reach the maximum inventory quantity |
 
@@ -24,6 +24,7 @@ Every part carries a **reordering policy** that tells planning how to replenish 
   <Field name="Minimum / maximum order quantity">Clamp each suggested order into an orderable range. *(applies to: all)*</Field>
   <Field name="Lot size">Round an order up to a multiple. *(applies to: all)*</Field>
   <Field name="Demand accumulation period">Window that groups demand into a single order. *(applies to: Demand-Based Reorder)*</Field>
+  <Field name="Demand accumulation safety stock">Buffer each accumulation window is topped up to. *(applies to: Demand-Based Reorder)*</Field>
 </FieldTable>
 
 <Callout type="info">

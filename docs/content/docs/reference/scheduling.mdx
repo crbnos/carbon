@@ -1,0 +1,103 @@
+---
+title: Scheduling
+description: The board where jobs get dates and operations get a dispatch order, and the engine that computes both.
+---
+
+Scheduling in Carbon answers two questions for the floor: *when* does each [job](/docs/reference/jobs) run, and *in what order* does each [work center](/docs/reference/work-centers) pick up its operations. The **schedule board** in the ERP is where you set the first, and an engine derives the second. Both live on one board with two views, reached from the **Production** area.
+
+The board opens on the **Week** view under *Jobs*, which lays jobs out by due date. A dropdown at the top-left switches to the **Month** view or to the **Work Centers** view, an operations Kanban with a column per work center. The two views drag differently, and that difference is the whole model, so it's worth getting straight before you touch anything.
+
+## The two views drag differently
+
+Rescheduling lives on the **Week / Month (Jobs)** view. Drag a job card onto a day (week view) or a week (month view) and Carbon writes that as the job's **due date**, then re-runs the engine to recompute every operation's dates and <Term id="dispatch-priority">dispatch order</Term> from the new deadline. Drag a card onto **Unscheduled**, **Next Week**, or **Next Month** and the due date is cleared (the job goes unscheduled). This is the only place in the product where a drag changes *dates*.
+
+The **Work Centers** view drags for a different purpose. Drag an operation card to another work center, or reorder it within a column, and Carbon writes only the operation's `workCenterId` and its `priority` (the per-work-center dispatch position). It does **not** recompute dates and does **not** re-run the engine. The board says so in an info tooltip: *"Reorders dispatch sequence and work center only — does not reschedule. Change dates on the Dates board."*
+
+<Callout type="warn" title="Only the Jobs view reschedules">
+Moving an operation on the Work Centers view repositions it in a work center's queue. It never shifts a date. To move *when* work happens, drag the job on the Week or Month view, which sets the due date and re-runs the scheduling engine. Never edit an operation's start or due date directly.
+</Callout>
+
+## The MES board is display only
+
+The shop-floor app (MES) also has a **Schedule** page, and it looks like the ERP Work Centers view: a Kanban with a column per work center, cards sorted by dispatch order. It is **not** an authoring surface. It has no drag-to-write action at all. Operators read it to see what's queued at their station, filter it by work center, process, sales order, tag, or assignee, then open an operation to run it. Every scheduling decision, dates and dispatch order alike, is made in the ERP.
+
+<Callout type="note" title="Where each board lives">
+Set dates and dispatch order in the ERP schedule board. Read the queue and run work on the MES board. The MES board reflects the same operation records the engine writes, in real time, but changes nothing about the schedule.
+</Callout>
+
+## What triggers a (re)schedule
+
+The engine runs when a job is created and whenever a due date changes. Setting a due date on the Jobs view calls `triggerJobSchedule`, which fires a background job. That path is asynchronous by design: the board saves the due date immediately, and the reschedule catches up a moment later (if it fails, it retries rather than blocking your edit). The computed operation dates then flow back to both boards.
+
+<Callout type="info" title="Reschedule is a background job">
+`triggerJobSchedule` sends an event, it doesn't wait. The new dates appear once the engine finishes, not on the same click that saved the due date. This keeps the board responsive and lets a failed run retry on its own.
+</Callout>
+
+The engine itself is a privileged function that runs a fixed pipeline for a job: pull its operations, attach materials, build the operation dependency graph, calculate dates, choose work centers, calculate dispatch priorities, and persist the results back onto each operation.
+
+## Dates: backward from the due date
+
+Carbon schedules **backward from the job's due date**. It anchors the last operation on the due date and walks the [routing](/docs/reference/routings) in reverse: each operation's due date is the earliest constraint its successors impose, and its start date is that due date minus the operation's duration. Duration is `setup + max(labor, machine)` time, rounded up to whole eight-hour days, and start dates are counted in **business days**, so weekends are skipped.
+
+Operation order comes from the routing's own sequence plus one enum. Each operation is either **After Previous** (the default, run serially after the one before it) or **With Previous** (run in parallel, sharing the predecessor's dates). Subassemblies add edges too: a subassembly's last operation must finish before the parent operation that consumes it. Carbon topologically sorts all of that into one order before assigning dates.
+
+<Callout type="note" title="Dates are infinite-capacity">
+The engine never checks whether a work center has room on a given day when it computes dates. It assumes infinite capacity and schedules purely off durations and dependencies working back from the due date. There is no finite-capacity scheduling that pushes a job out because a machine is full.
+</Callout>
+
+## Dispatch priority and work-center load
+
+Two related-but-separate numbers govern order. **Job priority** is a fractional index set once when a job is created, from its <Term id="job-deadline-type">deadline type</Term> and due date. **Operation priority** is the per-work-center dispatch position the engine recomputes on every run: it groups operations by work center, sorts each group by start date, then job priority, then deadline type, and numbers them 1, 2, 3. Both boards sort cards by this ascending priority, so the top card in a work-center column is the next thing to run there.
+
+Work-center load *does* enter the picture, but only to choose *which* work center an operation runs on, never to change its timing. When an operation's process can run on more than one work center, the engine sums the existing load on each candidate before the operation's date and assigns the operation to the least-loaded one. Timing is already fixed by the backward pass; load only breaks the tie over placement.
+
+<Callout type="info" title="Load picks the station, not the schedule">
+Choosing the least-loaded work center spreads work across identical stations. It does not delay an operation. Because dates ignore capacity, a work center can end up with more work on a day than it can physically finish, which surfaces as a conflict rather than an automatic push-out.
+</Callout>
+
+## Conflicts and pinned dates
+
+An operation is flagged with a **conflict** when its computed start date lands in the past, meaning the due date can't be met without starting before today. The engine records this on the operation, and the Jobs view rolls it up to a red flag on the job card so you can spot at-risk work and either pull in resources or move the due date out. A conflict is strictly a "start date is in the past" signal, not a capacity or overlap warning.
+
+You can also **pin a due date**. Marking an operation as manually scheduled tells the engine to keep the user's due date across future reschedules: it still recomputes and writes the start date, priority, work center, and conflict flag, but deliberately leaves that operation's due date alone. Everything else on the job reschedules around the pin.
+
+<AgentContext>
+## Troubleshooting
+
+Where saves fail on the boards, and why the engine flags a conflict.
+
+### "Invalid form data"
+The drag save (a due-date drop on the Jobs view, or an operation move on the Work Centers view) posted a payload the validator rejected — usually a malformed `columnId`. Re-do the drag; if it persists, the drop target wasn't a valid day/week or work-center column.
+
+### An operation shows a conflict flag
+A conflict is set purely when the operation's computed **start date is in the past** (`hasConflict` = start date `<` today; the recorded `conflictReason` reads *"Operation must start on … but current date is …"*). It is **not** a capacity or overlap warning — the engine schedules infinite-capacity. Resolve it by moving the job's due date out (drag on the Jobs view) or pulling in resources, not by editing the operation's dates directly.
+
+### Nothing reschedules when I move a card on the Work Centers / MES board
+Only the **Jobs (Week/Month) view** writes dates and re-runs the engine. The Work Centers view writes only `workCenterId` and `priority` — it never recomputes dates. The MES Schedule board writes nothing at all (display only). To change *when* work happens, drag the job on the ERP Jobs view.
+
+### A pinned operation's due date didn't move after a reschedule
+That's the design of **manually scheduled** (pinned) operations. The engine still recomputes and writes the start date, priority, work center, and conflict flag, but deliberately leaves a pinned operation's `dueDate` alone. Un-pin it to let the engine own the due date again.
+
+### The new dates didn't appear right after I saved
+The reschedule is a background job. Saving a due date calls `triggerJobSchedule`, which fires an async `schedule-job` event and returns immediately — it does not wait. The computed dates flow back to both boards a moment later; a failed run retries on its own rather than blocking your edit.
+
+### I can't edit dates on the board
+Editing on either ERP board (dropping a due date, or reordering an operation) requires the **production update** permission; reading the boards requires **production view**. Without update, the drag won't save.
+</AgentContext>
+
+## Related
+
+<Cards>
+  <Card title="Jobs" href="/docs/reference/jobs">
+    The work orders whose operations the schedule board sequences.
+  </Card>
+  <Card title="Work centers" href="/docs/reference/work-centers">
+    The stations operations are placed on, and the rates that cost them.
+  </Card>
+  <Card title="Plan the build" href="/guides/plan">
+    How demand turns into scheduled jobs before they hit the floor.
+  </Card>
+  <Card title="Run the floor" href="/guides/floor">
+    What operators see and do on the MES board once work is queued.
+  </Card>
+</Cards>
