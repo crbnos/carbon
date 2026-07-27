@@ -45,6 +45,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
       replenishmentSystem,
       itemTrackingType
     } = validation.data;
+    // The lock guard above authorized the notice in the URL, so the write must
+    // target that same notice.
+    if (changeOrderId !== id) {
+      return data(
+        { success: false },
+        await flash(request, error(null, "Invalid change notice"))
+      );
+    }
     const add = await addChangeOrderAffectedItem(client, {
       changeOrderId,
       changeType: "New Part",
@@ -80,6 +88,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   const { changeOrderId, itemId, changeType, revision } = validation.data;
+
+  if (changeOrderId !== id) {
+    return data(
+      { success: false },
+      await flash(request, error(null, "Invalid change notice"))
+    );
+  }
 
   const add = await addChangeOrderAffectedItem(client, {
     changeOrderId,

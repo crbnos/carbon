@@ -76,6 +76,7 @@ export async function linkActionToLinearIssue(
   await serviceRoleForLink
     .from("externalIntegrationMapping")
     .delete()
+    .eq("companyId", companyId)
     .eq("entityType", input.entityType)
     .eq("entityId", input.actionId)
     .eq("integration", "linear");
@@ -123,6 +124,7 @@ export async function unlinkActionFromLinearIssue(
   await serviceRole
     .from("externalIntegrationMapping")
     .delete()
+    .eq("companyId", companyId)
     .eq("entityType", input.entityType)
     .eq("entityId", input.actionId)
     .eq("integration", "linear");

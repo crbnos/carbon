@@ -102,12 +102,29 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  // Attach any affected Parts/Tools picked at create time. Each is added as a
-  // Version change (the service coerces Buy items to Revision). Best-effort: the
-  // CO already exists, so a per-item failure lands the user on the detail page
-  // with a warning rather than losing the CO.
-  const affectedItemIds = [...new Set(d.affectedItemIds ?? [])];
-  let affectedError: Parameters<typeof error>[0] = null;
+  // Attach any affected Parts picked at create time. Each is added as a Version
+  // change (the service coerces Buy items to Revision). Best-effort: the CO
+  // already exists, so a per-item failure lands the user on the detail page with
+  // a warning rather than losing the CO.
+  const submittedItemIds = [...new Set(d.affectedItemIds ?? [])];
+
+  // Change notices operate on Parts only — the create modal is reachable from
+  // Tool pages, so filter out anything that isn't a Part.
+  const submittedItems = submittedItemIds.length
+    ? await client
+        .from("item")
+        .select("id, type")
+        .in("id", submittedItemIds)
+        .eq("companyId", companyId)
+    : null;
+
+  const affectedItemIds = (submittedItems?.data ?? [])
+    .filter((item) => item.type === "Part")
+    .map((item) => item.id);
+  const skippedNonParts = submittedItemIds.length - affectedItemIds.length;
+
+  let affectedError: Parameters<typeof error>[0] =
+    submittedItems?.error ?? null;
   for (const itemId of affectedItemIds) {
     const add = await addChangeOrderAffectedItem(client, {
       changeOrderId: createResult.data.id,
@@ -119,14 +136,16 @@ export async function action({ request }: ActionFunctionArgs) {
     if (add.error) affectedError = add.error;
   }
 
-  if (affectedError) {
+  if (affectedError || skippedNonParts > 0) {
     throw redirect(
       path.to.changeNoticeDetails(createResult.data.id),
       await flash(
         request,
         error(
           affectedError,
-          "Change notice created, but some items could not be added"
+          affectedError
+            ? "Change notice created, but some items could not be added"
+            : "Change notice created. Change notices support Parts only, so non-Part items were skipped"
         )
       )
     );

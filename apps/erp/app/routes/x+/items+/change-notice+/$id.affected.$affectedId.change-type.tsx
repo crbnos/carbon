@@ -8,7 +8,10 @@ import {
   changeOrderAffectedItemChangeTypeValidator,
   updateChangeOrderAffectedItemChangeType
 } from "~/modules/items";
-import { requireEditableChangeOrderRoute } from "~/modules/items/items.server";
+import {
+  requireChangeOrderChildRoute,
+  requireEditableChangeOrderRoute
+} from "~/modules/items/items.server";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -16,9 +19,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
     update: "parts"
   });
 
+  const changeOrderId = params.id;
+  if (!changeOrderId) throw new Error("Could not find id");
+
   const locked = await requireEditableChangeOrderRoute(request, {
     client,
-    changeOrderId: params.id,
+    changeOrderId,
     companyId,
     scope: "engineering"
   });
@@ -46,6 +52,15 @@ export async function action({ request, params }: ActionFunctionArgs) {
       )
     );
   }
+
+  const owned = await requireChangeOrderChildRoute(request, {
+    client,
+    table: "changeOrderAffectedItem",
+    id,
+    changeOrderId,
+    companyId
+  });
+  if (owned) return owned;
 
   const update = await updateChangeOrderAffectedItemChangeType(client, {
     id,

@@ -14,6 +14,7 @@ import {
 import { getLogger } from "@carbon/logger";
 import type { ActionFunction, LoaderFunction } from "react-router";
 import { data } from "react-router";
+import { requireChangeOrderEditable } from "~/modules/items/items.server";
 import { getActionTaskWithParent } from "~/services/action-task.server";
 
 const logger = getLogger("erp", "integrations-linear-issue-create");
@@ -41,15 +42,33 @@ export const action: ActionFunction = async ({ request }) => {
     const description = data.get("description") as string;
     const assigneeId = data.get("assignee") as string;
 
-    const [carbonIssue, issue] = await Promise.all([
-      getActionTaskWithParent(client, entityType, actionId, companyId),
-      linear.createIssue(companyId, {
-        teamId,
-        title,
-        description: description || undefined,
-        assigneeId: assigneeId || null
-      })
-    ]);
+    const carbonIssue = await getActionTaskWithParent(
+      client,
+      entityType,
+      actionId,
+      companyId
+    );
+
+    if (entityType === "changeOrderActionTask") {
+      const locked = carbonIssue.parentId
+        ? await requireChangeOrderEditable(client, {
+            changeOrderId: carbonIssue.parentId,
+            companyId,
+            scope: "workflow"
+          })
+        : { error: { message: "Could not find change notice" } };
+
+      if (locked) {
+        return { success: false, message: locked.error.message };
+      }
+    }
+
+    const issue = await linear.createIssue(companyId, {
+      teamId,
+      title,
+      description: description || undefined,
+      assigneeId: assigneeId || null
+    });
 
     if (!issue) {
       return { success: false, message: "Issue not found" };
@@ -74,7 +93,7 @@ export const action: ActionFunction = async ({ request }) => {
     await linear.createAttachmentLink(companyId, {
       issueId: issue.id,
       url,
-      title: `Linked Carbon Issue: ${carbonIssue.parentId ?? ""}`
+      title: `Linked Carbon Issue: ${carbonIssue.parentReadableId ?? ""}`
     });
 
     return new Response("Linear issue created");

@@ -12,6 +12,8 @@ import {
 import { getLogger } from "@carbon/logger";
 import type { ActionFunction } from "react-router";
 import { data } from "react-router";
+import { requireChangeOrderEditable } from "~/modules/items/items.server";
+import { getActionTaskWithParent } from "~/services/action-task.server";
 
 const logger = getLogger("erp", "integrations-linear-issue-sync-notes");
 
@@ -39,6 +41,27 @@ export const action: ActionFunction = async ({ request }) => {
     request,
     actionTaskPermissions(entityType)
   );
+
+  if (entityType === "changeOrderActionTask") {
+    const task = await getActionTaskWithParent(
+      client,
+      entityType,
+      actionId,
+      companyId
+    );
+
+    const locked = task.parentId
+      ? await requireChangeOrderEditable(client, {
+          changeOrderId: task.parentId,
+          companyId,
+          scope: "workflow"
+        })
+      : { error: { message: "Could not find change notice" } };
+
+    if (locked) {
+      return data({ success: false, message: locked.error.message }, 400);
+    }
+  }
 
   // Parse the notes JSON
   let notes: TiptapDocument | null = null;

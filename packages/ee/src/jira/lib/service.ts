@@ -137,6 +137,7 @@ export async function linkActionToJiraIssue(
   await serviceRoleForLink
     .from("externalIntegrationMapping")
     .delete()
+    .eq("companyId", companyId)
     .eq("entityType", input.entityType)
     .eq("entityId", input.actionId)
     .eq("integration", "jira");
@@ -173,6 +174,7 @@ export async function unlinkActionFromJiraIssue(
   await serviceRole
     .from("externalIntegrationMapping")
     .delete()
+    .eq("companyId", companyId)
     .eq("entityType", input.entityType)
     .eq("entityId", input.actionId)
     .eq("integration", "jira");

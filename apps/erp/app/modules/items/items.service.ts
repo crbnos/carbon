@@ -6462,17 +6462,25 @@ export async function deleteChangeOrderAction(
 }
 
 // Bulk reorder (drag-sort) — a multi-row write, so Kysely (route passes
-// getDatabaseClient()).
+// getDatabaseClient()). Kysely bypasses RLS and the ids come from the request
+// body, so every update is scoped to the owning change notice + company.
 export async function updateChangeOrderActionOrder(
   db: Kysely<KyselyDatabase>,
-  updates: { id: string; sortOrder: number; updatedBy: string }[]
+  args: {
+    changeOrderId: string;
+    companyId: string;
+    updates: { id: string; sortOrder: number; updatedBy: string }[];
+  }
 ) {
+  const { changeOrderId, companyId, updates } = args;
   return db.transaction().execute(async (trx) => {
     for (const { id, sortOrder, updatedBy } of updates) {
       await trx
         .updateTable("changeOrderActionTask")
         .set({ sortOrder, updatedBy })
         .where("id", "=", id)
+        .where("changeOrderId", "=", changeOrderId)
+        .where("companyId", "=", companyId)
         .execute();
     }
   });

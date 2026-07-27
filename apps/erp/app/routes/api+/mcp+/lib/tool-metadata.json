@@ -1,5 +1,5 @@
 {
-  "generated": "2026-07-27T16:12:01.088Z",
+  "generated": "2026-07-27T17:56:42.647Z",
   "totalTools": 1376,
   "modules": 15,
   "tools": [
@@ -15581,7 +15581,7 @@
       "paramCount": 2,
       "serviceParams": [
         "db",
-        "updates"
+        "args"
       ],
       "injectAuth": [
         "companyId",
@@ -15590,16 +15590,31 @@
       "schema": {
         "type": "object",
         "properties": {
-          "id": {
+          "changeOrderId": {
             "type": "string"
           },
-          "sortOrder": {
-            "type": "number"
+          "updates": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "sortOrder": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "id",
+                "sortOrder"
+              ]
+            }
           }
         },
         "required": [
-          "id",
-          "sortOrder"
+          "changeOrderId",
+          "updates"
         ]
       }
     },

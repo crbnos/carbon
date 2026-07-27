@@ -15,6 +15,7 @@ import {
 import { getLogger } from "@carbon/logger";
 import type { ActionFunction, LoaderFunction } from "react-router";
 import { data } from "react-router";
+import { requireChangeOrderEditable } from "~/modules/items/items.server";
 import { getActionTaskWithParent } from "~/services/action-task.server";
 
 const logger = getLogger("erp", "integrations-jira-issue-create");
@@ -61,6 +62,23 @@ export const action: ActionFunction = async ({ request }) => {
       getActionTaskWithParent(client, entityType, actionId, companyId),
       jira.getSiteUrl(companyId)
     ]);
+
+    if (entityType === "changeOrderActionTask") {
+      const locked = carbonIssue.parentId
+        ? await requireChangeOrderEditable(client, {
+            changeOrderId: carbonIssue.parentId,
+            companyId,
+            scope: "workflow"
+          })
+        : { error: { message: "Could not find change notice" } };
+
+      if (locked) {
+        return data(
+          { success: false, message: locked.error.message },
+          { status: 400 }
+        );
+      }
+    }
 
     // Use the task's notes as the Jira issue description, falling back to form description
     let adfDescription: any = undefined;

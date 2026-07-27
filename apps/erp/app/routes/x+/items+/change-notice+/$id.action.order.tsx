@@ -13,9 +13,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
     update: "parts"
   });
 
+  const changeOrderId = params.id;
+  if (!changeOrderId) throw new Error("Could not find id");
+
   const locked = await requireEditableChangeOrderRoute(request, {
     client,
-    changeOrderId: params.id,
+    changeOrderId,
     companyId,
     scope: "workflow"
   });
@@ -38,7 +41,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }));
 
   try {
-    await updateChangeOrderActionOrder(getDatabaseClient(), updates);
+    await updateChangeOrderActionOrder(getDatabaseClient(), {
+      changeOrderId,
+      companyId,
+      updates
+    });
   } catch (err) {
     return data(
       { success: false },

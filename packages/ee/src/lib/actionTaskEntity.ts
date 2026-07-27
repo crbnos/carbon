@@ -31,7 +31,9 @@ export function isActionTaskEntityType(
 export function actionTaskPermissions(entityType: ActionTaskEntityType): {
   update?: string;
 } {
-  return entityType === "changeOrderActionTask" ? { update: "parts" } : {};
+  return entityType === "changeOrderActionTask"
+    ? { update: "parts" }
+    : { update: "quality" };
 }
 
 export function actionTaskParentId(

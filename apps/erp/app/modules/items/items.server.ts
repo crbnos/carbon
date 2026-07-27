@@ -262,6 +262,40 @@ export async function requireChangeOrderEditable(
   });
 }
 
+// Child rows (affected items, action tasks) are addressed by their own id, so
+// authorizing the change notice in the URL proves nothing about the row being
+// mutated — an editable notice's URL would otherwise let a user mutate a frozen
+// notice's rows. Same failure contract as requireEditableChangeOrderRoute;
+// null means the route may proceed.
+export async function requireChangeOrderChildRoute(
+  request: Request,
+  args: {
+    client: SupabaseClient<Database>;
+    table: "changeOrderAffectedItem" | "changeOrderActionTask";
+    id: string;
+    changeOrderId: string;
+    companyId: string;
+  }
+) {
+  const row = await args.client
+    .from(args.table)
+    .select("id")
+    .eq("id", args.id)
+    .eq("changeOrderId", args.changeOrderId)
+    .eq("companyId", args.companyId)
+    .maybeSingle();
+
+  if (row.error || !row.data) {
+    const message = "Record does not belong to this change notice";
+    return data(
+      { success: false },
+      await flash(request, error(row.error, message))
+    );
+  }
+
+  return null;
+}
+
 // The route-level guard: resolves the change notice from the URL, checks the
 // scope, and returns the flashed failure response so all eight mutation routes
 // share one failure contract. Returns null when the route may proceed.

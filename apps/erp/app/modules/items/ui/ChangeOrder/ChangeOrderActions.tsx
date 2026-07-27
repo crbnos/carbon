@@ -1,5 +1,4 @@
 import { useCarbon } from "@carbon/auth";
-import { getLogger } from "@carbon/logger";
 import {
   IconButton,
   type JSONContent,
@@ -20,13 +19,12 @@ import { ActionTaskList } from "~/components/ActionTasks/ActionTaskList";
 import { ActionTaskStatusButton } from "~/components/ActionTasks/ActionTaskStatusButton";
 import { JiraIssueDialog } from "~/components/ActionTasks/Jira/IssueDialog";
 import { LinearIssueDialog } from "~/components/ActionTasks/Linear/IssueDialog";
+import { syncActionTaskNotes } from "~/components/ActionTasks/syncNotes";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
 import { useIntegrations } from "~/hooks/useIntegrations";
 import type { ListItem } from "~/types";
 import { getPrivateUrl, path } from "~/utils/path";
 import type { ChangeOrderActionTask } from "../../types";
-
-const logger = getLogger("erp", "changeorderactions");
 
 // Change-order actions — a thin wrapper over the shared ActionTaskList (same
 // component the Quality issue uses). Adding picks from the change notice's
@@ -139,37 +137,19 @@ function ActionItem({
         .eq("id", action.id);
 
       if (hasLinearLink) {
-        try {
-          await fetch(path.to.api.linearSyncNotes, {
-            method: "POST",
-            headers: { "Content-Type": "application/x-www-form-urlencoded" },
-            body: new URLSearchParams({
-              actionId: action.id,
-              entityType: "changeOrderActionTask",
-              notes: JSON.stringify(value)
-            })
-          });
-        } catch (e) {
-          // Silently fail Linear sync - not critical
-          logger.error("Failed to sync notes to Linear", { error: e });
-        }
+        await syncActionTaskNotes("Linear", {
+          actionId: action.id,
+          entityType: "changeOrderActionTask",
+          notes: value
+        });
       }
 
       if (hasJiraLink) {
-        try {
-          await fetch(path.to.api.jiraSyncNotes, {
-            method: "POST",
-            headers: { "Content-Type": "application/x-www-form-urlencoded" },
-            body: new URLSearchParams({
-              actionId: action.id,
-              entityType: "changeOrderActionTask",
-              notes: JSON.stringify(value)
-            })
-          });
-        } catch (e) {
-          // Silently fail Jira sync - not critical
-          logger.error("Failed to sync notes to Jira", { error: e });
-        }
+        await syncActionTaskNotes("Jira", {
+          actionId: action.id,
+          entityType: "changeOrderActionTask",
+          notes: value
+        });
       }
     },
     2500,
