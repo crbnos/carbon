@@ -125,8 +125,7 @@ const ToolProperties = ({ data }: ToolPropertiesProps) => {
         | "itemPostingGroupId"
         | "toolId"
         | "active"
-        | "mpn"
-        | "requiresInspection",
+        | "mpn",
       value: string | null
     ) => {
       const formData = new FormData();
@@ -569,27 +568,6 @@ const ToolProperties = ({ data }: ToolPropertiesProps) => {
           }}
         />
       </ValidatedForm>
-      {routeData?.toolSummary?.replenishmentSystem?.includes("Buy") && (
-        <ValidatedForm
-          defaultValues={{
-            requiresInspection:
-              (routeData?.toolSummary as any)?.requiresInspection ?? false
-          }}
-          validator={z.object({
-            requiresInspection: zfd.checkbox()
-          })}
-          className="w-full"
-        >
-          <Boolean
-            label={t`Requires Inspection`}
-            name="requiresInspection"
-            variant="small"
-            onChange={(value) => {
-              onUpdate("requiresInspection", value ? "on" : "off");
-            }}
-          />
-        </ValidatedForm>
-      )}
       {routeData?.toolSummary?.replenishmentSystem?.includes("Buy") && (
         <ValidatedForm
           defaultValues={{

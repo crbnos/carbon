@@ -20,19 +20,12 @@ import {
 import type { Inspection } from "~/modules/quality/types";
 import { useItems } from "~/stores/items";
 import { path } from "~/utils/path";
+import { getInspectionStatusVariant } from "./InspectionStatus";
 
 type InspectionsTableProps = {
   data: Inspection[];
   count: number;
 };
-
-function getStatusVariant(status: string) {
-  if (status === "Passed") return "green";
-  if (status === "Failed") return "red";
-  if (status === "Partial") return "yellow";
-  if (status === "In Progress") return "blue";
-  return "secondary";
-}
 
 function computeProgress(row: Inspection): {
   inspected: number;
@@ -149,7 +142,7 @@ const InspectionsTable = memo(({ data, count }: InspectionsTableProps) => {
         accessorKey: "status",
         header: t`Status`,
         cell: ({ row }) => (
-          <Badge variant={getStatusVariant(row.original.status)}>
+          <Badge variant={getInspectionStatusVariant(row.original.status)}>
             {row.original.status}
           </Badge>
         ),
@@ -159,7 +152,7 @@ const InspectionsTable = memo(({ data, count }: InspectionsTableProps) => {
             type: "static",
             options: inspectionStatusType.map((s) => ({
               value: s,
-              label: <Badge variant={getStatusVariant(s)}>{s}</Badge>
+              label: <Badge variant={getInspectionStatusVariant(s)}>{s}</Badge>
             }))
           }
         }

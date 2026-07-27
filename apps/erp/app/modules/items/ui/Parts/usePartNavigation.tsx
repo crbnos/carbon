@@ -81,7 +81,6 @@ export function usePartNavigation() {
     {
       name: t`Quality`,
       to: path.to.partQuality(itemId),
-      isDisabled: !routeData?.partSummary?.requiresInspection,
       role: ["employee"],
       permission: "quality",
       icon: LuClipboardCheck,

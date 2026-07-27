@@ -22,16 +22,12 @@ import {
   inspectionDocumentUsages,
   itemInspectionDocumentAssignmentValidator
 } from "~/modules/quality";
-import type { SamplingStandard } from "~/modules/quality/samplingStandards";
 import type { ItemInspectionDocumentAssignment } from "~/modules/quality/types";
 import { path } from "~/utils/path";
-import SamplingPlanForm from "./SamplingPlanForm";
 
 type ItemQualityViewProps = {
   itemId: string;
   actionPath: string;
-  standard: SamplingStandard;
-  plan: Parameters<typeof SamplingPlanForm>[0]["initial"];
   documents: {
     id: string;
     fileName: string | null;
@@ -41,15 +37,13 @@ type ItemQualityViewProps = {
   assignments: ItemInspectionDocumentAssignment[];
 };
 
-// The item Quality tab: the item's inspection documents, the usage-slot
+// The item Quality tab: the item's inspection documents and the usage-slot
 // assignments driving which document each inspection flow uses (v1: Receipt
-// for inbound inspection; FAI / Production slots are additive later), and the
-// item-level sampling plan.
+// for inbound inspection; FAI / Production slots are additive later). Sampling
+// rules live on the inspection document itself (default + per-feature).
 const ItemQualityView = ({
   itemId,
   actionPath,
-  standard,
-  plan,
   documents,
   assignments
 }: ItemQualityViewProps) => {
@@ -67,7 +61,7 @@ const ItemQualityView = ({
               <Trans>Inspection Plans</Trans>
             </CardTitle>
             <CardDescription>
-              <Trans>Ballooned drawings with inspection characteristics.</Trans>
+              <Trans>Ballooned drawings with inspection features.</Trans>
             </CardDescription>
           </CardHeader>
           <CardAction>
@@ -159,13 +153,6 @@ const ItemQualityView = ({
           </VStack>
         </CardContent>
       </Card>
-
-      <SamplingPlanForm
-        action={actionPath}
-        itemId={itemId}
-        standard={standard}
-        initial={plan}
-      />
 
       {newDocumentDisclosure.isOpen && (
         <InspectionDocumentForm

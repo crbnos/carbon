@@ -24,7 +24,10 @@ readable id column `inspectionId`, sequence key `inspection` — existing
 companies keep their II prefix, new companies seed INS).
 
 Receipt flow: when a receipt is posted, a **lot-level** inspection is created
-for each received line whose item has `requiresInspection = true`. A **single**
+for each received line whose item has a **Receipt-usage inspection plan** — i.e.
+an `itemInspectionDocumentAssignment` row for `usage = 'Receipt'` (the item-level
+`requiresInspection` flag was removed 2026-07-26; the assigned document IS the
+gate). A **single**
 full-screen execution UI at `/x/inspection/{id}` (`InspectionView` +
 `InspectionMeasurementGrid`) covers every lot (spec
 `.ai/specs/2026-07-21-inbound-inspection-execution.md`):
@@ -34,7 +37,9 @@ full-screen execution UI at `/x/inspection/{id}` (`InspectionView` +
 - **Feature rows** — when the assigned document resolved features, the grid is a
   features × samples measurement grid: readings auto-valuate against live
   tolerances, sample status is **derived** (strict, no override), per-feature AQL
-  sampling (feature rule → `itemSamplingPlan` → All).
+  sampling (feature rule → document default → All; the per-item
+  `itemSamplingPlan` tier was removed 2026-07-26, migration
+  `20260726231401_document-sampling-default.sql`).
 - **No document** — the grid collapses to a single synthetic **"Overall result"**
   pass/fail row (client-only, `featureId = "__overall__"`). Its P/F cells set the
   sample's status **directly** via the sample route (`upsertInspectionSample`,
@@ -54,13 +59,15 @@ full-screen execution UI at `/x/inspection/{id}` (`InspectionView` +
 (The pre-unification "fallback" samples table and the scanner's `mode="record"`
 pass/fail path were removed 2026-07-25; scanning is always identify.)
 
-Disposition is always a human decision; Reject can auto-create an NCR whose
-description includes the failed characteristics. Two dispositions are exposed in
-the UI: **Accept** and **Reject**. **Partial** exists in the backend
-(`inspectionStatusType` enum value, `$id.partial.tsx` route,
-`path.to.inspectionPartial`, `dispositionInspection` `decision: "Partial"`) but its
-header button was removed from `InspectionView.tsx` — the backend path is currently
-unreachable from the UI, retained so it can be re-enabled later.
+Disposition is always a human decision; Reject/Partial can auto-create an NCR
+whose description includes the failed features (documentation only — never
+required, and the NCR does not drive the physical outcome). The **ERP receipt
+UI** exposes **Accept** and **Reject** (its `$id.partial.tsx` route exists but
+has no header button). The **MES job-operation UI** exposes **Accept**,
+**Partial**, and **Reject**, and its dispositions carry their physical
+production outcome (see "Disposition → production outcome" below). All three
+terminal statuses (Passed/Failed/**Partial**) are hard-terminal in the engine
+since 2026-07-27: samples and measurements are guarded closed on all of them.
 
 ## Data model (newest migration wins: `20260722132135_inspections-refactor.sql`)
 
@@ -70,12 +77,17 @@ lot rebuild `20260419163058_inbound-inspection-sampling.sql` → execution layer
 `20260722132135`. Old constraint/index NAMES still carry `inboundInspection`
 strings (cosmetic).
 
-- `item.requiresInspection` BOOLEAN (default false) — added `20260419094132`.
+- ~~`item.requiresInspection`~~ — **dropped 2026-07-26** (along with the vestigial
+  `purchaseOrderLine.requiresInspection` / `salesOrderLine.requiresInspection`
+  columns). Receipt inspection is now gated by the item's Receipt-usage
+  `itemInspectionDocumentAssignment` (see Receipt flow above), not a boolean flag.
 - `companySettings.samplingStandard` enum `samplingStandard` (`ANSI_Z1_4` | `ISO_2859_1`,
   default `ANSI_Z1_4`) and `companySettings.enforceInspectionFourEyes` BOOLEAN.
-- `itemSamplingPlan` (PK = **`itemId`** only, not composite) — per-item plan, created lazily:
-  `type` (`samplingPlanType`: All/First/Percentage/AQL), `sampleSize`, `percentage`,
-  `aql`, `inspectionLevel` (I/II/III/S1–S4), `severity` (Normal/Tightened/Reduced).
+- `inspectionDocument.sampling*` — the document-level **default sampling rule**
+  (six nullable columns mirroring the per-feature set; added
+  `20260726231401_document-sampling-default.sql`, which also **dropped
+  `itemSamplingPlan`** — plans that existed were backfilled onto the item's
+  documents via `partId`). NULL default = All (100%).
 - `inspection` (lot level, PK = `id`) — `inspectionId` (human id, `II` seq,
   unique per company), `receiptLineId` (**unique** — one lot per receipt line), `receiptId`,
   `itemId`, `itemReadableId`, `supplierId`, `lotSize`, snapshot of the resolved plan
@@ -91,6 +103,16 @@ strings (cosmetic).
 - `inspectionHistory` — one row per disposition (skeleton for future plan auto-switching).
 - `nonConformanceInspection` (`20260421091238`) — links an auto-created NCR back to
   the inspection (unique `(nonConformanceId, inspectionId)`).
+- `productionQuantity.inspectionId` / `.inspectionSampleId`
+  (`20260727031247_inspection-production-links.sql`) — nullable FKs (ON DELETE
+  SET NULL) recording which inspection/sample drove a posting. The **partial
+  UNIQUE index on `inspectionSampleId`** is the double-count guard: a sample's
+  verdict can produce at most one posting. The same migration forks
+  `sync_finish_job_operation` (the zero-completions fallback to the full job
+  quantity now applies ONLY when the job recorded no scrap/rework — a fully
+  scrapped job closes with `quantityComplete = 0` and receives nothing) and
+  `complete_job_to_inventory` (the serial branch excludes `Rejected` entities
+  from the Assembly Output ledger loop AND the Available release).
 
 Execution-layer tables (`20260722040401_inbound-inspection-execution.sql`):
 
@@ -101,7 +123,7 @@ Execution-layer tables (`20260722040401_inbound-inspection-execution.sql`):
   enum values later). Edited on the item Quality tab (`ItemQualityView`).
 - `inspectionFeature` gained six nullable per-feature sampling columns
   (`samplingPlanType/SampleSize/Percentage/Aql/InspectionLevel/Severity`);
-  NULL = inherit `itemSamplingPlan`. Persisted through the
+  NULL = inherit the document's default rule. Persisted through the
   `save_inspection_document_atomic` fork in the same migration (newest def).
 - `inspectionSamplingPlan` — per-lot per-feature **resolved** plan
   (`sampleSize`, `acceptanceNumber`, `rejectionNumber`, `codeLetter`), unique
@@ -117,21 +139,23 @@ RLS on all tables: standard SELECT/INSERT/UPDATE/DELETE gated by `quality_view/c
 ## Receipt → inspection flow (`post-receipt/index.ts`, Supabase edge fn)
 
 `packages/database/supabase/functions/post-receipt/index.ts` (inserts ~line 700):
-1. Loads items (`id, itemTrackingType, requiresInspection`), company `samplingStandard`,
-   `itemSamplingPlan` rows, Receipt-usage `itemInspectionDocumentAssignment` rows, and the
-   assigned documents' `inspectionFeature` rows.
-2. Per receipt line whose item `requiresInspection` and `receivedQuantity > 0`: resolves the
-   lot plan via `resolveSamplingPlan(plan, lotSize, standard)` from
+1. Loads items (`id, itemTrackingType, replenishmentSystem`), company `samplingStandard`,
+   Receipt-usage `itemInspectionDocumentAssignment` rows (`assignmentByItemId`), and the
+   assigned documents' `inspectionFeature` rows + default sampling columns.
+2. Per receipt line whose item **has a Receipt-usage assignment** (`assignmentByItemId.get(itemId)`)
+   and `receivedQuantity > 0`: the assigned document is the plan gate — no assignment, no lot.
+   Resolves the lot plan via `resolveSamplingPlan(plan, lotSize, standard)` from
    `packages/database/supabase/functions/shared/sampling-engine.ts` (ANSI Z1.4 / ISO 2859-1
-   tables; returns `{ sampleSize, acceptance, rejection, codeLetter }`). No configured plan →
-   defaults to `type: "All"`, level `II`, `Normal`. When a document is assigned, also resolves
-   **each feature** via `resolveFeatureSamplingPlan(feature, itemPlan, lotSize, standard)`
-   (feature rule → item plan → All), stamps `inspectionDocumentId` on the lot, sets the
-   lot-level `sampleSize` to the max across features, and (after the insert `.returning`s the
-   lot ids) batch-inserts the `inspectionSamplingPlan` rows.
-3. **Tracked entities for inspection-required items are set to `"On Hold"` at receipt** (not
-   Available); everything else flips to `Available`. They are released individually by sample
-   inspection / derived measurement status or en masse by lot disposition.
+   tables; returns `{ sampleSize, acceptance, rejection, codeLetter }`). Document with no
+   default rule → `type: "All"`, level `II`, `Normal`. Always resolves **each feature** via
+   `resolveFeatureSamplingPlan(feature, documentDefault, lotSize, standard)` (feature rule →
+   document default → All), **always** stamps `inspectionDocumentId = assignedDocumentId` on the
+   lot (even a drawing-only document with no features), sets the lot-level `sampleSize` to the max
+   across features (or the snapshot size when featureless), and (after the insert `.returning`s
+   the lot ids) batch-inserts the `inspectionSamplingPlan` rows.
+3. **Tracked entities for items with a Receipt-usage assignment are set to `"On Hold"` at
+   receipt** (not Available); everything else flips to `Available`. They are released
+   individually by sample inspection / derived measurement status or en masse by lot disposition.
 
 ## Job Operation → inspection flow (MES, added 2026-07-26)
 
@@ -140,7 +164,7 @@ Job operations with `operationType = 'Inspection'` execute in the MES at
 guard-redirect pattern per ADR-0005; `operation.$operationId.tsx` redirects
 Inspection ops here). The lot is **created lazily on first open** by
 `getOrCreateJobOperationInspection` (`@carbon/database/quality`): mirrors
-post-receipt plan resolution (itemSamplingPlan → default All; per-feature plans
+post-receipt plan resolution (document default → All; per-feature plans
 from the operation's `inspectionDocumentId` FK — stamped even when the document
 has no features yet, so drawing-only docs render and later features reconcile
 in), `sourceDocument='Job Operation'`, `sourceDocumentId=job.id`,
@@ -150,36 +174,76 @@ in), `sourceDocument='Job Operation'`, `sourceDocumentId=job.id`,
 Concurrent first-opens are settled by the partial unique index (23505 → reselect).
 
 - **MES UI**: `apps/mes/app/components/Inspection/` — `InspectionView` (AssemblyView
-  shell: header segments for Add Sample/Reject/Accept, TimerControl → `/x/event`,
-  action sheet for Log Completed/Scrap/Rework/Finish/Quality Issue via the shared
-  JobOperation modals), `InspectionMeasurementMatrix` (plain touch-first table,
-  SAME per-cell quiet POST contract as the ERP grid), `InspectionDrawingPane`
-  (verbatim copy of the ERP pane; MES gained `konva`/`react-konva`/`pdfjs-dist`
-  deps + canvas SSR stub + worker bootstrap), `ScanInspectionSample` (adapted:
-  `@carbon/form` fields, samples from make-method WIP entities), `RejectLotModal`
-  (adds hidden `operationId` for the redirect back).
+  shell: header segments for Add Sample / Complete passed (n) / Reject / Partial /
+  Accept, TimerControl → `/x/event` — the labor clock **auto-starts on open
+  whenever no clock is running**, always on for inspections, independent of the
+  company `autoStartOperationTimer` setting; action sheet for Scrap/Rework/Finish/Quality
+  Issue via the shared JobOperation modals), `InspectionMeasurementMatrix` (plain
+  touch-first table, SAME per-cell quiet POST contract as the ERP grid),
+  `InspectionDrawingPane` (verbatim copy of the ERP pane; MES gained
+  `konva`/`react-konva`/`pdfjs-dist` deps + canvas SSR stub + worker bootstrap),
+  `ScanInspectionSample` (adapted: `@carbon/form` fields, samples from
+  make-method WIP entities), `DispositionModal` (the Reject/Partial failed-set
+  allocator; replaced `RejectLotModal` 2026-07-27).
 - **MES routes**: view param is the jobOperationId; lot actions use the lot id
-  under a distinct prefix — `x+/inspection-lot.$id.{measurement,sample,accept,reject}.tsx`
-  (`path.to.inspectionMeasurement|Sample|Accept|Reject`), each
+  under a distinct prefix — `x+/inspection-lot.$id.{measurement,sample,disposition,complete-passed}.tsx`
+  (`path.to.inspectionMeasurement|Sample|Disposition|CompletePassed`; the old
+  accept/reject routes were retired 2026-07-27), each
   `requirePermissions({ update: "quality" })` → MES validators
   (`~/services/models`) → the shared engine with `getDatabaseClient()`
   (`apps/mes/app/services/database.server.ts`, same singleton as ERP's).
-- **Reject → issue**: MES reject runs `dispositionInspection(Reject)` then
-  (optional, default on) creates the NCR through MES's own job-op path —
-  `createQualityIssue` (`apps/mes/app/services/quality.server.ts`, extracted from
-  `quality-issue.new.tsx`; links `nonConformanceJobOperation` + item/entities) —
-  plus a `nonConformanceInspection` link and the ERP reject route's
-  failed-characteristics description block. No `post-nonconformance` invoke:
-  job-op lots return `writeOff: null`.
-- **WIP entities are never flipped by sampling/disposition.** The entity flips in
-  `upsertInspectionSample` / `upsertInspectionMeasurement` (and their
-  `applySampleEntityStatus` activity writes) are guarded
+- **WIP entities are never flipped by sampling or by the quality engine.** The
+  entity flips in `upsertInspectionSample` / `upsertInspectionMeasurement` (and
+  their `applySampleEntityStatus` activity writes) are guarded
   `sourceDocument === "Receipt"`, matching `dispositionInspection`'s existing
-  guard — job WIP entities keep their job-owned status (Reserved etc.); physical
-  outcomes go through Scrap/Rework/Issues.
+  guard — job WIP entities keep their job-owned status (Reserved etc.). The
+  ONE exception lives in the production-outcome layer, not the engine: the MES
+  disposition route flips the **scrap-allocated** serial subset to `Rejected`
+  (see below).
 - **MES reads**: `apps/mes/app/services/quality.service.ts` (copies of the ERP
   reads + a simplified `getInspectionDocumentWithBalloons` that builds the
   `/file/preview/private/` pdfUrl from `inspectionDocument.storagePath`).
+
+### Disposition → production outcome (MES, added 2026-07-27)
+
+The MES verdict carries its physical posting — one decision surface instead of
+parallel Accept/Reject + menu Log-Completed/Scrap/Rework vocabularies. The
+quality engine stays pure (verdicts only); orchestration lives in
+`x+/inspection-lot.$id.disposition.tsx` on top of shared helpers in
+`apps/mes/app/services/quality.server.ts`
+(`getInspectionOutcomeState` — buckets recomputed fresh from the DB per POST;
+`getSerialCompletionCandidates` / `postSerialCompletions` /
+`postBulkCompletion`; `createInspectionRejectionIssue` — the NCR block lifted
+from the retired reject route).
+
+| Decision | Physical postings |
+|---|---|
+| **Accept** | Completes the open remainder (serial: per-entity `issue` `jobOperationSerialComplete`, Pending-sampled and un-sampled units included, failed-sample units EXCLUDED; non-serial: one bulk posting of the op-column remaining via `jobOperationBatchComplete` or `insertProductionQuantity`+backflush) |
+| **Reject** | The operator allocates the open remainder in `DispositionModal`: serial per-unit Scrap/Rework toggles, non-serial scrap+rework quantity fields; the rest is record-only. Scrap subset → one `insertScrapQuantity` (+reason, + backflush) and the serial subset flips → `Rejected`. Rework subset → ONE `trigger-rework` invoke (targets from `rework-targets`; the routing clone includes the inspection op → fresh lot → automatic re-inspection) + `recalculate jobRequirements`; reworked entities are NOT flipped. |
+| **Partial** | Terminal mixed close, gated `inspected >= lotSize && passes > 0 && fails > 0`. Passed units complete; the failed set is allocated exactly like Reject (allocation restricted to failed units). |
+| **Complete passed (n)** header chip | Progressive completion of passed-but-unposted units any time the lot is open (`$id.complete-passed.tsx`) — explicit button, not auto-on-pass, so verdict typos need no compensating transaction. |
+
+Mechanics (in order, per POST):
+1. Buckets recomputed server-side and validated (allocation ids must be open
+   make-method entities; quantities clamped to the **op-column remaining** =
+   `target − complete − scrapped − reworked`, so escape-hatch menu postings are
+   never double-counted; serial divergence blocks with an error).
+2. `dispositionInspection({ requireOpen: true })` closes the lot FIRST — the
+   one-shot status UPDATE is the serialization point; a concurrent second POST
+   dies before any posting can re-run (a re-POST can never re-clone the rework
+   path).
+3. Postings, each carrying provenance links (`productionQuantity.inspectionId`
+   + `inspectionSampleId`; serial completes processed in ascending sample order;
+   non-serial bulk rows link the lowest unlinked passed sample as a serializing
+   representative). Failures after step 2 leave a closed lot with partial
+   postings — surfaced loudly in the flash; the links make the arithmetic
+   self-heal for manual ERP fixes.
+4. Optional NCR (`createNcr`), `willBeFinished` mirror from `complete.tsx` for
+   `targetQuantity = 0` operations.
+
+The action sheet keeps Scrap/Rework (escape hatches for non-quality losses),
+Finish, and Quality Issue; **Log Completed was removed** (verdict-driven
+completion replaced it).
 
 ## Tracking types
 
@@ -204,22 +268,25 @@ GL/cost posting and `.ai/plans/2026-07-25-inspection-disposition-gl-posting.md`.
 
 ## Code map (ERP)
 
-- **Items toggle**: `apps/erp/app/modules/items/ui/{Parts,Materials,Tools,Consumables}/*Properties.tsx`
-  render the `requiresInspection` checkbox only when `replenishmentSystem?.includes("Buy")` (i.e.
-  purchased items) — **gated by Buy replenishment, NOT by tracking type**.
-- **Item Quality tab**: `.../ui/SamplingPlan/ItemQualityView.tsx` (documents card + usage-slot
-  assignments card + `SamplingPlanForm`), mounted on
-  `routes/x+/{part,material,tool,consumable}+/$itemId.quality.tsx` (actions branch on
-  `intent=assignment`).
+- **No items toggle**: the `requiresInspection` checkbox was removed from the item
+  Properties sidebars (Parts/Materials/Tools/Consumables) 2026-07-26. Inbound
+  inspection is configured entirely on the item **Quality tab** by assigning a
+  Receipt-usage inspection document; there is no per-item boolean.
+- **Item Quality tab**: `.../ui/Item/ItemQualityView.tsx` (documents card + usage-slot
+  assignments card; sampling lives on the document, not the item), mounted on
+  `routes/x+/{part,material,tool,consumable,service}+/$itemId.quality.tsx` (actions branch on
+  `intent=assignment`). The tab is **always shown** (no `requiresInspection` gate in the item
+  navigation hooks), for every item type, gated only by the `quality` view permission.
 - **Execution view**: `.../ui/Inspections/InspectionView.tsx` — full-screen,
   data-prop reusable (AssemblyView pattern, for later MES reuse). Renders
   `InspectionDrawingPane.tsx` (lazy react-pdf + Konva balloons, click ↔ row sync) above
   `InspectionMeasurementGrid.tsx` when `pdfUrl != null`, else the grid alone.
   `InspectionMeasurementGrid.tsx` (shared Table inline editing, per-cell quiet POSTs, capture-phase
-  Enter/Tab nav, attribute P/F toggle cells, cells beyond a feature's n disabled) shows feature
+  Enter/Tab nav, attribute P/F toggle cells; every cell is recordable — a feature's n is the
+  required MINIMUM, extra readings up to the lot size are allowed) shows feature
   rows when `liveFeatures.length > 0`, otherwise the single `OVERALL_ROW_ID` pass/fail row whose
   cells write the sample status via the sample route. `RejectLotModal.tsx` (extracted) previews
-  failed characteristics.
+  failed features.
 - **Sample modal**: `.../ui/Inspections/ScanInspectionSample.tsx` — identify-only; opened by the
   header **"Add Sample"** button (`InspectionView`, serial lots; primary until the sample size is
   covered, auto-opened once on a fresh 0-sample lot). `isSerial` shows Scan/Select tabs (entity
@@ -239,6 +306,13 @@ GL/cost posting and `.ai/plans/2026-07-25-inspection-disposition-gl-posting.md`.
   re-exports the pure Deno `shared/sampling-engine.ts` node-side (client.ts
   pattern); the engine consumes it, so package + edge share ONE resolver copy
   (ERP's `samplingStandards.ts` client copy remains for UI previews).
+  - **Closed guards + linked-sample locks (2026-07-27):** all three terminal
+    statuses (Passed/Failed/**Partial**) block `upsertInspectionSample` (guard
+    is NEW — it had none) and `upsertInspectionMeasurement` ("Inspection is
+    closed") and `changeInspectionDocument`. Updating an EXISTING sample (or a
+    measurement on one) additionally fails when a `productionQuantity` row
+    links its `inspectionSampleId` — the unit was already completed from that
+    verdict; deleting the row in the ERP unlocks it (`assertSampleNotLinked`).
   - `upsertInspectionSample` — upsert precedence: by `trackedEntityId` (serial),
     else by `sampleId` (the "Overall result" row re-toggling an anonymous column
     in place), else insert a fresh anonymous sample. Entity flip + `trackedActivity`
@@ -248,28 +322,38 @@ GL/cost posting and `.ai/plans/2026-07-25-inspection-disposition-gl-posting.md`.
   - `valuateMeasurement` (exported, unit-tested) — numeric in `[nominal − |tol−|, nominal + |tol+|]`;
     unparseable nominal / non-Measurement types valuate as attributes.
   - `upsertInspectionMeasurement` — creates anonymous samples on demand, upserts the
-    reading, **derives** the sample status from its required measurements (feature required for
-    column i iff `sampleSize >= i`), applies entity transitions (revert → On Hold, no activity),
-    recomputes non-terminal lot status.
+    reading, **derives** the sample status count-based (not positional): any failed
+    reading ⇒ Failed; every plan feature Passed on the sample ⇒ Passed; else Pending.
+    A feature's n is the required minimum across ANY samples (per-feature disposition
+    gating enforces the counts); extra readings up to the lot size are allowed.
+    Applies entity transitions (revert → On Hold, no activity), recomputes
+    non-terminal lot status.
   - `reconcileInspectionSamplingPlans` — lazy per-lot plan rows for features added post-receipt.
   - `changeInspectionDocument` — swap/clear guarded to unmeasured non-terminal lots; wipes
     plan rows for re-resolution.
   - `dispositionInspection` — per-feature gating when the lot has features (Accept: every
     feature `recorded >= n && failed <= Ac`; Reject: some feature `failed >= Re` or a failed
-    sample); Accept releases un-sampled entities to Available; Reject flips all lot entities to
+    sample); Accept releases every non-failed lot entity to Available (un-sampled AND
+    partially-inspected Pending samples included); Reject flips all lot entities to
     Rejected (and for a non-tracked Inventory item posts an `itemLedger` `Inbound Inspection`
-    negative adjustment); Partial (currently UI-unreachable, see above) leaves
-    entities; always writes `inspectionHistory`.
+    negative adjustment); Partial leaves entities; always writes `inspectionHistory`.
+    Optional **`requireOpen`** (one-shot mode, MES disposition route only): the
+    status UPDATE gains `WHERE status NOT IN (Passed,Failed,Partial)` and the
+    call throws "Inspection is already dispositioned" on zero rows — concurrency
+    safe because a second transaction blocks on the row lock, re-evaluates the
+    predicate against the committed terminal status, and matches nothing. ERP
+    receipt lots do NOT pass it, preserving re-disposition (write-off retry)
+    semantics.
   - NCR auto-creation lives in the **reject route** (`x+/inspection+/$id.reject.tsx`),
     optional via `createNcr`, linking through `nonConformanceInspection`; the description
-    includes a "Failed characteristics" block built from the lot's measurements.
+    includes a "Failed features" block built from the lot's measurements.
 - **Service** `quality.service.ts`: `getInspections` (list), `getInspection`,
   `getInspectionTrackedEntities`, `getInspectionSamplingPlans` (embeds
   `inspectionFeature(...)` by table name), `getInspectionMeasurements`,
   `getItemInspectionDocumentAssignments` / `upsertItemInspectionDocumentAssignment` (empty
   documentId deletes the slot).
 - **Validators** `quality.models.ts`: `inspectionSampleValidator` (`trackedEntityId`
-  optional; status includes `Pending`), `itemSamplingPlanValidator`,
+  optional; status includes `Pending`),
   `inspectionDispositionValidator`, `inspectionMeasurementValidator`
   (`value` xor `passed`), `itemInspectionDocumentAssignmentValidator`,
   `inspectionDocumentUsages` const.
@@ -295,3 +379,15 @@ GL/cost posting and `.ai/plans/2026-07-25-inspection-disposition-gl-posting.md`.
 - **Per-cell measurement saves are quiet** (plain `fetch`, no revalidation) — the grid and
   the view mirror statuses locally from the action's returned
   `{sampleId, measurementStatus, sampleStatus}`.
+- **MES dispositions are one-shot; ERP receipt dispositions are not.** Only the
+  MES disposition route passes `requireOpen` — don't add it to ERP receipt
+  routes (their Reject retry re-invokes the idempotent `post-nonconformance`).
+- **A crash between the one-shot close and the postings** leaves a closed lot
+  with missing postings (by design — close-first is what makes rework
+  un-repeatable). Recovery is manual: post the missing rows from the ERP
+  (`productionQuantity` links make completed-vs-not arithmetic self-healing);
+  deleting a linked Production row makes that sample's unit completable again.
+- **ERP inspection views of Job Operation lots are verdict-only.** The
+  execution surface (postings, allocation, complete-passed) is the MES; the
+  ERP shows the lot, samples, and measurements but exposes no outcome
+  orchestration for job-op lots.

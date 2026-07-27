@@ -42,6 +42,12 @@ msgstr "{0} / {1} 已完成"
 msgid "{0} Scrapped"
 msgstr "{0} 已报废"
 
+msgid "{completions} passed unit(s) will be completed."
+msgstr "{completions} 个合格单位将被完成。"
+
+msgid "{fails} sampled failure(s) are recorded and will NOT be completed — resolve them from the actions menu."
+msgstr "{fails} 个抽样失败已记录，将不会完成 — 请从操作菜单中解决。"
+
 msgid "About"
 msgstr "关于"
 
@@ -83,6 +89,18 @@ msgstr "添加备件"
 
 msgid "All"
 msgstr "全部"
+
+msgid "All rework"
+msgstr "全部返工"
+
+msgid "All scrap"
+msgstr "全部报废"
+
+msgid "Allocate failed units"
+msgstr "分配不合格单位"
+
+msgid "Allocate units"
+msgstr "分配单位"
 
 msgid "Are you sure you want to delete this step?"
 msgstr "确定要删除此步骤吗？"
@@ -152,9 +170,6 @@ msgstr "Carbon 标志"
 msgid "Cards"
 msgstr "卡片"
 
-msgid "Characteristic"
-msgstr "特性"
-
 msgid "Chat"
 msgstr "聊天"
 
@@ -182,6 +197,9 @@ msgstr "自 {0} 起已打卡上班"
 
 msgid "Close"
 msgstr "关闭"
+
+msgid "Collapse features table"
+msgstr "折叠功能表"
 
 #. placeholder {0}: active.data.current.column.title
 #. placeholder {1}: overColumnPosition + 1
@@ -211,6 +229,9 @@ msgstr "完成"
 
 msgid "Complete All"
 msgstr "全部完成"
+
+msgid "Complete passed"
+msgstr "完成已通过"
 
 msgid "Completed"
 msgstr "已完成"
@@ -299,6 +320,9 @@ msgstr "草稿"
 msgid "Drag and drop a file here, or click to select a file"
 msgstr "拖放文件到此处，或点击选择文件"
 
+msgid "Drag to resize drawing and features"
+msgstr "拖动以调整绘图和功能的大小"
+
 #. placeholder {0}: active.data.current?.type
 msgid "Dragging {0} cancelled."
 msgstr "拖拽 {0} 已取消。"
@@ -343,6 +367,12 @@ msgstr "错误"
 msgid "Estimated"
 msgstr "估计"
 
+msgid "Every unit has a verdict: {passes} passed and {fails} failed. The lot closes with each unit routed to its own outcome."
+msgstr "每个单位都有判定结果：{passes} 个合格，{fails} 个不合格。批次关闭，每个单位按其各自的结果进行处理。"
+
+msgid "Expand features table"
+msgstr "展开功能表"
+
 msgid "Expired"
 msgstr "已过期"
 
@@ -355,8 +385,11 @@ msgstr "过期时间 {date}"
 msgid "Expiring first"
 msgstr "即将过期优先"
 
-msgid "Failed characteristics"
-msgstr "失败的特性"
+msgid "Failed"
+msgstr "失败"
+
+msgid "Failed features"
+msgstr "失败的功能"
 
 msgid "Failed to complete inventory adjustment"
 msgstr "库存调整失败"
@@ -382,6 +415,12 @@ msgstr "文件上传失败：{0}"
 
 msgid "Failed to upload image"
 msgstr "图片上传失败"
+
+msgid "Feature"
+msgstr "功能"
+
+msgid "Features"
+msgstr "特性"
 
 msgid "File size exceeds 10MB limit"
 msgstr "文件大小超过 10MB 限制"
@@ -649,6 +688,9 @@ msgstr "无物料"
 msgid "No open jobs"
 msgstr "没有开放的工作"
 
+msgid "No open units to allocate"
+msgstr "没有可分配的开放单位"
+
 msgid "No operators"
 msgstr "无操作员"
 
@@ -758,6 +800,12 @@ msgstr "参数"
 msgid "Part"
 msgstr "零件"
 
+msgid "Partial"
+msgstr "部分"
+
+msgid "Partial Disposition"
+msgstr "部分处置"
+
 msgid "Passed Inspection"
 msgstr "检验通过"
 
@@ -852,6 +900,12 @@ msgstr "记录"
 msgid "Record {0}"
 msgstr "记录 {0}"
 
+msgid "Record only"
+msgstr "仅记录"
+
+msgid "Record Partial"
+msgstr "记录部分"
+
 msgid "Reject"
 msgstr "退收"
 
@@ -878,6 +932,9 @@ msgstr "返工"
 
 msgid "Rework created successfully"
 msgstr "返工创建成功"
+
+msgid "Rework quantity"
+msgstr "返工数量"
 
 msgid "Sales Order"
 msgstr "销售订单"
@@ -911,6 +968,9 @@ msgstr "排程"
 
 msgid "Scrap"
 msgstr "报废"
+
+msgid "Scrap quantity"
+msgstr "报废数量"
 
 msgid "Scrap Reason"
 msgstr "报废原因"
@@ -1054,8 +1114,8 @@ msgid "Station: {stationName}"
 msgstr "工位：{stationName}"
 
 #. placeholder {0}: inspection.lotSize
-msgid "Statistical acceptance failed, so the entire lot of {0} is considered non-conforming (ISO 9001:2015 §8.7) — {passes} sampled pass(es) and {fails} failure(s)."
-msgstr "统计接收失败，因此整个 {0} 批次被视为不符合（ISO 9001:2015 §8.7）— {passes} 个样本通过，{fails} 个失败。"
+msgid "Statistical acceptance failed, so the entire lot of {0} is considered non-conforming (ISO 9001:2015 §8.7) — {passes} sampled pass(es) and {fails} failure(s). Route the units below to scrap or rework, or record the verdict only."
+msgstr "统计验收失败，因此整个批次 {0} 被视为不符合要求 (ISO 9001:2015 §8.7) — {passes} 个样品合格和 {fails} 个失败。将下面的单位路由到报废或返工，或仅记录判定结果。"
 
 msgid "Status"
 msgstr "状态"
@@ -1094,11 +1154,11 @@ msgstr "标签"
 msgid "The completed quantity for this operation is less than the required quantity of {0}."
 msgstr "此工序的完成数量小于所需数量 {0}。"
 
-msgid "The lot will be marked Passed. {fails} sampled failure(s) are recorded for your records."
-msgstr "批次将被标记为通过。 {fails} 个样本失败被记录以供您参考。"
+msgid "The lot will be marked Passed and {remaining} remaining unit(s) will be completed at this operation."
+msgstr "该批次将被标记为\"通过\"，{remaining} 个剩余单位将在此操作中完成。"
 
-msgid "The lot will still be rejected, but an NCR cannot be created until at least one Issue Type is configured."
-msgstr "批次仍将被拒绝，但在至少配置一个问题类型之前无法创建 NCR。"
+msgid "The lot will still be dispositioned, but an NCR cannot be created until at least one Issue Type is configured."
+msgstr "该批次仍将进行处置，但在至少配置一个问题类型之前，无法创建NCR。"
 
 msgid "There are serial or batch tracked materials on the bill of material that have not been fully issued. Completing without issuing may result in incorrect traceability records."
 msgstr "物料清单中有序列号或批次追踪的物料尚未完全发放。不发放即完成可能导致追溯记录不正确。"
@@ -1157,6 +1217,9 @@ msgstr "取消拣选 {0}"
 
 msgid "Unsaved changes"
 msgstr "未保存的更改"
+
+msgid "Up to {maxAllocatable} unit(s) can be allocated; the rest is recorded without a posting."
+msgstr "最多可分配 {maxAllocatable} 个单位；其余的将被记录而不进行过账。"
 
 msgid "Update"
 msgstr "更新"

@@ -76,7 +76,7 @@ type EntityLink = {
 
 function EntityLabel({ link }: { link: EntityLink }) {
   const readableId = link.trackedEntity?.readableId;
-  const idSlice = link.trackedEntityId.slice(-8);
+  const idSlice = link.trackedEntityId.slice(0, 8);
   if (readableId) {
     return (
       <span className="font-mono truncate">
@@ -204,7 +204,9 @@ export function AssociatedItemsList({
         disposition: row.disposition as string | null | undefined,
         pending:
           !row.disposition || row.disposition === "Pending" ? true : false,
-        sumMismatch: Math.abs(linkedSum - quantity) > 1e-6
+        // Only tracked rows reconcile a per-entity quantity sum; a non-tracked
+        // row carries its quantity directly with no links to add up.
+        sumMismatch: links.length > 0 && Math.abs(linkedSum - quantity) > 1e-6
       };
     });
   }, [associatedItems]);
@@ -213,11 +215,11 @@ export function AssociatedItemsList({
     return null;
   }
 
-  // Disposition only applies to rows that route physical tracked entities.
-  // Hide the entire card when nothing here is dispositionable (e.g. an NCR
-  // from a non-tracked job-operation part), matching the closure validator's
-  // skip-on-no-links rule.
-  const dispositionableRows = rows.filter((r) => r.links.length > 0);
+  // Every associated item row is dispositionable — tracked rows route physical
+  // entities (chips, split, move), non-tracked rows (Inventory / Non-Inventory,
+  // e.g. an NCR from a job-operation part) carry a plain quantity and just get
+  // the disposition Select. The closure validator applies the same rule.
+  const dispositionableRows = rows;
   if (dispositionableRows.length === 0) {
     return null;
   }
@@ -267,12 +269,15 @@ export function AssociatedItemsList({
                 disposition: (s.disposition ?? "Pending") as string,
                 itemReadableId: item.readableIdWithRevision
               }));
-            // Split breaks a portion of the row onto a new disposition row.
+            // Split breaks a portion of the row onto a new disposition row so
+            // MRB can decide each portion (e.g. scrap N, use-as-is the rest).
             // A single batch lot is subdivided server-side (a new tracked
-            // entity is created for the split-off quantity), so any row with
-            // quantity > 1 is splittable, even when it's one indivisible lot.
+            // entity is created for the split-off quantity); a non-tracked row
+            // is a pure quantity split. Any row with quantity > 1 is splittable.
             const canSplit = r.quantity > 1;
-            const hasRowActions = canSplit || siblings.length > 0;
+            // Moving entities only applies to tracked rows that own links.
+            const canMove = r.links.length > 0 && siblings.length > 0;
+            const hasRowActions = canSplit || canMove;
             const isDropTarget =
               canEdit &&
               sameItemSiblings.length > 0 &&
@@ -374,7 +379,7 @@ export function AssociatedItemsList({
                     />
                   </ValidatedForm>
                   <div className="w-10 shrink-0 flex items-start justify-end">
-                    {canEdit && r.links.length > 0 && hasRowActions && (
+                    {canEdit && hasRowActions && (
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <IconButton
@@ -401,7 +406,7 @@ export function AssociatedItemsList({
                               <Trans>Split line</Trans>
                             </DropdownMenuItem>
                           )}
-                          {siblings.length > 0 && (
+                          {canMove && (
                             <DropdownMenuItem
                               onClick={() =>
                                 setMoveTarget({

@@ -4,15 +4,21 @@ import {
   Card,
   CardContent,
   CardFooter,
+  DropdownMenu,
+  DropdownMenuContent,
   DropdownMenuIcon,
   DropdownMenuItem,
   DropdownMenuSeparator,
+  DropdownMenuTrigger,
+  HStack,
   useDisclosure,
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import {
   LuCheckCheck,
+  LuChevronDown,
+  LuClipboardCheck,
   LuCreditCard,
   LuShoppingCart,
   LuTicketX,
@@ -47,6 +53,7 @@ import {
   receiptSourceDocumentType,
   receiptValidator
 } from "~/modules/inventory";
+import { InspectionStatus } from "~/modules/quality/ui/Inspections/InspectionStatus";
 import { path } from "~/utils/path";
 import useReceiptForm from "./useReceiptForm";
 
@@ -69,6 +76,7 @@ const ReceiptForm = ({
   const routeData = useRouteData<{
     receipt: Receipt;
     receiptLineTracking: ItemTracking[];
+    receiptInspections: ReceiptInspection[];
     fixedAssetLines: { id: string; received: boolean }[];
   }>(path.to.receipt(receiptId));
 
@@ -192,6 +200,9 @@ const ReceiptForm = ({
                   sourceDocumentReadableId={
                     routeData?.receipt?.sourceDocumentReadableId ?? undefined
                   }
+                />
+                <InspectionsLink
+                  inspections={routeData?.receiptInspections ?? []}
                 />
                 <Button
                   variant={canInvoice ? "primary" : "secondary"}
@@ -357,6 +368,68 @@ function SourceDocumentLink({
     default:
       return null;
   }
+}
+
+type ReceiptInspection = {
+  id: string;
+  inspectionId: string;
+  itemId: string | null;
+  itemReadableId: string | null;
+  status: string;
+};
+
+// Link the receipt header to the inspection lots created on posting (one per
+// inspected line). A single lot renders a button; multiple render a dropdown —
+// mirrors the sales order header's Invoices link.
+function InspectionsLink({
+  inspections
+}: {
+  inspections: ReceiptInspection[];
+}) {
+  const permissions = usePermissions();
+
+  if (!permissions.can("view", "quality") || inspections.length === 0)
+    return null;
+
+  if (inspections.length === 1) {
+    const inspection = inspections[0];
+    return (
+      <Button variant="secondary" leftIcon={<LuClipboardCheck />} asChild>
+        <Link to={path.to.inspection(inspection.id)}>
+          <Trans>Inspection</Trans>
+        </Link>
+      </Button>
+    );
+  }
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          variant="secondary"
+          leftIcon={<LuClipboardCheck />}
+          rightIcon={<LuChevronDown />}
+        >
+          <Trans>Inspections</Trans>
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        {inspections.map((inspection) => (
+          <DropdownMenuItem key={inspection.id} asChild>
+            <Link to={path.to.inspection(inspection.id)}>
+              <DropdownMenuIcon icon={<LuClipboardCheck />} />
+              <HStack spacing={8}>
+                <span>
+                  {inspection.itemReadableId ?? inspection.inspectionId}
+                </span>
+                <InspectionStatus status={inspection.status} />
+              </HStack>
+            </Link>
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
 }
 
 export default ReceiptForm;

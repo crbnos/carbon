@@ -798,22 +798,26 @@ export async function getJobMaterialsByOperationId(
 }
 
 /**
- * Backflush "loose" materials — not serial/batch tracked and not assigned to
- * any step — when a unit's FIRST step is recorded. Units are built one at a
- * time; parts that aren't tied to a step are consumed as the unit is built,
- * so recording the first step issues one unit's worth automatically instead
- * of making the operator issue them by hand (tracked parts still require a
- * scan). Idempotent by construction: the target is
- * (distinct units with a first-step record) × per-unit quantity, and only
- * the shortfall vs quantityIssued is issued — re-records, undo/redo, manual
- * issues, and the completion-time backflush (backflush_job_materials, which
- * tops up to completed × per-unit) can all overlap without double-issuing.
- * Eligibility mirrors backflush_job_materials (Material/Part/Consumable,
- * not Make to Order, untracked) plus the no-step-assignment scope. Issue
- * failures (e.g. insufficient stock) are collected, not thrown — the part
- * simply stays unissued and manually issuable.
+ * Backflush untracked materials when a job operation STEP is recorded. Units are
+ * built one at a time; an untracked (not serial/batch) part is consumed as the
+ * step that "owns" it is recorded, so recording that step issues one unit's worth
+ * automatically instead of making the operator issue it by hand (tracked parts
+ * still require a scan). Step ownership:
+ *   • A step-assigned part (jobMaterialStep) is owned by its assigned step(s) and
+ *     issues when any of those steps is recorded for a unit.
+ *   • A loose part (no step assignment) is owned by the operation's FIRST step —
+ *     that's where the operator sees it — matching the prior behavior.
+ * Idempotent by construction: per material the target is
+ * (distinct units that recorded an owning step) × per-unit quantity, and only the
+ * shortfall vs quantityIssued is issued — re-records, undo/redo, manual issues,
+ * and the completion-time backflush (backflush_job_materials, which tops up to
+ * completed × per-unit) can all overlap without double-issuing. A part assigned to
+ * several steps is still counted once per unit, so its requirement never
+ * multiplies. Eligibility mirrors backflush_job_materials (Material/Part/Consumable,
+ * not Make to Order, untracked). Issue failures (e.g. insufficient stock) are
+ * collected, not thrown — the part simply stays unissued and manually issuable.
  */
-export async function backflushLooseMaterialsAtFirstStep(
+export async function backflushUntrackedMaterialsOnStepRecord(
   client: SupabaseClient<Database>,
   args: { jobOperationStepId: string; companyId: string; userId: string }
 ) {
@@ -823,35 +827,27 @@ export async function backflushLooseMaterialsAtFirstStep(
     .eq("id", args.jobOperationStepId)
     .single();
   if (step.error || !step.data.operationId) return { error: step.error };
+  const operationId = step.data.operationId;
 
-  // Only the operation's first step triggers the backflush.
-  const firstStep = await client
-    .from("jobOperationStep")
-    .select("id")
-    .eq("operationId", step.data.operationId)
-    .order("sortOrder", { ascending: true })
-    .order("id", { ascending: true })
-    .limit(1)
-    .maybeSingle();
-  if (firstStep.error || firstStep.data?.id !== step.data.id) {
-    return { error: firstStep.error };
-  }
-
-  const [records, operation] = await Promise.all([
+  const [steps, operation] = await Promise.all([
     client
-      .from("jobOperationStepRecord")
-      .select("index")
-      .eq("jobOperationStepId", step.data.id),
+      .from("jobOperationStep")
+      .select("id")
+      .eq("operationId", operationId)
+      .order("sortOrder", { ascending: true })
+      .order("id", { ascending: true }),
     client
       .from("jobOperation")
       .select("id, jobMakeMethodId")
-      .eq("id", step.data.operationId)
+      .eq("id", operationId)
       .single()
   ]);
-  const unitsStarted = new Set((records.data ?? []).map((r) => r.index)).size;
-  if (unitsStarted === 0 || !operation.data?.jobMakeMethodId) {
-    return { error: records.error ?? operation.error };
+  const firstStepId = steps.data?.[0]?.id;
+  if (steps.error || !firstStepId) return { error: steps.error };
+  if (operation.error || !operation.data?.jobMakeMethodId) {
+    return { error: operation.error };
   }
+  const stepIds = steps.data.map((s) => s.id);
 
   const materials = await client
     .from("jobMaterial")
@@ -866,26 +862,58 @@ export async function backflushLooseMaterialsAtFirstStep(
     return { error: materials.error };
   }
 
-  const stepAssigned = await client
+  // Step ownership: materialId → the step ids it's assigned to (empty = loose).
+  const stepLinks = await client
     .from("jobMaterialStep")
-    .select("jobMaterialId")
+    .select("jobMaterialId, jobOperationStepId")
     .in(
       "jobMaterialId",
       materials.data.map((m) => m.id)
     );
-  if (stepAssigned.error) return { error: stepAssigned.error };
-  const assigned = new Set(stepAssigned.data?.map((l) => l.jobMaterialId));
+  if (stepLinks.error) return { error: stepLinks.error };
+  const ownedSteps = new Map<string, Set<string>>();
+  for (const link of stepLinks.data ?? []) {
+    const set = ownedSteps.get(link.jobMaterialId) ?? new Set<string>();
+    set.add(link.jobOperationStepId);
+    ownedSteps.set(link.jobMaterialId, set);
+  }
+
+  // Units (index) that have recorded each of the operation's steps, so we can
+  // count distinct started units per material from its owning step(s).
+  const records = await client
+    .from("jobOperationStepRecord")
+    .select("jobOperationStepId, index")
+    .in("jobOperationStepId", stepIds);
+  if (records.error) return { error: records.error };
+  const unitsByStep = new Map<string, Set<number>>();
+  for (const r of records.data ?? []) {
+    const set = unitsByStep.get(r.jobOperationStepId) ?? new Set<number>();
+    set.add(r.index);
+    unitsByStep.set(r.jobOperationStepId, set);
+  }
 
   const failures: string[] = [];
   for (const material of materials.data) {
-    if (assigned.has(material.id)) continue;
     const perUnit = material.quantity ?? 0;
     if (perUnit <= 0) continue;
-    const delta = unitsStarted * perUnit - (material.quantityIssued ?? 0);
+    // Owning steps: the material's assigned steps (scoped to this operation), or
+    // the first step when it's loose (unassigned).
+    const owning = ownedSteps.get(material.id);
+    const triggerStepIds =
+      owning && owning.size > 0
+        ? stepIds.filter((id) => owning.has(id))
+        : [firstStepId];
+    // Distinct units that recorded at least one owning step — a unit that
+    // recorded several owning steps of the same material still counts once.
+    const units = new Set<number>();
+    for (const id of triggerStepIds) {
+      for (const idx of unitsByStep.get(id) ?? []) units.add(idx);
+    }
+    const delta = units.size * perUnit - (material.quantityIssued ?? 0);
     if (delta <= 0) continue;
     const issue = await client.functions.invoke("issue", {
       body: {
-        id: operation.data.id,
+        id: operationId,
         type: "partToOperation",
         itemId: material.itemId,
         materialId: material.id,
@@ -1394,6 +1422,10 @@ export async function insertProductionQuantity(
   data: z.infer<typeof nonScrapQuantityValidator> & {
     companyId: string;
     createdBy: string;
+    // Provenance links for inspection-driven completions (the partial UNIQUE
+    // index on inspectionSampleId is the double-count guard).
+    inspectionId?: string;
+    inspectionSampleId?: string;
   }
 ) {
   return client
@@ -1412,6 +1444,8 @@ export async function insertScrapQuantity(
   data: z.infer<typeof scrapQuantityValidator> & {
     companyId: string;
     createdBy: string;
+    inspectionId?: string;
+    inspectionSampleId?: string;
   }
 ) {
   return client
@@ -1526,14 +1560,15 @@ export async function startProductionEvent(
   client: SupabaseClient<Database>,
   data: Omit<
     z.infer<typeof productionEventValidator>,
-    "id" | "action" | "timezone" | "hasActiveEvents"
+    "id" | "action" | "timezone" | "hasActiveEvents" | "unitIndex"
   > & {
     startTime: string;
     employeeId: string;
     companyId: string;
     createdBy: string;
   },
-  trackedEntityId: string | undefined
+  trackedEntityId: string | undefined,
+  unitIndex?: number
 ) {
   if (trackedEntityId) {
     const activityId = nanoid();
@@ -1562,7 +1597,10 @@ export async function startProductionEvent(
           "Job Operation": data.jobOperationId,
           "Production Event": eventInsert.data?.id,
           "Work Center": data.workCenterId,
-          Employee: data.employeeId
+          Employee: data.employeeId,
+          // The unit this event built, so traceability can scope this activity's
+          // step records to just this unit (see get_job_operation_step_records).
+          ...(typeof unitIndex === "number" ? { Unit: unitIndex } : {})
         },
         companyId: data.companyId,
         createdBy: data.createdBy

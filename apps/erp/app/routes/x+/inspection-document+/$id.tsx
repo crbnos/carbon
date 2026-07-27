@@ -14,6 +14,8 @@ import {
   getInspectionFeatures
 } from "~/modules/production";
 import type { InspectionDocumentContent } from "~/modules/production/types";
+import type { SamplingRule } from "~/modules/production/ui/InspectionDocument/SamplingRuleModal";
+import { getCompanySettings } from "~/modules/settings";
 import type { BreadcrumbSegment, Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -45,13 +47,19 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!id) throw new Error("Could not find id");
 
   const serviceRole = await getCarbonServiceRole();
-  const [diagram, featuresResult, balloonsResult, unitOfMeasuresResult] =
-    await Promise.all([
-      getInspectionDocument(serviceRole, id),
-      getInspectionFeatures(serviceRole, id),
-      getBalloons(serviceRole, id),
-      getUnitOfMeasuresList(client, companyId)
-    ]);
+  const [
+    diagram,
+    featuresResult,
+    balloonsResult,
+    unitOfMeasuresResult,
+    companySettings
+  ] = await Promise.all([
+    getInspectionDocument(serviceRole, id),
+    getInspectionFeatures(serviceRole, id),
+    getBalloons(serviceRole, id),
+    getUnitOfMeasuresList(client, companyId),
+    getCompanySettings(client, companyId)
+  ]);
 
   if (diagram.error) {
     throw redirect(
@@ -80,12 +88,16 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     diagram: diagram.data,
     features,
     balloons,
-    unitOfMeasures
+    unitOfMeasures,
+    samplingStandard:
+      ((companySettings.data as any)?.samplingStandard as
+        | "ANSI_Z1_4"
+        | "ISO_2859_1") ?? "ANSI_Z1_4"
   };
 }
 
 export default function BalloonDetailRoute() {
-  const { diagram, features, balloons, unitOfMeasures } =
+  const { diagram, features, balloons, unitOfMeasures, samplingStandard } =
     useLoaderData<typeof loader>();
   const content = diagram.content as InspectionDocumentContent | null;
 
@@ -109,10 +121,13 @@ export default function BalloonDetailRoute() {
             <InspectionDocumentEditor
               diagramId={diagram.id}
               name={diagram.name}
+              partId={diagram.partId}
               content={content}
               features={features}
               balloons={balloons}
               unitOfMeasures={unitOfMeasures}
+              sampling={(diagram.sampling as SamplingRule | null) ?? null}
+              samplingStandard={samplingStandard}
             />
           </Suspense>
         )}

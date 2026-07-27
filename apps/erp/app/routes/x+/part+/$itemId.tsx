@@ -269,6 +269,7 @@ export default function PartRoute() {
                                 shipmentLines,
                                 supplierQuotes,
                                 assemblyInstructions,
+                                inspections,
                                 jobMaterialUsage
                               } = resolvedUsedIn;
 
@@ -374,6 +375,13 @@ export default function PartRoute() {
                                 });
                               }
 
+                              tree.push({
+                                key: "inspections",
+                                name: t`Inspections`,
+                                module: "quality",
+                                children: inspections
+                              });
+
                               return (
                                 <UsedInTree
                                   tree={tree}
@@ -428,6 +436,7 @@ export default function PartRoute() {
                               shipmentLines,
                               supplierQuotes,
                               assemblyInstructions,
+                              inspections,
                               jobMaterialUsage
                             } = resolvedUsedIn;
 
@@ -532,6 +541,13 @@ export default function PartRoute() {
                                 children: assemblyInstructions
                               });
                             }
+
+                            tree.push({
+                              key: "inspections",
+                              name: "Inspections",
+                              module: "quality",
+                              children: inspections
+                            });
 
                             return (
                               <UsedInTree

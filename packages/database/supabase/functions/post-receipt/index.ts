@@ -106,30 +106,22 @@ serve(async (req: Request) => {
       }
       return acc;
     }, []);
-    const [items, itemCosts, companySettings, itemSamplingPlans] =
-      await Promise.all([
-        client
-          .from("item")
-          .select("id, itemTrackingType, replenishmentSystem, requiresInspection")
-          .in("id", itemIds)
-          .eq("companyId", companyId),
-        client
-          .from("itemCost")
-          .select("itemId, itemPostingGroupId")
-          .in("itemId", itemIds),
-        client
-          .from("companySettings")
-          .select("samplingStandard")
-          .eq("id", companyId)
-          .single(),
-        (client as any)
-          .from("itemSamplingPlan")
-          .select(
-            "itemId, type, sampleSize, percentage, aql, inspectionLevel, severity"
-          )
-          .in("itemId", itemIds)
-          .eq("companyId", companyId),
-      ]);
+    const [items, itemCosts, companySettings] = await Promise.all([
+      client
+        .from("item")
+        .select("id, itemTrackingType, replenishmentSystem")
+        .in("id", itemIds)
+        .eq("companyId", companyId),
+      client
+        .from("itemCost")
+        .select("itemId, itemPostingGroupId")
+        .in("itemId", itemIds),
+      client
+        .from("companySettings")
+        .select("samplingStandard")
+        .eq("id", companyId)
+        .single(),
+    ]);
     if (items.error) {
       throw new Error("Failed to fetch items");
     }
@@ -139,9 +131,6 @@ serve(async (req: Request) => {
 
     const samplingStandard: SamplingStandard =
       (companySettings.data as any)?.samplingStandard ?? "ANSI_Z1_4";
-    const samplingPlansByItemId = new Map<string, any>(
-      ((itemSamplingPlans.data as any[]) ?? []).map((p) => [p.itemId, p])
-    );
 
     // Receipt-usage inspection document assignments drive per-feature
     // measurement plans on the created lots.
@@ -175,7 +164,35 @@ serve(async (req: Request) => {
         inspectionFeaturesByDocumentId.set(feature.inspectionDocumentId, list);
       }
     }
-    
+
+    // The document's default sampling rule is the lot-level plan base and the
+    // fallback for features without their own rule (feature rule -> document
+    // default -> All).
+    const documentDefaultByDocumentId = new Map<string, any>();
+    if (assignedDocumentIds.length > 0) {
+      const assignedDocuments = await (client as any)
+        .from("inspectionDocument")
+        .select(
+          "id, samplingPlanType, samplingSampleSize, samplingPercentage, samplingAql, samplingInspectionLevel, samplingSeverity"
+        )
+        .in("id", assignedDocumentIds)
+        .eq("companyId", companyId);
+      for (const doc of (assignedDocuments.data as any[]) ?? []) {
+        if (!doc.samplingPlanType) continue;
+        documentDefaultByDocumentId.set(doc.id, {
+          type: doc.samplingPlanType,
+          sampleSize: doc.samplingSampleSize,
+          percentage:
+            doc.samplingPercentage == null
+              ? null
+              : Number(doc.samplingPercentage),
+          aql: doc.samplingAql == null ? null : Number(doc.samplingAql),
+          inspectionLevel: doc.samplingInspectionLevel,
+          severity: doc.samplingSeverity,
+        });
+      }
+    }
+
     if (type === "void") {
       if (receipt.data?.status !== "Posted") {
         throw new Error("Can only void posted receipts");
@@ -690,10 +707,11 @@ serve(async (req: Request) => {
           return acc;
         }, {});
 
-        // Build one inspection lot per receiptLine that belongs to an item
-        // with requiresInspection = true. Compute the sampling plan snapshot
-        // from the company's chosen standard and the item's plan (or default
-        // to "Inspect All" if no plan is configured).
+        // Build one inspection lot per receiptLine whose item has a Receipt-usage
+        // inspection plan (a document assignment). The assigned document is the
+        // plan for the receipt; without one, no lot is created. Compute the
+        // sampling plan snapshot from the company's chosen standard and the
+        // document's default plan (or "Inspect All" when the document has none).
         const inspectionInserts: Array<Record<string, any>> = [];
         // Per-feature resolved plans, keyed by receiptLineId until the lot ids
         // exist (they are joined after the insert returns ids).
@@ -711,9 +729,13 @@ serve(async (req: Request) => {
           Array<InspectionSamplingPlanInsert>
         >();
         for (const receiptLine of receiptLines.data ?? []) {
-          const item = items.data?.find((i) => i.id === receiptLine.itemId);
-          if (!item?.requiresInspection) continue;
           if (!receiptLine.itemId) continue;
+
+          // An item is inspected at receipt when it has a Receipt-usage
+          // inspection plan (document assignment); without one, no lot.
+          const assignedDocumentId =
+            assignmentByItemId.get(receiptLine.itemId) ?? null;
+          if (!assignedDocumentId) continue;
 
           const safeReceivedQuantity =
             isNaN(receiptLine.receivedQuantity as any) ||
@@ -722,7 +744,11 @@ serve(async (req: Request) => {
               : receiptLine.receivedQuantity;
           if (safeReceivedQuantity <= 0) continue;
 
-          const plan = samplingPlansByItemId.get(receiptLine.itemId) ?? {
+          const documentDefault = assignedDocumentId
+            ? (documentDefaultByDocumentId.get(assignedDocumentId) ?? null)
+            : null;
+
+          const plan = documentDefault ?? {
             type: "All",
             sampleSize: null,
             percentage: null,
@@ -737,8 +763,6 @@ serve(async (req: Request) => {
             samplingStandard
           );
 
-          const assignedDocumentId =
-            assignmentByItemId.get(receiptLine.itemId) ?? null;
           const documentFeatures = assignedDocumentId
             ? (inspectionFeaturesByDocumentId.get(assignedDocumentId) ?? [])
             : [];
@@ -746,7 +770,7 @@ serve(async (req: Request) => {
             inspectionFeatureId: feature.id,
             resolved: resolveFeatureSamplingPlan(
               feature,
-              samplingPlansByItemId.get(receiptLine.itemId!),
+              documentDefault,
               safeReceivedQuantity,
               samplingStandard
             ),
@@ -790,17 +814,17 @@ serve(async (req: Request) => {
             inspectionLevel: plan.inspectionLevel ?? null,
             severity: plan.severity ?? null,
             codeLetter: snapshot.codeLetter,
-            inspectionDocumentId:
-              featurePlans.length > 0 ? assignedDocumentId : null,
+            inspectionDocumentId: assignedDocumentId,
             status: "Pending",
             companyId,
             createdBy: userId,
           });
         }
 
-        // Tracked entities for items requiring inspection stay On Hold after
-        // posting (they are released individually by the sample inspection or
-        // en masse by lot disposition). Everything else flips to Available.
+        // Tracked entities for items with a Receipt-usage inspection plan stay
+        // On Hold after posting (they are released individually by the sample
+        // inspection or en masse by lot disposition). Everything else flips to
+        // Available.
         const trackedEntityUpdates =
           receiptLineTracking.data?.reduce<
             Record<
@@ -826,10 +850,9 @@ serve(async (req: Request) => {
               ? 1
               : safeReceivedQuantity || itemTracking.quantity;
 
-            const item = items.data?.find(
-              (item) => item.id === receiptLine?.itemId
-            );
-            const requiresInspection = item?.requiresInspection === true;
+            const requiresInspection = receiptLine?.itemId
+              ? assignmentByItemId.has(receiptLine.itemId)
+              : false;
 
             acc[itemTracking.id] = {
               status: requiresInspection ? "On Hold" : "Available",

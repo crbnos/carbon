@@ -8,15 +8,11 @@ import invariant from "tiny-invariant";
 import { getInspectionDocumentsForItem } from "~/modules/production";
 import {
   getItemInspectionDocumentAssignments,
-  getItemSamplingPlan,
   itemInspectionDocumentAssignmentValidator,
-  itemSamplingPlanValidator,
-  upsertItemInspectionDocumentAssignment,
-  upsertItemSamplingPlan
+  upsertItemInspectionDocumentAssignment
 } from "~/modules/quality";
 import type { ItemInspectionDocumentAssignment } from "~/modules/quality/types";
-import ItemQualityView from "~/modules/quality/ui/SamplingPlan/ItemQualityView";
-import { getCompanySettings } from "~/modules/settings";
+import ItemQualityView from "~/modules/quality/ui/Item/ItemQualityView";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -26,21 +22,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { itemId } = params;
   invariant(itemId, "itemId is required");
 
-  const [plan, settings, documents, assignments] = await Promise.all([
-    getItemSamplingPlan(client, itemId, companyId),
-    getCompanySettings(client, companyId),
+  const [documents, assignments] = await Promise.all([
     getInspectionDocumentsForItem(client, itemId, companyId),
     getItemInspectionDocumentAssignments(client, itemId, companyId)
   ]);
 
   return data({
-    plan: plan.data,
     documents: documents.data ?? [],
-    assignments: (assignments.data ?? []) as ItemInspectionDocumentAssignment[],
-    samplingStandard:
-      ((settings.data as any)?.samplingStandard as
-        | "ANSI_Z1_4"
-        | "ISO_2859_1") ?? "ANSI_Z1_4"
+    assignments: (assignments.data ?? []) as ItemInspectionDocumentAssignment[]
   });
 }
 
@@ -78,32 +67,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const validation = await validator(itemSamplingPlanValidator).validate(
-    formData
-  );
-  if (validation.error) return validationError(validation.error);
-
-  const result = await upsertItemSamplingPlan(client, {
-    ...validation.data,
-    companyId,
-    updatedBy: userId
-  });
-  if (result.error) {
-    throw redirect(
-      path.to.partQuality(itemId),
-      await flash(request, error(result.error, "Failed to save sampling plan"))
-    );
-  }
-
   throw redirect(
     path.to.partQuality(itemId),
-    await flash(request, success("Sampling plan updated"))
+    await flash(request, error(null, "Unknown intent"))
   );
 }
 
 export default function PartQualityRoute() {
-  const { plan, documents, assignments, samplingStandard } =
-    useLoaderData<typeof loader>();
+  const { documents, assignments } = useLoaderData<typeof loader>();
   const { itemId } = useParams();
   if (!itemId) throw new Error("itemId is required");
   return (
@@ -111,8 +82,6 @@ export default function PartQualityRoute() {
       <ItemQualityView
         itemId={itemId}
         actionPath={path.to.partQuality(itemId)}
-        standard={samplingStandard}
-        plan={plan ?? undefined}
         documents={documents}
         assignments={assignments}
       />

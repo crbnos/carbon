@@ -25,7 +25,7 @@ export type MeasurementSaveResult = {
 
 // Synthetic feature id for the single pass/fail row shown when the lot has no
 // inspection document. Its cells write the sample's status directly (via the
-// sample route) rather than a per-characteristic measurement.
+// sample route) rather than a per-feature measurement.
 export const OVERALL_ROW_ID = "__overall__";
 
 type MatrixRow = {
@@ -47,6 +47,9 @@ type InspectionMeasurementMatrixProps = {
   samples: InspectionSample[];
   measurements: InspectionMeasurement[];
   maxSampleSize: number;
+  // Lot size caps how many sample columns can exist — a feature's n is the
+  // required minimum, but the inspector may record up to the whole lot.
+  lotSize: number;
   // Lot-level acceptance/rejection numbers, used only for the synthetic
   // "Overall result" row shown when the lot has no inspection-document features.
   lotAcceptanceNumber: number;
@@ -65,7 +68,7 @@ function parseSpecNumber(value: string | null | undefined): number | null {
 }
 
 // Shop-floor features × samples matrix. Implements the same per-cell quiet
-// POST contract as the ERP grid (measurement route for characteristic cells,
+// POST contract as the ERP grid (measurement route for feature cells,
 // sample route for the "Overall result" row) with plain touch-sized cells
 // instead of the ERP Table's inline-editing machinery.
 const InspectionMeasurementMatrix = ({
@@ -76,6 +79,7 @@ const InspectionMeasurementMatrix = ({
   samples,
   measurements,
   maxSampleSize,
+  lotSize,
   lotAcceptanceNumber,
   lotRejectionNumber,
   activeFeatureId,
@@ -150,11 +154,13 @@ const InspectionMeasurementMatrix = ({
   ]);
 
   // Column model: serial lots get one column per scanned sample; non-serial
-  // lots pre-create columns up to the max required n (sample rows are created
-  // server-side on the first measurement into a column).
+  // lots pre-create columns up to the max required n plus one spare, growing
+  // as columns are used, capped at the lot size (sample rows are created
+  // server-side on the first measurement into a column). n is a minimum —
+  // recording MORE than n samples is always allowed, up to the full lot.
   const columnCount = isSerial
     ? samples.length
-    : Math.max(maxSampleSize, samples.length);
+    : Math.min(lotSize, Math.max(maxSampleSize, samples.length + 1));
 
   // Column index -> sample id. Anonymous columns resolve lazily from save
   // responses; keyed by index because unsaved columns have no id yet.
@@ -217,7 +223,7 @@ const InspectionMeasurementMatrix = ({
     [valueByCell, sampleIdByColumn, measurementFor]
   );
 
-  // Document-driven cell: record a per-characteristic measurement.
+  // Document-driven cell: record a per-feature measurement.
   const persistMeasurement = useCallback(
     async (
       row: MatrixRow,
@@ -351,11 +357,13 @@ const InspectionMeasurementMatrix = ({
     () =>
       Array.from({ length: columnCount }, (_, index) => {
         const sample = samples[index];
+        // MES entity display convention (AssemblyView precedent): readableId,
+        // else the first 8 characters of the entity id.
+        const entityLabel =
+          sample?.trackedEntity?.readableId ??
+          sample?.trackedEntityId?.slice(0, 8);
         return {
-          label:
-            isSerial && sample?.trackedEntity?.readableId
-              ? sample.trackedEntity.readableId
-              : `${index + 1}`,
+          label: isSerial && entityLabel ? entityLabel : `${index + 1}`,
           status: sample?.status ?? "Pending"
         };
       }),
@@ -379,7 +387,7 @@ const InspectionMeasurementMatrix = ({
           <tr>
             <th className="sticky left-0 z-30 min-w-[220px] border-b border-r border-border bg-card px-3 py-2 text-left font-medium text-muted-foreground">
               {hasFeatures ? (
-                <span>{t`Characteristic`}</span>
+                <span>{t`Feature`}</span>
               ) : (
                 <span>{t`Result`}</span>
               )}
@@ -418,33 +426,40 @@ const InspectionMeasurementMatrix = ({
                       : undefined
                   }
                 >
-                  <div className="flex flex-col gap-0.5">
-                    <span className="font-medium">{row.label}</span>
-                    {row.specLabel ? (
-                      <span className="font-mono text-xs text-muted-foreground">
-                        {row.specLabel}
-                      </span>
+                  <div className="flex items-start gap-3">
+                    {row.featureId !== OVERALL_ROW_ID ? (
+                      <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-muted font-mono text-sm font-semibold text-foreground tabular-nums">
+                        {row.label}
+                      </div>
                     ) : null}
-                    <span className="text-xs text-muted-foreground tabular-nums">
-                      n {row.sampleSize} · Ac {row.acceptanceNumber} · Re{" "}
-                      {row.rejectionNumber}
-                    </span>
+                    <div className="flex min-w-0 flex-col gap-1">
+                      <div
+                        className="line-clamp-2 text-sm font-semibold text-foreground"
+                        title={row.description ?? undefined}
+                      >
+                        {row.description ??
+                          (row.featureId === OVERALL_ROW_ID ? row.label : "—")}
+                      </div>
+                      {row.specLabel ? (
+                        <div className="font-mono text-xs text-muted-foreground">
+                          {row.specLabel}
+                        </div>
+                      ) : null}
+                      <div className="text-xs text-muted-foreground tabular-nums">
+                        n {row.sampleSize} · Ac {row.acceptanceNumber} · Re{" "}
+                        {row.rejectionNumber}
+                      </div>
+                    </div>
                   </div>
                 </td>
                 {Array.from({ length: columnCount }, (_, columnIndex) => {
-                  // Cells beyond a feature's resolved n are not required and
-                  // stay disabled (the plan only samples the first n columns).
-                  const isRequired = columnIndex + 1 <= row.sampleSize;
-                  const disabled = isReadOnly || !isRequired;
+                  const disabled = isReadOnly;
                   const status = cellStatus(columnIndex, row.featureId);
                   return (
                     // biome-ignore lint/suspicious/noArrayIndexKey: columns are positional
                     <td
                       key={`${row.featureId}-${columnIndex}`}
-                      className={cn(
-                        "border-b border-border p-1 text-center align-middle",
-                        !isRequired && "bg-muted/40"
-                      )}
+                      className="border-b border-border p-1 text-center align-middle"
                     >
                       {row.isNumeric ? (
                         <NumericCell

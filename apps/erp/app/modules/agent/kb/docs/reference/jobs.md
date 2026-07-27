@@ -48,11 +48,11 @@ The job's routing is copied into job-specific **operations** on release, each a 
   - **Done**: Finished. Completing it closes any open events and promotes downstream operations whose dependencies are now all done.
   - **Canceled**: Won't run.
 
-### Inside and outside
+### Operation type
 
-Each operation is **Inside** or **Outside**. An Inside operation runs on one of your work centers and prices against its rates. An **outside** operation is subcontracted: instead of a work center it points at a supplier process, copies that supplier's cost and lead time, and drives an outside-processing purchase order.
+Each operation carries an operation type: **Process**, **Assembly**, **Inspection**, or **Outside Processing**. The first three run in-house on one of your work centers and price against its rates — Assembly operations get the guided assembly view on the shop floor, and Inspection operations a quality check. An **Outside Processing** operation is subcontracted: instead of a work center it points at a supplier process, copies that supplier's cost and lead time, and drives an outside-processing purchase order. The process you pick carries the same type and defaults it on new operations.
 
-An outside operation's cost and lead time are copied when you set the supplier process, not linked live. If the supplier's pricing changes, re-select the supplier process to refresh it.
+An Outside Processing operation's cost and lead time are copied when you set the supplier process, not linked live. If the supplier's pricing changes, re-select the supplier process to refresh it.
 
 ### Sequencing
 

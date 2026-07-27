@@ -22,14 +22,7 @@ import {
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useEffect, useState } from "react";
-import {
-  LuCheck,
-  LuCircleCheck,
-  LuCircleX,
-  LuList,
-  LuQrCode,
-  LuX
-} from "react-icons/lu";
+import { LuCheck, LuList, LuQrCode, LuX } from "react-icons/lu";
 import { useFetcher } from "react-router";
 import { Hidden, Submit, TextArea } from "~/components/Form";
 import { inspectionSampleValidator } from "~/modules/quality/quality.models";
@@ -45,10 +38,6 @@ type Props = {
   fails: number;
   acceptanceNumber: number;
   onClose: () => void;
-  // "record" (default) captures a pass/fail verdict; "identify" only registers
-  // the scanned entity as a Pending sample — its verdict is derived from the
-  // measurement grid when an inspection document drives the lot.
-  mode?: "record" | "identify";
 };
 
 export default function ScanInspectionSample({
@@ -59,8 +48,7 @@ export default function ScanInspectionSample({
   sampleSize,
   fails,
   acceptanceNumber,
-  onClose,
-  mode = "record"
+  onClose
 }: Props) {
   const { t } = useLingui();
   const fetcher = useFetcher<{ error?: unknown; success?: boolean }>();
@@ -68,9 +56,6 @@ export default function ScanInspectionSample({
   const [serial, setSerial] = useState("");
   const [selected, setSelected] = useState<InspectionTrackedEntity | null>(
     null
-  );
-  const [pendingStatus, setPendingStatus] = useState<"Passed" | "Failed">(
-    "Passed"
   );
   // Bumped after each successful save so the form (notes) remounts and clears,
   // even for non-serial parts where there's no entity selection to change.
@@ -102,9 +87,8 @@ export default function ScanInspectionSample({
   }, [fetcher.state, fetcher.data]);
 
   const isSubmitting = fetcher.state !== "idle";
-  const isIdentify = mode === "identify";
   // Serial parts require a scanned/selected tracked entity; other tracking
-  // types record pass/fail without one.
+  // types add a sample column without one.
   const canRecord = isSerial ? !!selected : true;
 
   return (
@@ -120,20 +104,10 @@ export default function ScanInspectionSample({
             <Trans>Inspect Item</Trans>
           </ModalTitle>
           <ModalDescription>
-            {isIdentify ? (
-              <Trans>
-                Scan or select a tracked entity from this lot to add it as a
-                sample column. Its result is derived from the recorded
-                measurements.
-              </Trans>
-            ) : isSerial ? (
-              <Trans>
-                Scan or select a tracked entity from this lot and record the
-                inspection result.
-              </Trans>
-            ) : (
-              <Trans>Record the inspection result for this sample.</Trans>
-            )}
+            <Trans>
+              Scan or select a tracked entity from this lot to add it as a
+              sample column, then record its result in the grid.
+            </Trans>
           </ModalDescription>
         </ModalHeader>
         <ValidatedForm
@@ -145,17 +119,14 @@ export default function ScanInspectionSample({
           defaultValues={{
             inspectionId,
             trackedEntityId: selected?.id ?? "",
-            status: pendingStatus,
+            status: "Pending",
             notes: ""
           }}
         >
           <ModalBody>
             <Hidden name="inspectionId" value={inspectionId} />
             <Hidden name="trackedEntityId" value={selected?.id ?? ""} />
-            <Hidden
-              name="status"
-              value={isIdentify ? "Pending" : pendingStatus}
-            />
+            <Hidden name="status" value="Pending" />
 
             <VStack spacing={4} className="w-full">
               <BarProgress
@@ -273,32 +244,12 @@ export default function ScanInspectionSample({
               <Button variant="secondary" onClick={onClose}>
                 <Trans>Close</Trans>
               </Button>
-              {isIdentify ? (
-                <Submit
-                  leftIcon={<LuCheck />}
-                  isDisabled={!canRecord || isSubmitting}
-                >
-                  <Trans>Add Sample</Trans>
-                </Submit>
-              ) : (
-                <>
-                  <Submit
-                    variant="destructive"
-                    leftIcon={<LuCircleX />}
-                    isDisabled={!canRecord || isSubmitting}
-                    onClick={() => setPendingStatus("Failed")}
-                  >
-                    <Trans>Fail</Trans>
-                  </Submit>
-                  <Submit
-                    leftIcon={<LuCircleCheck />}
-                    isDisabled={!canRecord || isSubmitting}
-                    onClick={() => setPendingStatus("Passed")}
-                  >
-                    <Trans>Pass</Trans>
-                  </Submit>
-                </>
-              )}
+              <Submit
+                leftIcon={<LuCheck />}
+                isDisabled={!canRecord || isSubmitting}
+              >
+                <Trans>Add Sample</Trans>
+              </Submit>
             </HStack>
           </ModalFooter>
         </ValidatedForm>

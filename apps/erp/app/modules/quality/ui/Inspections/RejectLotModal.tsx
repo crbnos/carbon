@@ -35,7 +35,7 @@ type RejectLotModalProps = {
   action: string;
   issueTypes: IssueTypeListItem[];
   summary: string;
-  // Document-driven lots: the characteristics that failed, previewed here and
+  // Document-driven lots: the features that failed, previewed here and
   // written into the NCR description by the reject action.
   failedFeatureSummary?: FailedFeatureSummary[];
   onCancel: () => void;
@@ -87,7 +87,7 @@ const RejectLotModal = ({
             {failedFeatureSummary && failedFeatureSummary.length > 0 && (
               <div className="w-full rounded-md border p-3">
                 <p className="mb-1 text-xs font-medium text-muted-foreground">
-                  <Trans>Failed characteristics</Trans>
+                  <Trans>Failed features</Trans>
                 </p>
                 <ul className="flex flex-col gap-0.5">
                   {failedFeatureSummary.map((feature) => (

@@ -37,7 +37,7 @@ pnpm --filter @carbon/database typecheck
 | `.` (index) | `Database` type, `fetchAllFromTable`, `fetchAllRecords`, `fetchRecordsInBatches` |
 | `./client` | `Kysely`, `KyselyDatabase`, Postgres pool factories (`getPostgresClient`, `getPostgresConnectionPool`) |
 | `./event` | `QueueMessage`, `EventSchema`, `createEventSystemSubscription`, `deleteEventSystemSubscription` |
-| `./quality` | Inspection execution engine shared by ERP + MES (`upsertInspectionSample`, `upsertInspectionMeasurement`, `dispositionInspection`, `reconcileInspectionSamplingPlans`, `changeInspectionDocument`, `getOrCreateJobOperationInspection`, pure `valuateMeasurement`); every fn takes a `Kysely<KyselyDatabase>` first arg — authorize at the route, see `.claude/rules/inspection-system.md` |
+| `./quality` | Inspection execution engine shared by ERP + MES (`upsertInspectionSample`, `upsertInspectionMeasurement`, `dispositionInspection` — optional one-shot `requireOpen`, `reconcileInspectionSamplingPlans`, `changeInspectionDocument`, `getOrCreateJobOperationInspection`, pure `valuateMeasurement`); Passed/Failed/Partial are all hard-terminal and samples linked from `productionQuantity.inspectionSampleId` are locked; every fn takes a `Kysely<KyselyDatabase>` first arg — authorize at the route, see `.claude/rules/inspection-system.md` |
 | `./sampling` | Node-side re-export of `supabase/functions/shared/sampling-engine.ts` (Z1.4 / ISO 2859-1 resolvers) |
 | `./audit` | `auditConfig`, entity/table lookup helpers, `AuditEntityType` |
 | `./ratelimit` | `checkApiKeyRateLimit` (Postgres RPC wrapper) |

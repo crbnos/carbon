@@ -10,7 +10,6 @@ import type { LoaderFunctionArgs } from "react-router";
 import { redirect, useLoaderData, useParams } from "react-router";
 import { InspectionView } from "~/components/Inspection/InspectionView";
 import { getDatabaseClient } from "~/services/database.server";
-import { getCompanySettings } from "~/services/inventory.service";
 import {
   getJobByOperationId,
   getJobMakeMethod,
@@ -111,7 +110,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     jobMakeMethod,
     events,
     quantities,
-    companySettings,
+    linkedQuantities,
     document
   ] = await Promise.all([
     getInspectionSamplingPlans(serviceRole, lot.data.id, companyId),
@@ -121,7 +120,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     getJobMakeMethod(serviceRole, op.jobMakeMethodId),
     getProductionEventsForJobOperation(serviceRole, { operationId, userId }),
     getProductionQuantitiesForJobOperation(serviceRole, operationId),
-    getCompanySettings(serviceRole, companyId),
+    // Verdict-driven postings link back to their sample — the UI derives
+    // "Complete passed (n)" from what is passed but not yet posted.
+    serviceRole
+      .from("productionQuantity")
+      .select("id, type, quantity, inspectionSampleId")
+      .eq("inspectionId", lot.data.id),
     inspection.inspectionDocumentId
       ? getInspectionDocumentWithBalloons(
           serviceRole,
@@ -129,6 +133,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         )
       : Promise.resolve(null)
   ]);
+
+  const linkedProductionRows = (linkedQuantities.data ?? []).filter(
+    (row) => row.type === "Production"
+  );
 
   const productionQuantities = (quantities.data ?? []).reduce(
     (acc, curr) => {
@@ -163,12 +171,17 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     requiresBatchTracking: jobMakeMethod.data?.requiresBatchTracking ?? false,
     events: events.data ?? [],
     productionQuantities,
+    linkedSampleIds: linkedProductionRows
+      .map((row) => row.inspectionSampleId)
+      .filter((sampleId): sampleId is string => Boolean(sampleId)),
+    linkedProductionQuantity: linkedProductionRows.reduce(
+      (sum, row) => sum + (row.quantity ?? 0),
+      0
+    ),
     jobId: job.data.id ?? null,
     balloons: document?.data?.balloons ?? [],
     documentName: document?.data?.name ?? null,
-    pdfUrl: document?.data?.pdfUrl ?? null,
-    autoStartOperationTimer:
-      companySettings.data?.autoStartOperationTimer ?? false
+    pdfUrl: document?.data?.pdfUrl ?? null
   };
 }
 

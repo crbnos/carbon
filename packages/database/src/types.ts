@@ -373,6 +373,7 @@ export type Database = {
           salesAccount: string
           salesDiscountAccount: string
           salesTaxPayableAccount: string
+          scrapAccount: string | null
           serviceChargeAccount: string
           subcontractingVarianceAccount: string
           supplierPaymentDiscountAccount: string
@@ -426,6 +427,7 @@ export type Database = {
           salesAccount: string
           salesDiscountAccount: string
           salesTaxPayableAccount: string
+          scrapAccount?: string | null
           serviceChargeAccount: string
           subcontractingVarianceAccount: string
           supplierPaymentDiscountAccount: string
@@ -479,6 +481,7 @@ export type Database = {
           salesAccount?: string
           salesDiscountAccount?: string
           salesTaxPayableAccount?: string
+          scrapAccount?: string | null
           serviceChargeAccount?: string
           subcontractingVarianceAccount?: string
           supplierPaymentDiscountAccount?: string
@@ -1114,6 +1117,20 @@ export type Database = {
           {
             foreignKeyName: "accountDefault_salesTaxPayableAccount_fkey"
             columns: ["salesTaxPayableAccount"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "accountDefault_scrapAccount_fkey"
+            columns: ["scrapAccount"]
+            isOneToOne: false
+            referencedRelation: "account"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "accountDefault_scrapAccount_fkey"
+            columns: ["scrapAccount"]
             isOneToOne: false
             referencedRelation: "accounts"
             referencedColumns: ["id"]
@@ -16588,6 +16605,18 @@ export type Database = {
           id: string
           pageCount: number | null
           partId: string
+          samplingAql: number | null
+          samplingInspectionLevel:
+            | Database["public"]["Enums"]["inspectionLevel"]
+            | null
+          samplingPercentage: number | null
+          samplingPlanType:
+            | Database["public"]["Enums"]["samplingPlanType"]
+            | null
+          samplingSampleSize: number | null
+          samplingSeverity:
+            | Database["public"]["Enums"]["inspectionSeverity"]
+            | null
           storagePath: string | null
           updatedAt: string | null
           updatedBy: string | null
@@ -16605,6 +16634,18 @@ export type Database = {
           id?: string
           pageCount?: number | null
           partId: string
+          samplingAql?: number | null
+          samplingInspectionLevel?:
+            | Database["public"]["Enums"]["inspectionLevel"]
+            | null
+          samplingPercentage?: number | null
+          samplingPlanType?:
+            | Database["public"]["Enums"]["samplingPlanType"]
+            | null
+          samplingSampleSize?: number | null
+          samplingSeverity?:
+            | Database["public"]["Enums"]["inspectionSeverity"]
+            | null
           storagePath?: string | null
           updatedAt?: string | null
           updatedBy?: string | null
@@ -16622,6 +16663,18 @@ export type Database = {
           id?: string
           pageCount?: number | null
           partId?: string
+          samplingAql?: number | null
+          samplingInspectionLevel?:
+            | Database["public"]["Enums"]["inspectionLevel"]
+            | null
+          samplingPercentage?: number | null
+          samplingPlanType?:
+            | Database["public"]["Enums"]["samplingPlanType"]
+            | null
+          samplingSampleSize?: number | null
+          samplingSeverity?:
+            | Database["public"]["Enums"]["inspectionSeverity"]
+            | null
           storagePath?: string | null
           updatedAt?: string | null
           updatedBy?: string | null
@@ -18810,7 +18863,6 @@ export type Database = {
           readableId: string
           readableIdWithRevision: string | null
           replenishmentSystem: Database["public"]["Enums"]["itemReplenishmentSystem"]
-          requiresInspection: boolean
           revision: string | null
           revisionStatus: Database["public"]["Enums"]["itemRevisionStatus"]
           sourcingType: Database["public"]["Enums"]["sourcingType"]
@@ -18840,7 +18892,6 @@ export type Database = {
           readableId: string
           readableIdWithRevision?: string | null
           replenishmentSystem?: Database["public"]["Enums"]["itemReplenishmentSystem"]
-          requiresInspection?: boolean
           revision?: string | null
           revisionStatus?: Database["public"]["Enums"]["itemRevisionStatus"]
           sourcingType?: Database["public"]["Enums"]["sourcingType"]
@@ -18870,7 +18921,6 @@ export type Database = {
           readableId?: string
           readableIdWithRevision?: string | null
           replenishmentSystem?: Database["public"]["Enums"]["itemReplenishmentSystem"]
-          requiresInspection?: boolean
           revision?: string | null
           revisionStatus?: Database["public"]["Enums"]["itemRevisionStatus"]
           sourcingType?: Database["public"]["Enums"]["sourcingType"]
@@ -20269,192 +20319,6 @@ export type Database = {
           },
           {
             foreignKeyName: "itemReplenishment_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "userDefaults"
-            referencedColumns: ["userId"]
-          },
-        ]
-      }
-      itemSamplingPlan: {
-        Row: {
-          aql: number | null
-          companyId: string
-          createdAt: string
-          createdBy: string
-          inspectionLevel: Database["public"]["Enums"]["inspectionLevel"]
-          itemId: string
-          percentage: number | null
-          sampleSize: number | null
-          severity: Database["public"]["Enums"]["inspectionSeverity"]
-          type: Database["public"]["Enums"]["samplingPlanType"]
-          updatedAt: string | null
-          updatedBy: string | null
-        }
-        Insert: {
-          aql?: number | null
-          companyId: string
-          createdAt?: string
-          createdBy: string
-          inspectionLevel?: Database["public"]["Enums"]["inspectionLevel"]
-          itemId: string
-          percentage?: number | null
-          sampleSize?: number | null
-          severity?: Database["public"]["Enums"]["inspectionSeverity"]
-          type?: Database["public"]["Enums"]["samplingPlanType"]
-          updatedAt?: string | null
-          updatedBy?: string | null
-        }
-        Update: {
-          aql?: number | null
-          companyId?: string
-          createdAt?: string
-          createdBy?: string
-          inspectionLevel?: Database["public"]["Enums"]["inspectionLevel"]
-          itemId?: string
-          percentage?: number | null
-          sampleSize?: number | null
-          severity?: Database["public"]["Enums"]["inspectionSeverity"]
-          type?: Database["public"]["Enums"]["samplingPlanType"]
-          updatedAt?: string | null
-          updatedBy?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "itemSamplingPlan_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "itemSamplingPlan_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "company"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "itemSamplingPlan_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "customFieldTables"
-            referencedColumns: ["companyId"]
-          },
-          {
-            foreignKeyName: "itemSamplingPlan_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "integrations"
-            referencedColumns: ["companyId"]
-          },
-          {
-            foreignKeyName: "itemSamplingPlan_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "itemSamplingPlan_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "employeesAcrossCompanies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "itemSamplingPlan_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "employeeSummary"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "itemSamplingPlan_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "user"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "itemSamplingPlan_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "userDefaults"
-            referencedColumns: ["userId"]
-          },
-          {
-            foreignKeyName: "itemSamplingPlan_itemId_fkey"
-            columns: ["itemId"]
-            isOneToOne: true
-            referencedRelation: "consumables"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "itemSamplingPlan_itemId_fkey"
-            columns: ["itemId"]
-            isOneToOne: true
-            referencedRelation: "item"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "itemSamplingPlan_itemId_fkey"
-            columns: ["itemId"]
-            isOneToOne: true
-            referencedRelation: "materials"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "itemSamplingPlan_itemId_fkey"
-            columns: ["itemId"]
-            isOneToOne: true
-            referencedRelation: "parts"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "itemSamplingPlan_itemId_fkey"
-            columns: ["itemId"]
-            isOneToOne: true
-            referencedRelation: "services"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "itemSamplingPlan_itemId_fkey"
-            columns: ["itemId"]
-            isOneToOne: true
-            referencedRelation: "tools"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "itemSamplingPlan_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "itemSamplingPlan_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "employeesAcrossCompanies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "itemSamplingPlan_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "employeeSummary"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "itemSamplingPlan_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "user"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "itemSamplingPlan_updatedBy_fkey"
             columns: ["updatedBy"]
             isOneToOne: false
             referencedRelation: "userDefaults"
@@ -37056,6 +36920,8 @@ export type Database = {
           createdAt: string
           createdBy: string
           id: string
+          inspectionId: string | null
+          inspectionSampleId: string | null
           jobOperationId: string
           laborProductionEventId: string | null
           machineProductionEventId: string | null
@@ -37072,6 +36938,8 @@ export type Database = {
           createdAt?: string
           createdBy: string
           id?: string
+          inspectionId?: string | null
+          inspectionSampleId?: string | null
           jobOperationId: string
           laborProductionEventId?: string | null
           machineProductionEventId?: string | null
@@ -37088,6 +36956,8 @@ export type Database = {
           createdAt?: string
           createdBy?: string
           id?: string
+          inspectionId?: string | null
+          inspectionSampleId?: string | null
           jobOperationId?: string
           laborProductionEventId?: string | null
           machineProductionEventId?: string | null
@@ -37127,6 +36997,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "integrations"
             referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "productionQuantity_inspectionId_fkey"
+            columns: ["inspectionId"]
+            isOneToOne: false
+            referencedRelation: "inspection"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "productionQuantity_inspectionSampleId_fkey"
+            columns: ["inspectionSampleId"]
+            isOneToOne: false
+            referencedRelation: "inspectionSample"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "productionQuantity_jobOperationId_fkey"
@@ -38822,7 +38706,6 @@ export type Database = {
           receivedComplete: boolean
           receivedDate: string | null
           requiredDate: string | null
-          requiresInspection: boolean
           setupPrice: number | null
           shippingCost: number | null
           sortOrder: number
@@ -38875,7 +38758,6 @@ export type Database = {
           receivedComplete?: boolean
           receivedDate?: string | null
           requiredDate?: string | null
-          requiresInspection?: boolean
           setupPrice?: number | null
           shippingCost?: number | null
           sortOrder?: number
@@ -38928,7 +38810,6 @@ export type Database = {
           receivedComplete?: boolean
           receivedDate?: string | null
           requiredDate?: string | null
-          requiresInspection?: boolean
           setupPrice?: number | null
           shippingCost?: number | null
           sortOrder?: number
@@ -45941,7 +45822,6 @@ export type Database = {
           quantitySent: number | null
           quantityToInvoice: number | null
           quantityToSend: number | null
-          requiresInspection: boolean
           saleQuantity: number | null
           salesOrderId: string
           salesOrderLineType: Database["public"]["Enums"]["salesOrderLineType"]
@@ -45988,7 +45868,6 @@ export type Database = {
           quantitySent?: number | null
           quantityToInvoice?: number | null
           quantityToSend?: number | null
-          requiresInspection?: boolean
           saleQuantity?: number | null
           salesOrderId: string
           salesOrderLineType: Database["public"]["Enums"]["salesOrderLineType"]
@@ -46035,7 +45914,6 @@ export type Database = {
           quantitySent?: number | null
           quantityToInvoice?: number | null
           quantityToSend?: number | null
-          requiresInspection?: boolean
           saleQuantity?: number | null
           salesOrderId?: string
           salesOrderLineType?: Database["public"]["Enums"]["salesOrderLineType"]
@@ -65905,7 +65783,6 @@ export type Database = {
           receivedComplete: boolean | null
           receivedDate: string | null
           requiredDate: string | null
-          requiresInspection: boolean | null
           setupPrice: number | null
           shippingCost: number | null
           sortOrder: number | null
@@ -66247,14 +66124,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["supplierCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["supplierCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -69633,6 +69510,13 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
+            columns: ["customerCountryCode"]
+            isOneToOne: false
+            referencedRelation: "country"
+            referencedColumns: ["alpha2"]
+          },
+          {
+            foreignKeyName: "address_countryCode_fkey"
             columns: ["invoiceCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
@@ -69641,13 +69525,6 @@ export type Database = {
           {
             foreignKeyName: "address_countryCode_fkey"
             columns: ["shipmentCountryCode"]
-            isOneToOne: false
-            referencedRelation: "country"
-            referencedColumns: ["alpha2"]
-          },
-          {
-            foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -69969,7 +69846,6 @@ export type Database = {
           quantitySent: number | null
           quantityToInvoice: number | null
           quantityToSend: number | null
-          requiresInspection: boolean | null
           saleQuantity: number | null
           salesOrderId: string | null
           salesOrderLineType:
@@ -74013,7 +73889,6 @@ export type Database = {
           readableId: string
           readableIdWithRevision: string
           replenishmentSystem: Database["public"]["Enums"]["itemReplenishmentSystem"]
-          requiresInspection: boolean
           revision: string
           revisions: Json
           supplierIds: string
@@ -74599,7 +74474,6 @@ export type Database = {
           readableId: string
           readableIdWithRevision: string
           replenishmentSystem: Database["public"]["Enums"]["itemReplenishmentSystem"]
-          requiresInspection: boolean
           revision: string
           revisions: Json
           supplierIds: string
@@ -74721,7 +74595,6 @@ export type Database = {
           readableId: string
           readableIdWithRevision: string
           replenishmentSystem: Database["public"]["Enums"]["itemReplenishmentSystem"]
-          requiresInspection: boolean
           revision: string
           revisions: Json
           sourcingType: Database["public"]["Enums"]["sourcingType"]
@@ -75238,7 +75111,6 @@ export type Database = {
           readableId: string
           readableIdWithRevision: string
           replenishmentSystem: Database["public"]["Enums"]["itemReplenishmentSystem"]
-          requiresInspection: boolean
           revision: string
           revisions: Json
           sourcingType: Database["public"]["Enums"]["sourcingType"]
@@ -75290,7 +75162,6 @@ export type Database = {
           readableId: string
           readableIdWithRevision: string
           replenishmentSystem: Database["public"]["Enums"]["itemReplenishmentSystem"]
-          requiresInspection: boolean
           revision: string
           revisions: Json
           sourcingType: Database["public"]["Enums"]["sourcingType"]
@@ -76282,6 +76153,8 @@ export type Database = {
         | "Payment"
         | "Credit Memo"
         | "Debit Memo"
+        | "Non-Conformance"
+        | "Inbound Inspection"
       journalEntryStatus: "Draft" | "Posted" | "Reversed"
       journalLineDocumentType:
         | "Receipt"
@@ -76303,6 +76176,8 @@ export type Database = {
         | "Memo"
         | "Inventory Adjustment"
         | "Inventory Count"
+        | "Non-Conformance"
+        | "Inbound Inspection"
       kanbanOutput: "label" | "qrcode" | "url"
       macrsConvention: "Half-Year" | "Mid-Quarter"
       macrsPropertyClass: "3" | "5" | "7" | "10" | "15" | "20" | "27.5" | "39"
@@ -77654,6 +77529,8 @@ export const Constants = {
         "Payment",
         "Credit Memo",
         "Debit Memo",
+        "Non-Conformance",
+        "Inbound Inspection",
       ],
       journalEntryStatus: ["Draft", "Posted", "Reversed"],
       journalLineDocumentType: [
@@ -77676,6 +77553,8 @@ export const Constants = {
         "Memo",
         "Inventory Adjustment",
         "Inventory Count",
+        "Non-Conformance",
+        "Inbound Inspection",
       ],
       kanbanOutput: ["label", "qrcode", "url"],
       macrsConvention: ["Half-Year", "Mid-Quarter"],

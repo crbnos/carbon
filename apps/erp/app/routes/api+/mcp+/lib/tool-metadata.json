@@ -1,5 +1,5 @@
 {
-  "generated": "2026-07-26T21:40:42.990Z",
+  "generated": "2026-07-27T04:19:42.297Z",
   "totalTools": 1394,
   "modules": 15,
   "tools": [
@@ -23579,6 +23579,44 @@
       }
     },
     {
+      "name": "production_updateInspectionDocumentSampling",
+      "module": "production",
+      "classification": "WRITE",
+      "description": "update inspection document sampling",
+      "paramCount": 6,
+      "serviceParams": [
+        "client",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "samplingPlanType": {
+            "type": "string"
+          },
+          "samplingSampleSize": {
+            "type": "number"
+          },
+          "samplingPercentage": {
+            "type": "number"
+          },
+          "samplingAql": {
+            "type": "number"
+          },
+          "samplingInspectionLevel": {
+            "type": "string"
+          },
+          "samplingSeverity": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    {
       "name": "production_saveInspectionDocumentAtomic",
       "module": "production",
       "classification": "WRITE",
@@ -29399,57 +29437,6 @@
       }
     },
     {
-      "name": "quality_getItemSamplingPlan",
-      "module": "quality",
-      "classification": "READ",
-      "description": "get item sampling plan",
-      "paramCount": 1,
-      "serviceParams": [
-        "client",
-        "itemId",
-        "companyId"
-      ],
-      "injectAuth": [
-        "companyId"
-      ],
-      "schema": {
-        "type": "object",
-        "properties": {
-          "itemId": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "itemId"
-        ]
-      }
-    },
-    {
-      "name": "quality_upsertItemSamplingPlan",
-      "module": "quality",
-      "classification": "WRITE",
-      "description": "upsert item sampling plan",
-      "paramCount": 1,
-      "serviceParams": [
-        "client",
-        "plan"
-      ],
-      "injectAuth": [
-        "companyId",
-        "createdBy",
-        "updatedBy"
-      ],
-      "schema": {
-        "type": "object",
-        "properties": {
-          "plan": {}
-        },
-        "required": [
-          "plan"
-        ]
-      }
-    },
-    {
       "name": "quality_getInspections",
       "module": "quality",
       "classification": "READ",
@@ -29522,6 +29509,32 @@
         },
         "required": [
           "id"
+        ]
+      }
+    },
+    {
+      "name": "quality_getReceiptInspections",
+      "module": "quality",
+      "classification": "READ",
+      "description": "get receipt inspections",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "receiptId",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "receiptId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "receiptId"
         ]
       }
     },

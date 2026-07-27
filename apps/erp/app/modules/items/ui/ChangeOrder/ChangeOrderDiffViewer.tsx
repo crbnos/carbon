@@ -62,7 +62,6 @@ const FIELD_LABELS: Record<string, string> = {
   itemTrackingType: "Tracking",
   replenishmentSystem: "Replenishment",
   sourcingType: "Sourcing",
-  requiresInspection: "Requires inspection",
   defaultMethodType: "Default method",
   itemPostingGroupId: "Item group",
   mpn: "MPN",

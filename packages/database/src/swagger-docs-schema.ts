@@ -7902,204 +7902,6 @@ export default {
         tags: ["receipts"]
       }
     },
-    "/itemSamplingPlan": {
-      get: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.itemSamplingPlan.itemId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemSamplingPlan.type"
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemSamplingPlan.sampleSize"
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemSamplingPlan.percentage"
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemSamplingPlan.aql"
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemSamplingPlan.inspectionLevel"
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemSamplingPlan.severity"
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemSamplingPlan.companyId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemSamplingPlan.createdAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemSamplingPlan.createdBy"
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemSamplingPlan.updatedAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemSamplingPlan.updatedBy"
-          },
-          {
-            $ref: "#/parameters/select"
-          },
-          {
-            $ref: "#/parameters/order"
-          },
-          {
-            $ref: "#/parameters/range"
-          },
-          {
-            $ref: "#/parameters/rangeUnit"
-          },
-          {
-            $ref: "#/parameters/offset"
-          },
-          {
-            $ref: "#/parameters/limit"
-          },
-          {
-            $ref: "#/parameters/preferCount"
-          }
-        ],
-        responses: {
-          "200": {
-            description: "OK",
-            schema: {
-              items: {
-                $ref: "#/definitions/itemSamplingPlan"
-              },
-              type: "array"
-            }
-          },
-          "206": {
-            description: "Partial Content"
-          }
-        },
-        tags: ["itemSamplingPlan"]
-      },
-      post: {
-        parameters: [
-          {
-            $ref: "#/parameters/body.itemSamplingPlan"
-          },
-          {
-            $ref: "#/parameters/select"
-          },
-          {
-            $ref: "#/parameters/preferPost"
-          }
-        ],
-        responses: {
-          "201": {
-            description: "Created"
-          }
-        },
-        tags: ["itemSamplingPlan"]
-      },
-      delete: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.itemSamplingPlan.itemId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemSamplingPlan.type"
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemSamplingPlan.sampleSize"
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemSamplingPlan.percentage"
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemSamplingPlan.aql"
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemSamplingPlan.inspectionLevel"
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemSamplingPlan.severity"
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemSamplingPlan.companyId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemSamplingPlan.createdAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemSamplingPlan.createdBy"
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemSamplingPlan.updatedAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemSamplingPlan.updatedBy"
-          },
-          {
-            $ref: "#/parameters/preferReturn"
-          }
-        ],
-        responses: {
-          "204": {
-            description: "No Content"
-          }
-        },
-        tags: ["itemSamplingPlan"]
-      },
-      patch: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.itemSamplingPlan.itemId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemSamplingPlan.type"
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemSamplingPlan.sampleSize"
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemSamplingPlan.percentage"
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemSamplingPlan.aql"
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemSamplingPlan.inspectionLevel"
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemSamplingPlan.severity"
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemSamplingPlan.companyId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemSamplingPlan.createdAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemSamplingPlan.createdBy"
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemSamplingPlan.updatedAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemSamplingPlan.updatedBy"
-          },
-          {
-            $ref: "#/parameters/body.itemSamplingPlan"
-          },
-          {
-            $ref: "#/parameters/preferReturn"
-          }
-        ],
-        responses: {
-          "204": {
-            description: "No Content"
-          }
-        },
-        tags: ["itemSamplingPlan"]
-      }
-    },
     "/purchaseOrderLocations": {
       get: {
         parameters: [
@@ -35584,9 +35386,6 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseOrderLine.invoicedComplete"
           },
           {
-            $ref: "#/parameters/rowFilter.purchaseOrderLine.requiresInspection"
-          },
-          {
             $ref: "#/parameters/rowFilter.purchaseOrderLine.companyId"
           },
           {
@@ -35796,9 +35595,6 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseOrderLine.invoicedComplete"
           },
           {
-            $ref: "#/parameters/rowFilter.purchaseOrderLine.requiresInspection"
-          },
-          {
             $ref: "#/parameters/rowFilter.purchaseOrderLine.companyId"
           },
           {
@@ -35960,9 +35756,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.purchaseOrderLine.invoicedComplete"
-          },
-          {
-            $ref: "#/parameters/rowFilter.purchaseOrderLine.requiresInspection"
           },
           {
             $ref: "#/parameters/rowFilter.purchaseOrderLine.companyId"
@@ -36349,6 +36142,9 @@ export default {
             $ref: "#/parameters/rowFilter.accountDefault.assetLossOnDisposalAccount"
           },
           {
+            $ref: "#/parameters/rowFilter.accountDefault.scrapAccount"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -36561,6 +36357,9 @@ export default {
             $ref: "#/parameters/rowFilter.accountDefault.assetLossOnDisposalAccount"
           },
           {
+            $ref: "#/parameters/rowFilter.accountDefault.scrapAccount"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -36725,6 +36524,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.accountDefault.assetLossOnDisposalAccount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountDefault.scrapAccount"
           },
           {
             $ref: "#/parameters/body.accountDefault"
@@ -49651,6 +49453,24 @@ export default {
             $ref: "#/parameters/rowFilter.inspectionDocument.updatedAt"
           },
           {
+            $ref: "#/parameters/rowFilter.inspectionDocument.samplingPlanType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionDocument.samplingSampleSize"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionDocument.samplingPercentage"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionDocument.samplingAql"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionDocument.samplingInspectionLevel"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionDocument.samplingSeverity"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -49755,6 +49575,24 @@ export default {
             $ref: "#/parameters/rowFilter.inspectionDocument.updatedAt"
           },
           {
+            $ref: "#/parameters/rowFilter.inspectionDocument.samplingPlanType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionDocument.samplingSampleSize"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionDocument.samplingPercentage"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionDocument.samplingAql"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionDocument.samplingInspectionLevel"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionDocument.samplingSeverity"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -49811,6 +49649,24 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.inspectionDocument.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionDocument.samplingPlanType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionDocument.samplingSampleSize"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionDocument.samplingPercentage"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionDocument.samplingAql"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionDocument.samplingInspectionLevel"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionDocument.samplingSeverity"
           },
           {
             $ref: "#/parameters/body.inspectionDocument"
@@ -53480,9 +53336,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.salesOrderLines.invoicedComplete"
-          },
-          {
-            $ref: "#/parameters/rowFilter.salesOrderLines.requiresInspection"
           },
           {
             $ref: "#/parameters/rowFilter.salesOrderLines.companyId"
@@ -64321,9 +64174,6 @@ export default {
             $ref: "#/parameters/rowFilter.salesOrderLine.invoicedComplete"
           },
           {
-            $ref: "#/parameters/rowFilter.salesOrderLine.requiresInspection"
-          },
-          {
             $ref: "#/parameters/rowFilter.salesOrderLine.companyId"
           },
           {
@@ -64515,9 +64365,6 @@ export default {
             $ref: "#/parameters/rowFilter.salesOrderLine.invoicedComplete"
           },
           {
-            $ref: "#/parameters/rowFilter.salesOrderLine.requiresInspection"
-          },
-          {
             $ref: "#/parameters/rowFilter.salesOrderLine.companyId"
           },
           {
@@ -64661,9 +64508,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.salesOrderLine.invoicedComplete"
-          },
-          {
-            $ref: "#/parameters/rowFilter.salesOrderLine.requiresInspection"
           },
           {
             $ref: "#/parameters/rowFilter.salesOrderLine.companyId"
@@ -70546,9 +70390,6 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseOrderLines.invoicedComplete"
           },
           {
-            $ref: "#/parameters/rowFilter.purchaseOrderLines.requiresInspection"
-          },
-          {
             $ref: "#/parameters/rowFilter.purchaseOrderLines.companyId"
           },
           {
@@ -75676,9 +75517,6 @@ export default {
             $ref: "#/parameters/rowFilter.item.readableIdWithRevision"
           },
           {
-            $ref: "#/parameters/rowFilter.item.requiresInspection"
-          },
-          {
             $ref: "#/parameters/rowFilter.item.sourcingType"
           },
           {
@@ -75819,9 +75657,6 @@ export default {
             $ref: "#/parameters/rowFilter.item.readableIdWithRevision"
           },
           {
-            $ref: "#/parameters/rowFilter.item.requiresInspection"
-          },
-          {
             $ref: "#/parameters/rowFilter.item.sourcingType"
           },
           {
@@ -75914,9 +75749,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.item.readableIdWithRevision"
-          },
-          {
-            $ref: "#/parameters/rowFilter.item.requiresInspection"
           },
           {
             $ref: "#/parameters/rowFilter.item.sourcingType"
@@ -98061,83 +97893,6 @@ export default {
       },
       type: "object"
     },
-    itemSamplingPlan: {
-      required: [
-        "itemId",
-        "type",
-        "inspectionLevel",
-        "severity",
-        "companyId",
-        "createdAt",
-        "createdBy"
-      ],
-      properties: {
-        itemId: {
-          description:
-            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
-          format: "text",
-          type: "string"
-        },
-        type: {
-          default: "All",
-          enum: ["All", "First", "Percentage", "AQL"],
-          format: 'public."samplingPlanType"',
-          type: "string"
-        },
-        sampleSize: {
-          format: "integer",
-          type: "integer"
-        },
-        percentage: {
-          format: "numeric",
-          type: "number"
-        },
-        aql: {
-          format: "numeric",
-          type: "number"
-        },
-        inspectionLevel: {
-          default: "II",
-          enum: ["I", "II", "III", "S1", "S2", "S3", "S4"],
-          format: 'public."inspectionLevel"',
-          type: "string"
-        },
-        severity: {
-          default: "Normal",
-          enum: ["Normal", "Tightened", "Reduced"],
-          format: 'public."inspectionSeverity"',
-          type: "string"
-        },
-        companyId: {
-          description:
-            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
-          format: "text",
-          type: "string"
-        },
-        createdAt: {
-          default: "now()",
-          format: "timestamp with time zone",
-          type: "string"
-        },
-        createdBy: {
-          description:
-            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
-          format: "text",
-          type: "string"
-        },
-        updatedAt: {
-          format: "timestamp with time zone",
-          type: "string"
-        },
-        updatedBy: {
-          description:
-            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
-          format: "text",
-          type: "string"
-        }
-      },
-      type: "object"
-    },
     purchaseOrderLocations: {
       properties: {
         id: {
@@ -98362,7 +98117,9 @@ export default {
             "Asset Disposal",
             "Payment",
             "Credit Memo",
-            "Debit Memo"
+            "Debit Memo",
+            "Non-Conformance",
+            "Inbound Inspection"
           ],
           format: 'public."journalEntrySourceType"',
           type: "string"
@@ -100121,7 +99878,7 @@ export default {
       properties: {
         id: {
           description:
-            "Note:\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
           format: "text",
           type: "string"
         },
@@ -100170,7 +99927,7 @@ export default {
         },
         supplierLocationId: {
           description:
-            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
+            "Note:\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
           format: "text",
           type: "string"
         },
@@ -108993,7 +108750,9 @@ export default {
             "Payment",
             "Memo",
             "Inventory Adjustment",
-            "Inventory Count"
+            "Inventory Count",
+            "Non-Conformance",
+            "Inbound Inspection"
           ],
           format: 'public."journalLineDocumentType"',
           type: "string"
@@ -109556,7 +109315,9 @@ export default {
             "Asset Disposal",
             "Payment",
             "Credit Memo",
-            "Debit Memo"
+            "Debit Memo",
+            "Non-Conformance",
+            "Inbound Inspection"
           ],
           format: 'public."journalEntrySourceType"',
           type: "string"
@@ -111085,7 +110846,6 @@ export default {
         "purchaseOrderLineType",
         "receivedComplete",
         "invoicedComplete",
-        "requiresInspection",
         "companyId",
         "createdAt",
         "createdBy",
@@ -111185,11 +110945,6 @@ export default {
           type: "boolean"
         },
         invoicedComplete: {
-          default: false,
-          format: "boolean",
-          type: "boolean"
-        },
-        requiresInspection: {
           default: false,
           format: "boolean",
           type: "boolean"
@@ -111821,6 +111576,12 @@ export default {
           type: "string"
         },
         assetLossOnDisposalAccount: {
+          description:
+            "Note:\nThis is a Foreign Key to `account.id`.<fk table='account' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        scrapAccount: {
           description:
             "Note:\nThis is a Foreign Key to `account.id`.<fk table='account' column='id'/>",
           format: "text",
@@ -117789,6 +117550,33 @@ export default {
         updatedAt: {
           format: "timestamp with time zone",
           type: "string"
+        },
+        samplingPlanType: {
+          enum: ["All", "First", "Percentage", "AQL"],
+          format: 'public."samplingPlanType"',
+          type: "string"
+        },
+        samplingSampleSize: {
+          format: "integer",
+          type: "integer"
+        },
+        samplingPercentage: {
+          format: "numeric",
+          type: "number"
+        },
+        samplingAql: {
+          format: "numeric",
+          type: "number"
+        },
+        samplingInspectionLevel: {
+          enum: ["I", "II", "III", "S1", "S2", "S3", "S4"],
+          format: 'public."inspectionLevel"',
+          type: "string"
+        },
+        samplingSeverity: {
+          enum: ["Normal", "Tightened", "Reduced"],
+          format: 'public."inspectionSeverity"',
+          type: "string"
         }
       },
       type: "object"
@@ -119362,10 +119150,6 @@ export default {
           type: "boolean"
         },
         invoicedComplete: {
-          format: "boolean",
-          type: "boolean"
-        },
-        requiresInspection: {
           format: "boolean",
           type: "boolean"
         },
@@ -121284,7 +121068,9 @@ export default {
             "Payment",
             "Memo",
             "Inventory Adjustment",
-            "Inventory Count"
+            "Inventory Count",
+            "Non-Conformance",
+            "Inbound Inspection"
           ],
           format: 'public."journalLineDocumentType"',
           type: "string"
@@ -121390,7 +121176,9 @@ export default {
             "Asset Disposal",
             "Payment",
             "Credit Memo",
-            "Debit Memo"
+            "Debit Memo",
+            "Non-Conformance",
+            "Inbound Inspection"
           ],
           format: 'public."journalEntrySourceType"',
           type: "string"
@@ -121459,7 +121247,9 @@ export default {
             "Payment",
             "Memo",
             "Inventory Adjustment",
-            "Inventory Count"
+            "Inventory Count",
+            "Non-Conformance",
+            "Inbound Inspection"
           ],
           format: 'public."journalLineDocumentType"',
           type: "string"
@@ -124925,7 +124715,6 @@ export default {
         "salesOrderLineType",
         "sentComplete",
         "invoicedComplete",
-        "requiresInspection",
         "companyId",
         "createdAt",
         "createdBy",
@@ -125023,11 +124812,6 @@ export default {
           type: "boolean"
         },
         invoicedComplete: {
-          default: false,
-          format: "boolean",
-          type: "boolean"
-        },
-        requiresInspection: {
           default: false,
           format: "boolean",
           type: "boolean"
@@ -127702,10 +127486,6 @@ export default {
           type: "boolean"
         },
         invoicedComplete: {
-          format: "boolean",
-          type: "boolean"
-        },
-        requiresInspection: {
           format: "boolean",
           type: "boolean"
         },
@@ -130402,7 +130182,6 @@ export default {
         "active",
         "createdBy",
         "createdAt",
-        "requiresInspection",
         "sourcingType",
         "revisionStatus"
       ],
@@ -130525,11 +130304,6 @@ export default {
         readableIdWithRevision: {
           format: "text",
           type: "string"
-        },
-        requiresInspection: {
-          default: false,
-          format: "boolean",
-          type: "boolean"
         },
         sourcingType: {
           default: "Specified",
@@ -138572,87 +138346,6 @@ export default {
     },
     "rowFilter.receipts.locationName": {
       name: "locationName",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "body.itemSamplingPlan": {
-      name: "itemSamplingPlan",
-      description: "itemSamplingPlan",
-      required: false,
-      in: "body",
-      schema: {
-        $ref: "#/definitions/itemSamplingPlan"
-      }
-    },
-    "rowFilter.itemSamplingPlan.itemId": {
-      name: "itemId",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.itemSamplingPlan.type": {
-      name: "type",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.itemSamplingPlan.sampleSize": {
-      name: "sampleSize",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.itemSamplingPlan.percentage": {
-      name: "percentage",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.itemSamplingPlan.aql": {
-      name: "aql",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.itemSamplingPlan.inspectionLevel": {
-      name: "inspectionLevel",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.itemSamplingPlan.severity": {
-      name: "severity",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.itemSamplingPlan.companyId": {
-      name: "companyId",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.itemSamplingPlan.createdAt": {
-      name: "createdAt",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.itemSamplingPlan.createdBy": {
-      name: "createdBy",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.itemSamplingPlan.updatedAt": {
-      name: "updatedAt",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.itemSamplingPlan.updatedBy": {
-      name: "updatedBy",
       required: false,
       in: "query",
       type: "string"
@@ -153276,12 +152969,6 @@ export default {
       in: "query",
       type: "string"
     },
-    "rowFilter.purchaseOrderLine.requiresInspection": {
-      name: "requiresInspection",
-      required: false,
-      in: "query",
-      type: "string"
-    },
     "rowFilter.purchaseOrderLine.companyId": {
       name: "companyId",
       required: false,
@@ -153944,6 +153631,12 @@ export default {
     },
     "rowFilter.accountDefault.assetLossOnDisposalAccount": {
       name: "assetLossOnDisposalAccount",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountDefault.scrapAccount": {
+      name: "scrapAccount",
       required: false,
       in: "query",
       type: "string"
@@ -160559,6 +160252,42 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.inspectionDocument.samplingPlanType": {
+      name: "samplingPlanType",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inspectionDocument.samplingSampleSize": {
+      name: "samplingSampleSize",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inspectionDocument.samplingPercentage": {
+      name: "samplingPercentage",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inspectionDocument.samplingAql": {
+      name: "samplingAql",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inspectionDocument.samplingInspectionLevel": {
+      name: "samplingInspectionLevel",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inspectionDocument.samplingSeverity": {
+      name: "samplingSeverity",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.supplierQuote": {
       name: "supplierQuote",
       description: "supplierQuote",
@@ -162254,12 +161983,6 @@ export default {
     },
     "rowFilter.salesOrderLines.invoicedComplete": {
       name: "invoicedComplete",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.salesOrderLines.requiresInspection": {
-      name: "requiresInspection",
       required: false,
       in: "query",
       type: "string"
@@ -168616,12 +168339,6 @@ export default {
       in: "query",
       type: "string"
     },
-    "rowFilter.salesOrderLine.requiresInspection": {
-      name: "requiresInspection",
-      required: false,
-      in: "query",
-      type: "string"
-    },
     "rowFilter.salesOrderLine.companyId": {
       name: "companyId",
       required: false,
@@ -171615,12 +171332,6 @@ export default {
     },
     "rowFilter.purchaseOrderLines.invoicedComplete": {
       name: "invoicedComplete",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.purchaseOrderLines.requiresInspection": {
-      name: "requiresInspection",
       required: false,
       in: "query",
       type: "string"
@@ -174801,12 +174512,6 @@ export default {
     },
     "rowFilter.item.readableIdWithRevision": {
       name: "readableIdWithRevision",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.item.requiresInspection": {
-      name: "requiresInspection",
       required: false,
       in: "query",
       type: "string"

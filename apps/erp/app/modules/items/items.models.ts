@@ -227,8 +227,7 @@ export const itemValidator = z.object({
   // capped by the earliest input expiry — the output cannot outlast its
   // raw materials. Falls back to today + days when no input has a date.
   // Mirrors the inventory-settings "Calculate from BOM" copy.
-  shelfLifeCalculateFromBom: zfd.checkbox(),
-  requiresInspection: zfd.checkbox().optional()
+  shelfLifeCalculateFromBom: zfd.checkbox()
 });
 
 // Common storage / shelf-life refines. Shared across all item-type

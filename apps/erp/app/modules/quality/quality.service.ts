@@ -22,7 +22,6 @@ import type {
   issueValidator,
   issueWorkflowValidator,
   itemInspectionDocumentAssignmentValidator,
-  itemSamplingPlanValidator,
   nonConformanceApprovalRequirement,
   nonConformanceReviewerValidator,
   nonConformanceStatus,
@@ -2210,62 +2209,6 @@ export async function upsertRisk(
 // Inbound Inspections (lot-based)
 // -------------------------------------------------------------
 
-export async function getItemSamplingPlan(
-  client: SupabaseClient<Database>,
-  itemId: string,
-  companyId: string
-) {
-  return (client as any)
-    .from("itemSamplingPlan")
-    .select("*")
-    .eq("itemId", itemId)
-    .eq("companyId", companyId)
-    .maybeSingle();
-}
-
-export async function upsertItemSamplingPlan(
-  client: SupabaseClient<Database>,
-  plan: z.infer<typeof itemSamplingPlanValidator> & {
-    companyId: string;
-    updatedBy: string;
-  }
-) {
-  const existing = await (client as any)
-    .from("itemSamplingPlan")
-    .select("itemId")
-    .eq("itemId", plan.itemId)
-    .eq("companyId", plan.companyId)
-    .maybeSingle();
-
-  const payload = {
-    itemId: plan.itemId,
-    type: plan.type,
-    sampleSize: plan.sampleSize ?? null,
-    percentage: plan.percentage ?? null,
-    aql: plan.aql ?? null,
-    inspectionLevel: plan.inspectionLevel,
-    severity: plan.severity,
-    companyId: plan.companyId
-  };
-
-  if (existing.data) {
-    return (client as any)
-      .from("itemSamplingPlan")
-      .update({
-        ...payload,
-        updatedBy: plan.updatedBy,
-        updatedAt: new Date().toISOString()
-      })
-      .eq("itemId", plan.itemId)
-      .eq("companyId", plan.companyId);
-  }
-
-  return (client as any).from("itemSamplingPlan").insert({
-    ...payload,
-    createdBy: plan.updatedBy
-  });
-}
-
 export async function getInspections(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -2321,6 +2264,23 @@ export async function getInspection(
     )
     .eq("id", id)
     .single();
+}
+
+// All inspection lots created for a receipt (one per inspected receipt line),
+// keyed by the source-generic columns. Powers the receipt header's link/dropdown
+// to its inspections.
+export async function getReceiptInspections(
+  client: SupabaseClient<Database>,
+  receiptId: string,
+  companyId: string
+) {
+  return (client as any)
+    .from("inspection")
+    .select("id, inspectionId, itemId, itemReadableId, status")
+    .eq("sourceDocument", "Receipt")
+    .eq("sourceDocumentId", receiptId)
+    .eq("companyId", companyId)
+    .order("createdAt", { ascending: true });
 }
 
 // Receipt-sourced lots only: the received tracked entities are linked to the

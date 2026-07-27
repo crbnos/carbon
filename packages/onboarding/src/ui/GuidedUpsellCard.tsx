@@ -13,7 +13,7 @@ export function GuidedUpsellCard({
 }) {
   const { i18n } = useLingui();
   return (
-    <section className="rounded-2xl border border-border p-6 flex items-start gap-4">
+    <section className="rounded-2xl border border-border bg-card p-6 flex items-start gap-4">
       <div className="shrink-0 size-11 rounded-2xl bg-primary/15 flex items-center justify-center text-primary">
         <LuSparkles className="text-xl" />
       </div>

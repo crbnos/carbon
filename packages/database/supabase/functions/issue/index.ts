@@ -810,6 +810,11 @@ const payloadValidator = z.discriminatedUnion("type", [
     laborProductionEventId: z.string().optional(),
     machineProductionEventId: z.string().optional(),
     setupProductionEventId: z.string().optional(),
+    // Provenance links for inspection-driven completions. The partial UNIQUE
+    // index on productionQuantity.inspectionSampleId makes a re-post of the
+    // same verdict fail instead of double-counting.
+    inspectionId: z.string().optional(),
+    inspectionSampleId: z.string().optional(),
   }),
   z.object({
     type: z.literal("jobOperationSerialComplete"),
@@ -822,6 +827,8 @@ const payloadValidator = z.discriminatedUnion("type", [
     laborProductionEventId: z.string().optional(),
     machineProductionEventId: z.string().optional(),
     setupProductionEventId: z.string().optional(),
+    inspectionId: z.string().optional(),
+    inspectionSampleId: z.string().optional(),
   }),
   z.object({
     type: z.literal("partToOperation"),

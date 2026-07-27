@@ -215,7 +215,10 @@ export const triggerReworkValidator = z.object({
   quantity: zfd.numeric(
     z.number().positive({ message: "Quantity must be greater than 0" })
   ),
-  trackedEntityIds: zfd.text(z.string().optional())
+  trackedEntityIds: zfd.text(z.string().optional()),
+  // Provenance link when the rework was triggered by an inspection
+  // disposition (stamped on the Rework productionQuantity row).
+  inspectionId: zfd.text(z.string().optional())
 });
 
 export const maintenanceDispatchValidator = z.object({
@@ -290,6 +293,84 @@ export const inspectionSampleValidator = z.object({
     errorMap: () => ({ message: "Status is required" })
   }),
   notes: zfd.text(z.string().optional())
+});
+
+// One decision surface for closing an inspection lot: the verdict carries its
+// physical outcome. Accept completes the remaining lot; Reject/Partial split
+// the failed set between Scrap (reason) and Rework (upstream target op) — or
+// record only. Serial lots allocate per entity (two disjoint JSON id arrays);
+// non-serial lots allocate by quantity. The route recomputes every bucket from
+// the DB and clamps to the operation's remaining quantity — these fields are
+// operator intent, not trusted arithmetic.
+export const inspectionDispositionValidator = z
+  .object({
+    decision: z.enum(["Accept", "Reject", "Partial"], {
+      errorMap: () => ({ message: "Decision is required" })
+    }),
+    // The job operation, for postings + redirect back to the inspection view.
+    operationId: z.string().min(1, { message: "Operation is required" }),
+    setupProductionEventId: zfd.text(z.string().optional()),
+    laborProductionEventId: zfd.text(z.string().optional()),
+    machineProductionEventId: zfd.text(z.string().optional()),
+    // Serial allocation: JSON string[] of tracked entity ids per outcome.
+    scrapEntityIds: zfd.text(z.string().optional()),
+    reworkEntityIds: zfd.text(z.string().optional()),
+    // Non-serial allocation: quantities out of the failed/remainder count.
+    scrapQuantity: zfd.numeric(z.number().min(0).optional()),
+    reworkQuantity: zfd.numeric(z.number().min(0).optional()),
+    // Shared outcome params.
+    scrapReasonId: zfd.text(z.string().optional()),
+    targetOperationId: zfd.text(z.string().optional()),
+    reworkReason: zfd.text(z.string().optional()),
+    // NCR is optional documentation — never required for scrap or rework.
+    createNcr: zfd.text(z.enum(["true", "false"]).optional()),
+    nonConformanceTypeId: zfd.text(z.string().optional())
+  })
+  .superRefine((data, ctx) => {
+    const parseIds = (json: string | undefined): string[] => {
+      if (!json) return [];
+      try {
+        const parsed = JSON.parse(json);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch {
+        return [];
+      }
+    };
+    const scrapCount = parseIds(data.scrapEntityIds).length;
+    const reworkCount = parseIds(data.reworkEntityIds).length;
+    const hasScrap = scrapCount > 0 || (data.scrapQuantity ?? 0) > 0;
+    const hasRework = reworkCount > 0 || (data.reworkQuantity ?? 0) > 0;
+    if (hasScrap && !data.scrapReasonId) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["scrapReasonId"],
+        message: "Scrap reason is required"
+      });
+    }
+    if (hasRework && !data.targetOperationId) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["targetOperationId"],
+        message: "Target operation is required"
+      });
+    }
+    if (hasRework && !data.reworkReason) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["reworkReason"],
+        message: "Rework reason is required"
+      });
+    }
+  });
+
+// Progressive completion of passed units while the lot stays open — posts a
+// Production row per passed serial sample (or one linked bulk row for
+// non-serial counts) with sample-level provenance links.
+export const inspectionCompletePassedValidator = z.object({
+  operationId: z.string().min(1, { message: "Operation is required" }),
+  setupProductionEventId: zfd.text(z.string().optional()),
+  laborProductionEventId: zfd.text(z.string().optional()),
+  machineProductionEventId: zfd.text(z.string().optional())
 });
 
 export const inspectionMeasurementValidator = z.object({

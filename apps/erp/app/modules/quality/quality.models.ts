@@ -442,40 +442,6 @@ export const inspectionSampleStatusType = [
   "Failed"
 ] as const;
 
-export const itemSamplingPlanValidator = z
-  .object({
-    itemId: z.string().min(1, { message: "Item is required" }),
-    type: z.enum(samplingPlanTypes),
-    sampleSize: zfd.numeric(z.number().int().positive().optional()),
-    percentage: zfd.numeric(z.number().positive().max(100).optional()),
-    aql: zfd.numeric(z.number().positive().optional()),
-    inspectionLevel: z.enum(inspectionLevels).default("II"),
-    severity: z.enum(inspectionSeverities).default("Normal")
-  })
-  .superRefine((value, ctx) => {
-    if (value.type === "First" && !value.sampleSize) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ["sampleSize"],
-        message: "Sample size is required for 'First N' plans"
-      });
-    }
-    if (value.type === "Percentage" && !value.percentage) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ["percentage"],
-        message: "Percentage is required for percentage plans"
-      });
-    }
-    if (value.type === "AQL" && !value.aql) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ["aql"],
-        message: "AQL is required for AQL plans"
-      });
-    }
-  });
-
 export const inspectionValidator = z.object({
   id: z.string().min(1, { message: "Id is required" }),
   status: z.enum(["Passed", "Failed"], {
@@ -486,6 +452,10 @@ export const inspectionValidator = z.object({
 
 export const inspectionSampleValidator = z.object({
   inspectionId: z.string().min(1, { message: "Inspection is required" }),
+  // Optional: update an existing sample in place (the grid's "Overall result"
+  // row re-toggles an anonymous non-serial column). Serial parts upsert by the
+  // tracked entity instead, so they don't need it.
+  sampleId: zfd.text(z.string().optional()),
   // Optional: serial parts scan a discrete tracked entity; batch / inventory /
   // non-inventory parts record pass/fail without one.
   trackedEntityId: zfd.text(z.string().optional()),

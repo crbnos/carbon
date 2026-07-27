@@ -567,8 +567,7 @@ export class PurchaseOrderSyncer extends BaseEntitySyncer<
           purchaseOrderLineType: itemId ? "Part" : "G/L Account",
           supplierShippingCost: 0,
           invoicedComplete: false,
-          receivedComplete: false,
-          requiresInspection: false
+          receivedComplete: false
         })
         .execute();
     }

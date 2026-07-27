@@ -8,7 +8,7 @@ import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { stepRecordValidator } from "~/services/models";
 import {
-  backflushLooseMaterialsAtFirstStep,
+  backflushUntrackedMaterialsOnStepRecord,
   insertAttributeRecord
 } from "~/services/operations.service";
 
@@ -42,18 +42,18 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  // Recording a unit's FIRST step auto-issues one unit's worth of the
-  // operation's loose materials (untracked, not assigned to any step) —
-  // the operator builds unit by unit and never scans these. A backflush
-  // failure (e.g. insufficient stock) never blocks the record; the part
-  // just stays manually issuable.
-  const backflush = await backflushLooseMaterialsAtFirstStep(serviceRole, {
+  // Recording a step auto-issues one unit's worth of the untracked materials that
+  // step owns — a step-assigned part when its step is recorded, or a loose part
+  // (unassigned) on the operation's first step. The operator builds unit by unit
+  // and never scans these. A backflush failure (e.g. insufficient stock) never
+  // blocks the record; the part just stays manually issuable.
+  const backflush = await backflushUntrackedMaterialsOnStepRecord(serviceRole, {
     jobOperationStepId: validation.data.jobOperationStepId,
     companyId,
     userId
   });
   if (backflush.error) {
-    log.error("Backflush on first-step record failed", {
+    log.error("Backflush on step record failed", {
       error: backflush.error,
       jobOperationStepId: validation.data.jobOperationStepId
     });

@@ -1,6 +1,6 @@
 import type { Database } from "@carbon/database";
 import type { KyselyTx } from "@carbon/database/client";
-import type { SupabaseClient } from "@supabase/supabase-js";
+import { FunctionRegion, type SupabaseClient } from "@supabase/supabase-js";
 
 import { getDatabaseClient } from "~/services/database.server";
 import { isIssueLocked } from "./quality.models";
@@ -453,7 +453,48 @@ export async function splitIssueItem(args: {
         .orderBy("te.quantity", "asc")
         .execute();
 
-      if (links.length === 0) throw new Error("No linked entities to split");
+      // Non-tracked row: no entities to move, so split is a pure quantity split
+      // (e.g. scrap N, use-as-is the rest). Create a new Pending row for the
+      // split-off quantity and shrink the original — no entity subdivision.
+      if (links.length === 0) {
+        const current = Number(item.quantity ?? 0);
+        const splitQty =
+          typeof splitQuantity === "number" ? splitQuantity : NaN;
+        if (!(splitQty > 0)) {
+          throw new Error("Missing split parameters");
+        }
+        if (splitQty >= current) {
+          throw new Error(
+            `Split quantity (${splitQty}) must be less than the current quantity (${current})`
+          );
+        }
+
+        const newRow = await trx
+          .insertInto("nonConformanceItem")
+          .values({
+            nonConformanceId: item.nonConformanceId,
+            itemId: item.itemId,
+            quantity: splitQty,
+            disposition: "Pending",
+            companyId,
+            createdBy: userId
+          })
+          .returning(["id"])
+          .executeTakeFirstOrThrow();
+
+        await trx
+          .updateTable("nonConformanceItem")
+          .set({
+            quantity: current - splitQty,
+            updatedBy: userId,
+            updatedAt: nowIso
+          })
+          .where("id", "=", id)
+          .where("companyId", "=", companyId)
+          .execute();
+
+        return { id: newRow.id };
+      }
 
       // entityAssignments are whole-lot picks from the multi-entity checkbox UI;
       // splitQuantity fills greedily from the smallest lots, subdividing the
@@ -590,11 +631,13 @@ export async function splitIssueItem(args: {
 // closeIssue
 // -------------------------------------------------------------
 // Validates disposition plan (qty sums, no Pending rows, no Consumed entities),
-// then for each row with linked entities:
-//   - insert trackedActivity + trackedActivityInput
-//   - flip trackedEntity status (Use As Is / Rework → Available;
-//     Scrap / Return to Supplier → Rejected and write a Negative Adjmt. ledger)
-// Finally sets nonConformance.status = Closed.
+// posts inventory value movements (Scrap/Return write-offs + non-tracked restores)
+// through the post-nonconformance edge function (itemLedger + cost relief + GL,
+// idempotent per NCR), THEN in one transaction re-validates under a row lock,
+// writes disposition genealogy (trackedActivity + input), flips trackedEntity
+// status (Use As Is / Rework → Available; Scrap / Return to Supplier → Rejected),
+// and sets nonConformance.status = Closed. The value posting runs first so a GL
+// failure aborts the close; the txn owns only status/genealogy.
 
 type DispositionLink = {
   id: string;
@@ -663,7 +706,7 @@ export async function closeIssue(
 
   const blockers: IssueClosureBlocker[] = [];
   for (const row of plan) {
-    if (row.links.length === 0) continue;
+    // Every row must be dispositioned before closing, tracked or not.
     if (!row.disposition || row.disposition === "Pending") {
       blockers.push({
         nonConformanceItemId: row.id,
@@ -671,6 +714,9 @@ export async function closeIssue(
       });
       continue;
     }
+    // Non-tracked rows carry no entity links — there is no per-entity quantity
+    // sum or status to reconcile, so the disposition alone is enough.
+    if (row.links.length === 0) continue;
     const sum = row.links.reduce((acc, l) => acc + l.quantity, 0);
     if (Math.abs(sum - row.quantity) > 1e-6) {
       blockers.push({
@@ -700,11 +746,134 @@ export async function closeIssue(
     );
   }
 
+  // Load the issue + disposition origin up front — needed to build the inventory
+  // write-off movements and to short-circuit an already-closed NCR.
+  const issueResult = await client
+    .from("nonConformance")
+    .select("id, nonConformanceId, status, locationId")
+    .eq("id", nonConformanceId)
+    .eq("companyId", companyId)
+    .single();
+  if (issueResult.error || !issueResult.data) {
+    return errResult("Issue not found");
+  }
+  if (issueResult.data.status === "Closed") {
+    return { data: { id: issueResult.data.id }, error: null };
+  }
+  const readableNc = issueResult.data.nonConformanceId ?? nonConformanceId;
+  const locationId = issueResult.data.locationId;
+
+  // Non-tracked origin: an inspection-rejected Inventory lot was already written
+  // off at reject (so Use As Is / Rework restores value); a MES/manual non-tracked
+  // scrap must be written off now. Detected via the NCR's inspection link (only
+  // the reject route creates one).
+  const linklessRows = plan.filter((r) => r.links.length === 0);
+  const inventoryItemIds = new Set<string>();
+  let inspectionOriginated = false;
+  if (linklessRows.length > 0) {
+    const linklessItemIds = [...new Set(linklessRows.map((r) => r.itemId))];
+    const [trackingRes, inspectionRes] = await Promise.all([
+      client
+        .from("item")
+        .select("id, itemTrackingType")
+        .in("id", linklessItemIds)
+        .eq("companyId", companyId),
+      client
+        .from("nonConformanceInspection")
+        .select("id")
+        .eq("nonConformanceId", nonConformanceId)
+        .eq("companyId", companyId)
+        .limit(1)
+    ]);
+    for (const it of trackingRes.data ?? []) {
+      if (it.itemTrackingType === "Inventory") inventoryItemIds.add(it.id);
+    }
+    inspectionOriginated = (inspectionRes.data?.length ?? 0) > 0;
+  }
+
+  // Build the inventory value movements: tracked Scrap/Return → one −qty per
+  // linked entity; non-tracked Inventory → −qty write-off (MES/manual scrap) or
+  // +qty restore (inspection-kept). Use As Is / Rework on tracked, and any
+  // Non-Inventory row, move no value.
+  const movements: {
+    itemId: string;
+    locationId: string | null;
+    trackedEntityId: string | null;
+    quantity: number;
+    comment: string;
+  }[] = [];
+  for (const row of plan) {
+    const isScrap =
+      row.disposition === "Scrap" || row.disposition === "Return to Supplier";
+    const isKeep =
+      row.disposition === "Use As Is" || row.disposition === "Rework";
+    if (row.links.length > 0) {
+      if (isScrap) {
+        const suffix =
+          row.disposition === "Scrap" ? "scrap" : "return to supplier";
+        for (const link of row.links) {
+          movements.push({
+            itemId: row.itemId,
+            locationId,
+            trackedEntityId: link.trackedEntityId,
+            quantity: -link.quantity,
+            comment: `NC ${readableNc} ${suffix}`
+          });
+        }
+      }
+      continue;
+    }
+    if (!inventoryItemIds.has(row.itemId)) continue; // Non-Inventory: no ledger
+    if (isScrap && !inspectionOriginated) {
+      movements.push({
+        itemId: row.itemId,
+        locationId,
+        trackedEntityId: null,
+        quantity: -row.quantity,
+        comment: `NC ${readableNc} scrap`
+      });
+    } else if (isKeep && inspectionOriginated) {
+      movements.push({
+        itemId: row.itemId,
+        locationId,
+        trackedEntityId: null,
+        quantity: row.quantity,
+        comment: `NC ${readableNc} ${
+          row.disposition === "Rework" ? "rework" : "use as is"
+        } — restore on-hand`
+      });
+    }
+  }
+
+  // Post the inventory value movements (itemLedger + cost relief + GL) through
+  // the edge function BEFORE flipping statuses / closing. Idempotent per NCR, so
+  // a retry after a later failure is safe; a posting failure aborts the close.
+  if (movements.length > 0) {
+    const post = await client.functions.invoke("post-nonconformance", {
+      body: {
+        companyId,
+        userId,
+        documentType: "Non-Conformance",
+        documentId: nonConformanceId,
+        description: `NC ${readableNc} disposition`,
+        movements
+      },
+      region: FunctionRegion.UsEast1
+    });
+    if (post.error) {
+      return errResult(
+        post.error instanceof Error
+          ? post.error.message
+          : "Failed to post disposition to the ledger"
+      );
+    }
+  }
+
   try {
     const result = await db.transaction().execute(async (trx) => {
       const issue = await trx
         .selectFrom("nonConformance")
-        .select(["id", "nonConformanceId", "status", "locationId"])
+        .select(["id", "status"])
         .where("id", "=", nonConformanceId)
         .where("companyId", "=", companyId)
         .executeTakeFirst();
@@ -713,8 +882,6 @@ export async function closeIssue(
 
       const nowIso = new Date().toISOString();
       const today = nowIso.slice(0, 10);
-      const readableNc = issue.nonConformanceId ?? nonConformanceId;
-      const locationId = issue.locationId;
 
       // The preflight plan above was read outside this transaction and can be
       // stale (a concurrent split/move changes rows and link quantities). Re-read
@@ -770,10 +937,10 @@ export async function closeIssue(
       }));
 
       for (const row of freshPlan) {
-        if (row.links.length === 0) continue;
         if (!row.disposition || row.disposition === "Pending") {
           throw new Error("Disposition changed while closing; please retry.");
         }
+        if (row.links.length === 0) continue;
         const sum = row.links.reduce((acc, l) => acc + l.quantity, 0);
         if (Math.abs(sum - row.quantity) > 1e-6) {
           throw new Error("Quantities changed while closing; please retry.");
@@ -790,6 +957,10 @@ export async function closeIssue(
         }
       }
 
+      // Inventory value movements (write-offs / restores) were already posted by
+      // post-nonconformance above. Here we only write disposition genealogy and
+      // flip tracked-entity statuses; non-tracked rows have no entities, so they
+      // need nothing further.
       for (const row of freshPlan) {
         if (row.links.length === 0) continue;
 
@@ -843,27 +1014,6 @@ export async function closeIssue(
           row.disposition === "Scrap" ||
           row.disposition === "Return to Supplier"
         ) {
-          const commentSuffix =
-            row.disposition === "Scrap" ? "scrap" : "return to supplier";
-
-          await trx
-            .insertInto("itemLedger")
-            .values(
-              row.links.map((link) => ({
-                itemId: row.itemId,
-                locationId,
-                entryType: "Negative Adjmt." as const,
-                documentType: "Non-Conformance" as const,
-                documentId: nonConformanceId,
-                quantity: -link.quantity,
-                trackedEntityId: link.trackedEntityId,
-                companyId,
-                createdBy: userId,
-                comment: `NC ${readableNc} ${commentSuffix}`
-              }))
-            )
-            .execute();
-
           const idsToFlip = row.links
             .filter((l) => l.trackedEntityStatus !== "Rejected")
             .map((l) => l.trackedEntityId);

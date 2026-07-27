@@ -125,12 +125,12 @@ export const path = {
     health: "/health",
     inspection: (operationId: string) =>
       generatePath(`${x}/inspection/${operationId}`),
-    inspectionAccept: (id: string) =>
-      generatePath(`${x}/inspection-lot/${id}/accept`),
+    inspectionCompletePassed: (id: string) =>
+      generatePath(`${x}/inspection-lot/${id}/complete-passed`),
+    inspectionDisposition: (id: string) =>
+      generatePath(`${x}/inspection-lot/${id}/disposition`),
     inspectionMeasurement: (id: string) =>
       generatePath(`${x}/inspection-lot/${id}/measurement`),
-    inspectionReject: (id: string) =>
-      generatePath(`${x}/inspection-lot/${id}/reject`),
     inspectionSample: (id: string) =>
       generatePath(`${x}/inspection-lot/${id}/sample`),
     inspectionSteps: `${x}/steps/inspection`,

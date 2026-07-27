@@ -83,7 +83,7 @@ import { inventoryAdjustmentValidator, receiptValidator } from "~/modules/invent
 - **production** — job completion posts finished goods; materials issued from inventory
 - **items** — `itemTrackingType` (Inventory/Serial/Batch/Non-Inventory) determines tracking behavior
 - **sales** — shipments fulfill sales order lines
-- **quality** — inbound inspections triggered on receipt for items with `requiresInspection`
+- **quality** — inbound inspections triggered on receipt for items with a Receipt-usage inspection-document assignment
 
 ## Rules References
 

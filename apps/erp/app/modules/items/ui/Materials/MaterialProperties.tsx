@@ -175,8 +175,7 @@ const MaterialProperties = ({ data }: MaterialPropertiesProps) => {
         | "finishId"
         | "materialTypeId"
         | "materialId"
-        | "mpn"
-        | "requiresInspection",
+        | "mpn",
       value: string | null
     ) => {
       const formData = new FormData();
@@ -727,27 +726,6 @@ const MaterialProperties = ({ data }: MaterialPropertiesProps) => {
             }}
           />
         </ValidatedForm>
-        {routeData?.materialSummary?.replenishmentSystem?.includes("Buy") && (
-          <ValidatedForm
-            defaultValues={{
-              requiresInspection:
-                routeData?.materialSummary?.requiresInspection ?? false
-            }}
-            validator={z.object({
-              requiresInspection: zfd.checkbox()
-            })}
-            className="w-full"
-          >
-            <Boolean
-              label={t`Requires Inspection`}
-              name="requiresInspection"
-              variant="small"
-              onChange={(value) => {
-                onUpdate("requiresInspection", value ? "on" : "off");
-              }}
-            />
-          </ValidatedForm>
-        )}
         {routeData?.materialSummary?.replenishmentSystem?.includes("Buy") && (
           <ValidatedForm
             defaultValues={{

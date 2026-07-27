@@ -1,6 +1,10 @@
 import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import type { ActionFunctionArgs } from "react-router";
+import type {
+  ActionFunctionArgs,
+  ClientActionFunctionArgs
+} from "react-router";
+import { invalidateInspectionDocuments } from "~/utils/react-query";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -28,4 +32,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   return { success: true };
+}
+
+export async function clientAction({ serverAction }: ClientActionFunctionArgs) {
+  invalidateInspectionDocuments();
+  return await serverAction();
 }

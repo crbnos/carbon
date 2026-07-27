@@ -69,7 +69,6 @@ export function useMaterialNavigation() {
     {
       name: t`Quality`,
       to: path.to.materialQuality(itemId),
-      isDisabled: !routeData?.materialSummary?.requiresInspection,
       role: ["employee"],
       permission: "quality",
       icon: LuClipboardCheck,

@@ -203,7 +203,6 @@ export async function createRevision(
       // only differences the user (and the CO diff) sees are ones they made.
       description: item.description,
       sourcingType: item.sourcingType,
-      requiresInspection: item.requiresInspection,
       thumbnailPath: item.thumbnailPath,
       mpn: item.mpn,
       active,
@@ -1062,6 +1061,7 @@ export async function getMaterialUsedIn(
     salesOrderLines,
     shipmentLines,
     supplierQuotes,
+    inspections,
     jobMaterialUsage
   ] = await Promise.all([
     client
@@ -1145,6 +1145,13 @@ export async function getMaterialUsedIn(
       .eq("itemId", itemId)
       .eq("companyId", companyId)
       .limit(100),
+    client
+      .from("inspection")
+      .select("id, documentReadableId:inspectionId")
+      .eq("itemId", itemId)
+      .eq("companyId", companyId)
+      .limit(100)
+      .order("createdAt", { ascending: false }),
     getJobMaterialUsageForItem(client, { itemId, companyId })
   ]);
 
@@ -1159,6 +1166,7 @@ export async function getMaterialUsedIn(
     salesOrderLines: salesOrderLines.data ?? [],
     shipmentLines: shipmentLines.data ?? [],
     supplierQuotes: supplierQuotes.data ?? [],
+    inspections: inspections.data ?? [],
     jobMaterialUsage
   };
 }
@@ -1803,6 +1811,7 @@ export async function getPartUsedIn(
     shipmentLines,
     supplierQuotes,
     assemblyInstructions,
+    inspections,
     jobMaterialUsage
   ] = await Promise.all([
     client
@@ -1911,6 +1920,13 @@ export async function getPartUsedIn(
       .eq("companyId", companyId)
       .limit(100)
       .order("createdAt", { ascending: false }),
+    client
+      .from("inspection")
+      .select("id, documentReadableId:inspectionId")
+      .eq("itemId", itemId)
+      .eq("companyId", companyId)
+      .limit(100)
+      .order("createdAt", { ascending: false }),
     getJobMaterialUsageForItem(client, { itemId, companyId })
   ]);
 
@@ -1928,6 +1944,7 @@ export async function getPartUsedIn(
     shipmentLines: shipmentLines.data ?? [],
     supplierQuotes: supplierQuotes.data ?? [],
     assemblyInstructions: assemblyInstructions.data ?? [],
+    inspections: inspections.data ?? [],
     jobMaterialUsage
   };
 }
@@ -5974,7 +5991,6 @@ export async function createChangeOrderDraftMethod(
       // user's edits, not gaps left by an incomplete copy.
       description: source.data.description,
       sourcingType: source.data.sourcingType,
-      requiresInspection: source.data.requiresInspection,
       thumbnailPath: source.data.thumbnailPath,
       mpn: source.data.mpn,
       active: false,
@@ -7201,7 +7217,7 @@ export type ChangeOrderDiff = {
 // separately by readItemAttributes. `active` is intentionally excluded — a CO
 // draft is created inactive until release, so it always differs (not a real edit).
 const ITEM_ATTRIBUTE_COLUMNS =
-  "name, description, unitOfMeasureCode, itemTrackingType, defaultMethodType, replenishmentSystem, sourcingType, requiresInspection, thumbnailPath, mpn";
+  "name, description, unitOfMeasureCode, itemTrackingType, defaultMethodType, replenishmentSystem, sourcingType, thumbnailPath, mpn";
 
 // Read one make method's materials + operations + per-operation children (real
 // method tables — the v2 substrate). Empty for a null makeMethodId (e.g. a Buy

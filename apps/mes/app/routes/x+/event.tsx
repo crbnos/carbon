@@ -30,6 +30,7 @@ export async function action({ request }: ActionFunctionArgs) {
     action: productionAction,
     timezone,
     trackedEntityId,
+    unitIndex,
     exclusive,
     ...d
   } = validation.data;
@@ -72,7 +73,8 @@ export async function action({ request }: ActionFunctionArgs) {
         companyId,
         createdBy: userId
       },
-      trackedEntityId
+      trackedEntityId,
+      unitIndex
     );
 
     if (startEvent.error) {

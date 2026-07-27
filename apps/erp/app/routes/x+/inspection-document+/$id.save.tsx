@@ -1,8 +1,14 @@
 import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import type { ActionFunctionArgs } from "react-router";
+import type {
+  ActionFunctionArgs,
+  ClientActionFunctionArgs
+} from "react-router";
 import { data } from "react-router";
-import { saveInspectionDocumentAtomic } from "~/modules/production";
+import {
+  saveInspectionDocumentAtomic,
+  updateInspectionDocumentSampling
+} from "~/modules/production";
 import {
   type InspectionSaveBalloonsGeometryPayload,
   type InspectionSaveFeaturesPayload,
@@ -12,11 +18,13 @@ import {
   translateLegacyInspectionSavePayload
 } from "~/modules/production/inspectionDocumentSave.server";
 import {
+  inspectionDocumentSamplingValidator,
   inspectionSaveAnchorsPayloadValidator,
   inspectionSaveBalloonsGeometryPayloadValidator,
   inspectionSaveBalloonsPayloadValidator,
   inspectionSaveFeaturesPayloadValidator
 } from "~/modules/production/production.models";
+import { invalidateInspectionDocuments } from "~/utils/react-query";
 
 function getErrorMessage(error: unknown, fallback: string) {
   if (error instanceof Error) return error.message;
@@ -46,6 +54,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const featuresRaw = formData.get("features") as string | null;
   const balloonsRaw = formData.get("balloons") as string | null;
   const anchorsRaw = formData.get("anchors") as string | null;
+  const samplingDefaultRaw = formData.get("samplingDefault") as string | null;
   const pageCountRaw = formData.get("pageCount");
   const defaultPageWidthRaw = formData.get("defaultPageWidth");
   const defaultPageHeightRaw = formData.get("defaultPageHeight");
@@ -200,6 +209,35 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
+  // The document's default sampling rule rides the same save (a single
+  // UPDATE; not part of the features/balloons atomic contract).
+  if (samplingDefaultRaw) {
+    try {
+      const json = JSON.parse(samplingDefaultRaw) as unknown;
+      const validated = inspectionDocumentSamplingValidator.safeParse(json);
+      if (!validated.success) {
+        throw new Error("Invalid sampling payload");
+      }
+      const samplingResult = await updateInspectionDocumentSampling(client, {
+        ...validated.data,
+        inspectionDocumentId: id,
+        companyId,
+        userId
+      });
+      if (samplingResult.error) {
+        return data(
+          { success: false, message: "Failed to save default sampling" },
+          { status: 400 }
+        );
+      }
+    } catch {
+      return data(
+        { success: false, message: "Invalid sampling payload" },
+        { status: 400 }
+      );
+    }
+  }
+
   return rpcResult.data as {
     success: boolean;
     featureIdMap: Record<string, string>;
@@ -208,4 +246,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
     anchors: unknown[];
     balloons: unknown[];
   };
+}
+
+export async function clientAction({ serverAction }: ClientActionFunctionArgs) {
+  invalidateInspectionDocuments();
+  return await serverAction();
 }

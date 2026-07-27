@@ -999,6 +999,9 @@ msgstr "すべてに適用"
 msgid "Applies to all work centers"
 msgstr "すべてのワークセンターに適用"
 
+msgid "Applies to features without their own rule, and to the lot when this plan drives an inspection."
+msgstr "独自のルールがない機能に適用され、このプランが検査を実施する場合、ロットに適用されます。"
+
 msgid "Apply"
 msgstr "適用"
 
@@ -1362,6 +1365,9 @@ msgstr "このゲージを削除してもよろしいですか？"
 msgid "Are you sure you want to delete this inspection plan?"
 msgstr "この検査計画を削除しますか？"
 
+msgid "Are you sure you want to delete this inspection plan? This cannot be undone."
+msgstr "このインスペクションプランを削除してもよろしいですか?この操作は取り消せません。"
+
 msgid "Are you sure you want to delete this issue workflow?"
 msgstr "このイシューワークフローを削除してもよろしいですか？"
 
@@ -1708,8 +1714,8 @@ msgstr "バランスが取れています"
 msgid "Balloon"
 msgstr "バルーン"
 
-msgid "Ballooned drawings with inspection characteristics."
-msgstr "検査特性付きの吹き出し図面。"
+msgid "Ballooned drawings with inspection features."
+msgstr "検査機能を持つ拡大図"
 
 msgid "Bank - Cash"
 msgstr "銀行-現金"
@@ -3669,6 +3675,9 @@ msgstr "デフォルト優先度"
 msgid "Default revenue GL account credited when a sales invoice posts."
 msgstr "売上請求書が転記されるときにクレジットされるデフォルト収益GLアカウント。"
 
+msgid "Default Sampling"
+msgstr "デフォルトサンプリング"
+
 msgid "Default shelf-life duration (days)"
 msgstr "デフォルト保管期間（日数）"
 
@@ -3710,9 +3719,6 @@ msgstr "最初に製造作業を定義します。"
 
 msgid "Define multi-level BOMs and Bill of Process (make methods)"
 msgstr "複数レベルのBOMおよびプロセス表(製造方法)を定義する"
-
-msgid "Defines how many tracked entities are inspected per lot, and how many failures are tolerated before the lot is rejected."
-msgstr "ロットごとに検査される追跡対象エンティティの数と、ロットが却下される前に許容される失敗の数を定義します。"
 
 msgid "Delete"
 msgstr "削除"
@@ -3806,6 +3812,9 @@ msgstr "グループを削除"
 
 msgid "Delete Holiday"
 msgstr "休日を削除"
+
+msgid "Delete Inspection Plan"
+msgstr "検査計画を削除"
 
 msgid "Delete Issue"
 msgstr "問題を削除"
@@ -5197,8 +5206,8 @@ msgstr "GL レポートをスライスするための追加タグ"
 msgid "Fail"
 msgstr "不合格"
 
-msgid "Failed characteristics"
-msgstr "失敗した特性"
+msgid "Failed features"
+msgstr "失敗した機能"
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create asset class: {0}"
@@ -6417,6 +6426,12 @@ msgstr "間接材料とサービス（デフォルト）"
 
 msgid "Infrastructure"
 msgstr "インフラストラクチャ"
+
+msgid "Inherit"
+msgstr "継承"
+
+msgid "Inherit document default"
+msgstr "ドキュメントのデフォルトを継承"
 
 msgid "Inherit From Materials"
 msgstr "材料から継承"
@@ -10373,9 +10388,6 @@ msgstr "対応が必要"
 msgid "Requires Adjustment"
 msgstr "調整が必要"
 
-msgid "Requires Inspection"
-msgstr "検査が必要"
-
 msgid "Requires Repair"
 msgstr "修理が必要"
 
@@ -10396,7 +10408,7 @@ msgstr "PINをリセット"
 msgid "Reset PIN for {0} {1}"
 msgstr "{0} {1}のPINをリセット"
 
-msgid "Reset View"
+msgid "Reset view"
 msgstr "ビューをリセット"
 
 msgid "Residual value"
@@ -10749,8 +10761,11 @@ msgstr "サンプル"
 msgid "Sample Size"
 msgstr "サンプルサイズ"
 
-msgid "Sampling Plan"
-msgstr "サンプリング計画"
+msgid "Sampling"
+msgstr "サンプリング"
+
+msgid "Sampling — Feature {featureLabel}"
+msgstr "サンプリング — 機能 {featureLabel}"
 
 msgid "Sampling Standard"
 msgstr "サンプリング標準"
@@ -12583,8 +12598,8 @@ msgstr "ロットは合格とマークされます。{fails}件のサンプル�
 msgid "The lot will still be rejected, but an NCR cannot be created until at least one Issue Type is configured."
 msgstr "ロットは引き続き却下されますが、少なくとも1つの問題タイプが設定されるまでNCRを作成することはできません。"
 
-msgid "The lot's per-characteristic sampling plan will be re-resolved from the selected document."
-msgstr "ロットの特性ごとのサンプリング計画は、選択されたドキュメントから再度解決されます。"
+msgid "The lot's per-feature sampling plan will be re-resolved from the selected document."
+msgstr "ロットの機能ごとのサンプリング計画は、選択されたドキュメントから再度解決されます。"
 
 msgid "The lowest amount this supplier will charge for this process, regardless of quantity; jobs below the breakeven volume still cost at least this much."
 msgstr "このサプライヤーがこのプロセスに対して請求する最低額（数量に関係なく）。損益分岐点以下のジョブもこの金額以上の費用がかかります。"
@@ -12952,6 +12967,9 @@ msgstr "この情報はドキュメントヘッダーで使用されます"
 
 msgid "This information will be visible to all users, so be careful what you share."
 msgstr "この情報はすべてのユーザーに表示されるため、共有する内容に注意してください。"
+
+msgid "this inspection plan"
+msgstr "この検査計画"
 
 msgid "This is a purchased item — it has no BoM/BoP; only its attributes and documents can change."
 msgstr "これは購入アイテムです。BoM/BoP はありません。属性と文書のみ変更できます。"

@@ -59,6 +59,7 @@ import {
   LuTarget,
   LuTimer,
   LuToggleLeft,
+  LuTriangleAlert,
   LuTruck,
   LuUser,
   LuUsers,
@@ -630,6 +631,10 @@ export const JournalEntrySourceTypeIcon = ({
       return <LuCreditCard className={className} />;
     case "Debit Memo":
       return <LuCreditCard className={className} />;
+    case "Non-Conformance":
+      return <LuTriangleAlert className={className} />;
+    case "Inbound Inspection":
+      return <LuClipboardCheck className={className} />;
   }
 
   return <LuSquare className={cn("text-muted-foreground", className)} />;

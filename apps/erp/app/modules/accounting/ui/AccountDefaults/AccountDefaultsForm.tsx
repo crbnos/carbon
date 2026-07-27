@@ -357,6 +357,12 @@ const AccountDefaultsForm = ({
             termId: "account-default-inventory-adjustment"
           },
           {
+            name: "scrapAccount",
+            label: t`Scrap / Cost of Quality`,
+            description: t`Write-off of stock scrapped or returned via inspection rejects and NCR dispositions`,
+            badgeType: "Expense"
+          },
+          {
             name: "materialVarianceAccount",
             label: t`Material Usage Variance`,
             description: t`Variance between actual and standard BOM component consumption`,

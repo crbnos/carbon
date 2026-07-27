@@ -216,8 +216,8 @@ export const themes = [
         "success-foreground": "0 0% 98%"
       },
       dark: {
-        background: "20 14.3% 6.1%",
-        foreground: "60 9.1% 97.8%",
+        background: "20 14.3% 3.1%",
+        foreground: "20 9.1% 97.8%",
         card: "20 14.3% 5%",
         "card-foreground": "60 9.1% 97.8%",
         popover: "20 14.3% 8.9%",
@@ -276,11 +276,11 @@ export const themes = [
         "success-foreground": "0 0% 98%"
       },
       dark: {
-        background: "20 14.3% 6.1%",
+        background: "61 14.3% 3.1%",
         foreground: "61 9.1% 97.8%",
-        card: "20 14.3% 5%",
+        card: "61 14.3% 5%",
         "card-foreground": "61 9.1% 97.8%",
-        popover: "20 14.3% 4.1%",
+        popover: "61 14.3% 4.1%",
         "popover-foreground": "61 9.1% 97.8%",
         primary: "61 100% 53.1%",
         "primary-foreground": "61 83.3% 14.1%",
@@ -338,7 +338,7 @@ export const themes = [
         "success-foreground": "0 0% 98%"
       },
       dark: {
-        background: "20 14.3% 6.1%",
+        background: "151 14.3% 3.1%",
         foreground: "0 0% 95%",
         popover: "151 0% 9%",
         "popover-foreground": "151 0% 95%",
@@ -398,7 +398,7 @@ export const themes = [
         "success-foreground": "0 0% 98%"
       },
       dark: {
-        background: "220 14.3% 6.1%",
+        background: "220 14.3% 3.1%",
         foreground: "220 0% 95%",
         popover: "216 0% 9%",
         "popover-foreground": "220 0% 95%",
@@ -458,7 +458,7 @@ export const themes = [
         "success-foreground": "0 0% 98%"
       },
       dark: {
-        background: "263 41.4 6.1%",
+        background: "263 41.4 3.1%",
         foreground: "263 20% 98%",
         card: "263 41.4 5%",
         "card-foreground": "210 20% 98%",

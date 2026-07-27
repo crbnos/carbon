@@ -1,4 +1,5 @@
 import type { Json } from "@carbon/database";
+import { PrintButton } from "@carbon/printing/ui";
 import {
   Accordion,
   AccordionContent,
@@ -56,6 +57,7 @@ import {
   LuCircle,
   LuCircleCheck,
   LuCircleDot,
+  LuCirclePlus,
   LuEllipsisVertical,
   LuExpand,
   LuEye,
@@ -69,7 +71,6 @@ import {
   LuListFilter,
   LuPause,
   LuPlay,
-  LuPlus,
   LuSkipForward,
   LuTimer,
   LuTrash,
@@ -776,7 +777,8 @@ export function AssemblyView({
   // Per-material issue state for the current step + unit, computed once so the
   // Parts cards and the completion gate agree. `issuedIsPerUnit`/`issuedOverride`
   // mirror the props the rows receive (serial parents report per-unit consumption
-  // for tracked parts; loose untracked parts are backflushed on the first step).
+  // for tracked parts; untracked parts are backflushed on the server when the
+  // step that owns them is recorded).
   const firstStep = steps[0];
   const visibleMaterialsWithState = visibleMaterials.map((m) => {
     const stepNumbers = ((m.jobOperationStepIds ?? []) as string[])
@@ -790,10 +792,22 @@ export function AssemblyView({
     // (attributed by the "Unit" stamp), so render it raw — no per-unit heuristic.
     const issuedIsPerUnit =
       (requiresSerialTracking || requiresBatchTracking) && isTrackedMat;
+    // Untracked parts are auto-issued server-side when their owning step is
+    // recorded for a unit — loose parts on the operation's FIRST step, and
+    // step-assigned parts on any of their assigned step(s). Mirror that so the
+    // row flips to issued the instant the owning step is done. Extra parts
+    // (perUnit 0, issued ad-hoc from the floor) are excluded so their raw
+    // quantityIssued drives the X/0 display instead.
+    const perUnit = m.quantity ?? 0;
+    const ownedStepDoneForUnit = isLoose
+      ? !!firstStep && isStepDone(firstStep)
+      : steps.some(
+          (s) => (m.jobOperationStepIds ?? []).includes(s.id) && isStepDone(s)
+        );
     const issuedOverride =
-      isLoose && firstStep
-        ? isStepDone(firstStep)
-          ? (m.quantity ?? 0)
+      !isTrackedMat && perUnit > 0
+        ? ownedStepDoneForUnit
+          ? perUnit
           : 0
         : undefined;
     const state = getIssuedForUnit(m, {
@@ -985,6 +999,7 @@ export function AssemblyView({
         fd.set("workCenterId", operation.workCenterId);
       const entityId = isTracked ? currentEntity?.id : undefined;
       if (entityId) fd.set("trackedEntityId", entityId);
+      fd.set("unitIndex", String(currentUnitIndex));
       laborFetcher.submit(fd, {
         method: "post",
         action: path.to.productionEvent
@@ -1120,13 +1135,23 @@ export function AssemblyView({
     navigate(url.pathname + url.search);
   }
 
+  // Serial parents mint one serial at a time — the next unit's tracked entity is only
+  // created when the current unit completes — so units beyond the created serials have
+  // no entity yet and can't be worked on (scanning tracked parts and completing the unit
+  // both require it). Cap navigation to the last unit that has a serial. Batch/untracked
+  // parents page purely by index, so every unit stays reachable.
+  const maxNavigableUnitIndex = navigatesByEntity
+    ? units.reduce((max, u) => (u.entity ? Math.max(max, u.index) : max), 0)
+    : unitCount - 1;
+
   // Navigate to a unit by its axis position (the prev/next pager). Serial units key
   // off their entity so the loader refetches that entity's materials; batch + untracked
   // units key off ?unit (batch shares one lot, untracked has no entity to scan —
   // FIX-3/FIX-4). The unit-change effect above then moves the step cursor to that unit's
-  // first incomplete step.
+  // first incomplete step. The clamp to maxNavigableUnitIndex blocks paging onto a unit
+  // whose serial hasn't been minted yet.
   function goToUnit(n: number) {
-    const clamped = Math.max(0, Math.min(n, Math.max(0, unitCount - 1)));
+    const clamped = Math.max(0, Math.min(n, maxNavigableUnitIndex));
     if (clamped === currentUnitIndex) return;
     const entity = units[clamped]?.entity;
     setSearchParams(
@@ -1220,6 +1245,7 @@ export function AssemblyView({
                 openEvent={openEventForWorkType(wt)}
                 workType={wt}
                 trackedEntityId={isTracked ? currentEntity?.id : undefined}
+                unitIndex={currentUnitIndex}
               />
             ))
           : null}
@@ -1331,7 +1357,7 @@ export function AssemblyView({
                 variant="ghost"
                 size="sm"
                 icon={<LuChevronRight />}
-                isDisabled={currentUnitIndex >= unitCount - 1}
+                isDisabled={currentUnitIndex >= maxNavigableUnitIndex}
                 onClick={() => goToUnit(currentUnitIndex + 1)}
               />
             </div>
@@ -1361,7 +1387,7 @@ export function AssemblyView({
                   {requiresBatchTracking ? "Batch" : "S/N"}
                 </Badge>
                 <span className="truncate font-mono text-[10px] text-muted-foreground">
-                  {currentEntity.readableId ?? currentEntity.id.slice(-8)}
+                  {currentEntity.readableId ?? currentEntity.id.slice(0, 8)}
                 </span>
               </div>
             ) : null}
@@ -1436,9 +1462,30 @@ export function AssemblyView({
             <UnitNavigator
               units={units}
               currentUnitIndex={currentUnitIndex}
+              maxNavigableIndex={maxNavigableUnitIndex}
               isTracked={isTracked}
               labelByEntity={requiresSerialTracking}
               trackingLabel={requiresBatchTracking ? "Batch" : "S/N"}
+              // Print the current unit's serial/lot label. Only tracked units have
+              // an entity to print; untracked builds have nothing to label.
+              headerAction={
+                isTracked && currentEntity?.id ? (
+                  <PrintButton
+                    isIcon
+                    variant="ghost"
+                    size="lg"
+                    sourceDocument="Entity"
+                    sourceDocumentId={currentEntity.id}
+                    locationId={locationId}
+                    context="workCenter"
+                    workCenterId={operation?.workCenterId ?? undefined}
+                    fileRoutes={{
+                      pdf: path.to.file.trackedEntityLabelPdf,
+                      zpl: path.to.file.trackedEntityLabelZpl
+                    }}
+                  />
+                ) : null
+              }
               unitHasBadResult={unitHasBadResult}
               unitIsRecorded={unitIsRecorded}
               onSelectUnit={goToUnit}
@@ -1692,8 +1739,8 @@ export function AssemblyView({
                   </p>
                 )}
 
-                {/* Slots = animated step playback (when synced) · this step's slides ·
-                    "Completed item" = the finished product. */}
+                {/* Slots = animated step playback (when synced) · this step's slides.
+                    The finished-product image is the fallback when a step has neither. */}
                 <div className="flex shrink-0 items-center gap-2">
                   {playbackAvailable && (
                     <button
@@ -1747,27 +1794,6 @@ export function AssemblyView({
                       </button>
                     );
                   })}
-                  <div className="flex-1" />
-                  <Button
-                    variant={selected === "finished" ? "primary" : "outline"}
-                    size="lg"
-                    className="gap-2"
-                    isDisabled={!assemblyImage}
-                    onClick={() => setSelected("finished")}
-                  >
-                    {assemblyImage ? (
-                      <span className="flex h-7 w-9 items-center justify-center overflow-hidden rounded bg-muted/40">
-                        <img
-                          src={assemblyImage}
-                          alt=""
-                          className="h-full w-full object-cover"
-                        />
-                      </span>
-                    ) : (
-                      <LuImage className="size-4" />
-                    )}
-                    Completed item
-                  </Button>
                 </div>
               </div>
 
@@ -1827,8 +1853,8 @@ export function AssemblyView({
                 <IconButton
                   aria-label="Issue material"
                   variant="ghost"
-                  size="sm"
-                  icon={<LuPlus />}
+                  size="lg"
+                  icon={<LuCirclePlus />}
                   onClick={() => {
                     // Clear any per-row selection so the modal opens in
                     // "pick any item" mode → issue a part not on the BOM.
@@ -2009,7 +2035,10 @@ export function AssemblyView({
           locationId={locationId}
           workCenterId={operation?.workCenterId ?? undefined}
           material={selectedMaterial ?? undefined}
-          parentId={currentEntity?.id ?? ""}
+          // Untracked parents have no unit-axis entity, but tracked child
+          // consumes still need a genealogy parent — fall back to the make
+          // method's seed entity, same as the operation view.
+          parentId={currentEntity?.id ?? trackedEntities[0]?.id ?? ""}
           parentIdIsSerialized={requiresSerialTracking}
           // Stamp the current step + 1-based unit onto the consume so issued
           // quantities can be attributed per-unit even for a batch parent (where
@@ -2250,6 +2279,7 @@ export function AssemblyView({
           workCenterId={operation.workCenterId ?? undefined}
           openEvent={openEventForWorkType(headerWorkTypes[0])}
           trackedEntityId={isTracked ? currentEntity?.id : undefined}
+          unitIndex={currentUnitIndex}
         />
       )}
     </div>
@@ -2266,7 +2296,8 @@ function AutoTimer({
   workType,
   workCenterId,
   openEvent,
-  trackedEntityId
+  trackedEntityId,
+  unitIndex
 }: {
   operationId: string;
   enabled: boolean;
@@ -2274,6 +2305,7 @@ function AutoTimer({
   workCenterId?: string;
   openEvent: { id: string; startTime: string } | null;
   trackedEntityId?: string;
+  unitIndex?: number;
 }) {
   const fetcher = useFetcher();
   const startedRef = useRef(false);
@@ -2295,6 +2327,7 @@ function AutoTimer({
     fd.set("exclusive", "true");
     if (workCenterId) fd.set("workCenterId", workCenterId);
     if (trackedEntityId) fd.set("trackedEntityId", trackedEntityId);
+    if (typeof unitIndex === "number") fd.set("unitIndex", String(unitIndex));
     fetcher.submit(fd, { method: "post", action: path.to.productionEvent });
   }, [enabled]);
 
@@ -2326,12 +2359,14 @@ function TimerControl({
   operation,
   openEvent,
   workType,
-  trackedEntityId
+  trackedEntityId,
+  unitIndex
 }: {
   operation: Operation;
   openEvent: { id: string; startTime: string } | null;
   workType: "Setup" | "Labor" | "Machine";
   trackedEntityId?: string;
+  unitIndex?: number;
 }) {
   const fetcher = useFetcher();
 
@@ -2377,6 +2412,9 @@ function TimerControl({
       ) : null}
       {trackedEntityId ? (
         <input type="hidden" name="trackedEntityId" value={trackedEntityId} />
+      ) : null}
+      {typeof unitIndex === "number" ? (
+        <input type="hidden" name="unitIndex" value={unitIndex} />
       ) : null}
       <button
         type="submit"
@@ -2764,9 +2802,11 @@ function StepCompleteAction({
 function UnitNavigator({
   units,
   currentUnitIndex,
+  maxNavigableIndex,
   isTracked,
   labelByEntity,
   trackingLabel,
+  headerAction,
   unitHasBadResult,
   unitIsRecorded,
   onSelectUnit
@@ -2776,19 +2816,26 @@ function UnitNavigator({
     entity: { id: string; readableId?: string | null } | null;
   }[];
   currentUnitIndex: number;
+  // Highest unit index the operator may open. For a serial parent this is the last
+  // unit whose serial has been minted; beyond it the unit has no entity and can't
+  // be worked on, so its row is disabled.
+  maxNavigableIndex: number;
   isTracked: boolean;
   labelByEntity: boolean;
   trackingLabel: string;
+  // Optional control in the section header, left of the pager (e.g. print label).
+  headerAction?: React.ReactNode;
   unitHasBadResult: (index: number) => boolean;
   unitIsRecorded: (index: number) => boolean;
   onSelectUnit: (index: number) => void;
 }) {
-  const unitCount = units.length;
   const isEntityLabel = (u: (typeof units)[number]) =>
     labelByEntity && !!u.entity;
+  const isNavigable = (u: (typeof units)[number]) =>
+    u.index <= maxNavigableIndex;
   const labelFor = (u: (typeof units)[number]) =>
     labelByEntity && u.entity
-      ? (u.entity.readableId ?? u.entity.id.slice(-8))
+      ? (u.entity.readableId ?? u.entity.id.slice(0, 8))
       : `Unit ${u.index + 1}`;
 
   // Keep the selected unit visible as the operator pages/jumps between units.
@@ -2808,6 +2855,7 @@ function UnitNavigator({
           {isTracked ? trackingLabel : "Units"}
         </p>
         <div className="flex items-center gap-0.5">
+          {headerAction}
           <IconButton
             aria-label="Previous unit"
             variant="ghost"
@@ -2821,7 +2869,7 @@ function UnitNavigator({
             variant="ghost"
             size="lg"
             icon={<LuChevronRight />}
-            isDisabled={currentUnitIndex >= unitCount - 1}
+            isDisabled={currentUnitIndex >= maxNavigableIndex}
             onClick={() => onSelectUnit(currentUnitIndex + 1)}
           />
         </div>
@@ -2835,18 +2883,25 @@ function UnitNavigator({
           const isCurrent = u.index === currentUnitIndex;
           const bad = unitHasBadResult(u.index);
           const recorded = unitIsRecorded(u.index);
+          // A serial unit with no minted serial yet can't be opened (nothing to
+          // scan or complete against). Show it as a disabled placeholder.
+          const navigable = isNavigable(u);
           return (
             <button
               key={u.index}
               type="button"
               ref={isCurrent ? currentRef : undefined}
               aria-pressed={isCurrent}
+              disabled={!navigable}
+              title={navigable ? undefined : "Not started yet"}
               onClick={() => onSelectUnit(u.index)}
               className={cn(
                 "flex w-full items-center gap-2 px-3 py-2 text-left text-xs transition-colors",
                 isCurrent
                   ? "bg-accent font-semibold text-foreground"
-                  : "text-muted-foreground hover:bg-muted/60",
+                  : navigable
+                    ? "text-muted-foreground hover:bg-muted/60"
+                    : "cursor-not-allowed text-muted-foreground/40",
                 bad && "text-red-500"
               )}
             >

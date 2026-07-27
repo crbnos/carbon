@@ -999,6 +999,9 @@ msgstr "S'applique à tous"
 msgid "Applies to all work centers"
 msgstr "S'applique à tous les centres de travail"
 
+msgid "Applies to features without their own rule, and to the lot when this plan drives an inspection."
+msgstr "S'applique aux fonctionnalités sans leur propre règle, et au lot lorsque ce plan détermine une inspection."
+
 msgid "Apply"
 msgstr "Appliquer"
 
@@ -1362,6 +1365,9 @@ msgstr "Êtes-vous sûr de vouloir supprimer ce jauge ?"
 msgid "Are you sure you want to delete this inspection plan?"
 msgstr "Êtes-vous sûr de vouloir supprimer ce plan d'inspection ?"
 
+msgid "Are you sure you want to delete this inspection plan? This cannot be undone."
+msgstr "Êtes-vous sûr de vouloir supprimer ce plan d'inspection ? Cette action ne peut pas être annulée."
+
 msgid "Are you sure you want to delete this issue workflow?"
 msgstr "Êtes-vous sûr de vouloir supprimer ce flux de travail de problème ?"
 
@@ -1708,8 +1714,8 @@ msgstr "Équilibré"
 msgid "Balloon"
 msgstr "Ballon"
 
-msgid "Ballooned drawings with inspection characteristics."
-msgstr "Dessins avec bulles et caractéristiques d'inspection."
+msgid "Ballooned drawings with inspection features."
+msgstr "Dessins avec annotations et caractéristiques d'inspection."
 
 msgid "Bank - Cash"
 msgstr "Banque - Espèces"
@@ -3669,6 +3675,9 @@ msgstr "Priorité par défaut"
 msgid "Default revenue GL account credited when a sales invoice posts."
 msgstr "Compte GL de revenu par défaut crédité lors de l'enregistrement d'une facture de vente."
 
+msgid "Default Sampling"
+msgstr "Échantillonnage par défaut"
+
 msgid "Default shelf-life duration (days)"
 msgstr "Durée de vie par défaut (jours)"
 
@@ -3710,9 +3719,6 @@ msgstr "Définissez d'abord une opération de fabrication."
 
 msgid "Define multi-level BOMs and Bill of Process (make methods)"
 msgstr "Définir les nomenclatures multi-niveaux et la gamme de fabrication (méthodes de fabrication)"
-
-msgid "Defines how many tracked entities are inspected per lot, and how many failures are tolerated before the lot is rejected."
-msgstr "Définit le nombre d'entités suivies inspectées par lot et le nombre de défaillances tolérées avant le rejet du lot."
 
 msgid "Delete"
 msgstr "Supprimer"
@@ -3806,6 +3812,9 @@ msgstr "Supprimer le groupe"
 
 msgid "Delete Holiday"
 msgstr "Supprimer le jour férié"
+
+msgid "Delete Inspection Plan"
+msgstr "Supprimer le plan d'inspection"
 
 msgid "Delete Issue"
 msgstr "Supprimer le problème"
@@ -5197,7 +5206,7 @@ msgstr "Balises supplémentaires pour segmenter vos rapports GL"
 msgid "Fail"
 msgstr "Échouer"
 
-msgid "Failed characteristics"
+msgid "Failed features"
 msgstr "Caractéristiques échouées"
 
 #. placeholder {0}: fetcher.data.error.message
@@ -6417,6 +6426,12 @@ msgstr "Matériaux Indirects et Services (par défaut)"
 
 msgid "Infrastructure"
 msgstr "Infrastructure"
+
+msgid "Inherit"
+msgstr "Hériter"
+
+msgid "Inherit document default"
+msgstr "Hériter du paramètre par défaut du document"
 
 msgid "Inherit From Materials"
 msgstr "Hériter des matériaux"
@@ -10373,9 +10388,6 @@ msgstr "Nécessite une action"
 msgid "Requires Adjustment"
 msgstr "Nécessite un ajustement"
 
-msgid "Requires Inspection"
-msgstr "Nécessite une inspection"
-
 msgid "Requires Repair"
 msgstr "Nécessite une réparation"
 
@@ -10396,7 +10408,7 @@ msgstr "Réinitialiser le PIN"
 msgid "Reset PIN for {0} {1}"
 msgstr "Réinitialiser le PIN pour {0} {1}"
 
-msgid "Reset View"
+msgid "Reset view"
 msgstr "Réinitialiser la vue"
 
 msgid "Residual value"
@@ -10749,8 +10761,11 @@ msgstr "Échantillon"
 msgid "Sample Size"
 msgstr "Taille de l'échantillon"
 
-msgid "Sampling Plan"
-msgstr "Plan d'échantillonnage"
+msgid "Sampling"
+msgstr "Échantillonnage"
+
+msgid "Sampling — Feature {featureLabel}"
+msgstr "Échantillonnage — Fonctionnalité {featureLabel}"
 
 msgid "Sampling Standard"
 msgstr "Norme d'échantillonnage"
@@ -12583,8 +12598,8 @@ msgstr "Le lot sera marqué comme Accepté. {fails} défaut(s) échantillonné(s
 msgid "The lot will still be rejected, but an NCR cannot be created until at least one Issue Type is configured."
 msgstr "Le lot sera toujours rejeté, mais un NCR ne peut pas être créé tant qu'au moins un type de problème n'est pas configuré."
 
-msgid "The lot's per-characteristic sampling plan will be re-resolved from the selected document."
-msgstr "Le plan d'échantillonnage par caractéristique du lot sera redéfini à partir du document sélectionné."
+msgid "The lot's per-feature sampling plan will be re-resolved from the selected document."
+msgstr "Le plan d'échantillonnage par caractéristique du lot sera re-résolu à partir du document sélectionné."
 
 msgid "The lowest amount this supplier will charge for this process, regardless of quantity; jobs below the breakeven volume still cost at least this much."
 msgstr "Le montant minimum que ce fournisseur facturera pour ce processus, quel que soit la quantité; les travaux en dessous du volume de seuil de rentabilité coûtent toujours au moins ce montant."
@@ -12952,6 +12967,9 @@ msgstr "Ces informations seront utilisées dans les en-têtes de document"
 
 msgid "This information will be visible to all users, so be careful what you share."
 msgstr "Ces informations seront visibles par tous les utilisateurs, soyez donc prudent dans ce que vous partagez."
+
+msgid "this inspection plan"
+msgstr "ce plan d'inspection"
 
 msgid "This is a purchased item — it has no BoM/BoP; only its attributes and documents can change."
 msgstr "Ceci est un article acheté — il n'a pas de BoM/BoP ; seuls ses attributs et documents peuvent changer."

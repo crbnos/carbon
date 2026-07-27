@@ -3,7 +3,6 @@ import {
   AlertDescription,
   AlertTitle,
   Badge,
-  BarProgress,
   Button,
   ClientOnly,
   HStack,
@@ -37,15 +36,12 @@ import {
 import {
   LuChevronDown,
   LuChevronUp,
-  LuCircleCheck,
-  LuCircleX,
   LuFileText,
   LuScan,
   LuShieldAlert,
   LuTriangleAlert
 } from "react-icons/lu";
 import { useFetcher } from "react-router";
-import { EmployeeAvatar } from "~/components";
 import { Confirm } from "~/components/Modals";
 import { usePermissions } from "~/hooks";
 import type {
@@ -69,7 +65,7 @@ import ScanInspectionSample from "./ScanInspectionSample";
 const InspectionDrawingPane = lazy(() => import("./InspectionDrawingPane"));
 
 // Vertical-stack sizing, mirrored from InspectionDocumentEditor: the PDF pane
-// keeps a pinned height while the characteristics grid is expanded; a draggable
+// keeps a pinned height while the features grid is expanded; a draggable
 // splitter trades space between them.
 const STACK_SPLITTER_H = 8;
 const MIN_PDF_PANE_PX = 160;
@@ -113,10 +109,11 @@ export type InspectionViewProps = {
   enforceFourEyes: boolean;
 };
 
-// Full-screen inbound inspection execution view. Document-driven lots show the
-// ballooned drawing beside the features x samples measurement grid; lots with
-// no assigned document keep the manual pass/fail sample flow. Reusable as a
-// data-prop component (AssemblyView pattern) so MES can consume it later.
+// Full-screen inbound inspection execution view. One UI for every lot: the
+// measurement grid, with a ballooned drawing above it when the lot has a PDF and
+// a single "Overall result" pass/fail row when the document resolved no
+// features. Serial lots build their sample columns by scanning tracked entities.
+// Reusable as a data-prop component (AssemblyView pattern) so MES can consume it.
 const InspectionView = ({
   inspection,
   sourceDocumentReadableId,
@@ -145,12 +142,16 @@ const InspectionView = ({
     () => features.filter((f) => f.inspectionFeature != null),
     [features]
   );
-  const hasDocument = pdfUrl != null && liveFeatures.length > 0;
+  // The measurement grid is the single execution UI. A drawing pane shows when
+  // the lot has an assigned PDF; per-feature feature rows show when the
+  // document resolved features, otherwise the grid collapses to one pass/fail
+  // "Overall result" row.
+  const showDrawing = pdfUrl != null;
+  const hasFeatures = liveFeatures.length > 0;
 
   const scannerDisclosure = useDisclosure();
   const rejectConfirmDisclosure = useDisclosure();
   const acceptConfirmDisclosure = useDisclosure();
-  const partialConfirmDisclosure = useDisclosure();
   const documentSwitchDisclosure = useDisclosure();
 
   const [activeFeatureId, setActiveFeatureId] = useState<string | null>(null);
@@ -338,16 +339,30 @@ const InspectionView = ({
     inspection.dispositionedAt != null &&
     (inspection.status === "Passed" || inspection.status === "Failed");
 
-  const maxSampleSize = hasDocument
+  // Serial lots build their sample columns by scanning tracked entities. The
+  // header "Add Sample" button stays primary until the plan's sample size is
+  // covered; a fresh serial lot auto-opens the scanner so the first scan is one
+  // tap away.
+  const allSamplesLoaded = samples.length >= inspection.sampleSize;
+  const hasAutoOpenedScanRef = useRef(false);
+  useEffect(() => {
+    if (hasAutoOpenedScanRef.current) return;
+    if (isSerial && samples.length === 0 && !lotClosed && canUpdate) {
+      hasAutoOpenedScanRef.current = true;
+      scannerDisclosure.onOpen();
+    }
+  }, [isSerial, samples.length, lotClosed, canUpdate, scannerDisclosure]);
+
+  const maxSampleSize = hasFeatures
     ? Math.max(1, ...liveFeatures.map((f) => f.sampleSize))
     : inspection.sampleSize;
 
-  // Gating. Document-driven lots gate per characteristic (mirrors the
-  // server-side disposition guards); fallback lots keep the lot-level rules.
+  // Gating. Feature-driven lots gate per feature (mirrors the
+  // server-side disposition guards); lots without features gate at the lot
+  // level on the "Overall result" pass/fail counts.
   let canAccept: boolean;
   let canReject: boolean;
-  let canPartial: boolean;
-  if (hasDocument) {
+  if (hasFeatures) {
     const allFeaturesSatisfied = liveFeatures.every((feature) => {
       const counts = featureCounts.get(feature.inspectionFeatureId) ?? {
         recorded: 0,
@@ -362,23 +377,18 @@ const InspectionView = ({
       const counts = featureCounts.get(feature.inspectionFeatureId);
       return counts != null && counts.failed >= feature.rejectionNumber;
     });
-    const anyRecorded = [...effectiveMeasurements.values()].some(
-      (m) => m.status !== "Pending"
-    );
     canAccept = !lotClosed && allFeaturesSatisfied;
     canReject = !lotClosed && (anyFeatureRejectable || fails > 0);
-    canPartial = !lotClosed && anyRecorded;
   } else {
     canAccept =
       !lotClosed &&
       inspected >= inspection.sampleSize &&
       fails <= inspection.acceptanceNumber;
     canReject = !lotClosed && fails > inspection.acceptanceNumber;
-    canPartial = !lotClosed && inspected > 0;
   }
 
   const failedFeatureSummary = useMemo<FailedFeatureSummary[]>(() => {
-    if (!hasDocument) return [];
+    if (!hasFeatures) return [];
     return liveFeatures
       .map((lotFeature) => {
         const feature = lotFeature.inspectionFeature!;
@@ -401,7 +411,7 @@ const InspectionView = ({
         return { label: feature.label, spec, failedValues };
       })
       .filter(Boolean) as FailedFeatureSummary[];
-  }, [hasDocument, liveFeatures, effectiveMeasurements]);
+  }, [hasFeatures, liveFeatures, effectiveMeasurements]);
 
   const failedTrackedEntityIds = samples
     .filter((s) => (sampleStatuses.get(s.id) ?? s.status) === "Failed")
@@ -486,13 +496,16 @@ const InspectionView = ({
               <Trans>Change Document</Trans>
             </Button>
           )}
-          <Button
-            variant="secondary"
-            onClick={partialConfirmDisclosure.onOpen}
-            isDisabled={!canUpdate || !canPartial}
-          >
-            <Trans>Partial</Trans>
-          </Button>
+          {isSerial && !lotClosed && (
+            <Button
+              variant={allSamplesLoaded ? "secondary" : "primary"}
+              leftIcon={<LuScan />}
+              onClick={scannerDisclosure.onOpen}
+              isDisabled={!canUpdate}
+            >
+              <Trans>Add Sample</Trans>
+            </Button>
+          )}
           <Button
             variant="destructive"
             onClick={rejectConfirmDisclosure.onOpen}
@@ -527,7 +540,7 @@ const InspectionView = ({
       )}
 
       {/* ── Body ── */}
-      {hasDocument ? (
+      {showDrawing ? (
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden px-4 pb-4 pt-2">
           <div
             ref={stackRef}
@@ -612,9 +625,11 @@ const InspectionView = ({
                   samples={samples}
                   measurements={measurements}
                   maxSampleSize={maxSampleSize}
+                  lotSize={inspection.lotSize}
+                  lotAcceptanceNumber={inspection.acceptanceNumber}
+                  lotRejectionNumber={inspection.rejectionNumber}
                   activeFeatureId={activeFeatureId}
                   onActiveFeatureChange={setActiveFeatureId}
-                  onAddSample={scannerDisclosure.onOpen}
                   onMeasurementSaved={onMeasurementSaved}
                   primaryAction={
                     <IconButton
@@ -643,107 +658,29 @@ const InspectionView = ({
           </div>
         </div>
       ) : (
-        <div className="min-h-0 flex-1 overflow-auto p-4">
-          <VStack spacing={4} className="mx-auto w-full max-w-4xl">
-            <BarProgress
-              label={t`Progress`}
-              value={`${inspected} / ${inspection.sampleSize} · ${fails} ${fails === 1 ? "failure" : "failures"} · Ac ${inspection.acceptanceNumber}`}
-              progress={inspected}
-              max={Math.max(1, inspection.sampleSize)}
-              activeClassName={
-                fails > inspection.acceptanceNumber
-                  ? "bg-red-500"
-                  : "bg-emerald-500"
-              }
-            />
-
-            {!lotClosed && canUpdate && (
-              <Button
-                leftIcon={<LuScan />}
-                onClick={scannerDisclosure.onOpen}
-                className="self-start"
-              >
-                <Trans>Inspect Next Item</Trans>
-              </Button>
-            )}
-
-            <div className="w-full overflow-hidden rounded-md border">
-              <table className="w-full text-sm">
-                <thead className="bg-muted text-xs text-muted-foreground">
-                  <tr>
-                    <th className="px-3 py-2 text-left font-medium">
-                      <Trans>Entity</Trans>
-                    </th>
-                    <th className="px-3 py-2 text-left font-medium">
-                      <Trans>Result</Trans>
-                    </th>
-                    <th className="px-3 py-2 text-left font-medium">
-                      <Trans>Inspector</Trans>
-                    </th>
-                    <th className="px-3 py-2 text-left font-medium">
-                      <Trans>Notes</Trans>
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {samples.length === 0 && (
-                    <tr>
-                      <td
-                        colSpan={4}
-                        className="px-3 py-6 text-center text-muted-foreground"
-                      >
-                        <Trans>No samples inspected yet.</Trans>
-                      </td>
-                    </tr>
-                  )}
-                  {samples.map((s, idx) => {
-                    const readable = s.trackedEntity?.readableId ?? null;
-                    return (
-                      <tr key={s.id} className="border-t">
-                        <td className="px-3 py-2">
-                          <div className="flex flex-col">
-                            <span className="font-mono text-sm">
-                              {readable ??
-                                s.trackedEntityId ??
-                                t`Sample ${idx + 1}`}
-                            </span>
-                            {readable && (
-                              <span className="text-xs text-muted-foreground">
-                                {s.trackedEntityId}
-                              </span>
-                            )}
-                          </div>
-                        </td>
-                        <td className="px-3 py-2">
-                          {s.status === "Passed" ? (
-                            <Badge variant="green">
-                              <LuCircleCheck className="mr-1 size-3" /> Passed
-                            </Badge>
-                          ) : s.status === "Failed" ? (
-                            <Badge variant="red">
-                              <LuCircleX className="mr-1 size-3" /> Failed
-                            </Badge>
-                          ) : (
-                            <Badge variant="secondary">{s.status}</Badge>
-                          )}
-                        </td>
-                        <td className="px-3 py-2">
-                          {s.inspectedBy ? (
-                            <EmployeeAvatar employeeId={s.inspectedBy} />
-                          ) : (
-                            ""
-                          )}
-                        </td>
-                        <td className="px-3 py-2 text-muted-foreground">
-                          {s.notes ?? ""}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+        // No drawing: the grid takes the full body. Feature-driven lots still
+        // render their features; lots without a document collapse to the
+        // single "Overall result" row inside the same grid.
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden px-4 pb-4 pt-2">
+          <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-lg bg-card">
+            <div className="min-h-0 flex-1 overflow-auto">
+              <InspectionMeasurementGrid
+                inspectionId={inspection.id}
+                isReadOnly={!canUpdate || lotClosed}
+                isSerial={isSerial}
+                features={features}
+                samples={samples}
+                measurements={measurements}
+                maxSampleSize={maxSampleSize}
+                lotSize={inspection.lotSize}
+                lotAcceptanceNumber={inspection.acceptanceNumber}
+                lotRejectionNumber={inspection.rejectionNumber}
+                activeFeatureId={activeFeatureId}
+                onActiveFeatureChange={setActiveFeatureId}
+                onMeasurementSaved={onMeasurementSaved}
+              />
             </div>
-          </VStack>
+          </div>
         </div>
       )}
 
@@ -757,7 +694,6 @@ const InspectionView = ({
           fails={fails}
           acceptanceNumber={inspection.acceptanceNumber}
           onClose={scannerDisclosure.onClose}
-          mode={hasDocument ? "identify" : "record"}
         />
       )}
 
@@ -773,21 +709,6 @@ const InspectionView = ({
           confirmText={t`Accept Lot`}
           onCancel={acceptConfirmDisclosure.onClose}
           onSubmit={acceptConfirmDisclosure.onClose}
-        />
-      )}
-
-      {partialConfirmDisclosure.isOpen && (
-        <Confirm
-          action={path.to.inspectionPartial(inspection.id)}
-          title={t`Mark lot as partial?`}
-          text={
-            isSerial
-              ? t`Un-sampled entities will remain On Hold so you can keep inspecting and disposition later. Sampled outcomes are preserved.`
-              : t`The lot stays open so you can keep inspecting and disposition later. Sampled outcomes are preserved.`
-          }
-          confirmText={t`Mark Partial`}
-          onCancel={partialConfirmDisclosure.onClose}
-          onSubmit={partialConfirmDisclosure.onClose}
         />
       )}
 
@@ -873,8 +794,8 @@ function DocumentSwitchModal({
           <VStack spacing={2}>
             <p className="text-sm text-muted-foreground">
               <Trans>
-                The lot's per-characteristic sampling plan will be re-resolved
-                from the selected document.
+                The lot's per-feature sampling plan will be re-resolved from the
+                selected document.
               </Trans>
             </p>
             <Select value={documentId} onValueChange={setDocumentId}>

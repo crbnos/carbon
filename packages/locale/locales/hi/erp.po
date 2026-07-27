@@ -999,6 +999,9 @@ msgstr "सभी पर लागू होता है"
 msgid "Applies to all work centers"
 msgstr "सभी कार्य केंद्रों पर लागू होता है"
 
+msgid "Applies to features without their own rule, and to the lot when this plan drives an inspection."
+msgstr "उन सुविधाओं पर लागू होता है जिनके अपने नियम नहीं हैं, और जब यह योजना निरीक्षण चलाती है तो लॉट पर लागू होता है।"
+
 msgid "Apply"
 msgstr "लागू करें"
 
@@ -1362,6 +1365,9 @@ msgstr "क्या आप सुनिश्चित हैं कि आप 
 msgid "Are you sure you want to delete this inspection plan?"
 msgstr "क्या आप निश्चित हैं कि आप इस निरीक्षण योजना को हटाना चाहते हैं?"
 
+msgid "Are you sure you want to delete this inspection plan? This cannot be undone."
+msgstr "क्या आप सुनिश्चित हैं कि आप इस निरीक्षण योजना को हटाना चाहते हैं? यह पूर्ववत नहीं किया जा सकता।"
+
 msgid "Are you sure you want to delete this issue workflow?"
 msgstr "क्या आप सुनिश्चित हैं कि आप इस समस्या वर्कफ़्लो को हटाना चाहते हैं?"
 
@@ -1708,8 +1714,8 @@ msgstr "संतुलित"
 msgid "Balloon"
 msgstr "गुब्बारा"
 
-msgid "Ballooned drawings with inspection characteristics."
-msgstr "निरीक्षण विशेषताओं के साथ गुब्बारे खींचे गए।"
+msgid "Ballooned drawings with inspection features."
+msgstr "निरीक्षण विशेषताओं वाले विस्तृत चित्र।"
 
 msgid "Bank - Cash"
 msgstr "बैंक - नकद"
@@ -3669,6 +3675,9 @@ msgstr "डिफ़ॉल्ट प्राथमिकता"
 msgid "Default revenue GL account credited when a sales invoice posts."
 msgstr "डिफ़ॉल्ट राजस्व GL खाता जब बिक्री चालान पोस्ट किया जाता है तो क्रेडिट किया जाता है।"
 
+msgid "Default Sampling"
+msgstr "डिफ़ॉल्ट नमूनाकरण"
+
 msgid "Default shelf-life duration (days)"
 msgstr "डिफ़ॉल्ट शेल्फ-लाइफ अवधि (दिन)"
 
@@ -3710,9 +3719,6 @@ msgstr "पहले एक विनिर्माण ऑपरेशन क�
 
 msgid "Define multi-level BOMs and Bill of Process (make methods)"
 msgstr "बहु-स्तरीय BOMs और Bill of Process (make methods) को परिभाषित करें"
-
-msgid "Defines how many tracked entities are inspected per lot, and how many failures are tolerated before the lot is rejected."
-msgstr "परिभाषित करता है कि प्रति लॉट कितनी ट्रैक की गई संस्थाओं का निरीक्षण किया जाता है, और लॉट को अस्वीकार करने से पहले कितनी विफलताओं को सहन किया जाता है।"
 
 msgid "Delete"
 msgstr "हटाएं"
@@ -3806,6 +3812,9 @@ msgstr "समूह हटाएं"
 
 msgid "Delete Holiday"
 msgstr "छुट्टी हटाएं"
+
+msgid "Delete Inspection Plan"
+msgstr "निरीक्षण योजना हटाएं"
 
 msgid "Delete Issue"
 msgstr "समस्या हटाएं"
@@ -5197,8 +5206,8 @@ msgstr "आपकी GL रिपोर्टिंग को स्लाइस
 msgid "Fail"
 msgstr "विफल"
 
-msgid "Failed characteristics"
-msgstr "विफल विशेषताएं"
+msgid "Failed features"
+msgstr "विफल विशेषताएँ"
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create asset class: {0}"
@@ -6417,6 +6426,12 @@ msgstr "अप्रत्यक्ष सामग्री और सेवा
 
 msgid "Infrastructure"
 msgstr "बुनियादी ढांचा"
+
+msgid "Inherit"
+msgstr "विरासत"
+
+msgid "Inherit document default"
+msgstr "दस्तावेज़ डिफ़ॉल्ट को विरासत में लें"
 
 msgid "Inherit From Materials"
 msgstr "सामग्री से विरासत में प्राप्त करें"
@@ -10373,9 +10388,6 @@ msgstr "कार्रवाई आवश्यक है"
 msgid "Requires Adjustment"
 msgstr "समायोजन आवश्यक है"
 
-msgid "Requires Inspection"
-msgstr "निरीक्षण आवश्यक है"
-
 msgid "Requires Repair"
 msgstr "मरम्मत की आवश्यकता है"
 
@@ -10396,7 +10408,7 @@ msgstr "PIN रीसेट करें"
 msgid "Reset PIN for {0} {1}"
 msgstr "{0} {1} के लिए PIN रीसेट करें"
 
-msgid "Reset View"
+msgid "Reset view"
 msgstr "दृश्य रीसेट करें"
 
 msgid "Residual value"
@@ -10749,8 +10761,11 @@ msgstr "नमूना"
 msgid "Sample Size"
 msgstr "नमूना आकार"
 
-msgid "Sampling Plan"
-msgstr "सैंपलिंग प्लान"
+msgid "Sampling"
+msgstr "नमूनाकरण"
+
+msgid "Sampling — Feature {featureLabel}"
+msgstr "नमूनाकरण — सुविधा {featureLabel}"
 
 msgid "Sampling Standard"
 msgstr "नमूना मानक"
@@ -12583,8 +12598,8 @@ msgstr "लॉट को पास के रूप में चिह्नि
 msgid "The lot will still be rejected, but an NCR cannot be created until at least one Issue Type is configured."
 msgstr "लॉट अभी भी अस्वीकृत कर दिया जाएगा, लेकिन कम से कम एक Issue Type कॉन्फ़िगर होने तक NCR नहीं बनाया जा सकता।"
 
-msgid "The lot's per-characteristic sampling plan will be re-resolved from the selected document."
-msgstr "लॉट की प्रति-विशेषता नमूना योजना को चयनित दस्तावेज़ से फिर से हल किया जाएगा।"
+msgid "The lot's per-feature sampling plan will be re-resolved from the selected document."
+msgstr "चयनित दस्तावेज़ से लॉट की प्रति-विशेषता नमूनाकरण योजना को पुनः निर्धारित किया जाएगा।"
 
 msgid "The lowest amount this supplier will charge for this process, regardless of quantity; jobs below the breakeven volume still cost at least this much."
 msgstr "सबसे कम राशि जो यह आपूर्तिकर्ता इस प्रक्रिया के लिए चार्ज करेगा, मात्रा की परवाह किए बिना; संतुलन मात्रा के नीचे नौकरियां अभी भी कम से कम इतनी अधिक लागत करती हैं।"
@@ -12952,6 +12967,9 @@ msgstr "यह जानकारी दस्तावेज़ शीर्ष
 
 msgid "This information will be visible to all users, so be careful what you share."
 msgstr "यह जानकारी सभी उपयोगकर्ताओं को दिखाई देगी, इसलिए सावधान रहें कि आप क्या साझा करते हैं।"
+
+msgid "this inspection plan"
+msgstr "इस निरीक्षण योजना"
 
 msgid "This is a purchased item — it has no BoM/BoP; only its attributes and documents can change."
 msgstr "यह एक खरीदा गया आइटम है — इसके पास कोई BoM/BoP नहीं है; केवल इसकी विशेषताओं और दस्तावेजों को बदला जा सकता है।"

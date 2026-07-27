@@ -93,5 +93,6 @@ Make methods are independently **versioned** (`20250603011801_make-method-versio
   generated column all special-case them together — handle all three.
 - **No `itemId` FK on type tables**; join on `readableId` + `companyId`. Adding an
   `itemReadableId` column is explicitly disallowed by the DB conventions.
-- The detail RPCs select `i."requiresInspection"` (added after the original
-  revision migrations) — older RPC bodies in earlier migrations omit it; newest wins.
+- The detail RPCs no longer select `i."requiresInspection"` — that column was dropped
+  2026-07-26 and the RPCs recreated without it (older RPC bodies in migrations between
+  `20260419094132` and the drop still select it; newest wins).

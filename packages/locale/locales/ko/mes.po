@@ -42,6 +42,12 @@ msgstr "{1} 중 {0} 완료됨"
 msgid "{0} Scrapped"
 msgstr "{0} 스크랩됨"
 
+msgid "{completions} passed unit(s) will be completed."
+msgstr "{completions}개의 합격 단위가 완료됩니다."
+
+msgid "{fails} sampled failure(s) are recorded and will NOT be completed — resolve them from the actions menu."
+msgstr "{fails}개의 샘플 불량이 기록되었으며 완료되지 않습니다 — 작업 메뉴에서 해결하세요."
+
 msgid "About"
 msgstr "정보"
 
@@ -83,6 +89,18 @@ msgstr "예비 부품 추가"
 
 msgid "All"
 msgstr "전체"
+
+msgid "All rework"
+msgstr "모두 재작업"
+
+msgid "All scrap"
+msgstr "모두 폐기"
+
+msgid "Allocate failed units"
+msgstr "실패한 단위 할당"
+
+msgid "Allocate units"
+msgstr "단위 할당"
 
 msgid "Are you sure you want to delete this step?"
 msgstr "이 단계를 삭제하시겠습니까?"
@@ -152,9 +170,6 @@ msgstr "Carbon 로고"
 msgid "Cards"
 msgstr "카드"
 
-msgid "Characteristic"
-msgstr "특성"
-
 msgid "Chat"
 msgstr "채팅"
 
@@ -182,6 +197,9 @@ msgstr "{0}부터 출근 중"
 
 msgid "Close"
 msgstr "닫기"
+
+msgid "Collapse features table"
+msgstr "기능 테이블 축소"
 
 #. placeholder {0}: active.data.current.column.title
 #. placeholder {1}: overColumnPosition + 1
@@ -211,6 +229,9 @@ msgstr "완료"
 
 msgid "Complete All"
 msgstr "모두 완료"
+
+msgid "Complete passed"
+msgstr "완료된 합격"
 
 msgid "Completed"
 msgstr "완료됨"
@@ -299,6 +320,9 @@ msgstr "초안"
 msgid "Drag and drop a file here, or click to select a file"
 msgstr "파일을 여기로 끌어다 놓거나 클릭하여 선택하세요"
 
+msgid "Drag to resize drawing and features"
+msgstr "그리기 및 기능 크기 조정하려면 드래그하세요"
+
 #. placeholder {0}: active.data.current?.type
 msgid "Dragging {0} cancelled."
 msgstr "{0} 끌기가 취소되었습니다."
@@ -343,6 +367,12 @@ msgstr "오류"
 msgid "Estimated"
 msgstr "예상"
 
+msgid "Every unit has a verdict: {passes} passed and {fails} failed. The lot closes with each unit routed to its own outcome."
+msgstr "모든 단위에 판정이 있습니다: {passes}개 합격 및 {fails}개 불합격. 로트는 각 단위가 자신의 결과로 라우팅되면서 종료됩니다."
+
+msgid "Expand features table"
+msgstr "기능 테이블 확장"
+
 msgid "Expired"
 msgstr "만료됨"
 
@@ -355,8 +385,11 @@ msgstr "{date}에 만료"
 msgid "Expiring first"
 msgstr "먼저 만료되는 순"
 
-msgid "Failed characteristics"
-msgstr "실패한 특성"
+msgid "Failed"
+msgstr "실패"
+
+msgid "Failed features"
+msgstr "실패한 기능"
 
 msgid "Failed to complete inventory adjustment"
 msgstr "재고 조정을 완료하지 못했습니다"
@@ -382,6 +415,12 @@ msgstr "파일을 업로드하지 못했습니다: {0}"
 
 msgid "Failed to upload image"
 msgstr "이미지를 업로드하지 못했습니다"
+
+msgid "Feature"
+msgstr "기능"
+
+msgid "Features"
+msgstr "기능"
 
 msgid "File size exceeds 10MB limit"
 msgstr "파일 크기가 10MB 제한을 초과했습니다"
@@ -649,6 +688,9 @@ msgstr "자재 없음"
 msgid "No open jobs"
 msgstr "진행 중인 작업이 없습니다"
 
+msgid "No open units to allocate"
+msgstr "할당할 열린 단위가 없습니다"
+
 msgid "No operators"
 msgstr "작업자 없음"
 
@@ -758,6 +800,12 @@ msgstr "파라미터"
 msgid "Part"
 msgstr "품목"
 
+msgid "Partial"
+msgstr "부분"
+
+msgid "Partial Disposition"
+msgstr "부분 처리"
+
 msgid "Passed Inspection"
 msgstr "검사 합격"
 
@@ -852,6 +900,12 @@ msgstr "기록"
 msgid "Record {0}"
 msgstr "{0} 기록"
 
+msgid "Record only"
+msgstr "기록만"
+
+msgid "Record Partial"
+msgstr "부분 기록"
+
 msgid "Reject"
 msgstr "거부"
 
@@ -878,6 +932,9 @@ msgstr "재작업"
 
 msgid "Rework created successfully"
 msgstr "재작업이 생성되었습니다"
+
+msgid "Rework quantity"
+msgstr "재작업 수량"
 
 msgid "Sales Order"
 msgstr "판매주문"
@@ -911,6 +968,9 @@ msgstr "일정"
 
 msgid "Scrap"
 msgstr "스크랩"
+
+msgid "Scrap quantity"
+msgstr "폐기 수량"
 
 msgid "Scrap Reason"
 msgstr "스크랩 사유"
@@ -1054,8 +1114,8 @@ msgid "Station: {stationName}"
 msgstr "스테이션: {stationName}"
 
 #. placeholder {0}: inspection.lotSize
-msgid "Statistical acceptance failed, so the entire lot of {0} is considered non-conforming (ISO 9001:2015 §8.7) — {passes} sampled pass(es) and {fails} failure(s)."
-msgstr "통계적 수락에 실패했으므로 {0}의 전체 로트는 부적합으로 간주됩니다(ISO 9001:2015 §8.7) — {passes}개의 샘플 통과 및 {fails}개의 불합격."
+msgid "Statistical acceptance failed, so the entire lot of {0} is considered non-conforming (ISO 9001:2015 §8.7) — {passes} sampled pass(es) and {fails} failure(s). Route the units below to scrap or rework, or record the verdict only."
+msgstr "통계적 수용이 실패했으므로 {0}의 전체 로트는 부적합으로 간주됩니다(ISO 9001:2015 §8.7) — {passes}개의 샘플 합격 및 {fails}개의 불합격. 아래 단위를 스크랩 또는 재작업으로 라우팅하거나 판정만 기록하세요."
 
 msgid "Status"
 msgstr "상태"
@@ -1094,11 +1154,11 @@ msgstr "태그"
 msgid "The completed quantity for this operation is less than the required quantity of {0}."
 msgstr "이 공정작업의 완료 수량이 필요 수량 {0}보다 적습니다."
 
-msgid "The lot will be marked Passed. {fails} sampled failure(s) are recorded for your records."
-msgstr "로트는 통과로 표시됩니다. {fails}개의 샘플 불합격이 기록됩니다."
+msgid "The lot will be marked Passed and {remaining} remaining unit(s) will be completed at this operation."
+msgstr "로트가 합격으로 표시되고 {remaining}개의 남은 단위가 이 작업에서 완료됩니다."
 
-msgid "The lot will still be rejected, but an NCR cannot be created until at least one Issue Type is configured."
-msgstr "로트는 여전히 거부되지만 하나 이상의 문제 유형이 구성될 때까지 NCR을 만들 수 없습니다."
+msgid "The lot will still be dispositioned, but an NCR cannot be created until at least one Issue Type is configured."
+msgstr "로트는 여전히 처리되지만 최소한 하나의 Issue Type이 구성될 때까지 NCR을 생성할 수 없습니다."
 
 msgid "There are serial or batch tracked materials on the bill of material that have not been fully issued. Completing without issuing may result in incorrect traceability records."
 msgstr "자재명세서(BOM)에 아직 완전히 출고되지 않은 일련번호 또는 배치 추적 자재가 있습니다. 출고하지 않고 완료하면 이력추적 기록이 부정확해질 수 있습니다."
@@ -1157,6 +1217,9 @@ msgstr "{0} 피킹 취소"
 
 msgid "Unsaved changes"
 msgstr "저장되지 않은 변경 사항"
+
+msgid "Up to {maxAllocatable} unit(s) can be allocated; the rest is recorded without a posting."
+msgstr "최대 {maxAllocatable}개 단위까지 할당할 수 있으며, 나머지는 전기 없이 기록됩니다."
 
 msgid "Update"
 msgstr "업데이트"

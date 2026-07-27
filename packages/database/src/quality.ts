@@ -49,6 +49,11 @@ export type InspectionDispositionInput = {
   notes?: string;
   companyId: string;
   dispositionedBy: string;
+  // One-shot mode: refuse to disposition a lot that is already terminal
+  // (Passed/Failed/Partial). The MES disposition route passes this because its
+  // dispositions drive physical postings (scrap/rework/complete) that must not
+  // re-run; ERP receipt lots keep re-disposition (write-off retry semantics).
+  requireOpen?: boolean;
 };
 
 export type InspectionMeasurementInput = {
@@ -64,6 +69,63 @@ export type InspectionMeasurementInput = {
   companyId: string;
   userId: string;
 };
+
+// The sampling hierarchy is: feature rule -> document default -> All. This
+// maps an inspectionDocument row's default-rule columns into the engine's
+// plan shape (NUMERIC columns come back from pg as strings — coerce).
+function toSamplingPlanInput(
+  row:
+    | {
+        samplingPlanType: SamplingPlanInput["type"] | null;
+        samplingSampleSize: number | null;
+        samplingPercentage: string | number | null;
+        samplingAql: string | number | null;
+        samplingInspectionLevel: SamplingPlanInput["inspectionLevel"];
+        samplingSeverity: SamplingPlanInput["severity"];
+      }
+    | null
+    | undefined
+): SamplingPlanInput | null {
+  if (!row?.samplingPlanType) return null;
+  return {
+    type: row.samplingPlanType,
+    sampleSize: row.samplingSampleSize,
+    percentage:
+      row.samplingPercentage == null ? null : Number(row.samplingPercentage),
+    aql: row.samplingAql == null ? null : Number(row.samplingAql),
+    inspectionLevel: row.samplingInspectionLevel,
+    severity: row.samplingSeverity
+  };
+}
+
+// Terminal lot statuses. Passed/Failed/Partial are all hard-terminal: once
+// dispositioned, samples and measurements are immutable (Partial is the mixed
+// close — some units passed, some failed, each already routed to its outcome).
+const INSPECTION_CLOSED_STATUSES = ["Passed", "Failed", "Partial"] as const;
+
+function isInspectionClosed(status: string): boolean {
+  return (INSPECTION_CLOSED_STATUSES as readonly string[]).includes(status);
+}
+
+// A sample whose verdict already drove a production posting (MES verdict-driven
+// completion links productionQuantity.inspectionSampleId) is locked — changing
+// it would desync the posted quantity. Deleting the productionQuantity row in
+// the ERP unlocks it (the completion arithmetic self-heals from the links).
+async function assertSampleNotLinked(
+  trx: Transaction<KyselyDatabase>,
+  sampleId: string
+) {
+  const linked = await trx
+    .selectFrom("productionQuantity")
+    .select(["id"])
+    .where("inspectionSampleId", "=", sampleId)
+    .executeTakeFirst();
+  if (linked) {
+    throw new Error(
+      "Sample is locked: its unit was already completed from this verdict"
+    );
+  }
+}
 
 // Mirrors the old in-service helper. Terminal states (Passed/Failed/Partial)
 // are owned by the disposition path, so the per-sample recompute only flips
@@ -167,6 +229,9 @@ export async function upsertInspectionSample(
         .where("companyId", "=", sample.companyId)
         .executeTakeFirst();
       if (!inspection) throw new Error("Inspection not found");
+      if (isInspectionClosed(inspection.status)) {
+        throw new Error("Inspection is closed");
+      }
 
       // Serial parts carry a tracked entity that may only be sampled once, so we
       // upsert by it. Anonymous (batch / inventory / non-inventory) columns have
@@ -204,6 +269,7 @@ export async function upsertInspectionSample(
 
       let sampleId: string;
       if (existing) {
+        await assertSampleNotLinked(trx, existing.id);
         const updated = await trx
           .updateTable("inspectionSample")
           .set({
@@ -330,6 +396,9 @@ export async function dispositionInspection(
         .where("companyId", "=", args.companyId)
         .executeTakeFirst();
       if (!inspection) throw new Error("Inspection not found");
+      if (args.requireOpen && isInspectionClosed(inspection.status)) {
+        throw new Error("Inspection is already dispositioned");
+      }
       const isReceiptSource = inspection.sourceDocument === "Receipt";
 
       const item = await trx
@@ -372,9 +441,13 @@ export async function dispositionInspection(
         .where("inspectionId", "=", args.id)
         .execute();
 
-      const sampledIds = new Set(existingSamples.map((s) => s.trackedEntityId));
+      const failedEntityIds = new Set(
+        existingSamples
+          .filter((s) => s.status === "Failed")
+          .map((s) => s.trackedEntityId)
+          .filter(Boolean)
+      );
       const allLotIds = lotEntities.map((e) => e.id);
-      const unsampledIds = allLotIds.filter((id) => !sampledIds.has(id));
       const failures = existingSamples.filter(
         (s) => s.status === "Failed"
       ).length;
@@ -427,7 +500,7 @@ export async function dispositionInspection(
           });
           if (blocking.length > 0) {
             throw new Error(
-              "Cannot accept: sampling incomplete or acceptance number exceeded for one or more characteristics"
+              "Cannot accept: sampling incomplete or acceptance number exceeded for one or more features"
             );
           }
         }
@@ -440,22 +513,23 @@ export async function dispositionInspection(
             }) || existingSamples.some((s) => s.status === "Failed");
           if (!rejectable) {
             throw new Error(
-              "Cannot reject: no characteristic has reached its rejection number and no sample has failed"
+              "Cannot reject: no feature has reached its rejection number and no sample has failed"
             );
           }
         }
       }
 
-      // Reject = entire lot non-conforming (ISO 9001:2015 §8.7). Accept only
-      // releases un-sampled entities (sampled outcomes already flipped
-      // per-sample). Partial leaves un-sampled entities On Hold.
+      // Reject = entire lot non-conforming (ISO 9001:2015 §8.7). Accept
+      // releases every lot entity that didn't fail a sample — un-sampled and
+      // partially-inspected (Pending) units included; failed units stay
+      // Rejected. Partial leaves un-sampled entities On Hold.
       let lotStatus: "Passed" | "Failed" | "Partial";
       let idsToFlip: string[] = [];
       let flipStatus: "Available" | "Rejected" | null = null;
       switch (args.decision) {
         case "Accept":
           lotStatus = "Passed";
-          idsToFlip = unsampledIds;
+          idsToFlip = allLotIds.filter((id) => !failedEntityIds.has(id));
           flipStatus = "Available";
           break;
         case "Reject":
@@ -513,8 +587,18 @@ export async function dispositionInspection(
         })
         .where("id", "=", args.id)
         .where("companyId", "=", args.companyId)
+        // One-shot under concurrency: a second disposition blocks on the row
+        // lock, re-evaluates this predicate against the committed terminal
+        // status, matches zero rows, and throws below — the early read check
+        // alone can't see an uncommitted concurrent disposition.
+        .$if(args.requireOpen === true, (qb) =>
+          qb.where("status", "not in", [...INSPECTION_CLOSED_STATUSES])
+        )
         .returning(["id", "status"])
-        .executeTakeFirstOrThrow();
+        .executeTakeFirst();
+      if (!updated) {
+        throw new Error("Inspection is already dispositioned");
+      }
 
       await trx
         .insertInto("inspectionHistory")
@@ -622,7 +706,7 @@ export async function upsertInspectionMeasurement(
         .where("companyId", "=", args.companyId)
         .executeTakeFirst();
       if (!inspection) throw new Error("Inspection not found");
-      if (inspection.status === "Passed" || inspection.status === "Failed") {
+      if (isInspectionClosed(inspection.status)) {
         throw new Error("Inspection is closed");
       }
 
@@ -657,6 +741,7 @@ export async function upsertInspectionMeasurement(
         if (!existing || existing.inspectionId !== args.inspectionId) {
           throw new Error("Sample not found");
         }
+        await assertSampleNotLinked(trx, existing.id);
         sample = existing;
       } else {
         const inserted = await trx
@@ -730,42 +815,35 @@ export async function upsertInspectionMeasurement(
         measurementId = inserted.id;
       }
 
-      // Derive the sample's status. The sample's 1-based column index decides
-      // which features are required for it (a feature with n=8 needs readings
-      // on the first 8 samples only).
+      // Derive the sample's status. Sampling is count-based, not positional —
+      // a feature's n is the minimum number of readings across ANY samples
+      // (per-feature gating at disposition enforces the counts), so a sample's
+      // own verdict is: Failed the moment any of its readings fails, Passed
+      // once every plan feature has a passing reading on it (a fully-inspected
+      // unit), otherwise Pending (partially inspected).
       const lotFeatures = await trx
         .selectFrom("inspectionSamplingPlan")
         .select(["inspectionFeatureId", "sampleSize"])
         .where("inspectionId", "=", args.inspectionId)
         .execute();
-      const lotSamples = await trx
-        .selectFrom("inspectionSample")
-        .select(["id"])
-        .where("inspectionId", "=", args.inspectionId)
-        .orderBy("createdAt", "asc")
-        .orderBy("id", "asc")
-        .execute();
-      const columnIndex = lotSamples.findIndex((s) => s.id === sample.id) + 1;
       const sampleMeasurements = await trx
         .selectFrom("inspectionMeasurement")
         .select(["inspectionFeatureId", "status"])
         .where("inspectionSampleId", "=", sample.id)
         .execute();
 
-      const requiredFeatureIds = lotFeatures
-        .filter((f) => f.sampleSize >= columnIndex)
-        .map((f) => f.inspectionFeatureId);
       const anyFailed = sampleMeasurements.some((m) => m.status === "Failed");
-      const allRequiredPassed =
-        requiredFeatureIds.length > 0 &&
-        requiredFeatureIds.every(
-          (featureId) =>
-            sampleMeasurements.find((m) => m.inspectionFeatureId === featureId)
-              ?.status === "Passed"
+      const allFeaturesPassed =
+        lotFeatures.length > 0 &&
+        lotFeatures.every(
+          (f) =>
+            sampleMeasurements.find(
+              (m) => m.inspectionFeatureId === f.inspectionFeatureId
+            )?.status === "Passed"
         );
       const derivedStatus: "Pending" | "Passed" | "Failed" = anyFailed
         ? "Failed"
-        : allRequiredPassed
+        : allFeaturesPassed
           ? "Passed"
           : "Pending";
 
@@ -865,7 +943,6 @@ export async function reconcileInspectionSamplingPlans(
         .select([
           "id",
           "inspectionDocumentId",
-          "itemId",
           "lotSize",
           "samplingStandard",
           "createdBy"
@@ -902,24 +979,27 @@ export async function reconcileInspectionSamplingPlans(
       const missing = documentFeatures.filter((f) => !existingIds.has(f.id));
       if (missing.length === 0) return { added: 0 };
 
-      const itemPlan = await trx
-        .selectFrom("itemSamplingPlan")
+      // The document's own default rule is the fallback for features without
+      // a rule (feature rule -> document default -> All).
+      const documentDefault = await trx
+        .selectFrom("inspectionDocument")
         .select([
-          "type",
-          "sampleSize",
-          "percentage",
-          "aql",
-          "inspectionLevel",
-          "severity"
+          "samplingPlanType",
+          "samplingSampleSize",
+          "samplingPercentage",
+          "samplingAql",
+          "samplingInspectionLevel",
+          "samplingSeverity"
         ])
-        .where("itemId", "=", inspection.itemId)
+        .where("id", "=", inspection.inspectionDocumentId)
         .where("companyId", "=", companyId)
         .executeTakeFirst();
+      const defaultPlan = toSamplingPlanInput(documentDefault);
 
       const inserts = missing.map((feature) => {
         const resolved = resolveFeatureSamplingPlan(
           feature,
-          itemPlan ?? null,
+          defaultPlan,
           Number(inspection.lotSize),
           inspection.samplingStandard as SamplingStandard
         );
@@ -977,7 +1057,7 @@ export async function changeInspectionDocument(
         .where("companyId", "=", args.companyId)
         .executeTakeFirst();
       if (!inspection) throw new Error("Inspection not found");
-      if (inspection.status === "Passed" || inspection.status === "Failed") {
+      if (isInspectionClosed(inspection.status)) {
         throw new Error("Inspection is closed");
       }
 
@@ -1106,21 +1186,27 @@ export async function getOrCreateJobOperationInspection(
       const samplingStandard = (settings?.samplingStandard ??
         "ANSI_Z1_4") as SamplingStandard;
 
-      const itemPlanRow = await trx
-        .selectFrom("itemSamplingPlan")
-        .select([
-          "type",
-          "sampleSize",
-          "percentage",
-          "aql",
-          "inspectionLevel",
-          "severity"
-        ])
-        .where("itemId", "=", itemId)
-        .where("companyId", "=", args.companyId)
-        .executeTakeFirst();
+      // The document's default sampling rule is both the lot-level plan base
+      // and the fallback for features without their own rule. No document (or
+      // no default set) means 100% inspection.
+      const documentDefault = operation.inspectionDocumentId
+        ? await trx
+            .selectFrom("inspectionDocument")
+            .select([
+              "samplingPlanType",
+              "samplingSampleSize",
+              "samplingPercentage",
+              "samplingAql",
+              "samplingInspectionLevel",
+              "samplingSeverity"
+            ])
+            .where("id", "=", operation.inspectionDocumentId)
+            .where("companyId", "=", args.companyId)
+            .executeTakeFirst()
+        : undefined;
+      const defaultPlan = toSamplingPlanInput(documentDefault);
 
-      const plan: SamplingPlanInput = itemPlanRow ?? {
+      const plan: SamplingPlanInput = defaultPlan ?? {
         type: "All",
         sampleSize: null,
         percentage: null,
@@ -1156,7 +1242,7 @@ export async function getOrCreateJobOperationInspection(
         inspectionFeatureId: feature.id,
         resolved: resolveFeatureSamplingPlan(
           feature,
-          itemPlanRow ?? null,
+          defaultPlan,
           lotSize,
           samplingStandard
         )

@@ -999,6 +999,9 @@ msgstr "Tümüne uygulanır"
 msgid "Applies to all work centers"
 msgstr "Tüm iş merkezlerine uygulanır"
 
+msgid "Applies to features without their own rule, and to the lot when this plan drives an inspection."
+msgstr "Kendi kuralı olmayan özelliklere ve bu plan bir muayene yaptırdığında lota uygulanır."
+
 msgid "Apply"
 msgstr "Uygula"
 
@@ -1362,6 +1365,9 @@ msgstr "Bu kalibratörü silmek istediğinizden emin misiniz?"
 msgid "Are you sure you want to delete this inspection plan?"
 msgstr "Bu muayene planını silmek istediğinizden emin misiniz?"
 
+msgid "Are you sure you want to delete this inspection plan? This cannot be undone."
+msgstr "Bu muayene planını silmek istediğinizden emin misiniz? Bu işlem geri alınamaz."
+
 msgid "Are you sure you want to delete this issue workflow?"
 msgstr "Bu iş akışını silmek istediğinizden emin misiniz?"
 
@@ -1708,8 +1714,8 @@ msgstr "Dengeli"
 msgid "Balloon"
 msgstr "Balon"
 
-msgid "Ballooned drawings with inspection characteristics."
-msgstr "İnceleme özellikleriyle işaretleme yapılmış çizimler."
+msgid "Ballooned drawings with inspection features."
+msgstr "İnceleme özellikleriyle balona alınmış çizimler."
 
 msgid "Bank - Cash"
 msgstr "Banka - Nakit"
@@ -3669,6 +3675,9 @@ msgstr "Varsayılan Öncelik"
 msgid "Default revenue GL account credited when a sales invoice posts."
 msgstr "Bir satış faturası nakledildiğinde alacaklandırılan varsayılan gelir GL hesabı."
 
+msgid "Default Sampling"
+msgstr "Varsayılan Örnekleme"
+
 msgid "Default shelf-life duration (days)"
 msgstr "Varsayılan raf ömrü süresi (gün)"
 
@@ -3710,9 +3719,6 @@ msgstr "Önce bir üretim işlemini tanımlayın."
 
 msgid "Define multi-level BOMs and Bill of Process (make methods)"
 msgstr "Çok seviyeli BOM'ları ve Bill of Process'i (üretim yöntemlerini) tanımlayın"
-
-msgid "Defines how many tracked entities are inspected per lot, and how many failures are tolerated before the lot is rejected."
-msgstr "Lot başına kaç izlenen varlığın denetlendiğini ve parti reddedilmeden önce kaç hatanın tolere edildiğini tanımlar."
 
 msgid "Delete"
 msgstr "Sil"
@@ -3806,6 +3812,9 @@ msgstr "Grubu Sil"
 
 msgid "Delete Holiday"
 msgstr "Tatili Sil"
+
+msgid "Delete Inspection Plan"
+msgstr "Muayene Planını Sil"
 
 msgid "Delete Issue"
 msgstr "Sorunu Sil"
@@ -5197,7 +5206,7 @@ msgstr "GL raporlamanızı dilimlemek için ekstra etiketler"
 msgid "Fail"
 msgstr "Başarısız"
 
-msgid "Failed characteristics"
+msgid "Failed features"
 msgstr "Başarısız özellikler"
 
 #. placeholder {0}: fetcher.data.error.message
@@ -6417,6 +6426,12 @@ msgstr "Dolaylı Malzemeler ve Hizmetler (varsayılan)"
 
 msgid "Infrastructure"
 msgstr "Altyapı"
+
+msgid "Inherit"
+msgstr "Devral"
+
+msgid "Inherit document default"
+msgstr "Belge varsayılanını devral"
 
 msgid "Inherit From Materials"
 msgstr "Malzemelerden Devral"
@@ -10373,9 +10388,6 @@ msgstr "Eylem Gerektirir"
 msgid "Requires Adjustment"
 msgstr "Ayarlama Gerektirir"
 
-msgid "Requires Inspection"
-msgstr "Kontrol Gerektirir"
-
 msgid "Requires Repair"
 msgstr "Onarım Gerektirir"
 
@@ -10396,8 +10408,8 @@ msgstr "PIN'i Sıfırla"
 msgid "Reset PIN for {0} {1}"
 msgstr "PIN'i sıfırla {0} {1}"
 
-msgid "Reset View"
-msgstr "Görünümü Sıfırla"
+msgid "Reset view"
+msgstr "Görünümü sıfırla"
 
 msgid "Residual value"
 msgstr "Artık değer"
@@ -10749,8 +10761,11 @@ msgstr "Örnek"
 msgid "Sample Size"
 msgstr "Örnek Boyutu"
 
-msgid "Sampling Plan"
-msgstr "Numune Alma Planı"
+msgid "Sampling"
+msgstr "Örnekleme"
+
+msgid "Sampling — Feature {featureLabel}"
+msgstr "Örnekleme — Özellik {featureLabel}"
 
 msgid "Sampling Standard"
 msgstr "Örnekleme Standardı"
@@ -12583,8 +12598,8 @@ msgstr "Lot bu olarak işaretlenecektir. Kayıtlarınız için {fails} örnek ba
 msgid "The lot will still be rejected, but an NCR cannot be created until at least one Issue Type is configured."
 msgstr "Lot yine de reddedilecek, ancak en az bir Hata Türü yapılandırılana kadar Bir Uygunluk Raporu (NCR) oluşturulamaz."
 
-msgid "The lot's per-characteristic sampling plan will be re-resolved from the selected document."
-msgstr "Lottun özellik başına örnekleme planı seçilen belgeden yeniden çözülecektir."
+msgid "The lot's per-feature sampling plan will be re-resolved from the selected document."
+msgstr "Lot'un her özellik başına örnekleme planı seçilen belgeden yeniden çözülecektir."
 
 msgid "The lowest amount this supplier will charge for this process, regardless of quantity; jobs below the breakeven volume still cost at least this much."
 msgstr "Bu tedarikçinin miktar ne olursa olsun bu işlem için tahsil edeceği minimum tutar; kâr-zarar noktası hacmi altındaki işler hala en az bu tutarına mal olur."
@@ -12952,6 +12967,9 @@ msgstr "Bu bilgiler belge başlıklarında kullanılacaktır"
 
 msgid "This information will be visible to all users, so be careful what you share."
 msgstr "Bu bilgiler tüm kullanıcılar tarafından görülecektir, bu yüzden ne paylaştığınıza dikkat edin."
+
+msgid "this inspection plan"
+msgstr "bu muayene planı"
 
 msgid "This is a purchased item — it has no BoM/BoP; only its attributes and documents can change."
 msgstr "Bu satın alınan bir üründür — BoM/BoP'si yoktur; yalnızca öznitelikleri ve belgeleri değişebilir."

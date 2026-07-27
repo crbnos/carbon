@@ -1,7 +1,24 @@
 import type { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database } from "@carbon/database";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import {
+  getJobMakeMethod,
+  getTrackedEntitiesByMakeMethodId,
+  insertProductionQuantity
+} from "~/services/operations.service";
+import {
+  getInspection,
+  getInspectionMeasurements,
+  getInspectionSamplingPlans
+} from "~/services/quality.service";
 
 type ServiceRole = Awaited<ReturnType<typeof getCarbonServiceRole>>;
+
+export type ProductionEventIds = {
+  setupProductionEventId?: string;
+  laborProductionEventId?: string;
+  machineProductionEventId?: string;
+};
 
 type IssueContext =
   | {
@@ -169,6 +186,470 @@ export async function createQualityIssue(
   }
 
   return { data: { id: nonConformanceId }, error: null, message: null };
+}
+
+export type InspectionOutcomeSample = {
+  id: string;
+  trackedEntityId: string | null;
+  status: string;
+};
+
+// Everything the disposition / complete-passed routes need to turn a verdict
+// into physical postings, recomputed fresh from the DB on every POST (client
+// form fields are operator intent, never trusted arithmetic).
+export type InspectionOutcomeState = {
+  inspection: any;
+  jobOperationId: string;
+  operation: Database["public"]["Tables"]["jobOperation"]["Row"];
+  jobId: string;
+  requiresSerialTracking: boolean;
+  requiresBatchTracking: boolean;
+  // The make method's batch WIP entity (batch-tracked completions accumulate
+  // onto it via jobOperationBatchComplete).
+  batchTrackedEntityId: string | null;
+  // Ascending (createdAt, id) — the grid's column order and the completion
+  // processing order.
+  samples: InspectionOutcomeSample[];
+  lotSize: number;
+  // Production rows already linked to this inspection: per-sample links are
+  // the serial double-count guard; the quantity sum is the non-serial one.
+  linkedSampleIds: Set<string>;
+  linkedProductionQuantity: number;
+  // Operation quantity column bookkeeping. `opRemaining` nets out EVERY
+  // posting — complete, scrapped, reworked, linked or not — so escape-hatch
+  // menu postings can never be double-counted by the orchestration.
+  opTarget: number;
+  opAccounted: number;
+  opRemaining: number;
+  // Serial only: the make method's WIP entities and the eligibility test
+  // (not Consumed, not Rejected, not already completed at this operation).
+  entities: { id: string; status: string | null; attributes: unknown }[];
+  entityEligible: (entityId: string) => boolean;
+};
+
+export async function getInspectionOutcomeState(
+  serviceRole: ServiceRole,
+  args: { inspectionId: string; companyId: string }
+): Promise<
+  | { data: InspectionOutcomeState; error: null; message: null }
+  | { data: null; error: unknown; message: string }
+> {
+  const inspectionResult = await getInspection(serviceRole, args.inspectionId);
+  if (inspectionResult.error || !inspectionResult.data) {
+    return {
+      data: null,
+      error: inspectionResult.error,
+      message: "Failed to load inspection"
+    };
+  }
+  const inspection = inspectionResult.data as any;
+  const jobOperationId = inspection.sourceDocumentLineId as string | null;
+  if (inspection.sourceDocument !== "Job Operation" || !jobOperationId) {
+    return {
+      data: null,
+      error: null,
+      message: "Inspection is not a job operation lot"
+    };
+  }
+
+  const [operationResult, linkedRows] = await Promise.all([
+    serviceRole
+      .from("jobOperation")
+      .select("*")
+      .eq("id", jobOperationId)
+      .single(),
+    serviceRole
+      .from("productionQuantity")
+      .select("id, type, quantity, inspectionSampleId")
+      .eq("inspectionId", args.inspectionId)
+  ]);
+  if (operationResult.error || !operationResult.data) {
+    return {
+      data: null,
+      error: operationResult.error,
+      message: "Failed to load job operation"
+    };
+  }
+  const operation = operationResult.data;
+  if (operation.companyId !== args.companyId) {
+    return {
+      data: null,
+      error: null,
+      message: "Job operation is not in this company"
+    };
+  }
+
+  const jobMakeMethod = operation.jobMakeMethodId
+    ? await getJobMakeMethod(serviceRole, operation.jobMakeMethodId)
+    : null;
+  const requiresSerialTracking =
+    jobMakeMethod?.data?.requiresSerialTracking ?? false;
+  const requiresBatchTracking =
+    jobMakeMethod?.data?.requiresBatchTracking ?? false;
+
+  const trackedEntities =
+    requiresSerialTracking && operation.jobMakeMethodId
+      ? await getTrackedEntitiesByMakeMethodId(
+          serviceRole,
+          operation.jobMakeMethodId
+        )
+      : null;
+
+  const samples: InspectionOutcomeSample[] = [
+    ...((inspection.inspectionSample ?? []) as any[])
+  ]
+    .sort(
+      (a, b) =>
+        (a.createdAt ?? "").localeCompare(b.createdAt ?? "") ||
+        a.id.localeCompare(b.id)
+    )
+    .map((s) => ({
+      id: s.id,
+      trackedEntityId: s.trackedEntityId ?? null,
+      status: s.status
+    }));
+
+  const productionRows = (linkedRows.data ?? []).filter(
+    (r) => r.type === "Production"
+  );
+  const linkedSampleIds = new Set(
+    productionRows
+      .map((r) => r.inspectionSampleId)
+      .filter((id): id is string => Boolean(id))
+  );
+  const linkedProductionQuantity = productionRows.reduce(
+    (sum, r) => sum + (r.quantity ?? 0),
+    0
+  );
+
+  const opTarget = operation.targetQuantity ?? operation.operationQuantity ?? 0;
+  const opAccounted =
+    (operation.quantityComplete ?? 0) +
+    (operation.quantityScrapped ?? 0) +
+    (operation.quantityReworked ?? 0);
+  const opRemaining = Math.max(0, opTarget - opAccounted);
+
+  const entities = (trackedEntities?.data ?? []).map((e) => ({
+    id: e.id,
+    status: e.status,
+    attributes: e.attributes
+  }));
+  const opAttrKey = `Operation ${jobOperationId}`;
+  const entityById = new Map(entities.map((e) => [e.id, e]));
+  const entityEligible = (entityId: string) => {
+    const entity = entityById.get(entityId);
+    if (!entity) return false;
+    if (entity.status === "Consumed" || entity.status === "Rejected") {
+      return false;
+    }
+    const attributes = (entity.attributes ?? {}) as Record<string, unknown>;
+    return !attributes[opAttrKey];
+  };
+
+  return {
+    data: {
+      inspection,
+      jobOperationId,
+      operation,
+      jobId: operation.jobId,
+      requiresSerialTracking,
+      requiresBatchTracking,
+      batchTrackedEntityId: jobMakeMethod?.data?.trackedEntityId ?? null,
+      samples,
+      lotSize: Number(inspection.lotSize ?? 0),
+      linkedSampleIds,
+      linkedProductionQuantity,
+      opTarget,
+      opAccounted,
+      opRemaining,
+      entities,
+      entityEligible
+    },
+    error: null,
+    message: null
+  };
+}
+
+// The serial units a completion pass may post, in ascending sample order:
+// sampled units whose sample isn't linked yet, then (optionally) sample-less
+// eligible units. Verdict-driven double-posting is impossible — the sample
+// link's partial UNIQUE index guards sampled units, and the `Operation <opId>`
+// entity attribute (via entityEligible) guards sample-less ones.
+export function getSerialCompletionCandidates(
+  state: InspectionOutcomeState,
+  opts: {
+    // Accept completes Pending-sampled units too (identify-only scans that
+    // never failed); progressive complete-passed takes Passed only.
+    includePending: boolean;
+    // Accept sweeps un-sampled eligible units; Partial/complete-passed don't.
+    includeSampleless: boolean;
+    excludeEntityIds?: Set<string>;
+  }
+): { trackedEntityId: string; inspectionSampleId: string | null }[] {
+  const candidates: {
+    trackedEntityId: string;
+    inspectionSampleId: string | null;
+  }[] = [];
+  const sampledEntityIds = new Set<string>();
+  for (const sample of state.samples) {
+    if (sample.trackedEntityId) sampledEntityIds.add(sample.trackedEntityId);
+    const statusOk =
+      sample.status === "Passed" ||
+      (opts.includePending && sample.status === "Pending");
+    if (!statusOk) continue;
+    if (!sample.trackedEntityId) continue;
+    if (state.linkedSampleIds.has(sample.id)) continue;
+    if (!state.entityEligible(sample.trackedEntityId)) continue;
+    if (opts.excludeEntityIds?.has(sample.trackedEntityId)) continue;
+    candidates.push({
+      trackedEntityId: sample.trackedEntityId,
+      inspectionSampleId: sample.id
+    });
+  }
+  if (opts.includeSampleless) {
+    for (const entity of state.entities) {
+      if (sampledEntityIds.has(entity.id)) continue;
+      if (!state.entityEligible(entity.id)) continue;
+      if (opts.excludeEntityIds?.has(entity.id)) continue;
+      candidates.push({ trackedEntityId: entity.id, inspectionSampleId: null });
+    }
+  }
+  return candidates;
+}
+
+// One `issue` serial-complete per unit (quantity 1), carrying the provenance
+// links. Sequential on purpose: each complete mints the next Reserved entity
+// and backflushes; stops at the first failure and reports how far it got.
+export async function postSerialCompletions(
+  serviceRole: ServiceRole,
+  args: {
+    candidates: {
+      trackedEntityId: string;
+      inspectionSampleId: string | null;
+    }[];
+    jobOperationId: string;
+    inspectionId: string;
+    eventIds: ProductionEventIds;
+    companyId: string;
+    userId: string;
+  }
+): Promise<{ completed: number; error: unknown | null }> {
+  let completed = 0;
+  for (const candidate of args.candidates) {
+    const response = await serviceRole.functions.invoke("issue", {
+      body: {
+        type: "jobOperationSerialComplete",
+        trackedEntityId: candidate.trackedEntityId,
+        quantity: 1,
+        jobOperationId: args.jobOperationId,
+        inspectionId: args.inspectionId,
+        ...(candidate.inspectionSampleId
+          ? { inspectionSampleId: candidate.inspectionSampleId }
+          : {}),
+        ...args.eventIds,
+        companyId: args.companyId,
+        userId: args.userId
+      }
+    });
+    if (response.error) return { completed, error: response.error };
+    completed += 1;
+  }
+  return { completed, error: null };
+}
+
+// Non-serial completion: one bulk Production posting (batch entities
+// accumulate via the issue edge fn; untracked inserts + backflushes here).
+// The row links the inspection plus the lowest unlinked passed sample as a
+// serializing representative — concurrent posts collide on the sample link's
+// UNIQUE index instead of double-counting.
+export async function postBulkCompletion(
+  serviceRole: ServiceRole,
+  client: SupabaseClient<Database>,
+  state: InspectionOutcomeState,
+  args: {
+    quantity: number;
+    eventIds: ProductionEventIds;
+    companyId: string;
+    userId: string;
+  }
+): Promise<{ error: unknown | null; message: string | null }> {
+  const watermark = state.samples.find(
+    (s) => s.status === "Passed" && !state.linkedSampleIds.has(s.id)
+  );
+
+  if (state.requiresBatchTracking && state.batchTrackedEntityId) {
+    const response = await serviceRole.functions.invoke("issue", {
+      body: {
+        type: "jobOperationBatchComplete",
+        trackedEntityId: state.batchTrackedEntityId,
+        quantity: args.quantity,
+        jobOperationId: state.jobOperationId,
+        inspectionId: state.inspection.id,
+        ...(watermark ? { inspectionSampleId: watermark.id } : {}),
+        ...args.eventIds,
+        companyId: args.companyId,
+        userId: args.userId
+      }
+    });
+    if (response.error) {
+      return { error: response.error, message: "Failed to complete units" };
+    }
+    return { error: null, message: null };
+  }
+
+  const insertResult = await insertProductionQuantity(client, {
+    jobOperationId: state.jobOperationId,
+    quantity: args.quantity,
+    inspectionId: state.inspection.id,
+    ...(watermark ? { inspectionSampleId: watermark.id } : {}),
+    ...args.eventIds,
+    companyId: args.companyId,
+    createdBy: args.userId
+  });
+  if (insertResult.error) {
+    return {
+      error: insertResult.error,
+      message: "Failed to record production quantity"
+    };
+  }
+
+  const issue = await serviceRole.functions.invoke("issue", {
+    body: {
+      id: state.jobOperationId,
+      type: "jobOperation",
+      quantity: args.quantity,
+      companyId: args.companyId,
+      userId: args.userId
+    }
+  });
+  if (issue.error) {
+    return {
+      error: issue.error,
+      message: "Units completed, but failed to issue materials"
+    };
+  }
+
+  return { error: null, message: null };
+}
+
+// Auto-creates the optional NCR documenting a rejected (or partially rejected)
+// inspection lot — failed features (measured values vs. spec) + sampling
+// summary in the description — and links it back via nonConformanceInspection.
+// Purely documentation: the physical outcome (scrap/rework/complete) is
+// orchestrated by the disposition route, never by the NCR. Lifted from the
+// retired inspection-lot reject route.
+export async function createInspectionRejectionIssue(
+  serviceRole: ServiceRole,
+  args: {
+    inspectionId: string;
+    companyId: string;
+    userId: string;
+    nonConformanceTypeId?: string;
+  }
+): Promise<{ error: unknown | null; message: string | null }> {
+  const { inspectionId, companyId, userId } = args;
+
+  const inspection = await getInspection(serviceRole, inspectionId);
+  if (inspection.error || !inspection.data) {
+    return {
+      error: inspection.error,
+      message: "Failed to load the lot for the quality issue"
+    };
+  }
+  const insp = inspection.data as any;
+  const jobOperationId = insp.sourceDocumentLineId as string | null;
+  if (!jobOperationId) {
+    return { error: null, message: "Lot has no job operation to link" };
+  }
+
+  const inspectionReadableId = insp.inspectionId ?? "";
+  const itemReadableId =
+    insp.item?.readableId ?? insp.itemReadableId ?? insp.itemId;
+
+  const issueTitle = [
+    "Rejected lot",
+    inspectionReadableId,
+    itemReadableId && `— ${itemReadableId}`,
+    insp.sourceDocumentReadableId && `on ${insp.sourceDocumentReadableId}`
+  ]
+    .filter(Boolean)
+    .join(" ");
+
+  // Document-driven lots: attach the failed features (measured values
+  // vs. spec) so MRB sees what failed and by how much without re-measuring.
+  const [lotFeatures, lotMeasurements] = await Promise.all([
+    getInspectionSamplingPlans(serviceRole, inspectionId, companyId),
+    getInspectionMeasurements(serviceRole, inspectionId, companyId)
+  ]);
+  const failedFeatureLines: string[] = [];
+  for (const lotFeature of lotFeatures.data ?? []) {
+    const feature = lotFeature.inspectionFeature;
+    if (!feature) continue;
+    const featureMeasurements = (lotMeasurements.data ?? []).filter(
+      (m) => m.inspectionFeatureId === feature.id
+    );
+    const recorded = featureMeasurements.filter(
+      (m) => m.status !== "Pending"
+    ).length;
+    const failed = featureMeasurements.filter((m) => m.status === "Failed");
+    if (failed.length === 0) continue;
+    const failedValues = failed
+      .map((m) => (m.value == null ? "F" : String(m.value)))
+      .join(", ");
+    const spec = [
+      feature.nominalValue,
+      feature.tolerancePlus != null || feature.toleranceMinus != null
+        ? `+${feature.tolerancePlus ?? "0"}/−${feature.toleranceMinus ?? "0"}`
+        : null,
+      feature.unit
+    ]
+      .filter(Boolean)
+      .join(" ");
+    failedFeatureLines.push(
+      spec
+        ? `- ${feature.label}: nominal ${spec} — failed values: ${failedValues} (${failed.length}/${recorded} failed, n=${lotFeature.sampleSize}, Ac=${lotFeature.acceptanceNumber})`
+        : `- ${feature.label}: ${failed.length}/${recorded} failed (n=${lotFeature.sampleSize}, Ac=${lotFeature.acceptanceNumber})`
+    );
+  }
+  const failedFeaturesBlock =
+    failedFeatureLines.length > 0
+      ? `\n\nFailed features:\n${failedFeatureLines.join("\n")}`
+      : "";
+
+  const issue = await createQualityIssue(serviceRole, {
+    companyId,
+    userId,
+    jobOperationId,
+    nonConformanceTypeId: args.nonConformanceTypeId,
+    name: issueTitle,
+    description: `Auto-created from inspection ${inspectionReadableId}. Lot size ${insp.lotSize}, sample ${insp.sampleSize}, Ac ${insp.acceptanceNumber} / Re ${insp.rejectionNumber}.${failedFeaturesBlock}`,
+    priority: "Medium",
+    quantity: Number(insp.lotSize ?? 1)
+  });
+
+  if (issue.error || !issue.data) {
+    return {
+      error: issue.error,
+      message: issue.message ?? "Failed to create quality issue"
+    };
+  }
+
+  // Link the source inspection to the issue so the ERP issue explorer can
+  // surface the origin and deep-link back to the inspection lot.
+  const link = await serviceRole.from("nonConformanceInspection").insert({
+    nonConformanceId: issue.data.id,
+    inspectionId,
+    companyId,
+    createdBy: userId
+  });
+  if (link.error) {
+    return {
+      error: link.error,
+      message: "Quality issue created, but failed to link the inspection"
+    };
+  }
+
+  return { error: null, message: null };
 }
 
 async function getIssueContext(

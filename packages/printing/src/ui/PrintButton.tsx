@@ -1,5 +1,6 @@
 import {
   Button,
+  IconButton,
   Modal,
   ModalBody,
   ModalContent,
@@ -32,7 +33,8 @@ export function PrintButton({
   fileRoutes,
   disabled,
   variant = "secondary",
-  size
+  size,
+  isIcon = false
 }: {
   sourceDocument: string;
   sourceDocumentId: string;
@@ -43,6 +45,9 @@ export function PrintButton({
   disabled?: boolean;
   variant?: ComponentProps<typeof Button>["variant"];
   size?: ComponentProps<typeof Button>["size"];
+  // Render as an icon-only button (printer glyph, no label) instead of the
+  // default labeled button. Same print/download flow either way.
+  isIcon?: boolean;
 }) {
   const { printerRoutes, resolvePrinterRoute, printPath } = usePrinting();
   const modal = useDisclosure();
@@ -96,15 +101,26 @@ export function PrintButton({
 
   return (
     <>
-      <Button
-        leftIcon={<LuPrinter />}
-        variant={variant}
-        size={size}
-        disabled={disabled}
-        onClick={handleClick}
-      >
-        <Trans>Print</Trans>
-      </Button>
+      {isIcon ? (
+        <IconButton
+          aria-label="Print label"
+          icon={<LuPrinter />}
+          variant={variant}
+          size={size}
+          isDisabled={disabled}
+          onClick={handleClick}
+        />
+      ) : (
+        <Button
+          leftIcon={<LuPrinter />}
+          variant={variant}
+          size={size}
+          disabled={disabled}
+          onClick={handleClick}
+        >
+          <Trans>Print</Trans>
+        </Button>
+      )}
 
       {modal.isOpen && (
         <Modal open onOpenChange={(open) => !open && modal.onClose()}>

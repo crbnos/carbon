@@ -999,6 +999,9 @@ msgstr "适用于全部"
 msgid "Applies to all work centers"
 msgstr "适用于所有工作中心"
 
+msgid "Applies to features without their own rule, and to the lot when this plan drives an inspection."
+msgstr "适用于没有自己规则的功能，以及当该计划驱动检验时的批次。"
+
 msgid "Apply"
 msgstr "应用"
 
@@ -1362,6 +1365,9 @@ msgstr "你确定要删除此量规吗？"
 msgid "Are you sure you want to delete this inspection plan?"
 msgstr "你确定要删除此检验计划吗?"
 
+msgid "Are you sure you want to delete this inspection plan? This cannot be undone."
+msgstr "你确定要删除此检验计划吗？此操作无法撤销。"
+
 msgid "Are you sure you want to delete this issue workflow?"
 msgstr "你确定要删除此问题工作流吗？"
 
@@ -1708,8 +1714,8 @@ msgstr "平衡"
 msgid "Balloon"
 msgstr "气球"
 
-msgid "Ballooned drawings with inspection characteristics."
-msgstr "带有检验特性的注解图。"
+msgid "Ballooned drawings with inspection features."
+msgstr "带有检验特性的标注图纸。"
 
 msgid "Bank - Cash"
 msgstr "银行-现金"
@@ -3669,6 +3675,9 @@ msgstr "默认优先级"
 msgid "Default revenue GL account credited when a sales invoice posts."
 msgstr "销售发票过帐时贷记的默认收入GL账户。"
 
+msgid "Default Sampling"
+msgstr "默认抽样"
+
 msgid "Default shelf-life duration (days)"
 msgstr "默认保质期时长（天）"
 
@@ -3710,9 +3719,6 @@ msgstr "首先定义制造操作。"
 
 msgid "Define multi-level BOMs and Bill of Process (make methods)"
 msgstr "定义多级物料清单和工艺流程（制造方法）"
-
-msgid "Defines how many tracked entities are inspected per lot, and how many failures are tolerated before the lot is rejected."
-msgstr "定义每批检查多少个跟踪实体，以及在批次被拒绝前允许多少个失败。"
 
 msgid "Delete"
 msgstr "删除"
@@ -3806,6 +3812,9 @@ msgstr "删除群组"
 
 msgid "Delete Holiday"
 msgstr "删除假期"
+
+msgid "Delete Inspection Plan"
+msgstr "删除检验计划"
 
 msgid "Delete Issue"
 msgstr "删除问题"
@@ -5197,8 +5206,8 @@ msgstr "用于切分总账报告的额外标签"
 msgid "Fail"
 msgstr "失败"
 
-msgid "Failed characteristics"
-msgstr "失败的特征"
+msgid "Failed features"
+msgstr "失效特性"
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create asset class: {0}"
@@ -6417,6 +6426,12 @@ msgstr "间接材料和服务（默认）"
 
 msgid "Infrastructure"
 msgstr "基础设施"
+
+msgid "Inherit"
+msgstr "继承"
+
+msgid "Inherit document default"
+msgstr "继承文档默认值"
 
 msgid "Inherit From Materials"
 msgstr "从材料继承"
@@ -10373,9 +10388,6 @@ msgstr "需要采取行动"
 msgid "Requires Adjustment"
 msgstr "需要调整"
 
-msgid "Requires Inspection"
-msgstr "需要检查"
-
 msgid "Requires Repair"
 msgstr "需要维修"
 
@@ -10396,7 +10408,7 @@ msgstr "重置PIN"
 msgid "Reset PIN for {0} {1}"
 msgstr "重置 {0} {1} 的 PIN"
 
-msgid "Reset View"
+msgid "Reset view"
 msgstr "重置视图"
 
 msgid "Residual value"
@@ -10749,8 +10761,11 @@ msgstr "样本"
 msgid "Sample Size"
 msgstr "样本量"
 
-msgid "Sampling Plan"
-msgstr "抽样计划"
+msgid "Sampling"
+msgstr "抽样"
+
+msgid "Sampling — Feature {featureLabel}"
+msgstr "抽样 — 功能 {featureLabel}"
 
 msgid "Sampling Standard"
 msgstr "抽样标准"
@@ -12583,8 +12598,8 @@ msgstr "该批次将被标记为通过。{fails} 个抽样失败已记录在案�
 msgid "The lot will still be rejected, but an NCR cannot be created until at least one Issue Type is configured."
 msgstr "该批次仍将被拒收，但在至少配置一个问题类型之前，无法创建NCR。"
 
-msgid "The lot's per-characteristic sampling plan will be re-resolved from the selected document."
-msgstr "该批次的按特征抽样计划将从所选文件重新确定。"
+msgid "The lot's per-feature sampling plan will be re-resolved from the selected document."
+msgstr "该批次的按特性抽样计划将从选定的文件中重新解析。"
 
 msgid "The lowest amount this supplier will charge for this process, regardless of quantity; jobs below the breakeven volume still cost at least this much."
 msgstr "此供应商无论数量如何为此流程收费的最低金额；低于损益平衡点的工作仍至少花费此金额。"
@@ -12952,6 +12967,9 @@ msgstr "此信息将用于文档标题"
 
 msgid "This information will be visible to all users, so be careful what you share."
 msgstr "此信息将对所有用户可见，请谨慎分享。"
+
+msgid "this inspection plan"
+msgstr "这个检验计划"
 
 msgid "This is a purchased item — it has no BoM/BoP; only its attributes and documents can change."
 msgstr "这是一个采购项目 — 它没有BoM/BoP；只有其属性和文档可以更改。"

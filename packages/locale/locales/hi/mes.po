@@ -42,6 +42,12 @@ msgstr "{0} में से {1} पूर्ण"
 msgid "{0} Scrapped"
 msgstr "{0} स्क्रैप किया गया"
 
+msgid "{completions} passed unit(s) will be completed."
+msgstr "{completions} पास किए गए यूनिट(यूनिट्स) पूरी की जाएंगी।"
+
+msgid "{fails} sampled failure(s) are recorded and will NOT be completed — resolve them from the actions menu."
+msgstr "{fails} नमूना विफलता(एं) दर्ज की गई है और पूर्ण नहीं की जाएगी — उन्हें क्रियाएं मेनू से हल करें।"
+
 msgid "About"
 msgstr "के बारे में"
 
@@ -83,6 +89,18 @@ msgstr "स्पेयर पार्ट जोड़ें"
 
 msgid "All"
 msgstr "सभी"
+
+msgid "All rework"
+msgstr "सभी रीवर्क"
+
+msgid "All scrap"
+msgstr "सभी स्क्रैप"
+
+msgid "Allocate failed units"
+msgstr "विफल इकाइयों को आवंटित करें"
+
+msgid "Allocate units"
+msgstr "इकाइयों को आवंटित करें"
 
 msgid "Are you sure you want to delete this step?"
 msgstr "क्या आप सुनिश्चित हैं कि आप इस चरण को हटाना चाहते हैं?"
@@ -152,9 +170,6 @@ msgstr "कार्बन लोगो"
 msgid "Cards"
 msgstr "कार्ड"
 
-msgid "Characteristic"
-msgstr "विशेषता"
-
 msgid "Chat"
 msgstr "चैट"
 
@@ -182,6 +197,9 @@ msgstr "Clocked in since {0}"
 
 msgid "Close"
 msgstr "बंद करें"
+
+msgid "Collapse features table"
+msgstr "फीचर्स टेबल को संक्षिप्त करें"
 
 #. placeholder {0}: active.data.current.column.title
 #. placeholder {1}: overColumnPosition + 1
@@ -211,6 +229,9 @@ msgstr "पूर्ण करें"
 
 msgid "Complete All"
 msgstr "सभी को पूर्ण करें"
+
+msgid "Complete passed"
+msgstr "पूर्ण पास"
 
 msgid "Completed"
 msgstr "पूर्ण"
@@ -299,6 +320,9 @@ msgstr "ड्राफ्ट"
 msgid "Drag and drop a file here, or click to select a file"
 msgstr "यहाँ एक फ़ाइल को ड्रैग और ड्रॉप करें, या फ़ाइल चुनने के लिए क्लिक करें"
 
+msgid "Drag to resize drawing and features"
+msgstr "ड्राइंग और फीचर्स को रिसाइज़ करने के लिए ड्रैग करें"
+
 #. placeholder {0}: active.data.current?.type
 msgid "Dragging {0} cancelled."
 msgstr "\"{0}\" को ड्रैग करना रद्द किया गया।"
@@ -343,6 +367,12 @@ msgstr "त्रुटि"
 msgid "Estimated"
 msgstr "अनुमानित"
 
+msgid "Every unit has a verdict: {passes} passed and {fails} failed. The lot closes with each unit routed to its own outcome."
+msgstr "हर इकाई का एक निर्णय है: {passes} पास और {fails} विफल। लॉट बंद हो जाता है और प्रत्येक इकाई अपने परिणाम के लिए रूट की जाती है।"
+
+msgid "Expand features table"
+msgstr "फीचर्स टेबल को विस्तृत करें"
+
 msgid "Expired"
 msgstr "समाप्त"
 
@@ -355,8 +385,11 @@ msgstr "समाप्त होता है {date}"
 msgid "Expiring first"
 msgstr "पहले समाप्त होने वाले"
 
-msgid "Failed characteristics"
-msgstr "विफल विशेषताएं"
+msgid "Failed"
+msgstr "विफल"
+
+msgid "Failed features"
+msgstr "विफल सुविधाएँ"
 
 msgid "Failed to complete inventory adjustment"
 msgstr "इन्वेंटरी समायोजन पूरा करने में विफल"
@@ -382,6 +415,12 @@ msgstr "फ़ाइल अपलोड करने में विफल: {0}
 
 msgid "Failed to upload image"
 msgstr "छवि अपलोड करने में विफल"
+
+msgid "Feature"
+msgstr "सुविधा"
+
+msgid "Features"
+msgstr "विशेषताएं"
 
 msgid "File size exceeds 10MB limit"
 msgstr "फ़ाइल का आकार 10MB की सीमा से अधिक है"
@@ -649,6 +688,9 @@ msgstr "कोई सामग्री नहीं"
 msgid "No open jobs"
 msgstr "कोई खुली नौकरी नहीं"
 
+msgid "No open units to allocate"
+msgstr "आवंटित करने के लिए कोई खुली इकाई नहीं"
+
 msgid "No operators"
 msgstr "कोई ऑपरेटर नहीं"
 
@@ -758,6 +800,12 @@ msgstr "पैरामीटर"
 msgid "Part"
 msgstr "भाग"
 
+msgid "Partial"
+msgstr "आंशिक"
+
+msgid "Partial Disposition"
+msgstr "आंशिक निपटान"
+
 msgid "Passed Inspection"
 msgstr "निरीक्षण पास किया"
 
@@ -852,6 +900,12 @@ msgstr "रिकॉर्ड"
 msgid "Record {0}"
 msgstr "रिकॉर्ड {0}"
 
+msgid "Record only"
+msgstr "केवल रिकॉर्ड करें"
+
+msgid "Record Partial"
+msgstr "आंशिक रिकॉर्ड करें"
+
 msgid "Reject"
 msgstr "अस्वीकार करें"
 
@@ -878,6 +932,9 @@ msgstr "रीवर्क"
 
 msgid "Rework created successfully"
 msgstr "रीवर्क सफलतापूर्वक बनाया गया"
+
+msgid "Rework quantity"
+msgstr "रीवर्क मात्रा"
 
 msgid "Sales Order"
 msgstr "बिक्रय आदेश"
@@ -911,6 +968,9 @@ msgstr "शेड्यूल"
 
 msgid "Scrap"
 msgstr "स्क्रैप"
+
+msgid "Scrap quantity"
+msgstr "स्क्रैप मात्रा"
 
 msgid "Scrap Reason"
 msgstr "स्क्रैप कारण"
@@ -1054,8 +1114,8 @@ msgid "Station: {stationName}"
 msgstr "स्टेशन: {stationName}"
 
 #. placeholder {0}: inspection.lotSize
-msgid "Statistical acceptance failed, so the entire lot of {0} is considered non-conforming (ISO 9001:2015 §8.7) — {passes} sampled pass(es) and {fails} failure(s)."
-msgstr "सांख्यिकीय स्वीकृति विफल रही, इसलिए {0} का पूरा लॉट गैर-अनुरूप माना जाता है (ISO 9001:2015 §8.7) — {passes} नमूना पास(es) और {fails} विफलता(एं)।"
+msgid "Statistical acceptance failed, so the entire lot of {0} is considered non-conforming (ISO 9001:2015 §8.7) — {passes} sampled pass(es) and {fails} failure(s). Route the units below to scrap or rework, or record the verdict only."
+msgstr "सांख्यिकीय स्वीकृति विफल हुई, इसलिए {0} का पूरा लॉट गैर-अनुरूप माना जाता है (ISO 9001:2015 §8.7) — {passes} नमूना पास और {fails} विफलता(एं)। नीचे दी गई इकाइयों को स्क्रैप या रीवर्क के लिए रूट करें, या केवल निर्णय रिकॉर्ड करें।"
 
 msgid "Status"
 msgstr "स्थिति"
@@ -1094,11 +1154,11 @@ msgstr "टैग"
 msgid "The completed quantity for this operation is less than the required quantity of {0}."
 msgstr "इस ऑपरेशन के लिए पूर्ण मात्रा आवश्यक मात्रा {0} से कम है।"
 
-msgid "The lot will be marked Passed. {fails} sampled failure(s) are recorded for your records."
-msgstr "लॉट को पास के रूप में चिह्नित किया जाएगा। {fails} नमूना विफलता(एं) आपके रिकॉर्ड के लिए दर्ज की गई हैं।"
+msgid "The lot will be marked Passed and {remaining} remaining unit(s) will be completed at this operation."
+msgstr "लॉट को पास के रूप में चिह्नित किया जाएगा और {remaining} शेष इकाई(यों) को इस ऑपरेशन पर पूरा किया जाएगा।"
 
-msgid "The lot will still be rejected, but an NCR cannot be created until at least one Issue Type is configured."
-msgstr "लॉट को अभी भी अस्वीकार किया जाएगा, लेकिन कम से कम एक समस्या प्रकार कॉन्फ़िगर होने तक एनसीआर नहीं बनाया जा सकता।"
+msgid "The lot will still be dispositioned, but an NCR cannot be created until at least one Issue Type is configured."
+msgstr "लॉट को अभी भी डिस्पोज़ किया जाएगा, लेकिन कम से कम एक Issue Type कॉन्फ़िगर होने तक NCR नहीं बनाया जा सकता।"
 
 msgid "There are serial or batch tracked materials on the bill of material that have not been fully issued. Completing without issuing may result in incorrect traceability records."
 msgstr "बिल ऑफ मेटेरियल पर सीरियल या बैच ट्रैक किए गए मेटेरियल हैं जो पूरी तरह से जारी नहीं किए गए हैं। जारी किए बिना पूरा करने से गलत ट्रेसेबिलिटी रिकॉर्ड हो सकते हैं।"
@@ -1157,6 +1217,9 @@ msgstr "अनपिक {0}"
 
 msgid "Unsaved changes"
 msgstr "असहेजे परिवर्तन"
+
+msgid "Up to {maxAllocatable} unit(s) can be allocated; the rest is recorded without a posting."
+msgstr "अधिकतम {maxAllocatable} इकाई(यों) को आवंटित किया जा सकता है; शेष को पोस्टिंग के बिना दर्ज किया जाता है।"
 
 msgid "Update"
 msgstr "अपडेट करें"

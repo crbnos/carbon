@@ -167,19 +167,17 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const entityIndex = trackedEntityId
     ? navEntities.findIndex((te) => te.id === trackedEntityId)
     : -1;
-  // Must match AssemblyView.currentUnitIndex: with no explicit ?unit, an index-paged
-  // (batch/untracked) parent lands on the NEXT unit still to build, not unit 0 — the
-  // component deletes ?unit after completing a unit and rolls forward on quantityComplete.
-  // Material issue attribution keys off this unit, so a stale 0 here would credit an
-  // earlier unit's consumes to the unit on screen.
+  // Must match AssemblyView.currentUnitIndex: with no explicit ?unit/?trackedEntityId,
+  // land on the NEXT unit still to build (quantityComplete), not unit 0 — for EVERY
+  // tracking type. A serial parent seeds trackedEntityId to this unit's entity below,
+  // so a fresh load resumes on the in-progress unit instead of a finished unit 1. The
+  // component deletes ?unit after completing a unit and rolls forward on quantityComplete;
+  // material issue attribution also keys off this unit, so a stale 0 would mis-credit it.
   const quantityComplete = Math.max(
     0,
     Math.round((op.quantityComplete as number) ?? 0)
   );
-  const defaultUnitIndex =
-    (jobMakeMethod.data?.requiresSerialTracking ?? false)
-      ? 0
-      : Math.min(quantityComplete, Math.max(0, opQty - 1));
+  const defaultUnitIndex = Math.min(quantityComplete, Math.max(0, opQty - 1));
   const unitIndex =
     entityIndex >= 0
       ? entityIndex

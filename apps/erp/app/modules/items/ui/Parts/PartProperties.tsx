@@ -172,8 +172,7 @@ const PartProperties = ({
         | "description"
         | "mpn"
         | "replenishmentSystem"
-        | "unitOfMeasureCode"
-        | "requiresInspection",
+        | "unitOfMeasureCode",
       value: string | null
     ) => {
       const formData = new FormData();
@@ -747,32 +746,9 @@ const PartProperties = ({
           />
         </ValidatedForm>
       )}
-      {/* Requires Inspection + Manufacturer Part Number are purchasing
-          attributes — hidden on the CO affected-item card; they stay editable on
-          the part page (non-embedded), same as Active/Tags above. */}
-      {!embedded &&
-        routeData?.partSummary?.replenishmentSystem?.includes("Buy") && (
-          <ValidatedForm
-            defaultValues={{
-              requiresInspection:
-                routeData?.partSummary?.requiresInspection ?? false
-            }}
-            validator={z.object({
-              requiresInspection: zfd.checkbox()
-            })}
-            className="w-full"
-            isReadOnly={isReadOnly}
-          >
-            <Boolean
-              label={t`Requires Inspection`}
-              name="requiresInspection"
-              variant="small"
-              onChange={(value) => {
-                onUpdate("requiresInspection", value ? "on" : "off");
-              }}
-            />
-          </ValidatedForm>
-        )}
+      {/* Manufacturer Part Number is a purchasing attribute — hidden on the CO
+          affected-item card; it stays editable on the part page (non-embedded),
+          same as Active/Tags above. */}
       {!embedded &&
         routeData?.partSummary?.replenishmentSystem?.includes("Buy") && (
           <ValidatedForm

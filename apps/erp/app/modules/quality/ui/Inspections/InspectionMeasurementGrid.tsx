@@ -1,9 +1,9 @@
-import { Badge, Button, cn, toast } from "@carbon/react";
+import { Badge, cn, toast } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
 import type { PostgrestSingleResponse } from "@supabase/supabase-js";
 import type { ColumnDef } from "@tanstack/react-table";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { LuCheck, LuPlus, LuX } from "react-icons/lu";
+import { LuCheck, LuX } from "react-icons/lu";
 import { Table } from "~/components";
 import type { EditableTableCellComponentProps } from "~/components/Editable";
 import { EditableNumber } from "~/components/Editable";
@@ -47,9 +47,15 @@ type InspectionMeasurementGridProps = {
   samples: InspectionSample[];
   measurements: InspectionMeasurement[];
   maxSampleSize: number;
+  // Lot size caps how many sample columns can exist — a feature's n is the
+  // required minimum, but the inspector may record up to the whole lot.
+  lotSize: number;
+  // Lot-level acceptance/rejection numbers, used only for the synthetic
+  // "Overall result" row shown when the lot has no inspection-document features.
+  lotAcceptanceNumber: number;
+  lotRejectionNumber: number;
   activeFeatureId: string | null;
   onActiveFeatureChange: (id: string | null) => void;
-  onAddSample: () => void;
   onMeasurementSaved: (result: MeasurementSaveResult) => void;
   // Rendered in the Table header (e.g. the collapse/expand toggle when the
   // grid is the bottom panel of the execution view).
@@ -57,6 +63,11 @@ type InspectionMeasurementGridProps = {
 };
 
 const sampleKey = (columnIndex: number) => `sample-${columnIndex}`;
+
+// Synthetic feature id for the single pass/fail row shown when the lot has no
+// inspection document. Its cells write the sample's status directly (via the
+// sample route) rather than a per-feature measurement.
+const OVERALL_ROW_ID = "__overall__";
 
 function parseSpecNumber(value: string | null | undefined): number | null {
   if (value == null) return null;
@@ -77,9 +88,11 @@ const InspectionMeasurementGrid = ({
   samples,
   measurements,
   maxSampleSize,
+  lotSize,
+  lotAcceptanceNumber,
+  lotRejectionNumber,
   activeFeatureId,
   onActiveFeatureChange,
-  onAddSample,
   onMeasurementSaved,
   primaryAction
 }: InspectionMeasurementGridProps) => {
@@ -101,12 +114,18 @@ const InspectionMeasurementGrid = ({
     [features]
   );
 
+  // Lots without an inspection document have no features to measure, so
+  // the grid collapses to a single "Overall result" pass/fail row per sample.
+  const hasFeatures = liveFeatures.length > 0;
+
   // Column model: serial lots get one column per scanned sample; non-serial
-  // lots pre-create columns up to the max required n (sample rows are created
-  // server-side on the first measurement into a column).
+  // lots pre-create columns up to the max required n plus one spare, growing
+  // as columns are used, capped at the lot size (sample rows are created
+  // server-side on the first measurement into a column). n is a minimum —
+  // recording MORE than n samples is always allowed, up to the full lot.
   const columnCount = isSerial
     ? samples.length
-    : Math.max(maxSampleSize, samples.length);
+    : Math.min(lotSize, Math.max(maxSampleSize, samples.length + 1));
 
   // Column index -> sample id. Anonymous columns resolve lazily from save
   // responses; keyed by index because unsaved columns have no id yet.
@@ -147,12 +166,18 @@ const InspectionMeasurementGrid = ({
     (columnIndex: number, featureId: string): string | undefined => {
       const override = statusByCell[`${columnIndex}:${featureId}`];
       if (override) return override;
+      // The "Overall result" row has no measurement — its verdict is the
+      // sample's own status (Pending shows as an untoggled cell).
+      if (featureId === OVERALL_ROW_ID) {
+        return samples[columnIndex]?.status;
+      }
       return measurementFor(sampleIdByColumn[columnIndex], featureId)?.status;
     },
-    [statusByCell, sampleIdByColumn, measurementFor]
+    [statusByCell, sampleIdByColumn, measurementFor, samples]
   );
 
-  const persistCell = useCallback(
+  // Document-driven cell: record a per-feature measurement.
+  const persistMeasurement = useCallback(
     async (
       row: FeatureGridRow,
       columnIndex: number,
@@ -185,7 +210,7 @@ const InspectionMeasurementGrid = ({
         return null;
       }
 
-      const result: MeasurementSaveResult = {
+      return {
         sampleId: body.data.sampleId,
         measurementId: body.data.measurementId,
         measurementStatus: body.data
@@ -200,6 +225,69 @@ const InspectionMeasurementGrid = ({
             : null,
         passed: payload.passed !== undefined ? payload.passed === "true" : null
       };
+    },
+    [inspectionId, sampleIdByColumn, t]
+  );
+
+  // No-document cell: set the sample's Pass/Fail status directly. Serial
+  // columns already carry a scanned tracked entity (upsert by it); anonymous
+  // columns update in place by sampleId once one exists.
+  const persistOverall = useCallback(
+    async (
+      columnIndex: number,
+      payload: { passed?: "true" | "false" }
+    ): Promise<MeasurementSaveResult | null> => {
+      const status = payload.passed === "true" ? "Passed" : "Failed";
+      const formData = new FormData();
+      formData.set("inspectionId", inspectionId);
+      formData.set("status", status);
+      formData.set("quiet", "true");
+      const sampleId = sampleIdByColumn[columnIndex];
+      if (sampleId) formData.set("sampleId", sampleId);
+      const trackedEntityId = samples[columnIndex]?.trackedEntityId;
+      if (trackedEntityId) formData.set("trackedEntityId", trackedEntityId);
+
+      const response = await fetch(
+        `${path.to.inspection(inspectionId)}/sample`,
+        { method: "post", body: formData }
+      );
+      const body = (await response.json().catch(() => null)) as {
+        sampleId?: string;
+        error?: { message: string } | null;
+      } | null;
+
+      if (!response.ok || !body?.sampleId || body.error) {
+        toast.error(body?.error?.message ?? t`Failed to save result`);
+        return null;
+      }
+
+      return {
+        sampleId: body.sampleId,
+        measurementId: "",
+        measurementStatus: status,
+        sampleStatus: status,
+        inspectionFeatureId: OVERALL_ROW_ID,
+        columnIndex,
+        value: null,
+        passed: status === "Passed"
+      };
+    },
+    [inspectionId, sampleIdByColumn, samples, t]
+  );
+
+  const persistCell = useCallback(
+    async (
+      row: FeatureGridRow,
+      columnIndex: number,
+      payload: { value?: string; passed?: "true" | "false" }
+    ): Promise<MeasurementSaveResult | null> => {
+      // The "Overall result" row (no-document lots) sets the sample's status
+      // directly through the sample route instead of recording a measurement.
+      const result =
+        row.featureId === OVERALL_ROW_ID
+          ? await persistOverall(columnIndex, payload)
+          : await persistMeasurement(row, columnIndex, payload);
+      if (!result) return null;
 
       setSampleIdByColumn((prev) =>
         prev[columnIndex] === result.sampleId
@@ -217,7 +305,7 @@ const InspectionMeasurementGrid = ({
       onMeasurementSaved(result);
       return result;
     },
-    [inspectionId, sampleIdByColumn, onMeasurementSaved, t]
+    [persistMeasurement, persistOverall, onMeasurementSaved]
   );
 
   // EditableNumber-compatible mutation for numeric cells.
@@ -240,6 +328,22 @@ const InspectionMeasurementGrid = ({
   );
 
   const rows = useMemo<FeatureGridRow[]>(() => {
+    if (!hasFeatures) {
+      // Single synthetic pass/fail row for lots with no inspection document.
+      return [
+        {
+          featureId: OVERALL_ROW_ID,
+          label: "1",
+          description: t`Overall result`,
+          pageNumber: 1,
+          isNumeric: false,
+          specLabel: "",
+          sampleSize: maxSampleSize,
+          acceptanceNumber: lotAcceptanceNumber,
+          rejectionNumber: lotRejectionNumber
+        }
+      ];
+    }
     return liveFeatures.map((lotFeature) => {
       const feature = lotFeature.inspectionFeature!;
       const isNumeric =
@@ -277,11 +381,16 @@ const InspectionMeasurementGrid = ({
       return row;
     });
   }, [
+    hasFeatures,
     liveFeatures,
     columnCount,
     sampleIdByColumn,
     valueByCell,
-    measurementFor
+    measurementFor,
+    maxSampleSize,
+    lotAcceptanceNumber,
+    lotRejectionNumber,
+    t
   ]);
 
   // Pass/fail chip counts per feature (loader data + local overrides).
@@ -299,6 +408,70 @@ const InspectionMeasurementGrid = ({
     [columnCount, cellStatus]
   );
 
+  // Attribute pass/fail: a segmented, color-coded toggle. Each half is a
+  // full-height tap target (shop-floor friendly), green ✓ pass / red ✗ fail,
+  // filled when selected and tinted on hover otherwise. Shared by the display
+  // cell AND the editable cell so opening a cell (keyboard nav / focus) keeps
+  // the same buttons on screen instead of swapping them for an empty editor.
+  const renderPassFail = useCallback(
+    (original: FeatureGridRow, i: number) => {
+      const status = cellStatus(i, original.featureId);
+      const passed = status === "Passed";
+      const failed = status === "Failed";
+      return (
+        <div
+          data-sample-col={i}
+          className="-mx-4 -my-2 flex justify-center px-1.5 py-1"
+        >
+          {/* Negative margins cancel the cell's px-4 py-2 so the segmented
+              control fills the full cell for a large, finger-friendly target;
+              a shared divider splits pass / fail. */}
+          <div className="flex h-10 w-full min-w-[92px] max-w-[152px] items-stretch overflow-hidden rounded-lg border border-border bg-background">
+            <button
+              type="button"
+              aria-label={t`Pass`}
+              aria-pressed={passed}
+              disabled={isReadOnly}
+              tabIndex={-1}
+              onClick={(e) => {
+                e.stopPropagation();
+                persistCell(original, i, { passed: "true" });
+              }}
+              className={cn(
+                "flex flex-1 items-center justify-center transition-transform active:scale-[0.96] disabled:pointer-events-none disabled:opacity-50",
+                passed
+                  ? "bg-emerald-500 text-white"
+                  : "text-muted-foreground hover:bg-emerald-500/10 hover:text-emerald-600"
+              )}
+            >
+              <LuCheck className="h-5 w-5" />
+            </button>
+            <button
+              type="button"
+              aria-label={t`Fail`}
+              aria-pressed={failed}
+              disabled={isReadOnly}
+              tabIndex={-1}
+              onClick={(e) => {
+                e.stopPropagation();
+                persistCell(original, i, { passed: "false" });
+              }}
+              className={cn(
+                "flex flex-1 items-center justify-center border-l border-border transition-transform active:scale-[0.96] disabled:pointer-events-none disabled:opacity-50",
+                failed
+                  ? "bg-red-500 text-white"
+                  : "text-muted-foreground hover:bg-red-500/10 hover:text-red-600"
+              )}
+            >
+              <LuX className="h-5 w-5" />
+            </button>
+          </div>
+        </div>
+      );
+    },
+    [cellStatus, isReadOnly, persistCell, t]
+  );
+
   const columns = useMemo<ColumnDef<FeatureGridRow>[]>(() => {
     const cols: ColumnDef<FeatureGridRow>[] = [
       {
@@ -312,7 +485,7 @@ const InspectionMeasurementGrid = ({
       },
       {
         accessorKey: "description",
-        header: t`Characteristic`,
+        header: t`Feature`,
         cell: ({ row }) => (
           <span
             className="line-clamp-2 max-w-[180px] text-xs"
@@ -378,14 +551,6 @@ const InspectionMeasurementGrid = ({
         meta: { headerClassName: "justify-center" },
         cell: ({ row }) => {
           const original = row.original;
-          const enabled = i < original.sampleSize;
-          if (!enabled) {
-            return (
-              <span className="block text-center text-xs text-muted-foreground/40">
-                ·
-              </span>
-            );
-          }
           const status = cellStatus(i, original.featureId);
           if (original.isNumeric) {
             const value = original[key];
@@ -402,79 +567,10 @@ const InspectionMeasurementGrid = ({
               </span>
             );
           }
-          // Attribute pass/fail: a segmented, color-coded toggle. Each half is
-          // a full-height tap target (shop-floor friendly), green ✓ for pass /
-          // red ✗ for fail, filled when selected and tinted on hover otherwise.
-          const passed = status === "Passed";
-          const failed = status === "Failed";
-          return (
-            <div
-              data-sample-col={i}
-              className="-mx-4 -my-2 flex justify-center px-1.5 py-1"
-            >
-              {/* Negative margins cancel the cell's px-4 py-2 so the segmented
-                  control fills the full cell for a large, finger-friendly
-                  target; a shared divider splits pass / fail. */}
-              <div className="flex h-10 w-full min-w-[92px] max-w-[152px] items-stretch overflow-hidden rounded-lg border border-border bg-background">
-                <button
-                  type="button"
-                  aria-label={t`Pass`}
-                  aria-pressed={passed}
-                  disabled={isReadOnly}
-                  tabIndex={-1}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    persistCell(original, i, { passed: "true" });
-                  }}
-                  className={cn(
-                    "flex flex-1 items-center justify-center transition-transform active:scale-[0.96] disabled:pointer-events-none disabled:opacity-50",
-                    passed
-                      ? "bg-emerald-500 text-white"
-                      : "text-muted-foreground hover:bg-emerald-500/10 hover:text-emerald-600"
-                  )}
-                >
-                  <LuCheck className="h-5 w-5" />
-                </button>
-                <button
-                  type="button"
-                  aria-label={t`Fail`}
-                  aria-pressed={failed}
-                  disabled={isReadOnly}
-                  tabIndex={-1}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    persistCell(original, i, { passed: "false" });
-                  }}
-                  className={cn(
-                    "flex flex-1 items-center justify-center border-l border-border transition-transform active:scale-[0.96] disabled:pointer-events-none disabled:opacity-50",
-                    failed
-                      ? "bg-red-500 text-white"
-                      : "text-muted-foreground hover:bg-red-500/10 hover:text-red-600"
-                  )}
-                >
-                  <LuX className="h-5 w-5" />
-                </button>
-              </div>
-            </div>
-          );
+          // Attribute pass/fail toggle — shared with the editable cell so
+          // focusing the cell keeps the buttons visible.
+          return renderPassFail(original, i);
         }
-      });
-    }
-
-    if (isSerial && !isReadOnly) {
-      cols.push({
-        id: "add-sample",
-        header: () => (
-          <Button
-            size="sm"
-            variant="secondary"
-            leftIcon={<LuPlus />}
-            onClick={onAddSample}
-          >
-            {t`Sample`}
-          </Button>
-        ),
-        cell: () => null
       });
     }
 
@@ -483,17 +579,16 @@ const InspectionMeasurementGrid = ({
     columnCount,
     samples,
     isSerial,
-    isReadOnly,
     featureCounts,
     cellStatus,
-    persistCell,
-    onAddSample,
+    renderPassFail,
     t
   ]);
 
   // Numeric sample cells edit through the shared Editable machinery; attribute
-  // rows keep their inline P/F buttons (the editable component falls back to
-  // them so an opened cell renders the same UI).
+  // cells render the SAME Pass/Fail control as the display cell, so opening a
+  // cell (single click, or keyboard nav that clicks the next cell) keeps the
+  // buttons on screen instead of swapping them for an empty placeholder.
   const editableComponents = useMemo(() => {
     const components: Record<
       string,
@@ -503,23 +598,24 @@ const InspectionMeasurementGrid = ({
       const key = sampleKey(i);
       const numberEditor = EditableNumber<FeatureGridRow>(
         onCellEdit,
-        undefined,
+        // react-aria NumberField defaults to 3 fraction digits, which rounds
+        // fine measurements (e.g. thousandths/ten-thousandths of an inch) on
+        // blur. Allow up to 6 so precision readings persist intact.
+        { formatOptions: { maximumFractionDigits: 6 } },
         {
           clearable: true
         }
       );
       components[key] = (props) => {
-        const enabled = i < props.row.sampleSize;
-        if (!enabled || !props.row.isNumeric) {
-          // Not numerically editable — render nothing; the display cell's
-          // buttons / placeholder stay in charge.
-          return <div className="px-2 text-xs text-muted-foreground/40">·</div>;
+        if (!props.row.isNumeric) {
+          // Attribute feature: keep the Pass/Fail toggle visible when focused.
+          return renderPassFail(props.row, i);
         }
         return numberEditor(props);
       };
     }
     return components;
-  }, [columnCount, onCellEdit]);
+  }, [columnCount, onCellEdit, renderPassFail]);
 
   const gridRef = useRef<HTMLDivElement>(null);
 
@@ -651,7 +747,7 @@ const InspectionMeasurementGrid = ({
         }
         titleBadge={
           <span className="min-w-0 truncate text-sm font-medium text-foreground">
-            {t`Features`} ({rows.length})
+            {hasFeatures ? `${t`Features`} (${rows.length})` : t`Result`}
           </span>
         }
         primaryAction={primaryAction}

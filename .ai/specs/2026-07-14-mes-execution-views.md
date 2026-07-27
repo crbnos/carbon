@@ -67,32 +67,32 @@ unit operators page through. Slides are reference media on the step, *not* a ste
 
 ### inspection plan
 The quality definition for a part: an `inspectionDocument` (ballooned drawing) holding
-`inspectionFeature` rows (characteristics with nominal ± tolerance and unit). Today an ERP-only
+`inspectionFeature` rows (features with nominal ± tolerance and unit). Today an ERP-only
 definition with no link to a job/operation and no result-capture. The Inspection view executes a
 plan against a `jobOperation`, linked by an explicit nullable `inspectionDocumentId` FK on the
 operation (picker defaults via resolve-by-item: the part's sole `inspectionDocument` if exactly
 one exists).
 
-### variable / attribute characteristic
+### variable / attribute feature
 An `inspectionFeature` is **variable** (numerically evaluated for pass/fail against
 `nominalNumeric ± tolerance`) iff its numeric columns are populated; otherwise it is an
-**attribute** characteristic the inspector marks pass/fail by hand (thread fits, surface-finish
+**attribute** feature the inspector marks pass/fail by hand (thread fits, surface-finish
 callouts, GD&T, visual). Numeric columns (`nominalNumeric`, `tolerancePlusNumeric`,
 `toleranceMinusNumeric`) are added alongside the existing TEXT, which is retained for display and
 non-numeric specs. See §5.3.
 
 ### pass/fail evaluator
 A pure function `(actual, nominalNumeric, tolerance±, unit) → pass | fail | out-of-tolerance`,
-run only for variable characteristics. Records actuals into the inspection result record.
+run only for variable features. Records actuals into the inspection result record.
 
 ### result record
 The planned `jobOperationInspectionRecord` table — one row per `inspectionFeature` per
 unit/sample, keyed `(jobOperationId, inspectionFeatureId, index)`. Modeled column-for-column on
 `jobOperationStepRecord` (`numericValue` = actual; `value`/`booleanValue`/`userValue` for
-attribute characteristics); `index` from the unit-axis module; optional `gaugeId`; a `result`
+attribute features); `index` from the unit-axis module; optional `gaugeId`; a `result`
 (`pass | fail | out-of-tolerance`) **frozen at record time** for as-inspected evidence. A failing
 row links a `nonConformance` via the existing association. It is *not* a `jobOperationStepRecord`
-— inspection characteristics are `inspectionFeature` rows, never synthetic procedure steps.
+— inspection features are `inspectionFeature` rows, never synthetic procedure steps.
 See §5.4.
 
 ---
@@ -314,17 +314,17 @@ consumes the extracted core (same screen, zero behavior change) do we re-point A
 Inspection on it. Boundary: shared core = hook(s) + shared modal components + a layout shell
 (timer/`productionEvent`, quantity, material issue, NCR affordance, realtime channel,
 completion/finish, unit-axis navigation); view-specific body = Operation's procedure/step
-rendering, Assembly's build-step + static model, Inspection's characteristic list + record +
+rendering, Assembly's build-step + static model, Inspection's feature list + record +
 pass/fail + gauge. Sequencing: unit-axis module first → extract the core while wiring Assembly,
 Operation re-pointed to prove parity → Inspection last. Rejected alternatives: a fresh core
 (no parity gate, discards proven behavior) and keeping Assembly's copy (guarantees drift).
 
 ### 5.3 Numeric tolerance columns alongside TEXT on `inspectionFeature` (accepted)
 Pass/fail needs numbers, but `inspectionFeature.nominalValue / tolerancePlus / toleranceMinus /
-unit` are TEXT — deliberately, since not every characteristic is numeric (thread fits like `H7`,
+unit` are TEXT — deliberately, since not every feature is numeric (thread fits like `H7`,
 `≤Ra 1.6`, GD&T, visual go/no-go). We **add nullable numeric columns** (`nominalNumeric`,
 `tolerancePlusNumeric`, `toleranceMinusNumeric`, DOUBLE PRECISION) **alongside** the TEXT rather
-than replacing it or parsing at evaluation time. A feature is a **variable** characteristic iff
+than replacing it or parsing at evaluation time. A feature is a **variable** feature iff
 `nominalNumeric` is non-null; otherwise **attribute** (manual pass/fail). No `featureType` enum
 in v1 — numeric-presence is the mode. The balloon-extraction/save path emits numeric for new
 features; a one-time lenient backfill parses existing TEXT where clean and leaves null otherwise
@@ -340,8 +340,14 @@ display; consistency is the extraction/save path's responsibility.
 > `inspectionMeasurement` with `sourceDocument` = 'Receipt' | 'Job Operation').
 > The shipped MES Inspection view executes against those tables — a lot per
 > job operation created lazily on first open (`getOrCreateJobOperationInspection`
-> in `@carbon/database/quality`), per-characteristic AQL sampling, measurements
-> in `inspectionMeasurement`, Accept/Reject disposition, reject → MES NCR.
+> in `@carbon/database/quality`), per-feature AQL sampling, measurements
+> in `inspectionMeasurement`, Accept/Partial/Reject disposition. Since
+> 2026-07-27 the disposition carries its production outcome (one-shot
+> `requireOpen` close, then Accept completes the remainder while Reject/Partial
+> allocate the failed set per-unit between Scrap and Rework — the rework path
+> via `trigger-rework`'s routing clone, which re-inspects automatically;
+> provenance links on `productionQuantity.inspectionId`/`inspectionSampleId`
+> guard double-posting); the NCR is optional documentation only.
 > The **plan-link half of this ADR stands**: `inspectionDocumentId` FK on
 > method/quote/job operations, propagated by get-method. See
 > `.claude/rules/inspection-system.md` for the live model.
@@ -353,10 +359,10 @@ classification migration independent). Resolve-by-item is ambiguous — a part c
 picker *defaults* via resolve-by-item; the stored FK is the source of truth.
 
 **Result record — a new table mirroring `jobOperationStepRecord`, not synthetic steps.**
-Inspection characteristics are `inspectionFeature` rows, not `jobOperationStep` rows, so writing
+Inspection features are `inspectionFeature` rows, not `jobOperationStep` rows, so writing
 into `jobOperationStepRecord` would require synthesizing fake steps. Instead
 `jobOperationInspectionRecord` is keyed `(jobOperationId, inspectionFeatureId, index)`, one row
-per characteristic per unit/sample, with `index` from the shared unit-axis module, an optional
+per feature per unit/sample, with `index` from the shared unit-axis module, an optional
 `gaugeId`, and a `result` frozen at record time (as-inspected evidence that survives later
 tolerance edits; the numeric columns of §5.3 remain the source for re-evaluation). A failing row
 links a `nonConformance` via the existing association.

@@ -69,7 +69,6 @@ export function useConsumableNavigation() {
     {
       name: t`Quality`,
       to: path.to.consumableQuality(itemId),
-      isDisabled: !routeData?.consumableSummary?.requiresInspection,
       role: ["employee"],
       permission: "quality",
       icon: LuClipboardCheck,

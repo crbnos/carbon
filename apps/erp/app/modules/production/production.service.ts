@@ -46,6 +46,7 @@ import type {
   assemblyStepStatuses,
   deadlineTypes,
   failureModeValidator,
+  inspectionDocumentSamplingValidator,
   inspectionDocumentValidator,
   jobMaterialValidator,
   jobOperationStatus,
@@ -6515,6 +6516,18 @@ function mapInspectionDocument(row: Record<string, unknown>) {
       pdfUrl: toPreviewUrl((row.storagePath as string | null) ?? null),
       annotations: [],
       features: []
+    },
+    // The document's default sampling rule (feature rule -> document default
+    // -> All). NUMERIC columns arrive as strings from PostgREST — coerce.
+    sampling: {
+      samplingPlanType: (row.samplingPlanType as string | null) ?? null,
+      samplingSampleSize: (row.samplingSampleSize as number | null) ?? null,
+      samplingPercentage:
+        row.samplingPercentage == null ? null : Number(row.samplingPercentage),
+      samplingAql: row.samplingAql == null ? null : Number(row.samplingAql),
+      samplingInspectionLevel:
+        (row.samplingInspectionLevel as string | null) ?? null,
+      samplingSeverity: (row.samplingSeverity as string | null) ?? null
     }
   };
 }
@@ -6604,6 +6617,47 @@ export async function getInspectionDocument(
     data: result.data ? mapInspectionDocument(result.data) : null,
     error: result.error
   };
+}
+
+/**
+ * When an inspection plan is created without a drawing number, fall back to the
+ * part's readableIdWithRevision. If a plan with that drawing number already
+ * exists for the company, append " (1)", " (2)", etc. until it is unique.
+ */
+async function resolveInspectionDocumentDrawingNumber(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  partId: string
+): Promise<string | null> {
+  const partResult = await client
+    .from("item")
+    .select("readableIdWithRevision")
+    .eq("id", partId)
+    .eq("companyId", companyId)
+    .single();
+
+  const base = partResult.data?.readableIdWithRevision?.trim();
+  if (!base) return null;
+
+  const existingResult = await client
+    .from("inspectionDocument")
+    .select("drawingNumber")
+    .eq("companyId", companyId)
+    .not("drawingNumber", "is", null);
+
+  const taken = new Set(
+    (existingResult.data ?? [])
+      .map((row) => row.drawingNumber)
+      .filter((value): value is string => Boolean(value))
+  );
+
+  if (!taken.has(base)) return base;
+
+  let suffix = 1;
+  while (taken.has(`${base} (${suffix})`)) {
+    suffix += 1;
+  }
+  return `${base} (${suffix})`;
 }
 
 export async function upsertInspectionDocument(
@@ -6760,12 +6814,16 @@ export async function upsertInspectionDocument(
     };
   }
 
+  const resolvedDrawingNumber = drawingNumber?.trim()
+    ? drawingNumber.trim()
+    : await resolveInspectionDocumentDrawingNumber(client, companyId, partId);
+
   return documentClient
     .from("inspectionDocument")
     .insert({
       companyId,
       partId,
-      drawingNumber: drawingNumber ?? null,
+      drawingNumber: resolvedDrawingNumber ?? null,
       version: 0,
       ...(storagePath
         ? {
@@ -6858,6 +6916,17 @@ function mapInspectionFeature(row: Record<string, unknown>) {
     toleranceMinus: (row.toleranceMinus as string | null) ?? null,
     unit: (row.unit as string | null) ?? null,
     type: (row.type as string) ?? "Measurement",
+    // Per-feature sampling rule (NULL = inherit the document default). NUMERIC
+    // columns arrive as strings from PostgREST — coerce, mirroring the document
+    // default rule in mapInspectionDocument.
+    samplingPlanType: (row.samplingPlanType as string | null) ?? null,
+    samplingSampleSize: (row.samplingSampleSize as number | null) ?? null,
+    samplingPercentage:
+      row.samplingPercentage == null ? null : Number(row.samplingPercentage),
+    samplingAql: row.samplingAql == null ? null : Number(row.samplingAql),
+    samplingInspectionLevel:
+      (row.samplingInspectionLevel as string | null) ?? null,
+    samplingSeverity: (row.samplingSeverity as string | null) ?? null,
     balloonId:
       typeof balloonIdRaw === "string"
         ? balloonIdRaw
@@ -6972,11 +7041,11 @@ export async function getInspectionPlan(
         /** Feature id (primary key for plan rows). */
         id: featureId,
         featureId,
-        /** Balloon id when placed; null for table-only characteristics. */
+        /** Balloon id when placed; null for table-only features. */
         balloonId: b?.id ?? null,
         inspectionDocumentId: row.inspectionDocumentId,
         pageNumber: b?.pageNumber ?? row.pageNumber,
-        characteristic: row.label,
+        label: row.label,
         description: row.description,
         nominalValue: row.nominalValue,
         tolerancePlus: row.tolerancePlus,
@@ -6992,6 +7061,26 @@ export async function getInspectionPlan(
     }),
     error: null
   };
+}
+
+export async function updateInspectionDocumentSampling(
+  client: SupabaseClient<Database>,
+  args: z.infer<typeof inspectionDocumentSamplingValidator> & {
+    inspectionDocumentId: string;
+    companyId: string;
+    userId: string;
+  }
+) {
+  const { inspectionDocumentId, companyId, userId, ...sampling } = args;
+  return client
+    .from("inspectionDocument")
+    .update({
+      ...sampling,
+      updatedBy: userId,
+      updatedAt: new Date().toISOString()
+    })
+    .eq("id", inspectionDocumentId)
+    .eq("companyId", companyId);
 }
 
 export async function saveInspectionDocumentAtomic(

@@ -26,7 +26,7 @@ rate), and the Procedure card shows only for Process operations.
 - The BoP editors expose one instruction source (Procedure) to every in-house
   operation type, even though a procedure is the wrong source for an Assembly op
   (its steps come from a published 3D assembly instruction) and for an
-  Inspection op (its characteristics live on an inspection document).
+  Inspection op (its features live on an inspection document).
 - The current assembly wiring is a one-off: `AssemblyStepsSource` (internal-flag
   gated) manually syncs instruction steps into `methodOperationStep` rows at
   authoring time — duplicating content on the template instead of inheriting it
@@ -66,7 +66,7 @@ One rule set, keyed on `operationType`:
 |----------|--------|-----------|
 | Assembly inheritance model | Method/quote carry the FK + lock Steps; **jobs materialize at get-method time** (mirror of `insertProcedureDataForJobOperation`) | Brad's directive ("inherit from the procedure at get-method time… similar approach for Assembly"). Kills the author-time duplication of instruction steps into `methodOperationStep`. |
 | Assembly lock scope | **Steps only** (not Instructions/Parameters) | An assembly instruction provides steps (+ slides/parts); it has no parameters and no work-instruction doc. Locking only what is inherited keeps params/instructions authorable on Assembly ops. Procedure locks all three because a procedure has all three. |
-| Inspection inheritance model | **Pointer only** — no materialization, no locking | PRD §5.4 (accepted): characteristics are `inspectionFeature` rows executed by the Phase-3 inspection view against `jobOperationInspectionRecord`; "not `jobOperationStep` rows". The FK is the plan link. |
+| Inspection inheritance model | **Pointer only** — no materialization, no locking | PRD §5.4 (accepted): features are `inspectionFeature` rows executed by the Phase-3 inspection view against `jobOperationInspectionRecord`; "not `jobOperationStep` rows". The FK is the plan link. |
 | `inspectionDocumentId` columns | Nullable TEXT FK on `methodOperation`, `quoteOperation`, `jobOperation` → `inspectionDocument(id)` ON DELETE SET NULL + indexes | Exactly PRD §5.4's shape ("explicit FK, not resolve-by-item"); SET NULL matches the assemblyInstructionId precedent (a deleted source shouldn't delete operations — note `procedureId`'s CASCADE is the odd one out, left as-is). Single-column FK is legal: `inspectionDocument.id` carries a UNIQUE constraint. |
 | `quoteOperation.assemblyInstructionId` | Add it (same shape as method/job) | Quote ops can be typed Assembly since the consolidation; the pointer must survive item→quote→job. `quoteLineToJob` already copies the column name — it just doesn't exist on the source yet. |
 | Picker options | All statuses/versions for the item, with status badge (assembly) / version + drawing number (inspection) | Parity with the Procedure picker (shows Draft/Active/Archived with badges). The **stored FK is the source of truth**; resolve-by-item is only how the list is scoped (PRD §5.4). |

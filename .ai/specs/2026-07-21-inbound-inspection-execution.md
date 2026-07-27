@@ -1,4 +1,4 @@
-# Inbound Inspection Execution — Drawing + Characteristics Grid
+# Inbound Inspection Execution — Drawing + Features Grid
 
 > Status: draft
 > Author: Brad Barbin (designed with Claude)
@@ -11,14 +11,22 @@ Research: [.ai/research/inbound-inspection-execution.md](../research/inbound-ins
 Merge Carbon's two disconnected quality systems into one inbound inspection
 execution screen: the `inboundInspection` lot (AQL sampling, pass/fail samples,
 Accept/Reject/Partial, reject→NCR) gains the item's `inspectionDocument`
-(ballooned PDF + `inspectionFeature` nominal/tolerance characteristics) as its
+(ballooned PDF + `inspectionFeature` nominal/tolerance features) as its
 inspection plan. The lot opens in a new full-screen split view — PDF drawing
 with balloon overlay beside an editable features × samples measurement grid
-(inventory-count editing pattern) — with per-characteristic AQL sampling,
+(inventory-count editing pattern) — with per-feature AQL sampling,
 auto-valuation of readings against tolerance, derived sample status, and the
 existing human-only disposition + NCR flow. The view is built as a reusable
 component so the same UI can be attached to job operations in MES next
 (AssemblyView pattern; that attachment is out of scope here).
+
+> **Update 2026-07-26 (2):** the sampling hierarchy changed after this spec —
+> the per-item `itemSamplingPlan` tier was **removed** (it "just adds
+> confusion"). Sampling now lives entirely in the inspection plan: a feature's
+> own rule → the document's default rule (six `sampling*` columns on
+> `inspectionDocument`, edited in the document editor) → All. Migration
+> `20260726231401_document-sampling-default.sql` backfilled item plans onto
+> their documents and dropped the table.
 
 > **Update 2026-07-26:** the MES attachment shipped. Job operations with
 > `operationType = 'Inspection'` execute at `/x/inspection/{jobOperationId}` in
@@ -30,12 +38,12 @@ component so the same UI can be attached to job operations in MES next
 
 Today an inspector receiving parts gets a lot drawer with anonymous Pass/Fail
 buttons — no connection to *what* to inspect. The ballooned drawing with its
-measurable characteristics (`inspectionDocument`/`inspectionFeature`/`balloon`,
+measurable features (`inspectionDocument`/`inspectionFeature`/`balloon`,
 built for FAI) is never surfaced at receiving, so inspectors work from paper
 prints or tribal knowledge, and a "Fail" records no evidence of which dimension
 failed or by how much. Sampling is one lot-level sample size applied blindly,
 while every reference system (SAP QM, 1factory, High QA) resolves sampling per
-characteristic — a critical bore and a cosmetic chamfer should not share a
+feature — a critical bore and a cosmetic chamfer should not share a
 sample size. NCRs created from rejects carry no measurement data for MRB.
 
 Concrete example: a lot of 200 machined housings arrives. The plan says sample
@@ -58,7 +66,7 @@ One execution screen at `/x/inbound-inspection/{id}` (full-screen route tree,
   the inventory-count keyboard navigation (Enter/Tab advance). Out-of-tolerance
   values color the cell red at entry (Net-Inspect pattern). The grid is ragged:
   cells beyond a feature's own resolved sample size are disabled.
-- **Sampling** resolves **per characteristic**: feature-level rule → item's
+- **Sampling** resolves **per feature**: feature-level rule → item's
   `itemSamplingPlan` → company default ("All"). Resolved n/Ac/Re per feature
   are stored on the lot at receipt.
 - **Valuation** is automatic and strict: an out-of-tolerance reading fails the
@@ -84,7 +92,7 @@ extends to FAI/Production slots later without schema change.
 
 | Decision | Choice | Rationale |
 |----------|--------|-----------|
-| Sampling granularity | Per characteristic (feature rule → item plan → "All" default) | Industry end-state (SAP/1factory/High QA); user decision Q1. Flat default with per-child override, no matrix config |
+| Sampling granularity | Per feature (feature rule → item plan → "All" default) | Industry end-state (SAP/1factory/High QA); user decision Q1. Flat default with per-child override, no matrix config |
 | Plan reference | Live: lot stores `inspectionDocumentId` only; no feature snapshot | User decision Q2b. Measurement rows store value + valuation at entry, so later tolerance edits don't silently rewrite recorded results |
 | Document selection | `itemInspectionDocumentAssignment` junction (itemId × usage), Receipt slot only in v1, edited on item Quality tab | User decision Q2a. Extensible to FAI/Production via new enum values, mirroring SAP task-list usage without a per-receipt choice |
 | Valuation roll-up | Strict: cell auto-valuated vs tolerance, sample status fully derived, no override; disposition human-only | User decision Q3 (SAP: auto-valuate readings, never auto-reject the lot; overrides happen at MRB) |
@@ -92,7 +100,7 @@ extends to FAI/Production slots later without schema change.
 | Screen form factor | Dedicated full-screen tree `x+/inbound-inspection+/`, drawer retired | User decision Q5. Matches `x+/inspection+`/`x+/assembly+` editor pattern from `.ai/lessons.md` |
 | Execution view reuse | `InboundInspectionView` built as a data-prop component (AssemblyView pattern) | Next step on this branch surfaces the same UI in MES against job operations; that attachment is out of this spec's scope |
 | Grid editing pattern | Inventory-count pattern: shared `Table` + `~/components/Editable` cells, `onCellEdit` posting per cell, spreadsheet keyboard nav | Explicit product direction; proven pattern in `InventoryCountLines.tsx` |
-| Feature cell types | Numeric features (nominal/tolerance) → number cell; non-numeric feature types → Pass/Fail toggle cell | 1factory Variable vs Attribute characteristics |
+| Feature cell types | Numeric features (nominal/tolerance) → number cell; non-numeric feature types → Pass/Fail toggle cell | 1factory Variable vs Attribute features |
 | Multi-tenancy (heuristic 1) | New tables carry `companyId` + RLS; PKs follow the inbound-inspection family (surrogate `id` PK, not composite) | Sibling tables `inboundInspection`/`inboundInspectionSample` use `id` PKs (Phase-2 rebuild, newest pattern for this subsystem); `itemInspectionDocumentAssignment` keys on `(itemId, usage, companyId)` like `itemSamplingPlan` keys on `itemId` |
 | Service shape (heuristic 2) | New reads in `quality.service.ts` (client first, `{data,error}`); write orchestration in `quality.server.ts` | Matches `upsertInboundInspectionSample`/`dispositionInboundInspection` |
 | RLS (heuristic 3) | SELECT/INSERT/UPDATE/DELETE policies gated by `quality_view/create/update/delete` on all new tables | Same as existing inbound-inspection tables |
@@ -339,8 +347,8 @@ new migration forking the newest RPC definition).
 
 > All resolved with the user before this spec was written (2026-07-21).
 
-- [x] Sampling granularity: lot-level (today) or per-characteristic? —
-      **Answer:** per-characteristic. Feature-level rule inherits from
+- [x] Sampling granularity: lot-level (today) or per-feature? —
+      **Answer:** per-feature. Feature-level rule inherits from
       `itemSamplingPlan`, then company default "All"; grid gates completeness
       per feature. (Q1)
 - [x] Which inspection document drives an inbound lot? — **Answer:** item

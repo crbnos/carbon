@@ -1620,6 +1620,17 @@ export const balloonUpdateItemsValidator = z.array(
 
 export const balloonDeleteIdsValidator = z.array(z.string().min(1));
 
+// The document-level default sampling rule (fallback for features without
+// their own rule; the lot-level plan base). Sent by the editor as JSON.
+export const inspectionDocumentSamplingValidator = z.object({
+  samplingPlanType: z.enum(samplingPlanTypes).nullable(),
+  samplingSampleSize: z.number().int().positive().nullable(),
+  samplingPercentage: z.number().positive().max(100).nullable(),
+  samplingAql: z.number().positive().nullable(),
+  samplingInspectionLevel: z.enum(inspectionLevels).nullable(),
+  samplingSeverity: z.enum(inspectionSeverities).nullable()
+});
+
 const inspectionFeatureSamplingFieldsValidator = {
   samplingPlanType: z.enum(samplingPlanTypes).nullable().optional(),
   samplingSampleSize: z.number().int().positive().nullable().optional(),

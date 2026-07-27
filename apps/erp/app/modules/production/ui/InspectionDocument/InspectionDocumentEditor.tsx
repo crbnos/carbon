@@ -4,6 +4,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
   HStack,
   IconButton,
@@ -17,6 +18,7 @@ import {
   ModalTitle,
   toast,
   useDebounce,
+  useDisclosure,
   VStack
 } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
@@ -34,27 +36,37 @@ import {
   LuChevronRight,
   LuChevronUp,
   LuEllipsisVertical,
+  LuExternalLink,
   LuFileDown,
   LuLoader,
+  LuMaximize,
   LuMinus,
   LuPlus,
   LuRectangleHorizontal,
   LuSave,
+  LuScan,
+  LuSlidersHorizontal,
   LuTrash2,
   LuUpload
 } from "react-icons/lu";
-import { useFetcher } from "react-router";
+import { useFetcher, useNavigate } from "react-router";
 import type { EditableTableCellComponentProps } from "~/components/Editable";
 import { EditableList, EditableText } from "~/components/Editable";
 import Grid from "~/components/Grid";
 import { ProcedureStepTypeIcon } from "~/components/Icons";
-import { useUser } from "~/hooks";
+import { ConfirmDelete } from "~/components/Modals";
+import { usePermissions, useUser } from "~/hooks";
+import { getLinkToItemDetails } from "~/modules/items/ui/Item/ItemForm";
 import type { BalloonRegionAnalysis } from "~/modules/production/inspectionBalloonAnalyze";
 import type { InspectionDocumentContent } from "~/modules/production/types";
+import type { SamplingStandard } from "~/modules/quality/samplingStandards";
 import { procedureStepType } from "~/modules/shared/shared.models";
+import { useItems } from "~/stores/items";
 import { path } from "~/utils/path";
 import { cropInspectionAnchorToPngBlob } from "./cropInspectionAnchorToPng";
 import { buildInspectionDocumentPdfWithOverlaysBytes } from "./exportInspectionDocumentPdfWithOverlays";
+import type { SamplingRule } from "./SamplingRuleModal";
+import SamplingRuleModal, { EMPTY_SAMPLING_RULE } from "./SamplingRuleModal";
 
 type DragState = {
   startX: number;
@@ -108,10 +120,15 @@ type AnnotationEditDraft = {
 type InspectionDocumentEditorProps = {
   diagramId: string;
   name: string;
+  partId: string | null;
   content: InspectionDocumentContent | null;
   features: Array<Record<string, unknown>>;
   balloons: Array<Record<string, unknown>>;
   unitOfMeasures: Array<{ code: string; name: string }>;
+  // The document's default sampling rule (fallback for features without a
+  // rule) and the company's sampling standard for previews.
+  sampling: SamplingRule | null;
+  samplingStandard: SamplingStandard;
 };
 
 type PdfMetrics = {
@@ -354,6 +371,12 @@ type FeatureRow = {
   toleranceMinus: string;
   units: string;
   type: (typeof procedureStepType)[number];
+  samplingPlanType: SamplingRule["samplingPlanType"];
+  samplingSampleSize: number | null;
+  samplingPercentage: number | null;
+  samplingAql: number | null;
+  samplingInspectionLevel: SamplingRule["samplingInspectionLevel"];
+  samplingSeverity: SamplingRule["samplingSeverity"];
   featureDirty?: boolean;
   geometryDirty?: boolean;
 };
@@ -362,6 +385,23 @@ const featureTypeOptions = procedureStepType.map((t) => ({
   label: t,
   value: t
 }));
+
+// Compact display of a sampling rule ("AQL 1 · II · Normal"); null = no rule
+// (a feature inherits the document default; the document falls back to All).
+function samplingRuleSummary(rule: SamplingRule): string | null {
+  switch (rule.samplingPlanType) {
+    case "All":
+      return "100%";
+    case "First":
+      return `First ${rule.samplingSampleSize ?? 1}`;
+    case "Percentage":
+      return `${rule.samplingPercentage ?? 100}%`;
+    case "AQL":
+      return `AQL ${rule.samplingAql ?? 1} · ${rule.samplingInspectionLevel ?? "II"} · ${rule.samplingSeverity ?? "Normal"}`;
+    default:
+      return null;
+  }
+}
 
 type FeatureMutationFn = (
   accessorKey: string,
@@ -540,6 +580,20 @@ function mapFeatureRowFromRecords(
     toleranceMinus: String(feature.toleranceMinus ?? ""),
     units: String(feature.unit ?? ""),
     type: (feature.type as (typeof procedureStepType)[number]) ?? "Measurement",
+    samplingPlanType:
+      (feature.samplingPlanType as SamplingRule["samplingPlanType"]) ?? null,
+    samplingSampleSize: (feature.samplingSampleSize as number | null) ?? null,
+    samplingPercentage:
+      feature.samplingPercentage == null
+        ? null
+        : Number(feature.samplingPercentage),
+    samplingAql:
+      feature.samplingAql == null ? null : Number(feature.samplingAql),
+    samplingInspectionLevel:
+      (feature.samplingInspectionLevel as SamplingRule["samplingInspectionLevel"]) ??
+      null,
+    samplingSeverity:
+      (feature.samplingSeverity as SamplingRule["samplingSeverity"]) ?? null,
     featureDirty: false,
     geometryDirty: false
   };
@@ -565,12 +619,25 @@ function buildFeatureRowsFromLoader(
 export default function InspectionDocumentEditor({
   diagramId,
   name,
+  partId,
   content,
   features: initialFeatures,
   balloons,
-  unitOfMeasures
+  unitOfMeasures,
+  sampling,
+  samplingStandard
 }: InspectionDocumentEditorProps) {
   const { t } = useLingui();
+  const navigate = useNavigate();
+  const permissions = usePermissions();
+  const [items] = useItems();
+  const deleteDisclosure = useDisclosure();
+
+  const part = partId ? items.find((i) => i.id === partId) : undefined;
+  const itemMasterLink =
+    part && part.type !== "Fixture"
+      ? getLinkToItemDetails(part.type, part.id)
+      : null;
   const fetcher = useFetcher<{
     success: boolean;
     message?: string;
@@ -597,6 +664,14 @@ export default function InspectionDocumentEditor({
   const companyId = user.company.id;
 
   const [pdfUrl, setPdfUrl] = useState<string>(content?.pdfUrl ?? "");
+  // The document's default sampling rule; persisted with Save alongside the
+  // feature rows. "document" | featureId targets the sampling modal.
+  const [docSampling, setDocSampling] = useState<SamplingRule>(
+    sampling ?? EMPTY_SAMPLING_RULE
+  );
+  const [samplingTarget, setSamplingTarget] = useState<
+    "document" | string | null
+  >(null);
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [replacePdfConfirmOpen, setReplacePdfConfirmOpen] = useState(false);
@@ -1150,7 +1225,13 @@ export default function InspectionDocumentEditor({
               tolerancePlus: "",
               toleranceMinus: "",
               units: "",
-              type: "Measurement"
+              type: "Measurement",
+              samplingPlanType: null,
+              samplingSampleSize: null,
+              samplingPercentage: null,
+              samplingAql: null,
+              samplingInspectionLevel: null,
+              samplingSeverity: null
             }
           ];
         });
@@ -1987,7 +2068,13 @@ export default function InspectionDocumentEditor({
         tolerancePlus: getBalloonValueOrNull(r.tolerancePlus),
         toleranceMinus: getBalloonValueOrNull(r.toleranceMinus),
         unit: getBalloonValueOrNull(r.units),
-        type: r.type
+        type: r.type,
+        samplingPlanType: r.samplingPlanType,
+        samplingSampleSize: r.samplingSampleSize,
+        samplingPercentage: r.samplingPercentage,
+        samplingAql: r.samplingAql,
+        samplingInspectionLevel: r.samplingInspectionLevel,
+        samplingSeverity: r.samplingSeverity
       }));
 
     const featuresUpdate = featureRows
@@ -2005,7 +2092,13 @@ export default function InspectionDocumentEditor({
         tolerancePlus: getBalloonValueOrNull(r.tolerancePlus),
         toleranceMinus: getBalloonValueOrNull(r.toleranceMinus),
         unit: getBalloonValueOrNull(r.units),
-        type: r.type
+        type: r.type,
+        samplingPlanType: r.samplingPlanType,
+        samplingSampleSize: r.samplingSampleSize,
+        samplingPercentage: r.samplingPercentage,
+        samplingAql: r.samplingAql,
+        samplingInspectionLevel: r.samplingInspectionLevel,
+        samplingSeverity: r.samplingSeverity
       }));
 
     formData.set(
@@ -2098,11 +2191,21 @@ export default function InspectionDocumentEditor({
       formData.set("defaultPageWidth", String(pdfMetrics.defaultPageWidth));
       formData.set("defaultPageHeight", String(pdfMetrics.defaultPageHeight));
     }
+    formData.set("samplingDefault", JSON.stringify(docSampling));
     fetcher.submit(formData, {
       method: "post",
       action: path.to.saveInspectionDocument(diagramId)
     });
-  }, [diagramId, name, pdfUrl, anchorRects, featureRows, pdfMetrics, fetcher]);
+  }, [
+    diagramId,
+    name,
+    pdfUrl,
+    anchorRects,
+    featureRows,
+    pdfMetrics,
+    docSampling,
+    fetcher
+  ]);
 
   const uploadPdfAndSave = useCallback(
     async (file: File, options: { clearBalloons: boolean }) => {
@@ -2241,7 +2344,13 @@ export default function InspectionDocumentEditor({
           tolerancePlus: "",
           toleranceMinus: "",
           units: "",
-          type: "Measurement"
+          type: "Measurement",
+          samplingPlanType: null,
+          samplingSampleSize: null,
+          samplingPercentage: null,
+          samplingAql: null,
+          samplingInspectionLevel: null,
+          samplingSeverity: null
         }
       ];
     });
@@ -2336,6 +2445,17 @@ export default function InspectionDocumentEditor({
     [updateFeatureField]
   );
 
+  const updateFeatureSampling = useCallback(
+    (featureId: string, rule: SamplingRule) => {
+      setFeatureRows((prev) =>
+        prev.map((r) =>
+          r.featureId !== featureId ? r : { ...r, ...rule, featureDirty: true }
+        )
+      );
+    },
+    []
+  );
+
   const unitOfMeasureOptions = useMemo(
     () => unitOfMeasures.map((uom) => ({ value: uom.code, label: uom.name })),
     [unitOfMeasures]
@@ -2413,6 +2533,28 @@ export default function InspectionDocumentEditor({
           row.original.type === "Measurement"
             ? (uomCodeToName.get(row.original.units) ?? row.original.units)
             : null
+      },
+      {
+        id: "sampling",
+        header: t`Sampling`,
+        size: 148,
+        cell: ({ row }) => {
+          const summary = samplingRuleSummary(row.original);
+          return (
+            <button
+              type="button"
+              className="text-left text-sm underline-offset-2 hover:underline"
+              onClick={(e) => {
+                e.stopPropagation();
+                setSamplingTarget(row.original.featureId);
+              }}
+            >
+              {summary ?? (
+                <span className="text-muted-foreground">{t`Inherit`}</span>
+              )}
+            </button>
+          );
+        }
       },
       {
         id: "actions",
@@ -2594,17 +2736,67 @@ export default function InspectionDocumentEditor({
 
       {/* Header bar — min-height only so controls are not clipped when the row wraps */}
       <div className="flex min-h-[50px] flex-shrink-0 flex-wrap items-center justify-between gap-x-3 gap-y-2 overflow-x-auto border-b border-border bg-card px-4 py-2 scrollbar-hide dark:border-none dark:shadow-[inset_0_0_1px_rgb(255_255_255_/_0.24),_0_0_0_0.5px_rgb(0,0,0,1),0px_0px_4px_rgba(0,_0,_0,_0.08)]">
-        <div className="min-w-0 flex-1 pr-2">
+        <div className="flex min-w-0 items-center gap-1 pr-2">
           <Input
             borderless
             value={title}
             placeholder={t`Untitled Diagram`}
-            className="font-semibold text-base truncate"
+            className="field-sizing-content min-w-[6rem] max-w-[28rem] font-semibold text-base truncate"
             onChange={(e) => {
               setTitle(e.target.value);
               debouncedSaveName(e.target.value);
             }}
           />
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <IconButton
+                type="button"
+                variant="outline"
+                size="sm"
+                aria-label={t`More actions`}
+                icon={<LuEllipsisVertical />}
+              />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="min-w-56">
+              <DropdownMenuItem
+                disabled={!itemMasterLink}
+                onClick={() => {
+                  if (itemMasterLink) navigate(itemMasterLink);
+                }}
+              >
+                <LuExternalLink className="mr-2 size-4" />
+                {t`View Item Master`}
+              </DropdownMenuItem>
+              {hasPdf && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    disabled={uploading}
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    <LuUpload className="mr-2 size-4" />
+                    {uploading ? t`Uploading…` : t`Replace PDF`}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    disabled={pdfExporting}
+                    onClick={handleDownloadPdfWithBalloons}
+                  >
+                    <LuFileDown className="mr-2 size-4" />
+                    {t`Download PDF`}
+                  </DropdownMenuItem>
+                </>
+              )}
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                destructive
+                disabled={!permissions.can("delete", "quality")}
+                onClick={() => deleteDisclosure.onOpen()}
+              >
+                <LuTrash2 className="mr-2 size-4" />
+                {t`Delete Inspection Plan`}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
         <HStack spacing={2} className="flex-shrink-0 flex-wrap justify-end">
           <Button
@@ -2626,43 +2818,13 @@ export default function InspectionDocumentEditor({
             {placing ? t`Drag to place on drawing` : t`Add Selector`}
           </Button>
           <Button
-            variant={zoomBoxMode ? "primary" : "secondary"}
-            onClick={() => {
-              setZoomBoxMode((v) => {
-                const next = !v;
-                if (next) {
-                  setPlacing(false);
-                  setPlacingAnnotation(false);
-                }
-                return next;
-              });
-            }}
-            isDisabled={!isOverlayReady}
+            type="button"
+            variant="secondary"
+            leftIcon={<LuSlidersHorizontal className="h-4 w-4" />}
+            onClick={() => setSamplingTarget("document")}
           >
-            {zoomBoxMode ? t`Drag to zoom` : t`Zoom Box`}
+            {samplingRuleSummary(docSampling) ?? t`Sampling`}
           </Button>
-          {hasPdf && (
-            <Button
-              variant="secondary"
-              leftIcon={<LuUpload />}
-              onClick={() => fileInputRef.current?.click()}
-              isDisabled={uploading}
-            >
-              {uploading ? t`Uploading…` : t`Replace PDF`}
-            </Button>
-          )}
-          {hasPdf && (
-            <Button
-              type="button"
-              variant="secondary"
-              leftIcon={<LuFileDown className="h-4 w-4" />}
-              onClick={handleDownloadPdfWithBalloons}
-              isDisabled={pdfExporting}
-              isLoading={pdfExporting}
-            >
-              {t`Download PDF`}
-            </Button>
-          )}
           <Button
             leftIcon={<LuSave />}
             onClick={handleSave}
@@ -2670,7 +2832,29 @@ export default function InspectionDocumentEditor({
           >
             {t`Save`}
           </Button>
-          <HStack className="ml-1 rounded-md border bg-background px-1 py-1">
+          <HStack
+            spacing={0}
+            className="ml-1 rounded-md border bg-background px-1 py-1"
+          >
+            <IconButton
+              type="button"
+              variant={zoomBoxMode ? "active" : "ghost"}
+              size="sm"
+              aria-label={zoomBoxMode ? t`Drag to zoom` : t`Zoom Box`}
+              icon={<LuScan />}
+              isDisabled={!isOverlayReady}
+              onClick={() =>
+                setZoomBoxMode((v) => {
+                  const next = !v;
+                  if (next) {
+                    setPlacing(false);
+                    setPlacingAnnotation(false);
+                  }
+                  return next;
+                })
+              }
+            />
+            <span className="mx-0.5 h-4 w-px bg-border" aria-hidden="true" />
             <IconButton
               type="button"
               variant="ghost"
@@ -2694,10 +2878,13 @@ export default function InspectionDocumentEditor({
                 setZoomScale((z) => Math.min(3, Number((z + 0.1).toFixed(2))))
               }
             />
-            <Button
+            <span className="mx-0.5 h-4 w-px bg-border" aria-hidden="true" />
+            <IconButton
               type="button"
               variant="ghost"
               size="sm"
+              aria-label={t`Reset view`}
+              icon={<LuMaximize />}
               onClick={() => {
                 setZoomScale(1);
                 requestAnimationFrame(() => {
@@ -2706,12 +2893,21 @@ export default function InspectionDocumentEditor({
                   containerRef.current.scrollTop = 0;
                 });
               }}
-            >
-              {t`Reset View`}
-            </Button>
+            />
           </HStack>
         </HStack>
       </div>
+
+      {deleteDisclosure.isOpen && (
+        <ConfirmDelete
+          action={path.to.deleteInspectionDocument(diagramId)}
+          isOpen
+          name={title || t`this inspection plan`}
+          text={t`Are you sure you want to delete this inspection plan? This cannot be undone.`}
+          onCancel={() => deleteDisclosure.onClose()}
+          onSubmit={() => deleteDisclosure.onClose()}
+        />
+      )}
 
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden px-4 pb-4 pt-2">
         <div
@@ -3351,7 +3547,7 @@ export default function InspectionDocumentEditor({
                 : undefined
             }
           >
-            <div className="flex min-h-10 flex-shrink-0 items-center justify-between gap-2 bg-muted/40 px-2 py-2 pl-3">
+            <div className="flex min-h-10 flex-shrink-0 items-center justify-between gap-2 px-2 py-2 pl-3">
               <span className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">
                 {t`Features`} ({featureRows.length})
               </span>
@@ -3403,6 +3599,45 @@ export default function InspectionDocumentEditor({
           </div>
         </div>
       </div>
+
+      {samplingTarget !== null && (
+        <SamplingRuleModal
+          context={samplingTarget === "document" ? "document" : "feature"}
+          featureLabel={
+            samplingTarget === "document"
+              ? undefined
+              : featureRows.find((r) => r.featureId === samplingTarget)?.label
+          }
+          standard={samplingStandard}
+          initial={
+            samplingTarget === "document"
+              ? docSampling
+              : (() => {
+                  const row = featureRows.find(
+                    (r) => r.featureId === samplingTarget
+                  );
+                  return {
+                    samplingPlanType: row?.samplingPlanType ?? null,
+                    samplingSampleSize: row?.samplingSampleSize ?? null,
+                    samplingPercentage: row?.samplingPercentage ?? null,
+                    samplingAql: row?.samplingAql ?? null,
+                    samplingInspectionLevel:
+                      row?.samplingInspectionLevel ?? null,
+                    samplingSeverity: row?.samplingSeverity ?? null
+                  };
+                })()
+          }
+          inheritedRule={samplingTarget === "document" ? null : docSampling}
+          onSave={(rule) => {
+            if (samplingTarget === "document") {
+              setDocSampling(rule);
+            } else if (samplingTarget) {
+              updateFeatureSampling(samplingTarget, rule);
+            }
+          }}
+          onClose={() => setSamplingTarget(null)}
+        />
+      )}
     </div>
   );
 }

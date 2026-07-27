@@ -999,6 +999,9 @@ msgstr "Applies to all"
 msgid "Applies to all work centers"
 msgstr "Applies to all work centers"
 
+msgid "Applies to features without their own rule, and to the lot when this plan drives an inspection."
+msgstr "Applies to features without their own rule, and to the lot when this plan drives an inspection."
+
 msgid "Apply"
 msgstr "Apply"
 
@@ -1362,6 +1365,9 @@ msgstr "Are you sure you want to delete this gauge?"
 msgid "Are you sure you want to delete this inspection plan?"
 msgstr "Are you sure you want to delete this inspection plan?"
 
+msgid "Are you sure you want to delete this inspection plan? This cannot be undone."
+msgstr "Are you sure you want to delete this inspection plan? This cannot be undone."
+
 msgid "Are you sure you want to delete this issue workflow?"
 msgstr "Are you sure you want to delete this issue workflow?"
 
@@ -1708,8 +1714,8 @@ msgstr "Balanced"
 msgid "Balloon"
 msgstr "Balloon"
 
-msgid "Ballooned drawings with inspection characteristics."
-msgstr "Ballooned drawings with inspection characteristics."
+msgid "Ballooned drawings with inspection features."
+msgstr "Ballooned drawings with inspection features."
 
 msgid "Bank - Cash"
 msgstr "Bank - Cash"
@@ -3669,6 +3675,9 @@ msgstr "Default Priority"
 msgid "Default revenue GL account credited when a sales invoice posts."
 msgstr "Default revenue GL account credited when a sales invoice posts."
 
+msgid "Default Sampling"
+msgstr "Default Sampling"
+
 msgid "Default shelf-life duration (days)"
 msgstr "Default shelf-life duration (days)"
 
@@ -3710,9 +3719,6 @@ msgstr "Define a manufacturing operation first."
 
 msgid "Define multi-level BOMs and Bill of Process (make methods)"
 msgstr "Define multi-level BOMs and Bill of Process (make methods)"
-
-msgid "Defines how many tracked entities are inspected per lot, and how many failures are tolerated before the lot is rejected."
-msgstr "Defines how many tracked entities are inspected per lot, and how many failures are tolerated before the lot is rejected."
 
 msgid "Delete"
 msgstr "Delete"
@@ -3806,6 +3812,9 @@ msgstr "Delete Group"
 
 msgid "Delete Holiday"
 msgstr "Delete Holiday"
+
+msgid "Delete Inspection Plan"
+msgstr "Delete Inspection Plan"
 
 msgid "Delete Issue"
 msgstr "Delete Issue"
@@ -5197,8 +5206,8 @@ msgstr "Extra tags for slicing your GL reporting"
 msgid "Fail"
 msgstr "Fail"
 
-msgid "Failed characteristics"
-msgstr "Failed characteristics"
+msgid "Failed features"
+msgstr "Failed features"
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create asset class: {0}"
@@ -6417,6 +6426,12 @@ msgstr "Indirect Materials & Services (default)"
 
 msgid "Infrastructure"
 msgstr "Infrastructure"
+
+msgid "Inherit"
+msgstr "Inherit"
+
+msgid "Inherit document default"
+msgstr "Inherit document default"
 
 msgid "Inherit From Materials"
 msgstr "Inherit From Materials"
@@ -10373,9 +10388,6 @@ msgstr "Requires Action"
 msgid "Requires Adjustment"
 msgstr "Requires Adjustment"
 
-msgid "Requires Inspection"
-msgstr "Requires Inspection"
-
 msgid "Requires Repair"
 msgstr "Requires Repair"
 
@@ -10396,8 +10408,8 @@ msgstr "Reset PIN"
 msgid "Reset PIN for {0} {1}"
 msgstr "Reset PIN for {0} {1}"
 
-msgid "Reset View"
-msgstr "Reset View"
+msgid "Reset view"
+msgstr "Reset view"
 
 msgid "Residual value"
 msgstr "Residual value"
@@ -10749,8 +10761,11 @@ msgstr "Sample"
 msgid "Sample Size"
 msgstr "Sample Size"
 
-msgid "Sampling Plan"
-msgstr "Sampling Plan"
+msgid "Sampling"
+msgstr "Sampling"
+
+msgid "Sampling — Feature {featureLabel}"
+msgstr "Sampling — Feature {featureLabel}"
 
 msgid "Sampling Standard"
 msgstr "Sampling Standard"
@@ -12583,8 +12598,8 @@ msgstr "The lot will be marked Passed. {fails} sampled failure(s) are recorded f
 msgid "The lot will still be rejected, but an NCR cannot be created until at least one Issue Type is configured."
 msgstr "The lot will still be rejected, but an NCR cannot be created until at least one Issue Type is configured."
 
-msgid "The lot's per-characteristic sampling plan will be re-resolved from the selected document."
-msgstr "The lot's per-characteristic sampling plan will be re-resolved from the selected document."
+msgid "The lot's per-feature sampling plan will be re-resolved from the selected document."
+msgstr "The lot's per-feature sampling plan will be re-resolved from the selected document."
 
 msgid "The lowest amount this supplier will charge for this process, regardless of quantity; jobs below the breakeven volume still cost at least this much."
 msgstr "The lowest amount this supplier will charge for this process, regardless of quantity; jobs below the breakeven volume still cost at least this much."
@@ -12952,6 +12967,9 @@ msgstr "This information will be used on document headers"
 
 msgid "This information will be visible to all users, so be careful what you share."
 msgstr "This information will be visible to all users, so be careful what you share."
+
+msgid "this inspection plan"
+msgstr "this inspection plan"
 
 msgid "This is a purchased item — it has no BoM/BoP; only its attributes and documents can change."
 msgstr "This is a purchased item — it has no BoM/BoP; only its attributes and documents can change."

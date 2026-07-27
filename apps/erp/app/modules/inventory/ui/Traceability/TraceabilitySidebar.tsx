@@ -130,11 +130,18 @@ export function TraceabilitySidebar({
   const stepRecordsForActivity = useMemo(() => {
     const list = stepRecordsFetcher.data?.stepRecords ?? [];
     if (!activity || list.length === 0) return [];
-    const opId = (activity.attributes as Record<string, any> | null)?.[
-      "Job Operation"
-    ];
+    const attrs = activity.attributes as Record<string, any> | null;
+    const opId = attrs?.["Job Operation"];
     if (!opId) return [];
-    return list.filter((r) => r.operationId === opId);
+    // A production activity is scoped to one unit (its "Unit" is the 0-based
+    // unit-axis index that step records key off). Isolate this unit's records
+    // from the operation's other units. Activities without a Unit (older data
+    // or the operation view) fall back to all records for the operation.
+    const unit = attrs?.Unit;
+    const hasUnit = typeof unit === "number";
+    return list.filter(
+      (r) => r.operationId === opId && (!hasUnit || r.index === unit)
+    );
   }, [activity, stepRecordsFetcher.data]);
 
   const containmentsForEntity = useMemo(() => {

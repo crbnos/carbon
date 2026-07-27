@@ -59,6 +59,51 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
+  // Post the inventory write-off (itemLedger + cost relief + GL) for a
+  // non-tracked Inventory lot through the post-nonconformance edge function.
+  // Idempotent per (documentType, documentId), so retrying the reject after a
+  // failure here re-posts safely (the lot stays Rejected). A failed write-off
+  // MUST abort before NCR creation: the NCR's disposition (closeIssue) restores
+  // value on Use-As-Is/Rework on the assumption this write-off already removed
+  // it, so proceeding would leave the received quantity double-counted on hand.
+  const writeOff = dispositionResult.data?.writeOff;
+  if (writeOff) {
+    const post = await client.functions.invoke("post-nonconformance", {
+      body: {
+        companyId,
+        userId,
+        documentType: "Inbound Inspection",
+        documentId: id,
+        description: "Inbound inspection lot rejected",
+        movements: [
+          {
+            itemId: writeOff.itemId,
+            locationId: writeOff.locationId,
+            trackedEntityId: null,
+            quantity: writeOff.quantity
+          }
+        ]
+      },
+      region: FunctionRegion.UsEast1
+    });
+    if (post.error) {
+      logger.error("Failed to post inspection reject write-off", {
+        error: post.error,
+        inspectionId: id
+      });
+      throw redirect(
+        path.to.inspection(id),
+        await flash(
+          request,
+          error(
+            post.error,
+            "Lot rejected, but the inventory write-off failed to post — resolve the accounting error and reject again to retry."
+          )
+        )
+      );
+    }
+  }
+
   // If the inspector opted out of an NCR, we're done — the lot is rejected.
   if (!createNcr) {
     throw redirect(
@@ -121,7 +166,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     .filter(Boolean)
     .join(" ");
 
-  // Document-driven lots: attach the failed characteristics (measured values
+  // Document-driven lots: attach the failed features (measured values
   // vs. spec) so MRB sees what failed and by how much without re-measuring.
   const [lotFeatures, lotMeasurements] = await Promise.all([
     getInspectionSamplingPlans(serviceRole, id, companyId),
@@ -159,7 +204,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
   const failedFeaturesBlock =
     failedFeatureLines.length > 0
-      ? `\n\nFailed characteristics:\n${failedFeatureLines.join("\n")}`
+      ? `\n\nFailed features:\n${failedFeatureLines.join("\n")}`
       : "";
 
   const createResult = await insertIssue(serviceRole, {

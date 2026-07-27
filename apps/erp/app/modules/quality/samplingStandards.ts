@@ -970,11 +970,11 @@ export type FeatureSamplingRule = {
   samplingSeverity?: InspectionSeverity | null;
 };
 
-// Per-characteristic resolution: a feature's own rule wins, else the item's
-// plan, else 100% inspection.
+// Per-feature resolution: a feature's own rule wins, else the inspection
+// document's default rule, else 100% inspection.
 export function resolveFeatureSamplingPlan(
   feature: FeatureSamplingRule | null | undefined,
-  itemPlan: SamplingPlanInput | null | undefined,
+  defaultPlan: SamplingPlanInput | null | undefined,
   lotSize: number,
   standard: SamplingStandard
 ): SamplingResult {
@@ -987,6 +987,6 @@ export function resolveFeatureSamplingPlan(
         inspectionLevel: feature.samplingInspectionLevel ?? undefined,
         severity: feature.samplingSeverity ?? undefined
       }
-    : (itemPlan ?? { type: "All" });
+    : (defaultPlan ?? { type: "All" });
   return resolveSamplingPlan(plan, lotSize, standard);
 }

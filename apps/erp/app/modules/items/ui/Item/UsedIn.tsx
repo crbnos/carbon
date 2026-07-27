@@ -64,6 +64,7 @@ export function UsedInSkeleton() {
 export type UsedInKey =
   | Database["public"]["Enums"]["itemType"]
   | "assemblyInstructions"
+  | "inspections"
   | "issues"
   | "jobMaterials"
   | "jobs"
@@ -171,16 +172,18 @@ export function UsedInTree({
           maxRevision={revisions?.[0]?.revision ?? ""}
           hasSizesInsteadOfRevisions={hasSizesInsteadOfRevisions}
         />
-        {tree.map((node) => (
-          <UsedInItem
-            key={node.key}
-            filterText={filterText}
-            node={node}
-            itemReadableIdWithRevision={itemReadableIdWithRevision}
-            jobMaterialQuantities={jobMaterialQuantities}
-            jobQuantities={jobQuantities}
-          />
-        ))}
+        {[...tree]
+          .sort((a, b) => a.name.localeCompare(b.name))
+          .map((node) => (
+            <UsedInItem
+              key={node.key}
+              filterText={filterText}
+              node={node}
+              itemReadableIdWithRevision={itemReadableIdWithRevision}
+              jobMaterialQuantities={jobMaterialQuantities}
+              jobQuantities={jobQuantities}
+            />
+          ))}
       </VStack>
     </VStack>
   );
@@ -531,6 +534,8 @@ function getUseInLink(
       return path.to.consumableDetails(child.id);
     case "Service":
       return path.to.serviceDetails(child.id);
+    case "inspections":
+      return path.to.inspection(child.id);
     case "issues":
       if (!child.documentId) return "#";
       return path.to.issue(child.documentId);
