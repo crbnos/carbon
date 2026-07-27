@@ -42,6 +42,7 @@ export const SAMPLE_PURCHASE_ORDER = {
       purchaseQuantity: 100,
       purchaseUnitOfMeasureCode: "EA",
       supplierUnitPrice: 5.22,
+      supplierShippingCost: 5,
       supplierTaxAmount: 78.3,
       taxPercent: 0.15,
       requiredDate: "2026-06-20",
