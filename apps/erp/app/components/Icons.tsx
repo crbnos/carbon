@@ -502,8 +502,12 @@ export const LinearIssueStateBadge = (props: {
       break;
   }
 
+  // Read-only mirror of Linear's state — no hover affordance, it isn't clickable.
   return (
-    <Badge variant={"secondary"} className="py-1 bg-transparent">
+    <Badge
+      variant={"secondary"}
+      className="py-1 bg-transparent hover:bg-transparent"
+    >
       {icon}
       <span className="ml-1">{props.state.name}</span>
     </Badge>
@@ -669,8 +673,12 @@ export const JiraIssueStatusBadge = (props: {
       break;
   }
 
+  // Read-only mirror of Jira's status — no hover affordance, it isn't clickable.
   return (
-    <Badge variant={"secondary"} className="py-1 bg-transparent">
+    <Badge
+      variant={"secondary"}
+      className="py-1 bg-transparent hover:bg-transparent"
+    >
       {icon}
       <span className="ml-1">{props.status.name}</span>
     </Badge>
