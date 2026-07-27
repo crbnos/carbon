@@ -125,6 +125,7 @@ export const path = {
       linearCreateIssue: `${api}/integrations/linear/issue/create`,
       linearLinkExistingIssue: `${api}/integrations/linear/issue/link`,
       linearSyncNotes: `${api}/integrations/linear/issue/sync-notes`,
+      link: (companyId: string) => `${api}/link?companyId=${companyId}`,
       locations: `${api}/resources/locations`,
       maintenanceDispatches: `${api}/resources/maintenance`,
       maintenanceSchedules: `${api}/resources/scheduled-maintenance`,

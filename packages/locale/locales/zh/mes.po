@@ -902,6 +902,9 @@ msgstr "选择要返回的操作。从该点到当前操作的所有操作都将
 msgid "Send"
 msgstr "发送"
 
+msgid "Send to Carbon"
+msgstr "发送至 Carbon"
+
 msgid "Serial"
 msgstr "序列号"
 

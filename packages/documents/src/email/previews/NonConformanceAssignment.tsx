@@ -9,7 +9,7 @@ export default function NonConformanceAssignmentPreview() {
       preview={"Issue assigned to you"}
       message={"Issue NCR-0003 assigned to you"}
       reference={"NCR-0003"}
-      recipientName={"Naveen"}
+      recipientName={"John Doe"}
       ctaLabel={"View details"}
       ctaUrl={"https://app.carbon.ms/x/issue/1"}
       details={[

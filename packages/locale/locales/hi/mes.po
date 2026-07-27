@@ -902,6 +902,9 @@ msgstr "उस ऑपरेशन को चुनें जिस पर वा
 msgid "Send"
 msgstr "भेजें"
 
+msgid "Send to Carbon"
+msgstr "Carbon को भेजें"
+
 msgid "Serial"
 msgstr "सीरीज़"
 

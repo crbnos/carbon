@@ -9,7 +9,7 @@ export default function JobAssignmentPreview() {
       preview={"Job assigned to you"}
       message={"Job J00105 assigned to you"}
       reference={"J00105"}
-      recipientName={"Naveen"}
+      recipientName={"John Doe"}
       ctaLabel={"View details"}
       ctaUrl={"https://app.carbon.ms/x/job/1"}
       details={[

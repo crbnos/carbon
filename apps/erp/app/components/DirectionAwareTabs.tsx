@@ -73,7 +73,7 @@ function DirectionAwareTabs({
         opacity: 1,
         filter: "blur(0px)"
       }}
-      transition={{ duration: 0.2, delay: 0.3 }}
+      transition={{ duration: 0.2 }}
       className="flex flex-col items-center w-full"
     >
       <div
@@ -113,7 +113,7 @@ function DirectionAwareTabs({
         <motion.div
           className="relative mx-auto w-full h-full overflow-hidden"
           initial={false}
-          animate={{ height: bounds.height }}
+          animate={{ height: bounds.height || "auto" }}
         >
           <div className="p-1" ref={ref}>
             <AnimatePresence

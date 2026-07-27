@@ -5449,6 +5449,9 @@ msgstr "Fehler beim Laden von verfolgten Entitäten"
 msgid "Failed to move account: {0}"
 msgstr "Konto konnte nicht verschoben werden: {0}"
 
+msgid "Failed to regenerate thumbnail"
+msgstr "Fehler beim Neuerstellen der Miniaturansicht"
+
 msgid "Failed to remove image: {errorMessage}"
 msgstr "Fehler beim Entfernen des Bildes: {errorMessage}"
 
@@ -8706,6 +8709,10 @@ msgstr "Offen in Änderungsauftrag {ids}. Geben Sie ihn frei, um neue Versionen 
 
 msgid "Open in change orders {ids}. Release them to create new versions or revisions."
 msgstr "Offen in Änderungsaufträgen {ids}. Geben Sie sie frei, um neue Versionen oder Überarbeitungen zu erstellen."
+msgstr "Änderungsauftrag {ids} öffnen. Geben Sie ihn frei, um neue Versionen oder Überarbeitungen zu erstellen."
+
+msgid "Open in change orders {ids}. Release them to create new versions or revisions."
+msgstr "Änderungsaufträge {ids} öffnen. Geben Sie sie frei, um neue Versionen oder Überarbeitungen zu erstellen."
 
 msgid "Open in MES"
 msgstr "Im MES öffnen"
@@ -10177,6 +10184,12 @@ msgstr "Aktualisieren"
 msgid "Refresh exchange rate"
 msgstr "Wechselkurs aktualisieren"
 
+msgid "Regenerate"
+msgstr "Neu generieren"
+
+msgid "Regenerating thumbnail…"
+msgstr "Miniaturansicht wird neu generiert…"
+
 msgid "Register"
 msgstr "Vorhandenes Vermögen registrieren"
 
@@ -11171,6 +11184,9 @@ msgstr "Einladungen senden"
 
 msgid "Send RFQ to Suppliers"
 msgstr "RFQ an Lieferanten senden"
+
+msgid "Send to Carbon"
+msgstr "An Carbon senden"
 
 msgid "Send Via"
 msgstr "Senden über"
@@ -13123,8 +13139,14 @@ msgstr "Bis {0}"
 msgid "Thumbnail"
 msgstr "Miniaturansicht"
 
+msgid "Thumbnail is still generating"
+msgstr "Miniaturansicht wird noch generiert"
+
 msgid "Thumbnail removed"
 msgstr "Vorschaubild entfernt"
+
+msgid "Thumbnail updated"
+msgstr "Miniaturansicht aktualisiert"
 
 msgid "Thumbnail uploaded"
 msgstr "Miniaturansicht hochgeladen"

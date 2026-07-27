@@ -902,6 +902,9 @@ msgstr "Select the operation to go back to. All operations from that point to th
 msgid "Send"
 msgstr "Send"
 
+msgid "Send to Carbon"
+msgstr "Send to Carbon"
+
 msgid "Serial"
 msgstr "Serial"
 

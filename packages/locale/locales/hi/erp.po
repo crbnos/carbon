@@ -5449,6 +5449,9 @@ msgstr "ट्रैक किए गए इकाइयों को लोड 
 msgid "Failed to move account: {0}"
 msgstr "खाता स्थानांतरित करने में विफल: {0}"
 
+msgid "Failed to regenerate thumbnail"
+msgstr "थंबनेल को पुनः उत्पन्न करने में विफल"
+
 msgid "Failed to remove image: {errorMessage}"
 msgstr "छवि हटाने में विफल: {errorMessage}"
 
@@ -8706,6 +8709,10 @@ msgstr "परिवर्तन आदेश {ids} में खुला। �
 
 msgid "Open in change orders {ids}. Release them to create new versions or revisions."
 msgstr "परिवर्तन आदेशों {ids} में खुला। नए संस्करण या संशोधन बनाने के लिए उन्हें जारी करें।"
+msgstr "{ids} में परिवर्तन आदेश खोलें। नई संस्करणें या संशोधन बनाने के लिए इसे जारी करें।"
+
+msgid "Open in change orders {ids}. Release them to create new versions or revisions."
+msgstr "{ids} में परिवर्तन आदेश खोलें। नई संस्करणें या संशोधन बनाने के लिए उन्हें जारी करें।"
 
 msgid "Open in MES"
 msgstr "MES में खोलें"
@@ -10177,6 +10184,12 @@ msgstr "ताज़ा करें"
 msgid "Refresh exchange rate"
 msgstr "विनिमय दर को ताज़ा करें"
 
+msgid "Regenerate"
+msgstr "पुनः उत्पन्न करें"
+
+msgid "Regenerating thumbnail…"
+msgstr "थंबनेल को पुनः उत्पन्न किया जा रहा है…"
+
 msgid "Register"
 msgstr "मौजूदा संपत्ति पंजीकृत करें"
 
@@ -11171,6 +11184,9 @@ msgstr "आमंत्रण भेजें"
 
 msgid "Send RFQ to Suppliers"
 msgstr "आपूर्तिकर्ताओं को RFQ भेजें"
+
+msgid "Send to Carbon"
+msgstr "Carbon को भेजें"
 
 msgid "Send Via"
 msgstr "के माध्यम से भेजें"
@@ -13123,8 +13139,14 @@ msgstr "{0} तक"
 msgid "Thumbnail"
 msgstr "थंबनेल"
 
+msgid "Thumbnail is still generating"
+msgstr "थंबनेल अभी भी उत्पन्न हो रहा है"
+
 msgid "Thumbnail removed"
 msgstr "थंबनेल हटाया गया"
+
+msgid "Thumbnail updated"
+msgstr "थंबनेल अपडेट हो गया"
 
 msgid "Thumbnail uploaded"
 msgstr "थंबनेल अपलोड किया गया"

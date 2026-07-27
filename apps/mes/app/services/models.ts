@@ -121,7 +121,10 @@ export const suggestionValidator = z.object({
   emoji: z.string().default("💡"),
   attachmentPath: z.string().optional(),
   path: z.string(),
-  userId: zfd.text(z.string().optional())
+  userId: zfd.text(z.string().optional()),
+  sendToCarbon: zfd
+    .text(z.string().optional())
+    .transform((value) => value === "true")
 });
 
 export const productionEventType = ["Setup", "Labor", "Machine"] as const;

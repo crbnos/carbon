@@ -902,6 +902,9 @@ msgstr "Выберите операцию, к которой нужно верн
 msgid "Send"
 msgstr "Отправить"
 
+msgid "Send to Carbon"
+msgstr "Отправить в Carbon"
+
 msgid "Serial"
 msgstr "Серийный"
 

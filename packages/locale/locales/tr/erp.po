@@ -5449,6 +5449,9 @@ msgstr "Takip edilen varlıklar yüklenemedi"
 msgid "Failed to move account: {0}"
 msgstr "Hesap taşınamadı: {0}"
 
+msgid "Failed to regenerate thumbnail"
+msgstr "Küçük resim yenileme başarısız"
+
 msgid "Failed to remove image: {errorMessage}"
 msgstr "Görsel kaldırılamadı: {errorMessage}"
 
@@ -8706,6 +8709,10 @@ msgstr "Değişiklik emrinde {ids} açılmış. Yeni versiyonlar veya revizyonla
 
 msgid "Open in change orders {ids}. Release them to create new versions or revisions."
 msgstr "Değişiklik emirlerinde {ids} açılmış. Yeni versiyonlar veya revizyonlar oluşturmak için bunları yayınlayın."
+msgstr "Değişiklik emrinde {ids} açın. Yeni sürümler veya revizyonlar oluşturmak için yayınlayın."
+
+msgid "Open in change orders {ids}. Release them to create new versions or revisions."
+msgstr "Değişiklik emirlerinde {ids} açın. Yeni sürümler veya revizyonlar oluşturmak için yayınlayın."
 
 msgid "Open in MES"
 msgstr "MES'te Aç"
@@ -10177,6 +10184,12 @@ msgstr "Yenile"
 msgid "Refresh exchange rate"
 msgstr "Döviz kurunu yenile"
 
+msgid "Regenerate"
+msgstr "Yenile"
+
+msgid "Regenerating thumbnail…"
+msgstr "Küçük resim yenileniyor…"
+
 msgid "Register"
 msgstr "Mevcut Varlığı Kayıt Yap"
 
@@ -11171,6 +11184,9 @@ msgstr "Davet Gönder"
 
 msgid "Send RFQ to Suppliers"
 msgstr "Tedarikçilere RFQ Gönder"
+
+msgid "Send to Carbon"
+msgstr "Carbon'a Gönder"
 
 msgid "Send Via"
 msgstr "Gönderim Yolu"
@@ -13123,8 +13139,14 @@ msgstr "Şu tarihe kadar {0}"
 msgid "Thumbnail"
 msgstr "Küçük Resim"
 
+msgid "Thumbnail is still generating"
+msgstr "Küçük resim hala oluşturuluyor"
+
 msgid "Thumbnail removed"
 msgstr "Küçük resim kaldırıldı"
+
+msgid "Thumbnail updated"
+msgstr "Küçük resim güncellendi"
 
 msgid "Thumbnail uploaded"
 msgstr "Küçük resim yüklendi"

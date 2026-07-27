@@ -162,7 +162,9 @@ const baseJobValidator = z.object({
     errorMap: () => ({ message: "Deadline type is required" })
   }),
   locationId: z.string().min(1, { message: "Location is required" }),
-  quantity: zfd.numeric(z.number().min(0)),
+  quantity: zfd.numeric(
+    z.number().positive({ message: "Quantity must be greater than zero" })
+  ),
   scrapQuantity: zfd.numeric(z.number().min(0)),
   startDate: zfd.text(z.string().optional()),
   unitOfMeasureCode: z
@@ -175,8 +177,16 @@ const baseJobValidator = z.object({
 export const bulkJobValidator = z
   .object({
     itemId: z.string().min(1, { message: "Item is required" }),
-    totalQuantity: zfd.numeric(z.number().min(0)),
-    quantityPerJob: zfd.numeric(z.number().min(0)),
+    totalQuantity: zfd.numeric(
+      z
+        .number()
+        .positive({ message: "Total quantity must be greater than zero" })
+    ),
+    quantityPerJob: zfd.numeric(
+      z
+        .number()
+        .positive({ message: "Quantity per job must be greater than zero" })
+    ),
     scrapQuantityPerJob: zfd.numeric(z.number().min(0)),
     unitOfMeasureCode: z
       .string()
@@ -886,7 +896,9 @@ export const productionOrderValidator = z.object({
   startDate: zfd.text(z.string().nullable()),
   dueDate: zfd.text(z.string().nullable()),
   periodId: z.string().min(1, { message: "Period is required" }),
-  quantity: zfd.numeric(z.number().min(0)),
+  quantity: zfd.numeric(
+    z.number().positive({ message: "Quantity must be greater than zero" })
+  ),
   existingId: zfd.text(z.string().optional()),
   existingQuantity: zfd.numeric(z.number().optional()),
   existingReadableId: zfd.text(z.string().optional()),

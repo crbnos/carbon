@@ -7,6 +7,7 @@ import { setAuthSession } from "@carbon/auth/session.server";
 import type { WebAuthnCredential } from "@simplewebauthn/browser";
 import type { ActionFunctionArgs } from "react-router";
 import { data, redirect } from "react-router";
+import { getEmployeeCompanies } from "~/modules/settings";
 import { path } from "~/utils/path";
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -110,20 +111,29 @@ export async function action({ request }: ActionFunctionArgs) {
       });
     }
 
+    const employeeCompanies = await getEmployeeCompanies(
+      serviceRole,
+      credRow.userId
+    );
+    if (employeeCompanies.error) {
+      return data(error(null, "Sign-in failed. Please try again."), {
+        status: 500
+      });
+    }
+
     const sessionCookie = await setAuthSession(request, { authSession });
-    const companyIdCookie = setCompanyId(authSession.companyId);
+    const headers: [string, string][] = [["Set-Cookie", sessionCookie]];
+
+    if (employeeCompanies.data.length <= 1) {
+      headers.push(["Set-Cookie", setCompanyId(authSession.companyId)]);
+    }
 
     const safeRedirect =
       redirectTo && redirectTo.startsWith("/") && !redirectTo.startsWith("//")
         ? redirectTo
         : path.to.authenticatedRoot;
 
-    return redirect(safeRedirect, {
-      headers: [
-        ["Set-Cookie", sessionCookie],
-        ["Set-Cookie", companyIdCookie]
-      ]
-    });
+    return redirect(safeRedirect, { headers });
   } catch {
     return data(error(null, "Sign-in failed. Please try again."), {
       status: 401

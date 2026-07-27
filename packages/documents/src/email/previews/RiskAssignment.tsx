@@ -9,7 +9,7 @@ export default function RiskAssignmentPreview() {
       preview={"Risk assigned to you"}
       message={'Risk "Single-source supplier" assigned to you'}
       reference={"Single-source supplier"}
-      recipientName={"Naveen"}
+      recipientName={"John Doe"}
       ctaLabel={"View details"}
       ctaUrl={"https://app.carbon.ms/x/quality/risk/1"}
       details={[

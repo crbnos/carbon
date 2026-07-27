@@ -9,7 +9,7 @@ export default function SupplierQuoteResponsePreview() {
       preview={"Supplier quote response"}
       message={"Supplier Quote SQ-0014 was submitted by Globex Inc."}
       reference={"SQ-0014"}
-      recipientName={"Naveen"}
+      recipientName={"John Doe"}
       ctaLabel={"View response"}
       ctaUrl={"https://app.carbon.ms/x/supplier-quote/1"}
       details={[

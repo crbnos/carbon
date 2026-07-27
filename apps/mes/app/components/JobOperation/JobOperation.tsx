@@ -332,6 +332,9 @@ export const JobOperation = ({
     artifacts,
     awaitingModel: modelPending,
     showOptimizeProgress,
+    backgroundOptimizing,
+    optimizeFailed,
+    canRetry,
     optimizeQueued,
     retry: onModelRetry,
     retryLabel: modelRetryLabel,
@@ -1772,6 +1775,8 @@ export const JobOperation = ({
               <ModelPreview
                 key={modelPath}
                 awaitingModel={modelPending}
+                optimizing={backgroundOptimizing}
+                optimizeFailed={optimizeFailed}
                 optimizedUrl={
                   artifacts?.optimizedModelPath
                     ? getPrivateUrl(artifacts.optimizedModelPath)
@@ -1796,7 +1801,7 @@ export const JobOperation = ({
                 }
                 mode={mode}
                 className="rounded-none"
-                onRetry={onModelRetry}
+                onRetry={canRetry ? onModelRetry : undefined}
                 retryLabel={modelRetryLabel}
               />
             ) : (

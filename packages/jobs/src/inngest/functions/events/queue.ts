@@ -42,13 +42,19 @@ type QueueJob = {
  * The drain loops until the queue is empty, so a single run absorbs a burst.
  * `concurrency: 1` serializes runs; bulk writes are coalesced upstream — the
  * trigger wakes at most once per transaction (carbon.event_wake_sent GUC).
+ * `singleton: skip` drops the *cross-transaction* pile-up: while a drain is in
+ * flight, every further wake is skipped (not queued) — the running drain already
+ * loops until empty and so absorbs their messages, and the drain's own re-wake +
+ * the pg_cron sweeper cover the narrow race where a wake lands just as it exits.
+ * So 10 wakes coalesce into 1 run instead of 1 run + 9 redundant empty drains.
  * This is the critical bridge between PostgreSQL events and inngest handlers.
  */
 export const eventQueueFunction = inngest.createFunction(
   {
     id: "event-queue",
     retries: 2,
-    concurrency: 1
+    concurrency: 1,
+    singleton: { mode: "skip" }
   },
   { event: "carbon/event-queue.process" },
   async ({ step }) => {

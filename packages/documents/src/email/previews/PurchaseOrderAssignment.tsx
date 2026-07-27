@@ -9,7 +9,7 @@ export default function PurchaseOrderAssignmentPreview() {
       preview={"Purchase order assigned to you"}
       message={"Purchase Order PO-00099 assigned to you"}
       reference={"PO-00099"}
-      recipientName={"Naveen"}
+      recipientName={"John Doe"}
       ctaLabel={"View details"}
       ctaUrl={"https://app.carbon.ms/x/purchase-order/1"}
       details={[

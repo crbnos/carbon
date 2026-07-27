@@ -5449,6 +5449,9 @@ msgstr "Impossibile caricare le entità tracciate"
 msgid "Failed to move account: {0}"
 msgstr "Impossibile spostare il conto: {0}"
 
+msgid "Failed to regenerate thumbnail"
+msgstr "Impossibile rigenerare l'anteprima"
+
 msgid "Failed to remove image: {errorMessage}"
 msgstr "Impossibile rimuovere l'immagine: {errorMessage}"
 
@@ -8706,6 +8709,10 @@ msgstr "Aperto nell'ordine di modifica {ids}. Rilasciarlo per creare nuove versi
 
 msgid "Open in change orders {ids}. Release them to create new versions or revisions."
 msgstr "Aperto negli ordini di modifica {ids}. Rilasciarli per creare nuove versioni o revisioni."
+msgstr "Apri in ordine di modifica {ids}. Rilascialo per creare nuove versioni o revisioni."
+
+msgid "Open in change orders {ids}. Release them to create new versions or revisions."
+msgstr "Apri in ordini di modifica {ids}. Rilasciali per creare nuove versioni o revisioni."
 
 msgid "Open in MES"
 msgstr "Apri in MES"
@@ -10177,6 +10184,12 @@ msgstr "Aggiorna"
 msgid "Refresh exchange rate"
 msgstr "Aggiorna tasso di cambio"
 
+msgid "Regenerate"
+msgstr "Rigenera"
+
+msgid "Regenerating thumbnail…"
+msgstr "Rigenerazione dell'anteprima…"
+
 msgid "Register"
 msgstr "Registrare Attivo Esistente"
 
@@ -11171,6 +11184,9 @@ msgstr "Invia inviti"
 
 msgid "Send RFQ to Suppliers"
 msgstr "Invia RFQ ai Fornitori"
+
+msgid "Send to Carbon"
+msgstr "Invia a Carbon"
 
 msgid "Send Via"
 msgstr "Invia tramite"
@@ -13123,8 +13139,14 @@ msgstr "Fino a {0}"
 msgid "Thumbnail"
 msgstr "Miniatura"
 
+msgid "Thumbnail is still generating"
+msgstr "L'anteprima è ancora in generazione"
+
 msgid "Thumbnail removed"
 msgstr "Miniatura rimossa"
+
+msgid "Thumbnail updated"
+msgstr "Anteprima aggiornata"
 
 msgid "Thumbnail uploaded"
 msgstr "Miniatura caricata"

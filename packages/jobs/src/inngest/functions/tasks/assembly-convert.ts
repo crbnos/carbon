@@ -2,6 +2,7 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Json } from "@carbon/database";
 import { inngest } from "../../client";
 import {
+  ASSEMBLER_CONCURRENCY,
   assemblerEnabled,
   internalizeStorageUrl,
   resolveModelSourceBucket,
@@ -25,6 +26,7 @@ export const assemblyConvertFunction = inngest.createFunction(
   {
     id: "assembly-convert",
     retries: 2,
+    concurrency: ASSEMBLER_CONCURRENCY,
     onFailure: async ({ event }) => {
       const { modelUploadId } = event.data.event.data;
       const client = getCarbonServiceRole();

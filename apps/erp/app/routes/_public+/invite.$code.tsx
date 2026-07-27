@@ -96,10 +96,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
       type: "magiclink",
       email: accept.data.email,
       options: {
-        redirectTo: `${getAppUrl()}/callback`
+        redirectTo: `${getAppUrl()}/callback?redirectTo=${encodeURIComponent(
+          path.to.api.link(accept.data.companyId)
+        )}`
       }
     });
-    throw redirect(magicLink.data?.properties?.action_link ?? path.to.root);
+    throw redirect(magicLink.data?.properties?.action_link ?? path.to.root, {
+      headers: [["Set-Cookie", setCompanyId(accept.data.companyId)]]
+    });
   }
 }
 

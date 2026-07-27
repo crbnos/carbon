@@ -902,6 +902,9 @@ msgstr "Geri dönülecek işlemi seçin. O noktadan mevcut işleme kadar olan t�
 msgid "Send"
 msgstr "Gönder"
 
+msgid "Send to Carbon"
+msgstr "Carbon'a Gönder"
+
 msgid "Serial"
 msgstr "Seri"
 

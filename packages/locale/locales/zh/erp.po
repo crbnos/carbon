@@ -5449,6 +5449,9 @@ msgstr "加载跟踪实体失败"
 msgid "Failed to move account: {0}"
 msgstr "移动账户失败: {0}"
 
+msgid "Failed to regenerate thumbnail"
+msgstr "未能重新生成缩略图"
+
 msgid "Failed to remove image: {errorMessage}"
 msgstr "删除图像失败：{errorMessage}"
 
@@ -8706,6 +8709,10 @@ msgstr "在变更单 {ids} 中打开。发放它以创建新的版本或修订�
 
 msgid "Open in change orders {ids}. Release them to create new versions or revisions."
 msgstr "在变更单 {ids} 中打开。发放它们以创建新的版本或修订版本。"
+msgstr "在更改订单 {ids} 中打开。释放它以创建新版本或修订。"
+
+msgid "Open in change orders {ids}. Release them to create new versions or revisions."
+msgstr "在更改订单 {ids} 中打开。释放它们以创建新版本或修订。"
 
 msgid "Open in MES"
 msgstr "在MES中打开"
@@ -10177,6 +10184,12 @@ msgstr "刷新"
 msgid "Refresh exchange rate"
 msgstr "刷新汇率"
 
+msgid "Regenerate"
+msgstr "重新生成"
+
+msgid "Regenerating thumbnail…"
+msgstr "正在重新生成缩略图…"
+
 msgid "Register"
 msgstr "注册现有资产"
 
@@ -11171,6 +11184,9 @@ msgstr "发送邀请"
 
 msgid "Send RFQ to Suppliers"
 msgstr "向供应商发送询价单"
+
+msgid "Send to Carbon"
+msgstr "发送至 Carbon"
 
 msgid "Send Via"
 msgstr "通过以下方式发送"
@@ -13123,8 +13139,14 @@ msgstr "至 {0}"
 msgid "Thumbnail"
 msgstr "缩略图"
 
+msgid "Thumbnail is still generating"
+msgstr "缩略图仍在生成中"
+
 msgid "Thumbnail removed"
 msgstr "缩略图已移除"
+
+msgid "Thumbnail updated"
+msgstr "缩略图已更新"
 
 msgid "Thumbnail uploaded"
 msgstr "缩略图已上传"

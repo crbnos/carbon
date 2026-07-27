@@ -902,6 +902,9 @@ msgstr "되돌아갈 공정작업을 선택하세요. 해당 시점부터 현재
 msgid "Send"
 msgstr "전송"
 
+msgid "Send to Carbon"
+msgstr "Carbon으로 보내기"
+
 msgid "Serial"
 msgstr "일련번호"
 
