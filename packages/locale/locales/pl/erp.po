@@ -6509,7 +6509,7 @@ msgid "Inbox"
 msgstr "Skrzynka odbiorcza"
 
 msgid "Include a materials (bill of materials) section on the job traveler PDF with item numbers and quantities."
-msgstr "Dołącz sekcję materiałów (specyfikacja materiałowa) w dokumencie karty pracy PDF wraz z numerami pozycji i ilościami."
+msgstr "Dołącz sekcję materiałów (specyfikacja materiałowa) w dokumencie karty marszruty PDF wraz z numerami pozycji i ilościami."
 
 msgid "Include extra parts in shipment"
 msgstr "Dołącz dodatkowe części do wysyłki"
@@ -6518,7 +6518,7 @@ msgid "Include Inactive"
 msgstr "Uwzględnij nieaktywne"
 
 msgid "Include materials on traveler"
-msgstr "Dołącz materiały do karty pracy"
+msgstr "Dołącz materiały do karty marszruty"
 
 msgid "Included"
 msgstr "Uwzględnione"
@@ -6962,10 +6962,10 @@ msgid "Job Operations"
 msgstr "Operacje Zadań"
 
 msgid "Job Traveler Materials"
-msgstr "Materiały Karty Pracy"
+msgstr "Materiały Karty Marszruty"
 
 msgid "Job traveler settings updated"
-msgstr "Ustawienia karty pracy zaktualizowane"
+msgstr "Ustawienia karty marszruty zaktualizowane"
 
 msgid "Jobs"
 msgstr "Zadania"
@@ -14476,7 +14476,7 @@ msgid "When on, scanning this process's operation barcode reports all remaining 
 msgstr "Gdy włączone, skanowanie kodu kreskowego operacji tego procesu zgłasza całą pozostałą otwartą ilość jako ukończoną w jednej akcji; wyłącz, gdy operatorzy regularnie zgłaszają częściowe."
 
 msgid "When on, the traveler PDF lists the job's required materials."
-msgstr "Gdy włączone, dokument karty pracy wyświetla materiały wymagane dla zadania."
+msgstr "Gdy włączone, dokument karty marszruty wyświetla materiały wymagane dla zadania."
 
 msgid "When on, this party's invoices skip tax calculation; the party is responsible for keeping the exemption certificate current."
 msgstr "Gdy włączone, faktury tej strony pomijają obliczenie podatku; strona jest odpowiedzialna za utrzymanie aktualności certyfikatu zwolnienia."
