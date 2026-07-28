@@ -205,7 +205,6 @@ export default function JobMakeMethodRoute() {
                   itemId: model?.itemId ?? undefined
                 }}
                 modelPath={model?.modelPath ?? null}
-                thumbnailPath={model?.thumbnailPath ?? null}
                 title="CAD Model"
                 uploadClassName="aspect-square min-h-[420px] max-h-[70vh]"
                 viewerClassName="aspect-square min-h-[420px] max-h-[70vh]"

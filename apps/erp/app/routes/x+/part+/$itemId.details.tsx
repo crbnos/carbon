@@ -406,7 +406,6 @@ export default function PartDetailsRoute() {
             isReadOnly={!permissions.can("update", "parts") || !!draftLock}
             metadata={{ itemId }}
             modelPath={partData?.partSummary?.modelPath ?? null}
-            thumbnailPath={partData?.partSummary?.thumbnailPath ?? null}
             title={t`CAD Model`}
             titleExtras={lockHint}
           />

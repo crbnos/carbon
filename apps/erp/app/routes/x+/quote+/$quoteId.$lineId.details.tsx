@@ -435,7 +435,6 @@ export default function QuoteLine() {
                   itemId: model?.itemId ?? undefined
                 }}
                 modelPath={model?.modelPath ?? null}
-                thumbnailPath={model?.thumbnailPath ?? null}
                 title={t`CAD Model`}
                 uploadClassName="aspect-square min-h-[420px] max-h-[70vh]"
                 viewerClassName="aspect-square min-h-[420px] max-h-[70vh]"
@@ -451,7 +450,6 @@ export default function QuoteLine() {
             itemId: line.itemId ?? undefined
           }}
           modelPath={line?.modelPath ?? null}
-          thumbnailPath={line?.thumbnailPath ?? null}
           title="CAD Model"
           uploadClassName="aspect-square min-h-[420px] max-h-[70vh]"
           viewerClassName="aspect-square min-h-[420px] max-h-[70vh]"

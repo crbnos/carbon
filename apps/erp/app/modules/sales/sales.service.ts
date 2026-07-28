@@ -921,8 +921,7 @@ export async function getModelByQuoteLineId(
     return {
       itemId: item.data?.id ?? null,
       type: item.data?.type ?? null,
-      modelPath: null,
-      thumbnailPath: null
+      modelPath: null
     };
   }
 
@@ -936,8 +935,7 @@ export async function getModelByQuoteLineId(
     return {
       itemId: item.data?.id ?? null,
       type: item.data?.type ?? null,
-      modelSize: null,
-      thumbnailPath: null
+      modelSize: null
     };
   }
 

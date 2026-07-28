@@ -30,7 +30,7 @@ import { Trans } from "@lingui/react/macro";
 import { nanoid } from "nanoid";
 import { useState } from "react";
 import { useDropzone } from "react-dropzone";
-import { LuAxis3D, LuCloudUpload, LuRefreshCw, LuZap } from "react-icons/lu";
+import { LuCloudUpload, LuRefreshCw, LuZap } from "react-icons/lu";
 import { useFetcher, useRevalidator } from "react-router";
 import { useModelUpload, useUser } from "~/hooks";
 import { getPrivateUrl, getRawModelUrl, path } from "~/utils/path";
@@ -40,7 +40,6 @@ const SIZE_LIMIT = getFileSizeLimit("CAD_MODEL_UPLOAD");
 
 type CadModelProps = {
   modelPath: string | null;
-  thumbnailPath?: string | null; // modelUpload.thumbnailPath — preview for the deferred placeholder
   metadata?: {
     itemId?: string;
     salesRfqLineId?: string;
@@ -61,7 +60,6 @@ const CadModel = ({
   isReadOnly,
   metadata,
   modelPath,
-  thumbnailPath,
   title,
   titleExtras,
   uploadClassName,
@@ -77,11 +75,6 @@ const CadModel = ({
 
   const fetcher = useFetcher<{}>();
   const [file, setFile] = useState<File | null>(null);
-  // Stored models load on demand (a click), not on page navigation — the viewer
-  // downloads and parses the whole file client-side, which can stall the page
-  // for large models (multi-MB compressed assemblies). A freshly dropped local
-  // file still shows immediately: no download, and the user just asked for it.
-  const [showViewer, setShowViewer] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const deleteModal = useDisclosure();
 
@@ -231,16 +224,6 @@ const CadModel = ({
       }
     >
       {() => {
-        if (!file && modelPath && !showViewer) {
-          return (
-            <CadModelDeferred
-              className={viewerClassName}
-              title={title}
-              thumbnailUrl={thumbnailPath ? getPrivateUrl(thumbnailPath) : null}
-              onDisplay={() => setShowViewer(true)}
-            />
-          );
-        }
         return file || modelPath ? (
           <>
             <div className="relative h-full w-full">
@@ -409,72 +392,6 @@ const CadModel = ({
 };
 
 export default CadModel;
-
-type CadModelDeferredProps = {
-  title?: string;
-  className?: string;
-  thumbnailUrl?: string | null;
-  onDisplay: () => void;
-};
-
-// Placeholder shown instead of the viewer until the user asks for the model.
-// Shows the generated model thumbnail when one exists (modelUpload.thumbnailPath
-// — absent right after upload and on local dev, where the thumbnail job skips),
-// falling back to an icon. Mirrors the upload card's shell so the page layout
-// doesn't shift on click.
-const CadModelDeferred = ({
-  title,
-  className,
-  thumbnailUrl,
-  onDisplay
-}: CadModelDeferredProps) => {
-  const [thumbnailFailed, setThumbnailFailed] = useState(false);
-  const showThumbnail = !!thumbnailUrl && !thumbnailFailed;
-
-  return (
-    <div
-      className={cn(
-        "flex flex-col flex-grow rounded-lg border border-border bg-gradient-to-bl from-card from-50% via-card to-background dark:border-none dark:shadow-[inset_0_0.5px_0_rgb(255_255_255_/_0.08),_inset_0_0_1px_rgb(255_255_255_/_0.24),_0_0_0_0.5px_rgb(0,0,0,1),0px_0px_4px_rgba(0,_0,_0,_0.08)] text-card-foreground shadow-sm w-full min-h-[400px]",
-        className
-      )}
-    >
-      {/* flex-grow (not h-full): the card's height often comes from min-height /
-          flex stretch, where percentage heights resolve to auto and the content
-          would hug the top instead of centring. */}
-      <div className="flex flex-col flex-grow w-full p-4">
-        <CardHeader>
-          <CardTitle>{title}</CardTitle>
-        </CardHeader>
-        <div className="flex flex-col flex-grow items-center justify-center gap-4 p-6 text-center">
-          {showThumbnail ? (
-            <img
-              src={thumbnailUrl}
-              alt="3D model preview"
-              className={cn(
-                "max-h-64 w-auto object-contain",
-                title && "-mt-16"
-              )}
-              onError={() => setThumbnailFailed(true)}
-            />
-          ) : (
-            <div
-              className={cn("p-4 bg-accent rounded-full", title && "-mt-16")}
-            >
-              <LuAxis3D className="mx-auto h-12 w-12 text-muted-foreground" />
-            </div>
-          )}
-          <Button variant="secondary" onClick={onDisplay}>
-            Display model
-          </Button>
-          <p className="text-xs text-muted-foreground text-balance">
-            3D models load on demand to keep this page fast. Large models may
-            take longer to load.
-          </p>
-        </div>
-      </div>
-    </div>
-  );
-};
 
 type CadModelUploadProps = {
   title?: string;
