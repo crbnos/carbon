@@ -332,6 +332,9 @@ export const JobOperation = ({
     artifacts,
     awaitingModel: modelPending,
     showOptimizeProgress,
+    backgroundOptimizing,
+    optimizeFailed,
+    canRetry,
     optimizeQueued,
     retry: onModelRetry,
     retryLabel: modelRetryLabel,
@@ -1453,6 +1456,16 @@ export const JobOperation = ({
                           {issueModal.isOpen && (
                             <IssueMaterialModal
                               operationId={operation.id}
+                              // The process view issues the whole quantity at
+                              // once, so picked lots may pre-fill when the
+                              // parent is a single entity. The modal enforces
+                              // the full rule: a picking list exists AND (the
+                              // parent is not serialized OR the operation
+                              // makes exactly one unit).
+                              allowPrefill
+                              parentUnitCount={
+                                operation.operationQuantity ?? undefined
+                              }
                               expiredEntityPolicy={expiredEntityPolicy}
                               locationId={locationId}
                               workCenterId={operation.workCenterId ?? undefined}
@@ -1772,9 +1785,17 @@ export const JobOperation = ({
               <ModelPreview
                 key={modelPath}
                 awaitingModel={modelPending}
+                optimizing={backgroundOptimizing}
+                optimizeFailed={optimizeFailed}
                 optimizedUrl={
                   artifacts?.optimizedModelPath
-                    ? getPrivateUrl(artifacts.optimizedModelPath)
+                    ? // ?v= busts the immutable preview cache on the STABLE
+                      // optimized.glb path when a re-optimise lands.
+                      `${getPrivateUrl(artifacts.optimizedModelPath)}${
+                        artifacts.optimizedAt
+                          ? `?v=${encodeURIComponent(artifacts.optimizedAt)}`
+                          : ""
+                      }`
                     : null
                 }
                 glbUrl={
@@ -1796,7 +1817,7 @@ export const JobOperation = ({
                 }
                 mode={mode}
                 className="rounded-none"
-                onRetry={onModelRetry}
+                onRetry={canRetry ? onModelRetry : undefined}
                 retryLabel={modelRetryLabel}
               />
             ) : (

@@ -106,8 +106,16 @@ export const getSalesOrderJobStatus = (
     (acc, job) => acc + (job.productionQuantity ?? 0),
     0
   );
+  // A job's quantityComplete persists after the job is reopened, so completion
+  // must be gated on the job actually being in a completed status. Otherwise a
+  // reopened (In Progress) job that still has quantityComplete >= saleQuantity
+  // would keep the line reading "Completed" (or "Shipped").
   const totalCompleted = filteredJobs.reduce(
-    (acc, job) => acc + job.quantityComplete,
+    (acc, job) =>
+      acc +
+      (["Completed", "Closed"].includes(job.status ?? "")
+        ? job.quantityComplete
+        : 0),
     0
   );
   const totalReleased = filteredJobs.reduce((acc, job) => {

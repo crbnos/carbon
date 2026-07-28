@@ -158,6 +158,7 @@ export default function StorageRuleForm({
                     name="appliesToAll"
                     label={t`Applies to all work centers`}
                     description={t`When on, this rule fires for every target of its type. Assignment rows are ignored but preserved.`}
+                    bordered
                   />
                 )}
                 <SurfacesField

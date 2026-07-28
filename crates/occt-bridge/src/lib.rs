@@ -63,7 +63,14 @@ pub mod ffi {
         /// product (flat multi-body, no assembly tree) to a STEP file.
         /// Hermetic tests use this instead of committed fixture files.
         fn write_test_step(path: &str, boxes: u32) -> bool;
+
+        /// Test fixture generator: a single cylinder — the canonical curved
+        /// surface for asserting tessellation smoothness (circle segments).
+        fn write_test_cylinder(path: &str, radius: f64, height: f64) -> bool;
     }
 }
 
-pub use ffi::{read_brep, read_iges, read_step, read_xbf, step_to_xbf, write_test_step, RawNode, Tree};
+pub use ffi::{
+    read_brep, read_iges, read_step, read_xbf, step_to_xbf, write_test_cylinder, write_test_step,
+    RawNode, Tree,
+};

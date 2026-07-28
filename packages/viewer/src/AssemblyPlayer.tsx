@@ -60,6 +60,12 @@ export type { FutureComponentsMode } from "./visibility";
 /** Marquee rectangle in canvas-local CSS pixels while box-selecting. */
 type BoxRect = { left: number; top: number; width: number; height: number };
 
+/**
+ * Loop mode (MES) holds the seated pose for this long at the end of each cycle
+ * before replaying the insertion — a calmer cadence than a seamless repeat.
+ */
+const LOOP_END_PAUSE_SECONDS = 2;
+
 export type AssemblyPlayerProps = {
   glbUrl: string;
   graphUrl: string;
@@ -113,6 +119,12 @@ export type AssemblyPlayerProps = {
    */
   autoPlay?: boolean;
   /**
+   * Loops the active step's insertion animation continuously instead of playing
+   * it once and holding the seated pose. Used by MES playback, where the operator
+   * stays on one step and the motion should keep replaying.
+   */
+  loop?: boolean;
+  /**
    * Named subassembly units (authored "plan as one component" groups). A step whose
    * components are exactly one of these is titled by the unit's name rather than by
    * listing every component inside it.
@@ -125,6 +137,12 @@ export type AssemblyPlayerProps = {
    * path would be misleading.
    */
   suppressFallbackMotions?: boolean;
+  /**
+   * Hides the footer caption (the active step's title + instructionText). Shop-floor
+   * (MES) playback shows the step name/description in its own panel, so the in-player
+   * caption is redundant there.
+   */
+  hideCaption?: boolean;
   mode?: "dark" | "light";
   className?: string;
 };
@@ -171,8 +189,10 @@ export const AssemblyPlayer = forwardRef<
     defaultFutureMode = "ghost",
     componentPickerActive = false,
     autoPlay = true,
+    loop = false,
     units,
     suppressFallbackMotions = false,
+    hideCaption = false,
     mode = "dark",
     className
   },
@@ -466,6 +486,7 @@ export const AssemblyPlayer = forwardRef<
               steps={displaySteps}
               activeStepIndex={clampedIndex}
               isPlaying={isPlaying}
+              loop={loop}
               futureMode={futureMode}
               highlightedNodeIds={highlightedNodeIds}
               hiddenNodeIds={hiddenNodeIds}
@@ -670,20 +691,22 @@ export const AssemblyPlayer = forwardRef<
         </div>
       </div>
 
-      {activeStep && (activeStepTitle || activeStep.instructionText) && (
-        <div className="border-t border-border bg-background px-3 py-2">
-          {activeStepTitle && (
-            <p className="text-sm font-medium text-foreground">
-              {activeStepTitle}
-            </p>
-          )}
-          {activeStep.instructionText && (
-            <p className="text-sm text-muted-foreground">
-              {activeStep.instructionText}
-            </p>
-          )}
-        </div>
-      )}
+      {!hideCaption &&
+        activeStep &&
+        (activeStepTitle || activeStep.instructionText) && (
+          <div className="border-t border-border bg-background px-3 py-2">
+            {activeStepTitle && (
+              <p className="text-sm font-medium text-foreground">
+                {activeStepTitle}
+              </p>
+            )}
+            {activeStep.instructionText && (
+              <p className="text-sm text-muted-foreground">
+                {activeStep.instructionText}
+              </p>
+            )}
+          </div>
+        )}
     </div>
   );
 });
@@ -796,6 +819,7 @@ function AssemblyScene({
   steps,
   activeStepIndex,
   isPlaying,
+  loop,
   futureMode,
   highlightedNodeIds,
   hiddenNodeIds,
@@ -824,6 +848,8 @@ function AssemblyScene({
   steps: AssemblyStep[];
   activeStepIndex: number;
   isPlaying: boolean;
+  /** Loop the active step's animation continuously (MES playback) */
+  loop: boolean;
   futureMode: FutureComponentsMode;
   highlightedNodeIds?: string[];
   hiddenNodeIds?: string[];
@@ -1248,6 +1274,9 @@ function AssemblyScene({
       }));
 
     const action = mixer.clipAction(clip);
+    // Play the insertion once and hold the seated pose. The editor keeps it seated;
+    // MES loop mode replays it from the frame loop after LOOP_END_PAUSE_SECONDS, so
+    // each cycle ends on a brief settled pause instead of a seamless repeat.
     action.setLoop(LoopOnce, 1);
     action.clampWhenFinished = true;
     action.play();
@@ -1281,6 +1310,7 @@ function AssemblyScene({
     clipKey,
     activeStepIndex,
     isEditingActive,
+    loop,
     seekRef,
     playheadRef
   ]);
@@ -1396,21 +1426,31 @@ function AssemblyScene({
   });
 
   useFrame((_, delta) => {
-    if (isPlaying) {
+    // MES loop: freeze the animation while the operator manipulates the model
+    // (orbit/zoom/pan), so they can inspect it without the parts moving; it
+    // resumes the moment they let go. Only in loop mode — the editor is unaffected.
+    const advancing = isPlaying && !(loop && orbitingRef.current);
+    if (advancing) {
       mixer.update(delta);
       localElapsedRef.current += delta;
     }
     const segment = segments[activeStepIndex] ?? 0;
     const clamped = Math.min(localElapsedRef.current, segment);
     playheadRef.current = (startTimes[activeStepIndex] ?? 0) + clamped;
-    if (
-      isPlaying &&
-      !finishedRef.current &&
-      segment > 0 &&
-      localElapsedRef.current >= segment
-    ) {
-      finishedRef.current = true;
-      onStepFinished?.();
+    if (advancing && segment > 0 && localElapsedRef.current >= segment) {
+      if (loop) {
+        // Hold the seated pose for LOOP_END_PAUSE_SECONDS (the action is
+        // LoopOnce+clamp, so the mesh stays put), then replay the insertion from
+        // the start — the seated fade re-runs when localElapsed wraps to 0.
+        if (localElapsedRef.current >= segment + LOOP_END_PAUSE_SECONDS) {
+          localElapsedRef.current = 0;
+          finishedRef.current = false;
+          actionRef.current?.reset().play();
+        }
+      } else if (!finishedRef.current) {
+        finishedRef.current = true;
+        onStepFinished?.();
+      }
     }
   });
 

@@ -3,6 +3,7 @@ import type { Json } from "@carbon/database";
 import type { AssemblyPlan } from "@carbon/viewer/steps";
 import { inngest } from "../../client";
 import {
+  ASSEMBLER_CONCURRENCY,
   assemblerEnabled,
   internalizeStorageUrl,
   resolveModelSourceBucket,
@@ -32,6 +33,7 @@ export const assemblyPlanFunction = inngest.createFunction(
   {
     id: "assembly-plan",
     retries: 2,
+    concurrency: ASSEMBLER_CONCURRENCY,
     onFailure: async ({ event }) => {
       const { modelUploadId } = event.data.event.data;
       const client = getCarbonServiceRole();

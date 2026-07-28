@@ -130,6 +130,11 @@ export type Events = {
       companyId: string;
       userId: string;
       // format is derived from the stored file inside the job, not passed here.
+      // Force a fresh optimise of an already-Successful model (the badge's
+      // refresh action) — bypasses the already-optimized guard and mints a
+      // fresh assembler job id (the stable id would attach to the previous
+      // run's cached result and finish instantly).
+      force?: boolean;
     };
   };
 

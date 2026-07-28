@@ -78,13 +78,17 @@ const ShiftForm = ({ initialValues }: ShiftFormProps) => {
                   <Trans>Days</Trans>
                 </FormLabel>
                 <VStack>
-                  <Boolean name="monday" description={t`Monday`} />
-                  <Boolean name="tuesday" description={t`Tuesday`} />
-                  <Boolean name="wednesday" description={t`Wednesday`} />
-                  <Boolean name="thursday" description={t`Thursday`} />
-                  <Boolean name="friday" description={t`Friday`} />
-                  <Boolean name="saturday" description={t`Saturday`} />
-                  <Boolean name="sunday" description={t`Sunday`} />
+                  <Boolean name="monday" description={t`Monday`} bordered />
+                  <Boolean name="tuesday" description={t`Tuesday`} bordered />
+                  <Boolean
+                    name="wednesday"
+                    description={t`Wednesday`}
+                    bordered
+                  />
+                  <Boolean name="thursday" description={t`Thursday`} bordered />
+                  <Boolean name="friday" description={t`Friday`} bordered />
+                  <Boolean name="saturday" description={t`Saturday`} bordered />
+                  <Boolean name="sunday" description={t`Sunday`} bordered />
                 </VStack>
               </FormControl>
               <CustomFormFields table="shift" />

@@ -168,6 +168,7 @@ const AddressAutocomplete = ({
             onFocus={handleInputFocus}
             onKeyDown={handleKeyDown}
             autoComplete="off"
+            placeholder={t`e.g. 1 Industrial Way`}
             className="bg-transparent"
           />
           {open && suggestions.length > 0 && (
@@ -204,21 +205,35 @@ const AddressAutocomplete = ({
       ref={addressLine2Ref}
       name="addressLine2"
       label={t`Address Line 2`}
+      placeholder={t`e.g. Suite 200`}
     />
   );
 
-  const cityField = <Input ref={cityRef} name="city" label={t`City`} />;
+  const cityField = (
+    <Input
+      ref={cityRef}
+      name="city"
+      label={t`City`}
+      placeholder={t`e.g. Detroit`}
+    />
+  );
 
   const stateProvinceField = (
     <Input
       ref={stateProvinceRef}
       name="stateProvince"
       label={t`State / Province`}
+      placeholder={t`e.g. MI`}
     />
   );
 
   const postalCodeField = (
-    <Input ref={postalCodeRef} name="postalCode" label={t`Postal Code`} />
+    <Input
+      ref={postalCodeRef}
+      name="postalCode"
+      label={t`Postal Code`}
+      placeholder={t`e.g. 48201`}
+    />
   );
 
   const countryField = <Country name="countryCode" label={t`Country`} />;

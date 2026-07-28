@@ -227,8 +227,7 @@ export const itemValidator = z.object({
   // capped by the earliest input expiry — the output cannot outlast its
   // raw materials. Falls back to today + days when no input has a date.
   // Mirrors the inventory-settings "Calculate from BOM" copy.
-  shelfLifeCalculateFromBom: zfd.checkbox(),
-  requiresInspection: zfd.checkbox().optional()
+  shelfLifeCalculateFromBom: zfd.checkbox()
 });
 
 // Common storage / shelf-life refines. Shared across all item-type
@@ -487,6 +486,8 @@ export const methodOperationValidator = z
     processId: z.string().min(1, { message: "Process is required" }),
     workCenterId: zfd.text(z.string().optional()),
     procedureId: zfd.text(z.string().optional()),
+    assemblyInstructionId: zfd.text(z.string().optional()),
+    inspectionDocumentId: zfd.text(z.string().optional()),
     description: zfd.text(
       z.string().min(0, { message: "Description is required" })
     ),
@@ -515,7 +516,7 @@ export const methodOperationValidator = z
   })
   .refine(
     (data) => {
-      if (data.operationType === "Inside") {
+      if (data.operationType !== "Outside Processing") {
         return !!data.setupUnit;
       }
       return true;
@@ -527,7 +528,7 @@ export const methodOperationValidator = z
   )
   .refine(
     (data) => {
-      if (data.operationType === "Inside") {
+      if (data.operationType !== "Outside Processing") {
         return !!data.laborUnit;
       }
       return true;
@@ -539,8 +540,10 @@ export const methodOperationValidator = z
   )
   .refine(
     (data) => {
-      if (data.operationType === "Inside") {
-        return !!data.laborUnit;
+      // Machine only applies to Process operations — Assembly and Inspection
+      // are setup + labor work.
+      if (data.operationType === "Process") {
+        return !!data.machineUnit;
       }
       return true;
     },
@@ -551,7 +554,7 @@ export const methodOperationValidator = z
   )
   .refine(
     (data) => {
-      if (data.operationType === "Inside") {
+      if (data.operationType !== "Outside Processing") {
         return Number.isFinite(data.setupTime);
       }
       return true;
@@ -563,7 +566,7 @@ export const methodOperationValidator = z
   )
   .refine(
     (data) => {
-      if (data.operationType === "Inside") {
+      if (data.operationType !== "Outside Processing") {
         return Number.isFinite(data.laborTime);
       }
       return true;
@@ -575,7 +578,7 @@ export const methodOperationValidator = z
   )
   .refine(
     (data) => {
-      if (data.operationType === "Inside") {
+      if (data.operationType === "Process") {
         return Number.isFinite(data.machineTime);
       }
       return true;
@@ -583,6 +586,18 @@ export const methodOperationValidator = z
     {
       message: "Machine time is required",
       path: ["machineTime"]
+    }
+  )
+  .refine(
+    (data) => {
+      if (data.operationType === "Inspection") {
+        return !!data.inspectionDocumentId;
+      }
+      return true;
+    },
+    {
+      message: "Inspection Plan is required",
+      path: ["inspectionDocumentId"]
     }
   );
 
@@ -973,13 +988,13 @@ export const itemRevisionStatus = [
 // companySettings.plmReleaseControl
 export const plmReleaseControl = ["off", "warn", "enforce"] as const;
 
-// Error shape returned by the change order service functions: either a real
+// Error shape returned by the change notice service functions: either a real
 // Supabase PostgrestError or a hand-built message (sequence/lookup failures that
 // don't originate from a query). One alias so callers get a consistent contract.
-export type ChangeOrderError = PostgrestError | { message: string };
+export type ChangeNoticeError = PostgrestError | { message: string };
 
 // =============================================================================
-// Change Orders — validators, enums, and the stage state machine.
+// Change Notices — validators, enums, and the stage state machine.
 //
 // A sub-area of the Items module, modeled on Quality. The header evolves the
 // existing `changeOrder` table. v2: a CO's per-affected-item edits live on a
@@ -990,9 +1005,9 @@ export type ChangeOrderError = PostgrestError | { message: string };
 
 // changeOrder.type — the legacy category enum on the header. Retained (the
 // column still exists); the primary "Category" is `changeOrderTypeId` (a row in
-// the changeOrderType lookup, reseeded to Design improvement / Obsolescence /
+// the changeNoticeType lookup, reseeded to Design improvement / Obsolescence /
 // Cost reduction).
-export const changeOrderType = [
+export const changeNoticeType = [
   "Engineering",
   "Manufacturing",
   "Documentation"
@@ -1001,7 +1016,7 @@ export const changeOrderType = [
 // V1 stage flow (forward, one step at a time). Broadcast on Start /
 // Implementation / Done; silent on Draft / Engineering Complete. "Cancelled" is
 // the off-ramp: a CO can be closed from any open stage and reopened to Draft.
-export const changeOrderStatus = [
+export const changeNoticeStatus = [
   "Draft",
   "Start",
   "Engineering Complete",
@@ -1013,7 +1028,7 @@ export const changeOrderStatus = [
 // The forward progress stages only (excludes the "Cancelled" off-ramp). Drives
 // the read-only status-flow progress bar so a cancelled CO doesn't render as a
 // sixth step.
-export const changeOrderStageFlow: (typeof changeOrderStatus)[number][] = [
+export const changeNoticeStageFlow: (typeof changeNoticeStatus)[number][] = [
   "Draft",
   "Start",
   "Engineering Complete",
@@ -1021,7 +1036,7 @@ export const changeOrderStageFlow: (typeof changeOrderStatus)[number][] = [
   "Done"
 ];
 
-export const changeOrderTaskStatus = [
+export const changeNoticeTaskStatus = [
   "Pending",
   "In Progress",
   "Completed",
@@ -1042,16 +1057,16 @@ export const changeOrderTaskStatus = [
 //                      change.
 // BoM/BoP is editable on ANY change type for a manufactured (non-Buy) draft; only
 // Version's extra editing scope differs (no attributes/docs/cutover surface).
-export const changeOrderChangeTypes = [
+export const changeNoticeChangeTypes = [
   "Version",
   "Revision",
   "Replacement Part",
   "New Part"
 ] as const;
-export type ChangeOrderChangeType = (typeof changeOrderChangeTypes)[number];
+export type ChangeNoticeChangeType = (typeof changeNoticeChangeTypes)[number];
 
 // changeOrder.priority reuses quality's nonConformancePriority DB enum.
-export const changeOrderPriority = nonConformancePriority;
+export const changeNoticePriority = nonConformancePriority;
 
 // -----------------------------------------------------------------------------
 // Stage state machine (G8 — one place). Forward, single step, plus the Cancel /
@@ -1059,37 +1074,38 @@ export const changeOrderPriority = nonConformancePriority;
 // IMPORTANT: the forward stage is always index 0 — the header's "Advance" action
 // reads `transitions[status][0]`, so "Cancelled" must never be first.
 // -----------------------------------------------------------------------------
-export const changeOrderStatusTransitions: Record<
-  (typeof changeOrderStatus)[number],
-  (typeof changeOrderStatus)[number][]
+export const changeNoticeStatusTransitions: Record<
+  (typeof changeNoticeStatus)[number],
+  (typeof changeNoticeStatus)[number][]
 > = {
   Draft: ["Start", "Cancelled"],
   Start: ["Engineering Complete", "Cancelled"],
   "Engineering Complete": ["Implementation", "Cancelled"],
-  Implementation: ["Done", "Cancelled"],
+  // Last entry is the reopen edge — "Done" stays first so the header still advances/releases.
+  Implementation: ["Done", "Cancelled", "Engineering Complete"],
   Done: [],
   // Reopen a closed CO back to Draft (fully editable). Done stays terminal.
   Cancelled: ["Draft"]
 };
 
-export function isAllowedChangeOrderTransition(
+export function isAllowedChangeNoticeTransition(
   from: string | null | undefined,
   to: string | null | undefined
 ): boolean {
   if (!from || !to || from === to) return false;
   const allowed =
-    changeOrderStatusTransitions[from as (typeof changeOrderStatus)[number]];
+    changeNoticeStatusTransitions[from as (typeof changeNoticeStatus)[number]];
   if (!allowed) return false;
   return (allowed as readonly string[]).includes(to);
 }
 
 // The stages that broadcast a team notification on entry.
-export const changeOrderBroadcastStages: (typeof changeOrderStatus)[number][] =
+export const changeNoticeBroadcastStages: (typeof changeNoticeStatus)[number][] =
   ["Start", "Implementation", "Done"];
 
 // "Open" = every stage before the record is closed at Done. Used by the item
 // open-CO alert and the single-open-CO guard.
-export const changeOrderOpenStatuses: (typeof changeOrderStatus)[number][] = [
+export const changeNoticeOpenStatuses: (typeof changeNoticeStatus)[number][] = [
   "Draft",
   "Start",
   "Engineering Complete",
@@ -1098,28 +1114,46 @@ export const changeOrderOpenStatuses: (typeof changeOrderStatus)[number][] = [
 
 // Locked once closed — Done (released, part of the audit trail) or Cancelled
 // (abandoned). Reopen a Cancelled CO to Draft to edit it again.
-export function isChangeOrderLocked(
+export function isChangeNoticeLocked(
   status: string | null | undefined
 ): boolean {
   return status === "Done" || status === "Cancelled";
 }
 
-// Content (reason/description/products/BOM changes/actions) is editable until
-// the CO is closed.
-export function canEditChangeOrder(status: string | null | undefined): boolean {
-  return !isChangeOrderLocked(status);
+// Engineering content — affected items, BOM/BOP drafts, cutover, reason/description.
+// Frozen from Implementation onward: what is being implemented must not shift underneath.
+export function canEditChangeNoticeEngineering(
+  status: string | null | undefined
+): boolean {
+  return !isChangeNoticeLocked(status) && status !== "Implementation";
+}
+
+// Why a change notice is locked, for whichever surface is asking: server guards
+// flash it, the affected-item UI shows it in the read-only tooltip. One wording,
+// so the two never drift.
+export function changeNoticeLockedMessage(status: string | null | undefined) {
+  return status === "Implementation"
+    ? "This change notice is being implemented, so its changes are locked. Reopen it to make changes."
+    : "This change notice is closed, so its changes are read-only.";
+}
+
+// Workflow content — action tasks, assignee, dates, priority. Editable until closed.
+export function canEditChangeNoticeWorkflow(
+  status: string | null | undefined
+): boolean {
+  return !isChangeNoticeLocked(status);
 }
 
 // -----------------------------------------------------------------------------
 // Header
 // -----------------------------------------------------------------------------
-export const changeOrderValidator = z.object({
+export const changeNoticeValidator = z.object({
   id: zfd.text(z.string().optional()),
   changeOrderId: zfd.text(z.string().optional()),
   name: z.string().min(1, { message: "Name is required" }),
   reasonForChange: zfd.text(z.string().optional()),
   description: zfd.text(z.string().optional()),
-  type: z.enum(changeOrderType).optional(),
+  type: z.enum(changeNoticeType).optional(),
   priority: z.enum(nonConformancePriority).optional(),
   changeOrderTypeId: zfd.text(z.string().optional()),
   nonConformanceId: zfd.text(z.string().optional()),
@@ -1134,10 +1168,10 @@ export const changeOrderValidator = z.object({
 
 // Status transition (used by the $id.status route). fromStatus drives a
 // compare-and-swap so a stale/concurrent transition is rejected.
-export const changeOrderStatusValidator = z.object({
+export const changeNoticeStatusValidator = z.object({
   id: z.string().min(1, { message: "Id is required" }),
-  fromStatus: z.enum(changeOrderStatus),
-  status: z.enum(changeOrderStatus),
+  fromStatus: z.enum(changeNoticeStatus),
+  status: z.enum(changeNoticeStatus),
   assignee: zfd.text(z.string().optional())
 });
 
@@ -1152,24 +1186,24 @@ export const changeOrderStatusValidator = z.object({
 
 // Affected item — the part the user selects to change. Adding one creates a
 // CO-owned Draft make method per the change type (service side).
-export const changeOrderAffectedItemValidator = z.object({
+export const changeNoticeAffectedItemValidator = z.object({
   id: zfd.text(z.string().optional()),
-  changeOrderId: z.string().min(1, { message: "Change order is required" }),
+  changeOrderId: z.string().min(1, { message: "Change notice is required" }),
   itemId: z.string().min(1, { message: "Item is required" }),
-  changeType: z.enum(changeOrderChangeTypes).default("Version"),
+  changeType: z.enum(changeNoticeChangeTypes).default("Version"),
   // Optional revision label for a Revision change (e.g. "A"). Blank → the next
-  // revision is auto-computed server-side (createChangeOrderDraftMethod).
+  // revision is auto-computed server-side (createChangeNoticeDraftMethod).
   revision: zfd.text(z.string().optional())
 });
 
 // Add-affected-item path for a net-new "New Part" (no existing itemId): the CO
 // mints a brand-new inactive Part and adds it as a New Part affected item. Always
 // a Part (no Part/Tool choice in the modal).
-export const changeOrderNewPartValidator = z.object({
-  changeOrderId: z.string().min(1, { message: "Change order is required" }),
+export const changeNoticeNewPartValidator = z.object({
+  changeOrderId: z.string().min(1, { message: "Change notice is required" }),
   // The route branches on this raw FormData value; also seeds the change-type
   // Select so it reads "New Part" after the form remounts (see AffectedItemForm).
-  changeType: z.enum(changeOrderChangeTypes).default("New Part"),
+  changeType: z.enum(changeNoticeChangeTypes).default("New Part"),
   readableId: z.string().min(1, { message: "Part number is required" }),
   name: z.string().min(1, { message: "Name is required" }),
   replenishmentSystem: z.enum(["Buy", "Make", "Buy and Make"]).default("Make"),
@@ -1177,15 +1211,15 @@ export const changeOrderNewPartValidator = z.object({
 });
 
 // Switch the change type on an existing affected item (rebuilds its CO-owned
-// Draft make method for the new type — see updateChangeOrderAffectedItemChangeType).
-export const changeOrderAffectedItemChangeTypeValidator = z.object({
+// Draft make method for the new type — see updateChangeNoticeAffectedItemChangeType).
+export const changeNoticeAffectedItemChangeTypeValidator = z.object({
   id: z.string().min(1, { message: "Id is required" }),
-  changeType: z.enum(changeOrderChangeTypes)
+  changeType: z.enum(changeNoticeChangeTypes)
 });
 
 // Per-item revision cutover config (Q3): existence of the oldRev→newRev
 // supersession is automatic at release; the user only tunes mode + dates here.
-export const changeOrderAffectedItemCutoverValidator = z.object({
+export const changeNoticeAffectedItemCutoverValidator = z.object({
   id: z.string().min(1, { message: "Id is required" }),
   supersessionMode: z.enum(supersessionModes),
   discontinuationDate: zfd.text(z.string().optional()),
@@ -1195,14 +1229,14 @@ export const changeOrderAffectedItemCutoverValidator = z.object({
 // Action task status transition (Start / Complete / Reopen). Actions are
 // instantiated from templates (see changeOrderRequiredAction); there's no
 // freeform-create validator.
-export const changeOrderActionStatusValidator = z.object({
+export const changeNoticeActionStatusValidator = z.object({
   id: z.string().min(1, { message: "Id is required" }),
-  status: z.enum(changeOrderTaskStatus)
+  status: z.enum(changeNoticeTaskStatus)
 });
 
 // Configurable default actions (changeOrderRequiredAction templates) — the
-// per-company set a new change order is seeded from. Configured like Issue Types.
-export const changeOrderRequiredActionValidator = z.object({
+// per-company set a new change notice is seeded from. Configured like Issue Types.
+export const changeNoticeRequiredActionValidator = z.object({
   id: zfd.text(z.string().optional()),
   name: z.string().min(1, { message: "Name is required" }),
   active: zfd.checkbox()
@@ -1224,8 +1258,8 @@ export type MethodDiffEntry<T> = {
 
 // One operation's child-level diff (steps / parameters / tools), each bucket
 // classified added/removed/modified/unchanged. Defined here (not in
-// changeOrder.diff.ts) so ChangeOrderItemDiff can carry the operation tree
-// without a circular import; changeOrder.diff.ts re-exports these for its own
+// items.service.ts) so ChangeNoticeItemDiff can carry the operation tree
+// without a circular import; items.service.ts re-exports these for its own
 // callers.
 export type OperationChildrenDiff = {
   steps: MethodDiffEntry<Record<string, unknown>>[];
@@ -1239,7 +1273,7 @@ export type OperationDiffEntry = MethodDiffEntry<Record<string, unknown>> & {
   children?: OperationChildrenDiff;
 };
 
-export type ChangeOrderItemDiff = {
+export type ChangeNoticeItemDiff = {
   affectedItemId: string;
   itemId: string;
   materials: MethodDiffEntry<Record<string, unknown>>[];
@@ -1253,9 +1287,9 @@ export type ChangeOrderItemDiff = {
 };
 
 // -----------------------------------------------------------------------------
-// Change Order Types (the "Category" lookup — configured like Issue Types)
+// Change Notice Types (the "Category" lookup — configured like Issue Types)
 // -----------------------------------------------------------------------------
-export const changeOrderTypeValidator = z.object({
+export const changeNoticeTypeValidator = z.object({
   id: zfd.text(z.string().optional()),
   name: z.string().min(1, { message: "Name is required" })
 });

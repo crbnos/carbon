@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { zfd } from "zod-form-data";
-import { processTypes, standardFactorType } from "../shared";
+import { operationTypes, standardFactorType } from "../shared";
 
 export const abilityCurveValidator = z.object({
   data: z
@@ -289,7 +289,7 @@ export const processValidator = z
   .object({
     id: zfd.text(z.string().optional()),
     name: z.string().min(1, { message: "Process name is required" }),
-    processType: z.enum(processTypes, {
+    processType: z.enum(operationTypes, {
       errorMap: () => ({ message: "Process type is required" })
     }),
     defaultStandardFactor: z
@@ -303,13 +303,16 @@ export const processValidator = z
     completeAllOnScan: zfd.checkbox()
   })
   .refine((data) => {
-    if (data.processType !== "Outside" && !data.workCenters) {
+    if (data.processType !== "Outside Processing" && !data.workCenters) {
       return { workCenters: ["Work center is required for inside process"] };
     }
     return true;
   })
   .refine((data) => {
-    if (data.processType !== "Outside" && !data.defaultStandardFactor) {
+    if (
+      data.processType !== "Outside Processing" &&
+      !data.defaultStandardFactor
+    ) {
       return { defaultStandardFactor: ["Standard factor is required"] };
     }
     return true;

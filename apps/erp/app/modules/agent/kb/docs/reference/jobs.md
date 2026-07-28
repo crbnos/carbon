@@ -36,6 +36,8 @@ A job's status drives what you can do with it and what the floor sees.
 
 A **Completed**, **Closed**, or **Cancelled** job is locked. Its method, quantity, and dates can no longer be edited. Closing is what makes a job's work-in-process provably zero.
 
+In the Jobs list, the **Ready** status is labelled **"Released"** — the underlying value is still `Ready`. Note also the spelling: a job is **Cancelled** (two L's), but a job *operation* is **Canceled** (one L). Different enums, different spelling.
+
 ## Operations
 
 The job's routing is copied into job-specific **operations** on release, each a process on a work center, carrying its own setup, labor, and machine time. The floor runs the job by running its operations, and each carries its own status. A job reads **"In Progress"** the moment any single operation does.
@@ -48,11 +50,11 @@ The job's routing is copied into job-specific **operations** on release, each a 
   - **Done**: Finished. Completing it closes any open events and promotes downstream operations whose dependencies are now all done.
   - **Canceled**: Won't run.
 
-### Inside and outside
+### Operation type
 
-Each operation is **Inside** or **Outside**. An Inside operation runs on one of your work centers and prices against its rates. An **outside** operation is subcontracted: instead of a work center it points at a supplier process, copies that supplier's cost and lead time, and drives an outside-processing purchase order.
+Each operation carries an operation type: **Process**, **Assembly**, **Inspection**, or **Outside Processing**. The first three run in-house on one of your work centers and price against its rates, and the type decides which execution view the operator sees on the shop floor. A plain **Process** operation runs the standard operation view. An **Assembly** operation opens a guided, step-by-step build view: 3D animated work instructions play each step's insertion motion, with the parts, tools, and reference images scoped to the step in front of the operator. An **Inspection** operation runs a quality check, recording measured features against a ballooned drawing (the same execution screen the quality module uses for received goods). An **Outside Processing** operation is subcontracted: instead of a work center it points at a supplier process, copies that supplier's cost and lead time, and drives an outside-processing purchase order. The process you pick carries the same type and defaults it on new operations.
 
-An outside operation's cost and lead time are copied when you set the supplier process, not linked live. If the supplier's pricing changes, re-select the supplier process to refresh it.
+An Outside Processing operation's cost and lead time are copied when you set the supplier process, not linked live. If the supplier's pricing changes, re-select the supplier process to refresh it.
 
 ### Sequencing
 
@@ -64,7 +66,7 @@ The floor reports two separate things against an operation. A production event m
 
 ### Procedures
 
-Each operation can attach a procedure: a reusable set of work instructions keyed to a process. A procedure carries an ordered list of typed **steps** the operator completes (a value, a measurement with a min/max range, a checkbox, a list choice, a timestamp, a person, or a file), any of which can be marked required. It also carries **parameters**, the process settings the work runs at, such as a temperature or speed. Separately, the operation lists the **tools** it requires.
+Each operation can attach a procedure: a reusable set of work instructions keyed to a process. A procedure carries an ordered list of typed **steps** the operator completes (a value, a measurement with a min/max range, a checkbox, a list choice, a timestamp, a person, or a file), any of which can be marked required. It also carries **parameters**, the process settings the work runs at, such as a temperature or speed. Separately, the operation lists the **tools** it requires. A material or tool can be assigned to a single step, or left to apply across the whole operation — so an assembly view shows the operator exactly the parts and tools each step needs as they advance.
 
 Because a procedure is keyed by process, you author it once and every operation running that process can attach it. It's versioned, moving through **Draft** while it's written, **Active** once ready for live work, and **Archived** when retired.
 
@@ -98,4 +100,4 @@ Creating the job needs a location and the company has none (or no default). Add 
 Completing the job to inventory referenced a serial or batch that no longer exists — usually consumed or deleted since the job's output was recorded. Re-check the job's tracked outputs and materials before completing again.
 
 ### "Failed to schedule job"
-The scheduling engine errored while placing the job's operations. Check that every operation has a work center (inside operations) or supplier process (outside operations) and that the job has a due date, then retry from the job's status menu.
+The scheduling engine errored while placing the job's operations. Check that every operation has a work center (in-house Process, Assembly, and Inspection operations) or a supplier process (Outside Processing operations) and that the job has a due date, then retry from the job's status menu.

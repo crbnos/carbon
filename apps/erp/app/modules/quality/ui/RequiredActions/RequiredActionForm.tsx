@@ -98,6 +98,7 @@ const RequiredActionForm = ({
                   name="active"
                   label={t`Active`}
                   description={t`Inactive actions will not appear in selection lists`}
+                  bordered
                 />
                 <CustomFormFields table="nonConformanceRequiredAction" />
               </VStack>

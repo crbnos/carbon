@@ -9,7 +9,7 @@ export default function JobOperationMessagePreview() {
       preview={"New job operation message"}
       message={"New message on J00105 operation: Deburr all edges"}
       reference={"J00105"}
-      recipientName={"Naveen"}
+      recipientName={"John Doe"}
       ctaLabel={"View details"}
       ctaUrl={"https://app.carbon.ms/x/job/1"}
       details={[

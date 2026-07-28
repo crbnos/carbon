@@ -47,18 +47,18 @@ const RevisionForm = ({
     ? !permissions.can("update", "parts")
     : !permissions.can("create", "parts");
 
-  const [openChangeOrder, setOpenChangeOrder] = useState(false);
-  // Offer the "open a change order" shortcut only when creating a new revision of
+  const [openChangeNotice, setOpenChangeNotice] = useState(false);
+  // Offer the "open a change notice" shortcut only when creating a new revision of
   // a make part/tool (CO affected items are Parts/Tools; the CO route coerces
   // Buy items to a Revision change type).
-  const canOpenChangeOrder =
+  const canOpenChangeNotice =
     !isEditing &&
     !hasSizesInsteadOfRevisions &&
     (initialValues.type === "Part" || initialValues.type === "Tool");
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   useEffect(() => {
-    // The "open a change order" path posts straight to the create+attach route
+    // The "open a change notice" path posts straight to the create+attach route
     // (see the form action below), which redirects to the new CO — so it never
     // returns here. This only handles the plain new-revision submit.
     if (fetcher.data?.success) {
@@ -85,8 +85,8 @@ const RevisionForm = ({
             action={
               isEditing
                 ? path.to.revision(initialValues.id!)
-                : openChangeOrder && initialValues.copyFromId
-                  ? path.to.newChangeOrderFromItem(initialValues.copyFromId)
+                : openChangeNotice && initialValues.copyFromId
+                  ? path.to.newChangeNoticeFromItem(initialValues.copyFromId)
                   : path.to.newRevision
             }
             defaultValues={initialValues}
@@ -126,16 +126,16 @@ const RevisionForm = ({
                       : t`The revision number of the part`
                   }
                 />
-                {canOpenChangeOrder && (
+                {canOpenChangeNotice && (
                   <Boolean
-                    name="openChangeOrder"
-                    label={t`Open a change order`}
-                    description={t`Create a change order for the new revision and open it`}
+                    name="openChangeNotice"
+                    label={t`Open a change notice`}
+                    description={t`Create a change notice for the new revision and open it`}
                     bordered
-                    onChange={setOpenChangeOrder}
+                    onChange={setOpenChangeNotice}
                   />
                 )}
-                {openChangeOrder && (
+                {openChangeNotice && (
                   <Hidden name="changeType" value="Revision" />
                 )}
               </VStack>

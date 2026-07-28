@@ -73,9 +73,13 @@ optional, export/sort-related fields:
 - **Filename:** hardcoded `"data.csv"` (a Blob + anchor click; no server roundtrip).
 - **Column selection** (respects the saved view): uses `columnOrder` (or
   `Object.keys(columnAccessors)` when order is empty), then keeps only ids that
-  are `in columnAccessors` AND not `columnVisibility[id] === false`. Synthetic
-  columns (select / expand / actions) are absent from `columnAccessors`, so they
-  drop out. CSV headers are the `columnAccessors` label values.
+  are `in columnAccessors` AND (in `exportOnlyColumns` OR not
+  `columnVisibility[id] === false`). Synthetic columns (select / expand / actions)
+  are absent from `columnAccessors`, so they drop out. CSV headers are the
+  `columnAccessors` label values.
+- **Export-only columns** (`exportOnlyColumns` prop, sourced from `meta.exportOnly`):
+  columns hidden in the grid but always included in the CSV regardless of the view's
+  `columnVisibility`. Use this for values you want in the export but not on screen.
 - **Per-cell value:** for each kept column, if `exportValues[key]` exists it is
   called with the full row to produce the value; otherwise the raw accessor read
   is used, with the id→name substitution below. The result is then passed through

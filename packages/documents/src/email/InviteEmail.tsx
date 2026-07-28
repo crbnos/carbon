@@ -132,7 +132,14 @@ export const InviteEmail = ({
               </span>
               . If you were not expecting this invitation, you can ignore this
               email. If you are concerned about your account's safety, please
-              reply to this email to get in touch with us.
+              get in touch with us at{" "}
+              <span
+                className={themeClasses.text}
+                style={{ color: lightStyles.text.color }}
+              >
+                support@carbon.ms
+              </span>
+              .
             </Text>
           </Section>
         </Container>

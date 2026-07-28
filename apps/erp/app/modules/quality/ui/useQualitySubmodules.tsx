@@ -1,5 +1,4 @@
 import { useLingui } from "@lingui/react/macro";
-import { IoBalloonOutline } from "react-icons/io5";
 import {
   LuCircleGauge,
   LuClipboardCheck,
@@ -67,15 +66,10 @@ export default function useQualitySubmodules() {
       name: t`Inspection`,
       routes: [
         {
-          name: t`Inbound Inspections`,
-          to: path.to.inboundInspections,
+          name: t`Inspections`,
+          to: path.to.inspections,
           icon: <LuClipboardCheck />,
-          table: "inboundInspection"
-        },
-        {
-          name: t`Inspection Documents`,
-          to: path.to.inspectionDocuments,
-          icon: <IoBalloonOutline />
+          table: "inspection"
         }
       ]
     },

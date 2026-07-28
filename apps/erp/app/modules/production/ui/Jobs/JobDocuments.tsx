@@ -27,24 +27,26 @@ import {
   toast,
   VStack
 } from "@carbon/react";
-import {
-  convertKbToString,
-  isModelRawDownloadable,
-  MODEL_RAW_KEEP_MAX_BYTES
-} from "@carbon/utils";
+import { convertKbToString, MODEL_RAW_KEEP_MAX_BYTES } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { FileObject } from "@supabase/storage-js";
 import type { ChangeEvent } from "react";
 import { useCallback } from "react";
 import { LuEllipsisVertical, LuUpload } from "react-icons/lu";
 import { Link, useFetchers, useRevalidator, useSubmit } from "react-router";
-import { DocumentPreview, FileDropzone, Hyperlink } from "~/components";
+import {
+  DocumentPreview,
+  FileDropzone,
+  Hyperlink,
+  ModelOptimizedIndicator
+} from "~/components";
 import DocumentIcon from "~/components/DocumentIcon";
 import { Enumerable } from "~/components/Enumerable";
 import { useDateFormatter, usePermissions, useUser } from "~/hooks";
 import type { OptimisticFileObject } from "~/modules/shared";
 import { getDocumentType } from "~/modules/shared";
 import type { ModelUpload } from "~/types";
+import { downloadModelFile } from "~/utils/download";
 import { path } from "~/utils/path";
 import { stripSpecialCharacters } from "~/utils/string";
 
@@ -114,26 +116,11 @@ const useJobDocuments = ({
 
   const downloadModel = useCallback(
     async (model: ModelUpload) => {
-      if (!model.modelPath || !model.modelName) {
-        toast.error(t`Model data is missing`);
-        return;
-      }
-
-      const url = path.to.file.previewFile(`temp-staging/${model.modelPath}`);
-      try {
-        const response = await fetch(url);
-        const blob = await response.blob();
-        const blobUrl = window.URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        document.body.appendChild(a);
-        a.href = blobUrl;
-        a.download = model.modelName;
-        a.click();
-        window.URL.revokeObjectURL(blobUrl);
-        document.body.removeChild(a);
-      } catch (error) {
+      const result = await downloadModelFile(model);
+      if (result === "unavailable") {
+        toast.error(t`The original model file is no longer available`);
+      } else if (result === "error") {
         toast.error(t`Error downloading file`);
-        logger.error("Failed to process file operation", { error });
       }
     },
 
@@ -424,6 +411,9 @@ const JobDocuments = ({
                             {modelUpload.modelName}
                           </Hyperlink>
                         </VStack>
+                        <ModelOptimizedIndicator
+                          modelPath={modelUpload.modelPath}
+                        />
                       </HStack>
                     </Td>
                     <Td>
@@ -453,13 +443,11 @@ const JobDocuments = ({
                                 <Trans>View</Trans>
                               </Link>
                             </DropdownMenuItem>
-                            {isModelRawDownloadable(modelUpload.modelPath) && (
-                              <DropdownMenuItem
-                                onClick={() => downloadModel(modelUpload)}
-                              >
-                                Download
-                              </DropdownMenuItem>
-                            )}
+                            <DropdownMenuItem
+                              onClick={() => downloadModel(modelUpload)}
+                            >
+                              Download
+                            </DropdownMenuItem>
                             <DropdownMenuItem
                               destructive
                               disabled={!canDelete || isReadOnly}

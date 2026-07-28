@@ -244,7 +244,7 @@ function NextStepCard({
     : undefined;
 
   return (
-    <div className="rounded-2xl border border-border p-5 flex items-start gap-4 motion-safe:animate-in motion-safe:fade-in-50 motion-safe:slide-in-from-bottom-2 motion-safe:duration-300">
+    <div className="rounded-2xl border border-border bg-card p-5 flex items-start gap-4 motion-safe:animate-in motion-safe:fade-in-50 motion-safe:slide-in-from-bottom-2 motion-safe:duration-300">
       <div className="shrink-0 size-9 rounded-xl bg-primary/15 flex items-center justify-center text-sm font-medium tabular-nums text-primary">
         {action.gateNumber}
       </div>
