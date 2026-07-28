@@ -1,6 +1,6 @@
 # Inbound Inspection Execution — implementation plan
 
-**Spec:** .ai/specs/2026-07-21-inbound-inspection-execution.md
+**Spec:** .ai/specs/implemented/2026-07-21-inbound-inspection-execution.md
 **Research:** .ai/research/inbound-inspection-execution.md
 **Branch:** feat/mes-assembly
 

@@ -54,7 +54,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     unitOfMeasuresResult,
     companySettings
   ] = await Promise.all([
-    getInspectionDocument(serviceRole, id),
+    getInspectionDocument(serviceRole, id, companyId),
     getInspectionFeatures(serviceRole, id),
     getBalloons(serviceRole, id),
     getUnitOfMeasuresList(client, companyId),

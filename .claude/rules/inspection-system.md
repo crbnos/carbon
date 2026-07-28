@@ -30,7 +30,7 @@ an `itemInspectionDocumentAssignment` row for `usage = 'Receipt'` (the item-leve
 gate). A **single**
 full-screen execution UI at `/x/inspection/{id}` (`InspectionView` +
 `InspectionMeasurementGrid`) covers every lot (spec
-`.ai/specs/2026-07-21-inbound-inspection-execution.md`):
+`.ai/specs/implemented/2026-07-21-inbound-inspection-execution.md`):
 
 - **Drawing pane** — shown when the lot has an assigned PDF (`pdfUrl != null`);
   hidden otherwise (the grid takes the full body).

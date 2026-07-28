@@ -21,6 +21,20 @@ export async function action({ request }: ActionFunctionArgs) {
     return data({ success: false }, { status: 400 });
   }
 
+  // Verify the step belongs to the caller's company before linking. The
+  // join-table RLS only checks the tool's company, not the step side
+  // (jobOperationToolStep has no companyId), so an unscoped stepId could
+  // otherwise link across tenants. The RLS-scoped read returns nothing for a
+  // foreign step.
+  const step = await client
+    .from("jobOperationStep")
+    .select("id")
+    .eq("id", jobOperationStepId)
+    .single();
+  if (step.error || !step.data) {
+    return data({ success: false }, { status: 404 });
+  }
+
   const result = await setJobOperationToolStepLink(client, {
     jobOperationToolId,
     jobOperationStepId,

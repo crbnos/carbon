@@ -47,7 +47,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
     id,
     decision: "Reject",
     companyId,
-    dispositionedBy: userId
+    dispositionedBy: userId,
+    // ERP reject does receipt-specific NCR/write-off work — Receipt lots only.
+    // Job Operation lots are rejected (with scrap/rework) by the MES route.
+    requireSource: "Receipt"
   });
   if (dispositionResult.error) {
     throw redirect(

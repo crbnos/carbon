@@ -54,6 +54,13 @@ export type InspectionDispositionInput = {
   // dispositions drive physical postings (scrap/rework/complete) that must not
   // re-run; ERP receipt lots keep re-disposition (write-off retry semantics).
   requireOpen?: boolean;
+  // Restrict the disposition to lots of this source. The ERP Accept/Reject/Partial
+  // routes pass "Receipt" because their verdicts carry NO physical production
+  // posting — accepting a Job Operation lot here would hard-terminate it with no
+  // complete/scrap/rework and wedge the operation (whose outcome the MES
+  // disposition route owns). The MES route omits this so it can disposition
+  // Job Operation lots.
+  requireSource?: "Receipt" | "Job Operation";
 };
 
 export type InspectionMeasurementInput = {
@@ -245,6 +252,8 @@ export async function upsertInspectionSample(
           .selectFrom("inspectionSample")
           .select(["id"])
           .where("trackedEntityId", "=", trackedEntityId)
+          .where("inspectionId", "=", sample.inspectionId)
+          .where("companyId", "=", sample.companyId)
           .executeTakeFirst();
       } else if (sample.sampleId) {
         existing = await trx
@@ -396,6 +405,14 @@ export async function dispositionInspection(
         .where("companyId", "=", args.companyId)
         .executeTakeFirst();
       if (!inspection) throw new Error("Inspection not found");
+      if (
+        args.requireSource &&
+        inspection.sourceDocument !== args.requireSource
+      ) {
+        throw new Error(
+          `This disposition is only available for ${args.requireSource} inspections`
+        );
+      }
       if (args.requireOpen && isInspectionClosed(inspection.status)) {
         throw new Error("Inspection is already dispositioned");
       }

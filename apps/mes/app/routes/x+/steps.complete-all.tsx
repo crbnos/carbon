@@ -2,9 +2,12 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
+import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { completeAllStepsForUnit } from "~/services/operations.service";
+
+const log = getLogger("mes");
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -37,6 +40,14 @@ export async function action({ request }: ActionFunctionArgs) {
       { success: false },
       await flash(request, error(result.error, "Failed to complete all steps"))
     );
+  }
+
+  if (result.data?.backflushError) {
+    log.error("Backflush on complete-all override failed", {
+      error: result.data.backflushError,
+      operationId,
+      index
+    });
   }
 
   return data(

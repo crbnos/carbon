@@ -76,7 +76,7 @@ Note: the older 2026-07-14 spec §5.4 designed a separate `jobOperationInspectio
 - `.claude/rules/inspection-system.md`: Job Operation source now live (creation path, MES routes, entity-flip guards, engine home `@carbon/database/quality`).
 - `.claude/rules/mes-job-operation-ui.md`: inspection route + redirect branch.
 - `apps/erp/app/modules/quality/AGENTS.md` (+ `packages/database/AGENTS.md` if it lists exports): engine move.
-- `.ai/specs/2026-07-14-mes-execution-views.md`: mark §5.4 result-record superseded by the unified inspection tables; §5.1 Phase-3 shipped. `.ai/specs/2026-07-21-inbound-inspection-execution.md`: MES attachment note.
+- `.ai/specs/implemented/2026-07-14-mes-execution-views.md`: mark §5.4 result-record superseded by the unified inspection tables; §5.1 Phase-3 shipped. `.ai/specs/implemented/2026-07-21-inbound-inspection-execution.md`: MES attachment note.
 - Copy this plan to `.ai/plans/2026-07-26-mes-inspection-view.md` with checkboxes.
 
 ### 10. Verification (end-to-end)

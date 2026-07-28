@@ -30,7 +30,7 @@ export async function dispositionInspection(
   args: z.infer<typeof inspectionDispositionValidator> & {
     companyId: string;
     dispositionedBy: string;
-  }
+  } & Pick<engine.InspectionDispositionInput, "requireOpen" | "requireSource">
 ) {
   return engine.dispositionInspection(getDatabaseClient(), args);
 }

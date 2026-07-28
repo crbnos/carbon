@@ -20,7 +20,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
     id,
     decision: "Accept",
     companyId,
-    dispositionedBy: userId
+    dispositionedBy: userId,
+    // ERP verdict carries no production posting — Receipt lots only. Job Operation
+    // lots are dispositioned (with their physical outcome) by the MES route.
+    requireSource: "Receipt"
   });
 
   if (result.error) {

@@ -1,6 +1,6 @@
 # Inspections refactor (generic source documents) — implementation plan
 
-**Spec:** .ai/specs/2026-07-21-inbound-inspection-execution.md (see 2026-07-22 changelog entry)
+**Spec:** .ai/specs/implemented/2026-07-21-inbound-inspection-execution.md (see 2026-07-22 changelog entry)
 **Branch:** feat/mes-assembly
 
 User decisions: migrate to a new `inspection` table family; move the document

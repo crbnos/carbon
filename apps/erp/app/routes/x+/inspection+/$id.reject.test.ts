@@ -140,6 +140,26 @@ describe("inspection reject route — inventory write-off", () => {
     );
   });
 
+  it("restricts the disposition to Receipt lots (Job Operation lots are verdict-only in the ERP)", async () => {
+    // The ERP reject carries no production posting and does receipt-specific NCR
+    // work, so it must scope the engine to Receipt source — otherwise accepting/
+    // rejecting a Job Operation lot here hard-terminates it and wedges the op.
+    vi.mocked(dispositionInspection).mockResolvedValue({
+      data: { id: "insp-1", status: "Failed", writeOff: null },
+      error: null
+    } as any);
+
+    await runAction(rejectRequest({ createNcr: "false" }));
+
+    expect(dispositionInspection).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: "insp-1",
+        decision: "Reject",
+        requireSource: "Receipt"
+      })
+    );
+  });
+
   it("aborts (does not create the NCR) when the write-off post fails", async () => {
     vi.mocked(dispositionInspection).mockResolvedValue({
       data: {

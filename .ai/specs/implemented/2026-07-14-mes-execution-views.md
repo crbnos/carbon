@@ -1,6 +1,6 @@
 # PRD — MES Execution Views (Operation / Assembly / Inspection)
 
-Status: In progress (branch `poc/mes-assembly-view`) · Owner: MES execution-views
+Status: implemented (branch `feat/mes-assembly`) · Owner: MES execution-views
 
 Single consolidated spec for the MES execution-view work: the `operationKind` classification,
 the mobile Assembly view, part/tool ↔ step linking, step reference images ("slides"), and the

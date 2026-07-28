@@ -1096,6 +1096,31 @@ export function AssemblyView({
     }
   }, [allStepsRecorded, isMultiQuantity, unitsRemaining]);
 
+  // Re-arm auto-complete when a completion POST fails. complete.tsx returns
+  // data({}, flash-error) on any failure (insufficient stock, serial-mint
+  // failure, …) — an empty object — while success returns the production row(s)
+  // or a redirect. Without this, autoCompleteSubmittedRef stays latched: every
+  // step reads green, the unit never advances, and the error flash is the only
+  // (transient) signal. Re-arming lets the operator retry (re-record a step, or
+  // the manual Complete flow) without wedging the unit. This does NOT loop: the
+  // auto-complete effect only re-fires when its deps actually change, and a
+  // failed completion leaves quantityComplete (hence unitsRemaining) unchanged.
+  const prevCompleteUnitStateRef = useRef(completeUnitFetcher.state);
+  useEffect(() => {
+    const settled =
+      prevCompleteUnitStateRef.current !== "idle" &&
+      completeUnitFetcher.state === "idle";
+    prevCompleteUnitStateRef.current = completeUnitFetcher.state;
+    if (!settled) return;
+    const result = completeUnitFetcher.data;
+    const failed =
+      !!result &&
+      !Array.isArray(result) &&
+      typeof result === "object" &&
+      Object.keys(result).length === 0;
+    if (failed) autoCompleteSubmittedRef.current = false;
+  }, [completeUnitFetcher.state, completeUnitFetcher.data]);
+
   // Return to step 1 on a new unit. Whenever the active unit changes — the
   // auto-complete rolls quantityComplete forward (untracked), a serial/batch
   // completion redirects to a fresh entity, or the operator pages units by hand —

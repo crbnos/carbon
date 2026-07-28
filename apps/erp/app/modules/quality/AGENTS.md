@@ -62,7 +62,7 @@ pnpm --filter @carbon/erp test
 - `getIssueAssociations` / `getIssueItems` / `getIssueReviewers` — NCR details and associations
 - `getIssueWorkflow` / `getIssueActionTasks` / `getIssueApprovalTasks` — workflow state
 - `updateIssueStatus` / `updateIssueTaskStatus` — status transitions
-- `getInspectionDocument` / `getBalloons` / `getInspectionFeatures` / `getInspectionPlan` — drawing inspection
+- `getInspectionDocument` / `getBalloons` / `getInspectionFeatures` / `getInspectionPlan` — drawing-inspection reads; NOTE these live in `production.service.ts`, not this module
 - `getInspection` / `getInspections` (status + source filters) / `getInspectionTrackedEntities` — inspections
 - `getInspectionSamplingPlans` / `getInspectionMeasurements` — per-inspection feature plans and grid readings
 - `getItemInspectionDocumentAssignments` / `upsertItemInspectionDocumentAssignment` — Receipt-usage document assignment

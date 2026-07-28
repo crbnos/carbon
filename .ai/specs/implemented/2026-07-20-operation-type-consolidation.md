@@ -1,6 +1,6 @@
 # Operation Type Consolidation — one enum for operations and processes
 
-> Status: implemented (on branch feat/mes-assembly, pending merge)
+> Status: implemented (branch feat/mes-assembly, migration 20260721004140)
 > Author: Brad Barbin (design) + Claude (spec)
 > Date: 2026-07-20
 > Research: [.ai/research/operation-type-consolidation.md](../research/operation-type-consolidation.md)

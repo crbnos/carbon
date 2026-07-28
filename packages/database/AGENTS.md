@@ -39,7 +39,7 @@ pnpm --filter @carbon/database typecheck
 | `./event` | `QueueMessage`, `EventSchema`, `createEventSystemSubscription`, `deleteEventSystemSubscription` |
 | `./quality` | Inspection execution engine shared by ERP + MES (`upsertInspectionSample`, `upsertInspectionMeasurement`, `dispositionInspection` — optional one-shot `requireOpen`, `reconcileInspectionSamplingPlans`, `changeInspectionDocument`, `getOrCreateJobOperationInspection`, pure `valuateMeasurement`); Passed/Failed/Partial are all hard-terminal and samples linked from `productionQuantity.inspectionSampleId` are locked; every fn takes a `Kysely<KyselyDatabase>` first arg — authorize at the route, see `.claude/rules/inspection-system.md` |
 | `./sampling` | Node-side re-export of `supabase/functions/shared/sampling-engine.ts` (Z1.4 / ISO 2859-1 resolvers) |
-| `./audit` | `auditConfig`, entity/table lookup helpers, `AuditEntityType` |
+| `./audit` | Audit-log functions (`getEntityAuditLog`, `enableAuditLog`, `syncAuditSubscriptions`, …); `auditConfig` + `AuditEntityType` come from the separate `./audit.config` subpath |
 | `./ratelimit` | `checkApiKeyRateLimit` (Postgres RPC wrapper) |
 
 ## Cross-References

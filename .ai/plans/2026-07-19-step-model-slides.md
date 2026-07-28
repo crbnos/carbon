@@ -2,7 +2,7 @@
 
 ## Context
 
-The `poc/mes-assembly-view` branch gives BOP steps "slides" (reference pictures with captions/pins) authored in the ERP BOP editors and shown in the MES assembly view. The user wants (a) the assembler service integrated into the BOP step section for parts and jobs, and (b) the MES assembly view to show **3D models (.stp, plus other supported formats) alongside pictures** per step — reversing the earlier "no 3D slides" non-goal in `.ai/specs/2026-07-14-mes-execution-views.md` §4.
+The `poc/mes-assembly-view` branch gives BOP steps "slides" (reference pictures with captions/pins) authored in the ERP BOP editors and shown in the MES assembly view. The user wants (a) the assembler service integrated into the BOP step section for parts and jobs, and (b) the MES assembly view to show **3D models (.stp, plus other supported formats) alongside pictures** per step — reversing the earlier "no 3D slides" non-goal in `.ai/specs/implemented/2026-07-14-mes-execution-views.md` §4.
 
 Everything heavy already exists and is reused, not rebuilt:
 

@@ -37,7 +37,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const docResult = await getInspectionDocument(client, inspectionDocumentId);
+  const docResult = await getInspectionDocument(
+    client,
+    inspectionDocumentId,
+    companyId
+  );
   if (docResult.error || !docResult.data) {
     return data(
       {

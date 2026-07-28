@@ -29,7 +29,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  const documentResult = await getInspectionDocument(client, id);
+  const documentResult = await getInspectionDocument(client, id, companyId);
   if (documentResult.error) {
     return data(
       {

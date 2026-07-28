@@ -1,6 +1,6 @@
 # Inbound Inspection Execution — Drawing + Features Grid
 
-> Status: draft
+> Status: implemented (branch feat/mes-assembly, migration 20260722040401)
 > Author: Brad Barbin (designed with Claude)
 > Date: 2026-07-21
 

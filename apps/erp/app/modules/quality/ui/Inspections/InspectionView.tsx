@@ -138,6 +138,12 @@ const InspectionView = ({
   const [items] = useItems();
 
   const isSerial = itemTrackingType === "Serial";
+  // Accept/Reject dispositions here carry no physical production posting, so they
+  // are Receipt-only. Job Operation lots are verdict-only in the ERP — their
+  // complete/scrap/rework outcome is orchestrated by the MES disposition route
+  // (which closes the lot one-shot). Exposing Accept/Reject on a job-op lot would
+  // hard-terminate it with no posting and wedge the operation.
+  const isReceiptSource = inspection.sourceDocument === "Receipt";
   const liveFeatures = useMemo(
     () => features.filter((f) => f.inspectionFeature != null),
     [features]
@@ -377,14 +383,17 @@ const InspectionView = ({
       const counts = featureCounts.get(feature.inspectionFeatureId);
       return counts != null && counts.failed >= feature.rejectionNumber;
     });
-    canAccept = !lotClosed && allFeaturesSatisfied;
-    canReject = !lotClosed && (anyFeatureRejectable || fails > 0);
+    canAccept = isReceiptSource && !lotClosed && allFeaturesSatisfied;
+    canReject =
+      isReceiptSource && !lotClosed && (anyFeatureRejectable || fails > 0);
   } else {
     canAccept =
+      isReceiptSource &&
       !lotClosed &&
       inspected >= inspection.sampleSize &&
       fails <= inspection.acceptanceNumber;
-    canReject = !lotClosed && fails > inspection.acceptanceNumber;
+    canReject =
+      isReceiptSource && !lotClosed && fails > inspection.acceptanceNumber;
   }
 
   const failedFeatureSummary = useMemo<FailedFeatureSummary[]>(() => {
@@ -506,19 +515,23 @@ const InspectionView = ({
               <Trans>Add Sample</Trans>
             </Button>
           )}
-          <Button
-            variant="destructive"
-            onClick={rejectConfirmDisclosure.onOpen}
-            isDisabled={!canUpdate || !canReject}
-          >
-            <Trans>Reject Lot</Trans>
-          </Button>
-          <Button
-            onClick={acceptConfirmDisclosure.onOpen}
-            isDisabled={!canUpdate || !canAccept}
-          >
-            <Trans>Accept Lot</Trans>
-          </Button>
+          {isReceiptSource && (
+            <>
+              <Button
+                variant="destructive"
+                onClick={rejectConfirmDisclosure.onOpen}
+                isDisabled={!canUpdate || !canReject}
+              >
+                <Trans>Reject Lot</Trans>
+              </Button>
+              <Button
+                onClick={acceptConfirmDisclosure.onOpen}
+                isDisabled={!canUpdate || !canAccept}
+              >
+                <Trans>Accept Lot</Trans>
+              </Button>
+            </>
+          )}
         </HStack>
       </div>
 

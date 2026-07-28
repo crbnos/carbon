@@ -91,7 +91,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
           )
         : Promise.resolve({ data: null, error: null }),
       insp.inspectionDocumentId
-        ? getInspectionDocument(serviceRole, insp.inspectionDocumentId)
+        ? getInspectionDocument(
+            serviceRole,
+            insp.inspectionDocumentId,
+            companyId
+          )
         : Promise.resolve({ data: null, error: null }),
       insp.inspectionDocumentId
         ? getBalloons(serviceRole, insp.inspectionDocumentId)

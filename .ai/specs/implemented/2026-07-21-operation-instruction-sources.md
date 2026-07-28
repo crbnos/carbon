@@ -1,6 +1,6 @@
 # Operation Instruction Sources — per-type source pickers on the Bill of Process
 
-> Status: draft
+> Status: implemented (branch feat/mes-assembly, migration 20260721022847)
 > Author: Brad Barbin (design) + Claude (spec)
 > Date: 2026-07-21
 > Depends on: [2026-07-20-operation-type-consolidation.md](2026-07-20-operation-type-consolidation.md) (implemented)

@@ -13,14 +13,14 @@ import { invalidateInspectionDocuments } from "~/utils/react-query";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client } = await requirePermissions(request, {
+  const { client, companyId } = await requirePermissions(request, {
     delete: "quality"
   });
 
   const { id } = params;
   if (!id) throw new Error("Could not find id");
 
-  const result = await deleteInspectionDocument(client, id);
+  const result = await deleteInspectionDocument(client, id, companyId);
 
   if (result.error) {
     throw redirect(

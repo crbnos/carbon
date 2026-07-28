@@ -5724,6 +5724,82 @@ function plainTextToTiptap(text: string) {
  * half-synced BOP would be a real bug. Guards (Draft method / unlocked job,
  * permissions) belong to the route — Kysely bypasses RLS.
  */
+/**
+ * Marker-based step reconciliation for the assembly→BoP sync. Given the current
+ * source step ids and the operation's existing synced steps (each carrying the
+ * `assemblyInstructionStepId` provenance marker), decide which source maps onto
+ * an existing target (update) vs. is new (insert), and which existing synced
+ * steps are stale — their source step was removed, so they must be deleted
+ * (cascading their slides/links). Hand-authored steps (null marker) are excluded
+ * by the caller's `assemblyInstructionStepId is not null` filter; a null marker
+ * here is treated as stale. Pure so the reconciliation is unit-testable.
+ */
+export function planAssemblyStepMarkerSync(
+  sourceStepIds: string[],
+  existingSynced: { id: string; assemblyInstructionStepId: string | null }[]
+): { targetIdBySourceId: Map<string, string>; staleTargetIds: string[] } {
+  const targetIdBySourceId = new Map<string, string>();
+  for (const step of existingSynced) {
+    if (step.assemblyInstructionStepId) {
+      targetIdBySourceId.set(step.assemblyInstructionStepId, step.id);
+    }
+  }
+  const sourceIdSet = new Set(sourceStepIds);
+  const staleTargetIds = existingSynced
+    .filter(
+      (step) =>
+        !step.assemblyInstructionStepId ||
+        !sourceIdSet.has(step.assemblyInstructionStepId)
+    )
+    .map((step) => step.id);
+  return { targetIdBySourceId, staleTargetIds };
+}
+
+/**
+ * The re-sync ratchets a tool's operation-level quantity up to the max quantity
+ * any source step asks for (operation-level rows are never lowered or deleted).
+ */
+export function maxToolQuantityByItem(
+  sourceTools: { itemId: string; quantity: number | null }[]
+): Map<string, number> {
+  const max = new Map<string, number>();
+  for (const tool of sourceTools) {
+    max.set(
+      tool.itemId,
+      Math.max(max.get(tool.itemId) ?? 0, tool.quantity ?? 1)
+    );
+  }
+  return max;
+}
+
+/**
+ * Build the `jobOperationToolStep` link rows for a re-sync. Links are rebuilt
+ * ONLY from the current source tools, so a tool removed from the instruction —
+ * whose `jobOperationTool` row is intentionally never deleted — ends up with
+ * zero links and therefore behaves as an operation-level tool (shown on every
+ * step). That is the documented re-sync contract; this returns exactly the links
+ * to (re)insert on the synced steps.
+ */
+export function buildAssemblyToolStepLinks(
+  sourceSteps: { id: string }[],
+  toolsByStep: Map<string, { itemId: string }[]>,
+  toolRowIdByItemId: Map<string, string>,
+  targetIdBySource: Map<string, string>
+): { jobOperationToolId: string; jobOperationStepId: string }[] {
+  const rows: { jobOperationToolId: string; jobOperationStepId: string }[] = [];
+  for (const source of sourceSteps) {
+    const targetStepId = targetIdBySource.get(source.id);
+    if (!targetStepId) continue;
+    for (const tool of toolsByStep.get(source.id) ?? []) {
+      const jobOperationToolId = toolRowIdByItemId.get(tool.itemId);
+      if (jobOperationToolId) {
+        rows.push({ jobOperationToolId, jobOperationStepId: targetStepId });
+      }
+    }
+  }
+  return rows;
+}
+
 export async function syncAssemblyInstructionToOperation(
   db: Kysely<KyselyDatabase>,
   args: {
@@ -5856,11 +5932,9 @@ export async function syncAssemblyInstructionToOperation(
       .where("companyId", "=", companyId)
       .where("assemblyInstructionStepId", "is not", null)
       .execute();
-    const targetIdBySourceId = new Map(
-      existingSynced.map((step) => [
-        step.assemblyInstructionStepId as string,
-        step.id
-      ])
+    const { targetIdBySourceId, staleTargetIds } = planAssemblyStepMarkerSync(
+      sourceSteps.map((step) => step.id),
+      existingSynced
     );
 
     const now = new Date().toISOString();
@@ -5930,17 +6004,11 @@ export async function syncAssemblyInstructionToOperation(
     }
 
     // Synced steps whose source step no longer exists — deleting cascades their
-    // slides and material/tool step links.
-    const sourceIds = new Set(sourceSteps.map((step) => step.id));
-    const staleIds = existingSynced
-      .filter(
-        (step) => !sourceIds.has(step.assemblyInstructionStepId as string)
-      )
-      .map((step) => step.id);
-    if (staleIds.length > 0) {
+    // slides and material/tool step links (staleTargetIds computed above).
+    if (staleTargetIds.length > 0) {
       await trx
         .deleteFrom(stepTable)
-        .where("id", "in", staleIds)
+        .where("id", "in", staleTargetIds)
         .where("companyId", "=", companyId)
         .execute();
     }
@@ -6034,13 +6102,7 @@ export async function syncAssemblyInstructionToOperation(
     const toolRowIdByItemId = new Map(
       existingTools.map((tool) => [tool.toolId, tool.id])
     );
-    const maxQuantityByItemId = new Map<string, number>();
-    for (const tool of sourceTools) {
-      maxQuantityByItemId.set(
-        tool.itemId,
-        Math.max(maxQuantityByItemId.get(tool.itemId) ?? 0, tool.quantity ?? 1)
-      );
-    }
+    const maxQuantityByItemId = maxToolQuantityByItem(sourceTools);
     for (const [itemId, quantity] of maxQuantityByItemId) {
       const existingId = toolRowIdByItemId.get(itemId);
       if (!existingId) {
@@ -6071,23 +6133,12 @@ export async function syncAssemblyInstructionToOperation(
       .deleteFrom("jobOperationToolStep")
       .where("jobOperationStepId", "in", syncedTargetIds)
       .execute();
-    const toolLinkRows: {
-      jobOperationToolId: string;
-      jobOperationStepId: string;
-    }[] = [];
-    for (const source of sourceSteps) {
-      const targetStepId = targetIdBySource.get(source.id);
-      if (!targetStepId) continue;
-      for (const tool of toolsByStep.get(source.id) ?? []) {
-        const jobOperationToolId = toolRowIdByItemId.get(tool.itemId);
-        if (jobOperationToolId) {
-          toolLinkRows.push({
-            jobOperationToolId,
-            jobOperationStepId: targetStepId
-          });
-        }
-      }
-    }
+    const toolLinkRows = buildAssemblyToolStepLinks(
+      sourceSteps,
+      toolsByStep,
+      toolRowIdByItemId,
+      targetIdBySource
+    );
     if (toolLinkRows.length > 0) {
       await trx
         .insertInto("jobOperationToolStep")
@@ -6111,7 +6162,7 @@ export async function syncAssemblyInstructionToOperation(
     return {
       created,
       updated,
-      deleted: staleIds.length,
+      deleted: staleTargetIds.length,
       partsLinked: linkPairs.length,
       partsUnmatched,
       slidesSynced: slideRows.length,
@@ -6589,28 +6640,14 @@ export async function getInspectionDocumentsForItem(
 
 export async function getInspectionDocument(
   client: SupabaseClient<Database>,
-  id: string
+  id: string,
+  companyId: string
 ) {
-  const documentClient = client as unknown as {
-    from: (table: string) => {
-      select: (columns: string) => {
-        eq: (
-          column: string,
-          value: unknown
-        ) => {
-          single: () => Promise<{
-            data: Record<string, unknown> | null;
-            error: unknown;
-          }>;
-        };
-      };
-    };
-  };
-
-  const result = await documentClient
+  const result = await client
     .from("inspectionDocument")
     .select("*")
     .eq("id", id)
+    .eq("companyId", companyId)
     .single();
 
   return {
@@ -6845,36 +6882,14 @@ export async function upsertInspectionDocument(
 
 export async function deleteInspectionDocument(
   client: SupabaseClient<Database>,
-  id: string
+  id: string,
+  companyId: string
 ) {
-  const documentClient = client as unknown as {
-    from: (table: string) => {
-      select: (columns: string) => {
-        eq: (
-          column: string,
-          value: unknown
-        ) => {
-          single: () => Promise<{
-            data: Record<string, unknown> | null;
-            error: unknown;
-          }>;
-        };
-      };
-      delete: () => {
-        eq: (
-          column: string,
-          value: unknown
-        ) => Promise<{
-          error: unknown;
-        }>;
-      };
-    };
-  };
-
-  const existingResult = await documentClient
+  const existingResult = await client
     .from("inspectionDocument")
     .select("*")
     .eq("id", id)
+    .eq("companyId", companyId)
     .single();
 
   if (!existingResult.data) {
@@ -6887,10 +6902,11 @@ export async function deleteInspectionDocument(
   const storagePath =
     (existingResult.data.storagePath as string | null) ?? null;
 
-  const deleteResult = await documentClient
+  const deleteResult = await client
     .from("inspectionDocument")
     .delete()
-    .eq("id", id);
+    .eq("id", id)
+    .eq("companyId", companyId);
 
   if (deleteResult.error) {
     return { data: null, error: deleteResult.error };
