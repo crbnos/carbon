@@ -7208,7 +7208,7 @@ msgid "Link Linear Issue"
 msgstr "Linear 이슈 연결"
 
 msgid "Link to sales order line"
-msgstr "판매 주문 라인에 연결"
+msgstr "판매주문 라인에 연결"
 
 #. placeholder {0}: r.linkedSum
 #. placeholder {1}: r.quantity
@@ -8474,7 +8474,7 @@ msgid "No open invoices"
 msgstr "미결 인보이스가 없습니다"
 
 msgid "No open sales order lines for this item"
-msgstr "이 항목에 대한 미처리 판매 주문 라인이 없습니다"
+msgstr "이 품목에 대한 미결 판매주문 라인이 없습니다"
 
 msgid "No operations require picking at this location"
 msgstr "이 위치에서 피킹이 필요한 공정작업이 없습니다"

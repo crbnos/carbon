@@ -7208,7 +7208,7 @@ msgid "Link Linear Issue"
 msgstr "Linear समस्या को लिंक करें"
 
 msgid "Link to sales order line"
-msgstr "बिक्रय आदेश लाइन से लिंक करें"
+msgstr "बिक्रय आदेश पंक्ति से लिंक करें"
 
 #. placeholder {0}: r.linkedSum
 #. placeholder {1}: r.quantity
@@ -8474,7 +8474,7 @@ msgid "No open invoices"
 msgstr "कोई खुले चालान नहीं"
 
 msgid "No open sales order lines for this item"
-msgstr "इस आइटम के लिए कोई खुली बिक्रय आदेश लाइन नहीं"
+msgstr "इस आइटम के लिए कोई खुली बिक्रय आदेश पंक्तियाँ नहीं हैं"
 
 msgid "No operations require picking at this location"
 msgstr "इस स्थान पर कोई भी ऑपरेशन पिकिंग की आवश्यकता नहीं है"

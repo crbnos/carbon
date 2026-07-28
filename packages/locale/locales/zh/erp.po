@@ -8474,7 +8474,7 @@ msgid "No open invoices"
 msgstr "没有未结发票"
 
 msgid "No open sales order lines for this item"
-msgstr "此物品没有开放的销售订单行"
+msgstr "此项目没有未结销售订单行"
 
 msgid "No operations require picking at this location"
 msgstr "此位置不需要进行任何操作拣选"

@@ -7208,7 +7208,7 @@ msgid "Link Linear Issue"
 msgstr "Połącz problem Linear"
 
 msgid "Link to sales order line"
-msgstr "Link do wiersza zamówienia sprzedaży"
+msgstr "Połącz z linią zamówienia sprzedaży"
 
 #. placeholder {0}: r.linkedSum
 #. placeholder {1}: r.quantity
@@ -8474,7 +8474,7 @@ msgid "No open invoices"
 msgstr "Brak otwartych faktur"
 
 msgid "No open sales order lines for this item"
-msgstr "Brak otwartych wierszy zamówień sprzedaży dla tego artykułu"
+msgstr "Brak otwartych linii zamówień sprzedaży dla tego artykułu"
 
 msgid "No operations require picking at this location"
 msgstr "Żadne operacje nie wymagają pobrania w tej lokalizacji"
