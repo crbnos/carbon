@@ -50,7 +50,7 @@ msgstr "{0, plural, one {此零件包含在1个开放的更改单中} other {此
 
 #. placeholder {0}: statement.unclassified.length
 msgid "{0} accounts have no cash flow activity — set an account type or override"
-msgstr ""
+msgstr "{0}个账户没有现金流量活动——设置账户类型或覆盖"
 
 #. placeholder {0}: ar.count
 msgid "{0} customers with a balance"
@@ -155,7 +155,7 @@ msgid "/month/user"
 msgstr "/月/用户"
 
 msgid "%"
-msgstr ""
+msgstr "%"
 
 msgid "% of Total"
 msgstr "占总数的 %"
@@ -863,7 +863,7 @@ msgid "All {total} phases are done. Nice work — your team is up and running."
 msgstr "所有 {total} 个阶段已完成。做得很好——你的团队已启动并运行。"
 
 msgid "All accounts"
-msgstr ""
+msgstr "所有账户"
 
 msgid "All actions selected"
 msgstr "所有操作已选中"
@@ -2213,16 +2213,16 @@ msgid "Cash & Banking"
 msgstr "现金和银行"
 
 msgid "Cash at beginning of period"
-msgstr ""
+msgstr "期间开始时的现金"
 
 msgid "Cash at end of period"
-msgstr ""
+msgstr "期间结束时的现金"
 
 msgid "Cash Flow"
-msgstr ""
+msgstr "现金流"
 
 msgid "Cash Flow Activity"
-msgstr ""
+msgstr "现金流活动"
 
 msgid "Categories that classify how stock is stored"
 msgstr "分类库存存储方式"
@@ -2421,10 +2421,10 @@ msgid "Closing"
 msgstr "结余"
 
 msgid "Closing Credit"
-msgstr ""
+msgstr "期末贷方"
 
 msgid "Closing Debit"
-msgstr ""
+msgstr "期末借方"
 
 msgid "Closure blocked"
 msgstr "关闭被阻止"
@@ -2523,7 +2523,7 @@ msgid "Compare Supplier Quotes"
 msgstr "比较供应商报价"
 
 msgid "Comparison"
-msgstr ""
+msgstr "比较"
 
 msgid "Complete"
 msgstr "完成"
@@ -3730,7 +3730,7 @@ msgid "Default"
 msgstr "默认"
 
 msgid "Default (from account type)"
-msgstr ""
+msgstr "默认（来自账户类型）"
 
 msgid "Default account for posting sales revenue from invoices"
 msgstr "用于记录发票销售收入的默认账户"
@@ -4139,7 +4139,7 @@ msgid "Delete Unit of Measure"
 msgstr "删除计量单位"
 
 msgid "Delete view"
-msgstr ""
+msgstr "删除视图"
 
 msgid "Delete View"
 msgstr "删除视图"
@@ -4901,7 +4901,7 @@ msgid "Edit Work Center"
 msgstr "编辑工作中心"
 
 msgid "Effect of exchange rate changes on cash"
-msgstr ""
+msgstr "汇率变化对现金的影响"
 
 msgid "Eliminated"
 msgstr "已消除"
@@ -5811,7 +5811,7 @@ msgstr "完成"
 msgid "Finalizing a fiscal month through the Open → Locked → Closed lifecycle; a closed period is frozen and its balances snapshotted, reversible only by explicit reopen."
 msgstr "通过打开 → 锁定 → 关闭生命周期完成财政月份；关闭的期间被冻结并其余额快照，仅可通过显式重新打开来反转。"
 msgid "Financing Activities"
-msgstr ""
+msgstr "筹资活动"
 
 msgid "finish"
 msgstr "成品"
@@ -5981,7 +5981,7 @@ msgstr "外汇损益"
 #. placeholder {0}: p.fiscalYear
 #. placeholder {1}: p.periodNumber
 msgid "FY{0} · P{1}"
-msgstr ""
+msgstr "FY{0} · P{1}"
 
 msgid "Gain on Disposal"
 msgstr "处置获利"
@@ -6188,7 +6188,7 @@ msgid "GL contra-asset account that accumulates depreciation booked against fixe
 msgstr "累积对固定资产计提的折旧的GL反向资产账户。"
 
 msgid "GL Detail"
-msgstr ""
+msgstr "总账详情"
 
 msgid "GL equity account (CTA reserve) that holds unrealized FX differences from re-translating foreign-currency balances at period-end; separate from realized FX gain/loss in P&L."
 msgstr "GL权益账户（CTA准备金），在期末对外币余额重新转换产生的未实现外汇差异；与P&L中实现的外汇收益/损失分开。"
@@ -6437,7 +6437,7 @@ msgstr "样本大小如何确定——检查全部、检查前N个、批次百�
 msgid "How this gauge is used — Standard (regular checks) or Master (calibrates other gauges)."
 msgstr "此量具的使用方式——标准（定期检查）或主（校准其他量具）。"
 msgid "How this account's period change is classified on the statement of cash flows. Default derives from the account type."
-msgstr ""
+msgstr "此账户的期间变化如何在现金流量表上分类。默认来自账户类型。"
 
 msgid "How this gauge is used — Standard (regular checks), Master (calibrates other gauges), or Reference (audit-only)."
 msgstr "此测量仪如何使用——标准（定期检查）、主控（校准其他测量仪）或参考（仅审计）。"
@@ -6616,7 +6616,7 @@ msgstr "收件箱"
 msgid "Include a materials (bill of materials) section on the job traveler PDF with item numbers and quantities."
 msgstr "在工作单据 PDF 中包含物料清单（BOM）部分，列出物料号和数量。"
 msgid "Include drafts"
-msgstr ""
+msgstr "包括草稿"
 
 msgid "Include extra parts in shipment"
 msgstr "在发货中包含额外零件"
@@ -6640,7 +6640,7 @@ msgid "Income Statement"
 msgstr "利润表"
 
 msgid "Income statement activity for the current fiscal year (computed, not posted)"
-msgstr ""
+msgstr "当前会计年度的收入表活动（计算的，未过账）"
 
 msgid "Income/Balance"
 msgstr "收入/余额"
@@ -6850,7 +6850,7 @@ msgid "Inventory Valuation"
 msgstr "库存估值"
 
 msgid "Investing Activities"
-msgstr ""
+msgstr "投资活动"
 
 msgid "Invite"
 msgstr "邀请"
@@ -8101,25 +8101,25 @@ msgid "Net Book Value"
 msgstr "账面净值"
 
 msgid "Net cash from financing activities"
-msgstr ""
+msgstr "融资活动产生的净现金"
 
 msgid "Net cash from investing activities"
-msgstr ""
+msgstr "投资活动产生的净现金"
 
 msgid "Net cash from operating activities"
-msgstr ""
+msgstr "经营活动产生的净现金"
 
 msgid "Net cash from unclassified activities"
-msgstr ""
+msgstr "未分类活动产生的净现金"
 
 msgid "Net Change"
 msgstr "净变化"
 
 msgid "Net change in cash"
-msgstr ""
+msgstr "现金净变化"
 
 msgid "Net Income"
-msgstr ""
+msgstr "净收入"
 
 msgid "Never"
 msgstr "永不"
@@ -8518,7 +8518,7 @@ msgid "No comments yet. Be the first to add a comment."
 msgstr "还没有评论。成为第一个添加评论的人。"
 
 msgid "No comparison"
-msgstr ""
+msgstr "无比较"
 
 msgid "No completed jobs within range"
 msgstr "范围内没有已完成的工作"
@@ -8721,6 +8721,9 @@ msgstr "无结果"
 msgid "No results found"
 msgstr "未找到结果"
 
+msgid "No Retained Earnings account found"
+msgstr "未找到保留收益账户"
+
 msgid "No rows here."
 msgstr "这里没有行。"
 
@@ -8731,7 +8734,7 @@ msgid "No samples inspected yet."
 msgstr "还没有检查任何样品。"
 
 msgid "No saved views"
-msgstr ""
+msgstr "无保存的视图"
 
 msgid "No single, trusted number for inventory or job status"
 msgstr "没有单一的、可信的库存或工作状态数字"
@@ -9073,13 +9076,13 @@ msgid "Opening balance of depreciation already booked before this asset was adde
 msgstr "在将此资产添加到Carbon之前已入账的折旧的期初余额（新购置的情况下使用0）。"
 
 msgid "Opening Credit"
-msgstr ""
+msgstr "期初贷方"
 
 msgid "Opening Debit"
-msgstr ""
+msgstr "期初借方"
 
 msgid "Operating Activities"
-msgstr ""
+msgstr "经营活动"
 
 msgid "Operating Expenses"
 msgstr "运营费用"
@@ -9488,16 +9491,16 @@ msgstr "期间"
 msgid "Period close"
 msgstr "期间关闭"
 msgid "Period Credits"
-msgstr ""
+msgstr "期间贷方"
 
 msgid "Period Debits"
-msgstr ""
+msgstr "期间借方"
 
 msgid "Period End"
 msgstr "期末"
 
 msgid "Period…"
-msgstr ""
+msgstr "期间…"
 
 msgid "Periodic depreciation expense for fixed assets"
 msgstr "拣选按最早过期日期优先提供跟踪实体，因此最快过期的库存默认首先出库。"
@@ -9722,7 +9725,7 @@ msgid "Posted At"
 msgstr "发布于"
 
 msgid "Posted balance plus prior fiscal years' net income (computed, not posted)"
-msgstr ""
+msgstr "过账余额加上以前会计年度的净收入（计算的，未过账）"
 
 msgid "Posted By"
 msgstr "发布者"
@@ -9793,13 +9796,16 @@ msgstr "上一个日期"
 msgid "Previous page"
 msgstr "上一页"
 
+msgid "Previous period"
+msgstr "上一期间"
+
 msgid "Previous step"
 msgstr "上一步"
 msgid "Previous period"
 msgstr ""
 
 msgid "Previous year"
-msgstr ""
+msgstr "前一年"
 
 msgid "Price break actions"
 msgstr "价格阶梯操作"
@@ -9871,6 +9877,9 @@ msgstr "打印机"
 
 msgid "Printing"
 msgstr "打印"
+
+msgid "Prior-year income is shown inside Net Income. Add an account with type Retained Earnings to split retained earnings from current-year income."
+msgstr "前年收入显示在净收入内。添加类型为保留收益的账户以将保留收益与当年收入分开。"
 
 msgid "Priorities"
 msgstr "优先级"
@@ -11031,7 +11040,7 @@ msgid "Run the floor on tablets: clock labor, report progress, see instructions"
 msgstr "在平板电脑上运行车间：记录劳动力、报告进度、查看说明"
 
 msgid "Running Balance"
-msgstr ""
+msgstr "累计余额"
 
 msgid "Running inventory after each week's supply and demand — the line."
 msgstr "每周供应和需求后运行的库存 — 该行。"
@@ -11182,13 +11191,13 @@ msgid "Save contacts"
 msgstr "保存联系人"
 
 msgid "Save current view…"
-msgstr ""
+msgstr "保存当前视图…"
 
 msgid "Save Method"
 msgstr "保存方法"
 
 msgid "Save view"
-msgstr ""
+msgstr "保存视图"
 
 msgid "Save View"
 msgstr "保存视图"
@@ -12122,7 +12131,7 @@ msgid "State / Province"
 msgstr "州/省"
 
 msgid "Statement of Cash Flows"
-msgstr ""
+msgstr "现金流量表"
 
 #. placeholder {0}: lotEntities.length
 #. placeholder {1}: Math.max(0, lotEntities.length - inspected)
@@ -13995,7 +14004,7 @@ msgid "Unreceived POs"
 msgstr "未收到的采购订单"
 
 msgid "Unreconciled difference"
-msgstr ""
+msgstr "未调节差异"
 
 msgid "Unsaved changes"
 msgstr "未保存的更改"
@@ -14379,7 +14388,7 @@ msgid "View missing values"
 msgstr "查看缺失值"
 
 msgid "View name"
-msgstr ""
+msgstr "视图名称"
 
 msgid "View notes"
 msgstr "查看备注"
@@ -14472,7 +14481,7 @@ msgid "View Transfer"
 msgstr "查看转移"
 
 msgid "Views"
-msgstr ""
+msgstr "视图"
 
 msgid "Visibilities"
 msgstr "可见性"

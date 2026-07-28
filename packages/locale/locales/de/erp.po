@@ -50,7 +50,7 @@ msgstr "{0, plural, one {Dieses Teil ist auf 1 offener Änderungsmitteilung} oth
 
 #. placeholder {0}: statement.unclassified.length
 msgid "{0} accounts have no cash flow activity — set an account type or override"
-msgstr ""
+msgstr "{0} Konten haben keine Cashflow-Aktivität — legen Sie einen Kontotyp fest oder überschreiben Sie"
 
 #. placeholder {0}: ar.count
 msgid "{0} customers with a balance"
@@ -155,7 +155,7 @@ msgid "/month/user"
 msgstr "/Monat/Benutzer"
 
 msgid "%"
-msgstr ""
+msgstr "%"
 
 msgid "% of Total"
 msgstr "% der Gesamtsumme"
@@ -863,7 +863,7 @@ msgid "All {total} phases are done. Nice work — your team is up and running."
 msgstr "Alle {total} Phasen sind abgeschlossen. Großartig — Ihr Team ist einsatzbereit."
 
 msgid "All accounts"
-msgstr ""
+msgstr "Alle Konten"
 
 msgid "All actions selected"
 msgstr "Alle Aktionen ausgewählt"
@@ -2213,16 +2213,16 @@ msgid "Cash & Banking"
 msgstr "Bargeld und Bankwesen"
 
 msgid "Cash at beginning of period"
-msgstr ""
+msgstr "Kasse zu Beginn der Periode"
 
 msgid "Cash at end of period"
-msgstr ""
+msgstr "Kasse am Ende der Periode"
 
 msgid "Cash Flow"
-msgstr ""
+msgstr "Cashflow"
 
 msgid "Cash Flow Activity"
-msgstr ""
+msgstr "Cashflow-Aktivität"
 
 msgid "Categories that classify how stock is stored"
 msgstr "Kategorien, die klassifizieren, wie Bestände gelagert werden"
@@ -2421,10 +2421,10 @@ msgid "Closing"
 msgstr "Schlussbilanz"
 
 msgid "Closing Credit"
-msgstr ""
+msgstr "Schließungsguthaben"
 
 msgid "Closing Debit"
-msgstr ""
+msgstr "Schließungslastschrift"
 
 msgid "Closure blocked"
 msgstr "Abschluss blockiert"
@@ -2523,7 +2523,7 @@ msgid "Compare Supplier Quotes"
 msgstr "Lieferantenofferte vergleichen"
 
 msgid "Comparison"
-msgstr ""
+msgstr "Vergleich"
 
 msgid "Complete"
 msgstr "Abschließen"
@@ -3730,7 +3730,7 @@ msgid "Default"
 msgstr "Standard"
 
 msgid "Default (from account type)"
-msgstr ""
+msgstr "Standard (aus Kontotyp)"
 
 msgid "Default account for posting sales revenue from invoices"
 msgstr "Standardkonto für die Buchung von Verkaufseinnahmen aus Rechnungen"
@@ -4139,7 +4139,7 @@ msgid "Delete Unit of Measure"
 msgstr "Maßeinheit löschen"
 
 msgid "Delete view"
-msgstr ""
+msgstr "Ansicht löschen"
 
 msgid "Delete View"
 msgstr "Ansicht löschen"
@@ -4901,7 +4901,7 @@ msgid "Edit Work Center"
 msgstr "Arbeitszentrum bearbeiten"
 
 msgid "Effect of exchange rate changes on cash"
-msgstr ""
+msgstr "Auswirkung von Wechselkursänderungen auf Bargeld"
 
 msgid "Eliminated"
 msgstr "Beseitigt"
@@ -5811,7 +5811,7 @@ msgstr "Abschließen"
 msgid "Finalizing a fiscal month through the Open → Locked → Closed lifecycle; a closed period is frozen and its balances snapshotted, reversible only by explicit reopen."
 msgstr "Abschluss eines Geschäftsmonats durch den Open → Locked → Closed-Lebenszyklus; eine geschlossene Periode ist eingefroren und ihre Salden sind erfasst, nur durch explizites Wiedereröffnen rückgängig zu machen."
 msgid "Financing Activities"
-msgstr ""
+msgstr "Finanzierungsaktivitäten"
 
 msgid "finish"
 msgstr "Fertigerzeugnisse"
@@ -5981,7 +5981,7 @@ msgstr "FX G/L"
 #. placeholder {0}: p.fiscalYear
 #. placeholder {1}: p.periodNumber
 msgid "FY{0} · P{1}"
-msgstr ""
+msgstr "FJ{0} · P{1}"
 
 msgid "Gain on Disposal"
 msgstr "Gewinn aus Veräußerung"
@@ -6188,7 +6188,7 @@ msgid "GL contra-asset account that accumulates depreciation booked against fixe
 msgstr "GL-Gegenkonto für Vermögenswerte, das Abschreibungen sammelt, die gegen Anlagevermögen verbucht werden."
 
 msgid "GL Detail"
-msgstr ""
+msgstr "Sachkontodetail"
 
 msgid "GL equity account (CTA reserve) that holds unrealized FX differences from re-translating foreign-currency balances at period-end; separate from realized FX gain/loss in P&L."
 msgstr "GL-Eigenkapitalkonto (CTA-Reserve), das nicht realisierte Wechselkursdifferenzen aus der Neubewertung von Fremdwährungssalden am Periodenende hält; getrennt von realisierten Wechselkursgewinnen/-verlusten in der GuV."
@@ -6437,7 +6437,7 @@ msgstr "Wie die Stichprobengröße entschieden wird — Alle inspizieren, Erste 
 msgid "How this gauge is used — Standard (regular checks) or Master (calibrates other gauges)."
 msgstr "Wie dieses Messinstrument verwendet wird — Standard (regelmäßige Kontrollen) oder Meister (kalibriert andere Messinstrumente)."
 msgid "How this account's period change is classified on the statement of cash flows. Default derives from the account type."
-msgstr ""
+msgstr "Wie die Periodenänderung dieses Kontos in der Cashflow-Aufstellung klassifiziert wird. Der Standard leitet sich vom Kontotyp ab."
 
 msgid "How this gauge is used — Standard (regular checks), Master (calibrates other gauges), or Reference (audit-only)."
 msgstr "Wie dieser Messschieber verwendet wird — Standard (regelmäßige Überprüfungen), Meister (kalibriert andere Messschieber) oder Referenz (Nur-Audit)."
@@ -6616,7 +6616,7 @@ msgstr "Posteingang"
 msgid "Include a materials (bill of materials) section on the job traveler PDF with item numbers and quantities."
 msgstr "Einen Materialabschnitt (Stückliste) im Job-Traveler-PDF mit Artikelnummern und Mengen einfügen."
 msgid "Include drafts"
-msgstr ""
+msgstr "Entwürfe einbeziehen"
 
 msgid "Include extra parts in shipment"
 msgstr "Zusätzliche Teile in Sendung einbeziehen"
@@ -6640,7 +6640,7 @@ msgid "Income Statement"
 msgstr "Gewinn- und Verlustrechnung"
 
 msgid "Income statement activity for the current fiscal year (computed, not posted)"
-msgstr ""
+msgstr "Gewinn- und Verlustrechnung-Aktivität für das aktuelle Fiskaljahr (berechnet, nicht gebucht)"
 
 msgid "Income/Balance"
 msgstr "Einnahmen/Bilanz"
@@ -6850,7 +6850,7 @@ msgid "Inventory Valuation"
 msgstr "Bestandsbewertung"
 
 msgid "Investing Activities"
-msgstr ""
+msgstr "Investitionsaktivitäten"
 
 msgid "Invite"
 msgstr "Einladen"
@@ -8101,25 +8101,25 @@ msgid "Net Book Value"
 msgstr "Nettobuchwert"
 
 msgid "Net cash from financing activities"
-msgstr ""
+msgstr "Netto-Cashflow aus Finanzierungsaktivitäten"
 
 msgid "Net cash from investing activities"
-msgstr ""
+msgstr "Netto-Cashflow aus Investitionsaktivitäten"
 
 msgid "Net cash from operating activities"
-msgstr ""
+msgstr "Netto-Cashflow aus Betriebsaktivitäten"
 
 msgid "Net cash from unclassified activities"
-msgstr ""
+msgstr "Netto-Cashflow aus nicht klassifizierten Aktivitäten"
 
 msgid "Net Change"
 msgstr "Nettoänderung"
 
 msgid "Net change in cash"
-msgstr ""
+msgstr "Netto-Cashveränderung"
 
 msgid "Net Income"
-msgstr ""
+msgstr "Nettoeinkommen"
 
 msgid "Never"
 msgstr "Nie"
@@ -8518,7 +8518,7 @@ msgid "No comments yet. Be the first to add a comment."
 msgstr "Noch keine Kommentare. Seien Sie der Erste, der einen Kommentar hinzufügt."
 
 msgid "No comparison"
-msgstr ""
+msgstr "Kein Vergleich"
 
 msgid "No completed jobs within range"
 msgstr "Keine abgeschlossenen Aufträge im Bereich"
@@ -8721,6 +8721,9 @@ msgstr "Keine Ergebnisse"
 msgid "No results found"
 msgstr "Keine Ergebnisse gefunden"
 
+msgid "No Retained Earnings account found"
+msgstr "Kein Gewinnrücklagenkonto gefunden"
+
 msgid "No rows here."
 msgstr "Hier sind keine Zeilen."
 
@@ -8731,7 +8734,7 @@ msgid "No samples inspected yet."
 msgstr "Noch keine Muster inspiziert."
 
 msgid "No saved views"
-msgstr ""
+msgstr "Keine gespeicherten Ansichten"
 
 msgid "No single, trusted number for inventory or job status"
 msgstr "Keine einzige, vertrauenswürdige Zahl für Bestand oder Auftragsstatus"
@@ -9073,13 +9076,13 @@ msgid "Opening balance of depreciation already booked before this asset was adde
 msgstr "Eröffnungssaldo der bereits vor dem Hinzufügen dieses Vermögenswerts zu Carbon gebuchten Abschreibung (für neue Akquisitionen 0 verwenden)."
 
 msgid "Opening Credit"
-msgstr ""
+msgstr "Eröffnungsguthaben"
 
 msgid "Opening Debit"
-msgstr ""
+msgstr "Eröffnungslastschrift"
 
 msgid "Operating Activities"
-msgstr ""
+msgstr "Betriebsaktivitäten"
 
 msgid "Operating Expenses"
 msgstr "Betriebsausgaben"
@@ -9488,16 +9491,16 @@ msgstr "Zeitraum"
 msgid "Period close"
 msgstr "Periodenschließung"
 msgid "Period Credits"
-msgstr ""
+msgstr "Periodenguthaben"
 
 msgid "Period Debits"
-msgstr ""
+msgstr "Periodenlastschriften"
 
 msgid "Period End"
 msgstr "Periodenende"
 
 msgid "Period…"
-msgstr ""
+msgstr "Periode…"
 
 msgid "Periodic depreciation expense for fixed assets"
 msgstr "Kommissionierung bietet verfolgten Einheiten mit frühestem Verfallsdatum zuerst an, sodass das am schnellsten ablaufende Lager standardmäßig zuerst ausgeht."
@@ -9722,7 +9725,7 @@ msgid "Posted At"
 msgstr "Gepostet am"
 
 msgid "Posted balance plus prior fiscal years' net income (computed, not posted)"
-msgstr ""
+msgstr "Gebuchter Saldo plus Nettoeinkommen der vorangegangenen Fiskaljahre (berechnet, nicht gebucht)"
 
 msgid "Posted By"
 msgstr "Gepostet von"
@@ -9793,13 +9796,16 @@ msgstr "Vorheriges Datum"
 msgid "Previous page"
 msgstr "Vorherige Seite"
 
+msgid "Previous period"
+msgstr "Vorherige Periode"
+
 msgid "Previous step"
 msgstr "Vorheriger Schritt"
 msgid "Previous period"
 msgstr ""
 
 msgid "Previous year"
-msgstr ""
+msgstr "Vorheriges Jahr"
 
 msgid "Price break actions"
 msgstr "Aktionen für Preisabstufung"
@@ -9871,6 +9877,9 @@ msgstr "Drucker"
 
 msgid "Printing"
 msgstr "Druck"
+
+msgid "Prior-year income is shown inside Net Income. Add an account with type Retained Earnings to split retained earnings from current-year income."
+msgstr "Das Einkommen des Vorjahres wird in Nettoeinkommen angezeigt. Fügen Sie ein Konto vom Typ Gewinnrücklagen hinzu, um Gewinnrücklagen vom Einkommen des laufenden Jahres zu trennen."
 
 msgid "Priorities"
 msgstr "Prioritäten"
@@ -11031,7 +11040,7 @@ msgid "Run the floor on tablets: clock labor, report progress, see instructions"
 msgstr "Betrieb auf Tablets: Arbeitszeit erfassen, Fortschritt melden, Anweisungen anzeigen"
 
 msgid "Running Balance"
-msgstr ""
+msgstr "Laufender Saldo"
 
 msgid "Running inventory after each week's supply and demand — the line."
 msgstr "Bestände nach jeder Woche laufen nach Angebot und Nachfrage — die Linie."
@@ -11182,13 +11191,13 @@ msgid "Save contacts"
 msgstr "Kontakte speichern"
 
 msgid "Save current view…"
-msgstr ""
+msgstr "Aktuelle Ansicht speichern…"
 
 msgid "Save Method"
 msgstr "Methode speichern"
 
 msgid "Save view"
-msgstr ""
+msgstr "Ansicht speichern"
 
 msgid "Save View"
 msgstr "Ansicht speichern"
@@ -12122,7 +12131,7 @@ msgid "State / Province"
 msgstr "Bundesland / Provinz"
 
 msgid "Statement of Cash Flows"
-msgstr ""
+msgstr "Kapitalflussrechnung"
 
 #. placeholder {0}: lotEntities.length
 #. placeholder {1}: Math.max(0, lotEntities.length - inspected)
@@ -13995,7 +14004,7 @@ msgid "Unreceived POs"
 msgstr "Nicht eingegangene Bestellungen"
 
 msgid "Unreconciled difference"
-msgstr ""
+msgstr "Nicht abgestimmte Differenz"
 
 msgid "Unsaved changes"
 msgstr "Nicht gespeicherte Änderungen"
@@ -14379,7 +14388,7 @@ msgid "View missing values"
 msgstr "Fehlende Werte anzeigen"
 
 msgid "View name"
-msgstr ""
+msgstr "Ansichtname"
 
 msgid "View notes"
 msgstr "Notizen anzeigen"
@@ -14472,7 +14481,7 @@ msgid "View Transfer"
 msgstr "Transfer anzeigen"
 
 msgid "Views"
-msgstr ""
+msgstr "Ansichten"
 
 msgid "Visibilities"
 msgstr "Sichtbarkeiten"

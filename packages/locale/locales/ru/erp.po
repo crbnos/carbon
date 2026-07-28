@@ -50,7 +50,7 @@ msgstr "{0, plural, one {Эта деталь находится на 1 откр�
 
 #. placeholder {0}: statement.unclassified.length
 msgid "{0} accounts have no cash flow activity — set an account type or override"
-msgstr ""
+msgstr "{0} счетов не имеют активности денежных потоков — установите тип счета или переопределите"
 
 #. placeholder {0}: ar.count
 msgid "{0} customers with a balance"
@@ -155,7 +155,7 @@ msgid "/month/user"
 msgstr "/месяц/пользователь"
 
 msgid "%"
-msgstr ""
+msgstr "%"
 
 msgid "% of Total"
 msgstr "% от всего"
@@ -863,7 +863,7 @@ msgid "All {total} phases are done. Nice work — your team is up and running."
 msgstr "Все {total} этапов завершены. Отличная работа — ваша команда готова к работе."
 
 msgid "All accounts"
-msgstr ""
+msgstr "Все счета"
 
 msgid "All actions selected"
 msgstr "Все действия выбраны"
@@ -2213,16 +2213,16 @@ msgid "Cash & Banking"
 msgstr "Наличные и Банковские операции"
 
 msgid "Cash at beginning of period"
-msgstr ""
+msgstr "Денежные средства в начале периода"
 
 msgid "Cash at end of period"
-msgstr ""
+msgstr "Денежные средства в конце периода"
 
 msgid "Cash Flow"
-msgstr ""
+msgstr "Поток денежных средств"
 
 msgid "Cash Flow Activity"
-msgstr ""
+msgstr "Активность потока денежных средств"
 
 msgid "Categories that classify how stock is stored"
 msgstr "Категории, которые классифицируют способ хранения запасов"
@@ -2421,10 +2421,10 @@ msgid "Closing"
 msgstr "Закрытие"
 
 msgid "Closing Credit"
-msgstr ""
+msgstr "Закрывающий кредит"
 
 msgid "Closing Debit"
-msgstr ""
+msgstr "Закрывающий дебет"
 
 msgid "Closure blocked"
 msgstr "Закрытие заблокировано"
@@ -2523,7 +2523,7 @@ msgid "Compare Supplier Quotes"
 msgstr "Сравнить предложения поставщиков"
 
 msgid "Comparison"
-msgstr ""
+msgstr "Сравнение"
 
 msgid "Complete"
 msgstr "Завершить"
@@ -3730,7 +3730,7 @@ msgid "Default"
 msgstr "По умолчанию"
 
 msgid "Default (from account type)"
-msgstr ""
+msgstr "По умолчанию (из типа счета)"
 
 msgid "Default account for posting sales revenue from invoices"
 msgstr "Счет по умолчанию для отражения выручки от продаж по счетам"
@@ -4139,7 +4139,7 @@ msgid "Delete Unit of Measure"
 msgstr "Удалить единицу измерения"
 
 msgid "Delete view"
-msgstr ""
+msgstr "Удалить представление"
 
 msgid "Delete View"
 msgstr "Удалить представление"
@@ -4901,7 +4901,7 @@ msgid "Edit Work Center"
 msgstr "Редактировать рабочий центр"
 
 msgid "Effect of exchange rate changes on cash"
-msgstr ""
+msgstr "Влияние изменений обменного курса на денежные средства"
 
 msgid "Eliminated"
 msgstr "Исключено"
@@ -5811,7 +5811,7 @@ msgstr "Завершить"
 msgid "Finalizing a fiscal month through the Open → Locked → Closed lifecycle; a closed period is frozen and its balances snapshotted, reversible only by explicit reopen."
 msgstr "Финализация налогового месяца через цикл жизни Открыто → Заблокировано → Закрыто; закрытый период заморожен и его остатки снимаются, обратимо только явным повторным открытием."
 msgid "Financing Activities"
-msgstr ""
+msgstr "Финансовые виды деятельности"
 
 msgid "finish"
 msgstr "Готовая продукция"
@@ -5981,7 +5981,7 @@ msgstr "Прибыль/убыток по курсу"
 #. placeholder {0}: p.fiscalYear
 #. placeholder {1}: p.periodNumber
 msgid "FY{0} · P{1}"
-msgstr ""
+msgstr "ФГ{0} · П{1}"
 
 msgid "Gain on Disposal"
 msgstr "Прибыль от выбытия"
@@ -6188,7 +6188,7 @@ msgid "GL contra-asset account that accumulates depreciation booked against fixe
 msgstr "Счет GL контра-активов, который накапливает амортизацию, записанную против основных средств."
 
 msgid "GL Detail"
-msgstr ""
+msgstr "Деталь главной книги"
 
 msgid "GL equity account (CTA reserve) that holds unrealized FX differences from re-translating foreign-currency balances at period-end; separate from realized FX gain/loss in P&L."
 msgstr "Счет GL капитала (резерв CTA), который держит нереализованные разницы по валютам в результате пересчета остатков в иностранной валюте на конец периода; отдельно от реализованной валютной прибыли/убытка в П&У."
@@ -6437,7 +6437,7 @@ msgstr "Как решается размер выборки — Проверит
 msgid "How this gauge is used — Standard (regular checks) or Master (calibrates other gauges)."
 msgstr "Как используется этот калибр — Стандартный (плановые проверки) или Мастер (калибрует другие калибры)."
 msgid "How this account's period change is classified on the statement of cash flows. Default derives from the account type."
-msgstr ""
+msgstr "Как классифицируется изменение периода этого счета в отчете о потоках денежных средств. По умолчанию получается из типа счета."
 
 msgid "How this gauge is used — Standard (regular checks), Master (calibrates other gauges), or Reference (audit-only)."
 msgstr "Как используется этот манометр — Стандартный (обычные проверки), Мастер (калибрует другие манометры) или Справка (только аудит)."
@@ -6616,7 +6616,7 @@ msgstr "Входящие"
 msgid "Include a materials (bill of materials) section on the job traveler PDF with item numbers and quantities."
 msgstr "Включить раздел материалов (спецификация материалов) в PDF путевого листа задания с номерами товаров и количествами."
 msgid "Include drafts"
-msgstr ""
+msgstr "Включить черновики"
 
 msgid "Include extra parts in shipment"
 msgstr "Включить дополнительные детали в отправку"
@@ -6640,7 +6640,7 @@ msgid "Income Statement"
 msgstr "Отчет о прибылях и убытках"
 
 msgid "Income statement activity for the current fiscal year (computed, not posted)"
-msgstr ""
+msgstr "Активность отчета о доходах за текущий финансовый год (вычисленная, не опубликованная)"
 
 msgid "Income/Balance"
 msgstr "Доход/Баланс"
@@ -6850,7 +6850,7 @@ msgid "Inventory Valuation"
 msgstr "Оценка товарно-материального запаса"
 
 msgid "Investing Activities"
-msgstr ""
+msgstr "Инвестиционная деятельность"
 
 msgid "Invite"
 msgstr "Пригласить"
@@ -8101,25 +8101,25 @@ msgid "Net Book Value"
 msgstr "Чистая балансовая стоимость"
 
 msgid "Net cash from financing activities"
-msgstr ""
+msgstr "Чистые денежные средства от финансовой деятельности"
 
 msgid "Net cash from investing activities"
-msgstr ""
+msgstr "Чистые денежные средства от инвестиционной деятельности"
 
 msgid "Net cash from operating activities"
-msgstr ""
+msgstr "Чистые денежные средства от операционной деятельности"
 
 msgid "Net cash from unclassified activities"
-msgstr ""
+msgstr "Чистые денежные средства от неклассифицированной деятельности"
 
 msgid "Net Change"
 msgstr "Чистое изменение"
 
 msgid "Net change in cash"
-msgstr ""
+msgstr "Чистое изменение денежных средств"
 
 msgid "Net Income"
-msgstr ""
+msgstr "Чистая прибыль"
 
 msgid "Never"
 msgstr "Никогда"
@@ -8518,7 +8518,7 @@ msgid "No comments yet. Be the first to add a comment."
 msgstr "Нет комментариев. Будьте первым, кто добавит комментарий."
 
 msgid "No comparison"
-msgstr ""
+msgstr "Нет сравнения"
 
 msgid "No completed jobs within range"
 msgstr "Нет завершенных работ в диапазоне"
@@ -8721,6 +8721,9 @@ msgstr "Нет результатов"
 msgid "No results found"
 msgstr "Результатов не найдено"
 
+msgid "No Retained Earnings account found"
+msgstr "Счет накопленной прибыли не найден"
+
 msgid "No rows here."
 msgstr "Нет строк здесь."
 
@@ -8731,7 +8734,7 @@ msgid "No samples inspected yet."
 msgstr "Пока нет проверенных образцов."
 
 msgid "No saved views"
-msgstr ""
+msgstr "Нет сохраненных представлений"
 
 msgid "No single, trusted number for inventory or job status"
 msgstr "Нет единого надежного показателя для инвентаря или статуса работы"
@@ -9073,13 +9076,13 @@ msgid "Opening balance of depreciation already booked before this asset was adde
 msgstr "Начальный баланс амортизации, уже учтенный до добавления этого актива в Carbon (используйте 0 для новых приобретений)."
 
 msgid "Opening Credit"
-msgstr ""
+msgstr "Открывающий кредит"
 
 msgid "Opening Debit"
-msgstr ""
+msgstr "Открывающий дебет"
 
 msgid "Operating Activities"
-msgstr ""
+msgstr "Операционная деятельность"
 
 msgid "Operating Expenses"
 msgstr "Операционные расходы"
@@ -9488,16 +9491,16 @@ msgstr "Период"
 msgid "Period close"
 msgstr "Закрытие периода"
 msgid "Period Credits"
-msgstr ""
+msgstr "Кредиты периода"
 
 msgid "Period Debits"
-msgstr ""
+msgstr "Дебеты периода"
 
 msgid "Period End"
 msgstr "Конец периода"
 
 msgid "Period…"
-msgstr ""
+msgstr "Период…"
 
 msgid "Periodic depreciation expense for fixed assets"
 msgstr "Комплектация предлагает отслеживаемые сущности в порядке самого раннего истечения сначала, поэтому запас, истекающий в первую очередь, по умолчанию выходит первым."
@@ -9722,7 +9725,7 @@ msgid "Posted At"
 msgstr "Опубликовано в"
 
 msgid "Posted balance plus prior fiscal years' net income (computed, not posted)"
-msgstr ""
+msgstr "Опубликованный баланс плюс чистая прибыль предыдущих финансовых лет (вычисленная, не опубликованная)"
 
 msgid "Posted By"
 msgstr "Опубликовано"
@@ -9793,13 +9796,16 @@ msgstr "Предыдущая дата"
 msgid "Previous page"
 msgstr "Предыдущая страница"
 
+msgid "Previous period"
+msgstr "Предыдущий период"
+
 msgid "Previous step"
 msgstr "Предыдущий шаг"
 msgid "Previous period"
 msgstr ""
 
 msgid "Previous year"
-msgstr ""
+msgstr "Предыдущий год"
 
 msgid "Price break actions"
 msgstr "Действия ценовой скидки"
@@ -9871,6 +9877,9 @@ msgstr "Принтеры"
 
 msgid "Printing"
 msgstr "Печать"
+
+msgid "Prior-year income is shown inside Net Income. Add an account with type Retained Earnings to split retained earnings from current-year income."
+msgstr "Доход предыдущего года показан в составе Чистой прибыли. Добавьте счет с типом Накопленная прибыль, чтобы разделить накопленную прибыль от дохода текущего года."
 
 msgid "Priorities"
 msgstr "Приоритеты"
@@ -11031,7 +11040,7 @@ msgid "Run the floor on tablets: clock labor, report progress, see instructions"
 msgstr "Управляйте цехом с планшетов: учитывайте рабочее время, отслеживайте прогресс, просматривайте инструкции"
 
 msgid "Running Balance"
-msgstr ""
+msgstr "Текущий баланс"
 
 msgid "Running inventory after each week's supply and demand — the line."
 msgstr "Инвентарь, обновляемый после еженедельного спроса и предложения — строка."
@@ -11182,13 +11191,13 @@ msgid "Save contacts"
 msgstr "Сохранить контакты"
 
 msgid "Save current view…"
-msgstr ""
+msgstr "Сохранить текущее представление…"
 
 msgid "Save Method"
 msgstr "Сохранить метод"
 
 msgid "Save view"
-msgstr ""
+msgstr "Сохранить представление"
 
 msgid "Save View"
 msgstr "Сохранить представление"
@@ -12122,7 +12131,7 @@ msgid "State / Province"
 msgstr "Штат / Провинция"
 
 msgid "Statement of Cash Flows"
-msgstr ""
+msgstr "Отчет о движении денежных средств"
 
 #. placeholder {0}: lotEntities.length
 #. placeholder {1}: Math.max(0, lotEntities.length - inspected)
@@ -13995,7 +14004,7 @@ msgid "Unreceived POs"
 msgstr "Неполученные ПО"
 
 msgid "Unreconciled difference"
-msgstr ""
+msgstr "Несогласованная разница"
 
 msgid "Unsaved changes"
 msgstr "Несохранённые изменения"
@@ -14379,7 +14388,7 @@ msgid "View missing values"
 msgstr "Просмотреть отсутствующие значения"
 
 msgid "View name"
-msgstr ""
+msgstr "Имя представления"
 
 msgid "View notes"
 msgstr "Просмотр заметок"
@@ -14472,7 +14481,7 @@ msgid "View Transfer"
 msgstr "Просмотр передачи"
 
 msgid "Views"
-msgstr ""
+msgstr "Представления"
 
 msgid "Visibilities"
 msgstr "Видимость"

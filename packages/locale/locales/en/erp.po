@@ -8721,6 +8721,9 @@ msgstr "No results"
 msgid "No results found"
 msgstr "No results found"
 
+msgid "No Retained Earnings account found"
+msgstr "No Retained Earnings account found"
+
 msgid "No rows here."
 msgstr "No rows here."
 
@@ -9871,6 +9874,9 @@ msgstr "Printers"
 
 msgid "Printing"
 msgstr "Printing"
+
+msgid "Prior-year income is shown inside Net Income. Add an account with type Retained Earnings to split retained earnings from current-year income."
+msgstr "Prior-year income is shown inside Net Income. Add an account with type Retained Earnings to split retained earnings from current-year income."
 
 msgid "Priorities"
 msgstr "Priorities"

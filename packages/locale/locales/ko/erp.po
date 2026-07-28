@@ -50,7 +50,7 @@ msgstr "{0, plural, one {이 부품은 1개의 미완료 변경 공지에 포함
 
 #. placeholder {0}: statement.unclassified.length
 msgid "{0} accounts have no cash flow activity — set an account type or override"
-msgstr ""
+msgstr "{0}계정은 현금흐름 활동이 없습니다 — 계정 유형을 설정하거나 재정의하세요"
 
 #. placeholder {0}: ar.count
 msgid "{0} customers with a balance"
@@ -155,7 +155,7 @@ msgid "/month/user"
 msgstr "/월/사용자"
 
 msgid "%"
-msgstr ""
+msgstr "%"
 
 msgid "% of Total"
 msgstr "전체의 %"
@@ -863,7 +863,7 @@ msgid "All {total} phases are done. Nice work — your team is up and running."
 msgstr "{total}단계가 모두 완료되었습니다. 수고하셨습니다 — 팀이 이제 정상 가동 중입니다."
 
 msgid "All accounts"
-msgstr ""
+msgstr "모든 계정"
 
 msgid "All actions selected"
 msgstr "모든 조치가 선택됨"
@@ -2213,16 +2213,16 @@ msgid "Cash & Banking"
 msgstr "현금 및 은행"
 
 msgid "Cash at beginning of period"
-msgstr ""
+msgstr "기간 초 현금"
 
 msgid "Cash at end of period"
-msgstr ""
+msgstr "기간 말 현금"
 
 msgid "Cash Flow"
-msgstr ""
+msgstr "현금흐름"
 
 msgid "Cash Flow Activity"
-msgstr ""
+msgstr "현금흐름 활동"
 
 msgid "Categories that classify how stock is stored"
 msgstr "재고 보관 방식을 분류하는 카테고리"
@@ -2421,10 +2421,10 @@ msgid "Closing"
 msgstr "마감"
 
 msgid "Closing Credit"
-msgstr ""
+msgstr "종료 신용"
 
 msgid "Closing Debit"
-msgstr ""
+msgstr "종료 차변"
 
 msgid "Closure blocked"
 msgstr "마감 차단됨"
@@ -2523,7 +2523,7 @@ msgid "Compare Supplier Quotes"
 msgstr "공급업체 견적 비교"
 
 msgid "Comparison"
-msgstr ""
+msgstr "비교"
 
 msgid "Complete"
 msgstr "완료"
@@ -3730,7 +3730,7 @@ msgid "Default"
 msgstr "기본값"
 
 msgid "Default (from account type)"
-msgstr ""
+msgstr "기본값(계정 유형에서)"
 
 msgid "Default account for posting sales revenue from invoices"
 msgstr "인보이스의 매출 수익을 전기할 기본 계정"
@@ -4139,7 +4139,7 @@ msgid "Delete Unit of Measure"
 msgstr "측정 단위 삭제"
 
 msgid "Delete view"
-msgstr ""
+msgstr "보기 삭제"
 
 msgid "Delete View"
 msgstr "보기 삭제"
@@ -4901,7 +4901,7 @@ msgid "Edit Work Center"
 msgstr "작업장 수정"
 
 msgid "Effect of exchange rate changes on cash"
-msgstr ""
+msgstr "환율 변화가 현금에 미치는 영향"
 
 msgid "Eliminated"
 msgstr "제거됨"
@@ -5811,7 +5811,7 @@ msgstr "확정"
 msgid "Finalizing a fiscal month through the Open → Locked → Closed lifecycle; a closed period is frozen and its balances snapshotted, reversible only by explicit reopen."
 msgstr "열림 → 잠김 → 종료 라이프사이클을 통해 회계 월을 마무리하는 것으로서, 종료된 기간은 고정되고 잔액은 스냅샷되며 명시적 재개를 통해서만 취소할 수 있습니다."
 msgid "Financing Activities"
-msgstr ""
+msgstr "재무 활동"
 
 msgid "finish"
 msgstr "마감"
@@ -5981,7 +5981,7 @@ msgstr "외환 손익"
 #. placeholder {0}: p.fiscalYear
 #. placeholder {1}: p.periodNumber
 msgid "FY{0} · P{1}"
-msgstr ""
+msgstr "회계연도{0} · 기간{1}"
 
 msgid "Gain on Disposal"
 msgstr "처분 이익"
@@ -6188,7 +6188,7 @@ msgid "GL contra-asset account that accumulates depreciation booked against fixe
 msgstr "고정자산에 대해 계상된 감가상각이 누적되는 총계정원장 자산 차감 계정입니다."
 
 msgid "GL Detail"
-msgstr ""
+msgstr "총계정원장 세부"
 
 msgid "GL equity account (CTA reserve) that holds unrealized FX differences from re-translating foreign-currency balances at period-end; separate from realized FX gain/loss in P&L."
 msgstr "기말에 외화 잔액을 재환산할 때 발생하는 미실현 외환 차이를 보관하는 총계정원장 자본 계정(CTA 적립금)으로, 손익계산서상 실현 외환손익과는 구분됩니다."
@@ -6437,7 +6437,7 @@ msgstr "샘플 크기를 결정하는 방식 — 전수 검사, 처음 N개 검�
 msgid "How this gauge is used — Standard (regular checks) or Master (calibrates other gauges)."
 msgstr "이 게이지의 사용 방식으로서, 표준(정기적인 점검) 또는 마스터(다른 게이지 교정)입니다."
 msgid "How this account's period change is classified on the statement of cash flows. Default derives from the account type."
-msgstr ""
+msgstr "이 계정의 기간 변화가 현금흐름표에서 어떻게 분류되는지입니다. 기본값은 계정 유형에서 파생됩니다."
 
 msgid "How this gauge is used — Standard (regular checks), Master (calibrates other gauges), or Reference (audit-only)."
 msgstr "이 측정기가 사용되는 방식 — 표준(정기 점검), 마스터(다른 측정기 교정), 또는 기준(감사 전용)."
@@ -6616,7 +6616,7 @@ msgstr "받은함"
 msgid "Include a materials (bill of materials) section on the job traveler PDF with item numbers and quantities."
 msgstr "작업 이동 PDF에 품목번호와 수량이 포함된 자재(부자재명세서) 섹션을 포함하세요."
 msgid "Include drafts"
-msgstr ""
+msgstr "초안 포함"
 
 msgid "Include extra parts in shipment"
 msgstr "출하에 여분 부품 포함"
@@ -6640,7 +6640,7 @@ msgid "Income Statement"
 msgstr "손익계산서"
 
 msgid "Income statement activity for the current fiscal year (computed, not posted)"
-msgstr ""
+msgstr "현재 회계연도의 손익계산서 활동(계산됨, 게시 안 됨)"
 
 msgid "Income/Balance"
 msgstr "손익/재무상태"
@@ -6850,7 +6850,7 @@ msgid "Inventory Valuation"
 msgstr "재고 평가"
 
 msgid "Investing Activities"
-msgstr ""
+msgstr "투자 활동"
 
 msgid "Invite"
 msgstr "초대"
@@ -8101,25 +8101,25 @@ msgid "Net Book Value"
 msgstr "순 장부 가치"
 
 msgid "Net cash from financing activities"
-msgstr ""
+msgstr "재무 활동에서의 순 현금"
 
 msgid "Net cash from investing activities"
-msgstr ""
+msgstr "투자 활동에서의 순 현금"
 
 msgid "Net cash from operating activities"
-msgstr ""
+msgstr "영업 활동에서의 순 현금"
 
 msgid "Net cash from unclassified activities"
-msgstr ""
+msgstr "미분류 활동에서의 순 현금"
 
 msgid "Net Change"
 msgstr "순변동"
 
 msgid "Net change in cash"
-msgstr ""
+msgstr "현금의 순 변화"
 
 msgid "Net Income"
-msgstr ""
+msgstr "순이익"
 
 msgid "Never"
 msgstr "안 함"
@@ -8518,7 +8518,7 @@ msgid "No comments yet. Be the first to add a comment."
 msgstr "아직 댓글이 없습니다. 첫 댓글을 남겨보세요."
 
 msgid "No comparison"
-msgstr ""
+msgstr "비교 없음"
 
 msgid "No completed jobs within range"
 msgstr "해당 기간 내 완료된 작업이 없습니다"
@@ -8721,6 +8721,9 @@ msgstr "결과 없음"
 msgid "No results found"
 msgstr "결과가 없습니다"
 
+msgid "No Retained Earnings account found"
+msgstr "이월이익 계정을 찾을 수 없습니다"
+
 msgid "No rows here."
 msgstr "행이 없습니다."
 
@@ -8731,7 +8734,7 @@ msgid "No samples inspected yet."
 msgstr "아직 검사된 샘플이 없습니다."
 
 msgid "No saved views"
-msgstr ""
+msgstr "저장된 보기 없음"
 
 msgid "No single, trusted number for inventory or job status"
 msgstr "재고나 작업 상태를 나타내는 신뢰할 수 있는 단일 수치가 없음"
@@ -9073,13 +9076,13 @@ msgid "Opening balance of depreciation already booked before this asset was adde
 msgstr "이 자산이 Carbon에 등록되기 전에 이미 계상된 감가상각의 기초 잔액입니다(신규 취득 자산은 0을 사용하세요)."
 
 msgid "Opening Credit"
-msgstr ""
+msgstr "개시 신용"
 
 msgid "Opening Debit"
-msgstr ""
+msgstr "개시 차변"
 
 msgid "Operating Activities"
-msgstr ""
+msgstr "영업 활동"
 
 msgid "Operating Expenses"
 msgstr "영업비용"
@@ -9488,16 +9491,16 @@ msgstr "기간"
 msgid "Period close"
 msgstr "기간 종료"
 msgid "Period Credits"
-msgstr ""
+msgstr "기간 신용"
 
 msgid "Period Debits"
-msgstr ""
+msgstr "기간 차변"
 
 msgid "Period End"
 msgstr "기간 종료"
 
 msgid "Period…"
-msgstr ""
+msgstr "기간…"
 
 msgid "Periodic depreciation expense for fixed assets"
 msgstr "고정자산에 대한 정기 감가상각비"
@@ -9722,7 +9725,7 @@ msgid "Posted At"
 msgstr "전기 일시"
 
 msgid "Posted balance plus prior fiscal years' net income (computed, not posted)"
-msgstr ""
+msgstr "게시된 잔액 및 이전 회계연도의 순이익(계산됨, 게시 안 됨)"
 
 msgid "Posted By"
 msgstr "전기자"
@@ -9793,13 +9796,16 @@ msgstr "이전 날짜"
 msgid "Previous page"
 msgstr "이전 페이지"
 
+msgid "Previous period"
+msgstr "이전 기간"
+
 msgid "Previous step"
 msgstr "이전 단계"
 msgid "Previous period"
 msgstr ""
 
 msgid "Previous year"
-msgstr ""
+msgstr "지난 해"
 
 msgid "Price break actions"
 msgstr "가격 구간 작업"
@@ -9871,6 +9877,9 @@ msgstr "프린터"
 
 msgid "Printing"
 msgstr "인쇄"
+
+msgid "Prior-year income is shown inside Net Income. Add an account with type Retained Earnings to split retained earnings from current-year income."
+msgstr "전년도 소득은 순이익 내에 표시됩니다. 이월이익을 당해 소득과 분리하려면 이월이익 유형의 계정을 추가하세요."
 
 msgid "Priorities"
 msgstr "우선순위"
@@ -11031,7 +11040,7 @@ msgid "Run the floor on tablets: clock labor, report progress, see instructions"
 msgstr "태블릿으로 현장을 운영하세요: 근무 시간 기록, 진행 상황 보고, 작업 지시 확인"
 
 msgid "Running Balance"
-msgstr ""
+msgstr "누적 잔액"
 
 msgid "Running inventory after each week's supply and demand — the line."
 msgstr "매주 공급과 수요를 반영해 갱신되는 재고 — 그 라인입니다."
@@ -11182,13 +11191,13 @@ msgid "Save contacts"
 msgstr "연락처 저장"
 
 msgid "Save current view…"
-msgstr ""
+msgstr "현재 보기 저장…"
 
 msgid "Save Method"
 msgstr "저장 방법"
 
 msgid "Save view"
-msgstr ""
+msgstr "보기 저장"
 
 msgid "Save View"
 msgstr "보기 저장"
@@ -12122,7 +12131,7 @@ msgid "State / Province"
 msgstr "주/도"
 
 msgid "Statement of Cash Flows"
-msgstr ""
+msgstr "현금 흐름표"
 
 #. placeholder {0}: lotEntities.length
 #. placeholder {1}: Math.max(0, lotEntities.length - inspected)
@@ -13995,7 +14004,7 @@ msgid "Unreceived POs"
 msgstr "미입고 구매주문"
 
 msgid "Unreconciled difference"
-msgstr ""
+msgstr "미조정 차이"
 
 msgid "Unsaved changes"
 msgstr "저장되지 않은 변경 사항"
@@ -14379,7 +14388,7 @@ msgid "View missing values"
 msgstr "누락된 값 보기"
 
 msgid "View name"
-msgstr ""
+msgstr "보기 이름"
 
 msgid "View notes"
 msgstr "메모 보기"
@@ -14472,7 +14481,7 @@ msgid "View Transfer"
 msgstr "이동 보기"
 
 msgid "Views"
-msgstr ""
+msgstr "보기"
 
 msgid "Visibilities"
 msgstr "공개 범위"

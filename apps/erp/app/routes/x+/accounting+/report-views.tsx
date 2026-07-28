@@ -30,12 +30,16 @@ export async function action({ request }: ActionFunctionArgs) {
   if (validation.error) return validationError(validation.error);
 
   const { id, report, name, params } = validation.data;
-  let parsedParams: Record<string, string> = {};
+  let parsedParams: Record<string, string>;
   try {
     const parsed = JSON.parse(params);
-    if (parsed && typeof parsed === "object") parsedParams = parsed;
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+      return { success: false };
+    }
+    parsedParams = parsed;
   } catch {
-    parsedParams = {};
+    // Malformed params — refuse rather than silently persist a blank view.
+    return { success: false };
   }
 
   const result = await upsertReportView(client, {

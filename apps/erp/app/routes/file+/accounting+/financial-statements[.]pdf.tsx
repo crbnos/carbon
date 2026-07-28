@@ -159,6 +159,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
     currencyCode = parentCurrency;
     displayCompanyId = parentCompany?.id ?? displayCompanyId;
   } else {
+    // NOTE: For a single foreign-currency company the on-screen statements honor
+    // a `showTranslated` toggle (parent-currency translation via
+    // `translateCompanyBalances`), but this PDF always renders base-currency
+    // figures. Translated single-company export is a follow-up — it needs the
+    // tree's translated group-subtotal recomputation, which the flat `flattenAccounts`
+    // path here does not reproduce. Consolidated (multi-company) reports above are
+    // already parent-currency.
     const selectedCompanyId = selectedCompanyIds[0] ?? companyId;
     displayCompanyId = selectedCompanyId;
 
@@ -245,9 +252,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
   });
 
   const filenameDate = endDate ?? new Date().toISOString().split("T")[0];
+  // Strip characters that would break the quoted `filename` parameter — a
+  // company name is DB-sourced and may contain a `"` or CR/LF.
+  const safeCompanyName = companyName.replace(/["\r\n]/g, "");
   const headers = new Headers({
     "Content-Type": "application/pdf",
-    "Content-Disposition": `inline; filename="${companyName} - Financial Statements ${filenameDate}.pdf"`
+    "Content-Disposition": `inline; filename="${safeCompanyName} - Financial Statements ${filenameDate}.pdf"`
   });
   return new Response(new Uint8Array(body), { status: 200, headers });
 }

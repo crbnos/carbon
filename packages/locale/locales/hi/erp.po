@@ -50,7 +50,7 @@ msgstr "{0, plural, one {यह भाग 1 खुली परिवर्त�
 
 #. placeholder {0}: statement.unclassified.length
 msgid "{0} accounts have no cash flow activity — set an account type or override"
-msgstr ""
+msgstr "{0} खातों का कोई नकद प्रवाह गतिविधि नहीं है — खाता प्रकार सेट करें या अतिरिक्त करें"
 
 #. placeholder {0}: ar.count
 msgid "{0} customers with a balance"
@@ -155,7 +155,7 @@ msgid "/month/user"
 msgstr "/माह/उपयोगकर्ता"
 
 msgid "%"
-msgstr ""
+msgstr "%"
 
 msgid "% of Total"
 msgstr "कुल का %"
@@ -863,7 +863,7 @@ msgid "All {total} phases are done. Nice work — your team is up and running."
 msgstr "सभी {total} चरण पूरे हो गए। शानदार काम — आपकी टीम चल रही है।"
 
 msgid "All accounts"
-msgstr ""
+msgstr "सभी खाते"
 
 msgid "All actions selected"
 msgstr "सभी कार्य चयनित"
@@ -2213,16 +2213,16 @@ msgid "Cash & Banking"
 msgstr "नकद और बैंकिंग"
 
 msgid "Cash at beginning of period"
-msgstr ""
+msgstr "अवधि की शुरुआत में नकद"
 
 msgid "Cash at end of period"
-msgstr ""
+msgstr "अवधि के अंत में नकद"
 
 msgid "Cash Flow"
-msgstr ""
+msgstr "नकद प्रवाह"
 
 msgid "Cash Flow Activity"
-msgstr ""
+msgstr "नकद प्रवाह गतिविधि"
 
 msgid "Categories that classify how stock is stored"
 msgstr "स्टॉक को कैसे संग्रहीत किया जाता है, इसे वर्गीकृत करने वाली श्रेणियां"
@@ -2421,10 +2421,10 @@ msgid "Closing"
 msgstr "समापन"
 
 msgid "Closing Credit"
-msgstr ""
+msgstr "समापन क्रेडिट"
 
 msgid "Closing Debit"
-msgstr ""
+msgstr "समापन डेबिट"
 
 msgid "Closure blocked"
 msgstr "बंद करना अवरुद्ध"
@@ -2523,7 +2523,7 @@ msgid "Compare Supplier Quotes"
 msgstr "आपूर्तिकर्ता उद्धरणों की तुलना करें"
 
 msgid "Comparison"
-msgstr ""
+msgstr "तुलना"
 
 msgid "Complete"
 msgstr "पूर्ण करें"
@@ -3730,7 +3730,7 @@ msgid "Default"
 msgstr "डिफ़ॉल्ट"
 
 msgid "Default (from account type)"
-msgstr ""
+msgstr "डिफ़ॉल्ट (खाता प्रकार से)"
 
 msgid "Default account for posting sales revenue from invoices"
 msgstr "चालान से बिक्री राजस्व पोस्ट करने के लिए डिफ़ॉल्ट खाता"
@@ -4139,7 +4139,7 @@ msgid "Delete Unit of Measure"
 msgstr "माप की इकाई हटाएं"
 
 msgid "Delete view"
-msgstr ""
+msgstr "दृश्य हटाएं"
 
 msgid "Delete View"
 msgstr "दृश्य हटाएं"
@@ -4901,7 +4901,7 @@ msgid "Edit Work Center"
 msgstr "कार्य केंद्र संपादित करें"
 
 msgid "Effect of exchange rate changes on cash"
-msgstr ""
+msgstr "नकद पर विनिमय दर परिवर्तन का प्रभाव"
 
 msgid "Eliminated"
 msgstr "समाप्त किया गया"
@@ -5811,7 +5811,7 @@ msgstr "अंतिम रूप दें"
 msgid "Finalizing a fiscal month through the Open → Locked → Closed lifecycle; a closed period is frozen and its balances snapshotted, reversible only by explicit reopen."
 msgstr "खुली → लॉक की गई → बंद जीवनचक्र के माध्यम से एक वित्तीय माह को अंतिम रूप देना; एक बंद अवधि जमी हुई है और इसके संतुलन को स्नैपशॉट किया गया है, केवल स्पष्ट पुनः खुलने से उलटा है।"
 msgid "Financing Activities"
-msgstr ""
+msgstr "वित्तपोषण गतिविधियां"
 
 msgid "finish"
 msgstr "तैयार माल"
@@ -5981,7 +5981,7 @@ msgstr "FX G/L"
 #. placeholder {0}: p.fiscalYear
 #. placeholder {1}: p.periodNumber
 msgid "FY{0} · P{1}"
-msgstr ""
+msgstr "FY{0} · P{1}"
 
 msgid "Gain on Disposal"
 msgstr "निपटान पर लाभ"
@@ -6188,7 +6188,7 @@ msgid "GL contra-asset account that accumulates depreciation booked against fixe
 msgstr "GL विरोधी-संपत्ति खाता जो निश्चित संपत्तियों के खिलाफ बुक किए गए मूल्यह्रास को जमा करता है।"
 
 msgid "GL Detail"
-msgstr ""
+msgstr "GL विवरण"
 
 msgid "GL equity account (CTA reserve) that holds unrealized FX differences from re-translating foreign-currency balances at period-end; separate from realized FX gain/loss in P&L."
 msgstr "GL इक्विटी खाता (CTA रिजर्व) जो विदेशी मुद्रा की शेष राशि को पुनः अनुवाद करने से अवास्तविक विदेशी मुद्रा अंतर रखता है अवधि के अंत में; P&L में महसूस की गई विदेशी मुद्रा लाभ/हानि से अलग।"
@@ -6437,7 +6437,7 @@ msgstr "नमूना आकार कैसे तय किया जात�
 msgid "How this gauge is used — Standard (regular checks) or Master (calibrates other gauges)."
 msgstr "यह गेज कैसे उपयोग किया जाता है — मानक (नियमित जांच) या मास्टर (अन्य गेज को कैलिब्रेट करता है)।"
 msgid "How this account's period change is classified on the statement of cash flows. Default derives from the account type."
-msgstr ""
+msgstr "नकद प्रवाह विवरण पर इस खाते के अवधि परिवर्तन को कैसे वर्गीकृत किया जाता है। डिफ़ॉल्ट खाता प्रकार से लिया जाता है।"
 
 msgid "How this gauge is used — Standard (regular checks), Master (calibrates other gauges), or Reference (audit-only)."
 msgstr "इस गेज का उपयोग कैसे किया जाता है — मानक (नियमित जांच), मास्टर (अन्य गेज को कैलिब्रेट करता है), या संदर्भ (केवल ऑडिट)।"
@@ -6616,7 +6616,7 @@ msgstr "इनबॉक्स"
 msgid "Include a materials (bill of materials) section on the job traveler PDF with item numbers and quantities."
 msgstr "जॉब ट्रैवलर PDF में आइटम नंबर और मात्राओं के साथ बिल ऑफ मटेरियल्स अनुभाग शामिल करें।"
 msgid "Include drafts"
-msgstr ""
+msgstr "ड्राफ्ट शामिल करें"
 
 msgid "Include extra parts in shipment"
 msgstr "शिपमेंट में अतिरिक्त पार्ट्स शामिल करें"
@@ -6640,7 +6640,7 @@ msgid "Income Statement"
 msgstr "आय विवरण"
 
 msgid "Income statement activity for the current fiscal year (computed, not posted)"
-msgstr ""
+msgstr "वर्तमान वित्त वर्ष के लिए आय विवरण गतिविधि (गणना की गई, पोस्ट नहीं की गई)"
 
 msgid "Income/Balance"
 msgstr "आय/शेष"
@@ -6850,7 +6850,7 @@ msgid "Inventory Valuation"
 msgstr "इन्वेंटरी मूल्यांकन"
 
 msgid "Investing Activities"
-msgstr ""
+msgstr "निवेश गतिविधियां"
 
 msgid "Invite"
 msgstr "आमंत्रित करें"
@@ -8101,25 +8101,25 @@ msgid "Net Book Value"
 msgstr "नेट बुक वैल्यू"
 
 msgid "Net cash from financing activities"
-msgstr ""
+msgstr "वित्तपोषण गतिविधियों से शुद्ध नकद"
 
 msgid "Net cash from investing activities"
-msgstr ""
+msgstr "निवेश गतिविधियों से शुद्ध नकद"
 
 msgid "Net cash from operating activities"
-msgstr ""
+msgstr "परिचालन गतिविधियों से शुद्ध नकद"
 
 msgid "Net cash from unclassified activities"
-msgstr ""
+msgstr "अवर्गीकृत गतिविधियों से शुद्ध नकद"
 
 msgid "Net Change"
 msgstr "शुद्ध परिवर्तन"
 
 msgid "Net change in cash"
-msgstr ""
+msgstr "नकद में शुद्ध परिवर्तन"
 
 msgid "Net Income"
-msgstr ""
+msgstr "शुद्ध आय"
 
 msgid "Never"
 msgstr "कभी नहीं"
@@ -8518,7 +8518,7 @@ msgid "No comments yet. Be the first to add a comment."
 msgstr "अभी तक कोई टिप्पणी नहीं है। टिप्पणी जोड़ने वाले पहले व्यक्ति बनें।"
 
 msgid "No comparison"
-msgstr ""
+msgstr "कोई तुलना नहीं"
 
 msgid "No completed jobs within range"
 msgstr "निर्धारित सीमा के भीतर कोई पूर्ण किए गए कार्य नहीं"
@@ -8721,6 +8721,9 @@ msgstr "कोई परिणाम नहीं"
 msgid "No results found"
 msgstr "कोई परिणाम नहीं मिला"
 
+msgid "No Retained Earnings account found"
+msgstr "कोई अवधारित आय खाता नहीं मिला"
+
 msgid "No rows here."
 msgstr "यहाँ कोई पंक्तियाँ नहीं हैं।"
 
@@ -8731,7 +8734,7 @@ msgid "No samples inspected yet."
 msgstr "अभी तक कोई नमूना निरीक्षण नहीं किया गया है।"
 
 msgid "No saved views"
-msgstr ""
+msgstr "कोई सहेजे गए दृश्य नहीं"
 
 msgid "No single, trusted number for inventory or job status"
 msgstr "इन्वेंटरी या जॉब स्थिति के लिए कोई एकल, विश्वसनीय संख्या नहीं"
@@ -9073,13 +9076,13 @@ msgid "Opening balance of depreciation already booked before this asset was adde
 msgstr "अवक्षयण का खाता खोलने के संतुलन को पहले ही बुक किया गया है इससे पहले कि यह संपत्ति Carbon में जोड़ी गई थी (नई खरीद के लिए 0 का उपयोग करें)।"
 
 msgid "Opening Credit"
-msgstr ""
+msgstr "उद्घाटन क्रेडिट"
 
 msgid "Opening Debit"
-msgstr ""
+msgstr "उद्घाटन डेबिट"
 
 msgid "Operating Activities"
-msgstr ""
+msgstr "परिचालन गतिविधियां"
 
 msgid "Operating Expenses"
 msgstr "परिचालन व्यय"
@@ -9488,16 +9491,16 @@ msgstr "अवधि"
 msgid "Period close"
 msgstr "अवधि बंद"
 msgid "Period Credits"
-msgstr ""
+msgstr "अवधि क्रेडिट"
 
 msgid "Period Debits"
-msgstr ""
+msgstr "अवधि डेबिट"
 
 msgid "Period End"
 msgstr "अवधि का अंत"
 
 msgid "Period…"
-msgstr ""
+msgstr "अवधि…"
 
 msgid "Periodic depreciation expense for fixed assets"
 msgstr "पिकिंग ट्रैक किए गए इकाइयों को सबसे पहले समाप्ति के क्रम में प्रदान करती है, इसलिए सबसे जल्दी समाप्त होने वाला स्टॉक डिफ़ॉल्ट रूप से पहले छोड़ा जाता है।"
@@ -9722,7 +9725,7 @@ msgid "Posted At"
 msgstr "पोस्ट किया गया"
 
 msgid "Posted balance plus prior fiscal years' net income (computed, not posted)"
-msgstr ""
+msgstr "पोस्ट किए गए शेष राशि और पूर्व वित्त वर्षों की शुद्ध आय (गणना की गई, पोस्ट नहीं की गई)"
 
 msgid "Posted By"
 msgstr "द्वारा पोस्ट किया गया"
@@ -9793,13 +9796,16 @@ msgstr "पिछली तारीख"
 msgid "Previous page"
 msgstr "पिछला पृष्ठ"
 
+msgid "Previous period"
+msgstr "पिछली अवधि"
+
 msgid "Previous step"
 msgstr "पिछला कदम"
 msgid "Previous period"
 msgstr ""
 
 msgid "Previous year"
-msgstr ""
+msgstr "पिछला वर्ष"
 
 msgid "Price break actions"
 msgstr "मूल्य विराम क्रियाएं"
@@ -9871,6 +9877,9 @@ msgstr "प्रिंटर"
 
 msgid "Printing"
 msgstr "मुद्रण"
+
+msgid "Prior-year income is shown inside Net Income. Add an account with type Retained Earnings to split retained earnings from current-year income."
+msgstr "पूर्व-वर्ष आय शुद्ध आय के अंदर दिखाई जाती है। पूर्व-आय को वर्तमान वर्ष की आय से अलग करने के लिए प्रकार अवधारित आय के साथ एक खाता जोड़ें।"
 
 msgid "Priorities"
 msgstr "प्राथमिकताएं"
@@ -11031,7 +11040,7 @@ msgid "Run the floor on tablets: clock labor, report progress, see instructions"
 msgstr "टैबलेट पर फ़्लोर चलाएं: श्रम घड़ी, प्रगति रिपोर्ट करें, निर्देश देखें"
 
 msgid "Running Balance"
-msgstr ""
+msgstr "चलती हुई शेष राशि"
 
 msgid "Running inventory after each week's supply and demand — the line."
 msgstr "प्रत्येक सप्ताह की आपूर्ति और मांग के बाद चलाई जाने वाली इन्वेंटरी — पंक्ति।"
@@ -11182,13 +11191,13 @@ msgid "Save contacts"
 msgstr "संपर्क सहेजें"
 
 msgid "Save current view…"
-msgstr ""
+msgstr "वर्तमान दृश्य सहेजें…"
 
 msgid "Save Method"
 msgstr "विधि सहेजें"
 
 msgid "Save view"
-msgstr ""
+msgstr "दृश्य सहेजें"
 
 msgid "Save View"
 msgstr "दृश्य सहेजें"
@@ -12122,7 +12131,7 @@ msgid "State / Province"
 msgstr "राज्य / प्रांत"
 
 msgid "Statement of Cash Flows"
-msgstr ""
+msgstr "नकदी प्रवाह विवरण"
 
 #. placeholder {0}: lotEntities.length
 #. placeholder {1}: Math.max(0, lotEntities.length - inspected)
@@ -13995,7 +14004,7 @@ msgid "Unreceived POs"
 msgstr "अप्राप्त POs"
 
 msgid "Unreconciled difference"
-msgstr ""
+msgstr "असंतुष्ट अंतर"
 
 msgid "Unsaved changes"
 msgstr "असहेजे परिवर्तन"
@@ -14379,7 +14388,7 @@ msgid "View missing values"
 msgstr "लापता मानों को देखें"
 
 msgid "View name"
-msgstr ""
+msgstr "दृश्य का नाम"
 
 msgid "View notes"
 msgstr "नोट्स देखें"
@@ -14472,7 +14481,7 @@ msgid "View Transfer"
 msgstr "ट्रांसफर देखें"
 
 msgid "Views"
-msgstr ""
+msgstr "दृश्य"
 
 msgid "Visibilities"
 msgstr "दृश्यता"

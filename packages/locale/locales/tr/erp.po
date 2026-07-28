@@ -50,7 +50,7 @@ msgstr "{0, plural, one {Bu parça 1 açık değişiklik bildirisinde yer alıyo
 
 #. placeholder {0}: statement.unclassified.length
 msgid "{0} accounts have no cash flow activity — set an account type or override"
-msgstr ""
+msgstr "{0} hesabının nakit akışı faaliyeti yok — bir hesap türü ayarlayın veya geçersiz kılın"
 
 #. placeholder {0}: ar.count
 msgid "{0} customers with a balance"
@@ -155,7 +155,7 @@ msgid "/month/user"
 msgstr "/ay/kullanıcı"
 
 msgid "%"
-msgstr ""
+msgstr "%"
 
 msgid "% of Total"
 msgstr "% Toplam"
@@ -863,7 +863,7 @@ msgid "All {total} phases are done. Nice work — your team is up and running."
 msgstr "Tüm {total} aşama tamamlandı. Harika iş — ekibiniz çalışmaya başladı."
 
 msgid "All accounts"
-msgstr ""
+msgstr "Tüm hesaplar"
 
 msgid "All actions selected"
 msgstr "Tüm eylemler seçildi"
@@ -2213,16 +2213,16 @@ msgid "Cash & Banking"
 msgstr "Nakit ve Bankacılık"
 
 msgid "Cash at beginning of period"
-msgstr ""
+msgstr "Dönem başında nakit"
 
 msgid "Cash at end of period"
-msgstr ""
+msgstr "Dönem sonunda nakit"
 
 msgid "Cash Flow"
-msgstr ""
+msgstr "Nakit Akışı"
 
 msgid "Cash Flow Activity"
-msgstr ""
+msgstr "Nakit Akışı Faaliyeti"
 
 msgid "Categories that classify how stock is stored"
 msgstr "Stokun nasıl depolandığını sınıflandıran kategoriler"
@@ -2421,10 +2421,10 @@ msgid "Closing"
 msgstr "Kapanış"
 
 msgid "Closing Credit"
-msgstr ""
+msgstr "Kapanış Kredisi"
 
 msgid "Closing Debit"
-msgstr ""
+msgstr "Kapanış Borcu"
 
 msgid "Closure blocked"
 msgstr "Kapanış engellendi"
@@ -2523,7 +2523,7 @@ msgid "Compare Supplier Quotes"
 msgstr "Tedarikçi Tekliflerini Karşılaştır"
 
 msgid "Comparison"
-msgstr ""
+msgstr "Karşılaştırma"
 
 msgid "Complete"
 msgstr "Tamamla"
@@ -3730,7 +3730,7 @@ msgid "Default"
 msgstr "Varsayılan"
 
 msgid "Default (from account type)"
-msgstr ""
+msgstr "Varsayılan (hesap türünden)"
 
 msgid "Default account for posting sales revenue from invoices"
 msgstr "Faturalardan satış gelirini kaydetmek için varsayılan hesap"
@@ -4139,7 +4139,7 @@ msgid "Delete Unit of Measure"
 msgstr "Ölçü Birimini Sil"
 
 msgid "Delete view"
-msgstr ""
+msgstr "Görünümü sil"
 
 msgid "Delete View"
 msgstr "Görünümü Sil"
@@ -4901,7 +4901,7 @@ msgid "Edit Work Center"
 msgstr "İş Merkezi Düzenle"
 
 msgid "Effect of exchange rate changes on cash"
-msgstr ""
+msgstr "Döviz kuru değişikliklerinin nakit üzerindeki etkisi"
 
 msgid "Eliminated"
 msgstr "Ortadan Kaldırılmış"
@@ -5811,7 +5811,7 @@ msgstr "Onayla"
 msgid "Finalizing a fiscal month through the Open → Locked → Closed lifecycle; a closed period is frozen and its balances snapshotted, reversible only by explicit reopen."
 msgstr "Mali bir ayı Açık → Kilitli → Kapalı yaşam döngüsü aracılığıyla sonlandırma; kapalı bir dönem donmuştur ve bakiyeleri anlık görüntülenmiş, yalnızca açık yeniden açılarak tersine çevrilebilir."
 msgid "Financing Activities"
-msgstr ""
+msgstr "Finansman Faaliyetleri"
 
 msgid "finish"
 msgstr "Bitmiş ürünler"
@@ -5981,7 +5981,7 @@ msgstr "FX K/Z"
 #. placeholder {0}: p.fiscalYear
 #. placeholder {1}: p.periodNumber
 msgid "FY{0} · P{1}"
-msgstr ""
+msgstr "FY{0} · P{1}"
 
 msgid "Gain on Disposal"
 msgstr "Elden Çıkarmada Kar"
@@ -6188,7 +6188,7 @@ msgid "GL contra-asset account that accumulates depreciation booked against fixe
 msgstr "Sabit varlıklara karşı kaydedilen amortismanı biriken GL contra-aktif hesabı."
 
 msgid "GL Detail"
-msgstr ""
+msgstr "GL Detayı"
 
 msgid "GL equity account (CTA reserve) that holds unrealized FX differences from re-translating foreign-currency balances at period-end; separate from realized FX gain/loss in P&L."
 msgstr "Öz sermaye GL hesabı (CTA rezervi) dönem sonunda yabancı para birimi bakiyelerinin retradüksiyonundan kaynaklanan gerçekleşmemiş FX farklarını tutar; P&L'deki gerçekleşmiş FX kazancı/kaybından ayrı."
@@ -6437,7 +6437,7 @@ msgstr "Örnek boyutu nasıl kararlaştırılır — Tümünü İncele, İlk N'y
 msgid "How this gauge is used — Standard (regular checks) or Master (calibrates other gauges)."
 msgstr "Bu göstergenin nasıl kullanıldığı — Standart (düzenli kontroller) veya Ana (diğer göstergeleri kalibre eder)."
 msgid "How this account's period change is classified on the statement of cash flows. Default derives from the account type."
-msgstr ""
+msgstr "Bu hesabın dönem değişikliğinin nakit akışı tablosunda nasıl sınıflandırıldığı. Varsayılan, hesap türünden türetilir."
 
 msgid "How this gauge is used — Standard (regular checks), Master (calibrates other gauges), or Reference (audit-only)."
 msgstr "Bu ölçü nasıl kullanılır — Standart (düzenli kontroller), Ana (diğer ölçümleri kalibre eder) veya Referans (yalnızca denetim)."
@@ -6616,7 +6616,7 @@ msgstr "Gelen Kutusu"
 msgid "Include a materials (bill of materials) section on the job traveler PDF with item numbers and quantities."
 msgstr "İş yolcu PDF'sine malzemeleri (malzeme listesi) bölümü, madde numaraları ve miktarlarıyla birlikte ekleyin."
 msgid "Include drafts"
-msgstr ""
+msgstr "Taslakları dahil et"
 
 msgid "Include extra parts in shipment"
 msgstr "Fazla parçaları sevkiyata dahil et"
@@ -6640,7 +6640,7 @@ msgid "Income Statement"
 msgstr "Gelir Tablosu"
 
 msgid "Income statement activity for the current fiscal year (computed, not posted)"
-msgstr ""
+msgstr "Cari mali yıl için gelir tablosu faaliyeti (hesaplanmış, nakitlenmemiş)"
 
 msgid "Income/Balance"
 msgstr "Gelir/Bakiye"
@@ -6850,7 +6850,7 @@ msgid "Inventory Valuation"
 msgstr "Envanter Değerlemesi"
 
 msgid "Investing Activities"
-msgstr ""
+msgstr "Yatırım Faaliyetleri"
 
 msgid "Invite"
 msgstr "Davet et"
@@ -8101,25 +8101,25 @@ msgid "Net Book Value"
 msgstr "Net Defter Değeri"
 
 msgid "Net cash from financing activities"
-msgstr ""
+msgstr "Finansman faaliyetlerinden net nakit"
 
 msgid "Net cash from investing activities"
-msgstr ""
+msgstr "Yatırım faaliyetlerinden net nakit"
 
 msgid "Net cash from operating activities"
-msgstr ""
+msgstr "İşletme faaliyetlerinden net nakit"
 
 msgid "Net cash from unclassified activities"
-msgstr ""
+msgstr "Sınıflandırılmamış faaliyetlerden net nakit"
 
 msgid "Net Change"
 msgstr "Net Değişim"
 
 msgid "Net change in cash"
-msgstr ""
+msgstr "Nakitteki net değişim"
 
 msgid "Net Income"
-msgstr ""
+msgstr "Net Gelir"
 
 msgid "Never"
 msgstr "Asla"
@@ -8518,7 +8518,7 @@ msgid "No comments yet. Be the first to add a comment."
 msgstr "Henüz yorum yok. İlk yorumu siz yapın."
 
 msgid "No comparison"
-msgstr ""
+msgstr "Karşılaştırma yok"
 
 msgid "No completed jobs within range"
 msgstr "Belirtilen aralıkta tamamlanmış iş yok"
@@ -8721,6 +8721,9 @@ msgstr "Sonuç bulunamadı"
 msgid "No results found"
 msgstr "Sonuç bulunamadı"
 
+msgid "No Retained Earnings account found"
+msgstr "Geçmiş Kazançlar hesabı bulunamadı"
+
 msgid "No rows here."
 msgstr "Burada satır yok."
 
@@ -8731,7 +8734,7 @@ msgid "No samples inspected yet."
 msgstr "Henüz örnek incelenmedi."
 
 msgid "No saved views"
-msgstr ""
+msgstr "Kaydedilen görünüm yok"
 
 msgid "No single, trusted number for inventory or job status"
 msgstr "Envanter veya iş durumu için tek bir güvenilir sayı yok"
@@ -9073,13 +9076,13 @@ msgid "Opening balance of depreciation already booked before this asset was adde
 msgstr "Bu varlık Carbon'a eklenmeden önce zaten deftere geçirilmiş amortismanın açılış bakiyesi (yeni satın almalar için 0 kullanın)."
 
 msgid "Opening Credit"
-msgstr ""
+msgstr "Açılış Kredisi"
 
 msgid "Opening Debit"
-msgstr ""
+msgstr "Açılış Borcu"
 
 msgid "Operating Activities"
-msgstr ""
+msgstr "İşletme Faaliyetleri"
 
 msgid "Operating Expenses"
 msgstr "İşletme Giderleri"
@@ -9488,16 +9491,16 @@ msgstr "Dönem"
 msgid "Period close"
 msgstr "Dönem Kapanışı"
 msgid "Period Credits"
-msgstr ""
+msgstr "Dönem Kredileri"
 
 msgid "Period Debits"
-msgstr ""
+msgstr "Dönem Borçları"
 
 msgid "Period End"
 msgstr "Dönem Sonu"
 
 msgid "Period…"
-msgstr ""
+msgstr "Dönem…"
 
 msgid "Periodic depreciation expense for fixed assets"
 msgstr "Toplama, izlenen varlıkları en erken son kullanma tarihine göre sunar, bu nedenle en erken son kullanma tarihine sahip stok varsayılan olarak ilk olarak çıkar."
@@ -9722,7 +9725,7 @@ msgid "Posted At"
 msgstr "Gönderilen Tarih"
 
 msgid "Posted balance plus prior fiscal years' net income (computed, not posted)"
-msgstr ""
+msgstr "Nakitlenmemiş bakiye artı önceki mali yılların net geliri (hesaplanmış, nakitlenmemiş)"
 
 msgid "Posted By"
 msgstr "Gönderen"
@@ -9793,13 +9796,16 @@ msgstr "Önceki Tarih"
 msgid "Previous page"
 msgstr "Önceki sayfa"
 
+msgid "Previous period"
+msgstr "Önceki dönem"
+
 msgid "Previous step"
 msgstr "Önceki adım"
 msgid "Previous period"
 msgstr ""
 
 msgid "Previous year"
-msgstr ""
+msgstr "Geçen yıl"
 
 msgid "Price break actions"
 msgstr "Fiyat kırılımı işlemleri"
@@ -9871,6 +9877,9 @@ msgstr "Yazıcılar"
 
 msgid "Printing"
 msgstr "Baskı"
+
+msgid "Prior-year income is shown inside Net Income. Add an account with type Retained Earnings to split retained earnings from current-year income."
+msgstr "Önceki yılın geliri Net Gelir içinde gösterilir. Geçmiş kazançları cari yıl gelirinden ayırmak için Geçmiş Kazançlar türünde bir hesap ekleyin."
 
 msgid "Priorities"
 msgstr "Öncelikler"
@@ -11031,7 +11040,7 @@ msgid "Run the floor on tablets: clock labor, report progress, see instructions"
 msgstr "Tabletlerde üretim katını yönetin: işçi saatini kaydedin, ilerlemeyi bildirin, talimatları görüntüleyin"
 
 msgid "Running Balance"
-msgstr ""
+msgstr "Çalışan Bakiye"
 
 msgid "Running inventory after each week's supply and demand — the line."
 msgstr "Her haftalık arz ve talep sonrası çalışan envanter — satır."
@@ -11182,13 +11191,13 @@ msgid "Save contacts"
 msgstr "Kişileri kaydet"
 
 msgid "Save current view…"
-msgstr ""
+msgstr "Geçerli görünümü kaydet…"
 
 msgid "Save Method"
 msgstr "Yöntemi Kaydet"
 
 msgid "Save view"
-msgstr ""
+msgstr "Görünümü kaydet"
 
 msgid "Save View"
 msgstr "Görünümü Kaydet"
@@ -12122,7 +12131,7 @@ msgid "State / Province"
 msgstr "Eyalet / İl"
 
 msgid "Statement of Cash Flows"
-msgstr ""
+msgstr "Nakit Akış Tablosu"
 
 #. placeholder {0}: lotEntities.length
 #. placeholder {1}: Math.max(0, lotEntities.length - inspected)
@@ -13995,7 +14004,7 @@ msgid "Unreceived POs"
 msgstr "Alınmamış PO'lar"
 
 msgid "Unreconciled difference"
-msgstr ""
+msgstr "Mutabakat edilmemiş fark"
 
 msgid "Unsaved changes"
 msgstr "Kaydedilmemiş değişiklikler"
@@ -14379,7 +14388,7 @@ msgid "View missing values"
 msgstr "Eksik değerleri görüntüle"
 
 msgid "View name"
-msgstr ""
+msgstr "Görünüm adı"
 
 msgid "View notes"
 msgstr "Notları görüntüle"
@@ -14472,7 +14481,7 @@ msgid "View Transfer"
 msgstr "Transferi Görüntüle"
 
 msgid "Views"
-msgstr ""
+msgstr "Görünümler"
 
 msgid "Visibilities"
 msgstr "Görünürlükler"

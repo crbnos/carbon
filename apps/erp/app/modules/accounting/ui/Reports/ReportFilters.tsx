@@ -87,7 +87,15 @@ const ReportFilters = ({
         {periods && periods.length > 0 && (
           <select
             className="h-8 rounded-md border border-input bg-background px-2 text-sm"
-            defaultValue=""
+            // Controlled by the applied date range so "Reset" (which clears
+            // startDate/endDate) visibly returns the picker to "Period…".
+            value={
+              periods.find(
+                (p) =>
+                  p.startDate === params.get("startDate") &&
+                  p.endDate === params.get("endDate")
+              )?.id ?? ""
+            }
             onChange={(e) => {
               const period = periods.find((p) => p.id === e.target.value);
               if (period)

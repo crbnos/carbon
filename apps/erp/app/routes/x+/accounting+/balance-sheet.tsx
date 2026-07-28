@@ -3,6 +3,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { Alert, AlertDescription, AlertTitle, VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
+import { useLingui } from "@lingui/react/macro";
 import { useState } from "react";
 import { LuTriangleAlert } from "react-icons/lu";
 import type { LoaderFunctionArgs } from "react-router";
@@ -240,6 +241,7 @@ export default function BalanceSheetRoute() {
     views,
     periods
   } = useLoaderData<typeof loader>();
+  const { t } = useLingui();
   const [search, setSearch] = useState("");
   const [params] = useUrlParams();
   const endDate =
@@ -280,11 +282,9 @@ export default function BalanceSheetRoute() {
       {warnings.includes("no-retained-earnings-account") && (
         <Alert variant="warning" className="rounded-none border-x-0">
           <LuTriangleAlert className="h-4 w-4" />
-          <AlertTitle>No Retained Earnings account found</AlertTitle>
+          <AlertTitle>{t`No Retained Earnings account found`}</AlertTitle>
           <AlertDescription>
-            Prior-year income is shown inside Net Income. Add an account with
-            type Retained Earnings to split retained earnings from current-year
-            income.
+            {t`Prior-year income is shown inside Net Income. Add an account with type Retained Earnings to split retained earnings from current-year income.`}
           </AlertDescription>
         </Alert>
       )}

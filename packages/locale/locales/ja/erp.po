@@ -50,7 +50,7 @@ msgstr "{0, plural, one {このパーツは1つの開いた変更通知に含ま
 
 #. placeholder {0}: statement.unclassified.length
 msgid "{0} accounts have no cash flow activity — set an account type or override"
-msgstr ""
+msgstr "{0}個のアカウントに現金流の活動がありません。アカウントタイプを設定するか、オーバーライドしてください"
 
 #. placeholder {0}: ar.count
 msgid "{0} customers with a balance"
@@ -155,7 +155,7 @@ msgid "/month/user"
 msgstr "/月/ユーザー"
 
 msgid "%"
-msgstr ""
+msgstr "%"
 
 msgid "% of Total"
 msgstr "総量比"
@@ -863,7 +863,7 @@ msgid "All {total} phases are done. Nice work — your team is up and running."
 msgstr "すべての{total}フェーズが完了しました。素晴らしい仕事です。チームが稼働しています。"
 
 msgid "All accounts"
-msgstr ""
+msgstr "すべてのアカウント"
 
 msgid "All actions selected"
 msgstr "すべてのアクションが選択されました"
@@ -2213,16 +2213,16 @@ msgid "Cash & Banking"
 msgstr "現金と銀行"
 
 msgid "Cash at beginning of period"
-msgstr ""
+msgstr "期間開始時の現金"
 
 msgid "Cash at end of period"
-msgstr ""
+msgstr "期間終了時の現金"
 
 msgid "Cash Flow"
-msgstr ""
+msgstr "キャッシュフロー"
 
 msgid "Cash Flow Activity"
-msgstr ""
+msgstr "キャッシュフロー活動"
 
 msgid "Categories that classify how stock is stored"
 msgstr "在庫がどのように保管されるかを分類するカテゴリ"
@@ -2421,10 +2421,10 @@ msgid "Closing"
 msgstr "終了残高"
 
 msgid "Closing Credit"
-msgstr ""
+msgstr "決算クレジット"
 
 msgid "Closing Debit"
-msgstr ""
+msgstr "決算デビット"
 
 msgid "Closure blocked"
 msgstr "完了がブロックされています"
@@ -2523,7 +2523,7 @@ msgid "Compare Supplier Quotes"
 msgstr "サプライヤー見積もりを比較"
 
 msgid "Comparison"
-msgstr ""
+msgstr "比較"
 
 msgid "Complete"
 msgstr "完了"
@@ -3730,7 +3730,7 @@ msgid "Default"
 msgstr "デフォルト"
 
 msgid "Default (from account type)"
-msgstr ""
+msgstr "デフォルト(アカウントタイプから)"
 
 msgid "Default account for posting sales revenue from invoices"
 msgstr "請求書からの売上収益を記録するためのデフォルト口座"
@@ -4139,7 +4139,7 @@ msgid "Delete Unit of Measure"
 msgstr "測定単位を削除"
 
 msgid "Delete view"
-msgstr ""
+msgstr "ビューを削除"
 
 msgid "Delete View"
 msgstr "ビューを削除"
@@ -4901,7 +4901,7 @@ msgid "Edit Work Center"
 msgstr "ワークセンターを編集"
 
 msgid "Effect of exchange rate changes on cash"
-msgstr ""
+msgstr "為替レート変動のキャッシュへの影響"
 
 msgid "Eliminated"
 msgstr "削除済み"
@@ -5811,7 +5811,7 @@ msgstr "確定"
 msgid "Finalizing a fiscal month through the Open → Locked → Closed lifecycle; a closed period is frozen and its balances snapshotted, reversible only by explicit reopen."
 msgstr "開始 → ロック → クローズ ライフサイクルを通じて会計月をファイナライズします。クローズされた期間は凍結され、残高がスナップショットされ、明示的な再開でのみ取り消せます。"
 msgid "Financing Activities"
-msgstr ""
+msgstr "財務活動"
 
 msgid "finish"
 msgstr "完成品"
@@ -5981,7 +5981,7 @@ msgstr "FX G/L"
 #. placeholder {0}: p.fiscalYear
 #. placeholder {1}: p.periodNumber
 msgid "FY{0} · P{1}"
-msgstr ""
+msgstr "FY{0}·P{1}"
 
 msgid "Gain on Disposal"
 msgstr "処分益"
@@ -6188,7 +6188,7 @@ msgid "GL contra-asset account that accumulates depreciation booked against fixe
 msgstr "固定資産に対して記録された減価償却を累積するGL反対資産勘定。"
 
 msgid "GL Detail"
-msgstr ""
+msgstr "GL詳細"
 
 msgid "GL equity account (CTA reserve) that holds unrealized FX differences from re-translating foreign-currency balances at period-end; separate from realized FX gain/loss in P&L."
 msgstr "GL株主資本勘定（CTA準備金）は、期末時点で外貨残高を再変換することから生じる未実現FX差異を保有しています。 P&Lの実現FX利得/損失とは別。"
@@ -6437,7 +6437,7 @@ msgstr "サンプルサイズがどのように決定されるか—すべてを
 msgid "How this gauge is used — Standard (regular checks) or Master (calibrates other gauges)."
 msgstr "このゲージの使用方法。標準 (定期的なチェック) またはマスター (他のゲージをキャリブレーション)。"
 msgid "How this account's period change is classified on the statement of cash flows. Default derives from the account type."
-msgstr ""
+msgstr "このアカウントの期間変更がキャッシュフロー計算書にどのように分類されるかについて。デフォルトはアカウントタイプから派生します。"
 
 msgid "How this gauge is used — Standard (regular checks), Master (calibrates other gauges), or Reference (audit-only)."
 msgstr "このゲージの使用方法—標準（定期チェック）、マスター（他のゲージを校正）、またはリファレンス（監査のみ）。"
@@ -6616,7 +6616,7 @@ msgstr "受信トレイ"
 msgid "Include a materials (bill of materials) section on the job traveler PDF with item numbers and quantities."
 msgstr "ジョブトラベラーPDFに品目番号と数量を含む材料（部品表）セクションを含める。"
 msgid "Include drafts"
-msgstr ""
+msgstr "ドラフトを含める"
 
 msgid "Include extra parts in shipment"
 msgstr "出荷に追加部品を含める"
@@ -6640,7 +6640,7 @@ msgid "Income Statement"
 msgstr "損益計算書"
 
 msgid "Income statement activity for the current fiscal year (computed, not posted)"
-msgstr ""
+msgstr "当年度の収益計算書活動(計算、未転記)"
 
 msgid "Income/Balance"
 msgstr "収入/残高"
@@ -6850,7 +6850,7 @@ msgid "Inventory Valuation"
 msgstr "在庫評価"
 
 msgid "Investing Activities"
-msgstr ""
+msgstr "投資活動"
 
 msgid "Invite"
 msgstr "招待"
@@ -8101,25 +8101,25 @@ msgid "Net Book Value"
 msgstr "純簿価額"
 
 msgid "Net cash from financing activities"
-msgstr ""
+msgstr "財務活動からの純現金"
 
 msgid "Net cash from investing activities"
-msgstr ""
+msgstr "投資活動からの純現金"
 
 msgid "Net cash from operating activities"
-msgstr ""
+msgstr "営業活動からの純現金"
 
 msgid "Net cash from unclassified activities"
-msgstr ""
+msgstr "未分類活動からの純現金"
 
 msgid "Net Change"
 msgstr "純変化"
 
 msgid "Net change in cash"
-msgstr ""
+msgstr "現金の純変化"
 
 msgid "Net Income"
-msgstr ""
+msgstr "純利益"
 
 msgid "Never"
 msgstr "なし"
@@ -8518,7 +8518,7 @@ msgid "No comments yet. Be the first to add a comment."
 msgstr "まだコメントがありません。最初のコメントを追加してください。"
 
 msgid "No comparison"
-msgstr ""
+msgstr "比較なし"
 
 msgid "No completed jobs within range"
 msgstr "範囲内に完了したジョブがありません"
@@ -8721,6 +8721,9 @@ msgstr "結果がありません"
 msgid "No results found"
 msgstr "検索結果が見つかりません"
 
+msgid "No Retained Earnings account found"
+msgstr "利益剰余金勘定が見つかりません"
+
 msgid "No rows here."
 msgstr "ここに行はありません。"
 
@@ -8731,7 +8734,7 @@ msgid "No samples inspected yet."
 msgstr "まだサンプルが検査されていません。"
 
 msgid "No saved views"
-msgstr ""
+msgstr "保存されたビューがありません"
 
 msgid "No single, trusted number for inventory or job status"
 msgstr "在庫またはジョブステータスの単一の信頼できる数値がない"
@@ -9073,13 +9076,13 @@ msgid "Opening balance of depreciation already booked before this asset was adde
 msgstr "このアセットがCarbonに追加される前に既に予約されていた減価償却の期首残高（新規取得の場合は0を使用してください）。"
 
 msgid "Opening Credit"
-msgstr ""
+msgstr "期首クレジット"
 
 msgid "Opening Debit"
-msgstr ""
+msgstr "期首デビット"
 
 msgid "Operating Activities"
-msgstr ""
+msgstr "営業活動"
 
 msgid "Operating Expenses"
 msgstr "営業費"
@@ -9488,16 +9491,16 @@ msgstr "期間"
 msgid "Period close"
 msgstr "期間クローズ"
 msgid "Period Credits"
-msgstr ""
+msgstr "期間クレジット"
 
 msgid "Period Debits"
-msgstr ""
+msgstr "期間デビット"
 
 msgid "Period End"
 msgstr "期間終了"
 
 msgid "Period…"
-msgstr ""
+msgstr "期間…"
 
 msgid "Periodic depreciation expense for fixed assets"
 msgstr "ピッキングは追跡対象エンティティを最も早い有効期限順に提供するため、デフォルトで最初に期限切れになる在庫が最初に出庫されます。"
@@ -9722,7 +9725,7 @@ msgid "Posted At"
 msgstr "投稿日時"
 
 msgid "Posted balance plus prior fiscal years' net income (computed, not posted)"
-msgstr ""
+msgstr "転記済残高および前年度の純利益(計算、未転記)"
 
 msgid "Posted By"
 msgstr "投稿者"
@@ -9793,13 +9796,16 @@ msgstr "前の日付"
 msgid "Previous page"
 msgstr "前のページ"
 
+msgid "Previous period"
+msgstr "前期"
+
 msgid "Previous step"
 msgstr "前のステップ"
 msgid "Previous period"
 msgstr ""
 
 msgid "Previous year"
-msgstr ""
+msgstr "前年度"
 
 msgid "Price break actions"
 msgstr "価格ブレークアクション"
@@ -9871,6 +9877,9 @@ msgstr "プリンター"
 
 msgid "Printing"
 msgstr "印刷"
+
+msgid "Prior-year income is shown inside Net Income. Add an account with type Retained Earnings to split retained earnings from current-year income."
+msgstr "前年度の収入は純利益に表示されます。前年度の収入から保有利益を分割するために、利益剰余金タイプのアカウントを追加します。"
 
 msgid "Priorities"
 msgstr "優先度"
@@ -11031,7 +11040,7 @@ msgid "Run the floor on tablets: clock labor, report progress, see instructions"
 msgstr "タブレットでフロアを運用：労働時間を記録、進捗を報告、指示を確認"
 
 msgid "Running Balance"
-msgstr ""
+msgstr "実行バランス"
 
 msgid "Running inventory after each week's supply and demand — the line."
 msgstr "毎週の需給の後に実行されるインベントリ — ラインです。"
@@ -11182,13 +11191,13 @@ msgid "Save contacts"
 msgstr "連絡先を保存"
 
 msgid "Save current view…"
-msgstr ""
+msgstr "現在のビューを保存…"
 
 msgid "Save Method"
 msgstr "メソッドを保存"
 
 msgid "Save view"
-msgstr ""
+msgstr "ビューを保存"
 
 msgid "Save View"
 msgstr "ビューを保存"
@@ -12122,7 +12131,7 @@ msgid "State / Province"
 msgstr "都道府県"
 
 msgid "Statement of Cash Flows"
-msgstr ""
+msgstr "キャッシュフロー計算書"
 
 #. placeholder {0}: lotEntities.length
 #. placeholder {1}: Math.max(0, lotEntities.length - inspected)
@@ -13995,7 +14004,7 @@ msgid "Unreceived POs"
 msgstr "未受領PO"
 
 msgid "Unreconciled difference"
-msgstr ""
+msgstr "未調整差額"
 
 msgid "Unsaved changes"
 msgstr "未保存の変更"
@@ -14379,7 +14388,7 @@ msgid "View missing values"
 msgstr "欠落値を表示"
 
 msgid "View name"
-msgstr ""
+msgstr "ビュー名"
 
 msgid "View notes"
 msgstr "ノートを表示"
@@ -14472,7 +14481,7 @@ msgid "View Transfer"
 msgstr "転送を表示"
 
 msgid "Views"
-msgstr ""
+msgstr "ビュー"
 
 msgid "Visibilities"
 msgstr "可視性"
