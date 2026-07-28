@@ -584,7 +584,7 @@ export default function PurchasingSettingsRoute() {
                   name="purchaseOrderUnitPricePrecision"
                   label={t`Decimal places`}
                   options={unitPricePrecisions.map((precision) => ({
-                    label: `${precision} (e.g. ${(1).toFixed(Number(precision))})`,
+                    label: t`${precision} (e.g. ${Number(1).toFixed(Number(precision))})`,
                     value: precision
                   }))}
                 />

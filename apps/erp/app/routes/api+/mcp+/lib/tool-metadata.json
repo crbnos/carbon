@@ -40497,7 +40497,12 @@
         "type": "object",
         "properties": {
           "purchaseOrderUnitPricePrecision": {
-            "type": "number"
+            "type": "integer",
+            "enum": [
+              2,
+              3,
+              4
+            ]
           }
         },
         "required": [

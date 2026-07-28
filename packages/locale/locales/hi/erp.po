@@ -126,6 +126,10 @@ msgstr "{maxSizeMB}MB सीमा"
 msgid "{name} deleted"
 msgstr "{name} हटाया गया"
 
+#. placeholder {0}: Number(1).toFixed(Number(precision))
+msgid "{precision} (e.g. {0})"
+msgstr "{precision} (उदा. {0})"
+
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining, plural, one {# चरण बचा} other {# चरण बचे}}"
 

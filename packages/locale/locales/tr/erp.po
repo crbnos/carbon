@@ -126,6 +126,10 @@ msgstr "{maxSizeMB}MB sınırı"
 msgid "{name} deleted"
 msgstr "{name} silindi"
 
+#. placeholder {0}: Number(1).toFixed(Number(precision))
+msgid "{precision} (e.g. {0})"
+msgstr "{precision} (örn. {0})"
+
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining, plural, one {# aşama kaldı} other {# aşama kaldı}}"
 

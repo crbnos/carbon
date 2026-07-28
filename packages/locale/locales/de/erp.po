@@ -126,6 +126,10 @@ msgstr "{maxSizeMB}MB-Limit"
 msgid "{name} deleted"
 msgstr "{name} gelöscht"
 
+#. placeholder {0}: Number(1).toFixed(Number(precision))
+msgid "{precision} (e.g. {0})"
+msgstr "{precision} (z. B. {0})"
+
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining, plural, one {# Phase verbleibend} other {# Phasen verbleibend}}"
 
