@@ -396,7 +396,7 @@ const InspectionMeasurementMatrix = ({
               // biome-ignore lint/suspicious/noArrayIndexKey: columns are positional
               <th
                 key={`column-${index}`}
-                className="min-w-[96px] border-b border-border bg-card px-2 py-2 text-center font-medium"
+                className="min-w-[96px] border-b border-r border-border bg-card px-2 py-2 text-center font-medium last:border-r-0"
               >
                 <div className="flex flex-col items-center gap-0.5">
                   <span className="max-w-[140px] truncate font-mono text-xs">
@@ -459,7 +459,7 @@ const InspectionMeasurementMatrix = ({
                     // biome-ignore lint/suspicious/noArrayIndexKey: columns are positional
                     <td
                       key={`${row.featureId}-${columnIndex}`}
-                      className="border-b border-border p-1 text-center align-middle"
+                      className="h-px border-b border-r border-border p-0 text-center align-middle last:border-r-0"
                     >
                       {row.isNumeric ? (
                         <NumericCell
@@ -494,11 +494,11 @@ const InspectionMeasurementMatrix = ({
 function statusClasses(status: string | undefined) {
   switch (status) {
     case "Passed":
-      return "border-emerald-500/60 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400";
+      return "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400";
     case "Failed":
-      return "border-red-500/60 bg-red-500/10 text-red-600 dark:text-red-400";
+      return "bg-red-500/10 text-red-600 dark:text-red-400";
     default:
-      return "border-border bg-background text-foreground";
+      return "bg-transparent text-foreground hover:bg-muted/40 focus:bg-background";
   }
 }
 
@@ -540,7 +540,7 @@ function NumericCell({
         }
       }}
       className={cn(
-        "h-12 w-full min-w-[88px] rounded-md border text-center font-mono text-base tabular-nums outline-none transition-colors focus:ring-2 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-40",
+        "block h-full min-h-12 w-full min-w-[88px] text-center font-mono text-base tabular-nums outline-none transition-colors focus:ring-2 focus:ring-inset focus:ring-ring disabled:cursor-not-allowed disabled:opacity-40",
         statusClasses(status)
       )}
     />
@@ -557,17 +557,17 @@ function PassFailCell({
   onToggle: (passed: "true" | "false") => void;
 }) {
   return (
-    <div className="flex items-center justify-center gap-1">
+    <div className="flex h-full min-h-12 items-stretch">
       <button
         type="button"
         disabled={disabled}
         aria-label="Pass"
         onClick={() => onToggle("true")}
         className={cn(
-          "flex h-12 w-12 items-center justify-center rounded-md border transition-colors active:scale-[0.96] disabled:cursor-not-allowed disabled:opacity-40",
+          "flex flex-1 items-center justify-center border-r border-border transition-colors disabled:cursor-not-allowed disabled:opacity-40",
           status === "Passed"
-            ? "border-emerald-500 bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
-            : "border-border text-muted-foreground hover:bg-accent"
+            ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
+            : "text-muted-foreground hover:bg-accent"
         )}
       >
         <LuCheck className="size-5" />
@@ -578,10 +578,10 @@ function PassFailCell({
         aria-label="Fail"
         onClick={() => onToggle("false")}
         className={cn(
-          "flex h-12 w-12 items-center justify-center rounded-md border transition-colors active:scale-[0.96] disabled:cursor-not-allowed disabled:opacity-40",
+          "flex flex-1 items-center justify-center transition-colors disabled:cursor-not-allowed disabled:opacity-40",
           status === "Failed"
-            ? "border-red-500 bg-red-500/15 text-red-600 dark:text-red-400"
-            : "border-border text-muted-foreground hover:bg-accent"
+            ? "bg-red-500/15 text-red-600 dark:text-red-400"
+            : "text-muted-foreground hover:bg-accent"
         )}
       >
         <LuX className="size-5" />
