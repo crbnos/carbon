@@ -6469,11 +6469,17 @@ msgstr "入站检验"
 msgid "Inbox"
 msgstr "收件箱"
 
+msgid "Include a materials (bill of materials) section on the job traveler PDF with item numbers and quantities."
+msgstr ""
+
 msgid "Include extra parts in shipment"
 msgstr "在发货中包含额外零件"
 
 msgid "Include Inactive"
 msgstr "包括不活跃"
+
+msgid "Include materials on traveler"
+msgstr ""
 
 msgid "Included"
 msgstr "已包含"
@@ -6915,6 +6921,9 @@ msgstr "工作操作"
 
 msgid "Job Operations"
 msgstr "工作操作"
+
+msgid "Job Traveler Materials"
+msgstr ""
 
 msgid "Jobs"
 msgstr "工作"
@@ -14420,6 +14429,9 @@ msgstr "启用后,定价规则(批量折扣、促销)仍适用于此覆盖;禁�
 
 msgid "When on, scanning this process's operation barcode reports all remaining open quantity as complete in one action; turn off when operators routinely report partials."
 msgstr "启用后,扫描此流程的操作条形码会在一个操作中将所有剩余的未处理数量报告为已完成;当操作员定期报告部分时禁用。"
+
+msgid "When on, the traveler PDF lists the job's required materials."
+msgstr ""
 
 msgid "When on, this party's invoices skip tax calculation; the party is responsible for keeping the exemption certificate current."
 msgstr "启用后,该方的发票会跳过税计算;该方负责使豁免证书保持最新。"

@@ -6469,11 +6469,17 @@ msgstr "受入検査"
 msgid "Inbox"
 msgstr "受信トレイ"
 
+msgid "Include a materials (bill of materials) section on the job traveler PDF with item numbers and quantities."
+msgstr ""
+
 msgid "Include extra parts in shipment"
 msgstr "出荷に追加部品を含める"
 
 msgid "Include Inactive"
 msgstr "非アクティブを含める"
+
+msgid "Include materials on traveler"
+msgstr ""
 
 msgid "Included"
 msgstr "含まれています"
@@ -6915,6 +6921,9 @@ msgstr "作業操作"
 
 msgid "Job Operations"
 msgstr "ジョブ操作"
+
+msgid "Job Traveler Materials"
+msgstr ""
 
 msgid "Jobs"
 msgstr "ジョブ"
@@ -14420,6 +14429,9 @@ msgstr "有効にすると、価格設定ルール(ボリュームディスカ�
 
 msgid "When on, scanning this process's operation barcode reports all remaining open quantity as complete in one action; turn off when operators routinely report partials."
 msgstr "有効にすると、このプロセスの操作バーコードをスキャンすると、残りのすべての未処理数量が1つのアクションで完了としてレポートされます。オペレータが定期的に部分を報告する場合は無効にします。"
+
+msgid "When on, the traveler PDF lists the job's required materials."
+msgstr ""
 
 msgid "When on, this party's invoices skip tax calculation; the party is responsible for keeping the exemption certificate current."
 msgstr "有効にすると、この当事者の請求書は税計算をスキップします。当事者は免税証明書を最新の状態に保つ責任があります。"

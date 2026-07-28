@@ -1054,6 +1054,19 @@ export async function updateLeadTimesOnReceiptSetting(
     .eq("id", companyId);
 }
 
+export async function updateIncludeMaterialsOnTravelerSetting(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  includeMaterialsOnTraveler: boolean
+) {
+  // Cast: the includeMaterialsOnTraveler column is added by migration
+  // 20260728151742 but isn't in the generated types until they're regenerated
+  // against the migrated DB (mirrors updateLeadTimesOnReceiptSetting).
+  return (client.from("companySettings") as any)
+    .update(sanitize({ includeMaterialsOnTraveler }))
+    .eq("id", companyId);
+}
+
 export async function updateAccountsPayableAddressSetting(
   client: SupabaseClient<Database>,
   companyId: string,

@@ -1,6 +1,6 @@
 {
-  "generated": "2026-07-28T02:27:47.871Z",
-  "totalTools": 1397,
+  "generated": "2026-07-28T08:10:57.027Z",
+  "totalTools": 1398,
   "modules": 15,
   "tools": [
     {
@@ -40502,6 +40502,33 @@
         },
         "required": [
           "updateLeadTimesOnReceipt"
+        ]
+      }
+    },
+    {
+      "name": "settings_updateIncludeMaterialsOnTravelerSetting",
+      "module": "settings",
+      "classification": "WRITE",
+      "description": "update include materials on traveler setting",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "includeMaterialsOnTraveler"
+      ],
+      "injectAuth": [
+        "companyId",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "includeMaterialsOnTraveler": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "includeMaterialsOnTraveler"
         ]
       }
     },
