@@ -65,6 +65,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
+  // Part ↔ step links are managed from the STEP side (the BoP step editor's "Parts" picker),
+  // so the material save no longer touches jobMaterialStep.
+
   // Check if job is released (not Draft or Planned)
   const job = await serviceRole
     .from("job")

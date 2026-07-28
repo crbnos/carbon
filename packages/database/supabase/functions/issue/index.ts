@@ -810,6 +810,11 @@ const payloadValidator = z.discriminatedUnion("type", [
     laborProductionEventId: z.string().optional(),
     machineProductionEventId: z.string().optional(),
     setupProductionEventId: z.string().optional(),
+    // Provenance links for inspection-driven completions. The partial UNIQUE
+    // index on productionQuantity.inspectionSampleId makes a re-post of the
+    // same verdict fail instead of double-counting.
+    inspectionId: z.string().optional(),
+    inspectionSampleId: z.string().optional(),
   }),
   z.object({
     type: z.literal("jobOperationSerialComplete"),
@@ -822,6 +827,8 @@ const payloadValidator = z.discriminatedUnion("type", [
     laborProductionEventId: z.string().optional(),
     machineProductionEventId: z.string().optional(),
     setupProductionEventId: z.string().optional(),
+    inspectionId: z.string().optional(),
+    inspectionSampleId: z.string().optional(),
   }),
   z.object({
     type: z.literal("partToOperation"),
@@ -834,6 +841,9 @@ const payloadValidator = z.discriminatedUnion("type", [
       "Negative Adjmt.",
     ]),
     materialId: z.string().optional(),
+    // Assembly view: when issuing an unplanned part (no materialId), scope the new
+    // jobMaterial to this step so it surfaces on that step in the operator view.
+    jobOperationStepId: z.string().optional(),
     companyId: z.string(),
     userId: z.string(),
   }),
@@ -857,6 +867,11 @@ const payloadValidator = z.discriminatedUnion("type", [
         quantity: z.number(),
       })
     ),
+    // Assembly view: the step + 1-based unit the operator was on, stamped onto the
+    // Consume activity so issued quantities can be attributed per-unit/per-step even
+    // for a batch parent (all units share one lot entity).
+    jobOperationStepId: z.string().optional(),
+    unitNumber: z.number().int().positive().optional(),
     overrideExpired: z.boolean().optional(),
     overrideReason: z.string().optional(),
     companyId: z.string(),
@@ -1326,6 +1341,7 @@ serve(async (req: Request) => {
           itemId,
           quantity,
           materialId,
+          jobOperationStepId,
           adjustmentType,
         } = validatedPayload;
 
@@ -1520,7 +1536,7 @@ serve(async (req: Request) => {
               .select("unitCost")
               .executeTakeFirst();
 
-            await trx
+            const newJobMaterial = await trx
               .insertInto("jobMaterial")
               .values({
                 companyId,
@@ -1538,7 +1554,21 @@ serve(async (req: Request) => {
                 quantityIssued: Number(quantity ?? 0),
                 unitCost: itemCost?.unitCost ?? 0,
               })
+              .returning("id")
               .executeTakeFirst();
+
+            // Scope this unplanned part to the step it was issued on (assembly
+            // view), so it shows on that step rather than as a General material.
+            if (jobOperationStepId && newJobMaterial?.id) {
+              await trx
+                .insertInto("jobMaterialStep")
+                .values({
+                  jobMaterialId: newJobMaterial.id,
+                  jobOperationStepId,
+                })
+                .onConflict((oc) => oc.doNothing())
+                .execute();
+            }
 
             if (itemLedgerInserts.length > 0) {
               await trx
@@ -1802,6 +1832,8 @@ serve(async (req: Request) => {
           itemId,
           parentTrackedEntityId,
           children,
+          jobOperationStepId,
+          unitNumber,
           overrideExpired,
           overrideReason,
           companyId,
@@ -2026,6 +2058,19 @@ serve(async (req: Request) => {
 
             actualMaterialId = newJobMaterial.id!;
 
+            // Scope this unplanned tracked part to the step it was issued on
+            // (assembly view), so it shows on that step rather than as General.
+            if (jobOperationStepId) {
+              await trx
+                .insertInto("jobMaterialStep")
+                .values({
+                  jobMaterialId: actualMaterialId,
+                  jobOperationStepId,
+                })
+                .onConflict((oc) => oc.doNothing())
+                .execute();
+            }
+
             // Fetch the newly created jobMaterial
             jobMaterial = await trx
               .selectFrom("jobMaterial")
@@ -2084,6 +2129,13 @@ serve(async (req: Request) => {
                 "Job Make Method": jobMaterial?.jobMakeMethodId!,
                 "Job Material": jobMaterial?.id!,
                 Employee: userId,
+                // Assembly view: which step + 1-based unit this consume was for, so
+                // the MES can attribute issued quantities per-unit even for a batch
+                // parent (where all units share one lot entity).
+                ...(jobOperationStepId
+                  ? { "Job Operation Step": jobOperationStepId }
+                  : {}),
+                ...(unitNumber !== undefined ? { Unit: unitNumber } : {}),
               },
               companyId,
               createdBy: userId,

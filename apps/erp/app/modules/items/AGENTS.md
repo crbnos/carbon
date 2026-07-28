@@ -137,7 +137,7 @@ Change-order code follows the one-service/models/server-per-module convention �
 - **production** — jobs manufacture items; make methods copied to jobs via `get-method` edge function
 - **sales** — quote lines and sales order lines reference items; `itemUnitSalePrice` is base price
 - **accounting** — `itemPostingGroup` maps items to GL accounts
-- **quality** — `requiresInspection` flag on items; inspection documents reference parts
+- **quality** — inbound inspection is driven by the item's Receipt-usage inspection-document assignment (`itemInspectionDocumentAssignment`), configured on the item Quality tab; inspection documents reference parts
 
 ## Rules References
 

@@ -163,7 +163,7 @@ const SidebarProvider = React.forwardRef<
               } as React.CSSProperties
             }
             className={cn(
-              "group/sidebar-wrapper flex min-h-svh w-full has-[[data-variant=inset]]:bg-sidebar",
+              "group/sidebar-wrapper flex min-h-svh w-full has-[[data-variant=inset]]:bg-card",
               className
             )}
             ref={ref}
@@ -203,7 +203,7 @@ const Sidebar = React.forwardRef<
       return (
         <div
           className={cn(
-            "flex h-full w-[var(--sidebar-width)] flex-col bg-sidebar text-sidebar-foreground",
+            "flex h-full w-[var(--sidebar-width)] flex-col bg-card text-foreground",
             className
           )}
           ref={ref}
@@ -220,7 +220,7 @@ const Sidebar = React.forwardRef<
           <DrawerContent
             data-sidebar="sidebar"
             data-mobile="true"
-            className="w-[var(--sidebar-width)] bg-sidebar p-0 text-sidebar-foreground [&>button]:hidden"
+            className="w-[var(--sidebar-width)] bg-card p-0 text-foreground [&>button]:hidden"
             style={
               {
                 "--sidebar-width": SIDEBAR_WIDTH_MOBILE
@@ -236,7 +236,7 @@ const Sidebar = React.forwardRef<
     return (
       <div
         ref={ref}
-        className="group peer hidden md:block text-sidebar-foreground"
+        className="group peer hidden md:block text-foreground"
         data-state={state}
         data-collapsible={state === "collapsed" ? collapsible : ""}
         data-variant={variant}
@@ -271,7 +271,7 @@ const Sidebar = React.forwardRef<
         >
           <div
             data-sidebar="sidebar"
-            className="flex h-full w-full flex-col bg-sidebar group-data-[variant=floating]:rounded-lg group-data-[variant=floating]:border group-data-[variant=floating]:border-sidebar-border group-data-[variant=floating]:shadow"
+            className="flex h-full w-full flex-col bg-card group-data-[variant=floating]:rounded-lg group-data-[variant=floating]:border group-data-[variant=floating]:border-sidebar-border group-data-[variant=floating]:shadow"
           >
             {children}
           </div>
@@ -324,7 +324,7 @@ const SidebarRail = React.forwardRef<
         "absolute inset-y-0 z-20 hidden w-4 -translate-x-1/2 transition-opacity duration-150 ease-out motion-reduce:transition-none after:absolute after:inset-y-0 after:left-1/2 after:w-[2px] hover:after:bg-sidebar-border group-data-[side=left]:-right-4 group-data-[side=right]:left-0 sm:flex",
         "[[data-side=left]_&]:cursor-w-resize [[data-side=right]_&]:cursor-e-resize",
         "[[data-side=left][data-state=collapsed]_&]:cursor-e-resize [[data-side=right][data-state=collapsed]_&]:cursor-w-resize",
-        "group-data-[collapsible=offcanvas]:translate-x-0 group-data-[collapsible=offcanvas]:after:left-full group-data-[collapsible=offcanvas]:hover:bg-sidebar",
+        "group-data-[collapsible=offcanvas]:translate-x-0 group-data-[collapsible=offcanvas]:after:left-full group-data-[collapsible=offcanvas]:hover:bg-card",
         "[[data-side=left][data-collapsible=offcanvas]_&]:-right-2",
         "[[data-side=right][data-collapsible=offcanvas]_&]:-left-2",
         className
@@ -466,7 +466,7 @@ const SidebarGroupLabel = React.forwardRef<
       className={cn(
         // Vercel style: very muted, uppercase, smaller text
         // ease-out-quint for consistent spring-like feel with sidebar expansion
-        "flex h-7 shrink-0 items-center rounded-md px-2 text-[11px] font-medium uppercase tracking-wider text-sidebar-foreground/50 outline-none ring-sidebar-ring transition-[margin,opacity] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] motion-reduce:transition-none focus-visible:ring-2 [&>svg]:size-3.5 [&>svg]:shrink-0",
+        "flex h-7 shrink-0 items-center rounded-md px-2 text-[11px] font-medium uppercase tracking-wider text-foreground/50 outline-none ring-sidebar-ring transition-[margin,opacity] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] motion-reduce:transition-none focus-visible:ring-2 [&>svg]:size-3.5 [&>svg]:shrink-0",
         "group-data-[collapsible=icon]:-mt-8 group-data-[collapsible=icon]:opacity-0",
         className
       )}
@@ -488,7 +488,7 @@ const SidebarGroupAction = React.forwardRef<
       data-sidebar="group-action"
       className={cn(
         // Muted by default, brightens on hover (Vercel style)
-        "absolute right-3 top-3 flex aspect-square w-5 items-center justify-center rounded-md p-0 text-sidebar-foreground/50 outline-none ring-sidebar-ring transition-[background-color,color] duration-100 ease-out hover:bg-sidebar-accent/50 hover:text-sidebar-foreground focus-visible:ring-2 motion-reduce:transition-none [&>svg]:size-3.5 [&>svg]:shrink-0",
+        "absolute right-3 top-3 flex aspect-square w-5 items-center justify-center rounded-md p-0 text-foreground/50 outline-none ring-sidebar-ring transition-[background-color,color] duration-100 ease-out hover:bg-sidebar-accent/50 hover:text-foreground focus-visible:ring-2 motion-reduce:transition-none [&>svg]:size-3.5 [&>svg]:shrink-0",
         // Increases the hit area of the button on mobile.
         "after:absolute after:-inset-2 after:md:hidden",
         "group-data-[collapsible=icon]:hidden",
@@ -552,26 +552,26 @@ const sidebarMenuButtonVariants = cva(
     // Layout - tighter padding for Vercel-style compact feel
     "peer/menu-button flex w-full items-center gap-2 overflow-hidden rounded-md px-2 py-1.5 text-left text-sm outline-none",
     // Default: muted text color (Vercel style - text is subdued until interaction)
-    "text-sidebar-foreground/70",
+    "text-foreground/70",
     // Icons inherit the muted color (size is applied per touch/non-touch mode below)
-    "[&>svg]:shrink-0 [&>svg]:text-sidebar-foreground/70",
+    "[&>svg]:shrink-0 [&>svg]:text-foreground/70",
     // Focus ring
     "ring-sidebar-ring focus-visible:ring-2",
     // Transitions - fast and smooth
     "transition-[background-color,color,border-color] duration-100 ease-out motion-reduce:transition-none",
     // Hover: subtle background tint + brighten text
-    "hover:bg-sidebar-accent/50 hover:text-sidebar-foreground [&:hover>svg]:text-sidebar-foreground",
+    "hover:bg-sidebar-accent/50 hover:text-foreground [&:hover>svg]:text-foreground",
     // Active (pressed): same as hover
-    "active:bg-sidebar-accent/50 active:text-sidebar-foreground",
+    "active:bg-sidebar-accent/50 active:text-foreground",
     // Disabled states
     "disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50",
     // Menu action padding adjustment
     "group-has-[[data-sidebar=menu-action]]/menu-item:pr-8",
     // Active/selected state - Vercel style: subtle left border accent + bright text
-    "data-[active=true]:bg-sidebar-accent/50 data-[active=true]:text-sidebar-foreground data-[active=true]:font-medium",
-    "[&[data-active=true]>svg]:text-sidebar-foreground",
+    "data-[active=true]:bg-sidebar-accent/50 data-[active=true]:text-foreground data-[active=true]:font-medium",
+    "[&[data-active=true]>svg]:text-foreground",
     // Open state (for collapsible menus)
-    "data-[state=open]:bg-sidebar-accent/50 data-[state=open]:text-sidebar-foreground",
+    "data-[state=open]:bg-sidebar-accent/50 data-[state=open]:text-foreground",
     // Text truncation
     "[&>span:last-child]:truncate"
   ].join(" "),
@@ -625,11 +625,12 @@ const SidebarMenuButton = React.forwardRef<
     // so the !important collapsed sizing never conflicts between modes.
     const sizing = touch
       ? cn(
-          // Expanded / mobile sheet: taller rows + bigger icons
-          "min-h-11 [&>svg]:size-5",
+          // Expanded / mobile sheet: taller rows; icons kept compact for a
+          // lighter feel (button size unchanged).
+          "min-h-11 [&>svg]:size-4",
           // Collapsed icon rail: a roomy centered square showing only the
           // leading icon/avatar (labels, counts, chevron clip away cleanly)
-          "group-data-[collapsible=icon]:!size-12 group-data-[collapsible=icon]:!p-0 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:[&>svg]:size-6 group-data-[collapsible=icon]:[&>:not(:first-child)]:hidden"
+          "group-data-[collapsible=icon]:!size-12 group-data-[collapsible=icon]:!p-0 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:[&>svg]:size-5 group-data-[collapsible=icon]:[&>:not(:first-child)]:hidden"
         )
       : cn(
           "[&>svg]:size-4",
@@ -691,7 +692,7 @@ const SidebarMenuAction = React.forwardRef<
       data-sidebar="menu-action"
       className={cn(
         // Muted by default (Vercel style)
-        "absolute right-1 top-1 flex aspect-square w-5 items-center justify-center rounded-md p-0 text-sidebar-foreground/50 outline-none ring-sidebar-ring transition-[background-color,color,opacity] duration-100 ease-out hover:bg-sidebar-accent/50 hover:text-sidebar-foreground focus-visible:ring-2 peer-hover/menu-button:text-sidebar-foreground motion-reduce:transition-none [&>svg]:size-3.5 [&>svg]:shrink-0",
+        "absolute right-1 top-1 flex aspect-square w-5 items-center justify-center rounded-md p-0 text-foreground/50 outline-none ring-sidebar-ring transition-[background-color,color,opacity] duration-100 ease-out hover:bg-sidebar-accent/50 hover:text-foreground focus-visible:ring-2 peer-hover/menu-button:text-foreground motion-reduce:transition-none [&>svg]:size-3.5 [&>svg]:shrink-0",
         // Increases the hit area of the button on mobile.
         "after:absolute after:-inset-2 after:md:hidden",
         "peer-data-[size=sm]/menu-button:top-0.5",
@@ -699,7 +700,7 @@ const SidebarMenuAction = React.forwardRef<
         "peer-data-[size=lg]/menu-button:top-2.5",
         "group-data-[collapsible=icon]:hidden",
         showOnHover &&
-          "group-focus-within/menu-item:opacity-100 group-hover/menu-item:opacity-100 data-[state=open]:opacity-100 peer-data-[active=true]/menu-button:text-sidebar-foreground md:opacity-0",
+          "group-focus-within/menu-item:opacity-100 group-hover/menu-item:opacity-100 data-[state=open]:opacity-100 peer-data-[active=true]/menu-button:text-foreground md:opacity-0",
         className
       )}
       {...props}
@@ -717,8 +718,8 @@ const SidebarMenuBadge = React.forwardRef<
     data-sidebar="menu-badge"
     className={cn(
       // Muted by default, brightens with parent (Vercel style)
-      "absolute right-1 flex h-5 min-w-5 items-center justify-center rounded-md px-1 text-xs font-medium text-sidebar-foreground/50 select-none pointer-events-none transition-colors duration-100 ease-out",
-      "peer-hover/menu-button:text-sidebar-foreground peer-data-[active=true]/menu-button:text-sidebar-foreground",
+      "absolute right-1 flex h-5 min-w-5 items-center justify-center rounded-md px-1 text-xs font-medium text-foreground/50 select-none pointer-events-none transition-colors duration-100 ease-out",
+      "peer-hover/menu-button:text-foreground peer-data-[active=true]/menu-button:text-foreground",
       "peer-data-[size=sm]/menu-button:top-0.5",
       "peer-data-[size=default]/menu-button:top-1",
       "peer-data-[size=lg]/menu-button:top-2.5",
@@ -817,23 +818,23 @@ const SidebarMenuSubButton = React.forwardRef<
         // Layout - compact
         "flex h-7 min-w-0 -translate-x-px items-center gap-2 overflow-hidden rounded-md px-2",
         // Default: muted text (Vercel style)
-        "text-sidebar-foreground/70",
+        "text-foreground/70",
         // Focus ring
         "outline-none ring-sidebar-ring focus-visible:ring-2",
         // Transitions
         "transition-[background-color,color] duration-100 ease-out motion-reduce:transition-none",
         // Hover: subtle tint + brighten
-        "hover:bg-sidebar-accent/50 hover:text-sidebar-foreground",
+        "hover:bg-sidebar-accent/50 hover:text-foreground",
         // Active (pressed)
-        "active:bg-sidebar-accent/50 active:text-sidebar-foreground",
+        "active:bg-sidebar-accent/50 active:text-foreground",
         // Disabled
         "disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50",
         // Icons
-        "[&>span:last-child]:truncate [&>svg]:size-4 [&>svg]:shrink-0 [&>svg]:text-sidebar-foreground/70",
-        "[&:hover>svg]:text-sidebar-foreground",
+        "[&>span:last-child]:truncate [&>svg]:size-4 [&>svg]:shrink-0 [&>svg]:text-foreground/70",
+        "[&:hover>svg]:text-foreground",
         // Selected state
-        "data-[active=true]:bg-sidebar-accent/50 data-[active=true]:text-sidebar-foreground data-[active=true]:font-medium",
-        "[&[data-active=true]>svg]:text-sidebar-foreground",
+        "data-[active=true]:bg-sidebar-accent/50 data-[active=true]:text-foreground data-[active=true]:font-medium",
+        "[&[data-active=true]>svg]:text-foreground",
         // Size variants
         size === "sm" && "text-xs",
         size === "md" && "text-sm",

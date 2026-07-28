@@ -21,6 +21,7 @@ import type {
   operationStepValidator,
   operationToolValidator
 } from "../shared";
+import { normalizeOperationSourceIds } from "../shared";
 import {
   lookupBuyPriceFromMap,
   upsertExternalLink
@@ -4108,7 +4109,17 @@ async function buildCostEffects(
     );
 
     for (const op of nodeOps) {
-      if (op.operationType === "Inside") {
+      // Outside Processing is subcontracted — its cost is the supplier's per-unit
+      // price (with a minimum). Every other operationType (Process, Assembly,
+      // Inspection, and any future in-house type) is costed in-house from
+      // labor/machine/setup times. Match the subcontract case explicitly so a new
+      // operationType can't silently inherit the outside-cost branch.
+      if (op.operationType === "Outside Processing") {
+        effects.outsideCost.push((outerQty) => {
+          const cost = op.operationUnitCost * qty * outerQty;
+          return Math.max(op.operationMinimumCost, cost);
+        });
+      } else {
         if (op.setupTime) {
           const { fixedHours, hoursPerUnit } = normalizeTime(
             op.setupTime,
@@ -4164,11 +4175,6 @@ async function buildCostEffects(
             return hpu * outerQty * qty * (op.overheadRate ?? 0);
           }
           return fh * (op.overheadRate ?? 0);
-        });
-      } else if (op.operationType === "Outside") {
-        effects.outsideCost.push((outerQty) => {
-          const cost = op.operationUnitCost * qty * outerQty;
-          return Math.max(op.operationMinimumCost, cost);
         });
       }
     }
@@ -4755,13 +4761,13 @@ export async function upsertQuoteOperation(
   if ("createdBy" in operation) {
     return client
       .from("quoteOperation")
-      .insert([operation])
+      .insert([normalizeOperationSourceIds(operation)])
       .select("id")
       .single();
   }
   return client
     .from("quoteOperation")
-    .update(sanitize(operation))
+    .update(sanitize(normalizeOperationSourceIds(operation)))
     .eq("id", operation.id)
     .select("id")
     .single();

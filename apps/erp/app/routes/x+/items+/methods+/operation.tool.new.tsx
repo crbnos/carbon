@@ -21,6 +21,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
+  // Tool↔step assignment now lives on the step editor (methodOperationStepTool route),
+  // not this tool form — a new tool starts operation-level (shown on every step).
+
   // Release-lock gate: enforce -> block; warn -> proceed + flash; off -> no-op.
   const lock = await checkRevisionLock(client, {
     kind: "operation",

@@ -11,14 +11,6 @@ import { sanitize } from "~/utils/supabase";
 
 const logger = getLogger("erp", "quality");
 
-import {
-  listBalloons,
-  listInspectionFeatures,
-  mapBalloonIdsToFeatureIdsForDocument
-} from "./inspectionDocumentDb";
-
-export { mapBalloonIdsToFeatureIdsForDocument };
-
 import type { inspectionStatus } from "../shared";
 import type {
   gaugeCalibrationRecordValidator,
@@ -26,11 +18,10 @@ import type {
   gaugeRole,
   gaugeTypeValidator,
   gaugeValidator,
-  inspectionDocumentValidator,
   issueTypeValidator,
   issueValidator,
   issueWorkflowValidator,
-  itemSamplingPlanValidator,
+  itemInspectionDocumentAssignmentValidator,
   nonConformanceApprovalRequirement,
   nonConformanceReviewerValidator,
   nonConformanceStatus,
@@ -142,9 +133,9 @@ export async function deleteIssueAssociation(
         .from("nonConformanceTrackedEntity")
         .delete()
         .eq("id", associationId);
-    case "inboundInspections":
+    case "inspections":
       return await (client as any)
-        .from("nonConformanceInboundInspection")
+        .from("nonConformanceInspection")
         .delete()
         .eq("id", associationId);
     default:
@@ -517,7 +508,7 @@ export async function getIssueAssociations(
     trackedEntities,
     customers,
     suppliers,
-    inboundInspections
+    inspections
   ] = await Promise.all([
     // Items
     (client as any)
@@ -699,14 +690,14 @@ export async function getIssueAssociations(
 
     // Inbound Inspections
     (client as any)
-      .from("nonConformanceInboundInspection")
+      .from("nonConformanceInspection")
       .select(
         `
         id,
-        inboundInspectionId,
-        inboundInspection:inboundInspection (
+        inspectionId,
+        inspection:inspection (
           id,
-          inboundInspectionId,
+          inspectionId,
           itemReadableId,
           lotSize,
           status,
@@ -811,17 +802,15 @@ export async function getIssueAssociations(
         documentLineId: "",
         documentReadableId: item.supplier.name
       })) || [],
-    inboundInspections: ((inboundInspections as any)?.data ?? []).map(
-      (link: any) => ({
-        id: link.id,
-        type: "inboundInspections",
-        documentId: link.inboundInspectionId ?? "",
-        documentLineId: "",
-        documentReadableId: link.inboundInspection?.inboundInspectionId ?? "",
-        quantity: link.inboundInspection?.lotSize ?? 0,
-        status: link.inboundInspection?.status ?? null
-      })
-    )
+    inspections: ((inspections as any)?.data ?? []).map((link: any) => ({
+      id: link.id,
+      type: "inspections",
+      documentId: link.inspectionId ?? "",
+      documentLineId: "",
+      documentReadableId: link.inspection?.inspectionId ?? "",
+      quantity: link.inspection?.lotSize ?? 0,
+      status: link.inspection?.status ?? null
+    }))
   };
 }
 
@@ -2216,633 +2205,43 @@ export async function upsertRisk(
   }
 }
 
-// ─── Inspection Documents ─────────────────────────────────────────────────────
-
-function toStoragePath(pdfUrl?: string | null) {
-  if (!pdfUrl) return null;
-  const previewPrefix = "/file/preview/private/";
-  if (pdfUrl.startsWith(previewPrefix)) {
-    return pdfUrl.slice(previewPrefix.length);
-  }
-  return pdfUrl;
-}
-
-function toPreviewUrl(storagePath?: string | null) {
-  if (!storagePath) return null;
-  return storagePath.startsWith("/file/preview/private/")
-    ? storagePath
-    : `/file/preview/private/${storagePath}`;
-}
-
-function fileNameFromPath(storagePath?: string | null) {
-  if (!storagePath) return "drawing.pdf";
-  return storagePath.split("/").at(-1) ?? "drawing.pdf";
-}
-
-function mapInspectionDocument(row: Record<string, unknown>) {
-  const drawingNumber = (row.drawingNumber as string | null) ?? null;
-  return {
-    id: String(row.id),
-    name: String(drawingNumber ?? row.fileName ?? "Untitled Diagram"),
-    companyId: String(row.companyId),
-    partId: (row.partId as string | null) ?? null,
-    createdBy: String(row.createdBy),
-    updatedBy: (row.updatedBy as string | null) ?? null,
-    createdAt: String(row.createdAt),
-    updatedAt: (row.updatedAt as string | null) ?? null,
-    content: {
-      drawingNumber,
-      pdfUrl: toPreviewUrl((row.storagePath as string | null) ?? null),
-      annotations: [],
-      features: []
-    }
-  };
-}
-
-export async function getInspectionDocuments(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  args?: { search: string | null } & GenericQueryFilters
-) {
-  const documentClient = client as unknown as {
-    from: (table: string) => {
-      select: (
-        columns: string,
-        options?: { count?: "exact" | "planned" | "estimated"; head?: boolean }
-      ) => any;
-    };
-  };
-
-  let query = documentClient
-    .from("inspectionDocuments")
-    .select("*", { count: "exact" })
-    .eq("companyId", companyId);
-
-  if (args?.search) {
-    query = query.or(
-      `drawingNumber.ilike.%${args.search}%,fileName.ilike.%${args.search}%,partReadableId.ilike.%${args.search}%`
-    );
-  }
-
-  if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "drawingNumber", ascending: true }
-    ]);
-  }
-
-  const result = await query;
-
-  return {
-    data: (result.data ?? []).map((row: Record<string, unknown>) =>
-      mapInspectionDocument(row)
-    ),
-    count: result.count ?? 0,
-    error: result.error
-  };
-}
-
-export async function getInspectionDocument(
-  client: SupabaseClient<Database>,
-  id: string
-) {
-  const documentClient = client as unknown as {
-    from: (table: string) => {
-      select: (columns: string) => {
-        eq: (
-          column: string,
-          value: unknown
-        ) => {
-          single: () => Promise<{
-            data: Record<string, unknown> | null;
-            error: unknown;
-          }>;
-        };
-      };
-    };
-  };
-
-  const result = await documentClient
-    .from("inspectionDocument")
-    .select("*")
-    .eq("id", id)
-    .single();
-
-  return {
-    data: result.data ? mapInspectionDocument(result.data) : null,
-    error: result.error
-  };
-}
-
-export async function upsertInspectionDocument(
-  client: SupabaseClient<Database>,
-  diagram:
-    | (Omit<z.infer<typeof inspectionDocumentValidator>, "id"> & {
-        id?: undefined;
-        companyId: string;
-        createdBy: string;
-        updatedBy?: string;
-        pageCount?: number;
-        defaultPageWidth?: number;
-        defaultPageHeight?: number;
-      })
-    | (Omit<z.infer<typeof inspectionDocumentValidator>, "id"> & {
-        id: string;
-        companyId: string;
-        createdBy: string;
-        updatedBy?: string;
-        pageCount?: number;
-        defaultPageWidth?: number;
-        defaultPageHeight?: number;
-      })
-) {
-  const {
-    id,
-    partId,
-    drawingNumber,
-    pdfUrl,
-    pageCount,
-    defaultPageWidth,
-    defaultPageHeight,
-    companyId,
-    createdBy,
-    updatedBy
-  } = diagram;
-
-  const documentClient = client as unknown as {
-    from: (table: string) => {
-      select: (columns: string) => {
-        eq: (
-          column: string,
-          value: unknown
-        ) => {
-          single: () => Promise<{
-            data: Record<string, unknown> | null;
-            error: unknown;
-          }>;
-        };
-      };
-      update: (payload: Record<string, unknown>) => {
-        eq: (
-          column: string,
-          value: unknown
-        ) => {
-          eq: (
-            column: string,
-            value: unknown
-          ) => {
-            select: (columns: string) => {
-              single: () => Promise<{
-                data: { id: string } | null;
-                error: unknown;
-              }>;
-            };
-          };
-        };
-      };
-      insert: (payload: Record<string, unknown>) => {
-        select: (columns: string) => {
-          single: () => Promise<{
-            data: { id: string } | null;
-            error: unknown;
-          }>;
-        };
-      };
-    };
-  };
-
-  const storagePath = toStoragePath(pdfUrl);
-
-  if (id) {
-    if (!companyId) {
-      return {
-        data: null,
-        error: {
-          message: "companyId is required to update inspection document"
-        }
-      };
-    }
-
-    const existingResult = await documentClient
-      .from("inspectionDocument")
-      .select("*")
-      .eq("id", id)
-      .single();
-
-    const existing = existingResult.data;
-    if (!existing) {
-      return {
-        data: null,
-        error: {
-          message: "Inspection document not found"
-        }
-      };
-    }
-    if (String(existing.companyId ?? "") !== companyId) {
-      return {
-        data: null,
-        error: {
-          message: "Inspection document does not belong to this company"
-        }
-      };
-    }
-
-    const updatePayload: Record<string, unknown> = {
-      updatedBy: updatedBy ?? createdBy,
-      updatedAt: new Date().toISOString()
-    };
-    if (drawingNumber !== undefined) {
-      updatePayload.drawingNumber = drawingNumber ?? null;
-    }
-    if (partId !== undefined) {
-      updatePayload.partId = partId;
-    }
-
-    if (storagePath) {
-      updatePayload.storagePath = storagePath;
-      updatePayload.fileName = fileNameFromPath(storagePath);
-    }
-    if (pageCount && pageCount > 0) {
-      updatePayload.pageCount = pageCount;
-    }
-    if (defaultPageWidth && defaultPageWidth > 0) {
-      updatePayload.defaultPageWidth = defaultPageWidth;
-    }
-    if (defaultPageHeight && defaultPageHeight > 0) {
-      updatePayload.defaultPageHeight = defaultPageHeight;
-    }
-
-    return documentClient
-      .from("inspectionDocument")
-      .update(updatePayload)
-      .eq("id", id)
-      .eq("companyId", companyId)
-      .select("id")
-      .single();
-  }
-
-  if (!companyId) {
-    return {
-      data: null,
-      error: { message: "companyId is required to create inspection document" }
-    };
-  }
-
-  return documentClient
-    .from("inspectionDocument")
-    .insert({
-      companyId,
-      partId,
-      drawingNumber: drawingNumber ?? null,
-      version: 0,
-      ...(storagePath
-        ? {
-            storagePath,
-            fileName: fileNameFromPath(storagePath),
-            uploadedBy: createdBy
-          }
-        : {}),
-      ...(pageCount && pageCount > 0 ? { pageCount } : {}),
-      ...(defaultPageWidth && defaultPageWidth > 0 ? { defaultPageWidth } : {}),
-      ...(defaultPageHeight && defaultPageHeight > 0
-        ? { defaultPageHeight }
-        : {}),
-      createdBy
-    })
-    .select("id")
-    .single();
-}
-
-export async function deleteInspectionDocument(
-  client: SupabaseClient<Database>,
-  id: string
-) {
-  const documentClient = client as unknown as {
-    from: (table: string) => {
-      select: (columns: string) => {
-        eq: (
-          column: string,
-          value: unknown
-        ) => {
-          single: () => Promise<{
-            data: Record<string, unknown> | null;
-            error: unknown;
-          }>;
-        };
-      };
-      delete: () => {
-        eq: (
-          column: string,
-          value: unknown
-        ) => Promise<{
-          error: unknown;
-        }>;
-      };
-    };
-  };
-
-  const existingResult = await documentClient
-    .from("inspectionDocument")
-    .select("*")
-    .eq("id", id)
-    .single();
-
-  if (!existingResult.data) {
-    return {
-      data: null,
-      error: { message: "Inspection document not found" }
-    };
-  }
-
-  const storagePath =
-    (existingResult.data.storagePath as string | null) ?? null;
-
-  const deleteResult = await documentClient
-    .from("inspectionDocument")
-    .delete()
-    .eq("id", id);
-
-  if (deleteResult.error) {
-    return { data: null, error: deleteResult.error };
-  }
-
-  return {
-    data: { storagePath },
-    error: null
-  };
-}
-
-function mapInspectionFeature(row: Record<string, unknown>) {
-  const balloonIdRaw = row.balloonId ?? row.balloon_id;
-  return {
-    id: String(row.id),
-    inspectionDocumentId: String(row.inspectionDocumentId),
-    companyId: String(row.companyId),
-    pageNumber: Number(row.pageNumber),
-    label: String(row.label),
-    description: (row.description as string | null) ?? null,
-    nominalValue: (row.nominalValue as string | null) ?? null,
-    tolerancePlus: (row.tolerancePlus as string | null) ?? null,
-    toleranceMinus: (row.toleranceMinus as string | null) ?? null,
-    unit: (row.unit as string | null) ?? null,
-    type: (row.type as string) ?? "Measurement",
-    balloonId:
-      typeof balloonIdRaw === "string"
-        ? balloonIdRaw
-        : balloonIdRaw != null
-          ? String(balloonIdRaw)
-          : null,
-    createdBy: String(row.createdBy),
-    updatedBy: (row.updatedBy as string | null) ?? null,
-    createdAt: String(row.createdAt),
-    updatedAt: (row.updatedAt as string | null) ?? null
-  };
-}
-
-function mapBalloon(row: Record<string, unknown>) {
-  return {
-    id: String(row.id),
-    inspectionDocumentId: String(row.inspectionDocumentId),
-    companyId: String(row.companyId),
-    inspectionFeatureId: String(row.inspectionFeatureId),
-    pageNumber: Number(row.pageNumber),
-    regionX: Number(row.regionX),
-    regionY: Number(row.regionY),
-    regionWidth: Number(row.regionWidth),
-    regionHeight: Number(row.regionHeight),
-    xCoordinate: Number(row.xCoordinate),
-    yCoordinate: Number(row.yCoordinate),
-    createdBy: String(row.createdBy),
-    updatedBy: (row.updatedBy as string | null) ?? null,
-    createdAt: String(row.createdAt),
-    updatedAt: (row.updatedAt as string | null) ?? null,
-    balloonAnchorId: String(row.id)
-  };
-}
-
-export async function getInspectionFeatures(
-  client: SupabaseClient<Database>,
-  inspectionDocumentId: string
-) {
-  const [featuresResult, balloonsResult] = await Promise.all([
-    getInspectionFeaturesRaw(client, inspectionDocumentId),
-    getBalloons(client, inspectionDocumentId)
-  ]);
-
-  if (featuresResult.error) {
-    return { data: null, error: featuresResult.error };
-  }
-  if (balloonsResult.error) {
-    return { data: null, error: balloonsResult.error };
-  }
-
-  const balloonByFeatureId = new Map(
-    (balloonsResult.data ?? []).map((b) => [b.inspectionFeatureId, b.id])
-  );
-
-  return {
-    data: (featuresResult.data ?? []).map((row) =>
-      mapInspectionFeature({
-        ...row,
-        balloonId: balloonByFeatureId.get(String(row.id)) ?? null
-      })
-    ),
-    error: null
-  };
-}
-
-async function getInspectionFeaturesRaw(
-  client: SupabaseClient<Database>,
-  inspectionDocumentId: string
-) {
-  return listInspectionFeatures(client, inspectionDocumentId);
-}
-
-export async function getBalloons(
-  client: SupabaseClient<Database>,
-  inspectionDocumentId: string
-) {
-  const result = await listBalloons(client, inspectionDocumentId);
-
-  return {
-    data: (result.data ?? []).map((row) =>
-      mapBalloon(row as unknown as Record<string, unknown>)
-    ),
-    error: result.error
-  };
-}
-
-export async function getInspectionPlan(
-  client: SupabaseClient<Database>,
-  inspectionDocumentId: string
-) {
-  const [featuresResult, balloonsResult] = await Promise.all([
-    getInspectionFeaturesRaw(client, inspectionDocumentId),
-    getBalloons(client, inspectionDocumentId)
-  ]);
-
-  if (featuresResult.error) {
-    return { data: null, error: featuresResult.error };
-  }
-  if (balloonsResult.error) {
-    return { data: null, error: balloonsResult.error };
-  }
-
-  const balloonByFeatureId = new Map(
-    (balloonsResult.data ?? []).map((b) => [b.inspectionFeatureId, b])
-  );
-
-  return {
-    data: (featuresResult.data ?? []).map((row) => {
-      const b = balloonByFeatureId.get(row.id);
-      const featureId = row.id;
-      return {
-        /** Feature id (primary key for plan rows). */
-        id: featureId,
-        featureId,
-        /** Balloon id when placed; null for table-only characteristics. */
-        balloonId: b?.id ?? null,
-        inspectionDocumentId: row.inspectionDocumentId,
-        pageNumber: b?.pageNumber ?? row.pageNumber,
-        characteristic: row.label,
-        description: row.description,
-        nominalValue: row.nominalValue,
-        tolerancePlus: row.tolerancePlus,
-        toleranceMinus: row.toleranceMinus,
-        unit: row.unit,
-        regionX: b ? b.regionX : null,
-        regionY: b ? b.regionY : null,
-        regionWidth: b ? b.regionWidth : null,
-        regionHeight: b ? b.regionHeight : null,
-        xCoordinate: b ? b.xCoordinate : null,
-        yCoordinate: b ? b.yCoordinate : null
-      };
-    }),
-    error: null
-  };
-}
-
-export async function saveInspectionDocumentAtomic(
-  client: SupabaseClient<Database>,
-  args: {
-    inspectionDocumentId: string;
-    companyId: string;
-    userId: string;
-    pdfUrl?: string | null;
-    pageCount?: number;
-    defaultPageWidth?: number;
-    defaultPageHeight?: number;
-    features: unknown;
-    balloons: unknown;
-  }
-) {
-  return (
-    client as unknown as {
-      rpc: (
-        fn: string,
-        args: Record<string, unknown>
-      ) => Promise<{
-        data: unknown;
-        error: unknown;
-      }>;
-    }
-  ).rpc("save_inspection_document_atomic", {
-    p_inspection_document_id: args.inspectionDocumentId,
-    p_company_id: args.companyId,
-    p_user_id: args.userId,
-    p_pdf_url: args.pdfUrl ?? null,
-    p_page_count: args.pageCount ?? null,
-    p_default_page_width: args.defaultPageWidth ?? null,
-    p_default_page_height: args.defaultPageHeight ?? null,
-    p_features: args.features,
-    p_balloons: args.balloons
-  });
-}
-
 // -------------------------------------------------------------
 // Inbound Inspections (lot-based)
 // -------------------------------------------------------------
 
-export async function getItemSamplingPlan(
-  client: SupabaseClient<Database>,
-  itemId: string,
-  companyId: string
-) {
-  return (client as any)
-    .from("itemSamplingPlan")
-    .select("*")
-    .eq("itemId", itemId)
-    .eq("companyId", companyId)
-    .maybeSingle();
-}
-
-export async function upsertItemSamplingPlan(
-  client: SupabaseClient<Database>,
-  plan: z.infer<typeof itemSamplingPlanValidator> & {
-    companyId: string;
-    updatedBy: string;
-  }
-) {
-  const existing = await (client as any)
-    .from("itemSamplingPlan")
-    .select("itemId")
-    .eq("itemId", plan.itemId)
-    .eq("companyId", plan.companyId)
-    .maybeSingle();
-
-  const payload = {
-    itemId: plan.itemId,
-    type: plan.type,
-    sampleSize: plan.sampleSize ?? null,
-    percentage: plan.percentage ?? null,
-    aql: plan.aql ?? null,
-    inspectionLevel: plan.inspectionLevel,
-    severity: plan.severity,
-    companyId: plan.companyId
-  };
-
-  if (existing.data) {
-    return (client as any)
-      .from("itemSamplingPlan")
-      .update({
-        ...payload,
-        updatedBy: plan.updatedBy,
-        updatedAt: new Date().toISOString()
-      })
-      .eq("itemId", plan.itemId)
-      .eq("companyId", plan.companyId);
-  }
-
-  return (client as any).from("itemSamplingPlan").insert({
-    ...payload,
-    createdBy: plan.updatedBy
-  });
-}
-
-export async function getInboundInspections(
+export async function getInspections(
   client: SupabaseClient<Database>,
   companyId: string,
   args?: GenericQueryFilters & {
     search: string | null;
     status: string | null;
+    source: string | null;
   }
 ) {
+  // No receipt embed: the generic sourceDocumentId carries no FK, so the
+  // source document is denormalized onto the row (sourceDocumentReadableId).
   let query = (client as any)
-    .from("inboundInspection")
+    .from("inspection")
     .select(
-      "*, item(readableId, name), receipt(receiptId, supplierId), supplier(name), inboundInspectionSample(status)",
+      "*, item(readableId, name), supplier(name), inspectionSample(status)",
       { count: "exact" }
     )
     .eq("companyId", companyId);
 
   if (args?.search) {
     query = query.or(
-      `itemReadableId.ilike.%${args.search}%,notes.ilike.%${args.search}%`
+      `itemReadableId.ilike.%${args.search}%,sourceDocumentReadableId.ilike.%${args.search}%,notes.ilike.%${args.search}%`
     );
   }
 
   if (args?.status) {
     // @ts-ignore - status is a valid enum value
     query = query.eq("status", args.status);
+  }
+
+  if (args?.source) {
+    // @ts-ignore - source is a valid enum value
+    query = query.eq("sourceDocument", args.source);
   }
 
   if (args) {
@@ -2854,20 +2253,39 @@ export async function getInboundInspections(
   return query;
 }
 
-export async function getInboundInspection(
+export async function getInspection(
   client: SupabaseClient<Database>,
   id: string
 ) {
   return (client as any)
-    .from("inboundInspection")
+    .from("inspection")
     .select(
-      "*, item(readableId, name, type, itemTrackingType), receipt(receiptId, supplierId, createdBy), supplier(name), inboundInspectionSample(*, trackedEntity(id, readableId, attributes, status, sourceDocumentReadableId))"
+      "*, item(readableId, name, type, itemTrackingType), supplier(name), inspectionSample(*, trackedEntity(id, readableId, attributes, status, sourceDocumentReadableId))"
     )
     .eq("id", id)
     .single();
 }
 
-export async function getInboundInspectionLotTrackedEntities(
+// All inspection lots created for a receipt (one per inspected receipt line),
+// keyed by the source-generic columns. Powers the receipt header's link/dropdown
+// to its inspections.
+export async function getReceiptInspections(
+  client: SupabaseClient<Database>,
+  receiptId: string,
+  companyId: string
+) {
+  return (client as any)
+    .from("inspection")
+    .select("id, inspectionId, itemId, itemReadableId, status")
+    .eq("sourceDocument", "Receipt")
+    .eq("sourceDocumentId", receiptId)
+    .eq("companyId", companyId)
+    .order("createdAt", { ascending: true });
+}
+
+// Receipt-sourced lots only: the received tracked entities are linked to the
+// receipt line through their attributes.
+export async function getInspectionTrackedEntities(
   client: SupabaseClient<Database>,
   receiptLineId: string,
   companyId: string
@@ -2877,4 +2295,90 @@ export async function getInboundInspectionLotTrackedEntities(
     .select("*")
     .eq("attributes ->> Receipt Line", receiptLineId)
     .eq("companyId", companyId);
+}
+
+export async function getInspectionSamplingPlans(
+  client: SupabaseClient<Database>,
+  inspectionId: string,
+  companyId: string
+) {
+  // Embed by target table name, never alias:fkColumn — composite-FK embeds
+  // break with the alias form.
+  return client
+    .from("inspectionSamplingPlan")
+    .select(
+      "*, inspectionFeature(id, label, description, pageNumber, type, nominalValue, tolerancePlus, toleranceMinus, unit)"
+    )
+    .eq("inspectionId", inspectionId)
+    .eq("companyId", companyId);
+}
+
+export async function getInspectionMeasurements(
+  client: SupabaseClient<Database>,
+  inspectionId: string,
+  companyId: string
+) {
+  return client
+    .from("inspectionMeasurement")
+    .select("*")
+    .eq("inspectionId", inspectionId)
+    .eq("companyId", companyId);
+}
+
+export async function getItemInspectionDocumentAssignments(
+  client: SupabaseClient<Database>,
+  itemId: string,
+  companyId: string
+) {
+  return client
+    .from("itemInspectionDocumentAssignment")
+    .select("*")
+    .eq("itemId", itemId)
+    .eq("companyId", companyId);
+}
+
+export async function upsertItemInspectionDocumentAssignment(
+  client: SupabaseClient<Database>,
+  assignment: z.infer<typeof itemInspectionDocumentAssignmentValidator> & {
+    companyId: string;
+    userId: string;
+  }
+) {
+  if (!assignment.inspectionDocumentId) {
+    return client
+      .from("itemInspectionDocumentAssignment")
+      .delete()
+      .eq("itemId", assignment.itemId)
+      .eq("usage", assignment.usage)
+      .eq("companyId", assignment.companyId);
+  }
+
+  const existing = await client
+    .from("itemInspectionDocumentAssignment")
+    .select("itemId")
+    .eq("itemId", assignment.itemId)
+    .eq("usage", assignment.usage)
+    .eq("companyId", assignment.companyId)
+    .maybeSingle();
+
+  if (existing.data) {
+    return client
+      .from("itemInspectionDocumentAssignment")
+      .update({
+        inspectionDocumentId: assignment.inspectionDocumentId,
+        updatedBy: assignment.userId,
+        updatedAt: new Date().toISOString()
+      })
+      .eq("itemId", assignment.itemId)
+      .eq("usage", assignment.usage)
+      .eq("companyId", assignment.companyId);
+  }
+
+  return client.from("itemInspectionDocumentAssignment").insert({
+    itemId: assignment.itemId,
+    usage: assignment.usage,
+    inspectionDocumentId: assignment.inspectionDocumentId,
+    companyId: assignment.companyId,
+    createdBy: assignment.userId
+  });
 }

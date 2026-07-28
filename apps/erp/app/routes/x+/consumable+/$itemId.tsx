@@ -124,6 +124,7 @@ export default function ConsumableRoute() {
                           salesOrderLines,
                           shipmentLines,
                           supplierQuotes,
+                          inspections,
                           jobMaterialUsage
                         } = resolvedUsedIn;
 
@@ -203,6 +204,13 @@ export default function ConsumableRoute() {
                             children: supplierQuotes
                           }
                         ];
+
+                        tree.push({
+                          key: "inspections",
+                          name: "Inspections",
+                          module: "quality",
+                          children: inspections
+                        });
 
                         return (
                           <UsedInTree

@@ -119,7 +119,11 @@ type Material = z.infer<typeof methodMaterialValidator> & {
   };
 };
 
-type Operation = z.infer<typeof methodOperationValidator>;
+type Operation = z.infer<typeof methodOperationValidator> & {
+  // The same operations data BillOfProcess gets — carries its steps at runtime, so the
+  // BoM editor can offer a per-step assignment (Phase 2). Narrow type, optional here.
+  methodOperationStep?: { id: string; name: string | null }[];
+};
 
 type ItemWithData = SortableItem & {
   data: Material;
@@ -631,6 +635,7 @@ function MaterialForm({
     description: string;
     unitOfMeasureCode: string;
     methodOperationId: string | undefined;
+    methodOperationStepIds?: string[];
     quantity: number;
     kit: boolean;
     storageUnitIds: Record<string, string>;
@@ -644,6 +649,13 @@ function MaterialForm({
     description: item.data.description ?? "",
     unitOfMeasureCode: item.data.unitOfMeasureCode ?? "EA",
     methodOperationId: item.data.methodOperationId ?? undefined,
+    methodOperationStepIds: (
+      (
+        item.data as {
+          methodMaterialStep?: { methodOperationStepId: string }[];
+        }
+      ).methodMaterialStep ?? []
+    ).map((s) => s.methodOperationStepId),
     quantity: item.data.quantity ?? 1,
     kit: item.data.kit ?? false,
     storageUnitIds: item.data.storageUnitIds ?? {},
@@ -1076,10 +1088,14 @@ function MaterialForm({
             onChange={(value) => {
               setItemData((d) => ({
                 ...d,
-                methodOperationId: value?.value
+                methodOperationId: value?.value,
+                // Steps belong to an operation — clear them when the operation changes.
+                methodOperationStepIds: []
               }));
             }}
           />
+          {/* Part ↔ step assignment now lives on the STEP (the BoP step editor's "Parts"
+              picker), not here — so there is no per-material "Steps" dropdown in the BOM. */}
         </div>
       </div>
 

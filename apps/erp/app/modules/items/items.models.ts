@@ -227,8 +227,7 @@ export const itemValidator = z.object({
   // capped by the earliest input expiry — the output cannot outlast its
   // raw materials. Falls back to today + days when no input has a date.
   // Mirrors the inventory-settings "Calculate from BOM" copy.
-  shelfLifeCalculateFromBom: zfd.checkbox(),
-  requiresInspection: zfd.checkbox().optional()
+  shelfLifeCalculateFromBom: zfd.checkbox()
 });
 
 // Common storage / shelf-life refines. Shared across all item-type
@@ -487,6 +486,8 @@ export const methodOperationValidator = z
     processId: z.string().min(1, { message: "Process is required" }),
     workCenterId: zfd.text(z.string().optional()),
     procedureId: zfd.text(z.string().optional()),
+    assemblyInstructionId: zfd.text(z.string().optional()),
+    inspectionDocumentId: zfd.text(z.string().optional()),
     description: zfd.text(
       z.string().min(0, { message: "Description is required" })
     ),
@@ -515,7 +516,7 @@ export const methodOperationValidator = z
   })
   .refine(
     (data) => {
-      if (data.operationType === "Inside") {
+      if (data.operationType !== "Outside Processing") {
         return !!data.setupUnit;
       }
       return true;
@@ -527,7 +528,7 @@ export const methodOperationValidator = z
   )
   .refine(
     (data) => {
-      if (data.operationType === "Inside") {
+      if (data.operationType !== "Outside Processing") {
         return !!data.laborUnit;
       }
       return true;
@@ -539,8 +540,10 @@ export const methodOperationValidator = z
   )
   .refine(
     (data) => {
-      if (data.operationType === "Inside") {
-        return !!data.laborUnit;
+      // Machine only applies to Process operations — Assembly and Inspection
+      // are setup + labor work.
+      if (data.operationType === "Process") {
+        return !!data.machineUnit;
       }
       return true;
     },
@@ -551,7 +554,7 @@ export const methodOperationValidator = z
   )
   .refine(
     (data) => {
-      if (data.operationType === "Inside") {
+      if (data.operationType !== "Outside Processing") {
         return Number.isFinite(data.setupTime);
       }
       return true;
@@ -563,7 +566,7 @@ export const methodOperationValidator = z
   )
   .refine(
     (data) => {
-      if (data.operationType === "Inside") {
+      if (data.operationType !== "Outside Processing") {
         return Number.isFinite(data.laborTime);
       }
       return true;
@@ -575,7 +578,7 @@ export const methodOperationValidator = z
   )
   .refine(
     (data) => {
-      if (data.operationType === "Inside") {
+      if (data.operationType === "Process") {
         return Number.isFinite(data.machineTime);
       }
       return true;
@@ -583,6 +586,18 @@ export const methodOperationValidator = z
     {
       message: "Machine time is required",
       path: ["machineTime"]
+    }
+  )
+  .refine(
+    (data) => {
+      if (data.operationType === "Inspection") {
+        return !!data.inspectionDocumentId;
+      }
+      return true;
+    },
+    {
+      message: "Inspection Plan is required",
+      path: ["inspectionDocumentId"]
     }
   );
 

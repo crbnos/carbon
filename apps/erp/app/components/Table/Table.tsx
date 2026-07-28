@@ -1120,7 +1120,13 @@ const Table = <T extends object>({
                             (sortable ? (
                               <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
-                                  <div className="group flex justify-start items-center gap-2">
+                                  <div
+                                    className={cn(
+                                      "group flex items-center gap-2",
+                                      header.column.columnDef.meta
+                                        ?.headerClassName ?? "justify-start"
+                                    )}
+                                  >
                                     {header.column.columnDef.meta?.icon}
                                     {typeof header.column.columnDef.header ===
                                     "string"
@@ -1181,7 +1187,13 @@ const Table = <T extends object>({
                                 </DropdownMenuContent>
                               </DropdownMenu>
                             ) : (
-                              <div className="flex justify-start items-center gap-2">
+                              <div
+                                className={cn(
+                                  "flex items-center gap-2",
+                                  header.column.columnDef.meta
+                                    ?.headerClassName ?? "justify-start"
+                                )}
+                              >
                                 {header.column.columnDef.meta?.icon}
                                 {typeof header.column.columnDef.header ===
                                 "string"
