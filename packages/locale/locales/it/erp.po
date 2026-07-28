@@ -8646,7 +8646,7 @@ msgid "Number"
 msgstr "Numero"
 
 msgid "Number of decimal places allowed when entering a supplier unit price on a purchase order line. Increase this when suppliers quote extended precision (e.g. 12.3456)."
-msgstr "Numero di cifre decimali consentite quando si inserisce un prezzo unitario fornitore su una riga di ordine di acquisto. Aumentare questo quando i fornitori quotano con precisione estesa (ad es. 12.3456)."
+msgstr "Numero di cifre decimali consentite quando si inserisce un prezzo unitario fornitore su una riga di ordine di acquisto. Aumentare questo valore quando i fornitori indicano prezzi con più cifre decimali (ad es. 12.3456)."
 
 msgid "Number of inventory units per purchase unit"
 msgstr "Numero di unità di inventario per unità di acquisto"

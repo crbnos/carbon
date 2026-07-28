@@ -8646,7 +8646,7 @@ msgid "Number"
 msgstr "संख्या"
 
 msgid "Number of decimal places allowed when entering a supplier unit price on a purchase order line. Increase this when suppliers quote extended precision (e.g. 12.3456)."
-msgstr "खरीद आदेश पंक्ति पर आपूर्तिकर्ता इकाई मूल्य दर्ज करते समय अनुमति दी गई दशमलव स्थान की संख्या। जब आपूर्तिकर्ता विस्तारित सटीकता का हवाला देते हैं तो इसे बढ़ाएं (उदा. 12.3456)।"
+msgstr "खरीद आदेश पंक्ति पर आपूर्तिकर्ता इकाई मूल्य दर्ज करते समय अनुमत दशमलव स्थानों की संख्या। जब आपूर्तिकर्ता अधिक दशमलव स्थानों के साथ मूल्य उद्धृत करते हैं तो इसे बढ़ाएं (उदा. 12.3456)।"
 
 msgid "Number of inventory units per purchase unit"
 msgstr "प्रति क्रय इकाई इन्वेंटरी इकाइयों की संख्या"
