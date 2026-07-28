@@ -43,7 +43,7 @@ not by the compiler.
 
 ## Progress
 - [x] Task 1: Create the branch and record the pre-rename baseline
-- [ ] Task 2: Rename the models layer (`items.models.ts`)
+- [x] Task 2: Rename the models layer (`items.models.ts`)
 - [ ] Task 3: Rename the service + server layer
 - [ ] Task 4: Rename the UI directories and component files
 - [ ] Task 5: Rename component identifiers, props and local variables
