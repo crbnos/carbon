@@ -8688,7 +8688,7 @@ msgid "Number"
 msgstr "Число"
 
 msgid "Number of decimal places allowed when entering a supplier unit price on a purchase order line. Increase this when suppliers quote extended precision (e.g. 12.3456)."
-msgstr "Количество десятичных разрядов, разрешённых при вводе цены поставщика в строке заказа. Увеличьте это значение, когда поставщики указывают расширенную точность (например 12,3456)."
+msgstr "Количество десятичных разрядов, разрешённых при вводе цены поставщика в строке заказа на покупку. Увеличьте это значение, когда поставщики указывают расширенную точность (например, 12,3456)."
 
 msgid "Number of inventory units per purchase unit"
 msgstr "Количество единиц запасов на единицу закупки"
@@ -13695,7 +13695,7 @@ msgid "Unit Price"
 msgstr "Цена за единицу"
 
 msgid "Unit Price Precision"
-msgstr "Точность цены единицы"
+msgstr "Точность цены за единицу"
 
 msgid "Unit Sale Price"
 msgstr "Цена продажи за единицу"

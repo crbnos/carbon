@@ -213,7 +213,7 @@ function parseExportedFunctions(content: string): ParsedFunction[] {
 // Type → JSON Schema conversion
 // ---------------------------------------------------------------------------
 
-function typeToJsonSchema(typeStr: string): Record<string, unknown> {
+export function typeToJsonSchema(typeStr: string): Record<string, unknown> {
   const t = typeStr.trim();
 
   // Nullable: "Type | null"
@@ -221,7 +221,12 @@ function typeToJsonSchema(typeStr: string): Record<string, unknown> {
   if (nullableMatch) {
     const inner = typeToJsonSchema(nullableMatch[1].trim());
     if (inner.type) {
-      return { ...inner, type: [inner.type, "null"] };
+      return {
+        ...inner,
+        type: [inner.type, "null"],
+        // Keep enum aligned with the widened type so `null` isn't rejected.
+        ...(Array.isArray(inner.enum) ? { enum: [...inner.enum, null] } : {}),
+      };
     }
     return inner;
   }
