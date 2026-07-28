@@ -6470,7 +6470,7 @@ msgid "Inbox"
 msgstr "Posta in arrivo"
 
 msgid "Include a materials (bill of materials) section on the job traveler PDF with item numbers and quantities."
-msgstr "Includi una sezione di materiali (distinta materiali) nel PDF del foglio di lavoro con numeri e quantità articoli."
+msgstr "Includi una sezione di materiali (distinta base) nel PDF del foglio di lavoro con numeri e quantità degli articoli."
 
 msgid "Include extra parts in shipment"
 msgstr "Includi parti extra nella spedizione"
@@ -14434,7 +14434,7 @@ msgid "When on, scanning this process's operation barcode reports all remaining 
 msgstr "Se abilitato, la scansione del codice a barre dell'operazione di questo processo segnala tutta la quantità aperta rimanente come completata in un'azione; disabilitare quando gli operatori segnalano regolarmente parziali."
 
 msgid "When on, the traveler PDF lists the job's required materials."
-msgstr "Una volta attivato, il PDF del foglio di lavoro elenca i materiali richiesti del lavoro."
+msgstr "Quando attivato, il PDF del foglio di lavoro elenca i materiali richiesti del lavoro."
 
 msgid "When on, this party's invoices skip tax calculation; the party is responsible for keeping the exemption certificate current."
 msgstr "Se abilitato, le fatture di questa parte saltano il calcolo delle tasse; la parte è responsabile di mantenere il certificato di esenzione aggiornato."

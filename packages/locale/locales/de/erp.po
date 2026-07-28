@@ -14434,7 +14434,7 @@ msgid "When on, scanning this process's operation barcode reports all remaining 
 msgstr "Wenn aktiviert, meldet das Scannen des Operationsbarcodes dieses Prozesses alle verbleibende offene Menge auf einmal als abgeschlossen; deaktivieren, wenn Operatoren routinemäßig Teilmengen melden."
 
 msgid "When on, the traveler PDF lists the job's required materials."
-msgstr "Wenn aktiviert, listet die Traveler-PDF die erforderlichen Materialien des Jobs auf."
+msgstr "Wenn aktiviert, listet das Traveler-PDF die erforderlichen Materialien des Jobs auf."
 
 msgid "When on, this party's invoices skip tax calculation; the party is responsible for keeping the exemption certificate current."
 msgstr "Wenn aktiviert, überspringen die Rechnungen dieser Partei die Steuerberechnung; die Partei ist verantwortlich für die Aktualisierung des Befreiungszertifikats."

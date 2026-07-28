@@ -6479,7 +6479,7 @@ msgid "Include Inactive"
 msgstr "包括不活跃"
 
 msgid "Include materials on traveler"
-msgstr "在单据上包含物料"
+msgstr "在工作单据上包含物料"
 
 msgid "Included"
 msgstr "已包含"
@@ -14434,7 +14434,7 @@ msgid "When on, scanning this process's operation barcode reports all remaining 
 msgstr "启用后,扫描此流程的操作条形码会在一个操作中将所有剩余的未处理数量报告为已完成;当操作员定期报告部分时禁用。"
 
 msgid "When on, the traveler PDF lists the job's required materials."
-msgstr "启用时，单据 PDF 将列出工作所需的物料。"
+msgstr "启用后，工作单据 PDF 将列出工作所需的物料。"
 
 msgid "When on, this party's invoices skip tax calculation; the party is responsible for keeping the exemption certificate current."
 msgstr "启用后,该方的发票会跳过税计算;该方负责使豁免证书保持最新。"
