@@ -22939,6 +22939,21 @@ export default {
             $ref: "#/parameters/rowFilter.companies.logoWatermark"
           },
           {
+            $ref: "#/parameters/rowFilter.companies.industryId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companies.customIndustryDescription"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companies.selectedModules"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companies.featureRequests"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companies.registrationNumber"
+          },
+          {
             $ref: "#/parameters/rowFilter.companies.userId"
           },
           {
@@ -64849,6 +64864,9 @@ export default {
             $ref: "#/parameters/rowFilter.company.featureRequests"
           },
           {
+            $ref: "#/parameters/rowFilter.company.registrationNumber"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -65010,6 +65028,9 @@ export default {
             $ref: "#/parameters/rowFilter.company.featureRequests"
           },
           {
+            $ref: "#/parameters/rowFilter.company.registrationNumber"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -65123,6 +65144,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.company.featureRequests"
+          },
+          {
+            $ref: "#/parameters/rowFilter.company.registrationNumber"
           },
           {
             $ref: "#/parameters/body.company"
@@ -86624,6 +86648,66 @@ export default {
         tags: ["(rpc) update_receipt_line_serial_tracking"]
       }
     },
+    "/rpc/get_foreign_key_map": {
+      get: {
+        parameters: [
+          {
+            format: "text[]",
+            in: "query",
+            name: "p_table_names",
+            required: true,
+            type: "string"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) get_foreign_key_map"]
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_table_names: {
+                  format: "text[]",
+                  items: {
+                    type: "string"
+                  },
+                  type: "array"
+                }
+              },
+              required: ["p_table_names"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) get_foreign_key_map"]
+      }
+    },
     "/rpc/get_ar_aging": {
       post: {
         parameters: [
@@ -87584,6 +87668,63 @@ export default {
           }
         },
         tags: ["(rpc) resolve_shelf_life_start_for_receipt"]
+      }
+    },
+    "/rpc/get_primary_key_columns": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "p_table_name",
+            required: true,
+            type: "string"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) get_primary_key_columns"]
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_table_name: {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: ["p_table_name"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) get_primary_key_columns"]
       }
     },
     "/rpc/check_api_key_rate_limit": {
@@ -105181,6 +105322,31 @@ export default {
           type: "string"
         },
         logoWatermark: {
+          format: "text",
+          type: "string"
+        },
+        industryId: {
+          description:
+            "Note:\nThis is a Foreign Key to `industry.id`.<fk table='industry' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        customIndustryDescription: {
+          format: "text",
+          type: "string"
+        },
+        selectedModules: {
+          format: "text[]",
+          items: {
+            type: "string"
+          },
+          type: "array"
+        },
+        featureRequests: {
+          format: "text",
+          type: "string"
+        },
+        registrationNumber: {
           format: "text",
           type: "string"
         },
@@ -125174,6 +125340,10 @@ export default {
           type: "array"
         },
         featureRequests: {
+          format: "text",
+          type: "string"
+        },
+        registrationNumber: {
           format: "text",
           type: "string"
         }
@@ -146594,6 +146764,36 @@ export default {
     },
     "rowFilter.companies.logoWatermark": {
       name: "logoWatermark",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.companies.industryId": {
+      name: "industryId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.companies.customIndustryDescription": {
+      name: "customIndustryDescription",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.companies.selectedModules": {
+      name: "selectedModules",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.companies.featureRequests": {
+      name: "featureRequests",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.companies.registrationNumber": {
+      name: "registrationNumber",
       required: false,
       in: "query",
       type: "string"
@@ -168798,6 +168998,12 @@ export default {
     },
     "rowFilter.company.featureRequests": {
       name: "featureRequests",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.company.registrationNumber": {
+      name: "registrationNumber",
       required: false,
       in: "query",
       type: "string"

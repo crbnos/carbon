@@ -4453,17 +4453,53 @@ msgstr "Duplizieren zu..."
 msgid "Duration"
 msgstr "Dauer"
 
+msgid "e.g. +1 555 123 4567"
+msgstr "z.B. +1 555 123 4567"
+
+msgid "e.g. +1 555 123 4568"
+msgstr "z.B. +1 555 123 4568"
+
+msgid "e.g. 01234567"
+msgstr "z.B. 01234567"
+
+msgid "e.g. 1 Industrial Way"
+msgstr "z.B. 1 Industrial Way"
+
+msgid "e.g. 12-3456789"
+msgstr "z.B. 12-3456789"
+
 msgid "e.g. 2h"
 msgstr "z.B. 2h"
 
+msgid "e.g. 48201"
+msgstr "z.B. 48201"
+
+msgid "e.g. Acme Manufacturing"
+msgstr "z.B. Acme Manufacturing"
+
+msgid "e.g. Detroit"
+msgstr "z.B. Detroit"
+
 msgid "e.g. DWG-1234"
 msgstr "z.B. DWG-1234"
+
+msgid "e.g. GB123456789"
+msgstr "z.B. GB123456789"
+
+msgid "e.g. GB123456789000"
+msgstr "z.B. GB123456789000"
 
 msgid "e.g. Jane Smith"
 msgstr "z.B. Jane Smith"
 
 msgid "e.g. Marco + the area leads"
 msgstr "z.B. Marco + die Bereichsleiter"
+
+msgid "e.g. MI"
+msgstr "z.B. MI"
+
+msgid "e.g. Suite 200"
+msgstr "z.B. Suite 200"
 
 msgid "e.g. the first 3 to 4 weeks"
 msgstr "z.B. die ersten 3 bis 4 Wochen"
@@ -4845,6 +4881,9 @@ msgstr "Angestellte"
 
 msgid "Employees"
 msgstr "Mitarbeiter"
+
+msgid "Empty"
+msgstr "Leer"
 
 msgid "Empty = match every item"
 msgstr "Leer = alle Artikel abgleichen"
@@ -10269,6 +10308,9 @@ msgstr "Registriert"
 
 msgid "Registered"
 msgstr "Bestellpunkt"
+
+msgid "Registration Number"
+msgstr "Registrierungsnummer"
 
 msgid "Reject"
 msgstr "Ablehnen"
