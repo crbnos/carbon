@@ -28,13 +28,13 @@ import {
   type SupplierPriceMap
 } from "../shared";
 import {
-  type ChangeOrderChangeType,
-  type ChangeOrderError,
-  type ChangeOrderItemDiff,
-  changeOrderOpenStatuses,
-  type changeOrderStatus,
-  type changeOrderTaskStatus,
-  type changeOrderType,
+  type ChangeNoticeChangeType,
+  type ChangeNoticeError,
+  type ChangeNoticeItemDiff,
+  changeNoticeOpenStatuses,
+  type changeNoticeStatus,
+  type changeNoticeTaskStatus,
+  type changeNoticeType,
   type configurationParameterGroupOrderValidator,
   type configurationParameterGroupValidator,
   type configurationParameterOrderValidator,
@@ -44,7 +44,7 @@ import {
   type customerPartValidator,
   type getMethodValidator,
   ItemTrackingType,
-  isAllowedChangeOrderTransition,
+  isAllowedChangeNoticeTransition,
   type itemCostValidator,
   type itemManufacturingValidator,
   type itemPlanningValidator,
@@ -4896,20 +4896,20 @@ export async function getSupplierPartPriceBreaks(
 // -----------------------------------------------------------------------------
 // Reads
 // -----------------------------------------------------------------------------
-export async function getChangeOrder(
+export async function getChangeNotice(
   client: SupabaseClient<Database>,
-  changeOrderId: string,
+  changeNoticeId: string,
   companyId: string
 ) {
   return client
     .from("changeOrder")
     .select("*")
-    .eq("id", changeOrderId)
+    .eq("id", changeNoticeId)
     .eq("companyId", companyId)
     .single();
 }
 
-export async function getChangeOrders(
+export async function getChangeNotices(
   client: SupabaseClient<Database>,
   companyId: string,
   args?: GenericQueryFilters & { search: string | null }
@@ -4937,16 +4937,16 @@ export async function getChangeOrders(
 // -----------------------------------------------------------------------------
 // Header CRUD
 // -----------------------------------------------------------------------------
-export async function insertChangeOrder(
+export async function insertChangeNotice(
   client: SupabaseClient<Database>,
   input: {
     companyId: string;
     createdBy: string;
-    changeOrderId?: string;
+    changeNoticeId?: string;
     name: string;
-    type?: (typeof changeOrderType)[number];
+    type?: (typeof changeNoticeType)[number];
     priority?: (typeof nonConformancePriority)[number];
-    changeOrderTypeId?: string;
+    changeNoticeTypeId?: string;
     nonConformanceId?: string;
     openDate: string;
     reasonForChange?: Json;
@@ -4956,12 +4956,12 @@ export async function insertChangeOrder(
     customFields?: Json;
   }
 ): Promise<{
-  data: { id: string; changeOrderId: string } | null;
-  error: ChangeOrderError | null;
+  data: { id: string; changeNoticeId: string } | null;
+  error: ChangeNoticeError | null;
 }> {
-  let changeOrderId: string;
-  if (input.changeOrderId) {
-    changeOrderId = input.changeOrderId;
+  let changeNoticeId: string;
+  if (input.changeNoticeId) {
+    changeNoticeId = input.changeNoticeId;
   } else {
     const seq = await client.rpc("get_next_sequence", {
       sequence_name: "changeOrder",
@@ -4975,17 +4975,17 @@ export async function insertChangeOrder(
         }
       };
     }
-    changeOrderId = seq.data;
+    changeNoticeId = seq.data;
   }
 
   const result = await client
     .from("changeOrder")
     .insert({
-      changeOrderId,
+      changeOrderId: changeNoticeId,
       name: input.name,
       type: input.type ?? "Engineering",
       priority: input.priority ?? null,
-      changeOrderTypeId: input.changeOrderTypeId ?? null,
+      changeOrderTypeId: input.changeNoticeTypeId ?? null,
       nonConformanceId: input.nonConformanceId ?? null,
       openDate: input.openDate,
       reasonForChange: input.reasonForChange ?? {},
@@ -5005,22 +5005,22 @@ export async function insertChangeOrder(
 
   // No default actions are seeded on create — the CO starts with zero required
   // actions selected; the user picks them afterward from the rail's Required
-  // Actions multiselect (reconciled by setChangeOrderActionTasks).
+  // Actions multiselect (reconciled by setChangeNoticeActionTasks).
 
   return {
-    data: { id: result.data.id, changeOrderId: result.data.changeOrderId },
+    data: { id: result.data.id, changeNoticeId: result.data.changeOrderId },
     error: null
   };
 }
 
-export async function updateChangeOrder(
+export async function updateChangeNotice(
   client: SupabaseClient<Database>,
   input: {
     id: string;
     updatedBy: string;
     changeOrderId?: string;
     name?: string;
-    type?: (typeof changeOrderType)[number];
+    type?: (typeof changeNoticeType)[number];
     priority?: (typeof nonConformancePriority)[number] | null;
     changeOrderTypeId?: string | null;
     nonConformanceId?: string | null;
@@ -5033,7 +5033,7 @@ export async function updateChangeOrder(
   }
 ): Promise<{
   data: { id: string } | null;
-  error: ChangeOrderError | null;
+  error: ChangeNoticeError | null;
 }> {
   const { id, ...rest } = input;
   const result = await client
@@ -5047,24 +5047,24 @@ export async function updateChangeOrder(
   return { data: { id: result.data.id }, error: null };
 }
 
-export async function deleteChangeOrder(
+export async function deleteChangeNotice(
   client: SupabaseClient<Database>,
-  changeOrderId: string,
+  changeNoticeId: string,
   companyId: string
 ) {
   // Discard each affected item's CO-owned Draft first (the Draft make method for
   // a Version, or the revealed inactive item for a Revision/New Part). These are
   // NOT FK children of the change notice, so the cascade below won't remove them —
   // only the changeOrderAffectedItem rows cascade. Without this, deleting a CO
-  // orphans its drafts (mirrors removeChangeOrderAffectedItem's cleanup).
+  // orphans its drafts (mirrors removeChangeNoticeAffectedItem's cleanup).
   const affected = await client
     .from("changeOrderAffectedItem")
     .select("draftMakeMethodId, newItemId")
-    .eq("changeOrderId", changeOrderId)
+    .eq("changeOrderId", changeNoticeId)
     .eq("companyId", companyId);
   if (!affected.error && affected.data) {
     for (const item of affected.data) {
-      await discardChangeOrderDraft(client, item, companyId);
+      await discardChangeNoticeDraft(client, item, companyId);
     }
   }
 
@@ -5072,31 +5072,31 @@ export async function deleteChangeOrder(
   return client
     .from("changeOrder")
     .delete()
-    .eq("id", changeOrderId)
+    .eq("id", changeNoticeId)
     .eq("companyId", companyId);
 }
 
 // -----------------------------------------------------------------------------
 // Stage transition — the single guarded writer (G8), a compare-and-swap (G2).
-// Forward-only (isAllowedChangeOrderTransition).
+// Forward-only (isAllowedChangeNoticeTransition).
 // -----------------------------------------------------------------------------
-export async function updateChangeOrderStatus(
+export async function updateChangeNoticeStatus(
   client: SupabaseClient<Database>,
   update: {
     id: string;
     companyId: string;
-    fromStatus: (typeof changeOrderStatus)[number];
-    toStatus: (typeof changeOrderStatus)[number];
+    fromStatus: (typeof changeNoticeStatus)[number];
+    toStatus: (typeof changeNoticeStatus)[number];
     assignee?: string | null;
     updatedBy: string;
   }
 ): Promise<{
-  data: { id: string; status: (typeof changeOrderStatus)[number] } | null;
+  data: { id: string; status: (typeof changeNoticeStatus)[number] } | null;
   error: { message: string } | null;
 }> {
   const { id, companyId, fromStatus, toStatus, ...rest } = update;
 
-  if (!isAllowedChangeOrderTransition(fromStatus, toStatus)) {
+  if (!isAllowedChangeNoticeTransition(fromStatus, toStatus)) {
     return {
       data: null,
       error: {
@@ -5110,7 +5110,7 @@ export async function updateChangeOrderStatus(
   // transition where the caller passes it as undefined. Only set an optional
   // field when the caller provided a value.
   const payload: {
-    status: (typeof changeOrderStatus)[number];
+    status: (typeof changeNoticeStatus)[number];
     updatedBy: string;
     assignee?: string | null;
   } = { status: toStatus, updatedBy: rest.updatedBy };
@@ -5141,7 +5141,7 @@ export async function updateChangeOrderStatus(
 // -----------------------------------------------------------------------------
 // Change Notice Types (the "Category" lookup — configured like Issue Types)
 // -----------------------------------------------------------------------------
-export async function getChangeOrderTypes(
+export async function getChangeNoticeTypes(
   client: SupabaseClient<Database>,
   companyId: string,
   args?: GenericQueryFilters & { search: string | null }
@@ -5164,7 +5164,7 @@ export async function getChangeOrderTypes(
   return query;
 }
 
-export async function getChangeOrderTypesList(
+export async function getChangeNoticeTypesList(
   client: SupabaseClient<Database>,
   companyId: string
 ) {
@@ -5175,16 +5175,16 @@ export async function getChangeOrderTypesList(
     .order("name", { ascending: true });
 }
 
-export async function getChangeOrderType(
+export async function getChangeNoticeType(
   client: SupabaseClient<Database>,
   id: string
 ) {
   return client.from("changeOrderType").select("*").eq("id", id).single();
 }
 
-export async function upsertChangeOrderType(
+export async function upsertChangeNoticeType(
   client: SupabaseClient<Database>,
-  changeOrderType:
+  changeNoticeType:
     | {
         name: string;
         companyId: string;
@@ -5198,22 +5198,22 @@ export async function upsertChangeOrderType(
         customFields?: Json;
       }
 ) {
-  if ("createdBy" in changeOrderType) {
+  if ("createdBy" in changeNoticeType) {
     return client
       .from("changeOrderType")
-      .insert([changeOrderType])
+      .insert([changeNoticeType])
       .select("id")
       .single();
   }
   return client
     .from("changeOrderType")
-    .update(sanitize(changeOrderType))
-    .eq("id", changeOrderType.id)
+    .update(sanitize(changeNoticeType))
+    .eq("id", changeNoticeType.id)
     .select("id")
     .single();
 }
 
-export async function deleteChangeOrderType(
+export async function deleteChangeNoticeType(
   client: SupabaseClient<Database>,
   id: string
 ) {
@@ -5348,7 +5348,7 @@ export async function mintPlaceholderPart(
   }
 ): Promise<{
   data: { id: string } | null;
-  error: ChangeOrderError | null;
+  error: ChangeNoticeError | null;
 }> {
   const item = await client
     .from("item")
@@ -5393,7 +5393,7 @@ export async function mintPlaceholderPart(
 //   Revision → new inactive revision item + its Draft method (attrs/docs).
 //   New Part → new inactive part number (new readableId) + copied Draft method.
 // All three keep the user client (the release path uses the same client for the
-// same privileged method helpers — see applyChangeOrder / changeOrder.server).
+// same privileged method helpers — see applyChangeNotice / items.server).
 // =============================================================================
 
 // Mint the next readableId for a CO-derived New Part, following the SAME numbering
@@ -5498,16 +5498,16 @@ type DraftMethodResult = {
     baseMakeMethodId: string | null;
     newItemId: string | null;
   } | null;
-  error: ChangeOrderError | null;
+  error: ChangeNoticeError | null;
 };
 
 // Create the CO-owned Draft make method for an affected item per its change type.
-export async function createChangeOrderDraftMethod(
+export async function createChangeNoticeDraftMethod(
   client: SupabaseClient<Database>,
   input: {
-    changeOrderId: string;
+    changeNoticeId: string;
     itemId: string;
-    changeType: ChangeOrderChangeType;
+    changeType: ChangeNoticeChangeType;
     // Optional revision label for the Revision path — when the caller already
     // knows the target revision (e.g. the value typed in the new-revision
     // modal). Omitted → the next revision is auto-computed.
@@ -5516,7 +5516,7 @@ export async function createChangeOrderDraftMethod(
     userId: string;
   }
 ): Promise<DraftMethodResult> {
-  const { changeOrderId, itemId, changeType, revision, companyId, userId } =
+  const { changeNoticeId, itemId, changeType, revision, companyId, userId } =
     input;
 
   const base = await getActiveMakeMethodId(client, itemId, companyId);
@@ -5586,7 +5586,7 @@ export async function createChangeOrderDraftMethod(
     }
     const stamp = await client
       .from("makeMethod")
-      .update({ changeOrderId })
+      .update({ changeOrderId: changeNoticeId })
       .eq("id", draftId)
       .eq("companyId", companyId);
     if (stamp.error) return { data: null, error: stamp.error };
@@ -5638,14 +5638,14 @@ export async function createChangeOrderDraftMethod(
     );
     const stampItem = await client
       .from("item")
-      .update({ changeOrderId })
+      .update({ changeOrderId: changeNoticeId })
       .eq("id", newItemId)
       .eq("companyId", companyId);
     if (stampItem.error) return { data: null, error: stampItem.error };
     if (draftId) {
       await client
         .from("makeMethod")
-        .update({ changeOrderId })
+        .update({ changeOrderId: changeNoticeId })
         .eq("id", draftId)
         .eq("companyId", companyId);
     }
@@ -5660,7 +5660,7 @@ export async function createChangeOrderDraftMethod(
   }
 
   if (changeType === "New Part") {
-    // Net-new part — no predecessor, no supersession. addChangeOrderAffectedItem
+    // Net-new part — no predecessor, no supersession. addChangeNoticeAffectedItem
     // already minted the item (inactive, CO-stamped); here `itemId` IS that new
     // item. Its insert trigger created a Draft makeMethod (status default 'Draft');
     // stamp it CO-owned so it hides from version lists until release (parity with
@@ -5673,7 +5673,7 @@ export async function createChangeOrderDraftMethod(
     if (draftId) {
       const stamp = await client
         .from("makeMethod")
-        .update({ changeOrderId })
+        .update({ changeOrderId: changeNoticeId })
         .eq("id", draftId)
         .eq("companyId", companyId);
       if (stamp.error) return { data: null, error: stamp.error };
@@ -5731,7 +5731,7 @@ export async function createChangeOrderDraftMethod(
       mpn: source.data.mpn,
       active: false,
       revisionStatus: "Design",
-      changeOrderId,
+      changeOrderId: changeNoticeId,
       companyId,
       createdBy: userId
     })
@@ -5773,7 +5773,7 @@ export async function createChangeOrderDraftMethod(
   if (draftId) {
     await client
       .from("makeMethod")
-      .update({ changeOrderId })
+      .update({ changeOrderId: changeNoticeId })
       .eq("id", draftId)
       .eq("companyId", companyId);
   }
@@ -5790,7 +5790,7 @@ export async function createChangeOrderDraftMethod(
 // Discard an affected item's CO-owned Draft (used on change-type switch + when
 // removing the affected item). Deletes the new item for Revision/New Part
 // (cascades its method rows) or the Draft method for Version.
-async function discardChangeOrderDraft(
+async function discardChangeNoticeDraft(
   client: SupabaseClient<Database>,
   affected: {
     draftMakeMethodId: string | null;
@@ -5818,15 +5818,15 @@ async function discardChangeOrderDraft(
 // Add an affected item to a CO: insert the row, then spin its CO-owned Draft
 // make method per the change type and write the draft refs back. Rolls the row
 // back if draft creation fails (edge-fn calls can't share one txn — G2).
-export async function addChangeOrderAffectedItem(
+export async function addChangeNoticeAffectedItem(
   client: SupabaseClient<Database>,
   input: {
-    changeOrderId: string;
+    changeNoticeId: string;
     // The existing affected item (Version / Revision / Replacement Part). Omitted
     // for the net-new New Part path, where `newPart` is supplied and the item is
     // minted here.
     itemId?: string;
-    changeType: ChangeOrderChangeType;
+    changeType: ChangeNoticeChangeType;
     // Forwarded to the Revision draft path so a Revision affected item can take
     // an explicit revision label (e.g. from the new-revision modal).
     revision?: string;
@@ -5844,12 +5844,12 @@ export async function addChangeOrderAffectedItem(
   }
 ): Promise<{
   data: { id: string; draftMakeMethodId: string | null } | null;
-  error: ChangeOrderError | null;
+  error: ChangeNoticeError | null;
 }> {
-  const { changeOrderId, changeType, revision, newPart, companyId, userId } =
+  const { changeNoticeId, changeType, revision, newPart, companyId, userId } =
     input;
   let itemId = input.itemId;
-  let effectiveChangeType: ChangeOrderChangeType = changeType;
+  let effectiveChangeType: ChangeNoticeChangeType = changeType;
 
   if (newPart) {
     // Net-new part introduced by the CO — mint an inactive Part/Tool + its type
@@ -5879,7 +5879,7 @@ export async function addChangeOrderAffectedItem(
         unitOfMeasureCode: "EA",
         active: false,
         revisionStatus: "Design",
-        changeOrderId,
+        changeOrderId: changeNoticeId,
         companyId,
         createdBy: userId
       })
@@ -5918,7 +5918,7 @@ export async function addChangeOrderAffectedItem(
   const last = await client
     .from("changeOrderAffectedItem")
     .select("sortOrder")
-    .eq("changeOrderId", changeOrderId)
+    .eq("changeOrderId", changeNoticeId)
     .eq("companyId", companyId)
     .order("sortOrder", { ascending: false })
     .limit(1)
@@ -5928,7 +5928,7 @@ export async function addChangeOrderAffectedItem(
   const inserted = await client
     .from("changeOrderAffectedItem")
     .insert({
-      changeOrderId,
+      changeOrderId: changeNoticeId,
       itemId,
       changeType: effectiveChangeType,
       sortOrder,
@@ -5942,8 +5942,8 @@ export async function addChangeOrderAffectedItem(
   }
   const affectedItemId = inserted.data.id;
 
-  const draft = await createChangeOrderDraftMethod(client, {
-    changeOrderId,
+  const draft = await createChangeNoticeDraftMethod(client, {
+    changeNoticeId,
     itemId,
     changeType: effectiveChangeType,
     revision,
@@ -5981,15 +5981,15 @@ export async function addChangeOrderAffectedItem(
 
 // Switch an affected item's change type: discard its current draft and rebuild
 // for the new type (Q2 — the editable surface differs per type, so edits reset).
-export async function updateChangeOrderAffectedItemChangeType(
+export async function updateChangeNoticeAffectedItemChangeType(
   client: SupabaseClient<Database>,
   input: {
     id: string;
-    changeType: ChangeOrderChangeType;
+    changeType: ChangeNoticeChangeType;
     companyId: string;
     userId: string;
   }
-): Promise<{ data: { id: string } | null; error: ChangeOrderError | null }> {
+): Promise<{ data: { id: string } | null; error: ChangeNoticeError | null }> {
   const { id, changeType, companyId, userId } = input;
 
   const affected = await client
@@ -6025,8 +6025,8 @@ export async function updateChangeOrderAffectedItemChangeType(
     newItemId: affected.data.newItemId
   };
 
-  const draft = await createChangeOrderDraftMethod(client, {
-    changeOrderId: affected.data.changeOrderId,
+  const draft = await createChangeNoticeDraftMethod(client, {
+    changeNoticeId: affected.data.changeOrderId,
     itemId: affected.data.itemId,
     changeType,
     companyId,
@@ -6050,13 +6050,13 @@ export async function updateChangeOrderAffectedItemChangeType(
   if (updated.error) return { data: null, error: updated.error };
 
   // Swap succeeded — now safe to discard the superseded draft.
-  await discardChangeOrderDraft(client, previousDraft, companyId);
+  await discardChangeNoticeDraft(client, previousDraft, companyId);
   return { data: { id }, error: null };
 }
 
 // Update the per-item revision cutover config (mode + dates). The existence of
 // the oldRev→newRev supersession is automatic at release; this only tunes it.
-export async function updateChangeOrderAffectedItemCutover(
+export async function updateChangeNoticeAffectedItemCutover(
   client: SupabaseClient<Database>,
   input: {
     id: string;
@@ -6085,7 +6085,7 @@ export async function updateChangeOrderAffectedItemCutover(
 // =============================================================================
 
 // The minimal item label rendered next to each affected item / supersession.
-export type ChangeOrderStagingItemLabel = {
+export type ChangeNoticeStagingItemLabel = {
   id: string;
   readableId: string;
   readableIdWithRevision: string | null;
@@ -6096,11 +6096,11 @@ export type ChangeOrderStagingItemLabel = {
   replenishmentSystem: Database["public"]["Enums"]["itemReplenishmentSystem"];
 };
 
-type ChangeOrderAffectedItemRow =
+type ChangeNoticeAffectedItemRow =
   Database["public"]["Tables"]["changeOrderAffectedItem"]["Row"];
 
-export type ChangeOrderAffectedItemWithLabel = ChangeOrderAffectedItemRow & {
-  item: ChangeOrderStagingItemLabel | null;
+export type ChangeNoticeAffectedItemWithLabel = ChangeNoticeAffectedItemRow & {
+  item: ChangeNoticeStagingItemLabel | null;
 };
 
 const ITEM_LABEL_COLUMNS =
@@ -6112,11 +6112,11 @@ async function stitchItemLabels(
   itemIds: string[],
   companyId: string
 ): Promise<{
-  labels: Map<string, ChangeOrderStagingItemLabel>;
+  labels: Map<string, ChangeNoticeStagingItemLabel>;
   error: { message: string } | null;
 }> {
   const uniqueIds = [...new Set(itemIds)];
-  const labels = new Map<string, ChangeOrderStagingItemLabel>();
+  const labels = new Map<string, ChangeNoticeStagingItemLabel>();
   if (uniqueIds.length === 0) return { labels, error: null };
 
   const items = await client
@@ -6127,24 +6127,24 @@ async function stitchItemLabels(
 
   if (items.error) return { labels, error: items.error };
   for (const it of items.data ?? [])
-    labels.set(it.id, it as ChangeOrderStagingItemLabel);
+    labels.set(it.id, it as ChangeNoticeStagingItemLabel);
 
   return { labels, error: null };
 }
 
 // The affected items of a CO, each stitched to a minimal item label.
-export async function getChangeOrderAffectedItems(
+export async function getChangeNoticeAffectedItems(
   client: SupabaseClient<Database>,
-  changeOrderId: string,
+  changeNoticeId: string,
   companyId: string
 ): Promise<{
-  data: ChangeOrderAffectedItemWithLabel[];
+  data: ChangeNoticeAffectedItemWithLabel[];
   error: { message: string } | null;
 }> {
   const affected = await client
     .from("changeOrderAffectedItem")
     .select("*")
-    .eq("changeOrderId", changeOrderId)
+    .eq("changeOrderId", changeNoticeId)
     .eq("companyId", companyId)
     .order("sortOrder", { ascending: true })
     .order("createdAt", { ascending: true });
@@ -6168,7 +6168,7 @@ export async function getChangeOrderAffectedItems(
 
 // Remove an affected item + discard its CO-owned Draft (delete the new item for
 // Revision/New Part, or the Draft method for Version) so no orphan draft leaks.
-export async function removeChangeOrderAffectedItem(
+export async function removeChangeNoticeAffectedItem(
   client: SupabaseClient<Database>,
   id: string,
   companyId: string
@@ -6180,7 +6180,7 @@ export async function removeChangeOrderAffectedItem(
     .eq("companyId", companyId)
     .maybeSingle();
   if (!affected.error && affected.data) {
-    await discardChangeOrderDraft(client, affected.data, companyId);
+    await discardChangeNoticeDraft(client, affected.data, companyId);
   }
   return client
     .from("changeOrderAffectedItem")
@@ -6204,7 +6204,7 @@ export async function removeChangeOrderAffectedItem(
 // released revision (`item.changeOrderId`). Scoped by readableId so it matches
 // the part across all its revisions. Flat queries + JS union (no embeds —
 // TS2589 budget).
-export type ChangeOrderForItem = {
+export type ChangeNoticeForItem = {
   id: string;
   changeOrderId: string;
   name: string;
@@ -6213,14 +6213,14 @@ export type ChangeOrderForItem = {
   createdAt: string;
 };
 
-export async function findChangeOrdersForItem(
+export async function findChangeNoticesForItem(
   client: SupabaseClient<Database>,
   args: {
     itemId: string;
     companyId: string;
     statuses?: Database["public"]["Enums"]["changeOrderStatus"][];
   }
-): Promise<{ data: ChangeOrderForItem[]; error: { message: string } | null }> {
+): Promise<{ data: ChangeNoticeForItem[]; error: { message: string } | null }> {
   const { itemId, companyId, statuses } = args;
 
   // Resolve every revision (item row) sharing this part's readableId.
@@ -6322,7 +6322,7 @@ export async function findChangeOrdersForItem(
 // Reverse of the Linked-NCR cross-link (4a): every change notice that references
 // a given non-conformance. Read-only, minimal columns; rendered on the Issue
 // detail. Flat select (no embeds — TS2589 budget).
-export async function getChangeOrdersForNonConformance(
+export async function getChangeNoticesForNonConformance(
   client: SupabaseClient<Database>,
   nonConformanceId: string,
   companyId: string
@@ -6340,34 +6340,34 @@ export async function getChangeOrdersForNonConformance(
 // Reuses the canonical G6 query at the open-status filter. A non-empty result
 // means adding the part here would create a parallel open CO — the routes (and
 // the staging service) reject it.
-export async function findOtherOpenChangeOrdersForItem(
+export async function findOtherOpenChangeNoticesForItem(
   client: SupabaseClient<Database>,
-  args: { itemId: string; companyId: string; excludeChangeOrderId: string }
-): Promise<ChangeOrderForItem[]> {
-  const { data } = await findChangeOrdersForItem(client, {
+  args: { itemId: string; companyId: string; excludeChangeNoticeId: string }
+): Promise<ChangeNoticeForItem[]> {
+  const { data } = await findChangeNoticesForItem(client, {
     itemId: args.itemId,
     companyId: args.companyId,
-    statuses: changeOrderOpenStatuses
+    statuses: changeNoticeOpenStatuses
   });
-  return data.filter((co) => co.id !== args.excludeChangeOrderId);
+  return data.filter((cn) => cn.id !== args.excludeChangeNoticeId);
 }
 
 // Loader data for the "Change Notices" history section + open-CO alert on an
 // item detail page (part/tool/material) — the CO history for the item plus the
 // type lookup used to label rows. One shared source so the detail routes don't
 // each re-implement the pair of reads.
-export async function getItemChangeOrderData(
+export async function getItemChangeNoticeData(
   client: SupabaseClient<Database>,
   itemId: string,
   companyId: string
 ) {
-  const [changeOrders, changeOrderTypes] = await Promise.all([
-    findChangeOrdersForItem(client, { itemId, companyId }),
-    getChangeOrderTypesList(client, companyId)
+  const [changeNotices, changeNoticeTypes] = await Promise.all([
+    findChangeNoticesForItem(client, { itemId, companyId }),
+    getChangeNoticeTypesList(client, companyId)
   ]);
   return {
-    changeOrders: changeOrders.data,
-    changeOrderTypes: changeOrderTypes.data ?? []
+    changeNotices: changeNotices.data,
+    changeNoticeTypes: changeNoticeTypes.data ?? []
   };
 }
 
@@ -6376,15 +6376,15 @@ export async function getItemChangeOrderData(
 // user, any stage; non-gating. Split out of changeOrder.service.ts to keep
 // each file focused and under the module's 1000-line budget (G4).
 // =============================================================================
-export async function getChangeOrderActions(
+export async function getChangeNoticeActions(
   client: SupabaseClient<Database>,
-  changeOrderId: string,
+  changeNoticeId: string,
   companyId: string
 ) {
   const result = await client
     .from("changeOrderActionTask")
     .select("*")
-    .eq("changeOrderId", changeOrderId)
+    .eq("changeOrderId", changeNoticeId)
     .eq("companyId", companyId)
     .order("sortOrder", { ascending: true })
     .order("createdAt", { ascending: true });
@@ -6433,11 +6433,11 @@ export async function getChangeOrderActions(
   };
 }
 
-export async function updateChangeOrderActionStatus(
+export async function updateChangeNoticeActionStatus(
   client: SupabaseClient<Database>,
   input: {
     id: string;
-    status: (typeof changeOrderTaskStatus)[number];
+    status: (typeof changeNoticeTaskStatus)[number];
     userId: string;
   }
 ) {
@@ -6454,7 +6454,7 @@ export async function updateChangeOrderActionStatus(
     .single();
 }
 
-export async function deleteChangeOrderAction(
+export async function deleteChangeNoticeAction(
   client: SupabaseClient<Database>,
   id: string
 ) {
@@ -6464,22 +6464,22 @@ export async function deleteChangeOrderAction(
 // Bulk reorder (drag-sort) — a multi-row write, so Kysely (route passes
 // getDatabaseClient()). Kysely bypasses RLS and the ids come from the request
 // body, so every update is scoped to the owning change notice + company.
-export async function updateChangeOrderActionOrder(
+export async function updateChangeNoticeActionOrder(
   db: Kysely<KyselyDatabase>,
   args: {
-    changeOrderId: string;
+    changeNoticeId: string;
     companyId: string;
     updates: { id: string; sortOrder: number; updatedBy: string }[];
   }
 ) {
-  const { changeOrderId, companyId, updates } = args;
+  const { changeNoticeId, companyId, updates } = args;
   return db.transaction().execute(async (trx) => {
     for (const { id, sortOrder, updatedBy } of updates) {
       await trx
         .updateTable("changeOrderActionTask")
         .set({ sortOrder, updatedBy })
         .where("id", "=", id)
-        .where("changeOrderId", "=", changeOrderId)
+        .where("changeOrderId", "=", changeNoticeId)
         .where("companyId", "=", companyId)
         .execute();
     }
@@ -6490,7 +6490,7 @@ export async function updateChangeOrderActionOrder(
 // Change Notice Required Actions (the configurable default-action templates the
 // config CRUD page manages, and the source new change notices are seeded from).
 // =============================================================================
-export async function getChangeOrderRequiredActions(
+export async function getChangeNoticeRequiredActions(
   client: SupabaseClient<Database>,
   companyId: string,
   args?: GenericQueryFilters & { search: string | null }
@@ -6513,7 +6513,7 @@ export async function getChangeOrderRequiredActions(
   return query;
 }
 
-export async function getChangeOrderRequiredActionsList(
+export async function getChangeNoticeRequiredActionsList(
   client: SupabaseClient<Database>,
   companyId: string
 ) {
@@ -6525,7 +6525,7 @@ export async function getChangeOrderRequiredActionsList(
     .order("name", { ascending: true });
 }
 
-export async function getChangeOrderRequiredAction(
+export async function getChangeNoticeRequiredAction(
   client: SupabaseClient<Database>,
   id: string
 ) {
@@ -6536,7 +6536,7 @@ export async function getChangeOrderRequiredAction(
     .single();
 }
 
-export async function upsertChangeOrderRequiredAction(
+export async function upsertChangeNoticeRequiredAction(
   client: SupabaseClient<Database>,
   input: {
     id?: string;
@@ -6571,7 +6571,7 @@ export async function upsertChangeOrderRequiredAction(
     .single();
 }
 
-export async function deleteChangeOrderRequiredAction(
+export async function deleteChangeNoticeRequiredAction(
   client: SupabaseClient<Database>,
   id: string
 ) {
@@ -6583,10 +6583,10 @@ export async function deleteChangeOrderRequiredAction(
 // Quality's requiredActionIds field). Templates newly selected are instantiated
 // (appended); templates deselected have their task removed. Tasks with no
 // template link (actionTypeId IS NULL) are left untouched.
-export async function setChangeOrderActionTasks(
+export async function setChangeNoticeActionTasks(
   client: SupabaseClient<Database>,
   input: {
-    changeOrderId: string;
+    changeNoticeId: string;
     requiredActionIds: string[];
     companyId: string;
     userId: string;
@@ -6595,7 +6595,7 @@ export async function setChangeOrderActionTasks(
   const existing = await client
     .from("changeOrderActionTask")
     .select("id, actionTypeId, sortOrder")
-    .eq("changeOrderId", input.changeOrderId)
+    .eq("changeOrderId", input.changeNoticeId)
     .eq("companyId", input.companyId);
   if (existing.error) return existing;
 
@@ -6628,7 +6628,7 @@ export async function setChangeOrderActionTasks(
     const base = rows.reduce((max, r) => Math.max(max, r.sortOrder ?? 0), 0);
     const ins = await client.from("changeOrderActionTask").insert(
       (templates.data ?? []).map((template, index) => ({
-        changeOrderId: input.changeOrderId,
+        changeOrderId: input.changeNoticeId,
         actionTypeId: template.id,
         name: template.name,
         status: "Pending" as const,
@@ -6644,13 +6644,13 @@ export async function setChangeOrderActionTasks(
 }
 
 // Instantiate one changeOrderActionTask per active template onto a new change
-// order. Called by insertChangeOrder; non-gating, so callers ignore a soft
+// notice. Called by insertChangeNotice; non-gating, so callers ignore a soft
 // failure rather than roll back the change notice.
-export async function seedDefaultChangeOrderActions(
+export async function seedDefaultChangeNoticeActions(
   client: SupabaseClient<Database>,
-  input: { changeOrderId: string; companyId: string; userId: string }
+  input: { changeNoticeId: string; companyId: string; userId: string }
 ) {
-  const templates = await getChangeOrderRequiredActionsList(
+  const templates = await getChangeNoticeRequiredActionsList(
     client,
     input.companyId
   );
@@ -6658,7 +6658,7 @@ export async function seedDefaultChangeOrderActions(
 
   return client.from("changeOrderActionTask").insert(
     templates.data.map((template, index) => ({
-      changeOrderId: input.changeOrderId,
+      changeOrderId: input.changeNoticeId,
       actionTypeId: template.id,
       name: template.name,
       status: "Pending" as const,
@@ -6679,7 +6679,7 @@ export async function seedDefaultChangeOrderActions(
 // The same shape is reused for the pre-release "tips" (staged-vs-live) and the
 // post-release oldRev↔newRev redline (Task 17).
 //
-// `getChangeOrderDiff` is the DB-facing wrapper: for each affected item it reads
+// `getChangeNoticeDiff` is the DB-facing wrapper: for each affected item it reads
 // the current source method live + the staged rows, runs `diffMethod`, and also
 // returns the manual supersession declarations. Reads are flat selects + JS
 // stitch (no composite-FK PostgREST embeds — the erp TS2589 budget; see lessons).
@@ -6838,7 +6838,7 @@ export type OperationChildren = {
 };
 
 // OperationChildrenDiff and OperationDiffEntry now live in changeOrder.models
-// (imported + re-exported above) so ChangeOrderItemDiff can reference them
+// (imported + re-exported above) so ChangeNoticeItemDiff can reference them
 // without a circular import. Their shape is unchanged (Row = Record<string,
 // unknown>, the same as MethodDiffEntry's generic here).
 
@@ -6995,8 +6995,8 @@ export function diffMethod(input: DiffMethodInput): DiffMethodResult {
 // DB-facing wrapper
 // -----------------------------------------------------------------------------
 
-export type ChangeOrderDiff = {
-  items: ChangeOrderItemDiff[];
+export type ChangeNoticeDiff = {
+  items: ChangeNoticeItemDiff[];
 };
 
 // Editable item attribute columns compared for the attribute diff. `mpn` lives on
@@ -7372,19 +7372,19 @@ async function stampOperationRefNames(
 // CO-owned Draft method as `target` (both REAL method tables), correlate by
 // natural keys, run the pure `diffMethod`, and collect. Also returns the manual
 // supersession declarations. Flat selects scoped by companyId (no embeds).
-export async function getChangeOrderDiff(
+export async function getChangeNoticeDiff(
   client: SupabaseClient<Database>,
-  changeOrderId: string,
+  changeNoticeId: string,
   companyId: string
-): Promise<{ data: ChangeOrderDiff; error: { message: string } | null }> {
-  const affected = await getChangeOrderAffectedItems(
+): Promise<{ data: ChangeNoticeDiff; error: { message: string } | null }> {
+  const affected = await getChangeNoticeAffectedItems(
     client,
-    changeOrderId,
+    changeNoticeId,
     companyId
   );
   if (affected.error) return { data: { items: [] }, error: affected.error };
 
-  const items: ChangeOrderItemDiff[] = [];
+  const items: ChangeNoticeItemDiff[] = [];
 
   for (const affectedItem of affected.data) {
     const base = await readMethodRows(

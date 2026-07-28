@@ -42,7 +42,7 @@ import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
 import { copyToClipboard } from "~/utils/string";
 import {
-  type ChangeOrderChangeType,
+  type ChangeNoticeChangeType,
   itemReplenishmentSystems,
   itemTrackingTypes
 } from "../../items.models";
@@ -86,7 +86,7 @@ type PartPropertiesProps = {
   // `Revision` keeps the source part number, so the Part Number field is locked
   // (Name + the other attributes stay editable); `New Part` gets a fresh number
   // and stays editable.
-  changeType?: ChangeOrderChangeType;
+  changeType?: ChangeNoticeChangeType;
 };
 
 const PartProperties = ({

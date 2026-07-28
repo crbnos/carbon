@@ -1,6 +1,6 @@
 import type { JSONContent } from "@carbon/react";
 import type { MethodItemType, MethodType } from "../../../shared";
-import type { ChangeOrderItemDiff } from "../../items.models";
+import type { ChangeNoticeItemDiff } from "../../items.models";
 import type { getRevisionLock } from "../../items.server";
 import type {
   ChangeOrderAffectedItemWithLabel,
@@ -85,5 +85,5 @@ export type AffectedItemDraft = {
   // Attribute/file bundle for the embedded PartProperties editor — set for
   // Part-type Revision / New Part affected items, null otherwise.
   partData: PartPropertiesData | null;
-  diff?: ChangeOrderItemDiff;
+  diff?: ChangeNoticeItemDiff;
 };

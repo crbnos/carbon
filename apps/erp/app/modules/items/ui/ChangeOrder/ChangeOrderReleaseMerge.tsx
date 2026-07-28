@@ -18,8 +18,8 @@ import { LuCircleCheck } from "react-icons/lu";
 import { useFetcher } from "react-router";
 import { path } from "~/utils/path";
 import type {
-  ChangeOrderChangeType,
-  ChangeOrderItemDiff
+  ChangeNoticeChangeType,
+  ChangeNoticeItemDiff
 } from "../../items.models";
 import ChangeOrderDiffViewer from "./ChangeOrderDiffViewer";
 import { releaseDialogOpenAtom } from "./releaseDialog.store";
@@ -33,9 +33,9 @@ export type ReleaseChange = {
   name?: string | null;
   // Change type + draft make-method version, for the ChangeTypeBadge shown in
   // the overview Changes rollup.
-  changeType: ChangeOrderChangeType;
+  changeType: ChangeNoticeChangeType;
   version?: number | null;
-  diff?: ChangeOrderItemDiff;
+  diff?: ChangeNoticeItemDiff;
 };
 
 // The Implementation → Done release control, rendered as a confirmation dialog

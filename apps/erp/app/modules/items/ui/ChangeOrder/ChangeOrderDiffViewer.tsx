@@ -14,7 +14,7 @@ import type { ReactNode } from "react";
 import { LuChevronRight } from "react-icons/lu";
 import { useItems, useSuppliers } from "~/stores";
 import type {
-  ChangeOrderItemDiff,
+  ChangeNoticeItemDiff,
   MethodDiffEntry,
   MethodDiffStatus,
   OperationDiffEntry
@@ -634,7 +634,7 @@ export default function ChangeOrderDiffViewer({
   // release dialog keeps the default framed look.
   bare = false
 }: {
-  diff?: ChangeOrderItemDiff;
+  diff?: ChangeNoticeItemDiff;
   bare?: boolean;
 }) {
   const [items] = useItems();

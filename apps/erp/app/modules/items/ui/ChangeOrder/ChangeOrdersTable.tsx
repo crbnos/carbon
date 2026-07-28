@@ -27,7 +27,7 @@ import { usePeople } from "~/stores/people";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
 import {
-  type ChangeOrderChangeType,
+  type ChangeNoticeChangeType,
   changeOrderPriority,
   changeOrderStatus
 } from "../../items.models";
@@ -48,7 +48,7 @@ type ChangeOrdersTableProps = {
 type AffectedItemSummary = {
   id: string;
   itemId: string;
-  changeType: ChangeOrderChangeType;
+  changeType: ChangeNoticeChangeType;
   newItemId: string | null;
 };
 

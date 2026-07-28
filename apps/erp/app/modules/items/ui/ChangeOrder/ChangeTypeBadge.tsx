@@ -1,6 +1,6 @@
 import type { BadgeProps } from "@carbon/react";
 import { Badge } from "@carbon/react";
-import type { ChangeOrderChangeType } from "../../items.models";
+import type { ChangeNoticeChangeType } from "../../items.models";
 
 // A single badge summarizing an affected item's change type:
 //   Version → "Version 2"   Revision → "New Revision"
@@ -10,7 +10,7 @@ import type { ChangeOrderChangeType } from "../../items.models";
 // method version; a Revision/New Part mints a brand-new item whose method
 // restarts at v1, so that number is noise — use the plain label instead.
 export function changeTypeBadgeLabel(
-  changeType: ChangeOrderChangeType,
+  changeType: ChangeNoticeChangeType,
   version?: number | null
 ): string {
   if (changeType === "New Part") return "New";
@@ -22,7 +22,7 @@ export function changeTypeBadgeLabel(
 // Color-coded by change type: New Part = green (net-new), Replacement = orange
 // (supersedes), Revision = blue, Version = outline.
 const changeTypeBadgeVariant: Record<
-  ChangeOrderChangeType,
+  ChangeNoticeChangeType,
   BadgeProps["variant"]
 > = {
   "New Part": "green",
@@ -36,7 +36,7 @@ export default function ChangeTypeBadge({
   version,
   className
 }: {
-  changeType: ChangeOrderChangeType;
+  changeType: ChangeNoticeChangeType;
   version?: number | null;
   className?: string;
 }) {

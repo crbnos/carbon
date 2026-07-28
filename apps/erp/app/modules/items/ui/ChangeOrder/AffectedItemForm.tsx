@@ -31,7 +31,7 @@ import { ReplenishmentSystemIcon } from "~/components/Icons";
 import { useNextItemId } from "~/hooks";
 import { path } from "~/utils/path";
 import {
-  type ChangeOrderChangeType,
+  type ChangeNoticeChangeType,
   changeOrderAffectedItemValidator,
   changeOrderChangeTypes,
   changeOrderNewPartValidator,
@@ -67,7 +67,7 @@ export default function AffectedItemForm({
   const fetcher = useFetcher<{ success: boolean; id?: string }>();
 
   const [changeType, setChangeType] =
-    useState<ChangeOrderChangeType>("Version");
+    useState<ChangeNoticeChangeType>("Version");
   // A net-new affected item is always a Part (no Part/Tool choice) — mint under
   // the Part sequence.
   const { id: nextId, onIdChange, loading } = useNextItemId("Part");
@@ -153,7 +153,7 @@ export default function AffectedItemForm({
       termId="change-order-change-type"
       options={changeTypeOptions}
       onChange={(o) =>
-        setChangeType((o?.value as ChangeOrderChangeType) ?? "Version")
+        setChangeType((o?.value as ChangeNoticeChangeType) ?? "Version")
       }
     />
   );

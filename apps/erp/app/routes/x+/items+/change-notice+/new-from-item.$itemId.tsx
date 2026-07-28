@@ -6,7 +6,7 @@ import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import {
   addChangeOrderAffectedItem,
-  type ChangeOrderChangeType,
+  type ChangeNoticeChangeType,
   changeOrderChangeTypes,
   getItem,
   insertChangeOrder
@@ -33,10 +33,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const formData = await request.formData();
   const changeTypeRaw = formData.get("changeType");
-  const changeType: ChangeOrderChangeType = changeOrderChangeTypes.includes(
-    changeTypeRaw as ChangeOrderChangeType
+  const changeType: ChangeNoticeChangeType = changeOrderChangeTypes.includes(
+    changeTypeRaw as ChangeNoticeChangeType
   )
-    ? (changeTypeRaw as ChangeOrderChangeType)
+    ? (changeTypeRaw as ChangeNoticeChangeType)
     : "Version";
   const revisionRaw = formData.get("revision");
   const revision =

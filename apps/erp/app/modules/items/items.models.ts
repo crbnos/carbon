@@ -976,7 +976,7 @@ export const plmReleaseControl = ["off", "warn", "enforce"] as const;
 // Error shape returned by the change notice service functions: either a real
 // Supabase PostgrestError or a hand-built message (sequence/lookup failures that
 // don't originate from a query). One alias so callers get a consistent contract.
-export type ChangeOrderError = PostgrestError | { message: string };
+export type ChangeNoticeError = PostgrestError | { message: string };
 
 // =============================================================================
 // Change Notices — validators, enums, and the stage state machine.
@@ -1048,7 +1048,7 @@ export const changeNoticeChangeTypes = [
   "Replacement Part",
   "New Part"
 ] as const;
-export type ChangeOrderChangeType = (typeof changeNoticeChangeTypes)[number];
+export type ChangeNoticeChangeType = (typeof changeNoticeChangeTypes)[number];
 
 // changeOrder.priority reuses quality's nonConformancePriority DB enum.
 export const changeNoticePriority = nonConformancePriority;
@@ -1243,7 +1243,7 @@ export type MethodDiffEntry<T> = {
 
 // One operation's child-level diff (steps / parameters / tools), each bucket
 // classified added/removed/modified/unchanged. Defined here (not in
-// changeOrder.diff.ts) so ChangeOrderItemDiff can carry the operation tree
+// changeOrder.diff.ts) so ChangeNoticeItemDiff can carry the operation tree
 // without a circular import; changeOrder.diff.ts re-exports these for its own
 // callers.
 export type OperationChildrenDiff = {
@@ -1258,7 +1258,7 @@ export type OperationDiffEntry = MethodDiffEntry<Record<string, unknown>> & {
   children?: OperationChildrenDiff;
 };
 
-export type ChangeOrderItemDiff = {
+export type ChangeNoticeItemDiff = {
   affectedItemId: string;
   itemId: string;
   materials: MethodDiffEntry<Record<string, unknown>>[];
