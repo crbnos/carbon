@@ -9,7 +9,7 @@ import {
   getChangeOrderType,
   upsertChangeOrderType
 } from "~/modules/items";
-import { ChangeOrderTypeForm } from "~/modules/items/ui/ChangeOrderTypes";
+import { ChangeOrderTypeForm } from "~/modules/items/ui/ChangeNoticeTypes";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {

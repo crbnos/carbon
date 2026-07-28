@@ -4,7 +4,7 @@ import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { Outlet, useLoaderData } from "react-router";
 import { getChangeOrderTypes } from "~/modules/items";
-import { ChangeOrderTypesTable } from "~/modules/items/ui/ChangeOrderTypes";
+import { ChangeOrderTypesTable } from "~/modules/items/ui/ChangeNoticeTypes";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";

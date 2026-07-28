@@ -21,7 +21,7 @@ import type {
   ChangeNoticeChangeType,
   ChangeNoticeItemDiff
 } from "../../items.models";
-import ChangeOrderDiffViewer from "./ChangeOrderDiffViewer";
+import ChangeOrderDiffViewer from "./ChangeNoticeDiffViewer";
 import { releaseDialogOpenAtom } from "./releaseDialog.store";
 
 // One affected item's read-only changes, shown in the release confirmation.

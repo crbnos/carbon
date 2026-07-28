@@ -38,7 +38,7 @@ import { usePermissions } from "~/hooks";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
 import { changeOrderPriority, changeOrderValidator } from "../../items.models";
-import ChangeOrderPriority from "./ChangeOrderPriority";
+import ChangeOrderPriority from "./ChangeNoticePriority";
 
 type ChangeOrderFormValues = z.infer<typeof changeOrderValidator>;
 

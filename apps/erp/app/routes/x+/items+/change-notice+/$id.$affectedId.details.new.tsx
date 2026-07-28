@@ -1,6 +1,6 @@
 import { useNavigate, useParams } from "react-router";
 import { useRouteData } from "~/hooks";
-import type { AffectedItemDraft } from "~/modules/items/ui/ChangeOrder";
+import type { AffectedItemDraft } from "~/modules/items/ui/ChangeNotice";
 import { SupplierPartForm } from "~/modules/items/ui/Item";
 import { path } from "~/utils/path";
 

@@ -30,7 +30,7 @@ import { Tags } from "~/components/Form";
 import CustomFormInlineFields from "~/components/Form/CustomFormInlineFields";
 import { usePermissions, useRouteData } from "~/hooks";
 import type { ChangeOrderStatus as ChangeOrderStatusType } from "~/modules/items";
-import { ChangeOrderStatus } from "~/modules/items/ui/ChangeOrder";
+import { ChangeOrderStatus } from "~/modules/items/ui/ChangeNotice";
 import type { action } from "~/routes/x+/items+/update";
 import type { ListItem, StorageItem } from "~/types";
 import { path } from "~/utils/path";

@@ -65,7 +65,7 @@ import {
   CreateChangeOrderModal,
   ItemChangeOrderLock,
   useItemOpenChangeOrders
-} from "../ChangeOrder";
+} from "../ChangeNotice";
 import { getPathToMakeMethod } from "../Methods/utils";
 import { getLinkToItemDetails } from "./ItemForm";
 import MakeMethodVersionStatus from "./MakeMethodVersionStatus";

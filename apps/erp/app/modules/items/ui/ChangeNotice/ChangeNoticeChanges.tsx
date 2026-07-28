@@ -7,8 +7,8 @@ import {
   VStack
 } from "@carbon/react";
 import { Trans } from "@lingui/react/macro";
-import ChangeOrderDiffViewer from "./ChangeOrderDiffViewer";
-import type { ReleaseChange } from "./ChangeOrderReleaseMerge";
+import ChangeOrderDiffViewer from "./ChangeNoticeDiffViewer";
+import type { ReleaseChange } from "./ChangeNoticeReleaseMerge";
 import ChangeTypeBadge from "./ChangeTypeBadge";
 
 // The CO-wide changes rollup shown on the top-level overview ($id.details):

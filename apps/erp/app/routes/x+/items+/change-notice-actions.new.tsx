@@ -8,7 +8,7 @@ import {
   changeOrderRequiredActionValidator,
   upsertChangeOrderRequiredAction
 } from "~/modules/items";
-import { ChangeOrderRequiredActionForm } from "~/modules/items/ui/ChangeOrderActions";
+import { ChangeOrderRequiredActionForm } from "~/modules/items/ui/ChangeNoticeActions";
 import { getParams, path, requestReferrer } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {

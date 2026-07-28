@@ -4,7 +4,7 @@ import { useFetcher } from "react-router";
 import { useUser } from "~/hooks";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
-import ChangeOrderForm from "./ChangeOrderForm";
+import ChangeOrderForm from "./ChangeNoticeForm";
 
 type CreateChangeOrderModalProps = {
   // The Part to pre-select as the first affected item.

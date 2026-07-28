@@ -32,8 +32,8 @@ import {
   changeOrderStatus
 } from "../../items.models";
 import type { ChangeOrderListItem } from "../../types";
-import ChangeOrderPriority from "./ChangeOrderPriority";
-import ChangeOrderStatus from "./ChangeOrderStatus";
+import ChangeOrderPriority from "./ChangeNoticePriority";
+import ChangeOrderStatus from "./ChangeNoticeStatus";
 import ChangeTypeBadge from "./ChangeTypeBadge";
 
 type ChangeOrdersTableProps = {

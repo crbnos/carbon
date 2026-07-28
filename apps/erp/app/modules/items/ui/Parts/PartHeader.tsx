@@ -26,7 +26,7 @@ import ConfirmDelete from "~/components/Modals/ConfirmDelete";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
 import { path } from "~/utils/path";
 import type { PartSummary } from "../../types";
-import { CreateChangeOrderModal } from "../ChangeOrder";
+import { CreateChangeOrderModal } from "../ChangeNotice";
 import { getItemLifecycleStatus } from "../Item/ItemSupersessionForm";
 import { usePartNavigation } from "./usePartNavigation";
 

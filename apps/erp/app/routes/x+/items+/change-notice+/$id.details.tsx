@@ -7,13 +7,13 @@ import {
   canEditChangeOrderEngineering,
   canEditChangeOrderWorkflow
 } from "~/modules/items";
-import type { AffectedItemDraft } from "~/modules/items/ui/ChangeOrder";
+import type { AffectedItemDraft } from "~/modules/items/ui/ChangeNotice";
 import {
   ChangeOrderActions,
   ChangeOrderChanges,
   ChangeOrderContent
-} from "~/modules/items/ui/ChangeOrder";
-import ChangeOrderStatusFlow from "~/modules/items/ui/ChangeOrder/ChangeOrderStatusFlow";
+} from "~/modules/items/ui/ChangeNotice";
+import ChangeOrderStatusFlow from "~/modules/items/ui/ChangeNotice/ChangeNoticeStatusFlow";
 import { path } from "~/utils/path";
 
 // Top-level change-order detail (the CO overview) — mirrors the sales order

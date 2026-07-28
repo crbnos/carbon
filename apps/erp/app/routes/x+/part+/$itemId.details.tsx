@@ -35,7 +35,7 @@ import { getRevisionLock } from "~/modules/items/items.server";
 import {
   ItemChangeOrders,
   ItemOpenChangeOrderAlert
-} from "~/modules/items/ui/ChangeOrder";
+} from "~/modules/items/ui/ChangeNotice";
 import {
   BillOfMaterial,
   BillOfProcess,

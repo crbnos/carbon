@@ -34,7 +34,7 @@ import {
   isChangeOrderLocked
 } from "../../items.models";
 import type { ChangeOrder } from "../../types";
-import ChangeOrderStatus from "./ChangeOrderStatus";
+import ChangeOrderStatus from "./ChangeNoticeStatus";
 import { releaseDialogOpenAtom } from "./releaseDialog.store";
 
 const ChangeOrderHeader = () => {

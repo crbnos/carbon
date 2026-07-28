@@ -14,7 +14,7 @@ import {
   getChangeOrderTypesList,
   insertChangeOrder
 } from "~/modules/items";
-import { ChangeOrderForm } from "~/modules/items/ui/ChangeOrder";
+import { ChangeOrderForm } from "~/modules/items/ui/ChangeNotice";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";

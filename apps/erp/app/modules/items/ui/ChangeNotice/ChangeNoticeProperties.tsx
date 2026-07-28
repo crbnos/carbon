@@ -31,7 +31,7 @@ import { copyToClipboard } from "~/utils/string";
 import { changeOrderPriority, isChangeOrderLocked } from "../../items.models";
 import type { ChangeOrder } from "../../types";
 import type { AffectedItemDraft } from "./affectedItem.types";
-import ChangeOrderReleaseMerge from "./ChangeOrderReleaseMerge";
+import ChangeOrderReleaseMerge from "./ChangeNoticeReleaseMerge";
 import ImpactPanel, { type ChangeOrderImpactItem } from "./ImpactPanel";
 
 // One CO-centric section — the xxs uppercase heading + content used by the

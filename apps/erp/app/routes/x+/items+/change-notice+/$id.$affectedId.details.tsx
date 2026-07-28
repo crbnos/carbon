@@ -4,8 +4,8 @@ import { useParams } from "react-router";
 import { useRouteData } from "~/hooks";
 import type { ChangeOrder } from "~/modules/items";
 import { canEditChangeOrderEngineering } from "~/modules/items";
-import type { AffectedItemDraft } from "~/modules/items/ui/ChangeOrder";
-import AffectedItemDetail from "~/modules/items/ui/ChangeOrder/AffectedItemDetail";
+import type { AffectedItemDraft } from "~/modules/items/ui/ChangeNotice";
+import AffectedItemDetail from "~/modules/items/ui/ChangeNotice/AffectedItemDetail";
 import { path } from "~/utils/path";
 
 // The selected affected item's line detail, addressed by the URL (not client

@@ -6,7 +6,7 @@ import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
 import { isChangeOrderLocked } from "../../items.models";
 import type { ChangeOrderForItem } from "../../items.service";
-import ChangeOrderStatus from "./ChangeOrderStatus";
+import ChangeOrderStatus from "./ChangeNoticeStatus";
 
 type ItemChangeOrdersProps = {
   changeOrders: ChangeOrderForItem[];

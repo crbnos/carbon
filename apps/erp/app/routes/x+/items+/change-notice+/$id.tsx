@@ -27,12 +27,12 @@ import {
   getSupplierParts
 } from "~/modules/items";
 import { getRevisionLock } from "~/modules/items/items.server";
-import type { AffectedItemDraft } from "~/modules/items/ui/ChangeOrder";
+import type { AffectedItemDraft } from "~/modules/items/ui/ChangeNotice";
 import {
   ChangeOrderExplorer,
   ChangeOrderHeader,
   ChangeOrderProperties
-} from "~/modules/items/ui/ChangeOrder";
+} from "~/modules/items/ui/ChangeNotice";
 import { getIssue, getIssues } from "~/modules/quality";
 import { getLocationsList } from "~/modules/resources";
 import type { MethodItemType, MethodType } from "~/modules/shared";

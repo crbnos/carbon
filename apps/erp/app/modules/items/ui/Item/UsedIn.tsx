@@ -46,7 +46,7 @@ import { getReadableIdWithRevision } from "~/utils/string";
 import {
   ItemChangeOrderLock,
   useItemOpenChangeOrders
-} from "../ChangeOrder/ItemChangeOrderLock";
+} from "../ChangeNotice/ItemChangeOrderLock";
 import { getPathToMakeMethod } from "../Methods/utils";
 import RevisionForm from "./RevisionForm";
 

@@ -5,7 +5,7 @@ import { VStack } from "@carbon/react";
 import type { LoaderFunctionArgs } from "react-router";
 import { Outlet, redirect, useLoaderData } from "react-router";
 import { getChangeOrders, getChangeOrderTypesList } from "~/modules/items";
-import { ChangeOrdersTable } from "~/modules/items/ui/ChangeOrder";
+import { ChangeOrdersTable } from "~/modules/items/ui/ChangeNotice";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
 

@@ -8,7 +8,7 @@ import {
   changeOrderTypeValidator,
   upsertChangeOrderType
 } from "~/modules/items";
-import { ChangeOrderTypeForm } from "~/modules/items/ui/ChangeOrderTypes";
+import { ChangeOrderTypeForm } from "~/modules/items/ui/ChangeNoticeTypes";
 import { getParams, path, requestReferrer } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {

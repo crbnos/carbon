@@ -35,7 +35,7 @@ import {
 } from "../Item";
 import PartProperties from "../Parts/PartProperties";
 import type { AffectedItemDraft } from "./affectedItem.types";
-import ChangeOrderDiffViewer from "./ChangeOrderDiffViewer";
+import ChangeOrderDiffViewer from "./ChangeNoticeDiffViewer";
 import ChangeTypeBadge from "./ChangeTypeBadge";
 import ItemLink from "./ItemLink";
 
