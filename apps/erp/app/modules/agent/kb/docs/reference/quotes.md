@@ -24,17 +24,17 @@ A quote is where pricing is negotiated and recorded. Lines support quantity brea
   - **Cancelled**: Withdrawn before a decision.
   - **Expired**: Lapsed past its expiration date.
 
-Each line tracks its own progress too: **Not Started**, **In Progress**, **Complete**, or **No Quote** for a line you decline to bid. Finalizing a quote moves it to **Sent** and marks its lines **Complete**.
+Each line tracks its own progress too: **Not Started**, **In Progress**, **Complete**, or **No Quote** for a line you decline to bid. Finalizing a quote moves it to **Sent** and marks its lines **Complete**, leaving any **No Quote** line as it is.
 
 ## Digital quotes
 
-A **Sent** quote can be shared with the customer over a private link — no login. From it the customer **accepts**, optionally attaching their PO, and the quote converts straight to a sales order; or they **reject**, and it moves to **Lost**. Internal notes are stripped before anything reaches the customer.
+A **Sent** quote can be shared with the customer over a private link, no login. From it the customer **accepts**, optionally entering their PO number, and the quote converts straight to a sales order; or they **reject**, and it moves to **Lost**. Internal notes are stripped before anything reaches the customer.
 
 Digital acceptance is gated: the quote must be **Sent** and the company must have digital quotes enabled. A companion customer portal then shows the buyer live order and job status as the work proceeds.
 
 ## Becoming an order
 
-Converting a quote, internally or by the customer accepting, builds a sales order from its lines at the negotiated price and opens it at **To Ship and Invoice**. The quote itself flips to **Ordered**, or **Partial** if only some lines converted.
+Converting a quote, internally or by the customer accepting, builds a sales order from its lines at the negotiated price. It opens at **To Ship and Invoice** when a line ships physical goods, or **To Invoice** for a service-only order with nothing to ship. The quote itself flips to **Ordered**, or **Partial** if only some lines converted.
 
 There's no path from a quote straight to a production job. A job is raised from a *sales order* line, so the sequence is always quote → order → job.
 
@@ -46,7 +46,7 @@ There's no path from a quote straight to a production job. A job is raised from 
 ## Troubleshooting
 
 ### "Cannot modify a locked quote. Reopen it first."
-A quote locks the moment it leaves **Draft** — any other status (Sent, Ordered, Lost, and so on) is read-only. Use the quote's reopen action to bring it back to Draft (which bumps the revision) before editing.
+A quote locks the moment it leaves **Draft** — any other status (Sent, Ordered, Lost, and so on) is read-only. Use the quote's reopen action to bring it back to Draft before editing. Reopen is disabled once the quote has become an order.
 
 ### "An item cannot be added to itself."
 In the quote line's bill of materials, the item being made was selected as one of its own components. Pick a different item for the sub-assembly or material line.

@@ -314,6 +314,7 @@ export default function ResourcesSettingsRoute() {
                     description="Create maintenance dispatches in advance"
                     value={maintenanceGenerateInAdvance}
                     onChange={setMaintenanceGenerateInAdvance}
+                    bordered
                   />
                 </div>
                 {maintenanceGenerateInAdvance && (

@@ -52,7 +52,8 @@ Other config knobs:
 - `skipFields: ["updatedAt", "updatedBy", "embedding"]` — excluded from diffs (matched top-level and as nested `.suffix`).
 - `retentionDays: 30`
 - `archivePath: "audit-logs/{companyId}/{year}/{month}.jsonl.gz"` and `archiveBucket: "private"`.
-- `createFields` (allowlist of columns surfaced on INSERT) and `snapshotFields` (FK display values frozen into the diff) are declared per table.
+- `createFields` (allowlist of columns surfaced on INSERT) is declared per table.
+- `fkDisplayRegistry` — display columns per FK *target* table (e.g. `supplier: ["name"]`, `user: ["fullName"]`). FK columns are discovered from the schema at runtime via the `get_foreign_key_map` RPC (reads `pg_constraint`; only FKs referencing the target's `id`; returns `targetHasCompanyId` so non-tenant targets like `user` skip the companyId filter). Any changed FK column whose target is in the registry gets its display values frozen into the diff automatically; targets missing from the registry degrade to showing the raw id. Per-column `snapshotFields` on a table config still exist as overrides and win over the registry.
 
 Types live in `audit.types.ts`: `AuditLogEntry`, `CreateAuditLogEntry`, `AuditDiff`, `AuditDiffEntry`,
 `AuditMetadata`, `AuditOperation`, `AuditLogFilters`, `AuditLogResponse`, `AuditLogArchive`, `AuditLogConfig`.
@@ -65,8 +66,10 @@ DB triggers added via `attach_event_trigger(...)` push table changes onto a PGMQ
 `handlerType = 'AUDIT'`. The queue dispatcher (`packages/jobs/src/inngest/.../queue.ts`) batches AUDIT
 records and emits `carbon/event-audit`. `auditFunction` in
 `packages/jobs/src/inngest/functions/events/audit.ts` (Inngest id `event-handler-audit`) computes diffs
-(`computeDiff` / `computeCreateDiff` / `computeNestedDiff`, honoring `skipFields`), resolves snapshot FKs,
-and writes via `client.rpc("insert_audit_log_batch", { p_company_id, p_entries })`.
+(`computeDiff` / `computeCreateDiff` / `computeNestedDiff` in `events/diff.ts` — pure, unit-tested; honors `skipFields` and suppresses empty↔empty transitions like `null → {}` / `null → ""`), resolves FK snapshots
+(`applyFkSnapshots`: FK topology from `get_foreign_key_map` cached per process, display columns from
+`fkDisplayRegistry`, override precedence in `events/fk-snapshots.ts` → `resolveSnapshotSpec`, one batched
+lookup per target table), and writes via `client.rpc("insert_audit_log_batch", { p_company_id, p_entries })`.
 
 ## Query / management functions
 

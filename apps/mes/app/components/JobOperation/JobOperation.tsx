@@ -61,7 +61,7 @@ import { OptimizeProgress } from "@carbon/viewer/optimize-progress";
 import { useOptimizedModel } from "@carbon/viewer/use-optimized-model";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { PostgrestSingleResponse } from "@supabase/supabase-js";
-import { Suspense, useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import { FaTasks } from "react-icons/fa";
 import { FaCheck, FaPlus, FaTrash } from "react-icons/fa6";
@@ -348,7 +348,12 @@ export const JobOperation = ({
   // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   useEffect(() => {
     async function createInspectionStepsForNonConformanceActions() {
-      if (!carbon || !operationId) return;
+      // Skip while a prior POST is still in flight: nonConformanceActions/procedure
+      // are deferred promises whose references change on every revalidation (and the
+      // effect double-invokes under Strict Mode), so without this guard a submit whose
+      // insert hasn't yet landed in procedure.attributes would be re-issued against a
+      // stale existingActionIds set — duplicating steps.
+      if (!carbon || !operationId || fetcher.state !== "idle") return;
 
       try {
         const activeActions = await nonConformanceActions;
@@ -414,6 +419,28 @@ export const JobOperation = ({
     companyId,
     userId
   ]);
+
+  // Surface a failed containment-step creation instead of failing silently — otherwise
+  // the operator could complete the operation without the required inspection step ever
+  // being recorded. The route (steps.inspection.tsx) returns { success, message }; only
+  // react on the transition to idle (via the ref) so we toast once, not on every render.
+  const prevInspectionStepsStateRef = useRef(fetcher.state);
+  useEffect(() => {
+    const settled =
+      prevInspectionStepsStateRef.current !== "idle" &&
+      fetcher.state === "idle";
+    prevInspectionStepsStateRef.current = fetcher.state;
+    if (!settled) return;
+    if (fetcher.data && fetcher.data.success === false) {
+      log.error(
+        "Failed to create inspection steps for non-conformance actions",
+        {
+          message: fetcher.data.message
+        }
+      );
+      toast.error(fetcher.data.message ?? "Failed to create containment steps");
+    }
+  }, [fetcher.state, fetcher.data]);
 
   const [selectedStep, setSelectedStep] = useState<JobOperationStep | null>(
     null
@@ -1456,6 +1483,16 @@ export const JobOperation = ({
                           {issueModal.isOpen && (
                             <IssueMaterialModal
                               operationId={operation.id}
+                              // The process view issues the whole quantity at
+                              // once, so picked lots may pre-fill when the
+                              // parent is a single entity. The modal enforces
+                              // the full rule: a picking list exists AND (the
+                              // parent is not serialized OR the operation
+                              // makes exactly one unit).
+                              allowPrefill
+                              parentUnitCount={
+                                operation.operationQuantity ?? undefined
+                              }
                               expiredEntityPolicy={expiredEntityPolicy}
                               locationId={locationId}
                               workCenterId={operation.workCenterId ?? undefined}
@@ -1779,7 +1816,13 @@ export const JobOperation = ({
                 optimizeFailed={optimizeFailed}
                 optimizedUrl={
                   artifacts?.optimizedModelPath
-                    ? getPrivateUrl(artifacts.optimizedModelPath)
+                    ? // ?v= busts the immutable preview cache on the STABLE
+                      // optimized.glb path when a re-optimise lands.
+                      `${getPrivateUrl(artifacts.optimizedModelPath)}${
+                        artifacts.optimizedAt
+                          ? `?v=${encodeURIComponent(artifacts.optimizedAt)}`
+                          : ""
+                      }`
                     : null
                 }
                 glbUrl={

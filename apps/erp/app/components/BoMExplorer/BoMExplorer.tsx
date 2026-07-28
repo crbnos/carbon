@@ -30,7 +30,7 @@ import {
   LuTable
 } from "react-icons/lu";
 import { Link, useNavigate, useSearchParams } from "react-router";
-import { useOptimisticLocation } from "~/hooks";
+import { useOptimisticLocation, useQuantityFormatter } from "~/hooks";
 import { useIntegrations } from "~/hooks/useIntegrations";
 import { getLinkToItemDetails } from "~/modules/items/ui/Item/ItemForm";
 import { generateBomIds } from "~/utils/bom";
@@ -534,16 +534,19 @@ function BoMNodeText({ node }: { node: BoMNode }) {
 function BoMNodeData({ node }: { node: BoMNode }) {
   const integrations = useIntegrations();
   const onShapeState = getOnshapeState(node, integrations.has("onshape"));
+  // Display only — the exact quantity is unchanged everywhere else, and the
+  // node's preview card still shows it at full precision.
+  const formatQuantity = useQuantityFormatter();
 
   return (
     <HStack spacing={1}>
-      <Badge className="text-xs" variant="outline">
+      <Badge className="text-xs tabular-nums" variant="outline">
         <MethodIcon
           type={node.data.methodType}
           isKit={node.data.kit ?? undefined}
           className="mr-2"
         />
-        {node.data.quantity}
+        {formatQuantity(node.data.quantity)}
       </Badge>
       {onShapeState && <OnshapeStatus status={onShapeState} />}
     </HStack>

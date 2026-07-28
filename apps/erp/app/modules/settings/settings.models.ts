@@ -85,7 +85,8 @@ const company = {
   fax: zfd.text(z.string().optional()),
   email: zfd.text(z.string().optional()),
   vatNumber: zfd.text(z.string().optional()),
-  eori: zfd.text(z.string().optional())
+  eori: zfd.text(z.string().optional()),
+  registrationNumber: zfd.text(z.string().optional())
 };
 
 export const companyValidator = z.object(company);
@@ -142,6 +143,10 @@ export const digitalQuoteValidator = z.object({
 export const jobCompletedValidator = z.object({
   inventoryJobCompletedNotificationGroup: z.array(z.string()).optional(),
   salesJobCompletedNotificationGroup: z.array(z.string()).optional()
+});
+
+export const operationTimerValidator = z.object({
+  autoStartOperationTimer: zfd.checkbox()
 });
 
 export const kanbanOutputValidator = z.object({

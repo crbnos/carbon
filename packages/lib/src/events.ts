@@ -130,6 +130,11 @@ export type Events = {
       companyId: string;
       userId: string;
       // format is derived from the stored file inside the job, not passed here.
+      // Force a fresh optimise of an already-Successful model (the badge's
+      // refresh action) — bypasses the already-optimized guard and mints a
+      // fresh assembler job id (the stable id would attach to the previous
+      // run's cached result and finish instantly).
+      force?: boolean;
     };
   };
 
@@ -493,6 +498,33 @@ export type Events = {
         vendors?: boolean;
         items?: boolean;
       };
+    };
+  };
+
+  // Onshape released-asset backfill / reconcile
+  "carbon/onshape-backfill": {
+    data: {
+      companyId: string;
+      userId: string;
+      onshapeCompanyId?: string;
+      after?: string;
+      pageLimit?: number;
+    };
+  };
+
+  // Onshape go-forward sync: one released revision (from the
+  // onshape.revision.created webhook) -> attach assets to the matching item
+  "carbon/onshape-revision-sync": {
+    data: {
+      companyId: string;
+      userId: string;
+      messageId: string; // Onshape webhook messageId — idempotency key
+      partNumber: string;
+      documentId: string;
+      versionId: string;
+      elementId: string;
+      elementType: number; // 0 = part studio, 1 = assembly, 2 = drawing
+      revisionId?: string;
     };
   };
 

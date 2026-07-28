@@ -60,7 +60,7 @@ const MaterialFinish = (props: MaterialFinishSelectProps) => {
     return (materialFinishesLoader.data?.data ?? []).map((c) => ({
       value: c.id,
       label: c.name,
-      helper: c.companyId === null ? "Standard" : undefined
+      helper: c.companyId === null ? "Standard" : "Custom"
     }));
   }, [materialFinishesLoader.data?.data]);
 

@@ -41,6 +41,7 @@ import {
 import {
   Customer,
   Item,
+  JobSalesOrderLine,
   Location,
   StorageUnit,
   Tags,
@@ -324,26 +325,46 @@ const JobProperties = () => {
           </HStack>
         </VStack>
       ) : (
-        <ValidatedForm
-          defaultValues={{
-            storageUnitId: routeData?.job?.storageUnitId ?? undefined
-          }}
-          validator={z.object({
-            storageUnitId: zfd.text(z.string().optional())
-          })}
-          className="w-full"
-        >
-          <StorageUnit
-            label={t`Target`}
-            name="storageUnitId"
-            inline
-            locationId={routeData?.job?.locationId ?? undefined}
-            isReadOnly={isDisabled}
-            onChange={(value) => {
-              onUpdate("storageUnitId", value?.id ?? null);
+        <>
+          <ValidatedForm
+            defaultValues={{ salesOrderLineId: undefined }}
+            validator={z.object({
+              salesOrderLineId: zfd.text(z.string().optional())
+            })}
+            className="w-full"
+          >
+            <JobSalesOrderLine
+              jobId={jobId}
+              name="salesOrderLineId"
+              label={t`Target`}
+              inline
+              isReadOnly={isDisabled}
+              onChange={(line) => {
+                onUpdate("salesOrderLineId", line?.id ?? null);
+              }}
+            />
+          </ValidatedForm>
+          <ValidatedForm
+            defaultValues={{
+              storageUnitId: routeData?.job?.storageUnitId ?? undefined
             }}
-          />
-        </ValidatedForm>
+            validator={z.object({
+              storageUnitId: zfd.text(z.string().optional())
+            })}
+            className="w-full"
+          >
+            <StorageUnit
+              label={t`Storage Unit`}
+              name="storageUnitId"
+              inline
+              locationId={routeData?.job?.locationId ?? undefined}
+              isReadOnly={isDisabled}
+              onChange={(value) => {
+                onUpdate("storageUnitId", value?.id ?? null);
+              }}
+            />
+          </ValidatedForm>
+        </>
       )}
 
       <Assignee

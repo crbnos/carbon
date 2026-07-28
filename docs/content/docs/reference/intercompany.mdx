@@ -1,0 +1,99 @@
+---
+title: Intercompany accounting
+description: "Match a sale in one company against the purchase in its sibling, then eliminate the pair for consolidated reporting."
+---
+
+When two companies under the same owner trade with each other, each books its own side: one records a receivable, the other a payable. On a consolidated statement those two entries are the same money counted twice. Intercompany accounting is how Carbon pairs them up and cancels them out.
+
+The whole feature is scoped to a **<Term>company group</Term>**, and it only appears once a group has more than one company. If you run a single company, there is nothing here to do. Set up the group and its members first (see [Companies](#prerequisite-a-multi-company-group)); everything below assumes they exist.
+
+## What a transaction is
+
+An intercompany transaction records that one company in the group owes or is owed by another. You create one from the accounting **Intercompany** screen with **New IC Transaction**, choosing a **source company** and a **target company** (they must be different), an amount, a description, and the two accounts to hit.
+
+Creating it does real bookkeeping on the source company. Carbon writes a balanced <Term>journal</Term> on the source: a **debit** line to the account you pick and a matching **credit** line, both tagged with the target company as the **intercompany partner**. The currency defaults to the source company's base currency. So an intercompany transaction is not a note. It is a posted journal on one company, plus a tracking record that remembers which sibling it was with.
+
+<Callout type="note">
+The source and target are picked from the group's active companies, and **elimination entities are excluded** from that list. You transact between real operating companies. The <Term id="elimination-entity">elimination entity</Term> is where the cancelling entries land later, not a party to the trade.
+</Callout>
+
+## The matching lifecycle
+
+Every intercompany transaction carries a **status**. It starts life at **"Unmatched"**, is paired to its counterpart by matching, and is retired by elimination.
+
+<StatusFlow>
+  <Status name="Unmatched">The transaction has been created and posted on its source company, but Carbon has not yet found the mirror-image transaction on the other company. This is the default on creation.</Status>
+  <Status name="Matched" accent>Matching found the counterpart: a transaction in the reverse direction (its source is this one's target, and vice versa) for the **same amount** in the same group. Both sides flip to Matched together and each records the other's journal line.</Status>
+  <Status name="Eliminated" terminal>Elimination has generated the reversing journal that cancels the pair for consolidation. The transaction is retired and stops counting toward the intercompany balance.</Status>
+</StatusFlow>
+
+These are the only three values, enforced by a database check constraint on the transaction's `status`.
+
+## How a pair gets matched
+
+Matching is a manual, run-on-demand step, not something that happens as you post. On the Intercompany screen, **Run Matching** sweeps the whole group.
+
+The rule is deliberately strict. Two **Unmatched** transactions match only when they are true mirror images: company A → B pairs with company B → A, for the **exact same amount**, within the same group. When Carbon finds such a pair it sets both to **"Matched"** in one step and links each to the other's journal line. The result toast tells you how many matched and how many are still unmatched.
+
+If a transaction stays **Unmatched** after a run, its mirror does not exist yet. The usual cause is that the sibling company has not booked its side, or booked it for a different amount. Create or correct the counterpart, then run matching again.
+
+<Callout type="note">
+Matching pairs the two sides. It does **not** post anything new or touch either company's ledger. The journals were written when you created each transaction; matching only records that they belong together and advances their status.
+</Callout>
+
+## Elimination
+
+Matching sets the stage. **Elimination** is what actually removes the double-count for consolidated reporting. It, too, is a manual sweep: **Generate Eliminations** processes every **Matched** pair in the group.
+
+For each matched pair, Carbon posts a single **elimination journal** whose lines are the sign-reversed copies of both sides' original journal lines. That journal is booked not on either operating company but on a dedicated **elimination entity** — a special company in the group flagged for this purpose. Carbon routes the entry to the elimination entity belonging to the **lowest common parent** of the two transacting companies, which is what makes multi-tier hierarchies (parent-child, sibling, cousin) consolidate correctly; if there isn't one at that level it falls back to any elimination entity in the group, and if the group has none the run fails.
+
+Once the reversing journal is posted, the pair flips to **"Eliminated"** and the elimination journal is recorded on each transaction. The run returns a count of the journals it created.
+
+<Callout type="warn">
+Elimination writes real reversing journal entries on the elimination entity. There is no one-click undo. Generate eliminations only when the matched pairs are correct, and confirm you have an elimination entity in the group before you run it.
+</Callout>
+
+## The intercompany balance
+
+The Intercompany screen also shows a **from / to balance matrix** across the group's companies and a running count of how many transactions sit at each status. The balance sums **non-eliminated** transactions only: once a pair is eliminated it drops out of the matrix. So a clean, fully-consolidated group shows zeros, and any non-zero cell is an intercompany position that hasn't been matched and eliminated yet.
+
+## Prerequisite: a multi-company group
+
+Intercompany is only meaningful with a group of companies and at least one elimination entity:
+
+- **The company group** ties the members together. The chart of accounts, currencies, and dimensions are shared at the group level, so every company posts against the same accounts. Members and their parent-child hierarchy are managed under company settings.
+- **The elimination entity** is a company in the group marked as such. It holds no operating activity; it exists to receive the elimination journals. Without one, **Generate Eliminations** has nowhere to post and the run fails.
+
+When a company joins a group, Carbon automatically creates the reciprocal intercompany customer and supplier records between it and each sibling, so the trading relationships exist as soon as the group does.
+
+## Related
+
+<Cards>
+  <Card title="Accounting & the ledger" href="/docs/reference/accounting">
+    The journal, accounts, and periods that intercompany transactions post into.
+  </Card>
+  <Card title="Period close" href="/docs/reference/period-close">
+    Closing the books, one period at a time.
+  </Card>
+</Cards>
+
+<AgentContext>
+## Troubleshooting
+
+Exact errors surfaced by intercompany matching and elimination.
+
+### "Debit and credit account must be different"
+The new IC transaction picked the same account for both the debit and the credit line. Choose two distinct accounts — the whole point is to move value from one to the other.
+
+### "Source and target company must be different"
+An intercompany transaction is between two companies. Pick a target company other than the source.
+
+### "No elimination entity found for company group …"
+**Generate Eliminations** ran but the group has no company flagged as an elimination entity, so there is nowhere to post the reversing journals. Add an elimination entity to the group under company settings, then run elimination again.
+
+### "Insufficient permissions to match intercompany transactions" / "… to generate elimination entries"
+Running matching or elimination requires being an employee of a company in the group with accounting-create permission. Both actions sweep the entire group, so the check is against group membership, not just the active company.
+
+### A transaction stays "Unmatched" after Run Matching
+No mirror-image transaction exists. Matching only pairs an A → B transaction with a B → A transaction for the **exact same amount** in the same group. Confirm the sibling company has booked its side for the identical amount, then run matching again.
+</AgentContext>

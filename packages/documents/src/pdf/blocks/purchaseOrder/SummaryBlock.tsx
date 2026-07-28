@@ -17,6 +17,13 @@ export function SummaryBlock({
   const taxLabel = block.options?.taxLabel?.trim() || "Tax";
 
   const shippingCost = purchaseOrder?.supplierShippingCost ?? 0;
+  const subtotal = purchaseOrderLines.reduce(
+    (acc, line) =>
+      acc +
+      (line.purchaseQuantity ?? 0) * (line.supplierUnitPrice ?? 0) +
+      (line.supplierShippingCost ?? 0),
+    0
+  );
   const taxAmount = purchaseOrderLines.reduce(
     (acc, line) => acc + (line.supplierTaxAmount ?? 0),
     0
@@ -34,14 +41,7 @@ export function SummaryBlock({
           Subtotal ({currencyCode})
         </Text>
         <Text style={tw("w-[13%] text-center text-gray-800")}>
-          {numberFormatter.format(
-            purchaseOrderLines.reduce((sum, line) => {
-              if (line?.purchaseQuantity && line?.supplierUnitPrice) {
-                return sum + line.purchaseQuantity * line.supplierUnitPrice;
-              }
-              return sum;
-            }, 0)
-          )}
+          {numberFormatter.format(subtotal)}
         </Text>
       </View>
 

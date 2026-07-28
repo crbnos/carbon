@@ -268,7 +268,7 @@ export const documentSectionPlacementSchema = z.enum([
 ]);
 
 /** Default registration number shown in the footer when none is configured. */
-export const DEFAULT_REGISTRATION_NUMBER = "{company.taxId}";
+export const DEFAULT_REGISTRATION_NUMBER = "{company.registrationNumber}";
 
 export const DEFAULT_FOOTER_OPTIONS = {
   showRegistrationLine: true,

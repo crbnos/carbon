@@ -23,6 +23,7 @@ import {
   MethodItemTypeIcon,
   ModuleIcon,
   OperationStatusIcon,
+  OperationTypeIcon,
   SourcingTypeIcon,
   TimeTypeIcon,
   TrackingTypeIcon
@@ -31,6 +32,7 @@ import { ItemLifecycleBadge } from "./ItemLifecycleBadge";
 import ItemThumbnail from "./ItemThumbnail";
 import Location from "./Location";
 import MetricCard from "./MetricCard";
+import { ModelOptimizedIndicator } from "./ModelOptimizedIndicator";
 import New from "./New";
 import PeriodSelector from "./PeriodSelector";
 import RealtimeDataProvider from "./RealtimeDataProvider";
@@ -68,9 +70,11 @@ export {
   MethodIcon,
   MethodItemTypeIcon,
   MetricCard,
+  ModelOptimizedIndicator,
   ModuleIcon,
   New,
   OperationStatusIcon,
+  OperationTypeIcon,
   PeriodSelector,
   PrintButton,
   RealtimeDataProvider,

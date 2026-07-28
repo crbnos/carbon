@@ -18,7 +18,7 @@ const statuses = Object.keys(actionTaskStatusActions) as ActionTaskStatus[];
 
 // Icon-only status control for an action-task card: the current status as an
 // icon (with tooltip), opening a dropdown to jump to any status. Shared by
-// Quality issues and Change Orders so both read identically — and it renders an
+// Quality issues and Change Notices so both read identically — and it renders an
 // icon, not the status word, so there's no text to truncate in the card footer.
 export function ActionTaskStatusButton({
   status,
