@@ -1872,7 +1872,7 @@ export const terms = {
   // ── Config: sequences, custom fields, dimensions ────────────────────────
   "numbering-sequence": {
     term: msg`Numbering sequence`,
-    definition: msg`The per-company counter behind a document type's readable number, assembling {prefix}{next+step, zero-padded}{suffix} and advancing as each document is created.`,
+    definition: msg`The per-company counter behind a document type's readable number, assembling the prefix, the zero-padded next value, and the suffix, and advancing as each document is created.`,
     href: "/docs/reference/sequences",
     aliases: ["sequence"]
   },

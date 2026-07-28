@@ -12820,8 +12820,8 @@ msgstr "귀사의 도입을 진행할 Carbon 측 담당자와 연락 방법입�
 msgid "The people on your team and their access to Carbon"
 msgstr "팀 구성원과 Carbon 접근 권한"
 
-msgid "The per-company counter behind a document type's readable number, assembling {prefix}{next+step, zero-padded}{suffix} and advancing as each document is created."
-msgstr "문서 유형의 읽을 수 있는 번호 뒤의 회사별 카운터로, {prefix}{next+step, zero-padded}{suffix}를 조립하고 각 문서가 생성될 때마다 증가함."
+msgid "The per-company counter behind a document type's readable number, assembling the prefix, the zero-padded next value, and the suffix, and advancing as each document is created."
+msgstr "문서 유형의 식별 번호를 생성하는 회사별 카운터로, 접두사, 0으로 채워진 다음 번호, 그리고 접미사를 결합하여 번호를 만들고, 각 문서가 생성될 때마다 증가합니다."
 
 msgid "The per-item outcome recorded on a non-conformance's affected material — Pending, Return to Supplier, Rework, Scrap, or Use As Is — decided for each affected lot or serial on its own."
 msgstr "부적합에 영향을 받은 자재에 기록되는 항목별 결과 — 대기 중, 공급자에게 반환, 재작업, 폐기 또는 있는 그대로 사용 — 각 영향을 받은 로트 또는 시리얼에 대해 개별적으로 결정됨."

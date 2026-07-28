@@ -12820,8 +12820,8 @@ msgstr "कार्बन की ओर से वे लोग जो आप�
 msgid "The people on your team and their access to Carbon"
 msgstr "आपकी टीम के लोग और Carbon तक उनकी पहुंच"
 
-msgid "The per-company counter behind a document type's readable number, assembling {prefix}{next+step, zero-padded}{suffix} and advancing as each document is created."
-msgstr "दस्तावेज़ प्रकार की पठनीय संख्या के पीछे प्रति-कंपनी काउंटर, {prefix}{next+step, zero-padded}{suffix} को असेम्बल करता है और प्रत्येक दस्तावेज़ बनाए जाने पर आगे बढ़ता है।"
+msgid "The per-company counter behind a document type's readable number, assembling the prefix, the zero-padded next value, and the suffix, and advancing as each document is created."
+msgstr "प्रति-कंपनी काउंटर जो एक दस्तावेज़ प्रकार की पठनीय संख्या के अंतर्गत काम करता है, जो उपसर्ग, शून्य-पैडित अगली मान, और प्रत्यय को एकत्रित करता है, और हर नए दस्तावेज़ के निर्माण के साथ आगे बढ़ता है।"
 
 msgid "The per-item outcome recorded on a non-conformance's affected material — Pending, Return to Supplier, Rework, Scrap, or Use As Is — decided for each affected lot or serial on its own."
 msgstr "प्रत्येक आइटम का परिणाम एक गैर-अनुरूपता की प्रभावित सामग्री पर दर्ज किया गया — प्रतीक्षित, आपूर्तिकर्ता को वापस, पुनः कार्य, स्क्रैप, या जैसा है वैसा उपयोग करें — प्रत्येक प्रभावित लॉट या सीरियल के लिए अपने आप पर निर्णय लिया गया।"

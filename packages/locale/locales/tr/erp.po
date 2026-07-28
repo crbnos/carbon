@@ -12820,8 +12820,8 @@ msgstr "Carbon tarafındaki uygulamanızı yönetecek ve onlara nasıl ulaşaca�
 msgid "The people on your team and their access to Carbon"
 msgstr "Ekibinizdeki kişiler ve Carbon'a erişimleri"
 
-msgid "The per-company counter behind a document type's readable number, assembling {prefix}{next+step, zero-padded}{suffix} and advancing as each document is created."
-msgstr "Belge türünün okunabilir sayısının arkasındaki şirket başına sayaç, {prefix}{next+step, zero-padded}{suffix} öğesini bir araya getiriyor ve her belge oluşturulduğunda ilerlemiştir."
+msgid "The per-company counter behind a document type's readable number, assembling the prefix, the zero-padded next value, and the suffix, and advancing as each document is created."
+msgstr "Belge türünün okunabilir numarasını oluşturan, şirket başına sayaç; ön ek, sıfırla dolgulu sonraki değer ve son eki birleştirerek, her belge oluşturulduğunda ilerler."
 
 msgid "The per-item outcome recorded on a non-conformance's affected material — Pending, Return to Supplier, Rework, Scrap, or Use As Is — decided for each affected lot or serial on its own."
 msgstr "Uyumsuzluğun etkilenen malzemesine kaydedilen ürün başına sonuç — Beklemede, Tedarikçiye İade, Yeniden İşleme, Hurdaya Çıkarma veya Olduğu Gibi Kullan — her etkilenen partiye veya seriye kendi başına karar verilir."

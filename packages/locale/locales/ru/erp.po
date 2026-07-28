@@ -12820,8 +12820,8 @@ msgstr "Люди со стороны Carbon, которые будут упра�
 msgid "The people on your team and their access to Carbon"
 msgstr "Люди в вашей команде и их доступ к Carbon"
 
-msgid "The per-company counter behind a document type's readable number, assembling {prefix}{next+step, zero-padded}{suffix} and advancing as each document is created."
-msgstr "Счётчик для каждой компании, лежащий в основе читаемого номера документа, собирающий {prefix}{next+step, zero-padded}{suffix} и увеличивающийся при создании каждого документа."
+msgid "The per-company counter behind a document type's readable number, assembling the prefix, the zero-padded next value, and the suffix, and advancing as each document is created."
+msgstr "Счётчик на уровне компании, формирующий читаемый номер документа путём объединения префикса, дополняемого нулями числового значения и суффикса, и увеличивающийся при создании каждого документа."
 
 msgid "The per-item outcome recorded on a non-conformance's affected material — Pending, Return to Supplier, Rework, Scrap, or Use As Is — decided for each affected lot or serial on its own."
 msgstr "Исход для каждого элемента, записанный для затронутого материала несоответствия — В ожидании, Вернуть поставщику, Переработка, Брак или Использовать как есть — решается для каждой затронутой партии или серии отдельно."

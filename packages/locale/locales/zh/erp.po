@@ -12820,8 +12820,8 @@ msgstr "Carbon 方面将运行您的实施的人员，以及如何联系他们�
 msgid "The people on your team and their access to Carbon"
 msgstr "您团队中的人员及其对 Carbon 的访问权限"
 
-msgid "The per-company counter behind a document type's readable number, assembling {prefix}{next+step, zero-padded}{suffix} and advancing as each document is created."
-msgstr "文档类型可读编号背后的按公司计数器，组合{prefix}{next+step, zero-padded}{suffix}，每创建一个文档就增加。"
+msgid "The per-company counter behind a document type's readable number, assembling the prefix, the zero-padded next value, and the suffix, and advancing as each document is created."
+msgstr "按公司分别维护的计数器，用于生成文档类型的可读编号，将前缀、零填充的序列号和后缀组合在一起，每创建一个文档时自动递增。"
 
 msgid "The per-item outcome recorded on a non-conformance's affected material — Pending, Return to Supplier, Rework, Scrap, or Use As Is — decided for each affected lot or serial on its own."
 msgstr "在不符合项的受影响物料上记录的逐项结果——待处理、退回供应商、返工、报废或照原样使用——针对每个受影响的批次或序列号单独决定。"
