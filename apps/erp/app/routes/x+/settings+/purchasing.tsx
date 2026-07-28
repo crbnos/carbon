@@ -166,7 +166,10 @@ export async function action({ request }: ActionFunctionArgs) {
         await updatePurchaseOrderUnitPricePrecisionSetting(
           client,
           companyId,
-          Number(precisionValidation.data.purchaseOrderUnitPricePrecision)
+          Number(precisionValidation.data.purchaseOrderUnitPricePrecision) as
+            | 2
+            | 3
+            | 4
         );
 
       if (precisionResult.error) {

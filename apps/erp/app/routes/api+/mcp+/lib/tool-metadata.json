@@ -1,5 +1,5 @@
 {
-  "generated": "2026-07-28T18:02:57.151Z",
+  "generated": "2026-07-28T18:07:07.402Z",
   "totalTools": 1397,
   "modules": 15,
   "tools": [
@@ -40491,7 +40491,12 @@
         "type": "object",
         "properties": {
           "purchaseOrderUnitPricePrecision": {
-            "type": "number"
+            "type": "integer",
+            "enum": [
+              2,
+              3,
+              4
+            ]
           }
         },
         "required": [

@@ -235,6 +235,17 @@ function typeToJsonSchema(typeStr: string): Record<string, unknown> {
     };
   }
 
+  // Numeric literal union: 2 | 3 | 4
+  if (
+    literalParts.length > 1 &&
+    literalParts.every((p) => /^-?\d+(?:\.\d+)?$/.test(p))
+  ) {
+    return {
+      type: literalParts.every((p) => /^-?\d+$/.test(p)) ? "integer" : "number",
+      enum: literalParts.map((p) => Number(p)),
+    };
+  }
+
   // Primitives
   if (t === "string") return { type: "string" };
   if (t === "number") return { type: "number" };

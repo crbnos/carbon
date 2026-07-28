@@ -1047,7 +1047,7 @@ export async function updatePurchasePriceUpdateTimingSetting(
 export async function updatePurchaseOrderUnitPricePrecisionSetting(
   client: SupabaseClient<Database>,
   companyId: string,
-  purchaseOrderUnitPricePrecision: number
+  purchaseOrderUnitPricePrecision: 2 | 3 | 4
 ) {
   // Cast: the purchaseOrderUnitPricePrecision column is added by migration
   // 20260728073255 but isn't in the generated types until they're regenerated
