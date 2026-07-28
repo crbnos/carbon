@@ -6509,7 +6509,7 @@ msgid "Inbox"
 msgstr "Входящие"
 
 msgid "Include a materials (bill of materials) section on the job traveler PDF with item numbers and quantities."
-msgstr "Включить раздел материалов (ведомость материалов) в PDF путевой лист работы с номерами элементов и количествами."
+msgstr "Включить раздел материалов (спецификация материалов) в PDF путевого листа задания с номерами товаров и количествами."
 
 msgid "Include extra parts in shipment"
 msgstr "Включить дополнительные детали в отправку"
@@ -6518,7 +6518,7 @@ msgid "Include Inactive"
 msgstr "Включить неактивные"
 
 msgid "Include materials on traveler"
-msgstr "Включить материалы в путевой лист"
+msgstr "Включить материалы в путевой лист задания"
 
 msgid "Included"
 msgstr "Включено"
@@ -6962,10 +6962,10 @@ msgid "Job Operations"
 msgstr "Операции задания"
 
 msgid "Job Traveler Materials"
-msgstr "Материалы путевого листа работы"
+msgstr "Материалы путевого листа задания"
 
 msgid "Job traveler settings updated"
-msgstr "Параметры путевого листа работы обновлены"
+msgstr "Параметры путевого листа задания обновлены"
 
 msgid "Jobs"
 msgstr "Работы"
@@ -14476,7 +14476,7 @@ msgid "When on, scanning this process's operation barcode reports all remaining 
 msgstr "Когда включено, сканирование операционного штрих-кода этого процесса сообщает всю оставшуюся открытую количество как завершенную в одном действии; отключите, если операторы регулярно сообщают о частичных."
 
 msgid "When on, the traveler PDF lists the job's required materials."
-msgstr "Когда включено, PDF путевого листа отображает необходимые материалы работы."
+msgstr "Когда включено, PDF путевого листа задания отображает необходимые материалы задания."
 
 msgid "When on, this party's invoices skip tax calculation; the party is responsible for keeping the exemption certificate current."
 msgstr "Если включено, счета этой стороны пропускают расчет налога; сторона отвечает за актуальность сертификата об освобождении."

@@ -6509,7 +6509,7 @@ msgid "Inbox"
 msgstr "इनबॉक्स"
 
 msgid "Include a materials (bill of materials) section on the job traveler PDF with item numbers and quantities."
-msgstr "नौकरी यात्री PDF पर आइटम संख्या और मात्रा के साथ एक सामग्री (सामग्री की विधेयक) अनुभाग शामिल करें।"
+msgstr "जॉब ट्रैवलर PDF में आइटम नंबर और मात्राओं के साथ बिल ऑफ मटेरियल्स अनुभाग शामिल करें।"
 
 msgid "Include extra parts in shipment"
 msgstr "शिपमेंट में अतिरिक्त पार्ट्स शामिल करें"
@@ -6518,7 +6518,7 @@ msgid "Include Inactive"
 msgstr "निष्क्रिय शामिल करें"
 
 msgid "Include materials on traveler"
-msgstr "यात्री पर सामग्री शामिल करें"
+msgstr "जॉब ट्रैवलर में सामग्री शामिल करें"
 
 msgid "Included"
 msgstr "शामिल"
@@ -6962,10 +6962,10 @@ msgid "Job Operations"
 msgstr "कार्य संचालन"
 
 msgid "Job Traveler Materials"
-msgstr "नौकरी यात्री सामग्री"
+msgstr "जॉब ट्रैवलर सामग्री"
 
 msgid "Job traveler settings updated"
-msgstr "नौकरी यात्री सेटिंग्स अपडेट की गई"
+msgstr "जॉब ट्रैवलर की सेटिंग्स अपडेट की गई हैं"
 
 msgid "Jobs"
 msgstr "नौकरियां"
@@ -14476,7 +14476,7 @@ msgid "When on, scanning this process's operation barcode reports all remaining 
 msgstr "जब सक्षम हो, तो इस प्रक्रिया की ऑपरेशन बारकोड स्कैन करने से सभी शेष खुली मात्रा एक कार्रवाई में पूर्ण के रूप में रिपोर्ट होती है; जब ऑपरेटर नियमित रूप से आंशिक रिपोर्ट करते हैं तो अक्षम करें।"
 
 msgid "When on, the traveler PDF lists the job's required materials."
-msgstr "जब चालू हो, तो यात्री PDF नौकरी की आवश्यक सामग्री सूचीबद्ध करता है।"
+msgstr "चालू होने पर, जॉब ट्रैवलर PDF में जॉब की आवश्यक सामग्री सूचीबद्ध होती है।"
 
 msgid "When on, this party's invoices skip tax calculation; the party is responsible for keeping the exemption certificate current."
 msgstr "जब सक्षम हो, तो इस पक्ष के चालान कर गणना को छोड़ देते हैं; पक्ष छूट प्रमाणपत्र को वर्तमान रखने के लिए जिम्मेदार है।"
