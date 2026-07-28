@@ -8872,6 +8872,12 @@ export default {
             $ref: "#/parameters/rowFilter.productionQuantity.scrapReasonId"
           },
           {
+            $ref: "#/parameters/rowFilter.productionQuantity.inspectionId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.productionQuantity.inspectionSampleId"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -8973,6 +8979,12 @@ export default {
             $ref: "#/parameters/rowFilter.productionQuantity.scrapReasonId"
           },
           {
+            $ref: "#/parameters/rowFilter.productionQuantity.inspectionId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.productionQuantity.inspectionSampleId"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -9026,6 +9038,12 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.productionQuantity.scrapReasonId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.productionQuantity.inspectionId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.productionQuantity.inspectionSampleId"
           },
           {
             $ref: "#/parameters/body.productionQuantity"
@@ -98446,6 +98464,18 @@ export default {
             "Note:\nThis is a Foreign Key to `scrapReason.id`.<fk table='scrapReason' column='id'/>",
           format: "text",
           type: "string"
+        },
+        inspectionId: {
+          description:
+            "Note:\nThis is a Foreign Key to `inspection.id`.<fk table='inspection' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        inspectionSampleId: {
+          description:
+            "Note:\nThis is a Foreign Key to `inspectionSample.id`.<fk table='inspectionSample' column='id'/>",
+          format: "text",
+          type: "string"
         }
       },
       type: "object"
@@ -138977,6 +139007,18 @@ export default {
     },
     "rowFilter.productionQuantity.scrapReasonId": {
       name: "scrapReasonId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.productionQuantity.inspectionId": {
+      name: "inspectionId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.productionQuantity.inspectionSampleId": {
+      name: "inspectionSampleId",
       required: false,
       in: "query",
       type: "string"
