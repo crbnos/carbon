@@ -474,6 +474,18 @@ export const sequences = [
     next: 0,
     size: 6,
     step: 1
+  },
+  {
+    // Intercompany netting statements are group-level; the initiating companyA
+    // supplies the sequence. Backfilled for existing companies in
+    // 20260725143012_intercompany-netting-foundation.sql.
+    table: "intercompanyNettingStatement",
+    name: "IC Netting Statement",
+    prefix: "ICNS-%{yyyy}-",
+    suffix: null,
+    next: 0,
+    size: 6,
+    step: 1
   }
 ] as const;
 
@@ -625,6 +637,7 @@ export const accounts = [
   { key: "receivables", number: null, name: "Receivables", isGroup: true, parentKey: "assets", accountType: "Accounts Receivable", incomeBalance: "Balance Sheet", class: "Asset", consolidatedRate: "Current", createdBy: "system" },
   { key: "1110", number: "1110", name: "Accounts Receivable", isGroup: false, parentKey: "receivables", accountType: "Accounts Receivable", incomeBalance: "Balance Sheet", class: "Asset", consolidatedRate: "Current", createdBy: "system" },
   { key: "1130", number: "1130", name: "Inter-Company Receivables", isGroup: false, parentKey: "receivables", accountType: "Accounts Receivable", incomeBalance: "Balance Sheet", class: "Asset", consolidatedRate: "Current", createdBy: "system" },
+  { key: "1135", number: "1135", name: "Intercompany Netting Clearing", isGroup: false, parentKey: "receivables", accountType: "Other Current Asset", incomeBalance: "Balance Sheet", class: "Asset", consolidatedRate: "Current", createdBy: "system" },
   { key: "1150", number: "1150", name: "Supplier Prepayments", isGroup: false, parentKey: "receivables", accountType: "Other Current Asset", incomeBalance: "Balance Sheet", class: "Asset", consolidatedRate: "Current", createdBy: "system" },
 
   // Inventory
@@ -790,6 +803,7 @@ export const accountDefaults = {
   receivablesAccount: "1110",
   intercompanyReceivablesAccount: "1130",
   intercompanyDifferenceAccount: "7095",
+  intercompanyNettingAccount: "1135",
   bankCashAccount: "1010",
   bankLocalCurrencyAccount: "1020",
   bankForeignCurrencyAccount: "1030",
