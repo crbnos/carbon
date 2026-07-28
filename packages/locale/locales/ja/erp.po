@@ -13207,11 +13207,11 @@ msgid "This updates the theme for all users of the application"
 msgstr "これはアプリケーションのすべてのユーザーのテーマを更新します"
 
 msgid "This version belongs to an open <0>change notice</0>. Edit it there."
-msgstr ""
+msgstr "このバージョンはオープンな<0>変更通知</0>に属しています。そこで編集してください。"
 
 #. placeholder {0}: lock.readableId
 msgid "This version belongs to change notice <0>{0}</0>. Edit it there."
-msgstr ""
+msgstr "このバージョンは変更通知<0>{0}</0>に属しています。そこで編集してください。"
 
 msgid "This will make this version read-only and replace any material make methods with this version."
 msgstr "このバージョンは読み取り専用になり、すべての材料製造方法がこのバージョンに置き換わります。"
@@ -14633,7 +14633,7 @@ msgid "Why is this included?"
 msgstr "なぜこれが含まれていますか？"
 
 msgid "Why is this locked?"
-msgstr ""
+msgstr "なぜこれはロックされていますか？"
 
 msgid "Why stock is changing — Positive (found), Negative (lost/scrap), or Set (replace count with a measured value)."
 msgstr "在庫が変わる理由 — ポジティブ(見つかった)、ネガティブ(失われた/スクラップ)、または設定(カウントを測定値に置き換え)。"

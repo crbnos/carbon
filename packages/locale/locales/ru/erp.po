@@ -13207,11 +13207,11 @@ msgid "This updates the theme for all users of the application"
 msgstr "Это обновляет тему для всех пользователей приложения"
 
 msgid "This version belongs to an open <0>change notice</0>. Edit it there."
-msgstr ""
+msgstr "Эта версия принадлежит открытому <0>уведомлению об изменении</0>. Отредактируйте его там."
 
 #. placeholder {0}: lock.readableId
 msgid "This version belongs to change notice <0>{0}</0>. Edit it there."
-msgstr ""
+msgstr "Эта версия принадлежит уведомлению об изменении <0>{0}</0>. Отредактируйте его там."
 
 msgid "This will make this version read-only and replace any material make methods with this version."
 msgstr "Это сделает эту версию доступной только для чтения и заменит все методы производства материалов на эту версию."
@@ -14633,7 +14633,7 @@ msgid "Why is this included?"
 msgstr "Почему это включено?"
 
 msgid "Why is this locked?"
-msgstr ""
+msgstr "Почему это заблокировано?"
 
 msgid "Why stock is changing — Positive (found), Negative (lost/scrap), or Set (replace count with a measured value)."
 msgstr "Почему запас меняется — Положительный (найден), Отрицательный (потеря/отходы) или Установить (заменить количество измеренным значением)."

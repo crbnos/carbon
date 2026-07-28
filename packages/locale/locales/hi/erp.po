@@ -13207,11 +13207,11 @@ msgid "This updates the theme for all users of the application"
 msgstr "यह एप्लिकेशन के सभी उपयोगकर्ताओं के लिए थीम को अपडेट करता है"
 
 msgid "This version belongs to an open <0>change notice</0>. Edit it there."
-msgstr ""
+msgstr "यह संस्करण एक खुली <0>परिवर्तन सूचना</0> के अंतर्गत है। इसे वहाँ संपादित करें।"
 
 #. placeholder {0}: lock.readableId
 msgid "This version belongs to change notice <0>{0}</0>. Edit it there."
-msgstr ""
+msgstr "यह संस्करण परिवर्तन सूचना <0>{0}</0> के अंतर्गत है। इसे वहाँ संपादित करें।"
 
 msgid "This will make this version read-only and replace any material make methods with this version."
 msgstr "यह इस संस्करण को केवल-पढ़ने योग्य बनाएगा और किसी भी सामग्री निर्माण विधि को इस संस्करण से बदल देगा।"
@@ -14633,7 +14633,7 @@ msgid "Why is this included?"
 msgstr "यह क्यों शामिल है?"
 
 msgid "Why is this locked?"
-msgstr ""
+msgstr "यह क्यों लॉक है?"
 
 msgid "Why stock is changing — Positive (found), Negative (lost/scrap), or Set (replace count with a measured value)."
 msgstr "स्टॉक क्यों बदल रहा है — सकारात्मक (पाया गया), नकारात्मक (खोया/स्क्रैप) या सेट करें (गिनती को मापा मूल्य से बदलें)।"

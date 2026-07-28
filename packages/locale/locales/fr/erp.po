@@ -13207,11 +13207,11 @@ msgid "This updates the theme for all users of the application"
 msgstr "Cela met à jour le thème pour tous les utilisateurs de l'application"
 
 msgid "This version belongs to an open <0>change notice</0>. Edit it there."
-msgstr ""
+msgstr "Cette version appartient à un <0>change notice</0> ouvert. Modifiez-le là."
 
 #. placeholder {0}: lock.readableId
 msgid "This version belongs to change notice <0>{0}</0>. Edit it there."
-msgstr ""
+msgstr "Cette version appartient au change notice <0>{0}</0>. Modifiez-le là."
 
 msgid "This will make this version read-only and replace any material make methods with this version."
 msgstr "Cela rendra cette version en lecture seule et remplacera toutes les méthodes de fabrication de matériaux par cette version."
@@ -14633,7 +14633,7 @@ msgid "Why is this included?"
 msgstr "Pourquoi est-ce inclus ?"
 
 msgid "Why is this locked?"
-msgstr ""
+msgstr "Pourquoi est-ce verrouillé ?"
 
 msgid "Why stock is changing — Positive (found), Negative (lost/scrap), or Set (replace count with a measured value)."
 msgstr "Pourquoi le stock change — Positif (trouvé), Négatif (perdu/rebut) ou Défini (remplacer la quantité par une valeur mesurée)."

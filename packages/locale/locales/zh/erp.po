@@ -13207,11 +13207,11 @@ msgid "This updates the theme for all users of the application"
 msgstr "这会更新应用程序所有用户的主题"
 
 msgid "This version belongs to an open <0>change notice</0>. Edit it there."
-msgstr ""
+msgstr "此版本属于开放的<0>变更通知</0>。请在那里编辑。"
 
 #. placeholder {0}: lock.readableId
 msgid "This version belongs to change notice <0>{0}</0>. Edit it there."
-msgstr ""
+msgstr "此版本属于变更通知<0>{0}</0>。请在那里编辑。"
 
 msgid "This will make this version read-only and replace any material make methods with this version."
 msgstr "这将使此版本为只读，并用此版本替换任何物料制造方法。"
@@ -14633,7 +14633,7 @@ msgid "Why is this included?"
 msgstr "为什么包括这个？"
 
 msgid "Why is this locked?"
-msgstr ""
+msgstr "为什么这被锁定了？"
 
 msgid "Why stock is changing — Positive (found), Negative (lost/scrap), or Set (replace count with a measured value)."
 msgstr "库存为何变化 — 正数(已找到)、负数(丢失/报废)或设置(用测量值替换计数)。"
