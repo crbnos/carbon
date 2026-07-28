@@ -7207,6 +7207,9 @@ msgstr "Lier un problème Jira"
 msgid "Link Linear Issue"
 msgstr "Lier un problème Linear"
 
+msgid "Link to sales order"
+msgstr ""
+
 #. placeholder {0}: r.linkedSum
 #. placeholder {1}: r.quantity
 msgid "Linked entity quantity ({0}) does not match row quantity ({1})."
@@ -8469,6 +8472,9 @@ msgstr "Aucune note"
 
 msgid "No open invoices"
 msgstr "Aucune facture ouverte"
+
+msgid "No open sales orders for this item"
+msgstr ""
 
 msgid "No operations require picking at this location"
 msgstr "Aucune opération ne nécessite de prélèvement à cet endroit"
