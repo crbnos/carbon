@@ -44,9 +44,9 @@ import type { ItemType } from "~/modules/shared";
 import { path } from "~/utils/path";
 import { getReadableIdWithRevision } from "~/utils/string";
 import {
-  ItemChangeOrderLock,
-  useItemOpenChangeOrders
-} from "../ChangeOrder/ItemChangeOrderLock";
+  ItemChangeNoticeLock,
+  useItemOpenChangeNotices
+} from "../ChangeNotice/ItemChangeNoticeLock";
 import { getPathToMakeMethod } from "../Methods/utils";
 import RevisionForm from "./RevisionForm";
 
@@ -64,6 +64,7 @@ export function UsedInSkeleton() {
 export type UsedInKey =
   | Database["public"]["Enums"]["itemType"]
   | "assemblyInstructions"
+  | "inspections"
   | "issues"
   | "jobMaterials"
   | "jobs"
@@ -171,16 +172,18 @@ export function UsedInTree({
           maxRevision={revisions?.[0]?.revision ?? ""}
           hasSizesInsteadOfRevisions={hasSizesInsteadOfRevisions}
         />
-        {tree.map((node) => (
-          <UsedInItem
-            key={node.key}
-            filterText={filterText}
-            node={node}
-            itemReadableIdWithRevision={itemReadableIdWithRevision}
-            jobMaterialQuantities={jobMaterialQuantities}
-            jobQuantities={jobQuantities}
-          />
-        ))}
+        {[...tree]
+          .sort((a, b) => a.name.localeCompare(b.name))
+          .map((node) => (
+            <UsedInItem
+              key={node.key}
+              filterText={filterText}
+              node={node}
+              itemReadableIdWithRevision={itemReadableIdWithRevision}
+              jobMaterialQuantities={jobMaterialQuantities}
+              jobQuantities={jobQuantities}
+            />
+          ))}
       </VStack>
     </VStack>
   );
@@ -203,11 +206,11 @@ export function RevisionsItem({
   const revisionDisclosure = useDisclosure();
   const defaultDisclosure = useDisclosure();
 
-  // Block manual revision creation while an open change order owns this item —
+  // Block manual revision creation while an open change notice owns this item —
   // the CO authors revisions. The button stays visible but disabled, with a
-  // tooltip pointing at the change order(s).
-  const openChangeOrders = useItemOpenChangeOrders(node.key, itemId);
-  const isChangeOrderLocked = openChangeOrders.length > 0;
+  // tooltip pointing at the change notice(s).
+  const openChangeNotices = useItemOpenChangeNotices(node.key, itemId);
+  const isChangeNoticeLocked = openChangeNotices.length > 0;
 
   const [selectedRevision, setSelectedRevision] = useState<{
     id?: string;
@@ -247,9 +250,9 @@ export function RevisionsItem({
           </div>
         </button>
         {permissions.can("create", "parts") &&
-          (isChangeOrderLocked ? (
-            <ItemChangeOrderLock
-              changeOrders={openChangeOrders}
+          (isChangeNoticeLocked ? (
+            <ItemChangeNoticeLock
+              changeNotices={openChangeNotices}
               className="absolute right-2 top-1.5"
             >
               <IconButton
@@ -260,7 +263,7 @@ export function RevisionsItem({
                 className="size-5"
                 isDisabled
               />
-            </ItemChangeOrderLock>
+            </ItemChangeNoticeLock>
           ) : (
             <IconButton
               size="sm"
@@ -531,6 +534,8 @@ function getUseInLink(
       return path.to.consumableDetails(child.id);
     case "Service":
       return path.to.serviceDetails(child.id);
+    case "inspections":
+      return path.to.inspection(child.id);
     case "issues":
       if (!child.documentId) return "#";
       return path.to.issue(child.documentId);

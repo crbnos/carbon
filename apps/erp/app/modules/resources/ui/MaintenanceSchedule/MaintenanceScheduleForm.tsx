@@ -89,6 +89,7 @@ function DailyScheduleOptions() {
         name="skipHolidays"
         label={t`Skip Holidays`}
         description={t`Skip scheduled maintenance on company holidays`}
+        bordered
       />
     </>
   );
@@ -203,7 +204,7 @@ const MaintenanceScheduleForm = ({
                   label={t`Procedure`}
                   termId="maintenance-schedule-procedure"
                 />
-                <Boolean name="active" label={t`Active`} />
+                <Boolean name="active" label={t`Active`} bordered />
                 <DailyScheduleOptions />
               </VStack>
             </ModalDrawerBody>

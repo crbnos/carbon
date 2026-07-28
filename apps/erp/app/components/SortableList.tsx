@@ -2,11 +2,17 @@
 
 import { Checkbox, cn, HStack } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
-import { LayoutGroup, motion, Reorder, useDragControls } from "framer-motion";
+import {
+  AnimatePresence,
+  LayoutGroup,
+  motion,
+  Reorder,
+  useDragControls
+} from "framer-motion";
 import type { ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
-import { LuTrash } from "react-icons/lu";
+import { LuSettings2, LuTrash, LuX } from "react-icons/lu";
 import Empty from "./Empty";
 
 export interface Item {
@@ -96,30 +102,16 @@ function SortableListItem<T>({
           dragListener={!item.checked && !isExpanded && !isReadOnly}
           dragControls={dragControls}
           onDragEnd={handleDragEnd}
-          style={
-            isExpanded
-              ? {
-                  zIndex: 9999,
-                  marginTop: 10,
-                  marginBottom: 10,
-                  position: "relative",
-                  overflow: "hidden"
-                }
-              : {
-                  position: "relative",
-                  overflow: "hidden"
-                }
-          }
+          style={{
+            zIndex: isExpanded ? 9999 : undefined,
+            position: "relative",
+            overflow: "hidden"
+          }}
           whileDrag={{ zIndex: 9999 }}
         >
           <div className={cn(isExpanded ? "w-full" : "", "z-20 ")}>
             <motion.div className="w-full py-3 px-3" layout="position">
-              <div
-                className={cn(
-                  "items-center justify-between w-full gap-2",
-                  isExpanded && "flex flex-col flex-grow"
-                )}
-              >
+              <div className="flex flex-col items-center justify-between w-full">
                 <div className="flex flex-col w-full">
                   <div className="flex w-full items-center gap-x-2 truncate pl-3">
                     {/* List Remove Actions */}
@@ -221,6 +213,55 @@ function SortableListItem<T>({
         ) : null}
       </div>
     </div>
+  );
+}
+
+export function SortableListItemToggle({
+  isOpen,
+  onToggle,
+  className
+}: {
+  isOpen: boolean;
+  onToggle: () => void;
+  className?: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      className={cn("absolute right-3 top-3 z-10", className)}
+    >
+      {isOpen ? (
+        <LuX className="h-5 w-5 text-foreground" />
+      ) : (
+        <LuSettings2 className="stroke-1 h-5 w-5 text-foreground/80 hover:stroke-primary/70" />
+      )}
+    </button>
+  );
+}
+
+export function SortableListItemPanel({
+  isOpen,
+  children
+}: {
+  isOpen: boolean;
+  children: ReactNode;
+}) {
+  return (
+    <AnimatePresence initial={false}>
+      {isOpen ? (
+        <motion.div
+          key="panel"
+          initial={{ height: 0, opacity: 0 }}
+          animate={{ height: "auto", opacity: 1 }}
+          exit={{ height: 0, opacity: 0 }}
+          transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
+          className="flex w-full flex-col overflow-hidden"
+        >
+          <div className="w-full p-2">{children}</div>
+        </motion.div>
+      ) : null}
+    </AnimatePresence>
   );
 }
 

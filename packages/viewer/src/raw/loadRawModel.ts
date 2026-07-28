@@ -28,6 +28,7 @@ export type RawSource = {
 };
 
 import { RAW_RENDERABLE_EXTS, rawExtension } from "./formats";
+import { rawCacheGet, rawCachePut } from "./rawCache";
 
 export async function loadRawModel(source: RawSource): Promise<Object3D> {
   const ext = rawExtension(source.filename);
@@ -35,6 +36,33 @@ export async function loadRawModel(source: RawSource): Promise<Object3D> {
     throw new Error(`unsupported raw model format: ${ext || "unknown"}`);
   }
   if (ext === "glb" || ext === "gltf") return loadGltf(source);
+
+  // Cache-first for the WASM-parsed formats: the STEP parse is ~40s of solid
+  // compute, so a prior visit's parsed buffers replay from IndexedDB without
+  // even fetching the raw. URL-keyed only (uploads mint a new path per file);
+  // just-dropped local Files skip the cache.
+  const isOcct = ![
+    "stl",
+    "obj",
+    "ply",
+    "dae",
+    "fbx",
+    "3ds",
+    "3mf",
+    "amf",
+    "off",
+    "bim",
+    "3dm"
+  ].includes(ext);
+  const cacheKey =
+    isOcct && !source.file && source.url
+      ? new URL(source.url, globalThis.location?.origin ?? "http://x").pathname
+      : null;
+  if (cacheKey) {
+    const cached = await rawCacheGet(cacheKey);
+    if (cached) return occtMeshesToGroup(cached);
+  }
+
   const bytes = await readBytes(source);
   switch (ext) {
     case "stl":
@@ -54,7 +82,7 @@ export async function loadRawModel(source: RawSource): Promise<Object3D> {
     case "3dm":
       return loadRhino(bytes);
     default:
-      return loadOcct(bytes, ext);
+      return loadOcct(bytes, ext, cacheKey);
   }
 }
 
@@ -169,52 +197,96 @@ async function loadOff(bytes: ArrayBuffer): Promise<Object3D> {
   return new Mesh(geometry, defaultMaterial());
 }
 
-/** STEP/IGES/BREP → meshes via the occt-import-js WASM build (OCCT compiled to
- *  WebAssembly — the same kernel the assembler uses server-side). */
-async function loadOcct(bytes: ArrayBuffer, ext: string): Promise<Object3D> {
-  const [{ default: occtimportjs }, { default: wasmUrl }] = await Promise.all([
-    import("occt-import-js"),
-    import("occt-import-js/dist/occt-import-js.wasm?url")
-  ]);
-  const occt = await occtimportjs({
-    locateFile: () => wasmUrl
-  });
+// ---------------------------------------------------------------------------
+// WASM parsers (occt-import-js, rhino3dm) run in a Web Worker — a real STEP
+// tessellation is seconds-to-minutes of solid compute, which on the main
+// thread freezes scroll/paint for the whole tab. The worker posts back plain
+// buffers; only the cheap Object3D assembly happens here.
 
-  const content = new Uint8Array(bytes);
-  const result =
-    ext === "brep" || ext === "brp"
-      ? occt.ReadBrepFile(content, null)
-      : ext === "iges" || ext === "igs"
-        ? occt.ReadIgesFile(content, null)
-        : occt.ReadStepFile(content, null);
-  if (!result?.success || !result.meshes?.length) {
-    throw new Error(`could not tessellate ${ext} file in the browser`);
+import type {
+  OcctWorkerMesh,
+  RawWorkerPayload,
+  RawWorkerResponse
+} from "./rawWorker";
+
+let rawWorker: Worker | null = null;
+let rawWorkerSeq = 0;
+const rawWorkerPending = new Map<
+  number,
+  {
+    resolve: (r: RawWorkerResponse) => void;
+    reject: (e: Error) => void;
   }
+>();
 
+function getRawWorker(): Worker {
+  if (rawWorker) return rawWorker;
+  const worker = new Worker(new URL("./rawWorker.ts", import.meta.url), {
+    type: "module"
+  });
+  worker.onmessage = (e: MessageEvent<RawWorkerResponse>) => {
+    const pending = rawWorkerPending.get(e.data.id);
+    if (!pending) return;
+    rawWorkerPending.delete(e.data.id);
+    pending.resolve(e.data);
+  };
+  // A fatal worker error (emscripten abort, OOM on a huge model) kills every
+  // in-flight parse; drop the worker so the next load starts a fresh one.
+  worker.onerror = (e) => {
+    const err = new Error(e.message || "raw model worker crashed");
+    for (const pending of rawWorkerPending.values()) pending.reject(err);
+    rawWorkerPending.clear();
+    worker.terminate();
+    if (rawWorker === worker) rawWorker = null;
+  };
+  rawWorker = worker;
+  return worker;
+}
+
+function requestRawWorker(
+  req: RawWorkerPayload,
+  transfer: Transferable[]
+): Promise<RawWorkerResponse> {
+  const id = ++rawWorkerSeq;
+  return new Promise<RawWorkerResponse>((resolve, reject) => {
+    rawWorkerPending.set(id, { resolve, reject });
+    getRawWorker().postMessage({ ...req, id }, transfer);
+  }).then((response) => {
+    if ("error" in response) throw new Error(response.error);
+    return response;
+  });
+}
+
+/** STEP/IGES/BREP → meshes via the occt-import-js WASM build (OCCT compiled to
+ *  WebAssembly — the same kernel the assembler uses server-side), tessellated
+ *  off-thread. A successful parse is persisted to the IndexedDB cache (when a
+ *  `cacheKey` is given) so later visits replay it instead of re-parsing. */
+async function loadOcct(
+  bytes: ArrayBuffer,
+  ext: string,
+  cacheKey: string | null = null
+): Promise<Object3D> {
+  const response = await requestRawWorker({ kind: "occt", bytes, ext }, [
+    bytes
+  ]);
+  const meshes = (response as { occt: OcctWorkerMesh[] }).occt;
+  if (cacheKey) void rawCachePut(cacheKey, meshes);
+  return occtMeshesToGroup(meshes);
+}
+
+function occtMeshesToGroup(meshes: OcctWorkerMesh[]): Object3D {
   const group = new Group();
-  for (const meshData of result.meshes) {
+  for (const meshData of meshes) {
     const geometry = new BufferGeometry();
     geometry.setAttribute(
       "position",
-      new BufferAttribute(
-        new Float32Array(meshData.attributes.position.array),
-        3
-      )
+      new BufferAttribute(meshData.position, 3)
     );
-    if (meshData.attributes.normal) {
-      geometry.setAttribute(
-        "normal",
-        new BufferAttribute(
-          new Float32Array(meshData.attributes.normal.array),
-          3
-        )
-      );
-    } else {
-      geometry.computeVertexNormals();
+    if (meshData.normal) {
+      geometry.setAttribute("normal", new BufferAttribute(meshData.normal, 3));
     }
-    geometry.setIndex(
-      new BufferAttribute(new Uint32Array(meshData.index.array), 1)
-    );
+    geometry.setIndex(new BufferAttribute(meshData.index, 1));
+    if (!meshData.normal) geometry.computeVertexNormals();
     const material = defaultMaterial();
     if (meshData.color) {
       material.color = new Color(
@@ -290,72 +362,20 @@ async function loadDotbim(bytes: ArrayBuffer): Promise<Object3D> {
   return group;
 }
 
-/** Rhino .3dm via the official rhino3dm WASM. Direct module use (no worker /
- *  library-path dance): meshes are taken as-is; Breps and Extrusions contribute
- *  their embedded render meshes. Curves/points/annotations are skipped. */
+/** Rhino .3dm via the official rhino3dm WASM, parsed off-thread. The worker
+ *  extracts each renderable mesh's `toThreejsJSON()` object; only the
+ *  BufferGeometryLoader assembly runs here. */
 async function loadRhino(bytes: ArrayBuffer): Promise<Object3D> {
-  const [{ default: rhino3dm }, { default: wasmUrl }] = await Promise.all([
-    import("rhino3dm"),
-    import("rhino3dm/rhino3dm.wasm?url")
-  ]);
-  // The shipped .d.ts types the factory as zero-arg, but it's an emscripten
-  // module factory — it accepts the standard init object; locateFile points the
-  // loader at Vite's hashed .wasm asset URL.
-  const factory = rhino3dm as unknown as (opts: {
-    locateFile: (path: string) => string;
-  }) => ReturnType<typeof rhino3dm>;
-  const rhino = await factory({ locateFile: () => wasmUrl });
-  const doc = rhino.File3dm.fromByteArray(new Uint8Array(bytes));
-  if (!doc) throw new Error("could not read 3dm file");
+  const response = await requestRawWorker({ kind: "rhino", bytes }, [bytes]);
+  const meshJsons = (response as { rhino: object[] }).rhino;
 
   const { BufferGeometryLoader } = await import("three");
   const geometryLoader = new BufferGeometryLoader();
   const group = new Group();
-  const addRhinoMesh = (rhinoMesh: { toThreejsJSON: () => object }) => {
-    const geometry = geometryLoader.parse(rhinoMesh.toThreejsJSON());
+  for (const meshJson of meshJsons) {
+    const geometry = geometryLoader.parse(meshJson);
     if (!geometry.attributes.normal) geometry.computeVertexNormals();
     group.add(new Mesh(geometry, defaultMaterial()));
-  };
-
-  const objects = doc.objects();
-  for (let i = 0; i < objects.count; i++) {
-    const geometry = objects.get(i)?.geometry();
-    if (!geometry) continue;
-    switch (geometry.objectType) {
-      case rhino.ObjectType.Mesh:
-        addRhinoMesh(geometry as unknown as { toThreejsJSON: () => object });
-        break;
-      case rhino.ObjectType.Brep: {
-        const brep = geometry as unknown as {
-          faces: () => {
-            count: number;
-            get: (i: number) => {
-              getMesh: (t: unknown) => { toThreejsJSON: () => object } | null;
-            };
-          };
-        };
-        const faces = brep.faces();
-        for (let f = 0; f < faces.count; f++) {
-          const mesh = faces.get(f).getMesh(rhino.MeshType.Any);
-          if (mesh) addRhinoMesh(mesh);
-        }
-        break;
-      }
-      case rhino.ObjectType.Extrusion: {
-        const mesh = (
-          geometry as unknown as {
-            getMesh: (t: unknown) => { toThreejsJSON: () => object } | null;
-          }
-        ).getMesh(rhino.MeshType.Any);
-        if (mesh) addRhinoMesh(mesh);
-        break;
-      }
-      default:
-        break;
-    }
-  }
-  if (group.children.length === 0) {
-    throw new Error("3dm file contains no renderable meshes");
   }
   return group;
 }

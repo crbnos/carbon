@@ -1,19 +1,28 @@
+import { error } from "@carbon/auth";
+import { flash } from "@carbon/auth/session.server";
 import type { Database } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
 import { NotificationEvent } from "@carbon/notifications";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { data } from "react-router";
 import { activateMethodVersion, upsertItemSupersession } from "~/modules/items";
 import { getCompanySettings } from "~/modules/settings";
+import { requireUnlockedBulk } from "~/utils/lockedGuard.server";
 import type { plmReleaseControl } from "./items.models";
-import { supersessionModes } from "./items.models";
+import {
+  canEditChangeNoticeEngineering,
+  canEditChangeNoticeWorkflow,
+  changeNoticeLockedMessage,
+  supersessionModes
+} from "./items.models";
 
 const logger = getLogger("erp", "change-orders");
 
 // Release-lock helpers — gate BOM/BOP mutations on a released (Production)
 // revision. A Production revision is the controlled, released make method;
-// changes must flow through a change order. The pending revision an ECO creates
+// changes must flow through a change notice. The pending revision an ECO creates
 // is Design/Prototype (NOT Production), so it stays editable.
 
 export type ReleaseControl = (typeof plmReleaseControl)[number];
@@ -21,7 +30,7 @@ export type ReleaseControl = (typeof plmReleaseControl)[number];
 type ItemRevisionStatus = Database["public"]["Enums"]["itemRevisionStatus"];
 
 export const LOCKED_REVISION_MESSAGE =
-  "This revision is released (Production). Open a change order to modify it.";
+  "This revision is released (Production). Open a change notice to modify it.";
 
 export type LockKind =
   | "item"
@@ -55,81 +64,101 @@ export function getLockVerdict(lock: {
   return { ok: false, warn: false, message: LOCKED_REVISION_MESSAGE };
 }
 
-// Each kind resolves entity -> item.revisionStatus in a single nested PostgREST
-// select instead of walking the FK chain with sequential single-row queries.
+type MethodLock = {
+  revisionStatus: ItemRevisionStatus | null;
+  changeNoticeStatus: string | null;
+};
+
+const NO_LOCK: MethodLock = { revisionStatus: null, changeNoticeStatus: null };
+
+// The FK chain from each lock kind up to its owning make method, expressed once.
+// The two lock inputs (the item's revisionStatus and the owning change notice's
+// status) hang off that method, so one nested select answers both — walking the
+// chain twice would double a query that runs on every BOM/BOP mutation.
+// `methodMaterial` has two FKs to `makeMethod` (makeMethodId and
+// materialMakeMethodId); the parent method is methodMaterial_methodId_fkey.
+const METHOD_LOCK_SOURCE = "changeOrder(status), item(revisionStatus)";
+
+const methodLockQueries = {
+  makeMethod: ["makeMethod", METHOD_LOCK_SOURCE],
+  material: [
+    "methodMaterial",
+    `makeMethod!methodMaterial_methodId_fkey(${METHOD_LOCK_SOURCE})`
+  ],
+  operation: ["methodOperation", `makeMethod(${METHOD_LOCK_SOURCE})`],
+  tool: [
+    "methodOperationTool",
+    `methodOperation(makeMethod(${METHOD_LOCK_SOURCE}))`
+  ],
+  parameter: [
+    "methodOperationParameter",
+    `methodOperation(makeMethod(${METHOD_LOCK_SOURCE}))`
+  ]
+} as const satisfies Partial<Record<LockKind, readonly [string, string]>>;
+
 // Every base query is scoped by companyId (defense-in-depth; the id is a global
 // UUID but tenant scoping is a golden rule). The lock is advisory — RLS +
 // requirePermissions are the real boundary — so a null/unresolvable status
 // leaves the gate open by design (see checkRevisionLock).
-async function resolveRevisionStatus(
+async function resolveMethodLock(
   client: SupabaseClient<Database>,
   kind: LockKind,
   id: string,
   companyId: string
-): Promise<ItemRevisionStatus | null> {
-  switch (kind) {
-    case "item": {
-      const item = await client
-        .from("item")
-        .select("revisionStatus")
-        .eq("id", id)
-        .eq("companyId", companyId)
-        .maybeSingle();
-      return item.data?.revisionStatus ?? null;
-    }
-    case "makeMethod": {
-      const makeMethod = await client
-        .from("makeMethod")
-        .select("item(revisionStatus)")
-        .eq("id", id)
-        .eq("companyId", companyId)
-        .maybeSingle();
-      return makeMethod.data?.item?.revisionStatus ?? null;
-    }
-    case "material": {
-      // methodMaterial has two FKs to makeMethod (makeMethodId and
-      // materialMakeMethodId) — the parent method is methodMaterial_methodId_fkey
-      const material = await client
-        .from("methodMaterial")
-        .select("makeMethod!methodMaterial_methodId_fkey(item(revisionStatus))")
-        .eq("id", id)
-        .eq("companyId", companyId)
-        .maybeSingle();
-      return material.data?.makeMethod?.item?.revisionStatus ?? null;
-    }
-    case "operation": {
-      const operation = await client
-        .from("methodOperation")
-        .select("makeMethod(item(revisionStatus))")
-        .eq("id", id)
-        .eq("companyId", companyId)
-        .maybeSingle();
-      return operation.data?.makeMethod?.item?.revisionStatus ?? null;
-    }
-    case "tool": {
-      const tool = await client
-        .from("methodOperationTool")
-        .select("methodOperation(makeMethod(item(revisionStatus)))")
-        .eq("id", id)
-        .eq("companyId", companyId)
-        .maybeSingle();
-      return (
-        tool.data?.methodOperation?.makeMethod?.item?.revisionStatus ?? null
-      );
-    }
-    case "parameter": {
-      const parameter = await client
-        .from("methodOperationParameter")
-        .select("methodOperation(makeMethod(item(revisionStatus)))")
-        .eq("id", id)
-        .eq("companyId", companyId)
-        .maybeSingle();
-      return (
-        parameter.data?.methodOperation?.makeMethod?.item?.revisionStatus ??
-        null
-      );
-    }
+): Promise<MethodLock> {
+  if (kind === "item") {
+    const item = await client
+      .from("item")
+      .select("revisionStatus")
+      .eq("id", id)
+      .eq("companyId", companyId)
+      .maybeSingle();
+    // item.changeOrderId is a PERMANENT back-link stamped at release (not cleared
+    // like makeMethod's), so it means "was created by" — never "is owned by".
+    // Resolving it would lock every CO-created item forever once its CO hit Done.
+    return { ...NO_LOCK, revisionStatus: item.data?.revisionStatus ?? null };
   }
+
+  const [table, select] = methodLockQueries[kind];
+  const result = await client
+    .from(table)
+    .select(select)
+    .eq("id", id)
+    .eq("companyId", companyId)
+    .maybeSingle();
+
+  // The select is built from a lookup, so PostgREST's row typing degrades to a
+  // generic shape — narrow it once, here, rather than at each read below.
+  const method = unwrapMakeMethod(result.data as MethodLockRow | null, kind);
+  return {
+    revisionStatus: method?.item?.revisionStatus ?? null,
+    changeNoticeStatus: method?.changeOrder?.status ?? null
+  };
+}
+
+type MakeMethodLockRow = {
+  changeOrder: { status: string | null } | null;
+  item: { revisionStatus: ItemRevisionStatus | null } | null;
+};
+
+type MethodLockRow =
+  | MakeMethodLockRow
+  | { makeMethod: MakeMethodLockRow | null }
+  | { methodOperation: { makeMethod: MakeMethodLockRow | null } | null };
+
+function unwrapMakeMethod(
+  row: MethodLockRow | null,
+  kind: LockKind
+): MakeMethodLockRow | null {
+  if (!row) return null;
+  if (kind === "makeMethod") return row as MakeMethodLockRow;
+  if (kind === "tool" || kind === "parameter") {
+    return (
+      (row as { methodOperation: { makeMethod: MakeMethodLockRow | null } })
+        .methodOperation?.makeMethod ?? null
+    );
+  }
+  return (row as { makeMethod: MakeMethodLockRow | null }).makeMethod ?? null;
 }
 
 async function getReleaseControl(
@@ -147,17 +176,17 @@ export async function getRevisionLock(
   client: SupabaseClient<Database>,
   args: { itemId: string | null; companyId: string }
 ): Promise<RevisionLock> {
-  const [revisionStatus, releaseControl] = await Promise.all([
+  const [lock, releaseControl] = await Promise.all([
     args.itemId
-      ? resolveRevisionStatus(client, "item", args.itemId, args.companyId)
-      : Promise.resolve(null),
+      ? resolveMethodLock(client, "item", args.itemId, args.companyId)
+      : Promise.resolve(NO_LOCK),
     getReleaseControl(client, args.companyId)
   ]);
 
   return {
-    isLocked: revisionStatus === "Production",
+    isLocked: lock.revisionStatus === "Production",
     releaseControl,
-    revisionStatus
+    revisionStatus: lock.revisionStatus
   };
 }
 
@@ -168,39 +197,148 @@ export async function checkRevisionLock(
   client: SupabaseClient<Database>,
   args: { kind: LockKind; id: string | null | undefined; companyId: string }
 ): Promise<LockCheck> {
-  const [revisionStatus, releaseControl] = await Promise.all([
+  const [lock, releaseControl] = await Promise.all([
     args.id
-      ? resolveRevisionStatus(client, args.kind, args.id, args.companyId)
-      : Promise.resolve(null),
+      ? resolveMethodLock(client, args.kind, args.id, args.companyId)
+      : Promise.resolve(NO_LOCK),
     getReleaseControl(client, args.companyId)
   ]);
 
+  // Hard block, independent of releaseControl — releaseControl only governs the
+  // revision lock.
+  if (
+    lock.changeNoticeStatus &&
+    !canEditChangeNoticeEngineering(lock.changeNoticeStatus)
+  ) {
+    return {
+      ok: false,
+      warn: false,
+      message: changeNoticeLockedMessage(lock.changeNoticeStatus)
+    };
+  }
+
   return getLockVerdict({
-    isLocked: revisionStatus === "Production",
+    isLocked: lock.revisionStatus === "Production",
     releaseControl
   });
 }
 
 // =============================================================================
-// Change Orders — server-only helpers (imports @carbon/jobs).
+// Change Notices — server-only helpers (imports @carbon/jobs).
 // =============================================================================
+
+type ChangeNoticeEditScope = "engineering" | "workflow";
+
+// One status read + predicate. Mutation routes call this before writing; the
+// UI disable is cosmetic on top of it.
+export async function requireChangeNoticeEditable(
+  client: SupabaseClient<Database>,
+  args: {
+    changeNoticeId: string;
+    companyId: string;
+    scope: ChangeNoticeEditScope;
+  }
+): Promise<{ error: { message: string }; data: null } | null> {
+  const existing = await client
+    .from("changeOrder")
+    .select("status")
+    .eq("id", args.changeNoticeId)
+    .eq("companyId", args.companyId)
+    .maybeSingle();
+
+  if (existing.error || !existing.data) {
+    return { error: { message: "Could not find change notice" }, data: null };
+  }
+
+  const canEdit =
+    args.scope === "engineering"
+      ? canEditChangeNoticeEngineering
+      : canEditChangeNoticeWorkflow;
+
+  return requireUnlockedBulk({
+    statuses: [existing.data.status],
+    checkFn: (status) => !canEdit(status),
+    message: changeNoticeLockedMessage(existing.data.status)
+  });
+}
+
+// Child rows (affected items, action tasks) are addressed by their own id, so
+// authorizing the change notice in the URL proves nothing about the row being
+// mutated — an editable notice's URL would otherwise let a user mutate a frozen
+// notice's rows. Same failure contract as requireEditableChangeNoticeRoute;
+// null means the route may proceed.
+export async function requireChangeNoticeChildRoute(
+  request: Request,
+  args: {
+    client: SupabaseClient<Database>;
+    table: "changeOrderAffectedItem" | "changeOrderActionTask";
+    id: string;
+    changeNoticeId: string;
+    companyId: string;
+  }
+) {
+  const row = await args.client
+    .from(args.table)
+    .select("id")
+    .eq("id", args.id)
+    .eq("changeOrderId", args.changeNoticeId)
+    .eq("companyId", args.companyId)
+    .maybeSingle();
+
+  if (row.error || !row.data) {
+    const message = "Record does not belong to this change notice";
+    return data(
+      { success: false },
+      await flash(request, error(row.error, message))
+    );
+  }
+
+  return null;
+}
+
+// The route-level guard: resolves the change notice from the URL, checks the
+// scope, and returns the flashed failure response so all eight mutation routes
+// share one failure contract. Returns null when the route may proceed.
+export async function requireEditableChangeNoticeRoute(
+  request: Request,
+  args: {
+    client: SupabaseClient<Database>;
+    changeNoticeId: string | undefined;
+    companyId: string;
+    scope: ChangeNoticeEditScope;
+  }
+) {
+  if (!args.changeNoticeId) throw new Error("Could not find id");
+
+  const locked = await requireChangeNoticeEditable(args.client, {
+    changeNoticeId: args.changeNoticeId,
+    companyId: args.companyId,
+    scope: args.scope
+  });
+  if (!locked) return null;
+
+  return data(
+    { success: false },
+    await flash(request, error(locked.error, locked.error.message))
+  );
+}
 
 // Maps a broadcast stage to its notification event. Only Start / Implementation
 // / Done broadcast (PRD §3.1); Draft / Engineering Complete are silent, so
 // callers simply don't invoke this for those stages.
-export const changeOrderStageEvent: Record<string, NotificationEvent> = {
-  Start: NotificationEvent.ChangeOrderStarted,
-  Implementation: NotificationEvent.ChangeOrderImplementation,
-  Done: NotificationEvent.ChangeOrderDone
+export const changeNoticeStageEvent: Record<string, NotificationEvent> = {
+  Start: NotificationEvent.ChangeNoticeStarted,
+  Implementation: NotificationEvent.ChangeNoticeImplementation,
+  Done: NotificationEvent.ChangeNoticeDone
 };
 
 // Broadcasts a CO stage to the whole team (best-effort). Recipient is the seeded
 // "All Employees" group — NOT companyGroupId, which is the currency/subsidiary
 // grouping and has no user members.
-export async function notifyChangeOrderTransition(args: {
+export async function notifyChangeNoticeTransition(args: {
   client: SupabaseClient<Database>;
   event: NotificationEvent;
-  changeOrderId: string;
+  changeNoticeId: string;
   companyId: string;
   userId: string;
 }): Promise<void> {
@@ -227,17 +365,17 @@ export async function notifyChangeOrderTransition(args: {
     await trigger("notify", {
       event: args.event,
       companyId: args.companyId,
-      documentId: args.changeOrderId,
+      documentId: args.changeNoticeId,
       recipient: { type: "group", groupIds: [employeeGroup.data.id] },
       from: args.userId
     });
   } catch (e) {
-    logger.error("Failed to trigger change order notification", { error: e });
+    logger.error("Failed to trigger change notice notification", { error: e });
   }
 }
 
 // =============================================================================
-// applyChangeOrder — the top-to-bottom "release", run on the Implementation →
+// applyChangeNotice — the top-to-bottom "release", run on the Implementation →
 // Done transition (this function IS that transition). It materializes each
 // affected item's CO-staged end-state onto a NEW inactive revision, activates
 // it, then auto-writes the oldRev → newRev supersession (Q1/Q2/Q5).
@@ -254,30 +392,30 @@ export async function notifyChangeOrderTransition(args: {
 //     status='Implementation', so a re-run can't double-transition the CO; only
 //     the closing status flip is transactional.
 // =============================================================================
-export async function applyChangeOrder(
+export async function applyChangeNotice(
   client: SupabaseClient<Database>,
   db: Kysely<KyselyDatabase>,
   args: {
-    changeOrderId: string;
+    changeNoticeId: string;
     userId: string;
     companyId: string;
   }
 ): Promise<{ data: { id: string } | null; error: { message: string } | null }> {
-  const { changeOrderId, userId, companyId } = args;
+  const { changeNoticeId, userId, companyId } = args;
 
-  const co = await client
+  const cn = await client
     .from("changeOrder")
     .select("id, status")
-    .eq("id", changeOrderId)
+    .eq("id", changeNoticeId)
     .eq("companyId", companyId)
     .single();
-  if (co.error || !co.data) {
-    return { data: null, error: { message: "Change order not found" } };
+  if (cn.error || !cn.data) {
+    return { data: null, error: { message: "Change notice not found" } };
   }
-  if (co.data.status !== "Implementation") {
+  if (cn.data.status !== "Implementation") {
     return {
       data: null,
-      error: { message: "Change order must be at Implementation to apply" }
+      error: { message: "Change notice must be at Implementation to apply" }
     };
   }
 
@@ -291,7 +429,7 @@ export async function applyChangeOrder(
     .select(
       "id, itemId, changeType, draftMakeMethodId, baseMakeMethodId, newItemId, supersessionMode, discontinuationDate, successorEffectivityDate"
     )
-    .eq("changeOrderId", changeOrderId)
+    .eq("changeOrderId", changeNoticeId)
     .eq("companyId", companyId)
     .order("sortOrder", { ascending: true })
     .order("createdAt", { ascending: true });
@@ -310,7 +448,7 @@ export async function applyChangeOrder(
 
   for (const affected of ordered) {
     const result = await releaseAffectedItem(client, {
-      changeOrderId,
+      changeNoticeId,
       companyId,
       userId,
       affected
@@ -324,7 +462,7 @@ export async function applyChangeOrder(
       const res = await trx
         .updateTable("changeOrder")
         .set({ status: "Done", updatedBy: userId })
-        .where("id", "=", changeOrderId)
+        .where("id", "=", changeNoticeId)
         .where("companyId", "=", companyId)
         .where("status", "=", "Implementation")
         .executeTakeFirst();
@@ -333,7 +471,7 @@ export async function applyChangeOrder(
     if (updated === 0) {
       return {
         data: null,
-        error: { message: "Change order has already been applied" }
+        error: { message: "Change notice has already been applied" }
       };
     }
   } catch (err) {
@@ -343,7 +481,7 @@ export async function applyChangeOrder(
     };
   }
 
-  return { data: { id: changeOrderId }, error: null };
+  return { data: { id: changeNoticeId }, error: null };
 }
 
 // -----------------------------------------------------------------------------
@@ -362,7 +500,7 @@ export async function applyChangeOrder(
 async function releaseAffectedItem(
   client: SupabaseClient<Database>,
   input: {
-    changeOrderId: string;
+    changeNoticeId: string;
     companyId: string;
     userId: string;
     affected: {
@@ -378,7 +516,7 @@ async function releaseAffectedItem(
     };
   }
 ): Promise<{ error: { message: string } | null }> {
-  const { changeOrderId, companyId, userId, affected } = input;
+  const { changeNoticeId, companyId, userId, affected } = input;
   const { changeType, draftMakeMethodId, newItemId } = affected;
   const sourceItemId = affected.itemId;
 
@@ -418,7 +556,7 @@ async function releaseAffectedItem(
       .from("item")
       .update({
         active: true,
-        changeOrderId,
+        changeOrderId: changeNoticeId,
         updatedBy: userId,
         updatedAt: new Date().toISOString()
       })

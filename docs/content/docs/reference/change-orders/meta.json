@@ -1,5 +1,5 @@
 {
-  "title": "Change orders",
+  "title": "Change notices",
   "defaultOpen": false,
   "pages": ["creating", "change-types", "lifecycle", "supersession", "setup"]
 }

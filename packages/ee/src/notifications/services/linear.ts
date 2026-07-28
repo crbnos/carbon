@@ -37,7 +37,8 @@ export class LinearNotificationService implements NotificationService {
         const issue = await getLinearIssueFromExternalId(
           context.serviceRole,
           event.companyId,
-          event.data.id
+          event.data.id,
+          "nonConformanceActionTask"
         );
 
         if (!issue) return;
@@ -63,7 +64,8 @@ export class LinearNotificationService implements NotificationService {
         const issue = await getLinearIssueFromExternalId(
           context.serviceRole,
           event.companyId,
-          event.data.id
+          event.data.id,
+          "nonConformanceActionTask"
         );
 
         if (!issue) return; // No linked Linear issue
@@ -94,7 +96,8 @@ export class LinearNotificationService implements NotificationService {
         const issue = await getLinearIssueFromExternalId(
           context.serviceRole,
           event.companyId,
-          event.data.id
+          event.data.id,
+          "nonConformanceActionTask"
         );
 
         if (!issue) return; // No linked Linear issue

@@ -81,5 +81,11 @@ is the separate `job` table from `20240909194622_jobs.sql`).
 - Permission company-ID array `"0"` means "all companies" — don't string-match a literal company id only.
 - Deactivating an employee (`deactivateEmployee` in `users.server.ts`) removes the company from
   `userPermission.permissions`, deletes the `userToCompany` and `employeeJob` rows, sets
-  `employee.active = false`, and invalidates the Redis claims cache.
+  `employee.active = false`, and invalidates the Redis claims cache. It does **not** clear
+  `user.active` or scrub stored userId references (assignee columns, `workCenterEmployee`,
+  notification-group settings arrays).
+- Notification fan-out (`notify.ts` `resolve-recipients` in `packages/jobs`) filters resolved
+  recipients against `userToCompany` for the notification's company — a missing membership row
+  (i.e. a deactivated user) is dropped before any in-app/email/Slack delivery, regardless of how
+  the recipient list was built.
 - Permission/claims helper SQL functions are redefined across many migrations — always read the newest.

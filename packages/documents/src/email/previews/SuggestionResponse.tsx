@@ -8,7 +8,7 @@ export default function SuggestionResponsePreview() {
       heading={"New suggestion submitted"}
       preview={"New suggestion submitted"}
       message={"New suggestion submitted by Jane Doe"}
-      recipientName={"Naveen"}
+      recipientName={"John Doe"}
       ctaLabel={"View suggestion"}
       ctaUrl={"https://app.carbon.ms/x/suggestions"}
       details={[

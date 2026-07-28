@@ -11,6 +11,7 @@
     "@ai-sdk/anthropic": "2.0.74",
     "@ai-sdk/openai": "catalog:",
     "@ai-sdk/react": "2.0.174",
+    "@base-ui-components/react": "1.0.0-rc.0",
     "@carbon/auth": "workspace:*",
     "@carbon/database": "workspace:*",
     "@carbon/documents": "workspace:*",

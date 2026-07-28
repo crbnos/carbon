@@ -16,4 +16,6 @@ bool step_to_xbf(rust::Str step_path, rust::Str xbf_path);
 Tree read_xbf(rust::Str path, double linear_deflection, double angular_deflection);
 
 bool write_test_step(rust::Str path, uint32_t boxes);
+
+bool write_test_cylinder(rust::Str path, double radius, double height);
 }  // namespace carbon_occt

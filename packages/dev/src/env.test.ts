@@ -35,6 +35,21 @@ describe("renderEnv (portless disabled)", () => {
     expect(out).not.toContain("PORTLESS_TLD");
   });
 
+  it("writes the assembler URL by default, omits it when deselected", () => {
+    const base = { slug: "s", ports, redisDb: 0, jwt, portless: false };
+    const withAssembler = renderEnv(base);
+    expect(withAssembler).toContain(
+      "ASSEMBLER_SERVICE_URL=http://localhost:54007"
+    );
+    expect(withAssembler).toContain("ASSEMBLER_SERVICE_API_KEY=dev-local-key");
+    // ASSEMBLER_SERVICE_URL is the pipeline's feature flag — when the app
+    // wasn't selected, the URL must be absent so jobs skip cleanly instead of
+    // failing against a dead endpoint.
+    const without = renderEnv({ ...base, includeAssembler: false });
+    expect(without).not.toContain("ASSEMBLER_SERVICE_URL=");
+    expect(without).not.toContain("ASSEMBLER_SERVICE_API_KEY=");
+  });
+
   it("wires every port into env vars", () => {
     const out = renderEnv({
       slug: "s",

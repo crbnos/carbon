@@ -29,8 +29,8 @@ import { ResizablePanels } from "~/components/Layout";
 import { flattenTree } from "~/components/TreeView";
 import type { ItemFile, PartSummary } from "~/modules/items";
 import {
-  changeOrderOpenStatuses,
-  findChangeOrdersForItem,
+  changeNoticeOpenStatuses,
+  findChangeNoticesForItem,
   getItemFiles,
   getItemSupersededBy,
   getItemSupersession,
@@ -79,7 +79,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     tags,
     supersession,
     supersededBy,
-    openChangeOrders
+    openChangeNotices
   ] = await Promise.all([
     getPart(client, itemId, companyId),
     getSupplierParts(client, itemId, companyId),
@@ -88,10 +88,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     getItemSupersession(client, itemId, companyId),
     getItemSupersededBy(client, itemId, companyId),
     // Locks manual version/revision creation while a CO owns this part
-    findChangeOrdersForItem(client, {
+    findChangeNoticesForItem(client, {
       itemId,
       companyId,
-      statuses: changeOrderOpenStatuses
+      statuses: changeNoticeOpenStatuses
     })
   ]);
 
@@ -115,7 +115,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const methodTree = getMakeMethods(client, itemId, companyId).then(
     async (makeMethods) => {
       // Include CO-owned drafts so a revision/new-part item created by an open
-      // Change Order shows its method tree on the item master, in sync with the
+      // Change Notice shows its method tree on the item master, in sync with the
       // CO (same makeMethod). Active is still preferred as the default below.
       const selectable = makeMethods.data ?? [];
       const makeMethod = requestedMethodId
@@ -156,7 +156,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     tags: tags.data ?? [],
     usedIn: getPartUsedIn(client, itemId, companyId),
     methodTree,
-    openChangeOrders: openChangeOrders.data ?? []
+    openChangeNotices: openChangeNotices.data ?? []
   };
 }
 
@@ -269,6 +269,7 @@ export default function PartRoute() {
                                 shipmentLines,
                                 supplierQuotes,
                                 assemblyInstructions,
+                                inspections,
                                 jobMaterialUsage
                               } = resolvedUsedIn;
 
@@ -374,6 +375,13 @@ export default function PartRoute() {
                                 });
                               }
 
+                              tree.push({
+                                key: "inspections",
+                                name: t`Inspections`,
+                                module: "quality",
+                                children: inspections
+                              });
+
                               return (
                                 <UsedInTree
                                   tree={tree}
@@ -428,6 +436,7 @@ export default function PartRoute() {
                               shipmentLines,
                               supplierQuotes,
                               assemblyInstructions,
+                              inspections,
                               jobMaterialUsage
                             } = resolvedUsedIn;
 
@@ -532,6 +541,13 @@ export default function PartRoute() {
                                 children: assemblyInstructions
                               });
                             }
+
+                            tree.push({
+                              key: "inspections",
+                              name: "Inspections",
+                              module: "quality",
+                              children: inspections
+                            });
 
                             return (
                               <UsedInTree

@@ -59,6 +59,10 @@ export interface TrackedActivityAttributes {
   "Job Make Method"?: string;
   "Job Material"?: string;
   "Job Operation"?: string;
+  "Job Operation Step"?: string;
+  // 1-based unit the consume was for (assembly view), so batch-parent issues can be
+  // attributed per-unit even though every unit shares one lot entity.
+  Unit?: number;
   "Original Quantity"?: number;
   "Production Event"?: string;
   "Receipt Line"?: string;

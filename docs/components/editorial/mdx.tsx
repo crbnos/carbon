@@ -117,6 +117,14 @@ export function Divider() {
   return <hr className="my-12 border-none border-t border-ed-hairline" />;
 }
 
+/** Agent-only context. Renders nothing on the site — the wrapped MDX is invisible to
+ *  human readers — but `scripts/generate-agent-kb.ts` unwraps it into the in-app agent's
+ *  knowledge base (`apps/erp/app/modules/agent/kb/<slug>.md`). Use it to give the agent
+ *  extra detail about the underlying code/behavior that shouldn't ship to readers. */
+export function AgentContext(_props: { children?: ReactNode }) {
+  return null;
+}
+
 function Paragraph(props: ComponentPropsWithoutRef<"p">) {
   return (
     <p
@@ -244,4 +252,5 @@ export const editorialMdxComponents = {
   Field,
   StatusFlow,
   Status,
+  AgentContext,
 };

@@ -2,6 +2,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { validator } from "@carbon/form";
 import { trigger } from "@carbon/jobs";
+import { postSuggestionToCarbonSlack } from "@carbon/lib/slack.server";
 import { getLogger } from "@carbon/logger";
 import { NotificationEvent } from "@carbon/notifications";
 import type { ActionFunctionArgs } from "react-router";
@@ -28,8 +29,17 @@ export async function action({ request }: ActionFunctionArgs) {
     emoji,
     suggestion,
     path,
-    userId: formUserId
+    userId: formUserId,
+    sendToCarbon
   } = validation.data;
+
+  // formUserId is only an anonymous on/off signal — attribute the session user or nobody
+  const suggestionUserId = formUserId ? userId : null;
+  const suggestionAttachmentPath =
+    attachmentPath && attachmentPath.startsWith(`${companyId}/suggestions/`)
+      ? attachmentPath
+      : null;
+
   const serviceRole = await getCarbonServiceRole();
 
   const insertSuggestion = await serviceRole
@@ -39,8 +49,8 @@ export async function action({ request }: ActionFunctionArgs) {
         suggestion,
         emoji,
         path,
-        attachmentPath: attachmentPath || null,
-        userId: formUserId || null,
+        attachmentPath: suggestionAttachmentPath,
+        userId: suggestionUserId,
         companyId
       }
     ])
@@ -56,6 +66,18 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const company = await getCompany(serviceRole, companyId);
 
+  if (sendToCarbon) {
+    await postSuggestionToCarbonSlack(serviceRole, {
+      companyId,
+      companyName: company.data?.name,
+      suggestion,
+      emoji,
+      path,
+      userId: suggestionUserId,
+      attachmentPath: suggestionAttachmentPath
+    });
+  }
+
   if (!company.error && company.data?.suggestionNotificationGroup?.length) {
     try {
       await trigger("notify", {
@@ -66,7 +88,7 @@ export async function action({ request }: ActionFunctionArgs) {
           type: "group",
           groupIds: company.data.suggestionNotificationGroup
         },
-        from: formUserId || userId
+        from: suggestionUserId || userId
       });
     } catch (err) {
       logger.error("Failed to trigger suggestion notification", { error: err });

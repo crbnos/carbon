@@ -437,6 +437,8 @@ export const quoteOperationValidator = z
     }),
     processId: z.string().min(1, { message: "Process is required" }),
     procedureId: zfd.text(z.string().optional()),
+    assemblyInstructionId: zfd.text(z.string().optional()),
+    inspectionDocumentId: zfd.text(z.string().optional()),
     workCenterId: zfd.text(z.string().optional()),
     description: zfd.text(
       z.string().min(0, { message: "Description is required" })
@@ -469,7 +471,7 @@ export const quoteOperationValidator = z
   })
   .refine(
     (data) => {
-      if (data.operationType === "Outside") {
+      if (data.operationType === "Outside Processing") {
         return Number.isFinite(data.operationMinimumCost);
       }
       return true;
@@ -481,7 +483,7 @@ export const quoteOperationValidator = z
   )
   .refine(
     (data) => {
-      if (data.operationType === "Outside") {
+      if (data.operationType === "Outside Processing") {
         return Number.isFinite(data.operationUnitCost);
       }
       return true;
@@ -493,7 +495,7 @@ export const quoteOperationValidator = z
   )
   .refine(
     (data) => {
-      if (data.operationType === "Outside") {
+      if (data.operationType === "Outside Processing") {
         return Number.isFinite(data.operationLeadTime);
       }
       return true;
@@ -505,7 +507,7 @@ export const quoteOperationValidator = z
   )
   .refine(
     (data) => {
-      if (data.operationType === "Inside") {
+      if (data.operationType !== "Outside Processing") {
         return !!data.setupUnit;
       }
       return true;
@@ -517,7 +519,7 @@ export const quoteOperationValidator = z
   )
   .refine(
     (data) => {
-      if (data.operationType === "Inside") {
+      if (data.operationType !== "Outside Processing") {
         return !!data.laborUnit;
       }
       return true;
@@ -529,8 +531,10 @@ export const quoteOperationValidator = z
   )
   .refine(
     (data) => {
-      if (data.operationType === "Inside") {
-        return !!data.laborUnit;
+      // Machine only applies to Process operations — Assembly and Inspection
+      // are setup + labor work.
+      if (data.operationType === "Process") {
+        return !!data.machineUnit;
       }
       return true;
     },
@@ -541,7 +545,7 @@ export const quoteOperationValidator = z
   )
   .refine(
     (data) => {
-      if (data.operationType === "Inside") {
+      if (data.operationType !== "Outside Processing") {
         return Number.isFinite(data.setupTime);
       }
       return true;
@@ -553,7 +557,7 @@ export const quoteOperationValidator = z
   )
   .refine(
     (data) => {
-      if (data.operationType === "Inside") {
+      if (data.operationType !== "Outside Processing") {
         return Number.isFinite(data.laborTime);
       }
       return true;
@@ -565,7 +569,7 @@ export const quoteOperationValidator = z
   )
   .refine(
     (data) => {
-      if (data.operationType === "Inside") {
+      if (data.operationType === "Process") {
         return Number.isFinite(data.machineTime);
       }
       return true;
@@ -577,7 +581,7 @@ export const quoteOperationValidator = z
   )
   .refine(
     (data) => {
-      if (data.operationType === "Inside") {
+      if (data.operationType === "Process") {
         return Number.isFinite(data.machineRate);
       }
       return true;
@@ -589,7 +593,7 @@ export const quoteOperationValidator = z
   )
   .refine(
     (data) => {
-      if (data.operationType === "Inside") {
+      if (data.operationType !== "Outside Processing") {
         return Number.isFinite(data.overheadRate);
       }
       return true;
@@ -601,7 +605,7 @@ export const quoteOperationValidator = z
   )
   .refine(
     (data) => {
-      if (data.operationType === "Inside") {
+      if (data.operationType !== "Outside Processing") {
         return Number.isFinite(data.laborRate);
       }
       return true;
@@ -609,6 +613,18 @@ export const quoteOperationValidator = z
     {
       message: "Labor rate is required",
       path: ["laborRate"]
+    }
+  )
+  .refine(
+    (data) => {
+      if (data.operationType === "Inspection") {
+        return !!data.inspectionDocumentId;
+      }
+      return true;
+    },
+    {
+      message: "Inspection Plan is required",
+      path: ["inspectionDocumentId"]
     }
   );
 
