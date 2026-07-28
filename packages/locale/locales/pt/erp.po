@@ -6470,7 +6470,7 @@ msgid "Inbox"
 msgstr "Caixa de entrada"
 
 msgid "Include a materials (bill of materials) section on the job traveler PDF with item numbers and quantities."
-msgstr ""
+msgstr "Incluir uma seção de materiais (lista de materiais) no PDF do traveler de trabalho com números de itens e quantidades."
 
 msgid "Include extra parts in shipment"
 msgstr "Incluir peças extras no envio"
@@ -6479,7 +6479,7 @@ msgid "Include Inactive"
 msgstr "Incluir Inativos"
 
 msgid "Include materials on traveler"
-msgstr ""
+msgstr "Incluir materiais no traveler"
 
 msgid "Included"
 msgstr "Incluído"
@@ -6923,7 +6923,10 @@ msgid "Job Operations"
 msgstr "Operações de Trabalho"
 
 msgid "Job Traveler Materials"
-msgstr ""
+msgstr "Materiais do Traveler de Trabalho"
+
+msgid "Job traveler settings updated"
+msgstr "Configurações do traveler de trabalho atualizadas"
 
 msgid "Jobs"
 msgstr "Trabalhos"
@@ -14431,7 +14434,7 @@ msgid "When on, scanning this process's operation barcode reports all remaining 
 msgstr "Quando ativado, escanear o código de barras de operação deste processo relata toda a quantidade aberta restante como concluída em uma ação; desabilitar quando os operadores informam regularmente parciais."
 
 msgid "When on, the traveler PDF lists the job's required materials."
-msgstr ""
+msgstr "Quando ativado, o PDF do traveler lista os materiais necessários do trabalho."
 
 msgid "When on, this party's invoices skip tax calculation; the party is responsible for keeping the exemption certificate current."
 msgstr "Quando ativado, as faturas desta parte ignoram o cálculo de impostos; a parte é responsável por manter o certificado de isenção atual."

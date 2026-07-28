@@ -6925,6 +6925,9 @@ msgstr "Job Operations"
 msgid "Job Traveler Materials"
 msgstr "Job Traveler Materials"
 
+msgid "Job traveler settings updated"
+msgstr "Job traveler settings updated"
+
 msgid "Jobs"
 msgstr "Jobs"
 

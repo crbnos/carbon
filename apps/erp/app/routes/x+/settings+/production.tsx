@@ -124,7 +124,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
     if (update.error) return { success: false, message: update.error.message };
 
-    return { success: true, message: "Job traveler settings updated" };
+    return { success: true };
   }
 
   return { success: false, message: "Unknown intent" };
@@ -158,11 +158,8 @@ export default function ProductionSettingsRoute() {
   }, [timerFetcher.data?.message, timerFetcher.data?.success]);
 
   useEffect(() => {
-    if (
-      travelerFetcher.data?.success === true &&
-      travelerFetcher?.data?.message
-    ) {
-      toast.success(travelerFetcher.data.message);
+    if (travelerFetcher.data?.success === true) {
+      toast.success(t`Job traveler settings updated`);
     }
 
     if (
@@ -171,7 +168,7 @@ export default function ProductionSettingsRoute() {
     ) {
       toast.error(travelerFetcher.data.message);
     }
-  }, [travelerFetcher.data?.message, travelerFetcher.data?.success]);
+  }, [travelerFetcher.data, t]);
 
   return (
     <ScrollArea className="w-full h-[calc(100dvh-49px)]">

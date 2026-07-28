@@ -6470,7 +6470,7 @@ msgid "Inbox"
 msgstr "受信トレイ"
 
 msgid "Include a materials (bill of materials) section on the job traveler PDF with item numbers and quantities."
-msgstr ""
+msgstr "ジョブ移動伝票PDFに材料（部品表）セクションを含めます（品番と数量付き）。"
 
 msgid "Include extra parts in shipment"
 msgstr "出荷に追加部品を含める"
@@ -6479,7 +6479,7 @@ msgid "Include Inactive"
 msgstr "非アクティブを含める"
 
 msgid "Include materials on traveler"
-msgstr ""
+msgstr "移動伝票に材料を含める"
 
 msgid "Included"
 msgstr "含まれています"
@@ -6923,7 +6923,10 @@ msgid "Job Operations"
 msgstr "ジョブ操作"
 
 msgid "Job Traveler Materials"
-msgstr ""
+msgstr "ジョブ移動伝票材料"
+
+msgid "Job traveler settings updated"
+msgstr "ジョブ移動伝票の設定が更新されました"
 
 msgid "Jobs"
 msgstr "ジョブ"
@@ -14431,7 +14434,7 @@ msgid "When on, scanning this process's operation barcode reports all remaining 
 msgstr "有効にすると、このプロセスの操作バーコードをスキャンすると、残りのすべての未処理数量が1つのアクションで完了としてレポートされます。オペレータが定期的に部分を報告する場合は無効にします。"
 
 msgid "When on, the traveler PDF lists the job's required materials."
-msgstr ""
+msgstr "オンにすると、移動伝票PDFにジョブの必要材料がリストアップされます。"
 
 msgid "When on, this party's invoices skip tax calculation; the party is responsible for keeping the exemption certificate current."
 msgstr "有効にすると、この当事者の請求書は税計算をスキップします。当事者は免税証明書を最新の状態に保つ責任があります。"

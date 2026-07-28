@@ -86,6 +86,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   // Opt-in company setting: render a materials (BOM) section on the traveler.
   const companySettings = await getCompanySettings(serviceRole, companyId);
+  if (companySettings.error) {
+    logger.error("Failed to load company settings", {
+      error: companySettings.error
+    });
+    throw new Error("Failed to load company settings");
+  }
   const includeMaterials =
     (
       companySettings.data as {
@@ -171,6 +177,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
             "id, description, quantity, unitOfMeasureCode, methodType, item(readableIdWithRevision)"
           )
           .eq("jobMakeMethodId", makeMethod.id)
+          .eq("companyId", companyId)
           .order("order", { ascending: true });
 
         if (jobMaterials.error) {
