@@ -3661,7 +3661,7 @@ msgid "Decide what an operator sees if they try to issue a batch or serial that'
 msgstr "तय करें कि यदि कोई ऑपरेटर एक बैच या सीरियल जारी करने का प्रयास करता है जो पहले से ही समाप्त हो गया है तो वह क्या देखता है।"
 
 msgid "Decimal places"
-msgstr ""
+msgstr "दशमलव स्थान"
 
 msgid "Decimal Places"
 msgstr "दशमलव स्थान"
@@ -8642,7 +8642,7 @@ msgid "Number"
 msgstr "संख्या"
 
 msgid "Number of decimal places allowed when entering a supplier unit price on a purchase order line. Increase this when suppliers quote extended precision (e.g. 12.3456)."
-msgstr ""
+msgstr "खरीद आदेश पंक्ति पर आपूर्तिकर्ता इकाई मूल्य दर्ज करते समय अनुमति दी गई दशमलव स्थान की संख्या। जब आपूर्तिकर्ता विस्तारित सटीकता का हवाला देते हैं तो इसे बढ़ाएं (उदा. 12.3456)।"
 
 msgid "Number of inventory units per purchase unit"
 msgstr "प्रति क्रय इकाई इन्वेंटरी इकाइयों की संख्या"
@@ -13630,7 +13630,7 @@ msgid "Unit Price"
 msgstr "यूनिट मूल्य"
 
 msgid "Unit Price Precision"
-msgstr ""
+msgstr "इकाई मूल्य सटीकता"
 
 msgid "Unit Sale Price"
 msgstr "यूनिट विक्रय मूल्य"

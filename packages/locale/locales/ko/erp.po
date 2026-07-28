@@ -3661,7 +3661,7 @@ msgid "Decide what an operator sees if they try to issue a batch or serial that'
 msgstr "작업자가 이미 만료된 배치 또는 일련번호를 출고하려 할 때 표시할 내용을 결정하세요."
 
 msgid "Decimal places"
-msgstr ""
+msgstr "소수 자리"
 
 msgid "Decimal Places"
 msgstr "소수 자릿수"
@@ -8642,7 +8642,7 @@ msgid "Number"
 msgstr "번호"
 
 msgid "Number of decimal places allowed when entering a supplier unit price on a purchase order line. Increase this when suppliers quote extended precision (e.g. 12.3456)."
-msgstr ""
+msgstr "구매 주문 라인에서 공급업체 단가를 입력할 때 허용되는 소수 자릿수입니다. 공급업체가 확장된 정밀도를 인용할 때 이를 증가시키세요(예: 12.3456)."
 
 msgid "Number of inventory units per purchase unit"
 msgstr "구매 단위당 재고 단위 수"
@@ -13630,7 +13630,7 @@ msgid "Unit Price"
 msgstr "단가"
 
 msgid "Unit Price Precision"
-msgstr ""
+msgstr "단가 정밀도"
 
 msgid "Unit Sale Price"
 msgstr "단위 판매가"
