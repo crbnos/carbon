@@ -1739,10 +1739,12 @@ export async function getSalesOrderLinesByItemId(
     .order("createdAt", { ascending: false });
 }
 
-// Sales order lines eligible for a job to link to: lines whose item matches the
-// job's item, on sales orders that are still open (not Completed/Invoiced/
-// Cancelled/Closed). Joins the base salesOrder header so we can filter on its
-// status (the salesOrderLines view only exposes the line-level status).
+/**
+ * Sales order lines eligible for a job to link to: lines whose item matches the
+ * job's item, on sales orders that are still open (not Completed/Invoiced/
+ * Cancelled/Closed). Joins the base salesOrder header so we can filter on its
+ * status (the salesOrderLines view only exposes the line-level status).
+ */
 export async function getOpenSalesOrderLinesForItem(
   client: SupabaseClient<Database>,
   companyId: string,

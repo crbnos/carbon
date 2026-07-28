@@ -7207,8 +7207,8 @@ msgstr "Link Jira Issue"
 msgid "Link Linear Issue"
 msgstr "Link Linear Issue"
 
-msgid "Link to sales order"
-msgstr "Link to sales order"
+msgid "Link to sales order line"
+msgstr "Link to sales order line"
 
 #. placeholder {0}: r.linkedSum
 #. placeholder {1}: r.quantity
@@ -8473,8 +8473,8 @@ msgstr "No notes"
 msgid "No open invoices"
 msgstr "No open invoices"
 
-msgid "No open sales orders for this item"
-msgstr "No open sales orders for this item"
+msgid "No open sales order lines for this item"
+msgstr "No open sales order lines for this item"
 
 msgid "No operations require picking at this location"
 msgstr "No operations require picking at this location"

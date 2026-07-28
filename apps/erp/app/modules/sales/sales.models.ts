@@ -698,9 +698,11 @@ export const OPEN_SALES_ORDER_STATUSES = [
   "To Invoice"
 ] as const;
 
-// True for terminal statuses (Completed, Invoiced, Cancelled, Closed) — and for
-// null/unknown — i.e. sales orders a job should not be (re)linked to. Inverse of
-// OPEN_SALES_ORDER_STATUSES.
+/**
+ * True for terminal statuses (Completed, Invoiced, Cancelled, Closed) — and for
+ * null/unknown — i.e. sales orders a job should not be (re)linked to. Inverse of
+ * OPEN_SALES_ORDER_STATUSES.
+ */
 export function isSalesOrderClosed(status: string | null | undefined): boolean {
   return !OPEN_SALES_ORDER_STATUSES.includes(
     status as (typeof OPEN_SALES_ORDER_STATUSES)[number]

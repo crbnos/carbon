@@ -7207,8 +7207,8 @@ msgstr "Jira イシューをリンク"
 msgid "Link Linear Issue"
 msgstr "Linear イシューをリンク"
 
-msgid "Link to sales order"
-msgstr ""
+msgid "Link to sales order line"
+msgstr "販売注文行へのリンク"
 
 #. placeholder {0}: r.linkedSum
 #. placeholder {1}: r.quantity
@@ -8473,8 +8473,8 @@ msgstr "ノートなし"
 msgid "No open invoices"
 msgstr "未処理の請求書がありません"
 
-msgid "No open sales orders for this item"
-msgstr ""
+msgid "No open sales order lines for this item"
+msgstr "この商品に対してオープンな販売注文行がありません"
 
 msgid "No operations require picking at this location"
 msgstr "この場所でのピッキングが必要な操作はありません"

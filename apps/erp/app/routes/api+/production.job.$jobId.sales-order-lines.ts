@@ -5,8 +5,14 @@ import type { LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { getOpenSalesOrderLinesForItem } from "~/modules/sales";
 
-// Sales order lines a job can be linked to: open/draft orders whose line item
-// matches this job's item. Consumed by the JobSalesOrderLine picker.
+/**
+ * Sales order lines a job can be linked to: open/draft orders whose line item
+ * matches this job's item. Consumed by the JobSalesOrderLine picker.
+ *
+ * A genuinely absent or item-less job returns an empty list, but real query
+ * failures are surfaced via flash (never masked as "no lines"), and the payload
+ * never leaks the raw PostgREST error.
+ */
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
     view: "production"
@@ -22,9 +28,17 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     .select("itemId")
     .eq("id", jobId)
     .eq("companyId", companyId)
-    .single();
+    .maybeSingle();
 
-  if (job.error || !job.data?.itemId) {
+  if (job.error) {
+    return data(
+      { data: [], error: null },
+      await flash(request, error(job.error, "Failed to load job"))
+    );
+  }
+
+  // Job genuinely absent or item-less: there is nothing to link to.
+  if (!job.data?.itemId) {
     return { data: [], error: null };
   }
 
@@ -36,7 +50,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   if (lines.error) {
     return data(
-      { data: [], error: lines.error },
+      { data: [], error: null },
       await flash(
         request,
         error(lines.error, "Failed to get sales order lines")

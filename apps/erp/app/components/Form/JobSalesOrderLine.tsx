@@ -1,10 +1,12 @@
-// `<JobSalesOrderLine>` — picks a sales order line to link a job to. Lists only
-// lines whose item matches the job's item, on sales orders that are still open
-// (not Completed/Invoiced/Cancelled/Closed). Backed by the per-job endpoint
-// `api/production/job/:jobId/sales-order-lines`.
-//
-// Form-bound like the other property selectors: render it inside a
-// `ValidatedForm` and give it a `name`.
+/**
+ * `<JobSalesOrderLine>` — picks a sales order line to link a job to. Lists only
+ * lines whose item matches the job's item, on sales orders that are still open
+ * (not Completed/Invoiced/Cancelled/Closed). Backed by the per-job endpoint
+ * `api/production/job/:jobId/sales-order-lines`.
+ *
+ * Form-bound like the other property selectors: render it inside a
+ * `ValidatedForm` and give it a `name`.
+ */
 
 import type { ComboboxProps } from "@carbon/form";
 import { Combobox } from "@carbon/form";
@@ -86,8 +88,10 @@ const JobSalesOrderLine = ({
       options={options}
       {...props}
       label={props.label ?? t`Target`}
-      placeholder={props.placeholder ?? t`Link to sales order`}
-      emptyMessage={props.emptyMessage ?? t`No open sales orders for this item`}
+      placeholder={props.placeholder ?? t`Link to sales order line`}
+      emptyMessage={
+        props.emptyMessage ?? t`No open sales order lines for this item`
+      }
       inline={inline ? salesOrderLinePreview : undefined}
       onChange={(option) =>
         onChange?.(lines.find((line) => line.id === option?.value) ?? null)

@@ -7207,8 +7207,8 @@ msgstr "关联 Jira 问题"
 msgid "Link Linear Issue"
 msgstr "关联 Linear 问题"
 
-msgid "Link to sales order"
-msgstr ""
+msgid "Link to sales order line"
+msgstr "关联销售订单行"
 
 #. placeholder {0}: r.linkedSum
 #. placeholder {1}: r.quantity
@@ -8473,8 +8473,8 @@ msgstr "没有备注"
 msgid "No open invoices"
 msgstr "没有未结发票"
 
-msgid "No open sales orders for this item"
-msgstr ""
+msgid "No open sales order lines for this item"
+msgstr "此物品没有开放的销售订单行"
 
 msgid "No operations require picking at this location"
 msgstr "此位置不需要进行任何操作拣选"
