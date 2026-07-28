@@ -6928,6 +6928,9 @@ msgstr "アイテムと生産"
 msgid "Items inside this window get a yellow badge."
 msgstr "このウィンドウ内のアイテムは黄色いバッジが表示されます。"
 
+msgid "Items whose bill of materials includes this item"
+msgstr "このアイテムが部品表に含まれるアイテム"
+
 msgid "Items: item master, BOMs, Bill of Process, engineering changes, CAD"
 msgstr "アイテム: アイテムマスター、BOM、プロセス仕様書、エンジニアリング変更、CAD"
 
@@ -10040,6 +10043,9 @@ msgstr "見積ID"
 
 msgid "Quote Line"
 msgstr "見積行"
+
+msgid "Quote lines whose bill of materials includes this item"
+msgstr "このアイテムが部品表に含まれる見積行"
 
 msgid "Quote Location"
 msgstr "見積もりロケーション"

@@ -6928,6 +6928,9 @@ msgstr "Articoli e Produzione"
 msgid "Items inside this window get a yellow badge."
 msgstr "Gli articoli all'interno di questa finestra ricevono un badge giallo."
 
+msgid "Items whose bill of materials includes this item"
+msgstr "Articoli la cui distinta base include questo articolo"
+
 msgid "Items: item master, BOMs, Bill of Process, engineering changes, CAD"
 msgstr "Articoli: anagrafica articoli, BOM, ciclo di lavorazione, modifiche ingegneristiche, CAD"
 
@@ -10040,6 +10043,9 @@ msgstr "ID Preventivo"
 
 msgid "Quote Line"
 msgstr "Riga di Preventivo"
+
+msgid "Quote lines whose bill of materials includes this item"
+msgstr "Righe di preventivo la cui distinta base include questo articolo"
 
 msgid "Quote Location"
 msgstr "Ubicazione Preventivo"

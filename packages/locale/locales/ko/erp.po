@@ -6928,6 +6928,9 @@ msgstr "품목 및 생산"
 msgid "Items inside this window get a yellow badge."
 msgstr "이 기간 내의 항목에는 노란색 배지가 표시됩니다."
 
+msgid "Items whose bill of materials includes this item"
+msgstr "자재명세서에 이 품목을 포함하는 품목"
+
 msgid "Items: item master, BOMs, Bill of Process, engineering changes, CAD"
 msgstr "품목: 품목 마스터, BOM, 공정(BOP), 설계 변경, CAD"
 
@@ -10040,6 +10043,9 @@ msgstr "견적 ID"
 
 msgid "Quote Line"
 msgstr "견적 라인"
+
+msgid "Quote lines whose bill of materials includes this item"
+msgstr "자재명세서에 이 품목을 포함하는 견적 라인"
 
 msgid "Quote Location"
 msgstr "견적 위치"

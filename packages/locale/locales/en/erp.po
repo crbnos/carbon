@@ -6928,6 +6928,9 @@ msgstr "Items & Production"
 msgid "Items inside this window get a yellow badge."
 msgstr "Items inside this window get a yellow badge."
 
+msgid "Items whose bill of materials includes this item"
+msgstr "Items whose bill of materials includes this item"
+
 msgid "Items: item master, BOMs, Bill of Process, engineering changes, CAD"
 msgstr "Items: item master, BOMs, Bill of Process, engineering changes, CAD"
 
@@ -10040,6 +10043,9 @@ msgstr "Quote ID"
 
 msgid "Quote Line"
 msgstr "Quote Line"
+
+msgid "Quote lines whose bill of materials includes this item"
+msgstr "Quote lines whose bill of materials includes this item"
 
 msgid "Quote Location"
 msgstr "Quote Location"

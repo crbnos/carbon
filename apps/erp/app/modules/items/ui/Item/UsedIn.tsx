@@ -107,7 +107,9 @@ type UsedInTooltipKey = UsedInKey | "revisions" | "sizes";
  * `sizes` for that row instead.
  */
 const USED_IN_TOOLTIPS: Partial<Record<UsedInTooltipKey, MessageDescriptor>> = {
-  jobMaterials: msg`Jobs that have this item on their bill of materials`
+  jobMaterials: msg`Jobs that have this item on their bill of materials`,
+  methodMaterials: msg`Items whose bill of materials includes this item`,
+  quoteMaterials: msg`Quote lines whose bill of materials includes this item`
 };
 
 export type UsedInNode = {

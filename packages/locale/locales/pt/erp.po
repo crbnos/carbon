@@ -6928,6 +6928,9 @@ msgstr "Itens e Produção"
 msgid "Items inside this window get a yellow badge."
 msgstr "Itens dentro desta janela recebem um crachá amarelo."
 
+msgid "Items whose bill of materials includes this item"
+msgstr "Itens cuja lista de materiais inclui este item"
+
 msgid "Items: item master, BOMs, Bill of Process, engineering changes, CAD"
 msgstr "Itens: mestre de itens, BOMs, Bill of Process, alterações de engenharia, CAD"
 
@@ -10040,6 +10043,9 @@ msgstr "ID da Cotação"
 
 msgid "Quote Line"
 msgstr "Linha de Cotação"
+
+msgid "Quote lines whose bill of materials includes this item"
+msgstr "Linhas de cotação cuja lista de materiais inclui este item"
 
 msgid "Quote Location"
 msgstr "Localização da Cotação"

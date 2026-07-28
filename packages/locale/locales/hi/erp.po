@@ -6928,6 +6928,9 @@ msgstr "आइटम और उत्पादन"
 msgid "Items inside this window get a yellow badge."
 msgstr "इस विंडो के अंदर आइटम को एक पीला बैज मिलता है।"
 
+msgid "Items whose bill of materials includes this item"
+msgstr "वस्तुएं जिनकी सामग्री सूची में यह आइटम शामिल है"
+
 msgid "Items: item master, BOMs, Bill of Process, engineering changes, CAD"
 msgstr "आइटम: आइटम मास्टर, BOMs, बिल ऑफ प्रोसेस, इंजीनियरिंग परिवर्तन, CAD"
 
@@ -10040,6 +10043,9 @@ msgstr "उद्धरण ID"
 
 msgid "Quote Line"
 msgstr "उद्धरण पंक्ति"
+
+msgid "Quote lines whose bill of materials includes this item"
+msgstr "उद्धरण पंक्तियां जिनकी सामग्री सूची में यह आइटम शामिल है"
 
 msgid "Quote Location"
 msgstr "उद्धरण स्थान"

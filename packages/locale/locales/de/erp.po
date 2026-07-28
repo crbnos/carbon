@@ -6928,6 +6928,9 @@ msgstr "Artikel & Produktion"
 msgid "Items inside this window get a yellow badge."
 msgstr "Artikel in diesem Fenster erhalten ein gelbes Abzeichen."
 
+msgid "Items whose bill of materials includes this item"
+msgstr "Artikel, deren Stückliste diesen Artikel enthält"
+
 msgid "Items: item master, BOMs, Bill of Process, engineering changes, CAD"
 msgstr "Artikel: Artikelstamm, Stücklisten, Fertigungsprozess, Konstruktionsänderungen, CAD"
 
@@ -10040,6 +10043,9 @@ msgstr "Angebots-ID"
 
 msgid "Quote Line"
 msgstr "Angebotsposition"
+
+msgid "Quote lines whose bill of materials includes this item"
+msgstr "Angebotspositionen, deren Stückliste diesen Artikel enthält"
 
 msgid "Quote Location"
 msgstr "Angebotsort"
