@@ -34,6 +34,7 @@ import {
   Spinner,
   Status,
   TruncatedTooltipText,
+  toast,
   useDisclosure,
   useKeyboardWedge,
   useMode,
@@ -633,7 +634,18 @@ export function AssemblyView({
   // biome-ignore lint/correctness/useExhaustiveDependencies: mirrors the operation view
   useEffect(() => {
     function createInspectionStepsForNonConformanceActions() {
-      if (!carbon || !operationId || nonConformanceActions.length === 0) return;
+      // Skip while a prior POST is still in flight: procedure/nonConformanceActions
+      // references churn on every realtime revalidation, so without this guard a
+      // submit whose insert hasn't yet landed in procedure.attributes would be
+      // re-issued against a stale existingActionIds set — duplicating steps. Matches
+      // the laborFetcher/completeUnitFetcher idle guards elsewhere in this file.
+      if (
+        !carbon ||
+        !operationId ||
+        nonConformanceActions.length === 0 ||
+        inspectionStepsFetcher.state !== "idle"
+      )
+        return;
 
       try {
         const attributes = procedure.attributes ?? [];
@@ -698,6 +710,31 @@ export function AssemblyView({
     user.company.id,
     user.id
   ]);
+
+  // Surface a failed containment-step creation instead of failing silently — otherwise
+  // the operator could complete the operation without the required inspection step ever
+  // being recorded. The route (steps.inspection.tsx) returns { success, message }; only
+  // react on the transition to idle (via the ref) so we toast once, not on every render.
+  const prevInspectionStepsStateRef = useRef(inspectionStepsFetcher.state);
+  useEffect(() => {
+    const settled =
+      prevInspectionStepsStateRef.current !== "idle" &&
+      inspectionStepsFetcher.state === "idle";
+    prevInspectionStepsStateRef.current = inspectionStepsFetcher.state;
+    if (!settled) return;
+    const result = inspectionStepsFetcher.data as
+      | { success?: boolean; message?: string }
+      | undefined;
+    if (result && result.success === false) {
+      log.error(
+        "Failed to create inspection steps for non-conformance actions",
+        {
+          message: result.message
+        }
+      );
+      toast.error(result.message ?? "Failed to create containment steps");
+    }
+  }, [inspectionStepsFetcher.state, inspectionStepsFetcher.data]);
 
   // Build steps, sorted by sortOrder. NCR containment actions are materialized as
   // Inspection steps (see the effect above) and appear inline like any other step —
