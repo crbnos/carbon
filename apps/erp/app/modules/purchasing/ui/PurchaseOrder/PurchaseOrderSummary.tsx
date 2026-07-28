@@ -25,6 +25,7 @@ import { MethodIcon, SupplierAvatar } from "~/components";
 import { useAccounts } from "~/components/Form/Account";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
 import {
+  useCompanySettings,
   useCurrencyFormatter,
   useDateFormatter,
   usePercentFormatter,
@@ -44,14 +45,18 @@ import type {
 const LineItems = ({
   currencyCode,
   presentationCurrencyFormatter,
+  presentationCurrencyUnitPriceFormatter,
   formatter,
+  unitPriceFormatter,
   locale,
   lines,
   shouldConvertCurrency
 }: {
   currencyCode: string;
   presentationCurrencyFormatter: Intl.NumberFormat;
+  presentationCurrencyUnitPriceFormatter: Intl.NumberFormat;
   formatter: Intl.NumberFormat;
+  unitPriceFormatter: Intl.NumberFormat;
   locale: string;
   lines: PurchaseOrderLine[];
   shouldConvertCurrency: boolean;
@@ -195,7 +200,7 @@ const LineItems = ({
                           </Badge>
                         )}
                         <Badge variant="green">
-                          {formatter.format(line.unitPrice ?? 0)}{" "}
+                          {unitPriceFormatter.format(line.unitPrice ?? 0)}{" "}
                           {
                             unitOfMeasures.find(
                               (uom) =>
@@ -309,10 +314,12 @@ const LineItems = ({
                       <Td>Unit Price</Td>
                       <Td className="text-right">
                         <VStack spacing={0} className="items-end">
-                          <span>{formatter.format(line.unitPrice ?? 0)}</span>
+                          <span>
+                            {unitPriceFormatter.format(line.unitPrice ?? 0)}
+                          </span>
                           {shouldConvertCurrency && (
                             <span className="text-muted-foreground text-xs">
-                              {presentationCurrencyFormatter.format(
+                              {presentationCurrencyUnitPriceFormatter.format(
                                 line.supplierUnitPrice ?? 0
                               )}
                             </span>
@@ -428,6 +435,23 @@ const PurchaseOrderSummary = ({
       "USD"
   });
 
+  const companySettings = useCompanySettings();
+  // Unit prices can carry more precision than the currency's default 2 decimals
+  // (issue #1236). Totals stay at 2 decimals; only unit prices use these,
+  // honoring the same company-configured precision as the PO line form.
+  const unitPricePrecision =
+    companySettings?.purchaseOrderUnitPricePrecision ?? 2;
+  const unitPriceFormatter = useCurrencyFormatter({
+    maximumFractionDigits: unitPricePrecision
+  });
+  const presentationCurrencyUnitPriceFormatter = useCurrencyFormatter({
+    currency:
+      routeData?.purchaseOrder?.currencyCode ??
+      company?.baseCurrencyCode ??
+      "USD",
+    maximumFractionDigits: unitPricePrecision
+  });
+
   const shouldConvertCurrency =
     routeData?.purchaseOrder?.currencyCode !== company?.baseCurrencyCode;
 
@@ -496,7 +520,11 @@ const PurchaseOrderSummary = ({
         <LineItems
           currencyCode={company?.baseCurrencyCode ?? "USD"}
           presentationCurrencyFormatter={presentationCurrencyFormatter}
+          presentationCurrencyUnitPriceFormatter={
+            presentationCurrencyUnitPriceFormatter
+          }
           formatter={formatter}
+          unitPriceFormatter={unitPriceFormatter}
           locale={locale}
           lines={routeData?.lines ?? []}
           shouldConvertCurrency={shouldConvertCurrency}
