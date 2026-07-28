@@ -4453,17 +4453,53 @@ msgstr "Duplicar a..."
 msgid "Duration"
 msgstr "Duración"
 
+msgid "e.g. +1 555 123 4567"
+msgstr "p. ej. +1 555 123 4567"
+
+msgid "e.g. +1 555 123 4568"
+msgstr "p. ej. +1 555 123 4568"
+
+msgid "e.g. 01234567"
+msgstr "p. ej. 01234567"
+
+msgid "e.g. 1 Industrial Way"
+msgstr "p. ej. 1 Industrial Way"
+
+msgid "e.g. 12-3456789"
+msgstr "p. ej. 12-3456789"
+
 msgid "e.g. 2h"
 msgstr "p. ej. 2h"
 
+msgid "e.g. 48201"
+msgstr "p. ej. 48201"
+
+msgid "e.g. Acme Manufacturing"
+msgstr "p. ej. Acme Manufacturing"
+
+msgid "e.g. Detroit"
+msgstr "p. ej. Detroit"
+
 msgid "e.g. DWG-1234"
 msgstr "p. ej. DWG-1234"
+
+msgid "e.g. GB123456789"
+msgstr "p. ej. GB123456789"
+
+msgid "e.g. GB123456789000"
+msgstr "p. ej. GB123456789000"
 
 msgid "e.g. Jane Smith"
 msgstr "p. ej. Jane Smith"
 
 msgid "e.g. Marco + the area leads"
 msgstr "p. ej. Marco + los líderes del área"
+
+msgid "e.g. MI"
+msgstr "p. ej. MI"
+
+msgid "e.g. Suite 200"
+msgstr "p. ej. Suite 200"
 
 msgid "e.g. the first 3 to 4 weeks"
 msgstr "p. ej. las primeras 3 a 4 semanas"
@@ -4845,6 +4881,9 @@ msgstr "empleados"
 
 msgid "Employees"
 msgstr "Empleados"
+
+msgid "Empty"
+msgstr "Vacío"
 
 msgid "Empty = match every item"
 msgstr "Vacío = coincide con todos los elementos"
@@ -10281,6 +10320,9 @@ msgstr "Registrado"
 
 msgid "Registered"
 msgstr "Punto de Reorden"
+
+msgid "Registration Number"
+msgstr "Número de registro"
 
 msgid "Reject"
 msgstr "Rechazar"

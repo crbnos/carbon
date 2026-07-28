@@ -4453,17 +4453,53 @@ msgstr "Duplicate to..."
 msgid "Duration"
 msgstr "Duration"
 
+msgid "e.g. +1 555 123 4567"
+msgstr "e.g. +1 555 123 4567"
+
+msgid "e.g. +1 555 123 4568"
+msgstr "e.g. +1 555 123 4568"
+
+msgid "e.g. 01234567"
+msgstr "e.g. 01234567"
+
+msgid "e.g. 1 Industrial Way"
+msgstr "e.g. 1 Industrial Way"
+
+msgid "e.g. 12-3456789"
+msgstr "e.g. 12-3456789"
+
 msgid "e.g. 2h"
 msgstr "e.g. 2h"
 
+msgid "e.g. 48201"
+msgstr "e.g. 48201"
+
+msgid "e.g. Acme Manufacturing"
+msgstr "e.g. Acme Manufacturing"
+
+msgid "e.g. Detroit"
+msgstr "e.g. Detroit"
+
 msgid "e.g. DWG-1234"
 msgstr "e.g. DWG-1234"
+
+msgid "e.g. GB123456789"
+msgstr "e.g. GB123456789"
+
+msgid "e.g. GB123456789000"
+msgstr "e.g. GB123456789000"
 
 msgid "e.g. Jane Smith"
 msgstr "e.g. Jane Smith"
 
 msgid "e.g. Marco + the area leads"
 msgstr "e.g. Marco + the area leads"
+
+msgid "e.g. MI"
+msgstr "e.g. MI"
+
+msgid "e.g. Suite 200"
+msgstr "e.g. Suite 200"
 
 msgid "e.g. the first 3 to 4 weeks"
 msgstr "e.g. the first 3 to 4 weeks"
@@ -4845,6 +4881,9 @@ msgstr "employees"
 
 msgid "Employees"
 msgstr "Employees"
+
+msgid "Empty"
+msgstr "Empty"
 
 msgid "Empty = match every item"
 msgstr "Empty = match every item"
@@ -10281,6 +10320,9 @@ msgstr "Register Existing Asset"
 
 msgid "Registered"
 msgstr "Registered"
+
+msgid "Registration Number"
+msgstr "Registration Number"
 
 msgid "Reject"
 msgstr "Reject"

@@ -4453,17 +4453,53 @@ msgstr "다음으로 복제..."
 msgid "Duration"
 msgstr "기간"
 
+msgid "e.g. +1 555 123 4567"
+msgstr "예: +1 555 123 4567"
+
+msgid "e.g. +1 555 123 4568"
+msgstr "예: +1 555 123 4568"
+
+msgid "e.g. 01234567"
+msgstr "예: 01234567"
+
+msgid "e.g. 1 Industrial Way"
+msgstr "예: 1 Industrial Way"
+
+msgid "e.g. 12-3456789"
+msgstr "예: 12-3456789"
+
 msgid "e.g. 2h"
 msgstr "예: 2시간"
 
+msgid "e.g. 48201"
+msgstr "예: 48201"
+
+msgid "e.g. Acme Manufacturing"
+msgstr "예: Acme Manufacturing"
+
+msgid "e.g. Detroit"
+msgstr "예: Detroit"
+
 msgid "e.g. DWG-1234"
 msgstr "예: DWG-1234"
+
+msgid "e.g. GB123456789"
+msgstr "예: GB123456789"
+
+msgid "e.g. GB123456789000"
+msgstr "예: GB123456789000"
 
 msgid "e.g. Jane Smith"
 msgstr "예: Jane Smith"
 
 msgid "e.g. Marco + the area leads"
 msgstr "예: Marco + 담당 지역 리더들"
+
+msgid "e.g. MI"
+msgstr "예: MI"
+
+msgid "e.g. Suite 200"
+msgstr "예: Suite 200"
 
 msgid "e.g. the first 3 to 4 weeks"
 msgstr "예: 처음 3~4주"
@@ -4845,6 +4881,9 @@ msgstr "직원"
 
 msgid "Employees"
 msgstr "직원"
+
+msgid "Empty"
+msgstr "비어있음"
 
 msgid "Empty = match every item"
 msgstr "비어 있으면 모든 품목과 일치"
@@ -10281,6 +10320,9 @@ msgstr "기존 자산 등록"
 
 msgid "Registered"
 msgstr "등록됨"
+
+msgid "Registration Number"
+msgstr "등록 번호"
 
 msgid "Reject"
 msgstr "반려"

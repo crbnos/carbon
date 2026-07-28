@@ -4453,17 +4453,53 @@ msgstr "複製先..."
 msgid "Duration"
 msgstr "期間"
 
+msgid "e.g. +1 555 123 4567"
+msgstr "例：+1 555 123 4567"
+
+msgid "e.g. +1 555 123 4568"
+msgstr "例：+1 555 123 4568"
+
+msgid "e.g. 01234567"
+msgstr "例：01234567"
+
+msgid "e.g. 1 Industrial Way"
+msgstr "例：1 Industrial Way"
+
+msgid "e.g. 12-3456789"
+msgstr "例：12-3456789"
+
 msgid "e.g. 2h"
 msgstr "例：2時間"
 
+msgid "e.g. 48201"
+msgstr "例：48201"
+
+msgid "e.g. Acme Manufacturing"
+msgstr "例：Acme Manufacturing"
+
+msgid "e.g. Detroit"
+msgstr "例：Detroit"
+
 msgid "e.g. DWG-1234"
 msgstr "例：DWG-1234"
+
+msgid "e.g. GB123456789"
+msgstr "例：GB123456789"
+
+msgid "e.g. GB123456789000"
+msgstr "例：GB123456789000"
 
 msgid "e.g. Jane Smith"
 msgstr "例：ジェーン・スミス"
 
 msgid "e.g. Marco + the area leads"
 msgstr "例：Marco + エリアリーダー"
+
+msgid "e.g. MI"
+msgstr "例：MI"
+
+msgid "e.g. Suite 200"
+msgstr "例：Suite 200"
 
 msgid "e.g. the first 3 to 4 weeks"
 msgstr "例：最初の3～4週間"
@@ -4845,6 +4881,9 @@ msgstr "従業員"
 
 msgid "Employees"
 msgstr "従業員"
+
+msgid "Empty"
+msgstr "空"
 
 msgid "Empty = match every item"
 msgstr "空 = すべてのアイテムに一致"
@@ -10281,6 +10320,9 @@ msgstr "登録済み"
 
 msgid "Registered"
 msgstr "再注文点"
+
+msgid "Registration Number"
+msgstr "登録番号"
 
 msgid "Reject"
 msgstr "却下"

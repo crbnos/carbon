@@ -4453,17 +4453,53 @@ msgstr "Duplica in..."
 msgid "Duration"
 msgstr "Durata"
 
+msgid "e.g. +1 555 123 4567"
+msgstr "ad es. +1 555 123 4567"
+
+msgid "e.g. +1 555 123 4568"
+msgstr "ad es. +1 555 123 4568"
+
+msgid "e.g. 01234567"
+msgstr "ad es. 01234567"
+
+msgid "e.g. 1 Industrial Way"
+msgstr "ad es. 1 Industrial Way"
+
+msgid "e.g. 12-3456789"
+msgstr "ad es. 12-3456789"
+
 msgid "e.g. 2h"
 msgstr "es. 2h"
 
+msgid "e.g. 48201"
+msgstr "ad es. 48201"
+
+msgid "e.g. Acme Manufacturing"
+msgstr "ad es. Acme Manufacturing"
+
+msgid "e.g. Detroit"
+msgstr "ad es. Detroit"
+
 msgid "e.g. DWG-1234"
 msgstr "es. DWG-1234"
+
+msgid "e.g. GB123456789"
+msgstr "ad es. GB123456789"
+
+msgid "e.g. GB123456789000"
+msgstr "ad es. GB123456789000"
 
 msgid "e.g. Jane Smith"
 msgstr "es. Jane Smith"
 
 msgid "e.g. Marco + the area leads"
 msgstr "es. Marco + i responsabili di area"
+
+msgid "e.g. MI"
+msgstr "ad es. MI"
+
+msgid "e.g. Suite 200"
+msgstr "ad es. Suite 200"
 
 msgid "e.g. the first 3 to 4 weeks"
 msgstr "ad es. le prime 3-4 settimane"
@@ -4845,6 +4881,9 @@ msgstr "dipendenti"
 
 msgid "Employees"
 msgstr "Dipendenti"
+
+msgid "Empty"
+msgstr "Vuoto"
 
 msgid "Empty = match every item"
 msgstr "Vuoto = corrisponde a ogni articolo"
@@ -10281,6 +10320,9 @@ msgstr "Registrato"
 
 msgid "Registered"
 msgstr "Punto di Riordino"
+
+msgid "Registration Number"
+msgstr "Numero di Registrazione"
 
 msgid "Reject"
 msgstr "Rifiuta"
