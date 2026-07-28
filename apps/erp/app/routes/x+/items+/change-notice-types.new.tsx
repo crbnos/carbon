@@ -5,10 +5,10 @@ import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { redirect, useNavigate } from "react-router";
 import {
-  changeOrderTypeValidator,
-  upsertChangeOrderType
+  changeNoticeTypeValidator,
+  upsertChangeNoticeType
 } from "~/modules/items";
-import { ChangeOrderTypeForm } from "~/modules/items/ui/ChangeOrderTypes";
+import { ChangeNoticeTypeForm } from "~/modules/items/ui/ChangeNoticeTypes";
 import { getParams, path, requestReferrer } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -28,7 +28,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const formData = await request.formData();
   const modal = formData.get("type") === "modal";
 
-  const validation = await validator(changeOrderTypeValidator).validate(
+  const validation = await validator(changeNoticeTypeValidator).validate(
     formData
   );
 
@@ -36,7 +36,7 @@ export async function action({ request }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const insert = await upsertChangeOrderType(client, {
+  const insert = await upsertChangeNoticeType(client, {
     name: validation.data.name,
     companyId,
     createdBy: userId
@@ -62,14 +62,14 @@ export async function action({ request }: ActionFunctionArgs) {
       );
 }
 
-export default function NewChangeOrderTypeRoute() {
+export default function NewChangeNoticeTypeRoute() {
   const navigate = useNavigate();
   const initialValues = {
     name: ""
   };
 
   return (
-    <ChangeOrderTypeForm
+    <ChangeNoticeTypeForm
       initialValues={initialValues}
       onClose={() => navigate(-1)}
     />

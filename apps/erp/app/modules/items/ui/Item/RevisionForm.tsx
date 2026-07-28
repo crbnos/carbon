@@ -47,11 +47,11 @@ const RevisionForm = ({
     ? !permissions.can("update", "parts")
     : !permissions.can("create", "parts");
 
-  const [openChangeOrder, setOpenChangeOrder] = useState(false);
+  const [openChangeNotice, setOpenChangeNotice] = useState(false);
   // Offer the "open a change notice" shortcut only when creating a new revision of
   // a make part/tool (CO affected items are Parts/Tools; the CO route coerces
   // Buy items to a Revision change type).
-  const canOpenChangeOrder =
+  const canOpenChangeNotice =
     !isEditing &&
     !hasSizesInsteadOfRevisions &&
     (initialValues.type === "Part" || initialValues.type === "Tool");
@@ -85,7 +85,7 @@ const RevisionForm = ({
             action={
               isEditing
                 ? path.to.revision(initialValues.id!)
-                : openChangeOrder && initialValues.copyFromId
+                : openChangeNotice && initialValues.copyFromId
                   ? path.to.newChangeNoticeFromItem(initialValues.copyFromId)
                   : path.to.newRevision
             }
@@ -126,16 +126,16 @@ const RevisionForm = ({
                       : t`The revision number of the part`
                   }
                 />
-                {canOpenChangeOrder && (
+                {canOpenChangeNotice && (
                   <Boolean
-                    name="openChangeOrder"
+                    name="openChangeNotice"
                     label={t`Open a change notice`}
                     description={t`Create a change notice for the new revision and open it`}
                     bordered
-                    onChange={setOpenChangeOrder}
+                    onChange={setOpenChangeNotice}
                   />
                 )}
-                {openChangeOrder && (
+                {openChangeNotice && (
                   <Hidden name="changeType" value="Revision" />
                 )}
               </VStack>

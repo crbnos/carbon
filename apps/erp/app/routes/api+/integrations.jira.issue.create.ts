@@ -15,7 +15,7 @@ import {
 import { getLogger } from "@carbon/logger";
 import type { ActionFunction, LoaderFunction } from "react-router";
 import { data } from "react-router";
-import { requireChangeOrderEditable } from "~/modules/items/items.server";
+import { requireChangeNoticeEditable } from "~/modules/items/items.server";
 import { getActionTaskWithParent } from "~/services/action-task.server";
 
 const logger = getLogger("erp", "integrations-jira-issue-create");
@@ -65,8 +65,8 @@ export const action: ActionFunction = async ({ request }) => {
 
     if (entityType === "changeOrderActionTask") {
       const locked = carbonIssue.parentId
-        ? await requireChangeOrderEditable(client, {
-            changeOrderId: carbonIssue.parentId,
+        ? await requireChangeNoticeEditable(client, {
+            changeNoticeId: carbonIssue.parentId,
             companyId,
             scope: "workflow"
           })

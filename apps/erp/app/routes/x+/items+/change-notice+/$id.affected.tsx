@@ -5,11 +5,11 @@ import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import {
-  addChangeOrderAffectedItem,
-  changeOrderAffectedItemValidator,
-  changeOrderNewPartValidator
+  addChangeNoticeAffectedItem,
+  changeNoticeAffectedItemValidator,
+  changeNoticeNewPartValidator
 } from "~/modules/items";
-import { requireEditableChangeOrderRoute } from "~/modules/items/items.server";
+import { requireEditableChangeNoticeRoute } from "~/modules/items/items.server";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -19,9 +19,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const { id } = params;
   if (!id) throw new Error("Could not find id");
-  const locked = await requireEditableChangeOrderRoute(request, {
+  const locked = await requireEditableChangeNoticeRoute(request, {
     client,
-    changeOrderId: params.id,
+    changeNoticeId: params.id,
     companyId,
     scope: "engineering"
   });
@@ -32,7 +32,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // Net-new "New Part": no existing itemId — mint a brand-new Part/Tool and add
   // it as a New Part affected item. The other change types add an existing item.
   if (formData.get("changeType") === "New Part") {
-    const validation = await validator(changeOrderNewPartValidator).validate(
+    const validation = await validator(changeNoticeNewPartValidator).validate(
       formData
     );
     if (validation.error) {
@@ -53,8 +53,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
         await flash(request, error(null, "Invalid change notice"))
       );
     }
-    const add = await addChangeOrderAffectedItem(client, {
-      changeOrderId,
+    const add = await addChangeNoticeAffectedItem(client, {
+      changeNoticeId: changeOrderId,
       changeType: "New Part",
       // A net-new affected item is always a Part.
       newPart: {
@@ -79,7 +79,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return { success: true, id: add.data.id };
   }
 
-  const validation = await validator(changeOrderAffectedItemValidator).validate(
+  const validation = await validator(changeNoticeAffectedItemValidator).validate(
     formData
   );
 
@@ -96,8 +96,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const add = await addChangeOrderAffectedItem(client, {
-    changeOrderId,
+  const add = await addChangeNoticeAffectedItem(client, {
+    changeNoticeId: changeOrderId,
     itemId,
     changeType,
     // Only a Revision change consumes an explicit revision label.

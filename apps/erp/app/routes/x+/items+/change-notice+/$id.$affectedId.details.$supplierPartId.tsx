@@ -2,7 +2,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useNavigate, useParams } from "react-router";
 import { useRouteData } from "~/hooks";
-import type { AffectedItemDraft } from "~/modules/items/ui/ChangeOrder";
+import type { AffectedItemDraft } from "~/modules/items/ui/ChangeNotice";
 import { SupplierPartForm } from "~/modules/items/ui/Item";
 import { path } from "~/utils/path";
 
@@ -57,7 +57,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   };
 }
 
-export default function ChangeOrderEditSupplierPartRoute() {
+export default function ChangeNoticeEditSupplierPartRoute() {
   const { id, affectedId } = useParams();
   if (!id) throw new Error("Could not find id");
   if (!affectedId) throw new Error("Could not find affectedId");

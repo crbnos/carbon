@@ -8,10 +8,12 @@ export enum NotificationEvent {
   ApprovalApproved = "approval-approved",
   ApprovalRejected = "approval-rejected",
   ApprovalRequested = "approval-requested",
-  // Change-order stage broadcasts (the only CO events; no approval flow in v1).
-  ChangeOrderStarted = "change-order-started",
-  ChangeOrderImplementation = "change-order-implementation",
-  ChangeOrderDone = "change-order-done",
+  // Change-notice stage broadcasts (the only CN events; no approval flow in v1).
+  // Values are persisted in `notification.event`, so they keep the legacy
+  // "change-order" spelling.
+  ChangeNoticeStarted = "change-order-started",
+  ChangeNoticeImplementation = "change-order-implementation",
+  ChangeNoticeDone = "change-order-done",
   DigitalQuoteResponse = "digital-quote-response",
   GaugeCalibrationExpired = "gauge-calibration-expired",
   JobAssignment = "job-assignment",
@@ -155,9 +157,9 @@ export function getNotificationTopic(
     case NotificationEvent.ApprovalRejected:
     case NotificationEvent.ApprovalRequested:
       return NotificationTopic.Approval;
-    case NotificationEvent.ChangeOrderStarted:
-    case NotificationEvent.ChangeOrderImplementation:
-    case NotificationEvent.ChangeOrderDone:
+    case NotificationEvent.ChangeNoticeStarted:
+    case NotificationEvent.ChangeNoticeImplementation:
+    case NotificationEvent.ChangeNoticeDone:
       return NotificationTopic.Items;
     default:
       return NotificationTopic.General;
@@ -230,11 +232,11 @@ export function getNotificationEmailHeading(event: NotificationEvent): string {
       return "Your request was approved";
     case NotificationEvent.ApprovalRejected:
       return "Your request was rejected";
-    case NotificationEvent.ChangeOrderStarted:
+    case NotificationEvent.ChangeNoticeStarted:
       return "Change notice started";
-    case NotificationEvent.ChangeOrderImplementation:
+    case NotificationEvent.ChangeNoticeImplementation:
       return "Change notice in implementation";
-    case NotificationEvent.ChangeOrderDone:
+    case NotificationEvent.ChangeNoticeDone:
       return "Change notice complete";
     default:
       return "You have a new notification";
@@ -250,9 +252,9 @@ export function getNotificationEmailCtaLabel(event: NotificationEvent): string {
     case NotificationEvent.ApprovalApproved:
     case NotificationEvent.ApprovalRejected:
       return "View decision";
-    case NotificationEvent.ChangeOrderStarted:
-    case NotificationEvent.ChangeOrderImplementation:
-    case NotificationEvent.ChangeOrderDone:
+    case NotificationEvent.ChangeNoticeStarted:
+    case NotificationEvent.ChangeNoticeImplementation:
+    case NotificationEvent.ChangeNoticeDone:
       return "View change notice";
     case NotificationEvent.JobCompleted:
       return "View job";

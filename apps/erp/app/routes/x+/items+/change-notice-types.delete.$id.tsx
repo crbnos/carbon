@@ -5,7 +5,7 @@ import { useLingui } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { redirect, useLoaderData, useNavigate, useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
-import { deleteChangeOrderType, getChangeOrderType } from "~/modules/items";
+import { deleteChangeNoticeType, getChangeNoticeType } from "~/modules/items";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -16,18 +16,18 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { id } = params;
   if (!id) throw notFound("id not found");
 
-  const changeOrderType = await getChangeOrderType(client, id);
-  if (changeOrderType.error) {
+  const changeNoticeType = await getChangeNoticeType(client, id);
+  if (changeNoticeType.error) {
     throw redirect(
       `${path.to.changeNoticeTypes}?${getParams(request)}`,
       await flash(
         request,
-        error(changeOrderType.error, "Failed to get change notice category")
+        error(changeNoticeType.error, "Failed to get change notice category")
       )
     );
   }
 
-  return { changeOrderType: changeOrderType.data };
+  return { changeNoticeType: changeNoticeType.data };
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -46,7 +46,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const { error: deleteError } = await deleteChangeOrderType(client, id);
+  const { error: deleteError } = await deleteChangeNoticeType(client, id);
   if (deleteError) {
     const errorMessage =
       deleteError.code === "23503"
@@ -65,21 +65,21 @@ export async function action({ request, params }: ActionFunctionArgs) {
   );
 }
 
-export default function DeleteChangeOrderTypeRoute() {
+export default function DeleteChangeNoticeTypeRoute() {
   const { id } = useParams();
-  const { changeOrderType } = useLoaderData<typeof loader>();
+  const { changeNoticeType } = useLoaderData<typeof loader>();
   const navigate = useNavigate();
   const { t } = useLingui();
 
-  if (!changeOrderType) return null;
+  if (!changeNoticeType) return null;
   if (!id) throw notFound("id not found");
 
   const onCancel = () => navigate(path.to.changeNoticeTypes);
   return (
     <ConfirmDelete
       action={path.to.deleteChangeNoticeType(id)}
-      name={changeOrderType.name}
-      text={t`Are you sure you want to delete the change notice category: ${changeOrderType.name}? This cannot be undone.`}
+      name={changeNoticeType.name}
+      text={t`Are you sure you want to delete the change notice category: ${changeNoticeType.name}? This cannot be undone.`}
       onCancel={onCancel}
     />
   );

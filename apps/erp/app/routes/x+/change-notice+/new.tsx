@@ -9,12 +9,12 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { redirect, useLoaderData } from "react-router";
 import { useUser } from "~/hooks";
 import {
-  addChangeOrderAffectedItem,
-  changeOrderValidator,
-  getChangeOrderTypesList,
-  insertChangeOrder
+  addChangeNoticeAffectedItem,
+  changeNoticeValidator,
+  getChangeNoticeTypesList,
+  insertChangeNotice
 } from "~/modules/items";
-import { ChangeOrderForm } from "~/modules/items/ui/ChangeOrder";
+import { ChangeNoticeForm } from "~/modules/items/ui/ChangeNotice";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -41,7 +41,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     view: "parts"
   });
 
-  const types = await getChangeOrderTypesList(client, companyId);
+  const types = await getChangeNoticeTypesList(client, companyId);
 
   // "Create Change Notice" from an Issue (NCR) links here with the source in the
   // query string. Pre-link the non-conformance so the created CO references it
@@ -68,7 +68,7 @@ export async function action({ request }: ActionFunctionArgs) {
   });
 
   const formData = await request.formData();
-  const validation = await validator(changeOrderValidator).validate(formData);
+  const validation = await validator(changeNoticeValidator).validate(formData);
 
   if (validation.error) {
     return validationError(validation.error);
@@ -76,13 +76,13 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const d = validation.data;
 
-  const createResult = await insertChangeOrder(client, {
-    changeOrderId: d.changeOrderId || undefined,
+  const createResult = await insertChangeNotice(client, {
+    changeNoticeId: d.changeOrderId || undefined,
     name: d.name,
     reasonForChange: toRichText(d.reasonForChange),
     description: toRichText(d.description),
     priority: d.priority,
-    changeOrderTypeId: d.changeOrderTypeId || undefined,
+    changeNoticeTypeId: d.changeOrderTypeId || undefined,
     nonConformanceId: d.nonConformanceId || undefined,
     openDate: d.openDate || today(getLocalTimeZone()).toString(),
     dueDate: d.dueDate || undefined,
@@ -126,8 +126,8 @@ export async function action({ request }: ActionFunctionArgs) {
   let affectedError: Parameters<typeof error>[0] =
     submittedItems?.error ?? null;
   for (const itemId of affectedItemIds) {
-    const add = await addChangeOrderAffectedItem(client, {
-      changeOrderId: createResult.data.id,
+    const add = await addChangeNoticeAffectedItem(client, {
+      changeNoticeId: createResult.data.id,
       itemId,
       changeType: "Version",
       companyId,
@@ -154,7 +154,7 @@ export async function action({ request }: ActionFunctionArgs) {
   throw redirect(path.to.changeNoticeDetails(createResult.data.id));
 }
 
-export default function ChangeOrderNewRoute() {
+export default function ChangeNoticeNewRoute() {
   const { types, nonConformanceId, name } = useLoaderData<typeof loader>();
   const user = useUser();
 
@@ -175,7 +175,7 @@ export default function ChangeOrderNewRoute() {
 
   return (
     <div className="max-w-4xl w-full p-2 sm:p-0 mx-auto mt-0 md:mt-8">
-      <ChangeOrderForm initialValues={initialValues} types={types} />
+      <ChangeNoticeForm initialValues={initialValues} types={types} />
     </div>
   );
 }

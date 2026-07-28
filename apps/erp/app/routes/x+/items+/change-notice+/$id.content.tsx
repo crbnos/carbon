@@ -1,8 +1,8 @@
 import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import type { ActionFunctionArgs } from "react-router";
-import { updateChangeOrder } from "~/modules/items";
-import { requireEditableChangeOrderRoute } from "~/modules/items/items.server";
+import { updateChangeNotice } from "~/modules/items";
+import { requireEditableChangeNoticeRoute } from "~/modules/items/items.server";
 
 // The two rich-text header columns. They used to be written straight from the
 // browser via the supabase client, which left no server-side place to enforce
@@ -19,9 +19,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const { id } = params;
   if (!id) throw new Error("Could not find id");
-  const locked = await requireEditableChangeOrderRoute(request, {
+  const locked = await requireEditableChangeNoticeRoute(request, {
     client,
-    changeOrderId: params.id,
+    changeNoticeId: params.id,
     companyId,
     scope: "engineering"
   });
@@ -46,7 +46,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return { error: { message: "Invalid content" }, data: null };
   }
 
-  const result = await updateChangeOrder(client, {
+  const result = await updateChangeNotice(client, {
     id,
     [field]: parsed,
     updatedBy: userId

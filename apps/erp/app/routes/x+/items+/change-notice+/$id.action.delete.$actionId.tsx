@@ -3,10 +3,10 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { deleteChangeOrderAction } from "~/modules/items";
+import { deleteChangeNoticeAction } from "~/modules/items";
 import {
-  requireChangeOrderChildRoute,
-  requireEditableChangeOrderRoute
+  requireChangeNoticeChildRoute,
+  requireEditableChangeNoticeRoute
 } from "~/modules/items/items.server";
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -15,27 +15,27 @@ export async function action({ request, params }: ActionFunctionArgs) {
     delete: "parts"
   });
 
-  const { id: changeOrderId, actionId } = params;
-  if (!changeOrderId) throw new Error("Could not find id");
+  const { id: changeNoticeId, actionId } = params;
+  if (!changeNoticeId) throw new Error("Could not find id");
   if (!actionId) throw new Error("Could not find actionId");
-  const locked = await requireEditableChangeOrderRoute(request, {
+  const locked = await requireEditableChangeNoticeRoute(request, {
     client,
-    changeOrderId,
+    changeNoticeId,
     companyId,
     scope: "workflow"
   });
   if (locked) return locked;
 
-  const owned = await requireChangeOrderChildRoute(request, {
+  const owned = await requireChangeNoticeChildRoute(request, {
     client,
     table: "changeOrderActionTask",
     id: actionId,
-    changeOrderId,
+    changeNoticeId,
     companyId
   });
   if (owned) return owned;
 
-  const remove = await deleteChangeOrderAction(client, actionId);
+  const remove = await deleteChangeNoticeAction(client, actionId);
 
   if (remove.error) {
     return data(

@@ -7,12 +7,12 @@ import type { LoaderFunctionArgs } from "react-router";
 import { Outlet, redirect, useLoaderData, useParams } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
 import {
-  getChangeOrder,
-  getChangeOrderActions,
-  getChangeOrderAffectedItems,
-  getChangeOrderDiff,
-  getChangeOrderRequiredActionsList,
-  getChangeOrderTypesList,
+  getChangeNotice,
+  getChangeNoticeActions,
+  getChangeNoticeAffectedItems,
+  getChangeNoticeDiff,
+  getChangeNoticeRequiredActionsList,
+  getChangeNoticeTypesList,
   getConfigurationParameters,
   getConfigurationRules,
   getItemFiles,
@@ -27,12 +27,12 @@ import {
   getSupplierParts
 } from "~/modules/items";
 import { getRevisionLock } from "~/modules/items/items.server";
-import type { AffectedItemDraft } from "~/modules/items/ui/ChangeOrder";
+import type { AffectedItemDraft } from "~/modules/items/ui/ChangeNotice";
 import {
-  ChangeOrderExplorer,
-  ChangeOrderHeader,
-  ChangeOrderProperties
-} from "~/modules/items/ui/ChangeOrder";
+  ChangeNoticeExplorer,
+  ChangeNoticeHeader,
+  ChangeNoticeProperties
+} from "~/modules/items/ui/ChangeNotice";
 import { getIssue, getIssues } from "~/modules/quality";
 import { getLocationsList } from "~/modules/resources";
 import type { MethodItemType, MethodType } from "~/modules/shared";
@@ -45,8 +45,8 @@ export const handle: Handle = {
   // static "Change Notices" (the parent _layout already renders the list crumb).
   breadcrumb: (
     _params: unknown,
-    data?: { changeOrder?: { changeOrderId?: string } }
-  ) => data?.changeOrder?.changeOrderId ?? msg`Change Notice`,
+    data?: { changeNotice?: { changeOrderId?: string } }
+  ) => data?.changeNotice?.changeOrderId ?? msg`Change Notice`,
   module: "parts",
   // The CO detail workspace has its own left affected-items sidebar — hide the
   // Items module sidebar here so two left sidebars don't stack.
@@ -61,13 +61,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { id } = params;
   if (!id) throw new Error("Could not find id");
 
-  const [changeOrder, types, affected, diff, actions, nonConformances] =
+  const [changeNotice, types, affected, diff, actions, nonConformances] =
     await Promise.all([
-      getChangeOrder(client, id, companyId),
-      getChangeOrderTypesList(client, companyId),
-      getChangeOrderAffectedItems(client, id, companyId),
-      getChangeOrderDiff(client, id, companyId),
-      getChangeOrderActions(client, id, companyId),
+      getChangeNotice(client, id, companyId),
+      getChangeNoticeTypesList(client, companyId),
+      getChangeNoticeAffectedItems(client, id, companyId),
+      getChangeNoticeDiff(client, id, companyId),
+      getChangeNoticeActions(client, id, companyId),
       // NCR cross-link picker options (4a).
       getIssues(client, companyId)
     ]);
@@ -77,21 +77,21 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   // Active default-action templates for the "Add Actions" picker.
   const requiredActions =
-    (await getChangeOrderRequiredActionsList(client, companyId)).data ?? [];
+    (await getChangeNoticeRequiredActionsList(client, companyId)).data ?? [];
 
-  if (changeOrder.error) {
+  if (changeNotice.error) {
     throw redirect(
       path.to.changeNotices,
       await flash(
         request,
-        error(changeOrder.error, "Failed to load change notice")
+        error(changeNotice.error, "Failed to load change notice")
       )
     );
   }
 
   // Human label for the currently-linked NCR (so the sidebar link shows the
   // readable id/name, not the raw id).
-  const linkedNonConformanceId = changeOrder.data?.nonConformanceId ?? null;
+  const linkedNonConformanceId = changeNotice.data?.nonConformanceId ?? null;
   const linkedNonConformance = linkedNonConformanceId
     ? (await getIssue(client, linkedNonConformanceId)).data
     : null;
@@ -266,7 +266,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   );
 
   return {
-    changeOrder: changeOrder.data,
+    changeNotice: changeNotice.data,
     types: types.data ?? [],
     affectedItems,
     diff: diff.data ?? { items: [] },
@@ -284,7 +284,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   };
 }
 
-export default function ChangeOrderIdRoute() {
+export default function ChangeNoticeIdRoute() {
   const { id } = useParams();
   if (!id) throw new Error("Could not find id");
   // Surfaced to child routes + header/explorer/properties via useRouteData.
@@ -298,17 +298,17 @@ export default function ChangeOrderIdRoute() {
     // actions, impact, and the release dialog.
     <PanelProvider>
       <div className="flex flex-col h-[calc(100dvh-49px)] overflow-hidden w-full">
-        <ChangeOrderHeader />
+        <ChangeNoticeHeader />
         <div className="flex h-[calc(100dvh-99px)] overflow-hidden w-full">
           <div className="flex flex-grow overflow-hidden">
             <ResizablePanels
-              explorer={<ChangeOrderExplorer />}
+              explorer={<ChangeNoticeExplorer />}
               content={
                 <div className="h-[calc(100dvh-99px)] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent w-full">
                   <Outlet />
                 </div>
               }
-              properties={<ChangeOrderProperties key={id} />}
+              properties={<ChangeNoticeProperties key={id} />}
             />
           </div>
         </div>

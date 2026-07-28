@@ -10,7 +10,7 @@ import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { redirect, useLoaderData } from "react-router";
 import { useUrlParams, useUser } from "~/hooks";
-import { updateChangeOrder } from "~/modules/items";
+import { updateChangeNotice } from "~/modules/items";
 import {
   deleteIssue,
   getIssueTypesList,
@@ -171,7 +171,7 @@ export async function action({ request }: ActionFunctionArgs) {
   // `client` update is RLS-scoped, so it only lands if they can edit the CO.
   const changeOrderId = url.searchParams.get("changeOrderId");
   if (changeOrderId) {
-    const linkResult = await updateChangeOrder(client, {
+    const linkResult = await updateChangeNotice(client, {
       id: changeOrderId,
       nonConformanceId: ncrId,
       updatedBy: userId
