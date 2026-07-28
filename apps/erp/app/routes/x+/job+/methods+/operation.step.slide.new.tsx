@@ -9,11 +9,16 @@ import { operationStepSlideValidator } from "~/modules/shared";
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    create: "production"
-  });
 
+  // Same route handles create (no `id`) and update (`id` present). Gate each branch on the
+  // matching permission so a create-only user can't edit an existing slide by passing an `id`.
   const formData = await request.formData();
+  const isUpdate = Boolean(formData.get("id"));
+  const { client, companyId, userId } = await requirePermissions(
+    request,
+    isUpdate ? { update: "production" } : { create: "production" }
+  );
+
   const validation = await validator(operationStepSlideValidator).validate(
     formData
   );

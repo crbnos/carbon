@@ -1368,17 +1368,26 @@ export async function completeAllStepsForUnit(
     companyId: string;
     createdBy: string;
   }
-): Promise<{ data: { count: number } | null; error: PostgrestError | null }> {
+): Promise<{
+  data: { count: number; backflushError: Error | null } | null;
+  error: PostgrestError | null;
+}> {
+  // Scope by companyId: this runs with the service-role client (RLS bypassed) and
+  // operationId comes from the request, so the tenant filter is the only guard against
+  // reading or stamping another company's steps.
   const steps = await client
     .from("jobOperationStep")
     .select("id, jobOperationStepRecord(index)")
-    .eq("operationId", args.operationId);
+    .eq("operationId", args.operationId)
+    .eq("companyId", args.companyId);
   if (steps.error) return { data: null, error: steps.error };
 
   const missing = (steps.data ?? []).filter(
     (s) => !(s.jobOperationStepRecord ?? []).some((r) => r.index === args.index)
   );
-  if (missing.length === 0) return { data: { count: 0 }, error: null };
+  if (missing.length === 0) {
+    return { data: { count: 0, backflushError: null }, error: null };
+  }
 
   const insert = await client.from("jobOperationStepRecord").upsert(
     missing.map((s) => ({
@@ -1390,7 +1399,24 @@ export async function completeAllStepsForUnit(
     { onConflict: "jobOperationStepId, index", ignoreDuplicates: true }
   );
   if (insert.error) return { data: null, error: insert.error };
-  return { data: { count: missing.length }, error: null };
+
+  // The override marks steps done without their per-step data capture, so it
+  // must still consume the untracked materials those steps own for this unit —
+  // otherwise recording via the override under-issues vs. recording step by step
+  // (which backflushes on every record). The backflush is idempotent and
+  // operation-wide, so one call after the inserts tops up this unit's shortfall.
+  // Non-blocking: a failure (e.g. insufficient stock) leaves parts manually
+  // issuable, matching the per-step record path.
+  const backflush = await backflushUntrackedMaterialsOnStepRecord(client, {
+    jobOperationStepId: missing[0].id,
+    companyId: args.companyId,
+    userId: args.createdBy
+  });
+
+  return {
+    data: { count: missing.length, backflushError: backflush.error ?? null },
+    error: null
+  };
 }
 
 export async function insertReworkQuantity(

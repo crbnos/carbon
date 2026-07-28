@@ -1,6 +1,6 @@
 {
-  "generated": "2026-07-27T04:19:42.297Z",
-  "totalTools": 1394,
+  "generated": "2026-07-28T02:24:35.732Z",
+  "totalTools": 1397,
   "modules": 15,
   "tools": [
     {
@@ -23204,6 +23204,122 @@
       }
     },
     {
+      "name": "production_planAssemblyStepMarkerSync",
+      "module": "production",
+      "classification": "WRITE",
+      "description": "plan assembly step marker sync",
+      "paramCount": 2,
+      "serviceParams": [
+        "sourceStepIds",
+        "existingSynced"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "sourceStepIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "existingSynced": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "assemblyInstructionStepId": {
+                "type": "array",
+                "items": {}
+              }
+            },
+            "required": [
+              "id",
+              "assemblyInstructionStepId"
+            ]
+          }
+        },
+        "required": [
+          "sourceStepIds",
+          "existingSynced"
+        ]
+      }
+    },
+    {
+      "name": "production_maxToolQuantityByItem",
+      "module": "production",
+      "classification": "WRITE",
+      "description": "max tool quantity by item",
+      "paramCount": 2,
+      "serviceParams": [
+        "sourceTools"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "itemId": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "array",
+            "items": {}
+          }
+        },
+        "required": [
+          "itemId",
+          "quantity"
+        ]
+      }
+    },
+    {
+      "name": "production_buildAssemblyToolStepLinks",
+      "module": "production",
+      "classification": "WRITE",
+      "description": "build assembly tool step links",
+      "paramCount": 4,
+      "serviceParams": [
+        "sourceSteps",
+        "toolsByStep",
+        "toolRowIdByItemId",
+        "targetIdBySource"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "sourceSteps": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "array",
+                "items": {}
+              }
+            },
+            "required": [
+              "id"
+            ]
+          },
+          "toolsByStep": {},
+          "toolRowIdByItemId": {},
+          "targetIdBySource": {}
+        },
+        "required": [
+          "sourceSteps",
+          "toolsByStep",
+          "toolRowIdByItemId",
+          "targetIdBySource"
+        ]
+      }
+    },
+    {
       "name": "production_syncAssemblyInstructionToOperation",
       "module": "production",
       "classification": "WRITE",
@@ -23416,7 +23532,8 @@
       "paramCount": 1,
       "serviceParams": [
         "client",
-        "id"
+        "id",
+        "companyId"
       ],
       "injectAuth": [
         "companyId"
@@ -23486,7 +23603,8 @@
       "paramCount": 1,
       "serviceParams": [
         "client",
-        "id"
+        "id",
+        "companyId"
       ],
       "injectAuth": [
         "companyId"
