@@ -195,6 +195,7 @@ export async function loader({ context, request }: LoaderFunctionArgs) {
       (op) =>
         op.jobReadableId.toLowerCase().includes(search.toLowerCase()) ||
         op.itemReadableId.toLowerCase().includes(search.toLowerCase()) ||
+        op.itemDescription?.toLowerCase().includes(search.toLowerCase()) ||
         op.description?.toLowerCase().includes(search.toLowerCase())
     );
   }
