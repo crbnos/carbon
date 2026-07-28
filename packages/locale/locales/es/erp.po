@@ -8474,10 +8474,10 @@ msgid "No open invoices"
 msgstr "Sin facturas abiertas"
 
 msgid "No open orders for this item are available to link."
-msgstr ""
+msgstr "No hay pedidos abiertos disponibles para este artículo."
 
 msgid "No open sales order lines"
-msgstr ""
+msgstr "Sin líneas de pedido de venta abiertas"
 
 msgid "No operations require picking at this location"
 msgstr "No se requieren operaciones de picking en esta ubicación"
@@ -8930,7 +8930,7 @@ msgid "Opportunity"
 msgstr "Oportunidad"
 
 msgid "Optimized for fast previews — downloads always serve the original uploaded file"
-msgstr ""
+msgstr "Optimizado para vistas previas rápidas — las descargas siempre sirven el archivo original cargado"
 
 msgid "Optional"
 msgstr "Opcional"
@@ -10310,7 +10310,7 @@ msgid "Refresh exchange rate"
 msgstr "Actualizar tipo de cambio"
 
 msgid "Regenerate thumbnail from the 3D model"
-msgstr ""
+msgstr "Regenerar miniatura del modelo 3D"
 
 msgid "Regenerating thumbnail…"
 msgstr "Regenerando miniatura…"

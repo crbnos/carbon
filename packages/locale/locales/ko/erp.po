@@ -8474,10 +8474,10 @@ msgid "No open invoices"
 msgstr "미결 인보이스가 없습니다"
 
 msgid "No open orders for this item are available to link."
-msgstr ""
+msgstr "이 항목에 연결할 수 있는 미결 주문이 없습니다."
 
 msgid "No open sales order lines"
-msgstr ""
+msgstr "미결 판매주문 라인이 없습니다."
 
 msgid "No operations require picking at this location"
 msgstr "이 위치에서 피킹이 필요한 공정작업이 없습니다"
@@ -8930,7 +8930,7 @@ msgid "Opportunity"
 msgstr "기회"
 
 msgid "Optimized for fast previews — downloads always serve the original uploaded file"
-msgstr ""
+msgstr "빠른 미리보기에 최적화됨 — 다운로드는 항상 원본 업로드 파일을 제공합니다."
 
 msgid "Optional"
 msgstr "선택 사항"
@@ -10310,7 +10310,7 @@ msgid "Refresh exchange rate"
 msgstr "환율 새로고침"
 
 msgid "Regenerate thumbnail from the 3D model"
-msgstr ""
+msgstr "3D 모델에서 썸네일 재생성"
 
 msgid "Regenerating thumbnail…"
 msgstr "썸네일 재생성 중…"

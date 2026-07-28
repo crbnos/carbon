@@ -8474,10 +8474,10 @@ msgid "No open invoices"
 msgstr "Açık fatura yok"
 
 msgid "No open orders for this item are available to link."
-msgstr ""
+msgstr "Bu öğe için bağlanacak açık siparişler mevcut değil."
 
 msgid "No open sales order lines"
-msgstr ""
+msgstr "Açık satış sipariş satırı yok"
 
 msgid "No operations require picking at this location"
 msgstr "Bu konumda toplama gerektiren işlem yok"
@@ -8930,7 +8930,7 @@ msgid "Opportunity"
 msgstr "Fırsat"
 
 msgid "Optimized for fast previews — downloads always serve the original uploaded file"
-msgstr ""
+msgstr "Hızlı önizlemeler için optimize edildi — indirmeler her zaman yüklenen orijinal dosyayı sunar"
 
 msgid "Optional"
 msgstr "İsteğe bağlı"
@@ -10310,7 +10310,7 @@ msgid "Refresh exchange rate"
 msgstr "Döviz kurunu yenile"
 
 msgid "Regenerate thumbnail from the 3D model"
-msgstr ""
+msgstr "3D modelinden küçük resmi yeniden oluştur"
 
 msgid "Regenerating thumbnail…"
 msgstr "Küçük resim yenileniyor…"

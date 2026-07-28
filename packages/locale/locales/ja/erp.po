@@ -8474,10 +8474,10 @@ msgid "No open invoices"
 msgstr "未処理の請求書がありません"
 
 msgid "No open orders for this item are available to link."
-msgstr ""
+msgstr "このアイテムにリンク可能なオープンオーダーはありません。"
 
 msgid "No open sales order lines"
-msgstr ""
+msgstr "オープンな販売注文行がありません"
 
 msgid "No operations require picking at this location"
 msgstr "この場所でのピッキングが必要な操作はありません"
@@ -8930,7 +8930,7 @@ msgid "Opportunity"
 msgstr "機会"
 
 msgid "Optimized for fast previews — downloads always serve the original uploaded file"
-msgstr ""
+msgstr "高速プレビューに最適化されています — ダウンロードは常にアップロードされたオリジナルファイルを提供します"
 
 msgid "Optional"
 msgstr "オプション"
@@ -10310,7 +10310,7 @@ msgid "Refresh exchange rate"
 msgstr "為替レートを更新"
 
 msgid "Regenerate thumbnail from the 3D model"
-msgstr ""
+msgstr "3Dモデルからサムネイルを再生成"
 
 msgid "Regenerating thumbnail…"
 msgstr "サムネイルを再生成中…"

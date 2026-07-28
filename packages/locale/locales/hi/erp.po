@@ -8474,10 +8474,10 @@ msgid "No open invoices"
 msgstr "कोई खुले चालान नहीं"
 
 msgid "No open orders for this item are available to link."
-msgstr ""
+msgstr "इस आइटम के लिए लिंक करने के लिए कोई खुले ऑर्डर उपलब्ध नहीं हैं।"
 
 msgid "No open sales order lines"
-msgstr ""
+msgstr "कोई खुली बिक्रय ऑर्डर लाइनें नहीं"
 
 msgid "No operations require picking at this location"
 msgstr "इस स्थान पर कोई भी ऑपरेशन पिकिंग की आवश्यकता नहीं है"
@@ -8930,7 +8930,7 @@ msgid "Opportunity"
 msgstr "अवसर"
 
 msgid "Optimized for fast previews — downloads always serve the original uploaded file"
-msgstr ""
+msgstr "तेज़ पूर्वावलोकन के लिए अनुकूलित — डाउनलोड हमेशा मूल अपलोड की गई फ़ाइल देते हैं"
 
 msgid "Optional"
 msgstr "वैकल्पिक"
@@ -10310,7 +10310,7 @@ msgid "Refresh exchange rate"
 msgstr "विनिमय दर को ताज़ा करें"
 
 msgid "Regenerate thumbnail from the 3D model"
-msgstr ""
+msgstr "3D मॉडल से थंबनेल पुनः उत्पन्न करें"
 
 msgid "Regenerating thumbnail…"
 msgstr "थंबनेल को पुनः उत्पन्न किया जा रहा है…"
