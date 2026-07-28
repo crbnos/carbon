@@ -33,8 +33,10 @@ export type ModelArtifacts = {
 /**
  * modelUpload.id is the model's filename (`${company}/models/${id}.ext`), so the
  * id — and thus its artifact paths — is recoverable from `modelPath` alone.
- * Retained raws are compacted in place (`${id}.step` → `${id}.step.zst`); the
- * `.zst` wrapper is peeled before the source extension.
+ * Compaction repoints `modelPath` at the compacted artifact (STEP →
+ * `${id}.xbf.zst`, mesh → `${id}.{ext}.zst`, with the original STEP retained
+ * separately at `originalPath`); the `.zst` wrapper is peeled before the
+ * source extension.
  */
 export function modelIdFromPath(modelPath: string | null): string | null {
   if (!modelPath) return null;

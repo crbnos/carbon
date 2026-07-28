@@ -56,12 +56,14 @@ export type Container = {
 export async function bootStack(
   root: string,
   slug: string,
-  opts?: { minimal?: boolean; services?: string[] }
+  opts?: { minimal?: boolean; services?: string[]; chrome?: boolean }
 ) {
   const args = devArgs(root, slug, "--env-file", ".env.local");
   // When specific services are requested, don't activate profiles — compose
   // starts only the named services (+ dependencies) regardless of profiles.
   if (!opts?.services && !opts?.minimal) args.push("--profile", "full");
+  // Opt-in local Chromium for the thumbnail edge fn (`crbn up --thumbnails`).
+  if (!opts?.services && opts?.chrome) args.push("--profile", "chrome");
   args.push("up", "-d");
   if (opts?.services) args.push(...opts.services);
   await execStrict("docker", args, root);

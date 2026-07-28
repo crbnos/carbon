@@ -71,6 +71,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
+  // Part ↔ step links are managed from the STEP side (the BoP step editor's "Parts" picker),
+  // so the material save no longer touches methodMaterialStep.
   const result = {
     id: methodMaterialId,
     success: true,

@@ -48,6 +48,10 @@ export const path = {
       agentFeedback: `${api}/agent/feedback`,
       agentThread: (id: string) => `${api}/agent/thread/${id}`,
       agentThreads: `${api}/agent/threads`,
+      assemblyForItem: (itemId: string) =>
+        generatePath(`${api}/production/assembly-for-item/${itemId}`),
+      assemblyInstructions: (itemId: string) =>
+        generatePath(`${api}/production/assembly-instructions/${itemId}`),
       assetClasses: `${api}/accounting/asset-classes`,
       assign: `${api}/assign`,
       batchNumbers: (itemId: string) =>
@@ -88,8 +92,10 @@ export const path = {
         generatePath(`${api}/ai/csv/${table}/columns`),
       inspectionDocumentBalloonAnalyze: (inspectionDocumentId: string) =>
         generatePath(
-          `${api}/quality/inspection-document/${inspectionDocumentId}/balloon-analyze`
+          `${api}/production/inspection-document/${inspectionDocumentId}/balloon-analyze`
         ),
+      inspectionDocuments: (itemId: string) =>
+        generatePath(`${api}/production/inspection-documents/${itemId}`),
       item: (type: string) => generatePath(`${api}/item/${type}`),
       itemConfigurable: `${api}/items/configurable`,
       itemCostRecalculate: (itemId: string) =>
@@ -150,6 +156,8 @@ export const path = {
         generatePath(`${api}/model/artifacts/${modelUploadId}`),
       modelConvertStatus: (modelUploadId: string) =>
         generatePath(`${api}/model/convert-status/${modelUploadId}`),
+      modelDownload: (modelUploadId: string) =>
+        generatePath(`${api}/model/download/${modelUploadId}`),
       modelOptimizeCancel: `${api}/model/optimize-cancel`,
       modelReoptimize: `${api}/model/reoptimize`,
       modelUpload: `${api}/model/upload`,
@@ -304,16 +312,12 @@ export const path = {
       generatePath(`${x}/assembly/${id}/model/invalidate`),
     assemblyPlanRerun: (id: string) =>
       generatePath(`${x}/assembly/${id}/plan/rerun`),
-    assemblyStandardNote: (noteId: string) =>
-      generatePath(`${x}/assembly/standard-notes/${noteId}`),
     assemblyStepMaterial: (id: string, materialId: string) =>
       generatePath(`${x}/assembly/${id}/materials/${materialId}`),
     assemblyStepMaterialOrder: (id: string) =>
       generatePath(`${x}/assembly/${id}/materials/order`),
-    assemblyStepRequirement: (id: string, requirementId: string) =>
-      generatePath(`${x}/assembly/${id}/requirements/${requirementId}`),
-    assemblyStepRequirementOrder: (id: string) =>
-      generatePath(`${x}/assembly/${id}/requirements/order`),
+    assemblySyncBop: (id: string) =>
+      generatePath(`${x}/assembly/${id}/sync-bop`),
     assetClass: (id: string) =>
       generatePath(`${x}/accounting/asset-class/${id}`),
     assetClasses: `${x}/accounting/asset-classes`,
@@ -537,12 +541,12 @@ export const path = {
       generatePath(`${x}/assembly/delete/${id}`),
     deleteAssemblyInstructionStep: (id: string, stepId: string) =>
       generatePath(`${x}/assembly/${id}/steps/delete/${stepId}`),
-    deleteAssemblyStandardNote: (noteId: string) =>
-      generatePath(`${x}/assembly/standard-notes/delete/${noteId}`),
     deleteAssemblyStepMaterial: (id: string, materialId: string) =>
       generatePath(`${x}/assembly/${id}/materials/delete/${materialId}`),
-    deleteAssemblyStepRequirement: (id: string, requirementId: string) =>
-      generatePath(`${x}/assembly/${id}/requirements/delete/${requirementId}`),
+    deleteAssemblyStepSlide: (id: string, slideId: string) =>
+      generatePath(`${x}/assembly/${id}/slides/delete/${slideId}`),
+    deleteAssemblyStepTool: (id: string, toolId: string) =>
+      generatePath(`${x}/assembly/${id}/tools/delete/${toolId}`),
     deleteAssemblyUnit: (id: string, unitId: string) =>
       generatePath(`${x}/assembly/${id}/units/delete/${unitId}`),
     deleteAssetClass: (id: string) =>
@@ -631,7 +635,7 @@ export const path = {
     deleteHoliday: (id: string) =>
       generatePath(`${x}/people/holidays/delete/${id}`),
     deleteInspectionDocument: (id: string) =>
-      generatePath(`${x}/inspection/${id}/delete`),
+      generatePath(`${x}/inspection-document/${id}/delete`),
     deleteInvestigationType: (id: string) =>
       generatePath(`${x}/quality/investigation-types/delete/${id}`),
     deleteIssue: (id: string) => generatePath(`${x}/issue/delete/${id}`),
@@ -653,6 +657,8 @@ export const path = {
       generatePath(`${x}/job/methods/operation/parameter/delete/${id}`),
     deleteJobOperationStep: (id: string) =>
       generatePath(`${x}/job/methods/operation/step/delete/${id}`),
+    deleteJobOperationStepSlide: (id: string) =>
+      generatePath(`${x}/job/methods/operation/step/slide/delete/${id}`),
     deleteJobOperationTool: (id: string) =>
       generatePath(`${x}/job/methods/operation/tool/delete/${id}`),
     deleteJournalEntry: (id: string) =>
@@ -689,6 +695,8 @@ export const path = {
       generatePath(`${x}/items/methods/operation/parameter/delete/${id}`),
     deleteMethodOperationStep: (id: string) =>
       generatePath(`${x}/items/methods/operation/step/delete/${id}`),
+    deleteMethodOperationStepSlide: (id: string) =>
+      generatePath(`${x}/items/methods/operation/step/slide/delete/${id}`),
     deleteMethodOperationTool: (id: string) =>
       generatePath(`${x}/items/methods/operation/tool/delete/${id}`),
     deleteNoQuoteReason: (id: string) =>
@@ -841,6 +849,10 @@ export const path = {
       generatePath(`${x}/documents/search/view/${id}`),
     download: (token: string) => `/download/${token}`,
     downloadError: (reason: string) => `/download/error?reason=${reason}`,
+    duplicateJobOperationStep: (id: string) =>
+      generatePath(`${x}/job/methods/operation/step/duplicate/${id}`),
+    duplicateMethodOperationStep: (id: string) =>
+      generatePath(`${x}/items/methods/operation/step/duplicate/${id}`),
     duplicatePriceList: `${x}/sales/price-list/duplicate`,
     editMaintenanceDispatchEvent: (dispatchId: string, eventId: string) =>
       generatePath(`${x}/maintenance/${dispatchId}/event/${eventId}`),
@@ -1113,14 +1125,26 @@ export const path = {
     holiday: (id: string) => generatePath(`${x}/people/holidays/${id}`),
     holidays: `${x}/people/holidays`,
     import: (tableId: string) => generatePath(`${x}/shared/import/${tableId}`),
-    inboundInspection: (id: string) =>
-      generatePath(`${x}/quality/inbound-inspections/${id}`),
-    inboundInspections: `${x}/quality/inbound-inspections`,
     incomeStatement: `${x}/accounting/income-statement`,
     incomeStatementLedger: (id: string) =>
       generatePath(`${x}/accounting/income-statement/${id}`),
-    inspectionDocument: (id: string) => generatePath(`${x}/inspection/${id}`),
-    inspectionDocuments: `${x}/quality/inspection`,
+    inspection: (id: string) => generatePath(`${x}/inspection/${id}`),
+    inspectionAccept: (id: string) =>
+      generatePath(`${x}/inspection/${id}/accept`),
+    inspectionAssignedDocument: (id: string) =>
+      generatePath(`${x}/inspection/${id}/document`),
+    inspectionDocument: (id: string) =>
+      generatePath(`${x}/inspection-document/${id}`),
+    inspectionDocuments: `${x}/production/inspection`,
+    inspectionMeasurement: (id: string) =>
+      generatePath(`${x}/inspection/${id}/measurement`),
+    inspectionPartial: (id: string) =>
+      generatePath(`${x}/inspection/${id}/partial`),
+    inspectionReject: (id: string) =>
+      generatePath(`${x}/inspection/${id}/reject`),
+    inspectionSample: (id: string) =>
+      generatePath(`${x}/inspection/${id}/sample`),
+    inspections: `${x}/quality/inspections`,
     integration: (id: string) =>
       generatePath(`${x}/settings/integrations/${id}`),
     integrationDeactivate: (id: string) =>
@@ -1210,10 +1234,12 @@ export const path = {
     jobOperationStatus: `${x}/job/methods/operation/status`,
     jobOperationStep: (id: string) =>
       generatePath(`${x}/job/methods/operation/step/${id}`),
+    jobOperationStepMaterial: `${x}/job/methods/operation/step/material`,
     jobOperationStepOrder: (operationId: string) =>
       generatePath(`${x}/job/methods/operation/${operationId}/step/order`),
     jobOperationStepRecords: (id: string) =>
       generatePath(`${x}/job/${id}/steps`),
+    jobOperationStepTool: `${x}/job/methods/operation/step/tool`,
     jobOperations: (id: string) => generatePath(`${x}/job/${id}/operations`),
     jobOperationsDelete: (jobId: string) =>
       generatePath(`${x}/job/methods/${jobId}/operation/delete`),
@@ -1325,8 +1351,10 @@ export const path = {
       generatePath(`${x}/items/methods/operation/parameter/${id}`),
     methodOperationStep: (id: string) =>
       generatePath(`${x}/items/methods/operation/step/${id}`),
+    methodOperationStepMaterial: `${x}/items/methods/operation/step/material`,
     methodOperationStepOrder: (operationId: string) =>
       generatePath(`${x}/items/methods/operation/${operationId}/step/order`),
+    methodOperationStepTool: `${x}/items/methods/operation/step/tool`,
     methodOperations: `${x}/items/methods/operations`,
     methodOperationsDelete: `${x}/items/methods/operation/delete`,
     methodOperationsOrder: `${x}/items/methods/operation/order`,
@@ -1345,11 +1373,12 @@ export const path = {
     newAssemblyInstruction: `${x}/production/assemblies/new`,
     newAssemblyInstructionStep: (id: string) =>
       generatePath(`${x}/assembly/${id}/steps/new`),
-    newAssemblyStandardNote: `${x}/assembly/standard-notes/new`,
     newAssemblyStepMaterial: (id: string) =>
       generatePath(`${x}/assembly/${id}/materials/new`),
-    newAssemblyStepRequirement: (id: string) =>
-      generatePath(`${x}/assembly/${id}/requirements/new`),
+    newAssemblyStepSlide: (id: string) =>
+      generatePath(`${x}/assembly/${id}/slides/new`),
+    newAssemblyStepTool: (id: string) =>
+      generatePath(`${x}/assembly/${id}/tools/new`),
     newAssemblyUnit: (id: string) =>
       generatePath(`${x}/assembly/${id}/units/new`),
     newAssetClass: `${x}/accounting/asset-classes/new`,
@@ -1411,7 +1440,7 @@ export const path = {
     newGaugeType: `${x}/quality/gauge-types/new`,
     newGroup: `${x}/users/groups/new`,
     newHoliday: `${x}/people/holidays/new`,
-    newInspectionDocument: `${x}/quality/inspection/new`,
+    newInspectionDocument: `${x}/production/inspection/new`,
     newIntercompanyTransaction: `${x}/accounting/intercompany/new`,
     newInventoryCount: `${x}/inventory/inventory-count/new`,
     newInvestigationType: `${x}/quality/investigation-types/new`,
@@ -1428,6 +1457,7 @@ export const path = {
       generatePath(`${x}/job/methods/${jobId}/operation/new`),
     newJobOperationParameter: `${x}/job/methods/operation/parameter/new`,
     newJobOperationStep: `${x}/job/methods/operation/step/new`,
+    newJobOperationStepSlide: `${x}/job/methods/operation/step/slide/new`,
     newJobOperationTool: `${x}/job/methods/operation/tool/new`,
     newJournalEntry: `${x}/accounting/journals/new`,
     newKanban: `${x}/inventory/kanbans/new`,
@@ -1452,6 +1482,7 @@ export const path = {
     newMethodOperation: `${x}/items/methods/operation/new`,
     newMethodOperationParameter: `${x}/items/methods/operation/parameter/new`,
     newMethodOperationStep: `${x}/items/methods/operation/step/new`,
+    newMethodOperationStepSlide: `${x}/items/methods/operation/step/slide/new`,
     newMethodOperationTool: `${x}/items/methods/operation/tool/new`,
     newNoQuoteReason: `${x}/sales/no-quote-reasons/new`,
     newNote: `${x}/shared/notes/new`,
@@ -1890,7 +1921,7 @@ export const path = {
     salesRfqs: `${x}/sales/rfqs`,
     salesSettings: `${x}/settings/sales`,
     saveInspectionDocument: (id: string) =>
-      generatePath(`${x}/inspection/${id}/save`),
+      generatePath(`${x}/inspection-document/${id}/save`),
 
     saveViewOrder: `${x}/shared/view/order`,
 
@@ -2075,7 +2106,7 @@ export const path = {
       generatePath(`${x}/assembly/${id}/units/${unitId}`),
     updateChangeNotice: `${x}/items/change-notice/update`,
     updateInspectionDocumentName: (id: string) =>
-      generatePath(`${x}/inspection/${id}/update-name`),
+      generatePath(`${x}/inspection-document/${id}/update-name`),
     updateIssueItem: `${x}/issue/item/update`,
     userAttribute: (id: string) => generatePath(`${x}/account/${id}/attribute`),
     users: `${x}/users`,

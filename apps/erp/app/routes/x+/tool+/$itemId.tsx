@@ -256,6 +256,7 @@ export default function ToolRoute() {
                                 salesOrderLines,
                                 shipmentLines,
                                 supplierQuotes,
+                                inspections,
                                 jobMaterialUsage
                               } = resolvedUsedIn;
 
@@ -351,6 +352,13 @@ export default function ToolRoute() {
                                 }
                               ];
 
+                              tree.push({
+                                key: "inspections",
+                                name: t`Inspections`,
+                                module: "quality",
+                                children: inspections
+                              });
+
                               return (
                                 <UsedInTree
                                   tree={tree}
@@ -404,6 +412,7 @@ export default function ToolRoute() {
                               salesOrderLines,
                               shipmentLines,
                               supplierQuotes,
+                              inspections,
                               jobMaterialUsage
                             } = resolvedUsedIn;
 
@@ -498,6 +507,13 @@ export default function ToolRoute() {
                                 children: supplierQuotes
                               }
                             ];
+
+                            tree.push({
+                              key: "inspections",
+                              name: "Inspections",
+                              module: "quality",
+                              children: inspections
+                            });
 
                             return (
                               <UsedInTree

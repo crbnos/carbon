@@ -1,7 +1,7 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import type { LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { getInspectionDocument, getInspectionPlan } from "~/modules/quality";
+import { getInspectionDocument, getInspectionPlan } from "~/modules/production";
 
 function getErrorMessage(error: unknown, fallback: string) {
   if (error instanceof Error) return error.message;
@@ -24,19 +24,19 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { id } = params;
   if (!id) {
     return data(
-      { success: false, message: "Missing inspection document id" },
+      { success: false, message: "Missing inspection plan id" },
       { status: 400 }
     );
   }
 
-  const documentResult = await getInspectionDocument(client, id);
+  const documentResult = await getInspectionDocument(client, id, companyId);
   if (documentResult.error) {
     return data(
       {
         success: false,
         message: getErrorMessage(
           documentResult.error,
-          "Failed to load inspection document"
+          "Failed to load inspection plan"
         )
       },
       { status: 400 }
@@ -44,7 +44,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
   if (!documentResult.data || documentResult.data.companyId !== companyId) {
     return data(
-      { success: false, message: "Inspection document not found" },
+      { success: false, message: "Inspection plan not found" },
       { status: 404 }
     );
   }

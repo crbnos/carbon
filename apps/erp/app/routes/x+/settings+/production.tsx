@@ -20,8 +20,12 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { useEffect } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { redirect, useFetcher, useLoaderData } from "react-router";
-import { Users } from "~/components/Form";
-import { getCompanySettings, jobCompletedValidator } from "~/modules/settings";
+import { Boolean, Users } from "~/components/Form";
+import {
+  getCompanySettings,
+  jobCompletedValidator,
+  operationTimerValidator
+} from "~/modules/settings";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -80,6 +84,27 @@ export async function action({ request }: ActionFunctionArgs) {
     return { success: true, message: "Job notification settings updated" };
   }
 
+  if (intent === "operationTimer") {
+    const validation = await validator(operationTimerValidator).validate(
+      formData
+    );
+
+    if (validation.error) {
+      return { success: false, message: "Invalid form data" };
+    }
+
+    const update = await client
+      .from("companySettings")
+      .update({
+        autoStartOperationTimer: validation.data.autoStartOperationTimer
+      })
+      .eq("id", companyId);
+
+    if (update.error) return { success: false, message: update.error.message };
+
+    return { success: true, message: "Operation timer settings updated" };
+  }
+
   return { success: false, message: "Unknown intent" };
 }
 
@@ -87,6 +112,7 @@ export default function ProductionSettingsRoute() {
   const { t } = useLingui();
   const { companySettings } = useLoaderData<typeof loader>();
   const fetcher = useFetcher<typeof action>();
+  const timerFetcher = useFetcher<typeof action>();
 
   useEffect(() => {
     if (fetcher.data?.success === true && fetcher?.data?.message) {
@@ -97,6 +123,16 @@ export default function ProductionSettingsRoute() {
       toast.error(fetcher.data.message);
     }
   }, [fetcher.data?.message, fetcher.data?.success]);
+
+  useEffect(() => {
+    if (timerFetcher.data?.success === true && timerFetcher?.data?.message) {
+      toast.success(timerFetcher.data.message);
+    }
+
+    if (timerFetcher.data?.success === false && timerFetcher?.data?.message) {
+      toast.error(timerFetcher.data.message);
+    }
+  }, [timerFetcher.data?.message, timerFetcher.data?.success]);
 
   return (
     <ScrollArea className="w-full h-[calc(100dvh-49px)]">
@@ -159,6 +195,49 @@ export default function ProductionSettingsRoute() {
               <Submit
                 isDisabled={fetcher.state !== "idle"}
                 isLoading={fetcher.state !== "idle"}
+              >
+                <Trans>Save</Trans>
+              </Submit>
+            </CardFooter>
+          </ValidatedForm>
+        </Card>
+
+        <Card>
+          <ValidatedForm
+            method="post"
+            validator={operationTimerValidator}
+            defaultValues={{
+              autoStartOperationTimer:
+                companySettings.autoStartOperationTimer ?? false
+            }}
+            fetcher={timerFetcher}
+          >
+            <input type="hidden" name="intent" value="operationTimer" />
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Trans>Operation Timer</Trans>
+              </CardTitle>
+              <CardDescription>
+                <Trans>
+                  Auto-start the operator's timer when they open an operation in
+                  the MES so time logs are captured from the start.
+                </Trans>
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-col gap-8 max-w-[400px]">
+                <Boolean
+                  name="autoStartOperationTimer"
+                  label={t`Auto-start timer on open`}
+                  description={t`When on, opening an operation starts its timer automatically.`}
+                  bordered
+                />
+              </div>
+            </CardContent>
+            <CardFooter>
+              <Submit
+                isDisabled={timerFetcher.state !== "idle"}
+                isLoading={timerFetcher.state !== "idle"}
               >
                 <Trans>Save</Trans>
               </Submit>

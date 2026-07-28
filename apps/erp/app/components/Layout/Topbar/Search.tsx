@@ -1,24 +1,20 @@
 import type { ShortcutDefinition } from "@carbon/react";
 import {
-  Button,
   Command,
   CommandGroup,
   CommandInput,
   CommandItem,
   CommandList,
   CommandSeparator,
-  HStack,
   Modal,
   ModalContent,
-  ShortcutKey,
   useDebounce,
-  useShortcutKeys,
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import idb from "localforage";
 import { nanoid } from "nanoid";
-import { memo, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   LuChevronRight,
   LuCirclePlay,
@@ -26,7 +22,6 @@ import {
   LuDraftingCompass,
   LuFileCheck,
   LuPackageSearch,
-  LuSearch,
   LuShieldX,
   LuShoppingCart,
   LuSquareUser,
@@ -69,12 +64,12 @@ type RecentSearch = Route & {
   description?: string;
 };
 
-const shortcut: ShortcutDefinition = {
+export const searchShortcut: ShortcutDefinition = {
   key: "K",
   modifiers: ["mod"]
 };
 
-const SearchModal = () => {
+export const SearchModal = () => {
   const { t } = useLingui();
   const navigate = useNavigate();
   const fetcher = useFetcher<SearchResponse>();
@@ -438,38 +433,6 @@ function ResultIcon({ entityType }: { entityType: string }) {
   }
 }
 
-const SearchButton = () => {
-  const { openSearchModal } = useUIStore();
-
-  useShortcutKeys({
-    shortcut: shortcut,
-    action: openSearchModal
-  });
-
-  return (
-    <div>
-      <Button
-        leftIcon={<LuSearch />}
-        variant="secondary"
-        className="w-[200px] px-2 hover:scale-100"
-        onClick={openSearchModal}
-      >
-        <HStack className="w-full">
-          <div className="flex flex-grow">
-            <Trans>Search</Trans>
-          </div>
-          <ShortcutKey
-            variant="small"
-            shortcut={shortcut}
-            className="hidden sm:grid"
-          />
-        </HStack>
-      </Button>
-      <SearchModal />
-    </div>
-  );
-};
-
 function useGroupedSubmodules() {
   const modules = useModules();
   const items = useItemsSubmodules();
@@ -549,5 +512,3 @@ function useGroupedSubmodules() {
 
   return shortcuts;
 }
-
-export default memo(SearchButton);

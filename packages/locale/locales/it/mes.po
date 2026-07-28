@@ -42,8 +42,23 @@ msgstr "{0} di {1} completati"
 msgid "{0} Scrapped"
 msgstr "{0} Scartati"
 
+msgid "{completions} passed unit(s) will be completed."
+msgstr "{completions} unità passate saranno completate."
+
+msgid "{fails} sampled failure(s) are recorded and will NOT be completed — resolve them from the actions menu."
+msgstr "{fails} errore(i) campionato(i) registrato(i) e NON sarà(sarranno) completato(i) — risolvere(li) dal menu azioni."
+
 msgid "About"
 msgstr "Informazioni"
+
+msgid "Accept"
+msgstr "Accetta"
+
+msgid "Accept Lot"
+msgstr "Accetta Lotto"
+
+msgid "Accept lot?"
+msgstr "Accettare il lotto?"
 
 msgid "Account Settings"
 msgstr "Impostazioni Account"
@@ -66,11 +81,26 @@ msgstr "Aggiungi una stampante nelle impostazioni di stampa per stampare le etic
 msgid "Add Inventory"
 msgstr "Aggiungi Inventario"
 
+msgid "Add Sample"
+msgstr "Aggiungi Campione"
+
 msgid "Add Spare Part"
 msgstr "Aggiungi Ricambio"
 
 msgid "All"
 msgstr "Tutti"
+
+msgid "All rework"
+msgstr "Tutto rilavorazione"
+
+msgid "All scrap"
+msgstr "Tutto scarto"
+
+msgid "Allocate failed units"
+msgstr "Allocare unità non conformi"
+
+msgid "Allocate units"
+msgstr "Assegna unità"
 
 msgid "Are you sure you want to delete this step?"
 msgstr "Sei sicuro di voler eliminare questa fase?"
@@ -165,6 +195,12 @@ msgstr "Timbratura Uscita"
 msgid "Clocked in since {0}"
 msgstr "Timbrato in ingresso dalle {0}"
 
+msgid "Close"
+msgstr "Chiudi"
+
+msgid "Collapse features table"
+msgstr "Comprimi tabella funzionalità"
+
 #. placeholder {0}: active.data.current.column.title
 #. placeholder {1}: overColumnPosition + 1
 #. placeholder {2}: columnOrder.length
@@ -193,6 +229,9 @@ msgstr "Completa"
 
 msgid "Complete All"
 msgstr "Completa tutto"
+
+msgid "Complete passed"
+msgstr "Completa passati"
 
 msgid "Completed"
 msgstr "Completato"
@@ -281,6 +320,9 @@ msgstr "Bozza"
 msgid "Drag and drop a file here, or click to select a file"
 msgstr "Trascina e rilascia un file qui, o clicca per selezionare un file"
 
+msgid "Drag to resize drawing and features"
+msgstr "Trascinare per ridimensionare il disegno e le caratteristiche"
+
 #. placeholder {0}: active.data.current?.type
 msgid "Dragging {0} cancelled."
 msgstr "Trascinamento di {0} annullato."
@@ -325,6 +367,12 @@ msgstr "Errore"
 msgid "Estimated"
 msgstr "Stimato"
 
+msgid "Every unit has a verdict: {passes} passed and {fails} failed. The lot closes with each unit routed to its own outcome."
+msgstr "Ogni unità ha un verdetto: {passes} approvate e {fails} non approvate. Il lotto si chiude con ogni unità instradata al suo risultato."
+
+msgid "Expand features table"
+msgstr "Espandi tabella funzionalità"
+
 msgid "Expired"
 msgstr "Scaduto"
 
@@ -336,6 +384,12 @@ msgstr "Scade {date}"
 
 msgid "Expiring first"
 msgstr "Scadenza prima"
+
+msgid "Failed"
+msgstr "Non riuscito"
+
+msgid "Failed features"
+msgstr "Funzionalità non riuscite"
 
 msgid "Failed to complete inventory adjustment"
 msgstr "Impossibile completare la rettifica dell'inventario"
@@ -349,12 +403,24 @@ msgstr "Impossibile recuperare le operazioni attive"
 msgid "Failed to fetch storageUnits"
 msgstr "Impossibile recuperare le unità di archiviazione"
 
+msgid "Failed to save measurement"
+msgstr "Errore durante il salvataggio della misurazione"
+
+msgid "Failed to save result"
+msgstr "Errore durante il salvataggio del risultato"
+
 #. placeholder {0}: fileUpload.name
 msgid "Failed to upload file: {0}"
 msgstr "Impossibile caricare il file: {0}"
 
 msgid "Failed to upload image"
 msgstr "Impossibile caricare l'immagine"
+
+msgid "Feature"
+msgstr "Funzionalità"
+
+msgid "Features"
+msgstr "Caratteristiche"
 
 msgid "File size exceeds 10MB limit"
 msgstr "La dimensione del file supera il limite di 10MB"
@@ -404,6 +470,12 @@ msgstr "Imperiale"
 
 msgid "In Progress"
 msgstr "In Corso"
+
+msgid "Inspect Item"
+msgstr "Ispeziona Articolo"
+
+msgid "inspected"
+msgstr "ispezionato"
 
 msgid "Insufficient quantity"
 msgstr "Quantità insufficiente"
@@ -498,6 +570,9 @@ msgstr "Registra scarti per {0}"
 msgid "Login"
 msgstr "Accedi"
 
+msgid "Lot"
+msgstr "Lotto"
+
 msgid "Machine"
 msgstr "Macchina"
 
@@ -530,6 +605,9 @@ msgstr "Metrico"
 
 msgid "Model"
 msgstr "Modello"
+
+msgid "More actions"
+msgstr "Altre azioni"
 
 msgid "More Actions"
 msgstr "Altre azioni"
@@ -595,6 +673,9 @@ msgstr "Nessun file"
 msgid "No Impact"
 msgstr "Nessun Impatto"
 
+msgid "No issue types configured"
+msgstr "Nessun tipo di problema configurato"
+
 msgid "No maintenance scheduled for today"
 msgstr "Nessuna manutenzione programmata per oggi"
 
@@ -606,6 +687,9 @@ msgstr "Nessun materiale"
 
 msgid "No open jobs"
 msgstr "Nessun lavoro aperto"
+
+msgid "No open units to allocate"
+msgstr "Nessuna unità aperta da allocare"
 
 msgid "No operators"
 msgstr "Nessun operatore"
@@ -625,6 +709,9 @@ msgstr "Nessuna stampante configurata"
 msgid "No recent operations"
 msgstr "Nessuna operazione recente"
 
+msgid "No remaining entities to inspect."
+msgstr "Nessuna entità rimanente da ispezionare."
+
 msgid "No results"
 msgstr "Nessun risultato"
 
@@ -633,6 +720,9 @@ msgstr "Nessun risultato esistente"
 
 msgid "No results found"
 msgstr "Nessun risultato trovato"
+
+msgid "No samples required."
+msgstr "Nessun campione richiesto."
 
 msgid "No scheduled time"
 msgstr "Nessun orario programmato"
@@ -683,6 +773,9 @@ msgstr "Ops. Non dovresti vedere questa pagina. In futuro sarà una pagina di de
 msgid "Open"
 msgstr "Aperto"
 
+msgid "Open an NCR for MRB disposition"
+msgstr "Apri un NCR per la disposizione MRB"
+
 msgid "Open Jobs"
 msgstr "Lavori Aperti"
 
@@ -698,11 +791,20 @@ msgstr "Eseguito dall'Operatore"
 msgid "Optional"
 msgstr "Facoltativo"
 
+msgid "Overall result"
+msgstr "Risultato complessivo"
+
 msgid "Parameters"
 msgstr "Parametri"
 
 msgid "Part"
 msgstr "Componente"
+
+msgid "Partial"
+msgstr "Parziale"
+
+msgid "Partial Disposition"
+msgstr "Disposizione Parziale"
 
 msgid "Passed Inspection"
 msgstr "Ispezione Superata"
@@ -748,9 +850,6 @@ msgstr "Precedente"
 
 msgid "Preventive"
 msgstr "Preventivo"
-
-msgid "Previous"
-msgstr "Precedente"
 
 msgid "Print"
 msgstr "Stampa"
@@ -801,6 +900,18 @@ msgstr "Registra"
 msgid "Record {0}"
 msgstr "Registrazione {0}"
 
+msgid "Record only"
+msgstr "Solo registrazione"
+
+msgid "Record Partial"
+msgstr "Registra Parziale"
+
+msgid "Reject"
+msgstr "Rifiuta"
+
+msgid "Reject Lot"
+msgstr "Rifiuta Lotto"
+
 msgid "Remove"
 msgstr "Rimuovi"
 
@@ -813,11 +924,17 @@ msgstr "Rimuovi Inventario"
 msgid "Remove part"
 msgstr "Rimuovi componente"
 
+msgid "Result"
+msgstr "Risultato"
+
 msgid "Rework"
 msgstr "Rielaborazione"
 
 msgid "Rework created successfully"
 msgstr "Rework creato con successo"
+
+msgid "Rework quantity"
+msgstr "Quantità di rilavorazione"
 
 msgid "Sales Order"
 msgstr "Ordine di Vendita"
@@ -828,8 +945,14 @@ msgstr "Salva"
 msgid "Scan"
 msgstr "Scansiona"
 
+msgid "Scan a tracked entity to add the first sample column."
+msgstr "Scansiona un'entità tracciata per aggiungere la prima colonna campione."
+
 msgid "Scan or enter serial number"
 msgstr "Scansiona o inserisci il numero di serie"
+
+msgid "Scan or enter tracked entity ID, serial, or batch"
+msgstr "Scansiona o inserisci ID entità tracciata, numero di serie o lotto"
 
 msgid "Scan or enter tracking number"
 msgstr "Scansiona o inserisci numero di tracciamento"
@@ -837,11 +960,17 @@ msgstr "Scansiona o inserisci numero di tracciamento"
 msgid "Scan or search serial number..."
 msgstr "Scansiona o cerca numero di serie..."
 
+msgid "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
+msgstr "Scansiona o seleziona un'entità tracciata da questo lotto per aggiungerla come colonna campione, quindi registra il suo risultato nella griglia."
+
 msgid "Schedule"
 msgstr "Pianificazione"
 
 msgid "Scrap"
 msgstr "Scarto"
+
+msgid "Scrap quantity"
+msgstr "Quantità di scarto"
 
 msgid "Scrap Reason"
 msgstr "Motivo Scarto"
@@ -876,6 +1005,9 @@ msgstr "Seleziona una quantità di scarto e il motivo"
 msgid "Select a serial number to continue with this operation"
 msgstr "Seleziona un numero di serie per continuare con questa operazione"
 
+msgid "Select an issue type"
+msgstr "Seleziona un tipo di problema"
+
 msgid "Select an item and specify the quantity to issue"
 msgstr "Seleziona un articolo e specifica la quantità da prelevare"
 
@@ -898,6 +1030,9 @@ msgstr "Seleziona Numero di Serie"
 
 msgid "Select the operation to go back to. All operations from that point to the current operation will be redone."
 msgstr "Seleziona l'operazione a cui tornare. Tutte le operazioni da quel punto all'operazione corrente verranno ripetute."
+
+msgid "Selected"
+msgstr "Selezionato"
 
 msgid "Send"
 msgstr "Invia"
@@ -978,6 +1113,10 @@ msgstr "Utente Stazione"
 msgid "Station: {stationName}"
 msgstr "Stazione: {stationName}"
 
+#. placeholder {0}: inspection.lotSize
+msgid "Statistical acceptance failed, so the entire lot of {0} is considered non-conforming (ISO 9001:2015 §8.7) — {passes} sampled pass(es) and {fails} failure(s). Route the units below to scrap or rework, or record the verdict only."
+msgstr "L'accettazione statistica è fallita, quindi l'intero lotto di {0} è considerato non conforme (ISO 9001:2015 §8.7) — {passes} campione(i) superato(i) e {fails} guasto(i). Instradare le unità di seguito a scarto o rilavorazione, oppure registrare solo il verdetto."
+
 msgid "Status"
 msgstr "Stato"
 
@@ -1015,6 +1154,12 @@ msgstr "Etichetta"
 msgid "The completed quantity for this operation is less than the required quantity of {0}."
 msgstr "La quantità completata per questa operazione è inferiore alla quantità richiesta di {0}."
 
+msgid "The lot will be marked Passed and {remaining} remaining unit(s) will be completed at this operation."
+msgstr "Il lotto sarà contrassegnato come Superato e {remaining} unità/unità rimanente/i saranno completate in questa operazione."
+
+msgid "The lot will still be dispositioned, but an NCR cannot be created until at least one Issue Type is configured."
+msgstr "Il lotto sarà comunque disposizionato, ma non è possibile creare un NCR finché non è configurato almeno un tipo di problema."
+
 msgid "There are serial or batch tracked materials on the bill of material that have not been fully issued. Completing without issuing may result in incorrect traceability records."
 msgstr "Ci sono materiali tracciati per numero di serie o lotto nella distinta base che non sono stati completamente prelevati. Completare senza prelevare potrebbe causare registrazioni di tracciabilità errate."
 
@@ -1048,6 +1193,9 @@ msgstr "Tempo totale: {0}"
 msgid "Total: {0}"
 msgstr "Totale: {0}"
 
+msgid "Tracked Entity"
+msgstr "Entità Tracciata"
+
 msgid "Tracking"
 msgstr "Tracciamento"
 
@@ -1069,6 +1217,9 @@ msgstr "Annulla prelievo {0}"
 
 msgid "Unsaved changes"
 msgstr "Modifiche non salvate"
+
+msgid "Up to {maxAllocatable} unit(s) can be allocated; the rest is recorded without a posting."
+msgstr "Fino a {maxAllocatable} unità possono essere allocate; il resto viene registrato senza una registrazione."
 
 msgid "Update"
 msgstr "Aggiorna"

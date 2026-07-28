@@ -37,6 +37,14 @@ export const accountsQuery = (companyId: string | null) => ({
   staleTime: RefreshRate.Low
 });
 
+export const assemblyInstructionsQuery = (
+  itemId: string,
+  companyId: string | null
+) => ({
+  queryKey: ["assemblyInstructions", itemId, companyId ?? "null"],
+  staleTime: RefreshRate.Low
+});
+
 export const countriesQuery = () => ({
   queryKey: ["countries"],
   staleTime: RefreshRate.Never
@@ -71,6 +79,34 @@ export const docsQuery = () => ({
   queryKey: ["docs"],
   staleTime: RefreshRate.Never
 });
+
+export const inspectionDocumentsQuery = (
+  itemId: string,
+  companyId: string | null
+) => ({
+  queryKey: ["inspectionDocuments", itemId, companyId ?? "null"],
+  staleTime: RefreshRate.Low
+});
+
+// Clears every cached inspection-document list for the current company. Mutation
+// routes are keyed by document `id`, not `itemId`, so they can't rebuild the
+// exact per-item key — a predicate on the key prefix covers all item entries.
+// `removeQueries` (not `invalidateQueries`) is required: the read route's
+// clientLoader gates on `if (!data)`, and the combobox reads via an imperative
+// `useFetcher().load()` with no active observer, so a merely stale-marked entry
+// would keep returning the cached array and never refetch.
+export const invalidateInspectionDocuments = () => {
+  const companyId = getCompanyId();
+  getClientCache()?.removeQueries({
+    predicate: (query) => {
+      const queryKey = query.queryKey as string[];
+      return (
+        queryKey[0] === "inspectionDocuments" &&
+        (!companyId || queryKey[2] === companyId)
+      );
+    }
+  });
+};
 
 export const itemPostingGroupsQuery = (companyId: string | null) => ({
   queryKey: ["itemPostingGroups", companyId ?? "null"],

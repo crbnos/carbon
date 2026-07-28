@@ -60,7 +60,6 @@ export function useServiceNavigation() {
     {
       name: t`Quality`,
       to: path.to.serviceQuality(itemId),
-      isDisabled: !routeData?.serviceSummary?.requiresInspection,
       role: ["employee"],
       permission: "quality",
       icon: LuClipboardCheck,

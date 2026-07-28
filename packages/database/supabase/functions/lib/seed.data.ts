@@ -248,9 +248,11 @@ export const sequences = [
     step: 1
   },
   {
-    table: "inboundInspection",
-    name: "Inbound Inspection",
-    prefix: "II",
+    // Existing companies keep their re-keyed II sequence (20260722132135);
+    // only new companies seed the INS prefix.
+    table: "inspection",
+    name: "Inspection",
+    prefix: "INS",
     suffix: null,
     next: 0,
     size: 6,
@@ -723,6 +725,7 @@ export const accounts = [
   // Inventory Adjustments
   { key: "inventory-adjustments", number: null, name: "Inventory Adjustments", isGroup: true, parentKey: "cogs", accountType: "Cost of Goods Sold", incomeBalance: "Income Statement", class: "Expense", consolidatedRate: "Average", createdBy: "system" },
   { key: "5310", number: "5310", name: "Inventory Adjustment", isGroup: false, parentKey: "inventory-adjustments", accountType: "Cost of Goods Sold", incomeBalance: "Income Statement", class: "Expense", consolidatedRate: "Average", createdBy: "system" },
+  { key: "5320", number: "5320", name: "Scrap / Cost of Quality", isGroup: false, parentKey: "inventory-adjustments", accountType: "Cost of Goods Sold", incomeBalance: "Income Statement", class: "Expense", consolidatedRate: "Average", createdBy: "system" },
 
   // ─── 6000-6999: OPERATING EXPENSES ───
   { key: "operating-expenses", number: null, name: "Operating Expenses", isGroup: true, parentKey: "income-statement", accountType: "Expense", incomeBalance: "Income Statement", class: "Expense", consolidatedRate: "Average", createdBy: "system" },
@@ -762,6 +765,7 @@ export const accountDefaults = {
   costOfGoodsSoldAccount: "5010",
   purchaseVarianceAccount: "5210",
   inventoryAdjustmentVarianceAccount: "5310",
+  scrapAccount: "5320",
   materialVarianceAccount: "5220",
   laborAndMachineVarianceAccount: "5230",
   overheadVarianceAccount: "5240",
