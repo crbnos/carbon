@@ -4453,17 +4453,53 @@ msgstr "Dupliquer vers..."
 msgid "Duration"
 msgstr "Durée"
 
+msgid "e.g. +1 555 123 4567"
+msgstr "p. ex. +1 555 123 4567"
+
+msgid "e.g. +1 555 123 4568"
+msgstr "p. ex. +1 555 123 4568"
+
+msgid "e.g. 01234567"
+msgstr "p. ex. 01234567"
+
+msgid "e.g. 1 Industrial Way"
+msgstr "p. ex. 1 Industrial Way"
+
+msgid "e.g. 12-3456789"
+msgstr "p. ex. 12-3456789"
+
 msgid "e.g. 2h"
 msgstr "p. ex. 2h"
 
+msgid "e.g. 48201"
+msgstr "p. ex. 48201"
+
+msgid "e.g. Acme Manufacturing"
+msgstr "p. ex. Acme Manufacturing"
+
+msgid "e.g. Detroit"
+msgstr "p. ex. Detroit"
+
 msgid "e.g. DWG-1234"
 msgstr "p. ex. DWG-1234"
+
+msgid "e.g. GB123456789"
+msgstr "p. ex. GB123456789"
+
+msgid "e.g. GB123456789000"
+msgstr "p. ex. GB123456789000"
 
 msgid "e.g. Jane Smith"
 msgstr "p. ex. Jane Smith"
 
 msgid "e.g. Marco + the area leads"
 msgstr "p. ex. Marco + les responsables régionaux"
+
+msgid "e.g. MI"
+msgstr "p. ex. MI"
+
+msgid "e.g. Suite 200"
+msgstr "p. ex. Suite 200"
 
 msgid "e.g. the first 3 to 4 weeks"
 msgstr "par exemple les 3 à 4 premières semaines"
@@ -4845,6 +4881,9 @@ msgstr "employés"
 
 msgid "Employees"
 msgstr "Employés"
+
+msgid "Empty"
+msgstr "Vide"
 
 msgid "Empty = match every item"
 msgstr "Vide = correspond à tous les articles"
@@ -10272,6 +10311,9 @@ msgstr "Enregistré"
 
 msgid "Registered"
 msgstr "Point de Réapprovisionnement"
+
+msgid "Registration Number"
+msgstr "Numéro d'enregistrement"
 
 msgid "Reject"
 msgstr "Rejeter"

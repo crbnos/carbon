@@ -141,7 +141,16 @@ export const auditConfig = {
     customer: {
       label: "Customer",
       tables: {
-        customer: { role: "root" },
+        customer: {
+          role: "root",
+          snapshotFields: {
+            customerTypeId: { table: "customerType", displayColumns: ["name"] },
+            customerStatusId: {
+              table: "customerStatus",
+              displayColumns: ["name"]
+            }
+          }
+        },
         customerPayment: { role: "extension" }, // PK = customerId
         customerShipping: { role: "extension" }, // PK = customerId
         customerTax: { role: "extension" }, // PK = customerId
@@ -165,7 +174,12 @@ export const auditConfig = {
     supplier: {
       label: "Supplier",
       tables: {
-        supplier: { role: "root" },
+        supplier: {
+          role: "root",
+          snapshotFields: {
+            supplierTypeId: { table: "supplierType", displayColumns: ["name"] }
+          }
+        },
         supplierPayment: { role: "extension" }, // PK = supplierId
         supplierShipping: { role: "extension" }, // PK = supplierId
         supplierTax: { role: "extension" }, // PK = supplierId
@@ -192,7 +206,12 @@ export const auditConfig = {
         item: { role: "root" },
         itemShelfLife: { role: "root" },
         itemCost: { role: "extension" }, // PK = itemId
-        itemPlanning: { role: "extension" }, // PK = itemId
+        itemPlanning: {
+          role: "extension", // unique on (itemId, locationId); entityId = itemId
+          snapshotFields: {
+            locationId: { table: "location", displayColumns: ["name"] }
+          }
+        },
         itemReplenishment: { role: "extension" }, // PK = itemId
         itemUnitSalePrice: { role: "extension" }, // PK = itemId
         supplierPart: { entityIdColumn: "itemId" },
@@ -232,10 +251,47 @@ export const auditConfig = {
     purchaseOrder: {
       label: "Purchase Order",
       tables: {
-        purchaseOrder: { role: "root" },
+        purchaseOrder: {
+          role: "root",
+          snapshotFields: {
+            supplierId: { table: "supplier", displayColumns: ["name"] },
+            supplierLocationId: {
+              table: "supplierLocation",
+              displayColumns: ["name"]
+            }
+          }
+        },
         purchaseOrderLine: { entityIdColumn: "purchaseOrderId" },
-        purchaseOrderPayment: { role: "extension" }, // PK = purchaseOrderId
-        purchaseOrderDelivery: { role: "extension" } // PK = purchaseOrderId
+        purchaseOrderPayment: {
+          role: "extension", // PK = purchaseOrderId
+          snapshotFields: {
+            paymentTermId: { table: "paymentTerm", displayColumns: ["name"] },
+            invoiceSupplierId: {
+              table: "supplier",
+              displayColumns: ["name"]
+            },
+            invoiceSupplierLocationId: {
+              table: "supplierLocation",
+              displayColumns: ["name"]
+            }
+          }
+        },
+        purchaseOrderDelivery: {
+          role: "extension", // PK = purchaseOrderId
+          snapshotFields: {
+            shippingMethodId: {
+              table: "shippingMethod",
+              displayColumns: ["name"]
+            },
+            shippingTermId: { table: "shippingTerm", displayColumns: ["name"] },
+            locationId: { table: "location", displayColumns: ["name"] },
+            customerId: { table: "customer", displayColumns: ["name"] },
+            customerLocationId: {
+              table: "customerLocation",
+              displayColumns: ["name"]
+            }
+          }
+        }
       }
     },
 
@@ -522,6 +578,52 @@ export const auditConfig = {
 
   /** Storage bucket name for archives */
   archiveBucket: "private"
+} as const;
+
+// ---------------------------------------------------------------------------
+// FK display registry
+// ---------------------------------------------------------------------------
+
+/**
+ * Display columns per FK *target* table, keyed by the table being pointed at
+ * — one entry per referenced table, reused by every FK that points there.
+ *
+ * The audit handler discovers which diff columns are FKs (and what they
+ * reference) from the schema itself via the `get_foreign_key_map` RPC, then
+ * uses this registry to decide what to read from the target row and freeze
+ * into the diff as `snapshot.old` / `snapshot.new`. A target table missing
+ * from this registry degrades gracefully: the diff keeps the raw id.
+ *
+ * Per-column `snapshotFields` on a table config still win over this registry
+ * (use them to pick different columns for one specific FK).
+ *
+ * A single-column list renders as an inline pill in the audit drawer; a
+ * multi-column list renders as an expanded section.
+ */
+export const fkDisplayRegistry: {
+  [T in TableName]?: readonly ColumnOf<T>[];
+} = {
+  address: ["addressLine1", "city"],
+  contact: ["fullName"],
+  customer: ["name"],
+  customerLocation: ["name"],
+  customerStatus: ["name"],
+  customerType: ["name"],
+  department: ["name"],
+  employeeType: ["name"],
+  item: ["readableId"],
+  location: ["name"],
+  paymentTerm: ["name"],
+  process: ["name"],
+  shift: ["name"],
+  shippingMethod: ["name"],
+  shippingTerm: ["name"],
+  supplier: ["name"],
+  supplierLocation: ["name"],
+  supplierType: ["name"],
+  unitOfMeasure: ["name"],
+  user: ["fullName"],
+  workCenter: ["name"]
 } as const;
 
 // ---------------------------------------------------------------------------

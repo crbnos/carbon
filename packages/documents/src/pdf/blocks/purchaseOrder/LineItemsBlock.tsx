@@ -132,6 +132,12 @@ export function LineItemsBlock({
                         />
                       </View>
                     )}
+                  {(line.supplierShippingCost ?? 0) > 0 && (
+                    <Text style={tw("text-[7px] text-gray-600 mt-0.5")}>
+                      Shipping:{" "}
+                      {numberFormatter.format(line.supplierShippingCost ?? 0)}
+                    </Text>
+                  )}
                 </View>
                 <Text style={tw("w-[8%] text-center text-gray-600")}>
                   {line.purchaseOrderLineType === "Comment"

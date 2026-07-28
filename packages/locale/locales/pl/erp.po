@@ -4453,17 +4453,53 @@ msgstr "Duplikuj do..."
 msgid "Duration"
 msgstr "Czas trwania"
 
+msgid "e.g. +1 555 123 4567"
+msgstr "np. +48 22 123 45 67"
+
+msgid "e.g. +1 555 123 4568"
+msgstr "np. +48 22 123 45 68"
+
+msgid "e.g. 01234567"
+msgstr "np. 01234567"
+
+msgid "e.g. 1 Industrial Way"
+msgstr "np. ul. Przemysłowa 1"
+
+msgid "e.g. 12-3456789"
+msgstr "np. 12-3456789"
+
 msgid "e.g. 2h"
 msgstr "np. 2h"
 
+msgid "e.g. 48201"
+msgstr "np. 00-001"
+
+msgid "e.g. Acme Manufacturing"
+msgstr "np. Acme Manufacturing"
+
+msgid "e.g. Detroit"
+msgstr "np. Warszawa"
+
 msgid "e.g. DWG-1234"
 msgstr "np. DWG-1234"
+
+msgid "e.g. GB123456789"
+msgstr "np. GB123456789"
+
+msgid "e.g. GB123456789000"
+msgstr "np. GB123456789000"
 
 msgid "e.g. Jane Smith"
 msgstr "np. Jane Smith"
 
 msgid "e.g. Marco + the area leads"
 msgstr "np. Marco + liderzy obszarów"
+
+msgid "e.g. MI"
+msgstr "np. mazowieckie"
+
+msgid "e.g. Suite 200"
+msgstr "np. lok. 200"
 
 msgid "e.g. the first 3 to 4 weeks"
 msgstr "np. pierwsze 3 do 4 tygodnie"
@@ -4845,6 +4881,9 @@ msgstr "pracownicy"
 
 msgid "Employees"
 msgstr "Pracownicy"
+
+msgid "Empty"
+msgstr "Puste"
 
 msgid "Empty = match every item"
 msgstr "Puste = dopasuj każdy element"
@@ -10272,6 +10311,9 @@ msgstr "Zarejestrowany"
 
 msgid "Registered"
 msgstr "Punkt Ponownego Zamówienia"
+
+msgid "Registration Number"
+msgstr "Numer rejestracyjny"
 
 msgid "Reject"
 msgstr "Odrzuć"

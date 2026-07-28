@@ -4453,17 +4453,53 @@ msgstr "…’ye kopyala"
 msgid "Duration"
 msgstr "Süre"
 
+msgid "e.g. +1 555 123 4567"
+msgstr "örn. +1 555 123 4567"
+
+msgid "e.g. +1 555 123 4568"
+msgstr "örn. +1 555 123 4568"
+
+msgid "e.g. 01234567"
+msgstr "örn. 01234567"
+
+msgid "e.g. 1 Industrial Way"
+msgstr "örn. 1 İmalat Yolu"
+
+msgid "e.g. 12-3456789"
+msgstr "örn. 12-3456789"
+
 msgid "e.g. 2h"
 msgstr "örn. 2s"
 
+msgid "e.g. 48201"
+msgstr "örn. 48201"
+
+msgid "e.g. Acme Manufacturing"
+msgstr "örn. Acme İmalat"
+
+msgid "e.g. Detroit"
+msgstr "örn. Detroit"
+
 msgid "e.g. DWG-1234"
 msgstr "örneğin DWG-1234"
+
+msgid "e.g. GB123456789"
+msgstr "örn. GB123456789"
+
+msgid "e.g. GB123456789000"
+msgstr "örn. GB123456789000"
 
 msgid "e.g. Jane Smith"
 msgstr "örn. Jane Smith"
 
 msgid "e.g. Marco + the area leads"
 msgstr "örn. Marco + alan liderleri"
+
+msgid "e.g. MI"
+msgstr "örn. MI"
+
+msgid "e.g. Suite 200"
+msgstr "örn. Daire 200"
 
 msgid "e.g. the first 3 to 4 weeks"
 msgstr "örn. ilk 3 ila 4 hafta"
@@ -4845,6 +4881,9 @@ msgstr "çalışanlar"
 
 msgid "Employees"
 msgstr "Çalışanlar"
+
+msgid "Empty"
+msgstr "Boş"
 
 msgid "Empty = match every item"
 msgstr "Boş = tüm öğeleri eşleştir"
@@ -10272,6 +10311,9 @@ msgstr "Kayıtlı"
 
 msgid "Registered"
 msgstr "Kayıtlı"
+
+msgid "Registration Number"
+msgstr "Sicil Numarası"
 
 msgid "Reject"
 msgstr "Reddet"
