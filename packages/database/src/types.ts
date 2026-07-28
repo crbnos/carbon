@@ -74050,6 +74050,15 @@ export type Database = {
           tableName: string
         }[]
       }
+      get_foreign_key_map: {
+        Args: { p_table_names: string[] }
+        Returns: {
+          columnName: string
+          tableName: string
+          targetHasCompanyId: boolean
+          targetTable: string
+        }[]
+      }
       get_inventory_quantities: {
         Args: { company_id: string; item_id?: string; location_id: string }
         Returns: {
@@ -74690,6 +74699,10 @@ export type Database = {
       get_primary_key_column: {
         Args: { p_table_name: string }
         Returns: string
+      }
+      get_primary_key_columns: {
+        Args: { p_table_name: string }
+        Returns: string[]
       }
       get_production_planning: {
         Args: { company_id: string; location_id: string; periods: string[] }

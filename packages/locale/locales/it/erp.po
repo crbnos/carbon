@@ -4882,6 +4882,9 @@ msgstr "dipendenti"
 msgid "Employees"
 msgstr "Dipendenti"
 
+msgid "Empty"
+msgstr "Vuoto"
+
 msgid "Empty = match every item"
 msgstr "Vuoto = corrisponde a ogni articolo"
 

@@ -4882,6 +4882,9 @@ msgstr "従業員"
 msgid "Employees"
 msgstr "従業員"
 
+msgid "Empty"
+msgstr "空"
+
 msgid "Empty = match every item"
 msgstr "空 = すべてのアイテムに一致"
 

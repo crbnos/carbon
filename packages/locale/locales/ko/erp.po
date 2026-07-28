@@ -4882,6 +4882,9 @@ msgstr "직원"
 msgid "Employees"
 msgstr "직원"
 
+msgid "Empty"
+msgstr "비어있음"
+
 msgid "Empty = match every item"
 msgstr "비어 있으면 모든 품목과 일치"
 

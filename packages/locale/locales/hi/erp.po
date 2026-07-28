@@ -4882,6 +4882,9 @@ msgstr "कर्मचारियों"
 msgid "Employees"
 msgstr "कर्मचारी"
 
+msgid "Empty"
+msgstr "खाली"
+
 msgid "Empty = match every item"
 msgstr "खाली = हर आइटम से मेल खाएं"
 

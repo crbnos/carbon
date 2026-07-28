@@ -4882,6 +4882,9 @@ msgstr "pracownicy"
 msgid "Employees"
 msgstr "Pracownicy"
 
+msgid "Empty"
+msgstr "Puste"
+
 msgid "Empty = match every item"
 msgstr "Puste = dopasuj każdy element"
 

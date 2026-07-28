@@ -4882,6 +4882,9 @@ msgstr "员工"
 msgid "Employees"
 msgstr "员工"
 
+msgid "Empty"
+msgstr "空"
+
 msgid "Empty = match every item"
 msgstr "空 = 匹配每个项目"
 

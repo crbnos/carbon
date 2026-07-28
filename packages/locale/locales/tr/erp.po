@@ -4882,6 +4882,9 @@ msgstr "çalışanlar"
 msgid "Employees"
 msgstr "Çalışanlar"
 
+msgid "Empty"
+msgstr "Boş"
+
 msgid "Empty = match every item"
 msgstr "Boş = tüm öğeleri eşleştir"
 
