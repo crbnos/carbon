@@ -13206,6 +13206,13 @@ msgstr "此供应商"
 msgid "This updates the theme for all users of the application"
 msgstr "这会更新应用程序所有用户的主题"
 
+msgid "This version belongs to an open <0>change notice</0>. Edit it there."
+msgstr ""
+
+#. placeholder {0}: lock.readableId
+msgid "This version belongs to change notice <0>{0}</0>. Edit it there."
+msgstr ""
+
 msgid "This will make this version read-only and replace any material make methods with this version."
 msgstr "这将使此版本为只读，并用此版本替换任何物料制造方法。"
 

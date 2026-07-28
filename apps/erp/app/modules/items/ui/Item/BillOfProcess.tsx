@@ -180,7 +180,7 @@ type BillOfProcessProps = {
   // engineering content is frozen at Implementation).
   isDisabled?: boolean;
   // What to tell the user when isDisabled is what made this read-only.
-  disabledReason?: string;
+  disabledReason?: ReactNode;
 } & ReleaseLockProps;
 
 type PendingWorkInstructions = {

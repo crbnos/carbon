@@ -13206,6 +13206,13 @@ msgstr "этот поставщик"
 msgid "This updates the theme for all users of the application"
 msgstr "Это обновляет тему для всех пользователей приложения"
 
+msgid "This version belongs to an open <0>change notice</0>. Edit it there."
+msgstr ""
+
+#. placeholder {0}: lock.readableId
+msgid "This version belongs to change notice <0>{0}</0>. Edit it there."
+msgstr ""
+
 msgid "This will make this version read-only and replace any material make methods with this version."
 msgstr "Это сделает эту версию доступной только для чтения и заменит все методы производства материалов на эту версию."
 

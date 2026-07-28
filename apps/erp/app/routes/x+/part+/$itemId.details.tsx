@@ -33,8 +33,11 @@ import {
 } from "~/modules/items";
 import { getRevisionLock } from "~/modules/items/items.server";
 import {
+  ChangeNoticeDraftLockReason,
+  getChangeNoticeDraftLock,
   ItemChangeNotices,
-  ItemOpenChangeNoticeAlert
+  ItemOpenChangeNoticeAlert,
+  LockedHint
 } from "~/modules/items/ui/ChangeNotice";
 import {
   BillOfMaterial,
@@ -257,6 +260,15 @@ export default function PartDetailsRoute() {
     changeNoticeTypes
   } = useLoaderData<typeof loader>();
 
+  const draftLock = getChangeNoticeDraftLock(
+    methodData?.makeMethod.changeOrderId,
+    changeNotices
+  );
+  const lockReason = draftLock ? (
+    <ChangeNoticeDraftLockReason lock={draftLock} />
+  ) : undefined;
+  const lockHint = lockReason ? <LockedHint reason={lockReason} /> : undefined;
+
   const partData = useRouteData<{
     partSummary: PartSummary;
     files: Promise<ItemFile[]>;
@@ -341,6 +353,8 @@ export default function PartDetailsRoute() {
                 replenishmentSystem={partData.partSummary?.replenishmentSystem}
                 revisionStatus={revisionStatus}
                 releaseControl={releaseControl}
+                isDisabled={!!draftLock}
+                disabledReason={lockReason}
               />
               <BillOfProcess
                 key={`bop:${itemId}`}
@@ -359,6 +373,8 @@ export default function PartDetailsRoute() {
                 tags={tags}
                 revisionStatus={revisionStatus}
                 releaseControl={releaseControl}
+                isDisabled={!!draftLock}
+                disabledReason={lockReason}
               />
             </>
           )}
@@ -373,6 +389,8 @@ export default function PartDetailsRoute() {
                 itemId={itemId}
                 modelUpload={partData.partSummary ?? undefined}
                 type="Part"
+                isReadOnly={!!draftLock}
+                titleExtras={lockHint}
               />
             )}
           </DeferredFiles>
@@ -385,10 +403,11 @@ export default function PartDetailsRoute() {
           /> */}
 
           <CadModel
-            isReadOnly={!permissions.can("update", "parts")}
+            isReadOnly={!permissions.can("update", "parts") || !!draftLock}
             metadata={{ itemId }}
             modelPath={partData?.partSummary?.modelPath ?? null}
             title={t`CAD Model`}
+            titleExtras={lockHint}
           />
           <ItemRiskRegister itemId={itemId} />
           <ItemChangeNotices

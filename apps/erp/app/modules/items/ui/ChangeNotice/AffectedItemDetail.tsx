@@ -6,14 +6,10 @@ import {
   CardTitle,
   HStack,
   Status,
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
-import { LuLock } from "react-icons/lu";
 import { useFetcher } from "react-router";
 import { CadModel, DeferredFiles } from "~/components";
 import { DatePicker, Hidden, Select, Submit } from "~/components/Form";
@@ -38,6 +34,7 @@ import type { AffectedItemDraft } from "./affectedItem.types";
 import ChangeNoticeDiffViewer from "./ChangeNoticeDiffViewer";
 import ChangeTypeBadge from "./ChangeTypeBadge";
 import ItemLink from "./ItemLink";
+import { LockedHint } from "./lock-ui";
 
 const supersessionModeOptions = supersessionModes.map((value) => ({
   value,
@@ -48,19 +45,6 @@ const changeTypeOptions = changeNoticeChangeTypes.map((c) => ({
   value: c,
   label: c
 }));
-
-// Matches the lock affordance on the BillOfMaterial / BillOfProcess cards, so
-// every card frozen by the change notice reads the same way.
-function LockedHint({ reason }: { reason?: string }) {
-  return (
-    <Tooltip>
-      <TooltipTrigger tabIndex={-1} className="text-muted-foreground">
-        <LuLock className="size-3.5" />
-      </TooltipTrigger>
-      <TooltipContent className="max-w-xs">{reason}</TooltipContent>
-    </Tooltip>
-  );
-}
 
 // The affected-item line detail: everything about the ONE selected affected item,
 // unwrapped from a single card into as many standalone cards as the change needs

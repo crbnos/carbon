@@ -17,3 +17,4 @@ export { default as ImpactPanel } from "./ImpactPanel";
 export * from "./ItemChangeNoticeLock";
 export { default as ItemChangeNotices } from "./ItemChangeNotices";
 export { default as ItemOpenChangeNoticeAlert } from "./ItemOpenChangeNoticeAlert";
+export * from "./lock-ui";

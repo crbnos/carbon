@@ -27,8 +27,11 @@ import {
 } from "~/modules/items";
 import { getRevisionLock } from "~/modules/items/items.server";
 import {
+  ChangeNoticeDraftLockReason,
+  getChangeNoticeDraftLock,
   ItemChangeNotices,
-  ItemOpenChangeNoticeAlert
+  ItemOpenChangeNoticeAlert,
+  LockedHint
 } from "~/modules/items/ui/ChangeNotice";
 import {
   BillOfMaterial,
@@ -220,6 +223,15 @@ export default function ToolDetailsRoute() {
     changeNoticeTypes
   } = useLoaderData<typeof loader>();
 
+  const draftLock = getChangeNoticeDraftLock(
+    methodData?.makeMethod.changeOrderId,
+    changeNotices
+  );
+  const lockReason = draftLock ? (
+    <ChangeNoticeDraftLockReason lock={draftLock} />
+  ) : undefined;
+  const lockHint = lockReason ? <LockedHint reason={lockReason} /> : undefined;
+
   const toolData = useRouteData<{
     toolSummary: ToolSummary;
     files: Promise<ItemFile[]>;
@@ -289,6 +301,8 @@ export default function ToolDetailsRoute() {
                 replenishmentSystem={toolData.toolSummary?.replenishmentSystem}
                 revisionStatus={revisionStatus}
                 releaseControl={releaseControl}
+                isDisabled={!!draftLock}
+                disabledReason={lockReason}
               />
               <BillOfProcess
                 key={`bop:${itemId}`}
@@ -298,6 +312,8 @@ export default function ToolDetailsRoute() {
                 tags={tags}
                 revisionStatus={revisionStatus}
                 releaseControl={releaseControl}
+                isDisabled={!!draftLock}
+                disabledReason={lockReason}
               />
             </>
           )}
@@ -312,15 +328,18 @@ export default function ToolDetailsRoute() {
                 itemId={itemId}
                 modelUpload={toolData.toolSummary ?? undefined}
                 type="Tool"
+                isReadOnly={!!draftLock}
+                titleExtras={lockHint}
               />
             )}
           </DeferredFiles>
 
           <CadModel
-            isReadOnly={!permissions.can("update", "parts")}
+            isReadOnly={!permissions.can("update", "parts") || !!draftLock}
             metadata={{ itemId }}
             modelPath={toolData?.toolSummary?.modelPath ?? null}
             title={t`CAD Model`}
+            titleExtras={lockHint}
           />
 
           <ItemRiskRegister itemId={itemId} />

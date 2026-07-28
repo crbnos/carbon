@@ -31,7 +31,7 @@ import { getItemReadableId } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { motion } from "framer-motion";
 import { nanoid } from "nanoid";
-import type { Dispatch, SetStateAction } from "react";
+import type { Dispatch, ReactNode, SetStateAction } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import {
@@ -142,7 +142,7 @@ type BillOfMaterialProps = {
   // engineering content is frozen at Implementation).
   isDisabled?: boolean;
   // What to tell the user when isDisabled is what made this read-only.
-  disabledReason?: string;
+  disabledReason?: ReactNode;
 } & ReleaseLockProps;
 
 type OrderState = {

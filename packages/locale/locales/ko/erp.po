@@ -13206,6 +13206,13 @@ msgstr "이 공급업체"
 msgid "This updates the theme for all users of the application"
 msgstr "이 설정은 애플리케이션의 모든 사용자에 대한 테마를 업데이트합니다"
 
+msgid "This version belongs to an open <0>change notice</0>. Edit it there."
+msgstr ""
+
+#. placeholder {0}: lock.readableId
+msgid "This version belongs to change notice <0>{0}</0>. Edit it there."
+msgstr ""
+
 msgid "This will make this version read-only and replace any material make methods with this version."
 msgstr "이렇게 하면 이 버전이 읽기 전용으로 전환되고, 자재 제조 방법이 모두 이 버전으로 교체됩니다."
 
