@@ -6967,6 +6967,9 @@ msgstr "चल रहे कार्य"
 msgid "Jobs Required"
 msgstr "नौकरियां आवश्यक हैं"
 
+msgid "Jobs that have this item on their bill of materials"
+msgstr "वह कार्य आदेश जिनके बिल ऑफ मेटेरियल्स पर यह आइटम है"
+
 #. placeholder {0}: company?.name ?? "Company"
 msgid "Join {0}"
 msgstr "{0} में शामिल हों"

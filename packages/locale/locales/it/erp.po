@@ -6967,6 +6967,9 @@ msgstr "Lavori in corso"
 msgid "Jobs Required"
 msgstr "Lavori Richiesti"
 
+msgid "Jobs that have this item on their bill of materials"
+msgstr "Lavori che hanno questo articolo nella loro distinta base"
+
 #. placeholder {0}: company?.name ?? "Company"
 msgid "Join {0}"
 msgstr "Unisciti a {0}"

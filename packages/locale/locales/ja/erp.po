@@ -6967,6 +6967,9 @@ msgstr "進行中のジョブ"
 msgid "Jobs Required"
 msgstr "ジョブが必要です"
 
+msgid "Jobs that have this item on their bill of materials"
+msgstr "この品目が部品表に含まれるジョブ"
+
 #. placeholder {0}: company?.name ?? "Company"
 msgid "Join {0}"
 msgstr "{0}に参加"
