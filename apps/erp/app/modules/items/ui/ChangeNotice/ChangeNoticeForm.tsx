@@ -37,7 +37,10 @@ import {
 import { usePermissions } from "~/hooks";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
-import { changeNoticePriority, changeNoticeValidator } from "../../items.models";
+import {
+  changeNoticePriority,
+  changeNoticeValidator
+} from "../../items.models";
 import ChangeNoticePriority from "./ChangeNoticePriority";
 
 type ChangeNoticeFormValues = z.infer<typeof changeNoticeValidator>;

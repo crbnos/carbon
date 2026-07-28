@@ -16,7 +16,10 @@ type ItemChangeNoticesProps = {
 // Part → CO traceability (4b): a history card of every change notice that
 // references this part (across all its revisions). Newest first (the G6 query
 // orders it). Done rows are de-emphasized. Renders nothing when empty.
-const ItemChangeNotices = ({ changeNotices, types }: ItemChangeNoticesProps) => {
+const ItemChangeNotices = ({
+  changeNotices,
+  types
+}: ItemChangeNoticesProps) => {
   if (changeNotices.length === 0) return null;
 
   return (

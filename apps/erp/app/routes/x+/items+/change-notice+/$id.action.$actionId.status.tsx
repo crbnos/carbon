@@ -31,9 +31,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (locked) return locked;
 
   const formData = await request.formData();
-  const validation = await validator(changeNoticeActionStatusValidator).validate(
-    formData
-  );
+  const validation = await validator(
+    changeNoticeActionStatusValidator
+  ).validate(formData);
 
   if (validation.error) {
     return validationError(validation.error);

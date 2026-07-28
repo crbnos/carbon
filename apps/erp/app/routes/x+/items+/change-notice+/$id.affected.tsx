@@ -79,9 +79,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return { success: true, id: add.data.id };
   }
 
-  const validation = await validator(changeNoticeAffectedItemValidator).validate(
-    formData
-  );
+  const validation = await validator(
+    changeNoticeAffectedItemValidator
+  ).validate(formData);
 
   if (validation.error) {
     return validationError(validation.error);

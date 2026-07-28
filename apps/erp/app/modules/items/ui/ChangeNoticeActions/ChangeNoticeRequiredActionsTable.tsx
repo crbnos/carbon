@@ -101,5 +101,6 @@ const ChangeNoticeRequiredActionsTable = memo(
   }
 );
 
-ChangeNoticeRequiredActionsTable.displayName = "ChangeNoticeRequiredActionsTable";
+ChangeNoticeRequiredActionsTable.displayName =
+  "ChangeNoticeRequiredActionsTable";
 export default ChangeNoticeRequiredActionsTable;

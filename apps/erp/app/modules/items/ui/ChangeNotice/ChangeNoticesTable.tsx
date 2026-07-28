@@ -101,7 +101,9 @@ const ChangeNoticesTable = memo(
         {
           accessorKey: "status",
           header: t`Status`,
-          cell: ({ row }) => <ChangeNoticeStatus status={row.original.status} />,
+          cell: ({ row }) => (
+            <ChangeNoticeStatus status={row.original.status} />
+          ),
           meta: {
             icon: <LuCircleGauge />,
             filter: {
