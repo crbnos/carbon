@@ -49,13 +49,14 @@ import {
 import type { FlattenedBomMaterial } from "../../production.service";
 import type {
   AssemblyInstructionStepRow,
-  AssemblyStandardNote,
   AssemblyStepMaterial,
-  AssemblyStepRequirement
+  AssemblyStepSlide,
+  AssemblyStepTool
 } from "../../types";
 import AssemblyStepBom, { ComponentColorSwatch } from "./AssemblyStepBom";
 import AssemblyStepMaterials from "./AssemblyStepMaterials";
-import AssemblyStepRequirements from "./AssemblyStepRequirements";
+import AssemblyStepSlides from "./AssemblyStepSlides";
+import AssemblyStepTools from "./AssemblyStepTools";
 
 type AssemblyInstructionPropertiesProps = {
   step: AssemblyInstructionStepRow | null;
@@ -72,10 +73,10 @@ type AssemblyInstructionPropertiesProps = {
   graphIndex: AssemblyGraphIndex | null;
   /** Authored subassembly units — a step matching one is titled by its name. */
   units: NamedUnit[];
-  requirements: AssemblyStepRequirement[];
   stepMaterials: AssemblyStepMaterial[];
+  stepSlides: AssemblyStepSlide[];
+  stepTools: AssemblyStepTool[];
   bomMaterials: FlattenedBomMaterial[];
-  standardNotes: AssemblyStandardNote[];
   onSelectComponents: (nodeIds: string[]) => void;
   onStartAddComponents: () => void;
   onStopAddComponents: () => void;
@@ -98,10 +99,10 @@ const AssemblyInstructionProperties = ({
   isDisabled,
   graphIndex,
   units,
-  requirements,
   stepMaterials,
+  stepSlides,
+  stepTools,
   bomMaterials,
-  standardNotes,
   onSelectComponents,
   onStartAddComponents,
   onStopAddComponents,
@@ -125,6 +126,21 @@ const AssemblyInstructionProperties = ({
   const flagged =
     step != null &&
     stepPlanWarningsSchema.safeParse(step.warnings).data?.flagged === true;
+
+  // BOM parts the author can @-mention in a step's instruction — mirrors the
+  // step-description editor in JobBillOfProcess (scoped to the item's BOM).
+  const itemMentions = useMemo(
+    () =>
+      bomMaterials.map((material) => ({
+        id: material.itemId,
+        label:
+          material.name ?? material.readableIdWithRevision ?? material.itemId,
+        helper: material.name
+          ? (material.readableIdWithRevision ?? undefined)
+          : undefined
+      })),
+    [bomMaterials]
+  );
 
   return (
     <VStack
@@ -178,8 +194,8 @@ const AssemblyInstructionProperties = ({
             <TabsTrigger className="flex-1" value="bom">
               BOM
             </TabsTrigger>
-            <TabsTrigger className="flex-1" value="requirements">
-              Requirements
+            <TabsTrigger className="flex-1" value="slides">
+              Slides
             </TabsTrigger>
           </TabsList>
           {/* forceMount keeps unsaved form edits alive while the BOM tab is open */}
@@ -197,6 +213,7 @@ const AssemblyInstructionProperties = ({
               isDisabled={isDisabled}
               graphIndex={graphIndex}
               units={units}
+              itemMentions={itemMentions}
               onSelectComponents={onSelectComponents}
               onStartAddComponents={onStartAddComponents}
               onStopAddComponents={onStopAddComponents}
@@ -217,6 +234,12 @@ const AssemblyInstructionProperties = ({
                 bomMaterials={bomMaterials}
                 isDisabled={isDisabled}
               />
+              <AssemblyStepTools
+                stepId={step.id}
+                instructionId={instructionId}
+                tools={stepTools}
+                isDisabled={isDisabled}
+              />
               <AssemblyStepBom
                 componentNodeIds={
                   draftComponentNodeIds ?? step.componentNodeIds ?? []
@@ -225,14 +248,15 @@ const AssemblyInstructionProperties = ({
               />
             </VStack>
           </TabsContent>
-          <TabsContent value="requirements">
-            <AssemblyStepRequirements
-              stepId={step.id}
-              instructionId={instructionId}
-              requirements={requirements}
-              standardNotes={standardNotes}
-              isDisabled={isDisabled}
-            />
+          <TabsContent value="slides">
+            <VStack spacing={4} className="w-full py-2">
+              <AssemblyStepSlides
+                stepId={step.id}
+                instructionId={instructionId}
+                slides={stepSlides}
+                isDisabled={isDisabled}
+              />
+            </VStack>
           </TabsContent>
         </Tabs>
       ) : (
@@ -299,6 +323,7 @@ function StepForm({
   isDisabled,
   graphIndex,
   units,
+  itemMentions,
   onSelectComponents,
   onStartAddComponents,
   onStopAddComponents,
@@ -316,6 +341,7 @@ function StepForm({
   isDisabled: boolean;
   graphIndex: AssemblyGraphIndex | null;
   units: NamedUnit[];
+  itemMentions: { id: string; label: string; helper?: string }[];
   onSelectComponents: (nodeIds: string[]) => void;
   onStartAddComponents: () => void;
   onStopAddComponents: () => void;
@@ -459,6 +485,7 @@ function StepForm({
             onChange={(value) => {
               setDescription(value);
             }}
+            mentions={[{ char: "@", items: itemMentions }]}
             className="[&_.is-empty]:text-muted-foreground min-h-[88px] max-h-[360px] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent p-3 rounded-lg border w-full"
           />
         </VStack>

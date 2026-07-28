@@ -1,0 +1,116 @@
+---
+title: Getting started
+description: The first-run setup wizard that creates your company, and the Implementation Hub that guides a new company from an empty tenant to live on Carbon.
+---
+
+Getting started on Carbon has two distinct surfaces. The **setup wizard** runs once, right after you sign up: it creates the company record, your profile, and the address that becomes your first location, then hands you a working tenant. The **Implementation Hub** is the checklist that takes it from there — a step-by-step map from that empty tenant to your team running production on Carbon. The wizard is unavoidable; the Hub is opt-in, and a company enrolls itself.
+
+## The setup wizard
+
+A brand-new account has no company yet, so Carbon holds you in `/onboarding` until one exists. The layout loader treats onboarding as complete only when the company has a **name** and at least **one location** — there is no `onboarded` boolean, the presence of those two facts is the gate (`apps/erp/app/routes/onboarding+/_layout.tsx:33-44`). Until then, every step redirects back into the wizard.
+
+The steps run in a fixed order (`apps/erp/app/utils/path.ts:2103-2109`):
+
+<Steps>
+
+<Step>
+**Theme.** Pick a color theme (`zinc`, `neutral`, `red`, `orange`, `yellow`, `green`, `blue`, or `violet`). This is a cosmetic choice stored in a cookie, not the database (`apps/erp/app/routes/onboarding+/theme.tsx`; validator at `apps/erp/app/modules/settings/settings.models.ts:306-311`).
+</Step>
+
+<Step>
+**Your profile.** First name and last name, both required. They write to your `user` record (`apps/erp/app/routes/onboarding+/user.tsx`; validator `onboardingUserValidator` at `apps/erp/app/modules/account/account.models.ts:12-17`).
+</Step>
+
+<Step>
+**Company.** The substantive step. It collects the company **name**, a full address (address line 1 and 2, city, state or province, postal code, country), a **base currency**, and an optional website (`apps/erp/app/routes/onboarding+/company.tsx`; `addressValidator` at `apps/erp/app/modules/settings/settings.models.ts:95-107`). Submitting this creates the company and everything a usable tenant needs.
+</Step>
+
+</Steps>
+
+Two more steps appear conditionally, and only in specific circumstances (`apps/erp/app/routes/onboarding+/_layout.tsx:49-53`):
+
+- **Industry** — shown only to internal Carbon staff accounts. It offers a demo-data template or a backup restore, so a seeded example company can be stood up. Regular sign-ups never see it.
+- **Plan** — shown only on Carbon Cloud, the hosted version at [app.carbon.ms](https://app.carbon.ms). It routes you to Stripe checkout to pick a plan before you enter the app. Self-hosted installs skip it entirely and go straight to `/x`.
+
+<Callout type="note" title="The company step does a lot of quiet work">
+Saving the company doesn't just insert one row. It also creates a **"Headquarters"** location from the address you entered (with your local timezone), links your user to the company as an employee, and seeds the tenant's baseline: chart of accounts, default posting accounts, numbering sequences, payment terms, and units of measure. This all happens under the hood via `provisionOnboardingCompany` and a background seed job (`apps/erp/app/services/onboarding.server.ts`; seed via `seedCompany` at `apps/erp/app/modules/settings/settings.service.ts:751-765`).
+</Callout>
+
+### What you don't choose during onboarding
+
+Fiscal year, accounting periods, and the numbering sequences are **not** asked for in the wizard. They come pre-seeded with sensible defaults, and you tune them afterward under [Company settings](/docs/reference/company-settings). The wizard's job is to get you into a working tenant fast, not to make you configure the whole system up front.
+
+## The Implementation Hub
+
+Once you're in the app, an empty tenant is still a long way from running production. The **Implementation Hub** (the "Get Started" area, at `/x/get-started`) is Carbon's structured onboarding checklist. It walks a new company through six phases from kickoff to go-live, with each phase deep-linking into the exact ERP screens you configure along the way (`apps/erp/app/routes/x+/get-started+/_layout.tsx`).
+
+The Hub only exists for a company that has **enrolled**. Enrollment is self-serve: anyone who can update company settings can turn it on from the home-page card, no Carbon staff required (`apps/erp/app/routes/x+/get-started+/enroll.tsx:24-48`). While the Hub is active, it takes over the home page so the project stays front and center, and it emails your Admins that the Hub is ready (`apps/erp/app/routes/x+/_index.tsx:37-53`).
+
+### The six phases
+
+The Hub is organized around six sequential **gates** — each phase ends at exactly one milestone you sign off before moving on (`packages/onboarding/src/content/spine.ts:11-143`):
+
+<StatusFlow>
+  <Status name="Discovery">Confirm how your company runs and lock the project scope. Ends at **"Scope signed"**. Paid tiers only.</Status>
+  <Status name="Configure" accent>Set Carbon up around your business: sites, users, suppliers, parts, BOMs, and Bill of Process. Ends at **"System configured"** — this is the phase most of your setup work lives in.</Status>
+  <Status name="Migrate data">Load your real data and approve a validated sample. Ends at **"Data validated"**. Paid tiers only.</Status>
+  <Status name="Train">Your team leads learn Carbon via the in-app guides and Academy, then bring everyone else up. Ends at **"Team trained"**.</Status>
+  <Status name="Acceptance">Every in-scope test passes on your configured system, with your data. Ends at **"Acceptance passed"**. Paid tiers only.</Status>
+  <Status name="Go-Live" terminal>Cut over, freeze the old system, and confirm you're live on Carbon. Ends at **"Live on Carbon"**.</Status>
+</StatusFlow>
+
+The **Configure** and **Acceptance** phases nest concrete "do this in Carbon" actions inside them — import your BOM, run MRP into purchase orders and jobs, serialize and sell a part. Those nested steps **auto-detect** their own completion against real tenant data (Carbon checks whether you actually have items, a job, a sales order) rather than relying on a manual tick (`packages/onboarding/src/content/spine.ts:38-131`).
+
+### Tiers change what you see
+
+The Hub adapts to how a company is being onboarded. There are three tiers — `self_serve`, `guided`, and `enterprise` — and self-serve enrollment defaults to `self_serve` (`apps/erp/app/routes/x+/get-started+/enroll.tsx:41`). The tier prunes the phases and pages that don't apply.
+
+<Callout type="info" title="Self-serve is the lean path">
+A self-serve company configures Carbon directly, so it skips the phases built for a Carbon-led project: **Discovery** (scoping), **Migrate data**, and **Acceptance** all fall away, along with their pages like Scope Summary, Roles, Requirements, and Data Migration. What's left is the core spine — Configure, Train, Go-Live — plus the pages every tier shares. The guided and enterprise tiers add the full commercial project structure back in (`packages/onboarding/src/content/registry.ts:8-115`).
+</Callout>
+
+### The Setup Map
+
+The single most useful page for a hands-on operator is the **Setup Map** (in the "Configure Carbon" group). It's the first-run configuration checklist: every master, reference, and config entity a new company sets up before it starts transacting, grouped by module and labelled as it appears in that module's navigation (`packages/onboarding/src/content/setup.ts:32-436`). It covers, per module:
+
+<FieldTable>
+  <Field name="Accounting">Fiscal year, accounting periods, chart of accounts, default accounts, cost centers, dimensions, payment terms, exchange rates, asset classes.</Field>
+  <Field name="Settings">Company identity, document templates, logos, printing, sequences, custom fields, integrations, approval rules.</Field>
+  <Field name="Resources">Locations, work centers, processes, training abilities, failure modes, maintenance schedules.</Field>
+  <Field name="People">Employees, departments, shifts, holidays, attributes, employee types, permission groups.</Field>
+  <Field name="Items">Units, item groups, parts, materials, tools, consumables, and the material substances, shapes, grades, and finishes.</Field>
+  <Field name="Sales">Customers, customer types and statuses, price lists, pricing rules, no-quote reasons.</Field>
+  <Field name="Purchasing">Suppliers and supplier types.</Field>
+  <Field name="Inventory">Storage units, storage types, storage rules, shipping methods.</Field>
+  <Field name="Production">Scrap reasons.</Field>
+</FieldTable>
+
+Each row deep-links straight to the screen where you configure that thing (`apps/erp/app/routes/x+/get-started+/_layout.tsx:59-118`), and its "configured" state is tracked so the Plan page and the Setup Map can never disagree about the same work. Rows tagged to a module drop out when you exclude that module, so an org that doesn't run quality or accounting doesn't see setup it will never do. The Accounting group only appears at all when accounting is enabled for the company (`apps/erp/app/routes/x+/get-started+/_layout.tsx:230-232`).
+
+## Where to go next
+
+The wizard gets you a tenant; the Hub gets you to production. For the settings the wizard seeds and you refine, see [Company settings](/docs/reference/company-settings). For adding the rest of your team, their access, and permission groups, see [People](/docs/reference/people). And for the end-to-end story of how work actually flows through Carbon once you're set up, the [guides](/guides) walk it start to finish.
+
+<AgentContext>
+## Troubleshooting
+
+Why onboarding won't let you into the app, and which steps show up — these are preconditions, not error messages.
+
+### Stuck in the setup wizard / keeps redirecting to /onboarding
+Onboarding is complete only when the company has a **name** and at least **one location**. There is no `onboarded` flag — the presence of those two facts is the gate. Until both exist, every step redirects back into the wizard. Finishing the **Company** step supplies both at once (it creates the company and a "Headquarters" location from the address you enter), so complete that step to get in.
+
+### The Industry step isn't showing
+It appears only for internal Carbon staff accounts. It offers demo-data templates and backup restore to stand up a seeded example company; regular sign-ups never see it, and its absence is expected.
+
+### The Plan step isn't showing
+The plan / Stripe-checkout step appears only on Carbon Cloud (the hosted version at app.carbon.ms). Self-hosted installs skip it entirely and go straight into the app at `/x`.
+
+### Can't enroll in the Implementation Hub
+Enrollment is self-serve but gated: only someone who **can update company settings** can turn the Hub on from the home-page card. Without that permission, the enroll control won't work — have an admin enroll, or grant Settings update access.
+
+### The Accounting group is missing from the Setup Map
+The Setup Map's Accounting group only appears when accounting is enabled for the company. Rows tagged to a module also drop out when that module is excluded, so an org that doesn't run a module won't see setup it will never do.
+
+### Some Hub phases are missing (Discovery, Migrate data, Acceptance)
+The Hub prunes phases by tier. Self-serve enrollment defaults to the `self_serve` tier, which skips the Carbon-led phases — **Discovery**, **Migrate data**, and **Acceptance** — leaving Configure, Train, and Go-Live. The `guided` and `enterprise` tiers add the full project structure back.
+</AgentContext>

@@ -13,6 +13,7 @@ import {
   getReceiptTracking,
   getShelfLifeForItems
 } from "~/modules/inventory";
+import { getReceiptInspections } from "~/modules/quality";
 import { getCompanySettings } from "~/modules/settings";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -34,11 +35,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { receiptId } = params;
   if (!receiptId) throw new Error("Could not find receiptId");
 
-  const [receipt, receiptLines, receiptLineTracking] = await Promise.all([
-    getReceipt(serviceRole, receiptId),
-    getReceiptLines(serviceRole, receiptId),
-    getReceiptTracking(serviceRole, receiptId, companyId)
-  ]);
+  const [receipt, receiptLines, receiptLineTracking, receiptInspections] =
+    await Promise.all([
+      getReceipt(serviceRole, receiptId),
+      getReceiptLines(serviceRole, receiptId),
+      getReceiptTracking(serviceRole, receiptId, companyId),
+      getReceiptInspections(serviceRole, receiptId, companyId)
+    ]);
 
   if (receipt.error) {
     throw redirect(
@@ -113,6 +116,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   return {
     receipt: receipt.data,
     receiptLines: receiptLines.data ?? [],
+    receiptInspections: receiptInspections.data ?? [],
     fixedAssetLines,
     receiptFiles: getReceiptFiles(serviceRole, companyId, receiptLineIds) ?? [],
     receiptLineTracking: receiptLineTracking.data ?? [],

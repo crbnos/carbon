@@ -8,7 +8,7 @@ import type {
 } from "@carbon/database/client";
 import { getLogger } from "@carbon/logger";
 import { getLocalTimeZone, now, today } from "@internationalized/date";
-import type { SupabaseClient } from "@supabase/supabase-js";
+import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 import { nanoid } from "nanoid";
 import type { z } from "zod";
 import type { GenericQueryFilters } from "~/utils/query";
@@ -17,12 +17,14 @@ import { sanitize } from "~/utils/supabase";
 import type { nonConformancePriority } from "../quality/quality.models";
 import type {
   operationParameterValidator,
+  operationStepSlideValidator,
   operationStepValidator,
   operationToolValidator
 } from "../shared";
 import {
   lookupBuyPriceFromMap,
   type MethodType,
+  normalizeOperationSourceIds,
   type PriceBreak,
   type SourcingType,
   type SupplierPriceMap
@@ -201,7 +203,6 @@ export async function createRevision(
       // only differences the user (and the CO diff) sees are ones they made.
       description: item.description,
       sourcingType: item.sourcingType,
-      requiresInspection: item.requiresInspection,
       thumbnailPath: item.thumbnailPath,
       mpn: item.mpn,
       active,
@@ -418,6 +419,13 @@ export async function deleteMethodOperationStep(
   id: string
 ) {
   return client.from("methodOperationStep").delete().eq("id", id);
+}
+
+export async function deleteMethodOperationStepSlide(
+  client: SupabaseClient<Database>,
+  id: string
+) {
+  return client.from("methodOperationStepSlide").delete().eq("id", id);
 }
 
 export async function deleteMethodOperationParameter(
@@ -1053,6 +1061,7 @@ export async function getMaterialUsedIn(
     salesOrderLines,
     shipmentLines,
     supplierQuotes,
+    inspections,
     jobMaterialUsage
   ] = await Promise.all([
     client
@@ -1136,6 +1145,13 @@ export async function getMaterialUsedIn(
       .eq("itemId", itemId)
       .eq("companyId", companyId)
       .limit(100),
+    client
+      .from("inspection")
+      .select("id, documentReadableId:inspectionId")
+      .eq("itemId", itemId)
+      .eq("companyId", companyId)
+      .limit(100)
+      .order("createdAt", { ascending: false }),
     getJobMaterialUsageForItem(client, { itemId, companyId })
   ]);
 
@@ -1150,6 +1166,7 @@ export async function getMaterialUsedIn(
     salesOrderLines: salesOrderLines.data ?? [],
     shipmentLines: shipmentLines.data ?? [],
     supplierQuotes: supplierQuotes.data ?? [],
+    inspections: inspections.data ?? [],
     jobMaterialUsage
   };
 }
@@ -1507,7 +1524,7 @@ export async function getMethodMaterialsByMakeMethod(
   return client
     .from("methodMaterial")
     .select(
-      "*, item(name, itemTrackingType, replenishmentSystem, defaultMethodType, sourcingType)"
+      "*, item(name, itemTrackingType, replenishmentSystem, defaultMethodType, sourcingType), methodMaterialStep(methodOperationStepId)"
     )
     .eq("makeMethodId", makeMethodId)
     .order("order", { ascending: true });
@@ -1548,7 +1565,7 @@ export async function getMethodOperationsByMakeMethodId(
   return client
     .from("methodOperation")
     .select(
-      "*, methodOperationTool(*), methodOperationParameter(*), methodOperationStep(*)"
+      "*, methodOperationTool(*, methodOperationToolStep(methodOperationStepId)), methodOperationParameter(*), methodOperationStep(*, methodOperationStepSlide(*))"
     )
     .eq("makeMethodId", makeMethodId)
     .order("order", { ascending: true });
@@ -1794,6 +1811,7 @@ export async function getPartUsedIn(
     shipmentLines,
     supplierQuotes,
     assemblyInstructions,
+    inspections,
     jobMaterialUsage
   ] = await Promise.all([
     client
@@ -1902,6 +1920,13 @@ export async function getPartUsedIn(
       .eq("companyId", companyId)
       .limit(100)
       .order("createdAt", { ascending: false }),
+    client
+      .from("inspection")
+      .select("id, documentReadableId:inspectionId")
+      .eq("itemId", itemId)
+      .eq("companyId", companyId)
+      .limit(100)
+      .order("createdAt", { ascending: false }),
     getJobMaterialUsageForItem(client, { itemId, companyId })
   ]);
 
@@ -1919,6 +1944,7 @@ export async function getPartUsedIn(
     shipmentLines: shipmentLines.data ?? [],
     supplierQuotes: supplierQuotes.data ?? [],
     assemblyInstructions: assemblyInstructions.data ?? [],
+    inspections: inspections.data ?? [],
     jobMaterialUsage
   };
 }
@@ -3961,13 +3987,13 @@ export async function upsertMethodOperation(
   if ("createdBy" in methodOperation) {
     return client
       .from("methodOperation")
-      .insert([methodOperation])
+      .insert([normalizeOperationSourceIds(methodOperation)])
       .select("id")
       .single();
   }
   return client
     .from("methodOperation")
-    .update(sanitize(methodOperation))
+    .update(sanitize(normalizeOperationSourceIds(methodOperation)))
     .eq("id", methodOperation.id)
     .select("id")
     .single();
@@ -4003,6 +4029,161 @@ export async function upsertMethodOperationStep(
     .from("methodOperationStep")
     .update(sanitize(methodOperationStep))
     .eq("id", methodOperationStep.id)
+    .select("id")
+    .single();
+}
+
+// Clone a step within the same operation: a "(copy)" appended after all siblings,
+// carrying its reference slides (image + caption + size + annotations, incl. tool
+// hotspots). Sequential supabase writes — a step is created first, then its slides,
+// so a slide-copy failure surfaces without a half-written step blocking the editor.
+export async function duplicateMethodOperationStep(
+  client: SupabaseClient<Database>,
+  args: { id: string; companyId: string; createdBy: string }
+): Promise<{ data: { id: string } | null; error: PostgrestError | null }> {
+  const source = await client
+    .from("methodOperationStep")
+    .select("*")
+    .eq("id", args.id)
+    .single();
+  if (source.error || !source.data) {
+    return { data: null, error: source.error };
+  }
+  const src = source.data;
+
+  // Append after the highest sortOrder in the operation.
+  const siblings = await client
+    .from("methodOperationStep")
+    .select("sortOrder")
+    .eq("operationId", src.operationId);
+  const nextSortOrder =
+    (siblings.data ?? []).reduce(
+      (max, s) => Math.max(max, s.sortOrder ?? 0),
+      0
+    ) + 1;
+
+  const insert = await client
+    .from("methodOperationStep")
+    .insert({
+      operationId: src.operationId,
+      name: `${src.name} (copy)`,
+      description: src.description,
+      type: src.type,
+      unitOfMeasureCode: src.unitOfMeasureCode,
+      minValue: src.minValue,
+      maxValue: src.maxValue,
+      listValues: src.listValues,
+      sortOrder: nextSortOrder,
+      companyId: args.companyId,
+      createdBy: args.createdBy
+    })
+    .select("id")
+    .single();
+  if (insert.error || !insert.data) {
+    return { data: null, error: insert.error };
+  }
+  const newStepId = insert.data.id;
+
+  // select("*") (not an explicit column list) so `size`/`annotations` — added by the
+  // step-slide migration — resolve once types are regenerated, without a bad column in
+  // the select string poisoning the whole row type before then.
+  const slides = await client
+    .from("methodOperationStepSlide")
+    .select("*")
+    .eq("stepId", args.id);
+  if (slides.error) {
+    return { data: null, error: slides.error };
+  }
+  if (slides.data && slides.data.length > 0) {
+    const slideRows = slides.data.map((s) => ({
+      stepId: newStepId,
+      imagePath: s.imagePath,
+      modelUploadId: s.modelUploadId,
+      caption: s.caption,
+      sortOrder: s.sortOrder,
+      size: s.size,
+      annotations: s.annotations,
+      companyId: args.companyId,
+      createdBy: args.createdBy
+    }));
+    const slideInsert = await client
+      .from("methodOperationStepSlide")
+      .insert(slideRows);
+    if (slideInsert.error) {
+      return { data: null, error: slideInsert.error };
+    }
+  }
+
+  // Copy step-scoped tool links. A tool with NO join rows is operation-level (shown on
+  // every step) and needs nothing copied; only tools scoped to this specific step carry
+  // a row here, and those must be repointed at the clone or the copy silently loses them.
+  const toolLinks = await client
+    .from("methodOperationToolStep")
+    .select("methodOperationToolId")
+    .eq("methodOperationStepId", args.id);
+  if (toolLinks.error) {
+    return { data: null, error: toolLinks.error };
+  }
+  if (toolLinks.data && toolLinks.data.length > 0) {
+    const toolLinkInsert = await client.from("methodOperationToolStep").insert(
+      toolLinks.data.map((l) => ({
+        methodOperationToolId: l.methodOperationToolId,
+        methodOperationStepId: newStepId
+      }))
+    );
+    if (toolLinkInsert.error) {
+      return { data: null, error: toolLinkInsert.error };
+    }
+  }
+
+  // Copy step-scoped part/material links (same operation-level-vs-scoped semantics as tools).
+  const materialLinks = await client
+    .from("methodMaterialStep")
+    .select("methodMaterialId")
+    .eq("methodOperationStepId", args.id);
+  if (materialLinks.error) {
+    return { data: null, error: materialLinks.error };
+  }
+  if (materialLinks.data && materialLinks.data.length > 0) {
+    const materialLinkInsert = await client.from("methodMaterialStep").insert(
+      materialLinks.data.map((l) => ({
+        methodMaterialId: l.methodMaterialId,
+        methodOperationStepId: newStepId
+      }))
+    );
+    if (materialLinkInsert.error) {
+      return { data: null, error: materialLinkInsert.error };
+    }
+  }
+
+  return { data: { id: newStepId }, error: null };
+}
+
+export async function upsertMethodOperationStepSlide(
+  client: SupabaseClient<Database>,
+  slide:
+    | (Omit<z.infer<typeof operationStepSlideValidator>, "id"> & {
+        companyId: string;
+        createdBy: string;
+      })
+    | (Omit<z.infer<typeof operationStepSlideValidator>, "id"> & {
+        id: string;
+        updatedBy: string;
+        updatedAt: string;
+      })
+) {
+  if ("createdBy" in slide) {
+    return client
+      .from("methodOperationStepSlide")
+      .insert(slide)
+      .select("id")
+      .single();
+  }
+
+  return client
+    .from("methodOperationStepSlide")
+    .update(sanitize(slide))
+    .eq("id", slide.id)
     .select("id")
     .single();
 }
@@ -4063,6 +4244,90 @@ export async function upsertMethodOperationTool(
     .eq("id", methodOperationTool.id)
     .select("id")
     .single();
+}
+
+// Replace a method tool's step links (tool ↔ step is many-to-many). No ids = the tool
+// applies to the whole operation (shown on every step in the MES). Delete-then-insert.
+// Replace a method material's step links (part ↔ step, many-to-many). See above.
+export async function replaceMethodMaterialSteps(
+  client: SupabaseClient<Database>,
+  methodMaterialId: string,
+  methodOperationStepIds: string[]
+) {
+  const del = await client
+    .from("methodMaterialStep")
+    .delete()
+    .eq("methodMaterialId", methodMaterialId);
+  if (del.error || methodOperationStepIds.length === 0) return del;
+  return client.from("methodMaterialStep").insert(
+    methodOperationStepIds.map((methodOperationStepId) => ({
+      methodMaterialId,
+      methodOperationStepId
+    }))
+  );
+}
+
+// Toggle a single part↔step link from the STEP side (the step editor's Parts picker).
+// `linked` true = link the material to the step, false = unlink. Idempotent on link.
+export async function setMethodMaterialStepLink(
+  client: SupabaseClient<Database>,
+  args: {
+    methodMaterialId: string;
+    methodOperationStepId: string;
+    linked: boolean;
+  }
+) {
+  if (args.linked) {
+    return client.from("methodMaterialStep").upsert(
+      [
+        {
+          methodMaterialId: args.methodMaterialId,
+          methodOperationStepId: args.methodOperationStepId
+        }
+      ],
+      {
+        onConflict: "methodMaterialId,methodOperationStepId",
+        ignoreDuplicates: true
+      }
+    );
+  }
+  return client
+    .from("methodMaterialStep")
+    .delete()
+    .eq("methodMaterialId", args.methodMaterialId)
+    .eq("methodOperationStepId", args.methodOperationStepId);
+}
+
+// Toggle a single tool↔step link from the STEP side (the step editor's Tools picker).
+// `linked` true = link the tool to the step, false = unlink. Idempotent on link. Twin of
+// setMethodMaterialStepLink.
+export async function setMethodOperationToolStepLink(
+  client: SupabaseClient<Database>,
+  args: {
+    methodOperationToolId: string;
+    methodOperationStepId: string;
+    linked: boolean;
+  }
+) {
+  if (args.linked) {
+    return client.from("methodOperationToolStep").upsert(
+      [
+        {
+          methodOperationToolId: args.methodOperationToolId,
+          methodOperationStepId: args.methodOperationStepId
+        }
+      ],
+      {
+        onConflict: "methodOperationToolId,methodOperationStepId",
+        ignoreDuplicates: true
+      }
+    );
+  }
+  return client
+    .from("methodOperationToolStep")
+    .delete()
+    .eq("methodOperationToolId", args.methodOperationToolId)
+    .eq("methodOperationStepId", args.methodOperationStepId);
 }
 
 export async function upsertMaterial(
@@ -5726,7 +5991,6 @@ export async function createChangeOrderDraftMethod(
       // user's edits, not gaps left by an incomplete copy.
       description: source.data.description,
       sourcingType: source.data.sourcingType,
-      requiresInspection: source.data.requiresInspection,
       thumbnailPath: source.data.thumbnailPath,
       mpn: source.data.mpn,
       active: false,
@@ -6953,7 +7217,7 @@ export type ChangeOrderDiff = {
 // separately by readItemAttributes. `active` is intentionally excluded — a CO
 // draft is created inactive until release, so it always differs (not a real edit).
 const ITEM_ATTRIBUTE_COLUMNS =
-  "name, description, unitOfMeasureCode, itemTrackingType, defaultMethodType, replenishmentSystem, sourcingType, requiresInspection, thumbnailPath, mpn";
+  "name, description, unitOfMeasureCode, itemTrackingType, defaultMethodType, replenishmentSystem, sourcingType, thumbnailPath, mpn";
 
 // Read one make method's materials + operations + per-operation children (real
 // method tables — the v2 substrate). Empty for a null makeMethodId (e.g. a Buy

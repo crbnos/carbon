@@ -3,6 +3,11 @@ import { textToTiptap } from "@carbon/utils";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import {
+  inspectionLevels,
+  inspectionSeverities,
+  samplingPlanTypes
+} from "../quality/samplingStandards";
+import {
   methodItemType,
   methodOperationOrders,
   methodType,
@@ -304,6 +309,8 @@ export const baseJobOperationValidator = z.object({
   }),
   processId: z.string().min(1, { message: "Process is required" }),
   procedureId: zfd.text(z.string().optional()),
+  assemblyInstructionId: zfd.text(z.string().optional()),
+  inspectionDocumentId: zfd.text(z.string().optional()),
   description: zfd.text(
     z.string().min(0, { message: "Description is required" })
   ),
@@ -342,7 +349,7 @@ export const jobOperationValidator = baseJobOperationValidator
   )
   .refine(
     (data) => {
-      if (data.operationType === "Outside") {
+      if (data.operationType === "Outside Processing") {
         return Number.isFinite(data.operationMinimumCost);
       }
       return true;
@@ -354,7 +361,7 @@ export const jobOperationValidator = baseJobOperationValidator
   )
   .refine(
     (data) => {
-      if (data.operationType === "Outside") {
+      if (data.operationType === "Outside Processing") {
         return Number.isFinite(data.operationUnitCost);
       }
       return true;
@@ -366,7 +373,7 @@ export const jobOperationValidator = baseJobOperationValidator
   )
   .refine(
     (data) => {
-      if (data.operationType === "Outside") {
+      if (data.operationType === "Outside Processing") {
         return Number.isFinite(data.operationLeadTime);
       }
       return true;
@@ -378,7 +385,7 @@ export const jobOperationValidator = baseJobOperationValidator
   )
   .refine(
     (data) => {
-      if (data.operationType === "Inside") {
+      if (data.operationType !== "Outside Processing") {
         return !!data.setupUnit;
       }
       return true;
@@ -390,7 +397,7 @@ export const jobOperationValidator = baseJobOperationValidator
   )
   .refine(
     (data) => {
-      if (data.operationType === "Inside") {
+      if (data.operationType !== "Outside Processing") {
         return !!data.laborUnit;
       }
       return true;
@@ -402,8 +409,10 @@ export const jobOperationValidator = baseJobOperationValidator
   )
   .refine(
     (data) => {
-      if (data.operationType === "Inside") {
-        return !!data.laborUnit;
+      // Machine only applies to Process operations — Assembly and Inspection
+      // are setup + labor work.
+      if (data.operationType === "Process") {
+        return !!data.machineUnit;
       }
       return true;
     },
@@ -414,7 +423,7 @@ export const jobOperationValidator = baseJobOperationValidator
   )
   .refine(
     (data) => {
-      if (data.operationType === "Inside") {
+      if (data.operationType !== "Outside Processing") {
         return Number.isFinite(data.setupTime);
       }
       return true;
@@ -426,7 +435,7 @@ export const jobOperationValidator = baseJobOperationValidator
   )
   .refine(
     (data) => {
-      if (data.operationType === "Inside") {
+      if (data.operationType !== "Outside Processing") {
         return Number.isFinite(data.laborTime);
       }
       return true;
@@ -438,7 +447,7 @@ export const jobOperationValidator = baseJobOperationValidator
   )
   .refine(
     (data) => {
-      if (data.operationType === "Inside") {
+      if (data.operationType === "Process") {
         return Number.isFinite(data.machineTime);
       }
       return true;
@@ -450,7 +459,7 @@ export const jobOperationValidator = baseJobOperationValidator
   )
   .refine(
     (data) => {
-      if (data.operationType === "Inside") {
+      if (data.operationType === "Process") {
         return Number.isFinite(data.machineRate);
       }
       return true;
@@ -462,7 +471,7 @@ export const jobOperationValidator = baseJobOperationValidator
   )
   .refine(
     (data) => {
-      if (data.operationType === "Inside") {
+      if (data.operationType !== "Outside Processing") {
         return Number.isFinite(data.overheadRate);
       }
       return true;
@@ -474,7 +483,7 @@ export const jobOperationValidator = baseJobOperationValidator
   )
   .refine(
     (data) => {
-      if (data.operationType === "Inside") {
+      if (data.operationType !== "Outside Processing") {
         return Number.isFinite(data.laborRate);
       }
       return true;
@@ -482,6 +491,18 @@ export const jobOperationValidator = baseJobOperationValidator
     {
       message: "Labor rate is required",
       path: ["laborRate"]
+    }
+  )
+  .refine(
+    (data) => {
+      if (data.operationType === "Inspection") {
+        return !!data.inspectionDocumentId;
+      }
+      return true;
+    },
+    {
+      message: "Inspection Plan is required",
+      path: ["inspectionDocumentId"]
     }
   );
 
@@ -493,7 +514,7 @@ export const jobOperationValidatorForReleasedJob = baseJobOperationValidator
   )
   .refine(
     (data) => {
-      if (data.operationType === "Inside") {
+      if (data.operationType !== "Outside Processing") {
         return !!data.workCenterId;
       }
       return true;
@@ -505,7 +526,7 @@ export const jobOperationValidatorForReleasedJob = baseJobOperationValidator
   )
   .refine(
     (data) => {
-      if (data.operationType === "Outside") {
+      if (data.operationType === "Outside Processing") {
         return Number.isFinite(data.operationMinimumCost);
       }
       return true;
@@ -517,7 +538,7 @@ export const jobOperationValidatorForReleasedJob = baseJobOperationValidator
   )
   .refine(
     (data) => {
-      if (data.operationType === "Outside") {
+      if (data.operationType === "Outside Processing") {
         return Number.isFinite(data.operationUnitCost);
       }
       return true;
@@ -529,7 +550,7 @@ export const jobOperationValidatorForReleasedJob = baseJobOperationValidator
   )
   .refine(
     (data) => {
-      if (data.operationType === "Outside") {
+      if (data.operationType === "Outside Processing") {
         return Number.isFinite(data.operationLeadTime);
       }
       return true;
@@ -541,7 +562,7 @@ export const jobOperationValidatorForReleasedJob = baseJobOperationValidator
   )
   .refine(
     (data) => {
-      if (data.operationType === "Outside") {
+      if (data.operationType === "Outside Processing") {
         return !!data.operationSupplierProcessId;
       }
       return true;
@@ -553,7 +574,7 @@ export const jobOperationValidatorForReleasedJob = baseJobOperationValidator
   )
   .refine(
     (data) => {
-      if (data.operationType === "Inside") {
+      if (data.operationType !== "Outside Processing") {
         return !!data.setupUnit;
       }
       return true;
@@ -565,7 +586,7 @@ export const jobOperationValidatorForReleasedJob = baseJobOperationValidator
   )
   .refine(
     (data) => {
-      if (data.operationType === "Inside") {
+      if (data.operationType !== "Outside Processing") {
         return !!data.laborUnit;
       }
       return true;
@@ -577,8 +598,10 @@ export const jobOperationValidatorForReleasedJob = baseJobOperationValidator
   )
   .refine(
     (data) => {
-      if (data.operationType === "Inside") {
-        return !!data.laborUnit;
+      // Machine only applies to Process operations — Assembly and Inspection
+      // are setup + labor work.
+      if (data.operationType === "Process") {
+        return !!data.machineUnit;
       }
       return true;
     },
@@ -589,7 +612,7 @@ export const jobOperationValidatorForReleasedJob = baseJobOperationValidator
   )
   .refine(
     (data) => {
-      if (data.operationType === "Inside") {
+      if (data.operationType !== "Outside Processing") {
         return Number.isFinite(data.setupTime);
       }
       return true;
@@ -601,7 +624,7 @@ export const jobOperationValidatorForReleasedJob = baseJobOperationValidator
   )
   .refine(
     (data) => {
-      if (data.operationType === "Inside") {
+      if (data.operationType !== "Outside Processing") {
         return Number.isFinite(data.laborTime);
       }
       return true;
@@ -613,7 +636,7 @@ export const jobOperationValidatorForReleasedJob = baseJobOperationValidator
   )
   .refine(
     (data) => {
-      if (data.operationType === "Inside") {
+      if (data.operationType === "Process") {
         return Number.isFinite(data.machineTime);
       }
       return true;
@@ -625,7 +648,7 @@ export const jobOperationValidatorForReleasedJob = baseJobOperationValidator
   )
   .refine(
     (data) => {
-      if (data.operationType === "Inside") {
+      if (data.operationType === "Process") {
         return Number.isFinite(data.machineRate);
       }
       return true;
@@ -637,7 +660,7 @@ export const jobOperationValidatorForReleasedJob = baseJobOperationValidator
   )
   .refine(
     (data) => {
-      if (data.operationType === "Inside") {
+      if (data.operationType !== "Outside Processing") {
         return Number.isFinite(data.overheadRate);
       }
       return true;
@@ -649,7 +672,7 @@ export const jobOperationValidatorForReleasedJob = baseJobOperationValidator
   )
   .refine(
     (data) => {
-      if (data.operationType === "Inside") {
+      if (data.operationType !== "Outside Processing") {
         return Number.isFinite(data.laborRate);
       }
       return true;
@@ -657,6 +680,18 @@ export const jobOperationValidatorForReleasedJob = baseJobOperationValidator
     {
       message: "Labor rate is required",
       path: ["laborRate"]
+    }
+  )
+  .refine(
+    (data) => {
+      if (data.operationType === "Inspection") {
+        return !!data.inspectionDocumentId;
+      }
+      return true;
+    },
+    {
+      message: "Inspection Plan is required",
+      path: ["inspectionDocumentId"]
     }
   );
 
@@ -694,6 +729,8 @@ const baseMaterialValidator = z.object({
 export const jobMaterialValidator = baseMaterialValidator
   .extend({
     jobOperationId: zfd.text(z.string().optional())
+    // Per-step assignment (part ↔ step) is many-to-many: the route reads
+    // formData.getAll("jobOperationStepIds") and writes jobMaterialStep rows.
   })
   .refine(
     (data) => {
@@ -735,6 +772,8 @@ export const jobMaterialValidator = baseMaterialValidator
 export const jobMaterialValidatorForReleasedJob = baseMaterialValidator
   .extend({
     jobOperationId: z.string().min(1, { message: "Operation is required" })
+    // Per-step assignment (part ↔ step) is many-to-many: the route reads
+    // formData.getAll("jobOperationStepIds") and writes jobMaterialStep rows.
   })
   .refine(
     (data) => {
@@ -1055,16 +1094,6 @@ export const planConfidences = ["high", "low", "manual"] as const;
 
 export const assemblyStepStatuses = ["Todo", "Review", "Done"] as const;
 
-export const assemblyRequirementTypes = [
-  "Tool",
-  "Fixture",
-  "Consumable",
-  "Note",
-  "Media"
-] as const;
-
-export const assemblyNoteSeverities = ["Info", "Caution", "Warning"] as const;
-
 const vector3 = z.tuple([z.number(), z.number(), z.number()]);
 const quaternion = z.tuple([z.number(), z.number(), z.number(), z.number()]);
 
@@ -1170,6 +1199,13 @@ export const assemblyInstructionValidator = z.object({
   name: z.string().min(1, { message: "Name is required" }),
   modelUploadId: z.string().min(1, { message: "Model is required" }),
   itemId: zfd.text(z.string().optional())
+});
+
+// Assembly → BOP sync: which operation receives the instruction's steps. "method"
+// targets the item's (Draft) make-method operation; "job" targets a live job's
+// operation directly.
+export const syncAssemblyToBopValidator = z.object({
+  operationId: z.string().min(1, { message: "Operation is required" })
 });
 
 export type AssemblyModelState =
@@ -1366,51 +1402,16 @@ export const assemblyStepMaterialValidator = z.object({
   sortOrder: zfd.numeric(z.number().min(0).optional())
 });
 
-export const assemblyStepRequirementValidator = z
-  .object({
-    id: zfd.text(z.string().optional()),
-    stepId: z.string().min(1),
-    type: z.enum(assemblyRequirementTypes),
-    itemId: zfd.text(z.string().optional()),
-    name: zfd.text(z.string().optional()),
-    text: zfd.text(z.string().optional()),
-    severity: zfd.text(z.enum(assemblyNoteSeverities).optional()),
-    filePath: zfd.text(z.string().optional()),
-    quantity: zfd.numeric(z.number().int().positive().optional())
-  })
-  .superRefine((data, ctx) => {
-    if (data.type === "Note" && !data.text?.trim()) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ["text"],
-        message: "Note text is required"
-      });
-    }
-    if (data.type === "Media" && !data.filePath?.trim()) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ["filePath"],
-        message: "A file is required"
-      });
-    }
-    if (
-      ["Tool", "Fixture", "Consumable"].includes(data.type) &&
-      !data.itemId?.trim() &&
-      !data.name?.trim()
-    ) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ["name"],
-        message: "Pick a catalog item or enter a name"
-      });
-    }
-  });
-
-export const assemblyStandardNoteValidator = z.object({
+/**
+ * Tools used at a step. itemId is a tool-type item — the same target
+ * jobOperationTool.toolId references, so the BOP sync maps rows 1:1.
+ */
+export const assemblyStepToolValidator = z.object({
   id: zfd.text(z.string().optional()),
-  name: z.string().min(1, { message: "Name is required" }),
-  content: z.string().min(1, { message: "Content is required" }),
-  severity: z.enum(assemblyNoteSeverities)
+  stepId: z.string().min(1),
+  itemId: z.string().min(1, { message: "Tool is required" }),
+  quantity: zfd.numeric(z.number().int().positive().optional()),
+  sortOrder: zfd.numeric(z.number().min(0).optional())
 });
 
 // An assembly unit: model leaf nodes the planner treats as one rigid body — a
@@ -1514,3 +1515,294 @@ export function getJobOrderStatusCategory(
   if (status?.supplyJobStatus) return "plannedJob";
   return null;
 }
+
+// ─── Inspection Documents ─────────────────────────────────────────────────────
+
+export const inspectionDocumentValidator = z.object({
+  id: zfd.text(z.string().optional()),
+  name: zfd.text(z.string().optional()),
+  partId: z.string().min(1, { message: "Part is required" }),
+  drawingNumber: zfd.text(z.string().optional()),
+  pdfUrl: zfd.text(z.string().optional()),
+  annotations: zfd.text(z.string().optional()),
+  features: zfd.text(z.string().optional())
+});
+
+export const balloonFeatureValidator = z.object({
+  id: zfd.text(z.string().optional()),
+  inspectionDocumentId: z.string().min(1, { message: "Diagram is required" }),
+  balloonNumber: zfd.numeric(z.number().min(1)),
+  description: z.string().min(1, { message: "Description is required" }),
+  nominalValue: zfd.numeric(z.number().optional()),
+  tolerancePlus: zfd.numeric(z.number().optional()),
+  toleranceMinus: zfd.numeric(z.number().optional()),
+  unitOfMeasureCode: zfd.text(z.string().optional())
+});
+
+export const balloonCreateFromPayloadItemValidator = z.object({
+  pageNumber: z.number(),
+  regionX: z.number(),
+  regionY: z.number(),
+  regionWidth: z.number(),
+  regionHeight: z.number(),
+  label: z.string().min(1),
+  xCoordinate: z.number(),
+  yCoordinate: z.number(),
+  nominalValue: z.string().nullable().optional(),
+  tolerancePlus: z.string().nullable().optional(),
+  toleranceMinus: z.string().nullable().optional(),
+  unit: z.string().nullable().optional(),
+  description: z.string().nullable().optional()
+});
+
+export const balloonUpdateItemValidator = z.object({
+  id: z.string().min(1),
+  pageNumber: z.number().optional(),
+  regionX: z.number().optional(),
+  regionY: z.number().optional(),
+  regionWidth: z.number().optional(),
+  regionHeight: z.number().optional(),
+  label: z.string().optional(),
+  xCoordinate: z.number().optional(),
+  yCoordinate: z.number().optional(),
+  nominalValue: z.string().nullable().optional(),
+  tolerancePlus: z.string().nullable().optional(),
+  toleranceMinus: z.string().nullable().optional(),
+  unit: z.string().nullable().optional(),
+  description: z.string().nullable().optional()
+});
+
+export const balloonDeleteValidator = z.object({
+  ids: z.array(z.string().min(1))
+});
+
+const normalizedCoordinateValidator = z.number().min(0).max(1);
+const normalizedSizeValidator = z.number().gt(0).max(1);
+const pageNumberValidator = z.number().int().min(1);
+
+export const balloonAnchorCreateItemValidator = z
+  .object({
+    pageNumber: pageNumberValidator,
+    regionX: normalizedCoordinateValidator,
+    regionY: normalizedCoordinateValidator,
+    regionWidth: normalizedSizeValidator,
+    regionHeight: normalizedSizeValidator
+  })
+  .strict();
+
+export const balloonCreateItemWithOverlayValidator = z
+  .object({
+    pageNumber: pageNumberValidator,
+    regionX: normalizedCoordinateValidator,
+    regionY: normalizedCoordinateValidator,
+    regionWidth: normalizedSizeValidator,
+    regionHeight: normalizedSizeValidator,
+    label: z.string().min(1),
+    xCoordinate: normalizedCoordinateValidator,
+    yCoordinate: normalizedCoordinateValidator,
+    nominalValue: z.string().nullable().optional(),
+    tolerancePlus: z.string().nullable().optional(),
+    toleranceMinus: z.string().nullable().optional(),
+    unit: z.string().nullable().optional(),
+    description: z.string().nullable().optional(),
+    type: z.enum(procedureStepType).optional(),
+    data: z.record(z.unknown()).optional()
+  })
+  .strict();
+
+export const balloonCreateItemsValidator = z.array(
+  z.union([
+    balloonCreateItemWithOverlayValidator,
+    balloonAnchorCreateItemValidator
+  ])
+);
+
+export const balloonUpdateItemsValidator = z.array(
+  balloonUpdateItemValidator.extend({
+    pageNumber: pageNumberValidator.optional(),
+    regionX: normalizedCoordinateValidator.optional(),
+    regionY: normalizedCoordinateValidator.optional(),
+    regionWidth: normalizedSizeValidator.optional(),
+    regionHeight: normalizedSizeValidator.optional(),
+    xCoordinate: normalizedCoordinateValidator.optional(),
+    yCoordinate: normalizedCoordinateValidator.optional(),
+    data: z.record(z.unknown()).optional()
+  })
+);
+
+export const balloonDeleteIdsValidator = z.array(z.string().min(1));
+
+// The document-level default sampling rule (fallback for features without
+// their own rule; the lot-level plan base). Sent by the editor as JSON.
+export const inspectionDocumentSamplingValidator = z.object({
+  samplingPlanType: z.enum(samplingPlanTypes).nullable(),
+  samplingSampleSize: z.number().int().positive().nullable(),
+  samplingPercentage: z.number().positive().max(100).nullable(),
+  samplingAql: z.number().positive().nullable(),
+  samplingInspectionLevel: z.enum(inspectionLevels).nullable(),
+  samplingSeverity: z.enum(inspectionSeverities).nullable()
+});
+
+const inspectionFeatureSamplingFieldsValidator = {
+  samplingPlanType: z.enum(samplingPlanTypes).nullable().optional(),
+  samplingSampleSize: z.number().int().positive().nullable().optional(),
+  samplingPercentage: z.number().positive().max(100).nullable().optional(),
+  samplingAql: z.number().positive().nullable().optional(),
+  samplingInspectionLevel: z.enum(inspectionLevels).nullable().optional(),
+  samplingSeverity: z.enum(inspectionSeverities).nullable().optional()
+};
+
+export const inspectionSaveFeatureCreateItemValidator = z
+  .object({
+    tempId: z.string().min(1),
+    pageNumber: pageNumberValidator,
+    label: z.string().min(1),
+    description: z.string().nullable().optional(),
+    nominalValue: z.string().nullable().optional(),
+    tolerancePlus: z.string().nullable().optional(),
+    toleranceMinus: z.string().nullable().optional(),
+    unit: z.string().nullable().optional(),
+    type: z.enum(procedureStepType).optional(),
+    ...inspectionFeatureSamplingFieldsValidator
+  })
+  .strict();
+
+export const inspectionSaveFeatureUpdateItemValidator = z
+  .object({
+    id: z.string().min(1),
+    pageNumber: pageNumberValidator.optional(),
+    label: z.string().min(1).optional(),
+    description: z.string().nullable().optional(),
+    nominalValue: z.string().nullable().optional(),
+    tolerancePlus: z.string().nullable().optional(),
+    toleranceMinus: z.string().nullable().optional(),
+    unit: z.string().nullable().optional(),
+    type: z.enum(procedureStepType).optional(),
+    ...inspectionFeatureSamplingFieldsValidator
+  })
+  .strict();
+
+export const inspectionSaveFeaturesPayloadValidator = z
+  .object({
+    create: z.array(inspectionSaveFeatureCreateItemValidator).default([]),
+    update: z.array(inspectionSaveFeatureUpdateItemValidator).default([]),
+    delete: z.array(z.string().min(1)).default([])
+  })
+  .strict();
+
+export const inspectionSaveBalloonGeometryCreateItemValidator = z
+  .object({
+    tempInspectionFeatureId: z.string().min(1).optional(),
+    inspectionFeatureId: z.string().min(1).optional(),
+    tempBalloonAnchorId: z.string().min(1).optional(),
+    pageNumber: pageNumberValidator,
+    regionX: normalizedCoordinateValidator,
+    regionY: normalizedCoordinateValidator,
+    regionWidth: normalizedSizeValidator,
+    regionHeight: normalizedSizeValidator,
+    xCoordinate: normalizedCoordinateValidator,
+    yCoordinate: normalizedCoordinateValidator
+  })
+  .strict()
+  .refine(
+    (data) =>
+      Boolean(data.tempInspectionFeatureId) ||
+      Boolean(data.inspectionFeatureId),
+    { message: "tempInspectionFeatureId or inspectionFeatureId is required" }
+  );
+
+export const inspectionSaveBalloonGeometryUpdateItemValidator = z
+  .object({
+    id: z.string().min(1),
+    pageNumber: pageNumberValidator.optional(),
+    regionX: normalizedCoordinateValidator.optional(),
+    regionY: normalizedCoordinateValidator.optional(),
+    regionWidth: normalizedSizeValidator.optional(),
+    regionHeight: normalizedSizeValidator.optional(),
+    xCoordinate: normalizedCoordinateValidator.optional(),
+    yCoordinate: normalizedCoordinateValidator.optional()
+  })
+  .strict();
+
+export const inspectionSaveBalloonsGeometryPayloadValidator = z
+  .object({
+    create: z
+      .array(inspectionSaveBalloonGeometryCreateItemValidator)
+      .default([]),
+    update: z
+      .array(inspectionSaveBalloonGeometryUpdateItemValidator)
+      .default([]),
+    delete: z.array(z.string().min(1)).default([])
+  })
+  .strict();
+
+/** @deprecated Legacy combined payload; use features + balloons geometry split. */
+export const inspectionSaveBalloonCreateItemValidator = z
+  .object({
+    tempBalloonAnchorId: z.string().min(1),
+    label: z.string().min(1),
+    xCoordinate: normalizedCoordinateValidator,
+    yCoordinate: normalizedCoordinateValidator,
+    nominalValue: z.string().nullable().optional(),
+    tolerancePlus: z.string().nullable().optional(),
+    toleranceMinus: z.string().nullable().optional(),
+    unit: z.string().nullable().optional(),
+    description: z.string().nullable().optional(),
+    type: z.enum(procedureStepType).optional()
+  })
+  .strict();
+
+/** @deprecated Legacy combined payload. */
+export const inspectionSaveBalloonUpdateItemValidator = z
+  .object({
+    id: z.string().min(1),
+    label: z.string().min(1).optional(),
+    xCoordinate: normalizedCoordinateValidator.optional(),
+    yCoordinate: normalizedCoordinateValidator.optional(),
+    nominalValue: z.string().nullable().optional(),
+    tolerancePlus: z.string().nullable().optional(),
+    toleranceMinus: z.string().nullable().optional(),
+    unit: z.string().nullable().optional(),
+    description: z.string().nullable().optional(),
+    type: z.enum(procedureStepType).optional()
+  })
+  .strict();
+
+/** @deprecated Legacy combined payload. */
+export const inspectionSaveBalloonsPayloadValidator = z
+  .object({
+    create: z.array(inspectionSaveBalloonCreateItemValidator).default([]),
+    update: z.array(inspectionSaveBalloonUpdateItemValidator).default([]),
+    delete: z.array(z.string().min(1)).default([])
+  })
+  .strict();
+
+export const inspectionSaveAnchorCreateItemValidator = z
+  .object({
+    tempId: z.string().min(1),
+    pageNumber: pageNumberValidator,
+    xCoordinate: normalizedCoordinateValidator,
+    yCoordinate: normalizedCoordinateValidator,
+    width: normalizedSizeValidator,
+    height: normalizedSizeValidator
+  })
+  .strict();
+
+export const inspectionSaveAnchorUpdateItemValidator = z
+  .object({
+    id: z.string().min(1),
+    pageNumber: pageNumberValidator.optional(),
+    xCoordinate: normalizedCoordinateValidator.optional(),
+    yCoordinate: normalizedCoordinateValidator.optional(),
+    width: normalizedSizeValidator.optional(),
+    height: normalizedSizeValidator.optional()
+  })
+  .strict();
+
+export const inspectionSaveAnchorsPayloadValidator = z
+  .object({
+    create: z.array(inspectionSaveAnchorCreateItemValidator).default([]),
+    update: z.array(inspectionSaveAnchorUpdateItemValidator).default([]),
+    delete: z.array(z.string().min(1)).default([])
+  })
+  .strict();

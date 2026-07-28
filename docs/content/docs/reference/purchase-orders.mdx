@@ -28,6 +28,7 @@ The status is computed from the state of its lines, never set by hand.
 <StatusFlow entity="purchaseOrder">
   <Status name="Draft">Being built.</Status>
   <Status name="Planned" branch>Suggested by planning.</Status>
+  <Status name="To Review" branch>A planning-suggested order awaiting review before it's sent.</Status>
   <Status name="Needs Approval" branch>Held for sign-off (amount-gated); rejection lands on *Rejected*.</Status>
   <Status name="To Receive and Invoice" accent>Confirmed; nothing received or billed yet.</Status>
   <Status name="To Receive">Fully invoiced, still owes receipt.</Status>

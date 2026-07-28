@@ -90,7 +90,7 @@ const ChangeOrderRequiredActionForm = ({
               <Hidden name="type" value={type} />
               <VStack spacing={4}>
                 <Input name="name" label={t`Action`} />
-                <Boolean name="active" label={t`Active`} />
+                <Boolean name="active" label={t`Active`} bordered />
               </VStack>
             </ModalDrawerBody>
             <ModalDrawerFooter>

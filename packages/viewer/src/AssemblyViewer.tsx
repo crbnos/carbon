@@ -30,13 +30,7 @@ export function AssemblyViewer({
   const isDarkMode = mode === "dark";
 
   return (
-    <div
-      className={cn(
-        "relative h-full w-full",
-        isDarkMode ? "bg-[#141619]" : "bg-white",
-        className
-      )}
-    >
+    <div className={cn("relative h-full w-full bg-card", className)}>
       <Canvas
         // Logarithmic depth buffer: distributes depth precision across a huge
         // CAD scale range (metre-scale body, mm-scale parts) so coplanar faces
@@ -60,10 +54,12 @@ export function AssemblyViewer({
         // Explicit CSS background on the canvas element: with alpha:true the
         // canvas layer is otherwise transparent, and Chrome's recomposite
         // during page unload/reload flashes such layers white in dark mode.
+        // Use the theme's card token so the viewer matches the surrounding cards
+        // in every theme instead of a hardcoded color.
         style={{
           position: "absolute",
           inset: 0,
-          background: isDarkMode ? "#141619" : "#ffffff"
+          background: "hsl(var(--card))"
         }}
       >
         <ambientLight intensity={isDarkMode ? 0.6 : 0.8} />

@@ -42,8 +42,23 @@ msgstr "{0} / {1} 完了済み"
 msgid "{0} Scrapped"
 msgstr "{0} スクラップ"
 
+msgid "{completions} passed unit(s) will be completed."
+msgstr "{completions}個の合格ユニットが完了します。"
+
+msgid "{fails} sampled failure(s) are recorded and will NOT be completed — resolve them from the actions menu."
+msgstr "{fails}件のサンプル不良が記録されており、完了されません — アクションメニューから対応してください。"
+
 msgid "About"
 msgstr "バージョン情報"
+
+msgid "Accept"
+msgstr "受け入れ"
+
+msgid "Accept Lot"
+msgstr "ロットを受け入れ"
+
+msgid "Accept lot?"
+msgstr "ロットを受け入れますか？"
 
 msgid "Account Settings"
 msgstr "アカウント設定"
@@ -66,11 +81,26 @@ msgstr "印刷設定でプリンターを追加して、ラベルを直接印刷
 msgid "Add Inventory"
 msgstr "在庫追加"
 
+msgid "Add Sample"
+msgstr "サンプルを追加"
+
 msgid "Add Spare Part"
 msgstr "スペアパーツを追加"
 
 msgid "All"
 msgstr "すべて"
+
+msgid "All rework"
+msgstr "すべて再加工"
+
+msgid "All scrap"
+msgstr "すべてスクラップ"
+
+msgid "Allocate failed units"
+msgstr "不合格ユニットを割り当てる"
+
+msgid "Allocate units"
+msgstr "ユニットを割り当てる"
 
 msgid "Are you sure you want to delete this step?"
 msgstr "このステップを削除してもよろしいですか？"
@@ -165,6 +195,12 @@ msgstr "退勤打刻"
 msgid "Clocked in since {0}"
 msgstr "{0} から出勤中"
 
+msgid "Close"
+msgstr "閉じる"
+
+msgid "Collapse features table"
+msgstr "機能テーブルを折りたたむ"
+
 #. placeholder {0}: active.data.current.column.title
 #. placeholder {1}: overColumnPosition + 1
 #. placeholder {2}: columnOrder.length
@@ -193,6 +229,9 @@ msgstr "完了"
 
 msgid "Complete All"
 msgstr "すべて完了"
+
+msgid "Complete passed"
+msgstr "完了済みを完了"
 
 msgid "Completed"
 msgstr "完了済み"
@@ -281,6 +320,9 @@ msgstr "下書き"
 msgid "Drag and drop a file here, or click to select a file"
 msgstr "ファイルをここにドラッグ＆ドロップするか、クリックしてファイルを選択してください"
 
+msgid "Drag to resize drawing and features"
+msgstr "描画と機能をリサイズするためにドラッグします"
+
 #. placeholder {0}: active.data.current?.type
 msgid "Dragging {0} cancelled."
 msgstr "{0} のドラッグがキャンセルされました。"
@@ -325,6 +367,12 @@ msgstr "エラー"
 msgid "Estimated"
 msgstr "見積"
 
+msgid "Every unit has a verdict: {passes} passed and {fails} failed. The lot closes with each unit routed to its own outcome."
+msgstr "すべてのユニットに判定があります: {passes}件が合格し、{fails}件が不合格です。ロットは各ユニットが独自の結果にルーティングされて終了します。"
+
+msgid "Expand features table"
+msgstr "機能テーブルを展開"
+
 msgid "Expired"
 msgstr "期限切れ"
 
@@ -336,6 +384,12 @@ msgstr "有効期限 {date}"
 
 msgid "Expiring first"
 msgstr "最初に期限切れ"
+
+msgid "Failed"
+msgstr "失敗"
+
+msgid "Failed features"
+msgstr "失敗した機能"
 
 msgid "Failed to complete inventory adjustment"
 msgstr "在庫調整の完了に失敗しました"
@@ -349,12 +403,24 @@ msgstr "アクティブな工程の取得に失敗しました"
 msgid "Failed to fetch storageUnits"
 msgstr "storageUnitsの取得に失敗しました"
 
+msgid "Failed to save measurement"
+msgstr "測定の保存に失敗しました"
+
+msgid "Failed to save result"
+msgstr "結果の保存に失敗しました"
+
 #. placeholder {0}: fileUpload.name
 msgid "Failed to upload file: {0}"
 msgstr "ファイルのアップロードに失敗しました: {0}"
 
 msgid "Failed to upload image"
 msgstr "画像のアップロードに失敗しました"
+
+msgid "Feature"
+msgstr "機能"
+
+msgid "Features"
+msgstr "機能"
 
 msgid "File size exceeds 10MB limit"
 msgstr "ファイルサイズが10MBの制限を超えています"
@@ -404,6 +470,12 @@ msgstr "インペリアル"
 
 msgid "In Progress"
 msgstr "進行中"
+
+msgid "Inspect Item"
+msgstr "アイテムを検査"
+
+msgid "inspected"
+msgstr "検査済み"
 
 msgid "Insufficient quantity"
 msgstr "数量が不足しています"
@@ -498,6 +570,9 @@ msgstr "{0} のスクラップを記録"
 msgid "Login"
 msgstr "ログイン"
 
+msgid "Lot"
+msgstr "ロット"
+
 msgid "Machine"
 msgstr "機械"
 
@@ -530,6 +605,9 @@ msgstr "メートル法"
 
 msgid "Model"
 msgstr "モデル"
+
+msgid "More actions"
+msgstr "その他のアクション"
 
 msgid "More Actions"
 msgstr "その他のアクション"
@@ -595,6 +673,9 @@ msgstr "ファイルなし"
 msgid "No Impact"
 msgstr "影響なし"
 
+msgid "No issue types configured"
+msgstr "構成されたイシュータイプがありません"
+
 msgid "No maintenance scheduled for today"
 msgstr "本日のメンテナンス予定はありません"
 
@@ -606,6 +687,9 @@ msgstr "材料なし"
 
 msgid "No open jobs"
 msgstr "オープンなジョブはありません"
+
+msgid "No open units to allocate"
+msgstr "割り当てるオープンユニットがありません"
 
 msgid "No operators"
 msgstr "オペレーターなし"
@@ -625,6 +709,9 @@ msgstr "プリンターが設定されていません"
 msgid "No recent operations"
 msgstr "最近の工程はありません"
 
+msgid "No remaining entities to inspect."
+msgstr "検査するエンティティが残っていません。"
+
 msgid "No results"
 msgstr "結果なし"
 
@@ -633,6 +720,9 @@ msgstr "結果がありません"
 
 msgid "No results found"
 msgstr "結果が見つかりません"
+
+msgid "No samples required."
+msgstr "サンプルは必要ありません。"
 
 msgid "No scheduled time"
 msgstr "予定時間なし"
@@ -683,6 +773,9 @@ msgstr "このページは表示されないはずです。最終的にはラン
 msgid "Open"
 msgstr "未対応"
 
+msgid "Open an NCR for MRB disposition"
+msgstr "MRB処分用のNCRを開く"
+
 msgid "Open Jobs"
 msgstr "オープンジョブ"
 
@@ -698,11 +791,20 @@ msgstr "オペレーター実施"
 msgid "Optional"
 msgstr "オプション"
 
+msgid "Overall result"
+msgstr "全体的な結果"
+
 msgid "Parameters"
 msgstr "パラメーター"
 
 msgid "Part"
 msgstr "パーツ"
+
+msgid "Partial"
+msgstr "部分的"
+
+msgid "Partial Disposition"
+msgstr "部分的な処分"
 
 msgid "Passed Inspection"
 msgstr "検査合格"
@@ -748,9 +850,6 @@ msgstr "前へ"
 
 msgid "Preventive"
 msgstr "予防保全"
-
-msgid "Previous"
-msgstr "前へ"
 
 msgid "Print"
 msgstr "印刷"
@@ -801,6 +900,18 @@ msgstr "記録"
 msgid "Record {0}"
 msgstr "レコード {0}"
 
+msgid "Record only"
+msgstr "記録のみ"
+
+msgid "Record Partial"
+msgstr "部分的に記録"
+
+msgid "Reject"
+msgstr "却下"
+
+msgid "Reject Lot"
+msgstr "ロットを却下"
+
 msgid "Remove"
 msgstr "削除"
 
@@ -813,11 +924,17 @@ msgstr "在庫削除"
 msgid "Remove part"
 msgstr "パーツを削除"
 
+msgid "Result"
+msgstr "結果"
+
 msgid "Rework"
 msgstr "リワーク"
 
 msgid "Rework created successfully"
 msgstr "リワーク作成に成功しました"
+
+msgid "Rework quantity"
+msgstr "リワーク数量"
 
 msgid "Sales Order"
 msgstr "受注"
@@ -828,8 +945,14 @@ msgstr "保存"
 msgid "Scan"
 msgstr "スキャン"
 
+msgid "Scan a tracked entity to add the first sample column."
+msgstr "スキャンして追跡エンティティを追加し、最初のサンプル列を追加してください。"
+
 msgid "Scan or enter serial number"
 msgstr "シリアル番号をスキャンまたは入力"
+
+msgid "Scan or enter tracked entity ID, serial, or batch"
+msgstr "追跡エンティティID、シリアル番号、またはバッチをスキャンまたは入力してください"
 
 msgid "Scan or enter tracking number"
 msgstr "スキャンまたは追跡番号を入力"
@@ -837,11 +960,17 @@ msgstr "スキャンまたは追跡番号を入力"
 msgid "Scan or search serial number..."
 msgstr "シリアル番号をスキャンまたは検索..."
 
+msgid "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
+msgstr "このロットから追跡エンティティをスキャンまたは選択してサンプル列として追加し、グリッドにその結果を記録してください。"
+
 msgid "Schedule"
 msgstr "スケジュール"
 
 msgid "Scrap"
 msgstr "廃棄"
+
+msgid "Scrap quantity"
+msgstr "スクラップ数量"
 
 msgid "Scrap Reason"
 msgstr "スクラップ理由"
@@ -876,6 +1005,9 @@ msgstr "スクラップ数量と理由を選択"
 msgid "Select a serial number to continue with this operation"
 msgstr "この工程を続行するシリアル番号を選択してください"
 
+msgid "Select an issue type"
+msgstr "イシュータイプを選択"
+
 msgid "Select an item and specify the quantity to issue"
 msgstr "品目を選択し、払出数量を指定してください"
 
@@ -898,6 +1030,9 @@ msgstr "シリアル番号を選択"
 
 msgid "Select the operation to go back to. All operations from that point to the current operation will be redone."
 msgstr "戻る操作を選択してください。その時点から現在の操作までのすべての操作が再度実行されます。"
+
+msgid "Selected"
+msgstr "選択済み"
 
 msgid "Send"
 msgstr "送信"
@@ -978,6 +1113,10 @@ msgstr "ステーションユーザー"
 msgid "Station: {stationName}"
 msgstr "ステーション: {stationName}"
 
+#. placeholder {0}: inspection.lotSize
+msgid "Statistical acceptance failed, so the entire lot of {0} is considered non-conforming (ISO 9001:2015 §8.7) — {passes} sampled pass(es) and {fails} failure(s). Route the units below to scrap or rework, or record the verdict only."
+msgstr "統計的受け入れに失敗したため、{0}の全ロットは不適合と見なされます(ISO 9001:2015 §8.7) — {passes}件のサンプル合格と{fails}件の不合格。以下のユニットをスクラップまたは再加工にルーティングするか、判定のみを記録してください。"
+
 msgid "Status"
 msgstr "ステータス"
 
@@ -1015,6 +1154,12 @@ msgstr "タグ"
 msgid "The completed quantity for this operation is less than the required quantity of {0}."
 msgstr "この工程の完了数量が必要数量 {0} を下回っています。"
 
+msgid "The lot will be marked Passed and {remaining} remaining unit(s) will be completed at this operation."
+msgstr "ロットは「合格」とマークされ、{remaining}個の残りユニットがこの工程で完了します。"
+
+msgid "The lot will still be dispositioned, but an NCR cannot be created until at least one Issue Type is configured."
+msgstr "ロットは引き続き処分されますが、少なくとも1つの問題タイプが設定されるまでNCRを作成することはできません。"
+
 msgid "There are serial or batch tracked materials on the bill of material that have not been fully issued. Completing without issuing may result in incorrect traceability records."
 msgstr "部品表にシリアルまたはバッチ追跡対象の材料が完全に払い出されていません。払出なしで完了すると、トレーサビリティ記録が不正確になる可能性があります。"
 
@@ -1048,6 +1193,9 @@ msgstr "合計時間: {0}"
 msgid "Total: {0}"
 msgstr "合計: {0}"
 
+msgid "Tracked Entity"
+msgstr "追跡エンティティ"
+
 msgid "Tracking"
 msgstr "追跡"
 
@@ -1069,6 +1217,9 @@ msgstr "ピック解除 {0}"
 
 msgid "Unsaved changes"
 msgstr "未保存の変更"
+
+msgid "Up to {maxAllocatable} unit(s) can be allocated; the rest is recorded without a posting."
+msgstr "最大 {maxAllocatable} 個のユニットを割り当てることができます。残りは転記なしで記録されます。"
 
 msgid "Update"
 msgstr "更新"

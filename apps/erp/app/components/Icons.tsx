@@ -47,16 +47,19 @@ import {
   LuImage,
   LuLandmark,
   LuList,
+  LuListChecks,
   LuMapPin,
   LuPizza,
   LuQrCode,
   LuRotateCcw,
   LuShoppingCart,
   LuSquare,
+  LuStepForward,
   LuTags,
   LuTarget,
   LuTimer,
   LuToggleLeft,
+  LuTriangleAlert,
   LuTruck,
   LuUser,
   LuUsers,
@@ -74,7 +77,7 @@ import type {
 } from "~/modules/accounting";
 import type { JobOperation } from "~/modules/production/types";
 import type { nonConformanceTaskStatus } from "~/modules/quality";
-import type { MethodType } from "~/modules/shared";
+import type { MethodType, OperationType } from "~/modules/shared";
 
 export const ModuleIcon = ({ icon }: { icon: ReactNode }) => {
   return (
@@ -375,6 +378,31 @@ export const ProcedureStepTypeIcon = ({
   }
 };
 
+export const OperationTypeIcon = ({
+  type,
+  className
+}: {
+  type: OperationType;
+  className?: string;
+}) => {
+  switch (type) {
+    // Process mirrors the Procedures nav icon
+    case "Process":
+      return <LuListChecks className={cn("text-foreground", className)} />;
+    // Assembly mirrors the Assembly Instructions nav icon
+    case "Assembly":
+      return <LuStepForward className={cn("text-emerald-500", className)} />;
+    // Inspection mirrors the Inspections nav icon
+    case "Inspection":
+      return <LuClipboardCheck className={cn("text-amber-500", className)} />;
+    // Outside Processing is subcontracted to a supplier (creates a PO)
+    case "Outside Processing":
+      return <LuTruck className={cn("text-blue-500", className)} />;
+    default:
+      return <LuListChecks className={cn("text-foreground", className)} />;
+  }
+};
+
 export const ReplenishmentSystemIcon = ({
   type,
   className
@@ -603,6 +631,10 @@ export const JournalEntrySourceTypeIcon = ({
       return <LuCreditCard className={className} />;
     case "Debit Memo":
       return <LuCreditCard className={className} />;
+    case "Non-Conformance":
+      return <LuTriangleAlert className={className} />;
+    case "Inbound Inspection":
+      return <LuClipboardCheck className={className} />;
   }
 
   return <LuSquare className={cn("text-muted-foreground", className)} />;

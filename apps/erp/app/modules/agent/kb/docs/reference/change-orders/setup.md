@@ -8,7 +8,7 @@ employees with the `parts` permission.
 ## Change order categories
 
 **Items → Change Order Types** holds the values for a change order's **"Category"** field — the same idea as
-issue types in Quality. Carbon seeds three: *Design improvement*, *Obsolescence*, and *Cost reduction*. Add,
+issue types in Quality. Carbon seeds eleven to start: *Design Improvement*, *Cost Reduction*, *Quality / Reliability Improvement*, *Supplier / Sourcing Change*, *Material or Component Change*, *Obsolescence / End-of-Life*, *Regulatory / Compliance*, *Safety*, *Manufacturing / Producibility*, *Customer Request*, and *Documentation Error / Correction*. Add,
 rename, or remove them to match how your shop classifies changes.
 
 Category is descriptive: it groups and filters change orders, but it doesn't change how release behaves. That

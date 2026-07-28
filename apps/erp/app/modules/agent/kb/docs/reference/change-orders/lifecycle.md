@@ -3,18 +3,24 @@
 > The five change-order stages, the impact panel, the diff review, and exactly what release does when a change order reaches Done.
 
 A change order advances forward one stage at a time. There's no approval toggle and no going back — the
-stages *are* the workflow, and the change order is its own release gate.
+stages *are* the workflow, and the change order is its own release gate. The one exit is **"Cancel"**,
+available from every open stage; a cancelled change order can later be reopened to **"Draft"**.
 
-## The five stages
+## The stages
 
   - **Draft**: The change order is being written. Pick affected items, set change types, and edit each draft method. Nothing is broadcast.
   - **Start**: Work is underway. Advancing to Start broadcasts a notification to the team.
   - **Engineering Complete**: The design edits are finished and ready for implementation review. Silent, no broadcast.
   - **Implementation**: The release stage. The **"Release"** action is available here; it reviews every affected item's diff and applies the change. Advancing here broadcasts.
   - **Done**: Released and locked. The change order becomes a read-only historical record; broadcasts on entry.
+  - **Cancelled**: The off-ramp. The header's **"Cancel"** action closes the change order from any open stage without releasing anything. Locked like **"Done"**, but reversible: **"Reopen"** returns it to **"Draft"**.
 
 The **"Start"**, **"Implementation"**, and **"Done"** transitions each notify the team; **"Engineering
 Complete"** is silent. Once a change order reaches **"Done"** it is locked — every editor is read-only.
+**"Cancelled"** is locked too, but not lost: cancelling keeps every affected item's draft, and **"Reopen"**
+takes the change order back to **"Draft"** to pick up where it left off. Only **"Done"** is permanent.
+Deleting a change order is the destructive path — that discards each affected item's draft and any new
+items the change order minted, so nothing is orphaned.
 
 ## The impact panel
 
@@ -44,7 +50,7 @@ Each item's diff compares its edited draft against the method it was snapshotted
 - **Bill of Process** — added, removed, and modified operations and their steps, parameters, and tools.
 - **Properties** — changed item fields (name, description, unit of measure, tracking type, replenishment
   system, and the rest), one row per changed column.
-- **Supplier Parts** — for a purchased Revision or New Part, the `docs/reference/change-orders/change-types`, each listed as an
+- **Supplier Parts** — for a purchased Revision, Replacement Part, or New Part, the `docs/reference/change-orders/change-types`, each listed as an
   addition with its part number, unit price, min order qty, order multiple, conversion factor, and purchasing
   unit. A draft starts with none, so every supplier you add shows here.
 
@@ -57,12 +63,14 @@ On confirm, Carbon walks the affected items and, per `docs/reference/change-orde
 
 1. **Activates the draft method** — it becomes the new **Active** version and the prior Active version is
    **Archived** (kept as history, never deleted).
-2. **Reveals the new item** — for a Revision or New Part, the newly created item is switched live and stamped
-   with the change order id. A Version has no new item.
-3. **Writes the supersession** — for a Revision or New Part, from the old item to the new one, using that
-   affected item's cutover settings. See `docs/reference/change-orders/supersession`.
+2. **Reveals the new item** — for a Revision, Replacement Part, or New Part, the newly created item is switched
+   live and stamped with the change order id. A Version has no new item.
+3. **Writes the supersession** — for a Revision or Replacement Part only, from the old item to the new one,
+   using that affected item's cutover settings. A New Part has no predecessor, so it supersedes nothing. See
+   `docs/reference/change-orders/supersession`.
 
-When every affected item is processed, the change order flips to **"Done"**.
+New Part items are released first, so a parent assembly whose draft BoM references a consolidated new part
+finds it already active. When every affected item is processed, the change order flips to **"Done"**.
 
 Each affected item is marked done the moment its draft's change-order id is cleared, so a re-run skips items
 already released and resumes at the first unreleased one. The final flip to **"Done"** is a compare-and-swap
@@ -83,7 +91,7 @@ merge-conflict step to resolve.
 ## Troubleshooting
 
 ### "Cannot modify a completed change order."
-The change order is at **"Done"** (or cancelled) and is a locked, read-only historical record — nothing reopens it. To make further changes to the same parts, raise a new change order; the released methods and items are its starting point.
+At **"Done"** the change order is a locked, read-only historical record — nothing reopens it. To make further changes to the same parts, raise a new change order; the released methods and items are its starting point. At **"Cancelled"** it is also locked, but the **"Reopen"** action returns it to **"Draft"** for further editing.
 
 ### Release button not available
 The **"Release"** action only appears at the **"Implementation"** stage. If the user can't find it, check the change order's current stage — it must be advanced (one stage at a time, no skipping) to Implementation first.
