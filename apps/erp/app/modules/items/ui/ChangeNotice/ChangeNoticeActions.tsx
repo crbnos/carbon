@@ -24,7 +24,7 @@ import { usePermissions, useRouteData, useUser } from "~/hooks";
 import { useIntegrations } from "~/hooks/useIntegrations";
 import type { ListItem } from "~/types";
 import { getPrivateUrl, path } from "~/utils/path";
-import type { ChangeOrderActionTask } from "../../types";
+import type { ChangeNoticeActionTask } from "../../types";
 
 // Change-order actions — a thin wrapper over the shared ActionTaskList (same
 // component the Quality issue uses). Adding picks from the change notice's
@@ -33,13 +33,13 @@ import type { ChangeOrderActionTask } from "../../types";
 // of the current tasks and the newly-picked templates. Each row is an ActionItem
 // (notes, status, assignee) with an inline delete. All actions live here on the
 // top-level detail route.
-export default function ChangeOrderActions({
+export default function ChangeNoticeActions({
   changeOrderId,
   actions,
   isDisabled
 }: {
   changeOrderId: string;
-  actions: ChangeOrderActionTask[];
+  actions: ChangeNoticeActionTask[];
   isDisabled: boolean;
 }) {
   const routeData = useRouteData<{ requiredActions: ListItem[] }>(
@@ -47,7 +47,7 @@ export default function ChangeOrderActions({
   );
   const addFetcher = useFetcher<{ success: boolean }>();
 
-  // The reconcile route (`setChangeOrderActionTasks`) sets the exact set of
+  // The reconcile route (`setChangeNoticeActionTasks`) sets the exact set of
   // tasks from the posted actionTypeIds, so adding posts the union of the current
   // tasks' types and the newly-picked templates (removal is per-card, below).
   const onAdd = useCallback(
@@ -96,7 +96,7 @@ function ActionItem({
   dragControls
 }: {
   changeOrderId: string;
-  action: ChangeOrderActionTask;
+  action: ChangeNoticeActionTask;
   isDisabled: boolean;
   dragControls: DragControls;
 }) {

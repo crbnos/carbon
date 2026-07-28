@@ -21,7 +21,7 @@ import type {
   ChangeNoticeChangeType,
   ChangeNoticeItemDiff
 } from "../../items.models";
-import ChangeOrderDiffViewer from "./ChangeNoticeDiffViewer";
+import ChangeNoticeDiffViewer from "./ChangeNoticeDiffViewer";
 import { releaseDialogOpenAtom } from "./releaseDialog.store";
 
 // One affected item's read-only changes, shown in the release confirmation.
@@ -29,7 +29,7 @@ export type ReleaseChange = {
   id: string;
   label: string;
   // The item's description — rendered under the label by the overview Changes
-  // rollup (ChangeOrderChanges); the release dialog doesn't populate it.
+  // rollup (ChangeNoticeChanges); the release dialog doesn't populate it.
   name?: string | null;
   // Change type + draft make-method version, for the ChangeTypeBadge shown in
   // the overview Changes rollup.
@@ -44,7 +44,7 @@ export type ReleaseChange = {
 // Draft make method as a new Active version and archives the prior one — the
 // prior version is kept as history, so there is no merge/conflict step. The user
 // reviews each item's changes, then confirms. Release is never a one-click action.
-export default function ChangeOrderReleaseMerge({
+export default function ChangeNoticeReleaseMerge({
   changeOrderId,
   status,
   changes
@@ -101,7 +101,7 @@ export default function ChangeOrderReleaseMerge({
                   >
                     {c.label}
                   </h3>
-                  <ChangeOrderDiffViewer diff={c.diff} />
+                  <ChangeNoticeDiffViewer diff={c.diff} />
                 </VStack>
               ))
             )}

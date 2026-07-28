@@ -20,13 +20,13 @@ import { DatePicker, Hidden, Select, Submit } from "~/components/Form";
 import { path } from "~/utils/path";
 import type { SupersessionMode } from "../../items.models";
 import {
-  changeOrderAffectedItemChangeTypeValidator,
-  changeOrderAffectedItemCutoverValidator,
-  changeOrderChangeTypes,
+  changeNoticeAffectedItemChangeTypeValidator,
+  changeNoticeAffectedItemCutoverValidator,
+  changeNoticeChangeTypes,
   supersessionModeMeta,
   supersessionModes
 } from "../../items.models";
-import type { ChangeOrderAffectedItemWithLabel } from "../../items.service";
+import type { ChangeNoticeAffectedItemWithLabel } from "../../items.service";
 import {
   BillOfMaterial,
   BillOfProcess,
@@ -35,7 +35,7 @@ import {
 } from "../Item";
 import PartProperties from "../Parts/PartProperties";
 import type { AffectedItemDraft } from "./affectedItem.types";
-import ChangeOrderDiffViewer from "./ChangeNoticeDiffViewer";
+import ChangeNoticeDiffViewer from "./ChangeNoticeDiffViewer";
 import ChangeTypeBadge from "./ChangeTypeBadge";
 import ItemLink from "./ItemLink";
 
@@ -44,7 +44,7 @@ const supersessionModeOptions = supersessionModes.map((value) => ({
   label: <Status color={supersessionModeMeta[value].color}>{value}</Status>
 }));
 
-const changeTypeOptions = changeOrderChangeTypes.map((c) => ({
+const changeTypeOptions = changeNoticeChangeTypes.map((c) => ({
   value: c,
   label: c
 }));
@@ -209,7 +209,7 @@ export default function AffectedItemDetail({
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <ChangeOrderDiffViewer bare diff={affected.diff} />
+          <ChangeNoticeDiffViewer bare diff={affected.diff} />
         </CardContent>
       </Card>
 
@@ -366,7 +366,7 @@ function ChangeTypeControl({
   isDisabled
 }: {
   changeOrderId: string;
-  affected: ChangeOrderAffectedItemWithLabel;
+  affected: ChangeNoticeAffectedItemWithLabel;
   isManufactured: boolean;
   isDisabled: boolean;
 }) {
@@ -397,7 +397,7 @@ function ChangeTypeControl({
         changeOrderId,
         affected.id
       )}
-      validator={changeOrderAffectedItemChangeTypeValidator}
+      validator={changeNoticeAffectedItemChangeTypeValidator}
       defaultValues={{ id: affected.id, changeType: affected.changeType }}
       className="w-full"
     >
@@ -436,7 +436,7 @@ function CutoverControl({
   isDisabled
 }: {
   changeOrderId: string;
-  affected: ChangeOrderAffectedItemWithLabel;
+  affected: ChangeNoticeAffectedItemWithLabel;
   isDisabled: boolean;
 }) {
   const { t } = useLingui();
@@ -452,7 +452,7 @@ function CutoverControl({
       fetcher={fetcher}
       method="post"
       action={path.to.changeNoticeAffectedCutover(changeOrderId, affected.id)}
-      validator={changeOrderAffectedItemCutoverValidator}
+      validator={changeNoticeAffectedItemCutoverValidator}
       defaultValues={{
         id: affected.id,
         supersessionMode: affected.supersessionMode,

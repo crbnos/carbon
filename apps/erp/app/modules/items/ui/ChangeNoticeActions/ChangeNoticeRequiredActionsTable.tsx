@@ -8,21 +8,21 @@ import { Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { path } from "~/utils/path";
-import type { ChangeOrderRequiredAction } from "../../types";
+import type { ChangeNoticeRequiredAction } from "../../types";
 
-type ChangeOrderRequiredActionsTableProps = {
-  data: ChangeOrderRequiredAction[];
+type ChangeNoticeRequiredActionsTableProps = {
+  data: ChangeNoticeRequiredAction[];
   count: number;
 };
 
-const ChangeOrderRequiredActionsTable = memo(
-  ({ data, count }: ChangeOrderRequiredActionsTableProps) => {
+const ChangeNoticeRequiredActionsTable = memo(
+  ({ data, count }: ChangeNoticeRequiredActionsTableProps) => {
     const [params] = useUrlParams();
     const navigate = useNavigate();
     const { t } = useLingui();
     const permissions = usePermissions();
 
-    const columns = useMemo<ColumnDef<ChangeOrderRequiredAction>[]>(() => {
+    const columns = useMemo<ColumnDef<ChangeNoticeRequiredAction>[]>(() => {
       return [
         {
           accessorKey: "name",
@@ -45,7 +45,7 @@ const ChangeOrderRequiredActionsTable = memo(
     }, [t]);
 
     const renderContextMenu = useCallback(
-      (row: ChangeOrderRequiredAction) => {
+      (row: ChangeNoticeRequiredAction) => {
         return (
           <>
             <MenuItem
@@ -82,7 +82,7 @@ const ChangeOrderRequiredActionsTable = memo(
     );
 
     return (
-      <Table<ChangeOrderRequiredAction>
+      <Table<ChangeNoticeRequiredAction>
         data={data}
         columns={columns}
         count={count}
@@ -101,5 +101,5 @@ const ChangeOrderRequiredActionsTable = memo(
   }
 );
 
-ChangeOrderRequiredActionsTable.displayName = "ChangeOrderRequiredActionsTable";
-export default ChangeOrderRequiredActionsTable;
+ChangeNoticeRequiredActionsTable.displayName = "ChangeNoticeRequiredActionsTable";
+export default ChangeNoticeRequiredActionsTable;

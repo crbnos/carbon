@@ -3,7 +3,7 @@ import type { MethodItemType, MethodType } from "../../../shared";
 import type { ChangeNoticeItemDiff } from "../../items.models";
 import type { getRevisionLock } from "../../items.server";
 import type {
-  ChangeOrderAffectedItemWithLabel,
+  ChangeNoticeAffectedItemWithLabel,
   getConfigurationParameters,
   getConfigurationRules,
   getMethodMaterialsByMakeMethod,
@@ -69,7 +69,7 @@ export type DraftOperationMapped = Omit<
 // for the embedded BillOfMaterial / BillOfProcess editors), the change type, and
 // the read-only authoring diff. The $id loader assembles this per affected item.
 export type AffectedItemDraft = {
-  affectedItem: ChangeOrderAffectedItemWithLabel;
+  affectedItem: ChangeNoticeAffectedItemWithLabel;
   // The item the draft edits — the same item for a Version, the new item for
   // Revision / New Part.
   draftItemId: string;

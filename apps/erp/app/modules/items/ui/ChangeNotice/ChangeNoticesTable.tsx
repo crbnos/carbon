@@ -28,16 +28,16 @@ import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
 import {
   type ChangeNoticeChangeType,
-  changeOrderPriority,
-  changeOrderStatus
+  changeNoticePriority,
+  changeNoticeStatus
 } from "../../items.models";
-import type { ChangeOrderListItem } from "../../types";
-import ChangeOrderPriority from "./ChangeNoticePriority";
-import ChangeOrderStatus from "./ChangeNoticeStatus";
+import type { ChangeNoticeListItem } from "../../types";
+import ChangeNoticePriority from "./ChangeNoticePriority";
+import ChangeNoticeStatus from "./ChangeNoticeStatus";
 import ChangeTypeBadge from "./ChangeTypeBadge";
 
-type ChangeOrdersTableProps = {
-  data: ChangeOrderListItem[];
+type ChangeNoticesTableProps = {
+  data: ChangeNoticeListItem[];
   types: ListItem[];
   count: number;
 };
@@ -52,17 +52,17 @@ type AffectedItemSummary = {
   newItemId: string | null;
 };
 
-const ChangeOrdersTable = memo(
-  ({ data, types, count }: ChangeOrdersTableProps) => {
+const ChangeNoticesTable = memo(
+  ({ data, types, count }: ChangeNoticesTableProps) => {
     const navigate = useNavigate();
     const { t } = useLingui();
     const { formatDate } = useDateFormatter();
     const permissions = usePermissions();
     const deleteDisclosure = useDisclosure();
-    const [selectedChangeOrder, setSelectedChangeOrder] =
-      useState<ChangeOrderListItem | null>(null);
+    const [selectedChangeNotice, setSelectedChangeNotice] =
+      useState<ChangeNoticeListItem | null>(null);
 
-    const customColumns = useCustomColumns<ChangeOrderListItem>("changeOrder");
+    const customColumns = useCustomColumns<ChangeNoticeListItem>("changeOrder");
     const [people] = usePeople();
     const [items] = useItems();
 
@@ -77,8 +77,8 @@ const ChangeOrdersTable = memo(
 
     useRealtime("changeOrder");
 
-    const columns = useMemo<ColumnDef<ChangeOrderListItem>[]>(() => {
-      const defaultColumns: ColumnDef<ChangeOrderListItem>[] = [
+    const columns = useMemo<ColumnDef<ChangeNoticeListItem>[]>(() => {
+      const defaultColumns: ColumnDef<ChangeNoticeListItem>[] = [
         {
           accessorKey: "changeOrderId",
           header: t`Change Notice`,
@@ -101,12 +101,12 @@ const ChangeOrdersTable = memo(
         {
           accessorKey: "status",
           header: t`Status`,
-          cell: ({ row }) => <ChangeOrderStatus status={row.original.status} />,
+          cell: ({ row }) => <ChangeNoticeStatus status={row.original.status} />,
           meta: {
             icon: <LuCircleGauge />,
             filter: {
               type: "static",
-              options: changeOrderStatus.map((status) => ({
+              options: changeNoticeStatus.map((status) => ({
                 label: status,
                 value: status
               }))
@@ -166,7 +166,7 @@ const ChangeOrdersTable = memo(
               })),
               isArray: true
             },
-            exportValue: (row: ChangeOrderListItem) =>
+            exportValue: (row: ChangeNoticeListItem) =>
               (row.itemIds ?? []).map((id) => resolveItemId(id)).join(", ")
           }
         },
@@ -174,13 +174,13 @@ const ChangeOrdersTable = memo(
           accessorKey: "priority",
           header: t`Priority`,
           cell: ({ row }) => (
-            <ChangeOrderPriority priority={row.original.priority} />
+            <ChangeNoticePriority priority={row.original.priority} />
           ),
           meta: {
             icon: <LuSignal />,
             filter: {
               type: "static",
-              options: changeOrderPriority.map((priority) => ({
+              options: changeNoticePriority.map((priority) => ({
                 label: priority,
                 value: priority
               }))
@@ -217,12 +217,12 @@ const ChangeOrdersTable = memo(
     }, [customColumns, people, items, resolveItemId, types, t, formatDate]);
 
     const canExpandRow = useCallback(
-      (row: ChangeOrderListItem) => (row.itemIds?.length ?? 0) > 0,
+      (row: ChangeNoticeListItem) => (row.itemIds?.length ?? 0) > 0,
       []
     );
 
     const renderExpandedRow = useCallback(
-      (row: ChangeOrderListItem) => {
+      (row: ChangeNoticeListItem) => {
         const affectedItems =
           (row.affectedItems as AffectedItemSummary[]) ?? [];
         if (affectedItems.length === 0) return null;
@@ -265,7 +265,7 @@ const ChangeOrdersTable = memo(
     );
 
     const renderContextMenu = useCallback(
-      (row: ChangeOrderListItem) => {
+      (row: ChangeNoticeListItem) => {
         return (
           <>
             <MenuItem
@@ -282,7 +282,7 @@ const ChangeOrdersTable = memo(
               disabled={!permissions.can("delete", "parts")}
               onClick={() => {
                 flushSync(() => {
-                  setSelectedChangeOrder(row);
+                  setSelectedChangeNotice(row);
                 });
                 deleteDisclosure.onOpen();
               }}
@@ -298,7 +298,7 @@ const ChangeOrdersTable = memo(
 
     return (
       <>
-        <Table<ChangeOrderListItem>
+        <Table<ChangeNoticeListItem>
           data={data}
           columns={columns}
           count={count}
@@ -315,19 +315,19 @@ const ChangeOrdersTable = memo(
           table="changeOrder"
           withSavedView
         />
-        {deleteDisclosure.isOpen && selectedChangeOrder && (
+        {deleteDisclosure.isOpen && selectedChangeNotice && (
           <ConfirmDelete
-            action={path.to.deleteChangeNotice(selectedChangeOrder.id!)}
+            action={path.to.deleteChangeNotice(selectedChangeNotice.id!)}
             isOpen
             onCancel={() => {
-              setSelectedChangeOrder(null);
+              setSelectedChangeNotice(null);
               deleteDisclosure.onClose();
             }}
             onSubmit={() => {
-              setSelectedChangeOrder(null);
+              setSelectedChangeNotice(null);
               deleteDisclosure.onClose();
             }}
-            name={selectedChangeOrder.name ?? "change notice"}
+            name={selectedChangeNotice.name ?? "change notice"}
             text={t`Are you sure you want to delete this change notice?`}
           />
         )}
@@ -336,5 +336,5 @@ const ChangeOrdersTable = memo(
   }
 );
 
-ChangeOrdersTable.displayName = "ChangeOrdersTable";
-export default ChangeOrdersTable;
+ChangeNoticesTable.displayName = "ChangeNoticesTable";
+export default ChangeNoticesTable;

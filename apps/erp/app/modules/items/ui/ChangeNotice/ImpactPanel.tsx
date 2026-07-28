@@ -15,7 +15,7 @@ type UsedInChild = UsedInNode["children"][number];
 // Where an affected item is referenced across the system (jobs, POs, sales,
 // receipts, methods, NCRs, …) — the same shape the part detail page's "Used In"
 // tree consumes. One entry per affected item on the change notice.
-export type ChangeOrderImpactItem = {
+export type ChangeNoticeImpactItem = {
   itemId: string;
   readableIdWithRevision: string;
   itemName: string | null;
@@ -40,7 +40,7 @@ export type ChangeOrderImpactItem = {
 // part detail page's Used In panel (kept in parallel with x+/part+/$itemId), but
 // empty categories are dropped — the impact only lists where the item actually
 // appears.
-function ImpactItem({ item }: { item: ChangeOrderImpactItem }) {
+function ImpactItem({ item }: { item: ChangeNoticeImpactItem }) {
   const { t } = useLingui();
   const u = item.usedIn;
 
@@ -171,7 +171,7 @@ export default function ImpactPanel({
   items,
   embedded = false
 }: {
-  items: ChangeOrderImpactItem[];
+  items: ChangeNoticeImpactItem[];
   // When true, render without the Card chrome — the rail supplies the section
   // frame + title.
   embedded?: boolean;

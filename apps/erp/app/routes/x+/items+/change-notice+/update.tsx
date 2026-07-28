@@ -1,11 +1,11 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import type { ActionFunctionArgs } from "react-router";
-import { isChangeOrderLocked, updateChangeOrder } from "~/modules/items";
+import { isChangeNoticeLocked, updateChangeNotice } from "~/modules/items";
 
-// Inline field editor used by ChangeOrderProperties (and future inline editors).
+// Inline field editor used by ChangeNoticeProperties (and future inline editors).
 // The fetcher posts { id, field, value }; only a curated set of header fields is
 // writable here. Rich-text (reasonForChange/description) is written directly by
-// ChangeOrderContent via the supabase client, so it is not handled here.
+// ChangeNoticeContent via the supabase client, so it is not handled here.
 const EDITABLE_FIELDS = [
   "name",
   "changeOrderTypeId",
@@ -46,7 +46,7 @@ export async function action({ request }: ActionFunctionArgs) {
     .eq("companyId", companyId)
     .single();
 
-  if (isChangeOrderLocked(existing.data?.status)) {
+  if (isChangeNoticeLocked(existing.data?.status)) {
     return {
       error: { message: "Cannot modify a completed change notice." },
       data: null
@@ -55,7 +55,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const normalized = typeof value === "string" && value !== "" ? value : null;
 
-  const result = await updateChangeOrder(client, {
+  const result = await updateChangeNotice(client, {
     id,
     [field]: normalized,
     updatedBy: userId

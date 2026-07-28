@@ -62,9 +62,9 @@ import {
 } from "../../items.models";
 import type { MakeMethod } from "../../types";
 import {
-  CreateChangeOrderModal,
-  ItemChangeOrderLock,
-  useItemOpenChangeOrders
+  CreateChangeNoticeModal,
+  ItemChangeNoticeLock,
+  useItemOpenChangeNotices
 } from "../ChangeNotice";
 import { getPathToMakeMethod } from "../Methods/utils";
 import { getLinkToItemDetails } from "./ItemForm";
@@ -108,15 +108,15 @@ const MakeMethodTools = ({
   const saveMethodModal = useDisclosure();
   const [hasMethodParts, setHasMethodParts] = useState(true);
   const newVersionModal = useDisclosure();
-  const changeOrderModal = useDisclosure();
+  const changeNoticeModal = useDisclosure();
   const activeMethodModal = useDisclosure();
-  const canCreateChangeOrder =
+  const canCreateChangeNotice =
     (type === "Part" || type === "Tool") && permissions.can("create", "parts");
   const itemLink = type && itemId ? getLinkToItemDetails(type, itemId) : null;
 
   // Version creation is locked while an open change notice owns this item
-  const openChangeOrders = useItemOpenChangeOrders(type, itemId);
-  const isChangeOrderLocked = openChangeOrders.length > 0;
+  const openChangeNotices = useItemOpenChangeNotices(type, itemId);
+  const isChangeNoticeLocked = openChangeNotices.length > 0;
 
   const activeMethod =
     makeMethods.find((m) => m.id === activeMethodId) ?? makeMethods[0];
@@ -304,11 +304,11 @@ const MakeMethodTools = ({
                           </DropdownMenuSubTrigger>
                           <DropdownMenuPortal>
                             <DropdownMenuSubContent>
-                              <ItemChangeOrderLock
-                                changeOrders={openChangeOrders}
+                              <ItemChangeNoticeLock
+                                changeNotices={openChangeNotices}
                               >
                                 <DropdownMenuItem
-                                  disabled={isChangeOrderLocked}
+                                  disabled={isChangeNoticeLocked}
                                   onClick={() => {
                                     flushSync(() => {
                                       setSelectedVersion(makeMethod);
@@ -319,7 +319,7 @@ const MakeMethodTools = ({
                                   <DropdownMenuIcon icon={<LuCopy />} />
                                   Duplicate Version
                                 </DropdownMenuItem>
-                              </ItemChangeOrderLock>
+                              </ItemChangeNoticeLock>
 
                               {/* <DropdownMenuItem
                                 destructive
@@ -332,13 +332,13 @@ const MakeMethodTools = ({
                                 Delete Version
                               </DropdownMenuItem> */}
                               <DropdownMenuSeparator />
-                              <ItemChangeOrderLock
-                                changeOrders={openChangeOrders}
+                              <ItemChangeNoticeLock
+                                changeNotices={openChangeNotices}
                               >
                                 <DropdownMenuItem
                                   disabled={
                                     makeMethod.status === "Active" ||
-                                    isChangeOrderLocked
+                                    isChangeNoticeLocked
                                   }
                                   onClick={() => {
                                     flushSync(() => {
@@ -350,7 +350,7 @@ const MakeMethodTools = ({
                                   <DropdownMenuIcon icon={<LuStar />} />
                                   Set as Active Version
                                 </DropdownMenuItem>
-                              </ItemChangeOrderLock>
+                              </ItemChangeNoticeLock>
                             </DropdownMenuSubContent>
                           </DropdownMenuPortal>
                         </DropdownMenuSub>
@@ -358,18 +358,18 @@ const MakeMethodTools = ({
                     })}
                   <DropdownMenuSeparator />
                   {permissions.can("create", "production") && (
-                    <ItemChangeOrderLock changeOrders={openChangeOrders}>
+                    <ItemChangeNoticeLock changeNotices={openChangeNotices}>
                       <DropdownMenuItem
-                        disabled={isChangeOrderLocked}
+                        disabled={isChangeNoticeLocked}
                         onClick={newVersionModal.onOpen}
                       >
                         <DropdownMenuIcon icon={<LuCirclePlus />} />
                         New Version
                       </DropdownMenuItem>
-                    </ItemChangeOrderLock>
+                    </ItemChangeNoticeLock>
                   )}
-                  {canCreateChangeOrder && (
-                    <DropdownMenuItem onClick={changeOrderModal.onOpen}>
+                  {canCreateChangeNotice && (
+                    <DropdownMenuItem onClick={changeNoticeModal.onOpen}>
                       <DropdownMenuIcon icon={<LuGitPullRequestArrow />} />
                       <Trans>New Change Notice</Trans>
                     </DropdownMenuItem>
@@ -661,10 +661,10 @@ const MakeMethodTools = ({
         />
       )}
 
-      {changeOrderModal.isOpen && (
-        <CreateChangeOrderModal
+      {changeNoticeModal.isOpen && (
+        <CreateChangeNoticeModal
           itemId={itemId}
-          onClose={changeOrderModal.onClose}
+          onClose={changeNoticeModal.onClose}
         />
       )}
     </Fragment>

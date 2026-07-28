@@ -5,11 +5,11 @@ import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, redirect, useLoaderData, useNavigate } from "react-router";
 import {
-  changeOrderTypeValidator,
-  getChangeOrderType,
-  upsertChangeOrderType
+  changeNoticeTypeValidator,
+  getChangeNoticeType,
+  upsertChangeNoticeType
 } from "~/modules/items";
-import { ChangeOrderTypeForm } from "~/modules/items/ui/ChangeNoticeTypes";
+import { ChangeNoticeTypeForm } from "~/modules/items/ui/ChangeNoticeTypes";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -21,20 +21,20 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { id } = params;
   if (!id) throw notFound("id not found");
 
-  const changeOrderType = await getChangeOrderType(client, id);
+  const changeNoticeType = await getChangeNoticeType(client, id);
 
-  if (changeOrderType.error) {
+  if (changeNoticeType.error) {
     throw redirect(
       path.to.changeNoticeTypes,
       await flash(
         request,
-        error(changeOrderType.error, "Failed to get change notice category")
+        error(changeNoticeType.error, "Failed to get change notice category")
       )
     );
   }
 
   return {
-    changeOrderType: changeOrderType.data
+    changeNoticeType: changeNoticeType.data
   };
 }
 
@@ -45,7 +45,7 @@ export async function action({ request }: ActionFunctionArgs) {
   });
 
   const formData = await request.formData();
-  const validation = await validator(changeOrderTypeValidator).validate(
+  const validation = await validator(changeNoticeTypeValidator).validate(
     formData
   );
 
@@ -56,7 +56,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const { id, ...d } = validation.data;
   if (!id) throw new Error("id not found");
 
-  const update = await upsertChangeOrderType(client, {
+  const update = await upsertChangeNoticeType(client, {
     id,
     ...d,
     updatedBy: userId
@@ -78,17 +78,17 @@ export async function action({ request }: ActionFunctionArgs) {
   );
 }
 
-export default function EditChangeOrderTypeRoute() {
-  const { changeOrderType } = useLoaderData<typeof loader>();
+export default function EditChangeNoticeTypeRoute() {
+  const { changeNoticeType } = useLoaderData<typeof loader>();
   const navigate = useNavigate();
 
   const initialValues = {
-    id: changeOrderType.id ?? undefined,
-    name: changeOrderType.name ?? ""
+    id: changeNoticeType.id ?? undefined,
+    name: changeNoticeType.name ?? ""
   };
 
   return (
-    <ChangeOrderTypeForm
+    <ChangeNoticeTypeForm
       key={initialValues.id}
       initialValues={initialValues}
       onClose={() => navigate(-1)}

@@ -1,2 +1,2 @@
-export { default as ChangeOrderTypeForm } from "./ChangeNoticeTypeForm";
-export { default as ChangeOrderTypesTable } from "./ChangeNoticeTypesTable";
+export { default as ChangeNoticeTypeForm } from "./ChangeNoticeTypeForm";
+export { default as ChangeNoticeTypesTable } from "./ChangeNoticeTypesTable";

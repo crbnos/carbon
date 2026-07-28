@@ -3,8 +3,8 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { updateChangeOrderActionOrder } from "~/modules/items";
-import { requireEditableChangeOrderRoute } from "~/modules/items/items.server";
+import { updateChangeNoticeActionOrder } from "~/modules/items";
+import { requireEditableChangeNoticeRoute } from "~/modules/items/items.server";
 import { getDatabaseClient } from "~/services/database.server";
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -13,12 +13,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
     update: "parts"
   });
 
-  const changeOrderId = params.id;
-  if (!changeOrderId) throw new Error("Could not find id");
+  const changeNoticeId = params.id;
+  if (!changeNoticeId) throw new Error("Could not find id");
 
-  const locked = await requireEditableChangeOrderRoute(request, {
+  const locked = await requireEditableChangeNoticeRoute(request, {
     client,
-    changeOrderId,
+    changeNoticeId,
     companyId,
     scope: "workflow"
   });
@@ -41,8 +41,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }));
 
   try {
-    await updateChangeOrderActionOrder(getDatabaseClient(), {
-      changeOrderId,
+    await updateChangeNoticeActionOrder(getDatabaseClient(), {
+      changeNoticeId,
       companyId,
       updates
     });

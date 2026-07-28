@@ -4,8 +4,8 @@ import { flash } from "@carbon/auth/session.server";
 import { VStack } from "@carbon/react";
 import type { LoaderFunctionArgs } from "react-router";
 import { Outlet, redirect, useLoaderData } from "react-router";
-import { getChangeOrders, getChangeOrderTypesList } from "~/modules/items";
-import { ChangeOrdersTable } from "~/modules/items/ui/ChangeNotice";
+import { getChangeNotices, getChangeNoticeTypesList } from "~/modules/items";
+import { ChangeNoticesTable } from "~/modules/items/ui/ChangeNotice";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
 
@@ -21,40 +21,40 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const { limit, offset, sorts, filters } =
     getGenericQueryFilters(searchParams);
 
-  const [changeOrders, types] = await Promise.all([
-    getChangeOrders(client, companyId, {
+  const [changeNotices, types] = await Promise.all([
+    getChangeNotices(client, companyId, {
       search,
       limit,
       offset,
       sorts,
       filters
     }),
-    getChangeOrderTypesList(client, companyId)
+    getChangeNoticeTypesList(client, companyId)
   ]);
 
-  if (changeOrders.error) {
+  if (changeNotices.error) {
     throw redirect(
       path.to.authenticatedRoot,
       await flash(
         request,
-        error(changeOrders.error, "Error loading change notices")
+        error(changeNotices.error, "Error loading change notices")
       )
     );
   }
 
   return {
-    changeOrders: changeOrders.data ?? [],
-    count: changeOrders.count ?? 0,
+    changeNotices: changeNotices.data ?? [],
+    count: changeNotices.count ?? 0,
     types: types.data ?? []
   };
 }
 
-export default function ChangeOrdersIndexRoute() {
-  const { changeOrders, count, types } = useLoaderData<typeof loader>();
+export default function ChangeNoticesIndexRoute() {
+  const { changeNotices, count, types } = useLoaderData<typeof loader>();
 
   return (
     <VStack spacing={0} className="h-full">
-      <ChangeOrdersTable data={changeOrders} count={count} types={types} />
+      <ChangeNoticesTable data={changeNotices} count={count} types={types} />
       <Outlet />
     </VStack>
   );

@@ -5,11 +5,11 @@ import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, redirect, useLoaderData, useNavigate } from "react-router";
 import {
-  changeOrderRequiredActionValidator,
-  getChangeOrderRequiredAction,
-  upsertChangeOrderRequiredAction
+  changeNoticeRequiredActionValidator,
+  getChangeNoticeRequiredAction,
+  upsertChangeNoticeRequiredAction
 } from "~/modules/items";
-import { ChangeOrderRequiredActionForm } from "~/modules/items/ui/ChangeNoticeActions";
+import { ChangeNoticeRequiredActionForm } from "~/modules/items/ui/ChangeNoticeActions";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -21,7 +21,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { id } = params;
   if (!id) throw notFound("id not found");
 
-  const requiredAction = await getChangeOrderRequiredAction(client, id);
+  const requiredAction = await getChangeNoticeRequiredAction(client, id);
 
   if (requiredAction.error) {
     throw redirect(
@@ -46,7 +46,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const formData = await request.formData();
   const validation = await validator(
-    changeOrderRequiredActionValidator
+    changeNoticeRequiredActionValidator
   ).validate(formData);
 
   if (validation.error) {
@@ -56,7 +56,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const { id, ...d } = validation.data;
   if (!id) throw new Error("id not found");
 
-  const update = await upsertChangeOrderRequiredAction(client, {
+  const update = await upsertChangeNoticeRequiredAction(client, {
     id,
     name: d.name,
     active: d.active,
@@ -80,7 +80,7 @@ export async function action({ request }: ActionFunctionArgs) {
   );
 }
 
-export default function EditChangeOrderRequiredActionRoute() {
+export default function EditChangeNoticeRequiredActionRoute() {
   const { requiredAction } = useLoaderData<typeof loader>();
   const navigate = useNavigate();
 
@@ -91,7 +91,7 @@ export default function EditChangeOrderRequiredActionRoute() {
   };
 
   return (
-    <ChangeOrderRequiredActionForm
+    <ChangeNoticeRequiredActionForm
       key={initialValues.id}
       initialValues={initialValues}
       onClose={() => navigate(-1)}

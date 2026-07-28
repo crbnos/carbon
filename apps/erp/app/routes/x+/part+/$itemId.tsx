@@ -29,8 +29,8 @@ import { ResizablePanels } from "~/components/Layout";
 import { flattenTree } from "~/components/TreeView";
 import type { ItemFile, PartSummary } from "~/modules/items";
 import {
-  changeOrderOpenStatuses,
-  findChangeOrdersForItem,
+  changeNoticeOpenStatuses,
+  findChangeNoticesForItem,
   getItemFiles,
   getItemSupersededBy,
   getItemSupersession,
@@ -79,7 +79,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     tags,
     supersession,
     supersededBy,
-    openChangeOrders
+    openChangeNotices
   ] = await Promise.all([
     getPart(client, itemId, companyId),
     getSupplierParts(client, itemId, companyId),
@@ -88,10 +88,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     getItemSupersession(client, itemId, companyId),
     getItemSupersededBy(client, itemId, companyId),
     // Locks manual version/revision creation while a CO owns this part
-    findChangeOrdersForItem(client, {
+    findChangeNoticesForItem(client, {
       itemId,
       companyId,
-      statuses: changeOrderOpenStatuses
+      statuses: changeNoticeOpenStatuses
     })
   ]);
 
@@ -156,7 +156,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     tags: tags.data ?? [],
     usedIn: getPartUsedIn(client, itemId, companyId),
     methodTree,
-    openChangeOrders: openChangeOrders.data ?? []
+    openChangeNotices: openChangeNotices.data ?? []
   };
 }
 

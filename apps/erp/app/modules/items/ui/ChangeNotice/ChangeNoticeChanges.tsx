@@ -7,14 +7,14 @@ import {
   VStack
 } from "@carbon/react";
 import { Trans } from "@lingui/react/macro";
-import ChangeOrderDiffViewer from "./ChangeNoticeDiffViewer";
+import ChangeNoticeDiffViewer from "./ChangeNoticeDiffViewer";
 import type { ReleaseChange } from "./ChangeNoticeReleaseMerge";
 import ChangeTypeBadge from "./ChangeTypeBadge";
 
 // The CO-wide changes rollup shown on the top-level overview ($id.details):
 // every affected item's read-only authoring diff in one card, mirroring the
-// release confirmation dialog's list (label + ChangeOrderDiffViewer per item).
-export default function ChangeOrderChanges({
+// release confirmation dialog's list (label + ChangeNoticeDiffViewer per item).
+export default function ChangeNoticeChanges({
   changes
 }: {
   changes: ReleaseChange[];
@@ -57,7 +57,7 @@ export default function ChangeOrderChanges({
                     className="shrink-0"
                   />
                 </HStack>
-                <ChangeOrderDiffViewer diff={c.diff} />
+                <ChangeNoticeDiffViewer diff={c.diff} />
               </VStack>
             ))
           )}

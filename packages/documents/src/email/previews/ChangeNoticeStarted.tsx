@@ -1,8 +1,8 @@
 import { NotificationEmail } from "../NotificationEmail";
 
 // Preview fixture — mirrors what getNotificationContent builds for the
-// ChangeOrderStarted event. Not shipped (not exported from index.ts).
-export default function ChangeOrderStartedPreview() {
+// ChangeNoticeStarted event. Not shipped (not exported from index.ts).
+export default function ChangeNoticeStartedPreview() {
   return (
     <NotificationEmail
       heading={"Change notice started"}

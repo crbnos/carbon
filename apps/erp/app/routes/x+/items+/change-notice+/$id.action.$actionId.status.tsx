@@ -5,12 +5,12 @@ import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import {
-  changeOrderActionStatusValidator,
-  updateChangeOrderActionStatus
+  changeNoticeActionStatusValidator,
+  updateChangeNoticeActionStatus
 } from "~/modules/items";
 import {
-  requireChangeOrderChildRoute,
-  requireEditableChangeOrderRoute
+  requireChangeNoticeChildRoute,
+  requireEditableChangeNoticeRoute
 } from "~/modules/items/items.server";
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -19,19 +19,19 @@ export async function action({ request, params }: ActionFunctionArgs) {
     update: "parts"
   });
 
-  const changeOrderId = params.id;
-  if (!changeOrderId) throw new Error("Could not find id");
+  const changeNoticeId = params.id;
+  if (!changeNoticeId) throw new Error("Could not find id");
 
-  const locked = await requireEditableChangeOrderRoute(request, {
+  const locked = await requireEditableChangeNoticeRoute(request, {
     client,
-    changeOrderId,
+    changeNoticeId,
     companyId,
     scope: "workflow"
   });
   if (locked) return locked;
 
   const formData = await request.formData();
-  const validation = await validator(changeOrderActionStatusValidator).validate(
+  const validation = await validator(changeNoticeActionStatusValidator).validate(
     formData
   );
 
@@ -47,16 +47,16 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const owned = await requireChangeOrderChildRoute(request, {
+  const owned = await requireChangeNoticeChildRoute(request, {
     client,
     table: "changeOrderActionTask",
     id,
-    changeOrderId,
+    changeNoticeId,
     companyId
   });
   if (owned) return owned;
 
-  const update = await updateChangeOrderActionStatus(client, {
+  const update = await updateChangeNoticeActionStatus(client, {
     id,
     status,
     userId

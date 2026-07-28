@@ -14,6 +14,6 @@ export const handle: Handle = {
   module: "items"
 };
 
-export default function ChangeOrdersRoute() {
+export default function ChangeNoticesRoute() {
   return <Outlet />;
 }

@@ -2,18 +2,18 @@ import type { JSONContent } from "@carbon/react";
 import { VStack } from "@carbon/react";
 import { useParams } from "react-router";
 import { useRouteData } from "~/hooks";
-import type { ChangeOrder, ChangeOrderActionTask } from "~/modules/items";
+import type { ChangeNotice, ChangeNoticeActionTask } from "~/modules/items";
 import {
-  canEditChangeOrderEngineering,
-  canEditChangeOrderWorkflow
+  canEditChangeNoticeEngineering,
+  canEditChangeNoticeWorkflow
 } from "~/modules/items";
 import type { AffectedItemDraft } from "~/modules/items/ui/ChangeNotice";
 import {
-  ChangeOrderActions,
-  ChangeOrderChanges,
-  ChangeOrderContent
+  ChangeNoticeActions,
+  ChangeNoticeChanges,
+  ChangeNoticeContent
 } from "~/modules/items/ui/ChangeNotice";
-import ChangeOrderStatusFlow from "~/modules/items/ui/ChangeNotice/ChangeNoticeStatusFlow";
+import ChangeNoticeStatusFlow from "~/modules/items/ui/ChangeNotice/ChangeNoticeStatusFlow";
 import { path } from "~/utils/path";
 
 // Top-level change-order detail (the CO overview) — mirrors the sales order
@@ -23,22 +23,22 @@ import { path } from "~/utils/path";
 // item's authoring diff), and the action tasks (with the shared "Add Actions"
 // picker). Affected items live in their own line routes (`$id.$affectedId.details`),
 // linked from the explorer.
-export default function ChangeOrderDetailsRoute() {
+export default function ChangeNoticeDetailsRoute() {
   const { id } = useParams();
   if (!id) throw new Error("Could not find id");
 
   const routeData = useRouteData<{
-    changeOrder: ChangeOrder;
-    actions: ChangeOrderActionTask[];
+    changeNotice: ChangeNotice;
+    actions: ChangeNoticeActionTask[];
     affectedItems: AffectedItemDraft[];
   }>(path.to.changeNotice(id));
-  const changeOrder = routeData?.changeOrder;
+  const changeNotice = routeData?.changeNotice;
 
-  if (!changeOrder) throw new Error("Could not find change notice data");
+  if (!changeNotice) throw new Error("Could not find change notice data");
 
-  const isDisabled = !canEditChangeOrderEngineering(changeOrder.status);
+  const isDisabled = !canEditChangeNoticeEngineering(changeNotice.status);
   // Action tasks are workflow content — executing them is what Implementation is for.
-  const isWorkflowDisabled = !canEditChangeOrderWorkflow(changeOrder.status);
+  const isWorkflowDisabled = !canEditChangeNoticeWorkflow(changeNotice.status);
 
   // Same shape the release dialog reviews (label + per-item diff), plus the
   // change type + draft version for the badge in the Changes rollup.
@@ -53,15 +53,15 @@ export default function ChangeOrderDetailsRoute() {
 
   return (
     <VStack spacing={2} className="p-2">
-      <ChangeOrderStatusFlow status={changeOrder.status} />
-      <ChangeOrderChanges changes={changes} />
-      <ChangeOrderContent
+      <ChangeNoticeStatusFlow status={changeNotice.status} />
+      <ChangeNoticeChanges changes={changes} />
+      <ChangeNoticeContent
         id={id}
-        reasonForChange={changeOrder.reasonForChange as JSONContent}
-        description={changeOrder.description as JSONContent}
+        reasonForChange={changeNotice.reasonForChange as JSONContent}
+        description={changeNotice.description as JSONContent}
         isDisabled={isDisabled}
       />
-      <ChangeOrderActions
+      <ChangeNoticeActions
         changeOrderId={id}
         actions={routeData?.actions ?? []}
         isDisabled={isWorkflowDisabled}

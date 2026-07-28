@@ -3,22 +3,22 @@ import { Plural, Trans } from "@lingui/react/macro";
 import { LuGitPullRequestArrow } from "react-icons/lu";
 import { Link } from "react-router";
 import { path } from "~/utils/path";
-import { changeOrderOpenStatuses } from "../../items.models";
-import type { ChangeOrderForItem } from "../../items.service";
+import { changeNoticeOpenStatuses } from "../../items.models";
+import type { ChangeNoticeForItem } from "../../items.service";
 
-type ItemOpenChangeOrderAlertProps = {
-  changeOrders: ChangeOrderForItem[];
+type ItemOpenChangeNoticeAlertProps = {
+  changeNotices: ChangeNoticeForItem[];
 };
 
-const openStatusSet = new Set<string>(changeOrderOpenStatuses);
+const openStatusSet = new Set<string>(changeNoticeOpenStatuses);
 
 // Part → CO traceability (4b): a subtle heads-up when this part is on one or
 // more not-yet-Done change notices. Derived from the same history list. Renders
 // nothing when there are no open COs.
-const ItemOpenChangeOrderAlert = ({
-  changeOrders
-}: ItemOpenChangeOrderAlertProps) => {
-  const open = changeOrders.filter((co) => openStatusSet.has(co.status));
+const ItemOpenChangeNoticeAlert = ({
+  changeNotices
+}: ItemOpenChangeNoticeAlertProps) => {
+  const open = changeNotices.filter((co) => openStatusSet.has(co.status));
   if (open.length === 0) return null;
 
   return (
@@ -51,4 +51,4 @@ const ItemOpenChangeOrderAlert = ({
   );
 };
 
-export default ItemOpenChangeOrderAlert;
+export default ItemOpenChangeNoticeAlert;

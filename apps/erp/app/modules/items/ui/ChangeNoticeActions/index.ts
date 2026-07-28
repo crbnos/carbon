@@ -1,2 +1,2 @@
-export { default as ChangeOrderRequiredActionForm } from "./ChangeNoticeRequiredActionForm";
-export { default as ChangeOrderRequiredActionsTable } from "./ChangeNoticeRequiredActionsTable";
+export { default as ChangeNoticeRequiredActionForm } from "./ChangeNoticeRequiredActionForm";
+export { default as ChangeNoticeRequiredActionsTable } from "./ChangeNoticeRequiredActionsTable";

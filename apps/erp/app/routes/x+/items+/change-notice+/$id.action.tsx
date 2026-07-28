@@ -3,8 +3,8 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { setChangeOrderActionTasks } from "~/modules/items";
-import { requireEditableChangeOrderRoute } from "~/modules/items/items.server";
+import { setChangeNoticeActionTasks } from "~/modules/items";
+import { requireEditableChangeNoticeRoute } from "~/modules/items/items.server";
 
 // Reconcile a change notice's action tasks to the set chosen in the sidebar's
 // "Required Actions" multiselect (mirrors Quality's requiredActionIds field):
@@ -17,9 +17,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const { id } = params;
   if (!id) throw new Error("id not found");
-  const locked = await requireEditableChangeOrderRoute(request, {
+  const locked = await requireEditableChangeNoticeRoute(request, {
     client,
-    changeOrderId: params.id,
+    changeNoticeId: params.id,
     companyId,
     scope: "workflow"
   });
@@ -30,8 +30,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
     .split(",")
     .filter(Boolean);
 
-  const result = await setChangeOrderActionTasks(client, {
-    changeOrderId: id,
+  const result = await setChangeNoticeActionTasks(client, {
+    changeNoticeId: id,
     requiredActionIds,
     companyId,
     userId

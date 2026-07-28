@@ -32,9 +32,9 @@ import { useNextItemId } from "~/hooks";
 import { path } from "~/utils/path";
 import {
   type ChangeNoticeChangeType,
-  changeOrderAffectedItemValidator,
-  changeOrderChangeTypes,
-  changeOrderNewPartValidator,
+  changeNoticeAffectedItemValidator,
+  changeNoticeChangeTypes,
+  changeNoticeNewPartValidator,
   itemReplenishmentSystems,
   itemTrackingTypes
 } from "../../items.models";
@@ -108,7 +108,7 @@ export default function AffectedItemForm({
     }
   }, [fetcher.state, fetcher.data, onClose, navigate, changeOrderId]);
 
-  const changeTypeOptions = changeOrderChangeTypes.map((c) => ({
+  const changeTypeOptions = changeNoticeChangeTypes.map((c) => ({
     label: c,
     value: c
   }));
@@ -190,7 +190,7 @@ export default function AffectedItemForm({
             // forces a fresh mount + fresh store that hydrates with these defaults.
             <ValidatedForm
               key="new-part"
-              validator={changeOrderNewPartValidator}
+              validator={changeNoticeNewPartValidator}
               method="post"
               action={path.to.changeNoticeAffected(changeOrderId)}
               defaultValues={{
@@ -247,7 +247,7 @@ export default function AffectedItemForm({
           ) : (
             <ValidatedForm
               key="existing-item"
-              validator={changeOrderAffectedItemValidator}
+              validator={changeNoticeAffectedItemValidator}
               method="post"
               action={path.to.changeNoticeAffected(changeOrderId)}
               defaultValues={{

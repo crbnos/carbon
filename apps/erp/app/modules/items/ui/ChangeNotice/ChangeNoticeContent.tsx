@@ -23,7 +23,7 @@ import { getPrivateUrl, path } from "~/utils/path";
 // server-side (a direct supabase write had no such gate). Rendered as full Cards
 // on the top-level CO detail route; `embedded` drops the Card chrome for callers
 // that supply their own frame.
-export function ChangeOrderContentSection({
+export function ChangeNoticeContentSection({
   id,
   title,
   field,
@@ -111,7 +111,7 @@ export function ChangeOrderContentSection({
   );
 }
 
-export function ChangeOrderContent({
+export function ChangeNoticeContent({
   id,
   reasonForChange,
   description,
@@ -128,7 +128,7 @@ export function ChangeOrderContent({
 
   return (
     <>
-      <ChangeOrderContentSection
+      <ChangeNoticeContentSection
         key={`${id}-reason`}
         id={id}
         title={t`Reason for Change`}
@@ -136,7 +136,7 @@ export function ChangeOrderContent({
         content={reasonForChange}
         isDisabled={isDisabled}
       />
-      <ChangeOrderContentSection
+      <ChangeNoticeContentSection
         key={`${id}-description`}
         id={id}
         title={t`Description of Change`}

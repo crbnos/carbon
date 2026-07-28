@@ -57,7 +57,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   };
 }
 
-export default function ChangeOrderEditSupplierPartRoute() {
+export default function ChangeNoticeEditSupplierPartRoute() {
   const { id, affectedId } = useParams();
   if (!id) throw new Error("Could not find id");
   if (!affectedId) throw new Error("Could not find affectedId");

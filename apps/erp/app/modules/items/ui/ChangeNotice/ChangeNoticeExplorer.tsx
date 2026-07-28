@@ -16,12 +16,12 @@ import { LuCirclePlus, LuEllipsisVertical, LuTrash } from "react-icons/lu";
 import { Link, useFetcher, useParams } from "react-router";
 import { Empty, ItemThumbnail, MethodItemTypeIcon } from "~/components";
 import { useRouteData } from "~/hooks";
-import { canEditChangeOrderEngineering } from "~/modules/items";
+import { canEditChangeNoticeEngineering } from "~/modules/items";
 import { getLinkToItemDetails } from "~/modules/items/ui/Item/ItemForm";
 import type { ItemType } from "~/modules/shared";
 import { useItems } from "~/stores";
 import { path } from "~/utils/path";
-import type { ChangeOrder } from "../../types";
+import type { ChangeNotice } from "../../types";
 import AffectedItemForm from "./AffectedItemForm";
 import type { AffectedItemDraft } from "./affectedItem.types";
 
@@ -33,18 +33,18 @@ import type { AffectedItemDraft } from "./affectedItem.types";
 // Selection lives in the URL (the affectedId route param). Self-contained: reads
 // the affected items and lock state from the $id route loader, so ResizablePanels
 // can render it with no props (mirrors SalesOrderExplorer).
-export default function ChangeOrderExplorer() {
+export default function ChangeNoticeExplorer() {
   const { id } = useParams();
   if (!id) throw new Error("id not found");
 
   const routeData = useRouteData<{
-    changeOrder: ChangeOrder;
+    changeNotice: ChangeNotice;
     affectedItems: AffectedItemDraft[];
   }>(path.to.changeNotice(id));
 
   const affectedItems = routeData?.affectedItems ?? [];
-  const isDisabled = !canEditChangeOrderEngineering(
-    routeData?.changeOrder?.status
+  const isDisabled = !canEditChangeNoticeEngineering(
+    routeData?.changeNotice?.status
   );
 
   const disclosure = useDisclosure();

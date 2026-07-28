@@ -10,7 +10,7 @@ import { path } from "~/utils/path";
 // create action (path.to.newPartSupplier(draftItemId)), which returns
 // { success } without redirecting, so the CO stays put and loader revalidation
 // refreshes the grid in place.
-export default function ChangeOrderNewSupplierPartRoute() {
+export default function ChangeNoticeNewSupplierPartRoute() {
   const { id, affectedId } = useParams();
   if (!id) throw new Error("Could not find id");
   if (!affectedId) throw new Error("Could not find affectedId");

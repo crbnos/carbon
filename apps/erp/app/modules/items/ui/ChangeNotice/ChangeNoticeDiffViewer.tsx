@@ -31,7 +31,7 @@ import { DiffBadge } from "./diff-ui";
 // audit-log red→green style. Unchanged rows are filtered out; an unchanged
 // operation is shown (uncolored) only when its children changed.
 //
-// This is NOT the release merge UI (ChangeOrderReleaseMerge / ...ConflictResolver,
+// This is NOT the release merge UI (ChangeNoticeReleaseMerge / ...ConflictResolver,
 // which have radio-button choices) — it is purely read-only, no forms, no state.
 // -----------------------------------------------------------------------------
 
@@ -627,7 +627,7 @@ function Section({
   );
 }
 
-export default function ChangeOrderDiffViewer({
+export default function ChangeNoticeDiffViewer({
   diff,
   // When `bare`, drop the bordered wrapper + the internal "Changes" label — the
   // caller (the affected-item "Changes" card) supplies the frame + title. The

@@ -5,11 +5,11 @@ import { getLocalTimeZone, today } from "@internationalized/date";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import {
-  addChangeOrderAffectedItem,
+  addChangeNoticeAffectedItem,
   type ChangeNoticeChangeType,
-  changeOrderChangeTypes,
+  changeNoticeChangeTypes,
   getItem,
-  insertChangeOrder
+  insertChangeNotice
 } from "~/modules/items";
 import { path, requestReferrer } from "~/utils/path";
 
@@ -33,7 +33,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const formData = await request.formData();
   const changeTypeRaw = formData.get("changeType");
-  const changeType: ChangeNoticeChangeType = changeOrderChangeTypes.includes(
+  const changeType: ChangeNoticeChangeType = changeNoticeChangeTypes.includes(
     changeTypeRaw as ChangeNoticeChangeType
   )
     ? (changeTypeRaw as ChangeNoticeChangeType)
@@ -50,7 +50,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const label =
     item.data?.readableIdWithRevision ?? item.data?.readableId ?? itemId;
 
-  const co = await insertChangeOrder(client, {
+  const co = await insertChangeNotice(client, {
     companyId,
     createdBy: userId,
     name: `Change for ${label}`,
@@ -63,8 +63,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const add = await addChangeOrderAffectedItem(client, {
-    changeOrderId: co.data.id,
+  const add = await addChangeNoticeAffectedItem(client, {
+    changeNoticeId: co.data.id,
     itemId,
     changeType,
     revision,

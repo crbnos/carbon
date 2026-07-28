@@ -5,10 +5,10 @@ import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { redirect, useNavigate } from "react-router";
 import {
-  changeOrderRequiredActionValidator,
-  upsertChangeOrderRequiredAction
+  changeNoticeRequiredActionValidator,
+  upsertChangeNoticeRequiredAction
 } from "~/modules/items";
-import { ChangeOrderRequiredActionForm } from "~/modules/items/ui/ChangeNoticeActions";
+import { ChangeNoticeRequiredActionForm } from "~/modules/items/ui/ChangeNoticeActions";
 import { getParams, path, requestReferrer } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -29,14 +29,14 @@ export async function action({ request }: ActionFunctionArgs) {
   const modal = formData.get("type") === "modal";
 
   const validation = await validator(
-    changeOrderRequiredActionValidator
+    changeNoticeRequiredActionValidator
   ).validate(formData);
 
   if (validation.error) {
     return validationError(validation.error);
   }
 
-  const insert = await upsertChangeOrderRequiredAction(client, {
+  const insert = await upsertChangeNoticeRequiredAction(client, {
     name: validation.data.name,
     active: validation.data.active,
     companyId,
@@ -63,7 +63,7 @@ export async function action({ request }: ActionFunctionArgs) {
       );
 }
 
-export default function NewChangeOrderRequiredActionRoute() {
+export default function NewChangeNoticeRequiredActionRoute() {
   const navigate = useNavigate();
   const initialValues = {
     name: "",
@@ -71,7 +71,7 @@ export default function NewChangeOrderRequiredActionRoute() {
   };
 
   return (
-    <ChangeOrderRequiredActionForm
+    <ChangeNoticeRequiredActionForm
       initialValues={initialValues}
       onClose={() => navigate(-1)}
     />

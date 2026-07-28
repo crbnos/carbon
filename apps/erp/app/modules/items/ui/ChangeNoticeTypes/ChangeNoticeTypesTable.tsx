@@ -8,21 +8,21 @@ import { Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { path } from "~/utils/path";
-import type { ChangeOrderType } from "../../types";
+import type { ChangeNoticeType } from "../../types";
 
-type ChangeOrderTypesTableProps = {
-  data: ChangeOrderType[];
+type ChangeNoticeTypesTableProps = {
+  data: ChangeNoticeType[];
   count: number;
 };
 
-const ChangeOrderTypesTable = memo(
-  ({ data, count }: ChangeOrderTypesTableProps) => {
+const ChangeNoticeTypesTable = memo(
+  ({ data, count }: ChangeNoticeTypesTableProps) => {
     const [params] = useUrlParams();
     const navigate = useNavigate();
     const { t } = useLingui();
     const permissions = usePermissions();
 
-    const columns = useMemo<ColumnDef<ChangeOrderType>[]>(() => {
+    const columns = useMemo<ColumnDef<ChangeNoticeType>[]>(() => {
       return [
         {
           accessorKey: "name",
@@ -40,7 +40,7 @@ const ChangeOrderTypesTable = memo(
     }, [t]);
 
     const renderContextMenu = useCallback(
-      (row: ChangeOrderType) => {
+      (row: ChangeNoticeType) => {
         return (
           <>
             <MenuItem
@@ -75,7 +75,7 @@ const ChangeOrderTypesTable = memo(
     );
 
     return (
-      <Table<ChangeOrderType>
+      <Table<ChangeNoticeType>
         data={data}
         columns={columns}
         count={count}
@@ -94,5 +94,5 @@ const ChangeOrderTypesTable = memo(
   }
 );
 
-ChangeOrderTypesTable.displayName = "ChangeOrderTypesTable";
-export default ChangeOrderTypesTable;
+ChangeNoticeTypesTable.displayName = "ChangeNoticeTypesTable";
+export default ChangeNoticeTypesTable;

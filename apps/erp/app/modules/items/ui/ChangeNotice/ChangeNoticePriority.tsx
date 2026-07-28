@@ -2,17 +2,17 @@ import { BsExclamationSquareFill } from "react-icons/bs";
 import { HighPriorityIcon } from "~/assets/icons/HighPriorityIcon";
 import { LowPriorityIcon } from "~/assets/icons/LowPriorityIcon";
 import { MediumPriorityIcon } from "~/assets/icons/MediumPriorityIcon";
-import type { changeOrderPriority } from "../../items.models";
+import type { changeNoticePriority } from "../../items.models";
 
-type ChangeOrderPriorityProps = {
-  priority?: (typeof changeOrderPriority)[number] | null;
+type ChangeNoticePriorityProps = {
+  priority?: (typeof changeNoticePriority)[number] | null;
   className?: string;
 };
 
-function ChangeOrderPriority({
+function ChangeNoticePriority({
   priority,
   className
-}: ChangeOrderPriorityProps) {
+}: ChangeNoticePriorityProps) {
   switch (priority) {
     case "Low":
       return (
@@ -47,4 +47,4 @@ function ChangeOrderPriority({
   }
 }
 
-export default ChangeOrderPriority;
+export default ChangeNoticePriority;

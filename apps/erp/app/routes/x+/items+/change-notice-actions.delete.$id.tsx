@@ -6,8 +6,8 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { redirect, useLoaderData, useNavigate, useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
 import {
-  deleteChangeOrderRequiredAction,
-  getChangeOrderRequiredAction
+  deleteChangeNoticeRequiredAction,
+  getChangeNoticeRequiredAction
 } from "~/modules/items";
 import { getParams, path } from "~/utils/path";
 
@@ -19,7 +19,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { id } = params;
   if (!id) throw notFound("id not found");
 
-  const requiredAction = await getChangeOrderRequiredAction(client, id);
+  const requiredAction = await getChangeNoticeRequiredAction(client, id);
   if (requiredAction.error) {
     throw redirect(
       `${path.to.changeNoticeRequiredActions}?${getParams(request)}`,
@@ -49,7 +49,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const { error: deleteError } = await deleteChangeOrderRequiredAction(
+  const { error: deleteError } = await deleteChangeNoticeRequiredAction(
     client,
     id
   );
@@ -69,7 +69,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   );
 }
 
-export default function DeleteChangeOrderRequiredActionRoute() {
+export default function DeleteChangeNoticeRequiredActionRoute() {
   const { id } = useParams();
   const { requiredAction } = useLoaderData<typeof loader>();
   const navigate = useNavigate();

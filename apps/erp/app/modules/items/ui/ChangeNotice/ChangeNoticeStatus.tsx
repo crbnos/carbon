@@ -1,5 +1,5 @@
 import { Status } from "@carbon/react";
-import type { ChangeOrderStatus as ChangeOrderStatusType } from "../../types";
+import type { ChangeNoticeStatus as ChangeNoticeStatusType } from "../../types";
 
 // Stage → badge color. Done is success (green); the open stages step through
 // gray → blue → yellow → orange as work progresses; Cancelled is red.
@@ -15,11 +15,11 @@ const CHANGE_ORDER_STATUS_COLOR_MAP: Record<
   Cancelled: "red"
 };
 
-type ChangeOrderStatusProps = {
-  status?: ChangeOrderStatusType | null;
+type ChangeNoticeStatusProps = {
+  status?: ChangeNoticeStatusType | null;
 };
 
-const ChangeOrderStatus = ({ status }: ChangeOrderStatusProps) => {
+const ChangeNoticeStatus = ({ status }: ChangeNoticeStatusProps) => {
   if (!status) return null;
   const color = CHANGE_ORDER_STATUS_COLOR_MAP[status];
   if (!color) return null;
@@ -27,4 +27,4 @@ const ChangeOrderStatus = ({ status }: ChangeOrderStatusProps) => {
   return <Status color={color}>{status}</Status>;
 };
 
-export default ChangeOrderStatus;
+export default ChangeNoticeStatus;

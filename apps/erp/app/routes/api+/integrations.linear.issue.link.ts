@@ -14,7 +14,7 @@ import {
 import { getLogger } from "@carbon/logger";
 import type { ActionFunction, LoaderFunction } from "react-router";
 import { data } from "react-router";
-import { requireChangeOrderEditable } from "~/modules/items/items.server";
+import { requireChangeNoticeEditable } from "~/modules/items/items.server";
 import { getActionTaskWithParent } from "~/services/action-task.server";
 
 const logger = getLogger("erp", "integrations-linear-issue-link");
@@ -50,8 +50,8 @@ export const action: ActionFunction = async ({ request }) => {
       );
 
       const locked = task.parentId
-        ? await requireChangeOrderEditable(client, {
-            changeOrderId: task.parentId,
+        ? await requireChangeNoticeEditable(client, {
+            changeNoticeId: task.parentId,
             companyId,
             scope: "workflow"
           })

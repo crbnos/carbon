@@ -5,12 +5,12 @@ import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import {
-  changeOrderAffectedItemCutoverValidator,
-  updateChangeOrderAffectedItemCutover
+  changeNoticeAffectedItemCutoverValidator,
+  updateChangeNoticeAffectedItemCutover
 } from "~/modules/items";
 import {
-  requireChangeOrderChildRoute,
-  requireEditableChangeOrderRoute
+  requireChangeNoticeChildRoute,
+  requireEditableChangeNoticeRoute
 } from "~/modules/items/items.server";
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -19,12 +19,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
     update: "parts"
   });
 
-  const changeOrderId = params.id;
-  if (!changeOrderId) throw new Error("Could not find id");
+  const changeNoticeId = params.id;
+  if (!changeNoticeId) throw new Error("Could not find id");
 
-  const locked = await requireEditableChangeOrderRoute(request, {
+  const locked = await requireEditableChangeNoticeRoute(request, {
     client,
-    changeOrderId,
+    changeNoticeId,
     companyId,
     scope: "engineering"
   });
@@ -32,7 +32,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const formData = await request.formData();
   const validation = await validator(
-    changeOrderAffectedItemCutoverValidator
+    changeNoticeAffectedItemCutoverValidator
   ).validate(formData);
 
   if (validation.error) {
@@ -46,16 +46,16 @@ export async function action({ request, params }: ActionFunctionArgs) {
     successorEffectivityDate
   } = validation.data;
 
-  const owned = await requireChangeOrderChildRoute(request, {
+  const owned = await requireChangeNoticeChildRoute(request, {
     client,
     table: "changeOrderAffectedItem",
     id,
-    changeOrderId,
+    changeNoticeId,
     companyId
   });
   if (owned) return owned;
 
-  const update = await updateChangeOrderAffectedItemCutover(client, {
+  const update = await updateChangeNoticeAffectedItemCutover(client, {
     id,
     supersessionMode,
     discontinuationDate,

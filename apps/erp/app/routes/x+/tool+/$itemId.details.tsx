@@ -14,7 +14,7 @@ import { CadModel, DeferredFiles } from "~/components";
 import { usePermissions, useRouteData } from "~/hooks";
 import type { ItemFile, MakeMethod, ToolSummary } from "~/modules/items";
 import {
-  getItemChangeOrderData,
+  getItemChangeNoticeData,
   getItemManufacturing,
   getMakeMethodById,
   getMakeMethods,
@@ -27,8 +27,8 @@ import {
 } from "~/modules/items";
 import { getRevisionLock } from "~/modules/items/items.server";
 import {
-  ItemChangeOrders,
-  ItemOpenChangeOrderAlert
+  ItemChangeNotices,
+  ItemOpenChangeNoticeAlert
 } from "~/modules/items/ui/ChangeNotice";
 import {
   BillOfMaterial,
@@ -58,11 +58,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const url = new URL(request.url);
   const requestedMethodId = url.searchParams.get("methodId");
 
-  const [makeMethods, revisionLock, changeOrderData] = await Promise.all([
+  const [makeMethods, revisionLock, changeNoticeData] = await Promise.all([
     getMakeMethods(client, itemId, companyId),
     getRevisionLock(client, { itemId, companyId }),
     // Tool → CO traceability (4b): CO history for this tool + type labels.
-    getItemChangeOrderData(client, itemId, companyId)
+    getItemChangeNoticeData(client, itemId, companyId)
   ]);
   const revisionStatus = revisionLock.revisionStatus;
   const releaseControl = revisionLock.releaseControl;
@@ -83,7 +83,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       tags: [],
       revisionStatus,
       releaseControl,
-      ...changeOrderData
+      ...changeNoticeData
     };
   }
 
@@ -94,7 +94,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       tags: [],
       revisionStatus,
       releaseControl,
-      ...changeOrderData
+      ...changeNoticeData
     };
   }
 
@@ -129,7 +129,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     tags: tags.data ?? [],
     revisionStatus,
     releaseControl,
-    ...changeOrderData
+    ...changeNoticeData
   };
 }
 
@@ -216,8 +216,8 @@ export default function ToolDetailsRoute() {
     tags,
     revisionStatus,
     releaseControl,
-    changeOrders,
-    changeOrderTypes
+    changeNotices,
+    changeNoticeTypes
   } = useLoaderData<typeof loader>();
 
   const toolData = useRouteData<{
@@ -239,7 +239,7 @@ export default function ToolDetailsRoute() {
   return (
     <VStack spacing={2} className="p-2">
       {permissions.is("employee") && (
-        <ItemOpenChangeOrderAlert changeOrders={changeOrders ?? []} />
+        <ItemOpenChangeNoticeAlert changeNotices={changeNotices ?? []} />
       )}
       {permissions.is("employee") && methodData && (
         <>
@@ -324,9 +324,9 @@ export default function ToolDetailsRoute() {
           />
 
           <ItemRiskRegister itemId={itemId} />
-          <ItemChangeOrders
-            changeOrders={changeOrders ?? []}
-            types={changeOrderTypes ?? []}
+          <ItemChangeNotices
+            changeNotices={changeNotices ?? []}
+            types={changeNoticeTypes ?? []}
           />
         </>
       )}

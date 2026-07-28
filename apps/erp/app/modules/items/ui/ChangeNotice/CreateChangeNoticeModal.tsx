@@ -4,9 +4,9 @@ import { useFetcher } from "react-router";
 import { useUser } from "~/hooks";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
-import ChangeOrderForm from "./ChangeNoticeForm";
+import ChangeNoticeForm from "./ChangeNoticeForm";
 
-type CreateChangeOrderModalProps = {
+type CreateChangeNoticeModalProps = {
   // The Part to pre-select as the first affected item.
   itemId: string;
   onClose: () => void;
@@ -17,10 +17,10 @@ type CreateChangeOrderModalProps = {
 // loaded on open from the create route's own loader (no extra route or
 // layout-loader query), and the form posts to that same route — its action
 // creates the CO, attaches the item, then redirects to the CO detail.
-const CreateChangeOrderModal = ({
+const CreateChangeNoticeModal = ({
   itemId,
   onClose
-}: CreateChangeOrderModalProps) => {
+}: CreateChangeNoticeModalProps) => {
   const typesFetcher = useFetcher<{ types: ListItem[] }>();
   const user = useUser();
 
@@ -48,7 +48,7 @@ const CreateChangeOrderModal = ({
   };
 
   return (
-    <ChangeOrderForm
+    <ChangeNoticeForm
       type="modal"
       open
       onClose={onClose}
@@ -58,4 +58,4 @@ const CreateChangeOrderModal = ({
   );
 };
 
-export default CreateChangeOrderModal;
+export default CreateChangeNoticeModal;

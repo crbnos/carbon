@@ -28,11 +28,11 @@ import type { action } from "~/routes/x+/items+/change-notice+/update";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
 import { copyToClipboard } from "~/utils/string";
-import { changeOrderPriority, isChangeOrderLocked } from "../../items.models";
-import type { ChangeOrder } from "../../types";
+import { changeNoticePriority, isChangeNoticeLocked } from "../../items.models";
+import type { ChangeNotice } from "../../types";
 import type { AffectedItemDraft } from "./affectedItem.types";
-import ChangeOrderReleaseMerge from "./ChangeNoticeReleaseMerge";
-import ImpactPanel, { type ChangeOrderImpactItem } from "./ImpactPanel";
+import ChangeNoticeReleaseMerge from "./ChangeNoticeReleaseMerge";
+import ImpactPanel, { type ChangeNoticeImpactItem } from "./ImpactPanel";
 
 // One CO-centric section — the xxs uppercase heading + content used by the
 // PurchaseOrder / SalesOrder / Quote property sidebars. Sections are separated by
@@ -66,7 +66,7 @@ function PropertiesSection({
 // route.) Self-contained: reads everything from the $id route loader so
 // ResizablePanels can render it with only a `key` (mirrors SalesOrderProperties).
 // Owns its own width / scroll / border / padding.
-const ChangeOrderProperties = () => {
+const ChangeNoticeProperties = () => {
   const { id } = useParams();
   if (!id) throw new Error("id not found");
 
@@ -75,10 +75,10 @@ const ChangeOrderProperties = () => {
   const permissions = usePermissions();
 
   const routeData = useRouteData<{
-    changeOrder: ChangeOrder;
+    changeNotice: ChangeNotice;
     types: ListItem[];
     affectedItems: AffectedItemDraft[];
-    impactUsedIn: ChangeOrderImpactItem[];
+    impactUsedIn: ChangeNoticeImpactItem[];
     nonConformanceOptions: {
       id: string;
       nonConformanceId: string;
@@ -91,14 +91,14 @@ const ChangeOrderProperties = () => {
     } | null;
   }>(path.to.changeNotice(id));
 
-  const changeOrder = routeData?.changeOrder;
+  const changeNotice = routeData?.changeNotice;
   const types = routeData?.types ?? [];
   const affectedItems = routeData?.affectedItems ?? [];
   const impactUsedIn = routeData?.impactUsedIn ?? [];
   const nonConformanceOptions = routeData?.nonConformanceOptions ?? [];
   const linkedNonConformance = routeData?.linkedNonConformance ?? null;
-  const isLocked = isChangeOrderLocked(changeOrder?.status);
-  const isImplementation = changeOrder?.status === "Implementation";
+  const isLocked = isChangeNoticeLocked(changeNotice?.status);
+  const isImplementation = changeNotice?.status === "Implementation";
   const canUpdate = permissions.can("update", "parts");
 
   const fetcher = useFetcher<typeof action>();
@@ -140,10 +140,10 @@ const ChangeOrderProperties = () => {
       {/* Release is triggered from the header button (opens this confirmation
           dialog via releaseDialogOpenAtom). The dialog is mounted here — headless
           until opened — so it renders nothing in the panel itself. */}
-      {isImplementation && changeOrder && (
-        <ChangeOrderReleaseMerge
+      {isImplementation && changeNotice && (
+        <ChangeNoticeReleaseMerge
           changeOrderId={id}
-          status={changeOrder.status}
+          status={changeNotice.status}
           changes={changes}
         />
       )}
@@ -176,10 +176,10 @@ const ChangeOrderProperties = () => {
         </HStack>
         <VStack spacing={1}>
           <span className="text-sm tracking-tight">
-            {changeOrder?.changeOrderId}
+            {changeNotice?.changeOrderId}
           </span>
           <ValidatedForm
-            defaultValues={{ name: changeOrder?.name ?? undefined }}
+            defaultValues={{ name: changeNotice?.name ?? undefined }}
             validator={z.object({ name: z.string() })}
             className="w-full"
           >
@@ -189,7 +189,7 @@ const ChangeOrderProperties = () => {
               size="sm"
               inline
               isReadOnly={!canUpdate || isLocked}
-              value={changeOrder?.name ?? ""}
+              value={changeNotice?.name ?? ""}
               onBlur={(e) => {
                 onUpdate("name", e.target.value ?? null);
               }}
@@ -205,7 +205,7 @@ const ChangeOrderProperties = () => {
         </h3>
         <ValidatedForm
           defaultValues={{
-            changeOrderTypeId: changeOrder?.changeOrderTypeId ?? ""
+            changeOrderTypeId: changeNotice?.changeOrderTypeId ?? ""
           }}
           validator={z.object({ changeOrderTypeId: z.string().optional() })}
           className="w-full"
@@ -235,13 +235,13 @@ const ChangeOrderProperties = () => {
           id={id}
           table="changeOrder"
           size="sm"
-          value={changeOrder?.assignee ?? ""}
+          value={changeNotice?.assignee ?? ""}
           isReadOnly={!canUpdate || isLocked}
         />
       </VStack>
 
       <ValidatedForm
-        defaultValues={{ openDate: changeOrder?.openDate ?? "" }}
+        defaultValues={{ openDate: changeNotice?.openDate ?? "" }}
         validator={z.object({ openDate: z.string().optional() })}
         className="w-full"
       >
@@ -255,7 +255,7 @@ const ChangeOrderProperties = () => {
       </ValidatedForm>
 
       <ValidatedForm
-        defaultValues={{ priority: changeOrder?.priority ?? "" }}
+        defaultValues={{ priority: changeNotice?.priority ?? "" }}
         validator={z.object({ priority: z.string().optional() })}
         className="w-full"
       >
@@ -264,7 +264,7 @@ const ChangeOrderProperties = () => {
           label={t`Priority`}
           inline={(value) => <span>{value}</span>}
           isReadOnly={!canUpdate || isLocked}
-          options={changeOrderPriority.map((priority) => ({
+          options={changeNoticePriority.map((priority) => ({
             value: priority,
             label: priority
           }))}
@@ -278,7 +278,7 @@ const ChangeOrderProperties = () => {
         </h3>
         <ValidatedForm
           defaultValues={{
-            nonConformanceId: changeOrder?.nonConformanceId ?? ""
+            nonConformanceId: changeNotice?.nonConformanceId ?? ""
           }}
           validator={z.object({ nonConformanceId: z.string().optional() })}
           className="w-full"
@@ -322,14 +322,14 @@ const ChangeOrderProperties = () => {
             }
           />
         </ValidatedForm>
-        {changeOrder?.nonConformanceId && (
+        {changeNotice?.nonConformanceId && (
           <Link
             className="text-xs text-primary hover:underline"
-            to={path.to.issue(changeOrder.nonConformanceId)}
+            to={path.to.issue(changeNotice.nonConformanceId)}
           >
             {linkedNonConformance
               ? `${linkedNonConformance.nonConformanceId} — ${linkedNonConformance.name}`
-              : changeOrder.nonConformanceId}
+              : changeNotice.nonConformanceId}
           </Link>
         )}
       </VStack>
@@ -338,7 +338,7 @@ const ChangeOrderProperties = () => {
         <h3 className="text-xs text-muted-foreground">
           <Trans>Created By</Trans>
         </h3>
-        <EmployeeAvatar employeeId={changeOrder?.createdBy ?? ""} size="xxs" />
+        <EmployeeAvatar employeeId={changeNotice?.createdBy ?? ""} size="xxs" />
       </VStack>
 
       <Separator />
@@ -352,4 +352,4 @@ const ChangeOrderProperties = () => {
   );
 };
 
-export default ChangeOrderProperties;
+export default ChangeNoticeProperties;

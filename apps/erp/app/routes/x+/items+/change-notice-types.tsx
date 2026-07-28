@@ -3,8 +3,8 @@ import { VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { Outlet, useLoaderData } from "react-router";
-import { getChangeOrderTypes } from "~/modules/items";
-import { ChangeOrderTypesTable } from "~/modules/items/ui/ChangeNoticeTypes";
+import { getChangeNoticeTypes } from "~/modules/items";
+import { ChangeNoticeTypesTable } from "~/modules/items/ui/ChangeNoticeTypes";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
@@ -26,7 +26,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const { limit, offset, sorts, filters } =
     getGenericQueryFilters(searchParams);
 
-  return await getChangeOrderTypes(client, companyId, {
+  return await getChangeNoticeTypes(client, companyId, {
     search,
     limit,
     offset,
@@ -35,12 +35,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
   });
 }
 
-export default function ChangeOrderTypesRoute() {
+export default function ChangeNoticeTypesRoute() {
   const { data, count } = useLoaderData<typeof loader>();
 
   return (
     <VStack spacing={0} className="h-full">
-      <ChangeOrderTypesTable data={data ?? []} count={count ?? 0} />
+      <ChangeNoticeTypesTable data={data ?? []} count={count ?? 0} />
       <Outlet />
     </VStack>
   );

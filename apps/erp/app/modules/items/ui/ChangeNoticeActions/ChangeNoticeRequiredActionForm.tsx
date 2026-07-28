@@ -20,21 +20,21 @@ import type { z } from "zod";
 import { Boolean, Hidden, Input, Submit } from "~/components/Form";
 import { usePermissions } from "~/hooks";
 import { path } from "~/utils/path";
-import { changeOrderRequiredActionValidator } from "../../items.models";
+import { changeNoticeRequiredActionValidator } from "../../items.models";
 
-type ChangeOrderRequiredActionFormProps = {
-  initialValues: z.infer<typeof changeOrderRequiredActionValidator>;
+type ChangeNoticeRequiredActionFormProps = {
+  initialValues: z.infer<typeof changeNoticeRequiredActionValidator>;
   type?: "modal" | "drawer";
   open?: boolean;
   onClose: () => void;
 };
 
-const ChangeOrderRequiredActionForm = ({
+const ChangeNoticeRequiredActionForm = ({
   initialValues,
   open = true,
   type = "drawer",
   onClose
-}: ChangeOrderRequiredActionFormProps) => {
+}: ChangeNoticeRequiredActionFormProps) => {
   const { t } = useLingui();
   const permissions = usePermissions();
   const fetcher = useFetcher<PostgrestResponse<{ id: string }>>();
@@ -67,7 +67,7 @@ const ChangeOrderRequiredActionForm = ({
       >
         <ModalDrawerContent>
           <ValidatedForm
-            validator={changeOrderRequiredActionValidator}
+            validator={changeNoticeRequiredActionValidator}
             method="post"
             action={
               isEditing
@@ -110,4 +110,4 @@ const ChangeOrderRequiredActionForm = ({
   );
 };
 
-export default ChangeOrderRequiredActionForm;
+export default ChangeNoticeRequiredActionForm;

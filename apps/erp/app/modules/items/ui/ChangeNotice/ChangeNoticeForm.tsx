@@ -37,13 +37,13 @@ import {
 import { usePermissions } from "~/hooks";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
-import { changeOrderPriority, changeOrderValidator } from "../../items.models";
-import ChangeOrderPriority from "./ChangeNoticePriority";
+import { changeNoticePriority, changeNoticeValidator } from "../../items.models";
+import ChangeNoticePriority from "./ChangeNoticePriority";
 
-type ChangeOrderFormValues = z.infer<typeof changeOrderValidator>;
+type ChangeNoticeFormValues = z.infer<typeof changeNoticeValidator>;
 
-type ChangeOrderFormProps = {
-  initialValues: ChangeOrderFormValues;
+type ChangeNoticeFormProps = {
+  initialValues: ChangeNoticeFormValues;
   types: ListItem[];
   // "page" (default) renders in a Card on the create route; "modal" renders in a
   // ModalDrawer launched from an item detail page (item pre-selected as affected).
@@ -53,14 +53,14 @@ type ChangeOrderFormProps = {
   fetcher?: FetcherWithComponents<unknown>;
 };
 
-const ChangeOrderForm = ({
+const ChangeNoticeForm = ({
   initialValues,
   types,
   type = "page",
   open,
   onClose,
   fetcher
-}: ChangeOrderFormProps) => {
+}: ChangeNoticeFormProps) => {
   const { t } = useLingui();
   const permissions = usePermissions();
   const isEditing = initialValues.id !== undefined;
@@ -75,7 +75,7 @@ const ChangeOrderForm = ({
       <Hidden name="nonConformanceId" />
       {/* Affected Parts are added on the CO detail page (top-to-bottom flow), not
           chosen here. The create form only carries any pre-selected item (e.g.
-          when opened from a part page via CreateChangeOrderModal) as hidden
+          when opened from a part page via CreateChangeNoticeModal) as hidden
           inputs so it's still attached on create. */}
       {!isEditing &&
         (initialValues.affectedItemIds ?? []).map((itemId) => (
@@ -110,8 +110,8 @@ const ChangeOrderForm = ({
           <Select
             name="priority"
             label={t`Priority`}
-            options={changeOrderPriority.map((priority) => ({
-              label: <ChangeOrderPriority priority={priority} />,
+            options={changeNoticePriority.map((priority) => ({
+              label: <ChangeNoticePriority priority={priority} />,
               value: priority
             }))}
           />
@@ -151,7 +151,7 @@ const ChangeOrderForm = ({
             <ValidatedForm
               method="post"
               action={path.to.newChangeNotice}
-              validator={changeOrderValidator}
+              validator={changeNoticeValidator}
               defaultValues={initialValues}
               fetcher={fetcher}
               className="flex flex-col h-full"
@@ -181,7 +181,7 @@ const ChangeOrderForm = ({
     <Card>
       <ValidatedForm
         method="post"
-        validator={changeOrderValidator}
+        validator={changeNoticeValidator}
         defaultValues={initialValues}
         className="w-full"
       >
@@ -209,4 +209,4 @@ const ChangeOrderForm = ({
   );
 };
 
-export default ChangeOrderForm;
+export default ChangeNoticeForm;

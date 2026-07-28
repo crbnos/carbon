@@ -29,23 +29,23 @@ import ConfirmDelete from "~/components/Modals/ConfirmDelete";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
 import { path } from "~/utils/path";
 import {
-  type changeOrderStatus,
-  changeOrderStatusTransitions,
-  isChangeOrderLocked
+  type changeNoticeStatus,
+  changeNoticeStatusTransitions,
+  isChangeNoticeLocked
 } from "../../items.models";
-import type { ChangeOrder } from "../../types";
-import ChangeOrderStatus from "./ChangeNoticeStatus";
+import type { ChangeNotice } from "../../types";
+import ChangeNoticeStatus from "./ChangeNoticeStatus";
 import { releaseDialogOpenAtom } from "./releaseDialog.store";
 
-const ChangeOrderHeader = () => {
+const ChangeNoticeHeader = () => {
   const { id } = useParams();
   if (!id) throw new Error("id not found");
 
-  const routeData = useRouteData<{ changeOrder: ChangeOrder }>(
+  const routeData = useRouteData<{ changeNotice: ChangeNotice }>(
     path.to.changeNotice(id)
   );
 
-  const status = routeData?.changeOrder?.status ?? "Draft";
+  const status = routeData?.changeNotice?.status ?? "Draft";
   const { t } = useLingui();
   const permissions = usePermissions();
   const { company } = useUser();
@@ -60,10 +60,10 @@ const ChangeOrderHeader = () => {
     variant: "dropdown"
   });
 
-  const isLocked = isChangeOrderLocked(status);
+  const isLocked = isChangeNoticeLocked(status);
   const nextStatus =
-    changeOrderStatusTransitions[
-      status as (typeof changeOrderStatus)[number]
+    changeNoticeStatusTransitions[
+      status as (typeof changeNoticeStatus)[number]
     ]?.[0] ?? null;
 
   return (
@@ -73,13 +73,13 @@ const ChangeOrderHeader = () => {
           <HStack>
             <Link to={path.to.changeNoticeDetails(id)}>
               <Heading size="h4" className="flex items-center gap-2">
-                <span>{routeData?.changeOrder?.changeOrderId}</span>
+                <span>{routeData?.changeNotice?.changeOrderId}</span>
               </Heading>
             </Link>
             <span className={cn(isLocked && "line-through")}>
-              <ChangeOrderStatus status={routeData?.changeOrder?.status} />
+              <ChangeNoticeStatus status={routeData?.changeNotice?.status} />
             </span>
-            <Copy text={routeData?.changeOrder?.changeOrderId ?? ""} />
+            <Copy text={routeData?.changeNotice?.changeOrderId ?? ""} />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <IconButton
@@ -155,7 +155,7 @@ const ChangeOrderHeader = () => {
 
         <HStack spacing={2}>
           {/* The full stage flow (green-dot progress) lives in the middle pane
-              (ChangeOrderStatusFlow); the header keeps only the canonical status
+              (ChangeNoticeStatusFlow); the header keeps only the canonical status
               badge (above) + the advance/release action. */}
 
           {/* Cancel — a header action (opens the confirm modal) sitting beside the
@@ -214,9 +214,9 @@ const ChangeOrderHeader = () => {
         <ConfirmDelete
           action={path.to.deleteChangeNotice(id)}
           isOpen={deleteModal.isOpen}
-          name={routeData?.changeOrder?.changeOrderId ?? ""}
+          name={routeData?.changeNotice?.changeOrderId ?? ""}
           text={t`Are you sure you want to delete ${
-            routeData?.changeOrder?.changeOrderId ?? ""
+            routeData?.changeNotice?.changeOrderId ?? ""
           }? This cannot be undone.`}
           onCancel={deleteModal.onClose}
           onSubmit={deleteModal.onClose}
@@ -227,7 +227,7 @@ const ChangeOrderHeader = () => {
           action={path.to.changeNoticeStatus(id)}
           title={t`Cancel change notice`}
           text={t`Are you sure you want to cancel ${
-            routeData?.changeOrder?.changeOrderId ?? ""
+            routeData?.changeNotice?.changeOrderId ?? ""
           }? It will be closed and read-only until you reopen it.`}
           confirmText={t`Cancel Change Notice`}
           cancelText={t`Keep Open`}
@@ -245,4 +245,4 @@ const ChangeOrderHeader = () => {
   );
 };
 
-export default ChangeOrderHeader;
+export default ChangeNoticeHeader;
