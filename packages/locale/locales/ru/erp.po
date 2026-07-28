@@ -6968,7 +6968,7 @@ msgid "Jobs Required"
 msgstr "Требуются работы"
 
 msgid "Jobs that have this item on their bill of materials"
-msgstr "Производственные заказы, содержащие этот материал в спецификации"
+msgstr "Работы, содержащие этот товар в спецификации материалов"
 
 #. placeholder {0}: company?.name ?? "Company"
 msgid "Join {0}"

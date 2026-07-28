@@ -6968,7 +6968,7 @@ msgid "Jobs Required"
 msgstr "İşler Gerekli"
 
 msgid "Jobs that have this item on their bill of materials"
-msgstr "Bu öğeyi ürün reçetesinde içeren işler"
+msgstr "Malzeme listesinde bu ürünü içeren işler"
 
 #. placeholder {0}: company?.name ?? "Company"
 msgid "Join {0}"

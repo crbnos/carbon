@@ -6968,7 +6968,7 @@ msgid "Jobs Required"
 msgstr "필요한 작업"
 
 msgid "Jobs that have this item on their bill of materials"
-msgstr "자재명세서에 이 항목이 포함된 작업"
+msgstr "자재명세서에 이 품목이 포함된 작업"
 
 #. placeholder {0}: company?.name ?? "Company"
 msgid "Join {0}"
