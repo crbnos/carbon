@@ -3660,6 +3660,9 @@ msgstr "デビット"
 msgid "Decide what an operator sees if they try to issue a batch or serial that's already expired."
 msgstr "オペレーターが既に期限切れのバッチまたはシリアルを発行しようとした場合に表示される内容を決定します。"
 
+msgid "Decimal places"
+msgstr ""
+
 msgid "Decimal Places"
 msgstr "小数位数"
 
@@ -8637,6 +8640,9 @@ msgstr "通知"
 
 msgid "Number"
 msgstr "数字"
+
+msgid "Number of decimal places allowed when entering a supplier unit price on a purchase order line. Increase this when suppliers quote extended precision (e.g. 12.3456)."
+msgstr ""
 
 msgid "Number of inventory units per purchase unit"
 msgstr "購買単位あたりの在庫単位数"
@@ -13622,6 +13628,9 @@ msgstr "単価"
 
 msgid "Unit Price"
 msgstr "単価"
+
+msgid "Unit Price Precision"
+msgstr ""
 
 msgid "Unit Sale Price"
 msgstr "単価販売価格"

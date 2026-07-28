@@ -3660,6 +3660,9 @@ msgstr "Debety"
 msgid "Decide what an operator sees if they try to issue a batch or serial that's already expired."
 msgstr "Zdecyduj, co operator widzi, jeśli spróbuje wydać partię lub numer seryjny, który już wygasł."
 
+msgid "Decimal places"
+msgstr ""
+
 msgid "Decimal Places"
 msgstr "Miejsca Dziesiętne"
 
@@ -8637,6 +8640,9 @@ msgstr "Powiadomienia"
 
 msgid "Number"
 msgstr "Liczba"
+
+msgid "Number of decimal places allowed when entering a supplier unit price on a purchase order line. Increase this when suppliers quote extended precision (e.g. 12.3456)."
+msgstr ""
 
 msgid "Number of inventory units per purchase unit"
 msgstr "Liczba jednostek inwentarza na jednostkę zakupu"
@@ -13622,6 +13628,9 @@ msgstr "Cena jednostkowa"
 
 msgid "Unit Price"
 msgstr "Cena jednostkowa"
+
+msgid "Unit Price Precision"
+msgstr ""
 
 msgid "Unit Sale Price"
 msgstr "Cena sprzedaży jednostkowej"

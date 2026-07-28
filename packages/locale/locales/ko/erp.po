@@ -3660,6 +3660,9 @@ msgstr "차변"
 msgid "Decide what an operator sees if they try to issue a batch or serial that's already expired."
 msgstr "작업자가 이미 만료된 배치 또는 일련번호를 출고하려 할 때 표시할 내용을 결정하세요."
 
+msgid "Decimal places"
+msgstr ""
+
 msgid "Decimal Places"
 msgstr "소수 자릿수"
 
@@ -8637,6 +8640,9 @@ msgstr "알림"
 
 msgid "Number"
 msgstr "번호"
+
+msgid "Number of decimal places allowed when entering a supplier unit price on a purchase order line. Increase this when suppliers quote extended precision (e.g. 12.3456)."
+msgstr ""
 
 msgid "Number of inventory units per purchase unit"
 msgstr "구매 단위당 재고 단위 수"
@@ -13622,6 +13628,9 @@ msgstr "단가"
 
 msgid "Unit Price"
 msgstr "단가"
+
+msgid "Unit Price Precision"
+msgstr ""
 
 msgid "Unit Sale Price"
 msgstr "단위 판매가"

@@ -38,13 +38,16 @@ import {
   defaultSupplierCcValidator,
   getAccountsPayableBillingAddress,
   getCompanySettings,
+  purchaseOrderUnitPricePrecisionValidator,
   purchasePriceUpdateTimingTypes,
   purchasePriceUpdateTimingValidator,
   supplierQuoteNotificationValidator,
+  unitPricePrecisions,
   updateAccountsPayableAddressSetting,
   updateAccountsPayableBillingAddress,
   updateDefaultSupplierCc,
   updateLeadTimesOnReceiptSetting,
+  updatePurchaseOrderUnitPricePrecisionSetting,
   updatePurchasePriceUpdateTimingSetting,
   updateShowSupplierReadableIdSetting,
   updateSupplierQuoteNotificationSetting
@@ -148,6 +151,37 @@ export async function action({ request }: ActionFunctionArgs) {
       return {
         success: true,
         message: "Purchase price update timing updated"
+      };
+
+    case "purchaseOrderUnitPricePrecision":
+      const precisionValidation = await validator(
+        purchaseOrderUnitPricePrecisionValidator
+      ).validate(formData);
+
+      if (precisionValidation.error) {
+        return { success: false, message: "Invalid form data" };
+      }
+
+      const precisionResult =
+        await updatePurchaseOrderUnitPricePrecisionSetting(
+          client,
+          companyId,
+          Number(precisionValidation.data.purchaseOrderUnitPricePrecision)
+        );
+
+      if (precisionResult.error) {
+        logger.error("Failed to update unit price precision setting", {
+          error: precisionResult.error
+        });
+        return {
+          success: false,
+          message: precisionResult.error.message
+        };
+      }
+
+      return {
+        success: true,
+        message: "Purchase order unit price precision updated"
       };
 
     case "updateLeadTimesOnReceipt":
@@ -507,6 +541,69 @@ export default function PurchasingSettingsRoute() {
             </ValidatedForm>
           </Card>
         )}
+
+        <p className="mt-4 text-xxs text-foreground/70 uppercase font-light tracking-wide">
+          <Trans>Purchase Orders</Trans>
+        </p>
+
+        <Card>
+          <ValidatedForm
+            method="post"
+            validator={purchaseOrderUnitPricePrecisionValidator}
+            defaultValues={{
+              purchaseOrderUnitPricePrecision: (
+                (
+                  companySettings as {
+                    purchaseOrderUnitPricePrecision?: number | null;
+                  }
+                ).purchaseOrderUnitPricePrecision ?? 2
+              ).toString() as (typeof unitPricePrecisions)[number]
+            }}
+            fetcher={fetcher}
+          >
+            <input
+              type="hidden"
+              name="intent"
+              value="purchaseOrderUnitPricePrecision"
+            />
+            <CardHeader>
+              <CardTitle>
+                <Trans>Unit Price Precision</Trans>
+              </CardTitle>
+              <CardDescription>
+                <Trans>
+                  Number of decimal places allowed when entering a supplier unit
+                  price on a purchase order line. Increase this when suppliers
+                  quote extended precision (e.g. 12.3456).
+                </Trans>
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-col gap-8 max-w-[400px]">
+                <Select
+                  name="purchaseOrderUnitPricePrecision"
+                  label={t`Decimal places`}
+                  options={unitPricePrecisions.map((precision) => ({
+                    label: `${precision} (e.g. ${(1).toFixed(Number(precision))})`,
+                    value: precision
+                  }))}
+                />
+              </div>
+            </CardContent>
+            <CardFooter>
+              <Submit
+                isDisabled={fetcher.state !== "idle"}
+                isLoading={
+                  fetcher.state !== "idle" &&
+                  fetcher.formData?.get("intent") ===
+                    "purchaseOrderUnitPricePrecision"
+                }
+              >
+                <Trans>Save</Trans>
+              </Submit>
+            </CardFooter>
+          </ValidatedForm>
+        </Card>
 
         <p className="mt-4 text-xxs text-foreground/70 uppercase font-light tracking-wide">
           <Trans>Automatic Updates</Trans>

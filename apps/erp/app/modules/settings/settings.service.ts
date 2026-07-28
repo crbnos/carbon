@@ -1044,6 +1044,19 @@ export async function updatePurchasePriceUpdateTimingSetting(
     .eq("id", companyId);
 }
 
+export async function updatePurchaseOrderUnitPricePrecisionSetting(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  purchaseOrderUnitPricePrecision: number
+) {
+  // Cast: the purchaseOrderUnitPricePrecision column is added by migration
+  // 20260728073255 but isn't in the generated types until they're regenerated
+  // against the migrated DB (mirrors updateLeadTimesOnReceiptSetting).
+  return (client.from("companySettings") as any)
+    .update(sanitize({ purchaseOrderUnitPricePrecision }))
+    .eq("id", companyId);
+}
+
 export async function updateLeadTimesOnReceiptSetting(
   client: SupabaseClient<Database>,
   companyId: string,

@@ -55,6 +55,7 @@ import {
 } from "~/components/Form";
 import { itemTypeLabel } from "~/components/Form/itemTypeLabel";
 import {
+  useCompanySettings,
   useCurrencyFormatter,
   usePercentFormatter,
   usePermissions,
@@ -112,6 +113,12 @@ const PurchaseOrderLineForm = ({
   const { carbon } = useCarbon();
   const [items] = useItems();
   const { company } = useUser();
+  const companySettings = useCompanySettings();
+  // Company-configured decimal precision for the supplier unit price input.
+  // Defaults to 2 (existing currency-rounding behavior); raise it (3/4) so a
+  // supplier's extended-precision price is preserved instead of rounded.
+  const unitPricePrecision =
+    companySettings?.purchaseOrderUnitPricePrecision ?? 2;
   const { orderId } = useParams();
   const fetcher = useFetcher<typeof action>();
 
@@ -728,7 +735,8 @@ const PurchaseOrderLineForm = ({
                             style: "currency",
                             currency:
                               routeData?.purchaseOrder?.currencyCode ??
-                              company.baseCurrencyCode
+                              company.baseCurrencyCode,
+                            maximumFractionDigits: unitPricePrecision
                           }}
                           onChange={(value) =>
                             setItemData((d) => ({
@@ -1018,7 +1026,8 @@ const PurchaseOrderLineForm = ({
                               style: "currency",
                               currency:
                                 routeData?.purchaseOrder?.currencyCode ??
-                                company.baseCurrencyCode
+                                company.baseCurrencyCode,
+                              maximumFractionDigits: unitPricePrecision
                             }}
                             onChange={(value) =>
                               setIndirectData((d) => ({

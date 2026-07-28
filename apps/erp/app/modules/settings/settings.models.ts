@@ -160,6 +160,16 @@ export const purchasePriceUpdateTimingValidator = z.object({
   purchasePriceUpdateTiming: z.enum(purchasePriceUpdateTimingTypes)
 });
 
+// Allowed decimal precisions for the Purchase Order line Unit Price input.
+// Mirrors the quoteLine.unitPricePrecision precedent (2/3/4); default 2 keeps
+// the existing currency rounding behavior. Stored as strings so the Select
+// binds cleanly; converted to an integer in the route action before persisting.
+export const unitPricePrecisions = ["2", "3", "4"] as const;
+
+export const purchaseOrderUnitPricePrecisionValidator = z.object({
+  purchaseOrderUnitPricePrecision: z.enum(unitPricePrecisions)
+});
+
 export const calculatedShelfLifeInputScopes = [
   "AllInputs",
   "ManagedInputsOnly"
