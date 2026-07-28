@@ -10,15 +10,19 @@ paths:
 # AI SDK Usage in Carbon
 
 Carbon uses the [Vercel AI SDK](https://sdk.vercel.ai/) (`ai` v5) for its AI
-features. There is **no chat interface, no streaming conversation, and no
-Anthropic/Claude usage in practice.** Every active AI call is a one-shot
-`generateObject` extraction against OpenAI.
+features. Most are one-shot `generateObject` extractions against OpenAI
+(document extraction, inspection-balloon analysis).
 
-> ⚠️ An earlier internal doc described a chat edge
-> function at `packages/database/supabase/functions/chat/index.ts` and an
-> `Agent.ee.tsx` frontend component using `@ai-sdk/anthropic`. **Neither exists
-> in the current codebase** — that was a scaffold that was never shipped (or was
-> removed). Treat the sections below as the source of truth.
+> **Update (2026-07): an in-app assistant chat DID ship.** The `agent` module
+> (`apps/erp/app/modules/agent/`, migration `20260721090000_in-app-agent.sql`,
+> plan-gated `AI_AGENT`) is a streaming, tool-using **read-only docs assistant**
+> — a real chat UI with threads/messages in the ERP top bar. Its runtime
+> provider is still **OpenAI** (`agentProvider` / `agentChatModel = "gpt-4"` in
+> `packages/utils/src/llm.ts`), NOT Anthropic, despite the `agentThread.modelId`
+> column defaulting to a Claude id. See `.claude/rules/agent-knowledge-base.md`
+> and `docs/content/docs/reference/agent.mdx`. The older unshipped
+> `functions/chat/index.ts` + `Agent.ee.tsx` scaffold (`@ai-sdk/anthropic`) this
+> rule used to warn about is a separate, dead thing.
 
 ## Packages (`apps/erp/package.json`)
 
@@ -26,8 +30,9 @@ Anthropic/Claude usage in practice.** Every active AI call is a one-shot
 - `@ai-sdk/openai` (catalog `2.0.102` in `pnpm-workspace.yaml`) — **the provider actually used**
 - `@ai-sdk/anthropic` `2.0.74` — **declared but never imported anywhere in source**
 - `@ai-sdk/react` `2.0.174` and the `@ai-sdk-tools/*` suite (`agents`, `artifacts`,
-  `cache`, `devtools`, `memory`, `store`, all `1.2.0`) — **installed but unused** (no
-  `useChat`, no transport, no chat UI anywhere in `apps/erp`)
+  `cache`, `devtools`, `memory`, `store`, all `1.2.0`) — `@ai-sdk/react` now
+  drives the in-app `agent` assistant chat (see the Update above); the broader
+  `@ai-sdk-tools/*` suite is largely unused
 
 `packages/jobs` and `packages/ee` also depend on `ai` `5.0.172` + `@ai-sdk/openai`.
 

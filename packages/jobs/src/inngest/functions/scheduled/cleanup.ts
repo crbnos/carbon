@@ -414,27 +414,35 @@ export const cleanupFunction = inngest.createFunction(
         return;
       }
 
-      // Orphans only — never delete an object a modelUpload still points at.
-      // A referenced fat raw means compaction hasn't succeeded yet (compact
-      // retries independently of optimise); deleting it would destroy the only
-      // copy of the model and break assemblies. True strays (upload recorded
-      // no row, or the row was repointed/deleted) are the actual dead weight.
-      const referenced = await serviceRole
-        .from("modelUpload")
-        .select("modelPath")
-        .in("modelPath", big);
-      if (referenced.error) {
+      // Orphans only — never delete an object a modelUpload still points at,
+      // via EITHER column: `modelPath` (a referenced fat raw means compaction
+      // hasn't succeeded yet) or `originalPath` (xbf compaction repoints
+      // `modelPath` at the derived `.xbf.zst` but retains the customer's
+      // original, which must survive for downloads). True strays (upload
+      // recorded no row, or the row was deleted) are the actual dead weight.
+      const [referenced, referencedOriginals] = await Promise.all([
+        serviceRole
+          .from("modelUpload")
+          .select("modelPath")
+          .in("modelPath", big),
+        serviceRole
+          .from("modelUpload")
+          .select("originalPath")
+          .in("originalPath", big)
+      ]);
+      if (referenced.error || referencedOriginals.error) {
         logger.error(
           "Error resolving referenced staged raws — skipping prune",
           {
-            error: referenced.error
+            error: referenced.error ?? referencedOriginals.error
           }
         );
         return;
       }
-      const referencedPaths = new Set(
-        (referenced.data ?? []).map((r) => r.modelPath)
-      );
+      const referencedPaths = new Set([
+        ...(referenced.data ?? []).map((r) => r.modelPath),
+        ...(referencedOriginals.data ?? []).map((r) => r.originalPath)
+      ]);
       const orphans = big.filter((n) => !referencedPaths.has(n));
       if (orphans.length === 0) {
         logger.info("No orphaned large staged raws to prune", {

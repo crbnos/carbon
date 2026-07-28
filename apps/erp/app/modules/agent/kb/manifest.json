@@ -203,6 +203,25 @@
       "headings": ["Recipes"]
     },
     {
+      "slug": "docs/reference/account",
+      "title": "Your account",
+      "description": "Personal, self-service settings for profile, passkeys, notification preferences, theme, and language, kept separate from the company-wide settings an admin controls.",
+      "keywords": ["your", "account", "docs", "reference"],
+      "headings": [
+        "Profile",
+        "Signing in — passkeys",
+        "Notification preferences",
+        "Theme and language",
+        "Personal attributes",
+        "Troubleshooting",
+        "Can't change your email from the Account screen",
+        "There's no password to change",
+        "The passkey card isn't showing",
+        "There's no language picker",
+        "The Slack or Email notification column is missing"
+      ]
+    },
+    {
       "slug": "docs/reference/accounting",
       "title": "Accounting & the ledger",
       "description": "How operations become journal entries: accounts, periods, and the postings behind every flow.",
@@ -226,6 +245,46 @@
       ]
     },
     {
+      "slug": "docs/reference/agent",
+      "title": "In-app assistant",
+      "description": "A read-only chat assistant inside the ERP that answers questions about how Carbon works from the product documentation and points you to the right page.",
+      "keywords": ["in-app", "assistant", "docs", "reference", "agent"],
+      "headings": [
+        "What it can do",
+        "Where it appears",
+        "Threads and messages",
+        "Limits and availability",
+        "Troubleshooting",
+        "\"Rate limit exceeded. Please wait a moment.\"",
+        "\"Upgrade required\"",
+        "\"Failed to create thread\"",
+        "\"I couldn't find that in the docs\"",
+        "Why can't I see the assistant?",
+        "The assistant says it can't read my data"
+      ]
+    },
+    {
+      "slug": "docs/reference/api-keys",
+      "title": "API keys",
+      "description": "A scoped secret that lets an external system call the Carbon API on your behalf, with its own permissions and rate limit.",
+      "keywords": ["api", "keys", "docs", "reference"],
+      "headings": [
+        "Creating a key",
+        "How a key authenticates a request",
+        "Permission scoping",
+        "Rate limiting",
+        "The REST and OpenAPI surface",
+        "The MCP endpoint",
+        "Keys versus webhooks",
+        "Troubleshooting",
+        "\"API key lacks required permissions\"",
+        "\"Rate limit exceeded\"",
+        "\"API key has expired\"",
+        "\"API key not found\"",
+        "I lost the key / can't find where to see it again"
+      ]
+    },
+    {
       "slug": "docs/reference/approvals",
       "title": "Approvals",
       "description": "Route purchase orders, quality documents, and suppliers for sign-off before they take effect, with amount-tiered approval rules.",
@@ -239,14 +298,56 @@
       ]
     },
     {
+      "slug": "docs/reference/audit-log",
+      "title": "Audit log",
+      "description": "A per-company change history for key business entities. What gets recorded, how to view and filter it, and how old entries are archived.",
+      "keywords": ["audit", "log", "docs", "reference"],
+      "headings": [
+        "Turning it on",
+        "What gets logged",
+        "Viewing and filtering",
+        "Retention and archives",
+        "Related",
+        "Troubleshooting",
+        "\"Upgrade to Business to enable audit logging\"",
+        "\"Upgrade to unlock audit history\"",
+        "\"Audit logging is not enabled\"",
+        "\"Failed to enable audit logging\" / \"Failed to disable audit logging\"",
+        "\"Failed to generate download URL\"",
+        "Empty history for a record you expected to see changes on",
+        "An older change is missing from the live log"
+      ]
+    },
+    {
+      "slug": "docs/reference/calibration",
+      "title": "Gauges and calibration",
+      "description": "Track measurement instruments, schedule their calibrations, and flag any gauge that falls out of calibration.",
+      "keywords": ["gauges", "and", "calibration", "docs", "reference"],
+      "headings": [
+        "The gauge record",
+        "The calibration schedule",
+        "Recording a calibration",
+        "Calibration status and going overdue",
+        "Related",
+        "Troubleshooting",
+        "\"Calibration interval is required\"",
+        "\"Type is required\" / \"Gauge is required\" / \"Date is required\"",
+        "\"Failed to insert gauge\" / \"Failed to update gauge\" / \"Failed to insert gauge calibration record\"",
+        "A calibration recorded Pass but the gauge still reads Out-of-Calibration",
+        "An overdue gauge is not blocking inspections",
+        "Deactivate vs. delete a gauge"
+      ]
+    },
+    {
       "slug": "docs/reference/change-orders/change-types",
       "title": "Change types",
-      "description": "Version, Revision, and New Part — the per-affected-item choice that decides what you can edit and what release creates.",
+      "description": "Version, Revision, Replacement Part, and New Part — the per-affected-item choice that decides what you can edit and what release creates.",
       "keywords": ["change", "types", "docs", "reference", "orders"],
       "headings": [
-        "The three types",
+        "The four types",
         "When to use which",
         "What each type gates",
+        "Add a net-new part",
         "Supplier parts on a purchased line",
         "Related"
       ]
@@ -296,7 +397,7 @@
         "orders"
       ],
       "headings": [
-        "The five stages",
+        "The stages",
         "The impact panel",
         "Review the changes, then release",
         "What release does",
@@ -325,7 +426,7 @@
     {
       "slug": "docs/reference/change-orders/supersession",
       "title": "Supersession & cutover",
-      "description": "How a released Revision or New Part phases over, the cutover fields you tune per item, and how MRP and Get Method honor supersession downstream.",
+      "description": "How a released Revision or Replacement Part phases over, the cutover fields you tune per item, and how MRP and Get Method honor supersession downstream.",
       "keywords": [
         "supersession",
         "cutover",
@@ -339,6 +440,131 @@
         "Supersession modes",
         "How downstream honors it",
         "Related"
+      ]
+    },
+    {
+      "slug": "docs/reference/company-settings",
+      "title": "Company settings",
+      "description": "The company record, its feature toggles, base currency, logos, and tags — the company-wide configuration every module reads from.",
+      "keywords": ["company", "settings", "docs", "reference"],
+      "headings": [
+        "The company record",
+        "Multiple companies",
+        "Feature toggles and defaults",
+        "Base currency",
+        "Theme",
+        "Logos",
+        "Tags",
+        "Related system configuration",
+        "Troubleshooting",
+        "I can't find the Companies or Backups settings page",
+        "I can't see the Billing settings page",
+        "Nothing posts to the general ledger even though jobs and invoices complete",
+        "My theme changed but a colleague still sees the old one",
+        "I can't change the base currency",
+        "A settings page (Modules) exists but the toggle does nothing I expect"
+      ]
+    },
+    {
+      "slug": "docs/reference/configurator",
+      "title": "Configurator",
+      "description": "Turn one part number into a parametric family. Inputs drive rules that resolve the BOM, routing, and price per order.",
+      "keywords": ["configurator", "docs", "reference"],
+      "headings": [
+        "Parameters — the inputs",
+        "Rules — deriving the method",
+        "Choosing a configured item at order time",
+        "Troubleshooting",
+        "\"Key must be lowercase and underscore separated\"",
+        "\"List options are required\"",
+        "\"Cannot override method of configured item\"",
+        "A rule returns null / falls back to the default",
+        "\"Save\" stays disabled on a configured line",
+        "Related"
+      ]
+    },
+    {
+      "slug": "docs/reference/custom-fields",
+      "title": "Custom fields",
+      "description": "Company-defined extra fields that attach to core records like customers, parts, and orders.",
+      "keywords": ["custom", "fields", "docs", "reference"],
+      "headings": [
+        "How a custom field is defined",
+        "Data types",
+        "Which entities support custom fields",
+        "How fields save on a form",
+        "CSV import and export",
+        "API access",
+        "Troubleshooting",
+        "\"Required\" (on a custom field that won't submit)",
+        "List custom field rejected on save",
+        "The Data Type dropdown is disabled when editing a field",
+        "A custom field's values aren't in my CSV import or export",
+        "The entity I want has no Custom Fields row"
+      ]
+    },
+    {
+      "slug": "docs/reference/dimensions",
+      "title": "Dimensions & cost centers",
+      "description": "Tag axes on journal lines that slice the general ledger without multiplying the chart of accounts.",
+      "keywords": ["dimensions", "cost", "centers", "docs", "reference"],
+      "headings": [
+        "What a dimension is",
+        "How a value lands on a journal line",
+        "Cost centers",
+        "Using dimensions in reports",
+        "Related",
+        "Troubleshooting",
+        "\"Owner is required\"",
+        "\"Name is required\" / \"Entity type is required\"",
+        "My journal lines aren't getting tagged with a dimension",
+        "A cost center isn't showing up in reports",
+        "A dimension filter doesn't change the balance sheet or trial balance",
+        "A manual journal's dimension tags disappeared after re-saving"
+      ]
+    },
+    {
+      "slug": "docs/reference/documents",
+      "title": "Documents",
+      "description": "A shared file library with favorites, labels, search, and AI extraction that reads PDFs and fills a form for you.",
+      "keywords": ["documents", "docs", "reference"],
+      "headings": [
+        "The explorer",
+        "Uploading",
+        "Who can see a file",
+        "Pins and labels",
+        "Search",
+        "How documents attach to records",
+        "AI extraction",
+        "What it does, step by step",
+        "What it pulls out",
+        "Troubleshooting",
+        "A deleted file is still there / a file I deleted came back",
+        "A file (or a link to it) is invisible to a user",
+        "Search isn't finding text inside a file",
+        "Extraction returned nothing for a scanned PDF",
+        "A field I expected wasn't pre-filled from the PDF",
+        "The extraction row shows `failed`, or nothing happened"
+      ]
+    },
+    {
+      "slug": "docs/reference/financial-reports",
+      "title": "Financial statement reports",
+      "description": "The Balance Sheet, Income Statement, and Trial Balance built from posted journals by account class.",
+      "keywords": ["financial", "statement", "reports", "docs", "reference"],
+      "headings": [
+        "The three statements",
+        "How a balance is built",
+        "Period and date selection",
+        "What the reports do not slice",
+        "Related",
+        "Troubleshooting",
+        "\"Why are all my numbers zero\"",
+        "\"Why do my numbers look too low / an entry is missing\"",
+        "\"Why is my Balance Sheet out of balance / Assets ≠ Liabilities + Equity\"",
+        "\"Why doesn't my dimension filter change the totals\"",
+        "\"Balance Sheet has no start date field\"",
+        "Preconditions to check first"
       ]
     },
     {
@@ -356,6 +582,94 @@
         "\"Fixed Asset invoice line … has no asset selected\"",
         "\"Asset is no longer in Draft status\"",
         "Depreciation or receipt posting fails with a period error"
+      ]
+    },
+    {
+      "slug": "docs/reference/forecast",
+      "title": "Demand projections",
+      "description": "Enter expected future demand for a make part, week by week, so planning orders ahead of the sales orders that haven't landed yet.",
+      "keywords": ["demand", "projections", "docs", "reference", "forecast"],
+      "headings": [
+        "What a projection is",
+        "How you enter one",
+        "How planning consumes it",
+        "Fields",
+        "Troubleshooting",
+        "The item I want to project isn't in the picker",
+        "I can't create, edit, or delete a projection",
+        "I edited `demandForecast` but my change was overwritten",
+        "Deleting a part's projection removed more than I expected",
+        "My projected quantity didn't turn into a full job/PO",
+        "A zero cell isn't saved"
+      ]
+    },
+    {
+      "slug": "docs/reference/import-export",
+      "title": "Import and export",
+      "description": "Bring records into Carbon from a CSV, and download any table's current view as a CSV.",
+      "keywords": ["import", "and", "export", "docs", "reference"],
+      "headings": [
+        "Exporting a table to CSV",
+        "What you can import",
+        "The import flow",
+        "Insert, update, or skip",
+        "Errors and partial failures",
+        "Related",
+        "Troubleshooting",
+        "\"Table not found in the list of supported tables\"",
+        "The import is refused before any row is written",
+        "A fixed-asset CSV is rejected",
+        "An enum column imported as the wrong value",
+        "Re-importing created duplicates — or didn't update what I expected",
+        "My custom fields are blank after import"
+      ]
+    },
+    {
+      "slug": "docs/reference/inspections",
+      "title": "Inspections and sampling",
+      "description": "How Carbon inspects received goods against AQL sampling plans, and how inspection templates and ballooned FAI drawings define what gets checked.",
+      "keywords": ["inspections", "and", "sampling", "docs", "reference"],
+      "headings": [
+        "The inbound inspection lifecycle",
+        "What triggers a lot",
+        "Recording samples",
+        "Disposition",
+        "Sampling plans and AQL",
+        "How an AQL plan resolves",
+        "Inspection templates and step types",
+        "FAI, inspection documents, and balloons",
+        "Related",
+        "Troubleshooting",
+        "\"Status is required\" / \"Decision is required\"",
+        "\"Inspection id mismatch\"",
+        "\"Inspection not found\"",
+        "\"Failed to save sample\" / \"Failed to accept lot\" / \"Failed to reject lot\" / \"Failed to mark partial\"",
+        "A terminal lot won't take more samples",
+        "The lot passed or failed on its own after one bad sample",
+        "\"Lot rejected. Configure at least one Issue Type and a default user location to auto-create an NCR.\"",
+        "\"Lot rejected, but failed to create NCR\" / \"… failed to create NCR tasks\" / \"… failed to load it for NCR\"",
+        "Permission-gated: recording samples or dispositioning a lot"
+      ]
+    },
+    {
+      "slug": "docs/reference/intercompany",
+      "title": "Intercompany accounting",
+      "description": "Match a sale in one company against the purchase in its sibling, then eliminate the pair for consolidated reporting.",
+      "keywords": ["intercompany", "accounting", "docs", "reference"],
+      "headings": [
+        "What a transaction is",
+        "The matching lifecycle",
+        "How a pair gets matched",
+        "Elimination",
+        "The intercompany balance",
+        "Prerequisite: a multi-company group",
+        "Related",
+        "Troubleshooting",
+        "\"Debit and credit account must be different\"",
+        "\"Source and target company must be different\"",
+        "\"No elimination entity found for company group …\"",
+        "\"Insufficient permissions to match intercompany transactions\" / \"… to generate elimination entries\"",
+        "A transaction stays \"Unmatched\" after Run Matching"
       ]
     },
     {
@@ -378,6 +692,29 @@
       ]
     },
     {
+      "slug": "docs/reference/inventory-count",
+      "title": "Inventory counts",
+      "description": "Count real stock against a frozen snapshot, review the variances, and post the differences as adjustments.",
+      "keywords": ["inventory", "counts", "docs", "reference", "count"],
+      "headings": [
+        "The count lifecycle",
+        "Creating a count",
+        "Counting",
+        "What posting does",
+        "Count vs. a direct adjustment",
+        "Related",
+        "Troubleshooting",
+        "\"… serial line(s) must be counted as 0 or 1 — a serial number is a single unit.\"",
+        "\"Counted quantity cannot be negative\"",
+        "\"Only a confirmed (pending) count can be made effective\"",
+        "\"Only a draft count can be confirmed\"",
+        "\"Only a pending count can be reopened\"",
+        "\"Only a posted count can be rectified\"",
+        "\"Inventory count is no longer pending\"",
+        "No journal was written for the post"
+      ]
+    },
+    {
       "slug": "docs/reference/invoices",
       "title": "Invoices",
       "description": "The billing documents — what you charge customers, and what suppliers charge you.",
@@ -385,8 +722,11 @@
       "headings": [
         "Where they come from",
         "Status lifecycle",
+        "Line types",
         "Posting",
-        "Payment",
+        "Settling an invoice",
+        "What if a payment overpays?",
+        "Voiding and dust",
         "Related",
         "Troubleshooting",
         "\"Can only void posted purchase invoices\"",
@@ -399,6 +739,34 @@
         "\"A payment can only be applied to its own customer's invoices\"",
         "\"Only posted credits can be applied\"",
         "\"Applied amount must be greater than 0\""
+      ]
+    },
+    {
+      "slug": "docs/reference/issues",
+      "title": "Issues (non-conformances)",
+      "description": "How Carbon logs a non-conformance, drives it through a configurable workflow of actions and approvals, and dispositions the affected material before closing.",
+      "keywords": ["issues", "(non-conformances)", "docs", "reference"],
+      "headings": [
+        "The lifecycle",
+        "Header fields",
+        "Workflows: the 8D and its cousins",
+        "Required actions and their system categories",
+        "Working the tasks",
+        "Approvals and the Material Review Board",
+        "Dispositions: deciding the material's fate",
+        "What an issue can point at",
+        "Related",
+        "Troubleshooting",
+        "\"Name is required\" / \"Location is required\" / \"Type is required\" / \"Open date is required\"",
+        "\"Cannot modify a closed issue. Reopen it first.\"",
+        "\"Cannot close: Disposition is still Pending; …\"",
+        "\"Cannot close: Linked entity quantity (…) does not match row quantity (…); …\"",
+        "\"Cannot close: Tracked entity … is already Consumed; …\"",
+        "\"Cannot move entities between different NCRs\" / \"Cannot move entities onto the same row\"",
+        "\"Split quantity (…) must be less than the current quantity (…)\"",
+        "\"Disposition changed while closing; please retry.\"",
+        "MRB review is holding the issue open",
+        "Permission-gated: you can't create, edit, close, or delete an issue"
       ]
     },
     {
@@ -432,6 +800,27 @@
       ]
     },
     {
+      "slug": "docs/reference/kanban",
+      "title": "Kanban",
+      "description": "Scan-based pull replenishment. A kanban card ties an item to a bin, and scanning it fires a purchase order or a job.",
+      "keywords": ["kanban", "docs", "reference"],
+      "headings": [
+        "What a kanban holds",
+        "The scan flow",
+        "Output format",
+        "Kanban vs. reordering policy",
+        "Related",
+        "Troubleshooting",
+        "\"… is not supported\"",
+        "\"Supplier is required\"",
+        "\"Quantity must be at least 1\"",
+        "\"There's already a job for this kanban.\"",
+        "\"No job found for kanban\"",
+        "\"Kanban is not active\"",
+        "The list view shows no Start / Complete affordances"
+      ]
+    },
+    {
       "slug": "docs/reference/maintenance",
       "title": "Maintenance",
       "description": "Keeping work centers running: reactive and preventive maintenance dispatches.",
@@ -443,6 +832,54 @@
         "Blocking and OEE impact",
         "Material and cost",
         "Related"
+      ]
+    },
+    {
+      "slug": "docs/reference/materials",
+      "title": "Materials",
+      "description": "The property tables that give a material its identity — substance, form, dimension, finish, grade, and type.",
+      "keywords": ["materials", "docs", "reference"],
+      "headings": [
+        "The property tables",
+        "Scope: system-wide or per company",
+        "How a material references them",
+        "Naming and uniqueness",
+        "Related",
+        "Troubleshooting",
+        "\"Substance is required\" / \"Shape is required\"",
+        "\"Material ID is required\"",
+        "The Material ID field is missing (or is shown) when I didn't expect it",
+        "Creating a property lookup is rejected for a missing parent",
+        "\"Failed to insert material\" / \"Failed to update material\""
+      ]
+    },
+    {
+      "slug": "docs/reference/mes",
+      "title": "The MES app",
+      "description": "The shop-floor surface where operators run operations, report quantities, issue material, and log their time.",
+      "keywords": ["the", "mes", "app", "docs", "reference"],
+      "headings": [
+        "Getting onto the floor",
+        "Console (shared-station) mode",
+        "The operations board",
+        "Focused lists",
+        "Open Jobs",
+        "Running an operation",
+        "Reporting quantities",
+        "Issuing material",
+        "Clocking in and out",
+        "Picking, quality, inspections, and maintenance",
+        "On-floor picking",
+        "Quality issues and inspections",
+        "Maintenance dispatch",
+        "Troubleshooting",
+        "\"Incorrect PIN\"",
+        "\"No PIN set. Please set a PIN in your account settings.\"",
+        "\"This picking list is closed. Reopen it from the ERP to continue.\"",
+        "Finish is blocked or warns (\"Insufficient quantity\" / \"Steps are missing\")",
+        "\"Forgot to Clock Out?\"",
+        "The Console Mode toggle or the time card isn't there",
+        "I can't drag a card to reschedule on the floor"
       ]
     },
     {
@@ -464,6 +901,168 @@
       ]
     },
     {
+      "slug": "docs/reference/notifications",
+      "title": "Notifications",
+      "description": "Assignments, approvals, expirations, and reminders reach the right people over in-app, email, and Slack, with per-user channel opt-outs by topic.",
+      "keywords": ["notifications", "docs", "reference"],
+      "headings": [
+        "What raises a notification",
+        "Topics",
+        "Channels",
+        "Per-user preferences",
+        "Who receives an expiration or reminder",
+        "The inbox",
+        "Related",
+        "Troubleshooting",
+        "Why am I not getting email notifications?",
+        "Why am I not getting Slack DMs?",
+        "I muted a topic but I'm still getting in-app notifications",
+        "I turned a channel on but it still doesn't deliver",
+        "I did something myself and got no notification",
+        "A recurring reminder stopped arriving"
+      ]
+    },
+    {
+      "slug": "docs/reference/onboarding",
+      "title": "Getting started",
+      "description": "The first-run setup wizard that creates your company, and the Implementation Hub that guides a new company from an empty tenant to live on Carbon.",
+      "keywords": ["getting", "started", "docs", "reference", "onboarding"],
+      "headings": [
+        "The setup wizard",
+        "What you don't choose during onboarding",
+        "The Implementation Hub",
+        "The six phases",
+        "Tiers change what you see",
+        "The Setup Map",
+        "Where to go next",
+        "Troubleshooting",
+        "Stuck in the setup wizard / keeps redirecting to /onboarding",
+        "The Industry step isn't showing",
+        "The Plan step isn't showing",
+        "Can't enroll in the Implementation Hub",
+        "The Accounting group is missing from the Setup Map",
+        "Some Hub phases are missing (Discovery, Migrate data, Acceptance)"
+      ]
+    },
+    {
+      "slug": "docs/reference/payments",
+      "title": "Payments",
+      "description": "Cash receipts, disbursements, and credit or debit memos — the posted transactions that settle AR and AP.",
+      "keywords": ["payments", "docs", "reference"],
+      "headings": [
+        "Payments",
+        "Credit and debit memos",
+        "The settlement row",
+        "Lifecycle",
+        "What posts to the general ledger",
+        "On-account credit and overpayment",
+        "The AR / AP workbench",
+        "Related",
+        "Troubleshooting",
+        "\"Cannot post payment in status … (only Draft)\"",
+        "\"Cannot void payment in status … (only Posted)\" / \"Cannot void memo in status … (only Posted)\"",
+        "\"Receipt cannot apply to purchase invoices\" / \"Disbursement cannot apply to sales invoices\"",
+        "\"Invoice … belongs to a different customer/supplier than the payment\"",
+        "\"Cannot apply payment to invoice … (must be Submitted/Open)\"",
+        "\"Application total … exceeds remaining open amount … on invoice …\"",
+        "\"Applied exceeds payment cash by … but only … of on-account credit is available\"",
+        "\"Cannot post payment: memo … is … (must be Posted)\" / \"Staged credit … exceeds remaining amount … on memo …\"",
+        "\"Accounting is enabled but this company has no account defaults configured\""
+      ]
+    },
+    {
+      "slug": "docs/reference/people",
+      "title": "People",
+      "description": "The HR master data a company sets up — employees, departments, shifts, holidays, custom attributes, and time cards.",
+      "keywords": ["people", "docs", "reference"],
+      "headings": [
+        "Employees",
+        "Departments",
+        "Shifts",
+        "Holidays",
+        "Attributes",
+        "Time cards",
+        "Related",
+        "Troubleshooting",
+        "\"Location is required\"",
+        "\"Start time is required\" / \"End time is required\"",
+        "\"Date is required\"",
+        "Deleting a department fails or orphans people",
+        "The Timecards tab / time card list isn't showing",
+        "Looking for a time card approval / sign-off step"
+      ]
+    },
+    {
+      "slug": "docs/reference/period-close",
+      "title": "Period close",
+      "description": "Locking and closing a fiscal period: the close checklist, what a locked period stops, and how to reopen.",
+      "keywords": ["period", "close", "docs", "reference"],
+      "headings": [
+        "The close lifecycle",
+        "What a locked or closed period stops",
+        "The close checklist",
+        "Severities gate differently",
+        "Completing and skipping tasks",
+        "Reopening",
+        "Fiscal periods and the calendar",
+        "Related",
+        "Troubleshooting",
+        "\"Period must be locked before closing.\"",
+        "\"Accounting period is closed. Reopen it before posting.\"",
+        "\"Accounting period is locked. Post as an accounting adjustment or unlock the period first.\"",
+        "\"Earlier periods must be closed first (sequential close)\"",
+        "\"Later periods must be reopened first (reopen from the most recent close backwards)\"",
+        "\"A reason is required to skip a task\"",
+        "\"Blocker tasks cannot be skipped; resolve the underlying issue first\"",
+        "The Close button is disabled or the close is refused",
+        "A period won't delete or its fiscal start month is locked"
+      ]
+    },
+    {
+      "slug": "docs/reference/permissions",
+      "title": "Permissions and access",
+      "description": "How Carbon decides who can see and change what, from the module-action model to employee types, groups, invites, and shop-floor PIN accounts.",
+      "keywords": ["permissions", "and", "access", "docs", "reference"],
+      "headings": [
+        "The module-action model",
+        "Employee types",
+        "Per-person overrides and bulk edits",
+        "Inviting people",
+        "Shop-floor PIN accounts",
+        "Where each piece lives",
+        "Troubleshooting",
+        "\"Incorrect PIN\"",
+        "\"No PIN set. Please set a PIN in your account settings.\"",
+        "\"PIN must be 4 digits\"",
+        "\"Group members are required\"",
+        "A user can sign in but sees nothing / can't open a module",
+        "Editing an employee type didn't change existing people's access",
+        "A permission change doesn't seem to take effect",
+        "The Operators screen isn't there"
+      ]
+    },
+    {
+      "slug": "docs/reference/picking",
+      "title": "Picking lists",
+      "description": "Staging a job's materials from the warehouse to the point of use, tracked line by line.",
+      "keywords": ["picking", "lists", "docs", "reference"],
+      "headings": [
+        "What a picking list picks against",
+        "Header and line status",
+        "Short picks don't silently close the list",
+        "Where picking happens",
+        "What posting a pick does to stock",
+        "Related",
+        "Troubleshooting",
+        "\"This picking list is closed. Reopen it to make changes.\"",
+        "\"Reopen this picking list from the ERP.\"",
+        "\"Tracked items must be picked via the scan flow\"",
+        "\"No lineside destination is set for this line\"",
+        "A short line won't let the list complete",
+        "The Reopen or Delete action is greyed out"
+      ]
+    },
+    {
       "slug": "docs/reference/planning",
       "title": "Planning (MRP)",
       "description": "How demand turns into suggested jobs and purchase orders — and where that ends and scheduling begins.",
@@ -480,6 +1079,55 @@
         "\"Manufacturing requires configuration for item …\"",
         "\"Failed to create job method for item …\"",
         "\"Failed to load any locations\""
+      ]
+    },
+    {
+      "slug": "docs/reference/pricing",
+      "title": "Pricing rules and overrides",
+      "description": "How Carbon resolves the price on a line, from base price through overrides and rules.",
+      "keywords": ["pricing", "rules", "and", "overrides", "docs", "reference"],
+      "headings": [
+        "Pricing rules",
+        "Price overrides",
+        "How the engine picks a price",
+        "What wins when rules collide",
+        "Where it applies",
+        "Related",
+        "Troubleshooting",
+        "\"Percentage must be between 0% and 100%\"",
+        "\"Duplicate quantity across breaks\"",
+        "\"Cannot set both Customer and Customer Type\" / \"Cannot set both customerId and customerTypeId\"",
+        "\"At least one break is required\"",
+        "\"Valid From must be on or before Valid To\"",
+        "\"Please select a target scope\"",
+        "Why did pricing rules not apply to an override price?",
+        "Why can't I edit a price override's Valid To or Active fields?"
+      ]
+    },
+    {
+      "slug": "docs/reference/printing",
+      "title": "Printing & labels",
+      "description": "Printer routing, ZPL and PDF labels, and the print-job queue that turns a receipt or a finished job into a label on a shelf.",
+      "keywords": ["printing", "labels", "docs", "reference"],
+      "headings": [
+        "Two renderers, one queue",
+        "Printer routes",
+        "Assignments: which printer, in which context",
+        "The print-job queue",
+        "Auto-print behavior",
+        "Print vs download",
+        "Label sizes",
+        "Troubleshooting",
+        "My label didn't print (no error shown)",
+        "Nothing printed after posting, and there's no print job at all",
+        "\"Print jobs already exist for … …\"",
+        "\"Document type \"…\" requires a BinderyPress template.\"",
+        "\"Rendering failed: …\"",
+        "\"Delivery timed out — content may have been printed. …\"",
+        "\"Print job not found: …\" / \"Print job has no content\"",
+        "\"ProxyBox delivery failed: … … — …\"",
+        "\"Test print is only supported for ZPL label printers with a media size configured.\"",
+        "\"Cannot reprint a job with no content\" / \"Cannot reprint a job that is still generating\""
       ]
     },
     {
@@ -521,6 +1169,28 @@
         "\"Split quantity exceeds the linked entity quantity\"",
         "\"Duplicate entity in split selection\"",
         "\"Failed to accept lot\" / \"Failed to reject lot\""
+      ]
+    },
+    {
+      "slug": "docs/reference/quality-documents",
+      "title": "Quality documents",
+      "description": "Controlled SOPs and work instructions, versioned so a new revision supersedes the old one without deleting it.",
+      "keywords": ["quality", "documents", "docs", "reference"],
+      "headings": [
+        "The lifecycle",
+        "Versioning",
+        "Approval",
+        "Steps",
+        "What a quality document is not",
+        "Troubleshooting",
+        "\"Name is required\" / \"Quality document is required\" / \"Type is required\"",
+        "\"Unit of measure is required\" / \"List options are required\"",
+        "\"Maximum value must be greater than or equal to minimum value\"",
+        "\"Invalid quality document content format\" / \"Failed to insert quality document\" / \"Failed to delete quality document\"",
+        "Activating a document is stuck in Draft",
+        "\"Approval request not found\"",
+        "A new version didn't replace the old record",
+        "Permission-gated: view, create, edit, or delete a document"
       ]
     },
     {
@@ -567,6 +1237,26 @@
       "headings": ["Policies", "Fields", "Related"]
     },
     {
+      "slug": "docs/reference/risks",
+      "title": "Risk register",
+      "description": "Track risks and opportunities against any entity, rated by severity and likelihood, and drive each to a resolution.",
+      "keywords": ["risk", "register", "docs", "reference", "risks"],
+      "headings": [
+        "What a risk entry holds",
+        "Rating severity and likelihood",
+        "Status lifecycle",
+        "Attaching risks to entities",
+        "Who can do what",
+        "Relation to issues and CAPA",
+        "Troubleshooting",
+        "\"Severity is required\" / \"Likelihood is required\" / \"Title is required\"",
+        "Severity or likelihood is rejected outside 1–5",
+        "\"Failed to create risk\" / \"Failed to update risk\" / \"Failed to delete risk\"",
+        "Status won't advance the way you expect",
+        "Permission-gated: you can create a risk but can't edit or delete it"
+      ]
+    },
+    {
       "slug": "docs/reference/routings",
       "title": "Routings",
       "description": "The ordered operations and work centers a part flows through to get made.",
@@ -587,6 +1277,73 @@
         "\"Cannot add lines to a locked sales order. Reopen it first.\" / \"Cannot delete lines on a locked sales order. Reopen it first.\"",
         "\"No jobs were created\"",
         "\"Failed to insert job\""
+      ]
+    },
+    {
+      "slug": "docs/reference/scheduling",
+      "title": "Scheduling",
+      "description": "The board where jobs get dates and operations get a dispatch order, and the engine that computes both.",
+      "keywords": ["scheduling", "docs", "reference"],
+      "headings": [
+        "The two views drag differently",
+        "The MES board is display only",
+        "What triggers a (re)schedule",
+        "Dates: backward from the due date",
+        "Dispatch priority and work-center load",
+        "Conflicts and pinned dates",
+        "Troubleshooting",
+        "\"Invalid form data\"",
+        "An operation shows a conflict flag",
+        "Nothing reschedules when I move a card on the Work Centers / MES board",
+        "A pinned operation's due date didn't move after a reschedule",
+        "The new dates didn't appear right after I saved",
+        "I can't edit dates on the board",
+        "Related"
+      ]
+    },
+    {
+      "slug": "docs/reference/sequences",
+      "title": "Numbering sequences",
+      "description": "The per-company generator behind every readable document number — jobs, change orders, payments, and more.",
+      "keywords": ["numbering", "sequences", "docs", "reference"],
+      "headings": [
+        "What a sequence is",
+        "Fields",
+        "Date tokens",
+        "Which documents use a sequence",
+        "How a number gets assigned",
+        "Troubleshooting",
+        "A sequence field won't save (Current, Step, or Size)",
+        "My `%{hh}` or `%{ss}` token shows up literally in the number",
+        "Editing a sequence didn't renumber existing documents",
+        "A prefix on my company doesn't match the seed defaults"
+      ]
+    },
+    {
+      "slug": "docs/reference/sharing",
+      "title": "External sharing and portals",
+      "description": "Private, login-free links that let a customer accept a quote, a supplier price an RFQ or answer a SCAR, and a buyer watch order status, all without a Carbon account.",
+      "keywords": [
+        "external",
+        "sharing",
+        "and",
+        "portals",
+        "docs",
+        "reference"
+      ],
+      "headings": [
+        "What can be shared",
+        "Digital quotes",
+        "Supplier quotes",
+        "Customer portal",
+        "Supplier corrective action requests",
+        "Troubleshooting",
+        "\"This quote is no longer available for a response.\"",
+        "\"Oops! The link you're trying to access has expired or is no longer valid.\" (Quote expired)",
+        "\"Issue has been closed already. Unable to make changes\"",
+        "Why does the customer portal link show \"Not found\" / a 404?",
+        "Why is the supplier's \"Submit Quote\" button disabled?",
+        "Why did downloads from the customer portal start failing (HTTP 429)?"
       ]
     },
     {
@@ -647,6 +1404,25 @@
       ]
     },
     {
+      "slug": "docs/reference/supplier-quotes",
+      "title": "Supplier quotes",
+      "description": "A supplier's priced response to your RFQ, one per supplier, ready to convert into a purchase order.",
+      "keywords": ["supplier", "quotes", "docs", "reference"],
+      "headings": [
+        "Where a quote comes from",
+        "Lines and pricing",
+        "Lifecycle",
+        "From quote to purchase order",
+        "Troubleshooting",
+        "\"Expiration date must be today or after\"",
+        "\"Supplier contact is required for email\"",
+        "\"Cannot convert to order: supplier is not approved (Active)\"",
+        "\"Failed to convert quote to order\"",
+        "Why is the quote read-only / why can't I edit lines?",
+        "Why is the Finalize or Send button disabled?"
+      ]
+    },
+    {
       "slug": "docs/reference/suppliers-and-customers",
       "title": "Suppliers & customers",
       "description": "The parties you buy from and sell to, and the ways their records differ.",
@@ -658,7 +1434,7 @@
         "Related",
         "Troubleshooting",
         "\"Cannot edit a protected customer type\" / \"Cannot edit a protected supplier type\"",
-        "\"Cannot finalize: supplier is not approved (Active)\""
+        "The purchase order's Finalize button is greyed out"
       ]
     },
     {
@@ -672,6 +1448,27 @@
         "Genealogy",
         "Shelf life",
         "Related"
+      ]
+    },
+    {
+      "slug": "docs/reference/training",
+      "title": "Training",
+      "description": "Training programs, quiz questions, group assignments, per-period completion tracking, and the weekly reminder digest.",
+      "keywords": ["training", "docs", "reference"],
+      "headings": [
+        "The training catalog",
+        "Quiz questions",
+        "Assigning training to groups",
+        "Completion and status",
+        "The weekly reminder",
+        "Abilities are a separate system",
+        "Troubleshooting",
+        "\"Training is required\"",
+        "\"At least one group is required\"",
+        "\"Training assignment is required\" / \"Employee is required\"",
+        "\"Why didn't a reminder send?\"",
+        "\"Why can't I mark someone complete / assign a training?\"",
+        "\"A completed training re-appeared as Pending\""
       ]
     },
     {

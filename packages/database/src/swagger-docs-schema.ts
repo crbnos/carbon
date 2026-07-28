@@ -56158,6 +56158,9 @@ export default {
             $ref: "#/parameters/rowFilter.modelUpload.originalSize"
           },
           {
+            $ref: "#/parameters/rowFilter.modelUpload.originalPath"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -56286,6 +56289,9 @@ export default {
             $ref: "#/parameters/rowFilter.modelUpload.originalSize"
           },
           {
+            $ref: "#/parameters/rowFilter.modelUpload.originalPath"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -56366,6 +56372,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.modelUpload.originalSize"
+          },
+          {
+            $ref: "#/parameters/rowFilter.modelUpload.originalPath"
           },
           {
             $ref: "#/parameters/body.modelUpload"
@@ -120771,6 +120780,10 @@ export default {
         originalSize: {
           format: "bigint",
           type: "integer"
+        },
+        originalPath: {
+          format: "text",
+          type: "string"
         }
       },
       type: "object"
@@ -163945,6 +163958,12 @@ export default {
     },
     "rowFilter.modelUpload.originalSize": {
       name: "originalSize",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.modelUpload.originalPath": {
+      name: "originalPath",
       required: false,
       in: "query",
       type: "string"

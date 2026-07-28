@@ -168,9 +168,12 @@ export const modelOptimizeFunction = inngest.createFunction(
         return {
           source: { url: internalizeStorageUrl(source.data.signedUrl), format },
           output: { path: optimizedPath }
-          // quality omitted → the service defaults apply (codec meshopt, merge on,
-          // normal quant on, auto simplify tolerance, aggressive ladder to fit the
-          // size + render-weight gates).
+          // quality omitted → the service applies its size-adaptive policy: codec
+          // meshopt, merge on, normal quant on, and an auto simplify budget that
+          // scales with the model's tessellated weight (small models keep the
+          // baseline high-quality budget; large ones decimate harder, still
+          // error-bounded), then the ladder + size/render-weight gates as the
+          // final fit. Passing any explicit quality knob disables the scaling.
         };
       },
       mintUploadUrls: async () => {

@@ -233,6 +233,18 @@ msgstr "Alınan ancak henüz faturalanmayan malların değerini tutan bir takas 
 msgid "A company that designs and builds its own finished products end to end (here, the shop building humanoid robots) rather than making parts to another company's specification."
 msgstr "Başka bir şirketin spesifikasyonuna göre parça üretmek yerine, kendi bitmiş ürünlerini uçtan uca tasarlayan ve inşa eden bir şirket (burada insansı robotlar inşa eden mağaza)."
 
+msgid "A company that sits at or above selected companies in the group hierarchy and receives their intercompany cancelling entries for consolidated reporting; it is never a party to the trade itself."
+msgstr "Grup hiyerarşisinde seçilen şirketlerin üstünde veya aynı seviyede bulunan ve konsolide raporlama için aralarındaki iptal girişlerini alan şirket; ticaret işleminin tarafı asla değildir."
+
+msgid "A company-defined extra field attached to a core table (customer, part, order); it shows on the record's form, saves alongside the built-in fields, and is queryable through the API."
+msgstr "Temel bir tabloya (müşteri, parça, sipariş) eklenen şirket tarafından tanımlı ek bir alan; kaydın formunda görünür, yerleşik alanlarla birlikte kaydedilir ve API üzerinden sorgulanabilir."
+
+msgid "A company-defined tag axis attached to journal lines so the same accounts can be sliced by location, department, or any custom axis without multiplying the chart of accounts."
+msgstr "Muhasebe satırlarına eklenen şirket tarafından tanımlı bir etiket ekseni; aynı hesaplar konum, bölüm veya herhangi bir özel eksen tarafından dilimlenebilir ve hesap planı çoğaltılmadan yönetilebilir."
+
+msgid "A company-scoped Discount or Markup, by percentage or fixed amount, that adjusts a line's price up or down when the line matches the rule's quantity, date, item, and customer conditions."
+msgstr "Satırın miktar, tarih, ürün ve müşteri koşulları kurala uyduğunda satır fiyatını yukarı veya aşağı ayarlayan, yüzde veya sabit tutar olarak şirket kapsamında bir İndirim veya Marj."
+
 msgid "A completed job's output, received into inventory at the job's actual accumulated WIP cost."
 msgstr "Tamamlanan bir işin çıktısı, işin gerçek birikmiş WIP maliyetine göre envantere alınır."
 
@@ -245,8 +257,11 @@ msgstr "Bir yüklenici, belirli yeteneklere ve müsait saatlere sahip bir tedari
 msgid "A customer is a business or person who buys your parts or services."
 msgstr "Bir müşteri, parçalarınızı veya hizmetlerinizi satın alan bir işletme veya kişidir."
 
-msgid "A dated window postings fall into (Active or Inactive, not open or closed), opened automatically when needed."
-msgstr "Postingların girdiği tarihli bir pencere (Etkin veya Etkin Değil, açık veya kapalı değil), gerektiğinde otomatik olarak açılır."
+msgid "A dated record proving a gauge was checked against a traceable standard; it passes unless a requires-action, -adjustment, or -repair flag is ticked, and resets the gauge's next-due date."
+msgstr "Bir göstergenin izlenebilir bir standarda karşı kontrol edildiğini kanıtlayan tarihli bir kayıt; işlem gerekli, ayarlama gerekli veya onarım gerekli bayrağı işaretlenmediği sürece geçer ve göstergenin sonraki kontrol tarihini sıfırlar."
+
+msgid "A dated window postings fall into; its close status moves Open → Locked → Closed, and a closed period is frozen against new postings."
+msgstr "Girişlerin düştüğü tarihli bir dönem; kapatma durumu Açık → Kilitli → Kapalı şeklinde ilerler ve kapalı bir dönem yeni girişlere karşı donmuş durumda kalır."
 
 msgid "A depreciation method that charges a fixed percentage of remaining book value each period — heavier early, lighter later."
 msgstr "Kalan defter değerinin her dönem sabit bir yüzdesini şarj eden bir amortisman yöntemi — başında daha ağır, sonra daha hafif."
@@ -263,6 +278,9 @@ msgstr "Bir tedarikçiye kesin sipariş; mal ve faturalar geldikçe durum, Tamam
 msgid "A formal acceptance / sign-off phase"
 msgstr "Resmi bir kabul / imza aşaması"
 
+msgid "A gauge whose role is Master — the reference standard other gauges are calibrated against, rather than one used for routine checks."
+msgstr "Rolü Ana Gösterge olan bir gösterge — rutin kontroller için kullanılan değil, diğer göstergelerin kalibre edildiği referans standarttır."
+
 msgid "A issue record tracks quality issues and their resolution process."
 msgstr "Bir sorun kaydı kalite sorunlarını ve çözüm süreçlerini izler."
 
@@ -275,8 +293,14 @@ msgstr "Parçaları ebeveyn işine birlikte verilen bir Sipariş üzere Üretim 
 msgid "A material is a physical item used to make a part that can be used across multiple jobs"
 msgstr "Bir malzeme, birden fazla işte kullanılabilecek bir parça yapmak için kullanılan fiziksel bir öğedir"
 
+msgid "A measurement instrument (caliper, micrometer, pin gauge, CMM) tracked as a record and held to a recurring calibration schedule."
+msgstr "Bir kayıt olarak izlenen ve yinelenen bir kalibrasyon programına tabi tutulan bir ölçüm aracı (kumpas, mikrometre, pim göstergesi, CMM)."
+
 msgid "A name is required to save a view"
 msgstr "Bir görünüm kaydetmek için bir isim gereklidir"
+
+msgid "A negotiated price pinned for a specific item — by customer, customer type, or all customers — that replaces the base price outright, optionally with quantity breaks."
+msgstr "Belirli bir ürün için sabitlenen müzakere edilen bir fiyat — müşteri, müşteri türü veya tüm müşteriler tarafından — temel fiyatı tamamen değiştirir, isteğe bağlı olarak miktar seviyeleriyle."
 
 msgid "A new purchase order will be created for each supplier. Alternatively, you can choose an existing draft purchase order for the supplier to add the outside operations to."
 msgstr "Her tedarikçi için yeni bir satın alma siparişi oluşturulacaktır. Alternatif olarak, tedarikçinin dış operasyonları eklemesi için mevcut taslak bir satın alma siparişi seçebilirsiniz."
@@ -286,6 +310,12 @@ msgstr "Yeni bir revizyon, mevcut revizyonun bir kopyası kullanılarak oluştur
 
 msgid "A new size will be created using a copy of the current size"
 msgstr "Yeni bir boyut, mevcut boyutun bir kopyası kullanılarak oluşturulacaktır"
+
+msgid "A non-cash document that settles an invoice against a reason account: a credit lowers what's owed, a debit raises it."
+msgstr "Bir faturayı bir sebep hesabına karşı ödeyen nakitsiz bir belge: alacak, borçlu olunan tutarı azaltır, borç artırır."
+
+msgid "A non-conformance shared with a supplier over a login-free /share/scar link, so they can respond to the issue and update its tasks from outside Carbon."
+msgstr "Bir tedarikçi ile login olmadan erişilebilir bir /share/scar bağlantısı üzerinden paylaşılan bir uygunsuzluk; tedarikçi soruna yanıt verebilir ve görevleri Carbon dışından güncelleyebilir."
 
 msgid "A non-taxable surcharge (e.g. recoverable expenses like permit fees) added to the line; excluded from the tax base."
 msgstr "Vergilendirilmeyen bir ek ücret (örneğin izin ücretleri gibi geri alınabilir giderler) satıra eklenir ve vergi matrahından hariç tutulur."
@@ -299,8 +329,14 @@ msgstr "Problemin başka yerde yeniden oluşmasını önleyen bir uygunsuzluk g�
 msgid "A part contains the information about a specific item that can be purchased or manufactured."
 msgstr "Bir parça, satın alınabilir veya üretilebilir belirli bir öğe hakkındaki bilgileri içerir."
 
+msgid "A physical pull signal — a printed card or QR code living with the stock — that raises a purchase order or a job the moment it's scanned to refill a bin."
+msgstr "Stokla yaşayan fiziksel bir çekme sinyali — basılı bir kart veya QR kodu — bir bin'i doldurmak için tarandığı anda bir satın alma siparişi veya iş oluşturur."
+
 msgid "A posted accounting entry: a header plus balanced debit and credit lines against GL accounts."
 msgstr "Deftere geçirilen muhasebe girişi: GL hesaplarına karşı dengeli debit ve kredi satırları artı başlık."
+
+msgid "A posted cash transaction — a Receipt from a customer or a Disbursement to a supplier — applied to invoices through settlements, moving Draft → Posted → Voided."
+msgstr "Deftere kaydedilmiş bir nakit işlemi — bir müşteriden alınan Makbuz veya bir tedarikçiye yapılan Ödeme — faturaları anlaşmalar aracılığıyla uygulanan, Taslak → Deftere Kaydedildi → İptal edildi şeklinde ilerler."
 
 msgid "A pre-written description inserted into every issue that uses this workflow; placeholders like {itemId} and {location} are substituted at creation."
 msgstr "Bu iş akışını kullanan her sorun içine eklenen önceden yazılmış bir açıklama; {itemId} ve {location} gibi yer tutucu değerleri oluşturma sırasında değiştirilir."
@@ -329,8 +365,8 @@ msgstr "Bir işleme bağlı, yeniden kullanılabilir, sürümlendirilmiş bir i�
 msgid "A routing step on a released job, the job's own copy of an operation, carrying a status the floor drives from Todo through Done."
 msgstr "Yayınlanan bir işin yönlendirme adımı, işin kendi operasyon kopyası, durumu zemin tarafından Yapılacak'tan Tamamlandı'ya kadar yönetilir."
 
-msgid "A sales invoice (you bill a customer) or purchase invoice (a supplier bills you); payment is a field, not a separate record."
-msgstr "Bir satış faturası (bir müşteriye fatura çıkarırsınız) veya satın alma faturası (bir tedarikçi size fatura çıkarır); ödeme bir alandır, ayrı bir kayıt değil."
+msgid "A sales invoice (you bill a customer) or purchase invoice (a supplier bills you), settled by applying payments and credit or debit memos."
+msgstr "Bir satış faturası (müşteriye fatura kesme) veya satın alma faturası (tedarikçi size fatura kesiyor), ödemeler ve alacak veya borç muhasebe defteri belgeleri uygulanarak ödenmiş."
 
 msgid "A sales invoice is a document that specifies the products or services sold to a customer and the corresponding cost."
 msgstr "Satış faturası, bir müşteriye satılan ürünleri veya hizmetleri ve bunlara karşılık gelen maliyeti belirten bir belgedir."
@@ -350,6 +386,9 @@ msgstr "Teklif talebi (RFQ), bir dizi parça ve miktar için müşterinin fiyat 
 msgid "A sales RFQ (a customer asks you to quote) or a purchasing RFQ (you ask suppliers); both feed the opportunity thread."
 msgstr "Bir satış RFQ (müşteri sizi alıntı yapmak için ister) veya satın alma RFQ (siz tedarikçileri istersiniz); her ikisi de fırsat ipliğini besler."
 
+msgid "A scoped secret sent on the carbon-key request header that authenticates programmatic calls to Carbon, carrying its own permissions and rate limit rather than a user session's."
+msgstr "Carbon'a programlı çağrıları doğrulayan carbon-key istek başlığında gönderilen kapsamlı bir gizli anahtar; bir kullanıcı oturumunun yerine kendi izinleri ve hız sınırını taşır."
+
 msgid "A separate schedule for tax reporting when tax rules require a method different from book depreciation."
 msgstr "Vergi kuralları defter amortismanından farklı bir yöntem gerektirdiğinde vergi raporlaması için ayrı bir zaman çizelgesi."
 
@@ -358,6 +397,9 @@ msgstr "Bir hizmet, satın alınan veya gerçekleştirilen faturalaştırılabil
 
 msgid "A set of companies under one owner that share group-scoped configuration — the chart of accounts, currencies, and dimensions — so the same accounting setup spans every company in the group."
 msgstr "Tek bir sahip altında, grup kapsamlı yapılandırmayı — hesap planı, para birimleri ve boyutlar — paylaşan, böylece aynı muhasebe kurulumunun gruptaki her şirketi kapsadığı şirketler kümesi."
+
+msgid "A set of instructions to pull a job's outstanding materials from the warehouse and stage them lineside; a pick moves stock to the point of use rather than consuming it."
+msgstr "Bir işin bekleyen malzemeleri depodan çekmek ve üretime hazırlamak için bir dizi talimat; bir çekme stoku tüketmek yerine kullanım noktasına taşır."
 
 msgid "A shipment line sent straight from supplier to customer, bypassing your warehouse — set per line, not on the header."
 msgstr "Deponuzu atlayarak doğrudan tedarikçiden müşteriye gönderilen bir gönderim satırı — satır başına ayarlanır, başlıkta değil."
@@ -892,6 +934,12 @@ msgstr "Departman veya işlev tarafından harcamaları gruplandıran bir muhaseb
 msgid "An accounting record for a capitalized item you depreciate rather than expense; Draft → Active → Fully Depreciated → Disposed."
 msgstr "Harcama yerine amorti ettiğiniz kapitalize edilmiş bir öğe için bir muhasebe kaydı; Taslak → Etkin → Tamamen amorti edilmiş → İmha edilmiş."
 
+msgid "An alert that something needs a person's attention, fanned out from a carbon/notify event to the in-app inbox plus optional email and Slack, muteable per topic per user."
+msgstr "Bir carbon/notify etkinliğinden uygulama içi gelen kutusu ve isteğe bağlı e-posta ve Slack'e dağıtılan bir uyarı; konu başına ve kullanıcı başına sessize alınabilir."
+
+msgid "An approval requirement on a non-conformance whose reviewers (seeded Engineering and Quality) must sign off before the issue can close."
+msgstr "Sorun kapanmadan önce gözden geçirenler (Mühendislik ve Kalite) onay vermelidir uygunsuzluk üzerinde bir onay gerekliliği."
+
 msgid "An asset's acquisition cost minus accumulated depreciation — what it's still worth on the books, and the figure it's disposed at."
 msgstr "Bir varlığın satın alma maliyeti eksi birikmiş amortisman — kitaplarda halen değeri olan ve imha edildiği tutar."
 
@@ -906,6 +954,9 @@ msgstr "Bir öğe kendisine eklenemez."
 
 msgid "An operation done by an outside supplier rather than an in-house work center, covered by a subcontracting purchase order."
 msgstr "Bir iç çalışma merkezi yerine harici bir sağlayıcı tarafından gerçekleştirilen ve bir alt yüklenici satın alma siparişiyle kapsanan işlem."
+
+msgid "An operation's position in its work center's queue — the order the floor picks work up — set by reordering cards on the Work Centers board without changing any dates."
+msgstr "Bir işin iş merkezinin kuyruğundaki konumu — işinin çekildiği sıra — İş Merkezleri panosundaki kartları herhangi bir tarihi değiştirmeden yeniden sıralayarak ayarlanan."
 
 msgid "Anchors the Plan timeline to real dates. Leave blank for a relative, week-numbered timeline. Setting either one fills in the rest."
 msgstr "Plan zaman çizelgesini gerçek tarihlere sabitleyin. Göreceli, hafta numaralı bir zaman çizelgesi için boş bırakın. Her ikisinden birini ayarlamak geri kalanını doldurur."
@@ -967,6 +1018,9 @@ msgstr "API Belgeleri"
 
 msgid "API Documentation"
 msgstr "API Dokümantasyonu"
+
+msgid "API key"
+msgstr "API Anahtarı"
 
 msgid "API Key"
 msgstr "API Anahtarı"
@@ -1956,6 +2010,9 @@ msgstr "Hesaplanan bitmiş ürün son kullanma tarihi"
 msgid "Calculation Method"
 msgstr "Hesaplama Yöntemi"
 
+msgid "Calibration"
+msgstr "Kalibrasyon"
+
 msgid "Calibration Attempts"
 msgstr "Kalibrasyon denemeleri"
 
@@ -2120,6 +2177,9 @@ msgstr "Carbon'un planlama çalışması arz ve talep tarafından net ve açıl�
 
 msgid "Carbon's production order — one job builds a quantity of one item from its own copied method and routing."
 msgstr "Carbon'ın üretim emri — bir iş, kopyalanmış yöntemi ve yönlendirmesinden bir öğenin miktarını oluşturur."
+
+msgid "Carbon's shop-floor app where operators run operations, report quantities, issue material, and log time against released jobs in real time."
+msgstr "Operatörlerin işlemleri çalıştırdığı, miktarları rapor ettiği, malzeme verdiği ve yayınlanan işlere karşı gerçek zamanlı olarak zaman kaydettiği Carbon'un atölye uygulaması."
 
 msgid "Cards"
 msgstr "Kartlar"
@@ -3217,6 +3277,9 @@ msgstr "Kredi"
 msgid "Credit ({0})"
 msgstr "Kredi ({0})"
 
+msgid "Credit / debit memo"
+msgstr "Alacak / Borç Muhasebe Defteri"
+
 msgid "Credit / Debit Memos"
 msgstr "Kredi / Borç Muhasebe Notları"
 
@@ -3303,6 +3366,9 @@ msgstr "Listelenenin ötesinde özel geliştirme"
 
 msgid "Custom development, integrations, or self-hosting"
 msgstr "Özel geliştirme, entegrasyonlar veya kendi barındırma"
+
+msgid "Custom field"
+msgstr "Özel Alan"
 
 msgid "Custom Field"
 msgstr "Özel Alan"
@@ -4039,6 +4105,9 @@ msgstr "Talep Tahmini — Kaynaklanan"
 msgid "Demand forecast = BOM-exploded demand from open sales orders, active jobs, and production projections."
 msgstr "Talep tahmini = Açık satış siparişlerinden, aktif işlerden ve üretim projeksiyonlarından BOM'u açılmış talep."
 
+msgid "Demand projection"
+msgstr "Talep Tahmini"
+
 msgid "Demand Projections"
 msgstr "Talep Tahminleri"
 
@@ -4186,6 +4255,9 @@ msgstr "Görevlendirme"
 
 msgid "Dispatch ID"
 msgstr "Görev Atama Kimliği"
+
+msgid "Dispatch priority"
+msgstr "Gönderme Önceliği"
 
 msgid "Dispatches"
 msgstr "Gönderiler"
@@ -4729,6 +4801,9 @@ msgstr "İş Merkezi Düzenle"
 msgid "Eliminated"
 msgstr "Ortadan Kaldırılmış"
 
+msgid "Elimination entity"
+msgstr "İndirim Varlığı"
+
 msgid "email"
 msgstr "e-posta"
 
@@ -5095,6 +5170,9 @@ msgstr "Kurulumu Genişlet"
 msgid "Expand subtree"
 msgstr "Alt ağacı genişlet"
 
+msgid "Expected future demand for a make part entered week by week before any sales order exists; planning nets it against supply and explodes the method to order components ahead."
+msgstr "İmalat yapılan bir parça için herhangi bir satış siparişi oluşturulmadan önceden hafta hafta girilen beklenen gelecek talep; planlama bunu arz karşısında hesaplar ve yöntem açıklarını bileşenleri önceden sipariş etmek için açar."
+
 msgid "Expected future demand for an item, bucketed by period, populated by the planning run alongside actual demand."
 msgstr "Bir öğe için beklenen gelecek talep, dönem tarafından gruplandırılmış, planlanma çalıştırması tarafından gerçek talep ile birlikte doldurulmuş."
 
@@ -5423,7 +5501,7 @@ msgid "Failed to move account: {0}"
 msgstr "Hesap taşınamadı: {0}"
 
 msgid "Failed to regenerate thumbnail"
-msgstr "Küçük resim yeniden oluşturulamadı"
+msgstr "Küçük resim yenileme başarısız"
 
 msgid "Failed to remove image: {errorMessage}"
 msgstr "Görsel kaldırılamadı: {errorMessage}"
@@ -5615,6 +5693,9 @@ msgstr "Filtre"
 
 msgid "Finalize"
 msgstr "Onayla"
+
+msgid "Finalizing a fiscal month through the Open → Locked → Closed lifecycle; a closed period is frozen and its balances snapshotted, reversible only by explicit reopen."
+msgstr "Mali bir ayı Açık → Kilitli → Kapalı yaşam döngüsü aracılığıyla sonlandırma; kapalı bir dönem donmuştur ve bakiyeleri anlık görüntülenmiş, yalnızca açık yeniden açılarak tersine çevrilebilir."
 
 msgid "finish"
 msgstr "Bitmiş ürünler"
@@ -6220,8 +6301,8 @@ msgstr "Çözülen fiyatın nasıl hesaplandığı."
 msgid "How the sample size is decided — Inspect All, Inspect First N, Percentage of Lot, or AQL (Z1.4 / ISO 2859-1). Each mode reveals its own parameter fields below."
 msgstr "Örnek boyutu nasıl kararlaştırılır — Tümünü İncele, İlk N'yi İncele, Lot Yüzdesini veya AQL'yi İncele (Z1.4 / ISO 2859-1). Her mod aşağıda kendi parametre alanlarını ortaya koymaktadır."
 
-msgid "How this gauge is used — Standard (regular checks), Master (calibrates other gauges), or Reference (audit-only)."
-msgstr "Bu ölçü nasıl kullanılır — Standart (düzenli kontroller), Ana (diğer ölçümleri kalibre eder) veya Referans (yalnızca denetim)."
+msgid "How this gauge is used — Standard (regular checks) or Master (calibrates other gauges)."
+msgstr "Bu göstergenin nasıl kullanıldığı — Standart (düzenli kontroller) veya Ana (diğer göstergeleri kalibre eder)."
 
 msgid "How this price was calculated"
 msgstr "Bu fiyat nasıl hesaplandı"
@@ -6381,6 +6462,9 @@ msgstr "Pasif"
 
 msgid "Inactive actions will not appear in selection lists"
 msgstr "Etkin olmayan eylemler seçim listelerinde görünmeyecektir"
+
+msgid "Inbound inspection"
+msgstr "Gelen Muhasebesi"
 
 msgid "Inbox"
 msgstr "Gelen Kutusu"
@@ -6639,6 +6723,9 @@ msgstr "Fatura Konumu"
 
 msgid "Invoice Number"
 msgstr "Fatura Numarası"
+
+msgid "Invoice settlement"
+msgstr "Fatura Ödeme"
 
 msgid "Invoice Supplier"
 msgstr "Fatura Tedarikçisi"
@@ -7066,6 +7153,9 @@ msgstr "Satırlar dahili parça numaralarına ihtiyaç duyuyor"
 msgid "Lines need prices or lead times"
 msgstr "Satırlarda fiyat veya teslim süreleri eksik"
 
+msgid "Lineside"
+msgstr "Üretim Hattı Yanı"
+
 msgid "Link"
 msgstr "Bağlantı"
 
@@ -7221,6 +7311,9 @@ msgstr "Lot Boyutu Sapması (varsayılan)"
 
 msgid "Lot Size:"
 msgstr "Lot Boyutu:"
+
+msgid "Lot-based inspection of received goods against a sampling plan; the units post On Hold at receipt and only release to Available once the lot is dispositioned as accepted."
+msgstr "Alınan malların bir örnekleme planına karşı lot bazında denetlenmesi; birimler alındı bekleme durumuna gelir ve yalnızca lot kabul edildiğine karar verilince kullanılabilir durumuna geçer."
 
 msgid "Low"
 msgstr "Düşük"
@@ -7424,6 +7517,9 @@ msgstr "Az eksik olarak işaretle"
 msgid "Mark to delete"
 msgstr "Silmek için işaretle"
 
+msgid "Master gauge"
+msgstr "Ana Gösterge"
+
 msgid "Master records"
 msgstr "Ana kayıtlar"
 
@@ -7492,6 +7588,9 @@ msgstr "Malzeme Kimlikleri"
 
 msgid "Material Properties"
 msgstr "Malzeme Özellikleri"
+
+msgid "Material Review Board (MRB)"
+msgstr "Malzeme İnceleme Kurulu (MRB)"
 
 msgid "Material Shape"
 msgstr "Malzeme Şekli"
@@ -7669,9 +7768,6 @@ msgstr "Tedarikçi Eksikleri"
 
 msgid "Mobile Phone"
 msgstr "Cep Telefonu"
-
-msgid "Model data is missing"
-msgstr "Model verisi eksik"
 
 msgid "Model Number"
 msgstr "Model Numarası"
@@ -8545,6 +8641,9 @@ msgstr "Numara"
 msgid "Number of inventory units per purchase unit"
 msgstr "Satın alma birimi başına envanter birimi sayısı"
 
+msgid "Numbering sequence"
+msgstr "Numaralandırma Sırası"
+
 msgid "OEE Impact"
 msgstr "OEE Etkisi"
 
@@ -8675,7 +8774,7 @@ msgid "Open in Carbon"
 msgstr "Carbon'da Aç"
 
 msgid "Open in change order {ids}. Release it to create new versions or revisions."
-msgstr "Değişiklik emrinde {ids} açın. Yeni sürümler veya revizyonlar oluşturmak için yayınlayın."
+msgstr "Değişiklik emrinde {ids} açılmış. Yeni versiyonlar veya revizyonlar oluşturmak için bunu yayınlayın."
 
 msgid "Open in change orders {ids}. Release them to create new versions or revisions."
 msgstr "Değişiklik emirlerinde {ids} açın. Yeni sürümler veya revizyonlar oluşturmak için yayınlayın."
@@ -9129,6 +9228,9 @@ msgstr "Düşük maliyetli değerlendirme için mükemmel"
 msgid "Period"
 msgstr "Dönem"
 
+msgid "Period close"
+msgstr "Dönem Kapanışı"
+
 msgid "Period End"
 msgstr "Dönem Sonu"
 
@@ -9194,6 +9296,9 @@ msgstr "Alınan miktar"
 
 msgid "Picking Lines"
 msgstr "Toplama Satırları"
+
+msgid "Picking list"
+msgstr "Çekme listesi"
 
 msgid "Picking List"
 msgstr "Toplama Listesi"
@@ -9441,11 +9546,17 @@ msgstr "Fiyat listeleri"
 msgid "Price Lists"
 msgstr "Fiyat Listeleri"
 
+msgid "Price override"
+msgstr "Fiyat geçersiz kılma"
+
 msgid "Prices"
 msgstr "Fiyatlar"
 
 msgid "Pricing"
 msgstr "Fiyatlandırma"
+
+msgid "Pricing rule"
+msgstr "Fiyatlandırma kuralı"
 
 msgid "Pricing Rule"
 msgstr "Fiyatlandırma Kuralı"
@@ -9954,6 +10065,9 @@ msgstr "Bunu okuyun — Carbon'un kurulumunuz için neler yapacağını ve yapma
 msgid "Read this through. When it's right, sign off at the bottom. It's the statement your commercial agreement points to, with no prices or legal terms here."
 msgstr "Bunu baştan sona oku. Doğru olduğunda, altta imzala. Bu, ticari anlaşmanın işaret ettiği beyan olup, burada fiyat veya yasal şart yoktur."
 
+msgid "Readable ID"
+msgstr "Okunabilir ID"
+
 msgid "Reading the document..."
 msgstr "Belge okunuyor..."
 
@@ -10105,11 +10219,11 @@ msgstr "Kayıt silindi"
 msgid "Record inspections tied to a part and a job"
 msgstr "Bir parça ve bir işe bağlı muayeneleri kaydedin"
 
+msgid "Recorded on a calibration that the gauge needs repair before its readings can be trusted."
+msgstr "Ölçü aletiyle ilgili kalibrasyonda, okumaları güvenilir olması için aletin onarılması gerektiği kaydedilmiştir."
+
 msgid "Recorded that follow-up is needed after this calibration; surfaces this gauge on the open-actions queue."
 msgstr "Bu kalibrasyon sonrasında takip gerektiği kaydedildi; bu göstergeyi açık eylemler kuyruğunda gösterir."
-
-msgid "Recorded that the gauge needs repair; the gauge stays unavailable for inspections until the repair is closed out."
-msgstr "Göstergenin tamir gerektirdiği kaydedildi; gösterge tamir kapatılana kadar incelemeler için kullanılamaz."
 
 msgid "Recorded that the gauge was adjusted during this calibration; affects how the calibration interval recalculates."
 msgstr "Bu kalibrasyon sırasında göstergenin ayarlandığı kaydedildi; kalibrasyon aralığının nasıl yeniden hesaplanacağını etkiler."
@@ -10145,7 +10259,7 @@ msgid "Regenerate"
 msgstr "Yeniden Oluştur"
 
 msgid "Regenerating thumbnail…"
-msgstr "Küçük resim yeniden oluşturuluyor…"
+msgstr "Küçük resim yenileniyor…"
 
 msgid "Register"
 msgstr "Mevcut Varlığı Kayıt Yap"
@@ -10333,6 +10447,9 @@ msgstr "Yenileştirme Sistemi"
 
 msgid "Report"
 msgstr "Rapor"
+
+msgid "Reporting dimension"
+msgstr "Raporlama boyutu"
 
 msgid "Reports"
 msgstr "Raporlar"
@@ -10549,6 +10666,9 @@ msgstr "Sağ öğe"
 
 msgid "Risk"
 msgstr "Risk"
+
+msgid "Risk register"
+msgstr "Risk kaydı"
 
 msgid "Risks"
 msgstr "Riskler"
@@ -10820,6 +10940,9 @@ msgstr "Bu satır için takip kimliğini tarayın"
 
 msgid "SCAR"
 msgstr "SCAR"
+
+msgid "SCAR (supplier corrective action request)"
+msgstr "SCAR (tedarikçi düzeltici eylem isteği)"
 
 msgid "Schedule"
 msgstr "Planlama"
@@ -12514,6 +12637,9 @@ msgstr "Bu iş merkezinde makineleri çalıştırmanın saatlik maliyeti; bir i�
 msgid "The hourly indirect-cost burden applied to this work center; the difference between labor + machine and the full quoting rate is what overhead absorbs."
 msgstr "Bu iş merkezine uygulanan saatlik dolaylı maliyet yükü; işçilik + makine ile tam alıntı oranı arasındaki fark, genel masrafların absorpladığıdır."
 
+msgid "The human-readable document number (like J000001 or ECO-000001) minted from a sequence and stored on the record, distinct from its internal id."
+msgstr "Bir diziden oluşturulan ve kayıtta saklanan, dahili kimlğinden farklı, insan tarafından okunabilir belge numarası (J000001 veya ECO-000001 gibi)."
+
 msgid "The identifier the customer uses for this part on their POs; Carbon resolves it to our internal Part ID on order import."
 msgstr "Müşterinin bu parça için PO'larında kullandığı tanımlayıcı; Carbon bunu sipariş alımında dahili Parça Kimliğimize çözümler."
 
@@ -12585,6 +12711,9 @@ msgstr "Bir siparişe dönüştürülürse bu teklifin yerine getirileceği konu
 
 msgid "The location this RFQ would fulfill from if it converts to a quote and then an order."
 msgstr "Bu RFQ'nun, bir alıntıya ve ardından siparişe dönüştürülürse yerine getirileceği konum."
+
+msgid "The log of risks and opportunities raised against any entity, each rated by independent 1–5 severity and likelihood and driven to a resolution."
+msgstr "Herhangi bir varlığa karşı ortaya konan risklerin ve fırsatların kaydı, her biri bağımsız 1–5 önem derecesi ve olasılığına göre derecelendirilmiş ve çözüme doğru yönlendirilmiştir."
 
 msgid "The logos shown on your printed and emailed documents"
 msgstr "Yazdırılan ve e-postayla gönderilen belgelerinizde gösterilen logolar"
@@ -12667,6 +12796,9 @@ msgstr "Bu iş akışını kullanan sorunların tamamlaması gereken görevlerin
 msgid "The ordered sequence of operations a job runs through, copied from the method's bill of process."
 msgstr "Bir işin çalıştırılmış olduğu işlemlerin sıralanmış sırası, yöntemin süreç faturasından kopyalanmıştır."
 
+msgid "The original model file is no longer available"
+msgstr ""
+
 msgid "The outbound posting document that takes goods out of stock to a customer, posting COGS as it goes."
 msgstr "Malları envanterten bir müşteriye çıkaran ve yol boyunca COGS'yi deftere geçiren giden deftere nakil belgesi."
 
@@ -12687,6 +12819,12 @@ msgstr "Carbon tarafındaki uygulamanızı yönetecek ve onlara nasıl ulaşaca�
 
 msgid "The people on your team and their access to Carbon"
 msgstr "Ekibinizdeki kişiler ve Carbon'a erişimleri"
+
+msgid "The per-company counter behind a document type's readable number, assembling {prefix}{next+step, zero-padded}{suffix} and advancing as each document is created."
+msgstr "Belge türünün okunabilir sayısının arkasındaki şirket başına sayaç, {prefix}{next+step, zero-padded}{suffix} öğesini bir araya getiriyor ve her belge oluşturulduğunda ilerlemiştir."
+
+msgid "The per-item outcome recorded on a non-conformance's affected material — Pending, Return to Supplier, Rework, Scrap, or Use As Is — decided for each affected lot or serial on its own."
+msgstr "Uyumsuzluğun etkilenen malzemesine kaydedilen ürün başına sonuç — Beklemede, Tedarikçiye İade, Yeniden İşleme, Hurdaya Çıkarma veya Olduğu Gibi Kullan — her etkilenen partiye veya seriye kendi başına karar verilir."
 
 msgid "The percentage of the cash discount. Use 0 for no discount."
 msgstr "Nakit indirim yüzdesi. İndirim yoksa 0 kullanın."
@@ -12735,6 +12873,9 @@ msgstr "Parçalar hurdaya çıkarıldığında kaydettiğiniz nedenler"
 
 msgid "The reasons you record when you decline an RFQ"
 msgstr "Bir RFQ'yu reddettiğinizde kaydettiğiniz nedenler"
+
+msgid "The record that applies a payment or memo to an invoice, carrying the applied, discount, and write-off amounts."
+msgstr "Faturaya ödeme veya muhasebe kaydı uygulayan ve uygulanan, indirim ve silme tutarlarını taşıyan kayıt."
 
 msgid "The recorded genealogy of tracked entities — which inputs were consumed to produce which outputs, receipt through shipment."
 msgstr "İzlenen varlıkların kaydedilmiş soykütüğü - hangi girdiler hangi çıktıları üretmek için tüketildi, makbuz ile sevkiyat arasında."
@@ -12910,6 +13051,9 @@ msgstr "Bu alıntının mallarının gönderileceği depo; müşterinin Sevkiyat
 
 msgid "The ways equipment fails, for maintenance and quality tracking"
 msgstr "Ekipmanın arızalanma şekilleri, bakım ve kalite takibi için"
+
+msgid "The work center's own bin where picked material is staged for production to draw down, as opposed to its warehouse source shelf."
+msgstr "Üretimin çekilmesi için seçilen malzemenin hazırlandığı ve depo kaynak rafının aksine olan iş merkezinin kendi konteynerdir."
 
 msgid "The working hours and calendars that drive scheduling"
 msgstr "Çalışma saatleri ve planlama yöneten takvimler"
@@ -14199,8 +14343,8 @@ msgstr "{translatedTerm} nedir?"
 msgid "What it is"
 msgstr "Ne olduğu"
 
-msgid "What kind of change this is: Version updates how the part is made, Revision edits its details and documents, and New Part replaces it with a new part number."
-msgstr "Bu ne tür bir değişikliktir: Sürüm parçanın nasıl yapıldığını günceller, Revizyon ayrıntılarını ve belgelerini düzenler ve Yeni Parça onu yeni bir parça numarasıyla değiştirir."
+msgid "What kind of change this is: Version updates how the part is made, Revision revises its details and documents, Replacement Part swaps in a new part number that supersedes the old one, and New Part introduces a net-new part with no predecessor."
+msgstr "Bu ne tür bir değişikliktir: Sürüm, parçanın nasıl yapıldığını günceller, Revizyon ayrıntılarını ve belgelerini revize eder, Yedek Parça, eskisinin yerini alan yeni bir parça numarasını değiştirir ve Yeni Parça, önceki parçası olmayan tamamen yeni bir parça sunar."
 
 msgid "What kind of output this entry records — Production (good units), Scrap (unrecoverable), or Rework (sent back for correction); reveals Scrap Reason when Scrap."
 msgstr "Bu giriş hangi tür çıktıyı kaydediyor — Üretim (iyi birimler), Hurda (kurtarılamaz) veya Yeniden İşlem (düzeltme için geri gönderilen); Hurda olduğunda Hurda Nedeni ortaya çıkar."
@@ -14325,8 +14469,8 @@ msgstr "Tedarikçi teslim etmeyi ne zaman taahhüt etti; planlama bu tarihi gele
 msgid "When the supplier's pricing stops being honored; converting this quote to a PO after this date may need re-quoting."
 msgstr "Tedarikçi fiyatlandırması artık kabul edilmediğinde; bu fiyatlandırmayı bu tarihten sonra bir PO'ya dönüştürmek yeniden fiyatlandırma gerektirebilir."
 
-msgid "When this gauge becomes due for calibration; once past due, it's blocked from inspections until calibrated."
-msgstr "Bu ölçü aletinin ne zaman kalibrasyona uygun olduğu; vadesi dolduktan sonra, kalibre edilene kadar incelenmeler engellenir."
+msgid "When this gauge becomes due for calibration; once past due it reads Out-of-Calibration."
+msgstr "Bu ölçü aleti kalibrasyonun yapılması gerektiğinde; vadesi geçtikten sonra Kalibrasyondan Çıktı olarak okunur."
 
 msgid "When this gauge was last successfully calibrated; the next-calibration date recomputes from this value plus the interval."
 msgstr "Bu ölçü aletinin en son başarıyla kalibre edildiği zaman; sonraki kalibrasyonu tarihi bu değer artı aralığından yeniden hesaplanır."

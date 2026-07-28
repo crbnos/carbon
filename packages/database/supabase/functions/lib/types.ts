@@ -28987,6 +28987,7 @@ export type Database = {
           optimizedSize: number | null
           optimizeError: string | null
           optimizeStatus: Database["public"]["Enums"]["modelProcessingStatus"]
+          originalPath: string | null
           originalSize: number | null
           processedAt: string | null
           processingError: string | null
@@ -29012,6 +29013,7 @@ export type Database = {
           optimizedSize?: number | null
           optimizeError?: string | null
           optimizeStatus?: Database["public"]["Enums"]["modelProcessingStatus"]
+          originalPath?: string | null
           originalSize?: number | null
           processedAt?: string | null
           processingError?: string | null
@@ -29037,6 +29039,7 @@ export type Database = {
           optimizedSize?: number | null
           optimizeError?: string | null
           optimizeStatus?: Database["public"]["Enums"]["modelProcessingStatus"]
+          originalPath?: string | null
           originalSize?: number | null
           processedAt?: string | null
           processingError?: string | null

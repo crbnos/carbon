@@ -9,25 +9,40 @@ import { nanoid } from "nanoid";
 import { inngest } from "../../client";
 
 export const modelThumbnailFunction = inngest.createFunction(
-  { id: "model-thumbnail", retries: 3 },
+  {
+    id: "model-thumbnail",
+    retries: 3,
+    // One render per model at a time — overlapping runs (regenerate + the
+    // optimise-chained event, or rapid clicks) would race the "delete previous
+    // thumbnail" step and can strand a just-published object. (This event's
+    // payload key is `modelId`, not `modelUploadId`.)
+    singleton: { key: "event.data.modelId", mode: "skip" }
+  },
   { event: "carbon/model-thumbnail" },
   async ({ event, step, logger }) => {
     const { modelId, companyId } = event.data;
 
     const isLocal = NODE_ENV !== "production";
+    // Dev opt-in: render via a local Chromium container (`crbn up --thumbnails`).
+    const renderLocal = process.env.THUMBNAIL_RENDER_LOCAL === "true";
 
+    // `VERCEL_URL` is the ERP's own URL in every env — prod app URL, or the
+    // portless `https://erp.<prefix>.dev` host locally. The local Chromium
+    // container reaches that host through the portless proxy (host-gateway),
+    // the same way the inngest container reaches the ERP; the raw ERP port only
+    // binds 127.0.0.1 and isn't reachable from a container.
     const getModelUrl = (id: string) => {
-      if (isLocal) return `http://localhost:3000/file/model/${id}`;
       const domain = VERCEL_URL?.startsWith("https://")
         ? VERCEL_URL
         : `https://${VERCEL_URL}`;
       return `${domain}/file/model/${id}`;
     };
 
-    if (isLocal) {
-      logger.info("Skipping model-thumbnail task on local", {
-        payload: event.data
-      });
+    if (isLocal && !renderLocal) {
+      logger.info(
+        "Skipping model-thumbnail on local (run `crbn up --thumbnails` to render via local Chromium)",
+        { payload: event.data }
+      );
       return;
     }
 

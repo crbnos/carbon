@@ -233,6 +233,18 @@ msgstr "एक क्लीयरिंग खाता जो प्राप�
 msgid "A company that designs and builds its own finished products end to end (here, the shop building humanoid robots) rather than making parts to another company's specification."
 msgstr "एक कंपनी जो अपने स्वयं के तैयार उत्पादों को अंत से अंत तक डिजाइन और निर्माण करती है (यहां, ह्यूमनॉइड रोबोट बनाने वाली दुकान) किसी अन्य कंपनी की विशेषताओं के अनुसार भाग बनाने के बजाय।"
 
+msgid "A company that sits at or above selected companies in the group hierarchy and receives their intercompany cancelling entries for consolidated reporting; it is never a party to the trade itself."
+msgstr "एक कंपनी जो समूह पदानुक्रम में चयनित कंपनियों के समान या ऊपर स्थित है और समेकित रिपोर्टिंग के लिए उनकी इंटरकंपनी रद्दकरण प्रविष्टियां प्राप्त करती है; यह कभी भी व्यापार का पक्ष नहीं होती है।"
+
+msgid "A company-defined extra field attached to a core table (customer, part, order); it shows on the record's form, saves alongside the built-in fields, and is queryable through the API."
+msgstr "एक कंपनी द्वारा परिभाषित अतिरिक्त क्षेत्र जो मुख्य तालिका (ग्राहक, भाग, ऑर्डर) से जुड़ा है; यह रिकॉर्ड के फॉर्म पर दिखाई देता है, अंतर्निहित क्षेत्रों के साथ सहेजा जाता है, और एपीआई के माध्यम से क्वेरी योग्य है।"
+
+msgid "A company-defined tag axis attached to journal lines so the same accounts can be sliced by location, department, or any custom axis without multiplying the chart of accounts."
+msgstr "जर्नल लाइनों से जुड़ा एक कंपनी द्वारा परिभाषित टैग अक्ष ताकि खातों की चार्ट को गुणा किए बिना एक ही खातों को स्थान, विभाग, या किसी भी कस्टम अक्ष के अनुसार विभाजित किया जा सके।"
+
+msgid "A company-scoped Discount or Markup, by percentage or fixed amount, that adjusts a line's price up or down when the line matches the rule's quantity, date, item, and customer conditions."
+msgstr "एक कंपनी-स्कोप्ड छूट या मार्कअप, प्रतिशत या निश्चित राशि द्वारा, जो लाइन की कीमत को ऊपर या नीचे समायोजित करता है जब लाइन नियम की मात्रा, तारीख, आइटम और ग्राहक शर्तों से मेल खाती है।"
+
 msgid "A completed job's output, received into inventory at the job's actual accumulated WIP cost."
 msgstr "एक पूर्ण नौकरी का आउटपुट, नौकरी की वास्तविक संचित WIP लागत पर इन्वेंटरी में प्राप्त।"
 
@@ -245,8 +257,11 @@ msgstr "एक ठेकेदार एक आपूर्तिकर्ता
 msgid "A customer is a business or person who buys your parts or services."
 msgstr "एक ग्राहक एक व्यवसाय या व्यक्ति है जो आपके पार्ट्स या सेवाएं खरीदता है।"
 
-msgid "A dated window postings fall into (Active or Inactive, not open or closed), opened automatically when needed."
-msgstr "एक दिनांकित विंडो जिसमें पोस्टिंग आती हैं (सक्रिय या निष्क्रिय, खुली या बंद नहीं), स्वचालित रूप से खोली जाती हैं जब आवश्यक हो।"
+msgid "A dated record proving a gauge was checked against a traceable standard; it passes unless a requires-action, -adjustment, or -repair flag is ticked, and resets the gauge's next-due date."
+msgstr "एक दिनांकित रिकॉर्ड यह साबित करता है कि एक गेज को एक ट्रेसेबल मानक के विरुद्ध जांचा गया था; यह तब तक पास होता है जब तक कि कोई कार्रवाई की आवश्यकता, समायोजन, या मरम्मत का झंडा चिन्हित नहीं किया जाता है, और गेज की अगली देय तारीख को रीसेट करता है।"
+
+msgid "A dated window postings fall into; its close status moves Open → Locked → Closed, and a closed period is frozen against new postings."
+msgstr "एक दिनांकित विंडो जिसमें पोस्टिंग आती हैं; इसकी बंद स्थिति खुली → लॉक की गई → बंद चली जाती है, और एक बंद अवधि नई पोस्टिंग के विरुद्ध जमी हुई है।"
 
 msgid "A depreciation method that charges a fixed percentage of remaining book value each period — heavier early, lighter later."
 msgstr "एक मूल्यह्रास पद्धति जो प्रत्येक अवधि में शेष पुस्तक मूल्य का एक निश्चित प्रतिशत लेती है — जल्दी भारी, बाद में हल्का।"
@@ -263,6 +278,9 @@ msgstr "एक आपूर्तिकर्ता को एक दृढ़ �
 msgid "A formal acceptance / sign-off phase"
 msgstr "एक औपचारिक स्वीकृति / साइन-ऑफ चरण"
 
+msgid "A gauge whose role is Master — the reference standard other gauges are calibrated against, rather than one used for routine checks."
+msgstr "एक गेज जिसकी भूमिका मास्टर है — संदर्भ मानक जिसके विरुद्ध अन्य गेज को कैलिब्रेट किया जाता है, बजाय नियमित जांच के लिए उपयोग किए जाने वाले।"
+
 msgid "A issue record tracks quality issues and their resolution process."
 msgstr "एक समस्या रिकॉर्ड गुणवत्ता समस्याओं और उनकी समाधान प्रक्रिया को ट्रैक करता है।"
 
@@ -275,8 +293,14 @@ msgstr "एक ऑर्डर टू मेक घटक जिसके भा
 msgid "A material is a physical item used to make a part that can be used across multiple jobs"
 msgstr "एक सामग्री एक भौतिक वस्तु है जिसका उपयोग एक भाग बनाने के लिए किया जाता है जिसे कई नौकरियों में उपयोग किया जा सकता है"
 
+msgid "A measurement instrument (caliper, micrometer, pin gauge, CMM) tracked as a record and held to a recurring calibration schedule."
+msgstr "एक मापन उपकरण (कैलिपर, माइक्रोमीटर, पिन गेज, सीएमएम) जो एक रिकॉर्ड के रूप में ट्रैक किया जाता है और एक आवर्ती कैलिब्रेशन शेड्यूल के लिए आयोजित किया जाता है।"
+
 msgid "A name is required to save a view"
 msgstr "एक दृश्य को सहेजने के लिए एक नाम आवश्यक है"
+
+msgid "A negotiated price pinned for a specific item — by customer, customer type, or all customers — that replaces the base price outright, optionally with quantity breaks."
+msgstr "एक विशिष्ट आइटम के लिए सहमत कीमत — ग्राहक, ग्राहक प्रकार, या सभी ग्राहकों द्वारा — जो आधार मूल्य को पूरी तरह से बदल देता है, वैकल्पिक रूप से मात्रा में छूट के साथ।"
 
 msgid "A new purchase order will be created for each supplier. Alternatively, you can choose an existing draft purchase order for the supplier to add the outside operations to."
 msgstr "प्रत्येक आपूर्तिकर्ता के लिए एक नया क्रय आदेश बनाया जाएगा। वैकल्पिक रूप से, आप आपूर्तिकर्ता के लिए एक मौजूदा ड्राफ्ट क्रय आदेश चुन सकते हैं और बाहरी संचालन जोड़ सकते हैं।"
@@ -286,6 +310,12 @@ msgstr "एक नया संशोधन वर्तमान संशो�
 
 msgid "A new size will be created using a copy of the current size"
 msgstr "एक नया आकार वर्तमान आकार की प्रतिलिपि का उपयोग करके बनाया जाएगा"
+
+msgid "A non-cash document that settles an invoice against a reason account: a credit lowers what's owed, a debit raises it."
+msgstr "एक गैर-नकद दस्तावेज जो एक कारण खाते के विरुद्ध एक चालान को निपटाता है: एक क्रेडिट बकाया राशि को कम करता है, एक डेबिट इसे बढ़ाता है।"
+
+msgid "A non-conformance shared with a supplier over a login-free /share/scar link, so they can respond to the issue and update its tasks from outside Carbon."
+msgstr "एक गैर-अनुरूपता जो एक आपूर्तिकर्ता के साथ एक लॉगिन-मुक्त /share/scar लिंक के माध्यम से साझा की जाती है, ताकि वे समस्या का जवाब दे सकें और कार्बन के बाहर से इसके कार्यों को अपडेट कर सकें।"
 
 msgid "A non-taxable surcharge (e.g. recoverable expenses like permit fees) added to the line; excluded from the tax base."
 msgstr "एक गैर-कर योग्य अधिभार (जैसे पुनः प्राप्य खर्च जैसे परमिट शुल्क) जो पंक्ति में जोड़ा जाता है और कर आधार से बाहर रखा जाता है।"
@@ -299,8 +329,14 @@ msgstr "एक अनुरूपता कार्य जो समस्य�
 msgid "A part contains the information about a specific item that can be purchased or manufactured."
 msgstr "एक पार्ट में एक विशिष्ट आइटम की जानकारी होती है जिसे खरीदा या निर्मित किया जा सकता है।"
 
+msgid "A physical pull signal — a printed card or QR code living with the stock — that raises a purchase order or a job the moment it's scanned to refill a bin."
+msgstr "एक भौतिक पुल सिग्नल — एक मुद्रित कार्ड या क्यूआर कोड जो स्टॉक के साथ रहता है — जो एक खरीद आदेश या नौकरी को उठाता है जैसे ही इसे बिन को फिर से भरने के लिए स्कैन किया जाता है।"
+
 msgid "A posted accounting entry: a header plus balanced debit and credit lines against GL accounts."
 msgstr "एक पोस्ट की गई लेखांकन प्रविष्टि: एक हेडर प्लस GL खातों के विरुद्ध संतुलित डेबिट और क्रेडिट लाইनें।"
+
+msgid "A posted cash transaction — a Receipt from a customer or a Disbursement to a supplier — applied to invoices through settlements, moving Draft → Posted → Voided."
+msgstr "एक पोस्ट किया गया नकद लेनदेन — एक ग्राहक से एक रसीद या एक आपूर्तिकर्ता को एक वितरण — निपटान के माध्यम से चालान पर लागू, ड्राफ्ट → पोस्ट किया गया → रद्द चल रहा है।"
 
 msgid "A pre-written description inserted into every issue that uses this workflow; placeholders like {itemId} and {location} are substituted at creation."
 msgstr "इस वर्कफ़्लो का उपयोग करने वाली प्रत्येक समस्या में डाला गया एक पूर्व-लिखित विवरण; {itemId} और {location} जैसे प्लेसहोल्डर बनाते समय प्रतिस्थापित किए जाते हैं।"
@@ -329,8 +365,8 @@ msgstr "एक पुनः प्रयोग योग्य, संस्क�
 msgid "A routing step on a released job, the job's own copy of an operation, carrying a status the floor drives from Todo through Done."
 msgstr "एक रिलीज़ की गई जॉब पर एक रूटिंग स्टेप, जॉब की अपनी ऑपरेशन की कॉपी, जिसमें एक स्थिति है जो फ्लोर Todo से Done तक चलाता है।"
 
-msgid "A sales invoice (you bill a customer) or purchase invoice (a supplier bills you); payment is a field, not a separate record."
-msgstr "एक बिक्रय चालान (आप ग्राहक को बिल करते हैं) या खरीद चालान (एक आपूर्तिकर्ता आपको बिल करता है); भुगतान एक क्षेत्र है, एक अलग रिकॉर्ड नहीं।"
+msgid "A sales invoice (you bill a customer) or purchase invoice (a supplier bills you), settled by applying payments and credit or debit memos."
+msgstr "एक बिक्री चालान (आप एक ग्राहक को बिल भेजते हैं) या एक खरीद चालान (एक आपूर्तिकर्ता आपको बिल भेजता है), भुगतान और क्रेडिट या डेबिट मेमो लागू करके निपटाया जाता है।"
 
 msgid "A sales invoice is a document that specifies the products or services sold to a customer and the corresponding cost."
 msgstr "एक बिक्रय चालान एक दस्तावेज है जो किसी ग्राहक को बेचे गए उत्पादों या सेवाओं और संबंधित लागत को निर्दिष्ट करता है।"
@@ -350,6 +386,9 @@ msgstr "एक बिक्रय उद्धरण अनुरोध (RFQ) �
 msgid "A sales RFQ (a customer asks you to quote) or a purchasing RFQ (you ask suppliers); both feed the opportunity thread."
 msgstr "एक बिक्रय RFQ (एक ग्राहक आपको उद्धृत करने के लिए कहता है) या खरीद RFQ (आप आपूर्तिकर्ताओं से पूछते हैं); दोनों अवसर धागे को खिलाते हैं।"
 
+msgid "A scoped secret sent on the carbon-key request header that authenticates programmatic calls to Carbon, carrying its own permissions and rate limit rather than a user session's."
+msgstr "कार्बन-कुंजी अनुरोध हेडर पर भेजा गया एक स्कोप्ड गोपनीय जो कार्बन के लिए प्रोग्रामेटिक कॉल को प्रमाणित करता है, उपयोगकर्ता सत्र की बजाय अपनी स्वयं की अनुमतियां और दर सीमा ले जाता है।"
+
 msgid "A separate schedule for tax reporting when tax rules require a method different from book depreciation."
 msgstr "कर रिपोर्टिंग के लिए एक अलग अनुसूची जब कर नियम पुस्तक मूल्यह्रास से अलग विधि की आवश्यकता होती है।"
 
@@ -358,6 +397,9 @@ msgstr "एक सेवा एक बिलयोग्य गतिविध�
 
 msgid "A set of companies under one owner that share group-scoped configuration — the chart of accounts, currencies, and dimensions — so the same accounting setup spans every company in the group."
 msgstr "एक ही मालिक के अधीन कंपनियों का समूह जो समूह-स्तरीय कॉन्फ़िगरेशन साझा करती हैं — खातों का चार्ट, मुद्राएँ और आयाम — ताकि वही लेखांकन सेटअप समूह की हर कंपनी पर लागू हो।"
+
+msgid "A set of instructions to pull a job's outstanding materials from the warehouse and stage them lineside; a pick moves stock to the point of use rather than consuming it."
+msgstr "गोदाम से एक नौकरी की बकाया सामग्री को खींचने और उन्हें लाइन के किनारे स्थापित करने के लिए निर्देशों का एक सेट; एक पिक स्टॉक को उपयोग के बिंदु तक ले जाता है न कि इसे खपत करता है।"
 
 msgid "A shipment line sent straight from supplier to customer, bypassing your warehouse — set per line, not on the header."
 msgstr "एक शिपमेंट लाइन जो सीधे आपूर्तिकर्ता से ग्राहक को भेजी जाती है, आपके गोदाम को दरकिनार करते हुए — प्रति लाइन सेट, हेडर पर नहीं।"
@@ -892,6 +934,12 @@ msgstr "एक लेखांकन बाल्टी जो विभाग �
 msgid "An accounting record for a capitalized item you depreciate rather than expense; Draft → Active → Fully Depreciated → Disposed."
 msgstr "एक पूंजीकृत वस्तु के लिए एक लेखांकन रिकॉर्ड जिसे आप खर्च करने के बजाय मूल्यह्रास करते हैं; मसौदा → सक्रिय → पूर्ण रूप से मूल्यह्रास → निपटान।"
 
+msgid "An alert that something needs a person's attention, fanned out from a carbon/notify event to the in-app inbox plus optional email and Slack, muteable per topic per user."
+msgstr "एक सतर्कता कि कुछ को एक व्यक्ति के ध्यान की आवश्यकता है, कार्बन/सूचित करें घटना से इन-ऐप इनबॉक्स और वैकल्पिक ईमेल और स्लैक में फैला हुआ, प्रति विषय प्रति उपयोगकर्ता म्यूट करने योग्य।"
+
+msgid "An approval requirement on a non-conformance whose reviewers (seeded Engineering and Quality) must sign off before the issue can close."
+msgstr "एक गैर-अनुरूपता पर एक अनुमोदन आवश्यकता जिसके समीक्षकों (सीडेड इंजीनियरिंग और गुणवत्ता) को समस्या बंद होने से पहले हस्ताक्षर करने चाहिए।"
+
 msgid "An asset's acquisition cost minus accumulated depreciation — what it's still worth on the books, and the figure it's disposed at."
 msgstr "एक संपत्ति की अधिग्रहण लागत माइनस संचयी मूल्यह्रास — यह किताबों पर अभी भी क्या मूल्य है और राशि जिस पर इसे निपटाया जाता है।"
 
@@ -906,6 +954,9 @@ msgstr "एक आइटम को स्वयं में नहीं जो
 
 msgid "An operation done by an outside supplier rather than an in-house work center, covered by a subcontracting purchase order."
 msgstr "एक आंतरिक कार्य केंद्र के बजाय बाहरी आपूर्तिकर्ता द्वारा किया गया ऑपरेशन, जिसे एक उप-अनुबंध खरीद आदेश द्वारा कवर किया जाता है।"
+
+msgid "An operation's position in its work center's queue — the order the floor picks work up — set by reordering cards on the Work Centers board without changing any dates."
+msgstr "एक ऑपरेशन की अपने कार्य केंद्र की कतार में स्थिति — वह क्रम जिससे मंजिल काम उठाती है — कार्य केंद्र बोर्ड पर कार्डों को पुनः सूचीबद्ध करके किसी भी तारीखों को बदले बिना सेट किया जाता है।"
 
 msgid "Anchors the Plan timeline to real dates. Leave blank for a relative, week-numbered timeline. Setting either one fills in the rest."
 msgstr "योजना समयरेखा को वास्तविक तारीखों से जोड़ता है। सापेक्ष, सप्ताह-संख्या वाली समयरेखा के लिए खाली छोड़ें। किसी एक को सेट करने से बाकी भर जाता है।"
@@ -967,6 +1018,9 @@ msgstr "API डॉक्स"
 
 msgid "API Documentation"
 msgstr "API दस्तावेज़"
+
+msgid "API key"
+msgstr "एपीआई कुंजी"
 
 msgid "API Key"
 msgstr "एपीआई कुंजी"
@@ -1956,6 +2010,9 @@ msgstr "गणना की गई तैयार-माल की समाप
 msgid "Calculation Method"
 msgstr "गणना विधि"
 
+msgid "Calibration"
+msgstr "अंशांकन"
+
 msgid "Calibration Attempts"
 msgstr "कैलिब्रेशन प्रयास"
 
@@ -2120,6 +2177,9 @@ msgstr "कार्बन का योजना रन आपूर्ति �
 
 msgid "Carbon's production order — one job builds a quantity of one item from its own copied method and routing."
 msgstr "कार्बन का उत्पादन आदेश — एक कार्य अपनी प्रतिलिपि की गई विधि और रूटिंग से एक आइटम की मात्रा बनाता है।"
+
+msgid "Carbon's shop-floor app where operators run operations, report quantities, issue material, and log time against released jobs in real time."
+msgstr "कार्बन का शॉप-फ्लोर ऐप जहां ऑपरेटर ऑपरेशन चलाते हैं, मात्रा की रिपोर्ट करते हैं, सामग्री जारी करते हैं, और रिलीज की गई नौकरियों के विरुद्ध रीयल टाइम में समय लॉग करते हैं।"
 
 msgid "Cards"
 msgstr "कार्ड"
@@ -3217,6 +3277,9 @@ msgstr "क्रेडिट"
 msgid "Credit ({0})"
 msgstr "जमा ({0})"
 
+msgid "Credit / debit memo"
+msgstr "क्रेडिट / डेबिट मेमो"
+
 msgid "Credit / Debit Memos"
 msgstr "क्रेडिट / डेबिट मेमो"
 
@@ -3303,6 +3366,9 @@ msgstr "सूचीबद्ध से परे कस्टम विका�
 
 msgid "Custom development, integrations, or self-hosting"
 msgstr "कस्टम विकास, एकीकरण, या स्व-होस्टिंग"
+
+msgid "Custom field"
+msgstr "कस्टम क्षेत्र"
 
 msgid "Custom Field"
 msgstr "कस्टम फील्ड"
@@ -4039,6 +4105,9 @@ msgstr "मांग पूर्वानुमान — द्वारा �
 msgid "Demand forecast = BOM-exploded demand from open sales orders, active jobs, and production projections."
 msgstr "मांग पूर्वानुमान = खुले बिक्रय आदेशों, सक्रिय कार्यों और उत्पादन प्रक्षेपणों से BOM-विस्फोटित मांग।"
 
+msgid "Demand projection"
+msgstr "मांग प्रक्षेपण"
+
 msgid "Demand Projections"
 msgstr "मांग प्रक्षेपण"
 
@@ -4186,6 +4255,9 @@ msgstr "डिस्पैच"
 
 msgid "Dispatch ID"
 msgstr "डिस्पैच आईडी"
+
+msgid "Dispatch priority"
+msgstr "डिस्पैच प्राथमिकता"
 
 msgid "Dispatches"
 msgstr "प्रेषण"
@@ -4729,6 +4801,9 @@ msgstr "कार्य केंद्र संपादित करें"
 msgid "Eliminated"
 msgstr "समाप्त किया गया"
 
+msgid "Elimination entity"
+msgstr "उन्मूलन इकाई"
+
 msgid "email"
 msgstr "ईमेल"
 
@@ -5095,6 +5170,9 @@ msgstr "सेटअप विस्तृत करें"
 msgid "Expand subtree"
 msgstr "सबट्री को विस्तृत करें"
 
+msgid "Expected future demand for a make part entered week by week before any sales order exists; planning nets it against supply and explodes the method to order components ahead."
+msgstr "एक निर्माण भाग के लिए अपेक्षित भविष्य की मांग सप्ताह दर सप्ताह किसी भी बिक्री आदेश के अस्तित्व से पहले; योजना इसे आपूर्ति के विरुद्ध शुद्ध करती है और घटकों को आदेश देने के लिए विधि को विस्फोट करती है।"
+
 msgid "Expected future demand for an item, bucketed by period, populated by the planning run alongside actual demand."
 msgstr "किसी वस्तु के लिए अपेक्षित भविष्य की मांग, अवधि द्वारा बकेटेड, वास्तविक मांग के साथ योजना चलाने द्वारा भरी हुई।"
 
@@ -5423,7 +5501,7 @@ msgid "Failed to move account: {0}"
 msgstr "खाता स्थानांतरित करने में विफल: {0}"
 
 msgid "Failed to regenerate thumbnail"
-msgstr "थंबनेल को पुनः उत्पन्न करने में विफल रहा"
+msgstr "थंबनेल को पुनः उत्पन्न करने में विफल"
 
 msgid "Failed to remove image: {errorMessage}"
 msgstr "छवि हटाने में विफल: {errorMessage}"
@@ -5615,6 +5693,9 @@ msgstr "फ़िल्टर"
 
 msgid "Finalize"
 msgstr "अंतिम रूप दें"
+
+msgid "Finalizing a fiscal month through the Open → Locked → Closed lifecycle; a closed period is frozen and its balances snapshotted, reversible only by explicit reopen."
+msgstr "खुली → लॉक की गई → बंद जीवनचक्र के माध्यम से एक वित्तीय माह को अंतिम रूप देना; एक बंद अवधि जमी हुई है और इसके संतुलन को स्नैपशॉट किया गया है, केवल स्पष्ट पुनः खुलने से उलटा है।"
 
 msgid "finish"
 msgstr "तैयार माल"
@@ -6220,8 +6301,8 @@ msgstr "हल की गई कीमत की गणना कैसे क�
 msgid "How the sample size is decided — Inspect All, Inspect First N, Percentage of Lot, or AQL (Z1.4 / ISO 2859-1). Each mode reveals its own parameter fields below."
 msgstr "नमूना आकार कैसे तय किया जाता है — सभी निरीक्षण करें, पहले N निरीक्षण करें, बहुत की प्रतिशत या AQL (Z1.4 / ISO 2859-1)। प्रत्येक मोड नीचे अपने स्वयं के पैरामीटर फ़ील्ड प्रकट करता है।"
 
-msgid "How this gauge is used — Standard (regular checks), Master (calibrates other gauges), or Reference (audit-only)."
-msgstr "इस गेज का उपयोग कैसे किया जाता है — मानक (नियमित जांच), मास्टर (अन्य गेज को कैलिब्रेट करता है), या संदर्भ (केवल ऑडिट)।"
+msgid "How this gauge is used — Standard (regular checks) or Master (calibrates other gauges)."
+msgstr "यह गेज कैसे उपयोग किया जाता है — मानक (नियमित जांच) या मास्टर (अन्य गेज को कैलिब्रेट करता है)।"
 
 msgid "How this price was calculated"
 msgstr "इस कीमत की गणना कैसे की गई"
@@ -6381,6 +6462,9 @@ msgstr "निष्क्रिय"
 
 msgid "Inactive actions will not appear in selection lists"
 msgstr "निष्क्रिय क्रियाएं चयन सूचियों में दिखाई नहीं देंगी"
+
+msgid "Inbound inspection"
+msgstr "इनबाउंड निरीक्षण"
 
 msgid "Inbox"
 msgstr "इनबॉक्स"
@@ -6639,6 +6723,9 @@ msgstr "चालान स्थान"
 
 msgid "Invoice Number"
 msgstr "चालान संख्या"
+
+msgid "Invoice settlement"
+msgstr "चालान निपटान"
 
 msgid "Invoice Supplier"
 msgstr "चालान आपूर्तिकर्ता"
@@ -7066,6 +7153,9 @@ msgstr "लाइनों को आंतरिक भाग संख्य�
 msgid "Lines need prices or lead times"
 msgstr "लाइनों को कीमतों या लीड समय की आवश्यकता है"
 
+msgid "Lineside"
+msgstr "लाइन के किनारे"
+
 msgid "Link"
 msgstr "लिंक"
 
@@ -7221,6 +7311,9 @@ msgstr "बहुत आकार विचरण (डिफ़ॉल्ट)"
 
 msgid "Lot Size:"
 msgstr "लॉट साइज:"
+
+msgid "Lot-based inspection of received goods against a sampling plan; the units post On Hold at receipt and only release to Available once the lot is dispositioned as accepted."
+msgstr "एक नमूने योजना के विरुद्ध प्राप्त माल का लॉट-आधारित निरीक्षण; इकाइयां रसीद पर होल्ड पर पोस्ट करती हैं और केवल उपलब्ध को रिलीज करती हैं जब लॉट स्वीकृत के रूप में निपटाया जाता है।"
 
 msgid "Low"
 msgstr "कम"
@@ -7424,6 +7517,9 @@ msgstr "कम चिह्नित करें"
 msgid "Mark to delete"
 msgstr "हटाने के लिए चिह्नित करें"
 
+msgid "Master gauge"
+msgstr "मास्टर गेज"
+
 msgid "Master records"
 msgstr "मास्टर रिकॉर्ड"
 
@@ -7492,6 +7588,9 @@ msgstr "सामग्री आईडी"
 
 msgid "Material Properties"
 msgstr "सामग्री गुण"
+
+msgid "Material Review Board (MRB)"
+msgstr "सामग्री समीक्षा बोर्ड (एमआरबी)"
 
 msgid "Material Shape"
 msgstr "सामग्री आकार"
@@ -7669,9 +7768,6 @@ msgstr "आपूर्तिकर्ता गायब हैं"
 
 msgid "Mobile Phone"
 msgstr "मोबाइल फोन"
-
-msgid "Model data is missing"
-msgstr "मॉडल डेटा गायब है"
 
 msgid "Model Number"
 msgstr "मॉडल नंबर"
@@ -8545,6 +8641,9 @@ msgstr "संख्या"
 msgid "Number of inventory units per purchase unit"
 msgstr "प्रति क्रय इकाई इन्वेंटरी इकाइयों की संख्या"
 
+msgid "Numbering sequence"
+msgstr "संख्या अनुक्रम"
+
 msgid "OEE Impact"
 msgstr "OEE प्रभाव"
 
@@ -8675,7 +8774,7 @@ msgid "Open in Carbon"
 msgstr "Carbon में खोलें"
 
 msgid "Open in change order {ids}. Release it to create new versions or revisions."
-msgstr "{ids} में परिवर्तन आदेश खोलें। नई संस्करणें या संशोधन बनाने के लिए इसे जारी करें।"
+msgstr "परिवर्तन आदेश {ids} में खुला। नए संस्करण या संशोधन बनाने के लिए इसे जारी करें।"
 
 msgid "Open in change orders {ids}. Release them to create new versions or revisions."
 msgstr "{ids} में परिवर्तन आदेश खोलें। नई संस्करणें या संशोधन बनाने के लिए उन्हें जारी करें।"
@@ -9129,6 +9228,9 @@ msgstr "कम लागत मूल्यांकन के लिए बि�
 msgid "Period"
 msgstr "अवधि"
 
+msgid "Period close"
+msgstr "अवधि बंद"
+
 msgid "Period End"
 msgstr "अवधि का अंत"
 
@@ -9194,6 +9296,9 @@ msgstr "चुना गया मात्रा"
 
 msgid "Picking Lines"
 msgstr "पिकिंग लाइनें"
+
+msgid "Picking list"
+msgstr "पिकिंग सूची"
 
 msgid "Picking List"
 msgstr "पिकिंग सूची"
@@ -9441,11 +9546,17 @@ msgstr "मूल्य सूचियाँ"
 msgid "Price Lists"
 msgstr "मूल्य सूचियाँ"
 
+msgid "Price override"
+msgstr "मूल्य ओवरराइड"
+
 msgid "Prices"
 msgstr "कीमतें"
 
 msgid "Pricing"
 msgstr "मूल्य निर्धारण"
+
+msgid "Pricing rule"
+msgstr "मूल्य निर्धारण नियम"
 
 msgid "Pricing Rule"
 msgstr "मूल्य निर्धारण नियम"
@@ -9954,6 +10065,9 @@ msgstr "इसे पूरी तरह पढ़ें — Carbon आपके
 msgid "Read this through. When it's right, sign off at the bottom. It's the statement your commercial agreement points to, with no prices or legal terms here."
 msgstr "इसे पूरी तरह पढ़ें। जब यह सही हो, तो नीचे साइन ऑफ करें। यह वह विवरण है जिसकी ओर आपका व्यावसायिक समझौता इशारा करता है, यहाँ कोई कीमत या कानूनी शर्तें नहीं हैं।"
 
+msgid "Readable ID"
+msgstr "पठनीय ID"
+
 msgid "Reading the document..."
 msgstr "दस्तावेज़ पढ़ा जा रहा है..."
 
@@ -10105,11 +10219,11 @@ msgstr "रिकॉर्ड हटाया गया"
 msgid "Record inspections tied to a part and a job"
 msgstr "एक भाग और एक कार्य से जुड़े निरीक्षण रिकॉर्ड करें"
 
+msgid "Recorded on a calibration that the gauge needs repair before its readings can be trusted."
+msgstr "कैलिब्रेशन पर दर्ज किया गया है कि गेज को मरम्मत की आवश्यकता है इससे पहले कि इसकी रीडिंग पर विश्वास किया जा सके।"
+
 msgid "Recorded that follow-up is needed after this calibration; surfaces this gauge on the open-actions queue."
 msgstr "दर्ज किया गया कि इस अंशांकन के बाद अनुवर्ती कार्रवाई की आवश्यकता है; खुली कार्रवाइयों की कतार में इस गेज को सामने लाता है।"
-
-msgid "Recorded that the gauge needs repair; the gauge stays unavailable for inspections until the repair is closed out."
-msgstr "दर्ज किया गया कि गेज को मरम्मत की आवश्यकता है; गेज निरीक्षण के लिए अनुपलब्ध रहता है जब तक कि मरम्मत बंद न हो जाए।"
 
 msgid "Recorded that the gauge was adjusted during this calibration; affects how the calibration interval recalculates."
 msgstr "दर्ज किया गया कि इस अंशांकन के दौरान गेज को समायोजित किया गया था; यह प्रभावित करता है कि अंशांकन अंतराल कैसे पुनर्गणना करता है।"
@@ -10145,7 +10259,7 @@ msgid "Regenerate"
 msgstr "पुनः उत्पन्न करें"
 
 msgid "Regenerating thumbnail…"
-msgstr "थंबनेल को पुनः उत्पन्न कर रहे हैं…"
+msgstr "थंबनेल को पुनः उत्पन्न किया जा रहा है…"
 
 msgid "Register"
 msgstr "मौजूदा संपत्ति पंजीकृत करें"
@@ -10333,6 +10447,9 @@ msgstr "पुनःपूर्ति प्रणाली"
 
 msgid "Report"
 msgstr "रिपोर्ट"
+
+msgid "Reporting dimension"
+msgstr "रिपोर्टिंग आयाम"
 
 msgid "Reports"
 msgstr "रिपोर्ट"
@@ -10549,6 +10666,9 @@ msgstr "दाहिनी वस्तु"
 
 msgid "Risk"
 msgstr "जोखिम"
+
+msgid "Risk register"
+msgstr "जोखिम रजिस्टर"
 
 msgid "Risks"
 msgstr "जोखिमें"
@@ -10820,6 +10940,9 @@ msgstr "इस लाइन के लिए ट्रैकिंग आईड�
 
 msgid "SCAR"
 msgstr "SCAR"
+
+msgid "SCAR (supplier corrective action request)"
+msgstr "SCAR (आपूर्तिकर्ता सुधारात्मक कार्रवाई अनुरोध)"
 
 msgid "Schedule"
 msgstr "शेड्यूल"
@@ -12514,6 +12637,9 @@ msgstr "इस कार्य केंद्र पर मशीनरी च�
 msgid "The hourly indirect-cost burden applied to this work center; the difference between labor + machine and the full quoting rate is what overhead absorbs."
 msgstr "इस कार्य केंद्र पर लागू प्रति घंटा अप्रत्यक्ष-लागत बोझ; श्रम + मशीन और पूर्ण उद्धरण दर के बीच का अंतर वह है जो ओवरहेड अवशोषित करता है।"
 
+msgid "The human-readable document number (like J000001 or ECO-000001) minted from a sequence and stored on the record, distinct from its internal id."
+msgstr "मानव-पठनीय दस्तावेज़ संख्या (जैसे J000001 या ECO-000001) जो एक अनुक्रम से बनाई गई है और रिकॉर्ड पर संग्रहीत है, इसके आंतरिक id से अलग।"
+
 msgid "The identifier the customer uses for this part on their POs; Carbon resolves it to our internal Part ID on order import."
 msgstr "पहचानकर्ता जो ग्राहक इस भाग के लिए अपने POs पर उपयोग करता है; Carbon आदेश आयात पर इसे हमारे आंतरिक भाग ID में हल करता है।"
 
@@ -12585,6 +12711,9 @@ msgstr "वह स्थान जिससे यह उद्धरण पू�
 
 msgid "The location this RFQ would fulfill from if it converts to a quote and then an order."
 msgstr "वह स्थान जिससे यह अनुरोध पूरा किया जाएगा यदि यह एक उद्धरण में और फिर एक आदेश में परिवर्तित होता है।"
+
+msgid "The log of risks and opportunities raised against any entity, each rated by independent 1–5 severity and likelihood and driven to a resolution."
+msgstr "किसी भी इकाई के खिलाफ उठाए गए जोखिमों और अवसरों का लॉग, प्रत्येक को स्वतंत्र 1–5 गंभीरता और संभावना द्वारा दर्जांकित और समाधान के लिए संचालित।"
 
 msgid "The logos shown on your printed and emailed documents"
 msgstr "आपके मुद्रित और ईमेल किए गए दस्तावेज़ों पर दिखाए गए लोगो"
@@ -12667,6 +12796,9 @@ msgstr "कार्यों की क्रमित सूची जो इ�
 msgid "The ordered sequence of operations a job runs through, copied from the method's bill of process."
 msgstr "संचालन का क्रमित क्रम जो एक काम चलाता है, विधि के बिल ऑफ प्रोसेस से कॉपी किया गया।"
 
+msgid "The original model file is no longer available"
+msgstr ""
+
 msgid "The outbound posting document that takes goods out of stock to a customer, posting COGS as it goes."
 msgstr "बाहरी पोस्टिंग दस्तावेज़ जो स्टॉक से माल को ग्राहक के पास ले जाता है, रास्ते में COGS पोस्ट करता है।"
 
@@ -12687,6 +12819,12 @@ msgstr "कार्बन की ओर से वे लोग जो आप�
 
 msgid "The people on your team and their access to Carbon"
 msgstr "आपकी टीम के लोग और Carbon तक उनकी पहुंच"
+
+msgid "The per-company counter behind a document type's readable number, assembling {prefix}{next+step, zero-padded}{suffix} and advancing as each document is created."
+msgstr "दस्तावेज़ प्रकार की पठनीय संख्या के पीछे प्रति-कंपनी काउंटर, {prefix}{next+step, zero-padded}{suffix} को असेम्बल करता है और प्रत्येक दस्तावेज़ बनाए जाने पर आगे बढ़ता है।"
+
+msgid "The per-item outcome recorded on a non-conformance's affected material — Pending, Return to Supplier, Rework, Scrap, or Use As Is — decided for each affected lot or serial on its own."
+msgstr "प्रत्येक आइटम का परिणाम एक गैर-अनुरूपता की प्रभावित सामग्री पर दर्ज किया गया — प्रतीक्षित, आपूर्तिकर्ता को वापस, पुनः कार्य, स्क्रैप, या जैसा है वैसा उपयोग करें — प्रत्येक प्रभावित लॉट या सीरियल के लिए अपने आप पर निर्णय लिया गया।"
 
 msgid "The percentage of the cash discount. Use 0 for no discount."
 msgstr "नकद छूट का प्रतिशत। कोई छूट नहीं के लिए 0 का उपयोग करें।"
@@ -12735,6 +12873,9 @@ msgstr "वह कारण जो आप रिकॉर्ड करते ह
 
 msgid "The reasons you record when you decline an RFQ"
 msgstr "वह कारण जो आप RFQ को अस्वीकार करते समय दर्ज करते हैं"
+
+msgid "The record that applies a payment or memo to an invoice, carrying the applied, discount, and write-off amounts."
+msgstr "वह रिकॉर्ड जो एक भुगतान या ज्ञापन को एक चालान पर लागू करता है, लागू, छूट और लिखित-बंद राशि ले जाता है।"
 
 msgid "The recorded genealogy of tracked entities — which inputs were consumed to produce which outputs, receipt through shipment."
 msgstr "ट्रैक किए गए इकाइयों का रिकॉर्ड किया गया वंशावली - कौन से इनपुट का उपभोग किया गया था कौन से आउटपुट का उत्पादन करने के लिए, रसीद से शिपमेंट।"
@@ -12910,6 +13051,9 @@ msgstr "गोदाम जिससे इस उद्धरण पर सा�
 
 msgid "The ways equipment fails, for maintenance and quality tracking"
 msgstr "उपकरण विफल होने के तरीके, रखरखाव और गुणवत्ता ट्रैकिंग के लिए"
+
+msgid "The work center's own bin where picked material is staged for production to draw down, as opposed to its warehouse source shelf."
+msgstr "कार्य केंद्र का अपना बिन जहां चुनी गई सामग्री उत्पादन के लिए तैयार की जाती है, इसके गोदाम स्रोत शेल्फ के विपरीत।"
 
 msgid "The working hours and calendars that drive scheduling"
 msgstr "कार्य घंटे और कैलेंडर जो शेड्यूलिंग को संचालित करते हैं"
@@ -13102,7 +13246,7 @@ msgid "Thumbnail removed"
 msgstr "थंबनेल हटाया गया"
 
 msgid "Thumbnail updated"
-msgstr "थंबनेल अपडेट किया गया"
+msgstr "थंबनेल अपडेट हो गया"
 
 msgid "Thumbnail uploaded"
 msgstr "थंबनेल अपलोड किया गया"
@@ -14199,8 +14343,8 @@ msgstr "{translatedTerm} क्या है?"
 msgid "What it is"
 msgstr "यह क्या है"
 
-msgid "What kind of change this is: Version updates how the part is made, Revision edits its details and documents, and New Part replaces it with a new part number."
-msgstr "यह किस प्रकार का परिवर्तन है: संस्करण अपडेट करता है कि भाग कैसे बनाया जाता है, संशोधन इसके विवरण और दस्तावेज़ों को संपादित करता है, और नया भाग इसे एक नए भाग संख्या से बदल देता है।"
+msgid "What kind of change this is: Version updates how the part is made, Revision revises its details and documents, Replacement Part swaps in a new part number that supersedes the old one, and New Part introduces a net-new part with no predecessor."
+msgstr "यह किस प्रकार का परिवर्तन है: संस्करण अपडेट करता है कि भाग कैसे बनाया जाता है, संशोधन अपने विवरण और दस्तावेज़ को संशोधित करता है, प्रतिस्थापन भाग एक नई भाग संख्या में स्वैप करता है जो पुरानी को प्रतिस्थापित करता है, और नया भाग एक शुद्ध-नया भाग पेश करता है जिसका कोई पूर्ववर्ती नहीं है।"
 
 msgid "What kind of output this entry records — Production (good units), Scrap (unrecoverable), or Rework (sent back for correction); reveals Scrap Reason when Scrap."
 msgstr "यह प्रविष्टि किस प्रकार का आउटपुट रिकॉर्ड करती है — उत्पादन (अच्छी इकाइयाँ), स्क्रैप (अपूरणीय) या पुनः कार्य (सुधार के लिए वापस भेजा गया); जब स्क्रैप हो तो स्क्रैप कारण प्रकट करता है।"
@@ -14325,8 +14469,8 @@ msgstr "जब आपूर्तिकर्ता डिलीवरी के
 msgid "When the supplier's pricing stops being honored; converting this quote to a PO after this date may need re-quoting."
 msgstr "जब आपूर्तिकर्ता की मूल्य निर्धारण सम्मानित नहीं रह जाती है; इस तारीख के बाद इस उद्धरण को एक पीओ में परिवर्तित करने के लिए पुनः-उद्धरण की आवश्यकता हो सकती है।"
 
-msgid "When this gauge becomes due for calibration; once past due, it's blocked from inspections until calibrated."
-msgstr "जब यह गेज अंशांकन के लिए देय है; एक बार समाप्त होने के बाद, यह अंशांकन तक निरीक्षण से अवरुद्ध है।"
+msgid "When this gauge becomes due for calibration; once past due it reads Out-of-Calibration."
+msgstr "जब यह गेज कैलिब्रेशन के लिए देय हो जाता है; एक बार अतिदेय होने के बाद यह Out-of-Calibration पढ़ता है।"
 
 msgid "When this gauge was last successfully calibrated; the next-calibration date recomputes from this value plus the interval."
 msgstr "जब यह गेज पिछली बार सफलतापूर्वक अंशांकित किया गया था; अगली-कैलिब्रेशन तारीख इस मूल्य और अंतराल से फिर से गणना की जाती है।"
