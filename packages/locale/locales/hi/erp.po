@@ -635,6 +635,9 @@ msgstr "एक टिप्पणी जोड़ें..."
 msgid "Add a custom pricing row to override quantity, price, shipping, lead time, and tax"
 msgstr "मात्रा, मूल्य, शिपिंग, लीड समय और कर को ओवरराइड करने के लिए एक कस्टम मूल्य निर्धारण पंक्ति जोड़ें"
 
+msgid "Add a materials section to the job traveler PDF listing the required parts and quantities for each make method."
+msgstr "प्रत्येक निर्माण विधि के लिए आवश्यक पुर्जों और मात्राओं को सूचीबद्ध करते हुए जॉब ट्रैवलर PDF में एक सामग्री अनुभाग जोड़ें।"
+
 msgid "Add a printer in the printing settings to print labels directly."
 msgstr "प्रिंटिंग सेटिंग्स में एक प्रिंटर जोड़ें ताकि लेबल सीधे प्रिंट कर सकें।"
 
@@ -6514,6 +6517,9 @@ msgstr "शिपमेंट में अतिरिक्त पार्ट
 msgid "Include Inactive"
 msgstr "निष्क्रिय शामिल करें"
 
+msgid "Include Materials"
+msgstr "सामग्री शामिल करें"
+
 msgid "Included"
 msgstr "शामिल"
 
@@ -6954,6 +6960,9 @@ msgstr "जॉब ऑपरेशन"
 
 msgid "Job Operations"
 msgstr "कार्य संचालन"
+
+msgid "Job Traveler"
+msgstr "जॉब ट्रैवलर"
 
 msgid "Jobs"
 msgstr "नौकरियां"

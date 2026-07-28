@@ -635,6 +635,9 @@ msgstr "Aggiungi un commento..."
 msgid "Add a custom pricing row to override quantity, price, shipping, lead time, and tax"
 msgstr "Aggiungi una riga di prezzo personalizzata per sovrascrivere quantità, prezzo, spedizione, lead time e tasse"
 
+msgid "Add a materials section to the job traveler PDF listing the required parts and quantities for each make method."
+msgstr "Aggiungi una sezione dei materiali al PDF del documento di lavorazione che elenca le parti e le quantità richieste per ciascun metodo di produzione."
+
 msgid "Add a printer in the printing settings to print labels directly."
 msgstr "Aggiungi una stampante nelle impostazioni di stampa per stampare le etichette direttamente."
 
@@ -6514,6 +6517,9 @@ msgstr "Includi parti extra nella spedizione"
 msgid "Include Inactive"
 msgstr "Includi Inattivi"
 
+msgid "Include Materials"
+msgstr "Includi materiali"
+
 msgid "Included"
 msgstr "Incluso"
 
@@ -6954,6 +6960,9 @@ msgstr "Operazione di Lavoro"
 
 msgid "Job Operations"
 msgstr "Operazioni di Lavoro"
+
+msgid "Job Traveler"
+msgstr "Documento di lavorazione"
 
 msgid "Jobs"
 msgstr "Lavori"

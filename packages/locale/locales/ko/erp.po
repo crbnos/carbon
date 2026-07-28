@@ -635,6 +635,9 @@ msgstr "댓글 추가..."
 msgid "Add a custom pricing row to override quantity, price, shipping, lead time, and tax"
 msgstr "수량, 가격, 배송비, 리드타임, 세금을 재정의할 사용자 정의 가격 행을 추가하세요"
 
+msgid "Add a materials section to the job traveler PDF listing the required parts and quantities for each make method."
+msgstr "각 제조 방법에 필요한 부품과 수량을 나열하는 자재 섹션을 작업 트래블러 PDF에 추가합니다."
+
 msgid "Add a printer in the printing settings to print labels directly."
 msgstr "라벨을 직접 출력하려면 인쇄 설정에서 프린터를 추가하세요."
 
@@ -6514,6 +6517,9 @@ msgstr "출하에 여분 부품 포함"
 msgid "Include Inactive"
 msgstr "비활성 포함"
 
+msgid "Include Materials"
+msgstr "자재 포함"
+
 msgid "Included"
 msgstr "포함됨"
 
@@ -6954,6 +6960,9 @@ msgstr "작업 공정작업"
 
 msgid "Job Operations"
 msgstr "작업 공정작업"
+
+msgid "Job Traveler"
+msgstr "작업 트래블러"
 
 msgid "Jobs"
 msgstr "작업"

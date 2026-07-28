@@ -635,6 +635,9 @@ msgstr "添加评论..."
 msgid "Add a custom pricing row to override quantity, price, shipping, lead time, and tax"
 msgstr "添加自定义定价行以覆盖数量、价格、运费、交货期和税费"
 
+msgid "Add a materials section to the job traveler PDF listing the required parts and quantities for each make method."
+msgstr "在工单流转单 PDF 中添加材料部分，列出每种制造方法所需的零件和数量。"
+
 msgid "Add a printer in the printing settings to print labels directly."
 msgstr "在打印设置中添加打印机以直接打印标签。"
 
@@ -6514,6 +6517,9 @@ msgstr "在发货中包含额外零件"
 msgid "Include Inactive"
 msgstr "包括不活跃"
 
+msgid "Include Materials"
+msgstr "包含材料"
+
 msgid "Included"
 msgstr "已包含"
 
@@ -6954,6 +6960,9 @@ msgstr "工作操作"
 
 msgid "Job Operations"
 msgstr "工作操作"
+
+msgid "Job Traveler"
+msgstr "工单流转单"
 
 msgid "Jobs"
 msgstr "工作"

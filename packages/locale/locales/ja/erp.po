@@ -635,6 +635,9 @@ msgstr "コメントを追加..."
 msgid "Add a custom pricing row to override quantity, price, shipping, lead time, and tax"
 msgstr "数量、価格、送料、リードタイム、税金を上書きするカスタム価格行を追加します"
 
+msgid "Add a materials section to the job traveler PDF listing the required parts and quantities for each make method."
+msgstr "各製造方法に必要な部品と数量を記載した資材セクションをジョブトラベラーPDFに追加します。"
+
 msgid "Add a printer in the printing settings to print labels directly."
 msgstr "プリンター設定にプリンターを追加して、ラベルを直接印刷します。"
 
@@ -6514,6 +6517,9 @@ msgstr "出荷に追加部品を含める"
 msgid "Include Inactive"
 msgstr "非アクティブを含める"
 
+msgid "Include Materials"
+msgstr "資材を含める"
+
 msgid "Included"
 msgstr "含まれています"
 
@@ -6954,6 +6960,9 @@ msgstr "作業操作"
 
 msgid "Job Operations"
 msgstr "ジョブ操作"
+
+msgid "Job Traveler"
+msgstr "ジョブトラベラー"
 
 msgid "Jobs"
 msgstr "ジョブ"

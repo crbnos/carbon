@@ -1,6 +1,6 @@
 {
-  "generated": "2026-07-28T08:32:59.708Z",
-  "totalTools": 1397,
+  "generated": "2026-07-28T17:57:19.473Z",
+  "totalTools": 1398,
   "modules": 15,
   "tools": [
     {
@@ -18823,6 +18823,32 @@
       "paramCount": 1,
       "serviceParams": [
         "client",
+        "jobMakeMethodId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "jobMakeMethodId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "jobMakeMethodId"
+        ]
+      }
+    },
+    {
+      "name": "production_getJobMaterialsForTraveler",
+      "module": "production",
+      "classification": "READ",
+      "description": "get job materials for traveler",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "companyId",
         "jobMakeMethodId"
       ],
       "injectAuth": [
@@ -40866,6 +40892,33 @@
         },
         "required": [
           "showSupplierReadableId"
+        ]
+      }
+    },
+    {
+      "name": "settings_updateIncludeMaterialsOnTravelerSetting",
+      "module": "settings",
+      "classification": "WRITE",
+      "description": "update include materials on traveler setting",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "includeMaterialsOnTraveler"
+      ],
+      "injectAuth": [
+        "companyId",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "includeMaterialsOnTraveler": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "includeMaterialsOnTraveler"
         ]
       }
     },

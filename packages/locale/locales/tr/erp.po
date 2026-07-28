@@ -635,6 +635,9 @@ msgstr "Bir yorum ekle..."
 msgid "Add a custom pricing row to override quantity, price, shipping, lead time, and tax"
 msgstr "Miktar, fiyat, kargo, teslim süresi ve vergiyi geçersiz kılmak için özel bir fiyatlandırma satırı ekleyin"
 
+msgid "Add a materials section to the job traveler PDF listing the required parts and quantities for each make method."
+msgstr "Her üretim yöntemi için gereken parçaları ve miktarları listeleyen bir malzemeler bölümünü iş takip formu PDF'sine ekleyin."
+
 msgid "Add a printer in the printing settings to print labels directly."
 msgstr "Etiketleri doğrudan yazdırmak için yazdırma ayarlarında bir yazıcı ekleyin."
 
@@ -6514,6 +6517,9 @@ msgstr "Fazla parçaları sevkiyata dahil et"
 msgid "Include Inactive"
 msgstr "Pasifleri Dahil Et"
 
+msgid "Include Materials"
+msgstr "Malzemeleri dahil et"
+
 msgid "Included"
 msgstr "Dahil"
 
@@ -6954,6 +6960,9 @@ msgstr "İşlem"
 
 msgid "Job Operations"
 msgstr "İşlem Operasyonları"
+
+msgid "Job Traveler"
+msgstr "İş Takip Formu"
 
 msgid "Jobs"
 msgstr "İşler"

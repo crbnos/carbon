@@ -1487,6 +1487,23 @@ export async function getJobMaterialsByMethodId(
     .order("order", { ascending: true });
 }
 
+/**
+ * Job materials for a make method, joined with the item's readable id + name for
+ * display. Used by the job traveler PDF materials section (opt-in company setting).
+ */
+export async function getJobMaterialsForTraveler(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  jobMakeMethodId: string
+) {
+  return client
+    .from("jobMaterial")
+    .select("*, item(readableIdWithRevision, name)")
+    .eq("companyId", companyId)
+    .eq("jobMakeMethodId", jobMakeMethodId)
+    .order("order", { ascending: true });
+}
+
 export async function getJobOperation(
   client: SupabaseClient<Database>,
   jobOperationId: string

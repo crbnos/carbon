@@ -1371,6 +1371,20 @@ export async function updateShowSupplierReadableIdSetting(
     .eq("id", companyId);
 }
 
+export async function updateIncludeMaterialsOnTravelerSetting(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  includeMaterialsOnTraveler: boolean
+) {
+  // The `as any` mirrors the existing `updateLeadTimesOnReceiptSetting` pattern for
+  // a column that isn't in the generated types yet. Drop it once `pnpm run
+  // generate:types` is run against a DB with 20260723020305_include-materials-on-traveler
+  // applied and the regenerated `@carbon/database` types are committed.
+  return (client.from("companySettings") as any)
+    .update(sanitize({ includeMaterialsOnTraveler }))
+    .eq("id", companyId);
+}
+
 export async function updateShowCustomerReadableIdSetting(
   client: SupabaseClient<Database>,
   companyId: string,

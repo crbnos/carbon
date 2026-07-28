@@ -10,21 +10,24 @@ import {
   CardHeader,
   CardTitle,
   Heading,
+  HStack,
   Label,
   ScrollArea,
+  Switch,
   toast,
   VStack
 } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { redirect, useFetcher, useLoaderData } from "react-router";
 import { Boolean, Users } from "~/components/Form";
 import {
   getCompanySettings,
   jobCompletedValidator,
-  operationTimerValidator
+  operationTimerValidator,
+  updateIncludeMaterialsOnTravelerSetting
 } from "~/modules/settings";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -84,6 +87,33 @@ export async function action({ request }: ActionFunctionArgs) {
     return { success: true, message: "Job notification settings updated" };
   }
 
+  if (intent === "includeMaterialsOnTraveler") {
+    const enabled = formData.get("enabled") === "true";
+
+    const update = await updateIncludeMaterialsOnTravelerSetting(
+      client,
+      companyId,
+      enabled
+    );
+
+    // Report the authoritative persisted value back so the client can reconcile
+    // its optimistic switch state: on failure the setting is unchanged (!enabled).
+    if (update.error)
+      return {
+        success: false,
+        enabled: !enabled,
+        message: update.error.message
+      };
+
+    return {
+      success: true,
+      enabled,
+      message: enabled
+        ? "Materials will be included on the job traveler"
+        : "Materials will not be included on the job traveler"
+    };
+  }
+
   if (intent === "operationTimer") {
     const validation = await validator(operationTimerValidator).validate(
       formData
@@ -133,6 +163,43 @@ export default function ProductionSettingsRoute() {
       toast.error(timerFetcher.data.message);
     }
   }, [timerFetcher.data?.message, timerFetcher.data?.success]);
+
+  const toggleFetcher = useFetcher<typeof action>();
+
+  const [includeMaterialsOnTraveler, setIncludeMaterialsOnTraveler] = useState(
+    (companySettings as { includeMaterialsOnTraveler?: boolean })
+      .includeMaterialsOnTraveler ?? false
+  );
+
+  const handleIncludeMaterialsOnTravelerToggle = useCallback(
+    (checked: boolean) => {
+      setIncludeMaterialsOnTraveler(checked);
+      toggleFetcher.submit(
+        { intent: "includeMaterialsOnTraveler", enabled: checked.toString() },
+        { method: "POST" }
+      );
+    },
+    [toggleFetcher]
+  );
+
+  useEffect(() => {
+    const data = toggleFetcher.data;
+    if (!data) return;
+
+    if (data.success === true && data.message) {
+      toast.success(data.message);
+    }
+    if (data.success === false && data.message) {
+      toast.error(data.message);
+    }
+
+    // Reconcile the optimistic switch with the value the server actually
+    // persisted (unchanged on failure), so a failed write can't leave the
+    // toggle displaying a state that was never saved.
+    if ("enabled" in data && typeof data.enabled === "boolean") {
+      setIncludeMaterialsOnTraveler(data.enabled);
+    }
+  }, [toggleFetcher.data]);
 
   return (
     <ScrollArea className="w-full h-[calc(100dvh-49px)]">
@@ -243,6 +310,33 @@ export default function ProductionSettingsRoute() {
               </Submit>
             </CardFooter>
           </ValidatedForm>
+        </Card>
+
+        <p className="mt-4 text-xxs text-foreground/70 uppercase font-light tracking-wide">
+          <Trans>Job Traveler</Trans>
+        </p>
+
+        <Card>
+          <CardHeader>
+            <HStack className="justify-between items-center">
+              <div>
+                <CardTitle>
+                  <Trans>Include Materials</Trans>
+                </CardTitle>
+                <CardDescription>
+                  <Trans>
+                    Add a materials section to the job traveler PDF listing the
+                    required parts and quantities for each make method.
+                  </Trans>
+                </CardDescription>
+              </div>
+              <Switch
+                checked={includeMaterialsOnTraveler}
+                onCheckedChange={handleIncludeMaterialsOnTravelerToggle}
+                disabled={toggleFetcher.state !== "idle"}
+              />
+            </HStack>
+          </CardHeader>
         </Card>
       </VStack>
     </ScrollArea>
