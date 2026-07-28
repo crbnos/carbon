@@ -203,20 +203,25 @@ impl Src {
     }
 }
 
-/// Map tessellated GLB weight → auto-mode error budget (normalized, a fraction of
-/// each mesh's extent). Log-scaled between two anchors: at/below `SMALL` the
-/// baseline high-quality budget (unchanged from today, so small models never
-/// regress), ramping up to `MAX_ERR` at/above `LARGE`. Still bounded and per-mesh
-/// adaptive — this decimates more on heavy models, it does not switch to unbounded
-/// ratio targeting.
-fn derive_auto_error(input_bytes: usize) -> f32 {
-    const SMALL: f64 = 512.0 * 1024.0; // 512 KiB
+/// Map tessellated GLB weight → auto-mode error budget (normalized, a fraction
+/// of each mesh's extent). At/below `SMALL` there is NO simplification at all
+/// (`None` — lossless weld/reorder/encode only): a small model needs no size
+/// win, and even a "high-quality" error budget visibly chamfers features that
+/// are small relative to the part (a hole in a long part decimates to a
+/// polygon). Above that, log-ramp from the baseline budget to `MAX_ERR` at
+/// `LARGE`. Always error-bounded and per-mesh adaptive — never unbounded ratio
+/// targeting.
+fn derive_auto_error(input_bytes: usize) -> Option<f32> {
+    const SMALL: f64 = 2.0 * 1024.0 * 1024.0; // 2 MiB — below this, lossless
     const LARGE: f64 = 32.0 * 1024.0 * 1024.0; // 32 MiB
     const MAX_ERR: f64 = 0.02; // 2% of extent — heavier but still reasonable
+    if (input_bytes as f64) <= SMALL {
+        return None;
+    }
     let min_err = optimize::DEFAULT_AUTO_ERROR as f64; // 0.5%
-    let b = (input_bytes as f64).clamp(SMALL, LARGE);
+    let b = (input_bytes as f64).min(LARGE);
     let t = (b.ln() - SMALL.ln()) / (LARGE.ln() - SMALL.ln()); // 0..1
-    (min_err + (MAX_ERR - min_err) * t) as f32
+    Some((min_err + (MAX_ERR - min_err) * t) as f32)
 }
 
 /// Resolve the format, load the source into GLB bytes, then walk the simplify
@@ -239,15 +244,14 @@ fn run_optimize(
     let glb = src.bytes();
     let input_bytes = glb.len();
 
-    // Size-adaptive quality (only when the caller gave no explicit knob): scale the
-    // auto-mode error budget by the tessellated GLB weight, so small models keep
-    // the baseline high-quality budget and large ones decimate harder within a
-    // still-bounded, per-mesh-adaptive budget. This smooths the old fit-or-fail
-    // cliff (mid-size models now decimate proportionally instead of not at all
-    // until they bust the size gate). The gate + coarse ratio rungs stay the final
-    // safety net below.
+    // Size-adaptive quality (only when the caller gave no explicit knob): scale
+    // the auto-mode error budget by the tessellated GLB weight — small models
+    // skip simplification entirely (lossless), mid-size decimate within a
+    // still-bounded per-mesh budget, large ones harder. Smooths the old
+    // fit-or-fail cliff. The gate + coarse ratio rungs stay the final safety
+    // net below.
     let auto_error = if opts.auto_scale {
-        Some(derive_auto_error(input_bytes))
+        derive_auto_error(input_bytes)
     } else {
         opts.auto_error
     };
@@ -460,14 +464,14 @@ mod tests {
     #[test]
     fn auto_error_scales_with_size() {
         let base = optimize::DEFAULT_AUTO_ERROR;
-        // Small models keep the baseline high-quality budget (no regression).
-        assert!((derive_auto_error(64 * 1024) - base).abs() < 1e-6);
-        assert!((derive_auto_error(512 * 1024) - base).abs() < 1e-6);
+        // Small models get NO simplification — lossless encode only.
+        assert_eq!(derive_auto_error(64 * 1024), None);
+        assert_eq!(derive_auto_error(2 * 1024 * 1024), None);
         // Large models decimate harder, capped at 2%.
-        assert!((derive_auto_error(64 * 1024 * 1024) - 0.02).abs() < 1e-6);
-        // Monotonic, strictly increasing through the ramp, and always within bounds.
-        let mid = derive_auto_error(4 * 1024 * 1024);
+        assert!((derive_auto_error(64 * 1024 * 1024).unwrap() - 0.02).abs() < 1e-6);
+        // Monotonic through the ramp, within bounds.
+        let mid = derive_auto_error(8 * 1024 * 1024).unwrap();
         assert!(mid > base && mid < 0.02);
-        assert!(derive_auto_error(2 * 1024 * 1024) < mid);
+        assert!(derive_auto_error(4 * 1024 * 1024).unwrap() < mid);
     }
 }

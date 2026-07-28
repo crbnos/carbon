@@ -216,7 +216,9 @@ export const modelCompactFunction = inngest.createFunction(
       if (fits) {
         // Relocate the compacted raw to durable storage and repoint `modelPath`
         // at it. xbf: also retain the original; zstd: drop the fat original
-        // (the `.zst` IS the original, compressed).
+        // (the `.zst` IS the original, compressed). `size` stays the
+        // AS-UPLOADED bytes — it feeds every "modelSize" view/RPC and the file
+        // lists, which must show the customer's file, not an internal artifact.
         const err = await moveRawToDurable(client, compactPath);
         if (err) throw new Error(`relocate compacted raw to durable: ${err}`);
         if (isXbf) await retainOriginal();
@@ -225,8 +227,7 @@ export const modelCompactFunction = inngest.createFunction(
           .update({
             modelPath: compactPath,
             originalPath: isXbf ? model.modelPath : null,
-            ...originalSizeUpdate,
-            size: compactedSize
+            ...originalSizeUpdate
           })
           .eq("id", modelUploadId);
         if (!isXbf) {
@@ -265,8 +266,7 @@ export const modelCompactFunction = inngest.createFunction(
         .update({
           modelPath: compactPath,
           originalPath: isXbf ? model.modelPath : null,
-          ...originalSizeUpdate,
-          ...(compactedSize != null ? { size: compactedSize } : {})
+          ...originalSizeUpdate
         })
         .eq("id", modelUploadId);
       if (!isXbf) {

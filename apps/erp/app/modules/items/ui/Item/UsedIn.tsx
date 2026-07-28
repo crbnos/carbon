@@ -44,9 +44,9 @@ import type { ItemType } from "~/modules/shared";
 import { path } from "~/utils/path";
 import { getReadableIdWithRevision } from "~/utils/string";
 import {
-  ItemChangeOrderLock,
-  useItemOpenChangeOrders
-} from "../ChangeOrder/ItemChangeOrderLock";
+  ItemChangeNoticeLock,
+  useItemOpenChangeNotices
+} from "../ChangeNotice/ItemChangeNoticeLock";
 import { getPathToMakeMethod } from "../Methods/utils";
 import RevisionForm from "./RevisionForm";
 
@@ -206,11 +206,11 @@ export function RevisionsItem({
   const revisionDisclosure = useDisclosure();
   const defaultDisclosure = useDisclosure();
 
-  // Block manual revision creation while an open change order owns this item —
+  // Block manual revision creation while an open change notice owns this item —
   // the CO authors revisions. The button stays visible but disabled, with a
-  // tooltip pointing at the change order(s).
-  const openChangeOrders = useItemOpenChangeOrders(node.key, itemId);
-  const isChangeOrderLocked = openChangeOrders.length > 0;
+  // tooltip pointing at the change notice(s).
+  const openChangeNotices = useItemOpenChangeNotices(node.key, itemId);
+  const isChangeNoticeLocked = openChangeNotices.length > 0;
 
   const [selectedRevision, setSelectedRevision] = useState<{
     id?: string;
@@ -250,9 +250,9 @@ export function RevisionsItem({
           </div>
         </button>
         {permissions.can("create", "parts") &&
-          (isChangeOrderLocked ? (
-            <ItemChangeOrderLock
-              changeOrders={openChangeOrders}
+          (isChangeNoticeLocked ? (
+            <ItemChangeNoticeLock
+              changeNotices={openChangeNotices}
               className="absolute right-2 top-1.5"
             >
               <IconButton
@@ -263,7 +263,7 @@ export function RevisionsItem({
                 className="size-5"
                 isDisabled
               />
-            </ItemChangeOrderLock>
+            </ItemChangeNoticeLock>
           ) : (
             <IconButton
               size="sm"

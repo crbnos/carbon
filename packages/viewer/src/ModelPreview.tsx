@@ -7,7 +7,8 @@ import {
   LuMaximize,
   LuRotateCw,
   LuTrash2,
-  LuTriangleAlert
+  LuTriangleAlert,
+  LuX
 } from "react-icons/lu";
 import type { ModelMetrics } from "./ModelCanvas";
 import { isRawRenderable } from "./raw/formats";
@@ -199,7 +200,7 @@ export function ModelPreview({
               non-blocking hint that a better GLB is on its way. Swaps out for the
               "Optimized GLB" size badge once the server model arrives. */}
           {optimizing && useRawTier && (
-            <div className="pointer-events-none absolute bottom-2 left-2 z-20 flex items-center gap-1.5 rounded-md border border-border bg-popover px-2 py-1 text-xs text-muted-foreground shadow-sm">
+            <div className="absolute bottom-2 left-2 z-20 flex items-center gap-1.5 rounded-md border border-border bg-popover px-2 py-1 text-xs text-muted-foreground shadow-sm">
               <svg
                 className="size-3 shrink-0 animate-spin"
                 viewBox="0 0 24 24"
@@ -221,6 +222,19 @@ export function ModelPreview({
                 />
               </svg>
               <span>Optimizing…</span>
+              {/* Escape hatch: without it, a run that orphans mid-flight (worker
+                  crash, externally cancelled run) leaves the chip spinning with
+                  no way out — cancel stamps the row Failed → retry chip shows. */}
+              {onCancelWait && (
+                <button
+                  type="button"
+                  aria-label="Cancel optimization"
+                  onClick={onCancelWait}
+                  className="ml-0.5 rounded p-0.5 hover:bg-muted"
+                >
+                  <LuX className="size-3" />
+                </button>
+              )}
             </div>
           )}
 

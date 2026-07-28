@@ -1,5 +1,6 @@
 import { ASSEMBLER_SERVICE_API_KEY, ASSEMBLER_SERVICE_URL } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 
@@ -16,14 +17,25 @@ export async function action({ request }: ActionFunctionArgs) {
     return data({ success: false }, { status: 400 });
   }
 
-  const cancelled = await client
+  // Tenant check with the RLS client, then stamp via service role — the
+  // RLS UPDATE policy needs an edit permission, and a viewer-only user's
+  // cancel would otherwise silently match zero rows (chip spins forever).
+  const owned = await client
+    .from("modelUpload")
+    .select("id")
+    .eq("id", modelUploadId)
+    .eq("companyId", companyId)
+    .maybeSingle();
+  if (owned.error || !owned.data) {
+    return data({ success: false }, { status: 404 });
+  }
+  const cancelled = await getCarbonServiceRole()
     .from("modelUpload")
     .update({
       optimizeStatus: "Failed",
       optimizeError: "Cancelled by user"
     })
     .eq("id", modelUploadId)
-    .eq("companyId", companyId)
     .in("optimizeStatus", ["Queued", "Processing"])
     .select("id");
 

@@ -45,8 +45,8 @@ msgid "(excluded for this customer)"
 msgstr "(für diesen Kunden ausgeschlossen)"
 
 #. placeholder {0}: open.length
-msgid "{0, plural, one {This part is on 1 open change order} other {This part is on # open change orders}}"
-msgstr "{0, plural, one {Dieses Teil befindet sich in 1 offener Änderungsanweisung} other {Dieses Teil befindet sich in # offenen Änderungsanweisungen}}"
+msgid "{0, plural, one {This part is on 1 open change notice} other {This part is on # open change notices}}"
+msgstr "{0, plural, one {Dieses Teil ist auf 1 offener Änderungsmitteilung} other {Dieses Teil ist auf # offenen Änderungsmitteilungen}}"
 
 #. placeholder {0}: ar.count
 msgid "{0} customers with a balance"
@@ -228,8 +228,8 @@ msgstr "90 Tage"
 msgid "A Carbon-run data migration — you load your own data"
 msgstr "Eine von Carbon durchgeführte Datenmigration – Sie laden Ihre eigenen Daten"
 
-msgid "A change order tracks a controlled engineering or manufacturing change through review and implementation."
-msgstr "Eine Änderungsanweisung verfolgt eine kontrollierte technische oder Fertigungsänderung durch Überprüfung und Umsetzung."
+msgid "A change notice tracks a controlled engineering or manufacturing change through review and implementation."
+msgstr "Eine Änderungsmitteilung verfolgt eine kontrollierte Ingenieur- oder Fertigungsänderung durch Überprüfung und Umsetzung."
 
 msgid "A clearing account holding the value of goods received but not yet billed; the supplier invoice clears it."
 msgstr "Ein Clearingkonto, das den Wert der erhaltenen, aber noch nicht in Rechnung gestellten Waren hält; die Lieferantenrechnung gleicht es aus."
@@ -1149,7 +1149,7 @@ msgstr "Sind Sie sicher, dass Sie den Prozess aktivieren möchten: {name}? Er wi
 msgid "Are you sure you want to activate this gauge?."
 msgstr "Sind Sie sicher, dass Sie dieses Messinstrument aktivieren möchten?."
 
-#. placeholder {0}: routeData?.changeOrder?.changeOrderId ?? ""
+#. placeholder {0}: routeData?.changeNotice?.changeOrderId ?? ""
 msgid "Are you sure you want to cancel {0}? It will be closed and read-only until you reopen it."
 msgstr "Sind Sie sicher, dass Sie {0} stornieren möchten? Es wird geschlossen und schreibgeschützt, bis Sie es erneut öffnen."
 
@@ -1249,12 +1249,12 @@ msgid "Are you sure you want to delete the asset class: {0}? This cannot be undo
 msgstr "Möchten Sie die Anlageklasse wirklich löschen: {0}? Dies kann nicht rückgängig gemacht werden."
 
 #. placeholder {0}: requiredAction.name
-msgid "Are you sure you want to delete the change order action: {0}? This cannot be undone."
-msgstr "Sind Sie sicher, dass Sie die Änderungsauftragsmaßnahme löschen möchten: {0}? Dies kann nicht rückgängig gemacht werden."
+msgid "Are you sure you want to delete the change notice action: {0}? This cannot be undone."
+msgstr "Sind Sie sicher, dass Sie die Änderungsmitteilung-Aktion löschen möchten: {0}? Dies kann nicht rückgängig gemacht werden."
 
-#. placeholder {0}: changeOrderType.name
-msgid "Are you sure you want to delete the change order category: {0}? This cannot be undone."
-msgstr "Möchten Sie die Änderungsanweisungskategorie wirklich löschen: {0}? Dies kann nicht rückgängig gemacht werden."
+#. placeholder {0}: changeNoticeType.name
+msgid "Are you sure you want to delete the change notice category: {0}? This cannot be undone."
+msgstr "Sind Sie sicher, dass Sie die Änderungsmitteilung-Kategorie löschen möchten: {0}? Dies kann nicht rückgängig gemacht werden."
 
 msgid "Are you sure you want to delete the contractor: {name}? This cannot be undone."
 msgstr "Sind Sie sicher, dass Sie den Auftragnehmer: {name} löschen möchten? Dies kann nicht rückgängig gemacht werden."
@@ -1414,8 +1414,8 @@ msgstr "Sind Sie sicher, dass Sie den Webhook löschen möchten: {0}? Dies kann 
 msgid "Are you sure you want to delete this approval rule? This cannot be undone."
 msgstr "Sind Sie sicher, dass Sie diese Genehmigungsregel löschen möchten? Dies kann nicht rückgängig gemacht werden."
 
-msgid "Are you sure you want to delete this change order?"
-msgstr "Möchten Sie diese Änderungsanweisung wirklich löschen?"
+msgid "Are you sure you want to delete this change notice?"
+msgstr "Sind Sie sicher, dass Sie diese Änderungsmitteilung löschen möchten?"
 
 msgid "Are you sure you want to delete this gauge?"
 msgstr "Sind Sie sicher, dass Sie dieses Messinstrument löschen möchten?"
@@ -2056,11 +2056,11 @@ msgstr "Diese Datei kann nicht heruntergeladen werden"
 msgid "Cancel"
 msgstr "Abbrechen"
 
-msgid "Cancel change order"
-msgstr "Änderungsauftrag stornieren"
+msgid "Cancel change notice"
+msgstr "Änderungsmitteilung abbrechen"
 
-msgid "Cancel Change Order"
-msgstr "Änderungsauftrag stornieren"
+msgid "Cancel Change Notice"
+msgstr "Änderungsmitteilung abbrechen"
 
 msgid "Cancel Job"
 msgstr "Auftrag abbrechen"
@@ -2236,20 +2236,20 @@ msgstr "Dokument ändern"
 msgid "Change Inspection Plan"
 msgstr "Inspektionsplan ändern"
 
-msgid "Change order"
-msgstr "Änderungsauftrag"
+msgid "Change notice"
+msgstr "Änderungsmitteilung"
 
-msgid "Change Order"
-msgstr "Änderungsanweisung"
+msgid "Change Notice"
+msgstr "Änderungsmitteilung"
 
-msgid "Change Order Actions"
-msgstr "Änderungsauftragsmaßnahmen"
+msgid "Change Notice Actions"
+msgstr "Änderungsmitteilung-Aktionen"
 
-msgid "Change Order Types"
-msgstr "Änderungsanweisungstypen"
+msgid "Change Notice Types"
+msgstr "Änderungsmitteilung-Typen"
 
-msgid "Change Orders"
-msgstr "Änderungsanweisungen"
+msgid "Change Notices"
+msgstr "Änderungsmitteilungen"
 
 msgid "Change status"
 msgstr "Status ändern"
@@ -2844,8 +2844,8 @@ msgstr "Job-Nummer kopieren"
 msgid "Copy link"
 msgstr "Link kopieren"
 
-msgid "Copy link to change order"
-msgstr "Link zur Änderungsanweisung kopieren"
+msgid "Copy link to change notice"
+msgstr "Link zur Änderungsmitteilung kopieren"
 
 msgid "Copy link to consumable"
 msgstr "Link zum Verbrauchsmaterial kopieren"
@@ -3068,8 +3068,8 @@ msgstr "Erstelle {0} Werte"
 msgid "Create & Snapshot"
 msgstr "Erstellen & Snapshot"
 
-msgid "Create a change order for the new revision and open it"
-msgstr "Erstellen Sie einen Änderungsauftrag für die neue Überarbeitung und öffnen Sie ihn"
+msgid "Create a change notice for the new revision and open it"
+msgstr "Erstellen Sie eine Änderungsmitteilung für die neue Überarbeitung und öffnen Sie sie"
 
 msgid "Create a new kanban card for scan-based replenishment."
 msgstr "Erstellen Sie eine neue Kanban-Karte für scan-basierte Nachschubversorgung."
@@ -3098,8 +3098,8 @@ msgstr "Bestellungen erstellen und genehmigen"
 msgid "Create audit trail entries"
 msgstr "Audit-Trail-Einträge erstellen"
 
-msgid "Create Change Order"
-msgstr "Änderungsanweisung erstellen"
+msgid "Create Change Notice"
+msgstr "Änderungsmitteilung erstellen"
 
 msgid "Create Issue"
 msgstr "Problem erstellen"
@@ -3155,11 +3155,11 @@ msgstr "Erstellt am"
 msgid "Created By"
 msgstr "Erstellt von"
 
-msgid "Created change order action"
-msgstr "Änderungsauftragsmaßnahme erstellt"
+msgid "Created change notice action"
+msgstr "Änderungsmitteilung-Aktion erstellt"
 
-msgid "Created change order type"
-msgstr "Änderungsauftragstyp erstellt"
+msgid "Created change notice type"
+msgstr "Änderungsmitteilung-Typ erstellt"
 
 msgid "Created consumable"
 msgstr "Verbrauchsmaterial erstellt"
@@ -3832,8 +3832,8 @@ msgstr "Attribut löschen"
 msgid "Delete Category"
 msgstr "Kategorie löschen"
 
-msgid "Delete Change Order"
-msgstr "Änderungsanweisung löschen"
+msgid "Delete Change Notice"
+msgstr "Änderungsmitteilung löschen"
 
 msgid "Delete Consumable"
 msgstr "Verbrauchsmaterial löschen"
@@ -4460,17 +4460,53 @@ msgstr "Duplizieren zu..."
 msgid "Duration"
 msgstr "Dauer"
 
+msgid "e.g. +1 555 123 4567"
+msgstr "z.B. +1 555 123 4567"
+
+msgid "e.g. +1 555 123 4568"
+msgstr "z.B. +1 555 123 4568"
+
+msgid "e.g. 01234567"
+msgstr "z.B. 01234567"
+
+msgid "e.g. 1 Industrial Way"
+msgstr "z.B. 1 Industrial Way"
+
+msgid "e.g. 12-3456789"
+msgstr "z.B. 12-3456789"
+
 msgid "e.g. 2h"
 msgstr "z.B. 2h"
 
+msgid "e.g. 48201"
+msgstr "z.B. 48201"
+
+msgid "e.g. Acme Manufacturing"
+msgstr "z.B. Acme Manufacturing"
+
+msgid "e.g. Detroit"
+msgstr "z.B. Detroit"
+
 msgid "e.g. DWG-1234"
 msgstr "z.B. DWG-1234"
+
+msgid "e.g. GB123456789"
+msgstr "z.B. GB123456789"
+
+msgid "e.g. GB123456789000"
+msgstr "z.B. GB123456789000"
 
 msgid "e.g. Jane Smith"
 msgstr "z.B. Jane Smith"
 
 msgid "e.g. Marco + the area leads"
 msgstr "z.B. Marco + die Bereichsleiter"
+
+msgid "e.g. MI"
+msgstr "z.B. MI"
+
+msgid "e.g. Suite 200"
+msgstr "z.B. Suite 200"
 
 msgid "e.g. the first 3 to 4 weeks"
 msgstr "z.B. die ersten 3 bis 4 Wochen"
@@ -4526,14 +4562,14 @@ msgstr "Attributkategorie bearbeiten"
 msgid "Edit Category"
 msgstr "Kategorie bearbeiten"
 
-msgid "Edit Change Order"
-msgstr "Änderungsanweisung bearbeiten"
+msgid "Edit Change Notice"
+msgstr "Änderungsmitteilung bearbeiten"
 
-msgid "Edit Change Order Action"
-msgstr "Änderungsauftragsmaßnahme bearbeiten"
+msgid "Edit Change Notice Action"
+msgstr "Änderungsmitteilung-Aktion bearbeiten"
 
-msgid "Edit Change Order Type"
-msgstr "Änderungsauftragstyp bearbeiten"
+msgid "Edit Change Notice Type"
+msgstr "Änderungsmitteilung-Typ bearbeiten"
 
 msgid "Edit column visibility"
 msgstr "Spaltensichtbarkeit bearbeiten"
@@ -4852,6 +4888,9 @@ msgstr "Angestellte"
 
 msgid "Employees"
 msgstr "Mitarbeiter"
+
+msgid "Empty"
+msgstr "Leer"
 
 msgid "Empty = match every item"
 msgstr "Leer = alle Artikel abgleichen"
@@ -7958,14 +7997,14 @@ msgstr "Neues Attribut"
 msgid "New Attribute Category"
 msgstr "Neue Attributkategorie"
 
-msgid "New Change Order"
-msgstr "Neue Änderungsanweisung"
+msgid "New Change Notice"
+msgstr "Neue Änderungsmitteilung"
 
-msgid "New Change Order Action"
-msgstr "Neue Änderungsauftragsmaßnahme"
+msgid "New Change Notice Action"
+msgstr "Neue Änderungsmitteilung-Aktion"
 
-msgid "New Change Order Type"
-msgstr "Neuer Änderungsauftragstyp"
+msgid "New Change Notice Type"
+msgstr "Neuer Änderungsmitteilung-Typ"
 
 msgid "New Consumable"
 msgstr "Neuer Verbrauchsstoff"
@@ -8308,6 +8347,9 @@ msgstr "Keine verfügbaren verfolgten Entitäten gefunden"
 
 msgid "No BOM input has a shelf-life policy"
 msgstr "Keine BOM-Eingabe hat eine Shelf-Life-Richtlinie"
+
+msgid "No CAD model to preview."
+msgstr "Kein CAD-Modell zum Vorschau verfügbar."
 
 msgid "No calibration records found"
 msgstr "Keine Kalibrierungsdatensätze gefunden"
@@ -8753,8 +8795,8 @@ msgstr "Oops! Der Link, auf den Sie zugreifen möchten, ist ungültig."
 msgid "Open"
 msgstr "Öffnen"
 
-msgid "Open a change order"
-msgstr "Öffnen Sie einen Änderungsauftrag"
+msgid "Open a change notice"
+msgstr "Öffnen Sie eine Änderungsmitteilung"
 
 msgid "Open Actions"
 msgstr "Offene Maßnahmen"
@@ -8771,8 +8813,8 @@ msgstr "Offene Forderungen"
 msgid "Open Audit Log"
 msgstr "Audit-Protokoll öffnen"
 
-msgid "Open change orders affecting this part"
-msgstr "Offene Änderungsanweisungen, die diesen Teil betreffen"
+msgid "Open change notices affecting this part"
+msgstr "Offene Änderungsmitteilungen, die dieses Teil beeinflussen"
 
 msgid "Open Date"
 msgstr "Öffnungsdatum"
@@ -8783,11 +8825,11 @@ msgstr "Offene Einsätze"
 msgid "Open in Carbon"
 msgstr "In Carbon öffnen"
 
-msgid "Open in change order {ids}. Release it to create new versions or revisions."
-msgstr "Offen in Änderungsauftrag {ids}. Geben Sie ihn frei, um neue Versionen oder Überarbeitungen zu erstellen."
+msgid "Open in change notice {ids}. Release it to create new versions or revisions."
+msgstr "Öffnen Sie in der Änderungsmitteilung {ids}. Geben Sie sie frei, um neue Versionen oder Überarbeitungen zu erstellen."
 
-msgid "Open in change orders {ids}. Release them to create new versions or revisions."
-msgstr "Änderungsaufträge {ids} öffnen. Geben Sie sie frei, um neue Versionen oder Überarbeitungen zu erstellen."
+msgid "Open in change notices {ids}. Release them to create new versions or revisions."
+msgstr "Öffnen Sie in den Änderungsmitteilungen {ids}. Geben Sie sie frei, um neue Versionen oder Überarbeitungen zu erstellen."
 
 msgid "Open in MES"
 msgstr "Im MES öffnen"
@@ -8887,6 +8929,9 @@ msgstr "Operatoren können gemeinsame Arbeitsstationen mit PIN-Authentifizierung
 
 msgid "Opportunity"
 msgstr "Gelegenheit"
+
+msgid "Optimized for fast previews — downloads always serve the original uploaded file"
+msgstr ""
 
 msgid "Optional"
 msgstr "Optional"
@@ -10265,8 +10310,8 @@ msgstr "Aktualisieren"
 msgid "Refresh exchange rate"
 msgstr "Wechselkurs aktualisieren"
 
-msgid "Regenerate"
-msgstr "Neu generieren"
+msgid "Regenerate thumbnail from the 3D model"
+msgstr ""
 
 msgid "Regenerating thumbnail…"
 msgstr "Miniaturansicht wird neu generiert…"
@@ -10279,6 +10324,9 @@ msgstr "Registriert"
 
 msgid "Registered"
 msgstr "Bestellpunkt"
+
+msgid "Registration Number"
+msgstr "Registrierungsnummer"
 
 msgid "Reject"
 msgstr "Ablehnen"
@@ -10310,8 +10358,8 @@ msgstr "Relative Zeitleiste · Daten müssen noch bestätigt werden"
 msgid "Release"
 msgstr "Freigabe"
 
-msgid "Release change order"
-msgstr "Änderungsauftrag freigeben"
+msgid "Release change notice"
+msgstr "Änderungsmitteilung freigeben"
 
 msgid "Release control"
 msgstr "Freigabekontrolle"
@@ -13101,6 +13149,12 @@ msgstr "Diese Aufträge haben Operationen, die diesem Arbeitszentrum zugewiesen 
 msgid "These journal entries are still Draft, so their debits and credits aren't in the ledger for this period. Post each one, or re-date it into a later open period."
 msgstr "Diese Journaleinträge sind noch im Entwurf, daher befinden sich ihre Belastungen und Gutschriften nicht im Ledger für diese Periode. Buchen Sie jeden Eintrag, oder buchen Sie ihn in eine spätere offene Periode um."
 
+msgid "This change notice is being implemented, so its changes are locked. Reopen it to edit."
+msgstr "Diese Änderungsmitteilung wird gerade implementiert, daher sind ihre Änderungen gesperrt. Öffnen Sie sie erneut zum Bearbeiten."
+
+msgid "This change notice is closed, so its changes are read-only."
+msgstr "Diese Änderungsmitteilung ist geschlossen, daher sind ihre Änderungen schreibgeschützt."
+
 msgid "This completes the Discovery step."
 msgstr "Dies schließt den Discovery-Schritt ab."
 
@@ -13185,11 +13239,11 @@ msgstr "Diese Periode hat keine Journaleinträge und kann dauerhaft gelöscht we
 msgid "This Quarter"
 msgstr "Dieses Quartal"
 
-msgid "This revision is released (Production). Changes should normally flow through a change order."
-msgstr "Diese Überarbeitung ist freigegeben (Produktion). Änderungen sollten normalerweise durch eine Änderungsanforderung fließen."
+msgid "This revision is released (Production). Changes should normally flow through a change notice."
+msgstr "Diese Überarbeitung wird freigegeben (Produktion). Änderungen sollten normalerweise durch eine Änderungsmitteilung fließen."
 
-msgid "This revision is released (Production). Open a change order to modify it."
-msgstr "Diese Überarbeitung ist freigegeben (Produktion). Öffnen Sie eine Änderungsanforderung, um sie zu ändern."
+msgid "This revision is released (Production). Open a change notice to modify it."
+msgstr "Diese Überarbeitung wird freigegeben (Produktion). Öffnen Sie eine Änderungsmitteilung, um sie zu ändern."
 
 msgid "This sales order has associated jobs. Choose what to do with them."
 msgstr "Diese Bestellung hat zugeordnete Aufträge. Wählen Sie, was damit geschehen soll."
@@ -13206,6 +13260,13 @@ msgstr "dieser Lieferant"
 
 msgid "This updates the theme for all users of the application"
 msgstr "Dies aktualisiert das Design für alle Benutzer der Anwendung"
+
+msgid "This version belongs to an open <0>change notice</0>. Edit it there."
+msgstr "Diese Version gehört zu einer offenen <0>Änderungsmitteilung</0>. Bearbeiten Sie sie dort."
+
+#. placeholder {0}: lock.readableId
+msgid "This version belongs to change notice <0>{0}</0>. Edit it there."
+msgstr "Diese Version gehört zur Änderungsmitteilung <0>{0}</0>. Bearbeiten Sie sie dort."
 
 msgid "This will make this version read-only and replace any material make methods with this version."
 msgstr "Dies macht diese Version schreibgeschützt und ersetzt alle Material-Make-Methoden durch diese Version."
@@ -14629,6 +14690,9 @@ msgstr "Warum wird das Ablaufdatum geändert?"
 msgid "Why is this included?"
 msgstr "Warum ist dies enthalten?"
 
+msgid "Why is this locked?"
+msgstr "Warum ist dies gesperrt?"
+
 msgid "Why stock is changing — Positive (found), Negative (lost/scrap), or Set (replace count with a measured value)."
 msgstr "Warum sich der Bestand ändert — Positiv (gefunden), Negativ (verloren/ausschuss) oder Satz (Zählwert mit gemessenem Wert ersetzen)."
 
@@ -14780,6 +14844,9 @@ msgstr "Sie haben {leftoverQuantity} weitere {0} als die bestellte Menge von {1}
 msgid "You don't have permission to edit this bill of material."
 msgstr "Sie haben keine Berechtigung, diese Stückliste zu bearbeiten."
 
+msgid "You don't have permission to edit this bill of process."
+msgstr "Sie haben keine Berechtigung, diesen Betriebsplan zu bearbeiten."
+
 msgid "You drive it; we make sure it's done right. Expert eyes on your setup, data, and go-live."
 msgstr "Du bestimmst das Tempo; wir sorgen dafür, dass es richtig gemacht wird. Fachkundige Augen auf dein Setup, deine Daten und deinen Go-Live."
 
@@ -14814,8 +14881,8 @@ msgstr "Du bist seit {hoursElapsed} Stunden angemeldet. Hast du vergessen, dich 
 msgid "Your books and how money flows."
 msgstr "Ihre Bücher und wie Geld fließt."
 
-msgid "Your changes go into a new draft version released with this change order."
-msgstr "Ihre Änderungen werden in eine neue Entwurfsversion aufgenommen, die mit dieser Änderungsorder freigegeben wird."
+msgid "Your changes go into a new draft version released with this change notice."
+msgstr "Ihre Änderungen werden in eine neue Entwurfsversion übernommen, die mit dieser Änderungsmitteilung freigegeben wird."
 
 msgid "Your Console PIN"
 msgstr "Ihre Konsolen-PIN"

@@ -18,7 +18,7 @@ Every notification starts as a `carbon/notify` event with a specific type. The t
 falls into one of three shapes:
 
   - **Assignments**: Someone is put on a record: a job, job operation, sales order, purchase order, RFQ, purchase invoice, supplier quote, issue, risk, procedure, picking list, stock transfer, maintenance dispatch, or training. The assignee is the recipient.
-  - **State changes & responses**: A record's state moved in a way someone should know about: an approval was **requested**, **approved**, or **rejected**; a job **completed**; a change order entered a new stage; a quote **expired**; a customer or supplier responded to a digital quote or supplier quote.
+  - **State changes & responses**: A record's state moved in a way someone should know about: an approval was **requested**, **approved**, or **rejected**; a job **completed**; a change notice entered a new stage; a quote **expired**; a customer or supplier responded to a digital quote or supplier quote.
   - **Expirations & reminders**: Time-driven, raised by scheduled jobs rather than a user action: a **gauge calibration expired**, a **maintenance dispatch** was auto-created for a work center, or a weekly **training reminder** rolls up a person's outstanding trainings.
 
 The full set of event types lives in `NotificationEvent` (`packages/notifications/src/index.ts:7`). Adding a
@@ -47,7 +47,7 @@ channel opt-outs. There are twelve, and the mapping is fixed in code
 | Maintenance | Maintenance dispatch (assigned or created), gauge calibration expired |
 | Training | Training and procedure assignments, resource training, training reminder |
 | Suggestion | Suggestion response |
-| Items | Change order started / in implementation / complete |
+| Items | Change notice started / in implementation / complete |
 | General | Anything without a specific bucket |
 
 The topic string is **stored** on every notification (`notification.topic`). It's what a user's opt-out row

@@ -405,6 +405,24 @@ export async function runAssemblerJob(
     });
   });
 
+  // Fast jobs (small models, warm/cached assembler) can complete — and fire
+  // their callback — in the gap between the submit step finishing and this
+  // run registering its waitForEvent; the event then matches nothing and the
+  // run parks for the FULL timeout. Poll once up front so an already-terminal
+  // job returns immediately; the wait only covers genuinely in-flight work.
+  const early: PollOutcome = await step.run(`${idPrefix}-early-poll`, () =>
+    pollAssemblerJobOnce({ jobId, mintUploadUrls, baseUrl })
+  );
+  if (early.status === "done") {
+    return { result: early.result, stats: early.stats };
+  }
+  if (early.status === "error") {
+    if (early.error === "Job canceled") {
+      throw new NonRetriableError(`assembler ${action} canceled`);
+    }
+    throw new Error(early.error);
+  }
+
   const done = await step.waitForEvent(`${idPrefix}-wait`, {
     event: "carbon/assembler-job-done",
     timeout: maxWaitMs,

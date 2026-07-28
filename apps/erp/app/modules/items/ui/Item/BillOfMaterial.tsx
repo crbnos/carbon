@@ -31,7 +31,7 @@ import { getItemReadableId } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { motion } from "framer-motion";
 import { nanoid } from "nanoid";
-import type { Dispatch, SetStateAction } from "react";
+import type { Dispatch, ReactNode, SetStateAction } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import {
@@ -138,6 +138,11 @@ type BillOfMaterialProps = {
   configurationRules?: ConfigurationRule[];
   replenishmentSystem?: string;
   parentItemId?: string;
+  // Extra read-only reason from the embedding surface (e.g. a change notice whose
+  // engineering content is frozen at Implementation).
+  isDisabled?: boolean;
+  // What to tell the user when isDisabled is what made this read-only.
+  disabledReason?: ReactNode;
 } & ReleaseLockProps;
 
 type OrderState = {
@@ -176,7 +181,9 @@ const BillOfMaterial = ({
   replenishmentSystem,
   parentItemId,
   revisionStatus,
-  releaseControl
+  releaseControl,
+  isDisabled = false,
+  disabledReason
 }: BillOfMaterialProps) => {
   const permissions = usePermissions();
   const { t } = useLingui();
@@ -187,7 +194,8 @@ const BillOfMaterial = ({
   const isReadOnly =
     permissions.can("update", "parts") === false ||
     makeMethod.status !== "Draft" ||
-    isReleaseLocked;
+    isReleaseLocked ||
+    isDisabled;
 
   const addItemButtonRef = useRef<HTMLButtonElement>(null);
 
@@ -462,7 +470,7 @@ const BillOfMaterial = ({
             <Trans>Bill of Material</Trans>
             {isReadOnly && (
               <Tooltip>
-                <TooltipTrigger tabIndex={-1} className="text-muted-foreground">
+                <TooltipTrigger className="text-muted-foreground">
                   <LuLock />
                 </TooltipTrigger>
                 <TooltipContent className="max-w-xs">
@@ -471,6 +479,8 @@ const BillOfMaterial = ({
                       This method version is read-only. Create a new version
                       from the method menu to make changes.
                     </Trans>
+                  ) : isDisabled && disabledReason ? (
+                    disabledReason
                   ) : (
                     <Trans>
                       You don't have permission to edit this bill of material.

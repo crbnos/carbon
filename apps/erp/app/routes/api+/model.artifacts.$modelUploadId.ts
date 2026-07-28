@@ -19,7 +19,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const model = await client
     .from("modelUpload")
     .select(
-      "size, originalSize, optimizedSize, optimizedModelPath, glbPath, thumbnailPath, optimizeStatus, modelPath"
+      "size, originalSize, optimizedSize, optimizedModelPath, glbPath, thumbnailPath, optimizeStatus, optimizedAt, modelPath, originalPath"
     )
     .eq("id", modelUploadId)
     .eq("companyId", companyId)
@@ -36,34 +36,45 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!model.data) throw new Response("Not found", { status: 404 });
 
   // Raw-source pointer for the viewer's WASM fallback tier (renders the original
-  // upload when no artifact exists). `.zst`-compacted raws are skipped — they only
-  // exist after a successful optimise, which means a GLB artifact exists too.
-  // A retained raw is relocated to the DURABLE `private` bucket; a just-uploaded
-  // one is briefly in ephemeral `temp-staging` before relocation; a pruned one is
-  // in neither (an oversized raw whose GLB preview is enough) → no raw tier.
+  // upload when no artifact exists). Prefer the retained ORIGINAL (xbf-compacted
+  // rows keep the uploaded STEP at `originalPath` — the `.xbf.zst` itself isn't
+  // WASM-renderable); else the uncompacted `modelPath`. A retained raw is
+  // relocated to the DURABLE `private` bucket; a just-uploaded one is briefly in
+  // ephemeral `temp-staging` before relocation; a pruned one is in neither → no
+  // raw tier (rely on the GLB).
   let rawPath: string | null = null;
   let rawBucket = "private";
   const modelPath = model.data?.modelPath ?? null;
-  if (modelPath && !modelPath.toLowerCase().endsWith(".zst")) {
-    const svc = getCarbonServiceRole();
-    const probe = (bucket: string) =>
-      svc.storage
+  const rawCandidate =
+    model.data?.originalPath ??
+    (modelPath && !modelPath.toLowerCase().endsWith(".zst") ? modelPath : null);
+  const svc = getCarbonServiceRole();
+  const exists = async (path: string) => {
+    for (const bucket of ["private", "temp-staging"] as const) {
+      const info = await svc.storage
         .from(bucket)
-        .info(modelPath)
+        .info(path)
         .catch(() => ({ data: null, error: true as const }));
-    const inDurable = await probe("private");
-    if (!inDurable.error && inDurable.data) {
-      rawPath = modelPath;
-      rawBucket = "private";
-    } else {
-      const staged = await probe("temp-staging");
-      if (!staged.error && staged.data) {
-        rawPath = modelPath;
-        rawBucket = "temp-staging";
-      }
-      // Absent in both → pruned/gone; rawPath stays null (rely on the GLB).
+      if (!info.error && info.data) return bucket;
     }
+    return null;
+  };
+  if (rawCandidate) {
+    const bucket = await exists(rawCandidate);
+    if (bucket) {
+      rawPath = rawCandidate;
+      rawBucket = bucket;
+    }
+    // Absent in both → pruned/gone; rawPath stays null (rely on the GLB).
   }
+  // Whether a reoptimise has a source to read: the `modelPath` object (an
+  // `.xbf.zst` counts — it re-tessellates). A pruned/dangling source means the
+  // refresh affordance would only ever fail — the client hides it.
+  const sourceAvailable = modelPath
+    ? rawCandidate === modelPath
+      ? rawPath !== null
+      : (await exists(modelPath)) !== null
+    : false;
 
   return {
     optimizedModelPath: model.data?.optimizedModelPath ?? null,
@@ -83,6 +94,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     // the STORED raw (rewritten to the .zst size after compaction), so prefer
     // the frozen originalSize; older rows fall back to size.
     size: model.data?.originalSize ?? model.data?.size ?? null,
-    optimizedSize: model.data?.optimizedSize ?? null
+    optimizedSize: model.data?.optimizedSize ?? null,
+    // Cache-buster for the optimised GLB: it lives at a STABLE path behind an
+    // immutable-cached preview URL, so a re-optimise would otherwise keep
+    // serving the browser-cached old mesh.
+    optimizedAt: model.data?.optimizedAt ?? null,
+    sourceAvailable
   };
 }

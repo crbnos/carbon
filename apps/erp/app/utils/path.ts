@@ -366,58 +366,61 @@ export const path = {
     calibrations: `${x}/quality/calibrations`,
     cancelPurchasingRfq: (id: string) =>
       generatePath(`${x}/purchasing-rfq/${id}/cancel`),
-    changeOrder: (id: string) => generatePath(`${x}/items/change-order/${id}`),
-    changeOrderAction: (id: string) =>
-      generatePath(`${x}/items/change-order/${id}/action`),
-    changeOrderActionOrder: (id: string) =>
-      generatePath(`${x}/items/change-order/${id}/action/order`),
-    changeOrderActionStatus: (id: string, actionId: string) =>
-      generatePath(`${x}/items/change-order/${id}/action/${actionId}/status`),
-    // Change Order content (Phase 2): BOM change rows + per-assembly targets, and
+    changeNotice: (id: string) =>
+      generatePath(`${x}/items/change-notice/${id}`),
+    changeNoticeAction: (id: string) =>
+      generatePath(`${x}/items/change-notice/${id}/action`),
+    changeNoticeActionOrder: (id: string) =>
+      generatePath(`${x}/items/change-notice/${id}/action/order`),
+    changeNoticeActionStatus: (id: string, actionId: string) =>
+      generatePath(`${x}/items/change-notice/${id}/action/${actionId}/status`),
+    // Change Notice content (Phase 2): BOM change rows + per-assembly targets, and
     // freeform actions. Top-to-bottom: affected items selected first, then
     // per-item staged BOM/BOP/attributes edited in place.
-    changeOrderAffected: (id: string) =>
-      generatePath(`${x}/items/change-order/${id}/affected`),
-    changeOrderAffectedChangeType: (id: string, affectedId: string) =>
+    changeNoticeAffected: (id: string) =>
+      generatePath(`${x}/items/change-notice/${id}/affected`),
+    changeNoticeAffectedChangeType: (id: string, affectedId: string) =>
       generatePath(
-        `${x}/items/change-order/${id}/affected/${affectedId}/change-type`
+        `${x}/items/change-notice/${id}/affected/${affectedId}/change-type`
       ),
-    changeOrderAffectedCutover: (id: string, affectedId: string) =>
+    changeNoticeAffectedCutover: (id: string, affectedId: string) =>
       generatePath(
-        `${x}/items/change-order/${id}/affected/${affectedId}/cutover`
+        `${x}/items/change-notice/${id}/affected/${affectedId}/cutover`
       ),
     // Each affected item is its own line-item detail route (mirrors the sales
     // order line detail `${x}/sales-order/${orderId}/${lineId}/details`). The URL
     // drives selection — refresh + back/forward reselect it.
-    changeOrderAffectedItem: (id: string, affectedId: string) =>
-      generatePath(`${x}/items/change-order/${id}/${affectedId}/details`),
+    changeNoticeAffectedItem: (id: string, affectedId: string) =>
+      generatePath(`${x}/items/change-notice/${id}/${affectedId}/details`),
+    changeNoticeContent: (id: string) =>
+      generatePath(`${x}/items/change-notice/${id}/content`),
     // Delete action for a supplier part managed on a CO line (Buy Revision/New
     // Part). Create/edit are reached relatively from the SupplierParts grid.
-    changeOrderDeleteSupplierPart: (
+    changeNoticeDeleteSupplierPart: (
       id: string,
       affectedId: string,
       supplierPartId: string
     ) =>
       generatePath(
-        `${x}/items/change-order/${id}/${affectedId}/details/${supplierPartId}/delete`
+        `${x}/items/change-notice/${id}/${affectedId}/details/${supplierPartId}/delete`
       ),
-    changeOrderDetails: (id: string) =>
-      generatePath(`${x}/items/change-order/${id}/details`),
-    changeOrderRequiredAction: (id: string) =>
-      generatePath(`${x}/items/change-order-actions/${id}`),
-    // Change Order Actions config (the changeOrderRequiredAction default-action
-    // templates) — a sibling of the CO list, like change-order-types above.
-    changeOrderRequiredActions: `${x}/items/change-order-actions`,
-    changeOrderStatus: (id: string) =>
-      generatePath(`${x}/items/change-order/${id}/status`),
-    // Change Orders — a sub-area of the Items module. List + config live under
-    // /x/items/change-orders; the detail record lives under /x/items/change-order/:id.
-    changeOrders: `${x}/items/change-orders`,
-    changeOrderType: (id: string) =>
-      generatePath(`${x}/items/change-order-types/${id}`),
-    // Change Order Types — a sibling of the CO list (not nested under it), so the
+    changeNoticeDetails: (id: string) =>
+      generatePath(`${x}/items/change-notice/${id}/details`),
+    changeNoticeRequiredAction: (id: string) =>
+      generatePath(`${x}/items/change-notice-actions/${id}`),
+    // Change Notice Actions config (the changeNoticeRequiredAction default-action
+    // templates) — a sibling of the CO list, like change-notice-types above.
+    changeNoticeRequiredActions: `${x}/items/change-notice-actions`,
+    changeNoticeStatus: (id: string) =>
+      generatePath(`${x}/items/change-notice/${id}/status`),
+    // Change Notices — a sub-area of the Items module. List + config live under
+    // /x/items/change-notices; the detail record lives under /x/items/change-notice/:id.
+    changeNotices: `${x}/items/change-notices`,
+    changeNoticeType: (id: string) =>
+      generatePath(`${x}/items/change-notice-types/${id}`),
+    // Change Notice Types — a sibling of the CO list (not nested under it), so the
     // Items sidebar doesn't highlight both entries via prefix matching.
-    changeOrderTypes: `${x}/items/change-order-types`,
+    changeNoticeTypes: `${x}/items/change-notice-types`,
     chartOfAccount: (id: string) =>
       generatePath(`${x}/accounting/charts/${id}`),
     chartOfAccounts: `${x}/accounting/charts`,
@@ -556,18 +559,18 @@ export const path = {
       generatePath(
         `${x}/inventory/batch-property/${itemId}/property/delete/${id}`
       ),
-    deleteChangeOrder: (id: string) =>
-      generatePath(`${x}/items/change-order/delete/${id}`),
-    deleteChangeOrderAction: (id: string, actionId: string) =>
-      generatePath(`${x}/items/change-order/${id}/action/delete/${actionId}`),
-    deleteChangeOrderAffected: (id: string, affectedId: string) =>
+    deleteChangeNotice: (id: string) =>
+      generatePath(`${x}/items/change-notice/delete/${id}`),
+    deleteChangeNoticeAction: (id: string, actionId: string) =>
+      generatePath(`${x}/items/change-notice/${id}/action/delete/${actionId}`),
+    deleteChangeNoticeAffected: (id: string, affectedId: string) =>
       generatePath(
-        `${x}/items/change-order/${id}/affected/delete/${affectedId}`
+        `${x}/items/change-notice/${id}/affected/delete/${affectedId}`
       ),
-    deleteChangeOrderRequiredAction: (id: string) =>
-      generatePath(`${x}/items/change-order-actions/delete/${id}`),
-    deleteChangeOrderType: (id: string) =>
-      generatePath(`${x}/items/change-order-types/delete/${id}`),
+    deleteChangeNoticeRequiredAction: (id: string) =>
+      generatePath(`${x}/items/change-notice-actions/delete/${id}`),
+    deleteChangeNoticeType: (id: string) =>
+      generatePath(`${x}/items/change-notice-types/delete/${id}`),
     deleteCompany: (id: string) =>
       generatePath(`${x}/settings/companies/delete/${id}`),
     deleteConfigurationParameter: (itemId: string, id: string) =>
@@ -1388,13 +1391,13 @@ export const path = {
     // Create form lives at its own top-level route (like /x/part/new and
     // /x/sales-order/new) so it renders with the app sidebar rather than nested
     // under the Items module layout.
-    newChangeOrder: `${x}/change-order/new`,
+    newChangeNotice: `${x}/change-notice/new`,
     // One-click create-a-CO-for-this-item (POST) — used by the part version
     // dropdown and the new-revision modal.
-    newChangeOrderFromItem: (itemId: string) =>
-      generatePath(`${x}/items/change-order/new-from-item/${itemId}`),
-    newChangeOrderRequiredAction: `${x}/items/change-order-actions/new`,
-    newChangeOrderType: `${x}/items/change-order-types/new`,
+    newChangeNoticeFromItem: (itemId: string) =>
+      generatePath(`${x}/items/change-notice/new-from-item/${itemId}`),
+    newChangeNoticeRequiredAction: `${x}/items/change-notice-actions/new`,
+    newChangeNoticeType: `${x}/items/change-notice-types/new`,
     newChartOfAccount: `${x}/accounting/charts/new`,
     newChartOfAccountGroup: `${x}/accounting/charts/new-group`,
     newCompany: `${x}/settings/company/new`,
@@ -2101,7 +2104,7 @@ export const path = {
     uoms: `${x}/items/uom`,
     updateAssemblyUnit: (id: string, unitId: string) =>
       generatePath(`${x}/assembly/${id}/units/${unitId}`),
-    updateChangeOrder: `${x}/items/change-order/update`,
+    updateChangeNotice: `${x}/items/change-notice/update`,
     updateInspectionDocumentName: (id: string) =>
       generatePath(`${x}/inspection-document/${id}/update-name`),
     updateIssueItem: `${x}/issue/item/update`,
