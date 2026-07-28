@@ -1,5 +1,5 @@
 import { Tooltip, TooltipContent, TooltipTrigger } from "@carbon/react";
-import { Trans } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
 import { LuLock } from "react-icons/lu";
 import { Link } from "react-router";
@@ -19,9 +19,15 @@ import type { ChangeNoticeForItem } from "../../items.service";
 // every frozen card looks the same. Cards that expose a title slot use this;
 // BOM/BOP take a bare `disabledReason` and wrap it themselves.
 export function LockedHint({ reason }: { reason?: ReactNode }) {
+  const { t } = useLingui();
+
   return (
     <Tooltip>
-      <TooltipTrigger tabIndex={-1} className="text-muted-foreground">
+      {/* Focusable: the tooltip is the only place the lock is explained. */}
+      <TooltipTrigger
+        className="text-muted-foreground"
+        aria-label={t`Why is this locked?`}
+      >
         <LuLock className="size-3.5" />
       </TooltipTrigger>
       <TooltipContent className="max-w-xs">{reason}</TooltipContent>

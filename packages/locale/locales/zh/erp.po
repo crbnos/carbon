@@ -14632,6 +14632,9 @@ msgstr "为什么要更改过期日期？"
 msgid "Why is this included?"
 msgstr "为什么包括这个？"
 
+msgid "Why is this locked?"
+msgstr ""
+
 msgid "Why stock is changing — Positive (found), Negative (lost/scrap), or Set (replace count with a measured value)."
 msgstr "库存为何变化 — 正数(已找到)、负数(丢失/报废)或设置(用测量值替换计数)。"
 

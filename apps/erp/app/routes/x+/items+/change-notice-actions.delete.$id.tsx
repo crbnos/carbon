@@ -12,14 +12,18 @@ import {
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  const { client, companyId } = await requirePermissions(request, {
     view: "parts",
     role: "employee"
   });
   const { id } = params;
   if (!id) throw notFound("id not found");
 
-  const requiredAction = await getChangeNoticeRequiredAction(client, id);
+  const requiredAction = await getChangeNoticeRequiredAction(
+    client,
+    id,
+    companyId
+  );
   if (requiredAction.error) {
     throw redirect(
       `${path.to.changeNoticeRequiredActions}?${getParams(request)}`,
@@ -34,7 +38,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  const { client, companyId } = await requirePermissions(request, {
     delete: "parts"
   });
 
@@ -51,7 +55,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const { error: deleteError } = await deleteChangeNoticeRequiredAction(
     client,
-    id
+    id,
+    companyId
   );
   if (deleteError) {
     throw redirect(

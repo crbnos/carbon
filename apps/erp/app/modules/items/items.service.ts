@@ -5442,9 +5442,15 @@ export async function getChangeNoticeTypesList(
 
 export async function getChangeNoticeType(
   client: SupabaseClient<Database>,
-  id: string
+  id: string,
+  companyId: string
 ) {
-  return client.from("changeOrderType").select("*").eq("id", id).single();
+  return client
+    .from("changeOrderType")
+    .select("*")
+    .eq("id", id)
+    .eq("companyId", companyId)
+    .single();
 }
 
 export async function upsertChangeNoticeType(
@@ -5459,6 +5465,7 @@ export async function upsertChangeNoticeType(
     | {
         id: string;
         name: string;
+        companyId: string;
         updatedBy: string;
         customFields?: Json;
       }
@@ -5470,19 +5477,27 @@ export async function upsertChangeNoticeType(
       .select("id")
       .single();
   }
+  // companyId scopes the row, it is not part of the payload (it's in the PK).
+  const { companyId, ...update } = changeNoticeType;
   return client
     .from("changeOrderType")
-    .update(sanitize(changeNoticeType))
+    .update(sanitize(update))
     .eq("id", changeNoticeType.id)
+    .eq("companyId", companyId)
     .select("id")
     .single();
 }
 
 export async function deleteChangeNoticeType(
   client: SupabaseClient<Database>,
-  id: string
+  id: string,
+  companyId: string
 ) {
-  return client.from("changeOrderType").delete().eq("id", id);
+  return client
+    .from("changeOrderType")
+    .delete()
+    .eq("id", id)
+    .eq("companyId", companyId);
 }
 
 // =============================================================================
@@ -6791,12 +6806,14 @@ export async function getChangeNoticeRequiredActionsList(
 
 export async function getChangeNoticeRequiredAction(
   client: SupabaseClient<Database>,
-  id: string
+  id: string,
+  companyId: string
 ) {
   return client
     .from("changeOrderRequiredAction")
     .select("*")
     .eq("id", id)
+    .eq("companyId", companyId)
     .single();
 }
 
@@ -6819,6 +6836,7 @@ export async function upsertChangeNoticeRequiredAction(
         updatedBy: input.userId
       })
       .eq("id", input.id)
+      .eq("companyId", input.companyId)
       .select("id")
       .single();
   }
@@ -6837,9 +6855,14 @@ export async function upsertChangeNoticeRequiredAction(
 
 export async function deleteChangeNoticeRequiredAction(
   client: SupabaseClient<Database>,
-  id: string
+  id: string,
+  companyId: string
 ) {
-  return client.from("changeOrderRequiredAction").delete().eq("id", id);
+  return client
+    .from("changeOrderRequiredAction")
+    .delete()
+    .eq("id", id)
+    .eq("companyId", companyId);
 }
 
 // Reconcile a change notice's action tasks to a chosen set of required-action

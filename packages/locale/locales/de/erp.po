@@ -14632,6 +14632,9 @@ msgstr "Warum wird das Ablaufdatum geändert?"
 msgid "Why is this included?"
 msgstr "Warum ist dies enthalten?"
 
+msgid "Why is this locked?"
+msgstr ""
+
 msgid "Why stock is changing — Positive (found), Negative (lost/scrap), or Set (replace count with a measured value)."
 msgstr "Warum sich der Bestand ändert — Positiv (gefunden), Negativ (verloren/ausschuss) oder Satz (Zählwert mit gemessenem Wert ersetzen)."
 

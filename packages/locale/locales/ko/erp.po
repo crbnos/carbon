@@ -14632,6 +14632,9 @@ msgstr "유효기한을 변경하는 이유는 무엇입니까?"
 msgid "Why is this included?"
 msgstr "이것이 포함된 이유는 무엇입니까?"
 
+msgid "Why is this locked?"
+msgstr ""
+
 msgid "Why stock is changing — Positive (found), Negative (lost/scrap), or Set (replace count with a measured value)."
 msgstr "재고가 변경되는 이유 — 양수(발견), 음수(분실/스크랩), 또는 설정(측정값으로 수량 대체)."
 

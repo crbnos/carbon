@@ -13,7 +13,7 @@ import { ChangeNoticeRequiredActionForm } from "~/modules/items/ui/ChangeNoticeA
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  const { client, companyId } = await requirePermissions(request, {
     view: "parts",
     role: "employee"
   });
@@ -21,7 +21,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { id } = params;
   if (!id) throw notFound("id not found");
 
-  const requiredAction = await getChangeNoticeRequiredAction(client, id);
+  const requiredAction = await getChangeNoticeRequiredAction(
+    client,
+    id,
+    companyId
+  );
 
   if (requiredAction.error) {
     throw redirect(

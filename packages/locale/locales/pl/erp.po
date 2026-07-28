@@ -14632,6 +14632,9 @@ msgstr "Dlaczego data wygaśnięcia jest zmieniana?"
 msgid "Why is this included?"
 msgstr "Dlaczego to jest uwzględnione?"
 
+msgid "Why is this locked?"
+msgstr ""
+
 msgid "Why stock is changing — Positive (found), Negative (lost/scrap), or Set (replace count with a measured value)."
 msgstr "Dlaczego zapasy się zmieniają — Pozytywnie (znaleźli), Negatywnie (zgubieni/złom) lub Ustawić (zamień ilość zmierzoną wartością)."
 

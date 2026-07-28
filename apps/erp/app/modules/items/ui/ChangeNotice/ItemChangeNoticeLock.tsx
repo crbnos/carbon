@@ -46,8 +46,12 @@ export function ItemChangeNoticeLock({
 
   return (
     <Tooltip>
+      {/* The child is disabled and can't take focus, so the wrapper carries it —
+          otherwise the tooltip is the only explanation and it's mouse-only. */}
       <TooltipTrigger asChild>
-        <div className={className}>{children}</div>
+        <div className={className} tabIndex={0}>
+          {children}
+        </div>
       </TooltipTrigger>
       <TooltipContent>
         {changeNotices.length === 1

@@ -818,7 +818,7 @@ const BillOfProcess = ({
             <Trans>Bill of Process</Trans>
             {isReadOnly && (
               <Tooltip>
-                <TooltipTrigger tabIndex={-1} className="text-muted-foreground">
+                <TooltipTrigger className="text-muted-foreground">
                   <LuLock />
                 </TooltipTrigger>
                 <TooltipContent className="max-w-xs">

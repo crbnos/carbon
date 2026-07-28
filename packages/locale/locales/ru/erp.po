@@ -14632,6 +14632,9 @@ msgstr "Почему истекает срок действия?"
 msgid "Why is this included?"
 msgstr "Почему это включено?"
 
+msgid "Why is this locked?"
+msgstr ""
+
 msgid "Why stock is changing — Positive (found), Negative (lost/scrap), or Set (replace count with a measured value)."
 msgstr "Почему запас меняется — Положительный (найден), Отрицательный (потеря/отходы) или Установить (заменить количество измеренным значением)."
 

@@ -14632,6 +14632,9 @@ msgstr "समाप्ति क्यों बदली जा रही ह�
 msgid "Why is this included?"
 msgstr "यह क्यों शामिल है?"
 
+msgid "Why is this locked?"
+msgstr ""
+
 msgid "Why stock is changing — Positive (found), Negative (lost/scrap), or Set (replace count with a measured value)."
 msgstr "स्टॉक क्यों बदल रहा है — सकारात्मक (पाया गया), नकारात्मक (खोया/स्क्रैप) या सेट करें (गिनती को मापा मूल्य से बदलें)।"
 

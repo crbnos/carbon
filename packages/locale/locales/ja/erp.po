@@ -14632,6 +14632,9 @@ msgstr "有効期限が変更されるのはなぜですか？"
 msgid "Why is this included?"
 msgstr "なぜこれが含まれていますか？"
 
+msgid "Why is this locked?"
+msgstr ""
+
 msgid "Why stock is changing — Positive (found), Negative (lost/scrap), or Set (replace count with a measured value)."
 msgstr "在庫が変わる理由 — ポジティブ(見つかった)、ネガティブ(失われた/スクラップ)、または設定(カウントを測定値に置き換え)。"
 

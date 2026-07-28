@@ -14632,6 +14632,9 @@ msgstr "Geçiş tarihi neden değiştiriliyor?"
 msgid "Why is this included?"
 msgstr "Neden dahil edildi?"
 
+msgid "Why is this locked?"
+msgstr ""
+
 msgid "Why stock is changing — Positive (found), Negative (lost/scrap), or Set (replace count with a measured value)."
 msgstr "Stok neden değişiyor — Pozitif (bulundu), Negatif (kayıp/hurda) veya Ayarla (sayıyı ölçülen değerle değiştir)."
 
