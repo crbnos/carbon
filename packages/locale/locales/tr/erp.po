@@ -12797,7 +12797,7 @@ msgid "The ordered sequence of operations a job runs through, copied from the me
 msgstr "Bir işin çalıştırılmış olduğu işlemlerin sıralanmış sırası, yöntemin süreç faturasından kopyalanmıştır."
 
 msgid "The original model file is no longer available"
-msgstr ""
+msgstr "Orijinal model dosyası artık kullanılamıyor"
 
 msgid "The outbound posting document that takes goods out of stock to a customer, posting COGS as it goes."
 msgstr "Malları envanterten bir müşteriye çıkaran ve yol boyunca COGS'yi deftere geçiren giden deftere nakil belgesi."

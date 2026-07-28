@@ -12797,7 +12797,7 @@ msgid "The ordered sequence of operations a job runs through, copied from the me
 msgstr "工作执行的操作的有序序列，从方法的流程清单中复制。"
 
 msgid "The original model file is no longer available"
-msgstr ""
+msgstr "原始模型文件不再可用"
 
 msgid "The outbound posting document that takes goods out of stock to a customer, posting COGS as it goes."
 msgstr "将商品从库存中取出给客户的出账凭证，沿途过账销售成本。"
