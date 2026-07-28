@@ -6191,8 +6191,8 @@ export async function removeChangeNoticeAffectedItem(
 
 // =============================================================================
 // Change Notices — item traceability reads (part/tool ↔ CO) and the linked-NCR
-// reverse view. Split out of changeOrder.service.ts to keep each file focused
-// and under the module's 1000-line budget (G4).
+// reverse view. Kept as its own section of items.service.ts to keep each area
+// focused and under the module's 1000-line budget (G4).
 // =============================================================================
 
 // G6 — the SINGLE canonical "change notices referencing this item" query,
@@ -6373,8 +6373,8 @@ export async function getItemChangeNoticeData(
 
 // =============================================================================
 // Change Notices — Actions (freeform tasks; reuse changeOrderActionTask). Any
-// user, any stage; non-gating. Split out of changeOrder.service.ts to keep
-// each file focused and under the module's 1000-line budget (G4).
+// user, any stage; non-gating. Kept as its own section of items.service.ts to
+// keep each area focused and under the module's 1000-line budget (G4).
 // =============================================================================
 export async function getChangeNoticeActions(
   client: SupabaseClient<Database>,
@@ -6837,7 +6837,7 @@ export type OperationChildren = {
   tools: Row[];
 };
 
-// OperationChildrenDiff and OperationDiffEntry now live in changeOrder.models
+// OperationChildrenDiff and OperationDiffEntry now live in items.models
 // (imported + re-exported above) so ChangeNoticeItemDiff can reference them
 // without a circular import. Their shape is unchanged (Row = Record<string,
 // unknown>, the same as MethodDiffEntry's generic here).

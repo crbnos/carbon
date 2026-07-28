@@ -1177,7 +1177,7 @@ export const changeNoticeAffectedItemValidator = z.object({
   itemId: z.string().min(1, { message: "Item is required" }),
   changeType: z.enum(changeNoticeChangeTypes).default("Version"),
   // Optional revision label for a Revision change (e.g. "A"). Blank → the next
-  // revision is auto-computed server-side (createChangeOrderDraftMethod).
+  // revision is auto-computed server-side (createChangeNoticeDraftMethod).
   revision: zfd.text(z.string().optional())
 });
 
@@ -1196,7 +1196,7 @@ export const changeNoticeNewPartValidator = z.object({
 });
 
 // Switch the change type on an existing affected item (rebuilds its CO-owned
-// Draft make method for the new type — see updateChangeOrderAffectedItemChangeType).
+// Draft make method for the new type — see updateChangeNoticeAffectedItemChangeType).
 export const changeNoticeAffectedItemChangeTypeValidator = z.object({
   id: z.string().min(1, { message: "Id is required" }),
   changeType: z.enum(changeNoticeChangeTypes)
@@ -1243,8 +1243,8 @@ export type MethodDiffEntry<T> = {
 
 // One operation's child-level diff (steps / parameters / tools), each bucket
 // classified added/removed/modified/unchanged. Defined here (not in
-// changeOrder.diff.ts) so ChangeNoticeItemDiff can carry the operation tree
-// without a circular import; changeOrder.diff.ts re-exports these for its own
+// items.service.ts) so ChangeNoticeItemDiff can carry the operation tree
+// without a circular import; items.service.ts re-exports these for its own
 // callers.
 export type OperationChildrenDiff = {
   steps: MethodDiffEntry<Record<string, unknown>>[];

@@ -327,9 +327,9 @@ export async function requireEditableChangeNoticeRoute(
 // / Done broadcast (PRD §3.1); Draft / Engineering Complete are silent, so
 // callers simply don't invoke this for those stages.
 export const changeNoticeStageEvent: Record<string, NotificationEvent> = {
-  Start: NotificationEvent.ChangeOrderStarted,
-  Implementation: NotificationEvent.ChangeOrderImplementation,
-  Done: NotificationEvent.ChangeOrderDone
+  Start: NotificationEvent.ChangeNoticeStarted,
+  Implementation: NotificationEvent.ChangeNoticeImplementation,
+  Done: NotificationEvent.ChangeNoticeDone
 };
 
 // Broadcasts a CO stage to the whole team (best-effort). Recipient is the seeded

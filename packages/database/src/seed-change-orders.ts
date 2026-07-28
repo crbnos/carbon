@@ -464,7 +464,7 @@ async function addBopOperation(
 // ---------------------------------------------------------------------------
 // Change-order builders
 // ---------------------------------------------------------------------------
-type ChangeOrderInput = {
+type ChangeNoticeInput = {
   changeOrderId: string;
   name: string;
   status: string;
@@ -475,9 +475,9 @@ type ChangeOrderInput = {
   nonConformanceId?: string | null;
 };
 
-async function createChangeOrder(
+async function createChangeNotice(
   ctx: Ctx,
-  input: ChangeOrderInput
+  input: ChangeNoticeInput
 ): Promise<string> {
   const { client, companyId, userId } = ctx;
   const res = await client.query(
@@ -507,7 +507,7 @@ async function createChangeOrder(
 // ---------------------------------------------------------------------------
 // v2 change-content builders — CO-owned Draft make methods (no staging tables).
 //
-// Mirrors createChangeOrderDraftMethod (changeOrder.service.ts):
+// Mirrors createChangeNoticeDraftMethod (items.service.ts):
 //   Version  → new Draft method version on the SAME item, copying the Active
 //              method's BOM + BOP rows; changeOrderId stamped.
 //   Revision → new inactive revision item (same readableId, bumped revision);
@@ -1074,7 +1074,7 @@ async function seed() {
       console.log("8. Creating change orders...");
 
       // ECO-000001 — Implementation
-      const co1 = await createChangeOrder(ctx, {
+      const co1 = await createChangeNotice(ctx, {
         changeOrderId: "ECO-000001",
         name: "Sync 3 Derailleur Mount",
         status: "Implementation",
@@ -1138,7 +1138,7 @@ async function seed() {
       );
 
       // ECO-000002 — Engineering Complete
-      const co2 = await createChangeOrder(ctx, {
+      const co2 = await createChangeNotice(ctx, {
         changeOrderId: "ECO-000002",
         name: "VEH3 Battery Lock Update",
         status: "Engineering Complete",
@@ -1155,7 +1155,7 @@ async function seed() {
       await addBomLine(ctx, co2Affected.draftMakeMethodId, brg200, 1, 1);
 
       // ECO-000003 — Start
-      const co3 = await createChangeOrder(ctx, {
+      const co3 = await createChangeNotice(ctx, {
         changeOrderId: "ECO-000003",
         name: "Cargo Box Bracket Redesign",
         status: "Start",
@@ -1170,7 +1170,7 @@ async function seed() {
       await deleteDraftMaterial(ctx, co3Affected.draftMakeMethodId, fst101);
 
       // ECO-000004 — Start. Demonstrates the Revision + New Part change types.
-      const co4 = await createChangeOrder(ctx, {
+      const co4 = await createChangeNotice(ctx, {
         changeOrderId: "ECO-000004",
         name: "Cable Routing Doc Update + FFF Replacement",
         status: "Start",
@@ -1202,7 +1202,7 @@ async function seed() {
       );
 
       // ECO-000005 — Done (already-applied CO)
-      const co5 = await createChangeOrder(ctx, {
+      const co5 = await createChangeNotice(ctx, {
         changeOrderId: "ECO-000005",
         name: "Saddle Supersession Royal MW",
         status: "Done",
@@ -1224,7 +1224,7 @@ async function seed() {
       );
 
       // ECO-000006 — Draft (Unassigned, blank)
-      await createChangeOrder(ctx, {
+      await createChangeNotice(ctx, {
         changeOrderId: "ECO-000006",
         name: "Luxembourg Handlebar Stem",
         status: "Draft",
@@ -1234,7 +1234,7 @@ async function seed() {
 
       // ECO-000007 — Start. One affected item (VEH0000001, a top-level product not
       // touched by another open CO): add a Locking Washer to its staged BOM.
-      const co7 = await createChangeOrder(ctx, {
+      const co7 = await createChangeNotice(ctx, {
         changeOrderId: "ECO-000007",
         name: "Fork Crown Reinforcement",
         status: "Start",

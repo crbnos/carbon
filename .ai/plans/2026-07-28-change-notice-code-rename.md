@@ -47,8 +47,8 @@ not by the compiler.
 - [x] Task 3: Rename the service + server layer
 - [x] Task 4: Rename the UI directories and component files
 - [x] Task 5: Rename component identifiers, props and local variables
-- [ ] Task 6: Rename route file-internal identifiers and remaining call sites
-- [ ] Task 7: Audit the do-not-rename list
+- [x] Task 6: Rename route file-internal identifiers and remaining call sites
+- [x] Task 7: Audit the do-not-rename list
 - [ ] Task 8: Full verification + browser check
 
 ## Dependencies
