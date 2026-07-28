@@ -20,8 +20,11 @@ export function formatQuantityForDisplay(
   if (!Number.isFinite(quantity)) return "";
 
   if (quantity !== 0 && Math.abs(quantity) < SMALLEST_DISPLAYABLE_QUANTITY) {
-    const threshold = formatter.format(SMALLEST_DISPLAYABLE_QUANTITY);
-    return quantity > 0 ? `<${threshold}` : `>-${threshold}`;
+    // Format the signed threshold rather than prepending "-": locales differ on
+    // the negative sign (sv/fi/nb use U+2212, ar/fa add a directional mark).
+    return quantity > 0
+      ? `<${formatter.format(SMALLEST_DISPLAYABLE_QUANTITY)}`
+      : `>${formatter.format(-SMALLEST_DISPLAYABLE_QUANTITY)}`;
   }
 
   return formatter.format(quantity);

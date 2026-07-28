@@ -61,4 +61,15 @@ describe("formatQuantityForDisplay", () => {
     expect(formatQuantityForDisplay(3.232227, de)).toBe("3,23");
     expect(formatQuantityForDisplay(0.004, de)).toBe("<0,01");
   });
+
+  it("uses the locale's own negative sign below the threshold", () => {
+    // sv-SE renders negatives with U+2212 MINUS SIGN, not an ASCII hyphen.
+    const sv = new Intl.NumberFormat("sv-SE", {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 2
+    });
+    expect(formatQuantityForDisplay(-0.004, sv)).toBe(`>${sv.format(-0.01)}`);
+    expect(formatQuantityForDisplay(-0.004, sv)).toBe(">−0,01");
+    expect(formatQuantityForDisplay(0.004, sv)).toBe("<0,01");
+  });
 });
