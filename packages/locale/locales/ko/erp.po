@@ -8473,8 +8473,11 @@ msgstr "메모 없음"
 msgid "No open invoices"
 msgstr "미결 인보이스가 없습니다"
 
-msgid "No open sales order lines for this item"
-msgstr "이 품목에 대한 미결 판매주문 라인이 없습니다"
+msgid "No open orders for this item are available to link."
+msgstr ""
+
+msgid "No open sales order lines"
+msgstr ""
 
 msgid "No operations require picking at this location"
 msgstr "이 위치에서 피킹이 필요한 공정작업이 없습니다"

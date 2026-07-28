@@ -8473,8 +8473,11 @@ msgstr "Нет заметок"
 msgid "No open invoices"
 msgstr "Нет открытых счетов"
 
-msgid "No open sales order lines for this item"
-msgstr "Нет открытых строк заказов на продажу для этого товара"
+msgid "No open orders for this item are available to link."
+msgstr ""
+
+msgid "No open sales order lines"
+msgstr ""
 
 msgid "No operations require picking at this location"
 msgstr "На этом месте нет операций, требующих комплектации"

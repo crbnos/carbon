@@ -9,7 +9,7 @@
  */
 
 import type { ComboboxProps } from "@carbon/form";
-import { Combobox } from "@carbon/form";
+import { Combobox, FieldEmptyState } from "@carbon/form";
 import { useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
 import { useEffect, useMemo } from "react";
@@ -90,7 +90,12 @@ const JobSalesOrderLine = ({
       label={props.label ?? t`Target`}
       placeholder={props.placeholder ?? t`Link to sales order line`}
       emptyMessage={
-        props.emptyMessage ?? t`No open sales order lines for this item`
+        props.emptyMessage ?? (
+          <FieldEmptyState
+            title={t`No open sales order lines`}
+            description={t`No open orders for this item are available to link.`}
+          />
+        )
       }
       inline={inline ? salesOrderLinePreview : undefined}
       onChange={(option) =>

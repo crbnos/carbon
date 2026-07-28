@@ -8473,8 +8473,11 @@ msgstr "ノートなし"
 msgid "No open invoices"
 msgstr "未処理の請求書がありません"
 
-msgid "No open sales order lines for this item"
-msgstr "この商品に対してオープンな販売注文行がありません"
+msgid "No open orders for this item are available to link."
+msgstr ""
+
+msgid "No open sales order lines"
+msgstr ""
 
 msgid "No operations require picking at this location"
 msgstr "この場所でのピッキングが必要な操作はありません"
