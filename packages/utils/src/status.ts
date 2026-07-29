@@ -210,9 +210,17 @@ export const hasIncompleteJobs = (
       return true;
     }
 
-    // Only count completed quantity from active (non-cancelled) jobs
+    // Mirror getSalesOrderJobStatus: quantityComplete persists after a job is
+    // reopened, so completion must be gated on the job being in a completed
+    // status. Otherwise a reopened (In Progress) job that still has a full
+    // quantityComplete would make hasIncompleteJobs return false and cause
+    // SalesStatus to omit "In Progress."
     const totalCompleted = activeLineJobs.reduce(
-      (acc, job) => acc + (job.quantityComplete ?? 0),
+      (acc, job) =>
+        acc +
+        (["Completed", "Closed"].includes(job.status ?? "")
+          ? (job.quantityComplete ?? 0)
+          : 0),
       0
     );
     if (totalCompleted < (line.saleQuantity ?? 0)) {
