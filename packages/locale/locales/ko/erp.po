@@ -9558,9 +9558,6 @@ msgstr "전기"
 msgid "Posting Date"
 msgstr "전기일"
 
-msgid "Posting Groups"
-msgstr "전기 그룹"
-
 msgid "Potential Data Loss"
 msgstr "데이터 손실 가능성"
 

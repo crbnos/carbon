@@ -9558,9 +9558,6 @@ msgstr "अग्रिम भुगतान"
 msgid "Posting Date"
 msgstr "पोस्टिंग तारीख"
 
-msgid "Posting Groups"
-msgstr "पोस्टिंग समूह"
-
 msgid "Potential Data Loss"
 msgstr "संभावित डेटा हानि"
 

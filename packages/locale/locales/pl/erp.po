@@ -9558,9 +9558,6 @@ msgstr "Przedpłaty"
 msgid "Posting Date"
 msgstr "Data księgowania"
 
-msgid "Posting Groups"
-msgstr "Grupy księgowania"
-
 msgid "Potential Data Loss"
 msgstr "Potencjalna utrata danych"
 

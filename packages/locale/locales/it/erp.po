@@ -9558,9 +9558,6 @@ msgstr "Anticipi"
 msgid "Posting Date"
 msgstr "Data di registrazione"
 
-msgid "Posting Groups"
-msgstr "Gruppi di Registrazione"
-
 msgid "Potential Data Loss"
 msgstr "Potenziale perdita di dati"
 

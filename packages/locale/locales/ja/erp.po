@@ -9558,9 +9558,6 @@ msgstr "前払金"
 msgid "Posting Date"
 msgstr "投稿日"
 
-msgid "Posting Groups"
-msgstr "転記グループ"
-
 msgid "Potential Data Loss"
 msgstr "潜在的データ損失"
 

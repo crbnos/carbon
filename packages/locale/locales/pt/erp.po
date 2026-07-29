@@ -9558,9 +9558,6 @@ msgstr "Adiantamentos"
 msgid "Posting Date"
 msgstr "Data de Postagem"
 
-msgid "Posting Groups"
-msgstr "Grupos de Lançamento"
-
 msgid "Potential Data Loss"
 msgstr "Possível Perda de Dados"
 

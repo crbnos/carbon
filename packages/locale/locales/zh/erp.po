@@ -9558,9 +9558,6 @@ msgstr "预付款"
 msgid "Posting Date"
 msgstr "过账日期"
 
-msgid "Posting Groups"
-msgstr "过账组"
-
 msgid "Potential Data Loss"
 msgstr "潜在数据丢失"
 

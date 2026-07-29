@@ -9558,9 +9558,6 @@ msgstr "Ön Ödemeler"
 msgid "Posting Date"
 msgstr "Yükleme Tarihi"
 
-msgid "Posting Groups"
-msgstr "Açıklama Grupları"
-
 msgid "Potential Data Loss"
 msgstr "Potansiyel Veri Kaybı"
 

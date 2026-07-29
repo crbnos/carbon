@@ -9558,9 +9558,6 @@ msgstr "Posting"
 msgid "Posting Date"
 msgstr "Posting Date"
 
-msgid "Posting Groups"
-msgstr "Posting Groups"
-
 msgid "Potential Data Loss"
 msgstr "Potential Data Loss"
 

@@ -9558,9 +9558,6 @@ msgstr "Acomptes"
 msgid "Posting Date"
 msgstr "Date de publication"
 
-msgid "Posting Groups"
-msgstr "Groupes de comptabilisation"
-
 msgid "Potential Data Loss"
 msgstr "Perte de données potentielle"
 
