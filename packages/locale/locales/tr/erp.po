@@ -6401,7 +6401,7 @@ msgid "Ideas, suggestions or problems?"
 msgstr "Fikirler, öneriler veya sorunlar?"
 
 msgid "Identifiers"
-msgstr ""
+msgstr "Tanımlayıcılar"
 
 msgid "IDs and descriptions are generated for raw materials."
 msgstr "Kimlikler ve açıklamalar ham malzemeler için oluşturulur."
@@ -7133,7 +7133,7 @@ msgid "Leave this page"
 msgstr "Bu sayfadan ayrıl"
 
 msgid "Ledger"
-msgstr ""
+msgstr "Büyük Defter"
 
 msgid "Left item"
 msgstr "Sol öğe"

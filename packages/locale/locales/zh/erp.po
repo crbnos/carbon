@@ -6401,7 +6401,7 @@ msgid "Ideas, suggestions or problems?"
 msgstr "想法、建议或问题？"
 
 msgid "Identifiers"
-msgstr ""
+msgstr "标识符"
 
 msgid "IDs and descriptions are generated for raw materials."
 msgstr "ID 和描述是为原材料生成的。"
@@ -7133,7 +7133,7 @@ msgid "Leave this page"
 msgstr "离开此页面"
 
 msgid "Ledger"
-msgstr ""
+msgstr "总账"
 
 msgid "Left item"
 msgstr "左项"

@@ -6401,7 +6401,7 @@ msgid "Ideas, suggestions or problems?"
 msgstr "아이디어, 제안, 또는 문제가 있으신가요?"
 
 msgid "Identifiers"
-msgstr ""
+msgstr "식별자"
 
 msgid "IDs and descriptions are generated for raw materials."
 msgstr "원자재에 대한 ID와 설명이 자동으로 생성됩니다."
@@ -7133,7 +7133,7 @@ msgid "Leave this page"
 msgstr "이 페이지 나가기"
 
 msgid "Ledger"
-msgstr ""
+msgstr "원장"
 
 msgid "Left item"
 msgstr "왼쪽 품목"

@@ -6401,7 +6401,7 @@ msgid "Ideas, suggestions or problems?"
 msgstr "アイデア、提案、または問題はありますか？"
 
 msgid "Identifiers"
-msgstr ""
+msgstr "識別子"
 
 msgid "IDs and descriptions are generated for raw materials."
 msgstr "IDと説明は原材料に対して生成されます。"
@@ -7133,7 +7133,7 @@ msgid "Leave this page"
 msgstr "このページを離れる"
 
 msgid "Ledger"
-msgstr ""
+msgstr "元帳"
 
 msgid "Left item"
 msgstr "左側の項目"

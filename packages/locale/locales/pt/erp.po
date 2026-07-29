@@ -6401,7 +6401,7 @@ msgid "Ideas, suggestions or problems?"
 msgstr "Ideias, sugestões ou problemas?"
 
 msgid "Identifiers"
-msgstr ""
+msgstr "Identificadores"
 
 msgid "IDs and descriptions are generated for raw materials."
 msgstr "IDs e descrições são gerados para matérias-primas."
@@ -7133,7 +7133,7 @@ msgid "Leave this page"
 msgstr "Sair desta página"
 
 msgid "Ledger"
-msgstr ""
+msgstr "Livro razão"
 
 msgid "Left item"
 msgstr "Item esquerdo"
