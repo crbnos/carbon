@@ -3663,6 +3663,9 @@ msgstr "Débitos"
 msgid "Decide what an operator sees if they try to issue a batch or serial that's already expired."
 msgstr "Decida o que um operador vê se tentar emitir um lote ou série que já expirou."
 
+msgid "Decide what happens when an operator presses Finish on the shop floor with material still unpicked."
+msgstr ""
+
 msgid "Decimal Places"
 msgstr "Casas Decimais"
 
@@ -5765,6 +5768,12 @@ msgstr "Dedução adicional do primeiro ano tomada antes do cronograma MACRS reg
 
 msgid "Finishes"
 msgstr "Acabamentos"
+
+msgid "Finishing an incomplete pick"
+msgstr ""
+
+msgid "Finishing is refused until every line is picked or marked Short."
+msgstr ""
 
 msgid "First Name"
 msgstr "Primeiro Nome"
@@ -8932,6 +8941,9 @@ msgstr "O operador recebe um aviso. O estoque ainda passa."
 msgid "Operator must pick a different batch/serial."
 msgstr "O operador deve escolher um lote/série diferente."
 
+msgid "Operator sees the missing items, can acknowledge & finish. The list is flagged Partial."
+msgstr ""
+
 msgid "Operators"
 msgstr "Operadores"
 
@@ -9170,6 +9182,9 @@ msgstr "Número da Peça"
 
 msgid "Part Supersession"
 msgstr "Substituição de Peça"
+
+msgid "Partial"
+msgstr ""
 
 msgid "Partner"
 msgstr "Parceiro"
@@ -9548,6 +9563,9 @@ msgstr "Possível Perda de Dados"
 
 msgid "Pre-filled for a new item when expiry is Fixed Duration."
 msgstr "Pré-preenchido para um novo item quando a validade é Duração Fixa."
+
+msgid "Pre-select material without a picking list"
+msgstr ""
 
 msgid "Preferred Supplier"
 msgstr "Fornecedor Preferido"
@@ -14514,6 +14532,9 @@ msgstr "Quando ativado, este override de preço se aplica aos pedidos correspond
 
 msgid "When on, this rule fires for every target of its type. Assignment rows are ignored but preserved."
 msgstr "Quando ativado, esta regra é acionada para cada alvo do seu tipo. As linhas de atribuição são ignoradas, mas preservadas."
+
+msgid "When on, tracked material is pre-selected by pick order (FEFO) on the shop floor even when no picking list exists, and the issue dialog opens on the Select tab. When off, operators start on the Scan tab and nothing is pre-selected unless a picking list already picked the lots."
+msgstr ""
 
 msgid "When supplier responses are expected back; suppliers see this date on the RFQ portal and Carbon stops accepting late responses after it (configurable)."
 msgstr "Quando se espera que os fornecedores respondam; os fornecedores veem esta data no portal RFQ e a Carbon para de aceitar respostas tardias depois dela (configurável)."

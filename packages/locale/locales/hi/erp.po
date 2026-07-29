@@ -3663,6 +3663,9 @@ msgstr "नामे"
 msgid "Decide what an operator sees if they try to issue a batch or serial that's already expired."
 msgstr "तय करें कि यदि कोई ऑपरेटर एक बैच या सीरियल जारी करने का प्रयास करता है जो पहले से ही समाप्त हो गया है तो वह क्या देखता है।"
 
+msgid "Decide what happens when an operator presses Finish on the shop floor with material still unpicked."
+msgstr ""
+
 msgid "Decimal Places"
 msgstr "दशमलव स्थान"
 
@@ -5765,6 +5768,12 @@ msgstr "नियमित MACRS अनुसूची शुरू होने
 
 msgid "Finishes"
 msgstr "फिनिशेस"
+
+msgid "Finishing an incomplete pick"
+msgstr ""
+
+msgid "Finishing is refused until every line is picked or marked Short."
+msgstr ""
 
 msgid "First Name"
 msgstr "पहला नाम"
@@ -8932,6 +8941,9 @@ msgstr "ऑपरेटर को एक चेतावनी मिलती �
 msgid "Operator must pick a different batch/serial."
 msgstr "ऑपरेटर को एक अलग बैच/सीरीज़ चुननी होगी।"
 
+msgid "Operator sees the missing items, can acknowledge & finish. The list is flagged Partial."
+msgstr ""
+
 msgid "Operators"
 msgstr "ऑपरेटर"
 
@@ -9170,6 +9182,9 @@ msgstr "भाग संख्या"
 
 msgid "Part Supersession"
 msgstr "भाग प्रतिस्थापन"
+
+msgid "Partial"
+msgstr ""
 
 msgid "Partner"
 msgstr "साथी"
@@ -9548,6 +9563,9 @@ msgstr "संभावित डेटा हानि"
 
 msgid "Pre-filled for a new item when expiry is Fixed Duration."
 msgstr "समाप्ति Fixed Duration होने पर नई वस्तु के लिए पूर्व-भरी हुई।"
+
+msgid "Pre-select material without a picking list"
+msgstr ""
 
 msgid "Preferred Supplier"
 msgstr "पसंदीदा आपूर्तिकर्ता"
@@ -14514,6 +14532,9 @@ msgstr "जब सक्षम हो, तो यह मूल्य ओवर�
 
 msgid "When on, this rule fires for every target of its type. Assignment rows are ignored but preserved."
 msgstr "जब चालू हो, तो यह नियम अपने प्रकार के प्रत्येक लक्ष्य के लिए सक्रिय होता है। असाइनमेंट पंक्तियों को अनदेखा किया जाता है लेकिन संरक्षित रखा जाता है।"
+
+msgid "When on, tracked material is pre-selected by pick order (FEFO) on the shop floor even when no picking list exists, and the issue dialog opens on the Select tab. When off, operators start on the Scan tab and nothing is pre-selected unless a picking list already picked the lots."
+msgstr ""
 
 msgid "When supplier responses are expected back; suppliers see this date on the RFQ portal and Carbon stops accepting late responses after it (configurable)."
 msgstr "जब आपूर्तिकर्ता प्रतिक्रिया की उम्मीद की जाती है; आपूर्तिकर्ता आरएफक्यू पोर्टल पर यह तारीख देखते हैं और कार्बन इसके बाद देर से प्रतिक्रिया स्वीकार नहीं करता है (कॉन्फ़िगर करने योग्य)।"

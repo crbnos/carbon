@@ -63,6 +63,9 @@ msgstr "Принять партию?"
 msgid "Account Settings"
 msgstr "Настройки аккаунта"
 
+msgid "Acknowledge & finish"
+msgstr ""
+
 msgid "Active"
 msgstr "Активные"
 
@@ -444,6 +447,9 @@ msgstr "Завершить {0}"
 msgid "Finish Anyways"
 msgstr "Завершить в любом случае"
 
+msgid "Finish with material unpicked?"
+msgstr ""
+
 msgid "Forgot to Clock Out?"
 msgstr "Забыли отметить уход?"
 
@@ -518,6 +524,9 @@ msgstr "Маршрутный лист"
 
 msgid "Jobs"
 msgstr "Работы"
+
+msgid "Keep picking"
+msgstr ""
 
 msgid "Kit"
 msgstr "Комплект"
@@ -1068,6 +1077,9 @@ msgstr "Установить время ухода"
 msgid "Setup"
 msgstr "Наладка"
 
+msgid "short"
+msgstr ""
+
 msgid "Short"
 msgstr "Недостача"
 
@@ -1162,6 +1174,9 @@ msgstr "Партия все еще будет распределена, но NCR
 
 msgid "There are serial or batch tracked materials on the bill of material that have not been fully issued. Completing without issuing may result in incorrect traceability records."
 msgstr "В спецификации есть материалы с серийным или партионным учётом, которые не были полностью выданы. Завершение без выдачи может привести к некорректным записям прослеживаемости."
+
+msgid "These items still have material to pick. Finishing now marks the list Partial."
+msgstr ""
 
 msgid "This lot is expired and can't be picked."
 msgstr "Эта партия истекла и не может быть выбрана."

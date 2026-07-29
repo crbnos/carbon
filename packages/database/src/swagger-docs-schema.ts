@@ -82591,6 +82591,12 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.plmReleaseControl"
           },
           {
+            $ref: "#/parameters/rowFilter.companySettings.incompletePickingListPolicy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.autoSelectMaterialWithoutPickingList"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -82779,6 +82785,12 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.plmReleaseControl"
           },
           {
+            $ref: "#/parameters/rowFilter.companySettings.incompletePickingListPolicy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.autoSelectMaterialWithoutPickingList"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -82919,6 +82931,12 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.plmReleaseControl"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.incompletePickingListPolicy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.autoSelectMaterialWithoutPickingList"
           },
           {
             $ref: "#/parameters/body.companySettings"
@@ -103327,7 +103345,7 @@ export default {
         },
         status: {
           default: "Draft",
-          enum: ["Draft", "In Progress", "Completed", "Cancelled"],
+          enum: ["Draft", "In Progress", "Completed", "Cancelled", "Partial"],
           format: 'public."pickingListStatus"',
           type: "string"
         },
@@ -128791,7 +128809,7 @@ export default {
           type: "string"
         },
         status: {
-          enum: ["Draft", "In Progress", "Completed", "Cancelled"],
+          enum: ["Draft", "In Progress", "Completed", "Cancelled", "Partial"],
           format: 'public."pickingListStatus"',
           type: "string"
         },
@@ -133695,7 +133713,9 @@ export default {
         "showSupplierReadableId",
         "showCustomerReadableId",
         "autoStartOperationTimer",
-        "plmReleaseControl"
+        "plmReleaseControl",
+        "incompletePickingListPolicy",
+        "autoSelectMaterialWithoutPickingList"
       ],
       properties: {
         id: {
@@ -133931,6 +133951,16 @@ export default {
           default: "enforce",
           format: "text",
           type: "string"
+        },
+        incompletePickingListPolicy: {
+          default: "warn",
+          format: "text",
+          type: "string"
+        },
+        autoSelectMaterialWithoutPickingList: {
+          default: false,
+          format: "boolean",
+          type: "boolean"
         }
       },
       type: "object"
@@ -178541,6 +178571,18 @@ export default {
     },
     "rowFilter.companySettings.plmReleaseControl": {
       name: "plmReleaseControl",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.companySettings.incompletePickingListPolicy": {
+      name: "incompletePickingListPolicy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.companySettings.autoSelectMaterialWithoutPickingList": {
+      name: "autoSelectMaterialWithoutPickingList",
       required: false,
       in: "query",
       type: "string"

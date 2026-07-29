@@ -63,6 +63,9 @@ msgstr "로트를 수락하시겠습니까?"
 msgid "Account Settings"
 msgstr "계정 설정"
 
+msgid "Acknowledge & finish"
+msgstr ""
+
 msgid "Active"
 msgstr "활성"
 
@@ -444,6 +447,9 @@ msgstr "{0} 완료"
 msgid "Finish Anyways"
 msgstr "그래도 완료"
 
+msgid "Finish with material unpicked?"
+msgstr ""
+
 msgid "Forgot to Clock Out?"
 msgstr "퇴근 체크를 잊으셨나요?"
 
@@ -518,6 +524,9 @@ msgstr "작업 트래블러"
 
 msgid "Jobs"
 msgstr "작업"
+
+msgid "Keep picking"
+msgstr ""
 
 msgid "Kit"
 msgstr "키트"
@@ -1068,6 +1077,9 @@ msgstr "퇴근 시간 설정"
 msgid "Setup"
 msgstr "설정"
 
+msgid "short"
+msgstr ""
+
 msgid "Short"
 msgstr "짧게"
 
@@ -1162,6 +1174,9 @@ msgstr "로트는 여전히 처리되지만 최소한 하나의 Issue Type이 �
 
 msgid "There are serial or batch tracked materials on the bill of material that have not been fully issued. Completing without issuing may result in incorrect traceability records."
 msgstr "자재명세서(BOM)에 아직 완전히 출고되지 않은 일련번호 또는 배치 추적 자재가 있습니다. 출고하지 않고 완료하면 이력추적 기록이 부정확해질 수 있습니다."
+
+msgid "These items still have material to pick. Finishing now marks the list Partial."
+msgstr ""
 
 msgid "This lot is expired and can't be picked."
 msgstr "이 로트는 만료되어 피킹할 수 없습니다."

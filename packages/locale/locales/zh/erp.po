@@ -3663,6 +3663,9 @@ msgstr "借方"
 msgid "Decide what an operator sees if they try to issue a batch or serial that's already expired."
 msgstr "决定操作员在尝试发放已过期的批次或序列号时看到的内容。"
 
+msgid "Decide what happens when an operator presses Finish on the shop floor with material still unpicked."
+msgstr ""
+
 msgid "Decimal Places"
 msgstr "小数位数"
 
@@ -5765,6 +5768,12 @@ msgstr "在常规MACRS计划开始之前采取的第一年额外扣除。"
 
 msgid "Finishes"
 msgstr "表面处理"
+
+msgid "Finishing an incomplete pick"
+msgstr ""
+
+msgid "Finishing is refused until every line is picked or marked Short."
+msgstr ""
 
 msgid "First Name"
 msgstr "名字"
@@ -8932,6 +8941,9 @@ msgstr "操作员收到警告。库存仍然可以通过。"
 msgid "Operator must pick a different batch/serial."
 msgstr "操作员必须选择不同的批次/序列号。"
 
+msgid "Operator sees the missing items, can acknowledge & finish. The list is flagged Partial."
+msgstr ""
+
 msgid "Operators"
 msgstr "操作员"
 
@@ -9170,6 +9182,9 @@ msgstr "零件编号"
 
 msgid "Part Supersession"
 msgstr "零件取代"
+
+msgid "Partial"
+msgstr ""
 
 msgid "Partner"
 msgstr "合作伙伴"
@@ -9548,6 +9563,9 @@ msgstr "潜在数据丢失"
 
 msgid "Pre-filled for a new item when expiry is Fixed Duration."
 msgstr "当过期时间设置为固定期限时，为新项目预填充。"
+
+msgid "Pre-select material without a picking list"
+msgstr ""
 
 msgid "Preferred Supplier"
 msgstr "首选供应商"
@@ -14514,6 +14532,9 @@ msgstr "启用后,此价格覆盖适用于匹配的订单;禁用时,覆盖被保
 
 msgid "When on, this rule fires for every target of its type. Assignment rows are ignored but preserved."
 msgstr "启用时，此规则对其类型的每个目标都会触发。分配行被忽略但保留。"
+
+msgid "When on, tracked material is pre-selected by pick order (FEFO) on the shop floor even when no picking list exists, and the issue dialog opens on the Select tab. When off, operators start on the Scan tab and nothing is pre-selected unless a picking list already picked the lots."
+msgstr ""
 
 msgid "When supplier responses are expected back; suppliers see this date on the RFQ portal and Carbon stops accepting late responses after it (configurable)."
 msgstr "何时预期供应商回复;供应商在RFQ门户上看到该日期,Carbon在之后停止接受迟到的回复(可配置)。"

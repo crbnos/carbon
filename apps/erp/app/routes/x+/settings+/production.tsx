@@ -10,21 +10,24 @@ import {
   CardHeader,
   CardTitle,
   Heading,
+  HStack,
   Label,
   ScrollArea,
+  Switch,
   toast,
   VStack
 } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { redirect, useFetcher, useLoaderData } from "react-router";
 import { Boolean, Users } from "~/components/Form";
 import {
   getCompanySettings,
   jobCompletedValidator,
-  operationTimerValidator
+  operationTimerValidator,
+  updateAutoSelectMaterialWithoutPickingListSetting
 } from "~/modules/settings";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -105,6 +108,25 @@ export async function action({ request }: ActionFunctionArgs) {
     return { success: true, message: "Operation timer settings updated" };
   }
 
+  if (intent === "autoSelectMaterialWithoutPickingListToggle") {
+    const autoSelectMaterialWithoutPickingList =
+      formData.get("enabled") === "true";
+    const result = await updateAutoSelectMaterialWithoutPickingListSetting(
+      client,
+      companyId,
+      autoSelectMaterialWithoutPickingList
+    );
+
+    if (result.error) return { success: false, message: result.error.message };
+
+    return {
+      success: true,
+      message: `Material pre-selection ${
+        autoSelectMaterialWithoutPickingList ? "enabled" : "disabled"
+      }`
+    };
+  }
+
   return { success: false, message: "Unknown intent" };
 }
 
@@ -113,6 +135,26 @@ export default function ProductionSettingsRoute() {
   const { companySettings } = useLoaderData<typeof loader>();
   const fetcher = useFetcher<typeof action>();
   const timerFetcher = useFetcher<typeof action>();
+  const toggleFetcher = useFetcher<typeof action>();
+
+  const [
+    autoSelectMaterialWithoutPickingList,
+    setAutoSelectMaterialWithoutPickingList
+  ] = useState(companySettings.autoSelectMaterialWithoutPickingList ?? false);
+
+  const handleAutoSelectMaterialToggle = useCallback(
+    (checked: boolean) => {
+      setAutoSelectMaterialWithoutPickingList(checked);
+      toggleFetcher.submit(
+        {
+          intent: "autoSelectMaterialWithoutPickingListToggle",
+          enabled: checked.toString()
+        },
+        { method: "post" }
+      );
+    },
+    [toggleFetcher]
+  );
 
   useEffect(() => {
     if (fetcher.data?.success === true && fetcher?.data?.message) {
@@ -133,6 +175,16 @@ export default function ProductionSettingsRoute() {
       toast.error(timerFetcher.data.message);
     }
   }, [timerFetcher.data?.message, timerFetcher.data?.success]);
+
+  useEffect(() => {
+    if (toggleFetcher.data?.success === true && toggleFetcher?.data?.message) {
+      toast.success(toggleFetcher.data.message);
+    }
+
+    if (toggleFetcher.data?.success === false && toggleFetcher?.data?.message) {
+      toast.error(toggleFetcher.data.message);
+    }
+  }, [toggleFetcher.data?.message, toggleFetcher.data?.success]);
 
   return (
     <ScrollArea className="w-full h-[calc(100dvh-49px)]">
@@ -243,6 +295,32 @@ export default function ProductionSettingsRoute() {
               </Submit>
             </CardFooter>
           </ValidatedForm>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <HStack className="justify-between items-center">
+              <div>
+                <CardTitle>
+                  <Trans>Pre-select material without a picking list</Trans>
+                </CardTitle>
+                <CardDescription>
+                  <Trans>
+                    When on, tracked material is pre-selected by pick order
+                    (FEFO) on the shop floor even when no picking list exists,
+                    and the issue dialog opens on the Select tab. When off,
+                    operators start on the Scan tab and nothing is pre-selected
+                    unless a picking list already picked the lots.
+                  </Trans>
+                </CardDescription>
+              </div>
+              <Switch
+                checked={autoSelectMaterialWithoutPickingList}
+                onCheckedChange={handleAutoSelectMaterialToggle}
+                disabled={toggleFetcher.state !== "idle"}
+              />
+            </HStack>
+          </CardHeader>
         </Card>
       </VStack>
     </ScrollArea>

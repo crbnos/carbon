@@ -1382,6 +1382,28 @@ export async function updateShowCustomerReadableIdSetting(
     .eq("id", companyId);
 }
 
+export async function updateAutoSelectMaterialWithoutPickingListSetting(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  autoSelectMaterialWithoutPickingList: boolean
+) {
+  return client
+    .from("companySettings")
+    .update(sanitize({ autoSelectMaterialWithoutPickingList }))
+    .eq("id", companyId);
+}
+
+export async function updateIncompletePickingListPolicySetting(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  incompletePickingListPolicy: "warn" | "error"
+) {
+  return client
+    .from("companySettings")
+    .update(sanitize({ incompletePickingListPolicy }))
+    .eq("id", companyId);
+}
+
 export async function upsertWebhook(
   client: SupabaseClient<Database>,
   webhook:

@@ -63,6 +63,9 @@ msgstr "Zaakceptuj partię?"
 msgid "Account Settings"
 msgstr "Ustawienia konta"
 
+msgid "Acknowledge & finish"
+msgstr ""
+
 msgid "Active"
 msgstr "Aktywne"
 
@@ -444,6 +447,9 @@ msgstr "Zakończ {0}"
 msgid "Finish Anyways"
 msgstr "Zakończ mimo wszystko"
 
+msgid "Finish with material unpicked?"
+msgstr ""
+
 msgid "Forgot to Clock Out?"
 msgstr "Zapomniałeś zakończyć zmianę?"
 
@@ -518,6 +524,9 @@ msgstr "Karta obiegowa zlecenia"
 
 msgid "Jobs"
 msgstr "Zadania"
+
+msgid "Keep picking"
+msgstr ""
 
 msgid "Kit"
 msgstr "Zestaw"
@@ -1068,6 +1077,9 @@ msgstr "Ustaw czas zakończenia zmiany"
 msgid "Setup"
 msgstr "Ustawienie"
 
+msgid "short"
+msgstr ""
+
 msgid "Short"
 msgstr "Brakuje"
 
@@ -1162,6 +1174,9 @@ msgstr "Partia będzie nadal dyspozycjonowana, ale nie można utworzyć NCR, dop
 
 msgid "There are serial or batch tracked materials on the bill of material that have not been fully issued. Completing without issuing may result in incorrect traceability records."
 msgstr "Na liście materiałowej znajdują się materiały śledzone seryjnie lub partiami, które nie zostały w pełni wydane. Ukończenie bez wydania może skutkować nieprawidłowymi rekordami śledzenia."
+
+msgid "These items still have material to pick. Finishing now marks the list Partial."
+msgstr ""
 
 msgid "This lot is expired and can't be picked."
 msgstr "Ta partia wygasła i nie można jej pobrać."

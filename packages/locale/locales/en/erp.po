@@ -3663,6 +3663,9 @@ msgstr "Debits"
 msgid "Decide what an operator sees if they try to issue a batch or serial that's already expired."
 msgstr "Decide what an operator sees if they try to issue a batch or serial that's already expired."
 
+msgid "Decide what happens when an operator presses Finish on the shop floor with material still unpicked."
+msgstr "Decide what happens when an operator presses Finish on the shop floor with material still unpicked."
+
 msgid "Decimal Places"
 msgstr "Decimal Places"
 
@@ -5765,6 +5768,12 @@ msgstr "finishes"
 
 msgid "Finishes"
 msgstr "Finishes"
+
+msgid "Finishing an incomplete pick"
+msgstr "Finishing an incomplete pick"
+
+msgid "Finishing is refused until every line is picked or marked Short."
+msgstr "Finishing is refused until every line is picked or marked Short."
 
 msgid "First Name"
 msgstr "First Name"
@@ -8932,6 +8941,9 @@ msgstr "Operator gets a warning. Stock still goes through."
 msgid "Operator must pick a different batch/serial."
 msgstr "Operator must pick a different batch/serial."
 
+msgid "Operator sees the missing items, can acknowledge & finish. The list is flagged Partial."
+msgstr "Operator sees the missing items, can acknowledge & finish. The list is flagged Partial."
+
 msgid "Operators"
 msgstr "Operators"
 
@@ -9170,6 +9182,9 @@ msgstr "Part Number"
 
 msgid "Part Supersession"
 msgstr "Part Supersession"
+
+msgid "Partial"
+msgstr "Partial"
 
 msgid "Partner"
 msgstr "Partner"
@@ -9548,6 +9563,9 @@ msgstr "Potential Data Loss"
 
 msgid "Pre-filled for a new item when expiry is Fixed Duration."
 msgstr "Pre-filled for a new item when expiry is Fixed Duration."
+
+msgid "Pre-select material without a picking list"
+msgstr "Pre-select material without a picking list"
 
 msgid "Preferred Supplier"
 msgstr "Preferred Supplier"
@@ -14514,6 +14532,9 @@ msgstr "When on, this price override applies to matching orders; turning off wit
 
 msgid "When on, this rule fires for every target of its type. Assignment rows are ignored but preserved."
 msgstr "When on, this rule fires for every target of its type. Assignment rows are ignored but preserved."
+
+msgid "When on, tracked material is pre-selected by pick order (FEFO) on the shop floor even when no picking list exists, and the issue dialog opens on the Select tab. When off, operators start on the Scan tab and nothing is pre-selected unless a picking list already picked the lots."
+msgstr "When on, tracked material is pre-selected by pick order (FEFO) on the shop floor even when no picking list exists, and the issue dialog opens on the Select tab. When off, operators start on the Scan tab and nothing is pre-selected unless a picking list already picked the lots."
 
 msgid "When supplier responses are expected back; suppliers see this date on the RFQ portal and Carbon stops accepting late responses after it (configurable)."
 msgstr "When supplier responses are expected back; suppliers see this date on the RFQ portal and Carbon stops accepting late responses after it (configurable)."

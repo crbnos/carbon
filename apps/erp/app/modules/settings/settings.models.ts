@@ -201,6 +201,20 @@ export const shelfLifeSettingsValidator = z.object({
   expiredEntityPolicy: z.enum(expiredEntityPolicies).default("Block")
 });
 
+// What happens when an operator presses Finish on a picking list that still has
+// unpicked material. 'warn' surfaces the shortfall but lets them acknowledge &
+// continue (the list is flagged Partial); 'error' blocks completion until every
+// line is picked or marked Short. Mirrors the storage-rule severity shape.
+export const incompletePickingListPolicies = ["warn", "error"] as const;
+export type IncompletePickingListPolicy =
+  (typeof incompletePickingListPolicies)[number];
+
+export const incompletePickingListPolicyValidator = z.object({
+  incompletePickingListPolicy: z
+    .enum(incompletePickingListPolicies)
+    .default("warn")
+});
+
 export const updateLeadTimesOnReceiptValidator = z.object({
   updateLeadTimesOnReceipt: zfd.checkbox()
 });
