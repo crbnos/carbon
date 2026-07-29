@@ -6400,6 +6400,9 @@ msgstr "ID"
 msgid "Ideas, suggestions or problems?"
 msgstr "아이디어, 제안, 또는 문제가 있으신가요?"
 
+msgid "Identifiers"
+msgstr ""
+
 msgid "IDs and descriptions are generated for raw materials."
 msgstr "원자재에 대한 ID와 설명이 자동으로 생성됩니다."
 
@@ -7128,6 +7131,9 @@ msgstr "정확히 일치시키려면 비워두세요"
 
 msgid "Leave this page"
 msgstr "이 페이지 나가기"
+
+msgid "Ledger"
+msgstr ""
 
 msgid "Left item"
 msgstr "왼쪽 품목"
@@ -10075,9 +10081,6 @@ msgid "Quoted Date"
 msgstr "견적일"
 
 msgid "Quotes"
-msgstr "견적"
-
-msgid "Quoting"
 msgstr "견적"
 
 msgid "Quoting and sales orders"

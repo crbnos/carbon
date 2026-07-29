@@ -6400,6 +6400,9 @@ msgstr "Kimlik"
 msgid "Ideas, suggestions or problems?"
 msgstr "Fikirler, öneriler veya sorunlar?"
 
+msgid "Identifiers"
+msgstr ""
+
 msgid "IDs and descriptions are generated for raw materials."
 msgstr "Kimlikler ve açıklamalar ham malzemeler için oluşturulur."
 
@@ -7128,6 +7131,9 @@ msgstr "Tam eşleşme için boş bırakın"
 
 msgid "Leave this page"
 msgstr "Bu sayfadan ayrıl"
+
+msgid "Ledger"
+msgstr ""
 
 msgid "Left item"
 msgstr "Sol öğe"
@@ -10076,9 +10082,6 @@ msgstr "Teklif Tarihi"
 
 msgid "Quotes"
 msgstr "Teklifler"
-
-msgid "Quoting"
-msgstr "Teklif Verme"
 
 msgid "Quoting and sales orders"
 msgstr "Teklifler ve satış siparişleri"

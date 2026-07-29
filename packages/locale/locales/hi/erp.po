@@ -6400,6 +6400,9 @@ msgstr "आईडी"
 msgid "Ideas, suggestions or problems?"
 msgstr "विचार, सुझाव या समस्याएं?"
 
+msgid "Identifiers"
+msgstr ""
+
 msgid "IDs and descriptions are generated for raw materials."
 msgstr "कच्चे माल के लिए आईडी और विवरण उत्पन्न किए जाते हैं।"
 
@@ -7128,6 +7131,9 @@ msgstr "सटीक मिलान के लिए खाली छोड़�
 
 msgid "Leave this page"
 msgstr "इस पृष्ठ को छोड़ें"
+
+msgid "Ledger"
+msgstr ""
 
 msgid "Left item"
 msgstr "बाईं ओर की वस्तु"
@@ -10075,9 +10081,6 @@ msgid "Quoted Date"
 msgstr "उद्धृत तारीख"
 
 msgid "Quotes"
-msgstr "उद्धरण"
-
-msgid "Quoting"
 msgstr "उद्धरण"
 
 msgid "Quoting and sales orders"

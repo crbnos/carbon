@@ -21,6 +21,7 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { useCallback, useEffect } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { redirect, useFetcher, useLoaderData } from "react-router";
+import SettingsSectionHeader from "~/components/SettingsSectionHeader";
 import { plmReleaseControl } from "~/modules/items";
 import {
   getCompanySettings,
@@ -161,6 +162,11 @@ export default function ItemsSettingsRoute() {
         <Heading size="h3">
           <Trans>Items</Trans>
         </Heading>
+
+        <SettingsSectionHeader>
+          <Trans>Identifiers</Trans>
+        </SettingsSectionHeader>
+
         <Card>
           <CardHeader>
             <CardTitle>
@@ -203,6 +209,11 @@ export default function ItemsSettingsRoute() {
             </HStack>
           </CardContent>
         </Card>
+
+        <SettingsSectionHeader>
+          <Trans>Units</Trans>
+        </SettingsSectionHeader>
+
         <Card>
           <CardHeader>
             <CardTitle>
@@ -240,6 +251,11 @@ export default function ItemsSettingsRoute() {
             </HStack>
           </CardContent>
         </Card>
+
+        <SettingsSectionHeader>
+          <Trans>Revisions</Trans>
+        </SettingsSectionHeader>
+
         <Card>
           <ValidatedForm
             method="post"

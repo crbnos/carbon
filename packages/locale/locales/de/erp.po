@@ -6400,6 +6400,9 @@ msgstr "ID"
 msgid "Ideas, suggestions or problems?"
 msgstr "Ideen, Vorschläge oder Probleme?"
 
+msgid "Identifiers"
+msgstr ""
+
 msgid "IDs and descriptions are generated for raw materials."
 msgstr "IDs und Beschreibungen werden für Rohstoffe generiert."
 
@@ -7128,6 +7131,9 @@ msgstr "Leer lassen für exakte Übereinstimmung"
 
 msgid "Leave this page"
 msgstr "Diese Seite verlassen"
+
+msgid "Ledger"
+msgstr ""
 
 msgid "Left item"
 msgstr "Linkes Element"
@@ -10076,9 +10082,6 @@ msgstr "Angebotsdatum"
 
 msgid "Quotes"
 msgstr "Angebote"
-
-msgid "Quoting"
-msgstr "Angebotserstellung"
 
 msgid "Quoting and sales orders"
 msgstr "Angebote und Aufträge"

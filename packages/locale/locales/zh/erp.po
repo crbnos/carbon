@@ -6400,6 +6400,9 @@ msgstr "ID"
 msgid "Ideas, suggestions or problems?"
 msgstr "想法、建议或问题？"
 
+msgid "Identifiers"
+msgstr ""
+
 msgid "IDs and descriptions are generated for raw materials."
 msgstr "ID 和描述是为原材料生成的。"
 
@@ -7128,6 +7131,9 @@ msgstr "留空以精确匹配"
 
 msgid "Leave this page"
 msgstr "离开此页面"
+
+msgid "Ledger"
+msgstr ""
 
 msgid "Left item"
 msgstr "左项"
@@ -10075,9 +10081,6 @@ msgid "Quoted Date"
 msgstr "报价日期"
 
 msgid "Quotes"
-msgstr "报价"
-
-msgid "Quoting"
 msgstr "报价"
 
 msgid "Quoting and sales orders"

@@ -21,6 +21,7 @@ import { useEffect } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { redirect, useFetcher, useLoaderData } from "react-router";
 import { Boolean, Users } from "~/components/Form";
+import SettingsSectionHeader from "~/components/SettingsSectionHeader";
 import {
   getCompanySettings,
   jobCompletedValidator,
@@ -180,6 +181,108 @@ export default function ProductionSettingsRoute() {
           <Trans>Production</Trans>
         </Heading>
 
+        <SettingsSectionHeader>
+          <Trans>Documents</Trans>
+        </SettingsSectionHeader>
+
+        <Card>
+          <ValidatedForm
+            method="post"
+            validator={jobTravelerMaterialsValidator}
+            defaultValues={{
+              includeMaterialsOnTraveler:
+                (
+                  companySettings as {
+                    includeMaterialsOnTraveler?: boolean | null;
+                  }
+                ).includeMaterialsOnTraveler ?? false
+            }}
+            fetcher={travelerFetcher}
+          >
+            <input type="hidden" name="intent" value="jobTravelerMaterials" />
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Trans>Job Traveler Materials</Trans>
+              </CardTitle>
+              <CardDescription>
+                <Trans>
+                  Include a materials (bill of materials) section on the job
+                  traveler PDF with item numbers and quantities.
+                </Trans>
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-col gap-8 max-w-[400px]">
+                <Boolean
+                  name="includeMaterialsOnTraveler"
+                  label={t`Include materials on traveler`}
+                  description={t`When on, the traveler PDF lists the job's required materials.`}
+                  bordered
+                />
+              </div>
+            </CardContent>
+            <CardFooter>
+              <Submit
+                isDisabled={travelerFetcher.state !== "idle"}
+                isLoading={travelerFetcher.state !== "idle"}
+              >
+                <Trans>Save</Trans>
+              </Submit>
+            </CardFooter>
+          </ValidatedForm>
+        </Card>
+
+        <SettingsSectionHeader>
+          <Trans>Shop Floor</Trans>
+        </SettingsSectionHeader>
+
+        <Card>
+          <ValidatedForm
+            method="post"
+            validator={operationTimerValidator}
+            defaultValues={{
+              autoStartOperationTimer:
+                companySettings.autoStartOperationTimer ?? false
+            }}
+            fetcher={timerFetcher}
+          >
+            <input type="hidden" name="intent" value="operationTimer" />
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Trans>Operation Timer</Trans>
+              </CardTitle>
+              <CardDescription>
+                <Trans>
+                  Auto-start the operator's timer when they open an operation in
+                  the MES so time logs are captured from the start.
+                </Trans>
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-col gap-8 max-w-[400px]">
+                <Boolean
+                  name="autoStartOperationTimer"
+                  label={t`Auto-start timer on open`}
+                  description={t`When on, opening an operation starts its timer automatically.`}
+                  bordered
+                />
+              </div>
+            </CardContent>
+            <CardFooter>
+              <Submit
+                isDisabled={timerFetcher.state !== "idle"}
+                isLoading={timerFetcher.state !== "idle"}
+              >
+                <Trans>Save</Trans>
+              </Submit>
+            </CardFooter>
+          </ValidatedForm>
+        </Card>
+
+        <SettingsSectionHeader>
+          <Trans>Notifications</Trans>
+        </SettingsSectionHeader>
+
         <Card>
           <ValidatedForm
             method="post"
@@ -231,96 +334,6 @@ export default function ProductionSettingsRoute() {
               <Submit
                 isDisabled={fetcher.state !== "idle"}
                 isLoading={fetcher.state !== "idle"}
-              >
-                <Trans>Save</Trans>
-              </Submit>
-            </CardFooter>
-          </ValidatedForm>
-        </Card>
-
-        <Card>
-          <ValidatedForm
-            method="post"
-            validator={operationTimerValidator}
-            defaultValues={{
-              autoStartOperationTimer:
-                companySettings.autoStartOperationTimer ?? false
-            }}
-            fetcher={timerFetcher}
-          >
-            <input type="hidden" name="intent" value="operationTimer" />
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Trans>Operation Timer</Trans>
-              </CardTitle>
-              <CardDescription>
-                <Trans>
-                  Auto-start the operator's timer when they open an operation in
-                  the MES so time logs are captured from the start.
-                </Trans>
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-col gap-8 max-w-[400px]">
-                <Boolean
-                  name="autoStartOperationTimer"
-                  label={t`Auto-start timer on open`}
-                  description={t`When on, opening an operation starts its timer automatically.`}
-                  bordered
-                />
-              </div>
-            </CardContent>
-            <CardFooter>
-              <Submit
-                isDisabled={timerFetcher.state !== "idle"}
-                isLoading={timerFetcher.state !== "idle"}
-              >
-                <Trans>Save</Trans>
-              </Submit>
-            </CardFooter>
-          </ValidatedForm>
-        </Card>
-
-        <Card>
-          <ValidatedForm
-            method="post"
-            validator={jobTravelerMaterialsValidator}
-            defaultValues={{
-              includeMaterialsOnTraveler:
-                (
-                  companySettings as {
-                    includeMaterialsOnTraveler?: boolean | null;
-                  }
-                ).includeMaterialsOnTraveler ?? false
-            }}
-            fetcher={travelerFetcher}
-          >
-            <input type="hidden" name="intent" value="jobTravelerMaterials" />
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Trans>Job Traveler Materials</Trans>
-              </CardTitle>
-              <CardDescription>
-                <Trans>
-                  Include a materials (bill of materials) section on the job
-                  traveler PDF with item numbers and quantities.
-                </Trans>
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-col gap-8 max-w-[400px]">
-                <Boolean
-                  name="includeMaterialsOnTraveler"
-                  label={t`Include materials on traveler`}
-                  description={t`When on, the traveler PDF lists the job's required materials.`}
-                  bordered
-                />
-              </div>
-            </CardContent>
-            <CardFooter>
-              <Submit
-                isDisabled={travelerFetcher.state !== "idle"}
-                isLoading={travelerFetcher.state !== "idle"}
               >
                 <Trans>Save</Trans>
               </Submit>

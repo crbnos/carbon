@@ -35,6 +35,7 @@ import {
 } from "react-icons/lu";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { redirect, useFetcher, useLoaderData } from "react-router";
+import SettingsSectionHeader from "~/components/SettingsSectionHeader";
 import {
   getCompanySettings,
   kanbanOutputTypes,
@@ -163,6 +164,11 @@ export default function InventorySettingsRoute() {
         <Heading size="h3">
           <Trans>Inventory</Trans>
         </Heading>
+
+        <SettingsSectionHeader>
+          <Trans>Kanban</Trans>
+        </SettingsSectionHeader>
+
         <Card>
           <ValidatedForm
             method="post"
@@ -204,6 +210,10 @@ export default function InventorySettingsRoute() {
             </CardFooter>
           </ValidatedForm>
         </Card>
+
+        <SettingsSectionHeader>
+          <Trans>Traceability</Trans>
+        </SettingsSectionHeader>
 
         <Card>
           <ValidatedForm

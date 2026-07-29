@@ -6400,6 +6400,9 @@ msgstr "ID"
 msgid "Ideas, suggestions or problems?"
 msgstr "Идеи, предложения или проблемы?"
 
+msgid "Identifiers"
+msgstr ""
+
 msgid "IDs and descriptions are generated for raw materials."
 msgstr "Идентификаторы и описания генерируются для сырья."
 
@@ -7128,6 +7131,9 @@ msgstr "Оставьте пустым для точного совпадения
 
 msgid "Leave this page"
 msgstr "Покинуть эту страницу"
+
+msgid "Ledger"
+msgstr ""
 
 msgid "Left item"
 msgstr "Левый элемент"
@@ -10076,9 +10082,6 @@ msgstr "Дата предложения"
 
 msgid "Quotes"
 msgstr "Предложения"
-
-msgid "Quoting"
-msgstr "Котировка"
 
 msgid "Quoting and sales orders"
 msgstr "Котировки и заказы на продажу"
