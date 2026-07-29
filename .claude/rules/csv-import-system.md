@@ -100,6 +100,14 @@ Deno `serve` handler. Payload validated by `importCsvValidator` (table enum, `fi
   when the strict parser rejects uneven row widths.
 - Applies `columnMappings`, then `enumMappings` (unknown CSV value → the enum's `"Default"`);
   `"N/A"` / unmapped columns are skipped.
+- **Material Finish / Grade / Dimensions arrive as raw text** (`finish`, `grade`,
+  `dimensions` — they can't be flat enum mappings because `materialFinish`/`materialGrade`
+  are scoped by substance and `materialDimension` by form). `resolveMaterialTaxonomyIds()`
+  resolves them per row within the row's substance/form scope — case-insensitive match
+  against global (`companyId IS NULL`) + company rows (company wins) — and **creates a
+  company-scoped taxonomy row for unmatched names** (mirroring the creatable comboboxes on
+  the material form). A row with no substance (finish/grade) or no form (dimensions) leaves
+  the attribute unset.
 - Classifies each row with `classifyImportRow()` (see `classify-import-row.ts`):
   returns `{ action: "insert" }`, `{ action: "update"; entityId }`, or
   `{ action: "skip"; reason }`. Skips on missing Name or duplicate id/name within the file.
