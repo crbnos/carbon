@@ -14551,7 +14551,7 @@ msgstr "Quand il est activé, ce remplacement de prix s'applique aux commandes c
 msgid "When on, this rule fires for every target of its type. Assignment rows are ignored but preserved."
 msgstr "Lorsqu'elle est activée, cette règle s'applique à chaque cible de son type. Les lignes d'affectation sont ignorées mais conservées."
 
-msgid "When on, tracked material is pre-selected by pick order (FEFO) on the shop floor even when no picking list exists, and the issue dialog opens on the Select tab. When off, operators start on the Scan tab and nothing is pre-selected unless a picking list already picked the lots."
+msgid "When on, tracked material is pre-selected by pick order (FEFO) even without a picking list. When off, operators start on the Scan tab."
 msgstr ""
 
 msgid "When supplier responses are expected back; suppliers see this date on the RFQ portal and Carbon stops accepting late responses after it (configurable)."

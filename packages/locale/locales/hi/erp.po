@@ -14551,7 +14551,7 @@ msgstr "जब सक्षम हो, तो यह मूल्य ओवर�
 msgid "When on, this rule fires for every target of its type. Assignment rows are ignored but preserved."
 msgstr "जब चालू हो, तो यह नियम अपने प्रकार के प्रत्येक लक्ष्य के लिए सक्रिय होता है। असाइनमेंट पंक्तियों को अनदेखा किया जाता है लेकिन संरक्षित रखा जाता है।"
 
-msgid "When on, tracked material is pre-selected by pick order (FEFO) on the shop floor even when no picking list exists, and the issue dialog opens on the Select tab. When off, operators start on the Scan tab and nothing is pre-selected unless a picking list already picked the lots."
+msgid "When on, tracked material is pre-selected by pick order (FEFO) even without a picking list. When off, operators start on the Scan tab."
 msgstr ""
 
 msgid "When supplier responses are expected back; suppliers see this date on the RFQ portal and Carbon stops accepting late responses after it (configurable)."

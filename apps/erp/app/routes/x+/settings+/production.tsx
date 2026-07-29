@@ -341,10 +341,8 @@ export default function ProductionSettingsRoute() {
                 <CardDescription>
                   <Trans>
                     When on, tracked material is pre-selected by pick order
-                    (FEFO) on the shop floor even when no picking list exists,
-                    and the issue dialog opens on the Select tab. When off,
-                    operators start on the Scan tab and nothing is pre-selected
-                    unless a picking list already picked the lots.
+                    (FEFO) even without a picking list. When off, operators
+                    start on the Scan tab.
                   </Trans>
                 </CardDescription>
               </div>
