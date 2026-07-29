@@ -248,6 +248,13 @@ export function QuantityModal({
                       onChange={setQuantity}
                       isReadOnly={parentIsSerial}
                       minValue={0}
+                      // Allow fractional quantities (weight/length UoMs).
+                      // Without this, NumberControlled inherits react-aria's
+                      // 3-decimal default; Number.tsx already defaults to 10.
+                      formatOptions={{
+                        minimumFractionDigits: 0,
+                        maximumFractionDigits: 10
+                      }}
                       size="lg"
                     />
                   </div>
