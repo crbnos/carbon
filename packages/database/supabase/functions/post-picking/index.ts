@@ -761,16 +761,23 @@ serve(async (req: Request) => {
             .where("ta.sourceDocumentId", "=", line.pickingListId)
             .where("tai.trackedEntityId", "=", trackedEntityId)
             .where("ta.companyId", "=", companyId)
+            .where("tai.companyId", "=", companyId)
             .orderBy("ta.createdAt", "desc")
             .select("ta.attributes")
             .execute();
 
-          const pickedFromShelf = pickActivities
+          // Use the LATEST pick for this line (activities are newest-first). Its
+          // "From Shelf" is the current truth — even if null (picked from an
+          // unassigned bin), fall through to the line bin rather than reusing an
+          // older pick's stale shelf.
+          const latestPickForLine = pickActivities
             .map((a) => a.attributes as Record<string, unknown> | null)
             // Disambiguate if the same entity was picked on multiple lines.
-            .filter((a) => a?.["Picking List Line"] === pickingListLineId)
-            .map((a) => a?.["From Shelf"] as string | null | undefined)
-            .find((s) => s != null);
+            .find((a) => a?.["Picking List Line"] === pickingListLineId);
+          const pickedFromShelf = latestPickForLine?.["From Shelf"] as
+            | string
+            | null
+            | undefined;
 
           const source = pickedFromShelf ?? line.storageUnitId;
           // No lineside stage or no source to return to → nothing to do.
