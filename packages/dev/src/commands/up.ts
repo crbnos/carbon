@@ -14,8 +14,11 @@ import {
   installSkills,
   spawnApps,
   spawnAssembler,
+  spawnEmailPreview,
   spawnStripeListener,
-  syncEnvSymlinks
+  stopAuxApps,
+  syncEnvSymlinks,
+  whenAuxAppExits
 } from "../services/apps.js";
 import {
   allImagesPresentLocally,
@@ -254,6 +257,10 @@ export async function up(opts: UpOpts = {}) {
     spawnAssembler({ root, ports: ctx.ports });
   }
 
+  if (selectedApps.includes("email")) {
+    spawnEmailPreview({ root, ports: ctx.ports });
+  }
+
   const summary = summaryLines(
     ctx.ports,
     selectedApps,
@@ -388,7 +395,8 @@ async function provisionSlot(
               ports: {
                 ...borrowedEntry.ports,
                 PORT_ERP: ownSlot.ports.PORT_ERP,
-                PORT_MES: ownSlot.ports.PORT_MES
+                PORT_MES: ownSlot.ports.PORT_MES,
+                PORT_EMAIL: ownSlot.ports.PORT_EMAIL
               } as PortMap,
               redisDb: borrowedEntry.redisDb,
               jwt: borrowedEntry.jwt
@@ -679,6 +687,10 @@ async function ensureHostsFile() {
   await syncHostsFile();
 }
 
+function reactRouterApps(selectedApps: AppId[]): AppId[] {
+  return selectedApps.filter((id) => id !== "assembler" && id !== "email");
+}
+
 async function runAppsThenTeardown(
   root: string,
   selectedApps: AppId[],
@@ -686,8 +698,17 @@ async function runAppsThenTeardown(
   portless: boolean,
   stripeChild?: ExecaChildProcess
 ) {
-  const reactRouterApps = selectedApps.filter((id) => id !== "assembler");
-  await spawnApps({ root, apps: reactRouterApps, ports, portless });
+  const apps = reactRouterApps(selectedApps);
+  if (apps.length === 0) {
+    await Promise.race([
+      new Promise<void>((resolve) => {
+        onShutdown(() => resolve());
+      }),
+      whenAuxAppExits()
+    ]);
+  } else {
+    await spawnApps({ root, apps, ports, portless });
+  }
 
   // Apps exit on Ctrl+C; auto-`down` so compose stack isn't orphaned.
   // Swallow further signals so a second Ctrl+C during teardown doesn't
@@ -768,7 +789,7 @@ async function runAppsThenCommand(
   const controller = new AbortController();
   const appsDone = spawnApps({
     root,
-    apps: selectedApps,
+    apps: reactRouterApps(selectedApps),
     ports,
     portless,
     signal: controller.signal
@@ -790,6 +811,7 @@ async function runAppsThenCommand(
   } finally {
     controller.abort(); // stop the app supervisors
     await appsDone;
+    stopAuxApps();
     killStripe(stripeChild);
     await down({ silent: true, volumes: cleanVolumes });
     detach();

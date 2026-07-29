@@ -74,7 +74,7 @@ export const terms = {
     definition: msg`Classifies a routing operation: Process, Assembly, and Inspection operations run on your own shop floor in the MES — Assembly gets the guided assembly view and Inspection a quality check — while an Outside Processing operation is subcontracted to a supplier and creates a purchase order; the process carries the same type and defaults it on new operations.`
   },
   "change-order": {
-    term: msg`Change order`,
+    term: msg`Change notice`,
     definition: msg`An engineering change: the affected items whose methods are revised on a draft and released together, superseding the versions they replace.`
   },
   wip: {

@@ -1,5 +1,5 @@
 {
-  "generated": "2026-07-28T10:30:46.379Z",
+  "generated": "2026-07-29T06:52:00.739Z",
   "totalTools": 1398,
   "modules": 15,
   "tools": [
@@ -14926,14 +14926,14 @@
       }
     },
     {
-      "name": "items_getChangeOrder",
+      "name": "items_getChangeNotice",
       "module": "items",
       "classification": "READ",
-      "description": "get change order",
+      "description": "get change notice",
       "paramCount": 1,
       "serviceParams": [
         "client",
-        "changeOrderId",
+        "changeNoticeId",
         "companyId"
       ],
       "injectAuth": [
@@ -14942,20 +14942,20 @@
       "schema": {
         "type": "object",
         "properties": {
-          "changeOrderId": {
+          "changeNoticeId": {
             "type": "string"
           }
         },
         "required": [
-          "changeOrderId"
+          "changeNoticeId"
         ]
       }
     },
     {
-      "name": "items_getChangeOrders",
+      "name": "items_getChangeNotices",
       "module": "items",
       "classification": "READ",
-      "description": "get change orders",
+      "description": "get change notices",
       "paramCount": 3,
       "serviceParams": [
         "client",
@@ -14991,10 +14991,10 @@
       }
     },
     {
-      "name": "items_insertChangeOrder",
+      "name": "items_insertChangeNotice",
       "module": "items",
       "classification": "WRITE",
-      "description": "insert change order",
+      "description": "insert change notice",
       "paramCount": 12,
       "serviceParams": [
         "client",
@@ -15008,7 +15008,7 @@
       "schema": {
         "type": "object",
         "properties": {
-          "changeOrderId": {
+          "changeNoticeId": {
             "type": "string"
           },
           "name": {
@@ -15020,7 +15020,7 @@
           "priority": {
             "type": "string"
           },
-          "changeOrderTypeId": {
+          "changeNoticeTypeId": {
             "type": "string"
           },
           "nonConformanceId": {
@@ -15046,10 +15046,10 @@
       }
     },
     {
-      "name": "items_updateChangeOrder",
+      "name": "items_updateChangeNotice",
       "module": "items",
       "classification": "WRITE",
-      "description": "update change order",
+      "description": "update change notice",
       "paramCount": 13,
       "serviceParams": [
         "client",
@@ -15117,14 +15117,14 @@
       }
     },
     {
-      "name": "items_deleteChangeOrder",
+      "name": "items_deleteChangeNotice",
       "module": "items",
       "classification": "DESTRUCTIVE",
-      "description": "delete change order",
+      "description": "delete change notice",
       "paramCount": 1,
       "serviceParams": [
         "client",
-        "changeOrderId",
+        "changeNoticeId",
         "companyId"
       ],
       "injectAuth": [
@@ -15133,20 +15133,20 @@
       "schema": {
         "type": "object",
         "properties": {
-          "changeOrderId": {
+          "changeNoticeId": {
             "type": "string"
           }
         },
         "required": [
-          "changeOrderId"
+          "changeNoticeId"
         ]
       }
     },
     {
-      "name": "items_updateChangeOrderStatus",
+      "name": "items_updateChangeNoticeStatus",
       "module": "items",
       "classification": "WRITE",
-      "description": "update change order status",
+      "description": "update change notice status",
       "paramCount": 4,
       "serviceParams": [
         "client",
@@ -15183,10 +15183,10 @@
       }
     },
     {
-      "name": "items_getChangeOrderTypes",
+      "name": "items_getChangeNoticeTypes",
       "module": "items",
       "classification": "READ",
-      "description": "get change order types",
+      "description": "get change notice types",
       "paramCount": 3,
       "serviceParams": [
         "client",
@@ -15222,10 +15222,10 @@
       }
     },
     {
-      "name": "items_getChangeOrderTypesList",
+      "name": "items_getChangeNoticeTypesList",
       "module": "items",
       "classification": "READ",
-      "description": "get change order types list",
+      "description": "get change notice types list",
       "paramCount": 0,
       "serviceParams": [
         "client",
@@ -15240,14 +15240,15 @@
       }
     },
     {
-      "name": "items_getChangeOrderType",
+      "name": "items_getChangeNoticeType",
       "module": "items",
       "classification": "READ",
-      "description": "get change order type",
+      "description": "get change notice type",
       "paramCount": 1,
       "serviceParams": [
         "client",
-        "id"
+        "id",
+        "companyId"
       ],
       "injectAuth": [
         "companyId"
@@ -15265,14 +15266,14 @@
       }
     },
     {
-      "name": "items_upsertChangeOrderType",
+      "name": "items_upsertChangeNoticeType",
       "module": "items",
       "classification": "WRITE",
-      "description": "upsert change order type",
+      "description": "upsert change notice type",
       "paramCount": 1,
       "serviceParams": [
         "client",
-        "changeOrderType"
+        "changeNoticeType"
       ],
       "injectAuth": [
         "companyId",
@@ -15282,22 +15283,23 @@
       "schema": {
         "type": "object",
         "properties": {
-          "changeOrderType": {}
+          "changeNoticeType": {}
         },
         "required": [
-          "changeOrderType"
+          "changeNoticeType"
         ]
       }
     },
     {
-      "name": "items_deleteChangeOrderType",
+      "name": "items_deleteChangeNoticeType",
       "module": "items",
       "classification": "DESTRUCTIVE",
-      "description": "delete change order type",
+      "description": "delete change notice type",
       "paramCount": 1,
       "serviceParams": [
         "client",
-        "id"
+        "id",
+        "companyId"
       ],
       "injectAuth": [
         "companyId"
@@ -15376,10 +15378,10 @@
       }
     },
     {
-      "name": "items_createChangeOrderDraftMethod",
+      "name": "items_createChangeNoticeDraftMethod",
       "module": "items",
       "classification": "WRITE",
-      "description": "create change order draft method",
+      "description": "create change notice draft method",
       "paramCount": 4,
       "serviceParams": [
         "client",
@@ -15393,7 +15395,7 @@
       "schema": {
         "type": "object",
         "properties": {
-          "changeOrderId": {
+          "changeNoticeId": {
             "type": "string"
           },
           "itemId": {
@@ -15405,17 +15407,17 @@
           }
         },
         "required": [
-          "changeOrderId",
+          "changeNoticeId",
           "itemId",
           "changeType"
         ]
       }
     },
     {
-      "name": "items_addChangeOrderAffectedItem",
+      "name": "items_addChangeNoticeAffectedItem",
       "module": "items",
       "classification": "WRITE",
-      "description": "add change order affected item",
+      "description": "add change notice affected item",
       "paramCount": 5,
       "serviceParams": [
         "client",
@@ -15429,7 +15431,7 @@
       "schema": {
         "type": "object",
         "properties": {
-          "changeOrderId": {
+          "changeNoticeId": {
             "type": "string"
           },
           "itemId": {
@@ -15444,16 +15446,16 @@
           }
         },
         "required": [
-          "changeOrderId",
+          "changeNoticeId",
           "changeType"
         ]
       }
     },
     {
-      "name": "items_updateChangeOrderAffectedItemChangeType",
+      "name": "items_updateChangeNoticeAffectedItemChangeType",
       "module": "items",
       "classification": "WRITE",
-      "description": "update change order affected item change type",
+      "description": "update change notice affected item change type",
       "paramCount": 2,
       "serviceParams": [
         "client",
@@ -15478,10 +15480,10 @@
       }
     },
     {
-      "name": "items_updateChangeOrderAffectedItemCutover",
+      "name": "items_updateChangeNoticeAffectedItemCutover",
       "module": "items",
       "classification": "WRITE",
-      "description": "update change order affected item cutover",
+      "description": "update change notice affected item cutover",
       "paramCount": 4,
       "serviceParams": [
         "client",
@@ -15512,14 +15514,14 @@
       }
     },
     {
-      "name": "items_getChangeOrderAffectedItems",
+      "name": "items_getChangeNoticeAffectedItems",
       "module": "items",
       "classification": "READ",
-      "description": "get change order affected items",
+      "description": "get change notice affected items",
       "paramCount": 1,
       "serviceParams": [
         "client",
-        "changeOrderId",
+        "changeNoticeId",
         "companyId"
       ],
       "injectAuth": [
@@ -15528,20 +15530,20 @@
       "schema": {
         "type": "object",
         "properties": {
-          "changeOrderId": {
+          "changeNoticeId": {
             "type": "string"
           }
         },
         "required": [
-          "changeOrderId"
+          "changeNoticeId"
         ]
       }
     },
     {
-      "name": "items_removeChangeOrderAffectedItem",
+      "name": "items_removeChangeNoticeAffectedItem",
       "module": "items",
       "classification": "WRITE",
-      "description": "remove change order affected item",
+      "description": "remove change notice affected item",
       "paramCount": 1,
       "serviceParams": [
         "client",
@@ -15564,10 +15566,10 @@
       }
     },
     {
-      "name": "items_findChangeOrdersForItem",
+      "name": "items_findChangeNoticesForItem",
       "module": "items",
       "classification": "READ",
-      "description": "find change orders for item",
+      "description": "find change notices for item",
       "paramCount": 2,
       "serviceParams": [
         "client",
@@ -15593,10 +15595,10 @@
       }
     },
     {
-      "name": "items_getChangeOrdersForNonConformance",
+      "name": "items_getChangeNoticesForNonConformance",
       "module": "items",
       "classification": "READ",
-      "description": "get change orders for non conformance",
+      "description": "get change notices for non conformance",
       "paramCount": 1,
       "serviceParams": [
         "client",
@@ -15619,10 +15621,10 @@
       }
     },
     {
-      "name": "items_findOtherOpenChangeOrdersForItem",
+      "name": "items_findOtherOpenChangeNoticesForItem",
       "module": "items",
       "classification": "READ",
-      "description": "find other open change orders for item",
+      "description": "find other open change notices for item",
       "paramCount": 2,
       "serviceParams": [
         "client",
@@ -15637,21 +15639,21 @@
           "itemId": {
             "type": "string"
           },
-          "excludeChangeOrderId": {
+          "excludeChangeNoticeId": {
             "type": "string"
           }
         },
         "required": [
           "itemId",
-          "excludeChangeOrderId"
+          "excludeChangeNoticeId"
         ]
       }
     },
     {
-      "name": "items_getItemChangeOrderData",
+      "name": "items_getItemChangeNoticeData",
       "module": "items",
       "classification": "READ",
-      "description": "get item change order data",
+      "description": "get item change notice data",
       "paramCount": 1,
       "serviceParams": [
         "client",
@@ -15674,14 +15676,14 @@
       }
     },
     {
-      "name": "items_getChangeOrderActions",
+      "name": "items_getChangeNoticeActions",
       "module": "items",
       "classification": "READ",
-      "description": "get change order actions",
+      "description": "get change notice actions",
       "paramCount": 1,
       "serviceParams": [
         "client",
-        "changeOrderId",
+        "changeNoticeId",
         "companyId"
       ],
       "injectAuth": [
@@ -15690,20 +15692,20 @@
       "schema": {
         "type": "object",
         "properties": {
-          "changeOrderId": {
+          "changeNoticeId": {
             "type": "string"
           }
         },
         "required": [
-          "changeOrderId"
+          "changeNoticeId"
         ]
       }
     },
     {
-      "name": "items_updateChangeOrderActionStatus",
+      "name": "items_updateChangeNoticeActionStatus",
       "module": "items",
       "classification": "WRITE",
-      "description": "update change order action status",
+      "description": "update change notice action status",
       "paramCount": 2,
       "serviceParams": [
         "client",
@@ -15730,10 +15732,10 @@
       }
     },
     {
-      "name": "items_deleteChangeOrderAction",
+      "name": "items_deleteChangeNoticeAction",
       "module": "items",
       "classification": "DESTRUCTIVE",
-      "description": "delete change order action",
+      "description": "delete change notice action",
       "paramCount": 1,
       "serviceParams": [
         "client",
@@ -15755,14 +15757,14 @@
       }
     },
     {
-      "name": "items_updateChangeOrderActionOrder",
+      "name": "items_updateChangeNoticeActionOrder",
       "module": "items",
       "classification": "WRITE",
-      "description": "update change order action order",
+      "description": "update change notice action order",
       "paramCount": 2,
       "serviceParams": [
         "db",
-        "updates"
+        "args"
       ],
       "injectAuth": [
         "companyId",
@@ -15771,24 +15773,39 @@
       "schema": {
         "type": "object",
         "properties": {
-          "id": {
+          "changeNoticeId": {
             "type": "string"
           },
-          "sortOrder": {
-            "type": "number"
+          "updates": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "sortOrder": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "id",
+                "sortOrder"
+              ]
+            }
           }
         },
         "required": [
-          "id",
-          "sortOrder"
+          "changeNoticeId",
+          "updates"
         ]
       }
     },
     {
-      "name": "items_getChangeOrderRequiredActions",
+      "name": "items_getChangeNoticeRequiredActions",
       "module": "items",
       "classification": "READ",
-      "description": "get change order required actions",
+      "description": "get change notice required actions",
       "paramCount": 3,
       "serviceParams": [
         "client",
@@ -15824,10 +15841,10 @@
       }
     },
     {
-      "name": "items_getChangeOrderRequiredActionsList",
+      "name": "items_getChangeNoticeRequiredActionsList",
       "module": "items",
       "classification": "READ",
-      "description": "get change order required actions list",
+      "description": "get change notice required actions list",
       "paramCount": 0,
       "serviceParams": [
         "client",
@@ -15842,14 +15859,15 @@
       }
     },
     {
-      "name": "items_getChangeOrderRequiredAction",
+      "name": "items_getChangeNoticeRequiredAction",
       "module": "items",
       "classification": "READ",
-      "description": "get change order required action",
+      "description": "get change notice required action",
       "paramCount": 1,
       "serviceParams": [
         "client",
-        "id"
+        "id",
+        "companyId"
       ],
       "injectAuth": [
         "companyId"
@@ -15867,10 +15885,10 @@
       }
     },
     {
-      "name": "items_upsertChangeOrderRequiredAction",
+      "name": "items_upsertChangeNoticeRequiredAction",
       "module": "items",
       "classification": "WRITE",
-      "description": "upsert change order required action",
+      "description": "upsert change notice required action",
       "paramCount": 3,
       "serviceParams": [
         "client",
@@ -15901,14 +15919,15 @@
       }
     },
     {
-      "name": "items_deleteChangeOrderRequiredAction",
+      "name": "items_deleteChangeNoticeRequiredAction",
       "module": "items",
       "classification": "DESTRUCTIVE",
-      "description": "delete change order required action",
+      "description": "delete change notice required action",
       "paramCount": 1,
       "serviceParams": [
         "client",
-        "id"
+        "id",
+        "companyId"
       ],
       "injectAuth": [
         "companyId"
@@ -15926,10 +15945,10 @@
       }
     },
     {
-      "name": "items_setChangeOrderActionTasks",
+      "name": "items_setChangeNoticeActionTasks",
       "module": "items",
       "classification": "WRITE",
-      "description": "set change order action tasks",
+      "description": "set change notice action tasks",
       "paramCount": 2,
       "serviceParams": [
         "client",
@@ -15942,7 +15961,7 @@
       "schema": {
         "type": "object",
         "properties": {
-          "changeOrderId": {
+          "changeNoticeId": {
             "type": "string"
           },
           "requiredActionIds": {
@@ -15953,16 +15972,16 @@
           }
         },
         "required": [
-          "changeOrderId",
+          "changeNoticeId",
           "requiredActionIds"
         ]
       }
     },
     {
-      "name": "items_seedDefaultChangeOrderActions",
+      "name": "items_seedDefaultChangeNoticeActions",
       "module": "items",
       "classification": "WRITE",
-      "description": "seed default change order actions",
+      "description": "seed default change notice actions",
       "paramCount": 1,
       "serviceParams": [
         "client",
@@ -15974,12 +15993,12 @@
       "schema": {
         "type": "object",
         "properties": {
-          "changeOrderId": {
+          "changeNoticeId": {
             "type": "string"
           }
         },
         "required": [
-          "changeOrderId"
+          "changeNoticeId"
         ]
       }
     },
@@ -16006,14 +16025,14 @@
       }
     },
     {
-      "name": "items_getChangeOrderDiff",
+      "name": "items_getChangeNoticeDiff",
       "module": "items",
       "classification": "READ",
-      "description": "get change order diff",
+      "description": "get change notice diff",
       "paramCount": 1,
       "serviceParams": [
         "client",
-        "changeOrderId",
+        "changeNoticeId",
         "companyId"
       ],
       "injectAuth": [
@@ -16022,12 +16041,12 @@
       "schema": {
         "type": "object",
         "properties": {
-          "changeOrderId": {
+          "changeNoticeId": {
             "type": "string"
           }
         },
         "required": [
-          "changeOrderId"
+          "changeNoticeId"
         ]
       }
     },
@@ -27786,31 +27805,6 @@
       }
     },
     {
-      "name": "quality_getIssueAction",
-      "module": "quality",
-      "classification": "READ",
-      "description": "get issue action",
-      "paramCount": 1,
-      "serviceParams": [
-        "client",
-        "id"
-      ],
-      "injectAuth": [
-        "companyId"
-      ],
-      "schema": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "id"
-        ]
-      }
-    },
-    {
       "name": "quality_getIssueActionTasks",
       "module": "quality",
       "classification": "READ",
@@ -35602,6 +35596,32 @@
       "paramCount": 1,
       "serviceParams": [
         "client",
+        "itemId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "itemId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "itemId"
+        ]
+      }
+    },
+    {
+      "name": "sales_getOpenSalesOrderLinesForItem",
+      "module": "sales",
+      "classification": "READ",
+      "description": "get open sales order lines for item",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "companyId",
         "itemId"
       ],
       "injectAuth": [

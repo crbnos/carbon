@@ -27,18 +27,19 @@ import {
   toast,
   VStack
 } from "@carbon/react";
-import {
-  convertKbToString,
-  isModelRawDownloadable,
-  MODEL_RAW_KEEP_MAX_BYTES
-} from "@carbon/utils";
+import { convertKbToString, MODEL_RAW_KEEP_MAX_BYTES } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { FileObject } from "@supabase/storage-js";
 import type { ChangeEvent } from "react";
 import { useCallback } from "react";
 import { LuEllipsisVertical, LuUpload } from "react-icons/lu";
 import { Link, useFetchers, useRevalidator, useSubmit } from "react-router";
-import { DocumentPreview, FileDropzone, Hyperlink } from "~/components";
+import {
+  DocumentPreview,
+  FileDropzone,
+  Hyperlink,
+  ModelOptimizedIndicator
+} from "~/components";
 import DocumentIcon from "~/components/DocumentIcon";
 import { Enumerable } from "~/components/Enumerable";
 import { useDateFormatter, usePermissions, useUser } from "~/hooks";
@@ -480,6 +481,9 @@ const OpportunityLineDocuments = ({
                             {modelUpload.modelName}
                           </Hyperlink>
                         </VStack>
+                        <ModelOptimizedIndicator
+                          modelPath={modelUpload.modelPath}
+                        />
                       </HStack>
                     </Td>
                     <Td>
@@ -509,13 +513,11 @@ const OpportunityLineDocuments = ({
                                 <Trans>View</Trans>
                               </Link>
                             </DropdownMenuItem>
-                            {isModelRawDownloadable(modelUpload.modelPath) && (
-                              <DropdownMenuItem
-                                onClick={() => downloadModel(modelUpload)}
-                              >
-                                <Trans>Download</Trans>
-                              </DropdownMenuItem>
-                            )}
+                            <DropdownMenuItem
+                              onClick={() => downloadModel(modelUpload)}
+                            >
+                              <Trans>Download</Trans>
+                            </DropdownMenuItem>
                             <DropdownMenuItem
                               destructive
                               disabled={!canDelete}

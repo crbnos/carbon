@@ -118,6 +118,7 @@ export function renderEnv(opts: {
   // which is why we can't reuse ${DOMAIN} (e.g. `main.dev` won't match the
   // `erp.main.dev` host the SDK URL points at).
   lines.push(`INNGEST_TLS_HOST=${portless ? host("erp") : "localhost"}`);
+  lines.push(`EMAIL_DEV_PORT=${ports.PORT_EMAIL}`);
   lines.push("");
   if (includeAssembler) {
     lines.push("# Assembler service (CAD conversion + motion planning)");

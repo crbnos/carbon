@@ -94,6 +94,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
           refreshToken: tokenData.refresh_token,
           expiresAt: new Date(Date.now() + 3600 * 1000).toISOString()
         },
+        // The scope actually granted by this authorization. Onshape returns it on
+        // the token response; fall back to what we requested (install.ts always
+        // asks for read+write). Used to tell an already-connected user they must
+        // reconnect before enabling asset sync — a token minted before write was
+        // requested is read-only, and a refresh can't widen it. Legacy installs
+        // predate this field (no `scope`), which reads as read-only → prompt.
+        scope: tokenData.scope ?? "OAuth2Read OAuth2Write",
         baseUrl: "https://cad.onshape.com"
       },
       updatedBy: userId,
@@ -101,6 +108,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
     });
 
     if (createdIntegration?.data?.metadata) {
+      // The release webhook is registered when the user enables asset sync (see
+      // the integration settings save + ensureOnshapeReleaseWebhook), not on
+      // connect — asset sync is off by default, so there's nothing to subscribe
+      // to yet at this point.
       const requestUrl = new URL(request.url);
 
       if (!VERCEL_URL || VERCEL_URL.includes("localhost")) {

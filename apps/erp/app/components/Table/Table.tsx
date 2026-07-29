@@ -102,6 +102,12 @@ interface TableProps<T extends object> {
     label: string;
   }[];
   primaryAction?: ReactNode;
+  // Optional override for the "no rows" state. When provided and the table is
+  // empty (and not loading), this is rendered instead of the default
+  // "No results found" / "No data exists" blocks. Use it when the generic
+  // filtered empty state would be misleading — e.g. a table pre-filtered to a
+  // parent entity that simply has no child records yet.
+  emptyState?: ReactNode;
   // Optional controls rendered in the toolbar row next to the search/filter
   // (e.g. quick filter toggles that write their own `filter` URL params).
   headerActions?: ReactNode;
@@ -255,6 +261,7 @@ const Table = <T extends object>({
   editableComponents,
   importCSV,
   primaryAction,
+  emptyState,
   headerActions,
   table: tableName,
   title,
@@ -1053,6 +1060,10 @@ const Table = <T extends object>({
                     ))}
                   </Tbody>
                 </TableBase>
+              </div>
+            ) : emptyState ? (
+              <div className="flex flex-col w-full h-full items-center justify-center gap-4">
+                {emptyState}
               </div>
             ) : hasFilters ? (
               <div className="flex flex-col w-full h-full items-center justify-center gap-4">

@@ -354,12 +354,12 @@
     },
     {
       "slug": "docs/reference/change-orders/creating",
-      "title": "Create a change order",
-      "description": "The entry points that open a change order, the fields on the create form, and how change orders surface back on a part or tool page.",
+      "title": "Create a change notice",
+      "description": "The entry points that open a change notice, the fields on the create form, and how change notices surface back on a part or tool page.",
       "keywords": [
         "create",
         "change",
-        "order",
+        "notice",
         "docs",
         "reference",
         "orders",
@@ -368,15 +368,15 @@
       "headings": [
         "Entry points",
         "The create form",
-        "Where change orders surface on a part",
+        "Where change notices surface on a part",
         "Related"
       ]
     },
     {
       "slug": "docs/reference/change-orders/index",
-      "title": "Change orders",
+      "title": "Change notices",
       "description": "How Carbon drafts an engineering change against real methods, reviews it as a diff, and releases it so downstream planning supersedes the versions it replaces.",
-      "keywords": ["change", "orders", "docs", "reference", "index"],
+      "keywords": ["change", "notices", "docs", "reference", "orders", "index"],
       "headings": [
         "The affected item is the unit of work",
         "Find one in the list",
@@ -387,7 +387,7 @@
     {
       "slug": "docs/reference/change-orders/lifecycle",
       "title": "Lifecycle & release",
-      "description": "The five change-order stages, the impact panel, the diff review, and exactly what release does when a change order reaches Done.",
+      "description": "The five change-notice stages, the Implementation lock and Reopen, the impact panel, the diff review, and exactly what release does when a change notice reaches Done.",
       "keywords": [
         "lifecycle",
         "release",
@@ -398,20 +398,24 @@
       ],
       "headings": [
         "The stages",
+        "Implementation freezes the engineering content",
+        "Reopen",
         "The impact panel",
         "Review the changes, then release",
         "What release does",
-        "Parallel change orders on the same part",
+        "Parallel change notices on the same part",
         "Related",
         "Troubleshooting",
-        "\"Cannot modify a completed change order.\"",
-        "Release button not available"
+        "\"This change notice is being implemented, so its changes are locked. Reopen it to make changes.\"",
+        "\"This change notice is closed, so its changes are read-only.\"",
+        "Release button not available",
+        "Can't find Reopen"
       ]
     },
     {
       "slug": "docs/reference/change-orders/setup",
       "title": "Categories & actions",
-      "description": "The two company-scoped lookups that sit alongside change orders — the category list and the reusable action-task templates.",
+      "description": "The two company-scoped lookups that sit alongside change notices — the category list and the reusable action-task templates — plus linking an action task to Linear.",
       "keywords": [
         "categories",
         "actions",
@@ -421,7 +425,12 @@
         "orders",
         "setup"
       ],
-      "headings": ["Change order categories", "Change order actions", "Related"]
+      "headings": [
+        "Change notice categories",
+        "Change notice actions",
+        "Link a task to Linear",
+        "Related"
+      ]
     },
     {
       "slug": "docs/reference/change-orders/supersession",
@@ -1305,7 +1314,7 @@
     {
       "slug": "docs/reference/sequences",
       "title": "Numbering sequences",
-      "description": "The per-company generator behind every readable document number — jobs, change orders, payments, and more.",
+      "description": "The per-company generator behind every readable document number — jobs, change notices, payments, and more.",
       "keywords": ["numbering", "sequences", "docs", "reference"],
       "headings": [
         "What a sequence is",

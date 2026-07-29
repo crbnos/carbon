@@ -45,8 +45,8 @@ msgid "(excluded for this customer)"
 msgstr "(이 고객에게는 제외됨)"
 
 #. placeholder {0}: open.length
-msgid "{0, plural, one {This part is on 1 open change order} other {This part is on # open change orders}}"
-msgstr "{0, plural, one {이 부품은 1개의 미처리 변경주문에 있습니다} other {이 부품은 #개의 미처리 변경주문에 있습니다}}"
+msgid "{0, plural, one {This part is on 1 open change notice} other {This part is on # open change notices}}"
+msgstr "{0, plural, one {이 부품은 1개의 미완료 변경 공지에 포함되어 있습니다} other {이 부품은 #개의 미완료 변경 공지에 포함되어 있습니다}}"
 
 #. placeholder {0}: ar.count
 msgid "{0} customers with a balance"
@@ -224,8 +224,8 @@ msgstr "90일"
 msgid "A Carbon-run data migration — you load your own data"
 msgstr "Carbon이 진행하는 데이터 마이그레이션 — 직접 데이터를 업로드"
 
-msgid "A change order tracks a controlled engineering or manufacturing change through review and implementation."
-msgstr "변경주문은 검토 및 시행을 통해 제어되는 엔지니어링 또는 제조 변경사항을 추적합니다."
+msgid "A change notice tracks a controlled engineering or manufacturing change through review and implementation."
+msgstr "변경 공지는 엔지니어링 또는 제조 변경 사항을 검토 및 구현 단계를 거쳐 추적합니다."
 
 msgid "A clearing account holding the value of goods received but not yet billed; the supplier invoice clears it."
 msgstr "입고되었으나 아직 청구되지 않은 재화의 금액을 보관하는 경과 계정으로, 공급업체 인보이스가 처리되면 정산됩니다."
@@ -1145,7 +1145,7 @@ msgstr "공정 {name}을(를) 활성화하시겠습니까? 드롭다운에 다�
 msgid "Are you sure you want to activate this gauge?."
 msgstr "이 측정기를 활성화하시겠습니까?"
 
-#. placeholder {0}: routeData?.changeOrder?.changeOrderId ?? ""
+#. placeholder {0}: routeData?.changeNotice?.changeOrderId ?? ""
 msgid "Are you sure you want to cancel {0}? It will be closed and read-only until you reopen it."
 msgstr "{0}을(를) 취소하시겠습니까? 취소되면 다시 열 때까지 닫힌 상태로 읽기 전용이 됩니다."
 
@@ -1217,6 +1217,9 @@ msgstr "{0}을(를) 삭제하시겠습니까?"
 msgid "Are you sure you want to delete {0}? This cannot be undone."
 msgstr "{0}을(를) 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다."
 
+msgid "Are you sure you want to delete {name}? This cannot be undone."
+msgstr "{name}을(를) 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다."
+
 #. placeholder {0}: selectedCustomField?.name
 msgid "Are you sure you want to delete the {0} field?"
 msgstr "{0} 필드를 삭제하시겠습니까?"
@@ -1245,12 +1248,12 @@ msgid "Are you sure you want to delete the asset class: {0}? This cannot be undo
 msgstr "자산 클래스: {0}를 삭제하시겠습니까? 이 작업은 실행 취소할 수 없습니다."
 
 #. placeholder {0}: requiredAction.name
-msgid "Are you sure you want to delete the change order action: {0}? This cannot be undone."
-msgstr "변경 주문 작업 '{0}'을(를) 삭제하시겠습니까? 이 작업은 실행 취소할 수 없습니다."
+msgid "Are you sure you want to delete the change notice action: {0}? This cannot be undone."
+msgstr "변경 공지 작업 {0}을(를) 삭제하시겠습니까? 이 작업은 실행 취소할 수 없습니다."
 
-#. placeholder {0}: changeOrderType.name
-msgid "Are you sure you want to delete the change order category: {0}? This cannot be undone."
-msgstr "변경주문 카테고리 {0}을(를) 삭제하시겠습니까? 이는 실행 취소할 수 없습니다."
+#. placeholder {0}: changeNoticeType.name
+msgid "Are you sure you want to delete the change notice category: {0}? This cannot be undone."
+msgstr "변경 공지 카테고리 {0}을(를) 삭제하시겠습니까? 이 작업은 실행 취소할 수 없습니다."
 
 msgid "Are you sure you want to delete the contractor: {name}? This cannot be undone."
 msgstr "계약직 {name}을(를) 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다."
@@ -1410,8 +1413,8 @@ msgstr "웹훅 {0}을(를) 삭제하시겠습니까? 이 작업은 되돌릴 수
 msgid "Are you sure you want to delete this approval rule? This cannot be undone."
 msgstr "이 승인 규칙을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다."
 
-msgid "Are you sure you want to delete this change order?"
-msgstr "이 변경주문을 삭제하시겠습니까?"
+msgid "Are you sure you want to delete this change notice?"
+msgstr "이 변경 공지를 삭제하시겠습니까?"
 
 msgid "Are you sure you want to delete this gauge?"
 msgstr "이 측정기를 삭제하시겠습니까?"
@@ -2052,11 +2055,11 @@ msgstr "이 파일을 다운로드할 수 없습니다"
 msgid "Cancel"
 msgstr "취소"
 
-msgid "Cancel change order"
-msgstr "변경 주문 취소"
+msgid "Cancel change notice"
+msgstr "변경 공지 취소"
 
-msgid "Cancel Change Order"
-msgstr "변경 주문 취소"
+msgid "Cancel Change Notice"
+msgstr "변경 공지 취소"
 
 msgid "Cancel Job"
 msgstr "작업 취소"
@@ -2232,20 +2235,20 @@ msgstr "문서 변경"
 msgid "Change Inspection Plan"
 msgstr "검사 계획 변경"
 
-msgid "Change order"
-msgstr "변경 주문"
+msgid "Change notice"
+msgstr "변경 공지"
 
-msgid "Change Order"
-msgstr "변경주문"
+msgid "Change Notice"
+msgstr "변경 공지"
 
-msgid "Change Order Actions"
-msgstr "변경 주문 작업"
+msgid "Change Notice Actions"
+msgstr "변경 공지 작업"
 
-msgid "Change Order Types"
-msgstr "변경주문 유형"
+msgid "Change Notice Types"
+msgstr "변경 공지 유형"
 
-msgid "Change Orders"
-msgstr "변경주문"
+msgid "Change Notices"
+msgstr "변경 공지"
 
 msgid "Change status"
 msgstr "상태 변경"
@@ -2840,8 +2843,8 @@ msgstr "작업 번호 복사"
 msgid "Copy link"
 msgstr "링크 복사"
 
-msgid "Copy link to change order"
-msgstr "변경주문 링크 복사"
+msgid "Copy link to change notice"
+msgstr "변경 공지 링크 복사"
 
 msgid "Copy link to consumable"
 msgstr "소모품 링크 복사"
@@ -3064,8 +3067,8 @@ msgstr "{0} 값 생성"
 msgid "Create & Snapshot"
 msgstr "생성 및 스냅샷"
 
-msgid "Create a change order for the new revision and open it"
-msgstr "새 개정에 대한 변경 주문을 만들고 열기"
+msgid "Create a change notice for the new revision and open it"
+msgstr "새 개정본을 위한 변경 공지를 만들고 엽니다"
 
 msgid "Create a new kanban card for scan-based replenishment."
 msgstr "스캔 기반 보충을 위한 새 칸반 카드를 생성합니다."
@@ -3094,8 +3097,8 @@ msgstr "구매주문 생성 및 승인"
 msgid "Create audit trail entries"
 msgstr "감사 추적 항목 생성"
 
-msgid "Create Change Order"
-msgstr "변경주문 생성"
+msgid "Create Change Notice"
+msgstr "변경 공지 만들기"
 
 msgid "Create Issue"
 msgstr "이슈 생성"
@@ -3151,11 +3154,11 @@ msgstr "생성일"
 msgid "Created By"
 msgstr "생성자"
 
-msgid "Created change order action"
-msgstr "변경 주문 작업 생성됨"
+msgid "Created change notice action"
+msgstr "변경 공지 작업 생성됨"
 
-msgid "Created change order type"
-msgstr "생성된 변경 주문 유형"
+msgid "Created change notice type"
+msgstr "변경 공지 유형 생성됨"
 
 msgid "Created consumable"
 msgstr "소모품 생성됨"
@@ -3825,8 +3828,8 @@ msgstr "속성 삭제"
 msgid "Delete Category"
 msgstr "카테고리 삭제"
 
-msgid "Delete Change Order"
-msgstr "변경주문 삭제"
+msgid "Delete Change Notice"
+msgstr "변경 공지 삭제"
 
 msgid "Delete Consumable"
 msgstr "소모품 삭제"
@@ -4555,14 +4558,14 @@ msgstr "속성 카테고리 수정"
 msgid "Edit Category"
 msgstr "카테고리 수정"
 
-msgid "Edit Change Order"
-msgstr "변경주문 편집"
+msgid "Edit Change Notice"
+msgstr "변경 공지 편집"
 
-msgid "Edit Change Order Action"
-msgstr "변경 주문 작업 편집"
+msgid "Edit Change Notice Action"
+msgstr "변경 공지 작업 편집"
 
-msgid "Edit Change Order Type"
-msgstr "변경 주문 유형 편집"
+msgid "Edit Change Notice Type"
+msgstr "변경 공지 유형 편집"
 
 msgid "Edit column visibility"
 msgstr "열 표시 여부 수정"
@@ -6937,6 +6940,9 @@ msgstr "품목 및 생산"
 msgid "Items inside this window get a yellow badge."
 msgstr "이 기간 내의 항목에는 노란색 배지가 표시됩니다."
 
+msgid "Items whose bill of materials includes this item"
+msgstr "자재명세서에 이 품목을 포함하는 품목"
+
 msgid "Items: item master, BOMs, Bill of Process, engineering changes, CAD"
 msgstr "품목: 품목 마스터, BOM, 공정(BOP), 설계 변경, CAD"
 
@@ -6981,6 +6987,9 @@ msgstr "진행 중인 작업"
 
 msgid "Jobs Required"
 msgstr "필요한 작업"
+
+msgid "Jobs that have this item on their bill of materials"
+msgstr "자재명세서에 이 품목이 포함된 작업"
 
 #. placeholder {0}: company?.name ?? "Company"
 msgid "Join {0}"
@@ -7224,6 +7233,9 @@ msgstr "Jira 이슈 연결"
 
 msgid "Link Linear Issue"
 msgstr "Linear 이슈 연결"
+
+msgid "Link to sales order line"
+msgstr "판매주문 라인에 연결"
 
 #. placeholder {0}: r.linkedSum
 #. placeholder {1}: r.quantity
@@ -8008,14 +8020,14 @@ msgstr "신규 속성"
 msgid "New Attribute Category"
 msgstr "신규 속성 카테고리"
 
-msgid "New Change Order"
-msgstr "새 변경 주문"
+msgid "New Change Notice"
+msgstr "새 변경 공지"
 
-msgid "New Change Order Action"
-msgstr "새 변경 주문 작업"
+msgid "New Change Notice Action"
+msgstr "새 변경 공지 작업"
 
-msgid "New Change Order Type"
-msgstr "새 변경 주문 유형"
+msgid "New Change Notice Type"
+msgstr "새 변경 공지 유형"
 
 msgid "New Consumable"
 msgstr "신규 소모품"
@@ -8359,6 +8371,9 @@ msgstr "사용 가능한 추적 개체가 없습니다"
 msgid "No BOM input has a shelf-life policy"
 msgstr "BOM 투입 항목 중 유효기간 정책이 설정된 항목이 없습니다"
 
+msgid "No CAD model to preview."
+msgstr "미리 볼 수 있는 CAD 모델이 없습니다."
+
 msgid "No calibration records found"
 msgstr "교정 기록이 없습니다"
 
@@ -8485,6 +8500,12 @@ msgstr "메모 없음"
 msgid "No open invoices"
 msgstr "미결 인보이스가 없습니다"
 
+msgid "No open orders for this item are available to link."
+msgstr "이 항목에 연결할 수 있는 미결 주문이 없습니다."
+
+msgid "No open sales order lines"
+msgstr "미결 판매주문 라인이 없습니다."
+
 msgid "No operations require picking at this location"
 msgstr "이 위치에서 피킹이 필요한 공정작업이 없습니다"
 
@@ -8538,6 +8559,9 @@ msgstr "설정된 프린터가 없습니다. \"프린터 추가\"를 클릭하�
 
 msgid "No process selected"
 msgstr "프로세스를 선택하지 않았습니다"
+
+msgid "No production events recorded for this operation yet"
+msgstr "이 공정작업에 대해 아직 기록된 생산 이벤트가 없습니다"
 
 msgid "No Quote"
 msgstr "견적 없음"
@@ -8800,8 +8824,8 @@ msgstr "이런! 접근하려는 링크가 유효하지 않습니다."
 msgid "Open"
 msgstr "열림"
 
-msgid "Open a change order"
-msgstr "변경 주문 열기"
+msgid "Open a change notice"
+msgstr "변경 공지 열기"
 
 msgid "Open Actions"
 msgstr "미결 조치"
@@ -8818,8 +8842,8 @@ msgstr "미결 매출채권"
 msgid "Open Audit Log"
 msgstr "감사 로그 열기"
 
-msgid "Open change orders affecting this part"
-msgstr "이 부품에 영향을 미치는 개방된 변경 주문"
+msgid "Open change notices affecting this part"
+msgstr "이 부품에 영향을 주는 미완료 변경 공지 열기"
 
 msgid "Open Date"
 msgstr "개설일"
@@ -8830,11 +8854,11 @@ msgstr "미결 작업지시"
 msgid "Open in Carbon"
 msgstr "Carbon에서 열기"
 
-msgid "Open in change order {ids}. Release it to create new versions or revisions."
-msgstr "변경 주문 {ids}에서 열기. 새 버전 또는 개정을 만들려면 릴리스하세요."
+msgid "Open in change notice {ids}. Release it to create new versions or revisions."
+msgstr "변경 공지 {ids}에서 열기. 새 버전 또는 개정본을 만들려면 이를 릴리스하십시오."
 
-msgid "Open in change orders {ids}. Release them to create new versions or revisions."
-msgstr "변경 요청 {ids}에서 열기. 이들을 릴리스하여 새로운 버전 또는 개정판을 생성합니다."
+msgid "Open in change notices {ids}. Release them to create new versions or revisions."
+msgstr "변경 공지 {ids}에서 열기. 새 버전 또는 개정본을 만들려면 이들을 릴리스하십시오."
 
 msgid "Open in MES"
 msgstr "MES에서 열기"
@@ -8934,6 +8958,9 @@ msgstr "작업자는 PIN 인증을 통해 공유 워크스테이션을 사용할
 
 msgid "Opportunity"
 msgstr "기회"
+
+msgid "Optimized for fast previews — downloads always serve the original uploaded file"
+msgstr "빠른 미리보기에 최적화됨 — 다운로드는 항상 원본 업로드 파일을 제공합니다."
 
 msgid "Optional"
 msgstr "선택 사항"
@@ -10056,6 +10083,9 @@ msgstr "견적 ID"
 msgid "Quote Line"
 msgstr "견적 라인"
 
+msgid "Quote lines whose bill of materials includes this item"
+msgstr "자재명세서에 이 품목을 포함하는 견적 라인"
+
 msgid "Quote Location"
 msgstr "견적 위치"
 
@@ -10309,8 +10339,8 @@ msgstr "새로고침"
 msgid "Refresh exchange rate"
 msgstr "환율 새로고침"
 
-msgid "Regenerate"
-msgstr "재생성"
+msgid "Regenerate thumbnail from the 3D model"
+msgstr "3D 모델에서 썸네일 재생성"
 
 msgid "Regenerating thumbnail…"
 msgstr "썸네일 재생성 중…"
@@ -10357,8 +10387,8 @@ msgstr "상대적 타임라인 · 날짜 확정 예정"
 msgid "Release"
 msgstr "릴리즈"
 
-msgid "Release change order"
-msgstr "변경 주문 릴리스"
+msgid "Release change notice"
+msgstr "변경 공지 릴리스"
 
 msgid "Release control"
 msgstr "릴리스 제어"
@@ -13148,6 +13178,12 @@ msgstr "다음 작업에 이 작업장이 지정된 공정작업이 있습니다
 msgid "These journal entries are still Draft, so their debits and credits aren't in the ledger for this period. Post each one, or re-date it into a later open period."
 msgstr "이 분개들은 아직 임시이므로 그 차변과 대변이 이 기간의 총계정원장에 없습니다. 각각을 전기하거나 나중의 개방된 기간으로 재날짜하세요."
 
+msgid "This change notice is being implemented, so its changes are locked. Reopen it to edit."
+msgstr "이 변경 사항은 구현 중이므로 변경 사항이 잠겨 있습니다. 편집하려면 다시 열어주세요."
+
+msgid "This change notice is closed, so its changes are read-only."
+msgstr "이 변경 사항은 닫혀 있으므로 변경 사항이 읽기 전용입니다."
+
 msgid "This completes the Discovery step."
 msgstr "이것으로 발견(Discovery) 단계가 완료됩니다."
 
@@ -13232,11 +13268,11 @@ msgstr "이 기간에는 게시된 분개가 없으며 영구적으로 삭제할
 msgid "This Quarter"
 msgstr "이번 분기"
 
-msgid "This revision is released (Production). Changes should normally flow through a change order."
-msgstr "이 리뷰는 릴리스 상태입니다(프로덕션). 변경 사항은 일반적으로 변경 주문을 통해 진행되어야 합니다."
+msgid "This revision is released (Production). Changes should normally flow through a change notice."
+msgstr "이 개정본이 릴리스되었습니다(프로덕션). 변경 사항은 일반적으로 변경 공지를 통해 처리되어야 합니다."
 
-msgid "This revision is released (Production). Open a change order to modify it."
-msgstr "이 리뷰는 릴리스 상태입니다(프로덕션). 수정하려면 변경 주문을 열어주세요."
+msgid "This revision is released (Production). Open a change notice to modify it."
+msgstr "이 개정본이 릴리스되었습니다(프로덕션). 수정하려면 변경 공지를 열어주십시오."
 
 msgid "This sales order has associated jobs. Choose what to do with them."
 msgstr "이 판매주문에는 연결된 작업이 있습니다. 처리 방법을 선택하세요."
@@ -13253,6 +13289,13 @@ msgstr "이 공급업체"
 
 msgid "This updates the theme for all users of the application"
 msgstr "이 설정은 애플리케이션의 모든 사용자에 대한 테마를 업데이트합니다"
+
+msgid "This version belongs to an open <0>change notice</0>. Edit it there."
+msgstr "이 버전은 열려 있는 <0>변경 공지</0>에 속합니다. 거기서 편집하세요."
+
+#. placeholder {0}: lock.readableId
+msgid "This version belongs to change notice <0>{0}</0>. Edit it there."
+msgstr "이 버전은 변경 공지 <0>{0}</0>에 속합니다. 거기서 편집하세요."
 
 msgid "This will make this version read-only and replace any material make methods with this version."
 msgstr "이렇게 하면 이 버전이 읽기 전용으로 전환되고, 자재 제조 방법이 모두 이 버전으로 교체됩니다."
@@ -14676,6 +14719,9 @@ msgstr "유효기한을 변경하는 이유는 무엇입니까?"
 msgid "Why is this included?"
 msgstr "이것이 포함된 이유는 무엇입니까?"
 
+msgid "Why is this locked?"
+msgstr "왜 이것이 잠겨 있나요?"
+
 msgid "Why stock is changing — Positive (found), Negative (lost/scrap), or Set (replace count with a measured value)."
 msgstr "재고가 변경되는 이유 — 양수(발견), 음수(분실/스크랩), 또는 설정(측정값으로 수량 대체)."
 
@@ -14827,6 +14873,9 @@ msgstr "주문 수량 {1}보다 {leftoverQuantity}개 더 많은 {0}을(를) 완
 msgid "You don't have permission to edit this bill of material."
 msgstr "이 자재명세서를 수정할 권한이 없습니다."
 
+msgid "You don't have permission to edit this bill of process."
+msgstr "이 프로세스 명세서를 편집할 권한이 없습니다."
+
 msgid "You drive it; we make sure it's done right. Expert eyes on your setup, data, and go-live."
 msgstr "귀사가 주도하고, 저희가 제대로 되도록 확인합니다. 설정, 데이터, 도입 전반을 전문가가 점검합니다."
 
@@ -14861,8 +14910,8 @@ msgstr "{hoursElapsed}시간 동안 출근 상태입니다. 퇴근 처리를 잊
 msgid "Your books and how money flows."
 msgstr "귀사의 장부와 자금 흐름."
 
-msgid "Your changes go into a new draft version released with this change order."
-msgstr "변경 사항이 이 변경 주문과 함께 릴리스되는 새로운 초안 버전으로 이동합니다."
+msgid "Your changes go into a new draft version released with this change notice."
+msgstr "변경 사항이 이 변경 공지와 함께 릴리스된 새 초안 버전으로 이동합니다."
 
 msgid "Your Console PIN"
 msgstr "콘솔 PIN"

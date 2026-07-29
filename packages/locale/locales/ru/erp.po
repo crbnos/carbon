@@ -45,8 +45,8 @@ msgid "(excluded for this customer)"
 msgstr "(исключено для этого клиента)"
 
 #. placeholder {0}: open.length
-msgid "{0, plural, one {This part is on 1 open change order} other {This part is on # open change orders}}"
-msgstr "{0, plural, one {Эта деталь находится в 1 открытом приказе об изменении} other {Эта деталь находится в # открытых приказах об изменении}}"
+msgid "{0, plural, one {This part is on 1 open change notice} other {This part is on # open change notices}}"
+msgstr "{0, plural, one {Эта деталь находится на 1 открытой уведомлении об изменении} other {Эта деталь находится на # открытых уведомлениях об изменении}}"
 
 #. placeholder {0}: ar.count
 msgid "{0} customers with a balance"
@@ -224,8 +224,8 @@ msgstr "90 дней"
 msgid "A Carbon-run data migration — you load your own data"
 msgstr "Миграция данных, управляемая Carbon — вы загружаете свои собственные данные"
 
-msgid "A change order tracks a controlled engineering or manufacturing change through review and implementation."
-msgstr "Приказ об изменении отслеживает контролируемое инженерное или производственное изменение на этапах проверки и внедрения."
+msgid "A change notice tracks a controlled engineering or manufacturing change through review and implementation."
+msgstr "Уведомление об изменении отслеживает контролируемое инженерное или производственное изменение через проверку и реализацию."
 
 msgid "A clearing account holding the value of goods received but not yet billed; the supplier invoice clears it."
 msgstr "Расчетный счет, содержащий стоимость полученных, но не выставленных счетом товаров; счет поставщика его закрывает."
@@ -1145,7 +1145,7 @@ msgstr "Вы уверены, что хотите активировать про
 msgid "Are you sure you want to activate this gauge?."
 msgstr "Вы уверены, что хотите активировать этот прибор?."
 
-#. placeholder {0}: routeData?.changeOrder?.changeOrderId ?? ""
+#. placeholder {0}: routeData?.changeNotice?.changeOrderId ?? ""
 msgid "Are you sure you want to cancel {0}? It will be closed and read-only until you reopen it."
 msgstr "Вы уверены, что хотите отменить {0}? Он будет закрыт и доступен только для чтения, пока вы его не откроете."
 
@@ -1217,6 +1217,9 @@ msgstr "Вы уверены, что хотите удалить {0}?"
 msgid "Are you sure you want to delete {0}? This cannot be undone."
 msgstr "Вы уверены, что хотите удалить {0}? Это действие невозможно отменить."
 
+msgid "Are you sure you want to delete {name}? This cannot be undone."
+msgstr "Вы уверены, что хотите удалить {name}? Это действие невозможно отменить."
+
 #. placeholder {0}: selectedCustomField?.name
 msgid "Are you sure you want to delete the {0} field?"
 msgstr "Вы уверены, что хотите удалить поле {0}?"
@@ -1245,12 +1248,12 @@ msgid "Are you sure you want to delete the asset class: {0}? This cannot be undo
 msgstr "Вы уверены, что хотите удалить класс активов: {0}? Это невозможно отменить."
 
 #. placeholder {0}: requiredAction.name
-msgid "Are you sure you want to delete the change order action: {0}? This cannot be undone."
-msgstr "Вы уверены, что хотите удалить действие приказа об изменении: {0}? Это невозможно отменить."
+msgid "Are you sure you want to delete the change notice action: {0}? This cannot be undone."
+msgstr "Вы уверены, что хотите удалить действие уведомления об изменении: {0}? Это невозможно отменить."
 
-#. placeholder {0}: changeOrderType.name
-msgid "Are you sure you want to delete the change order category: {0}? This cannot be undone."
-msgstr "Вы уверены, что хотите удалить категорию приказа об изменении: {0}? Это действие невозможно отменить."
+#. placeholder {0}: changeNoticeType.name
+msgid "Are you sure you want to delete the change notice category: {0}? This cannot be undone."
+msgstr "Вы уверены, что хотите удалить категорию уведомления об изменении: {0}? Это невозможно отменить."
 
 msgid "Are you sure you want to delete the contractor: {name}? This cannot be undone."
 msgstr "Вы уверены, что хотите удалить подрядчика: {name}? Это действие невозможно отменить."
@@ -1410,8 +1413,8 @@ msgstr "Вы уверены, что хотите удалить webhook: {0}? Э
 msgid "Are you sure you want to delete this approval rule? This cannot be undone."
 msgstr "Вы уверены, что хотите удалить это правило утверждения? Это действие невозможно отменить."
 
-msgid "Are you sure you want to delete this change order?"
-msgstr "Вы уверены, что хотите удалить этот приказ об изменении?"
+msgid "Are you sure you want to delete this change notice?"
+msgstr "Вы уверены, что хотите удалить это уведомление об изменении?"
 
 msgid "Are you sure you want to delete this gauge?"
 msgstr "Вы уверены, что хотите удалить этот манометр?"
@@ -2052,11 +2055,11 @@ msgstr "Не удается загрузить этот файл"
 msgid "Cancel"
 msgstr "Отмена"
 
-msgid "Cancel change order"
-msgstr "Отменить заказ на внесение изменений"
+msgid "Cancel change notice"
+msgstr "Отменить уведомление об изменении"
 
-msgid "Cancel Change Order"
-msgstr "Отменить заказ на внесение изменений"
+msgid "Cancel Change Notice"
+msgstr "Отменить уведомление об изменении"
 
 msgid "Cancel Job"
 msgstr "Отменить задание"
@@ -2232,20 +2235,20 @@ msgstr "Изменить документ"
 msgid "Change Inspection Plan"
 msgstr "Изменить план контроля"
 
-msgid "Change order"
-msgstr "Приказ об изменении"
+msgid "Change notice"
+msgstr "Уведомление об изменении"
 
-msgid "Change Order"
-msgstr "Приказ об изменении"
+msgid "Change Notice"
+msgstr "Уведомление об изменении"
 
-msgid "Change Order Actions"
-msgstr "Действия приказа об изменении"
+msgid "Change Notice Actions"
+msgstr "Действия уведомлений об изменении"
 
-msgid "Change Order Types"
-msgstr "Типы приказов об изменении"
+msgid "Change Notice Types"
+msgstr "Типы уведомлений об изменении"
 
-msgid "Change Orders"
-msgstr "Приказы об изменении"
+msgid "Change Notices"
+msgstr "Уведомления об изменении"
 
 msgid "Change status"
 msgstr "Изменить статус"
@@ -2840,8 +2843,8 @@ msgstr "Скопировать номер задания"
 msgid "Copy link"
 msgstr "Копировать ссылку"
 
-msgid "Copy link to change order"
-msgstr "Скопировать ссылку на приказ об изменении"
+msgid "Copy link to change notice"
+msgstr "Скопировать ссылку на уведомление об изменении"
 
 msgid "Copy link to consumable"
 msgstr "Скопировать ссылку на расходный материал"
@@ -3064,8 +3067,8 @@ msgstr "Создать {0} значений"
 msgid "Create & Snapshot"
 msgstr "Создать и снимок"
 
-msgid "Create a change order for the new revision and open it"
-msgstr "Создать приказ об изменении для новой редакции и открыть его"
+msgid "Create a change notice for the new revision and open it"
+msgstr "Создать уведомление об изменении для новой редакции и открыть его"
 
 msgid "Create a new kanban card for scan-based replenishment."
 msgstr "Создайте новую карточку канбана для пополнения на основе сканирования."
@@ -3094,8 +3097,8 @@ msgstr "Создавать и утверждать заказы на покуп�
 msgid "Create audit trail entries"
 msgstr "Создать записи в журнале аудита"
 
-msgid "Create Change Order"
-msgstr "Создать приказ об изменении"
+msgid "Create Change Notice"
+msgstr "Создать уведомление об изменении"
 
 msgid "Create Issue"
 msgstr "Создать проблему"
@@ -3151,11 +3154,11 @@ msgstr "Создано"
 msgid "Created By"
 msgstr "Создано"
 
-msgid "Created change order action"
-msgstr "Создано действие приказа об изменении"
+msgid "Created change notice action"
+msgstr "Создано действие уведомления об изменении"
 
-msgid "Created change order type"
-msgstr "Создан тип заказа на внесение изменений"
+msgid "Created change notice type"
+msgstr "Создан тип уведомления об изменении"
 
 msgid "Created consumable"
 msgstr "Расходный материал создан"
@@ -3825,8 +3828,8 @@ msgstr "Удалить атрибут"
 msgid "Delete Category"
 msgstr "Удалить категорию"
 
-msgid "Delete Change Order"
-msgstr "Удалить приказ об изменении"
+msgid "Delete Change Notice"
+msgstr "Удалить уведомление об изменении"
 
 msgid "Delete Consumable"
 msgstr "Удалить расходный материал"
@@ -4555,14 +4558,14 @@ msgstr "Редактировать категорию атрибута"
 msgid "Edit Category"
 msgstr "Редактировать категорию"
 
-msgid "Edit Change Order"
-msgstr "Редактировать приказ об изменении"
+msgid "Edit Change Notice"
+msgstr "Редактировать уведомление об изменении"
 
-msgid "Edit Change Order Action"
-msgstr "Редактировать действие приказа об изменении"
+msgid "Edit Change Notice Action"
+msgstr "Редактировать действие уведомления об изменении"
 
-msgid "Edit Change Order Type"
-msgstr "Редактировать тип заказа на внесение изменений"
+msgid "Edit Change Notice Type"
+msgstr "Редактировать тип уведомления об изменении"
 
 msgid "Edit column visibility"
 msgstr "Изменить видимость столбцов"
@@ -6937,6 +6940,9 @@ msgstr "Товары и производство"
 msgid "Items inside this window get a yellow badge."
 msgstr "Товары в этом диапазоне получают жёлтый значок."
 
+msgid "Items whose bill of materials includes this item"
+msgstr "Товары, чья спецификация материалов включает этот товар"
+
 msgid "Items: item master, BOMs, Bill of Process, engineering changes, CAD"
 msgstr "Товары: справочник товаров, спецификации, технологические процессы, инженерные изменения, САПР"
 
@@ -6981,6 +6987,9 @@ msgstr "Задания в процессе"
 
 msgid "Jobs Required"
 msgstr "Требуются работы"
+
+msgid "Jobs that have this item on their bill of materials"
+msgstr "Работы, содержащие этот товар в спецификации материалов"
 
 #. placeholder {0}: company?.name ?? "Company"
 msgid "Join {0}"
@@ -7224,6 +7233,9 @@ msgstr "Связать проблему Jira"
 
 msgid "Link Linear Issue"
 msgstr "Связать проблему Linear"
+
+msgid "Link to sales order line"
+msgstr "Связать со строкой заказа на продажу"
 
 #. placeholder {0}: r.linkedSum
 #. placeholder {1}: r.quantity
@@ -8008,14 +8020,14 @@ msgstr "Новый атрибут"
 msgid "New Attribute Category"
 msgstr "Новая категория атрибутов"
 
-msgid "New Change Order"
-msgstr "Новый приказ на изменение"
+msgid "New Change Notice"
+msgstr "Новое уведомление об изменении"
 
-msgid "New Change Order Action"
-msgstr "Новое действие приказа об изменении"
+msgid "New Change Notice Action"
+msgstr "Новое действие уведомления об изменении"
 
-msgid "New Change Order Type"
-msgstr "Новый тип заказа на внесение изменений"
+msgid "New Change Notice Type"
+msgstr "Новый тип уведомления об изменении"
 
 msgid "New Consumable"
 msgstr "Новый расходный материал"
@@ -8359,6 +8371,9 @@ msgstr "Не найдено доступных отслеживаемых объ
 msgid "No BOM input has a shelf-life policy"
 msgstr "Ни один вход BOM не имеет политики срока хранения"
 
+msgid "No CAD model to preview."
+msgstr "Нет модели CAD для предпросмотра."
+
 msgid "No calibration records found"
 msgstr "Записи о калибровке не найдены"
 
@@ -8485,6 +8500,12 @@ msgstr "Нет заметок"
 msgid "No open invoices"
 msgstr "Нет открытых счетов"
 
+msgid "No open orders for this item are available to link."
+msgstr "Нет открытых заказов для этого товара, доступных для связи."
+
+msgid "No open sales order lines"
+msgstr "Нет открытых строк заказа продажи"
+
 msgid "No operations require picking at this location"
 msgstr "На этом месте нет операций, требующих комплектации"
 
@@ -8538,6 +8559,9 @@ msgstr "Принтеры не настроены. Нажмите «Добави�
 
 msgid "No process selected"
 msgstr "Процесс не выбран"
+
+msgid "No production events recorded for this operation yet"
+msgstr "Для этой операции еще не записано ни одного производственного события"
 
 msgid "No Quote"
 msgstr "Нет предложения"
@@ -8800,8 +8824,8 @@ msgstr "Упс! Ссылка, которую вы пытаетесь откры�
 msgid "Open"
 msgstr "Открыть"
 
-msgid "Open a change order"
-msgstr "Открыть приказ об изменении"
+msgid "Open a change notice"
+msgstr "Открыть уведомление об изменении"
 
 msgid "Open Actions"
 msgstr "Открытые действия"
@@ -8818,8 +8842,8 @@ msgstr "Открытая дебиторская задолженность"
 msgid "Open Audit Log"
 msgstr "Открыть журнал аудита"
 
-msgid "Open change orders affecting this part"
-msgstr "Открытые приказы на изменение, влияющие на эту деталь"
+msgid "Open change notices affecting this part"
+msgstr "Открытые уведомления об изменении, влияющие на эту деталь"
 
 msgid "Open Date"
 msgstr "Дата открытия"
@@ -8830,11 +8854,11 @@ msgstr "Открытые наряды"
 msgid "Open in Carbon"
 msgstr "Открыть в Carbon"
 
-msgid "Open in change order {ids}. Release it to create new versions or revisions."
-msgstr "Открыть в приказе об изменении {ids}. Выпустить его для создания новых версий или редакций."
+msgid "Open in change notice {ids}. Release it to create new versions or revisions."
+msgstr "Открыто в уведомлении об изменении {ids}. Выпустите его, чтобы создать новые версии или редакции."
 
-msgid "Open in change orders {ids}. Release them to create new versions or revisions."
-msgstr "Открыть в заказах изменений {ids}. Выпустите их, чтобы создать новые версии или редакции."
+msgid "Open in change notices {ids}. Release them to create new versions or revisions."
+msgstr "Открыто в уведомлениях об изменении {ids}. Выпустите их, чтобы создать новые версии или редакции."
 
 msgid "Open in MES"
 msgstr "Открыть в MES"
@@ -8934,6 +8958,9 @@ msgstr "Операторы могут использовать общие раб
 
 msgid "Opportunity"
 msgstr "Возможность"
+
+msgid "Optimized for fast previews — downloads always serve the original uploaded file"
+msgstr "Оптимизировано для быстрого предпросмотра — загрузки всегда предоставляют исходный загруженный файл"
 
 msgid "Optional"
 msgstr "Опционально"
@@ -10056,6 +10083,9 @@ msgstr "ID предложения"
 msgid "Quote Line"
 msgstr "Строка предложения"
 
+msgid "Quote lines whose bill of materials includes this item"
+msgstr "Строки предложения, чья спецификация материалов включает этот товар"
+
 msgid "Quote Location"
 msgstr "Местоположение предложения"
 
@@ -10309,8 +10339,8 @@ msgstr "Обновить"
 msgid "Refresh exchange rate"
 msgstr "Обновить курс обмена"
 
-msgid "Regenerate"
-msgstr "Повторно создать"
+msgid "Regenerate thumbnail from the 3D model"
+msgstr "Восстановить миниатюру из 3D модели"
 
 msgid "Regenerating thumbnail…"
 msgstr "Создание миниатюры…"
@@ -10357,8 +10387,8 @@ msgstr "Относительная шкала времени · даты буд�
 msgid "Release"
 msgstr "Выпуск"
 
-msgid "Release change order"
-msgstr "Выпустить заказ на изменение"
+msgid "Release change notice"
+msgstr "Выпустить уведомление об изменении"
 
 msgid "Release control"
 msgstr "Контроль выпуска"
@@ -13148,6 +13178,12 @@ msgstr "Эти задания имеют операции, назначенны�
 msgid "These journal entries are still Draft, so their debits and credits aren't in the ledger for this period. Post each one, or re-date it into a later open period."
 msgstr "Эти записи в журнале всё ещё находятся в статусе «Черновик», поэтому их дебеты и кредиты не находятся в главной книге за этот период. Опубликуйте каждую или переделируйте её на более поздний открытый период."
 
+msgid "This change notice is being implemented, so its changes are locked. Reopen it to edit."
+msgstr "Это уведомление об изменении реализуется, поэтому его изменения заблокированы. Откройте его повторно, чтобы отредактировать."
+
+msgid "This change notice is closed, so its changes are read-only."
+msgstr "Это уведомление об изменении закрыто, поэтому его изменения доступны только для чтения."
+
 msgid "This completes the Discovery step."
 msgstr "Это завершает этап Discovery."
 
@@ -13232,11 +13268,11 @@ msgstr "В этот период не размещены записи журна
 msgid "This Quarter"
 msgstr "Этот квартал"
 
-msgid "This revision is released (Production). Changes should normally flow through a change order."
-msgstr "Эта версия выпущена (Production). Изменения должны обычно проходить через заказ на изменение."
+msgid "This revision is released (Production). Changes should normally flow through a change notice."
+msgstr "Эта редакция выпущена (Производство). Изменения должны нормально проходить через уведомление об изменении."
 
-msgid "This revision is released (Production). Open a change order to modify it."
-msgstr "Эта версия выпущена (Production). Откройте заказ на изменение, чтобы изменить её."
+msgid "This revision is released (Production). Open a change notice to modify it."
+msgstr "Эта редакция выпущена (Производство). Откройте уведомление об изменении, чтобы изменить его."
 
 msgid "This sales order has associated jobs. Choose what to do with them."
 msgstr "Этот заказ на продажу имеет связанные работы. Выберите, что с ними делать."
@@ -13253,6 +13289,13 @@ msgstr "этот поставщик"
 
 msgid "This updates the theme for all users of the application"
 msgstr "Это обновляет тему для всех пользователей приложения"
+
+msgid "This version belongs to an open <0>change notice</0>. Edit it there."
+msgstr "Эта версия принадлежит открытому <0>уведомлению об изменении</0>. Отредактируйте его там."
+
+#. placeholder {0}: lock.readableId
+msgid "This version belongs to change notice <0>{0}</0>. Edit it there."
+msgstr "Эта версия принадлежит уведомлению об изменении <0>{0}</0>. Отредактируйте его там."
 
 msgid "This will make this version read-only and replace any material make methods with this version."
 msgstr "Это сделает эту версию доступной только для чтения и заменит все методы производства материалов на эту версию."
@@ -14676,6 +14719,9 @@ msgstr "Почему истекает срок действия?"
 msgid "Why is this included?"
 msgstr "Почему это включено?"
 
+msgid "Why is this locked?"
+msgstr "Почему это заблокировано?"
+
 msgid "Why stock is changing — Positive (found), Negative (lost/scrap), or Set (replace count with a measured value)."
 msgstr "Почему запас меняется — Положительный (найден), Отрицательный (потеря/отходы) или Установить (заменить количество измеренным значением)."
 
@@ -14827,6 +14873,9 @@ msgstr "Вы завершили {leftoverQuantity} больше {0}, чем за
 msgid "You don't have permission to edit this bill of material."
 msgstr "У вас нет разрешения на редактирование этой ведомости материалов."
 
+msgid "You don't have permission to edit this bill of process."
+msgstr "У вас нет разрешения на редактирование этой технологической карты."
+
 msgid "You drive it; we make sure it's done right. Expert eyes on your setup, data, and go-live."
 msgstr "Вы управляете процессом; мы следим, чтобы всё было сделано правильно. Опытный взгляд на вашу настройку, данные и запуск."
 
@@ -14861,8 +14910,8 @@ msgstr "Вы отметились на работу {hoursElapsed} часов н
 msgid "Your books and how money flows."
 msgstr "Ваши книги и движение денежных средств."
 
-msgid "Your changes go into a new draft version released with this change order."
-msgstr "Ваши изменения переходят в новую черновую версию, выпущенную с этим приказом об изменении."
+msgid "Your changes go into a new draft version released with this change notice."
+msgstr "Ваши изменения переходят в новую черновую версию, выпущенную с этим уведомлением об изменении."
 
 msgid "Your Console PIN"
 msgstr "Ваш PIN консоли"

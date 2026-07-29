@@ -684,6 +684,31 @@ export const salesOrderStatusType = [
   "Closed"
 ] as const;
 
+// Sales orders in these statuses can still receive/fulfill a job — i.e. a job
+// may be linked to one of their lines. The terminal statuses (Completed,
+// Invoiced, Cancelled, Closed) are excluded. Used when offering sales order
+// lines to link a job to (see getOpenSalesOrderLinesForItem).
+export const OPEN_SALES_ORDER_STATUSES = [
+  "Draft",
+  "Needs Approval",
+  "Confirmed",
+  "In Progress",
+  "To Ship and Invoice",
+  "To Ship",
+  "To Invoice"
+] as const;
+
+/**
+ * True for terminal statuses (Completed, Invoiced, Cancelled, Closed) — and for
+ * null/unknown — i.e. sales orders a job should not be (re)linked to. Inverse of
+ * OPEN_SALES_ORDER_STATUSES.
+ */
+export function isSalesOrderClosed(status: string | null | undefined): boolean {
+  return !OPEN_SALES_ORDER_STATUSES.includes(
+    status as (typeof OPEN_SALES_ORDER_STATUSES)[number]
+  );
+}
+
 export const salesConfirmValidator = z
   .object({
     notification: z.enum(["Email", "None"]).optional(),

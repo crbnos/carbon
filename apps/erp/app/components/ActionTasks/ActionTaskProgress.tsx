@@ -2,7 +2,7 @@ import { BarProgress, cn } from "@carbon/react";
 import type { ActionTaskStatus } from "./ActionTaskCard";
 
 // Completed/skipped progress bar for an action-task list — shared by Quality
-// issues and Change Orders.
+// issues and Change Notices.
 export function ActionTaskProgress({
   tasks,
   className

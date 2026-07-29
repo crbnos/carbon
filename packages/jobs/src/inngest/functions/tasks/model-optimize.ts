@@ -53,6 +53,7 @@ export const modelOptimizeFunction = inngest.createFunction(
   { event: "carbon/model-optimize" },
   async ({ event, step, logger }) => {
     const { modelUploadId, companyId } = event.data;
+    const force = event.data.force === true;
 
     // Feature-gated: no assembler configured -> skip before touching the row,
     // so the viewer just serves the raw model tier (optimizeStatus stays null).
@@ -89,6 +90,7 @@ export const modelOptimizeFunction = inngest.createFunction(
       // client auto-fire, an errant retry — re-running the assembler on a model
       // that already has its GLB.
       if (
+        !force &&
         upload.data.optimizeStatus === "Success" &&
         upload.data.optimizedModelPath
       ) {
@@ -145,8 +147,15 @@ export const modelOptimizeFunction = inngest.createFunction(
     // Where the optimised GLB lands. The service late-mint uploads to this via a
     // signed URL minted fresh on each poll (below).
     const optimizedPath = `${companyId}/models/${modelUploadId}/optimized.glb`;
-    // Idempotent per model — a re-run attaches to the in-flight optimise.
-    const jobId = `optimize-${modelUploadId}`;
+    // Idempotent per model — a re-run attaches to the in-flight optimise. A
+    // FORCED regen must not: the assembler's job store keeps completed results
+    // (24h TTL), so the stable id would attach to the previous run's cached
+    // result and "finish" instantly. Salt the id with the triggering event so
+    // each forced regen is a fresh assembler job (retries of the same event
+    // keep the same id and still attach to their own in-flight run).
+    const jobId = force
+      ? `optimize-${modelUploadId}-${event.id ?? event.ts ?? "forced"}`
+      : `optimize-${modelUploadId}`;
 
     // Router: sync inline on Lambda (default when enabled) or async submit->poll
     // on the standing service / dev container. Sync off => today's async path.

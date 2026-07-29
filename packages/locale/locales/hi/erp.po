@@ -45,8 +45,8 @@ msgid "(excluded for this customer)"
 msgstr "(इस ग्राहक के लिए बाहर रखा गया)"
 
 #. placeholder {0}: open.length
-msgid "{0, plural, one {This part is on 1 open change order} other {This part is on # open change orders}}"
-msgstr "{0, plural, one {यह भाग 1 खुले परिवर्तन आदेश पर है} other {यह भाग # खुले परिवर्तन आदेशों पर है}}"
+msgid "{0, plural, one {This part is on 1 open change notice} other {This part is on # open change notices}}"
+msgstr "{0, plural, one {यह भाग 1 खुली परिवर्तन सूचना पर है} other {यह भाग # खुली परिवर्तन सूचनाओं पर है}}"
 
 #. placeholder {0}: ar.count
 msgid "{0} customers with a balance"
@@ -224,8 +224,8 @@ msgstr "90 दिन"
 msgid "A Carbon-run data migration — you load your own data"
 msgstr "एक कार्बन-चलाया गया डेटा माइग्रेशन — आप अपना डेटा लोड करते हैं"
 
-msgid "A change order tracks a controlled engineering or manufacturing change through review and implementation."
-msgstr "एक परिवर्तन आदेश समीक्षा और कार्यान्वयन के माध्यम से नियंत्रित इंजीनियरिंग या विनिर्माण परिवर्तन को ट्रैक करता है।"
+msgid "A change notice tracks a controlled engineering or manufacturing change through review and implementation."
+msgstr "एक परिवर्तन सूचना समीक्षा और कार्यान्वयन के माध्यम से एक नियंत्रित इंजीनियरिंग या विनिर्माण परिवर्तन को ट्रैक करती है।"
 
 msgid "A clearing account holding the value of goods received but not yet billed; the supplier invoice clears it."
 msgstr "एक क्लीयरिंग खाता जो प्राप्त किए गए लेकिन अभी तक चालान नहीं किए गए सामान का मूल्य रखता है; आपूर्तिकर्ता चालान इसे साफ करता है।"
@@ -1145,7 +1145,7 @@ msgstr "क्या आप सुनिश्चित हैं कि आप 
 msgid "Are you sure you want to activate this gauge?."
 msgstr "क्या आप सुनिश्चित हैं कि आप इस गेज को सक्रिय करना चाहते हैं?"
 
-#. placeholder {0}: routeData?.changeOrder?.changeOrderId ?? ""
+#. placeholder {0}: routeData?.changeNotice?.changeOrderId ?? ""
 msgid "Are you sure you want to cancel {0}? It will be closed and read-only until you reopen it."
 msgstr "क्या आप सुनिश्चित हैं कि आप {0} को रद्द करना चाहते हैं? यह बंद हो जाएगा और जब तक आप इसे फिर से नहीं खोलते तब तक यह केवल पढ़ने के लिए होगा।"
 
@@ -1217,6 +1217,9 @@ msgstr "क्या आप {0} को हटाना सुनिश्चि�
 msgid "Are you sure you want to delete {0}? This cannot be undone."
 msgstr "क्या आप सुनिश्चित हैं कि आप {0} को हटाना चाहते हैं? यह पूर्ववत नहीं किया जा सकता।"
 
+msgid "Are you sure you want to delete {name}? This cannot be undone."
+msgstr "क्या आप सुनिश्चित हैं कि आप {name} को हटाना चाहते हैं? यह पूर्ववत नहीं किया जा सकता।"
+
 #. placeholder {0}: selectedCustomField?.name
 msgid "Are you sure you want to delete the {0} field?"
 msgstr "क्या आप सुनिश्चित हैं कि आप {0} फ़ील्ड को हटाना चाहते हैं?"
@@ -1245,12 +1248,12 @@ msgid "Are you sure you want to delete the asset class: {0}? This cannot be undo
 msgstr "क्या आप निश्चित हैं कि आप परिसंपत्ति वर्ग हटाना चाहते हैं: {0}? यह पूर्ववत नहीं किया जा सकता।"
 
 #. placeholder {0}: requiredAction.name
-msgid "Are you sure you want to delete the change order action: {0}? This cannot be undone."
-msgstr "क्या आप वाकई परिवर्तन आदेश कार्रवाई को हटाना चाहते हैं: {0}? यह पूर्ववत नहीं किया जा सकता।"
+msgid "Are you sure you want to delete the change notice action: {0}? This cannot be undone."
+msgstr "क्या आप परिवर्तन सूचना कार्रवाई को हटाना सुनिश्चित हैं: {0}? यह पूर्ववत नहीं किया जा सकता।"
 
-#. placeholder {0}: changeOrderType.name
-msgid "Are you sure you want to delete the change order category: {0}? This cannot be undone."
-msgstr "क्या आप परिवर्तन आदेश श्रेणी को हटाना चाहते हैं: {0}? यह पूर्ववत नहीं किया जा सकता।"
+#. placeholder {0}: changeNoticeType.name
+msgid "Are you sure you want to delete the change notice category: {0}? This cannot be undone."
+msgstr "क्या आप परिवर्तन सूचना श्रेणी को हटाना सुनिश्चित हैं: {0}? यह पूर्ववत नहीं किया जा सकता।"
 
 msgid "Are you sure you want to delete the contractor: {name}? This cannot be undone."
 msgstr "क्या आप सुनिश्चित हैं कि आप ठेकेदार को हटाना चाहते हैं: {name}? यह पूर्ववत नहीं किया जा सकता।"
@@ -1410,8 +1413,8 @@ msgstr "क्या आप सुनिश्चित हैं कि आप 
 msgid "Are you sure you want to delete this approval rule? This cannot be undone."
 msgstr "क्या आप सुनिश्चित हैं कि आप इस अनुमोदन नियम को हटाना चाहते हैं? यह पूर्ववत नहीं किया जा सकता।"
 
-msgid "Are you sure you want to delete this change order?"
-msgstr "क्या आप इस परिवर्तन आदेश को हटाना चाहते हैं?"
+msgid "Are you sure you want to delete this change notice?"
+msgstr "क्या आप इस परिवर्तन सूचना को हटाना सुनिश्चित हैं?"
 
 msgid "Are you sure you want to delete this gauge?"
 msgstr "क्या आप सुनिश्चित हैं कि आप इस गेज को हटाना चाहते हैं?"
@@ -2052,11 +2055,11 @@ msgstr "इस फ़ाइल को डाउनलोड नहीं कर 
 msgid "Cancel"
 msgstr "रद्द करें"
 
-msgid "Cancel change order"
-msgstr "परिवर्तन आदेश रद्द करें"
+msgid "Cancel change notice"
+msgstr "परिवर्तन सूचना को रद्द करें"
 
-msgid "Cancel Change Order"
-msgstr "परिवर्तन आदेश रद्द करें"
+msgid "Cancel Change Notice"
+msgstr "परिवर्तन सूचना को रद्द करें"
 
 msgid "Cancel Job"
 msgstr "नौकरी रद्द करें"
@@ -2232,20 +2235,20 @@ msgstr "परिवर्तन दस्तावेज़"
 msgid "Change Inspection Plan"
 msgstr "निरीक्षण योजना बदलें"
 
-msgid "Change order"
-msgstr "परिवर्तन आदेश"
+msgid "Change notice"
+msgstr "परिवर्तन सूचना"
 
-msgid "Change Order"
-msgstr "परिवर्तन आदेश"
+msgid "Change Notice"
+msgstr "परिवर्तन सूचना"
 
-msgid "Change Order Actions"
-msgstr "परिवर्तन आदेश कार्रवाई"
+msgid "Change Notice Actions"
+msgstr "परिवर्तन सूचना कार्रवाई"
 
-msgid "Change Order Types"
-msgstr "परिवर्तन आदेश प्रकार"
+msgid "Change Notice Types"
+msgstr "परिवर्तन सूचना प्रकार"
 
-msgid "Change Orders"
-msgstr "परिवर्तन आदेश"
+msgid "Change Notices"
+msgstr "परिवर्तन सूचनाएं"
 
 msgid "Change status"
 msgstr "स्थिति बदलें"
@@ -2840,8 +2843,8 @@ msgstr "जॉब नंबर कॉपी करें"
 msgid "Copy link"
 msgstr "लिंक कॉपी करें"
 
-msgid "Copy link to change order"
-msgstr "परिवर्तन आदेश के लिए लिंक कॉपी करें"
+msgid "Copy link to change notice"
+msgstr "परिवर्तन सूचना के लिंक की प्रतिलिपि बनाएं"
 
 msgid "Copy link to consumable"
 msgstr "उपभोग्य के लिए लिंक कॉपी करें"
@@ -3064,8 +3067,8 @@ msgstr "{0} मान बनाएं"
 msgid "Create & Snapshot"
 msgstr "बनाएं और स्नैपशॉट लें"
 
-msgid "Create a change order for the new revision and open it"
-msgstr "नए संशोधन के लिए एक परिवर्तन आदेश बनाएं और इसे खोलें"
+msgid "Create a change notice for the new revision and open it"
+msgstr "नई संशोधन के लिए एक परिवर्तन सूचना बनाएं और इसे खोलें"
 
 msgid "Create a new kanban card for scan-based replenishment."
 msgstr "स्कैन-आधारित पुनःपूर्ति के लिए एक नया कानबन कार्ड बनाएं।"
@@ -3094,8 +3097,8 @@ msgstr "क्रय आदेश बनाएं और मंजूरी द�
 msgid "Create audit trail entries"
 msgstr "ऑडिट ट्रेल प्रविष्टियां बनाएं"
 
-msgid "Create Change Order"
-msgstr "परिवर्तन आदेश बनाएं"
+msgid "Create Change Notice"
+msgstr "परिवर्तन सूचना बनाएं"
 
 msgid "Create Issue"
 msgstr "समस्या बनाएं"
@@ -3151,11 +3154,11 @@ msgstr "बनाया गया"
 msgid "Created By"
 msgstr "द्वारा बनाया गया"
 
-msgid "Created change order action"
-msgstr "बनाई गई परिवर्तन आदेश कार्रवाई"
+msgid "Created change notice action"
+msgstr "परिवर्तन सूचना कार्रवाई बनाई गई"
 
-msgid "Created change order type"
-msgstr "बनाया गया परिवर्तन आदेश प्रकार"
+msgid "Created change notice type"
+msgstr "परिवर्तन सूचना प्रकार बनाया गया"
 
 msgid "Created consumable"
 msgstr "उपभोग्य बनाया गया"
@@ -3790,7 +3793,7 @@ msgid "Delete"
 msgstr "हटाएं"
 
 msgid "Delete {name}"
-msgstr "Delete {name} को हटाएं"
+msgstr "{name} को हटाएं"
 
 msgid "Delete {periodLabel}"
 msgstr "{periodLabel} हटाएँ"
@@ -3825,8 +3828,8 @@ msgstr "विशेषता हटाएं"
 msgid "Delete Category"
 msgstr "श्रेणी हटाएं"
 
-msgid "Delete Change Order"
-msgstr "परिवर्तन आदेश हटाएं"
+msgid "Delete Change Notice"
+msgstr "परिवर्तन सूचना हटाएं"
 
 msgid "Delete Consumable"
 msgstr "उपभोग्य हटाएं"
@@ -4555,14 +4558,14 @@ msgstr "विशेषता श्रेणी संपादित करे
 msgid "Edit Category"
 msgstr "श्रेणी संपादित करें"
 
-msgid "Edit Change Order"
-msgstr "परिवर्तन आदेश संपादित करें"
+msgid "Edit Change Notice"
+msgstr "परिवर्तन सूचना संपादित करें"
 
-msgid "Edit Change Order Action"
-msgstr "परिवर्तन आदेश कार्रवाई संपादित करें"
+msgid "Edit Change Notice Action"
+msgstr "परिवर्तन सूचना कार्रवाई संपादित करें"
 
-msgid "Edit Change Order Type"
-msgstr "परिवर्तन आदेश प्रकार संपादित करें"
+msgid "Edit Change Notice Type"
+msgstr "परिवर्तन सूचना प्रकार संपादित करें"
 
 msgid "Edit column visibility"
 msgstr "कॉलम दृश्यता संपादित करें"
@@ -6937,6 +6940,9 @@ msgstr "आइटम और उत्पादन"
 msgid "Items inside this window get a yellow badge."
 msgstr "इस विंडो के अंदर आइटम को एक पीला बैज मिलता है।"
 
+msgid "Items whose bill of materials includes this item"
+msgstr "वस्तुएं जिनकी सामग्री सूची में यह आइटम शामिल है"
+
 msgid "Items: item master, BOMs, Bill of Process, engineering changes, CAD"
 msgstr "आइटम: आइटम मास्टर, BOMs, बिल ऑफ प्रोसेस, इंजीनियरिंग परिवर्तन, CAD"
 
@@ -6981,6 +6987,9 @@ msgstr "चल रहे कार्य"
 
 msgid "Jobs Required"
 msgstr "नौकरियां आवश्यक हैं"
+
+msgid "Jobs that have this item on their bill of materials"
+msgstr "जिन कार्यों की सामग्री सूची में यह आइटम है"
 
 #. placeholder {0}: company?.name ?? "Company"
 msgid "Join {0}"
@@ -7224,6 +7233,9 @@ msgstr "Jira समस्या को लिंक करें"
 
 msgid "Link Linear Issue"
 msgstr "Linear समस्या को लिंक करें"
+
+msgid "Link to sales order line"
+msgstr "बिक्रय आदेश पंक्ति से लिंक करें"
 
 #. placeholder {0}: r.linkedSum
 #. placeholder {1}: r.quantity
@@ -8008,14 +8020,14 @@ msgstr "नई विशेषता"
 msgid "New Attribute Category"
 msgstr "नई विशेषता श्रेणी"
 
-msgid "New Change Order"
-msgstr "नया परिवर्तन आदेश"
+msgid "New Change Notice"
+msgstr "नई परिवर्तन सूचना"
 
-msgid "New Change Order Action"
-msgstr "नई परिवर्तन आदेश कार्रवाई"
+msgid "New Change Notice Action"
+msgstr "नई परिवर्तन सूचना कार्रवाई"
 
-msgid "New Change Order Type"
-msgstr "नया परिवर्तन आदेश प्रकार"
+msgid "New Change Notice Type"
+msgstr "नई परिवर्तन सूचना प्रकार"
 
 msgid "New Consumable"
 msgstr "नया उपभोग्य"
@@ -8359,6 +8371,9 @@ msgstr "कोई उपलब्ध ट्रैक किए गए इका�
 msgid "No BOM input has a shelf-life policy"
 msgstr "कोई BOM इनपुट शेल्फ-लाइफ नीति नहीं है"
 
+msgid "No CAD model to preview."
+msgstr "पूर्वावलोकन के लिए कोई CAD मॉडल नहीं है।"
+
 msgid "No calibration records found"
 msgstr "कोई अंशांकन रिकॉर्ड नहीं मिला"
 
@@ -8485,6 +8500,12 @@ msgstr "कोई नोट नहीं"
 msgid "No open invoices"
 msgstr "कोई खुले चालान नहीं"
 
+msgid "No open orders for this item are available to link."
+msgstr "इस आइटम के लिए लिंक करने के लिए कोई खुले ऑर्डर उपलब्ध नहीं हैं।"
+
+msgid "No open sales order lines"
+msgstr "कोई खुली बिक्रय ऑर्डर लाइनें नहीं"
+
 msgid "No operations require picking at this location"
 msgstr "इस स्थान पर कोई भी ऑपरेशन पिकिंग की आवश्यकता नहीं है"
 
@@ -8538,6 +8559,9 @@ msgstr "कोई प्रिंटर कॉन्फ़िगर नहीं
 
 msgid "No process selected"
 msgstr "कोई प्रक्रिया चयनित नहीं है"
+
+msgid "No production events recorded for this operation yet"
+msgstr "इस ऑपरेशन के लिए अभी तक कोई उत्पादन घटना रिकॉर्ड नहीं की गई है"
 
 msgid "No Quote"
 msgstr "कोई उद्धरण नहीं"
@@ -8800,8 +8824,8 @@ msgstr "अरे! आप जिस लिंक को एक्सेस क�
 msgid "Open"
 msgstr "खोलें"
 
-msgid "Open a change order"
-msgstr "एक परिवर्तन आदेश खोलें"
+msgid "Open a change notice"
+msgstr "एक परिवर्तन सूचना खोलें"
 
 msgid "Open Actions"
 msgstr "खुली कार्रवाइयाँ"
@@ -8818,8 +8842,8 @@ msgstr "खुला AR"
 msgid "Open Audit Log"
 msgstr "ऑडिट लॉग खोलें"
 
-msgid "Open change orders affecting this part"
-msgstr "इस हिस्से को प्रभावित करने वाले खुले परिवर्तन आदेश"
+msgid "Open change notices affecting this part"
+msgstr "इस भाग को प्रभावित करने वाली परिवर्तन सूचनाएं खोलें"
 
 msgid "Open Date"
 msgstr "खुली तारीख"
@@ -8830,11 +8854,11 @@ msgstr "खुली डिस्पैच"
 msgid "Open in Carbon"
 msgstr "Carbon में खोलें"
 
-msgid "Open in change order {ids}. Release it to create new versions or revisions."
-msgstr "परिवर्तन आदेश {ids} में खुला। नए संस्करण या संशोधन बनाने के लिए इसे जारी करें।"
+msgid "Open in change notice {ids}. Release it to create new versions or revisions."
+msgstr "परिवर्तन सूचना {ids} में खोलें। नए संस्करण या संशोधन बनाने के लिए इसे जारी करें।"
 
-msgid "Open in change orders {ids}. Release them to create new versions or revisions."
-msgstr "{ids} में परिवर्तन आदेश खोलें। नई संस्करणें या संशोधन बनाने के लिए उन्हें जारी करें।"
+msgid "Open in change notices {ids}. Release them to create new versions or revisions."
+msgstr "परिवर्तन सूचनाओं {ids} में खोलें। नए संस्करण या संशोधन बनाने के लिए उन्हें जारी करें।"
 
 msgid "Open in MES"
 msgstr "MES में खोलें"
@@ -8934,6 +8958,9 @@ msgstr "ऑपरेटर PIN प्रमाणीकरण के साथ �
 
 msgid "Opportunity"
 msgstr "अवसर"
+
+msgid "Optimized for fast previews — downloads always serve the original uploaded file"
+msgstr "तेज़ पूर्वावलोकन के लिए अनुकूलित — डाउनलोड हमेशा मूल अपलोड की गई फ़ाइल देते हैं"
 
 msgid "Optional"
 msgstr "वैकल्पिक"
@@ -10056,6 +10083,9 @@ msgstr "उद्धरण ID"
 msgid "Quote Line"
 msgstr "उद्धरण पंक्ति"
 
+msgid "Quote lines whose bill of materials includes this item"
+msgstr "उद्धरण पंक्तियां जिनकी सामग्री सूची में यह आइटम शामिल है"
+
 msgid "Quote Location"
 msgstr "उद्धरण स्थान"
 
@@ -10309,8 +10339,8 @@ msgstr "ताज़ा करें"
 msgid "Refresh exchange rate"
 msgstr "विनिमय दर को ताज़ा करें"
 
-msgid "Regenerate"
-msgstr "पुनः उत्पन्न करें"
+msgid "Regenerate thumbnail from the 3D model"
+msgstr "3D मॉडल से थंबनेल पुनः उत्पन्न करें"
 
 msgid "Regenerating thumbnail…"
 msgstr "थंबनेल को पुनः उत्पन्न किया जा रहा है…"
@@ -10357,8 +10387,8 @@ msgstr "सापेक्ष समयरेखा · तारीखें प
 msgid "Release"
 msgstr "रिलीज़"
 
-msgid "Release change order"
-msgstr "परिवर्तन आदेश जारी करें"
+msgid "Release change notice"
+msgstr "परिवर्तन सूचना जारी करें"
 
 msgid "Release control"
 msgstr "जारी करने का नियंत्रण"
@@ -13148,6 +13178,12 @@ msgstr "इन कार्यों के पास इस कार्य क
 msgid "These journal entries are still Draft, so their debits and credits aren't in the ledger for this period. Post each one, or re-date it into a later open period."
 msgstr "ये जर्नल प्रविष्टियाँ अभी भी ड्राफ्ट हैं, इसलिए उनके डेबिट और क्रेडिट इस अवधि के लिए लेजर में नहीं हैं। प्रत्येक को पोस्ट करें, या इसे बाद की खुली अवधि में पुनः दिनांकित करें।"
 
+msgid "This change notice is being implemented, so its changes are locked. Reopen it to edit."
+msgstr "यह परिवर्तन सूचना लागू की जा रही है, इसलिए इसके परिवर्तन लॉक हैं। इसे संपादित करने के लिए फिर से खोलें।"
+
+msgid "This change notice is closed, so its changes are read-only."
+msgstr "यह परिवर्तन सूचना बंद है, इसलिए इसके परिवर्तन केवल पढ़ने के लिए हैं।"
+
 msgid "This completes the Discovery step."
 msgstr "यह Discovery चरण को पूरा करता है।"
 
@@ -13232,11 +13268,11 @@ msgstr "इस अवधि में कोई जर्नल प्रवि�
 msgid "This Quarter"
 msgstr "इस त्रैमासिक"
 
-msgid "This revision is released (Production). Changes should normally flow through a change order."
-msgstr "यह संशोधन जारी है (Production)। परिवर्तन सामान्यतः एक चेंज ऑर्डर के माध्यम से होने चाहिए।"
+msgid "This revision is released (Production). Changes should normally flow through a change notice."
+msgstr "यह संशोधन जारी किया गया है (उत्पादन)। परिवर्तन सामान्यतः एक परिवर्तन सूचना के माध्यम से होने चाहिए।"
 
-msgid "This revision is released (Production). Open a change order to modify it."
-msgstr "यह संशोधन जारी है (Production)। इसे संशोधित करने के लिए एक चेंज ऑर्डर खोलें।"
+msgid "This revision is released (Production). Open a change notice to modify it."
+msgstr "यह संशोधन जारी किया गया है (उत्पादन)। इसे संशोधित करने के लिए एक परिवर्तन सूचना खोलें।"
 
 msgid "This sales order has associated jobs. Choose what to do with them."
 msgstr "इस बिक्रय आदेश के संबंधित कार्य हैं। उनके साथ क्या करना है यह चुनें।"
@@ -13253,6 +13289,13 @@ msgstr "यह आपूर्तिकर्ता"
 
 msgid "This updates the theme for all users of the application"
 msgstr "यह एप्लिकेशन के सभी उपयोगकर्ताओं के लिए थीम को अपडेट करता है"
+
+msgid "This version belongs to an open <0>change notice</0>. Edit it there."
+msgstr "यह संस्करण एक खुली <0>परिवर्तन सूचना</0> के अंतर्गत है। इसे वहाँ संपादित करें।"
+
+#. placeholder {0}: lock.readableId
+msgid "This version belongs to change notice <0>{0}</0>. Edit it there."
+msgstr "यह संस्करण परिवर्तन सूचना <0>{0}</0> के अंतर्गत है। इसे वहाँ संपादित करें।"
 
 msgid "This will make this version read-only and replace any material make methods with this version."
 msgstr "यह इस संस्करण को केवल-पढ़ने योग्य बनाएगा और किसी भी सामग्री निर्माण विधि को इस संस्करण से बदल देगा।"
@@ -14676,6 +14719,9 @@ msgstr "समाप्ति क्यों बदली जा रही ह�
 msgid "Why is this included?"
 msgstr "यह क्यों शामिल है?"
 
+msgid "Why is this locked?"
+msgstr "यह क्यों लॉक है?"
+
 msgid "Why stock is changing — Positive (found), Negative (lost/scrap), or Set (replace count with a measured value)."
 msgstr "स्टॉक क्यों बदल रहा है — सकारात्मक (पाया गया), नकारात्मक (खोया/स्क्रैप) या सेट करें (गिनती को मापा मूल्य से बदलें)।"
 
@@ -14827,6 +14873,9 @@ msgstr "आपने {leftoverQuantity} अधिक {0} पूरा किय�
 msgid "You don't have permission to edit this bill of material."
 msgstr "आपको इस सामग्री सूची को संपादित करने की अनुमति नहीं है।"
 
+msgid "You don't have permission to edit this bill of process."
+msgstr "आपके पास इस प्रक्रिया बिल को संपादित करने की अनुमति नहीं है।"
+
 msgid "You drive it; we make sure it's done right. Expert eyes on your setup, data, and go-live."
 msgstr "आप इसे चलाएं; हम सुनिश्चित करते हैं कि यह सही तरीके से किया जाए। आपके सेटअप, डेटा और गो-लाइव पर विशेषज्ञ की नजर।"
 
@@ -14861,8 +14910,8 @@ msgstr "आप {hoursElapsed} घंटे के लिए क्लॉक इ�
 msgid "Your books and how money flows."
 msgstr "आपकी किताबें और पैसा कैसे बहता है।"
 
-msgid "Your changes go into a new draft version released with this change order."
-msgstr "आपके परिवर्तन इस परिवर्तन आदेश के साथ जारी एक नए ड्राफ्ट संस्करण में जाते हैं।"
+msgid "Your changes go into a new draft version released with this change notice."
+msgstr "आपके परिवर्तन इस परिवर्तन सूचना के साथ जारी किए गए एक नए मसौदा संस्करण में जाते हैं।"
 
 msgid "Your Console PIN"
 msgstr "आपका कंसोल PIN"

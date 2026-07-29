@@ -55,6 +55,7 @@ import InspectionDocument from "./InspectionDocument";
 import Item, { useConfigurableItems } from "./Item";
 import ItemPostingGroup from "./ItemPostingGroup";
 import Items from "./Items";
+import JobSalesOrderLine from "./JobSalesOrderLine";
 import Location from "./Location";
 import MaterialType from "./MaterialType";
 import Part from "./Part";
@@ -135,6 +136,7 @@ export {
   Item,
   ItemPostingGroup,
   Items,
+  JobSalesOrderLine,
   useConfigurableItems,
   Location,
   MaterialType,

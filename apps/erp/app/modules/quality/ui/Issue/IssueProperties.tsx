@@ -29,8 +29,8 @@ import { Enumerable } from "~/components/Enumerable";
 import { Tags } from "~/components/Form";
 import CustomFormInlineFields from "~/components/Form/CustomFormInlineFields";
 import { usePermissions, useRouteData } from "~/hooks";
-import type { ChangeOrderStatus as ChangeOrderStatusType } from "~/modules/items";
-import { ChangeOrderStatus } from "~/modules/items/ui/ChangeOrder";
+import type { ChangeNoticeStatus as ChangeNoticeStatusType } from "~/modules/items";
+import { ChangeNoticeStatus } from "~/modules/items/ui/ChangeNotice";
 import type { action } from "~/routes/x+/items+/update";
 import type { ListItem, StorageItem } from "~/types";
 import { path } from "~/utils/path";
@@ -58,15 +58,15 @@ const IssueProperties = () => {
     requiredActions: ListItem[];
     files: Promise<StorageItem[]>;
     tags: { name: string }[];
-    changeOrders: {
+    changeNotices: {
       id: string;
       changeOrderId: string;
       name: string;
-      status: ChangeOrderStatusType;
+      status: ChangeNoticeStatusType;
     }[];
   }>(path.to.issue(id));
 
-  const changeOrders = routeData?.changeOrders ?? [];
+  const changeNotices = routeData?.changeNotices ?? [];
 
   const optimisticAssignment = useOptimisticAssignment({
     id: id,
@@ -554,22 +554,22 @@ const IssueProperties = () => {
         onUpdate={onUpdateCustomFields}
       />
 
-      {changeOrders.length > 0 && (
+      {changeNotices.length > 0 && (
         <VStack spacing={2}>
           <h3 className="text-xs text-muted-foreground">
-            <Trans>Change Orders</Trans>
+            <Trans>Change Notices</Trans>
           </h3>
           <VStack spacing={1}>
-            {changeOrders.map((co) => (
+            {changeNotices.map((co) => (
               <Link
                 key={co.id}
-                to={path.to.changeOrder(co.id)}
+                to={path.to.changeNotice(co.id)}
                 className="flex items-center justify-between gap-2 w-full hover:bg-accent/50 rounded-md px-2 -mx-2 py-1 transition-colors"
               >
                 <span className="text-sm text-primary hover:underline truncate">
                   {co.changeOrderId}
                 </span>
-                <ChangeOrderStatus status={co.status} />
+                <ChangeNoticeStatus status={co.status} />
               </Link>
             ))}
           </VStack>
