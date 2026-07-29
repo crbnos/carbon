@@ -3,7 +3,7 @@
 > Version, Revision, Replacement Part, and New Part — the per-affected-item choice that decides what you can edit and what release creates.
 
 Change type is set per affected item (default **Version**) and is the most load-bearing field on the whole
-change order. It decides two things at once: what you're allowed to edit on the draft, and what release
+change notice. It decides two things at once: what you're allowed to edit on the draft, and what release
 creates from it. Two axes tell the four types apart: is there a **predecessor** item, and does the result keep
 the **same part number**.
 
@@ -14,7 +14,7 @@ the **same part number**.
 | Version | BoM and BoP on the **same item** | A new **method version**; the prior Active version is archived | None |
 | Revision | Attributes, documents, BoM and BoP | A new **item revision** (same Part ID, next revision) | Old revision → new revision |
 | Replacement Part | Attributes, documents, BoM and BoP | A **new part number** derived from the affected part | Affected part → new part |
-| New Part | Attributes, documents, BoM and BoP | A **net-new part** minted under the change order | None — it has no predecessor |
+| New Part | Attributes, documents, BoM and BoP | A **net-new part** minted under the change notice | None — it has no predecessor |
 
 Don't conflate them. A **Version** produces a new method version on the *same* item row, so existing stock and
 item history are untouched and nothing is superseded. A **Revision** and a **Replacement Part** each mint a
@@ -49,7 +49,7 @@ Change type also controls the editable surface on the affected item:
   top of BoM and BoP, because each is producing a genuinely new item, not just a new recipe.
 
 The **Add Affected Item** picker accepts **Parts only** — the existing-item selector is filtered to Parts, and
-the New Part mini-form always mints a Part. There's no Tool path in the change-order UI.
+the New Part mini-form always mints a Part. There's no Tool path in the change-notice UI.
 
 A purchased (**Buy**) item has no bill of materials or process, so a **Version** is meaningless for it. The
 picker hides **Version** for Buy items and restricts a Version's item selector to **Make** parts; adding a Buy
@@ -64,7 +64,7 @@ Choosing **New Part** in the change-type selector swaps the affected-item modal 
   - **Replenishment System**: Buy, Make, or Buy and Make. Defaults to **Make**.
   - **Tracking Type**: Inventory, Non-Inventory, Serial, or Batch. Defaults to **Inventory**.
 
-Submitting mints an inactive Part under the change order and adds it as a **New Part** affected item. It stays
+Submitting mints an inactive Part under the change notice and adds it as a **New Part** affected item. It stays
 hidden until release reveals it.
 
 ## Supplier parts on a purchased line
@@ -78,10 +78,10 @@ here the same way you would on a live part.
 A draft item starts with **no** supplier parts — the source item's suppliers aren't copied onto the draft. If a
 purchased Revision, Replacement Part, or New Part releases with an empty grid, the new part is stocked but has
 no way to buy it, so a purchase order can't reference it. Fill the grid on the line first. The suppliers you add
-show up in the change order's `docs/reference/change-orders/lifecycle`
+show up in the change notice's `docs/reference/change-orders/lifecycle`
 as additions.
 
 ## Related
 
   - Lifecycle & release What release does with each change type.
-  - Methods & sourcing Method versions and the Draft/Active/Archived states a change order drives.
+  - Methods & sourcing Method versions and the Draft/Active/Archived states a change notice drives.

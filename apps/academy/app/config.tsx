@@ -528,9 +528,9 @@ export const modules: Config = [
                 id: "engineering-change-orders",
                 loomUrl:
                   "https://www.loom.com/share/0aa0ab77ef014a52a3c617ff0939d4a2",
-                name: "Engineering Change Orders",
+                name: "Change Notices",
                 description:
-                  "Learn how to use engineering change orders to manage and track changes to items, methods, and bills in a controlled, auditable way.",
+                  "Learn how to use engineering change notices to manage and track changes to items, methods, and bills in a controlled, auditable way.",
                 duration: 260
               }
             ],
@@ -900,6 +900,15 @@ export const modules: Config = [
                 description:
                   "Learn the proper process for completing and closing jobs in the production system.",
                 duration: 221
+              },
+              {
+                id: "work-instructions-and-process-types",
+                loomUrl:
+                  "https://www.loom.com/share/9648a9fb41bc44079d0927784cec49cd",
+                name: "Work Instructions and Process Types",
+                description:
+                  "Learn how to create work instructions and configure process types for your production operations.",
+                duration: 541
               }
             ]
           }

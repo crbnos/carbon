@@ -94,7 +94,7 @@ function getEntityPath(entityId: string): string | null {
     quote: path.to.quote,
     emp: path.to.employeeAccount,
     nc: path.to.issue,
-    co: path.to.changeOrder,
+    co: path.to.changeNotice,
     sh: path.to.shipment,
     rec: path.to.receipt,
     ic: path.to.inventoryCount,

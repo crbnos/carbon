@@ -210,13 +210,13 @@ function GenericNotification({
           {...props}
         />
       );
-    case NotificationEvent.ChangeOrderStarted:
-    case NotificationEvent.ChangeOrderImplementation:
-    case NotificationEvent.ChangeOrderDone:
+    case NotificationEvent.ChangeNoticeStarted:
+    case NotificationEvent.ChangeNoticeImplementation:
+    case NotificationEvent.ChangeNoticeDone:
       return (
         <Notification
           icon={<LuGitPullRequestArrow />}
-          to={path.to.changeOrderDetails(id)}
+          to={path.to.changeNoticeDetails(id)}
           {...props}
         />
       );

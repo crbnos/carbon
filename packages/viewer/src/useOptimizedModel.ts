@@ -8,6 +8,13 @@ import { isRawRenderable } from "./raw/formats";
 
 export type ModelArtifacts = {
   optimizedModelPath: string | null;
+  /** When the optimised GLB last landed — the client cache-buster for its
+   * stable, immutable-cached URL. */
+  optimizedAt?: string | null;
+  /** Whether the reoptimise SOURCE (the modelPath object) still exists in
+   * storage — pruned/dangling rows can't be re-optimised, so hosts hide the
+   * refresh affordance. Absent (older server) → treat as available. */
+  sourceAvailable?: boolean;
   lodPath: string | null;
   glbPath: string | null;
   thumbnailPath: string | null;
@@ -58,9 +65,14 @@ const DEFAULT_PATHS = {
   cancel: "/api/model/optimize-cancel"
 };
 
-async function postModelAction(action: string, modelUploadId: string) {
+async function postModelAction(
+  action: string,
+  modelUploadId: string,
+  extra?: Record<string, string>
+) {
   const body = new FormData();
   body.append("modelUploadId", modelUploadId);
+  for (const [k, v] of Object.entries(extra ?? {})) body.append(k, v);
   await fetch(action, { method: "POST", body }).catch(() => {
     // Best-effort — polling reflects whatever actually happened server-side.
   });
@@ -127,13 +139,17 @@ export function useOptimizedModel({
       if (q.state.status === "error") return false;
       const d = q.state.data;
       if (!d) return POLL_MS;
-      if (d.optimizedModelPath || d.glbPath) return false;
+      // In-flight beats "a GLB already exists": a forced re-optimise runs with
+      // the previous GLB still present — polling must continue until the run
+      // settles, or the UI freezes on the pre-regen snapshot (stale mesh/sizes,
+      // regen spinner stuck forever).
       const inFlight =
         d.optimizeStatus === "Queued" || d.optimizeStatus === "Processing";
       if (inFlight) {
         gracePolls.current = 0;
         return POLL_MS;
       }
+      if (d.optimizedModelPath || d.glbPath) return false;
       // Terminal/idle: keep a short grace window so a just-fired trigger (row
       // not yet flipped, possibly still showing a STALE Failed from the last
       // attempt) is picked up instead of polling stopping dead — the
@@ -185,11 +201,15 @@ export function useOptimizedModel({
   const [actionBusy, setActionBusy] = useState(false);
 
   const fireOptimize = useCallback(
-    async (id: string) => {
+    async (id: string, force?: boolean) => {
       gracePolls.current = 0;
       setOptimisticOptimize(true);
       setActionBusy(true);
-      await postModelAction(paths.reoptimize, id);
+      await postModelAction(
+        paths.reoptimize,
+        id,
+        force ? { force: "true" } : undefined
+      );
       setActionBusy(false);
       await queryClient.invalidateQueries({
         queryKey: ["model-artifacts", companyId, id]
@@ -206,6 +226,8 @@ export function useOptimizedModel({
     if (autoFiredRef.current === modelUploadId) return;
     // No optimiser configured → firing reoptimise just no-ops server-side; skip it.
     if (artifacts.optimizerAvailable === false) return;
+    // No source left in storage → the run can only fail; don't fire.
+    if (artifacts.sourceAvailable === false) return;
     if (
       hasInteractive ||
       optimizeInFlight ||
@@ -228,6 +250,15 @@ export function useOptimizedModel({
   const retry = useCallback(() => {
     if (!enabled || !modelUploadId) return;
     void fireOptimize(modelUploadId);
+  }, [enabled, modelUploadId, fireOptimize]);
+
+  // Force a fresh optimise of an already-Successful model (the badge's
+  // refresh action) — e.g. to pick up improved tessellation/quality settings.
+  // The server resets optimizeStatus so the job's already-optimised guard
+  // doesn't skip the run.
+  const regenerate = useCallback(() => {
+    if (!enabled || !modelUploadId) return;
+    void fireOptimize(modelUploadId, true);
   }, [enabled, modelUploadId, fireOptimize]);
 
   const cancel = useCallback(async () => {
@@ -271,9 +302,12 @@ export function useOptimizedModel({
     artifacts?.optimizerAvailable !== false;
 
   // Whether a manual retry can possibly succeed. When the optimiser isn't
-  // configured, hosts must not wire `onRetry` — otherwise ModelPreview's
-  // settled/no-preview state renders a retry button advertising a dead action.
-  const canRetry = artifacts?.optimizerAvailable !== false;
+  // configured — or the reoptimise SOURCE no longer exists in storage — hosts
+  // must not wire `onRetry`: ModelPreview's settled/no-preview state would
+  // render a retry button advertising a dead action.
+  const canRetry =
+    artifacts?.optimizerAvailable !== false &&
+    artifacts?.sourceAvailable !== false;
 
   return {
     artifacts,
@@ -289,6 +323,7 @@ export function useOptimizedModel({
     /** Overlay's first step reads as waiting until the job is picked up. */
     optimizeQueued: artifacts?.optimizeStatus !== "Processing",
     retry,
+    regenerate,
     retryLabel:
       artifacts?.optimizeStatus === "Failed" ? "Retry" : "Load Preview",
     cancel,

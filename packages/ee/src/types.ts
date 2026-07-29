@@ -5,6 +5,11 @@ export type IntegrationAction = {
   label: string;
   description: string;
   endpoint: string;
+  /**
+   * Name of a boolean setting that must be enabled for this action to be shown.
+   * Omit to always show the action on an installed integration.
+   */
+  enabledWhenSetting?: string;
 };
 
 /**

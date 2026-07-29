@@ -1,4 +1,6 @@
-import type { Json } from "@carbon/database";
+import { useCarbon } from "@carbon/auth";
+import type { Database, Json } from "@carbon/database";
+import { getLogger } from "@carbon/logger";
 import { PrintButton } from "@carbon/printing/ui";
 import {
   Accordion,
@@ -32,6 +34,7 @@ import {
   Spinner,
   Status,
   TruncatedTooltipText,
+  toast,
   useDisclosure,
   useKeyboardWedge,
   useMode,
@@ -103,6 +106,8 @@ import type {
 } from "~/services/types";
 import { getPrivateUrl, path } from "~/utils/path";
 import { deriveUnits } from "~/utils/units";
+
+const log = getLogger("mes", "assembly-view");
 
 type StepRecord = {
   id: string;
@@ -493,6 +498,7 @@ export function AssemblyView({
   productionQuantities = { scrap: 0, production: 0, rework: 0 }
 }: Props) {
   const user = useUser();
+  const { carbon } = useCarbon();
   const mode = useMode();
   const navigate = useNavigate();
   const revalidator = useRevalidator();
@@ -514,6 +520,8 @@ export function AssemblyView({
   // Silent auto-completion of a single unit once its final step is recorded
   // (multi-quantity assembly builds one at a time — see the effect below).
   const completeUnitFetcher = useFetcher<{ id?: string }>();
+  // Lazily creates NCR containment inspection steps for this operation (see effect below).
+  const inspectionStepsFetcher = useFetcher();
   const imageViewer = useDisclosure();
   // Which reference image fills the main panel: a step photo (index) or the
   // finished-product image ("finished").
@@ -618,18 +626,123 @@ export function AssemblyView({
   );
   const locationId = layoutData?.location;
 
-  // Real build steps only. NCR actions are surfaced through the dedicated "Open NCRs"
-  // sidebar + Flag-issue affordance, never injected as synthetic build steps (story 20).
-  const steps = (procedure.attributes ?? [])
-    .filter(
-      (s) =>
-        !(
-          s.type === "Inspection" &&
-          (s as { nonConformanceActionId?: string | null })
-            .nonConformanceActionId != null
-        )
-    )
-    .toSorted((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
+  // Lazy creation of Inspection steps for non-conformance (containment) actions —
+  // mirrors the operation view (JobOperation): any outstanding NCR with a containment
+  // against this item/process is materialized as a recordable Inspection step so the
+  // operator signs off on the containment inline. Idempotent — actions that already have
+  // a step are skipped; the fetcher POST revalidates the loader, so a second pass no-ops.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: mirrors the operation view
+  useEffect(() => {
+    function createInspectionStepsForNonConformanceActions() {
+      // Skip while a prior POST is still in flight: procedure/nonConformanceActions
+      // references churn on every realtime revalidation, so without this guard a
+      // submit whose insert hasn't yet landed in procedure.attributes would be
+      // re-issued against a stale existingActionIds set — duplicating steps. Matches
+      // the laborFetcher/completeUnitFetcher idle guards elsewhere in this file.
+      if (
+        !carbon ||
+        !operationId ||
+        nonConformanceActions.length === 0 ||
+        inspectionStepsFetcher.state !== "idle"
+      )
+        return;
+
+      try {
+        const attributes = procedure.attributes ?? [];
+        const existingActionIds = new Set(
+          attributes
+            .filter(
+              (step) =>
+                step.type === "Inspection" &&
+                (step as { nonConformanceActionId?: string | null })
+                  .nonConformanceActionId != null
+            )
+            .map(
+              (step) =>
+                (step as { nonConformanceActionId?: string | null })
+                  .nonConformanceActionId
+            )
+        );
+
+        const newSteps: Database["public"]["Tables"]["jobOperationStep"]["Insert"][] =
+          [];
+        let maxSortOrder = Math.max(
+          ...attributes.map((s) => s.sortOrder ?? 0),
+          0
+        );
+
+        for (const action of nonConformanceActions) {
+          const actionId = action.id;
+          if (!actionId || existingActionIds.has(actionId)) continue;
+
+          newSteps.push({
+            companyId: user.company.id,
+            createdBy: user.id,
+            operationId,
+            name: `${action.actionTypeName} - ${action.nonConformanceId}`,
+            type: "Inspection" as const,
+            sortOrder: ++maxSortOrder,
+            nonConformanceActionId: actionId
+          });
+        }
+
+        if (newSteps.length > 0) {
+          inspectionStepsFetcher.submit(JSON.stringify(newSteps), {
+            method: "post",
+            action: path.to.inspectionSteps,
+            encType: "application/json"
+          });
+        }
+      } catch (error) {
+        log.error(
+          "Failed to create inspection steps for non-conformance actions",
+          { error }
+        );
+      }
+    }
+
+    createInspectionStepsForNonConformanceActions();
+  }, [
+    carbon,
+    operationId,
+    nonConformanceActions,
+    procedure,
+    user.company.id,
+    user.id
+  ]);
+
+  // Surface a failed containment-step creation instead of failing silently — otherwise
+  // the operator could complete the operation without the required inspection step ever
+  // being recorded. The route (steps.inspection.tsx) returns { success, message }; only
+  // react on the transition to idle (via the ref) so we toast once, not on every render.
+  const prevInspectionStepsStateRef = useRef(inspectionStepsFetcher.state);
+  useEffect(() => {
+    const settled =
+      prevInspectionStepsStateRef.current !== "idle" &&
+      inspectionStepsFetcher.state === "idle";
+    prevInspectionStepsStateRef.current = inspectionStepsFetcher.state;
+    if (!settled) return;
+    const result = inspectionStepsFetcher.data as
+      | { success?: boolean; message?: string }
+      | undefined;
+    if (result && result.success === false) {
+      log.error(
+        "Failed to create inspection steps for non-conformance actions",
+        {
+          message: result.message
+        }
+      );
+      toast.error(result.message ?? "Failed to create containment steps");
+    }
+  }, [inspectionStepsFetcher.state, inspectionStepsFetcher.data]);
+
+  // Build steps, sorted by sortOrder. NCR containment actions are materialized as
+  // Inspection steps (see the effect above) and appear inline like any other step —
+  // parity with the operation view. The disposition notes for each are also surfaced
+  // in the Containment accordion in the left panel.
+  const steps = (procedure.attributes ?? []).toSorted(
+    (a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0)
+  );
   const parameters = procedure.parameters ?? [];
 
   // Current step, computed early so materials/tools can be filtered to it. Mirrors the
