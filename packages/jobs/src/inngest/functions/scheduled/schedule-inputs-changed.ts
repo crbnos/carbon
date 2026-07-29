@@ -31,7 +31,8 @@ const scheduleInputsChangedData = z.object({
     "employee-shift",
     "work-center",
     "location",
-    "reorder"
+    "reorder",
+    "crew"
   ]),
   reason: z.string(),
   entityId: z.string().optional(),
@@ -92,6 +93,8 @@ export const markScheduleStaleFunction = inngest.createFunction(
     //   ability-gated process (people-availability changes only matter to gated work;
     //   a company with zero gated ops is untouched)
     // - work-center (with id)  -> jobs with unfinished ops assigned to that work center
+    // - crew (with id)         -> same as work-center (entityId = the crewed workCenterId)
+    // - crew (no id)           -> absence of an uncrewed person; only gated ops care
     // - location/reorder       -> everything (timezone/order changes affect all placements)
     const affectedJobIds = await step.run("compute-affected-jobs", async () => {
       const gatedKinds = ["ability", "shift", "employee-shift"];
@@ -105,7 +108,7 @@ export const markScheduleStaleFunction = inngest.createFunction(
           .eq("companyId", companyId)
           .maybeSingle();
         processIds = ability.data?.processId ? [ability.data.processId] : [];
-      } else if (gatedKinds.includes(kind)) {
+      } else if (gatedKinds.includes(kind) || (kind === "crew" && !entityId)) {
         const gated = await serviceRole
           .from("process")
           .select("id")
@@ -114,7 +117,10 @@ export const markScheduleStaleFunction = inngest.createFunction(
         processIds = (gated.data ?? []).map((p) => p.id);
       }
 
-      if (processIds !== null || (kind === "work-center" && entityId)) {
+      if (
+        processIds !== null ||
+        ((kind === "work-center" || kind === "crew") && entityId)
+      ) {
         if (processIds !== null && processIds.length === 0) {
           return []; // nothing gated -> nothing affected
         }

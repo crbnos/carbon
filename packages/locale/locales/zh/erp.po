@@ -96,6 +96,10 @@ msgstr "{0} 上传成功"
 msgid "{0} values missing"
 msgstr "{0} 个值缺失"
 
+#. placeholder {0}: formatHours(-delta)
+msgid "{0}h free"
+msgstr ""
+
 msgid "{apOverduePct}% of payables"
 msgstr "{apOverduePct}% 的应付账款"
 
@@ -159,6 +163,10 @@ msgstr "占总数的 %"
 #. placeholder {1}: redirectedParts.join(", ")
 msgid "↩ {0} redirected from superseded {1}"
 msgstr "↩ {0} 从已淘汰的 {1} 重定向"
+
+#. placeholder {0}: formatHours(delta)
+msgid "+{0}h"
+msgstr ""
 
 msgid "<0>Add a supplier part</0> for this item to set a preferred supplier."
 msgstr "<0>为此项目添加供应商零件</0>以设置首选供应商。"
@@ -396,6 +404,9 @@ msgstr "能力"
 
 msgid "About"
 msgstr "关于"
+
+msgid "Absent"
+msgstr ""
 
 msgid "Absorption"
 msgstr "吸收"
@@ -818,6 +829,9 @@ msgstr "所有可审计实体的更改都正在被记录。"
 msgid "All Customers"
 msgstr "所有客户"
 
+msgid "All departments"
+msgstr ""
+
 msgid "All Documents"
 msgstr "所有文档"
 
@@ -838,6 +852,9 @@ msgstr "所选组的所有成员和所选个人将能够批准请求"
 
 msgid "All rows imported — {inserted} inserted, {updated} updated."
 msgstr "所有行已导入—{inserted}行插入，{updated}行更新。"
+
+msgid "All shifts"
+msgstr ""
 
 msgid "All Suppliers"
 msgstr "所有供应商"
@@ -1546,6 +1563,9 @@ msgstr "分配给组"
 msgid "Assigned"
 msgstr "已分配"
 
+msgid "Assigned / Needed people per station. Needed = job hours due that day ÷ {defaultShiftHours}h shift, rounded up. Red is short-staffed, green is covered, yellow is overstaffed."
+msgstr ""
+
 msgid "Assigned to Me"
 msgstr "分配给我"
 
@@ -1817,6 +1837,9 @@ msgstr "被 {0} 阻止"
 
 msgid "Blocks save until resolved"
 msgstr "阻止保存直到解决"
+
+msgid "Board"
+msgstr ""
 
 msgid "BoM"
 msgstr "物料清单"
@@ -2234,6 +2257,9 @@ msgstr "清理并批准迁移的数据"
 
 msgid "Clear"
 msgstr "清除"
+
+msgid "Clear absence"
+msgstr ""
 
 msgid "Clear due date"
 msgstr "清除截止日期"
@@ -2801,6 +2827,9 @@ msgstr "复制零件唯一标识符"
 msgid "Copy PIN"
 msgstr "复制PIN"
 
+msgid "Copy previous day"
+msgstr ""
+
 msgid "Copy pricing to a single customer"
 msgstr "将定价复制到单个客户"
 
@@ -2952,6 +2981,9 @@ msgstr "交易对手"
 
 msgid "Country"
 msgstr "国家"
+
+msgid "Coverage"
+msgstr ""
 
 msgid "Create"
 msgstr "创建"
@@ -3200,6 +3232,9 @@ msgstr "贷项和借项"
 
 msgid "Credits applied"
 msgstr "已应用的额度"
+
+msgid "Crew"
+msgstr ""
 
 msgid "Critical"
 msgstr "关键"
@@ -3958,6 +3993,9 @@ msgstr "送货地点"
 
 msgid "Demand"
 msgstr "需求"
+
+msgid "Demand = job hours due · Scheduled = work hours the scheduler placed · Available = assigned crew's shift hours (uncrewed stations use the location's shift calendar) · Load = hours over (+) or free"
+msgstr ""
 
 msgid "Demand forecast"
 msgstr "需求预测"
@@ -6042,6 +6080,9 @@ msgstr "家庭电话"
 msgid "Host, secure, and back up the platform"
 msgstr "托管、保护和备份平台"
 
+msgid "Hours"
+msgstr ""
+
 msgid "Hours per Week"
 msgstr "每周小时数"
 
@@ -6998,6 +7039,9 @@ msgstr "在 Carbon 上线"
 msgid "Live reloading"
 msgstr "实时重新加载"
 
+msgid "Load"
+msgstr ""
+
 msgid "Load newer"
 msgstr "加载更新"
 
@@ -7270,6 +7314,9 @@ msgstr "映射您当前的流程、系统和数据"
 msgid "Mark \"{0}\" as passed?"
 msgstr "将\"{0}\"标记为已通过？"
 
+msgid "Mark absent today"
+msgstr ""
+
 msgid "Mark all as configured"
 msgstr "全部标记为已配置"
 
@@ -7423,6 +7470,9 @@ msgstr "材料"
 msgid "Materials"
 msgstr "材料"
 
+msgid "Matrix"
+msgstr ""
+
 msgid "Max Qty"
 msgstr "最大数量"
 
@@ -7560,6 +7610,9 @@ msgstr "缺少运费"
 
 msgid "Missing Suppliers"
 msgstr "缺少供应商"
+
+msgid "Missing:"
+msgstr ""
 
 msgid "Mobile Phone"
 msgstr "手机"
@@ -8013,6 +8066,9 @@ msgstr "下次校准日期"
 msgid "Next Date"
 msgstr "下一个日期"
 
+msgid "Next Day"
+msgstr ""
+
 msgid "Next Due"
 msgstr "下次到期"
 
@@ -8024,6 +8080,9 @@ msgstr "下一个序列"
 
 msgid "Next step"
 msgstr "下一步"
+
+msgid "Next Week"
+msgstr ""
 
 msgid "Next:"
 msgstr "下一步："
@@ -8138,6 +8197,9 @@ msgstr "无截止日期"
 
 msgid "No editable properties for this item."
 msgstr "此项目没有可编辑的属性。"
+
+msgid "No employees assigned this week"
+msgstr ""
 
 msgid "No employees assigned yet. Add groups to see status."
 msgstr "还未分配员工。添加组以查看状态。"
@@ -8432,6 +8494,9 @@ msgstr "的"
 
 msgid "Off — released revisions stay editable"
 msgstr "关闭 — 已发布的版本保持可编辑"
+
+msgid "ok"
+msgstr ""
 
 msgid "OK"
 msgstr "确定"
@@ -8779,6 +8844,9 @@ msgstr "间接费用差异（默认）"
 msgid "Overhead Variance (default)"
 msgstr "所有者（成本中心）"
 
+msgid "overloaded"
+msgstr ""
+
 msgid "Override needs the inventory:update permission and a reason."
 msgstr "覆盖需要 inventory:update 权限和原因。"
 
@@ -8911,6 +8979,9 @@ msgstr "通过"
 
 msgid "Passed"
 msgstr "已通过"
+
+msgid "Past due"
+msgstr ""
 
 msgid "Path"
 msgstr "路径"
@@ -9290,8 +9361,14 @@ msgstr "上一步"
 msgid "Previous Date"
 msgstr "上一个日期"
 
+msgid "Previous Day"
+msgstr ""
+
 msgid "Previous page"
 msgstr "上一页"
+
+msgid "Previous Week"
+msgstr ""
 
 msgid "Price break actions"
 msgstr "价格阶梯操作"
@@ -10116,6 +10193,9 @@ msgstr "移除筛选"
 
 msgid "Remove from Price List"
 msgstr "从价格列表中移除"
+
+msgid "Remove from station"
+msgstr ""
 
 msgid "Remove item"
 msgstr "删除项目"
@@ -11050,6 +11130,9 @@ msgstr "序列号/批次 #"
 
 msgid "Serialize & sell your parts"
 msgstr "序列化并销售您的零件"
+
+msgid "Series"
+msgstr ""
 
 msgid "service"
 msgstr "服务"
@@ -12967,6 +13050,9 @@ msgstr "对账"
 msgid "Tie-Out unavailable"
 msgstr "结账检验不可用"
 
+msgid "tight"
+msgstr ""
+
 msgid "Tightened"
 msgstr "紧张"
 
@@ -13972,6 +14058,9 @@ msgstr "网站"
 
 msgid "Wednesday"
 msgstr "星期三"
+
+msgid "Week"
+msgstr ""
 
 #. placeholder {0}: d.week
 msgid "Week {0}"

@@ -27,7 +27,7 @@ first match.
   through the `MasterDataProvider` interface (`KyselyMasterDataProvider` is the
   live impl); writes stay on Kysely. `resource-manager.ts` was dead code and
   has been deleted. `calendar-utils.ts` / `slot-allocator.ts` /
-  `date-utils.ts` / `operator-eligibility.ts` are pure and have Deno tests
+  `date-utils.ts` / `operator-eligibility.ts` / `crew-utils.ts` are pure and have Deno tests
   (`deno test lib/scheduling/` from the functions dir). `date-utils.toIsoDate`
   normalizes pg DATE columns (JS Date at local midnight) to "YYYY-MM-DD" —
   required before any lexicographic date comparison (operator expiry).
@@ -35,7 +35,26 @@ first match.
   (ops Kanban; drag → `operations.update.tsx` writes `jobOperation.workCenterId` +
   `priority`, no reschedule) and `dates.tsx` (jobs-by-due-date Kanban; drag →
   `dates.update.tsx` writes `job.dueDate` + `priority`, **then calls
-  `triggerJobSchedule(...)`** to re-run the engine).
+  `triggerJobSchedule(...)`** to re-run the engine). `crew.tsx` is the Crew
+  page with a segmented view switcher (`?view=`): the Crew **board** (manning
+  board: drag employees onto work-center columns per date; Unassigned column
+  is `position: sticky` — needs `min-w-max` on the shared `BoardContainer`
+  row and `MeasuringStrategy.Always` on the DndContext; mutations via
+  `crew.update.tsx`, which fires
+  `notifyScheduleInputsChanged(companyId, "crew", ..., workCenterId)`), a
+  week **matrix** (`CrewMatrix.tsx`: employee×day grid + assigned-vs-needed
+  coverage as sub-tabs, department filter), and a week **capacity** board
+  (`CrewCapacity.tsx`). Capacity math: Demand = open `jobOperation` hours by
+  due date via `makeDurations` (Draft/Planned jobs excluded — released work
+  only; ops overdue up to 28 days land in a Past-due column); Scheduled =
+  `capacityReservation.workHours` distributed across each reservation's span
+  per day; Available = crew headcount × real shift hours resolved through
+  the ladder assignment `shiftId` → the person's `employeeShift` →
+  most-common shift duration at the location → 8h (uncrewed stations fall
+  back to the location's per-weekday shift calendar); Load renders as hours
+  over/free (+Xh / Xh free), not %. Shift + location filters live in header
+  popovers; the shift filter's "All shifts" option (`shiftId` null on
+  drag) creates shift-less assignments that resolve hours via the ladder.
 - **MES display** (`apps/mes/app/routes/x+/operations.tsx`): the "Schedule" page is
   a **Kanban** (columns = work centers, cards = operations sorted by `priority`),
   not a Gantt. Read-only re display; operators execute via `operation.$operationId.tsx`.
@@ -78,8 +97,25 @@ selectWorkCenters → calculatePriorities → persistChanges`.
   ability-gated processes, ≥1 qualified employee on shift and unreserved
   (`slot-allocator.ts`; the accumulation windows for gated ops are the union
   of the pool members' shift windows, so work pauses while nobody qualified
-  is on shift; ungated ops need only the machine). The allocator attributes
-  each wait to its binding resource (machine queue vs operator pool) for the
+  is on shift; ungated ops need only the machine). **Crew assignments**
+  (the manning board: `crewAssignment` / `crewAbsence` tables) also feed the
+  context (`crewByWorkCenter` + `windowsByEmployee`, built in
+  `buildFiniteContext` via `getCrewAssignments`/`getCrewAbsences`). A crewed
+  station works as a TEAM (`allocateAttendedOperation`'s `team` option →
+  `simulateAttendedTeam` in `slot-allocator.ts`): still one op at a time,
+  but every crew member present is booked on that op together — labor
+  accumulates at n× wall-clock (n = crew present in the stretch; rate drops
+  when someone leaves), setup accumulates at 1×, and machine time is never
+  compressed (unattended remainder = machineHours − labor wall-clock run
+  concurrently). Gated ops team-book crew∩qualified with windows clipped to
+  their crewed dates (`clipWindowsToDates`); pass 2 falls back softly to
+  the full qualified pool in classic single-person relay mode. Ungated ops
+  at a crewed station are manned the same way with machine-only fallback.
+  Absences subtract the person's windows for that date everywhere
+  (`subtractAbsences`). A blank board is byte-identical to pre-crew
+  behavior (single-member team mode ≡ legacy relay). The allocator attributes
+  each wait to its binding resource (machine queue vs operator pool vs the
+  assigned crew — `crew-wait` cause) for the
   schedule note / conflict message. Picks the earliest-finish
   candidate (tie → least reserved). Placement overwrites `startDate`/`dueDate`;
   placements past the backward due date set `hasConflict`/`conflictReason`

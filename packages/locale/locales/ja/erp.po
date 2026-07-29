@@ -96,6 +96,10 @@ msgstr "{0}が正常にアップロードされました"
 msgid "{0} values missing"
 msgstr "{0}個の値が見つかりません"
 
+#. placeholder {0}: formatHours(-delta)
+msgid "{0}h free"
+msgstr ""
+
 msgid "{apOverduePct}% of payables"
 msgstr "{apOverduePct}%の買掛金"
 
@@ -159,6 +163,10 @@ msgstr "総量比"
 #. placeholder {1}: redirectedParts.join(", ")
 msgid "↩ {0} redirected from superseded {1}"
 msgstr "↩ {0} は廃止された {1} からリダイレクトされました"
+
+#. placeholder {0}: formatHours(delta)
+msgid "+{0}h"
+msgstr ""
 
 msgid "<0>Add a supplier part</0> for this item to set a preferred supplier."
 msgstr "<0>この商品の仕入先部品を追加</0>して、優先仕入先を設定してください。"
@@ -396,6 +404,9 @@ msgstr "能力"
 
 msgid "About"
 msgstr "について"
+
+msgid "Absent"
+msgstr ""
 
 msgid "Absorption"
 msgstr "吸収"
@@ -818,6 +829,9 @@ msgstr "監査対象エンティティへのすべての変更が記録されて
 msgid "All Customers"
 msgstr "すべての顧客"
 
+msgid "All departments"
+msgstr ""
+
 msgid "All Documents"
 msgstr "すべてのドキュメント"
 
@@ -838,6 +852,9 @@ msgstr "選択されたグループのすべてのメンバーと選択された
 
 msgid "All rows imported — {inserted} inserted, {updated} updated."
 msgstr "すべての行をインポート—{inserted}行挿入、{updated}行更新。"
+
+msgid "All shifts"
+msgstr ""
 
 msgid "All Suppliers"
 msgstr "すべてのサプライヤー"
@@ -1546,6 +1563,9 @@ msgstr "グループに割り当て"
 msgid "Assigned"
 msgstr "割り当て済み"
 
+msgid "Assigned / Needed people per station. Needed = job hours due that day ÷ {defaultShiftHours}h shift, rounded up. Red is short-staffed, green is covered, yellow is overstaffed."
+msgstr ""
+
 msgid "Assigned to Me"
 msgstr "私に割り当てられた"
 
@@ -1817,6 +1837,9 @@ msgstr "{0}によってブロックされています"
 
 msgid "Blocks save until resolved"
 msgstr "解決されるまで保存をブロックします"
+
+msgid "Board"
+msgstr ""
 
 msgid "BoM"
 msgstr "BoM"
@@ -2234,6 +2257,9 @@ msgstr "移行されたデータをクリーンアップして承認する"
 
 msgid "Clear"
 msgstr "クリア"
+
+msgid "Clear absence"
+msgstr ""
 
 msgid "Clear due date"
 msgstr "期限をクリア"
@@ -2801,6 +2827,9 @@ msgstr "部品の一意の識別子をコピー"
 msgid "Copy PIN"
 msgstr "PINをコピー"
 
+msgid "Copy previous day"
+msgstr ""
+
 msgid "Copy pricing to a single customer"
 msgstr "単一の顧客に価格設定をコピーする"
 
@@ -2952,6 +2981,9 @@ msgstr "相手先"
 
 msgid "Country"
 msgstr "国"
+
+msgid "Coverage"
+msgstr ""
 
 msgid "Create"
 msgstr "作成"
@@ -3200,6 +3232,9 @@ msgstr "クレジット＆デビット"
 
 msgid "Credits applied"
 msgstr "適用されたクレジット"
+
+msgid "Crew"
+msgstr ""
 
 msgid "Critical"
 msgstr "重大"
@@ -3958,6 +3993,9 @@ msgstr "配送先"
 
 msgid "Demand"
 msgstr "需要"
+
+msgid "Demand = job hours due · Scheduled = work hours the scheduler placed · Available = assigned crew's shift hours (uncrewed stations use the location's shift calendar) · Load = hours over (+) or free"
+msgstr ""
 
 msgid "Demand forecast"
 msgstr "需要予測"
@@ -6042,6 +6080,9 @@ msgstr "自宅電話"
 msgid "Host, secure, and back up the platform"
 msgstr "プラットフォームをホストし、保護し、バックアップする"
 
+msgid "Hours"
+msgstr ""
+
 msgid "Hours per Week"
 msgstr "週間あたりの時間"
 
@@ -6998,6 +7039,9 @@ msgstr "Carbonで稼働中"
 msgid "Live reloading"
 msgstr "ライブリロード中"
 
+msgid "Load"
+msgstr ""
+
 msgid "Load newer"
 msgstr "新しいものを読み込む"
 
@@ -7270,6 +7314,9 @@ msgstr "現在のプロセス、システム、データをマップする"
 msgid "Mark \"{0}\" as passed?"
 msgstr "\"{0}\"をパスしたとしてマークしますか？"
 
+msgid "Mark absent today"
+msgstr ""
+
 msgid "Mark all as configured"
 msgstr "すべてを設定済みとしてマーク"
 
@@ -7423,6 +7470,9 @@ msgstr "材料"
 msgid "Materials"
 msgstr "材料"
 
+msgid "Matrix"
+msgstr ""
+
 msgid "Max Qty"
 msgstr "最大数量"
 
@@ -7560,6 +7610,9 @@ msgstr "配送コストが不足しています"
 
 msgid "Missing Suppliers"
 msgstr "サプライヤーが見つかりません"
+
+msgid "Missing:"
+msgstr ""
 
 msgid "Mobile Phone"
 msgstr "携帯電話"
@@ -8013,6 +8066,9 @@ msgstr "次の校正日"
 msgid "Next Date"
 msgstr "次の日付"
 
+msgid "Next Day"
+msgstr ""
+
 msgid "Next Due"
 msgstr "次回期限"
 
@@ -8024,6 +8080,9 @@ msgstr "次のシーケンス"
 
 msgid "Next step"
 msgstr "次のステップ"
+
+msgid "Next Week"
+msgstr ""
 
 msgid "Next:"
 msgstr "次:"
@@ -8138,6 +8197,9 @@ msgstr "期限なし"
 
 msgid "No editable properties for this item."
 msgstr "このアイテムの編集可能なプロパティはありません。"
+
+msgid "No employees assigned this week"
+msgstr ""
 
 msgid "No employees assigned yet. Add groups to see status."
 msgstr "まだ従業員が割り当てられていません。グループを追加してステータスを確認してください。"
@@ -8432,6 +8494,9 @@ msgstr "の"
 
 msgid "Off — released revisions stay editable"
 msgstr "オフ - リリースされたリビジョンは編集可能なままです"
+
+msgid "ok"
+msgstr ""
 
 msgid "OK"
 msgstr "OK"
@@ -8779,6 +8844,9 @@ msgstr "間接費差異（デフォルト）"
 msgid "Overhead Variance (default)"
 msgstr "所有者（コストセンター）"
 
+msgid "overloaded"
+msgstr ""
+
 msgid "Override needs the inventory:update permission and a reason."
 msgstr "オーバーライドには inventory:update 権限と理由が必要です。"
 
@@ -8911,6 +8979,9 @@ msgstr "合格"
 
 msgid "Passed"
 msgstr "完了"
+
+msgid "Past due"
+msgstr ""
 
 msgid "Path"
 msgstr "パス"
@@ -9290,8 +9361,14 @@ msgstr "前へ"
 msgid "Previous Date"
 msgstr "前の日付"
 
+msgid "Previous Day"
+msgstr ""
+
 msgid "Previous page"
 msgstr "前のページ"
+
+msgid "Previous Week"
+msgstr ""
 
 msgid "Price break actions"
 msgstr "価格ブレークアクション"
@@ -10116,6 +10193,9 @@ msgstr "フィルターを削除"
 
 msgid "Remove from Price List"
 msgstr "価格リストから削除"
+
+msgid "Remove from station"
+msgstr ""
 
 msgid "Remove item"
 msgstr "アイテムを削除"
@@ -11050,6 +11130,9 @@ msgstr "シリアル/バッチ #"
 
 msgid "Serialize & sell your parts"
 msgstr "パーツをシリアル化して販売する"
+
+msgid "Series"
+msgstr ""
 
 msgid "service"
 msgstr "サービス"
@@ -12967,6 +13050,9 @@ msgstr "照合"
 msgid "Tie-Out unavailable"
 msgstr "Tie-Outは利用できません"
 
+msgid "tight"
+msgstr ""
+
 msgid "Tightened"
 msgstr "厳しい"
 
@@ -13972,6 +14058,9 @@ msgstr "ウェブサイト"
 
 msgid "Wednesday"
 msgstr "水曜日"
+
+msgid "Week"
+msgstr ""
 
 #. placeholder {0}: d.week
 msgid "Week {0}"

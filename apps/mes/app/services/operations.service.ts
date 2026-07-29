@@ -1085,6 +1085,22 @@ export async function getWorkCentersByLocation(
   return { data: mergedData, error: null };
 }
 
+/**
+ * The operator's crew assignment (manning-board station) for a date. Multiple
+ * rows are possible at multi-shift locations; callers take the first.
+ */
+export async function getMyCrewAssignment(
+  client: SupabaseClient<Database>,
+  args: { companyId: string; employeeId: string; date: string }
+) {
+  return client
+    .from("crewAssignment")
+    .select("id, workCenterId, shiftId")
+    .eq("companyId", args.companyId)
+    .eq("employeeId", args.employeeId)
+    .eq("date", args.date);
+}
+
 export async function getWorkCentersByCompany(
   client: SupabaseClient<Database>,
   companyId: string

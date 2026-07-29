@@ -101,6 +101,11 @@ export type EmployeeShiftRow = {
   timezone: string;
 };
 
+// Row types live in crew-utils.ts (pure module) so the deno tests don't pull
+// the DB dependency graph
+import type { CrewAbsenceRow, CrewAssignmentRow } from "./crew-utils.ts";
+export type { CrewAbsenceRow, CrewAssignmentRow };
+
 /**
  * Master Data Provider
  * The single read seam for the scheduling engine. All master/transactional
@@ -149,6 +154,11 @@ export interface MasterDataProvider {
   getEmployeeShiftWindows(
     employeeIds: string[]
   ): Promise<EmployeeShiftRow[]>;
+  getCrewAssignments(
+    rangeStart: Date,
+    rangeEnd: Date
+  ): Promise<CrewAssignmentRow[]>;
+  getCrewAbsences(rangeStart: Date, rangeEnd: Date): Promise<CrewAbsenceRow[]>;
 }
 
 /**
@@ -594,5 +604,78 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
       }
     }
     return result;
+  }
+
+  async getCrewAssignments(
+    rangeStart: Date,
+    rangeEnd: Date
+  ): Promise<CrewAssignmentRow[]> {
+    return this.cached(
+      `crewAssignments:${rangeStart.toISOString()}:${rangeEnd.toISOString()}`,
+      () => this.loadCrewAssignments(rangeStart, rangeEnd)
+    );
+  }
+
+  private async loadCrewAssignments(
+    rangeStart: Date,
+    rangeEnd: Date
+  ): Promise<CrewAssignmentRow[]> {
+    const rows = await this.db
+      .selectFrom("crewAssignment as ca")
+      .select(["ca.workCenterId", "ca.employeeId", "ca.date", "ca.shiftId"])
+      .where("ca.companyId", "=", this.companyId)
+      .where("ca.date", ">=", rangeStart.toISOString().slice(0, 10))
+      .where("ca.date", "<=", rangeEnd.toISOString().slice(0, 10))
+      .execute();
+
+    return rows.flatMap((r) => {
+      const date = toIsoDate(r.date);
+      return date
+        ? [
+            {
+              workCenterId: r.workCenterId,
+              employeeId: r.employeeId,
+              date,
+              shiftId: r.shiftId,
+            },
+          ]
+        : [];
+    });
+  }
+
+  async getCrewAbsences(
+    rangeStart: Date,
+    rangeEnd: Date
+  ): Promise<CrewAbsenceRow[]> {
+    return this.cached(
+      `crewAbsences:${rangeStart.toISOString()}:${rangeEnd.toISOString()}`,
+      () => this.loadCrewAbsences(rangeStart, rangeEnd)
+    );
+  }
+
+  private async loadCrewAbsences(
+    rangeStart: Date,
+    rangeEnd: Date
+  ): Promise<CrewAbsenceRow[]> {
+    const rows = await this.db
+      .selectFrom("crewAbsence as ca")
+      .select(["ca.employeeId", "ca.date", "ca.shiftId"])
+      .where("ca.companyId", "=", this.companyId)
+      .where("ca.date", ">=", rangeStart.toISOString().slice(0, 10))
+      .where("ca.date", "<=", rangeEnd.toISOString().slice(0, 10))
+      .execute();
+
+    return rows.flatMap((r) => {
+      const date = toIsoDate(r.date);
+      return date
+        ? [
+            {
+              employeeId: r.employeeId,
+              date,
+              shiftId: r.shiftId,
+            },
+          ]
+        : [];
+    });
   }
 }

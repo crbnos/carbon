@@ -1411,6 +1411,31 @@ export const assemblyUnitValidator = z.object({
   itemId: zfd.text(z.string().optional())
 });
 
+export const crewAssignmentValidator = z.object({
+  id: zfd.text(z.string().optional()),
+  workCenterId: z.string().min(1, { message: "Work center is required" }),
+  employeeId: z.string().min(1, { message: "Employee is required" }),
+  locationId: z.string().min(1, { message: "Location is required" }),
+  date: z.string().min(1, { message: "Date is required" }), // YYYY-MM-DD
+  shiftId: zfd.text(z.string().optional()),
+  note: zfd.text(z.string().optional())
+});
+
+export const crewAbsenceValidator = z.object({
+  id: zfd.text(z.string().optional()),
+  employeeId: z.string().min(1, { message: "Employee is required" }),
+  date: z.string().min(1, { message: "Date is required" }),
+  shiftId: zfd.text(z.string().optional()),
+  note: zfd.text(z.string().optional())
+});
+
+export const copyCrewBoardValidator = z.object({
+  locationId: z.string().min(1),
+  fromDate: z.string().min(1),
+  toDate: z.string().min(1),
+  shiftId: zfd.text(z.string().optional())
+});
+
 export type Motion = z.infer<typeof motionSchema>;
 export type CameraPose = z.infer<typeof cameraSchema>;
 export type Fastener = z.infer<typeof fastenerSchema>;

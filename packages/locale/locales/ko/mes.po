@@ -158,6 +158,9 @@ msgstr "필터 지우기"
 msgid "Clear Search"
 msgstr "검색 지우기"
 
+msgid "Clear station default"
+msgstr ""
+
 msgid "Clock In"
 msgstr "출근"
 
@@ -1117,3 +1120,7 @@ msgstr "{0}에 출근했습니다. 아래에서 퇴근 시간을 수정하거나
 
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
 msgstr "{hoursElapsed}시간 동안 출근 상태입니다. 퇴근 처리를 잊으셨나요?"
+
+#. placeholder {0}: crewStation.name
+msgid "Your station: {0}"
+msgstr ""

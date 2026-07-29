@@ -3880,6 +3880,358 @@ export async function upsertDemandProjections(
   };
 }
 
+export async function getCrewAssignments(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: { locationId: string; date: string; shiftId?: string | null }
+) {
+  let query = client
+    .from("crewAssignment")
+    .select("id, workCenterId, employeeId, shiftId, note, date")
+    .eq("companyId", companyId)
+    .eq("locationId", args.locationId)
+    .eq("date", args.date);
+  if (args.shiftId) query = query.eq("shiftId", args.shiftId);
+  return query;
+}
+
+export async function getCrewAbsences(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  date: string
+) {
+  return client
+    .from("crewAbsence")
+    .select("id, employeeId, shiftId, note, date")
+    .eq("companyId", companyId)
+    .eq("date", date);
+}
+
+export async function getCrewAssignmentsRange(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: { locationId: string; startDate: string; endDate: string }
+) {
+  return client
+    .from("crewAssignment")
+    .select("id, workCenterId, employeeId, shiftId, date")
+    .eq("companyId", companyId)
+    .eq("locationId", args.locationId)
+    .gte("date", args.startDate)
+    .lte("date", args.endDate);
+}
+
+export async function getCrewAbsencesRange(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: { startDate: string; endDate: string }
+) {
+  return client
+    .from("crewAbsence")
+    .select("id, employeeId, shiftId, date")
+    .eq("companyId", companyId)
+    .gte("date", args.startDate)
+    .lte("date", args.endDate);
+}
+
+/**
+ * Open job-operation hours per work center for the capacity view. Draft and
+ * Planned jobs are excluded — only released (firm) work counts toward load,
+ * matching the industry release-gating convention.
+ */
+export async function getCrewCapacityOperations(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: { workCenterIds: string[]; startDate: string; endDate: string }
+) {
+  return client
+    .from("jobOperation")
+    .select(
+      `id, workCenterId, dueDate, status, operationQuantity,
+       setupTime, setupUnit, laborTime, laborUnit, machineTime, machineUnit,
+       job!inner(status)`
+    )
+    .eq("companyId", companyId)
+    .in("workCenterId", args.workCenterIds)
+    .gte("dueDate", args.startDate)
+    .lte("dueDate", args.endDate)
+    .not("status", "in", '("Done","Canceled")')
+    .not(
+      "job.status",
+      "in",
+      '("Draft","Planned","Completed","Cancelled","Closed")'
+    );
+}
+
+export async function getCrewEmployees(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  locationId: string
+) {
+  return client
+    .from("employees")
+    .select("id, name, avatarUrl")
+    .eq("companyId", companyId)
+    .eq("locationId", locationId);
+}
+
+/**
+ * Gated abilities per work center at a location, for the crew board's
+ * advisory qualification badge. Chained lookups instead of a PostgREST embed —
+ * the composite tenant FKs break alias:fkColumn(...) embeds.
+ */
+export async function getWorkCenterRequiredAbilities(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  locationId: string
+): Promise<{
+  data:
+    | { workCenterId: string; abilityId: string; abilityName: string }[]
+    | null;
+  error: PostgrestError | null;
+}> {
+  const workCenters = await client
+    .from("workCenter")
+    .select("id")
+    .eq("companyId", companyId)
+    .eq("locationId", locationId);
+  if (workCenters.error) return { data: null, error: workCenters.error };
+  const workCenterIds = (workCenters.data ?? []).map((w) => w.id);
+  if (workCenterIds.length === 0) return { data: [], error: null };
+
+  const workCenterProcesses = await client
+    .from("workCenterProcess")
+    .select("workCenterId, processId")
+    .eq("companyId", companyId)
+    .in("workCenterId", workCenterIds);
+  if (workCenterProcesses.error)
+    return { data: null, error: workCenterProcesses.error };
+  const processIds = [
+    ...new Set((workCenterProcesses.data ?? []).map((r) => r.processId))
+  ];
+  if (processIds.length === 0) return { data: [], error: null };
+
+  const processes = await client
+    .from("process")
+    .select("id, requiresAbility")
+    .eq("companyId", companyId)
+    .in("id", processIds);
+  if (processes.error) return { data: null, error: processes.error };
+  const gatedProcessIds = (processes.data ?? [])
+    .filter((p) => p.requiresAbility)
+    .map((p) => p.id);
+  if (gatedProcessIds.length === 0) return { data: [], error: null };
+
+  const abilities = await client
+    .from("ability")
+    .select("id, name, processId")
+    .eq("companyId", companyId)
+    .eq("active", true)
+    .in("processId", gatedProcessIds);
+  if (abilities.error) return { data: null, error: abilities.error };
+  const abilityByProcess = new Map(
+    (abilities.data ?? [])
+      .filter((a) => a.processId)
+      .map((a) => [a.processId as string, a])
+  );
+
+  const rows = (workCenterProcesses.data ?? []).flatMap(
+    ({ workCenterId, processId }) => {
+      const ability = abilityByProcess.get(processId);
+      return ability
+        ? [{ workCenterId, abilityId: ability.id, abilityName: ability.name }]
+        : [];
+    }
+  );
+  return { data: rows, error: null };
+}
+
+export async function getActiveEmployeeAbilities(
+  client: SupabaseClient<Database>,
+  companyId: string
+) {
+  return client
+    .from("employeeAbility")
+    .select("employeeId, abilityId, trainingCompleted, expiresAt")
+    .eq("companyId", companyId)
+    .eq("active", true);
+}
+
+/**
+ * Move-semantics upsert: one magnet per person per date/shift — any existing
+ * assignment for the person on that date/shift is replaced.
+ */
+export async function upsertCrewAssignment(
+  db: Kysely<KyselyDatabase>,
+  assignment: {
+    companyId: string;
+    locationId: string;
+    workCenterId: string;
+    employeeId: string;
+    date: string;
+    shiftId: string | null;
+    note?: string;
+    createdBy: string;
+  }
+) {
+  return db.transaction().execute(async (trx) => {
+    let del = trx
+      .deleteFrom("crewAssignment")
+      .where("companyId", "=", assignment.companyId)
+      .where("employeeId", "=", assignment.employeeId)
+      .where("date", "=", assignment.date);
+    del = assignment.shiftId
+      ? del.where("shiftId", "=", assignment.shiftId)
+      : del.where("shiftId", "is", null);
+    await del.execute();
+    return trx
+      .insertInto("crewAssignment")
+      .values({
+        companyId: assignment.companyId,
+        locationId: assignment.locationId,
+        workCenterId: assignment.workCenterId,
+        employeeId: assignment.employeeId,
+        date: assignment.date,
+        shiftId: assignment.shiftId,
+        note: assignment.note ?? null,
+        createdBy: assignment.createdBy
+      })
+      .returning(["id", "workCenterId"])
+      .executeTakeFirstOrThrow();
+  });
+}
+
+export async function deleteCrewAssignment(
+  client: SupabaseClient<Database>,
+  id: string,
+  companyId: string
+) {
+  return client
+    .from("crewAssignment")
+    .delete()
+    .eq("id", id)
+    .eq("companyId", companyId)
+    .select("id, workCenterId, employeeId")
+    .single();
+}
+
+export async function updateCrewAssignmentNote(
+  client: SupabaseClient<Database>,
+  args: {
+    id: string;
+    companyId: string;
+    note: string | null;
+    updatedBy: string;
+  }
+) {
+  return client
+    .from("crewAssignment")
+    .update(
+      sanitize({
+        note: args.note,
+        updatedBy: args.updatedBy,
+        updatedAt: new Date().toISOString()
+      })
+    )
+    .eq("id", args.id)
+    .eq("companyId", args.companyId)
+    .select("id")
+    .single();
+}
+
+export async function setCrewAbsence(
+  client: SupabaseClient<Database>,
+  absence: {
+    companyId: string;
+    employeeId: string;
+    date: string;
+    shiftId: string | null;
+    note?: string;
+    createdBy: string;
+  }
+) {
+  return client.from("crewAbsence").insert([absence]).select("id").single();
+}
+
+export async function clearCrewAbsence(
+  client: SupabaseClient<Database>,
+  id: string,
+  companyId: string
+) {
+  return client
+    .from("crewAbsence")
+    .delete()
+    .eq("id", id)
+    .eq("companyId", companyId)
+    .select("id, employeeId")
+    .single();
+}
+
+/**
+ * Copy one day's crew board to another date, skipping people already assigned
+ * on the target date or marked absent there.
+ */
+export async function copyCrewBoard(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    companyId: string;
+    locationId: string;
+    fromDate: string;
+    toDate: string;
+    shiftId: string | null;
+    createdBy: string;
+  }
+) {
+  return db.transaction().execute(async (trx) => {
+    let sourceQuery = trx
+      .selectFrom("crewAssignment")
+      .select(["workCenterId", "employeeId", "shiftId", "note"])
+      .where("companyId", "=", args.companyId)
+      .where("locationId", "=", args.locationId)
+      .where("date", "=", args.fromDate);
+    if (args.shiftId) {
+      sourceQuery = sourceQuery.where("shiftId", "=", args.shiftId);
+    }
+    const source = await sourceQuery.execute();
+
+    const [existing, absences] = await Promise.all([
+      trx
+        .selectFrom("crewAssignment")
+        .select(["employeeId"])
+        .where("companyId", "=", args.companyId)
+        .where("date", "=", args.toDate)
+        .execute(),
+      trx
+        .selectFrom("crewAbsence")
+        .select(["employeeId"])
+        .where("companyId", "=", args.companyId)
+        .where("date", "=", args.toDate)
+        .execute()
+    ]);
+    const skip = new Set([
+      ...existing.map((r) => r.employeeId),
+      ...absences.map((r) => r.employeeId)
+    ]);
+
+    const rows = source
+      .filter((r) => !skip.has(r.employeeId))
+      .map((r) => ({
+        companyId: args.companyId,
+        locationId: args.locationId,
+        workCenterId: r.workCenterId,
+        employeeId: r.employeeId,
+        date: args.toDate,
+        shiftId: r.shiftId,
+        note: r.note,
+        createdBy: args.createdBy
+      }));
+    if (rows.length > 0) {
+      await trx.insertInto("crewAssignment").values(rows).execute();
+    }
+    return { copied: rows.length, skipped: source.length - rows.length };
+  });
+}
+
 /**
  * Trigger a job scheduling task via Inngest.
  * Supports both initial scheduling and rescheduling.
@@ -3897,7 +4249,8 @@ export async function notifyScheduleInputsChanged(
     | "employee-shift"
     | "work-center"
     | "location"
-    | "reorder",
+    | "reorder"
+    | "crew",
   reason: string,
   entityId?: string
 ) {

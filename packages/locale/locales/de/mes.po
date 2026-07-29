@@ -158,6 +158,9 @@ msgstr "Filter zurücksetzen"
 msgid "Clear Search"
 msgstr "Suche löschen"
 
+msgid "Clear station default"
+msgstr ""
+
 msgid "Clock In"
 msgstr "Einstempeln"
 
@@ -1117,3 +1120,7 @@ msgstr "Sie haben sich um {0} eingestempelt. Sie können Ihre Ausstempelzeit unt
 
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
 msgstr "Sie sind seit {hoursElapsed} Stunden eingestempelt. Haben Sie vergessen auszustempeln?"
+
+#. placeholder {0}: crewStation.name
+msgid "Your station: {0}"
+msgstr ""

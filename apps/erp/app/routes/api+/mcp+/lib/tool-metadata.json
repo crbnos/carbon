@@ -1,6 +1,6 @@
 {
-  "generated": "2026-07-22T12:26:46.578Z",
-  "totalTools": 1384,
+  "generated": "2026-07-29T20:05:34.554Z",
+  "totalTools": 1400,
   "modules": 15,
   "tools": [
     {
@@ -16427,6 +16427,50 @@
       }
     },
     {
+      "name": "people_getEmployeeShifts",
+      "module": "people",
+      "classification": "READ",
+      "description": "get employee shifts",
+      "paramCount": 0,
+      "serviceParams": [
+        "client",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    {
+      "name": "people_getShiftsWithTimes",
+      "module": "people",
+      "classification": "READ",
+      "description": "get shifts with times",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "locationId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "locationId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "locationId"
+        ]
+      }
+    },
+    {
       "name": "people_insertAttribute",
       "module": "people",
       "classification": "WRITE",
@@ -21610,6 +21654,455 @@
         },
         "required": [
           "forecasts"
+        ]
+      }
+    },
+    {
+      "name": "production_getCrewAssignments",
+      "module": "production",
+      "classification": "READ",
+      "description": "get crew assignments",
+      "paramCount": 3,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "locationId": {
+            "type": "string"
+          },
+          "date": {
+            "type": "string"
+          },
+          "shiftId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "locationId",
+          "date"
+        ]
+      }
+    },
+    {
+      "name": "production_getCrewAbsences",
+      "module": "production",
+      "classification": "READ",
+      "description": "get crew absences",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "date"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "date"
+        ]
+      }
+    },
+    {
+      "name": "production_getCrewAssignmentsRange",
+      "module": "production",
+      "classification": "READ",
+      "description": "get crew assignments range",
+      "paramCount": 3,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "locationId": {
+            "type": "string"
+          },
+          "startDate": {
+            "type": "string"
+          },
+          "endDate": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "locationId",
+          "startDate",
+          "endDate"
+        ]
+      }
+    },
+    {
+      "name": "production_getCrewAbsencesRange",
+      "module": "production",
+      "classification": "READ",
+      "description": "get crew absences range",
+      "paramCount": 2,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "startDate": {
+            "type": "string"
+          },
+          "endDate": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "startDate",
+          "endDate"
+        ]
+      }
+    },
+    {
+      "name": "production_getCrewCapacityOperations",
+      "module": "production",
+      "classification": "READ",
+      "description": "get crew capacity operations",
+      "paramCount": 3,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "workCenterIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "startDate": {
+            "type": "string"
+          },
+          "endDate": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "workCenterIds",
+          "startDate",
+          "endDate"
+        ]
+      }
+    },
+    {
+      "name": "production_getCrewEmployees",
+      "module": "production",
+      "classification": "READ",
+      "description": "get crew employees",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "locationId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "locationId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "locationId"
+        ]
+      }
+    },
+    {
+      "name": "production_getWorkCenterRequiredAbilities",
+      "module": "production",
+      "classification": "READ",
+      "description": "get work center required abilities",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "locationId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "locationId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "locationId"
+        ]
+      }
+    },
+    {
+      "name": "production_getActiveEmployeeAbilities",
+      "module": "production",
+      "classification": "READ",
+      "description": "get active employee abilities",
+      "paramCount": 0,
+      "serviceParams": [
+        "client",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    {
+      "name": "production_upsertCrewAssignment",
+      "module": "production",
+      "classification": "WRITE",
+      "description": "upsert crew assignment",
+      "paramCount": 6,
+      "serviceParams": [
+        "db",
+        "assignment"
+      ],
+      "injectAuth": [
+        "companyId",
+        "createdBy",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "locationId": {
+            "type": "string"
+          },
+          "workCenterId": {
+            "type": "string"
+          },
+          "employeeId": {
+            "type": "string"
+          },
+          "date": {
+            "type": "string"
+          },
+          "shiftId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "note": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "locationId",
+          "workCenterId",
+          "employeeId",
+          "date",
+          "shiftId"
+        ]
+      }
+    },
+    {
+      "name": "production_deleteCrewAssignment",
+      "module": "production",
+      "classification": "DESTRUCTIVE",
+      "description": "delete crew assignment",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "id",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      }
+    },
+    {
+      "name": "production_updateCrewAssignmentNote",
+      "module": "production",
+      "classification": "WRITE",
+      "description": "update crew assignment note",
+      "paramCount": 2,
+      "serviceParams": [
+        "client",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "note": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "note"
+        ]
+      }
+    },
+    {
+      "name": "production_setCrewAbsence",
+      "module": "production",
+      "classification": "WRITE",
+      "description": "set crew absence",
+      "paramCount": 4,
+      "serviceParams": [
+        "client",
+        "absence"
+      ],
+      "injectAuth": [
+        "companyId",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "employeeId": {
+            "type": "string"
+          },
+          "date": {
+            "type": "string"
+          },
+          "shiftId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "note": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "employeeId",
+          "date",
+          "shiftId"
+        ]
+      }
+    },
+    {
+      "name": "production_clearCrewAbsence",
+      "module": "production",
+      "classification": "WRITE",
+      "description": "clear crew absence",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "id",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      }
+    },
+    {
+      "name": "production_copyCrewBoard",
+      "module": "production",
+      "classification": "WRITE",
+      "description": "copy crew board",
+      "paramCount": 4,
+      "serviceParams": [
+        "db",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId",
+        "createdBy",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "locationId": {
+            "type": "string"
+          },
+          "fromDate": {
+            "type": "string"
+          },
+          "toDate": {
+            "type": "string"
+          },
+          "shiftId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "locationId",
+          "fromDate",
+          "toDate",
+          "shiftId"
         ]
       }
     },

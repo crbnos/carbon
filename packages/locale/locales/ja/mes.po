@@ -158,6 +158,9 @@ msgstr "フィルターをクリア"
 msgid "Clear Search"
 msgstr "検索をクリア"
 
+msgid "Clear station default"
+msgstr ""
+
 msgid "Clock In"
 msgstr "出勤打刻"
 
@@ -1117,3 +1120,7 @@ msgstr "{0} に出勤打刻しました。下記で退勤時間を編集する�
 
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
 msgstr "{hoursElapsed} 時間出勤中です。退勤打刻を忘れていませんか？"
+
+#. placeholder {0}: crewStation.name
+msgid "Your station: {0}"
+msgstr ""

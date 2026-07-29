@@ -18,7 +18,8 @@ import {
   LuChevronDown,
   LuCog,
   LuFactory,
-  LuList
+  LuList,
+  LuUsers
 } from "react-icons/lu";
 import { useLocation, useNavigate } from "react-router";
 import { path } from "~/utils/path";
@@ -28,6 +29,7 @@ export function ScheduleNavigation() {
   const navigate = useNavigate();
 
   const getCurrentView = () => {
+    if (location.pathname.includes(path.to.scheduleCrew)) return "crew";
     if (location.pathname.includes(path.to.scheduleResources))
       return "capacity";
     if (location.pathname.includes(path.to.scheduleGantt())) return "timeline";
@@ -51,6 +53,8 @@ export function ScheduleNavigation() {
         return "Work Centers";
       case "capacity":
         return "Capacity";
+      case "crew":
+        return "Crew";
       case "week":
         return "Week";
       case "month":
@@ -68,6 +72,8 @@ export function ScheduleNavigation() {
         return <LuCog />;
       case "capacity":
         return <LuFactory />;
+      case "crew":
+        return <LuUsers />;
       case "week":
         return <LuCalendarDays />;
       case "month":
@@ -88,6 +94,9 @@ export function ScheduleNavigation() {
         break;
       case "capacity":
         navigate(path.to.scheduleResources);
+        break;
+      case "crew":
+        navigate(path.to.scheduleCrew + "?" + searchParams.toString());
         break;
       case "week":
         searchParams.set("view", "week");
@@ -129,6 +138,10 @@ export function ScheduleNavigation() {
           <DropdownMenuRadioItem value="capacity">
             <DropdownMenuIcon icon={getViewIcon("capacity")} />
             {getViewLabel("capacity")}
+          </DropdownMenuRadioItem>
+          <DropdownMenuRadioItem value="crew">
+            <DropdownMenuIcon icon={getViewIcon("crew")} />
+            {getViewLabel("crew")}
           </DropdownMenuRadioItem>
           <DropdownMenuSeparator />
           <DropdownMenuGroup>

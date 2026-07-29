@@ -13,7 +13,7 @@ Work orders (jobs), scheduling, routings (operations), bill of materials, proced
 - **Procedure** — versioned work instructions linked to operations via `processId`. Statuses: Draft/Active/Archived.
 - **Assembly Instructions are internal-only** (feature flag) while the module matures: the nav entry is in `internalOnlyRoutes` (`useProductionSubmodules.tsx`, via `useFlags().isInternal`), and `requireAssembliesInternal` (`production.server.ts`) redirects non-internal users out of `production/assemblies`, `production/assemblies/new`, and every `x+/assembly+` route (layout loader). Mirrors the settings backups gate; drop the gates to ship publicly.
 - **Maintenance Dispatch** — reactive/scheduled repair for work centers with comments, events, items, and linked work centers.
-- **Scheduling** — finite scheduling via the `schedule` edge function: backward date calculation feeds a forward slot allocator. Work centers do NOT limit concurrency (anyone qualified can work at a station); the only finite resource is qualified PEOPLE. When an operation's process `requiresAbility`, work only accumulates while a qualified employee is on shift (`employeeShift` ⋈ `shift`; no shift assignment = always available) and not reserved elsewhere. Placements persist as `capacityReservation` rows (authoritative across jobs/runs; rebuilt per job per run; `WorkCenter` + `OperatorPool` kinds). Dispatch rules per `schedulingPolicy` (per-WC row → company default → EDD). MUST use `triggerJobSchedule` to reschedule, never direct date writes.
+- **Scheduling** — finite scheduling via the `schedule` edge function: backward date calculation feeds a forward slot allocator. Work centers are finite (capacity 1 — one op at a time) AND, for ability-gated processes, qualified PEOPLE are finite: work only accumulates while a qualified employee is on shift (`employeeShift` ⋈ `shift`; no shift assignment = always available) and not reserved elsewhere. Placements persist as `capacityReservation` rows (authoritative across jobs/runs; rebuilt per job per run; `WorkCenter` + `Employee` kinds — `OperatorPool` is read-tolerated legacy, never written). **Crew assignments** (manning board, `crewAssignment`) make a crewed station a TEAM: the station still runs ONE op at a time, but the whole present crew is booked on that op together — labor is parallelized across the present crew (two people halve the labor wall-clock; setup and machine time are never compressed). Gated ops team-book crew∩qualified on their crewed dates, falling back softly to the classic any-qualified single-person relay; ungated ops at a crewed station are manned the same way with machine-only fallback. `crewAbsence` subtracts the person's availability for that date everywhere. A blank board changes nothing. Dispatch rules per `schedulingPolicy` (per-WC row → company default → EDD). MUST use `triggerJobSchedule` to reschedule, never direct date writes.
 - **Ability requirements** — resolved through the operation's PROCESS: `process.requiresAbility` → the ability linked 1:1 to the process (`ability.processId`) → binary `employeeAbility` qualification (active ∧ trainingCompleted ∧ not expired). Gates both the scheduler's operator pools and MES operation start. There are no operation-level ability tables.
 
 ## Safety
@@ -52,7 +52,8 @@ pnpm --filter @carbon/erp test
 | `jobMaterial` | BOM line: item, quantity, methodType, unitCost |
 | `jobOperationStep` / `jobOperationParameter` / `jobOperationTool` | Work instruction details on operations |
 | `jobOperationDependency` | Operation sequencing dependencies |
-| `capacityReservation` | Durable finite-capacity slot allocations (WorkCenter / OperatorPool) |
+| `capacityReservation` | Durable finite-capacity slot allocations (WorkCenter / Employee; OperatorPool legacy) |
+| `crewAssignment` / `crewAbsence` | Manning board: person→work-center per date (optional shift; unique per person/day/shift) and person-out-for-date flags; consumed by the Crew page (`x+/schedule+/crew.tsx` — Board/Matrix/Capacity views via `?view=`), the MES station default, and the scheduling engine |
 | `schedulingPolicy` | Dispatch rule per work center (null workCenterId = company default) |
 | `jobOperationQueueTime` (view) | Ready → first productionEvent queue time (`jobOperation.readyAt` stamped by trigger) |
 | `productionEvent` | Time tracking: type (Labor/Machine/Setup), start/end, employee |
@@ -79,6 +80,9 @@ pnpm --filter @carbon/erp test
 - `runMRP` — triggers Material Requirements Planning via `mrp` edge function
 - `calculateJobPriority` — computes priority from deadline type and due date
 - `getActiveJobOperationsByLocation` — schedule board data (RPC `get_active_job_operations_by_location`)
+- `getCrewAssignments` / `getCrewAbsences` (single date) and `getCrewAssignmentsRange` / `getCrewAbsencesRange` (week) — crew board/matrix reads; `upsertCrewAssignment` (move semantics) / `deleteCrewAssignment` / `setCrewAbsence` / `clearCrewAbsence` / `copyCrewBoard` — crew mutations (Kysely)
+- `getCrewCapacityOperations` — open `jobOperation` hours for the Capacity view (excludes Done/Canceled ops and Draft/Planned/Completed/Cancelled/Closed jobs — released load only)
+- `getCapacityReservationsForResources` — live reservations across jobs (resource timeline + Capacity view's Scheduled series)
 - `getProductionPlanning` — MRP-driven production planning (RPC `get_production_planning`)
 - `upsertMaintenanceDispatch` / `upsertMaintenanceSchedule` — maintenance management
 - `getAssemblyInstruction(s)` / `upsertAssemblyInstructionStep` / `getAssemblyInstructionStepMaterials` — assembly instruction authoring; the step upsert derives `instructionText` from the tiptap `description` (viewer/MES consume the plain text)

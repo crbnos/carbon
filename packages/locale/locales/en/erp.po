@@ -96,6 +96,10 @@ msgstr "{0} uploaded successfully"
 msgid "{0} values missing"
 msgstr "{0} values missing"
 
+#. placeholder {0}: formatHours(-delta)
+msgid "{0}h free"
+msgstr "{0}h free"
+
 msgid "{apOverduePct}% of payables"
 msgstr "{apOverduePct}% of payables"
 
@@ -159,6 +163,10 @@ msgstr "% of Total"
 #. placeholder {1}: redirectedParts.join(", ")
 msgid "↩ {0} redirected from superseded {1}"
 msgstr "↩ {0} redirected from superseded {1}"
+
+#. placeholder {0}: formatHours(delta)
+msgid "+{0}h"
+msgstr "+{0}h"
 
 msgid "<0>Add a supplier part</0> for this item to set a preferred supplier."
 msgstr "<0>Add a supplier part</0> for this item to set a preferred supplier."
@@ -396,6 +404,9 @@ msgstr "Ability"
 
 msgid "About"
 msgstr "About"
+
+msgid "Absent"
+msgstr "Absent"
 
 msgid "Absorption"
 msgstr "Absorption"
@@ -818,6 +829,9 @@ msgstr "All changes to auditable entities are being recorded."
 msgid "All Customers"
 msgstr "All Customers"
 
+msgid "All departments"
+msgstr "All departments"
+
 msgid "All Documents"
 msgstr "All Documents"
 
@@ -838,6 +852,9 @@ msgstr "All members of selected groups and selected individuals will be able to 
 
 msgid "All rows imported — {inserted} inserted, {updated} updated."
 msgstr "All rows imported — {inserted} inserted, {updated} updated."
+
+msgid "All shifts"
+msgstr "All shifts"
 
 msgid "All Suppliers"
 msgstr "All Suppliers"
@@ -1546,6 +1563,9 @@ msgstr "Assign to Groups"
 msgid "Assigned"
 msgstr "Assigned"
 
+msgid "Assigned / Needed people per station. Needed = job hours due that day ÷ {defaultShiftHours}h shift, rounded up. Red is short-staffed, green is covered, yellow is overstaffed."
+msgstr "Assigned / Needed people per station. Needed = job hours due that day ÷ {defaultShiftHours}h shift, rounded up. Red is short-staffed, green is covered, yellow is overstaffed."
+
 msgid "Assigned to Me"
 msgstr "Assigned to Me"
 
@@ -1817,6 +1837,9 @@ msgstr "Blocked by {0}"
 
 msgid "Blocks save until resolved"
 msgstr "Blocks save until resolved"
+
+msgid "Board"
+msgstr "Board"
 
 msgid "BoM"
 msgstr "BoM"
@@ -2234,6 +2257,9 @@ msgstr "Clean and approve the migrated data"
 
 msgid "Clear"
 msgstr "Clear"
+
+msgid "Clear absence"
+msgstr "Clear absence"
 
 msgid "Clear due date"
 msgstr "Clear due date"
@@ -2801,6 +2827,9 @@ msgstr "Copy part unique identifier"
 msgid "Copy PIN"
 msgstr "Copy PIN"
 
+msgid "Copy previous day"
+msgstr "Copy previous day"
+
 msgid "Copy pricing to a single customer"
 msgstr "Copy pricing to a single customer"
 
@@ -2952,6 +2981,9 @@ msgstr "Counterparty"
 
 msgid "Country"
 msgstr "Country"
+
+msgid "Coverage"
+msgstr "Coverage"
 
 msgid "Create"
 msgstr "Create"
@@ -3200,6 +3232,9 @@ msgstr "Credits & Debits"
 
 msgid "Credits applied"
 msgstr "Credits applied"
+
+msgid "Crew"
+msgstr "Crew"
 
 msgid "Critical"
 msgstr "Critical"
@@ -3958,6 +3993,9 @@ msgstr "Delivery Location"
 
 msgid "Demand"
 msgstr "Demand"
+
+msgid "Demand = job hours due · Scheduled = work hours the scheduler placed · Available = assigned crew's shift hours (uncrewed stations use the location's shift calendar) · Load = hours over (+) or free"
+msgstr "Demand = job hours due · Scheduled = work hours the scheduler placed · Available = assigned crew's shift hours (uncrewed stations use the location's shift calendar) · Load = hours over (+) or free"
 
 msgid "Demand forecast"
 msgstr "Demand forecast"
@@ -6042,6 +6080,9 @@ msgstr "Home Phone"
 msgid "Host, secure, and back up the platform"
 msgstr "Host, secure, and back up the platform"
 
+msgid "Hours"
+msgstr "Hours"
+
 msgid "Hours per Week"
 msgstr "Hours per Week"
 
@@ -6998,6 +7039,9 @@ msgstr "Live on Carbon"
 msgid "Live reloading"
 msgstr "Live reloading"
 
+msgid "Load"
+msgstr "Load"
+
 msgid "Load newer"
 msgstr "Load newer"
 
@@ -7270,6 +7314,9 @@ msgstr "Map your current process, systems, and data"
 msgid "Mark \"{0}\" as passed?"
 msgstr "Mark \"{0}\" as passed?"
 
+msgid "Mark absent today"
+msgstr "Mark absent today"
+
 msgid "Mark all as configured"
 msgstr "Mark all as configured"
 
@@ -7423,6 +7470,9 @@ msgstr "materials"
 msgid "Materials"
 msgstr "Materials"
 
+msgid "Matrix"
+msgstr "Matrix"
+
 msgid "Max Qty"
 msgstr "Max Qty"
 
@@ -7560,6 +7610,9 @@ msgstr "Missing Shipping Costs"
 
 msgid "Missing Suppliers"
 msgstr "Missing Suppliers"
+
+msgid "Missing:"
+msgstr "Missing:"
 
 msgid "Mobile Phone"
 msgstr "Mobile Phone"
@@ -8013,6 +8066,9 @@ msgstr "Next Calibration Date"
 msgid "Next Date"
 msgstr "Next Date"
 
+msgid "Next Day"
+msgstr "Next Day"
+
 msgid "Next Due"
 msgstr "Next Due"
 
@@ -8024,6 +8080,9 @@ msgstr "Next Sequence"
 
 msgid "Next step"
 msgstr "Next step"
+
+msgid "Next Week"
+msgstr "Next Week"
 
 msgid "Next:"
 msgstr "Next:"
@@ -8138,6 +8197,9 @@ msgstr "No due date"
 
 msgid "No editable properties for this item."
 msgstr "No editable properties for this item."
+
+msgid "No employees assigned this week"
+msgstr "No employees assigned this week"
 
 msgid "No employees assigned yet. Add groups to see status."
 msgstr "No employees assigned yet. Add groups to see status."
@@ -8432,6 +8494,9 @@ msgstr "of"
 
 msgid "Off — released revisions stay editable"
 msgstr "Off — released revisions stay editable"
+
+msgid "ok"
+msgstr "ok"
 
 msgid "OK"
 msgstr "OK"
@@ -8779,6 +8844,9 @@ msgstr "Overhead Variance"
 msgid "Overhead Variance (default)"
 msgstr "Overhead Variance (default)"
 
+msgid "overloaded"
+msgstr "overloaded"
+
 msgid "Override needs the inventory:update permission and a reason."
 msgstr "Override needs the inventory:update permission and a reason."
 
@@ -8911,6 +8979,9 @@ msgstr "Pass"
 
 msgid "Passed"
 msgstr "Passed"
+
+msgid "Past due"
+msgstr "Past due"
 
 msgid "Path"
 msgstr "Path"
@@ -9290,8 +9361,14 @@ msgstr "Previous"
 msgid "Previous Date"
 msgstr "Previous Date"
 
+msgid "Previous Day"
+msgstr "Previous Day"
+
 msgid "Previous page"
 msgstr "Previous page"
+
+msgid "Previous Week"
+msgstr "Previous Week"
 
 msgid "Price break actions"
 msgstr "Price break actions"
@@ -10116,6 +10193,9 @@ msgstr "Remove Filters"
 
 msgid "Remove from Price List"
 msgstr "Remove from Price List"
+
+msgid "Remove from station"
+msgstr "Remove from station"
 
 msgid "Remove item"
 msgstr "Remove item"
@@ -11050,6 +11130,9 @@ msgstr "Serial/Batch #"
 
 msgid "Serialize & sell your parts"
 msgstr "Serialize & sell your parts"
+
+msgid "Series"
+msgstr "Series"
 
 msgid "service"
 msgstr "service"
@@ -12967,6 +13050,9 @@ msgstr "Tie-Out"
 msgid "Tie-Out unavailable"
 msgstr "Tie-Out unavailable"
 
+msgid "tight"
+msgstr "tight"
+
 msgid "Tightened"
 msgstr "Tightened"
 
@@ -13972,6 +14058,9 @@ msgstr "Website"
 
 msgid "Wednesday"
 msgstr "Wednesday"
+
+msgid "Week"
+msgstr "Week"
 
 #. placeholder {0}: d.week
 msgid "Week {0}"

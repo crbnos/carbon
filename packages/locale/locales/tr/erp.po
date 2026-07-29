@@ -96,6 +96,10 @@ msgstr "{0} başarıyla yüklendi"
 msgid "{0} values missing"
 msgstr "{0} değeri eksik"
 
+#. placeholder {0}: formatHours(-delta)
+msgid "{0}h free"
+msgstr ""
+
 msgid "{apOverduePct}% of payables"
 msgstr "{apOverduePct}% borç"
 
@@ -159,6 +163,10 @@ msgstr "% Toplam"
 #. placeholder {1}: redirectedParts.join(", ")
 msgid "↩ {0} redirected from superseded {1}"
 msgstr "↩ {0} eski hale getirilen {1} kaynağından yönlendirildi"
+
+#. placeholder {0}: formatHours(delta)
+msgid "+{0}h"
+msgstr ""
 
 msgid "<0>Add a supplier part</0> for this item to set a preferred supplier."
 msgstr "<0>Bu ürün için bir tedarikçi parçası ekleyin</0> tercih edilen tedarikçi ayarlamak için."
@@ -396,6 +404,9 @@ msgstr "Yetenek"
 
 msgid "About"
 msgstr "Hakkında"
+
+msgid "Absent"
+msgstr ""
 
 msgid "Absorption"
 msgstr "Emilim"
@@ -818,6 +829,9 @@ msgstr "Denetlenebilir varlıklardaki tüm değişiklikler kaydediliyor."
 msgid "All Customers"
 msgstr "Tüm Müşteriler"
 
+msgid "All departments"
+msgstr ""
+
 msgid "All Documents"
 msgstr "Tüm Belgeler"
 
@@ -838,6 +852,9 @@ msgstr "Seçilen gruplardaki ve bireylerdeki tüm üyeler talepleri onaylayabile
 
 msgid "All rows imported — {inserted} inserted, {updated} updated."
 msgstr "{inserted} eklendi, {updated} güncellendi — tüm satırlar içe aktarıldı."
+
+msgid "All shifts"
+msgstr ""
 
 msgid "All Suppliers"
 msgstr "Tüm Tedarikçiler"
@@ -1546,6 +1563,9 @@ msgstr "Gruplara Ata"
 msgid "Assigned"
 msgstr "Atanmış"
 
+msgid "Assigned / Needed people per station. Needed = job hours due that day ÷ {defaultShiftHours}h shift, rounded up. Red is short-staffed, green is covered, yellow is overstaffed."
+msgstr ""
+
 msgid "Assigned to Me"
 msgstr "Bana Atananlar"
 
@@ -1817,6 +1837,9 @@ msgstr "Bloklandı: {0}"
 
 msgid "Blocks save until resolved"
 msgstr "Çözülene kadar kaydetmeyi engeller"
+
+msgid "Board"
+msgstr ""
 
 msgid "BoM"
 msgstr "BOM"
@@ -2234,6 +2257,9 @@ msgstr "Geçirilen verileri temizleyin ve onaylayın"
 
 msgid "Clear"
 msgstr "Temizle"
+
+msgid "Clear absence"
+msgstr ""
 
 msgid "Clear due date"
 msgstr "Vade tarihini temizle"
@@ -2801,6 +2827,9 @@ msgstr "Parça benzersiz tanımlayıcısını kopyala"
 msgid "Copy PIN"
 msgstr "PIN'i Kopyala"
 
+msgid "Copy previous day"
+msgstr ""
+
 msgid "Copy pricing to a single customer"
 msgstr "Tek bir müşteriye fiyatlandırma kopyala"
 
@@ -2952,6 +2981,9 @@ msgstr "Karşı Taraf"
 
 msgid "Country"
 msgstr "Ülke"
+
+msgid "Coverage"
+msgstr ""
 
 msgid "Create"
 msgstr "Oluştur"
@@ -3200,6 +3232,9 @@ msgstr "Krediler ve Borçlar"
 
 msgid "Credits applied"
 msgstr "Uygulanan krediler"
+
+msgid "Crew"
+msgstr ""
 
 msgid "Critical"
 msgstr "Kritik"
@@ -3958,6 +3993,9 @@ msgstr "Teslimat Yeri"
 
 msgid "Demand"
 msgstr "Talep"
+
+msgid "Demand = job hours due · Scheduled = work hours the scheduler placed · Available = assigned crew's shift hours (uncrewed stations use the location's shift calendar) · Load = hours over (+) or free"
+msgstr ""
 
 msgid "Demand forecast"
 msgstr "Talep Tahmini"
@@ -6042,6 +6080,9 @@ msgstr "Ev Telefonu"
 msgid "Host, secure, and back up the platform"
 msgstr "Platformu barındırın, güvenli hale getirin ve yedekleyin"
 
+msgid "Hours"
+msgstr ""
+
 msgid "Hours per Week"
 msgstr "Haftalık Saat"
 
@@ -6998,6 +7039,9 @@ msgstr "Carbon'da Canlı"
 msgid "Live reloading"
 msgstr "Canlı yeniden yükleniyor"
 
+msgid "Load"
+msgstr ""
+
 msgid "Load newer"
 msgstr "Daha yenisini yükle"
 
@@ -7270,6 +7314,9 @@ msgstr "Mevcut sürecinizi, sistemlerinizi ve verilerinizi eşleyin"
 msgid "Mark \"{0}\" as passed?"
 msgstr "\"{0}\" olarak işaretlensin mi?"
 
+msgid "Mark absent today"
+msgstr ""
+
 msgid "Mark all as configured"
 msgstr "Tümünü yapılandırılmış olarak işaretle"
 
@@ -7423,6 +7470,9 @@ msgstr "Malzemeler"
 msgid "Materials"
 msgstr "Malzemeler"
 
+msgid "Matrix"
+msgstr ""
+
 msgid "Max Qty"
 msgstr "Maks. Miktar"
 
@@ -7560,6 +7610,9 @@ msgstr "Kargo Maliyetleri Eksik"
 
 msgid "Missing Suppliers"
 msgstr "Tedarikçi Eksikleri"
+
+msgid "Missing:"
+msgstr ""
 
 msgid "Mobile Phone"
 msgstr "Cep Telefonu"
@@ -8013,6 +8066,9 @@ msgstr "Sonraki Kalibrasyon Tarihi"
 msgid "Next Date"
 msgstr "Sonraki Tarih"
 
+msgid "Next Day"
+msgstr ""
+
 msgid "Next Due"
 msgstr "Sonraki Teslim Tarihi"
 
@@ -8024,6 +8080,9 @@ msgstr "Sonraki Sıra"
 
 msgid "Next step"
 msgstr "Sonraki adım"
+
+msgid "Next Week"
+msgstr ""
 
 msgid "Next:"
 msgstr "Sonraki:"
@@ -8138,6 +8197,9 @@ msgstr "Teslim tarihi yok"
 
 msgid "No editable properties for this item."
 msgstr "Bu öğe için düzenlenebilir özellik yok."
+
+msgid "No employees assigned this week"
+msgstr ""
 
 msgid "No employees assigned yet. Add groups to see status."
 msgstr "Henüz çalışan atanmadı. Durumu görmek için gruplar ekleyin."
@@ -8432,6 +8494,9 @@ msgstr "adet"
 
 msgid "Off — released revisions stay editable"
 msgstr "Kapalı — yayınlanan revizyonlar düzenlenebilir kalır"
+
+msgid "ok"
+msgstr ""
 
 msgid "OK"
 msgstr "Tamam"
@@ -8779,6 +8844,9 @@ msgstr "Genel Gider Sapması (varsayılan)"
 msgid "Overhead Variance (default)"
 msgstr "Sahibi (maliyet merkezi)"
 
+msgid "overloaded"
+msgstr ""
+
 msgid "Override needs the inventory:update permission and a reason."
 msgstr "Geçersiz kılma için envanter:güncelleme izni ve bir gerekçe gerekir."
 
@@ -8911,6 +8979,9 @@ msgstr "Geçerli"
 
 msgid "Passed"
 msgstr "Geçti"
+
+msgid "Past due"
+msgstr ""
 
 msgid "Path"
 msgstr "Yol"
@@ -9290,8 +9361,14 @@ msgstr "Önceki"
 msgid "Previous Date"
 msgstr "Önceki Tarih"
 
+msgid "Previous Day"
+msgstr ""
+
 msgid "Previous page"
 msgstr "Önceki sayfa"
+
+msgid "Previous Week"
+msgstr ""
 
 msgid "Price break actions"
 msgstr "Fiyat kırılımı işlemleri"
@@ -10116,6 +10193,9 @@ msgstr "Filtreleri Kaldır"
 
 msgid "Remove from Price List"
 msgstr "Fiyat Listesinden Kaldır"
+
+msgid "Remove from station"
+msgstr ""
 
 msgid "Remove item"
 msgstr "Ürünü kaldır"
@@ -11050,6 +11130,9 @@ msgstr "Seri/Parti No"
 
 msgid "Serialize & sell your parts"
 msgstr "Parçalarınızı seri hale getirin ve satın"
+
+msgid "Series"
+msgstr ""
 
 msgid "service"
 msgstr "hizmet"
@@ -12967,6 +13050,9 @@ msgstr "Mutabakat Kontrolü"
 msgid "Tie-Out unavailable"
 msgstr "Uzlaştırma kullanılamıyor"
 
+msgid "tight"
+msgstr ""
+
 msgid "Tightened"
 msgstr "Sıkı"
 
@@ -13972,6 +14058,9 @@ msgstr "Web Sitesi"
 
 msgid "Wednesday"
 msgstr "Çarşamba"
+
+msgid "Week"
+msgstr ""
 
 #. placeholder {0}: d.week
 msgid "Week {0}"

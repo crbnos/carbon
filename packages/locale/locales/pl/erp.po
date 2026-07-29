@@ -96,6 +96,10 @@ msgstr "{0} przesłano pomyślnie"
 msgid "{0} values missing"
 msgstr "{0} brakujących wartości"
 
+#. placeholder {0}: formatHours(-delta)
+msgid "{0}h free"
+msgstr ""
+
 msgid "{apOverduePct}% of payables"
 msgstr "{apOverduePct}% zobowiązań"
 
@@ -159,6 +163,10 @@ msgstr "% całości"
 #. placeholder {1}: redirectedParts.join(", ")
 msgid "↩ {0} redirected from superseded {1}"
 msgstr "↩ {0} przekierowano z wycofanych {1}"
+
+#. placeholder {0}: formatHours(delta)
+msgid "+{0}h"
+msgstr ""
 
 msgid "<0>Add a supplier part</0> for this item to set a preferred supplier."
 msgstr "<0>Dodaj część dostawcy</0> do tego artykułu, aby ustawić preferowanego dostawcę."
@@ -396,6 +404,9 @@ msgstr "Umiejętność"
 
 msgid "About"
 msgstr "O mnie"
+
+msgid "Absent"
+msgstr ""
 
 msgid "Absorption"
 msgstr "Absorpcja"
@@ -818,6 +829,9 @@ msgstr "Wszystkie zmiany w jednostkach podlegających audytowi są rejestrowane.
 msgid "All Customers"
 msgstr "Wszyscy Klienci"
 
+msgid "All departments"
+msgstr ""
+
 msgid "All Documents"
 msgstr "Wszystkie dokumenty"
 
@@ -838,6 +852,9 @@ msgstr "Wszyscy członkowie wybranych grup i wybrane osoby będą mogły zatwier
 
 msgid "All rows imported — {inserted} inserted, {updated} updated."
 msgstr "Wszystkie wiersze zaimportowane — {inserted} wstawiono, {updated} zaktualizowano."
+
+msgid "All shifts"
+msgstr ""
 
 msgid "All Suppliers"
 msgstr "Wszyscy dostawcy"
@@ -1546,6 +1563,9 @@ msgstr "Przypisz do grup"
 msgid "Assigned"
 msgstr "Przydzielone"
 
+msgid "Assigned / Needed people per station. Needed = job hours due that day ÷ {defaultShiftHours}h shift, rounded up. Red is short-staffed, green is covered, yellow is overstaffed."
+msgstr ""
+
 msgid "Assigned to Me"
 msgstr "Przypisane do mnie"
 
@@ -1817,6 +1837,9 @@ msgstr "Zablokowane przez {0}"
 
 msgid "Blocks save until resolved"
 msgstr "Blokuje zapis do czasu rozwiązania"
+
+msgid "Board"
+msgstr ""
 
 msgid "BoM"
 msgstr "BoM"
@@ -2234,6 +2257,9 @@ msgstr "Wyczyść i zatwierdź migrowane dane"
 
 msgid "Clear"
 msgstr "Wyczysc"
+
+msgid "Clear absence"
+msgstr ""
 
 msgid "Clear due date"
 msgstr "Wyczyść datę terminu"
@@ -2801,6 +2827,9 @@ msgstr "Skopiuj unikalny identyfikator części"
 msgid "Copy PIN"
 msgstr "Skopiuj PIN"
 
+msgid "Copy previous day"
+msgstr ""
+
 msgid "Copy pricing to a single customer"
 msgstr "Skopiuj cennik dla jednego klienta"
 
@@ -2952,6 +2981,9 @@ msgstr "Kontrahent"
 
 msgid "Country"
 msgstr "Kraj"
+
+msgid "Coverage"
+msgstr ""
 
 msgid "Create"
 msgstr "Utwórz"
@@ -3200,6 +3232,9 @@ msgstr "Kredyty i Debety"
 
 msgid "Credits applied"
 msgstr "Zastosowane kredyty"
+
+msgid "Crew"
+msgstr ""
 
 msgid "Critical"
 msgstr "Krytyczne"
@@ -3958,6 +3993,9 @@ msgstr "Lokalizacja dostawy"
 
 msgid "Demand"
 msgstr "Popyt"
+
+msgid "Demand = job hours due · Scheduled = work hours the scheduler placed · Available = assigned crew's shift hours (uncrewed stations use the location's shift calendar) · Load = hours over (+) or free"
+msgstr ""
 
 msgid "Demand forecast"
 msgstr "Prognoza Popytu"
@@ -6042,6 +6080,9 @@ msgstr "Telefon domowy"
 msgid "Host, secure, and back up the platform"
 msgstr "Hostuj, zabezpiecz i wykonuj kopie zapasowe platformy"
 
+msgid "Hours"
+msgstr ""
+
 msgid "Hours per Week"
 msgstr "Godziny na tydzień"
 
@@ -6998,6 +7039,9 @@ msgstr "Na żywo w Carbon"
 msgid "Live reloading"
 msgstr "Odświeżanie na żywo"
 
+msgid "Load"
+msgstr ""
+
 msgid "Load newer"
 msgstr "Załaduj nowsze"
 
@@ -7270,6 +7314,9 @@ msgstr "Zmapuj swój obecny proces, systemy i dane"
 msgid "Mark \"{0}\" as passed?"
 msgstr "Oznaczyć „{0}\" jako ukończone?"
 
+msgid "Mark absent today"
+msgstr ""
+
 msgid "Mark all as configured"
 msgstr "Oznacz wszystko jako skonfigurowane"
 
@@ -7423,6 +7470,9 @@ msgstr "Materiały"
 msgid "Materials"
 msgstr "Materiały"
 
+msgid "Matrix"
+msgstr ""
+
 msgid "Max Qty"
 msgstr "Maks. Ilość"
 
@@ -7560,6 +7610,9 @@ msgstr "Brakujące koszty wysyłki"
 
 msgid "Missing Suppliers"
 msgstr "Brakujący dostawcy"
+
+msgid "Missing:"
+msgstr ""
 
 msgid "Mobile Phone"
 msgstr "Telefon komórkowy"
@@ -8013,6 +8066,9 @@ msgstr "Data następnej kalibracji"
 msgid "Next Date"
 msgstr "Następna data"
 
+msgid "Next Day"
+msgstr ""
+
 msgid "Next Due"
 msgstr "Następny termin"
 
@@ -8024,6 +8080,9 @@ msgstr "Następna Sekwencja"
 
 msgid "Next step"
 msgstr "Następny krok"
+
+msgid "Next Week"
+msgstr ""
 
 msgid "Next:"
 msgstr "Dalej:"
@@ -8138,6 +8197,9 @@ msgstr "Brak daty terminu"
 
 msgid "No editable properties for this item."
 msgstr "Brak edytowalnych właściwości dla tego elementu."
+
+msgid "No employees assigned this week"
+msgstr ""
 
 msgid "No employees assigned yet. Add groups to see status."
 msgstr "Brak przypisanych pracowników. Dodaj grupy, aby zobaczyć status."
@@ -8432,6 +8494,9 @@ msgstr "z"
 
 msgid "Off — released revisions stay editable"
 msgstr "Wyłączone — wydane wersje pozostają edytowalne"
+
+msgid "ok"
+msgstr ""
 
 msgid "OK"
 msgstr "OK"
@@ -8779,6 +8844,9 @@ msgstr "Odchylenie Kosztów Pośrednich (domyślne)"
 msgid "Overhead Variance (default)"
 msgstr "Właściciel (centrum kosztów)"
 
+msgid "overloaded"
+msgstr ""
+
 msgid "Override needs the inventory:update permission and a reason."
 msgstr "Zastąpienie wymaga uprawnień inventory:update i uzasadnienia."
 
@@ -8911,6 +8979,9 @@ msgstr "Zatwierdź"
 
 msgid "Passed"
 msgstr "Zaliczone"
+
+msgid "Past due"
+msgstr ""
 
 msgid "Path"
 msgstr "Ścieżka"
@@ -9290,8 +9361,14 @@ msgstr "Poprzedni"
 msgid "Previous Date"
 msgstr "Poprzednia data"
 
+msgid "Previous Day"
+msgstr ""
+
 msgid "Previous page"
 msgstr "Poprzednia strona"
+
+msgid "Previous Week"
+msgstr ""
 
 msgid "Price break actions"
 msgstr "Akcje podziału ceny"
@@ -10116,6 +10193,9 @@ msgstr "Usuń filtry"
 
 msgid "Remove from Price List"
 msgstr "Usuń z listy cen"
+
+msgid "Remove from station"
+msgstr ""
 
 msgid "Remove item"
 msgstr "Usuń element"
@@ -11050,6 +11130,9 @@ msgstr "Numer seryjny/partii #"
 
 msgid "Serialize & sell your parts"
 msgstr "Serializuj i sprzedawaj swoje części"
+
+msgid "Series"
+msgstr ""
 
 msgid "service"
 msgstr "usługa"
@@ -12967,6 +13050,9 @@ msgstr "Uzgodnienie"
 msgid "Tie-Out unavailable"
 msgstr "Uzgodnienie niedostępne"
 
+msgid "tight"
+msgstr ""
+
 msgid "Tightened"
 msgstr "Ścisły"
 
@@ -13972,6 +14058,9 @@ msgstr "Strona internetowa"
 
 msgid "Wednesday"
 msgstr "Środa"
+
+msgid "Week"
+msgstr ""
 
 #. placeholder {0}: d.week
 msgid "Week {0}"

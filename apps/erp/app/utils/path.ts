@@ -1892,6 +1892,8 @@ export const path = {
     saveViewOrder: `${x}/shared/view/order`,
 
     saveViews: `${x}/shared/views`,
+    scheduleCrew: `${x}/schedule/crew`,
+    scheduleCrewUpdate: `${x}/schedule/crew/update`,
     scheduleDates: `${x}/schedule/dates`,
     scheduleDatesUpdate: `${x}/schedule/dates/update`,
     scheduleGantt: (jobId?: string) =>

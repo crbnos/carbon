@@ -238,3 +238,31 @@ Deno.test("outside processing message", () => {
     "Finishes 2026-07-20 but the job is due 2026-07-17 — outside processing pushes it past the due date"
   );
 });
+
+Deno.test("crew-manned wait classifies and words as the assigned crew", () => {
+  const cause = classifyLatePlacement({
+    waitedMs: 2 * HOUR,
+    wait: { resource: "operator", blockers: null, ownJobAhead: false },
+    dominantDep: null,
+    crewManned: true,
+  });
+  assertEquals(cause, { kind: "crew-wait" });
+  assertEquals(
+    composePlacementNote(cause, 2 * HOUR),
+    "Waited 2h for the assigned crew"
+  );
+  assertEquals(
+    composeLateConflict("2026-07-20", "2026-07-17", cause),
+    "Finishes 2026-07-20 but the job is due 2026-07-17 — waited for the assigned crew to be available"
+  );
+});
+
+Deno.test("crewManned never reclassifies a machine-bound wait", () => {
+  const cause = classifyLatePlacement({
+    waitedMs: 2 * HOUR,
+    wait: { resource: "machine", blockers: null, ownJobAhead: false },
+    dominantDep: null,
+    crewManned: true,
+  });
+  assertEquals(cause, { kind: "machine-wait" });
+});

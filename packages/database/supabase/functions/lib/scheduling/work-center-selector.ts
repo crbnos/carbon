@@ -1,5 +1,6 @@
 import {
   calculateAttendedHours,
+  calculateDurationBreakdown,
   calculateDurationHours,
 } from "./duration-calculator.ts";
 import {
@@ -9,6 +10,7 @@ import {
 } from "./conflict-messages.ts";
 import { toIsoDateInTimeZone } from "./date-utils.ts";
 import type { CalendarWindow } from "./calendar-utils.ts";
+import { clipWindowsToDates } from "./crew-utils.ts";
 import type { MasterDataProvider } from "./master-data-provider.ts";
 import {
   isEligibleOperator,
@@ -71,6 +73,19 @@ export type FiniteSchedulingContext = {
    */
   windowsEnd: Date;
   /**
+   * Manning board: workCenterId -> local dateKey (YYYY-MM-DD) -> employeeIds
+   * crewed at that station that day. Absent people are already removed.
+   * Empty when no crew assignments exist in the horizon (blank board =>
+   * behavior identical to pre-crew scheduling).
+   */
+  crewByWorkCenter: Map<string, Map<string, string[]>>;
+  /**
+   * Availability windows (post-absence) for ALL known people — qualified and
+   * crew-assigned alike. employeesByAbility members reference the same
+   * (already-subtracted) window arrays.
+   */
+  windowsByEmployee: Map<string, CalendarWindow[]>;
+  /**
    * IANA time zone of the job's location. Lateness is judged and message
    * dates are worded in the FACTORY's calendar day, not UTC's.
    */
@@ -82,6 +97,31 @@ export type FiniteSchedulingContext = {
    */
   stickyWorkCenters: boolean;
 };
+
+/**
+ * The manning-board view of one work center: each member's crewed dates
+ * there. Null when the station has no crew in the horizon (default
+ * machine-only / any-qualified behavior).
+ */
+function crewInfoForWorkCenter(
+  ctx: FiniteSchedulingContext,
+  workCenterId: string
+): { memberCrewDates: Map<string, Set<string>> } | null {
+  const byDate = ctx.crewByWorkCenter.get(workCenterId);
+  if (!byDate || byDate.size === 0) return null;
+  const memberCrewDates = new Map<string, Set<string>>();
+  for (const [dateKey, employeeIds] of byDate) {
+    for (const employeeId of employeeIds) {
+      let dates = memberCrewDates.get(employeeId);
+      if (!dates) {
+        dates = new Set();
+        memberCrewDates.set(employeeId, dates);
+      }
+      dates.add(dateKey);
+    }
+  }
+  return { memberCrewDates };
+}
 
 /**
  * Work Center Selector — placement. Two finite resources gate every
@@ -382,12 +422,24 @@ export class WorkCenterSelector {
         calculateAttendedHours({ ...op, priority: op.priority ?? undefined }),
         durationHours
       );
+      // Split components for crew team mode (labor parallelizes across the
+      // present crew; setup and machine time don't)
+      const breakdown = calculateDurationBreakdown({
+        ...op,
+        priority: op.priority ?? undefined,
+      });
+      const teamComponents = {
+        setupHours: breakdown.setupHours,
+        laborHours: breakdown.laborHours,
+        machineHours: breakdown.machineHours,
+      };
 
       let best: {
         wcId: string;
         slot: AttendedAllocationSuccess;
         reservedMs: number;
         capacity: ResourceCapacityData;
+        crewManned: boolean;
       } | null = null;
       let firstConflict: string | null = null;
 
@@ -399,47 +451,129 @@ export class WorkCenterSelector {
           const capacity = ctx.capacityByWorkCenter.get(wcId);
           if (!capacity) continue;
 
+          const crew = crewInfoForWorkCenter(ctx, wcId);
+
           let slot: AttendedAllocationSuccess;
+          let crewManned = false;
           if (requirement) {
-            const result = allocateAttendedOperation({
-              attendedHours,
-              totalHours: durationHours,
-              earliestStart,
-              horizonEnd,
-              capacity,
-              members: members ?? [],
-              busyByEmployee: ctx.reservationsByEmployee,
-              timeZone: ctx.timeZone,
-            });
-            if (isConflict(result)) {
-              if (!firstConflict) {
-                firstConflict = result.conflict;
+            // Pass 1 (soft prefer): when the station has crew, the crewed
+            // QUALIFIED people work the op TOGETHER on their crewed days
+            // (team mode: everyone booked on the same op, labor parallelized
+            // across whoever is present; setup/machine not). A pass-1 miss is
+            // not a conflict; pass 2 is today's any-qualified relay behavior.
+            let result: AttendedAllocationSuccess | null = null;
+            if (crew) {
+              const crewQualified = (members ?? []).flatMap((m) => {
+                const dates = crew.memberCrewDates.get(m.employeeId);
+                if (!dates) return [];
+                const windows = clipWindowsToDates(
+                  m.windows,
+                  dates,
+                  ctx.timeZone
+                );
+                return windows.length > 0
+                  ? [{ employeeId: m.employeeId, windows }]
+                  : [];
+              });
+              if (crewQualified.length > 0) {
+                const pass1 = allocateAttendedOperation({
+                  attendedHours,
+                  totalHours: durationHours,
+                  earliestStart,
+                  horizonEnd,
+                  capacity,
+                  members: crewQualified,
+                  busyByEmployee: ctx.reservationsByEmployee,
+                  timeZone: ctx.timeZone,
+                  team: teamComponents,
+                });
+                if (!isConflict(pass1)) {
+                  result = pass1;
+                  crewManned = true;
+                }
               }
-              continue;
+            }
+            if (!result) {
+              const pass2 = allocateAttendedOperation({
+                attendedHours,
+                totalHours: durationHours,
+                earliestStart,
+                horizonEnd,
+                capacity,
+                members: members ?? [],
+                busyByEmployee: ctx.reservationsByEmployee,
+                timeZone: ctx.timeZone,
+              });
+              if (isConflict(pass2)) {
+                if (!firstConflict) {
+                  firstConflict = pass2.conflict;
+                }
+                continue;
+              }
+              result = pass2;
             }
             slot = result;
           } else {
-            const result = allocateOperation({
-              durationHours,
-              earliestStart,
-              horizonEnd,
-              capacity,
-              timeZone: ctx.timeZone,
-            });
-            if (isConflict(result)) {
-              if (!firstConflict) {
-                firstConflict = result.conflict;
+            // Ungated op: a crewed station is MANNED — the crew works the op
+            // together (team mode: labor parallelized across whoever is
+            // present, setup/machine not), machine holding the full span.
+            // Falls back to machine-only (soft) when the crew can't cover
+            // it; an uncrewed station is machine-only exactly as before.
+            let result: AttendedAllocationSuccess | null = null;
+            if (crew && attendedHours > 0) {
+              const crewMembers: EligibleMember[] = [];
+              for (const [employeeId, dates] of crew.memberCrewDates) {
+                const windows = clipWindowsToDates(
+                  ctx.windowsByEmployee.get(employeeId) ?? [],
+                  dates,
+                  ctx.timeZone
+                );
+                if (windows.length > 0) {
+                  crewMembers.push({ employeeId, windows });
+                }
               }
-              continue;
+              if (crewMembers.length > 0) {
+                const manned = allocateAttendedOperation({
+                  attendedHours,
+                  totalHours: durationHours,
+                  earliestStart,
+                  horizonEnd,
+                  capacity,
+                  members: crewMembers,
+                  busyByEmployee: ctx.reservationsByEmployee,
+                  timeZone: ctx.timeZone,
+                  team: teamComponents,
+                });
+                if (!isConflict(manned)) {
+                  result = manned;
+                  crewManned = true;
+                }
+              }
             }
-            // Normalize the machine-only result to the attended shape
-            slot = {
-              start: result.start,
-              attendedEnd: result.end,
-              end: result.end,
-              segments: [],
-              wait: result.wait,
-            };
+            if (!result) {
+              const machineOnly = allocateOperation({
+                durationHours,
+                earliestStart,
+                horizonEnd,
+                capacity,
+                timeZone: ctx.timeZone,
+              });
+              if (isConflict(machineOnly)) {
+                if (!firstConflict) {
+                  firstConflict = machineOnly.conflict;
+                }
+                continue;
+              }
+              // Normalize the machine-only result to the attended shape
+              result = {
+                start: machineOnly.start,
+                attendedEnd: machineOnly.end,
+                end: machineOnly.end,
+                segments: [],
+                wait: machineOnly.wait,
+              };
+            }
+            slot = result;
           }
 
           const reservedMs = capacity.reservations.reduce(
@@ -453,7 +587,7 @@ export class WorkCenterSelector {
             (slot.end.getTime() === best.slot.end.getTime() &&
               reservedMs < best.reservedMs)
           ) {
-            best = { wcId, slot, reservedMs, capacity };
+            best = { wcId, slot, reservedMs, capacity, crewManned };
           }
         }
       }
@@ -472,6 +606,7 @@ export class WorkCenterSelector {
           dominantDep: dominantDepId
             ? { description: descriptionById.get(dominantDepId) ?? null }
             : null,
+          crewManned: best.crewManned,
         });
 
         // Commit in-run so subsequent operations see this placement

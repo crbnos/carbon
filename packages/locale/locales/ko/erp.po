@@ -96,6 +96,10 @@ msgstr "{0}이(가) 업로드되었습니다"
 msgid "{0} values missing"
 msgstr "{0}개 값 누락"
 
+#. placeholder {0}: formatHours(-delta)
+msgid "{0}h free"
+msgstr ""
+
 msgid "{apOverduePct}% of payables"
 msgstr "매입채무의 {apOverduePct}%"
 
@@ -159,6 +163,10 @@ msgstr "전체의 %"
 #. placeholder {1}: redirectedParts.join(", ")
 msgid "↩ {0} redirected from superseded {1}"
 msgstr "↩ 대체된 {1}에서 {0}(으)로 전환됨"
+
+#. placeholder {0}: formatHours(delta)
+msgid "+{0}h"
+msgstr ""
 
 msgid "<0>Add a supplier part</0> for this item to set a preferred supplier."
 msgstr "이 품목에 <0>공급업체 부품 추가</0>를 하여 선호 공급업체를 설정하세요."
@@ -396,6 +404,9 @@ msgstr "능력"
 
 msgid "About"
 msgstr "정보"
+
+msgid "Absent"
+msgstr ""
 
 msgid "Absorption"
 msgstr "흡수"
@@ -818,6 +829,9 @@ msgstr "감사 대상 개체에 대한 모든 변경 사항이 기록되고 있�
 msgid "All Customers"
 msgstr "모든 고객"
 
+msgid "All departments"
+msgstr ""
+
 msgid "All Documents"
 msgstr "모든 문서"
 
@@ -838,6 +852,9 @@ msgstr "선택한 그룹의 모든 구성원과 선택한 개인이 요청을 �
 
 msgid "All rows imported — {inserted} inserted, {updated} updated."
 msgstr "모든 행을 가져왔습니다 — {inserted}개 추가, {updated}개 업데이트."
+
+msgid "All shifts"
+msgstr ""
 
 msgid "All Suppliers"
 msgstr "모든 공급업체"
@@ -1546,6 +1563,9 @@ msgstr "그룹에 배정"
 msgid "Assigned"
 msgstr "배정됨"
 
+msgid "Assigned / Needed people per station. Needed = job hours due that day ÷ {defaultShiftHours}h shift, rounded up. Red is short-staffed, green is covered, yellow is overstaffed."
+msgstr ""
+
 msgid "Assigned to Me"
 msgstr "나에게 배정됨"
 
@@ -1817,6 +1837,9 @@ msgstr "{0}에 의해 차단됨"
 
 msgid "Blocks save until resolved"
 msgstr "해결될 때까지 저장을 차단합니다"
+
+msgid "Board"
+msgstr ""
 
 msgid "BoM"
 msgstr "BOM"
@@ -2234,6 +2257,9 @@ msgstr "마이그레이션된 데이터를 정리하고 승인하세요"
 
 msgid "Clear"
 msgstr "지우기"
+
+msgid "Clear absence"
+msgstr ""
 
 msgid "Clear due date"
 msgstr "기한 지우기"
@@ -2801,6 +2827,9 @@ msgstr "품목 고유 식별자 복사"
 msgid "Copy PIN"
 msgstr "PIN 복사"
 
+msgid "Copy previous day"
+msgstr ""
+
 msgid "Copy pricing to a single customer"
 msgstr "단일 고객에게 가격 복사"
 
@@ -2952,6 +2981,9 @@ msgstr "거래처"
 
 msgid "Country"
 msgstr "국가"
+
+msgid "Coverage"
+msgstr ""
 
 msgid "Create"
 msgstr "생성"
@@ -3200,6 +3232,9 @@ msgstr "대변 및 차변"
 
 msgid "Credits applied"
 msgstr "적용된 크레딧"
+
+msgid "Crew"
+msgstr ""
 
 msgid "Critical"
 msgstr "심각"
@@ -3958,6 +3993,9 @@ msgstr "배송지"
 
 msgid "Demand"
 msgstr "수요"
+
+msgid "Demand = job hours due · Scheduled = work hours the scheduler placed · Available = assigned crew's shift hours (uncrewed stations use the location's shift calendar) · Load = hours over (+) or free"
+msgstr ""
 
 msgid "Demand forecast"
 msgstr "수요예측"
@@ -6042,6 +6080,9 @@ msgstr "자택 전화번호"
 msgid "Host, secure, and back up the platform"
 msgstr "플랫폼 호스팅, 보안, 백업"
 
+msgid "Hours"
+msgstr ""
+
 msgid "Hours per Week"
 msgstr "주당 시간"
 
@@ -6998,6 +7039,9 @@ msgstr "Carbon 도입 완료"
 msgid "Live reloading"
 msgstr "실시간 새로고침"
 
+msgid "Load"
+msgstr ""
+
 msgid "Load newer"
 msgstr "최신 항목 불러오기"
 
@@ -7270,6 +7314,9 @@ msgstr "현재 프로세스, 시스템, 데이터를 매핑하세요"
 msgid "Mark \"{0}\" as passed?"
 msgstr "\"{0}\"을(를) 합격으로 표시하시겠습니까?"
 
+msgid "Mark absent today"
+msgstr ""
+
 msgid "Mark all as configured"
 msgstr "모두 설정됨으로 표시"
 
@@ -7423,6 +7470,9 @@ msgstr "자재"
 msgid "Materials"
 msgstr "자재"
 
+msgid "Matrix"
+msgstr ""
+
 msgid "Max Qty"
 msgstr "최대 수량"
 
@@ -7560,6 +7610,9 @@ msgstr "누락된 배송비"
 
 msgid "Missing Suppliers"
 msgstr "누락된 공급업체"
+
+msgid "Missing:"
+msgstr ""
 
 msgid "Mobile Phone"
 msgstr "휴대전화"
@@ -8013,6 +8066,9 @@ msgstr "다음 교정일"
 msgid "Next Date"
 msgstr "다음 날짜"
 
+msgid "Next Day"
+msgstr ""
+
 msgid "Next Due"
 msgstr "다음 예정일"
 
@@ -8024,6 +8080,9 @@ msgstr "다음 순번"
 
 msgid "Next step"
 msgstr "다음 단계"
+
+msgid "Next Week"
+msgstr ""
 
 msgid "Next:"
 msgstr "다음:"
@@ -8138,6 +8197,9 @@ msgstr "마감일 없음"
 
 msgid "No editable properties for this item."
 msgstr "이 항목에 대한 편집 가능한 속성이 없습니다."
+
+msgid "No employees assigned this week"
+msgstr ""
 
 msgid "No employees assigned yet. Add groups to see status."
 msgstr "아직 배정된 직원이 없습니다. 그룹을 추가하면 상태를 확인할 수 있습니다."
@@ -8432,6 +8494,9 @@ msgstr "중"
 
 msgid "Off — released revisions stay editable"
 msgstr "꺼짐 — 릴리스된 리비전은 편집 가능한 상태로 유지됨"
+
+msgid "ok"
+msgstr ""
 
 msgid "OK"
 msgstr "확인"
@@ -8779,6 +8844,9 @@ msgstr "제조간접비 차이"
 msgid "Overhead Variance (default)"
 msgstr "제조간접비 차이(기본값)"
 
+msgid "overloaded"
+msgstr ""
+
 msgid "Override needs the inventory:update permission and a reason."
 msgstr "재정의하려면 inventory:update 권한과 사유가 필요합니다."
 
@@ -8911,6 +8979,9 @@ msgstr "합격"
 
 msgid "Passed"
 msgstr "합격됨"
+
+msgid "Past due"
+msgstr ""
 
 msgid "Path"
 msgstr "경로"
@@ -9290,8 +9361,14 @@ msgstr "이전"
 msgid "Previous Date"
 msgstr "이전 날짜"
 
+msgid "Previous Day"
+msgstr ""
+
 msgid "Previous page"
 msgstr "이전 페이지"
+
+msgid "Previous Week"
+msgstr ""
 
 msgid "Price break actions"
 msgstr "가격 구간 작업"
@@ -10116,6 +10193,9 @@ msgstr "필터 제거"
 
 msgid "Remove from Price List"
 msgstr "가격표에서 제거"
+
+msgid "Remove from station"
+msgstr ""
 
 msgid "Remove item"
 msgstr "품목 제거"
@@ -11050,6 +11130,9 @@ msgstr "일련번호/배치 #"
 
 msgid "Serialize & sell your parts"
 msgstr "품목에 일련번호를 부여하고 판매하세요"
+
+msgid "Series"
+msgstr ""
 
 msgid "service"
 msgstr "서비스"
@@ -12967,6 +13050,9 @@ msgstr "대사"
 msgid "Tie-Out unavailable"
 msgstr "동적 대조 불가능"
 
+msgid "tight"
+msgstr ""
+
 msgid "Tightened"
 msgstr "강화됨"
 
@@ -13972,6 +14058,9 @@ msgstr "웹사이트"
 
 msgid "Wednesday"
 msgstr "수요일"
+
+msgid "Week"
+msgstr ""
 
 #. placeholder {0}: d.week
 msgid "Week {0}"

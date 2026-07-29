@@ -158,6 +158,9 @@ msgstr "Cancella Filtri"
 msgid "Clear Search"
 msgstr "Cancella Ricerca"
 
+msgid "Clear station default"
+msgstr ""
+
 msgid "Clock In"
 msgstr "Timbratura Ingresso"
 
@@ -1117,3 +1120,7 @@ msgstr "Hai timbrato l'ingresso alle {0}. Puoi modificare l'orario di uscita qui
 
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
 msgstr "Sei timbrato in ingresso da {hoursElapsed} ore. Hai dimenticato di timbrare l'uscita?"
+
+#. placeholder {0}: crewStation.name
+msgid "Your station: {0}"
+msgstr ""

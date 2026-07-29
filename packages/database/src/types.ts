@@ -7944,6 +7944,421 @@ export type Database = {
         }
         Relationships: []
       }
+      crewAbsence: {
+        Row: {
+          companyId: string
+          createdAt: string
+          createdBy: string
+          date: string
+          employeeId: string
+          id: string
+          note: string | null
+          shiftId: string | null
+          updatedAt: string | null
+          updatedBy: string | null
+        }
+        Insert: {
+          companyId: string
+          createdAt?: string
+          createdBy: string
+          date: string
+          employeeId: string
+          id?: string
+          note?: string | null
+          shiftId?: string | null
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Update: {
+          companyId?: string
+          createdAt?: string
+          createdBy?: string
+          date?: string
+          employeeId?: string
+          id?: string
+          note?: string | null
+          shiftId?: string | null
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crewAbsence_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crewAbsence_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crewAbsence_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "crewAbsence_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "crewAbsence_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crewAbsence_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crewAbsence_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crewAbsence_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crewAbsence_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "crewAbsence_employeeId_fkey"
+            columns: ["employeeId"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crewAbsence_employeeId_fkey"
+            columns: ["employeeId"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crewAbsence_employeeId_fkey"
+            columns: ["employeeId"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crewAbsence_employeeId_fkey"
+            columns: ["employeeId"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crewAbsence_employeeId_fkey"
+            columns: ["employeeId"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "crewAbsence_shiftId_fkey"
+            columns: ["shiftId"]
+            isOneToOne: false
+            referencedRelation: "shift"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crewAbsence_shiftId_fkey"
+            columns: ["shiftId"]
+            isOneToOne: false
+            referencedRelation: "shifts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crewAbsence_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crewAbsence_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crewAbsence_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crewAbsence_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crewAbsence_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+        ]
+      }
+      crewAssignment: {
+        Row: {
+          companyId: string
+          createdAt: string
+          createdBy: string
+          date: string
+          employeeId: string
+          id: string
+          locationId: string
+          note: string | null
+          shiftId: string | null
+          updatedAt: string | null
+          updatedBy: string | null
+          workCenterId: string
+        }
+        Insert: {
+          companyId: string
+          createdAt?: string
+          createdBy: string
+          date: string
+          employeeId: string
+          id?: string
+          locationId: string
+          note?: string | null
+          shiftId?: string | null
+          updatedAt?: string | null
+          updatedBy?: string | null
+          workCenterId: string
+        }
+        Update: {
+          companyId?: string
+          createdAt?: string
+          createdBy?: string
+          date?: string
+          employeeId?: string
+          id?: string
+          locationId?: string
+          note?: string | null
+          shiftId?: string | null
+          updatedAt?: string | null
+          updatedBy?: string | null
+          workCenterId?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crewAssignment_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crewAssignment_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crewAssignment_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "crewAssignment_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "crewAssignment_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crewAssignment_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crewAssignment_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crewAssignment_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crewAssignment_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "crewAssignment_employeeId_fkey"
+            columns: ["employeeId"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crewAssignment_employeeId_fkey"
+            columns: ["employeeId"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crewAssignment_employeeId_fkey"
+            columns: ["employeeId"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crewAssignment_employeeId_fkey"
+            columns: ["employeeId"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crewAssignment_employeeId_fkey"
+            columns: ["employeeId"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "crewAssignment_locationId_fkey"
+            columns: ["locationId"]
+            isOneToOne: false
+            referencedRelation: "location"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crewAssignment_shiftId_fkey"
+            columns: ["shiftId"]
+            isOneToOne: false
+            referencedRelation: "shift"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crewAssignment_shiftId_fkey"
+            columns: ["shiftId"]
+            isOneToOne: false
+            referencedRelation: "shifts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crewAssignment_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crewAssignment_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crewAssignment_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crewAssignment_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crewAssignment_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "crewAssignment_workCenterId_fkey"
+            columns: ["workCenterId"]
+            isOneToOne: false
+            referencedRelation: "riskRegisters"
+            referencedColumns: ["workCenterId"]
+          },
+          {
+            foreignKeyName: "crewAssignment_workCenterId_fkey"
+            columns: ["workCenterId"]
+            isOneToOne: false
+            referencedRelation: "workCenter"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crewAssignment_workCenterId_fkey"
+            columns: ["workCenterId"]
+            isOneToOne: false
+            referencedRelation: "workCenters"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crewAssignment_workCenterId_fkey"
+            columns: ["workCenterId"]
+            isOneToOne: false
+            referencedRelation: "workCentersWithBlockingStatus"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       currency: {
         Row: {
           active: boolean

@@ -158,6 +158,9 @@ msgstr "Wyczyść filtry"
 msgid "Clear Search"
 msgstr "Wyczyść wyszukiwanie"
 
+msgid "Clear station default"
+msgstr ""
+
 msgid "Clock In"
 msgstr "Rozpocznij zmianę"
 
@@ -1117,3 +1120,7 @@ msgstr "Zalogowałeś się o {0}. Możesz edytować czas zakończenia zmiany pon
 
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
 msgstr "Jesteś zalogowany od {hoursElapsed} godzin. Czy zapomniałeś zakończyć zmianę?"
+
+#. placeholder {0}: crewStation.name
+msgid "Your station: {0}"
+msgstr ""

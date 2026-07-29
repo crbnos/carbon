@@ -158,6 +158,9 @@ msgstr "फ़िल्टर साफ़ करें"
 msgid "Clear Search"
 msgstr "खोज साफ़ करें"
 
+msgid "Clear station default"
+msgstr ""
+
 msgid "Clock In"
 msgstr "घड़ी में प्रवेश करें"
 
@@ -1117,3 +1120,7 @@ msgstr "आप {0} पर क्लॉक इन हुए हैं। आप �
 
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
 msgstr "आप {hoursElapsed} घंटे के लिए क्लॉक इन हैं। क्या आप क्लॉक आउट करना भूल गए?"
+
+#. placeholder {0}: crewStation.name
+msgid "Your station: {0}"
+msgstr ""

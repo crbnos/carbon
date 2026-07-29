@@ -611,3 +611,131 @@ Deno.test("formatBlockingJobs ranks by op count then job id, capping at 3", () =
     "queued behind J000002 (2 ops), J000001 (1 op), J000003 (1 op), +1 more"
   );
 });
+
+// --- crew team mode (station crew works the same op together) ---------------
+
+Deno.test("team: two members halve the labor, both booked on the same op", () => {
+  // setup 1h + labor 4h, machine 0. Two 24/7 members => setup 1h at 1x, then
+  // labor 4h at 2x = 2h wall. Attended span 08:00-11:00; both booked 3h.
+  const r = expectAttended(
+    allocateAttendedOperation({
+      attendedHours: 5,
+      totalHours: 5,
+      earliestStart: utc("2026-01-05T08:00:00Z"),
+      horizonEnd: HORIZON,
+      capacity: makeCapacity(),
+      members: [member("bob"), member("carol")],
+      busyByEmployee: new Map(),
+      team: { setupHours: 1, laborHours: 4, machineHours: 0 },
+    })
+  );
+  assertEquals(r.start.toISOString(), "2026-01-05T08:00:00.000Z");
+  assertEquals(r.attendedEnd.toISOString(), "2026-01-05T11:00:00.000Z");
+  assertEquals(r.end.toISOString(), "2026-01-05T11:00:00.000Z");
+  // One overlapping segment per person covering the whole attended span
+  assertEquals(r.segments.length, 2);
+  for (const employeeId of ["bob", "carol"]) {
+    const seg = r.segments.find((s) => s.employeeId === employeeId);
+    assert(seg, `${employeeId} booked`);
+    assertEquals(seg!.startAt.toISOString(), "2026-01-05T08:00:00.000Z");
+    assertEquals(seg!.endAt.toISOString(), "2026-01-05T11:00:00.000Z");
+  }
+});
+
+Deno.test("team: single member matches the legacy attended result", () => {
+  const argsBase = {
+    attendedHours: 5,
+    totalHours: 5,
+    earliestStart: utc("2026-01-05T08:00:00Z"),
+    horizonEnd: HORIZON,
+    capacity: makeCapacity(),
+    members: [member("bob", weekdayWindows)],
+    busyByEmployee: new Map<string, ReservationInterval[]>(),
+  };
+  const legacy = expectAttended(allocateAttendedOperation(argsBase));
+  const team = expectAttended(
+    allocateAttendedOperation({
+      ...argsBase,
+      team: { setupHours: 1, laborHours: 4, machineHours: 0 },
+    })
+  );
+  assertEquals(team.start.toISOString(), legacy.start.toISOString());
+  assertEquals(team.attendedEnd.toISOString(), legacy.attendedEnd.toISOString());
+  assertEquals(team.end.toISOString(), legacy.end.toISOString());
+  assertEquals(team.segments.length, 1);
+  assertEquals(team.segments[0].employeeId, "bob");
+});
+
+Deno.test("team: rate drops when a member's shift ends mid-op", () => {
+  // Bob 24/7, Carol only Mon 08:00-10:00. Setup 0, labor 6h.
+  // 08:00-10:00 both present: 2h wall x2 = 4h labor done.
+  // 10:00 on Bob alone: remaining 2h at 1x -> attended ends 12:00.
+  const carolWindows = [
+    { start: utc("2026-01-05T08:00:00Z"), end: utc("2026-01-05T10:00:00Z") },
+  ];
+  const r = expectAttended(
+    allocateAttendedOperation({
+      attendedHours: 6,
+      totalHours: 6,
+      earliestStart: utc("2026-01-05T08:00:00Z"),
+      horizonEnd: HORIZON,
+      capacity: makeCapacity(),
+      members: [member("bob"), member("carol", carolWindows)],
+      busyByEmployee: new Map(),
+      team: { setupHours: 0, laborHours: 6, machineHours: 0 },
+    })
+  );
+  assertEquals(r.attendedEnd.toISOString(), "2026-01-05T12:00:00.000Z");
+  const carol = r.segments.find((s) => s.employeeId === "carol");
+  assertEquals(carol!.endAt.toISOString(), "2026-01-05T10:00:00.000Z");
+  const bob = r.segments.find((s) => s.employeeId === "bob");
+  assertEquals(bob!.endAt.toISOString(), "2026-01-05T12:00:00.000Z");
+});
+
+Deno.test("team: machine time is not compressed", () => {
+  // Setup 1h, labor 4h, machine 6h. Two members: attended = 1h + 2h = 3h
+  // (ends 11:00). Machine ran concurrently for the 2h labor wall-clock;
+  // remaining 4h unattended -> end 15:00. (Legacy would end at
+  // setup + max(labor, machine) = 7h -> 15:00 too, but attended would be 5h.)
+  const r = expectAttended(
+    allocateAttendedOperation({
+      attendedHours: 5,
+      totalHours: 7,
+      earliestStart: utc("2026-01-05T08:00:00Z"),
+      horizonEnd: HORIZON,
+      capacity: makeCapacity(),
+      members: [member("bob"), member("carol")],
+      busyByEmployee: new Map(),
+      team: { setupHours: 1, laborHours: 4, machineHours: 6 },
+    })
+  );
+  assertEquals(r.attendedEnd.toISOString(), "2026-01-05T11:00:00.000Z");
+  assertEquals(r.end.toISOString(), "2026-01-05T15:00:00.000Z");
+});
+
+Deno.test("team: a busy member joins the op when they free up", () => {
+  // Carol busy 08:00-09:00 on another booking; labor 4h, no setup.
+  // 08:00-09:00 Bob alone (1h done), 09:00 Carol joins: remaining 3h at 2x
+  // -> +1.5h -> attended ends 10:30.
+  const busy = new Map<string, ReservationInterval[]>([
+    [
+      "carol",
+      [{ startAt: utc("2026-01-05T08:00:00Z"), endAt: utc("2026-01-05T09:00:00Z") }],
+    ],
+  ]);
+  const r = expectAttended(
+    allocateAttendedOperation({
+      attendedHours: 4,
+      totalHours: 4,
+      earliestStart: utc("2026-01-05T08:00:00Z"),
+      horizonEnd: HORIZON,
+      capacity: makeCapacity(),
+      members: [member("bob"), member("carol")],
+      busyByEmployee: busy,
+      team: { setupHours: 0, laborHours: 4, machineHours: 0 },
+    })
+  );
+  assertEquals(r.attendedEnd.toISOString(), "2026-01-05T10:30:00.000Z");
+  const carol = r.segments.find((s) => s.employeeId === "carol");
+  assertEquals(carol!.startAt.toISOString(), "2026-01-05T09:00:00.000Z");
+});

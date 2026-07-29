@@ -277,10 +277,141 @@ function simulateAttended(args: {
 }
 
 /**
+ * TEAM variant of the attended simulation: the station's whole crew works the
+ * SAME operation together. Every member available in a stretch is booked on
+ * it (overlapping segments). Setup accumulates at 1x (a second pair of hands
+ * doesn't speed up setup), labor accumulates at n x wall-clock where n is the
+ * crew present in that stretch — two welders finish 12h of weld labor in 6
+ * wall-clock hours; if one leaves mid-op the rate drops to 1x. Returns the
+ * wall-clock spent in the labor phase so the caller can credit the machine's
+ * concurrent run. With one member this is behavior-identical to
+ * simulateAttended (same rate, same bookings).
+ */
+function simulateAttendedTeam(args: {
+  from: Date;
+  setupHours: number;
+  laborHours: number;
+  members: EligibleMember[];
+  busyByEmployee: Map<string, ReservationInterval[]>;
+  horizonEnd: Date;
+}): {
+  segments: AttendedSegment[];
+  start: Date;
+  attendedEnd: Date;
+  laborActiveWallMs: number;
+} | null {
+  const { from, setupHours, laborHours, members, busyByEmployee, horizonEnd } =
+    args;
+  const setupMs = Math.round(setupHours * HOUR_MS);
+  const laborMs = Math.round(laborHours * HOUR_MS);
+  if (setupMs + laborMs <= 0) {
+    return { segments: [], start: from, attendedEnd: from, laborActiveWallMs: 0 };
+  }
+
+  const fromMs = from.getTime();
+  const horizonMs = horizonEnd.getTime();
+  const busyOf = (id: string) => busyByEmployee.get(id) ?? [];
+
+  // Availability change points: window and busy boundaries in (from, horizon)
+  const boundaries = new Set<number>([fromMs]);
+  for (const m of members) {
+    for (const w of m.windows) {
+      const ws = w.start.getTime();
+      const we = w.end.getTime();
+      if (ws > fromMs && ws < horizonMs) boundaries.add(ws);
+      if (we > fromMs && we < horizonMs) boundaries.add(we);
+    }
+    for (const r of busyOf(m.employeeId)) {
+      const rs = r.startAt.getTime();
+      const re = r.endAt.getTime();
+      if (rs > fromMs && rs < horizonMs) boundaries.add(rs);
+      if (re > fromMs && re < horizonMs) boundaries.add(re);
+    }
+  }
+  const points = Array.from(boundaries).sort((a, b) => a - b);
+  points.push(horizonMs);
+
+  let setupDoneMs = 0;
+  let laborDoneMs = 0;
+  let laborActiveWallMs = 0;
+  const segments: AttendedSegment[] = [];
+  const lastSegmentByEmployee = new Map<string, AttendedSegment>();
+  const bookAll = (
+    available: EligibleMember[],
+    startMs: number,
+    endMs: number
+  ) => {
+    for (const m of available) {
+      const last = lastSegmentByEmployee.get(m.employeeId);
+      if (last && last.endAt.getTime() === startMs) {
+        last.endAt = new Date(endMs);
+      } else {
+        const segment: AttendedSegment = {
+          employeeId: m.employeeId,
+          startAt: new Date(startMs),
+          endAt: new Date(endMs),
+        };
+        segments.push(segment);
+        lastSegmentByEmployee.set(m.employeeId, segment);
+      }
+    }
+  };
+
+  for (let i = 0; i < points.length - 1; i++) {
+    let cursor = points[i];
+    const stretchEnd = points[i + 1];
+    if (cursor >= horizonMs) break;
+
+    // Availability is constant within a stretch (all window/busy edges are
+    // boundary points)
+    const available = members.filter((m) =>
+      memberAvailableAt(m, busyOf(m.employeeId), cursor)
+    );
+    if (available.length === 0) continue; // pause — nobody free here
+
+    while (cursor < stretchEnd) {
+      if (setupDoneMs < setupMs) {
+        // Setup: one pair of hands' worth of progress; the whole present
+        // crew is at the station with the op regardless
+        const take = Math.min(stretchEnd - cursor, setupMs - setupDoneMs);
+        bookAll(available, cursor, cursor + take);
+        setupDoneMs += take;
+        cursor += take;
+      } else if (laborDoneMs < laborMs) {
+        const n = available.length;
+        const wallNeeded = Math.ceil((laborMs - laborDoneMs) / n);
+        const take = Math.min(stretchEnd - cursor, wallNeeded);
+        bookAll(available, cursor, cursor + take);
+        laborDoneMs = Math.min(laborMs, laborDoneMs + take * n);
+        laborActiveWallMs += take;
+        cursor += take;
+      }
+      if (setupDoneMs >= setupMs && laborDoneMs >= laborMs) {
+        return {
+          segments,
+          start: segments[0].startAt,
+          attendedEnd: new Date(cursor),
+          laborActiveWallMs,
+        };
+      }
+    }
+  }
+  return null; // horizon exhausted before attended work completed
+}
+
+/**
  * Allocate a person-gated operation: the machine is held for the whole span
  * while people are booked only for the attended window (relay across
  * shifts). Walks forward from `earliestStart`; each machine collision hops
  * to the blocking reservation's end and the attended simulation re-runs.
+ *
+ * With `team` set (crewed stations), the members work the operation
+ * TOGETHER: everyone present is booked on it, labor is parallelized across
+ * the present crew, setup and machine time are not (see
+ * simulateAttendedTeam). The end is then derived from the machine hours
+ * minus the machine run concurrent with the labor phase — `totalHours` (a
+ * fixed setup + max(labor, machine)) would overstate the span when labor
+ * compresses.
  */
 export function allocateAttendedOperation(args: {
   attendedHours: number;
@@ -292,6 +423,8 @@ export function allocateAttendedOperation(args: {
   busyByEmployee: Map<string, ReservationInterval[]>;
   /** IANA zone used to word dates in conflict messages (factory time) */
   timeZone?: string;
+  /** Crew team mode: the members man the station together (see above). */
+  team?: { setupHours: number; laborHours: number; machineHours: number };
 }): AttendedAllocationSuccess | AllocationConflict {
   const {
     attendedHours,
@@ -301,19 +434,24 @@ export function allocateAttendedOperation(args: {
     capacity,
     members,
     busyByEmployee,
+    team,
   } = args;
   const timeZone = args.timeZone ?? "UTC";
 
+  const handsOnHours = team
+    ? team.setupHours + team.laborHours
+    : attendedHours;
+
   // No eligible people can never free up — immediate skill conflict (the
   // selector normally pre-empts this with a message naming the ability)
-  if (attendedHours > 0 && members.length === 0) {
+  if (handsOnHours > 0 && members.length === 0) {
     return { conflict: "No qualified operator available" };
   }
 
   const remainderMs = Math.round(Math.max(0, totalHours - attendedHours) * HOUR_MS);
   const exhausted = {
     conflict:
-      attendedHours > 0
+      handsOnHours > 0
         ? `No slot with both an open work center and a qualified operator available before ${
             toIsoDateInTimeZone(horizonEnd, timeZone)
           }`
@@ -329,13 +467,32 @@ export function allocateAttendedOperation(args: {
     if (cursor.getTime() >= horizonEnd.getTime()) {
       return exhausted; // machine hops walked past the horizon
     }
-    const sim = simulateAttended({
-      from: cursor,
-      attendedHours,
-      members,
-      busyByEmployee,
-      horizonEnd,
-    });
+    let sim: {
+      segments: AttendedSegment[];
+      start: Date;
+      attendedEnd: Date;
+    } | null;
+    let laborActiveWallMs = 0;
+    if (team) {
+      const teamSim = simulateAttendedTeam({
+        from: cursor,
+        setupHours: team.setupHours,
+        laborHours: team.laborHours,
+        members,
+        busyByEmployee,
+        horizonEnd,
+      });
+      sim = teamSim;
+      laborActiveWallMs = teamSim?.laborActiveWallMs ?? 0;
+    } else {
+      sim = simulateAttended({
+        from: cursor,
+        attendedHours,
+        members,
+        busyByEmployee,
+        horizonEnd,
+      });
+    }
     if (!sim) {
       return {
         conflict: `No qualified operator availability before ${
@@ -344,7 +501,12 @@ export function allocateAttendedOperation(args: {
       };
     }
 
-    const end = new Date(sim.attendedEnd.getTime() + remainderMs);
+    // Unattended machine remainder: in team mode the machine gets credit for
+    // its run concurrent with the (possibly compressed) labor wall-clock
+    const unattendedMs = team
+      ? Math.max(0, Math.round(team.machineHours * HOUR_MS) - laborActiveWallMs)
+      : remainderMs;
+    const end = new Date(sim.attendedEnd.getTime() + unattendedMs);
     if (end.getTime() > horizonEnd.getTime()) {
       return exhausted; // later starts only finish later — no point walking on
     }

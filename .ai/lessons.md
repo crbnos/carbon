@@ -487,3 +487,23 @@ Format: `Context → Problem → Rule → Applies to`
 **Rule:** Don't rely on `debounce` for Carbon Inngest functions validated against the local dev server — it's broken there. For the event queue the coalescing was moved upstream: `dispatch_event_batch()` wakes at most once per transaction (txn-local GUC `carbon.event_wake_sent`), so the important bulk case (a CSV import = one transaction) is already one wake; `concurrency: 1` + loop-until-empty drain absorbs the rest (extra runs from many separate transactions are cheap no-ops that read an empty queue). If you must coalesce many *separate* transactions in a burst, do it at the DB/application layer, not with `debounce`. Verify any flow-control choice by watching `docker logs <inngest container>` for `error handling queue item` during a burst, not just by trusting the config.
 
 **Applies to:** `packages/jobs/src/inngest/functions/events/queue.ts`; any new Inngest function reaching for `debounce`/flow-control that will be exercised in local dev.
+
+## Table cells in @carbon/react highlight on row hover by default
+
+**Context:** The crew Capacity view needed a hover-free (then row-scoped-hover) table; removing every hover class in the feature file changed nothing — cells still tinted on row hover, and a rowSpan name cell lit up whenever its first row was hovered.
+
+**Problem:** `packages/react/src/Table.tsx` bakes the hover in at the primitive level: `Tr` carries the Tailwind `group` class and `Td`/`Th` ship `group-hover:bg-muted`. No amount of feature-level class removal turns it off, and a `rowSpan` cell belongs to its first row, so that row's hover tints it.
+
+**Rule:** To opt a table out of (or customize) hover, override per cell with `group-hover:bg-transparent` (tailwind-merge lets the passed className win) — a local `<Td>` wrapper keeps it tidy. For a rowSpan cell that must stay static, also give it an opaque `bg-card` so sibling-row tints can't bleed through. If more tables need this, promote a `static` prop into `packages/react` instead of copying wrappers.
+
+**Applies to:** any table built on `@carbon/react` `Tr`/`Td`/`Th`, especially with `rowSpan` cells or custom hover semantics (`CrewCapacity.tsx` is the reference).
+
+## position:sticky inside a horizontal board needs a content-width row and a clamped scroll root
+
+**Context:** Making the crew board's Unassigned column sticky worked for one viewport-width of scrolling, then scrolled away; fixing that caused page-level overflow on small screens.
+
+**Problem:** Sticky elements only stick within their parent's bounds. The flex row inside the Radix ScrollArea was viewport-width (columns overflowed it), so the sticky column ran out of parent after one screenful. Adding `min-w-max` fixed that but let the ScrollArea (a flex item, which sizes to content) exceed ITS parent, pushing overflow to the page.
+
+**Rule:** The sizing contract for a sticky column in a scrollable flex board is three layers: scroll root clamped (`w-full min-w-0 max-w-full`) > row content-width (`min-w-max`) > column `sticky left-0 z-10` with an opaque background. With dnd-kit on top, add `measuring={{ droppable: { strategy: MeasuringStrategy.Always } }}` — cached droppable rects assume elements move with the scroll, and sticky ones don't.
+
+**Applies to:** `BoardContainer` (`ColumnCard.tsx`) and any kanban wanting a pinned column; any dnd-kit board with sticky droppables.

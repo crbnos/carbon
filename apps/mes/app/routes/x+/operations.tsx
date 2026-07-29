@@ -7,6 +7,7 @@ import {
   ClientOnly,
   Heading,
   HStack,
+  IconButton,
   Popover,
   PopoverContent,
   PopoverTrigger,
@@ -29,9 +30,9 @@ import {
 } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { LuSettings2, LuTriangleAlert } from "react-icons/lu";
+import { LuFactory, LuSettings2, LuTriangleAlert, LuX } from "react-icons/lu";
 import type { LoaderFunctionArgs } from "react-router";
-import { data, redirect, useLoaderData } from "react-router";
+import { data, redirect, useFetcher, useLoaderData } from "react-router";
 
 import type { ColumnFilter } from "~/components/Filter";
 import { ActiveFilters, Filter, useFilters } from "~/components/Filter";
@@ -40,15 +41,18 @@ import { Kanban } from "~/components/Kanban";
 import SearchFilter from "~/components/SearchFilter";
 import { userContext } from "~/context";
 import { useUrlParams, useUser } from "~/hooks";
+import { getCrewOverride } from "~/services/crew.server";
 import { getFilters, setFilters } from "~/services/operation.server";
 import {
   getActiveJobOperationsByLocation,
   getCustomers,
+  getMyCrewAssignment,
   getProcessesList,
   getWorkCentersByLocation
 } from "~/services/operations.service";
 import { usePeople } from "~/stores";
 import { makeDurations } from "~/utils/durations";
+import { path } from "~/utils/path";
 
 const log = getLogger("mes");
 
@@ -139,6 +143,40 @@ export async function loader({ context, request }: LoaderFunctionArgs) {
 
   const locationId = context.get(userContext)?.locationId;
 
+  // Crew-assignment station default: when the operator has a manning-board
+  // assignment for today and no explicit work-center filter (and hasn't
+  // dismissed the default this session), open on their station.
+  const effectiveUserId = context.get(userContext)?.effectiveUserId;
+  let crewStation: { workCenterId: string; name: string } | null = null;
+  let crewDate: string | null = null;
+  if (selectedWorkCenterIds.length === 0 && effectiveUserId && locationId) {
+    const location = await serviceRole
+      .from("location")
+      .select("timezone")
+      .eq("id", locationId)
+      .single();
+    const timezone = location.data?.timezone;
+    const today = timezone
+      ? new Intl.DateTimeFormat("en-CA", { timeZone: timezone }).format(
+          new Date()
+        )
+      : new Date().toISOString().slice(0, 10);
+    crewDate = today;
+    const dismissed = await getCrewOverride(request);
+    if (dismissed !== today) {
+      const myAssignment = await getMyCrewAssignment(serviceRole, {
+        companyId,
+        employeeId: effectiveUserId,
+        date: today
+      });
+      const assignment = myAssignment.data?.[0];
+      if (assignment) {
+        selectedWorkCenterIds = [assignment.workCenterId];
+        crewStation = { workCenterId: assignment.workCenterId, name: "" };
+      }
+    }
+  }
+
   const [workCenters, processes, operations] = await Promise.all([
     getWorkCentersByLocation(serviceRole, locationId),
     getProcessesList(serviceRole, companyId),
@@ -224,8 +262,16 @@ export async function loader({ context, request }: LoaderFunctionArgs) {
     new Set(filteredOperations.flatMap((op) => op.tags || []))
   ).sort();
 
+  if (crewStation) {
+    crewStation.name =
+      workCenters.data?.find((wc: any) => wc.id === crewStation?.workCenterId)
+        ?.name ?? "";
+  }
+
   return data(
     {
+      crewStation,
+      crewDate,
       columns: filteredWorkCenters
         .map((wc: any) => ({
           id: wc.id!,
@@ -322,8 +368,11 @@ function KanbanSchedule() {
     items: initialItems,
     processes,
     workCenters,
-    availableTags
+    availableTags,
+    crewStation,
+    crewDate
   } = useLoaderData<typeof loader>();
+  const crewOverrideFetcher = useFetcher();
   const [items, setItems] = useState<Item[]>(initialItems);
 
   useEffect(() => {
@@ -436,6 +485,32 @@ function KanbanSchedule() {
           <HStack>
             <SearchFilter param="search" size="sm" placeholder={t`Search`} />
             <Filter filters={filters} />
+            {crewStation &&
+              !currentFilters.some((filter) =>
+                filter.startsWith("workCenterId:")
+              ) && (
+                <HStack
+                  spacing={0}
+                  className="rounded-md border border-border bg-card"
+                >
+                  <span className="flex items-center gap-1.5 px-2 py-1 text-sm whitespace-nowrap">
+                    <LuFactory className="flex-shrink-0" />
+                    <Trans>Your station: {crewStation.name}</Trans>
+                  </span>
+                  <IconButton
+                    aria-label={t`Clear station default`}
+                    icon={<LuX />}
+                    variant="ghost"
+                    size="sm"
+                    onClick={() =>
+                      crewOverrideFetcher.submit(
+                        { date: crewDate ?? "" },
+                        { method: "post", action: path.to.crewOverride }
+                      )
+                    }
+                  />
+                </HStack>
+              )}
           </HStack>
 
           <Popover>

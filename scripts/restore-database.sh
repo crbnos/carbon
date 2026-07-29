@@ -82,12 +82,6 @@ $PSQL_PG -At -c "
   UNION ALL SELECT format('DROP SEQUENCE IF EXISTS public.%I CASCADE;', sequencename) FROM pg_sequences WHERE schemaname='public'
 " | $PSQL_PG -v ON_ERROR_STOP=0 >/dev/null
 $PSQL_PG -c "TRUNCATE auth.users CASCADE; TRUNCATE storage.objects CASCADE; TRUNCATE storage.buckets CASCADE;" >/dev/null
-# Migration bookkeeping must not survive the drop. The dump carries its own
-# supabase_migrations.schema_migrations rows, and when the local rows are
-# still present the dump's COPY aborts on the first duplicate key — leaving
-# bookkeeping that claims local-branch migrations are applied while their
-# schema was just dropped ("schema already up to date" but tables missing).
-$PSQL_SA -c "TRUNCATE supabase_migrations.schema_migrations;" >/dev/null 2>&1 || true
 # ── 3. Restore ───────────────────────────────────────────────────────────────
 # Supports both plain-text SQL dumps (Supabase cluster .backup files) and
 # custom-format pg_dump archives (.dump, magic bytes 'PGDMP').
@@ -125,14 +119,6 @@ BEGIN
     );
   END LOOP;
 END \$\$;
-" >/dev/null 2>&1 || true
-# Same sequence-drift class for pg_cron: the dump COPYs cron.job_run_details /
-# cron.job rows but not the sequence positions, so every cron heartbeat after
-# restore fails with `duplicate key ... job_run_details_pkey` (one error per
-# scheduler tick, ~11s).
-$PSQL_SA -c "
-SELECT setval('cron.runid_seq', GREATEST((SELECT COALESCE(max(runid), 1) FROM cron.job_run_details), 1));
-SELECT setval('cron.jobid_seq', GREATEST((SELECT COALESCE(max(jobid), 1) FROM cron.job), 1));
 " >/dev/null 2>&1 || true
 # pgmq queue tables restored from a prod DB whose queues predate pgmq >= 1.4 are
 # missing the `headers` column the local pgmq read/send functions write to. This
@@ -195,33 +181,6 @@ ON CONFLICT (id) DO NOTHING;
 " >/dev/null 2>&1 || true
 BUCKET_COUNT=$($PSQL_PG -At -c "SELECT count(*) FROM storage.buckets;" 2>/dev/null || echo "?")
 echo "  ✓ $BUCKET_COUNT storage buckets present (5 fixed + one per company)"
-# ── 3b. Reapply local migrations on top of the restored schema ──────────────
-# The backup's schema matches ITS branch (usually prod/main): migrations that
-# exist only in this worktree's branch were wiped with the public schema, and
-# the bookkeeping now reflects the backup. Prune versions the backup knew but
-# this branch has no file for (mirrors crbn migrate's stale repair), then
-# apply every local migration that's missing.
-MIGRATIONS_DIR="$REPO_ROOT/packages/database/supabase/migrations"
-MIGRATION_ROWS=$($PSQL_PG -At -c "SELECT count(*) FROM supabase_migrations.schema_migrations;" 2>/dev/null || echo 0)
-if [[ "$MIGRATION_ROWS" == "0" ]]; then
-  echo "  ⚠ Backup carried no migration bookkeeping — cannot tell which migrations"
-  echo "    its schema includes. Skipping auto-migrate; reconcile by hand before"
-  echo "    running the app (do NOT blindly run 'pnpm db:migrate')."
-else
-  LOCAL_VERSIONS=$(cd "$MIGRATIONS_DIR" && ls -- *.sql | sed -E "s/^([0-9]+)_.*/'\1'/" | paste -sd, -)
-  echo "▶ Reapplying local migrations on top of the restored schema"
-  $PSQL_SA -c "DELETE FROM supabase_migrations.schema_migrations WHERE version NOT IN ($LOCAL_VERSIONS);" >/dev/null
-  (cd "$REPO_ROOT/packages/database" && pnpm exec supabase migration up --include-all \
-      --db-url "postgresql://supabase_admin:postgres@localhost:$PORT_DB/postgres") \
-    || echo "  ⚠ supabase migration up failed — fix and run 'pnpm db:migrate' manually" >&2
-fi
-# Restored materialized views come back WITH NO DATA — first read 500s with
-# "materialized view ... has not been populated". Populate any that aren't.
-echo "▶ Populating restored materialized views"
-$PSQL_PG -At -c "SELECT format('REFRESH MATERIALIZED VIEW public.%I;', matviewname) FROM pg_matviews WHERE schemaname='public' AND NOT ispopulated" \
-  | $PSQL_PG -v ON_ERROR_STOP=0 >/dev/null 2>&1 || true
-# New tables/columns are invisible to PostgREST until its schema cache reloads.
-$PSQL_PG -c "NOTIFY pgrst, 'reload schema';" >/dev/null 2>&1 || true
 # ── 4. If ADMIN_EMAIL is set, resolve the user_id ───────────────────────────
 ADMIN_USER_ID=""
 if [[ -n "$ADMIN_EMAIL" ]]; then

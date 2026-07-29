@@ -265,7 +265,8 @@ export type Events = {
         | "employee-shift"
         | "work-center"
         | "location"
-        | "reorder";
+        | "reorder"
+        | "crew";
       reason: string;
       /** The changed record (abilityId, workCenterId, ...) for precise scoping */
       entityId?: string;

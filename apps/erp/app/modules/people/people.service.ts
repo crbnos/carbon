@@ -441,6 +441,32 @@ export async function getShiftsList(
   return query.order("name");
 }
 
+export async function getEmployeeShifts(
+  client: SupabaseClient<Database>,
+  companyId: string
+) {
+  return client
+    .from("employeeShift")
+    .select("employeeId, shiftId")
+    .eq("companyId", companyId);
+}
+
+export async function getShiftsWithTimes(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  locationId: string
+) {
+  return client
+    .from("shift")
+    .select(
+      "id, name, startTime, endTime, monday, tuesday, wednesday, thursday, friday, saturday, sunday"
+    )
+    .eq("companyId", companyId)
+    .eq("locationId", locationId)
+    .eq("active", true)
+    .order("name");
+}
+
 export async function insertAttribute(
   client: SupabaseClient<Database>,
   attribute: {

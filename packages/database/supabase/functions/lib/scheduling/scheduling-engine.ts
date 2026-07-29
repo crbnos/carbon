@@ -13,6 +13,11 @@ import {
   expandCalendar,
   unionWindows,
 } from "./calendar-utils.ts";
+import {
+  buildAbsencesByEmployee,
+  buildCrewByWorkCenter,
+  subtractAbsences,
+} from "./crew-utils.ts";
 import { calculateOperationDates } from "./date-calculator.ts";
 import { calculateDurationHours } from "./duration-calculator.ts";
 import {
@@ -457,24 +462,32 @@ export class SchedulingEngine {
       }
     }
 
-    const [liveReservations, processRequirements] = await Promise.all([
-      this.provider.getLiveReservations(now, this.jobId),
-      this.provider.getProcessRequirements(processIds),
-    ]);
+    const rangeStart = now;
+    const rangeEnd = new Date(
+      now.getTime() + (SCHEDULING_HORIZON_DAYS + 7) * 24 * 3_600_000
+    );
+
+    const [liveReservations, processRequirements, crewRows, absenceRows] =
+      await Promise.all([
+        this.provider.getLiveReservations(now, this.jobId),
+        this.provider.getProcessRequirements(processIds),
+        this.provider.getCrewAssignments(rangeStart, rangeEnd),
+        this.provider.getCrewAbsences(rangeStart, rangeEnd),
+      ]);
 
     const abilityIds = Array.from(
       new Set(processRequirements.map((r) => r.abilityId))
     );
     const employees = await this.provider.getQualifiedEmployees(abilityIds);
+    // Crew members at ungated stations need real availability windows too, so
+    // shift rows are loaded for the union of qualified + crewed people
     const employeeIds = Array.from(
-      new Set(employees.map((e) => e.employeeId))
+      new Set([
+        ...employees.map((e) => e.employeeId),
+        ...crewRows.map((r) => r.employeeId),
+      ])
     );
     const shiftRows = await this.provider.getEmployeeShiftWindows(employeeIds);
-
-    const rangeStart = now;
-    const rangeEnd = new Date(
-      now.getTime() + (SCHEDULING_HORIZON_DAYS + 7) * 24 * 3_600_000
-    );
 
     // Work centers: capacity 1, always open across the horizon; the
     // reservations GATE placement (one op at a time) and feed attribution
@@ -531,6 +544,39 @@ export class SchedulingEngine {
       windowsByEmployee.set(employeeId, unionWindows(lists));
     }
 
+    // People with no shift assignment default to always-available (same value
+    // the ability pools fall back to) — materialized here so absences can
+    // subtract from them too
+    for (const employeeId of employeeIds) {
+      if (!windowsByEmployee.has(employeeId)) {
+        windowsByEmployee.set(employeeId, [
+          { start: rangeStart, end: rangeEnd },
+        ]);
+      }
+    }
+
+    const timeZone = this.job?.timezone ?? "UTC";
+
+    // Absences subtract the person's availability on those dates everywhere —
+    // crew-preferred and qualified-fallback paths alike
+    const absentByEmployee = buildAbsencesByEmployee(absenceRows);
+    for (const [employeeId, absentDates] of absentByEmployee) {
+      const windows = windowsByEmployee.get(employeeId);
+      if (windows) {
+        windowsByEmployee.set(
+          employeeId,
+          subtractAbsences(windows, absentDates, timeZone)
+        );
+      }
+    }
+
+    // An absent person is never that day's crew
+    const crewByWorkCenter = buildCrewByWorkCenter(
+      crewRows.filter(
+        (row) => !absentByEmployee.get(row.employeeId)?.has(row.date)
+      )
+    );
+
     const employeesByAbility = new Map<string, PoolEmployee[]>();
     for (const e of employees) {
       const list = employeesByAbility.get(e.abilityId) ?? [];
@@ -570,11 +616,13 @@ export class SchedulingEngine {
       requirementByProcess,
       employeesByAbility,
       reservationsByEmployee,
+      crewByWorkCenter,
+      windowsByEmployee,
       dependencies: this.dependencies,
       now,
       horizonDays: SCHEDULING_HORIZON_DAYS,
       windowsEnd: rangeEnd,
-      timeZone: this.job?.timezone ?? "UTC",
+      timeZone,
       // Reschedules (incl. the nightly replan) keep operations on their
       // assigned work center — machines only get (re)picked at initial
       // scheduling or by an explicit human move on the operations board.

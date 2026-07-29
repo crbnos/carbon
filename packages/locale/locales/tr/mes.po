@@ -158,6 +158,9 @@ msgstr "Filtreleri Temizle"
 msgid "Clear Search"
 msgstr "Aramayı Temizle"
 
+msgid "Clear station default"
+msgstr ""
+
 msgid "Clock In"
 msgstr "Giriş Yap"
 
@@ -1117,3 +1120,7 @@ msgstr "Saat {0} giriş yaptınız. Aşağıdan çıkış saatinizi düzenleyebi
 
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
 msgstr "Ne kadar süredir giriş yaptınız? Çıkış yapmayı unuttunuz mu?"
+
+#. placeholder {0}: crewStation.name
+msgid "Your station: {0}"
+msgstr ""

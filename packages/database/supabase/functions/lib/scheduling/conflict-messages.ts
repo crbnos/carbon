@@ -39,6 +39,8 @@ export type LatePlacementCause =
   | { kind: "own-job-queue" }
   /** Waited for a qualified operator (nobody on shift in the gap). */
   | { kind: "operator-wait" }
+  /** Waited for the crew assigned to the station (manning board). */
+  | { kind: "crew-wait" }
   /** Started on time for its own resources but a predecessor finished late. */
   | { kind: "inherited-delay"; predecessorDescription: string | null }
   /** Nothing delayed it — there simply isn't enough time before the due date. */
@@ -58,14 +60,21 @@ export function classifyLatePlacement(args: {
   waitedMs: number;
   wait: WaitAttribution | null;
   dominantDep: { description: string | null } | null;
+  /**
+   * The placement's people came from the manning board (an ungated op at a
+   * crewed station) — person-bound waits are "the assigned crew", not
+   * "a qualified operator".
+   */
+  crewManned?: boolean;
 }): LatePlacementCause {
-  const { waitedMs, wait, dominantDep } = args;
+  const { waitedMs, wait, dominantDep, crewManned } = args;
   if (waitedMs > 0) {
     if (wait?.resource === "machine") {
       if (wait.blockers) return { kind: "machine-queue", blockers: wait.blockers };
       if (wait.ownJobAhead) return { kind: "machine-own-job" };
       return { kind: "machine-wait" };
     }
+    if (crewManned) return { kind: "crew-wait" };
     // Operator-bound wait — or a shift-gap snap (wait === null), which for a
     // gated op means nobody qualified was on shift in the gap
     if (wait?.blockers) return { kind: "operator-queue", blockers: wait.blockers };
@@ -130,6 +139,8 @@ export function composePlacementNote(
       return `Waited ${formatWaitDuration(
         waitedMs
       )} for a qualified operator to be available`;
+    case "crew-wait":
+      return `Waited ${formatWaitDuration(waitedMs)} for the assigned crew`;
     case "inherited-delay":
       return cause.predecessorDescription
         ? `Starts after "${cause.predecessorDescription}" finishes`
@@ -159,6 +170,8 @@ export function composeLateConflict(
       return `${late} — waited for a qualified operator, busy with earlier operations in this job`;
     case "operator-wait":
       return `${late} — waited for a qualified operator to be available`;
+    case "crew-wait":
+      return `${late} — waited for the assigned crew to be available`;
     case "inherited-delay":
       return `${late} — starts late because it waits for ${
         cause.predecessorDescription
