@@ -6940,9 +6940,6 @@ msgstr "Artículos y Producción"
 msgid "Items inside this window get a yellow badge."
 msgstr "Los artículos dentro de esta ventana obtienen una insignia amarilla."
 
-msgid "Items whose bill of materials includes this item"
-msgstr "Artículos cuya lista de materiales incluye este artículo"
-
 msgid "Items: item master, BOMs, Bill of Process, engineering changes, CAD"
 msgstr "Artículos: maestro de artículos, BOMs, Bill of Process, cambios de ingeniería, CAD"
 
@@ -9161,6 +9158,9 @@ msgstr "Grupo Principal"
 
 msgid "Parent Item"
 msgstr "Artículo Principal"
+
+msgid "Parent items. (If you click into one of the parent parts below, you'll see this item included as a component on the bill of material.)"
+msgstr "Artículos padres. (Si hace clic en una de las piezas padres abajo, verá este artículo incluido como componente en la lista de materiales.)"
 
 msgid "Parent Storage Unit"
 msgstr "Unidad de Almacenamiento Principal"

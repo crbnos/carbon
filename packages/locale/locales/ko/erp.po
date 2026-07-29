@@ -6940,9 +6940,6 @@ msgstr "품목 및 생산"
 msgid "Items inside this window get a yellow badge."
 msgstr "이 기간 내의 항목에는 노란색 배지가 표시됩니다."
 
-msgid "Items whose bill of materials includes this item"
-msgstr "자재명세서에 이 품목을 포함하는 품목"
-
 msgid "Items: item master, BOMs, Bill of Process, engineering changes, CAD"
 msgstr "품목: 품목 마스터, BOM, 공정(BOP), 설계 변경, CAD"
 
@@ -9161,6 +9158,9 @@ msgstr "상위 그룹"
 
 msgid "Parent Item"
 msgstr "상위 품목"
+
+msgid "Parent items. (If you click into one of the parent parts below, you'll see this item included as a component on the bill of material.)"
+msgstr "상위 품목. (아래의 상위 부품 중 하나를 클릭하면, 이 품목이 자재명세서에 구성품으로 포함되어 있는 것을 보실 수 있습니다.)"
 
 msgid "Parent Storage Unit"
 msgstr "상위 저장 단위"

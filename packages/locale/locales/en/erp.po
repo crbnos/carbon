@@ -6940,9 +6940,6 @@ msgstr "Items & Production"
 msgid "Items inside this window get a yellow badge."
 msgstr "Items inside this window get a yellow badge."
 
-msgid "Items whose bill of materials includes this item"
-msgstr "Items whose bill of materials includes this item"
-
 msgid "Items: item master, BOMs, Bill of Process, engineering changes, CAD"
 msgstr "Items: item master, BOMs, Bill of Process, engineering changes, CAD"
 
@@ -9161,6 +9158,9 @@ msgstr "Parent Group"
 
 msgid "Parent Item"
 msgstr "Parent Item"
+
+msgid "Parent items. (If you click into one of the parent parts below, you'll see this item included as a component on the bill of material.)"
+msgstr "Parent items. (If you click into one of the parent parts below, you'll see this item included as a component on the bill of material.)"
 
 msgid "Parent Storage Unit"
 msgstr "Parent Storage Unit"

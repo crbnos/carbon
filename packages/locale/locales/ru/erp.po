@@ -6940,9 +6940,6 @@ msgstr "Товары и производство"
 msgid "Items inside this window get a yellow badge."
 msgstr "Товары в этом диапазоне получают жёлтый значок."
 
-msgid "Items whose bill of materials includes this item"
-msgstr "Товары, чья спецификация материалов включает этот товар"
-
 msgid "Items: item master, BOMs, Bill of Process, engineering changes, CAD"
 msgstr "Товары: справочник товаров, спецификации, технологические процессы, инженерные изменения, САПР"
 
@@ -9161,6 +9158,9 @@ msgstr "Родительская группа"
 
 msgid "Parent Item"
 msgstr "Родительский товар"
+
+msgid "Parent items. (If you click into one of the parent parts below, you'll see this item included as a component on the bill of material.)"
+msgstr "Родительские товары. (Если вы щёлкнете на один из родительских товаров ниже, вы увидите этот товар в качестве компонента в спецификации материалов.)"
 
 msgid "Parent Storage Unit"
 msgstr "Родительское хранилище"

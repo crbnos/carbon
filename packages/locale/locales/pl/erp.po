@@ -6940,9 +6940,6 @@ msgstr "Pozycje i produkcja"
 msgid "Items inside this window get a yellow badge."
 msgstr "Elementy w tym oknie otrzymują żółty znaczek."
 
-msgid "Items whose bill of materials includes this item"
-msgstr "Artykuły, których zestawienie materiałów zawiera ten przedmiot"
-
 msgid "Items: item master, BOMs, Bill of Process, engineering changes, CAD"
 msgstr "Pozycje: główny katalog pozycji, BOM, Bill of Process, zmiany inżynierskie, CAD"
 
@@ -9161,6 +9158,9 @@ msgstr "Grupa nadrzędna"
 
 msgid "Parent Item"
 msgstr "Element nadrzędny"
+
+msgid "Parent items. (If you click into one of the parent parts below, you'll see this item included as a component on the bill of material.)"
+msgstr "Artykuły nadrzędne. (Jeśli klikniesz w jedną z części nadrzędnych poniżej, zobaczysz ten przedmiot zawarty jako komponent w zestawieniu materiałów.)"
 
 msgid "Parent Storage Unit"
 msgstr "Nadrzędna jednostka magazynowa"

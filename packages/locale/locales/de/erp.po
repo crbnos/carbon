@@ -6940,9 +6940,6 @@ msgstr "Artikel & Produktion"
 msgid "Items inside this window get a yellow badge."
 msgstr "Artikel in diesem Fenster erhalten ein gelbes Abzeichen."
 
-msgid "Items whose bill of materials includes this item"
-msgstr "Artikel, deren Stückliste diesen Artikel enthält"
-
 msgid "Items: item master, BOMs, Bill of Process, engineering changes, CAD"
 msgstr "Artikel: Artikelstamm, Stücklisten, Fertigungsprozess, Konstruktionsänderungen, CAD"
 
@@ -9161,6 +9158,9 @@ msgstr "Übergeordnete Gruppe"
 
 msgid "Parent Item"
 msgstr "Übergeordneter Artikel"
+
+msgid "Parent items. (If you click into one of the parent parts below, you'll see this item included as a component on the bill of material.)"
+msgstr "Übergeordnete Artikel. (Wenn Sie auf einen der übergeordneten Teile unten klicken, sehen Sie diesen Artikel als Komponente in der Stückliste.)"
 
 msgid "Parent Storage Unit"
 msgstr "Übergeordnete Lagereinheit"

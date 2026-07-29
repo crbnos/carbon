@@ -6940,9 +6940,6 @@ msgstr "आइटम और उत्पादन"
 msgid "Items inside this window get a yellow badge."
 msgstr "इस विंडो के अंदर आइटम को एक पीला बैज मिलता है।"
 
-msgid "Items whose bill of materials includes this item"
-msgstr "वस्तुएं जिनकी सामग्री सूची में यह आइटम शामिल है"
-
 msgid "Items: item master, BOMs, Bill of Process, engineering changes, CAD"
 msgstr "आइटम: आइटम मास्टर, BOMs, बिल ऑफ प्रोसेस, इंजीनियरिंग परिवर्तन, CAD"
 
@@ -9161,6 +9158,9 @@ msgstr "मूल समूह"
 
 msgid "Parent Item"
 msgstr "मूल आइटम"
+
+msgid "Parent items. (If you click into one of the parent parts below, you'll see this item included as a component on the bill of material.)"
+msgstr "मूल वस्तुएं। (यदि आप नीचे दिए गए मूल पुर्जों में से किसी एक पर क्लिक करते हैं, तो आप इस आइटम को सामग्री सूची पर एक घटक के रूप में शामिल देखेंगे।)"
 
 msgid "Parent Storage Unit"
 msgstr "पैरेंट स्टोरेज यूनिट"

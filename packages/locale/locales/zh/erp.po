@@ -6940,9 +6940,6 @@ msgstr "项目与生产"
 msgid "Items inside this window get a yellow badge."
 msgstr "此窗口内的项目会获得黄色徽章。"
 
-msgid "Items whose bill of materials includes this item"
-msgstr "物料清单中包含此物品的物品"
-
 msgid "Items: item master, BOMs, Bill of Process, engineering changes, CAD"
 msgstr "项目：项目主数据、物料清单、工艺流程、工程变更、CAD"
 
@@ -9161,6 +9158,9 @@ msgstr "上级组"
 
 msgid "Parent Item"
 msgstr "父项目"
+
+msgid "Parent items. (If you click into one of the parent parts below, you'll see this item included as a component on the bill of material.)"
+msgstr "上级物品。(如果您点击下方其中一个上级零件，您将看到此物品作为组件包含在物料清单中。)"
 
 msgid "Parent Storage Unit"
 msgstr "父存储单元"

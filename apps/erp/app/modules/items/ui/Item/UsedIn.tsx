@@ -94,7 +94,7 @@ type UsedInTooltipKey = UsedInKey | "revisions" | "sizes";
  *
  * This is the only place a group tooltip is declared. Every surface builds its
  * tree from these same keys, so one entry here reaches the part, tool, material,
- * consumable and service detail pages *and* the change-order impact panel at
+ * consumable and service detail pages *and* the change-notice impact panel at
  * once — no route file changes. Resolution deliberately happens in the row
  * component rather than in `UsedInTree`, because `ImpactPanel` renders
  * `UsedInItem` directly and would silently miss anything injected there.
@@ -108,7 +108,7 @@ type UsedInTooltipKey = UsedInKey | "revisions" | "sizes";
  */
 const USED_IN_TOOLTIPS: Partial<Record<UsedInTooltipKey, MessageDescriptor>> = {
   jobMaterials: msg`Jobs that have this item on their bill of materials`,
-  methodMaterials: msg`Items whose bill of materials includes this item`,
+  methodMaterials: msg`Parent items. (If you click into one of the parent parts below, you'll see this item included as a component on the bill of material.)`,
   quoteMaterials: msg`Quote lines whose bill of materials includes this item`
 };
 
