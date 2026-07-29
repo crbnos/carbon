@@ -382,7 +382,13 @@ async function resolveMaterialTaxonomyIds(
         })) as never
       )
       // A concurrent import may have created the same name first; the
-      // re-select below picks up whichever row won.
+      // re-select below picks up whichever row won. The unique constraint is
+      // exact-match, so two concurrent imports inserting different CASINGS of
+      // the same new name can both land, leaving a case-variant duplicate —
+      // the same duplicate the app's creatable comboboxes permit. Closing
+      // that window needs a case-insensitive unique index on
+      // (scope, lower(name), companyId), which requires a migration plus a
+      // dedupe of existing case-variant rows.
       .onConflict((oc) =>
         oc.columns([scopeColumn, "name", "companyId"] as never).doNothing()
       )
@@ -1530,13 +1536,16 @@ serve(async (req: Request) => {
             for (const record of mappedRecords) {
               const substanceId = record.materialSubstanceId;
               const formId = record.materialFormId;
-              if (substanceId && record.finish) {
+              // An explicit *Id (possible via direct invocation) wins over the
+              // raw text, so don't resolve — and possibly create — a taxonomy
+              // row that nothing would reference.
+              if (substanceId && record.finish && !record.finishId) {
                 finishPairs.push({ scopeId: substanceId, name: record.finish });
               }
-              if (substanceId && record.grade) {
+              if (substanceId && record.grade && !record.gradeId) {
                 gradePairs.push({ scopeId: substanceId, name: record.grade });
               }
-              if (formId && record.dimensions) {
+              if (formId && record.dimensions && !record.dimensionId) {
                 dimensionPairs.push({ scopeId: formId, name: record.dimensions });
               }
             }
