@@ -955,7 +955,11 @@ export function AssemblyView({
       | ProductionEventType
       | undefined;
 
-  const stepHasDescription = richTextToPlainText(step?.description).length > 0;
+  // Empty descriptions are persisted as JSON.stringify({}) === "{}" (and legacy
+  // rows as a tiptap doc whose only text is "{}"); treat those as "no description".
+  const stepDescriptionText = richTextToPlainText(step?.description);
+  const stepHasDescription =
+    stepDescriptionText.length > 0 && stepDescriptionText !== "{}";
   const stepDescriptionHtml =
     step && stepHasDescription
       ? generateHTML(

@@ -6412,6 +6412,9 @@ msgstr "ID"
 msgid "Ideas, suggestions or problems?"
 msgstr "Pomysly, sugestie lub problemy?"
 
+msgid "Identifiers"
+msgstr "Identyfikatory"
+
 msgid "IDs and descriptions are generated for raw materials."
 msgstr "Identyfikatory i opisy są generowane dla surowców."
 
@@ -6520,11 +6523,17 @@ msgstr "Inspekcja przychodząca"
 msgid "Inbox"
 msgstr "Skrzynka odbiorcza"
 
+msgid "Include a materials (bill of materials) section on the job traveler PDF with item numbers and quantities."
+msgstr "Dołącz sekcję materiałów (specyfikacja materiałowa) w dokumencie karty marszruty PDF wraz z numerami pozycji i ilościami."
+
 msgid "Include extra parts in shipment"
 msgstr "Dołącz dodatkowe części do wysyłki"
 
 msgid "Include Inactive"
 msgstr "Uwzględnij nieaktywne"
+
+msgid "Include materials on traveler"
+msgstr "Dołącz materiały do karty marszruty"
 
 msgid "Included"
 msgstr "Uwzględnione"
@@ -6970,6 +6979,12 @@ msgstr "Operacja zadania"
 msgid "Job Operations"
 msgstr "Operacje Zadań"
 
+msgid "Job Traveler Materials"
+msgstr "Materiały Karty Marszruty"
+
+msgid "Job traveler settings updated"
+msgstr "Ustawienia karty marszruty zaktualizowane"
+
 msgid "Jobs"
 msgstr "Zadania"
 
@@ -7134,6 +7149,9 @@ msgstr "Pozostaw puste dla dokładnego dopasowania"
 
 msgid "Leave this page"
 msgstr "Opuść tę stronę"
+
+msgid "Ledger"
+msgstr "Księga główna"
 
 msgid "Left item"
 msgstr "Element po lewej stronie"
@@ -10112,9 +10130,6 @@ msgstr "Data wyceny"
 
 msgid "Quotes"
 msgstr "Oferty"
-
-msgid "Quoting"
-msgstr "Wycena"
 
 msgid "Quoting and sales orders"
 msgstr "Wycena i zamówienia sprzedaży"
@@ -14523,6 +14538,9 @@ msgstr "Gdy włączone, zasady ustalania cen (rabaty objętościowe, promocje) n
 
 msgid "When on, scanning this process's operation barcode reports all remaining open quantity as complete in one action; turn off when operators routinely report partials."
 msgstr "Gdy włączone, skanowanie kodu kreskowego operacji tego procesu zgłasza całą pozostałą otwartą ilość jako ukończoną w jednej akcji; wyłącz, gdy operatorzy regularnie zgłaszają częściowe."
+
+msgid "When on, the traveler PDF lists the job's required materials."
+msgstr "Gdy włączone, dokument karty marszruty wyświetla materiały wymagane dla zadania."
 
 msgid "When on, this party's invoices skip tax calculation; the party is responsible for keeping the exemption certificate current."
 msgstr "Gdy włączone, faktury tej strony pomijają obliczenie podatku; strona jest odpowiedzialna za utrzymanie aktualności certyfikatu zwolnienia."

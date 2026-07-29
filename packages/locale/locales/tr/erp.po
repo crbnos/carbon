@@ -6412,6 +6412,9 @@ msgstr "Kimlik"
 msgid "Ideas, suggestions or problems?"
 msgstr "Fikirler, öneriler veya sorunlar?"
 
+msgid "Identifiers"
+msgstr "Tanımlayıcılar"
+
 msgid "IDs and descriptions are generated for raw materials."
 msgstr "Kimlikler ve açıklamalar ham malzemeler için oluşturulur."
 
@@ -6520,11 +6523,17 @@ msgstr "Gelen Muhasebesi"
 msgid "Inbox"
 msgstr "Gelen Kutusu"
 
+msgid "Include a materials (bill of materials) section on the job traveler PDF with item numbers and quantities."
+msgstr "İş yolcu PDF'sine malzemeleri (malzeme listesi) bölümü, madde numaraları ve miktarlarıyla birlikte ekleyin."
+
 msgid "Include extra parts in shipment"
 msgstr "Fazla parçaları sevkiyata dahil et"
 
 msgid "Include Inactive"
 msgstr "Pasifleri Dahil Et"
+
+msgid "Include materials on traveler"
+msgstr "Yolcu üzerinde malzemeleri ekleyin"
 
 msgid "Included"
 msgstr "Dahil"
@@ -6970,6 +6979,12 @@ msgstr "İşlem"
 msgid "Job Operations"
 msgstr "İşlem Operasyonları"
 
+msgid "Job Traveler Materials"
+msgstr "İş Yolcu Malzemeleri"
+
+msgid "Job traveler settings updated"
+msgstr "İş yolcu ayarları güncellendi"
+
 msgid "Jobs"
 msgstr "İşler"
 
@@ -7134,6 +7149,9 @@ msgstr "Tam eşleşme için boş bırakın"
 
 msgid "Leave this page"
 msgstr "Bu sayfadan ayrıl"
+
+msgid "Ledger"
+msgstr "Büyük Defter"
 
 msgid "Left item"
 msgstr "Sol öğe"
@@ -10112,9 +10130,6 @@ msgstr "Teklif Tarihi"
 
 msgid "Quotes"
 msgstr "Teklifler"
-
-msgid "Quoting"
-msgstr "Teklif Verme"
 
 msgid "Quoting and sales orders"
 msgstr "Teklifler ve satış siparişleri"
@@ -14523,6 +14538,9 @@ msgstr "Etkinleştirildiğinde, fiyatlandırma kuralları (hacim indirimler, pro
 
 msgid "When on, scanning this process's operation barcode reports all remaining open quantity as complete in one action; turn off when operators routinely report partials."
 msgstr "Etkinleştirildiğinde, bu işlemin işlem barkodunu taramak, kalan tüm açık miktarı bir işlemde tamamlandı olarak bildirir; operatörler düzenli olarak kısmiları bildirdiğinde devre dışı bırakın."
+
+msgid "When on, the traveler PDF lists the job's required materials."
+msgstr "Açık olduğunda, yolcu PDF'si işin gerekli malzemelerini listeler."
 
 msgid "When on, this party's invoices skip tax calculation; the party is responsible for keeping the exemption certificate current."
 msgstr "Etkinleştirildiğinde, bu tarafın faturaları vergi hesaplamasını atlar; taraf, muafiyet sertifikasını güncel tutmaktan sorumludur."

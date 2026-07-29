@@ -6412,6 +6412,9 @@ msgstr "ID"
 msgid "Ideas, suggestions or problems?"
 msgstr "아이디어, 제안, 또는 문제가 있으신가요?"
 
+msgid "Identifiers"
+msgstr "식별자"
+
 msgid "IDs and descriptions are generated for raw materials."
 msgstr "원자재에 대한 ID와 설명이 자동으로 생성됩니다."
 
@@ -6520,11 +6523,17 @@ msgstr "입고 검사"
 msgid "Inbox"
 msgstr "받은함"
 
+msgid "Include a materials (bill of materials) section on the job traveler PDF with item numbers and quantities."
+msgstr "작업 이동 PDF에 품목번호와 수량이 포함된 자재(부자재명세서) 섹션을 포함하세요."
+
 msgid "Include extra parts in shipment"
 msgstr "출하에 여분 부품 포함"
 
 msgid "Include Inactive"
 msgstr "비활성 포함"
+
+msgid "Include materials on traveler"
+msgstr "이동 시 자재 포함"
 
 msgid "Included"
 msgstr "포함됨"
@@ -6970,6 +6979,12 @@ msgstr "작업 공정작업"
 msgid "Job Operations"
 msgstr "작업 공정작업"
 
+msgid "Job Traveler Materials"
+msgstr "작업 이동 자재"
+
+msgid "Job traveler settings updated"
+msgstr "작업 이동 설정이 업데이트되었습니다"
+
 msgid "Jobs"
 msgstr "작업"
 
@@ -7134,6 +7149,9 @@ msgstr "정확히 일치시키려면 비워두세요"
 
 msgid "Leave this page"
 msgstr "이 페이지 나가기"
+
+msgid "Ledger"
+msgstr "원장"
 
 msgid "Left item"
 msgstr "왼쪽 품목"
@@ -10111,9 +10129,6 @@ msgid "Quoted Date"
 msgstr "견적일"
 
 msgid "Quotes"
-msgstr "견적"
-
-msgid "Quoting"
 msgstr "견적"
 
 msgid "Quoting and sales orders"
@@ -14523,6 +14538,9 @@ msgstr "켜면 가격 규칙(수량 할인, 프로모션)이 이 재정의 위�
 
 msgid "When on, scanning this process's operation barcode reports all remaining open quantity as complete in one action; turn off when operators routinely report partials."
 msgstr "켜면 이 공정의 공정작업 바코드를 스캔할 때 남은 미완료 수량 전체가 한 번에 완료 처리됩니다. 작업자가 부분 완료를 자주 보고하는 경우에는 꺼두세요."
+
+msgid "When on, the traveler PDF lists the job's required materials."
+msgstr "활성화되면 이동 PDF는 작업의 필수 자재를 나열합니다."
 
 msgid "When on, this party's invoices skip tax calculation; the party is responsible for keeping the exemption certificate current."
 msgstr "켜면 이 거래처의 인보이스는 세금 계산을 건너뜁니다. 면세 증명서를 최신 상태로 유지하는 것은 해당 거래처의 책임입니다."

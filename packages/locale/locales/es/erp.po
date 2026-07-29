@@ -6412,6 +6412,9 @@ msgstr "ID"
 msgid "Ideas, suggestions or problems?"
 msgstr "¿Ideas, sugerencias o problemas?"
 
+msgid "Identifiers"
+msgstr "Identificadores"
+
 msgid "IDs and descriptions are generated for raw materials."
 msgstr "Los IDs y descripciones se generan para materias primas."
 
@@ -6520,11 +6523,17 @@ msgstr "Inspección de entrada"
 msgid "Inbox"
 msgstr "Bandeja de entrada"
 
+msgid "Include a materials (bill of materials) section on the job traveler PDF with item numbers and quantities."
+msgstr "Incluir una sección de materiales (lista de materiales) en el PDF del viaje del trabajo con números de artículos y cantidades."
+
 msgid "Include extra parts in shipment"
 msgstr "Incluir piezas adicionales en el envío"
 
 msgid "Include Inactive"
 msgstr "Incluir Inactivos"
+
+msgid "Include materials on traveler"
+msgstr "Incluir materiales en el viaje"
 
 msgid "Included"
 msgstr "Incluido"
@@ -6970,6 +6979,12 @@ msgstr "Operación de Trabajo"
 msgid "Job Operations"
 msgstr "Operaciones de Trabajo"
 
+msgid "Job Traveler Materials"
+msgstr "Materiales del Viaje del Trabajo"
+
+msgid "Job traveler settings updated"
+msgstr "Configuración del viaje del trabajo actualizada"
+
 msgid "Jobs"
 msgstr "Trabajos"
 
@@ -7134,6 +7149,9 @@ msgstr "Dejar vacío para coincidencia exacta"
 
 msgid "Leave this page"
 msgstr "Salir de esta página"
+
+msgid "Ledger"
+msgstr "Libro mayor"
 
 msgid "Left item"
 msgstr "Elemento izquierdo"
@@ -10112,9 +10130,6 @@ msgstr "Fecha de Cotización"
 
 msgid "Quotes"
 msgstr "Cotizaciones"
-
-msgid "Quoting"
-msgstr "Cotización"
 
 msgid "Quoting and sales orders"
 msgstr "Presupuestos y pedidos de venta"
@@ -14523,6 +14538,9 @@ msgstr "Cuando está activado, las reglas de precios (descuentos por volumen, pr
 
 msgid "When on, scanning this process's operation barcode reports all remaining open quantity as complete in one action; turn off when operators routinely report partials."
 msgstr "Cuando está activado, escanear el código de barras de operación de este proceso reporta toda la cantidad abierta restante como completada en una acción; desactivar cuando los operadores informan habitualmente de cantidades parciales."
+
+msgid "When on, the traveler PDF lists the job's required materials."
+msgstr "Cuando está activado, el PDF del viaje lista los materiales requeridos del trabajo."
 
 msgid "When on, this party's invoices skip tax calculation; the party is responsible for keeping the exemption certificate current."
 msgstr "Cuando está activado, las facturas de esta parte omiten el cálculo de impuestos; la parte es responsable de mantener el certificado de exención actualizado."

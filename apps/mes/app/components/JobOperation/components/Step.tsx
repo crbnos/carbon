@@ -35,7 +35,8 @@ import {
 } from "@carbon/react";
 import {
   parseMentionsFromDocument,
-  stripSpecialCharacters
+  stripSpecialCharacters,
+  tiptapToText
 } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useNumberFormatter } from "@react-aria/i18n";
@@ -58,6 +59,19 @@ import type { JobOperationStep } from "~/services/types";
 import { useItems, usePeople } from "~/stores";
 import { getPrivateUrl, path } from "~/utils/path";
 import FileDropzone from "../../FileDropzone";
+
+// An empty step description is persisted by the ERP editors as
+// JSON.stringify({}) === "{}" (and some legacy rows carry it as a tiptap doc
+// whose only text is literally "{}"). Treat an empty object, empty doc, or
+// "{}"-only text as "no description" so we render nothing instead of a bare "{}".
+function hasStepDescription(
+  description: JobOperationStep["description"]
+): boolean {
+  if (!description) return false;
+  const text = tiptapToText(description as JSONContent).trim();
+  if (text.length > 0 && text !== "{}") return true;
+  return parseMentionsFromDocument(description as JSONContent).length > 0;
+}
 
 export function StepsListItem({
   activeStep,
@@ -82,12 +96,12 @@ export function StepsListItem({
   const { name, description, type, unitOfMeasureCode, minValue, maxValue } =
     step;
 
-  const hasDescription = description && Object.keys(description).length > 0;
+  const hasDescription = hasStepDescription(description);
   const mentionIds = hasDescription
     ? parseMentionsFromDocument(description as JSONContent)
     : [];
   const disclosure = useDisclosure({
-    defaultIsOpen: !!hasDescription
+    defaultIsOpen: hasDescription
   });
 
   if (!operationId) return null;
@@ -483,7 +497,7 @@ export function RecordModal({
               </>
             )}
             <VStack spacing={4}>
-              {attribute.description && (
+              {hasStepDescription(attribute.description) && (
                 <div
                   className="flex flex-col gap-2"
                   dangerouslySetInnerHTML={{

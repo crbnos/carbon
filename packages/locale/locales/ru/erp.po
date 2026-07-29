@@ -6412,6 +6412,9 @@ msgstr "ID"
 msgid "Ideas, suggestions or problems?"
 msgstr "Идеи, предложения или проблемы?"
 
+msgid "Identifiers"
+msgstr "Идентификаторы"
+
 msgid "IDs and descriptions are generated for raw materials."
 msgstr "Идентификаторы и описания генерируются для сырья."
 
@@ -6520,11 +6523,17 @@ msgstr "Входящая проверка"
 msgid "Inbox"
 msgstr "Входящие"
 
+msgid "Include a materials (bill of materials) section on the job traveler PDF with item numbers and quantities."
+msgstr "Включить раздел материалов (спецификация материалов) в PDF путевого листа задания с номерами товаров и количествами."
+
 msgid "Include extra parts in shipment"
 msgstr "Включить дополнительные детали в отправку"
 
 msgid "Include Inactive"
 msgstr "Включить неактивные"
+
+msgid "Include materials on traveler"
+msgstr "Включить материалы в путевой лист задания"
 
 msgid "Included"
 msgstr "Включено"
@@ -6970,6 +6979,12 @@ msgstr "Операция задания"
 msgid "Job Operations"
 msgstr "Операции задания"
 
+msgid "Job Traveler Materials"
+msgstr "Материалы путевого листа задания"
+
+msgid "Job traveler settings updated"
+msgstr "Параметры путевого листа задания обновлены"
+
 msgid "Jobs"
 msgstr "Работы"
 
@@ -7134,6 +7149,9 @@ msgstr "Оставьте пустым для точного совпадения
 
 msgid "Leave this page"
 msgstr "Покинуть эту страницу"
+
+msgid "Ledger"
+msgstr "Главная книга"
 
 msgid "Left item"
 msgstr "Левый элемент"
@@ -10112,9 +10130,6 @@ msgstr "Дата предложения"
 
 msgid "Quotes"
 msgstr "Предложения"
-
-msgid "Quoting"
-msgstr "Котировка"
 
 msgid "Quoting and sales orders"
 msgstr "Котировки и заказы на продажу"
@@ -14523,6 +14538,9 @@ msgstr "Когда включено, правила цены (скидки по 
 
 msgid "When on, scanning this process's operation barcode reports all remaining open quantity as complete in one action; turn off when operators routinely report partials."
 msgstr "Когда включено, сканирование операционного штрих-кода этого процесса сообщает всю оставшуюся открытую количество как завершенную в одном действии; отключите, если операторы регулярно сообщают о частичных."
+
+msgid "When on, the traveler PDF lists the job's required materials."
+msgstr "Когда включено, PDF путевого листа задания отображает необходимые материалы задания."
 
 msgid "When on, this party's invoices skip tax calculation; the party is responsible for keeping the exemption certificate current."
 msgstr "Если включено, счета этой стороны пропускают расчет налога; сторона отвечает за актуальность сертификата об освобождении."

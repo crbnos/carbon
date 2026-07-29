@@ -149,6 +149,10 @@ export const operationTimerValidator = z.object({
   autoStartOperationTimer: zfd.checkbox()
 });
 
+export const jobTravelerMaterialsValidator = z.object({
+  includeMaterialsOnTraveler: zfd.checkbox()
+});
+
 export const kanbanOutputValidator = z.object({
   kanbanOutput: z.enum(kanbanOutputTypes)
 });

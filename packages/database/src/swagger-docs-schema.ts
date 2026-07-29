@@ -82597,6 +82597,9 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.autoSelectMaterialWithoutPickingList"
           },
           {
+            $ref: "#/parameters/rowFilter.companySettings.includeMaterialsOnTraveler"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -82791,6 +82794,9 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.autoSelectMaterialWithoutPickingList"
           },
           {
+            $ref: "#/parameters/rowFilter.companySettings.includeMaterialsOnTraveler"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -82937,6 +82943,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.autoSelectMaterialWithoutPickingList"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.includeMaterialsOnTraveler"
           },
           {
             $ref: "#/parameters/body.companySettings"
@@ -133715,7 +133724,8 @@ export default {
         "autoStartOperationTimer",
         "plmReleaseControl",
         "incompletePickingListPolicy",
-        "autoSelectMaterialWithoutPickingList"
+        "autoSelectMaterialWithoutPickingList",
+        "includeMaterialsOnTraveler"
       ],
       properties: {
         id: {
@@ -133958,6 +133968,11 @@ export default {
           type: "string"
         },
         autoSelectMaterialWithoutPickingList: {
+          default: false,
+          format: "boolean",
+          type: "boolean"
+        },
+        includeMaterialsOnTraveler: {
           default: false,
           format: "boolean",
           type: "boolean"
@@ -178583,6 +178598,12 @@ export default {
     },
     "rowFilter.companySettings.autoSelectMaterialWithoutPickingList": {
       name: "autoSelectMaterialWithoutPickingList",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.companySettings.includeMaterialsOnTraveler": {
+      name: "includeMaterialsOnTraveler",
       required: false,
       in: "query",
       type: "string"

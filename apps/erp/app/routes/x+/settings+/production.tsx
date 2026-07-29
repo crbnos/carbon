@@ -23,11 +23,14 @@ import { useCallback, useEffect, useState } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { redirect, useFetcher, useLoaderData } from "react-router";
 import { Boolean, Users } from "~/components/Form";
+import SettingsSectionHeader from "~/components/SettingsSectionHeader";
 import {
   getCompanySettings,
   jobCompletedValidator,
+  jobTravelerMaterialsValidator,
   operationTimerValidator,
-  updateAutoSelectMaterialWithoutPickingListSetting
+  updateAutoSelectMaterialWithoutPickingListSetting,
+  updateIncludeMaterialsOnTravelerSetting
 } from "~/modules/settings";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -108,6 +111,26 @@ export async function action({ request }: ActionFunctionArgs) {
     return { success: true, message: "Operation timer settings updated" };
   }
 
+  if (intent === "jobTravelerMaterials") {
+    const validation = await validator(jobTravelerMaterialsValidator).validate(
+      formData
+    );
+
+    if (validation.error) {
+      return { success: false, message: "Invalid form data" };
+    }
+
+    const update = await updateIncludeMaterialsOnTravelerSetting(
+      client,
+      companyId,
+      validation.data.includeMaterialsOnTraveler
+    );
+
+    if (update.error) return { success: false, message: update.error.message };
+
+    return { success: true };
+  }
+
   if (intent === "autoSelectMaterialWithoutPickingListToggle") {
     const autoSelectMaterialWithoutPickingList =
       formData.get("enabled") === "true";
@@ -135,6 +158,7 @@ export default function ProductionSettingsRoute() {
   const { companySettings } = useLoaderData<typeof loader>();
   const fetcher = useFetcher<typeof action>();
   const timerFetcher = useFetcher<typeof action>();
+  const travelerFetcher = useFetcher<typeof action>();
   const toggleFetcher = useFetcher<typeof action>();
 
   const [
@@ -177,6 +201,19 @@ export default function ProductionSettingsRoute() {
   }, [timerFetcher.data?.message, timerFetcher.data?.success]);
 
   useEffect(() => {
+    if (travelerFetcher.data?.success === true) {
+      toast.success(t`Job traveler settings updated`);
+    }
+
+    if (
+      travelerFetcher.data?.success === false &&
+      travelerFetcher?.data?.message
+    ) {
+      toast.error(travelerFetcher.data.message);
+    }
+  }, [travelerFetcher.data, t]);
+
+  useEffect(() => {
     if (toggleFetcher.data?.success === true && toggleFetcher?.data?.message) {
       toast.success(toggleFetcher.data.message);
     }
@@ -196,63 +233,60 @@ export default function ProductionSettingsRoute() {
           <Trans>Production</Trans>
         </Heading>
 
+        <SettingsSectionHeader>
+          <Trans>Documents</Trans>
+        </SettingsSectionHeader>
+
         <Card>
           <ValidatedForm
             method="post"
-            validator={jobCompletedValidator}
+            validator={jobTravelerMaterialsValidator}
             defaultValues={{
-              inventoryJobCompletedNotificationGroup:
-                companySettings.inventoryJobCompletedNotificationGroup ?? [],
-              salesJobCompletedNotificationGroup:
-                companySettings.salesJobCompletedNotificationGroup ?? []
+              includeMaterialsOnTraveler:
+                (
+                  companySettings as {
+                    includeMaterialsOnTraveler?: boolean | null;
+                  }
+                ).includeMaterialsOnTraveler ?? false
             }}
-            fetcher={fetcher}
+            fetcher={travelerFetcher}
           >
-            <input type="hidden" name="intent" value="jobCompleted" />
+            <input type="hidden" name="intent" value="jobTravelerMaterials" />
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Trans>Completed Job Notifications</Trans>
+                <Trans>Job Traveler Materials</Trans>
               </CardTitle>
               <CardDescription>
                 <Trans>
-                  Configure notifications for when jobs are completed.
+                  Include a materials (bill of materials) section on the job
+                  traveler PDF with item numbers and quantities.
                 </Trans>
               </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="flex flex-col gap-8 max-w-[400px]">
-                <div className="flex flex-col gap-2">
-                  <Label>
-                    <Trans>Inventory Job Notifications</Trans>
-                  </Label>
-                  <Users
-                    name="inventoryJobCompletedNotificationGroup"
-                    label={t`Who should receive notifications when an inventory job is completed?`}
-                    type="employee"
-                  />
-                </div>
-                <div className="flex flex-col gap-2">
-                  <Label>
-                    <Trans>Sales Job Notifications</Trans>
-                  </Label>
-                  <Users
-                    name="salesJobCompletedNotificationGroup"
-                    label={t`Who should receive notifications when a sales job is completed?`}
-                    type="employee"
-                  />
-                </div>
+                <Boolean
+                  name="includeMaterialsOnTraveler"
+                  label={t`Include materials on traveler`}
+                  description={t`When on, the traveler PDF lists the job's required materials.`}
+                  bordered
+                />
               </div>
             </CardContent>
             <CardFooter>
               <Submit
-                isDisabled={fetcher.state !== "idle"}
-                isLoading={fetcher.state !== "idle"}
+                isDisabled={travelerFetcher.state !== "idle"}
+                isLoading={travelerFetcher.state !== "idle"}
               >
                 <Trans>Save</Trans>
               </Submit>
             </CardFooter>
           </ValidatedForm>
         </Card>
+
+        <SettingsSectionHeader>
+          <Trans>Shop Floor</Trans>
+        </SettingsSectionHeader>
 
         <Card>
           <ValidatedForm
@@ -321,6 +355,68 @@ export default function ProductionSettingsRoute() {
               />
             </HStack>
           </CardHeader>
+        </Card>
+
+        <SettingsSectionHeader>
+          <Trans>Notifications</Trans>
+        </SettingsSectionHeader>
+
+        <Card>
+          <ValidatedForm
+            method="post"
+            validator={jobCompletedValidator}
+            defaultValues={{
+              inventoryJobCompletedNotificationGroup:
+                companySettings.inventoryJobCompletedNotificationGroup ?? [],
+              salesJobCompletedNotificationGroup:
+                companySettings.salesJobCompletedNotificationGroup ?? []
+            }}
+            fetcher={fetcher}
+          >
+            <input type="hidden" name="intent" value="jobCompleted" />
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Trans>Completed Job Notifications</Trans>
+              </CardTitle>
+              <CardDescription>
+                <Trans>
+                  Configure notifications for when jobs are completed.
+                </Trans>
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-col gap-8 max-w-[400px]">
+                <div className="flex flex-col gap-2">
+                  <Label>
+                    <Trans>Inventory Job Notifications</Trans>
+                  </Label>
+                  <Users
+                    name="inventoryJobCompletedNotificationGroup"
+                    label={t`Who should receive notifications when an inventory job is completed?`}
+                    type="employee"
+                  />
+                </div>
+                <div className="flex flex-col gap-2">
+                  <Label>
+                    <Trans>Sales Job Notifications</Trans>
+                  </Label>
+                  <Users
+                    name="salesJobCompletedNotificationGroup"
+                    label={t`Who should receive notifications when a sales job is completed?`}
+                    type="employee"
+                  />
+                </div>
+              </div>
+            </CardContent>
+            <CardFooter>
+              <Submit
+                isDisabled={fetcher.state !== "idle"}
+                isLoading={fetcher.state !== "idle"}
+              >
+                <Trans>Save</Trans>
+              </Submit>
+            </CardFooter>
+          </ValidatedForm>
         </Card>
       </VStack>
     </ScrollArea>

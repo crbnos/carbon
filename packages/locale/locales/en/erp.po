@@ -6412,6 +6412,9 @@ msgstr "ID"
 msgid "Ideas, suggestions or problems?"
 msgstr "Ideas, suggestions or problems?"
 
+msgid "Identifiers"
+msgstr "Identifiers"
+
 msgid "IDs and descriptions are generated for raw materials."
 msgstr "IDs and descriptions are generated for raw materials."
 
@@ -6520,11 +6523,17 @@ msgstr "Inbound inspection"
 msgid "Inbox"
 msgstr "Inbox"
 
+msgid "Include a materials (bill of materials) section on the job traveler PDF with item numbers and quantities."
+msgstr "Include a materials (bill of materials) section on the job traveler PDF with item numbers and quantities."
+
 msgid "Include extra parts in shipment"
 msgstr "Include extra parts in shipment"
 
 msgid "Include Inactive"
 msgstr "Include Inactive"
+
+msgid "Include materials on traveler"
+msgstr "Include materials on traveler"
 
 msgid "Included"
 msgstr "Included"
@@ -6970,6 +6979,12 @@ msgstr "Job Operation"
 msgid "Job Operations"
 msgstr "Job Operations"
 
+msgid "Job Traveler Materials"
+msgstr "Job Traveler Materials"
+
+msgid "Job traveler settings updated"
+msgstr "Job traveler settings updated"
+
 msgid "Jobs"
 msgstr "Jobs"
 
@@ -7134,6 +7149,9 @@ msgstr "Leave empty for exact match"
 
 msgid "Leave this page"
 msgstr "Leave this page"
+
+msgid "Ledger"
+msgstr "Ledger"
 
 msgid "Left item"
 msgstr "Left item"
@@ -10112,9 +10130,6 @@ msgstr "Quoted Date"
 
 msgid "Quotes"
 msgstr "Quotes"
-
-msgid "Quoting"
-msgstr "Quoting"
 
 msgid "Quoting and sales orders"
 msgstr "Quoting and sales orders"
@@ -14523,6 +14538,9 @@ msgstr "When on, pricing rules (volume discounts, promotions) still apply on top
 
 msgid "When on, scanning this process's operation barcode reports all remaining open quantity as complete in one action; turn off when operators routinely report partials."
 msgstr "When on, scanning this process's operation barcode reports all remaining open quantity as complete in one action; turn off when operators routinely report partials."
+
+msgid "When on, the traveler PDF lists the job's required materials."
+msgstr "When on, the traveler PDF lists the job's required materials."
 
 msgid "When on, this party's invoices skip tax calculation; the party is responsible for keeping the exemption certificate current."
 msgstr "When on, this party's invoices skip tax calculation; the party is responsible for keeping the exemption certificate current."
