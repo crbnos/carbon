@@ -42,8 +42,23 @@ msgstr "{0} adet tamamlandı"
 msgid "{0} Scrapped"
 msgstr "{0} Hurdaya Çıkarılmış"
 
+msgid "{completions} passed unit(s) will be completed."
+msgstr "{completions} geçen birim(ler) tamamlanacaktır."
+
+msgid "{fails} sampled failure(s) are recorded and will NOT be completed — resolve them from the actions menu."
+msgstr "{fails} örnek hata(ları) kaydedildi ve tamamlanmayacak — bunları işlemler menüsünden çözün."
+
 msgid "About"
 msgstr "Hakkında"
+
+msgid "Accept"
+msgstr "Kabul Et"
+
+msgid "Accept Lot"
+msgstr "Lotu Kabul Et"
+
+msgid "Accept lot?"
+msgstr "Lotu kabul et?"
 
 msgid "Account Settings"
 msgstr "Hesap Ayarları"
@@ -66,11 +81,26 @@ msgstr "Etiketleri doğrudan yazdırmak için yazdırma ayarlarında bir yazıc�
 msgid "Add Inventory"
 msgstr "Envantere Ekle"
 
+msgid "Add Sample"
+msgstr "Örnek Ekle"
+
 msgid "Add Spare Part"
 msgstr "Yedek Parça Ekle"
 
 msgid "All"
 msgstr "Tümü"
+
+msgid "All rework"
+msgstr "Tümünü yeniden işle"
+
+msgid "All scrap"
+msgstr "Tümünü hurdaya çıkar"
+
+msgid "Allocate failed units"
+msgstr "Başarısız birimleri tahsis et"
+
+msgid "Allocate units"
+msgstr "Birimleri tahsis et"
 
 msgid "Are you sure you want to delete this step?"
 msgstr "Bu adımı silmek istediğinizden emin misiniz?"
@@ -165,6 +195,12 @@ msgstr "Çıkış Yap"
 msgid "Clocked in since {0}"
 msgstr "Giriş yapıldı: {0}"
 
+msgid "Close"
+msgstr "Kapat"
+
+msgid "Collapse features table"
+msgstr "Özellikler tablosunu daralt"
+
 #. placeholder {0}: active.data.current.column.title
 #. placeholder {1}: overColumnPosition + 1
 #. placeholder {2}: columnOrder.length
@@ -193,6 +229,9 @@ msgstr "Tamamla"
 
 msgid "Complete All"
 msgstr "Tümünü Tamamla"
+
+msgid "Complete passed"
+msgstr "Tamamlanan geçti"
 
 msgid "Completed"
 msgstr "Tamamlandı"
@@ -281,6 +320,9 @@ msgstr "Taslak"
 msgid "Drag and drop a file here, or click to select a file"
 msgstr "Dosyayı buraya sürükleyip bırakın veya bir dosya seçmek için tıklayın"
 
+msgid "Drag to resize drawing and features"
+msgstr "Çizimi ve özellikleri yeniden boyutlandırmak için sürükleyin"
+
 #. placeholder {0}: active.data.current?.type
 msgid "Dragging {0} cancelled."
 msgstr "Taşıma {0} iptal edildi."
@@ -325,6 +367,12 @@ msgstr "Hata"
 msgid "Estimated"
 msgstr "Tahmini"
 
+msgid "Every unit has a verdict: {passes} passed and {fails} failed. The lot closes with each unit routed to its own outcome."
+msgstr "Her birim için bir karar verildi: {passes} geçti ve {fails} başarısız oldu. Lot, her birim kendi sonucuna yönlendirilmek üzere kapanır."
+
+msgid "Expand features table"
+msgstr "Özellikler tablosunu genişlet"
+
 msgid "Expired"
 msgstr "Süresi Dolmuş"
 
@@ -336,6 +384,12 @@ msgstr "Son kullanma tarihi {date}'de"
 
 msgid "Expiring first"
 msgstr "İlk süresi dolacak"
+
+msgid "Failed"
+msgstr "Başarısız"
+
+msgid "Failed features"
+msgstr "Başarısız özellikler"
 
 msgid "Failed to complete inventory adjustment"
 msgstr "Envanter ayarlaması tamamlanamadı"
@@ -349,12 +403,24 @@ msgstr "Aktif operasyonlar alınamadı"
 msgid "Failed to fetch storageUnits"
 msgstr "Depolama birimlerini almak başarısız oldu"
 
+msgid "Failed to save measurement"
+msgstr "Ölçüm kaydedilemedi"
+
+msgid "Failed to save result"
+msgstr "Sonuç kaydedilemedi"
+
 #. placeholder {0}: fileUpload.name
 msgid "Failed to upload file: {0}"
 msgstr "Dosyayı yüklemede başarısız oldu: {0}"
 
 msgid "Failed to upload image"
 msgstr "Görsel yüklenemedi"
+
+msgid "Feature"
+msgstr "Özellik"
+
+msgid "Features"
+msgstr "Özellikler"
 
 msgid "File size exceeds 10MB limit"
 msgstr "Dosya boyutu 10MB sınırını aşıyor"
@@ -404,6 +470,12 @@ msgstr "İmparatorluk"
 
 msgid "In Progress"
 msgstr "Devam Ediyor"
+
+msgid "Inspect Item"
+msgstr "Ürünü İncele"
+
+msgid "inspected"
+msgstr "incelendi"
 
 msgid "Insufficient quantity"
 msgstr "Yetersiz miktar"
@@ -498,6 +570,9 @@ msgstr "Hata için kayıt yap {0}"
 msgid "Login"
 msgstr "Giriş Yap"
 
+msgid "Lot"
+msgstr "Lot"
+
 msgid "Machine"
 msgstr "Makine"
 
@@ -530,6 +605,9 @@ msgstr "Metrik"
 
 msgid "Model"
 msgstr "Model"
+
+msgid "More actions"
+msgstr "Daha fazla işlem"
 
 msgid "More Actions"
 msgstr "Daha Fazla İşlem"
@@ -595,6 +673,9 @@ msgstr "Dosya yok"
 msgid "No Impact"
 msgstr "Etki Yok"
 
+msgid "No issue types configured"
+msgstr "Sorun türü yapılandırılmadı"
+
 msgid "No maintenance scheduled for today"
 msgstr "Bugün planlanmış bakım yok"
 
@@ -606,6 +687,9 @@ msgstr "Malzeme yok"
 
 msgid "No open jobs"
 msgstr "Açık iş yok"
+
+msgid "No open units to allocate"
+msgstr "Tahsis edilecek açık birim yok"
 
 msgid "No operators"
 msgstr "Operatör bulunamadı"
@@ -625,6 +709,9 @@ msgstr "Yazıcı yapılandırılmadı"
 msgid "No recent operations"
 msgstr "Son yakın işlemler yok"
 
+msgid "No remaining entities to inspect."
+msgstr "İncelenecek kalan varlık yok."
+
 msgid "No results"
 msgstr "Sonuç bulunamadı"
 
@@ -633,6 +720,9 @@ msgstr "Sonuç bulunamadı"
 
 msgid "No results found"
 msgstr "Sonuç bulunamadı"
+
+msgid "No samples required."
+msgstr "Örnek gerekli değil."
 
 msgid "No scheduled time"
 msgstr "Planlanmış zaman yok"
@@ -683,6 +773,9 @@ msgstr "Üzgünüz. Bu sayfayı görmemelisiniz. Sonunda bir açılış sayfası
 msgid "Open"
 msgstr "Açık"
 
+msgid "Open an NCR for MRB disposition"
+msgstr "MRB kararı için NCR aç"
+
 msgid "Open Jobs"
 msgstr "Açık İşler"
 
@@ -698,11 +791,20 @@ msgstr "Operatör Tarafından Yapıldı"
 msgid "Optional"
 msgstr "İsteğe bağlı"
 
+msgid "Overall result"
+msgstr "Genel sonuç"
+
 msgid "Parameters"
 msgstr "Parametreler"
 
 msgid "Part"
 msgstr "Parça"
+
+msgid "Partial"
+msgstr "Kısmi"
+
+msgid "Partial Disposition"
+msgstr "Kısmi Disposition"
 
 msgid "Passed Inspection"
 msgstr "Kontrolden Geçti"
@@ -748,9 +850,6 @@ msgstr "Önceki"
 
 msgid "Preventive"
 msgstr "Önleyici"
-
-msgid "Previous"
-msgstr "Önceki"
 
 msgid "Print"
 msgstr "Yazdır"
@@ -801,6 +900,18 @@ msgstr "Kaydet"
 msgid "Record {0}"
 msgstr "Kayıt {0}"
 
+msgid "Record only"
+msgstr "Yalnızca kaydet"
+
+msgid "Record Partial"
+msgstr "Kısmi Kaydı"
+
+msgid "Reject"
+msgstr "Reddet"
+
+msgid "Reject Lot"
+msgstr "Lotu Reddet"
+
 msgid "Remove"
 msgstr "Kaldır"
 
@@ -813,11 +924,17 @@ msgstr "Stoktan Çıkar"
 msgid "Remove part"
 msgstr "Parçayı kaldır"
 
+msgid "Result"
+msgstr "Sonuç"
+
 msgid "Rework"
 msgstr "Revizyon"
 
 msgid "Rework created successfully"
 msgstr "Yeniden işleme başarıyla oluşturuldu"
+
+msgid "Rework quantity"
+msgstr "Yeniden işleme miktarı"
 
 msgid "Sales Order"
 msgstr "Satış Siparişi"
@@ -828,8 +945,14 @@ msgstr "Kaydet"
 msgid "Scan"
 msgstr "Tarama"
 
+msgid "Scan a tracked entity to add the first sample column."
+msgstr "İlk örnek sütununu eklemek için izlenen bir varlığı tarayın."
+
 msgid "Scan or enter serial number"
 msgstr "Seri numarası tarayın veya girin"
+
+msgid "Scan or enter tracked entity ID, serial, or batch"
+msgstr "İzlenen varlık kimliğini, seri numarasını veya grubunu tarayın veya girin"
 
 msgid "Scan or enter tracking number"
 msgstr "Takip numarasını tarayın veya girin"
@@ -837,11 +960,17 @@ msgstr "Takip numarasını tarayın veya girin"
 msgid "Scan or search serial number..."
 msgstr "Seri numaras tarayın veya arayın..."
 
+msgid "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
+msgstr "Bu lottan izlenen bir varlığı tarayın veya seçin, onu bir örnek sütunu olarak ekleyin ve sonucunu ızgarada kaydedin."
+
 msgid "Schedule"
 msgstr "Planlama"
 
 msgid "Scrap"
 msgstr "Hurda"
+
+msgid "Scrap quantity"
+msgstr "Hurda miktarı"
 
 msgid "Scrap Reason"
 msgstr "Hurda Nedeni"
@@ -876,6 +1005,9 @@ msgstr "Bir hurda miktarı ve nedeni seçin"
 msgid "Select a serial number to continue with this operation"
 msgstr "Bu işlemle devam etmek için bir seri numarası seçin"
 
+msgid "Select an issue type"
+msgstr "Bir sorun türü seçin"
+
 msgid "Select an item and specify the quantity to issue"
 msgstr "Bir parça seçin ve çıkarılacak miktarı belirtin"
 
@@ -898,6 +1030,9 @@ msgstr "Seri Numarası Seçin"
 
 msgid "Select the operation to go back to. All operations from that point to the current operation will be redone."
 msgstr "Geri dönülecek işlemi seçin. O noktadan mevcut işleme kadar olan tüm işlemler yeniden yapılacaktır."
+
+msgid "Selected"
+msgstr "Seçildi"
 
 msgid "Send"
 msgstr "Gönder"
@@ -978,6 +1113,10 @@ msgstr "İstasyon Kullanıcısı"
 msgid "Station: {stationName}"
 msgstr "İstasyon: {stationName}"
 
+#. placeholder {0}: inspection.lotSize
+msgid "Statistical acceptance failed, so the entire lot of {0} is considered non-conforming (ISO 9001:2015 §8.7) — {passes} sampled pass(es) and {fails} failure(s). Route the units below to scrap or rework, or record the verdict only."
+msgstr "İstatistiksel kabul başarısız oldu, bu nedenle {0} birimlik tüm lot uygunsuz olarak kabul edilir (ISO 9001:2015 §8.7) — {passes} örnek geçti ve {fails} hata(lar). Aşağıdaki birimleri hurda veya yeniden işlemeye yönlendirin veya yalnızca kararı kaydedin."
+
 msgid "Status"
 msgstr "Durum"
 
@@ -1015,6 +1154,12 @@ msgstr "Etiket"
 msgid "The completed quantity for this operation is less than the required quantity of {0}."
 msgstr "Bu işlem için tamamlanan miktar, gerekli miktar olan {0}'dan azdır."
 
+msgid "The lot will be marked Passed and {remaining} remaining unit(s) will be completed at this operation."
+msgstr "Lot Passed olarak işaretlenecek ve {remaining} kalan birim(ler) bu operasyonda tamamlanacaktır."
+
+msgid "The lot will still be dispositioned, but an NCR cannot be created until at least one Issue Type is configured."
+msgstr "Lot yine de işleme tabi tutulacak, ancak en az bir Sorun Türü yapılandırılana kadar bir NCR oluşturulamaz."
+
 msgid "There are serial or batch tracked materials on the bill of material that have not been fully issued. Completing without issuing may result in incorrect traceability records."
 msgstr "Malzeme listesindeki seri veya parti takipli malzemeler tam olarak verilmemiş. Vermeden tamamlamak, yanlış izlenebilirlik kayıtlarına neden olabilir."
 
@@ -1048,6 +1193,9 @@ msgstr "Toplam süre: {0}"
 msgid "Total: {0}"
 msgstr "Toplam: {0}"
 
+msgid "Tracked Entity"
+msgstr "İzlenen Varlık"
+
 msgid "Tracking"
 msgstr "Takip"
 
@@ -1069,6 +1217,9 @@ msgstr "Çıkart {0}"
 
 msgid "Unsaved changes"
 msgstr "Kaydedilmemiş değişiklikler"
+
+msgid "Up to {maxAllocatable} unit(s) can be allocated; the rest is recorded without a posting."
+msgstr "En fazla {maxAllocatable} birim ayrılabilir; geri kalanı deftere kaydedilmeden kaydedilir."
 
 msgid "Update"
 msgstr "Güncelle"

@@ -16,6 +16,11 @@ export const APP_CHOICES = [
     value: "assembler",
     label: "Assembler",
     hint: "CAD convert + motion planning"
+  },
+  {
+    value: "email",
+    label: "Email previews",
+    hint: "react-email server for every email template"
   }
 ] as const;
 export type AppId = (typeof APP_CHOICES)[number]["value"];

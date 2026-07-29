@@ -28,6 +28,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const { id: _id, ...d } = validation.data;
 
+  // Tool↔step links are managed by the step editor (methodOperationStepTool route), so this
+  // edit deliberately leaves them untouched.
+
   // Release-lock gate: enforce -> block; warn -> proceed + flash; off -> no-op.
   const lock = await checkRevisionLock(client, { kind: "tool", id, companyId });
   if (!lock.ok) {

@@ -16,6 +16,9 @@ interface TriggerReworkRequest {
   reason: string;
   quantity: number;
   trackedEntityIds?: string[];
+  // Provenance link when an inspection disposition triggered the rework —
+  // stamped on the Rework productionQuantity row.
+  inspectionId?: string;
   companyId: string;
   userId: string;
 }
@@ -93,6 +96,7 @@ async function triggerRework(
     reason,
     quantity,
     trackedEntityIds,
+    inspectionId,
     companyId,
     userId,
   } = body;
@@ -233,6 +237,11 @@ async function triggerRework(
         operationSupplierProcessId: sourceOp.operationSupplierProcessId,
         workInstruction: sourceOp.workInstruction,
         procedureId: sourceOp.procedureId,
+        // A cloned Inspection op must re-inspect against the SAME plan — its
+        // lazily-created lot resolves features/sampling from this document.
+        // Assembly ops likewise keep their instruction link for 3D playback.
+        inspectionDocumentId: sourceOp.inspectionDocumentId,
+        assemblyInstructionId: sourceOp.assemblyInstructionId,
         operationQuantity: quantity,
         targetQuantity: quantity,
         tags: sourceOp.tags,
@@ -373,6 +382,7 @@ async function triggerRework(
       jobOperationId: triggeredAtJobOperationId,
       type: "Rework",
       quantity,
+      inspectionId: inspectionId ?? null,
       companyId,
       createdBy: userId,
     })
@@ -401,6 +411,7 @@ serve(async (req) => {
         reason: z.string().min(1),
         quantity: z.number().positive(),
         trackedEntityIds: z.array(z.string()).optional(),
+        inspectionId: z.string().optional(),
         companyId: z.string().min(1),
         userId: z.string().min(1),
       })

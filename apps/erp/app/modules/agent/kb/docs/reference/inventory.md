@@ -14,10 +14,10 @@ The **item ledger** is the source of truth. On-hand is the sum of its signed mov
 
 | Entry type | Effect |
 | --- | --- |
-| Purchase / Output | Goods received or produced into stock. |
-| Sale / Consumption | Goods shipped or issued to a job. |
-| Positive / Negative Adjustment | Manual corrections. |
-| Transfer | Movement between locations or storage units. |
+| `Purchase` · `Output` · `Assembly Output` | Goods received or produced into stock. |
+| `Sale` · `Consumption` · `Assembly Consumption` | Goods shipped or issued to a job. |
+| `Positive Adjmt.` · `Negative Adjmt.` | Manual corrections. |
+| `Transfer` | Movement between locations or storage units. |
 
 Read on-hand from the **ledger**, not the cached quantity table. The ledger is the truth, and it's status-aware (it can separate what's on hold or rejected from what's truly available).
 

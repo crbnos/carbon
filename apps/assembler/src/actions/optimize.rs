@@ -36,6 +36,12 @@ pub struct Opts {
     pub tolerance: Option<f32>,
     /// Auto-mode normalized error budget. `None` = lossless.
     pub auto_error: Option<f32>,
+    /// Size-adaptive policy: the caller supplied no explicit quality knob, so the
+    /// service is free to scale the compression by the model's tessellated weight.
+    /// When set, `run_optimize` overrides `auto_error` from `input_bytes` (small
+    /// models keep the baseline high-quality budget; large models decimate harder,
+    /// still error-bounded). Off when any explicit knob was given (full override).
+    pub auto_scale: bool,
     /// Draco quantization bits (position, normal, texcoord) — Draco codec only.
     pub draco_bits: (i32, i32, i32),
     /// Quantize normals to i16 (none/meshopt codecs).
@@ -197,6 +203,31 @@ impl Src {
     }
 }
 
+/// Map tessellated GLB weight → auto-mode error budget (normalized, a fraction
+/// of each mesh's extent). At/below `SMALL` there is NO simplification at all
+/// (`None` — lossless weld/reorder/encode only): a small model needs no size
+/// win, and even a "high-quality" error budget visibly chamfers features that
+/// are small relative to the part (a hole in a long part decimates to a
+/// polygon). Above that, log-ramp from the baseline budget to `MAX_ERR` at
+/// `LARGE`. Always error-bounded and per-mesh adaptive — never unbounded ratio
+/// targeting.
+fn derive_auto_error(input_bytes: usize) -> Option<f32> {
+    // 3 MiB — below this, lossless. Sized against the 0.15 rad angular default:
+    // the same geometry tessellates ~1.6x heavier than it did at 0.25 rad, so a
+    // 2 MiB cut would push parts that used to stay lossless back into the
+    // simplifier and undo the roundness the tighter angle just bought.
+    const SMALL: f64 = 3.0 * 1024.0 * 1024.0;
+    const LARGE: f64 = 32.0 * 1024.0 * 1024.0; // 32 MiB
+    const MAX_ERR: f64 = 0.02; // 2% of extent — heavier but still reasonable
+    if (input_bytes as f64) <= SMALL {
+        return None;
+    }
+    let min_err = optimize::DEFAULT_AUTO_ERROR as f64; // 0.5%
+    let b = (input_bytes as f64).min(LARGE);
+    let t = (b.ln() - SMALL.ln()) / (LARGE.ln() - SMALL.ln()); // 0..1
+    Some((min_err + (MAX_ERR - min_err) * t) as f32)
+}
+
 /// Resolve the format, load the source into GLB bytes, then walk the simplify
 /// ladder — the first rung under both gates wins; if none fit, fail with
 /// `cannot_fit_budget` (never store an over-cap blob).
@@ -216,6 +247,18 @@ fn run_optimize(
     let src = load_source(path, format, &head, opts)?;
     let glb = src.bytes();
     let input_bytes = glb.len();
+
+    // Size-adaptive quality (only when the caller gave no explicit knob): scale
+    // the auto-mode error budget by the tessellated GLB weight — small models
+    // skip simplification entirely (lossless), mid-size decimate within a
+    // still-bounded per-mesh budget, large ones harder. Smooths the old
+    // fit-or-fail cliff. The gate + coarse ratio rungs stay the final safety
+    // net below.
+    let auto_error = if opts.auto_scale {
+        derive_auto_error(input_bytes)
+    } else {
+        opts.auto_error
+    };
 
     let ladder = if opts.ladder.is_empty() {
         vec![None]
@@ -248,7 +291,7 @@ fn run_optimize(
             codec: opts.codec,
             simplify: rung,
             tolerance: opts.tolerance,
-            auto_error: opts.auto_error,
+            auto_error,
             simplify_aggressive: opts.simplify_aggressive,
             draco_bits: opts.draco_bits,
             quantize_normals: opts.quantize_normals,
@@ -415,5 +458,24 @@ fn codec_name(c: optimize::Codec) -> &'static str {
         optimize::Codec::None => "none",
         optimize::Codec::Meshopt => "meshopt",
         optimize::Codec::Draco => "draco",
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn auto_error_scales_with_size() {
+        let base = optimize::DEFAULT_AUTO_ERROR;
+        // Small models get NO simplification — lossless encode only.
+        assert_eq!(derive_auto_error(64 * 1024), None);
+        assert_eq!(derive_auto_error(3 * 1024 * 1024), None);
+        // Large models decimate harder, capped at 2%.
+        assert!((derive_auto_error(64 * 1024 * 1024).unwrap() - 0.02).abs() < 1e-6);
+        // Monotonic through the ramp, within bounds.
+        let mid = derive_auto_error(8 * 1024 * 1024).unwrap();
+        assert!(mid > base && mid < 0.02);
+        assert!(derive_auto_error(4 * 1024 * 1024).unwrap() < mid);
     }
 }

@@ -22,10 +22,12 @@ import {
   HStack,
   ScrollArea,
   toast,
+  useDisclosure,
   VStack
 } from "@carbon/react";
 import { convertKbToString, isInternalEmail } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { LuLoaderCircle } from "react-icons/lu";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
@@ -33,10 +35,12 @@ import {
   data,
   redirect,
   useFetcher,
+  useFetchers,
   useLoaderData,
   useRevalidator
 } from "react-router";
 import { z } from "zod";
+import { Confirm } from "~/components/Modals";
 import type { CompanyBackupSummary } from "~/modules/settings";
 import {
   deleteCompanyBackup,
@@ -571,12 +575,20 @@ export default function BackupsRoute() {
   );
 }
 
-// One backup row. Its own fetcher so Delete shows a spinner and dims the row
-// while the (async, storage-recursing) delete runs; the row drops out of the
-// list on the revalidation that follows.
 function BackupRow({ file }: { file: CompanyBackupSummary }) {
-  const deleteFetcher = useFetcher();
-  const isDeleting = deleteFetcher.state !== "idle";
+  const { t } = useLingui();
+  const deleteDisclosure = useDisclosure();
+  const isDeleting = useFetchers().some((fetcher) => {
+    const intent = fetcher.formData?.get("intent");
+    const backupName = fetcher.formData?.get("name");
+    return (
+      fetcher.state !== "idle" &&
+      fetcher.formAction === path.to.backups &&
+      intent === "delete" &&
+      backupName === file.name
+    );
+  });
+  const name = file.label || formatBackupName(file.name);
 
   return (
     <HStack
@@ -585,9 +597,7 @@ function BackupRow({ file }: { file: CompanyBackupSummary }) {
       }`}
     >
       <VStack spacing={0}>
-        <span className="text-sm font-medium">
-          {file.label || formatBackupName(file.name)}
-        </span>
+        <span className="text-sm font-medium">{name}</span>
         <span className="text-xs text-muted-foreground">
           {file.status === "pending" ? (
             // A pending folder with no running export is a dead partial — never
@@ -607,7 +617,7 @@ function BackupRow({ file }: { file: CompanyBackupSummary }) {
         </span>
       </VStack>
       <HStack spacing={2}>
-        {file.status === "ready" ? (
+        {file.status === "ready" && !isDeleting ? (
           <Button asChild variant="secondary">
             <a
               href={`/api/settings/backup-archive/${encodeURIComponent(
@@ -623,18 +633,31 @@ function BackupRow({ file }: { file: CompanyBackupSummary }) {
             Download
           </Button>
         )}
-        <deleteFetcher.Form method="post">
+        <Button
+          type="button"
+          variant="destructive"
+          isLoading={isDeleting}
+          isDisabled={isDeleting}
+          onClick={deleteDisclosure.onOpen}
+        >
+          <Trans>Delete</Trans>
+        </Button>
+        <Confirm
+          action={path.to.backups}
+          isOpen={deleteDisclosure.isOpen}
+          title={t`Delete ${name}`}
+          text={t`Are you sure you want to delete ${
+            name
+          }? This cannot be undone.`}
+          confirmText={t`Delete`}
+          cancelText={isDeleting ? t`Close` : t`Cancel`}
+          confirmVariant="destructive"
+          onCancel={deleteDisclosure.onClose}
+          onSubmit={deleteDisclosure.onClose}
+        >
           <input type="hidden" name="intent" value="delete" />
           <input type="hidden" name="name" value={file.name} />
-          <Button
-            type="submit"
-            variant="destructive"
-            isLoading={isDeleting}
-            isDisabled={isDeleting}
-          >
-            Delete
-          </Button>
-        </deleteFetcher.Form>
+        </Confirm>
       </HStack>
     </HStack>
   );

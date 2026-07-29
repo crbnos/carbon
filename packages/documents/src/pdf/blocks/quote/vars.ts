@@ -25,6 +25,7 @@ export function buildQuoteVars(
     "company.country": str(data.company?.countryCode),
     "company.taxId": str(data.company?.taxId),
     "company.eori": str(data.company?.eori),
-    "company.vatNumber": str(data.company?.vatNumber)
+    "company.vatNumber": str(data.company?.vatNumber),
+    "company.registrationNumber": str(data.company?.registrationNumber)
   };
 }

@@ -45,6 +45,28 @@ in the migrations — **newest wins**; core tables created in
   in `quality.models.ts` currently has most values **commented out** (only `Pending`,
   `Return to Supplier`, `Rework`, `Scrap`, `Use As Is` active) — the picker is a
   deliberate subset of the DB enum.
+- **Non-tracked disposition**: `nonConformanceItem` rows exist for non-tracked items
+  (`Inventory` / `Non-Inventory`, e.g. a job-operation NCR from `apps/mes` or a
+  rejected non-tracked inbound-inspection lot) — they carry a `quantity` and no
+  `nonConformanceItemTrackedEntity` links. `AssociatedItemsList.tsx` renders these as
+  a quantity + disposition `Select` (no entity chips; "Move entities" stays gated on
+  `links.length > 0`). **Split** works for a non-tracked row as a pure quantity split
+  (`splitIssueItem` creates a new `Pending` row for the split-off quantity and shrinks
+  the original, no entity subdivision), so MRB can e.g. scrap N and use-as-is the
+  rest. `closeIssue` still requires every row (tracked or not) to be non-`Pending`.
+- **Disposition GL/cost posting** (`closeIssue` + inspection reject): inventory value
+  movements go through the **`post-nonconformance` edge function** (`itemLedger` +
+  `costLedger` relief via `calculateCOGS` + a balanced `journal` offset to
+  `accountDefault.scrapAccount`, gated on `accountingEnabled`), **not** raw `itemLedger`
+  inserts. `closeIssue` builds `movements[]` and invokes it BEFORE the status-flip
+  transaction (idempotent per `(documentType,documentId)`, so a retry is safe; a GL
+  failure aborts the close). Movement rules: tracked Scrap/Return → `-link.qty` per
+  entity; non-tracked `Inventory` **non-inspection** Scrap → `-row.qty` write-off;
+  non-tracked `Inventory` **inspection-originated** Use-As-Is/Rework → `+row.qty` restore
+  (undoing the reject write-off); tracked Use-As-Is/Rework and any `Non-Inventory` move
+  no value. Origin detected via the `nonConformanceInspection` link. Reopen is blocked
+  once a `Non-Conformance` `itemLedger` row exists (`$id.status.tsx`). See
+  `.claude/rules/inspection-system.md` and `.ai/plans/2026-07-25-inspection-disposition-gl-posting.md`.
 
 ## Workflow (header buttons → routes)
 
@@ -117,7 +139,7 @@ Reviewers managed in `ReviewersList.tsx` (`nonConformanceReviewerValidator` = ju
   `externalLink`), `nonConformanceJobOperation`, `nonConformancePurchaseOrderLine`,
   `nonConformanceSalesOrderLine`, `nonConformanceShipmentLine`,
   `nonConformanceReceiptLine`, `nonConformanceTrackedEntity`,
-  `nonConformanceInboundInspection` (`20260421091238`).
+  `nonConformanceInspection` (created `20260421091238` as nonConformanceInboundInspection; renamed `20260722132135`).
 
 ## `issues` view
 

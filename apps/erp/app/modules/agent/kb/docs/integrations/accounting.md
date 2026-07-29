@@ -8,8 +8,9 @@ keeps multi-currency math honest. Exchange Rates is available on every plan; Xer
 
 ## Xero
 
-Connect over **OAuth**, then choose what Carbon and Xero share. Once connected, Carbon posts **sales and
-purchase invoices** to Xero and keeps the two ledgers aligned.
+Connect over **OAuth**, then choose what Carbon and Xero share. Once connected, Carbon syncs **customers**,
+**vendors**, **items**, **sales invoices**, and **bills** with Xero and keeps the two ledgers aligned, with
+several of those entities syncing both ways.
 
   
   ### Connect over OAuth

@@ -28,8 +28,14 @@ export interface BookAdjustmentArgs {
     trackedEntityId: string | null;
     entryType: "Positive Adjmt." | "Negative Adjmt.";
     // itemLedgerDocumentType — manual adjustments stay NULL (ledger rows keep
-    // today's shape; 'Inventory Adjustment' exists only on journalLineDocumentType)
-    documentType?: "Inventory Count" | null;
+    // today's shape; 'Inventory Adjustment' exists only on journalLineDocumentType).
+    // Non-Conformance / Inbound Inspection tag NCR-disposition & inspection-reject
+    // write-offs (these also flow to the journal line's documentType).
+    documentType?:
+      | "Inventory Count"
+      | "Non-Conformance"
+      | "Inbound Inspection"
+      | null;
     documentId?: string | null;
     correctionOfItemLedgerId?: string | null;
     comment?: string | null;
@@ -52,6 +58,15 @@ export interface BookAdjustmentArgs {
       finishedGoodsAccount: string;
       inventoryAdjustmentVarianceAccount: string;
     };
+    // Offset (non-inventory) side of the balanced pair. Defaults to
+    // inventoryAdjustmentVarianceAccount; NCR-disposition / inspection-reject
+    // write-offs pass the company's scrapAccount so cost of quality is separable
+    // on the P&L.
+    offsetAccount?: string | null;
+    offsetDescription?: string;
+    // journal.sourceType for a header this call creates (default
+    // 'Inventory Adjustment'). Ignored when getJournalId supplies a shared journal.
+    sourceType?: Database["public"]["Enums"]["journalEntrySourceType"];
     description: string;
     userId: string;
     // active dimensions for the company group, entityType → dimension id
@@ -82,6 +97,7 @@ export interface CreateAdjustmentJournalArgs {
   description: string;
   postingDate: string;
   userId: string;
+  sourceType?: Database["public"]["Enums"]["journalEntrySourceType"];
 }
 
 // One journal header for adjustment postings ('Inventory Adjustment' source,
@@ -104,7 +120,7 @@ export async function createAdjustmentJournal(
       description: args.description,
       postingDate: args.postingDate,
       companyId: args.companyId,
-      sourceType: "Inventory Adjustment",
+      sourceType: args.sourceType ?? "Inventory Adjustment",
       status: "Posted",
       postedAt: new Date().toISOString(),
       postedBy: args.userId,
@@ -267,6 +283,7 @@ export async function bookAdjustment(
         description: accounting.description,
         postingDate: ledger.postingDate,
         userId: accounting.userId,
+        sourceType: accounting.sourceType,
       });
 
   const inventoryAccount = resolveInventoryAccount(
@@ -293,8 +310,10 @@ export async function bookAdjustment(
       },
       {
         journalId,
-        accountId: accounting.accountDefaults.inventoryAdjustmentVarianceAccount,
-        description: "Inventory Adjustment",
+        accountId:
+          accounting.offsetAccount ??
+          accounting.accountDefaults.inventoryAdjustmentVarianceAccount,
+        description: accounting.offsetDescription ?? "Inventory Adjustment",
         amount: isGain ? credit("expense", cost) : debit("expense", cost),
         quantity: absQuantity,
         documentType: journalLineDocumentType,

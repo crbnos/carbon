@@ -42,7 +42,7 @@ import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
 import { copyToClipboard } from "~/utils/string";
 import {
-  type ChangeOrderChangeType,
+  type ChangeNoticeChangeType,
   itemReplenishmentSystems,
   itemTrackingTypes
 } from "../../items.models";
@@ -79,14 +79,14 @@ type PartPropertiesProps = {
   // rows of the part detail sidebar. "form" = standard labeled form fields (used
   // by the CO card). Only affects presentation — persistence is unchanged.
   layout?: "sidebar" | "form";
-  // Read-only: every field/control is non-editable (used when the change order
+  // Read-only: every field/control is non-editable (used when the change notice
   // is released/locked). Defaults to editable.
   isReadOnly?: boolean;
   // The change-order change type this card is embedded for (a CO line). A
   // `Revision` keeps the source part number, so the Part Number field is locked
   // (Name + the other attributes stay editable); `New Part` gets a fresh number
   // and stays editable.
-  changeType?: ChangeOrderChangeType;
+  changeType?: ChangeNoticeChangeType;
 };
 
 const PartProperties = ({
@@ -172,8 +172,7 @@ const PartProperties = ({
         | "description"
         | "mpn"
         | "replenishmentSystem"
-        | "unitOfMeasureCode"
-        | "requiresInspection",
+        | "unitOfMeasureCode",
       value: string | null
     ) => {
       const formData = new FormData();
@@ -724,7 +723,7 @@ const PartProperties = ({
           />
         ))}
       </VStack>
-      {/* Active is a lifecycle flag the change order controls at release — not a
+      {/* Active is a lifecycle flag the change notice controls at release — not a
           user-editable attribute in the CO card. Keep it on the part page only. */}
       {!embedded && (
         <ValidatedForm
@@ -747,32 +746,9 @@ const PartProperties = ({
           />
         </ValidatedForm>
       )}
-      {/* Requires Inspection + Manufacturer Part Number are purchasing
-          attributes — hidden on the CO affected-item card; they stay editable on
-          the part page (non-embedded), same as Active/Tags above. */}
-      {!embedded &&
-        routeData?.partSummary?.replenishmentSystem?.includes("Buy") && (
-          <ValidatedForm
-            defaultValues={{
-              requiresInspection:
-                routeData?.partSummary?.requiresInspection ?? false
-            }}
-            validator={z.object({
-              requiresInspection: zfd.checkbox()
-            })}
-            className="w-full"
-            isReadOnly={isReadOnly}
-          >
-            <Boolean
-              label={t`Requires Inspection`}
-              name="requiresInspection"
-              variant="small"
-              onChange={(value) => {
-                onUpdate("requiresInspection", value ? "on" : "off");
-              }}
-            />
-          </ValidatedForm>
-        )}
+      {/* Manufacturer Part Number is a purchasing attribute — hidden on the CO
+          affected-item card; it stays editable on the part page (non-embedded),
+          same as Active/Tags above. */}
       {!embedded &&
         routeData?.partSummary?.replenishmentSystem?.includes("Buy") && (
           <ValidatedForm

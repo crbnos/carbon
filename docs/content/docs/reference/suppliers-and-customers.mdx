@@ -45,6 +45,6 @@ Both records carry the same satellite shape: **contacts**, **locations/addresses
 ### "Cannot edit a protected customer type" / "Cannot edit a protected supplier type"
 System-defined types are protected and can't be renamed or deleted. Create a new custom type instead and assign parties to it.
 
-### "Cannot finalize: supplier is not approved (Active)"
-Raised when finalizing a purchase order for a supplier whose status isn't **Active** (it's *Pending*, *Inactive*, or *Rejected*). Approve/activate the supplier, then finalize the order — see [Purchase orders](/docs/reference/purchase-orders).
+### The purchase order's Finalize button is greyed out
+When supplier approval is required, a purchase order can't be finalized while its supplier's status isn't **Active** (it's *Pending*, *Inactive*, or *Rejected*). This is enforced as a disabled button, not an error message. Approve or activate the supplier, then finalize the order — see [Purchase orders](/docs/reference/purchase-orders).
 </AgentContext>

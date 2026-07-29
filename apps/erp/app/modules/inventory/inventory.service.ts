@@ -10,7 +10,7 @@ import { getNextSequence } from "~/modules/settings";
 import type { StorageItem } from "~/types";
 import { getEdgeFunctionErrorMessage } from "~/utils/error";
 import type { GenericQueryFilters } from "~/utils/query";
-import { setGenericQueryFilters } from "~/utils/query";
+import { setGenericQueryFilters, setSearchFilter } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
 import { getItemStorageUnitQuantities } from "../items/items.service";
 import type {
@@ -288,11 +288,10 @@ export async function getInventoryItems(
     }
   );
 
-  if (args?.search) {
-    query = query.or(
-      `name.ilike.%${args.search}%,readableIdWithRevision.ilike.%${args.search}%`
-    );
-  }
+  query = setSearchFilter(query, args?.search, [
+    "name",
+    "readableIdWithRevision"
+  ]);
 
   query = setGenericQueryFilters(query, args, [
     { column: "readableIdWithRevision", ascending: true }
@@ -317,11 +316,10 @@ export async function getInventoryItemsCount(
     .neq("itemTrackingType", "Non-Inventory")
     .eq("companyId", companyId);
 
-  if (args?.search) {
-    query = query.or(
-      `name.ilike.%${args.search}%,readableIdWithRevision.ilike.%${args.search}%`
-    );
-  }
+  query = setSearchFilter(query, args?.search, [
+    "name",
+    "readableIdWithRevision"
+  ]);
 
   query = setGenericQueryFilters(query, args);
 

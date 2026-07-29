@@ -35,6 +35,7 @@ import {
 } from "~/components/UpgradeOverlay";
 import { useDateFormatter, usePermissions, useRouteData } from "~/hooks";
 import { path } from "~/utils/path";
+import { isEmptyDiffValue } from "./utils";
 
 type AuditLogDrawerProps = {
   isOpen: boolean;
@@ -365,7 +366,18 @@ function ChangePill({
   display?: unknown;
   variant: "old" | "new";
 }) {
-  const hasDisplay = display !== undefined && display !== null;
+  // An empty-string display (e.g. a snapshot row whose name is blank) is no
+  // display at all — fall through so an empty value renders the "Empty" pill
+  // rather than a blank colored one.
+  const hasDisplay =
+    display !== undefined && display !== null && display !== "";
+  if (!hasDisplay && isEmptyDiffValue(value)) {
+    return (
+      <span className="px-2 py-0.5 rounded bg-muted text-muted-foreground italic">
+        <Trans>Empty</Trans>
+      </span>
+    );
+  }
   const text = hasDisplay ? formatValue(display) : formatValue(value);
   const className = cn(
     "px-2 py-0.5 rounded",

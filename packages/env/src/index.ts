@@ -238,6 +238,15 @@ export const ONSHAPE_CLIENT_SECRET = getEnv("ONSHAPE_CLIENT_SECRET", {
 export const ONSHAPE_OAUTH_REDIRECT_URL = getEnv("ONSHAPE_OAUTH_REDIRECT_URL", {
   isRequired: false
 });
+// Path to the native gltfpack binary (github.com/zeux/meshoptimizer), used to
+// compress oversized Onshape GLTF exports into viewer-ready GLBs. Optional:
+// when unset (and gltfpack isn't on PATH), oversized models are skipped
+// instead of compressed. The npm gltfpack is WASM with a 4GB memory ceiling
+// and cannot process large CAD exports — this must point to a native build.
+export const GLTFPACK_PATH = getEnv("GLTFPACK_PATH", {
+  isRequired: false,
+  isSecret: false
+});
 
 export const QUICKBOOKS_CLIENT_ID = getEnv("QUICKBOOKS_CLIENT_ID", {
   isRequired: false

@@ -15,7 +15,7 @@ a build unless someone with permission overrides it.
 
 ## How a date gets set: the three modes
 
-An item's shelf-life policy has one **mode**, and the mode decides how the expiration date is computed:
+An item's shelf-life policy has one **mode**. `NotManaged` is the default — no expiry is tracked, and choosing it removes any existing policy. The other three modes each decide how the expiration date is computed:
 
 | Mode | The date is… | Applies to |
 | --- | --- | --- |
