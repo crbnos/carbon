@@ -25,6 +25,7 @@ BEGIN
       -- that isn't fully picked still counts as outstanding work.
       SELECT 1 FROM "pickingListLine"
       WHERE "pickingListId" = NEW."pickingListId"
+        AND "companyId" = NEW."companyId"
         AND "status" <> 'Cancelled'
         AND ("quantityPicked" IS NULL OR "quantityPicked" < "quantityToPick")
     ) THEN
@@ -34,16 +35,19 @@ BEGIN
       IF EXISTS (
         SELECT 1 FROM "pickingListLine"
         WHERE "pickingListId" = NEW."pickingListId"
+          AND "companyId" = NEW."companyId"
           AND "status" = 'Short'
       ) THEN
         UPDATE "pickingList"
         SET "status" = 'Partial'
         WHERE "id" = NEW."pickingListId"
+          AND "companyId" = NEW."companyId"
           AND "status" <> 'Cancelled';
       ELSE
         UPDATE "pickingList"
         SET "status" = 'Completed'
         WHERE "id" = NEW."pickingListId"
+          AND "companyId" = NEW."companyId"
           AND "status" <> 'Cancelled';
       END IF;
     ELSE
@@ -53,10 +57,12 @@ BEGIN
       UPDATE "pickingList"
       SET "status" = 'In Progress'
       WHERE "id" = NEW."pickingListId"
+        AND "companyId" = NEW."companyId"
         AND ("status" IN ('Completed', 'Partial')
              OR ("status" = 'Draft' AND EXISTS (
                SELECT 1 FROM "pickingListLine"
                WHERE "pickingListId" = NEW."pickingListId"
+                 AND "companyId" = NEW."companyId"
                  AND (COALESCE("quantityPicked", 0) > 0
                       OR "status" IN ('Picked', 'Short', 'Cancelled'))
              )));

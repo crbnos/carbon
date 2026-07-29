@@ -177,9 +177,13 @@ Deviations from the design below, decided during implementation:
 ### Enforcement flow (on Finish → `status = 'Completed'`)
 1. Load the list's lines. Compute `unresolved`.
 2. If `unresolved.length > 0`:
-   - policy `error` → return `{ error, unresolvedLines }`; **do not** change status. Header stays `In Progress`.
-   - policy `warn` and no `acknowledged` flag → return `{ needsAcknowledgement: true, unresolvedLines }`.
-3. Else / `acknowledged` → set final status (`Completed` vs `Partial`) per the rule above.
+   - policy `error` → return `{ success: false, blocked: true, unresolvedLines, message }`; **do not** change status. Header stays `In Progress`.
+   - policy `warn` and no `acknowledged` flag → return `{ success: false, needsAcknowledgement: true, unresolvedLines }`.
+3. Else / `acknowledged` → set final status (`Completed` vs `Partial`) per the rule above, return `{ success: true }`.
+
+Fail closed: if the `getCompanySettings` lookup errors or returns no row, refuse
+the finish (`{ success: false, message }`) rather than defaulting to `warn` — a
+`warn` default could be `acknowledged`-bypassed past a configured `error` policy.
 
 ### Files & changes
 
@@ -200,9 +204,10 @@ ALTER TABLE "companySettings"
 **3. Migration C — trigger update** (`update_picking_list_status()` replacement)
 - Keep the outstanding-work test. In the "all resolved" branch: if ≥1 non-Cancelled line is `Short`
   (or picked-short but resolved), set `Partial` instead of `Completed`; fully picked → `Completed`.
-- Never stomp a `Cancelled` **or `Partial`** header when work remains (add `Partial` to the guarded set
-  so an unpick doesn't silently downgrade it). The explicit Finish action remains the authority for the
-  header; the trigger just stays consistent.
+- Never stomp a `Cancelled` header. When work remains, a terminal `Completed`/`Partial` header **is**
+  moved back to `In Progress` (an unpick must not leave it stuck on a completion state). The explicit
+  Finish action is the authority that sets `Completed`/`Partial`; the trigger only keeps the header
+  consistent with line state. Every line/header query is scoped by `companyId = NEW."companyId"`.
 
 **4. Enum mirrors + validator**
 - MES `apps/mes/app/services/models.ts`: add `"Partial"` to `pickingListStatus`. Decide `isPickingListLocked`
@@ -221,13 +226,17 @@ ALTER TABLE "companySettings"
 - Add `Partial` to any picking-list status **filter** option lists (table filters / legend).
 
 **7. MES read**
-- `picking.$pickingListId.tsx` loader: return `incompletePickingListPolicy` (default `warn`) from
-  `getCompanySettings`; thread to `PickingListControls`.
+- The policy is read **server-side** in the status action (item 8) via `getCompanySettings` — it is
+  **not** threaded through the loader. `PickingListControls` stays policy-agnostic: it always submits
+  Finish and only reacts to the action response.
 
 **8. Server enforcement**
-- `picking.$pickingListId.status.tsx` action (or push into `updatePickingListStatus`): implement the
-  flow above. Return typed results `{ success }` / `{ error, unresolvedLines }` /
-  `{ needsAcknowledgement, unresolvedLines }`. Read `acknowledged` from the form.
+- `picking.$pickingListId.status.tsx` action: implement the flow above (fail-closed on a settings-lookup
+  error). Return typed results:
+  `{ success: true }` /
+  `{ success: false, blocked: true, unresolvedLines, message }` (error policy) /
+  `{ success: false, needsAcknowledgement: true, unresolvedLines }` (warn, not yet acknowledged) /
+  `{ success: false, message }` (settings/line-load failure). Read `acknowledged` from the form.
 
 **9. MES UI — Finish gating + acknowledge modal**
 - `PickingListControls`: on `error` → inline/toast error listing unpicked items; on

@@ -421,17 +421,18 @@ export function IssueMaterialModal({
   // faster suggestion response can't be seeded and then locked in ahead of the
   // real picked lots.
   //
-  // The no-picking-list suggestion fallback is gated by a company setting
-  // (`autoSelectMaterialWithoutPickingList`). Picked lots always seed; the FEFO
-  // suggestion only seeds (and flips to the Select tab) when the setting is on —
-  // otherwise the operator stays on the Scan tab. This does NOT affect the
-  // Select-tab option ordering or the add-row remainder fill below.
+  // Seed the FEFO suggestion whenever seeding is allowed (`canSeedSuggestion`):
+  // that's a real picking allocation (allocated-but-not-yet-picked) OR the
+  // no-picking-list opt-in setting. Picked lots always seed. When there's no
+  // picking list and the setting is off, `canSeedSuggestion` is false → the
+  // operator stays on the Scan tab. This does NOT affect the Select-tab option
+  // ordering or the add-row remainder fill below.
   const seedAllocation =
     shouldLoadPickedAllocation && !pickedAllocationResolved
       ? []
       : pickedAllocation.length
         ? pickedAllocation
-        : autoSelectMaterialWithoutPickingList
+        : canSeedSuggestion
           ? suggestedAllocation
           : [];
   const hasSeededSuggestionRef = useRef(false);

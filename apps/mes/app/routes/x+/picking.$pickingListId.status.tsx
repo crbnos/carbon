@@ -62,8 +62,18 @@ export async function action({ context, request, params }: ActionFunctionArgs) {
       };
     }
 
+    // Fail closed: if the policy can't be read, don't silently fall back to
+    // 'warn' (which an `acknowledged=true` submit could bypass). Refuse the
+    // finish instead.
+    if (settings.error || !settings.data) {
+      return {
+        success: false,
+        message: "Failed to read the picking list completion policy"
+      };
+    }
+
     const policy =
-      settings.data?.incompletePickingListPolicy === "error" ? "error" : "warn";
+      settings.data.incompletePickingListPolicy === "error" ? "error" : "warn";
     const { unresolved, hasShort } = lineResult;
     const acknowledged = formData.get("acknowledged") === "true";
 
