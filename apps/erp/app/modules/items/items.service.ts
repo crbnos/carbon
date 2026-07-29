@@ -1260,6 +1260,11 @@ export async function getMaterialsList(
   );
 }
 
+function buildSearchFilter(search: string, columns: string[]) {
+  const value = `"%${search.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}%"`;
+  return columns.map((column) => `${column}.ilike.${value}`).join(",");
+}
+
 export async function getMaterialDimension(
   client: SupabaseClient<Database>,
   id: string
@@ -1282,7 +1287,7 @@ export async function getMaterialDimensions(
 
   if (args?.search) {
     query = query.or(
-      `name.ilike.%${args.search}%,formName.ilike.%${args.search}%,id.ilike.%${args.search}%`
+      buildSearchFilter(args.search, ["name", "formName", "id"])
     );
   }
 
@@ -1331,7 +1336,7 @@ export async function getMaterialFinishes(
 
   if (args?.search) {
     query = query.or(
-      `name.ilike.%${args.search}%,substanceName.ilike.%${args.search}%,id.ilike.%${args.search}%`
+      buildSearchFilter(args.search, ["name", "substanceName", "id"])
     );
   }
 
@@ -1414,7 +1419,7 @@ export async function getMaterialGrades(
 
   if (args?.search) {
     query = query.or(
-      `name.ilike.%${args.search}%,substanceName.ilike.%${args.search}%,id.ilike.%${args.search}%`
+      buildSearchFilter(args.search, ["name", "substanceName", "id"])
     );
   }
 
@@ -4697,7 +4702,12 @@ export async function getMaterialTypes(
 
   if (args?.search) {
     query = query.or(
-      `name.ilike.%${args.search}%,substanceName.ilike.%${args.search}%,formName.ilike.%${args.search}%,id.ilike.%${args.search}%`
+      buildSearchFilter(args.search, [
+        "name",
+        "substanceName",
+        "formName",
+        "id"
+      ])
     );
   }
 
