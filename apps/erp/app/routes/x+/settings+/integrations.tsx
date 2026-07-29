@@ -5,12 +5,13 @@ import {
   integrations as availableIntegrations,
   quickInstallConnectors
 } from "@carbon/ee";
-import { Alert, AlertDescription, AlertTitle } from "@carbon/react";
+import { toast } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
-import { LuTriangleAlert } from "react-icons/lu";
+import { useEffect } from "react";
 import type { LoaderFunctionArgs } from "react-router";
 import { Outlet, redirect, useLoaderData, useSearchParams } from "react-router";
 import { IntegrationsList } from "~/modules/settings";
+import { getIntegrationError } from "~/modules/settings/integration-errors";
 import { getIntegrationsWithHealth } from "~/modules/settings/settings.server";
 import { path } from "~/utils/path";
 
@@ -48,60 +49,41 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export default function IntegrationsRoute() {
   const { integrations } = useLoaderData<typeof loader>();
-  const { t } = useLingui();
-  const [searchParams] = useSearchParams();
+  const { i18n } = useLingui();
+  const [searchParams, setSearchParams] = useSearchParams();
 
-  // The Onshape OAuth callback (api/integrations/onshape/oauth) can only redirect
-  // the browser, so it reports a failed connect as `?onshapeError=<code>` and the
-  // copy lives here. Codes are a closed set — an unrecognized one renders nothing
-  // rather than a blank alert.
-  const onshapeFailures: Record<string, { title: string; body: string }> = {
-    "write-permission": {
-      title: t`Onshape denied the connection`,
-      body: t`In Onshape, edit this OAuth application's permissions to include "Application can write to your documents", then connect again.`
-    },
-    denied: {
-      title: t`Onshape denied the connection`,
-      body: t`The authorization was refused in Onshape. Try connecting again.`
-    },
-    "invalid-response": {
-      title: t`Onshape didn't return an authorization code`,
-      body: t`The response from Onshape was missing required parameters. Try connecting again.`
-    },
-    "not-configured": {
-      title: t`Onshape isn't configured`,
-      body: t`This Carbon instance is missing its Onshape OAuth credentials. Ask an administrator to set them.`
-    },
-    "token-exchange": {
-      title: t`Onshape rejected the authorization`,
-      body: t`Exchanging the authorization code for an access token failed. Try connecting again.`
-    },
-    "save-failed": {
-      title: t`Couldn't save the Onshape connection`,
-      body: t`Onshape authorized the connection but saving it failed. Try connecting again.`
-    },
-    unexpected: {
-      title: t`Couldn't complete the Onshape connection`,
-      body: t`An unexpected error occurred while connecting to Onshape. Try connecting again.`
+  const integration = searchParams.get("integration");
+  const integrationError = searchParams.get("error");
+
+  // An integration's OAuth callback can only redirect the browser, so it reports a
+  // failed connect as `?integration=<id>&error=<code>` and the copy is resolved
+  // here (see ~/modules/settings/integration-errors).
+  useEffect(() => {
+    if (!integration) return;
+
+    const failure = getIntegrationError(integration, integrationError);
+    if (failure) {
+      toast.error(i18n._(failure.title), {
+        // Same id for the same failure, so a re-render can't stack duplicates.
+        id: `${integration}:${integrationError}`,
+        description: i18n._(failure.description)
+      });
     }
-  };
 
-  const onshapeError = searchParams.get("onshapeError");
-  const onshapeFailure = onshapeError
-    ? onshapeFailures[onshapeError]
-    : undefined;
+    // Consume the params either way — a reload shouldn't replay the toast, and an
+    // unrecognized code shouldn't linger in the URL.
+    setSearchParams(
+      (params) => {
+        params.delete("integration");
+        params.delete("error");
+        return params;
+      },
+      { replace: true, preventScrollReset: true }
+    );
+  }, [integration, integrationError, i18n, setSearchParams]);
 
   return (
     <>
-      {onshapeFailure && (
-        <div className="p-4 w-full">
-          <Alert variant="destructive">
-            <LuTriangleAlert className="h-4 w-4" />
-            <AlertTitle>{onshapeFailure.title}</AlertTitle>
-            <AlertDescription>{onshapeFailure.body}</AlertDescription>
-          </Alert>
-        </div>
-      )}
       <IntegrationsList
         integrations={integrations}
         // @ts-expect-error TS2322 - TODO: fix type

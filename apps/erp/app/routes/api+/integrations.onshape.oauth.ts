@@ -10,6 +10,8 @@ import { Onshape } from "@carbon/ee";
 import { getLogger } from "@carbon/logger";
 import type { LoaderFunctionArgs } from "react-router";
 import { redirect } from "react-router";
+import type { IntegrationErrorCode } from "~/modules/settings/integration-errors";
+import { integrationErrorSearch } from "~/modules/settings/integration-errors";
 import { upsertCompanyIntegration } from "~/modules/settings/settings.server";
 import { oAuthCallbackSchema } from "~/modules/shared";
 import { path } from "~/utils/path";
@@ -32,28 +34,19 @@ function integrationsUrl(request: Request) {
 }
 
 /**
- * Why a code and not the message itself: `error_description` is chosen by whoever
- * crafted the redirect to this callback, and reflecting it into the page would put
- * attacker-authored text on a Carbon settings screen. The integrations route owns
- * the copy for each of these; only the closed set below crosses the URL.
- */
-type OnshapeConnectFailure =
-  | "write-permission"
-  | "denied"
-  | "invalid-response"
-  | "not-configured"
-  | "token-exchange"
-  | "save-failed"
-  | "unexpected";
-
-/**
  * Onshape reaches this loader by redirecting the user's browser, so a failure has
  * to render as something they can act on. Returning `data({ error })` produced a
  * bare `{"error":"…"}` JSON document — dead end, no navigation, no next step. Send
- * them back to the integrations page, which turns the code into an explanation.
+ * them back to the integrations page, which turns the code into a toast. Only a
+ * code crosses the URL; `integrationErrors` owns the copy.
  */
-function connectionFailed(request: Request, reason: OnshapeConnectFailure) {
-  return redirect(`${integrationsUrl(request)}?onshapeError=${reason}`);
+function connectionFailed(
+  request: Request,
+  reason: IntegrationErrorCode<"onshape">
+) {
+  return redirect(
+    `${integrationsUrl(request)}${integrationErrorSearch("onshape", reason)}`
+  );
 }
 
 export async function loader({ request }: LoaderFunctionArgs) {
