@@ -958,6 +958,9 @@ msgstr "社内の作業センターではなく、外部の仕入先によって
 msgid "An operation's position in its work center's queue — the order the floor picks work up — set by reordering cards on the Work Centers board without changing any dates."
 msgstr "作業センターのキューの中での操作の位置。フロアが仕事を取り上げる順序。作業センター ボード上のカードを並べ替えることで設定され、日付は変更されません。"
 
+msgid "An unexpected error occurred while connecting to Onshape. Try connecting again."
+msgstr "Onshape への接続中に予期しないエラーが発生しました。もう一度接続してください。"
+
 msgid "Anchors the Plan timeline to real dates. Leave blank for a relative, week-numbered timeline. Setting either one fills in the rest."
 msgstr "計画のタイムラインを実際の日付に固定します。相対的な週番号付きタイムラインの場合は空白のままにしてください。どちらか一方を設定すると、残りが自動的に入力されます。"
 
@@ -3022,6 +3025,9 @@ msgstr "分析用の領域画像を準備できませんでした"
 msgid "Could not read the document: {0}"
 msgstr "ドキュメントを読み込めませんでした: {0}"
 
+msgid "Couldn't complete the Onshape connection"
+msgstr "Onshape 接続を完了できませんでした"
+
 msgid "Couldn't load documents"
 msgstr "ドキュメントを読み込めませんでした"
 
@@ -3030,6 +3036,9 @@ msgstr "関連ドキュメントを読み込めませんでした。重複を避
 
 msgid "Couldn't reschedule the job. Please try again."
 msgstr "ジョブを再スケジュールできませんでした。もう一度お試しください。"
+
+msgid "Couldn't save the Onshape connection"
+msgstr "Onshape 接続を保存できませんでした"
 
 msgid "Count"
 msgstr "数"
@@ -5175,6 +5184,9 @@ msgstr "為替レート"
 msgid "Exchange Rates"
 msgstr "為替レート"
 
+msgid "Exchanging the authorization code for an access token failed. Try connecting again."
+msgstr "認可コードとアクセストークンの交換に失敗しました。もう一度接続してください。"
+
 msgid "Excluded"
 msgstr "除外"
 
@@ -6453,6 +6465,9 @@ msgstr "インポート結果"
 
 msgid "Import your BOM"
 msgstr "BOMをインポート"
+
+msgid "In Onshape, edit this OAuth application's permissions to include \"Application can write to your documents\", then connect again."
+msgstr "Onshape でこの OAuth アプリケーションの権限を編集し、「Application can write to your documents」を含めてから、もう一度接続してください。"
 
 msgid "In order to convert this RFQ to a quote, all lines must have an internal part number."
 msgstr "このRFQを見積に変換するには、すべての行に内部部品番号が必要です。"
@@ -8793,6 +8808,21 @@ msgstr "編集可能なのは下書き手順のみです。アクティブまた
 
 msgid "Only empty, open periods can be deleted."
 msgstr "空のオープン期間のみ削除できます。"
+
+msgid "Onshape authorized the connection but saving it failed. Try connecting again."
+msgstr "Onshape は接続を承認しましたが、保存に失敗しました。もう一度接続してください。"
+
+msgid "Onshape denied the connection"
+msgstr "Onshape が接続を拒否しました"
+
+msgid "Onshape didn't return an authorization code"
+msgstr "Onshape が認可コードを返しませんでした"
+
+msgid "Onshape isn't configured"
+msgstr "Onshape が構成されていません"
+
+msgid "Onshape rejected the authorization"
+msgstr "Onshape が認可を拒否しました"
 
 msgid "Onshape Status"
 msgstr "Onshape ステータス"
@@ -12493,6 +12523,9 @@ msgstr "計算方法の後の支払い期日までの日数"
 msgid "The append-only record of every stock movement; on-hand is the sum of its signed entries and the source of truth."
 msgstr "すべての在庫移動の追加専用レコード。手持在庫はその署名付きエントリの合計であり、信頼できる情報源です。"
 
+msgid "The authorization was refused in Onshape. Try connecting again."
+msgstr "Onshape で認可が拒否されました。もう一度接続してください。"
+
 msgid "The book of all posted journal lines, summed by account — written only when the company has accounting enabled."
 msgstr "投稿されたすべての仕訳行のブック（勘定ごとに合計）。会社で会計が有効な場合にのみ記入されます。"
 
@@ -12968,6 +13001,9 @@ msgstr "残りの{0}{1}は期待されなくなります。発注済み供給と
 msgid "The residual WIP a job has left at close, swept to a Production Variance account — the only variance Carbon books for a job."
 msgstr "ジョブがクローズ時に残した残留WIP。生産差異勘定に削除されます—Carbonがジョブのために記録する唯一の差異。"
 
+msgid "The response from Onshape was missing required parameters. Try connecting again."
+msgstr "Onshape からの応答に必須パラメーターが含まれていませんでした。もう一度接続してください。"
+
 msgid "The revision number of the part"
 msgstr "部品のリビジョン番号"
 
@@ -13162,6 +13198,9 @@ msgstr "これらのジョブにはこのワークセンターに割り当てら
 
 msgid "These journal entries are still Draft, so their debits and credits aren't in the ledger for this period. Post each one, or re-date it into a later open period."
 msgstr "これらの仕訳はまだ下書きであるため、それらの借方と貸方は当期の元帳に含まれていません。各仕訳を転記するか、後の開いている期間に再度日付を付け直してください。"
+
+msgid "This Carbon instance is missing its Onshape OAuth credentials. Ask an administrator to set them."
+msgstr "この Carbon インスタンスには Onshape の OAuth 認証情報がありません。管理者に設定を依頼してください。"
 
 msgid "This change notice is being implemented, so its changes are locked. Reopen it to edit."
 msgstr "この変更通知は実装中であるため、変更がロックされています。編集するために再度開いてください。"

@@ -958,6 +958,9 @@ msgstr "Une opération effectuée par un fournisseur externe plutôt que par un 
 msgid "An operation's position in its work center's queue — the order the floor picks work up — set by reordering cards on the Work Centers board without changing any dates."
 msgstr "La position d'une opération dans la file d'attente de son centre de travail — l'ordre dans lequel l'atelier choisit le travail — défini en réorganisant les cartes sur le tableau des Centres de travail sans modifier les dates."
 
+msgid "An unexpected error occurred while connecting to Onshape. Try connecting again."
+msgstr "Une erreur inattendue s'est produite lors de la connexion à Onshape. Réessayez de vous connecter."
+
 msgid "Anchors the Plan timeline to real dates. Leave blank for a relative, week-numbered timeline. Setting either one fills in the rest."
 msgstr "Ancre la chronologie du Plan sur des dates réelles. Laissez vide pour une chronologie relative numérotée par semaines. Définir l'une ou l'autre remplit le reste."
 
@@ -3022,6 +3025,9 @@ msgstr "Impossible de préparer l'image de la région pour l'analyse"
 msgid "Could not read the document: {0}"
 msgstr "Impossible de lire le document : {0}"
 
+msgid "Couldn't complete the Onshape connection"
+msgstr "Impossible d'établir la connexion Onshape"
+
 msgid "Couldn't load documents"
 msgstr "Impossible de charger les documents"
 
@@ -3030,6 +3036,9 @@ msgstr "Impossible de charger les documents associés. Actualisez avant d'en cr�
 
 msgid "Couldn't reschedule the job. Please try again."
 msgstr "Impossible de reprogrammer le travail. Veuillez réessayer."
+
+msgid "Couldn't save the Onshape connection"
+msgstr "Impossible d'enregistrer la connexion Onshape"
 
 msgid "Count"
 msgstr "Nombre"
@@ -5175,6 +5184,9 @@ msgstr "Taux de change"
 msgid "Exchange Rates"
 msgstr "Taux de change"
 
+msgid "Exchanging the authorization code for an access token failed. Try connecting again."
+msgstr "L'échange du code d'autorisation contre un jeton d'accès a échoué. Réessayez de vous connecter."
+
 msgid "Excluded"
 msgstr "Exclu"
 
@@ -6453,6 +6465,9 @@ msgstr "Résultats d'Importation"
 
 msgid "Import your BOM"
 msgstr "Importez votre nomenclature"
+
+msgid "In Onshape, edit this OAuth application's permissions to include \"Application can write to your documents\", then connect again."
+msgstr "Dans Onshape, modifiez les autorisations de cette application OAuth pour inclure « Application can write to your documents », puis reconnectez-vous."
 
 msgid "In order to convert this RFQ to a quote, all lines must have an internal part number."
 msgstr "Pour convertir cette demande de devis en devis, toutes les lignes doivent avoir un numéro de pièce interne."
@@ -8793,6 +8808,21 @@ msgstr "Seules les procédures en brouillon sont modifiables. Créez une nouvell
 
 msgid "Only empty, open periods can be deleted."
 msgstr "Seules les périodes vides et ouvertes peuvent être supprimées."
+
+msgid "Onshape authorized the connection but saving it failed. Try connecting again."
+msgstr "Onshape a autorisé la connexion, mais son enregistrement a échoué. Réessayez de vous connecter."
+
+msgid "Onshape denied the connection"
+msgstr "Onshape a refusé la connexion"
+
+msgid "Onshape didn't return an authorization code"
+msgstr "Onshape n'a pas renvoyé de code d'autorisation"
+
+msgid "Onshape isn't configured"
+msgstr "Onshape n'est pas configuré"
+
+msgid "Onshape rejected the authorization"
+msgstr "Onshape a rejeté l'autorisation"
 
 msgid "Onshape Status"
 msgstr "Statut Onshape"
@@ -12493,6 +12523,9 @@ msgstr "Le nombre de jours après la méthode de calcul que le paiement est dû"
 msgid "The append-only record of every stock movement; on-hand is the sum of its signed entries and the source of truth."
 msgstr "L'enregistrement d'ajout seul de tout mouvement de stock; le stock disponible est la somme de ses entrées signées et la source unique de référence."
 
+msgid "The authorization was refused in Onshape. Try connecting again."
+msgstr "L'autorisation a été refusée dans Onshape. Réessayez de vous connecter."
+
 msgid "The book of all posted journal lines, summed by account — written only when the company has accounting enabled."
 msgstr "Le livre de toutes les lignes de journal enregistrées, sommées par compte – écrit seulement si la comptabilité est activée pour l'entreprise."
 
@@ -12968,6 +13001,9 @@ msgstr "Les {0} {1} restants ne seront plus attendus. L'approvisionnement en com
 msgid "The residual WIP a job has left at close, swept to a Production Variance account — the only variance Carbon books for a job."
 msgstr "Le WIP résiduel qu'un travail a laissé à la fermeture, balayé sur un compte de variance de production - la seule variance que Carbon enregistre pour une tâche."
 
+msgid "The response from Onshape was missing required parameters. Try connecting again."
+msgstr "La réponse d'Onshape ne contenait pas les paramètres requis. Réessayez de vous connecter."
+
 msgid "The revision number of the part"
 msgstr "Le numéro de révision de la pièce"
 
@@ -13162,6 +13198,9 @@ msgstr "Ces travaux ont des opérations assignées à ce centre de travail :"
 
 msgid "These journal entries are still Draft, so their debits and credits aren't in the ledger for this period. Post each one, or re-date it into a later open period."
 msgstr "Ces écritures de journal sont encore Brouillon, de sorte que leurs débits et crédits ne se trouvent pas dans le grand livre pour cette période. Comptabilisez chacune ou redatez-la à une période ouverte ultérieure."
+
+msgid "This Carbon instance is missing its Onshape OAuth credentials. Ask an administrator to set them."
+msgstr "Cette instance Carbon n'a pas d'identifiants OAuth Onshape. Demandez à un administrateur de les configurer."
 
 msgid "This change notice is being implemented, so its changes are locked. Reopen it to edit."
 msgstr "Cette notice de modification est en cours de mise en œuvre, donc ses modifications sont verrouillées. Rouvrez-la pour la modifier."

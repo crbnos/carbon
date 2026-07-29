@@ -958,6 +958,9 @@ msgstr "由外部供应商而不是内部工作中心执行的操作，由分包
 msgid "An operation's position in its work center's queue — the order the floor picks work up — set by reordering cards on the Work Centers board without changing any dates."
 msgstr "一个操作在其工作中心队列中的位置——车间拿起工作的顺序——通过在工作中心板上重新排序卡片来设置，无需更改任何日期。"
 
+msgid "An unexpected error occurred while connecting to Onshape. Try connecting again."
+msgstr "连接 Onshape 时发生意外错误。请重新连接。"
+
 msgid "Anchors the Plan timeline to real dates. Leave blank for a relative, week-numbered timeline. Setting either one fills in the rest."
 msgstr "将计划时间表锚定到实际日期。留空以获得相对的、按周编号的时间表。设置其中任何一个会填充其余部分。"
 
@@ -3022,6 +3025,9 @@ msgstr "无法准备区域图像以进行分析"
 msgid "Could not read the document: {0}"
 msgstr "无法读取文档：{0}"
 
+msgid "Couldn't complete the Onshape connection"
+msgstr "无法完成 Onshape 连接"
+
 msgid "Couldn't load documents"
 msgstr "无法加载文档"
 
@@ -3030,6 +3036,9 @@ msgstr "无法加载相关文档。创建新文档前请先刷新以避免重复
 
 msgid "Couldn't reschedule the job. Please try again."
 msgstr "无法重新安排作业。请重试。"
+
+msgid "Couldn't save the Onshape connection"
+msgstr "无法保存 Onshape 连接"
 
 msgid "Count"
 msgstr "数量"
@@ -5175,6 +5184,9 @@ msgstr "汇率"
 msgid "Exchange Rates"
 msgstr "汇率"
 
+msgid "Exchanging the authorization code for an access token failed. Try connecting again."
+msgstr "用授权代码交换访问令牌失败。请重新连接。"
+
 msgid "Excluded"
 msgstr "已排除"
 
@@ -6453,6 +6465,9 @@ msgstr "导入结果"
 
 msgid "Import your BOM"
 msgstr "导入您的物料清单"
+
+msgid "In Onshape, edit this OAuth application's permissions to include \"Application can write to your documents\", then connect again."
+msgstr "请在 Onshape 中编辑此 OAuth 应用的权限，加入“Application can write to your documents”，然后重新连接。"
 
 msgid "In order to convert this RFQ to a quote, all lines must have an internal part number."
 msgstr "为了将此RFQ转换为报价，所有行必须具有内部零件编号。"
@@ -8793,6 +8808,21 @@ msgstr "只有草稿程序可以编辑。创建新版本以更改活动或已归
 
 msgid "Only empty, open periods can be deleted."
 msgstr "仅可删除空白的开放期间。"
+
+msgid "Onshape authorized the connection but saving it failed. Try connecting again."
+msgstr "Onshape 已授权此连接，但保存失败。请重新连接。"
+
+msgid "Onshape denied the connection"
+msgstr "Onshape 拒绝了连接"
+
+msgid "Onshape didn't return an authorization code"
+msgstr "Onshape 未返回授权代码"
+
+msgid "Onshape isn't configured"
+msgstr "尚未配置 Onshape"
+
+msgid "Onshape rejected the authorization"
+msgstr "Onshape 拒绝了授权"
 
 msgid "Onshape Status"
 msgstr "Onshape 状态"
@@ -12493,6 +12523,9 @@ msgstr "计算方法后的天数，在该天数后付款到期"
 msgid "The append-only record of every stock movement; on-hand is the sum of its signed entries and the source of truth."
 msgstr "每个库存变动的追加专用记录；在手数量是其带符号条目的总和，也是单一信息源。"
 
+msgid "The authorization was refused in Onshape. Try connecting again."
+msgstr "授权在 Onshape 中被拒绝。请重新连接。"
+
 msgid "The book of all posted journal lines, summed by account — written only when the company has accounting enabled."
 msgstr "所有已记账的日记账行书，按账户汇总 - 仅在公司启用会计时编写。"
 
@@ -12968,6 +13001,9 @@ msgstr "剩余的 {0} {1} 将不再被预期。在途供应和 MRP 将停止计�
 msgid "The residual WIP a job has left at close, swept to a Production Variance account — the only variance Carbon books for a job."
 msgstr "工作在关闭时留下的残余在制品，扫至生产差异帐户 - Carbon为工作记录的唯一差异。"
 
+msgid "The response from Onshape was missing required parameters. Try connecting again."
+msgstr "Onshape 的响应缺少必需的参数。请重新连接。"
+
 msgid "The revision number of the part"
 msgstr "零件的修订号"
 
@@ -13162,6 +13198,9 @@ msgstr "这些工作有分配给此工作中心的操作："
 
 msgid "These journal entries are still Draft, so their debits and credits aren't in the ledger for this period. Post each one, or re-date it into a later open period."
 msgstr "这些日记账条目仍为草稿状态，因此其借贷金额不在本期分类账中。过账每一份，或将其重新标记日期至较晚的开放期间。"
+
+msgid "This Carbon instance is missing its Onshape OAuth credentials. Ask an administrator to set them."
+msgstr "此 Carbon 实例缺少 Onshape 的 OAuth 凭据。请让管理员进行设置。"
 
 msgid "This change notice is being implemented, so its changes are locked. Reopen it to edit."
 msgstr "此变更通知正在实施中，因此其更改已锁定。重新打开它进行编辑。"

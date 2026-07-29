@@ -958,6 +958,9 @@ msgstr "Eine Operation, die von einem externen Lieferanten anstelle eines intern
 msgid "An operation's position in its work center's queue — the order the floor picks work up — set by reordering cards on the Work Centers board without changing any dates."
 msgstr "Die Position einer Operation in der Warteschlange seines Arbeitszentrums — die Reihenfolge, in der die Werkstatt die Arbeiten aufnimmt — festgelegt durch Neuanordnung von Karten auf dem Board der Arbeitszentren, ohne Daten zu ändern."
 
+msgid "An unexpected error occurred while connecting to Onshape. Try connecting again."
+msgstr "Bei der Verbindung mit Onshape ist ein unerwarteter Fehler aufgetreten. Versuchen Sie die Verbindung erneut."
+
 msgid "Anchors the Plan timeline to real dates. Leave blank for a relative, week-numbered timeline. Setting either one fills in the rest."
 msgstr "Verankert die Plan-Zeitleiste mit echten Daten. Lassen Sie das Feld leer für eine relative, wochenweise nummerierte Zeitleiste. Das Festlegen einer der beiden Optionen füllt den Rest automatisch aus."
 
@@ -3022,6 +3025,9 @@ msgstr "Konnte Regionsbild nicht für die Analyse vorbereiten"
 msgid "Could not read the document: {0}"
 msgstr "Dokument konnte nicht gelesen werden: {0}"
 
+msgid "Couldn't complete the Onshape connection"
+msgstr "Die Onshape-Verbindung konnte nicht abgeschlossen werden"
+
 msgid "Couldn't load documents"
 msgstr "Dokumente konnten nicht geladen werden"
 
@@ -3030,6 +3036,9 @@ msgstr "Verwandte Dokumente konnten nicht geladen werden. Aktualisieren Sie die 
 
 msgid "Couldn't reschedule the job. Please try again."
 msgstr "Der Auftrag konnte nicht umgeplant werden. Bitte versuchen Sie es erneut."
+
+msgid "Couldn't save the Onshape connection"
+msgstr "Die Onshape-Verbindung konnte nicht gespeichert werden"
 
 msgid "Count"
 msgstr "Anzahl"
@@ -5175,6 +5184,9 @@ msgstr "Wechselkurs"
 msgid "Exchange Rates"
 msgstr "Wechselkurse"
 
+msgid "Exchanging the authorization code for an access token failed. Try connecting again."
+msgstr "Der Austausch des Autorisierungscodes gegen ein Zugriffstoken ist fehlgeschlagen. Versuchen Sie die Verbindung erneut."
+
 msgid "Excluded"
 msgstr "Ausgeschlossen"
 
@@ -6453,6 +6465,9 @@ msgstr "Importergebnisse"
 
 msgid "Import your BOM"
 msgstr "Importieren Sie Ihre Stückliste"
+
+msgid "In Onshape, edit this OAuth application's permissions to include \"Application can write to your documents\", then connect again."
+msgstr "Bearbeiten Sie in Onshape die Berechtigungen dieser OAuth-Anwendung, sodass sie „Application can write to your documents“ enthalten, und verbinden Sie sich dann erneut."
 
 msgid "In order to convert this RFQ to a quote, all lines must have an internal part number."
 msgstr "Um diese Anfrage in ein Angebot umzuwandeln, müssen alle Positionen eine interne Teilenummer haben."
@@ -8793,6 +8808,21 @@ msgstr "Nur Entwurfsverfahren sind bearbeitbar. Erstellen Sie eine neue Version,
 
 msgid "Only empty, open periods can be deleted."
 msgstr "Nur leere, offene Perioden können gelöscht werden."
+
+msgid "Onshape authorized the connection but saving it failed. Try connecting again."
+msgstr "Onshape hat die Verbindung autorisiert, das Speichern ist jedoch fehlgeschlagen. Versuchen Sie die Verbindung erneut."
+
+msgid "Onshape denied the connection"
+msgstr "Onshape hat die Verbindung abgelehnt"
+
+msgid "Onshape didn't return an authorization code"
+msgstr "Onshape hat keinen Autorisierungscode zurückgegeben"
+
+msgid "Onshape isn't configured"
+msgstr "Onshape ist nicht konfiguriert"
+
+msgid "Onshape rejected the authorization"
+msgstr "Onshape hat die Autorisierung abgelehnt"
 
 msgid "Onshape Status"
 msgstr "Onshape-Status"
@@ -12493,6 +12523,9 @@ msgstr "Die Anzahl der Tage nach der Berechnungsmethode, bis die Zahlung fällig
 msgid "The append-only record of every stock movement; on-hand is the sum of its signed entries and the source of truth."
 msgstr "Der unveränderliche Datensatz jeder Bestandsbewegung; der verfügbare Bestand ist die Summe seiner signierten Einträge und die maßgebliche Quelle."
 
+msgid "The authorization was refused in Onshape. Try connecting again."
+msgstr "Die Autorisierung wurde in Onshape abgelehnt. Versuchen Sie die Verbindung erneut."
+
 msgid "The book of all posted journal lines, summed by account — written only when the company has accounting enabled."
 msgstr "Das Buch aller gebuchten Journalzeilen, summiert nach Konto – wird nur geschrieben, wenn die Buchhaltung für das Unternehmen aktiviert ist."
 
@@ -12968,6 +13001,9 @@ msgstr "Die restliche {0} {1} wird nicht mehr erwartet. Die Bestellversorgung un
 msgid "The residual WIP a job has left at close, swept to a Production Variance account — the only variance Carbon books for a job."
 msgstr "Das Residualwip, das ein Auftrag bei Schließung verlassen hat, gefegt auf ein Produktionsvarianzverkehr – die einzige Varianz Carbon Bücher für einen Auftrag."
 
+msgid "The response from Onshape was missing required parameters. Try connecting again."
+msgstr "In der Antwort von Onshape fehlten erforderliche Parameter. Versuchen Sie die Verbindung erneut."
+
 msgid "The revision number of the part"
 msgstr "Die Revisionsnummer des Teils"
 
@@ -13162,6 +13198,9 @@ msgstr "Diese Aufträge haben Operationen, die diesem Arbeitszentrum zugewiesen 
 
 msgid "These journal entries are still Draft, so their debits and credits aren't in the ledger for this period. Post each one, or re-date it into a later open period."
 msgstr "Diese Journaleinträge sind noch im Entwurf, daher befinden sich ihre Belastungen und Gutschriften nicht im Ledger für diese Periode. Buchen Sie jeden Eintrag, oder buchen Sie ihn in eine spätere offene Periode um."
+
+msgid "This Carbon instance is missing its Onshape OAuth credentials. Ask an administrator to set them."
+msgstr "Dieser Carbon-Instanz fehlen die Onshape-OAuth-Anmeldedaten. Bitten Sie einen Administrator, sie einzurichten."
 
 msgid "This change notice is being implemented, so its changes are locked. Reopen it to edit."
 msgstr "Diese Änderungsmitteilung wird gerade implementiert, daher sind ihre Änderungen gesperrt. Öffnen Sie sie erneut zum Bearbeiten."

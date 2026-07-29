@@ -958,6 +958,9 @@ msgstr "Операция, выполняемая внешним поставщи
 msgid "An operation's position in its work center's queue — the order the floor picks work up — set by reordering cards on the Work Centers board without changing any dates."
 msgstr "Положение операции в очереди её рабочего центра — порядок, в котором площадка берёт работу — устанавливается переупорядочением карточек на доске Рабочих центров без изменения дат."
 
+msgid "An unexpected error occurred while connecting to Onshape. Try connecting again."
+msgstr "При подключении к Onshape произошла непредвиденная ошибка. Повторите попытку подключения."
+
 msgid "Anchors the Plan timeline to real dates. Leave blank for a relative, week-numbered timeline. Setting either one fills in the rest."
 msgstr "Привязывает временную шкалу плана к реальным датам. Оставьте пустым для относительной временной шкалы с номерами недель. Установка одной из них заполнит остальное."
 
@@ -3022,6 +3025,9 @@ msgstr "Не удалось подготовить изображение рег
 msgid "Could not read the document: {0}"
 msgstr "Не удалось прочитать документ: {0}"
 
+msgid "Couldn't complete the Onshape connection"
+msgstr "Не удалось завершить подключение к Onshape"
+
 msgid "Couldn't load documents"
 msgstr "Не удалось загрузить документы"
 
@@ -3030,6 +3036,9 @@ msgstr "Не удалось загрузить связанные докумен
 
 msgid "Couldn't reschedule the job. Please try again."
 msgstr "Не удалось перепланировать задание. Пожалуйста, попробуйте еще раз."
+
+msgid "Couldn't save the Onshape connection"
+msgstr "Не удалось сохранить подключение к Onshape"
 
 msgid "Count"
 msgstr "Количество"
@@ -5175,6 +5184,9 @@ msgstr "Курс обмена"
 msgid "Exchange Rates"
 msgstr "Курсы обмена"
 
+msgid "Exchanging the authorization code for an access token failed. Try connecting again."
+msgstr "Не удалось обменять код авторизации на токен доступа. Повторите попытку подключения."
+
 msgid "Excluded"
 msgstr "Исключено"
 
@@ -6453,6 +6465,9 @@ msgstr "Результаты импорта"
 
 msgid "Import your BOM"
 msgstr "Импортируйте вашу BOM"
+
+msgid "In Onshape, edit this OAuth application's permissions to include \"Application can write to your documents\", then connect again."
+msgstr "В Onshape измените разрешения этого приложения OAuth, добавив «Application can write to your documents», затем подключитесь снова."
 
 msgid "In order to convert this RFQ to a quote, all lines must have an internal part number."
 msgstr "Чтобы преобразовать это РЗП в предложение, все строки должны иметь внутренний номер детали."
@@ -8793,6 +8808,21 @@ msgstr "Редактировать можно только процедуры в
 
 msgid "Only empty, open periods can be deleted."
 msgstr "Удалять можно только пустые открытые периоды."
+
+msgid "Onshape authorized the connection but saving it failed. Try connecting again."
+msgstr "Onshape авторизовал подключение, но сохранить его не удалось. Повторите попытку подключения."
+
+msgid "Onshape denied the connection"
+msgstr "Onshape отклонил подключение"
+
+msgid "Onshape didn't return an authorization code"
+msgstr "Onshape не вернул код авторизации"
+
+msgid "Onshape isn't configured"
+msgstr "Onshape не настроен"
+
+msgid "Onshape rejected the authorization"
+msgstr "Onshape отклонил авторизацию"
 
 msgid "Onshape Status"
 msgstr "Статус Onshape"
@@ -12493,6 +12523,9 @@ msgstr "Количество дней после метода расчета, в
 msgid "The append-only record of every stock movement; on-hand is the sum of its signed entries and the source of truth."
 msgstr "Журнал доступного только для добавления, отражающий каждое движение запасов; остаток на складе является суммой подписанных записей и источником истины."
 
+msgid "The authorization was refused in Onshape. Try connecting again."
+msgstr "Авторизация была отклонена в Onshape. Повторите попытку подключения."
+
 msgid "The book of all posted journal lines, summed by account — written only when the company has accounting enabled."
 msgstr "Книга всех проведенных строк журнала, суммированные по счетам — записывается только при включенной учетной политике компании."
 
@@ -12968,6 +13001,9 @@ msgstr "Оставшиеся {0} {1} больше не будут ожидать
 msgid "The residual WIP a job has left at close, swept to a Production Variance account — the only variance Carbon books for a job."
 msgstr "Остаточное незавершенное производство, оставленное заданием при закрытии, перемещено на счет производственного отклонения — единственное отклонение, которое Carbon регистрирует для задания."
 
+msgid "The response from Onshape was missing required parameters. Try connecting again."
+msgstr "В ответе Onshape отсутствовали обязательные параметры. Повторите попытку подключения."
+
 msgid "The revision number of the part"
 msgstr "Номер редакции детали"
 
@@ -13162,6 +13198,9 @@ msgstr "Эти задания имеют операции, назначенны�
 
 msgid "These journal entries are still Draft, so their debits and credits aren't in the ledger for this period. Post each one, or re-date it into a later open period."
 msgstr "Эти записи в журнале всё ещё находятся в статусе «Черновик», поэтому их дебеты и кредиты не находятся в главной книге за этот период. Опубликуйте каждую или переделируйте её на более поздний открытый период."
+
+msgid "This Carbon instance is missing its Onshape OAuth credentials. Ask an administrator to set them."
+msgstr "В этом экземпляре Carbon отсутствуют учётные данные OAuth для Onshape. Попросите администратора настроить их."
 
 msgid "This change notice is being implemented, so its changes are locked. Reopen it to edit."
 msgstr "Это уведомление об изменении реализуется, поэтому его изменения заблокированы. Откройте его повторно, чтобы отредактировать."

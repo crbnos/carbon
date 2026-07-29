@@ -958,6 +958,9 @@ msgstr "एक आंतरिक कार्य केंद्र के ब�
 msgid "An operation's position in its work center's queue — the order the floor picks work up — set by reordering cards on the Work Centers board without changing any dates."
 msgstr "एक ऑपरेशन की अपने कार्य केंद्र की कतार में स्थिति — वह क्रम जिससे मंजिल काम उठाती है — कार्य केंद्र बोर्ड पर कार्डों को पुनः सूचीबद्ध करके किसी भी तारीखों को बदले बिना सेट किया जाता है।"
 
+msgid "An unexpected error occurred while connecting to Onshape. Try connecting again."
+msgstr "Onshape से कनेक्ट करते समय एक अनपेक्षित त्रुटि हुई। दोबारा कनेक्ट करने का प्रयास करें।"
+
 msgid "Anchors the Plan timeline to real dates. Leave blank for a relative, week-numbered timeline. Setting either one fills in the rest."
 msgstr "योजना समयरेखा को वास्तविक तारीखों से जोड़ता है। सापेक्ष, सप्ताह-संख्या वाली समयरेखा के लिए खाली छोड़ें। किसी एक को सेट करने से बाकी भर जाता है।"
 
@@ -3022,6 +3025,9 @@ msgstr "विश्लेषण के लिए क्षेत्र छव�
 msgid "Could not read the document: {0}"
 msgstr "दस्तावेज़ नहीं पढ़ा जा सका: {0}"
 
+msgid "Couldn't complete the Onshape connection"
+msgstr "Onshape कनेक्शन पूरा नहीं हो सका"
+
 msgid "Couldn't load documents"
 msgstr "दस्तावेज़ लोड नहीं हो सके"
 
@@ -3030,6 +3036,9 @@ msgstr "संबंधित दस्तावेज़ लोड नहीं
 
 msgid "Couldn't reschedule the job. Please try again."
 msgstr "कार्य पुनर्निर्धारित नहीं हो सका। कृपया पुनः प्रयास करें।"
+
+msgid "Couldn't save the Onshape connection"
+msgstr "Onshape कनेक्शन सहेजा नहीं जा सका"
 
 msgid "Count"
 msgstr "गिनती"
@@ -5175,6 +5184,9 @@ msgstr "विनिमय दर"
 msgid "Exchange Rates"
 msgstr "विनिमय दरें"
 
+msgid "Exchanging the authorization code for an access token failed. Try connecting again."
+msgstr "प्राधिकरण कोड को एक्सेस टोकन से बदलना विफल रहा। दोबारा कनेक्ट करने का प्रयास करें।"
+
 msgid "Excluded"
 msgstr "बहिष्कृत"
 
@@ -6453,6 +6465,9 @@ msgstr "आयात परिणाम"
 
 msgid "Import your BOM"
 msgstr "अपना BOM आयात करें"
+
+msgid "In Onshape, edit this OAuth application's permissions to include \"Application can write to your documents\", then connect again."
+msgstr "Onshape में, इस OAuth ऐप्लिकेशन की अनुमतियों में \"Application can write to your documents\" शामिल करें, फिर दोबारा कनेक्ट करें।"
 
 msgid "In order to convert this RFQ to a quote, all lines must have an internal part number."
 msgstr "इस RFQ को उद्धरण में परिवर्तित करने के लिए, सभी पंक्तियों के पास एक आंतरिक भाग संख्या होनी चाहिए।"
@@ -8793,6 +8808,21 @@ msgstr "केवल ड्राफ्ट प्रक्रियाएं स
 
 msgid "Only empty, open periods can be deleted."
 msgstr "केवल खाली, खुली अवधियों को हटाया जा सकता है।"
+
+msgid "Onshape authorized the connection but saving it failed. Try connecting again."
+msgstr "Onshape ने कनेक्शन को अधिकृत किया, लेकिन उसे सहेजना विफल रहा। दोबारा कनेक्ट करने का प्रयास करें।"
+
+msgid "Onshape denied the connection"
+msgstr "Onshape ने कनेक्शन अस्वीकार कर दिया"
+
+msgid "Onshape didn't return an authorization code"
+msgstr "Onshape ने प्राधिकरण कोड नहीं लौटाया"
+
+msgid "Onshape isn't configured"
+msgstr "Onshape कॉन्फ़िगर नहीं है"
+
+msgid "Onshape rejected the authorization"
+msgstr "Onshape ने प्राधिकरण अस्वीकार कर दिया"
 
 msgid "Onshape Status"
 msgstr "Onshape स्थिति"
@@ -12493,6 +12523,9 @@ msgstr "गणना विधि के बाद दिनों की सं
 msgid "The append-only record of every stock movement; on-hand is the sum of its signed entries and the source of truth."
 msgstr "प्रत्येक स्टॉक आंदोलन का केवल-परिशिष्ट रिकॉर्ड; हाथ में राशि इसकी हस्ताक्षरित प्रविष्टियों का योग है और सत्य का स्रोत है।"
 
+msgid "The authorization was refused in Onshape. Try connecting again."
+msgstr "Onshape में प्राधिकरण अस्वीकार कर दिया गया। दोबारा कनेक्ट करने का प्रयास करें।"
+
 msgid "The book of all posted journal lines, summed by account — written only when the company has accounting enabled."
 msgstr "सभी पोस्ट की गई जर्नल पंक्तियों की पुस्तक, खाते द्वारा योग किया गया - केवल तभी लिखा जाता है जब कंपनी के लिए लेखांकन सक्षम हो।"
 
@@ -12968,6 +13001,9 @@ msgstr "शेष {0} {1} अब अपेक्षित नहीं होग
 msgid "The residual WIP a job has left at close, swept to a Production Variance account — the only variance Carbon books for a job."
 msgstr "अवशिष्ट WIP जो एक काम को बंद करने पर छोड़ गया है, उत्पादन विचरण खाते में स्वेप किया गया - एक काम के लिए कार्बन पुस्तकें का एकमात्र विचरण।"
 
+msgid "The response from Onshape was missing required parameters. Try connecting again."
+msgstr "Onshape की प्रतिक्रिया में आवश्यक पैरामीटर नहीं थे। दोबारा कनेक्ट करने का प्रयास करें।"
+
 msgid "The revision number of the part"
 msgstr "भाग की संशोधन संख्या"
 
@@ -13162,6 +13198,9 @@ msgstr "इन कार्यों के पास इस कार्य क
 
 msgid "These journal entries are still Draft, so their debits and credits aren't in the ledger for this period. Post each one, or re-date it into a later open period."
 msgstr "ये जर्नल प्रविष्टियाँ अभी भी ड्राफ्ट हैं, इसलिए उनके डेबिट और क्रेडिट इस अवधि के लिए लेजर में नहीं हैं। प्रत्येक को पोस्ट करें, या इसे बाद की खुली अवधि में पुनः दिनांकित करें।"
+
+msgid "This Carbon instance is missing its Onshape OAuth credentials. Ask an administrator to set them."
+msgstr "इस Carbon इंस्टेंस में Onshape OAuth क्रेडेंशियल नहीं हैं। किसी व्यवस्थापक से उन्हें सेट करने के लिए कहें।"
 
 msgid "This change notice is being implemented, so its changes are locked. Reopen it to edit."
 msgstr "यह परिवर्तन सूचना लागू की जा रही है, इसलिए इसके परिवर्तन लॉक हैं। इसे संपादित करने के लिए फिर से खोलें।"

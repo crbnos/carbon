@@ -958,6 +958,9 @@ msgstr "Bir iç çalışma merkezi yerine harici bir sağlayıcı tarafından ge
 msgid "An operation's position in its work center's queue — the order the floor picks work up — set by reordering cards on the Work Centers board without changing any dates."
 msgstr "Bir işin iş merkezinin kuyruğundaki konumu — işinin çekildiği sıra — İş Merkezleri panosundaki kartları herhangi bir tarihi değiştirmeden yeniden sıralayarak ayarlanan."
 
+msgid "An unexpected error occurred while connecting to Onshape. Try connecting again."
+msgstr "Onshape'e bağlanırken beklenmeyen bir hata oluştu. Yeniden bağlanmayı deneyin."
+
 msgid "Anchors the Plan timeline to real dates. Leave blank for a relative, week-numbered timeline. Setting either one fills in the rest."
 msgstr "Plan zaman çizelgesini gerçek tarihlere sabitleyin. Göreceli, hafta numaralı bir zaman çizelgesi için boş bırakın. Her ikisinden birini ayarlamak geri kalanını doldurur."
 
@@ -3022,6 +3025,9 @@ msgstr "Bölge görüntüsü analiz için hazırlanamadı"
 msgid "Could not read the document: {0}"
 msgstr "Belge okunamadı: {0}"
 
+msgid "Couldn't complete the Onshape connection"
+msgstr "Onshape bağlantısı tamamlanamadı"
+
 msgid "Couldn't load documents"
 msgstr "Belgeler yüklenemedi"
 
@@ -3030,6 +3036,9 @@ msgstr "İlgili belgeler yüklenemedi. Yeni bir tane oluşturmadan önce yeniley
 
 msgid "Couldn't reschedule the job. Please try again."
 msgstr "İş yeniden planlanamadı. Lütfen tekrar deneyin."
+
+msgid "Couldn't save the Onshape connection"
+msgstr "Onshape bağlantısı kaydedilemedi"
 
 msgid "Count"
 msgstr "Adet"
@@ -5175,6 +5184,9 @@ msgstr "Döviz Kuru"
 msgid "Exchange Rates"
 msgstr "Döviz Kurları"
 
+msgid "Exchanging the authorization code for an access token failed. Try connecting again."
+msgstr "Yetkilendirme kodunun erişim belirteciyle değiştirilmesi başarısız oldu. Yeniden bağlanmayı deneyin."
+
 msgid "Excluded"
 msgstr "Hariç Tutulan"
 
@@ -6453,6 +6465,9 @@ msgstr "İçe Aktarma Sonuçları"
 
 msgid "Import your BOM"
 msgstr "BOM'unuzu İçe Aktarın"
+
+msgid "In Onshape, edit this OAuth application's permissions to include \"Application can write to your documents\", then connect again."
+msgstr "Onshape'te bu OAuth uygulamasının izinlerini düzenleyerek \"Application can write to your documents\" iznini ekleyin, ardından yeniden bağlanın."
 
 msgid "In order to convert this RFQ to a quote, all lines must have an internal part number."
 msgstr "Bu Fiyat Teklifi'ni (RFQ) bir teklife dönüştürmek için tüm satırların dahili bir parça numarasına sahip olması gerekir."
@@ -8793,6 +8808,21 @@ msgstr "Yalnızca Taslak prosedürler düzenlenebilir. Aktif veya Arşivlenmiş 
 
 msgid "Only empty, open periods can be deleted."
 msgstr "Yalnızca boş, açık dönemler silinebilir."
+
+msgid "Onshape authorized the connection but saving it failed. Try connecting again."
+msgstr "Onshape bağlantıyı yetkilendirdi ancak kaydetme başarısız oldu. Yeniden bağlanmayı deneyin."
+
+msgid "Onshape denied the connection"
+msgstr "Onshape bağlantıyı reddetti"
+
+msgid "Onshape didn't return an authorization code"
+msgstr "Onshape bir yetkilendirme kodu döndürmedi"
+
+msgid "Onshape isn't configured"
+msgstr "Onshape yapılandırılmamış"
+
+msgid "Onshape rejected the authorization"
+msgstr "Onshape yetkilendirmeyi reddetti"
 
 msgid "Onshape Status"
 msgstr "Onshape Durumu"
@@ -12493,6 +12523,9 @@ msgstr "Ödeme vadesinin hesaplama yönteminden sonraki gün sayısı"
 msgid "The append-only record of every stock movement; on-hand is the sum of its signed entries and the source of truth."
 msgstr "Her stok hareketinin yalnızca ekleme kaydı; eldeki tutar, imzalı girdilerinin toplamı ve gerçeğin kaynağıdır."
 
+msgid "The authorization was refused in Onshape. Try connecting again."
+msgstr "Yetkilendirme Onshape'te reddedildi. Yeniden bağlanmayı deneyin."
+
 msgid "The book of all posted journal lines, summed by account — written only when the company has accounting enabled."
 msgstr "Tüm kaydedilen günlük satırlarının defteri, hesaba göre özetlenmiş — yalnızca şirket muhasebesi etkinleştirildiğinde yazılır."
 
@@ -12968,6 +13001,9 @@ msgstr "Kalan {0} {1} artık beklenmeyecektir. Sipariş edilen arz ve MRP bunu s
 msgid "The residual WIP a job has left at close, swept to a Production Variance account — the only variance Carbon books for a job."
 msgstr "Bir işin kapatmada bıraktığı artık WIP, bir üretim varyans hesabına süpürülen - Carbon'un bir iş için kaydettiği tek varyans."
 
+msgid "The response from Onshape was missing required parameters. Try connecting again."
+msgstr "Onshape'ten gelen yanıtta gerekli parametreler eksikti. Yeniden bağlanmayı deneyin."
+
 msgid "The revision number of the part"
 msgstr "Parçanın revizyon numarası"
 
@@ -13162,6 +13198,9 @@ msgstr "Bu işler bu iş merkezine atanmış işlemlere sahiptir:"
 
 msgid "These journal entries are still Draft, so their debits and credits aren't in the ledger for this period. Post each one, or re-date it into a later open period."
 msgstr "Bu muhasebe kayıtları hâlâ Taslak durumundadır, bu nedenle borç ve alacakları bu dönem için defteri kebir'de değildir. Her birini deftere geçirin veya daha sonraki bir açık döneme yeniden tarihlendiriniz."
+
+msgid "This Carbon instance is missing its Onshape OAuth credentials. Ask an administrator to set them."
+msgstr "Bu Carbon örneğinde Onshape OAuth kimlik bilgileri eksik. Bir yöneticiden bunları ayarlamasını isteyin."
 
 msgid "This change notice is being implemented, so its changes are locked. Reopen it to edit."
 msgstr "Bu değişiklik bildirimi uygulanmakta olduğundan, değişiklikleri kilitlidir. Düzenlemek için yeniden açın."

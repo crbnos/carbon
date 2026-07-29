@@ -958,6 +958,9 @@ msgstr "사내 작업장이 아닌 외부 공급업체가 수행하는 공정작
 msgid "An operation's position in its work center's queue — the order the floor picks work up — set by reordering cards on the Work Centers board without changing any dates."
 msgstr "작업 센터의 작업 대기열에서 작업의 위치(현장이 작업을 선택하는 순서)로서, 날짜를 변경하지 않고 Work Centers 보드에서 카드를 재정렬하여 설정합니다."
 
+msgid "An unexpected error occurred while connecting to Onshape. Try connecting again."
+msgstr "Onshape에 연결하는 중 예기치 않은 오류가 발생했습니다. 다시 연결해 보세요."
+
 msgid "Anchors the Plan timeline to real dates. Leave blank for a relative, week-numbered timeline. Setting either one fills in the rest."
 msgstr "계획 타임라인을 실제 날짜에 고정합니다. 비워두면 주 번호 기반의 상대적 타임라인이 됩니다. 둘 중 하나를 설정하면 나머지가 자동으로 채워집니다."
 
@@ -3022,6 +3025,9 @@ msgstr "분석을 위한 영역 이미지를 준비할 수 없습니다"
 msgid "Could not read the document: {0}"
 msgstr "문서를 읽을 수 없습니다: {0}"
 
+msgid "Couldn't complete the Onshape connection"
+msgstr "Onshape 연결을 완료할 수 없습니다"
+
 msgid "Couldn't load documents"
 msgstr "문서를 불러올 수 없습니다"
 
@@ -3030,6 +3036,9 @@ msgstr "관련 문서를 불러올 수 없습니다. 중복 생성을 방지하�
 
 msgid "Couldn't reschedule the job. Please try again."
 msgstr "작업 일정을 변경할 수 없습니다. 다시 시도하세요."
+
+msgid "Couldn't save the Onshape connection"
+msgstr "Onshape 연결을 저장할 수 없습니다"
 
 msgid "Count"
 msgstr "실사"
@@ -5175,6 +5184,9 @@ msgstr "환율"
 msgid "Exchange Rates"
 msgstr "환율"
 
+msgid "Exchanging the authorization code for an access token failed. Try connecting again."
+msgstr "인증 코드를 액세스 토큰으로 교환하지 못했습니다. 다시 연결해 보세요."
+
 msgid "Excluded"
 msgstr "제외됨"
 
@@ -6453,6 +6465,9 @@ msgstr "가져오기 결과"
 
 msgid "Import your BOM"
 msgstr "BOM 가져오기"
+
+msgid "In Onshape, edit this OAuth application's permissions to include \"Application can write to your documents\", then connect again."
+msgstr "Onshape에서 이 OAuth 애플리케이션의 권한에 \"Application can write to your documents\"를 포함하도록 편집한 후 다시 연결하세요."
 
 msgid "In order to convert this RFQ to a quote, all lines must have an internal part number."
 msgstr "이 RFQ를 견적으로 전환하려면 모든 라인에 내부 품목 번호가 있어야 합니다."
@@ -8793,6 +8808,21 @@ msgstr "초안 상태의 절차만 수정할 수 있습니다. 활성 또는 보
 
 msgid "Only empty, open periods can be deleted."
 msgstr "비어있는 열린 기간만 삭제할 수 있습니다."
+
+msgid "Onshape authorized the connection but saving it failed. Try connecting again."
+msgstr "Onshape가 연결을 승인했지만 저장하지 못했습니다. 다시 연결해 보세요."
+
+msgid "Onshape denied the connection"
+msgstr "Onshape가 연결을 거부했습니다"
+
+msgid "Onshape didn't return an authorization code"
+msgstr "Onshape가 인증 코드를 반환하지 않았습니다"
+
+msgid "Onshape isn't configured"
+msgstr "Onshape가 구성되지 않았습니다"
+
+msgid "Onshape rejected the authorization"
+msgstr "Onshape가 인증을 거부했습니다"
 
 msgid "Onshape Status"
 msgstr "Onshape 상태"
@@ -12493,6 +12523,9 @@ msgstr "계산 방법 기준일로부터 결제 기한까지의 일수"
 msgid "The append-only record of every stock movement; on-hand is the sum of its signed entries and the source of truth."
 msgstr "모든 재고 이동을 추가 전용으로 기록한 원장으로, 보유 수량은 부호가 있는 항목들의 합이며 최종 근거 데이터입니다."
 
+msgid "The authorization was refused in Onshape. Try connecting again."
+msgstr "Onshape에서 인증이 거부되었습니다. 다시 연결해 보세요."
+
 msgid "The book of all posted journal lines, summed by account — written only when the company has accounting enabled."
 msgstr "전기된 모든 분개 라인을 계정별로 합산한 장부로, 회사에서 회계 기능이 활성화된 경우에만 기록됩니다."
 
@@ -12968,6 +13001,9 @@ msgstr "{0} {1}의 남은 수량은 더 이상 예상되지 않습니다. 주문
 msgid "The residual WIP a job has left at close, swept to a Production Variance account — the only variance Carbon books for a job."
 msgstr "작업 마감 시 남은 재공품(WIP)으로, 생산 차이 계정으로 이관됩니다 — Carbon이 작업에 대해 계상하는 유일한 차이 항목입니다."
 
+msgid "The response from Onshape was missing required parameters. Try connecting again."
+msgstr "Onshape의 응답에 필수 매개변수가 없습니다. 다시 연결해 보세요."
+
 msgid "The revision number of the part"
 msgstr "품목의 리비전 번호"
 
@@ -13162,6 +13198,9 @@ msgstr "다음 작업에 이 작업장이 지정된 공정작업이 있습니다
 
 msgid "These journal entries are still Draft, so their debits and credits aren't in the ledger for this period. Post each one, or re-date it into a later open period."
 msgstr "이 분개들은 아직 임시이므로 그 차변과 대변이 이 기간의 총계정원장에 없습니다. 각각을 전기하거나 나중의 개방된 기간으로 재날짜하세요."
+
+msgid "This Carbon instance is missing its Onshape OAuth credentials. Ask an administrator to set them."
+msgstr "이 Carbon 인스턴스에 Onshape OAuth 자격 증명이 없습니다. 관리자에게 설정을 요청하세요."
 
 msgid "This change notice is being implemented, so its changes are locked. Reopen it to edit."
 msgstr "이 변경 사항은 구현 중이므로 변경 사항이 잠겨 있습니다. 편집하려면 다시 열어주세요."
