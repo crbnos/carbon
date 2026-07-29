@@ -1281,7 +1281,9 @@ export async function getMaterialDimensions(
     .or(`companyId.eq.${companyId},companyId.is.null`);
 
   if (args?.search) {
-    query = query.ilike("name", `%${args.search}%`);
+    query = query.or(
+      `name.ilike.%${args.search}%,formName.ilike.%${args.search}%,id.ilike.%${args.search}%`
+    );
   }
 
   if (args) {
@@ -1328,7 +1330,9 @@ export async function getMaterialFinishes(
     .or(`companyId.eq.${companyId},companyId.is.null`);
 
   if (args?.search) {
-    query = query.ilike("name", `%${args.search}%`);
+    query = query.or(
+      `name.ilike.%${args.search}%,substanceName.ilike.%${args.search}%,id.ilike.%${args.search}%`
+    );
   }
 
   if (args) {
@@ -1409,7 +1413,9 @@ export async function getMaterialGrades(
     .or(`companyId.eq.${companyId},companyId.is.null`);
 
   if (args?.search) {
-    query = query.ilike("name", `%${args.search}%`);
+    query = query.or(
+      `name.ilike.%${args.search}%,substanceName.ilike.%${args.search}%,id.ilike.%${args.search}%`
+    );
   }
 
   if (args) {
@@ -4690,7 +4696,9 @@ export async function getMaterialTypes(
     .or(`companyId.eq.${companyId},companyId.is.null`);
 
   if (args?.search) {
-    query = query.ilike("name", `%${args.search}%`);
+    query = query.or(
+      `name.ilike.%${args.search}%,substanceName.ilike.%${args.search}%,formName.ilike.%${args.search}%,id.ilike.%${args.search}%`
+    );
   }
 
   query = setGenericQueryFilters(query, args ?? {});
