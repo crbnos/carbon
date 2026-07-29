@@ -10038,6 +10038,9 @@ msgstr "ID da Cotação"
 msgid "Quote Line"
 msgstr "Linha de Cotação"
 
+msgid "Quote Lines"
+msgstr "Linhas de Cotação"
+
 msgid "Quote Location"
 msgstr "Localização da Cotação"
 
@@ -10064,6 +10067,9 @@ msgstr "Data da Cotação"
 
 msgid "Quotes"
 msgstr "Orçamentos"
+
+msgid "Quotes with Lines"
+msgstr "Cotações com Linhas"
 
 msgid "Quoting"
 msgstr "Cotação"

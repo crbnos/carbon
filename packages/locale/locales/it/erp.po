@@ -10038,6 +10038,9 @@ msgstr "ID Preventivo"
 msgid "Quote Line"
 msgstr "Riga di Preventivo"
 
+msgid "Quote Lines"
+msgstr "Righe Preventivo"
+
 msgid "Quote Location"
 msgstr "Ubicazione Preventivo"
 
@@ -10064,6 +10067,9 @@ msgstr "Data Quotata"
 
 msgid "Quotes"
 msgstr "Preventivi"
+
+msgid "Quotes with Lines"
+msgstr "Preventivi con Righe"
 
 msgid "Quoting"
 msgstr "Quotazione"

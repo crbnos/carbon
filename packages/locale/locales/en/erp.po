@@ -10038,6 +10038,9 @@ msgstr "Quote ID"
 msgid "Quote Line"
 msgstr "Quote Line"
 
+msgid "Quote Lines"
+msgstr "Quote Lines"
+
 msgid "Quote Location"
 msgstr "Quote Location"
 
@@ -10064,6 +10067,9 @@ msgstr "Quoted Date"
 
 msgid "Quotes"
 msgstr "Quotes"
+
+msgid "Quotes with Lines"
+msgstr "Quotes with Lines"
 
 msgid "Quoting"
 msgstr "Quoting"

@@ -4,6 +4,10 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { z } from "zod";
+import {
+  importQuotes,
+  isQuoteImportTable
+} from "~/modules/sales/sales.import.server";
 import { importCsv, importPermissions, importSchemas } from "~/modules/shared";
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -17,9 +21,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
     throw notFound("Table not found in the list of supported tables");
   }
 
-  const { companyId, userId } = await requirePermissions(request, {
-    update: importPermissions[table]
-  });
+  const { companyId, companyGroupId, userId } = await requirePermissions(
+    request,
+    {
+      update: importPermissions[table]
+    }
+  );
 
   const schema = importSchemas[table].extend({
     filePath: z.string().min(1, { message: "Path is required" }),
@@ -36,16 +43,32 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   const { filePath, enumMappings, ...columnMappings } = validation.data;
+  const parsedEnumMappings = enumMappings
+    ? JSON.parse(enumMappings as string)
+    : undefined;
 
   const serviceRole = getCarbonServiceRole();
-  const importResult = await importCsv(serviceRole, {
-    table,
-    filePath: filePath as string,
-    columnMappings,
-    enumMappings: enumMappings ? JSON.parse(enumMappings as string) : undefined,
-    companyId,
-    userId
-  });
+  // Quotes are created through the sales services (Option B) so quote side
+  // effects — opportunity, payment, shipment, external link — are preserved;
+  // all other tables run through the generic import-csv edge function.
+  const importResult = isQuoteImportTable(table)
+    ? await importQuotes(serviceRole, {
+        table,
+        filePath: filePath as string,
+        columnMappings: columnMappings as Record<string, string>,
+        enumMappings: parsedEnumMappings,
+        companyId,
+        companyGroupId,
+        userId
+      })
+    : await importCsv(serviceRole, {
+        table,
+        filePath: filePath as string,
+        columnMappings,
+        enumMappings: parsedEnumMappings,
+        companyId,
+        userId
+      });
 
   if (importResult.error) {
     return {

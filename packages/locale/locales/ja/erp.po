@@ -10038,6 +10038,9 @@ msgstr "見積ID"
 msgid "Quote Line"
 msgstr "見積行"
 
+msgid "Quote Lines"
+msgstr "見積明細"
+
 msgid "Quote Location"
 msgstr "見積もりロケーション"
 
@@ -10064,6 +10067,9 @@ msgstr "見積日"
 
 msgid "Quotes"
 msgstr "見積"
+
+msgid "Quotes with Lines"
+msgstr "見積明細付き"
 
 msgid "Quoting"
 msgstr "見積"

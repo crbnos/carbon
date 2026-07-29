@@ -54,6 +54,7 @@ pnpm --filter @carbon/erp test -- --testPathPattern=sales
 
 ## Key Service Functions
 
+- `importQuotes` (`sales.import.server.ts`) — app-side bulk CSV quote importer (modes `quote` / `quoteLine` / `quoteWithLines`); reuses `insertQuote` / `upsertQuoteLine` / `upsertQuoteLinePrices` so quote side effects are preserved. Wired from `routes/x+/shared+/import.$tableId.tsx`; config in `modules/shared/imports.models.ts`. Create-only idempotency via `externalIntegrationMapping` (integration `csv`).
 - `convertQuoteToOrder` / `convertSalesRfqToQuote` — lifecycle conversions via edge function
 - `copyQuoteLine` / `copyQuote` — duplication via `get-method` edge function
 - `applyPriceRules` — applies matched discount/markup rules to a starting price

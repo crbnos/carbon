@@ -10038,6 +10038,9 @@ msgstr "Teklif Kimliği"
 msgid "Quote Line"
 msgstr "Teklif Satırı"
 
+msgid "Quote Lines"
+msgstr "Teklif Satırları"
+
 msgid "Quote Location"
 msgstr "Teklif Konumu"
 
@@ -10064,6 +10067,9 @@ msgstr "Teklif Tarihi"
 
 msgid "Quotes"
 msgstr "Teklifler"
+
+msgid "Quotes with Lines"
+msgstr "Satırları Olan Teklifler"
 
 msgid "Quoting"
 msgstr "Teklif Verme"

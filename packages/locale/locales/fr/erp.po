@@ -10038,6 +10038,9 @@ msgstr "ID de devis"
 msgid "Quote Line"
 msgstr "Ligne de devis"
 
+msgid "Quote Lines"
+msgstr "Lignes de Devis"
+
 msgid "Quote Location"
 msgstr "Lieu du devis"
 
@@ -10064,6 +10067,9 @@ msgstr "Date de devis"
 
 msgid "Quotes"
 msgstr "Devis"
+
+msgid "Quotes with Lines"
+msgstr "Devis avec Lignes"
 
 msgid "Quoting"
 msgstr "Devis"

@@ -10038,6 +10038,9 @@ msgstr "ID предложения"
 msgid "Quote Line"
 msgstr "Строка предложения"
 
+msgid "Quote Lines"
+msgstr "Строки котировки"
+
 msgid "Quote Location"
 msgstr "Местоположение предложения"
 
@@ -10064,6 +10067,9 @@ msgstr "Дата предложения"
 
 msgid "Quotes"
 msgstr "Предложения"
+
+msgid "Quotes with Lines"
+msgstr "Котировки со строками"
 
 msgid "Quoting"
 msgstr "Котировка"

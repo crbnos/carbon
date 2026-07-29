@@ -10038,6 +10038,9 @@ msgstr "उद्धरण ID"
 msgid "Quote Line"
 msgstr "उद्धरण पंक्ति"
 
+msgid "Quote Lines"
+msgstr "उद्धरण पंक्तियाँ"
+
 msgid "Quote Location"
 msgstr "उद्धरण स्थान"
 
@@ -10064,6 +10067,9 @@ msgstr "उद्धृत तारीख"
 
 msgid "Quotes"
 msgstr "उद्धरण"
+
+msgid "Quotes with Lines"
+msgstr "पंक्तियों के साथ उद्धरण"
 
 msgid "Quoting"
 msgstr "उद्धरण"

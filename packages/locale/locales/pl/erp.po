@@ -10038,6 +10038,9 @@ msgstr "ID Oferty"
 msgid "Quote Line"
 msgstr "Linia oferty"
 
+msgid "Quote Lines"
+msgstr "Pozycje oferty"
+
 msgid "Quote Location"
 msgstr "Lokalizacja oferty"
 
@@ -10064,6 +10067,9 @@ msgstr "Data wyceny"
 
 msgid "Quotes"
 msgstr "Oferty"
+
+msgid "Quotes with Lines"
+msgstr "Oferty z pozycjami"
 
 msgid "Quoting"
 msgstr "Wycena"

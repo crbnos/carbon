@@ -10038,6 +10038,9 @@ msgstr "报价单ID"
 msgid "Quote Line"
 msgstr "报价行"
 
+msgid "Quote Lines"
+msgstr "报价行"
+
 msgid "Quote Location"
 msgstr "报价地点"
 
@@ -10064,6 +10067,9 @@ msgstr "报价日期"
 
 msgid "Quotes"
 msgstr "报价"
+
+msgid "Quotes with Lines"
+msgstr "有行的报价单"
 
 msgid "Quoting"
 msgstr "报价"
