@@ -43,14 +43,14 @@ import { usePermissions } from "~/hooks";
 import { getEmployeeShifts, getShiftsWithTimes } from "~/modules/people";
 import {
   getActiveEmployeeAbilities,
-  getCapacityReservationsForResources,
   getCrewAbsences,
   getCrewAbsencesRange,
   getCrewAssignments,
   getCrewAssignmentsRange,
   getCrewCapacityOperations,
   getCrewEmployees,
-  getWorkCenterRequiredAbilities
+  getWorkCenterRequiredAbilities,
+  getWorkCenterReservationsRange
 } from "~/modules/production";
 import { CrewBoard } from "~/modules/production/ui/Schedule/Crew/CrewBoard";
 import { CrewCapacity } from "~/modules/production/ui/Schedule/Crew/CrewCapacity";
@@ -241,8 +241,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
     // overdue open operations count toward a "Past due" bucket like the
     // classic capacity board's Past Weeks column
     const lookbackStart = weekStart.subtract({ days: 28 }).toString();
-    const workCenterIds = (workCenters.data ?? []).flatMap((workCenter) =>
-      workCenter.id ? [workCenter.id as string] : []
+    // reservation window in server-local time, matching the day bucketing below
+    const weekWindowStart = new Date(`${weekStartDate}T00:00:00`);
+    const weekWindowEnd = new Date(
+      new Date(`${weekEndDate}T00:00:00`).getTime() + 24 * HOUR_MS
     );
 
     const [
@@ -262,15 +264,16 @@ export async function loader({ request }: LoaderFunctionArgs) {
         endDate: weekEndDate
       }),
       getEmployeeShifts(client, companyId),
-      workCenterIds.length
-        ? getCrewCapacityOperations(client, companyId, {
-            workCenterIds,
-            startDate: lookbackStart,
-            endDate: weekEndDate
-          })
-        : Promise.resolve({ data: [], error: null }),
+      getCrewCapacityOperations(client, companyId, {
+        locationId,
+        startDate: lookbackStart,
+        endDate: weekEndDate
+      }),
       view === "capacity"
-        ? getCapacityReservationsForResources(client, companyId)
+        ? getWorkCenterReservationsRange(client, companyId, {
+            startAt: weekWindowStart.toISOString(),
+            endAt: weekWindowEnd.toISOString()
+          })
         : Promise.resolve({ data: [], error: null })
     ]);
 
@@ -307,14 +310,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       }
     }
 
-    const workCenterIdSet = new Set(workCenterIds);
     for (const reservation of reservations.data ?? []) {
-      if (
-        reservation.resourceKind !== "WorkCenter" ||
-        !workCenterIdSet.has(reservation.resourceId)
-      ) {
-        continue;
-      }
       const startMs = new Date(reservation.startAt).getTime();
       const endMs = new Date(reservation.endAt).getTime();
       const spanMs = endMs - startMs;

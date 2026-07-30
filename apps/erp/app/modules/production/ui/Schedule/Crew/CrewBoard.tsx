@@ -272,7 +272,9 @@ function CrewColumn({
   const { setNodeRef } = useSortable({
     id,
     data: { type: "column", column: { id, title } },
-    disabled: true
+    // draggable only — a boolean would ALSO disable the droppable, making
+    // empty columns dead drop targets (dnd-kit normalizes true to both)
+    disabled: { draggable: true, droppable: false }
   });
   const elementRef = useRef<HTMLDivElement | null>(null);
   const [isScrolled, setIsScrolled] = useState(false);

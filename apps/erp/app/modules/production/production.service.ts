@@ -3918,7 +3918,9 @@ export async function getCrewAssignmentsRange(
     .eq("companyId", companyId)
     .eq("locationId", args.locationId)
     .gte("date", args.startDate)
-    .lte("date", args.endDate);
+    .lte("date", args.endDate)
+    .order("date")
+    .order("shiftId", { nullsFirst: true });
 }
 
 export async function getCrewAbsencesRange(
@@ -3937,30 +3939,80 @@ export async function getCrewAbsencesRange(
 /**
  * Open job-operation hours per work center for the capacity view. Draft and
  * Planned jobs are excluded — only released (firm) work counts toward load,
- * matching the industry release-gating convention.
+ * matching the industry release-gating convention. Paginated — the default
+ * PostgREST max_rows (1000) would silently truncate a busy location.
  */
 export async function getCrewCapacityOperations(
   client: SupabaseClient<Database>,
   companyId: string,
-  args: { workCenterIds: string[]; startDate: string; endDate: string }
+  args: { locationId: string; startDate: string; endDate: string }
 ) {
-  return client
-    .from("jobOperation")
-    .select(
-      `id, workCenterId, dueDate, status, operationQuantity,
-       setupTime, setupUnit, laborTime, laborUnit, machineTime, machineUnit,
-       job!inner(status)`
-    )
-    .eq("companyId", companyId)
-    .in("workCenterId", args.workCenterIds)
-    .gte("dueDate", args.startDate)
-    .lte("dueDate", args.endDate)
-    .not("status", "in", '("Done","Canceled")')
-    .not(
-      "job.status",
-      "in",
-      '("Draft","Planned","Completed","Cancelled","Closed")'
-    );
+  return fetchAllFromTable<{
+    id: string;
+    workCenterId: string | null;
+    dueDate: string | null;
+    status: string;
+    operationQuantity: number | null;
+    setupTime: number;
+    setupUnit: string;
+    laborTime: number;
+    laborUnit: string;
+    machineTime: number;
+    machineUnit: string;
+  }>(
+    client,
+    "jobOperation",
+    `id, workCenterId, dueDate, status, operationQuantity,
+     setupTime, setupUnit, laborTime, laborUnit, machineTime, machineUnit,
+     job!inner(status, locationId)`,
+    (query) =>
+      query
+        .eq("companyId", companyId)
+        .eq("job.locationId", args.locationId)
+        .not("workCenterId", "is", null)
+        .gte("dueDate", args.startDate)
+        .lte("dueDate", args.endDate)
+        .not("status", "in", '("Done","Canceled")')
+        .not(
+          "job.status",
+          "in",
+          '("Draft","Planned","Completed","Cancelled","Closed")'
+        )
+        .order("id")
+  );
+}
+
+/**
+ * WorkCenter-kind reservations overlapping a window — the Capacity view's
+ * Scheduled series. Bounded by the window (not "recent only") so earlier days
+ * of the current week keep their completed bookings, filtered to WorkCenter
+ * rows server-side, and paginated past the PostgREST max_rows cap.
+ */
+export async function getWorkCenterReservationsRange(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: { startAt: string; endAt: string }
+) {
+  return fetchAllFromTable<{
+    id: string;
+    resourceId: string;
+    startAt: string;
+    endAt: string;
+    workHours: number | null;
+  }>(
+    client,
+    "capacityReservation",
+    `id, resourceId, startAt, endAt, workHours, job!inner(status)`,
+    (query) =>
+      query
+        .eq("companyId", companyId)
+        .eq("resourceKind", "WorkCenter")
+        .is("scenarioId", null)
+        .lt("startAt", args.endAt)
+        .gt("endAt", args.startAt)
+        .not("job.status", "in", '("Cancelled","Completed","Closed")')
+        .order("id")
+  );
 }
 
 export async function getCrewEmployees(

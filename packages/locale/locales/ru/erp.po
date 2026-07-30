@@ -98,7 +98,7 @@ msgstr "{0} значений отсутствует"
 
 #. placeholder {0}: formatHours(-delta)
 msgid "{0}h free"
-msgstr ""
+msgstr "{0}ч свободно"
 
 msgid "{apOverduePct}% of payables"
 msgstr "{apOverduePct}% кредиторской задолженности"
@@ -166,7 +166,7 @@ msgstr "↩ {0} перенаправлено из снятых с произво
 
 #. placeholder {0}: formatHours(delta)
 msgid "+{0}h"
-msgstr ""
+msgstr "+{0}ч"
 
 msgid "<0>Add a supplier part</0> for this item to set a preferred supplier."
 msgstr "<0>Добавьте компонент поставщика</0> для этого товара, чтобы установить предпочтительного поставщика."
@@ -406,7 +406,7 @@ msgid "About"
 msgstr "О программе"
 
 msgid "Absent"
-msgstr ""
+msgstr "Отсутствует"
 
 msgid "Absorption"
 msgstr "Абсорбция"
@@ -830,7 +830,7 @@ msgid "All Customers"
 msgstr "Все клиенты"
 
 msgid "All departments"
-msgstr ""
+msgstr "Все отделы"
 
 msgid "All Documents"
 msgstr "Все документы"
@@ -854,7 +854,7 @@ msgid "All rows imported — {inserted} inserted, {updated} updated."
 msgstr "Все строки импортированы — {inserted} вставлено, {updated} обновлено."
 
 msgid "All shifts"
-msgstr ""
+msgstr "Все смены"
 
 msgid "All Suppliers"
 msgstr "Все поставщики"
@@ -1564,7 +1564,7 @@ msgid "Assigned"
 msgstr "Назначено"
 
 msgid "Assigned / Needed people per station. Needed = job hours due that day ÷ {defaultShiftHours}h shift, rounded up. Red is short-staffed, green is covered, yellow is overstaffed."
-msgstr ""
+msgstr "Назначенные / требуемые люди по станциям. Требуемые = часы работ на день ÷ {defaultShiftHours}ч смена, округлено вверх. Красный = нехватка персонала, зеленый = укомплектовано, желтый = переукомплектовано."
 
 msgid "Assigned to Me"
 msgstr "Назначено мне"
@@ -1839,7 +1839,7 @@ msgid "Blocks save until resolved"
 msgstr "Блокирует сохранение до разрешения"
 
 msgid "Board"
-msgstr ""
+msgstr "Доска"
 
 msgid "BoM"
 msgstr "BoM"
@@ -2259,7 +2259,7 @@ msgid "Clear"
 msgstr "Очистить"
 
 msgid "Clear absence"
-msgstr ""
+msgstr "Очистить отсутствие"
 
 msgid "Clear due date"
 msgstr "Очистить срок выполнения"
@@ -2828,7 +2828,7 @@ msgid "Copy PIN"
 msgstr "Копировать PIN"
 
 msgid "Copy previous day"
-msgstr ""
+msgstr "Скопировать предыдущий день"
 
 msgid "Copy pricing to a single customer"
 msgstr "Копировать цены для одного клиента"
@@ -2983,7 +2983,7 @@ msgid "Country"
 msgstr "Страна"
 
 msgid "Coverage"
-msgstr ""
+msgstr "Покрытие"
 
 msgid "Create"
 msgstr "Создать"
@@ -3234,7 +3234,7 @@ msgid "Credits applied"
 msgstr "Применённые кредиты"
 
 msgid "Crew"
-msgstr ""
+msgstr "Экипаж"
 
 msgid "Critical"
 msgstr "Критический"
@@ -3995,7 +3995,7 @@ msgid "Demand"
 msgstr "Спрос"
 
 msgid "Demand = job hours due · Scheduled = work hours the scheduler placed · Available = assigned crew's shift hours (uncrewed stations use the location's shift calendar) · Load = hours over (+) or free"
-msgstr ""
+msgstr "Спрос = часы работ · Запланировано = часы работы размещены планировщиком · Доступно = часы смены назначенного экипажа (необслуживаемые станции используют календарь смен местоположения) · Нагрузка = часы переработки (+) или свободные"
 
 msgid "Demand forecast"
 msgstr "Прогноз спроса"
@@ -6081,7 +6081,7 @@ msgid "Host, secure, and back up the platform"
 msgstr "Размещение, защита и резервное копирование платформы"
 
 msgid "Hours"
-msgstr ""
+msgstr "Часы"
 
 msgid "Hours per Week"
 msgstr "Часов в неделю"
@@ -7040,7 +7040,7 @@ msgid "Live reloading"
 msgstr "Живая перезагрузка"
 
 msgid "Load"
-msgstr ""
+msgstr "Нагрузка"
 
 msgid "Load newer"
 msgstr "Загрузить новые"
@@ -7315,7 +7315,7 @@ msgid "Mark \"{0}\" as passed?"
 msgstr "Отметить \"{0}\" как пройденный?"
 
 msgid "Mark absent today"
-msgstr ""
+msgstr "Отметить отсутствие на сегодня"
 
 msgid "Mark all as configured"
 msgstr "Отметить все как настроенные"
@@ -7471,7 +7471,7 @@ msgid "Materials"
 msgstr "Материалы"
 
 msgid "Matrix"
-msgstr ""
+msgstr "Матрица"
 
 msgid "Max Qty"
 msgstr "Макс. кол-во"
@@ -7612,7 +7612,7 @@ msgid "Missing Suppliers"
 msgstr "Отсутствуют поставщики"
 
 msgid "Missing:"
-msgstr ""
+msgstr "Отсутствует:"
 
 msgid "Mobile Phone"
 msgstr "Мобильный телефон"
@@ -8067,7 +8067,7 @@ msgid "Next Date"
 msgstr "Следующая дата"
 
 msgid "Next Day"
-msgstr ""
+msgstr "Следующий день"
 
 msgid "Next Due"
 msgstr "Следующий срок"
@@ -8082,7 +8082,7 @@ msgid "Next step"
 msgstr "Следующий шаг"
 
 msgid "Next Week"
-msgstr ""
+msgstr "Следующая неделя"
 
 msgid "Next:"
 msgstr "Далее:"
@@ -8199,7 +8199,7 @@ msgid "No editable properties for this item."
 msgstr "Нет редактируемых свойств для этого элемента."
 
 msgid "No employees assigned this week"
-msgstr ""
+msgstr "На эту неделю не назначены сотрудники"
 
 msgid "No employees assigned yet. Add groups to see status."
 msgstr "Сотрудники еще не назначены. Добавьте группы, чтобы увидеть статус."
@@ -8496,7 +8496,7 @@ msgid "Off — released revisions stay editable"
 msgstr "Выключено — выпущенные версии остаются редактируемыми"
 
 msgid "ok"
-msgstr ""
+msgstr "хорошо"
 
 msgid "OK"
 msgstr "ОК"
@@ -8845,7 +8845,7 @@ msgid "Overhead Variance (default)"
 msgstr "Владелец (центр затрат)"
 
 msgid "overloaded"
-msgstr ""
+msgstr "перегружено"
 
 msgid "Override needs the inventory:update permission and a reason."
 msgstr "Переопределение требует разрешения inventory:update и причину."
@@ -8981,7 +8981,7 @@ msgid "Passed"
 msgstr "Пройдено"
 
 msgid "Past due"
-msgstr ""
+msgstr "Просрочено"
 
 msgid "Path"
 msgstr "Путь"
@@ -9362,13 +9362,13 @@ msgid "Previous Date"
 msgstr "Предыдущая дата"
 
 msgid "Previous Day"
-msgstr ""
+msgstr "Предыдущий день"
 
 msgid "Previous page"
 msgstr "Предыдущая страница"
 
 msgid "Previous Week"
-msgstr ""
+msgstr "Предыдущая неделя"
 
 msgid "Price break actions"
 msgstr "Действия ценовой скидки"
@@ -10195,7 +10195,7 @@ msgid "Remove from Price List"
 msgstr "Удалить из прайс-листа"
 
 msgid "Remove from station"
-msgstr ""
+msgstr "Удалить со станции"
 
 msgid "Remove item"
 msgstr "Удалить товар"
@@ -11132,7 +11132,7 @@ msgid "Serialize & sell your parts"
 msgstr "Сериализуйте и продавайте свои детали"
 
 msgid "Series"
-msgstr ""
+msgstr "Серия"
 
 msgid "service"
 msgstr "услуга"
@@ -13051,7 +13051,7 @@ msgid "Tie-Out unavailable"
 msgstr "Сверка недоступна"
 
 msgid "tight"
-msgstr ""
+msgstr "плотно"
 
 msgid "Tightened"
 msgstr "Ужесточенный"
@@ -14060,7 +14060,7 @@ msgid "Wednesday"
 msgstr "Среда"
 
 msgid "Week"
-msgstr ""
+msgstr "Неделя"
 
 #. placeholder {0}: d.week
 msgid "Week {0}"

@@ -159,7 +159,7 @@ msgid "Clear Search"
 msgstr "清除搜索"
 
 msgid "Clear station default"
-msgstr ""
+msgstr "清除工作站默认值"
 
 msgid "Clock In"
 msgstr "上班打卡"
@@ -1123,4 +1123,4 @@ msgstr "您已打卡上班 {hoursElapsed} 小时。您是否忘记打卡下班�
 
 #. placeholder {0}: crewStation.name
 msgid "Your station: {0}"
-msgstr ""
+msgstr "您的工作站：{0}"

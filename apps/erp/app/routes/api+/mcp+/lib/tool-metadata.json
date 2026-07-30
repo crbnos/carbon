@@ -1,6 +1,6 @@
 {
-  "generated": "2026-07-29T20:05:34.554Z",
-  "totalTools": 1400,
+  "generated": "2026-07-30T19:21:36.805Z",
+  "totalTools": 1401,
   "modules": 15,
   "tools": [
     {
@@ -21800,11 +21800,8 @@
       "schema": {
         "type": "object",
         "properties": {
-          "workCenterIds": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
+          "locationId": {
+            "type": "string"
           },
           "startDate": {
             "type": "string"
@@ -21814,9 +21811,39 @@
           }
         },
         "required": [
-          "workCenterIds",
+          "locationId",
           "startDate",
           "endDate"
+        ]
+      }
+    },
+    {
+      "name": "production_getWorkCenterReservationsRange",
+      "module": "production",
+      "classification": "READ",
+      "description": "get work center reservations range",
+      "paramCount": 2,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "startAt": {
+            "type": "string"
+          },
+          "endAt": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "startAt",
+          "endAt"
         ]
       }
     },

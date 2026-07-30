@@ -159,7 +159,7 @@ msgid "Clear Search"
 msgstr "Очистить поиск"
 
 msgid "Clear station default"
-msgstr ""
+msgstr "Очистить станцию по умолчанию"
 
 msgid "Clock In"
 msgstr "Отметить приход"
@@ -1123,4 +1123,4 @@ msgstr "Вы на смене уже {hoursElapsed} часов. Вы забыли
 
 #. placeholder {0}: crewStation.name
 msgid "Your station: {0}"
-msgstr ""
+msgstr "Ваша станция: {0}"

@@ -159,7 +159,7 @@ msgid "Clear Search"
 msgstr "Suche löschen"
 
 msgid "Clear station default"
-msgstr ""
+msgstr "Standardstation löschen"
 
 msgid "Clock In"
 msgstr "Einstempeln"
@@ -1123,4 +1123,4 @@ msgstr "Sie sind seit {hoursElapsed} Stunden eingestempelt. Haben Sie vergessen 
 
 #. placeholder {0}: crewStation.name
 msgid "Your station: {0}"
-msgstr ""
+msgstr "Ihre Station: {0}"

@@ -159,7 +159,7 @@ msgid "Clear Search"
 msgstr "검색 지우기"
 
 msgid "Clear station default"
-msgstr ""
+msgstr "스테이션 기본값 초기화"
 
 msgid "Clock In"
 msgstr "출근"
@@ -1123,4 +1123,4 @@ msgstr "{hoursElapsed}시간 동안 출근 상태입니다. 퇴근 처리를 잊
 
 #. placeholder {0}: crewStation.name
 msgid "Your station: {0}"
-msgstr ""
+msgstr "당신의 스테이션: {0}"

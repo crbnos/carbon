@@ -43,6 +43,7 @@ type MatrixWorkCenter = {
 };
 
 type MatrixAssignment = {
+  id: string;
   employeeId: string;
   workCenterId: string;
   date: string;
@@ -113,15 +114,19 @@ export function CrewMatrix({
     [assignments, shiftId]
   );
 
-  const assignmentByEmployeeDate = useMemo(() => {
-    const map = new Map<string, Map<string, MatrixAssignment>>();
+  // a person can legally hold one assignment PER SHIFT on the same date —
+  // keep them all (the unique index is per employee/date/shift)
+  const assignmentsByEmployeeDate = useMemo(() => {
+    const map = new Map<string, Map<string, MatrixAssignment[]>>();
     for (const assignment of visibleAssignments) {
       let byDate = map.get(assignment.employeeId);
       if (!byDate) {
         byDate = new Map();
         map.set(assignment.employeeId, byDate);
       }
-      byDate.set(assignment.date, assignment);
+      const list = byDate.get(assignment.date);
+      if (list) list.push(assignment);
+      else byDate.set(assignment.date, [assignment]);
     }
     return map;
   }, [visibleAssignments]);
@@ -151,16 +156,16 @@ export function CrewMatrix({
     );
     if (departmentId === "all") return sorted;
     return sorted.filter((employee) => {
-      const byDate = assignmentByEmployeeDate.get(employee.id);
+      const byDate = assignmentsByEmployeeDate.get(employee.id);
       if (!byDate) return false;
-      return [...byDate.values()].some((a) =>
-        filteredWorkCenterIds.has(a.workCenterId)
+      return [...byDate.values()].some((list) =>
+        list.some((a) => filteredWorkCenterIds.has(a.workCenterId))
       );
     });
   }, [
     employees,
     departmentId,
-    assignmentByEmployeeDate,
+    assignmentsByEmployeeDate,
     filteredWorkCenterIds
   ]);
 
@@ -281,16 +286,15 @@ export function CrewMatrix({
                 </Tr>
               )}
               {rows.map((employee) => {
-                const byDate = assignmentByEmployeeDate.get(employee.id);
+                const byDate = assignmentsByEmployeeDate.get(employee.id);
                 let assignedHours = 0;
                 const cells = weekDates.map((date) => {
                   const absent = absentSet.has(`${employee.id}:${date}`);
-                  const assignment = byDate?.get(date);
-                  const workCenter = assignment
-                    ? workCenterById.get(assignment.workCenterId)
-                    : undefined;
-                  if (!absent && assignment) {
-                    assignedHours += assignmentHours(assignment);
+                  const dayAssignments = byDate?.get(date) ?? [];
+                  if (!absent) {
+                    for (const assignment of dayAssignments) {
+                      assignedHours += assignmentHours(assignment);
+                    }
                   }
                   return (
                     <Td
@@ -309,14 +313,26 @@ export function CrewMatrix({
                         >
                           <Trans>Absent</Trans>
                         </span>
-                      ) : workCenter ? (
-                        <span
-                          className={cn(
-                            CHIP_BASE,
-                            chipClassByWorkCenter.get(workCenter.id)
-                          )}
-                        >
-                          {workCenter.name}
+                      ) : dayAssignments.length > 0 ? (
+                        <span className="inline-flex flex-col items-center gap-1">
+                          {dayAssignments.map((assignment) => {
+                            const workCenter = workCenterById.get(
+                              assignment.workCenterId
+                            );
+                            return (
+                              <span
+                                key={assignment.id}
+                                className={cn(
+                                  CHIP_BASE,
+                                  chipClassByWorkCenter.get(
+                                    assignment.workCenterId
+                                  )
+                                )}
+                              >
+                                {workCenter?.name ?? assignment.workCenterId}
+                              </span>
+                            );
+                          })}
                         </span>
                       ) : (
                         <span className="text-muted-foreground/50">—</span>

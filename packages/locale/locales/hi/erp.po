@@ -98,7 +98,7 @@ msgstr "{0} मान गायब हैं"
 
 #. placeholder {0}: formatHours(-delta)
 msgid "{0}h free"
-msgstr ""
+msgstr "{0}घंटे मुक्त"
 
 msgid "{apOverduePct}% of payables"
 msgstr "{apOverduePct}% देय राशि का"
@@ -166,7 +166,7 @@ msgstr "↩ {0} अप्रचलित {1} से पुनर्निर्�
 
 #. placeholder {0}: formatHours(delta)
 msgid "+{0}h"
-msgstr ""
+msgstr "+{0}घंटे"
 
 msgid "<0>Add a supplier part</0> for this item to set a preferred supplier."
 msgstr "<0>इस आइटम के लिए एक आपूर्तिकर्ता भाग जोड़ें</0> एक पसंदीदा आपूर्तिकर्ता सेट करने के लिए।"
@@ -406,7 +406,7 @@ msgid "About"
 msgstr "के बारे में"
 
 msgid "Absent"
-msgstr ""
+msgstr "अनुपस्थित"
 
 msgid "Absorption"
 msgstr "अवशोषण"
@@ -830,7 +830,7 @@ msgid "All Customers"
 msgstr "सभी ग्राहक"
 
 msgid "All departments"
-msgstr ""
+msgstr "सभी विभाग"
 
 msgid "All Documents"
 msgstr "सभी दस्तावेज़"
@@ -854,7 +854,7 @@ msgid "All rows imported — {inserted} inserted, {updated} updated."
 msgstr "सभी पंक्तियाँ आयात की गईं — {inserted} डाली गईं, {updated} अपडेट की गईं।"
 
 msgid "All shifts"
-msgstr ""
+msgstr "सभी पारियां"
 
 msgid "All Suppliers"
 msgstr "सभी आपूर्तिकर्ता"
@@ -1564,7 +1564,7 @@ msgid "Assigned"
 msgstr "नियुक्त"
 
 msgid "Assigned / Needed people per station. Needed = job hours due that day ÷ {defaultShiftHours}h shift, rounded up. Red is short-staffed, green is covered, yellow is overstaffed."
-msgstr ""
+msgstr "प्रति स्टेशन नियुक्त / आवश्यक लोग। आवश्यक = उस दिन के कार्य घंटे ÷ {defaultShiftHours}घंटे की पारी, पूर्णांकित। लाल = कर्मचारियों की कमी, हरा = कवर किया गया, पीला = अतिरिक्त कर्मचारी।"
 
 msgid "Assigned to Me"
 msgstr "मुझे असाइन किया गया"
@@ -1839,7 +1839,7 @@ msgid "Blocks save until resolved"
 msgstr "सहेजने को तब तक ब्लॉक करता है जब तक समाधान न हो जाए"
 
 msgid "Board"
-msgstr ""
+msgstr "बोर्ड"
 
 msgid "BoM"
 msgstr "BoM"
@@ -2259,7 +2259,7 @@ msgid "Clear"
 msgstr "साफ़ करें"
 
 msgid "Clear absence"
-msgstr ""
+msgstr "अनुपस्थिति स्पष्ट करें"
 
 msgid "Clear due date"
 msgstr "देय तारीख साफ़ करें"
@@ -2828,7 +2828,7 @@ msgid "Copy PIN"
 msgstr "PIN कॉपी करें"
 
 msgid "Copy previous day"
-msgstr ""
+msgstr "पिछले दिन से कॉपी करें"
 
 msgid "Copy pricing to a single customer"
 msgstr "एक ग्राहक को मूल्य निर्धारण कॉपी करें"
@@ -2983,7 +2983,7 @@ msgid "Country"
 msgstr "देश"
 
 msgid "Coverage"
-msgstr ""
+msgstr "कवरेज"
 
 msgid "Create"
 msgstr "बनाएं"
@@ -3234,7 +3234,7 @@ msgid "Credits applied"
 msgstr "क्रेडिट लागू किए गए"
 
 msgid "Crew"
-msgstr ""
+msgstr "दल"
 
 msgid "Critical"
 msgstr "महत्वपूर्ण"
@@ -3995,7 +3995,7 @@ msgid "Demand"
 msgstr "मांग"
 
 msgid "Demand = job hours due · Scheduled = work hours the scheduler placed · Available = assigned crew's shift hours (uncrewed stations use the location's shift calendar) · Load = hours over (+) or free"
-msgstr ""
+msgstr "मांग = देय कार्य घंटे · निर्धारित = शेड्यूलर द्वारा रखे गए कार्य घंटे · उपलब्ध = नियुक्त दल की पारी घंटे (बिना दल वाले स्टेशन स्थान की पारी कैलेंडर का उपयोग करते हैं) · भार = घंटे अधिक (+) या मुक्त"
 
 msgid "Demand forecast"
 msgstr "मांग पूर्वानुमान"
@@ -6081,7 +6081,7 @@ msgid "Host, secure, and back up the platform"
 msgstr "प्लेटफॉर्म को होस्ट करें, सुरक्षित रखें और बैकअप लें"
 
 msgid "Hours"
-msgstr ""
+msgstr "घंटे"
 
 msgid "Hours per Week"
 msgstr "सप्ताह में घंटे"
@@ -7040,7 +7040,7 @@ msgid "Live reloading"
 msgstr "लाइव रीलोडिंग"
 
 msgid "Load"
-msgstr ""
+msgstr "भार"
 
 msgid "Load newer"
 msgstr "नया लोड करें"
@@ -7315,7 +7315,7 @@ msgid "Mark \"{0}\" as passed?"
 msgstr "\"{0}\" को पास के रूप में चिह्नित करें?"
 
 msgid "Mark absent today"
-msgstr ""
+msgstr "आज अनुपस्थित चिह्नित करें"
 
 msgid "Mark all as configured"
 msgstr "सभी को कॉन्फ़िगर किए गए के रूप में चिह्नित करें"
@@ -7471,7 +7471,7 @@ msgid "Materials"
 msgstr "सामग्री"
 
 msgid "Matrix"
-msgstr ""
+msgstr "मैट्रिक्स"
 
 msgid "Max Qty"
 msgstr "अधिकतम मात्रा"
@@ -7612,7 +7612,7 @@ msgid "Missing Suppliers"
 msgstr "आपूर्तिकर्ता गायब हैं"
 
 msgid "Missing:"
-msgstr ""
+msgstr "लापता:"
 
 msgid "Mobile Phone"
 msgstr "मोबाइल फोन"
@@ -8067,7 +8067,7 @@ msgid "Next Date"
 msgstr "अगली तारीख"
 
 msgid "Next Day"
-msgstr ""
+msgstr "अगला दिन"
 
 msgid "Next Due"
 msgstr "अगला देय"
@@ -8082,7 +8082,7 @@ msgid "Next step"
 msgstr "अगला कदम"
 
 msgid "Next Week"
-msgstr ""
+msgstr "अगला सप्ताह"
 
 msgid "Next:"
 msgstr "अगला:"
@@ -8199,7 +8199,7 @@ msgid "No editable properties for this item."
 msgstr "इस आइटम के लिए कोई संपादन योग्य गुण नहीं।"
 
 msgid "No employees assigned this week"
-msgstr ""
+msgstr "इस सप्ताह कोई कर्मचारी निर्धारित नहीं"
 
 msgid "No employees assigned yet. Add groups to see status."
 msgstr "अभी तक कोई कर्मचारी असाइन नहीं किया गया है। स्थिति देखने के लिए समूह जोड़ें।"
@@ -8496,7 +8496,7 @@ msgid "Off — released revisions stay editable"
 msgstr "बंद — जारी किए गए संशोधन संपादन योग्य रहते हैं"
 
 msgid "ok"
-msgstr ""
+msgstr "ठीक"
 
 msgid "OK"
 msgstr "ठीक है"
@@ -8845,7 +8845,7 @@ msgid "Overhead Variance (default)"
 msgstr "स्वामी (लागत केंद्र)"
 
 msgid "overloaded"
-msgstr ""
+msgstr "अधिभारित"
 
 msgid "Override needs the inventory:update permission and a reason."
 msgstr "ओवरराइड के लिए inventory:update अनुमति और एक कारण की आवश्यकता है।"
@@ -8981,7 +8981,7 @@ msgid "Passed"
 msgstr "पास किया गया"
 
 msgid "Past due"
-msgstr ""
+msgstr "अतिदेय"
 
 msgid "Path"
 msgstr "पथ"
@@ -9362,13 +9362,13 @@ msgid "Previous Date"
 msgstr "पिछली तारीख"
 
 msgid "Previous Day"
-msgstr ""
+msgstr "पिछला दिन"
 
 msgid "Previous page"
 msgstr "पिछला पृष्ठ"
 
 msgid "Previous Week"
-msgstr ""
+msgstr "पिछला सप्ताह"
 
 msgid "Price break actions"
 msgstr "मूल्य विराम क्रियाएं"
@@ -10195,7 +10195,7 @@ msgid "Remove from Price List"
 msgstr "मूल्य सूची से हटाएं"
 
 msgid "Remove from station"
-msgstr ""
+msgstr "स्टेशन से हटाएं"
 
 msgid "Remove item"
 msgstr "आइटम हटाएं"
@@ -11132,7 +11132,7 @@ msgid "Serialize & sell your parts"
 msgstr "अपने पार्ट्स को सीरियलाइज़ करें और बेचें"
 
 msgid "Series"
-msgstr ""
+msgstr "श्रृंखला"
 
 msgid "service"
 msgstr "सेवा"
@@ -13051,7 +13051,7 @@ msgid "Tie-Out unavailable"
 msgstr "Tie-Out उपलब्ध नहीं है"
 
 msgid "tight"
-msgstr ""
+msgstr "तंग"
 
 msgid "Tightened"
 msgstr "कड़ा"
@@ -14060,7 +14060,7 @@ msgid "Wednesday"
 msgstr "बुधवार"
 
 msgid "Week"
-msgstr ""
+msgstr "सप्ताह"
 
 #. placeholder {0}: d.week
 msgid "Week {0}"

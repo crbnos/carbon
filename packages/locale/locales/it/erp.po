@@ -98,7 +98,7 @@ msgstr "{0} valori mancanti"
 
 #. placeholder {0}: formatHours(-delta)
 msgid "{0}h free"
-msgstr ""
+msgstr "{0}h libere"
 
 msgid "{apOverduePct}% of payables"
 msgstr "{apOverduePct}% dei debiti"
@@ -166,7 +166,7 @@ msgstr "↩ {0} reindirizzato da {1} obsoleto"
 
 #. placeholder {0}: formatHours(delta)
 msgid "+{0}h"
-msgstr ""
+msgstr "+{0}h"
 
 msgid "<0>Add a supplier part</0> for this item to set a preferred supplier."
 msgstr "<0>Aggiungi una parte fornitore</0> per questo articolo per impostare un fornitore preferito."
@@ -406,7 +406,7 @@ msgid "About"
 msgstr "Informazioni"
 
 msgid "Absent"
-msgstr ""
+msgstr "Assente"
 
 msgid "Absorption"
 msgstr "Assorbimento"
@@ -830,7 +830,7 @@ msgid "All Customers"
 msgstr "Tutti i clienti"
 
 msgid "All departments"
-msgstr ""
+msgstr "Tutti i reparti"
 
 msgid "All Documents"
 msgstr "Tutti i documenti"
@@ -854,7 +854,7 @@ msgid "All rows imported — {inserted} inserted, {updated} updated."
 msgstr "Tutte le righe importate — {inserted} inserite, {updated} aggiornate."
 
 msgid "All shifts"
-msgstr ""
+msgstr "Tutti i turni"
 
 msgid "All Suppliers"
 msgstr "Tutti i fornitori"
@@ -1564,7 +1564,7 @@ msgid "Assigned"
 msgstr "Assegnato"
 
 msgid "Assigned / Needed people per station. Needed = job hours due that day ÷ {defaultShiftHours}h shift, rounded up. Red is short-staffed, green is covered, yellow is overstaffed."
-msgstr ""
+msgstr "Persone assegnate / Necessarie per stazione. Necessarie = ore di lavoro dovute quel giorno ÷ turno di {defaultShiftHours}h, arrotondato per eccesso. Rosso = insufficiente, verde = coperto, giallo = eccedentario."
 
 msgid "Assigned to Me"
 msgstr "Assegnato a me"
@@ -1839,7 +1839,7 @@ msgid "Blocks save until resolved"
 msgstr "Blocca il salvataggio fino alla risoluzione"
 
 msgid "Board"
-msgstr ""
+msgstr "Lavagna"
 
 msgid "BoM"
 msgstr "BoM"
@@ -2259,7 +2259,7 @@ msgid "Clear"
 msgstr "Cancella"
 
 msgid "Clear absence"
-msgstr ""
+msgstr "Cancella assenza"
 
 msgid "Clear due date"
 msgstr "Cancella data di scadenza"
@@ -2828,7 +2828,7 @@ msgid "Copy PIN"
 msgstr "Copia PIN"
 
 msgid "Copy previous day"
-msgstr ""
+msgstr "Copia giorno precedente"
 
 msgid "Copy pricing to a single customer"
 msgstr "Copia i prezzi a un singolo cliente"
@@ -2983,7 +2983,7 @@ msgid "Country"
 msgstr "Paese"
 
 msgid "Coverage"
-msgstr ""
+msgstr "Copertura"
 
 msgid "Create"
 msgstr "Crea"
@@ -3234,7 +3234,7 @@ msgid "Credits applied"
 msgstr "Crediti applicati"
 
 msgid "Crew"
-msgstr ""
+msgstr "Equipaggio"
 
 msgid "Critical"
 msgstr "Critico"
@@ -3995,7 +3995,7 @@ msgid "Demand"
 msgstr "Domanda"
 
 msgid "Demand = job hours due · Scheduled = work hours the scheduler placed · Available = assigned crew's shift hours (uncrewed stations use the location's shift calendar) · Load = hours over (+) or free"
-msgstr ""
+msgstr "Richiesta = ore di lavoro dovute · Pianificato = ore di lavoro che lo scheduler ha assegnato · Disponibile = ore di turno dell'equipaggio assegnato (le stazioni senza equipaggio utilizzano il calendario dei turni della location) · Carico = ore in eccesso (+) o libere"
 
 msgid "Demand forecast"
 msgstr "Previsione della Domanda"
@@ -6081,7 +6081,7 @@ msgid "Host, secure, and back up the platform"
 msgstr "Ospitare, proteggere e eseguire il backup della piattaforma"
 
 msgid "Hours"
-msgstr ""
+msgstr "Ore"
 
 msgid "Hours per Week"
 msgstr "Ore per Settimana"
@@ -7040,7 +7040,7 @@ msgid "Live reloading"
 msgstr "Ricaricamento in tempo reale"
 
 msgid "Load"
-msgstr ""
+msgstr "Carico"
 
 msgid "Load newer"
 msgstr "Carica più recenti"
@@ -7315,7 +7315,7 @@ msgid "Mark \"{0}\" as passed?"
 msgstr "Contrassegna \"{0}\" come superato?"
 
 msgid "Mark absent today"
-msgstr ""
+msgstr "Marca come assente oggi"
 
 msgid "Mark all as configured"
 msgstr "Segna tutto come configurato"
@@ -7471,7 +7471,7 @@ msgid "Materials"
 msgstr "Materiali"
 
 msgid "Matrix"
-msgstr ""
+msgstr "Matrice"
 
 msgid "Max Qty"
 msgstr "Qtà Max"
@@ -7612,7 +7612,7 @@ msgid "Missing Suppliers"
 msgstr "Fornitori Mancanti"
 
 msgid "Missing:"
-msgstr ""
+msgstr "Mancanti:"
 
 msgid "Mobile Phone"
 msgstr "Telefono Mobile"
@@ -8067,7 +8067,7 @@ msgid "Next Date"
 msgstr "Data successiva"
 
 msgid "Next Day"
-msgstr ""
+msgstr "Prossimo giorno"
 
 msgid "Next Due"
 msgstr "Prossima Scadenza"
@@ -8082,7 +8082,7 @@ msgid "Next step"
 msgstr "Passaggio successivo"
 
 msgid "Next Week"
-msgstr ""
+msgstr "Prossima settimana"
 
 msgid "Next:"
 msgstr "Successivo:"
@@ -8199,7 +8199,7 @@ msgid "No editable properties for this item."
 msgstr "Nessuna proprietà modificabile per questo elemento."
 
 msgid "No employees assigned this week"
-msgstr ""
+msgstr "Nessun dipendente assegnato questa settimana"
 
 msgid "No employees assigned yet. Add groups to see status."
 msgstr "Nessun dipendente assegnato ancora. Aggiungi gruppi per visualizzare lo stato."
@@ -8496,7 +8496,7 @@ msgid "Off — released revisions stay editable"
 msgstr "Disattivato — le revisioni rilasciate rimangono modificabili"
 
 msgid "ok"
-msgstr ""
+msgstr "ok"
 
 msgid "OK"
 msgstr "OK"
@@ -8845,7 +8845,7 @@ msgid "Overhead Variance (default)"
 msgstr "Proprietario (centro di costo)"
 
 msgid "overloaded"
-msgstr ""
+msgstr "sovraccarico"
 
 msgid "Override needs the inventory:update permission and a reason."
 msgstr "L'override richiede l'autorizzazione inventory:update e una motivazione."
@@ -8981,7 +8981,7 @@ msgid "Passed"
 msgstr "Superato"
 
 msgid "Past due"
-msgstr ""
+msgstr "Scaduto"
 
 msgid "Path"
 msgstr "Percorso"
@@ -9362,13 +9362,13 @@ msgid "Previous Date"
 msgstr "Data precedente"
 
 msgid "Previous Day"
-msgstr ""
+msgstr "Giorno precedente"
 
 msgid "Previous page"
 msgstr "Pagina precedente"
 
 msgid "Previous Week"
-msgstr ""
+msgstr "Settimana precedente"
 
 msgid "Price break actions"
 msgstr "Azioni di scaglione di prezzo"
@@ -10195,7 +10195,7 @@ msgid "Remove from Price List"
 msgstr "Rimuovi da Listino Prezzi"
 
 msgid "Remove from station"
-msgstr ""
+msgstr "Rimuovi dalla stazione"
 
 msgid "Remove item"
 msgstr "Rimuovi elemento"
@@ -11132,7 +11132,7 @@ msgid "Serialize & sell your parts"
 msgstr "Serializza e vendi i tuoi articoli"
 
 msgid "Series"
-msgstr ""
+msgstr "Serie"
 
 msgid "service"
 msgstr "servizio"
@@ -13051,7 +13051,7 @@ msgid "Tie-Out unavailable"
 msgstr "Riconciliazione non disponibile"
 
 msgid "tight"
-msgstr ""
+msgstr "stretto"
 
 msgid "Tightened"
 msgstr "Stretto"
@@ -14060,7 +14060,7 @@ msgid "Wednesday"
 msgstr "Mercoledì"
 
 msgid "Week"
-msgstr ""
+msgstr "Settimana"
 
 #. placeholder {0}: d.week
 msgid "Week {0}"

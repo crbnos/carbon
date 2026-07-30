@@ -159,7 +159,7 @@ msgid "Clear Search"
 msgstr "Effacer la recherche"
 
 msgid "Clear station default"
-msgstr ""
+msgstr "Effacer la station par défaut"
 
 msgid "Clock In"
 msgstr "Pointer l'entrée"
@@ -1123,4 +1123,4 @@ msgstr "Vous êtes pointé depuis {hoursElapsed} heures. Avez-vous oublié de po
 
 #. placeholder {0}: crewStation.name
 msgid "Your station: {0}"
-msgstr ""
+msgstr "Votre station : {0}"
