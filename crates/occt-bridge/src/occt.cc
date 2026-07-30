@@ -11,8 +11,10 @@
 #include <cstdio>
 #include <cstdlib>
 #include <BinXCAFDrivers.hxx>
+#include <BRepAlgoAPI_Cut.hxx>
 #include <BRepMesh_IncrementalMesh.hxx>
 #include <BRepPrimAPI_MakeBox.hxx>
+#include <BRepPrimAPI_MakeCylinder.hxx>
 #include <BRep_Builder.hxx>
 #include <BRep_Tool.hxx>
 #include <Bnd_Box.hxx>
@@ -133,9 +135,26 @@ static bool mesh_parallel() {
   return v;
 }
 
+// The caller's linear deflection is an ABSOLUTE sag in mm, sized for typical
+// parts — on a small part the same 0.1 mm sag leaves a curved face with only a
+// handful of facets. Scale it to the shape: 0.05% of the bbox diagonal, never
+// coarser than requested, floored at 5% of the request so a tiny part can't
+// demand micron-level meshes.
+static double adaptive_deflection(const TopoDS_Shape &shape, double lin) {
+  Bnd_Box box;
+  BRepBndLib::Add(shape, box);
+  if (box.IsVoid()) return lin;
+  Standard_Real x0, y0, z0, x1, y1, z1;
+  box.Get(x0, y0, z0, x1, y1, z1);
+  const double dx = x1 - x0, dy = y1 - y0, dz = z1 - z0;
+  const double diag = std::sqrt(dx * dx + dy * dy + dz * dz);
+  return std::min(lin, std::max(diag * 5e-4, lin * 0.05));
+}
+
 static void tessellate(const TopoDS_Shape &shape, double lin, double ang,
                        std::vector<float> &verts, std::vector<uint32_t> &indices) {
-  BRepMesh_IncrementalMesh(shape, lin, Standard_False, ang,
+  BRepMesh_IncrementalMesh(shape, adaptive_deflection(shape, lin),
+                           Standard_False, ang,
                            mesh_parallel() ? Standard_True : Standard_False);
   uint32_t offset = 0;
   for (TopExp_Explorer exp(shape, TopAbs_FACE); exp.More(); exp.Next()) {
@@ -628,6 +647,55 @@ Tree read_xbf(rust::Str path, double linear_deflection, double angular_deflectio
 // compound, no assembly tree) — the flat multi-body export shape the split
 // path handles. Hermetic converter tests build their own STEP with this
 // instead of committing fixture files.
+bool write_test_cylinder(rust::Str path, double radius, double height) {
+  try {
+    ensure_step_init();
+    TopoDS_Shape shape = BRepPrimAPI_MakeCylinder(radius, height).Shape();
+    STEPControl_Writer writer;
+    if (writer.Transfer(shape, STEPControl_AsIs) != IFSelect_RetDone) {
+      return false;
+    }
+    std::string p(path);
+    return writer.Write(p.c_str()) == IFSelect_RetDone;
+  } catch (...) {
+    return false;
+  }
+}
+
+// Test fixture generator: a `size` x `size` x `thickness` plate with `holes`
+// through-holes of `hole_radius` drilled along X. The small-feature-in-a-big-
+// part case: the shape bbox is large (so the bbox-scaled linear deflection
+// stays coarse) while the drilled circles are tiny, which is exactly where the
+// segment count has to come from angular deflection rather than sag.
+bool write_test_plate_with_holes(rust::Str path, double size, double thickness,
+                                 double hole_radius, uint32_t holes) {
+  try {
+    ensure_step_init();
+    TopoDS_Shape shape =
+        BRepPrimAPI_MakeBox(gp_Pnt(0.0, 0.0, 0.0), size, size, thickness)
+            .Shape();
+    // Evenly spaced along the plate's mid-line, clear of the edges.
+    for (uint32_t i = 0; i < holes; ++i) {
+      const double x = size * (i + 1) / (holes + 1);
+      // Start below and run past the far face so the cut is a clean through-hole
+      // (a coincident face would leave a degenerate lid).
+      const gp_Ax2 axis(gp_Pnt(x, size / 2.0, -thickness),
+                        gp_Dir(0.0, 0.0, 1.0));
+      TopoDS_Shape drill =
+          BRepPrimAPI_MakeCylinder(axis, hole_radius, thickness * 3.0).Shape();
+      shape = BRepAlgoAPI_Cut(shape, drill).Shape();
+    }
+    STEPControl_Writer writer;
+    if (writer.Transfer(shape, STEPControl_AsIs) != IFSelect_RetDone) {
+      return false;
+    }
+    std::string p(path);
+    return writer.Write(p.c_str()) == IFSelect_RetDone;
+  } catch (...) {
+    return false;
+  }
+}
+
 bool write_test_step(rust::Str path, uint32_t boxes) {
   try {
     ensure_step_init();

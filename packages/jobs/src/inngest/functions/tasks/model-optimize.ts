@@ -3,10 +3,12 @@ import type { Json } from "@carbon/database";
 import { modelPathOptimizeFormat } from "@carbon/utils";
 import { inngest } from "../../client";
 import {
+  ASSEMBLER_CONCURRENCY,
   assemblerEnabled,
   internalizeStorageUrl,
   resolveModelSourceBucket,
-  runAssemblerJob
+  runAssemblerJob,
+  signSourceUrl
 } from "./assembler-client";
 
 const SIGNED_URL_EXPIRY = 60 * 60; // seconds — the source (read) URL only.
@@ -24,6 +26,13 @@ export const modelOptimizeFunction = inngest.createFunction(
   {
     id: "model-optimize",
     retries: 2,
+    concurrency: ASSEMBLER_CONCURRENCY,
+    // Collapse the viewer's per-view auto-fire: while one optimise for a model is
+    // in flight, duplicate triggers (repeated views, drag re-attach) are skipped
+    // rather than spawning redundant runs. A later Retry after it settles still
+    // runs (nothing in flight). The `alreadyOptimized` guard covers re-fires on an
+    // already-optimised model; this covers the in-flight duplicates.
+    singleton: { key: "event.data.modelUploadId", mode: "skip" },
     onFailure: async ({ event }) => {
       const { modelUploadId, companyId } = event.data.event.data;
       const client = getCarbonServiceRole();
@@ -45,10 +54,18 @@ export const modelOptimizeFunction = inngest.createFunction(
   { event: "carbon/model-optimize" },
   async ({ event, step, logger }) => {
     const { modelUploadId, companyId } = event.data;
+    const force = event.data.force === true;
 
     // Feature-gated: no assembler configured -> skip before touching the row,
     // so the viewer just serves the raw model tier (optimizeStatus stays null).
+    // Still fire model-compact: it relocates the raw from ephemeral staging to
+    // the durable bucket (no assembler needed for a plain relocation) so an
+    // assembler-off model isn't lost when staging is cleared.
     if (!assemblerEnabled()) {
+      await step.sendEvent("compact", {
+        name: "carbon/model-compact",
+        data: { modelUploadId, companyId }
+      });
       logger.info("model optimise skipped — assembler is not configured", {
         modelUploadId
       });
@@ -74,6 +91,7 @@ export const modelOptimizeFunction = inngest.createFunction(
       // client auto-fire, an errant retry — re-running the assembler on a model
       // that already has its GLB.
       if (
+        !force &&
         upload.data.optimizeStatus === "Success" &&
         upload.data.optimizedModelPath
       ) {
@@ -130,8 +148,15 @@ export const modelOptimizeFunction = inngest.createFunction(
     // Where the optimised GLB lands. The service late-mint uploads to this via a
     // signed URL minted fresh on each poll (below).
     const optimizedPath = `${companyId}/models/${modelUploadId}/optimized.glb`;
-    // Idempotent per model — a re-run attaches to the in-flight optimise.
-    const jobId = `optimize-${modelUploadId}`;
+    // Idempotent per model — a re-run attaches to the in-flight optimise. A
+    // FORCED regen must not: the assembler's job store keeps completed results
+    // (24h TTL), so the stable id would attach to the previous run's cached
+    // result and "finish" instantly. Salt the id with the triggering event so
+    // each forced regen is a fresh assembler job (retries of the same event
+    // keep the same id and still attach to their own in-flight run).
+    const jobId = force
+      ? `optimize-${modelUploadId}-${event.id ?? event.ts ?? "forced"}`
+      : `optimize-${modelUploadId}`;
 
     // Router: sync inline on Lambda (default when enabled) or async submit->poll
     // on the standing service / dev container. Sync off => today's async path.
@@ -144,18 +169,21 @@ export const modelOptimizeFunction = inngest.createFunction(
       buildBody: async () => {
         const client = getCarbonServiceRole();
         // Optimised artifacts are written to `private` (50 MB served cap) below.
-        const source = await client.storage
-          .from(model.sourceBucket)
-          .createSignedUrl(model.modelPath, SIGNED_URL_EXPIRY);
-        if (source.error) {
-          throw new Error(`Failed to sign source URL: ${source.error.message}`);
-        }
+        const signedUrl = await signSourceUrl(
+          client,
+          model.sourceBucket,
+          model.modelPath,
+          SIGNED_URL_EXPIRY
+        );
         return {
-          source: { url: internalizeStorageUrl(source.data.signedUrl), format },
+          source: { url: internalizeStorageUrl(signedUrl), format },
           output: { path: optimizedPath }
-          // quality omitted → the service defaults apply (codec meshopt, merge on,
-          // normal quant on, auto simplify tolerance, aggressive ladder to fit the
-          // size + render-weight gates).
+          // quality omitted → the service applies its size-adaptive policy: codec
+          // meshopt, merge on, normal quant on, and an auto simplify budget that
+          // scales with the model's tessellated weight (small models keep the
+          // baseline high-quality budget; large ones decimate harder, still
+          // error-bounded), then the ladder + size/render-weight gates as the
+          // final fit. Passing any explicit quality knob disables the scaling.
         };
       },
       mintUploadUrls: async () => {
@@ -203,6 +231,16 @@ export const modelOptimizeFunction = inngest.createFunction(
     await step.sendEvent("compact", {
       name: "carbon/model-compact",
       data: { modelUploadId, companyId }
+    });
+
+    // Generate the preview thumbnail now that the optimised GLB exists — the
+    // thumbnail renderer (/file/model/:id) draws only the assembler GLB, so
+    // firing this at upload time (before the GLB) always failed. Chaining it to
+    // optimise success means it has something to render, and a re-optimise
+    // (viewer Retry / regenerate) refreshes the thumbnail for free.
+    await step.sendEvent("thumbnail", {
+      name: "carbon/model-thumbnail",
+      data: { modelId: modelUploadId, companyId }
     });
 
     logger.info("model optimise finalized", { modelUploadId, stats });

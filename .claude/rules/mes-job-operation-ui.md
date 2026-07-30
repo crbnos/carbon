@@ -11,6 +11,13 @@ steps/parameters, files, serials, and scrap/rework/finish actions.
 
 ## Route & data flow
 
+Execution views are routed by `jobOperation.operationType` via
+`resolveOperationView` (`apps/mes/app/utils/operationView.ts`): `Assembly` →
+`/x/assembly/:id` (`AssemblyView`), `Inspection` → `/x/inspection/:id`
+(`components/Inspection/InspectionView`, see `inspection-system.md`), everything
+else → this operation view. Each route opens with a redirect guard that only
+redirects kinds it does not serve (no loops).
+
 - **Route:** `apps/mes/app/routes/x+/operation.$operationId.tsx` — `/x/operation/:operationId`.
 - **Loader** (uses `getCarbonServiceRole()`, not the user client) fetches via
   `~/services/operations.service`: `getJobOperationById`, `getJobByOperationId`,
@@ -48,7 +55,11 @@ steps/parameters, files, serials, and scrap/rework/finish actions.
   **mobile-only** job/customer/deadline info in a `md:hidden` block (the header hides
   that info on mobile).
 - **`components/Step.tsx`** — exports `StepsListItem`, **`RecordModal`**, and
-  **`DeleteStepRecordModal`** (these are NOT separate files).
+  **`DeleteStepRecordModal`** (these are NOT separate files). File/Inspection step
+  uploads go to the private bucket at
+  `{companyId}/job/{operationId}/{stepId}/{nanoid}/{sanitized filename}` — this
+  shape is a contract with `parseJobFilePath`
+  (`apps/erp/app/utils/supabase.ts`), which gates the customer-portal file route.
 - **`components/Parameter.tsx`** — exports `ParametersListItem`.
 - Modals/sections: `IssueMaterialModal`, `QuantityModal` (type `scrap`/`finish`),
   `ReworkModal`, `SerialSelectorModal`, `QualityIssueModal`, `MaintenanceDispatch`,

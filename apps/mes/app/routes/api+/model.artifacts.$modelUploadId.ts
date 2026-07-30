@@ -1,3 +1,4 @@
+import { ASSEMBLER_SERVICE_URL } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { LoaderFunctionArgs } from "react-router";
@@ -17,7 +18,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const model = await client
     .from("modelUpload")
     .select(
-      "size, originalSize, optimizedSize, optimizedModelPath, glbPath, thumbnailPath, optimizeStatus, modelPath"
+      "size, originalSize, optimizedSize, optimizedModelPath, glbPath, thumbnailPath, optimizeStatus, optimizedAt, modelPath, originalPath"
     )
     .eq("id", modelUploadId)
     .eq("companyId", companyId)
@@ -34,21 +35,45 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!model.data) throw new Response("Not found", { status: 404 });
 
   // Raw-source pointer for the viewer's WASM fallback tier (renders the original
-  // upload when no artifact exists). `.zst`-compacted raws are skipped — they
-  // only exist after a successful optimise, which means an artifact exists too.
-  // Bucket split: current uploads land in `temp-staging`; pre-assembler rows
-  // lived in `private` — probe temp-staging and fall back.
+  // upload when no artifact exists). Prefer the retained ORIGINAL (xbf-compacted
+  // rows keep the uploaded STEP at `originalPath` — the `.xbf.zst` itself isn't
+  // WASM-renderable); else the uncompacted `modelPath`. A retained raw is
+  // relocated to the DURABLE `private` bucket; a just-uploaded one is briefly in
+  // ephemeral `temp-staging` before relocation; a pruned one is in neither → no
+  // raw tier (rely on the GLB).
   let rawPath: string | null = null;
-  let rawBucket = "temp-staging";
+  let rawBucket = "private";
   const modelPath = model.data?.modelPath ?? null;
-  if (modelPath && !modelPath.toLowerCase().endsWith(".zst")) {
-    rawPath = modelPath;
-    const staged = await getCarbonServiceRole()
-      .storage.from("temp-staging")
-      .info(modelPath)
-      .catch(() => ({ data: null, error: true as const }));
-    if (staged.error || !staged.data) rawBucket = "private";
+  const rawCandidate =
+    model.data?.originalPath ??
+    (modelPath && !modelPath.toLowerCase().endsWith(".zst") ? modelPath : null);
+  const svc = getCarbonServiceRole();
+  const exists = async (path: string) => {
+    for (const bucket of ["private", "temp-staging"] as const) {
+      const info = await svc.storage
+        .from(bucket)
+        .info(path)
+        .catch(() => ({ data: null, error: true as const }));
+      if (!info.error && info.data) return bucket;
+    }
+    return null;
+  };
+  if (rawCandidate) {
+    const bucket = await exists(rawCandidate);
+    if (bucket) {
+      rawPath = rawCandidate;
+      rawBucket = bucket;
+    }
+    // Absent in both → pruned/gone; rawPath stays null (rely on the GLB).
   }
+  // Whether a reoptimise has a source to read: the `modelPath` object (an
+  // `.xbf.zst` counts — it re-tessellates). A pruned/dangling source means the
+  // refresh affordance would only ever fail — the client hides it.
+  const sourceAvailable = modelPath
+    ? rawCandidate === modelPath
+      ? rawPath !== null
+      : (await exists(modelPath)) !== null
+    : false;
 
   return {
     optimizedModelPath: model.data?.optimizedModelPath ?? null,
@@ -57,8 +82,16 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     thumbnailPath: model.data?.thumbnailPath ?? null,
     rawPath,
     rawBucket,
+    // Whether the optimiser is configured at all. When false, the viewer hides
+    // the "Optimize failed · Retry" affordance and never auto-fires an optimise.
+    optimizerAvailable: Boolean(ASSEMBLER_SERVICE_URL),
     optimizeStatus: model.data?.optimizeStatus ?? null,
     size: model.data?.originalSize ?? model.data?.size ?? null,
-    optimizedSize: model.data?.optimizedSize ?? null
+    optimizedSize: model.data?.optimizedSize ?? null,
+    // Cache-buster for the optimised GLB: it lives at a STABLE path behind an
+    // immutable-cached preview URL, so a re-optimise would otherwise keep
+    // serving the browser-cached old mesh.
+    optimizedAt: model.data?.optimizedAt ?? null,
+    sourceAvailable
   };
 }

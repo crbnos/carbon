@@ -9,7 +9,7 @@ export default function TrainingAssignmentPreview() {
       preview={"Training assigned to you"}
       message={'Training "Anti-Bribery" assigned to you'}
       reference={"Anti-Bribery"}
-      recipientName={"Naveen"}
+      recipientName={"John Doe"}
       ctaLabel={"View details"}
       ctaUrl={"https://app.carbon.ms/x/training/1"}
       details={[

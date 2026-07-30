@@ -126,6 +126,7 @@ export default function MaterialRoute() {
                           salesOrderLines,
                           shipmentLines,
                           supplierQuotes,
+                          inspections,
                           jobMaterialUsage
                         } = resolvedUsedIn;
 
@@ -205,6 +206,13 @@ export default function MaterialRoute() {
                             children: supplierQuotes
                           }
                         ];
+
+                        tree.push({
+                          key: "inspections",
+                          name: "Inspections",
+                          module: "quality",
+                          children: inspections
+                        });
 
                         return (
                           <UsedInTree

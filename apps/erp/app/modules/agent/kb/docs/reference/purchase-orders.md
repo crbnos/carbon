@@ -24,6 +24,7 @@ The status is computed from the state of its lines, never set by hand.
 
   - **Draft**: Being built.
   - **Planned**: Suggested by planning.
+  - **To Review**: A planning-suggested order awaiting review before it's sent.
   - **Needs Approval**: Held for sign-off (amount-gated); rejection lands on *Rejected*.
   - **To Receive and Invoice**: Confirmed; nothing received or billed yet.
   - **To Receive**: Fully invoiced, still owes receipt.

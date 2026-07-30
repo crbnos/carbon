@@ -24,7 +24,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   // Release-lock gate: block edits to a released (Production) revision unless a
-  // change order is used. enforce -> block; warn -> proceed + flash; off -> no-op.
+  // change notice is used. enforce -> block; warn -> proceed + flash; off -> no-op.
   const lock = await checkRevisionLock(client, {
     kind: "makeMethod",
     id: validation.data.makeMethodId,
@@ -66,6 +66,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
+  // Part ↔ step links are managed from the STEP side (the BoP step editor's "Parts" picker),
+  // so the material save no longer touches methodMaterialStep.
   const result = {
     id: methodMaterialId,
     success: true,

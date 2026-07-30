@@ -1,3 +1,4 @@
+import type { JobTravelerMaterial } from "./blocks/jobTraveler";
 import { Footer } from "./components";
 import { ensureFont, getSafeFontFamily, registerDocumentFonts } from "./fonts";
 import IssuePDF from "./IssuePDF";
@@ -17,6 +18,7 @@ import StorageUnitLabelPDF from "./StorageUnitLabelPDF";
 import { SAMPLE_SALES_ORDER } from "./salesOrder.samples";
 import { SAMPLE_SALES_INVOICE } from "./samples";
 import { SAMPLE_TRACKING_LABEL } from "./trackingLabel.samples";
+export type { JobTravelerMaterial };
 export {
   DOCUMENT_PDFS,
   ensureFont,

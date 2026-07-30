@@ -37,7 +37,8 @@ export class JiraNotificationService implements NotificationService {
         const issue = await getJiraIssueFromExternalId(
           context.serviceRole,
           event.companyId,
-          event.data.id
+          event.data.id,
+          "nonConformanceActionTask"
         );
 
         if (!issue) return;
@@ -57,7 +58,8 @@ export class JiraNotificationService implements NotificationService {
         const issue = await getJiraIssueFromExternalId(
           context.serviceRole,
           event.companyId,
-          event.data.id
+          event.data.id,
+          "nonConformanceActionTask"
         );
 
         if (!issue) return; // No linked Jira issue
@@ -89,7 +91,8 @@ export class JiraNotificationService implements NotificationService {
         const issue = await getJiraIssueFromExternalId(
           context.serviceRole,
           event.companyId,
-          event.data.id
+          event.data.id,
+          "nonConformanceActionTask"
         );
 
         if (!issue) return; // No linked Jira issue

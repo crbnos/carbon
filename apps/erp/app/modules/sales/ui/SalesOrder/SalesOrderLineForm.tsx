@@ -4,13 +4,7 @@ import { Combobox, ValidatedForm } from "@carbon/form";
 import {
   Badge,
   Select as CarbonSelect,
-  CardAction,
   cn,
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuIcon,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
   FormControl,
   FormLabel,
   HStack,
@@ -43,13 +37,11 @@ import {
 import { getItemReadableId } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useCallback, useEffect, useState } from "react";
-import { BsThreeDotsVertical } from "react-icons/bs";
 import {
   LuBox,
   LuChevronRight,
   LuLandmark,
   LuPlus,
-  LuTrash,
   LuTruck
 } from "react-icons/lu";
 import { useParams } from "react-router";
@@ -86,11 +78,9 @@ import {
 import type {
   PriceTraceStep,
   SalesOrder,
-  SalesOrderLine,
   SalesOrderLineType
 } from "../../types";
 import { PriceTracePopover } from "../Pricing/PriceTracePopover";
-import DeleteSalesOrderLine from "./DeleteSalesOrderLine";
 
 type SalesOrderLineFormProps = {
   initialValues: z.infer<typeof salesOrderLineValidator> & {
@@ -425,7 +415,6 @@ const SalesOrderLineForm = ({
 
   const costsDisclosure = useDisclosure();
   const assetCostsDisclosure = useDisclosure();
-  const deleteDisclosure = useDisclosure();
 
   return (
     <>
@@ -545,30 +534,6 @@ const SalesOrderLineForm = ({
                         </TabsTrigger>
                       </TabsList>
                     )}
-                    {isEditing &&
-                      permissions.can("update", "sales") &&
-                      !isLocked && (
-                        <CardAction>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <IconButton
-                                icon={<BsThreeDotsVertical />}
-                                aria-label={t`More`}
-                                variant="ghost"
-                              />
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem
-                                destructive
-                                onClick={deleteDisclosure.onOpen}
-                              >
-                                <DropdownMenuIcon icon={<LuTrash />} />
-                                <Trans>Delete Line</Trans>
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </CardAction>
-                      )}
                   </div>
                 </HStack>
                 <ModalCardBody>
@@ -1093,12 +1058,6 @@ const SalesOrderLineForm = ({
           </ModalCard>
         </ModalCardProvider>
       </Tabs>
-      {isEditing && deleteDisclosure.isOpen && (
-        <DeleteSalesOrderLine
-          line={initialValues as SalesOrderLine}
-          onCancel={deleteDisclosure.onClose}
-        />
-      )}
     </>
   );
 };

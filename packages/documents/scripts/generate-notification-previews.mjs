@@ -407,6 +407,67 @@ const previews = [
     ]
   },
   {
+    name: "PurchasingRfqAssignment",
+    heading: "Purchasing RFQ assigned to you",
+    message: "Purchasing RFQ PRFQ-0004 assigned to you",
+    reference: "PRFQ-0004",
+    cta: "View details",
+    url: "https://app.carbon.ms/x/purchasing-rfq/1",
+    details: [
+      { label: "RFQ date", value: "Jul 6, 2026" },
+      { label: "Expires", value: "Aug 14, 2026" },
+      { label: "Status", value: "Requested" }
+    ]
+  },
+  {
+    name: "ChangeOrderStarted",
+    heading: "Change order started",
+    message: "Change order ECO-000012 has started",
+    reference: "ECO-000012",
+    cta: "View change order",
+    url: "https://app.carbon.ms/x/items/change-order/1/details",
+    details: [
+      { label: "Name", value: "Bracket tolerance fix" },
+      { label: "Type", value: "Engineering" },
+      { label: "Priority", value: "High" },
+      { label: "Due", value: "Aug 14, 2026" },
+      { label: "Status", value: "Start" },
+      { label: "Assignee", value: "Jane Doe" }
+    ]
+  },
+  {
+    name: "ChangeOrderImplementation",
+    heading: "Change order in implementation",
+    message: "Change order ECO-000012 has moved to implementation",
+    reference: "ECO-000012",
+    cta: "View change order",
+    url: "https://app.carbon.ms/x/items/change-order/1/details",
+    details: [
+      { label: "Name", value: "Bracket tolerance fix" },
+      { label: "Type", value: "Engineering" },
+      { label: "Priority", value: "High" },
+      { label: "Due", value: "Aug 14, 2026" },
+      { label: "Status", value: "Implementation" },
+      { label: "Assignee", value: "Jane Doe" }
+    ]
+  },
+  {
+    name: "ChangeOrderDone",
+    heading: "Change order complete",
+    message: "Change order ECO-000012 is complete",
+    reference: "ECO-000012",
+    cta: "View change order",
+    url: "https://app.carbon.ms/x/items/change-order/1/details",
+    details: [
+      { label: "Name", value: "Bracket tolerance fix" },
+      { label: "Type", value: "Engineering" },
+      { label: "Priority", value: "High" },
+      { label: "Due", value: "Aug 14, 2026" },
+      { label: "Status", value: "Done" },
+      { label: "Assignee", value: "Jane Doe" }
+    ]
+  },
+  {
     name: "ApprovalRejected",
     heading: "Your request was rejected",
     message: "Purchase order PO-00099 was rejected",
@@ -444,7 +505,7 @@ export default function ${p.name}Preview() {
       heading={${j(p.heading)}}
       preview={${j(p.heading)}}
       message={${j(p.message)}}${referenceProp}
-      recipientName={"Naveen"}
+      recipientName={"John Doe"}
       ctaLabel={${j(p.cta)}}
       ctaUrl={${j(p.url)}}${detailsProp}
     />

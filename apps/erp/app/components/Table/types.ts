@@ -9,6 +9,9 @@ declare module "@tanstack/react-table" {
     // Filter dropdown/chip label when `header` is JSX instead of a string.
     filterHeader?: string;
     pluralHeader?: string;
+    // Extra classes for the header content wrapper (e.g. "justify-center" to
+    // center a header). Defaults to left-aligned (`justify-start`).
+    headerClassName?: string;
     icon?: ReactElement;
     renderTotal?: boolean;
     formatter?: (

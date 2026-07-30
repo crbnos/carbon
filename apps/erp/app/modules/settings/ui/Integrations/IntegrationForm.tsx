@@ -96,6 +96,21 @@ function IntegrationActionButton({
   );
 }
 
+// Wraps an action gated by a boolean setting (`enabledWhenSetting`), reading the
+// LIVE form value so it appears/disappears as the toggle changes — not only after
+// save. Renders nothing when the setting is off.
+function GatedIntegrationActionButton({
+  action,
+  isDisabled
+}: {
+  action: IntegrationAction;
+  isDisabled: boolean;
+}) {
+  const [value] = useControlField<boolean>(action.enabledWhenSetting as string);
+  if (value !== true) return null;
+  return <IntegrationActionButton action={action} isDisabled={isDisabled} />;
+}
+
 /**
  * Helper to normalize option to consistent format
  */
@@ -573,6 +588,9 @@ export function IntegrationForm({
     );
   }, [integration, metadata]);
 
+  const integrationActions =
+    (integration as { actions?: IntegrationAction[] })?.actions ?? [];
+
   if (!integrationId) {
     throw new Error("Integration ID is required");
   }
@@ -666,27 +684,33 @@ export function IntegrationForm({
                   />
                 ))}
 
-                {installed &&
-                  // @ts-expect-error TS2339 - TODO: fix type
-                  integration.actions &&
-                  // @ts-expect-error TS2339 - TODO: fix type
-                  integration.actions.length > 0 && (
-                    <div className="flex w-full flex-col gap-3 border-t border-border pt-4">
-                      <div className="text-[0.6875rem] font-semibold uppercase tracking-wider text-foreground/70">
-                        <Trans>Actions</Trans>
-                      </div>
-                      <VStack spacing={2} className="w-full">
-                        {/* @ts-expect-error TS7006 */}
-                        {integration.actions.map((action) => (
+                {installed && integrationActions.length > 0 && (
+                  // `has-[button]` collapses the whole section (header included)
+                  // when every gated action is hidden, so the toggle live-controls
+                  // visibility without leaving an empty "Actions" header.
+                  <div className="hidden has-[button]:flex w-full flex-col gap-3 border-t border-border pt-4">
+                    <div className="text-[0.6875rem] font-semibold uppercase tracking-wider text-foreground/70">
+                      <Trans>Actions</Trans>
+                    </div>
+                    <VStack spacing={2} className="w-full">
+                      {integrationActions.map((action) =>
+                        action.enabledWhenSetting ? (
+                          <GatedIntegrationActionButton
+                            key={action.id}
+                            action={action}
+                            isDisabled={isDisabled}
+                          />
+                        ) : (
                           <IntegrationActionButton
                             key={action.id}
                             action={action}
                             isDisabled={isDisabled}
                           />
-                        ))}
-                      </VStack>
-                    </div>
-                  )}
+                        )
+                      )}
+                    </VStack>
+                  </div>
+                )}
               </VStack>
             </ScrollArea>
             <div className="mt-2">

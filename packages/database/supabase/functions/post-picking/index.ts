@@ -744,7 +744,42 @@ serve(async (req: Request) => {
             .executeTakeFirstOrThrow();
 
           const lineside = line.toStorageUnitId;
-          const source = line.storageUnitId;
+
+          // Return target = the bin this lot was actually PICKED from, recorded
+          // on its Pick trackedActivity at pick time — not the line's stale
+          // generation-time source bin, which can be wrong per-lot and is null
+          // for a shortage line that later got picked anyway.
+          const pickActivities = await trx
+            .selectFrom("trackedActivity as ta")
+            .innerJoin(
+              "trackedActivityInput as tai",
+              "tai.trackedActivityId",
+              "ta.id"
+            )
+            .where("ta.type", "=", "Pick")
+            .where("ta.sourceDocument", "=", "Picking List")
+            .where("ta.sourceDocumentId", "=", line.pickingListId)
+            .where("tai.trackedEntityId", "=", trackedEntityId)
+            .where("ta.companyId", "=", companyId)
+            .where("tai.companyId", "=", companyId)
+            .orderBy("ta.createdAt", "desc")
+            .select("ta.attributes")
+            .execute();
+
+          // Use the LATEST pick for this line (activities are newest-first). Its
+          // "From Shelf" is the current truth — even if null (picked from an
+          // unassigned bin), fall through to the line bin rather than reusing an
+          // older pick's stale shelf.
+          const latestPickForLine = pickActivities
+            .map((a) => a.attributes as Record<string, unknown> | null)
+            // Disambiguate if the same entity was picked on multiple lines.
+            .find((a) => a?.["Picking List Line"] === pickingListLineId);
+          const pickedFromShelf = latestPickForLine?.["From Shelf"] as
+            | string
+            | null
+            | undefined;
+
+          const source = pickedFromShelf ?? line.storageUnitId;
           // No lineside stage or no source to return to → nothing to do.
           if (!lineside || !source) return;
 

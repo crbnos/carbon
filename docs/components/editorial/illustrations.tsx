@@ -27,7 +27,7 @@ export type IllustrationKey =
   | "depreciation-curve"
   | "asset-exit";
 
-/* On-brand editorial illustrations — warm paper palette, DM Sans (inherited),
+/* On-brand editorial illustrations — warm paper palette, Archivo (inherited),
  * #00B0FF accent, made=blue / bought=amber tags matching the content badges.
  * Each is a responsive SVG (w-full h-auto) sized for the 620px reading column.
  * Box / Arrow / Tag and the palette constants live in `illustration-kit.tsx`,

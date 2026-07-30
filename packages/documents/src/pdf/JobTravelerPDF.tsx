@@ -9,10 +9,14 @@ import {
   resolveTemplate
 } from "../template";
 import type { PDF } from "../types";
-import type { JobTravelerData } from "./blocks/jobTraveler";
+import type {
+  JobTravelerData,
+  JobTravelerMaterial
+} from "./blocks/jobTraveler";
 import {
   buildJobTravelerVars,
-  jobTravelerBlockRegistry
+  jobTravelerBlockRegistry,
+  MaterialsBlock
 } from "./blocks/jobTraveler";
 import { tw } from "./blocks/jobTraveler/tw";
 import { Template } from "./components";
@@ -34,6 +38,8 @@ interface JobTravelerProps extends PDF {
   bomId?: string;
   notes?: JSONContent;
   thumbnail?: string | null;
+  includeMaterials?: boolean;
+  materials?: JobTravelerMaterial[];
   template?: DocumentTemplate | null;
   sections?: Record<string, ResolvedSection>;
 }
@@ -70,6 +76,8 @@ function buildData(
     notes: props.notes,
     thumbnail: props.thumbnail,
     methodRevision: props.methodRevision,
+    includeMaterials: props.includeMaterials,
+    materials: props.materials,
     theme: template.theme,
     sections,
     vars,
@@ -97,6 +105,7 @@ export const JobTravelerPageContent = (props: PageContentProps) => {
         if (!render) return null;
         return <Fragment key={block.id}>{render({ block, data })}</Fragment>;
       })}
+      {data.includeMaterials && <MaterialsBlock data={data} />}
     </View>
   );
 };
@@ -114,6 +123,8 @@ const JobTravelerPDF = ({
   meta,
   notes,
   thumbnail,
+  includeMaterials,
+  materials,
   title = "Job Traveler",
   template,
   sections = {}
@@ -163,6 +174,8 @@ const JobTravelerPDF = ({
         locale={locale}
         notes={notes}
         thumbnail={thumbnail}
+        includeMaterials={includeMaterials}
+        materials={materials}
         methodRevision={jobMakeMethod?.version?.toString()}
         template={template}
         sections={sections}

@@ -1,15 +1,13 @@
 import type { Database } from "@carbon/database";
 import type { nonConformanceAssociationType } from "./quality.models";
 import type {
-  getBalloons,
   getGaugeCalibrationRecords,
   getGauges,
   getGaugeTypes,
-  getInboundInspection,
-  getInboundInspections,
-  getInspectionDocument,
-  getInspectionDocuments,
-  getInspectionFeatures,
+  getInspection,
+  getInspectionMeasurements,
+  getInspectionSamplingPlans,
+  getInspections,
   getIssueActionTasks,
   getIssueApprovalTasks,
   getIssueAssociations,
@@ -27,38 +25,6 @@ import type {
   getRequiredActions,
   getRisks
 } from "./quality.service";
-
-export type InspectionDocument = NonNullable<
-  Awaited<ReturnType<typeof getInspectionDocuments>>["data"]
->[number];
-
-export type InspectionDocumentDetail = NonNullable<
-  Awaited<ReturnType<typeof getInspectionDocument>>["data"]
->;
-
-export type Balloon = NonNullable<
-  Awaited<ReturnType<typeof getBalloons>>["data"]
->[number];
-
-export type InspectionFeature = NonNullable<
-  Awaited<ReturnType<typeof getInspectionFeatures>>["data"]
->[number];
-
-export type BalloonFeature = {
-  id: string;
-  balloonNumber: number;
-  description: string;
-  nominalValue: number | null;
-  tolerancePlus: number | null;
-  toleranceMinus: number | null;
-  unitOfMeasureCode: string | null;
-};
-
-export type InspectionDocumentContent = {
-  pdfUrl: string | null;
-  drawingNumber: string | null;
-  features: BalloonFeature[];
-};
 
 export type Gauge = NonNullable<
   Awaited<ReturnType<typeof getGauges>>["data"]
@@ -169,34 +135,47 @@ export type Risk = NonNullable<
   Awaited<ReturnType<typeof getRisks>>["data"]
 >[number];
 
-export type InboundInspection = NonNullable<
-  Awaited<ReturnType<typeof getInboundInspections>>["data"]
+export type Inspection = NonNullable<
+  Awaited<ReturnType<typeof getInspections>>["data"]
 >[number];
 
-export type InboundInspectionDetail = NonNullable<
-  Awaited<ReturnType<typeof getInboundInspection>>["data"]
+export type InspectionDetail = NonNullable<
+  Awaited<ReturnType<typeof getInspection>>["data"]
 >;
 
-export type InboundInspectionStatus =
-  Database["public"]["Enums"]["inboundInspectionStatus"];
+export type InspectionStatus =
+  Database["public"]["Enums"]["inspectionStatusType"];
 
-export type InboundInspectionSampleStatus =
-  Database["public"]["Enums"]["inboundInspectionSampleStatus"];
+export type InspectionSampleStatus =
+  Database["public"]["Enums"]["inspectionSampleStatusType"];
 
-export type InboundInspectionRow =
-  Database["public"]["Tables"]["inboundInspection"]["Row"];
+export type InspectionRow = Database["public"]["Tables"]["inspection"]["Row"];
 
-export type InboundInspectionSampleRow =
-  Database["public"]["Tables"]["inboundInspectionSample"]["Row"];
+export type InspectionSampleRow =
+  Database["public"]["Tables"]["inspectionSample"]["Row"];
 
 export type InspectionTrackedEntity = Pick<
   Database["public"]["Tables"]["trackedEntity"]["Row"],
   "id" | "readableId" | "attributes" | "status" | "sourceDocumentReadableId"
 >;
 
-export type InboundInspectionSample = InboundInspectionSampleRow & {
+export type InspectionSample = InspectionSampleRow & {
   trackedEntity: InspectionTrackedEntity | null;
 };
+
+export type ItemInspectionDocumentAssignment =
+  Database["public"]["Tables"]["itemInspectionDocumentAssignment"]["Row"];
+
+export type InspectionMeasurementRow =
+  Database["public"]["Tables"]["inspectionMeasurement"]["Row"];
+
+export type InspectionSamplingPlan = NonNullable<
+  Awaited<ReturnType<typeof getInspectionSamplingPlans>>["data"]
+>[number];
+
+export type InspectionMeasurement = NonNullable<
+  Awaited<ReturnType<typeof getInspectionMeasurements>>["data"]
+>[number];
 
 export type IssueTypeListItem = NonNullable<
   Awaited<ReturnType<typeof getIssueTypesList>>["data"]

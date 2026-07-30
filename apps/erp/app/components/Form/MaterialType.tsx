@@ -120,7 +120,7 @@ export const useMaterialTypes = (substanceId?: string, formId?: string) => {
     return (materialTypes.data?.data ?? []).map((c) => ({
       value: c.id,
       label: c.name,
-      helper: c.companyId === null ? "Standard" : undefined,
+      helper: c.companyId === null ? "Standard" : "Custom",
       code: c.code
     }));
   }, [materialTypes.data?.data]);

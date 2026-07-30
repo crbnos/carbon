@@ -26,10 +26,11 @@ import {
 import { ModelPreview } from "@carbon/viewer/model-preview";
 import { OptimizeProgress } from "@carbon/viewer/optimize-progress";
 import { useOptimizedModel } from "@carbon/viewer/use-optimized-model";
+import { Trans } from "@lingui/react/macro";
 import { nanoid } from "nanoid";
 import { useState } from "react";
 import { useDropzone } from "react-dropzone";
-import { LuCloudUpload, LuZap } from "react-icons/lu";
+import { LuCloudUpload, LuRefreshCw, LuZap } from "react-icons/lu";
 import { useFetcher, useRevalidator } from "react-router";
 import { useModelUpload, useUser } from "~/hooks";
 import { getPrivateUrl, getRawModelUrl, path } from "~/utils/path";
@@ -48,6 +49,8 @@ type CadModelProps = {
     jobId?: string;
   };
   title?: string;
+  // Rendered beside the title when the embedding surface locked this card.
+  titleExtras?: React.ReactNode;
   uploadClassName?: string;
   viewerClassName?: string;
   isReadOnly?: boolean;
@@ -58,6 +61,7 @@ const CadModel = ({
   metadata,
   modelPath,
   title,
+  titleExtras,
   uploadClassName,
   viewerClassName
 }: CadModelProps) => {
@@ -78,9 +82,14 @@ const CadModel = ({
     artifacts,
     awaitingModel,
     showOptimizeProgress: optimizeProgressActive,
+    backgroundOptimizing,
+    optimizeFailed,
+    canRetry,
     optimizeQueued,
+    optimizeInFlight,
     retry: onRetry,
     retryLabel,
+    regenerate,
     cancel: onCancelWait,
     actionBusy
   } = useOptimizedModel({ modelPath, companyId, file });
@@ -221,9 +230,18 @@ const CadModel = ({
               <ModelPreview
                 key={modelPath}
                 awaitingModel={awaitingModel}
+                optimizing={backgroundOptimizing}
+                optimizeFailed={optimizeFailed}
+                sourceMissing={artifacts?.sourceAvailable === false}
                 optimizedUrl={
                   artifacts?.optimizedModelPath
-                    ? getPrivateUrl(artifacts.optimizedModelPath)
+                    ? // ?v= busts the immutable preview cache on the STABLE
+                      // optimized.glb path when a re-optimise lands.
+                      `${getPrivateUrl(artifacts.optimizedModelPath)}${
+                        artifacts.optimizedAt
+                          ? `?v=${encodeURIComponent(artifacts.optimizedAt)}`
+                          : ""
+                      }`
                     : null
                 }
                 glbUrl={
@@ -248,7 +266,7 @@ const CadModel = ({
                 }
                 mode={mode}
                 className={viewerClassName}
-                onRetry={modelPath ? onRetry : undefined}
+                onRetry={modelPath && canRetry ? onRetry : undefined}
                 retryLabel={retryLabel}
                 onCancelWait={modelPath ? onCancelWait : undefined}
                 onDelete={canDelete ? deleteModal.onOpen : undefined}
@@ -274,8 +292,38 @@ const CadModel = ({
                 </div>
               )}
               {artifacts?.size && artifacts?.optimizedSize ? (
-                <div className="pointer-events-none absolute bottom-2 left-2 z-10 flex items-center gap-1.5 rounded-md border border-border bg-popover px-2 py-1 text-xs text-muted-foreground shadow-sm">
-                  <LuZap className="size-3 shrink-0 text-emerald-500" />
+                <div className="group absolute bottom-2 left-2 z-10 flex items-center gap-1.5 rounded-md border border-border bg-popover px-2 py-1 text-xs text-muted-foreground shadow-sm">
+                  {artifacts.optimizerAvailable &&
+                  artifacts.sourceAvailable !== false ? (
+                    // Hovering the badge swaps the lightning for a refresh
+                    // action: re-run the optimise from the source file (e.g.
+                    // to pick up improved quality settings). Hidden when the
+                    // source no longer exists — nothing to re-run from.
+                    <button
+                      type="button"
+                      aria-label="Reoptimize from source file"
+                      title="Reoptimize from source file"
+                      // Locked while a regen is in flight: rapid re-clicks would
+                      // race the job's per-model singleton (a burst of events can
+                      // get wholly skipped on the local Inngest dev server), and
+                      // the spin is the only signal the silent background regen
+                      // is running.
+                      disabled={actionBusy || optimizeInFlight}
+                      onClick={regenerate}
+                      className="relative -m-2 flex size-7 shrink-0 items-center justify-center disabled:opacity-50"
+                    >
+                      {actionBusy || optimizeInFlight ? (
+                        <LuRefreshCw className="size-3 animate-spin text-emerald-500" />
+                      ) : (
+                        <>
+                          <LuZap className="size-3 text-emerald-500 group-hover:hidden" />
+                          <LuRefreshCw className="hidden size-3 text-emerald-500 group-hover:block" />
+                        </>
+                      )}
+                    </button>
+                  ) : (
+                    <LuZap className="size-3 shrink-0 text-emerald-500" />
+                  )}
                   <span>Optimized GLB</span>
                   <span className="font-mono tabular-nums">
                     {convertKbToString(Math.round(artifacts.size / 1024))}
@@ -334,6 +382,8 @@ const CadModel = ({
             className={uploadClassName}
             file={file}
             title={title}
+            isReadOnly={isReadOnly}
+            titleExtras={titleExtras}
             onFileChange={onFileChange}
           />
         );
@@ -346,6 +396,7 @@ export default CadModel;
 
 type CadModelUploadProps = {
   title?: string;
+  titleExtras?: React.ReactNode;
   file: File | null;
   className?: string;
   isReadOnly?: boolean;
@@ -354,6 +405,7 @@ type CadModelUploadProps = {
 
 const CadModelUpload = ({
   title,
+  titleExtras,
   file,
   isReadOnly,
   className,
@@ -396,8 +448,33 @@ const CadModelUpload = ({
     }
   });
 
+  // Read-only with no model yet: keep the section (and its title) so the reader
+  // knows it exists, but drop the drop zone entirely.
   if (isReadOnly) {
-    return null;
+    return (
+      <div
+        className={cn(
+          "flex h-full flex-col flex-grow rounded-lg border border-border bg-gradient-to-bl from-card from-50% via-card to-background dark:border-none dark:shadow-[inset_0_0.5px_0_rgb(255_255_255_/_0.08),_inset_0_0_1px_rgb(255_255_255_/_0.24),_0_0_0_0.5px_rgb(0,0,0,1),0px_0px_4px_rgba(0,_0,_0,_0.08)] text-card-foreground shadow-sm w-full min-h-[400px] ",
+          className
+        )}
+      >
+        <div className="relative flex flex-col flex-1 min-h-0 w-full p-4">
+          {title && (
+            <CardHeader className="absolute top-0 left-0 z-10">
+              <CardTitle className="flex flex-row items-center gap-2">
+                {title}
+                {titleExtras}
+              </CardTitle>
+            </CardHeader>
+          )}
+          <div className="flex flex-col flex-grow items-center justify-center gap-2 p-6">
+            <p className="text-base text-muted-foreground">
+              <Trans>No CAD model to preview.</Trans>
+            </p>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (

@@ -1,7 +1,7 @@
-import { Badge, HStack, VStack } from "@carbon/react";
+import { Badge, HStack, MenuIcon, MenuItem, VStack } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
-import { memo, useCallback, useMemo } from "react";
+import { memo, useCallback, useMemo, useState } from "react";
 import {
   LuArrowRightLeft,
   LuBlocks,
@@ -21,7 +21,7 @@ import { Link } from "react-router";
 import { EmployeeAvatar, Hyperlink, ItemThumbnail, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { useLocations } from "~/components/Form/Location";
-import { useDateFormatter, useUser } from "~/hooks";
+import { useDateFormatter, usePermissions, useUser } from "~/hooks";
 import { useDebouncedRealtime } from "~/hooks/useDebouncedRealtime";
 import type { MethodItemType } from "~/modules/shared";
 import { usePeople } from "~/stores";
@@ -31,6 +31,7 @@ import {
   itemLedgerTypes
 } from "../../inventory.models";
 import type { StockMovement } from "../../types";
+import StockMovementCorrectionModal from "./StockMovementCorrectionModal";
 
 type StockMovementsTableProps = {
   data: StockMovement[];
@@ -42,6 +43,9 @@ const StockMovementsTable = memo(
     const { t } = useLingui();
     const { formatDate } = useDateFormatter();
     const { company } = useUser();
+    const permissions = usePermissions();
+    const [correctionTarget, setCorrectionTarget] =
+      useState<StockMovement | null>(null);
     const [people] = usePeople();
     const locations = useLocations();
     const locationsById = useMemo(
@@ -241,10 +245,10 @@ const StockMovementsTable = memo(
       const byId = new Map(data.map((m) => [m.id, m]));
 
       // Walk a correction up its `correctionOfItemLedgerId` chain to the topmost
-      // ancestor present on this page. Corrections can chain (a rectification of
-      // a rectification links to the prior correction, not the original), so we
-      // must resolve to the ULTIMATE root — otherwise a grandchild correction
-      // would be hidden but never re-shown under any visible row.
+      // ancestor present on this page. Historical corrections can chain (a fix
+      // of a fix links to the prior correction, not the original), so we must
+      // resolve to the ULTIMATE root — otherwise a grandchild correction would
+      // be hidden but never re-shown under any visible row.
       const rootOf = (m: StockMovement) => {
         let cur = m;
         const seen = new Set<string>();
@@ -290,6 +294,19 @@ const StockMovementsTable = memo(
       [correctionsByOriginal]
     );
 
+    const renderContextMenu = useCallback(
+      (row: StockMovement) => (
+        <MenuItem
+          disabled={!permissions.can("update", "inventory")}
+          onClick={() => setCorrectionTarget(row)}
+        >
+          <MenuIcon icon={<LuWrench />} />
+          {t`Correct Quantity`}
+        </MenuItem>
+      ),
+      [permissions, t]
+    );
+
     const renderExpandedRow = useCallback(
       (row: StockMovement) => {
         const corrections = row.id
@@ -329,19 +346,28 @@ const StockMovementsTable = memo(
     );
 
     return (
-      <Table<(typeof data)[number]>
-        data={displayData}
-        columns={columns}
-        count={count}
-        defaultColumnPinning={{
-          left: ["itemReadableId"]
-        }}
-        renderExpandedRow={renderExpandedRow}
-        canExpandRow={canExpandRow}
-        title={t`Inventory Movements`}
-        table="itemLedger"
-        withSavedView
-      />
+      <>
+        <Table<(typeof data)[number]>
+          data={displayData}
+          columns={columns}
+          count={count}
+          defaultColumnPinning={{
+            left: ["itemReadableId"]
+          }}
+          renderContextMenu={renderContextMenu}
+          renderExpandedRow={renderExpandedRow}
+          canExpandRow={canExpandRow}
+          title={t`Inventory Movements`}
+          table="itemLedger"
+          withSavedView
+        />
+        {correctionTarget && (
+          <StockMovementCorrectionModal
+            movement={correctionTarget}
+            onClose={() => setCorrectionTarget(null)}
+          />
+        )}
+      </>
     );
   }
 );

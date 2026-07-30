@@ -56,15 +56,26 @@ export function useFiles(job: Job) {
   );
 
   const downloadModel = useCallback(
-    async (model: { modelPath: string; modelName: string }) => {
-      if (!model.modelPath || !model.modelName) {
+    async (model: { modelId: string | null; modelName: string | null }) => {
+      if (!model.modelId || !model.modelName) {
         toast.error("Model data is missing");
         return;
       }
 
-      const url = path.to.file.previewFile(`private/${model.modelPath}`);
+      // The download route resolves the customer's ORIGINAL file — fetching
+      // `modelPath` directly would serve the compacted `.xbf.zst` (an OCCT
+      // container no CAD tool opens) once compaction has repointed it.
+      const url = path.to.api.modelDownload(model.modelId);
       try {
         const response = await fetch(url);
+        if (!response.ok) {
+          toast.error(
+            response.status === 404
+              ? "The original model file is no longer available"
+              : "Error downloading file"
+          );
+          return;
+        }
         const blob = await response.blob();
         const blobUrl = window.URL.createObjectURL(blob);
         const a = document.createElement("a");

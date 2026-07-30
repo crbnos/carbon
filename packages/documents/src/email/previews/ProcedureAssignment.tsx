@@ -9,7 +9,7 @@ export default function ProcedureAssignmentPreview() {
       preview={"Procedure assigned to you"}
       message={"Procedure Calibration SOP version 3 assigned to you"}
       reference={"Calibration SOP"}
-      recipientName={"Naveen"}
+      recipientName={"John Doe"}
       ctaLabel={"View details"}
       ctaUrl={"https://app.carbon.ms/x/procedure/1"}
       details={[

@@ -102,6 +102,12 @@ interface TableProps<T extends object> {
     label: string;
   }[];
   primaryAction?: ReactNode;
+  // Optional override for the "no rows" state. When provided and the table is
+  // empty (and not loading), this is rendered instead of the default
+  // "No results found" / "No data exists" blocks. Use it when the generic
+  // filtered empty state would be misleading — e.g. a table pre-filtered to a
+  // parent entity that simply has no child records yet.
+  emptyState?: ReactNode;
   // Optional controls rendered in the toolbar row next to the search/filter
   // (e.g. quick filter toggles that write their own `filter` URL params).
   headerActions?: ReactNode;
@@ -255,6 +261,7 @@ const Table = <T extends object>({
   editableComponents,
   importCSV,
   primaryAction,
+  emptyState,
   headerActions,
   table: tableName,
   title,
@@ -536,7 +543,7 @@ const Table = <T extends object>({
   const [isEditing, setIsEditing] = useState(false);
   const [selectedCell, setSelectedCell] = useState<Position>(null);
 
-  // forceEditMode follows the document's state (e.g. Rectify flips a Posted
+  // forceEditMode follows the document's state (e.g. Reopen flips a Pending
   // count back to Draft via revalidation, without remounting the table) — and
   // the Edit/Lock toggle is hidden while it's set, so a stale editMode would
   // strand the table with no way to recover. Keep them in sync.
@@ -1054,6 +1061,10 @@ const Table = <T extends object>({
                   </Tbody>
                 </TableBase>
               </div>
+            ) : emptyState ? (
+              <div className="flex flex-col w-full h-full items-center justify-center gap-4">
+                {emptyState}
+              </div>
             ) : hasFilters ? (
               <div className="flex flex-col w-full h-full items-center justify-center gap-4">
                 <div className="flex justify-center items-center h-12 w-12 rounded-full bg-foreground text-background -mt-[10dvh]">
@@ -1120,7 +1131,13 @@ const Table = <T extends object>({
                             (sortable ? (
                               <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
-                                  <div className="group flex justify-start items-center gap-2">
+                                  <div
+                                    className={cn(
+                                      "group flex items-center gap-2",
+                                      header.column.columnDef.meta
+                                        ?.headerClassName ?? "justify-start"
+                                    )}
+                                  >
                                     {header.column.columnDef.meta?.icon}
                                     {typeof header.column.columnDef.header ===
                                     "string"
@@ -1181,7 +1198,13 @@ const Table = <T extends object>({
                                 </DropdownMenuContent>
                               </DropdownMenu>
                             ) : (
-                              <div className="flex justify-start items-center gap-2">
+                              <div
+                                className={cn(
+                                  "flex items-center gap-2",
+                                  header.column.columnDef.meta
+                                    ?.headerClassName ?? "justify-start"
+                                )}
+                              >
                                 {header.column.columnDef.meta?.icon}
                                 {typeof header.column.columnDef.header ===
                                 "string"

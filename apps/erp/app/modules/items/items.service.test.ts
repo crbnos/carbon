@@ -13,7 +13,9 @@ vi.mock("@carbon/glossary", () => ({
   termSlug: vi.fn()
 }));
 
-const { diffMethod } = await import("./items.service");
+const { diffMethod, duplicateMethodOperationStep } = await import(
+  "./items.service"
+);
 
 // A minimal live methodMaterial row (only the fields diffMethod compares + id).
 function baseMaterial(over: Record<string, unknown> = {}) {
@@ -258,6 +260,172 @@ describe("diffMethod — operation children", () => {
 
     expect(children.tools).toHaveLength(1);
     expect(children.tools[0].status).toBe("removed");
+  });
+});
+
+// ── duplicateMethodOperationStep: link-carrying copy ─────────────────────────
+// Tiny fake supabase client mirroring the chain shapes this function uses:
+// canned rows for selects, records inserts.
+function makeFakeClient(opts: {
+  rows: Record<string, Record<string, unknown>[]>;
+  newIdByTable?: Record<string, string>;
+  errorOnInsert?: string;
+}) {
+  const inserts: { table: string; rows: Record<string, unknown>[] }[] = [];
+
+  function resolve(state: {
+    table: string;
+    op?: "insert";
+    filters: Record<string, unknown>;
+    insertRows?: Record<string, unknown>[];
+    single: boolean;
+  }) {
+    if (state.op === "insert") {
+      inserts.push({ table: state.table, rows: state.insertRows ?? [] });
+      if (opts.errorOnInsert === state.table) {
+        return {
+          data: null,
+          error: { message: `insert failed: ${state.table}` }
+        };
+      }
+      if (state.single) {
+        const id = opts.newIdByTable?.[state.table] ?? `new_${state.table}`;
+        return { data: { id }, error: null };
+      }
+      return { data: null, error: null };
+    }
+    let data = opts.rows[state.table] ?? [];
+    for (const [col, val] of Object.entries(state.filters)) {
+      data = data.filter((r) => r[col] === val);
+    }
+    return state.single
+      ? { data: data[0] ?? null, error: null }
+      : { data, error: null };
+  }
+
+  function builder(table: string) {
+    const state = {
+      table,
+      filters: {} as Record<string, unknown>,
+      op: undefined as "insert" | undefined,
+      insertRows: undefined as Record<string, unknown>[] | undefined,
+      single: false
+    };
+    const b = {
+      select: () => b,
+      eq: (col: string, val: unknown) => {
+        state.filters[col] = val;
+        return b;
+      },
+      insert: (rows: Record<string, unknown> | Record<string, unknown>[]) => {
+        state.op = "insert";
+        state.insertRows = Array.isArray(rows) ? rows : [rows];
+        return b;
+      },
+      single: () => {
+        state.single = true;
+        return Promise.resolve(resolve(state));
+      },
+      then: (onF: (v: unknown) => unknown, onR?: (e: unknown) => unknown) =>
+        Promise.resolve(resolve(state)).then(onF, onR)
+    };
+    return b;
+  }
+
+  return { client: { from: builder } as never, inserts };
+}
+
+describe("duplicateMethodOperationStep", () => {
+  function sourceRows() {
+    return {
+      methodOperationStep: [
+        {
+          id: "step-1",
+          operationId: "op-1",
+          name: "Deburr",
+          description: null,
+          type: "Task",
+          unitOfMeasureCode: null,
+          minValue: null,
+          maxValue: null,
+          listValues: null,
+          sortOrder: 2
+        },
+        { id: "step-2", operationId: "op-1", sortOrder: 5 }
+      ],
+      methodOperationStepSlide: [
+        {
+          stepId: "step-1",
+          imagePath: "/x.png",
+          modelUploadId: null,
+          caption: "c",
+          sortOrder: 1,
+          size: "medium",
+          annotations: "[]"
+        }
+      ],
+      methodOperationToolStep: [
+        { methodOperationToolId: "tool-1", methodOperationStepId: "step-1" }
+      ],
+      methodMaterialStep: [
+        { methodMaterialId: "mat-1", methodOperationStepId: "step-1" }
+      ]
+    };
+  }
+
+  it("copies the step and carries its slides/tool-links/material-links onto the clone", async () => {
+    const { client, inserts } = makeFakeClient({
+      rows: sourceRows(),
+      newIdByTable: { methodOperationStep: "step-new" }
+    });
+
+    const result = await duplicateMethodOperationStep(client, {
+      id: "step-1",
+      companyId: "c1",
+      createdBy: "u1"
+    });
+    expect(result.error).toBeNull();
+    expect(result.data).toEqual({ id: "step-new" });
+
+    expect(
+      inserts.find((i) => i.table === "methodOperationStep")?.rows[0]
+    ).toMatchObject({
+      operationId: "op-1",
+      name: "Deburr (copy)",
+      sortOrder: 6, // max sibling sortOrder (5) + 1
+      companyId: "c1",
+      createdBy: "u1"
+    });
+    expect(
+      inserts.find((i) => i.table === "methodOperationStepSlide")?.rows[0]
+    ).toMatchObject({ stepId: "step-new", imagePath: "/x.png" });
+    expect(
+      inserts.find((i) => i.table === "methodOperationToolStep")?.rows
+    ).toEqual([
+      { methodOperationToolId: "tool-1", methodOperationStepId: "step-new" }
+    ]);
+    expect(inserts.find((i) => i.table === "methodMaterialStep")?.rows).toEqual(
+      [{ methodMaterialId: "mat-1", methodOperationStepId: "step-new" }]
+    );
+  });
+
+  it("aborts and surfaces the error if a child copy fails (no further inserts)", async () => {
+    const { client, inserts } = makeFakeClient({
+      rows: sourceRows(),
+      newIdByTable: { methodOperationStep: "step-new" },
+      errorOnInsert: "methodOperationToolStep"
+    });
+
+    const result = await duplicateMethodOperationStep(client, {
+      id: "step-1",
+      companyId: "c1",
+      createdBy: "u1"
+    });
+
+    expect(result.data).toBeNull();
+    expect(result.error).not.toBeNull();
+    // Tool-link copy failed → the material-link copy must never run.
+    expect(inserts.some((i) => i.table === "methodMaterialStep")).toBe(false);
   });
 });
 
