@@ -105,7 +105,10 @@ export const getSalesOrderJobStatus = (
   const isMade = line.methodType === "Make to Order";
   const saleQuantity = line.saleQuantity ?? 0;
 
-  const totalProduction = filteredJobs.reduce(
+  // Cancelled jobs contribute no coverage, released work, or completion — every
+  // reduction runs off activeJobs so a cancelled job can't inflate coverage or
+  // make a line read "In Progress"/"Completed" when no active work exists.
+  const totalProduction = activeJobs.reduce(
     (acc, job) => acc + (job.productionQuantity ?? 0),
     0
   );
@@ -113,7 +116,7 @@ export const getSalesOrderJobStatus = (
   // must be gated on the job actually being in a completed status. Otherwise a
   // reopened (In Progress) job that still has quantityComplete >= saleQuantity
   // would keep the line reading "Completed" (or "Shipped").
-  const totalCompleted = filteredJobs.reduce(
+  const totalCompleted = activeJobs.reduce(
     (acc, job) =>
       acc +
       (["Completed", "Closed"].includes(job.status ?? "")
@@ -121,7 +124,7 @@ export const getSalesOrderJobStatus = (
         : 0),
     0
   );
-  const totalReleased = filteredJobs.reduce((acc, job) => {
+  const totalReleased = activeJobs.reduce((acc, job) => {
     if (job.status !== "Planned" && job.status !== "Draft") {
       return acc + (job.productionQuantity ?? 0);
     }

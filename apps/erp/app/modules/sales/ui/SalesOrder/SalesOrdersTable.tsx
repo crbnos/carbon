@@ -213,8 +213,11 @@ const SalesOrdersTable = memo(({ data, count }: SalesOrdersTableProps) => {
             if (line.methodType !== "Make to Order") return true;
             const relevantJobs =
               jobs.filter?.((job) => job.salesOrderLineId === line.id) ?? [];
+            // A cancelled job's quantityComplete is stale — exclude it so a
+            // cancelled job can't make a line read "All jobs completed".
             const totalJobQuantity = relevantJobs.reduce(
-              (acc, job) => acc + job.quantityComplete,
+              (acc, job) =>
+                acc + (job.status === "Cancelled" ? 0 : job.quantityComplete),
               0
             );
             return totalJobQuantity >= line.saleQuantity;
