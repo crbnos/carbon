@@ -100,12 +100,12 @@ describe("createEventCatalog — WorkflowCatalog conformance", () => {
     expect(catalog.getEntity("ghost")).toBeUndefined();
   });
 
-  it("returns undefined for actions and operations until phase 5", () => {
+  it("returns undefined for actions and operations when no providers are supplied", () => {
     expect(catalog.getAction("notify")).toBeUndefined();
     expect(catalog.getOperation("job.totalScrap")).toBeUndefined();
   });
 
-  it("delegates actions and operations when phase 5 supplies them", () => {
+  it("delegates actions and operations to the supplied providers", () => {
     const action: CatalogAction = {
       id: "notify",
       inputs: {},
@@ -118,13 +118,13 @@ describe("createEventCatalog — WorkflowCatalog conformance", () => {
       inputs: {},
       output: { kind: "primitive", of: "number" }
     };
-    const withPhase5 = createEventCatalog({
+    const withProviders = createEventCatalog({
       getAction: (id) => (id === action.id ? action : undefined),
       getOperation: (id) => (id === operation.id ? operation : undefined)
     });
-    expect(withPhase5.getAction("notify")).toBe(action);
-    expect(withPhase5.getOperation("job.totalScrap")).toBe(operation);
-    expect(withPhase5.getAction("ghost")).toBeUndefined();
+    expect(withProviders.getAction("notify")).toBe(action);
+    expect(withProviders.getOperation("job.totalScrap")).toBe(operation);
+    expect(withProviders.getAction("ghost")).toBeUndefined();
   });
 });
 
@@ -172,8 +172,7 @@ describe("createEventCatalog — entity properties", () => {
 });
 
 describe("validateDefinition against the real catalog", () => {
-  // Property paths use column names, so the buyer's name is
-  // record.supplierId.name — there is no de-suffixed `supplier` alias in v1.
+  // Property paths use column names: record.supplierId.name, not record.supplier.name.
   function withPath(path: string[]): WorkflowDefinition {
     return define(
       [

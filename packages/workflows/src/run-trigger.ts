@@ -1,11 +1,6 @@
 import { z } from "zod";
 
-/**
- * What fired a workflow run. Lives here because it is the one wire contract
- * shared by the matcher (`@carbon/jobs`), the `carbon/workflow-run.queued`
- * event type (`@carbon/lib`) and the phase-4 engine — all of which already
- * depend on this package.
- */
+/** What fired a workflow run — the wire contract shared by the matcher, event type and engine. */
 export const runTriggerSchema = z.discriminatedUnion("kind", [
   z.object({
     kind: z.literal("record"),

@@ -84,9 +84,8 @@ export function fnv1a32(input: string, seed: number = FNV_OFFSET): number {
   return hash >>> 0;
 }
 
-// Two 32-bit passes rather than one 64-bit: BigInt literals need ES2020 and
-// apps/erp targets ES2019. Not node:crypto either — this package runs in the
-// browser.
+// Two 32-bit passes, not one 64-bit: BigInt needs ES2020 and apps/erp targets
+// ES2019. Not node:crypto either — this package runs in the browser.
 export function fnv1a64(input: string): string {
   const high = fnv1a32(input, FNV_OFFSET);
   const low = fnv1a32(input, FNV_PRIME);

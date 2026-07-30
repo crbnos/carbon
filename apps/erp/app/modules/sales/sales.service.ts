@@ -210,8 +210,8 @@ export async function convertQuoteToOrder(
         salesOrder: { id: result.data.convertedId }
       },
       companyId: payload.companyId,
-      // A digital acceptance is the customer acting, not `userId` (which is only
-      // the employee who created the quote).
+      // A digital acceptance is the customer acting; `userId` is only the
+      // employee who created the quote.
       actorId: payload.digitalQuoteAcceptedBy ? null : payload.userId
     });
   }
@@ -1997,8 +1997,8 @@ export async function finalizeQuote(
     .neq("status", "No Quote")
     .eq("quoteId", quoteId);
 
-  // Gated on the quote reaching 'Sent' (the early return above), not on the line
-  // write: the quote is sent either way, and a zero-line quote is not an error.
+  // Gated on the quote reaching 'Sent' (the early return above), not on the
+  // line write — a zero-line quote is still sent.
   await raiseMoment("sales.quoteSent", {
     outputs: { quote: { id: quoteId }, sentBy: { id: userId } },
     companyId,

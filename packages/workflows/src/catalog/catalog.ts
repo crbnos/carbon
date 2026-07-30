@@ -8,14 +8,11 @@ import type {
 import { WORKFLOW_ENTITIES, WORKFLOW_EVENTS } from "./events.generated";
 
 export interface EventCatalogOptions {
-  /** Phase 5 supplies the action catalog through this seam. */
   getAction?: (id: string) => CatalogAction | undefined;
-  /** Phase 5 supplies the entity-operation catalog through this seam. */
   getOperation?: (id: string) => CatalogOperation | undefined;
 }
 
-// Built once at module load — the same pattern audit.config.ts uses for its
-// derived indexes.
+// Built once at module load, as audit.config.ts does for its derived indexes.
 const EVENTS: Map<string, CatalogEvent> = new Map(
   Object.entries(WORKFLOW_EVENTS).map(([id, event]) => [id, { id, ...event }])
 );
@@ -27,10 +24,7 @@ const ENTITIES: Map<string, CatalogEntity> = new Map(
   ])
 );
 
-/**
- * The real catalog, backed by the generated event file. `getAction` and
- * `getOperation` answer nothing until phase 5 plugs them in.
- */
+/** Backed by the generated event file; actions and operations answer only if supplied. */
 export function createEventCatalog(
   options: EventCatalogOptions = {}
 ): WorkflowCatalog {

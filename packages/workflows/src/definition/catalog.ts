@@ -1,6 +1,6 @@
 import { t, type ValueType } from "./types";
 
-/** How the phase-3 matcher recognises this event. Only the matcher reads it. */
+/** How the matcher recognises this event. Only the matcher reads it. */
 export type EventMatch =
   | { table: string; operation: "INSERT" | "UPDATE" | "DELETE"; field?: string }
   | { moment: string };
@@ -37,10 +37,7 @@ export interface CatalogEntity {
   properties: Record<string, ValueType>;
 }
 
-/**
- * What the validator needs to look up, and nothing more. Phases 2 and 5 satisfy
- * this from the generated event catalog and the hand-curated action catalog.
- */
+/** What the validator needs to look up, and nothing more. */
 export interface WorkflowCatalog {
   getEvent(id: string): CatalogEvent | undefined;
   getAction(id: string): CatalogAction | undefined;
@@ -135,11 +132,7 @@ export interface FixtureCatalogOptions {
   omitEntities?: string[];
 }
 
-/**
- * An in-memory catalog for tests, so the validator can be written and fully
- * exercised before the real event and action catalogs land in phases 2 and 5.
- * The `omit*` options prove the catalog is genuinely injected, not baked in.
- */
+/** An in-memory catalog for tests; `omit*` drops entries to simulate a stale catalog. */
 export function createFixtureCatalog(
   options: FixtureCatalogOptions = {}
 ): WorkflowCatalog {

@@ -19,10 +19,8 @@ const runPayloadSchema = z.object({
   trigger: runTriggerSchema
 });
 
-/**
- * Walks one matched run's graph, one durable step per node, acting as the
- * workflow's owner. See `.claude/rules/workflow-engine.md`.
- */
+/** Walks one matched run's graph, one durable step per node, acting as the
+ * workflow's owner. */
 export const workflowRunFunction = inngest.createFunction(
   {
     id: "workflow-run",
@@ -47,8 +45,7 @@ export const workflowRunFunction = inngest.createFunction(
   { event: "carbon/workflow-run.queued" },
   async ({ event, step, logger }) => {
     const payload = runPayloadSchema.parse(event.data);
-    // Inngest's step.run returns a Jsonify of the handler's type; every engine
-    // step already returns plain JSON, so the narrower shape is the honest one.
+    // Inngest types step.run as Jsonify<T>; every engine step already returns plain JSON.
     return executeWorkflowRun({
       payload,
       step: step as unknown as EngineStep,

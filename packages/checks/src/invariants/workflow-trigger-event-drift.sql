@@ -1,8 +1,5 @@
 -- invariant: an active workflow's workflowTriggerEvent rows equal the event ids
--- on its active version's trigger nodes
--- returns rows that VIOLATE the rule (none = healthy)
---
--- If these drift, a workflow silently stops firing or fires when it should not.
+-- on its active version's trigger nodes; returns violating rows (none = healthy)
 WITH active AS (
     SELECT w."id" AS "workflowId",
            w."companyId",

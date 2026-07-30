@@ -5,11 +5,8 @@ import {
 } from "@carbon/database/client";
 import { type Kysely, PostgresDriver } from "kysely";
 
-/**
- * The Kysely client for background jobs. `getPostgresClient` is typed against
- * the edge runtime's vendored kysely, so the structurally-identical instance
- * needs a cast to satisfy this package's copy.
- */
+/** `getPostgresClient` is typed against the edge runtime's vendored kysely, so
+ * the structurally-identical instance needs a cast for this package's copy. */
 export function getJobDatabaseClient(size = 1) {
   const pool = getPostgresConnectionPool(size);
   return getPostgresClient(

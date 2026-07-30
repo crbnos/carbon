@@ -5,10 +5,7 @@ import {
   workflowDefinitionSchema
 } from "./schema";
 
-/**
- * The stored row shape. `nodes` and `edges` are separate untyped JSON columns,
- * and `formatVersion` is its own column so it is queryable without opening them.
- */
+/** The stored row: `nodes` and `edges` are separate untyped JSON columns. */
 const storedRowSchema = z.object({
   formatVersion: z.number().int().nullish(),
   nodes: z.unknown().optional(),
@@ -22,7 +19,7 @@ interface RawDefinition {
   edges: unknown;
 }
 
-/** A fresh empty canvas. A factory, so no caller can mutate a shared value. */
+/** A factory, so no caller can mutate a shared value. */
 export function emptyDefinition(): WorkflowDefinition {
   return {
     formatVersion: CURRENT_DEFINITION_FORMAT_VERSION,
@@ -44,13 +41,8 @@ export type WorkflowVersionRead =
   | { ok: false; failure: WorkflowVersionReadFailure; message: string };
 
 /**
- * Upgrade a stored document to the current format. Pass-through at v1, and the
- * single seam where a definition saved under an older format is brought forward,
- * so stored rows never need a backfill migration.
- *
- * This deliberately runs on the raw JSON, *before* the current-schema parse: a
- * document old enough to need upgrading is by definition not valid under the
- * current schema, so a migration placed after that parse could never run.
+ * Upgrade a stored document to the current format; pass-through at v1. Runs on
+ * raw JSON before the current-schema parse, which an old document would fail.
  */
 function migrateDefinition(raw: RawDefinition, _from: number): RawDefinition {
   return raw;
@@ -61,16 +53,11 @@ export function parseWorkflowDefinition(value: unknown) {
 }
 
 /**
- * The one place raw database JSON becomes the typed model: assembles the two
- * columns into one document, upgrades it on read, then validates.
- *
- * Failure is reported rather than swallowed. An unreadable row used to come back
- * as an empty canvas, which meant the builder opened blank and the next save
- * quietly overwrote a definition nobody could see; the caller needs to be able
- * to say "this version could not be read" and refuse to save over it.
+ * The one place raw database JSON becomes the typed model. Failure is reported,
+ * not swallowed, so a caller never saves a blank canvas over an unreadable row.
  */
 export function readWorkflowVersion(row: unknown): WorkflowVersionRead {
-  // Nothing stored yet is not a failure — it is a new version's blank canvas.
+  // Nothing stored yet is a new version's blank canvas, not a failure.
   if (row === null || row === undefined) {
     return { ok: true, definition: emptyDefinition() };
   }
@@ -84,8 +71,8 @@ export function readWorkflowVersion(row: unknown): WorkflowVersionRead {
     };
   }
 
-  // A missing version means the row predates the column, so it is v1 — not
-  // whatever the current version happens to be, which would skip its migration.
+  // A missing version means the row predates the column, so it is v1; defaulting
+  // to the current version would skip its migration.
   const from = stored.data.formatVersion ?? 1;
   if (from > CURRENT_DEFINITION_FORMAT_VERSION) {
     return {

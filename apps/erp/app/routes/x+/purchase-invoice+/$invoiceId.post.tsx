@@ -109,8 +109,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
     };
   }
 
-  // Below the catch above, which reverts to Draft. The write itself happens in a
-  // Deno edge function that cannot import app code, so the caller announces it.
+  // Must stay below the rollback catch above — a post that got reverted to
+  // Draft must not fire workflows.
   await raiseMoment("invoicing.purchaseInvoicePosted", {
     outputs: { purchaseInvoice: { id: invoiceId }, postedBy: { id: userId } },
     companyId,

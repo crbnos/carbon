@@ -4,7 +4,7 @@ import { resolveValue } from "./resolve";
 import type { RuntimeContext, RuntimeValue } from "./types";
 import { isNull } from "./values";
 
-/** Numbers as themselves, dates as an instant. Anything else is not orderable. */
+/** Numbers as themselves, dates as ms since epoch. Anything else is not orderable. */
 function orderable(value: RuntimeValue): number | undefined {
   if (value.kind !== "primitive") return undefined;
   if (value.of === "number") {
@@ -33,10 +33,7 @@ function equals(left: RuntimeValue, right: RuntimeValue): boolean {
   return left.value === right.value;
 }
 
-/**
- * One comparison. Text matching ignores case; `eq` does not, so "Acme" and
- * "acme" are two different customers but a search for "acme" finds both.
- */
+/** `contains`/`startsWith`/`endsWith` ignore case; `eq`/`neq` do not. */
 export function compare(
   left: RuntimeValue,
   operator: Operator,
@@ -85,10 +82,7 @@ export function compare(
   }
 }
 
-/**
- * Every operand is resolved even once the answer is settled, so a customer
- * reading the run history sees what each side actually held.
- */
+/** No short-circuiting: every operand is resolved so the run history shows both sides. */
 export async function evaluateClauses(
   clauses: Clause[],
   combinator: Combinator,

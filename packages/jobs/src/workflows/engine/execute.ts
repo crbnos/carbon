@@ -76,10 +76,7 @@ interface NodeArgs {
   cache: EntityCache;
 }
 
-/**
- * The permission gate and the work come from the same registry entry, so a node
- * kind can never gain an executor without also gaining its permission check.
- */
+// The permission gate and the work come from the same registry entry, so they cannot drift.
 async function runExecutor(args: NodeArgs): Promise<NodeResult> {
   const { payload, node, catalog, cache } = args;
 
@@ -108,8 +105,8 @@ async function runOneNode(args: NodeArgs): Promise<StepOutcome> {
   const db = getJobDatabaseClient();
   const startedAt = new Date().toISOString();
 
-  // Claim before acting: at most once, on purpose. An interrupted step is
-  // settled as Failed at the end of the run rather than silently retried.
+  // Claim before acting: at most once, on purpose. An interrupted step settles
+  // as Failed at the end of the run rather than silently retrying.
   const claim = await claimStep(db, {
     runId: payload.runId,
     companyId: payload.companyId,
@@ -223,8 +220,8 @@ export async function executeWorkflowRun(params: {
     );
     if (permissions === null) return refuse(NO_PERMISSIONS);
 
-    // Checked explicitly as well as by RLS: a lost permission has to produce a
-    // message the customer can act on, not zero rows and a silent skip.
+    // Checked explicitly as well as by RLS: RLS alone returns zero rows, which
+    // reads as a silent skip rather than a lost permission.
     const module = catalog.getEvent(payload.eventId)?.permission;
     if (
       module !== undefined &&

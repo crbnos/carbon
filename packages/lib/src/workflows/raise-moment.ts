@@ -7,10 +7,7 @@ const log = getLogger("lib", "workflows");
 
 /**
  * Announce a business moment a row change cannot express, after its write has
- * committed. Declarations live in `@carbon/workflows`; phase 3 adds the listener.
- *
- * Never throws into the caller — losing a moment is a missed workflow, whereas
- * failing the caller would break a business action that already committed.
+ * committed. Never throws into the caller — a lost moment beats a failed action.
  */
 export async function raiseMoment<K extends MomentKey>(
   key: K,
@@ -21,9 +18,8 @@ export async function raiseMoment<K extends MomentKey>(
     actorId: string | null;
   }
 ): Promise<void> {
-  // Sender-set idempotency: the same id is the payload field, the matcher's
-  // sourceEventId (`moment:<id>`), and the Inngest event id, so a double send
-  // is suppressed upstream and deduped downstream.
+  // One id serves as payload field, Inngest event id, and the matcher's
+  // sourceEventId (`moment:<id>`), so a double send dedupes at both ends.
   const momentId = nanoid();
   try {
     await trigger(

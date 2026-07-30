@@ -2,7 +2,7 @@ import type { ConditionNode } from "../definition/schema";
 import { evaluateClauses } from "./compare";
 import type { NodeExecutor } from "./types";
 
-/** Branch names the run log uses when nothing matched. */
+/** `branchTaken` in the run log when no path matched. */
 export const NO_BRANCH = "none";
 
 export const conditionExecutor: NodeExecutor<ConditionNode> = {
@@ -20,8 +20,7 @@ export const conditionExecutor: NodeExecutor<ConditionNode> = {
       }
 
       const result = await evaluateClauses(path.clauses, path.combinator, ctx);
-      // A value we could not work out is missing data, not a failed test, so the
-      // node stops here rather than falling through to the else.
+      // Unresolvable data is a skip, not a failed test — never fall through to the else.
       if (!result.ok) return { status: "Skipped", reason: result.reason };
 
       if (result.passed) {

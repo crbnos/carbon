@@ -1,25 +1,10 @@
 /**
- * generate-workflow-catalog — build the workflow event catalog from its two
- * hand-written inputs plus the database's own schema.
+ * Builds events.generated.ts and labels.generated.ts from entities.ts, moments.ts
+ * and the database swagger schema. Run: pnpm run generate:workflow-catalog
  *
- * Inputs (edit these):
- *   packages/workflows/src/catalog/entities.ts   — one entry per record type
- *   packages/workflows/src/catalog/moments.ts    — business events a row change can't express
- *
- * Outputs (committed, never hand-edited):
- *   packages/workflows/src/catalog/events.generated.ts  — ids, outputs, permission, match
- *   packages/workflows/src/catalog/labels.generated.ts  — one msg`` descriptor per id
- *
- * The output is committed so that renaming a column shows up in a pull request
- * as a DELETED event id — the signal that a live customer workflow is about to
- * break. Labels live in their own file because `msg` is a build-time macro:
- * anything importing it from plain Node (the matcher, any vitest run) throws.
- *
- * Emission is deliberately unformatted — the `generate:workflow-catalog` script
- * pipes both files through `biome check --write`, so hand-indenting here would
- * only be overwritten.
- *
- * Run:  pnpm run generate:workflow-catalog
+ * Labels are a separate file because `msg` is a build-time macro that throws when
+ * plain Node imports it. Emitted source is unformatted; the script pipes it
+ * through `biome check --write`.
  */
 import fs from "node:fs";
 import path from "node:path";
@@ -28,7 +13,7 @@ import { buildCatalog } from "../packages/workflows/src/catalog/build";
 import { WORKFLOW_ENTITY_REGISTRY } from "../packages/workflows/src/catalog/entities";
 import { WORKFLOW_MOMENTS } from "../packages/workflows/src/catalog/moments";
 
-// Run from repo root via `pnpm run generate:workflow-catalog`.
+// Resolved against the repo root; the script must be run from there.
 const CATALOG_DIR = path.join(
   process.cwd(),
   "packages/workflows/src/catalog"

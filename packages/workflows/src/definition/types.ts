@@ -17,11 +17,7 @@ export const scalarTypeSchema = z.discriminatedUnion("kind", [
 ]);
 export type ScalarType = z.infer<typeof scalarTypeSchema>;
 
-/**
- * A value flowing between nodes: a primitive, an entity reference, or a list of
- * either. A list's `of` accepts only scalars, so `list<list<T>>` is
- * unrepresentable by construction.
- */
+/** A list's `of` accepts only scalars, so `list<list<T>>` is unrepresentable. */
 export const valueTypeSchema = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("primitive"), of: primitiveKindSchema }),
   z.object({ kind: z.literal("entity"), of: z.string() }),
@@ -29,10 +25,7 @@ export const valueTypeSchema = z.discriminatedUnion("kind", [
 ]);
 export type ValueType = z.infer<typeof valueTypeSchema>;
 
-/**
- * The canonical `ValueType` constructors. Use these rather than writing the
- * literals inline, so the shape has one definition.
- */
+/** The canonical `ValueType` constructors; prefer these over inline literals. */
 export const t = {
   string: { kind: "primitive", of: "string" },
   number: { kind: "primitive", of: "number" },
@@ -61,12 +54,7 @@ export function describeType(type: ValueType): string {
   return `a ${type.of}`;
 }
 
-/**
- * Which operators a value of each type may be tested with — "compare like with
- * like". The operator names come from Carbon's shared vocabulary in
- * `@carbon/utils`, so workflows and storage rules cannot drift apart; this table
- * only decides which of them a workflow may use where.
- */
+/** Which operators each type may be tested with. Names come from `@carbon/utils`. */
 export const OPERATORS_BY_TYPE = {
   boolean: ["eq", "neq"],
   string: ["eq", "neq", "contains", "startsWith", "endsWith"],
@@ -129,12 +117,7 @@ function scalarValueMatches(type: ScalarType, value: unknown): boolean {
   }
 }
 
-/**
- * Does a literal's value actually match the type it claims? The type tag is
- * supplied by the builder, and every other check compares declared types only,
- * so without this a literal tagged `string` could carry an object all the way
- * into a run.
- */
+/** Every other check compares declared types only, so the tag must be verified here. */
 export function literalValueMatchesType(
   type: ValueType,
   value: unknown
@@ -148,12 +131,8 @@ export function literalValueMatchesType(
   return scalarValueMatches(type, value);
 }
 
-/**
- * The value-or-reference union. The literal's value/type agreement is checked
- * here rather than on `literalSchema` itself because zod's `discriminatedUnion`
- * only accepts plain objects as options — refining `literalSchema` would make it
- * ineligible as a member.
- */
+// The literal refinement lives here because zod's `discriminatedUnion` only
+// accepts plain objects, so `literalSchema` itself cannot be refined.
 export const valueOrRefSchema = z
   .discriminatedUnion("kind", [literalSchema, variableRefSchema, itemRefSchema])
   .superRefine((value, ctx) => {
@@ -179,11 +158,7 @@ export type Clause = z.infer<typeof clauseSchema>;
 export const combinatorSchema = z.enum(["and", "or"]);
 export type Combinator = z.infer<typeof combinatorSchema>;
 
-/**
- * Wall time plus an IANA zone name — never a UTC instant, which would leave
- * every US and EU schedule an hour off after a clock change. Frequency values
- * are PascalCase to match Carbon's other enums, including `maintenanceFrequency`.
- */
+/** Wall time plus an IANA zone name, never a UTC instant — schedules must survive clock changes. */
 export const scheduleSchema = z.object({
   freq: z.enum(["Daily", "Weekly", "Monthly"]),
   hour: z.number().int().min(0).max(23),

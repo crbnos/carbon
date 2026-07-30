@@ -14,7 +14,7 @@ export function primitiveValue(
   return { kind: "primitive", of, value };
 }
 
-/** Nothing at all. Reading a property of this is this again, never an error. */
+/** Reading a property of this yields this again, never an error. */
 export function nullValue(): RuntimeValue {
   return { kind: "primitive", of: "null", value: null };
 }
@@ -29,7 +29,7 @@ export function entityValue(
     : { kind: "entity", of, id, row };
 }
 
-/** The one place MAX_LIST_ITEMS is applied. Reports how many were left out. */
+/** The one place MAX_LIST_ITEMS is applied. */
 export function capItems(items: RuntimeValue[]): {
   items: RuntimeValue[];
   dropped: number;
@@ -55,7 +55,7 @@ export function isNull(value: RuntimeValue): boolean {
   return value.kind === "primitive" && value.value === null;
 }
 
-/** A raw database column value plus its catalog type → a RuntimeValue. */
+/** Coerces a raw database column value against its catalog type; anything unusable is null. */
 export function fromColumn(type: ValueType, raw: unknown): RuntimeValue {
   if (type.kind === "list") {
     if (!Array.isArray(raw)) return { kind: "list", of: type.of, items: [] };

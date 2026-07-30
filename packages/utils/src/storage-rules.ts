@@ -15,12 +15,8 @@ import {
 import { fnv1a32 } from "./hash";
 
 /**
- * Carbon's one condition-operator vocabulary, shared by every feature that lets
- * a user build a condition (storage rules, workflows). Which operators a given
- * field or value type may use is decided per-feature — storage rules via
- * `availableOperators` in `./field-registry`, workflows via `OPERATORS_BY_TYPE`
- * in `@carbon/workflows` — but the names and their meanings live here, so two
- * builders can never offer the same user contradictory operator sets.
+ * The one condition-operator vocabulary, shared by storage rules and workflows.
+ * Which operators a field may use is narrowed per-feature; the names live here.
  */
 export type Operator =
   | "eq"
@@ -166,9 +162,7 @@ export type CompiledRule = {
   predicate: (ctx: RuleContext) => boolean;
 };
 
-// ---------------------------------------------------------------------------
 // Field path resolver
-// ---------------------------------------------------------------------------
 
 type Resolver = (ctx: RuleContext) => unknown;
 
@@ -196,9 +190,7 @@ export const buildResolver = (path: string): Resolver => {
   };
 };
 
-// ---------------------------------------------------------------------------
 // Operator implementations (pure)
-// ---------------------------------------------------------------------------
 
 const isNullish = (v: unknown): boolean => v === null || v === undefined;
 
@@ -230,8 +222,7 @@ const operatorFns: Record<
   gte: (l, r) => typeof l === "number" && typeof r === "number" && l >= r,
   lt: (l, r) => typeof l === "number" && typeof r === "number" && l < r,
   lte: (l, r) => typeof l === "number" && typeof r === "number" && l <= r,
-  // On a list, `contains` is membership; on a string, substring. The left
-  // operand's type decides, so one operator name covers both readings.
+  // Membership on a list, substring on a string — the left operand decides.
   contains: (l, r) =>
     Array.isArray(l)
       ? l.includes(r)
@@ -242,9 +233,7 @@ const operatorFns: Record<
     typeof l === "string" && typeof r === "string" && l.endsWith(r)
 };
 
-// ---------------------------------------------------------------------------
 // Compiler
-// ---------------------------------------------------------------------------
 
 const compileCondition = (cond: Condition): ((ctx: RuleContext) => boolean) => {
   const resolve = buildResolver(cond.field);
@@ -315,9 +304,7 @@ export const compileRule = (row: StorageRuleRow): CompiledRule => ({
   predicate: compilePredicate(row.conditionAst)
 });
 
-// ---------------------------------------------------------------------------
 // LRU cache (process-scoped, FIFO eviction at cap)
-// ---------------------------------------------------------------------------
 
 const CACHE_CAP = 256;
 const cache = new Map<string, CompiledRule>();
@@ -354,9 +341,7 @@ export const __resetStorageRulesCache = (): void => {
 
 export const __storageRulesCacheSize = (): number => cache.size;
 
-// ---------------------------------------------------------------------------
 // Message interpolation
-// ---------------------------------------------------------------------------
 
 const TOKEN_RE =
   /\{(condition\[\d+\]\.(?:field|operator|value|name)|[a-zA-Z_][\w.]*)\}/g;
@@ -438,9 +423,7 @@ export const interpolateMessage = (
   });
 };
 
-// ---------------------------------------------------------------------------
 // Evaluator
-// ---------------------------------------------------------------------------
 
 export type EvaluateRulesOptions = {
   resolveConditionValue?: (
@@ -512,13 +495,8 @@ export const evaluateRules = (
   return out;
 };
 
-// ---------------------------------------------------------------------------
-// Item-target rule filtering — which items a broadcast item rule fires on
-// ---------------------------------------------------------------------------
-//
-// Item rules no longer use the blunt `appliesToAll` broadcast. Instead they
-// carry optional type/group filters; empty filters = every item. `server.ts`
-// gates each item broadcast through this before adding the rule to a line.
+// Which items a broadcast item rule fires on: optional type/group filters,
+// empty = every item. `server.ts` gates each broadcast through this.
 
 export type ItemRuleFilter = {
   filteredItemTypes?: string[];
@@ -567,24 +545,9 @@ export const toItemRuleFilter = (row: {
   filteredItemMatchAll: row.filteredItemMatchAll ?? false
 });
 
-// ---------------------------------------------------------------------------
-// Per-surface context availability — single source of truth for "which field
-// may a rule reference given the surfaces it subscribes to"
-// ---------------------------------------------------------------------------
-//
-// Declares which root `FieldContext`s the evaluator STRUCTURALLY builds in
-// `RuleContext` for each surface. "Structurally" = the evaluator constructs that
-// root context for the surface at all; whether a given line's value is null is a
-// separate, allowed concern handled by `isSet`/`isNotSet` (see `nullable`). This
-// turns the prose in `STORAGE_UNIT_NOTES` / "Not populated" into enforced data so
-// the builder/validator can never offer or accept a field that won't resolve.
-//
-// Note `"storage"` is the `FieldContext` value; it maps to the `storageUnit`
-// RuleContext root key.
-//
-// Locked by the anti-drift test in `packages/ee/src/storage-rules/context.test.ts`,
-// which asserts the ctx `evaluateLinesForSurface` builds for each surface
-// populates exactly these contexts.
+// Which root `FieldContext`s the evaluator builds per surface — a null value is
+// a separate concern, handled by `isSet`/`isNotSet`. `"storage"` maps to the
+// `storageUnit` root key. Locked by `packages/ee/src/storage-rules/context.test.ts`.
 export const SURFACE_CONTEXT_AVAILABILITY: Record<
   TransactionSurface,
   readonly FieldContext[]
@@ -627,15 +590,8 @@ export const getFieldsForTargetTypeAndSurfaces = (
     isFieldAvailableOnSurfaces(f, surfaces)
   );
 
-// ---------------------------------------------------------------------------
-// Per-surface field semantics
-// ---------------------------------------------------------------------------
-//
-// Some fields carry different meaning depending on which surface fires the
-// rule. `transaction.quantity` is the prime example — it's the line qty on a
-// receipt, the planned op qty on `operationStart`, the scan delta on
-// `operationFinish`, etc. Surface this so rule authors don't write predicates
-// that work on one surface and silently misfire on another.
+// Fields whose meaning shifts by surface, surfaced to rule authors so a
+// predicate written for one surface doesn't silently misfire on another.
 
 const TRANSACTION_QUANTITY_NOTES: Record<TransactionSurface, string> = {
   receipt: "Quantity received on this receipt line.",

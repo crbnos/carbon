@@ -11,12 +11,7 @@ import { zfd } from "zod-form-data";
 
 export const storageRuleSeverities = ["error", "warn"] as const;
 
-/**
- * The subset of Carbon's shared `Operator` vocabulary that storage rules accept
- * on the wire. `satisfies` ties it to that union so a rename there breaks here
- * rather than silently drifting; the text operators are deliberately omitted
- * because no `field-registry` field offers them.
- */
+/** The subset of the shared `Operator` union storage rules accept on the wire. */
 export const storageRuleOperators = [
   "eq",
   "neq",

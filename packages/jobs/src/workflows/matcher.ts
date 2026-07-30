@@ -10,7 +10,7 @@ const FRESH_TRACE: RunTrace = {
   path: []
 };
 
-/** Person / Automation / Both, decided purely by the presence of the run tag. */
+/** Origin is decided purely by the presence of the run tag. */
 export function filterByOrigin(
   subscribers: Subscriber[],
   workflowRunId: string | null
@@ -19,7 +19,6 @@ export function filterByOrigin(
   return subscribers.filter((s) => s.origin === "Both" || s.origin === origin);
 }
 
-/** The next hop's chain-tracking columns, derived from the causing run. */
 export function deriveNextTrace(causing: CausingRun): RunTrace {
   return {
     rootRunId: causing.rootRunId ?? causing.id,
@@ -31,7 +30,6 @@ export function deriveNextTrace(causing: CausingRun): RunTrace {
   };
 }
 
-/** Cycle and depth checks, evaluated before any run is created. */
 export function evaluateLoopGuard(
   workflowId: string,
   trace: RunTrace
@@ -59,10 +57,8 @@ export type PlannedRun = {
 };
 
 /**
- * Pure planning: dedupe to one run per workflow (first matching event id in
- * catalog order wins — the dedupe key would collapse them anyway), apply the
- * origin filter, then the loop guards. A blocked firing is planned as a
- * Blocked run, never dropped.
+ * One run per workflow — the first matching event id in catalog order wins.
+ * A blocked firing is planned as a Blocked run, never dropped.
  */
 export function planRuns(input: {
   subscribers: Subscriber[];
@@ -118,10 +114,8 @@ export type MatchResult = {
 };
 
 /**
- * The matcher: subscribers -> origin filter -> loop guards -> one workflowRun
- * row per surviving workflow -> one queued event per row actually inserted.
- * A conflict on workflowRun_dedupe_key means this announcement was already
- * handled; nothing is sent for it.
+ * Subscribers -> origin filter -> loop guards -> one workflowRun row per
+ * surviving workflow -> one queued event per row actually inserted.
  */
 export async function matchAndQueue(
   db: Kysely<KyselyDatabase>,
@@ -145,8 +139,7 @@ export async function matchAndQueue(
     .where("te.eventId", "in", input.eventIds)
     .execute();
 
-  // `origin` is a CHECK-constrained text column, so the DB types widen it to
-  // string; narrowing here is the only unchecked step, not the whole row.
+  // `origin` is a CHECK-constrained text column, so the DB types widen it to string.
   const subscribers: Subscriber[] = rows.map((r) => ({
     ...r,
     origin: r.origin as Origin
@@ -164,8 +157,7 @@ export async function matchAndQueue(
       .where("id", "=", input.workflowRunId)
       .where("companyId", "=", input.companyId)
       .executeTakeFirst();
-    // A purged/missing causing run: keep the chain countable (depth 1) even
-    // though its path is unknowable.
+    // A purged causing run still keeps the chain countable, though its path is lost.
     causingRun = row ?? {
       id: input.workflowRunId,
       workflowId: null,

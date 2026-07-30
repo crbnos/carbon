@@ -99,7 +99,7 @@ function drain(
 }
 
 describe("MAX_NODE_EXECUTIONS", () => {
-  it("is the PRD cap", () => {
+  it("caps node executions at 500", () => {
     expect(MAX_NODE_EXECUTIONS).toBe(500);
   });
 });

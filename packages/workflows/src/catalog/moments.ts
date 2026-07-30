@@ -1,11 +1,8 @@
 import { t } from "../definition/types";
 import type { MomentDeclarationLike } from "./build";
 
-/**
- * Business events a row change cannot express, raised from the code that
- * performs the action. Every declaration here must be raised somewhere —
- * `scripts/check-workflow-catalog.ts` fails the build otherwise.
- */
+// Business events a row change cannot express. Every declaration must have a
+// raiseMoment site, or `scripts/check-workflow-catalog.ts` fails the build.
 export const WORKFLOW_MOMENTS = {
   "production.jobReleased": {
     label: "A job is released",

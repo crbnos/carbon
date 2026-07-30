@@ -1,5 +1,4 @@
--- Workflows foundation: module enum, five tables, indexes, RLS, realtime
--- Spec: .ai/specs/2026-07-30-workflows-foundation.md
+-- Workflows: module enum, five tables, indexes, RLS, realtime
 
 ALTER TYPE "module" ADD VALUE IF NOT EXISTS 'Workflows';
 
@@ -9,7 +8,6 @@ DROP VIEW IF EXISTS "modules";
 CREATE VIEW "modules" AS
     SELECT unnest(enum_range(NULL::module)) AS name;
 
--- Insert Workflows module permissions for Admin and Management employee types
 INSERT INTO "employeeTypePermission" ("employeeTypeId", "module", "create", "delete", "update", "view")
 SELECT
     et.id AS "employeeTypeId",
@@ -22,7 +20,7 @@ FROM "employeeType" et
 WHERE et.name IN ('Admin', 'Management')
 ON CONFLICT ("employeeTypeId", "module") DO NOTHING;
 
--- Seed userPermission Workflows keys from the existing Settings permissions
+-- Seed Workflows keys from each user's existing Settings permissions
 UPDATE "userPermission"
 SET "permissions" = "permissions" || jsonb_build_object(
   'workflows_view', COALESCE("permissions"->'settings_view', '[]'::jsonb),
@@ -31,7 +29,6 @@ SET "permissions" = "permissions" || jsonb_build_object(
   'workflows_delete', COALESCE("permissions"->'settings_delete', '[]'::jsonb)
 );
 
--- The workflow itself: name, owner, on/off switch, promoted version, scheduler bookkeeping
 CREATE TABLE "workflow" (
     "id" TEXT NOT NULL DEFAULT id('wf'),
     "companyId" TEXT NOT NULL,
@@ -51,7 +48,7 @@ CREATE TABLE "workflow" (
     CONSTRAINT "workflow_name_companyId_key" UNIQUE ("companyId", "name")
 );
 
--- One version's canvas: nodes and edges in two separate JSON columns
+-- One canvas version
 CREATE TABLE "workflowVersion" (
     "id" TEXT NOT NULL DEFAULT id('wfv'),
     "companyId" TEXT NOT NULL,
@@ -73,7 +70,6 @@ CREATE TABLE "workflowVersion" (
         UNIQUE ("workflowId", "companyId", "versionNumber")
 );
 
--- Circular reference: added after workflowVersion exists.
 -- SET NULL names the column explicitly, or Postgres would null "companyId" too.
 ALTER TABLE "workflow"
     ADD CONSTRAINT "workflow_activeVersionId_fkey"
@@ -81,8 +77,8 @@ ALTER TABLE "workflow"
     REFERENCES "workflowVersion"("id", "companyId")
     ON DELETE SET NULL ("activeVersionId");
 
--- Derived index: a row exists iff the workflow is active, has a promoted version,
--- and that version's trigger nodes list this event id. Rewritten on promote/toggle.
+-- Derived dispatch index, rewritten on promote/toggle: a row exists iff the
+-- workflow is active and its promoted version's trigger nodes list this event id.
 CREATE TABLE "workflowTriggerEvent" (
     "id" TEXT NOT NULL DEFAULT id('wfe'),
     "companyId" TEXT NOT NULL,
@@ -120,11 +116,8 @@ CREATE TABLE "workflowRun" (
     "status" TEXT NOT NULL DEFAULT 'Queued'
         CHECK ("status" IN ('Queued', 'Running', 'Succeeded', 'Failed', 'Blocked', 'Skipped')),
     "statusReason" TEXT,
-    -- Deliberately not foreign keys. ON DELETE CASCADE would let an aged-out
-    -- ancestor take newer descendants with it during a retention purge, and
-    -- SET NULL would make NULL mean both "I am the root" and "my ancestor was
-    -- purged", which the chain-depth cap cannot tell apart. Revisit alongside
-    -- the purge path in a later phase.
+    -- Not FKs: a retention purge of an aged-out ancestor would cascade to newer
+    -- descendants, and SET NULL would make NULL ambiguous with "I am the root".
     "rootRunId" TEXT,
     "causedByRunId" TEXT,
     "depth" INTEGER NOT NULL DEFAULT 0,
@@ -180,10 +173,7 @@ CREATE INDEX "workflow_companyId_idx" ON "workflow" ("companyId");
 CREATE INDEX "workflow_ownerId_idx" ON "workflow" ("ownerId");
 CREATE INDEX "workflow_createdBy_idx" ON "workflow" ("createdBy");
 CREATE INDEX "workflow_updatedBy_idx" ON "workflow" ("updatedBy");
--- The predicate is the firing condition itself: a workflow runs only when it is
--- switched on AND has a promoted version. Deleting the promoted version leaves
--- "active" set, so both halves are needed or the scheduler reads rows it must
--- then discard.
+-- Both predicate halves matter: deleting the promoted version leaves "active" set.
 CREATE INDEX "workflow_due_idx" ON "workflow" ("nextRunAt")
     WHERE "active" = TRUE AND "nextRunAt" IS NOT NULL
       AND "activeVersionId" IS NOT NULL;
@@ -253,8 +243,7 @@ FOR DELETE USING (
   "companyId" = ANY ((SELECT get_companies_with_employee_permission('workflows_delete'))::text[])
 );
 
--- Derived, but rewritten by the promote path running as the signed-in user.
--- No UPDATE policy: a rewrite is always delete-then-insert.
+-- No UPDATE policy: the promote path rewrites rows as delete-then-insert.
 ALTER TABLE "public"."workflowTriggerEvent" ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "SELECT" ON "public"."workflowTriggerEvent"
@@ -272,8 +261,7 @@ FOR DELETE USING (
   "companyId" = ANY ((SELECT get_companies_with_employee_permission('workflows_update'))::text[])
 );
 
--- Run logs are written by the engine as service-role (RLS bypassed).
--- SELECT only, so no authenticated user can forge or alter a run log.
+-- Written by the engine as service-role; SELECT-only so no user can forge a run log.
 ALTER TABLE "public"."workflowRun" ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "SELECT" ON "public"."workflowRun"

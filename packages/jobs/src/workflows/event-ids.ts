@@ -8,8 +8,7 @@ type TableIndex = {
   changed: Map<string, string>;
 };
 
-// Built once from the catalog's match blocks. Moments carry no table and are
-// looked up directly by id in the moment entry point.
+// Built once from the catalog's match blocks. Moments carry no table.
 const INDEX: Map<string, TableIndex> = (() => {
   const index = new Map<string, TableIndex>();
   for (const [id, event] of Object.entries(WORKFLOW_EVENTS)) {
@@ -29,8 +28,7 @@ const INDEX: Map<string, TableIndex> = (() => {
 
 /**
  * One announcement -> the catalog event ids it raises. UPDATEs go through
- * computeDiff (skip-fields, empty-to-empty, rich text), so an update touching
- * no watched column produces [] and the matcher writes nothing at all.
+ * computeDiff, so an update touching no watched column produces [].
  */
 export function computeEventIds(input: {
   table: string;

@@ -3,7 +3,7 @@ import type { EntityLoader, RuntimeContext, RuntimeValue } from "./types";
 
 export type FakeRows = Record<string, Record<string, unknown>>;
 
-/** Rows keyed `${entity}:${id}`. Anything absent reads as "could not be read". */
+/** Rows keyed `${entity}:${id}`; anything absent loads as null. */
 export function createFakeLoader(rows: FakeRows): EntityLoader {
   return { load: async (entity, id) => rows[`${entity}:${id}`] ?? null };
 }

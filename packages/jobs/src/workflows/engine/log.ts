@@ -19,7 +19,7 @@ export interface RunContext {
   } | null;
 }
 
-/** One read: the run, its workflow's on/off switch, and the exact version it was queued against. */
+/** One read: the run, its workflow's on/off switch, and the version it was queued against. */
 export async function loadRunContext(
   db: JobDatabase,
   runId: string,
@@ -32,8 +32,8 @@ export async function loadRunContext(
         .onRef("w.id", "=", "r.workflowId")
         .onRef("w.companyId", "=", "r.companyId")
     )
-    // Pinned to the run's own workflowVersionId — never the workflow's current
-    // activeVersionId, or a promote mid-flight would swap the definition.
+    // Pinned to the run's own workflowVersionId, so a promote mid-flight cannot
+    // swap the definition under it.
     .leftJoin("workflowVersion as v", (join) =>
       join
         .onRef("v.id", "=", "r.workflowVersionId")
@@ -98,11 +98,8 @@ export async function claimRun(
   return claimed !== undefined;
 }
 
-/**
- * The crash exit, so a dead run still settles like every other one. Queued is
- * included because the function can die before the "load" step claims it; a run
- * that already reached a terminal status is left alone.
- */
+/** The crash exit. Queued counts because the function can die before "load"
+ * claims it; a run already in a terminal status is left alone. */
 export async function failCrashedRun(
   db: JobDatabase,
   runId: string,

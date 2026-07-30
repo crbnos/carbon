@@ -23,11 +23,8 @@ export async function getOwnerClient(
   return getUserScopedClient(ownerId, { workflowRunId: runId });
 }
 
-/**
- * Deliberately not `getUserClaims` from `@carbon/auth`: that reads through the
- * service role and a one-hour Redis cache, so a workflow would keep a revoked
- * permission for an hour and would read it privileged. This asks as the owner.
- */
+/** Not `getUserClaims`: that reads privileged, through a one-hour cache, so a
+ * revoked permission would survive an hour. This asks as the owner. */
 export async function readOwnerPermissions(
   client: SupabaseClient<Database>,
   ownerId: string,

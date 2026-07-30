@@ -123,8 +123,6 @@ describe("readWorkflowVersion", () => {
       expect(result.failure).toBe("invalid");
     });
 
-    // Regression: this used to come back as an empty canvas, so opening the
-    // version in the builder and saving would destroy the stored nodes.
     it("rejects a document written by a newer release rather than emptying it", () => {
       const result = readWorkflowVersion({
         formatVersion: 2,

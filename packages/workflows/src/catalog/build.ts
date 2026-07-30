@@ -22,29 +22,22 @@ export interface SwaggerSchema {
 
 export interface WatchedColumnLike {
   label: string;
-  /**
-   * Names the registry entity this column points at. Needed only where the
-   * schema carries no foreign-key note — see `FK_TARGET`.
-   */
+  /** Registry entity this column points at; needed only when the schema has no fk note. */
   ref?: string;
 }
 
 export interface RegistryEntry {
   table: string;
   label: string;
-  /** Lowercase permission module (an existing family — never a new one). */
+  /** Lowercase permission module; must be an existing family. */
   permission: string;
   /** Overrides the derived "A"/"An" where the vowel test gets it wrong. */
   article?: "A" | "An";
-  /**
-   * Present => triggerable (generates created/deleted/changed events).
-   * Absent => reference-only: no events, but a moment or a foreign key hands it out.
-   */
+  /** Present => triggerable; absent => reference-only, no events generated. */
   watch?: Record<string, WatchedColumnLike | undefined>;
 }
 
 export interface MomentDeclarationLike {
-  /** Mandatory — the generator refuses a moment without one. */
   label: string;
   permission: string;
   outputs: Record<string, ValueType>;
@@ -58,12 +51,12 @@ export interface BuiltEvent {
 
 export interface BuiltCatalog {
   events: Record<string, BuiltEvent>;
-  /** English label text per event id — the generator wraps these in msg``. */
+  /** English label text per event id; the generator wraps these in msg``. */
   labels: Record<string, string>;
   entities: Record<string, Record<string, ValueType>>;
 }
 
-/** Columns nobody should reach: tenancy, extensibility, and audit noise. */
+/** Tenancy, extensibility and audit columns, hidden from every entity. */
 const DROPPED_COLUMNS = new Set([
   "companyId",
   "customFields",
@@ -72,11 +65,7 @@ const DROPPED_COLUMNS = new Set([
   "updatedBy"
 ]);
 
-/**
- * Only single-column foreign keys carry this note. A composite key like
- * `(supplierId, companyId)` has none at all, which is why the registry can
- * declare `ref` — and why a `ref` that contradicts a present note is an error.
- */
+/** Only single-column foreign keys carry this note; composite keys have none. */
 const FK_TARGET = /<fk table='([^']+)'/;
 
 /** Lowercase only the first character, so "Purchase order" reads mid-sentence. */
@@ -84,10 +73,7 @@ function lowerFirst(label: string): string {
   return label.charAt(0).toLowerCase() + label.slice(1);
 }
 
-/**
- * "An item", "A purchase order". The vowel test is wrong for u-words ("a user"),
- * so a registry entry can override it — a wrong article is visible to every customer.
- */
+/** The vowel test is wrong for u-words ("a user"), so an entry can override it. */
 function article(label: string, override: string | undefined): string {
   return override ?? (/^[aeiou]/i.test(label) ? "An" : "A");
 }
@@ -135,11 +121,7 @@ function refFor(
   return fkTable === undefined ? undefined : byTable.get(fkTable);
 }
 
-/**
- * Every way the two hand-written files can disagree with the database, collected
- * rather than thrown one at a time — a migration that renames three columns
- * should report three problems, not the first one.
- */
+/** Collects every problem rather than throwing on the first. */
 export function validateCatalogInputs(
   registry: Record<string, RegistryEntry>,
   moments: Record<string, MomentDeclarationLike>,
@@ -205,7 +187,6 @@ export function validateCatalogInputs(
   return problems;
 }
 
-/** Every column a customer can reach by typing a dot. */
 function entityProperties(
   entry: RegistryEntry,
   definition: SwaggerSchema["definitions"][string],
@@ -222,14 +203,7 @@ function entityProperties(
   return properties;
 }
 
-/**
- * Turn the two hand-written inputs plus the database's own schema into one flat
- * catalog. Pure mapping — `validateCatalogInputs` owns every rejection, so the
- * generation below has no error paths to read past.
- *
- * The schema is injected rather than imported, which is what keeps
- * `@carbon/database` out of this package's runtime graph.
- */
+/** The schema is injected, not imported, to keep `@carbon/database` out of the runtime graph. */
 export function buildCatalog(
   registry: Record<string, RegistryEntry>,
   moments: Record<string, MomentDeclarationLike>,

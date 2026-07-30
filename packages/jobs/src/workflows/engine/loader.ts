@@ -11,10 +11,8 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 export type EntityCache = Map<string, Record<string, unknown> | null>;
 
-/**
- * Reads records through the workflow owner's own connection, so anything they
- * may not see comes back as null. `client` must never be a privileged one.
- */
+/** Reads as the workflow owner, so anything they may not see comes back as null.
+ * `client` must never be a privileged one. */
 export function createEntityLoader(params: {
   client: SupabaseClient<Database>;
   companyId: string;
@@ -34,8 +32,7 @@ export function createEntityLoader(params: {
         return null;
       }
 
-      // The entity is only known at run time, so the generated table union
-      // cannot help — and asking it to try costs a 350-way instantiation.
+      // The entity is only known at run time; typing it costs a 350-way instantiation.
       const untyped = client as unknown as SupabaseClient;
       const { data, error } = await untyped
         .from(table)
@@ -44,8 +41,7 @@ export function createEntityLoader(params: {
         .eq("companyId", companyId)
         .maybeSingle();
 
-      // Denied by row-level security and genuinely absent are the same answer
-      // here, and that is correct — the node stops with a reason either way.
+      // Denied by row-level security and genuinely absent are the same answer here.
       const row = error || !data ? null : (data as Record<string, unknown>);
       cache.set(key, row);
       return row;
@@ -53,11 +49,8 @@ export function createEntityLoader(params: {
   };
 }
 
-/**
- * The variables a trigger hands out. A record trigger already carries whole
- * rows, so the common case costs no query; `before` keeps its row inline
- * because it shares an id with `after` and cannot be cached by that id.
- */
+/** The variables a trigger hands out. `before` keeps its row inline because it
+ * shares an id with `after` and so cannot be cached by that id. */
 export function triggerOutputs(params: {
   eventId: string;
   trigger: RunTrigger;

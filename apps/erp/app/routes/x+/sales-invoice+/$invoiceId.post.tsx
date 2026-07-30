@@ -114,7 +114,8 @@ export async function action(args: ActionFunctionArgs) {
     };
   }
 
-  // Below the tenant guard, and below the try/catch that reverts to Draft.
+  // Must stay below the tenant guard and the rollback catch above — a post that
+  // got reverted to Draft must not fire workflows.
   await raiseMoment("invoicing.salesInvoicePosted", {
     outputs: { salesInvoice: { id: invoiceId }, postedBy: { id: userId } },
     companyId,

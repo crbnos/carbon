@@ -1,9 +1,4 @@
-/**
- * Everything wrong with a workflow that stops it being activated. Every issue is
- * fatal — there is deliberately no `severity`, because nothing in phase 1
- * produces advice a customer may ignore. Add one when a check genuinely should
- * warn rather than block, not by default.
- */
+/** Everything that stops a workflow being activated. Every issue is fatal; there is no severity. */
 export type WorkflowIssueCode =
   | "MALFORMED_DEFINITION"
   | "NO_TRIGGER"
@@ -29,7 +24,7 @@ export type WorkflowIssueCode =
 
 export interface WorkflowIssue {
   code: WorkflowIssueCode;
-  /** Customer-facing. Phase 8 renders these through the translation macro. */
+  /** Customer-facing. */
   message: string;
   nodeId?: string;
   edgeId?: string;

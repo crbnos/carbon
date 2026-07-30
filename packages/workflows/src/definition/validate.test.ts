@@ -221,7 +221,7 @@ const lookup = (id: string, entity: string, returns: "one" | "list") => ({
   data: { entity, returns, match: [] }
 });
 
-/** The PRD's "when a purchase order over $10,000 is sent, tell the buyer's manager". */
+/** "When a purchase order over $10,000 is sent, tell the buyer's manager." */
 function purchaseOrderWorkflow(): WorkflowDefinition {
   return define(
     [
@@ -577,9 +577,7 @@ describe("the current item", () => {
     );
   });
 
-  // The three below all used to report ITEM_OUTSIDE_LOOP alongside — or above —
-  // the real problem, because the item check ran unconditionally in layer 7
-  // instead of joining the resolver that already suppresses knock-on failures.
+  // The next three assert ITEM_OUTSIDE_LOOP is suppressed when a deeper cause exists.
   it("reports only UNKNOWN_ENTITY when the list's record type is gone", () => {
     const thin = createFixtureCatalog({ omitEntities: ["part"] });
     const definition = filterOn([
@@ -683,9 +681,6 @@ describe("the catalog is injected, not baked in", () => {
 });
 
 describe("regressions", () => {
-  // A node used to be exempt from its own upstream check, so a filter reading
-  // its own output resolved to "unconfigured", was skipped by every later layer,
-  // and the whole workflow validated clean.
   it("rejects a filter whose source is its own output", () => {
     const definition = define(
       [
@@ -722,8 +717,6 @@ describe("regressions", () => {
     expect(codes(definition)).toEqual(["REF_NOT_UPSTREAM"]);
   });
 
-  // The declared type on a literal used to be taken on trust, so a literal
-  // tagged `string` could carry an object all the way into a run.
   it("rejects a literal whose value contradicts its declared type", () => {
     const definition = {
       formatVersion: 1,
@@ -806,8 +799,6 @@ describe("regressions", () => {
     expect(issues.map((i) => i.code)).toEqual(["MALFORMED_DEFINITION"]);
   });
 
-  // Adding a node type used to compile clean while five separate switches
-  // silently ignored it, leaving it with no handles and no checks at all.
   it("declares a node kind for every node type in the schema", () => {
     const inSchema = nodeSchema.options
       .map((option) => option.shape.type.value)

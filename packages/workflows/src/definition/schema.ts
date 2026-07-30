@@ -9,9 +9,9 @@ import {
 
 export const CURRENT_DEFINITION_FORMAT_VERSION = 1;
 
-/** PRD cap, so batch mode cannot run away. */
+/** Cap on batch-mode iterations. */
 export const MAX_LIST_ITEMS = 100;
-/** PRD hop cap, shared with the matcher in phase 3. */
+/** Hop cap, shared with the matcher. */
 export const MAX_CHAIN_DEPTH = 10;
 
 /** Who made the change being watched — a person, the system, or either. */

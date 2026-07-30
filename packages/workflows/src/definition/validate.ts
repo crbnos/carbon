@@ -23,14 +23,7 @@ import type { ItemRef, ValueOrRef, ValueType, VariableRef } from "./types";
 
 /**
  * Is this workflow well-formed enough to activate? An empty result means yes.
- * The activation gate in phase 7 checks that directly, so there is exactly one
- * entry point and the builder and the engine can never disagree.
- *
- * Takes `unknown` because what it really validates is stored JSON that may
- * predate the current schema; the shape layer below is the boundary.
- *
- * Checks run in layers, each assuming the previous one passed, so a customer is
- * never shown type errors that are really a consequence of a broken shape.
+ * Layers run in order and stop at the first that fails, so knock-on errors stay hidden.
  */
 export function validateDefinition(
   definition: unknown,
@@ -298,11 +291,7 @@ function reachableFrom(
   return reachable;
 }
 
-/**
- * Answers the questions node kinds ask about the rest of the definition.
- * Ancestors, outputs and loop lists are memoised because both layers 5 and 6
- * walk every value in the graph.
- */
+/** Answers the questions node kinds ask about the rest of the definition. */
 function createContext(
   definition: WorkflowDefinition,
   catalog: WorkflowCatalog
@@ -323,9 +312,8 @@ function createContext(
     return ancestors;
   };
 
-  // Recursion terminates without a re-entry guard: a reference resolves only to
-  // a strict ancestor (below), and layer 4 already proved the graph acyclic, so
-  // each hop moves strictly upstream.
+  // No re-entry guard needed: refs resolve only to strict ancestors and layer 4
+  // proved the graph acyclic, so each hop moves strictly upstream.
   const outputsOf = (nodeId: string): NodeOutputs | undefined => {
     if (outputCache.has(nodeId)) return outputCache.get(nodeId);
     const node = byId.get(nodeId);
@@ -351,7 +339,6 @@ function createContext(
     return { type: resolved };
   };
 
-  /** The item one turn of a looping node holds, reached through that node's list. */
   const resolveItem = (ref: ItemRef, atNodeId: string): ResolvedRef => {
     const loop = loopListOf(atNodeId);
     if (loop === undefined) return { failure: "no-loop" };
@@ -392,11 +379,7 @@ function createContext(
   return ctx;
 }
 
-/**
- * Layer 5 — every value resolves: a variable names a real, genuinely upstream
- * value, and the current item is only read inside a step that works through a
- * list.
- */
+/** Layer 5 — every variable names a real upstream value, and items are only read inside a loop. */
 function checkReferences(
   definition: WorkflowDefinition,
   ctx: NodeContext
@@ -417,11 +400,7 @@ function checkReferences(
   return issues;
 }
 
-/**
- * A failure as a customer would put it, or nothing when another layer reports
- * the real cause. The same mistake on an item path and on a variable path is one
- * code, not two, because to a customer it is the same mistake.
- */
+/** A failure as a customer would put it, or nothing when another layer reports the real cause. */
 function describeFailure(
   failure: ResolveFailure,
   value: ValueOrRef
@@ -468,10 +447,8 @@ function describeFailure(
 }
 
 /**
- * Layer 6 — every value plugged in is the kind of value that fits. Nodes whose
- * catalog entry is missing are skipped so layer 7 reports that once, rather than
- * a customer seeing both "we no longer know this action" and every type error
- * that follows from not knowing it.
+ * Layer 6 — every value plugged in fits. Nodes with a missing catalog entry are
+ * skipped so layer 7 reports that alone.
  */
 function checkTypes(
   definition: WorkflowDefinition,

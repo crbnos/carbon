@@ -21,12 +21,7 @@ import {
 
 export type NodeOutputs = Record<string, ValueType>;
 
-/**
- * Why a value could not be resolved. `unconfigured` means another layer already
- * reports the real cause — the node it reads from has no catalog entry, or a
- * looping node has not settled on a list — so reporting it here too would be two
- * problems where there is one. `no-loop` is the current item read outside a loop.
- */
+/** `unconfigured` is suppressed — another layer reports the real cause. */
 export type ResolveFailure =
   | "unknown-node"
   | "not-upstream"
@@ -47,11 +42,7 @@ export interface ValueSite {
   field: string;
 }
 
-/**
- * What a node needs to know about the rest of the definition in order to answer
- * questions about itself. Implemented by the resolver in `validate.ts`; declared
- * here so node behaviour never has to import the validator.
- */
+/** What a node can ask about the rest of the definition. Implemented in `validate.ts`. */
 export interface NodeContext {
   catalog: WorkflowCatalog;
   resolveValue(value: ValueOrRef, atNodeId: string): ResolvedRef;
@@ -60,17 +51,10 @@ export interface NodeContext {
   loopListOf(nodeId: string): LoopList | undefined;
 }
 
-/**
- * Everything one kind of node declares about itself. Keeping the seven
- * behaviours together means adding a node type is a single entry in
- * `NODE_KINDS` rather than seven switches to remember, and the mapped type below
- * makes forgetting one a compile error instead of a node that silently
- * validates clean.
- */
+/** Everything one kind of node declares about itself. */
 interface NodeKind<N extends WorkflowNode> {
   /** Outgoing connection points, by name. */
   handles(node: N): string[];
-  /** Every value plugged into this node, whatever form it takes. */
   values(node: N): ValueSite[];
   /** What it hands onward; `undefined` when its catalog entry is missing. */
   outputs(node: N, ctx: NodeContext): NodeOutputs | undefined;
@@ -78,15 +62,9 @@ interface NodeKind<N extends WorkflowNode> {
   loopList(node: N, ctx: NodeContext): LoopList | undefined;
   /** Is its catalog entry resolvable? Type checking is skipped when not. */
   configured(node: N, ctx: NodeContext): boolean;
-  /** Are the values plugged into it the kind of values that fit? */
   checkTypes(node: N, ctx: NodeContext): WorkflowIssue[];
-  /** Is anything left unchosen, or chosen but no longer offered? */
   checkConfig(node: N, ctx: NodeContext): WorkflowIssue[];
 }
-
-// ---------------------------------------------------------------------------
-// Shared checks — clauses (condition, lookup, filter) and inputs (entity, action)
-// ---------------------------------------------------------------------------
 
 function clauseValues(clauses: Clause[], prefix: string): ValueSite[] {
   return clauses.flatMap((clause, index) => [
@@ -99,10 +77,7 @@ function inputValues(inputs: Record<string, ValueOrRef>): ValueSite[] {
   return Object.entries(inputs).map(([field, value]) => ({ value, field }));
 }
 
-/**
- * A filter always works through its source; every reason that source is not a
- * list it reports itself, in `checkTypes` or `checkConfig`.
- */
+/** A bad source is reported by the filter's own `checkTypes`/`checkConfig`. */
 function filterLoopList(node: FilterNode, ctx: NodeContext): LoopList {
   if (node.data.source === undefined) return { failure: "unconfigured" };
   const source = ctx.resolveValue(node.data.source, node.id);
@@ -112,10 +87,7 @@ function filterLoopList(node: FilterNode, ctx: NodeContext): LoopList {
   return { failure: "unconfigured" };
 }
 
-/**
- * A batched action repeats over its one list-typed input. Inputs reading the
- * current item are skipped, so asking what the item is never asks again.
- */
+/** Item-reading inputs are skipped, so resolving the item never recurses. */
 function actionLoopList(
   node: ActionNode,
   ctx: NodeContext
@@ -232,11 +204,7 @@ const incomplete = (
   message
 });
 
-/**
- * The narrowest promise a trigger listening to several events can make: only the
- * outputs every event supplies, at the same type. Anything else could be absent
- * at run time depending on which event fired.
- */
+/** Only outputs every event supplies at the same type; the rest may be absent at run time. */
 function intersectOutputs(a: NodeOutputs, b: NodeOutputs): NodeOutputs {
   const shared: NodeOutputs = {};
   for (const [name, type] of Object.entries(a)) {
@@ -245,10 +213,6 @@ function intersectOutputs(a: NodeOutputs, b: NodeOutputs): NodeOutputs {
   }
   return shared;
 }
-
-// ---------------------------------------------------------------------------
-// The node kinds
-// ---------------------------------------------------------------------------
 
 export const NODE_KINDS: {
   [K in WorkflowNodeType]: NodeKind<Extract<WorkflowNode, { type: K }>>;
@@ -399,8 +363,7 @@ export const NODE_KINDS: {
       return "type" in list ? { [DEFAULT_OUTPUT]: list.type } : undefined;
     },
     loopList: filterLoopList,
-    // A filter has no catalog entry to be missing; a bad source is a type error
-    // it reports itself, below.
+    // A filter has no catalog entry to be missing.
     configured: () => true,
     checkTypes: (node, ctx) => {
       if (node.data.source === undefined) return [];
@@ -474,11 +437,8 @@ export const NODE_KINDS: {
   }
 };
 
-/**
- * The one cast in the dispatch. TypeScript cannot see that `NODE_KINDS[n.type]`
- * and `n` are narrowed to the same member of the union, so each accessor asserts
- * it once here instead of every call site re-deriving it with a switch.
- */
+// Cast: TypeScript cannot see that `NODE_KINDS[node.type]` and `node` narrow to
+// the same member of the union.
 function kindOf<N extends WorkflowNode>(node: N): NodeKind<N> {
   return NODE_KINDS[node.type] as unknown as NodeKind<N>;
 }

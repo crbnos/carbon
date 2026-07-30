@@ -1,17 +1,6 @@
--- Phase 3 (workflows): tag queue messages with the causing workflow run.
---
--- dispatch_event_batch() gains one payload field, `workflowRunId`, read from
--- the `workflow_run_id` claim on the caller's verified JWT
--- (request.jwt.claims). The workflow engine (phase 4) mints its per-step
--- owner token with that claim, so every write a running workflow makes
--- announces which run made it; a normal user or API token carries no such
--- claim and the field is null. This is what makes the origin filter and the
--- loop guards possible.
---
--- Also restores the composite-key UPDATE row pairing (pk_join) from
--- 20260717143448_fix-event-update-row-pairing.sql, which 20260721184852
--- silently reverted by copying its body forward from 20260427120000.
--- get_primary_key_columns() already exists and is not recreated here.
+-- Tag queue messages with `workflowRunId`, read from the `workflow_run_id` JWT
+-- claim: null unless a running workflow made the write. Also restores the
+-- composite-key UPDATE pairing from 20260717143448, reverted by 20260721184852.
 
 CREATE OR REPLACE FUNCTION public.dispatch_event_batch()
 RETURNS TRIGGER
@@ -40,9 +29,8 @@ BEGIN
     (nullif(current_setting('request.jwt.claims', true), '')::jsonb)->>'workflow_run_id';
   pk_column := public.get_primary_key_column(TG_TABLE_NAME);
 
-  -- Pair UPDATE transition rows on the table's full row identity, not just
-  -- the first key column — single-column pairing cross-joins rows on tables
-  -- with composite identity (see 20260717143448).
+  -- Pair UPDATE rows on the full key: single-column pairing cross-joins rows
+  -- on tables with composite identity.
   SELECT string_agg(format('n.%I = o.%I', col, col), ' AND ')
     INTO pk_join
   FROM unnest(public.get_primary_key_columns(TG_TABLE_NAME)) AS col;
@@ -177,9 +165,8 @@ BEGIN
 
   END LOOP;
 
-  -- Wake the Inngest drainer, at most once per transaction. The GUC is
-  -- txn-local (set_config(..., true)), so multi-statement transactions and
-  -- bulk imports post a single doorbell instead of one per statement.
+  -- Wake the Inngest drainer once per transaction: the GUC is txn-local, so a
+  -- bulk import posts a single doorbell instead of one per statement.
   IF did_enqueue
      AND current_setting('carbon.event_wake_sent', true) IS DISTINCT FROM 'true' THEN
     PERFORM util.wake_event_queue();

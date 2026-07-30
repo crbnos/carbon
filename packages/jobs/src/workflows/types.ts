@@ -9,11 +9,7 @@ export type Subscriber = {
   ownerId: string;
 };
 
-/**
- * The causing run, read when the announcement carries a workflowRunId.
- * `workflowId` is null only when that run row has been purged — the chain stays
- * countable but its history is unknowable.
- */
+/** `workflowId` is null only when the causing run row has been purged. */
 export type CausingRun = {
   id: string;
   workflowId: string | null;
@@ -22,7 +18,7 @@ export type CausingRun = {
   path: string[];
 };
 
-/** The chain-tracking columns for the run(s) this announcement creates. */
+/** The chain-tracking columns for the run(s) an announcement creates. */
 export type RunTrace = {
   rootRunId: string | null;
   causedByRunId: string | null;

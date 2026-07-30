@@ -1,17 +1,14 @@
 import type { ColumnOf, TableName } from "@carbon/database/audit.config";
 import type { RegistryEntry, WatchedColumnLike } from "./build";
 
-/**
- * The registry's shape, with `watch` keys bound to the entry's own table so a
- * renamed column is a compile error here. `build.ts` owns the field contract.
- */
+/** `watch` keys are bound to the entry's own table, so a renamed column fails to compile. */
 interface EntityEntry<T extends TableName>
   extends Omit<RegistryEntry, "table" | "watch"> {
   table: T;
   watch?: { [C in ColumnOf<T>]?: WatchedColumnLike };
 }
 
-/** Identity helper so `watch` keys are checked against the entry's own table. */
+/** Identity helper that infers `T` so `watch` keys get checked. */
 const entity = <T extends TableName>(entry: EntityEntry<T>) => entry;
 
 export const WORKFLOW_ENTITY_REGISTRY = {
@@ -163,9 +160,8 @@ export const WORKFLOW_ENTITY_REGISTRY = {
     }
   }),
 
-  // Reference-only: no events, but a moment hands one out or a foreign key
-  // points at it, so a customer can type a dot through it.
-  // "A user", not the vowel test's "An user".
+  // Reference-only entries below: no `watch`, so no events, but they are
+  // dot-reachable as moment outputs and foreign-key targets.
   user: entity({
     table: "user",
     label: "User",
@@ -196,10 +192,6 @@ export const WORKFLOW_ENTITY_REGISTRY = {
 
 export type RegistryEntityName = keyof typeof WORKFLOW_ENTITY_REGISTRY;
 
-/**
- * The registry widened for iteration. `as const` gives each entry a distinct
- * literal type, so `Object.values` over the raw object yields a union in which
- * reference-only entries have no `watch` key at all.
- */
+/** The registry widened for iteration; `as const` above makes `Object.values` a union. */
 export const REGISTRY_ENTRIES: Record<string, RegistryEntry> =
   WORKFLOW_ENTITY_REGISTRY;

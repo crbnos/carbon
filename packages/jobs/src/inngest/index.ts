@@ -78,7 +78,7 @@ export const functions = [
   webhookFunction,
   workflowFunction,
   embeddingFunction,
-  // Workflows (matcher + stub consumer)
+  // Workflows
   workflowMomentFunction,
   workflowRunFunction,
   // Tasks

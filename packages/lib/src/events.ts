@@ -569,8 +569,7 @@ export type Events = {
     };
   };
 
-  // A matched workflow firing: one event per created workflowRun row. The
-  // phase-4 engine consumes this; until then a stub logs and returns.
+  // A matched workflow firing: one event per created workflowRun row.
   "carbon/workflow-run.queued": {
     data: {
       runId: string;
@@ -584,10 +583,10 @@ export type Events = {
     };
   };
 
-  // Workflow moments — raised after a business action commits. Phase 3 consumes.
+  // Workflow moments — raised after a business action commits.
   "carbon/workflow-moment.raised": {
     data: {
-      /** Minted by raiseMoment (nanoid); also set as the Inngest event id. */
+      /** Minted by raiseMoment; also set as the Inngest event id. */
       momentId: string;
       moment: string;
       companyId: string;

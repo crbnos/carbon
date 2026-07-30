@@ -77,11 +77,7 @@ const moments: Record<string, MomentDeclarationLike> = {
   }
 };
 
-/**
- * Every registry table stubbed with just its watched columns, so these tests can
- * prove the two hand-written files are internally consistent without importing
- * `@carbon/database` as a value.
- */
+/** Every registry table stubbed, so these tests never import `@carbon/database` as a value. */
 function realDefinitions(): SwaggerSchema["definitions"] {
   const definitions: SwaggerSchema["definitions"] = {};
   for (const entry of Object.values(REGISTRY_ENTRIES)) {

@@ -4,7 +4,6 @@ import {
   type WorkflowDefinition
 } from "@carbon/workflows";
 
-/** Hard cap on how many nodes one run may execute. Enforced by the engine. */
 export const MAX_NODE_EXECUTIONS = 500;
 
 export function findTriggerNode(
@@ -42,7 +41,6 @@ export function createWalkState(definition: WorkflowDefinition): WalkState {
   };
 }
 
-/** Pops the next node id to execute, or undefined when the walk is done. */
 export function nextNode(state: WalkState): string | undefined {
   return state.frontier.shift();
 }

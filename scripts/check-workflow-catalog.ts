@@ -1,19 +1,7 @@
 /**
- * check-workflow-catalog — the guarantees that keep the workflow event catalog honest.
- *
- * A dead trigger is worse than a missing one: a customer builds a rule on "a job is
- * released", and if nothing in the code ever raises it, the rule silently never fires.
- * A renamed column is the same failure with a longer fuse. Both must break the build.
- *
- * Checks:
- *   1. Every declared moment has at least one raise site.
- *   2. Every raise site names a declared moment (the type system covers this too).
- *   3. The registry still agrees with the database schema — delegated to
- *      `validateCatalogInputs`, which is typechecked and unit-tested, unlike this
- *      script (`scripts/` is in no tsconfig).
- *   4. The committed catalog is what the generator would produce right now.
- *
- * Run:  pnpm run check:workflow-catalog
+ * Fails the build when a declared moment has no raise site, a raise site names an
+ * undeclared moment, the registry disagrees with the database schema, or the
+ * committed catalog is stale. Run: pnpm run check:workflow-catalog
  */
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
@@ -37,8 +25,8 @@ const LABELS_FILE = path.join(
 const failures: string[] = [];
 const fail = (message: string) => failures.push(message);
 
-// Checks 1 and 2 — the raise sites. `git grep` searches the index, so build
-// output and dependencies are excluded by definition rather than by a skip-list.
+// `git grep` searches the index, so build output and dependencies are excluded
+// without a skip-list.
 const raised = new Map<string, string[]>();
 const grep = execFileSync(
   "git",
@@ -79,8 +67,6 @@ for (const key of raised.keys()) {
   }
 }
 
-// Check 3 — every registry table and watched column still exists, every ref agrees
-// with the schema, every moment is well-formed. Reports all problems, not the first.
 for (const problem of validateCatalogInputs(
   WORKFLOW_ENTITY_REGISTRY,
   WORKFLOW_MOMENTS,
@@ -89,8 +75,7 @@ for (const problem of validateCatalogInputs(
   fail(problem);
 }
 
-// Check 4 — the committed catalog matches a fresh build. Compares data, not file
-// text, so formatting can never make this flap.
+// Compares data, not file text, so formatting can never make this flap.
 if (failures.length === 0) {
   const rebuilt = buildCatalog(WORKFLOW_ENTITY_REGISTRY, WORKFLOW_MOMENTS, schema);
   const stale =
@@ -116,8 +101,7 @@ if (failures.length === 0) {
     fail(`${stale} An entity's generated properties changed.`);
   }
 
-  // Read the label file as text: it holds an untransformed `msg` macro, which
-  // throws if plain Node imports it. That split is deliberate.
+  // Read as text, not imported: the untransformed `msg` macro throws in plain Node.
   const labelSource = fs.readFileSync(LABELS_FILE, "utf8");
   const labelIds = new Set(
     [...labelSource.matchAll(/^ {2}"([^"]+)":\s*msg`/gm)].map((m) => m[1])

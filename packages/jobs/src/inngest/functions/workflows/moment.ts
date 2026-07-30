@@ -12,11 +12,8 @@ const momentPayloadSchema = z.object({
   outputs: z.record(z.object({ id: z.string() }).passthrough())
 });
 
-/**
- * Moment entry point of the workflow matcher. A moment already IS a catalog
- * event id; a moment is always Person-origin for the filter (no workflow run
- * tag travels with it — a workflow action cannot raise one in this phase).
- */
+/** Moment entry point of the workflow matcher. A moment already IS a catalog event
+ * id, and carries no run tag, so it is always Person-origin for the filter. */
 export const workflowMomentFunction = inngest.createFunction(
   {
     id: "workflow-moment",

@@ -1,12 +1,6 @@
 /**
- * check-workflow-events — every event id a live workflow subscribes to must still
- * exist in the generated catalog.
- *
- * The SQL invariant `workflow-trigger-event-drift` covers row-vs-trigger-node
- * equality; this covers the half that needs the catalog, which is TypeScript.
- * Needs a live database, so it runs alongside the invariants, not in CI.
- *
- * Run:  pnpm --filter @carbon/checks workflow-events
+ * Every event id a live workflow subscribes to must still exist in the generated
+ * catalog. Needs a live database: `pnpm --filter @carbon/checks workflow-events`.
  */
 import { createEventCatalog } from "@carbon/workflows";
 import { Client } from "pg";

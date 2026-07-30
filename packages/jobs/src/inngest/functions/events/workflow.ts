@@ -6,8 +6,7 @@ import { matchAndQueue } from "../../../workflows/matcher";
 import { inngest } from "../../client";
 
 const workflowPayloadSchema = z.object({
-  // pgmq msg_id is BIGINT — node-pg hands it back as a string, so coerce
-  // rather than assume the number the QueueJob type claims.
+  // pgmq msg_id is BIGINT, which node-pg hands back as a string.
   msgId: z.coerce.number(),
   companyId: z.string(),
   actorId: z.string().nullish(),
@@ -17,12 +16,8 @@ const workflowPayloadSchema = z.object({
 
 export type WorkflowPayload = z.infer<typeof workflowPayloadSchema>;
 
-/**
- * Record-change entry point of the workflow matcher: one pgmq announcement ->
- * catalog event ids -> subscribed workflows -> one Queued workflowRun (and
- * one carbon/workflow-run.queued event) per workflow. Blocked firings are
- * written as Blocked runs and not queued.
- */
+/** Record-change entry point of the workflow matcher: one pgmq announcement ->
+ * catalog event ids -> one workflowRun per subscribed workflow. */
 export const workflowFunction = inngest.createFunction(
   {
     id: "event-handler-workflow",

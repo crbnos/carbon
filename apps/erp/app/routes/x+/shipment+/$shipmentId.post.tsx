@@ -332,10 +332,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
       .eq("id", shipmentId);
   }
 
-  // Below the catch above, which reverts to Draft: announcing a post that then
-  // got rolled back would fire workflows on a shipment the UI still shows as Draft.
-  // The write itself happens in a Deno edge function that cannot import app code,
-  // so the caller announces it.
+  // Must stay below the rollback catch above — a post that got reverted to
+  // Draft must not fire workflows.
   await raiseMoment("inventory.shipmentPosted", {
     outputs: { shipment: { id: shipmentId }, postedBy: { id: userId } },
     companyId,

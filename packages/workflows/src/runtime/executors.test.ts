@@ -13,14 +13,12 @@ describe("executorFor", () => {
     expect(executorFor(nodeOf("filter"))).toBe(filterExecutor);
   });
 
-  it("has nothing for the kinds that arrive in phase 5", () => {
+  it("has nothing for the kinds that cannot run yet", () => {
     expect(executorFor(nodeOf("lookup"))).toBeUndefined();
     expect(executorFor(nodeOf("entity"))).toBeUndefined();
     expect(executorFor(nodeOf("action"))).toBeUndefined();
   });
 
-  // The drift this registry exists to stop: a kind that can execute but whose
-  // permission check was forgotten in a second lookup.
   it("never offers work without a permission check beside it", () => {
     for (const type of ["condition", "filter", "lookup", "entity", "action"]) {
       const executor = executorFor(nodeOf(type as WorkflowNodeType));

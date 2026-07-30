@@ -2362,8 +2362,7 @@ export async function updateJobStatus(
   // set completedDate — that is the complete route's / complete_job_to_inventory's job.
   const clearsCompletion = !["Completed", "Closed"].includes(status);
 
-  // Every status transition funnels through here, so the prior status is what
-  // tells a real release/hold apart from a no-op re-save.
+  // The prior status is what tells a real release/hold apart from a re-save.
   const prior = await client
     .from("job")
     .select("status")

@@ -4,10 +4,8 @@ import { z } from "zod";
 import { WORKFLOW_EVENTS } from "./catalog";
 import { nodeSchema, type Origin } from "./definition/schema";
 
-/** One desired workflowTriggerEvent row, before ids/defaults. */
 export type DesiredTriggerRow = { eventId: string; origin: Origin };
 
-/** One desired company-level WORKFLOW subscription. */
 export type DesiredSubscription = {
   table: string;
   operations: ("INSERT" | "UPDATE" | "DELETE")[];
@@ -15,12 +13,7 @@ export type DesiredSubscription = {
 
 const nodesSchema = z.array(nodeSchema);
 
-/**
- * Derive the workflowTriggerEvent rows a promoted version wants: one row per
- * event id on each trigger node, carrying that node's origin. Duplicate event
- * ids across trigger nodes keep the first node's origin (the table is unique
- * on (workflowId, companyId, eventId)).
- */
+/** One row per event id per trigger node; a duplicate event id keeps the first node's origin. */
 export function deriveWorkflowTriggerRows(nodes: unknown): DesiredTriggerRow[] {
   const parsed = nodesSchema.safeParse(nodes);
   if (!parsed.success) {
@@ -40,12 +33,7 @@ export function deriveWorkflowTriggerRows(nodes: unknown): DesiredTriggerRow[] {
   return [...rows.values()];
 }
 
-/**
- * Derive the company's WORKFLOW subscriptions from its subscribed event ids,
- * resolved through each event's catalog match block: one `workflow-<table>`
- * subscription per distinct table, operations set to exactly what those
- * events need. Moments resolve to no table and contribute nothing.
- */
+/** One subscription per distinct table across the event ids; moments have no table. */
 export function deriveWorkflowSubscriptions(
   eventIds: string[]
 ): DesiredSubscription[] {
@@ -69,13 +57,7 @@ function sameOperations(a: string[], b: string[]): boolean {
   );
 }
 
-/**
- * Reconcile the company's `workflow-<table>` eventSystemSubscription rows to
- * what its workflowTriggerEvent rows require. Runs inside the caller's
- * transaction. Removal is by exact (companyId, name, table); a row with the
- * wrong operations is deleted and re-inserted (the table is written
- * delete-then-insert by design — see the foundation migration's RLS comment).
- */
+/** The table has no UPDATE policy, so a row with wrong operations is deleted and re-inserted. */
 async function reconcileWorkflowSubscriptions(
   trx: Transaction<KyselyDatabase>,
   companyId: string
@@ -135,12 +117,7 @@ async function reconcileWorkflowSubscriptions(
   return { tables: desired.map((d) => d.table) };
 }
 
-/**
- * Rewrite one workflow's workflowTriggerEvent rows and reconcile the
- * company's WORKFLOW subscriptions, in one transaction. Kysely bypasses RLS:
- * the caller authorizes first (phase 7's activation route gates on
- * workflows_update before calling).
- */
+/** Kysely bypasses RLS here: the caller must authorize before calling. */
 export async function syncWorkflowTriggers(
   db: Kysely<KyselyDatabase>,
   companyId: string,
@@ -195,10 +172,7 @@ export async function syncWorkflowTriggers(
   });
 }
 
-/**
- * Standalone repair entry: reconcile a company's WORKFLOW subscriptions from
- * its current workflowTriggerEvent rows without touching any workflow.
- */
+/** Repair entry: reconcile subscriptions from existing trigger rows, touching no workflow. */
 export async function syncWorkflowSubscriptions(
   db: Kysely<KyselyDatabase>,
   companyId: string

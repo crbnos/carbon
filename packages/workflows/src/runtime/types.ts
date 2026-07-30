@@ -9,17 +9,16 @@ export type RuntimeValue =
       of: PrimitiveKind;
       value: string | number | boolean | null;
     }
-  // `row` carries a snapshot the loader could not produce — the "before" side of
-  // a change, which shares its id with "after" and so cannot be cached by id.
+  // `row` holds a snapshot the loader cannot produce: "before" shares its id with "after".
   | { kind: "entity"; of: string; id: string; row?: Record<string, unknown> }
   | { kind: "list"; of: ScalarType; items: RuntimeValue[] };
 
-/** Either a value, or a customer-facing reason it could not be worked out. */
+/** `reason` is customer-facing text. */
 export type Resolution =
   | { ok: true; value: RuntimeValue }
   | { ok: false; reason: string };
 
-/** Loads a record the run does not already hold. Implemented job-side; never here. */
+/** Implemented job-side; this package stays free of I/O. */
 export interface EntityLoader {
   load(entity: string, id: string): Promise<Record<string, unknown> | null>;
 }
@@ -40,14 +39,14 @@ export type NodeResult =
       /** The handle to follow, or null to stop this path cleanly. */
       handle: string | null;
       branchTaken?: string;
-      /** A one-line note for the step row's statusReason, e.g. what a filter kept. */
+      /** A one-line note for the step row's statusReason. */
       summary?: string;
     }
   | { status: "Skipped"; reason: string }
   | { status: "Failed"; error: string; handle?: string | null };
 
 export interface NodeExecutor<N extends WorkflowNode> {
-  /** The permission module the owner must hold, or undefined when the node reads nothing. */
+  /** The permission module the owner must hold; undefined when the node reads nothing. */
   permission(node: N, catalog: WorkflowCatalog): string | undefined;
   execute(node: N, ctx: RuntimeContext): Promise<NodeResult>;
 }

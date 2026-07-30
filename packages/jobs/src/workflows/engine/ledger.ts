@@ -13,11 +13,8 @@ function toJson(value: unknown): string | null {
   return value === null || value === undefined ? null : JSON.stringify(value);
 }
 
-/**
- * Claims one step for this run. The unique constraint makes the claim atomic.
- * Losing it means a previous attempt already started this step: the caller must
- * not act, and `failInterruptedSteps` settles that abandoned row at the end.
- */
+/** The unique constraint makes the claim atomic. Losing it means a previous
+ * attempt already started this step, so the caller must not act. */
 export async function claimStep(
   db: JobDatabase,
   params: {

@@ -39,7 +39,7 @@ export async function resolveItem(
   return walk(ctx.item, ref.path, ctx);
 }
 
-/** Reading a property of nothing is nothing, so a null on the way stops the walk. */
+/** A null anywhere along the path ends the walk as null rather than failing. */
 async function walk(
   start: RuntimeValue,
   path: string[],
