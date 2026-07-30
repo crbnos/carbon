@@ -42,8 +42,11 @@ describe("getSalesOrderJobStatus", () => {
   });
 
   it("excludes cancelled jobs from production coverage", () => {
-    // A cancelled job with full production quantity + a small active job should
-    // not read as sufficiently covered.
+    // A cancelled job with full production quantity + a small completed active
+    // job. Active production (2) < saleQuantity (10), so coverage is
+    // insufficient and the line reads "In Progress" — not "Completed". If the
+    // cancelled production (10) were counted, coverage would satisfy and the
+    // line would incorrectly read "Completed".
     const result = getSalesOrderJobStatus(
       [
         makeJob({
@@ -53,23 +56,36 @@ describe("getSalesOrderJobStatus", () => {
         }),
         makeJob({
           id: "active",
-          status: "In Progress",
-          productionQuantity: 2
+          status: "Completed",
+          productionQuantity: 2,
+          quantityComplete: 10
         })
       ],
       makeLine()
     );
-    // Active coverage (2) < saleQuantity (10), so it is not Completed.
-    expect(result.jobLabel).not.toBe("Completed");
+    expect(result.jobLabel).toBe("In Progress");
   });
 
   it("excludes cancelled jobs from released-work detection", () => {
-    // Only a cancelled (non-Planned/Draft) job exists — no active work released,
-    // so the line stays Planned rather than reading In Progress.
+    // A cancelled job (production 10) plus a Planned active job (production 0).
+    // The Planned job keeps activeJobs non-empty (so not "Requires Jobs") but
+    // releases no work, so the line stays "Planned". If the cancelled job's
+    // production were counted as released, the line would read "In Progress".
     const result = getSalesOrderJobStatus(
-      [makeJob({ status: "Cancelled" })],
+      [
+        makeJob({
+          id: "cancelled",
+          status: "Cancelled",
+          productionQuantity: 10
+        }),
+        makeJob({
+          id: "planned",
+          status: "Planned",
+          productionQuantity: 0
+        })
+      ],
       makeLine({ saleQuantity: 10 })
     );
-    expect(result.jobLabel).not.toBe("In Progress");
+    expect(result.jobLabel).toBe("Planned");
   });
 });

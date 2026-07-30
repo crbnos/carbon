@@ -213,11 +213,16 @@ const SalesOrdersTable = memo(({ data, count }: SalesOrdersTableProps) => {
             if (line.methodType !== "Make to Order") return true;
             const relevantJobs =
               jobs.filter?.((job) => job.salesOrderLineId === line.id) ?? [];
-            // A cancelled job's quantityComplete is stale — exclude it so a
-            // cancelled job can't make a line read "All jobs completed".
+            // Match the shared status helper (getSalesOrderJobStatus): only
+            // Completed/Closed jobs contribute completion. A reopened or
+            // in-progress job with stale quantityComplete must not make a line
+            // read "All jobs completed".
             const totalJobQuantity = relevantJobs.reduce(
               (acc, job) =>
-                acc + (job.status === "Cancelled" ? 0 : job.quantityComplete),
+                acc +
+                (["Completed", "Closed"].includes(job.status ?? "")
+                  ? (job.quantityComplete ?? 0)
+                  : 0),
               0
             );
             return totalJobQuantity >= line.saleQuantity;
