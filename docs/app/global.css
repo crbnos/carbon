@@ -253,13 +253,13 @@
   .guide-prose h1 {
     font-size: clamp(2.25rem, 5vw, 2.75rem);
     line-height: 1.1;
-    letter-spacing: -0.03em;
+    letter-spacing: -0.025em;
     font-weight: 600;
   }
   .guide-prose h2 {
     margin-top: 3rem;
     font-size: 1.5rem;
-    letter-spacing: -0.02em;
+    letter-spacing: -0.025em;
     font-weight: 600;
   }
 
