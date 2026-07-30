@@ -30,6 +30,7 @@ import {
   Number as NumberInput,
   Submit
 } from "~/components/Form";
+import SettingsSectionHeader from "~/components/SettingsSectionHeader";
 import { useFlags } from "~/hooks";
 import { getDefaultAccounts } from "~/modules/accounting";
 import {
@@ -213,6 +214,10 @@ export default function AccountingSettingsRoute() {
           <Trans>Accounting</Trans>
         </Heading>
 
+        <SettingsSectionHeader>
+          <Trans>Ledger</Trans>
+        </SettingsSectionHeader>
+
         <Card>
           <CardHeader>
             <CardTitle>
@@ -262,6 +267,10 @@ export default function AccountingSettingsRoute() {
             </HStack>
           </CardContent>
         </Card>
+
+        <SettingsSectionHeader>
+          <Trans>Assets</Trans>
+        </SettingsSectionHeader>
 
         <ValidatedForm
           className="w-full"

@@ -149,6 +149,7 @@ const log = getLogger("mes", "job-operation");
 type JobOperationProps = {
   events: ProductionEvent[];
   expiredEntityPolicy?: "Warn" | "Block" | "BlockWithOverride";
+  autoSelectMaterialWithoutPickingList?: boolean;
   files: Promise<StorageItem[]>;
   kanban: Kanban | null;
   materials: Promise<{
@@ -215,6 +216,7 @@ function PickedBadge({
 export const JobOperation = ({
   events,
   expiredEntityPolicy = "Block",
+  autoSelectMaterialWithoutPickingList = false,
   files,
   job,
   kanban,
@@ -1456,7 +1458,20 @@ export const JobOperation = ({
                           {issueModal.isOpen && (
                             <IssueMaterialModal
                               operationId={operation.id}
+                              // The process view issues the whole quantity at
+                              // once, so picked lots may pre-fill when the
+                              // parent is a single entity. The modal enforces
+                              // the full rule: a picking list exists AND (the
+                              // parent is not serialized OR the operation
+                              // makes exactly one unit).
+                              allowPrefill
+                              parentUnitCount={
+                                operation.operationQuantity ?? undefined
+                              }
                               expiredEntityPolicy={expiredEntityPolicy}
+                              autoSelectMaterialWithoutPickingList={
+                                autoSelectMaterialWithoutPickingList
+                              }
                               locationId={locationId}
                               workCenterId={operation.workCenterId ?? undefined}
                               material={selectedMaterial ?? undefined}
@@ -1777,9 +1792,16 @@ export const JobOperation = ({
                 awaitingModel={modelPending}
                 optimizing={backgroundOptimizing}
                 optimizeFailed={optimizeFailed}
+                sourceMissing={artifacts?.sourceAvailable === false}
                 optimizedUrl={
                   artifacts?.optimizedModelPath
-                    ? getPrivateUrl(artifacts.optimizedModelPath)
+                    ? // ?v= busts the immutable preview cache on the STABLE
+                      // optimized.glb path when a re-optimise lands.
+                      `${getPrivateUrl(artifacts.optimizedModelPath)}${
+                        artifacts.optimizedAt
+                          ? `?v=${encodeURIComponent(artifacts.optimizedAt)}`
+                          : ""
+                      }`
                     : null
                 }
                 glbUrl={

@@ -9,7 +9,7 @@ export default function DigitalQuoteResponsePreview() {
       preview={"Digital quote response"}
       message={"Digital Quote Q-00012 was completed by buyer@acme.com"}
       reference={"Q-00012"}
-      recipientName={"Naveen"}
+      recipientName={"John Doe"}
       ctaLabel={"View response"}
       ctaUrl={"https://app.carbon.ms/x/quote/1"}
       details={[

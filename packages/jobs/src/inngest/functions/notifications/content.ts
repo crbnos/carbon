@@ -120,17 +120,17 @@ type EventContentOptions = {
   userId?: string;
 };
 
-function changeOrderStageDescription(
+function changeNoticeStageDescription(
   type: NotificationEvent,
   readableId: string
 ): string {
   switch (type) {
-    case NotificationEvent.ChangeOrderStarted:
-      return `Change order ${readableId} has started`;
-    case NotificationEvent.ChangeOrderImplementation:
-      return `Change order ${readableId} has moved to implementation`;
+    case NotificationEvent.ChangeNoticeStarted:
+      return `Change notice ${readableId} has started`;
+    case NotificationEvent.ChangeNoticeImplementation:
+      return `Change notice ${readableId} has moved to implementation`;
     default:
-      return `Change order ${readableId} is complete`;
+      return `Change notice ${readableId} is complete`;
   }
 }
 
@@ -1107,21 +1107,23 @@ async function buildEventContent(
       };
     }
 
-    case NotificationEvent.ChangeOrderStarted:
-    case NotificationEvent.ChangeOrderImplementation:
-    case NotificationEvent.ChangeOrderDone: {
+    case NotificationEvent.ChangeNoticeStarted:
+    case NotificationEvent.ChangeNoticeImplementation:
+    case NotificationEvent.ChangeNoticeDone: {
       // Company-scope both lookups: readable ids (ECO-…) repeat across tenants.
       const companyId = opts?.companyId;
       if (!companyId) {
         throw new Error(
-          `companyId is required to resolve change order ${documentId}`
+          `companyId is required to resolve change notice ${documentId}`
         );
       }
 
       // documentId may be the row id (co_…) or the readable id (ECO-…) — try both.
+      const changeNoticeColumns =
+        "changeOrderId, name, type, priority, status, dueDate, assignee";
       const rowLookup = await client
         .from("changeOrder")
-        .select("changeOrderId, status")
+        .select(changeNoticeColumns)
         .eq("id", documentId)
         .eq("companyId", companyId)
         .maybeSingle();
@@ -1130,11 +1132,11 @@ async function buildEventContent(
         throw rowLookup.error;
       }
 
-      let changeOrderData = rowLookup.data;
-      if (!changeOrderData) {
+      let changeNoticeData = rowLookup.data;
+      if (!changeNoticeData) {
         const readableIdLookup = await client
           .from("changeOrder")
-          .select("changeOrderId, status")
+          .select(changeNoticeColumns)
           .eq("changeOrderId", documentId)
           .eq("companyId", companyId)
           .maybeSingle();
@@ -1142,21 +1144,39 @@ async function buildEventContent(
           console.error("Failed to get changeOrder", readableIdLookup.error);
           throw readableIdLookup.error;
         }
-        changeOrderData = readableIdLookup.data;
+        changeNoticeData = readableIdLookup.data;
       }
 
-      if (!changeOrderData) {
-        throw new Error(`Change order not found for documentId ${documentId}`);
+      if (!changeNoticeData) {
+        throw new Error(`Change notice not found for documentId ${documentId}`);
       }
 
-      const readableId = changeOrderData.changeOrderId;
-      const description = changeOrderStageDescription(type, readableId);
+      const readableId = changeNoticeData.changeOrderId;
+      const description = changeNoticeStageDescription(type, readableId);
+
+      let assigneeName: string | null = null;
+      if (changeNoticeData.assignee) {
+        const assignee = await client
+          .from("user")
+          .select("fullName")
+          .eq("id", changeNoticeData.assignee)
+          .maybeSingle();
+        if (assignee.error) {
+          console.error("Failed to get change notice assignee", assignee.error);
+        }
+        assigneeName = assignee.data?.fullName ?? null;
+      }
 
       return {
         description,
         reference: readableId ?? undefined,
         details: buildDetails([
-          { label: "Status", value: changeOrderData?.status }
+          { label: "Name", value: changeNoticeData.name },
+          { label: "Type", value: changeNoticeData.type },
+          { label: "Priority", value: changeNoticeData.priority },
+          { label: "Due", value: formatDetailDate(changeNoticeData.dueDate) },
+          { label: "Status", value: changeNoticeData.status },
+          { label: "Assignee", value: assigneeName }
         ])
       };
     }

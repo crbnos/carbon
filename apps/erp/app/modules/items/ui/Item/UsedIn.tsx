@@ -20,7 +20,10 @@ import {
   useDisclosure,
   VStack
 } from "@carbon/react";
+import type { MessageDescriptor } from "@lingui/core";
+import { msg } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react/macro";
+import type { ReactElement } from "react";
 import { useState } from "react";
 import { flushSync } from "react-dom";
 import {
@@ -44,9 +47,9 @@ import type { ItemType } from "~/modules/shared";
 import { path } from "~/utils/path";
 import { getReadableIdWithRevision } from "~/utils/string";
 import {
-  ItemChangeOrderLock,
-  useItemOpenChangeOrders
-} from "../ChangeOrder/ItemChangeOrderLock";
+  ItemChangeNoticeLock,
+  useItemOpenChangeNotices
+} from "../ChangeNotice/ItemChangeNoticeLock";
 import { getPathToMakeMethod } from "../Methods/utils";
 import RevisionForm from "./RevisionForm";
 
@@ -64,6 +67,7 @@ export function UsedInSkeleton() {
 export type UsedInKey =
   | Database["public"]["Enums"]["itemType"]
   | "assemblyInstructions"
+  | "inspections"
   | "issues"
   | "jobMaterials"
   | "jobs"
@@ -76,6 +80,37 @@ export type UsedInKey =
   | "salesOrderLines"
   | "shipmentLines"
   | "supplierQuotes";
+
+/**
+ * Tooltip identity for a group row. Every group is identified by its
+ * `UsedInKey` except the revisions row, which `UsedInTree` builds inline with
+ * the item's *type* as its key (`Part`, `Material`, …) and labels either
+ * "Revisions" or "Sizes" — so it looks itself up under `revisions` / `sizes`.
+ */
+type UsedInTooltipKey = UsedInKey | "revisions" | "sizes";
+
+/**
+ * Optional one-line explanation of what a "Used In" group means, shown on hover.
+ *
+ * This is the only place a group tooltip is declared. Every surface builds its
+ * tree from these same keys, so one entry here reaches the part, tool, material,
+ * consumable and service detail pages *and* the change-notice impact panel at
+ * once — no route file changes. Resolution deliberately happens in the row
+ * component rather than in `UsedInTree`, because `ImpactPanel` renders
+ * `UsedInItem` directly and would silently miss anything injected there.
+ *
+ * Sparse on purpose: most group names explain themselves, and a tooltip on every
+ * row is noise. A key with no entry renders exactly as it does without one.
+ *
+ * The itemType members of `UsedInKey` are never a group's identity, so an entry
+ * under one of them would type-check but never render — use `revisions` /
+ * `sizes` for that row instead.
+ */
+const USED_IN_TOOLTIPS: Partial<Record<UsedInTooltipKey, MessageDescriptor>> = {
+  jobMaterials: msg`Jobs that have this item on their bill of materials`,
+  methodMaterials: msg`Parent items. (If you click into one of the parent parts below, you'll see this item included as a component on the bill of material.)`,
+  quoteMaterials: msg`Quote lines whose bill of materials includes this item`
+};
 
 export type UsedInNode = {
   key: UsedInKey;
@@ -171,18 +206,53 @@ export function UsedInTree({
           maxRevision={revisions?.[0]?.revision ?? ""}
           hasSizesInsteadOfRevisions={hasSizesInsteadOfRevisions}
         />
-        {tree.map((node) => (
-          <UsedInItem
-            key={node.key}
-            filterText={filterText}
-            node={node}
-            itemReadableIdWithRevision={itemReadableIdWithRevision}
-            jobMaterialQuantities={jobMaterialQuantities}
-            jobQuantities={jobQuantities}
-          />
-        ))}
+        {[...tree]
+          .sort((a, b) => a.name.localeCompare(b.name))
+          .map((node) => (
+            <UsedInItem
+              key={node.key}
+              filterText={filterText}
+              node={node}
+              itemReadableIdWithRevision={itemReadableIdWithRevision}
+              jobMaterialQuantities={jobMaterialQuantities}
+              jobQuantities={jobQuantities}
+            />
+          ))}
       </VStack>
     </VStack>
+  );
+}
+
+/**
+ * Wraps a group row in a tooltip when its key has one, and returns the row
+ * untouched when it doesn't.
+ *
+ * The trigger is the row button itself, not the label: `asChild` clones the
+ * child instead of emitting its own element, so there is no nested button and no
+ * extra tab stop, and the natively focusable button makes the tooltip reachable
+ * by keyboard rather than hover-only.
+ *
+ * The lookup lives here rather than in the callers so that neither `UsedInItem`
+ * nor `RevisionsItem` gains a hook — `UsedInItem` has a conditional early
+ * return, so any hook added after it trips `useHookAtTopLevel`.
+ */
+function UsedInGroupTooltip({
+  tooltipKey,
+  children
+}: {
+  tooltipKey: UsedInTooltipKey;
+  children: ReactElement;
+}) {
+  const { i18n } = useLingui();
+  const tooltip = USED_IN_TOOLTIPS[tooltipKey];
+
+  if (!tooltip) return children;
+
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>{children}</TooltipTrigger>
+      <TooltipContent>{i18n._(tooltip)}</TooltipContent>
+    </Tooltip>
   );
 }
 
@@ -203,11 +273,11 @@ export function RevisionsItem({
   const revisionDisclosure = useDisclosure();
   const defaultDisclosure = useDisclosure();
 
-  // Block manual revision creation while an open change order owns this item —
+  // Block manual revision creation while an open change notice owns this item —
   // the CO authors revisions. The button stays visible but disabled, with a
-  // tooltip pointing at the change order(s).
-  const openChangeOrders = useItemOpenChangeOrders(node.key, itemId);
-  const isChangeOrderLocked = openChangeOrders.length > 0;
+  // tooltip pointing at the change notice(s).
+  const openChangeNotices = useItemOpenChangeNotices(node.key, itemId);
+  const isChangeNoticeLocked = openChangeNotices.length > 0;
 
   const [selectedRevision, setSelectedRevision] = useState<{
     id?: string;
@@ -226,30 +296,34 @@ export function RevisionsItem({
   return (
     <>
       <div className="relative w-full">
-        <button
-          className="flex h-8 cursor-pointer items-center overflow-hidden rounded-sm px-2 gap-2 text-sm hover:bg-accent w-full font-medium"
-          onClick={(e) => {
-            e.stopPropagation();
-            setIsExpanded(!isExpanded);
-          }}
+        <UsedInGroupTooltip
+          tooltipKey={hasSizesInsteadOfRevisions ? "sizes" : "revisions"}
         >
-          <div className="h-8 w-4 flex items-center justify-center">
-            <LuChevronRight
-              className={cn("size-4", isExpanded && "rotate-90")}
-            />
-          </div>
-          <div className="flex flex-grow items-center justify-between gap-2 pr-6">
-            <span>{node.name}</span>
+          <button
+            className="flex h-8 cursor-pointer items-center overflow-hidden rounded-sm px-2 gap-2 text-sm hover:bg-accent w-full font-medium"
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsExpanded(!isExpanded);
+            }}
+          >
+            <div className="h-8 w-4 flex items-center justify-center">
+              <LuChevronRight
+                className={cn("size-4", isExpanded && "rotate-90")}
+              />
+            </div>
+            <div className="flex flex-grow items-center justify-between gap-2 pr-6">
+              <span>{node.name}</span>
 
-            {filteredChildren.length > 0 && (
-              <Count count={filteredChildren.length} />
-            )}
-          </div>
-        </button>
+              {filteredChildren.length > 0 && (
+                <Count count={filteredChildren.length} />
+              )}
+            </div>
+          </button>
+        </UsedInGroupTooltip>
         {permissions.can("create", "parts") &&
-          (isChangeOrderLocked ? (
-            <ItemChangeOrderLock
-              changeOrders={openChangeOrders}
+          (isChangeNoticeLocked ? (
+            <ItemChangeNoticeLock
+              changeNotices={openChangeNotices}
               className="absolute right-2 top-1.5"
             >
               <IconButton
@@ -260,7 +334,7 @@ export function RevisionsItem({
                 className="size-5"
                 isDisabled
               />
-            </ItemChangeOrderLock>
+            </ItemChangeNoticeLock>
           ) : (
             <IconButton
               size="sm"
@@ -426,23 +500,27 @@ export function UsedInItem({
 
   return (
     <>
-      <button
-        className="flex h-8 cursor-pointer items-center overflow-hidden rounded-sm px-2 gap-2 text-sm hover:bg-accent w-full font-medium"
-        onClick={(e) => {
-          e.stopPropagation();
-          setIsExpanded(!isExpanded);
-        }}
-      >
-        <div className="h-8 w-4 flex items-center justify-center">
-          <LuChevronRight className={cn("size-4", isExpanded && "rotate-90")} />
-        </div>
-        <div className="flex flex-grow items-center justify-between gap-2">
-          <span>{node.name}</span>
-          {filteredChildren.length > 0 && (
-            <Count count={filteredChildren.length} />
-          )}
-        </div>
-      </button>
+      <UsedInGroupTooltip tooltipKey={node.key}>
+        <button
+          className="flex h-8 cursor-pointer items-center overflow-hidden rounded-sm px-2 gap-2 text-sm hover:bg-accent w-full font-medium"
+          onClick={(e) => {
+            e.stopPropagation();
+            setIsExpanded(!isExpanded);
+          }}
+        >
+          <div className="h-8 w-4 flex items-center justify-center">
+            <LuChevronRight
+              className={cn("size-4", isExpanded && "rotate-90")}
+            />
+          </div>
+          <div className="flex flex-grow items-center justify-between gap-2">
+            <span>{node.name}</span>
+            {filteredChildren.length > 0 && (
+              <Count count={filteredChildren.length} />
+            )}
+          </div>
+        </button>
+      </UsedInGroupTooltip>
       {isExpanded && (
         <div className="flex flex-col w-full">
           {node.children.length === 0 ? (
@@ -531,6 +609,8 @@ function getUseInLink(
       return path.to.consumableDetails(child.id);
     case "Service":
       return path.to.serviceDetails(child.id);
+    case "inspections":
+      return path.to.inspection(child.id);
     case "issues":
       if (!child.documentId) return "#";
       return path.to.issue(child.documentId);

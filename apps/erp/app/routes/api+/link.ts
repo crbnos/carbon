@@ -1,5 +1,5 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { setCompanyId } from "@carbon/auth/company.server";
+import { getCompanyId, setCompanyId } from "@carbon/auth/company.server";
 import { updateCompanySession } from "@carbon/auth/session.server";
 import type { Database } from "@carbon/database";
 import { NotificationEvent } from "@carbon/notifications";
@@ -65,10 +65,10 @@ function resolve(
       return path.to.gauge(documentId);
     case NotificationEvent.NonConformanceAssignment:
       return path.to.issue(documentId);
-    case NotificationEvent.ChangeOrderStarted:
-    case NotificationEvent.ChangeOrderImplementation:
-    case NotificationEvent.ChangeOrderDone:
-      return path.to.changeOrderDetails(documentId);
+    case NotificationEvent.ChangeNoticeStarted:
+    case NotificationEvent.ChangeNoticeImplementation:
+    case NotificationEvent.ChangeNoticeDone:
+      return path.to.changeNoticeDetails(documentId);
     case NotificationEvent.RiskAssignment:
       return path.to.risk(documentId);
     case NotificationEvent.ProcedureAssignment:
@@ -115,19 +115,23 @@ export async function loader({ request }: LoaderFunctionArgs) {
   if (page === "notification-settings") {
     // Email footer link — no document, but the company-switch below still applies.
     redirectTo = path.to.notificationSettings;
-  } else {
-    if (!event || !documentId) {
-      throw redirect(path.to.authenticatedRoot);
-    }
+  } else if (event && documentId) {
     const link = resolve(event, documentId, documentType ?? undefined);
     redirectTo = link ?? path.to.authenticatedRoot;
+  } else if (companyId) {
+    redirectTo = path.to.authenticatedRoot;
+  } else {
+    throw redirect(path.to.authenticatedRoot);
   }
 
   // The notification points at a document in a specific company, but the
   // recipient may currently be viewing a different one. If the linked company
   // is one the user belongs to, switch them into it before redirecting — the
   // same flow the company switcher uses — so the document actually resolves.
-  if (companyId && companyId !== sessionCompanyId) {
+  if (
+    companyId &&
+    (companyId !== sessionCompanyId || companyId !== getCompanyId(request))
+  ) {
     const companies = await getCompanies(client, userId);
     const matchedCompany = companies.data?.find(
       (company) => company.id === companyId

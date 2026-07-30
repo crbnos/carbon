@@ -419,6 +419,7 @@ function aliasMap(
     { name: withPrefix("api", branchPrefix), port: ports.PORT_API },
     { name: withPrefix("studio", branchPrefix), port: ports.PORT_STUDIO },
     { name: withPrefix("mail", branchPrefix), port: ports.PORT_INBUCKET },
+    { name: withPrefix("email", branchPrefix), port: ports.PORT_EMAIL },
     { name: withPrefix("inngest", branchPrefix), port: ports.PORT_INNGEST },
     { name: withPrefix("assembler", branchPrefix), port: ports.PORT_ASSEMBLER },
     { name: STABLE_OAUTH_ALIAS, port: ports.PORT_API }

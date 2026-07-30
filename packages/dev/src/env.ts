@@ -21,6 +21,11 @@ export function renderEnv(opts: {
    * pinned in `.env` via `#force` wins regardless.
    */
   includeAssembler?: boolean;
+  /**
+   * When true (`crbn up --thumbnails`), let the model-thumbnail job render
+   * locally against the `chrome` compose service instead of skipping on local.
+   */
+  thumbnails?: boolean;
 }): string {
   const {
     slug,
@@ -29,7 +34,8 @@ export function renderEnv(opts: {
     jwt,
     portless,
     branchPrefix,
-    includeAssembler = true
+    includeAssembler = true,
+    thumbnails = false
   } = opts;
 
   const host = (sub: string) => `${sub}.${branchPrefix}.dev`;
@@ -112,6 +118,7 @@ export function renderEnv(opts: {
   // which is why we can't reuse ${DOMAIN} (e.g. `main.dev` won't match the
   // `erp.main.dev` host the SDK URL points at).
   lines.push(`INNGEST_TLS_HOST=${portless ? host("erp") : "localhost"}`);
+  lines.push(`EMAIL_DEV_PORT=${ports.PORT_EMAIL}`);
   lines.push("");
   if (includeAssembler) {
     lines.push("# Assembler service (CAD conversion + motion planning)");
@@ -122,6 +129,15 @@ export function renderEnv(opts: {
   } else {
     lines.push("# Assembler not selected this run — URL omitted so the CAD");
     lines.push("# pipeline skips cleanly (assemblerEnabled() gates on it).");
+  }
+  if (thumbnails && portless) {
+    lines.push("");
+    lines.push("# Local Chromium thumbnail rendering (crbn up --thumbnails).");
+    lines.push("# The chrome container renders VERCEL_URL (the portless erp");
+    lines.push(
+      "# host) through the portless proxy, like the inngest container."
+    );
+    lines.push("THUMBNAIL_RENDER_LOCAL=true");
   }
   lines.push("");
   lines.push("# Dev auth bypass");

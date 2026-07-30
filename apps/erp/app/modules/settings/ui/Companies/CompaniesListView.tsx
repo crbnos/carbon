@@ -1,11 +1,13 @@
 import { CountryFlag } from "@carbon/form";
 import {
+  cn,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
   IconButton
 } from "@carbon/react";
+import { useState } from "react";
 import {
   LuBuilding2,
   LuChevronRight,
@@ -36,6 +38,8 @@ function CompaniesRow({
   onAddChild: (parentId: string) => void;
 }) {
   const children = companies.filter((s) => s.parentCompanyId === company.id);
+  const hasChildren = children.length > 0;
+  const [expanded, setExpanded] = useState(true);
   const isElimination = company.isEliminationEntity;
   const canAddChild = !isElimination;
   const canDelete = !!company.parentCompanyId;
@@ -47,10 +51,23 @@ function CompaniesRow({
         className="flex items-center gap-3 border-b border-border px-4 py-3 transition-colors hover:bg-accent/50"
         style={{ paddingLeft: `${depth * 28 + 16}px` }}
       >
-        {children.length > 0 ? (
-          <LuChevronRight className="size-4 text-muted-foreground" />
+        {hasChildren ? (
+          <button
+            type="button"
+            onClick={() => setExpanded((prev) => !prev)}
+            aria-expanded={expanded}
+            aria-label={expanded ? "Collapse" : "Expand"}
+            className="flex size-4 shrink-0 items-center justify-center rounded text-muted-foreground transition-colors hover:text-foreground"
+          >
+            <LuChevronRight
+              className={cn(
+                "size-4 transition-transform",
+                expanded && "rotate-90"
+              )}
+            />
+          </button>
         ) : (
-          <div className="size-4" />
+          <div className="size-4 shrink-0" />
         )}
 
         <div className="flex size-8 shrink-0 items-center justify-center bg-muted">
@@ -110,16 +127,18 @@ function CompaniesRow({
         )}
       </div>
 
-      {children.map((child) => (
-        <CompaniesRow
-          key={child.id}
-          company={child}
-          companies={companies}
-          depth={depth + 1}
-          onDelete={onDelete}
-          onAddChild={onAddChild}
-        />
-      ))}
+      {hasChildren &&
+        expanded &&
+        children.map((child) => (
+          <CompaniesRow
+            key={child.id}
+            company={child}
+            companies={companies}
+            depth={depth + 1}
+            onDelete={onDelete}
+            onAddChild={onAddChild}
+          />
+        ))}
     </div>
   );
 }

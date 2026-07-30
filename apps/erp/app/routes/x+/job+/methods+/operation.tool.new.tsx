@@ -20,6 +20,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
+  // Tool↔step assignment now lives on the step editor (jobOperationStepTool route),
+  // not this tool form — a new tool starts operation-level (shown on every step).
   const insert = await upsertJobOperationTool(client, {
     ...validation.data,
     companyId,

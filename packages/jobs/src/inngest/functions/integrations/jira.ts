@@ -1,4 +1,5 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { isActionTaskEntityType } from "@carbon/ee/action-task-entity";
 import {
   getCompanyEmployees,
   getJiraClient,
@@ -63,8 +64,7 @@ export const jiraSyncFunction = inngest.createFunction(
     // Look up the action task via the mapping table
     const mapping = await carbon
       .from("externalIntegrationMapping")
-      .select("entityId")
-      .eq("entityType", "nonConformanceActionTask")
+      .select("entityId, entityType")
       .eq("integration", "jira")
       .eq("externalId", issueId)
       .eq("companyId", payload.companyId)
@@ -78,6 +78,18 @@ export const jiraSyncFunction = inngest.createFunction(
     }
 
     const actionId = mapping.data.entityId;
+    const entityType = mapping.data.entityType;
+
+    if (!isActionTaskEntityType(entityType)) {
+      logger.info("Ignoring Jira mapping for non-action-task entity", {
+        entityType,
+        externalId: issueId
+      });
+      return {
+        success: false,
+        message: `Mapping for Jira issue ID ${issueId} is not an action task (entityType: ${entityType})`
+      };
+    }
 
     // Fetch the full issue from Jira
     const fullIssue = await jira.getIssue(payload.companyId, issueId);
@@ -105,6 +117,7 @@ export const jiraSyncFunction = inngest.createFunction(
     // Update the linked action task
     const updated = await linkActionToJiraIssue(carbon, payload.companyId, {
       actionId,
+      entityType,
       issue: fullIssue,
       siteUrl,
       assignee,

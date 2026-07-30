@@ -1,4 +1,10 @@
-import { cn, useDisclosure, VStack } from "@carbon/react";
+import {
+  cn,
+  ShortcutKey,
+  useDisclosure,
+  useShortcutKeys,
+  VStack
+} from "@carbon/react";
 import {
   closestCenter,
   DndContext,
@@ -11,14 +17,21 @@ import {
   SortableContext,
   verticalListSortingStrategy
 } from "@dnd-kit/sortable";
-import { Trans } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import type { AnchorHTMLAttributes } from "react";
 import { forwardRef, memo, useEffect } from "react";
-import { LuSettings2 } from "react-icons/lu";
+import { LuSearch, LuSettings2 } from "react-icons/lu";
 import { Link, useMatches } from "react-router";
-import { useModules, useOptimisticLocation, useSettingsModule } from "~/hooks";
+import {
+  useModules,
+  useOptimisticLocation,
+  usePermissions,
+  useSettingsModule
+} from "~/hooks";
 import { useImplementationNavItem } from "~/hooks/useImplementationNavItem";
+import { useUIStore } from "~/stores/ui";
 import type { Authenticated, NavItem } from "~/types";
+import { SearchModal, searchShortcut } from "../Topbar/Search";
 import { HiddenModulesPopover } from "./HiddenModulesPopover";
 import { NavigationEditBar } from "./NavigationEditBar";
 import { SortableNavItem } from "./SortableNavItem";
@@ -26,6 +39,7 @@ import { useNavigationEditMode } from "./useNavigationEditMode";
 
 const PrimaryNavigation = () => {
   const navigationPanel = useDisclosure();
+  const permissions = usePermissions();
   const location = useOptimisticLocation();
   const currentModule = getModule(location.pathname);
   const links = useModules();
@@ -77,6 +91,9 @@ const PrimaryNavigation = () => {
           className="flex flex-col justify-between h-full px-2"
         >
           <VStack spacing={1}>
+            {permissions.is("employee") && (
+              <NavigationSearchButton isOpen={isOpen} />
+            )}
             {!editMode.isEditing && implementationNav ? (
               <NavigationIconLink
                 link={implementationNav}
@@ -165,7 +182,6 @@ const PrimaryNavigation = () => {
                   "group-data-[state=collapsed]:justify-center",
                   "group-data-[state=expanded]:-space-x-2",
                   "font-medium shrink-0 inline-flex select-none",
-                  "text-muted-foreground",
                   "hover:bg-accent hover:text-accent-foreground",
                   "transition-[background-color,color,width] duration-100 ease-out",
                   "focus:!outline-none focus:!ring-0 active:!outline-none active:!ring-0",
@@ -189,6 +205,62 @@ const PrimaryNavigation = () => {
         </VStack>
       </nav>
     </div>
+  );
+};
+
+const NavigationSearchButton = ({ isOpen = false }: { isOpen?: boolean }) => {
+  const { t } = useLingui();
+  const { openSearchModal } = useUIStore();
+
+  useShortcutKeys({
+    shortcut: searchShortcut,
+    action: openSearchModal
+  });
+
+  return (
+    <>
+      <button
+        type="button"
+        aria-label={t`Search`}
+        onClick={openSearchModal}
+        className={cn(
+          "relative",
+          "h-10 w-10 group-data-[state=expanded]:w-full",
+          "flex items-center rounded-md",
+          "group-data-[state=collapsed]:justify-center",
+          "group-data-[state=expanded]:-space-x-2",
+          "font-medium shrink-0 inline-flex select-none",
+          "hover:bg-accent hover:text-accent-foreground",
+          "transition-[background-color,color,width] duration-100 ease-out",
+          "focus:!outline-none focus:!ring-0 active:!outline-none active:!ring-0",
+          "after:pointer-events-none after:absolute after:-inset-[3px] after:rounded-lg after:border after:border-blue-500 after:opacity-0 after:ring-2 after:ring-blue-500/20 after:transition-opacity focus-visible:after:opacity-100 active:after:opacity-0",
+          "group/item"
+        )}
+      >
+        <LuSearch className="absolute left-3 top-3 flex items-center justify-center" />
+        <span
+          aria-hidden={isOpen || undefined}
+          className={cn(
+            "min-w-[128px] text-sm text-left",
+            "absolute left-7 group-data-[state=expanded]:left-12",
+            "opacity-0 group-data-[state=expanded]:opacity-100"
+          )}
+        >
+          <Trans>Search</Trans>
+        </span>
+        {/* ⌘K hint — only meaningful when expanded (the shortcut itself is wired
+            via useShortcutKeys above, same as the old topbar search). */}
+        <ShortcutKey
+          shortcut={searchShortcut}
+          variant="small"
+          className={cn(
+            "pointer-events-none absolute right-3 top-1/2 mx-0 -translate-y-1/2",
+            "opacity-0 transition-opacity duration-100 group-data-[state=expanded]:opacity-100"
+          )}
+        />
+      </button>
+      <SearchModal />
+    </>
   );
 };
 

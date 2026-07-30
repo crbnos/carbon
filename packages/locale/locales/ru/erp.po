@@ -45,8 +45,8 @@ msgid "(excluded for this customer)"
 msgstr "(исключено для этого клиента)"
 
 #. placeholder {0}: open.length
-msgid "{0, plural, one {This part is on 1 open change order} other {This part is on # open change orders}}"
-msgstr "{0, plural, one {Эта деталь находится в 1 открытом приказе об изменении} other {Эта деталь находится в # открытых приказах об изменении}}"
+msgid "{0, plural, one {This part is on 1 open change notice} other {This part is on # open change notices}}"
+msgstr "{0, plural, one {Эта деталь находится на 1 открытой уведомлении об изменении} other {Эта деталь находится на # открытых уведомлениях об изменении}}"
 
 #. placeholder {0}: ar.count
 msgid "{0} customers with a balance"
@@ -224,14 +224,26 @@ msgstr "90 дней"
 msgid "A Carbon-run data migration — you load your own data"
 msgstr "Миграция данных, управляемая Carbon — вы загружаете свои собственные данные"
 
-msgid "A change order tracks a controlled engineering or manufacturing change through review and implementation."
-msgstr "Приказ об изменении отслеживает контролируемое инженерное или производственное изменение на этапах проверки и внедрения."
+msgid "A change notice tracks a controlled engineering or manufacturing change through review and implementation."
+msgstr "Уведомление об изменении отслеживает контролируемое инженерное или производственное изменение через проверку и реализацию."
 
 msgid "A clearing account holding the value of goods received but not yet billed; the supplier invoice clears it."
 msgstr "Расчетный счет, содержащий стоимость полученных, но не выставленных счетом товаров; счет поставщика его закрывает."
 
 msgid "A company that designs and builds its own finished products end to end (here, the shop building humanoid robots) rather than making parts to another company's specification."
 msgstr "Компания, которая проектирует и производит собственные готовые изделия с начала до конца (здесь магазин, производящий гуманоидных роботов), вместо производства деталей по спецификации другой компании."
+
+msgid "A company that sits at or above selected companies in the group hierarchy and receives their intercompany cancelling entries for consolidated reporting; it is never a party to the trade itself."
+msgstr "Компания, находящаяся на уровне или выше выбранных компаний в иерархии группы и получающая их взаимокомпенсирующие записи для консолидированной отчетности; она никогда не является стороной торговли."
+
+msgid "A company-defined extra field attached to a core table (customer, part, order); it shows on the record's form, saves alongside the built-in fields, and is queryable through the API."
+msgstr "Дополнительное поле, определённое компанией и прикреплённое к основной таблице (клиент, товар, заказ); оно отображается в форме записи, сохраняется вместе со встроенными полями и доступно для запросов через API."
+
+msgid "A company-defined tag axis attached to journal lines so the same accounts can be sliced by location, department, or any custom axis without multiplying the chart of accounts."
+msgstr "Определённая компанией ось тегов, прикреплённая к строкам журнала, позволяющая разбивать одни и те же счета по местоположению, отделению или любой другой пользовательской оси без увеличения плана счетов."
+
+msgid "A company-scoped Discount or Markup, by percentage or fixed amount, that adjusts a line's price up or down when the line matches the rule's quantity, date, item, and customer conditions."
+msgstr "Скидка или надбавка в масштабе компании (в процентах или фиксированной сумме), которая корректирует цену строки вверх или вниз, когда строка соответствует условиям правила по количеству, дате, товару и клиенту."
 
 msgid "A completed job's output, received into inventory at the job's actual accumulated WIP cost."
 msgstr "Выход завершенной работы, поступающий в запасы по фактической накопленной стоимости незавершенного производства."
@@ -245,8 +257,11 @@ msgstr "Подрядчик — это контакт поставщика с о�
 msgid "A customer is a business or person who buys your parts or services."
 msgstr "Клиент — это компания или физическое лицо, которое покупает ваши детали или услуги."
 
-msgid "A dated window postings fall into (Active or Inactive, not open or closed), opened automatically when needed."
-msgstr "Датированное окно, в которое попадают проводки (Активное или Неактивное, не открытое или закрытое), открываемое автоматически при необходимости."
+msgid "A dated record proving a gauge was checked against a traceable standard; it passes unless a requires-action, -adjustment, or -repair flag is ticked, and resets the gauge's next-due date."
+msgstr "Датированная запись, подтверждающая проверку калибра по отслеживаемому стандарту; она проходит проверку, если не установлены флаги требует-действия, требует-регулировки или требует-ремонта, и перезагружает следующую дату поверки калибра."
+
+msgid "A dated window postings fall into; its close status moves Open → Locked → Closed, and a closed period is frozen against new postings."
+msgstr "Датированный период, в который попадают проводки; статус его закрытия меняется с Открыто → Заблокировано → Закрыто, и закрытый период заморожен для новых проводок."
 
 msgid "A depreciation method that charges a fixed percentage of remaining book value each period — heavier early, lighter later."
 msgstr "Метод амортизации, который списывает фиксированный процент от оставшейся балансовой стоимости каждый период — больше в начале, меньше позже."
@@ -263,6 +278,9 @@ msgstr "Твердый заказ поставщику; статус прохо�
 msgid "A formal acceptance / sign-off phase"
 msgstr "Формальная фаза принятия / подписания"
 
+msgid "A gauge whose role is Master — the reference standard other gauges are calibrated against, rather than one used for routine checks."
+msgstr "Калибр, выполняющий роль Мастер — эталонный стандарт, на который калибруются другие калибры, а не используемый для плановых проверок."
+
 msgid "A issue record tracks quality issues and their resolution process."
 msgstr "Запись о проблеме отслеживает проблемы качества и процесс их разрешения."
 
@@ -275,8 +293,14 @@ msgstr "Компонент \"Производство на заказ\", час�
 msgid "A material is a physical item used to make a part that can be used across multiple jobs"
 msgstr "Материал — это физический предмет, используемый для изготовления детали, которая может использоваться в нескольких заданиях"
 
+msgid "A measurement instrument (caliper, micrometer, pin gauge, CMM) tracked as a record and held to a recurring calibration schedule."
+msgstr "Измерительный инструмент (штангенциркуль, микрометр, пробка, КММ), отслеживаемый как запись и подлежащий повторяющемуся графику поверки."
+
 msgid "A name is required to save a view"
 msgstr "Требуется имя для сохранения представления"
+
+msgid "A negotiated price pinned for a specific item — by customer, customer type, or all customers — that replaces the base price outright, optionally with quantity breaks."
+msgstr "Согласованная цена, установленная для конкретного товара — для клиента, типа клиента или всех клиентов — заменяющая базовую цену полностью, при необходимости с ценовыми льготами по количеству."
 
 msgid "A new purchase order will be created for each supplier. Alternatively, you can choose an existing draft purchase order for the supplier to add the outside operations to."
 msgstr "Для каждого поставщика будет создан новый заказ на покупку. Кроме того, вы можете выбрать существующий черновик заказа на покупку поставщика, чтобы добавить к нему внешние операции."
@@ -286,6 +310,12 @@ msgstr "Новая редакция будет создана с использ�
 
 msgid "A new size will be created using a copy of the current size"
 msgstr "Новый размер будет создан с использованием копии текущего размера"
+
+msgid "A non-cash document that settles an invoice against a reason account: a credit lowers what's owed, a debit raises it."
+msgstr "Неденежный документ, погашающий счёт-фактуру по счёту причин: кредит уменьшает сумму задолженности, дебет её увеличивает."
+
+msgid "A non-conformance shared with a supplier over a login-free /share/scar link, so they can respond to the issue and update its tasks from outside Carbon."
+msgstr "Несоответствие, поделённое с поставщиком через ссылку /share/scar без входа, чтобы они могли ответить на проблему и обновить её задачи вне Carbon."
 
 msgid "A non-taxable surcharge (e.g. recoverable expenses like permit fees) added to the line; excluded from the tax base."
 msgstr "Неналоговый сбор (например, возмещаемые расходы в виде сборов за разрешения), добавляемый к строке и исключенный из налоговой базы."
@@ -299,8 +329,14 @@ msgstr "Задача о несоответствии, которая предо�
 msgid "A part contains the information about a specific item that can be purchased or manufactured."
 msgstr "Деталь содержит информацию о конкретном товаре, который можно приобрести или изготовить."
 
+msgid "A physical pull signal — a printed card or QR code living with the stock — that raises a purchase order or a job the moment it's scanned to refill a bin."
+msgstr "Физический сигнал вытягивания — печатная карточка или QR-код, находящиеся со складом, — которые создают заказ на покупку или работу в момент сканирования для пополнения корзины."
+
 msgid "A posted accounting entry: a header plus balanced debit and credit lines against GL accounts."
 msgstr "Учтенная бухгалтерская запись: заголовок плюс сбалансированные строки дебетовых и кредитовых записей по счетам ГЛ."
+
+msgid "A posted cash transaction — a Receipt from a customer or a Disbursement to a supplier — applied to invoices through settlements, moving Draft → Posted → Voided."
+msgstr "Проведённая кассовая операция — Поступление от клиента или Выплата поставщику — применяемая к счетам-фактурам через расчёты, переходя из Черновика → Проведено → Аннулировано."
 
 msgid "A pre-written description inserted into every issue that uses this workflow; placeholders like {itemId} and {location} are substituted at creation."
 msgstr "Предварительно написанное описание, вставляемое в каждую проблему, использующую этот рабочий процесс; заполнители, такие как {itemId} и {location}, заменяются при создании."
@@ -329,8 +365,8 @@ msgstr "Многократно используемый, версионируе�
 msgid "A routing step on a released job, the job's own copy of an operation, carrying a status the floor drives from Todo through Done."
 msgstr "Этап маршрута на выпущенном заказе, собственная копия операции заказа, имеющая статус, который цех изменяет от \"К выполнению\" до \"Выполнено\"."
 
-msgid "A sales invoice (you bill a customer) or purchase invoice (a supplier bills you); payment is a field, not a separate record."
-msgstr "Счет-фактура продажи (вы выставляете счет клиенту) или счет-фактура покупки (поставщик выставляет вам счет); платеж — это поле, а не отдельная запись."
+msgid "A sales invoice (you bill a customer) or purchase invoice (a supplier bills you), settled by applying payments and credit or debit memos."
+msgstr "Счёт-фактура продажи (вы выставляете счет клиенту) или счёт-фактура покупки (поставщик выставляет счет вам), погашаемый путём применения платежей и кредит-нот или дебет-нот."
 
 msgid "A sales invoice is a document that specifies the products or services sold to a customer and the corresponding cost."
 msgstr "Счет-фактура продажи — это документ, в котором указаны продукты или услуги, проданные клиенту, и соответствующая стоимость."
@@ -350,6 +386,9 @@ msgstr "Запрос коммерческого предложения (RFQ) —
 msgid "A sales RFQ (a customer asks you to quote) or a purchasing RFQ (you ask suppliers); both feed the opportunity thread."
 msgstr "Запрос коммерческого предложения продажи (клиент просит вас сделать предложение) или запрос коммерческого предложения закупки (вы просите поставщиков); оба питают цепочку возможностей."
 
+msgid "A scoped secret sent on the carbon-key request header that authenticates programmatic calls to Carbon, carrying its own permissions and rate limit rather than a user session's."
+msgstr "Ограниченный секрет, отправляемый в заголовке запроса carbon-key, который аутентифицирует программные вызовы к Carbon, несущий собственные разрешения и ограничение по частоте вместо сеанса пользователя."
+
 msgid "A separate schedule for tax reporting when tax rules require a method different from book depreciation."
 msgstr "Отдельный график для налоговой отчетности, когда налоговые правила требуют метода, отличного от бухгалтерской амортизации."
 
@@ -358,6 +397,9 @@ msgstr "Услуга — это платная деятельность, кот�
 
 msgid "A set of companies under one owner that share group-scoped configuration — the chart of accounts, currencies, and dimensions — so the same accounting setup spans every company in the group."
 msgstr "Набор компаний под одним владельцем, которые совместно используют конфигурацию уровня группы — план счетов, валюты и аналитики — так что одна и та же настройка учёта распространяется на каждую компанию в группе."
+
+msgid "A set of instructions to pull a job's outstanding materials from the warehouse and stage them lineside; a pick moves stock to the point of use rather than consuming it."
+msgstr "Набор инструкций по извлечению невыданных материалов работы со склада и подготовке их у линии; перемещение перемещает товар в место использования, а не потребляет его."
 
 msgid "A shipment line sent straight from supplier to customer, bypassing your warehouse — set per line, not on the header."
 msgstr "Строка отгрузки, отправленная прямо от поставщика к клиенту, минуя ваш склад — устанавливается для каждой строки, а не в заголовке."
@@ -683,6 +725,9 @@ msgstr "Добавить параметр"
 msgid "Add Partner"
 msgstr "Добавить партнера"
 
+msgid "Add parts"
+msgstr "Добавить детали"
+
 msgid "Add Permissions"
 msgstr "Добавить разрешения"
 
@@ -707,6 +752,9 @@ msgstr "Добавить риск"
 msgid "Add rule"
 msgstr "Добавить правило"
 
+msgid "Add Sample"
+msgstr "Добавить образец"
+
 msgid "Add Selector"
 msgstr "Добавить селектор"
 
@@ -722,6 +770,9 @@ msgstr "Добавить запасную часть"
 msgid "Add Step"
 msgstr "Добавить шаг"
 
+msgid "Add steps to preview the operator view."
+msgstr "Добавьте шаги для предварительного просмотра представления оператора."
+
 msgid "Add Supplier"
 msgstr "Добавить поставщика"
 
@@ -733,6 +784,9 @@ msgstr "Добавить табель учета рабочего времени
 
 msgid "Add to stock for future use"
 msgstr "Добавить в запас для будущего использования"
+
+msgid "Add tools"
+msgstr "Добавить инструменты"
 
 #. placeholder {0}: copy.noun
 msgid "Add your first {0}"
@@ -880,6 +934,12 @@ msgstr "Учетный контейнер, который группирует �
 msgid "An accounting record for a capitalized item you depreciate rather than expense; Draft → Active → Fully Depreciated → Disposed."
 msgstr "Учетная запись капитализированного элемента, который вы амортизируете вместо того, чтобы расходовать; Черновик → Активный → Полностью амортизирован → Ликвидирован."
 
+msgid "An alert that something needs a person's attention, fanned out from a carbon/notify event to the in-app inbox plus optional email and Slack, muteable per topic per user."
+msgstr "Оповещение о том, что что-то требует внимания человека, разошедшееся из события carbon/notify в приложенный почтовый ящик плюс дополнительные email и Slack, отключаемое по теме на пользователя."
+
+msgid "An approval requirement on a non-conformance whose reviewers (seeded Engineering and Quality) must sign off before the issue can close."
+msgstr "Требование одобрения несоответствия, проверяющие которого (заполняемые Engineering и Quality) должны подписать перед тем, как проблема может закрыться."
+
 msgid "An asset's acquisition cost minus accumulated depreciation — what it's still worth on the books, and the figure it's disposed at."
 msgstr "Первоначальная стоимость активов минус накопленная амортизация — его текущая балансовая стоимость и сумма, по которой он ликвидируется."
 
@@ -894,6 +954,12 @@ msgstr "Элемент не может быть добавлен к самому
 
 msgid "An operation done by an outside supplier rather than an in-house work center, covered by a subcontracting purchase order."
 msgstr "Операция, выполняемая внешним поставщиком вместо внутреннего рабочего центра, охватываемая заказом на закупку с привлечением подрядчика."
+
+msgid "An operation's position in its work center's queue — the order the floor picks work up — set by reordering cards on the Work Centers board without changing any dates."
+msgstr "Положение операции в очереди её рабочего центра — порядок, в котором площадка берёт работу — устанавливается переупорядочением карточек на доске Рабочих центров без изменения дат."
+
+msgid "An unexpected error occurred while connecting to Onshape. Try connecting again."
+msgstr "При подключении к Onshape произошла непредвиденная ошибка. Повторите попытку подключения."
 
 msgid "Anchors the Plan timeline to real dates. Leave blank for a relative, week-numbered timeline. Setting either one fills in the rest."
 msgstr "Привязывает временную шкалу плана к реальным датам. Оставьте пустым для относительной временной шкалы с номерами недель. Установка одной из них заполнит остальное."
@@ -956,6 +1022,9 @@ msgstr "Документация API"
 msgid "API Documentation"
 msgstr "Документация API"
 
+msgid "API key"
+msgstr "Ключ API"
+
 msgid "API Key"
 msgstr "API ключ"
 
@@ -986,6 +1055,9 @@ msgstr "Применяется ко всем"
 
 msgid "Applies to all work centers"
 msgstr "Применяется ко всем рабочим центрам"
+
+msgid "Applies to features without their own rule, and to the lot when this plan drives an inspection."
+msgstr "Применяется к функциям без собственного правила и к партии, когда этот план инициирует проверку."
 
 msgid "Apply"
 msgstr "Применить"
@@ -1076,7 +1148,7 @@ msgstr "Вы уверены, что хотите активировать про
 msgid "Are you sure you want to activate this gauge?."
 msgstr "Вы уверены, что хотите активировать этот прибор?."
 
-#. placeholder {0}: routeData?.changeOrder?.changeOrderId ?? ""
+#. placeholder {0}: routeData?.changeNotice?.changeOrderId ?? ""
 msgid "Are you sure you want to cancel {0}? It will be closed and read-only until you reopen it."
 msgstr "Вы уверены, что хотите отменить {0}? Он будет закрыт и доступен только для чтения, пока вы его не откроете."
 
@@ -1148,6 +1220,9 @@ msgstr "Вы уверены, что хотите удалить {0}?"
 msgid "Are you sure you want to delete {0}? This cannot be undone."
 msgstr "Вы уверены, что хотите удалить {0}? Это действие невозможно отменить."
 
+msgid "Are you sure you want to delete {name}? This cannot be undone."
+msgstr "Вы уверены, что хотите удалить {name}? Это действие невозможно отменить."
+
 #. placeholder {0}: selectedCustomField?.name
 msgid "Are you sure you want to delete the {0} field?"
 msgstr "Вы уверены, что хотите удалить поле {0}?"
@@ -1176,12 +1251,12 @@ msgid "Are you sure you want to delete the asset class: {0}? This cannot be undo
 msgstr "Вы уверены, что хотите удалить класс активов: {0}? Это невозможно отменить."
 
 #. placeholder {0}: requiredAction.name
-msgid "Are you sure you want to delete the change order action: {0}? This cannot be undone."
-msgstr "Вы уверены, что хотите удалить действие приказа об изменении: {0}? Это невозможно отменить."
+msgid "Are you sure you want to delete the change notice action: {0}? This cannot be undone."
+msgstr "Вы уверены, что хотите удалить действие уведомления об изменении: {0}? Это невозможно отменить."
 
-#. placeholder {0}: changeOrderType.name
-msgid "Are you sure you want to delete the change order category: {0}? This cannot be undone."
-msgstr "Вы уверены, что хотите удалить категорию приказа об изменении: {0}? Это действие невозможно отменить."
+#. placeholder {0}: changeNoticeType.name
+msgid "Are you sure you want to delete the change notice category: {0}? This cannot be undone."
+msgstr "Вы уверены, что хотите удалить категорию уведомления об изменении: {0}? Это невозможно отменить."
 
 msgid "Are you sure you want to delete the contractor: {name}? This cannot be undone."
 msgstr "Вы уверены, что хотите удалить подрядчика: {name}? Это действие невозможно отменить."
@@ -1341,14 +1416,17 @@ msgstr "Вы уверены, что хотите удалить webhook: {0}? Э
 msgid "Are you sure you want to delete this approval rule? This cannot be undone."
 msgstr "Вы уверены, что хотите удалить это правило утверждения? Это действие невозможно отменить."
 
-msgid "Are you sure you want to delete this change order?"
-msgstr "Вы уверены, что хотите удалить этот приказ об изменении?"
+msgid "Are you sure you want to delete this change notice?"
+msgstr "Вы уверены, что хотите удалить это уведомление об изменении?"
 
 msgid "Are you sure you want to delete this gauge?"
 msgstr "Вы уверены, что хотите удалить этот манометр?"
 
-msgid "Are you sure you want to delete this inspection document?"
-msgstr "Вы уверены, что хотите удалить этот документ проверки?"
+msgid "Are you sure you want to delete this inspection plan?"
+msgstr "Вы уверены, что хотите удалить этот план контроля?"
+
+msgid "Are you sure you want to delete this inspection plan? This cannot be undone."
+msgstr "Вы уверены, что хотите удалить этот план проверки? Это действие невозможно отменить."
 
 msgid "Are you sure you want to delete this issue workflow?"
 msgstr "Вы уверены, что хотите удалить этот рабочий процесс проблемы?"
@@ -1479,6 +1557,9 @@ msgstr "Попросите администратора с разрешение�
 
 msgid "Assemblies"
 msgstr "Сборки"
+
+msgid "Assembly Instruction"
+msgstr "Инструкция по сборке"
 
 msgid "Assembly Instructions"
 msgstr "Инструкции по сборке"
@@ -1624,6 +1705,12 @@ msgstr "Автоматически созданный QR-код"
 msgid "Auto-numbering formats for orders, jobs, parts, and more"
 msgstr "Форматы автонумерации для заказов, работ, деталей и многого другого"
 
+msgid "Auto-start the operator's timer when they open an operation in the MES so time logs are captured from the start."
+msgstr "Автоматически запускать таймер оператора при открытии операции в MES, чтобы логи времени записывались с начала."
+
+msgid "Auto-start timer on open"
+msgstr "Автоматически запустить таймер при открытии"
+
 msgid "Auto-suggest purchases from demand and reorder points"
 msgstr "Автоматически предлагать покупки на основе спроса и точек переупорядочения"
 
@@ -1686,6 +1773,9 @@ msgstr "Сбалансировано"
 
 msgid "Balloon"
 msgstr "Выноска"
+
+msgid "Ballooned drawings with inspection features."
+msgstr "Аннотированные чертежи с элементами проверки."
 
 msgid "Bank - Cash"
 msgstr "Банк - Денежные средства"
@@ -1926,6 +2016,9 @@ msgstr "Рассчитанный срок годности готовой про
 msgid "Calculation Method"
 msgstr "Метод расчета"
 
+msgid "Calibration"
+msgstr "Поверка"
+
 msgid "Calibration Attempts"
 msgstr "Попытки калибровки"
 
@@ -1965,11 +2058,11 @@ msgstr "Не удается загрузить этот файл"
 msgid "Cancel"
 msgstr "Отмена"
 
-msgid "Cancel change order"
-msgstr "Отменить заказ на внесение изменений"
+msgid "Cancel change notice"
+msgstr "Отменить уведомление об изменении"
 
-msgid "Cancel Change Order"
-msgstr "Отменить заказ на внесение изменений"
+msgid "Cancel Change Notice"
+msgstr "Отменить уведомление об изменении"
 
 msgid "Cancel Job"
 msgstr "Отменить задание"
@@ -2037,6 +2130,9 @@ msgstr "Невозможно загрузить — взаимодействие
 msgid "Cannot upload to parts bucket without item ID"
 msgstr "Невозможно загрузить в корзину деталей без ID элемента"
 
+msgid "Caption"
+msgstr "Заголовок"
+
 msgid "Carbon"
 msgstr "Углерод"
 
@@ -2088,6 +2184,9 @@ msgstr "Прогон планирования Carbon балансирует пр
 msgid "Carbon's production order — one job builds a quantity of one item from its own copied method and routing."
 msgstr "Производственный заказ Carbon — одна работа строит количество одного товара из его скопированного метода и маршрутизации."
 
+msgid "Carbon's shop-floor app where operators run operations, report quantities, issue material, and log time against released jobs in real time."
+msgstr "Приложение Carbon для цеха, где операторы выполняют операции, сообщают количества, выдают материалы и регистрируют время по выпущенным работам в реальном времени."
+
 msgid "Cards"
 msgstr "Карточки"
 
@@ -2133,20 +2232,26 @@ msgstr "Чемпионы"
 msgid "Change"
 msgstr "Изменить"
 
-msgid "Change order"
-msgstr "Приказ об изменении"
+msgid "Change Document"
+msgstr "Изменить документ"
 
-msgid "Change Order"
-msgstr "Приказ об изменении"
+msgid "Change Inspection Plan"
+msgstr "Изменить план контроля"
 
-msgid "Change Order Actions"
-msgstr "Действия приказа об изменении"
+msgid "Change notice"
+msgstr "Уведомление об изменении"
 
-msgid "Change Order Types"
-msgstr "Типы приказов об изменении"
+msgid "Change Notice"
+msgstr "Уведомление об изменении"
 
-msgid "Change Orders"
-msgstr "Приказы об изменении"
+msgid "Change Notice Actions"
+msgstr "Действия уведомлений об изменении"
+
+msgid "Change Notice Types"
+msgstr "Типы уведомлений об изменении"
+
+msgid "Change Notices"
+msgstr "Уведомления об изменении"
 
 msgid "Change status"
 msgstr "Изменить статус"
@@ -2222,6 +2327,9 @@ msgstr "Класс"
 
 msgid "Class (inherited)"
 msgstr "Класс (унаследованный)"
+
+msgid "Classifies a routing operation: Process, Assembly, and Inspection operations run on your own shop floor in the MES — Assembly gets the guided assembly view and Inspection a quality check — while an Outside Processing operation is subcontracted to a supplier and creates a purchase order; the process carries the same type and defaults it on new operations."
+msgstr "Классифицирует операцию маршрута: операции Process, Assembly и Inspection выполняются на собственном производстве в MES — Assembly получает управляемое представление сборки, а Inspection выполняет проверку качества — в то время как операция Outside Processing субподряжается поставщику и создает заказ на покупку; процесс имеет тот же тип и использует его по умолчанию для новых операций."
 
 msgid "Clean and approve the migrated data"
 msgstr "Очистить и утвердить перенесенные данные"
@@ -2687,6 +2795,9 @@ msgstr "Преобразуйте предложения MRP в заказы на
 msgid "Convert to Quote"
 msgstr "Преобразовать в предложение"
 
+msgid "Converting…"
+msgstr "Преобразование…"
+
 msgid "Converts a supplier's purchase unit to your inventory unit on a PO, receipt, or bill line — buy in cartons of 12, stock in eaches."
 msgstr "Преобразует единицу покупки поставщика в единицу инвентаря в строке заказа на покупку, квитанции или счета — покупайте в картонах по 12 штук, запасайте в единицах."
 
@@ -2735,8 +2846,8 @@ msgstr "Скопировать номер задания"
 msgid "Copy link"
 msgstr "Копировать ссылку"
 
-msgid "Copy link to change order"
-msgstr "Скопировать ссылку на приказ об изменении"
+msgid "Copy link to change notice"
+msgstr "Скопировать ссылку на уведомление об изменении"
 
 msgid "Copy link to consumable"
 msgstr "Скопировать ссылку на расходный материал"
@@ -2914,6 +3025,9 @@ msgstr "Не удалось подготовить изображение рег
 msgid "Could not read the document: {0}"
 msgstr "Не удалось прочитать документ: {0}"
 
+msgid "Couldn't complete the Onshape connection"
+msgstr "Не удалось завершить подключение к Onshape"
+
 msgid "Couldn't load documents"
 msgstr "Не удалось загрузить документы"
 
@@ -2922,6 +3036,9 @@ msgstr "Не удалось загрузить связанные докумен
 
 msgid "Couldn't reschedule the job. Please try again."
 msgstr "Не удалось перепланировать задание. Пожалуйста, попробуйте еще раз."
+
+msgid "Couldn't save the Onshape connection"
+msgstr "Не удалось сохранить подключение к Onshape"
 
 msgid "Count"
 msgstr "Количество"
@@ -2959,8 +3076,8 @@ msgstr "Создать {0} значений"
 msgid "Create & Snapshot"
 msgstr "Создать и снимок"
 
-msgid "Create a change order for the new revision and open it"
-msgstr "Создать приказ об изменении для новой редакции и открыть его"
+msgid "Create a change notice for the new revision and open it"
+msgstr "Создать уведомление об изменении для новой редакции и открыть его"
 
 msgid "Create a new kanban card for scan-based replenishment."
 msgstr "Создайте новую карточку канбана для пополнения на основе сканирования."
@@ -2989,14 +3106,11 @@ msgstr "Создавать и утверждать заказы на покуп�
 msgid "Create audit trail entries"
 msgstr "Создать записи в журнале аудита"
 
-msgid "Create Change Order"
-msgstr "Создать приказ об изменении"
+msgid "Create Change Notice"
+msgstr "Создать уведомление об изменении"
 
 msgid "Create Issue"
 msgstr "Создать проблему"
-
-msgid "Create Issue from Inspection"
-msgstr "Создать проблему из проверки"
 
 msgid "Create Jobs"
 msgstr "Создать задания"
@@ -3049,11 +3163,11 @@ msgstr "Создано"
 msgid "Created By"
 msgstr "Создано"
 
-msgid "Created change order action"
-msgstr "Создано действие приказа об изменении"
+msgid "Created change notice action"
+msgstr "Создано действие уведомления об изменении"
 
-msgid "Created change order type"
-msgstr "Создан тип заказа на внесение изменений"
+msgid "Created change notice type"
+msgstr "Создан тип уведомления об изменении"
 
 msgid "Created consumable"
 msgstr "Расходный материал создан"
@@ -3175,6 +3289,9 @@ msgstr "Кредит"
 msgid "Credit ({0})"
 msgstr "Кредит ({0})"
 
+msgid "Credit / debit memo"
+msgstr "Кредит-нота / Дебет-нота"
+
 msgid "Credit / Debit Memos"
 msgstr "Кредит-ноты / Дебет-ноты"
 
@@ -3261,6 +3378,9 @@ msgstr "Пользовательская разработка сверх ука�
 
 msgid "Custom development, integrations, or self-hosting"
 msgstr "Пользовательская разработка, интеграции или самостоятельный хостинг"
+
+msgid "Custom field"
+msgstr "Пользовательское поле"
 
 msgid "Custom Field"
 msgstr "Пользовательское поле"
@@ -3552,6 +3672,9 @@ msgstr "Дебеты"
 msgid "Decide what an operator sees if they try to issue a batch or serial that's already expired."
 msgstr "Решите, что видит оператор при попытке выдать партию или серийный номер, срок действия которого уже истек."
 
+msgid "Decide what happens when an operator presses Finish on the shop floor with material still unpicked."
+msgstr ""
+
 msgid "Decimal Places"
 msgstr "Десятичные разряды"
 
@@ -3633,6 +3756,9 @@ msgstr "Приоритет по умолчанию"
 msgid "Default revenue GL account credited when a sales invoice posts."
 msgstr "Счет GL по умолчанию, который кредитуется при проведении счета-фактуры продажи."
 
+msgid "Default Sampling"
+msgstr "Выборка по умолчанию"
+
 msgid "Default shelf-life duration (days)"
 msgstr "Продолжительность срока годности по умолчанию (дни)"
 
@@ -3675,9 +3801,6 @@ msgstr "Сначала определите производственную о�
 msgid "Define multi-level BOMs and Bill of Process (make methods)"
 msgstr "Определите многоуровневые спецификации материалов и Лист процесса (методы производства)"
 
-msgid "Defines how many tracked entities are inspected per lot, and how many failures are tolerated before the lot is rejected."
-msgstr "Определяет, сколько отслеживаемых объектов проверяется на партию и сколько отказов допускается перед отклонением партии."
-
 msgid "Delete"
 msgstr "Удалить"
 
@@ -3717,8 +3840,8 @@ msgstr "Удалить атрибут"
 msgid "Delete Category"
 msgstr "Удалить категорию"
 
-msgid "Delete Change Order"
-msgstr "Удалить приказ об изменении"
+msgid "Delete Change Notice"
+msgstr "Удалить уведомление об изменении"
 
 msgid "Delete Consumable"
 msgstr "Удалить расходный материал"
@@ -3770,6 +3893,9 @@ msgstr "Удалить группу"
 
 msgid "Delete Holiday"
 msgstr "Удалить праздник"
+
+msgid "Delete Inspection Plan"
+msgstr "Удалить план проверки"
 
 msgid "Delete Issue"
 msgstr "Удалить проблему"
@@ -3994,6 +4120,9 @@ msgstr "Прогноз спроса — Обусловлено"
 msgid "Demand forecast = BOM-exploded demand from open sales orders, active jobs, and production projections."
 msgstr "Прогноз спроса = спрос, разложенный по BOM, из открытых заказов на продажу, активных работ и прогнозов производства."
 
+msgid "Demand projection"
+msgstr "Прогноз спроса"
+
 msgid "Demand Projections"
 msgstr "Прогнозы спроса"
 
@@ -4142,6 +4271,9 @@ msgstr "Диспетчеризация"
 msgid "Dispatch ID"
 msgstr "ID диспетчеризации"
 
+msgid "Dispatch priority"
+msgstr "Приоритет отправки"
+
 msgid "Dispatches"
 msgstr "Отправки"
 
@@ -4257,6 +4389,9 @@ msgstr "Перетащите для переупорядочивания"
 msgid "Drag to resize diagram and features"
 msgstr "Перетащите, чтобы изменить размер диаграммы и функций"
 
+msgid "Drag to resize drawing and features"
+msgstr "Перетащите, чтобы изменить размер рисунка и функций"
+
 msgid "Drag to zoom"
 msgstr "Перетащите для масштабирования"
 
@@ -4333,17 +4468,53 @@ msgstr "Дублировать в..."
 msgid "Duration"
 msgstr "Продолжительность"
 
+msgid "e.g. +1 555 123 4567"
+msgstr "например +1 555 123 4567"
+
+msgid "e.g. +1 555 123 4568"
+msgstr "например +1 555 123 4568"
+
+msgid "e.g. 01234567"
+msgstr "например 01234567"
+
+msgid "e.g. 1 Industrial Way"
+msgstr "например 1 Industrial Way"
+
+msgid "e.g. 12-3456789"
+msgstr "например 12-3456789"
+
 msgid "e.g. 2h"
 msgstr "например, 2ч"
 
+msgid "e.g. 48201"
+msgstr "например 48201"
+
+msgid "e.g. Acme Manufacturing"
+msgstr "например Acme Manufacturing"
+
+msgid "e.g. Detroit"
+msgstr "например Detroit"
+
 msgid "e.g. DWG-1234"
 msgstr "например, DWG-1234"
+
+msgid "e.g. GB123456789"
+msgstr "например GB123456789"
+
+msgid "e.g. GB123456789000"
+msgstr "например GB123456789000"
 
 msgid "e.g. Jane Smith"
 msgstr "например, Джейн Смит"
 
 msgid "e.g. Marco + the area leads"
 msgstr "например, Марко + руководители отделов"
+
+msgid "e.g. MI"
+msgstr "например MI"
+
+msgid "e.g. Suite 200"
+msgstr "например Suite 200"
 
 msgid "e.g. the first 3 to 4 weeks"
 msgstr "например, первые 3-4 недели"
@@ -4399,14 +4570,14 @@ msgstr "Редактировать категорию атрибута"
 msgid "Edit Category"
 msgstr "Редактировать категорию"
 
-msgid "Edit Change Order"
-msgstr "Редактировать приказ об изменении"
+msgid "Edit Change Notice"
+msgstr "Редактировать уведомление об изменении"
 
-msgid "Edit Change Order Action"
-msgstr "Редактировать действие приказа об изменении"
+msgid "Edit Change Notice Action"
+msgstr "Редактировать действие уведомления об изменении"
 
-msgid "Edit Change Order Type"
-msgstr "Редактировать тип заказа на внесение изменений"
+msgid "Edit Change Notice Type"
+msgstr "Редактировать тип уведомления об изменении"
 
 msgid "Edit column visibility"
 msgstr "Изменить видимость столбцов"
@@ -4477,8 +4648,8 @@ msgstr "Редактировать группу"
 msgid "Edit Holiday"
 msgstr "Редактировать праздник"
 
-msgid "Edit Inspection Document"
-msgstr "Редактировать документ проверки"
+msgid "Edit Inspection Plan"
+msgstr "Отредактировать план контроля"
 
 msgid "Edit Item Group"
 msgstr "Редактировать группу товаров"
@@ -4681,6 +4852,9 @@ msgstr "Редактировать рабочий центр"
 msgid "Eliminated"
 msgstr "Исключено"
 
+msgid "Elimination entity"
+msgstr "Сущность ликвидации"
+
 msgid "email"
 msgstr "Электронная почта"
 
@@ -4722,6 +4896,9 @@ msgstr "сотрудники"
 
 msgid "Employees"
 msgstr "Сотрудники"
+
+msgid "Empty"
+msgstr "Пусто"
 
 msgid "Empty = match every item"
 msgstr "Пусто = соответствует каждому товару"
@@ -5010,6 +5187,9 @@ msgstr "Курс обмена"
 msgid "Exchange Rates"
 msgstr "Курсы обмена"
 
+msgid "Exchanging the authorization code for an access token failed. Try connecting again."
+msgstr "Не удалось обменять код авторизации на токен доступа. Повторите попытку подключения."
+
 msgid "Excluded"
 msgstr "Исключено"
 
@@ -5046,6 +5226,9 @@ msgstr "Развернуть Setup"
 
 msgid "Expand subtree"
 msgstr "Развернуть поддерево"
+
+msgid "Expected future demand for a make part entered week by week before any sales order exists; planning nets it against supply and explodes the method to order components ahead."
+msgstr "Ожидаемый будущий спрос на производимый товар, вводимый неделя за неделей до того, как появится какой-либо заказ продажи; планирование сопоставляет его с предложением и разворачивает метод для упреждающего заказа компонентов."
 
 msgid "Expected future demand for an item, bucketed by period, populated by the planning run alongside actual demand."
 msgstr "Ожидаемый будущий спрос на товар, сгруппированный по периодам, заполняемый при запуске планирования наряду с фактическим спросом."
@@ -5157,6 +5340,9 @@ msgstr "Дополнительные теги для разбора отчетн
 
 msgid "Fail"
 msgstr "Не пройти"
+
+msgid "Failed features"
+msgstr "Отказавшие элементы"
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create asset class: {0}"
@@ -5372,7 +5558,7 @@ msgid "Failed to move account: {0}"
 msgstr "Не удалось переместить счет: {0}"
 
 msgid "Failed to regenerate thumbnail"
-msgstr ""
+msgstr "Не удалось повторно создать миниатюру"
 
 msgid "Failed to remove image: {errorMessage}"
 msgstr "Не удалось удалить изображение: {errorMessage}"
@@ -5400,6 +5586,21 @@ msgstr "Ошибка при сохранении правила конфигур
 
 msgid "Failed to save diagram"
 msgstr "Не удалось сохранить диаграмму"
+
+msgid "Failed to save measurement"
+msgstr "Не удалось сохранить измерение"
+
+msgid "Failed to save parts"
+msgstr "Ошибка при сохранении деталей"
+
+msgid "Failed to save result"
+msgstr "Не удалось сохранить результат"
+
+msgid "Failed to save slides"
+msgstr "Ошибка при сохранении слайдов"
+
+msgid "Failed to save tools"
+msgstr "Ошибка при сохранении инструментов"
 
 msgid "Failed to update batch property"
 msgstr "Не удалось обновить свойство партии"
@@ -5550,6 +5751,9 @@ msgstr "Фильтр"
 msgid "Finalize"
 msgstr "Завершить"
 
+msgid "Finalizing a fiscal month through the Open → Locked → Closed lifecycle; a closed period is frozen and its balances snapshotted, reversible only by explicit reopen."
+msgstr "Финализация налогового месяца через цикл жизни Открыто → Заблокировано → Закрыто; закрытый период заморожен и его остатки снимаются, обратимо только явным повторным открытием."
+
 msgid "finish"
 msgstr "Готовая продукция"
 
@@ -5576,6 +5780,12 @@ msgstr "Дополнительное вычитание в первый год, 
 
 msgid "Finishes"
 msgstr "Отделки"
+
+msgid "Finishing an incomplete pick"
+msgstr ""
+
+msgid "Finishing is refused until every line is picked or marked Short."
+msgstr ""
 
 msgid "First Name"
 msgstr "Имя"
@@ -6154,8 +6364,8 @@ msgstr "Как была рассчитана окончательная цена
 msgid "How the sample size is decided — Inspect All, Inspect First N, Percentage of Lot, or AQL (Z1.4 / ISO 2859-1). Each mode reveals its own parameter fields below."
 msgstr "Как решается размер выборки — Проверить все, Проверить первые N, Процент партии или AQL (Z1.4 / ISO 2859-1). Каждый режим раскрывает свои собственные поля параметров ниже."
 
-msgid "How this gauge is used — Standard (regular checks), Master (calibrates other gauges), or Reference (audit-only)."
-msgstr "Как используется этот манометр — Стандартный (обычные проверки), Мастер (калибрует другие манометры) или Справка (только аудит)."
+msgid "How this gauge is used — Standard (regular checks) or Master (calibrates other gauges)."
+msgstr "Как используется этот калибр — Стандартный (плановые проверки) или Мастер (калибрует другие калибры)."
 
 msgid "How this price was calculated"
 msgstr "Как была рассчитана эта цена"
@@ -6214,6 +6424,9 @@ msgstr "ID"
 msgid "Ideas, suggestions or problems?"
 msgstr "Идеи, предложения или проблемы?"
 
+msgid "Identifiers"
+msgstr "Идентификаторы"
+
 msgid "IDs and descriptions are generated for raw materials."
 msgstr "Идентификаторы и описания генерируются для сырья."
 
@@ -6264,6 +6477,9 @@ msgstr "Результаты импорта"
 
 msgid "Import your BOM"
 msgstr "Импортируйте вашу BOM"
+
+msgid "In Onshape, edit this OAuth application's permissions to include \"Application can write to your documents\", then connect again."
+msgstr "В Onshape измените разрешения этого приложения OAuth, добавив «Application can write to your documents», затем подключитесь снова."
 
 msgid "In order to convert this RFQ to a quote, all lines must have an internal part number."
 msgstr "Чтобы преобразовать это РЗП в предложение, все строки должны иметь внутренний номер детали."
@@ -6316,23 +6532,23 @@ msgstr "Неактивно"
 msgid "Inactive actions will not appear in selection lists"
 msgstr "Неактивные действия не будут отображаться в списках выбора"
 
-msgid "Inbound Inspection"
+msgid "Inbound inspection"
 msgstr "Входящая проверка"
-
-msgid "Inbound Inspections"
-msgstr "Входящие проверки"
-
-msgid "Inbound Inspections: Require Different Inspector"
-msgstr "Входящие проверки: требовать другого инспектора"
 
 msgid "Inbox"
 msgstr "Входящие"
+
+msgid "Include a materials (bill of materials) section on the job traveler PDF with item numbers and quantities."
+msgstr "Включить раздел материалов (спецификация материалов) в PDF путевого листа задания с номерами товаров и количествами."
 
 msgid "Include extra parts in shipment"
 msgstr "Включить дополнительные детали в отправку"
 
 msgid "Include Inactive"
 msgstr "Включить неактивные"
+
+msgid "Include materials on traveler"
+msgstr "Включить материалы в путевой лист задания"
 
 msgid "Included"
 msgstr "Включено"
@@ -6370,6 +6586,12 @@ msgstr "Косвенные материалы и услуги (по умолча
 msgid "Infrastructure"
 msgstr "Инфраструктура"
 
+msgid "Inherit"
+msgstr "Наследовать"
+
+msgid "Inherit document default"
+msgstr "Наследовать документ по умолчанию"
+
 msgid "Inherit From Materials"
 msgstr "Наследовать от материалов"
 
@@ -6406,23 +6628,26 @@ msgstr "Проверить первые N"
 msgid "Inspect Item"
 msgstr "Проверить товар"
 
-msgid "Inspect Next Item"
-msgstr "Проверить следующий элемент"
-
 msgid "Inspection"
 msgstr "Проверка"
-
-msgid "Inspection Document"
-msgstr "Документ проверки"
-
-msgid "Inspection Documents"
-msgstr "Документы проверки"
 
 msgid "Inspection Level"
 msgstr "Уровень проверки"
 
+msgid "Inspection Plan"
+msgstr "План контроля"
+
+msgid "Inspection Plan Assignments"
+msgstr "Назначения плана контроля"
+
+msgid "Inspection Plans"
+msgstr "Планы контроля"
+
 msgid "Inspection Status"
 msgstr "Статус проверки"
+
+msgid "Inspections"
+msgstr "Проверки"
 
 msgid "Inspections, nonconformance, and CAPA"
 msgstr "Проверки, несоответствия и CAPA"
@@ -6430,8 +6655,8 @@ msgstr "Проверки, несоответствия и CAPA"
 msgid "Inspections, Nonconformance, CAPA"
 msgstr "Проверки, несоответствия, CAPA"
 
-msgid "Inspector"
-msgstr "Инспектор"
+msgid "Inspections: Require Different Inspector"
+msgstr "Проверки: Требуется другой инспектор"
 
 msgid "Install"
 msgstr "Установить"
@@ -6573,6 +6798,9 @@ msgstr "Местоположение счета"
 
 msgid "Invoice Number"
 msgstr "Номер счета"
+
+msgid "Invoice settlement"
+msgstr "Погашение счёта"
 
 msgid "Invoice Supplier"
 msgstr "Поставщик счета"
@@ -6763,6 +6991,12 @@ msgstr "Операция задания"
 msgid "Job Operations"
 msgstr "Операции задания"
 
+msgid "Job Traveler Materials"
+msgstr "Материалы путевого листа задания"
+
+msgid "Job traveler settings updated"
+msgstr "Параметры путевого листа задания обновлены"
+
 msgid "Jobs"
 msgstr "Работы"
 
@@ -6774,6 +7008,9 @@ msgstr "Задания в процессе"
 
 msgid "Jobs Required"
 msgstr "Требуются работы"
+
+msgid "Jobs that have this item on their bill of materials"
+msgstr "Работы, содержащие этот товар в спецификации материалов"
 
 #. placeholder {0}: company?.name ?? "Company"
 msgid "Join {0}"
@@ -6925,6 +7162,9 @@ msgstr "Оставьте пустым для точного совпадения
 msgid "Leave this page"
 msgstr "Покинуть эту страницу"
 
+msgid "Ledger"
+msgstr "Главная книга"
+
 msgid "Left item"
 msgstr "Левый элемент"
 
@@ -7000,6 +7240,9 @@ msgstr "Строки требуют внутренние номера детал
 msgid "Lines need prices or lead times"
 msgstr "Строки требуют цены или сроки поставки"
 
+msgid "Lineside"
+msgstr "У линии"
+
 msgid "Link"
 msgstr "Ссылка"
 
@@ -7011,6 +7254,9 @@ msgstr "Связать проблему Jira"
 
 msgid "Link Linear Issue"
 msgstr "Связать проблему Linear"
+
+msgid "Link to sales order line"
+msgstr "Связать со строкой заказа на продажу"
 
 #. placeholder {0}: r.linkedSum
 #. placeholder {1}: r.quantity
@@ -7155,6 +7401,9 @@ msgstr "Отклонение размера партии (по умолчани�
 
 msgid "Lot Size:"
 msgstr "Размер партии:"
+
+msgid "Lot-based inspection of received goods against a sampling plan; the units post On Hold at receipt and only release to Available once the lot is dispositioned as accepted."
+msgstr "Партионная проверка полученных товаров по плану выборки; единицы размещаются как На удержании при получении и выпускаются в Доступно только после того, как партия dispositionируется как принята."
 
 msgid "Low"
 msgstr "Низкий"
@@ -7346,14 +7595,8 @@ msgstr "Отметить как выполнено"
 msgid "Mark Light Mode"
 msgstr "Логотип в светлом режиме"
 
-msgid "Mark lot as partial?"
-msgstr "Отметить партию как частичную?"
-
 msgid "Mark not done"
 msgstr "Отметить как невыполненное"
-
-msgid "Mark Partial"
-msgstr "Отметить как частичное"
 
 msgid "Mark scope as agreed"
 msgstr "Отметить область как согласованную"
@@ -7363,6 +7606,9 @@ msgstr "Отметить как недостача"
 
 msgid "Mark to delete"
 msgstr "Отметить для удаления"
+
+msgid "Master gauge"
+msgstr "Мастер-калибр"
 
 msgid "Master records"
 msgstr "Основные записи"
@@ -7432,6 +7678,9 @@ msgstr "Идентификаторы материалов"
 
 msgid "Material Properties"
 msgstr "Свойства материалов"
+
+msgid "Material Review Board (MRB)"
+msgstr "Комиссия по проверке материалов (МРБ)"
 
 msgid "Material Shape"
 msgstr "Форма материала"
@@ -7609,9 +7858,6 @@ msgstr "Отсутствуют поставщики"
 
 msgid "Mobile Phone"
 msgstr "Мобильный телефон"
-
-msgid "Model data is missing"
-msgstr "Данные модели отсутствуют"
 
 msgid "Model Number"
 msgstr "Номер модели"
@@ -7795,14 +8041,14 @@ msgstr "Новый атрибут"
 msgid "New Attribute Category"
 msgstr "Новая категория атрибутов"
 
-msgid "New Change Order"
-msgstr "Новый приказ на изменение"
+msgid "New Change Notice"
+msgstr "Новое уведомление об изменении"
 
-msgid "New Change Order Action"
-msgstr "Новое действие приказа об изменении"
+msgid "New Change Notice Action"
+msgstr "Новое действие уведомления об изменении"
 
-msgid "New Change Order Type"
-msgstr "Новый тип заказа на внесение изменений"
+msgid "New Change Notice Type"
+msgstr "Новый тип уведомления об изменении"
 
 msgid "New Consumable"
 msgstr "Новый расходный материал"
@@ -7864,8 +8110,8 @@ msgstr "Новый праздник"
 msgid "New IC Transaction"
 msgstr "Новая транзакция IC"
 
-msgid "New Inspection Document"
-msgstr "Новый документ проверки"
+msgid "New Inspection Plan"
+msgstr "Новый план контроля"
 
 msgid "New Inventory Count"
 msgstr "Новый подсчет инвентаря"
@@ -8146,6 +8392,9 @@ msgstr "Не найдено доступных отслеживаемых объ
 msgid "No BOM input has a shelf-life policy"
 msgstr "Ни один вход BOM не имеет политики срока хранения"
 
+msgid "No CAD model to preview."
+msgstr "Нет модели CAD для предпросмотра."
+
 msgid "No calibration records found"
 msgstr "Записи о калибровке не найдены"
 
@@ -8236,6 +8485,9 @@ msgstr "Нет назначенных групп"
 msgid "No image"
 msgstr "Нет изображения"
 
+msgid "No inspection plans"
+msgstr "Нет планов контроля"
+
 msgid "No issue types configured"
 msgstr "Типы проблем не настроены"
 
@@ -8269,6 +8521,12 @@ msgstr "Нет заметок"
 msgid "No open invoices"
 msgstr "Нет открытых счетов"
 
+msgid "No open orders for this item are available to link."
+msgstr "Нет открытых заказов для этого товара, доступных для связи."
+
+msgid "No open sales order lines"
+msgstr "Нет открытых строк заказа продажи"
+
 msgid "No operations require picking at this location"
 msgstr "На этом месте нет операций, требующих комплектации"
 
@@ -8296,6 +8554,9 @@ msgstr "Родительские источники еще не записаны
 msgid "No part ID"
 msgstr "Нет ID детали"
 
+msgid "No parts"
+msgstr "Нет деталей"
+
 msgid "No payables"
 msgstr "Нет кредиторской задолженности"
 
@@ -8320,6 +8581,9 @@ msgstr "Принтеры не настроены. Нажмите «Добави�
 msgid "No process selected"
 msgstr "Процесс не выбран"
 
+msgid "No production events recorded for this operation yet"
+msgstr "Для этой операции еще не записано ни одного производственного события"
+
 msgid "No Quote"
 msgstr "Нет предложения"
 
@@ -8331,6 +8595,9 @@ msgstr "Причины отсутствия предложения"
 
 msgid "No receivables"
 msgstr "Нет дебиторской задолженности"
+
+msgid "No reference image"
+msgstr "Нет эталонного изображения"
 
 msgid "No remaining entities to inspect."
 msgstr "Нет оставшихся объектов для проверки."
@@ -8346,9 +8613,6 @@ msgstr "Нет строк здесь."
 
 msgid "No rules assigned"
 msgstr "Нет назначенных правил"
-
-msgid "No samples inspected yet."
-msgstr "Пока нет проверенных образцов."
 
 msgid "No single, trusted number for inventory or job status"
 msgstr "Нет единого надежного показателя для инвентаря или статуса работы"
@@ -8367,6 +8631,12 @@ msgstr "Поставщиков еще нет"
 
 msgid "No time entries for this week"
 msgstr "Нет записей о времени на эту неделю"
+
+msgid "No tools"
+msgstr "Нет инструментов"
+
+msgid "No tools for this step"
+msgstr "Нет инструментов для этого шага"
 
 msgid "No transactions in this period"
 msgstr "Нет транзакций в этом периоде"
@@ -8473,6 +8743,9 @@ msgstr "Число"
 msgid "Number of inventory units per purchase unit"
 msgstr "Количество единиц запасов на единицу закупки"
 
+msgid "Numbering sequence"
+msgstr "Нумерационная последовательность"
+
 msgid "OEE Impact"
 msgstr "Влияние OEE"
 
@@ -8560,6 +8833,21 @@ msgstr "Редактировать можно только процедуры в
 msgid "Only empty, open periods can be deleted."
 msgstr "Удалять можно только пустые открытые периоды."
 
+msgid "Onshape authorized the connection but saving it failed. Try connecting again."
+msgstr "Onshape авторизовал подключение, но сохранить его не удалось. Повторите попытку подключения."
+
+msgid "Onshape denied the connection"
+msgstr "Onshape отклонил подключение"
+
+msgid "Onshape didn't return an authorization code"
+msgstr "Onshape не вернул код авторизации"
+
+msgid "Onshape isn't configured"
+msgstr "Onshape не настроен"
+
+msgid "Onshape rejected the authorization"
+msgstr "Onshape отклонил авторизацию"
+
 msgid "Onshape Status"
 msgstr "Статус Onshape"
 
@@ -8572,8 +8860,8 @@ msgstr "Упс! Ссылка, которую вы пытаетесь откры�
 msgid "Open"
 msgstr "Открыть"
 
-msgid "Open a change order"
-msgstr "Открыть приказ об изменении"
+msgid "Open a change notice"
+msgstr "Открыть уведомление об изменении"
 
 msgid "Open Actions"
 msgstr "Открытые действия"
@@ -8590,8 +8878,8 @@ msgstr "Открытая дебиторская задолженность"
 msgid "Open Audit Log"
 msgstr "Открыть журнал аудита"
 
-msgid "Open change orders affecting this part"
-msgstr "Открытые приказы на изменение, влияющие на эту деталь"
+msgid "Open change notices affecting this part"
+msgstr "Открытые уведомления об изменении, влияющие на эту деталь"
 
 msgid "Open Date"
 msgstr "Дата открытия"
@@ -8602,11 +8890,11 @@ msgstr "Открытые наряды"
 msgid "Open in Carbon"
 msgstr "Открыть в Carbon"
 
-msgid "Open in change order {ids}. Release it to create new versions or revisions."
-msgstr ""
+msgid "Open in change notice {ids}. Release it to create new versions or revisions."
+msgstr "Открыто в уведомлении об изменении {ids}. Выпустите его, чтобы создать новые версии или редакции."
 
-msgid "Open in change orders {ids}. Release them to create new versions or revisions."
-msgstr ""
+msgid "Open in change notices {ids}. Release them to create new versions or revisions."
+msgstr "Открыто в уведомлениях об изменении {ids}. Выпустите их, чтобы создать новые версии или редакции."
 
 msgid "Open in MES"
 msgstr "Открыть в MES"
@@ -8674,6 +8962,9 @@ msgstr "Операция"
 msgid "Operation Order"
 msgstr "Порядок операции"
 
+msgid "Operation Timer"
+msgstr "Таймер операции"
+
 msgid "Operation Type"
 msgstr "Тип операции"
 
@@ -8695,6 +8986,9 @@ msgstr "Оператор получит предупреждение. Товар
 msgid "Operator must pick a different batch/serial."
 msgstr "Оператор должен выбрать другую партию/серию."
 
+msgid "Operator sees the missing items, can acknowledge & finish. The list is flagged Partial."
+msgstr ""
+
 msgid "Operators"
 msgstr "Операторы"
 
@@ -8703,6 +8997,9 @@ msgstr "Операторы могут использовать общие раб
 
 msgid "Opportunity"
 msgstr "Возможность"
+
+msgid "Optimized for fast previews — downloads always serve the original uploaded file"
+msgstr "Оптимизировано для быстрого предпросмотра — загрузки всегда предоставляют исходный загруженный файл"
 
 msgid "Optional"
 msgstr "Опционально"
@@ -8800,6 +9097,9 @@ msgstr "Отклонение косвенных затрат"
 
 msgid "Over-applied by"
 msgstr "Переприменено на"
+
+msgid "Overall result"
+msgstr "Общий результат"
 
 msgid "Overdue"
 msgstr "Просрочено"
@@ -8901,6 +9201,9 @@ msgstr "Родительская группа"
 msgid "Parent Item"
 msgstr "Родительский товар"
 
+msgid "Parent items. (If you click into one of the parent parts below, you'll see this item included as a component on the bill of material.)"
+msgstr "Родительские товары. (Если вы щёлкнете на один из родительских товаров ниже, вы увидите этот товар в качестве компонента в спецификации материалов.)"
+
 msgid "Parent Storage Unit"
 msgstr "Родительское хранилище"
 
@@ -8929,7 +9232,7 @@ msgid "Part Supersession"
 msgstr "Замена детали"
 
 msgid "Partial"
-msgstr "Частичный"
+msgstr ""
 
 msgid "Partner"
 msgstr "Партнер"
@@ -9054,6 +9357,9 @@ msgstr "Идеально для недорогой оценки"
 msgid "Period"
 msgstr "Период"
 
+msgid "Period close"
+msgstr "Закрытие периода"
+
 msgid "Period End"
 msgstr "Конец периода"
 
@@ -9120,6 +9426,9 @@ msgstr "Выбранное количество"
 msgid "Picking Lines"
 msgstr "Строки комплектации"
 
+msgid "Picking list"
+msgstr "Список подбора"
+
 msgid "Picking List"
 msgstr "Список комплектации"
 
@@ -9140,6 +9449,9 @@ msgstr "Штук/час"
 
 msgid "Pieces/Minute"
 msgstr "Деталей/Минуту"
+
+msgid "Pin"
+msgstr "Закрепить"
 
 msgid "Pinned"
 msgstr "Закреплено"
@@ -9291,14 +9603,14 @@ msgstr "Авансовые платежи"
 msgid "Posting Date"
 msgstr "Дата публикации"
 
-msgid "Posting Groups"
-msgstr "Группы учета"
-
 msgid "Potential Data Loss"
 msgstr "Потенциальная потеря данных"
 
 msgid "Pre-filled for a new item when expiry is Fixed Duration."
 msgstr "Предварительно заполняется для нового товара, когда срок действия установлен как Фиксированная продолжительность."
+
+msgid "Pre-select material without a picking list"
+msgstr ""
 
 msgid "Preferred Supplier"
 msgstr "Предпочитаемый поставщик"
@@ -9342,6 +9654,9 @@ msgstr "Предыдущая дата"
 msgid "Previous page"
 msgstr "Предыдущая страница"
 
+msgid "Previous step"
+msgstr "Предыдущий шаг"
+
 msgid "Price break actions"
 msgstr "Действия ценовой скидки"
 
@@ -9360,11 +9675,17 @@ msgstr "Прайс-листы"
 msgid "Price Lists"
 msgstr "Прайс-листы"
 
+msgid "Price override"
+msgstr "Переопределение цены"
+
 msgid "Prices"
 msgstr "Цены"
 
 msgid "Pricing"
 msgstr "Ценообразование"
+
+msgid "Pricing rule"
+msgstr "Правило ценообразования"
 
 msgid "Pricing Rule"
 msgstr "Правило цены"
@@ -9807,6 +10128,9 @@ msgstr "ID предложения"
 msgid "Quote Line"
 msgstr "Строка предложения"
 
+msgid "Quote lines whose bill of materials includes this item"
+msgstr "Строки предложения, чья спецификация материалов включает этот товар"
+
 msgid "Quote Location"
 msgstr "Местоположение предложения"
 
@@ -9833,9 +10157,6 @@ msgstr "Дата предложения"
 
 msgid "Quotes"
 msgstr "Предложения"
-
-msgid "Quoting"
-msgstr "Котировка"
 
 msgid "Quoting and sales orders"
 msgstr "Котировки и заказы на продажу"
@@ -9872,6 +10193,9 @@ msgstr "Прочитайте это внимательно — что Carbon б�
 
 msgid "Read this through. When it's right, sign off at the bottom. It's the statement your commercial agreement points to, with no prices or legal terms here."
 msgstr "Прочитайте это внимательно. Когда всё будет правильно, подпишитесь внизу. Это заявление, на которое указывает ваше коммерческое соглашение, без цен и юридических условий."
+
+msgid "Readable ID"
+msgstr "Читаемый ID"
 
 msgid "Reading the document..."
 msgstr "Чтение документа..."
@@ -10024,14 +10348,11 @@ msgstr "Запись удалена"
 msgid "Record inspections tied to a part and a job"
 msgstr "Записывать проверки, связанные с деталью и заказом"
 
-msgid "Record the inspection result for this sample."
-msgstr "Запишите результат проверки для этого образца."
+msgid "Recorded on a calibration that the gauge needs repair before its readings can be trusted."
+msgstr "Записано при калибровке, что калибр нужно отремонтировать перед тем, как можно доверять его показаниям."
 
 msgid "Recorded that follow-up is needed after this calibration; surfaces this gauge on the open-actions queue."
 msgstr "Записано, что необходимо последующее наблюдение после этой калибровки; отображает этот датчик в очереди открытых действий."
-
-msgid "Recorded that the gauge needs repair; the gauge stays unavailable for inspections until the repair is closed out."
-msgstr "Записано, что датчик нуждается в ремонте; датчик остается недоступным для проверок до закрытия ремонта."
 
 msgid "Recorded that the gauge was adjusted during this calibration; affects how the calibration interval recalculates."
 msgstr "Записано, что датчик был отрегулирован во время этой калибровки; влияет на пересчет интервала калибровки."
@@ -10063,11 +10384,11 @@ msgstr "Обновить"
 msgid "Refresh exchange rate"
 msgstr "Обновить курс обмена"
 
-msgid "Regenerate"
-msgstr ""
+msgid "Regenerate thumbnail from the 3D model"
+msgstr "Восстановить миниатюру из 3D модели"
 
 msgid "Regenerating thumbnail…"
-msgstr ""
+msgstr "Создание миниатюры…"
 
 msgid "Register"
 msgstr "Зарегистрировать существующий актив"
@@ -10077,6 +10398,9 @@ msgstr "Зарегистрирован"
 
 msgid "Registered"
 msgstr "Точка переза́каза"
+
+msgid "Registration Number"
+msgstr "Регистрационный номер"
 
 msgid "Reject"
 msgstr "Отклонить"
@@ -10108,8 +10432,8 @@ msgstr "Относительная шкала времени · даты буд�
 msgid "Release"
 msgstr "Выпуск"
 
-msgid "Release change order"
-msgstr "Выпустить заказ на изменение"
+msgid "Release change notice"
+msgstr "Выпустить уведомление об изменении"
 
 msgid "Release control"
 msgstr "Контроль выпуска"
@@ -10151,9 +10475,6 @@ msgstr "Удалить {label}"
 msgid "Remove condition"
 msgstr "Удалить условие"
 
-msgid "Remove feature"
-msgstr "Удалить функцию"
-
 msgid "Remove filter"
 msgstr "Удалить фильтр"
 
@@ -10172,11 +10493,20 @@ msgstr "Удалить заказ"
 msgid "Remove pair"
 msgstr "Удалить пару"
 
+msgid "Remove part"
+msgstr "Удалить деталь"
+
+msgid "Remove slide"
+msgstr "Удалить слайд"
+
 msgid "Remove sort by column"
 msgstr "Удалить сортировку по столбцу"
 
 msgid "Remove this storage type from all referencing storage units and delete it. This cannot be undone."
 msgstr "Удалите этот тип хранилища из всех ссылающихся на него единиц хранения и удалите его. Это невозможно отменить."
+
+msgid "Remove tool"
+msgstr "Удалить инструмент"
 
 msgid "Removed"
 msgstr "Удалено"
@@ -10250,6 +10580,9 @@ msgstr "Система пополнения"
 msgid "Report"
 msgstr "Отчет"
 
+msgid "Reporting dimension"
+msgstr "Измерение отчётности"
+
 msgid "Reports"
 msgstr "Отчеты"
 
@@ -10304,9 +10637,6 @@ msgstr "Требует действия"
 msgid "Requires Adjustment"
 msgstr "Требует регулировки"
 
-msgid "Requires Inspection"
-msgstr "Требует проверки"
-
 msgid "Requires Repair"
 msgstr "Требует ремонта"
 
@@ -10327,7 +10657,7 @@ msgstr "Сброс PIN"
 msgid "Reset PIN for {0} {1}"
 msgstr "Сброс PIN для {0} {1}"
 
-msgid "Reset View"
+msgid "Reset view"
 msgstr "Сбросить вид"
 
 msgid "Residual value"
@@ -10468,6 +10798,9 @@ msgstr "Правый элемент"
 
 msgid "Risk"
 msgstr "Риск"
+
+msgid "Risk register"
+msgstr "Реестр рисков"
 
 msgid "Risks"
 msgstr "Риски"
@@ -10677,15 +11010,14 @@ msgstr "Как в книге"
 msgid "Sample"
 msgstr "Образец"
 
-#. placeholder {0}: idx + 1
-msgid "Sample {0}"
-msgstr "Образец {0}"
-
 msgid "Sample Size"
 msgstr "Размер выборки"
 
-msgid "Sampling Plan"
-msgstr "План выборочного контроля"
+msgid "Sampling"
+msgstr "Выборка"
+
+msgid "Sampling — Feature {featureLabel}"
+msgstr "Выборка — Функция {featureLabel}"
 
 msgid "Sampling Standard"
 msgstr "Стандарт выборки"
@@ -10732,14 +11064,17 @@ msgstr "Отсканируйте или введите номер отслежи
 msgid "Scan or search..."
 msgstr "Сканировать или искать..."
 
-msgid "Scan or select a tracked entity from this lot and record the inspection result."
-msgstr "Отсканируйте или выберите отслеживаемый объект из этой партии и запишите результат проверки."
+msgid "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
+msgstr "Отсканируйте или выберите отслеживаемую сущность из этой партии, чтобы добавить её в качестве столбца образца, затем запишите её результат в сетку."
 
 msgid "Scan the tracking ID for this line"
 msgstr "Отсканируйте идентификатор отслеживания для этой строки"
 
 msgid "SCAR"
 msgstr "SCAR"
+
+msgid "SCAR (supplier corrective action request)"
+msgstr "SCAR (запрос на корректирующие действия поставщика)"
 
 msgid "Schedule"
 msgstr "График"
@@ -10776,6 +11111,9 @@ msgstr "Области"
 
 msgid "Scrap"
 msgstr "Брак"
+
+msgid "Scrap / Cost of Quality"
+msgstr "Брак / Стоимость качества"
 
 msgid "Scrap Percent"
 msgstr "Процент брака"
@@ -10837,6 +11175,9 @@ msgstr "Поиск задания"
 msgid "Search operators..."
 msgstr "Поиск операторов..."
 
+msgid "Search parts..."
+msgstr "Поиск деталей..."
+
 msgid "Search processes..."
 msgstr "Поиск процессов..."
 
@@ -10845,6 +11186,9 @@ msgstr "Поиск связанных элементов..."
 
 msgid "Search suppliers..."
 msgstr "Поиск поставщиков..."
+
+msgid "Search tools..."
+msgstr "Поиск инструментов..."
 
 msgid "Search..."
 msgstr "Поиск..."
@@ -10866,6 +11210,9 @@ msgstr "Выберите исполнителя"
 
 msgid "Select a default approver"
 msgstr "Выберите утверждающего по умолчанию"
+
+msgid "Select a document"
+msgstr "Выберите документ"
 
 msgid "Select a new owner"
 msgstr "Выберите нового владельца"
@@ -11524,6 +11871,9 @@ msgstr "Потребление запасных частей"
 msgid "Spare Part Cost"
 msgstr "Стоимость запасных частей"
 
+msgid "Spec"
+msgstr "Тех. условия"
+
 msgid "Specific Customer"
 msgstr "Конкретный клиент"
 
@@ -11653,6 +12003,12 @@ msgstr "шаги"
 
 msgid "Steps"
 msgstr "Шаги"
+
+msgid "Steps are inherited from the assembly instruction."
+msgstr "Этапы наследуются из инструкции по сборке."
+
+msgid "Steps are inherited from the inspection plan."
+msgstr "Этапы наследуются из плана контроля."
 
 msgid "Stock Transfer ID"
 msgstr "ID передачи запасов"
@@ -12197,6 +12553,9 @@ msgstr "Количество дней после метода расчета, в
 msgid "The append-only record of every stock movement; on-hand is the sum of its signed entries and the source of truth."
 msgstr "Журнал доступного только для добавления, отражающий каждое движение запасов; остаток на складе является суммой подписанных записей и источником истины."
 
+msgid "The authorization was refused in Onshape. Try connecting again."
+msgstr "Авторизация была отклонена в Onshape. Повторите попытку подключения."
+
 msgid "The book of all posted journal lines, summed by account — written only when the company has accounting enabled."
 msgstr "Книга всех проведенных строк журнала, суммированные по счетам — записывается только при включенной учетной политике компании."
 
@@ -12347,8 +12706,8 @@ msgstr "Сквозной коммерческий процесс от предл
 msgid "The endpoint that receives a POST request with the updated data when the table is updated"
 msgstr "Конечная точка, которая получает POST-запрос с обновленными данными при обновлении таблицы"
 
-msgid "The engineering drawing this inspection document is tied to; inspections recorded against this part reference back to this drawing."
-msgstr "Технический чертеж, к которому привязан этот документ проверки; проверки, записанные в отношении этого обозначения детали, ссылаются на этот чертеж."
+msgid "The engineering drawing this inspection plan is tied to; inspections recorded against this part reference back to this drawing."
+msgstr "Техническая схема, к которой привязан данный план контроля; проверки, записанные для этой детали, ссылаются на эту схему."
 
 msgid "The expected percentage of this item's output lost during production; planning multiplies demand by 1 / (1 − scrap) to compensate."
 msgstr "Ожидаемый процент выпуска этого товара, потерянный во время производства; планирование умножает спрос на 1 / (1 − отход) для компенсации."
@@ -12412,6 +12771,9 @@ msgstr "Почасовая стоимость работы механизмов 
 
 msgid "The hourly indirect-cost burden applied to this work center; the difference between labor + machine and the full quoting rate is what overhead absorbs."
 msgstr "Почасовая нагрузка косвенных затрат, применяемая к этому рабочему центру; разница между трудом + машиной и полной ставкой котировки - это то, что поглощает накладные расходы."
+
+msgid "The human-readable document number (like J000001 or ECO-000001) minted from a sequence and stored on the record, distinct from its internal id."
+msgstr "Понятный номер документа (например J000001 или ECO-000001), сгенерированный из последовательности и сохранённый в записи, отличный от его внутреннего ID."
 
 msgid "The identifier the customer uses for this part on their POs; Carbon resolves it to our internal Part ID on order import."
 msgstr "Идентификатор, который клиент использует для этой детали на их заказах; Carbon разрешает его на наш внутренний идентификатор детали при импорте заказа."
@@ -12485,20 +12847,23 @@ msgstr "Местоположение, из которого будет выпо�
 msgid "The location this RFQ would fulfill from if it converts to a quote and then an order."
 msgstr "Местоположение, из которого будет выполнено этоРЗП, если оно преобразуется в предложение, а затем в заказ."
 
+msgid "The log of risks and opportunities raised against any entity, each rated by independent 1–5 severity and likelihood and driven to a resolution."
+msgstr "Журнал рисков и возможностей, поднятых для любого объекта, каждый оценивается независимо по уровню серьёзности и вероятности от 1 до 5 и доводится до разрешения."
+
 msgid "The logos shown on your printed and emailed documents"
 msgstr "Логотипы, отображаемые в ваших печатных и отправленных по электронной почте документах"
 
 msgid "The lot identifier for this stock; one row per batch, quantity is the on-hand for that lot."
 msgstr "Идентификатор партии для этого запаса; одна строка на партию, количество - это количество на руках для этой партии."
 
-msgid "The lot stays open so you can keep inspecting and disposition later. Sampled outcomes are preserved."
-msgstr "Партия остается открытой, чтобы вы могли продолжить проверку и принять решение позже. Результаты выборки сохраняются."
-
 msgid "The lot will be marked Passed. {fails} sampled failure(s) are recorded for your records."
 msgstr "Партия будет отмечена как принята. {fails} образец(ов) с дефектом(и) записан(ы) для ваших записей."
 
 msgid "The lot will still be rejected, but an NCR cannot be created until at least one Issue Type is configured."
 msgstr "Партия все еще будет отклонена, но NCR не может быть создана до тех пор, пока не будет настроен хотя бы один тип проблемы."
+
+msgid "The lot's per-feature sampling plan will be re-resolved from the selected document."
+msgstr "План выборочной проверки партии по элементам будет переопределен из выбранного документа."
 
 msgid "The lowest amount this supplier will charge for this process, regardless of quantity; jobs below the breakeven volume still cost at least this much."
 msgstr "Минимальная сумма, которую этот поставщик взимает за этот процесс, независимо от количества; работы ниже объема безубыточности все еще стоят как минимум эту сумму."
@@ -12566,6 +12931,9 @@ msgstr "Упорядоченный список задач, которые до�
 msgid "The ordered sequence of operations a job runs through, copied from the method's bill of process."
 msgstr "Упорядоченная последовательность операций, которые выполняет задание, скопированная из расчета процессов метода."
 
+msgid "The original model file is no longer available"
+msgstr "Исходный файл модели больше недоступен"
+
 msgid "The outbound posting document that takes goods out of stock to a customer, posting COGS as it goes."
 msgstr "Документ исходящего учета, который выводит товары со склада к клиенту, осуществляя учет себестоимости проданных товаров."
 
@@ -12586,6 +12954,12 @@ msgstr "Люди со стороны Carbon, которые будут упра�
 
 msgid "The people on your team and their access to Carbon"
 msgstr "Люди в вашей команде и их доступ к Carbon"
+
+msgid "The per-company counter behind a document type's readable number, assembling the prefix, the zero-padded next value, and the suffix, and advancing as each document is created."
+msgstr "Счётчик на уровне компании, формирующий читаемый номер документа путём объединения префикса, дополняемого нулями числового значения и суффикса, и увеличивающийся при создании каждого документа."
+
+msgid "The per-item outcome recorded on a non-conformance's affected material — Pending, Return to Supplier, Rework, Scrap, or Use As Is — decided for each affected lot or serial on its own."
+msgstr "Исход для каждого элемента, записанный для затронутого материала несоответствия — В ожидании, Вернуть поставщику, Переработка, Брак или Использовать как есть — решается для каждой затронутой партии или серии отдельно."
 
 msgid "The percentage of the cash discount. Use 0 for no discount."
 msgstr "Процент скидки за наличный расчет. Используйте 0 для отсутствия скидки."
@@ -12635,6 +13009,9 @@ msgstr "Причины, которые вы записываете, когда �
 msgid "The reasons you record when you decline an RFQ"
 msgstr "Причины, которые вы записываете, когда отклоняете РФП"
 
+msgid "The record that applies a payment or memo to an invoice, carrying the applied, discount, and write-off amounts."
+msgstr "Запись, которая применяет платёж или памятку к счёту-фактуре, содержащая применённые, дисконтные и списанные суммы."
+
 msgid "The recorded genealogy of tracked entities — which inputs were consumed to produce which outputs, receipt through shipment."
 msgstr "Записанная генеалогия отслеживаемых объектов — какие входные данные были использованы для получения каких выходных данных, от приемки до доставки."
 
@@ -12653,6 +13030,9 @@ msgstr "Оставшиеся {0} {1} больше не будут ожидать
 
 msgid "The residual WIP a job has left at close, swept to a Production Variance account — the only variance Carbon books for a job."
 msgstr "Остаточное незавершенное производство, оставленное заданием при закрытии, перемещено на счет производственного отклонения — единственное отклонение, которое Carbon регистрирует для задания."
+
+msgid "The response from Onshape was missing required parameters. Try connecting again."
+msgstr "В ответе Onshape отсутствовали обязательные параметры. Повторите попытку подключения."
 
 msgid "The revision number of the part"
 msgstr "Номер редакции детали"
@@ -12810,6 +13190,9 @@ msgstr "Склад, с которого будут отправлены това
 msgid "The ways equipment fails, for maintenance and quality tracking"
 msgstr "Способы отказа оборудования для отслеживания обслуживания и качества"
 
+msgid "The work center's own bin where picked material is staged for production to draw down, as opposed to its warehouse source shelf."
+msgstr "Собственный контейнер рабочего центра, где подобранный материал подготавливается для производства к использованию, в отличие от его полки-источника на складе."
+
 msgid "The working hours and calendars that drive scheduling"
 msgstr "Рабочие часы и календари, которые управляют планированием"
 
@@ -12846,6 +13229,15 @@ msgstr "Эти задания имеют операции, назначенны�
 msgid "These journal entries are still Draft, so their debits and credits aren't in the ledger for this period. Post each one, or re-date it into a later open period."
 msgstr "Эти записи в журнале всё ещё находятся в статусе «Черновик», поэтому их дебеты и кредиты не находятся в главной книге за этот период. Опубликуйте каждую или переделируйте её на более поздний открытый период."
 
+msgid "This Carbon instance is missing its Onshape OAuth credentials. Ask an administrator to set them."
+msgstr "В этом экземпляре Carbon отсутствуют учётные данные OAuth для Onshape. Попросите администратора настроить их."
+
+msgid "This change notice is being implemented, so its changes are locked. Reopen it to edit."
+msgstr "Это уведомление об изменении реализуется, поэтому его изменения заблокированы. Откройте его повторно, чтобы отредактировать."
+
+msgid "This change notice is closed, so its changes are read-only."
+msgstr "Это уведомление об изменении закрыто, поэтому его изменения доступны только для чтения."
+
 msgid "This completes the Discovery step."
 msgstr "Это завершает этап Discovery."
 
@@ -12866,6 +13258,9 @@ msgstr "Эта информация будет использована в за�
 
 msgid "This information will be visible to all users, so be careful what you share."
 msgstr "Эта информация будет видна всем пользователям, поэтому будьте осторожны с тем, что вы делитесь."
+
+msgid "this inspection plan"
+msgstr "этот план проверки"
 
 msgid "This is a purchased item — it has no BoM/BoP; only its attributes and documents can change."
 msgstr "Это купленный элемент — у него нет BoM/BoP; могут изменяться только его атрибуты и документы."
@@ -12927,11 +13322,11 @@ msgstr "В этот период не размещены записи журна
 msgid "This Quarter"
 msgstr "Этот квартал"
 
-msgid "This revision is released (Production). Changes should normally flow through a change order."
-msgstr "Эта версия выпущена (Production). Изменения должны обычно проходить через заказ на изменение."
+msgid "This revision is released (Production). Changes should normally flow through a change notice."
+msgstr "Эта редакция выпущена (Производство). Изменения должны нормально проходить через уведомление об изменении."
 
-msgid "This revision is released (Production). Open a change order to modify it."
-msgstr "Эта версия выпущена (Production). Откройте заказ на изменение, чтобы изменить её."
+msgid "This revision is released (Production). Open a change notice to modify it."
+msgstr "Эта редакция выпущена (Производство). Откройте уведомление об изменении, чтобы изменить его."
 
 msgid "This sales order has associated jobs. Choose what to do with them."
 msgstr "Этот заказ на продажу имеет связанные работы. Выберите, что с ними делать."
@@ -12948,6 +13343,13 @@ msgstr "этот поставщик"
 
 msgid "This updates the theme for all users of the application"
 msgstr "Это обновляет тему для всех пользователей приложения"
+
+msgid "This version belongs to an open <0>change notice</0>. Edit it there."
+msgstr "Эта версия принадлежит открытому <0>уведомлению об изменении</0>. Отредактируйте его там."
+
+#. placeholder {0}: lock.readableId
+msgid "This version belongs to change notice <0>{0}</0>. Edit it there."
+msgstr "Эта версия принадлежит уведомлению об изменении <0>{0}</0>. Отредактируйте его там."
 
 msgid "This will make this version read-only and replace any material make methods with this version."
 msgstr "Это сделает эту версию доступной только для чтения и заменит все методы производства материалов на эту версию."
@@ -12992,13 +13394,13 @@ msgid "Thumbnail"
 msgstr "Миниатюра"
 
 msgid "Thumbnail is still generating"
-msgstr ""
+msgstr "Миниатюра все еще создается"
 
 msgid "Thumbnail removed"
 msgstr "Миниатюра удалена"
 
 msgid "Thumbnail updated"
-msgstr ""
+msgstr "Миниатюра обновлена"
 
 msgid "Thumbnail uploaded"
 msgstr "Миниатюра загружена"
@@ -13314,9 +13716,6 @@ msgstr "Тип:"
 
 msgid "Types"
 msgstr "Типы"
-
-msgid "Un-sampled entities will remain On Hold so you can keep inspecting and disposition later. Sampled outcomes are preserved."
-msgstr "Необработанные сущности останутся в статусе \"На удержании\", чтобы вы могли продолжить проверку и принять решение позже. Результаты проверенных образцов сохраняются."
 
 msgid "Unapplied"
 msgstr "Неприменённые"
@@ -14098,8 +14497,8 @@ msgstr "Что такое {translatedTerm}?"
 msgid "What it is"
 msgstr "Что это такое"
 
-msgid "What kind of change this is: Version updates how the part is made, Revision edits its details and documents, and New Part replaces it with a new part number."
-msgstr "Какой это тип изменения: Version обновляет способ изготовления детали, Revision редактирует её детали и документы, а New Part заменяет её новым номером детали."
+msgid "What kind of change this is: Version updates how the part is made, Revision revises its details and documents, Replacement Part swaps in a new part number that supersedes the old one, and New Part introduces a net-new part with no predecessor."
+msgstr "Какой это вид изменения: Версия обновляет способ производства детали, Редакция пересматривает её детали и документы, Замена детали вводит новый номер детали, заменяющий старый, а Новая деталь представляет совершенно новую деталь без предшественника."
 
 msgid "What kind of output this entry records — Production (good units), Scrap (unrecoverable), or Rework (sent back for correction); reveals Scrap Reason when Scrap."
 msgstr "Какой тип выхода записывает эта запись — Производство (хорошие единицы), Отходы (невозвратные) или Переработка (отправлено на исправление); показывает Причину отходов при отходах."
@@ -14167,11 +14566,17 @@ msgstr "Когда включено, атрибуты в этой категор
 msgid "When on, employees can edit this attribute's value on their own profile; otherwise only admins can."
 msgstr "Когда включено, сотрудники могут редактировать значение этого атрибута в своем профиле; в противном случае это могут делать только администраторы."
 
+msgid "When on, opening an operation starts its timer automatically."
+msgstr "Когда включено, открытие операции автоматически запускает ее таймер."
+
 msgid "When on, pricing rules (volume discounts, promotions) still apply on top of this override; when off, this override is the final price."
 msgstr "Когда включено, правила цены (скидки по объемам, акции) по-прежнему применяются сверх этого переопределения; когда отключено, это переопределение — финальная цена."
 
 msgid "When on, scanning this process's operation barcode reports all remaining open quantity as complete in one action; turn off when operators routinely report partials."
 msgstr "Когда включено, сканирование операционного штрих-кода этого процесса сообщает всю оставшуюся открытую количество как завершенную в одном действии; отключите, если операторы регулярно сообщают о частичных."
+
+msgid "When on, the traveler PDF lists the job's required materials."
+msgstr "Когда включено, PDF путевого листа задания отображает необходимые материалы задания."
 
 msgid "When on, this party's invoices skip tax calculation; the party is responsible for keeping the exemption certificate current."
 msgstr "Если включено, счета этой стороны пропускают расчет налога; сторона отвечает за актуальность сертификата об освобождении."
@@ -14181,6 +14586,9 @@ msgstr "Если включено, это переопределение цен�
 
 msgid "When on, this rule fires for every target of its type. Assignment rows are ignored but preserved."
 msgstr "Когда включено, это правило срабатывает для каждой цели его типа. Строки назначения игнорируются, но сохраняются."
+
+msgid "When on, tracked material is pre-selected by pick order (FEFO) even without a picking list. When off, operators start on the Scan tab."
+msgstr ""
 
 msgid "When supplier responses are expected back; suppliers see this date on the RFQ portal and Carbon stops accepting late responses after it (configurable)."
 msgstr "Когда ожидается ответ поставщиков; поставщики видят эту дату на портале RFQ, и Carbon перестает принимать поздние ответы после нее (настраивается)."
@@ -14221,8 +14629,8 @@ msgstr "Когда поставщик обязался доставить; пл�
 msgid "When the supplier's pricing stops being honored; converting this quote to a PO after this date may need re-quoting."
 msgstr "Когда цены поставщика перестают быть соблюдаемыми; преобразование этого предложения в PO после этой даты может потребовать переквотации."
 
-msgid "When this gauge becomes due for calibration; once past due, it's blocked from inspections until calibrated."
-msgstr "Когда эта калибровка должна быть отклонена; по истечении срока она блокируется от проверок до калибровки."
+msgid "When this gauge becomes due for calibration; once past due it reads Out-of-Calibration."
+msgstr "Когда этот калибр подлежит калибровке; после истечения срока он показывает выходит из калибра."
 
 msgid "When this gauge was last successfully calibrated; the next-calibration date recomputes from this value plus the interval."
 msgstr "Когда этот ориентир был в последний раз успешно откалиброван; дата следующей кальибровки пересчитывается из этого значения плюс интервал."
@@ -14293,14 +14701,17 @@ msgstr "Запускается ли отсчёт времени в начале 
 msgid "Whether this lot/serial passes inspection (Pass) or fails (Fail); a Fail blocks the stock from being received into available inventory."
 msgstr "Проходит ли эта партия/серийный номер проверку (Pass) или не проходит (Fail); Fail блокирует приём запасов в доступные складские остатки."
 
-msgid "Whether this process runs on internal work centers (Inside), outside suppliers (Outside), or both (Both); reveals different downstream fields and changes how planning routes work for this process."
-msgstr "Выполняется ли этот процесс на внутренних рабочих центрах (Inside), у внешних поставщиков (Outside) или и там, и там (Both); открывает разные последующие поля и меняет, как планирование строит маршруты для этого процесса."
+msgid "Whether this process runs on internal work centers (Process, Assembly, or Inspection) or at outside suppliers (Outside Processing); reveals different downstream fields, changes how planning routes work for this process, and defaults the operation type on new operations."
+msgstr "Определяет, выполняется ли этот процесс на внутренних рабочих центрах (Process, Assembly или Inspection) или у внешних поставщиков (Outside Processing); раскрывает различные нижестоящие поля, изменяет способ работы планирования маршрутов для этого процесса и устанавливает тип операции по умолчанию для новых операций."
 
 msgid "Whether this work blocks production (Down), degrades it (Impact), is on a planned downtime window (Planned), or has no production impact (No Impact); informs scheduling and customer-facing downtime communication."
 msgstr "Блокирует ли эта работа производство (Вниз), его деградирует (Воздействие), находится в окне планового простоя (Плановое) или не оказывает влияния на производство (Без воздействия); информирует планирование и общение об простое, обращенное к клиентам."
 
 msgid "Whether to Add the selected permissions on top of what each user already has, or Update by replacing each user's permission set wholesale with the selection below."
 msgstr "Если выбранные разрешения Добавляются к тому, что каждый пользователь уже имеет, или Обновляются путем замены набора разрешений каждого пользователя на выбранные ниже."
+
+msgid "Which document drives each inspection flow for this item."
+msgstr "Какой документ определяет каждый процесс контроля для этого элемента."
 
 msgid "Which manufacturing event starts the shelf-life clock — for example, fill, seal, or final QC."
 msgstr "Какое производственное событие запускает часы срока хранения — например, заполнение, уплотнение или окончательный контроль качества."
@@ -14364,6 +14775,9 @@ msgstr "Почему истекает срок действия?"
 
 msgid "Why is this included?"
 msgstr "Почему это включено?"
+
+msgid "Why is this locked?"
+msgstr "Почему это заблокировано?"
 
 msgid "Why stock is changing — Positive (found), Negative (lost/scrap), or Set (replace count with a measured value)."
 msgstr "Почему запас меняется — Положительный (найден), Отрицательный (потеря/отходы) или Установить (заменить количество измеренным значением)."
@@ -14464,6 +14878,9 @@ msgstr "Счет списания"
 msgid "Write-off for {0}"
 msgstr "Списание для {0}"
 
+msgid "Write-off of stock scrapped or returned via inspection rejects and NCR dispositions"
+msgstr "Списание запасов, забракованных или возвращённых через отклонения проверки и решения NCR"
+
 msgid "Writing an asset's value down over its life — a monthly batch you create, review as a draft, then post."
 msgstr "Снижение стоимости актива в течение его полезного использования — ежемесячный пакет, который вы создаете, проверяете как черновик, затем контируете."
 
@@ -14513,6 +14930,9 @@ msgstr "Вы завершили {leftoverQuantity} больше {0}, чем за
 msgid "You don't have permission to edit this bill of material."
 msgstr "У вас нет разрешения на редактирование этой ведомости материалов."
 
+msgid "You don't have permission to edit this bill of process."
+msgstr "У вас нет разрешения на редактирование этой технологической карты."
+
 msgid "You drive it; we make sure it's done right. Expert eyes on your setup, data, and go-live."
 msgstr "Вы управляете процессом; мы следим, чтобы всё было сделано правильно. Опытный взгляд на вашу настройку, данные и запуск."
 
@@ -14547,8 +14967,8 @@ msgstr "Вы отметились на работу {hoursElapsed} часов н
 msgid "Your books and how money flows."
 msgstr "Ваши книги и движение денежных средств."
 
-msgid "Your changes go into a new draft version released with this change order."
-msgstr "Ваши изменения переходят в новую черновую версию, выпущенную с этим приказом об изменении."
+msgid "Your changes go into a new draft version released with this change notice."
+msgstr "Ваши изменения переходят в новую черновую версию, выпущенную с этим уведомлением об изменении."
 
 msgid "Your Console PIN"
 msgstr "Ваш PIN консоли"

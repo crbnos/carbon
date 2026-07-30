@@ -21,23 +21,25 @@ import {
   Tr,
   toast
 } from "@carbon/react";
-import {
-  convertKbToString,
-  isModelRawDownloadable,
-  MODEL_RAW_KEEP_MAX_BYTES
-} from "@carbon/utils";
+import { convertKbToString, MODEL_RAW_KEEP_MAX_BYTES } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { FileObject } from "@supabase/storage-js";
 import type { ChangeEvent } from "react";
 import { useCallback } from "react";
 import { LuAxis3D, LuEllipsisVertical, LuUpload } from "react-icons/lu";
 import { Link, useFetchers, useRevalidator, useSubmit } from "react-router";
-import { DocumentPreview, FileDropzone, Hyperlink } from "~/components";
+import {
+  DocumentPreview,
+  FileDropzone,
+  Hyperlink,
+  ModelOptimizedIndicator
+} from "~/components";
 import DocumentIcon from "~/components/DocumentIcon";
 import { useDateFormatter, usePermissions, useUser } from "~/hooks";
 import type { ItemType, OptimisticFileObject } from "~/modules/shared";
 import { getDocumentType } from "~/modules/shared";
 import type { ModelUpload } from "~/types";
+import { downloadModelFile } from "~/utils/download";
 import { path } from "~/utils/path";
 import { stripSpecialCharacters } from "~/utils/string";
 import type { ItemFile } from "../../types";
@@ -50,9 +52,11 @@ type ItemDocumentsProps = {
   modelUpload?: ModelUpload;
   type: ItemType;
   // Read-only: hide the upload affordances and disable delete. Used when the
-  // owning record is closed (e.g. a completed/cancelled change order). Defaults
+  // owning record is closed (e.g. a completed/cancelled change notice). Defaults
   // to editable so the part detail page is unchanged.
   isReadOnly?: boolean;
+  // Rendered beside the title when the embedding surface locked this card.
+  titleExtras?: React.ReactNode;
 };
 
 const ItemDocuments = ({
@@ -60,7 +64,8 @@ const ItemDocuments = ({
   itemId,
   modelUpload,
   type,
-  isReadOnly = false
+  isReadOnly = false,
+  titleExtras
 }: ItemDocumentsProps) => {
   const { t } = useLingui();
   const { formatDate } = useDateFormatter();
@@ -103,8 +108,9 @@ const ItemDocuments = ({
     <Card className="flex-grow">
       <HStack className="justify-between items-start">
         <CardHeader>
-          <CardTitle>
+          <CardTitle className="flex flex-row items-center gap-2">
             <Trans>Files</Trans>
+            {titleExtras}
           </CardTitle>
         </CardHeader>
         {!isReadOnly && (
@@ -141,6 +147,9 @@ const ItemDocuments = ({
                       <Hyperlink target="_blank" to={getModelPath(modelUpload)}>
                         {modelUpload.modelName}
                       </Hyperlink>
+                      <ModelOptimizedIndicator
+                        modelPath={modelUpload.modelPath}
+                      />
                     </HStack>
                   </Td>
                   <Td className="text-xs font-mono">
@@ -167,13 +176,11 @@ const ItemDocuments = ({
                               <Trans>View</Trans>
                             </Link>
                           </DropdownMenuItem>
-                          {isModelRawDownloadable(modelUpload.modelPath) && (
-                            <DropdownMenuItem
-                              onClick={() => downloadModel(modelUpload)}
-                            >
-                              Download
-                            </DropdownMenuItem>
-                          )}
+                          <DropdownMenuItem
+                            onClick={() => downloadModel(modelUpload)}
+                          >
+                            Download
+                          </DropdownMenuItem>
                           <DropdownMenuItem
                             destructive
                             disabled={isReadOnly || !canDelete}
@@ -364,31 +371,11 @@ export const useItemDocuments = ({ itemId, type }: Props) => {
 
   const downloadModel = useCallback(
     async (model: ModelUpload) => {
-      if (!model.modelPath || !model.modelName) {
-        toast.error(t`Model data is missing`);
-        return;
-      }
-
-      if (!model.modelPath || !model.modelName) {
-        toast.error(t`Model data is missing`);
-        return;
-      }
-
-      const url = path.to.file.previewFile(`temp-staging/${model.modelPath}`);
-      try {
-        const response = await fetch(url);
-        const blob = await response.blob();
-        const blobUrl = window.URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        document.body.appendChild(a);
-        a.href = blobUrl;
-        a.download = model.modelName;
-        a.click();
-        window.URL.revokeObjectURL(blobUrl);
-        document.body.removeChild(a);
-      } catch (error) {
+      const result = await downloadModelFile(model);
+      if (result === "unavailable") {
+        toast.error(t`The original model file is no longer available`);
+      } else if (result === "error") {
         toast.error(t`Error downloading file`);
-        logger.error("Error", { error: error });
       }
     },
 

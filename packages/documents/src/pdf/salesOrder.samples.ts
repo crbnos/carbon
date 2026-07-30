@@ -16,7 +16,8 @@ export const SAMPLE_SALES_ORDER = {
     logoLight: null,
     logoLightIcon: null,
     logoWatermark: null,
-    eori: null
+    eori: null,
+    registrationNumber: null
   },
   salesOrder: {
     salesOrderId: "SO-001042",

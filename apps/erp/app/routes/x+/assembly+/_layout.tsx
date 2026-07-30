@@ -2,7 +2,6 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import { Outlet } from "react-router";
-import { requireAssembliesInternal } from "~/modules/production/production.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -11,10 +10,9 @@ export const meta: MetaFunction = () => {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { email } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "production"
   });
-  requireAssembliesInternal(email);
 
   return null;
 }

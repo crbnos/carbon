@@ -1,8 +1,9 @@
 import type { Database } from "@carbon/database";
 import type {
-  getChangeOrder,
-  getChangeOrders,
-  getChangeOrderTypes,
+  getChangeNotice,
+  getChangeNoticeActions,
+  getChangeNotices,
+  getChangeNoticeTypes,
   getConfigurationParameters,
   getConfigurationRules,
   getConsumable,
@@ -42,30 +43,32 @@ import type {
 export type ItemRevisionStatus =
   Database["public"]["Enums"]["itemRevisionStatus"];
 
-// The single change order (base table, NOT-NULL columns) — the shape detail
+// The single change notice (base table, NOT-NULL columns) — the shape detail
 // routes and the properties/header/explorer components consume via useRouteData.
-export type ChangeOrder = NonNullable<
-  Awaited<ReturnType<typeof getChangeOrder>>["data"]
+export type ChangeNotice = NonNullable<
+  Awaited<ReturnType<typeof getChangeNotice>>["data"]
 >;
 
-// A row of the change-orders LIST — the `changeOrders` view, which additionally
-// rolls up `itemIds` (text[]) and `affectedItems` (jsonb) per CO. View columns are
-// all nullable, so this is a distinct type from the single-CO `ChangeOrder`.
-export type ChangeOrderListItem = NonNullable<
-  Awaited<ReturnType<typeof getChangeOrders>>["data"]
+// A row of the change-notices LIST — the `changeOrders` view, which additionally
+// rolls up `itemIds` (text[]) and `affectedItems` (jsonb) per CN. View columns are
+// all nullable, so this is a distinct type from the single-CN `ChangeNotice`.
+export type ChangeNoticeListItem = NonNullable<
+  Awaited<ReturnType<typeof getChangeNotices>>["data"]
 >[number];
 
-export type ChangeOrderType = NonNullable<
-  Awaited<ReturnType<typeof getChangeOrderTypes>>["data"]
+export type ChangeNoticeType = NonNullable<
+  Awaited<ReturnType<typeof getChangeNoticeTypes>>["data"]
 >[number];
 
-export type ChangeOrderStatus =
+export type ChangeNoticeStatus =
   Database["public"]["Enums"]["changeOrderStatus"];
 
-export type ChangeOrderActionTask =
-  Database["public"]["Tables"]["changeOrderActionTask"]["Row"];
+// Includes the `linearIssue` / `jiraIssue` mappings that `getChangeNoticeActions` hydrates.
+export type ChangeNoticeActionTask = NonNullable<
+  Awaited<ReturnType<typeof getChangeNoticeActions>>["data"]
+>[number];
 
-export type ChangeOrderRequiredAction =
+export type ChangeNoticeRequiredAction =
   Database["public"]["Tables"]["changeOrderRequiredAction"]["Row"];
 
 export type MaterialConfigurationData = {

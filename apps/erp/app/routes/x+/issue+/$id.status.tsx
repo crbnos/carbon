@@ -1,5 +1,6 @@
 import { assertIsPost, ERP_URL, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { notifyIssueStatusChanged } from "@carbon/ee/notifications";
 import { getLogger } from "@carbon/logger";
@@ -30,6 +31,43 @@ export async function action({ request, params }: ActionFunctionArgs) {
       requestReferrer(request) ?? path.to.issueDetails(id),
       await flash(request, error(null, "Invalid status"))
     );
+  }
+
+  // Block reopening an NCR whose disposition already posted inventory value.
+  // Reversing posted GL must be an explicit compensating action (SAP-aligned),
+  // not a casual reopen. Narrow: only NCRs that actually posted a ledger movement
+  // are blocked (an all-Use-As-Is/tracked NCR posts nothing and stays reopenable).
+  // Read via service role — itemLedger SELECT needs inventory/accounting_view,
+  // which a quality user may lack, so a user-client read would fail open.
+  if (status !== "Closed") {
+    const serviceRole = getCarbonServiceRole();
+    const current = await serviceRole
+      .from("nonConformance")
+      .select("status")
+      .eq("id", id)
+      .eq("companyId", companyId)
+      .maybeSingle();
+    if (current.data?.status === "Closed") {
+      const posted = await serviceRole
+        .from("itemLedger")
+        .select("id")
+        .eq("documentType", "Non-Conformance")
+        .eq("documentId", id)
+        .eq("companyId", companyId)
+        .limit(1);
+      if ((posted.data?.length ?? 0) > 0) {
+        throw redirect(
+          requestReferrer(request) ?? path.to.issueDetails(id),
+          await flash(
+            request,
+            error(
+              null,
+              "This NCR posted inventory transactions and can't be reopened. Create a correcting entry instead."
+            )
+          )
+        );
+      }
+    }
   }
 
   const update = await updateIssueStatus(client, {

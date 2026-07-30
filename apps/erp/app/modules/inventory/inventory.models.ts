@@ -494,6 +494,7 @@ export const pickingListStatusType = [
   "Draft",
   "In Progress",
   "Completed",
+  "Partial",
   "Cancelled"
 ] as const;
 
@@ -504,13 +505,15 @@ export const pickingListLineStatusType = [
   "Cancelled"
 ] as const;
 
-// A picking list locks once it is Completed or Cancelled: no further picks or
-// unpicks are allowed until it is reopened (which requires the inventory
-// `delete` permission, ERP-only).
+// A picking list locks once it is Completed, Partial, or Cancelled — all
+// terminal outcomes: no further picks or unpicks are allowed until it is
+// reopened (which requires the inventory `delete` permission, ERP-only).
 export function isPickingListLocked(
   status: string | null | undefined
 ): boolean {
-  return status === "Completed" || status === "Cancelled";
+  return (
+    status === "Completed" || status === "Partial" || status === "Cancelled"
+  );
 }
 
 export const pickingListValidator = z.object({

@@ -96,6 +96,21 @@ export class InventoryAdjustmentSyncer extends BaseEntitySyncer<
         "Positive Adjmt.",
         "Negative Adjmt."
       ])
+      // Only genuine inventory adjustments push as Xero ManualJournals against the
+      // variance account. Exclude Non-Conformance / Inbound Inspection (these post
+      // their own local journals against the scrap account) and Batch Split
+      // (value-neutral). NULL documentType (manual adjustment) must stay included,
+      // so `NOT IN` alone won't do — it drops NULLs.
+      .where((eb) =>
+        eb.or([
+          eb("itemLedger.documentType", "is", null),
+          eb("itemLedger.documentType", "not in", [
+            "Non-Conformance",
+            "Inbound Inspection",
+            "Batch Split"
+          ])
+        ])
+      )
       .execute();
 
     return this.transformRows(rows as unknown as InventoryAdjustmentRow[]);

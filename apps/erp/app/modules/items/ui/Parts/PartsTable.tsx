@@ -594,12 +594,12 @@ const PartsTable = memo(({ data, tags, count }: PartsTableProps) => {
             onClick={() =>
               fetcher.submit(null, {
                 method: "post",
-                action: path.to.newChangeOrderFromItem(row.id!)
+                action: path.to.newChangeNoticeFromItem(row.id!)
               })
             }
           >
             <MenuIcon icon={<LuGitPullRequestArrow />} />
-            <Trans>Create Change Order</Trans>
+            <Trans>Create Change Notice</Trans>
           </MenuItem>
           <MenuItem
             destructive

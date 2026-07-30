@@ -283,7 +283,10 @@ const PurchaseOrderEmail = ({
               <Column className="border-l border-gray-200 h-12"></Column>
               <Column className="w-[90px] pr-5">
                 <Text className="text-base font-semibold whitespace-nowrap">
-                  {formatter.format(getTotal(purchaseOrderLines))}
+                  {formatter.format(
+                    getTotal(purchaseOrderLines) +
+                      (purchaseOrder.supplierShippingCost ?? 0)
+                  )}
                 </Text>
               </Column>
             </Row>

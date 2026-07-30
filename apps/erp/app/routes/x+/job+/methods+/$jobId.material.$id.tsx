@@ -89,6 +89,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
+  // Part ↔ step links are managed from the STEP side (the BoP step editor's "Parts" picker),
+  // so the material save no longer touches jobMaterialStep.
+
   // On transition Pull/Purchase → Make to Order, pull the subassembly's method
   // (BOM + operations) into the newly-created child make method, mirroring the
   // create route. Without this the material flips to Make to Order but stays empty.

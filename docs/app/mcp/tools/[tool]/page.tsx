@@ -146,7 +146,7 @@ export default async function ToolPage(props: Params) {
         items={[{ label: "MCP", href: "/mcp" }, { label: mod.name }]}
       />
       <div className="mt-2 flex flex-wrap items-center gap-3">
-        <h1 className="m-0 break-all font-mono text-ed-24 font-semi leading-[120%] text-ed-ink">
+        <h1 className="m-0 break-all font-mono text-ed-24 font-semibold tracking-tight leading-[120%] text-ed-ink">
           {t.name}
         </h1>
         <span

@@ -1,6 +1,15 @@
 import { SUPABASE_URL, useCarbon } from "@carbon/auth";
 import { getLogger } from "@carbon/logger";
-import { Button, File as FileUpload, HStack, toast } from "@carbon/react";
+import {
+  Button,
+  File as FileUpload,
+  HStack,
+  IconButton,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+  toast
+} from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { nanoid } from "nanoid";
 import type { ChangeEvent } from "react";
@@ -231,21 +240,27 @@ export function ItemThumbnailUpload({
           </span>
         </div>
       )}
-      {!isReadOnly && (
-        <HStack className="absolute bottom-2 right-2">
-          {modelId && (
-            <Button
+      {!isReadOnly && modelId && (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <IconButton
+              aria-label={t`Regenerate thumbnail from the 3D model`}
+              icon={<LuRefreshCw />}
               variant="secondary"
-              className="bg-card opacity-100"
               size="sm"
-              leftIcon={<LuRefreshCw />}
+              className="absolute top-2 right-2 bg-card opacity-100"
               isLoading={isRegenerating}
               isDisabled={isRegenerating}
               onClick={onRegenerate}
-            >
-              <Trans>Regenerate</Trans>
-            </Button>
-          )}
+            />
+          </TooltipTrigger>
+          <TooltipContent>
+            <Trans>Regenerate thumbnail from the 3D model</Trans>
+          </TooltipContent>
+        </Tooltip>
+      )}
+      {!isReadOnly && (
+        <HStack className="absolute bottom-2 right-2">
           {thumbnailPath && (
             <Button
               variant="secondary"

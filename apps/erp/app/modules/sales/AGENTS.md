@@ -62,6 +62,7 @@ pnpm --filter @carbon/erp test -- --testPathPattern=sales
 - `closeSalesOrder` / `releaseSalesOrder` / `finalizeQuote` — status transitions
 - `getQuote` / `getQuoteLines` / `getQuoteLinePrices` / `getQuoteMaterials` / `getQuoteOperations` — quote reads
 - `getSalesOrder(s)` / `getSalesOrderLines` / `getExternalSalesOrderLines` — order reads
+- `getOpenSalesOrderLinesForItem` — sales order lines a job can link to (open orders, matching item); `isSalesOrderClosed` / `OPEN_SALES_ORDER_STATUSES` gate eligibility
 - `getCustomer(s)` / `getCustomerContacts` / `getCustomerLocations` — customer reads
 - `getPricingRules` / `createPricingRule` / `duplicatePricingRule` — rule management
 - `getOpportunity` / `getOpportunityDocuments` — deal tracking

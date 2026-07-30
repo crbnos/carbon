@@ -27,7 +27,10 @@ function CompanyNodeComponent({ data }: NodeProps & { data: CompanyNodeData }) {
   const isElimination = company.isEliminationEntity;
 
   return (
-    <div className="group relative">
+    // pointer-events-auto: the flow marks non-interactive nodes (not
+    // selectable/draggable/connectable) as `pointer-events: none`, which
+    // otherwise swallows hover + clicks on the actions menu below.
+    <div className="group relative pointer-events-auto">
       <Handle
         type="target"
         position={Position.Top}
@@ -40,7 +43,10 @@ function CompanyNodeComponent({ data }: NodeProps & { data: CompanyNodeData }) {
           transition-shadow hover:shadow-md
           ${isElimination ? "border-dashed border-muted-foreground/30" : "border-border"}
         `}
-        style={{ minWidth: isElimination ? 140 : 170, maxWidth: 220 }}
+        // Fixed width matches the dimensions dagre lays out with
+        // (see layout-utils), so the top/bottom handles sit at the node's
+        // true center and edges connect cleanly.
+        style={{ width: isElimination ? 160 : 200 }}
       >
         <div className="flex size-9 shrink-0 items-center justify-center rounded-md bg-muted">
           {company.countryCode && !isElimination ? (
