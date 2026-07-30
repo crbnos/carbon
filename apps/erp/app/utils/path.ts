@@ -291,6 +291,8 @@ export const path = {
       generatePath(`${x}/settings/approval-rules/${id}`),
     approvalRules: `${x}/settings/approval-rules`,
     assemblyInstruction: (id: string) => generatePath(`${x}/assembly/${id}`),
+    assemblyInstructionActivate: (id: string) =>
+      generatePath(`${x}/assembly/${id}/activate`),
     assemblyInstructionStatus: (id: string) =>
       generatePath(`${x}/assembly/${id}/status`),
     assemblyInstructionStep: (id: string, stepId: string) =>
@@ -306,6 +308,8 @@ export const path = {
     assemblyInstructionStepStatus: (id: string, stepId: string) =>
       generatePath(`${x}/assembly/${id}/steps/status/${stepId}`),
     assemblyInstructions: `${x}/production/assemblies`,
+    assemblyInstructionVersionNew: (id: string) =>
+      generatePath(`${x}/assembly/${id}/version/new`),
     assemblyJobsCancel: (id: string) =>
       generatePath(`${x}/assembly/${id}/jobs/cancel`),
     assemblyModelConvert: (id: string) =>

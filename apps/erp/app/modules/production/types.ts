@@ -8,6 +8,7 @@ import type {
   getAssemblyInstructionSteps,
   getAssemblyInstructionStepTools,
   getAssemblyInstructions,
+  getAssemblyInstructionVersions,
   getAssemblyUnits,
   getBalloons,
   getFailureMode,
@@ -202,6 +203,10 @@ export type AssemblyInstruction = NonNullable<
 
 export type AssemblyInstructionListItem = NonNullable<
   Awaited<ReturnType<typeof getAssemblyInstructions>>["data"]
+>[number];
+
+export type AssemblyInstructionVersion = NonNullable<
+  Awaited<ReturnType<typeof getAssemblyInstructionVersions>>["data"]
 >[number];
 
 export type AssemblyInstructionStepRow = NonNullable<
