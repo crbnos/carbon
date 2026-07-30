@@ -35,6 +35,11 @@ import {
   isPickingListLocked,
   reconcileReceiptLineSerials
 } from "./inventory.models";
+import {
+  effectiveSuccessorId,
+  type PickSupersession,
+  resolvePickTarget
+} from "./supersession-pick";
 
 export async function deleteBatchProperty(
   client: SupabaseClient<Database>,
@@ -2715,7 +2720,7 @@ export async function getPickingListLines(
   return client
     .from("pickingListLine")
     .select(
-      "*, item(name, readableId, itemTrackingType), job(jobId), jobOperation(order, processId, workCenterId, process:process(name), workCenter:workCenter(name)), storageUnit:storageUnit!pickingListLine_storageUnitId_fkey(name, locationId), toStorageUnit:storageUnit!pickingListLine_toStorageUnitId_fkey(name, locationId), trackedEntities:pickingListLineTrackedEntity(trackedEntityId, quantity, quantityPicked, trackedEntity(readableId))"
+      "*, item(name, readableId, itemTrackingType), jobMaterial(itemId, item(readableId)), job(jobId), jobOperation(order, processId, workCenterId, process:process(name), workCenter:workCenter(name)), storageUnit:storageUnit!pickingListLine_storageUnitId_fkey(name, locationId), toStorageUnit:storageUnit!pickingListLine_toStorageUnitId_fkey(name, locationId), trackedEntities:pickingListLineTrackedEntity(trackedEntityId, quantity, quantityPicked, trackedEntity(readableId))"
     )
     .eq("pickingListId", pickingListId)
     .order("jobOperationId")
@@ -3280,6 +3285,46 @@ export async function generatePickingList(
     return { data: null, error: materials.error };
   }
 
+  // Supersession config for every demanded material, so a pick can honor an
+  // item's supersession: redirect to an effective successor (Prefer New /
+  // Stock Only) or, for Consume First, when the predecessor is out of stock.
+  // Mirrors get_picking_schedule's SQL resolution.
+  const materialItemIds = Array.from(
+    new Set((materials.data ?? []).map((m) => m.itemId))
+  );
+  const supersessionByItem = new Map<string, PickSupersession>();
+  if (materialItemIds.length > 0) {
+    const supersessions = await client
+      .from("itemSupersession")
+      .select(
+        "itemId, supersessionMode, successorItemId, successorEffectivityDate, conversionFactor"
+      )
+      .eq("companyId", args.companyId)
+      .in("itemId", materialItemIds);
+    if (supersessions.error) {
+      await client.from("pickingList").delete().eq("id", plId);
+      return { data: null, error: supersessions.error };
+    }
+    for (const row of supersessions.data ?? []) {
+      supersessionByItem.set(row.itemId, row);
+    }
+  }
+  const asOfDate = today(getLocalTimeZone()).toString();
+
+  // Cache per-item on-hand-by-bin so a supersession redirect doesn't refetch.
+  const onHandCache = new Map<string, Map<string, number>>();
+  const onHandFor = async (itemId: string): Promise<Map<string, number>> => {
+    const cached = onHandCache.get(itemId);
+    if (cached) return cached;
+    const map = await getItemOnHandByStorageUnit(client, {
+      itemId,
+      locationId: args.locationId,
+      companyId: args.companyId
+    });
+    onHandCache.set(itemId, map);
+    return map;
+  };
+
   // Lazily resolve (and cache) the lineside destination per work center. A
   // pick is a transfer from the warehouse source to this lineside shelf;
   // production later consumes from it.
@@ -3336,49 +3381,85 @@ export async function generatePickingList(
     // 5. Resolve the destination: the operation's work-center lineside shelf.
     const toStorageUnitId = await resolveLineside(opWorkCenterId);
 
-    // On-hand of this item per bin at the location (computed once, reused below
-    // for both the already-staged skip and warehouse-source resolution).
-    const onHandByUnit = await getItemOnHandByStorageUnit(client, {
-      itemId: mat.itemId,
-      locationId: args.locationId,
-      companyId: args.companyId
-    });
+    // 6. Honor supersession: decide which item this pick targets. Consume First
+    // needs to know whether the predecessor is out of warehouse stock (and the
+    // successor has stock), so probe those sources first — for that mode only.
+    const supersession = supersessionByItem.get(mat.itemId);
+    let predecessorInStock = true;
+    let successorInStock = true;
+    if (supersession?.supersessionMode === "Consume First") {
+      const predSource = await resolveWarehouseSource(
+        client,
+        await onHandFor(mat.itemId)
+      );
+      predecessorInStock = predSource !== null;
+      const successorId = effectiveSuccessorId(supersession, asOfDate);
+      if (successorId && !predecessorInStock) {
+        const succSource = await resolveWarehouseSource(
+          client,
+          await onHandFor(successorId)
+        );
+        successorInStock = succSource !== null;
+      }
+    }
 
-    // Skip when the op's lineside bin already stocks enough to cover the issue —
-    // it's already staged here, so there's nothing to pick. We test the ACTUAL
-    // on-hand at that bin, not merely whether the jobMaterial's recorded shelf
-    // points there: a part can be line-stocked at this work center while the
-    // jobMaterial still points at the warehouse (or another line).
+    const target = resolvePickTarget({
+      itemId: mat.itemId,
+      supersession,
+      predecessorInStock,
+      successorInStock,
+      asOfDate
+    });
+    // Nothing valid to pick for production (No Stock, or Stock Only without an
+    // effective successor) — drop it, matching get_picking_schedule.
+    if (target.kind === "skip") continue;
+
+    const pickItemId = target.itemId;
+    const quantityToPick = quantityToIssue * target.factor;
+
+    // On-hand of the resolved PICK item per bin at the location (reused for the
+    // already-staged skip and warehouse-source resolution).
+    const onHandByUnit = await onHandFor(pickItemId);
+
+    // Skip when the op's lineside bin already stocks enough of the pick item to
+    // cover the (converted) quantity — it's already staged here, so there's
+    // nothing to pick. We test the ACTUAL on-hand at that bin, not merely
+    // whether the jobMaterial's recorded shelf points there: a part can be
+    // line-stocked at this work center while the jobMaterial still points at the
+    // warehouse (or another line).
     if (
       toStorageUnitId &&
-      (onHandByUnit.get(toStorageUnitId) ?? 0) >= quantityToIssue
+      (onHandByUnit.get(toStorageUnitId) ?? 0) >= quantityToPick
     ) {
       continue;
     }
 
-    // 6. Determine the source (warehouse) shelf. Use the jobMaterial's shelf
-    // only when it's a warehouse (non-lineside) shelf; otherwise resolve a
-    // warehouse source by on-hand — never rob another work center's lineside.
-    // A null source = a shortage the kitter/planner must resolve.
-    let materialEffectiveWc: string | null = null;
-    if (mat.storageUnitId) {
+    // 7. Determine the source (warehouse) shelf. The jobMaterial's recorded
+    // shelf is only meaningful when we're picking that same item (the
+    // predecessor); for a substituted successor, resolve a warehouse source by
+    // on-hand. Use the recorded shelf only when it's a warehouse (non-lineside)
+    // shelf; otherwise resolve by on-hand — never rob another work center's
+    // lineside. A null source = a shortage the kitter/planner must resolve.
+    let sourceStorageUnitId: string | null;
+    if (pickItemId === mat.itemId && mat.storageUnitId) {
       const effectiveWc = await client.rpc("get_effective_work_center_id", {
         p_storage_unit_id: mat.storageUnitId
       });
-      materialEffectiveWc = (effectiveWc.data as string | null) ?? null;
+      const materialEffectiveWc = (effectiveWc.data as string | null) ?? null;
+      sourceStorageUnitId = materialEffectiveWc
+        ? await resolveWarehouseSource(client, onHandByUnit)
+        : mat.storageUnitId;
+    } else {
+      sourceStorageUnitId = await resolveWarehouseSource(client, onHandByUnit);
     }
-    const sourceStorageUnitId =
-      mat.storageUnitId && !materialEffectiveWc
-        ? mat.storageUnitId
-        : await resolveWarehouseSource(client, onHandByUnit);
 
     lineRows.push({
       pickingListId: plId,
       jobId: mat.jobId,
       jobMaterialId: mat.id,
       jobOperationId: effectiveOperationId,
-      itemId: mat.itemId,
-      quantityToPick: quantityToIssue,
+      itemId: pickItemId,
+      quantityToPick,
       storageUnitId: sourceStorageUnitId,
       toStorageUnitId,
       companyId: args.companyId,

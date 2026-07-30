@@ -556,6 +556,7 @@ msgstr "Biriktirme Dönemi:"
 
 msgid "Acknowledge & finish"
 msgstr "Onayla ve Bitir"
+msgstr "Onayla ve bitir"
 
 msgid "Acquisition Cost"
 msgstr "Satın alma maliyeti"
@@ -5789,6 +5790,7 @@ msgstr "Bitirmek İçin"
 
 msgid "Finish with material unpicked?"
 msgstr "Seçilmemiş malzeme ile Bitir?"
+msgstr "Malzeme seçilmemiş durumda bitir?"
 
 msgid "Finished goods"
 msgstr "Tamamlamalar"
@@ -7078,6 +7080,7 @@ msgstr "Açık Tut"
 
 msgid "Keep picking"
 msgstr "Seçmeye Devam Et"
+msgstr "Seçmeye devam et"
 
 msgid "Key"
 msgstr "Anahtar"
@@ -11729,6 +11732,7 @@ msgstr "Üretim katı yapılandırması."
 
 msgid "short"
 msgstr "Kısa"
+msgstr "kısa"
 
 msgid "Short"
 msgstr "Azalt"
@@ -12169,6 +12173,9 @@ msgstr "Madde Maddeleri"
 
 msgid "substituted from"
 msgstr "yerine konulan"
+
+msgid "Substituted from {substitutedFrom}"
+msgstr "Şu kaynaktan değiştirildi: {substitutedFrom}"
 
 msgid "Subtotal"
 msgstr "Ara Toplamı"
@@ -13261,6 +13268,7 @@ msgstr "Bu e-posta adresleri, müşterilere gönderilen tüm teklif e-postaları
 
 msgid "These items still have material to pick. Finishing now marks the list Partial."
 msgstr "Bu maddeler için hala seçilecek malzeme var. Şimdi bitirmek listeyi Kısmi olarak işaretler."
+msgstr "Bu öğelerin hala seçilecek malzeme var. Şimdi bitirmek listeyi Kısmi olarak işaretler."
 
 msgid "These jobs have operations assigned to this work center:"
 msgstr "Bu işler bu iş merkezine atanmış işlemlere sahiptir:"

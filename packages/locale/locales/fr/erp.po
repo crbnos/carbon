@@ -556,6 +556,7 @@ msgstr "Période d'accumulation :"
 
 msgid "Acknowledge & finish"
 msgstr "Confirmer et terminer"
+msgstr "Reconnaître et terminer"
 
 msgid "Acquisition Cost"
 msgstr "Coût d'acquisition"
@@ -5789,6 +5790,7 @@ msgstr "Terminer vers"
 
 msgid "Finish with material unpicked?"
 msgstr "Terminer avec du matériel non prélevé ?"
+msgstr "Terminer sans matériel sélectionné ?"
 
 msgid "Finished goods"
 msgstr "Finitions"
@@ -7078,6 +7080,7 @@ msgstr "Garder ouvert"
 
 msgid "Keep picking"
 msgstr "Continuer"
+msgstr "Continuer à sélectionner"
 
 msgid "Key"
 msgstr "Clé"
@@ -12170,6 +12173,9 @@ msgstr "Substances"
 msgid "substituted from"
 msgstr "substitué de"
 
+msgid "Substituted from {substitutedFrom}"
+msgstr "Substitué depuis {substitutedFrom}"
+
 msgid "Subtotal"
 msgstr "Sous-total"
 
@@ -13261,6 +13267,7 @@ msgstr "Ces adresses e-mail seront automatiquement mises en copie sur tous les e
 
 msgid "These items still have material to pick. Finishing now marks the list Partial."
 msgstr "Ces articles ont toujours du matériel à prélever. Terminer maintenant marque la liste comme Partielle."
+msgstr "Ces articles ont encore du matériel à sélectionner. Terminer maintenant marque la liste comme Partielle."
 
 msgid "These jobs have operations assigned to this work center:"
 msgstr "Ces travaux ont des opérations assignées à ce centre de travail :"

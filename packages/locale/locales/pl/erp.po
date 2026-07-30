@@ -5789,6 +5789,7 @@ msgstr "Zakończyć do"
 
 msgid "Finish with material unpicked?"
 msgstr "Zakończyć bez rozliczenia materiału?"
+msgstr "Zakończyć z niepobranymi materiałami?"
 
 msgid "Finished goods"
 msgstr "Wykończenia"
@@ -7078,6 +7079,7 @@ msgstr "Utrzymaj otwarte"
 
 msgid "Keep picking"
 msgstr "Kontynuuj pobieranie"
+msgstr "Kontynuuj pobranie"
 
 msgid "Key"
 msgstr "Klucz"
@@ -11729,6 +11731,7 @@ msgstr "Konfiguracja hali produkcyjnej."
 
 msgid "short"
 msgstr "krótko"
+msgstr "krótki"
 
 msgid "Short"
 msgstr "Brakuje"
@@ -12169,6 +12172,9 @@ msgstr "Substancje"
 
 msgid "substituted from"
 msgstr "zastąpione z"
+
+msgid "Substituted from {substitutedFrom}"
+msgstr "Zastąpione z {substitutedFrom}"
 
 msgid "Subtotal"
 msgstr "Razem netto"
@@ -13261,6 +13267,7 @@ msgstr "Te adresy e-mail będą automatycznie dodawane w polu DW do wszystkich w
 
 msgid "These items still have material to pick. Finishing now marks the list Partial."
 msgstr "Te elementy mają jeszcze materiał do pobrania. Zakończenie teraz oznaczy listę jako Częściowa."
+msgstr "Te pozycje nadal mają materiały do pobrania. Zakończenie teraz oznacza listę jako Niekompletna."
 
 msgid "These jobs have operations assigned to this work center:"
 msgstr "Te zadania mają operacje przypisane do tego centrum pracy:"

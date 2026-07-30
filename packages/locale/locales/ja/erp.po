@@ -556,6 +556,7 @@ msgstr "蓄積期間:"
 
 msgid "Acknowledge & finish"
 msgstr "認めて完了"
+msgstr "確認して終了する"
 
 msgid "Acquisition Cost"
 msgstr "取得原価"
@@ -5789,6 +5790,7 @@ msgstr "完成先"
 
 msgid "Finish with material unpicked?"
 msgstr "ピッキングされていない材料のまま完了しますか？"
+msgstr "ピッキングされていない材料で終了しますか？"
 
 msgid "Finished goods"
 msgstr "フィニッシュ"
@@ -12170,6 +12172,9 @@ msgstr "物質"
 msgid "substituted from"
 msgstr "代替元"
 
+msgid "Substituted from {substitutedFrom}"
+msgstr "{substitutedFrom}から代替されました"
+
 msgid "Subtotal"
 msgstr "小計"
 
@@ -13261,6 +13266,7 @@ msgstr "これらのメールアドレスは、顧客に送信されるすべて
 
 msgid "These items still have material to pick. Finishing now marks the list Partial."
 msgstr "これらのアイテムはまだピッキングすべき材料があります。今完了するとリストが部分的になります。"
+msgstr "これらの項目にはまだピッキングする材料があります。今すぐ終了するとリストが「部分的」とマークされます。"
 
 msgid "These jobs have operations assigned to this work center:"
 msgstr "これらのジョブにはこのワークセンターに割り当てられた操作があります:"

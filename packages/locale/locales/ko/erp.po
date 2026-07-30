@@ -5789,6 +5789,7 @@ msgstr "종료 시점"
 
 msgid "Finish with material unpicked?"
 msgstr "자재가 선택되지 않은 상태로 완료하시겠습니까?"
+msgstr "물품을 선택하지 않고 완료하시겠습니까?"
 
 msgid "Finished goods"
 msgstr "완제품"
@@ -11729,6 +11730,7 @@ msgstr "현장 설정."
 
 msgid "short"
 msgstr "부족"
+msgstr "짧음"
 
 msgid "Short"
 msgstr "짧게"
@@ -12169,6 +12171,9 @@ msgstr "재질"
 
 msgid "substituted from"
 msgstr "다음에서 대체됨"
+
+msgid "Substituted from {substitutedFrom}"
+msgstr "{substitutedFrom}에서 대체됨"
 
 msgid "Subtotal"
 msgstr "소계"
@@ -13261,6 +13266,7 @@ msgstr "이 이메일 주소는 고객에게 발송되는 모든 견적 이메�
 
 msgid "These items still have material to pick. Finishing now marks the list Partial."
 msgstr "이 항목들은 여전히 선택할 자재가 있습니다. 지금 완료하면 목록이 부분으로 표시됩니다."
+msgstr "이 항목들은 아직 선택할 물품이 있습니다. 지금 완료하면 목록이 부분 완료로 표시됩니다."
 
 msgid "These jobs have operations assigned to this work center:"
 msgstr "다음 작업에 이 작업장이 지정된 공정작업이 있습니다:"

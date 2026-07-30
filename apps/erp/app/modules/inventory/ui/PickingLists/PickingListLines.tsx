@@ -263,6 +263,20 @@ function PickingListLineItem({
 
   const item = items.find((i) => i.id === line.itemId);
   const itemName = item?.name ?? line.item?.name ?? "";
+  // A pick is substituted when its item differs from the source job material's
+  // item (an item-supersession redirect at generation time). Show the original.
+  const sourceMaterial = (
+    line as {
+      jobMaterial?: {
+        itemId?: string | null;
+        item?: { readableId?: string | null } | null;
+      } | null;
+    }
+  ).jobMaterial;
+  const substitutedFrom =
+    sourceMaterial?.itemId && sourceMaterial.itemId !== line.itemId
+      ? (sourceMaterial.item?.readableId ?? null)
+      : null;
   const quantityToPick = Number(line.quantityToPick ?? 0);
   const quantityPicked = Number(line.quantityPicked ?? 0);
   const isPicked = quantityToPick > 0 && quantityPicked >= quantityToPick;
@@ -330,6 +344,11 @@ function PickingListLineItem({
           <p className="truncate font-mono text-sm text-muted-foreground sm:text-xs">
             {item?.readableIdWithRevision ?? line.item?.readableId}
           </p>
+          {substitutedFrom && (
+            <p className="truncate text-sm text-muted-foreground sm:text-xs">
+              <Trans>Substituted from {substitutedFrom}</Trans>
+            </p>
+          )}
           {isTracked && !isPicked && (
             <RecommendedLots resolve={recommendations} lineId={line.id} />
           )}
