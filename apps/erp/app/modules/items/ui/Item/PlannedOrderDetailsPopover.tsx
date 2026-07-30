@@ -14,6 +14,7 @@ import { LuInfo } from "react-icons/lu";
 import { Link } from "react-router";
 import { useCurrencyFormatter, useDateFormatter } from "~/hooks";
 import type { PlannedOrder } from "~/modules/purchasing/purchasing.models";
+import { PurchasingStatus } from "~/modules/purchasing/ui/PurchaseOrder";
 import { useSuppliers } from "~/stores";
 import { path } from "~/utils/path";
 import { ItemReorderPolicy } from "./ItemReorderPolicy";
@@ -292,8 +293,9 @@ export function PlannedOrderDetailsPopover({
                     <dt className="text-muted-foreground">
                       <Trans>Status</Trans>
                     </dt>
-                    <dd className="font-mono text-xs">
-                      {order.existingStatus}
+                    <dd>
+                      {/* @ts-expect-error - status is a string because we have a general type for purchase orders and purchaseOrderLines */}
+                      <PurchasingStatus status={order.existingStatus} />
                     </dd>
                   </>
                 )}

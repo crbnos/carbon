@@ -90,7 +90,12 @@ export const usePreviewing = () => useHub((s) => s.previewing);
 export const useIsInternal = () => useHub((s) => s.isInternal);
 export const useTier = () => useHub((s) => s.tier);
 export const useHubStatus = () => useHub((s) => s.status);
-export const useExclusions = () => useHub((s) => s.exclusions);
+// What views filter by: stored exclusions + app-forced modules (e.g. "acc"
+// while accounting is disabled in company settings).
+export const useExclusions = () => useHub((s) => s.effectiveExclusions);
+// The stored, staff-editable exclusions — the editing surface for Setup &
+// Controls. Never includes forced modules, so edits can't persist them.
+export const useStoredExclusions = () => useHub((s) => s.exclusions);
 export const useContacts = () => useHub((s) => s.contacts);
 export const useSignals = () => useHub((s) => s.signals);
 export const useCheckMap = () => useHub((s) => s.checkMap);

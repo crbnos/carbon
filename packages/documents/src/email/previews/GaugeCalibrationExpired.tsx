@@ -9,7 +9,7 @@ export default function GaugeCalibrationExpiredPreview() {
       preview={"Gauge calibration expired"}
       message={"Gauge GAUGE-14 is out of calibration"}
       reference={"GAUGE-14"}
-      recipientName={"Naveen"}
+      recipientName={"John Doe"}
       ctaLabel={"View gauge"}
       ctaUrl={"https://app.carbon.ms/x/gauge/1"}
       details={[

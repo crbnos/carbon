@@ -25,9 +25,9 @@ type InventoryCountConfirmModalProps = {
 };
 
 // Confirm (Draft -> Pending). Surfaces the row-level checks the user must
-// acknowledge before the count is locked: uncounted rows (skipped at post) and
-// non-zero variances. Counts are computed server-side so they reflect the whole
-// count, not just the loaded page.
+// acknowledge before posting: uncounted rows (skipped at post) and non-zero
+// variances. Counts are computed server-side so they reflect the whole count,
+// not just the loaded page.
 const InventoryCountConfirmModal = ({
   inventoryCountId,
   summary,
@@ -67,8 +67,8 @@ const InventoryCountConfirmModal = ({
           <VStack spacing={4}>
             <p className="text-sm text-muted-foreground">
               <Trans>
-                Confirming locks the counted quantities. Review the warnings
-                below, then post the count to apply the adjustments.
+                Review the warnings below, then post the count to apply the
+                adjustments.
               </Trans>
             </p>
 

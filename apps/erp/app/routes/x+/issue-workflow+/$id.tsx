@@ -20,14 +20,16 @@ import {
   upsertIssueWorkflow
 } from "~/modules/quality";
 import IssueWorkflowForm from "~/modules/quality/ui/IssueWorkflows/IssueWorkflowForm";
-import type { Handle } from "~/utils/handle";
+import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
 const logger = getLogger("erp", "id");
 
 export const handle: Handle = {
-  breadcrumb: msg`Issue Workflows`,
-  to: path.to.issueWorkflows,
+  breadcrumb: detailBreadcrumb(
+    { breadcrumb: msg`Issue Workflows`, to: path.to.issueWorkflows },
+    (data) => data?.workflow?.name
+  ),
   module: "quality"
 };
 

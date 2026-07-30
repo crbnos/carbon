@@ -2,6 +2,7 @@ import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { VStack } from "@carbon/react";
+import { msg } from "@lingui/core/macro";
 import { useState } from "react";
 import type { LoaderFunctionArgs } from "react-router";
 import { Outlet, redirect, useLoaderData } from "react-router";
@@ -23,7 +24,7 @@ import { path } from "~/utils/path";
 import { revalidateIgnoringOffset } from "~/utils/revalidate";
 
 export const handle: Handle = {
-  breadcrumb: "Balance Sheet",
+  breadcrumb: msg`Balance Sheet`,
   to: path.to.balanceSheet
 };
 
@@ -136,7 +137,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
       companyGroupId,
       selectedCompanyId!,
       parentCurrency,
-      periodEnd
+      periodEnd,
+      undefined,
+      balances.data ?? []
     );
 
     if (translation.data) {

@@ -1,4 +1,4 @@
-import { assertIsPost, error } from "@carbon/auth";
+import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
@@ -8,6 +8,7 @@ import {
   methodOperationValidator,
   upsertMethodOperation
 } from "~/modules/items";
+import { checkRevisionLock } from "~/modules/items/items.server";
 import { setCustomFields } from "~/utils/form";
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -23,6 +24,18 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   if (validation.error) {
     return validationError(validation.error);
+  }
+
+  // Release-lock gate: enforce -> block; warn -> proceed + flash; off -> no-op.
+  const lock = await checkRevisionLock(client, {
+    kind: "makeMethod",
+    id: validation.data.makeMethodId,
+    companyId
+  });
+  if (!lock.ok) {
+    return validationError({
+      fieldErrors: { description: lock.message }
+    });
   }
 
   const insertMethodOperation = await upsertMethodOperation(client, {
@@ -56,9 +69,15 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  return {
+  const result = {
     id: methodOperationId,
     success: true,
     message: "Operation created"
   };
+
+  if (lock.warn) {
+    return data(result, await flash(request, success(lock.message)));
+  }
+
+  return result;
 }

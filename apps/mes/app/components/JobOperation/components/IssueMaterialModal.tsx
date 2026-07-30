@@ -73,7 +73,7 @@ import type { JobMaterial, TrackedInput } from "~/services/types";
 import { useItems } from "~/stores";
 import { path } from "~/utils/path";
 
-type TrackingType = "Serial" | "Batch" | "Inventory" | null;
+type TrackingType = "Serial" | "Batch" | "Inventory" | "Non-Inventory" | null;
 
 interface ItemDetails {
   id: string;
@@ -86,22 +86,50 @@ type ExpiredEntityPolicy = "Warn" | "Block" | "BlockWithOverride";
 
 export function IssueMaterialModal({
   operationId,
+  allowPrefill = false,
+  parentUnitCount,
+  issuePerUnit = false,
   expiredEntityPolicy = "Block",
+  autoSelectMaterialWithoutPickingList = false,
   locationId,
   workCenterId,
   material,
   parentId,
   parentIdIsSerialized,
+  jobOperationStepId,
+  unitNumber,
   trackedInputs = [],
   onClose
 }: {
   operationId: string;
+  // Opt-in from the call site to pre-select tracked entities from the picking
+  // list. The process view passes true; the assembly view issues one unit at
+  // a time and never opts in. Even when true, the modal only seeds when the
+  // whole pick provably belongs to the parent entity being issued to: a
+  // picking list exists AND (the parent is not serialized — one entity spans
+  // the whole quantity — or the operation makes exactly one unit, so there is
+  // exactly one parent serial). See canPrefill below.
+  allowPrefill?: boolean;
+  // How many units the operation makes (parent tracked entities for a serial
+  // parent). Required for prefill when the parent is serialized — without it
+  // a serialized parent never prefills.
+  parentUnitCount?: number;
+  // Issue one unit's worth per submission (the assembly view's build-one-at-
+  // a-time flow) instead of defaulting to the whole remaining quantity.
+  // Serial parents always behave this way regardless of this flag.
+  issuePerUnit?: boolean;
   expiredEntityPolicy?: ExpiredEntityPolicy;
+  autoSelectMaterialWithoutPickingList?: boolean;
   locationId?: string;
   workCenterId?: string;
   material?: JobMaterial;
   parentId?: string;
   parentIdIsSerialized?: boolean;
+  // Assembly view only: the step + 1-based unit the operator is on, stamped onto the
+  // consume so issued quantities can be attributed per-unit/per-step even for a batch
+  // parent (where all units share one lot entity). Omitted by the operation view.
+  jobOperationStepId?: string;
+  unitNumber?: number;
   trackedInputs?: TrackedInput[];
   onClose: () => void;
 }) {
@@ -274,15 +302,25 @@ export function IssueMaterialModal({
     }));
   }, [trackedInputs]);
 
-  // Quantity for inventory items
+  // Default issue quantity. Serial parents always issue per-unit
+  // (material.quantity is the per-unit requirement and quantityIssued is
+  // scoped to the parent entity). The assembly view issues per-unit for
+  // EVERY parent type (issuePerUnit) — a 10-unit build consumes its parts
+  // one unit at a time, never the whole remaining total in one shot.
+  // Otherwise (process view, non-serial parent) default to the remaining
+  // total for the operation.
   const initialQuantity = useMemo(() => {
     if (!material) return 1;
-    const total = parentIdIsSerialized
-      ? (material.quantity ?? material.estimatedQuantity ?? 1)
-      : (material.estimatedQuantity ?? material.quantity ?? 1);
-    const remaining = total - (material.quantityIssued ?? 0);
-    return Math.max(1, remaining);
-  }, [material, parentIdIsSerialized]);
+    const perUnit = material.quantity ?? material.estimatedQuantity ?? 1;
+    if (parentIdIsSerialized) {
+      return Math.max(1, perUnit - (material.quantityIssued ?? 0));
+    }
+    if (issuePerUnit) {
+      return Math.max(1, perUnit);
+    }
+    const total = material.estimatedQuantity ?? material.quantity ?? 1;
+    return Math.max(1, total - (material.quantityIssued ?? 0));
+  }, [material, parentIdIsSerialized, issuePerUnit]);
 
   // Serial numbers selection state
   const [selectedSerialNumbers, setSelectedSerialNumbers] = useState<
@@ -307,20 +345,58 @@ export function IssueMaterialModal({
   // Tab state
   const [activeTab, setActiveTab] = useState("scan");
 
-  // When no picking list has allocated this tracked material, suggest the same
-  // lots a picking list would (netting + the item's pickMethod sort) and pre-fill
-  // the selection. The suggestion is a default only — fully editable below.
+  // Pre-fill the selection with the picking list's recommendation (a default
+  // only — fully editable below). Pre-selecting tracked entities is a
+  // traceability hazard: a wrong default an operator blindly accepts records
+  // the wrong genealogy. Every issue submission binds ALL children to ONE
+  // parent tracked entity, so seeding is only trustworthy when the whole
+  // pick provably belongs to that parent. That requires ALL of:
+  //   - the call site opted in (`allowPrefill` — the process view; the
+  //     assembly view issues one unit at a time so the pick can never be
+  //     attributed to the unit on screen),
+  //   - the material is actually on a picking list, and
+  //   - the parent is a single entity: not serialized (one batch/lot spans
+  //     the whole quantity) OR the operation makes exactly one unit (one
+  //     parent serial).
+  // Otherwise the modal opens on the Scan tab with nothing selected.
+  // When seeding is allowed, two sources feed it, in priority order:
+  //   1. the exact lots a picking list already PICKED for this material
+  //      (`pickedAllocation`, from pickingListLineTrackedEntity), and
+  //   2. the on-the-fly pickMethod suggestion of what to pick
+  //      (`suggestedAllocation`, netted + FEFO/FIFO sorted).
+  // A material can be on a picking list (quantityToPick > 0) with nothing picked
+  // yet — e.g. a multi-line list where other lines were picked first. In that
+  // state `pickedAllocation` is empty, so we must still surface the suggestion
+  // rather than leaving the operator with the default first lot. Hence the
+  // suggestion is ALWAYS loaded, not gated off whenever a picking allocation
+  // merely exists. Whether the suggestion actually SEEDS the rows when there is
+  // no picking list is gated by `autoSelectMaterialWithoutPickingList` (see
+  // `seedAllocation` below).
   const pickedOverlay = material as
     | { quantityToPick?: number | null; quantityPicked?: number | null }
     | undefined;
   const hasPickingAllocation =
     Number(pickedOverlay?.quantityToPick ?? 0) > 0 ||
     Number(pickedOverlay?.quantityPicked ?? 0) > 0;
+  // The genealogy safety gate: a seed is only trustworthy when the whole pick
+  // provably belongs to ONE parent — the call site opted in (`allowPrefill`) and
+  // the parent is a single entity (not a serialized multi-unit operation).
+  const parentSafe =
+    allowPrefill && (!parentIdIsSerialized || parentUnitCount === 1);
+  // Picking-list seeding (picked lots): always requires a real allocation.
+  const canPrefill = parentSafe && hasPickingAllocation;
+  // No-picking-list FEFO seeding: opt-in per company via
+  // `autoSelectMaterialWithoutPickingList`, still bound by the same parent
+  // safety. Relaxes ONLY the picking-allocation requirement, never the
+  // single-parent genealogy guard.
+  const canSuggestWithoutList =
+    parentSafe && autoSelectMaterialWithoutPickingList;
+  const canSeedSuggestion = canPrefill || canSuggestWithoutList;
   const shouldSuggestAllocation =
+    canSeedSuggestion &&
     !!material &&
     !!selectedItemId &&
     !!locationId &&
-    !hasPickingAllocation &&
     (trackingType === "Batch" || trackingType === "Serial");
   const { data: suggestedAllocation } = useSuggestedAllocation(
     shouldSuggestAllocation
@@ -331,40 +407,98 @@ export function IssueMaterialModal({
         }
       : undefined
   );
+  const shouldLoadPickedAllocation =
+    canPrefill &&
+    !!material?.id &&
+    (trackingType === "Batch" || trackingType === "Serial");
+  const { data: pickedAllocation, resolved: pickedAllocationResolved } =
+    usePickedAllocation(
+      shouldLoadPickedAllocation ? (material?.id ?? undefined) : undefined
+    );
+  // Prefer the actual picks; fall back to the suggestion only when nothing's
+  // been picked yet (allocated-but-not-picked) or when there's no picking list.
+  // Wait for the picked-allocation request to resolve before falling back, so a
+  // faster suggestion response can't be seeded and then locked in ahead of the
+  // real picked lots.
+  //
+  // Seed the FEFO suggestion whenever seeding is allowed (`canSeedSuggestion`):
+  // that's a real picking allocation (allocated-but-not-yet-picked) OR the
+  // no-picking-list opt-in setting. Picked lots always seed. When there's no
+  // picking list and the setting is off, `canSeedSuggestion` is false → the
+  // operator stays on the Scan tab. This does NOT affect the Select-tab option
+  // ordering or the add-row remainder fill below.
+  const seedAllocation =
+    shouldLoadPickedAllocation && !pickedAllocationResolved
+      ? []
+      : pickedAllocation.length
+        ? pickedAllocation
+        : canSeedSuggestion
+          ? suggestedAllocation
+          : [];
   const hasSeededSuggestionRef = useRef(false);
   useEffect(() => {
     if (hasSeededSuggestionRef.current) return;
-    if (!suggestedAllocation.length) return;
+    if (!seedAllocation.length) return;
+    // Intersect the seed with what is actually still available before
+    // applying it. The picked allocation is NOT netted by consumption
+    // (pickingListLineTrackedEntity keeps the original picked qty, and a
+    // partial consumption splits the entity into a new id), so re-opening
+    // the modal after a partial issue would otherwise re-suggest lots that
+    // were already consumed. Consumed/unavailable entities drop out of the
+    // options lists, so waiting for those to resolve and filtering against
+    // them nets the seed correctly.
     if (trackingType === "Batch") {
+      if (batchNumbers?.data === undefined) return;
       // Don't clobber a selection the operator already started if the (async)
       // suggestion arrives after they picked.
       if (selectedBatchNumbers.some((b) => b.id)) return;
+      const availableById = new Map(
+        batchOptions.map((o) => [o.value, o.availableQuantity])
+      );
+      const lots = seedAllocation
+        .map((lot) => ({
+          ...lot,
+          quantity: Math.min(
+            lot.quantity,
+            availableById.get(lot.trackedEntityId) ?? 0
+          )
+        }))
+        .filter((lot) => lot.quantity > 0);
+      hasSeededSuggestionRef.current = true;
+      if (!lots.length) return;
       setSelectedBatchNumbers(
-        suggestedAllocation.map((lot, index) => ({
+        lots.map((lot, index) => ({
           index,
           id: lot.trackedEntityId,
           quantity: lot.quantity
         }))
       );
       setActiveTab("select");
-      hasSeededSuggestionRef.current = true;
     } else if (trackingType === "Serial") {
+      if (serialNumbers?.data === undefined) return;
       if (selectedSerialNumbers.some((s) => s.id)) return;
+      const availableIds = new Set(serialOptions.map((o) => o.value));
+      const lots = seedAllocation.filter((lot) =>
+        availableIds.has(lot.trackedEntityId)
+      );
+      hasSeededSuggestionRef.current = true;
+      if (!lots.length) return;
       setSelectedSerialNumbers((prev) =>
         prev.map((row, i) =>
-          suggestedAllocation[i]
-            ? { ...row, id: suggestedAllocation[i].trackedEntityId }
-            : row
+          lots[i] ? { ...row, id: lots[i].trackedEntityId } : row
         )
       );
       setActiveTab("select");
-      hasSeededSuggestionRef.current = true;
     }
   }, [
-    suggestedAllocation,
+    seedAllocation,
     trackingType,
     selectedBatchNumbers,
-    selectedSerialNumbers
+    selectedSerialNumbers,
+    batchNumbers,
+    serialNumbers,
+    batchOptions,
+    serialOptions
   ]);
 
   // Expiry override state. Surfaced when a selected serial/batch is expired.
@@ -501,12 +635,17 @@ export function IssueMaterialModal({
 
   const addSerialNumber = useCallback(() => {
     setSelectedSerialNumbers((prev) => {
-      // Pre-fill the new row with the next unused serial. Prefer the remaining
-      // pick-method-ordered suggestion (FEFO/FIFO/LIFO), so added rows stay
-      // consistent with the seeded ones; only fall back to the picker's default
-      // FEFO/FIFO order once the suggestion is exhausted. Editable either way.
+      // When prefill is allowed, seed the new row with the next unused serial.
+      // Prefer the remaining pick-method-ordered suggestion (FEFO/FIFO/LIFO),
+      // so added rows stay consistent with the seeded ones; only fall back to
+      // the picker's default FEFO/FIFO order once the suggestion is exhausted.
+      // When prefill is off, the row starts empty — auto-picking a tracked
+      // entity the operator never chose is a traceability hazard.
+      if (!canSeedSuggestion) {
+        return [...prev, { index: prev.length, id: "" }];
+      }
       const used = new Set(prev.map((s) => s.id).filter(Boolean));
-      const fromSuggestion = suggestedAllocation.find(
+      const fromSuggestion = seedAllocation.find(
         (lot) => !used.has(lot.trackedEntityId)
       );
       const next = fromSuggestion
@@ -514,7 +653,7 @@ export function IssueMaterialModal({
         : serialOptions.find((o) => !used.has(o.value) && !o.isExpired);
       return [...prev, { index: prev.length, id: next?.value ?? "" }];
     });
-  }, [serialOptions, suggestedAllocation]);
+  }, [serialOptions, seedAllocation, canSeedSuggestion]);
 
   const removeSerialNumber = useCallback((indexToRemove: number) => {
     setSelectedSerialNumbers((prev) => {
@@ -551,12 +690,17 @@ export function IssueMaterialModal({
 
   const addBatchNumber = useCallback(() => {
     setSelectedBatchNumbers((prev) => {
-      // Pre-fill the new row with the next unused batch. Prefer the remaining
-      // pick-method-ordered suggestion (FEFO/FIFO/LIFO) so added rows match the
-      // seeded ones; fall back to the picker's default FEFO/FIFO order once the
-      // suggestion is exhausted. Default qty is clamped to the lot's on-hand.
+      // When prefill is allowed, seed the new row with the next unused batch.
+      // Prefer the remaining pick-method-ordered suggestion (FEFO/FIFO/LIFO) so
+      // added rows match the seeded ones; fall back to the picker's default
+      // FEFO/FIFO order once the suggestion is exhausted. Default qty is
+      // clamped to the lot's on-hand. When prefill is off, the row starts
+      // empty — auto-picking a tracked entity is a traceability hazard.
+      if (!canSeedSuggestion) {
+        return [...prev, { index: prev.length, id: "", quantity: 1 }];
+      }
       const used = new Set(prev.map((b) => b.id).filter(Boolean));
-      const fromSuggestion = suggestedAllocation.find(
+      const fromSuggestion = seedAllocation.find(
         (lot) => !used.has(lot.trackedEntityId)
       );
       const next = fromSuggestion
@@ -571,7 +715,7 @@ export function IssueMaterialModal({
         }
       ];
     });
-  }, [batchOptions, suggestedAllocation]);
+  }, [batchOptions, seedAllocation, canSeedSuggestion]);
 
   const removeBatchNumber = useCallback((indexToRemove: number) => {
     setSelectedBatchNumbers((prev) => {
@@ -698,6 +842,11 @@ export function IssueMaterialModal({
               overrideReason: expiryOverrideReason.trim()
             }
           : {};
+      // Per-unit/per-step attribution context (assembly view only).
+      const contextFields = {
+        ...(jobOperationStepId ? { jobOperationStepId } : {}),
+        ...(unitNumber !== undefined ? { unitNumber } : {})
+      };
       const payload = material?.id
         ? {
             materialId: material.id,
@@ -706,6 +855,7 @@ export function IssueMaterialModal({
               trackedEntityId: sn.id,
               quantity: 1
             })),
+            ...contextFields,
             ...overrideFields
           }
         : {
@@ -716,6 +866,7 @@ export function IssueMaterialModal({
               trackedEntityId: sn.id,
               quantity: 1
             })),
+            ...contextFields,
             ...overrideFields
           };
 
@@ -734,7 +885,9 @@ export function IssueMaterialModal({
     selectedItemId,
     fetcher,
     hasExpiredSelection,
-    expiryOverrideReason
+    expiryOverrideReason,
+    jobOperationStepId,
+    unitNumber
   ]);
 
   const handleSubmitBatch = useCallback(() => {
@@ -770,6 +923,11 @@ export function IssueMaterialModal({
               overrideReason: expiryOverrideReason.trim()
             }
           : {};
+      // Per-unit/per-step attribution context (assembly view only).
+      const contextFields = {
+        ...(jobOperationStepId ? { jobOperationStepId } : {}),
+        ...(unitNumber !== undefined ? { unitNumber } : {})
+      };
       const payload = material?.id
         ? {
             materialId: material.id,
@@ -778,6 +936,7 @@ export function IssueMaterialModal({
               trackedEntityId: bn.id,
               quantity: bn.quantity
             })),
+            ...contextFields,
             ...overrideFields
           }
         : {
@@ -788,6 +947,7 @@ export function IssueMaterialModal({
               trackedEntityId: bn.id,
               quantity: bn.quantity
             })),
+            ...contextFields,
             ...overrideFields
           };
 
@@ -806,7 +966,9 @@ export function IssueMaterialModal({
     selectedItemId,
     fetcher,
     hasExpiredSelection,
-    expiryOverrideReason
+    expiryOverrideReason,
+    jobOperationStepId,
+    unitNumber
   ]);
 
   const handleUnconsumeSerial = useCallback(() => {
@@ -1019,8 +1181,12 @@ export function IssueMaterialModal({
                 </AlertDescription>
               </Alert>
             </ModalBody>
-          ) : trackingType === "Inventory" || trackingType === null ? (
-            // Inventory item - use ValidatedForm
+          ) : trackingType === "Inventory" ||
+            trackingType === "Non-Inventory" ||
+            trackingType === null ? (
+            // Untracked item (Inventory or Non-Inventory, e.g. consumables and
+            // services) - use ValidatedForm; the issue edge function skips the
+            // itemLedger for Non-Inventory items but still posts the WIP cost
             <ValidatedForm
               method="post"
               action={path.to.issue}
@@ -1030,14 +1196,17 @@ export function IssueMaterialModal({
                 materialId: material?.id ?? "",
                 jobOperationId: operationId,
                 itemId: selectedItemId,
-                // Default to the remaining qty, but never submit zero/negative
-                // — that's how this modal ends up posting an invalid form and
-                // the server bouncing it silently when a material has been
-                // fully issued already.
+                // Default to the remaining qty (or one unit's worth in the
+                // assembly view's one-at-a-time flow), but never submit
+                // zero/negative — that's how this modal ends up posting an
+                // invalid form and the server bouncing it silently when a
+                // material has been fully issued already.
                 quantity: Math.max(
                   1,
-                  (material?.estimatedQuantity ?? 0) -
-                    (material?.quantityIssued ?? 0)
+                  issuePerUnit
+                    ? (material?.quantity ?? material?.estimatedQuantity ?? 1)
+                    : (material?.estimatedQuantity ?? 0) -
+                        (material?.quantityIssued ?? 0)
                 ),
                 adjustmentType: "Negative Adjmt."
               }}
@@ -1046,6 +1215,14 @@ export function IssueMaterialModal({
               <ModalBody>
                 <Hidden name="jobOperationId" />
                 <Hidden name="materialId" />
+                {/* Scope an unplanned part (no materialId) to the step it's
+                    issued on so the assembly view shows it on that step. */}
+                {!material?.id && jobOperationStepId && (
+                  <Hidden
+                    name="jobOperationStepId"
+                    value={jobOperationStepId}
+                  />
+                )}
                 {material?.id && (
                   <Hidden name="adjustmentType" value="Negative Adjmt." />
                 )}
@@ -1080,32 +1257,34 @@ export function IssueMaterialModal({
                     </div>
                   )}
 
-                  {showContent && trackingType === "Inventory" && (
-                    <>
-                      {!material?.id && (
-                        <div>
-                          <label className="block text-sm font-medium mb-1">
-                            Adjustment Type
-                          </label>
-                          <Select
-                            name="adjustmentType"
-                            defaultValue="Negative Adjmt."
-                          >
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="Positive Adjmt.">
-                                Add to Inventory
-                              </SelectItem>
-                              <SelectItem value="Negative Adjmt.">
-                                Pull from Inventory
-                              </SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      )}
-                      {/*
+                  {showContent &&
+                    (trackingType === "Inventory" ||
+                      trackingType === "Non-Inventory") && (
+                      <>
+                        {!material?.id && (
+                          <div>
+                            <label className="block text-sm font-medium mb-1">
+                              Adjustment Type
+                            </label>
+                            <Select
+                              name="adjustmentType"
+                              defaultValue="Negative Adjmt."
+                            >
+                              <SelectTrigger>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="Positive Adjmt.">
+                                  Add to Inventory
+                                </SelectItem>
+                                <SelectItem value="Negative Adjmt.">
+                                  Pull from Inventory
+                                </SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        )}
+                        {/*
                         Use the form-aware `<Number>` (FormNumberInput) so
                         `name="quantity"` lands on react-aria's NumberField
                         and a hidden form input is rendered with the numeric
@@ -1115,13 +1294,13 @@ export function IssueMaterialModal({
                         the server's zod schema rejected it, and the action
                         returned a 400 the modal silently swallowed.
                       */}
-                      <FormNumberInput
-                        name="quantity"
-                        label="Quantity"
-                        minValue={0.01}
-                      />
-                    </>
-                  )}
+                        <FormNumberInput
+                          name="quantity"
+                          label="Quantity"
+                          minValue={0.01}
+                        />
+                      </>
+                    )}
                 </div>
               </ModalBody>
               <ModalFooter>
@@ -1203,6 +1382,7 @@ export function IssueMaterialModal({
                                 <div className="flex-1">
                                   <InputGroup>
                                     <Input
+                                      autoFocus={index === 0}
                                       placeholder={`Serial Number ${index + 1}`}
                                       value={sn.id}
                                       onChange={(e) => {
@@ -1217,6 +1397,15 @@ export function IssueMaterialModal({
                                         setSelectedSerialNumbers(
                                           newSerialNumbers
                                         );
+                                      }}
+                                      onKeyDown={(e) => {
+                                        // Barcode scanners emit the code then an
+                                        // Enter keystroke — submit the issue on
+                                        // Enter, same as clicking Issue.
+                                        if (e.key === "Enter") {
+                                          e.preventDefault();
+                                          handleSubmitSerial();
+                                        }
                                       }}
                                       onBlur={(e) => {
                                         const newValue = e.target.value;
@@ -1443,6 +1632,7 @@ export function IssueMaterialModal({
                                 <div className="flex-1">
                                   <InputGroup>
                                     <Input
+                                      autoFocus={index === 0}
                                       value={batch.id}
                                       onChange={(e) => {
                                         const newValue = e.target.value;
@@ -1450,6 +1640,15 @@ export function IssueMaterialModal({
                                           ...batch,
                                           id: newValue
                                         });
+                                      }}
+                                      onKeyDown={(e) => {
+                                        // Barcode scanners emit the code then an
+                                        // Enter keystroke — submit the issue on
+                                        // Enter, same as clicking Issue.
+                                        if (e.key === "Enter") {
+                                          e.preventDefault();
+                                          handleSubmitBatch();
+                                        }
                                       }}
                                       onBlur={(e) => {
                                         validateBatchInput(
@@ -2014,4 +2213,25 @@ function useSuggestedAllocation(args?: {
   }, [key]);
 
   return { data: fetcher.data?.data ?? [] };
+}
+
+// Hook for the lots a picking list already picked for this job material. Loads
+// only when a picking allocation exists (jobMaterialId provided).
+function usePickedAllocation(jobMaterialId?: string) {
+  const fetcher = useFetcher<{ data: SuggestedAllocationLot[]; error: null }>();
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: keyed on jobMaterialId
+  useEffect(() => {
+    if (jobMaterialId) {
+      fetcher.load(path.to.api.pickedAllocation(jobMaterialId));
+    }
+  }, [jobMaterialId]);
+
+  return {
+    data: fetcher.data?.data ?? [],
+    // Has the request come back? An empty result only means "nothing picked"
+    // once this is true — before that it's still loading. Guards the seed from
+    // falling back to the suggestion before the picked lots have arrived.
+    resolved: fetcher.state === "idle" && fetcher.data !== undefined
+  };
 }

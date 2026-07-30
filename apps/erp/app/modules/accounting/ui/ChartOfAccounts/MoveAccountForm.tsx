@@ -12,6 +12,7 @@ import {
   toast,
   VStack
 } from "@carbon/react";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { useEffect } from "react";
 import { useFetcher } from "react-router";
 import { Combobox, Hidden, Submit } from "~/components/Form";
@@ -41,17 +42,18 @@ const MoveAccountForm = ({
   open = true,
   onClose
 }: MoveAccountFormProps) => {
+  const { t } = useLingui();
   const permissions = usePermissions();
   const fetcher = useFetcher();
 
   useEffect(() => {
     if (fetcher.state === "loading" && fetcher.data?.data) {
       onClose?.();
-      toast.success("Moved account");
+      toast.success(t`Moved account`);
     } else if (fetcher.state === "idle" && fetcher.data?.error) {
-      toast.error(`Failed to move account: ${fetcher.data.error.message}`);
+      toast.error(t`Failed to move account: ${fetcher.data.error.message}`);
     }
-  }, [fetcher.data, fetcher.state, onClose]);
+  }, [fetcher.data, fetcher.state, onClose, t]);
 
   const isDisabled = !permissions.can("update", "accounting");
 
@@ -76,17 +78,19 @@ const MoveAccountForm = ({
             className="flex flex-col h-full"
           >
             <ModalDrawerHeader>
-              <ModalDrawerTitle>Move {accountName}</ModalDrawerTitle>
+              <ModalDrawerTitle>
+                <Trans>Move {accountName}</Trans>
+              </ModalDrawerTitle>
             </ModalDrawerHeader>
             <ModalDrawerBody>
               <Hidden name="id" />
               <VStack spacing={4}>
                 <p className="text-sm text-muted-foreground">
-                  Select a new parent group for this account.
+                  <Trans>Select a new parent group for this account.</Trans>
                 </p>
                 <Combobox
                   name="parentId"
-                  label="Move to Group"
+                  label={t`Move to Group`}
                   options={groupAccounts.map((a) => ({
                     label: a.name,
                     value: a.id
@@ -96,9 +100,11 @@ const MoveAccountForm = ({
             </ModalDrawerBody>
             <ModalDrawerFooter>
               <HStack>
-                <Submit isDisabled={isDisabled}>Move</Submit>
+                <Submit isDisabled={isDisabled}>
+                  <Trans>Move</Trans>
+                </Submit>
                 <Button size="md" variant="solid" onClick={() => onClose?.()}>
-                  Cancel
+                  <Trans>Cancel</Trans>
                 </Button>
               </HStack>
             </ModalDrawerFooter>

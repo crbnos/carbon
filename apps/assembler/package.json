@@ -1,0 +1,8 @@
+{
+  "name": "carbon-assembler-infra",
+  "private": true,
+  "description": "SST (Ion) infrastructure for the Rust assembler service. Deploy: `pnpm exec sst deploy --stage <stage>`. The Rust app itself is a cargo crate; this package only carries the IaC toolchain.",
+  "devDependencies": {
+    "sst": "4.6.9"
+  }
+}

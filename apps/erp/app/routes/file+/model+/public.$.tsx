@@ -7,6 +7,7 @@ import type { LoaderFunctionArgs } from "react-router";
 const logger = getLogger("erp", "public");
 
 const supportedFileTypes: Record<string, string> = {
+  glb: "model/gltf-binary",
   pdf: "application/pdf",
   jpg: "image/jpeg",
   jpeg: "image/jpeg",
@@ -45,7 +46,11 @@ export async function loader({ params }: LoaderFunctionArgs) {
       !supportedModelTypes.includes(fileType))
   )
     throw new Error(`File type ${fileType} not supported`);
-  const contentType = supportedFileTypes[fileType];
+  // Model extensions (step, glb, …) aren't in supportedFileTypes — without a
+  // fallback they'd be served with "Content-Type: undefined".
+  const contentType =
+    supportedFileTypes[fileType] ??
+    (fileType === "glb" ? "model/gltf-binary" : "application/octet-stream");
 
   async function downloadFile() {
     const result = await client.storage.from("private").download(`${path}`);

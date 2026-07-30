@@ -3,7 +3,7 @@ import { useMemo } from "react";
 import { useItemPostingGroups } from "~/components/Form/ItemPostingGroup";
 import { useLocations } from "~/components/Form/Location";
 import { useStorageTypes } from "~/components/Form/StorageTypes";
-import { itemTypes } from "~/modules/inventory/inventory.models";
+import { inventoryItemTypes } from "~/modules/inventory/inventory.models";
 import {
   itemReplenishmentSystems,
   itemTrackingTypes
@@ -21,8 +21,10 @@ export type ValueOptionsByLoader = Partial<
 const enumOptions = (arr: readonly string[]): ValueOption[] =>
   arr.map((v) => ({ value: v, label: v }));
 
-// Module-level constants — stable refs, never re-allocated.
-const ITEM_TYPES_OPTIONS = enumOptions(itemTypes);
+// Module-level constants — stable refs, never re-allocated. (The `itemTypes`
+// key returned below is the persisted field-registry loader name from
+// @carbon/utils ValueOptionsLoader — only the option SOURCE is renamed.)
+const ITEM_TYPES_OPTIONS = enumOptions(inventoryItemTypes);
 const ITEM_TRACKING_TYPES_OPTIONS = enumOptions(itemTrackingTypes);
 const REPLENISHMENT_SYSTEMS_OPTIONS = enumOptions(itemReplenishmentSystems);
 

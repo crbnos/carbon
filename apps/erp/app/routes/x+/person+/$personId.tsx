@@ -13,12 +13,14 @@ import {
 import { getEmployeeSummary } from "~/modules/people";
 import { PersonPreview, PersonSidebar } from "~/modules/people/ui/Person";
 import { getCompanySettings } from "~/modules/settings";
-import type { Handle } from "~/utils/handle";
+import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
 export const handle: Handle = {
-  breadcrumb: msg`People`,
-  to: path.to.people
+  breadcrumb: detailBreadcrumb(
+    { breadcrumb: msg`People`, to: path.to.people },
+    (data) => data?.employeeSummary?.name
+  )
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {

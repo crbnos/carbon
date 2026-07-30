@@ -51,7 +51,6 @@ import { path } from "~/utils/path";
 import {
   assignIssueItemEntitiesValidator,
   disposition,
-  itemQuantityValidator,
   splitIssueItemValidator
 } from "../../quality.models";
 import type { IssueAssociationNode } from "../../types";
@@ -77,7 +76,7 @@ type EntityLink = {
 
 function EntityLabel({ link }: { link: EntityLink }) {
   const readableId = link.trackedEntity?.readableId;
-  const idSlice = link.trackedEntityId.slice(-8);
+  const idSlice = link.trackedEntityId.slice(0, 8);
   if (readableId) {
     return (
       <span className="font-mono truncate">
@@ -167,21 +166,6 @@ export function AssociatedItemsList({
     [fetcher]
   );
 
-  const onUpdateQuantity = useCallback(
-    (nonConformanceItemId: string, quantityValue: number | null) => {
-      const formData = new FormData();
-      formData.append("id", nonConformanceItemId);
-      formData.append("field", "quantity");
-      formData.append("value", quantityValue?.toString() ?? "0");
-
-      fetcher.submit(formData, {
-        method: "post",
-        action: path.to.updateIssueItem
-      });
-    },
-    [fetcher]
-  );
-
   const onMoveEntity = useCallback(
     (
       sourceRowId: string,
@@ -220,7 +204,9 @@ export function AssociatedItemsList({
         disposition: row.disposition as string | null | undefined,
         pending:
           !row.disposition || row.disposition === "Pending" ? true : false,
-        sumMismatch: Math.abs(linkedSum - quantity) > 1e-6
+        // Only tracked rows reconcile a per-entity quantity sum; a non-tracked
+        // row carries its quantity directly with no links to add up.
+        sumMismatch: links.length > 0 && Math.abs(linkedSum - quantity) > 1e-6
       };
     });
   }, [associatedItems]);
@@ -229,11 +215,11 @@ export function AssociatedItemsList({
     return null;
   }
 
-  // Disposition only applies to rows that route physical tracked entities.
-  // Hide the entire card when nothing here is dispositionable (e.g. an NCR
-  // from a non-tracked job-operation part), matching the closure validator's
-  // skip-on-no-links rule.
-  const dispositionableRows = rows.filter((r) => r.links.length > 0);
+  // Every associated item row is dispositionable — tracked rows route physical
+  // entities (chips, split, move), non-tracked rows (Inventory / Non-Inventory,
+  // e.g. an NCR from a job-operation part) carry a plain quantity and just get
+  // the disposition Select. The closure validator applies the same rule.
+  const dispositionableRows = rows;
   if (dispositionableRows.length === 0) {
     return null;
   }
@@ -283,6 +269,15 @@ export function AssociatedItemsList({
                 disposition: (s.disposition ?? "Pending") as string,
                 itemReadableId: item.readableIdWithRevision
               }));
+            // Split breaks a portion of the row onto a new disposition row so
+            // MRB can decide each portion (e.g. scrap N, use-as-is the rest).
+            // A single batch lot is subdivided server-side (a new tracked
+            // entity is created for the split-off quantity); a non-tracked row
+            // is a pure quantity split. Any row with quantity > 1 is splittable.
+            const canSplit = r.quantity > 1;
+            // Moving entities only applies to tracked rows that own links.
+            const canMove = r.links.length > 0 && siblings.length > 0;
+            const hasRowActions = canSplit || canMove;
             const isDropTarget =
               canEdit &&
               sameItemSiblings.length > 0 &&
@@ -335,7 +330,7 @@ export function AssociatedItemsList({
                   }
                 }}
               >
-                <div className="flex items-center w-full gap-4">
+                <div className="flex items-start w-full gap-4">
                   <div className="flex flex-col min-w-0 flex-1">
                     <h3 className="font-semibold truncate">
                       {item.readableIdWithRevision}
@@ -344,27 +339,14 @@ export function AssociatedItemsList({
                       {item.name}
                     </p>
                   </div>
-                  <ValidatedForm
-                    key={`${r.child.id}-${r.quantity}`}
-                    defaultValues={{
-                      quantity: r.quantity
-                    }}
-                    validator={itemQuantityValidator}
-                    className="w-24 shrink-0"
-                  >
-                    <NumberInput
-                      label={t`Quantity`}
-                      name="quantity"
-                      isReadOnly={!canEdit || r.links.length > 0}
-                      minValue={0}
-                      size="sm"
-                      onBlur={(e) => {
-                        const target = e.target as HTMLInputElement;
-                        const numValue = parseFloat(target.value) || 0;
-                        onUpdateQuantity(r.child.id, numValue);
-                      }}
-                    />
-                  </ValidatedForm>
+                  <div className="w-20 shrink-0 flex flex-col gap-1">
+                    <span className="text-xs font-medium text-muted-foreground">
+                      <Trans>Quantity</Trans>
+                    </span>
+                    <span className="h-8 flex items-center text-sm tabular-nums">
+                      {r.quantity}
+                    </span>
+                  </div>
                   <ValidatedForm
                     defaultValues={{
                       disposition: r.disposition ?? "Pending"
@@ -372,7 +354,7 @@ export function AssociatedItemsList({
                     validator={z.object({
                       disposition: z.string()
                     })}
-                    className="w-[120px] shrink-0 items-center"
+                    className="w-[150px] shrink-0 items-center"
                   >
                     <Select
                       options={disposition.map((d) => ({
@@ -384,7 +366,7 @@ export function AssociatedItemsList({
                       name="disposition"
                       inline={(value) => {
                         return (
-                          <div className="h-8 flex items-center">
+                          <div className="h-8 flex items-center min-w-0 max-w-full">
                             <DispositionStatus disposition={value} />
                           </div>
                         );
@@ -396,8 +378,8 @@ export function AssociatedItemsList({
                       }}
                     />
                   </ValidatedForm>
-                  <div className="w-10 shrink-0 flex items-end justify-end">
-                    {canEdit && r.links.length > 0 && (
+                  <div className="w-10 shrink-0 flex items-start justify-end">
+                    {canEdit && hasRowActions && (
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <IconButton
@@ -408,7 +390,7 @@ export function AssociatedItemsList({
                           />
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          {r.quantity > 1 && (
+                          {canSplit && (
                             <DropdownMenuItem
                               onClick={() =>
                                 setSplitTarget({
@@ -424,7 +406,7 @@ export function AssociatedItemsList({
                               <Trans>Split line</Trans>
                             </DropdownMenuItem>
                           )}
-                          {siblings.length > 0 && (
+                          {canMove && (
                             <DropdownMenuItem
                               onClick={() =>
                                 setMoveTarget({
@@ -532,6 +514,7 @@ function SplitLineModal({
   const hasMultipleEntities = target.links.length > 1;
 
   const [selected, setSelected] = useState<Record<string, boolean>>({});
+  const [splitQty, setSplitQty] = useState(1);
 
   const selectedAssignments = target.links
     .filter((l) => selected[l.trackedEntityId])
@@ -544,11 +527,15 @@ function SplitLineModal({
     (acc, a) => acc + a.quantity,
     0
   );
+  // The split-off portion must leave something on the original row, so it has
+  // to be a whole positive quantity strictly less than the current quantity.
+  const splitQtyValid =
+    Number.isFinite(splitQty) && splitQty >= 1 && splitQty < target.maxQuantity;
   const canSubmit = hasMultipleEntities
     ? selectedAssignments.length > 0 &&
       selectedSum > 0 &&
       selectedSum < target.maxQuantity
-    : true;
+    : splitQtyValid;
 
   return (
     <Modal
@@ -581,16 +568,16 @@ function SplitLineModal({
           }}
         >
           <ModalBody>
+            <Hidden name="id" />
+            <Hidden name="itemId" />
+            <input
+              type="hidden"
+              name="entityAssignments"
+              value={
+                hasMultipleEntities ? JSON.stringify(selectedAssignments) : ""
+              }
+            />
             <div className="flex flex-col gap-4 w-full">
-              <Hidden name="id" />
-              <Hidden name="itemId" />
-              <input
-                type="hidden"
-                name="entityAssignments"
-                value={
-                  hasMultipleEntities ? JSON.stringify(selectedAssignments) : ""
-                }
-              />
               <Input
                 name="currentQuantity"
                 label={t`Current quantity`}
@@ -639,8 +626,16 @@ function SplitLineModal({
                   label={t`Split off quantity`}
                   minValue={1}
                   maxValue={target.maxQuantity - 1}
+                  onChange={setSplitQty}
                   helperText={t`Remaining after split stays on the original row.`}
                 />
+              )}
+              {!hasMultipleEntities && !splitQtyValid && (
+                <p className="text-xs text-destructive-foreground">
+                  <Trans>
+                    Enter a quantity between 1 and {target.maxQuantity - 1}.
+                  </Trans>
+                </p>
               )}
             </div>
           </ModalBody>

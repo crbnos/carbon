@@ -23,9 +23,12 @@ export const PORT_NAMES = [
   "PORT_INNGEST",
   "PORT_ERP",
   "PORT_MES",
-  "PORT_GEOMETRY"
+  "PORT_ASSEMBLER",
+  "PORT_EMAIL"
 ] as const;
 type PortName = (typeof PORT_NAMES)[number];
+
+const OPTIONAL_PORT_NAMES: readonly PortName[] = ["PORT_EMAIL"];
 
 export type PortMap = Record<PortName, number>;
 export type JwtCreds = { secret: string; anonKey: string; serviceKey: string };
@@ -61,6 +64,23 @@ export function resolveSlug(worktreeRoot: string): string {
 
 export function persistSlug(worktreeRoot: string, slug: string) {
   writeFileSync(join(worktreeRoot, SLUG_FILE), `${slug}\n`);
+}
+
+// Canonical, branch-derived slug: "<repoBase>-<branch>" — the same directory
+// name `crbn new` derives (new.ts). Path-independent, so a worktree created by
+// Conductor (a codename dir like `moscow`) or a bare `git worktree add` gets the
+// SAME slug a native `crbn` worktree would, instead of `basename` colliding with
+// the main checkout's `carbon`. Falls back to the worktree dir basename when the
+// branch is missing / HEAD-detached.
+export function canonicalSlug(opts: {
+  worktreeRoot: string;
+  mainRoot: string;
+  branch: string;
+}): string {
+  const repoBase = basename(opts.mainRoot).replace(/-[a-z0-9-]+$/i, "");
+  return opts.branch
+    ? slugify(`${repoBase}-${opts.branch}`)
+    : slugify(basename(opts.worktreeRoot));
 }
 
 export async function getWorktreeRoot(): Promise<string> {
@@ -141,6 +161,7 @@ export async function resolveSlot(
   // Fast path: registry entry is valid, points at this worktree, and all
   // ports are still available (no stale processes holding them).
   if (existing && sameWorktreePath(existing.worktreeRoot, worktreeRoot)) {
+    await backfillMissingPorts(registry, slug, existing);
     const allFree = await portsAvailable(Object.values(existing.ports));
     if (allFree) {
       return {
@@ -163,6 +184,23 @@ export async function resolveSlot(
   registry[slug] = { worktreeRoot, ports, redisDb, jwt };
   writeRegistry(registry);
   return { ports, redisDb, jwt };
+}
+
+async function backfillMissingPorts(
+  registry: Registry,
+  slug: string,
+  entry: RegistryEntry
+): Promise<void> {
+  const missing = OPTIONAL_PORT_NAMES.filter(
+    (n) => entry.ports[n] === undefined
+  );
+  if (missing.length === 0) return;
+  const { claimedPorts } = collectClaims(registry, slug);
+  for (const p of Object.values(entry.ports)) claimedPorts.add(p);
+  for (const name of missing) {
+    entry.ports[name] = await pickFreePort(claimedPorts);
+  }
+  writeRegistry(registry);
 }
 
 function collectClaims(
@@ -257,6 +295,7 @@ function isPortMap(v: unknown): v is PortMap {
   if (!v || typeof v !== "object") return false;
   const o = v as Record<string, unknown>;
   for (const name of PORT_NAMES) {
+    if (o[name] === undefined && OPTIONAL_PORT_NAMES.includes(name)) continue;
     if (typeof o[name] !== "number" || !Number.isInteger(o[name])) return false;
   }
   return true;

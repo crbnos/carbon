@@ -21,19 +21,25 @@ import {
   Tr,
   toast
 } from "@carbon/react";
-import { convertKbToString } from "@carbon/utils";
+import { convertKbToString, MODEL_RAW_KEEP_MAX_BYTES } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { FileObject } from "@supabase/storage-js";
 import type { ChangeEvent } from "react";
 import { useCallback } from "react";
 import { LuAxis3D, LuEllipsisVertical, LuUpload } from "react-icons/lu";
 import { Link, useFetchers, useRevalidator, useSubmit } from "react-router";
-import { DocumentPreview, FileDropzone, Hyperlink } from "~/components";
+import {
+  DocumentPreview,
+  FileDropzone,
+  Hyperlink,
+  ModelOptimizedIndicator
+} from "~/components";
 import DocumentIcon from "~/components/DocumentIcon";
 import { useDateFormatter, usePermissions, useUser } from "~/hooks";
-import type { MethodItemType, OptimisticFileObject } from "~/modules/shared";
+import type { ItemType, OptimisticFileObject } from "~/modules/shared";
 import { getDocumentType } from "~/modules/shared";
 import type { ModelUpload } from "~/types";
+import { downloadModelFile } from "~/utils/download";
 import { path } from "~/utils/path";
 import { stripSpecialCharacters } from "~/utils/string";
 import type { ItemFile } from "../../types";
@@ -44,14 +50,22 @@ type ItemDocumentsProps = {
   files: ItemFile[];
   itemId: string;
   modelUpload?: ModelUpload;
-  type: MethodItemType;
+  type: ItemType;
+  // Read-only: hide the upload affordances and disable delete. Used when the
+  // owning record is closed (e.g. a completed/cancelled change notice). Defaults
+  // to editable so the part detail page is unchanged.
+  isReadOnly?: boolean;
+  // Rendered beside the title when the embedding surface locked this card.
+  titleExtras?: React.ReactNode;
 };
 
 const ItemDocuments = ({
   files,
   itemId,
   modelUpload,
-  type
+  type,
+  isReadOnly = false,
+  titleExtras
 }: ItemDocumentsProps) => {
   const { t } = useLingui();
   const { formatDate } = useDateFormatter();
@@ -94,13 +108,18 @@ const ItemDocuments = ({
     <Card className="flex-grow">
       <HStack className="justify-between items-start">
         <CardHeader>
-          <CardTitle>
+          <CardTitle className="flex flex-row items-center gap-2">
             <Trans>Files</Trans>
+            {titleExtras}
           </CardTitle>
         </CardHeader>
-        <CardAction>
-          <ItemDocumentForm type={type} itemId={itemId} />
-        </CardAction>
+        {!isReadOnly && (
+          <CardAction>
+            <HStack>
+              <ItemDocumentForm type={type} itemId={itemId} />
+            </HStack>
+          </CardAction>
+        )}
       </HStack>
       <CardContent>
         <Table>
@@ -119,58 +138,62 @@ const ItemDocuments = ({
             </Tr>
           </Thead>
           <Tbody>
-            {modelUpload?.modelId && (
-              <Tr>
-                <Td>
-                  <HStack>
-                    <LuAxis3D className="text-emerald-500 w-6 h-6" />
-                    <Hyperlink target="_blank" to={getModelPath(modelUpload)}>
-                      {modelUpload.modelName}
-                    </Hyperlink>
-                  </HStack>
-                </Td>
-                <Td className="text-xs font-mono">
-                  {modelUpload.modelSize
-                    ? convertKbToString(
-                        Math.floor((modelUpload.modelSize ?? 0) / 1024)
-                      )
-                    : "--"}
-                </Td>
-                <Td className="text-xs font-mono">--</Td>
-                <Td>
-                  <div className="flex justify-end w-full">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <IconButton
-                          aria-label={t`More`}
-                          icon={<LuEllipsisVertical />}
-                          variant="secondary"
-                        />
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent>
-                        <DropdownMenuItem asChild>
-                          <Link to={getModelPath(modelUpload)}>
-                            <Trans>View</Trans>
-                          </Link>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => downloadModel(modelUpload)}
-                        >
-                          Download
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          destructive
-                          disabled={!canDelete}
-                          onClick={() => deleteModel()}
-                        >
-                          Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-                </Td>
-              </Tr>
-            )}
+            {modelUpload?.modelId &&
+              (modelUpload.modelSize ?? 0) <= MODEL_RAW_KEEP_MAX_BYTES && (
+                <Tr>
+                  <Td>
+                    <HStack>
+                      <LuAxis3D className="text-emerald-500 w-6 h-6" />
+                      <Hyperlink target="_blank" to={getModelPath(modelUpload)}>
+                        {modelUpload.modelName}
+                      </Hyperlink>
+                      <ModelOptimizedIndicator
+                        modelPath={modelUpload.modelPath}
+                      />
+                    </HStack>
+                  </Td>
+                  <Td className="text-xs font-mono">
+                    {modelUpload.modelSize
+                      ? convertKbToString(
+                          Math.floor((modelUpload.modelSize ?? 0) / 1024)
+                        )
+                      : "--"}
+                  </Td>
+                  <Td className="text-xs font-mono">--</Td>
+                  <Td>
+                    <div className="flex justify-end w-full">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <IconButton
+                            aria-label={t`More`}
+                            icon={<LuEllipsisVertical />}
+                            variant="secondary"
+                          />
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent>
+                          <DropdownMenuItem asChild>
+                            <Link to={getModelPath(modelUpload)}>
+                              <Trans>View</Trans>
+                            </Link>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => downloadModel(modelUpload)}
+                          >
+                            Download
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            destructive
+                            disabled={isReadOnly || !canDelete}
+                            onClick={() => deleteModel()}
+                          >
+                            Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  </Td>
+                </Tr>
+              )}
             {allFiles.map((file) => {
               const type = getDocumentType(file.name);
               return (
@@ -232,7 +255,7 @@ const ItemDocuments = ({
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             destructive
-                            disabled={!canDelete}
+                            disabled={isReadOnly || !canDelete}
                             onClick={() => deleteFile(file)}
                           >
                             Delete
@@ -256,7 +279,7 @@ const ItemDocuments = ({
             )}
           </Tbody>
         </Table>
-        <FileDropzone onDrop={onDrop} />
+        {!isReadOnly && <FileDropzone onDrop={onDrop} />}
       </CardContent>
     </Card>
   );
@@ -266,7 +289,7 @@ export default ItemDocuments;
 
 type ItemDocumentFormProps = {
   itemId: string;
-  type: MethodItemType;
+  type: ItemType;
 };
 
 const ItemDocumentForm = ({ itemId, type }: ItemDocumentFormProps) => {
@@ -293,7 +316,7 @@ const ItemDocumentForm = ({ itemId, type }: ItemDocumentFormProps) => {
 
 type Props = {
   itemId: string;
-  type: MethodItemType;
+  type: ItemType;
 };
 
 export const useItemDocuments = ({ itemId, type }: Props) => {
@@ -348,31 +371,11 @@ export const useItemDocuments = ({ itemId, type }: Props) => {
 
   const downloadModel = useCallback(
     async (model: ModelUpload) => {
-      if (!model.modelPath || !model.modelName) {
-        toast.error(t`Model data is missing`);
-        return;
-      }
-
-      if (!model.modelPath || !model.modelName) {
-        toast.error(t`Model data is missing`);
-        return;
-      }
-
-      const url = path.to.file.previewFile(`private/${model.modelPath}`);
-      try {
-        const response = await fetch(url);
-        const blob = await response.blob();
-        const blobUrl = window.URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        document.body.appendChild(a);
-        a.href = blobUrl;
-        a.download = model.modelName;
-        a.click();
-        window.URL.revokeObjectURL(blobUrl);
-        document.body.removeChild(a);
-      } catch (error) {
+      const result = await downloadModelFile(model);
+      if (result === "unavailable") {
+        toast.error(t`The original model file is no longer available`);
+      } else if (result === "error") {
         toast.error(t`Error downloading file`);
-        logger.error("Error", { error: error });
       }
     },
 

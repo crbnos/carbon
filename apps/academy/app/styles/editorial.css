@@ -1,0 +1,146 @@
+/* Editorial design system — ported from the docs app (docs/app/editorial.css +
+ * reference.css). Warm paper, DM Sans, glass pills, callout boxes, ink text.
+ * Powers the restyled academy surfaces (header, sidebar, reader, challenge).
+ * Loaded AFTER theme.css so its treatments win. Light-only. */
+
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
+.glass-pill {
+  border: 1px solid rgba(32, 32, 32, 0.06);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.5) 0%, rgba(255, 255, 255, 0) 100%),
+    rgba(245, 245, 242, 0.65);
+  box-shadow: 0 2px 3px 0 rgba(0, 0, 0, 0.06), 0 0 0.357px 1.5px rgba(255, 255, 255, 0.35) inset,
+    0 2px 0 0 #fff inset;
+  backdrop-filter: blur(12px);
+}
+
+.cta-btn-dark {
+  background: linear-gradient(180deg, #3a3835 0%, #262323 100%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.45), 0 0 0 0.5px rgba(255, 255, 255, 0.08) inset,
+    0 1px 0 0 rgba(255, 255, 255, 0.1) inset;
+}
+
+.btn-dark-hover {
+  background: linear-gradient(180deg, #4a4845 0%, #363333 100%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.45), 0 0 0 0.5px rgba(255, 255, 255, 0.12) inset,
+    0 1px 0 0 rgba(255, 255, 255, 0.15) inset;
+}
+
+.text-ink {
+  color: #262323cc;
+  text-shadow: 0 0.5px 0 rgba(0, 0, 0, 0.2), 0 -0.5px 0 rgba(255, 255, 255, 0.25);
+}
+.text-ink-ui {
+  color: #202020cc;
+}
+.text-ink-faint {
+  color: #262323b3;
+}
+.text-ink-body {
+  color: rgba(38, 35, 35, 0.78);
+}
+.text-on-dark {
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.nav-link {
+  text-shadow: 0 0.5px 0 rgba(0, 0, 0, 0.1), 0 -0.5px 0 rgba(255, 255, 255, 0.15);
+}
+
+.callout-box {
+  border: 1px solid #e7e7e3;
+  background: rgba(251, 251, 248, 0.5);
+  box-shadow: inset 0 1px 0 #fff;
+  border-radius: 12px;
+}
+.callout-box-inner {
+  background: #f7f7f3;
+  box-shadow: inset 0 0 0 1px rgba(38, 35, 35, 0.08), inset 0 1px 0 #fff;
+  border-radius: 10px;
+}
+
+.scrollbar-hidden-until-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+}
+.scrollbar-hidden-until-scroll:hover {
+  scrollbar-color: #26232326 transparent;
+}
+.scrollbar-hidden-until-scroll::-webkit-scrollbar {
+  width: 4px;
+}
+.scrollbar-hidden-until-scroll::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: 2px;
+}
+.scrollbar-hidden-until-scroll:hover::-webkit-scrollbar-thumb {
+  background: #26232326;
+}
+
+/* Fade the top edge of a nav scroller so it's clear there's more above. */
+.nav-scroll-fade {
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 22px);
+  mask-image: linear-gradient(to bottom, transparent 0, #000 22px);
+}
+
+.code-inline {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 5px;
+  border: 1.2px solid #e3e3e0;
+  padding: 1px 6px;
+  font-size: 13px;
+  line-height: 140%;
+  letter-spacing: 0.13px;
+  color: #a76451;
+  white-space: nowrap;
+  background: #e7e7e3;
+  box-shadow: 0 0.5px 0.5px 0 rgba(0, 0, 0, 0.1), 0 2px 1px 0 #fff, 0 -1px 1px 0 rgba(0, 0, 0, 0.03);
+}
+
+/* Page/reader title + lead — mirrors the docs Reference (reference.css). */
+.reference-title {
+  font-family: var(--font-sans);
+  font-size: clamp(2rem, 4vw, 2.5rem);
+  line-height: 1.12;
+  letter-spacing: -0.005em;
+  font-weight: 530;
+  color: #262323;
+}
+.reference-desc {
+  font-size: 1.0625rem;
+  line-height: 1.6;
+  color: rgba(38, 35, 35, 0.78);
+}
+
+/* Editorial reading rhythm for prose bodies (lesson description, about copy). */
+.guide-prose p,
+.guide-prose li {
+  font-size: 1.0625rem;
+  line-height: 1.75;
+  color: rgba(38, 35, 35, 0.86);
+}
+
+/* Flash a lesson row the TOC jumped to — hold the accent, then fade out. */
+@keyframes lesson-flash {
+  0%,
+  55% {
+    background-color: var(--color-ed-accent-fill);
+    box-shadow: inset 0 0 0 1px var(--color-ed-blue-border);
+  }
+  100% {
+    background-color: transparent;
+    box-shadow: inset 0 0 0 1px transparent;
+  }
+}
+.lesson-flash {
+  animation: lesson-flash 2.2s ease-out both;
+}

@@ -75,6 +75,10 @@ export async function calculateCOGS(
         )
         .orderBy("postingDate", orderDirection)
         .orderBy("createdAt", orderDirection)
+        // Lock the layers for this transaction — two concurrent consumers
+        // would otherwise both read the same remainingQuantity and consume
+        // the layer twice (lost update).
+        .forUpdate()
         .execute();
 
       let remainingToConsume = quantity;
@@ -108,6 +112,7 @@ export async function calculateCOGS(
             remainingQuantity: layerRemaining - quantityFromLayer,
           })
           .where("id", "=", layer.id)
+          .where("companyId", "=", companyId)
           .execute();
 
         // Consume the layer's cost-adjustment children (invoice-vs-receipt
@@ -117,8 +122,10 @@ export async function calculateCOGS(
           .selectFrom("costLedger")
           .selectAll()
           .where("appliesToCostLedgerId", "=", layer.id)
+          .where("companyId", "=", companyId)
           .where("remainingQuantity", ">", 0)
           .orderBy("createdAt", "asc")
+          .forUpdate()
           .execute();
 
         let unappliedQuantity = quantityFromLayer;
@@ -136,6 +143,7 @@ export async function calculateCOGS(
             .updateTable("costLedger")
             .set({ remainingQuantity: childQty - applyQty })
             .where("id", "=", child.id)
+            .where("companyId", "=", companyId)
             .execute();
         }
       }

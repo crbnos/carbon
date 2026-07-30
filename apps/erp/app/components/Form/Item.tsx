@@ -33,10 +33,12 @@ import { useFetcher } from "react-router";
 import ConsumableForm from "~/modules/items/ui/Consumables/ConsumableForm";
 import MaterialForm from "~/modules/items/ui/Materials/MaterialForm";
 import PartForm from "~/modules/items/ui/Parts/PartForm";
+import ServiceForm from "~/modules/items/ui/Services/ServiceForm";
 import ToolForm from "~/modules/items/ui/Tools/ToolForm";
-import type { MethodItemType } from "~/modules/shared";
-import { methodItemType } from "~/modules/shared";
+import type { ItemType, MethodItemType } from "~/modules/shared";
+import { itemType, methodItemType } from "~/modules/shared";
 import { useItems } from "~/stores";
+import { latestRevisionByReadableId } from "~/stores/items";
 import { path } from "~/utils/path";
 import { MethodItemTypeIcon } from "../Icons";
 import { ItemLifecycleBadge } from "../ItemLifecycleBadge";
@@ -47,15 +49,23 @@ type ItemSelectProps = Omit<ComboboxProps, "options" | "type" | "inline"> & {
   isReadOnly?: boolean;
   blacklist?: string[];
   includeInactive?: boolean;
+  // Collapse options to a single row per part (the latest revision), matching the
+  // parts/materials list views. Off by default so pickers that legitimately need a
+  // specific revision (BOM, sales/job lines) keep every revision.
+  latestRevisionOnly?: boolean;
   inline?: boolean;
   isConfigured?: boolean;
   locationId?: string;
   replenishmentSystem?: "Buy" | "Make";
-  type: MethodItemType | "Item";
+  type: ItemType | "Item";
   typeFieldName?: string;
-  validItemTypes?: MethodItemType[];
+  validItemTypes?: ItemType[];
   whitelist?: string[];
   onConfigure?: () => void;
+  // Narrower than `type`/`validItemTypes` on purpose: BOM/method callers pass a
+  // MethodItemType handler, and order-line callers pass a wider handler that is
+  // still assignable here (contravariance). The dropdown's emit is cast, so it
+  // can still surface "Service" when validItemTypes includes it.
   onTypeChange?: (type: MethodItemType | "Item") => void;
 };
 
@@ -70,7 +80,7 @@ const ItemPreview = (
 
 const useTranslatedItemType = () => {
   const { t } = useLingui();
-  return (type: MethodItemType | "Item") => {
+  return (type: ItemType | "Item") => {
     switch (type) {
       case "Item":
         return t`Item`;
@@ -82,6 +92,8 @@ const useTranslatedItemType = () => {
         return t`Tool`;
       case "Consumable":
         return t`Consumable`;
+      case "Service":
+        return t`Service`;
       default:
         return type;
     }
@@ -107,51 +119,55 @@ const Item = ({
   const [items] = useItems();
 
   const options = useMemo(() => {
-    let results = items
-      .filter((item) => {
-        // Filter by type
-        // @ts-expect-error
-        if (validItemTypes && !validItemTypes.includes(item.type)) return false;
+    let filtered = items.filter((item) => {
+      // Filter by type
+      // @ts-expect-error
+      if (validItemTypes && !validItemTypes.includes(item.type)) return false;
 
-        if (type !== "Item" && type !== item.type) return false;
+      if (type !== "Item" && type !== item.type) return false;
 
-        // Filter by active status
-        // Filter by active status
-        if (!props.includeInactive && !item.active) return false;
+      // Filter by active status
+      if (!props.includeInactive && !item.active) return false;
 
-        // Filter by replenishment system
-        if (props.replenishmentSystem) {
-          const systemMatches =
-            item.replenishmentSystem === props.replenishmentSystem ||
-            item.replenishmentSystem === "Buy and Make" ||
-            props.replenishmentSystem === item.replenishmentSystem;
+      // Filter by replenishment system
+      if (props.replenishmentSystem) {
+        const systemMatches =
+          item.replenishmentSystem === props.replenishmentSystem ||
+          item.replenishmentSystem === "Buy and Make" ||
+          props.replenishmentSystem === item.replenishmentSystem;
 
-          if (!systemMatches) return false;
-        }
+        if (!systemMatches) return false;
+      }
 
-        return true;
-      })
-      .map((item) => {
-        const scopedQuantity = props.locationId
-          ? item.quantityByLocation?.[props.locationId]
-          : item.quantityOnHand;
-        return {
-          value: item.id,
-          label: item.supersessionMode ? (
-            <span className="flex items-center gap-1.5">
-              {item.readableIdWithRevision}
-              <ItemLifecycleBadge mode={item.supersessionMode} />
-            </span>
-          ) : (
-            item.readableIdWithRevision
-          ),
-          helper: item.name,
-          helperRight:
-            scopedQuantity !== undefined
-              ? `${scopedQuantity} ${item.unitOfMeasureCode}`
-              : undefined
-        };
-      });
+      return true;
+    });
+
+    // Collapse to a single current revision per part.
+    if (props.latestRevisionOnly) {
+      filtered = latestRevisionByReadableId(filtered);
+    }
+
+    let results = filtered.map((item) => {
+      const scopedQuantity = props.locationId
+        ? item.quantityByLocation?.[props.locationId]
+        : item.quantityOnHand;
+      return {
+        value: item.id,
+        label: item.supersessionMode ? (
+          <span className="flex items-center gap-1.5">
+            {item.readableIdWithRevision}
+            <ItemLifecycleBadge mode={item.supersessionMode} />
+          </span>
+        ) : (
+          item.readableIdWithRevision
+        ),
+        helper: item.name,
+        helperRight:
+          scopedQuantity !== undefined
+            ? `${scopedQuantity} ${item.unitOfMeasureCode}`
+            : undefined
+      };
+    });
 
     if (props.whitelist) {
       results = results.filter((item) => props.whitelist?.includes(item.value));
@@ -166,6 +182,7 @@ const Item = ({
     items,
     props?.includeInactive,
     props.blacklist,
+    props.latestRevisionOnly,
     props.locationId,
     props.replenishmentSystem,
     props.whitelist,
@@ -354,21 +371,23 @@ const Item = ({
                       <Trans>All Items</Trans>
                     </span>
                   </DropdownMenuRadioItem>
-                  {Object.values(methodItemType)
-                    .filter(
-                      (itemType) =>
-                        validItemTypes === undefined ||
-                        (Array.isArray(validItemTypes) &&
-                          validItemTypes.includes(itemType))
+                  {itemType
+                    .filter((option) =>
+                      // Default to methodItemType so BOM/method pickers never
+                      // surface Service; order-line forms opt in by passing
+                      // validItemTypes that include it.
+                      (validItemTypes ?? methodItemType).some(
+                        (t) => t === option
+                      )
                     )
-                    .map((itemType) => (
+                    .map((option) => (
                       <DropdownMenuRadioItem
-                        key={itemType}
-                        value={itemType}
+                        key={option}
+                        value={option}
                         className="flex items-center gap-2"
                       >
-                        <MethodItemTypeIcon type={itemType} />
-                        <span>{translateItemType(itemType)}</span>
+                        <MethodItemTypeIcon type={option} />
+                        <span>{translateItemType(option)}</span>
                       </DropdownMenuRadioItem>
                     ))}
                 </DropdownMenuRadioGroup>
@@ -434,24 +453,32 @@ const Item = ({
               </ModalTitle>
             </ModalHeader>
             <ModalBody>
-              <div className="grid grid-cols-2 gap-4">
-                {Object.values(methodItemType).map((itemType) => (
-                  <Button
-                    key={itemType}
-                    leftIcon={<MethodItemTypeIcon type={itemType} />}
-                    className="flex w-full"
-                    variant={type === itemType ? "primary" : "secondary"}
-                    size="lg"
-                    onClick={() => {
-                      onTypeChange?.(itemType);
-                      setTimeout(() => {
-                        submitRef.current?.focus();
-                      }, 0);
-                    }}
-                  >
-                    {translateItemType(itemType)}
-                  </Button>
-                ))}
+              <div className="grid grid-cols-1 gap-4">
+                {itemType
+                  .filter((option) =>
+                    // Same narrowing as the dropdown above: BOM/method pickers
+                    // never surface Tool or Service; order-line forms opt in
+                    // via validItemTypes.
+                    (validItemTypes ?? methodItemType).some((t) => t === option)
+                  )
+                  .map((option) => (
+                    <Button
+                      key={option}
+                      leftIcon={<MethodItemTypeIcon type={option} />}
+                      className="flex w-full"
+                      variant={type === option ? "primary" : "secondary"}
+                      size="lg"
+                      onClick={() => {
+                        // Same contravariance cast as the dropdown emit above.
+                        onTypeChange?.(option as MethodItemType);
+                        setTimeout(() => {
+                          submitRef.current?.focus();
+                        }, 0);
+                      }}
+                    >
+                      {translateItemType(option)}
+                    </Button>
+                  ))}
               </div>
             </ModalBody>
             <ModalFooter>
@@ -550,7 +577,32 @@ const Item = ({
           }}
         />
       )}
-      {/* TODO: Add service */}
+      {type === "Service" && newItemsModal.isOpen && (
+        <ServiceForm
+          type="modal"
+          onClose={() => {
+            setCreated("");
+            newItemsModal.onClose();
+            triggerRef.current?.click();
+          }}
+          initialValues={{
+            id: "",
+            revision: "0",
+            name: created,
+            description: "",
+            itemTrackingType: "Non-Inventory",
+            unitOfMeasureCode: "EA",
+            replenishmentSystem: props?.replenishmentSystem ?? "Buy",
+            defaultMethodType:
+              props?.replenishmentSystem === "Make"
+                ? "Make to Order"
+                : "Purchase to Order",
+            unitCost: 0,
+            shelfLifeCalculateFromBom: false,
+            tags: []
+          }}
+        />
+      )}
       {type === "Tool" && newItemsModal.isOpen && (
         <ToolForm
           type="modal"

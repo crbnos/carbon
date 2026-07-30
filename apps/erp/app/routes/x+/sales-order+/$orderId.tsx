@@ -24,12 +24,14 @@ import {
   SalesOrderProperties
 } from "~/modules/sales/ui/SalesOrder";
 import { getCompanySettings } from "~/modules/settings";
-import type { Handle } from "~/utils/handle";
+import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
 export const handle: Handle = {
-  breadcrumb: msg`Orders`,
-  to: path.to.salesOrders,
+  breadcrumb: detailBreadcrumb(
+    { breadcrumb: msg`Orders`, to: path.to.salesOrders },
+    (data) => data?.salesOrder?.salesOrderId
+  ),
   module: "sales"
 };
 

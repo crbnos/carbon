@@ -35,7 +35,7 @@ import {
 import { itemTypeIdLabel } from "~/components/Form/itemTypeLabel";
 import { ReplenishmentSystemIcon } from "~/components/Icons";
 import { usePermissions } from "~/hooks";
-import type { MethodItemType } from "~/modules/shared";
+import type { ItemType } from "~/modules/shared";
 import { path } from "~/utils/path";
 import {
   itemReplenishmentSystems,
@@ -197,7 +197,7 @@ const ItemForm = ({ initialValues, type }: ItemFormProps) => {
 
 export default ItemForm;
 
-export function getLinkToItemDetails(type: MethodItemType, id: string) {
+export function getLinkToItemDetails(type: ItemType, id: string) {
   switch (type) {
     case "Part":
       return path.to.partDetails(id);
@@ -207,25 +207,27 @@ export function getLinkToItemDetails(type: MethodItemType, id: string) {
       return path.to.toolDetails(id);
     case "Consumable":
       return path.to.consumableDetails(id);
-    // case "Service":
-    //   return path.to.serviceDetails(id);
+    case "Service":
+      return path.to.serviceDetails(id);
     default:
       throw new Error("Invalid type");
   }
 }
 
-export function getLinkToItemManufacturing(type: MethodItemType, id: string) {
+export function getLinkToItemManufacturing(type: ItemType, id: string) {
   switch (type) {
     case "Part":
       return path.to.partDetails(id);
     case "Tool":
       return path.to.toolDetails(id);
+    case "Service":
+      return path.to.serviceDetails(id);
     default:
       return getLinkToItemDetails(type, id);
   }
 }
 
-export function getLinkToItemPlanning(type: MethodItemType, id: string) {
+export function getLinkToItemPlanning(type: ItemType, id: string) {
   switch (type) {
     case "Part":
       return path.to.partPlanning(id);
@@ -235,8 +237,7 @@ export function getLinkToItemPlanning(type: MethodItemType, id: string) {
       return path.to.toolPlanning(id);
     case "Consumable":
       return path.to.consumablePlanning(id);
-    // case "Service":
-    //   return path.to.serviceDetails(id);
+    // Services are Non-Inventory and never planned — no planning page.
     default:
       throw new Error("Invalid type");
   }

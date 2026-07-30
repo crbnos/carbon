@@ -51,11 +51,11 @@ const MultiSelectPreview = (
           const label = option ? option.label : val;
           return (
             <Badge
-              className="max-w-[160px] truncate border dark:border-none dark:shadow-button-base"
+              className="max-w-[160px] border dark:border-none dark:shadow-button-base"
               key={val}
               variant="secondary"
             >
-              {label}
+              <span className="truncate">{label}</span>
             </Badge>
           );
         })

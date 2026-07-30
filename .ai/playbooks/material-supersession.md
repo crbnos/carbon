@@ -28,7 +28,7 @@ AFTER INSERT trigger auto-creates itemCost/itemReplenishment/itemPlanning/makeMe
 - itemSupersession: one row per old item (mode, successorItemId, discontinuationDate ≤ today,
   successorEffectivityDate ≤ today, conversionFactor).
 - BOM: `methodMaterial` rows on the parent's makeMethod id (itemType 'Part', methodType
-  'Purchase to Order'/'Pull from Inventory', effectiveFrom/effectiveTo for line effectivity).
+  'Purchase to Order'/'Pull from Inventory').
 - On-hand: `itemLedger` (entryType 'Positive Adjmt.', itemId, locationId, quantity, companyId, createdBy).
 - Stock Only reserve: UPDATE itemPlanning SET reorderingPolicy='Fixed Reorder Quantity',
   reorderPoint=1, minimumReserveQuantity=N.
@@ -64,4 +64,3 @@ First call also creates the weekly `period` rows. Returns `{"success":true}`.
 - NEW1 = 100 (Prefer New, factor 1) | NEW2 = 400 (Consume First, factor 2: 200×2)
 - CHAIN-C = 100 (chain A→B→C collapse) | M-NEW = 100 in production planning (Make→Make)
 - SPARE = 80 (reserve 100 − on-hand 20) | OLD1/OLD2/CHAIN-A/B/OBS/M-OLD excluded
-- BOM-line effectivity: a future effectiveFrom or past effectiveTo line is skipped (no demand).

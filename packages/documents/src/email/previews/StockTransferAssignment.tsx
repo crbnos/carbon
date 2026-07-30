@@ -9,7 +9,7 @@ export default function StockTransferAssignmentPreview() {
       preview={"Stock transfer assigned to you"}
       message={"Stock Transfer ST-0021 assigned to you"}
       reference={"ST-0021"}
-      recipientName={"Naveen"}
+      recipientName={"John Doe"}
       ctaLabel={"View details"}
       ctaUrl={"https://app.carbon.ms/x/stock-transfer/1"}
       details={[

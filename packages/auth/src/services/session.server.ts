@@ -88,6 +88,9 @@ export async function flash(request: Request, result: Result) {
   if (typeof result.success === "boolean") {
     session.flash("success", result.success);
     session.flash("message", result.message);
+    if (result.description) {
+      session.flash("description", result.description);
+    }
     if (result.flash) {
       session.flash("flash", result.flash);
     }
@@ -124,6 +127,7 @@ export async function getSessionFlash(request: Request) {
   const result: Result = {
     success: session.get("success") === true,
     message: session.get("message"),
+    description: session.get("description"),
     flash: session.get("flash") as "success" | "error" | undefined
   };
 

@@ -6,28 +6,19 @@ import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
-  DropdownMenuTrigger,
-  Switch,
-  useMode
+  DropdownMenuTrigger
 } from "@carbon/react";
-import { useRef, useState } from "react";
-import { LuHouse, LuLogOut, LuMoon, LuSun, LuUser } from "react-icons/lu";
-import { Form, Link, useFetcher } from "react-router";
+import { useState } from "react";
+import { LuHouse, LuLogOut, LuUser } from "react-icons/lu";
+import { Form, Link } from "react-router";
 import { Avatar } from "~/components";
 import { useUser } from "~/hooks";
-import type { action } from "~/root";
 import { path } from "~/utils/path";
 
 const AvatarMenu = ({ className }: { className?: string }) => {
   const user = useUser();
   const name = `${user.firstName} ${user.lastName}`;
 
-  const mode = useMode();
-
-  const nextMode = mode === "dark" ? "light" : "dark";
-  const modeSubmitRef = useRef<HTMLButtonElement>(null);
-
-  const fetcher = useFetcher<typeof action>();
   const [isOpen, setIsOpen] = useState(false);
 
   return (
@@ -55,34 +46,6 @@ const AvatarMenu = ({ className }: { className?: string }) => {
             <DropdownMenuIcon icon={<LuUser />} />
             Account Settings
           </Link>
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-          <div className="flex items-center justify-between w-full">
-            <div className="flex items-center justify-start">
-              <DropdownMenuIcon
-                icon={mode === "dark" ? <LuMoon /> : <LuSun />}
-              />
-              Dark Mode
-            </div>
-            <div>
-              <Switch
-                checked={mode === "dark"}
-                onCheckedChange={() => modeSubmitRef.current?.click()}
-              />
-              <fetcher.Form
-                action={path.to.root}
-                method="post"
-                onSubmit={() => {
-                  document.body.removeAttribute("style");
-                }}
-                className="sr-only"
-              >
-                <input type="hidden" name="mode" value={nextMode} />
-                <button ref={modeSubmitRef} className="sr-only" type="submit" />
-              </fetcher.Form>
-            </div>
-          </div>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem onSelect={(e) => e.preventDefault()}>

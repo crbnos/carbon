@@ -1,0 +1,14 @@
+[package]
+name = "occt-bridge"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+# cxx bridge over OpenCASCADE 7.9.3 (== cadquery-ocp's OCCT). One C++ entry point
+# walks the XCAF assembly tree + tessellates, returning a flat node list to Rust.
+
+[dependencies]
+cxx = "1"
+
+[build-dependencies]
+cxx-build = "1"

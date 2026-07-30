@@ -1,6 +1,12 @@
 import { getAppUrl } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import {
+  actionTaskEntities,
+  actionTaskParentId,
+  actionTaskPermissions,
+  isActionTaskEntityType
+} from "@carbon/ee/action-task-entity";
+import {
   getCompanyEmployees,
   getJiraClient,
   linkActionToJiraIssue,
@@ -9,7 +15,8 @@ import {
 import { getLogger } from "@carbon/logger";
 import type { ActionFunction, LoaderFunction } from "react-router";
 import { data } from "react-router";
-import { getIssueAction } from "~/modules/quality/quality.service";
+import { requireChangeNoticeEditable } from "~/modules/items/items.server";
+import { getActionTaskWithParent } from "~/services/action-task.server";
 
 const logger = getLogger("erp", "integrations-jira-issue-create");
 
@@ -19,9 +26,21 @@ export const action: ActionFunction = async ({ request }) => {
   try {
     const formData = await request.formData();
 
-    const { companyId, client } = await requirePermissions(request, {});
-
     const actionId = formData.get("actionId") as string;
+    const entityType = formData.get("entityType") as string | null;
+
+    if (!isActionTaskEntityType(entityType)) {
+      return data(
+        { success: false, message: "Invalid entityType" },
+        { status: 400 }
+      );
+    }
+
+    const { companyId, client } = await requirePermissions(
+      request,
+      actionTaskPermissions(entityType)
+    );
+
     const projectKey = formData.get("projectKey") as string;
     const issueTypeId = formData.get("issueTypeId") as string;
     const summary = formData.get("title") as string;
@@ -40,13 +59,30 @@ export const action: ActionFunction = async ({ request }) => {
     }
 
     const [carbonIssue, siteUrl] = await Promise.all([
-      getIssueAction(client, actionId),
+      getActionTaskWithParent(client, entityType, actionId, companyId),
       jira.getSiteUrl(companyId)
     ]);
 
+    if (entityType === "changeOrderActionTask") {
+      const locked = carbonIssue.parentId
+        ? await requireChangeNoticeEditable(client, {
+            changeNoticeId: carbonIssue.parentId,
+            companyId,
+            scope: "workflow"
+          })
+        : { error: { message: "Could not find change notice" } };
+
+      if (locked) {
+        return data(
+          { success: false, message: locked.error.message },
+          { status: 400 }
+        );
+      }
+    }
+
     // Use the task's notes as the Jira issue description, falling back to form description
     let adfDescription: any = undefined;
-    const notes = carbonIssue.data?.notes;
+    const notes = carbonIssue.notes;
     if (notes && typeof notes === "object") {
       try {
         adfDescription = tiptapToAdf(notes as any);
@@ -89,6 +125,7 @@ export const action: ActionFunction = async ({ request }) => {
     }
 
     const linked = await linkActionToJiraIssue(client, companyId, {
+      entityType,
       actionId,
       issue,
       siteUrl
@@ -101,16 +138,18 @@ export const action: ActionFunction = async ({ request }) => {
       );
     }
 
-    const nonConformanceId = linked.data?.[0].nonConformanceId;
+    const parentId = actionTaskParentId(linked.data, entityType) ?? "";
 
-    const url = getAppUrl() + `/x/issue/${nonConformanceId}/details`;
+    const url =
+      getAppUrl() +
+      `${actionTaskEntities[entityType].detailPath(parentId)}/details`;
 
     // Create a remote link in Jira pointing back to Carbon
     await jira.createRemoteLink(
       companyId,
       issue.id,
       url,
-      `Linked Carbon Issue: ${carbonIssue.data?.nonConformance?.nonConformanceId ?? ""}`
+      `Linked Carbon Issue: ${carbonIssue.parentReadableId ?? ""}`
     );
 
     return { success: true, message: "Jira issue created" };

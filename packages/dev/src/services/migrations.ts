@@ -166,8 +166,7 @@ export async function applyMigrations(
           preferLocal: true
         });
         if (retry.exitCode === 0) {
-          const applied = /Applying migration/i.test(retry.stdout ?? "");
-          return { applied };
+          return { applied: didApplyMigrations(retry) };
         }
         process.stderr.write(retry.stderr?.toString() ?? "");
         process.stdout.write(retry.stdout?.toString() ?? "");
@@ -180,10 +179,14 @@ export async function applyMigrations(
     process.stdout.write(r.stdout?.toString() ?? "");
     throw new Error(`supabase ${args.join(" ")} failed (exit ${r.exitCode})`);
   }
-  // supabase prints "Applying migration <ts>_<name>.sql..." per applied
-  // migration; absent that, the schema was already current.
-  const applied = /Applying migration/i.test(r.stdout ?? "");
-  return { applied };
+  return { applied: didApplyMigrations(r) };
+}
+
+// supabase prints "Applying migration <ts>_<name>.sql..." per applied
+// migration — on STDERR (stdout says "Local database is up to date." even
+// while applying), so both streams must be checked.
+function didApplyMigrations(r: { stdout?: string; stderr?: string }): boolean {
+  return /Applying migration/i.test(`${r.stderr ?? ""}\n${r.stdout ?? ""}`);
 }
 
 // Find migration versions in DB that have no corresponding local file and
@@ -227,6 +230,31 @@ async function repairStaleMigrations(
   );
 
   return stale.length;
+}
+
+// ---------------------------------------------------------------------------
+// Config row (pg_net push targets)
+// ---------------------------------------------------------------------------
+
+// The singleton "config" row is what SECURITY DEFINER functions
+// (wake_event_queue, webhook_insert/update/delete) read to POST to edge
+// functions via pg_net. Without it those pushes silently no-op, so the
+// event-queue wake and local webhooks never fire in dev. `apiUrl` must be the
+// in-network Kong URL — pg_net runs inside the postgres container, which
+// can't reach host ports.
+export async function ensureConfigRow(
+  dbPort: number,
+  anonKey: string
+): Promise<void> {
+  await withClient(dbPort, (c) =>
+    c.query(
+      `INSERT INTO "config" ("id", "apiUrl", "anonKey")
+       VALUES (TRUE, 'http://kong:8000', $1)
+       ON CONFLICT ("id") DO UPDATE
+         SET "apiUrl" = EXCLUDED."apiUrl", "anonKey" = EXCLUDED."anonKey"`,
+      [anonKey]
+    )
+  );
 }
 
 // ---------------------------------------------------------------------------

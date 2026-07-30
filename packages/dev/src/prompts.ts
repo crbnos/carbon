@@ -56,7 +56,11 @@ export async function pickApps(): Promise<AppId[]> {
       .map((s) => s.trim())
       .filter((s): s is AppId => APP_CHOICES.some((c) => c.value === s));
   }
-  if (!process.stdin.isTTY) return APP_CHOICES.map((c) => c.value);
+  const optInApps: readonly AppId[] = ["assembler", "email"];
+  const defaultApps = APP_CHOICES.filter(
+    (c) => !optInApps.includes(c.value)
+  ).map((c) => c.value);
+  if (!process.stdin.isTTY) return defaultApps;
 
   note(
     "When no apps are selected it will only run (postgres, kong, supabase, inngest, mail) without spawning ERP/MES dev servers.",
@@ -69,7 +73,7 @@ export async function pickApps(): Promise<AppId[]> {
       label: c.label,
       hint: c.hint
     })),
-    initialValues: APP_CHOICES.map((c) => c.value),
+    initialValues: defaultApps,
     required: false
   });
   if (isCancel(picked)) abort();

@@ -2111,8 +2111,7 @@ export async function createPartFromComponent(
           operations.push({
             order: operation.position ?? index + 1,
             operationOrder: "After Previous",
-            operationType:
-              process.processType === "Inside" ? "Inside" : "Outside",
+            operationType: process.processType,
             description:
               operation.operation_definition_name ??
               operation.name ??
@@ -2588,7 +2587,10 @@ async function getOrCreateProcess(
     .from("process")
     .insert({
       name: operationName,
-      processType: operation.is_outside_service === true ? "Outside" : "Inside",
+      processType:
+        operation.is_outside_service === true
+          ? "Outside Processing"
+          : "Process",
       companyId,
       createdBy,
       defaultStandardFactor: "Minutes/Piece"
@@ -3045,6 +3047,9 @@ export async function insertQuoteLines(
               unitPrice: qp.unit_price ?? 0,
               leadTime: qp.lead_time ?? 0,
               discountPercent: 0,
+              // Paperless is the pricing source of truth for imported quotes —
+              // mark the price manual so no Carbon recalc ever overwrites it.
+              priceSource: "manual",
               createdBy
             }));
 
@@ -3119,8 +3124,7 @@ export async function insertQuoteLines(
                       quoteMakeMethodId,
                       processId: process.id,
                       order: operation.position ?? operationOrder++,
-                      operationType:
-                        process.processType === "Inside" ? "Inside" : "Outside",
+                      operationType: process.processType,
                       description:
                         operationName ?? `Operation ${operationOrder}`,
                       setupTime: (operation.setup_time ?? 0) * 60,

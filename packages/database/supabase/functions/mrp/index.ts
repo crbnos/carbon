@@ -244,8 +244,6 @@ serve(async (req: Request) => {
       itemId: string;
       quantity: number;
       methodType: MethodType;
-      effectiveFrom: string | null;
-      effectiveTo: string | null;
     }[] = [];
 
     if (allMethodIds.length > 0) {
@@ -259,8 +257,6 @@ serve(async (req: Request) => {
           "quantity",
           "methodType",
         ])
-        .select(sql<string | null>`"effectiveFrom"::text`.as("effectiveFrom"))
-        .select(sql<string | null>`"effectiveTo"::text`.as("effectiveTo"))
         .where("companyId", "=", companyId)
         .where("makeMethodId", "in", allMethodIds)
         .execute()) as typeof allMaterials;
@@ -285,8 +281,6 @@ serve(async (req: Request) => {
           itemId: mat.itemId,
           quantity: Number(mat.quantity) || 1,
           methodType: mat.methodType as MethodType,
-          effectiveFrom: mat.effectiveFrom,
-          effectiveTo: mat.effectiveTo,
         });
       }
       if (children.length > 0) {
@@ -545,10 +539,7 @@ serve(async (req: Request) => {
       bomByItem,
       replenishmentSystemByItem,
       leadTimeByItem,
-      periods: periods.map((p) => ({
-        id: p.id ?? "",
-        startDate: p.startDate ?? undefined,
-      })),
+      periods: periods.map((p) => ({ id: p.id ?? "" })),
       onHandByLocationItem: new Map(baseInventoryByLocationItem),
       jobSupplyByLocationPeriodItem: jobAndPoSupplyByLocationPeriodItem,
       topLevelContributors,

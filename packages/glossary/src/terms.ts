@@ -69,6 +69,14 @@ export const terms = {
     definition: msg`Called a method in Carbon — the components plus operations that produce a part.`,
     href: "/docs/reference/methods"
   },
+  "operation-type": {
+    term: msg`Operation Type`,
+    definition: msg`Classifies a routing operation: Process, Assembly, and Inspection operations run on your own shop floor in the MES — Assembly gets the guided assembly view and Inspection a quality check — while an Outside Processing operation is subcontracted to a supplier and creates a purchase order; the process carries the same type and defaults it on new operations.`
+  },
+  "change-order": {
+    term: msg`Change notice`,
+    definition: msg`An engineering change: the affected items whose methods are revised on a draft and released together, superseding the versions they replace.`
+  },
   wip: {
     term: msg`Work in process (WIP)`,
     definition: msg`Not a table but a general-ledger balance: cost accumulates as job materials are issued and clears when the job is received to stock.`,
@@ -322,8 +330,8 @@ export const terms = {
   },
   "accounting-period": {
     term: msg`Accounting period`,
-    definition: msg`A dated window postings fall into (Active or Inactive, not open or closed), opened automatically when needed.`,
-    href: "/docs/reference/accounting#periods"
+    definition: msg`A dated window postings fall into; its close status moves Open → Locked → Closed, and a closed period is frozen against new postings.`,
+    href: "/docs/reference/period-close"
   },
 
   // ── Cost centers ────────────────────────────────────────────────────────
@@ -351,8 +359,23 @@ export const terms = {
   },
   invoice: {
     term: msg`Invoice`,
-    definition: msg`A sales invoice (you bill a customer) or purchase invoice (a supplier bills you); payment is a field, not a separate record.`,
+    definition: msg`A sales invoice (you bill a customer) or purchase invoice (a supplier bills you), settled by applying payments and credit or debit memos.`,
     href: "/docs/reference/invoices"
+  },
+  payment: {
+    term: msg`Payment`,
+    definition: msg`A posted cash transaction — a Receipt from a customer or a Disbursement to a supplier — applied to invoices through settlements, moving Draft → Posted → Voided.`,
+    href: "/docs/reference/payments"
+  },
+  "credit-memo": {
+    term: msg`Credit / debit memo`,
+    definition: msg`A non-cash document that settles an invoice against a reason account: a credit lowers what's owed, a debit raises it.`,
+    href: "/docs/reference/payments"
+  },
+  "invoice-settlement": {
+    term: msg`Invoice settlement`,
+    definition: msg`The record that applies a payment or memo to an invoice, carrying the applied, discount, and write-off amounts.`,
+    href: "/docs/reference/invoices#settling-an-invoice"
   },
   "finished-goods": {
     term: msg`Finished goods`,
@@ -413,7 +436,7 @@ export const terms = {
   },
   disposal: {
     term: msg`Disposal`,
-    definition: msg`Retiring an asset by write-off instead of sale, booking the remaining net book value as a loss — status becomes Disposed.`,
+    definition: msg`Retiring an asset from service by scrapping or sale, booking any gain or loss against net book value and setting its status to Disposed.`,
     href: "/docs/reference/fixed-assets#selling-vs-disposing"
   },
 
@@ -466,17 +489,17 @@ export const terms = {
     term: msg`Prepayments (default)`,
     definition: msg`GL account used when a customer pays before an invoice is issued; cleared when the invoice posts.`
   },
-  "account-default-inventory": {
-    term: msg`Inventory (default)`,
-    definition: msg`Default GL account that holds inventory value; debited on receipt, credited on shipment/issue.`
+  "account-default-raw-materials": {
+    term: msg`Raw Materials (default)`,
+    definition: msg`GL account that holds the value of purchased stock and components (Buy items); debited on receipt, credited on issue/shipment.`
+  },
+  "account-default-finished-goods": {
+    term: msg`Finished Goods (default)`,
+    definition: msg`GL account that holds the value of manufactured goods (Make items); debited on job completion, credited on shipment.`
   },
   "account-default-wip": {
     term: msg`Work in Progress (default)`,
     definition: msg`GL account that holds the value of jobs in production until they post to finished goods.`
-  },
-  "account-default-inventory-shipped-not-invoiced": {
-    term: msg`Inventory Shipped Not Invoiced (default)`,
-    definition: msg`Accrual account debited at shipment to recognize the receivable before the sales invoice posts; cleared when the invoice posts.`
   },
   "account-default-asset-acquisition-cost": {
     term: msg`Asset Acquisition Cost (default)`,
@@ -546,6 +569,10 @@ export const terms = {
     term: msg`Labor & Machine Absorption (default)`,
     definition: msg`GL account credited when labor or machine cost is absorbed into a production job.`
   },
+  "account-default-overhead-absorption": {
+    term: msg`Overhead Absorption (default)`,
+    definition: msg`GL account credited when manufacturing overhead is absorbed into a production job.`
+  },
   "account-default-purchase-price-variance": {
     term: msg`Purchase Price Variance (default)`,
     definition: msg`GL account that captures the difference between standard cost and actual purchase cost.`
@@ -582,9 +609,13 @@ export const terms = {
     term: msg`Depreciation Expense (default)`,
     definition: msg`Default GL expense account for periodic depreciation runs.`
   },
-  "account-default-gains-and-losses": {
-    term: msg`Gains and Losses (default)`,
-    definition: msg`GL account where gain or loss is booked on fixed-asset disposal.`
+  "account-default-gain-on-disposal": {
+    term: msg`Gain on Disposal (default)`,
+    definition: msg`Default GL account credited when a fixed-asset disposal results in a gain.`
+  },
+  "account-default-loss-on-disposal": {
+    term: msg`Loss on Disposal (default)`,
+    definition: msg`Default GL account debited when a fixed-asset disposal results in a loss.`
   },
   "account-default-service-charges": {
     term: msg`Service Charges (default)`,
@@ -724,11 +755,11 @@ export const terms = {
   },
   "asset-class-asset-account": {
     term: msg`Asset Account`,
-    definition: msg`GL account debited when an asset in this class is acquired.`
+    definition: msg`GL account that carries an asset's original acquisition cost — debited when acquired and credited at full gross cost when it is disposed or sold.`
   },
   "asset-class-accumulated-depreciation-account": {
     term: msg`Accumulated Depreciation Account`,
-    definition: msg`GL contra-asset account credited when depreciation posts for assets in this class.`
+    definition: msg`GL contra-asset account credited as depreciation posts each period and debited in full when the asset is sold or scrapped.`
   },
   "asset-class-depreciation-expense-account": {
     term: msg`Depreciation Expense Account`,
@@ -736,15 +767,19 @@ export const terms = {
   },
   "asset-class-write-off-account": {
     term: msg`Write-Off Account`,
-    definition: msg`GL account hit when an asset is written off (cost removed without disposal proceeds).`
+    definition: msg`Temporary disposal-clearing account debited for an asset's net book value on shipment and credited for its net book value on invoicing, netting to zero over the sale cycle.`
   },
   "asset-class-write-down-account": {
     term: msg`Write-Down Account`,
-    definition: msg`GL account hit when an asset's book value is reduced (impairment).`
+    definition: msg`GL expense account debited when an asset's carrying value is reduced by impairment, i.e. when its recoverable amount falls below net book value.`
   },
-  "asset-class-disposal-account": {
-    term: msg`Disposal Account`,
-    definition: msg`GL account where gain or loss is booked when an asset in this class is disposed.`
+  "asset-class-gain-on-disposal-account": {
+    term: msg`Gain on Disposal Account`,
+    definition: msg`Non-operating income account credited when an asset in this class is sold for more than its net book value.`
+  },
+  "asset-class-loss-on-disposal-account": {
+    term: msg`Loss on Disposal Account`,
+    definition: msg`Non-operating expense account debited when an asset in this class is sold or scrapped below its net book value.`
   },
   "asset-class-default-tax-method": {
     term: msg`Tax Method (default)`,
@@ -1052,6 +1087,11 @@ export const terms = {
     definition: msg`Controls how planning handles a discontinued item: Consume First exhausts on-hand before switching to the successor, Prefer New redirects new demand to the successor immediately, Stock Only keeps only a minimum service reserve, and No Stock drops the item from planning entirely.`,
     aliases: ["phase-out", "spares-only", "obsolete"]
   },
+  "change-order-change-type": {
+    term: msg`Change Type`,
+    definition: msg`What kind of change this is: Version updates how the part is made, Revision revises its details and documents, Replacement Part swaps in a new part number that supersedes the old one, and New Part introduces a net-new part with no predecessor.`,
+    aliases: ["version", "revision", "replacement-part", "new-part"]
+  },
 
   // ── Items: Pick method / shelf life (PickMethodForm) ────────────────────
   "item-default-storage-unit": {
@@ -1112,7 +1152,7 @@ export const terms = {
   },
   "calibration-requires-repair": {
     term: msg`Requires Repair`,
-    definition: msg`Recorded that the gauge needs repair; the gauge stays unavailable for inspections until the repair is closed out.`
+    definition: msg`Recorded on a calibration that the gauge needs repair before its readings can be trusted.`
   },
   "calibration-measurement-standard": {
     term: msg`Measurement Standard`,
@@ -1128,7 +1168,7 @@ export const terms = {
   // ── Quality: Gauge (GaugeForm) ──────────────────────────────────────────
   "gauge-role": {
     term: msg`Role`,
-    definition: msg`How this gauge is used — Standard (regular checks), Master (calibrates other gauges), or Reference (audit-only).`
+    definition: msg`How this gauge is used — Standard (regular checks) or Master (calibrates other gauges).`
   },
   "gauge-last-calibration-date": {
     term: msg`Last Calibration Date`,
@@ -1136,7 +1176,7 @@ export const terms = {
   },
   "gauge-next-calibration-date": {
     term: msg`Next Calibration Date`,
-    definition: msg`When this gauge becomes due for calibration; once past due, it's blocked from inspections until calibrated.`
+    definition: msg`When this gauge becomes due for calibration; once past due it reads Out-of-Calibration.`
   },
   "gauge-calibration-interval-months": {
     term: msg`Calibration Interval (Months)`,
@@ -1152,7 +1192,7 @@ export const terms = {
   // ── Quality: Inspection document (InspectionDocumentForm) ───────────────
   "inspection-document-drawing-number": {
     term: msg`Drawing Number`,
-    definition: msg`The engineering drawing this inspection document is tied to; inspections recorded against this part reference back to this drawing.`
+    definition: msg`The engineering drawing this inspection plan is tied to; inspections recorded against this part reference back to this drawing.`
   },
 
   // ── Quality: Issue (IssueForm + IssueProperties) ────────────────────────
@@ -1642,7 +1682,7 @@ export const terms = {
   // ── Resources: Processes (ProcessForm) ──────────────────────────────────
   "process-type": {
     term: msg`Process Type`,
-    definition: msg`Whether this process runs on internal work centers (Inside), outside suppliers (Outside), or both (Both); reveals different downstream fields and changes how planning routes work for this process.`
+    definition: msg`Whether this process runs on internal work centers (Process, Assembly, or Inspection) or at outside suppliers (Outside Processing); reveals different downstream fields, changes how planning routes work for this process, and defaults the operation type on new operations.`
   },
   "process-default-unit": {
     term: msg`Default Unit`,
@@ -1763,5 +1803,149 @@ export const terms = {
   "create-employee-location": {
     term: msg`Location`,
     definition: msg`The location this employee defaults to; drives timezone interpretation on their timecards and the default shift selectors on their job record.`
+  },
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // Docs sweep: concept-level terms for the newly-written reference pages.
+  // Grounded against source (code wins); href points at the page that explains
+  // each concept.
+  // ──────────────────────────────────────────────────────────────────────────
+
+  // ── Quality: issues / disposition / SCAR / MRB ──────────────────────────
+  disposition: {
+    term: msg`Disposition`,
+    definition: msg`The per-item outcome recorded on a non-conformance's affected material — Pending, Return to Supplier, Rework, Scrap, or Use As Is — decided for each affected lot or serial on its own.`,
+    href: "/docs/reference/issues"
+  },
+  mrb: {
+    term: msg`Material Review Board (MRB)`,
+    definition: msg`An approval requirement on a non-conformance whose reviewers (seeded Engineering and Quality) must sign off before the issue can close.`,
+    href: "/docs/reference/issues"
+  },
+  scar: {
+    term: msg`SCAR (supplier corrective action request)`,
+    definition: msg`A non-conformance shared with a supplier over a login-free /share/scar link, so they can respond to the issue and update its tasks from outside Carbon.`,
+    href: "/docs/reference/sharing"
+  },
+
+  // ── Quality: gauges & calibration ───────────────────────────────────────
+  gauge: {
+    term: msg`Gauge`,
+    definition: msg`A measurement instrument (caliper, micrometer, pin gauge, CMM) tracked as a record and held to a recurring calibration schedule.`,
+    href: "/docs/reference/calibration"
+  },
+  "master-gauge": {
+    term: msg`Master gauge`,
+    definition: msg`A gauge whose role is Master — the reference standard other gauges are calibrated against, rather than one used for routine checks.`,
+    href: "/docs/reference/calibration#the-gauge-record"
+  },
+  calibration: {
+    term: msg`Calibration`,
+    definition: msg`A dated record proving a gauge was checked against a traceable standard; it passes unless a requires-action, -adjustment, or -repair flag is ticked, and resets the gauge's next-due date.`,
+    href: "/docs/reference/calibration#recording-a-calibration"
+  },
+
+  // ── Quality: inspections & risk register ────────────────────────────────
+  "inbound-inspection": {
+    term: msg`Inbound inspection`,
+    definition: msg`Lot-based inspection of received goods against a sampling plan; the units post On Hold at receipt and only release to Available once the lot is dispositioned as accepted.`,
+    href: "/docs/reference/inspections"
+  },
+  "risk-register": {
+    term: msg`Risk register`,
+    definition: msg`The log of risks and opportunities raised against any entity, each rated by independent 1–5 severity and likelihood and driven to a resolution.`,
+    href: "/docs/reference/risks"
+  },
+
+  // ── Sales: pricing rules & overrides (concept-level) ────────────────────
+  "pricing-rule": {
+    term: msg`Pricing rule`,
+    definition: msg`A company-scoped Discount or Markup, by percentage or fixed amount, that adjusts a line's price up or down when the line matches the rule's quantity, date, item, and customer conditions.`,
+    href: "/docs/reference/pricing#pricing-rules"
+  },
+  "price-override": {
+    term: msg`Price override`,
+    definition: msg`A negotiated price pinned for a specific item — by customer, customer type, or all customers — that replaces the base price outright, optionally with quantity breaks.`,
+    href: "/docs/reference/pricing#price-overrides"
+  },
+
+  // ── Config: sequences, custom fields, dimensions ────────────────────────
+  "numbering-sequence": {
+    term: msg`Numbering sequence`,
+    definition: msg`The per-company counter behind a document type's readable number, assembling the prefix, the zero-padded next value, and the suffix, and advancing as each document is created.`,
+    href: "/docs/reference/sequences",
+    aliases: ["sequence"]
+  },
+  "readable-id": {
+    term: msg`Readable ID`,
+    definition: msg`The human-readable document number (like J000001 or ECO-000001) minted from a sequence and stored on the record, distinct from its internal id.`,
+    href: "/docs/reference/sequences"
+  },
+  "custom-field": {
+    term: msg`Custom field`,
+    definition: msg`A company-defined extra field attached to a core table (customer, part, order); it shows on the record's form, saves alongside the built-in fields, and is queryable through the API.`,
+    href: "/docs/reference/custom-fields"
+  },
+  "reporting-dimension": {
+    term: msg`Reporting dimension`,
+    definition: msg`A company-defined tag axis attached to journal lines so the same accounts can be sliced by location, department, or any custom axis without multiplying the chart of accounts.`,
+    href: "/docs/reference/dimensions",
+    aliases: ["dimension"]
+  },
+
+  // ── Planning & scheduling ───────────────────────────────────────────────
+  "demand-projection": {
+    term: msg`Demand projection`,
+    definition: msg`Expected future demand for a make part entered week by week before any sales order exists; planning nets it against supply and explodes the method to order components ahead.`,
+    href: "/docs/reference/forecast"
+  },
+  "dispatch-priority": {
+    term: msg`Dispatch priority`,
+    definition: msg`An operation's position in its work center's queue — the order the floor picks work up — set by reordering cards on the Work Centers board without changing any dates.`,
+    href: "/docs/reference/scheduling"
+  },
+
+  // ── Shop floor: MES, kanban, picking, lineside ──────────────────────────
+  mes: {
+    term: msg`MES`,
+    definition: msg`Carbon's shop-floor app where operators run operations, report quantities, issue material, and log time against released jobs in real time.`,
+    href: "/docs/reference/mes"
+  },
+  kanban: {
+    term: msg`Kanban`,
+    definition: msg`A physical pull signal — a printed card or QR code living with the stock — that raises a purchase order or a job the moment it's scanned to refill a bin.`,
+    href: "/docs/reference/kanban"
+  },
+  "picking-list": {
+    term: msg`Picking list`,
+    definition: msg`A set of instructions to pull a job's outstanding materials from the warehouse and stage them lineside; a pick moves stock to the point of use rather than consuming it.`,
+    href: "/docs/reference/picking"
+  },
+  lineside: {
+    term: msg`Lineside`,
+    definition: msg`The work center's own bin where picked material is staged for production to draw down, as opposed to its warehouse source shelf.`,
+    href: "/docs/reference/picking"
+  },
+
+  // ── Accounting: period close, intercompany, API keys, notifications ──────
+  "period-close": {
+    term: msg`Period close`,
+    definition: msg`Finalizing a fiscal month through the Open → Locked → Closed lifecycle; a closed period is frozen and its balances snapshotted, reversible only by explicit reopen.`,
+    href: "/docs/reference/period-close"
+  },
+  "elimination-entity": {
+    term: msg`Elimination entity`,
+    definition: msg`A company that sits at or above selected companies in the group hierarchy and receives their intercompany cancelling entries for consolidated reporting; it is never a party to the trade itself.`,
+    href: "/docs/reference/intercompany"
+  },
+  "api-key": {
+    term: msg`API key`,
+    definition: msg`A scoped secret sent on the carbon-key request header that authenticates programmatic calls to Carbon, carrying its own permissions and rate limit rather than a user session's.`,
+    href: "/docs/reference/api-keys"
+  },
+  notification: {
+    term: msg`Notification`,
+    definition: msg`An alert that something needs a person's attention, fanned out from a carbon/notify event to the in-app inbox plus optional email and Slack, muteable per topic per user.`,
+    href: "/docs/reference/notifications"
   }
 } as const satisfies Record<string, GlossaryEntry>;

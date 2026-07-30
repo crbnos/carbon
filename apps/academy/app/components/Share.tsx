@@ -33,8 +33,7 @@ const Share = ({
           variant="secondary"
           aria-label="Copy"
           className={cn(
-            "text-white",
-            isCopied && "text-emerald-500 hover:text-emerald-500",
+            isCopied && "text-ed-green-strong hover:text-ed-green-strong",
             className
           )}
           rightIcon={

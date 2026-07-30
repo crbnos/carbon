@@ -263,7 +263,7 @@ export class WorkCenterSelector {
 
     for (const op of sorted) {
       // Skip outside operations (they don't need work center assignment)
-      if (op.operationType === "Outside") {
+      if (op.operationType === "Outside Processing") {
         continue;
       }
 

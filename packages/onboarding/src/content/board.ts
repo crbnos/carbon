@@ -1,5 +1,6 @@
 import { msg } from "@lingui/core/macro";
-import type { BoardTask } from "../types";
+import { isModuleExcluded } from "../logic/visibility";
+import type { BoardTask, Mod } from "../types";
 import { SETUP_GROUPS } from "./setup";
 
 // Configure's checklist is one task per Setup Map module group (Settings,
@@ -9,14 +10,14 @@ import { SETUP_GROUPS } from "./setup";
 // shape, only `key` is hand-assigned (stable across a group's `n`/title
 // changing).
 const CONFIGURE_GROUP_KEYS: Record<number, string> = {
-  1: "setup-settings",
-  2: "setup-resources",
-  3: "setup-people",
-  4: "setup-items",
-  5: "setup-sales",
-  6: "setup-purchasing",
-  7: "setup-inventory",
-  8: "setup-accounting",
+  1: "setup-accounting",
+  2: "setup-settings",
+  3: "setup-resources",
+  4: "setup-people",
+  5: "setup-items",
+  6: "setup-sales",
+  7: "setup-purchasing",
+  8: "setup-inventory",
   9: "setup-production"
 };
 
@@ -35,6 +36,31 @@ const CONFIGURE_GROUP_TASKS: BoardTask[] = SETUP_GROUPS.map((group) => ({
   academyUrl: group.academyUrl,
   hint: group.desc
 }));
+
+// Setup row key → its module tags, for scoping derived tasks the same way the
+// Setup Map scopes its rows.
+const SETUP_ROW_TAGS = new Map<string, Mod[] | undefined>(
+  SETUP_GROUPS.flatMap((group) =>
+    group.rows.map((row) => [row.key, row.moduleTags] as const)
+  )
+);
+
+// Drop excluded-module rows from setup-derived tasks — and the whole task when
+// nothing remains — mirroring the Setup Map, where an excluded module's group
+// disappears. Without this the Plan would show an unfinishable task whose rows
+// the customer can never see or configure.
+export function boardTasksForScope(
+  tasks: BoardTask[],
+  excludedModules: Mod[]
+): BoardTask[] {
+  return tasks.flatMap((task) => {
+    if (!task.setupKeys?.length) return task;
+    const setupKeys = task.setupKeys.filter(
+      (key) => !isModuleExcluded(SETUP_ROW_TAGS.get(key), excludedModules)
+    );
+    return setupKeys.length ? { ...task, setupKeys } : [];
+  });
+}
 
 // Starter Project Board tasks, grouped under the six spine steps. Keys match the
 // prototype's boardKeys. Each task's status lives in implementationCheckState

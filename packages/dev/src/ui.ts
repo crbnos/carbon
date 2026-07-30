@@ -36,7 +36,7 @@ export function portsTable(
   for (const n of PORT_NAMES) {
     t.push([
       pc.cyan(n.replace("PORT_", "").toLowerCase()),
-      pc.bold(String(ports[n]))
+      ports[n] === undefined ? pc.dim("—") : pc.bold(String(ports[n]))
     ]);
   }
   t.push([
@@ -161,19 +161,29 @@ export function summaryLines(
       url("mail", ports.PORT_INBUCKET),
       branchPrefix ? ports.PORT_INBUCKET : undefined
     ),
+    ...(apps.includes("email")
+      ? [
+          row(
+            pc.yellow,
+            "Email",
+            url("email", ports.PORT_EMAIL),
+            branchPrefix ? ports.PORT_EMAIL : undefined
+          )
+        ]
+      : []),
     row(
       pc.blue,
       "Inngest",
       url("inngest", ports.PORT_INNGEST),
       branchPrefix ? ports.PORT_INNGEST : undefined
     ),
-    ...(apps.includes("geometry")
+    ...(apps.includes("assembler")
       ? [
           row(
             pc.yellow,
-            "Geometry",
-            url("geometry", ports.PORT_GEOMETRY),
-            branchPrefix ? ports.PORT_GEOMETRY : undefined
+            "Assembler",
+            url("assembler", ports.PORT_ASSEMBLER),
+            branchPrefix ? ports.PORT_ASSEMBLER : undefined
           )
         ]
       : []),

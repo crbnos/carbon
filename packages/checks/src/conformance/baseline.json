@@ -1,4 +1,6 @@
 [
+  "module-shape::items::extra-models:changeOrder.models.ts",
+  "module-shape::items::extra-service:changeOrder.service.ts",
   "module-shape::settings::extra-service:backups.service.ts",
   "module-shape::shared::extra-models:imports.models.ts",
   "module-shape::shared::missing:ui",

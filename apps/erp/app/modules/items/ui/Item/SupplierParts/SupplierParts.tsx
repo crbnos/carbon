@@ -29,18 +29,25 @@ type SupplierPartsProps = {
   supplierParts: Part[];
   compact?: boolean;
   deleteSupplierPath?: (id: string) => string;
+  // Suppresses the add row + delete column regardless of permissions — for
+  // read-only contexts like a locked (Done/Cancelled) change notice.
+  isReadOnly?: boolean;
+  // Rendered beside the title when the embedding surface locked this card.
+  titleExtras?: React.ReactNode;
 };
 
 const SupplierParts = ({
   supplierParts,
   compact = false,
-  deleteSupplierPath
+  deleteSupplierPath,
+  isReadOnly = false,
+  titleExtras
 }: SupplierPartsProps) => {
   const navigate = useNavigate();
   const { t } = useLingui();
   const permissions = usePermissions();
-  const canEdit = permissions.can("update", "parts");
-  const canDelete = permissions.can("delete", "parts");
+  const canEdit = permissions.can("update", "parts") && !isReadOnly;
+  const canDelete = permissions.can("delete", "parts") && !isReadOnly;
   const formatter = useCurrencyFormatter();
   const customColumns = useCustomColumns<Part>("supplierPart");
   const [suppliers] = useSuppliers();
@@ -124,8 +131,9 @@ const SupplierParts = ({
     <>
       <Card className={cn(compact && "border-none p-0 dark:shadow-none")}>
         <CardHeader className={cn(compact && "px-0")}>
-          <CardTitle>
+          <CardTitle className="flex flex-row items-center gap-2">
             <Trans>Supplier Parts</Trans>
+            {titleExtras}
           </CardTitle>
         </CardHeader>
         <CardContent className={cn(compact && "px-0")}>

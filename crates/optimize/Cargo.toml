@@ -1,0 +1,24 @@
+[package]
+name = "optimize"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+# Mesh optimisation: parse a GLB, run meshopt per-mesh (weld, vertex-cache /
+# overdraw / fetch reorder, optional simplify ladder), and re-encode
+# (plain, or EXT_meshopt_compression). Codec-agnostic core so Draco slots in
+# behind the same `optimize_glb` entry point.
+
+[dependencies]
+gltf.workspace = true
+meshopt.workspace = true
+bytemuck.workspace = true
+serde_json.workspace = true
+base64 = "0.22"
+struson = "0.6"
+draco-bridge = { path = "../draco-bridge" }
+zip = { version = "8.6.0", default-features = false, features = ["deflate"] }
+quick-xml = "0.41.0"
+
+[dev-dependencies]
+memmap2 = "0.9"

@@ -9,7 +9,7 @@ import {
 } from "~/modules/inventory";
 import { path } from "~/utils/path";
 
-// Confirm (Draft -> Pending): locks the counted quantities for review. The
+// Confirm (Draft -> Pending): moves the count out of entry into review. The
 // acknowledgement of row-level warnings happens in the confirm dialog.
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);

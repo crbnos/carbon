@@ -3,7 +3,7 @@
   "dependencies": {
     "@logtape/logtape": "catalog:",
     "@logtape/redaction": "catalog:",
-    "nanoid": "catalog:"
+    "@paralleldrive/cuid2": "catalog:"
   },
   "peerDependencies": {
     "react-router": "catalog:"

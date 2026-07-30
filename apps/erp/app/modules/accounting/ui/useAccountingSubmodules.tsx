@@ -7,6 +7,7 @@ import {
   LuBookOpen,
   LuBuilding2,
   LuCalendar1,
+  LuCalendarCheck,
   LuClock,
   LuCoins,
   LuEuro,
@@ -28,6 +29,7 @@ const accountingOnlyRoutes = new Set<string>([
   path.to.trialBalance,
   path.to.intercompany,
   path.to.accountingJournals,
+  path.to.accountingPeriods,
   path.to.fixedAssets,
   path.to.depreciationRuns
 ]);
@@ -73,6 +75,12 @@ export default function useAccountingSubmodules() {
             to: path.to.accountingJournals,
             role: "employee",
             icon: <LuBookOpen />
+          },
+          {
+            name: t`Accounting Periods`,
+            to: path.to.accountingPeriods,
+            role: "employee",
+            icon: <LuCalendarCheck />
           }
         ]
       },

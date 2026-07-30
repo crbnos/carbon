@@ -22,12 +22,14 @@ import {
   upsertPayment
 } from "~/modules/invoicing";
 import { setCustomFields } from "~/utils/form";
-import type { Handle } from "~/utils/handle";
+import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
 export const handle: Handle = {
-  breadcrumb: "Payments",
-  to: path.to.payments
+  breadcrumb: detailBreadcrumb(
+    { breadcrumb: "Payments", to: path.to.payments },
+    (data) => data?.payment?.paymentId
+  )
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {

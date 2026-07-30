@@ -56,10 +56,15 @@ export default defineConfig(({ mode, isSsrBuild }) => {
     resolve: {
       tsconfigPaths: true,
       alias: {
-        "@carbon/utils": path.resolve(
-          __dirname,
-          "../../packages/utils/src/index.ts"
-        ),
+        /**
+         * Konva's Node entry (`index-node.js`) requires native `canvas`. Vite SSR
+         * can still load that graph; alias `canvas` to a stub (do not alias the
+         * konva entry itself — the drawing pane needs the real browser build).
+         */
+        canvas: path.resolve(__dirname, "app/ssr-shims/canvas-stub.cjs"),
+        // Directory (not index.ts) so subpath imports like
+        // `@carbon/utils/favicon` resolve to `src/favicon.ts`.
+        "@carbon/utils": path.resolve(__dirname, "../../packages/utils/src"),
         "@carbon/form": path.resolve(
           __dirname,
           "../../packages/form/src/index.tsx"

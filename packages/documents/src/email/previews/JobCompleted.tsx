@@ -9,7 +9,7 @@ export default function JobCompletedPreview() {
       preview={"Job completed"}
       message={"Job J00105 is complete!"}
       reference={"J00105"}
-      recipientName={"Naveen"}
+      recipientName={"John Doe"}
       ctaLabel={"View job"}
       ctaUrl={"https://app.carbon.ms/x/job/1"}
       details={[

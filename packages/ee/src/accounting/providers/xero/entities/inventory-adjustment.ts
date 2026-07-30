@@ -19,7 +19,9 @@ type InventoryAdjustmentRow = {
   companyId: string;
   createdAt: string;
   unitCost: number | null;
-  inventoryAccount: string | null;
+  replenishmentSystem: string | null;
+  rawMaterialsAccount: string | null;
+  finishedGoodsAccount: string | null;
   adjustmentVarianceAccount: string | null;
   itemReadableId: string | null;
 };
@@ -82,7 +84,9 @@ export class InventoryAdjustmentSyncer extends BaseEntitySyncer<
         "itemLedger.companyId",
         "itemLedger.createdAt",
         "itemCost.unitCost",
-        "accountDefault.inventoryAccount",
+        "item.replenishmentSystem",
+        "accountDefault.rawMaterialsAccount",
+        "accountDefault.finishedGoodsAccount",
         "accountDefault.inventoryAdjustmentVarianceAccount as adjustmentVarianceAccount",
         "item.readableId as itemReadableId"
       ])
@@ -92,6 +96,21 @@ export class InventoryAdjustmentSyncer extends BaseEntitySyncer<
         "Positive Adjmt.",
         "Negative Adjmt."
       ])
+      // Only genuine inventory adjustments push as Xero ManualJournals against the
+      // variance account. Exclude Non-Conformance / Inbound Inspection (these post
+      // their own local journals against the scrap account) and Batch Split
+      // (value-neutral). NULL documentType (manual adjustment) must stay included,
+      // so `NOT IN` alone won't do — it drops NULLs.
+      .where((eb) =>
+        eb.or([
+          eb("itemLedger.documentType", "is", null),
+          eb("itemLedger.documentType", "not in", [
+            "Non-Conformance",
+            "Inbound Inspection",
+            "Batch Split"
+          ])
+        ])
+      )
       .execute();
 
     return this.transformRows(rows as unknown as InventoryAdjustmentRow[]);
@@ -103,8 +122,16 @@ export class InventoryAdjustmentSyncer extends BaseEntitySyncer<
     const result = new Map<string, Accounting.InventoryAdjustment>();
 
     for (const row of rows) {
+      // Buy → Raw Materials; Make / Buy and Make → Finished Goods (mirrors
+      // resolveInventoryAccount in the posting edge functions)
+      const inventoryAccount =
+        row.replenishmentSystem === "Make" ||
+        row.replenishmentSystem === "Buy and Make"
+          ? row.finishedGoodsAccount
+          : row.rawMaterialsAccount;
+
       // Skip rows without required GL accounts
-      if (!row.inventoryAccount || !row.adjustmentVarianceAccount) {
+      if (!inventoryAccount || !row.adjustmentVarianceAccount) {
         continue;
       }
 
@@ -118,7 +145,7 @@ export class InventoryAdjustmentSyncer extends BaseEntitySyncer<
         quantity: Number(row.quantity) || 0,
         companyId: row.companyId,
         unitCost: Number(row.unitCost) || 0,
-        inventoryAccount: row.inventoryAccount,
+        inventoryAccount,
         adjustmentVarianceAccount: row.adjustmentVarianceAccount,
         updatedAt: row.createdAt ?? new Date().toISOString(),
         raw: row

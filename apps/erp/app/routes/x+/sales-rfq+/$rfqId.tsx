@@ -25,12 +25,14 @@ import {
   SalesRFQProperties
 } from "~/modules/sales/ui/SalesRFQ";
 import { useOptimisticDocumentDrag } from "~/modules/sales/ui/SalesRFQ/useOptimiticDocumentDrag";
-import type { Handle } from "~/utils/handle";
+import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
 export const handle: Handle = {
-  breadcrumb: msg`RFQs`,
-  to: path.to.salesRfqs
+  breadcrumb: detailBreadcrumb(
+    { breadcrumb: msg`RFQs`, to: path.to.salesRfqs },
+    (data) => data?.rfqSummary?.rfqId
+  )
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {

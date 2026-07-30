@@ -1,0 +1,17 @@
+[package]
+name = "converter"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+# STEP -> GLB + graph.json. Deterministic pieces (nodeId, graph, GLB) are pure;
+# STEP ingestion + tessellation come from the occt-bridge crate (Phase B).
+
+[dependencies]
+occt-bridge = { path = "../occt-bridge" }
+gltf.workspace = true
+nalgebra.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+sha1.workspace = true
+regex = "1"

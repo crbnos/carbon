@@ -209,7 +209,7 @@ export async function getSlackAuth(
     .eq("companyId", companyId)
     .eq("id", "slack")
     .maybeSingle();
-  if (companyIntegration.error) {
+  if (companyIntegration.error || !companyIntegration.data?.active) {
     return null;
   }
 

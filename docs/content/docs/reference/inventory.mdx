@@ -15,10 +15,10 @@ The **<Term id="item-ledger">item ledger</Term>** is the source of truth. On-han
 
 | Entry type | Effect |
 | --- | --- |
-| Purchase / Output | Goods received or produced into stock. |
-| Sale / Consumption | Goods shipped or issued to a job. |
-| Positive / Negative Adjustment | Manual corrections. |
-| Transfer | Movement between locations or storage units. |
+| `Purchase` · `Output` · `Assembly Output` | Goods received or produced into stock. |
+| `Sale` · `Consumption` · `Assembly Consumption` | Goods shipped or issued to a job. |
+| `Positive Adjmt.` · `Negative Adjmt.` | Manual corrections. |
+| `Transfer` | Movement between locations or storage units. |
 
 <Callout type="note">
 Read on-hand from the **ledger**, not the cached quantity table. The ledger is the truth, and it's status-aware (it can separate what's on hold or rejected from what's truly available).
@@ -30,11 +30,11 @@ On hand can go **negative**. Shipping, issuing to a job, and picking all post th
 
 ## Movements
 
-Two kinds of transfer move stock. A **warehouse transfer** moves it between locations, and is carried out as a <Term id="shipment">shipment</Term> out of one and a receipt into the other. A **stock transfer** moves it within a single location, between storage units. A manual **adjustment** writes straight to the ledger as a positive or negative entry — or a *Set Quantity* that books the difference to a target.
+Two kinds of transfer move stock. A **warehouse transfer** moves it between locations, and is carried out as a <Term id="shipment">shipment</Term> out of one and a receipt into the other. A **stock transfer** moves it within a single location, between storage units. A manual **adjustment** posts a positive or negative entry to the ledger, or a *Set Quantity* that books the difference to a target. When accounting is enabled, every adjustment also posts a <Term id="journal">journal</Term>: a loss debits the inventory adjustment account and credits inventory, a gain is the mirror image, valued at the item's current cost. Inventory count variances post the same way. Moving stock between storage units posts no journal, because the value never left the location.
 
 ## Value
 
-Inventory value is on-hand quantity times the item's unit cost, summed per item and location.
+Inventory value is on-hand quantity times the item's unit cost, summed per item and location. The Valuation report shows it by location or by item, and its **"Tie-Out"** panel compares that subledger value to the GL inventory account balances. If the two disagree (adjustments made before the books were turned on are the usual reason), **"Reconcile"** drafts an adjusting journal for an accountant to review and post.
 
 ## Related
 
@@ -46,3 +46,24 @@ Inventory value is on-hand quantity times the item's unit cost, summed per item 
     How goods enter inventory in the first place.
   </Card>
 </Cards>
+
+<AgentContext>
+## Troubleshooting
+
+### "Insufficient quantity for negative adjustment"
+The decrease (or *Set Quantity* reduction) exceeds what's on hand in that storage unit. Manual adjustments are the one movement guarded against overdraw. Check on-hand for the exact item/location/storage unit (and lot, if tracked) and adjust by no more than that.
+
+### "Serial number not found"
+The serial or batch number entered for a negative adjustment doesn't exist in the selected storage unit. Verify the number and the storage unit — the stock may sit in a different bin.
+
+### "Multiple tracked entities in this storage unit — select a specific row to adjust"
+A negative adjustment on a tracked item was ambiguous: several lots/serials sit in that storage unit. Select the specific tracked-entity row (or enter its number) so Carbon knows which one to reduce.
+
+### "Cannot edit expiry of a consumed tracked entity"
+Expiration dates can't be changed on stock that's already **Consumed**. Only live entities (Available, On Hold) accept an expiry override.
+
+### Storage unit hierarchy errors
+- "Parent storage unit … is in location …, but this unit is in location …; they must match" — parent and child bins must share a location; pick a parent in the same location.
+- "Cannot change locationId of storage unit … because it has child units" — move or delete the children first, then move the parent.
+- "Cycle detected in storage unit hierarchy at …" — the chosen parent is a descendant of this unit; pick one that doesn't loop back.
+</AgentContext>

@@ -22,12 +22,14 @@ import {
   MaintenanceDispatchNotes
 } from "~/modules/resources/ui/Maintenance/MaintenanceDispatchNotes";
 import MaintenanceDispatchProperties from "~/modules/resources/ui/Maintenance/MaintenanceDispatchProperties";
-import type { Handle } from "~/utils/handle";
+import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
 export const handle: Handle = {
-  breadcrumb: msg`Maintenance`,
-  to: path.to.maintenanceDispatches,
+  breadcrumb: detailBreadcrumb(
+    { breadcrumb: msg`Maintenance`, to: path.to.maintenanceDispatches },
+    (data) => data?.dispatch?.maintenanceDispatchId
+  ),
   module: "resources"
 };
 

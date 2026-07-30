@@ -22,12 +22,14 @@ import {
   getOpportunityDocuments
 } from "~/modules/sales/sales.service";
 import { getCompanySettings } from "~/modules/settings";
-import type { Handle } from "~/utils/handle";
+import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
 export const handle: Handle = {
-  breadcrumb: msg`Sales Invoices`,
-  to: path.to.invoicingSales
+  breadcrumb: detailBreadcrumb(
+    { breadcrumb: msg`Sales Invoices`, to: path.to.invoicingSales },
+    (data) => data?.salesInvoice?.invoiceId
+  )
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {

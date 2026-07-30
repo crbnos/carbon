@@ -25,8 +25,13 @@ const Hyperlink = ({
         <Button
           rightIcon={<LuPanelRight />}
           variant="secondary"
-          className="flex-shrink-0 opacity-0 transition-opacity duration-200 group-hover/hyperlink:opacity-100 no-underline"
+          // pointer-events-none so clicks fall through to the anchor: a plain
+          // click navigates in-tab, a Cmd/Ctrl (or middle) click opens a new tab.
+          // A real <button> here would otherwise swallow the anchor's native
+          // modifier-click behavior and always open in the same tab.
+          className="flex-shrink-0 opacity-0 transition-opacity duration-200 group-hover/hyperlink:opacity-100 no-underline pointer-events-none"
           size="sm"
+          tabIndex={-1}
         >
           Open
         </Button>

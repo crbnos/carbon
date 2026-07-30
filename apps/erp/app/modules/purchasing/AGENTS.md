@@ -8,7 +8,7 @@ Purchase orders, supplier management, supplier quotes/interactions, RFQs, and pr
 - **Supplier Interaction** — umbrella entity linking a supplier quote to RFQs, POs, and documents. A supplier quote always lives under an interaction.
 - **Supplier Quote** — vendor-side pricing with line-level price breaks (`supplierQuoteLinePrice`). Can be finalized (`finalizeSupplierQuote`) and converted to POs via the `convert` edge function.
 - **RFQ (Request for Quotation)** — solicits pricing from multiple suppliers. Links to supplier quotes via `purchasingRfqToSupplierQuote`. Statuses managed by `updatePurchasingRFQStatus`.
-- **Conversion Factor** — when a supplier's UoM differs from stocking UoM, `conversionFactor` on `purchaseOrderLine` scales quantities at receipt: `inventoryQty = purchaseQty × conversionFactor`. See `.ai/rules/purchasing-conversion-factors.md`.
+- **Conversion Factor** — when a supplier's UoM differs from stocking UoM, `conversionFactor` on `purchaseOrderLine` scales quantities at receipt: `inventoryQty = purchaseQty × conversionFactor`. See `.claude/rules/purchasing-conversion-factors.md`.
 - **Purchasing Planning** — MRP-driven planned orders surfaced via `getPurchasingPlanning` (calls `get_purchasing_planning` RPC).
 
 ## Safety
@@ -39,7 +39,7 @@ pnpm --filter @carbon/erp test
 
 | Table / View | Purpose |
 |---|---|
-| `purchaseOrder` / `purchaseOrders` (view) | PO header: supplier, status, dates, location |
+| `purchaseOrder` / `purchaseOrders` (view) | PO header: supplier, status, dates, location; view adds `receivableQuantity`/`receivedQuantity` aggregates (drives the list's Received progress bar and the derived "Partially Received" header chip — display-only, not a status enum value) |
 | `purchaseOrderLine` | Line items: item, quantity, price, conversionFactor, jobId |
 | `purchaseOrderDelivery` / `purchaseOrderPayment` | PO delivery and payment terms |
 | `supplier` / `suppliers` (view) | Vendor master: name, type, status, tax info |
@@ -54,6 +54,7 @@ pnpm --filter @carbon/erp test
 
 - `getPurchaseOrder` / `getPurchaseOrders` / `getPurchaseOrderLines` — read POs
 - `closePurchaseOrder` — marks a PO closed
+- `shortClosePurchaseOrderLine` — Kysely transaction; sets a line's `receivedComplete` ("Stop/Resume Receiving") and recomputes the header status. Open-PO supply queries (`get_inventory_quantities`, `openPurchaseOrderLines`, `get_job_quantity_on_hand`) exclude `receivedComplete` lines, so short-closed remainders stop counting as incoming stock
 - `convertSupplierQuoteToOrder` — calls `convert` edge function
 - `duplicatePurchaseOrder` — copies a PO with new sequence
 - `finalizePurchaseOrder` / `finalizeSupplierQuote` — lock documents for processing
@@ -81,6 +82,6 @@ import { purchaseOrderValidator, supplierValidator } from "~/modules/purchasing"
 
 ## Rules References
 
-- `.ai/rules/purchasing-conversion-factors.md` — UoM conversion on PO lines (factor math, gotchas)
-- `.ai/rules/method-material-sourcing.md` — how method materials determine sourcing type (Buy/Make/Pull)
-- `.ai/rules/conventions-services.md` — service function shape and naming
+- `.claude/rules/purchasing-conversion-factors.md` — UoM conversion on PO lines (factor math, gotchas)
+- `.claude/rules/method-material-sourcing.md` — how method materials determine sourcing type (Buy/Make/Pull)
+- `.claude/rules/conventions-services.md` — service function shape and naming

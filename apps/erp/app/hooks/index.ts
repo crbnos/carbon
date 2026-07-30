@@ -11,6 +11,7 @@ import { useDateFormatter } from "./useDateFormatter";
 import { useFlags } from "./useFlags";
 import { useGooglePlaces } from "./useGooglePlaces";
 import { useHighlightFlash } from "./useHighlightFlash";
+import { useModelUpload } from "./useModelUpload";
 import { useAllModules, useModules, useSettingsModule } from "./useModules";
 import { useMovingCellRef } from "./useMovingCellRef";
 import { useNextItemId } from "./useNextItemId";
@@ -19,6 +20,7 @@ import { useOnboarding } from "./useOnboarding";
 import { usePercentFormatter } from "./usePercentFormatter";
 import { usePermissions } from "./usePermissions";
 import { usePlanGate } from "./usePlanGate";
+import { useQuantityFormatter } from "./useQuantityFormatter";
 import { useRealtime } from "./useRealtime";
 import { useScrollPosition } from "./useScrollPosition";
 import { useScrollToHash } from "./useScrollToHash";
@@ -37,6 +39,7 @@ export {
   useAllModules,
   useModules,
   useSettingsModule,
+  useModelUpload,
   useMovingCellRef,
   useNanoStore,
   useNextItemId,
@@ -47,6 +50,7 @@ export {
   usePermissions,
   usePlanGate,
   usePrinting,
+  useQuantityFormatter,
   useRealtime,
   useRouteData,
   useScrollPosition,

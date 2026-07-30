@@ -71,6 +71,18 @@ export type CameraPose = {
   fov: number;
 };
 
+/**
+ * Planner-baked camera hint: a mesh-precise view DIRECTION (target→eye, unit)
+ * chosen with sight lines against the real triangles of everything installed
+ * earlier. The viewer supplies the rest live — target, standing distance, and
+ * frustum fit at the actual viewport aspect. Distinct from a manual
+ * {@link CameraPose}, which is applied verbatim.
+ */
+export type PlanViewHint = {
+  source: "plan";
+  direction: Vec3;
+};
+
 /** Fastener callout for a step. All fields optional. */
 export type Fastener = {
   spec?: string;
@@ -86,7 +98,7 @@ export type AssemblyStep = {
   /** Components installed in this step (stable nodeIds from glTF extras/graph.json) */
   componentNodeIds: string[];
   motion: Motion;
-  camera: CameraPose | null;
+  camera: CameraPose | PlanViewHint | null;
   fastener: Fastener | null;
   /** Optional authored override for the step's timeline length (seconds) */
   durationSeconds?: number | null;
@@ -96,6 +108,13 @@ export type AssemblyStep = {
    * motion — a fabricated path would animate straight through geometry.
    */
   flagged?: boolean;
+  /**
+   * Subassembly phase this step belongs to (baked at step generation from the
+   * plan's contact graph). `null`/absent = the main phase, built seated. A
+   * non-null phase builds staged off to the side and flies into the main body
+   * at its `join` step. See `@carbon/viewer` staging.
+   */
+  phase?: { id: string; name: string; join: boolean } | null;
 };
 
 /** One node of the assembly tree in graph.json. */

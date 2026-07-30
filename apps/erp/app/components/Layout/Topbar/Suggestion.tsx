@@ -1,4 +1,4 @@
-import { useCarbon } from "@carbon/auth";
+import { CARBON_SLACK_ENABLED, useCarbon } from "@carbon/auth";
 import {
   Hidden,
   Submit,
@@ -25,7 +25,7 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { nanoid } from "nanoid";
 import type { ChangeEvent } from "react";
 import React, { Suspense, useEffect, useRef, useState } from "react";
-import { LuImage } from "react-icons/lu";
+import { LuImage, LuMegaphone } from "react-icons/lu";
 import { useFetcher, useLocation } from "react-router";
 import { useUser } from "~/hooks";
 import { suggestionValidator } from "~/modules/shared";
@@ -54,6 +54,7 @@ const Suggestion = () => {
   const [emoji, setEmoji] = useState(defaultEmoji);
   const [emojiPickerOpen, setEmojiPickerOpen] = useState(false);
   const [anonymous, setAnonymous] = useState(true);
+  const [sendToCarbon, setSendToCarbon] = useState(CARBON_SLACK_ENABLED);
   const mode = useMode();
   const pickerTheme = mode;
   const [attachment, setAttachment] = useState<{
@@ -71,6 +72,7 @@ const Suggestion = () => {
       setEmoji(defaultEmoji);
       setAttachment(null);
       setAnonymous(true);
+      setSendToCarbon(CARBON_SLACK_ENABLED);
       popoverTriggerRef.current?.click();
     } else if (fetcher.data?.message) {
       toast.error(fetcher.data.message);
@@ -119,7 +121,11 @@ const Suggestion = () => {
   return (
     <Popover>
       <PopoverTrigger ref={popoverTriggerRef} asChild>
-        <Button variant="secondary" className="hover:scale-100">
+        <Button
+          variant="secondary"
+          className="hover:scale-100"
+          leftIcon={<LuMegaphone />}
+        >
           <Trans>Suggestion</Trans>
         </Button>
       </PopoverTrigger>
@@ -134,6 +140,7 @@ const Suggestion = () => {
           <Hidden name="emoji" value={emoji} />
           <Hidden name="attachmentPath" value={attachment?.path ?? ""} />
           <Hidden name="userId" value={anonymous ? "" : user.id} />
+          <Hidden name="sendToCarbon" value={sendToCarbon ? "true" : ""} />
           <VStack spacing={2}>
             <VStack spacing={2} className="w-full">
               <TextAreaControlled
@@ -156,15 +163,32 @@ const Suggestion = () => {
               )}
             </VStack>
             <HStack className="w-full justify-between">
-              <HStack spacing={2}>
-                <Checkbox
-                  isChecked={anonymous}
-                  onCheckedChange={(checked) => setAnonymous(checked === true)}
-                />
-                <span className="text-sm">
-                  <Trans>Submit anonymously</Trans>
-                </span>
-              </HStack>
+              <VStack spacing={2}>
+                <HStack spacing={2}>
+                  <Checkbox
+                    isChecked={anonymous}
+                    onCheckedChange={(checked) =>
+                      setAnonymous(checked === true)
+                    }
+                  />
+                  <span className="text-sm">
+                    <Trans>Submit anonymously</Trans>
+                  </span>
+                </HStack>
+                {CARBON_SLACK_ENABLED && (
+                  <HStack spacing={2}>
+                    <Checkbox
+                      isChecked={sendToCarbon}
+                      onCheckedChange={(checked) =>
+                        setSendToCarbon(checked === true)
+                      }
+                    />
+                    <span className="text-sm">
+                      <Trans>Send to Carbon</Trans>
+                    </span>
+                  </HStack>
+                )}
+              </VStack>
               <Popover open={emojiPickerOpen} onOpenChange={setEmojiPickerOpen}>
                 <PopoverTrigger asChild>
                   <button

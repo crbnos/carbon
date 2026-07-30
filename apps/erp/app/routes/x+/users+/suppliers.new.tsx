@@ -13,7 +13,10 @@ import { sendEmail } from "@carbon/lib/resend.server";
 import { getLogger } from "@carbon/logger";
 import { render } from "@react-email/components";
 import { nanoid } from "nanoid";
-import type { ActionFunctionArgs } from "react-router";
+import type {
+  ActionFunctionArgs,
+  ClientActionFunctionArgs
+} from "react-router";
 import { redirect } from "react-router";
 import {
   CreateSupplierModal,
@@ -21,6 +24,7 @@ import {
 } from "~/modules/users";
 import { createSupplierAccount } from "~/modules/users/users.server";
 import { path } from "~/utils/path";
+import { getCompanyId, invalidateUserSelectQueries } from "~/utils/react-query";
 
 const logger = getLogger("erp", "suppliers-new");
 
@@ -105,6 +109,11 @@ export async function action({ request }: ActionFunctionArgs) {
     path.to.supplierAccounts,
     await flash(request, success("Supplier invited"))
   );
+}
+
+export async function clientAction({ serverAction }: ClientActionFunctionArgs) {
+  invalidateUserSelectQueries(getCompanyId());
+  return await serverAction();
 }
 
 export default function () {

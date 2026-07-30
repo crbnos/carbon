@@ -2,11 +2,16 @@ import { error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { useLingui } from "@lingui/react/macro";
-import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
+import type {
+  ActionFunctionArgs,
+  ClientActionFunctionArgs,
+  LoaderFunctionArgs
+} from "react-router";
 import { redirect, useLoaderData, useNavigate, useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
 import { deleteAccount, getAccount } from "~/modules/accounting";
 import { path } from "~/utils/path";
+import { accountsQuery, getCompanyId } from "~/utils/react-query";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client } = await requirePermissions(request, {
@@ -60,6 +65,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
     path.to.chartOfAccounts,
     await flash(request, success("Successfully deleted account"))
   );
+}
+
+export async function clientAction({ serverAction }: ClientActionFunctionArgs) {
+  window.clientCache?.setQueryData(
+    accountsQuery(getCompanyId()).queryKey,
+    null
+  );
+  return await serverAction();
 }
 
 export default function DeleteAccountRoute() {

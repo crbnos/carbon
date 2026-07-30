@@ -24,7 +24,7 @@ import {
   LuTriangleAlert
 } from "react-icons/lu";
 import { PAGE_COPY } from "../content";
-import { BOARD_TASKS } from "../content/board";
+import { BOARD_TASKS, boardTasksForScope } from "../content/board";
 import { SPINE } from "../content/spine";
 import {
   boardTasksForTier,
@@ -47,6 +47,7 @@ import { ProgressPill } from "./ProgressPill";
 import { DerivedStatus, LearnLink, PageHeader } from "./primitives";
 import {
   useCheckMap,
+  useExclusions,
   useFieldMap,
   useHubActions,
   useResolveVideoUrl,
@@ -70,9 +71,13 @@ export function PlanView({
   const fields = useFieldMap();
   const tier = useTier();
   const signals = useSignals();
+  const exclusions = useExclusions();
   const { setCheck, setGate } = useHubActions();
   const steps = spineForTier(SPINE, tier);
-  const tasks = boardTasksForTier(BOARD_TASKS, tier);
+  const tasks = boardTasksForScope(
+    boardTasksForTier(BOARD_TASKS, tier),
+    exclusions.modules
+  );
   const tasksDone = tasks.filter((t) => taskStatus(t, map) === "done").length;
 
   // Target go-live = the resolved Go-Live checkpoint date (from the schedule set

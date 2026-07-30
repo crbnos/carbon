@@ -1,0 +1,42 @@
+[package]
+name = "assembler"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[[bin]]
+name = "assembler"
+path = "src/main.rs"
+
+[dependencies]
+converter = { path = "../../crates/converter" }
+planner = { path = "../../crates/planner" }
+optimize = { path = "../../crates/optimize" }
+serde.workspace = true
+serde_json.workspace = true
+axum = "0.7"
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "sync", "fs", "signal", "time"] }
+reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "stream"] }
+dashmap = "6"
+bytes = "1"
+lru = "0.12"
+xxhash-rust = { version = "0.8", features = ["xxh3"] }
+futures-util = "0.3"
+tokio-util = { version = "0.7", features = ["rt", "io"] }
+async-compression = { version = "0.4", features = ["tokio", "zstd"] }
+zstd = "0.13"
+redis = { version = "0.27", default-features = false, features = ["tokio-comp", "connection-manager", "tokio-rustls-comp"] }
+# Lambda self-invoke dispatch (ASSEMBLER_DISPATCH=lambda): one SigV4-signed POST
+# to the Lambda Invoke API (Event type). Hand-signed — the aws-sdk tree needs
+# rustc 1.94 (ours is 1.90) and is ~40 crates for a single call; creds come
+# straight from the Lambda runtime env.
+hmac = "0.12"
+sha2 = "0.10"
+hex = "0.4"
+tower-http = { version = "0.6", features = ["compression-zstd", "compression-gzip"] }
+memmap2 = "0.9"
+file-format = "0.26"
+tempfile = "3"
+
+[target.'cfg(target_os = "linux")'.dependencies]
+tikv-jemallocator = "0.6"

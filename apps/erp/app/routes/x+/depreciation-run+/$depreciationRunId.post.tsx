@@ -97,7 +97,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const accountingPeriod = await getOrCreateAccountingPeriod(
     client,
     companyId,
-    postingDate
+    postingDate,
+    "accounting"
   );
   if (accountingPeriod.error) {
     throw redirect(

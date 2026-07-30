@@ -21,6 +21,7 @@ import type {
   operationStepValidator,
   operationToolValidator
 } from "../shared";
+import { normalizeOperationSourceIds } from "../shared";
 import {
   lookupBuyPriceFromMap,
   upsertExternalLink
@@ -55,7 +56,8 @@ import type {
   salesRfqValidator,
   selectedLinesValidator
 } from "./sales.models";
-import { costCategoryKeys } from "./sales.models";
+import { costCategoryKeys, OPEN_SALES_ORDER_STATUSES } from "./sales.models";
+import { decideRecalcPricing, getEffectiveDefaultMarkups } from "./sales.utils";
 import type {
   MatchedRule,
   OverrideEntry,
@@ -1734,6 +1736,28 @@ export async function getSalesOrderLinesByItemId(
     .select("*")
     .eq("itemId", itemId)
     .order("orderDate", { ascending: false })
+    .order("createdAt", { ascending: false });
+}
+
+/**
+ * Sales order lines eligible for a job to link to: lines whose item matches the
+ * job's item, on sales orders that are still open (not Completed/Invoiced/
+ * Cancelled/Closed). Joins the base salesOrder header so we can filter on its
+ * status (the salesOrderLines view only exposes the line-level status).
+ */
+export async function getOpenSalesOrderLinesForItem(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  itemId: string
+) {
+  return client
+    .from("salesOrderLine")
+    .select(
+      "id, saleQuantity, salesOrderLineType, salesOrder!inner(id, salesOrderId, customerId, status)"
+    )
+    .eq("companyId", companyId)
+    .eq("itemId", itemId)
+    .in("salesOrder.status", [...OPEN_SALES_ORDER_STATUSES])
     .order("createdAt", { ascending: false });
 }
 
@@ -3839,6 +3863,7 @@ export async function upsertQuoteLinePrices(
     quantity: number;
     createdBy: string;
     categoryMarkups?: Record<string, number>;
+    priceSource?: "system" | "manual";
   }[]
 ) {
   const existingPrices = await client
@@ -3876,6 +3901,7 @@ export async function upsertQuoteLinePrices(
         discountPercent: number;
         leadTime: number;
         categoryMarkups: unknown;
+        priceSource: string;
       }
     >
   >((acc, price) => {
@@ -3897,6 +3923,9 @@ export async function upsertQuoteLinePrices(
       discountPercent: existing?.discountPercent ?? p.discountPercent,
       leadTime: existing?.leadTime ?? p.leadTime,
       categoryMarkups: p.categoryMarkups ?? existing?.categoryMarkups ?? {},
+      // Explicit caller intent wins; otherwise keep the row's provenance so a
+      // delete+reinsert can never turn a manual price back into a system one.
+      priceSource: p.priceSource ?? existing?.priceSource ?? "system",
       quoteId: quoteId,
       exchangeRate: quoteExchangeRate.data?.exchangeRate ?? 1
     };
@@ -4102,7 +4131,17 @@ async function buildCostEffects(
     );
 
     for (const op of nodeOps) {
-      if (op.operationType === "Inside") {
+      // Outside Processing is subcontracted — its cost is the supplier's per-unit
+      // price (with a minimum). Every other operationType (Process, Assembly,
+      // Inspection, and any future in-house type) is costed in-house from
+      // labor/machine/setup times. Match the subcontract case explicitly so a new
+      // operationType can't silently inherit the outside-cost branch.
+      if (op.operationType === "Outside Processing") {
+        effects.outsideCost.push((outerQty) => {
+          const cost = op.operationUnitCost * qty * outerQty;
+          return Math.max(op.operationMinimumCost, cost);
+        });
+      } else {
         if (op.setupTime) {
           const { fixedHours, hoursPerUnit } = normalizeTime(
             op.setupTime,
@@ -4158,11 +4197,6 @@ async function buildCostEffects(
             return hpu * outerQty * qty * (op.overheadRate ?? 0);
           }
           return fh * (op.overheadRate ?? 0);
-        });
-      } else if (op.operationType === "Outside") {
-        effects.outsideCost.push((outerQty) => {
-          const cost = op.operationUnitCost * qty * outerQty;
-          return Math.max(op.operationMinimumCost, cost);
         });
       }
     }
@@ -4228,6 +4262,7 @@ export async function calculatePricesForQuantities(
   for (const [key, value] of Object.entries(rawMarkups)) {
     defaultMarkups[key] = value * 100;
   }
+  const effectiveDefaults = getEffectiveDefaultMarkups(defaultMarkups);
 
   // 2. Build cost effects
   const result = await buildCostEffects(client, quoteLineId);
@@ -4247,7 +4282,7 @@ export async function calculatePricesForQuantities(
 
     const rollupPrice = costCategoryKeys.reduce((sum, key) => {
       const cost = categoryCosts[key] ?? 0;
-      const markup = defaultMarkups[key] ?? 0;
+      const markup = effectiveDefaults[key] ?? 0;
       return sum + cost * (1 + markup / 100);
     }, 0);
 
@@ -4268,7 +4303,8 @@ export async function calculatePricesForQuantities(
       companyId,
       quantity: qty,
       unitPrice: Number(finalPrice.toFixed(precision)),
-      categoryMarkups: defaultMarkups,
+      categoryMarkups: effectiveDefaults,
+      priceSource: "system",
       exchangeRate,
       createdBy: userId,
       leadTime: 0,
@@ -4479,12 +4515,32 @@ export async function recalculateQuoteLinePrices(
 
   const { effects } = result;
 
-  const updatedRows = [];
+  const effectiveDefaults = getEffectiveDefaultMarkups(defaultMarkups);
+
+  const repricedRows: {
+    quantity: number;
+    unitPrice: number;
+    categoryMarkups: Record<string, number>;
+  }[] = [];
   for (const row of existingPrices.data) {
     const qty = row.quantity;
-    const rowMarkups = (row.categoryMarkups as Record<string, number>) ?? {};
-    const markups =
-      Object.keys(rowMarkups).length > 0 ? rowMarkups : defaultMarkups;
+
+    const decision = decideRecalcPricing(
+      {
+        priceSource: row.priceSource,
+        categoryMarkups: row.categoryMarkups as Record<string, number> | null
+      },
+      effectiveDefaults
+    );
+
+    // Manual price: a person or an external system stated this price.
+    // Leave the row untouched — never re-derive it from costs or defaults
+    // (the core fix).
+    if (decision.mode === "preserve") {
+      continue;
+    }
+
+    const markups = decision.markups;
 
     const categoryCosts: Record<string, number> = {};
     for (const key of costCategoryKeys) {
@@ -4510,42 +4566,35 @@ export async function recalculateQuoteLinePrices(
           ).finalPrice
         : rollupPrice;
 
-    updatedRows.push({
-      quoteId: row.quoteId,
-      quoteLineId: row.quoteLineId,
-      companyId: row.companyId,
-      quantity: row.quantity,
+    repricedRows.push({
+      quantity: qty,
       unitPrice: Number(finalPrice.toFixed(precision)),
-      categoryMarkups: markups,
-      exchangeRate: row.exchangeRate,
-      createdBy: row.createdBy,
-      updatedBy: userId,
-      leadTime: row.leadTime,
-      discountPercent: row.discountPercent
+      categoryMarkups: markups
     });
   }
 
-  // 5. Delete existing and re-insert with updated prices
-  const deleteResult = await client
-    .from("quoteLinePrice")
-    .delete()
-    .eq("quoteLineId", quoteLineId);
+  // 5. Update only the repriced rows in place. Preserved (manual) rows are
+  // not written at all, so no column can be lost or clobbered.
+  for (const row of repricedRows) {
+    const updateResult = await client
+      .from("quoteLinePrice")
+      .update({
+        unitPrice: row.unitPrice,
+        categoryMarkups: row.categoryMarkups,
+        priceSource: "system",
+        updatedBy: userId
+      })
+      .eq("quoteLineId", quoteLineId)
+      .eq("quantity", row.quantity);
 
-  if (deleteResult.error) {
-    logger.error("Failed to delete quote line prices during recalc", {
-      quoteLineId,
-      error: deleteResult.error
-    });
-    return { error: deleteResult.error };
-  }
-
-  const insertResult = await client.from("quoteLinePrice").insert(updatedRows);
-  if (insertResult.error) {
-    logger.error("Failed to insert quote line prices during recalc", {
-      quoteLineId,
-      error: insertResult.error
-    });
-    return { error: insertResult.error };
+    if (updateResult.error) {
+      logger.error("Failed to update quote line price during recalc", {
+        quoteLineId,
+        quantity: row.quantity,
+        error: updateResult.error
+      });
+      return { error: updateResult.error };
+    }
   }
   return { error: null };
 }
@@ -4734,13 +4783,13 @@ export async function upsertQuoteOperation(
   if ("createdBy" in operation) {
     return client
       .from("quoteOperation")
-      .insert([operation])
+      .insert([normalizeOperationSourceIds(operation)])
       .select("id")
       .single();
   }
   return client
     .from("quoteOperation")
-    .update(sanitize(operation))
+    .update(sanitize(normalizeOperationSourceIds(operation)))
     .eq("id", operation.id)
     .select("id")
     .single();
@@ -4956,6 +5005,9 @@ export async function insertSalesOrder(
     requestedDate?: string;
     promisedDate?: string;
     notes?: string;
+    customerReference?: string;
+    customerEngineeringContactId?: string;
+    salesPersonId?: string;
     customFields?: Json;
   }
 ): Promise<{
@@ -5051,6 +5103,9 @@ export async function insertSalesOrder(
       customerId: input.customerId,
       customerContactId: input.customerContactId,
       customerLocationId: input.customerLocationId,
+      customerEngineeringContactId: input.customerEngineeringContactId ?? null,
+      customerReference: input.customerReference ?? null,
+      salesPersonId: input.salesPersonId ?? null,
       opportunityId,
       status: input.status ?? "Draft",
       orderDate: input.orderDate ?? new Date().toISOString().split("T")[0],
@@ -5511,6 +5566,12 @@ export async function upsertSalesOrderLine(
     .insert([
       {
         ...salesOrderLine,
+        // methodType is NOT NULL DEFAULT 'Pull from Inventory', but the validator
+        // legitimately omits it for Fixed Asset / Comment lines. Because the key is
+        // still present (as undefined) in the spread, PostgREST lists the column and
+        // inserts NULL rather than applying the DB default — a not-null violation.
+        // Supply the column default explicitly so those line types insert cleanly.
+        methodType: salesOrderLine.methodType ?? "Pull from Inventory",
         setupPrice: salesOrderLine.setupPrice ?? 0,
         unitPrice: salesOrderLine.unitPrice ?? 0,
         shippingCost: salesOrderLine.shippingCost ?? 0,

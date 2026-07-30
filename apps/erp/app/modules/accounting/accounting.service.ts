@@ -1,11 +1,16 @@
 import type { Database, Json } from "@carbon/database";
+import type { Kysely, KyselyDatabase } from "@carbon/database/client";
+import type { PeriodPostingSource } from "@carbon/utils";
 import {
+  fiscalYearAndPeriodFor,
   getDateNYearsAgo,
+  MONTH_NUMBER,
   toDisplayCredit,
   toDisplayDebit,
   toStoredAmount
 } from "@carbon/utils";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
+import { sql } from "kysely";
 import type { z } from "zod";
 import { getNextSequence } from "~/modules/settings";
 import type { GenericQueryFilters } from "~/utils/query";
@@ -26,6 +31,11 @@ import type {
   macrsConventions,
   macrsPropertyClasses,
   paymentTermValidator,
+  periodCloseStatuses,
+  periodCloseTaskDefinitionValidator,
+  periodCloseTaskSeverities,
+  periodCloseTaskStatuses,
+  periodCloseTaskTypes,
   taxDepreciationMethods
 } from "./accounting.models";
 import type {
@@ -148,14 +158,15 @@ export async function getAccountLedger(
     offset: number;
   }
 ) {
-  // The journalLines view intentionally has no journal-status filter so that
-  // the lines shown always sum to the balances from accountTreeBalancesByCompany
-  // (which also includes Draft journals).
+  // Draft journals are excluded so the lines shown always sum to the balances
+  // from accountTreeBalancesByCompany, which excludes them too — unposted
+  // entries belong in the Journal Entries list, not the account ledger.
   // TODO: remove the cast once cloud-generated DB types include the view.
   let query = client
     .from("journalLines" as any)
     .select("*", { count: "exact" })
     .eq("accountId", args.accountId)
+    .neq("status", "Draft")
     .gte(
       "postingDate",
       args.startDate ?? getDateNYearsAgo(50).toISOString().split("T")[0]
@@ -589,19 +600,43 @@ export async function getCurrentAccountingPeriod(
     .single();
 }
 
+// PeriodPostingSource lives in @carbon/utils alongside the fiscal-year helpers.
+// New close-lifecycle columns on accountingPeriod are cloud-generated and not
+// yet in the committed DB types, so read them through this cast shape.
+type AccountingPeriodCloseColumns = {
+  closeStatus?: (typeof periodCloseStatuses)[number];
+  fiscalYear?: number | null;
+  periodNumber?: number | null;
+};
+
 export async function getOrCreateAccountingPeriod(
   client: SupabaseClient<Database>,
   companyId: string,
-  date: string
+  date: string,
+  source: PeriodPostingSource = "operational"
 ): Promise<{ data: string | null; error: { message: string } | null }> {
   const existing = await getCurrentAccountingPeriod(client, companyId, date);
 
   if (existing.data) {
-    if (existing.data.closedAt) {
+    const closeStatus =
+      (existing.data as unknown as AccountingPeriodCloseColumns).closeStatus ??
+      (existing.data.closedAt ? "Closed" : "Open");
+
+    if (closeStatus === "Closed") {
       return {
         data: null,
         error: {
           message: "Accounting period is closed. Reopen it before posting."
+        }
+      };
+    }
+
+    if (closeStatus === "Locked" && source === "operational") {
+      return {
+        data: null,
+        error: {
+          message:
+            "Accounting period is locked. Post as an accounting adjustment or unlock the period first."
         }
       };
     }
@@ -628,19 +663,27 @@ export async function getOrCreateAccountingPeriod(
   const startDate = new Date(year, month, 1).toISOString().split("T")[0];
   const endDate = new Date(year, month + 1, 0).toISOString().split("T")[0];
 
+  const settings = await getFiscalYearSettings(client, companyId);
+  const startMonth = settings.data?.startMonth
+    ? (MONTH_NUMBER[settings.data.startMonth] ?? 1)
+    : 1;
+  const { fiscalYear, periodNumber } = fiscalYearAndPeriodFor(d, startMonth);
+
   await client
     .from("accountingPeriod")
     .update({ status: "Inactive" as const })
     .eq("companyId", companyId)
     .eq("status", "Active");
 
-  const result = await client
-    .from("accountingPeriod")
+  const result = await (client.from("accountingPeriod") as any)
     .insert({
       startDate,
       endDate,
       companyId,
       status: "Active" as const,
+      closeStatus: "Open",
+      fiscalYear,
+      periodNumber,
       createdBy: "system"
     })
     .select("id")
@@ -654,6 +697,1279 @@ export async function getOrCreateAccountingPeriod(
   }
 
   return { data: result.data.id, error: null };
+}
+
+type AccountingPeriodRow = {
+  id: string;
+  startDate: string;
+  endDate: string;
+  status: "Active" | "Inactive";
+  closeStatus: (typeof periodCloseStatuses)[number];
+  fiscalYear: number | null;
+  periodNumber: number | null;
+  lockedAt: string | null;
+  lockedBy: string | null;
+  closedAt: string | null;
+  closedBy: string | null;
+};
+
+export async function getAccountingPeriods(
+  client: SupabaseClient<Database>,
+  companyId: string
+) {
+  return (client.from("accountingPeriod") as any)
+    .select(
+      "id, startDate, endDate, status, closeStatus, fiscalYear, periodNumber, lockedAt, lockedBy, closedAt, closedBy",
+      { count: "exact" }
+    )
+    .eq("companyId", companyId)
+    .order("startDate", { ascending: false }) as Promise<{
+    data: AccountingPeriodRow[] | null;
+    count: number | null;
+    error: { message: string } | null;
+  }>;
+}
+
+async function getAccountingPeriodById(
+  client: SupabaseClient<Database>,
+  periodId: string,
+  companyId: string
+) {
+  const result = await (client.from("accountingPeriod") as any)
+    .select("id, startDate, endDate, closeStatus, fiscalYear, periodNumber")
+    .eq("id", periodId)
+    .eq("companyId", companyId)
+    .single();
+  return result as {
+    data: Pick<
+      AccountingPeriodRow,
+      | "id"
+      | "startDate"
+      | "endDate"
+      | "closeStatus"
+      | "fiscalYear"
+      | "periodNumber"
+    > | null;
+    error: { message: string } | null;
+  };
+}
+
+// Deletability check (industry rule: delete only empty, open periods). A journal
+// referencing the period (journal.accountingPeriodId, FK ON DELETE RESTRICT)
+// means it has postings; Locked/Closed periods are structurally frozen.
+// periodCloseTask rows cascade on delete, so they never block.
+export async function getAccountingPeriodDeletability(
+  client: SupabaseClient<Database>,
+  periodId: string,
+  companyId: string
+) {
+  const period = await getAccountingPeriodById(client, periodId, companyId);
+  if (period.error || !period.data) {
+    return {
+      data: null,
+      error: period.error ?? { message: "Period not found" }
+    };
+  }
+
+  const journals = await (client.from("journal") as any)
+    .select("id", { count: "exact", head: true })
+    .eq("companyId", companyId)
+    .eq("accountingPeriodId", periodId);
+  if (journals.error) return { data: null, error: journals.error };
+
+  const journalCount = (journals.count as number | null) ?? 0;
+  const closeStatus = period.data.closeStatus;
+  const reason =
+    closeStatus !== "Open"
+      ? `Only open periods can be deleted — this period is ${closeStatus}.`
+      : journalCount > 0
+        ? `This period has ${journalCount} journal ${
+            journalCount === 1 ? "entry" : "entries"
+          } posted to it and cannot be deleted.`
+        : null;
+
+  return {
+    data: {
+      canDelete: reason === null,
+      reason,
+      closeStatus,
+      journalCount,
+      startDate: period.data.startDate
+    },
+    error: null
+  };
+}
+
+export async function deleteAccountingPeriod(
+  client: SupabaseClient<Database>,
+  args: { periodId: string; companyId: string }
+) {
+  // Re-check server-side — never trust the client's disabled button.
+  const check = await getAccountingPeriodDeletability(
+    client,
+    args.periodId,
+    args.companyId
+  );
+  if (check.error || !check.data) {
+    return {
+      data: null,
+      error: check.error ?? { message: "Period not found" }
+    };
+  }
+  if (!check.data.canDelete) {
+    return {
+      data: null,
+      error: { message: check.data.reason ?? "Period cannot be deleted" }
+    };
+  }
+
+  return (client.from("accountingPeriod") as any)
+    .delete()
+    .eq("companyId", args.companyId)
+    .eq("id", args.periodId);
+}
+
+// The fiscal-year START month is fixed once the calendar is "committed" — any
+// Locked/Closed period, or any posting. Re-labeling committed periods would
+// retroactively rewrite already-reported fiscal years (and needs a short-year
+// bridge, not an edit), so the setting locks. Open, empty periods stay freely
+// changeable via delete + regenerate.
+export async function getFiscalCalendarCommitted(
+  client: SupabaseClient<Database>,
+  companyId: string
+) {
+  const [nonOpen, journals] = await Promise.all([
+    (client.from("accountingPeriod") as any)
+      .select("id", { count: "exact", head: true })
+      .eq("companyId", companyId)
+      .neq("closeStatus", "Open"),
+    (client.from("journal") as any)
+      .select("id", { count: "exact", head: true })
+      .eq("companyId", companyId)
+  ]);
+  if (nonOpen.error) return { data: null, error: nonOpen.error };
+  if (journals.error) return { data: null, error: journals.error };
+
+  return {
+    data: {
+      committed: (nonOpen.count ?? 0) > 0 || (journals.count ?? 0) > 0
+    },
+    error: null
+  };
+}
+
+export async function lockAccountingPeriod(
+  client: SupabaseClient<Database>,
+  args: { periodId: string; companyId: string; userId: string }
+) {
+  const period = await getAccountingPeriodById(
+    client,
+    args.periodId,
+    args.companyId
+  );
+  if (period.error || !period.data) {
+    return {
+      data: null,
+      error: period.error ?? { message: "Period not found" }
+    };
+  }
+  if (period.data.closeStatus !== "Open") {
+    return {
+      data: null,
+      error: { message: "Only open periods can be locked" }
+    };
+  }
+  return (client.from("accountingPeriod") as any)
+    .update({
+      closeStatus: "Locked",
+      lockedAt: new Date().toISOString(),
+      lockedBy: args.userId,
+      updatedBy: args.userId,
+      updatedAt: new Date().toISOString()
+    })
+    .eq("id", args.periodId)
+    .eq("companyId", args.companyId)
+    .select("id")
+    .single();
+}
+
+export async function unlockAccountingPeriod(
+  client: SupabaseClient<Database>,
+  args: { periodId: string; companyId: string; userId: string }
+) {
+  const period = await getAccountingPeriodById(
+    client,
+    args.periodId,
+    args.companyId
+  );
+  if (period.error || !period.data) {
+    return {
+      data: null,
+      error: period.error ?? { message: "Period not found" }
+    };
+  }
+  if (period.data.closeStatus !== "Locked") {
+    return {
+      data: null,
+      error: { message: "Only locked periods can be unlocked" }
+    };
+  }
+  return (client.from("accountingPeriod") as any)
+    .update({
+      closeStatus: "Open",
+      lockedAt: null,
+      lockedBy: null,
+      updatedBy: args.userId,
+      updatedAt: new Date().toISOString()
+    })
+    .eq("id", args.periodId)
+    .eq("companyId", args.companyId)
+    .select("id")
+    .single();
+}
+
+export async function closeAccountingPeriod(
+  client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
+  args: { periodId: string; companyId: string; userId: string }
+) {
+  const period = await getAccountingPeriodById(
+    client,
+    args.periodId,
+    args.companyId
+  );
+  if (period.error || !period.data) {
+    return {
+      data: null,
+      error: period.error ?? { message: "Period not found" }
+    };
+  }
+  if (period.data.closeStatus === "Closed") {
+    return { data: null, error: { message: "Period is already closed" } };
+  }
+
+  // Enforce the Open -> Locked -> Closed lifecycle: a period must be Locked
+  // before it can close. The "Lock the period" checklist step drives the flip;
+  // this gate makes locking a hard precondition regardless of that task's state.
+  if (period.data.closeStatus !== "Locked") {
+    return {
+      data: null,
+      error: { message: "Period must be locked before closing." }
+    };
+  }
+
+  // Sequential close: every earlier period must already be Closed.
+  const earlierOpen = await (client.from("accountingPeriod") as any)
+    .select("id", { count: "exact", head: true })
+    .eq("companyId", args.companyId)
+    .lt("startDate", period.data.startDate)
+    .neq("closeStatus", "Closed");
+  if ((earlierOpen.count ?? 0) > 0) {
+    return {
+      data: null,
+      error: {
+        message: "Earlier periods must be closed first (sequential close)"
+      }
+    };
+  }
+
+  // Checklist gate: every required task must be Done/Skipped and no Blocker
+  // auto-check may be failing (acceptance criteria 7/10). Instantiation is
+  // idempotent, so this both materializes and evaluates the checklist.
+  const checklist = await getPeriodCloseChecklist(
+    client,
+    args.companyId,
+    args.periodId
+  );
+  if (checklist.error || !checklist.data) {
+    return {
+      data: null,
+      error: checklist.error ?? { message: "Failed to load close checklist" }
+    };
+  }
+  if (!checklist.data.canClose) {
+    return {
+      data: null,
+      error: {
+        message:
+          checklist.data.blockingReason ?? "Close checklist is not complete"
+      }
+    };
+  }
+
+  // Persist the final Auto-task states and flip the period atomically. The
+  // checklist state and the period status must move together — a partial write
+  // would leave the checklist inconsistent with the period. supabase-js has no
+  // multi-statement transaction, so the writes go through the Kysely client;
+  // the DB close trigger remains the backstop for the invariant.
+  const now = new Date().toISOString();
+  // periodCloseTask and accountingPeriod.closeStatus are added by the
+  // period-close-lifecycle migration; the generated Kysely types don't include
+  // them yet, so the write builder is cast until types are regenerated (this
+  // mirrors the `as any` casts the read path already uses).
+  try {
+    await db.transaction().execute(async (trx) => {
+      const tx = trx as any;
+      for (const state of checklist.data.autoTaskStates) {
+        await tx
+          .updateTable("periodCloseTask")
+          .set({
+            status: state.status,
+            completedAt: state.status === "Done" ? now : null,
+            updatedBy: args.userId,
+            updatedAt: now
+          })
+          .where("id", "=", state.id)
+          .where("companyId", "=", args.companyId)
+          .execute();
+      }
+
+      await tx
+        .updateTable("accountingPeriod")
+        .set({
+          closeStatus: "Closed",
+          closedAt: now,
+          closedBy: args.userId,
+          updatedBy: args.userId,
+          updatedAt: now
+        })
+        .where("id", "=", args.periodId)
+        .where("companyId", "=", args.companyId)
+        .execute();
+
+      // Write the per-account cumulative GL balance snapshot for this period
+      // *inside* the close transaction, after the flip to Closed. The snapshot
+      // is what makes accountTreeBalancesByCompany read "latest snapshot +
+      // lines after it" instead of scanning all history. It runs here (not as
+      // a supabase RPC) so it stays private to the service-role/Kysely path —
+      // the function is SECURITY DEFINER and takes companyId as an argument, so
+      // exposing it via PostgREST would be a cross-tenant write. The function
+      // asserts the period is Closed (true within this tx's view), so it can
+      // never snapshot a still-postable period.
+      //
+      // Race safety: the flip above holds the accountingPeriod row lock until
+      // commit, and check_accounting_period_open reads that row FOR SHARE on
+      // every posting (migration 20260713235930), so no journal can land in the
+      // period between this snapshot and the commit. Keeping the snapshot in the
+      // same transaction is deliberate: close ⇔ snapshot is atomic, so a snapshot
+      // failure rolls the whole close back cleanly rather than leaving a Closed
+      // period with a stale/absent snapshot. Any period without a snapshot is
+      // still correct — the read path falls back to the full-history scan.
+      await sql`SELECT "snapshotAccountingPeriodBalances"(${args.companyId}, ${args.periodId}, ${args.userId})`.execute(
+        trx
+      );
+    });
+  } catch (err) {
+    return {
+      data: null,
+      error: {
+        message: err instanceof Error ? err.message : "Failed to close period"
+      }
+    };
+  }
+
+  return { data: { id: args.periodId }, error: null };
+}
+
+// Public entry point for the close-checklist UI. `closeAccountingPeriod`
+// already reloads the checklist, refuses the close when a Blocker auto-check is
+// failing or a required task is still Open (surfacing `blockingReason`), and
+// flushes the derived final Auto-task states before flipping the period — so a
+// checklist-aware close is exactly that call with the argument shape the route
+// action passes. Kept as a distinct named export so the route imports intent,
+// not the lower-level lifecycle primitive.
+export async function closePeriodWithChecklist(
+  client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
+  args: { companyId: string; periodId: string; userId: string }
+) {
+  return closeAccountingPeriod(client, db, {
+    periodId: args.periodId,
+    companyId: args.companyId,
+    userId: args.userId
+  });
+}
+
+export async function reopenAccountingPeriod(
+  client: SupabaseClient<Database>,
+  args: { periodId: string; companyId: string; userId: string }
+) {
+  const period = await getAccountingPeriodById(
+    client,
+    args.periodId,
+    args.companyId
+  );
+  if (period.error || !period.data) {
+    return {
+      data: null,
+      error: period.error ?? { message: "Period not found" }
+    };
+  }
+  if (period.data.closeStatus !== "Closed") {
+    return { data: null, error: { message: "Period is not closed" } };
+  }
+
+  // Reverse-sequential reopen: no later period may still be Closed.
+  const laterClosed = await (client.from("accountingPeriod") as any)
+    .select("id", { count: "exact", head: true })
+    .eq("companyId", args.companyId)
+    .gt("startDate", period.data.startDate)
+    .eq("closeStatus", "Closed");
+  if ((laterClosed.count ?? 0) > 0) {
+    return {
+      data: null,
+      error: {
+        message:
+          "Later periods must be reopened first (reopen from the most recent close backwards)"
+      }
+    };
+  }
+
+  // Invariant #3 (accountingPeriodBalance migration): snapshots are cumulative
+  // through their period's endDate, so reopening this period invalidates its own
+  // snapshot and any later one that embeds it. Delete them BEFORE flipping to
+  // Open: if the delete fails we abort with the period still Closed (snapshots
+  // intact, consistent); if the flip later fails, the period stays Closed with
+  // no snapshots, so reads fall back to the full scan (correct, just slower)
+  // rather than trusting a stale snapshot once postings resume in the period.
+  // accountingPeriodBalance is not in the cloud-generated DB types yet, so the
+  // client is cast to reach it (same reason the period reads above use `as any`).
+  const deletedSnapshots = await (client as any)
+    .from("accountingPeriodBalance")
+    .delete()
+    .eq("companyId", args.companyId)
+    .gte("endingBalanceDate", period.data.endDate);
+  if (deletedSnapshots.error) {
+    return { data: null, error: deletedSnapshots.error };
+  }
+
+  return (client.from("accountingPeriod") as any)
+    .update({
+      closeStatus: "Open",
+      closedAt: null,
+      closedBy: null,
+      updatedBy: args.userId,
+      updatedAt: new Date().toISOString()
+    })
+    .eq("id", args.periodId)
+    .eq("companyId", args.companyId)
+    .select("id")
+    .single();
+}
+
+export async function createFiscalYearPeriods(
+  client: SupabaseClient<Database>,
+  args: { companyId: string; fiscalYear: number; userId: string }
+) {
+  const settings = await getFiscalYearSettings(client, args.companyId);
+  const startMonth = settings.data?.startMonth
+    ? (MONTH_NUMBER[settings.data.startMonth] ?? 1)
+    : 1;
+
+  // FY is named by its ending calendar year; a non-January start begins in the
+  // prior calendar year.
+  const firstYear = startMonth === 1 ? args.fiscalYear : args.fiscalYear - 1;
+
+  const existing = await (client.from("accountingPeriod") as any)
+    .select("periodNumber")
+    .eq("companyId", args.companyId)
+    .eq("fiscalYear", args.fiscalYear);
+  if (existing.error) return existing;
+  const existingNumbers = new Set(
+    ((existing.data ?? []) as { periodNumber: number | null }[]).map(
+      (p) => p.periodNumber
+    )
+  );
+
+  const rows = [];
+  for (let p = 1; p <= 12; p++) {
+    if (existingNumbers.has(p)) continue;
+    const monthIndex = (startMonth - 1 + (p - 1)) % 12; // 0-indexed
+    const year = firstYear + Math.floor((startMonth - 1 + (p - 1)) / 12);
+    const startDate = new Date(Date.UTC(year, monthIndex, 1));
+    const endDate = new Date(Date.UTC(year, monthIndex + 1, 0));
+    rows.push({
+      companyId: args.companyId,
+      startDate: startDate.toISOString().split("T")[0],
+      endDate: endDate.toISOString().split("T")[0],
+      status: "Inactive",
+      closeStatus: "Open",
+      fiscalYear: args.fiscalYear,
+      periodNumber: p,
+      createdBy: args.userId
+    });
+  }
+
+  if (rows.length === 0) {
+    return { data: [], error: null };
+  }
+
+  return (client.from("accountingPeriod") as any).insert(rows).select("id");
+}
+
+// A single readiness evaluator, keyed by the autoCheckKey that binds it to an
+// Auto checklist task. Every seeded autoCheckKey has an evaluator here; a key
+// with no matching evaluator fails closed in evaluateCloseChecklist (the task
+// stays Open and blocks the close) rather than silently passing, so a new Auto
+// task without its evaluator gates the close instead of quietly resolving Done.
+export type PeriodReadinessCheck = {
+  autoCheckKey: string;
+  severity: (typeof periodCloseTaskSeverities)[number];
+  label: string;
+  failing: boolean;
+  count: number;
+  documents?: PeriodCloseUnpostedDocument[];
+};
+
+// An operational document (receipt, shipment, invoice) that has not posted to
+// the general ledger, surfaced on the close checklist so the user can jump to
+// it. `count` on the check stays exact even when the fetched rows are capped.
+export type PeriodCloseUnpostedDocument = {
+  documentType:
+    | "Receipt"
+    | "Shipment"
+    | "Sales Invoice"
+    | "Purchase Invoice"
+    | "Payment"
+    | "Credit Memo"
+    | "Debit Memo"
+    | "Journal Entry";
+  id: string;
+  readableId: string;
+  status: string;
+};
+
+const UNPOSTED_DOCUMENT_LIMIT = 25;
+
+async function computePeriodReadiness(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  startDate: string,
+  endDate: string
+): Promise<{
+  checks: PeriodReadinessCheck[];
+  blockers: { key: string; label: string; count: number }[];
+  warnings: { key: string; label: string; count: number }[];
+}> {
+  // Un-posted operational documents have no postingDate until the post-*
+  // functions stamp them with the posting day's date. So a Draft/Pending
+  // document with no postingDate can only land in this period if the period is
+  // still running (or in the future) when it posts — closing an already-ended
+  // period is not blocked by new drafts, which would post into a later period.
+  const todayDate = new Date().toISOString().slice(0, 10);
+  const unpostedDateFilter =
+    endDate >= todayDate
+      ? `postingDate.is.null,and(postingDate.gte.${startDate},postingDate.lte.${endDate})`
+      : `and(postingDate.gte.${startDate},postingDate.lte.${endDate})`;
+
+  const [
+    draftJournals,
+    journalsInPeriod,
+    draftDepreciation,
+    unmatchedIC,
+    pendingReceipts,
+    pendingShipments,
+    pendingSalesInvoices,
+    pendingPurchaseInvoices,
+    pendingPayments,
+    pendingMemos
+  ] = await Promise.all([
+    client
+      .from("journal")
+      .select("id, journalEntryId, status", { count: "exact" })
+      .eq("companyId", companyId)
+      .eq("status", "Draft")
+      .gte("postingDate", startDate)
+      .lte("postingDate", endDate)
+      .order("journalEntryId", { ascending: true })
+      .limit(UNPOSTED_DOCUMENT_LIMIT),
+    client
+      .from("journalEntries")
+      .select("id, journalEntryId, totalDebits, totalCredits")
+      .eq("companyId", companyId)
+      .eq("status", "Posted")
+      .gte("postingDate", startDate)
+      .lte("postingDate", endDate),
+    client
+      .from("depreciationRun")
+      .select("id", { count: "exact", head: true })
+      .eq("companyId", companyId)
+      .eq("status", "Draft")
+      .gte("periodEnd", startDate)
+      .lte("periodEnd", endDate),
+    client
+      .from("intercompanyTransaction")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "Unmatched")
+      .or(`sourceCompanyId.eq.${companyId},targetCompanyId.eq.${companyId}`),
+    // Un-posted operational documents that threaten this period. Draft/Pending
+    // are the pre-posting states for receipts, shipments and invoices; Posted
+    // (or Open/Submitted for invoices) and Voided are terminal. Rows are fetched
+    // (not just counted) so the checklist can list them; counts stay exact even
+    // when rows are capped.
+    client
+      .from("receipt")
+      .select("id, receiptId, status", { count: "exact" })
+      .eq("companyId", companyId)
+      .in("status", ["Draft", "Pending"])
+      .or(unpostedDateFilter)
+      .order("receiptId", { ascending: true })
+      .limit(UNPOSTED_DOCUMENT_LIMIT),
+    client
+      .from("shipment")
+      .select("id, shipmentId, status", { count: "exact" })
+      .eq("companyId", companyId)
+      .in("status", ["Draft", "Pending"])
+      .or(unpostedDateFilter)
+      .order("shipmentId", { ascending: true })
+      .limit(UNPOSTED_DOCUMENT_LIMIT),
+    client
+      .from("salesInvoice")
+      .select("id, invoiceId, status", { count: "exact" })
+      .eq("companyId", companyId)
+      .in("status", ["Draft", "Pending"])
+      .or(unpostedDateFilter)
+      .order("invoiceId", { ascending: true })
+      .limit(UNPOSTED_DOCUMENT_LIMIT),
+    client
+      .from("purchaseInvoice")
+      .select("id, invoiceId, status", { count: "exact" })
+      .eq("companyId", companyId)
+      .in("status", ["Draft", "Pending"])
+      .or(unpostedDateFilter)
+      .order("invoiceId", { ascending: true })
+      .limit(UNPOSTED_DOCUMENT_LIMIT),
+    // Payments and credit/debit memos are payment-shaped operational documents
+    // with the same Draft -> Posted -> Voided lifecycle; post-payment/post-memo
+    // stamp postingDate the same way the other post-* functions do.
+    client
+      .from("payment")
+      .select("id, paymentId, status", { count: "exact" })
+      .eq("companyId", companyId)
+      .eq("status", "Draft")
+      .or(unpostedDateFilter)
+      .order("paymentId", { ascending: true })
+      .limit(UNPOSTED_DOCUMENT_LIMIT),
+    client
+      .from("memo")
+      .select("id, memoId, status, direction", { count: "exact" })
+      .eq("companyId", companyId)
+      .eq("status", "Draft")
+      .or(unpostedDateFilter)
+      .order("memoId", { ascending: true })
+      .limit(UNPOSTED_DOCUMENT_LIMIT)
+  ]);
+
+  const unbalanced = (journalsInPeriod.data ?? []).filter(
+    (j) =>
+      Math.abs(Number(j.totalDebits ?? 0) - Number(j.totalCredits ?? 0)) > 0.001
+  );
+
+  const pendingPostings =
+    (pendingReceipts.count ?? 0) +
+    (pendingShipments.count ?? 0) +
+    (pendingSalesInvoices.count ?? 0) +
+    (pendingPurchaseInvoices.count ?? 0) +
+    (pendingPayments.count ?? 0) +
+    (pendingMemos.count ?? 0);
+
+  const unpostedDocuments: PeriodCloseUnpostedDocument[] = [
+    ...(pendingReceipts.data ?? []).map((d) => ({
+      documentType: "Receipt" as const,
+      id: d.id,
+      readableId: d.receiptId,
+      status: d.status as string
+    })),
+    ...(pendingShipments.data ?? []).map((d) => ({
+      documentType: "Shipment" as const,
+      id: d.id,
+      readableId: d.shipmentId,
+      status: d.status as string
+    })),
+    ...(pendingSalesInvoices.data ?? []).map((d) => ({
+      documentType: "Sales Invoice" as const,
+      id: d.id,
+      readableId: d.invoiceId,
+      status: d.status as string
+    })),
+    ...(pendingPurchaseInvoices.data ?? []).map((d) => ({
+      documentType: "Purchase Invoice" as const,
+      id: d.id,
+      readableId: d.invoiceId,
+      status: d.status as string
+    })),
+    ...(pendingPayments.data ?? []).map((d) => ({
+      documentType: "Payment" as const,
+      id: d.id,
+      readableId: d.paymentId,
+      status: d.status as string
+    })),
+    ...(pendingMemos.data ?? []).map((d) => ({
+      documentType:
+        d.direction === "Debit"
+          ? ("Debit Memo" as const)
+          : ("Credit Memo" as const),
+      id: d.id,
+      readableId: d.memoId,
+      status: d.status as string
+    }))
+  ];
+
+  const draftJournalDocuments: PeriodCloseUnpostedDocument[] = (
+    draftJournals.data ?? []
+  ).map((d) => ({
+    documentType: "Journal Entry" as const,
+    id: d.id,
+    readableId: d.journalEntryId,
+    status: d.status as string
+  }));
+
+  const checks: PeriodReadinessCheck[] = [
+    {
+      autoCheckKey: "pending-postings",
+      severity: "Blocker",
+      label: "Un-posted operational documents that would post into this period",
+      failing: pendingPostings > 0,
+      count: pendingPostings,
+      documents: unpostedDocuments
+    },
+    {
+      autoCheckKey: "draft-journals",
+      severity: "Blocker",
+      label: "Draft journal entries dated in this period",
+      failing: (draftJournals.count ?? 0) > 0,
+      count: draftJournals.count ?? 0,
+      documents: draftJournalDocuments
+    },
+    {
+      autoCheckKey: "tb-balanced",
+      severity: "Blocker",
+      label: "Posted journal entries with unequal debits and credits",
+      failing: unbalanced.length > 0,
+      count: unbalanced.length
+    },
+    {
+      autoCheckKey: "draft-depreciation",
+      severity: "Warning",
+      label: "Draft depreciation runs ending in this period",
+      failing: (draftDepreciation.count ?? 0) > 0,
+      count: draftDepreciation.count ?? 0
+    },
+    {
+      autoCheckKey: "unmatched-ic",
+      severity: "Warning",
+      label: "Unmatched intercompany transactions involving this company",
+      failing: (unmatchedIC.count ?? 0) > 0,
+      count: unmatchedIC.count ?? 0
+    }
+  ];
+
+  const blockers = checks
+    .filter((c) => c.severity === "Blocker" && c.failing)
+    .map((c) => ({ key: c.autoCheckKey, label: c.label, count: c.count }));
+  const warnings = checks
+    .filter((c) => c.severity === "Warning" && c.failing)
+    .map((c) => ({ key: c.autoCheckKey, label: c.label, count: c.count }));
+
+  return { checks, blockers, warnings };
+}
+
+export async function getPeriodCloseReadiness(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  periodId: string
+) {
+  const period = await getAccountingPeriodById(client, periodId, companyId);
+  if (period.error || !period.data) {
+    return {
+      data: null,
+      error: period.error ?? { message: "Period not found" }
+    };
+  }
+  const { checks, blockers, warnings } = await computePeriodReadiness(
+    client,
+    companyId,
+    period.data.startDate,
+    period.data.endDate
+  );
+  return { data: { checks, blockers, warnings }, error: null };
+}
+
+// ---------------------------------------------------------------------------
+// NetSuite-style close checklist: company-level task definitions template +
+// per-period task instances, gating the period close.
+// ---------------------------------------------------------------------------
+
+const PERIOD_CLOSE_TASK_COLUMNS =
+  "id, companyId, accountingPeriodId, definitionId, name, taskType, autoCheckKey, sortOrder, required, severity, status, assigneeId, completedBy, completedAt, skippedReason, notes";
+
+const PERIOD_CLOSE_DEFINITION_COLUMNS =
+  "id, companyId, name, taskType, autoCheckKey, sortOrder, required, severity, active, isSystem, defaultAssigneeId";
+
+export type PeriodCloseTaskRow = {
+  id: string;
+  companyId: string;
+  accountingPeriodId: string;
+  definitionId: string | null;
+  name: string;
+  taskType: (typeof periodCloseTaskTypes)[number];
+  autoCheckKey: string | null;
+  sortOrder: number;
+  required: boolean;
+  severity: (typeof periodCloseTaskSeverities)[number] | null;
+  status: (typeof periodCloseTaskStatuses)[number];
+  assigneeId: string | null;
+  completedBy: string | null;
+  completedAt: string | null;
+  skippedReason: string | null;
+  notes: string | null;
+};
+
+export type PeriodCloseTaskDefinitionRow = {
+  id: string;
+  companyId: string;
+  name: string;
+  taskType: (typeof periodCloseTaskTypes)[number];
+  autoCheckKey: string | null;
+  sortOrder: number;
+  required: boolean;
+  severity: (typeof periodCloseTaskSeverities)[number] | null;
+  active: boolean;
+  isSystem: boolean;
+  defaultAssigneeId: string | null;
+};
+
+export type PeriodCloseTaskView = PeriodCloseTaskRow & {
+  autoCheck: PeriodReadinessCheck | null;
+  effectiveStatus: (typeof periodCloseTaskStatuses)[number];
+};
+
+// Pure: which active definitions still need a task row for this period. Drives
+// idempotent instantiation — re-running with the instances already present
+// returns nothing to create (acceptance criterion 6).
+export function checklistTasksToCreate<T extends { id: string }>(
+  definitions: T[],
+  existingTasks: { definitionId: string | null }[]
+): T[] {
+  const existing = new Set(
+    existingTasks
+      .map((t) => t.definitionId)
+      .filter((d): d is string => Boolean(d))
+  );
+  return definitions.filter((d) => !existing.has(d.id));
+}
+
+// Pure: overlay live readiness onto tasks and decide whether the period can
+// close. An Auto task is Done when its evaluator passes (or has none), Open
+// when it fails; a manual Skip is preserved. Close is allowed only when every
+// required task resolves to Done/Skipped and no Blocker auto-check is failing.
+// The "Lock the period" checklist step is an Action task whose completion IS the
+// Open -> Locked transition. Its status is derived from the period's closeStatus
+// (Locked/Closed => Done) rather than a stored task status, and its button drives
+// lock/unlock instead of a generic "Mark Done". Identified by name (a stable,
+// non-deletable system definition).
+export const LOCK_PERIOD_TASK_NAME = "Lock the period";
+
+export function evaluateCloseChecklist(
+  tasks: PeriodCloseTaskRow[],
+  checks: PeriodReadinessCheck[],
+  closeStatus: (typeof periodCloseStatuses)[number]
+): {
+  tasks: PeriodCloseTaskView[];
+  canClose: boolean;
+  blockingReason: string | null;
+  autoTaskStates: {
+    id: string;
+    status: (typeof periodCloseTaskStatuses)[number];
+  }[];
+} {
+  const checkByKey = new Map(checks.map((c) => [c.autoCheckKey, c]));
+
+  const views: PeriodCloseTaskView[] = tasks.map((task) => {
+    if (task.taskType === "Auto" && task.autoCheckKey) {
+      // An Auto task whose autoCheckKey has no registered evaluator cannot be
+      // verified, so it fails closed instead of silently passing: synthesize a
+      // failing check (inheriting the task's declared severity, defaulting to
+      // Blocker) so the close is gated and the reason is visible rather than a
+      // quiet Done. Every seeded key has an evaluator; this guards future
+      // custom Auto tasks added without one.
+      const autoCheck: PeriodReadinessCheck = checkByKey.get(
+        task.autoCheckKey
+      ) ?? {
+        autoCheckKey: task.autoCheckKey,
+        severity: task.severity ?? "Blocker",
+        label: `No automated check is implemented for "${task.autoCheckKey}"`,
+        failing: true,
+        count: 0
+      };
+      const effectiveStatus =
+        task.status === "Skipped"
+          ? "Skipped"
+          : autoCheck.failing
+            ? "Open"
+            : "Done";
+      return { ...task, autoCheck, effectiveStatus };
+    }
+    if (task.taskType === "Action" && task.name === LOCK_PERIOD_TASK_NAME) {
+      const effectiveStatus =
+        closeStatus === "Locked" || closeStatus === "Closed" ? "Done" : "Open";
+      return { ...task, autoCheck: null, effectiveStatus };
+    }
+    return { ...task, autoCheck: null, effectiveStatus: task.status };
+  });
+
+  const failingBlocker = views.find(
+    (v) =>
+      v.autoCheck?.severity === "Blocker" &&
+      v.autoCheck.failing &&
+      v.effectiveStatus !== "Skipped"
+  );
+  const incomplete = views.find(
+    (v) => v.required && v.effectiveStatus === "Open"
+  );
+
+  const canClose = !failingBlocker && !incomplete;
+  const blockingReason = failingBlocker
+    ? `"${failingBlocker.name}" has unresolved blocking issues`
+    : incomplete
+      ? `Task "${incomplete.name}" is not complete`
+      : null;
+
+  // Auto tasks whose derived state differs from what is persisted get flushed
+  // to the DB at close time (acceptance criterion 10).
+  const autoTaskStates = views
+    .filter((v) => v.taskType === "Auto" && v.status !== v.effectiveStatus)
+    .map((v) => ({ id: v.id, status: v.effectiveStatus }));
+
+  return { tasks: views, canClose, blockingReason, autoTaskStates };
+}
+
+// Idempotently instantiate the checklist for a period from active definitions,
+// then overlay live readiness. Returns the evaluated tasks plus the close gate.
+export async function getPeriodCloseChecklist(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  periodId: string
+) {
+  const period = await getAccountingPeriodById(client, periodId, companyId);
+  if (period.error || !period.data) {
+    return {
+      data: null,
+      error: period.error ?? { message: "Period not found" }
+    };
+  }
+
+  const [defsRes, tasksRes] = await Promise.all([
+    (client as any)
+      .from("periodCloseTaskDefinition")
+      .select(PERIOD_CLOSE_DEFINITION_COLUMNS)
+      .eq("companyId", companyId)
+      .eq("active", true)
+      .order("sortOrder", { ascending: true }),
+    (client as any)
+      .from("periodCloseTask")
+      .select(PERIOD_CLOSE_TASK_COLUMNS)
+      .eq("companyId", companyId)
+      .eq("accountingPeriodId", periodId)
+  ]);
+  if (defsRes.error) return { data: null, error: defsRes.error };
+  if (tasksRes.error) return { data: null, error: tasksRes.error };
+
+  const definitions = (defsRes.data ?? []) as PeriodCloseTaskDefinitionRow[];
+  let tasks = (tasksRes.data ?? []) as PeriodCloseTaskRow[];
+
+  const toCreate = checklistTasksToCreate(definitions, tasks);
+  if (toCreate.length > 0) {
+    const rows = toCreate.map((d) => ({
+      companyId,
+      accountingPeriodId: periodId,
+      definitionId: d.id,
+      name: d.name,
+      taskType: d.taskType,
+      autoCheckKey: d.autoCheckKey,
+      sortOrder: d.sortOrder,
+      required: d.required,
+      severity: d.severity,
+      status: "Open",
+      assigneeId: d.defaultAssigneeId ?? null,
+      createdBy: "system"
+    }));
+    // The unique (companyId, accountingPeriodId, definitionId) key makes a
+    // concurrent instantiation a no-op rather than a duplicate-row error.
+    const inserted = await (client as any)
+      .from("periodCloseTask")
+      .upsert(rows, {
+        onConflict: "companyId, accountingPeriodId, definitionId",
+        ignoreDuplicates: true
+      })
+      .select("id");
+    if (inserted.error) return { data: null, error: inserted.error };
+
+    const reload = await (client as any)
+      .from("periodCloseTask")
+      .select(PERIOD_CLOSE_TASK_COLUMNS)
+      .eq("companyId", companyId)
+      .eq("accountingPeriodId", periodId);
+    if (reload.error) return { data: null, error: reload.error };
+    tasks = (reload.data ?? []) as PeriodCloseTaskRow[];
+  }
+
+  const readiness = await computePeriodReadiness(
+    client,
+    companyId,
+    period.data.startDate,
+    period.data.endDate
+  );
+
+  const evaluated = evaluateCloseChecklist(
+    tasks,
+    readiness.checks,
+    period.data.closeStatus
+  );
+  evaluated.tasks.sort((a, b) => a.sortOrder - b.sortOrder);
+
+  return {
+    data: {
+      ...evaluated,
+      readiness: { blockers: readiness.blockers, warnings: readiness.warnings }
+    },
+    error: null
+  };
+}
+
+async function getPeriodCloseTaskById(
+  client: SupabaseClient<Database>,
+  taskId: string,
+  companyId: string
+) {
+  return (client as any)
+    .from("periodCloseTask")
+    .select("id, taskType, severity, status, required, name")
+    .eq("id", taskId)
+    .eq("companyId", companyId)
+    .single() as Promise<{
+    data: Pick<
+      PeriodCloseTaskRow,
+      "id" | "taskType" | "severity" | "status" | "required" | "name"
+    > | null;
+    error: { message: string } | null;
+  }>;
+}
+
+export async function completeCloseTask(
+  client: SupabaseClient<Database>,
+  args: { taskId: string; companyId: string; userId: string; notes?: string }
+) {
+  const task = await getPeriodCloseTaskById(
+    client,
+    args.taskId,
+    args.companyId
+  );
+  if (task.error || !task.data) {
+    return { data: null, error: task.error ?? { message: "Task not found" } };
+  }
+  // Auto tasks reflect a live evaluator and are completed by the close, not by
+  // hand.
+  if (task.data.taskType === "Auto") {
+    return {
+      data: null,
+      error: {
+        message:
+          "Automated tasks are evaluated by the system and cannot be completed manually"
+      }
+    };
+  }
+  return (client as any)
+    .from("periodCloseTask")
+    .update({
+      status: "Done",
+      completedBy: args.userId,
+      completedAt: new Date().toISOString(),
+      notes: args.notes ?? null,
+      skippedReason: null,
+      updatedBy: args.userId,
+      updatedAt: new Date().toISOString()
+    })
+    .eq("id", args.taskId)
+    .eq("companyId", args.companyId)
+    .select("id")
+    .single();
+}
+
+export async function skipCloseTask(
+  client: SupabaseClient<Database>,
+  args: {
+    taskId: string;
+    companyId: string;
+    userId: string;
+    skippedReason: string;
+  }
+) {
+  const reason = args.skippedReason?.trim();
+  if (!reason) {
+    return {
+      data: null,
+      error: { message: "A reason is required to skip a task" }
+    };
+  }
+  const task = await getPeriodCloseTaskById(
+    client,
+    args.taskId,
+    args.companyId
+  );
+  if (task.error || !task.data) {
+    return { data: null, error: task.error ?? { message: "Task not found" } };
+  }
+  // Blocker tasks guard hard invariants — they can never be skipped, only
+  // resolved (acceptance criterion 9).
+  if (task.data.severity === "Blocker") {
+    return {
+      data: null,
+      error: {
+        message:
+          "Blocker tasks cannot be skipped; resolve the underlying issue first"
+      }
+    };
+  }
+  return (client as any)
+    .from("periodCloseTask")
+    .update({
+      status: "Skipped",
+      skippedReason: reason,
+      completedBy: args.userId,
+      completedAt: new Date().toISOString(),
+      updatedBy: args.userId,
+      updatedAt: new Date().toISOString()
+    })
+    .eq("id", args.taskId)
+    .eq("companyId", args.companyId)
+    .select("id")
+    .single();
+}
+
+export async function addCloseTask(
+  client: SupabaseClient<Database>,
+  args: {
+    companyId: string;
+    periodId: string;
+    name: string;
+    taskType: (typeof periodCloseTaskTypes)[number];
+    required: boolean;
+    userId: string;
+    assigneeId?: string;
+  }
+) {
+  const existing = await (client as any)
+    .from("periodCloseTask")
+    .select("sortOrder")
+    .eq("companyId", args.companyId)
+    .eq("accountingPeriodId", args.periodId)
+    .order("sortOrder", { ascending: false })
+    .limit(1);
+  const maxSort =
+    ((existing.data?.[0]?.sortOrder as number | undefined) ?? 0) + 1;
+
+  return (client as any)
+    .from("periodCloseTask")
+    .insert({
+      companyId: args.companyId,
+      accountingPeriodId: args.periodId,
+      definitionId: null,
+      name: args.name,
+      taskType: args.taskType,
+      autoCheckKey: null,
+      sortOrder: maxSort,
+      required: args.required,
+      severity: null,
+      status: "Open",
+      assigneeId: args.assigneeId ?? null,
+      createdBy: args.userId
+    })
+    .select("id")
+    .single();
+}
+
+export async function getPeriodCloseTaskDefinitions(
+  client: SupabaseClient<Database>,
+  companyId: string
+) {
+  return (client as any)
+    .from("periodCloseTaskDefinition")
+    .select(PERIOD_CLOSE_DEFINITION_COLUMNS)
+    .eq("companyId", companyId)
+    .order("sortOrder", { ascending: true }) as Promise<{
+    data: PeriodCloseTaskDefinitionRow[] | null;
+    error: { message: string } | null;
+  }>;
+}
+
+export async function upsertPeriodCloseTaskDefinition(
+  client: SupabaseClient<Database>,
+  definition:
+    | (z.infer<typeof periodCloseTaskDefinitionValidator> & {
+        companyId: string;
+        createdBy: string;
+      })
+    | (z.infer<typeof periodCloseTaskDefinitionValidator> & {
+        id: string;
+        companyId: string;
+        updatedBy: string;
+      })
+) {
+  if ("updatedBy" in definition) {
+    const { id, companyId, updatedBy, ...rest } = definition;
+    return (client as any)
+      .from("periodCloseTaskDefinition")
+      .update({
+        ...sanitize(rest),
+        updatedBy,
+        updatedAt: new Date().toISOString()
+      })
+      .eq("id", id)
+      .eq("companyId", companyId)
+      .select("id")
+      .single();
+  }
+  const { createdBy, ...rest } = definition;
+  delete (rest as { id?: string }).id; // let the DB default generate the id
+  return (client as any)
+    .from("periodCloseTaskDefinition")
+    .insert({ ...rest, isSystem: false, createdBy })
+    .select("id")
+    .single();
+}
+
+export async function deletePeriodCloseTaskDefinition(
+  client: SupabaseClient<Database>,
+  args: { id: string; companyId: string }
+) {
+  const def = await (client as any)
+    .from("periodCloseTaskDefinition")
+    .select("isSystem")
+    .eq("id", args.id)
+    .eq("companyId", args.companyId)
+    .single();
+  if (def.error || !def.data) {
+    return {
+      data: null,
+      error: def.error ?? { message: "Task definition not found" }
+    };
+  }
+  // System definitions seed the default close steps — deactivate, never delete.
+  if (def.data.isSystem) {
+    return {
+      data: null,
+      error: {
+        message:
+          "System task definitions cannot be deleted. Deactivate it instead."
+      }
+    };
+  }
+  return (client as any)
+    .from("periodCloseTaskDefinition")
+    .delete()
+    .eq("id", args.id)
+    .eq("companyId", args.companyId);
 }
 
 export async function getDefaultAccounts(
@@ -1359,46 +2675,93 @@ export async function translateCompanyBalances(
   companyId: string,
   targetCurrency: string,
   periodEnd: string,
-  periodStart?: string
+  periodStart: string | undefined,
+  // Rows from getFinancialStatementBalances for the same company/dates —
+  // translation only needs balanceAtDate + consolidatedRate, so re-running
+  // the full journalLine scan through the translateTrialBalance RPC would
+  // double the cost of every translated statement.
+  balances: Array<{
+    id: string;
+    balanceAtDate: number;
+    consolidatedRate: string | null;
+    isGroup: boolean | null;
+    class: string | null;
+  }>
 ): Promise<{
   data: TranslatedBalance[] | null;
   cta: number;
   error: string | null;
 }> {
-  const { data, error } = await client.rpc("translateTrialBalance", {
+  // getConsolidationRates is defined in migration
+  // 20260713225803_ledger-balance-posted-filter.sql; the committed DB types
+  // regenerate from the cloud DB after deploy, hence the cast.
+  const { data: ratesData, error: ratesError } = await (
+    client.rpc as unknown as (
+      fn: string,
+      args: Record<string, unknown>
+    ) => PromiseLike<{ data: unknown; error: { message: string } | null }>
+  )("getConsolidationRates", {
     p_company_group_id: companyGroupId,
-    p_company_id: companyId ?? undefined,
-    p_target_currency: targetCurrency,
+    p_company_id: companyId,
     p_period_end: periodEnd,
-    p_period_start: periodStart ?? undefined
+    p_period_start: periodStart
   });
 
-  if (error) {
-    return { data: null, cta: 0, error: error.message };
+  if (ratesError) {
+    return { data: null, cta: 0, error: ratesError.message };
   }
 
-  const rows = (data ?? []) as unknown as TranslatedBalance[];
+  const rates = (Array.isArray(ratesData) ? ratesData[0] : ratesData) as
+    | {
+        sourceCurrency: string | null;
+        closingRate: number;
+        averageRate: number;
+        historicalRate: number;
+      }
+    | undefined;
 
-  // Look up each account's class to compute CTA
-  const accountIds = rows.map((r) => r.accountId);
-  const { data: accounts } = await client
-    .from("account")
-    .select("id, class")
-    .in("id", accountIds);
+  const sameCurrency = rates?.sourceCurrency === targetCurrency;
+  const rateFor = (consolidatedRate: string | null): number => {
+    if (sameCurrency || !rates) return 1;
+    switch (consolidatedRate) {
+      case "Average":
+        return Number(rates.averageRate);
+      case "Historical":
+        return Number(rates.historicalRate);
+      default:
+        // 'Current' (the column default)
+        return Number(rates.closingRate);
+    }
+  };
 
-  const classById = new Map((accounts ?? []).map((a) => [a.id, a.class]));
-
+  const rows: TranslatedBalance[] = [];
   let totalTranslatedAssets = 0;
   let totalTranslatedLiabilitiesAndEquity = 0;
 
-  for (const row of rows) {
-    const cls = classById.get(row.accountId);
-    if (cls === "Asset") {
-      totalTranslatedAssets += Number(row.translatedBalance);
+  for (const account of balances) {
+    // Leaf accounts only, and never the synthetic Net Income line — its
+    // income-statement components are already in the rows, so translating it
+    // too would double-count net income in the CTA.
+    if (account.isGroup || account.id === NET_INCOME_ACCOUNT_ID) continue;
+
+    const exchangeRate = rateFor(account.consolidatedRate);
+    const localBalance = Number(account.balanceAtDate ?? 0);
+    const translatedBalance =
+      Math.round(localBalance * exchangeRate * 10000) / 10000;
+
+    rows.push({
+      accountId: account.id,
+      localBalance,
+      exchangeRate,
+      translatedBalance
+    });
+
+    if (account.class === "Asset") {
+      totalTranslatedAssets += translatedBalance;
     } else {
       // Liability, Equity, Revenue, Expense (but income statement
       // accounts net to retained earnings on balance sheet)
-      totalTranslatedLiabilitiesAndEquity += Number(row.translatedBalance);
+      totalTranslatedLiabilitiesAndEquity += translatedBalance;
     }
   }
 
@@ -1455,29 +2818,43 @@ export async function getConsolidatedBalances(
   // All companies whose balances we need (operating + elimination entities)
   const allIds = [...companyIds, ...eliminationIds];
 
-  // Get balances for all companies and translate to target currency
-  const [allBalances, translations] = await Promise.all([
-    Promise.all(
-      allIds.map((id) =>
-        getFinancialStatementBalances(client, companyGroupId, id, {
+  // Get balances for all companies, then translate the already-computed
+  // balances to the target currency (one ledger scan per company, not two).
+  const results = await Promise.all(
+    allIds.map(async (id) => {
+      const balances = await getFinancialStatementBalances(
+        client,
+        companyGroupId,
+        id,
+        {
           startDate: periodStart ?? null,
           endDate: periodEnd
-        })
-      )
-    ),
-    Promise.all(
-      allIds.map((id) =>
-        translateCompanyBalances(
-          client,
-          companyGroupId,
-          id,
-          targetCurrency,
-          periodEnd,
-          periodStart
-        )
-      )
-    )
-  ]);
+        }
+      );
+
+      const translation =
+        balances.error || !balances.data
+          ? {
+              data: null,
+              cta: 0,
+              error: balances.error?.message ?? "Failed to load balances"
+            }
+          : await translateCompanyBalances(
+              client,
+              companyGroupId,
+              id,
+              targetCurrency,
+              periodEnd,
+              periodStart,
+              balances.data
+            );
+
+      return { balances, translation };
+    })
+  );
+
+  const allBalances = results.map((r) => r.balances);
+  const translations = results.map((r) => r.translation);
 
   // Build a map of translated balances per account, summed across companies
   const translationByAccount = new Map<
@@ -2027,6 +3404,19 @@ export async function postJournalEntry(
     };
   }
 
+  // 2b. Enforce the period lifecycle. A manual JE posts as an "accounting"
+  // source, so a Locked period still accepts it (adjustments are allowed);
+  // only a Closed period rejects. Stamp the resolved period on the entry.
+  const period = await getOrCreateAccountingPeriod(
+    client,
+    entry.data.companyId,
+    entry.data.postingDate ?? new Date().toISOString().split("T")[0],
+    "accounting"
+  );
+  if (period.error) {
+    return { data: null, error: period.error };
+  }
+
   // 3. Flip status — lines are already in journalLine, no copying needed
   return client
     .from("journal")
@@ -2034,6 +3424,7 @@ export async function postJournalEntry(
       status: "Posted" as const,
       postedAt: new Date().toISOString(),
       postedBy: userId,
+      accountingPeriodId: period.data,
       updatedBy: userId
     })
     .eq("id", id)
@@ -2080,6 +3471,20 @@ export async function reverseJournalEntry(
     journalEntryId = seq.data;
   }
 
+  // 2b. The reversing entry is dated today and posts as an "accounting" source,
+  // so it lands in the current period (never the original's, which may be
+  // Closed). A Closed current period rejects; a Locked one still accepts.
+  const postingDate = new Date().toISOString().split("T")[0];
+  const period = await getOrCreateAccountingPeriod(
+    client,
+    data.companyId,
+    postingDate,
+    "accounting"
+  );
+  if (period.error) {
+    return { data: null, error: period.error };
+  }
+
   // 3. Create reversing entry as Posted
   const reversed = await client
     .from("journal")
@@ -2087,7 +3492,8 @@ export async function reverseJournalEntry(
       journalEntryId,
       companyId: data.companyId,
       description: `Reversal of ${original.data.journalEntryId}`,
-      postingDate: new Date().toISOString().split("T")[0],
+      postingDate,
+      accountingPeriodId: period.data,
       sourceType: "Manual" as const,
       reversalOfId: id,
       status: "Posted" as const,

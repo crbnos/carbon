@@ -128,11 +128,26 @@ const SalesOrderSummary = ({
     routeData?.lines?.some((line) => line.methodType === "Make to Order") ??
     false;
 
+  // Services never ship, so an all-service order confirms straight to
+  // "To Invoice" (getSalesOrderStatus counts Service lines as shipped) and
+  // never passes through the "To Ship" states — but its Make to Order
+  // service lines still need jobs.
+  const hasMakeServiceItems =
+    routeData?.lines?.some(
+      (line) =>
+        line.methodType === "Make to Order" &&
+        line.salesOrderLineType === "Service"
+    ) ?? false;
+
+  const jobsCardStatusMatches =
+    ["To Ship and Invoice", "To Ship"].includes(
+      routeData?.salesOrder?.status ?? ""
+    ) ||
+    (routeData?.salesOrder?.status === "To Invoice" && hasMakeServiceItems);
+
   return (
     <>
-      {["To Ship and Invoice", "To Ship"].includes(
-        routeData?.salesOrder?.status ?? ""
-      ) &&
+      {jobsCardStatusMatches &&
         permissions.can("create", "production") &&
         permissions.is("employee") &&
         !routeData?.salesOrder?.jobs &&

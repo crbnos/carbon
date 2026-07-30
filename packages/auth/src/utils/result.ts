@@ -8,7 +8,7 @@ export function error(error: any, message = "Request failed"): Result {
 
   return {
     success: false,
-    message: message
+    message
   };
 }
 

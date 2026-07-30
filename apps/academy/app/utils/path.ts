@@ -9,11 +9,16 @@ const ERP_URL = SUPABASE_URL?.includes("localhost")
   ? "http://localhost:3000"
   : ERP_URL_CONFIG;
 
+const DOCS_URL = SUPABASE_URL?.includes("localhost")
+  ? "http://localhost:3002"
+  : "https://docs.carbon.ms";
+
 export const path = {
   to: {
-    about: "/about",
     accountSettings: `${ERP_URL}/x/account`,
     callback: "/callback",
+    docs: `${DOCS_URL}/docs`,
+    glossary: `${DOCS_URL}/docs/glossary`,
     challenge: (topicId: string) => generatePath(`${challenge}/${topicId}`),
     course: (moduleId: string, courseId: string) =>
       generatePath(`${course}/${moduleId}/${courseId}`),

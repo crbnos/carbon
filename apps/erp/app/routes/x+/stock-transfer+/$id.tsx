@@ -11,12 +11,14 @@ import { getStockTransfer, getStockTransferLines } from "~/modules/inventory";
 import StockTransferHeader from "~/modules/inventory/ui/StockTransfers/StockTransferHeader";
 import StockTransferLines from "~/modules/inventory/ui/StockTransfers/StockTransferLines";
 import StockTransferNotes from "~/modules/inventory/ui/StockTransfers/StockTransferNotes";
-import type { Handle } from "~/utils/handle";
+import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
 export const handle: Handle = {
-  breadcrumb: msg`Stock Transfers`,
-  to: path.to.stockTransfers
+  breadcrumb: detailBreadcrumb(
+    { breadcrumb: msg`Stock Transfers`, to: path.to.stockTransfers },
+    (data) => data?.stockTransfer?.stockTransferId
+  )
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {

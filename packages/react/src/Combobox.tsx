@@ -81,8 +81,6 @@ const Combobox = forwardRef<HTMLButtonElement, ComboboxProps>(
       return [labelText, selectedOption.helper].filter(Boolean).join(" - ");
     }, [selectedOption]);
     const dropdownContentWidthCh = useMemo(() => {
-      if (options.length === 0) return undefined;
-
       const maxOptionChars = options.reduce((longest, option) => {
         const labelText =
           typeof option.label === "string"
@@ -95,6 +93,9 @@ const Combobox = forwardRef<HTMLButtonElement, ComboboxProps>(
         return Math.max(longest, combined.length);
       }, 0);
 
+      // Keep a sensible minimum even for an empty list so the `emptyMessage`
+      // has room. An inline "+" trigger is tiny, so falling back to the trigger
+      // width would collapse the popover and wrap the message one word per line.
       return Math.min(72, Math.max(36, maxOptionChars + 8));
     }, [options]);
 
@@ -160,9 +161,7 @@ const Combobox = forwardRef<HTMLButtonElement, ComboboxProps>(
             onTouchMove={(e) => e.stopPropagation()}
             className="min-w-[var(--radix-popover-trigger-width)] max-w-[min(560px,calc(100vw-2rem))] p-1"
             style={{
-              width: dropdownContentWidthCh
-                ? `min(560px, max(var(--radix-popover-trigger-width), ${dropdownContentWidthCh}ch))`
-                : "var(--radix-popover-trigger-width)"
+              width: `min(560px, max(var(--radix-popover-trigger-width), ${dropdownContentWidthCh}ch))`
             }}
           >
             {emptyMessage && options.length === 0 ? (

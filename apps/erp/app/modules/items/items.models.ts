@@ -1,5 +1,7 @@
+import type { PostgrestError } from "@supabase/supabase-js";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
+import { nonConformancePriority } from "../quality/quality.models";
 import {
   methodItemType,
   methodOperationOrders,
@@ -59,6 +61,90 @@ export const itemReplenishmentSystems = [
   "Buy and Make"
 ] as const;
 
+// Maps an edit of ONE of the three interlocked item-level fields
+// (replenishmentSystem, defaultMethodType, sourcingType) to the columns that must
+// change together on the item, plus the values to mirror down to method materials.
+// Pure — no DB access — so the interlock rule lives in ONE place, shared by the
+// inline item-update route (x+/items+/update.tsx) and the change-order attributes
+// editor. Keeping them in sync via a hand-copied mapping is exactly the drift this
+// avoids.
+export function deriveItemMethodUpdate(
+  field: "replenishmentSystem" | "defaultMethodType" | "sourcingType",
+  value: string
+): {
+  itemUpdate: {
+    replenishmentSystem?: (typeof itemReplenishmentSystems)[number];
+    defaultMethodType?: (typeof methodType)[number];
+    sourcingType?: (typeof sourcingType)[number];
+  };
+  cascade: {
+    sourcingType?: (typeof sourcingType)[number];
+    methodType?: (typeof methodType)[number];
+  };
+} {
+  switch (field) {
+    case "replenishmentSystem": {
+      const replenishmentSystem =
+        value as (typeof itemReplenishmentSystems)[number];
+      // Picking a concrete replenishment system pins the default method type.
+      if (value !== "Buy and Make") {
+        const defaultMethodType: (typeof methodType)[number] =
+          value === "Make"
+            ? "Make to Order"
+            : value === "Buy"
+              ? "Purchase to Order"
+              : "Pull from Inventory";
+        return {
+          itemUpdate: { replenishmentSystem, defaultMethodType },
+          cascade: { methodType: defaultMethodType }
+        };
+      }
+      return { itemUpdate: { replenishmentSystem }, cascade: {} };
+    }
+    case "defaultMethodType": {
+      const defaultMethodType = value as (typeof methodType)[number];
+      // A concrete method type pins the replenishment system to match.
+      if (value !== "Pull from Inventory") {
+        const replenishmentSystem: (typeof itemReplenishmentSystems)[number] =
+          value === "Make to Order"
+            ? "Make"
+            : value === "Purchase to Order"
+              ? "Buy"
+              : "Buy and Make";
+        return {
+          itemUpdate: { defaultMethodType, replenishmentSystem },
+          cascade: { methodType: defaultMethodType }
+        };
+      }
+      return {
+        itemUpdate: { defaultMethodType },
+        cascade: { methodType: defaultMethodType }
+      };
+    }
+    case "sourcingType": {
+      const sourcingTypeValue = value as (typeof sourcingType)[number];
+      // Sourcing drives method type: Drop Ship → Purchase to Order, Ship from
+      // Inventory → Pull from Inventory, Specified → leave method type as-is.
+      const derivedMethodType: (typeof methodType)[number] | undefined =
+        value === "Drop Ship"
+          ? "Purchase to Order"
+          : value === "Ship from Inventory"
+            ? "Pull from Inventory"
+            : undefined;
+      return {
+        itemUpdate: {
+          sourcingType: sourcingTypeValue,
+          ...(derivedMethodType ? { defaultMethodType: derivedMethodType } : {})
+        },
+        cascade: {
+          sourcingType: sourcingTypeValue,
+          methodType: derivedMethodType
+        }
+      };
+    }
+  }
+}
+
 export const shelfLifeModes = [
   "NotManaged",
   "Fixed Duration",
@@ -73,7 +159,9 @@ export const partManufacturingPolicies = [
   "Make to Order"
 ] as const;
 
-export const serviceType = ["Internal", "External"] as const;
+// Services are Buy or Make only — never "Buy and Make", and never stocked
+// ("Pull from Inventory" is not a valid method for a Non-Inventory item).
+export const serviceReplenishmentSystems = ["Buy", "Make"] as const;
 
 export const supplierPartPriceSourceTypes = [
   "Quote",
@@ -139,8 +227,7 @@ export const itemValidator = z.object({
   // capped by the earliest input expiry — the output cannot outlast its
   // raw materials. Falls back to today + days when no input has a date.
   // Mirrors the inventory-settings "Calculate from BOM" copy.
-  shelfLifeCalculateFromBom: zfd.checkbox(),
-  requiresInspection: zfd.checkbox().optional()
+  shelfLifeCalculateFromBom: zfd.checkbox()
 });
 
 // Common storage / shelf-life refines. Shared across all item-type
@@ -345,55 +432,41 @@ export const materialValidatorWithGeneratedIds = z.object({
   sizes: z.array(z.string()).optional()
 });
 
-export const methodMaterialValidator = z
-  .object({
-    id: z.string().min(1, { message: "Material ID is required" }),
-    makeMethodId: z.string().min(1, { message: "Make method is required" }),
-    order: zfd.numeric(z.number().min(0)),
-    itemType: z.enum(methodItemType, {
-      errorMap: (issue, ctx) => ({
-        message: "Item type is required"
-      })
-    }),
-    kit: zfd.text(z.string().optional()).transform((value) => value === "true"),
-    methodType: z.enum(methodType, {
-      errorMap: (issue, ctx) => ({
-        message: "Method type is required"
-      })
-    }),
-    sourcingType: z.enum(sourcingType, {
-      errorMap: (issue, ctx) => ({
-        message: "Sourcing type is required"
-      })
-    }),
-    itemId: z.string().optional(),
-    methodOperationId: zfd.text(z.string().optional()),
-    // description: z.string().min(1, { message: "Description is required" }),
-    quantity: zfd.numeric(z.number().min(0)),
-    unitOfMeasureCode: z
-      .string()
-      .min(1, { message: "Unit of Measure is required" }),
-    storageUnitIds: z.string().transform((val) => {
-      try {
-        return JSON.parse(val) as Record<string, string>;
-      } catch {
-        return {};
-      }
-    }),
-    // BOM line-item effectivity: the build-date window this line applies to.
-    effectiveFrom: zfd.text(z.string().optional()),
-    effectiveTo: zfd.text(z.string().optional())
-  })
-  .refine(
-    (data) =>
-      !data.effectiveFrom ||
-      !data.effectiveTo ||
-      data.effectiveFrom <= data.effectiveTo,
-    {
-      message: "Effective From must be on or before Effective To",
-      path: ["effectiveTo"]
+export const methodMaterialValidator = z.object({
+  id: z.string().min(1, { message: "Material ID is required" }),
+  makeMethodId: z.string().min(1, { message: "Make method is required" }),
+  order: zfd.numeric(z.number().min(0)),
+  itemType: z.enum(methodItemType, {
+    errorMap: (issue, ctx) => ({
+      message: "Item type is required"
+    })
+  }),
+  kit: zfd.text(z.string().optional()).transform((value) => value === "true"),
+  methodType: z.enum(methodType, {
+    errorMap: (issue, ctx) => ({
+      message: "Method type is required"
+    })
+  }),
+  sourcingType: z.enum(sourcingType, {
+    errorMap: (issue, ctx) => ({
+      message: "Sourcing type is required"
+    })
+  }),
+  itemId: z.string().optional(),
+  methodOperationId: zfd.text(z.string().optional()),
+  // description: z.string().min(1, { message: "Description is required" }),
+  quantity: zfd.numeric(z.number().min(0)),
+  unitOfMeasureCode: z
+    .string()
+    .min(1, { message: "Unit of Measure is required" }),
+  storageUnitIds: z.string().transform((val) => {
+    try {
+      return JSON.parse(val) as Record<string, string>;
+    } catch {
+      return {};
     }
-  );
+  })
+});
 
 export const methodOperationValidator = z
   .object({
@@ -413,6 +486,8 @@ export const methodOperationValidator = z
     processId: z.string().min(1, { message: "Process is required" }),
     workCenterId: zfd.text(z.string().optional()),
     procedureId: zfd.text(z.string().optional()),
+    assemblyInstructionId: zfd.text(z.string().optional()),
+    inspectionDocumentId: zfd.text(z.string().optional()),
     description: zfd.text(
       z.string().min(0, { message: "Description is required" })
     ),
@@ -441,7 +516,7 @@ export const methodOperationValidator = z
   })
   .refine(
     (data) => {
-      if (data.operationType === "Inside") {
+      if (data.operationType !== "Outside Processing") {
         return !!data.setupUnit;
       }
       return true;
@@ -453,7 +528,7 @@ export const methodOperationValidator = z
   )
   .refine(
     (data) => {
-      if (data.operationType === "Inside") {
+      if (data.operationType !== "Outside Processing") {
         return !!data.laborUnit;
       }
       return true;
@@ -465,8 +540,10 @@ export const methodOperationValidator = z
   )
   .refine(
     (data) => {
-      if (data.operationType === "Inside") {
-        return !!data.laborUnit;
+      // Machine only applies to Process operations — Assembly and Inspection
+      // are setup + labor work.
+      if (data.operationType === "Process") {
+        return !!data.machineUnit;
       }
       return true;
     },
@@ -477,7 +554,7 @@ export const methodOperationValidator = z
   )
   .refine(
     (data) => {
-      if (data.operationType === "Inside") {
+      if (data.operationType !== "Outside Processing") {
         return Number.isFinite(data.setupTime);
       }
       return true;
@@ -489,7 +566,7 @@ export const methodOperationValidator = z
   )
   .refine(
     (data) => {
-      if (data.operationType === "Inside") {
+      if (data.operationType !== "Outside Processing") {
         return Number.isFinite(data.laborTime);
       }
       return true;
@@ -501,7 +578,7 @@ export const methodOperationValidator = z
   )
   .refine(
     (data) => {
-      if (data.operationType === "Inside") {
+      if (data.operationType === "Process") {
         return Number.isFinite(data.machineTime);
       }
       return true;
@@ -509,6 +586,18 @@ export const methodOperationValidator = z
     {
       message: "Machine time is required",
       path: ["machineTime"]
+    }
+  )
+  .refine(
+    (data) => {
+      if (data.operationType === "Inspection") {
+        return !!data.inspectionDocumentId;
+      }
+      return true;
+    },
+    {
+      message: "Inspection Plan is required",
+      path: ["inspectionDocumentId"]
     }
   );
 
@@ -594,6 +683,34 @@ export const supersessionModes = [
   "Stock Only",
   "No Stock"
 ] as const;
+
+export type SupersessionMode = (typeof supersessionModes)[number];
+
+// Single source of truth for how each supersession mode is presented — the same
+// color + description is reused everywhere the mode shows up (the item
+// supersession picker, the item lifecycle badge, and the change-order cutover),
+// so they never drift.
+export const supersessionModeMeta: Record<
+  SupersessionMode,
+  { color: "green" | "blue" | "orange" | "red"; description: string }
+> = {
+  "Consume First": {
+    color: "green",
+    description: "Use remaining stock before switching to the successor"
+  },
+  "Prefer New": {
+    color: "blue",
+    description: "Default to the successor; old part as fallback only"
+  },
+  "Stock Only": {
+    color: "orange",
+    description: "Hold a minimum reserve for service; no production use"
+  },
+  "No Stock": {
+    color: "red",
+    description: "Fully obsolete — do not plan or stock"
+  }
+};
 
 export const itemSupersessionValidator = z
   .object({
@@ -814,11 +931,17 @@ export const serviceValidator = applyStorageAndShelfLifeRefines(
   itemValidator.merge(
     z.object({
       id: z.string().min(1, { message: "Service ID is required" }).max(255),
-      serviceType: z.enum(serviceType, {
+      revision: z.string().min(1, { message: "Revision is required" }),
+      unitOfMeasureCode: z
+        .string()
+        .min(1, { message: "Unit of Measure is required" }),
+      replenishmentSystem: z.enum(serviceReplenishmentSystems, {
         errorMap: (issue, ctx) => ({
-          message: "Service type is required"
+          message: "Replenishment system is required"
         })
-      })
+      }),
+      // Services can never be shipped, received, or stocked
+      itemTrackingType: z.literal("Non-Inventory")
     })
   )
 );
@@ -853,4 +976,320 @@ export const unitOfMeasureValidator = z.object({
   id: zfd.text(z.string().optional()),
   code: z.string().min(1, { message: "Code is required" }).max(10),
   name: z.string().min(1, { message: "Name is required" }).max(50)
+});
+
+export const itemRevisionStatus = [
+  "Design",
+  "Prototype",
+  "Production",
+  "Obsolete"
+] as const;
+
+// companySettings.plmReleaseControl
+export const plmReleaseControl = ["off", "warn", "enforce"] as const;
+
+// Error shape returned by the change notice service functions: either a real
+// Supabase PostgrestError or a hand-built message (sequence/lookup failures that
+// don't originate from a query). One alias so callers get a consistent contract.
+export type ChangeNoticeError = PostgrestError | { message: string };
+
+// =============================================================================
+// Change Notices — validators, enums, and the stage state machine.
+//
+// A sub-area of the Items module, modeled on Quality. The header evolves the
+// existing `changeOrder` table. v2: a CO's per-affected-item edits live on a
+// REAL CO-owned Draft make method (no staged mirror tables); the change type
+// drives the release action. Validators here cover the header, affected items +
+// change type, cutover, manual supersession, and freeform actions.
+// =============================================================================
+
+// changeOrder.type — the legacy category enum on the header. Retained (the
+// column still exists); the primary "Category" is `changeOrderTypeId` (a row in
+// the changeNoticeType lookup, reseeded to Design improvement / Obsolescence /
+// Cost reduction).
+export const changeNoticeType = [
+  "Engineering",
+  "Manufacturing",
+  "Documentation"
+] as const;
+
+// V1 stage flow (forward, one step at a time). Broadcast on Start /
+// Implementation / Done; silent on Draft / Engineering Complete. "Cancelled" is
+// the off-ramp: a CO can be closed from any open stage and reopened to Draft.
+export const changeNoticeStatus = [
+  "Draft",
+  "Start",
+  "Engineering Complete",
+  "Implementation",
+  "Done",
+  "Cancelled"
+] as const;
+
+// The forward progress stages only (excludes the "Cancelled" off-ramp). Drives
+// the read-only status-flow progress bar so a cancelled CO doesn't render as a
+// sixth step.
+export const changeNoticeStageFlow: (typeof changeNoticeStatus)[number][] = [
+  "Draft",
+  "Start",
+  "Engineering Complete",
+  "Implementation",
+  "Done"
+];
+
+export const changeNoticeTaskStatus = [
+  "Pending",
+  "In Progress",
+  "Completed",
+  "Skipped"
+] as const;
+
+// v2 per-affected-item change type. Drives the release action + which editing
+// surface is shown. Two axes — is there a predecessor, and same part number?
+//   Version          = new method version on the SAME item (BoM/BoP, no supersession)
+//   Revision         = new revision item, same #, new rev (BoM/BoP + attrs, auto
+//                      old-rev→new-rev supersession)
+//   Replacement Part = new P/N derived from + auto-superseding the affected part
+//                      (BoM/BoP + attrs) — the 1:1 replacement, renamed from the old
+//                      "New Part"
+//   New Part         = net-new part, NO predecessor, NO supersession — introduced by
+//                      the CO (Make or Buy). Used to introduce a part under change
+//                      control, incl. the consolidated "1" in an N→1 assembly BOM
+//                      change.
+// BoM/BoP is editable on ANY change type for a manufactured (non-Buy) draft; only
+// Version's extra editing scope differs (no attributes/docs/cutover surface).
+export const changeNoticeChangeTypes = [
+  "Version",
+  "Revision",
+  "Replacement Part",
+  "New Part"
+] as const;
+export type ChangeNoticeChangeType = (typeof changeNoticeChangeTypes)[number];
+
+// changeOrder.priority reuses quality's nonConformancePriority DB enum.
+export const changeNoticePriority = nonConformancePriority;
+
+// -----------------------------------------------------------------------------
+// Stage state machine (G8 — one place). Forward, single step, plus the Cancel /
+// Reopen off-ramp. This map only encodes the allowed shape of a transition.
+// IMPORTANT: the forward stage is always index 0 — the header's "Advance" action
+// reads `transitions[status][0]`, so "Cancelled" must never be first.
+// -----------------------------------------------------------------------------
+export const changeNoticeStatusTransitions: Record<
+  (typeof changeNoticeStatus)[number],
+  (typeof changeNoticeStatus)[number][]
+> = {
+  Draft: ["Start", "Cancelled"],
+  Start: ["Engineering Complete", "Cancelled"],
+  "Engineering Complete": ["Implementation", "Cancelled"],
+  // Last entry is the reopen edge — "Done" stays first so the header still advances/releases.
+  Implementation: ["Done", "Cancelled", "Engineering Complete"],
+  Done: [],
+  // Reopen a closed CO back to Draft (fully editable). Done stays terminal.
+  Cancelled: ["Draft"]
+};
+
+export function isAllowedChangeNoticeTransition(
+  from: string | null | undefined,
+  to: string | null | undefined
+): boolean {
+  if (!from || !to || from === to) return false;
+  const allowed =
+    changeNoticeStatusTransitions[from as (typeof changeNoticeStatus)[number]];
+  if (!allowed) return false;
+  return (allowed as readonly string[]).includes(to);
+}
+
+// The stages that broadcast a team notification on entry.
+export const changeNoticeBroadcastStages: (typeof changeNoticeStatus)[number][] =
+  ["Start", "Implementation", "Done"];
+
+// "Open" = every stage before the record is closed at Done. Used by the item
+// open-CO alert and the single-open-CO guard.
+export const changeNoticeOpenStatuses: (typeof changeNoticeStatus)[number][] = [
+  "Draft",
+  "Start",
+  "Engineering Complete",
+  "Implementation"
+];
+
+// Locked once closed — Done (released, part of the audit trail) or Cancelled
+// (abandoned). Reopen a Cancelled CO to Draft to edit it again.
+export function isChangeNoticeLocked(
+  status: string | null | undefined
+): boolean {
+  return status === "Done" || status === "Cancelled";
+}
+
+// Engineering content — affected items, BOM/BOP drafts, cutover, reason/description.
+// Frozen from Implementation onward: what is being implemented must not shift underneath.
+export function canEditChangeNoticeEngineering(
+  status: string | null | undefined
+): boolean {
+  return !isChangeNoticeLocked(status) && status !== "Implementation";
+}
+
+// Why a change notice is locked, for whichever surface is asking: server guards
+// flash it, the affected-item UI shows it in the read-only tooltip. One wording,
+// so the two never drift.
+export function changeNoticeLockedMessage(status: string | null | undefined) {
+  return status === "Implementation"
+    ? "This change notice is being implemented, so its changes are locked. Reopen it to make changes."
+    : "This change notice is closed, so its changes are read-only.";
+}
+
+// Workflow content — action tasks, assignee, dates, priority. Editable until closed.
+export function canEditChangeNoticeWorkflow(
+  status: string | null | undefined
+): boolean {
+  return !isChangeNoticeLocked(status);
+}
+
+// -----------------------------------------------------------------------------
+// Header
+// -----------------------------------------------------------------------------
+export const changeNoticeValidator = z.object({
+  id: zfd.text(z.string().optional()),
+  changeOrderId: zfd.text(z.string().optional()),
+  name: z.string().min(1, { message: "Name is required" }),
+  reasonForChange: zfd.text(z.string().optional()),
+  description: zfd.text(z.string().optional()),
+  type: z.enum(changeNoticeType).optional(),
+  priority: z.enum(nonConformancePriority).optional(),
+  changeOrderTypeId: zfd.text(z.string().optional()),
+  nonConformanceId: zfd.text(z.string().optional()),
+  openDate: z.string().min(1, { message: "Open date is required" }),
+  dueDate: zfd.text(z.string().optional()),
+  assignee: zfd.text(z.string().optional()),
+  // Optional affected Parts/Tools to attach at create time — each is added as a
+  // Version affected item (Buy items coerced to Revision service-side). More can
+  // be added later on the CO detail. Only consumed by the create action.
+  affectedItemIds: zfd.repeatableOfType(z.string()).optional()
+});
+
+// Status transition (used by the $id.status route). fromStatus drives a
+// compare-and-swap so a stale/concurrent transition is rejected.
+export const changeNoticeStatusValidator = z.object({
+  id: z.string().min(1, { message: "Id is required" }),
+  fromStatus: z.enum(changeNoticeStatus),
+  status: z.enum(changeNoticeStatus),
+  assignee: zfd.text(z.string().optional())
+});
+
+// =============================================================================
+// Top-to-bottom change content (v2) — affected items + per-item change type +
+// cutover + manual supersession. The user selects affected parts first; each
+// part's edits live on a REAL CO-owned Draft make method edited via the normal
+// BillOfMaterial/BillOfProcess/PartProperties editors (no staged mirror tables).
+// All validators are flat objects (no discriminated unions / heavy generics) to
+// stay clear of TS2589 when threaded through @carbon/form's `validator()`.
+// =============================================================================
+
+// Affected item — the part the user selects to change. Adding one creates a
+// CO-owned Draft make method per the change type (service side).
+export const changeNoticeAffectedItemValidator = z.object({
+  id: zfd.text(z.string().optional()),
+  changeOrderId: z.string().min(1, { message: "Change notice is required" }),
+  itemId: z.string().min(1, { message: "Item is required" }),
+  changeType: z.enum(changeNoticeChangeTypes).default("Version"),
+  // Optional revision label for a Revision change (e.g. "A"). Blank → the next
+  // revision is auto-computed server-side (createChangeNoticeDraftMethod).
+  revision: zfd.text(z.string().optional())
+});
+
+// Add-affected-item path for a net-new "New Part" (no existing itemId): the CO
+// mints a brand-new inactive Part and adds it as a New Part affected item. Always
+// a Part (no Part/Tool choice in the modal).
+export const changeNoticeNewPartValidator = z.object({
+  changeOrderId: z.string().min(1, { message: "Change notice is required" }),
+  // The route branches on this raw FormData value; also seeds the change-type
+  // Select so it reads "New Part" after the form remounts (see AffectedItemForm).
+  changeType: z.enum(changeNoticeChangeTypes).default("New Part"),
+  readableId: z.string().min(1, { message: "Part number is required" }),
+  name: z.string().min(1, { message: "Name is required" }),
+  replenishmentSystem: z.enum(["Buy", "Make", "Buy and Make"]).default("Make"),
+  itemTrackingType: z.enum(itemTrackingTypes).default("Inventory")
+});
+
+// Switch the change type on an existing affected item (rebuilds its CO-owned
+// Draft make method for the new type — see updateChangeNoticeAffectedItemChangeType).
+export const changeNoticeAffectedItemChangeTypeValidator = z.object({
+  id: z.string().min(1, { message: "Id is required" }),
+  changeType: z.enum(changeNoticeChangeTypes)
+});
+
+// Per-item revision cutover config (Q3): existence of the oldRev→newRev
+// supersession is automatic at release; the user only tunes mode + dates here.
+export const changeNoticeAffectedItemCutoverValidator = z.object({
+  id: z.string().min(1, { message: "Id is required" }),
+  supersessionMode: z.enum(supersessionModes),
+  discontinuationDate: zfd.text(z.string().optional()),
+  successorEffectivityDate: zfd.text(z.string().optional())
+});
+
+// Action task status transition (Start / Complete / Reopen). Actions are
+// instantiated from templates (see changeOrderRequiredAction); there's no
+// freeform-create validator.
+export const changeNoticeActionStatusValidator = z.object({
+  id: z.string().min(1, { message: "Id is required" }),
+  status: z.enum(changeNoticeTaskStatus)
+});
+
+// Configurable default actions (changeOrderRequiredAction templates) — the
+// per-company set a new change notice is seeded from. Configured like Issue Types.
+export const changeNoticeRequiredActionValidator = z.object({
+  id: zfd.text(z.string().optional()),
+  name: z.string().min(1, { message: "Name is required" }),
+  active: zfd.checkbox()
+});
+
+// -----------------------------------------------------------------------------
+// Diff types (Q5 git-style) — one shape reused for the pre-release "tips"
+// (staged-vs-live) and the post-release revision redline (oldRev-vs-newRev).
+// -----------------------------------------------------------------------------
+export type MethodDiffStatus = "added" | "removed" | "modified" | "unchanged";
+
+export type MethodDiffEntry<T> = {
+  status: MethodDiffStatus;
+  before: T | null;
+  after: T | null;
+  // Field-level changes for a "modified" entry: { field: { before, after } }.
+  changedFields?: Record<string, { before: unknown; after: unknown }>;
+};
+
+// One operation's child-level diff (steps / parameters / tools), each bucket
+// classified added/removed/modified/unchanged. Defined here (not in
+// items.service.ts) so ChangeNoticeItemDiff can carry the operation tree
+// without a circular import; items.service.ts re-exports these for its own
+// callers.
+export type OperationChildrenDiff = {
+  steps: MethodDiffEntry<Record<string, unknown>>[];
+  parameters: MethodDiffEntry<Record<string, unknown>>[];
+  tools: MethodDiffEntry<Record<string, unknown>>[];
+};
+
+// An operation diff entry, optionally carrying its child-level diff. A superset
+// of MethodDiffEntry, so consumers typed against the base entry keep working.
+export type OperationDiffEntry = MethodDiffEntry<Record<string, unknown>> & {
+  children?: OperationChildrenDiff;
+};
+
+export type ChangeNoticeItemDiff = {
+  affectedItemId: string;
+  itemId: string;
+  materials: MethodDiffEntry<Record<string, unknown>>[];
+  // Operations carry the optional child (steps/parameters/tools) diff so the
+  // read-only diff viewer can render the BOP as a tree.
+  operations: OperationDiffEntry[];
+  attributes: MethodDiffEntry<Record<string, unknown>>[];
+  // Supplier parts on a Revision/New Part draft item. Drafts start with none
+  // (the source's suppliers aren't copied), so these surface as `added` entries.
+  supplierParts: MethodDiffEntry<Record<string, unknown>>[];
+};
+
+// -----------------------------------------------------------------------------
+// Change Notice Types (the "Category" lookup — configured like Issue Types)
+// -----------------------------------------------------------------------------
+export const changeNoticeTypeValidator = z.object({
+  id: zfd.text(z.string().optional()),
+  name: z.string().min(1, { message: "Name is required" })
 });

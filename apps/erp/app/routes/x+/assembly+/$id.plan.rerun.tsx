@@ -9,6 +9,7 @@ import {
   getLatestAssemblyPlanJob,
   isAssemblyPlanRunning
 } from "~/modules/production";
+import { isAssemblerServiceHealthy } from "~/modules/production/production.server";
 
 /**
  * Re-runs motion planning over the instruction's converted model. When the
@@ -25,6 +26,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const { id } = params;
   if (!id) throw new Error("Could not find id");
+
+  // `fresh` forces a from-scratch DERIVE plan (re-detects grouping/swarms and
+  // re-orders) even when steps exist — used by "Regenerate Steps". Without it,
+  // an instruction with steps re-plans in order-preserving re-motion mode.
+  const formData = await request.formData();
+  const fresh = formData.get("fresh") === "1";
 
   const instruction = await client
     .from("assemblyInstruction")
@@ -53,6 +60,20 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
+  // Every path here triggers the planner, which needs the geometry service.
+  if (!(await isAssemblerServiceHealthy())) {
+    return data(
+      { success: false },
+      await flash(
+        request,
+        error(
+          null,
+          "The geometry service is unavailable — motion planning can't run right now."
+        )
+      )
+    );
+  }
+
   const planJob = await getLatestAssemblyPlanJob(
     client,
     instruction.data.modelUploadId
@@ -63,14 +84,22 @@ export async function action({ request, params }: ActionFunctionArgs) {
       await flash(request, error(null, "Motion planning is already running"))
     );
   }
-  if (planJob.data?.status === "Queued") {
-    // Stale Queued row: the event was never picked up (worker pickup takes
-    // seconds). Fail it so it can't shadow the run we're about to start.
+  if (
+    planJob.data?.status === "Queued" ||
+    planJob.data?.status === "Processing"
+  ) {
+    // Stale row the guard above already ruled non-live: a Queued event that
+    // was never picked up, or a Processing run whose worker is gone (crash,
+    // or the in-memory dev Inngest server restarting mid-run). Fail it so it
+    // can't shadow the run we're about to start.
     await client
       .from("assemblyPlanJob")
       .update({
         status: "Failed",
-        error: "Planning never started — the job event was lost",
+        error:
+          planJob.data.status === "Queued"
+            ? "Planning never started — the job event was lost"
+            : "Planning run was lost (worker restarted mid-run)",
         updatedAt: new Date().toISOString()
       })
       .eq("id", planJob.data.id)
@@ -84,7 +113,43 @@ export async function action({ request, params }: ActionFunctionArgs) {
     .select("id", { count: "exact", head: true })
     .eq("assemblyInstructionId", id)
     .eq("companyId", companyId);
-  const hasSteps = (stepCount.count ?? 0) > 0;
+  // `fresh` re-derives from scratch (no order preservation), so treat it like
+  // "no steps yet" for the trigger below.
+  const hasSteps = !fresh && (stepCount.count ?? 0) > 0;
+
+  // Regenerate (fresh) replaces all steps once the plan lands — refuse up front
+  // if any step is manually authored or Done, rather than running the planner
+  // for ~15s and only then failing the regenerate.
+  if (fresh && (stepCount.count ?? 0) > 0) {
+    const locked = await client
+      .from("assemblyInstructionStep")
+      .select("id", { count: "exact", head: true })
+      .eq("assemblyInstructionId", id)
+      .eq("companyId", companyId)
+      .or("planConfidence.eq.manual,status.eq.Done");
+    if ((locked.count ?? 0) > 0) {
+      return data(
+        { success: false },
+        await flash(
+          request,
+          error(
+            null,
+            "Some steps are manually authored or Done — reset or delete them before regenerating"
+          )
+        )
+      );
+    }
+  }
+
+  // Auto-detected groups (swarms) are materialized as `assemblyUnit` rows so
+  // they show/edit like authored units — but that FREEZES the detection: on the
+  // next plan `loadPlanUnits` feeds them back as caller units, so the planner
+  // merges them as-is and never re-runs swarm detection (which is where things
+  // like board-mounted-component absorption happen). A from-scratch regenerate
+  // must re-derive them. We DON'T delete the rows here (a delete-then-failed-
+  // re-plan would strand the model ungrouped); instead `reDetectUnits` below
+  // tells the worker to omit auto-units for this run so detection re-runs, and
+  // step generation swaps the rows atomically once the new plan lands.
 
   // Create the job row before sending the event so the UI reflects the run
   // immediately (the worker adopts it via planJobId). Best-effort: planning
@@ -100,7 +165,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
     companyId,
     userId,
     ...(created.data?.id ? { planJobId: created.data.id } : {}),
-    ...(hasSteps ? { reMotionFor: id } : {})
+    ...(hasSteps ? { reMotionFor: id } : {}),
+    ...(fresh ? { reDetectUnits: true } : {})
   });
 
   return data(
@@ -110,7 +176,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
       success(
         hasSteps
           ? "Re-planning motions in the current step order — steps update when it finishes"
-          : "Motion planning started — regenerate steps when it finishes"
+          : fresh
+            ? "Re-planning from scratch — steps rebuild automatically when it finishes"
+            : "Motion planning started — steps generate when it finishes"
       )
     )
   );

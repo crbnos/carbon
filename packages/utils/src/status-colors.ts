@@ -189,6 +189,12 @@ export const JOURNAL_ENTRY_STATUS_COLOR_MAP = {
   Reversed: "red"
 } as const satisfies Record<string, StatusColor>;
 
+export const PERIOD_CLOSE_STATUS_COLOR_MAP = {
+  Open: "gray",
+  Locked: "orange",
+  Closed: "green"
+} as const satisfies Record<string, StatusColor>;
+
 export const RISK_STATUS_COLOR_MAP = {
   Open: "gray",
   "In Review": "blue",
@@ -232,7 +238,8 @@ export const statusColorMaps = {
   shipment: SHIPMENT_STATUS_COLOR_MAP,
   maintenanceDispatch: MAINTENANCE_DISPATCH_STATUS_COLOR_MAP,
   fixedAsset: FIXED_ASSET_STATUS_COLOR_MAP,
-  trackedEntity: TRACKED_ENTITY_STATUS_COLOR_MAP
+  trackedEntity: TRACKED_ENTITY_STATUS_COLOR_MAP,
+  supplierQuote: SUPPLIER_QUOTE_STATUS_COLOR_MAP
 } as const;
 
 export type StatusEntity = keyof typeof statusColorMaps;

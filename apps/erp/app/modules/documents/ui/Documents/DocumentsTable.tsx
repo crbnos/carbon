@@ -646,8 +646,8 @@ function getDocumentLocation(
       return path.to.gaugeCalibrationRecord(sourceDocumentId);
     case "Job":
       return path.to.job(sourceDocumentId);
-    // case "Service":
-    //   return path.to.service(sourceDocumentId);
+    case "Service":
+      return path.to.service(sourceDocumentId);
     case "Purchase Order":
       return path.to.purchaseOrder(sourceDocumentId);
     case "Purchasing Request for Quote":

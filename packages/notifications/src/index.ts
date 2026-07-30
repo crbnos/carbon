@@ -8,6 +8,12 @@ export enum NotificationEvent {
   ApprovalApproved = "approval-approved",
   ApprovalRejected = "approval-rejected",
   ApprovalRequested = "approval-requested",
+  // Change-notice stage broadcasts (the only CN events; no approval flow in v1).
+  // Values are persisted in `notification.event`, so they keep the legacy
+  // "change-order" spelling.
+  ChangeNoticeStarted = "change-order-started",
+  ChangeNoticeImplementation = "change-order-implementation",
+  ChangeNoticeDone = "change-order-done",
   DigitalQuoteResponse = "digital-quote-response",
   GaugeCalibrationExpired = "gauge-calibration-expired",
   JobAssignment = "job-assignment",
@@ -21,6 +27,7 @@ export enum NotificationEvent {
   ProcedureAssignment = "procedure-assignment",
   PurchaseInvoiceAssignment = "purchase-invoice-assignment",
   PurchaseOrderAssignment = "purchase-order-assignment",
+  PurchasingRfqAssignment = "purchasing-rfq-assignment",
   QuoteAssignment = "quote-assignment",
   QuoteExpired = "quote-expired",
   RiskAssignment = "risk-assignment",
@@ -45,6 +52,7 @@ export enum NotificationTopic {
   Approval = "approval",
   General = "general",
   Inventory = "inventory",
+  Items = "items",
   Job = "job",
   Maintenance = "maintenance",
   Purchasing = "purchasing",
@@ -54,6 +62,22 @@ export enum NotificationTopic {
   Suggestion = "suggestion",
   Training = "training"
 }
+
+// Display order for the notification-settings page (/x/account/notifications);
+// labels live in that route so Lingui extracts them.
+export const USER_FACING_NOTIFICATION_TOPICS = [
+  NotificationTopic.Approval,
+  NotificationTopic.Job,
+  NotificationTopic.Sales,
+  NotificationTopic.Quote,
+  NotificationTopic.Purchasing,
+  NotificationTopic.Inventory,
+  NotificationTopic.Quality,
+  NotificationTopic.Maintenance,
+  NotificationTopic.Training,
+  NotificationTopic.Suggestion,
+  NotificationTopic.General
+] as const satisfies readonly NotificationTopic[];
 
 // A labeled fact attached to a notification (e.g. Customer / Acme Corp),
 // rendered in the email, Slack text, and notification.payload.details.
@@ -100,6 +124,7 @@ export function getNotificationTopic(
       return NotificationTopic.Job;
     case NotificationEvent.PurchaseInvoiceAssignment:
     case NotificationEvent.PurchaseOrderAssignment:
+    case NotificationEvent.PurchasingRfqAssignment:
       return NotificationTopic.Purchasing;
     case NotificationEvent.QuoteAssignment:
     case NotificationEvent.QuoteExpired:
@@ -132,6 +157,10 @@ export function getNotificationTopic(
     case NotificationEvent.ApprovalRejected:
     case NotificationEvent.ApprovalRequested:
       return NotificationTopic.Approval;
+    case NotificationEvent.ChangeNoticeStarted:
+    case NotificationEvent.ChangeNoticeImplementation:
+    case NotificationEvent.ChangeNoticeDone:
+      return NotificationTopic.Items;
     default:
       return NotificationTopic.General;
   }
@@ -155,6 +184,8 @@ export function getNotificationEmailHeading(event: NotificationEvent): string {
       return "Purchase invoice assigned to you";
     case NotificationEvent.PurchaseOrderAssignment:
       return "Purchase order assigned to you";
+    case NotificationEvent.PurchasingRfqAssignment:
+      return "Purchasing RFQ assigned to you";
     case NotificationEvent.QuoteAssignment:
       return "Quote assigned to you";
     case NotificationEvent.QuoteExpired:
@@ -201,6 +232,12 @@ export function getNotificationEmailHeading(event: NotificationEvent): string {
       return "Your request was approved";
     case NotificationEvent.ApprovalRejected:
       return "Your request was rejected";
+    case NotificationEvent.ChangeNoticeStarted:
+      return "Change notice started";
+    case NotificationEvent.ChangeNoticeImplementation:
+      return "Change notice in implementation";
+    case NotificationEvent.ChangeNoticeDone:
+      return "Change notice complete";
     default:
       return "You have a new notification";
   }
@@ -215,6 +252,10 @@ export function getNotificationEmailCtaLabel(event: NotificationEvent): string {
     case NotificationEvent.ApprovalApproved:
     case NotificationEvent.ApprovalRejected:
       return "View decision";
+    case NotificationEvent.ChangeNoticeStarted:
+    case NotificationEvent.ChangeNoticeImplementation:
+    case NotificationEvent.ChangeNoticeDone:
+      return "View change notice";
     case NotificationEvent.JobCompleted:
       return "View job";
     case NotificationEvent.SuggestionResponse:
@@ -255,6 +296,8 @@ export function getNotificationTopicPhrase(
       return `${count} training ${plural}`;
     case NotificationTopic.Inventory:
       return `${count} inventory ${plural}`;
+    case NotificationTopic.Items:
+      return `${count} item ${plural}`;
     case NotificationTopic.Suggestion:
       return `${count} suggestion ${plural}`;
     case NotificationTopic.Approval:

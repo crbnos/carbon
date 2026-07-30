@@ -33,11 +33,15 @@ import {
   useDisclosure,
   VStack
 } from "@carbon/react";
-import { parseMentionsFromDocument } from "@carbon/utils";
+import {
+  parseMentionsFromDocument,
+  stripSpecialCharacters,
+  tiptapToText
+} from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useNumberFormatter } from "@react-aria/i18n";
 import { nanoid } from "nanoid";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   LuChevronDown,
   LuChevronRight,
@@ -55,6 +59,19 @@ import type { JobOperationStep } from "~/services/types";
 import { useItems, usePeople } from "~/stores";
 import { getPrivateUrl, path } from "~/utils/path";
 import FileDropzone from "../../FileDropzone";
+
+// An empty step description is persisted by the ERP editors as
+// JSON.stringify({}) === "{}" (and some legacy rows carry it as a tiptap doc
+// whose only text is literally "{}"). Treat an empty object, empty doc, or
+// "{}"-only text as "no description" so we render nothing instead of a bare "{}".
+function hasStepDescription(
+  description: JobOperationStep["description"]
+): boolean {
+  if (!description) return false;
+  const text = tiptapToText(description as JSONContent).trim();
+  if (text.length > 0 && text !== "{}") return true;
+  return parseMentionsFromDocument(description as JSONContent).length > 0;
+}
 
 export function StepsListItem({
   activeStep,
@@ -79,12 +96,12 @@ export function StepsListItem({
   const { name, description, type, unitOfMeasureCode, minValue, maxValue } =
     step;
 
-  const hasDescription = description && Object.keys(description).length > 0;
+  const hasDescription = hasStepDescription(description);
   const mentionIds = hasDescription
     ? parseMentionsFromDocument(description as JSONContent)
     : [];
   const disclosure = useDisclosure({
-    defaultIsOpen: !!hasDescription
+    defaultIsOpen: hasDescription
   });
 
   if (!operationId) return null;
@@ -372,16 +389,26 @@ export function RecordModal({
   const { company } = useUser();
   const [file, setFile] = useState<File | null>(null);
   const [filePath, setFilePath] = useState<string | null>(null);
+  // Bumped on every drop/remove so a stale in-flight upload can't set state
+  const uploadIdRef = useRef(0);
   const fetcher = useFetcher<{ success: boolean }>();
+
+  const removeFile = () => {
+    uploadIdRef.current += 1;
+    setFile(null);
+    setFilePath(null);
+  };
 
   const onDrop = async (acceptedFiles: File[]) => {
     if (!acceptedFiles[0] || !carbon) return;
     const fileUpload = acceptedFiles[0];
+    const uploadId = ++uploadIdRef.current;
 
     setFile(fileUpload);
     toast.info(t`Uploading ${fileUpload.name}`);
 
-    const fileName = `${company.id}/job/${attribute.operationId}/${attribute.id}/${nanoid()}/${fileUpload.name}`;
+    const safeName = stripSpecialCharacters(fileUpload.name) || "file";
+    const fileName = `${company.id}/job/${attribute.operationId}/${attribute.id}/${nanoid()}/${safeName}`;
 
     const upload = await carbon?.storage
       .from("private")
@@ -390,8 +417,11 @@ export function RecordModal({
         upsert: true
       });
 
+    if (uploadIdRef.current !== uploadId) return;
+
     if (upload.error) {
       toast.error(t`Failed to upload file: ${fileUpload.name}`);
+      removeFile();
     } else if (upload.data?.path) {
       toast.success(t`Uploaded: ${fileUpload.name}`);
       setFilePath(upload.data.path);
@@ -467,7 +497,7 @@ export function RecordModal({
               </>
             )}
             <VStack spacing={4}>
-              {attribute.description && (
+              {hasStepDescription(attribute.description) && (
                 <div
                   className="flex flex-col gap-2"
                   dangerouslySetInnerHTML={{
@@ -514,14 +544,7 @@ export function RecordModal({
                   <div className="flex flex-col gap-2 items-center justify-center py-6 w-full">
                     <LuFile className="size-10 text-muted-foreground" />
                     <p className="text-sm text-muted-foreground">{file.name}</p>
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      onClick={() => {
-                        setFile(null);
-                        setFilePath(null);
-                      }}
-                    >
+                    <Button variant="secondary" size="sm" onClick={removeFile}>
                       <Trans>Remove</Trans>
                     </Button>
                   </div>
@@ -539,10 +562,7 @@ export function RecordModal({
                       <Button
                         variant="secondary"
                         size="sm"
-                        onClick={() => {
-                          setFile(null);
-                          setFilePath(null);
-                        }}
+                        onClick={removeFile}
                       >
                         Remove
                       </Button>

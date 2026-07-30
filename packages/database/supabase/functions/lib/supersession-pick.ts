@@ -1,10 +1,6 @@
-// Single source of truth for date-aware BOM component picking, shared by the MRP
-// engine (planning / demand) and the get-method edge function (job creation) so
-// the two can never disagree about which component a given build date resolves to.
-//
-// Two independent mechanisms live here:
-//   1. Supersession swap — should a component be replaced by its successor.
-//   2. BOM-line effectivity — is a given BOM line live for a build date.
+// Single source of truth for the supersession swap — should a component be
+// replaced by its successor — shared by the MRP engine (planning / demand) and
+// the get-method edge function (job creation) so the two can never disagree.
 //
 // All dates are ISO "YYYY-MM-DD" strings. Lexicographic comparison is exact for
 // that format and equivalent to a calendar-date compare, so no date library is
@@ -72,20 +68,4 @@ export function buildSupersessionRedirectMap(
   }
 
   return redirect;
-}
-
-// BOM-line effectivity test. A line is live on `buildDate` unless the date falls
-// outside its [effectiveFrom, effectiveTo] window (inclusive bounds; a null bound
-// is open-ended). A missing buildDate means "always live" (graceful fallback so
-// an undated job never silently drops every line). Mirrors the explodeBom filter
-// in mrp-engine.ts.
-export function isLineEffective(
-  effectiveFrom: string | null | undefined,
-  effectiveTo: string | null | undefined,
-  buildDate: string | null | undefined
-): boolean {
-  if (!buildDate) return true;
-  if (effectiveFrom && buildDate < effectiveFrom) return false;
-  if (effectiveTo && buildDate > effectiveTo) return false;
-  return true;
 }

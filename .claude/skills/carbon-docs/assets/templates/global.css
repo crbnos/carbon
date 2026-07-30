@@ -1,0 +1,161 @@
+/* Carbon docs — Tailwind v4 + Geist + Carbon tokens + Fumadocs UI.
+ * See .claude/skills/carbon-docs/references/brand-integration.md for the why. */
+
+@import "tailwindcss";
+
+/* Geist (Carbon's typeface) */
+@import "non.geist";
+@import "non.geist/mono";
+
+/* Carbon's token → utility mapping (@theme inline) + @plugins */
+@import "@carbon/config/tailwind/theme.css";
+
+/* Fumadocs UI base + a neutral preset we override with Carbon tokens below */
+@import "fumadocs-ui/css/neutral.css";
+@import "fumadocs-ui/css/preset.css";
+
+/* Scan the docs app's own files for utility classes */
+@source "../";
+
+/* Raw token values for the default "Modern" (zinc) theme, baked in because a
+ * Next app has no React Router root route to inject them at runtime. */
+:root {
+  --background: 0 0% 100%;
+  --foreground: 220 10% 3.9%;
+  --card: 0 0% 100%;
+  --card-foreground: 220 10% 3.9%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 220 10% 3.9%;
+  --active: 222 10% 88%;
+  --active-foreground: 222 0 8%;
+  --primary: 220 5.9% 10%;
+  --primary-foreground: 0 0% 98%;
+  --secondary: 220 4.8% 95.9%;
+  --secondary-foreground: 220 5.9% 10%;
+  --muted: 220 4.8% 95.9%;
+  --muted-foreground: 220 3.8% 46.1%;
+  --accent: 220 4.8% 95.9%;
+  --accent-foreground: 220 5.9% 10%;
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 0 0% 98%;
+  --border: 220 5.9% 90%;
+  --input: 220 5.9% 90%;
+  --ring: 220 5.9% 10%;
+  --success: 142 70% 45%;
+  --success-foreground: 0 0% 98%;
+  --radius: 0.5rem;
+
+  /* Editorial highlight accent (progress fill, active step dot, feature label) */
+  --brand: 217 91% 60%;
+}
+
+.dark {
+  --background: 0 0% 0%;
+  --foreground: 0 0% 93%;
+  --card: 0 0% 4%;
+  --card-foreground: 0 0% 93%;
+  --popover: 0 0% 7%;
+  --popover-foreground: 0 0% 93%;
+  --active: 0 0% 10%;
+  --active-foreground: 0 0% 100%;
+  --primary: 0 0% 100%;
+  --primary-foreground: 0 0% 0%;
+  --secondary: 0 0% 7%;
+  --secondary-foreground: 0 0% 93%;
+  --muted: 0 0% 15%;
+  --muted-foreground: 0 0% 63%;
+  --accent: 0 0% 10%;
+  --accent-foreground: 0 0% 93%;
+  --destructive: 0 100% 64%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 0 0% 15%;
+  --input: 0 0% 15%;
+  --ring: 0 0% 35%;
+  --success: 152 72% 53%;
+  --success-foreground: 0 0% 0%;
+
+  --brand: 213 94% 68%;
+}
+
+/* Expose --brand as Tailwind color utilities (text-brand, bg-brand, bg-brand/10) */
+@theme inline {
+  --color-brand: hsl(var(--brand));
+}
+
+/* Map Fumadocs' own theme variables onto Carbon tokens — one palette everywhere */
+:root,
+.dark {
+  --color-fd-background: hsl(var(--background));
+  --color-fd-foreground: hsl(var(--foreground));
+  --color-fd-muted: hsl(var(--muted));
+  --color-fd-muted-foreground: hsl(var(--muted-foreground));
+  --color-fd-popover: hsl(var(--popover));
+  --color-fd-popover-foreground: hsl(var(--popover-foreground));
+  --color-fd-card: hsl(var(--card));
+  --color-fd-card-foreground: hsl(var(--card-foreground));
+  --color-fd-border: hsl(var(--border));
+  --color-fd-primary: hsl(var(--primary));
+  --color-fd-primary-foreground: hsl(var(--primary-foreground));
+  --color-fd-secondary: hsl(var(--secondary));
+  --color-fd-secondary-foreground: hsl(var(--secondary-foreground));
+  --color-fd-accent: hsl(var(--accent));
+  --color-fd-accent-foreground: hsl(var(--accent-foreground));
+  --color-fd-ring: hsl(var(--ring));
+}
+
+/* Carbon's theme.css pulls in @tailwindcss/typography, whose `.prose` rules
+ * collide with Fumadocs' content (also `.prose`) and apply fixed grays that
+ * don't adapt to dark mode. Point Typography's color vars at Carbon tokens so
+ * prose text is theme-aware (near-white on dark, near-black on light). */
+.prose {
+  --tw-prose-body: hsl(var(--foreground));
+  --tw-prose-headings: hsl(var(--foreground));
+  --tw-prose-lead: hsl(var(--muted-foreground));
+  --tw-prose-links: hsl(var(--primary));
+  --tw-prose-bold: hsl(var(--foreground));
+  --tw-prose-counters: hsl(var(--muted-foreground));
+  --tw-prose-bullets: hsl(var(--border));
+  --tw-prose-hr: hsl(var(--border));
+  --tw-prose-quotes: hsl(var(--foreground));
+  --tw-prose-quote-borders: hsl(var(--border));
+  --tw-prose-captions: hsl(var(--muted-foreground));
+  --tw-prose-code: hsl(var(--foreground));
+  --tw-prose-pre-code: hsl(var(--foreground));
+  --tw-prose-pre-bg: hsl(var(--muted));
+  --tw-prose-th-borders: hsl(var(--border));
+  --tw-prose-td-borders: hsl(var(--border));
+}
+
+@layer base {
+  body {
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+    font-family: var(--font-sans);
+    letter-spacing: var(--tracking-normal);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* Editorial reading rhythm for the Guide surface (.guide-prose on the article) */
+  .guide-prose p,
+  .guide-prose li {
+    font-size: 1.0625rem;
+    line-height: 1.75;
+  }
+  .guide-prose h1 {
+    font-size: clamp(2.25rem, 5vw, 2.75rem);
+    line-height: 1.1;
+    letter-spacing: -0.03em;
+    font-weight: 600;
+  }
+  .guide-prose h2 {
+    margin-top: 3rem;
+    font-size: 1.5rem;
+    letter-spacing: -0.02em;
+    font-weight: 600;
+  }
+
+  table {
+    font-variant-numeric: tabular-nums;
+  }
+}

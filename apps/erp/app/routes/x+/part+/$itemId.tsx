@@ -29,6 +29,8 @@ import { ResizablePanels } from "~/components/Layout";
 import { flattenTree } from "~/components/TreeView";
 import type { ItemFile, PartSummary } from "~/modules/items";
 import {
+  changeNoticeOpenStatuses,
+  findChangeNoticesForItem,
   getItemFiles,
   getItemSupersededBy,
   getItemSupersession,
@@ -50,12 +52,14 @@ import type { UsedInNode } from "~/modules/items/ui/Item/UsedIn";
 import { UsedInSkeleton, UsedInTree } from "~/modules/items/ui/Item/UsedIn";
 import { PartHeader, PartProperties } from "~/modules/items/ui/Parts";
 import { getTagsList } from "~/modules/shared";
-import type { Handle } from "~/utils/handle";
+import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
 export const handle: Handle = {
-  breadcrumb: msg`Parts`,
-  to: path.to.parts,
+  breadcrumb: detailBreadcrumb(
+    { breadcrumb: msg`Parts`, to: path.to.parts },
+    (data) => data?.partSummary?.readableIdWithRevision
+  ),
   module: "items"
 };
 
@@ -74,14 +78,21 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     pickMethods,
     tags,
     supersession,
-    supersededBy
+    supersededBy,
+    openChangeNotices
   ] = await Promise.all([
     getPart(client, itemId, companyId),
     getSupplierParts(client, itemId, companyId),
     getPickMethods(client, itemId, companyId),
     getTagsList(client, companyId, "part"),
     getItemSupersession(client, itemId, companyId),
-    getItemSupersededBy(client, itemId, companyId)
+    getItemSupersededBy(client, itemId, companyId),
+    // Locks manual version/revision creation while a CO owns this part
+    findChangeNoticesForItem(client, {
+      itemId,
+      companyId,
+      statuses: changeNoticeOpenStatuses
+    })
   ]);
 
   if (partSummary.data?.companyId !== companyId) {
@@ -103,12 +114,15 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const methodTree = getMakeMethods(client, itemId, companyId).then(
     async (makeMethods) => {
+      // Include CO-owned drafts so a revision/new-part item created by an open
+      // Change Notice shows its method tree on the item master, in sync with the
+      // CO (same makeMethod). Active is still preferred as the default below.
+      const selectable = makeMethods.data ?? [];
       const makeMethod = requestedMethodId
-        ? (makeMethods.data?.find((m) => m.id === requestedMethodId) ??
-          makeMethods.data?.find((m) => m.status === "Active") ??
-          makeMethods.data?.[0])
-        : (makeMethods.data?.find((m) => m.status === "Active") ??
-          makeMethods.data?.[0]);
+        ? (selectable.find((m) => m.id === requestedMethodId) ??
+          selectable.find((m) => m.status === "Active") ??
+          selectable[0])
+        : (selectable.find((m) => m.status === "Active") ?? selectable[0]);
       if (!makeMethod) return null;
 
       const fullMethod = await getMakeMethodById(
@@ -141,7 +155,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     makeMethods: getMakeMethods(client, itemId, companyId),
     tags: tags.data ?? [],
     usedIn: getPartUsedIn(client, itemId, companyId),
-    methodTree
+    methodTree,
+    openChangeNotices: openChangeNotices.data ?? []
   };
 }
 
@@ -254,6 +269,7 @@ export default function PartRoute() {
                                 shipmentLines,
                                 supplierQuotes,
                                 assemblyInstructions,
+                                inspections,
                                 jobMaterialUsage
                               } = resolvedUsedIn;
 
@@ -359,6 +375,13 @@ export default function PartRoute() {
                                 });
                               }
 
+                              tree.push({
+                                key: "inspections",
+                                name: t`Inspections`,
+                                module: "quality",
+                                children: inspections
+                              });
+
                               return (
                                 <UsedInTree
                                   tree={tree}
@@ -413,6 +436,7 @@ export default function PartRoute() {
                               shipmentLines,
                               supplierQuotes,
                               assemblyInstructions,
+                              inspections,
                               jobMaterialUsage
                             } = resolvedUsedIn;
 
@@ -517,6 +541,13 @@ export default function PartRoute() {
                                 children: assemblyInstructions
                               });
                             }
+
+                            tree.push({
+                              key: "inspections",
+                              name: "Inspections",
+                              module: "quality",
+                              children: inspections
+                            });
 
                             return (
                               <UsedInTree

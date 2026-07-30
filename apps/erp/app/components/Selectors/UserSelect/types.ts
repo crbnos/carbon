@@ -8,12 +8,12 @@ import type {
   RefObject
 } from "react";
 
-import type { Group, User } from "~/modules/users";
+import type { User, UserSelectGroup } from "~/modules/users";
 
 export type ComboBoxRefs = {
   containerRef: RefObject<HTMLDivElement>;
   inputRef: RefObject<HTMLInputElement>;
-  listBoxRef: RefObject<HTMLUListElement>;
+  listBoxRef: RefObject<HTMLDivElement>;
   popoverRef: RefObject<HTMLDivElement>;
   buttonRef: RefObject<Element>;
   focusableNodes: MutableRefObject<Record<string, TreeNode>>;
@@ -54,13 +54,6 @@ export interface UserSelectProps {
   ) => void;
 }
 
-export type OptionGroup = {
-  uid: string;
-  expanded: boolean;
-  items: IndividualOrGroup[];
-  name: string;
-};
-
 export type TreeNode = {
   uid: string;
   expandable: boolean;
@@ -68,12 +61,6 @@ export type TreeNode = {
   previousId?: string;
   nextId?: string;
 };
-export interface PopoverProps {
-  aria: HTMLAttributes<HTMLDivElement>;
-  children: ReactNode;
-  innerProps: UserSelectProps;
-  refs: ComboBoxRefs;
-}
 
 interface SelectionOptions {
   uid: string;
@@ -82,18 +69,49 @@ interface SelectionOptions {
   isPersistent?: boolean;
 }
 
-type UserWithOptions = User & SelectionOptions;
-type SelectionGroupWithOptions = Group["data"] & {
-  children?: Group[];
+export type UserWithOptions = User & SelectionOptions;
+
+/**
+ * A selected (or selectable) group. `users` is always present — it is the
+ * discriminator between users and groups ("users" in item) relied on by the
+ * Form wrappers — but stays [] until the group is exploded.
+ */
+export type SelectionGroupWithOptions = UserSelectGroup & {
+  users: User[];
+  memberCount: number;
 } & SelectionOptions;
 
 export type IndividualOrGroup = UserWithOptions | SelectionGroupWithOptions;
 
 export type SelectionItemsById = Record<string, IndividualOrGroup>;
 
+/** One group node in the lazily-loaded browse tree. */
+export type GroupNode = {
+  /** Path-scoped id: `${parentUid}_${groupId}_group` — unique per tree path. */
+  uid: string;
+  group: UserSelectGroup;
+  expanded: boolean;
+  loading: boolean;
+  /** null until the group's direct members have been fetched. */
+  members: { groups: GroupNode[]; users: UserWithOptions[] } | null;
+};
+
+export type UserSelectViewModel =
+  | {
+      mode: "browse";
+      nodes: GroupNode[];
+      hasMore: boolean;
+      loadingMore: boolean;
+    }
+  | {
+      mode: "search";
+      groups: SelectionGroupWithOptions[];
+      users: UserWithOptions[];
+      searching: boolean;
+    };
+
 export interface SelectInputProps {
   aria?: Omit<InputHTMLAttributes<HTMLInputElement>, "size">;
-  errors?: import("@supabase/supabase-js").PostgrestError;
   inputValue: string;
   innerProps: UserSelectProps;
   loading: boolean;
@@ -106,23 +124,11 @@ export interface SelectInputProps {
   onInputFocus: () => void;
 }
 
-export interface UserTreeSelectProps {
-  aria: HTMLAttributes<HTMLUListElement>;
-  disabledSelections?: string[];
-  focusedId: string | null;
-  groups: OptionGroup[];
-  groupTypeFilter?: string;
+export interface PopoverProps {
+  aria: HTMLAttributes<HTMLDivElement>;
+  children: ReactNode;
   innerProps: UserSelectProps;
-  instanceId: string;
-  itemOnSelect?: (selectableItem: IndividualOrGroup) => void;
-  itemOnStage?: (selectableItem: IndividualOrGroup) => void;
-  loading: boolean;
-  multi?: boolean;
   refs: ComboBoxRefs;
-  searchFilter?: string;
-  selectionItemsById: SelectionItemsById;
-  stagedSelectionsById?: SelectionItemsById;
-  visible?: boolean;
 }
 
 export interface UserSelectionGenericQueryFilters {

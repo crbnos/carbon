@@ -6,7 +6,7 @@ import { forwardRef } from "react";
 import { cn } from "./utils/cn";
 
 const alertVariants = cva(
-  "relative flex flex-col gap-1.5 w-full rounded-lg border p-3 transition-colors [&>svg~*]:pl-7 [&>svg+div]:translate-y-[-3px] [&>svg]:absolute [&>svg]:left-4 [&>svg]:top-[10px] [&>svg]:text-foreground dark:inset-ring dark:inset-ring-white/5",
+  "relative grid w-full grid-cols-[0_1fr] items-start gap-y-1.5 rounded-lg border p-3 transition-colors has-[>svg]:grid-cols-[1rem_1fr] has-[>svg]:gap-x-3 [&>svg]:size-4 [&>svg]:text-foreground dark:inset-ring dark:inset-ring-white/5",
   {
     variants: {
       variant: {
@@ -45,7 +45,7 @@ const AlertTitle = forwardRef<
 >(({ className, ...props }, ref) => (
   <h5
     ref={ref}
-    className={cn("font-medium leading-none text-sm", className)}
+    className={cn("col-start-2 font-medium leading-none text-sm", className)}
     {...props}
   />
 ));
@@ -57,7 +57,7 @@ const AlertDescription = forwardRef<
 >(({ className, ...props }, ref) => (
   <div
     ref={ref}
-    className={cn("text-xs [&_p]:leading-relaxed", className)}
+    className={cn("col-start-2 text-xs [&_p]:leading-relaxed", className)}
     {...props}
   />
 ));

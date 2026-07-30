@@ -6,7 +6,7 @@ import { notifyIssueStatusChanged } from "@carbon/ee/notifications";
 import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
-import { closeIssue } from "~/modules/quality/quality.server";
+import { closeIssue } from "~/modules/quality/quality-disposition.server";
 import { getCompanyIntegrations } from "~/modules/settings/settings.server";
 import { path, requestReferrer } from "~/utils/path";
 

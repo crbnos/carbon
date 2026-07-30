@@ -82,6 +82,9 @@ serve(async (req: Request) => {
     if (!accountDefaults.data.laborAbsorptionAccount) {
       throw new Error("laborAbsorptionAccount not configured in account defaults");
     }
+    // Cast until the cloud-generated DB types include the new column.
+    const overheadAbsorptionAccount = (accountDefaults.data as any)
+      .overheadAbsorptionAccount as string | undefined;
 
     const event = productionEvent.data;
 
@@ -108,10 +111,11 @@ serve(async (req: Request) => {
     const jobId = (event.jobOperation as any).jobId as string;
 
     let cost = 0;
+    let overheadCost = 0;
     if (!reverse) {
       const workCenter = await client
         .from("workCenter")
-        .select("laborRate, machineRate")
+        .select("laborRate, machineRate, overheadRate")
         .eq("id", event.workCenterId!)
         .single();
 
@@ -124,6 +128,13 @@ serve(async (req: Request) => {
           : Number(workCenter.data.laborRate ?? 0);
 
       cost = durationHours * rate;
+      overheadCost = durationHours * Number(workCenter.data.overheadRate ?? 0);
+
+      if (overheadCost > 0 && !overheadAbsorptionAccount) {
+        throw new Error(
+          "overheadAbsorptionAccount not configured in account defaults"
+        );
+      }
     }
 
     // Net amount already posted for this specific event, grouped by account.
@@ -184,7 +195,7 @@ serve(async (req: Request) => {
       );
     }
 
-    if (cost <= 0 && reversalLines.length === 0) {
+    if (cost <= 0 && overheadCost <= 0 && reversalLines.length === 0) {
       // Nothing to post and nothing to reverse. On a reversal this clears the
       // flag so the event can be deleted; on a post it marks it done.
       await client
@@ -253,6 +264,32 @@ serve(async (req: Request) => {
               accountId: accountDefaults.data.laborAbsorptionAccount!,
               description: "Labor/Machine Absorption",
               amount: credit("expense", cost),
+              quantity: 1,
+              documentType: "Production Event",
+              documentId: jobId,
+              documentLineReference: eventReference,
+              journalLineReference,
+              companyId,
+            },
+          ]
+        : []),
+      ...(!reverse && overheadCost > 0
+        ? [
+            {
+              accountId: accountDefaults.data.workInProgressAccount,
+              description: "WIP Account (Overhead)",
+              amount: debit("asset", overheadCost),
+              quantity: 1,
+              documentType: "Production Event",
+              documentId: jobId,
+              documentLineReference: eventReference,
+              journalLineReference,
+              companyId,
+            },
+            {
+              accountId: overheadAbsorptionAccount!,
+              description: "Overhead Absorption",
+              amount: credit("expense", overheadCost),
               quantity: 1,
               documentType: "Production Event",
               documentId: jobId,

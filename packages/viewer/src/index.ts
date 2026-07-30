@@ -5,7 +5,7 @@ export {
   type FutureComponentsMode
 } from "./AssemblyPlayer";
 export { AssemblyViewer, type AssemblyViewerProps } from "./AssemblyViewer";
-export { computeStepCameraPose, computeStepCameras } from "./camera";
+export { type FramingFit, fitFraming } from "./camera";
 export { describeStep, type NamedUnit } from "./describe";
 export { synthesizeFallbackMotion } from "./fallback";
 export {
@@ -15,14 +15,19 @@ export {
   indexAssemblyGraph
 } from "./graph";
 export {
+  ModelCanvas,
+  type ModelCanvasProps,
+  type ModelMetrics
+} from "./ModelCanvas";
+export {
   buildStepClip,
   displayMotionForStep,
-  exaggerateMotion,
   type MotionKeyframeOptions,
   type MotionKeyframes,
   motionDuration,
   motionToKeyframes,
   motionTravelDistance,
+  naturalizeMotion,
   type Pose,
   type StepClipOptions,
   stepTimelineSeconds
@@ -31,10 +36,12 @@ export {
   type AssemblyPlan,
   type AssemblyPlanComponent,
   type AssemblyStepGroup,
+  assignStepPhases,
   buildAssemblyStepGroups,
   CURRENT_PLAN_VERSION,
   type PlannedMotion,
-  planMotionForComponents
+  planMotionForComponents,
+  type StepPhase
 } from "./plan";
 export type {
   AssemblyGraph,
@@ -48,6 +55,7 @@ export type {
   Motion,
   NoneMotion,
   PathMotion,
+  PlanViewHint,
   Quat,
   Vec3
 } from "./types";

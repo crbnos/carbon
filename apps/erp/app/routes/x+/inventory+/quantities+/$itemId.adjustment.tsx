@@ -32,7 +32,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (validation.error) {
     return validationError(validation.error);
   }
-  const { ...d } = validation.data;
+  // `requiresSerialTracking` is a form-only flag for the serial quantity guard —
+  // strip it before the service call (not an `insertManualInventoryAdjustment` arg).
+  const { requiresSerialTracking: _requiresSerialTracking, ...d } =
+    validation.data;
   const acknowledged = formData.get("acknowledged") === "true";
 
   // Business rule evaluation. Item rules fire on the `inventoryAdjustment`
@@ -109,7 +112,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
         ? "Insufficient quantity for negative adjustment"
         : itemLedger.error === "Serial number not found"
           ? "Serial number not found"
-          : "Failed to create manual inventory adjustment";
+          : itemLedger.error ===
+              "Multiple tracked entities in this storage unit — select a specific row to adjust"
+            ? "Multiple tracked entities in this storage unit — select a specific row to adjust"
+            : "Failed to create manual inventory adjustment";
 
     return {
       error: { message },

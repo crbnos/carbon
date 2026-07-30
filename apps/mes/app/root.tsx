@@ -9,19 +9,20 @@ import { validator } from "@carbon/form";
 import { LocaleProvider, resolveLanguage } from "@carbon/locale";
 import { requestIdMiddleware } from "@carbon/logger/middleware.server";
 import {
-  Button,
-  Heading,
   OperatingSystemContextProvider,
   Toaster,
   TooltipProvider,
   useMode
 } from "@carbon/react";
+import { RootErrorBoundary } from "@carbon/react/ErrorBoundary";
 import type { Theme } from "@carbon/utils";
 import { getPreferenceHeaders, modeValidator, themes } from "@carbon/utils";
-import { Trans, useLingui } from "@lingui/react/macro";
+import { faviconLinks } from "@carbon/utils/favicon";
 import { I18nProvider } from "@react-aria/i18n";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Analytics } from "@vercel/analytics/react";
 import type React from "react";
+import { useState } from "react";
 import type {
   ActionFunctionArgs,
   LoaderFunctionArgs,
@@ -29,14 +30,12 @@ import type {
 } from "react-router";
 import {
   data,
-  isRouteErrorResponse,
   Links,
   Meta,
   Outlet,
   Scripts,
   ScrollRestoration,
-  useLoaderData,
-  useRouteLoaderData
+  useLoaderData
 } from "react-router";
 import { loadLinguiCatalogForRequest } from "~/services/lingui.server";
 import { getMode, setMode } from "~/services/mode.server";
@@ -53,36 +52,7 @@ export const links: Route.LinksFunction = () => [
   { rel: "stylesheet", href: Tailwind },
   { rel: "stylesheet", href: Background },
   { rel: "stylesheet", href: NProgress },
-  {
-    rel: "icon",
-    type: "image/svg+xml",
-    href: "/carbon-mark-light.svg",
-    media: "(prefers-color-scheme: light)"
-  },
-  {
-    rel: "icon",
-    type: "image/svg+xml",
-    href: "/carbon-mark-dark.svg",
-    media: "(prefers-color-scheme: dark)"
-  },
-  {
-    rel: "icon",
-    type: "image/png",
-    sizes: "32x32",
-    href: "/favicon-32x32.png"
-  },
-  {
-    rel: "icon",
-    type: "image/png",
-    sizes: "16x16",
-    href: "/favicon-16x16.png"
-  },
-  {
-    rel: "apple-touch-icon",
-    sizes: "180x180",
-    href: "/apple-touch-icon.png"
-  },
-  { rel: "manifest", href: "/site.webmanifest" }
+  ...faviconLinks
 ];
 
 export const meta: MetaFunction = () => {
@@ -98,6 +68,7 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
     AUTH_PROVIDERS,
     CARBON_EDITION,
     CARBON_API_URL,
+    CARBON_SLACK_ENABLED,
     CONTROLLED_ENVIRONMENT,
     ERP_URL,
     LOG_LEVEL,
@@ -121,6 +92,7 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
         AUTH_PROVIDERS,
         CARBON_EDITION,
         CARBON_API_URL,
+        CARBON_SLACK_ENABLED,
         CONTROLLED_ENVIRONMENT,
         ERP_URL,
         LOG_LEVEL,
@@ -177,13 +149,15 @@ function Document({
   title = "Carbon",
   lang = "en",
   mode = "light",
-  theme = "zinc"
+  theme = "zinc",
+  env
 }: {
   children: React.ReactNode;
   title?: string;
   lang?: string;
   mode?: "light" | "dark";
   theme?: string;
+  env?: Record<string, unknown>;
 }) {
   const selectedTheme = themes.find((t) => t.name === theme) as
     | Theme
@@ -231,7 +205,18 @@ function Document({
       </head>
       <body className="h-full bg-background antialiased selection:bg-primary/10 selection:text-primary">
         {children}
-        <Toaster position="bottom-right" visibleToasts={5} />
+        {/* Injected before <Scripts /> so `window.env` is populated before the
+            client entry module loads. Rendered here (not in <App />) so error
+            pages get it too — the client Supabase client reads SUPABASE_URL from
+            window.env at module load and otherwise crashes hydration. */}
+        {env ? (
+          <script
+            dangerouslySetInnerHTML={{
+              __html: `window.env = ${JSON.stringify(env)};`
+            }}
+          />
+        ) : null}
+        <Toaster position="bottom-left" visibleToasts={5} />
         <ScrollRestoration />
         <Scripts />
         {!CONTROLLED_ENVIRONMENT && import.meta.env.PROD && <Analytics />}
@@ -251,74 +236,45 @@ export default function App() {
   /* Dark/Light Mode */
   const mode = useMode();
 
+  // Backs hook-based useQuery (the viewer's useOptimizedModel); MES has no
+  // clientLoader cache convention, so this client exists only for hooks.
+  const [queryClient] = useState(
+    () =>
+      new QueryClient({
+        defaultOptions: {
+          queries: { refetchOnWindowFocus: false }
+        }
+      })
+  );
+
   return (
-    <OperatingSystemContextProvider platform={prefs.platform}>
-      <LocaleProvider locale={appLanguage} catalog={linguiCatalog}>
-        <I18nProvider locale={prefs.locale}>
-          <TooltipProvider delayDuration={200}>
-            <Document mode={mode} theme={theme} lang={appLanguage}>
-              <Outlet />
-              <script
-                dangerouslySetInnerHTML={{
-                  __html: `window.env = ${JSON.stringify(env)};`
-                }}
-              />
-            </Document>
-          </TooltipProvider>
-        </I18nProvider>
-      </LocaleProvider>
-    </OperatingSystemContextProvider>
+    <QueryClientProvider client={queryClient}>
+      <OperatingSystemContextProvider platform={prefs.platform}>
+        <LocaleProvider locale={appLanguage} catalog={linguiCatalog}>
+          <I18nProvider locale={prefs.locale}>
+            <TooltipProvider delayDuration={200}>
+              <Document mode={mode} theme={theme} lang={appLanguage} env={env}>
+                <Outlet />
+              </Document>
+            </TooltipProvider>
+          </I18nProvider>
+        </LocaleProvider>
+      </OperatingSystemContextProvider>
+    </QueryClientProvider>
   );
 }
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
-  // The ErrorBoundary renders in place of <App />, so it is outside the
-  // LocaleProvider mounted there. Re-establish it from the root loader data
-  // (falling back to defaults if the loader itself threw) so the boundary can
-  // use the same lingui catalog as the rest of the app.
-  const rootLoaderData = useRouteLoaderData<typeof loader>("root");
-
+  // The ErrorBoundary renders in place of <App />, so it needs its own
+  // <Document> shell (html/head/scripts + theme vars). The VOID//SYS screen is
+  // dark by design, so force dark mode regardless of the user's preference.
+  // Inject `window.env` (via getBrowserEnv, not root loader data which is
+  // undefined in a no-match boundary) so the client can hydrate — otherwise the
+  // Supabase client throws "supabaseUrl is required" at module load and the
+  // boundary never becomes interactive.
   return (
-    <LocaleProvider
-      locale={rootLoaderData?.preferences?.locale}
-      catalog={rootLoaderData?.linguiCatalog}
-    >
-      <ErrorBoundaryContent error={error} />
-    </LocaleProvider>
-  );
-}
-
-function ErrorBoundaryContent({ error }: { error: unknown }) {
-  const { t } = useLingui();
-  const message = isRouteErrorResponse(error)
-    ? (error.data.message ?? error.data)
-    : error instanceof Error
-      ? error.message
-      : String(error);
-
-  return (
-    <Document title={t`Error!`}>
-      <div className="light">
-        <div className="flex flex-col w-full h-screen  items-center justify-center space-y-4 ">
-          <img
-            src="/carbon-mark-light.svg"
-            alt="Carbon Logo"
-            className="block max-w-[60px] dark:hidden"
-          />
-          <img
-            src="/carbon-mark-dark.svg"
-            alt="Carbon Logo"
-            className="max-w-[60px] hidden dark:block"
-          />
-          <Heading size="h1">
-            <Trans>Something went wrong</Trans>
-          </Heading>
-          <p className="text-muted-foreground max-w-2xl">{message}</p>
-          <Button onClick={() => (window.location.href = "/")}>
-            <Trans>Back Home</Trans>
-          </Button>
-        </div>
-      </div>
+    <Document mode="dark" title="Error" env={getBrowserEnv()}>
+      <RootErrorBoundary error={error} />
     </Document>
   );
 }

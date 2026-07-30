@@ -99,7 +99,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const accountingPeriod = await getOrCreateAccountingPeriod(
     client,
     companyId,
-    disposalDate
+    disposalDate,
+    "accounting"
   );
   if (accountingPeriod.error) {
     throw redirect(
@@ -132,7 +133,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       assetAccountId: assetClass.assetAccountId,
       accumulatedDepreciationAccountId:
         assetClass.accumulatedDepreciationAccountId,
-      writeOffAccountId: assetClass.writeOffAccountId,
+      lossOnDisposalAccountId: assetClass.lossOnDisposalAccountId,
       accountingPeriodId: accountingPeriod.data!,
       locationDimensionId,
       assetClassDimensionId,

@@ -12,6 +12,7 @@ import {
   Text
 } from "@react-email/components";
 import type { CompanySettings, Email } from "../types";
+import ExternalNotes from "./components/ExternalNotes";
 import {
   Button,
   EmailThemeProvider,
@@ -85,31 +86,24 @@ const QuoteEmail = ({
             </Row>
           </Section>
           <Section>
-            {digitalQuoteUrl ? (
-              <>
-                <Text
-                  className={`text-left text-sm font-medium ${themeClasses.text} my-9`}
-                  style={{ color: lightStyles.text.color }}
-                >
-                  {recipient.firstName ? `Hi ${recipient.firstName}, ` : "Hi, "}
-                  we are pleased to provide you with your digital quote, which
-                  is available for review here:
-                </Text>
-                <Button href={digitalQuoteUrl} className="mb-4">
-                  View Digital Quote
-                </Button>
-              </>
-            ) : (
-              <Text
-                className={`text-left text-sm font-medium ${themeClasses.text} my-9`}
-                style={{ color: lightStyles.text.color }}
-              >
-                {recipient.firstName ? `Hi ${recipient.firstName}, ` : "Hi, "}
-                please see the attached quote and let me know if you have any
-                questions.
-              </Text>
-            )}
+            <Text
+              className={`text-left text-sm font-medium ${themeClasses.text} my-9`}
+              style={{ color: lightStyles.text.color }}
+            >
+              {recipient.firstName ? `Hi ${recipient.firstName}, ` : "Hi, "}
+              {digitalQuoteUrl
+                ? "we are pleased to provide you with your digital quote, which is available for review here:"
+                : "please see the attached quote and let me know if you have any questions."}
+            </Text>
           </Section>
+          <ExternalNotes content={quote.externalNotes} />
+          {digitalQuoteUrl ? (
+            <Section>
+              <Button href={digitalQuoteUrl} className="mb-4">
+                View Digital Quote
+              </Button>
+            </Section>
+          ) : null}
           <Section className="bg-gray-50 rounded-lg text-xs">
             <Row>
               <Column className="p-5" colSpan={2}>

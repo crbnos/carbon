@@ -229,59 +229,111 @@ export function spawnApps(opts: {
     });
 }
 
-export function spawnGeometry(opts: {
+const ASSEMBLER_PREFIX = pc.yellow(pc.bold("asm | "));
+
+/**
+ * Fail fast (before spawning) when the assembler is selected but its one-time
+ * native OCCT dependency isn't built. `cargo run --release` would otherwise
+ * either fail deep in a cc/link error or trigger a ~30-min build — neither is
+ * what a plain `crbn up` should do. We never auto-build it: the user runs the
+ * OCCT script once, then the assembler is available.
+ */
+/** Non-throwing check: is the assembler's one-time native OCCT build present? */
+export function assemblerDepsBuilt(): boolean {
+  const prefix =
+    process.env.OCCT_PREFIX ||
+    join(homedir(), ".cache", "carbon-occt", "8.0.0-p1");
+  return existsSync(prefix);
+}
+
+export function assertAssemblerDepsBuilt(): void {
+  if (!assemblerDepsBuilt()) {
+    const prefix =
+      process.env.OCCT_PREFIX ||
+      join(homedir(), ".cache", "carbon-occt", "8.0.0-p1");
+    throw new Error(
+      `Assembler selected, but its OCCT dependency isn't built.\n` +
+        `  expected: ${prefix}\n` +
+        `  build it once (~15-30 min): apps/assembler/scripts/build-occt.sh\n` +
+        `  then re-run, or run without the assembler app.`
+    );
+  }
+}
+
+const auxChildren = new Set<ExecaChildProcess>();
+
+function trackAuxChild(child: ExecaChildProcess): void {
+  auxChildren.add(child);
+  child.once("exit", () => auxChildren.delete(child));
+}
+
+export function stopAuxApps(): void {
+  for (const child of auxChildren) {
+    if (child.exitCode !== null || !child.pid) continue;
+    try {
+      process.kill(-child.pid, "SIGTERM");
+    } catch {
+      try {
+        child.kill("SIGTERM");
+        // biome-ignore lint/suspicious/noEmptyBlockStatements: best-effort kill
+      } catch {}
+    }
+  }
+}
+
+export function whenAuxAppExits(): Promise<void> {
+  return new Promise<void>((resolve) => {
+    for (const child of auxChildren) child.once("exit", () => resolve());
+  });
+}
+
+export function spawnAssembler(opts: {
   root: string;
   ports: PortMap;
 }): ExecaChildProcess | null {
   const { root, ports } = opts;
-  const serviceDir = join(root, "services", "geometry");
-  const venvPython = join(serviceDir, ".venv", "bin", "python");
+  const port = ports.PORT_ASSEMBLER;
+  const prefix = ASSEMBLER_PREFIX;
 
-  if (!existsSync(venvPython)) {
-    const prefix = pc.yellow(pc.bold("geo | "));
-    process.stderr.write(
-      `${prefix}${pc.dim("skipped — no .venv (run: cd services/geometry && python3 -m venv .venv && .venv/bin/pip install -e .)")}\n`
-    );
-    return null;
-  }
-
-  const color = pc.yellow;
-  const port = ports.PORT_GEOMETRY;
-
-  // Trust portless's self-signed CA so the service can fetch signed URLs
-  // from the local Supabase storage (served over HTTPS via portless).
-  const caPath = join(homedir(), ".portless", "ca.pem");
-  const caEnv = existsSync(caPath)
-    ? { SSL_CERT_FILE: caPath, REQUESTS_CA_BUNDLE: caPath }
-    : {};
-
-  const child = execa(
-    venvPython,
-    [
-      "-m",
-      "uvicorn",
-      "app.main:app",
-      "--port",
-      String(port),
-      "--host",
-      "127.0.0.1",
-      "--reload"
-    ],
-    {
-      cwd: serviceDir,
-      env: {
-        ...process.env,
-        ...caEnv,
-        GEOMETRY_SERVICE_API_KEY: "dev-local-key",
-        GEOMETRY_DEV_MODE: "true"
-      },
-      reject: false,
-      stdin: "ignore",
-      detached: true
-    }
+  // `cargo run --release` compiles-if-stale then runs, so a Rust change is
+  // picked up on the next `crbn up` (the CLI does not watch/rebuild otherwise).
+  // First build is slow (OCCT/FCL); incremental is quick. Run from the workspace
+  // root so cargo resolves the `assembler` package.
+  const file = "cargo";
+  const args = ["run", "--release", "-p", "assembler"];
+  const cwd = root;
+  // Merge the worktree .env* stack so the assembler shares the same REDIS_URL as
+  // the apps (keys are asm:-prefixed, so sharing the logical DB is safe).
+  const appEnv = spawnAppEnv(root, "assembler");
+  // ASSEMBLER_DEV_MODE=true also disables TLS verification in the service, so
+  // portless's self-signed CA needs no extra trust wiring. Passing
+  // REDIS_URL points the service at the stateless Redis-backed job +
+  // result store; unset (no worktree REDIS_URL) => in-memory, single-process.
+  const extraEnv: NodeJS.ProcessEnv = {
+    PORT: String(port),
+    ASSEMBLER_SERVICE_API_KEY: "dev-local-key",
+    ASSEMBLER_DEV_MODE: "true",
+    ...(appEnv.REDIS_URL ? { REDIS_URL: appEnv.REDIS_URL } : {})
+  };
+  process.stderr.write(
+    `${prefix}${pc.dim(
+      appEnv.REDIS_URL
+        ? "cargo run --release (redis store)"
+        : "cargo run --release"
+    )}\n`
   );
 
-  const prefix = color(pc.bold("geo | "));
+  const child = execa(file, args, {
+    cwd,
+    env: {
+      ...appEnv,
+      ...extraEnv
+    },
+    reject: false,
+    stdin: "ignore",
+    detached: true
+  });
+
   const pipe = (
     stream: NodeJS.ReadableStream | null,
     sink: NodeJS.WriteStream
@@ -295,16 +347,62 @@ export function spawnGeometry(opts: {
   pipe(child.stdout, process.stdout);
   pipe(child.stderr, process.stderr);
 
-  onShutdown(() => {
-    if (child.exitCode !== null || !child.pid) return;
-    try {
-      process.kill(-child.pid, "SIGTERM");
-    } catch {
-      try {
-        child.kill("SIGTERM");
-      } catch {}
-    }
+  trackAuxChild(child);
+  onShutdown(() => stopAuxApps());
+
+  return child;
+}
+
+const EMAIL_PREFIX = pc.green(pc.bold("eml | "));
+
+const EMAIL_STARTUP_PATTERNS: RegExp[] = [
+  /^\s*React Email\b/,
+  /^\s*Running preview at:/,
+  /Getting react-email preview server ready/,
+  /^\s*[✔✓]\s*Ready in\b/
+];
+
+function isEmailStartupLine(line: string): boolean {
+  // biome-ignore lint/suspicious/noControlCharactersInRegex: strip SGR codes
+  const plain = line.replace(/\x1b\[[0-9;]*m/g, "");
+  return EMAIL_STARTUP_PATTERNS.some((re) => re.test(plain));
+}
+
+export function spawnEmailPreview(opts: {
+  root: string;
+  ports: PortMap;
+  command?: () => { file: string; args: string[] };
+}): ExecaChildProcess {
+  const { root, ports, command } = opts;
+  const port = ports.PORT_EMAIL;
+  const { file, args } = command?.() ?? {
+    file: "pnpm",
+    args: ["run", "email:previews"]
+  };
+
+  const child = execa(file, args, {
+    cwd: join(root, "packages", "documents"),
+    env: { ...process.env, EMAIL_DEV_PORT: String(port) },
+    reject: false,
+    stdin: "ignore",
+    detached: true
   });
+
+  const pipe = (
+    stream: NodeJS.ReadableStream | null,
+    sink: NodeJS.WriteStream
+  ) => {
+    if (!stream) return;
+    readLines(stream, (line) => {
+      if (isNoiseLine(line) || isEmailStartupLine(line)) return;
+      sink.write(`${EMAIL_PREFIX}${line}\n`);
+    });
+  };
+  pipe(child.stdout, process.stdout);
+  pipe(child.stderr, process.stderr);
+
+  trackAuxChild(child);
+  onShutdown(() => stopAuxApps());
 
   return child;
 }
@@ -385,7 +483,9 @@ export async function installSkills(root: string): Promise<boolean> {
 // reliable since ports are unique per worktree (allocated in the slot
 // registry). Best-effort — silently skips ports with nothing listening.
 export async function killOrphanedApps(ports: PortMap): Promise<void> {
-  const appPorts = [ports.PORT_ERP, ports.PORT_MES];
+  const appPorts = [ports.PORT_ERP, ports.PORT_MES, ports.PORT_EMAIL].filter(
+    (p) => typeof p === "number"
+  );
   for (const port of appPorts) {
     const r = await execa("lsof", ["-ti", `:${port}`], { reject: false });
     if (r.exitCode !== 0) continue;

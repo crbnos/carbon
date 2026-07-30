@@ -14,6 +14,7 @@ import { CadModel, DeferredFiles } from "~/components";
 import { usePermissions, useRouteData } from "~/hooks";
 import type { ItemFile, MakeMethod, ToolSummary } from "~/modules/items";
 import {
+  getItemChangeNoticeData,
   getItemManufacturing,
   getMakeMethodById,
   getMakeMethods,
@@ -24,6 +25,14 @@ import {
   upsertItemManufacturing,
   upsertTool
 } from "~/modules/items";
+import { getRevisionLock } from "~/modules/items/items.server";
+import {
+  ChangeNoticeDraftLockReason,
+  getChangeNoticeDraftLock,
+  ItemChangeNotices,
+  ItemOpenChangeNoticeAlert,
+  LockedHint
+} from "~/modules/items/ui/ChangeNotice";
 import {
   BillOfMaterial,
   BillOfProcess,
@@ -52,21 +61,44 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const url = new URL(request.url);
   const requestedMethodId = url.searchParams.get("methodId");
 
-  const makeMethods = await getMakeMethods(client, itemId, companyId);
+  const [makeMethods, revisionLock, changeNoticeData] = await Promise.all([
+    getMakeMethods(client, itemId, companyId),
+    getRevisionLock(client, { itemId, companyId }),
+    // Tool → CO traceability (4b): CO history for this tool + type labels.
+    getItemChangeNoticeData(client, itemId, companyId)
+  ]);
+  const revisionStatus = revisionLock.revisionStatus;
+  const releaseControl = revisionLock.releaseControl;
+  // Include CO-owned draft methods so a revision/new-part item created by an open
+  // Change Notice still shows its BOM/BOP on the item master. The draft is the same
+  // makeMethod the CO edits, so the two surfaces stay in sync. Active is still
+  // preferred below, so a Version CO's item keeps its live method as the default.
+  const selectable = makeMethods.data ?? [];
   const makeMethod = requestedMethodId
-    ? (makeMethods.data?.find((m) => m.id === requestedMethodId) ??
-      makeMethods.data?.find((m) => m.status === "Active") ??
-      makeMethods.data?.[0])
-    : (makeMethods.data?.find((m) => m.status === "Active") ??
-      makeMethods.data?.[0]);
+    ? (selectable.find((m) => m.id === requestedMethodId) ??
+      selectable.find((m) => m.status === "Active") ??
+      selectable[0])
+    : (selectable.find((m) => m.status === "Active") ?? selectable[0]);
 
   if (!makeMethod) {
-    return { methodData: null, tags: [] };
+    return {
+      methodData: null,
+      tags: [],
+      revisionStatus,
+      releaseControl,
+      ...changeNoticeData
+    };
   }
 
   const fullMethod = await getMakeMethodById(client, makeMethod.id, companyId);
   if (fullMethod.error || !fullMethod.data) {
-    return { methodData: null, tags: [] };
+    return {
+      methodData: null,
+      tags: [],
+      revisionStatus,
+      releaseControl,
+      ...changeNoticeData
+    };
   }
 
   const [methodMaterials, methodOperations, tags, toolManufacturing] =
@@ -97,7 +129,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         })) ?? [],
       toolManufacturing: toolManufacturing.data
     },
-    tags: tags.data ?? []
+    tags: tags.data ?? [],
+    revisionStatus,
+    releaseControl,
+    ...changeNoticeData
   };
 }
 
@@ -179,7 +214,23 @@ export default function ToolDetailsRoute() {
   if (!itemId) throw new Error("Could not find itemId");
 
   const permissions = usePermissions();
-  const { methodData, tags } = useLoaderData<typeof loader>();
+  const {
+    methodData,
+    tags,
+    revisionStatus,
+    releaseControl,
+    changeNotices,
+    changeNoticeTypes
+  } = useLoaderData<typeof loader>();
+
+  const draftLock = getChangeNoticeDraftLock(
+    methodData?.makeMethod.changeOrderId,
+    changeNotices
+  );
+  const lockReason = draftLock ? (
+    <ChangeNoticeDraftLockReason lock={draftLock} />
+  ) : undefined;
+  const lockHint = lockReason ? <LockedHint reason={lockReason} /> : undefined;
 
   const toolData = useRouteData<{
     toolSummary: ToolSummary;
@@ -199,28 +250,36 @@ export default function ToolDetailsRoute() {
 
   return (
     <VStack spacing={2} className="p-2">
+      {permissions.is("employee") && (
+        <ItemOpenChangeNoticeAlert changeNotices={changeNotices ?? []} />
+      )}
       {permissions.is("employee") && methodData && (
         <>
-          <Suspense fallback={<Menubar />}>
-            <Await resolve={toolData?.makeMethods}>
-              {(makeMethods) => (
-                <MakeMethodTools
-                  itemId={methodData.makeMethod.itemId}
-                  makeMethods={makeMethods?.data ?? []}
-                  type="Tool"
-                  currentMethodId={methodData.makeMethod.id}
+          {["Make", "Buy and Make"].includes(
+            toolData.toolSummary?.replenishmentSystem ?? ""
+          ) && (
+            <>
+              <Suspense fallback={<Menubar />}>
+                <Await resolve={toolData?.makeMethods}>
+                  {(makeMethods) => (
+                    <MakeMethodTools
+                      itemId={methodData.makeMethod.itemId}
+                      makeMethods={makeMethods?.data ?? []}
+                      type="Tool"
+                      currentMethodId={methodData.makeMethod.id}
+                    />
+                  )}
+                </Await>
+              </Suspense>
+              {manufacturingInitialValues && (
+                <ItemManufacturingForm
+                  key={itemId}
+                  // @ts-ignore
+                  initialValues={manufacturingInitialValues}
+                  withConfiguration={false}
                 />
               )}
-            </Await>
-          </Suspense>
-
-          {manufacturingInitialValues && (
-            <ItemManufacturingForm
-              key={itemId}
-              // @ts-ignore
-              initialValues={manufacturingInitialValues}
-              withConfiguration={false}
-            />
+            </>
           )}
           <ItemNotes
             id={toolData.toolSummary?.id ?? null}
@@ -240,6 +299,10 @@ export default function ToolDetailsRoute() {
                 // @ts-ignore
                 operations={methodData.methodOperations}
                 replenishmentSystem={toolData.toolSummary?.replenishmentSystem}
+                revisionStatus={revisionStatus}
+                releaseControl={releaseControl}
+                isDisabled={!!draftLock}
+                disabledReason={lockReason}
               />
               <BillOfProcess
                 key={`bop:${itemId}`}
@@ -247,6 +310,10 @@ export default function ToolDetailsRoute() {
                 // @ts-ignore
                 operations={methodData.methodOperations ?? []}
                 tags={tags}
+                revisionStatus={revisionStatus}
+                releaseControl={releaseControl}
+                isDisabled={!!draftLock}
+                disabledReason={lockReason}
               />
             </>
           )}
@@ -261,18 +328,25 @@ export default function ToolDetailsRoute() {
                 itemId={itemId}
                 modelUpload={toolData.toolSummary ?? undefined}
                 type="Tool"
+                isReadOnly={!!draftLock}
+                titleExtras={lockHint}
               />
             )}
           </DeferredFiles>
 
           <CadModel
-            isReadOnly={!permissions.can("update", "parts")}
+            isReadOnly={!permissions.can("update", "parts") || !!draftLock}
             metadata={{ itemId }}
             modelPath={toolData?.toolSummary?.modelPath ?? null}
             title={t`CAD Model`}
+            titleExtras={lockHint}
           />
 
           <ItemRiskRegister itemId={itemId} />
+          <ItemChangeNotices
+            changeNotices={changeNotices ?? []}
+            types={changeNoticeTypes ?? []}
+          />
         </>
       )}
     </VStack>

@@ -32,6 +32,75 @@ export interface SetupGroup {
 export const SETUP_GROUPS: SetupGroup[] = [
   {
     n: 1,
+    title: msg`Accounting`,
+    desc: msg`Your books and how money flows.`,
+    // No dedicated academy course for accounting yet — docs only.
+    docsUrl: "https://docs.carbon.ms/docs/integrations/accounting",
+    rows: [
+      {
+        key: "fiscal-year",
+        object: msg`Fiscal Year`,
+        detail: msg`When your fiscal and tax years start`,
+        moduleTags: ["acc"]
+      },
+      {
+        key: "accounting-periods",
+        object: msg`Accounting Periods`,
+        detail: msg`The monthly periods you post into and close`,
+        moduleTags: ["acc"]
+      },
+      {
+        key: "chart-of-accounts",
+        object: msg`Chart of Accounts`,
+        detail: msg`Your general-ledger accounts and their structure`,
+        moduleTags: ["acc"]
+      },
+      {
+        key: "default-accounts",
+        object: msg`Default Accounts`,
+        detail: msg`The accounts Carbon posts to automatically`,
+        moduleTags: ["acc"]
+      },
+      {
+        key: "cost-centers",
+        object: msg`Cost Centers`,
+        detail: msg`The buckets you track costs against`,
+        moduleTags: ["acc"]
+      },
+      {
+        key: "accounting-dimensions",
+        object: msg`Dimensions`,
+        detail: msg`Extra tags for slicing your GL reporting`,
+        moduleTags: ["acc"]
+      },
+      {
+        key: "payment-terms",
+        object: msg`Payment Terms`,
+        detail: msg`Payment terms like Net 30 or due on receipt`,
+        moduleTags: ["acc"]
+      },
+      {
+        key: "exchange-rates",
+        object: msg`Exchange Rates`,
+        detail: msg`The currencies you trade in and their rates`,
+        moduleTags: ["acc"]
+      },
+      {
+        key: "asset-classes",
+        object: msg`Asset Classes`,
+        detail: msg`The categories your fixed assets fall into`,
+        moduleTags: ["acc"]
+      },
+      {
+        key: "fixed-assets",
+        object: msg`Fixed Assets`,
+        detail: msg`The capital assets you own and depreciate`,
+        moduleTags: ["acc"]
+      }
+    ]
+  },
+  {
+    n: 2,
     title: msg`Settings`,
     desc: msg`Company identity, documents, and system defaults.`,
     docsUrl: "https://docs.carbon.ms/docs",
@@ -81,7 +150,7 @@ export const SETUP_GROUPS: SetupGroup[] = [
     ]
   },
   {
-    n: 2,
+    n: 3,
     title: msg`Resources`,
     desc: msg`Where and how you make things.`,
     docsUrl: "https://docs.carbon.ms/guides/floor",
@@ -125,7 +194,7 @@ export const SETUP_GROUPS: SetupGroup[] = [
     ]
   },
   {
-    n: 3,
+    n: 4,
     title: msg`People`,
     desc: msg`Your team, structure, and access.`,
     docsUrl: "https://docs.carbon.ms/docs",
@@ -170,7 +239,7 @@ export const SETUP_GROUPS: SetupGroup[] = [
     ]
   },
   {
-    n: 4,
+    n: 5,
     title: msg`Items`,
     desc: msg`Parts, materials, and how you classify them.`,
     docsUrl: "https://docs.carbon.ms/guides/build",
@@ -251,7 +320,7 @@ export const SETUP_GROUPS: SetupGroup[] = [
     ]
   },
   {
-    n: 5,
+    n: 6,
     title: msg`Sales`,
     desc: msg`Who you sell to and at what price.`,
     docsUrl: "https://docs.carbon.ms/guides/order-to-cash",
@@ -296,7 +365,7 @@ export const SETUP_GROUPS: SetupGroup[] = [
     ]
   },
   {
-    n: 6,
+    n: 7,
     title: msg`Purchasing`,
     desc: msg`Who you buy from.`,
     docsUrl: "https://docs.carbon.ms/guides/rfq-to-po",
@@ -317,7 +386,7 @@ export const SETUP_GROUPS: SetupGroup[] = [
     ]
   },
   {
-    n: 7,
+    n: 8,
     title: msg`Inventory`,
     desc: msg`Where stock lives and how it ships.`,
     // No dedicated academy course for inventory yet — docs only.
@@ -346,63 +415,6 @@ export const SETUP_GROUPS: SetupGroup[] = [
         object: msg`Shipping Methods`,
         detail: msg`The carriers and methods you ship orders with`,
         moduleTags: ["inv"]
-      }
-    ]
-  },
-  {
-    n: 8,
-    title: msg`Accounting`,
-    desc: msg`Your books and how money flows.`,
-    // No dedicated academy course for accounting yet — docs only.
-    docsUrl: "https://docs.carbon.ms/docs/integrations/accounting",
-    rows: [
-      {
-        key: "chart-of-accounts",
-        object: msg`Chart of Accounts`,
-        detail: msg`Your general-ledger accounts and their structure`,
-        moduleTags: ["acc"]
-      },
-      {
-        key: "default-accounts",
-        object: msg`Default Accounts`,
-        detail: msg`The accounts Carbon posts to automatically`,
-        moduleTags: ["acc"]
-      },
-      {
-        key: "cost-centers",
-        object: msg`Cost Centers`,
-        detail: msg`The buckets you track costs against`,
-        moduleTags: ["acc"]
-      },
-      {
-        key: "accounting-dimensions",
-        object: msg`Dimensions`,
-        detail: msg`Extra tags for slicing your GL reporting`,
-        moduleTags: ["acc"]
-      },
-      {
-        key: "payment-terms",
-        object: msg`Payment Terms`,
-        detail: msg`Payment terms like Net 30 or due on receipt`,
-        moduleTags: ["acc"]
-      },
-      {
-        key: "exchange-rates",
-        object: msg`Exchange Rates`,
-        detail: msg`The currencies you trade in and their rates`,
-        moduleTags: ["acc"]
-      },
-      {
-        key: "fiscal-year",
-        object: msg`Fiscal Year`,
-        detail: msg`Your fiscal year and its accounting periods`,
-        moduleTags: ["acc"]
-      },
-      {
-        key: "asset-classes",
-        object: msg`Asset Classes`,
-        detail: msg`The categories your fixed assets fall into`,
-        moduleTags: ["acc"]
       }
     ]
   },

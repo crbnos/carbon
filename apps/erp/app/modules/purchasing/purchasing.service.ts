@@ -133,7 +133,7 @@ export async function duplicatePurchaseOrder(
     client
       .from("purchaseOrderLine")
       .select(
-        "purchaseOrderLineType, itemId, assetId, description, purchaseQuantity, supplierUnitPrice, inventoryUnitOfMeasureCode, purchaseUnitOfMeasureCode, locationId, storageUnitId, setupPrice, requiresInspection, customFields, conversionFactor, tags, internalNotes, externalNotes, exchangeRate, supplierShippingCost, modelUploadId, supplierTaxAmount, jobId, jobOperationId, promisedDate, requiredDate, accountId, costCenterId, ownerId, sortOrder, supplierPartId"
+        "purchaseOrderLineType, itemId, assetId, description, purchaseQuantity, supplierUnitPrice, inventoryUnitOfMeasureCode, purchaseUnitOfMeasureCode, locationId, storageUnitId, setupPrice, customFields, conversionFactor, tags, internalNotes, externalNotes, exchangeRate, supplierShippingCost, modelUploadId, supplierTaxAmount, jobId, jobOperationId, promisedDate, requiredDate, accountId, costCenterId, ownerId, sortOrder, supplierPartId"
       )
       .eq("purchaseOrderId", sourcePurchaseOrderId)
   ]);
@@ -1791,6 +1791,90 @@ export async function updatePurchaseOrderLineOrder(
         .where("id", "=", id)
         .execute();
     }
+  });
+}
+
+/**
+ * Short-close ("stop receiving") or reopen a purchase order line whose
+ * remaining quantity will never arrive. Sets `receivedComplete` without
+ * touching quantities or pricing, then recomputes the header status from the
+ * line completeness flags. Open-PO supply queries (get_inventory_quantities,
+ * openPurchaseOrderLines) exclude `receivedComplete` lines, so the undelivered
+ * remainder stops counting as incoming stock.
+ *
+ * Closing also caps the billable quantity at what was received (the convert
+ * and post-purchase-invoice functions apply the same rule), so a line whose
+ * received quantity is already fully invoiced gets `invoicedComplete` too —
+ * otherwise the order could never reach Completed. Reopening restores the
+ * natural rule (fully invoiced = ordered quantity).
+ */
+export async function shortClosePurchaseOrderLine(
+  db: Kysely<KyselyDatabase>,
+  {
+    lineId,
+    purchaseOrderId,
+    companyId,
+    userId,
+    intent
+  }: {
+    lineId: string;
+    purchaseOrderId: string;
+    companyId: string;
+    userId: string;
+    intent: "close" | "reopen";
+  }
+) {
+  return db.transaction().execute(async (trx) => {
+    const line = await trx
+      .selectFrom("purchaseOrderLine")
+      .select(["purchaseQuantity", "quantityReceived", "quantityInvoiced"])
+      .where("id", "=", lineId)
+      .where("purchaseOrderId", "=", purchaseOrderId)
+      .where("companyId", "=", companyId)
+      .executeTakeFirst();
+
+    if (!line) throw new Error("Purchase order line not found");
+
+    // NUMERIC columns come back from the pg driver as strings
+    const ordered = Number(line.purchaseQuantity ?? 0);
+    const received = Number(line.quantityReceived ?? 0);
+    const invoiced = Number(line.quantityInvoiced ?? 0);
+
+    const invoicedComplete =
+      intent === "close" ? invoiced >= received : invoiced >= ordered;
+
+    await trx
+      .updateTable("purchaseOrderLine")
+      .set({
+        receivedComplete: intent === "close",
+        invoicedComplete,
+        updatedBy: userId,
+        updatedAt: new Date().toISOString()
+      })
+      .where("id", "=", lineId)
+      .where("purchaseOrderId", "=", purchaseOrderId)
+      .where("companyId", "=", companyId)
+      .execute();
+
+    const lines = await trx
+      .selectFrom("purchaseOrderLine")
+      .select(["purchaseOrderLineType", "invoicedComplete", "receivedComplete"])
+      .where("purchaseOrderId", "=", purchaseOrderId)
+      .where("companyId", "=", companyId)
+      .execute();
+
+    const { status } = getPurchaseOrderStatus(lines);
+
+    await trx
+      .updateTable("purchaseOrder")
+      .set({
+        status,
+        updatedBy: userId,
+        updatedAt: new Date().toISOString()
+      })
+      .where("id", "=", purchaseOrderId)
+      .where("companyId", "=", companyId)
+      .execute();
   });
 }
 

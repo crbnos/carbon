@@ -1,6 +1,7 @@
 import type { Database, Json } from "@carbon/database";
 import { fetchAllFromTable } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
+import { ASSEMBLER_SERVICE_API_KEY, ASSEMBLER_SERVICE_URL } from "@carbon/env";
 import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
 import { nameSimilarity, tiptapToText } from "@carbon/utils";
@@ -13,7 +14,7 @@ import type {
 import {
   buildAssemblyStepGroups,
   CURRENT_PLAN_VERSION,
-  computeStepCameras,
+  describeStep,
   groupComponentNodeIds,
   indexAssemblyGraph
 } from "@carbon/viewer";
@@ -30,16 +31,23 @@ import { getEmployeeJob } from "../people";
 import type {
   MethodType,
   operationParameterValidator,
+  operationStepSlideValidator,
   operationStepValidator,
   operationToolValidator
 } from "../shared";
+import { normalizeOperationSourceIds } from "../shared";
+import {
+  listBalloons,
+  listInspectionFeatures,
+  mapBalloonIdsToFeatureIdsForDocument
+} from "./inspectionDocumentDb";
 import type {
   assemblyInstructionStatuses,
-  assemblyNoteSeverities,
-  assemblyRequirementTypes,
   assemblyStepStatuses,
   deadlineTypes,
   failureModeValidator,
+  inspectionDocumentSamplingValidator,
+  inspectionDocumentValidator,
   jobMaterialValidator,
   jobOperationStatus,
   jobOperationValidator,
@@ -78,6 +86,8 @@ import type {
   JobMaterialPurchaseOrderLine,
   JobMaterialSupplyJobLine
 } from "./types";
+
+export { mapBalloonIdsToFeatureIdsForDocument };
 
 const logger = getLogger("erp", "production");
 
@@ -141,7 +151,7 @@ export async function convertSalesOrderLinesToJobs(
         .select("*")
         .eq("itemId", line.itemId)
         .eq("companyId", companyId)
-        .single();
+        .maybeSingle();
 
       const lotSize = manufacturing.data?.lotSize ?? 0;
       const totalQuantity = line.saleQuantity ?? 0;
@@ -186,12 +196,16 @@ export async function convertSalesOrderLinesToJobs(
           }
         }
 
-        const storageUnitId = await getDefaultStorageUnitForJob(
-          client,
-          line.itemId,
-          locationId!,
-          companyId
-        );
+        // Services are Non-Inventory and never have storage units
+        const storageUnitId =
+          line.salesOrderLineType === "Service"
+            ? null
+            : await getDefaultStorageUnitForJob(
+                client,
+                line.itemId,
+                locationId!,
+                companyId
+              );
 
         // Calculate scrap quantity based on item's scrap percentage
         const scrapPercentage = manufacturing.data?.scrapPercentage ?? 0;
@@ -499,6 +513,13 @@ export async function deleteJobOperationStep(
   id: string
 ) {
   return client.from("jobOperationStep").delete().eq("id", id);
+}
+
+export async function deleteJobOperationStepSlide(
+  client: SupabaseClient<Database>,
+  id: string
+) {
+  return client.from("jobOperationStepSlide").delete().eq("id", id);
 }
 
 export async function deleteJobOperationParameter(
@@ -1461,7 +1482,7 @@ export async function getJobMaterialsByMethodId(
 ) {
   return client
     .from("jobMaterial")
-    .select("*, item(replenishmentSystem)")
+    .select("*, item(replenishmentSystem), jobMaterialStep(jobOperationStepId)")
     .eq("jobMakeMethodId", jobMakeMethodId)
     .order("order", { ascending: true });
 }
@@ -1582,7 +1603,7 @@ export async function getJobOperationsByMethodId(
   return client
     .from("jobOperation")
     .select(
-      "*, jobOperationTool(*), jobOperationParameter(*), jobOperationStep(*, jobOperationStepRecord(*))"
+      "*, jobOperationTool(*, jobOperationToolStep(jobOperationStepId)), jobOperationParameter(*), jobOperationStep(*, jobOperationStepRecord(*), jobOperationStepSlide(*))"
     )
     .eq("jobMakeMethodId", jobMakeMethodId)
     .order("order", { ascending: true });
@@ -1622,7 +1643,7 @@ export async function getOutsideOperationsByJobId(
     .select("id, description")
     .eq("jobId", jobId)
     .eq("companyId", companyId)
-    .eq("operationType", "Outside");
+    .eq("operationType", "Outside Processing");
 }
 
 export async function getProcedure(
@@ -2332,13 +2353,21 @@ export async function updateJobStatus(
 ) {
   const { id, status, assignee, updatedBy } = params;
 
+  // Reopening a job (leaving a completed state) must clear completedDate so it
+  // isn't left stale. Done in the same UPDATE as status so the job event
+  // interceptor (sync_job_recompute_service_line) fires once and re-derives the
+  // linked service line's fulfillment. Setting a completed state here does not
+  // set completedDate — that is the complete route's / complete_job_to_inventory's job.
+  const clearsCompletion = !["Completed", "Closed"].includes(status);
+
   return client
     .from("job")
     .update({
       status,
       assignee,
       updatedBy,
-      updatedAt: new Date().toISOString()
+      updatedAt: new Date().toISOString(),
+      ...(clearsCompletion ? { completedDate: null } : {})
     })
     .eq("id", id);
 }
@@ -2951,17 +2980,18 @@ export async function upsertJobOperation(
         customFields?: Json;
       })
 ) {
-  if ("updatedBy" in jobOperation) {
+  const normalized = normalizeOperationSourceIds(jobOperation);
+  if ("updatedBy" in normalized) {
     return client
       .from("jobOperation")
-      .update(sanitize(jobOperation))
-      .eq("id", jobOperation.id)
+      .update(sanitize(normalized))
+      .eq("id", normalized.id)
       .select("id")
       .single();
   }
   const operationInsert = await client
     .from("jobOperation")
-    .insert([jobOperation])
+    .insert([normalized])
     .select("id")
     .single();
 
@@ -2971,14 +3001,14 @@ export async function upsertJobOperation(
   const operationId = operationInsert.data?.id;
   if (!operationId) return operationInsert;
 
-  if (jobOperation.procedureId) {
+  if (normalized.procedureId && "createdBy" in normalized) {
     const { error } = await client.functions.invoke("get-method", {
       body: {
         type: "procedureToOperation",
-        sourceId: jobOperation.procedureId,
+        sourceId: normalized.procedureId,
         targetId: operationId,
-        companyId: jobOperation.companyId,
-        userId: jobOperation.createdBy
+        companyId: normalized.companyId,
+        userId: normalized.createdBy
       }
     });
     if (error) {
@@ -3021,6 +3051,162 @@ export async function upsertJobOperationStep(
     .from("jobOperationStep")
     .update(sanitize(jobOperationStep))
     .eq("id", jobOperationStep.id)
+    .select("id")
+    .single();
+}
+
+// Job-tier twin of duplicateMethodOperationStep (items.service.ts). Deep-copies a job
+// step's DEFINITION — the step row, its slides (incl. size/annotations), and its
+// step-scoped tool + part/material links — but NOT its jobOperationStepRecord rows: those
+// are captured operator results, not part of the template, and must start empty on a copy.
+// NCR linkage (nonConformance*Id) is intentionally dropped so a clone isn't a second step
+// claiming the same containment action.
+export async function duplicateJobOperationStep(
+  client: SupabaseClient<Database>,
+  args: { id: string; companyId: string; createdBy: string }
+): Promise<{ data: { id: string } | null; error: PostgrestError | null }> {
+  const source = await client
+    .from("jobOperationStep")
+    .select("*")
+    .eq("id", args.id)
+    .single();
+  if (source.error || !source.data) {
+    return { data: null, error: source.error };
+  }
+  const src = source.data;
+
+  // Append after the highest sortOrder in the operation.
+  const siblings = await client
+    .from("jobOperationStep")
+    .select("sortOrder")
+    .eq("operationId", src.operationId);
+  const nextSortOrder =
+    (siblings.data ?? []).reduce(
+      (max, s) => Math.max(max, s.sortOrder ?? 0),
+      0
+    ) + 1;
+
+  const insert = await client
+    .from("jobOperationStep")
+    .insert({
+      operationId: src.operationId,
+      name: `${src.name} (copy)`,
+      description: src.description,
+      type: src.type,
+      unitOfMeasureCode: src.unitOfMeasureCode,
+      minValue: src.minValue,
+      maxValue: src.maxValue,
+      listValues: src.listValues,
+      sortOrder: nextSortOrder,
+      companyId: args.companyId,
+      createdBy: args.createdBy
+    })
+    .select("id")
+    .single();
+  if (insert.error || !insert.data) {
+    return { data: null, error: insert.error };
+  }
+  const newStepId = insert.data.id;
+
+  const slides = await client
+    .from("jobOperationStepSlide")
+    .select("*")
+    .eq("stepId", args.id);
+  if (slides.error) {
+    return { data: null, error: slides.error };
+  }
+  if (slides.data && slides.data.length > 0) {
+    const slideRows = slides.data.map((s) => ({
+      stepId: newStepId,
+      imagePath: s.imagePath,
+      modelUploadId: s.modelUploadId,
+      caption: s.caption,
+      sortOrder: s.sortOrder,
+      size: s.size,
+      annotations: s.annotations,
+      companyId: args.companyId,
+      createdBy: args.createdBy
+    }));
+    const slideInsert = await client
+      .from("jobOperationStepSlide")
+      .insert(slideRows);
+    if (slideInsert.error) {
+      return { data: null, error: slideInsert.error };
+    }
+  }
+
+  // Copy step-scoped tool links. No join rows = operation-level (shown on every step) and
+  // needs nothing copied; only tools scoped to this step carry a row to repoint at the clone.
+  const toolLinks = await client
+    .from("jobOperationToolStep")
+    .select("jobOperationToolId")
+    .eq("jobOperationStepId", args.id);
+  if (toolLinks.error) {
+    return { data: null, error: toolLinks.error };
+  }
+  if (toolLinks.data && toolLinks.data.length > 0) {
+    const toolLinkInsert = await client.from("jobOperationToolStep").insert(
+      toolLinks.data.map((l) => ({
+        jobOperationToolId: l.jobOperationToolId,
+        jobOperationStepId: newStepId
+      }))
+    );
+    if (toolLinkInsert.error) {
+      return { data: null, error: toolLinkInsert.error };
+    }
+  }
+
+  // Copy step-scoped part/material links (same operation-level-vs-scoped semantics as tools).
+  const materialLinks = await client
+    .from("jobMaterialStep")
+    .select("jobMaterialId")
+    .eq("jobOperationStepId", args.id);
+  if (materialLinks.error) {
+    return { data: null, error: materialLinks.error };
+  }
+  if (materialLinks.data && materialLinks.data.length > 0) {
+    const materialLinkInsert = await client.from("jobMaterialStep").insert(
+      materialLinks.data.map((l) => ({
+        jobMaterialId: l.jobMaterialId,
+        jobOperationStepId: newStepId
+      }))
+    );
+    if (materialLinkInsert.error) {
+      return { data: null, error: materialLinkInsert.error };
+    }
+  }
+
+  return { data: { id: newStepId }, error: null };
+}
+
+// Job-tier twin of upsertMethodOperationStepSlide (items.service.ts). Same generic
+// validator; `stepId` here is a jobOperationStep id. On update we sanitize() so an
+// omitted optional field (caption-only save) never wipes size/annotations.
+export async function upsertJobOperationStepSlide(
+  client: SupabaseClient<Database>,
+  slide:
+    | (Omit<z.infer<typeof operationStepSlideValidator>, "id"> & {
+        companyId: string;
+        createdBy: string;
+      })
+    | (Omit<z.infer<typeof operationStepSlideValidator>, "id"> & {
+        id: string;
+        updatedBy: string;
+        updatedAt: string;
+      })
+) {
+  if ("createdBy" in slide) {
+    return client
+      .from("jobOperationStepSlide")
+      .insert(slide)
+      .select("id")
+      .single();
+  }
+
+  return client
+    .from("jobOperationStepSlide")
+    .update(sanitize(slide))
+    .eq("id", slide.id)
     .select("id")
     .single();
 }
@@ -3081,6 +3267,86 @@ export async function upsertJobOperationTool(
     .eq("id", jobOperationTool.id)
     .select("id")
     .single();
+}
+
+// Replace a job tool's step links (part/tool ↔ step is many-to-many). No ids = the tool
+// applies to the whole operation (shown on every step in the MES). Delete-then-insert.
+// Replace a job material's step links (part ↔ step, many-to-many). See above.
+export async function replaceJobMaterialSteps(
+  client: SupabaseClient<Database>,
+  jobMaterialId: string,
+  jobOperationStepIds: string[]
+) {
+  const del = await client
+    .from("jobMaterialStep")
+    .delete()
+    .eq("jobMaterialId", jobMaterialId);
+  if (del.error || jobOperationStepIds.length === 0) return del;
+  return client.from("jobMaterialStep").insert(
+    jobOperationStepIds.map((jobOperationStepId) => ({
+      jobMaterialId,
+      jobOperationStepId
+    }))
+  );
+}
+
+// Toggle a single part↔step link from the STEP side (the step editor's Parts picker).
+// `linked` true = link the material to the step, false = unlink. Idempotent on link.
+export async function setJobMaterialStepLink(
+  client: SupabaseClient<Database>,
+  args: { jobMaterialId: string; jobOperationStepId: string; linked: boolean }
+) {
+  if (args.linked) {
+    return client.from("jobMaterialStep").upsert(
+      [
+        {
+          jobMaterialId: args.jobMaterialId,
+          jobOperationStepId: args.jobOperationStepId
+        }
+      ],
+      {
+        onConflict: "jobMaterialId,jobOperationStepId",
+        ignoreDuplicates: true
+      }
+    );
+  }
+  return client
+    .from("jobMaterialStep")
+    .delete()
+    .eq("jobMaterialId", args.jobMaterialId)
+    .eq("jobOperationStepId", args.jobOperationStepId);
+}
+
+// Toggle a single tool↔step link from the STEP side (the step editor's Tools picker).
+// `linked` true = link the tool to the step, false = unlink. Idempotent on link. Twin of
+// setJobMaterialStepLink.
+export async function setJobOperationToolStepLink(
+  client: SupabaseClient<Database>,
+  args: {
+    jobOperationToolId: string;
+    jobOperationStepId: string;
+    linked: boolean;
+  }
+) {
+  if (args.linked) {
+    return client.from("jobOperationToolStep").upsert(
+      [
+        {
+          jobOperationToolId: args.jobOperationToolId,
+          jobOperationStepId: args.jobOperationStepId
+        }
+      ],
+      {
+        onConflict: "jobOperationToolId,jobOperationStepId",
+        ignoreDuplicates: true
+      }
+    );
+  }
+  return client
+    .from("jobOperationToolStep")
+    .delete()
+    .eq("jobOperationToolId", args.jobOperationToolId)
+    .eq("jobOperationStepId", args.jobOperationStepId);
 }
 
 export async function upsertJobMethod(
@@ -3211,6 +3477,48 @@ export async function upsertJobMaterialMakeMethod(
   }
 
   return { data: null, error: null };
+}
+
+/**
+ * Resolve a job material's child make-method id and pull its source item's
+ * method (BOM + operations) into it. Shared by the job-material create and edit
+ * routes: both flip a material to "Make to Order" and must populate the newly
+ * created child make method.
+ */
+export async function pullJobMaterialMakeMethod(
+  client: SupabaseClient<Database>,
+  args: {
+    jobMaterialId: string;
+    itemId: string;
+    companyId: string;
+    userId: string;
+  }
+) {
+  const materialMakeMethod = await client
+    .from("jobMaterialWithMakeMethodId")
+    .select("jobMaterialMakeMethodId")
+    .eq("id", args.jobMaterialId)
+    .eq("companyId", args.companyId)
+    .single();
+
+  if (
+    materialMakeMethod.error ||
+    !materialMakeMethod.data?.jobMaterialMakeMethodId
+  ) {
+    return {
+      data: null,
+      error: (materialMakeMethod.error ?? {
+        message: "Failed to resolve job material make method"
+      }) as PostgrestError
+    };
+  }
+
+  return upsertJobMaterialMakeMethod(client, {
+    sourceId: args.itemId,
+    targetId: materialMakeMethod.data.jobMaterialMakeMethodId,
+    companyId: args.companyId,
+    userId: args.userId
+  });
 }
 
 export async function upsertMakeMethodFromJob(
@@ -3854,6 +4162,19 @@ export async function getAssemblyInstructions(
   return query.order("updatedAt", { ascending: false, nullsFirst: false });
 }
 
+export async function getAssemblyInstructionsForItem(
+  client: SupabaseClient<Database>,
+  itemId: string,
+  companyId: string
+) {
+  return client
+    .from("assemblyInstruction")
+    .select("id, name, version, status")
+    .eq("companyId", companyId)
+    .eq("itemId", itemId)
+    .order("updatedAt", { ascending: false, nullsFirst: false });
+}
+
 /**
  * Resolves a made item's CAD model for assembly instructions. Items link to
  * their model via item.modelUploadId. Conversion to viewer artifacts (GLB +
@@ -4007,6 +4328,33 @@ export async function deleteAssemblyInstruction(
 }
 
 /**
+ * Best-effort: tell the assembler to drop its content-hash result-pointer cache
+ * for a model, so a re-plan of unchanged bytes+options re-derives instead of
+ * reusing a stale pointer. The DB/storage invalidation is the real gate; this is
+ * belt-and-suspenders (the service cache also auto-invalidates on CODE_VERSION
+ * and any option change). Skips silently when the service URL is unset, and
+ * never throws — a failed notify must not block the DB invalidation.
+ */
+async function notifyAssemblerInvalidate(modelUploadId: string) {
+  if (!ASSEMBLER_SERVICE_URL) return;
+  try {
+    await fetch(`${ASSEMBLER_SERVICE_URL}/v1/cache/invalidate`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(ASSEMBLER_SERVICE_API_KEY
+          ? { Authorization: `Bearer ${ASSEMBLER_SERVICE_API_KEY}` }
+          : {})
+      },
+      body: JSON.stringify({ modelUploadId }),
+      signal: AbortSignal.timeout(5000)
+    });
+  } catch {
+    // swallow — best-effort
+  }
+}
+
+/**
  * Drops the cached motion plan for a model so the next instruction re-plans from
  * scratch (with the current algorithm). Leaves the expensive conversion output
  * (glb/graph on the modelUpload) intact — conversion isn't what a planner change
@@ -4026,16 +4374,25 @@ async function invalidateAssemblyPlanCache(
 
   const planJobs = await client
     .from("assemblyPlanJob")
-    .select("planPath")
+    .select("id, companyId, planPath")
     .eq("modelUploadId", modelUploadId)
     .eq("kind", "plan");
 
-  const planPaths = (planJobs.data ?? [])
-    .map((job) => job.planPath)
-    .filter((planPath): planPath is string => Boolean(planPath));
+  // Remove the recorded planPath AND the deterministic per-job path: a job
+  // that failed or was cancelled after the service uploaded plan.json never
+  // got planPath set on its row, and would otherwise leave an orphan file.
+  const planPaths = [
+    ...new Set(
+      (planJobs.data ?? []).flatMap((job) => [
+        ...(job.planPath ? [job.planPath] : []),
+        `${job.companyId}/models/${modelUploadId}/${job.id}/plan.json`
+      ])
+    )
+  ];
   if (planPaths.length > 0) {
-    // Best-effort artifact cleanup; deleting the rows below is what actually
-    // invalidates the cache (getLatestAssemblyPlan then finds nothing).
+    // Best-effort artifact cleanup (removing a nonexistent path is a no-op);
+    // deleting the rows below is what actually invalidates the cache
+    // (getLatestAssemblyPlan then finds nothing).
     await client.storage.from("private").remove(planPaths);
   }
 
@@ -4044,6 +4401,86 @@ async function invalidateAssemblyPlanCache(
     .delete()
     .eq("modelUploadId", modelUploadId)
     .eq("kind", "plan");
+
+  // Auto-detected groups (swarms) get materialized as `assemblyUnit` rows, which
+  // FREEZE detection: `loadPlanUnits` feeds them back to the planner as caller
+  // units, so a re-plan merges them as-is and never re-runs swarm detection.
+  // They're derived cache — invalidating the plan must drop them too, else a
+  // deleted-then-recreated instruction re-plans against the frozen unit and
+  // resurrects the stale grouping (defeating any planner improvement). The guard
+  // above already ensured no other instruction authors against this model, so
+  // this is safe. User-authored units (sourceGroupId null) are kept.
+  await client
+    .from("assemblyUnit")
+    .delete()
+    .eq("modelUploadId", modelUploadId)
+    .not("sourceGroupId", "is", null);
+
+  await notifyAssemblerInvalidate(modelUploadId);
+}
+
+/**
+ * Explicitly invalidates EVERY cached artifact for a model — plan rows +
+ * plan.json files (for all instructions on the model) and the conversion
+ * output (glb/graph files + paths) — and resets processingStatus so a fresh
+ * convert can run. This is the user-facing escape hatch for stale caches
+ * (e.g. after a geometry-service upgrade that changes nodeIds); routine
+ * instruction deletion uses the narrower invalidateAssemblyPlanCache instead.
+ */
+export async function invalidateAssemblyModelCache(
+  client: SupabaseClient<Database>,
+  modelUploadId: string
+) {
+  const planJobs = await client
+    .from("assemblyPlanJob")
+    .select("id, companyId, planPath")
+    .eq("modelUploadId", modelUploadId)
+    .eq("kind", "plan");
+
+  const paths = new Set<string>();
+  for (const job of planJobs.data ?? []) {
+    if (job.planPath) paths.add(job.planPath);
+    paths.add(`${job.companyId}/models/${modelUploadId}/${job.id}/plan.json`);
+  }
+
+  const model = await client
+    .from("modelUpload")
+    .select("glbPath, graphPath")
+    .eq("id", modelUploadId)
+    .maybeSingle();
+  if (model.data?.glbPath) paths.add(model.data.glbPath);
+  if (model.data?.graphPath) paths.add(model.data.graphPath);
+
+  if (paths.size > 0) {
+    // Best-effort file cleanup; the row updates below are what invalidate.
+    await client.storage.from("private").remove([...paths]);
+  }
+
+  await client
+    .from("assemblyPlanJob")
+    .delete()
+    .eq("modelUploadId", modelUploadId)
+    .eq("kind", "plan");
+
+  // Drop auto-materialized swarm units too (see invalidateAssemblyPlanCache) —
+  // they freeze detection, so a full model-cache reset must re-derive them.
+  await client
+    .from("assemblyUnit")
+    .delete()
+    .eq("modelUploadId", modelUploadId)
+    .not("sourceGroupId", "is", null);
+
+  await notifyAssemblerInvalidate(modelUploadId);
+
+  return client
+    .from("modelUpload")
+    .update({
+      processingStatus: "Idle",
+      processingError: null,
+      glbPath: null,
+      graphPath: null
+    })
+    .eq("id", modelUploadId);
 }
 
 export async function upsertAssemblyInstructionStep(
@@ -4209,6 +4646,153 @@ export async function updateAssemblyStepComponents(
     .single();
 }
 
+// Assign a set of component instances to a target step. `duplicate` unions them
+// onto the target only (a component may live on several steps). `move` unions
+// them onto the target AND strips them from every other step, so the component
+// ends up on exactly the target. `remove` (no target) strips them from EVERY
+// step, unassigning them entirely. One transaction: a half-applied move (added
+// to target but not removed from the source, or vice versa) would be a real bug.
+export async function reassignAssemblyStepComponents(
+  db: Kysely<KyselyDatabase>,
+  data: {
+    assemblyInstructionId: string;
+    companyId: string;
+    targetStepId?: string;
+    componentNodeIds: string[];
+    mode: "move" | "duplicate" | "remove";
+    updatedBy: string;
+  }
+) {
+  const moving = new Set(data.componentNodeIds);
+  return db.transaction().execute(async (trx) => {
+    const steps = await trx
+      .selectFrom("assemblyInstructionStep")
+      .select(["id", "componentNodeIds"])
+      .where("assemblyInstructionId", "=", data.assemblyInstructionId)
+      .where("companyId", "=", data.companyId)
+      .execute();
+
+    const now = new Date().toISOString();
+    for (const step of steps) {
+      const current = (step.componentNodeIds ?? []) as string[];
+      let next: string[];
+      if (data.mode !== "remove" && step.id === data.targetStepId) {
+        const merged = new Set(current);
+        for (const nodeId of moving) merged.add(nodeId);
+        next = [...merged];
+      } else if (data.mode === "move" || data.mode === "remove") {
+        next = current.filter((nodeId) => !moving.has(nodeId));
+      } else {
+        continue; // duplicate: other steps are untouched
+      }
+      // Skip a no-op write (nothing added/removed for this step).
+      if (
+        next.length === current.length &&
+        next.every((nodeId, index) => nodeId === current[index])
+      ) {
+        continue;
+      }
+      // A move that empties a source step (it had components, now none) leaves a
+      // meaningless orphan — drop it. The target step is never emptied (it gains
+      // parts), and an already-empty process step (current.length === 0) is left
+      // alone.
+      if (
+        step.id !== data.targetStepId &&
+        current.length > 0 &&
+        next.length === 0
+      ) {
+        await trx
+          .deleteFrom("assemblyInstructionStep")
+          .where("id", "=", step.id)
+          .where("companyId", "=", data.companyId)
+          .execute();
+        continue;
+      }
+      await trx
+        .updateTable("assemblyInstructionStep")
+        .set({
+          componentNodeIds: next,
+          updatedBy: data.updatedBy,
+          updatedAt: now
+        })
+        .where("id", "=", step.id)
+        .where("companyId", "=", data.companyId)
+        .execute();
+    }
+
+    // Keep UNIT membership in step with STEP membership. The Components tab
+    // groups by `assemblyUnit`, so moving a part into a step that installs a unit
+    // (e.g. the PCB step) must also add it to that unit — otherwise it shows as a
+    // loose leaf that never joins the group. `assemblyUnit` is model-scoped.
+    const targetStep = steps.find((s) => s.id === data.targetStepId);
+    const preMove = ((targetStep?.componentNodeIds ?? []) as string[]).filter(
+      (nodeId) => !moving.has(nodeId)
+    );
+    const model = await trx
+      .selectFrom("assemblyInstruction")
+      .select("modelUploadId")
+      .where("id", "=", data.assemblyInstructionId)
+      .where("companyId", "=", data.companyId)
+      .executeTakeFirst();
+    if (model?.modelUploadId) {
+      const units = await trx
+        .selectFrom("assemblyUnit")
+        .select(["id", "componentNodeIds"])
+        .where("modelUploadId", "=", model.modelUploadId)
+        .where("companyId", "=", data.companyId)
+        .execute();
+
+      // The unit the target step installs = the tightest unit whose members
+      // cover the step's pre-move components. None ⇒ a loose step (leave units).
+      let targetUnitId: string | null = null;
+      if (preMove.length > 0) {
+        let bestSize = Number.POSITIVE_INFINITY;
+        for (const unit of units) {
+          const members = new Set((unit.componentNodeIds ?? []) as string[]);
+          if (
+            preMove.every((nodeId) => members.has(nodeId)) &&
+            members.size < bestSize
+          ) {
+            bestSize = members.size;
+            targetUnitId = unit.id;
+          }
+        }
+      }
+
+      for (const unit of units) {
+        const members = new Set((unit.componentNodeIds ?? []) as string[]);
+        let changed = false;
+        // move/remove: a component leaves every unit it was in (units stay
+        // disjoint; a pure remove just unassigns it)…
+        if (data.mode === "move" || data.mode === "remove") {
+          for (const nodeId of moving)
+            if (members.delete(nodeId)) changed = true;
+        }
+        // …and joins the unit its new step installs.
+        if (unit.id === targetUnitId) {
+          for (const nodeId of moving)
+            if (!members.has(nodeId)) {
+              members.add(nodeId);
+              changed = true;
+            }
+        }
+        if (changed) {
+          await trx
+            .updateTable("assemblyUnit")
+            .set({
+              componentNodeIds: [...members],
+              updatedBy: data.updatedBy,
+              updatedAt: now
+            })
+            .where("id", "=", unit.id)
+            .where("companyId", "=", data.companyId)
+            .execute();
+        }
+      }
+    }
+  });
+}
+
 async function getNextStepSortOrder(
   client: SupabaseClient<Database>,
   data: { assemblyInstructionId: string }
@@ -4266,7 +4850,7 @@ export async function deleteAssemblyInstructionStep(
   return client.from("assemblyInstructionStep").delete().eq("id", id);
 }
 
-export async function getAssemblyInstructionStepRequirements(
+export async function getAssemblyInstructionStepSlides(
   client: SupabaseClient<Database>,
   stepIds: string[]
 ) {
@@ -4274,23 +4858,68 @@ export async function getAssemblyInstructionStepRequirements(
     return { data: [], error: null };
   }
   return client
-    .from("assemblyInstructionStepRequirement")
+    .from("assemblyInstructionStepSlide")
+    .select("*")
+    .in("stepId", stepIds)
+    .order("sortOrder", { ascending: true });
+}
+
+export async function upsertAssemblyInstructionStepSlide(
+  client: SupabaseClient<Database>,
+  slide:
+    | (Omit<z.infer<typeof operationStepSlideValidator>, "id"> & {
+        companyId: string;
+        createdBy: string;
+      })
+    | (Omit<z.infer<typeof operationStepSlideValidator>, "id"> & {
+        id: string;
+        updatedBy: string;
+        updatedAt: string;
+      })
+) {
+  if ("createdBy" in slide) {
+    return client
+      .from("assemblyInstructionStepSlide")
+      .insert(slide)
+      .select("id")
+      .single();
+  }
+
+  return client
+    .from("assemblyInstructionStepSlide")
+    .update(sanitize(slide))
+    .eq("id", slide.id)
+    .select("id")
+    .single();
+}
+
+export async function deleteAssemblyInstructionStepSlide(
+  client: SupabaseClient<Database>,
+  id: string
+) {
+  return client.from("assemblyInstructionStepSlide").delete().eq("id", id);
+}
+
+export async function getAssemblyInstructionStepTools(
+  client: SupabaseClient<Database>,
+  stepIds: string[]
+) {
+  if (stepIds.length === 0) {
+    return { data: [], error: null };
+  }
+  return client
+    .from("assemblyInstructionStepTool")
     .select("*, item(id, name, readableIdWithRevision)")
     .in("stepId", stepIds)
     .order("sortOrder", { ascending: true });
 }
 
-export async function upsertAssemblyInstructionStepRequirement(
+export async function upsertAssemblyInstructionStepTool(
   client: SupabaseClient<Database>,
   data: {
     id?: string;
     stepId: string;
-    type: (typeof assemblyRequirementTypes)[number];
-    itemId?: string | null;
-    name?: string | null;
-    text?: string | null;
-    severity?: (typeof assemblyNoteSeverities)[number] | null;
-    filePath?: string | null;
+    itemId: string;
     quantity?: number;
     sortOrder?: number;
     companyId: string;
@@ -4298,28 +4927,12 @@ export async function upsertAssemblyInstructionStepRequirement(
     updatedBy?: string;
   }
 ) {
-  // Snapshot the catalog item name so display never needs a join and
-  // survives item deletion
-  let name = data.name ?? null;
-  if (!name && data.itemId) {
-    const item = await client
-      .from("item")
-      .select("name")
-      .eq("id", data.itemId)
-      .single();
-    name = item.data?.name ?? null;
-  }
-
   if (data.id) {
     return client
-      .from("assemblyInstructionStepRequirement")
+      .from("assemblyInstructionStepTool")
       .update({
-        itemId: data.itemId ?? null,
-        name,
-        text: data.text ?? null,
-        severity: data.severity ?? null,
-        ...(data.filePath !== undefined ? { filePath: data.filePath } : {}),
-        ...(data.quantity !== undefined ? { quantity: data.quantity } : {}),
+        itemId: data.itemId,
+        quantity: data.quantity ?? 1,
         ...(data.sortOrder !== undefined ? { sortOrder: data.sortOrder } : {}),
         updatedBy: data.updatedBy ?? data.createdBy,
         updatedAt: new Date().toISOString()
@@ -4330,18 +4943,13 @@ export async function upsertAssemblyInstructionStepRequirement(
   }
 
   return client
-    .from("assemblyInstructionStepRequirement")
+    .from("assemblyInstructionStepTool")
     .insert({
       stepId: data.stepId,
-      type: data.type,
-      itemId: data.itemId ?? null,
-      name,
-      text: data.text ?? null,
-      severity: data.severity ?? null,
-      filePath: data.filePath ?? null,
+      itemId: data.itemId,
       quantity: data.quantity ?? 1,
       sortOrder:
-        data.sortOrder ?? (await getNextRequirementSortOrder(client, data)),
+        data.sortOrder ?? (await getNextStepToolSortOrder(client, data)),
       companyId: data.companyId,
       createdBy: data.createdBy
     })
@@ -4349,15 +4957,14 @@ export async function upsertAssemblyInstructionStepRequirement(
     .single();
 }
 
-async function getNextRequirementSortOrder(
+async function getNextStepToolSortOrder(
   client: SupabaseClient<Database>,
-  data: { stepId: string; type: (typeof assemblyRequirementTypes)[number] }
+  data: { stepId: string }
 ) {
   const last = await client
-    .from("assemblyInstructionStepRequirement")
+    .from("assemblyInstructionStepTool")
     .select("sortOrder")
     .eq("stepId", data.stepId)
-    .eq("type", data.type)
     .order("sortOrder", { ascending: false })
     .limit(1)
     .maybeSingle();
@@ -4365,40 +4972,11 @@ async function getNextRequirementSortOrder(
   return (last.data?.sortOrder ?? 0) + 1;
 }
 
-export async function getAssemblyInstructionStepRequirement(
+export async function deleteAssemblyInstructionStepTool(
   client: SupabaseClient<Database>,
   id: string
 ) {
-  return client
-    .from("assemblyInstructionStepRequirement")
-    .select("*")
-    .eq("id", id)
-    .single();
-}
-
-export async function updateAssemblyInstructionStepRequirementOrder(
-  db: Kysely<KyselyDatabase>,
-  updates: { id: string; sortOrder: number; updatedBy: string }[]
-) {
-  return db.transaction().execute(async (trx) => {
-    for (const { id, sortOrder, updatedBy } of updates) {
-      await trx
-        .updateTable("assemblyInstructionStepRequirement")
-        .set({ sortOrder, updatedBy, updatedAt: new Date().toISOString() })
-        .where("id", "=", id)
-        .execute();
-    }
-  });
-}
-
-export async function deleteAssemblyInstructionStepRequirement(
-  client: SupabaseClient<Database>,
-  id: string
-) {
-  return client
-    .from("assemblyInstructionStepRequirement")
-    .delete()
-    .eq("id", id);
+  return client.from("assemblyInstructionStepTool").delete().eq("id", id);
 }
 
 export async function getAssemblyInstructionStepMaterials(
@@ -4655,64 +5233,6 @@ export async function syncAssemblyStepMaterialsFromMappings(
 
   const insert = await insertAssemblyStepMaterialSeeds(client, seeds, args);
   return { created: insert.error ? 0 : seeds.length };
-}
-
-export async function getAssemblyStandardNotes(
-  client: SupabaseClient<Database>,
-  companyId: string
-) {
-  return client
-    .from("assemblyStandardNote")
-    .select("*")
-    .eq("companyId", companyId)
-    .order("name", { ascending: true });
-}
-
-export async function upsertAssemblyStandardNote(
-  client: SupabaseClient<Database>,
-  data: {
-    id?: string;
-    name: string;
-    content: string;
-    severity: (typeof assemblyNoteSeverities)[number];
-    companyId: string;
-    createdBy: string;
-    updatedBy?: string;
-  }
-) {
-  if (data.id) {
-    return client
-      .from("assemblyStandardNote")
-      .update({
-        name: data.name,
-        content: data.content,
-        severity: data.severity,
-        updatedBy: data.updatedBy ?? data.createdBy,
-        updatedAt: new Date().toISOString()
-      })
-      .eq("id", data.id)
-      .select("id")
-      .single();
-  }
-
-  return client
-    .from("assemblyStandardNote")
-    .insert({
-      name: data.name,
-      content: data.content,
-      severity: data.severity,
-      companyId: data.companyId,
-      createdBy: data.createdBy
-    })
-    .select("id")
-    .single();
-}
-
-export async function deleteAssemblyStandardNote(
-  client: SupabaseClient<Database>,
-  id: string
-) {
-  return client.from("assemblyStandardNote").delete().eq("id", id);
 }
 
 export async function getAssemblyUnits(
@@ -5104,44 +5624,61 @@ export async function autoMatchAssemblyComponents(
   }
 
   // Quantity fallback: a still-unmatched part whose instance count equals
-  // exactly one still-unmatched BOM line's quantity
+  // exactly one still-unmatched BOM line's quantity. Index the unmatched groups
+  // and BOM lines by count once (instead of rescanning both per group), and
+  // prune the buckets as matches land so the "exactly one" checks stay O(1).
+  const unmatchedGroupsByCount = new Map<number, string[]>();
   for (const [hash, group] of componentGroups) {
     if (matchedHashes.has(hash)) continue;
-    const candidates = bom.filter(
-      (material) =>
-        !matchedItems.has(material.itemId) &&
-        Math.round(material.quantity) === group.count
-    );
-    const sameCountComponents = [...componentGroups.entries()].filter(
-      ([otherHash, other]) =>
-        !matchedHashes.has(otherHash) && other.count === group.count
-    );
-    const candidate = candidates[0];
-    if (
-      candidates.length === 1 &&
-      sameCountComponents.length === 1 &&
-      candidate
-    ) {
+    const bucket = unmatchedGroupsByCount.get(group.count);
+    if (bucket) bucket.push(hash);
+    else unmatchedGroupsByCount.set(group.count, [hash]);
+  }
+  const unmatchedBomByCount = new Map<number, string[]>();
+  for (const material of bom) {
+    if (matchedItems.has(material.itemId)) continue;
+    const count = Math.round(material.quantity);
+    const bucket = unmatchedBomByCount.get(count);
+    if (bucket) bucket.push(material.itemId);
+    else unmatchedBomByCount.set(count, [material.itemId]);
+  }
+  for (const [hash, group] of componentGroups) {
+    if (matchedHashes.has(hash)) continue;
+    const groupBucket = unmatchedGroupsByCount.get(group.count) ?? [];
+    const bomBucket = unmatchedBomByCount.get(group.count) ?? [];
+    const candidateItemId = bomBucket[0];
+    if (groupBucket.length === 1 && bomBucket.length === 1 && candidateItemId) {
       matchedHashes.add(hash);
-      matchedItems.add(candidate.itemId);
+      matchedItems.add(candidateItemId);
+      unmatchedGroupsByCount.set(group.count, []);
+      unmatchedBomByCount.set(group.count, []);
       accepted.push({
         geometryHash: hash,
-        itemId: candidate.itemId,
+        itemId: candidateItemId,
         score: 0,
         confidence: "low"
       });
     }
   }
 
-  for (const suggestion of accepted) {
-    await upsertAssemblyComponentMapping(client, {
-      modelUploadId: instruction.data.modelUploadId,
-      geometryHash: suggestion.geometryHash,
-      itemId: suggestion.itemId,
-      confidence: suggestion.confidence,
-      companyId: args.companyId,
-      createdBy: args.userId
-    });
+  // One bulk upsert instead of a round-trip per accepted mapping — this runs on
+  // the first-generation critical path. Same conflict target as the single-row
+  // helper (upsertAssemblyComponentMapping).
+  if (accepted.length > 0) {
+    const now = new Date().toISOString();
+    await client.from("assemblyComponentMapping").upsert(
+      accepted.map((suggestion) => ({
+        modelUploadId: instruction.data.modelUploadId,
+        geometryHash: suggestion.geometryHash,
+        itemId: suggestion.itemId,
+        confidence: suggestion.confidence,
+        companyId: args.companyId,
+        createdBy: args.userId,
+        updatedBy: args.userId,
+        updatedAt: now
+      })),
+      { onConflict: "modelUploadId,geometryHash" }
+    );
   }
 
   return {
@@ -5157,13 +5694,482 @@ export async function autoMatchAssemblyComponents(
 }
 
 type GenerateStepsResult =
-  | { ok: true; created: number }
+  | { ok: true; created: number; unmappedComponentCount: number }
   | {
       ok: false;
       reason: "no-model" | "no-plan" | "steps-exist" | "steps-locked" | "error";
       modelUploadId?: string;
       message?: string;
     };
+
+// Minimal tiptap document wrapping a plain-text instruction, for source steps that
+// have text but no rich description.
+function plainTextToTiptap(text: string) {
+  return {
+    type: "doc",
+    content: [{ type: "paragraph", content: [{ type: "text", text }] }]
+  };
+}
+
+/**
+ * Assembly → BOP sync: copy a Published instruction's steps into a BOP operation
+ * as real method/job operation steps (the typed fields mirror by design), link
+ * each step's BOM parts via the material↔step join table, attach the
+ * instruction's 3D model as a model slide on every synced step, and point the
+ * operation at the instruction. Re-runnable: rows carry an
+ * `assemblyInstructionStepId` provenance marker, so a re-sync updates matched
+ * steps in place (keeping their ids — slides, records, and links survive),
+ * inserts new ones, and deletes synced steps whose source step is gone.
+ * Hand-authored steps (NULL marker) are never touched. One transaction: a
+ * half-synced BOP would be a real bug. Guards (Draft method / unlocked job,
+ * permissions) belong to the route — Kysely bypasses RLS.
+ */
+/**
+ * Marker-based step reconciliation for the assembly→BoP sync. Given the current
+ * source step ids and the operation's existing synced steps (each carrying the
+ * `assemblyInstructionStepId` provenance marker), decide which source maps onto
+ * an existing target (update) vs. is new (insert), and which existing synced
+ * steps are stale — their source step was removed, so they must be deleted
+ * (cascading their slides/links). Hand-authored steps (null marker) are excluded
+ * by the caller's `assemblyInstructionStepId is not null` filter; a null marker
+ * here is treated as stale. Pure so the reconciliation is unit-testable.
+ */
+export function planAssemblyStepMarkerSync(
+  sourceStepIds: string[],
+  existingSynced: { id: string; assemblyInstructionStepId: string | null }[]
+): { targetIdBySourceId: Map<string, string>; staleTargetIds: string[] } {
+  const targetIdBySourceId = new Map<string, string>();
+  for (const step of existingSynced) {
+    if (step.assemblyInstructionStepId) {
+      targetIdBySourceId.set(step.assemblyInstructionStepId, step.id);
+    }
+  }
+  const sourceIdSet = new Set(sourceStepIds);
+  const staleTargetIds = existingSynced
+    .filter(
+      (step) =>
+        !step.assemblyInstructionStepId ||
+        !sourceIdSet.has(step.assemblyInstructionStepId)
+    )
+    .map((step) => step.id);
+  return { targetIdBySourceId, staleTargetIds };
+}
+
+/**
+ * The re-sync ratchets a tool's operation-level quantity up to the max quantity
+ * any source step asks for (operation-level rows are never lowered or deleted).
+ */
+export function maxToolQuantityByItem(
+  sourceTools: { itemId: string; quantity: number | null }[]
+): Map<string, number> {
+  const max = new Map<string, number>();
+  for (const tool of sourceTools) {
+    max.set(
+      tool.itemId,
+      Math.max(max.get(tool.itemId) ?? 0, tool.quantity ?? 1)
+    );
+  }
+  return max;
+}
+
+/**
+ * Build the `jobOperationToolStep` link rows for a re-sync. Links are rebuilt
+ * ONLY from the current source tools, so a tool removed from the instruction —
+ * whose `jobOperationTool` row is intentionally never deleted — ends up with
+ * zero links and therefore behaves as an operation-level tool (shown on every
+ * step). That is the documented re-sync contract; this returns exactly the links
+ * to (re)insert on the synced steps.
+ */
+export function buildAssemblyToolStepLinks(
+  sourceSteps: { id: string }[],
+  toolsByStep: Map<string, { itemId: string }[]>,
+  toolRowIdByItemId: Map<string, string>,
+  targetIdBySource: Map<string, string>
+): { jobOperationToolId: string; jobOperationStepId: string }[] {
+  const rows: { jobOperationToolId: string; jobOperationStepId: string }[] = [];
+  for (const source of sourceSteps) {
+    const targetStepId = targetIdBySource.get(source.id);
+    if (!targetStepId) continue;
+    for (const tool of toolsByStep.get(source.id) ?? []) {
+      const jobOperationToolId = toolRowIdByItemId.get(tool.itemId);
+      if (jobOperationToolId) {
+        rows.push({ jobOperationToolId, jobOperationStepId: targetStepId });
+      }
+    }
+  }
+  return rows;
+}
+
+export async function syncAssemblyInstructionToOperation(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    assemblyInstructionId: string;
+    operationId: string;
+    companyId: string;
+    userId: string;
+  }
+) {
+  const { assemblyInstructionId, operationId, companyId, userId } = args;
+  const stepTable = "jobOperationStep" as const;
+  const slideTable = "jobOperationStepSlide" as const;
+
+  return db.transaction().execute(async (trx) => {
+    const instruction = await trx
+      .selectFrom("assemblyInstruction")
+      .select(["id", "itemId", "modelUploadId"])
+      .where("id", "=", assemblyInstructionId)
+      .where("companyId", "=", companyId)
+      .executeTakeFirst();
+    if (!instruction) throw new Error("Assembly instruction not found");
+
+    const sourceSteps = await trx
+      .selectFrom("assemblyInstructionStep")
+      .select([
+        "id",
+        "title",
+        "type",
+        "description",
+        "instructionText",
+        "required",
+        "unitOfMeasureCode",
+        "minValue",
+        "maxValue",
+        "listValues",
+        "fileTypes",
+        "sortOrder"
+      ])
+      .where("assemblyInstructionId", "=", instruction.id)
+      .where("companyId", "=", companyId)
+      .orderBy("sortOrder", "asc")
+      .execute();
+    if (sourceSteps.length === 0) {
+      throw new Error("The assembly instruction has no steps to sync");
+    }
+
+    const sourceMaterials = await trx
+      .selectFrom("assemblyInstructionStepMaterial")
+      .select(["stepId", "itemId"])
+      .where("companyId", "=", companyId)
+      .where(
+        "stepId",
+        "in",
+        sourceSteps.map((step) => step.id)
+      )
+      .execute();
+    const materialsByStep = new Map<string, string[]>();
+    for (const material of sourceMaterials) {
+      const list = materialsByStep.get(material.stepId) ?? [];
+      list.push(material.itemId);
+      materialsByStep.set(material.stepId, list);
+    }
+
+    const sourceSlides = await trx
+      .selectFrom("assemblyInstructionStepSlide")
+      .select([
+        "stepId",
+        "imagePath",
+        "modelUploadId",
+        "caption",
+        "sortOrder",
+        "size",
+        "annotations"
+      ])
+      .where("companyId", "=", companyId)
+      .where(
+        "stepId",
+        "in",
+        sourceSteps.map((step) => step.id)
+      )
+      .orderBy("sortOrder", "asc")
+      .execute();
+    const slidesByStep = new Map<string, typeof sourceSlides>();
+    for (const slide of sourceSlides) {
+      const list = slidesByStep.get(slide.stepId) ?? [];
+      list.push(slide);
+      slidesByStep.set(slide.stepId, list);
+    }
+
+    const sourceTools = await trx
+      .selectFrom("assemblyInstructionStepTool")
+      .select(["stepId", "itemId", "quantity"])
+      .where("companyId", "=", companyId)
+      .where(
+        "stepId",
+        "in",
+        sourceSteps.map((step) => step.id)
+      )
+      .execute();
+    const toolsByStep = new Map<
+      string,
+      { itemId: string; quantity: number }[]
+    >();
+    for (const tool of sourceTools) {
+      const list = toolsByStep.get(tool.stepId) ?? [];
+      list.push({ itemId: tool.itemId, quantity: tool.quantity ?? 1 });
+      toolsByStep.set(tool.stepId, list);
+    }
+
+    // The target operation's own BOM lines, keyed by item — instruction step
+    // materials are itemIds; the link table wants the material row on THIS
+    // operation (a link to another operation's material never shows in the MES).
+    const operationMaterials = await trx
+      .selectFrom("jobMaterial")
+      .select(["id", "itemId"])
+      .where("jobOperationId", "=", operationId)
+      .where("companyId", "=", companyId)
+      .execute();
+    const materialIdByItemId = new Map<string, string>();
+    for (const material of operationMaterials) {
+      if (material.itemId && !materialIdByItemId.has(material.itemId)) {
+        materialIdByItemId.set(material.itemId, material.id);
+      }
+    }
+
+    const existingSynced = await trx
+      .selectFrom(stepTable)
+      .select(["id", "assemblyInstructionStepId"])
+      .where("operationId", "=", operationId)
+      .where("companyId", "=", companyId)
+      .where("assemblyInstructionStepId", "is not", null)
+      .execute();
+    const { targetIdBySourceId, staleTargetIds } = planAssemblyStepMarkerSync(
+      sourceSteps.map((step) => step.id),
+      existingSynced
+    );
+
+    const now = new Date().toISOString();
+    let created = 0;
+    let updated = 0;
+    const syncedTargetIds: string[] = [];
+    // source assembly step id → synced job step id, for slide/tool copying
+    const targetIdBySource = new Map<string, string>();
+    const linkPairs: { materialId: string; stepId: string }[] = [];
+    let partsUnmatched = 0;
+
+    for (const [index, source] of sourceSteps.entries()) {
+      const payload = {
+        name: source.title || `Step ${index + 1}`,
+        type: source.type ?? "Task",
+        description:
+          source.description ??
+          (source.instructionText
+            ? plainTextToTiptap(source.instructionText)
+            : null),
+        required: source.required ?? false,
+        unitOfMeasureCode: source.unitOfMeasureCode,
+        minValue: source.minValue,
+        maxValue: source.maxValue,
+        listValues: source.listValues,
+        fileTypes: source.fileTypes,
+        sortOrder: source.sortOrder ?? index + 1
+      };
+
+      const existingId = targetIdBySourceId.get(source.id);
+      let targetStepId: string;
+      if (existingId) {
+        await trx
+          .updateTable(stepTable)
+          .set({ ...payload, updatedBy: userId, updatedAt: now })
+          .where("id", "=", existingId)
+          .where("companyId", "=", companyId)
+          .execute();
+        targetStepId = existingId;
+        updated++;
+      } else {
+        const inserted = await trx
+          .insertInto(stepTable)
+          .values({
+            ...payload,
+            operationId,
+            assemblyInstructionStepId: source.id,
+            companyId,
+            createdBy: userId
+          })
+          .returning("id")
+          .executeTakeFirstOrThrow();
+        targetStepId = inserted.id;
+        created++;
+      }
+      syncedTargetIds.push(targetStepId);
+      targetIdBySource.set(source.id, targetStepId);
+
+      for (const itemId of materialsByStep.get(source.id) ?? []) {
+        const materialId = materialIdByItemId.get(itemId);
+        if (materialId) {
+          linkPairs.push({ materialId, stepId: targetStepId });
+        } else {
+          partsUnmatched++;
+        }
+      }
+    }
+
+    // Synced steps whose source step no longer exists — deleting cascades their
+    // slides and material/tool step links (staleTargetIds computed above).
+    if (staleTargetIds.length > 0) {
+      await trx
+        .deleteFrom(stepTable)
+        .where("id", "in", staleTargetIds)
+        .where("companyId", "=", companyId)
+        .execute();
+    }
+
+    // Refresh part links on the synced steps only (hand-authored steps keep theirs).
+    await trx
+      .deleteFrom("jobMaterialStep")
+      .where("jobOperationStepId", "in", syncedTargetIds)
+      .execute();
+    if (linkPairs.length > 0) {
+      await trx
+        .insertInto("jobMaterialStep")
+        .values(
+          linkPairs.map((pair) => ({
+            jobMaterialId: pair.materialId,
+            jobOperationStepId: pair.stepId
+          }))
+        )
+        .execute();
+    }
+
+    // Refresh slides on the synced steps only (hand-authored steps keep theirs):
+    // the instruction's 3D model leads as a model slide, followed by the step's
+    // authored slides. Delete + recreate mirrors the jobMaterialStep refresh —
+    // the assembly instruction is authoritative for what a synced step shows.
+    await trx
+      .deleteFrom(slideTable)
+      .where("stepId", "in", syncedTargetIds)
+      .execute();
+    const slideRows: {
+      stepId: string;
+      imagePath: string | null;
+      modelUploadId: string | null;
+      caption: string | null;
+      sortOrder: number;
+      size: string;
+      annotations: string;
+      companyId: string;
+      createdBy: string;
+    }[] = [];
+    for (const source of sourceSteps) {
+      const targetStepId = targetIdBySource.get(source.id);
+      if (!targetStepId) continue;
+      const authored = slidesByStep.get(source.id) ?? [];
+      if (
+        instruction.modelUploadId &&
+        !authored.some(
+          (slide) => slide.modelUploadId === instruction.modelUploadId
+        )
+      ) {
+        slideRows.push({
+          stepId: targetStepId,
+          imagePath: null,
+          modelUploadId: instruction.modelUploadId,
+          caption: null,
+          sortOrder: 0,
+          size: "medium",
+          annotations: JSON.stringify([]),
+          companyId,
+          createdBy: userId
+        });
+      }
+      for (const slide of authored) {
+        slideRows.push({
+          stepId: targetStepId,
+          imagePath: slide.imagePath,
+          modelUploadId: slide.modelUploadId,
+          caption: slide.caption,
+          sortOrder: slide.sortOrder ?? 1,
+          size: slide.size ?? "medium",
+          annotations: JSON.stringify(slide.annotations ?? []),
+          companyId,
+          createdBy: userId
+        });
+      }
+    }
+    if (slideRows.length > 0) {
+      await trx.insertInto(slideTable).values(slideRows).execute();
+    }
+
+    // Tools: ensure a jobOperationTool row per distinct tool item, then refresh
+    // the step links on the synced steps. Operation-level tool rows are never
+    // deleted (no provenance column) and quantities only ratchet up, so
+    // hand-added tools survive a re-sync.
+    const existingTools = await trx
+      .selectFrom("jobOperationTool")
+      .select(["id", "toolId", "quantity"])
+      .where("operationId", "=", operationId)
+      .where("companyId", "=", companyId)
+      .execute();
+    const toolRowIdByItemId = new Map(
+      existingTools.map((tool) => [tool.toolId, tool.id])
+    );
+    const maxQuantityByItemId = maxToolQuantityByItem(sourceTools);
+    for (const [itemId, quantity] of maxQuantityByItemId) {
+      const existingId = toolRowIdByItemId.get(itemId);
+      if (!existingId) {
+        const inserted = await trx
+          .insertInto("jobOperationTool")
+          .values({
+            operationId,
+            toolId: itemId,
+            quantity,
+            companyId,
+            createdBy: userId
+          })
+          .returning("id")
+          .executeTakeFirstOrThrow();
+        toolRowIdByItemId.set(itemId, inserted.id);
+      } else {
+        const existing = existingTools.find((tool) => tool.id === existingId);
+        if ((existing?.quantity ?? 1) < quantity) {
+          await trx
+            .updateTable("jobOperationTool")
+            .set({ quantity, updatedBy: userId, updatedAt: now })
+            .where("id", "=", existingId)
+            .execute();
+        }
+      }
+    }
+    await trx
+      .deleteFrom("jobOperationToolStep")
+      .where("jobOperationStepId", "in", syncedTargetIds)
+      .execute();
+    const toolLinkRows = buildAssemblyToolStepLinks(
+      sourceSteps,
+      toolsByStep,
+      toolRowIdByItemId,
+      targetIdBySource
+    );
+    if (toolLinkRows.length > 0) {
+      await trx
+        .insertInto("jobOperationToolStep")
+        .values(toolLinkRows)
+        .execute();
+    }
+
+    // Point the operation at its instruction (also how the re-sync UI knows
+    // what this operation was synced from).
+    await trx
+      .updateTable("jobOperation")
+      .set({
+        assemblyInstructionId: instruction.id,
+        updatedBy: userId,
+        updatedAt: now
+      })
+      .where("id", "=", operationId)
+      .where("companyId", "=", companyId)
+      .execute();
+
+    return {
+      created,
+      updated,
+      deleted: staleTargetIds.length,
+      partsLinked: linkPairs.length,
+      partsUnmatched,
+      slidesSynced: slideRows.length,
+      toolsLinked: toolLinkRows.length
+    };
+  });
+}
 
 /**
  * Creates draft steps from the motion plan: walks the planned assembly
@@ -5252,11 +6258,77 @@ export async function generateAssemblyStepsFromPlan(
     return { ok: false, reason: "error", message: "The plan has no parts" };
   }
 
-  // Bake an occlusion-aware camera per step: an unobstructed view of the step's
-  // components on their motion path, given only the components already animated
-  // by earlier steps. Falls back to the viewer's live framing (camera: null)
-  // when the graph is unavailable.
-  const cameras = graphIndex ? computeStepCameras(groups, graphIndex) : [];
+  // Materialize planner-DETECTED groups (id "swarm:<host>" — e.g. a populated
+  // PCB's detail swarm) as assemblyUnit rows so the Components tab shows them
+  // like authored units, editable through the same UI. Caller-unit groups
+  // already ARE rows. Best-effort: a failure here must not block step generation.
+  //
+  // This is a SYSTEM/derived-data write (reflecting the plan), not a user
+  // creating a unit — so the generate route passes a bypassRls (service-role)
+  // `client`. The assemblyUnit INSERT/DELETE RLS policies require
+  // `production_create`/`production_delete`, but generate only authorizes
+  // `production_update`; through a plain RLS client the write silently no-ops
+  // (steps get built, units never do). Scoped to companyId, so it's tenant-safe.
+  const detectedUnits = Object.entries(plan.groups ?? {})
+    .filter(([groupId]) => groupId.startsWith("swarm:"))
+    .map(([groupId, group]) => ({
+      modelUploadId,
+      name: group.name ?? "Detected group",
+      componentNodeIds: group.componentNodeIds,
+      sourceGroupId: groupId,
+      companyId: args.companyId,
+      createdBy: args.userId
+    }));
+  if (args.mode === "regenerate") {
+    // Fresh regenerate: the auto-units were deliberately NOT deleted before the
+    // plan (a delete-then-failed-re-plan would strand the model ungrouped).
+    // Swap them HERE, atomically with the just-rebuilt steps — drop the old auto
+    // rows and insert the freshly detected ones so new detection (absorption
+    // etc.) wins. If detection now finds no swarm, they clear (the steps don't
+    // group it either — consistent).
+    const dropped = await client
+      .from("assemblyUnit")
+      .delete()
+      .eq("modelUploadId", modelUploadId)
+      .eq("companyId", args.companyId)
+      .not("sourceGroupId", "is", null);
+    if (dropped.error) {
+      logger.error("Failed to clear detected assembly units", {
+        error: dropped.error
+      });
+    }
+    if (detectedUnits.length > 0) {
+      const inserted = await client.from("assemblyUnit").insert(detectedUnits);
+      if (inserted.error) {
+        logger.error("Failed to materialize detected assembly units", {
+          error: inserted.error
+        });
+      }
+    }
+  } else if (detectedUnits.length > 0) {
+    // First generation: DO NOTHING on conflict — once materialized the row
+    // belongs to the user (renames/member edits survive).
+    const materialized = await client
+      .from("assemblyUnit")
+      .upsert(detectedUnits, {
+        onConflict: "modelUploadId,sourceGroupId",
+        ignoreDuplicates: true
+      });
+    if (materialized.error) {
+      logger.error("Failed to materialize detected assembly units", {
+        error: materialized.error
+      });
+    }
+  }
+
+  // Authored subassembly units name their steps; the rest derive a human title
+  // from the components (same `describeStep` the viewer/explorer render), so the
+  // title is real editable data instead of a render-time fallback.
+  const units = await getAssemblyUnits(client, modelUploadId);
+  const namedUnits = (units.data ?? []).map((unit) => ({
+    name: unit.name,
+    componentNodeIds: unit.componentNodeIds ?? []
+  }));
 
   const rows = groups.map((group, index) => {
     const motion = motionSchema.safeParse(group.motion);
@@ -5265,14 +6337,40 @@ export async function generateAssemblyStepsFromPlan(
       sortOrder: index + 1,
       // A pre-grouped unit (e.g. a purchased PCB) titles its step with the
       // unit name; ungrouped steps derive their title from their parts.
-      title: group.name ?? null,
+      title:
+        group.name ??
+        describeStep(
+          {
+            title: null,
+            componentNodeIds: group.componentNodeIds,
+            fastener: null
+          },
+          graphIndex,
+          namedUnits
+        ) ??
+        null,
       componentNodeIds: group.componentNodeIds,
       motion: (motion.success ? motion.data : { type: "none" }) as Json,
-      camera: (cameras[index] ?? null) as Json | null,
-      warnings:
-        group.blockedBy.length > 0
-          ? ({ flagged: true, blockedBy: group.blockedBy } as Json)
-          : null,
+      // Planner-baked view direction (mesh-precise sight lines); the viewer
+      // applies it with live framing — target, distance, frustum fit at the
+      // real viewport aspect. Manual "Set view" poses replace this wholesale.
+      camera: (group.viewDirection
+        ? { source: "plan", direction: group.viewDirection }
+        : null) as Json | null,
+      warnings: ((): Json | null => {
+        const w: Record<string, Json> = {};
+        if (group.blockedBy.length > 0) {
+          w.flagged = true;
+          w.blockedBy = group.blockedBy;
+        }
+        if (group.needsSupport) {
+          w.needsSupport = true;
+        }
+        return Object.keys(w).length > 0 ? (w as Json) : null;
+      })(),
+      // Parallel-buildable wave (steps sharing one have no ordering constraint);
+      // null for cycle-affected steps. Informational — sortOrder still governs.
+      buildWave: group.wave ?? null,
       planConfidence: group.confidence,
       status: "Review" as const,
       companyId: args.companyId,
@@ -5290,8 +6388,21 @@ export async function generateAssemblyStepsFromPlan(
 
   // Seed each step's materials from the model's component→BOM mappings —
   // best-effort; generation succeeds regardless.
+  let unmappedComponentCount = 0;
   if (graphIndex && insert.data?.length) {
-    const mappings = await getAssemblyComponentMappings(client, modelUploadId);
+    let mappings = await getAssemblyComponentMappings(client, modelUploadId);
+    // First generation usually has no mappings yet. Rather than silently seed
+    // nothing (and leave the user to discover "Match BOM"), auto-match once so
+    // steps come out with their materials populated. Best-effort: a missing BOM
+    // or a match failure just leaves mappings empty and the warning below fires.
+    if ((mappings.data ?? []).length === 0) {
+      await autoMatchAssemblyComponents(client, {
+        assemblyInstructionId: args.assemblyInstructionId,
+        companyId: args.companyId,
+        userId: args.userId
+      });
+      mappings = await getAssemblyComponentMappings(client, modelUploadId);
+    }
     const itemIdByGeometryHash = new Map(
       (mappings.data ?? []).map((mapping) => [
         mapping.geometryHash,
@@ -5308,9 +6419,18 @@ export async function generateAssemblyStepsFromPlan(
         await insertAssemblyStepMaterialSeeds(client, seeds, args);
       }
     }
+    // Surface how many distinct geometry groups still have no BOM item, so the
+    // route can nudge the user to Match BOM instead of a silent gap.
+    const allNodeIds = insert.data.flatMap(
+      (step) => step.componentNodeIds ?? []
+    );
+    unmappedComponentCount = groupComponentNodeIds(
+      allNodeIds,
+      graphIndex
+    ).filter((group) => !itemIdByGeometryHash.has(group.key)).length;
   }
 
-  return { ok: true, created: rows.length };
+  return { ok: true, created: rows.length, unmappedComponentCount };
 }
 
 /**
@@ -5406,4 +6526,612 @@ export async function getJobMaterialSupplyJobLines(
     itemId: job.itemId,
     status: job.status
   }));
+}
+
+// ─── Inspection Documents ─────────────────────────────────────────────────────
+
+function toStoragePath(pdfUrl?: string | null) {
+  if (!pdfUrl) return null;
+  const previewPrefix = "/file/preview/private/";
+  if (pdfUrl.startsWith(previewPrefix)) {
+    return pdfUrl.slice(previewPrefix.length);
+  }
+  return pdfUrl;
+}
+
+function toPreviewUrl(storagePath?: string | null) {
+  if (!storagePath) return null;
+  return storagePath.startsWith("/file/preview/private/")
+    ? storagePath
+    : `/file/preview/private/${storagePath}`;
+}
+
+function fileNameFromPath(storagePath?: string | null) {
+  if (!storagePath) return "drawing.pdf";
+  return storagePath.split("/").at(-1) ?? "drawing.pdf";
+}
+
+function mapInspectionDocument(row: Record<string, unknown>) {
+  const drawingNumber = (row.drawingNumber as string | null) ?? null;
+  return {
+    id: String(row.id),
+    name: String(drawingNumber ?? row.fileName ?? "Untitled Diagram"),
+    companyId: String(row.companyId),
+    partId: (row.partId as string | null) ?? null,
+    createdBy: String(row.createdBy),
+    updatedBy: (row.updatedBy as string | null) ?? null,
+    createdAt: String(row.createdAt),
+    updatedAt: (row.updatedAt as string | null) ?? null,
+    content: {
+      drawingNumber,
+      pdfUrl: toPreviewUrl((row.storagePath as string | null) ?? null),
+      annotations: [],
+      features: []
+    },
+    // The document's default sampling rule (feature rule -> document default
+    // -> All). NUMERIC columns arrive as strings from PostgREST — coerce.
+    sampling: {
+      samplingPlanType: (row.samplingPlanType as string | null) ?? null,
+      samplingSampleSize: (row.samplingSampleSize as number | null) ?? null,
+      samplingPercentage:
+        row.samplingPercentage == null ? null : Number(row.samplingPercentage),
+      samplingAql: row.samplingAql == null ? null : Number(row.samplingAql),
+      samplingInspectionLevel:
+        (row.samplingInspectionLevel as string | null) ?? null,
+      samplingSeverity: (row.samplingSeverity as string | null) ?? null
+    }
+  };
+}
+
+export async function getInspectionDocuments(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args?: { search: string | null } & GenericQueryFilters
+) {
+  const documentClient = client as unknown as {
+    from: (table: string) => {
+      select: (
+        columns: string,
+        options?: { count?: "exact" | "planned" | "estimated"; head?: boolean }
+      ) => any;
+    };
+  };
+
+  let query = documentClient
+    .from("inspectionDocuments")
+    .select("*", { count: "exact" })
+    .eq("companyId", companyId);
+
+  if (args?.search) {
+    query = query.or(
+      `drawingNumber.ilike.%${args.search}%,fileName.ilike.%${args.search}%,partReadableId.ilike.%${args.search}%`
+    );
+  }
+
+  if (args) {
+    query = setGenericQueryFilters(query, args, [
+      { column: "drawingNumber", ascending: true }
+    ]);
+  }
+
+  const result = await query;
+
+  return {
+    data: (result.data ?? []).map((row: Record<string, unknown>) =>
+      mapInspectionDocument(row)
+    ),
+    count: result.count ?? 0,
+    error: result.error
+  };
+}
+
+export async function getInspectionDocumentsForItem(
+  client: SupabaseClient<Database>,
+  itemId: string,
+  companyId: string
+) {
+  return client
+    .from("inspectionDocument")
+    .select("id, fileName, drawingNumber, version")
+    .eq("companyId", companyId)
+    .eq("partId", itemId)
+    .order("updatedAt", { ascending: false, nullsFirst: false });
+}
+
+export async function getInspectionDocument(
+  client: SupabaseClient<Database>,
+  id: string,
+  companyId: string
+) {
+  const result = await client
+    .from("inspectionDocument")
+    .select("*")
+    .eq("id", id)
+    .eq("companyId", companyId)
+    .single();
+
+  return {
+    data: result.data ? mapInspectionDocument(result.data) : null,
+    error: result.error
+  };
+}
+
+/**
+ * When an inspection plan is created without a drawing number, fall back to the
+ * part's readableIdWithRevision. If a plan with that drawing number already
+ * exists for the company, append " (1)", " (2)", etc. until it is unique.
+ */
+async function resolveInspectionDocumentDrawingNumber(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  partId: string
+): Promise<string | null> {
+  const partResult = await client
+    .from("item")
+    .select("readableIdWithRevision")
+    .eq("id", partId)
+    .eq("companyId", companyId)
+    .single();
+
+  const base = partResult.data?.readableIdWithRevision?.trim();
+  if (!base) return null;
+
+  const existingResult = await client
+    .from("inspectionDocument")
+    .select("drawingNumber")
+    .eq("companyId", companyId)
+    .not("drawingNumber", "is", null);
+
+  const taken = new Set(
+    (existingResult.data ?? [])
+      .map((row) => row.drawingNumber)
+      .filter((value): value is string => Boolean(value))
+  );
+
+  if (!taken.has(base)) return base;
+
+  let suffix = 1;
+  while (taken.has(`${base} (${suffix})`)) {
+    suffix += 1;
+  }
+  return `${base} (${suffix})`;
+}
+
+export async function upsertInspectionDocument(
+  client: SupabaseClient<Database>,
+  diagram:
+    | (Omit<z.infer<typeof inspectionDocumentValidator>, "id"> & {
+        id?: undefined;
+        companyId: string;
+        createdBy: string;
+        updatedBy?: string;
+        pageCount?: number;
+        defaultPageWidth?: number;
+        defaultPageHeight?: number;
+      })
+    | (Omit<z.infer<typeof inspectionDocumentValidator>, "id"> & {
+        id: string;
+        companyId: string;
+        createdBy: string;
+        updatedBy?: string;
+        pageCount?: number;
+        defaultPageWidth?: number;
+        defaultPageHeight?: number;
+      })
+) {
+  const {
+    id,
+    partId,
+    drawingNumber,
+    pdfUrl,
+    pageCount,
+    defaultPageWidth,
+    defaultPageHeight,
+    companyId,
+    createdBy,
+    updatedBy
+  } = diagram;
+
+  const documentClient = client as unknown as {
+    from: (table: string) => {
+      select: (columns: string) => {
+        eq: (
+          column: string,
+          value: unknown
+        ) => {
+          single: () => Promise<{
+            data: Record<string, unknown> | null;
+            error: unknown;
+          }>;
+        };
+      };
+      update: (payload: Record<string, unknown>) => {
+        eq: (
+          column: string,
+          value: unknown
+        ) => {
+          eq: (
+            column: string,
+            value: unknown
+          ) => {
+            select: (columns: string) => {
+              single: () => Promise<{
+                data: { id: string } | null;
+                error: unknown;
+              }>;
+            };
+          };
+        };
+      };
+      insert: (payload: Record<string, unknown>) => {
+        select: (columns: string) => {
+          single: () => Promise<{
+            data: { id: string } | null;
+            error: unknown;
+          }>;
+        };
+      };
+    };
+  };
+
+  const storagePath = toStoragePath(pdfUrl);
+
+  if (id) {
+    if (!companyId) {
+      return {
+        data: null,
+        error: {
+          message: "companyId is required to update inspection plan"
+        }
+      };
+    }
+
+    const existingResult = await documentClient
+      .from("inspectionDocument")
+      .select("*")
+      .eq("id", id)
+      .single();
+
+    const existing = existingResult.data;
+    if (!existing) {
+      return {
+        data: null,
+        error: {
+          message: "Inspection plan not found"
+        }
+      };
+    }
+    if (String(existing.companyId ?? "") !== companyId) {
+      return {
+        data: null,
+        error: {
+          message: "Inspection plan does not belong to this company"
+        }
+      };
+    }
+
+    const updatePayload: Record<string, unknown> = {
+      updatedBy: updatedBy ?? createdBy,
+      updatedAt: new Date().toISOString()
+    };
+    if (drawingNumber !== undefined) {
+      updatePayload.drawingNumber = drawingNumber ?? null;
+    }
+    if (partId !== undefined) {
+      updatePayload.partId = partId;
+    }
+
+    if (storagePath) {
+      updatePayload.storagePath = storagePath;
+      updatePayload.fileName = fileNameFromPath(storagePath);
+    }
+    if (pageCount && pageCount > 0) {
+      updatePayload.pageCount = pageCount;
+    }
+    if (defaultPageWidth && defaultPageWidth > 0) {
+      updatePayload.defaultPageWidth = defaultPageWidth;
+    }
+    if (defaultPageHeight && defaultPageHeight > 0) {
+      updatePayload.defaultPageHeight = defaultPageHeight;
+    }
+
+    return documentClient
+      .from("inspectionDocument")
+      .update(updatePayload)
+      .eq("id", id)
+      .eq("companyId", companyId)
+      .select("id")
+      .single();
+  }
+
+  if (!companyId) {
+    return {
+      data: null,
+      error: { message: "companyId is required to create inspection plan" }
+    };
+  }
+
+  const resolvedDrawingNumber = drawingNumber?.trim()
+    ? drawingNumber.trim()
+    : await resolveInspectionDocumentDrawingNumber(client, companyId, partId);
+
+  return documentClient
+    .from("inspectionDocument")
+    .insert({
+      companyId,
+      partId,
+      drawingNumber: resolvedDrawingNumber ?? null,
+      version: 0,
+      ...(storagePath
+        ? {
+            storagePath,
+            fileName: fileNameFromPath(storagePath),
+            uploadedBy: createdBy
+          }
+        : {}),
+      ...(pageCount && pageCount > 0 ? { pageCount } : {}),
+      ...(defaultPageWidth && defaultPageWidth > 0 ? { defaultPageWidth } : {}),
+      ...(defaultPageHeight && defaultPageHeight > 0
+        ? { defaultPageHeight }
+        : {}),
+      createdBy
+    })
+    .select("id")
+    .single();
+}
+
+export async function deleteInspectionDocument(
+  client: SupabaseClient<Database>,
+  id: string,
+  companyId: string
+) {
+  const existingResult = await client
+    .from("inspectionDocument")
+    .select("*")
+    .eq("id", id)
+    .eq("companyId", companyId)
+    .single();
+
+  if (!existingResult.data) {
+    return {
+      data: null,
+      error: { message: "Inspection plan not found" }
+    };
+  }
+
+  const storagePath =
+    (existingResult.data.storagePath as string | null) ?? null;
+
+  const deleteResult = await client
+    .from("inspectionDocument")
+    .delete()
+    .eq("id", id)
+    .eq("companyId", companyId);
+
+  if (deleteResult.error) {
+    return { data: null, error: deleteResult.error };
+  }
+
+  return {
+    data: { storagePath },
+    error: null
+  };
+}
+
+function mapInspectionFeature(row: Record<string, unknown>) {
+  const balloonIdRaw = row.balloonId ?? row.balloon_id;
+  return {
+    id: String(row.id),
+    inspectionDocumentId: String(row.inspectionDocumentId),
+    companyId: String(row.companyId),
+    pageNumber: Number(row.pageNumber),
+    label: String(row.label),
+    description: (row.description as string | null) ?? null,
+    nominalValue: (row.nominalValue as string | null) ?? null,
+    tolerancePlus: (row.tolerancePlus as string | null) ?? null,
+    toleranceMinus: (row.toleranceMinus as string | null) ?? null,
+    unit: (row.unit as string | null) ?? null,
+    type: (row.type as string) ?? "Measurement",
+    // Per-feature sampling rule (NULL = inherit the document default). NUMERIC
+    // columns arrive as strings from PostgREST — coerce, mirroring the document
+    // default rule in mapInspectionDocument.
+    samplingPlanType: (row.samplingPlanType as string | null) ?? null,
+    samplingSampleSize: (row.samplingSampleSize as number | null) ?? null,
+    samplingPercentage:
+      row.samplingPercentage == null ? null : Number(row.samplingPercentage),
+    samplingAql: row.samplingAql == null ? null : Number(row.samplingAql),
+    samplingInspectionLevel:
+      (row.samplingInspectionLevel as string | null) ?? null,
+    samplingSeverity: (row.samplingSeverity as string | null) ?? null,
+    balloonId:
+      typeof balloonIdRaw === "string"
+        ? balloonIdRaw
+        : balloonIdRaw != null
+          ? String(balloonIdRaw)
+          : null,
+    createdBy: String(row.createdBy),
+    updatedBy: (row.updatedBy as string | null) ?? null,
+    createdAt: String(row.createdAt),
+    updatedAt: (row.updatedAt as string | null) ?? null
+  };
+}
+
+function mapBalloon(row: Record<string, unknown>) {
+  return {
+    id: String(row.id),
+    inspectionDocumentId: String(row.inspectionDocumentId),
+    companyId: String(row.companyId),
+    inspectionFeatureId: String(row.inspectionFeatureId),
+    pageNumber: Number(row.pageNumber),
+    regionX: Number(row.regionX),
+    regionY: Number(row.regionY),
+    regionWidth: Number(row.regionWidth),
+    regionHeight: Number(row.regionHeight),
+    xCoordinate: Number(row.xCoordinate),
+    yCoordinate: Number(row.yCoordinate),
+    createdBy: String(row.createdBy),
+    updatedBy: (row.updatedBy as string | null) ?? null,
+    createdAt: String(row.createdAt),
+    updatedAt: (row.updatedAt as string | null) ?? null,
+    balloonAnchorId: String(row.id)
+  };
+}
+
+export async function getInspectionFeatures(
+  client: SupabaseClient<Database>,
+  inspectionDocumentId: string
+) {
+  const [featuresResult, balloonsResult] = await Promise.all([
+    getInspectionFeaturesRaw(client, inspectionDocumentId),
+    getBalloons(client, inspectionDocumentId)
+  ]);
+
+  if (featuresResult.error) {
+    return { data: null, error: featuresResult.error };
+  }
+  if (balloonsResult.error) {
+    return { data: null, error: balloonsResult.error };
+  }
+
+  const balloonByFeatureId = new Map(
+    (balloonsResult.data ?? []).map((b) => [b.inspectionFeatureId, b.id])
+  );
+
+  return {
+    data: (featuresResult.data ?? []).map((row) =>
+      mapInspectionFeature({
+        ...row,
+        balloonId: balloonByFeatureId.get(String(row.id)) ?? null
+      })
+    ),
+    error: null
+  };
+}
+
+async function getInspectionFeaturesRaw(
+  client: SupabaseClient<Database>,
+  inspectionDocumentId: string
+) {
+  return listInspectionFeatures(client, inspectionDocumentId);
+}
+
+export async function getBalloons(
+  client: SupabaseClient<Database>,
+  inspectionDocumentId: string
+) {
+  const result = await listBalloons(client, inspectionDocumentId);
+
+  return {
+    data: (result.data ?? []).map((row) =>
+      mapBalloon(row as unknown as Record<string, unknown>)
+    ),
+    error: result.error
+  };
+}
+
+export async function getInspectionPlan(
+  client: SupabaseClient<Database>,
+  inspectionDocumentId: string
+) {
+  const [featuresResult, balloonsResult] = await Promise.all([
+    getInspectionFeaturesRaw(client, inspectionDocumentId),
+    getBalloons(client, inspectionDocumentId)
+  ]);
+
+  if (featuresResult.error) {
+    return { data: null, error: featuresResult.error };
+  }
+  if (balloonsResult.error) {
+    return { data: null, error: balloonsResult.error };
+  }
+
+  const balloonByFeatureId = new Map(
+    (balloonsResult.data ?? []).map((b) => [b.inspectionFeatureId, b])
+  );
+
+  return {
+    data: (featuresResult.data ?? []).map((row) => {
+      const b = balloonByFeatureId.get(row.id);
+      const featureId = row.id;
+      return {
+        /** Feature id (primary key for plan rows). */
+        id: featureId,
+        featureId,
+        /** Balloon id when placed; null for table-only features. */
+        balloonId: b?.id ?? null,
+        inspectionDocumentId: row.inspectionDocumentId,
+        pageNumber: b?.pageNumber ?? row.pageNumber,
+        label: row.label,
+        description: row.description,
+        nominalValue: row.nominalValue,
+        tolerancePlus: row.tolerancePlus,
+        toleranceMinus: row.toleranceMinus,
+        unit: row.unit,
+        regionX: b ? b.regionX : null,
+        regionY: b ? b.regionY : null,
+        regionWidth: b ? b.regionWidth : null,
+        regionHeight: b ? b.regionHeight : null,
+        xCoordinate: b ? b.xCoordinate : null,
+        yCoordinate: b ? b.yCoordinate : null
+      };
+    }),
+    error: null
+  };
+}
+
+export async function updateInspectionDocumentSampling(
+  client: SupabaseClient<Database>,
+  args: z.infer<typeof inspectionDocumentSamplingValidator> & {
+    inspectionDocumentId: string;
+    companyId: string;
+    userId: string;
+  }
+) {
+  const { inspectionDocumentId, companyId, userId, ...sampling } = args;
+  return client
+    .from("inspectionDocument")
+    .update({
+      ...sampling,
+      updatedBy: userId,
+      updatedAt: new Date().toISOString()
+    })
+    .eq("id", inspectionDocumentId)
+    .eq("companyId", companyId);
+}
+
+export async function saveInspectionDocumentAtomic(
+  client: SupabaseClient<Database>,
+  args: {
+    inspectionDocumentId: string;
+    companyId: string;
+    userId: string;
+    pdfUrl?: string | null;
+    pageCount?: number;
+    defaultPageWidth?: number;
+    defaultPageHeight?: number;
+    features: unknown;
+    balloons: unknown;
+  }
+) {
+  return (
+    client as unknown as {
+      rpc: (
+        fn: string,
+        args: Record<string, unknown>
+      ) => Promise<{
+        data: unknown;
+        error: unknown;
+      }>;
+    }
+  ).rpc("save_inspection_document_atomic", {
+    p_inspection_document_id: args.inspectionDocumentId,
+    p_company_id: args.companyId,
+    p_user_id: args.userId,
+    p_pdf_url: args.pdfUrl ?? null,
+    p_page_count: args.pageCount ?? null,
+    p_default_page_width: args.defaultPageWidth ?? null,
+    p_default_page_height: args.defaultPageHeight ?? null,
+    p_features: args.features,
+    p_balloons: args.balloons
+  });
 }

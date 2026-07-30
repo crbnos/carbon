@@ -123,6 +123,13 @@
   },
   "overrides": [
     {
+      // Keep the typed path helpers alphabetically sorted. Applies on
+      // `biome check --write` (pre-commit lint-staged + CI), not plain
+      // `biome format`, which does not run assists.
+      "includes": ["**/erp/app/utils/path.ts", "**/mes/app/utils/path.ts"],
+      "assist": { "actions": { "source": { "useSortedKeys": "on" } } }
+    },
+    {
       "linter": {
         "rules": {
           "complexity": { "noUselessConstructor": "warn" },

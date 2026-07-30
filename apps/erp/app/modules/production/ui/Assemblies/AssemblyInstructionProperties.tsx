@@ -28,10 +28,14 @@ import { Editor } from "@carbon/react/Editor";
 import type { AssemblyGraphIndex, NamedUnit } from "@carbon/viewer";
 import { describeStep, groupComponentNodeIds } from "@carbon/viewer";
 import { nanoid } from "nanoid";
-import { useMemo, useState } from "react";
-import { LuCirclePlus, LuX } from "react-icons/lu";
+import { memo, useMemo, useState } from "react";
+import {
+  LuCirclePlus,
+  LuMousePointerClick,
+  LuTriangleAlert,
+  LuX
+} from "react-icons/lu";
 import { useFetcher, useParams } from "react-router";
-import { Empty } from "~/components";
 import { UnitOfMeasure } from "~/components/Form";
 import { ProcedureStepTypeIcon } from "~/components/Icons";
 import { usePermissions, useUser } from "~/hooks";
@@ -45,16 +49,21 @@ import {
 import type { FlattenedBomMaterial } from "../../production.service";
 import type {
   AssemblyInstructionStepRow,
-  AssemblyStandardNote,
   AssemblyStepMaterial,
-  AssemblyStepRequirement
+  AssemblyStepSlide,
+  AssemblyStepTool
 } from "../../types";
 import AssemblyStepBom, { ComponentColorSwatch } from "./AssemblyStepBom";
 import AssemblyStepMaterials from "./AssemblyStepMaterials";
-import AssemblyStepRequirements from "./AssemblyStepRequirements";
+import AssemblyStepSlides from "./AssemblyStepSlides";
+import AssemblyStepTools from "./AssemblyStepTools";
 
 type AssemblyInstructionPropertiesProps = {
   step: AssemblyInstructionStepRow | null;
+  /** Zero-based index of the selected step; null when nothing is selected */
+  stepIndex: number | null;
+  /** Total step count, for the "Step N of M" header */
+  stepCount: number;
   draftComponentNodeIds: string[] | null;
   /** Current viewer/Components-panel selection — marks the matching component rows */
   selectedNodeIds: string[];
@@ -64,10 +73,10 @@ type AssemblyInstructionPropertiesProps = {
   graphIndex: AssemblyGraphIndex | null;
   /** Authored subassembly units — a step matching one is titled by its name. */
   units: NamedUnit[];
-  requirements: AssemblyStepRequirement[];
   stepMaterials: AssemblyStepMaterial[];
+  stepSlides: AssemblyStepSlide[];
+  stepTools: AssemblyStepTool[];
   bomMaterials: FlattenedBomMaterial[];
-  standardNotes: AssemblyStandardNote[];
   onSelectComponents: (nodeIds: string[]) => void;
   onStartAddComponents: () => void;
   onStopAddComponents: () => void;
@@ -82,16 +91,18 @@ type AssemblyInstructionPropertiesProps = {
 
 const AssemblyInstructionProperties = ({
   step,
+  stepIndex,
+  stepCount,
   draftComponentNodeIds,
   selectedNodeIds,
   isAddingComponents,
   isDisabled,
   graphIndex,
   units,
-  requirements,
   stepMaterials,
+  stepSlides,
+  stepTools,
   bomMaterials,
-  standardNotes,
   onSelectComponents,
   onStartAddComponents,
   onStopAddComponents,
@@ -105,18 +116,77 @@ const AssemblyInstructionProperties = ({
   const { id: instructionId } = useParams();
   if (!instructionId) throw new Error("Could not find id");
 
+  const componentCount = (draftComponentNodeIds ?? step?.componentNodeIds ?? [])
+    .length;
+  const title =
+    (step &&
+      (step.title ||
+        describeStep(toStepDescriptor(step), graphIndex, units))) ||
+    "Untitled step";
+  const flagged =
+    step != null &&
+    stepPlanWarningsSchema.safeParse(step.warnings).data?.flagged === true;
+
+  // BOM parts the author can @-mention in a step's instruction — mirrors the
+  // step-description editor in JobBillOfProcess (scoped to the item's BOM).
+  const itemMentions = useMemo(
+    () =>
+      bomMaterials.map((material) => ({
+        id: material.itemId,
+        label:
+          material.name ?? material.readableIdWithRevision ?? material.itemId,
+        helper: material.name
+          ? (material.readableIdWithRevision ?? undefined)
+          : undefined
+      })),
+    [bomMaterials]
+  );
+
   return (
     <VStack
-      spacing={4}
-      className="w-[450px] bg-card h-full overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent border-l border-border px-4 py-2 text-sm"
+      spacing={0}
+      className="w-[450px] bg-card h-full overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent border-l border-border text-sm"
     >
-      <VStack spacing={2}>
-        <h3 className="text-xxs text-foreground/70 uppercase font-light tracking-wide">
-          Step
-        </h3>
-      </VStack>
+      {/* Sticky panel header: which step you're editing, its status, and a
+          one-glance summary (component count, flagged). */}
+      <div className="sticky top-0 z-10 w-full min-w-0 flex-none border-b border-border bg-card/95 px-4 py-3 backdrop-blur">
+        {step ? (
+          <VStack spacing={1} className="w-full min-w-0">
+            <HStack className="w-full min-w-0 items-center justify-between gap-2">
+              <span className="shrink-0 text-xxs font-medium uppercase tracking-wide text-muted-foreground tabular-nums">
+                {stepIndex != null
+                  ? `Step ${stepIndex + 1} of ${stepCount}`
+                  : "Step"}
+              </span>
+              <StepStatusPill status={normalizeStatus(step.status)} />
+            </HStack>
+            <h3 className="w-full min-w-0 truncate text-sm font-medium text-foreground">
+              {title}
+            </h3>
+            <HStack className="w-full min-w-0 items-center gap-1.5 text-xs text-muted-foreground tabular-nums">
+              <span>
+                {componentCount}{" "}
+                {componentCount === 1 ? "component" : "components"}
+              </span>
+              {flagged && (
+                <>
+                  <span aria-hidden>·</span>
+                  <span className="inline-flex items-center gap-1 text-amber-600 dark:text-amber-500">
+                    <LuTriangleAlert className="size-3" />
+                    No collision-free path
+                  </span>
+                </>
+              )}
+            </HStack>
+          </VStack>
+        ) : (
+          <span className="text-xxs font-medium uppercase tracking-wide text-muted-foreground">
+            Step
+          </span>
+        )}
+      </div>
       {step ? (
-        <Tabs defaultValue="details" className="w-full">
+        <Tabs defaultValue="details" className="w-full px-4 pb-2 pt-3">
           <TabsList className="w-full mb-4">
             <TabsTrigger className="flex-1" value="details">
               Details
@@ -124,8 +194,8 @@ const AssemblyInstructionProperties = ({
             <TabsTrigger className="flex-1" value="bom">
               BOM
             </TabsTrigger>
-            <TabsTrigger className="flex-1" value="requirements">
-              Requirements
+            <TabsTrigger className="flex-1" value="slides">
+              Slides
             </TabsTrigger>
           </TabsList>
           {/* forceMount keeps unsaved form edits alive while the BOM tab is open */}
@@ -143,6 +213,7 @@ const AssemblyInstructionProperties = ({
               isDisabled={isDisabled}
               graphIndex={graphIndex}
               units={units}
+              itemMentions={itemMentions}
               onSelectComponents={onSelectComponents}
               onStartAddComponents={onStartAddComponents}
               onStopAddComponents={onStopAddComponents}
@@ -163,6 +234,12 @@ const AssemblyInstructionProperties = ({
                 bomMaterials={bomMaterials}
                 isDisabled={isDisabled}
               />
+              <AssemblyStepTools
+                stepId={step.id}
+                instructionId={instructionId}
+                tools={stepTools}
+                isDisabled={isDisabled}
+              />
               <AssemblyStepBom
                 componentNodeIds={
                   draftComponentNodeIds ?? step.componentNodeIds ?? []
@@ -171,24 +248,72 @@ const AssemblyInstructionProperties = ({
               />
             </VStack>
           </TabsContent>
-          <TabsContent value="requirements">
-            <AssemblyStepRequirements
-              stepId={step.id}
-              instructionId={instructionId}
-              requirements={requirements}
-              standardNotes={standardNotes}
-              isDisabled={isDisabled}
-            />
+          <TabsContent value="slides">
+            <VStack spacing={4} className="w-full py-2">
+              <AssemblyStepSlides
+                stepId={step.id}
+                instructionId={instructionId}
+                slides={stepSlides}
+                isDisabled={isDisabled}
+              />
+            </VStack>
           </TabsContent>
         </Tabs>
       ) : (
-        <Empty className="border-none">Select a step to edit it</Empty>
+        <div className="flex w-full flex-1 flex-col items-center justify-center gap-2 px-6 py-16 text-center">
+          <div className="flex size-10 items-center justify-center rounded-full bg-muted text-muted-foreground">
+            <LuMousePointerClick className="size-5" />
+          </div>
+          <p className="text-sm font-medium text-foreground">
+            No step selected
+          </p>
+          <p className="max-w-[30ch] text-xs text-muted-foreground">
+            Pick a step from the list to edit its details, components, and
+            materials.
+          </p>
+        </div>
       )}
     </VStack>
   );
 };
 
-export default AssemblyInstructionProperties;
+const stepStatusStyles: Record<string, string> = {
+  Todo: "bg-red-500",
+  Review: "bg-yellow-500",
+  Done: "bg-green-500"
+};
+
+function normalizeStatus(status: string | null | undefined): string {
+  return status && status in stepStatusStyles ? status : "Todo";
+}
+
+/** Compact status chip for the panel header — mirrors the Explorer's status dot. */
+function StepStatusPill({ status }: { status: string }) {
+  return (
+    <span className="inline-flex h-5 shrink-0 items-center gap-1.5 rounded-md border border-border px-1.5 text-xxs font-medium text-foreground">
+      <span
+        className={cn(
+          "block size-1.5 shrink-0 rounded-full",
+          stepStatusStyles[status] ?? stepStatusStyles.Todo
+        )}
+      />
+      {status}
+    </span>
+  );
+}
+
+/** The minimal descriptor `describeStep` needs to derive a title. */
+function toStepDescriptor(step: AssemblyInstructionStepRow) {
+  return {
+    title: null,
+    componentNodeIds: step.componentNodeIds ?? [],
+    fastener: fastenerSchema.safeParse(step.fastener).data ?? null
+  };
+}
+
+// Memoized: skips re-render on the route's per-frame motion-drag updates
+// (draftMotion) — none of this panel's props change during a waypoint drag.
+export default memo(AssemblyInstructionProperties);
 
 function StepForm({
   step,
@@ -198,6 +323,7 @@ function StepForm({
   isDisabled,
   graphIndex,
   units,
+  itemMentions,
   onSelectComponents,
   onStartAddComponents,
   onStopAddComponents,
@@ -215,6 +341,7 @@ function StepForm({
   isDisabled: boolean;
   graphIndex: AssemblyGraphIndex | null;
   units: NamedUnit[];
+  itemMentions: { id: string; label: string; helper?: string }[];
   onSelectComponents: (nodeIds: string[]) => void;
   onStartAddComponents: () => void;
   onStopAddComponents: () => void;
@@ -358,7 +485,8 @@ function StepForm({
             onChange={(value) => {
               setDescription(value);
             }}
-            className="[&_.is-empty]:text-muted-foreground min-h-[120px] p-4 rounded-lg border w-full"
+            mentions={[{ char: "@", items: itemMentions }]}
+            className="[&_.is-empty]:text-muted-foreground min-h-[88px] max-h-[360px] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent p-3 rounded-lg border w-full"
           />
         </VStack>
 
@@ -394,9 +522,17 @@ function StepForm({
           description="Operators must record this step to complete the operation"
         />
 
-        <VStack spacing={2} className="w-full">
+        <h4 className="w-full pt-1 text-xxs font-medium uppercase tracking-wide text-muted-foreground">
+          Playback &amp; components
+        </h4>
+        <VStack
+          spacing={2}
+          className="w-full rounded-lg border border-border bg-muted/40 p-3"
+        >
           <HStack className="w-full justify-between">
-            <Label>Motion</Label>
+            <Label className="text-xxs font-medium uppercase tracking-wide text-muted-foreground">
+              Motion
+            </Label>
             {!isDisabled && (
               <Button
                 variant={isEditingMotion ? "primary" : "secondary"}
@@ -435,8 +571,13 @@ function StepForm({
           )}
         </VStack>
 
-        <VStack spacing={2} className="w-full">
-          <Label>Camera</Label>
+        <VStack
+          spacing={2}
+          className="w-full rounded-lg border border-border bg-muted/40 p-3"
+        >
+          <Label className="text-xxs font-medium uppercase tracking-wide text-muted-foreground">
+            Camera
+          </Label>
           <p className="text-xs text-muted-foreground">
             {hasCamera
               ? "A saved view frames this step during playback."
@@ -527,9 +668,14 @@ function StepComponentsEditor({
   );
 
   return (
-    <VStack spacing={2} className="w-full">
+    <VStack
+      spacing={2}
+      className="w-full rounded-lg border border-border bg-muted/40 p-3"
+    >
       <HStack className="w-full justify-between">
-        <Label>Components</Label>
+        <Label className="text-xxs font-medium uppercase tracking-wide text-muted-foreground">
+          Components
+        </Label>
         {!isDisabled && (
           <Button
             variant={isAddingComponents ? "primary" : "secondary"}

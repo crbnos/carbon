@@ -45,15 +45,17 @@ import {
 import { getUser } from "~/modules/users/users.server";
 import { loader as pdfLoader } from "~/routes/file+/purchase-order+/$orderId[.]pdf";
 import { getDatabaseClient } from "~/services/database.server";
-import type { Handle } from "~/utils/handle";
+import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import { stripSpecialCharacters } from "~/utils/string";
 
 const logger = getLogger("erp", "purchase-order");
 
 export const handle: Handle = {
-  breadcrumb: msg`Orders`,
-  to: path.to.purchaseOrders,
+  breadcrumb: detailBreadcrumb(
+    { breadcrumb: msg`Orders`, to: path.to.purchaseOrders },
+    (data) => data?.purchaseOrder?.purchaseOrderId
+  ),
   module: "purchasing"
 };
 

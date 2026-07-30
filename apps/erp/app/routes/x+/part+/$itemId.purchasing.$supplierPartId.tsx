@@ -1,10 +1,9 @@
-import { assertIsPost, success } from "@carbon/auth";
+import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { flash } from "@carbon/auth/session.server";
 import { validator } from "@carbon/form";
 import { useRouteData } from "@carbon/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { redirect, useLoaderData, useNavigate, useParams } from "react-router";
+import { useLoaderData, useNavigate, useParams } from "react-router";
 import type { PartSummary } from "~/modules/items";
 import { supplierPartValidator, upsertSupplierPart } from "~/modules/items";
 import { SupplierPartForm } from "~/modules/items/ui/Item";
@@ -80,6 +79,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const updatedSupplierPart = await upsertSupplierPart(client, {
     id: supplierPartId,
     ...d,
+    companyId,
     updatedBy: userId,
     customFields: setCustomFields(formData)
   });
@@ -121,10 +121,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
     });
   }
 
-  throw redirect(
-    path.to.partPurchasing(itemId),
-    await flash(request, success("Supplier part updated"))
-  );
+  // Fetcher-friendly success (mirrors the create route): the form's fetcher
+  // effect toasts + fires onClose, so callers embedded outside the part page
+  // (e.g. the change-order line detail) aren't yanked to partPurchasing.
+  return { success: true, message: "Supplier part updated" };
 }
 
 export default function EditPartSupplierRoute() {

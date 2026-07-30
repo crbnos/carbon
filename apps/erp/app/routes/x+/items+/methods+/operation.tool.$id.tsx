@@ -5,6 +5,7 @@ import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { upsertMethodOperationTool } from "~/modules/items";
+import { checkRevisionLock } from "~/modules/items/items.server";
 import { operationToolValidator } from "~/modules/shared";
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -26,6 +27,15 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   const { id: _id, ...d } = validation.data;
+
+  // Tool↔step links are managed by the step editor (methodOperationStepTool route), so this
+  // edit deliberately leaves them untouched.
+
+  // Release-lock gate: enforce -> block; warn -> proceed + flash; off -> no-op.
+  const lock = await checkRevisionLock(client, { kind: "tool", id, companyId });
+  if (!lock.ok) {
+    return data({ id: null }, await flash(request, error(null, lock.message)));
+  }
 
   const update = await upsertMethodOperationTool(client, {
     id,
@@ -61,6 +71,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   return data(
     { id: methodOperationToolId },
-    await flash(request, success("Method operation tool updated"))
+    await flash(
+      request,
+      success(lock.warn ? lock.message : "Method operation tool updated")
+    )
   );
 }

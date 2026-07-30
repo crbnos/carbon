@@ -1,0 +1,17 @@
+[package]
+name = "collision"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+# Rust bridge over C++ FCL 0.7.0 (mesh-mesh collision / penetration depth).
+# build.rs resolves FCL/libccd/eigen/octomap via `<PKG>_PREFIX` env or Homebrew.
+
+[dependencies]
+cxx = "1"
+
+[build-dependencies]
+cxx-build = "1"
+
+[dev-dependencies]
+serde_json = "1"

@@ -562,7 +562,7 @@ const ToolsTable = memo(({ data, tags, count }: ToolsTableProps) => {
             <MenuSub>
               <MenuSubTrigger>
                 <MenuIcon icon={<LuGitPullRequestArrow />} />
-                <Trans>Versions</Trans>
+                <Trans>Revisions</Trans>
               </MenuSubTrigger>
               <MenuSubContent>
                 {revisions.map((revision) => (
@@ -622,6 +622,10 @@ const ToolsTable = memo(({ data, tags, count }: ToolsTableProps) => {
           {
             table: "operations" as const,
             label: "Operations"
+          },
+          {
+            table: "partWithMethod" as const,
+            label: "Parts with Methods"
           }
         ]}
         primaryAction={

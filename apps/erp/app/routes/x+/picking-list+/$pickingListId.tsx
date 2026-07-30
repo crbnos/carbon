@@ -11,12 +11,14 @@ import {
   getPickingListRecommendations
 } from "~/modules/inventory";
 import { PickingListHeader } from "~/modules/inventory/ui/PickingLists";
-import type { Handle } from "~/utils/handle";
+import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
 export const handle: Handle = {
-  breadcrumb: msg`Picking List`,
-  to: path.to.pickingLists
+  breadcrumb: detailBreadcrumb(
+    { breadcrumb: msg`Picking List`, to: path.to.pickingLists },
+    (data) => data?.pickingList?.pickingListId
+  )
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {

@@ -13,8 +13,21 @@ for (const file of [".env.local", ".env"]) {
   if (existsSync(path)) process.loadEnvFile(path);
 }
 
-const [dir = "./src/email"] = process.argv.slice(2);
-const result = spawnSync("email", ["dev", "--dir", dir, "--port", "3030"], {
+const [dir = "./src/email/previews"] = process.argv.slice(2);
+const port = process.env.EMAIL_DEV_PORT || "3030";
+
+const result = spawnSync("email", ["dev", "--dir", dir, "--port", port], {
   stdio: "inherit"
 });
+// spawnSync reports launch failures (e.g. binary missing) via result.error
+// with status null — without this check the script exits 0 printing nothing.
+if (result.error) {
+  console.error(`Failed to start react-email preview server: ${result.error.message}`);
+  if (result.error.code === "ENOENT") {
+    console.error(
+      "The `email` binary was not found. Run `pnpm install`, then start via `pnpm --filter @carbon/documents email` so node_modules/.bin is on PATH."
+    );
+  }
+  process.exit(1);
+}
 process.exit(result.status ?? 0);

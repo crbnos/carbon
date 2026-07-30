@@ -9,12 +9,14 @@ import {
   getJournalEntry,
   getJournalLineDimensions
 } from "~/modules/accounting";
-import type { Handle } from "~/utils/handle";
+import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
 export const handle: Handle = {
-  breadcrumb: "Journal Entries",
-  to: path.to.accountingJournals
+  breadcrumb: detailBreadcrumb(
+    { breadcrumb: "Journal Entries", to: path.to.accountingJournals },
+    (data) => data?.journalEntry?.journalEntryId
+  )
 };
 
 // Maps a journal's sourceType to the document it was posted from, so the

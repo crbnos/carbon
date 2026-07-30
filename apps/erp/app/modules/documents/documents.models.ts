@@ -2,7 +2,7 @@ import type { Database } from "@carbon/database";
 import { getLogger } from "@carbon/logger";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
-import { methodItemType } from "~/modules/shared";
+import { itemType } from "~/modules/shared";
 
 const logger = getLogger("erp", "documents-models");
 
@@ -19,7 +19,7 @@ export const documentSourceTypes = [
   "Sales Order",
   "Sales Invoice",
   "Shipment",
-  ...methodItemType
+  ...itemType
 ] as const;
 
 export const documentValidator = z.object({

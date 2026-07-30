@@ -87,6 +87,7 @@ Technical highlights:
 - [Lingui](https://lingui.dev) - i18n
 - [Vercel](https://vercel.com) – hosting
 - [Stripe](https://stripe.com) - billing
+- [Rust](https://www.rust-lang.org) – geometry service (FCL collision + OpenCASCADE CAD)
 
 
 ## Codebase
@@ -104,8 +105,9 @@ The monorepo follows the Turborepo convention of grouping packages into one of t
 | `mes`        | MES             | `pnpm dev` (select MES in picker, or both)          |
 | `academy`    | Academy         | `pnpm dev:academy`                                  |
 | `starter`    | Starter         | `pnpm dev:starter`                                  |
+| `assembler`  | Geometry service (Rust): STEP → GLB + assembly motion planning | spawned by `crbn up` (needs a release binary — see [Installation](#installation)) |
 
-`pnpm dev` runs the per-worktree dev CLI (`crbn up`). ERP and MES are first-class — the CLI boots the docker stack, applies migrations, regenerates types/swagger, and spawns the selected apps behind portless. Academy and starter are standalone Turborepo entries.
+`pnpm dev` runs the per-worktree dev CLI (`crbn up`). ERP and MES are first-class — the CLI boots the docker stack, applies migrations, regenerates types/swagger, and spawns the selected apps behind portless. The `assembler` geometry service is spawned too when its release binary is present. Academy and starter are standalone Turborepo entries.
 
 ### `/packages`
 
@@ -167,6 +169,35 @@ Then install dependencies:
 $ nvm use            # use node v22
 $ pnpm install       # install dependencies
 ```
+
+#### Optional: the `assembler` geometry service
+
+`assembler` is a Rust service (STEP → GLB + assembly motion planning) over C++ FCL and OpenCASCADE. ERP/MES run fine without it — set it up only if you need the 3D `/convert` and `/plan` endpoints.
+
+1. **Toolchain + native build deps** (macOS):
+
+   ```bash
+   $ curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh   # Rust, if not already installed
+   $ brew install fcl cmake ninja draco                               # collision libs (+ libccd/eigen/octomap), build tools, Draco mesh compression
+   ```
+
+   On Linux, install the equivalents from your package manager: `libfcl-dev libccd-dev libeigen3-dev liboctomap-dev libdraco-dev cmake ninja-build` plus a C/C++ toolchain.
+
+   `./setup.sh` already installs Draco on macOS. If yours lives outside the Homebrew keg (`/opt/homebrew/opt/draco` on arm64), point `draco-bridge`'s build at it with `DRACO_PREFIX=/path/to/draco cargo build`.
+
+2. **Build OCCT once** — a patched static OpenCASCADE, cached in `~/.cache/carbon-occt`. Slow (~15–30 min) but one-time per machine; re-running is a no-op once cached:
+
+   ```bash
+   $ ./apps/assembler/scripts/build-occt.sh
+   ```
+
+3. **Build the service** — seconds once OCCT is cached (`build.rs` finds it automatically):
+
+   ```bash
+   $ cargo build --release -p assembler
+   ```
+
+`crbn up` spawns the binary when it's present. Verify it's up with `curl -sf "$ASSEMBLER_SERVICE_URL/health"` (the URL is in your worktree's `.env.local`) or by watching the `asm |` lines in the `crbn up` output. Without the binary the rest of the stack still runs — only `/convert` and `/plan` are unavailable.
 
 The dev stack (Postgres, GoTrue, Kong, Storage, Inngest, Inbucket, Studio, Realtime) is booted later by `crbn up` — see [Local dev CLI](#local-dev-cli-crbn) below. There is no separate "start the database" step.
 
@@ -277,6 +308,26 @@ $ pnpm dev                # equivalent to `crbn up` — picker lets you choose E
 `<worktree>` is derived from the branch name (e.g. `sid-local-dev` → `local-dev`). The main checkout drops the prefix and just uses `erp.dev`, `mes.dev`, etc. Ports for raw TCP services (Postgres, Inbucket, Inngest) are dynamic per-worktree — `crbn status` is the source of truth.
 
 Academy and starter still run on classic localhost ports via `pnpm dev:academy` / `pnpm dev:starter` (they are not part of the per-worktree stack).
+
+### Logging in
+
+For local development you don't need email or OAuth configured. `crbn up` seeds a
+smoke-test user (`test@carbon.ms`) and writes `DEV_BYPASS_EMAIL=test@carbon.ms`
+into `.env.local` for you. When that bypass email is set, signing in with it skips
+the magic link and logs you straight into the ERP:
+
+1. Open the ERP at the URL from the `crbn up` summary (e.g. `https://<worktree>.erp.dev/login`).
+2. Type `test@carbon.ms` into the email field.
+3. Click **Sign in with Email**.
+
+You'll land on the authenticated dashboard (`/x`) — no inbox check required. The
+same session cookie works for the MES app at `https://<worktree>.mes.dev`.
+
+> The bypass only applies to the exact address in `DEV_BYPASS_EMAIL` and only when
+> that user is active — it's a dev convenience, not present in production. Any other
+> email falls back to the normal magic-link / verification flow (which needs Resend
+> configured). To sign in as your own account instead, use the magic link and read it
+> from the local mail catcher at `https://<worktree>.mail.dev`.
 
 ### Code Formatting
 
@@ -436,19 +487,6 @@ const { data, error } = await carbon
 ```
 
 
-## Translations
-
-In order to run `pnpm run translate` you must first run:
-
-```bash
-brew install ollama
-brew services start ollama
-ollama pull llama3.2
-curl http://localhost:11434/api/tags
-npx linguito config set \
-  llmSettings.provider=ollama \
-  llmSettings.url=http://127.0.0.1:11434/api
-```
 ## Migration Notes
 
 ### Trigger.dev to Inngest

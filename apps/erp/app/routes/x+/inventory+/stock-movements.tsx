@@ -12,7 +12,7 @@ import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
 
 export const handle: Handle = {
-  breadcrumb: msg`Stock Movements`,
+  breadcrumb: msg`Movements`,
   to: path.to.stockMovements
 };
 

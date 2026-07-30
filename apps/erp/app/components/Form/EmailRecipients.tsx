@@ -20,15 +20,22 @@ import {
 import {
   type KeyboardEvent,
   useCallback,
+  useEffect,
   useMemo,
   useRef,
   useState
 } from "react";
 import { LuUsers } from "react-icons/lu";
-import { useFetcher } from "react-router";
-import type { Group } from "~/modules/users";
+import type { User, UserSelectGroup } from "~/modules/users";
 import { isValidEmail } from "~/utils/form";
 import { path } from "~/utils/path";
+import {
+  cachedApiQuery,
+  getCompanyId,
+  groupEmailsQuery,
+  userSelectGroupsQuery,
+  userSelectSearchQuery
+} from "~/utils/react-query";
 
 type EmailRecipientsProps = {
   name: string;
@@ -48,73 +55,83 @@ type GroupOption = {
   type: "group";
   id: string;
   name: string;
-  emails: string[];
   memberCount: number;
 };
 
 type Option = UserOption | GroupOption;
 
-const useEmailOptions = (type: "employee" | "supplier" | "customer") => {
-  const groupsFetcher = useFetcher<{ groups: Group[] }>();
+const toGroupOption = (group: UserSelectGroup): GroupOption => ({
+  type: "group",
+  id: group.id,
+  name: group.name,
+  memberCount: group.userCount
+});
+
+const useEmailOptions = (
+  type: "employee" | "supplier" | "customer",
+  inputValue: string
+) => {
+  const [topGroups, setTopGroups] = useState<UserSelectGroup[]>([]);
+  const [searchResults, setSearchResults] = useState<{
+    groups: UserSelectGroup[];
+    users: User[];
+  } | null>(null);
 
   useMount(() => {
-    groupsFetcher.load(path.to.api.groupsByTypeWithUsers(type));
+    const companyId = getCompanyId();
+    cachedApiQuery<{ groups: UserSelectGroup[]; hasMore: boolean }>(
+      userSelectGroupsQuery(companyId, type, 0),
+      path.to.api.userSelectGroups(type, 0)
+    )
+      .then((data) => setTopGroups(data.groups))
+      .catch(() => setTopGroups([]));
   });
 
+  const q = inputValue.trim();
+
+  useEffect(() => {
+    if (q.length < 2) {
+      setSearchResults(null);
+      return;
+    }
+    const companyId = getCompanyId();
+    const timeout = setTimeout(() => {
+      cachedApiQuery<{ groups: UserSelectGroup[]; users: User[] }>(
+        userSelectSearchQuery(companyId, type, q, ""),
+        path.to.api.userSelectSearch(q, type)
+      )
+        .then(setSearchResults)
+        .catch(() => setSearchResults(null));
+    }, 240);
+    return () => clearTimeout(timeout);
+  }, [q, type]);
+
   const options = useMemo<Option[]>(() => {
-    if (!groupsFetcher.data?.groups) return [];
+    const hasMembers = (g: UserSelectGroup) => g.userCount + g.groupCount > 0;
 
-    const opts: Option[] = [];
-    const seenGroupIds = new Set<string>();
+    if (q.length >= 2 && searchResults) {
+      const opts: Option[] = searchResults.groups
+        .filter(hasMembers)
+        .map(toGroupOption);
 
-    const collectGroupEmails = (group: Group): string[] => {
-      const groupEmails: string[] = [];
-      group.data.users?.forEach((user) => {
-        if (user.email) groupEmails.push(user.email);
-      });
-      group.children?.forEach((child) => {
-        groupEmails.push(...collectGroupEmails(child));
-      });
-      return groupEmails;
-    };
-
-    const processGroup = (group: Group) => {
-      if (seenGroupIds.has(group.data.id)) return;
-      seenGroupIds.add(group.data.id);
-
-      const groupEmails = [...new Set(collectGroupEmails(group))];
-      if (groupEmails.length > 0) {
-        opts.push({
-          type: "group",
-          id: group.data.id,
-          name: group.data.name,
-          emails: groupEmails,
-          memberCount: groupEmails.length
-        });
-      }
-
-      group.data.users?.forEach((user) => {
-        if (user.email) {
+      const seenEmails = new Set<string>();
+      searchResults.users.forEach((user) => {
+        if (user.email && !seenEmails.has(user.email)) {
+          seenEmails.add(user.email);
           opts.push({
             type: "user",
             id: user.id,
-            name: user.fullName,
+            name: user.fullName ?? "",
             email: user.email
           });
         }
       });
-    };
 
-    groupsFetcher.data.groups.forEach(processGroup);
+      return opts;
+    }
 
-    const seenEmails = new Set<string>();
-    return opts.filter((opt) => {
-      if (opt.type === "group") return true;
-      if (seenEmails.has(opt.email)) return false;
-      seenEmails.add(opt.email);
-      return true;
-    });
-  }, [groupsFetcher.data]);
+    return topGroups.filter(hasMembers).map(toGroupOption);
+  }, [topGroups, searchResults, q]);
 
   return options;
 };
@@ -137,21 +154,13 @@ export default function EmailRecipients({
   const [open, setOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const options = useEmailOptions(type);
+  const options = useEmailOptions(type, inputValue);
 
-  // Filter options based on search
+  // Server search covers >= 2 chars; filter the mounted groups for shorter input
   const filteredOptions = useMemo(() => {
-    if (!inputValue.trim()) return options;
-    const search = inputValue.toLowerCase();
-    return options.filter((opt) => {
-      if (opt.type === "user") {
-        return (
-          opt.name.toLowerCase().includes(search) ||
-          opt.email.toLowerCase().includes(search)
-        );
-      }
-      return opt.name.toLowerCase().includes(search);
-    });
+    const search = inputValue.trim().toLowerCase();
+    if (!search || search.length >= 2) return options;
+    return options.filter((opt) => opt.name.toLowerCase().includes(search));
   }, [options, inputValue]);
 
   const addEmail = useCallback(
@@ -211,11 +220,22 @@ export default function EmailRecipients({
     }
   };
 
-  const handleSelect = (option: Option) => {
+  const handleSelect = async (option: Option) => {
     if (option.type === "user") {
       addEmail(option.email);
     } else {
-      addEmails(option.emails);
+      try {
+        const companyId = getCompanyId();
+        const { emails: groupEmails } = await cachedApiQuery<{
+          emails: string[];
+        }>(
+          groupEmailsQuery(companyId, option.id),
+          path.to.api.userSelectGroupEmails(option.id)
+        );
+        addEmails(groupEmails);
+      } catch {
+        // leave the input as-is — selecting again retries
+      }
     }
     setInputValue("");
     setOpen(false);

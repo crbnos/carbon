@@ -1,3 +1,4 @@
+import { useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useMemo } from "react";
 import { LuHash, LuText } from "react-icons/lu";
@@ -38,11 +39,12 @@ const TrialBalanceTable = memo(
     showTranslated = false,
     parentCurrency
   }: TrialBalanceTableProps) => {
+    const { t } = useLingui();
     const columns = useMemo<ColumnDef<TrialBalanceRow>[]>(() => {
       const cols: ColumnDef<TrialBalanceRow>[] = [
         {
           accessorKey: "accountNumber",
-          header: "Account",
+          header: t`Account`,
           cell: ({ row }) => (
             <span className="font-mono text-muted-foreground">
               {row.original.accountNumber}
@@ -55,7 +57,7 @@ const TrialBalanceTable = memo(
         },
         {
           accessorKey: "accountName",
-          header: "Name",
+          header: t`Name`,
           cell: ({ row }) => row.original.accountName,
           meta: {
             icon: <LuText />
@@ -63,7 +65,7 @@ const TrialBalanceTable = memo(
         },
         {
           accessorKey: "debitBalance",
-          header: "Debit",
+          header: t`Debit`,
           cell: ({ row }) => (
             <span className="tabular-nums">
               {formatCurrency(row.original.debitBalance)}
@@ -77,7 +79,7 @@ const TrialBalanceTable = memo(
         },
         {
           accessorKey: "creditBalance",
-          header: "Credit",
+          header: t`Credit`,
           cell: ({ row }) => (
             <span className="tabular-nums">
               {formatCurrency(row.original.creditBalance)}
@@ -95,7 +97,7 @@ const TrialBalanceTable = memo(
         cols.push(
           {
             accessorKey: "translatedDebit",
-            header: `Debit (${parentCurrency ?? "Translated"})`,
+            header: t`Debit (${parentCurrency ?? "Translated"})`,
             cell: ({ row }) => (
               <span className="tabular-nums">
                 {formatCurrency(row.original.translatedDebit ?? 0)}
@@ -109,7 +111,7 @@ const TrialBalanceTable = memo(
           },
           {
             accessorKey: "translatedCredit",
-            header: `Credit (${parentCurrency ?? "Translated"})`,
+            header: t`Credit (${parentCurrency ?? "Translated"})`,
             cell: ({ row }) => (
               <span className="tabular-nums">
                 {formatCurrency(row.original.translatedCredit ?? 0)}
@@ -126,7 +128,7 @@ const TrialBalanceTable = memo(
 
       cols.push({
         accessorKey: "netChange",
-        header: "Net Change",
+        header: t`Net Change`,
         cell: ({ row }) => (
           <span className="tabular-nums">
             {formatCurrency(row.original.netChange)}
@@ -140,7 +142,7 @@ const TrialBalanceTable = memo(
       });
 
       return cols;
-    }, [showTranslated, parentCurrency]);
+    }, [showTranslated, parentCurrency, t]);
 
     return (
       <Table<TrialBalanceRow>
@@ -148,7 +150,7 @@ const TrialBalanceTable = memo(
         columns={columns}
         count={count}
         withSimpleSorting={false}
-        title="Trial Balance"
+        title={t`Trial Balance`}
       />
     );
   }

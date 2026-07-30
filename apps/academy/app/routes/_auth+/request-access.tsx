@@ -18,11 +18,6 @@ export default function RequestAccessRoute() {
         <img
           src="/carbon-mark-light.svg"
           alt="Carbon Logo"
-          className="w-24 mb-3 dark:hidden"
-        />
-        <img
-          src="/carbon-mark-dark.svg"
-          alt="Carbon Logo"
           className="w-24 mb-3"
         />
 

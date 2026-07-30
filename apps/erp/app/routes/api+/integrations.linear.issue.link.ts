@@ -1,6 +1,12 @@
 import { getAppUrl } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import {
+  actionTaskEntities,
+  actionTaskParentId,
+  actionTaskPermissions,
+  isActionTaskEntityType
+} from "@carbon/ee/action-task-entity";
+import {
   getLinearClient,
   linkActionToLinearIssue,
   unlinkActionFromLinearIssue
@@ -8,7 +14,8 @@ import {
 import { getLogger } from "@carbon/logger";
 import type { ActionFunction, LoaderFunction } from "react-router";
 import { data } from "react-router";
-import { getIssueAction } from "~/modules/quality/quality.service";
+import { requireChangeNoticeEditable } from "~/modules/items/items.server";
+import { getActionTaskWithParent } from "~/services/action-task.server";
 
 const logger = getLogger("erp", "integrations-linear-issue-link");
 
@@ -16,13 +23,43 @@ const linear = getLinearClient();
 
 export const action: ActionFunction = async ({ request }) => {
   try {
-    const { companyId, client } = await requirePermissions(request, {});
     const form = await request.formData();
 
     const actionId = form.get("actionId") as string;
+    const entityType = form.get("entityType") as string | null;
 
     if (!actionId) {
       return { success: false, message: "Missing required fields: actionId" };
+    }
+
+    if (!isActionTaskEntityType(entityType)) {
+      return { success: false, message: "Invalid entityType" };
+    }
+
+    const { companyId, client } = await requirePermissions(
+      request,
+      actionTaskPermissions(entityType)
+    );
+
+    if (entityType === "changeOrderActionTask") {
+      const task = await getActionTaskWithParent(
+        client,
+        entityType,
+        actionId,
+        companyId
+      );
+
+      const locked = task.parentId
+        ? await requireChangeNoticeEditable(client, {
+            changeNoticeId: task.parentId,
+            companyId,
+            scope: "workflow"
+          })
+        : { error: { message: "Could not find change notice" } };
+
+      if (locked) {
+        return { success: false, message: locked.error.message };
+      }
     }
 
     switch (request.method) {
@@ -37,7 +74,7 @@ export const action: ActionFunction = async ({ request }) => {
         }
 
         const [carbonIssue, issue] = await Promise.all([
-          getIssueAction(client, actionId),
+          getActionTaskWithParent(client, entityType, actionId, companyId),
           linear.getIssueById(companyId, issueId)
         ]);
 
@@ -54,6 +91,7 @@ export const action: ActionFunction = async ({ request }) => {
           .single();
 
         const linked = await linkActionToLinearIssue(client, companyId, {
+          entityType,
           actionId,
           issue,
           assignee: assignee.data ? assignee.data.id : null
@@ -63,16 +101,16 @@ export const action: ActionFunction = async ({ request }) => {
           return { success: false, message: "Failed to link issue" };
         }
 
-        const nonConformanceId = linked.data?.[0].nonConformanceId;
+        const parentId = actionTaskParentId(linked.data, entityType) ?? "";
 
-        const url = getAppUrl() + `/x/issue/${nonConformanceId}/details`;
+        const url =
+          getAppUrl() +
+          `${actionTaskEntities[entityType].detailPath(parentId)}/details`;
 
         await linear.createAttachmentLink(companyId, {
           issueId: issue.id as string,
           url,
-          title: `Linked Carbon Issue: ${
-            carbonIssue.data?.nonConformance?.nonConformanceId ?? ""
-          }`
+          title: `Linked Carbon Issue: ${carbonIssue.parentReadableId ?? ""}`
         });
 
         return { success: true, message: "Linked successfully" };
@@ -81,6 +119,7 @@ export const action: ActionFunction = async ({ request }) => {
       case "DELETE": {
         // Unlink from Carbon's DB first
         const unlinked = await unlinkActionFromLinearIssue(client, companyId, {
+          entityType,
           actionId
         });
 
@@ -90,13 +129,10 @@ export const action: ActionFunction = async ({ request }) => {
 
         // Best-effort: clean up attachment in Linear
         try {
-          const { data: action } = await getIssueAction(client, actionId);
+          const parentId = actionTaskParentId(unlinked.data, entityType);
 
-          if (action?.nonConformanceId) {
-            const [found] = await linear.listAttachments(
-              companyId,
-              action.nonConformanceId
-            );
+          if (parentId) {
+            const [found] = await linear.listAttachments(companyId, parentId);
 
             if (found) {
               await linear.removeAttachment(companyId, found.id);
@@ -119,8 +155,18 @@ export const action: ActionFunction = async ({ request }) => {
 };
 
 export const loader: LoaderFunction = async ({ request }) => {
-  const { companyId } = await requirePermissions(request, {});
   const url = new URL(request.url);
+
+  const entityType = url.searchParams.get("entityType");
+
+  if (!isActionTaskEntityType(entityType)) {
+    return { issues: [] };
+  }
+
+  const { companyId } = await requirePermissions(
+    request,
+    actionTaskPermissions(entityType)
+  );
 
   const query = url.searchParams.get("search") as string;
 

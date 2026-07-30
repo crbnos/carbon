@@ -7,10 +7,10 @@ import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import {
   jobMaterialValidator,
+  pullJobMaterialMakeMethod,
   recalculateJobMakeMethodRequirements,
   recalculateJobOperationDependencies,
-  upsertJobMaterial,
-  upsertJobMaterialMakeMethod
+  upsertJobMaterial
 } from "~/modules/production";
 import { setCustomFields } from "~/utils/form";
 
@@ -65,6 +65,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
+  // Part ↔ step links are managed from the STEP side (the BoP step editor's "Parts" picker),
+  // so the material save no longer touches jobMaterialStep.
+
   // Check if job is released (not Draft or Planned)
   const job = await serviceRole
     .from("job")
@@ -74,25 +77,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const isReleased = !["Draft", "Planned"].includes(job.data?.status ?? "");
 
   if (validation.data.methodType === "Make to Order") {
-    const materialMakeMethod = await serviceRole
-      .from("jobMaterialWithMakeMethodId")
-      .select("*")
-      .eq("id", jobMaterialId)
-      .single();
-    if (materialMakeMethod.error) {
-      return data(
-        {
-          id: null
-        },
-        await flash(
-          request,
-          error(materialMakeMethod.error, "Failed to get material make method")
-        )
-      );
-    }
-    const makeMethod = await upsertJobMaterialMakeMethod(serviceRole, {
-      sourceId: validation.data.itemId,
-      targetId: materialMakeMethod.data?.jobMaterialMakeMethodId!,
+    const makeMethod = await pullJobMaterialMakeMethod(serviceRole, {
+      jobMaterialId,
+      itemId: validation.data.itemId,
       companyId,
       userId
     });

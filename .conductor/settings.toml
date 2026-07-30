@@ -1,0 +1,33 @@
+"$schema" = "https://conductor.build/schemas/settings.repo.schema.json"
+
+# Copy only `.env` (secrets) from the main checkout into each new workspace.
+# NOT the default `.env*` — that would drag in the main checkout's `.env.local`
+# (its ports/slug/domain); `crbn up` regenerates `.env.local` per worktree.
+file_include_globs = ".env"
+
+[scripts]
+# Conductor runs `setup` to completion BEFORE it kicks off the initial agent
+# chat, so anything the agent needs at session start must be provisioned here.
+#
+# `crbn init` provisions the git worktree (which Conductor creates) the same way
+# `crbn checkout` does: a deterministic branch-derived slug (`.carbon-worktree`),
+# `.env` synced from main, and `.ai` rules/skills linked into `.claude/`+`.codex/`.
+# It replaces the old `echo "$CONDUCTOR_WORKSPACE_NAME" > .carbon-worktree`, which
+# produced non-unique slugs that collided with the main checkout's `carbon`.
+#
+# `install-skills` runs last, explicitly: the `.claude/`+`.codex/` skill symlinks
+# are gitignored (absent in a fresh worktree), and both the `pnpm install` prepare
+# hook and `crbn init`'s link step are best-effort/non-fatal. Running it here as
+# its own step guarantees the skills are linked before the chat starts.
+setup = "pnpm install && ./packages/dev/bin/crbn init && pnpm run install-skills"
+# Each worktree gets its own ports/DB/redis-slot (the crbn slot registry), so
+# multiple workspaces can run their stacks at once.
+run_mode = "concurrent"
+# Full teardown when a workspace is archived: stop the stack, wipe volumes,
+# flush redis, and release the port slot so the pool doesn't leak entries.
+archive = "./packages/dev/bin/crbn down --purge"
+
+[scripts.run.dev]
+command = "./packages/dev/bin/crbn up --all"
+default = true
+icon = "rocket"

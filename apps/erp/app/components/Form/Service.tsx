@@ -1,15 +1,12 @@
 import type { ComboboxProps } from "@carbon/form";
 import { Combobox } from "@carbon/form";
 import { useMemo } from "react";
-import type { ServiceType } from "~/modules/items";
 import { useServices } from "~/stores";
 import { useEmptyState } from "./emptyStates";
 
-type ServiceSelectProps = Omit<ComboboxProps, "options"> & {
-  serviceType?: ServiceType;
-};
+type ServiceSelectProps = Omit<ComboboxProps, "options">;
 
-const Service = ({ serviceType, ...props }: ServiceSelectProps) => {
+const Service = (props: ServiceSelectProps) => {
   const services = useServices();
   const options = useMemo(
     () =>

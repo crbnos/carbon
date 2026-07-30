@@ -30,12 +30,14 @@ import {
 import type { UsedInNode } from "~/modules/items/ui/Item/UsedIn";
 import { UsedInSkeleton, UsedInTree } from "~/modules/items/ui/Item/UsedIn";
 import { getTagsList } from "~/modules/shared";
-import type { Handle } from "~/utils/handle";
+import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
 export const handle: Handle = {
-  breadcrumb: msg`Consumables`,
-  to: path.to.consumables,
+  breadcrumb: detailBreadcrumb(
+    { breadcrumb: msg`Consumables`, to: path.to.consumables },
+    (data) => data?.consumableSummary?.readableIdWithRevision
+  ),
   module: "items"
 };
 
@@ -122,6 +124,7 @@ export default function ConsumableRoute() {
                           salesOrderLines,
                           shipmentLines,
                           supplierQuotes,
+                          inspections,
                           jobMaterialUsage
                         } = resolvedUsedIn;
 
@@ -201,6 +204,13 @@ export default function ConsumableRoute() {
                             children: supplierQuotes
                           }
                         ];
+
+                        tree.push({
+                          key: "inspections",
+                          name: "Inspections",
+                          module: "quality",
+                          children: inspections
+                        });
 
                         return (
                           <UsedInTree

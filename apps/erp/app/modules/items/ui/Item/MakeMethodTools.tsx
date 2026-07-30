@@ -46,6 +46,7 @@ import {
   LuGitBranch,
   LuGitFork,
   LuGitMerge,
+  LuGitPullRequestArrow,
   LuStar,
   LuTriangleAlert
 } from "react-icons/lu";
@@ -53,20 +54,25 @@ import { Link, useFetcher, useParams } from "react-router";
 import { Hidden, Item, useConfigurableItems } from "~/components/Form";
 import { Confirm } from "~/components/Modals";
 import { usePermissions, useUser } from "~/hooks";
-import type { MethodItemType } from "~/modules/shared";
+import type { ItemType } from "~/modules/shared";
 import { path } from "~/utils/path";
 import {
   getMethodValidator,
   makeMethodVersionValidator
 } from "../../items.models";
 import type { MakeMethod } from "../../types";
+import {
+  CreateChangeNoticeModal,
+  ItemChangeNoticeLock,
+  useItemOpenChangeNotices
+} from "../ChangeNotice";
 import { getPathToMakeMethod } from "../Methods/utils";
 import { getLinkToItemDetails } from "./ItemForm";
 import MakeMethodVersionStatus from "./MakeMethodVersionStatus";
 
 type MakeMethodToolsProps = {
   itemId: string;
-  type: MethodItemType;
+  type: ItemType;
   makeMethods: MakeMethod[];
   currentMethodId?: string;
 };
@@ -102,8 +108,15 @@ const MakeMethodTools = ({
   const saveMethodModal = useDisclosure();
   const [hasMethodParts, setHasMethodParts] = useState(true);
   const newVersionModal = useDisclosure();
+  const changeNoticeModal = useDisclosure();
   const activeMethodModal = useDisclosure();
+  const canCreateChangeNotice =
+    (type === "Part" || type === "Tool") && permissions.can("create", "parts");
   const itemLink = type && itemId ? getLinkToItemDetails(type, itemId) : null;
+
+  // Version creation is locked while an open change notice owns this item
+  const openChangeNotices = useItemOpenChangeNotices(type, itemId);
+  const isChangeNoticeLocked = openChangeNotices.length > 0;
 
   const activeMethod =
     makeMethods.find((m) => m.id === activeMethodId) ?? makeMethods[0];
@@ -178,7 +191,7 @@ const MakeMethodTools = ({
     if (!carbon) return;
     const { data, error } = await carbon
       .from("makeMethod")
-      .select("id, version, status")
+      .select("id, version, status, changeOrderId")
       .eq("itemId", targetItemId)
       .eq("companyId", companyId)
       .order("version", { ascending: false });
@@ -187,9 +200,11 @@ const MakeMethodTools = ({
       toast.error(error.message);
     }
 
-    // Only Draft versions can be overwritten - Active and Archived are read-only
+    // Only Draft versions can be overwritten - Active and Archived are read-only.
+    // Exclude CO-owned drafts (changeOrderId set) — a CO's draft is authored via
+    // its own BOM/BOP surfaces, not clobbered wholesale by this copy-method tool.
     const availableVersions =
-      data?.filter(({ status }) => status === "Draft") ?? [];
+      data?.filter((m) => m.status === "Draft" && !m.changeOrderId) ?? [];
 
     setTargetMakeMethods(
       availableVersions.map(({ id, version, status }) => ({
@@ -289,17 +304,22 @@ const MakeMethodTools = ({
                           </DropdownMenuSubTrigger>
                           <DropdownMenuPortal>
                             <DropdownMenuSubContent>
-                              <DropdownMenuItem
-                                onClick={() => {
-                                  flushSync(() => {
-                                    setSelectedVersion(makeMethod);
-                                  });
-                                  newVersionModal.onOpen();
-                                }}
+                              <ItemChangeNoticeLock
+                                changeNotices={openChangeNotices}
                               >
-                                <DropdownMenuIcon icon={<LuCopy />} />
-                                Copy Version
-                              </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  disabled={isChangeNoticeLocked}
+                                  onClick={() => {
+                                    flushSync(() => {
+                                      setSelectedVersion(makeMethod);
+                                    });
+                                    newVersionModal.onOpen();
+                                  }}
+                                >
+                                  <DropdownMenuIcon icon={<LuCopy />} />
+                                  Duplicate Version
+                                </DropdownMenuItem>
+                              </ItemChangeNoticeLock>
 
                               {/* <DropdownMenuItem
                                 destructive
@@ -312,18 +332,25 @@ const MakeMethodTools = ({
                                 Delete Version
                               </DropdownMenuItem> */}
                               <DropdownMenuSeparator />
-                              <DropdownMenuItem
-                                disabled={makeMethod.status === "Active"}
-                                onClick={() => {
-                                  flushSync(() => {
-                                    setSelectedVersion(makeMethod);
-                                  });
-                                  activeMethodModal.onOpen();
-                                }}
+                              <ItemChangeNoticeLock
+                                changeNotices={openChangeNotices}
                               >
-                                <DropdownMenuIcon icon={<LuStar />} />
-                                Set as Active Version
-                              </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  disabled={
+                                    makeMethod.status === "Active" ||
+                                    isChangeNoticeLocked
+                                  }
+                                  onClick={() => {
+                                    flushSync(() => {
+                                      setSelectedVersion(makeMethod);
+                                    });
+                                    activeMethodModal.onOpen();
+                                  }}
+                                >
+                                  <DropdownMenuIcon icon={<LuStar />} />
+                                  Set as Active Version
+                                </DropdownMenuItem>
+                              </ItemChangeNoticeLock>
                             </DropdownMenuSubContent>
                           </DropdownMenuPortal>
                         </DropdownMenuSub>
@@ -331,9 +358,20 @@ const MakeMethodTools = ({
                     })}
                   <DropdownMenuSeparator />
                   {permissions.can("create", "production") && (
-                    <DropdownMenuItem onClick={newVersionModal.onOpen}>
-                      <DropdownMenuIcon icon={<LuCirclePlus />} />
-                      New Version
+                    <ItemChangeNoticeLock changeNotices={openChangeNotices}>
+                      <DropdownMenuItem
+                        disabled={isChangeNoticeLocked}
+                        onClick={newVersionModal.onOpen}
+                      >
+                        <DropdownMenuIcon icon={<LuCirclePlus />} />
+                        New Version
+                      </DropdownMenuItem>
+                    </ItemChangeNoticeLock>
+                  )}
+                  {canCreateChangeNotice && (
+                    <DropdownMenuItem onClick={changeNoticeModal.onOpen}>
+                      <DropdownMenuIcon icon={<LuGitPullRequestArrow />} />
+                      <Trans>New Change Notice</Trans>
                     </DropdownMenuItem>
                   )}
                 </>
@@ -620,6 +658,13 @@ const MakeMethodTools = ({
             setSelectedVersion(activeMethod);
           }}
           onCancel={activeMethodModal.onClose}
+        />
+      )}
+
+      {changeNoticeModal.isOpen && (
+        <CreateChangeNoticeModal
+          itemId={itemId}
+          onClose={changeNoticeModal.onClose}
         />
       )}
     </Fragment>

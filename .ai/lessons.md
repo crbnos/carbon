@@ -69,7 +69,7 @@ Format: `Context → Problem → Rule → Applies to`
 - **Manual motion editing is a 0.001% escape hatch:** keep it collapsed behind "Edit manually"; motions come from the geometry planner.
 - **Planner correctness beats coverage:** cap sample spacing (2mm) rather than sample count. Threaded fasteners need a thread-depth penetration allowance along their own axis because CAD models them as interfering solid cylinders.
 
-**Applies to:** `packages/viewer/`, geometry planner (`services/geometry`).
+**Applies to:** `packages/viewer/`, geometry planner (`crates/planner`).
 
 ## Posting-group-style matrices are a rejected pattern
 
@@ -113,13 +113,13 @@ Format: `Context → Problem → Rule → Applies to`
 
 ## Never fabricate a "best-effort" motion through geometry
 
-**Context:** The assembly motion planner (`services/geometry/app/plan.py`) had a tier-4 "forced removal" that gave unsolvable parts a straight-line motion through whatever blocked them, so every part animated. On the seat-rail assembly 6/30 parts got 48–647mm fly-through motions early in the sequence — the whole animation read as wrecked.
+**Context:** The assembly motion planner (`crates/planner/src`) had a tier-4 "forced removal" that gave unsolvable parts a straight-line motion through whatever blocked them, so every part animated. On the seat-rail assembly 6/30 parts got 48–647mm fly-through motions early in the sequence — the whole animation read as wrecked.
 
 **Problem:** A fabricated path is worse than no path: it renders as a collision, erodes trust in every other step, and hides the real geometric finding (interlocked unit, embedded solid, missing mate exemption) behind a fake answer.
 
 **Rule:** When a solver can't prove a result, emit an explicit flagged state (`motion: "none"` + `blockedBy` + warning) and give the UI a degraded-but-honest rendering (fade-in at the seated pose). Never ship a fabricated approximation of a geometric/physical claim. Same for display fallbacks: an AABB "least-blocked direction" guess may only be used where it's labeled as a guess, never silently for planner output.
 
-**Applies to:** `services/geometry/app/plan.py`, `packages/viewer` (fallback.ts, AssemblyPlayer), `generateAssemblyStepsFromPlan`.
+**Applies to:** `crates/planner/src`, `packages/viewer` (fallback.ts, AssemblyPlayer), `generateAssemblyStepsFromPlan`.
 
 ## Penetration tolerances must stay far below sample spacing
 
@@ -129,7 +129,7 @@ Format: `Context → Problem → Rule → Applies to`
 
 **Rule:** Scope allowances to the specific mating pair that justifies them (fastener ↔ its detected threaded mate, capped at the seated interference + margin), keep the global tolerance an order of magnitude below sample spacing, and locally refine sampling near any contact that approaches the tolerance.
 
-**Applies to:** `services/geometry/app/plan.py` collision sampling; any sampled sweep/clearance check.
+**Applies to:** `crates/planner/src` collision sampling; any sampled sweep/clearance check.
 
 ## trimesh CollisionManager rebuilds BVHs on every single-object query
 
@@ -137,7 +137,7 @@ Format: `Context → Problem → Rule → Applies to`
 
 **Rule:** For sampled sweeps, cache the FCL BVH per mesh (`mesh_to_BVH` once, `fcl.CollisionObject` per query) and collide against `manager._manager` directly; never remove/re-add a manager object to "exclude" it — filter its contacts by name with an infinite allowance instead. Bound sampling by the AABB separation distance (beyond it, disjointness is provable).
 
-**Applies to:** `services/geometry/app/plan.py` (`_contacts_at`, `_self_exempt`), any trimesh/fcl sampling loop.
+**Applies to:** `crates/planner/src` (`_contacts_at`, `_self_exempt`), any trimesh/fcl sampling loop.
 
 ## Don't pre-sign a short-lived upload URL before a long-running operation
 
@@ -147,7 +147,7 @@ Format: `Context → Problem → Rule → Applies to`
 
 **Rule:** A pre-signed **upload** URL must be consumed within ~60s of minting. For any operation that can outlast that, don't hand the worker a pre-signed PUT URL — have the service **return the artifact inline** and let the worker persist it with the service-role client the moment it has the bytes (no token, no expiry). Also bound the outbound `fetch` with `AbortSignal.timeout(...)` so a hung service fails cleanly (→ `onFailure` marks the row Failed) instead of pinning it in `Processing`.
 
-**Applies to:** `packages/jobs/src/inngest/functions/tasks/assembly-plan.ts`, `services/geometry/app/main.py` (`/plan`); any Inngest task that pre-signs storage upload URLs before a slow external call.
+**Applies to:** `packages/jobs/src/inngest/functions/tasks/assembly-plan.ts`, `apps/assembler/src/main.rs` (`/plan`); any Inngest task that pre-signs storage upload URLs before a slow external call.
 
 ## Direct psql DDL needs a PostgREST schema-cache reload
 
@@ -167,7 +167,7 @@ Format: `Context → Problem → Rule → Applies to`
 
 **Rule:** In planner tests, any part that must SLIDE while touching another needs `mesh.subdivide_to_size(5.0)` on both meshes — and prefer seating the moving part against a face perpendicular to its travel (contact vanishes on the first sample) over a face parallel to it (contact persists the whole sweep). Also avoid geometry where a seated bite must scrape past an opening sill: that is a real interference, not an artifact.
 
-**Applies to:** `services/geometry/tests/test_plan.py` synthetic fixtures; debugging any "cannot separate / planned as one rigid unit" result on hand-built trimesh geometry.
+**Applies to:** `crates/planner/tests` synthetic fixtures; debugging any "cannot separate / planned as one rigid unit" result on hand-built trimesh geometry.
 
 ## Ordering heuristics must be gated on a large noisy model, not just the seat rail
 
@@ -177,7 +177,7 @@ Format: `Context → Problem → Rule → Applies to`
 
 **Rule:** Before shipping a planner ordering/allowance heuristic: (a) run the classification-only probe (`.ai/scratch/geometry-probe.py`) on a large noisy model (harness/BCU class) and eyeball every cohort member and every allowance value — a 10mm "squish" is a bug, not a gasket; (b) keep display preferences in the topo sort only, never in `removal_priority`; (c) cap and axis-gate anything that relaxes collision tolerance, and prefer fail-closed (reject classification) over fail-open (grant allowance) when evidence is out of range.
 
-**Applies to:** `services/geometry/app/plan.py` ordering preferences, `_sandwiched_parts`-style classifiers, any future exempt/allowance mechanism.
+**Applies to:** `crates/planner/src` ordering preferences, `_sandwiched_parts`-style classifiers, any future exempt/allowance mechanism.
 
 ## Profile the planner before optimizing — the flood was pass-through, not self-collision
 
@@ -187,7 +187,7 @@ Format: `Context → Problem → Rule → Applies to`
 
 **Rule:** For planner performance work, cProfile the real model FIRST (`cProfile.run('plan_step(...)')` — 30s of setup) and read cumtime by caller before choosing a lever. The winning fix: in `_path_blockers`, once a partner is recorded as a blocker, unregister it from the broadphase for the remainder of the sweep and re-register before returning (`registerObject`/`unregisterObject` on the SAME CollisionObject rebuilds nothing — the BVH lives on the geometry). Seat rail 191–211s → 20–26s (8×), harness >30min → 9.5min, byte-identical sequences. Keep the self-unregister too (it's what makes the synthetic test suite 8× faster), but don't mistake it for the fix.
 
-**Applies to:** `services/geometry/app/plan.py` sweep functions (`_path_blockers`, `_contacts_at`, `_unregistered`); any future "collect all X along a path" collision query.
+**Applies to:** `crates/planner/src` sweep functions (`_path_blockers`, `_contacts_at`, `_unregistered`); any future "collect all X along a path" collision query.
 
 ## Verify what actually rendered before root-causing a "bad motion" report
 
@@ -195,9 +195,9 @@ Format: `Context → Problem → Rule → Applies to`
 
 **Problem:** A "the animation collides" report conflates at least four layers: the stored plan motion, the display-time fallback synthesis (`displayMotionForStep` → `synthesizeFallbackMotion`), display adjustments (`exaggerateMotion`), and the visibility model (what else is on canvas). Root-causing the planner first is attacking the strongest layer — the geometry service's motion had `verified: true` and meant it.
 
-**Rule:** Before touching planner code for a visual-collision report: (1) check `assemblyPlanJob.status` — Queued/Processing means the user watched placeholder motions; (2) dump the step's stored `motion` from `assemblyInstructionStep` and sweep it against the GLB with trimesh (`services/geometry/.venv` has everything; storage files live in the storage container under `/var/lib/storage/stub/stub/<bucket>/...`); (3) only if the stored motion itself collides is it a planner problem — otherwise it's fallback/visibility/display-layer work in `packages/viewer`.
+**Rule:** Before touching planner code for a visual-collision report: (1) check `assemblyPlanJob.status` — Queued/Processing means the user watched placeholder motions; (2) dump the step's stored `motion` from `assemblyInstructionStep` and sweep it against the GLB (the `collision` crate, or a small trimesh script; storage files live in the storage container under `/var/lib/storage/stub/stub/<bucket>/...`); (3) only if the stored motion itself collides is it a planner problem — otherwise it's fallback/visibility/display-layer work in `packages/viewer`.
 
-**Applies to:** assembly-instruction motion bug reports; `packages/viewer/src/{motion,fallback,AssemblyPlayer}`; `services/geometry/app/plan.py`.
+**Applies to:** assembly-instruction motion bug reports; `packages/viewer/src/{motion,fallback,AssemblyPlayer}`; `crates/planner/src`.
 
 ## GLB node↔nodeId joins must be validated against graph.json bboxes
 
@@ -217,7 +217,7 @@ Format: `Context → Problem → Rule → Applies to`
 
 **Rule:** Never classify on ambiguous single tokens — "pin" is out (dowel pins still match via "dowel"). Back the name test with physical sanity in `_classify_fasteners`: a name-matched part spanning more than `max(100mm, 0.35 × assembly diagonal)` keeps its structural role. When ordering goes absurd on a new model, print the `fasteners` cohort first — one misclassified structural part explains a scrambled sequence.
 
-**Applies to:** `services/geometry/app/plan.py` (`FASTENER_NAME_RE`, `_classify_fasteners`, `removal_priority`, `_reselect_base`); future classification heuristics.
+**Applies to:** `crates/planner/src` (`FASTENER_NAME_RE`, `_classify_fasteners`, `removal_priority`, `_reselect_base`); future classification heuristics.
 
 ## Client-side entity caches must be company-keyed in a multi-tenant app
 
@@ -298,3 +298,272 @@ Format: `Context → Problem → Rule → Applies to`
 **Rule:** When a dep of a workspace source package pins a different major of a package the app also depends on, add that package to `ssr.noExternal` in the consuming apps' `vite.config.ts` so each importer keeps its own inlined copy. Verify with a build + `grep -E "from *[\"']zustand" build/server/**` (expect no bare imports) and `node --input-type=module -e "await import('.../build/server/index.js')"` — reaching an env-var error proves linking succeeded. For any all-requests-500 Vercel incident with a minified source dump, read the **last** lines for the real error and check `node:internal/modules/esm/module_job` in the stack before believing anything the dumped source suggests.
 
 **Applies to:** `apps/erp/vite.config.ts`, `apps/mes/vite.config.ts` `ssr.noExternal`; any new dep of `@carbon/viewer` or other source-only workspace packages (`@carbon/form`, `@carbon/onboarding`, ...) that pins an older major of a shared package.
+
+## `@ts-expect-error TS2589` on Supabase joined-selects is fragile — flips "used/unused" as files are added
+
+**Context:** The `$itemId.purchasing.$supplierPartId.delete.tsx` routes (material / tool / consumable / part / …) each do `client.from("supplierPart").select("id, supplierId, supplier:supplierId(name)")`. Some carried `// @ts-expect-error TS2589 — … type instantiation too deep`. Adding an unrelated new route file (`periods.generate.tsx`) flipped which file the checker reported: `material` went from TS2578 (unused directive) to clean, `tool` went from clean to TS2589 — a whack-a-mole that broke `erp` typecheck without touching those files.
+
+**Problem:** TS2589 ("type instantiation is excessively deep") on PostgREST joined-select types is **order/threshold dependent** — it surfaces at whichever file crosses a cumulative-depth limit during a given check pass, so which file errors changes as files are added/removed elsewhere. `@ts-expect-error` *requires* an error on the next line, so a directive that was "used" becomes an "unused directive" (TS2578) the moment the trigger moves — and the newly-triggering file now lacks a directive (TS2589). Swapping directives just moves the problem.
+
+**Rule:** Don't manage TS2589 on Supabase joined-selects with `@ts-expect-error` — it *requires* an error, so it flips to TS2578 the moment the trigger moves to another file. Use `@ts-ignore` instead (the codebase's choice on the `supplierPart` delete routes): it suppresses the error when it fires and stays green when it doesn't, and it preserves the inferred `result` type. A localized `(client as any)` cast is the heavier alternative — it removes the file from the cumulative-depth pool entirely but drops the result's type; prefer `@ts-ignore` unless you specifically need to break the inference chain.
+
+**Applies to:** the `supplierPart` joined-select delete routes and any similar `alias:fkColumn(...)` embed that trips TS2589; `apps/erp/app/routes/x+/{material,tool,consumable,part}+/...delete.tsx`.
+
+## Changing `seed.data.ts` only reaches NEW companies — existing companies need a reconciling migration
+
+**Context:** The period-close checklist changed (dropped "Close the period", reclassified two Auto/Manual tasks to Action). Those edits went into `packages/database/supabase/functions/lib/seed.data.ts` (+ `seed-company` / `seed-dev`), which only run on **company creation**. Existing companies — seeded by the original migration's `INSERT … FROM company` — kept the old task set, so the fixes never reached them.
+
+**Problem:** Seed data (`seed.data.ts` + `seed-company`) and migration-time seeds (`INSERT … FROM company`) are two different populate paths. Editing the former fixes new companies; existing companies are frozen at whatever the migration inserted. The two silently drift.
+
+**Rule:** When you change seeded per-company template rows (`periodCloseTaskDefinition`, `paymentTerm`, `accountDefault`, …) in `seed.data.ts`, also write an idempotent **reconciling migration** for existing companies (`INSERT … FROM company … ON CONFLICT DO UPDATE`, plus deletes for removed rows), guarded on the `system` user for the `createdBy` FK. Validate it in a rolled-back psql txn that simulates the old state. Deleting instance rows to force re-instantiation is fine when no real data depends on them (confirm first).
+
+**Applies to:** any change to `packages/database/supabase/functions/lib/seed.data.ts` per-company templates; `seed-company/index.ts`, `seed-dev.ts`.
+
+## meshopt vertex codec requires a stride that is a multiple of 4 — i16 VEC3 normals break it
+
+**Context:** `crates/optimize` quantizes normals to i16 (SHORT, normalized) to shrink the optimised GLB, encoding each attribute as its own `EXT_meshopt_compression` vertex buffer. An i16 VEC3 normal is 6 bytes, so the normal view was emitted with `byteStride: 6`. The GLB reparsed and round-tripped fine through the Rust `meshopt` decoder, and all crate tests passed.
+
+**Problem:** `meshopt_encodeVertexBuffer`/`decodeVertexBuffer` require the vertex size be a **multiple of 4** (`assert(vertex_size % 4 == 0)`); the Rust binding doesn't assert in release, so it emitted a 6-byte-stride stream that only its own decoder round-trips. The spec-compliant JS `MeshoptDecoder` (three.js / `three-stdlib`) rejects it with `Malformed buffer data: -2`, so the viewer showed a black screen — and because the failure is inside the decoder, no obvious app-level error surfaced. Positions (stride 12) and indices were fine; only the 6-byte normal stream broke.
+
+**Rule:** Any attribute encoded as a meshopt vertex buffer must have a stride divisible by 4. Pad i16 VEC3 normals to i16 VEC4 (8 bytes, 4th lane `0`) — the accessor stays VEC3 (reads x,y,z; the 8-byte stride skips the pad) and the constant pad lane compresses to ~nothing. Never trust "reparses + Rust-decoder round-trips" as proof a meshopt GLB is valid; validate against the spec JS decoder (`GLTFLoader.setMeshoptDecoder`). The regression test `quantized_normals_keep_meshopt_stride_multiple_of_four` asserts every `ATTRIBUTES` view stride is `% 4 == 0`.
+
+**Applies to:** `crates/optimize/src/lib.rs` (`ViewData`, the meshopt assemble path); any new quantized attribute type added to the optimiser; the `@carbon/viewer` `useAssembly` loader that consumes these GLBs.
+
+## Large text `.gltf` with an embedded base64 buffer can't be serde-parsed bounded — stream it into a GLB
+
+**Context:** The assembler optimises uploaded models. Text `.gltf` (the Onshape export shape) carries its single geometry buffer as a base64 `data:` URI. `optimize_gltf` did `serde_json::from_slice(gltf_bytes)` then base64-decoded the URI. GLB (`optimize_glb`) was already bounded — its BIN chunk is a `&[u8]` slice into the mmap.
+
+**Problem:** For a 1.73 GB `.gltf`, serde materialises the base64 as an owned ~1.73 GB `String`, then base64-decode allocates ~1.3 GB more — both live at once → ~3 GB peak. mmap doesn't help because serde copies the string out of the mapped bytes. The assembler failed with "source file exceeds the size limit" (a separate cap) and, once that was lifted, was on track to OOM on parse.
+
+**Rule:** Don't serde-parse a glTF whose buffer is a giant base64 data URI. Repack `.gltf` → `.glb` first with a **streaming** base64 decode: walk the JSON with `struson` (`transfer_to` copies the small structural fields verbatim, dropping the buffer's `uri`), then `next_string_reader()` the base64 value through `base64::read::DecoderReader` straight into the GLB BIN chunk on disk. Then mmap the `.glb` and use the already-bounded `optimize_glb` path — geometry never heaps. Verify decoded length == the buffer's declared `byteLength` (fail loud, never emit a corrupt GLB). `crates/optimize::gltf_to_glb` + `apps/assembler` `load_source` (`Format::Gltf` → repacked temp `.glb` → `Src::MappedTemp`).
+
+**Applies to:** `crates/optimize/src/lib.rs` (`gltf_to_glb`; `optimize_gltf` was removed), `apps/assembler/src/actions/optimize.rs` (`load_source`, `run_optimize` — every source is GLB now); any new large-text-JSON asset with an embedded base64 blob.
+## Raw-SQL item fixtures break type-specific UI — Material items need a companion `material` row keyed by readableId
+
+**Context:** Posting-flow verification created a type-`Material` item (RM-STEEL) with a raw `INSERT INTO "item"`. Interceptors auto-created `itemCost`/`itemReplenishment`/etc., so purchasing and posting worked. Later, selecting that material on a part's BOM (`/x/part/{id}/details?materialId=…`) crashed the whole page with "Not Found".
+
+**Problem:** Type-specific detail RPCs join companion tables the interceptors do NOT create: `get_material_details` requires a `material` row joined via `material."id" = item."readableId"` (readableId, not item id — all revisions share one taxonomy row). The properties route throws `404` when the RPC returns nothing, and a fetcher 404 bubbles to the route error boundary, taking down the entire details page.
+
+**Rule:** When creating item fixtures via SQL, create the type's companion row too (`material` keyed by `readableId` for Materials; check the `get_{type}_details` RPC joins for the type). Prefer creating fixtures through the UI or service functions when the item will be used in UI flows, not just ledger posting.
+
+**Applies to:** any psql/SQL test-fixture item creation; `get_material_details` / `get_part_details` / `get_tool_details` consumers; `apps/erp/app/routes/x+/items+/$itemId.properties.tsx`.
+
+## Journal debit/credit is derived from account class + amount sign, not the raw sign
+
+**Context:** Seeding a Cash sale as a journal via SQL, I used Cash (Asset) `amount = +1000` and Sales (Revenue) `amount = -1000`, assuming `+ = debit, - = credit` (which the `journal` AGENTS.md states for the *stored* value). The `journalEntries` view then reported the entry as `totalDebits = 2000, totalCredits = 0` — unbalanced — and the period-close "Trial balance in balance" auto-check (`tb-balanced`) refused the close.
+
+**Problem:** `journalEntries.totalDebits`/`totalCredits` are computed from **account class AND amount sign**: Asset/Expense `amount>0` OR Liability/Equity/Revenue `amount<0` → debit; the mirror → credit. So a *positive* amount on a Revenue account is a **credit**, not a debit. A correctly-balanced sale is Cash (Asset) `+1000` and Sales (Revenue) `+1000` — both positive. The raw `SUM(amount)` the balance RPCs use is a separate, class-agnostic signed sum; don't conflate the two.
+
+**Rule:** When hand-seeding `journalLine` rows, set the sign to move the account toward its natural balance: `+` increases an Asset/Expense (debit) and increases a Liability/Equity/Revenue (credit). Verify against the `journalEntries` view (`totalDebits == totalCredits` per `journalEntryId`) before relying on the data — an unbalanced entry silently blocks period close. Posted `journal`/`journalLine` rows are immutable (`journal_posted_immutable` / `journalLine_posted_immutable`); to correct seeded mistakes you must disable those triggers on the local DB (superuser), never in a migration.
+
+**Applies to:** any SQL journal fixtures; the `journalEntries` view; the `tb-balanced` close check in `computePeriodReadiness` (`accounting.service.ts`).
+
+## A period snapshot written at close races Locked-period postings unless the posting guard locks the period row
+
+**Context:** `closeAccountingPeriod` writes the `accountingPeriodBalance` snapshot inside its transaction, after flipping the period to `Closed`. `check_accounting_period_open` only *rejects* postings when a period is already `Closed`; a `Locked` period still accepts them (Locked is a soft freeze for adjustments). A period only becomes Closed on COMMIT.
+
+**Problem:** In the window between the close txn's snapshot `SELECT` and its COMMIT, a concurrent posting reads the period as still-Locked (the flip is uncommitted under READ COMMITTED), is allowed, and commits a line with `postingDate <= endDate` that the snapshot never captured. The read path's delta only adds `postingDate > endDate`, so that line is silently dropped from the optimized balance until reopen+reclose — a wrong financial figure with no error.
+
+**Rule:** When a cache/snapshot is written inside a state-flip transaction and a concurrent writer keys off the *committed* state, make the writer take a lock that conflicts with the flip. Here: the posting guard reads the target `accountingPeriod` row `FOR SHARE` (migration `20260713235930`), which blocks behind the close's row lock — postings before the flip commit first (and land in the snapshot); postings after block, then see `Closed` and are rejected. `FOR SHARE` is shared, so normal concurrent postings don't block each other; only an in-flight close serializes them. Verify with two psql sessions + `lock_timeout`.
+
+**Applies to:** `check_accounting_period_open`; `snapshotAccountingPeriodBalances` / `accountingPeriodBalance`; any close/snapshot-on-commit pattern.
+
+## Inline-editable table cells commit on blur — the container must own navigation keys in the capture phase
+
+**Context:** Inventory count table (PR #1135 follow-up): typed Counted Qty values were lost on Tab/Enter (only click-away saved), Enter never navigated, arrows stepped the number instead of moving the selection, and keyboard nav went dead after a commit.
+
+**Problem:** Editable cells (`~/components/Editable/*`) persist via the input's native `onBlur`, but three things prevent that blur from ever firing on keyboard navigation: (1) the Table's key handler `preventDefault()`s Tab/Enter, so the browser never moves focus; (2) React unmounts the still-focused input when the selection moves, and browsers fire no blur on a removed element; (3) react-aria's NumberField swallows Enter entirely (`onKeyDownEnter` commits internally without `continuePropagation()`) and consumes ArrowUp/Down as spinbutton steps, so a bubble-phase table handler never sees those keys. Blurring at the input level without navigating drops `document.activeElement` to `body`, after which the table wrapper hears no further keys.
+
+**Rule:** The table container owns the Excel keyboard model: attach the handler with `onKeyDownCapture` (so it beats react-aria to Enter/arrows), `stopPropagation()` for handled keys while editing, blur `document.activeElement` to commit *before* `setSelectedCell`, and let the roving-tabindex cell ref (`useMovingCellRef`) refocus the newly selected cell. Skip events targeting portaled overlays (`[data-radix-popper-content-wrapper]`, `[role=menu|listbox|dialog]`) — those own their keys. Editors must keep blur as their *single* commit path (no keydown commits — they double-fire the mutation, as `EditableText` did in Grid).
+
+**Applies to:** `apps/erp/app/components/Table/Table.tsx`, `apps/erp/app/components/Grid/Grid.tsx`, `apps/erp/app/components/Editable/*`, any future inline-editable cell editor.
+
+## Seeding useState from a prop goes stale when the document flips state in place
+
+**Context:** After Rectify flipped a Posted inventory count back to Draft, the lines table stayed read-only until a full page reload.
+
+**Problem:** `Table` read `forceEditMode` only as the `useState` initial value. Rectify/Post actions revalidate the route in place — the component never remounts, so the prop change never reached the state, and the Edit/Lock toggle is hidden while `forceEditMode` is set, leaving no way to recover. The same staleness applied in the opposite direction after posting a Draft (table looked editable on a read-only document).
+
+**Rule:** When a prop derives from a document's mutable status (Draft/Posted etc.) and controls interaction mode, sync it with an effect (`useEffect(() => setEditMode(forceEditMode), [forceEditMode])`) or derive it instead of seeding state once. Test the transition without a reload — loader revalidation does not remount components.
+
+**Applies to:** `apps/erp/app/components/Table/Table.tsx` (`forceEditMode`), any component seeding state from status-derived props on revalidating routes.
+
+## journalLineDocumentType and itemLedgerDocumentType are different enums with near-identical value sets
+
+**Context:** Adding GL posting for inventory adjustments: journal lines needed a `documentType` of `'Inventory Adjustment'`, and the plan also stamped the same value onto `itemLedger`/`costLedger` rows.
+
+**Problem:** `journalLine.documentType` uses the `journalLineDocumentType` enum while `itemLedger.documentType` AND `costLedger.documentType` share the `itemLedgerDocumentType` enum. The two lists overlap heavily ('Inventory Count' exists in both) but are not identical — `'Inventory Adjustment'` existed in neither and was added only to `journalLineDocumentType`. Writing a journal-only value into a ledger column fails at runtime with an invalid-enum error, and stamping a new documentType onto manual-adjustment `itemLedger` rows would also have broken the "byte-identical ledger writes when accounting is disabled" guarantee (they are NULL today).
+
+**Rule:** Before using a `documentType` string, check WHICH enum the target column uses (`\dT+` or grep the migration) — never assume the journal and ledger enums share values. When adding GL posting to an existing subledger flow, keep the subledger rows' shape unchanged (documentType stays whatever it was, usually NULL) and put the new linkage value on the journal lines only.
+
+**Applies to:** `packages/database/supabase/migrations/` enum additions; `functions/shared/post-adjustment.ts`; any `post-*` function writing both `itemLedger`/`costLedger` and `journalLine`.
+
+## Deno edge functions are not deno-check-clean — gate on own-file error deltas, not exit code
+
+**Context:** Verifying new/edited Supabase edge functions (`post-inventory-adjustment`, `post-inventory-count`) with `deno check`.
+
+**Problem:** `deno check` on ANY edge function fails with ~10–20 pre-existing errors from the shared dependency graph (TS2589 in `shared/get-next-sequence.ts`, kysely pool-config type skew, supabase-js generic inference collapsing to implicit-any callbacks). CI never runs `deno check`, so committed, working functions fail it — a red exit code proves nothing about the change, and chasing those errors means rewriting shared files out of scope.
+
+**Rule:** Gate edge-function changes on the DELTA of errors attributed to the touched file: `deno check <file> 2>&1 | sed 's/\x1b\[[0-9;]*m//g' | grep -c "<file>:"` must not exceed the committed baseline (copy the HEAD version beside it to measure, e.g. `git show HEAD:<path> > <dir>/index.orig.ts`, check, delete). New code should contribute zero; annotate supabase-js callbacks with explicit row types instead of leaving implicit-any. Pure logic goes in a small module importing only `lib/types.ts` so `deno test` type-checks clean.
+
+**Applies to:** `packages/database/supabase/functions/**` verification; `.claude/skills/check-and-commit` runs touching edge functions.
+
+## Forking a SQL function migration silently drops sibling branches added since your fork base
+
+**Context:** `complete_job_to_inventory` gained a Non-Inventory branch in `20260707022142` (services post WIP→COGS, no inventory artifacts). Six days later, two migrations (`20260713190909` raw-materials split, `20260713222236` overhead fix) each forked the function from the older `20260630092517` baseline — silently deleting the Non-Inventory branch. Service job completions then posted phantom Finished Goods until the branch was restored in `20260714043017`.
+
+**Problem:** "Fork from the newest definition" fails when the author greps for the migration that matters to *their* change and misses intermediate redefinitions that added orthogonal branches. The dropped branch produces no error — the divergent behavior only surfaces when someone exercises the other feature.
+
+**Rule:** Before redefining a function, list EVERY migration that touches it (`grep -l '<fn_name>' migrations/*.sql | sort`), and fork from the last one — then diff your new body against that exact file (`diff <(sed -n 'a,bp' newest.sql) <(...)`) so the only hunks are your intended edits. If the timeline shows a branch you don't understand (an `itemTrackingType` guard, a feature flag), it is load-bearing — carry it forward, never re-derive the body from an older file or memory.
+
+**Applies to:** `packages/database/supabase/migrations/` — any `CREATE OR REPLACE FUNCTION` fork; reviews of migrations that redefine shared functions (`complete_job_to_inventory`, `backflush_job_materials`, `get_inventory_quantities`, sync interceptors).
+
+## Job-completion side effects must live in complete_job_to_inventory, not in route actions
+
+**Context:** Service-job fulfillment (advance the linked salesOrderLine on completion) was first implemented in the ERP `$jobId.complete.tsx` action after the RPC call. In e2e it never ran: the operator finished the last operation, and `sync_update_job_operation_quantities` → `sync_finish_job_operation` (DB interceptors) called `complete_job_to_inventory` directly — the ERP route was never involved.
+
+**Problem:** Job completion has multiple entry points — the ERP Complete button AND the interceptor cascade that auto-completes when the last operation flips to Done (fired from MES quantity recording or ERP production quantities). Any completion side effect hooked at the app layer silently misses the interceptor path.
+
+**Rule:** Side effects that must accompany job completion (fulfillment, status propagation, posting) go INSIDE `complete_job_to_inventory` — the single choke point every path crosses. Place them before the `accountingEnabled` / zero-WIP early returns if they must run unconditionally. App-layer completion hooks are only valid for effects the SQL function cannot perform (edge-function invocation — cf. `returnAllocatedRemaindersAtJobComplete`, orchestrated in TS for exactly that reason).
+
+**Applies to:** `complete_job_to_inventory`; `apps/erp/app/routes/x+/job+/$jobId.complete.tsx`; `sync_finish_job_operation`; any future completion-triggered behavior (rev-rec POC recognition events).
+
+## A `@ts-expect-error` on generated DB types is evidence of a dropped column, not a type quirk
+
+**Context:** `InventoryTable.tsx` read `row.original.tags` behind a `// @ts-expect-error TS2339`. The suppression was correct that the property was missing — `20260713235406` had forked `get_inventory_quantities` and dropped the `tags` output added by `20260113122437` (the sibling-branch failure mode above). The regression then hid in plain sight for months: the Tags column silently rendered empty, and the Tags filter sent `.overlaps("tags", …)` → PostgREST 42703 against a nonexistent column.
+
+**Problem:** Generated types are mechanically derived from the live schema, so TS2339 on a generated Row/Returns type is never a false positive — it is the type system reporting that the column does not exist. Suppressing it converts a compile-time regression signal into a silent runtime one. The blast radius was widened by `quantities.tsx` calling `redirect(...)` without `throw`, which discarded the resulting PostgREST error and rendered an empty table instead of surfacing it.
+
+**Rule:** Never `@ts-expect-error` / `@ts-ignore` a missing property on a `@carbon/database` generated type. Grep every migration touching the function or table (`grep -l '<name>' migrations/*.sql | sort`) and find the revision that removed it — the fix is a migration restoring the column, not a suppression. When reviewing, treat a `@ts-expect-error` near generated types as a probable dropped-column regression. Corollary: in a loader, always `return` or `throw redirect(...)` on a service error — a `redirect(...)` that is neither returned nor thrown is a no-op that swallows the error and renders empty data.
+
+**Applies to:** `packages/database/src/types.ts` consumers; `apps/erp/app/modules/**/ui/**` table columns bound to RPC outputs; any loader branching on `{ data, error }`.
+
+## A mutually-exclusive primary/fallback branch breaks when the primary source can be legitimately empty
+
+**Context:** The MES Issue dialog (`IssueMaterialModal`) pre-selects tracked lots from two sources: `pickedAllocation` (lots a picking list already picked) and `suggestedAllocation` (the FEFO/pickMethod suggestion of what to pick). It gated the suggestion off whenever a picking allocation merely existed (`shouldSuggestAllocation = … && !hasPickingAllocation`) and chose `seedAllocation = hasPickingAllocation ? pickedAllocation : suggestedAllocation`.
+
+**Problem:** `hasPickingAllocation` was true when `quantityToPick > 0` — i.e. the material is ON a picking list — but `pickedAllocation` is only non-empty once something is physically PICKED (pickingListLineTrackedEntity rows are written at pick time, never at allocation). For a material on an In-Progress list that hasn't been picked yet (common in a multi-line list where other lines were picked first), the primary branch was selected but resolved empty, the suggestion was gated off, and the seed effect bailed → operator got the default first lot instead of the recommendation. The two conditions "should we prefer picked lots" and "do picked lots exist" were conflated.
+
+**Rule:** When one data source is the preferred seed and another is the fallback, branch on whether the preferred source actually HAS data (`primary.length ? primary : fallback`), and load the fallback unconditionally — do not gate the fallback off on a proxy signal (here `hasPickingAllocation`) that can be true while the primary is still empty. Verify the "primary exists but is empty" state explicitly, since it's the one static reading and happy-path testing both miss.
+
+**Applies to:** `apps/mes/app/components/JobOperation/components/IssueMaterialModal.tsx` (picked vs suggested allocation seeding); any picking-list-aware UI that distinguishes allocated-but-not-picked from picked (`pickingListLineTrackedEntity.quantityPicked > 0`).
+
+## PostgREST inserts NULL (not the DB default) for a present-but-`undefined` key spread into an insert
+
+**Context:** Creating a Fixed Asset sales-order line failed with `23502 null value in column "methodType" violates not-null constraint`, even though `salesOrderLine.methodType` is `NOT NULL DEFAULT 'Pull from Inventory'`. The validator (`salesOrderLineValidator`) intentionally coerces the form's empty `methodType` to `undefined` for Fixed Asset / Comment lines (`zfd.text` + a refine that exempts them). The action spreads `...validation.data` into `upsertSalesOrderLine`, whose insert path spreads `...salesOrderLine` — so the object still carries `methodType: undefined`. A raw psql insert omitting the column succeeded (used the default); the app's PostgREST insert did not.
+
+**Problem:** `postgrest-js` builds its `?columns=` list from `Object.keys(row)`, which **includes keys whose value is `undefined`**. `JSON.stringify` then drops the value from the body, so PostgREST sees the column listed with no value and inserts `NULL` — it does **not** fall back to the column `DEFAULT`. A truly absent key (never spread, e.g. `id`) is excluded from `?columns=` and does get its default. This is why the sibling **update** path was fine: it runs `sanitize(...)`, which strips `undefined`/empty keys before the write. Only the **insert** path (which didn't sanitize) leaked the `undefined` key.
+
+**Rule:** When spreading validated/optional data into a supabase-js `.insert(...)`, a NOT-NULL column with a DB default will still fail if the key is present-but-`undefined`. Either (a) supply the value explicitly at the insert site next to the other defaults (`methodType: x.methodType ?? "Pull from Inventory"`), (b) `sanitize(...)` the insert object so undefined keys are dropped (matches the update path), or (c) pass `{ defaultToNull: false }` to `.insert(...)` (sends `Prefer: missing=default`). Prefer (a) for a single column, (b) for consistency with an existing update path. Don't assume the DB `DEFAULT` will apply — it only does for keys entirely absent from the object.
+
+**Applies to:** `upsertSalesOrderLine` (`apps/erp/app/modules/sales/sales.service.ts`); any `upsert*` whose insert branch spreads optional/validated fields into a table with NOT-NULL-DEFAULT columns (sales/purchase/quote/invoice line inserts especially, which all carry a NOT NULL `methodType`).
+
+## Twin `ValidatedForm`s at the same JSX slot share one RVF store — controlled-field defaults seed only for whichever branch mounts first
+
+**Context:** The Add Affected Item modal (`AffectedItemForm`) renders `isNewPart ? <ValidatedForm A/> : <ValidatedForm B/>`. Branch A (New Part) has `replenishmentSystem`/`itemTrackingType` Selects with `defaultValues` `"Make"`/`"Inventory"`; branch B (existing item) has an item picker. After switching to New Part the two Selects rendered blank and submit failed with `Invalid enum value … received ''`.
+
+**Problem:** Both branches render a `<ValidatedForm>` (same element type) at the **same JSX position**, so React reconciles them as **one component instance** and just swaps props — no unmount/remount. `@carbon/form`'s RVF store seeds `controlledFields.values` from `defaultValues` **only on first hydration** (`syncFormProps`: `if (!state.isHydrated) { … }`). The instance hydrates on the initial branch (B, `changeType` default `Version`), so when the user switches to A, A's Select defaults are **never** seeded — `useControlledFieldValue` returns the store value (`undefined`) once `isHydrated`, not the `defaultValue`. Uncontrolled fields (`InputControlled`) were unaffected because they write their own value via effect. `defaultValues` object identity was a red herring: `ValidatedForm` already `useDeepEqualsMemo`s it, and `syncFormProps` ignores later `defaultValues` changes post-hydration.
+
+**Rule:** When two `ValidatedForm`s occupy the same conditional slot (`cond ? <VF/> : <VF/>`), give each a distinct, stable `key` (`key="new-part"` / `key="existing-item"`) so switching forces a fresh mount + fresh store that hydrates with the correct branch's `defaultValues`. Consequence: the fresh mount also needs any Select value the branch relies on seeded in its own `defaultValues` (e.g. `changeType: "New Part"`, added to `changeOrderNewPartValidator`) — a value the shared store previously carried over from the user's click is gone after remount. Symptom to watch for: a controlled Select rendering blank / submitting `""` right after a branch switch.
+
+**Applies to:** `apps/erp/app/modules/items/ui/ChangeOrder/AffectedItemForm.tsx`; any conditional twin-`ValidatedForm` pattern; `@carbon/form` controlled fields (`Select`/`Combobox`/anything on `useControlField`) that rely on `defaultValues` seeding.
+
+## Never blind-pop a stash in a Conductor worktree — the stash stack is shared/stale
+
+**Context:** During /execute, proving an erp typecheck failure pre-existing by temporarily parking three edited files with `git stash push -u <paths>` in a Conductor workspace.
+
+**Problem:** The `stash push` failed ("could not write index" — likely a concurrent git process from a sibling workspace; untracked-file pathspecs also fail plain `stash push`). No stash was created, but the follow-up `git stash pop` applied the TOP of the existing stash stack — an old stash from a *different branch's* work — half-applying unrelated files with merge conflicts (`UU`) and staged changes that then had to be surgically reverted.
+
+**Rule:** In Conductor/multi-worktree checkouts, don't use `git stash` for temporary file parking at all. Prove a failure is pre-existing with `git show HEAD~1:<file>` / `git log -- <file>` / a merge-base check instead. If stash is truly unavoidable: verify the push succeeded AND `git stash list` shows YOUR entry at stash@{0} before ever popping, and never `pop` after a failed `push`.
+
+**Applies to:** any git stash usage in Conductor workspaces; /execute and /check-and-commit loops; proving pre-existing test/typecheck failures.
+
+## A public SECURITY DEFINER function that calls net.http_post is a remote-DoS surface — put it in an internal schema
+
+**Context:** The push-based event-queue wake (`20260721184852_event-queue-wake.sql`) originally defined `wake_event_queue()` / `sweep_event_queue()` in the `public` schema. Both are SECURITY DEFINER and call `net.http_post` (pg_net) to POST to the `event-wake` edge function. The trigger (`dispatch_event_batch`) and pg_cron call them as the owner (superuser).
+
+**Problem:** Every `public` function is auto-exposed as a PostgREST RPC (`/rest/v1/rpc/<name>`), reachable by `anon`. Worse than mere exposure: referencing such a function as a **non-superuser** role segfaults the backend (pg_net 0.20 / PG15) — reproducible via `SET ROLE authenticated; EXPLAIN SELECT public.wake_event_queue();`, which crashed even though `EXPLAIN` never runs the body and the role lacked EXECUTE. The crash happens at plan/permission-resolution time, **before** the ACL check — so `REVOKE ALL … FROM PUBLIC, anon, authenticated` does NOT protect: an unauthenticated `POST /rpc/wake_event_queue` crash-loops the whole DB (postmaster reinitializes all backends → "database system is in recovery mode" for every client). Same-body call as superuser was fine, which is why the trigger/cron paths worked and masked it in end-to-end testing.
+
+**Rule:** Never define an internal SECURITY DEFINER helper (especially one calling `net.http_post` / pg_net) in `public`. Put it in the internal `util` schema (the existing Carbon/Supabase convention — cf. `util.process_embeddings`), where `anon`/`authenticated` have no `USAGE`, so the API can't reference it at all and a hostile call fails cleanly with `permission denied for schema util` before any crash-prone planning. Callers that are triggers/pg_cron run as owner and reach `util` fine; update their bodies to `util.<fn>()`. Keep `REVOKE ALL … FROM PUBLIC` on the util function as defense-in-depth, but the schema-USAGE gate is the real fix. Verify with `SET ROLE authenticated; SELECT util.<fn>();` → must be a clean `permission denied`, not a dropped connection. Note PostgREST-exposed schemas exclude `util`/`pgmq` but include `public`/`net` (`has_schema_privilege('anon', <schema>, 'USAGE')`).
+
+**Applies to:** any new SECURITY DEFINER function that calls pg_net/`net.http_post` or is meant to be trigger/cron-only (`packages/database/supabase/migrations/`). Trigger functions returning `trigger` are not RPC-exposed (safe in public), but VOID/scalar helpers are.
+
+## The local Inngest dev server (v1.19.4) can't handle `debounce` — it errors on every debounce item
+
+**Context:** The push-based event-queue drainer (`packages/jobs/src/inngest/functions/events/queue.ts`) was configured with `debounce: { period: "2s", timeout: "10s" }` to coalesce bursts of `carbon/event-queue.process` wake events into one run.
+
+**Problem:** The Dockerized dev server (`inngest/inngest:v1.19.4`, run by `crbn up`) logs `error unmarshalling debounce item: json: cannot unmarshal array into Go struct field DebounceItem.e.data of type map[string]interface {}` on every debounced event, fails to coalesce (a 20-write burst produced 21 runs, not ~1), and spams the error each time the function is triggered (including every pg_cron sweeper tick). Fails open — events still process, queue still drains, nothing is lost — but the optimization is absent in dev and the logs are noisy. Inngest Cloud honors debounce; the dev server does not.
+
+**Rule:** Don't rely on `debounce` for Carbon Inngest functions validated against the local dev server — it's broken there. For the event queue the coalescing was moved upstream: `dispatch_event_batch()` wakes at most once per transaction (txn-local GUC `carbon.event_wake_sent`), so the important bulk case (a CSV import = one transaction) is already one wake; `concurrency: 1` + loop-until-empty drain absorbs the rest (extra runs from many separate transactions are cheap no-ops that read an empty queue). If you must coalesce many *separate* transactions in a burst, do it at the DB/application layer, not with `debounce`. Verify any flow-control choice by watching `docker logs <inngest container>` for `error handling queue item` during a burst, not just by trusting the config.
+
+**Applies to:** `packages/jobs/src/inngest/functions/events/queue.ts`; any new Inngest function reaching for `debounce`/flow-control that will be exercised in local dev.
+
+## Regenerating `src/email/previews/` fixtures requires a follow-up biome format pass
+
+**Context:** Adding ChangeOrder* entries to `packages/documents/scripts/generate-notification-previews.mjs` and re-running it to emit the per-event preview fixtures.
+
+**Problem:** The generator writes raw `JSON.stringify(..., null, 6)` output (quoted keys, 6-space indent), but the committed fixtures are biome-formatted (unquoted keys, 2-space indent). Re-running the script therefore rewrites **all** existing fixtures into the raw style — 28 files of pure formatting churn drowning the 3 intended new files in the diff.
+
+**Rule:** After running `generate-notification-previews.mjs`, always run `pnpm exec biome check --write packages/documents/src/email/previews/` before reviewing the diff. Only intended fixture changes should remain; if pre-existing fixtures still show as modified, something else changed.
+
+**Applies to:** `packages/documents/scripts/generate-notification-previews.mjs`, `packages/documents/src/email/previews/*`, and any generator whose committed output is formatter-normalized.
+
+## Turbo typecheck/test runs can regenerate `@carbon/database` artifacts as ride-along churn
+
+**Context:** Running `pnpm exec turbo run typecheck --filter=erp` and `turbo run test --filter=@carbon/jobs` to verify unrelated changes (notification filter, invite-link fix).
+
+**Problem:** Turbo builds dependency packages first, and a `@carbon/database` build step regenerated `src/types.ts` (nondeterministic FK-relationship ordering), `src/swagger-docs-schema.ts`, and `supabase/functions/lib/types.ts` — none of which the task touched. Committing them would mix generated-file drift into an unrelated PR; the drift can also reflect whatever local DB happens to be running, not migrations.
+
+**Rule:** After any turbo run, check `git status` for modified generated files under `packages/database/` before committing. If you didn't intentionally run `pnpm run generate:types`, revert them (`git checkout -- packages/database/src/... packages/database/supabase/functions/lib/types.ts`). Regenerate deliberately and separately when schema actually changed.
+
+**Applies to:** `packages/database/src/types.ts`, `packages/database/src/swagger-docs-schema.ts`, `packages/database/supabase/functions/lib/types.ts`; any branch running turbo tasks that build `@carbon/database`.
+
+## Storage keys built from raw filenames break silently — always sanitize, and the portal share route regex is a hidden contract with every upload path shape
+
+**Context:** MES file/inspection step uploads (`RecordModal` in `apps/mes/app/components/JobOperation/components/Step.tsx`) put the raw `file.name` into the Supabase storage key. macOS screenshot names contain U+202F (narrow no-break space before "AM/PM"), which is outside Supabase storage's allowed-key charset.
+
+**Problem:** The upload fails with "Invalid key", but the modal had already rendered the file card (`setFile` before the await), so the operator saw the file "attached" with the Record button permanently disabled — no actionable error. Separately, the customer-portal file route (`share+/customer.$id.$.tsx`) validated paths with a regex hardcoded to the *old* flat layout `companyId/job/operationId/file`; when `032f8d0e` nested step uploads under `/stepId/nanoid/`, every portal file link started returning 403 and nobody noticed for months.
+
+**Rule:** (1) Any storage key that embeds a user-controlled filename must pass it through `stripSpecialCharacters` (canonical copy in `@carbon/utils`, re-exported by `~/utils/string` in ERP) with a `|| "file"` fallback for names that sanitize to empty. (2) The share-route path validation (`parseJobFilePath` in `apps/erp/app/utils/supabase.ts`, unit-tested) is coupled to every writer of the `companyId/job/...` prefix — changing an upload path shape requires updating the parser and its test in the same PR. (3) On upload failure, reset the picker UI so the user can retry; never leave a dead-end state.
+
+**Applies to:** all `storage.from(...).upload(...)` call sites in `apps/mes` and `apps/erp`; `share+/customer.$id.$.tsx`; any new externally-shared file route.
+
+## Document totals helpers guarded on truthy qty/price silently drop shipping- or tax-only lines
+
+**Context:** Adding line-level shipping cost display to the purchase order PDF (`packages/documents/src/pdf/blocks/purchaseOrder/`). A PO line with a 0.00 unit price and a 30.00 `supplierShippingCost` rendered Total and Subtotal as 0 on the PDF.
+
+**Problem:** The totals helpers in `packages/documents/src/utils/` (`purchase-order.ts` `getLineTotal`/`getTotal`, and the same pattern in `sales-order.ts`/`sales-invoice.ts` `getLineSubtotal`/`getLineTaxableSubtotal`) wrapped the whole formula in `if (line?.qty && line?.unitPrice)` — so any line whose value was only shipping, add-on, or tax contributed 0 to the document, even though those amounts were displayed elsewhere on the page and included in posting math.
+
+**Rule:** Compute document money formulas unconditionally with `?? 0` per term — never gate the whole formula on one term being truthy. Also keep a document's Subtotal semantics identical to that module's in-app summary (PO PDF Subtotal = qty × price + line shipping, matching `PurchaseOrderSummary.tsx`), and lock the helpers with unit tests (`packages/documents/src/utils/document-totals.test.ts`).
+
+**Applies to:** `packages/documents/src/utils/{purchase-order,sales-order,sales-invoice,quote}.ts`, PDF Summary/LineItems blocks, `email/{PurchaseOrder,SalesOrder,SalesInvoice}Email.tsx`, and any new document totals code.
+
+## Loader-computed "current unit" must match the component's, or per-unit attribution credits the wrong unit
+
+**Context:** The MES assembly view resolves the unit on screen twice: the loader (`apps/mes/app/routes/x+/assembly.$operationId.tsx`) computes `unitIndex` from `?unit`/`?trackedEntityId`, and `AssemblyView.currentUnitIndex` computes it again client-side. Per-unit material issue attribution (batch parents) was moved into the loader, keyed off the loader's `unitIndex`.
+
+**Problem:** The two defaults diverged. When there's no `?unit` param, `AssemblyView` lands on the NEXT unit still to build (`min(quantityComplete, units.length-1)`) — and the auto-complete effect DELETES `?unit` after finishing a unit — but the loader defaulted `unitIndex` to `0`. So on unit 2 (default landing) the loader attributed unit 1's stamped consumes (`Unit=1`) to the unit-2 view: parts showed `1/1`/`2/1` though nothing was issued to unit 2, and the scan gate (which reads the same values) let the operator Mark done. Serial parents were unaffected (attribution is per-entity, and both default to 0).
+
+**Rule:** When a loader and its component both compute the same "current X" and one feeds data the other renders, their resolution logic — including the no-param default — must be identical. For the assembly loader, mirror `AssemblyView.currentUnitIndex`: index-paged (batch/untracked) parents default to `min(quantityComplete, opQty-1)`, serial parents to `0`. If you make a loader-computed index load-bearing for attribution, re-derive it the exact same way the UI does.
+
+**Applies to:** `apps/mes/app/routes/x+/assembly.$operationId.tsx` (`unitIndex`) ↔ `apps/mes/app/components/AssemblyView.tsx` (`currentUnitIndex`); any loader/component pair where one computes an index the other renders.
+
+## Node-side re-exports from the Deno functions tree must dodge lib/database.ts
+
+**Context:** `@carbon/database` re-exports code from `packages/database/supabase/functions/` into the node world (`src/client.ts` → `lib/postgres/index.ts`). The shared inspection engine (`src/quality.ts`) needed `getNextSequence` from `supabase/functions/shared/get-next-sequence.ts`, which imported its `DB` type from `../lib/database.ts`.
+
+**Problem:** `lib/database.ts` imports `./driver.ts` — the Deno-postgres driver whose types (`queryObject`, deno `Pool`) don't typecheck under the node tsconfig. Pulling any `shared/*.ts` helper that touches `lib/database.ts` into a `src/*` file breaks `pnpm --filter @carbon/database typecheck`, even though the runtime graph would have been fine.
+
+**Rule:** When making a Deno-tree helper importable from `packages/database/src/*`, its type-only imports must come from `../lib/postgres/index.ts` (node-clean, already the `src/client.ts` re-export source), never `../lib/database.ts`. `import type { KyselyDatabase as DB } from "../lib/postgres/index.ts"` is behavior-neutral for Deno. Check the full import chain (`lib/utils.ts` is safe; `lib/database.ts`/`lib/driver.ts` are not) before re-exporting.
+
+**Applies to:** `packages/database/src/{client,sampling,quality}.ts`; any future node-side re-export of `packages/database/supabase/functions/{shared,lib}/*`.
+
+## A zod `.refine` that returns an object instead of a boolean silently disables the check
+
+**Context:** Cross-field validation in module `*.models.ts` zod schemas (real case: `processValidator` in `apps/erp/app/modules/resources/resources.models.ts`, lines 305–319).
+
+**Problem:** `.refine((data) => { if (bad) return { workCenters: ["..."] }; return true; })` looks like it reports a field error, but `.refine`'s callback is coerced to a boolean — any non-empty object is **truthy**, so the "failure" branch returns a value that passes validation. Both `processValidator` refinements (work-center-required and standard-factor-required) never fire: the object was meant to be an error map, but `.refine` has no such API. The schema typechecks and the form submits, so the missing validation is invisible until bad data lands.
+
+**Rule:** A `.refine` predicate must return a **boolean** (`false` = invalid). To attach a path/message, either pass the second `{ message, path }` argument to `.refine` and return `false` on failure, or use `.superRefine((data, ctx) => ctx.addIssue({ path, message }))` when you need per-field errors. Never return an object/array from a `.refine` callback expecting it to be an error map.
+
+**Applies to:** all `apps/erp/app/modules/**/*.models.ts` (and `apps/mes/app/services/models.ts`) zod schemas using `.refine`.

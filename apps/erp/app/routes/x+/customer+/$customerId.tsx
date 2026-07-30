@@ -14,12 +14,14 @@ import {
 } from "~/modules/sales";
 import { CustomerHeader, CustomerSidebar } from "~/modules/sales/ui/Customer";
 import { getTagsList } from "~/modules/shared";
-import type { Handle } from "~/utils/handle";
+import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
 export const handle: Handle = {
-  breadcrumb: msg`Customers`,
-  to: path.to.customers
+  breadcrumb: detailBreadcrumb(
+    { breadcrumb: msg`Customers`, to: path.to.customers },
+    (data) => data?.customer?.name
+  )
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {

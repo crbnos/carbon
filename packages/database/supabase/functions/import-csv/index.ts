@@ -23,6 +23,7 @@ const importCsvValidator = z.object({
     "material",
     "bom",
     "operations",
+    "partWithMethod",
     "part",
     "supplier",
     "supplierContact",
@@ -2193,6 +2194,21 @@ serve(async (req: Request) => {
             data: Database["public"]["Tables"]["process"]["Update"];
           }[] = [];
 
+          // Legacy CSV templates may still use the old Inside/Outside process types.
+          const normalizeProcessType = (value: string) =>
+            (value === "Inside"
+              ? "Process"
+              : value === "Outside" || value === "Inside and Outside"
+                ? "Outside Processing"
+                : value) as Database["public"]["Enums"]["processType"];
+
+          const validProcessTypes = [
+            "Process",
+            "Assembly",
+            "Inspection",
+            "Outside Processing",
+          ];
+
           const isProcessValid = (
             record: Record<string, string>
           ): record is { name: string; processType: string } => {
@@ -2200,8 +2216,9 @@ serve(async (req: Request) => {
               typeof record.name === "string" &&
               record.name.trim() !== "" &&
               typeof record.processType === "string" &&
-              (record.processType === "Inside" ||
-                record.processType === "Outside")
+              validProcessTypes.includes(
+                normalizeProcessType(record.processType)
+              )
             );
           };
 
@@ -2215,6 +2232,7 @@ serve(async (req: Request) => {
                   id: existingEntityId,
                   data: {
                     ...rest,
+                    processType: normalizeProcessType(rest.processType),
                     completeAllOnScan:
                       rest.completeAllOnScan?.toLowerCase() === "true" ?? false,
                     updatedAt: new Date().toISOString(),
@@ -2226,6 +2244,7 @@ serve(async (req: Request) => {
               processIds.add(id);
               processInserts.push({
                 ...rest,
+                processType: normalizeProcessType(rest.processType),
                 completeAllOnScan:
                   rest.completeAllOnScan?.toLowerCase() === "true" ?? false,
                 companyId,
@@ -2272,7 +2291,8 @@ serve(async (req: Request) => {
         break;
       }
       case "bom":
-      case "operations": {
+      case "operations":
+      case "partWithMethod": {
         await importMethods(db, {
           table,
           mappedRecords,

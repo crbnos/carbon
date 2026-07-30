@@ -46,6 +46,7 @@ import {
 import { useRouteData, useUser } from "~/hooks";
 import type { Company } from "~/modules/settings";
 import { companyValidator } from "~/modules/settings/settings.models";
+import type { BreadcrumbSegment } from "~/utils/handle";
 import { path } from "~/utils/path";
 
 export const BreadcrumbHandle = z.object({
@@ -70,21 +71,29 @@ const Breadcrumbs = () => {
     return value as ReactNode;
   };
 
-  const breadcrumbs = matches
-    .map((m) => {
-      const result = BreadcrumbHandleMatch.safeParse(m);
-      if (!result.success || !result.data.handle.breadcrumb) return null;
+  const breadcrumbs = matches.flatMap((m) => {
+    const result = BreadcrumbHandleMatch.safeParse(m);
+    if (!result.success || !result.data.handle.breadcrumb) return [];
 
-      return {
-        breadcrumb: translateBreadcrumb(
-          typeof result.data.handle.breadcrumb === "function"
-            ? result.data.handle.breadcrumb(m.params)
-            : result.data.handle.breadcrumb
-        ),
-        to: result.data.handle?.to ?? m.pathname
-      };
-    })
-    .filter(Boolean);
+    const handle = result.data.handle;
+    const resolved =
+      typeof handle.breadcrumb === "function"
+        ? handle.breadcrumb(m.params, m.data)
+        : handle.breadcrumb;
+
+    // A detail route may resolve to multiple segments (list link + entity id);
+    // a plain handle resolves to one, defaulting its link to the match's path.
+    const segments: BreadcrumbSegment[] = Array.isArray(resolved)
+      ? resolved.filter((seg) => seg && seg.breadcrumb)
+      : resolved
+        ? [{ breadcrumb: resolved, to: handle.to ?? m.pathname }]
+        : [];
+
+    return segments.map((seg) => ({
+      breadcrumb: translateBreadcrumb(seg.breadcrumb),
+      to: seg.to // undefined => rendered as current page (no link)
+    }));
+  });
 
   const isMobile = useIsMobile();
   const { company } = useUser();

@@ -61,7 +61,12 @@ export const COMPANY_MERGE_FIELDS: MergeField[] = [
   { token: "company.country", label: "Company Country", group: "Company" },
   { token: "company.taxId", label: "Company Tax ID", group: "Company" },
   { token: "company.eori", label: "Company EORI", group: "Company" },
-  { token: "company.vatNumber", label: "Company VAT Number", group: "Company" }
+  { token: "company.vatNumber", label: "Company VAT Number", group: "Company" },
+  {
+    token: "company.registrationNumber",
+    label: "Company Registration Number",
+    group: "Company"
+  }
 ];
 
 const SALES_INVOICE_MERGE_FIELDS: MergeField[] = [

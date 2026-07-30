@@ -6,12 +6,13 @@ import {
 } from "@carbon/database/audit.config";
 import type { AuditDiff, AuditLogEntry } from "@carbon/database/audit.types";
 import { Badge, HStack } from "@carbon/react";
-import { useLingui } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
 import { LuFilePen, LuFilePlus, LuFileX } from "react-icons/lu";
 import { Link } from "react-router";
 import { EmployeeAvatar, Table } from "~/components";
+import { isEmptyDiffValue } from "~/components/AuditLog";
 import { useDateFormatter } from "~/hooks";
 import { path } from "~/utils/path";
 
@@ -50,6 +51,33 @@ function formatValue(value: unknown): string {
   return JSON.stringify(value);
 }
 
+function DiffValue({
+  value,
+  variant
+}: {
+  value: unknown;
+  variant: "old" | "new";
+}) {
+  if (isEmptyDiffValue(value)) {
+    return (
+      <span className="px-2 py-0.5 rounded bg-muted text-muted-foreground italic font-sans">
+        <Trans>Empty</Trans>
+      </span>
+    );
+  }
+  return (
+    <span
+      className={
+        variant === "old"
+          ? "px-2 py-0.5 rounded bg-red-500/10 text-red-500"
+          : "px-2 py-0.5 rounded bg-green-500/10 text-green-500"
+      }
+    >
+      {formatValue(value)}
+    </span>
+  );
+}
+
 function getEntityPath(entityId: string): string | null {
   const prefix = entityId.split("_")[0];
   if (!prefix || prefix === entityId) return null;
@@ -66,8 +94,10 @@ function getEntityPath(entityId: string): string | null {
     quote: path.to.quote,
     emp: path.to.employeeAccount,
     nc: path.to.issue,
+    co: path.to.changeNotice,
     sh: path.to.shipment,
     rec: path.to.receipt,
+    ic: path.to.inventoryCount,
     g: path.to.gauge,
     sq: path.to.supplierQuote,
     wc: path.to.workCenter,
@@ -91,19 +121,11 @@ const InlineDiff = memo(
       <span className="text-muted-foreground font-medium min-w-[120px]">
         {fieldName}:
       </span>
-      {oldValue !== undefined && (
-        <span className="px-2 py-0.5 rounded bg-red-500/10 text-red-500">
-          {formatValue(oldValue)}
-        </span>
-      )}
+      {oldValue !== undefined && <DiffValue value={oldValue} variant="old" />}
       {oldValue !== undefined && newValue !== undefined && (
         <span className="text-muted-foreground">→</span>
       )}
-      {newValue !== undefined && (
-        <span className="px-2 py-0.5 rounded bg-green-500/10 text-green-500">
-          {formatValue(newValue)}
-        </span>
-      )}
+      {newValue !== undefined && <DiffValue value={newValue} variant="new" />}
     </div>
   )
 );

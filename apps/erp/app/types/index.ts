@@ -65,6 +65,7 @@ export type NavItem = Omit<Route, "icon"> & {
   icon: IconType;
   backgroundColor?: string;
   foregroundColor?: string;
+  external?: boolean;
 };
 
 export type Result = {

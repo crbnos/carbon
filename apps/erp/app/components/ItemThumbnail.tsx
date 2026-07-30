@@ -1,13 +1,13 @@
 import { cn } from "@carbon/react";
 import { cva } from "class-variance-authority";
 import { LuBlocks } from "react-icons/lu";
-import type { MethodItemType } from "~/modules/shared";
+import type { ItemType } from "~/modules/shared";
 import { getPrivateUrl } from "~/utils/path";
 import { MethodItemTypeIcon } from "./Icons";
 
 interface ItemThumbnailProps {
   thumbnailPath?: string | null;
-  type?: MethodItemType;
+  type?: ItemType;
   size?: "sm" | "md" | "lg" | "xl";
 }
 

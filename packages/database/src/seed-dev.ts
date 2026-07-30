@@ -15,6 +15,8 @@ import * as dotenv from "dotenv";
 import {
   accountDefaults,
   accounts,
+  changeOrderRequiredActions,
+  changeOrderTypes,
   currencies,
   customerStatuses,
   defaultLocation,
@@ -28,6 +30,7 @@ import {
   nonConformanceRequiredActions,
   nonConformanceTypes,
   paymentTerms,
+  periodCloseTaskDefinitions,
   scrapReasons,
   sequences,
   unitOfMeasures
@@ -314,6 +317,25 @@ async function seedDev() {
         );
       }
 
+      // Seed period-close checklist definitions
+      for (const d of periodCloseTaskDefinitions) {
+        await client.query(
+          `INSERT INTO "periodCloseTaskDefinition" (name, "taskType", "autoCheckKey", "sortOrder", required, severity, active, "isSystem", "companyId", "createdBy")
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'system')`,
+          [
+            d.name,
+            d.taskType,
+            d.autoCheckKey,
+            d.sortOrder,
+            d.required,
+            d.severity,
+            d.active,
+            d.isSystem,
+            companyId
+          ]
+        );
+      }
+
       // Seed gauge types
       for (const gt of gaugeTypes) {
         await client.query(
@@ -338,11 +360,27 @@ async function seedDev() {
         );
       }
 
+      // Seed change order categories
+      for (const cot of changeOrderTypes) {
+        await client.query(
+          `INSERT INTO "changeOrderType" (name, "companyId", "createdBy") VALUES ($1, $2, 'system')`,
+          [cot.name, companyId]
+        );
+      }
+
       // Seed non-conformance required actions
       for (const nca of nonConformanceRequiredActions) {
         await client.query(
           `INSERT INTO "nonConformanceRequiredAction" (name, "systemType", "companyId", "createdBy") VALUES ($1, $2, $3, 'system')`,
           [nca.name, "systemType" in nca ? nca.systemType : null, companyId]
+        );
+      }
+
+      // Seed change order default actions
+      for (const ca of changeOrderRequiredActions) {
+        await client.query(
+          `INSERT INTO "changeOrderRequiredAction" (name, "companyId", "createdBy") VALUES ($1, $2, 'system')`,
+          [ca.name, companyId]
         );
       }
 
@@ -408,79 +446,23 @@ async function seedDev() {
       const resolveAccountId = (number: string) =>
         accountIdByKey[number] ?? null;
 
-      // Seed account defaults
+      // Seed account defaults — columns derive from the shared accountDefaults
+      // object so this insert can't drift from seed.data.ts when new defaults
+      // are added (seed-company builds its insert the same way)
+      const accountDefaultEntries = Object.entries(accountDefaults);
+      const accountDefaultColumns = [
+        ...accountDefaultEntries.map(([column]) => `"${column}"`),
+        `"companyId"`
+      ];
       await client.query(
-        `INSERT INTO "accountDefault" (
-          "salesAccount", "salesDiscountAccount", "costOfGoodsSoldAccount",
-          "purchaseVarianceAccount", "inventoryAdjustmentVarianceAccount",
-          "materialVarianceAccount", "laborAndMachineVarianceAccount",
-          "overheadVarianceAccount", "lotSizeVarianceAccount", "subcontractingVarianceAccount",
-          "laborAbsorptionAccount", "indirectCostAccount", "maintenanceAccount", "assetDepreciationExpenseAccount",
-          "assetGainsAndLossesAccount", "serviceChargeAccount", "interestAccount",
-          "supplierPaymentDiscountAccount", "customerPaymentDiscountAccount", "roundingAccount",
-          "assetAquisitionCostAccount", "assetAquisitionCostOnDisposalAccount",
-          "accumulatedDepreciationAccount", "accumulatedDepreciationOnDisposalAccount",
-          "inventoryAccount", "workInProgressAccount",
-          "receivablesAccount", "bankCashAccount",
-          "bankLocalCurrencyAccount", "bankForeignCurrencyAccount", "prepaymentAccount",
-          "payablesAccount", "goodsReceivedNotInvoicedAccount", "inventoryShippedNotInvoicedAccount",
-          "salesTaxPayableAccount", "purchaseTaxPayableAccount", "reverseChargeSalesTaxPayableAccount",
-          "retainedEarningsAccount", "currencyTranslationAccount",
-          "customerWriteOffAccount", "supplierWriteOffAccount",
-          "realizedExchangeGainAccount", "realizedExchangeLossAccount", "companyId"
-        ) VALUES (
-          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19,
-          $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39, $40,
-          $41, $42, $43, $44
-        )`,
+        `INSERT INTO "accountDefault" (${accountDefaultColumns.join(", ")})
+         VALUES (${accountDefaultColumns
+           .map((_, i) => `$${i + 1}`)
+           .join(", ")})`,
         [
-          resolveAccountId(accountDefaults.salesAccount),
-          resolveAccountId(accountDefaults.salesDiscountAccount),
-          resolveAccountId(accountDefaults.costOfGoodsSoldAccount),
-          resolveAccountId(accountDefaults.purchaseVarianceAccount),
-          resolveAccountId(accountDefaults.inventoryAdjustmentVarianceAccount),
-          resolveAccountId(accountDefaults.materialVarianceAccount),
-          resolveAccountId(accountDefaults.laborAndMachineVarianceAccount),
-          resolveAccountId(accountDefaults.overheadVarianceAccount),
-          resolveAccountId(accountDefaults.lotSizeVarianceAccount),
-          resolveAccountId(accountDefaults.subcontractingVarianceAccount),
-          resolveAccountId(accountDefaults.laborAbsorptionAccount),
-          resolveAccountId(accountDefaults.indirectCostAccount),
-          resolveAccountId(accountDefaults.maintenanceAccount),
-          resolveAccountId(accountDefaults.assetDepreciationExpenseAccount),
-          resolveAccountId(accountDefaults.assetGainsAndLossesAccount),
-          resolveAccountId(accountDefaults.serviceChargeAccount),
-          resolveAccountId(accountDefaults.interestAccount),
-          resolveAccountId(accountDefaults.supplierPaymentDiscountAccount),
-          resolveAccountId(accountDefaults.customerPaymentDiscountAccount),
-          resolveAccountId(accountDefaults.roundingAccount),
-          resolveAccountId(accountDefaults.assetAquisitionCostAccount),
-          resolveAccountId(
-            accountDefaults.assetAquisitionCostOnDisposalAccount
+          ...accountDefaultEntries.map(([, number]) =>
+            resolveAccountId(number)
           ),
-          resolveAccountId(accountDefaults.accumulatedDepreciationAccount),
-          resolveAccountId(
-            accountDefaults.accumulatedDepreciationOnDisposalAccount
-          ),
-          resolveAccountId(accountDefaults.inventoryAccount),
-          resolveAccountId(accountDefaults.workInProgressAccount),
-          resolveAccountId(accountDefaults.receivablesAccount),
-          resolveAccountId(accountDefaults.bankCashAccount),
-          resolveAccountId(accountDefaults.bankLocalCurrencyAccount),
-          resolveAccountId(accountDefaults.bankForeignCurrencyAccount),
-          resolveAccountId(accountDefaults.prepaymentAccount),
-          resolveAccountId(accountDefaults.payablesAccount),
-          resolveAccountId(accountDefaults.goodsReceivedNotInvoicedAccount),
-          resolveAccountId(accountDefaults.inventoryShippedNotInvoicedAccount),
-          resolveAccountId(accountDefaults.salesTaxPayableAccount),
-          resolveAccountId(accountDefaults.purchaseTaxPayableAccount),
-          resolveAccountId(accountDefaults.reverseChargeSalesTaxPayableAccount),
-          resolveAccountId(accountDefaults.retainedEarningsAccount),
-          resolveAccountId(accountDefaults.currencyTranslationAccount),
-          resolveAccountId(accountDefaults.customerWriteOffAccount),
-          resolveAccountId(accountDefaults.supplierWriteOffAccount),
-          resolveAccountId(accountDefaults.realizedExchangeGainAccount),
-          resolveAccountId(accountDefaults.realizedExchangeLossAccount),
           companyId
         ]
       );
@@ -503,9 +485,9 @@ async function seedDev() {
             "name", "depreciationMethod", "usefulLifeMonths", "residualValuePercent",
             "assetAccountId", "accumulatedDepreciationAccountId",
             "depreciationExpenseAccountId", "writeOffAccountId",
-            "writeDownAccountId", "disposalAccountId",
+            "writeDownAccountId", "gainOnDisposalAccountId", "lossOnDisposalAccountId",
             "companyId", "createdBy"
-          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'system')`,
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, 'system')`,
           [
             fac.name,
             fac.depreciationMethod,
@@ -516,7 +498,8 @@ async function seedDev() {
             accountIdByKey[fac.depreciationExpenseAccount],
             accountIdByKey[fac.writeOffAccount],
             accountIdByKey[fac.writeDownAccount],
-            accountIdByKey[fac.disposalAccount],
+            accountIdByKey[fac.gainOnDisposalAccount],
+            accountIdByKey[fac.lossOnDisposalAccount],
             companyId
           ]
         );

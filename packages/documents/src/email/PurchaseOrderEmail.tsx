@@ -18,6 +18,7 @@ import {
   getTotal
 } from "../utils/purchase-order";
 import { getCurrencyFormatter } from "../utils/shared";
+import ExternalNotes from "./components/ExternalNotes";
 import {
   EmailThemeProvider,
   getEmailInlineStyles,
@@ -126,6 +127,7 @@ const PurchaseOrderEmail = ({
               any questions.
             </Text>
           </Section>
+          <ExternalNotes content={purchaseOrder.externalNotes} />
           <Section className="bg-gray-50 rounded-lg text-xs">
             <Row>
               <Column className="p-5" colSpan={2}>
@@ -281,7 +283,10 @@ const PurchaseOrderEmail = ({
               <Column className="border-l border-gray-200 h-12"></Column>
               <Column className="w-[90px] pr-5">
                 <Text className="text-base font-semibold whitespace-nowrap">
-                  {formatter.format(getTotal(purchaseOrderLines))}
+                  {formatter.format(
+                    getTotal(purchaseOrderLines) +
+                      (purchaseOrder.supplierShippingCost ?? 0)
+                  )}
                 </Text>
               </Column>
             </Row>

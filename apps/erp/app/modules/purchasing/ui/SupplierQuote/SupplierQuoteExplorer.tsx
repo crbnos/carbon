@@ -38,8 +38,8 @@ import {
 } from "~/components/LineReorder";
 import { useOptimisticLocation, usePermissions, useRouteData } from "~/hooks";
 import { getLinkToItemDetails } from "~/modules/items/ui/Item/ItemForm";
-import type { MethodItemType } from "~/modules/shared";
-import { methodItemType } from "~/modules/shared";
+import type { ItemType } from "~/modules/shared";
+import { itemType } from "~/modules/shared";
 import { useItems } from "~/stores";
 import { path } from "~/utils/path";
 import { isSupplierQuoteLocked } from "../../purchasing.models";
@@ -262,7 +262,7 @@ function SupplierQuoteLineItem({
   const { id, lineId } = useParams();
   if (!id) throw new Error("Could not find id");
   const [items] = useItems();
-  const itemType = items.find((i) => i.id === line.itemId)?.type;
+  const lineItemType = items.find((i) => i.id === line.itemId)?.type;
   const permissions = usePermissions();
   const disclosure = useDisclosure();
   const location = useOptimisticLocation();
@@ -332,22 +332,22 @@ function SupplierQuoteLineItem({
                   <Trans>Delete Line</Trans>
                 </DropdownMenuItem>
 
-                {itemType &&
-                  methodItemType.includes(itemType as MethodItemType) && (
+                {lineItemType &&
+                  itemType.includes(lineItemType as ItemType) && (
                     <DropdownMenuItem
                       asChild
                       onClick={(e) => e.stopPropagation()}
                     >
                       <Link
                         to={getLinkToItemDetails(
-                          itemType as MethodItemType,
+                          lineItemType as ItemType,
                           line.itemId!
                         )}
                       >
                         <DropdownMenuIcon
                           icon={
                             <MethodItemTypeIcon
-                              type={itemType as MethodItemType}
+                              type={lineItemType as ItemType}
                             />
                           }
                         />

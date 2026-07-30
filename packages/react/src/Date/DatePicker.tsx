@@ -5,6 +5,7 @@ import type { DatePickerProps } from "@react-types/datepicker";
 import type { ReactNode } from "react";
 import { useRef } from "react";
 import { LuBan, LuCalendarClock, LuInfo } from "react-icons/lu";
+import { cn } from "..";
 import { Button } from "../Button";
 import { HStack } from "../HStack";
 import { IconButton } from "../IconButton";
@@ -114,8 +115,17 @@ const DatePicker = (
                 {/* Anchor (not Trigger) so the calendar button isn't wrapped
                     in a second <button>; the popover open state is driven by
                     react-aria's buttonProps on FieldButton. */}
+                {/* -mt/-mr let the button overlay the group's own 1px border
+                    exactly — without -mr-px its rounded corner sits 1px inside
+                    the group's corner and both edges show. The sm field is
+                    shorter, so the button needs a deeper pull-up. */}
                 <PopoverAnchor asChild>
-                  <div className="flex-shrink-0 -mt-px">
+                  <div
+                    className={cn(
+                      "flex-shrink-0 -mr-px",
+                      props.size === "sm" ? "mt-[-3px]" : "-mt-px"
+                    )}
+                  >
                     <FieldButton
                       {...buttonProps}
                       size={props.size}

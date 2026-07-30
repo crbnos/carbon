@@ -645,7 +645,7 @@ const MaterialsTable = memo(({ data, tags, count }: MaterialsTableProps) => {
             <MenuSub>
               <MenuSubTrigger>
                 <MenuIcon icon={<LuGitPullRequestArrow />} />
-                <Trans>Versions</Trans>
+                <Trans>Revisions</Trans>
               </MenuSubTrigger>
               <MenuSubContent>
                 {revisions.map((revision) => (

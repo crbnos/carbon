@@ -56,12 +56,14 @@ export type Container = {
 export async function bootStack(
   root: string,
   slug: string,
-  opts?: { minimal?: boolean; services?: string[] }
+  opts?: { minimal?: boolean; services?: string[]; chrome?: boolean }
 ) {
   const args = devArgs(root, slug, "--env-file", ".env.local");
   // When specific services are requested, don't activate profiles — compose
   // starts only the named services (+ dependencies) regardless of profiles.
   if (!opts?.services && !opts?.minimal) args.push("--profile", "full");
+  // Opt-in local Chromium for the thumbnail edge fn (`crbn up --thumbnails`).
+  if (!opts?.services && opts?.chrome) args.push("--profile", "chrome");
   args.push("up", "-d");
   if (opts?.services) args.push(...opts.services);
   await execStrict("docker", args, root);
@@ -81,6 +83,32 @@ export async function restartServices(
     reject: false,
     stdio: "ignore"
   });
+}
+
+// `docker compose up -d --force-recreate` a subset of services — reapplies
+// compose/.env.local changes (image, env, memory, ports) to just those
+// containers, leaving the rest of the stack (and the app dev servers) running.
+// Unlike `restart`, this picks up edits to the compose file.
+export async function recreateServices(
+  root: string,
+  slug: string,
+  services: string[]
+) {
+  if (services.length === 0) return;
+  await execStrict(
+    "docker",
+    devArgs(
+      root,
+      slug,
+      "--env-file",
+      ".env.local",
+      "up",
+      "-d",
+      "--force-recreate",
+      ...services
+    ),
+    root
+  );
 }
 
 // Pull all images before `up -d` so `bootStack` doesn't block silently behind

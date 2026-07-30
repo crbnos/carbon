@@ -17,7 +17,8 @@ export const SAMPLE_SALES_INVOICE = {
     baseCurrencyCode: "USD",
     logoLightIcon: null,
     logoWatermark: null,
-    eori: null
+    eori: null,
+    registrationNumber: null
   },
   salesInvoice: {
     invoiceId: "INV-001042",

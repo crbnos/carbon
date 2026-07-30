@@ -19,6 +19,7 @@ type FormTextArea = TextareaProps & {
   size?: "sm" | "md" | "lg";
   characterLimit?: number;
   isRequired?: boolean;
+  isOptional?: boolean;
   isDisabled?: boolean;
 };
 
@@ -31,6 +32,7 @@ const TextArea = forwardRef<HTMLTextAreaElement, FormTextArea>(
       size,
       characterLimit,
       isRequired,
+      isOptional,
       isDisabled: isDisabledProp,
       ...rest
     },
@@ -48,7 +50,8 @@ const TextArea = forwardRef<HTMLTextAreaElement, FormTextArea>(
     const [characterCount, setCharacterCount] = useState(
       defaultValue?.length ?? 0
     );
-    const resolvedIsOptional = isRequired ? false : (fieldIsOptional ?? false);
+    const resolvedIsOptional =
+      isOptional ?? (isRequired ? false : (fieldIsOptional ?? false));
 
     const onChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
       if (characterLimit) setCharacterCount(e.target.value.length);

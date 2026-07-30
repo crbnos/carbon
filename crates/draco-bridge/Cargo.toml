@@ -1,0 +1,15 @@
+[package]
+name = "draco-bridge"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+# Rust bridge over C++ Google Draco (KHR_draco_mesh_compression encoding).
+# build.rs resolves draco via `DRACO_PREFIX` env or the Homebrew/distro layout;
+# links the static libdraco.a when present (self-contained binary), else dynamic.
+
+[dependencies]
+cxx = "1"
+
+[build-dependencies]
+cxx-build = "1"

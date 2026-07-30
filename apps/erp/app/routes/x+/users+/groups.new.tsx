@@ -15,7 +15,7 @@ import {
   upsertGroupMembers
 } from "~/modules/users";
 import { path } from "~/utils/path";
-import { getCompanyId } from "~/utils/react-query";
+import { getCompanyId, invalidateUserSelectQueries } from "~/utils/react-query";
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -73,13 +73,7 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export async function clientAction({ serverAction }: ClientActionFunctionArgs) {
-  const companyId = getCompanyId();
-  window.clientCache?.invalidateQueries({
-    predicate: (query) => {
-      const queryKey = query.queryKey as string[];
-      return queryKey[0] === "groupsByType" && queryKey[1] === companyId;
-    }
-  });
+  invalidateUserSelectQueries(getCompanyId());
   return await serverAction();
 }
 

@@ -16,14 +16,17 @@ type FiscalYearSettingsField = {
   label: string;
   description: string;
   termId: TermId;
+  locked: boolean;
 };
 
 type FiscalYearSettingsFormProps = {
   initialValues: z.infer<typeof fiscalYearSettingsValidator>;
+  fiscalStartLocked?: boolean;
 };
 
 const FiscalYearSettingsForm = ({
-  initialValues
+  initialValues,
+  fiscalStartLocked = false
 }: FiscalYearSettingsFormProps) => {
   const { t } = useLingui();
   const permissions = usePermissions();
@@ -39,16 +42,18 @@ const FiscalYearSettingsForm = ({
         name: "startMonth",
         label: t`Start of Fiscal Year`,
         description: t`This is the month your fiscal year starts.`,
-        termId: "fiscal-year-start"
+        termId: "fiscal-year-start",
+        locked: fiscalStartLocked
       },
       {
         name: "taxStartMonth",
         label: t`Start of Tax Year`,
         description: t`This is the month your tax year starts.`,
-        termId: "fiscal-year-tax-start"
+        termId: "fiscal-year-tax-start",
+        locked: false
       }
     ],
-    [t]
+    [t, fiscalStartLocked]
   );
 
   return (
@@ -96,6 +101,14 @@ const FiscalYearSettingsForm = ({
                   <p className="text-xs text-muted-foreground">
                     {field.description}
                   </p>
+                  {field.locked && (
+                    <p className="text-xs text-muted-foreground mt-1.5">
+                      <Trans>
+                        Fixed once accounting periods have been posted to or
+                        closed. Delete all open periods to change it.
+                      </Trans>
+                    </p>
+                  )}
                 </div>
                 <div className="flex-shrink-0 w-64">
                   <Select
@@ -105,6 +118,7 @@ const FiscalYearSettingsForm = ({
                       value: month
                     }))}
                     size="sm"
+                    isReadOnly={field.locked}
                   />
                 </div>
               </div>

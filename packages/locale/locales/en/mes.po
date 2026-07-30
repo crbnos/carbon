@@ -42,11 +42,29 @@ msgstr "{0} of {1} completed"
 msgid "{0} Scrapped"
 msgstr "{0} Scrapped"
 
+msgid "{completions} passed unit(s) will be completed."
+msgstr "{completions} passed unit(s) will be completed."
+
+msgid "{fails} sampled failure(s) are recorded and will NOT be completed — resolve them from the actions menu."
+msgstr "{fails} sampled failure(s) are recorded and will NOT be completed — resolve them from the actions menu."
+
 msgid "About"
 msgstr "About"
 
+msgid "Accept"
+msgstr "Accept"
+
+msgid "Accept Lot"
+msgstr "Accept Lot"
+
+msgid "Accept lot?"
+msgstr "Accept lot?"
+
 msgid "Account Settings"
 msgstr "Account Settings"
+
+msgid "Acknowledge & finish"
+msgstr "Acknowledge & finish"
 
 msgid "Active"
 msgstr "Active"
@@ -66,11 +84,26 @@ msgstr "Add a printer in the printing settings to print labels directly."
 msgid "Add Inventory"
 msgstr "Add Inventory"
 
+msgid "Add Sample"
+msgstr "Add Sample"
+
 msgid "Add Spare Part"
 msgstr "Add Spare Part"
 
 msgid "All"
 msgstr "All"
+
+msgid "All rework"
+msgstr "All rework"
+
+msgid "All scrap"
+msgstr "All scrap"
+
+msgid "Allocate failed units"
+msgstr "Allocate failed units"
+
+msgid "Allocate units"
+msgstr "Allocate units"
 
 msgid "Are you sure you want to delete this step?"
 msgstr "Are you sure you want to delete this step?"
@@ -96,17 +129,11 @@ msgstr "Assigned to Me"
 msgid "Assignee"
 msgstr "Assignee"
 
-msgid "Attach File"
-msgstr "Attach File"
-
 msgid "Authentication Error"
 msgstr "Authentication Error"
 
 msgid "available"
 msgstr "available"
-
-msgid "Back Home"
-msgstr "Back Home"
 
 msgid "Batch"
 msgstr "Batch"
@@ -171,6 +198,12 @@ msgstr "Clock Out"
 msgid "Clocked in since {0}"
 msgstr "Clocked in since {0}"
 
+msgid "Close"
+msgstr "Close"
+
+msgid "Collapse features table"
+msgstr "Collapse features table"
+
 #. placeholder {0}: active.data.current.column.title
 #. placeholder {1}: overColumnPosition + 1
 #. placeholder {2}: columnOrder.length
@@ -199,6 +232,9 @@ msgstr "Complete"
 
 msgid "Complete All"
 msgstr "Complete All"
+
+msgid "Complete passed"
+msgstr "Complete passed"
 
 msgid "Completed"
 msgstr "Completed"
@@ -287,6 +323,9 @@ msgstr "Draft"
 msgid "Drag and drop a file here, or click to select a file"
 msgstr "Drag and drop a file here, or click to select a file"
 
+msgid "Drag to resize drawing and features"
+msgstr "Drag to resize drawing and features"
+
 #. placeholder {0}: active.data.current?.type
 msgid "Dragging {0} cancelled."
 msgstr "Dragging {0} cancelled."
@@ -328,11 +367,14 @@ msgstr "Enter PIN for {0}"
 msgid "Error"
 msgstr "Error"
 
-msgid "Error!"
-msgstr "Error!"
-
 msgid "Estimated"
 msgstr "Estimated"
+
+msgid "Every unit has a verdict: {passes} passed and {fails} failed. The lot closes with each unit routed to its own outcome."
+msgstr "Every unit has a verdict: {passes} passed and {fails} failed. The lot closes with each unit routed to its own outcome."
+
+msgid "Expand features table"
+msgstr "Expand features table"
 
 msgid "Expired"
 msgstr "Expired"
@@ -346,6 +388,12 @@ msgstr "Expires {date}"
 msgid "Expiring first"
 msgstr "Expiring first"
 
+msgid "Failed"
+msgstr "Failed"
+
+msgid "Failed features"
+msgstr "Failed features"
+
 msgid "Failed to complete inventory adjustment"
 msgstr "Failed to complete inventory adjustment"
 
@@ -358,6 +406,12 @@ msgstr "Failed to fetch active operations"
 msgid "Failed to fetch storageUnits"
 msgstr "Failed to fetch storageUnits"
 
+msgid "Failed to save measurement"
+msgstr "Failed to save measurement"
+
+msgid "Failed to save result"
+msgstr "Failed to save result"
+
 #. placeholder {0}: fileUpload.name
 msgid "Failed to upload file: {0}"
 msgstr "Failed to upload file: {0}"
@@ -365,8 +419,11 @@ msgstr "Failed to upload file: {0}"
 msgid "Failed to upload image"
 msgstr "Failed to upload image"
 
-msgid "Feedback"
-msgstr "Feedback"
+msgid "Feature"
+msgstr "Feature"
+
+msgid "Features"
+msgstr "Features"
 
 msgid "File size exceeds 10MB limit"
 msgstr "File size exceeds 10MB limit"
@@ -390,14 +447,14 @@ msgstr "Finish {0}"
 msgid "Finish Anyways"
 msgstr "Finish Anyways"
 
+msgid "Finish with material unpicked?"
+msgstr "Finish with material unpicked?"
+
 msgid "Forgot to Clock Out?"
 msgstr "Forgot to Clock Out?"
 
 msgid "Go back to operation"
 msgstr "Go back to operation"
-
-msgid "Have a technical issue? Contact <0>Carbon Support.</0>"
-msgstr "Have a technical issue? Contact <0>Carbon Support.</0>"
 
 msgid "How many were actually picked?"
 msgstr "How many were actually picked?"
@@ -407,9 +464,6 @@ msgstr "I understand and want to complete without issuing"
 
 msgid "I'm Still Working"
 msgstr "I'm Still Working"
-
-msgid "Ideas, suggestions or problems with this page?"
-msgstr "Ideas, suggestions or problems with this page?"
 
 msgid "Ideas, suggestions or problems?"
 msgstr "Ideas, suggestions or problems?"
@@ -422,6 +476,12 @@ msgstr "Imperial"
 
 msgid "In Progress"
 msgstr "In Progress"
+
+msgid "Inspect Item"
+msgstr "Inspect Item"
+
+msgid "inspected"
+msgstr "inspected"
 
 msgid "Insufficient quantity"
 msgstr "Insufficient quantity"
@@ -464,6 +524,9 @@ msgstr "Job Traveler"
 
 msgid "Jobs"
 msgstr "Jobs"
+
+msgid "Keep picking"
+msgstr "Keep picking"
 
 msgid "Kit"
 msgstr "Kit"
@@ -516,6 +579,9 @@ msgstr "Log scrap for {0}"
 msgid "Login"
 msgstr "Login"
 
+msgid "Lot"
+msgstr "Lot"
+
 msgid "Machine"
 msgstr "Machine"
 
@@ -548,6 +614,9 @@ msgstr "Metric"
 
 msgid "Model"
 msgstr "Model"
+
+msgid "More actions"
+msgstr "More actions"
 
 msgid "More Actions"
 msgstr "More Actions"
@@ -613,14 +682,23 @@ msgstr "No files"
 msgid "No Impact"
 msgstr "No Impact"
 
+msgid "No issue types configured"
+msgstr "No issue types configured"
+
 msgid "No maintenance scheduled for today"
 msgstr "No maintenance scheduled for today"
+
+msgid "No matches. Type to create one."
+msgstr "No matches. Type to create one."
 
 msgid "No materials"
 msgstr "No materials"
 
 msgid "No open jobs"
 msgstr "No open jobs"
+
+msgid "No open units to allocate"
+msgstr "No open units to allocate"
 
 msgid "No operators"
 msgstr "No operators"
@@ -640,6 +718,9 @@ msgstr "No printer configured"
 msgid "No recent operations"
 msgstr "No recent operations"
 
+msgid "No remaining entities to inspect."
+msgstr "No remaining entities to inspect."
+
 msgid "No results"
 msgstr "No results"
 
@@ -648,6 +729,9 @@ msgstr "No results exist"
 
 msgid "No results found"
 msgstr "No results found"
+
+msgid "No samples required."
+msgstr "No samples required."
 
 msgid "No scheduled time"
 msgstr "No scheduled time"
@@ -698,6 +782,9 @@ msgstr "Oops. You shouldn't see this page. Eventually it will be a landing page.
 msgid "Open"
 msgstr "Open"
 
+msgid "Open an NCR for MRB disposition"
+msgstr "Open an NCR for MRB disposition"
+
 msgid "Open Jobs"
 msgstr "Open Jobs"
 
@@ -713,11 +800,20 @@ msgstr "Operator Performed"
 msgid "Optional"
 msgstr "Optional"
 
+msgid "Overall result"
+msgstr "Overall result"
+
 msgid "Parameters"
 msgstr "Parameters"
 
 msgid "Part"
 msgstr "Part"
+
+msgid "Partial"
+msgstr "Partial"
+
+msgid "Partial Disposition"
+msgstr "Partial Disposition"
 
 msgid "Passed Inspection"
 msgstr "Passed Inspection"
@@ -763,9 +859,6 @@ msgstr "Prev"
 
 msgid "Preventive"
 msgstr "Preventive"
-
-msgid "Previous"
-msgstr "Previous"
 
 msgid "Print"
 msgstr "Print"
@@ -816,6 +909,18 @@ msgstr "Record"
 msgid "Record {0}"
 msgstr "Record {0}"
 
+msgid "Record only"
+msgstr "Record only"
+
+msgid "Record Partial"
+msgstr "Record Partial"
+
+msgid "Reject"
+msgstr "Reject"
+
+msgid "Reject Lot"
+msgstr "Reject Lot"
+
 msgid "Remove"
 msgstr "Remove"
 
@@ -828,11 +933,17 @@ msgstr "Remove Inventory"
 msgid "Remove part"
 msgstr "Remove part"
 
+msgid "Result"
+msgstr "Result"
+
 msgid "Rework"
 msgstr "Rework"
 
 msgid "Rework created successfully"
 msgstr "Rework created successfully"
+
+msgid "Rework quantity"
+msgstr "Rework quantity"
 
 msgid "Sales Order"
 msgstr "Sales Order"
@@ -843,8 +954,14 @@ msgstr "Save"
 msgid "Scan"
 msgstr "Scan"
 
+msgid "Scan a tracked entity to add the first sample column."
+msgstr "Scan a tracked entity to add the first sample column."
+
 msgid "Scan or enter serial number"
 msgstr "Scan or enter serial number"
+
+msgid "Scan or enter tracked entity ID, serial, or batch"
+msgstr "Scan or enter tracked entity ID, serial, or batch"
 
 msgid "Scan or enter tracking number"
 msgstr "Scan or enter tracking number"
@@ -852,11 +969,17 @@ msgstr "Scan or enter tracking number"
 msgid "Scan or search serial number..."
 msgstr "Scan or search serial number..."
 
+msgid "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
+msgstr "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
+
 msgid "Schedule"
 msgstr "Schedule"
 
 msgid "Scrap"
 msgstr "Scrap"
+
+msgid "Scrap quantity"
+msgstr "Scrap quantity"
 
 msgid "Scrap Reason"
 msgstr "Scrap Reason"
@@ -891,6 +1014,9 @@ msgstr "Select a scrap quantity and reason"
 msgid "Select a serial number to continue with this operation"
 msgstr "Select a serial number to continue with this operation"
 
+msgid "Select an issue type"
+msgstr "Select an issue type"
+
 msgid "Select an item and specify the quantity to issue"
 msgstr "Select an item and specify the quantity to issue"
 
@@ -914,8 +1040,14 @@ msgstr "Select Serial Number"
 msgid "Select the operation to go back to. All operations from that point to the current operation will be redone."
 msgstr "Select the operation to go back to. All operations from that point to the current operation will be redone."
 
+msgid "Selected"
+msgstr "Selected"
+
 msgid "Send"
 msgstr "Send"
+
+msgid "Send to Carbon"
+msgstr "Send to Carbon"
 
 msgid "Serial"
 msgstr "Serial"
@@ -945,6 +1077,9 @@ msgstr "Set clock-out time"
 msgid "Setup"
 msgstr "Setup"
 
+msgid "short"
+msgstr "short"
+
 msgid "Short"
 msgstr "Short"
 
@@ -972,9 +1107,6 @@ msgstr "Signed in as {stationName}"
 msgid "Size"
 msgstr "Size"
 
-msgid "Something went wrong"
-msgstr "Something went wrong"
-
 msgid "Source"
 msgstr "Source"
 
@@ -992,6 +1124,10 @@ msgstr "Station User"
 
 msgid "Station: {stationName}"
 msgstr "Station: {stationName}"
+
+#. placeholder {0}: inspection.lotSize
+msgid "Statistical acceptance failed, so the entire lot of {0} is considered non-conforming (ISO 9001:2015 §8.7) — {passes} sampled pass(es) and {fails} failure(s). Route the units below to scrap or rework, or record the verdict only."
+msgstr "Statistical acceptance failed, so the entire lot of {0} is considered non-conforming (ISO 9001:2015 §8.7) — {passes} sampled pass(es) and {fails} failure(s). Route the units below to scrap or rework, or record the verdict only."
 
 msgid "Status"
 msgstr "Status"
@@ -1030,8 +1166,17 @@ msgstr "Tag"
 msgid "The completed quantity for this operation is less than the required quantity of {0}."
 msgstr "The completed quantity for this operation is less than the required quantity of {0}."
 
+msgid "The lot will be marked Passed and {remaining} remaining unit(s) will be completed at this operation."
+msgstr "The lot will be marked Passed and {remaining} remaining unit(s) will be completed at this operation."
+
+msgid "The lot will still be dispositioned, but an NCR cannot be created until at least one Issue Type is configured."
+msgstr "The lot will still be dispositioned, but an NCR cannot be created until at least one Issue Type is configured."
+
 msgid "There are serial or batch tracked materials on the bill of material that have not been fully issued. Completing without issuing may result in incorrect traceability records."
 msgstr "There are serial or batch tracked materials on the bill of material that have not been fully issued. Completing without issuing may result in incorrect traceability records."
+
+msgid "These items still have material to pick. Finishing now marks the list Partial."
+msgstr "These items still have material to pick. Finishing now marks the list Partial."
 
 msgid "This lot is expired and can't be picked."
 msgstr "This lot is expired and can't be picked."
@@ -1063,6 +1208,9 @@ msgstr "Total time: {0}"
 msgid "Total: {0}"
 msgstr "Total: {0}"
 
+msgid "Tracked Entity"
+msgstr "Tracked Entity"
+
 msgid "Tracking"
 msgstr "Tracking"
 
@@ -1084,6 +1232,9 @@ msgstr "Unpick {0}"
 
 msgid "Unsaved changes"
 msgstr "Unsaved changes"
+
+msgid "Up to {maxAllocatable} unit(s) can be allocated; the rest is recorded without a posting."
+msgstr "Up to {maxAllocatable} unit(s) can be allocated; the rest is recorded without a posting."
 
 msgid "Update"
 msgstr "Update"

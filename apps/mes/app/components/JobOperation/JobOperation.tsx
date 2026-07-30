@@ -25,7 +25,6 @@ import {
   Heading,
   HStack,
   IconButton,
-  ModelViewer,
   ScrollArea,
   Separator,
   SidebarTrigger,
@@ -54,8 +53,12 @@ import {
   convertDateStringToIsoString,
   convertKbToString,
   formatDurationMilliseconds,
-  getItemReadableId
+  getItemReadableId,
+  MODEL_RAW_KEEP_MAX_BYTES
 } from "@carbon/utils";
+import { ModelPreview } from "@carbon/viewer/model-preview";
+import { OptimizeProgress } from "@carbon/viewer/optimize-progress";
+import { useOptimizedModel } from "@carbon/viewer/use-optimized-model";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { PostgrestSingleResponse } from "@supabase/supabase-js";
 import { Suspense, useEffect, useMemo, useState } from "react";
@@ -115,7 +118,7 @@ import type {
   TrackedInput
 } from "~/services/types";
 import { useItems } from "~/stores";
-import { path } from "~/utils/path";
+import { getPrivateUrl, getRawModelUrl, path } from "~/utils/path";
 import ItemThumbnail from "../ItemThumbnail";
 import { OperationChat } from "./components/Chat";
 import {
@@ -146,6 +149,7 @@ const log = getLogger("mes", "job-operation");
 type JobOperationProps = {
   events: ProductionEvent[];
   expiredEntityPolicy?: "Warn" | "Block" | "BlockWithOverride";
+  autoSelectMaterialWithoutPickingList?: boolean;
   files: Promise<StorageItem[]>;
   kanban: Kanban | null;
   materials: Promise<{
@@ -212,6 +216,7 @@ function PickedBadge({
 export const JobOperation = ({
   events,
   expiredEntityPolicy = "Block",
+  autoSelectMaterialWithoutPickingList = false,
   files,
   job,
   kanban,
@@ -319,6 +324,25 @@ export const JobOperation = ({
           modelSize: operation.itemModelSize ?? job.modelSize
         }
       : null;
+
+  const modelPath = operation.itemModelPath ?? job.modelPath ?? null;
+  // Prefer the authoritative id (mirrors the modelPath precedence) over deriving
+  // it from the path — legacy paths whose basename isn't the id would otherwise
+  // resolve a phantom id and 404 the artifacts/reoptimise lookups.
+  const modelUploadId = operation.itemModelId ?? job.modelId ?? null;
+  const {
+    artifacts,
+    awaitingModel: modelPending,
+    showOptimizeProgress,
+    backgroundOptimizing,
+    optimizeFailed,
+    canRetry,
+    optimizeQueued,
+    retry: onModelRetry,
+    retryLabel: modelRetryLabel,
+    cancel: onModelCancel,
+    actionBusy: modelActionBusy
+  } = useOptimizedModel({ modelPath, modelUploadId, companyId });
 
   const fetcher = useFetcher<Result>();
 
@@ -1434,7 +1458,20 @@ export const JobOperation = ({
                           {issueModal.isOpen && (
                             <IssueMaterialModal
                               operationId={operation.id}
+                              // The process view issues the whole quantity at
+                              // once, so picked lots may pre-fill when the
+                              // parent is a single entity. The modal enforces
+                              // the full rule: a picking list exists AND (the
+                              // parent is not serialized OR the operation
+                              // makes exactly one unit).
+                              allowPrefill
+                              parentUnitCount={
+                                operation.operationQuantity ?? undefined
+                              }
                               expiredEntityPolicy={expiredEntityPolicy}
+                              autoSelectMaterialWithoutPickingList={
+                                autoSelectMaterialWithoutPickingList
+                              }
                               locationId={locationId}
                               workCenterId={operation.workCenterId ?? undefined}
                               material={selectedMaterial ?? undefined}
@@ -1748,16 +1785,63 @@ export const JobOperation = ({
           </ScrollArea>
         </TabsContent>
         <TabsContent value="model">
-          <div className="w-full h-[calc(100dvh-var(--header-height)*2)] p-0">
-            <ModelViewer
-              file={null}
-              key={`model-${operation.itemModelPath ?? job.modelPath}`}
-              url={`/file/preview/private/${
-                operation.itemModelPath ?? job.modelPath
-              }`}
-              mode={mode}
-              className="rounded-none"
-            />
+          <div className="relative w-full h-[calc(100dvh-var(--header-height)*2)] p-0">
+            {modelPath ? (
+              <ModelPreview
+                key={modelPath}
+                awaitingModel={modelPending}
+                optimizing={backgroundOptimizing}
+                optimizeFailed={optimizeFailed}
+                optimizedUrl={
+                  artifacts?.optimizedModelPath
+                    ? // ?v= busts the immutable preview cache on the STABLE
+                      // optimized.glb path when a re-optimise lands.
+                      `${getPrivateUrl(artifacts.optimizedModelPath)}${
+                        artifacts.optimizedAt
+                          ? `?v=${encodeURIComponent(artifacts.optimizedAt)}`
+                          : ""
+                      }`
+                    : null
+                }
+                glbUrl={
+                  artifacts?.glbPath ? getPrivateUrl(artifacts.glbPath) : null
+                }
+                lodUrl={
+                  artifacts?.lodPath ? getPrivateUrl(artifacts.lodPath) : null
+                }
+                rawUrl={
+                  artifacts?.rawPath &&
+                  (artifacts.size ?? 0) <= MODEL_RAW_KEEP_MAX_BYTES
+                    ? getRawModelUrl(artifacts.rawBucket, artifacts.rawPath)
+                    : null
+                }
+                thumbnailUrl={
+                  artifacts?.thumbnailPath
+                    ? getPrivateUrl(artifacts.thumbnailPath)
+                    : null
+                }
+                mode={mode}
+                className="rounded-none"
+                onRetry={canRetry ? onModelRetry : undefined}
+                retryLabel={modelRetryLabel}
+              />
+            ) : (
+              <div className="flex h-full w-full items-center justify-center">
+                <p className="text-sm text-muted-foreground">
+                  No 3D model attached
+                </p>
+              </div>
+            )}
+            {showOptimizeProgress && (
+              <div className="absolute inset-0 z-30 flex items-center justify-center bg-background/95 p-6">
+                <OptimizeProgress
+                  key={`${modelPath}:${artifacts?.optimizeStatus}`}
+                  queued={optimizeQueued}
+                  onCancel={onModelCancel}
+                  cancelling={modelActionBusy}
+                />
+              </div>
+            )}
           </div>
         </TabsContent>
         <TabsContent value="procedure" className="flex flex-grow">

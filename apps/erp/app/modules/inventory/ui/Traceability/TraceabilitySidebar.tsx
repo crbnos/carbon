@@ -130,11 +130,18 @@ export function TraceabilitySidebar({
   const stepRecordsForActivity = useMemo(() => {
     const list = stepRecordsFetcher.data?.stepRecords ?? [];
     if (!activity || list.length === 0) return [];
-    const opId = (activity.attributes as Record<string, any> | null)?.[
-      "Job Operation"
-    ];
+    const attrs = activity.attributes as Record<string, any> | null;
+    const opId = attrs?.["Job Operation"];
     if (!opId) return [];
-    return list.filter((r) => r.operationId === opId);
+    // A production activity is scoped to one unit (its "Unit" is the 0-based
+    // unit-axis index that step records key off). Isolate this unit's records
+    // from the operation's other units. Activities without a Unit (older data
+    // or the operation view) fall back to all records for the operation.
+    const unit = attrs?.Unit;
+    const hasUnit = typeof unit === "number";
+    return list.filter(
+      (r) => r.operationId === opId && (!hasUnit || r.index === unit)
+    );
   }, [activity, stepRecordsFetcher.data]);
 
   const containmentsForEntity = useMemo(() => {
@@ -145,7 +152,7 @@ export function TraceabilitySidebar({
   const hasMultiSelect = selectedIds && selectedIds.length > 1;
 
   return (
-    <aside className="w-[426px] flex-shrink-0 bg-sidebar h-full overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent border-l border-border text-sm">
+    <aside className="w-[426px] flex-shrink-0 bg-card h-full overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent border-l border-border text-sm">
       {hasMultiSelect && (
         <div className="flex items-center justify-between gap-2 bg-muted/40 mx-3 mt-3 rounded-md px-2 py-1">
           <div className="flex items-center gap-2 min-w-0">

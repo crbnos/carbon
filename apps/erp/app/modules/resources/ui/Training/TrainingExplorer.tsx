@@ -4,7 +4,6 @@ import {
   Input,
   MultiSelect,
   Number,
-  Select,
   SelectControlled,
   Submit,
   useFormContext,
@@ -775,7 +774,7 @@ function OptionsWithCorrectAnswers({
       <ArrayInput name="options" label={t`Options`} />
 
       {type === "MultipleChoice" && (
-        <Select
+        <SelectControlled
           name="correctAnswers"
           label={t`Correct Answer`}
           options={answerOptions}

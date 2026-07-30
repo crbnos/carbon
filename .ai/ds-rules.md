@@ -97,7 +97,7 @@ When modifying a file, fix any DS violations you encounter on the lines you touc
 
 ## Cross-References
 
-- Full UI conventions: `.ai/rules/conventions-ui.md`
-- Form conventions: `.ai/rules/conventions-forms.md`
+- Full UI conventions: `.claude/rules/conventions-ui.md`
+- Form conventions: `.claude/rules/conventions-forms.md`
 - Component source: `packages/react/src/`
 - Form components: `apps/erp/app/components/Form/`

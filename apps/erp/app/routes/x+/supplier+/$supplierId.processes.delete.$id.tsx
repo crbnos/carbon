@@ -12,6 +12,7 @@ import { useRouteData } from "~/hooks";
 import type { SupplierProcess } from "~/modules/purchasing";
 import { deleteSupplierProcess } from "~/modules/purchasing";
 import { path } from "~/utils/path";
+import { supplierProcessesQuery } from "~/utils/react-query";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -38,10 +39,17 @@ export async function action({ request, params }: ActionFunctionArgs) {
   return redirect(path.to.supplierProcesses(supplierId));
 }
 
-export async function clientAction({ serverAction }: ClientActionFunctionArgs) {
-  window.clientCache?.invalidateQueries({
-    queryKey: ["supplierProcesses"]
-  });
+export async function clientAction({
+  request,
+  serverAction
+}: ClientActionFunctionArgs) {
+  const processId = new URL(request.url).searchParams.get("processId");
+  if (processId) {
+    window.clientCache?.setQueryData(
+      supplierProcessesQuery(processId).queryKey,
+      null
+    );
+  }
   return await serverAction();
 }
 
@@ -61,7 +69,9 @@ export default function DeleteSupplierProcessRoute() {
 
   return (
     <ConfirmDelete
-      action={path.to.deleteSupplierProcess(supplierId, id)}
+      action={`${path.to.deleteSupplierProcess(supplierId, id)}?processId=${
+        process?.processId
+      }`}
       isOpen
       name={process.processName!}
       text={t`Are you sure you want to permanently delete the supplier process?`}

@@ -37,15 +37,17 @@ pnpm --filter @carbon/database typecheck
 | `.` (index) | `Database` type, `fetchAllFromTable`, `fetchAllRecords`, `fetchRecordsInBatches` |
 | `./client` | `Kysely`, `KyselyDatabase`, Postgres pool factories (`getPostgresClient`, `getPostgresConnectionPool`) |
 | `./event` | `QueueMessage`, `EventSchema`, `createEventSystemSubscription`, `deleteEventSystemSubscription` |
-| `./audit` | `auditConfig`, entity/table lookup helpers, `AuditEntityType` |
+| `./quality` | Inspection execution engine shared by ERP + MES (`upsertInspectionSample`, `upsertInspectionMeasurement`, `dispositionInspection` — optional one-shot `requireOpen`, `reconcileInspectionSamplingPlans`, `changeInspectionDocument`, `getOrCreateJobOperationInspection`, pure `valuateMeasurement`); Passed/Failed/Partial are all hard-terminal and samples linked from `productionQuantity.inspectionSampleId` are locked; every fn takes a `Kysely<KyselyDatabase>` first arg — authorize at the route, see `.claude/rules/inspection-system.md` |
+| `./sampling` | Node-side re-export of `supabase/functions/shared/sampling-engine.ts` (Z1.4 / ISO 2859-1 resolvers) |
+| `./audit` | Audit-log functions (`getEntityAuditLog`, `enableAuditLog`, `syncAuditSubscriptions`, …); `auditConfig` + `AuditEntityType` come from the separate `./audit.config` subpath |
 | `./ratelimit` | `checkApiKeyRateLimit` (Postgres RPC wrapper) |
 
 ## Cross-References
 
-- `.ai/rules/conventions-database.md` — table template, column types, migration checklist
-- `.ai/rules/database-patterns.md` — client factories, services, Kysely transactions
-- `.ai/rules/database-migration-patterns.md` — SQL conventions, enums, triggers, RLS for tables without `companyId`
-- `.ai/rules/event-system.md` — trigger dispatch, PGMQ queue, handler types
+- `.claude/rules/conventions-database.md` — table template, column types, migration checklist
+- `.claude/rules/database-patterns.md` — client factories, services, Kysely transactions
+- `.claude/rules/database-migration-patterns.md` — SQL conventions, enums, triggers, RLS for tables without `companyId`
+- `.claude/rules/event-system.md` — trigger dispatch, PGMQ queue, handler types
 - `packages/auth/` — Supabase client factories (`getCarbon`, `getCarbonServiceRole`)
 - `packages/jobs/` — Inngest event handlers that consume the event queue
 - `supabase/functions/lib/logging.ts` — Deno-native logger (`getFunctionLogger`) mirroring `@carbon/logger`; use it instead of `console.*` in edge functions (`@logtape/*` via `deno.json` jsr imports)

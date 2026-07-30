@@ -5,6 +5,24 @@ export type IntegrationAction = {
   label: string;
   description: string;
   endpoint: string;
+  /**
+   * Name of a boolean setting that must be enabled for this action to be shown.
+   * Omit to always show the action on an installed integration.
+   */
+  enabledWhenSetting?: string;
+};
+
+/**
+ * A quick-install connector: an external link-out with no DB state, shown
+ * above the integrations grid. Each user connects individually.
+ */
+export type QuickInstallConnector = {
+  id: string;
+  name: string;
+  description: string;
+  badge: string;
+  installUrl: string;
+  logo: React.FC<React.ComponentProps<"svg">>;
 };
 
 /**

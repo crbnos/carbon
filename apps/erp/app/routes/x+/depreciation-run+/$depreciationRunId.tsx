@@ -18,6 +18,7 @@ import {
   useDisclosure
 } from "@carbon/react";
 import { formatDate } from "@carbon/utils";
+import { msg } from "@lingui/core/macro";
 import { LuEllipsisVertical, LuRepeat, LuTrash } from "react-icons/lu";
 import type { LoaderFunctionArgs } from "react-router";
 import {
@@ -36,13 +37,16 @@ import {
   getDepreciationRun,
   getDepreciationRunLines
 } from "~/modules/accounting";
+import { depreciationRunLineDisplay } from "~/modules/accounting/accounting.utils";
 import { DepreciationRunStatus } from "~/modules/accounting/ui/FixedAssets";
-import type { Handle } from "~/utils/handle";
+import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
 export const handle: Handle = {
-  breadcrumb: "Depreciation",
-  to: path.to.depreciationRuns
+  breadcrumb: detailBreadcrumb(
+    { breadcrumb: msg`Depreciation`, to: path.to.depreciationRuns },
+    (data) => data?.run?.depreciationRunId
+  )
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -202,8 +206,18 @@ export default function DepreciationRunDetailRoute() {
                   lines.map((line, index) => {
                     const asset = line.fixedAsset as any;
                     const cost = Number(asset?.acquisitionCost ?? 0);
-                    const accDepr = Number(asset?.accumulatedDepreciation ?? 0);
-                    const nbvAfter = cost - accDepr - Number(line.amount);
+                    const amount = Number(line.amount);
+                    const {
+                      accumulatedDepreciationBefore: accDepr,
+                      netBookValueAfter: nbvAfter
+                    } = depreciationRunLineDisplay({
+                      acquisitionCost: cost,
+                      accumulatedDepreciation: Number(
+                        asset?.accumulatedDepreciation ?? 0
+                      ),
+                      amount,
+                      isPosted
+                    });
                     return (
                       <div
                         key={line.id}
@@ -234,7 +248,7 @@ export default function DepreciationRunDetailRoute() {
                           {currencyFormatter.format(accDepr)}
                         </div>
                         <div className="text-right tabular-nums font-medium">
-                          {currencyFormatter.format(Number(line.amount))}
+                          {currencyFormatter.format(amount)}
                         </div>
                         {taxDepreciationEnabled && (
                           <div className="text-right tabular-nums font-medium">

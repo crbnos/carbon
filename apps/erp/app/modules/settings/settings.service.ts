@@ -18,6 +18,7 @@ import {
 import type { JSONContent } from "@carbon/react";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { z } from "zod";
+import type { plmReleaseControl as plmReleaseControlOptions } from "~/modules/items/items.models";
 import type { GenericQueryFilters } from "~/utils/query";
 import { setGenericQueryFilters } from "~/utils/query";
 import { interpolateSequenceDate } from "~/utils/string";
@@ -1010,6 +1011,17 @@ export async function updateMetricSettings(
     .eq("id", companyId);
 }
 
+export async function updatePlmReleaseControlSetting(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  plmReleaseControl: (typeof plmReleaseControlOptions)[number]
+) {
+  return client
+    .from("companySettings")
+    .update(sanitize({ plmReleaseControl }))
+    .eq("id", companyId);
+}
+
 export async function updateProductLabelSize(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1039,6 +1051,19 @@ export async function updateLeadTimesOnReceiptSetting(
 ) {
   return (client.from("companySettings") as any)
     .update(sanitize({ updateLeadTimesOnReceipt }))
+    .eq("id", companyId);
+}
+
+export async function updateIncludeMaterialsOnTravelerSetting(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  includeMaterialsOnTraveler: boolean
+) {
+  // Cast: the includeMaterialsOnTraveler column is added by migration
+  // 20260728151742 but isn't in the generated types until they're regenerated
+  // against the migrated DB (mirrors updateLeadTimesOnReceiptSetting).
+  return (client.from("companySettings") as any)
+    .update(sanitize({ includeMaterialsOnTraveler }))
     .eq("id", companyId);
 }
 
@@ -1367,6 +1392,28 @@ export async function updateShowCustomerReadableIdSetting(
   return client
     .from("companySettings")
     .update(sanitize({ showCustomerReadableId }))
+    .eq("id", companyId);
+}
+
+export async function updateAutoSelectMaterialWithoutPickingListSetting(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  autoSelectMaterialWithoutPickingList: boolean
+) {
+  return client
+    .from("companySettings")
+    .update(sanitize({ autoSelectMaterialWithoutPickingList }))
+    .eq("id", companyId);
+}
+
+export async function updateIncompletePickingListPolicySetting(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  incompletePickingListPolicy: "warn" | "error"
+) {
+  return client
+    .from("companySettings")
+    .update(sanitize({ incompletePickingListPolicy }))
     .eq("id", companyId);
 }
 

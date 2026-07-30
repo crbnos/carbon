@@ -88,6 +88,13 @@ export type Events = {
       // each step's motion to avoid collision with parts from earlier steps, then
       // updates the step motions in place. Mutually exclusive with reordering.
       reMotionFor?: string;
+      // Fresh regenerate: re-detect groups from scratch. When set, the worker
+      // sends only USER-authored units to the planner (auto-detected swarm units
+      // are excluded) so detection re-runs — WITHOUT deleting the materialized
+      // `assemblyUnit` rows up front. The rows are swapped atomically when the
+      // new plan's steps are generated, so a failed/late generate leaves the old
+      // grouped state intact instead of stranding the model ungrouped.
+      reDetectUnits?: boolean;
       // A pre-created `assemblyPlanJob` row (status Queued) the worker should
       // adopt instead of inserting its own. User-facing triggers create the row
       // synchronously so the UI reflects "planning" immediately — the worker's
@@ -101,6 +108,43 @@ export type Events = {
   "carbon/model-thumbnail": {
     data: {
       modelId: string;
+      companyId: string;
+    };
+  };
+
+  // Eager model optimisation on upload (mesh inputs → compact optimised GLB)
+  "carbon/assembler-job-done": {
+    data: {
+      /** The assembler job id the waiting run matches on. */
+      jobId: string;
+      /** Terminal public status: succeeded | failed | canceled. */
+      status: string;
+      result: unknown;
+      stats: unknown;
+      error: { code?: string; message?: string } | null;
+    };
+  };
+  "carbon/model-optimize": {
+    data: {
+      modelUploadId: string;
+      companyId: string;
+      userId: string;
+      // format is derived from the stored file inside the job, not passed here.
+      // Force a fresh optimise of an already-Successful model (the badge's
+      // refresh action) — bypasses the already-optimized guard and mints a
+      // fresh assembler job id (the stable id would attach to the previous
+      // run's cached result and finish instantly).
+      force?: boolean;
+    };
+  };
+
+  // Compact the retained raw (STEP → BinXCAF `.xbf.zst`, mesh → `.{ext}.zst`)
+  // so it never lingers as the fat upload. Fired after model-optimize settles
+  // (success, already-optimized, or failure) — decoupled so an optimize
+  // failure can't strand a fat raw for the prune to delete.
+  "carbon/model-compact": {
+    data: {
+      modelUploadId: string;
       companyId: string;
     };
   };
@@ -293,7 +337,8 @@ export type Events = {
     };
   };
 
-  // Event queue processing (PGMQ consumer)
+  // Wake event for the PGMQ drainer (event-queue). Pushed by the database via
+  // the event-wake edge function whenever events are enqueued or pending.
   "carbon/event-queue.process": {
     data: Record<string, never>;
   };
@@ -453,6 +498,33 @@ export type Events = {
         vendors?: boolean;
         items?: boolean;
       };
+    };
+  };
+
+  // Onshape released-asset backfill / reconcile
+  "carbon/onshape-backfill": {
+    data: {
+      companyId: string;
+      userId: string;
+      onshapeCompanyId?: string;
+      after?: string;
+      pageLimit?: number;
+    };
+  };
+
+  // Onshape go-forward sync: one released revision (from the
+  // onshape.revision.created webhook) -> attach assets to the matching item
+  "carbon/onshape-revision-sync": {
+    data: {
+      companyId: string;
+      userId: string;
+      messageId: string; // Onshape webhook messageId — idempotency key
+      partNumber: string;
+      documentId: string;
+      versionId: string;
+      elementId: string;
+      elementType: number; // 0 = part studio, 1 = assembly, 2 = drawing
+      revisionId?: string;
     };
   };
 

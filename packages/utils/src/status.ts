@@ -34,7 +34,11 @@ export const getSalesOrderStatus = (
   );
 
   const allShipped = lines.every(
-    (line) => line.salesOrderLineType === "Comment" || line.sentComplete
+    (line) =>
+      line.salesOrderLineType === "Comment" ||
+      // Services are never shipped — they can't block shipping completeness
+      line.salesOrderLineType === "Service" ||
+      line.sentComplete
   );
 
   let status: Database["public"]["Tables"]["salesOrder"]["Row"]["status"] =
@@ -71,6 +75,8 @@ export const getPurchaseOrderStatus = (
     (line) =>
       line.purchaseOrderLineType === "Comment" ||
       line.purchaseOrderLineType === "G/L Account" ||
+      // Services are never received — they can't block receipt completeness
+      line.purchaseOrderLineType === "Service" ||
       line.receivedComplete
   );
 
@@ -100,8 +106,16 @@ export const getSalesOrderJobStatus = (
     (acc, job) => acc + (job.productionQuantity ?? 0),
     0
   );
+  // A job's quantityComplete persists after the job is reopened, so completion
+  // must be gated on the job actually being in a completed status. Otherwise a
+  // reopened (In Progress) job that still has quantityComplete >= saleQuantity
+  // would keep the line reading "Completed" (or "Shipped").
   const totalCompleted = filteredJobs.reduce(
-    (acc, job) => acc + job.quantityComplete,
+    (acc, job) =>
+      acc +
+      (["Completed", "Closed"].includes(job.status ?? "")
+        ? job.quantityComplete
+        : 0),
     0
   );
   const totalReleased = filteredJobs.reduce((acc, job) => {

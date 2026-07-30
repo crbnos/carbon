@@ -1,16 +1,192 @@
+import { toDisplayCredit, toDisplayDebit } from "@carbon/utils";
 import { describe, expect, it } from "vitest";
 import {
+  acquisitionLines,
   addOneMonth,
   buildDepreciationLines,
   calculateDepreciation,
   calculateMacrsDepreciation,
   calculateTaxDepreciation,
+  computeDisposalGainLoss,
+  depreciationRunLineDisplay,
   getLastDayOfMonth,
   getMacrsPercentage,
   getMonthsBetween,
   getMonthsElapsed,
   getNextPeriodEnd
 } from "./accounting.utils";
+
+// ---------------------------------------------------------------------------
+// Acquisition (registration opening entry)
+// ---------------------------------------------------------------------------
+
+describe("acquisitionLines", () => {
+  // Map each line's role to the account class its amount is stored against, so
+  // we can assert the entry balances (display debits === display credits).
+  const roleClass = {
+    asset: "Asset",
+    accumulatedDepreciation: "Asset",
+    offset: "Equity"
+  } as const;
+
+  const totals = (lines: ReturnType<typeof acquisitionLines>) =>
+    lines.reduce(
+      (acc, line) => {
+        const cls = roleClass[line.role];
+        acc.debit += toDisplayDebit(line.amount, cls);
+        acc.credit += toDisplayCredit(line.amount, cls);
+        return acc;
+      },
+      { debit: 0, credit: 0 }
+    );
+
+  it("emits the original two-line entry when there is no prior depreciation", () => {
+    const lines = acquisitionLines(100000);
+    expect(lines).toHaveLength(2);
+    // Dr Fixed Asset at gross cost, Cr owner equity at full cost (NBV === cost)
+    expect(lines[0]).toMatchObject({ role: "asset", amount: 100000 });
+    expect(lines[1]).toMatchObject({ role: "offset", amount: 100000 });
+
+    const { debit, credit } = totals(lines);
+    expect(debit).toBe(100000);
+    expect(credit).toBe(100000);
+  });
+
+  it("defaults accumulatedDepreciation to 0 (backward compatible)", () => {
+    expect(acquisitionLines(50000)).toEqual(acquisitionLines(50000, 0));
+  });
+
+  it("emits a three-line entry crediting opening accumulated depreciation", () => {
+    // cost 100k, prior accum dep 40k → NBV 60k
+    const lines = acquisitionLines(100000, 40000);
+    expect(lines).toHaveLength(3);
+    expect(lines[0]).toMatchObject({ role: "asset", amount: 100000 });
+    // credit to a natural-debit (Asset contra) account is stored negative
+    expect(lines[1]).toMatchObject({
+      role: "accumulatedDepreciation",
+      amount: -40000
+    });
+    // owner equity is credited only the net book value, not gross cost
+    expect(lines[2]).toMatchObject({ role: "offset", amount: 60000 });
+
+    const { debit, credit } = totals(lines);
+    // Dr 100k === Cr (40k accum dep + 60k equity)
+    expect(debit).toBe(100000);
+    expect(credit).toBe(100000);
+  });
+
+  it("allows accumulated depreciation equal to acquisition cost (NBV 0)", () => {
+    const lines = acquisitionLines(100000, 100000);
+    const { debit, credit } = totals(lines);
+    expect(debit).toBe(100000);
+    expect(credit).toBe(100000);
+  });
+
+  it("throws when accumulated depreciation exceeds acquisition cost", () => {
+    expect(() => acquisitionLines(100000, 120000)).toThrow(
+      /Accumulated depreciation cannot exceed/
+    );
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Disposal gain/loss
+// ---------------------------------------------------------------------------
+
+describe("computeDisposalGainLoss", () => {
+  it("books a gain as a credit (negative stored amount) to the disposal account", () => {
+    // proceeds 1000, NBV 600 → gain 400 credited (income)
+    const { gainLoss, disposalStoredAmount } = computeDisposalGainLoss(
+      1000,
+      600
+    );
+    expect(gainLoss).toBe(400);
+    expect(disposalStoredAmount).toBe(-400);
+  });
+
+  it("books a loss as a debit (positive stored amount) to the disposal account", () => {
+    // proceeds 250, NBV 600 → loss 350 debited (expense)
+    const { gainLoss, disposalStoredAmount } = computeDisposalGainLoss(
+      250,
+      600
+    );
+    expect(gainLoss).toBe(-350);
+    expect(disposalStoredAmount).toBe(350);
+  });
+
+  it("returns a zero stored amount when proceeds equal NBV (no line needed)", () => {
+    const { gainLoss, disposalStoredAmount } = computeDisposalGainLoss(
+      600,
+      600
+    );
+    expect(gainLoss).toBe(0);
+    expect(disposalStoredAmount).toBe(0);
+  });
+
+  it("treats a scrap (zero proceeds) as a full loss of the net book value", () => {
+    const { gainLoss, disposalStoredAmount } = computeDisposalGainLoss(0, 800);
+    expect(gainLoss).toBe(-800);
+    expect(disposalStoredAmount).toBe(800);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Depreciation-run line display (NBV After)
+// ---------------------------------------------------------------------------
+
+describe("depreciationRunLineDisplay", () => {
+  // cost 100k, 20k already depreciated, this run adds 4k → NBV after = 76k.
+  const cost = 100_000;
+  const amount = 4_000;
+  const priorAccumulated = 20_000;
+
+  it("computes accumulated-before and NBV-after for a Draft run", () => {
+    // Draft: the asset's live accumulated depreciation is still the pre-run
+    // balance (this run has not posted yet).
+    const { accumulatedDepreciationBefore, netBookValueAfter } =
+      depreciationRunLineDisplay({
+        acquisitionCost: cost,
+        accumulatedDepreciation: priorAccumulated,
+        amount,
+        isPosted: false
+      });
+    expect(accumulatedDepreciationBefore).toBe(20_000);
+    expect(netBookValueAfter).toBe(76_000);
+  });
+
+  it("shows the same figures once Posted (no double-count of the amount)", () => {
+    // After posting, postDepreciationRun has folded this run's amount into the
+    // asset's accumulated depreciation (20k + 4k = 24k). NBV After must stay
+    // 76k — the pre-posting value — not drop to 72k.
+    const { accumulatedDepreciationBefore, netBookValueAfter } =
+      depreciationRunLineDisplay({
+        acquisitionCost: cost,
+        accumulatedDepreciation: priorAccumulated + amount,
+        amount,
+        isPosted: true
+      });
+    expect(accumulatedDepreciationBefore).toBe(20_000);
+    expect(netBookValueAfter).toBe(76_000);
+  });
+
+  it("keeps the row arithmetic cost − accumulated − amount = NBV after", () => {
+    for (const isPosted of [false, true]) {
+      const accumulatedDepreciation = isPosted
+        ? priorAccumulated + amount
+        : priorAccumulated;
+      const { accumulatedDepreciationBefore, netBookValueAfter } =
+        depreciationRunLineDisplay({
+          acquisitionCost: cost,
+          accumulatedDepreciation,
+          amount,
+          isPosted
+        });
+      expect(cost - accumulatedDepreciationBefore - amount).toBe(
+        netBookValueAfter
+      );
+    }
+  });
+});
 
 // ---------------------------------------------------------------------------
 // Date helpers

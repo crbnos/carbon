@@ -32,6 +32,7 @@ import {
 } from "react-router";
 import z from "zod";
 import { zfd } from "zod-form-data";
+import { actionTaskStatusActions } from "~/components/ActionTasks/ActionTaskCard";
 import { getSupplier } from "~/modules/purchasing";
 import type { IssueActionTask } from "~/modules/quality";
 import {
@@ -41,7 +42,7 @@ import {
   updateIssueTaskContent,
   updateIssueTaskStatus
 } from "~/modules/quality";
-import { statusActions, TaskProgress } from "~/modules/quality/ui/Issue";
+import { TaskProgress } from "~/modules/quality/ui/Issue";
 import IssueStatus from "~/modules/quality/ui/Issue/IssueStatus";
 import { getCompany } from "~/modules/settings";
 import { getExternalLink } from "~/modules/shared";
@@ -361,7 +362,7 @@ export function TaskItem({
     task,
     type
   });
-  const statusAction = statusActions[currentStatus];
+  const statusAction = actionTaskStatusActions[currentStatus];
   const { content, setContent, onUpdateContent } = useTaskNotes({
     initialContent: (task.notes ?? {}) as JSONContent,
     taskId: task.id!,
@@ -429,7 +430,7 @@ export function TaskItem({
             variant="secondary"
             size="sm"
             onClick={() => {
-              onOperationStatusChange(task.id!, statusAction.status);
+              onOperationStatusChange(task.id!, statusAction.next);
             }}
           >
             {statusAction.action}

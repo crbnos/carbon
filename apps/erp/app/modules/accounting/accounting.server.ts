@@ -1,6 +1,7 @@
 import type { Kysely, KyselyDatabase, KyselyTx } from "@carbon/database/client";
 import { toStoredAmount } from "@carbon/utils";
 import { interpolateSequenceDate } from "~/utils/string";
+import { acquisitionLines } from "./accounting.utils";
 
 async function getNextSequence(
   trx: KyselyTx,
@@ -47,7 +48,7 @@ export async function postDisposal(
     fixedAssetClassId: string;
     assetAccountId: string;
     accumulatedDepreciationAccountId: string;
-    writeOffAccountId: string;
+    lossOnDisposalAccountId: string;
     accountingPeriodId: string;
     locationDimensionId: string | undefined;
     assetClassDimensionId: string | undefined;
@@ -66,7 +67,7 @@ export async function postDisposal(
     fixedAssetClassId,
     assetAccountId,
     accumulatedDepreciationAccountId,
-    writeOffAccountId,
+    lossOnDisposalAccountId,
     accountingPeriodId,
     locationDimensionId,
     assetClassDimensionId,
@@ -122,10 +123,13 @@ export async function postDisposal(
     }
 
     if (nbv > 0) {
+      // Scrap has no proceeds, so the entire net book value is a loss booked to
+      // the dedicated Loss on Disposal account (not comingled with the write-off
+      // account). gainLoss = 0 − nbv = −nbv → a full debit (loss).
       journalLines.push({
         journalId: journal.id,
-        accountId: writeOffAccountId,
-        description: "Write-off remaining book value",
+        accountId: lossOnDisposalAccountId,
+        description: "Loss on disposal (scrap)",
         amount: toStoredAmount(nbv, 0, "Expense"),
         journalLineReference: crypto.randomUUID(),
         companyId
@@ -200,7 +204,157 @@ export async function postDisposal(
         updatedBy: userId
       })
       .where("id", "=", fixedAssetId)
+      .where("companyId", "=", companyId)
       .execute();
+  });
+}
+
+export async function postAssetRegistration(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    fixedAssetId: string;
+    fixedAssetReadableId: string;
+    registration: {
+      acquisitionCost: number;
+      acquisitionDate: string;
+      accumulatedDepreciation: number;
+      depreciationStartDate: string;
+    };
+    locationId: string | null;
+    fixedAssetClassId: string;
+    assetAccountId: string;
+    // Contra-asset account credited with any opening accumulated depreciation
+    // when the asset is capitalized mid-life (from the asset class).
+    accumulatedDepreciationAccountId: string;
+    // Equity offset for a direct (non-purchase) registration — owner equity /
+    // retained earnings. Brings the asset onto the books at NBV.
+    offsetAccountId: string;
+    accountingPeriodId: string;
+    locationDimensionId: string | undefined;
+    assetClassDimensionId: string | undefined;
+    companyId: string;
+    userId: string;
+  }
+) {
+  const {
+    fixedAssetId,
+    fixedAssetReadableId,
+    registration,
+    locationId,
+    fixedAssetClassId,
+    assetAccountId,
+    accumulatedDepreciationAccountId,
+    offsetAccountId,
+    accountingPeriodId,
+    locationDimensionId,
+    assetClassDimensionId,
+    companyId,
+    userId
+  } = args;
+
+  const { acquisitionCost, acquisitionDate, accumulatedDepreciation } =
+    registration;
+  const now = new Date().toISOString();
+
+  return db.transaction().execute(async (trx) => {
+    // Post the acquisition journal FIRST, then flip the asset to Active — so a
+    // capitalized asset can never exist without its GL entry (if the journal
+    // fails the whole transaction rolls back and the asset stays Draft).
+    //   Dr  assetAccountId                     acquisitionCost           (capitalize at gross cost)
+    //       Cr  accumulatedDepreciationAccountId   accumulatedDepreciation   (opening contra, mid-life only)
+    //       Cr  offsetAccountId                    nbv                       (owner equity)
+    const journalEntryId = await getNextSequence(
+      trx,
+      "journalEntry",
+      companyId
+    );
+
+    const journal = await trx
+      .insertInto("journal")
+      .values({
+        journalEntryId,
+        accountingPeriodId,
+        companyId,
+        description: `Asset Registration: ${fixedAssetReadableId}`,
+        postingDate: acquisitionDate,
+        sourceType: "Manual",
+        status: "Posted",
+        postedAt: now,
+        postedBy: userId,
+        createdBy: userId
+      })
+      .returning(["id"])
+      .executeTakeFirstOrThrow();
+
+    const journalLineResults = await trx
+      .insertInto("journalLine")
+      .values(
+        acquisitionLines(acquisitionCost, accumulatedDepreciation).map(
+          (line) => ({
+            journalId: journal.id,
+            accountId:
+              line.role === "asset"
+                ? assetAccountId
+                : line.role === "accumulatedDepreciation"
+                  ? accumulatedDepreciationAccountId
+                  : offsetAccountId,
+            description: line.description,
+            amount: line.amount,
+            journalLineReference: crypto.randomUUID(),
+            companyId
+          })
+        )
+      )
+      .returning(["id"])
+      .execute();
+
+    if (locationDimensionId && locationId) {
+      await trx
+        .insertInto("journalLineDimension")
+        .values(
+          journalLineResults.map((jl) => ({
+            journalLineId: jl.id,
+            dimensionId: locationDimensionId,
+            valueId: locationId,
+            companyId
+          }))
+        )
+        .execute();
+    }
+
+    if (assetClassDimensionId && fixedAssetClassId) {
+      await trx
+        .insertInto("journalLineDimension")
+        .values(
+          journalLineResults.map((jl) => ({
+            journalLineId: jl.id,
+            dimensionId: assetClassDimensionId,
+            valueId: fixedAssetClassId,
+            companyId
+          }))
+        )
+        .execute();
+    }
+
+    const updateResult = await trx
+      .updateTable("fixedAsset")
+      .set({
+        status: "Active",
+        acquisitionCost: registration.acquisitionCost,
+        acquisitionDate: registration.acquisitionDate,
+        accumulatedDepreciation: registration.accumulatedDepreciation,
+        depreciationStartDate: registration.depreciationStartDate,
+        updatedBy: userId
+      })
+      .where("id", "=", fixedAssetId)
+      .where("status", "=", "Draft")
+      .where("companyId", "=", companyId)
+      .executeTakeFirst();
+
+    if (!updateResult.numUpdatedRows) {
+      // Lost the race (already registered/disposed) — roll back the journal.
+      throw new Error("Asset is no longer in Draft status");
+    }
   });
 }
 

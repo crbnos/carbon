@@ -15,9 +15,10 @@ import { useMemo, useRef, useState } from "react";
 import ConsumableForm from "~/modules/items/ui/Consumables/ConsumableForm";
 import MaterialForm from "~/modules/items/ui/Materials/MaterialForm";
 import PartForm from "~/modules/items/ui/Parts/PartForm";
+import ServiceForm from "~/modules/items/ui/Services/ServiceForm";
 import ToolForm from "~/modules/items/ui/Tools/ToolForm";
-import type { MethodItemType } from "~/modules/shared";
-import { methodItemType } from "~/modules/shared";
+import type { ItemType } from "~/modules/shared";
+import { itemType } from "~/modules/shared";
 import { useItems } from "~/stores";
 import { MethodItemTypeIcon } from "../Icons";
 import { useEmptyState } from "./emptyStates";
@@ -26,7 +27,7 @@ type ItemsSelectProps = Omit<CreatableMultiSelectProps, "options">;
 
 const Items = (props: ItemsSelectProps) => {
   const { t } = useLingui();
-  const translateType = (type: MethodItemType) => {
+  const translateType = (type: ItemType) => {
     switch (type) {
       case "Part":
         return t`Part`;
@@ -36,6 +37,8 @@ const Items = (props: ItemsSelectProps) => {
         return t`Tool`;
       case "Consumable":
         return t`Consumable`;
+      case "Service":
+        return t`Service`;
       default:
         return type;
     }
@@ -44,7 +47,7 @@ const Items = (props: ItemsSelectProps) => {
   const selectTypeModal = useDisclosure();
   const newItemsModal = useDisclosure();
   const [created, setCreated] = useState<string>("");
-  const [type, setType] = useState<MethodItemType>("Part");
+  const [type, setType] = useState<ItemType>("Part");
   const triggerRef = useRef<HTMLButtonElement>(null);
 
   const options = useMemo(
@@ -101,17 +104,17 @@ const Items = (props: ItemsSelectProps) => {
               </ModalTitle>
             </ModalHeader>
             <ModalBody>
-              <div className="grid grid-cols-2 gap-4">
-                {Object.values(methodItemType).map((itemType) => (
+              <div className="grid grid-cols-1 gap-4">
+                {itemType.map((option) => (
                   <Button
-                    key={itemType}
-                    leftIcon={<MethodItemTypeIcon type={itemType} />}
+                    key={option}
+                    leftIcon={<MethodItemTypeIcon type={option} />}
                     className="flex w-full"
-                    variant={type === itemType ? "primary" : "secondary"}
+                    variant={type === option ? "primary" : "secondary"}
                     size="lg"
-                    onClick={() => setType(itemType)}
+                    onClick={() => setType(option)}
                   >
-                    {translateType(itemType)}
+                    {translateType(option)}
                   </Button>
                 ))}
               </div>
@@ -207,6 +210,25 @@ const Items = (props: ItemsSelectProps) => {
             unitOfMeasureCode: "EA",
             replenishmentSystem: "Buy",
             defaultMethodType: "Pull from Inventory",
+            unitCost: 0,
+            shelfLifeCalculateFromBom: false,
+            tags: []
+          }}
+        />
+      )}
+      {type === "Service" && newItemsModal.isOpen && (
+        <ServiceForm
+          type="modal"
+          onClose={handleCreateClose}
+          initialValues={{
+            id: "",
+            revision: "0",
+            name: created,
+            description: "",
+            itemTrackingType: "Non-Inventory",
+            unitOfMeasureCode: "EA",
+            replenishmentSystem: "Buy",
+            defaultMethodType: "Purchase to Order",
             unitCost: 0,
             shelfLifeCalculateFromBom: false,
             tags: []

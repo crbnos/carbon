@@ -1,5 +1,9 @@
 import type { Database } from "@carbon/database";
 import type {
+  getChangeNotice,
+  getChangeNoticeActions,
+  getChangeNotices,
+  getChangeNoticeTypes,
   getConfigurationParameters,
   getConfigurationRules,
   getConsumable,
@@ -27,6 +31,7 @@ import type {
   getPart,
   getParts,
   getPickMethods,
+  getService,
   getServices,
   getSupplierParts,
   getTool,
@@ -34,6 +39,37 @@ import type {
   getUnitOfMeasure,
   getUnitOfMeasuresList
 } from "./items.service";
+
+export type ItemRevisionStatus =
+  Database["public"]["Enums"]["itemRevisionStatus"];
+
+// The single change notice (base table, NOT-NULL columns) — the shape detail
+// routes and the properties/header/explorer components consume via useRouteData.
+export type ChangeNotice = NonNullable<
+  Awaited<ReturnType<typeof getChangeNotice>>["data"]
+>;
+
+// A row of the change-notices LIST — the `changeOrders` view, which additionally
+// rolls up `itemIds` (text[]) and `affectedItems` (jsonb) per CN. View columns are
+// all nullable, so this is a distinct type from the single-CN `ChangeNotice`.
+export type ChangeNoticeListItem = NonNullable<
+  Awaited<ReturnType<typeof getChangeNotices>>["data"]
+>[number];
+
+export type ChangeNoticeType = NonNullable<
+  Awaited<ReturnType<typeof getChangeNoticeTypes>>["data"]
+>[number];
+
+export type ChangeNoticeStatus =
+  Database["public"]["Enums"]["changeOrderStatus"];
+
+// Includes the `linearIssue` / `jiraIssue` mappings that `getChangeNoticeActions` hydrates.
+export type ChangeNoticeActionTask = NonNullable<
+  Awaited<ReturnType<typeof getChangeNoticeActions>>["data"]
+>[number];
+
+export type ChangeNoticeRequiredAction =
+  Database["public"]["Tables"]["changeOrderRequiredAction"]["Row"];
 
 export type MaterialConfigurationData = {
   materialId?: string;
@@ -171,7 +207,9 @@ export type Service = NonNullable<
   Awaited<ReturnType<typeof getServices>>["data"]
 >[number];
 
-export type ServiceType = Database["public"]["Enums"]["serviceType"];
+export type ServiceSummary = NonNullable<
+  Awaited<ReturnType<typeof getService>>
+>["data"];
 
 export type Substance = NonNullable<
   Awaited<ReturnType<typeof getMaterialSubstances>>["data"]

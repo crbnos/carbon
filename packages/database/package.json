@@ -19,7 +19,9 @@
     ".": "./src/index.ts",
     "./client": "./src/client.ts",
     "./event": "./src/event.ts",
+    "./quality": "./src/quality.ts",
     "./ratelimit": "./src/ratelimit.ts",
+    "./sampling": "./src/sampling.ts",
     "./audit": "./src/audit.ts",
     "./audit.config": "./src/audit.config.ts",
     "./audit.types": "./src/audit.types.ts",
@@ -33,6 +35,7 @@
     "db:migrate:new": "supabase migration new",
     "db:seed": "tsx src/seed.ts",
     "db:seed:dev": "tsx src/seed-dev.ts",
+    "seed:change-orders": "tsx src/seed-change-orders.ts",
     "deploy": "supabase link --project-ref $SUPABASE_PROJECT_ID && supabase db push",
     "lint": "biome lint --write ",
     "typecheck": "tsgo --noEmit"

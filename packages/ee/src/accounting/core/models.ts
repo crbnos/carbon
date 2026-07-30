@@ -503,7 +503,14 @@ export const ItemSchema = z.object({
   name: z.string(),
   description: withNullable(z.string()),
   companyId: z.string(),
-  type: z.enum(["Part", "Material", "Tool", "Consumable", "Fixture"]),
+  type: z.enum([
+    "Part",
+    "Material",
+    "Tool",
+    "Consumable",
+    "Fixture",
+    "Service"
+  ]),
   unitOfMeasureCode: withNullable(z.string()),
   unitCost: z.number(),
   unitSalePrice: z.number(),
@@ -528,7 +535,7 @@ export const InventoryAdjustmentSchema = z.object({
   quantity: z.number(), // positive for positive adj, negative for negative adj
   companyId: z.string(),
   unitCost: z.number(), // from itemCost table
-  inventoryAccount: z.string(), // GL account code from accountDefault
+  inventoryAccount: z.string(), // resolved GL account from accountDefault (rawMaterialsAccount for Buy items, finishedGoodsAccount for Make / Buy and Make)
   adjustmentVarianceAccount: z.string(), // GL account code from accountDefault
   updatedAt: z.string().datetime(),
   raw: z.record(z.any()).optional()

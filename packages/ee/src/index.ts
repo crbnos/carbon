@@ -1,9 +1,5 @@
 import { Avalara } from "./avalara/config";
 
-import { ClaudeMCP } from "./claude-mcp/config";
-
-export type { QuickInstallConnector } from "./claude-mcp/config";
-
 import { Email } from "./email/config";
 import { ExchangeRates } from "./exchange-rates/config";
 import { Jira } from "./jira/config";
@@ -14,7 +10,7 @@ import { QuickBooks } from "./quickbooks/config";
 // import { Radan } from "./radan/config";
 import { Sage } from "./sage/config";
 import { Slack } from "./slack/config";
-
+import type { QuickInstallConnector } from "./types";
 import { Xero } from "./xero/config";
 import { Zapier } from "./zapier/config";
 
@@ -30,7 +26,8 @@ export type {
   IntegrationSetting,
   IntegrationSettingGroup,
   IntegrationSettingOption,
-  OAuthConfig
+  OAuthConfig,
+  QuickInstallConnector
 } from "./types";
 
 export const integrations = [
@@ -72,6 +69,7 @@ export const getIntegrationConfigById = (id: IntegrationID) => {
 
 /**
  * Quick-install connectors are external link-outs with no DB state.
- * Each user connects individually (e.g. Claude MCP).
+ * Each user connects individually. Currently empty — the section is hidden
+ * until a connector is added.
  */
-export const quickInstallConnectors = [ClaudeMCP];
+export const quickInstallConnectors: QuickInstallConnector[] = [];

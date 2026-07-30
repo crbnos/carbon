@@ -37,6 +37,14 @@ export const accountsQuery = (companyId: string | null) => ({
   staleTime: RefreshRate.Low
 });
 
+export const assemblyInstructionsQuery = (
+  itemId: string,
+  companyId: string | null
+) => ({
+  queryKey: ["assemblyInstructions", itemId, companyId ?? "null"],
+  staleTime: RefreshRate.Low
+});
+
 export const countriesQuery = () => ({
   queryKey: ["countries"],
   staleTime: RefreshRate.Never
@@ -71,6 +79,34 @@ export const docsQuery = () => ({
   queryKey: ["docs"],
   staleTime: RefreshRate.Never
 });
+
+export const inspectionDocumentsQuery = (
+  itemId: string,
+  companyId: string | null
+) => ({
+  queryKey: ["inspectionDocuments", itemId, companyId ?? "null"],
+  staleTime: RefreshRate.Low
+});
+
+// Clears every cached inspection-document list for the current company. Mutation
+// routes are keyed by document `id`, not `itemId`, so they can't rebuild the
+// exact per-item key — a predicate on the key prefix covers all item entries.
+// `removeQueries` (not `invalidateQueries`) is required: the read route's
+// clientLoader gates on `if (!data)`, and the combobox reads via an imperative
+// `useFetcher().load()` with no active observer, so a merely stale-marked entry
+// would keep returning the cached array and never refetch.
+export const invalidateInspectionDocuments = () => {
+  const companyId = getCompanyId();
+  getClientCache()?.removeQueries({
+    predicate: (query) => {
+      const queryKey = query.queryKey as string[];
+      return (
+        queryKey[0] === "inspectionDocuments" &&
+        (!companyId || queryKey[2] === companyId)
+      );
+    }
+  });
+};
 
 export const itemPostingGroupsQuery = (companyId: string | null) => ({
   queryKey: ["itemPostingGroups", companyId ?? "null"],
@@ -181,14 +217,6 @@ export const workCentersQuery = (companyId: string | null) => ({
   staleTime: RefreshRate.Low
 });
 
-export const groupsByTypeQuery = (
-  companyId: string | null,
-  type: string | null
-) => ({
-  queryKey: ["groupsByType", companyId ?? "null", type ?? "null"],
-  staleTime: RefreshRate.Low
-});
-
 export const materialTypesQuery = (
   substanceId: string,
   formId: string,
@@ -197,3 +225,99 @@ export const materialTypesQuery = (
   queryKey: ["materialTypes", substanceId, formId, companyId ?? "null"],
   staleTime: RefreshRate.Low
 });
+
+export const userSelectGroupsQuery = (
+  companyId: string | null,
+  type: string | null,
+  offset: number
+) => ({
+  queryKey: ["userSelectGroups", companyId ?? "null", type ?? "all", offset],
+  staleTime: RefreshRate.Low
+});
+
+export const userSelectMembersQuery = (
+  companyId: string | null,
+  groupId: string
+) => ({
+  queryKey: ["userSelectMembers", companyId ?? "null", groupId],
+  staleTime: RefreshRate.Low
+});
+
+export const userSelectSearchQuery = (
+  companyId: string | null,
+  type: string | null,
+  q: string,
+  filters: string
+) => ({
+  queryKey: [
+    "userSelectSearch",
+    companyId ?? "null",
+    type ?? "all",
+    q,
+    filters
+  ],
+  staleTime: RefreshRate.High
+});
+
+export const userSelectResolveQuery = (
+  companyId: string | null,
+  ids: string[]
+) => ({
+  queryKey: [
+    "userSelectResolve",
+    companyId ?? "null",
+    [...ids].sort().join(",")
+  ],
+  staleTime: RefreshRate.Low
+});
+
+export const groupEmailsQuery = (
+  companyId: string | null,
+  groupId: string
+) => ({
+  queryKey: ["groupEmails", companyId ?? "null", groupId],
+  staleTime: RefreshRate.Low
+});
+
+const USER_SELECT_QUERY_PREFIXES = [
+  "userSelectGroups",
+  "userSelectMembers",
+  "userSelectSearch",
+  "userSelectResolve",
+  "groupEmails"
+];
+
+/**
+ * Read-through fetch against an API route, cached in window.clientCache.
+ * fetchQuery dedupes concurrent identical calls and honors staleTime.
+ * Falls back to a plain fetch when the cache isn't mounted yet.
+ */
+export async function cachedApiQuery<T>(
+  query: { queryKey: unknown[]; staleTime: number },
+  url: string
+): Promise<T> {
+  const queryFn = async (): Promise<T> => {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`Request failed with status ${res.status}`);
+    return res.json();
+  };
+  const cache = getClientCache();
+  if (!cache) return queryFn();
+  return cache.fetchQuery({
+    queryKey: query.queryKey,
+    queryFn,
+    staleTime: query.staleTime
+  });
+}
+
+export function invalidateUserSelectQueries(companyId: string | null) {
+  window.clientCache?.invalidateQueries({
+    predicate: (query) => {
+      const queryKey = query.queryKey as unknown[];
+      return (
+        USER_SELECT_QUERY_PREFIXES.includes(queryKey[0] as string) &&
+        queryKey[1] === (companyId ?? "null")
+      );
+    }
+  });
+}

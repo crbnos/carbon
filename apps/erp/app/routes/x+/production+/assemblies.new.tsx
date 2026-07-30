@@ -13,15 +13,14 @@ import {
   getModelForItem,
   upsertAssemblyInstruction
 } from "~/modules/production";
-import { requireAssembliesInternal } from "~/modules/production/production.server";
+import { isAssemblerServiceHealthy } from "~/modules/production/production.server";
 import AssemblyInstructionForm from "~/modules/production/ui/Assemblies/AssemblyInstructionForm";
 import { path } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { email } = await requirePermissions(request, {
+  await requirePermissions(request, {
     create: "production"
   });
-  requireAssembliesInternal(email);
 
   const url = new URL(request.url);
 
@@ -34,13 +33,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId, email } = await requirePermissions(
-    request,
-    {
-      create: "production"
-    }
-  );
-  requireAssembliesInternal(email);
+  const { client, companyId, userId } = await requirePermissions(request, {
+    create: "production"
+  });
 
   const validation = await validator(
     assemblyInstructionFromItemValidator
@@ -96,6 +91,24 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
+  // A model that still needs converting can't become a usable instruction while
+  // the geometry service is down — refuse rather than create a stuck record.
+  const needsConversion =
+    modelState === "convertible" || modelState === "failed";
+  const assemblerHealthy = await isAssemblerServiceHealthy();
+  if (needsConversion && !assemblerHealthy) {
+    return data(
+      {},
+      await flash(
+        request,
+        error(
+          null,
+          "The geometry service is unavailable — model conversion can't run right now. Try again shortly."
+        )
+      )
+    );
+  }
+
   const create = await upsertAssemblyInstruction(client, {
     name: derived.item.name || "Assembly",
     modelUploadId: model.id,
@@ -123,10 +136,11 @@ export async function action({ request }: ActionFunctionArgs) {
       modelUploadId: model.id,
       userId
     });
-  } else if (modelState === "converted") {
+  } else if (modelState === "converted" && assemblerHealthy) {
     // Conversion chains motion planning, but a model converted before this
     // instruction existed may have no plan yet — start planning now so the
-    // plan is ready by the time the author clicks Generate Steps.
+    // plan is ready by the time the author clicks Generate Steps. Skipped when
+    // the geometry service is down; the author's Generate click starts it later.
     const planJob = await getLatestAssemblyPlanJob(client, model.id);
     const planStatus = planJob.data?.status;
     if (
@@ -152,8 +166,13 @@ export async function action({ request }: ActionFunctionArgs) {
     }
   }
 
+  // A model-backed instruction auto-generates its steps: the explorer sees
+  // ?autogen=1 and submits Generate once — if the plan is ready it lands
+  // instantly, otherwise the submit kicks planning and the awaiting machinery
+  // finishes the chain when the plan completes.
+  const autogen = modelState !== "none" ? "?autogen=1" : "";
   throw redirect(
-    path.to.assemblyInstruction(create.data.id),
+    `${path.to.assemblyInstruction(create.data.id)}${autogen}`,
     await flash(request, success("Assembly instruction created"))
   );
 }

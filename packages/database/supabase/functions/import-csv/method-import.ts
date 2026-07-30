@@ -1,5 +1,5 @@
-// Method (BOM/BOP) importer — backs the `bom` and `operations` CSV imports.
-// One row-type-multiplexed engine (ADR-0002): a single file carries
+// Method (BOM/BOP) importer — backs the `bom`, `operations`, and `partWithMethod`
+// CSV imports. One row-type-multiplexed engine (ADR-0002): a single file carries
 // PART/BOM/BOP/STEP/TOOL/PARAM rows, each non-PART row naming its parent part
 // explicitly. Atomic per parent part and create-only / fill-if-empty (ADR-0001).
 //
@@ -75,6 +75,14 @@ const bool = (s: string | undefined): boolean =>
 
 const text = (s: string | undefined): string => (s ?? "").trim();
 
+// Legacy CSV templates may still use the old "Inside"/"Outside" operation types.
+const normalizeOperationType = (value: string): string =>
+  value === "Inside"
+    ? "Process"
+    : value === "Outside"
+      ? "Outside Processing"
+      : value;
+
 // The `row` reported on each error: the 0-based index of the data row. This must
 // match how the results modal keys errors to rows (by array index into the parsed
 // rows) and the standard importer in index.ts — NOT a human CSV line number.
@@ -109,7 +117,7 @@ function normalizeRowType(
 export async function importMethods(
   db: Kysely<DB>,
   args: {
-    table: "bom" | "operations";
+    table: "bom" | "operations" | "partWithMethod";
     mappedRecords: Rec[];
     companyId: string;
     userId: string;
@@ -429,13 +437,13 @@ function validateGroup(
         }
       }
 
-      // Inside operations need time units.
-      const opType = text(e.record.operationType) || "Inside";
-      if (opType === "Inside") {
+      // In-house operations need time units.
+      const opType = normalizeOperationType(text(e.record.operationType)) || "Process";
+      if (opType !== "Outside Processing") {
         if (!text(e.record.setupUnit) || !text(e.record.laborUnit) || !text(e.record.machineUnit)) {
           errors.push({
             row: rowOf(e.index),
-            reason: `Op ${opNo}: Inside operations require Setup, Labor, and Machine units`,
+            reason: `Op ${opNo}: In-house operations require Setup, Labor, and Machine units`,
           });
         }
       }
@@ -668,14 +676,14 @@ async function writeGroup(
       for (const e of bucket.bop) {
         const r = e.record;
         const opNo = text(r.opNo);
-        const opType = text(r.operationType) || "Inside";
+        const opType = normalizeOperationType(text(r.operationType)) || "Process";
         const processId = ctx.processMap.get(text(r.process).toLowerCase())!;
         const workCenterId = text(r.workCenter)
           ? ctx.workCenterMap.get(text(r.workCenter).toLowerCase())
           : undefined;
 
         let operationSupplierProcessId: string | undefined;
-        if (opType === "Outside" && text(r.supplier)) {
+        if (opType === "Outside Processing" && text(r.supplier)) {
           operationSupplierProcessId = await resolveSupplierProcess(
             trx,
             companyId,
@@ -921,7 +929,7 @@ async function seedStorageUnitIds(
   return current;
 }
 
-// Optional supplier-process link for an Outside operation (by supplier + process).
+// Optional supplier-process link for an Outside Processing operation (by supplier + process).
 async function resolveSupplierProcess(
   trx: Transaction<DB>,
   companyId: string,

@@ -41,11 +41,12 @@ import { Button, Card, HStack, VStack, IconButton, cn } from "@carbon/react";
 - **Overlays**: `Drawer`, `Modal`, `ModalDrawer` (unified drawer/modal), `BottomSheet`, `Popover`
 - **Data**: `Table` (TanStack), chart components via sub-exports (`@carbon/react/Chart`)
 - **Rich text**: `@carbon/react/Editor` and `@carbon/react/RichText` (wraps `@carbon/tiptap`)
+- **Error boundary**: `@carbon/react/ErrorBoundary` — `RootErrorBoundary` (drop-in root `ErrorBoundary` for RR v7 that maps 404 / other HTTP / thrown `Error` to a styled screen) plus its parts (`ErrorScreen`, `GlitchHeading`, `StatusReadout`, `MagneticLink`, `NoiseOverlay`). Wrap it in the app's `Document` and pass `env` so `window.env` is set (the client crashes hydration otherwise). Copy is intentionally hardcoded English, not i18n.
 - **Polish**: shadows over borders, `tabular-nums` for dynamic numbers, `active:scale-[0.96]` on pressables, `text-balance`/`text-pretty` for text wrapping
 
 ## Cross-References
 
-- `.ai/rules/conventions-ui.md` — full UI conventions, polish principles, review checklist
+- `.claude/rules/conventions-ui.md` — full UI conventions, polish principles, review checklist
 - `@carbon/tiptap` — editor extensions used by `Editor/` and `RichText/`
 - `@carbon/glossary` — term definitions used by `LabelWithHelp`
 - `@carbon/form` — form field components (import from `~/components/Form` in apps, not directly)

@@ -43,7 +43,7 @@ pnpm --filter @carbon/auth test
 
 ## Cross-References
 
-- `.ai/rules/authentication-system.md` — full auth architecture, login flows, claims caching
+- `.claude/rules/authentication-system.md` — full auth architecture, login flows, claims caching
 - `packages/env/` — env var definitions (`getEnv`, `SUPABASE_URL`, `SESSION_SECRET`, etc.)
 - `packages/kv/` — Redis client for permission caching and login rate limiting
 - `packages/database/` — `Database` type, `checkApiKeyRateLimit` RPC wrapper

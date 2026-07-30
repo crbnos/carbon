@@ -316,7 +316,7 @@ function getAssociationIcon(key: IssueAssociationKey) {
       return <LuHandCoins className="text-red-600" />;
     case "trackedEntities":
       return <LuQrCode />;
-    case "inboundInspections":
+    case "inspections":
       return <LuClipboardCheck className="text-teal-600" />;
     default:
       return <LuFileText />;
@@ -897,7 +897,7 @@ function NewTrackedEntityAssociation({ items }: { items?: string[] }) {
   );
 }
 
-function NewInboundInspectionAssociation() {
+function NewInspectionAssociation() {
   const { t } = useLingui();
   const { carbon } = useCarbon();
   const [storedItems] = useItems();
@@ -912,8 +912,8 @@ function NewInboundInspectionAssociation() {
       return;
     }
     const { data, error } = await carbon
-      .from("inboundInspection")
-      .select("id, inboundInspectionId, itemId, status");
+      .from("inspection")
+      .select("id, inspectionId, itemId, status");
 
     if (error) {
       toast.error(t`Failed to load inbound inspections`);
@@ -921,7 +921,7 @@ function NewInboundInspectionAssociation() {
 
     setInspections(
       data?.map((inspection) => ({
-        label: (inspection as any).inboundInspectionId ?? inspection.id,
+        label: (inspection as any).inspectionId ?? inspection.id,
         value: inspection.id,
         helper: [
           getItemReadableId(storedItems, inspection.itemId),
@@ -941,7 +941,7 @@ function NewInboundInspectionAssociation() {
   return (
     <Combobox
       name="id"
-      label={t`Inbound Inspection`}
+      label={t`Inspection`}
       options={inspections}
       isLoading={inspectionsAreLoading}
     />
@@ -996,8 +996,8 @@ function NewAssociationModal({
         return <NewReceiptLineAssociation items={items} />;
       case "trackedEntities":
         return <NewTrackedEntityAssociation items={items} />;
-      case "inboundInspections":
-        return <NewInboundInspectionAssociation />;
+      case "inspections":
+        return <NewInspectionAssociation />;
       default:
         return null;
     }
@@ -1068,8 +1068,8 @@ function getAssociationLink(
       return path.to.customer(child.documentId);
     case "suppliers":
       return path.to.supplier(child.documentId);
-    case "inboundInspections":
-      return path.to.inboundInspection(child.documentId);
+    case "inspections":
+      return path.to.inspection(child.documentId);
     default:
       return "#";
   }

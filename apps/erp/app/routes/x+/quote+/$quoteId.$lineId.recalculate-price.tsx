@@ -76,7 +76,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
       discountPercent: 0,
       leadTime: 0,
       createdBy: userId,
-      categoryMarkups: categoryMarkupsByQuantity.data[quantity] ?? undefined
+      categoryMarkups: categoryMarkupsByQuantity.data[quantity] ?? undefined,
+      // Applying a markup is explicit cost-plus intent: the row goes back to
+      // system pricing so future BOM changes reprice it from these markups.
+      priceSource: "system" as const
     };
   });
 

@@ -8,6 +8,7 @@ declare global {
       AVALARA_ACCOUNT_ID: string;
       CARBON_EDITION: string;
       CARBON_API_URL: string;
+      CARBON_SLACK_ENABLED: string;
       CLOUDFLARE_TURNSTILE_SITE_KEY: string;
       CONTROLLED_ENVIRONMENT: string;
       ERP_URL: string;
@@ -200,13 +201,34 @@ export const MES_URL =
   getEnv("MES_URL", { isRequired: false, isSecret: false }) ??
   "https://mes.carbon.ms";
 
-export const GEOMETRY_SERVICE_URL = getEnv("GEOMETRY_SERVICE_URL", {
+export const ASSEMBLER_SERVICE_URL = getEnv("ASSEMBLER_SERVICE_URL", {
   isRequired: false
 });
-export const GEOMETRY_SERVICE_API_KEY = getEnv("GEOMETRY_SERVICE_API_KEY", {
+// Dev-only (crbn-written): local kong port for the storage-URL rewrite in
+// internalizeStorageUrl. Unset in prod.
+export const PORT_API = getEnv("PORT_API", {
+  isRequired: false,
+  isSecret: false
+});
+export const ASSEMBLER_SERVICE_API_KEY = getEnv("ASSEMBLER_SERVICE_API_KEY", {
   isRequired: false,
   isSecret: true
 });
+// Cap on concurrently running assembler-backed Inngest functions (shared across
+// optimize/compact/convert/plan). Must stay within the Inngest plan's account
+// concurrency or app sync fails ("function has higher concurrency limits than
+// your plan"); raise it via env on plans that allow more.
+export const ASSEMBLER_JOB_CONCURRENCY = getEnv("ASSEMBLER_JOB_CONCURRENCY", {
+  isRequired: false,
+  isSecret: false
+});
+// Dev-only: public tunnel origin substituted into assembler-bound storage URLs
+// when the assembler is remote (local `.dev` hosts resolve only on this
+// machine). Unset in prod/preview.
+export const ASSEMBLER_STORAGE_PUBLIC_URL = getEnv(
+  "ASSEMBLER_STORAGE_PUBLIC_URL",
+  { isRequired: false, isSecret: false }
+);
 
 export const GOOGLE_PLACES_API_KEY = getEnv("GOOGLE_PLACES_API_KEY", {
   isRequired: false
@@ -228,6 +250,15 @@ export const ONSHAPE_CLIENT_SECRET = getEnv("ONSHAPE_CLIENT_SECRET", {
 });
 export const ONSHAPE_OAUTH_REDIRECT_URL = getEnv("ONSHAPE_OAUTH_REDIRECT_URL", {
   isRequired: false
+});
+// Path to the native gltfpack binary (github.com/zeux/meshoptimizer), used to
+// compress oversized Onshape GLTF exports into viewer-ready GLBs. Optional:
+// when unset (and gltfpack isn't on PATH), oversized models are skipped
+// instead of compressed. The npm gltfpack is WASM with a 4GB memory ceiling
+// and cannot process large CAD exports — this must point to a native build.
+export const GLTFPACK_PATH = getEnv("GLTFPACK_PATH", {
+  isRequired: false,
+  isSecret: false
 });
 
 export const QUICKBOOKS_CLIENT_ID = getEnv("QUICKBOOKS_CLIENT_ID", {
@@ -252,6 +283,9 @@ export const RESEND_DOMAIN =
 export const SLACK_BOT_TOKEN = getEnv("SLACK_BOT_TOKEN", {
   isRequired: false
 });
+export const CARBON_SLACK_ENABLED = isBrowser
+  ? window.env?.CARBON_SLACK_ENABLED === "true"
+  : Boolean(SLACK_BOT_TOKEN);
 export const SLACK_CLIENT_ID = getEnv("SLACK_CLIENT_ID", {
   isRequired: false
 });
@@ -465,6 +499,7 @@ export function getBrowserEnv() {
     AVALARA_ACCOUNT_ID,
     CARBON_API_URL,
     CARBON_EDITION,
+    CARBON_SLACK_ENABLED: CARBON_SLACK_ENABLED ? "true" : "",
     CLOUDFLARE_TURNSTILE_SITE_KEY,
     CONTROLLED_ENVIRONMENT,
     DEFAULT_LANGUAGE,

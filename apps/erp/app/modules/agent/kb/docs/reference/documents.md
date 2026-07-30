@@ -1,0 +1,111 @@
+# Documents
+
+> A shared file library with favorites, labels, search, and AI extraction that reads PDFs and fills a form for you.
+
+Every file your team uploads lands in one place: the **document explorer**. It is a flat, searchable library of files, not a folder tree on disk. A file can be a loose upload someone dropped in, or it can be **attached to a record** (a job, a purchase order, an RFQ) and show up both there and in the explorer. On top of the library sit three conveniences: personal **pins** and **labels**, full-text-ish **search**, and an AI **extraction** pass that reads a PDF and pre-fills the form you would otherwise type by hand.
+
+Open the explorer from **Documents** in the sidebar. It defaults to the `All Documents` view (`useDocumentsSubmodules.tsx:15-45`).
+
+## The explorer
+
+The table lists every file you can see, one row per document, sorted with your pinned files first (`documents.service.ts:86-88`). Each row carries the file's **name**, its linked **source document** (if any), your **labels**, **size**, **type**, **extension**, and the usual created/updated audit columns (`DocumentsTable.tsx:174-405`).
+
+Five views scope the list, switched by the tab rail down the left (`useDocumentsSubmodules.tsx:15-45`):
+
+  - **All Documents**: Every active file in the company you have read access to.
+  - **My Documents**: Files you uploaded (`createdBy` = you).
+  - **Recent**: Sorted by last activity — the newest view, download, label, or edit first.
+  - **Pinned**: Only files you have pinned.
+  - **Trash**: Soft-deleted files, waiting to be restored or purged.
+
+**Type** is derived, not chosen. When a file is uploaded, Carbon reads its name and classifies it into one of ten buckets: `Archive`, `Document`, `Presentation`, `PDF`, `Spreadsheet`, `Text`, `Image`, `Video`, `Audio`, or `Other` (`20230423023136_documents.sql:1-12`). The **extension** column is computed by the database from the filename itself (the text after the last dot), so it always matches the real file (`20230423023136_documents.sql:20`).
+
+"Move to Trash" only flips the file's `active` flag to `false` — the row and the stored file both stay put, and "Restore from Trash" flips it back (`documents.service.ts:124-152`). To actually remove a file, use **Permanently Delete** from the row menu; that one cannot be undone (`DocumentsTable.tsx:461-471`).
+
+### Uploading
+
+**Upload** in the explorer header takes any file. The browser uploads it straight into the private storage bucket under `{companyId}/{random}.{ext}`, then posts the path, name, and size to create the document row (`DocumentCreateForm.tsx:22-69`). The upload records itself as a transaction, and every later action (download, edit, favorite, label) logs one too — that activity trail is what drives the **Recent** view (`useDocument.ts:44-57`, `20230423023136_documents.sql:117-146`).
+
+## Who can see a file
+
+Visibility is by **group**, not by role alone. Every document carries a `readGroups` and a `writeGroups` array, and a file is only visible to a user who belongs to one of its read groups (and holds the `documents` view permission). Editing or deleting needs membership in a write group plus the matching permission (`20230423023136_documents.sql:40-66`, `useDocument.ts:22-42`). The same rule guards the underlying stored file in the private bucket, so a link to a file you are not in the read groups for resolves to nothing (`20230423023136_documents.sql:68-119`).
+
+Read and write groups are drawn from your company group membership, the same groups used elsewhere for scoping. Set them when you edit a document's properties; a file with no matching read group for a user is simply invisible to that user.
+
+## Pins and labels
+
+Two personal organizers sit on top of the shared library, and both are **per-user** — what you pin or label is yours alone, not the whole company's.
+
+- **Pins** (shown as a pushpin, called "Favorite" in the row menu) float a file to the top of your list and power the **Pinned** view. Toggling one writes or removes a `documentFavorite` row keyed to you (`useDocument.ts:113-130`, `documents.service.ts:199-219`).
+- **Labels** are free-text tags you attach to a file. Type into the label popover on a row to reuse an existing label or create a new one on the fly; click a label to filter the list down to it (`DocumentsTable.tsx:239-296`, `useDocument.ts:142-164`). Labels are stored per user, so your "Q3-audit" label doesn't clutter a colleague's view (`20230423023136_documents.sql:186-215`).
+
+## Search
+
+The explorer search box does a case-insensitive substring match across a file's **name** and **description** (`documents.service.ts:72-76`). It is a filename/description search, not a full-text search of the file's contents. Combine it with the column filters (source document, label, type, extension, creator) to narrow a large library, and with the view tabs to scope to your own, recent, or pinned files. The current result set is exactly what the table's **Download CSV** button exports, each row carrying a signed download link (`search.tsx`, `DocumentsTable.tsx:393-405`).
+
+## How documents attach to records
+
+A document can point back at the record it belongs to. The row's **Source Document** column shows that link and jumps straight to the parent record (`DocumentsTable.tsx:207-237`). The set of record types a document can attach to is fixed (`documents.models.ts:9-23`):
+
+  - **Sales side**: Quote, Request for Quote, Sales Order, Sales Invoice, Shipment.
+  - **Purchasing side**: Purchase Order, Purchase Invoice, Purchasing Request for Quote, Supplier Quote.
+  - **Production & quality**: Job, Gauge Calibration Record, Issue.
+  - **Items**: Part, Material, Tool, Consumable, Service.
+
+The attachment is stored as a `sourceDocument` (the type) plus a `sourceDocumentId` (the record's id) on the file (`documents.service.ts:154-183`). Because the file also lives in the shared explorer, you can find it either by opening the record or by searching the library. See the `docs/reference/sales-orders`, `docs/reference/purchase-orders`, and `docs/reference/jobs` references for where each record surfaces its files.
+
+## AI extraction
+
+Extraction is the one place documents stop being passive files. Upload a PDF into a supported flow and Carbon reads it, pulls out the fields, and hands them to the form so you can accept them instead of retyping. Two document kinds are supported today (`document-extraction.ts:9-13`, `documents.models.ts:126`):
+
+- a **Request for Quote** PDF, on the sales side, and
+- a **Purchase Invoice** PDF, on the purchasing side.
+
+### What it does, step by step
+
+When you drop a PDF into one of those flows, Carbon creates a `documentExtraction` row (starting at status `pending`) and enqueues a background job (`documents.service.ts:248-296`, `20260609001724_add-document-extraction.sql:4-30`). The job then (`extract-document.ts:26-232`):
+
+1. flips the row to `processing`;
+2. downloads the PDF from private storage and extracts its **text** with a PDF parser (this is text extraction, not image OCR — a scanned image-only PDF yields no text);
+3. loads the company's candidate records so the model can resolve names to real ids itself — suppliers and payment terms for an invoice, customers for an RFQ (`extract-document.ts:84-140`);
+4. sends the text plus those candidate lists to the AI model, which returns every field as a `{ value, confidence }` pair (`schemas.ts:1-88`);
+5. **filters by confidence**: any field scoring below the threshold (default `0.85`) is dropped to `null`, so a low-confidence guess never lands in your form (`extract-document.ts:184-224`, `packages/env/src/index.ts:173-178`); and
+6. normalizes dates to `YYYY-MM-DD` and saves both the raw output and the filtered result on the row, status `completed` (`extract-document.ts:184-232`).
+
+The form then reads the filtered values and pre-fills itself, matching extracted contacts and addresses against the customer's or supplier's existing records where it can (`documents.models.ts:168-255`).
+
+The model is handed the actual list of your suppliers, payment terms, or customers and told to return the id of the single best match or `null` — never to make one up (`extract-document.ts:141-152`). So `supplierId` / `customerId` / `paymentTermId` come back either as a real record you already have or as blank, and the form's own matching fills the rest.
+
+### What it pulls out
+
+For a **Purchase Invoice**, extraction targets the supplier (name, contact, address, and a resolved `supplierId`), the invoice header (number, invoice and due dates, payment terms and a resolved `paymentTermId`, referenced PO number, currency), the money (subtotal, tax, shipping, total), and the **line items** (part number, description, quantity, unit price, line total) (`schemas.ts:20-54`).
+
+For a **Request for Quote**, it targets the customer (name, a resolved `customerId`, plus separate purchasing and engineering contacts and the customer address), the RFQ header (number, RFQ date, due date, requested delivery date), and the **line items** (part number, description, quantity) (`schemas.ts:63-86`).
+
+A `documentExtraction` row is only a staging area — it never creates an invoice or an RFQ by itself. The extracted values pre-fill the normal form, and the real record is created through the usual permission-gated route action when you save (`20260609001724_add-document-extraction.sql:37-39`). If the background job can't be enqueued or the parse fails, the row is marked `failed` with the error, and you just fill the form manually (`documents.service.ts:272-295`, `extract-document.ts:225-231`).
+
+Extraction quality depends on the PDF being text-based and on the AI keys being configured for your deployment; without them the flows still work, you simply type the fields yourself.
+
+This page is about the file library. The separate **document template** feature — the drag-and-drop customizer for the PDFs Carbon *generates* (quotes, order confirmations, invoices) — is a different subsystem and isn't covered here.
+
+## Troubleshooting
+
+Deletion, visibility, and the limits of AI extraction.
+
+### A deleted file is still there / a file I deleted came back
+"Move to Trash" is a soft delete — it only flips the file's `active` flag to `false`; the row and stored file stay put and "Restore from Trash" flips it back (`documents.service.ts:124-152`). To remove a file for good, use **Permanently Delete** from the row menu (`DocumentsTable.tsx:461-471`); that one can't be undone.
+
+### A file (or a link to it) is invisible to a user
+Visibility is by **group**. A document carries `readGroups` and `writeGroups` arrays, and a user sees a file only if they belong to one of its read groups **and** hold the `documents` view permission (`20230423023136_documents.sql:40-66`). The same rule guards the stored file, so a link to a file the user isn't in the read groups for resolves to nothing. Add the user's company group to the document's read groups, or check they have the view permission. Editing/deleting additionally needs write-group membership.
+
+### Search isn't finding text inside a file
+The explorer search is a case-insensitive substring match over a file's **name** and **description** only (`documents.service.ts:72-76`) — not a full-text search of the file's contents. Rename or describe the file, or narrow with the column filters instead.
+
+### Extraction returned nothing for a scanned PDF
+Extraction does **text extraction, not image OCR** (`extract-document.ts` step 2). A scanned, image-only PDF yields no text, so no fields come back. Use a text-based PDF, or fill the form manually.
+
+### A field I expected wasn't pre-filled from the PDF
+Any extracted field scoring below the confidence threshold (default `0.85`) is dropped to `null` so a low-confidence guess never lands in the form (`extract-document.ts:184-224`, `packages/env/src/index.ts:173-178`, env var `EXTRACTION_CONFIDENCE_THRESHOLD`). Only Request for Quote and Purchase Invoice PDFs are supported, and `supplierId`/`customerId`/`paymentTermId` come back only when the model matches one of your existing records — otherwise blank, to be filled by the form.
+
+### The extraction row shows `failed`, or nothing happened
+A `documentExtraction` row moves `pending → processing → completed`, or is marked `failed` with the error if the background job can't be enqueued or the parse fails (`documents.service.ts:272-295`, `extract-document.ts:225-231`). Extraction also needs AI keys configured for the deployment; without them the flow still works, you just type the fields yourself. Either way the row is only a staging area — it never creates the invoice or RFQ, so on failure just fill the form manually.

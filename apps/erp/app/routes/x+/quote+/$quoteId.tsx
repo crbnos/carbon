@@ -38,12 +38,14 @@ import {
 } from "~/modules/sales/ui/Quotes";
 import { useOptimisticDocumentDrag } from "~/modules/sales/ui/Quotes/QuoteExplorer";
 import { getCompanySettings } from "~/modules/settings";
-import type { Handle } from "~/utils/handle";
+import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
 export const handle: Handle = {
-  breadcrumb: msg`Quotes`,
-  to: path.to.quotes,
+  breadcrumb: detailBreadcrumb(
+    { breadcrumb: msg`Quotes`, to: path.to.quotes },
+    (data) => data?.quote?.quoteId
+  ),
   module: "sales"
 };
 

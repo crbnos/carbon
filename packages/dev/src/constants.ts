@@ -12,7 +12,16 @@ export const COMPOSE_DEV_FILE_LEGACY = "docker-compose.dev.yml";
 export const APP_CHOICES = [
   { value: "erp", label: "ERP", hint: "main app" },
   { value: "mes", label: "MES", hint: "shop floor" },
-  { value: "geometry", label: "Geometry", hint: "3D engine" }
+  {
+    value: "assembler",
+    label: "Assembler",
+    hint: "CAD convert + motion planning"
+  },
+  {
+    value: "email",
+    label: "Email previews",
+    hint: "react-email server for every email template"
+  }
 ] as const;
 export type AppId = (typeof APP_CHOICES)[number]["value"];
 

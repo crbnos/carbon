@@ -103,7 +103,12 @@ const DateTimePicker = (
                   )}
                 </div>
                 {props.withButton !== false && (
-                  <div className="flex-shrink-0 -mt-px">
+                  <div
+                    className={cn(
+                      "flex-shrink-0 -mr-px",
+                      props.size === "sm" ? "mt-[-3px]" : "-mt-px"
+                    )}
+                  >
                     <PopoverTrigger tabIndex={-1}>
                       <FieldButton
                         {...buttonProps}

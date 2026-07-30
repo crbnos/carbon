@@ -94,7 +94,8 @@ export default function AssetClassRoute() {
     depreciationExpenseAccountId: assetClass.depreciationExpenseAccountId,
     writeOffAccountId: assetClass.writeOffAccountId,
     writeDownAccountId: assetClass.writeDownAccountId,
-    disposalAccountId: assetClass.disposalAccountId,
+    gainOnDisposalAccountId: assetClass.gainOnDisposalAccountId,
+    lossOnDisposalAccountId: assetClass.lossOnDisposalAccountId,
     taxDepreciationMethod: (assetClass as any).taxDepreciationMethod ?? null,
     taxUsefulLifeMonths: (assetClass as any).taxUsefulLifeMonths ?? null,
     taxResidualValuePercent:

@@ -419,7 +419,7 @@ serve(async (req: Request) => {
         if (jobOperations.error) throw new Error(jobOperations.error.message);
 
         const outsideOperations = jobOperations.data?.filter(
-          (d) => d.operationType === "Outside"
+          (d) => d.operationType === "Outside Processing"
         );
 
         if (outsideOperations.length > 0) {
@@ -893,6 +893,7 @@ serve(async (req: Request) => {
           if (
             !d.itemId ||
             !d.purchaseQuantity ||
+            d.receivedComplete ||
             d.purchaseOrderLineType === "Service" ||
             d.purchaseOrderLineType === "G/L Account"
           ) {
@@ -2347,6 +2348,9 @@ serve(async (req: Request) => {
 
         if (!salesOrderLine.data || !salesOrderLine.data.itemId)
           throw new Error("Sales order line not found");
+        // Services are never shipped
+        if (salesOrderLine.data.salesOrderLineType === "Service")
+          throw new Error("Service lines cannot be shipped");
         const salesOrderId = salesOrderLine.data.salesOrderId;
 
         const [salesOrder, salesOrderShipment, shipment, jobs] =

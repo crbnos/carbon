@@ -154,7 +154,7 @@ export const ProductionPlanningOrderDrawer = memo(
     const onAddOrder = useCallback(() => {
       if (row.id) {
         const newOrder: ProductionOrder = {
-          quantity: row.lotSize ?? row.minimumOrderQuantity ?? 0,
+          quantity: row.lotSize || row.minimumOrderQuantity || 1,
           dueDate: today(getLocalTimeZone())
             .add({ days: row.leadTime ?? 0 })
             .toString(),

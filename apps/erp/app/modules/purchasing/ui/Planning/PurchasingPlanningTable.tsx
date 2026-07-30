@@ -49,7 +49,7 @@ import { Enumerable } from "~/components/Enumerable";
 import { useLocations } from "~/components/Form/Location";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
 import { usePermissions } from "~/hooks";
-import { itemTypes } from "~/modules/inventory/inventory.models";
+import { inventoryItemTypes } from "~/modules/inventory/inventory.models";
 import { itemReorderingPolicies } from "~/modules/items/items.models";
 import type { SupplierPart } from "~/modules/items/types";
 import {
@@ -507,7 +507,7 @@ const PlanningTable = memo(
           meta: {
             filter: {
               type: "static",
-              options: itemTypes
+              options: inventoryItemTypes
                 .filter((t) => ["Part", "Tool"].includes(t))
                 .map((type) => ({
                   label: (

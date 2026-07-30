@@ -38,7 +38,7 @@ pnpm --filter @carbon/stripe dev:stripe  # local Stripe listener (dev)
 
 ## Cross-References
 
-- `.ai/rules/billing-system.md` — full billing architecture
+- `.claude/rules/billing-system.md` — full billing architecture
 - `packages/ee/src/plan.ts` + `plan.server.ts` — feature/plan gating (`FEATURE_PLANS`)
 - `apps/erp/app/routes/api+/webhook.stripe.ts` — webhook route
 - `packages/database/supabase/migrations/*billing*.sql` — schema

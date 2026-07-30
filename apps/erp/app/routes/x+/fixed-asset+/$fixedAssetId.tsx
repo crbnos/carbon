@@ -19,6 +19,7 @@ import {
   useDisclosure
 } from "@carbon/react";
 import { formatDate } from "@carbon/utils";
+import { msg } from "@lingui/core/macro";
 import {
   LuChevronDown,
   LuCircleX,
@@ -54,12 +55,14 @@ import {
   FixedAssetNotes,
   FixedAssetStatus
 } from "~/modules/accounting/ui/FixedAssets";
-import type { Handle } from "~/utils/handle";
+import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
 export const handle: Handle = {
-  breadcrumb: "Fixed Assets",
-  to: path.to.fixedAssets
+  breadcrumb: detailBreadcrumb(
+    { breadcrumb: msg`Fixed Assets`, to: path.to.fixedAssets },
+    (data) => data?.asset?.fixedAssetId
+  )
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {

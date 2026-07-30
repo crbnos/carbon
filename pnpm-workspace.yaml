@@ -33,6 +33,7 @@ catalog:
   '@logtape/redaction': 2.2.3
   '@logtape/testing': 2.2.3
   '@nanostores/react': 0.7.3
+  '@paralleldrive/cuid2': 2.2.2
   '@react-aria/i18n': 3.12.16
   '@react-email/components': 0.3.3
   '@react-pdf/renderer': 3.4.5

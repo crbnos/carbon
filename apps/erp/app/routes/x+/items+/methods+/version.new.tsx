@@ -27,6 +27,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
+  // No change-order gate here: the V1 change-order model applies BOM edits by
+  // spinning fresh method versions at Done and never stages/reserves a pending
+  // revision, so there is nothing for an open CO to lock against.
+
   const insertMethodOperation = await upsertMakeMethodVersion(client, {
     ...validation.data,
     companyId,

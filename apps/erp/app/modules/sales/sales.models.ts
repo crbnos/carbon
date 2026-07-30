@@ -4,6 +4,7 @@ import { address, contact } from "~/types/validators";
 import { currencyCodes } from "../accounting";
 import {
   incoterms,
+  itemType,
   methodItemType,
   methodOperationOrders,
   methodType,
@@ -326,6 +327,7 @@ export const quoteLineCategoryMarkupsValidator = z
 export const quoteLineValidator = z.object({
   id: zfd.text(z.string().optional()),
   quoteId: z.string(),
+  itemType: z.enum(itemType).optional(),
   itemId: z.string().min(1, { message: "Part is required" }),
   status: z.enum(quoteLineStatusType, {
     errorMap: () => ({ message: "Status is required" })
@@ -405,18 +407,6 @@ export const quoteMaterialValidator = z
   )
   .refine(
     (data) => {
-      if (data.itemType === "Tool") {
-        return !!data.itemId;
-      }
-      return true;
-    },
-    {
-      message: "Tool ID is required",
-      path: ["itemId"]
-    }
-  )
-  .refine(
-    (data) => {
       if (data.itemType === "Consumable") {
         return !!data.itemId;
       }
@@ -447,6 +437,8 @@ export const quoteOperationValidator = z
     }),
     processId: z.string().min(1, { message: "Process is required" }),
     procedureId: zfd.text(z.string().optional()),
+    assemblyInstructionId: zfd.text(z.string().optional()),
+    inspectionDocumentId: zfd.text(z.string().optional()),
     workCenterId: zfd.text(z.string().optional()),
     description: zfd.text(
       z.string().min(0, { message: "Description is required" })
@@ -479,7 +471,7 @@ export const quoteOperationValidator = z
   })
   .refine(
     (data) => {
-      if (data.operationType === "Outside") {
+      if (data.operationType === "Outside Processing") {
         return Number.isFinite(data.operationMinimumCost);
       }
       return true;
@@ -491,7 +483,7 @@ export const quoteOperationValidator = z
   )
   .refine(
     (data) => {
-      if (data.operationType === "Outside") {
+      if (data.operationType === "Outside Processing") {
         return Number.isFinite(data.operationUnitCost);
       }
       return true;
@@ -503,7 +495,7 @@ export const quoteOperationValidator = z
   )
   .refine(
     (data) => {
-      if (data.operationType === "Outside") {
+      if (data.operationType === "Outside Processing") {
         return Number.isFinite(data.operationLeadTime);
       }
       return true;
@@ -515,7 +507,7 @@ export const quoteOperationValidator = z
   )
   .refine(
     (data) => {
-      if (data.operationType === "Inside") {
+      if (data.operationType !== "Outside Processing") {
         return !!data.setupUnit;
       }
       return true;
@@ -527,7 +519,7 @@ export const quoteOperationValidator = z
   )
   .refine(
     (data) => {
-      if (data.operationType === "Inside") {
+      if (data.operationType !== "Outside Processing") {
         return !!data.laborUnit;
       }
       return true;
@@ -539,8 +531,10 @@ export const quoteOperationValidator = z
   )
   .refine(
     (data) => {
-      if (data.operationType === "Inside") {
-        return !!data.laborUnit;
+      // Machine only applies to Process operations — Assembly and Inspection
+      // are setup + labor work.
+      if (data.operationType === "Process") {
+        return !!data.machineUnit;
       }
       return true;
     },
@@ -551,7 +545,7 @@ export const quoteOperationValidator = z
   )
   .refine(
     (data) => {
-      if (data.operationType === "Inside") {
+      if (data.operationType !== "Outside Processing") {
         return Number.isFinite(data.setupTime);
       }
       return true;
@@ -563,7 +557,7 @@ export const quoteOperationValidator = z
   )
   .refine(
     (data) => {
-      if (data.operationType === "Inside") {
+      if (data.operationType !== "Outside Processing") {
         return Number.isFinite(data.laborTime);
       }
       return true;
@@ -575,7 +569,7 @@ export const quoteOperationValidator = z
   )
   .refine(
     (data) => {
-      if (data.operationType === "Inside") {
+      if (data.operationType === "Process") {
         return Number.isFinite(data.machineTime);
       }
       return true;
@@ -587,7 +581,7 @@ export const quoteOperationValidator = z
   )
   .refine(
     (data) => {
-      if (data.operationType === "Inside") {
+      if (data.operationType === "Process") {
         return Number.isFinite(data.machineRate);
       }
       return true;
@@ -599,7 +593,7 @@ export const quoteOperationValidator = z
   )
   .refine(
     (data) => {
-      if (data.operationType === "Inside") {
+      if (data.operationType !== "Outside Processing") {
         return Number.isFinite(data.overheadRate);
       }
       return true;
@@ -611,7 +605,7 @@ export const quoteOperationValidator = z
   )
   .refine(
     (data) => {
-      if (data.operationType === "Inside") {
+      if (data.operationType !== "Outside Processing") {
         return Number.isFinite(data.laborRate);
       }
       return true;
@@ -619,6 +613,18 @@ export const quoteOperationValidator = z
     {
       message: "Labor rate is required",
       path: ["laborRate"]
+    }
+  )
+  .refine(
+    (data) => {
+      if (data.operationType === "Inspection") {
+        return !!data.inspectionDocumentId;
+      }
+      return true;
+    },
+    {
+      message: "Inspection Plan is required",
+      path: ["inspectionDocumentId"]
     }
   );
 
@@ -656,7 +662,7 @@ export const quoteShipmentValidator = z.object({
 
 export const salesOrderLineType = [
   "Part",
-  // "Service",
+  "Service",
   "Material",
   "Tool",
   "Consumable",
@@ -677,6 +683,31 @@ export const salesOrderStatusType = [
   "Cancelled",
   "Closed"
 ] as const;
+
+// Sales orders in these statuses can still receive/fulfill a job — i.e. a job
+// may be linked to one of their lines. The terminal statuses (Completed,
+// Invoiced, Cancelled, Closed) are excluded. Used when offering sales order
+// lines to link a job to (see getOpenSalesOrderLinesForItem).
+export const OPEN_SALES_ORDER_STATUSES = [
+  "Draft",
+  "Needs Approval",
+  "Confirmed",
+  "In Progress",
+  "To Ship and Invoice",
+  "To Ship",
+  "To Invoice"
+] as const;
+
+/**
+ * True for terminal statuses (Completed, Invoiced, Cancelled, Closed) — and for
+ * null/unknown — i.e. sales orders a job should not be (re)linked to. Inverse of
+ * OPEN_SALES_ORDER_STATUSES.
+ */
+export function isSalesOrderClosed(status: string | null | undefined): boolean {
+  return !OPEN_SALES_ORDER_STATUSES.includes(
+    status as (typeof OPEN_SALES_ORDER_STATUSES)[number]
+  );
+}
 
 export const salesConfirmValidator = z
   .object({
@@ -763,11 +794,17 @@ export const salesOrderLineValidator = z
     description: zfd.text(z.string().optional()),
     itemId: zfd.text(z.string().optional()),
     locationId: z.string().min(0, { message: "Location is required" }),
-    methodType: z
-      .enum(methodType, {
-        errorMap: () => ({ message: "Method is required" })
-      })
-      .optional(),
+    // Wrapped in zfd.text so an empty-string submission (the form always posts a
+    // hidden methodType) coerces to undefined instead of failing the enum check.
+    // Requiredness is enforced conditionally by the refine below, which exempts
+    // Comment and Fixed Asset lines.
+    methodType: zfd.text(
+      z
+        .enum(methodType, {
+          errorMap: () => ({ message: "Method is required" })
+        })
+        .optional()
+    ),
     modelUploadId: zfd.text(z.string().optional()),
     promisedDate: zfd.text(z.string().optional()),
     saleQuantity: zfd.numeric(z.number().optional()),

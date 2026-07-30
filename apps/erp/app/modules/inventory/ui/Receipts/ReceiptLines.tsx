@@ -446,6 +446,10 @@ function ReceiptLineItem({
   const splitDisclosure = useDisclosure();
   const deleteDisclosure = useDisclosure();
 
+  const remainingQuantity =
+    (line.outstandingQuantity ?? 0) - (line.receivedQuantity ?? 0);
+  const isSurplus = remainingQuantity < 0;
+
   return (
     <div className={cn("flex flex-col border-b p-6 gap-6 relative", className)}>
       <div className="absolute top-4 right-6">
@@ -548,16 +552,16 @@ function ReceiptLineItem({
 
             <VStack spacing={1} className="text-center items-center">
               <label className="text-xs text-muted-foreground">
-                Outstanding
+                {isSurplus ? "Surplus" : "Outstanding"}
               </label>
               <HStack className="justify-center">
-                <span className="text-sm py-1.5">
-                  {(line.outstandingQuantity ?? 0) -
-                    (line.receivedQuantity ?? 0)}
+                <span
+                  className={cn("text-sm py-1.5", isSurplus && "text-red-500")}
+                >
+                  {Math.abs(remainingQuantity)}
                 </span>
 
-                {(line.receivedQuantity ?? 0) >
-                  (line.outstandingQuantity ?? 0) && (
+                {isSurplus && (
                   <Tooltip>
                     <TooltipTrigger>
                       <LuCircleAlert className="text-red-500" />

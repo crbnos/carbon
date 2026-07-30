@@ -17,9 +17,9 @@ export const flashClientMiddleware: MiddlewareFunction<
     const result = (rootData.result as Record<string, unknown>)
       .result as Result | null;
     if (result?.success === true) {
-      toast.success(result.message);
+      toast.success(result.message, { description: result.description });
     } else if (result?.message) {
-      toast.error(result.message);
+      toast.error(result.message, { description: result.description });
     }
   }
 

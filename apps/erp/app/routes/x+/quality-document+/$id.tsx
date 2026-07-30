@@ -31,7 +31,7 @@ import {
   rejectRequest
 } from "~/modules/shared";
 import { getDatabaseClient } from "~/services/database.server";
-import type { Handle } from "~/utils/handle";
+import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
 const logger = getLogger("erp", "id");
@@ -101,8 +101,10 @@ async function getQualityDocumentApprovalContext(
 }
 
 export const handle: Handle = {
-  breadcrumb: msg`Policy & Procedure`,
-  to: path.to.qualityDocuments,
+  breadcrumb: detailBreadcrumb(
+    { breadcrumb: msg`Policy & Procedure`, to: path.to.qualityDocuments },
+    (data) => data?.document?.name
+  ),
   module: "quality"
 };
 

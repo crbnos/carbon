@@ -133,6 +133,12 @@ services:
       PGRST_DB_SCHEMAS: public,storage,graphql_public
       PGRST_DB_ANON_ROLE: anon
       PGRST_JWT_SECRET: ${SUPABASE_JWT_SECRET}
+      # Pool default is 10 — a burst of concurrent authed queries (the /x loader
+      # alone fires ~16) plus any aborted-mid-transaction requests exhausts it and
+      # every subsequent query blocks. Bigger pool + a bounded acquisition timeout
+      # so a saturated pool fails fast instead of hanging the request forever.
+      PGRST_DB_POOL: ${PGRST_DB_POOL:-25}
+      PGRST_DB_POOL_ACQUISITION_TIMEOUT: ${PGRST_DB_POOL_ACQUISITION_TIMEOUT:-10}
       PGRST_DB_USE_LEGACY_GUCS: "false"
       PGRST_APP_SETTINGS_JWT_SECRET: ${SUPABASE_JWT_SECRET}
       PGRST_APP_SETTINGS_JWT_EXP: 3600
@@ -159,7 +165,7 @@ services:
       DB_USER: supabase_admin
       DB_PASSWORD: postgres
       DB_NAME: postgres
-      DB_AFTER_CONNECT_QUERY: 'SET search_path TO _realtime'
+      DB_AFTER_CONNECT_QUERY: "SET search_path TO _realtime"
       DB_ENC_KEY: supabaserealtime
       API_JWT_SECRET: ${SUPABASE_JWT_SECRET}
       METRICS_JWT_SECRET: ${SUPABASE_JWT_SECRET}
@@ -178,8 +184,14 @@ services:
     deploy:
       resources:
         limits:
-          memory: ${MEM_STORAGE:-192m}
-          cpus: ${CPU_STORAGE:-0.25}
+          # GB-scale CAD: temp-staging allows 2.5 GB objects. Serving a 1.85 GB
+          # object, storage-api is CPU-bound (reads/hashes the whole file before
+          # streaming) — at the old 0.25-core limit it never produced a byte
+          # before the client timed out. Give it real cores + headroom RAM. Limits
+          # are ceilings (idle ~160 MB / ~0%), only used when serving a big file.
+          # Paired with kong `proxy_buffering off` so the response streams.
+          memory: ${MEM_STORAGE:-2g}
+          cpus: ${CPU_STORAGE:-2}
     depends_on:
       postgres:
         condition: service_healthy
@@ -189,7 +201,11 @@ services:
       POSTGREST_URL: http://postgrest:3000
       PGRST_JWT_SECRET: ${SUPABASE_JWT_SECRET}
       DATABASE_URL: postgres://supabase_storage_admin:postgres@postgres:5432/postgres
-      FILE_SIZE_LIMIT: 52428800
+      # 2.5 GB global storage ceiling (must be >= the largest per-bucket limit;
+      # effective per-bucket = min(this, bucket limit)). Per-bucket limits then
+      # differentiate: `private` = 50 MB (served artifacts), `temp-staging` =
+      # 2.5 GB (raw CAD). Keep in sync with config.toml [storage].
+      FILE_SIZE_LIMIT: 2500000000
       STORAGE_BACKEND: file
       FILE_STORAGE_BACKEND_PATH: /var/lib/storage
       TENANT_ID: stub
@@ -280,6 +296,9 @@ services:
       # edge container itself).
       INNGEST_DEV: "1"
       INNGEST_BASE_URL: http://inngest:8288
+      # Local Chromium for the `thumbnail` edge fn (the `chrome` profile below).
+      # Prod reads no env → falls back to the remote browserless box.
+      BROWSERLESS_WS_URL: ws://chrome:3000
     volumes:
       - ./packages/database/supabase/functions:/home/deno/functions:ro
       - ./packages/database/src:/home/src:ro
@@ -321,6 +340,11 @@ services:
       KONG_DNS_ORDER: LAST,A,CNAME
       KONG_PLUGINS: request-transformer,cors,key-auth,acl,basic-auth
       KONG_NGINX_WORKER_PROCESSES: ${KONG_WORKERS:-1}
+      # Stream proxied responses instead of buffering them. Default nginx
+      # `proxy_buffering on` buffers the whole upstream response (to RAM then a
+      # temp file capped at 1 GB) before sending — so a >1 GB storage download
+      # (2.5 GB temp-staging cap) stalls/aborts. `off` streams upstream→client.
+      KONG_NGINX_PROXY_PROXY_BUFFERING: "off"
     volumes:
       - ./packages/dev/docker/kong.yml:/home/kong/kong.yml:ro
 
@@ -350,6 +374,33 @@ services:
     volumes:
       - inngest:/data
       - ${HOME}/.portless/ca.pem:/etc/ssl/certs/portless-ca.pem:ro
+
+  # Local headless Chromium for the `thumbnail` edge fn — opt-in
+  # (`crbn up --thumbnails` enables this profile). v1 browserless (swiftshader
+  # WebGL, so the GLB render works) is compatible with the edge fn's puppeteer
+  # 16.2.0. edge-runtime reaches it at ws://chrome:3000; it in turn renders the
+  # portless ERP host (VERCEL_URL, e.g. erp.<prefix>.dev) through the portless
+  # proxy on the host — the same host-gateway path the inngest service uses. The
+  # raw ERP dev port only binds 127.0.0.1, so it is NOT container-reachable; the
+  # proxy is. The edge fn connects with ignoreHTTPSErrors for the self-signed CA.
+  chrome:
+    image: browserless/chrome:1-puppeteer-21.3.6
+    restart: unless-stopped
+    profiles: ["chrome"]
+    deploy:
+      resources:
+        limits:
+          memory: ${MEM_CHROME:-1g}
+          cpus: ${CPU_CHROME:-1}
+    environment:
+      # Match the edge fn's connect URL (ws://chrome:3000, no token).
+      TOKEN: ""
+      CONNECTION_TIMEOUT: "60000"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+      # Resolve the portless erp host (erp.<prefix>.dev) to the host, so the
+      # rendered VERCEL_URL reaches the portless proxy — mirrors inngest.
+      - "${INNGEST_TLS_HOST}:host-gateway"
 
 volumes:
   pgdata:
