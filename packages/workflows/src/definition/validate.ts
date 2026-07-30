@@ -1,22 +1,25 @@
-import type { WorkflowCatalog } from "./catalog";
-import type { WorkflowIssue } from "./issues";
+import { type WorkflowCatalog, walkPath } from "./catalog";
+import type { WorkflowIssue, WorkflowIssueCode } from "./issues";
 import {
   checkNodeConfig,
   checkNodeTypes,
   getNodeHandles,
+  getNodeLoopList,
   getNodeOutputs,
-  getNodeRefs,
+  getNodeValues,
   isNodeConfigured,
+  type LoopList,
   type NodeContext,
   type NodeOutputs,
-  type ResolvedRef
+  type ResolvedRef,
+  type ResolveFailure
 } from "./nodes";
 import {
   type TriggerNode,
   type WorkflowDefinition,
   workflowDefinitionSchema
 } from "./schema";
-import type { ValueOrRef, ValueType, VariableRef } from "./types";
+import type { ItemRef, ValueOrRef, ValueType, VariableRef } from "./types";
 
 /**
  * Is this workflow well-formed enough to activate? An empty result means yes.
@@ -297,8 +300,8 @@ function reachableFrom(
 
 /**
  * Answers the questions node kinds ask about the rest of the definition.
- * Ancestors and outputs are memoised because both layers 5 and 6 walk every
- * reference in the graph.
+ * Ancestors, outputs and loop lists are memoised because both layers 5 and 6
+ * walk every value in the graph.
  */
 function createContext(
   definition: WorkflowDefinition,
@@ -308,6 +311,7 @@ function createContext(
   const reverse = buildAdjacency(definition, "reverse");
   const ancestorCache = new Map<string, Set<string>>();
   const outputCache = new Map<string, NodeOutputs | undefined>();
+  const loopCache = new Map<string, LoopList | undefined>();
 
   /** Every node whose value can legitimately be read at `nodeId`. */
   const ancestorsOf = (nodeId: string): Set<string> => {
@@ -347,38 +351,52 @@ function createContext(
     return { type: resolved };
   };
 
+  /** The item one turn of a looping node holds, reached through that node's list. */
+  const resolveItem = (ref: ItemRef, atNodeId: string): ResolvedRef => {
+    const loop = loopListOf(atNodeId);
+    if (loop === undefined) return { failure: "no-loop" };
+    if (!("type" in loop)) return loop;
+    const resolved = walkPath(loop.type.of, ref.path, catalog);
+    return resolved === undefined ? { failure: "unknown" } : { type: resolved };
+  };
+
+  const resolveValue = (value: ValueOrRef, atNodeId: string): ResolvedRef => {
+    if (value.kind === "literal") return { type: value.type };
+    if (value.kind === "item") return resolveItem(value, atNodeId);
+    return resolveRef(value, atNodeId);
+  };
+
   const typeOf = (
     value: ValueOrRef,
     atNodeId: string
   ): ValueType | undefined => {
-    if (value.kind === "literal") return value.type;
-    const resolved = resolveRef(value, atNodeId);
+    const resolved = resolveValue(value, atNodeId);
     return "type" in resolved ? resolved.type : undefined;
   };
 
-  const ctx: NodeContext = { catalog, resolveRef, typeOf, outputsOf };
+  const loopListOf = (nodeId: string): LoopList | undefined => {
+    if (loopCache.has(nodeId)) return loopCache.get(nodeId);
+    const node = byId.get(nodeId);
+    const loop = node === undefined ? undefined : getNodeLoopList(node, ctx);
+    loopCache.set(nodeId, loop);
+    return loop;
+  };
+
+  const ctx: NodeContext = {
+    catalog,
+    resolveValue,
+    typeOf,
+    outputsOf,
+    loopListOf
+  };
   return ctx;
 }
 
-/** Follow a dotted property path through the catalog's entity properties. */
-function walkPath(
-  type: ValueType,
-  path: string[],
-  catalog: WorkflowCatalog
-): ValueType | undefined {
-  let current = type;
-  for (const segment of path) {
-    if (current.kind !== "entity") return undefined;
-    const entity = catalog.getEntity(current.of);
-    if (entity === undefined) return undefined;
-    const next = entity.properties[segment];
-    if (next === undefined) return undefined;
-    current = next;
-  }
-  return current;
-}
-
-/** Layer 5 — every variable names a real, genuinely upstream value. */
+/**
+ * Layer 5 — every value resolves: a variable names a real, genuinely upstream
+ * value, and the current item is only read inside a step that works through a
+ * list.
+ */
 function checkReferences(
   definition: WorkflowDefinition,
   ctx: NodeContext
@@ -386,43 +404,67 @@ function checkReferences(
   const issues: WorkflowIssue[] = [];
 
   for (const node of definition.nodes) {
-    for (const { ref, field } of getNodeRefs(node)) {
-      const resolved = ctx.resolveRef(ref, node.id);
+    for (const { value, field } of getNodeValues(node)) {
+      const resolved = ctx.resolveValue(value, node.id);
       if ("type" in resolved) continue;
-
-      switch (resolved.failure) {
-        case "unconfigured":
-          break;
-        case "unknown-node":
-          issues.push({
-            code: "UNKNOWN_VARIABLE",
-            nodeId: node.id,
-            field,
-            message: `This uses a value from a step ("${ref.nodeId}") that no longer exists.`
-          });
-          break;
-        case "not-upstream":
-          issues.push({
-            code: "REF_NOT_UPSTREAM",
-            nodeId: node.id,
-            field,
-            message:
-              "This uses a value from a step that does not always run before it."
-          });
-          break;
-        case "unknown":
-          issues.push({
-            code: "UNKNOWN_VARIABLE",
-            nodeId: node.id,
-            field,
-            message: `"${[ref.output, ...ref.path].join(".")}" is not a value that step hands out.`
-          });
-          break;
+      const described = describeFailure(resolved.failure, value);
+      if (described !== undefined) {
+        issues.push({ ...described, nodeId: node.id, field });
       }
     }
   }
 
   return issues;
+}
+
+/**
+ * A failure as a customer would put it, or nothing when another layer reports
+ * the real cause. The same mistake on an item path and on a variable path is one
+ * code, not two, because to a customer it is the same mistake.
+ */
+function describeFailure(
+  failure: ResolveFailure,
+  value: ValueOrRef
+): { code: WorkflowIssueCode; message: string } | undefined {
+  if (value.kind === "item") {
+    if (failure === "no-loop") {
+      return {
+        code: "ITEM_OUTSIDE_LOOP",
+        message:
+          "This refers to the current item, but this step does not work through a list."
+      };
+    }
+    if (failure === "unknown") {
+      return {
+        code: "UNKNOWN_VARIABLE",
+        message: "This property does not exist on the items in that list."
+      };
+    }
+    return undefined;
+  }
+
+  if (value.kind !== "ref") return undefined;
+
+  switch (failure) {
+    case "unknown-node":
+      return {
+        code: "UNKNOWN_VARIABLE",
+        message: `This uses a value from a step ("${value.nodeId}") that no longer exists.`
+      };
+    case "not-upstream":
+      return {
+        code: "REF_NOT_UPSTREAM",
+        message:
+          "This uses a value from a step that does not always run before it."
+      };
+    case "unknown":
+      return {
+        code: "UNKNOWN_VARIABLE",
+        message: `"${[value.output, ...value.path].join(".")}" is not a value that step hands out.`
+      };
+    default:
+      return undefined;
+  }
 }
 
 /**

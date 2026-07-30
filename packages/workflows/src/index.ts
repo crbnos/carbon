@@ -12,18 +12,20 @@ export type {
 export { createFixtureCatalog } from "./definition/catalog";
 export type { WorkflowIssue, WorkflowIssueCode } from "./definition/issues";
 export type {
+  LoopList,
   NodeContext,
   NodeOutputs,
-  RefSite,
   ResolvedRef,
-  ResolveFailure
+  ResolveFailure,
+  ValueSite
 } from "./definition/nodes";
 export {
   checkNodeConfig,
   checkNodeTypes,
   getNodeHandles,
+  getNodeLoopList,
   getNodeOutputs,
-  getNodeRefs,
+  getNodeValues,
   isNodeConfigured,
   NODE_KINDS
 } from "./definition/nodes";
@@ -67,6 +69,7 @@ export {
 export type {
   Clause,
   Combinator,
+  ItemRef,
   Literal,
   PrimitiveKind,
   ScalarType,
@@ -79,6 +82,7 @@ export {
   clauseSchema,
   combinatorSchema,
   describeType,
+  itemRefSchema,
   literalSchema,
   literalValueMatchesType,
   OPERATORS_BY_TYPE,
@@ -97,6 +101,35 @@ export {
 export { validateDefinition } from "./definition/validate";
 export type { RunTrigger } from "./run-trigger";
 export { runTriggerSchema } from "./run-trigger";
+export type {
+  EntityLoader,
+  NodeExecutor,
+  NodeResult,
+  Resolution,
+  RuntimeContext,
+  RuntimeValue
+} from "./runtime";
+export {
+  compare,
+  conditionExecutor,
+  entityValue,
+  evaluateClauses,
+  executorFor,
+  filterExecutor,
+  filterSummary,
+  fromColumn,
+  fromLiteral,
+  isNull,
+  itemKeyFor,
+  listValue,
+  NO_BRANCH,
+  nullValue,
+  planBatch,
+  primitiveValue,
+  resolveItem,
+  resolveRef,
+  resolveValue
+} from "./runtime";
 export type { DesiredSubscription, DesiredTriggerRow } from "./sync";
 export {
   deriveWorkflowSubscriptions,

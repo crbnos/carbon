@@ -48,6 +48,24 @@ export interface WorkflowCatalog {
   getEntity(name: string): CatalogEntity | undefined;
 }
 
+/** The type at the end of a property path, or undefined where it does not exist. */
+export function walkPath(
+  type: ValueType,
+  path: string[],
+  catalog: WorkflowCatalog
+): ValueType | undefined {
+  let current = type;
+  for (const segment of path) {
+    if (current.kind !== "entity") return undefined;
+    const entity = catalog.getEntity(current.of);
+    if (entity === undefined) return undefined;
+    const next = entity.properties[segment];
+    if (next === undefined) return undefined;
+    current = next;
+  }
+  return current;
+}
+
 const FIXTURE_EVENTS: CatalogEvent[] = [
   {
     id: "purchaseOrder.status.changed",
@@ -70,7 +88,7 @@ const FIXTURE_ENTITIES: CatalogEntity[] = [
   },
   { name: "user", properties: { email: t.string, manager: t.entity("user") } },
   { name: "part", properties: { name: t.string, unitPrice: t.number } },
-  { name: "job", properties: { name: t.string } },
+  { name: "job", properties: { name: t.string, dueDate: t.date } },
   { name: "issue", properties: { title: t.string } }
 ];
 

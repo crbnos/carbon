@@ -12,6 +12,7 @@ export * from "./duration";
 export * from "./field-registry";
 export * from "./file";
 export * from "./geo";
+export * from "./hash";
 export * from "./headers";
 export * from "./items";
 export * from "./keyboard";

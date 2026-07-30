@@ -1,9 +1,11 @@
 import type { CatalogInput, WorkflowCatalog } from "./catalog";
 import type { WorkflowIssue } from "./issues";
 import {
+  type ActionNode,
   DEFAULT_HANDLE,
   DEFAULT_OUTPUT,
   FAILURE_HANDLE,
+  type FilterNode,
   SUCCESS_HANDLE,
   type WorkflowNode,
   type WorkflowNodeType
@@ -14,28 +16,34 @@ import {
   operatorsForType,
   typesEqual,
   type ValueOrRef,
-  type ValueType,
-  type VariableRef
+  type ValueType
 } from "./types";
 
 export type NodeOutputs = Record<string, ValueType>;
 
 /**
- * Why a reference could not be resolved. `unconfigured` means the node it points
- * at has no catalog entry, so its outputs are unknowable and the config layer
- * reports that instead — showing both would be two problems where there is one.
+ * Why a value could not be resolved. `unconfigured` means another layer already
+ * reports the real cause — the node it reads from has no catalog entry, or a
+ * looping node has not settled on a list — so reporting it here too would be two
+ * problems where there is one. `no-loop` is the current item read outside a loop.
  */
 export type ResolveFailure =
   | "unknown-node"
   | "not-upstream"
   | "unknown"
-  | "unconfigured";
+  | "unconfigured"
+  | "no-loop";
 
 export type ResolvedRef = { type: ValueType } | { failure: ResolveFailure };
 
-/** One place a node reads a value from elsewhere, and the field it sits in. */
-export interface RefSite {
-  ref: VariableRef;
+type ListType = Extract<ValueType, { kind: "list" }>;
+
+/** The list a looping node works through, or why it is not settled. */
+export type LoopList = { type: ListType } | { failure: ResolveFailure };
+
+/** One value plugged into a node — literal, variable or current item. */
+export interface ValueSite {
+  value: ValueOrRef;
   field: string;
 }
 
@@ -46,24 +54,28 @@ export interface RefSite {
  */
 export interface NodeContext {
   catalog: WorkflowCatalog;
-  resolveRef(ref: VariableRef, atNodeId: string): ResolvedRef;
+  resolveValue(value: ValueOrRef, atNodeId: string): ResolvedRef;
   typeOf(value: ValueOrRef, atNodeId: string): ValueType | undefined;
   outputsOf(nodeId: string): NodeOutputs | undefined;
+  loopListOf(nodeId: string): LoopList | undefined;
 }
 
 /**
- * Everything one kind of node declares about itself. Keeping the six behaviours
- * together means adding a node type is a single entry in `NODE_KINDS` rather
- * than six switches to remember, and the mapped type below makes forgetting one
- * a compile error instead of a node that silently validates clean.
+ * Everything one kind of node declares about itself. Keeping the seven
+ * behaviours together means adding a node type is a single entry in
+ * `NODE_KINDS` rather than seven switches to remember, and the mapped type below
+ * makes forgetting one a compile error instead of a node that silently
+ * validates clean.
  */
 interface NodeKind<N extends WorkflowNode> {
   /** Outgoing connection points, by name. */
   handles(node: N): string[];
-  /** Every value this node reads from somewhere else. */
-  refs(node: N): RefSite[];
+  /** Every value plugged into this node, whatever form it takes. */
+  values(node: N): ValueSite[];
   /** What it hands onward; `undefined` when its catalog entry is missing. */
   outputs(node: N, ctx: NodeContext): NodeOutputs | undefined;
+  /** The one list this node works through, or undefined when it does not loop. */
+  loopList(node: N, ctx: NodeContext): LoopList | undefined;
   /** Is its catalog entry resolvable? Type checking is skipped when not. */
   configured(node: N, ctx: NodeContext): boolean;
   /** Are the values plugged into it the kind of values that fit? */
@@ -76,17 +88,46 @@ interface NodeKind<N extends WorkflowNode> {
 // Shared checks — clauses (condition, lookup, filter) and inputs (entity, action)
 // ---------------------------------------------------------------------------
 
-function clauseRefs(clauses: Clause[], prefix: string): RefSite[] {
-  const refs: RefSite[] = [];
-  clauses.forEach((clause, index) => {
-    if (clause.left.kind === "ref") {
-      refs.push({ ref: clause.left, field: `${prefix}.${index}.left` });
-    }
-    if (clause.right.kind === "ref") {
-      refs.push({ ref: clause.right, field: `${prefix}.${index}.right` });
-    }
+function clauseValues(clauses: Clause[], prefix: string): ValueSite[] {
+  return clauses.flatMap((clause, index) => [
+    { value: clause.left, field: `${prefix}.${index}.left` },
+    { value: clause.right, field: `${prefix}.${index}.right` }
+  ]);
+}
+
+function inputValues(inputs: Record<string, ValueOrRef>): ValueSite[] {
+  return Object.entries(inputs).map(([field, value]) => ({ value, field }));
+}
+
+/**
+ * A filter always works through its source; every reason that source is not a
+ * list it reports itself, in `checkTypes` or `checkConfig`.
+ */
+function filterLoopList(node: FilterNode, ctx: NodeContext): LoopList {
+  if (node.data.source === undefined) return { failure: "unconfigured" };
+  const source = ctx.resolveValue(node.data.source, node.id);
+  if ("type" in source && source.type.kind === "list") {
+    return { type: source.type };
+  }
+  return { failure: "unconfigured" };
+}
+
+/**
+ * A batched action repeats over its one list-typed input. Inputs reading the
+ * current item are skipped, so asking what the item is never asks again.
+ */
+function actionLoopList(
+  node: ActionNode,
+  ctx: NodeContext
+): LoopList | undefined {
+  if (!node.data.batch) return undefined;
+  const lists = Object.values(node.data.inputs).flatMap((input) => {
+    if (input.kind === "item") return [];
+    const type = ctx.typeOf(input, node.id);
+    return type !== undefined && type.kind === "list" ? [type] : [];
   });
-  return refs;
+  const only = lists.length === 1 ? lists[0] : undefined;
+  return only === undefined ? { failure: "unconfigured" } : { type: only };
 }
 
 function checkClauses(
@@ -214,7 +255,7 @@ export const NODE_KINDS: {
 } = {
   trigger: {
     handles: () => [DEFAULT_HANDLE],
-    refs: () => [],
+    values: () => [],
     outputs: (node, ctx) => {
       if (node.data.schedule !== undefined) return {};
       const events = node.data.events.map((id) => ctx.catalog.getEvent(id));
@@ -227,6 +268,7 @@ export const NODE_KINDS: {
       }
       return shared;
     },
+    loopList: () => undefined,
     configured: (node, ctx) =>
       node.data.schedule !== undefined ||
       (node.data.events.length > 0 &&
@@ -245,11 +287,12 @@ export const NODE_KINDS: {
 
   condition: {
     handles: (node) => node.data.paths.map((path) => path.id),
-    refs: (node) =>
+    values: (node) =>
       node.data.paths.flatMap((path) =>
-        clauseRefs(path.clauses, `paths.${path.id}.clauses`)
+        clauseValues(path.clauses, `paths.${path.id}.clauses`)
       ),
     outputs: () => ({}),
+    loopList: () => undefined,
     configured: () => true,
     checkTypes: (node, ctx) =>
       node.data.paths.flatMap((path) =>
@@ -275,16 +318,14 @@ export const NODE_KINDS: {
 
   entity: {
     handles: () => [DEFAULT_HANDLE],
-    refs: (node) =>
-      Object.entries(node.data.inputs).flatMap(([field, value]) =>
-        value.kind === "ref" ? [{ ref: value, field }] : []
-      ),
+    values: (node) => inputValues(node.data.inputs),
     outputs: (node, ctx) => {
       const operation = ctx.catalog.getOperation(node.data.operation);
       return operation === undefined
         ? undefined
         : { [DEFAULT_OUTPUT]: operation.output };
     },
+    loopList: () => undefined,
     configured: (node, ctx) =>
       ctx.catalog.getOperation(node.data.operation) !== undefined,
     checkTypes: (node, ctx) => {
@@ -312,7 +353,7 @@ export const NODE_KINDS: {
 
   lookup: {
     handles: () => [SUCCESS_HANDLE, FAILURE_HANDLE],
-    refs: (node) => clauseRefs(node.data.match, "match"),
+    values: (node) => clauseValues(node.data.match, "match"),
     outputs: (node, ctx) => {
       const entity = ctx.catalog.getEntity(node.data.entity);
       if (entity === undefined) return undefined;
@@ -322,6 +363,7 @@ export const NODE_KINDS: {
           node.data.returns === "list" ? { kind: "list", of: one } : one
       };
     },
+    loopList: () => undefined,
     configured: (node, ctx) =>
       ctx.catalog.getEntity(node.data.entity) !== undefined,
     checkTypes: (node, ctx) =>
@@ -346,18 +388,17 @@ export const NODE_KINDS: {
 
   filter: {
     handles: () => [DEFAULT_HANDLE],
-    refs: (node) => [
+    values: (node) => [
       ...(node.data.source === undefined
         ? []
-        : [{ ref: node.data.source, field: "source" }]),
-      ...clauseRefs(node.data.clauses, "clauses")
+        : [{ value: node.data.source, field: "source" }]),
+      ...clauseValues(node.data.clauses, "clauses")
     ],
     outputs: (node, ctx) => {
-      if (node.data.source === undefined) return undefined;
-      const source = ctx.resolveRef(node.data.source, node.id);
-      if (!("type" in source) || source.type.kind !== "list") return undefined;
-      return { [DEFAULT_OUTPUT]: source.type };
+      const list = filterLoopList(node, ctx);
+      return "type" in list ? { [DEFAULT_OUTPUT]: list.type } : undefined;
     },
+    loopList: filterLoopList,
     // A filter has no catalog entry to be missing; a bad source is a type error
     // it reports itself, below.
     configured: () => true,
@@ -385,11 +426,9 @@ export const NODE_KINDS: {
 
   action: {
     handles: () => [SUCCESS_HANDLE, FAILURE_HANDLE],
-    refs: (node) =>
-      Object.entries(node.data.inputs).flatMap(([field, value]) =>
-        value.kind === "ref" ? [{ ref: value, field }] : []
-      ),
+    values: (node) => inputValues(node.data.inputs),
     outputs: (node, ctx) => ctx.catalog.getAction(node.data.action)?.outputs,
+    loopList: actionLoopList,
     configured: (node, ctx) =>
       ctx.catalog.getAction(node.data.action) !== undefined,
     checkTypes: (node, ctx) => {
@@ -408,15 +447,29 @@ export const NODE_KINDS: {
       if (node.data.action.length === 0) {
         return [incomplete(node, "action", "Choose what this step should do.")];
       }
-      if (ctx.catalog.getAction(node.data.action) !== undefined) return [];
-      return [
-        {
-          code: "UNKNOWN_ACTION",
-          nodeId: node.id,
-          field: "action",
-          message: `"${node.data.action}" is not something we can do any more.`
+      if (ctx.catalog.getAction(node.data.action) === undefined) {
+        return [
+          {
+            code: "UNKNOWN_ACTION",
+            nodeId: node.id,
+            field: "action",
+            message: `"${node.data.action}" is not something we can do any more.`
+          }
+        ];
+      }
+      if (node.data.batch) {
+        const loop = ctx.loopListOf(node.id);
+        if (loop === undefined || !("type" in loop)) {
+          return [
+            incomplete(
+              node,
+              "batch",
+              "A step that repeats needs exactly one list to repeat over."
+            )
+          ];
         }
-      ];
+      }
+      return [];
     }
   }
 };
@@ -433,13 +486,18 @@ function kindOf<N extends WorkflowNode>(node: N): NodeKind<N> {
 export const getNodeHandles = (node: WorkflowNode): string[] =>
   kindOf(node).handles(node);
 
-export const getNodeRefs = (node: WorkflowNode): RefSite[] =>
-  kindOf(node).refs(node);
+export const getNodeValues = (node: WorkflowNode): ValueSite[] =>
+  kindOf(node).values(node);
 
 export const getNodeOutputs = (
   node: WorkflowNode,
   ctx: NodeContext
 ): NodeOutputs | undefined => kindOf(node).outputs(node, ctx);
+
+export const getNodeLoopList = (
+  node: WorkflowNode,
+  ctx: NodeContext
+): LoopList | undefined => kindOf(node).loopList(node, ctx);
 
 export const isNodeConfigured = (
   node: WorkflowNode,

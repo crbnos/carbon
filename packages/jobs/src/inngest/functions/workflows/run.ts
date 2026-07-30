@@ -1,5 +1,11 @@
 import { runTriggerSchema } from "@carbon/workflows";
 import { z } from "zod";
+import { getJobDatabaseClient } from "../../../db";
+import {
+  type EngineStep,
+  executeWorkflowRun,
+  failCrashedRun
+} from "../../../workflows/engine";
 import { inngest } from "../../client";
 
 const runPayloadSchema = z.object({
@@ -14,19 +20,39 @@ const runPayloadSchema = z.object({
 });
 
 /**
- * Stub consumer for matched runs. Phase 4 replaces this body with the graph
- * walker and adds the per-company / per-workflow concurrency keys.
+ * Walks one matched run's graph, one durable step per node, acting as the
+ * workflow's owner. See `.claude/rules/workflow-engine.md`.
  */
 export const workflowRunFunction = inngest.createFunction(
-  { id: "workflow-run", retries: 3 },
+  {
+    id: "workflow-run",
+    retries: 3,
+    idempotency: "event.data.runId",
+    concurrency: [
+      { limit: 10, key: "event.data.companyId" },
+      { limit: 5, key: "event.data.workflowId" }
+    ],
+    onFailure: async ({ event, logger }) => {
+      const { runId, companyId } = event.data.event.data;
+      logger.error(`Workflow run ${runId} failed`, event.data.error);
+
+      await failCrashedRun(
+        getJobDatabaseClient(),
+        runId,
+        companyId,
+        event.data.error.message
+      );
+    }
+  },
   { event: "carbon/workflow-run.queued" },
   async ({ event, step, logger }) => {
     const payload = runPayloadSchema.parse(event.data);
-    await step.run("stub", async () => {
-      logger.info(
-        `Workflow run ${payload.runId} queued for workflow ${payload.workflowId} (stub — the engine is phase 4)`
-      );
+    // Inngest's step.run returns a Jsonify of the handler's type; every engine
+    // step already returns plain JSON, so the narrower shape is the honest one.
+    return executeWorkflowRun({
+      payload,
+      step: step as unknown as EngineStep,
+      logger
     });
-    return { runId: payload.runId };
   }
 );

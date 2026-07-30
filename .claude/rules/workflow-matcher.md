@@ -34,7 +34,7 @@ record change                            business moment
                  4. insert workflowRun one per workflow, ON CONFLICT DO NOTHING
                  5. emit one carbon/workflow-run.queued per row actually inserted
                        ▼
-              workflows/run.ts — stub consumer; the engine is phase 4
+              workflows/run.ts → engine/execute.ts   (workflow-engine.md)
 ```
 
 `packages/jobs/src/workflows/` holds the core and imports no Inngest:
@@ -71,7 +71,8 @@ The tag comes from the `workflow_run_id` claim on the caller's JWT.
 message (migration `20260730135206_workflows-run-tag.sql`), and `QueueMessage.workflowRunId`
 carries it to the handler. **A workflow action that writes through anything but the
 owner-scoped client is untagged** — it will look like a person's write, so the origin filter
-and both loop guards go blind. Nothing mints a tagged token until phase 4.
+and both loop guards go blind. The engine mints it: `getOwnerClient(ownerId, runId)` in
+`packages/jobs/src/workflows/engine/owner.ts`.
 
 ## Loop guards
 
@@ -140,8 +141,8 @@ Kysely bypasses RLS. **The caller authorizes first** — phase 7's activation ro
   company with no workflows costs nothing. That is the point of deriving subscriptions.
 - `events/workflow.ts` returns early on `TRUNCATE`; `record` is `new ?? old`, and
   `before`/`after` are populated only for UPDATE.
-- `workflows/run.ts` is a **stub** — it logs the run id and returns. Phase 4 replaces the
-  body and adds the real per-company / per-workflow concurrency keys, which is why it
-  deliberately declares none today.
+- `workflows/run.ts` hands the payload to `src/workflows/engine/` and declares
+  `idempotency: "event.data.runId"` plus per-`companyId` (10) and per-`workflowId` (5)
+  concurrency keys. See `workflow-engine.md`.
 - Deploy-time drift checks live with `packages/checks`: the `workflow-trigger-event-drift`
   SQL invariant and `pnpm --filter @carbon/checks workflow-events`.

@@ -511,6 +511,155 @@ describe("configuration", () => {
   });
 });
 
+describe("the current item", () => {
+  const item = (path: string[] = []) => ({ kind: "item" as const, path });
+
+  const filterOn = (clauses: unknown[]) =>
+    define(
+      [
+        trigger(),
+        lookup("find", "part", "list"),
+        {
+          id: "f1",
+          type: "filter",
+          position: { x: 0, y: 0 },
+          data: { source: ref("find", "result"), clauses }
+        }
+      ],
+      [
+        edge("e1", "trigger", "out", "find"),
+        edge("e2", "find", "success", "f1")
+      ]
+    );
+
+  it("accepts a filter testing a property of the item it is on", () => {
+    const definition = filterOn([
+      {
+        left: item(["unitPrice"]),
+        operator: "gt",
+        right: literal("number", 10)
+      }
+    ]);
+    expect(validateDefinition(definition, catalog)).toEqual([]);
+  });
+
+  it("reports ITEM_OUTSIDE_LOOP on a node that works through no list", () => {
+    const definition = define(
+      [
+        trigger(),
+        condition("check", [
+          {
+            id: "p1",
+            kind: "if",
+            clauses: [
+              {
+                left: item(["unitPrice"]),
+                operator: "gt",
+                right: literal("number", 10)
+              }
+            ]
+          }
+        ])
+      ],
+      [edge("e1", "trigger", "out", "check")]
+    );
+    expect(codes(definition)).toEqual(["ITEM_OUTSIDE_LOOP"]);
+  });
+
+  it("reports UNKNOWN_VARIABLE for a property the items do not have", () => {
+    const definition = filterOn([
+      { left: item(["nope"]), operator: "eq", right: literal("string", "x") }
+    ]);
+    const issues = validateDefinition(definition, catalog);
+    expect(issues.map((i) => i.code)).toEqual(["UNKNOWN_VARIABLE"]);
+    expect(issues[0]?.message).toBe(
+      "This property does not exist on the items in that list."
+    );
+  });
+
+  // The three below all used to report ITEM_OUTSIDE_LOOP alongside — or above —
+  // the real problem, because the item check ran unconditionally in layer 7
+  // instead of joining the resolver that already suppresses knock-on failures.
+  it("reports only UNKNOWN_ENTITY when the list's record type is gone", () => {
+    const thin = createFixtureCatalog({ omitEntities: ["part"] });
+    const definition = filterOn([
+      {
+        left: item(["unitPrice"]),
+        operator: "gt",
+        right: literal("number", 10)
+      }
+    ]);
+    expect(validateDefinition(definition, thin).map((i) => i.code)).toEqual([
+      "UNKNOWN_ENTITY"
+    ]);
+  });
+
+  it("reports only INCOMPLETE_CONFIG when the filter has no list chosen", () => {
+    const definition = define(
+      [
+        trigger(),
+        {
+          id: "f1",
+          type: "filter",
+          position: { x: 0, y: 0 },
+          data: {
+            clauses: [
+              {
+                left: item(["unitPrice"]),
+                operator: "gt",
+                right: literal("number", 10)
+              }
+            ]
+          }
+        }
+      ],
+      [edge("e1", "trigger", "out", "f1")]
+    );
+    const issues = validateDefinition(definition, catalog);
+    expect(issues.map((i) => i.code)).toEqual(["INCOMPLETE_CONFIG"]);
+    expect(issues[0]?.field).toBe("source");
+  });
+
+  it("reports only UNKNOWN_ACTION when a batched action's action is gone", () => {
+    const thin = createFixtureCatalog({ omitActions: ["updatePart"] });
+    const definition = define(
+      [
+        trigger(),
+        action("a1", {
+          action: "updatePart",
+          batch: true,
+          inputs: { name: item(["name"]) }
+        })
+      ],
+      [edge("e1", "trigger", "out", "a1")]
+    );
+    expect(validateDefinition(definition, thin).map((i) => i.code)).toEqual([
+      "UNKNOWN_ACTION"
+    ]);
+  });
+
+  it("reports INCOMPLETE_CONFIG for a batch action with no list to repeat over", () => {
+    const definition = define(
+      [
+        trigger(),
+        lookup("find", "part", "one"),
+        action("a1", {
+          action: "updatePart",
+          batch: true,
+          inputs: { part: ref("find", "result") }
+        })
+      ],
+      [
+        edge("e1", "trigger", "out", "find"),
+        edge("e2", "find", "success", "a1")
+      ]
+    );
+    const issues = validateDefinition(definition, catalog);
+    expect(issues.map((i) => i.code)).toEqual(["INCOMPLETE_CONFIG"]);
+    expect(issues[0]?.field).toBe("batch");
+  });
+});
+
 describe("the catalog is injected, not baked in", () => {
   it("validates the purchase-order workflow against the full catalog", () => {
     expect(validateDefinition(purchaseOrderWorkflow(), catalog)).toEqual([]);

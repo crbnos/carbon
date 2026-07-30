@@ -54,11 +54,18 @@ pnpm --filter @carbon/jobs dev:jobs   # Start local Inngest dev server
 | Function | Event | Purpose |
 |----------|-------|---------|
 | `workflow-moment` | `carbon/workflow-moment.raised` | Moment entry point of the same matcher (a moment already IS a catalog event id) |
-| `workflow-run` | `carbon/workflow-run.queued` | **Stub** consumer for a matched run — logs and returns; phase 4 replaces the body and adds the real concurrency keys |
+| `workflow-run` | `carbon/workflow-run.queued` | Walks one matched run's graph — one durable step per node, acting as the workflow's owner. Thin wrapper over `src/workflows/engine/` |
 
 Both entry points call one shared core in `src/workflows/` (`event-ids.ts`, `matcher.ts`,
 `types.ts`), which imports no Inngest and is unit-tested directly. See
 `.claude/rules/workflow-matcher.md`.
+
+The engine lives in `src/workflows/engine/` (`walk.ts`, `owner.ts`, `loader.ts`,
+`ledger.ts`, `log.ts`, `execute.ts`) and imports no Inngest either. **A running workflow
+acts as its owner**: every business read goes through `getOwnerClient(ownerId, runId)`,
+minted per step and always carrying the run tag. `getJobDatabaseClient()` is allowed in
+the engine only for the two run-log tables — a business read through it bypasses the
+owner's permissions. See `.claude/rules/workflow-engine.md`.
 
 ## Database client
 

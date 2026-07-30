@@ -62,7 +62,7 @@ src/definition/
 ├── schema.ts     # node/edge/definition schemas, format version, handle names, PRD caps
 ├── nodes.ts      # NODE_KINDS — what each node type declares about itself
 ├── normalize.ts  # readWorkflowVersion + the migrateDefinition seam
-├── catalog.ts    # the WorkflowCatalog interface + createFixtureCatalog
+├── catalog.ts    # the WorkflowCatalog interface + walkPath + createFixtureCatalog
 └── validate.ts   # validateDefinition -> WorkflowIssue[]
 
 src/catalog/
@@ -74,8 +74,24 @@ src/catalog/
 ├── catalog.ts              # createEventCatalog() -> WorkflowCatalog
 └── index.ts                # barrel (labels deliberately excluded)
 
+src/runtime/
+├── types.ts     # RuntimeValue, Resolution, EntityLoader, RuntimeContext, NodeResult, NodeExecutor
+├── values.ts    # value constructors + fromColumn coercion
+├── resolve.ts   # structured refs and the current item -> a value, or a readable reason
+├── compare.ts   # operator semantics + clause evaluation
+├── condition.ts # the Condition executor
+├── filter.ts    # the Filter executor
+├── batch.ts     # planBatch + itemKeyFor
+├── fixtures.ts  # TEST-ONLY fake loader/context. Not exported from the package root
+└── index.ts     # barrel
+
 src/sync.ts       # trigger-event + subscription reconciler (phase 3)
 ```
+
+`src/runtime/` is pure: no I/O, no database client, no Supabase. Records are read
+through the injected `EntityLoader`, which the engine in `@carbon/jobs` implements
+over the workflow owner's own connection. Comparison semantics live in
+`runtime/compare.ts` and must not be re-implemented anywhere else.
 
 ## `sync.ts` — deriving what the matcher reads
 
@@ -123,9 +139,15 @@ subscribe to that can never fire — worse than a missing one, so it fails the b
 
 ## Node kinds
 
-Everything one node type does — handles, references, outputs, type checks, config checks — lives in
-its single `NODE_KINDS` entry. `validate.ts` owns only the cross-cutting layers below; it never
-switches on a node type.
+Everything one node type does — handles, values, outputs, the list it loops over, type checks,
+config checks — lives in its single `NODE_KINDS` entry, seven members the mapped type makes
+mandatory. `validate.ts` owns only the cross-cutting layers below; it never switches on a node type.
+
+`loopList` is where "which single list does this step work through" is answered **once**: a filter's
+source, a batched action's one list-typed input, and `undefined` for every other kind. A filter's
+outputs are its loop list; the item a `{kind:"item"}` value reads is that list's `of`; the batch
+config check is that list failing to settle. Inputs that are themselves `{kind:"item"}` are skipped
+when looking for it, which is what stops the item type asking for itself.
 
 ## `validateDefinition`
 
@@ -136,15 +158,23 @@ previous passed, so a customer is never shown type errors that are really a brok
 2. Trigger — exactly one; either events or a schedule, never both; the schedule is coherent.
 3. Edges — both endpoints exist, and the handle exists on the source node.
 4. Graph — no cycle; every non-trigger step is reachable from the trigger.
-5. References — every variable names a real, genuinely upstream value with a resolvable property path.
+5. References — every value plugged into a node resolves: a variable names a real, genuinely
+   upstream value with a resolvable property path, and "the current item" is only read inside a step
+   that works through a list.
 6. Types — required inputs supplied, types match, a `list<T>` never feeds a single-`T` input unless
    the action is in batch mode.
 7. Configuration — every event/action/operation/entity id exists; nothing left half-configured.
 
-Layers 5 and 6 deliberately **skip** a node whose catalog entry is missing (`configured()` on its
-node kind), so an unknown action reports one `UNKNOWN_ACTION` rather than that plus a pile of
-consequent input errors. A filter is always `configured` — a source that is not a list is a type
-error the filter reports itself.
+There is **one** resolver and one failure vocabulary (`ResolveFailure`): layer 5 walks every value,
+whatever form it takes, and every layer's type question goes through it. Adding a second private
+pipeline beside it is how a customer ends up shown a symptom above its own cause.
+
+`unconfigured` is the silent failure, and it is what keeps a single mistake to a single issue: layer
+5 says nothing when the value it cannot resolve depends on something another layer already reports —
+a node whose catalog entry is missing, or a looping node that has not settled on a list. Layer 6
+skips such a node outright (`configured()` on its node kind), so an unknown action reports one
+`UNKNOWN_ACTION` rather than that plus a pile of consequent input and item errors. A filter is always
+`configured` — a source that is not a list is a type error the filter reports itself.
 
 Two invariants worth knowing, both regression-tested: a reference must resolve to a **strict**
 ancestor, which is what stops a node reading its own output and is why the output resolver needs no

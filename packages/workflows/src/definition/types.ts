@@ -99,6 +99,13 @@ export const variableRefSchema = z.object({
 });
 export type VariableRef = z.infer<typeof variableRefSchema>;
 
+/** The item a looping node is currently on: a filter's list, or a batched action's. */
+export const itemRefSchema = z.object({
+  kind: z.literal("item"),
+  path: z.array(z.string()).default([])
+});
+export type ItemRef = z.infer<typeof itemRefSchema>;
+
 export const literalSchema = z.object({
   kind: z.literal("literal"),
   type: valueTypeSchema,
@@ -148,7 +155,7 @@ export function literalValueMatchesType(
  * ineligible as a member.
  */
 export const valueOrRefSchema = z
-  .discriminatedUnion("kind", [literalSchema, variableRefSchema])
+  .discriminatedUnion("kind", [literalSchema, variableRefSchema, itemRefSchema])
   .superRefine((value, ctx) => {
     if (value.kind !== "literal") return;
     if (!literalValueMatchesType(value.type, value.value)) {

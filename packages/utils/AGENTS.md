@@ -36,6 +36,7 @@ pnpm --filter @carbon/utils typecheck
 | `arrays` | Array manipulation, grouping, deduplication |
 | `bom` | Bill of Materials traversal and level computation |
 | `date` | Date formatting, parsing, range helpers (uses `@internationalized/date`) |
+| `hash` | The repo's stable content hashes — `fnv1a32`/`fnv1a64` (cache and idempotency keys) and `getBucket`. Browser-safe; never add `node:crypto` here |
 | `math` | Rounding, precision, numeric utilities |
 | `string` | Slugify, truncate, camelCase/titleCase conversions |
 | `status` | Status resolution, status color mapping |

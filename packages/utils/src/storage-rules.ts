@@ -12,6 +12,7 @@ import {
   getFieldDef,
   getFieldsForTargetType
 } from "./field-registry";
+import { fnv1a32 } from "./hash";
 
 /**
  * Carbon's one condition-operator vocabulary, shared by every feature that lets
@@ -321,21 +322,12 @@ export const compileRule = (row: StorageRuleRow): CompiledRule => ({
 const CACHE_CAP = 256;
 const cache = new Map<string, CompiledRule>();
 
-const fnv1a = (s: string): string => {
-  let h = 0x811c9dc5;
-  for (let i = 0; i < s.length; i++) {
-    h ^= s.charCodeAt(i);
-    h = (h + ((h << 1) + (h << 4) + (h << 7) + (h << 8) + (h << 24))) >>> 0;
-  }
-  return h.toString(36);
-};
-
 const cacheKey = (row: StorageRuleRow): string => {
   // Hash bits that drive compilation output, including targetType so two
   // rules with identical AST but different targets cannot collide.
-  const contentHash = fnv1a(
+  const contentHash = fnv1a32(
     `${row.targetType}|${row.message}|${JSON.stringify(row.conditionAst)}|${(row.surfaces ?? []).join(",")}`
-  );
+  ).toString(36);
   return `${row.id}:${row.updatedAt ?? ""}:${contentHash}`;
 };
 
