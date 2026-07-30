@@ -958,6 +958,9 @@ msgstr "由外部供应商而不是内部工作中心执行的操作，由分包
 msgid "An operation's position in its work center's queue — the order the floor picks work up — set by reordering cards on the Work Centers board without changing any dates."
 msgstr "一个操作在其工作中心队列中的位置——车间拿起工作的顺序——通过在工作中心板上重新排序卡片来设置，无需更改任何日期。"
 
+msgid "An unexpected error occurred while connecting to Onshape. Try connecting again."
+msgstr "连接 Onshape 时发生意外错误。请重新连接。"
+
 msgid "Anchors the Plan timeline to real dates. Leave blank for a relative, week-numbered timeline. Setting either one fills in the rest."
 msgstr "将计划时间表锚定到实际日期。留空以获得相对的、按周编号的时间表。设置其中任何一个会填充其余部分。"
 
@@ -3022,6 +3025,9 @@ msgstr "无法准备区域图像以进行分析"
 msgid "Could not read the document: {0}"
 msgstr "无法读取文档：{0}"
 
+msgid "Couldn't complete the Onshape connection"
+msgstr "无法完成 Onshape 连接"
+
 msgid "Couldn't load documents"
 msgstr "无法加载文档"
 
@@ -3030,6 +3036,9 @@ msgstr "无法加载相关文档。创建新文档前请先刷新以避免重复
 
 msgid "Couldn't reschedule the job. Please try again."
 msgstr "无法重新安排作业。请重试。"
+
+msgid "Couldn't save the Onshape connection"
+msgstr "无法保存 Onshape 连接"
 
 msgid "Count"
 msgstr "数量"
@@ -3662,6 +3671,9 @@ msgstr "借方"
 
 msgid "Decide what an operator sees if they try to issue a batch or serial that's already expired."
 msgstr "决定操作员在尝试发放已过期的批次或序列号时看到的内容。"
+
+msgid "Decide what happens when an operator presses Finish on the shop floor with material still unpicked."
+msgstr ""
 
 msgid "Decimal Places"
 msgstr "小数位数"
@@ -5175,6 +5187,9 @@ msgstr "汇率"
 msgid "Exchange Rates"
 msgstr "汇率"
 
+msgid "Exchanging the authorization code for an access token failed. Try connecting again."
+msgstr "用授权代码交换访问令牌失败。请重新连接。"
+
 msgid "Excluded"
 msgstr "已排除"
 
@@ -5765,6 +5780,12 @@ msgstr "在常规MACRS计划开始之前采取的第一年额外扣除。"
 
 msgid "Finishes"
 msgstr "表面处理"
+
+msgid "Finishing an incomplete pick"
+msgstr ""
+
+msgid "Finishing is refused until every line is picked or marked Short."
+msgstr ""
 
 msgid "First Name"
 msgstr "名字"
@@ -6403,6 +6424,9 @@ msgstr "ID"
 msgid "Ideas, suggestions or problems?"
 msgstr "想法、建议或问题？"
 
+msgid "Identifiers"
+msgstr "标识符"
+
 msgid "IDs and descriptions are generated for raw materials."
 msgstr "ID 和描述是为原材料生成的。"
 
@@ -6453,6 +6477,9 @@ msgstr "导入结果"
 
 msgid "Import your BOM"
 msgstr "导入您的物料清单"
+
+msgid "In Onshape, edit this OAuth application's permissions to include \"Application can write to your documents\", then connect again."
+msgstr "请在 Onshape 中编辑此 OAuth 应用的权限，加入“Application can write to your documents”，然后重新连接。"
 
 msgid "In order to convert this RFQ to a quote, all lines must have an internal part number."
 msgstr "为了将此RFQ转换为报价，所有行必须具有内部零件编号。"
@@ -6511,11 +6538,17 @@ msgstr "入站检验"
 msgid "Inbox"
 msgstr "收件箱"
 
+msgid "Include a materials (bill of materials) section on the job traveler PDF with item numbers and quantities."
+msgstr "在工作单据 PDF 中包含物料清单（BOM）部分，列出物料号和数量。"
+
 msgid "Include extra parts in shipment"
 msgstr "在发货中包含额外零件"
 
 msgid "Include Inactive"
 msgstr "包括不活跃"
+
+msgid "Include materials on traveler"
+msgstr "在工作单据上包含物料"
 
 msgid "Included"
 msgstr "已包含"
@@ -6931,9 +6964,6 @@ msgstr "项目与生产"
 msgid "Items inside this window get a yellow badge."
 msgstr "此窗口内的项目会获得黄色徽章。"
 
-msgid "Items whose bill of materials includes this item"
-msgstr "物料清单中包含此物品的物品"
-
 msgid "Items: item master, BOMs, Bill of Process, engineering changes, CAD"
 msgstr "项目：项目主数据、物料清单、工艺流程、工程变更、CAD"
 
@@ -6960,6 +6990,12 @@ msgstr "工作操作"
 
 msgid "Job Operations"
 msgstr "工作操作"
+
+msgid "Job Traveler Materials"
+msgstr "工作单据物料"
+
+msgid "Job traveler settings updated"
+msgstr "工作单据设置已更新"
 
 msgid "Jobs"
 msgstr "工作"
@@ -7125,6 +7161,9 @@ msgstr "留空以精确匹配"
 
 msgid "Leave this page"
 msgstr "离开此页面"
+
+msgid "Ledger"
+msgstr "总账"
 
 msgid "Left item"
 msgstr "左项"
@@ -8794,6 +8833,21 @@ msgstr "只有草稿程序可以编辑。创建新版本以更改活动或已归
 msgid "Only empty, open periods can be deleted."
 msgstr "仅可删除空白的开放期间。"
 
+msgid "Onshape authorized the connection but saving it failed. Try connecting again."
+msgstr "Onshape 已授权此连接，但保存失败。请重新连接。"
+
+msgid "Onshape denied the connection"
+msgstr "Onshape 拒绝了连接"
+
+msgid "Onshape didn't return an authorization code"
+msgstr "Onshape 未返回授权代码"
+
+msgid "Onshape isn't configured"
+msgstr "尚未配置 Onshape"
+
+msgid "Onshape rejected the authorization"
+msgstr "Onshape 拒绝了授权"
+
 msgid "Onshape Status"
 msgstr "Onshape 状态"
 
@@ -8931,6 +8985,9 @@ msgstr "操作员收到警告。库存仍然可以通过。"
 
 msgid "Operator must pick a different batch/serial."
 msgstr "操作员必须选择不同的批次/序列号。"
+
+msgid "Operator sees the missing items, can acknowledge & finish. The list is flagged Partial."
+msgstr ""
 
 msgid "Operators"
 msgstr "操作员"
@@ -9144,6 +9201,9 @@ msgstr "上级组"
 msgid "Parent Item"
 msgstr "父项目"
 
+msgid "Parent items. (If you click into one of the parent parts below, you'll see this item included as a component on the bill of material.)"
+msgstr "上级物品。(如果您点击下方其中一个上级零件，您将看到此物品作为组件包含在物料清单中。)"
+
 msgid "Parent Storage Unit"
 msgstr "父存储单元"
 
@@ -9170,6 +9230,9 @@ msgstr "零件编号"
 
 msgid "Part Supersession"
 msgstr "零件取代"
+
+msgid "Partial"
+msgstr ""
 
 msgid "Partner"
 msgstr "合作伙伴"
@@ -9540,14 +9603,14 @@ msgstr "预付款"
 msgid "Posting Date"
 msgstr "过账日期"
 
-msgid "Posting Groups"
-msgstr "过账组"
-
 msgid "Potential Data Loss"
 msgstr "潜在数据丢失"
 
 msgid "Pre-filled for a new item when expiry is Fixed Duration."
 msgstr "当过期时间设置为固定期限时，为新项目预填充。"
+
+msgid "Pre-select material without a picking list"
+msgstr ""
 
 msgid "Preferred Supplier"
 msgstr "首选供应商"
@@ -12499,6 +12562,9 @@ msgstr "计算方法后的天数，在该天数后付款到期"
 msgid "The append-only record of every stock movement; on-hand is the sum of its signed entries and the source of truth."
 msgstr "每个库存变动的追加专用记录；在手数量是其带符号条目的总和，也是单一信息源。"
 
+msgid "The authorization was refused in Onshape. Try connecting again."
+msgstr "授权在 Onshape 中被拒绝。请重新连接。"
+
 msgid "The book of all posted journal lines, summed by account — written only when the company has accounting enabled."
 msgstr "所有已记账的日记账行书，按账户汇总 - 仅在公司启用会计时编写。"
 
@@ -12974,6 +13040,9 @@ msgstr "剩余的 {0} {1} 将不再被预期。在途供应和 MRP 将停止计�
 msgid "The residual WIP a job has left at close, swept to a Production Variance account — the only variance Carbon books for a job."
 msgstr "工作在关闭时留下的残余在制品，扫至生产差异帐户 - Carbon为工作记录的唯一差异。"
 
+msgid "The response from Onshape was missing required parameters. Try connecting again."
+msgstr "Onshape 的响应缺少必需的参数。请重新连接。"
+
 msgid "The revision number of the part"
 msgstr "零件的修订号"
 
@@ -13168,6 +13237,9 @@ msgstr "这些工作有分配给此工作中心的操作："
 
 msgid "These journal entries are still Draft, so their debits and credits aren't in the ledger for this period. Post each one, or re-date it into a later open period."
 msgstr "这些日记账条目仍为草稿状态，因此其借贷金额不在本期分类账中。过账每一份，或将其重新标记日期至较晚的开放期间。"
+
+msgid "This Carbon instance is missing its Onshape OAuth credentials. Ask an administrator to set them."
+msgstr "此 Carbon 实例缺少 Onshape 的 OAuth 凭据。请让管理员进行设置。"
 
 msgid "This change notice is being implemented, so its changes are locked. Reopen it to edit."
 msgstr "此变更通知正在实施中，因此其更改已锁定。重新打开它进行编辑。"
@@ -14512,6 +14584,9 @@ msgstr "启用后,定价规则(批量折扣、促销)仍适用于此覆盖;禁�
 msgid "When on, scanning this process's operation barcode reports all remaining open quantity as complete in one action; turn off when operators routinely report partials."
 msgstr "启用后,扫描此流程的操作条形码会在一个操作中将所有剩余的未处理数量报告为已完成;当操作员定期报告部分时禁用。"
 
+msgid "When on, the traveler PDF lists the job's required materials."
+msgstr "启用后，工作单据 PDF 将列出工作所需的物料。"
+
 msgid "When on, this party's invoices skip tax calculation; the party is responsible for keeping the exemption certificate current."
 msgstr "启用后,该方的发票会跳过税计算;该方负责使豁免证书保持最新。"
 
@@ -14520,6 +14595,9 @@ msgstr "启用后,此价格覆盖适用于匹配的订单;禁用时,覆盖被保
 
 msgid "When on, this rule fires for every target of its type. Assignment rows are ignored but preserved."
 msgstr "启用时，此规则对其类型的每个目标都会触发。分配行被忽略但保留。"
+
+msgid "When on, tracked material is pre-selected by pick order (FEFO) even without a picking list. When off, operators start on the Scan tab."
+msgstr ""
 
 msgid "When supplier responses are expected back; suppliers see this date on the RFQ portal and Carbon stops accepting late responses after it (configurable)."
 msgstr "何时预期供应商回复;供应商在RFQ门户上看到该日期,Carbon在之后停止接受迟到的回复(可配置)。"

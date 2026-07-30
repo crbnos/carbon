@@ -11,7 +11,7 @@ Work orders (jobs), scheduling, routings (operations), bill of materials, proced
 - **Production Event** — time tracking (Labor/Machine/Setup) against an operation.
 - **Production Quantity** — output recording (Production/Scrap/Rework) against an operation with optional `scrapReason`.
 - **Procedure** — versioned work instructions linked to operations via `processId`. Statuses: Draft/Active/Archived.
-- **Assembly Instructions are internal-only** (feature flag) while the module matures: the nav entry is in `internalOnlyRoutes` (`useProductionSubmodules.tsx`, via `useFlags().isInternal`), and `requireAssembliesInternal` (`production.server.ts`) redirects non-internal users out of `production/assemblies`, `production/assemblies/new`, and every `x+/assembly+` route (layout loader). Mirrors the settings backups gate; drop the gates to ship publicly.
+- **Assembly Instructions** — 3D animated work instructions, available to all users. (Previously gated to Carbon-internal emails via `requireAssembliesInternal` / `useFlags().isInternal`; that gate was removed to ship publicly.)
 - **Maintenance Dispatch** — reactive/scheduled repair for work centers with comments, events, items, and linked work centers.
 - **Scheduling** — infinite-capacity backward scheduling via `schedule` edge function. MUST use `triggerJobSchedule` to reschedule, never direct date writes.
 

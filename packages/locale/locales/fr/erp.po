@@ -958,6 +958,9 @@ msgstr "Une opération effectuée par un fournisseur externe plutôt que par un 
 msgid "An operation's position in its work center's queue — the order the floor picks work up — set by reordering cards on the Work Centers board without changing any dates."
 msgstr "La position d'une opération dans la file d'attente de son centre de travail — l'ordre dans lequel l'atelier choisit le travail — défini en réorganisant les cartes sur le tableau des Centres de travail sans modifier les dates."
 
+msgid "An unexpected error occurred while connecting to Onshape. Try connecting again."
+msgstr "Une erreur inattendue s'est produite lors de la connexion à Onshape. Réessayez de vous connecter."
+
 msgid "Anchors the Plan timeline to real dates. Leave blank for a relative, week-numbered timeline. Setting either one fills in the rest."
 msgstr "Ancre la chronologie du Plan sur des dates réelles. Laissez vide pour une chronologie relative numérotée par semaines. Définir l'une ou l'autre remplit le reste."
 
@@ -3022,6 +3025,9 @@ msgstr "Impossible de préparer l'image de la région pour l'analyse"
 msgid "Could not read the document: {0}"
 msgstr "Impossible de lire le document : {0}"
 
+msgid "Couldn't complete the Onshape connection"
+msgstr "Impossible d'établir la connexion Onshape"
+
 msgid "Couldn't load documents"
 msgstr "Impossible de charger les documents"
 
@@ -3030,6 +3036,9 @@ msgstr "Impossible de charger les documents associés. Actualisez avant d'en cr�
 
 msgid "Couldn't reschedule the job. Please try again."
 msgstr "Impossible de reprogrammer le travail. Veuillez réessayer."
+
+msgid "Couldn't save the Onshape connection"
+msgstr "Impossible d'enregistrer la connexion Onshape"
 
 msgid "Count"
 msgstr "Nombre"
@@ -3662,6 +3671,9 @@ msgstr "Débits"
 
 msgid "Decide what an operator sees if they try to issue a batch or serial that's already expired."
 msgstr "Décidez ce qu'un opérateur voit s'il essaie d'émettre un lot ou un numéro de série qui a déjà expiré."
+
+msgid "Decide what happens when an operator presses Finish on the shop floor with material still unpicked."
+msgstr ""
 
 msgid "Decimal Places"
 msgstr "Décimales"
@@ -5175,6 +5187,9 @@ msgstr "Taux de change"
 msgid "Exchange Rates"
 msgstr "Taux de change"
 
+msgid "Exchanging the authorization code for an access token failed. Try connecting again."
+msgstr "L'échange du code d'autorisation contre un jeton d'accès a échoué. Réessayez de vous connecter."
+
 msgid "Excluded"
 msgstr "Exclu"
 
@@ -5765,6 +5780,12 @@ msgstr "Déduction supplémentaire de première année prise avant le début du 
 
 msgid "Finishes"
 msgstr "Finitions"
+
+msgid "Finishing an incomplete pick"
+msgstr ""
+
+msgid "Finishing is refused until every line is picked or marked Short."
+msgstr ""
 
 msgid "First Name"
 msgstr "Prénom"
@@ -6403,6 +6424,9 @@ msgstr "ID"
 msgid "Ideas, suggestions or problems?"
 msgstr "Des idées, des suggestions ou des problèmes ?"
 
+msgid "Identifiers"
+msgstr "Identifiants"
+
 msgid "IDs and descriptions are generated for raw materials."
 msgstr "Les IDs et descriptions sont générés pour les matières premières."
 
@@ -6453,6 +6477,9 @@ msgstr "Résultats d'Importation"
 
 msgid "Import your BOM"
 msgstr "Importez votre nomenclature"
+
+msgid "In Onshape, edit this OAuth application's permissions to include \"Application can write to your documents\", then connect again."
+msgstr "Dans Onshape, modifiez les autorisations de cette application OAuth pour inclure « Application can write to your documents », puis reconnectez-vous."
 
 msgid "In order to convert this RFQ to a quote, all lines must have an internal part number."
 msgstr "Pour convertir cette demande de devis en devis, toutes les lignes doivent avoir un numéro de pièce interne."
@@ -6511,11 +6538,17 @@ msgstr "Inspection entrante"
 msgid "Inbox"
 msgstr "Boîte de réception"
 
+msgid "Include a materials (bill of materials) section on the job traveler PDF with item numbers and quantities."
+msgstr "Inclure une section matériaux (nomenclature) sur le PDF de la fiche suiveuse avec les numéros d'article et les quantités."
+
 msgid "Include extra parts in shipment"
 msgstr "Inclure les pièces supplémentaires dans l'expédition"
 
 msgid "Include Inactive"
 msgstr "Inclure les inactifs"
+
+msgid "Include materials on traveler"
+msgstr "Inclure les matériaux sur la fiche suiveuse"
 
 msgid "Included"
 msgstr "Inclus"
@@ -6931,9 +6964,6 @@ msgstr "Articles et Production"
 msgid "Items inside this window get a yellow badge."
 msgstr "Les articles dans cette fenêtre reçoivent un badge jaune."
 
-msgid "Items whose bill of materials includes this item"
-msgstr "Articles dont la nomenclature inclut cet article"
-
 msgid "Items: item master, BOMs, Bill of Process, engineering changes, CAD"
 msgstr "Articles : nomenclature, nomenclatures, gamme de fabrication, modifications d'ingénierie, CAO"
 
@@ -6960,6 +6990,12 @@ msgstr "Opération de travail"
 
 msgid "Job Operations"
 msgstr "Opérations de travail"
+
+msgid "Job Traveler Materials"
+msgstr "Matériaux de la fiche suiveuse"
+
+msgid "Job traveler settings updated"
+msgstr "Paramètres de la fiche suiveuse mis à jour"
 
 msgid "Jobs"
 msgstr "Travaux"
@@ -7125,6 +7161,9 @@ msgstr "Laisser vide pour une correspondance exacte"
 
 msgid "Leave this page"
 msgstr "Quitter cette page"
+
+msgid "Ledger"
+msgstr "Grand livre"
 
 msgid "Left item"
 msgstr "Élément de gauche"
@@ -8794,6 +8833,21 @@ msgstr "Seules les procédures en brouillon sont modifiables. Créez une nouvell
 msgid "Only empty, open periods can be deleted."
 msgstr "Seules les périodes vides et ouvertes peuvent être supprimées."
 
+msgid "Onshape authorized the connection but saving it failed. Try connecting again."
+msgstr "Onshape a autorisé la connexion, mais son enregistrement a échoué. Réessayez de vous connecter."
+
+msgid "Onshape denied the connection"
+msgstr "Onshape a refusé la connexion"
+
+msgid "Onshape didn't return an authorization code"
+msgstr "Onshape n'a pas renvoyé de code d'autorisation"
+
+msgid "Onshape isn't configured"
+msgstr "Onshape n'est pas configuré"
+
+msgid "Onshape rejected the authorization"
+msgstr "Onshape a rejeté l'autorisation"
+
 msgid "Onshape Status"
 msgstr "Statut Onshape"
 
@@ -8931,6 +8985,9 @@ msgstr "L'opérateur reçoit un avertissement. Le stock passe quand même."
 
 msgid "Operator must pick a different batch/serial."
 msgstr "L'opérateur doit choisir un lot/numéro de série différent."
+
+msgid "Operator sees the missing items, can acknowledge & finish. The list is flagged Partial."
+msgstr ""
 
 msgid "Operators"
 msgstr "Opérateurs"
@@ -9144,6 +9201,9 @@ msgstr "Groupe parent"
 msgid "Parent Item"
 msgstr "Article parent"
 
+msgid "Parent items. (If you click into one of the parent parts below, you'll see this item included as a component on the bill of material.)"
+msgstr "Articles parents. (Si vous cliquez sur l'une des pièces parents ci-dessous, vous verrez cet article inclus en tant que composant dans la nomenclature.)"
+
 msgid "Parent Storage Unit"
 msgstr "Unité de stockage parent"
 
@@ -9170,6 +9230,9 @@ msgstr "Numéro de pièce"
 
 msgid "Part Supersession"
 msgstr "Remplacement de pièce"
+
+msgid "Partial"
+msgstr ""
 
 msgid "Partner"
 msgstr "Partenaire"
@@ -9540,14 +9603,14 @@ msgstr "Acomptes"
 msgid "Posting Date"
 msgstr "Date de publication"
 
-msgid "Posting Groups"
-msgstr "Groupes de comptabilisation"
-
 msgid "Potential Data Loss"
 msgstr "Perte de données potentielle"
 
 msgid "Pre-filled for a new item when expiry is Fixed Duration."
 msgstr "Pré-rempli pour un nouvel article lorsque l'expiration est Durée fixe."
+
+msgid "Pre-select material without a picking list"
+msgstr ""
 
 msgid "Preferred Supplier"
 msgstr "Fournisseur préféré"
@@ -12499,6 +12562,9 @@ msgstr "Le nombre de jours après la méthode de calcul que le paiement est dû"
 msgid "The append-only record of every stock movement; on-hand is the sum of its signed entries and the source of truth."
 msgstr "L'enregistrement d'ajout seul de tout mouvement de stock; le stock disponible est la somme de ses entrées signées et la source unique de référence."
 
+msgid "The authorization was refused in Onshape. Try connecting again."
+msgstr "L'autorisation a été refusée dans Onshape. Réessayez de vous connecter."
+
 msgid "The book of all posted journal lines, summed by account — written only when the company has accounting enabled."
 msgstr "Le livre de toutes les lignes de journal enregistrées, sommées par compte – écrit seulement si la comptabilité est activée pour l'entreprise."
 
@@ -12974,6 +13040,9 @@ msgstr "Les {0} {1} restants ne seront plus attendus. L'approvisionnement en com
 msgid "The residual WIP a job has left at close, swept to a Production Variance account — the only variance Carbon books for a job."
 msgstr "Le WIP résiduel qu'un travail a laissé à la fermeture, balayé sur un compte de variance de production - la seule variance que Carbon enregistre pour une tâche."
 
+msgid "The response from Onshape was missing required parameters. Try connecting again."
+msgstr "La réponse d'Onshape ne contenait pas les paramètres requis. Réessayez de vous connecter."
+
 msgid "The revision number of the part"
 msgstr "Le numéro de révision de la pièce"
 
@@ -13168,6 +13237,9 @@ msgstr "Ces travaux ont des opérations assignées à ce centre de travail :"
 
 msgid "These journal entries are still Draft, so their debits and credits aren't in the ledger for this period. Post each one, or re-date it into a later open period."
 msgstr "Ces écritures de journal sont encore Brouillon, de sorte que leurs débits et crédits ne se trouvent pas dans le grand livre pour cette période. Comptabilisez chacune ou redatez-la à une période ouverte ultérieure."
+
+msgid "This Carbon instance is missing its Onshape OAuth credentials. Ask an administrator to set them."
+msgstr "Cette instance Carbon n'a pas d'identifiants OAuth Onshape. Demandez à un administrateur de les configurer."
 
 msgid "This change notice is being implemented, so its changes are locked. Reopen it to edit."
 msgstr "Cette notice de modification est en cours de mise en œuvre, donc ses modifications sont verrouillées. Rouvrez-la pour la modifier."
@@ -14512,6 +14584,9 @@ msgstr "Quand il est activé, les règles de tarification (remises en volume, pr
 msgid "When on, scanning this process's operation barcode reports all remaining open quantity as complete in one action; turn off when operators routinely report partials."
 msgstr "Quand il est activé, scanner le code à barres d'opération de ce processus signale toute la quantité ouverte restante comme complétée en une seule action ; désactiver quand les opérateurs rapportent régulièrement des partiels."
 
+msgid "When on, the traveler PDF lists the job's required materials."
+msgstr "Lorsque cette option est activée, le PDF de la fiche suiveuse répertorie les matériaux requis pour la tâche."
+
 msgid "When on, this party's invoices skip tax calculation; the party is responsible for keeping the exemption certificate current."
 msgstr "Quand il est activé, les factures de cette partie ignorent le calcul des impôts ; la partie est responsable de maintenir le certificat d'exemption à jour."
 
@@ -14520,6 +14595,9 @@ msgstr "Quand il est activé, ce remplacement de prix s'applique aux commandes c
 
 msgid "When on, this rule fires for every target of its type. Assignment rows are ignored but preserved."
 msgstr "Lorsqu'elle est activée, cette règle s'applique à chaque cible de son type. Les lignes d'affectation sont ignorées mais conservées."
+
+msgid "When on, tracked material is pre-selected by pick order (FEFO) even without a picking list. When off, operators start on the Scan tab."
+msgstr ""
 
 msgid "When supplier responses are expected back; suppliers see this date on the RFQ portal and Carbon stops accepting late responses after it (configurable)."
 msgstr "Quand les réponses des fournisseurs sont attendues ; les fournisseurs voient cette date sur le portail RFQ et Carbon cesse d'accepter les réponses tardives après celle-ci (configurable)."

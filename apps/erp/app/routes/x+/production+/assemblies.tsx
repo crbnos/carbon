@@ -4,7 +4,6 @@ import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { Outlet, useLoaderData } from "react-router";
 import { getAssemblyInstructions } from "~/modules/production";
-import { requireAssembliesInternal } from "~/modules/production/production.server";
 import AssemblyInstructionsTable from "~/modules/production/ui/Assemblies/AssemblyInstructionsTable";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -16,11 +15,10 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId, email } = await requirePermissions(request, {
+  const { client, companyId } = await requirePermissions(request, {
     view: "production",
     role: "employee"
   });
-  requireAssembliesInternal(email);
 
   const url = new URL(request.url);
   const searchParams = new URLSearchParams(url.search);

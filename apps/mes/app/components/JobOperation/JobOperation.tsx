@@ -61,7 +61,7 @@ import { OptimizeProgress } from "@carbon/viewer/optimize-progress";
 import { useOptimizedModel } from "@carbon/viewer/use-optimized-model";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { PostgrestSingleResponse } from "@supabase/supabase-js";
-import { Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { flushSync } from "react-dom";
 import { FaTasks } from "react-icons/fa";
 import { FaCheck, FaPlus, FaTrash } from "react-icons/fa6";
@@ -149,6 +149,7 @@ const log = getLogger("mes", "job-operation");
 type JobOperationProps = {
   events: ProductionEvent[];
   expiredEntityPolicy?: "Warn" | "Block" | "BlockWithOverride";
+  autoSelectMaterialWithoutPickingList?: boolean;
   files: Promise<StorageItem[]>;
   kanban: Kanban | null;
   materials: Promise<{
@@ -215,6 +216,7 @@ function PickedBadge({
 export const JobOperation = ({
   events,
   expiredEntityPolicy = "Block",
+  autoSelectMaterialWithoutPickingList = false,
   files,
   job,
   kanban,
@@ -348,12 +350,7 @@ export const JobOperation = ({
   // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   useEffect(() => {
     async function createInspectionStepsForNonConformanceActions() {
-      // Skip while a prior POST is still in flight: nonConformanceActions/procedure
-      // are deferred promises whose references change on every revalidation (and the
-      // effect double-invokes under Strict Mode), so without this guard a submit whose
-      // insert hasn't yet landed in procedure.attributes would be re-issued against a
-      // stale existingActionIds set — duplicating steps.
-      if (!carbon || !operationId || fetcher.state !== "idle") return;
+      if (!carbon || !operationId) return;
 
       try {
         const activeActions = await nonConformanceActions;
@@ -419,28 +416,6 @@ export const JobOperation = ({
     companyId,
     userId
   ]);
-
-  // Surface a failed containment-step creation instead of failing silently — otherwise
-  // the operator could complete the operation without the required inspection step ever
-  // being recorded. The route (steps.inspection.tsx) returns { success, message }; only
-  // react on the transition to idle (via the ref) so we toast once, not on every render.
-  const prevInspectionStepsStateRef = useRef(fetcher.state);
-  useEffect(() => {
-    const settled =
-      prevInspectionStepsStateRef.current !== "idle" &&
-      fetcher.state === "idle";
-    prevInspectionStepsStateRef.current = fetcher.state;
-    if (!settled) return;
-    if (fetcher.data && fetcher.data.success === false) {
-      log.error(
-        "Failed to create inspection steps for non-conformance actions",
-        {
-          message: fetcher.data.message
-        }
-      );
-      toast.error(fetcher.data.message ?? "Failed to create containment steps");
-    }
-  }, [fetcher.state, fetcher.data]);
 
   const [selectedStep, setSelectedStep] = useState<JobOperationStep | null>(
     null
@@ -1494,6 +1469,9 @@ export const JobOperation = ({
                                 operation.operationQuantity ?? undefined
                               }
                               expiredEntityPolicy={expiredEntityPolicy}
+                              autoSelectMaterialWithoutPickingList={
+                                autoSelectMaterialWithoutPickingList
+                              }
                               locationId={locationId}
                               workCenterId={operation.workCenterId ?? undefined}
                               material={selectedMaterial ?? undefined}
@@ -1814,6 +1792,7 @@ export const JobOperation = ({
                 awaitingModel={modelPending}
                 optimizing={backgroundOptimizing}
                 optimizeFailed={optimizeFailed}
+                sourceMissing={artifacts?.sourceAvailable === false}
                 optimizedUrl={
                   artifacts?.optimizedModelPath
                     ? // ?v= busts the immutable preview cache on the STABLE

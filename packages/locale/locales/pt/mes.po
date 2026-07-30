@@ -63,6 +63,9 @@ msgstr "Aceitar lote?"
 msgid "Account Settings"
 msgstr "Configurações da Conta"
 
+msgid "Acknowledge & finish"
+msgstr ""
+
 msgid "Active"
 msgstr "Ativo"
 
@@ -444,6 +447,9 @@ msgstr "Terminar {0}"
 msgid "Finish Anyways"
 msgstr "Terminar Mesmo Assim"
 
+msgid "Finish with material unpicked?"
+msgstr ""
+
 msgid "Forgot to Clock Out?"
 msgstr "Esqueceu de Registrar Saída?"
 
@@ -518,6 +524,9 @@ msgstr "Folha de Processo"
 
 msgid "Jobs"
 msgstr "Trabalhos"
+
+msgid "Keep picking"
+msgstr ""
 
 msgid "Kit"
 msgstr "Kit"
@@ -1068,6 +1077,9 @@ msgstr "Definir horário de saída"
 msgid "Setup"
 msgstr "Setup"
 
+msgid "short"
+msgstr ""
+
 msgid "Short"
 msgstr "Falta"
 
@@ -1162,6 +1174,9 @@ msgstr "O lote ainda será disposicionado, mas um NCR não pode ser criado até 
 
 msgid "There are serial or batch tracked materials on the bill of material that have not been fully issued. Completing without issuing may result in incorrect traceability records."
 msgstr "Existem materiais rastreados por série ou lote na lista de materiais que não foram totalmente emitidos. Concluir sem emitir pode resultar em registros de rastreabilidade incorretos."
+
+msgid "These items still have material to pick. Finishing now marks the list Partial."
+msgstr ""
 
 msgid "This lot is expired and can't be picked."
 msgstr "Este lote expirou e não pode ser selecionado."

@@ -958,6 +958,9 @@ msgstr "Bir iç çalışma merkezi yerine harici bir sağlayıcı tarafından ge
 msgid "An operation's position in its work center's queue — the order the floor picks work up — set by reordering cards on the Work Centers board without changing any dates."
 msgstr "Bir işin iş merkezinin kuyruğundaki konumu — işinin çekildiği sıra — İş Merkezleri panosundaki kartları herhangi bir tarihi değiştirmeden yeniden sıralayarak ayarlanan."
 
+msgid "An unexpected error occurred while connecting to Onshape. Try connecting again."
+msgstr "Onshape'e bağlanırken beklenmeyen bir hata oluştu. Yeniden bağlanmayı deneyin."
+
 msgid "Anchors the Plan timeline to real dates. Leave blank for a relative, week-numbered timeline. Setting either one fills in the rest."
 msgstr "Plan zaman çizelgesini gerçek tarihlere sabitleyin. Göreceli, hafta numaralı bir zaman çizelgesi için boş bırakın. Her ikisinden birini ayarlamak geri kalanını doldurur."
 
@@ -3022,6 +3025,9 @@ msgstr "Bölge görüntüsü analiz için hazırlanamadı"
 msgid "Could not read the document: {0}"
 msgstr "Belge okunamadı: {0}"
 
+msgid "Couldn't complete the Onshape connection"
+msgstr "Onshape bağlantısı tamamlanamadı"
+
 msgid "Couldn't load documents"
 msgstr "Belgeler yüklenemedi"
 
@@ -3030,6 +3036,9 @@ msgstr "İlgili belgeler yüklenemedi. Yeni bir tane oluşturmadan önce yeniley
 
 msgid "Couldn't reschedule the job. Please try again."
 msgstr "İş yeniden planlanamadı. Lütfen tekrar deneyin."
+
+msgid "Couldn't save the Onshape connection"
+msgstr "Onshape bağlantısı kaydedilemedi"
 
 msgid "Count"
 msgstr "Adet"
@@ -3662,6 +3671,9 @@ msgstr "Borçlar"
 
 msgid "Decide what an operator sees if they try to issue a batch or serial that's already expired."
 msgstr "Operatörün zaten süresi dolmuş bir parti veya seri çıkarmaya çalışması durumunda ne göreceğini belirleyin."
+
+msgid "Decide what happens when an operator presses Finish on the shop floor with material still unpicked."
+msgstr ""
 
 msgid "Decimal Places"
 msgstr "Ondalık Basamaklar"
@@ -5175,6 +5187,9 @@ msgstr "Döviz Kuru"
 msgid "Exchange Rates"
 msgstr "Döviz Kurları"
 
+msgid "Exchanging the authorization code for an access token failed. Try connecting again."
+msgstr "Yetkilendirme kodunun erişim belirteciyle değiştirilmesi başarısız oldu. Yeniden bağlanmayı deneyin."
+
 msgid "Excluded"
 msgstr "Hariç Tutulan"
 
@@ -5765,6 +5780,12 @@ msgstr "Normal MACRS programı başlamadan önce alınan ilk yıl ek indirimi."
 
 msgid "Finishes"
 msgstr "Kaplamalar"
+
+msgid "Finishing an incomplete pick"
+msgstr ""
+
+msgid "Finishing is refused until every line is picked or marked Short."
+msgstr ""
 
 msgid "First Name"
 msgstr "Adı Soyad"
@@ -6403,6 +6424,9 @@ msgstr "Kimlik"
 msgid "Ideas, suggestions or problems?"
 msgstr "Fikirler, öneriler veya sorunlar?"
 
+msgid "Identifiers"
+msgstr "Tanımlayıcılar"
+
 msgid "IDs and descriptions are generated for raw materials."
 msgstr "Kimlikler ve açıklamalar ham malzemeler için oluşturulur."
 
@@ -6453,6 +6477,9 @@ msgstr "İçe Aktarma Sonuçları"
 
 msgid "Import your BOM"
 msgstr "BOM'unuzu İçe Aktarın"
+
+msgid "In Onshape, edit this OAuth application's permissions to include \"Application can write to your documents\", then connect again."
+msgstr "Onshape'te bu OAuth uygulamasının izinlerini düzenleyerek \"Application can write to your documents\" iznini ekleyin, ardından yeniden bağlanın."
 
 msgid "In order to convert this RFQ to a quote, all lines must have an internal part number."
 msgstr "Bu Fiyat Teklifi'ni (RFQ) bir teklife dönüştürmek için tüm satırların dahili bir parça numarasına sahip olması gerekir."
@@ -6511,11 +6538,17 @@ msgstr "Gelen Muhasebesi"
 msgid "Inbox"
 msgstr "Gelen Kutusu"
 
+msgid "Include a materials (bill of materials) section on the job traveler PDF with item numbers and quantities."
+msgstr "İş yolcu PDF'sine malzemeleri (malzeme listesi) bölümü, madde numaraları ve miktarlarıyla birlikte ekleyin."
+
 msgid "Include extra parts in shipment"
 msgstr "Fazla parçaları sevkiyata dahil et"
 
 msgid "Include Inactive"
 msgstr "Pasifleri Dahil Et"
+
+msgid "Include materials on traveler"
+msgstr "Yolcu üzerinde malzemeleri ekleyin"
 
 msgid "Included"
 msgstr "Dahil"
@@ -6931,9 +6964,6 @@ msgstr "Öğeler ve Üretim"
 msgid "Items inside this window get a yellow badge."
 msgstr "Bu aralıktaki ürünler sarı bir rozet alır."
 
-msgid "Items whose bill of materials includes this item"
-msgstr "Malzeme listesinde bu ürünü içeren ürünler"
-
 msgid "Items: item master, BOMs, Bill of Process, engineering changes, CAD"
 msgstr "Öğeler: öğe ana verileri, BOM'lar, İşlem Şeması, mühendislik değişiklikleri, CAD"
 
@@ -6960,6 +6990,12 @@ msgstr "İşlem"
 
 msgid "Job Operations"
 msgstr "İşlem Operasyonları"
+
+msgid "Job Traveler Materials"
+msgstr "İş Yolcu Malzemeleri"
+
+msgid "Job traveler settings updated"
+msgstr "İş yolcu ayarları güncellendi"
 
 msgid "Jobs"
 msgstr "İşler"
@@ -7125,6 +7161,9 @@ msgstr "Tam eşleşme için boş bırakın"
 
 msgid "Leave this page"
 msgstr "Bu sayfadan ayrıl"
+
+msgid "Ledger"
+msgstr "Büyük Defter"
 
 msgid "Left item"
 msgstr "Sol öğe"
@@ -8794,6 +8833,21 @@ msgstr "Yalnızca Taslak prosedürler düzenlenebilir. Aktif veya Arşivlenmiş 
 msgid "Only empty, open periods can be deleted."
 msgstr "Yalnızca boş, açık dönemler silinebilir."
 
+msgid "Onshape authorized the connection but saving it failed. Try connecting again."
+msgstr "Onshape bağlantıyı yetkilendirdi ancak kaydetme başarısız oldu. Yeniden bağlanmayı deneyin."
+
+msgid "Onshape denied the connection"
+msgstr "Onshape bağlantıyı reddetti"
+
+msgid "Onshape didn't return an authorization code"
+msgstr "Onshape bir yetkilendirme kodu döndürmedi"
+
+msgid "Onshape isn't configured"
+msgstr "Onshape yapılandırılmamış"
+
+msgid "Onshape rejected the authorization"
+msgstr "Onshape yetkilendirmeyi reddetti"
+
 msgid "Onshape Status"
 msgstr "Onshape Durumu"
 
@@ -8931,6 +8985,9 @@ msgstr "Operatöre bir uyarı verilir. Stok yine de geçer."
 
 msgid "Operator must pick a different batch/serial."
 msgstr "Operatör farklı bir parti/seri seçmelidir."
+
+msgid "Operator sees the missing items, can acknowledge & finish. The list is flagged Partial."
+msgstr ""
 
 msgid "Operators"
 msgstr "Operatörler"
@@ -9144,6 +9201,9 @@ msgstr "Üst Grup"
 msgid "Parent Item"
 msgstr "Üst Öğe"
 
+msgid "Parent items. (If you click into one of the parent parts below, you'll see this item included as a component on the bill of material.)"
+msgstr "Ana ürünler. (Aşağıdaki ana parçalardan birine tıklarsanız, bu ürünü o parçanın malzeme listesinde bir bileşen olarak göreceksiniz.)"
+
 msgid "Parent Storage Unit"
 msgstr "Üst Depolama Birimi"
 
@@ -9170,6 +9230,9 @@ msgstr "Parça Numarası"
 
 msgid "Part Supersession"
 msgstr "Parça Yerini Alma"
+
+msgid "Partial"
+msgstr ""
 
 msgid "Partner"
 msgstr "İş Ortağı"
@@ -9540,14 +9603,14 @@ msgstr "Ön Ödemeler"
 msgid "Posting Date"
 msgstr "Yükleme Tarihi"
 
-msgid "Posting Groups"
-msgstr "Açıklama Grupları"
-
 msgid "Potential Data Loss"
 msgstr "Potansiyel Veri Kaybı"
 
 msgid "Pre-filled for a new item when expiry is Fixed Duration."
 msgstr "Son kullanma tarihi Sabit Süre olduğunda yeni bir ürün için önceden doldurulur."
+
+msgid "Pre-select material without a picking list"
+msgstr ""
 
 msgid "Preferred Supplier"
 msgstr "Tercih Edilen Tedarikçi"
@@ -12499,6 +12562,9 @@ msgstr "Ödeme vadesinin hesaplama yönteminden sonraki gün sayısı"
 msgid "The append-only record of every stock movement; on-hand is the sum of its signed entries and the source of truth."
 msgstr "Her stok hareketinin yalnızca ekleme kaydı; eldeki tutar, imzalı girdilerinin toplamı ve gerçeğin kaynağıdır."
 
+msgid "The authorization was refused in Onshape. Try connecting again."
+msgstr "Yetkilendirme Onshape'te reddedildi. Yeniden bağlanmayı deneyin."
+
 msgid "The book of all posted journal lines, summed by account — written only when the company has accounting enabled."
 msgstr "Tüm kaydedilen günlük satırlarının defteri, hesaba göre özetlenmiş — yalnızca şirket muhasebesi etkinleştirildiğinde yazılır."
 
@@ -12974,6 +13040,9 @@ msgstr "Kalan {0} {1} artık beklenmeyecektir. Sipariş edilen arz ve MRP bunu s
 msgid "The residual WIP a job has left at close, swept to a Production Variance account — the only variance Carbon books for a job."
 msgstr "Bir işin kapatmada bıraktığı artık WIP, bir üretim varyans hesabına süpürülen - Carbon'un bir iş için kaydettiği tek varyans."
 
+msgid "The response from Onshape was missing required parameters. Try connecting again."
+msgstr "Onshape'ten gelen yanıtta gerekli parametreler eksikti. Yeniden bağlanmayı deneyin."
+
 msgid "The revision number of the part"
 msgstr "Parçanın revizyon numarası"
 
@@ -13168,6 +13237,9 @@ msgstr "Bu işler bu iş merkezine atanmış işlemlere sahiptir:"
 
 msgid "These journal entries are still Draft, so their debits and credits aren't in the ledger for this period. Post each one, or re-date it into a later open period."
 msgstr "Bu muhasebe kayıtları hâlâ Taslak durumundadır, bu nedenle borç ve alacakları bu dönem için defteri kebir'de değildir. Her birini deftere geçirin veya daha sonraki bir açık döneme yeniden tarihlendiriniz."
+
+msgid "This Carbon instance is missing its Onshape OAuth credentials. Ask an administrator to set them."
+msgstr "Bu Carbon örneğinde Onshape OAuth kimlik bilgileri eksik. Bir yöneticiden bunları ayarlamasını isteyin."
 
 msgid "This change notice is being implemented, so its changes are locked. Reopen it to edit."
 msgstr "Bu değişiklik bildirimi uygulanmakta olduğundan, değişiklikleri kilitlidir. Düzenlemek için yeniden açın."
@@ -14512,6 +14584,9 @@ msgstr "Etkinleştirildiğinde, fiyatlandırma kuralları (hacim indirimler, pro
 msgid "When on, scanning this process's operation barcode reports all remaining open quantity as complete in one action; turn off when operators routinely report partials."
 msgstr "Etkinleştirildiğinde, bu işlemin işlem barkodunu taramak, kalan tüm açık miktarı bir işlemde tamamlandı olarak bildirir; operatörler düzenli olarak kısmiları bildirdiğinde devre dışı bırakın."
 
+msgid "When on, the traveler PDF lists the job's required materials."
+msgstr "Açık olduğunda, yolcu PDF'si işin gerekli malzemelerini listeler."
+
 msgid "When on, this party's invoices skip tax calculation; the party is responsible for keeping the exemption certificate current."
 msgstr "Etkinleştirildiğinde, bu tarafın faturaları vergi hesaplamasını atlar; taraf, muafiyet sertifikasını güncel tutmaktan sorumludur."
 
@@ -14520,6 +14595,9 @@ msgstr "Etkinleştirildiğinde, bu fiyat geçersiz kılması eşleşen siparişl
 
 msgid "When on, this rule fires for every target of its type. Assignment rows are ignored but preserved."
 msgstr "Açıkken bu kural, türündeki her hedef için tetiklenir. Atama satırları yok sayılır ancak korunur."
+
+msgid "When on, tracked material is pre-selected by pick order (FEFO) even without a picking list. When off, operators start on the Scan tab."
+msgstr ""
 
 msgid "When supplier responses are expected back; suppliers see this date on the RFQ portal and Carbon stops accepting late responses after it (configurable)."
 msgstr "Tedarikçi yanıtlarının ne zaman beklenmesi gerektiği; tedarikçiler RFQ portalında bu tarihi görür ve Carbon bundan sonra geç yanıtları kabul etmeyi durdurur (yapılandırılabilir)."

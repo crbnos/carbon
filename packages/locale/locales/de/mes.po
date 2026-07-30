@@ -63,6 +63,9 @@ msgstr "Charge annehmen?"
 msgid "Account Settings"
 msgstr "Kontoeinstellungen"
 
+msgid "Acknowledge & finish"
+msgstr ""
+
 msgid "Active"
 msgstr "Aktiv"
 
@@ -444,6 +447,9 @@ msgstr "Beenden {0}"
 msgid "Finish Anyways"
 msgstr "Trotzdem beenden"
 
+msgid "Finish with material unpicked?"
+msgstr ""
+
 msgid "Forgot to Clock Out?"
 msgstr "Vergessen auszustempeln?"
 
@@ -518,6 +524,9 @@ msgstr "Auftragsbegleitkarte"
 
 msgid "Jobs"
 msgstr "Aufträge"
+
+msgid "Keep picking"
+msgstr ""
 
 msgid "Kit"
 msgstr "Bausatz"
@@ -1068,6 +1077,9 @@ msgstr "Ausstempelzeit festlegen"
 msgid "Setup"
 msgstr "Rüsten"
 
+msgid "short"
+msgstr ""
+
 msgid "Short"
 msgstr "Fehlbestand"
 
@@ -1162,6 +1174,9 @@ msgstr "Das Los wird weiterhin dispositioniert, aber ein NCR kann nicht erstellt
 
 msgid "There are serial or batch tracked materials on the bill of material that have not been fully issued. Completing without issuing may result in incorrect traceability records."
 msgstr "Es gibt serien- oder chargenverfolgte Materialien in der Stückliste, die noch nicht vollständig ausgegeben wurden. Ein Abschluss ohne Ausgabe kann zu fehlerhaften Rückverfolgbarkeitsdaten führen."
+
+msgid "These items still have material to pick. Finishing now marks the list Partial."
+msgstr ""
 
 msgid "This lot is expired and can't be picked."
 msgstr "Dieses Los ist abgelaufen und kann nicht entnommen werden."
