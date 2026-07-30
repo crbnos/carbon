@@ -554,6 +554,9 @@ msgstr "Biriktirme Süresi (Hafta)"
 msgid "Accumulation Period:"
 msgstr "Biriktirme Dönemi:"
 
+msgid "Acknowledge & finish"
+msgstr ""
+
 msgid "Acquisition Cost"
 msgstr "Satın alma maliyeti"
 
@@ -5784,6 +5787,9 @@ msgstr "Onboarding'ı bitir"
 msgid "Finish To"
 msgstr "Bitirmek İçin"
 
+msgid "Finish with material unpicked?"
+msgstr ""
+
 msgid "Finished goods"
 msgstr "Tamamlamalar"
 
@@ -7066,6 +7072,9 @@ msgstr "Mevcut fiyatlandırmayı koru, yalnızca yeni öğeler ekle"
 
 msgid "Keep Open"
 msgstr "Açık Tut"
+
+msgid "Keep picking"
+msgstr ""
 
 msgid "Key"
 msgstr "Anahtar"
@@ -11715,6 +11724,9 @@ msgstr "Üretim katı uygulaması ve planlama"
 msgid "Shop-floor configuration."
 msgstr "Üretim katı yapılandırması."
 
+msgid "short"
+msgstr ""
+
 msgid "Short"
 msgstr "Azalt"
 
@@ -13243,6 +13255,9 @@ msgstr "Bu e-posta adresleri, tedarikçilere gönderilen tüm e-postalara (tekli
 
 msgid "These email addresses will be automatically CC'd on all quote emails sent to customers."
 msgstr "Bu e-posta adresleri, müşterilere gönderilen tüm teklif e-postalarına otomatik olarak CC'lenecektir."
+
+msgid "These items still have material to pick. Finishing now marks the list Partial."
+msgstr ""
 
 msgid "These jobs have operations assigned to this work center:"
 msgstr "Bu işler bu iş merkezine atanmış işlemlere sahiptir:"

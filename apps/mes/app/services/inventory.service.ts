@@ -318,10 +318,20 @@ export async function getSuggestedAllocationForMaterial(
   });
   if (error || !data) return [];
 
+  // Never suggest an expired lot. FEFO puts the earliest expiry FIRST, so with
+  // expired stock on hand the greedy fill would suggest exactly the lots the
+  // issue modal refuses to offer (expiredEntityPolicy 'Block' drops them from
+  // the options), netting the seed to nothing. An expired lot is never the
+  // "correct batch to use" — skip them regardless of policy.
+  const today = new Date().toISOString().slice(0, 10);
+  const unexpired = data.filter(
+    (row) => !row.expirationDate || row.expirationDate >= today
+  );
+
   // Sort in the app: the RPC's internal ORDER BY is not guaranteed through
   // PostgREST (SQL-function inlining), so ordering is authoritative here.
   const ordered = sortLotsByPickMethod(
-    data.map((row) => ({
+    unexpired.map((row) => ({
       trackedEntityId: row.trackedEntityId,
       readableId: row.readableId,
       availableQuantity: Number(row.availableQuantity ?? 0),

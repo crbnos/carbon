@@ -554,6 +554,9 @@ msgstr "蓄積期間（週）"
 msgid "Accumulation Period:"
 msgstr "蓄積期間:"
 
+msgid "Acknowledge & finish"
+msgstr ""
+
 msgid "Acquisition Cost"
 msgstr "取得原価"
 
@@ -5784,6 +5787,9 @@ msgstr "オンボーディングを完了"
 msgid "Finish To"
 msgstr "完成先"
 
+msgid "Finish with material unpicked?"
+msgstr ""
+
 msgid "Finished goods"
 msgstr "フィニッシュ"
 
@@ -7066,6 +7072,9 @@ msgstr "既存の価格を保持し、新しい項目のみを追加"
 
 msgid "Keep Open"
 msgstr "開いたままにする"
+
+msgid "Keep picking"
+msgstr ""
 
 msgid "Key"
 msgstr "キー"
@@ -11715,6 +11724,9 @@ msgstr "ショップフロアアプリとスケジューリング"
 msgid "Shop-floor configuration."
 msgstr "生産現場の構成。"
 
+msgid "short"
+msgstr ""
+
 msgid "Short"
 msgstr "不足"
 
@@ -13243,6 +13255,9 @@ msgstr "これらのメールアドレスは、サプライヤーに送信され
 
 msgid "These email addresses will be automatically CC'd on all quote emails sent to customers."
 msgstr "これらのメールアドレスは、顧客に送信されるすべての見積メールに自動的にCC送信されます。"
+
+msgid "These items still have material to pick. Finishing now marks the list Partial."
+msgstr ""
 
 msgid "These jobs have operations assigned to this work center:"
 msgstr "これらのジョブにはこのワークセンターに割り当てられた操作があります:"

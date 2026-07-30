@@ -396,7 +396,7 @@ export const ProductionPlanningOrderDrawer = memo(
                 <Tbody>
                   {orders.map((order, index) => (
                     <Tr key={index}>
-                      <Td className="group-hover:bg-inherit justify-between">
+                      <Td className="group-hover:bg-inherit justify-between whitespace-nowrap">
                         {order.existingReadableId && order.existingId ? (
                           <Link to={path.to.job(order.existingId)}>
                             {order.existingReadableId}

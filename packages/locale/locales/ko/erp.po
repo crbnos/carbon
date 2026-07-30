@@ -554,6 +554,9 @@ msgstr "누적 기간(주)"
 msgid "Accumulation Period:"
 msgstr "누적 기간:"
 
+msgid "Acknowledge & finish"
+msgstr ""
+
 msgid "Acquisition Cost"
 msgstr "취득원가"
 
@@ -5784,6 +5787,9 @@ msgstr "온보딩 완료"
 msgid "Finish To"
 msgstr "종료 시점"
 
+msgid "Finish with material unpicked?"
+msgstr ""
+
 msgid "Finished goods"
 msgstr "완제품"
 
@@ -7066,6 +7072,9 @@ msgstr "기존 가격은 유지하고 새 품목만 추가"
 
 msgid "Keep Open"
 msgstr "열린 상태 유지"
+
+msgid "Keep picking"
+msgstr ""
 
 msgid "Key"
 msgstr "키"
@@ -11715,6 +11724,9 @@ msgstr "현장 앱 및 일정 관리"
 msgid "Shop-floor configuration."
 msgstr "현장 설정."
 
+msgid "short"
+msgstr ""
+
 msgid "Short"
 msgstr "짧게"
 
@@ -13243,6 +13255,9 @@ msgstr "이 이메일 주소는 공급업체에 발송되는 모든 이메일(�
 
 msgid "These email addresses will be automatically CC'd on all quote emails sent to customers."
 msgstr "이 이메일 주소는 고객에게 발송되는 모든 견적 이메일에 자동으로 참조(CC)됩니다."
+
+msgid "These items still have material to pick. Finishing now marks the list Partial."
+msgstr ""
 
 msgid "These jobs have operations assigned to this work center:"
 msgstr "다음 작업에 이 작업장이 지정된 공정작업이 있습니다:"

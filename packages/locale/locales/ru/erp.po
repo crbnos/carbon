@@ -554,6 +554,9 @@ msgstr "Период накопления (недели)"
 msgid "Accumulation Period:"
 msgstr "Период накопления:"
 
+msgid "Acknowledge & finish"
+msgstr ""
+
 msgid "Acquisition Cost"
 msgstr "Первоначальная стоимость"
 
@@ -5784,6 +5787,9 @@ msgstr "Завершить адаптацию"
 msgid "Finish To"
 msgstr "Завершить в"
 
+msgid "Finish with material unpicked?"
+msgstr ""
+
 msgid "Finished goods"
 msgstr "Отделки"
 
@@ -7066,6 +7072,9 @@ msgstr "Сохранить существующие цены, добавить �
 
 msgid "Keep Open"
 msgstr "Оставить открытым"
+
+msgid "Keep picking"
+msgstr ""
 
 msgid "Key"
 msgstr "Ключ"
@@ -11715,6 +11724,9 @@ msgstr "Приложение цеха и планирование"
 msgid "Shop-floor configuration."
 msgstr "Конфигурация цеха."
 
+msgid "short"
+msgstr ""
+
 msgid "Short"
 msgstr "Недостача"
 
@@ -13243,6 +13255,9 @@ msgstr "Эти адреса электронной почты будут авт�
 
 msgid "These email addresses will be automatically CC'd on all quote emails sent to customers."
 msgstr "Эти адреса электронной почты будут автоматически добавлены в копию на все письма с предложениями, отправляемые клиентам."
+
+msgid "These items still have material to pick. Finishing now marks the list Partial."
+msgstr ""
 
 msgid "These jobs have operations assigned to this work center:"
 msgstr "Эти задания имеют операции, назначенные этому рабочему центру:"

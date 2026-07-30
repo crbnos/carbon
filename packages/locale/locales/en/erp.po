@@ -554,6 +554,9 @@ msgstr "Accumulation Period (Weeks)"
 msgid "Accumulation Period:"
 msgstr "Accumulation Period:"
 
+msgid "Acknowledge & finish"
+msgstr "Acknowledge & finish"
+
 msgid "Acquisition Cost"
 msgstr "Acquisition Cost"
 
@@ -5784,6 +5787,9 @@ msgstr "Finish onboarding"
 msgid "Finish To"
 msgstr "Finish To"
 
+msgid "Finish with material unpicked?"
+msgstr "Finish with material unpicked?"
+
 msgid "Finished goods"
 msgstr "Finished goods"
 
@@ -7066,6 +7072,9 @@ msgstr "Keep existing pricing, only add new items"
 
 msgid "Keep Open"
 msgstr "Keep Open"
+
+msgid "Keep picking"
+msgstr "Keep picking"
 
 msgid "Key"
 msgstr "Key"
@@ -11715,6 +11724,9 @@ msgstr "Shop-floor app and scheduling"
 msgid "Shop-floor configuration."
 msgstr "Shop-floor configuration."
 
+msgid "short"
+msgstr "short"
+
 msgid "Short"
 msgstr "Short"
 
@@ -13243,6 +13255,9 @@ msgstr "These email addresses will be automatically CC'd on all emails sent to s
 
 msgid "These email addresses will be automatically CC'd on all quote emails sent to customers."
 msgstr "These email addresses will be automatically CC'd on all quote emails sent to customers."
+
+msgid "These items still have material to pick. Finishing now marks the list Partial."
+msgstr "These items still have material to pick. Finishing now marks the list Partial."
 
 msgid "These jobs have operations assigned to this work center:"
 msgstr "These jobs have operations assigned to this work center:"

@@ -554,6 +554,9 @@ msgstr "Période d'accumulation (semaines)"
 msgid "Accumulation Period:"
 msgstr "Période d'accumulation :"
 
+msgid "Acknowledge & finish"
+msgstr ""
+
 msgid "Acquisition Cost"
 msgstr "Coût d'acquisition"
 
@@ -5784,6 +5787,9 @@ msgstr "Terminer l'intégration"
 msgid "Finish To"
 msgstr "Terminer vers"
 
+msgid "Finish with material unpicked?"
+msgstr ""
+
 msgid "Finished goods"
 msgstr "Finitions"
 
@@ -7066,6 +7072,9 @@ msgstr "Conserver la tarification existante, ajouter uniquement les nouveaux art
 
 msgid "Keep Open"
 msgstr "Garder ouvert"
+
+msgid "Keep picking"
+msgstr ""
 
 msgid "Key"
 msgstr "Clé"
@@ -11715,6 +11724,9 @@ msgstr "Application d'atelier et planification"
 msgid "Shop-floor configuration."
 msgstr "Configuration de l'atelier."
 
+msgid "short"
+msgstr ""
+
 msgid "Short"
 msgstr "Manquant"
 
@@ -13243,6 +13255,9 @@ msgstr "Ces adresses e-mail seront automatiquement mises en copie sur tous les e
 
 msgid "These email addresses will be automatically CC'd on all quote emails sent to customers."
 msgstr "Ces adresses e-mail seront automatiquement mises en copie sur tous les e-mails de devis envoyés aux clients."
+
+msgid "These items still have material to pick. Finishing now marks the list Partial."
+msgstr ""
 
 msgid "These jobs have operations assigned to this work center:"
 msgstr "Ces travaux ont des opérations assignées à ce centre de travail :"
