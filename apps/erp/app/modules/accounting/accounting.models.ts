@@ -832,7 +832,7 @@ export const bookAdjustmentRunValidator = z
     skippedReason: zfd.text(z.string().optional())
   })
   .superRefine((data, ctx) => {
-    if (data.status === "Skipped" && !data.skippedReason) {
+    if (data.status === "Skipped" && !data.skippedReason?.trim()) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         message: "Reason is required when skipping",

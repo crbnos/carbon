@@ -195,8 +195,14 @@ const SalesOrdersTable = memo(({ data, count }: SalesOrdersTableProps) => {
             if (line.methodType !== "Make to Order") return true;
             const relevantJobs =
               jobs.filter?.((job) => job.salesOrderLineId === line.id) ?? [];
+            // Match the shared status helper (getSalesOrderJobStatus): count
+            // production coverage from non-cancelled jobs' productionQuantity.
             const totalJobQuantity = relevantJobs.reduce(
-              (acc, job) => acc + job.quantity,
+              (acc, job) =>
+                acc +
+                (job.status === "Cancelled"
+                  ? 0
+                  : (job.productionQuantity ?? 0)),
               0
             );
 

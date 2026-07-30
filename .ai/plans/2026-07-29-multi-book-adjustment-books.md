@@ -44,5 +44,5 @@ recorded in the PR body as the remaining work; they fail typecheck without regen
 
 - `pnpm exec biome check` on changed files
 - `pnpm exec turbo run typecheck --filter=erp` (models are pure zod → green)
-- `pnpm --filter @carbon/erp test -- --testPathPattern=accounting` (accounting models + related)
+- `pnpm --filter erp exec vitest run app/modules/accounting` (accounting models + related)
 - Migration reviewed for idempotency + RLS + forward timestamp

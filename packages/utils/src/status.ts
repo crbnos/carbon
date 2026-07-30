@@ -99,6 +99,9 @@ export const getSalesOrderJobStatus = (
 ) => {
   const filteredJobs =
     jobs?.filter((j) => j.salesOrderLineId === line.id) ?? [];
+  // Cancelled jobs don't count as active work — a line whose only jobs are
+  // cancelled still "Requires Jobs" rather than reading as Planned.
+  const activeJobs = filteredJobs.filter((job) => job.status !== "Cancelled");
   const isMade = line.methodType === "Make to Order";
   const saleQuantity = line.saleQuantity ?? 0;
 
@@ -151,7 +154,7 @@ export const getSalesOrderJobStatus = (
   } else if (isPartiallyShipped) {
     jobLabel = "Partially Shipped";
     jobVariant = "orange";
-  } else if (isMade && filteredJobs.length === 0) {
+  } else if (isMade && activeJobs.length === 0) {
     jobLabel = "Requires Jobs";
     jobVariant = "red";
   } else if (hasAnyQuantityReleased) {

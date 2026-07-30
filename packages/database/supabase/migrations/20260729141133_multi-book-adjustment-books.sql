@@ -285,7 +285,7 @@ CREATE TABLE IF NOT EXISTS "fixedAssetBook" (
   CONSTRAINT "fixedAssetBook_residualValuePercent_check"
     CHECK ("residualValuePercent" >= 0 AND "residualValuePercent" <= 100),
   CONSTRAINT "fixedAssetBook_accumulatedDepreciation_check"
-    CHECK ("accumulatedDepreciation" >= 0)
+    CHECK ("accumulatedDepreciation" <> 'NaN'::numeric AND "accumulatedDepreciation" >= 0)
 );
 
 CREATE INDEX IF NOT EXISTS "fixedAssetBook_companyId_idx"
