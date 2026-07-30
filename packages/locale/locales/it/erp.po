@@ -10164,9 +10164,6 @@ msgstr "Preventivi"
 msgid "Quotes with Lines"
 msgstr "Preventivi con Righe"
 
-msgid "Quoting"
-msgstr "Quotazione"
-
 msgid "Quoting and sales orders"
 msgstr "Preventivi e ordini di vendita"
 

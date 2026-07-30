@@ -10164,9 +10164,6 @@ msgstr "报价"
 msgid "Quotes with Lines"
 msgstr "带报价行的报价单"
 
-msgid "Quoting"
-msgstr "报价"
-
 msgid "Quoting and sales orders"
 msgstr "报价和销售订单"
 

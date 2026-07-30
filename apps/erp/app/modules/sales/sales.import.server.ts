@@ -757,30 +757,51 @@ async function createLines(
     summary.inserted += 1;
     const lineId = line.data.id;
 
-    const unitPrice = num(record.unitPrice);
-    if (unitPrice !== undefined) {
-      const priceResult = await upsertQuoteLinePrices(
-        client,
-        quoteInternalId,
-        lineId,
-        [
-          {
-            quoteLineId: lineId,
-            unitPrice,
-            leadTime: num(record.leadTime) ?? 0,
-            discountPercent: discount,
-            quantity,
-            createdBy: userId,
-            priceSource: "manual"
-          }
-        ]
-      );
-      if (priceResult.error) {
+    // Explicit quantity-break pricing. Only persist non-negative, valid numbers
+    // — a present-but-invalid or negative Unit Price / Lead Time is rejected
+    // rather than written to the quote line.
+    const unitPriceRaw = text(record.unitPrice);
+    if (unitPriceRaw) {
+      const unitPrice = num(unitPriceRaw);
+      const leadTimeRaw = text(record.leadTime);
+      const leadTime = num(leadTimeRaw);
+
+      if (unitPrice === undefined || unitPrice < 0) {
         summary.errors.push({
           row: index,
-          reason: `Line created but pricing failed: ${priceResult.error.message}`,
+          reason: "Unit Price must be a number of 0 or greater",
           values: record
         });
+      } else if (leadTimeRaw && (leadTime === undefined || leadTime < 0)) {
+        summary.errors.push({
+          row: index,
+          reason: "Lead Time must be a number of 0 or greater",
+          values: record
+        });
+      } else {
+        const priceResult = await upsertQuoteLinePrices(
+          client,
+          quoteInternalId,
+          lineId,
+          [
+            {
+              quoteLineId: lineId,
+              unitPrice,
+              leadTime: leadTime ?? 0,
+              discountPercent: discount,
+              quantity,
+              createdBy: userId,
+              priceSource: "manual"
+            }
+          ]
+        );
+        if (priceResult.error) {
+          summary.errors.push({
+            row: index,
+            reason: `Line created but pricing failed: ${priceResult.error.message}`,
+            values: record
+          });
+        }
       }
     }
   }

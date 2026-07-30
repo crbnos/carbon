@@ -10164,9 +10164,6 @@ msgstr "Oferty"
 msgid "Quotes with Lines"
 msgstr "Oferty z pozycjami"
 
-msgid "Quoting"
-msgstr "Wycena"
-
 msgid "Quoting and sales orders"
 msgstr "Wycena i zamówienia sprzedaży"
 

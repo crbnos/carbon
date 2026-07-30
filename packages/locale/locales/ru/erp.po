@@ -10164,9 +10164,6 @@ msgstr "Предложения"
 msgid "Quotes with Lines"
 msgstr "Предложения со строками"
 
-msgid "Quoting"
-msgstr "Котировка"
-
 msgid "Quoting and sales orders"
 msgstr "Котировки и заказы на продажу"
 

@@ -10164,9 +10164,6 @@ msgstr "Devis"
 msgid "Quotes with Lines"
 msgstr "Devis avec lignes"
 
-msgid "Quoting"
-msgstr "Devis"
-
 msgid "Quoting and sales orders"
 msgstr "Devis et commandes de vente"
 

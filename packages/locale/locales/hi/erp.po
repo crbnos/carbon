@@ -10164,9 +10164,6 @@ msgstr "उद्धरण"
 msgid "Quotes with Lines"
 msgstr "पंक्तियों के साथ उद्धरण"
 
-msgid "Quoting"
-msgstr "उद्धरण"
-
 msgid "Quoting and sales orders"
 msgstr "उद्धरण और बिक्रय आदेश"
 

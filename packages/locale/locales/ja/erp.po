@@ -10164,9 +10164,6 @@ msgstr "見積"
 msgid "Quotes with Lines"
 msgstr "明細付き見積"
 
-msgid "Quoting"
-msgstr "見積"
-
 msgid "Quoting and sales orders"
 msgstr "見積と販売注文"
 

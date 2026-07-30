@@ -10164,9 +10164,6 @@ msgstr "Cotizaciones"
 msgid "Quotes with Lines"
 msgstr "Cotizaciones con Líneas"
 
-msgid "Quoting"
-msgstr "Cotización"
-
 msgid "Quoting and sales orders"
 msgstr "Presupuestos y pedidos de venta"
 

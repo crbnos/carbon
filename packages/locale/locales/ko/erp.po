@@ -10164,9 +10164,6 @@ msgstr "견적"
 msgid "Quotes with Lines"
 msgstr "라인이 포함된 견적"
 
-msgid "Quoting"
-msgstr "견적"
-
 msgid "Quoting and sales orders"
 msgstr "견적 및 판매주문"
 

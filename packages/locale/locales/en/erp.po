@@ -10164,9 +10164,6 @@ msgstr "Quotes"
 msgid "Quotes with Lines"
 msgstr "Quotes with Lines"
 
-msgid "Quoting"
-msgstr "Quoting"
-
 msgid "Quoting and sales orders"
 msgstr "Quoting and sales orders"
 

@@ -10164,9 +10164,6 @@ msgstr "Teklifler"
 msgid "Quotes with Lines"
 msgstr "Satırlı Teklifler"
 
-msgid "Quoting"
-msgstr "Teklif Verme"
-
 msgid "Quoting and sales orders"
 msgstr "Teklifler ve satış siparişleri"
 

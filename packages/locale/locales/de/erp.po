@@ -10164,9 +10164,6 @@ msgstr "Angebote"
 msgid "Quotes with Lines"
 msgstr "Angebote mit Zeilen"
 
-msgid "Quoting"
-msgstr "Angebotserstellung"
-
 msgid "Quoting and sales orders"
 msgstr "Angebote und Aufträge"
 

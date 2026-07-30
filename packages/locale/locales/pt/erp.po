@@ -10162,10 +10162,7 @@ msgid "Quotes"
 msgstr "Orçamentos"
 
 msgid "Quotes with Lines"
-msgstr "Cotações com Linhas"
-
-msgid "Quoting"
-msgstr "Cotação"
+msgstr "Orçamentos com Linhas"
 
 msgid "Quoting and sales orders"
 msgstr "Cotação e pedidos de venda"
