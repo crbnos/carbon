@@ -820,13 +820,23 @@ export const bookAdjustmentRunStatuses = [
   "Skipped"
 ] as const;
 
-export const bookAdjustmentRunValidator = z.object({
-  id: zfd.text(z.string().optional()),
-  bookId: z.string().min(1, { message: "Book is required" }),
-  accountingPeriodId: z.string().min(1, { message: "Period is required" }),
-  generatorKey: z.string().min(1, { message: "Generator is required" }),
-  status: z.enum(bookAdjustmentRunStatuses, {
-    errorMap: () => ({ message: "Status is required" })
-  }),
-  skippedReason: zfd.text(z.string().optional())
-});
+export const bookAdjustmentRunValidator = z
+  .object({
+    id: zfd.text(z.string().optional()),
+    bookId: z.string().min(1, { message: "Book is required" }),
+    accountingPeriodId: z.string().min(1, { message: "Period is required" }),
+    generatorKey: z.string().min(1, { message: "Generator is required" }),
+    status: z.enum(bookAdjustmentRunStatuses, {
+      errorMap: () => ({ message: "Status is required" })
+    }),
+    skippedReason: zfd.text(z.string().optional())
+  })
+  .superRefine((data, ctx) => {
+    if (data.status === "Skipped" && !data.skippedReason) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Reason is required when skipping",
+        path: ["skippedReason"]
+      });
+    }
+  });

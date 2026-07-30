@@ -279,7 +279,13 @@ CREATE TABLE IF NOT EXISTS "fixedAssetBook" (
     REFERENCES "company"("id") ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT "fixedAssetBook_fixedAssetId_fkey" FOREIGN KEY ("fixedAssetId")
     REFERENCES "fixedAsset"("id") ON DELETE CASCADE,
-  CONSTRAINT "fixedAssetBook_asset_book_key" UNIQUE ("fixedAssetId", "bookId", "companyId")
+  CONSTRAINT "fixedAssetBook_asset_book_key" UNIQUE ("fixedAssetId", "bookId", "companyId"),
+  -- Mirror fixedAssetBookValidator bounds (accounting.models.ts)
+  CONSTRAINT "fixedAssetBook_usefulLifeMonths_check" CHECK ("usefulLifeMonths" > 0),
+  CONSTRAINT "fixedAssetBook_residualValuePercent_check"
+    CHECK ("residualValuePercent" >= 0 AND "residualValuePercent" <= 100),
+  CONSTRAINT "fixedAssetBook_accumulatedDepreciation_check"
+    CHECK ("accumulatedDepreciation" >= 0)
 );
 
 CREATE INDEX IF NOT EXISTS "fixedAssetBook_companyId_idx"
