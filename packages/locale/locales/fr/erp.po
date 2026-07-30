@@ -257,6 +257,33 @@ msgstr "Un entrepreneur est un contact fournisseur ayant des compétences partic
 msgid "A customer is a business or person who buys your parts or services."
 msgstr "Un client est une entreprise ou une personne qui achète vos pièces ou services."
 
+msgid "A customer is created"
+msgstr ""
+
+msgid "A customer is deleted"
+msgstr ""
+
+msgid "A customer's account manager changes"
+msgstr ""
+
+msgid "A customer's assignee changes"
+msgstr ""
+
+msgid "A customer's currency changes"
+msgstr ""
+
+msgid "A customer's name changes"
+msgstr ""
+
+msgid "A customer's sales contact changes"
+msgstr ""
+
+msgid "A customer's status changes"
+msgstr ""
+
+msgid "A customer's type changes"
+msgstr ""
+
 msgid "A dated record proving a gauge was checked against a traceable standard; it passes unless a requires-action, -adjustment, or -repair flag is ticked, and resets the gauge's next-due date."
 msgstr "Un enregistrement daté prouvant qu'un instrument de mesure a été vérifié par rapport à une norme traçable ; il réussit sauf si un drapeau nécessitant une action, un ajustement ou une réparation est coché, et réinitialise la date d'échéance suivante de l'instrument."
 
@@ -283,6 +310,45 @@ msgstr "Un instrument de mesure dont le rôle est Maître — la norme de réfé
 
 msgid "A issue record tracks quality issues and their resolution process."
 msgstr "Un enregistrement de problème suit les problèmes de qualité et leur processus de résolution."
+
+msgid "A job is created"
+msgstr ""
+
+msgid "A job is deleted"
+msgstr ""
+
+msgid "A job is put on hold"
+msgstr ""
+
+msgid "A job is released"
+msgstr ""
+
+msgid "A job operation is completed"
+msgstr ""
+
+msgid "A job's assignee changes"
+msgstr ""
+
+msgid "A job's deadline type changes"
+msgstr ""
+
+msgid "A job's due date changes"
+msgstr ""
+
+msgid "A job's priority changes"
+msgstr ""
+
+msgid "A job's quantity changes"
+msgstr ""
+
+msgid "A job's scrap quantity changes"
+msgstr ""
+
+msgid "A job's start date changes"
+msgstr ""
+
+msgid "A job's status changes"
+msgstr ""
 
 msgid "A Make to Order component that gets its own job and routing inside the parent's build."
 msgstr "Un composant Fabriquer sur commande qui obtient son propre travail et son acheminement à l'intérieur de la construction du parent."
@@ -347,6 +413,39 @@ msgstr "Un devis de vente tarifé ; Brouillon → Envoyé → Commandé, ou se t
 msgid "A purchase invoice is a document that specifies the products or services purchased by a customer and the corresponding cost."
 msgstr "Une facture d'achat est un document qui spécifie les produits ou services achetés par un client et le coût correspondant."
 
+msgid "A purchase invoice is posted"
+msgstr ""
+
+msgid "A purchase order is created"
+msgstr ""
+
+msgid "A purchase order is deleted"
+msgstr ""
+
+msgid "A purchase order's assignee changes"
+msgstr ""
+
+msgid "A purchase order's order date changes"
+msgstr ""
+
+msgid "A purchase order's status changes"
+msgstr ""
+
+msgid "A purchase order's supplier changes"
+msgstr ""
+
+msgid "A purchase order's supplier location changes"
+msgstr ""
+
+msgid "A purchase order's supplier reference changes"
+msgstr ""
+
+msgid "A purchase order's tags changes"
+msgstr ""
+
+msgid "A purchase order's type changes"
+msgstr ""
+
 msgid "A quality issue — a logged deviation or defect with a configurable workflow of investigation and action tasks."
 msgstr "Un problème de qualité — un écart enregistré ou un défaut avec un flux de travail configurable de tâches d'enquête et d'action."
 
@@ -356,8 +455,74 @@ msgstr "Une quantité d'unités identiques partage une entité suivie et un num�
 msgid "A quote is a set of prices for specific parts and quantities."
 msgstr "Un devis est un ensemble de prix pour des pièces et des quantités spécifiques."
 
+msgid "A quote is accepted"
+msgstr ""
+
+msgid "A quote is created"
+msgstr ""
+
+msgid "A quote is deleted"
+msgstr ""
+
+msgid "A quote is sent"
+msgstr ""
+
 msgid "A quote line contains pricing and lead times for a particular part"
 msgstr "Une ligne de devis contient les tarifs et les délais de livraison pour une pièce particulière"
+
+msgid "A quote's assignee changes"
+msgstr ""
+
+msgid "A quote's completed date changes"
+msgstr ""
+
+msgid "A quote's customer changes"
+msgstr ""
+
+msgid "A quote's due date changes"
+msgstr ""
+
+msgid "A quote's estimator changes"
+msgstr ""
+
+msgid "A quote's expiration date changes"
+msgstr ""
+
+msgid "A quote's salesperson changes"
+msgstr ""
+
+msgid "A quote's status changes"
+msgstr ""
+
+msgid "A receipt is created"
+msgstr ""
+
+msgid "A receipt is deleted"
+msgstr ""
+
+msgid "A receipt is posted"
+msgstr ""
+
+msgid "A receipt's assignee changes"
+msgstr ""
+
+msgid "A receipt's invoiced changes"
+msgstr ""
+
+msgid "A receipt's location changes"
+msgstr ""
+
+msgid "A receipt's posting date changes"
+msgstr ""
+
+msgid "A receipt's source document changes"
+msgstr ""
+
+msgid "A receipt's status changes"
+msgstr ""
+
+msgid "A receipt's supplier changes"
+msgstr ""
 
 msgid "A reusable, versioned set of work instructions attached to a process, giving an operation its ordered steps to record and check plus the parameters it runs at."
 msgstr "Un ensemble réutilisable et versionné d'instructions de travail attaché à un processus, donnant à une opération ses étapes ordonnées à enregistrer et vérifier ainsi que les paramètres auxquels elle s'exécute."
@@ -371,14 +536,47 @@ msgstr "Une facture de vente (vous facturez un client) ou une facture d'achat (u
 msgid "A sales invoice is a document that specifies the products or services sold to a customer and the corresponding cost."
 msgstr "Une facture de vente est un document qui spécifie les produits ou services vendus à un client et le coût correspondant."
 
+msgid "A sales invoice is posted"
+msgstr ""
+
 msgid "A sales invoice line contains invoice details for a particular item"
 msgstr "Une ligne de facture de vente contient les détails de la facture pour un article particulier"
 
 msgid "A sales order contains information about the agreement between the company and a specific customer for parts and services."
 msgstr "Un bon de commande contient des informations sur l'accord entre l'entreprise et un client spécifique pour les pièces et les services."
 
+msgid "A sales order is created"
+msgstr ""
+
+msgid "A sales order is deleted"
+msgstr ""
+
 msgid "A sales order line contains order details for a particular item"
 msgstr "Une ligne de commande client contient les détails de la commande pour un article particulier"
+
+msgid "A sales order's assignee changes"
+msgstr ""
+
+msgid "A sales order's completed date changes"
+msgstr ""
+
+msgid "A sales order's customer changes"
+msgstr ""
+
+msgid "A sales order's customer reference changes"
+msgstr ""
+
+msgid "A sales order's location changes"
+msgstr ""
+
+msgid "A sales order's order date changes"
+msgstr ""
+
+msgid "A sales order's salesperson changes"
+msgstr ""
+
+msgid "A sales order's status changes"
+msgstr ""
 
 msgid "A sales request for quote (RFQ) is a customer inquiry for pricing on a set of parts and quantities. It may result in a quote."
 msgstr "Une demande de devis (RFQ) est une demande de client pour obtenir des prix sur un ensemble de pièces et de quantités. Elle peut aboutir à un devis."
@@ -401,11 +599,68 @@ msgstr "Un ensemble d'entreprises sous un même propriétaire qui partagent une 
 msgid "A set of instructions to pull a job's outstanding materials from the warehouse and stage them lineside; a pick moves stock to the point of use rather than consuming it."
 msgstr "Un ensemble d'instructions pour retirer les matériaux en attente d'une tâche de l'entrepôt et les préparer au pied de la chaîne ; un prélèvement déplace le stock jusqu'au point d'utilisation plutôt que de le consommer."
 
+msgid "A shipment is created"
+msgstr ""
+
+msgid "A shipment is deleted"
+msgstr ""
+
+msgid "A shipment is posted"
+msgstr ""
+
 msgid "A shipment line sent straight from supplier to customer, bypassing your warehouse — set per line, not on the header."
 msgstr "Une ligne d'expédition envoyée directement du fournisseur au client, contournant votre entrepôt — définie par ligne, pas dans l'en-tête."
 
+msgid "A shipment's assignee changes"
+msgstr ""
+
+msgid "A shipment's customer changes"
+msgstr ""
+
+msgid "A shipment's location changes"
+msgstr ""
+
+msgid "A shipment's posting date changes"
+msgstr ""
+
+msgid "A shipment's shipping method changes"
+msgstr ""
+
+msgid "A shipment's status changes"
+msgstr ""
+
+msgid "A shipment's tracking number changes"
+msgstr ""
+
+msgid "A supplier is created"
+msgstr ""
+
+msgid "A supplier is deleted"
+msgstr ""
+
+msgid "A supplier's account manager changes"
+msgstr ""
+
+msgid "A supplier's assignee changes"
+msgstr ""
+
+msgid "A supplier's currency changes"
+msgstr ""
+
+msgid "A supplier's name changes"
+msgstr ""
+
 msgid "A supplier's priced response to a purchasing RFQ — one per supplier; Draft → Active when they submit, or Declined."
 msgstr "La réponse tarifée d'un fournisseur à un RFQ d'achat — une par fournisseur ; Brouillon → Actif lorsqu'ils envoient, ou Refusé."
+
+msgid "A supplier's status changes"
+msgstr ""
+
+msgid "A supplier's tax percent changes"
+msgstr ""
+
+msgid "A supplier's type changes"
+msgstr ""
 
 msgid "A taxable surcharge (handling, setup, fuel) added to the line; rolls into the tax base."
 msgstr "Un supplément imposable (manutention, configuration, carburant) ajouté à la ligne et inclus dans la base imposable."
@@ -949,8 +1204,71 @@ msgstr "Un ordre de modification d'ingénierie : les articles affectés dont les
 msgid "An integration or a custom change — the small slice that's actually custom."
 msgstr "Une intégration ou une modification personnalisée — la petite partie qui est réellement personnalisée."
 
+msgid "An issue is created"
+msgstr ""
+
+msgid "An issue is deleted"
+msgstr ""
+
+msgid "An issue's assignee changes"
+msgstr ""
+
+msgid "An issue's close date changes"
+msgstr ""
+
+msgid "An issue's due date changes"
+msgstr ""
+
+msgid "An issue's location changes"
+msgstr ""
+
+msgid "An issue's priority changes"
+msgstr ""
+
+msgid "An issue's quantity changes"
+msgstr ""
+
+msgid "An issue's source changes"
+msgstr ""
+
+msgid "An issue's status changes"
+msgstr ""
+
+msgid "An issue's type changes"
+msgstr ""
+
 msgid "An item cannot be added to itself."
 msgstr "Un article ne peut pas être ajouté à lui-même."
+
+msgid "An item is created"
+msgstr ""
+
+msgid "An item is deleted"
+msgstr ""
+
+msgid "An item's active changes"
+msgstr ""
+
+msgid "An item's assignee changes"
+msgstr ""
+
+msgid "An item's default method type changes"
+msgstr ""
+
+msgid "An item's name changes"
+msgstr ""
+
+msgid "An item's replenishment system changes"
+msgstr ""
+
+msgid "An item's revision status changes"
+msgstr ""
+
+msgid "An item's tracking type changes"
+msgstr ""
+
+msgid "An item's unit of measure changes"
+msgstr ""
 
 msgid "An operation done by an outside supplier rather than an in-house work center, covered by a subcontracting purchase order."
 msgstr "Une opération effectuée par un fournisseur externe plutôt que par un centre de travail interne, couverte par une commande d'achat de sous-traitance."

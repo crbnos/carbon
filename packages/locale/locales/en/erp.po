@@ -257,6 +257,33 @@ msgstr "A contractor is a supplier contact with particular abilities and availab
 msgid "A customer is a business or person who buys your parts or services."
 msgstr "A customer is a business or person who buys your parts or services."
 
+msgid "A customer is created"
+msgstr "A customer is created"
+
+msgid "A customer is deleted"
+msgstr "A customer is deleted"
+
+msgid "A customer's account manager changes"
+msgstr "A customer's account manager changes"
+
+msgid "A customer's assignee changes"
+msgstr "A customer's assignee changes"
+
+msgid "A customer's currency changes"
+msgstr "A customer's currency changes"
+
+msgid "A customer's name changes"
+msgstr "A customer's name changes"
+
+msgid "A customer's sales contact changes"
+msgstr "A customer's sales contact changes"
+
+msgid "A customer's status changes"
+msgstr "A customer's status changes"
+
+msgid "A customer's type changes"
+msgstr "A customer's type changes"
+
 msgid "A dated record proving a gauge was checked against a traceable standard; it passes unless a requires-action, -adjustment, or -repair flag is ticked, and resets the gauge's next-due date."
 msgstr "A dated record proving a gauge was checked against a traceable standard; it passes unless a requires-action, -adjustment, or -repair flag is ticked, and resets the gauge's next-due date."
 
@@ -283,6 +310,45 @@ msgstr "A gauge whose role is Master — the reference standard other gauges are
 
 msgid "A issue record tracks quality issues and their resolution process."
 msgstr "A issue record tracks quality issues and their resolution process."
+
+msgid "A job is created"
+msgstr "A job is created"
+
+msgid "A job is deleted"
+msgstr "A job is deleted"
+
+msgid "A job is put on hold"
+msgstr "A job is put on hold"
+
+msgid "A job is released"
+msgstr "A job is released"
+
+msgid "A job operation is completed"
+msgstr "A job operation is completed"
+
+msgid "A job's assignee changes"
+msgstr "A job's assignee changes"
+
+msgid "A job's deadline type changes"
+msgstr "A job's deadline type changes"
+
+msgid "A job's due date changes"
+msgstr "A job's due date changes"
+
+msgid "A job's priority changes"
+msgstr "A job's priority changes"
+
+msgid "A job's quantity changes"
+msgstr "A job's quantity changes"
+
+msgid "A job's scrap quantity changes"
+msgstr "A job's scrap quantity changes"
+
+msgid "A job's start date changes"
+msgstr "A job's start date changes"
+
+msgid "A job's status changes"
+msgstr "A job's status changes"
 
 msgid "A Make to Order component that gets its own job and routing inside the parent's build."
 msgstr "A Make to Order component that gets its own job and routing inside the parent's build."
@@ -347,6 +413,39 @@ msgstr "A priced sales quotation; Draft → Sent → Ordered, or ends Lost, Expi
 msgid "A purchase invoice is a document that specifies the products or services purchased by a customer and the corresponding cost."
 msgstr "A purchase invoice is a document that specifies the products or services purchased by a customer and the corresponding cost."
 
+msgid "A purchase invoice is posted"
+msgstr "A purchase invoice is posted"
+
+msgid "A purchase order is created"
+msgstr "A purchase order is created"
+
+msgid "A purchase order is deleted"
+msgstr "A purchase order is deleted"
+
+msgid "A purchase order's assignee changes"
+msgstr "A purchase order's assignee changes"
+
+msgid "A purchase order's order date changes"
+msgstr "A purchase order's order date changes"
+
+msgid "A purchase order's status changes"
+msgstr "A purchase order's status changes"
+
+msgid "A purchase order's supplier changes"
+msgstr "A purchase order's supplier changes"
+
+msgid "A purchase order's supplier location changes"
+msgstr "A purchase order's supplier location changes"
+
+msgid "A purchase order's supplier reference changes"
+msgstr "A purchase order's supplier reference changes"
+
+msgid "A purchase order's tags changes"
+msgstr "A purchase order's tags changes"
+
+msgid "A purchase order's type changes"
+msgstr "A purchase order's type changes"
+
 msgid "A quality issue — a logged deviation or defect with a configurable workflow of investigation and action tasks."
 msgstr "A quality issue — a logged deviation or defect with a configurable workflow of investigation and action tasks."
 
@@ -356,8 +455,74 @@ msgstr "A quantity of identical units shares one tracked entity and batch number
 msgid "A quote is a set of prices for specific parts and quantities."
 msgstr "A quote is a set of prices for specific parts and quantities."
 
+msgid "A quote is accepted"
+msgstr "A quote is accepted"
+
+msgid "A quote is created"
+msgstr "A quote is created"
+
+msgid "A quote is deleted"
+msgstr "A quote is deleted"
+
+msgid "A quote is sent"
+msgstr "A quote is sent"
+
 msgid "A quote line contains pricing and lead times for a particular part"
 msgstr "A quote line contains pricing and lead times for a particular part"
+
+msgid "A quote's assignee changes"
+msgstr "A quote's assignee changes"
+
+msgid "A quote's completed date changes"
+msgstr "A quote's completed date changes"
+
+msgid "A quote's customer changes"
+msgstr "A quote's customer changes"
+
+msgid "A quote's due date changes"
+msgstr "A quote's due date changes"
+
+msgid "A quote's estimator changes"
+msgstr "A quote's estimator changes"
+
+msgid "A quote's expiration date changes"
+msgstr "A quote's expiration date changes"
+
+msgid "A quote's salesperson changes"
+msgstr "A quote's salesperson changes"
+
+msgid "A quote's status changes"
+msgstr "A quote's status changes"
+
+msgid "A receipt is created"
+msgstr "A receipt is created"
+
+msgid "A receipt is deleted"
+msgstr "A receipt is deleted"
+
+msgid "A receipt is posted"
+msgstr "A receipt is posted"
+
+msgid "A receipt's assignee changes"
+msgstr "A receipt's assignee changes"
+
+msgid "A receipt's invoiced changes"
+msgstr "A receipt's invoiced changes"
+
+msgid "A receipt's location changes"
+msgstr "A receipt's location changes"
+
+msgid "A receipt's posting date changes"
+msgstr "A receipt's posting date changes"
+
+msgid "A receipt's source document changes"
+msgstr "A receipt's source document changes"
+
+msgid "A receipt's status changes"
+msgstr "A receipt's status changes"
+
+msgid "A receipt's supplier changes"
+msgstr "A receipt's supplier changes"
 
 msgid "A reusable, versioned set of work instructions attached to a process, giving an operation its ordered steps to record and check plus the parameters it runs at."
 msgstr "A reusable, versioned set of work instructions attached to a process, giving an operation its ordered steps to record and check plus the parameters it runs at."
@@ -371,14 +536,47 @@ msgstr "A sales invoice (you bill a customer) or purchase invoice (a supplier bi
 msgid "A sales invoice is a document that specifies the products or services sold to a customer and the corresponding cost."
 msgstr "A sales invoice is a document that specifies the products or services sold to a customer and the corresponding cost."
 
+msgid "A sales invoice is posted"
+msgstr "A sales invoice is posted"
+
 msgid "A sales invoice line contains invoice details for a particular item"
 msgstr "A sales invoice line contains invoice details for a particular item"
 
 msgid "A sales order contains information about the agreement between the company and a specific customer for parts and services."
 msgstr "A sales order contains information about the agreement between the company and a specific customer for parts and services."
 
+msgid "A sales order is created"
+msgstr "A sales order is created"
+
+msgid "A sales order is deleted"
+msgstr "A sales order is deleted"
+
 msgid "A sales order line contains order details for a particular item"
 msgstr "A sales order line contains order details for a particular item"
+
+msgid "A sales order's assignee changes"
+msgstr "A sales order's assignee changes"
+
+msgid "A sales order's completed date changes"
+msgstr "A sales order's completed date changes"
+
+msgid "A sales order's customer changes"
+msgstr "A sales order's customer changes"
+
+msgid "A sales order's customer reference changes"
+msgstr "A sales order's customer reference changes"
+
+msgid "A sales order's location changes"
+msgstr "A sales order's location changes"
+
+msgid "A sales order's order date changes"
+msgstr "A sales order's order date changes"
+
+msgid "A sales order's salesperson changes"
+msgstr "A sales order's salesperson changes"
+
+msgid "A sales order's status changes"
+msgstr "A sales order's status changes"
 
 msgid "A sales request for quote (RFQ) is a customer inquiry for pricing on a set of parts and quantities. It may result in a quote."
 msgstr "A sales request for quote (RFQ) is a customer inquiry for pricing on a set of parts and quantities. It may result in a quote."
@@ -401,11 +599,68 @@ msgstr "A set of companies under one owner that share group-scoped configuration
 msgid "A set of instructions to pull a job's outstanding materials from the warehouse and stage them lineside; a pick moves stock to the point of use rather than consuming it."
 msgstr "A set of instructions to pull a job's outstanding materials from the warehouse and stage them lineside; a pick moves stock to the point of use rather than consuming it."
 
+msgid "A shipment is created"
+msgstr "A shipment is created"
+
+msgid "A shipment is deleted"
+msgstr "A shipment is deleted"
+
+msgid "A shipment is posted"
+msgstr "A shipment is posted"
+
 msgid "A shipment line sent straight from supplier to customer, bypassing your warehouse — set per line, not on the header."
 msgstr "A shipment line sent straight from supplier to customer, bypassing your warehouse — set per line, not on the header."
 
+msgid "A shipment's assignee changes"
+msgstr "A shipment's assignee changes"
+
+msgid "A shipment's customer changes"
+msgstr "A shipment's customer changes"
+
+msgid "A shipment's location changes"
+msgstr "A shipment's location changes"
+
+msgid "A shipment's posting date changes"
+msgstr "A shipment's posting date changes"
+
+msgid "A shipment's shipping method changes"
+msgstr "A shipment's shipping method changes"
+
+msgid "A shipment's status changes"
+msgstr "A shipment's status changes"
+
+msgid "A shipment's tracking number changes"
+msgstr "A shipment's tracking number changes"
+
+msgid "A supplier is created"
+msgstr "A supplier is created"
+
+msgid "A supplier is deleted"
+msgstr "A supplier is deleted"
+
+msgid "A supplier's account manager changes"
+msgstr "A supplier's account manager changes"
+
+msgid "A supplier's assignee changes"
+msgstr "A supplier's assignee changes"
+
+msgid "A supplier's currency changes"
+msgstr "A supplier's currency changes"
+
+msgid "A supplier's name changes"
+msgstr "A supplier's name changes"
+
 msgid "A supplier's priced response to a purchasing RFQ — one per supplier; Draft → Active when they submit, or Declined."
 msgstr "A supplier's priced response to a purchasing RFQ — one per supplier; Draft → Active when they submit, or Declined."
+
+msgid "A supplier's status changes"
+msgstr "A supplier's status changes"
+
+msgid "A supplier's tax percent changes"
+msgstr "A supplier's tax percent changes"
+
+msgid "A supplier's type changes"
+msgstr "A supplier's type changes"
 
 msgid "A taxable surcharge (handling, setup, fuel) added to the line; rolls into the tax base."
 msgstr "A taxable surcharge (handling, setup, fuel) added to the line; rolls into the tax base."
@@ -949,8 +1204,71 @@ msgstr "An engineering change: the affected items whose methods are revised on a
 msgid "An integration or a custom change — the small slice that's actually custom."
 msgstr "An integration or a custom change — the small slice that's actually custom."
 
+msgid "An issue is created"
+msgstr "An issue is created"
+
+msgid "An issue is deleted"
+msgstr "An issue is deleted"
+
+msgid "An issue's assignee changes"
+msgstr "An issue's assignee changes"
+
+msgid "An issue's close date changes"
+msgstr "An issue's close date changes"
+
+msgid "An issue's due date changes"
+msgstr "An issue's due date changes"
+
+msgid "An issue's location changes"
+msgstr "An issue's location changes"
+
+msgid "An issue's priority changes"
+msgstr "An issue's priority changes"
+
+msgid "An issue's quantity changes"
+msgstr "An issue's quantity changes"
+
+msgid "An issue's source changes"
+msgstr "An issue's source changes"
+
+msgid "An issue's status changes"
+msgstr "An issue's status changes"
+
+msgid "An issue's type changes"
+msgstr "An issue's type changes"
+
 msgid "An item cannot be added to itself."
 msgstr "An item cannot be added to itself."
+
+msgid "An item is created"
+msgstr "An item is created"
+
+msgid "An item is deleted"
+msgstr "An item is deleted"
+
+msgid "An item's active changes"
+msgstr "An item's active changes"
+
+msgid "An item's assignee changes"
+msgstr "An item's assignee changes"
+
+msgid "An item's default method type changes"
+msgstr "An item's default method type changes"
+
+msgid "An item's name changes"
+msgstr "An item's name changes"
+
+msgid "An item's replenishment system changes"
+msgstr "An item's replenishment system changes"
+
+msgid "An item's revision status changes"
+msgstr "An item's revision status changes"
+
+msgid "An item's tracking type changes"
+msgstr "An item's tracking type changes"
+
+msgid "An item's unit of measure changes"
+msgstr "An item's unit of measure changes"
 
 msgid "An operation done by an outside supplier rather than an in-house work center, covered by a subcontracting purchase order."
 msgstr "An operation done by an outside supplier rather than an in-house work center, covered by a subcontracting purchase order."

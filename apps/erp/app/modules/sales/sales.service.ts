@@ -1,6 +1,7 @@
 import type { Database, Json } from "@carbon/database";
 import { fetchAllFromTable } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
+import { raiseMoment } from "@carbon/lib/workflows";
 import { getLogger } from "@carbon/logger";
 import type { PickPartial } from "@carbon/utils";
 import { getLocalTimeZone, now, today } from "@internationalized/date";
@@ -192,12 +193,30 @@ export async function convertQuoteToOrder(
     digitalQuoteAcceptedByEmail?: string;
   }
 ) {
-  return client.functions.invoke<{ convertedId: string }>("convert", {
-    body: {
-      type: "quoteToSalesOrder",
-      ...payload
+  const result = await client.functions.invoke<{ convertedId: string }>(
+    "convert",
+    {
+      body: {
+        type: "quoteToSalesOrder",
+        ...payload
+      }
     }
-  });
+  );
+
+  if (!result.error && result.data?.convertedId) {
+    await raiseMoment("sales.quoteAccepted", {
+      outputs: {
+        quote: { id: payload.id },
+        salesOrder: { id: result.data.convertedId }
+      },
+      companyId: payload.companyId,
+      // A digital acceptance is the customer acting, not `userId` (which is only
+      // the employee who created the quote).
+      actorId: payload.digitalQuoteAcceptedBy ? null : payload.userId
+    });
+  }
+
+  return result;
 }
 
 export async function copyQuoteLine(
@@ -1952,7 +1971,8 @@ export async function insertSalesOrderLines(
 export async function finalizeQuote(
   client: SupabaseClient<Database>,
   quoteId: string,
-  userId: string
+  userId: string,
+  companyId: string
 ) {
   const quoteUpdate = await client
     .from("quote")
@@ -1967,7 +1987,7 @@ export async function finalizeQuote(
     return quoteUpdate;
   }
 
-  return client
+  const lineUpdate = await client
     .from("quoteLine")
     .update({
       status: "Complete",
@@ -1976,6 +1996,16 @@ export async function finalizeQuote(
     })
     .neq("status", "No Quote")
     .eq("quoteId", quoteId);
+
+  // Gated on the quote reaching 'Sent' (the early return above), not on the line
+  // write: the quote is sent either way, and a zero-line quote is not an error.
+  await raiseMoment("sales.quoteSent", {
+    outputs: { quote: { id: quoteId }, sentBy: { id: userId } },
+    companyId,
+    actorId: userId
+  });
+
+  return lineUpdate;
 }
 
 export async function releaseSalesOrder(

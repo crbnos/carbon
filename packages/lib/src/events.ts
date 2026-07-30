@@ -565,4 +565,16 @@ export type Events = {
       companyId: string;
     };
   };
+
+  // Workflow moments — raised after a business action commits. Phase 3 consumes.
+  "carbon/workflow-moment.raised": {
+    data: {
+      moment: string;
+      companyId: string;
+      /** auth.uid() of the actor; null for service-role / background writes. */
+      actorId: string | null;
+      /** Output name -> entity id, per the moment's declaration. */
+      outputs: Record<string, { id: string }>;
+    };
+  };
 };

@@ -124,6 +124,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const update = await updateJobStatus(client, {
     id,
+    companyId,
     status,
     assignee: ["Cancelled"].includes(status) ? null : undefined,
     updatedBy: userId

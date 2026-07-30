@@ -29,6 +29,22 @@ export const valueTypeSchema = z.discriminatedUnion("kind", [
 ]);
 export type ValueType = z.infer<typeof valueTypeSchema>;
 
+/**
+ * The canonical `ValueType` constructors. Use these rather than writing the
+ * literals inline, so the shape has one definition.
+ */
+export const t = {
+  string: { kind: "primitive", of: "string" },
+  number: { kind: "primitive", of: "number" },
+  boolean: { kind: "primitive", of: "boolean" },
+  date: { kind: "primitive", of: "date" },
+  entity: (of: string): ValueType => ({ kind: "entity", of }),
+  list: (of: ScalarType): ValueType => ({ kind: "list", of })
+} as const satisfies Record<
+  string,
+  ValueType | ((...args: never[]) => ValueType)
+>;
+
 export function typesEqual(a: ValueType, b: ValueType): boolean {
   if (a.kind === "list" && b.kind === "list") {
     return a.of.kind === b.of.kind && a.of.of === b.of.of;

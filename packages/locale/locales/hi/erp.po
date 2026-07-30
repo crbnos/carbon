@@ -257,6 +257,33 @@ msgstr "एक ठेकेदार एक आपूर्तिकर्ता
 msgid "A customer is a business or person who buys your parts or services."
 msgstr "एक ग्राहक एक व्यवसाय या व्यक्ति है जो आपके पार्ट्स या सेवाएं खरीदता है।"
 
+msgid "A customer is created"
+msgstr ""
+
+msgid "A customer is deleted"
+msgstr ""
+
+msgid "A customer's account manager changes"
+msgstr ""
+
+msgid "A customer's assignee changes"
+msgstr ""
+
+msgid "A customer's currency changes"
+msgstr ""
+
+msgid "A customer's name changes"
+msgstr ""
+
+msgid "A customer's sales contact changes"
+msgstr ""
+
+msgid "A customer's status changes"
+msgstr ""
+
+msgid "A customer's type changes"
+msgstr ""
+
 msgid "A dated record proving a gauge was checked against a traceable standard; it passes unless a requires-action, -adjustment, or -repair flag is ticked, and resets the gauge's next-due date."
 msgstr "एक दिनांकित रिकॉर्ड यह साबित करता है कि एक गेज को एक ट्रेसेबल मानक के विरुद्ध जांचा गया था; यह तब तक पास होता है जब तक कि कोई कार्रवाई की आवश्यकता, समायोजन, या मरम्मत का झंडा चिन्हित नहीं किया जाता है, और गेज की अगली देय तारीख को रीसेट करता है।"
 
@@ -283,6 +310,45 @@ msgstr "एक गेज जिसकी भूमिका मास्टर �
 
 msgid "A issue record tracks quality issues and their resolution process."
 msgstr "एक समस्या रिकॉर्ड गुणवत्ता समस्याओं और उनकी समाधान प्रक्रिया को ट्रैक करता है।"
+
+msgid "A job is created"
+msgstr ""
+
+msgid "A job is deleted"
+msgstr ""
+
+msgid "A job is put on hold"
+msgstr ""
+
+msgid "A job is released"
+msgstr ""
+
+msgid "A job operation is completed"
+msgstr ""
+
+msgid "A job's assignee changes"
+msgstr ""
+
+msgid "A job's deadline type changes"
+msgstr ""
+
+msgid "A job's due date changes"
+msgstr ""
+
+msgid "A job's priority changes"
+msgstr ""
+
+msgid "A job's quantity changes"
+msgstr ""
+
+msgid "A job's scrap quantity changes"
+msgstr ""
+
+msgid "A job's start date changes"
+msgstr ""
+
+msgid "A job's status changes"
+msgstr ""
 
 msgid "A Make to Order component that gets its own job and routing inside the parent's build."
 msgstr "एक ऑर्डर टू मेक घटक जो माता-पिता के बिल्ड के अंदर अपनी नौकरी और रूटिंग पाता है।"
@@ -347,6 +413,39 @@ msgstr "एक मूल्यवान बिक्रय उद्धरण; �
 msgid "A purchase invoice is a document that specifies the products or services purchased by a customer and the corresponding cost."
 msgstr "एक क्रय चालान एक दस्तावेज है जो किसी ग्राहक द्वारा खरीदे गए उत्पादों या सेवाओं और संबंधित लागत को निर्दिष्ट करता है।"
 
+msgid "A purchase invoice is posted"
+msgstr ""
+
+msgid "A purchase order is created"
+msgstr ""
+
+msgid "A purchase order is deleted"
+msgstr ""
+
+msgid "A purchase order's assignee changes"
+msgstr ""
+
+msgid "A purchase order's order date changes"
+msgstr ""
+
+msgid "A purchase order's status changes"
+msgstr ""
+
+msgid "A purchase order's supplier changes"
+msgstr ""
+
+msgid "A purchase order's supplier location changes"
+msgstr ""
+
+msgid "A purchase order's supplier reference changes"
+msgstr ""
+
+msgid "A purchase order's tags changes"
+msgstr ""
+
+msgid "A purchase order's type changes"
+msgstr ""
+
 msgid "A quality issue — a logged deviation or defect with a configurable workflow of investigation and action tasks."
 msgstr "एक गुणवत्ता समस्या — एक लॉग किया गया विचलन या दोष जिसमें जांच और कार्य कार्यों की एक कॉन्फ़िगरेबल वर्कफ़्लो है।"
 
@@ -356,8 +455,74 @@ msgstr "समान इकाइयों की एक मात्रा ए�
 msgid "A quote is a set of prices for specific parts and quantities."
 msgstr "एक उद्धरण विशिष्ट भागों और मात्राओं के लिए कीमतों का एक समूह है।"
 
+msgid "A quote is accepted"
+msgstr ""
+
+msgid "A quote is created"
+msgstr ""
+
+msgid "A quote is deleted"
+msgstr ""
+
+msgid "A quote is sent"
+msgstr ""
+
 msgid "A quote line contains pricing and lead times for a particular part"
 msgstr "एक उद्धरण पंक्ति में किसी विशेष भाग के लिए मूल्य निर्धारण और लीड समय शामिल होते हैं"
+
+msgid "A quote's assignee changes"
+msgstr ""
+
+msgid "A quote's completed date changes"
+msgstr ""
+
+msgid "A quote's customer changes"
+msgstr ""
+
+msgid "A quote's due date changes"
+msgstr ""
+
+msgid "A quote's estimator changes"
+msgstr ""
+
+msgid "A quote's expiration date changes"
+msgstr ""
+
+msgid "A quote's salesperson changes"
+msgstr ""
+
+msgid "A quote's status changes"
+msgstr ""
+
+msgid "A receipt is created"
+msgstr ""
+
+msgid "A receipt is deleted"
+msgstr ""
+
+msgid "A receipt is posted"
+msgstr ""
+
+msgid "A receipt's assignee changes"
+msgstr ""
+
+msgid "A receipt's invoiced changes"
+msgstr ""
+
+msgid "A receipt's location changes"
+msgstr ""
+
+msgid "A receipt's posting date changes"
+msgstr ""
+
+msgid "A receipt's source document changes"
+msgstr ""
+
+msgid "A receipt's status changes"
+msgstr ""
+
+msgid "A receipt's supplier changes"
+msgstr ""
 
 msgid "A reusable, versioned set of work instructions attached to a process, giving an operation its ordered steps to record and check plus the parameters it runs at."
 msgstr "एक पुनः प्रयोग योग्य, संस्करण युक्त कार्य निर्देशों का समूह जो एक प्रक्रिया से जुड़ा होता है, जो एक ऑपरेशन को रिकॉर्ड और जांच के लिए क्रमबद्ध चरण प्रदान करता है साथ ही वह पैरामीटर भी प्रदान करता है जिस पर यह चलता है।"
@@ -371,14 +536,47 @@ msgstr "एक बिक्री चालान (आप एक ग्राह
 msgid "A sales invoice is a document that specifies the products or services sold to a customer and the corresponding cost."
 msgstr "एक बिक्रय चालान एक दस्तावेज है जो किसी ग्राहक को बेचे गए उत्पादों या सेवाओं और संबंधित लागत को निर्दिष्ट करता है।"
 
+msgid "A sales invoice is posted"
+msgstr ""
+
 msgid "A sales invoice line contains invoice details for a particular item"
 msgstr "एक बिक्रय चालान पंक्ति में किसी विशेष आइटम के लिए चालान विवरण होते हैं"
 
 msgid "A sales order contains information about the agreement between the company and a specific customer for parts and services."
 msgstr "एक बिक्रय आदेश कंपनी और एक विशिष्ट ग्राहक के बीच भागों और सेवाओं के लिए समझौते की जानकारी रखता है।"
 
+msgid "A sales order is created"
+msgstr ""
+
+msgid "A sales order is deleted"
+msgstr ""
+
 msgid "A sales order line contains order details for a particular item"
 msgstr "एक बिक्रय आदेश पंक्ति किसी विशेष आइटम के लिए आदेश विवरण रखती है"
+
+msgid "A sales order's assignee changes"
+msgstr ""
+
+msgid "A sales order's completed date changes"
+msgstr ""
+
+msgid "A sales order's customer changes"
+msgstr ""
+
+msgid "A sales order's customer reference changes"
+msgstr ""
+
+msgid "A sales order's location changes"
+msgstr ""
+
+msgid "A sales order's order date changes"
+msgstr ""
+
+msgid "A sales order's salesperson changes"
+msgstr ""
+
+msgid "A sales order's status changes"
+msgstr ""
 
 msgid "A sales request for quote (RFQ) is a customer inquiry for pricing on a set of parts and quantities. It may result in a quote."
 msgstr "एक बिक्रय उद्धरण अनुरोध (RFQ) भागों और मात्राओं के एक सेट पर मूल्य निर्धारण के लिए एक ग्राहक पूछताछ है। इसके परिणामस्वरूप एक उद्धरण हो सकता है।"
@@ -401,11 +599,68 @@ msgstr "एक ही मालिक के अधीन कंपनियो�
 msgid "A set of instructions to pull a job's outstanding materials from the warehouse and stage them lineside; a pick moves stock to the point of use rather than consuming it."
 msgstr "गोदाम से एक नौकरी की बकाया सामग्री को खींचने और उन्हें लाइन के किनारे स्थापित करने के लिए निर्देशों का एक सेट; एक पिक स्टॉक को उपयोग के बिंदु तक ले जाता है न कि इसे खपत करता है।"
 
+msgid "A shipment is created"
+msgstr ""
+
+msgid "A shipment is deleted"
+msgstr ""
+
+msgid "A shipment is posted"
+msgstr ""
+
 msgid "A shipment line sent straight from supplier to customer, bypassing your warehouse — set per line, not on the header."
 msgstr "एक शिपमेंट लाइन जो सीधे आपूर्तिकर्ता से ग्राहक को भेजी जाती है, आपके गोदाम को दरकिनार करते हुए — प्रति लाइन सेट, हेडर पर नहीं।"
 
+msgid "A shipment's assignee changes"
+msgstr ""
+
+msgid "A shipment's customer changes"
+msgstr ""
+
+msgid "A shipment's location changes"
+msgstr ""
+
+msgid "A shipment's posting date changes"
+msgstr ""
+
+msgid "A shipment's shipping method changes"
+msgstr ""
+
+msgid "A shipment's status changes"
+msgstr ""
+
+msgid "A shipment's tracking number changes"
+msgstr ""
+
+msgid "A supplier is created"
+msgstr ""
+
+msgid "A supplier is deleted"
+msgstr ""
+
+msgid "A supplier's account manager changes"
+msgstr ""
+
+msgid "A supplier's assignee changes"
+msgstr ""
+
+msgid "A supplier's currency changes"
+msgstr ""
+
+msgid "A supplier's name changes"
+msgstr ""
+
 msgid "A supplier's priced response to a purchasing RFQ — one per supplier; Draft → Active when they submit, or Declined."
 msgstr "एक आपूर्तिकर्ता की खरीद RFQ का मूल्य निर्धारण प्रतिक्रिया — एक प्रति आपूर्तिकर्ता; ड्राफ्ट → सक्रिय जब वे जमा करते हैं, या अस्वीकार।"
+
+msgid "A supplier's status changes"
+msgstr ""
+
+msgid "A supplier's tax percent changes"
+msgstr ""
+
+msgid "A supplier's type changes"
+msgstr ""
 
 msgid "A taxable surcharge (handling, setup, fuel) added to the line; rolls into the tax base."
 msgstr "एक कर योग्य अधिभार (हैंडलिंग, सेटअप, ईंधन) जो पंक्ति में जोड़ा जाता है और कर आधार में शामिल किया जाता है।"
@@ -949,8 +1204,71 @@ msgstr "एक इंजीनियरिंग परिवर्तन: प�
 msgid "An integration or a custom change — the small slice that's actually custom."
 msgstr "एक एकीकरण या एक कस्टम परिवर्तन — वह छोटा हिस्सा जो वास्तव में कस्टम है।"
 
+msgid "An issue is created"
+msgstr ""
+
+msgid "An issue is deleted"
+msgstr ""
+
+msgid "An issue's assignee changes"
+msgstr ""
+
+msgid "An issue's close date changes"
+msgstr ""
+
+msgid "An issue's due date changes"
+msgstr ""
+
+msgid "An issue's location changes"
+msgstr ""
+
+msgid "An issue's priority changes"
+msgstr ""
+
+msgid "An issue's quantity changes"
+msgstr ""
+
+msgid "An issue's source changes"
+msgstr ""
+
+msgid "An issue's status changes"
+msgstr ""
+
+msgid "An issue's type changes"
+msgstr ""
+
 msgid "An item cannot be added to itself."
 msgstr "एक आइटम को स्वयं में नहीं जोड़ा जा सकता।"
+
+msgid "An item is created"
+msgstr ""
+
+msgid "An item is deleted"
+msgstr ""
+
+msgid "An item's active changes"
+msgstr ""
+
+msgid "An item's assignee changes"
+msgstr ""
+
+msgid "An item's default method type changes"
+msgstr ""
+
+msgid "An item's name changes"
+msgstr ""
+
+msgid "An item's replenishment system changes"
+msgstr ""
+
+msgid "An item's revision status changes"
+msgstr ""
+
+msgid "An item's tracking type changes"
+msgstr ""
+
+msgid "An item's unit of measure changes"
+msgstr ""
 
 msgid "An operation done by an outside supplier rather than an in-house work center, covered by a subcontracting purchase order."
 msgstr "एक आंतरिक कार्य केंद्र के बजाय बाहरी आपूर्तिकर्ता द्वारा किया गया ऑपरेशन, जिसे एक उप-अनुबंध खरीद आदेश द्वारा कवर किया जाता है।"

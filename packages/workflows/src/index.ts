@@ -1,9 +1,11 @@
+export * from "./catalog";
 export type {
   CatalogAction,
   CatalogEntity,
   CatalogEvent,
   CatalogInput,
   CatalogOperation,
+  EventMatch,
   FixtureCatalogOptions,
   WorkflowCatalog
 } from "./definition/catalog";
@@ -85,6 +87,7 @@ export {
   primitiveKindSchema,
   scalarTypeSchema,
   scheduleSchema,
+  t,
   typesEqual,
   valueOrRefSchema,
   valueTypeSchema,

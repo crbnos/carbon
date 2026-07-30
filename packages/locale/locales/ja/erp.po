@@ -257,6 +257,33 @@ msgstr "契約者は、特定の能力と利用可能な時間を持つサプラ
 msgid "A customer is a business or person who buys your parts or services."
 msgstr "顧客とは、あなたの部品またはサービスを購入する企業または個人です。"
 
+msgid "A customer is created"
+msgstr ""
+
+msgid "A customer is deleted"
+msgstr ""
+
+msgid "A customer's account manager changes"
+msgstr ""
+
+msgid "A customer's assignee changes"
+msgstr ""
+
+msgid "A customer's currency changes"
+msgstr ""
+
+msgid "A customer's name changes"
+msgstr ""
+
+msgid "A customer's sales contact changes"
+msgstr ""
+
+msgid "A customer's status changes"
+msgstr ""
+
+msgid "A customer's type changes"
+msgstr ""
+
 msgid "A dated record proving a gauge was checked against a traceable standard; it passes unless a requires-action, -adjustment, or -repair flag is ticked, and resets the gauge's next-due date."
 msgstr "ゲージが追跡可能な標準に対してチェックされたことを証明する日付付きレコード。措置要求、調整要求、または修理要求フラグがオンになっていない限り合格し、ゲージの次回実施予定日をリセットします。"
 
@@ -283,6 +310,45 @@ msgstr "マスターの役割を持つゲージ。日常的なチェックに使
 
 msgid "A issue record tracks quality issues and their resolution process."
 msgstr "問題レコードは品質問題とその解決プロセスを追跡します。"
+
+msgid "A job is created"
+msgstr ""
+
+msgid "A job is deleted"
+msgstr ""
+
+msgid "A job is put on hold"
+msgstr ""
+
+msgid "A job is released"
+msgstr ""
+
+msgid "A job operation is completed"
+msgstr ""
+
+msgid "A job's assignee changes"
+msgstr ""
+
+msgid "A job's deadline type changes"
+msgstr ""
+
+msgid "A job's due date changes"
+msgstr ""
+
+msgid "A job's priority changes"
+msgstr ""
+
+msgid "A job's quantity changes"
+msgstr ""
+
+msgid "A job's scrap quantity changes"
+msgstr ""
+
+msgid "A job's start date changes"
+msgstr ""
+
+msgid "A job's status changes"
+msgstr ""
 
 msgid "A Make to Order component that gets its own job and routing inside the parent's build."
 msgstr "親のビルド内で独自のジョブとルーティングを取得する受注製造コンポーネント。"
@@ -347,6 +413,39 @@ msgstr "価格付きの販売見積もり。ドラフト→送信→注文済み
 msgid "A purchase invoice is a document that specifies the products or services purchased by a customer and the corresponding cost."
 msgstr "購入請求書は、顧客が購入した製品またはサービスと対応するコストを指定するドキュメントです。"
 
+msgid "A purchase invoice is posted"
+msgstr ""
+
+msgid "A purchase order is created"
+msgstr ""
+
+msgid "A purchase order is deleted"
+msgstr ""
+
+msgid "A purchase order's assignee changes"
+msgstr ""
+
+msgid "A purchase order's order date changes"
+msgstr ""
+
+msgid "A purchase order's status changes"
+msgstr ""
+
+msgid "A purchase order's supplier changes"
+msgstr ""
+
+msgid "A purchase order's supplier location changes"
+msgstr ""
+
+msgid "A purchase order's supplier reference changes"
+msgstr ""
+
+msgid "A purchase order's tags changes"
+msgstr ""
+
+msgid "A purchase order's type changes"
+msgstr ""
+
 msgid "A quality issue — a logged deviation or defect with a configurable workflow of investigation and action tasks."
 msgstr "品質問題—記録された逸脱または欠陥であり、調査および実施タスクの構成可能なワークフローがあります。"
 
@@ -356,8 +455,74 @@ msgstr "同一ユニットの数量は、追跡エンティティとバッチ番
 msgid "A quote is a set of prices for specific parts and quantities."
 msgstr "見積もりは、特定の部品と数量の価格セットです。"
 
+msgid "A quote is accepted"
+msgstr ""
+
+msgid "A quote is created"
+msgstr ""
+
+msgid "A quote is deleted"
+msgstr ""
+
+msgid "A quote is sent"
+msgstr ""
+
 msgid "A quote line contains pricing and lead times for a particular part"
 msgstr "見積行には、特定の部品の価格とリードタイムが含まれています"
+
+msgid "A quote's assignee changes"
+msgstr ""
+
+msgid "A quote's completed date changes"
+msgstr ""
+
+msgid "A quote's customer changes"
+msgstr ""
+
+msgid "A quote's due date changes"
+msgstr ""
+
+msgid "A quote's estimator changes"
+msgstr ""
+
+msgid "A quote's expiration date changes"
+msgstr ""
+
+msgid "A quote's salesperson changes"
+msgstr ""
+
+msgid "A quote's status changes"
+msgstr ""
+
+msgid "A receipt is created"
+msgstr ""
+
+msgid "A receipt is deleted"
+msgstr ""
+
+msgid "A receipt is posted"
+msgstr ""
+
+msgid "A receipt's assignee changes"
+msgstr ""
+
+msgid "A receipt's invoiced changes"
+msgstr ""
+
+msgid "A receipt's location changes"
+msgstr ""
+
+msgid "A receipt's posting date changes"
+msgstr ""
+
+msgid "A receipt's source document changes"
+msgstr ""
+
+msgid "A receipt's status changes"
+msgstr ""
+
+msgid "A receipt's supplier changes"
+msgstr ""
 
 msgid "A reusable, versioned set of work instructions attached to a process, giving an operation its ordered steps to record and check plus the parameters it runs at."
 msgstr "プロセスに添付された再利用可能でバージョン管理された作業指示のセット。操作に記録・確認するための順序付きステップと実行パラメータを提供します。"
@@ -371,14 +536,47 @@ msgstr "売上請求書 (顧客に請求) または仕入請求書 (仕入先か
 msgid "A sales invoice is a document that specifies the products or services sold to a customer and the corresponding cost."
 msgstr "売上請求書は、顧客に販売された製品またはサービスと対応する費用を指定するドキュメントです。"
 
+msgid "A sales invoice is posted"
+msgstr ""
+
 msgid "A sales invoice line contains invoice details for a particular item"
 msgstr "売上請求書行には、特定の品目の請求書詳細が含まれています"
 
 msgid "A sales order contains information about the agreement between the company and a specific customer for parts and services."
 msgstr "営業注文には、会社と特定の顧客との部品およびサービスに関する契約情報が含まれています。"
 
+msgid "A sales order is created"
+msgstr ""
+
+msgid "A sales order is deleted"
+msgstr ""
+
 msgid "A sales order line contains order details for a particular item"
 msgstr "販売注文行には、特定の品目の注文詳細が含まれています"
+
+msgid "A sales order's assignee changes"
+msgstr ""
+
+msgid "A sales order's completed date changes"
+msgstr ""
+
+msgid "A sales order's customer changes"
+msgstr ""
+
+msgid "A sales order's customer reference changes"
+msgstr ""
+
+msgid "A sales order's location changes"
+msgstr ""
+
+msgid "A sales order's order date changes"
+msgstr ""
+
+msgid "A sales order's salesperson changes"
+msgstr ""
+
+msgid "A sales order's status changes"
+msgstr ""
 
 msgid "A sales request for quote (RFQ) is a customer inquiry for pricing on a set of parts and quantities. It may result in a quote."
 msgstr "営業見積依頼（RFQ）は、一連の部品と数量の価格設定に関する顧客からの問い合わせです。見積書につながる可能性があります。"
@@ -401,11 +599,68 @@ msgstr "同一の所有者の下にある会社の集合で、グループ単位
 msgid "A set of instructions to pull a job's outstanding materials from the warehouse and stage them lineside; a pick moves stock to the point of use rather than consuming it."
 msgstr "ジョブの未処理材料をウェアハウスから引き出し、ラインサイドにステージングする一連の指示。ピッキングは在庫を消費するのではなく、使用場所に移動します。"
 
+msgid "A shipment is created"
+msgstr ""
+
+msgid "A shipment is deleted"
+msgstr ""
+
+msgid "A shipment is posted"
+msgstr ""
+
 msgid "A shipment line sent straight from supplier to customer, bypassing your warehouse — set per line, not on the header."
 msgstr "仕入先からお客様に直接送られる出荷ラインで、倉庫をバイパスします。行ごとに設定され、ヘッダーではありません。"
 
+msgid "A shipment's assignee changes"
+msgstr ""
+
+msgid "A shipment's customer changes"
+msgstr ""
+
+msgid "A shipment's location changes"
+msgstr ""
+
+msgid "A shipment's posting date changes"
+msgstr ""
+
+msgid "A shipment's shipping method changes"
+msgstr ""
+
+msgid "A shipment's status changes"
+msgstr ""
+
+msgid "A shipment's tracking number changes"
+msgstr ""
+
+msgid "A supplier is created"
+msgstr ""
+
+msgid "A supplier is deleted"
+msgstr ""
+
+msgid "A supplier's account manager changes"
+msgstr ""
+
+msgid "A supplier's assignee changes"
+msgstr ""
+
+msgid "A supplier's currency changes"
+msgstr ""
+
+msgid "A supplier's name changes"
+msgstr ""
+
 msgid "A supplier's priced response to a purchasing RFQ — one per supplier; Draft → Active when they submit, or Declined."
 msgstr "購買RFQに対するサプライヤーの価格応答—サプライヤーごとに1つ。ドラフト→提出時のアクティブ、またはDeclined。"
+
+msgid "A supplier's status changes"
+msgstr ""
+
+msgid "A supplier's tax percent changes"
+msgstr ""
+
+msgid "A supplier's type changes"
+msgstr ""
 
 msgid "A taxable surcharge (handling, setup, fuel) added to the line; rolls into the tax base."
 msgstr "課税対象の追加料金（取扱、セットアップ、燃料）を行に追加し、課税ベースに含めます。"
@@ -949,8 +1204,71 @@ msgstr "エンジニアリング変更：ドラフト上で方法が改訂され
 msgid "An integration or a custom change — the small slice that's actually custom."
 msgstr "統合またはカスタム変更 — 実際にカスタムである小さなスライス。"
 
+msgid "An issue is created"
+msgstr ""
+
+msgid "An issue is deleted"
+msgstr ""
+
+msgid "An issue's assignee changes"
+msgstr ""
+
+msgid "An issue's close date changes"
+msgstr ""
+
+msgid "An issue's due date changes"
+msgstr ""
+
+msgid "An issue's location changes"
+msgstr ""
+
+msgid "An issue's priority changes"
+msgstr ""
+
+msgid "An issue's quantity changes"
+msgstr ""
+
+msgid "An issue's source changes"
+msgstr ""
+
+msgid "An issue's status changes"
+msgstr ""
+
+msgid "An issue's type changes"
+msgstr ""
+
 msgid "An item cannot be added to itself."
 msgstr "アイテムをそれ自体に追加することはできません。"
+
+msgid "An item is created"
+msgstr ""
+
+msgid "An item is deleted"
+msgstr ""
+
+msgid "An item's active changes"
+msgstr ""
+
+msgid "An item's assignee changes"
+msgstr ""
+
+msgid "An item's default method type changes"
+msgstr ""
+
+msgid "An item's name changes"
+msgstr ""
+
+msgid "An item's replenishment system changes"
+msgstr ""
+
+msgid "An item's revision status changes"
+msgstr ""
+
+msgid "An item's tracking type changes"
+msgstr ""
+
+msgid "An item's unit of measure changes"
+msgstr ""
 
 msgid "An operation done by an outside supplier rather than an in-house work center, covered by a subcontracting purchase order."
 msgstr "社内の作業センターではなく、外部の仕入先によって行われた操作。下請購買注文でカバーされます。"

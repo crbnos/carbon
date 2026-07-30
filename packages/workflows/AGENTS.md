@@ -34,12 +34,22 @@ Spec: `.ai/specs/2026-07-30-workflows-foundation.md`.
   invent names.
 - Keep zod unions **flat** and avoid recursive generics. `apps/erp` sits near TypeScript's
   instantiation budget, so new type surface here can trip TS2589 in unrelated files.
+- Add an entity or a moment by editing **one hand-written file** in `src/catalog/`, then run
+  `pnpm run generate:workflow-catalog`. Nothing else is authored by hand.
 
 ## Never
 
-- Never import from `@carbon/database`, `@carbon/react`, or anything app-specific. The only runtime
-  dependencies are `zod` and `@carbon/utils` (itself client-safe), which is what lets both the
-  browser builder and the server engine use this package.
+- Never import from `@carbon/react` or anything app-specific. `@carbon/database` is a
+  **devDependency used for types only** (`ColumnOf` / `TableName` in `src/catalog/entities.ts`) —
+  never import it as a value. Runtime dependencies are `zod`, `@carbon/utils` and `@lingui/core`,
+  which is what lets both the browser builder and the server engine use this package.
+- Never hand-edit `src/catalog/*.generated.ts` — regenerate instead.
+- Never import `src/catalog/labels.generated.ts` from anything but a Vite-built app. `msg` is a
+  build-time macro; plain Node (the phase-3 matcher, any vitest run) throws on import. That is why
+  labels are a separate file from the runtime catalog, and why `src/catalog/index.ts` does not
+  re-export them.
+- Never import `src/catalog/` from `src/definition/`. The catalog is injected into the validator,
+  not baked into it; `createFixtureCatalog`'s `omit*` options exist to prove that.
 - Never let a stored node/edge shape reach a consumer without going through the schema.
 - Never represent a list of lists — a list's `of` accepts scalars only, by construction.
 
@@ -54,7 +64,37 @@ src/definition/
 ├── normalize.ts  # readWorkflowVersion + the migrateDefinition seam
 ├── catalog.ts    # the WorkflowCatalog interface + createFixtureCatalog
 └── validate.ts   # validateDefinition -> WorkflowIssue[]
+
+src/catalog/
+├── entities.ts             # HAND-WRITTEN. 10 triggerable record types + 5 reference-only
+├── moments.ts              # HAND-WRITTEN. 9 business events, their labels and outputs
+├── build.ts                # buildCatalog(registry, moments, schema) — pure, schema injected
+├── events.generated.ts     # COMMITTED. ids, outputs, permission, match. No Lingui import
+├── labels.generated.ts     # COMMITTED. one msg`` descriptor per event id
+├── catalog.ts              # createEventCatalog() -> WorkflowCatalog
+└── index.ts                # barrel (labels deliberately excluded)
 ```
+
+## The event catalog
+
+One customer-facing concept — an **event** — from two hand-written inputs. A record type with
+8 watched columns yields 10 events (created, deleted, one per column); there is deliberately
+**no generic `updated` event**. Moments cover what a row change cannot express. Downstream,
+nothing knows which input produced an event: only the `match` block distinguishes them, and only
+the phase-3 matcher reads it.
+
+`buildCatalog` takes the swagger schema as an argument rather than importing it, which is what
+keeps `@carbon/database` out of this package's runtime graph and lets the transform be unit-tested
+in place. Entity properties are generated from the table's own columns so a customer can reach any
+property by typing a dot; a foreign key becomes an entity ref only when its target is in the
+registry, and a `ref` that disagrees with the schema's foreign key is a build error.
+
+`scripts/check-workflow-catalog.ts` (CI job `catalog`) enforces: every moment is raised somewhere,
+every raise site names a declared moment, every watched column still exists, and the committed
+catalog matches a fresh build. A declared-but-never-raised moment is a trigger a customer can
+subscribe to that can never fire — worse than a missing one, so it fails the build.
+
+## Node kinds
 
 Everything one node type does — handles, references, outputs, type checks, config checks — lives in
 its single `NODE_KINDS` entry. `validate.ts` owns only the cross-cutting layers below; it never
@@ -92,12 +132,19 @@ active version's trigger, and toggling `active` must all rewrite the workflow's 
 delete-then-insert **in the same transaction** as the change. If these drift, a workflow silently
 stops firing or fires when it should not.
 
+Two deploy-time checks in `packages/checks` watch for that drift against a live database (they need
+one, so they are not CI jobs): the `workflow-trigger-event-drift` SQL invariant compares the rows to
+the trigger nodes, and `pnpm --filter @carbon/checks workflow-events` confirms every subscribed
+event id still exists in the catalog.
+
 ## Validation Commands
 
 ```bash
-pnpm --filter @carbon/workflows test              # vitest
+pnpm --filter @carbon/workflows test               # vitest
 pnpm --filter @carbon/workflows exec tsgo --noEmit # typecheck
-pnpm exec biome check packages/workflows          # lint
+pnpm exec biome check packages/workflows           # lint
+pnpm run generate:workflow-catalog                 # after editing entities.ts / moments.ts
+pnpm run check:workflow-catalog                    # the CI `catalog` job
 ```
 
 Changing `Operator` in `@carbon/utils` also needs

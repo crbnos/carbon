@@ -1,0 +1,459 @@
+import { describe, expect, it } from "vitest";
+import type {
+  MomentDeclarationLike,
+  RegistryEntry,
+  SwaggerSchema
+} from "./build";
+import { buildCatalog, validateCatalogInputs } from "./build";
+import { REGISTRY_ENTRIES, WORKFLOW_ENTITY_REGISTRY } from "./entities";
+import { WORKFLOW_MOMENTS } from "./moments";
+
+const text = { format: "text", type: "string" };
+
+/** Indexed reads are `| undefined` under noUncheckedIndexedAccess. */
+function need<T>(value: T | undefined, what: string): T {
+  if (value === undefined) throw new Error(`missing ${what}`);
+  return value;
+}
+
+const schema: SwaggerSchema = {
+  definitions: {
+    order: {
+      properties: {
+        id: text,
+        status: { enum: ["Draft", "Sent"], type: "string" },
+        supplierId: text,
+        buyerId: {
+          type: "string",
+          format: "text",
+          description: "<fk table='person' column='id'/>"
+        },
+        vendorId: {
+          type: "string",
+          format: "text",
+          description: "<fk table='vendorTable' column='id'/>"
+        },
+        orderDate: { format: "date", type: "string" },
+        createdAt: { format: "timestamp with time zone", type: "string" },
+        total: { format: "numeric", type: "number" },
+        revision: { format: "integer", type: "integer" },
+        approved: { format: "boolean", type: "boolean" },
+        tags: { format: "text[]", type: "array", items: { type: "string" } },
+        config: { format: "jsonb" },
+        companyId: text,
+        customFields: { format: "jsonb" },
+        updatedAt: { format: "timestamp with time zone", type: "string" },
+        updatedBy: text,
+        embedding: text
+      }
+    },
+    person: { properties: { id: text, email: text } },
+    vendorTable: { properties: { id: text, name: text } }
+  }
+};
+
+const registry: Record<string, RegistryEntry> = {
+  order: {
+    table: "order",
+    label: "Order",
+    permission: "purchasing",
+    watch: {
+      status: { label: "status" },
+      supplierId: { label: "supplier", ref: "person" },
+      buyerId: { label: "buyer" }
+    }
+  },
+  person: { table: "person", label: "Person", permission: "users" }
+};
+
+const moments: Record<string, MomentDeclarationLike> = {
+  "order.approved": {
+    label: "An order is approved",
+    permission: "purchasing",
+    outputs: {
+      order: { kind: "entity", of: "order" },
+      approvedBy: { kind: "entity", of: "person" }
+    }
+  }
+};
+
+/**
+ * Every registry table stubbed with just its watched columns, so these tests can
+ * prove the two hand-written files are internally consistent without importing
+ * `@carbon/database` as a value.
+ */
+function realDefinitions(): SwaggerSchema["definitions"] {
+  const definitions: SwaggerSchema["definitions"] = {};
+  for (const entry of Object.values(REGISTRY_ENTRIES)) {
+    const properties: Record<string, typeof text> = { id: text };
+    for (const column of Object.keys(entry.watch ?? {})) {
+      properties[column] = text;
+    }
+    definitions[entry.table] = { properties };
+  }
+  return definitions;
+}
+
+describe("buildCatalog — record events", () => {
+  const built = buildCatalog(registry, moments, schema);
+  const ev = (id: string) => need(built.events[id], id);
+
+  it("emits created, deleted and one changed event per watched column", () => {
+    const ids = Object.keys(built.events).filter((id) =>
+      id.startsWith("order.")
+    );
+    expect(ids).toEqual(
+      expect.arrayContaining([
+        "order.created",
+        "order.deleted",
+        "order.status.changed",
+        "order.supplierId.changed",
+        "order.buyerId.changed"
+      ])
+    );
+    // 3 watched columns => 5 record events, plus the moment keyed "order.approved".
+    expect(ids).toHaveLength(6);
+  });
+
+  it("emits no generic updated event", () => {
+    expect(built.events["order.updated"]).toBeUndefined();
+  });
+
+  it("emits no events for a reference-only entity", () => {
+    expect(
+      Object.keys(built.events).some((id) => id.startsWith("person."))
+    ).toBe(false);
+  });
+
+  it("carries the INSERT, DELETE and UPDATE match shapes", () => {
+    expect(ev("order.created").match).toEqual({
+      table: "order",
+      operation: "INSERT"
+    });
+    expect(ev("order.deleted").match).toEqual({
+      table: "order",
+      operation: "DELETE"
+    });
+    expect(ev("order.status.changed").match).toEqual({
+      table: "order",
+      operation: "UPDATE",
+      field: "status"
+    });
+  });
+
+  it("hands out record, before and after on a changed event", () => {
+    expect(ev("order.status.changed").outputs).toEqual({
+      record: { kind: "entity", of: "order" },
+      before: { kind: "entity", of: "order" },
+      after: { kind: "entity", of: "order" }
+    });
+  });
+
+  it("hands out only record on created and deleted", () => {
+    expect(ev("order.created").outputs).toEqual({
+      record: { kind: "entity", of: "order" }
+    });
+    expect(ev("order.deleted").outputs).toEqual({
+      record: { kind: "entity", of: "order" }
+    });
+  });
+
+  it("carries the entity's permission on every event", () => {
+    expect(ev("order.created").permission).toBe("purchasing");
+  });
+});
+
+describe("buildCatalog — labels", () => {
+  const built = buildCatalog(registry, moments, schema);
+
+  it("uses the three templates", () => {
+    expect(built.labels["order.created"]).toBe("An order is created");
+    expect(built.labels["order.deleted"]).toBe("An order is deleted");
+    expect(built.labels["order.status.changed"]).toBe(
+      "An order's status changes"
+    );
+  });
+
+  it("lets a registry entry override the article the vowel test gets wrong", () => {
+    const built2 = buildCatalog(
+      {
+        user: {
+          table: "person",
+          label: "User",
+          article: "A",
+          permission: "users",
+          watch: { email: { label: "email" } }
+        }
+      },
+      {},
+      schema
+    );
+    expect(built2.labels["user.created"]).toBe("A user is created");
+  });
+
+  it("picks the article from the entity label", () => {
+    const built2 = buildCatalog(
+      {
+        quote: {
+          table: "order",
+          label: "Quote",
+          permission: "sales",
+          watch: { status: { label: "status" } }
+        }
+      },
+      {},
+      schema
+    );
+    expect(built2.labels["quote.created"]).toBe("A quote is created");
+  });
+
+  it("uses the column's own label, not its column name", () => {
+    expect(built.labels["order.supplierId.changed"]).toBe(
+      "An order's supplier changes"
+    );
+  });
+
+  it("passes a moment's hand-written label through unchanged", () => {
+    expect(built.labels["order.approved"]).toBe("An order is approved");
+  });
+
+  it("emits exactly one label per event", () => {
+    expect(Object.keys(built.labels).sort()).toEqual(
+      Object.keys(built.events).sort()
+    );
+  });
+});
+
+describe("buildCatalog — moments", () => {
+  const built = buildCatalog(registry, moments, schema);
+
+  it("passes declared outputs through unchanged and matches on the key", () => {
+    expect(built.events["order.approved"]).toEqual({
+      outputs: {
+        order: { kind: "entity", of: "order" },
+        approvedBy: { kind: "entity", of: "person" }
+      },
+      permission: "purchasing",
+      match: { moment: "order.approved" }
+    });
+  });
+
+  it("throws when an output names an entity outside the registry", () => {
+    expect(() =>
+      buildCatalog(
+        registry,
+        {
+          "order.shipped": {
+            label: "An order is shipped",
+            permission: "inventory",
+            outputs: { carrier: { kind: "entity", of: "carrier" } }
+          }
+        },
+        schema
+      )
+    ).toThrow(/names entity "carrier"/);
+  });
+
+  it("throws when a label is blank", () => {
+    expect(() =>
+      buildCatalog(
+        registry,
+        {
+          "order.shipped": {
+            label: "   ",
+            permission: "inventory",
+            outputs: {}
+          }
+        },
+        schema
+      )
+    ).toThrow(/has no label/);
+  });
+});
+
+describe("buildCatalog — entity properties", () => {
+  const built = buildCatalog(registry, moments, schema);
+  const order = need(built.entities.order, "order entity");
+  const person = need(built.entities.person, "person entity");
+
+  it("drops tenancy, extensibility and audit columns", () => {
+    expect(order.companyId).toBeUndefined();
+    expect(order.customFields).toBeUndefined();
+    expect(order.updatedAt).toBeUndefined();
+    expect(order.updatedBy).toBeUndefined();
+    expect(order.embedding).toBeUndefined();
+  });
+
+  it("keeps every other column, including unwatched ones", () => {
+    expect(order.id).toEqual({ kind: "primitive", of: "string" });
+    expect(order.total).toEqual({ kind: "primitive", of: "number" });
+    expect(order.revision).toEqual({ kind: "primitive", of: "number" });
+    expect(order.approved).toEqual({ kind: "primitive", of: "boolean" });
+  });
+
+  it("maps date and timestamp formats to date", () => {
+    expect(order.orderDate).toEqual({ kind: "primitive", of: "date" });
+    expect(order.createdAt).toEqual({ kind: "primitive", of: "date" });
+  });
+
+  it("maps an array column to a list of its item type", () => {
+    expect(order.tags).toEqual({
+      kind: "list",
+      of: { kind: "primitive", of: "string" }
+    });
+  });
+
+  it("maps an opaque json column to string", () => {
+    expect(order.config).toEqual({ kind: "primitive", of: "string" });
+  });
+
+  it("turns a foreign key into an entity ref when the target is in the registry", () => {
+    expect(order.buyerId).toEqual({ kind: "entity", of: "person" });
+  });
+
+  it("leaves a foreign key to a non-registry table as a plain string", () => {
+    expect(order.vendorId).toEqual({ kind: "primitive", of: "string" });
+  });
+
+  it("honors an explicit ref where the schema carries no foreign key note", () => {
+    expect(order.supplierId).toEqual({ kind: "entity", of: "person" });
+  });
+
+  it("generates properties for reference-only entities too", () => {
+    expect(person.email).toEqual({ kind: "primitive", of: "string" });
+  });
+
+  it("throws when a declared ref disagrees with the schema's foreign key", () => {
+    expect(() =>
+      buildCatalog(
+        {
+          ...registry,
+          order: {
+            table: "order",
+            label: "Order",
+            permission: "purchasing",
+            watch: { buyerId: { label: "buyer", ref: "order" } }
+          }
+        },
+        {},
+        schema
+      )
+    ).toThrow(/foreign key points at "person"/);
+  });
+
+  it("throws when a declared ref is not a registry entity", () => {
+    expect(() =>
+      buildCatalog(
+        {
+          ...registry,
+          order: {
+            table: "order",
+            label: "Order",
+            permission: "purchasing",
+            watch: { status: { label: "status", ref: "ghost" } }
+          }
+        },
+        {},
+        schema
+      )
+    ).toThrow(/not a registry entity/);
+  });
+
+  it("throws when a watched column does not exist on the table", () => {
+    expect(() =>
+      buildCatalog(
+        {
+          order: {
+            table: "order",
+            label: "Order",
+            permission: "purchasing",
+            watch: { ghostColumn: { label: "ghost" } }
+          }
+        },
+        {},
+        schema
+      )
+    ).toThrow(/watches column "ghostColumn"/);
+  });
+
+  it("throws when an entity names a table outside the schema", () => {
+    expect(() =>
+      buildCatalog(
+        { ghost: { table: "ghostTable", label: "Ghost", permission: "sales" } },
+        {},
+        schema
+      )
+    ).toThrow(/not in the database schema/);
+  });
+});
+
+describe("validateCatalogInputs", () => {
+  it("collects every problem instead of stopping at the first", () => {
+    const problems = validateCatalogInputs(
+      {
+        order: {
+          table: "order",
+          label: "Order",
+          permission: "purchasing",
+          watch: {
+            ghostOne: { label: "one" },
+            ghostTwo: { label: "two" },
+            updatedAt: { label: "updated" }
+          }
+        }
+      },
+      {
+        "order.x": {
+          label: "",
+          permission: "sales",
+          outputs: { who: { kind: "entity", of: "nobody" } }
+        }
+      },
+      schema
+    );
+    expect(problems).toHaveLength(5);
+    expect(problems.join("\n")).toMatch(/ghostOne/);
+    expect(problems.join("\n")).toMatch(/ghostTwo/);
+    expect(problems.join("\n")).toMatch(/has no label/);
+    expect(problems.join("\n")).toMatch(/names entity "nobody"/);
+  });
+
+  it("returns nothing for the real hand-written inputs", () => {
+    expect(
+      validateCatalogInputs(WORKFLOW_ENTITY_REGISTRY, WORKFLOW_MOMENTS, {
+        definitions: realDefinitions()
+      })
+    ).toEqual([]);
+  });
+
+  it("rejects watching a column that is dropped from every property map", () => {
+    expect(() =>
+      buildCatalog(
+        {
+          order: {
+            table: "order",
+            label: "Order",
+            permission: "purchasing",
+            watch: { updatedBy: { label: "updated by" } }
+          }
+        },
+        {},
+        schema
+      )
+    ).toThrow(/dropped from every entity's properties/);
+  });
+});
+
+describe("buildCatalog — the real hand-written inputs", () => {
+  it("accepts the real registry and moments against a stub schema", () => {
+    const built = buildCatalog(WORKFLOW_ENTITY_REGISTRY, WORKFLOW_MOMENTS, {
+      definitions: realDefinitions()
+    });
+
+    expect(Object.keys(WORKFLOW_MOMENTS)).toHaveLength(9);
+    // 77 watched columns + 10 created + 10 deleted + 9 moments.
+    expect(Object.keys(built.events)).toHaveLength(106);
+    expect(Object.keys(built.labels)).toHaveLength(106);
+    expect(Object.keys(built.entities)).toHaveLength(15);
+  });
+});

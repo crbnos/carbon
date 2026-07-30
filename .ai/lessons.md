@@ -620,3 +620,48 @@ what caught the missing `OPERATOR_LABELS` entries when `Operator` was extended.
 
 **Applies to:** `packages/workflows/src/definition/nodes.ts`, and any
 `switch (x.type)` over a zod discriminated union.
+
+## A generated catalog must key entity refs off the schema, not off a hand-written hint
+
+**Context:** The workflow event catalog's entity registry lets a watched column
+declare `ref: "supplier"`, which becomes `entity("supplier")` in the generated
+property map so a customer can dot-chain `record.supplierId.name`.
+
+**Problem:** `ref` was needed for real — composite foreign keys like
+`(supplierId, companyId)` carry no `<fk table=…>` note in
+`packages/database/src/swagger-docs-schema.ts`, so `purchaseOrder.supplierId`
+has no detectable target. But a hand-written hint is a hand-written lie waiting
+to happen: `customer.salesContactId` was declared `ref: "user"` when its foreign
+key actually targets `customerContact`. Nothing would have caught it, and every
+dot-path through that property would have resolved against the wrong entity.
+
+**Rule:** Where a generator accepts a hand-written type hint alongside a
+machine-readable source, make disagreement a hard error rather than letting the
+hint win silently. `buildCatalog` throws when a declared `ref` conflicts with a
+foreign key present in the schema, and only uses `ref` where the schema is
+genuinely silent. Audit every existing hint against the real source before
+trusting a slate that came from a design document.
+
+**Applies to:** `packages/workflows/src/catalog/build.ts`, and any hand-curated
+overlay on generated schema data (`packages/database/src/audit.config.ts`'s
+`snapshotFields` / `fkDisplayRegistry`).
+
+## Lingui's `msg` macro forces generated translatable strings into their own file
+
+**Context:** The generated workflow catalog needs a human label per event, and
+Carbon's convention outside React is `msg` from `@lingui/core/macro`.
+
+**Problem:** `msg` is a **build-time babel macro**. A generated file containing
+one can only ever be imported by Vite-built app code — importing it from plain
+Node throws, which would break the phase-3 matcher in `packages/jobs`, every
+`tsx` script, and any vitest run that touches the catalog.
+
+**Rule:** Split the artifact: `events.generated.ts` carries the runtime data and
+imports nothing from `@lingui/*`; `labels.generated.ts` carries only `msg``
+descriptors keyed by id and is excluded from the package barrel. Tooling that
+must read the labels reads the file as **text** (regex the keys) rather than
+importing it — `scripts/check-workflow-catalog.ts` does exactly that. Never put a
+`label` field on the runtime type; it would always be undefined.
+
+**Applies to:** `packages/workflows/src/catalog/`, and any future generated file
+that needs both translatable strings and a Node-side consumer.

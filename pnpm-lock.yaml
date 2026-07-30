@@ -1882,6 +1882,9 @@ importers:
       '@carbon/config':
         specifier: workspace:*
         version: link:../config
+      '@carbon/workflows':
+        specifier: workspace:*
+        version: link:../workflows
       '@types/node':
         specifier: ^22
         version: 22.19.7
@@ -2651,6 +2654,9 @@ importers:
       '@carbon/notifications':
         specifier: workspace:*
         version: link:../notifications
+      '@carbon/workflows':
+        specifier: workspace:*
+        version: link:../workflows
       '@slack/web-api':
         specifier: 'catalog:'
         version: 7.10.0
@@ -3552,6 +3558,9 @@ importers:
       '@carbon/utils':
         specifier: workspace:*
         version: link:../utils
+      '@lingui/core':
+        specifier: 'catalog:'
+        version: 5.9.4(@lingui/babel-plugin-lingui-macro@5.9.4(babel-plugin-macros@3.1.0)(typescript@5.8.3))(babel-plugin-macros@3.1.0)
       zod:
         specifier: 'catalog:'
         version: 3.25.76
@@ -3559,6 +3568,9 @@ importers:
       '@carbon/config':
         specifier: workspace:*
         version: link:../config
+      '@carbon/database':
+        specifier: workspace:*
+        version: link:../database
       typescript:
         specifier: 'catalog:'
         version: 5.8.3

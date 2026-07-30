@@ -36,7 +36,8 @@ const taskToEvent = {
   "sync-issue-from-linear": "carbon/linear-sync",
   "update-permissions": "carbon/update-permissions",
   "user-admin": "carbon/user-admin",
-  "extract-document": "carbon/extract-document"
+  "extract-document": "carbon/extract-document",
+  "workflow-moment": "carbon/workflow-moment.raised"
 } as const;
 
 type TaskMap = typeof taskToEvent;

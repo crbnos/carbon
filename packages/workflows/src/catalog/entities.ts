@@ -1,0 +1,205 @@
+import type { ColumnOf, TableName } from "@carbon/database/audit.config";
+import type { RegistryEntry, WatchedColumnLike } from "./build";
+
+/**
+ * The registry's shape, with `watch` keys bound to the entry's own table so a
+ * renamed column is a compile error here. `build.ts` owns the field contract.
+ */
+interface EntityEntry<T extends TableName>
+  extends Omit<RegistryEntry, "table" | "watch"> {
+  table: T;
+  watch?: { [C in ColumnOf<T>]?: WatchedColumnLike };
+}
+
+/** Identity helper so `watch` keys are checked against the entry's own table. */
+const entity = <T extends TableName>(entry: EntityEntry<T>) => entry;
+
+export const WORKFLOW_ENTITY_REGISTRY = {
+  purchaseOrder: entity({
+    table: "purchaseOrder",
+    label: "Purchase order",
+    permission: "purchasing",
+    watch: {
+      status: { label: "status" },
+      supplierId: { label: "supplier", ref: "supplier" },
+      assignee: { label: "assignee", ref: "user" },
+      orderDate: { label: "order date" },
+      purchaseOrderType: { label: "type" },
+      supplierReference: { label: "supplier reference" },
+      supplierLocationId: { label: "supplier location" },
+      tags: { label: "tags" }
+    }
+  }),
+  salesOrder: entity({
+    table: "salesOrder",
+    label: "Sales order",
+    permission: "sales",
+    watch: {
+      status: { label: "status" },
+      customerId: { label: "customer", ref: "customer" },
+      assignee: { label: "assignee", ref: "user" },
+      salesPersonId: { label: "salesperson", ref: "user" },
+      orderDate: { label: "order date" },
+      locationId: { label: "location", ref: "location" },
+      customerReference: { label: "customer reference" },
+      completedDate: { label: "completed date" }
+    }
+  }),
+  job: entity({
+    table: "job",
+    label: "Job",
+    permission: "production",
+    watch: {
+      status: { label: "status" },
+      assignee: { label: "assignee", ref: "user" },
+      dueDate: { label: "due date" },
+      startDate: { label: "start date" },
+      quantity: { label: "quantity" },
+      priority: { label: "priority" },
+      deadlineType: { label: "deadline type" },
+      scrapQuantity: { label: "scrap quantity" }
+    }
+  }),
+  item: entity({
+    table: "item",
+    label: "Item",
+    permission: "parts",
+    watch: {
+      active: { label: "active" },
+      revisionStatus: { label: "revision status" },
+      replenishmentSystem: { label: "replenishment system" },
+      itemTrackingType: { label: "tracking type" },
+      defaultMethodType: { label: "default method type" },
+      assignee: { label: "assignee", ref: "user" },
+      name: { label: "name" },
+      unitOfMeasureCode: { label: "unit of measure" }
+    }
+  }),
+  receipt: entity({
+    table: "receipt",
+    label: "Receipt",
+    permission: "inventory",
+    watch: {
+      status: { label: "status" },
+      supplierId: { label: "supplier", ref: "supplier" },
+      locationId: { label: "location", ref: "location" },
+      assignee: { label: "assignee", ref: "user" },
+      postingDate: { label: "posting date" },
+      invoiced: { label: "invoiced" },
+      sourceDocument: { label: "source document" }
+    }
+  }),
+  shipment: entity({
+    table: "shipment",
+    label: "Shipment",
+    permission: "inventory",
+    watch: {
+      status: { label: "status" },
+      customerId: { label: "customer", ref: "customer" },
+      locationId: { label: "location", ref: "location" },
+      assignee: { label: "assignee", ref: "user" },
+      postingDate: { label: "posting date" },
+      trackingNumber: { label: "tracking number" },
+      shippingMethodId: { label: "shipping method" }
+    }
+  }),
+  quote: entity({
+    table: "quote",
+    label: "Quote",
+    permission: "sales",
+    watch: {
+      status: { label: "status" },
+      customerId: { label: "customer", ref: "customer" },
+      assignee: { label: "assignee", ref: "user" },
+      estimatorId: { label: "estimator", ref: "user" },
+      salesPersonId: { label: "salesperson", ref: "user" },
+      expirationDate: { label: "expiration date" },
+      dueDate: { label: "due date" },
+      completedDate: { label: "completed date" }
+    }
+  }),
+  supplier: entity({
+    table: "supplier",
+    label: "Supplier",
+    permission: "purchasing",
+    watch: {
+      supplierStatus: { label: "status" },
+      supplierTypeId: { label: "type" },
+      accountManagerId: { label: "account manager", ref: "user" },
+      assignee: { label: "assignee", ref: "user" },
+      name: { label: "name" },
+      currencyCode: { label: "currency" },
+      taxPercent: { label: "tax percent" }
+    }
+  }),
+  customer: entity({
+    table: "customer",
+    label: "Customer",
+    permission: "sales",
+    watch: {
+      customerStatusId: { label: "status" },
+      customerTypeId: { label: "type" },
+      accountManagerId: { label: "account manager", ref: "user" },
+      assignee: { label: "assignee", ref: "user" },
+      name: { label: "name" },
+      currencyCode: { label: "currency" },
+      salesContactId: { label: "sales contact" }
+    }
+  }),
+  nonConformance: entity({
+    table: "nonConformance",
+    label: "Issue",
+    permission: "quality",
+    watch: {
+      status: { label: "status" },
+      priority: { label: "priority" },
+      assignee: { label: "assignee", ref: "user" },
+      source: { label: "source" },
+      nonConformanceTypeId: { label: "type" },
+      dueDate: { label: "due date" },
+      closeDate: { label: "close date" },
+      locationId: { label: "location", ref: "location" },
+      quantity: { label: "quantity" }
+    }
+  }),
+
+  // Reference-only: no events, but a moment hands one out or a foreign key
+  // points at it, so a customer can type a dot through it.
+  // "A user", not the vowel test's "An user".
+  user: entity({
+    table: "user",
+    label: "User",
+    article: "A",
+    permission: "users"
+  }),
+  jobOperation: entity({
+    table: "jobOperation",
+    label: "Job operation",
+    permission: "production"
+  }),
+  salesInvoice: entity({
+    table: "salesInvoice",
+    label: "Sales invoice",
+    permission: "invoicing"
+  }),
+  purchaseInvoice: entity({
+    table: "purchaseInvoice",
+    label: "Purchase invoice",
+    permission: "invoicing"
+  }),
+  location: entity({
+    table: "location",
+    label: "Location",
+    permission: "resources"
+  })
+} as const;
+
+export type RegistryEntityName = keyof typeof WORKFLOW_ENTITY_REGISTRY;
+
+/**
+ * The registry widened for iteration. `as const` gives each entry a distinct
+ * literal type, so `Object.values` over the raw object yields a union in which
+ * reference-only entries have no `watch` key at all.
+ */
+export const REGISTRY_ENTRIES: Record<string, RegistryEntry> =
+  WORKFLOW_ENTITY_REGISTRY;

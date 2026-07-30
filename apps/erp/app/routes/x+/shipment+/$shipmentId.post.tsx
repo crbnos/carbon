@@ -8,6 +8,7 @@ import {
   isBlocked
 } from "@carbon/ee/storage-rules.server";
 import { trigger } from "@carbon/jobs";
+import { raiseMoment } from "@carbon/lib/workflows";
 import { getLogger } from "@carbon/logger";
 import { getCachedPrinterConfig } from "@carbon/printing/printing.server";
 import { getLocalTimeZone, parseDate, today } from "@internationalized/date";
@@ -330,6 +331,16 @@ export async function action({ request, params }: ActionFunctionArgs) {
       })
       .eq("id", shipmentId);
   }
+
+  // Below the catch above, which reverts to Draft: announcing a post that then
+  // got rolled back would fire workflows on a shipment the UI still shows as Draft.
+  // The write itself happens in a Deno edge function that cannot import app code,
+  // so the caller announces it.
+  await raiseMoment("inventory.shipmentPosted", {
+    outputs: { shipment: { id: shipmentId }, postedBy: { id: userId } },
+    companyId,
+    actorId: userId
+  });
 
   if (expiredWarning) {
     throw redirect(

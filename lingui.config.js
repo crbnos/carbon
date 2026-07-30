@@ -20,7 +20,8 @@ export default defineConfig({
         "packages/form/src",
         "packages/printing/src/ui",
         "packages/glossary/src",
-        "packages/onboarding/src"
+        "packages/onboarding/src",
+        "packages/workflows/src"
       ],
       exclude: ["**/*.server.*", "**/*.test.*", "**/*.spec.*"]
     },

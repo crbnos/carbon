@@ -1,8 +1,16 @@
-import type { ValueType } from "./types";
+import { t, type ValueType } from "./types";
+
+/** How the phase-3 matcher recognises this event. Only the matcher reads it. */
+export type EventMatch =
+  | { table: string; operation: "INSERT" | "UPDATE" | "DELETE"; field?: string }
+  | { moment: string };
 
 export interface CatalogEvent {
   id: string;
   outputs: Record<string, ValueType>;
+  /** Lowercase permission module the subscribing workflow's owner must hold. */
+  permission?: string;
+  match?: EventMatch;
 }
 
 export interface CatalogInput {
@@ -40,42 +48,38 @@ export interface WorkflowCatalog {
   getEntity(name: string): CatalogEntity | undefined;
 }
 
-const num: ValueType = { kind: "primitive", of: "number" };
-const str: ValueType = { kind: "primitive", of: "string" };
-const entity = (of: string): ValueType => ({ kind: "entity", of });
-
 const FIXTURE_EVENTS: CatalogEvent[] = [
   {
     id: "purchaseOrder.status.changed",
     outputs: {
-      purchaseOrder: entity("purchaseOrder"),
-      before: entity("purchaseOrder")
+      purchaseOrder: t.entity("purchaseOrder"),
+      before: t.entity("purchaseOrder")
     }
   },
-  { id: "part.created", outputs: { part: entity("part") } }
+  { id: "part.created", outputs: { part: t.entity("part") } }
 ];
 
 const FIXTURE_ENTITIES: CatalogEntity[] = [
   {
     name: "purchaseOrder",
     properties: {
-      amount: num,
-      status: str,
-      assignee: entity("user")
+      amount: t.number,
+      status: t.string,
+      assignee: t.entity("user")
     }
   },
-  { name: "user", properties: { email: str, manager: entity("user") } },
-  { name: "part", properties: { name: str, unitPrice: num } },
-  { name: "job", properties: { name: str } },
-  { name: "issue", properties: { title: str } }
+  { name: "user", properties: { email: t.string, manager: t.entity("user") } },
+  { name: "part", properties: { name: t.string, unitPrice: t.number } },
+  { name: "job", properties: { name: t.string } },
+  { name: "issue", properties: { title: t.string } }
 ];
 
 const FIXTURE_ACTIONS: CatalogAction[] = [
   {
     id: "notify",
     inputs: {
-      recipient: { type: entity("user"), required: true },
-      message: { type: str, required: true }
+      recipient: { type: t.entity("user"), required: true },
+      message: { type: t.string, required: true }
     },
     outputs: {},
     batchable: true
@@ -83,16 +87,16 @@ const FIXTURE_ACTIONS: CatalogAction[] = [
   {
     id: "updatePart",
     inputs: {
-      part: { type: entity("part"), required: true },
-      name: { type: str, required: false }
+      part: { type: t.entity("part"), required: true },
+      name: { type: t.string, required: false }
     },
-    outputs: { part: entity("part") },
+    outputs: { part: t.entity("part") },
     batchable: true
   },
   {
     id: "createIssue",
-    inputs: { title: { type: str, required: true } },
-    outputs: { issue: entity("issue") },
+    inputs: { title: { type: t.string, required: true } },
+    outputs: { issue: t.entity("issue") },
     batchable: false
   }
 ];
@@ -101,8 +105,8 @@ const FIXTURE_OPERATIONS: CatalogOperation[] = [
   {
     id: "job.totalScrap",
     entity: "job",
-    inputs: { job: { type: entity("job"), required: true } },
-    output: num
+    inputs: { job: { type: t.entity("job"), required: true } },
+    output: t.number
   }
 ];
 

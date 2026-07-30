@@ -14,10 +14,12 @@
   },
   "dependencies": {
     "@carbon/utils": "workspace:*",
+    "@lingui/core": "catalog:",
     "zod": "catalog:"
   },
   "devDependencies": {
     "@carbon/config": "workspace:*",
+    "@carbon/database": "workspace:*",
     "typescript": "catalog:",
     "vitest": "catalog:"
   }

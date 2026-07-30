@@ -1,4 +1,5 @@
 import type { Database } from "@carbon/database";
+import { raiseMoment } from "@carbon/lib/workflows";
 import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
 import {
@@ -192,7 +193,22 @@ export async function finishJobOperation(
     // last operation. At that point, return any picking-list-allocated batch/serial
     // stock that was staged to lineside but not consumed back to its warehouse
     // source — the SQL trigger can't call edge functions, so we orchestrate it here.
-    await returnAllocatedRemaindersAtJobComplete(client, args);
+    const { jobId } = await returnAllocatedRemaindersAtJobComplete(
+      client,
+      args
+    );
+
+    if (jobId) {
+      await raiseMoment("production.jobOperationCompleted", {
+        outputs: {
+          job: { id: jobId },
+          jobOperation: { id: args.jobOperationId },
+          completedBy: { id: args.userId }
+        },
+        companyId: args.companyId,
+        actorId: args.userId
+      });
+    }
   }
 
   return result;
@@ -217,14 +233,15 @@ async function returnAllocatedRemaindersAtJobComplete(
     userId: string;
     companyId: string;
   }
-) {
+): Promise<{ jobId: string | undefined }> {
   const op = await client
     .from("jobOperation")
     .select("jobId")
     .eq("id", args.jobOperationId)
+    .eq("companyId", args.companyId)
     .maybeSingle();
   const jobId = op.data?.jobId;
-  if (!jobId) return;
+  if (!jobId) return { jobId: undefined };
 
   const job = await client
     .from("job")
@@ -232,14 +249,14 @@ async function returnAllocatedRemaindersAtJobComplete(
     .eq("id", jobId)
     .maybeSingle();
   const locationId = job.data?.locationId;
-  if (job.data?.status !== "Completed" || !locationId) return;
+  if (job.data?.status !== "Completed" || !locationId) return { jobId };
 
   const { data: lines } = await client
     .from("pickingListLine")
     .select("id, pickingListId, pickingListLineTrackedEntity(trackedEntityId)")
     .eq("jobId", jobId)
     .neq("status", "Cancelled");
-  if (!lines?.length) return;
+  if (!lines?.length) return { jobId };
 
   const returns = lines.flatMap((line) => {
     const allocations =
@@ -274,6 +291,8 @@ async function returnAllocatedRemaindersAtJobComplete(
       });
     }
   }
+
+  return { jobId };
 }
 
 export async function getActiveJobOperationsByEmployee(
