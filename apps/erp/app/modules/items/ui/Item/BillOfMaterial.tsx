@@ -94,7 +94,11 @@ import type {
   MethodType,
   SourcingType
 } from "~/modules/shared";
-import { methodType, sourcingType } from "~/modules/shared";
+import {
+  getValidMethodTypes,
+  methodType,
+  sourcingType
+} from "~/modules/shared";
 import type { Item as ItemType } from "~/stores";
 import { useItems } from "~/stores";
 import { path } from "~/utils/path";
@@ -855,20 +859,43 @@ function MaterialForm({
       | "itemTrackingType"
   ) => {
     const itemDefaults = item.data.item;
+    const itemMethodType =
+      itemDefaults?.defaultMethodType ?? "Pull from Inventory";
+
+    // methodType and replenishmentSystem are interlocked, so resetting either one
+    // alone can strand methodType outside getValidMethodTypes (e.g. reset method
+    // type to the item's "Make to Order" on a line pinned to Buy). Clamp the pair
+    // back into range, and keep the flag honest: a clamped value is no longer the
+    // item's, so it must stay overridden or the server re-derives the bad pair.
+    const reconcileMethodType = (
+      replenishmentSystem: string,
+      desired: MethodType
+    ) => {
+      const valid = getValidMethodTypes(replenishmentSystem);
+      const resolved =
+        valid.length === 0 || valid.includes(desired) ? desired : valid[0];
+      return {
+        methodType: resolved,
+        methodTypeOverridden: resolved !== itemMethodType
+      };
+    };
+
     setItemData((d) => {
       switch (field) {
-        case "replenishmentSystem":
+        case "replenishmentSystem": {
+          const replenishmentSystem =
+            itemDefaults?.replenishmentSystem ?? "Buy";
           return {
             ...d,
-            replenishmentSystem: itemDefaults?.replenishmentSystem ?? "Buy",
-            replenishmentSystemOverridden: false
+            replenishmentSystem,
+            replenishmentSystemOverridden: false,
+            ...reconcileMethodType(replenishmentSystem, d.methodType)
           };
+        }
         case "methodType":
           return {
             ...d,
-            methodType:
-              itemDefaults?.defaultMethodType ?? "Pull from Inventory",
-            methodTypeOverridden: false
+            ...reconcileMethodType(d.replenishmentSystem, itemMethodType)
           };
         case "sourcingType":
           return {
