@@ -34,6 +34,7 @@ import {
   VStack
 } from "@carbon/react";
 import {
+  documentHasImages,
   parseMentionsFromDocument,
   stripSpecialCharacters,
   tiptapToText
@@ -80,9 +81,13 @@ function hasStepDescription(
   description: JobOperationStep["description"]
 ): boolean {
   if (!description) return false;
-  const text = tiptapToText(description as JSONContent).trim();
+  const doc = description as JSONContent;
+  const text = tiptapToText(doc).trim();
   if (text.length > 0 && text !== "{}") return true;
-  return parseMentionsFromDocument(description as JSONContent).length > 0;
+  if (parseMentionsFromDocument(doc).length > 0) return true;
+  // A step's reference imagery is frequently an image-only description (no text,
+  // no @-mention). Without this the description block — and its <img> — is hidden.
+  return documentHasImages(doc);
 }
 
 export function StepsListItem({
