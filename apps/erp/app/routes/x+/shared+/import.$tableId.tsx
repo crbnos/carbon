@@ -43,9 +43,19 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   const { filePath, enumMappings, ...columnMappings } = validation.data;
-  const parsedEnumMappings = enumMappings
-    ? JSON.parse(enumMappings as string)
-    : undefined;
+  let parsedEnumMappings: Record<string, Record<string, string>> | undefined;
+  if (enumMappings) {
+    try {
+      parsedEnumMappings = JSON.parse(enumMappings as string);
+    } catch {
+      // Malformed client-supplied JSON — treat as a validation failure rather
+      // than letting the parse throw escape as a 500.
+      return {
+        success: false,
+        message: "Validation failed"
+      };
+    }
+  }
 
   const serviceRole = getCarbonServiceRole();
   // Quotes are created through the sales services (Option B) so quote side
@@ -65,7 +75,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
         table,
         filePath: filePath as string,
         columnMappings,
-        enumMappings: parsedEnumMappings,
+        // The edge-fn wrapper types enumMappings loosely (Record<string,
+        // string[]>); the real payload is field → { value → mapped }.
+        enumMappings: parsedEnumMappings as unknown as Record<string, string[]>,
         companyId,
         userId
       });

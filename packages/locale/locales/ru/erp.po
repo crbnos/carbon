@@ -10066,7 +10066,8 @@ msgid "Quote Line"
 msgstr "Строка предложения"
 
 msgid "Quote Lines"
-msgstr "Строки котировки"
+msgstr "Строки предложения"
+
 msgid "Quote lines whose bill of materials includes this item"
 msgstr "Строки предложения, чья спецификация материалов включает этот товар"
 
@@ -10098,7 +10099,7 @@ msgid "Quotes"
 msgstr "Предложения"
 
 msgid "Quotes with Lines"
-msgstr "Котировки со строками"
+msgstr "Предложения со строками"
 
 msgid "Quoting"
 msgstr "Котировка"

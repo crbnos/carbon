@@ -10067,6 +10067,7 @@ msgstr "견적 라인"
 
 msgid "Quote Lines"
 msgstr "견적 라인"
+
 msgid "Quote lines whose bill of materials includes this item"
 msgstr "자재명세서에 이 품목을 포함하는 견적 라인"
 

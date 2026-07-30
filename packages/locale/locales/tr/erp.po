@@ -10067,6 +10067,7 @@ msgstr "Teklif Satırı"
 
 msgid "Quote Lines"
 msgstr "Teklif Satırları"
+
 msgid "Quote lines whose bill of materials includes this item"
 msgstr "Malzeme listesinde bu ürünü içeren teklif satırları"
 
@@ -10098,7 +10099,7 @@ msgid "Quotes"
 msgstr "Teklifler"
 
 msgid "Quotes with Lines"
-msgstr "Satırları Olan Teklifler"
+msgstr "Satırlı Teklifler"
 
 msgid "Quoting"
 msgstr "Teklif Verme"

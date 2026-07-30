@@ -10066,7 +10066,8 @@ msgid "Quote Line"
 msgstr "Riga di Preventivo"
 
 msgid "Quote Lines"
-msgstr "Righe Preventivo"
+msgstr "Righe di Preventivo"
+
 msgid "Quote lines whose bill of materials includes this item"
 msgstr "Righe di preventivo la cui distinta base include questo articolo"
 

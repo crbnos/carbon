@@ -10067,6 +10067,7 @@ msgstr "Línea de Cotización"
 
 msgid "Quote Lines"
 msgstr "Líneas de Cotización"
+
 msgid "Quote lines whose bill of materials includes this item"
 msgstr "Líneas de cotización cuya lista de materiales incluye este artículo"
 

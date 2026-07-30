@@ -10067,6 +10067,7 @@ msgstr "Angebotsposition"
 
 msgid "Quote Lines"
 msgstr "Angebotszeilen"
+
 msgid "Quote lines whose bill of materials includes this item"
 msgstr "Angebotspositionen, deren Stückliste diesen Artikel enthält"
 

@@ -10067,6 +10067,7 @@ msgstr "見積行"
 
 msgid "Quote Lines"
 msgstr "見積明細"
+
 msgid "Quote lines whose bill of materials includes this item"
 msgstr "このアイテムが部品表に含まれる見積行"
 
@@ -10098,7 +10099,7 @@ msgid "Quotes"
 msgstr "見積"
 
 msgid "Quotes with Lines"
-msgstr "見積明細付き"
+msgstr "明細付き見積"
 
 msgid "Quoting"
 msgstr "見積"

@@ -10067,6 +10067,7 @@ msgstr "उद्धरण पंक्ति"
 
 msgid "Quote Lines"
 msgstr "उद्धरण पंक्तियाँ"
+
 msgid "Quote lines whose bill of materials includes this item"
 msgstr "उद्धरण पंक्तियां जिनकी सामग्री सूची में यह आइटम शामिल है"
 

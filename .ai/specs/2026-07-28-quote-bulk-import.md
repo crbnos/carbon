@@ -203,11 +203,14 @@ a temporary import id). All rows sharing a Quote Group belong to one quote; the
 first `QUOTE` row is the header, subsequent `LINE` rows are its lines. The Quote
 Group value doubles as the **external id** for idempotency (see §7).
 
-Quantity breaks: one `LINE` row = one item + one quantity + its price. Multiple
-quantity breaks for the same item = multiple `LINE` rows with the same
-item/description and different `quantity`/`unitPrice` (the handler groups them
-into one `quoteLine` with a `quantity[]` array + N `quoteLinePrice` rows). This
-matches how method import represents repeated child rows.
+Quantity breaks: one `LINE` row = one `quoteLine` with a single quantity break
+(`quantity[]` of length 1 + one `quoteLinePrice`). Phase 1 does **not** merge
+multiple rows for the same part into a single multi-break line — each `LINE`
+row is its own quote line. Within one quote, a repeated `(part number, quantity)`
+row is treated as a duplicate and **skipped** (reported in `skipped[]`); rows are
+compared on that key only, so a differing method type / UoM / status still
+produces a separate line. (Multi-row → multi-break aggregation is a possible
+Phase 2 refinement.)
 
 ### 6.3 Proposed columns (`fieldMappings`)
 
@@ -251,19 +254,34 @@ schemas); authoritative validation is in the handler.
 
 ## 7. Idempotency
 
-Reuse the shared `externalIntegrationMapping` table (`integration = "csv"`), the
-same mechanism the customer/supplier/item imports use:
-- The **Quote Group / externalId** column is the CSV external id for the quote.
-- On import, build `externalId → quote.id` map (via `getCsvExternalIdMap`, or
-  `getQuoteByExternalId` on the `quote.externalId` JSONB column).
-- Existing external id → **update** the header / append-or-update lines; else
-  **create**. Persist the mapping via `upsertCsvMappings`.
-- Add `"quote"` to the edge fn's `CsvEntityType` union + `fetchLiveEntityIds`
-  switch if we want live-id reconciliation.
+The **single canonical idempotency source is the shared
+`externalIntegrationMapping` table** with `integration = "csv"`,
+`entityType = "quote"` — the same mechanism the customer/supplier/item imports
+use. The `quote.externalId` JSONB column and `getQuoteByExternalId` are **not**
+used for import idempotency (avoids two lookup paths that could disagree).
 
-**Create-only vs update semantics** need a decision (Q3): safest Phase-1 default
-is *create-only* — if a quote with that external id already exists, **skip** it
-(report in `skipped[]`), matching the method import's "don't clobber" stance.
+- **Key:** a mapping row is `(companyId, integration = "csv",
+  entityType = "quote", externalId)`, where `externalId` is the verbatim **Quote
+  Group** cell (trimmed). Company-scoping is by `companyId`; there is no format
+  constraint on the Quote Group value beyond non-empty.
+- **Lookup:** at import start, the importer reads the mappings for exactly the
+  Quote Group values present in the file (chunked `.in(...)`) into a set of
+  already-imported external ids.
+- **Create-only (Q3, resolved):** if a Quote Group is already in that set, the
+  whole group is **skipped** (reported in `skipped[]`) — never updated —
+  matching the method import's "don't clobber" stance.
+- **Durability point:** the mapping row is inserted **immediately after the
+  header quote is created**, before its lines. So the "already imported" marker
+  means *"a quote was created for this group"*, not *"every line succeeded"*.
+
+**Partial-failure limitation (Phase 1):** because the mapping is written right
+after header creation, if some `LINE` rows then fail (reported per-row in
+`errors[]`), a re-run **skips** the group rather than retrying the failed lines —
+this is the deliberate trade to guarantee re-runs never create a *duplicate*
+quote. Fixing failed lines is done by editing the quote (or deleting it and its
+mapping, then re-importing). True header+lines atomicity / resumable partial
+groups is deferred (it would require a transaction spanning the non-transactional
+`insertQuote` service or a per-group status column).
 
 ---
 
@@ -392,17 +410,14 @@ the execution backend differs for quotes.
 - **Q2 — Architecture:** ✅ **Option B** — app-side `importQuotes`, reuse services.
 - **Q3 — Idempotency:** ✅ **Create-only skip** for Phase 1 (skip existing external ids).
 
-**Still open (low-risk; recommended defaults apply unless changed):**
-- **Q4 — Customer/item keys:** Accept **name or readableId** for customer, and
-  **part number (readableId)** for items? Any support for raw ids? *(Recommend
-  name-or-readableId, no raw ids.)*
-- **Q5 — Grouping key:** Use a dedicated **Quote Group** column as external id, or
-  reuse `customerReference`? *(Recommend a dedicated column so `customerReference`
-  stays a real business field.)*
-- **Q6 — Where does the import button live?** Quotes list table only, or also
-  Opportunities? *(Recommend Quotes table only for Phase 1.)*
-- **Q7 — Pricing scope:** Confirm Phase 1 imports **explicit** prices only (no
-  `resolvePrice`/rollup). *(Recommend yes.)*
+**Resolved 2026-07-28 (implemented):**
+- **Q4 — Customer/item keys:** ✅ Customer by **name or readableId** (case-insensitive);
+  item by **part number (readableId)**, exact match. No raw ids.
+- **Q5 — Grouping key:** ✅ Dedicated **Quote Group** column as the external id;
+  `customerReference` stays a real business field.
+- **Q6 — Where does the import button live?** ✅ **Quotes table only** for Phase 1.
+- **Q7 — Pricing scope:** ✅ **Explicit** quantity-break prices only — no
+  `resolvePrice` / rollup during import.
 
 ---
 

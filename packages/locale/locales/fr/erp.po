@@ -10066,7 +10066,8 @@ msgid "Quote Line"
 msgstr "Ligne de devis"
 
 msgid "Quote Lines"
-msgstr "Lignes de Devis"
+msgstr "Lignes de devis"
+
 msgid "Quote lines whose bill of materials includes this item"
 msgstr "Lignes de devis dont la nomenclature inclut cet article"
 
@@ -10098,7 +10099,7 @@ msgid "Quotes"
 msgstr "Devis"
 
 msgid "Quotes with Lines"
-msgstr "Devis avec Lignes"
+msgstr "Devis avec lignes"
 
 msgid "Quoting"
 msgstr "Devis"

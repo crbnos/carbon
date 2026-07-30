@@ -1,4 +1,5 @@
 import type { Database } from "@carbon/database";
+import { fetchAllFromTable } from "@carbon/database";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import Papa from "papaparse";
 import {
@@ -94,6 +95,17 @@ type ImportQuotesResult = {
 // small helpers
 // ---------------------------------------------------------------------------
 
+// PostgREST caps a single `.in(...)` list; chunk large id sets so a big file
+// can't blow the request size limit.
+const LOOKUP_CHUNK = 200;
+
+function chunk<T>(items: T[], size: number): T[][] {
+  const out: T[][] = [];
+  for (let i = 0; i < items.length; i += size)
+    out.push(items.slice(i, i + size));
+  return out;
+}
+
 const text = (value: string | null | undefined): string => (value ?? "").trim();
 
 const num = (value: string | null | undefined): number | undefined => {
@@ -124,15 +136,17 @@ function normalizeQuoteStatus(
   return QUOTE_STATUSES.find((s) => s.toLowerCase() === t);
 }
 
-// discountPercent is stored as a fraction 0..1. Accept either a fraction or a
-// whole percent (e.g. 10 → 0.10); reject anything above 100.
+// discountPercent is stored as a fraction 0..1. To remove the ambiguity at 1
+// (100% or 1%?), the format decides: a decimal-formatted value (contains ".") is
+// a fraction and must be 0..1; a whole number is a percent and must be 0..100
+// (e.g. "0.10" → 0.10, "10" → 0.10, "1" → 0.01). Reject out-of-range / negative.
 function normalizeDiscount(raw: string | undefined): number | "invalid" {
-  const n = num(raw);
-  if (n === undefined) return 0;
-  if (n < 0) return "invalid";
-  if (n <= 1) return n;
-  if (n <= 100) return n / 100;
-  return "invalid";
+  const t = text(raw);
+  if (!t) return 0;
+  const n = num(t);
+  if (n === undefined || n < 0) return "invalid";
+  if (t.includes(".")) return n <= 1 ? n : "invalid";
+  return n <= 100 ? n / 100 : "invalid";
 }
 
 type RowType = "QUOTE" | "LINE";
@@ -200,7 +214,18 @@ export async function importQuotes(
   }
 
   // 3. batch-resolve references (customers, items, existing quotes) --------
-  const refs = await loadReferences(client, companyId, records, table);
+  const { refs, error: refError } = await loadReferences(
+    client,
+    companyId,
+    records,
+    table
+  );
+  if (refError || !refs) {
+    return {
+      data: null,
+      error: refError ?? { message: "Failed to load import references" }
+    };
+  }
 
   // 4. process by mode -----------------------------------------------------
   if (table === "quoteLine") {
@@ -241,17 +266,20 @@ type ItemInfo = {
 type References = {
   customersByKey: Map<string, string>; // lowercased name|readableId → customer.id
   ambiguousCustomers: Set<string>;
-  itemsByReadableId: Map<string, ItemInfo>;
+  itemsByReadableId: Map<string, ItemInfo>; // exact readableId → item
   quotesByNumber: Map<string, string>; // Quote Number → quote.id
   importedExternalIds: Set<string>;
 };
 
+// Resolves every reference the import needs up front. Any DB read failing is a
+// hard error (returned, not swallowed) so a lookup failure never masquerades as
+// a row-level "not found".
 async function loadReferences(
   client: SupabaseClient<Database>,
   companyId: string,
   records: Rec[],
   table: QuoteImportTable
-): Promise<References> {
+): Promise<{ refs: References | null; error: { message: string } | null }> {
   const refs: References = {
     customersByKey: new Map(),
     ambiguousCustomers: new Set(),
@@ -260,44 +288,63 @@ async function loadReferences(
     importedExternalIds: new Set()
   };
 
-  // Customers — resolve by name or readableId (only needed for header rows).
-  const customerKeys = new Set<string>();
-  for (const r of records) {
-    const key = text(r.customerId).toLowerCase();
-    if (key) customerKeys.add(key);
-  }
-  if (customerKeys.size > 0 && table !== "quoteLine") {
-    const customers = await client
-      .from("customer")
-      .select("id, name, readableId")
-      .eq("companyId", companyId);
-    for (const c of customers.data ?? []) {
-      for (const raw of [c.name, c.readableId]) {
-        const k = text(raw ?? undefined).toLowerCase();
-        if (!k) continue;
-        if (refs.customersByKey.has(k) && refs.customersByKey.get(k) !== c.id) {
-          refs.ambiguousCustomers.add(k);
-        } else {
-          refs.customersByKey.set(k, c.id);
+  // Customers — resolve by name or readableId (only for header rows). Name
+  // matching is case-insensitive, so fetch all company customers (paged past the
+  // 1000-row cap) and compare in memory.
+  const hasCustomerKey = records.some((r) => text(r.customerId));
+  if (hasCustomerKey && table !== "quoteLine") {
+    try {
+      const customers = await fetchAllFromTable<{
+        id: string;
+        name: string | null;
+        readableId: string | null;
+      }>(client, "customer", "id, name, readableId", (q) =>
+        q.eq("companyId", companyId)
+      );
+      for (const c of customers.data ?? []) {
+        for (const raw of [c.name, c.readableId]) {
+          const k = text(raw).toLowerCase();
+          if (!k) continue;
+          if (
+            refs.customersByKey.has(k) &&
+            refs.customersByKey.get(k) !== c.id
+          ) {
+            refs.ambiguousCustomers.add(k);
+          } else {
+            refs.customersByKey.set(k, c.id);
+          }
         }
       }
+    } catch (err) {
+      return {
+        refs: null,
+        error: {
+          message: `Failed to load customers: ${(err as Error).message}`
+        }
+      };
     }
   }
 
-  // Items — resolve part numbers referenced by line rows.
+  // Items — resolve part numbers (exact readableId match), chunked.
   const partNumbers = new Set<string>();
   for (const r of records) {
     const pn = text(r.itemReadableId);
     if (pn) partNumbers.add(pn);
   }
-  if (partNumbers.size > 0) {
+  for (const batch of chunk(Array.from(partNumbers), LOOKUP_CHUNK)) {
     const items = await client
       .from("item")
       .select("id, readableId, type, defaultMethodType, unitOfMeasureCode")
       .eq("companyId", companyId)
-      .in("readableId", Array.from(partNumbers));
+      .in("readableId", batch);
+    if (items.error) {
+      return {
+        refs: null,
+        error: { message: `Failed to load items: ${items.error.message}` }
+      };
+    }
     for (const it of items.data ?? []) {
-      refs.itemsByReadableId.set(text(it.readableId).toLowerCase(), {
+      refs.itemsByReadableId.set(text(it.readableId), {
         id: it.id,
         readableId: it.readableId,
         type: it.type ?? "Part",
@@ -314,33 +361,57 @@ async function loadReferences(
       const q = text(r.quoteId);
       if (q) numbers.add(q);
     }
-    if (numbers.size > 0) {
+    for (const batch of chunk(Array.from(numbers), LOOKUP_CHUNK)) {
       const quotes = await client
         .from("quote")
         .select("id, quoteId")
         .eq("companyId", companyId)
-        .in("quoteId", Array.from(numbers));
+        .in("quoteId", batch);
+      if (quotes.error) {
+        return {
+          refs: null,
+          error: { message: `Failed to load quotes: ${quotes.error.message}` }
+        };
+      }
       for (const q of quotes.data ?? []) {
         refs.quotesByNumber.set(text(q.quoteId), q.id);
       }
     }
   }
 
-  // Already-imported Quote Groups (create-only idempotency).
+  // Already-imported Quote Groups (create-only idempotency) — query only the
+  // external ids present in this file, chunked, so a company with many prior
+  // imports can't overflow the 1000-row cap and miss an existing mapping.
   if (table !== "quoteLine") {
-    const mappings = await client
-      .from("externalIntegrationMapping")
-      .select("externalId")
-      .eq("companyId", companyId)
-      .eq("integration", EXTERNAL_INTEGRATION)
-      .eq("entityType", QUOTE_ENTITY_TYPE);
-    for (const m of mappings.data ?? []) {
-      const k = text(m.externalId);
-      if (k) refs.importedExternalIds.add(k);
+    const externalIds = new Set<string>();
+    for (const r of records) {
+      const e = text(r.externalId);
+      if (e) externalIds.add(e);
+    }
+    for (const batch of chunk(Array.from(externalIds), LOOKUP_CHUNK)) {
+      const mappings = await client
+        .from("externalIntegrationMapping")
+        .select("externalId")
+        .eq("companyId", companyId)
+        .eq("integration", EXTERNAL_INTEGRATION)
+        .eq("entityType", QUOTE_ENTITY_TYPE)
+        .in("externalId", batch);
+      if (mappings.error) {
+        return {
+          refs: null,
+          error: {
+            message: `Failed to load import history: ${mappings.error.message}`
+          }
+        };
+      }
+      for (const m of mappings.data ?? []) {
+        const k = text(m.externalId);
+        if (k) refs.importedExternalIds.add(k);
+      }
     }
   }
 
-  return refs;
+  return { refs, error: null };
 }
 
 // ---------------------------------------------------------------------------
@@ -485,15 +556,26 @@ async function importQuoteGroups(
     summary.inserted += 1;
     const quoteInternalId = created.data.id;
 
-    // Record the mapping so a re-import skips this Quote Group.
-    await client.from("externalIntegrationMapping").insert({
-      entityType: QUOTE_ENTITY_TYPE,
-      entityId: quoteInternalId,
-      integration: EXTERNAL_INTEGRATION,
-      externalId,
-      companyId,
-      createdBy: userId
-    });
+    // Record the mapping so a re-import skips this Quote Group. If this write
+    // fails the quote still exists, so surface it — a re-import would otherwise
+    // create a duplicate quote for this group.
+    const mappingInsert = await client
+      .from("externalIntegrationMapping")
+      .insert({
+        entityType: QUOTE_ENTITY_TYPE,
+        entityId: quoteInternalId,
+        integration: EXTERNAL_INTEGRATION,
+        externalId,
+        companyId,
+        createdBy: userId
+      });
+    if (mappingInsert.error) {
+      summary.errors.push({
+        row: header.index,
+        reason: `Quote created, but recording its import mapping failed (a re-import may duplicate it): ${mappingInsert.error.message}`,
+        values: header.record
+      });
+    }
 
     await createLines(client, {
       quoteInternalId,
@@ -582,7 +664,7 @@ async function createLines(
       });
       continue;
     }
-    const item = refs.itemsByReadableId.get(partNumber.toLowerCase());
+    const item = refs.itemsByReadableId.get(partNumber);
     if (!item) {
       summary.errors.push({
         row: index,
@@ -593,8 +675,8 @@ async function createLines(
     }
 
     const description = text(record.description) || item.readableId;
-    const quantity = num(record.quantity);
-    if (quantity === undefined || quantity < 0.00001) {
+    const quantityRaw = text(record.quantity);
+    if (!quantityRaw) {
       summary.errors.push({
         row: index,
         reason: "Quantity is required",
@@ -602,8 +684,17 @@ async function createLines(
       });
       continue;
     }
+    const quantity = num(quantityRaw);
+    if (quantity === undefined || quantity < 0.00001) {
+      summary.errors.push({
+        row: index,
+        reason: "Quantity must be a positive number",
+        values: record
+      });
+      continue;
+    }
 
-    const dedupKey = `${partNumber.toLowerCase()}|${quantity}`;
+    const dedupKey = `${item.readableId}|${quantity}`;
     if (seen.has(dedupKey)) {
       summary.skipped.push({
         row: index,
@@ -618,7 +709,8 @@ async function createLines(
     if (discount === "invalid") {
       summary.errors.push({
         row: index,
-        reason: "Discount Percent must be between 0 and 100",
+        reason:
+          "Discount Percent must be a fraction 0–1 (e.g. 0.10) or a whole percent 0–100 (e.g. 10)",
         values: record
       });
       continue;

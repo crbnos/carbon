@@ -314,7 +314,9 @@ const QuotesTable = memo(({ data, count }: QuotesTableProps) => {
           updatedBy: false
         }}
         importCSV={
-          permissions.can("create", "sales")
+          // The import action gates on `sales_update` (see import.$tableId.tsx),
+          // so match that here rather than `create`.
+          permissions.can("update", "sales")
             ? [
                 {
                   table: "quoteWithLines" as const,
