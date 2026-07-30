@@ -11,6 +11,7 @@ import {
   failureModes,
   fiscalYearSettings,
   fixedAssetClasses,
+  leaseClasses,
   changeOrderRequiredActions,
   changeOrderTypes,
   gaugeTypes,
@@ -446,6 +447,37 @@ serve(async (req: Request) => {
             writeDownAccountId: accountIdByKey[fac.writeDownAccount]!,
             gainOnDisposalAccountId: accountIdByKey[fac.gainOnDisposalAccount]!,
             lossOnDisposalAccountId: accountIdByKey[fac.lossOnDisposalAccount]!,
+            companyId,
+            createdBy: userId,
+          }))
+        )
+        .execute();
+
+      // Lease subledger classes (cast: the table is newer than the generated
+      // Kysely types until the next `pnpm db:migrate` regen — same as the
+      // periodCloseTaskDefinition insert above).
+      await (trx as any)
+        .insertInto("leaseClass")
+        .values(
+          leaseClasses.map((lc) => ({
+            name: lc.name,
+            rouAssetAccountId: accountIdByKey[lc.rouAssetAccount]!,
+            accumulatedRouAmortizationAccountId:
+              accountIdByKey[lc.accumulatedRouAmortizationAccount]!,
+            leaseLiabilityAccountId: accountIdByKey[lc.leaseLiabilityAccount]!,
+            interestExpenseAccountId: accountIdByKey[lc.interestExpenseAccount]!,
+            rouAmortizationExpenseAccountId:
+              accountIdByKey[lc.rouAmortizationExpenseAccount]!,
+            operatingLeaseExpenseAccountId:
+              accountIdByKey[lc.operatingLeaseExpenseAccount]!,
+            variableLeaseExpenseAccountId:
+              accountIdByKey[lc.variableLeaseExpenseAccount]!,
+            leaseClearingAccountId: accountIdByKey[lc.leaseClearingAccount]!,
+            leaseIncomeAccountId: accountIdByKey[lc.leaseIncomeAccount]!,
+            netInvestmentAccountId: accountIdByKey[lc.netInvestmentAccount]!,
+            interestIncomeAccountId: accountIdByKey[lc.interestIncomeAccount]!,
+            straightLineRentAccountId:
+              accountIdByKey[lc.straightLineRentAccount]!,
             companyId,
             createdBy: userId,
           }))

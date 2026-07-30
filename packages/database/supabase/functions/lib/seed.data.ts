@@ -221,6 +221,24 @@ export const changeOrderRequiredActions = [
 
 export const sequences = [
   {
+    table: "lease",
+    name: "Lease",
+    prefix: "LSE",
+    suffix: null,
+    next: 0,
+    size: 6,
+    step: 1
+  },
+  {
+    table: "leaseRun",
+    name: "Lease Run",
+    prefix: "LR",
+    suffix: null,
+    next: 0,
+    size: 6,
+    step: 1
+  },
+  {
     table: "journalEntry",
     name: "Journal Entry",
     prefix: "JE-%{yyyy}-%{mm}-",
@@ -644,6 +662,8 @@ export const accounts = [
   { key: "1340", number: "1340", name: "Accumulated Depreciation on Disposal", isGroup: false, parentKey: "ppe", accountType: "Accumulated Depreciation", incomeBalance: "Balance Sheet", class: "Asset", consolidatedRate: "Current", createdBy: "system" },
   { key: "1350", number: "1350", name: "Machinery & Equipment", isGroup: false, parentKey: "ppe", accountType: "Fixed Asset", incomeBalance: "Balance Sheet", class: "Asset", consolidatedRate: "Current", createdBy: "system" },
   { key: "1360", number: "1360", name: "Buildings & Leasehold Improvements", isGroup: false, parentKey: "ppe", accountType: "Fixed Asset", incomeBalance: "Balance Sheet", class: "Asset", consolidatedRate: "Current", createdBy: "system" },
+  { key: "1370", number: "1370", name: "Right-of-Use Assets", isGroup: false, parentKey: "ppe", accountType: "Fixed Asset", incomeBalance: "Balance Sheet", class: "Asset", consolidatedRate: "Current", createdBy: "system" },
+  { key: "1380", number: "1380", name: "Accumulated ROU Amortization", isGroup: false, parentKey: "ppe", accountType: "Accumulated Depreciation", incomeBalance: "Balance Sheet", class: "Asset", consolidatedRate: "Current", createdBy: "system" },
 
   // Other Assets
   { key: "other-assets", number: null, name: "Other Assets", isGroup: true, parentKey: "assets", accountType: "Other Asset", incomeBalance: "Balance Sheet", class: "Asset", consolidatedRate: "Current", createdBy: "system" },
@@ -651,6 +671,7 @@ export const accounts = [
   { key: "1420", number: "1420", name: "Accumulated Amortization", isGroup: false, parentKey: "other-assets", accountType: "Other Asset", incomeBalance: "Balance Sheet", class: "Asset", consolidatedRate: "Current", createdBy: "system" },
   { key: "1430", number: "1430", name: "Investments in Subsidiaries", isGroup: false, parentKey: "other-assets", accountType: "Investments", incomeBalance: "Balance Sheet", class: "Asset", consolidatedRate: "Current", createdBy: "system" },
   { key: "1440", number: "1440", name: "Deferred Tax Assets", isGroup: false, parentKey: "other-assets", accountType: "Other Asset", incomeBalance: "Balance Sheet", class: "Asset", consolidatedRate: "Current", createdBy: "system" },
+  { key: "1450", number: "1450", name: "Net Investment in Leases", isGroup: false, parentKey: "other-assets", accountType: "Other Asset", incomeBalance: "Balance Sheet", class: "Asset", consolidatedRate: "Current", createdBy: "system" },
 
   // ─── 2000-2999: LIABILITIES ───
   { key: "liabilities", number: null, name: "Liabilities", isGroup: true, parentKey: "balance-sheet", accountType: "Other Current Liability", incomeBalance: "Balance Sheet", class: "Liability", consolidatedRate: "Current", createdBy: "system" },
@@ -668,6 +689,8 @@ export const accounts = [
   { key: "2150", number: "2150", name: "Accrued Wages & Salaries", isGroup: false, parentKey: "current-liabilities", accountType: "Other Current Liability", incomeBalance: "Balance Sheet", class: "Liability", consolidatedRate: "Current", createdBy: "system" },
   { key: "2160", number: "2160", name: "Deferred Revenue", isGroup: false, parentKey: "current-liabilities", accountType: "Other Current Liability", incomeBalance: "Balance Sheet", class: "Liability", consolidatedRate: "Current", createdBy: "system" },
   { key: "2170", number: "2170", name: "Short-Term Loans", isGroup: false, parentKey: "current-liabilities", accountType: "Other Current Liability", incomeBalance: "Balance Sheet", class: "Liability", consolidatedRate: "Current", createdBy: "system" },
+  { key: "2180", number: "2180", name: "Lease Clearing", isGroup: false, parentKey: "current-liabilities", accountType: "Other Current Liability", incomeBalance: "Balance Sheet", class: "Liability", consolidatedRate: "Current", createdBy: "system" },
+  { key: "2190", number: "2190", name: "Straight-Line Rent Accrual", isGroup: false, parentKey: "current-liabilities", accountType: "Other Current Liability", incomeBalance: "Balance Sheet", class: "Liability", consolidatedRate: "Current", createdBy: "system" },
 
   // Tax Liabilities
   { key: "tax-liabilities", number: null, name: "Tax Liabilities", isGroup: true, parentKey: "liabilities", accountType: "Tax", incomeBalance: "Balance Sheet", class: "Liability", consolidatedRate: "Current", createdBy: "system" },
@@ -680,6 +703,7 @@ export const accounts = [
   { key: "2410", number: "2410", name: "Long-Term Debt / Loans", isGroup: false, parentKey: "long-term-liabilities", accountType: "Long Term Liability", incomeBalance: "Balance Sheet", class: "Liability", consolidatedRate: "Current", createdBy: "system" },
   { key: "2420", number: "2420", name: "Deferred Tax Liabilities", isGroup: false, parentKey: "long-term-liabilities", accountType: "Long Term Liability", incomeBalance: "Balance Sheet", class: "Liability", consolidatedRate: "Current", createdBy: "system" },
   { key: "2430", number: "2430", name: "Pension Obligations", isGroup: false, parentKey: "long-term-liabilities", accountType: "Long Term Liability", incomeBalance: "Balance Sheet", class: "Liability", consolidatedRate: "Current", createdBy: "system" },
+  { key: "2440", number: "2440", name: "Lease Liability", isGroup: false, parentKey: "long-term-liabilities", accountType: "Long Term Liability", incomeBalance: "Balance Sheet", class: "Liability", consolidatedRate: "Current", createdBy: "system" },
 
   // ─── 3000-3999: EQUITY ───
   { key: "equity", number: null, name: "Equity", isGroup: true, parentKey: "balance-sheet", accountType: "Equity - No Close", incomeBalance: "Balance Sheet", class: "Equity", consolidatedRate: "Historical", createdBy: "system" },
@@ -705,6 +729,8 @@ export const accounts = [
   { key: "4120", number: "4120", name: "Foreign Exchange Gains", isGroup: false, parentKey: "other-income", accountType: "Other Income", incomeBalance: "Income Statement", class: "Revenue", consolidatedRate: "Average", createdBy: "system" },
   { key: "4130", number: "4130", name: "Vendor Write-Off Income", isGroup: false, parentKey: "other-income", accountType: "Other Income", incomeBalance: "Income Statement", class: "Revenue", consolidatedRate: "Average", createdBy: "system" },
   { key: "4140", number: "4140", name: "Gain on Disposal", isGroup: false, parentKey: "other-income", accountType: "Other Income", incomeBalance: "Income Statement", class: "Revenue", consolidatedRate: "Average", createdBy: "system" },
+  { key: "4150", number: "4150", name: "Lease Income", isGroup: false, parentKey: "other-income", accountType: "Other Income", incomeBalance: "Income Statement", class: "Revenue", consolidatedRate: "Average", createdBy: "system" },
+  { key: "4160", number: "4160", name: "Interest Income on Leases", isGroup: false, parentKey: "other-income", accountType: "Other Income", incomeBalance: "Income Statement", class: "Revenue", consolidatedRate: "Average", createdBy: "system" },
 
   // ─── 5000-5999: COST OF GOODS SOLD ───
   { key: "cogs", number: null, name: "Cost of Goods Sold", isGroup: true, parentKey: "income-statement", accountType: "Cost of Goods Sold", incomeBalance: "Income Statement", class: "Expense", consolidatedRate: "Average", createdBy: "system" },
@@ -740,11 +766,14 @@ export const accounts = [
   { key: "6090", number: "6090", name: "Travel & Entertainment", isGroup: false, parentKey: "operating-expenses", accountType: "Expense", incomeBalance: "Income Statement", class: "Expense", consolidatedRate: "Average", createdBy: "system" },
   { key: "6100", number: "6100", name: "Insurance", isGroup: false, parentKey: "operating-expenses", accountType: "Expense", incomeBalance: "Income Statement", class: "Expense", consolidatedRate: "Average", createdBy: "system" },
   { key: "6110", number: "6110", name: "Bank Charges & Fees", isGroup: false, parentKey: "operating-expenses", accountType: "Expense", incomeBalance: "Income Statement", class: "Expense", consolidatedRate: "Average", createdBy: "system" },
+  { key: "6120", number: "6120", name: "Operating Lease Expense", isGroup: false, parentKey: "operating-expenses", accountType: "Expense", incomeBalance: "Income Statement", class: "Expense", consolidatedRate: "Average", createdBy: "system" },
+  { key: "6130", number: "6130", name: "Variable Lease Expense", isGroup: false, parentKey: "operating-expenses", accountType: "Expense", incomeBalance: "Income Statement", class: "Expense", consolidatedRate: "Average", createdBy: "system" },
 
   // Depreciation & Amortization
   { key: "depreciation", number: null, name: "Depreciation & Amortization", isGroup: true, parentKey: "operating-expenses", accountType: "Other Expense", incomeBalance: "Income Statement", class: "Expense", consolidatedRate: "Average", createdBy: "system" },
   { key: "6310", number: "6310", name: "Depreciation Expense", isGroup: false, parentKey: "depreciation", accountType: "Other Expense", incomeBalance: "Income Statement", class: "Expense", consolidatedRate: "Average", createdBy: "system" },
   { key: "6320", number: "6320", name: "Loss on Disposal", isGroup: false, parentKey: "depreciation", accountType: "Other Expense", incomeBalance: "Income Statement", class: "Expense", consolidatedRate: "Average", createdBy: "system" },
+  { key: "6330", number: "6330", name: "ROU Amortization Expense", isGroup: false, parentKey: "depreciation", accountType: "Other Expense", incomeBalance: "Income Statement", class: "Expense", consolidatedRate: "Average", createdBy: "system" },
 
   // ─── 7000-7999: OTHER / NON-OPERATING EXPENSES ───
   { key: "other-expenses", number: null, name: "Other Expenses", isGroup: true, parentKey: "income-statement", accountType: "Other Expense", incomeBalance: "Income Statement", class: "Expense", consolidatedRate: "Average", createdBy: "system" },
@@ -853,6 +882,29 @@ export const fixedAssetClasses = [
     lossOnDisposalAccount: "6320",
   },
 ];
+
+// Lease subledger (ASC 842 / IFRS 16) — default lease classes seeded per company.
+// Account numbers map to the lease GL accounts added in
+// 20260730161600_lease-subledger.sql; lessee interest expense reuses 7010.
+export const leaseClasses = [
+  { name: "Real Estate" },
+  { name: "Equipment" },
+  { name: "Vehicles" },
+].map((c) => ({
+  ...c,
+  rouAssetAccount: "1370",
+  accumulatedRouAmortizationAccount: "1380",
+  leaseLiabilityAccount: "2440",
+  interestExpenseAccount: "7010",
+  rouAmortizationExpenseAccount: "6330",
+  operatingLeaseExpenseAccount: "6120",
+  variableLeaseExpenseAccount: "6130",
+  leaseClearingAccount: "2180",
+  leaseIncomeAccount: "4150",
+  netInvestmentAccount: "1450",
+  interestIncomeAccount: "4160",
+  straightLineRentAccount: "2190",
+}));
 
 export const fiscalYearSettings = {
   startMonth: "January",
