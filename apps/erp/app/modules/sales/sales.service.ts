@@ -56,7 +56,7 @@ import type {
   salesRfqValidator,
   selectedLinesValidator
 } from "./sales.models";
-import { costCategoryKeys } from "./sales.models";
+import { costCategoryKeys, OPEN_SALES_ORDER_STATUSES } from "./sales.models";
 import { decideRecalcPricing, getEffectiveDefaultMarkups } from "./sales.utils";
 import type {
   MatchedRule,
@@ -1736,6 +1736,28 @@ export async function getSalesOrderLinesByItemId(
     .select("*")
     .eq("itemId", itemId)
     .order("orderDate", { ascending: false })
+    .order("createdAt", { ascending: false });
+}
+
+/**
+ * Sales order lines eligible for a job to link to: lines whose item matches the
+ * job's item, on sales orders that are still open (not Completed/Invoiced/
+ * Cancelled/Closed). Joins the base salesOrder header so we can filter on its
+ * status (the salesOrderLines view only exposes the line-level status).
+ */
+export async function getOpenSalesOrderLinesForItem(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  itemId: string
+) {
+  return client
+    .from("salesOrderLine")
+    .select(
+      "id, saleQuantity, salesOrderLineType, salesOrder!inner(id, salesOrderId, customerId, status)"
+    )
+    .eq("companyId", companyId)
+    .eq("itemId", itemId)
+    .in("salesOrder.status", [...OPEN_SALES_ORDER_STATUSES])
     .order("createdAt", { ascending: false });
 }
 

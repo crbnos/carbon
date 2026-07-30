@@ -209,6 +209,14 @@ export const ASSEMBLER_SERVICE_API_KEY = getEnv("ASSEMBLER_SERVICE_API_KEY", {
   isRequired: false,
   isSecret: true
 });
+// Cap on concurrently running assembler-backed Inngest functions (shared across
+// optimize/compact/convert/plan). Must stay within the Inngest plan's account
+// concurrency or app sync fails ("function has higher concurrency limits than
+// your plan"); raise it via env on plans that allow more.
+export const ASSEMBLER_JOB_CONCURRENCY = getEnv("ASSEMBLER_JOB_CONCURRENCY", {
+  isRequired: false,
+  isSecret: false
+});
 // Dev-only: public tunnel origin substituted into assembler-bound storage URLs
 // when the assembler is remote (local `.dev` hosts resolve only on this
 // machine). Unset in prod/preview.
@@ -237,6 +245,15 @@ export const ONSHAPE_CLIENT_SECRET = getEnv("ONSHAPE_CLIENT_SECRET", {
 });
 export const ONSHAPE_OAUTH_REDIRECT_URL = getEnv("ONSHAPE_OAUTH_REDIRECT_URL", {
   isRequired: false
+});
+// Path to the native gltfpack binary (github.com/zeux/meshoptimizer), used to
+// compress oversized Onshape GLTF exports into viewer-ready GLBs. Optional:
+// when unset (and gltfpack isn't on PATH), oversized models are skipped
+// instead of compressed. The npm gltfpack is WASM with a 4GB memory ceiling
+// and cannot process large CAD exports — this must point to a native build.
+export const GLTFPACK_PATH = getEnv("GLTFPACK_PATH", {
+  isRequired: false,
+  isSecret: false
 });
 
 export const QUICKBOOKS_CLIENT_ID = getEnv("QUICKBOOKS_CLIENT_ID", {

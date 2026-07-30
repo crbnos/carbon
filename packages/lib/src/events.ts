@@ -501,6 +501,33 @@ export type Events = {
     };
   };
 
+  // Onshape released-asset backfill / reconcile
+  "carbon/onshape-backfill": {
+    data: {
+      companyId: string;
+      userId: string;
+      onshapeCompanyId?: string;
+      after?: string;
+      pageLimit?: number;
+    };
+  };
+
+  // Onshape go-forward sync: one released revision (from the
+  // onshape.revision.created webhook) -> attach assets to the matching item
+  "carbon/onshape-revision-sync": {
+    data: {
+      companyId: string;
+      userId: string;
+      messageId: string; // Onshape webhook messageId — idempotency key
+      partNumber: string;
+      documentId: string;
+      versionId: string;
+      elementId: string;
+      elementType: number; // 0 = part studio, 1 = assembly, 2 = drawing
+      revisionId?: string;
+    };
+  };
+
   // Sync external accounting (accepts the full AccountingSyncSchema payload)
   "carbon/sync-external-accounting": {
     data: {

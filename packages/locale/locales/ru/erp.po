@@ -962,6 +962,9 @@ msgstr "Операция, выполняемая внешним поставщи
 msgid "An operation's position in its work center's queue — the order the floor picks work up — set by reordering cards on the Work Centers board without changing any dates."
 msgstr "Положение операции в очереди её рабочего центра — порядок, в котором площадка берёт работу — устанавливается переупорядочением карточек на доске Рабочих центров без изменения дат."
 
+msgid "An unexpected error occurred while connecting to Onshape. Try connecting again."
+msgstr "При подключении к Onshape произошла непредвиденная ошибка. Повторите попытку подключения."
+
 msgid "Anchors the Plan timeline to real dates. Leave blank for a relative, week-numbered timeline. Setting either one fills in the rest."
 msgstr "Привязывает временную шкалу плана к реальным датам. Оставьте пустым для относительной временной шкалы с номерами недель. Установка одной из них заполнит остальное."
 
@@ -1220,6 +1223,9 @@ msgstr "Вы уверены, что хотите удалить {0}?"
 #. placeholder {0}: pickingList.pickingListId
 msgid "Are you sure you want to delete {0}? This cannot be undone."
 msgstr "Вы уверены, что хотите удалить {0}? Это действие невозможно отменить."
+
+msgid "Are you sure you want to delete {name}? This cannot be undone."
+msgstr "Вы уверены, что хотите удалить {name}? Это действие невозможно отменить."
 
 #. placeholder {0}: selectedCustomField?.name
 msgid "Are you sure you want to delete the {0} field?"
@@ -3023,6 +3029,9 @@ msgstr "Не удалось подготовить изображение рег
 msgid "Could not read the document: {0}"
 msgstr "Не удалось прочитать документ: {0}"
 
+msgid "Couldn't complete the Onshape connection"
+msgstr "Не удалось завершить подключение к Onshape"
+
 msgid "Couldn't load documents"
 msgstr "Не удалось загрузить документы"
 
@@ -3031,6 +3040,9 @@ msgstr "Не удалось загрузить связанные докумен
 
 msgid "Couldn't reschedule the job. Please try again."
 msgstr "Не удалось перепланировать задание. Пожалуйста, попробуйте еще раз."
+
+msgid "Couldn't save the Onshape connection"
+msgstr "Не удалось сохранить подключение к Onshape"
 
 msgid "Count"
 msgstr "Количество"
@@ -3666,6 +3678,8 @@ msgstr "Решите, что видит оператор при попытке �
 
 msgid "Decimal places"
 msgstr "Количество десятичных разрядов"
+msgid "Decide what happens when an operator presses Finish on the shop floor with material still unpicked."
+msgstr ""
 
 msgid "Decimal Places"
 msgstr "Десятичные разряды"
@@ -5179,6 +5193,9 @@ msgstr "Курс обмена"
 msgid "Exchange Rates"
 msgstr "Курсы обмена"
 
+msgid "Exchanging the authorization code for an access token failed. Try connecting again."
+msgstr "Не удалось обменять код авторизации на токен доступа. Повторите попытку подключения."
+
 msgid "Excluded"
 msgstr "Исключено"
 
@@ -5769,6 +5786,12 @@ msgstr "Дополнительное вычитание в первый год, 
 
 msgid "Finishes"
 msgstr "Отделки"
+
+msgid "Finishing an incomplete pick"
+msgstr ""
+
+msgid "Finishing is refused until every line is picked or marked Short."
+msgstr ""
 
 msgid "First Name"
 msgstr "Имя"
@@ -6407,6 +6430,9 @@ msgstr "ID"
 msgid "Ideas, suggestions or problems?"
 msgstr "Идеи, предложения или проблемы?"
 
+msgid "Identifiers"
+msgstr "Идентификаторы"
+
 msgid "IDs and descriptions are generated for raw materials."
 msgstr "Идентификаторы и описания генерируются для сырья."
 
@@ -6457,6 +6483,9 @@ msgstr "Результаты импорта"
 
 msgid "Import your BOM"
 msgstr "Импортируйте вашу BOM"
+
+msgid "In Onshape, edit this OAuth application's permissions to include \"Application can write to your documents\", then connect again."
+msgstr "В Onshape измените разрешения этого приложения OAuth, добавив «Application can write to your documents», затем подключитесь снова."
 
 msgid "In order to convert this RFQ to a quote, all lines must have an internal part number."
 msgstr "Чтобы преобразовать это РЗП в предложение, все строки должны иметь внутренний номер детали."
@@ -6515,11 +6544,17 @@ msgstr "Входящая проверка"
 msgid "Inbox"
 msgstr "Входящие"
 
+msgid "Include a materials (bill of materials) section on the job traveler PDF with item numbers and quantities."
+msgstr "Включить раздел материалов (спецификация материалов) в PDF путевого листа задания с номерами товаров и количествами."
+
 msgid "Include extra parts in shipment"
 msgstr "Включить дополнительные детали в отправку"
 
 msgid "Include Inactive"
 msgstr "Включить неактивные"
+
+msgid "Include materials on traveler"
+msgstr "Включить материалы в путевой лист задания"
 
 msgid "Included"
 msgstr "Включено"
@@ -6962,6 +6997,12 @@ msgstr "Операция задания"
 msgid "Job Operations"
 msgstr "Операции задания"
 
+msgid "Job Traveler Materials"
+msgstr "Материалы путевого листа задания"
+
+msgid "Job traveler settings updated"
+msgstr "Параметры путевого листа задания обновлены"
+
 msgid "Jobs"
 msgstr "Работы"
 
@@ -6973,6 +7014,9 @@ msgstr "Задания в процессе"
 
 msgid "Jobs Required"
 msgstr "Требуются работы"
+
+msgid "Jobs that have this item on their bill of materials"
+msgstr "Работы, содержащие этот товар в спецификации материалов"
 
 #. placeholder {0}: company?.name ?? "Company"
 msgid "Join {0}"
@@ -7124,6 +7168,9 @@ msgstr "Оставьте пустым для точного совпадения
 msgid "Leave this page"
 msgstr "Покинуть эту страницу"
 
+msgid "Ledger"
+msgstr "Главная книга"
+
 msgid "Left item"
 msgstr "Левый элемент"
 
@@ -7213,6 +7260,9 @@ msgstr "Связать проблему Jira"
 
 msgid "Link Linear Issue"
 msgstr "Связать проблему Linear"
+
+msgid "Link to sales order line"
+msgstr "Связать со строкой заказа на продажу"
 
 #. placeholder {0}: r.linkedSum
 #. placeholder {1}: r.quantity
@@ -8477,6 +8527,12 @@ msgstr "Нет заметок"
 msgid "No open invoices"
 msgstr "Нет открытых счетов"
 
+msgid "No open orders for this item are available to link."
+msgstr "Нет открытых заказов для этого товара, доступных для связи."
+
+msgid "No open sales order lines"
+msgstr "Нет открытых строк заказа продажи"
+
 msgid "No operations require picking at this location"
 msgstr "На этом месте нет операций, требующих комплектации"
 
@@ -8530,6 +8586,9 @@ msgstr "Принтеры не настроены. Нажмите «Добави�
 
 msgid "No process selected"
 msgstr "Процесс не выбран"
+
+msgid "No production events recorded for this operation yet"
+msgstr "Для этой операции еще не записано ни одного производственного события"
 
 msgid "No Quote"
 msgstr "Нет предложения"
@@ -8783,6 +8842,21 @@ msgstr "Редактировать можно только процедуры в
 msgid "Only empty, open periods can be deleted."
 msgstr "Удалять можно только пустые открытые периоды."
 
+msgid "Onshape authorized the connection but saving it failed. Try connecting again."
+msgstr "Onshape авторизовал подключение, но сохранить его не удалось. Повторите попытку подключения."
+
+msgid "Onshape denied the connection"
+msgstr "Onshape отклонил подключение"
+
+msgid "Onshape didn't return an authorization code"
+msgstr "Onshape не вернул код авторизации"
+
+msgid "Onshape isn't configured"
+msgstr "Onshape не настроен"
+
+msgid "Onshape rejected the authorization"
+msgstr "Onshape отклонил авторизацию"
+
 msgid "Onshape Status"
 msgstr "Статус Onshape"
 
@@ -8921,6 +8995,9 @@ msgstr "Оператор получит предупреждение. Товар
 msgid "Operator must pick a different batch/serial."
 msgstr "Оператор должен выбрать другую партию/серию."
 
+msgid "Operator sees the missing items, can acknowledge & finish. The list is flagged Partial."
+msgstr ""
+
 msgid "Operators"
 msgstr "Операторы"
 
@@ -8931,7 +9008,7 @@ msgid "Opportunity"
 msgstr "Возможность"
 
 msgid "Optimized for fast previews — downloads always serve the original uploaded file"
-msgstr ""
+msgstr "Оптимизировано для быстрого предпросмотра — загрузки всегда предоставляют исходный загруженный файл"
 
 msgid "Optional"
 msgstr "Опционально"
@@ -9133,6 +9210,9 @@ msgstr "Родительская группа"
 msgid "Parent Item"
 msgstr "Родительский товар"
 
+msgid "Parent items. (If you click into one of the parent parts below, you'll see this item included as a component on the bill of material.)"
+msgstr "Родительские товары. (Если вы щёлкнете на один из родительских товаров ниже, вы увидите этот товар в качестве компонента в спецификации материалов.)"
+
 msgid "Parent Storage Unit"
 msgstr "Родительское хранилище"
 
@@ -9159,6 +9239,9 @@ msgstr "Номер детали"
 
 msgid "Part Supersession"
 msgstr "Замена детали"
+
+msgid "Partial"
+msgstr ""
 
 msgid "Partner"
 msgstr "Партнер"
@@ -9529,14 +9612,14 @@ msgstr "Авансовые платежи"
 msgid "Posting Date"
 msgstr "Дата публикации"
 
-msgid "Posting Groups"
-msgstr "Группы учета"
-
 msgid "Potential Data Loss"
 msgstr "Потенциальная потеря данных"
 
 msgid "Pre-filled for a new item when expiry is Fixed Duration."
 msgstr "Предварительно заполняется для нового товара, когда срок действия установлен как Фиксированная продолжительность."
+
+msgid "Pre-select material without a picking list"
+msgstr ""
 
 msgid "Preferred Supplier"
 msgstr "Предпочитаемый поставщик"
@@ -10054,6 +10137,9 @@ msgstr "ID предложения"
 msgid "Quote Line"
 msgstr "Строка предложения"
 
+msgid "Quote lines whose bill of materials includes this item"
+msgstr "Строки предложения, чья спецификация материалов включает этот товар"
+
 msgid "Quote Location"
 msgstr "Местоположение предложения"
 
@@ -10080,9 +10166,6 @@ msgstr "Дата предложения"
 
 msgid "Quotes"
 msgstr "Предложения"
-
-msgid "Quoting"
-msgstr "Котировка"
 
 msgid "Quoting and sales orders"
 msgstr "Котировки и заказы на продажу"
@@ -10311,7 +10394,7 @@ msgid "Refresh exchange rate"
 msgstr "Обновить курс обмена"
 
 msgid "Regenerate thumbnail from the 3D model"
-msgstr ""
+msgstr "Восстановить миниатюру из 3D модели"
 
 msgid "Regenerating thumbnail…"
 msgstr "Создание миниатюры…"
@@ -12479,6 +12562,9 @@ msgstr "Количество дней после метода расчета, в
 msgid "The append-only record of every stock movement; on-hand is the sum of its signed entries and the source of truth."
 msgstr "Журнал доступного только для добавления, отражающий каждое движение запасов; остаток на складе является суммой подписанных записей и источником истины."
 
+msgid "The authorization was refused in Onshape. Try connecting again."
+msgstr "Авторизация была отклонена в Onshape. Повторите попытку подключения."
+
 msgid "The book of all posted journal lines, summed by account — written only when the company has accounting enabled."
 msgstr "Книга всех проведенных строк журнала, суммированные по счетам — записывается только при включенной учетной политике компании."
 
@@ -12954,6 +13040,9 @@ msgstr "Оставшиеся {0} {1} больше не будут ожидать
 msgid "The residual WIP a job has left at close, swept to a Production Variance account — the only variance Carbon books for a job."
 msgstr "Остаточное незавершенное производство, оставленное заданием при закрытии, перемещено на счет производственного отклонения — единственное отклонение, которое Carbon регистрирует для задания."
 
+msgid "The response from Onshape was missing required parameters. Try connecting again."
+msgstr "В ответе Onshape отсутствовали обязательные параметры. Повторите попытку подключения."
+
 msgid "The revision number of the part"
 msgstr "Номер редакции детали"
 
@@ -13148,6 +13237,9 @@ msgstr "Эти задания имеют операции, назначенны�
 
 msgid "These journal entries are still Draft, so their debits and credits aren't in the ledger for this period. Post each one, or re-date it into a later open period."
 msgstr "Эти записи в журнале всё ещё находятся в статусе «Черновик», поэтому их дебеты и кредиты не находятся в главной книге за этот период. Опубликуйте каждую или переделируйте её на более поздний открытый период."
+
+msgid "This Carbon instance is missing its Onshape OAuth credentials. Ask an administrator to set them."
+msgstr "В этом экземпляре Carbon отсутствуют учётные данные OAuth для Onshape. Попросите администратора настроить их."
 
 msgid "This change notice is being implemented, so its changes are locked. Reopen it to edit."
 msgstr "Это уведомление об изменении реализуется, поэтому его изменения заблокированы. Откройте его повторно, чтобы отредактировать."
@@ -14495,6 +14587,9 @@ msgstr "Когда включено, правила цены (скидки по 
 msgid "When on, scanning this process's operation barcode reports all remaining open quantity as complete in one action; turn off when operators routinely report partials."
 msgstr "Когда включено, сканирование операционного штрих-кода этого процесса сообщает всю оставшуюся открытую количество как завершенную в одном действии; отключите, если операторы регулярно сообщают о частичных."
 
+msgid "When on, the traveler PDF lists the job's required materials."
+msgstr "Когда включено, PDF путевого листа задания отображает необходимые материалы задания."
+
 msgid "When on, this party's invoices skip tax calculation; the party is responsible for keeping the exemption certificate current."
 msgstr "Если включено, счета этой стороны пропускают расчет налога; сторона отвечает за актуальность сертификата об освобождении."
 
@@ -14503,6 +14598,9 @@ msgstr "Если включено, это переопределение цен�
 
 msgid "When on, this rule fires for every target of its type. Assignment rows are ignored but preserved."
 msgstr "Когда включено, это правило срабатывает для каждой цели его типа. Строки назначения игнорируются, но сохраняются."
+
+msgid "When on, tracked material is pre-selected by pick order (FEFO) even without a picking list. When off, operators start on the Scan tab."
+msgstr ""
 
 msgid "When supplier responses are expected back; suppliers see this date on the RFQ portal and Carbon stops accepting late responses after it (configurable)."
 msgstr "Когда ожидается ответ поставщиков; поставщики видят эту дату на портале RFQ, и Carbon перестает принимать поздние ответы после нее (настраивается)."

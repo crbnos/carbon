@@ -67,10 +67,21 @@ pub mod ffi {
         /// Test fixture generator: a single cylinder — the canonical curved
         /// surface for asserting tessellation smoothness (circle segments).
         fn write_test_cylinder(path: &str, radius: f64, height: f64) -> bool;
+
+        /// Test fixture generator: a square plate with `holes` small
+        /// through-holes drilled in it — a small curved feature inside a large
+        /// bounding box, the case where sag-based deflection alone goes blocky.
+        fn write_test_plate_with_holes(
+            path: &str,
+            size: f64,
+            thickness: f64,
+            hole_radius: f64,
+            holes: u32,
+        ) -> bool;
     }
 }
 
 pub use ffi::{
-    read_brep, read_iges, read_step, read_xbf, step_to_xbf, write_test_cylinder, write_test_step,
-    RawNode, Tree,
+    read_brep, read_iges, read_step, read_xbf, step_to_xbf, write_test_cylinder,
+    write_test_plate_with_holes, write_test_step, RawNode, Tree,
 };

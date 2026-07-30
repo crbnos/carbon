@@ -472,10 +472,13 @@ async fn create_convert(
                     glb_path: req["outputs"]["glb"]["path"].as_str().map(str::to_string),
                     graph_path: req["outputs"]["graph"]["path"].as_str().map(str::to_string),
                     lin: req["options"]["linearDeflection"].as_f64().unwrap_or(0.1),
-                    // Matches the optimize default: 0.25 rad keeps circles smooth
-                    // (≥ ~25 segments; 0.5 gave a blocky ~13). Also part of the
-                    // convert result-cache key, so older coarse results aren't reused.
-                    ang: req["options"]["angularDeflection"].as_f64().unwrap_or(0.25),
+                    // Matches the optimize default: 0.15 rad ≈ 42 segments per
+                    // circle (0.25 gave 25, 0.5 a blocky 13). Angular deflection
+                    // is the ONLY scale-invariant constraint, so this is what a
+                    // small hole/groove's roundness actually comes from — sag
+                    // never binds on a small radius. Also part of the convert
+                    // result-cache key, so older coarse results aren't reused.
+                    ang: req["options"]["angularDeflection"].as_f64().unwrap_or(0.15),
                     optimize: req["options"]["optimize"].as_bool().unwrap_or(true),
                 },
             );
@@ -582,10 +585,13 @@ pub fn optimize_opts(out: &Value, q: &Value) -> actions::optimize::Opts {
             .as_u64()
             .unwrap_or(DEFAULT_MAX_OUTPUT_BYTES) as usize,
         lin: q["linear_deflection"].as_f64().unwrap_or(0.1),
-        // 0.25 rad → a full circle tessellates with ≥ ~25 segments (0.5 gave a
-        // visibly blocky ~13). The bridge also scales linear deflection to each
-        // shape, so small parts keep smooth curvature too.
-        ang: q["angular_deflection"].as_f64().unwrap_or(0.25),
+        // 0.15 rad → ≈ 42 segments per circle (0.25 gave 25, 0.5 a blocky 13).
+        // Angular deflection is the only SCALE-INVARIANT constraint: a small
+        // hole's sag budget is satisfied after a handful of chords, so segment
+        // count on holes/grooves/fillets comes from this value alone. The bridge
+        // also scales linear deflection to each shape, which covers the large
+        // curved faces where sag does bind.
+        ang: q["angular_deflection"].as_f64().unwrap_or(0.15),
         // Per-request budget wins; else the env default (set on the Lambda path).
         budget: q["time_budget_secs"]
             .as_u64()

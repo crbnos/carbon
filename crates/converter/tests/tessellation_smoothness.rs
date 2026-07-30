@@ -6,6 +6,35 @@
 
 use converter::convert::convert_step;
 
+/// Triangles contributed by ONE drilled hole: tessellate the same plate with and
+/// without holes and take the per-hole delta. The delta is proportional to the
+/// circle's segment count (side wall + the retriangulated top/bottom rims), so
+/// it is the metric for "how round is a hole".
+fn tris_per_hole(size: f64, hole_radius: f64, lin: f64, ang: f64) -> f64 {
+    const HOLES: u32 = 8;
+    let plain = plate_tris(size, hole_radius, 0, lin, ang);
+    let drilled = plate_tris(size, hole_radius, HOLES, lin, ang);
+    (drilled as f64 - plain as f64) / HOLES as f64
+}
+
+fn plate_tris(size: f64, hole_radius: f64, holes: u32, lin: f64, ang: f64) -> u64 {
+    let dir = std::env::temp_dir().join(format!(
+        "carbon-plate-{size}-{}-{holes}-{}-{}",
+        (hole_radius * 1000.0) as u64,
+        (lin * 1000.0) as u64,
+        (ang * 1000.0) as u64
+    ));
+    std::fs::create_dir_all(&dir).unwrap();
+    let path = dir.join("plate.step");
+    let path_str = path.to_str().unwrap();
+    assert!(
+        occt_bridge::write_test_plate_with_holes(path_str, size, 10.0, hole_radius, holes),
+        "failed to write test plate STEP"
+    );
+    let text = std::fs::read_to_string(path_str).unwrap();
+    convert_step(path_str, &text, lin, ang).expect("convert").triangles as u64
+}
+
 fn cylinder_tris(radius: f64, height: f64, lin: f64, ang: f64) -> u64 {
     let dir = std::env::temp_dir().join(format!(
         "carbon-cyl-{radius}-{height}-{}-{}",
@@ -60,5 +89,57 @@ fn small_parts_keep_proportional_smoothness() {
     assert!(
         small >= 90,
         "small cylinder should still have >= ~25 circle segments (got {small} tris)"
+    );
+}
+
+/// A hole's roundness must not depend on how big the part around it is, nor on
+/// the hole's own radius. Linear deflection is scaled to the SHAPE's bbox, so a
+/// 1.5 mm hole in a 200 mm plate gets a sag budget it satisfies after a handful
+/// of chords — only angular deflection keeps it round. This pins that: a tiny
+/// hole in a big plate tessellates the same as a big hole, and the same as a
+/// hole in a small plate.
+#[test]
+fn holes_are_round_regardless_of_hole_or_part_size() {
+    let tiny_hole_big_plate = tris_per_hole(200.0, 1.5, 0.1, 0.15);
+    let big_hole_big_plate = tris_per_hole(200.0, 5.0, 0.1, 0.15);
+    let hole_small_plate = tris_per_hole(20.0, 1.0, 0.1, 0.15);
+
+    for (label, got) in [
+        ("tiny hole / big plate", tiny_hole_big_plate),
+        ("big hole / big plate", big_hole_big_plate),
+        ("hole / small plate", hole_small_plate),
+    ] {
+        // 0.15 rad => ~42 segments; the per-hole delta runs ~8x the segment
+        // count, so ~340 tris. Floor well under that to stay robust to OCCT
+        // retriangulation details while still catching a drop to 25 (~208) or
+        // the old 13 (~108) segments.
+        assert!(
+            got >= 280.0,
+            "{label}: hole tessellated too coarsely ({got:.0} tris/hole)"
+        );
+    }
+    // Scale invariance: all three within 10% of each other.
+    let min = tiny_hole_big_plate
+        .min(big_hole_big_plate)
+        .min(hole_small_plate);
+    let max = tiny_hole_big_plate
+        .max(big_hole_big_plate)
+        .max(hole_small_plate);
+    assert!(
+        max <= min * 1.1,
+        "hole roundness varies with size ({min:.0}..{max:.0} tris/hole)"
+    );
+}
+
+/// Tightening angular deflection is the lever that makes small features rounder
+/// — each step must actually buy segments, or the default is doing nothing.
+#[test]
+fn tighter_angular_deflection_buys_hole_segments() {
+    let coarse = tris_per_hole(200.0, 1.5, 0.1, 0.5);
+    let previous = tris_per_hole(200.0, 1.5, 0.1, 0.25);
+    let current = tris_per_hole(200.0, 1.5, 0.1, 0.15);
+    assert!(
+        current > previous && previous > coarse,
+        "expected monotonic segment gain (0.5 -> {coarse:.0}, 0.25 -> {previous:.0}, 0.15 -> {current:.0})"
     );
 }

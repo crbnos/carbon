@@ -149,6 +149,7 @@ const log = getLogger("mes", "job-operation");
 type JobOperationProps = {
   events: ProductionEvent[];
   expiredEntityPolicy?: "Warn" | "Block" | "BlockWithOverride";
+  autoSelectMaterialWithoutPickingList?: boolean;
   files: Promise<StorageItem[]>;
   kanban: Kanban | null;
   materials: Promise<{
@@ -215,6 +216,7 @@ function PickedBadge({
 export const JobOperation = ({
   events,
   expiredEntityPolicy = "Block",
+  autoSelectMaterialWithoutPickingList = false,
   files,
   job,
   kanban,
@@ -1467,6 +1469,9 @@ export const JobOperation = ({
                                 operation.operationQuantity ?? undefined
                               }
                               expiredEntityPolicy={expiredEntityPolicy}
+                              autoSelectMaterialWithoutPickingList={
+                                autoSelectMaterialWithoutPickingList
+                              }
                               locationId={locationId}
                               workCenterId={operation.workCenterId ?? undefined}
                               material={selectedMaterial ?? undefined}

@@ -36,11 +36,12 @@ pub struct Opts {
     pub tolerance: Option<f32>,
     /// Auto-mode normalized error budget. `None` = lossless.
     pub auto_error: Option<f32>,
-    /// Size-adaptive policy: the caller supplied no explicit quality knob, so the
-    /// service is free to scale the compression by the model's tessellated weight.
-    /// When set, `run_optimize` overrides `auto_error` from `input_bytes` (small
-    /// models keep the baseline high-quality budget; large models decimate harder,
-    /// still error-bounded). Off when any explicit knob was given (full override).
+    /// The caller supplied no explicit quality knob, so the service owns the
+    /// fidelity policy: `run_optimize` runs a lossless pass first and, only when
+    /// a gate fails, re-runs with a keep ratio PREDICTED from that pass's
+    /// measured overshoot (`required_keep`), ignoring `ladder`/`auto_error`.
+    /// Off when any explicit knob was given — then the caller's ladder is
+    /// authoritative.
     pub auto_scale: bool,
     /// Draco quantization bits (position, normal, texcoord) — Draco codec only.
     pub draco_bits: (i32, i32, i32),
@@ -203,30 +204,79 @@ impl Src {
     }
 }
 
-/// Map tessellated GLB weight → auto-mode error budget (normalized, a fraction
-/// of each mesh's extent). At/below `SMALL` there is NO simplification at all
-/// (`None` — lossless weld/reorder/encode only): a small model needs no size
-/// win, and even a "high-quality" error budget visibly chamfers features that
-/// are small relative to the part (a hole in a long part decimates to a
-/// polygon). Above that, log-ramp from the baseline budget to `MAX_ERR` at
-/// `LARGE`. Always error-bounded and per-mesh adaptive — never unbounded ratio
-/// targeting.
-fn derive_auto_error(input_bytes: usize) -> Option<f32> {
-    const SMALL: f64 = 2.0 * 1024.0 * 1024.0; // 2 MiB — below this, lossless
-    const LARGE: f64 = 32.0 * 1024.0 * 1024.0; // 32 MiB
-    const MAX_ERR: f64 = 0.02; // 2% of extent — heavier but still reasonable
-    if (input_bytes as f64) <= SMALL {
+/// Safety margin applied to the predicted keep ratio. Decoded (render-weight)
+/// bytes are exactly linear in kept triangles and encoded bytes are close to
+/// linear, but the meshopt encoder's per-vertex rate wobbles with connectivity —
+/// the margin makes the first targeted pass land under the gates instead of a
+/// hair over (which would cost another full pass).
+const AUTO_TARGET_MARGIN: f64 = 0.85;
+
+/// How many measured, targeted simplify passes to attempt after the lossless
+/// pass fails the gates. Each pass re-predicts from the previous pass's real
+/// numbers, so convergence is geometric; 3 misses means the prediction model
+/// does not hold for this input (fail loudly rather than loop).
+const AUTO_MAX_TARGETED_PASSES: usize = 3;
+
+/// Length of a GLB's JSON (structure) chunk — the scene graph, nodes, and
+/// materials. It does not shrink when triangles are removed, so the encoded
+/// size is `json + bin(tris)`: an affine model, not a linear one. `None` on
+/// anything that isn't a well-formed GLB (we only ever call this on our own
+/// encoder's output, so that is a defensive fallback, not an expected path).
+fn glb_json_len(glb: &[u8]) -> Option<usize> {
+    if glb.len() < 20 || &glb[0..4] != b"glTF" || &glb[16..20] != b"JSON" {
         return None;
     }
-    let min_err = optimize::DEFAULT_AUTO_ERROR as f64; // 0.5%
-    let b = (input_bytes as f64).min(LARGE);
-    let t = (b.ln() - SMALL.ln()) / (LARGE.ln() - SMALL.ln()); // 0..1
-    Some((min_err + (MAX_ERR - min_err) * t) as f32)
+    let len = u32::from_le_bytes(glb[12..16].try_into().ok()?) as usize;
+    (len <= glb.len()).then_some(len)
 }
 
-/// Resolve the format, load the source into GLB bytes, then walk the simplify
-/// ladder — the first rung under both gates wins; if none fit, fail with
-/// `cannot_fit_budget` (never store an over-cap blob).
+/// Predict the fraction of triangles a failing pass may keep so the next pass
+/// lands under both gates. Decoded (render-weight) bytes are linear in triangle
+/// count; encoded bytes are the JSON structure constant plus a ~linear mesh
+/// term — so the constant is subtracted from both the measurement and the cap
+/// before inverting the worst overshoot (times the margin). `None` = the pass
+/// already fits.
+fn required_keep(
+    decoded: usize,
+    encoded: usize,
+    json_len: usize,
+    max_packed: usize,
+    max_output: usize,
+) -> Option<f64> {
+    if decoded <= max_packed && encoded <= max_output {
+        return None;
+    }
+    let over_packed = decoded as f64 / max_packed as f64;
+    // Guard division by ~zero: json_len >= max_output is the infeasible case
+    // the caller fails fast on; a stale/absent json_len degrades to the plain
+    // linear model.
+    let bin = encoded.saturating_sub(json_len) as f64;
+    let bin_cap = max_output.saturating_sub(json_len) as f64;
+    let over_encoded = if bin_cap > 0.0 {
+        bin / bin_cap
+    } else {
+        f64::INFINITY
+    };
+    Some((AUTO_TARGET_MARGIN / over_packed.max(over_encoded)).min(1.0))
+}
+
+/// Resolve the format and load the source into GLB bytes, then fit it under the
+/// size/render-weight gates.
+///
+/// Auto mode (no explicit quality knob) is MEASURE → PREDICT, never a guessed
+/// coefficient: pass 1 is lossless (weld + reorder + encode only), and since
+/// both gate metrics scale ~linearly with triangle count, its real numbers
+/// predict the exact keep ratio a failing model needs (`required_keep`). Most
+/// models fit lossless and are returned untouched — geometry is only reduced
+/// when a gate proves it must be, and then by the minimum measured amount.
+/// (The old weight-derived error budget decimated models that had no size
+/// problem: a 34 MB-decoded connector — 12x under the render-weight gate —
+/// lost 95% of its triangles, pins first, because meshopt's error normalizes
+/// to the merged mesh's extent.)
+///
+/// Explicit knobs (ladder/simplify/tolerance/auto_error) bypass all of this —
+/// the caller owns the policy and their ladder is walked as given. If nothing
+/// fits, fail with `cannot_fit_budget` (never store an over-cap blob).
 fn run_optimize(
     path: &str,
     declared: &str,
@@ -244,24 +294,144 @@ fn run_optimize(
     let glb = src.bytes();
     let input_bytes = glb.len();
 
-    // Size-adaptive quality (only when the caller gave no explicit knob): scale
-    // the auto-mode error budget by the tessellated GLB weight — small models
-    // skip simplification entirely (lossless), mid-size decimate within a
-    // still-bounded per-mesh budget, large ones harder. Smooths the old
-    // fit-or-fail cliff. The gate + coarse ratio rungs stay the final safety
-    // net below.
-    let auto_error = if opts.auto_scale {
-        derive_auto_error(input_bytes)
-    } else {
-        opts.auto_error
+    // One optimize pass over the tessellated GLB. Every source is GLB here
+    // (STEP/STL ingested, GLB mmap'd, text glTF repacked in load_source).
+    let run_pass = |simplify: Option<f32>,
+                    auto_error: Option<f32>,
+                    aggressive: bool|
+     -> Result<Outcome, ActionErr> {
+        let o = optimize::Options {
+            codec: opts.codec,
+            simplify,
+            tolerance: opts.tolerance,
+            auto_error,
+            simplify_aggressive: aggressive,
+            draco_bits: opts.draco_bits,
+            quantize_normals: opts.quantize_normals,
+            merge_primitives: opts.merge_primitives,
+            weld: opts.weld,
+            reorder: opts.reorder,
+        };
+        let mut res = optimize::optimize_glb(glb, &o)
+            .map_err(|e| ActionErr::new("optimize_failed", e.message))?;
+        res.stats.input_bytes = input_bytes;
+        Ok(Outcome {
+            glb: res.glb,
+            stats: res.stats,
+            codec: opts.codec,
+            ratio: simplify,
+            warnings: Vec::new(),
+            detected_format,
+            detected_via,
+        })
+    };
+    let fits =
+        |o: &Outcome| o.stats.decoded_bytes <= opts.max_packed && o.glb.len() <= opts.max_output;
+    let over_msg = |label: &str, o: &Outcome| {
+        format!(
+            "{label} over budget: render-weight {}B (max {}B), output {}B (max {}B)",
+            o.stats.decoded_bytes,
+            opts.max_packed,
+            o.glb.len(),
+            opts.max_output
+        )
     };
 
+    if opts.auto_scale {
+        // Measure at full fidelity first.
+        let lossless = run_pass(None, None, false)?;
+        if fits(&lossless) {
+            return Ok(lossless);
+        }
+        let mut warnings = vec![over_msg("lossless", &lossless)];
+        // The JSON (structure) chunk survives simplification whole — if it
+        // alone exceeds the output cap, no amount of triangle removal can ever
+        // fit. Fail now with the real reason instead of burning three passes
+        // discovering it. (Revisit if the optimizer ever learns to prune the
+        // scene graph itself — then this floor stops being a floor.)
+        let json_len = glb_json_len(&lossless.glb).unwrap_or(0);
+        if json_len >= opts.max_output {
+            return Err(ActionErr::new(
+                "cannot_fit_budget",
+                format!(
+                    "scene structure alone ({json_len}B of glTF JSON) exceeds the output cap \
+                     ({}B) — simplification cannot fit this model",
+                    opts.max_output
+                ),
+            ));
+        }
+        // Predict the keep ratio from the measured overshoot, then converge:
+        // each miss re-predicts from that pass's real numbers, so the ratio
+        // shrinks geometrically. The bounded pass count replaces the old
+        // skip-to-coarsest deadline dance — pass 2 already targets the size the
+        // model must reach, there are no intermediate rungs to skip.
+        let mut keep = required_keep(
+            lossless.stats.decoded_bytes,
+            lossless.glb.len(),
+            json_len,
+            opts.max_packed,
+            opts.max_output,
+        )
+        .unwrap_or(1.0);
+        let mut smallest = lossless.glb.len();
+        let mut prev_encoded = lossless.glb.len();
+        let mut aggressive = false;
+        for _ in 0..AUTO_MAX_TARGETED_PASSES {
+            // Ratio targeting hits its triangle count whatever the error — the
+            // gate has proven the reduction unavoidable, and meshopt removes the
+            // lowest-error collapses first, so what fidelity can survive does.
+            let out = run_pass(Some(keep as f32), None, aggressive)?;
+            if fits(&out) {
+                return Ok(out);
+            }
+            warnings.push(over_msg(
+                &format!("keep={keep:.4}{}", if aggressive { " (sloppy)" } else { "" }),
+                &out,
+            ));
+            let further = required_keep(
+                out.stats.decoded_bytes,
+                out.glb.len(),
+                glb_json_len(&out.glb).unwrap_or(0),
+                opts.max_packed,
+                opts.max_output,
+            )
+            .unwrap_or(1.0);
+            // Re-anchor on what the pass actually ACHIEVED, not what it was
+            // asked for — topology-preserving simplify stalls above the target
+            // when it runs out of legal edge collapses, and multiplying the
+            // requested ratio down further would change nothing.
+            let achieved = out.stats.output_triangles as f64
+                / out.stats.input_triangles.max(1) as f64;
+            keep = (achieved * further).min(keep);
+            // Stall: the pass barely moved the encoded size — no smaller target
+            // can help while collapses are exhausted. Escalate to sloppy
+            // (positional) simplification, which trades topology for the
+            // ability to reach any triangle count. Only ever reached after
+            // bounded simplification has provably hit its floor.
+            if out.glb.len() as f64 > prev_encoded as f64 * 0.98 {
+                aggressive = true;
+            }
+            prev_encoded = out.glb.len();
+            smallest = smallest.min(out.glb.len());
+        }
+        return Err(ActionErr::new(
+            "cannot_fit_budget",
+            format!(
+                "could not fit the size/render-weight budget (smallest {smallest}B, max {}B) \
+                 after {AUTO_MAX_TARGETED_PASSES} targeted passes. {}",
+                opts.max_output,
+                warnings.join("; ")
+            ),
+        ));
+    }
+
+    // Explicit quality knobs: walk the caller's ladder as given, first rung
+    // under both gates wins.
     let ladder = if opts.ladder.is_empty() {
         vec![None]
     } else {
         opts.ladder.clone()
     };
-
     let mut best: Option<Outcome> = None;
     let mut warnings: Vec<String> = Vec::new();
     let mut i = 0;
@@ -283,44 +453,11 @@ fn run_optimize(
             }
         }
         let rung = ladder[i];
-        let o = optimize::Options {
-            codec: opts.codec,
-            simplify: rung,
-            tolerance: opts.tolerance,
-            auto_error,
-            simplify_aggressive: opts.simplify_aggressive,
-            draco_bits: opts.draco_bits,
-            quantize_normals: opts.quantize_normals,
-            merge_primitives: opts.merge_primitives,
-            weld: opts.weld,
-            reorder: opts.reorder,
-        };
-        // Every source is GLB here (STEP/STL ingested to GLB, GLB mmap'd, text
-        // glTF repacked to GLB in load_source).
-        let mut res = optimize::optimize_glb(glb, &o)
-            .map_err(|e| ActionErr::new("optimize_failed", e.message))?;
-        res.stats.input_bytes = input_bytes;
-        let passes = res.stats.decoded_bytes <= opts.max_packed && res.glb.len() <= opts.max_output;
-        let outcome = Outcome {
-            glb: res.glb,
-            stats: res.stats,
-            codec: opts.codec,
-            ratio: rung,
-            warnings: Vec::new(),
-            detected_format,
-            detected_via,
-        };
-        if passes {
+        let outcome = run_pass(rung, opts.auto_error, opts.simplify_aggressive)?;
+        if fits(&outcome) {
             return Ok(outcome);
         }
-        warnings.push(format!(
-            "rung {:?} over budget: render-weight {}B (max {}B), output {}B (max {}B)",
-            rung,
-            outcome.stats.decoded_bytes,
-            opts.max_packed,
-            outcome.glb.len(),
-            opts.max_output
-        ));
+        warnings.push(over_msg(&format!("rung {rung:?}"), &outcome));
         best = Some(outcome);
         i += 1;
     }
@@ -333,7 +470,7 @@ fn run_optimize(
         format!(
             "could not fit the size/render-weight budget (smallest {smallest}B, max {}B); tried rungs {:?}. {}",
             opts.max_output,
-            opts.ladder,
+            ladder,
             warnings.join("; ")
         ),
     ))
@@ -462,16 +599,131 @@ mod tests {
     use super::*;
 
     #[test]
-    fn auto_error_scales_with_size() {
-        let base = optimize::DEFAULT_AUTO_ERROR;
-        // Small models get NO simplification — lossless encode only.
-        assert_eq!(derive_auto_error(64 * 1024), None);
-        assert_eq!(derive_auto_error(2 * 1024 * 1024), None);
-        // Large models decimate harder, capped at 2%.
-        assert!((derive_auto_error(64 * 1024 * 1024).unwrap() - 0.02).abs() < 1e-6);
-        // Monotonic through the ramp, within bounds.
-        let mid = derive_auto_error(8 * 1024 * 1024).unwrap();
-        assert!(mid > base && mid < 0.02);
-        assert!(derive_auto_error(4 * 1024 * 1024).unwrap() < mid);
+    #[ignore = "scratch probe: needs real STEP files in .ai/scratch/"]
+    fn probe_real_model() {
+        let scratch = concat!(env!("CARGO_MANIFEST_DIR"), "/../../.ai/scratch");
+        let opts = crate::optimize_opts(&serde_json::json!({}), &serde_json::json!({}));
+        eprintln!(
+            "PROBE opts lin={} ang={} auto_scale={} max_packed={} max_output={}",
+            opts.lin, opts.ang, opts.auto_scale, opts.max_packed, opts.max_output
+        );
+        let mut files: Vec<_> = std::fs::read_dir(scratch)
+            .expect("scratch dir")
+            .filter_map(|e| e.ok().map(|e| e.path()))
+            .filter(|p| {
+                p.extension()
+                    .and_then(|x| x.to_str())
+                    .is_some_and(|x| ["step", "stp", "gltf", "glb", "stl"].contains(&x))
+            })
+            .collect();
+        files.sort();
+        assert!(!files.is_empty(), "no model files in {scratch}");
+        for path in files {
+            let p = path.to_str().unwrap();
+            let name = path.file_name().unwrap().to_str().unwrap();
+            let ext = path.extension().unwrap().to_str().unwrap();
+            for (label, max_packed, max_output) in [
+                ("prod-gates", opts.max_packed, opts.max_output),
+                // Force the measured-overshoot predictor path.
+                ("tight-gates", 8 * 1024 * 1024, 2 * 1024 * 1024),
+            ] {
+                let mut o = crate::optimize_opts(&serde_json::json!({}), &serde_json::json!({}));
+                o.max_packed = max_packed;
+                o.max_output = max_output;
+                let t0 = std::time::Instant::now();
+                let out = match run_optimize(p, ext, Some(ext), &o) {
+                    Ok(r) => r,
+                    Err(e) => panic!("optimize failed on {p} ({label}): {} {}", e.code, e.message),
+                };
+                eprintln!(
+                    "PROBE {name} {label} in {:?}: ratio={:?} in_tris={} out_tris={} kept={:.1}% decoded={} glb={}",
+                    t0.elapsed(),
+                    out.ratio,
+                    out.stats.input_triangles,
+                    out.stats.output_triangles,
+                    100.0 * out.stats.output_triangles as f64
+                        / out.stats.input_triangles.max(1) as f64,
+                    out.stats.decoded_bytes,
+                    out.glb.len()
+                );
+            }
+        }
+    }
+
+    /// A model under both gates must never be touched — `required_keep` returns
+    /// `None` (no simplify pass runs at all). A weight-derived budget is what
+    /// shredded the connector housing: 95% of its triangles deleted while it sat
+    /// 5x under the output cap and 12x under the render-weight cap.
+    #[test]
+    fn required_keep_is_none_when_the_model_fits() {
+        assert_eq!(required_keep(0, 0, 0, 100, 100), None);
+        assert_eq!(required_keep(100, 100, 0, 100, 100), None);
+        // The real connector's numbers vs the production gates.
+        assert_eq!(
+            required_keep(33_933_600, 9_957_924, 0, 419_430_400, 52_428_800),
+            None
+        );
+    }
+
+    /// The keep ratio is the inverse of the WORST gate overshoot times the
+    /// safety margin — both gate metrics are ~linear in triangle count, so this
+    /// is a prediction, not a guess.
+    #[test]
+    fn required_keep_tracks_the_worst_overshoot() {
+        // 2x over the render-weight gate, encoded fine → keep 0.85/2.
+        let k = required_keep(200, 10, 0, 100, 100).unwrap();
+        assert!((k - 0.425).abs() < 1e-9, "got {k}");
+        // Encoded gate is the worse one (4x) → it wins over decoded (2x).
+        let k = required_keep(200, 400, 0, 100, 100).unwrap();
+        assert!((k - 0.2125).abs() < 1e-9, "got {k}");
+        // Barely over still shrinks (margin applies) and never exceeds 1.
+        let k = required_keep(101, 0, 0, 100, 100).unwrap();
+        assert!(k < 1.0 && k > 0.8, "got {k}");
+    }
+
+    /// Encoded bytes are structure + mesh; only the mesh term shrinks with
+    /// triangles. The affine correction subtracts the JSON constant from both
+    /// sides — without it the prediction is too optimistic on structure-heavy
+    /// files (Vehicle: ~3 MB of scene JSON cost an extra full pass).
+    #[test]
+    fn required_keep_subtracts_the_structure_constant() {
+        // encoded = 40 JSON + 360 mesh, cap 100: plain model says keep
+        // 0.85/4 = 0.2125, but the mesh must fit in 100-40=60 → 0.85*60/360.
+        let k = required_keep(0, 400, 40, 1_000_000, 100).unwrap();
+        assert!((k - 0.85 * 60.0 / 360.0).abs() < 1e-9, "got {k}");
+        // json_len at/over the cap is the caller's fast-fail case; the
+        // prediction itself degrades to "keep nothing" rather than dividing
+        // by zero.
+        let k = required_keep(0, 400, 100, 1_000_000, 100).unwrap();
+        assert!(k < 1e-12, "got {k}");
+    }
+
+    /// Convergence: re-predicting from a missed pass's real numbers shrinks the
+    /// ratio geometrically — a 100x-over model reaches its target in two steps.
+    #[test]
+    fn required_keep_converges_geometrically() {
+        let k1 = required_keep(10_000, 0, 0, 100, 100).unwrap(); // 100x over
+        let after_pass = (10_000.0 * k1) as usize; // linear model holds
+        assert!(after_pass <= 100, "one predicted pass should land under");
+    }
+
+    /// Header parse of our own encoder's GLB output, with the defensive
+    /// fallbacks for anything malformed.
+    #[test]
+    fn glb_json_len_parses_and_guards() {
+        let mut glb = Vec::new();
+        glb.extend_from_slice(b"glTF");
+        glb.extend_from_slice(&2u32.to_le_bytes()); // version
+        glb.extend_from_slice(&28u32.to_le_bytes()); // total length
+        glb.extend_from_slice(&8u32.to_le_bytes()); // JSON chunk length
+        glb.extend_from_slice(b"JSON");
+        glb.extend_from_slice(b"{\"a\":1} ");
+        assert_eq!(glb_json_len(&glb), Some(8));
+        assert_eq!(glb_json_len(b"not a glb"), None);
+        assert_eq!(glb_json_len(&glb[..12]), None);
+        // Declared JSON length larger than the blob → reject.
+        let mut bad = glb.clone();
+        bad[12..16].copy_from_slice(&10_000u32.to_le_bytes());
+        assert_eq!(glb_json_len(&bad), None);
     }
 }

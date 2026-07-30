@@ -33,6 +33,7 @@ import { redirect, useFetcher, useLoaderData } from "react-router";
 import CompanyDefaultAttachmentsCard from "~/components/CompanyDefaultAttachmentsCard";
 import { EmailRecipients, Users } from "~/components/Form";
 import Country from "~/components/Form/Country";
+import SettingsSectionHeader from "~/components/SettingsSectionHeader";
 import {
   accountsPayableBillingAddressValidator,
   defaultSupplierCcValidator,
@@ -414,9 +415,9 @@ export default function PurchasingSettingsRoute() {
           <Trans>Purchasing</Trans>
         </Heading>
 
-        <p className="mt-4 text-xxs text-foreground/70 uppercase font-light tracking-wide">
+        <SettingsSectionHeader>
           <Trans>Documents</Trans>
-        </p>
+        </SettingsSectionHeader>
 
         <CompanyDefaultAttachmentsCard
           files={(defaultAttachments ?? []) as any}
@@ -545,9 +546,9 @@ export default function PurchasingSettingsRoute() {
           </Card>
         )}
 
-        <p className="mt-4 text-xxs text-foreground/70 uppercase font-light tracking-wide">
+        <SettingsSectionHeader>
           <Trans>Purchase Orders</Trans>
-        </p>
+        </SettingsSectionHeader>
 
         <Card>
           <ValidatedForm
@@ -608,9 +609,9 @@ export default function PurchasingSettingsRoute() {
           </ValidatedForm>
         </Card>
 
-        <p className="mt-4 text-xxs text-foreground/70 uppercase font-light tracking-wide">
+        <SettingsSectionHeader>
           <Trans>Automatic Updates</Trans>
-        </p>
+        </SettingsSectionHeader>
 
         <Card>
           <ValidatedForm
@@ -686,9 +687,9 @@ export default function PurchasingSettingsRoute() {
             </HStack>
           </CardHeader>
         </Card>
-        <p className="mt-4 text-xxs text-foreground/70 uppercase font-light tracking-wide">
+        <SettingsSectionHeader>
           <Trans>Suppliers</Trans>
-        </p>
+        </SettingsSectionHeader>
 
         <Card>
           <CardHeader>
@@ -714,9 +715,9 @@ export default function PurchasingSettingsRoute() {
           </CardHeader>
         </Card>
 
-        <p className="mt-4 text-xxs text-foreground/70 uppercase font-light tracking-wide">
+        <SettingsSectionHeader>
           <Trans>Notifications</Trans>
-        </p>
+        </SettingsSectionHeader>
 
         <Card>
           <ValidatedForm

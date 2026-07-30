@@ -1067,6 +1067,19 @@ export async function updateLeadTimesOnReceiptSetting(
     .eq("id", companyId);
 }
 
+export async function updateIncludeMaterialsOnTravelerSetting(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  includeMaterialsOnTraveler: boolean
+) {
+  // Cast: the includeMaterialsOnTraveler column is added by migration
+  // 20260728151742 but isn't in the generated types until they're regenerated
+  // against the migrated DB (mirrors updateLeadTimesOnReceiptSetting).
+  return (client.from("companySettings") as any)
+    .update(sanitize({ includeMaterialsOnTraveler }))
+    .eq("id", companyId);
+}
+
 export async function updateAccountsPayableAddressSetting(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1392,6 +1405,28 @@ export async function updateShowCustomerReadableIdSetting(
   return client
     .from("companySettings")
     .update(sanitize({ showCustomerReadableId }))
+    .eq("id", companyId);
+}
+
+export async function updateAutoSelectMaterialWithoutPickingListSetting(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  autoSelectMaterialWithoutPickingList: boolean
+) {
+  return client
+    .from("companySettings")
+    .update(sanitize({ autoSelectMaterialWithoutPickingList }))
+    .eq("id", companyId);
+}
+
+export async function updateIncompletePickingListPolicySetting(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  incompletePickingListPolicy: "warn" | "error"
+) {
+  return client
+    .from("companySettings")
+    .update(sanitize({ incompletePickingListPolicy }))
     .eq("id", companyId);
 }
 

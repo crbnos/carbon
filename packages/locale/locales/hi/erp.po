@@ -962,6 +962,9 @@ msgstr "एक आंतरिक कार्य केंद्र के ब�
 msgid "An operation's position in its work center's queue — the order the floor picks work up — set by reordering cards on the Work Centers board without changing any dates."
 msgstr "एक ऑपरेशन की अपने कार्य केंद्र की कतार में स्थिति — वह क्रम जिससे मंजिल काम उठाती है — कार्य केंद्र बोर्ड पर कार्डों को पुनः सूचीबद्ध करके किसी भी तारीखों को बदले बिना सेट किया जाता है।"
 
+msgid "An unexpected error occurred while connecting to Onshape. Try connecting again."
+msgstr "Onshape से कनेक्ट करते समय एक अनपेक्षित त्रुटि हुई। दोबारा कनेक्ट करने का प्रयास करें।"
+
 msgid "Anchors the Plan timeline to real dates. Leave blank for a relative, week-numbered timeline. Setting either one fills in the rest."
 msgstr "योजना समयरेखा को वास्तविक तारीखों से जोड़ता है। सापेक्ष, सप्ताह-संख्या वाली समयरेखा के लिए खाली छोड़ें। किसी एक को सेट करने से बाकी भर जाता है।"
 
@@ -1220,6 +1223,9 @@ msgstr "क्या आप {0} को हटाना सुनिश्चि�
 #. placeholder {0}: pickingList.pickingListId
 msgid "Are you sure you want to delete {0}? This cannot be undone."
 msgstr "क्या आप सुनिश्चित हैं कि आप {0} को हटाना चाहते हैं? यह पूर्ववत नहीं किया जा सकता।"
+
+msgid "Are you sure you want to delete {name}? This cannot be undone."
+msgstr "क्या आप सुनिश्चित हैं कि आप {name} को हटाना चाहते हैं? यह पूर्ववत नहीं किया जा सकता।"
 
 #. placeholder {0}: selectedCustomField?.name
 msgid "Are you sure you want to delete the {0} field?"
@@ -3023,6 +3029,9 @@ msgstr "विश्लेषण के लिए क्षेत्र छव�
 msgid "Could not read the document: {0}"
 msgstr "दस्तावेज़ नहीं पढ़ा जा सका: {0}"
 
+msgid "Couldn't complete the Onshape connection"
+msgstr "Onshape कनेक्शन पूरा नहीं हो सका"
+
 msgid "Couldn't load documents"
 msgstr "दस्तावेज़ लोड नहीं हो सके"
 
@@ -3031,6 +3040,9 @@ msgstr "संबंधित दस्तावेज़ लोड नहीं
 
 msgid "Couldn't reschedule the job. Please try again."
 msgstr "कार्य पुनर्निर्धारित नहीं हो सका। कृपया पुनः प्रयास करें।"
+
+msgid "Couldn't save the Onshape connection"
+msgstr "Onshape कनेक्शन सहेजा नहीं जा सका"
 
 msgid "Count"
 msgstr "गिनती"
@@ -3666,6 +3678,8 @@ msgstr "तय करें कि यदि कोई ऑपरेटर एक
 
 msgid "Decimal places"
 msgstr "दशमलव स्थान"
+msgid "Decide what happens when an operator presses Finish on the shop floor with material still unpicked."
+msgstr ""
 
 msgid "Decimal Places"
 msgstr "दशमलव स्थान"
@@ -3797,7 +3811,7 @@ msgid "Delete"
 msgstr "हटाएं"
 
 msgid "Delete {name}"
-msgstr "Delete {name} को हटाएं"
+msgstr "{name} को हटाएं"
 
 msgid "Delete {periodLabel}"
 msgstr "{periodLabel} हटाएँ"
@@ -5179,6 +5193,9 @@ msgstr "विनिमय दर"
 msgid "Exchange Rates"
 msgstr "विनिमय दरें"
 
+msgid "Exchanging the authorization code for an access token failed. Try connecting again."
+msgstr "प्राधिकरण कोड को एक्सेस टोकन से बदलना विफल रहा। दोबारा कनेक्ट करने का प्रयास करें।"
+
 msgid "Excluded"
 msgstr "बहिष्कृत"
 
@@ -5769,6 +5786,12 @@ msgstr "नियमित MACRS अनुसूची शुरू होने
 
 msgid "Finishes"
 msgstr "फिनिशेस"
+
+msgid "Finishing an incomplete pick"
+msgstr ""
+
+msgid "Finishing is refused until every line is picked or marked Short."
+msgstr ""
 
 msgid "First Name"
 msgstr "पहला नाम"
@@ -6407,6 +6430,9 @@ msgstr "आईडी"
 msgid "Ideas, suggestions or problems?"
 msgstr "विचार, सुझाव या समस्याएं?"
 
+msgid "Identifiers"
+msgstr "पहचानकर्ता"
+
 msgid "IDs and descriptions are generated for raw materials."
 msgstr "कच्चे माल के लिए आईडी और विवरण उत्पन्न किए जाते हैं।"
 
@@ -6457,6 +6483,9 @@ msgstr "आयात परिणाम"
 
 msgid "Import your BOM"
 msgstr "अपना BOM आयात करें"
+
+msgid "In Onshape, edit this OAuth application's permissions to include \"Application can write to your documents\", then connect again."
+msgstr "Onshape में, इस OAuth ऐप्लिकेशन की अनुमतियों में \"Application can write to your documents\" शामिल करें, फिर दोबारा कनेक्ट करें।"
 
 msgid "In order to convert this RFQ to a quote, all lines must have an internal part number."
 msgstr "इस RFQ को उद्धरण में परिवर्तित करने के लिए, सभी पंक्तियों के पास एक आंतरिक भाग संख्या होनी चाहिए।"
@@ -6515,11 +6544,17 @@ msgstr "इनबाउंड निरीक्षण"
 msgid "Inbox"
 msgstr "इनबॉक्स"
 
+msgid "Include a materials (bill of materials) section on the job traveler PDF with item numbers and quantities."
+msgstr "जॉब ट्रैवलर PDF में आइटम नंबर और मात्राओं के साथ बिल ऑफ मटेरियल्स अनुभाग शामिल करें।"
+
 msgid "Include extra parts in shipment"
 msgstr "शिपमेंट में अतिरिक्त पार्ट्स शामिल करें"
 
 msgid "Include Inactive"
 msgstr "निष्क्रिय शामिल करें"
+
+msgid "Include materials on traveler"
+msgstr "जॉब ट्रैवलर में सामग्री शामिल करें"
 
 msgid "Included"
 msgstr "शामिल"
@@ -6962,6 +6997,12 @@ msgstr "जॉब ऑपरेशन"
 msgid "Job Operations"
 msgstr "कार्य संचालन"
 
+msgid "Job Traveler Materials"
+msgstr "जॉब ट्रैवलर सामग्री"
+
+msgid "Job traveler settings updated"
+msgstr "जॉब ट्रैवलर की सेटिंग्स अपडेट की गई हैं"
+
 msgid "Jobs"
 msgstr "नौकरियां"
 
@@ -6973,6 +7014,9 @@ msgstr "चल रहे कार्य"
 
 msgid "Jobs Required"
 msgstr "नौकरियां आवश्यक हैं"
+
+msgid "Jobs that have this item on their bill of materials"
+msgstr "जिन कार्यों की सामग्री सूची में यह आइटम है"
 
 #. placeholder {0}: company?.name ?? "Company"
 msgid "Join {0}"
@@ -7124,6 +7168,9 @@ msgstr "सटीक मिलान के लिए खाली छोड़�
 msgid "Leave this page"
 msgstr "इस पृष्ठ को छोड़ें"
 
+msgid "Ledger"
+msgstr "बहीखाता"
+
 msgid "Left item"
 msgstr "बाईं ओर की वस्तु"
 
@@ -7213,6 +7260,9 @@ msgstr "Jira समस्या को लिंक करें"
 
 msgid "Link Linear Issue"
 msgstr "Linear समस्या को लिंक करें"
+
+msgid "Link to sales order line"
+msgstr "बिक्रय आदेश पंक्ति से लिंक करें"
 
 #. placeholder {0}: r.linkedSum
 #. placeholder {1}: r.quantity
@@ -8477,6 +8527,12 @@ msgstr "कोई नोट नहीं"
 msgid "No open invoices"
 msgstr "कोई खुले चालान नहीं"
 
+msgid "No open orders for this item are available to link."
+msgstr "इस आइटम के लिए लिंक करने के लिए कोई खुले ऑर्डर उपलब्ध नहीं हैं।"
+
+msgid "No open sales order lines"
+msgstr "कोई खुली बिक्रय ऑर्डर लाइनें नहीं"
+
 msgid "No operations require picking at this location"
 msgstr "इस स्थान पर कोई भी ऑपरेशन पिकिंग की आवश्यकता नहीं है"
 
@@ -8530,6 +8586,9 @@ msgstr "कोई प्रिंटर कॉन्फ़िगर नहीं
 
 msgid "No process selected"
 msgstr "कोई प्रक्रिया चयनित नहीं है"
+
+msgid "No production events recorded for this operation yet"
+msgstr "इस ऑपरेशन के लिए अभी तक कोई उत्पादन घटना रिकॉर्ड नहीं की गई है"
 
 msgid "No Quote"
 msgstr "कोई उद्धरण नहीं"
@@ -8783,6 +8842,21 @@ msgstr "केवल ड्राफ्ट प्रक्रियाएं स
 msgid "Only empty, open periods can be deleted."
 msgstr "केवल खाली, खुली अवधियों को हटाया जा सकता है।"
 
+msgid "Onshape authorized the connection but saving it failed. Try connecting again."
+msgstr "Onshape ने कनेक्शन को अधिकृत किया, लेकिन उसे सहेजना विफल रहा। दोबारा कनेक्ट करने का प्रयास करें।"
+
+msgid "Onshape denied the connection"
+msgstr "Onshape ने कनेक्शन अस्वीकार कर दिया"
+
+msgid "Onshape didn't return an authorization code"
+msgstr "Onshape ने प्राधिकरण कोड नहीं लौटाया"
+
+msgid "Onshape isn't configured"
+msgstr "Onshape कॉन्फ़िगर नहीं है"
+
+msgid "Onshape rejected the authorization"
+msgstr "Onshape ने प्राधिकरण अस्वीकार कर दिया"
+
 msgid "Onshape Status"
 msgstr "Onshape स्थिति"
 
@@ -8921,6 +8995,9 @@ msgstr "ऑपरेटर को एक चेतावनी मिलती �
 msgid "Operator must pick a different batch/serial."
 msgstr "ऑपरेटर को एक अलग बैच/सीरीज़ चुननी होगी।"
 
+msgid "Operator sees the missing items, can acknowledge & finish. The list is flagged Partial."
+msgstr ""
+
 msgid "Operators"
 msgstr "ऑपरेटर"
 
@@ -8931,7 +9008,7 @@ msgid "Opportunity"
 msgstr "अवसर"
 
 msgid "Optimized for fast previews — downloads always serve the original uploaded file"
-msgstr ""
+msgstr "तेज़ पूर्वावलोकन के लिए अनुकूलित — डाउनलोड हमेशा मूल अपलोड की गई फ़ाइल देते हैं"
 
 msgid "Optional"
 msgstr "वैकल्पिक"
@@ -9133,6 +9210,9 @@ msgstr "मूल समूह"
 msgid "Parent Item"
 msgstr "मूल आइटम"
 
+msgid "Parent items. (If you click into one of the parent parts below, you'll see this item included as a component on the bill of material.)"
+msgstr "मूल वस्तुएं। (यदि आप नीचे दिए गए मूल पुर्जों में से किसी एक पर क्लिक करते हैं, तो आप इस आइटम को सामग्री सूची पर एक घटक के रूप में शामिल देखेंगे।)"
+
 msgid "Parent Storage Unit"
 msgstr "पैरेंट स्टोरेज यूनिट"
 
@@ -9159,6 +9239,9 @@ msgstr "भाग संख्या"
 
 msgid "Part Supersession"
 msgstr "भाग प्रतिस्थापन"
+
+msgid "Partial"
+msgstr ""
 
 msgid "Partner"
 msgstr "साथी"
@@ -9529,14 +9612,14 @@ msgstr "अग्रिम भुगतान"
 msgid "Posting Date"
 msgstr "पोस्टिंग तारीख"
 
-msgid "Posting Groups"
-msgstr "पोस्टिंग समूह"
-
 msgid "Potential Data Loss"
 msgstr "संभावित डेटा हानि"
 
 msgid "Pre-filled for a new item when expiry is Fixed Duration."
 msgstr "समाप्ति Fixed Duration होने पर नई वस्तु के लिए पूर्व-भरी हुई।"
+
+msgid "Pre-select material without a picking list"
+msgstr ""
 
 msgid "Preferred Supplier"
 msgstr "पसंदीदा आपूर्तिकर्ता"
@@ -10054,6 +10137,9 @@ msgstr "उद्धरण ID"
 msgid "Quote Line"
 msgstr "उद्धरण पंक्ति"
 
+msgid "Quote lines whose bill of materials includes this item"
+msgstr "उद्धरण पंक्तियां जिनकी सामग्री सूची में यह आइटम शामिल है"
+
 msgid "Quote Location"
 msgstr "उद्धरण स्थान"
 
@@ -10079,9 +10165,6 @@ msgid "Quoted Date"
 msgstr "उद्धृत तारीख"
 
 msgid "Quotes"
-msgstr "उद्धरण"
-
-msgid "Quoting"
 msgstr "उद्धरण"
 
 msgid "Quoting and sales orders"
@@ -10311,7 +10394,7 @@ msgid "Refresh exchange rate"
 msgstr "विनिमय दर को ताज़ा करें"
 
 msgid "Regenerate thumbnail from the 3D model"
-msgstr ""
+msgstr "3D मॉडल से थंबनेल पुनः उत्पन्न करें"
 
 msgid "Regenerating thumbnail…"
 msgstr "थंबनेल को पुनः उत्पन्न किया जा रहा है…"
@@ -12479,6 +12562,9 @@ msgstr "गणना विधि के बाद दिनों की सं
 msgid "The append-only record of every stock movement; on-hand is the sum of its signed entries and the source of truth."
 msgstr "प्रत्येक स्टॉक आंदोलन का केवल-परिशिष्ट रिकॉर्ड; हाथ में राशि इसकी हस्ताक्षरित प्रविष्टियों का योग है और सत्य का स्रोत है।"
 
+msgid "The authorization was refused in Onshape. Try connecting again."
+msgstr "Onshape में प्राधिकरण अस्वीकार कर दिया गया। दोबारा कनेक्ट करने का प्रयास करें।"
+
 msgid "The book of all posted journal lines, summed by account — written only when the company has accounting enabled."
 msgstr "सभी पोस्ट की गई जर्नल पंक्तियों की पुस्तक, खाते द्वारा योग किया गया - केवल तभी लिखा जाता है जब कंपनी के लिए लेखांकन सक्षम हो।"
 
@@ -12954,6 +13040,9 @@ msgstr "शेष {0} {1} अब अपेक्षित नहीं होग
 msgid "The residual WIP a job has left at close, swept to a Production Variance account — the only variance Carbon books for a job."
 msgstr "अवशिष्ट WIP जो एक काम को बंद करने पर छोड़ गया है, उत्पादन विचरण खाते में स्वेप किया गया - एक काम के लिए कार्बन पुस्तकें का एकमात्र विचरण।"
 
+msgid "The response from Onshape was missing required parameters. Try connecting again."
+msgstr "Onshape की प्रतिक्रिया में आवश्यक पैरामीटर नहीं थे। दोबारा कनेक्ट करने का प्रयास करें।"
+
 msgid "The revision number of the part"
 msgstr "भाग की संशोधन संख्या"
 
@@ -13148,6 +13237,9 @@ msgstr "इन कार्यों के पास इस कार्य क
 
 msgid "These journal entries are still Draft, so their debits and credits aren't in the ledger for this period. Post each one, or re-date it into a later open period."
 msgstr "ये जर्नल प्रविष्टियाँ अभी भी ड्राफ्ट हैं, इसलिए उनके डेबिट और क्रेडिट इस अवधि के लिए लेजर में नहीं हैं। प्रत्येक को पोस्ट करें, या इसे बाद की खुली अवधि में पुनः दिनांकित करें।"
+
+msgid "This Carbon instance is missing its Onshape OAuth credentials. Ask an administrator to set them."
+msgstr "इस Carbon इंस्टेंस में Onshape OAuth क्रेडेंशियल नहीं हैं। किसी व्यवस्थापक से उन्हें सेट करने के लिए कहें।"
 
 msgid "This change notice is being implemented, so its changes are locked. Reopen it to edit."
 msgstr "यह परिवर्तन सूचना लागू की जा रही है, इसलिए इसके परिवर्तन लॉक हैं। इसे संपादित करने के लिए फिर से खोलें।"
@@ -14495,6 +14587,9 @@ msgstr "जब सक्षम हो, तो मूल्य निर्धा
 msgid "When on, scanning this process's operation barcode reports all remaining open quantity as complete in one action; turn off when operators routinely report partials."
 msgstr "जब सक्षम हो, तो इस प्रक्रिया की ऑपरेशन बारकोड स्कैन करने से सभी शेष खुली मात्रा एक कार्रवाई में पूर्ण के रूप में रिपोर्ट होती है; जब ऑपरेटर नियमित रूप से आंशिक रिपोर्ट करते हैं तो अक्षम करें।"
 
+msgid "When on, the traveler PDF lists the job's required materials."
+msgstr "चालू होने पर, जॉब ट्रैवलर PDF में जॉब की आवश्यक सामग्री सूचीबद्ध होती है।"
+
 msgid "When on, this party's invoices skip tax calculation; the party is responsible for keeping the exemption certificate current."
 msgstr "जब सक्षम हो, तो इस पक्ष के चालान कर गणना को छोड़ देते हैं; पक्ष छूट प्रमाणपत्र को वर्तमान रखने के लिए जिम्मेदार है।"
 
@@ -14503,6 +14598,9 @@ msgstr "जब सक्षम हो, तो यह मूल्य ओवर�
 
 msgid "When on, this rule fires for every target of its type. Assignment rows are ignored but preserved."
 msgstr "जब चालू हो, तो यह नियम अपने प्रकार के प्रत्येक लक्ष्य के लिए सक्रिय होता है। असाइनमेंट पंक्तियों को अनदेखा किया जाता है लेकिन संरक्षित रखा जाता है।"
+
+msgid "When on, tracked material is pre-selected by pick order (FEFO) even without a picking list. When off, operators start on the Scan tab."
+msgstr ""
 
 msgid "When supplier responses are expected back; suppliers see this date on the RFQ portal and Carbon stops accepting late responses after it (configurable)."
 msgstr "जब आपूर्तिकर्ता प्रतिक्रिया की उम्मीद की जाती है; आपूर्तिकर्ता आरएफक्यू पोर्टल पर यह तारीख देखते हैं और कार्बन इसके बाद देर से प्रतिक्रिया स्वीकार नहीं करता है (कॉन्फ़िगर करने योग्य)।"

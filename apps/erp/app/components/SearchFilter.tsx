@@ -17,7 +17,7 @@ const SearchFilter = ({ param, size, ...props }: SearchFilterProps) => {
   const [params, setParams] = useUrlParams();
   const [query, setQuery] = useState(params.get(param) || "");
   const debounceQuery = useDebounce((q: string) => {
-    setParams({ [param]: q, offset: null, limit: null });
+    setParams({ [param]: q.trim(), offset: null, limit: null });
   }, 500);
 
   return (

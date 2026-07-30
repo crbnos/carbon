@@ -11,6 +11,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <BinXCAFDrivers.hxx>
+#include <BRepAlgoAPI_Cut.hxx>
 #include <BRepMesh_IncrementalMesh.hxx>
 #include <BRepPrimAPI_MakeBox.hxx>
 #include <BRepPrimAPI_MakeCylinder.hxx>
@@ -650,6 +651,40 @@ bool write_test_cylinder(rust::Str path, double radius, double height) {
   try {
     ensure_step_init();
     TopoDS_Shape shape = BRepPrimAPI_MakeCylinder(radius, height).Shape();
+    STEPControl_Writer writer;
+    if (writer.Transfer(shape, STEPControl_AsIs) != IFSelect_RetDone) {
+      return false;
+    }
+    std::string p(path);
+    return writer.Write(p.c_str()) == IFSelect_RetDone;
+  } catch (...) {
+    return false;
+  }
+}
+
+// Test fixture generator: a `size` x `size` x `thickness` plate with `holes`
+// through-holes of `hole_radius` drilled along X. The small-feature-in-a-big-
+// part case: the shape bbox is large (so the bbox-scaled linear deflection
+// stays coarse) while the drilled circles are tiny, which is exactly where the
+// segment count has to come from angular deflection rather than sag.
+bool write_test_plate_with_holes(rust::Str path, double size, double thickness,
+                                 double hole_radius, uint32_t holes) {
+  try {
+    ensure_step_init();
+    TopoDS_Shape shape =
+        BRepPrimAPI_MakeBox(gp_Pnt(0.0, 0.0, 0.0), size, size, thickness)
+            .Shape();
+    // Evenly spaced along the plate's mid-line, clear of the edges.
+    for (uint32_t i = 0; i < holes; ++i) {
+      const double x = size * (i + 1) / (holes + 1);
+      // Start below and run past the far face so the cut is a clean through-hole
+      // (a coincident face would leave a degenerate lid).
+      const gp_Ax2 axis(gp_Pnt(x, size / 2.0, -thickness),
+                        gp_Dir(0.0, 0.0, 1.0));
+      TopoDS_Shape drill =
+          BRepPrimAPI_MakeCylinder(axis, hole_radius, thickness * 3.0).Shape();
+      shape = BRepAlgoAPI_Cut(shape, drill).Shape();
+    }
     STEPControl_Writer writer;
     if (writer.Transfer(shape, STEPControl_AsIs) != IFSelect_RetDone) {
       return false;

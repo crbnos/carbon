@@ -18,4 +18,7 @@ Tree read_xbf(rust::Str path, double linear_deflection, double angular_deflectio
 bool write_test_step(rust::Str path, uint32_t boxes);
 
 bool write_test_cylinder(rust::Str path, double radius, double height);
+
+bool write_test_plate_with_holes(rust::Str path, double size, double thickness,
+                                 double hole_radius, uint32_t holes);
 }  // namespace carbon_occt

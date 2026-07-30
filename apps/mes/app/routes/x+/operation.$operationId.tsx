@@ -106,6 +106,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     null) as { expiredEntityPolicy?: ExpiredEntityPolicy } | null;
   const expiredEntityPolicy: ExpiredEntityPolicy =
     inventoryShelfLife?.expiredEntityPolicy ?? "Block";
+  const autoSelectMaterialWithoutPickingList =
+    companySettings.data?.autoSelectMaterialWithoutPickingList ?? false;
 
   // If no trackedEntityId is provided in the URL but trackedEntities exist,
   // redirect to the same URL with the last trackedEntityId as a search param
@@ -160,6 +162,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     }),
     operation: makeDurations(operation.data?.[0]) as OperationWithDetails,
     expiredEntityPolicy,
+    autoSelectMaterialWithoutPickingList,
     procedure: getJobOperationProcedure(serviceRole, operation.data?.[0].id),
     workCenter: getWorkCenter(
       serviceRole,
@@ -184,6 +187,7 @@ export default function OperationRoute() {
   const {
     events,
     expiredEntityPolicy,
+    autoSelectMaterialWithoutPickingList,
     files,
     job,
     jobMakeMethod,
@@ -202,6 +206,9 @@ export default function OperationRoute() {
       key={`job-operation-${operationId}`}
       events={events}
       expiredEntityPolicy={expiredEntityPolicy}
+      autoSelectMaterialWithoutPickingList={
+        autoSelectMaterialWithoutPickingList
+      }
       files={files}
       kanban={kanban}
       materials={materials}

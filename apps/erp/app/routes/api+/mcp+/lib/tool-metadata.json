@@ -1,6 +1,6 @@
 {
-  "generated": "2026-07-28T19:32:57.900Z",
-  "totalTools": 1397,
+  "generated": "2026-07-29T14:23:29.561Z",
+  "totalTools": 1400,
   "modules": 15,
   "tools": [
     {
@@ -35618,6 +35618,32 @@
       }
     },
     {
+      "name": "sales_getOpenSalesOrderLinesForItem",
+      "module": "sales",
+      "classification": "READ",
+      "description": "get open sales order lines for item",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "itemId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "itemId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "itemId"
+        ]
+      }
+    },
+    {
       "name": "sales_getSalesOrderLinesByItemIds",
       "module": "sales",
       "classification": "READ",
@@ -40536,6 +40562,33 @@
       }
     },
     {
+      "name": "settings_updateIncludeMaterialsOnTravelerSetting",
+      "module": "settings",
+      "classification": "WRITE",
+      "description": "update include materials on traveler setting",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "includeMaterialsOnTraveler"
+      ],
+      "injectAuth": [
+        "companyId",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "includeMaterialsOnTraveler": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "includeMaterialsOnTraveler"
+        ]
+      }
+    },
+    {
       "name": "settings_updateAccountsPayableAddressSetting",
       "module": "settings",
       "classification": "WRITE",
@@ -40929,6 +40982,64 @@
         },
         "required": [
           "showCustomerReadableId"
+        ]
+      }
+    },
+    {
+      "name": "settings_updateAutoSelectMaterialWithoutPickingListSetting",
+      "module": "settings",
+      "classification": "WRITE",
+      "description": "update auto select material without picking list setting",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "autoSelectMaterialWithoutPickingList"
+      ],
+      "injectAuth": [
+        "companyId",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "autoSelectMaterialWithoutPickingList": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "autoSelectMaterialWithoutPickingList"
+        ]
+      }
+    },
+    {
+      "name": "settings_updateIncompletePickingListPolicySetting",
+      "module": "settings",
+      "classification": "WRITE",
+      "description": "update incomplete picking list policy setting",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "incompletePickingListPolicy"
+      ],
+      "injectAuth": [
+        "companyId",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "incompletePickingListPolicy": {
+            "type": "string",
+            "enum": [
+              "warn",
+              "error"
+            ]
+          }
+        },
+        "required": [
+          "incompletePickingListPolicy"
         ]
       }
     },

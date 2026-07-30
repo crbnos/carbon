@@ -1,6 +1,7 @@
 import { createHmac } from "node:crypto";
 import type { Database, Json } from "@carbon/database";
 import {
+  ASSEMBLER_JOB_CONCURRENCY,
   ASSEMBLER_SERVICE_API_KEY,
   ASSEMBLER_SERVICE_URL,
   ASSEMBLER_STORAGE_PUBLIC_URL,
@@ -45,9 +46,19 @@ export const assemblerAuthHeaders: Record<string, string> =
 // The cap ≈ how many assembler jobs should run at once (the service 429s past its
 // real capacity, so more parked runs buy nothing); the WASM raw tier renders while
 // an optimise waits, so a low cap never blocks a user from viewing a model.
+// Default 5: a per-function limit above the Inngest plan's account concurrency
+// fails app sync outright ("function has higher concurrency limits than your
+// plan"), and 5 is the smallest plan cap in play. Override via
+// ASSEMBLER_JOB_CONCURRENCY where the plan allows more.
 export const ASSEMBLER_CONCURRENCY: [
   { scope: "env"; key: string; limit: number }
-] = [{ scope: "env", key: '"assembler"', limit: 6 }];
+] = [
+  {
+    scope: "env",
+    key: '"assembler"',
+    limit: Number(ASSEMBLER_JOB_CONCURRENCY) || 5
+  }
+];
 
 /**
  * The assembler feature flag IS the config: unset `ASSEMBLER_SERVICE_URL` means
