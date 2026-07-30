@@ -64,7 +64,7 @@ msgid "Account Settings"
 msgstr "Hesap Ayarları"
 
 msgid "Acknowledge & finish"
-msgstr ""
+msgstr "Onayla ve bitir"
 
 msgid "Active"
 msgstr "Aktif"
@@ -448,7 +448,7 @@ msgid "Finish Anyways"
 msgstr "Yine de Bitir"
 
 msgid "Finish with material unpicked?"
-msgstr ""
+msgstr "Malzeme seçilmeden bitir?"
 
 msgid "Forgot to Clock Out?"
 msgstr "Çıkış yapmayı unuttunuz mu?"
@@ -526,7 +526,7 @@ msgid "Jobs"
 msgstr "İşler"
 
 msgid "Keep picking"
-msgstr ""
+msgstr "Seçmeye devam et"
 
 msgid "Kit"
 msgstr "Set"
@@ -1078,7 +1078,7 @@ msgid "Setup"
 msgstr "Kurulum"
 
 msgid "short"
-msgstr ""
+msgstr "kısa"
 
 msgid "Short"
 msgstr "Azalt"
@@ -1176,7 +1176,7 @@ msgid "There are serial or batch tracked materials on the bill of material that 
 msgstr "Malzeme listesindeki seri veya parti takipli malzemeler tam olarak verilmemiş. Vermeden tamamlamak, yanlış izlenebilirlik kayıtlarına neden olabilir."
 
 msgid "These items still have material to pick. Finishing now marks the list Partial."
-msgstr ""
+msgstr "Bu öğelerin hala seçilecek malzemesi var. Şimdi bitirmek listeyi Kısmi olarak işaretler."
 
 msgid "This lot is expired and can't be picked."
 msgstr "Bu parti süresi dolmuş ve alınamaz."

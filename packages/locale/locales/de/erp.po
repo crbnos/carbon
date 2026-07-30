@@ -2952,7 +2952,7 @@ msgid "Copy training unique identifier"
 msgstr "Eindeutige Schulungs-ID kopieren"
 
 msgid "Correct"
-msgstr ""
+msgstr "Korrigieren"
 
 msgid "Correct Answer"
 msgstr "Richtige Antwort"
@@ -2961,19 +2961,19 @@ msgid "Correct Answers"
 msgstr "Richtige Antworten"
 
 msgid "Correct Quantity"
-msgstr ""
+msgstr "Menge korrigieren"
 
 msgid "Correct Stock Movement"
-msgstr ""
+msgstr "Lagerbewegung korrigieren"
 
 msgid "Corrected Quantity"
-msgstr ""
+msgstr "Korrigierte Menge"
 
 msgid "Correction"
 msgstr "Korrektur"
 
 msgid "Correction {correctionNumber}"
-msgstr ""
+msgstr "Korrektur {correctionNumber}"
 
 msgid "Corrections"
 msgstr "Korrektionen"
@@ -3688,7 +3688,7 @@ msgid "Decide what an operator sees if they try to issue a batch or serial that'
 msgstr "Entscheiden Sie, was ein Bediener sieht, wenn er versucht, einen Batch oder eine Seriennummer auszugeben, die bereits abgelaufen ist."
 
 msgid "Decide what happens when an operator presses Finish on the shop floor with material still unpicked."
-msgstr ""
+msgstr "Legen Sie fest, was passiert, wenn ein Bediener auf dem Shopfloor die Funktion \"Fertig\" drückt, während Material noch nicht kommissioniert ist."
 
 msgid "Decimal Places"
 msgstr "Dezimalstellen"
@@ -5035,7 +5035,7 @@ msgid "Enter PO number"
 msgstr "PO-Nummer eingeben"
 
 msgid "Enter the quantity this movement should have been. An opposite movement for the difference is posted next to the original, in the original's time period."
-msgstr ""
+msgstr "Geben Sie die Menge ein, die diese Bewegung hätte sein sollen. Eine Gegenbewegung für die Differenz wird neben dem Original in dessen Zeitraum verbucht."
 
 msgid "Entered At Receipt"
 msgstr "Bei Wareneingang erfasst"
@@ -5800,10 +5800,10 @@ msgid "Finishes"
 msgstr "Oberflächen"
 
 msgid "Finishing an incomplete pick"
-msgstr ""
+msgstr "Unvollständige Kommissionierung abschließen"
 
 msgid "Finishing is refused until every line is picked or marked Short."
-msgstr ""
+msgstr "Das Abschließen wird verweigert, bis jede Zeile kommissioniert oder als Kurzbestand markiert ist."
 
 msgid "First Name"
 msgstr "Vorname"
@@ -7313,6 +7313,9 @@ msgstr "Zuletzt geladen, direkt bei der Umstellung, damit die Salden aktuell sin
 
 msgid "Loading associated jobs..."
 msgstr "Zugehörige Aufträge werden geladen..."
+
+msgid "Loading current quantity…"
+msgstr "Aktuelle Menge wird geladen…"
 
 msgid "Loading item details..."
 msgstr "Artikeldetails werden geladen..."
@@ -9005,7 +9008,7 @@ msgid "Operator must pick a different batch/serial."
 msgstr "Operator muss einen anderen Batch/eine andere Seriennummer auswählen."
 
 msgid "Operator sees the missing items, can acknowledge & finish. The list is flagged Partial."
-msgstr ""
+msgstr "Der Bediener sieht die fehlenden Artikel, kann bestätigen und abschließen. Die Liste ist als \"Teilbestand\" gekennzeichnet."
 
 msgid "Operators"
 msgstr "Operatoren"
@@ -9250,7 +9253,7 @@ msgid "Part Supersession"
 msgstr "Teilersatz"
 
 msgid "Partial"
-msgstr ""
+msgstr "Teilbestand"
 
 msgid "Partner"
 msgstr "Partner"
@@ -9607,13 +9610,13 @@ msgid "Posted By"
 msgstr "Gepostet von"
 
 msgid "Posted once, corrected {corrections} times."
-msgstr ""
+msgstr "Einmal verbucht, {corrections} mal korrigiert."
 
 msgid "Posted once, corrected 1 time."
-msgstr ""
+msgstr "Einmal verbucht, 1 mal korrigiert."
 
 msgid "Posted once, no corrections."
-msgstr ""
+msgstr "Einmal verbucht, keine Korrektionen."
 
 msgid "Posting"
 msgstr "Vorauszahlungen"
@@ -9628,7 +9631,7 @@ msgid "Pre-filled for a new item when expiry is Fixed Duration."
 msgstr "Wird für einen neuen Artikel vorausgefüllt, wenn die Verfallszeit auf Feste Dauer eingestellt ist."
 
 msgid "Pre-select material without a picking list"
-msgstr ""
+msgstr "Material ohne Kommissionierliste vorauswählen"
 
 msgid "Preferred Supplier"
 msgstr "Bevorzugter Lieferant"
@@ -11779,7 +11782,7 @@ msgid "Signed in as {name}"
 msgstr "Angemeldet als {name}"
 
 msgid "Signed quantity — negative for outbound movements"
-msgstr ""
+msgstr "Signierte Menge – negativ für ausgehende Bewegungen"
 
 msgid "Sites & locations"
 msgstr "Standorte & Lagerorte"
@@ -12026,7 +12029,7 @@ msgid "Steps are inherited from the inspection plan."
 msgstr "Schritte werden vom Inspektionsplan geerbt."
 
 msgid "Stock movement corrected"
-msgstr ""
+msgstr "Lagerbewegung korrigiert"
 
 msgid "Stock Transfer ID"
 msgstr "Lagerbestandstransfer-ID"
@@ -14606,7 +14609,7 @@ msgid "When on, this rule fires for every target of its type. Assignment rows ar
 msgstr "Wenn aktiviert, wird diese Regel für jedes Ziel ihres Typs ausgelöst. Zuordnungszeilen werden ignoriert, aber beibehalten."
 
 msgid "When on, tracked material is pre-selected by pick order (FEFO) even without a picking list. When off, operators start on the Scan tab."
-msgstr ""
+msgstr "Wenn aktiviert, wird verfolgtes Material auch ohne Kommissionierliste nach Kommissionierreihenfolge (FEFO) vorausgewählt. Wenn deaktiviert, starten Bediener auf der Registerkarte Scan."
 
 msgid "When supplier responses are expected back; suppliers see this date on the RFQ portal and Carbon stops accepting late responses after it (configurable)."
 msgstr "Wann Lieferantenreaktionen erwartet werden; Lieferanten sehen dieses Datum auf dem RFQ-Portal und Carbon akzeptiert keine späten Antworten danach (konfigurierbar)."

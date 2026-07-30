@@ -64,7 +64,7 @@ msgid "Account Settings"
 msgstr "Configuración de cuenta"
 
 msgid "Acknowledge & finish"
-msgstr ""
+msgstr "Reconocer y finalizar"
 
 msgid "Active"
 msgstr "Activo"
@@ -448,7 +448,7 @@ msgid "Finish Anyways"
 msgstr "Finalizar de todas formas"
 
 msgid "Finish with material unpicked?"
-msgstr ""
+msgstr "¿Finalizar con material sin recoger?"
 
 msgid "Forgot to Clock Out?"
 msgstr "¿Olvidó registrar la salida?"
@@ -526,7 +526,7 @@ msgid "Jobs"
 msgstr "Trabajos"
 
 msgid "Keep picking"
-msgstr ""
+msgstr "Continuar recogiendo"
 
 msgid "Kit"
 msgstr "Kit"
@@ -1078,7 +1078,7 @@ msgid "Setup"
 msgstr "Preparación"
 
 msgid "short"
-msgstr ""
+msgstr "corto"
 
 msgid "Short"
 msgstr "Faltante"
@@ -1176,7 +1176,7 @@ msgid "There are serial or batch tracked materials on the bill of material that 
 msgstr "Hay materiales con seguimiento de serie o lote en la lista de materiales que no se han emitido completamente. Completar sin emitir puede generar registros de trazabilidad incorrectos."
 
 msgid "These items still have material to pick. Finishing now marks the list Partial."
-msgstr ""
+msgstr "Estos elementos aún tienen material para recoger. Finalizar ahora marca la lista como Parcial."
 
 msgid "This lot is expired and can't be picked."
 msgstr "Este lote ha expirado y no se puede seleccionar."

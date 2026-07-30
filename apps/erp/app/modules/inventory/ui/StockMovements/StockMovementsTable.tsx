@@ -307,18 +307,6 @@ const StockMovementsTable = memo(
       [permissions, t]
     );
 
-    // What the movement currently nets to on this page (original + its visible
-    // corrections). The server recomputes this authoritatively — including
-    // corrections that are not on this page — before deriving the delta.
-    const correctionEffectiveQuantity = useMemo(() => {
-      if (!correctionTarget) return 0;
-      const own = Number(correctionTarget.quantity ?? 0);
-      const corrections = correctionTarget.id
-        ? (correctionsByOriginal.get(correctionTarget.id) ?? [])
-        : [];
-      return corrections.reduce((sum, c) => sum + Number(c.quantity ?? 0), own);
-    }, [correctionTarget, correctionsByOriginal]);
-
     const renderExpandedRow = useCallback(
       (row: StockMovement) => {
         const corrections = row.id
@@ -376,7 +364,6 @@ const StockMovementsTable = memo(
         {correctionTarget && (
           <StockMovementCorrectionModal
             movement={correctionTarget}
-            effectiveQuantity={correctionEffectiveQuantity}
             onClose={() => setCorrectionTarget(null)}
           />
         )}

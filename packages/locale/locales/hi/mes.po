@@ -64,7 +64,7 @@ msgid "Account Settings"
 msgstr "खाता सेटिंग्स"
 
 msgid "Acknowledge & finish"
-msgstr ""
+msgstr "स्वीकार करें और समाप्त करें"
 
 msgid "Active"
 msgstr "सक्रिय"
@@ -448,7 +448,7 @@ msgid "Finish Anyways"
 msgstr "वैसे भी समाप्त करें"
 
 msgid "Finish with material unpicked?"
-msgstr ""
+msgstr "सामग्री बिना चुने समाप्त करें?"
 
 msgid "Forgot to Clock Out?"
 msgstr "घड़ी से बाहर निकलना भूल गए?"
@@ -526,7 +526,7 @@ msgid "Jobs"
 msgstr "नौकरियां"
 
 msgid "Keep picking"
-msgstr ""
+msgstr "चुनना जारी रखें"
 
 msgid "Kit"
 msgstr "किट"
@@ -1078,7 +1078,7 @@ msgid "Setup"
 msgstr "सेटअप"
 
 msgid "short"
-msgstr ""
+msgstr "छोटा"
 
 msgid "Short"
 msgstr "कम"
@@ -1176,7 +1176,7 @@ msgid "There are serial or batch tracked materials on the bill of material that 
 msgstr "बिल ऑफ मेटेरियल पर सीरियल या बैच ट्रैक किए गए मेटेरियल हैं जो पूरी तरह से जारी नहीं किए गए हैं। जारी किए बिना पूरा करने से गलत ट्रेसेबिलिटी रिकॉर्ड हो सकते हैं।"
 
 msgid "These items still have material to pick. Finishing now marks the list Partial."
-msgstr ""
+msgstr "इन आइटम के पास अभी भी चुनने के लिए सामग्री है। अभी समाप्त करने से सूची को आंशिक के रूप में चिह्नित किया जाता है।"
 
 msgid "This lot is expired and can't be picked."
 msgstr "यह लॉट समाप्त हो गया है और इसे चुना नहीं जा सकता।"

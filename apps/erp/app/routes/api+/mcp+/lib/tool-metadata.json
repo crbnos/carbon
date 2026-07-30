@@ -1,6 +1,6 @@
 {
-  "generated": "2026-07-30T13:56:21.533Z",
-  "totalTools": 1400,
+  "generated": "2026-07-30T14:40:04.298Z",
+  "totalTools": 1401,
   "modules": 15,
   "tools": [
     {
@@ -6147,6 +6147,32 @@
         },
         "required": [
           "// `requiresSerialTracking` is a form-only flag for the validator's serial\n  // quantity guard — the route strips it before calling this.\n  inventoryAdjustment"
+        ]
+      }
+    },
+    {
+      "name": "inventory_getStockMovementEffectiveQuantity",
+      "module": "inventory",
+      "classification": "READ",
+      "description": "get stock movement effective quantity",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "itemLedgerId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "itemLedgerId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "itemLedgerId"
         ]
       }
     },

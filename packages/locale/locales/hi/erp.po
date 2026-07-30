@@ -2952,7 +2952,7 @@ msgid "Copy training unique identifier"
 msgstr "प्रशिक्षण अद्वितीय पहचानकर्ता की प्रतिलिपि बनाएं"
 
 msgid "Correct"
-msgstr ""
+msgstr "सही करें"
 
 msgid "Correct Answer"
 msgstr "सही उत्तर"
@@ -2961,19 +2961,19 @@ msgid "Correct Answers"
 msgstr "सही उत्तर"
 
 msgid "Correct Quantity"
-msgstr ""
+msgstr "मात्रा को सही करें"
 
 msgid "Correct Stock Movement"
-msgstr ""
+msgstr "स्टॉक आंदोलन को सही करें"
 
 msgid "Corrected Quantity"
-msgstr ""
+msgstr "सही की गई मात्रा"
 
 msgid "Correction"
 msgstr "सुधार"
 
 msgid "Correction {correctionNumber}"
-msgstr ""
+msgstr "सुधार {correctionNumber}"
 
 msgid "Corrections"
 msgstr "सुधार"
@@ -3688,7 +3688,7 @@ msgid "Decide what an operator sees if they try to issue a batch or serial that'
 msgstr "तय करें कि यदि कोई ऑपरेटर एक बैच या सीरियल जारी करने का प्रयास करता है जो पहले से ही समाप्त हो गया है तो वह क्या देखता है।"
 
 msgid "Decide what happens when an operator presses Finish on the shop floor with material still unpicked."
-msgstr ""
+msgstr "तय करें कि जब ऑपरेटर शॉप फ्लोर पर फिनिश दबाता है तो क्या होता है जब सामग्री अभी भी अनचुनी होती है।"
 
 msgid "Decimal Places"
 msgstr "दशमलव स्थान"
@@ -5035,7 +5035,7 @@ msgid "Enter PO number"
 msgstr "PO नंबर दर्ज करें"
 
 msgid "Enter the quantity this movement should have been. An opposite movement for the difference is posted next to the original, in the original's time period."
-msgstr ""
+msgstr "वह मात्रा दर्ज करें जो यह आंदोलन होना चाहिए था। अंतर के लिए एक विपरीत आंदोलन मूल के बगल में, मूल की समय अवधि में पोस्ट किया जाता है।"
 
 msgid "Entered At Receipt"
 msgstr "रसीद पर दर्ज"
@@ -5800,10 +5800,10 @@ msgid "Finishes"
 msgstr "फिनिशेस"
 
 msgid "Finishing an incomplete pick"
-msgstr ""
+msgstr "अधूरी पिकिंग को समाप्त करना"
 
 msgid "Finishing is refused until every line is picked or marked Short."
-msgstr ""
+msgstr "जब तक हर पंक्ति को चुना नहीं जाता या छोटा चिह्नित नहीं किया जाता तब तक समाप्ति से इनकार किया जाता है।"
 
 msgid "First Name"
 msgstr "पहला नाम"
@@ -7313,6 +7313,9 @@ msgstr "अंत में लोड किया गया, कटओवर �
 
 msgid "Loading associated jobs..."
 msgstr "संबंधित कार्य लोड हो रहे हैं..."
+
+msgid "Loading current quantity…"
+msgstr "वर्तमान मात्रा लोड हो रही है…"
 
 msgid "Loading item details..."
 msgstr "आइटम विवरण लोड हो रहे हैं..."
@@ -9005,7 +9008,7 @@ msgid "Operator must pick a different batch/serial."
 msgstr "ऑपरेटर को एक अलग बैच/सीरीज़ चुननी होगी।"
 
 msgid "Operator sees the missing items, can acknowledge & finish. The list is flagged Partial."
-msgstr ""
+msgstr "ऑपरेटर लापता वस्तुओं को देखता है, स्वीकार कर सकता है और समाप्त कर सकता है। सूची को आंशिक के रूप में चिह्नित किया जाता है।"
 
 msgid "Operators"
 msgstr "ऑपरेटर"
@@ -9250,7 +9253,7 @@ msgid "Part Supersession"
 msgstr "भाग प्रतिस्थापन"
 
 msgid "Partial"
-msgstr ""
+msgstr "आंशिक"
 
 msgid "Partner"
 msgstr "साथी"
@@ -9607,13 +9610,13 @@ msgid "Posted By"
 msgstr "द्वारा पोस्ट किया गया"
 
 msgid "Posted once, corrected {corrections} times."
-msgstr ""
+msgstr "एक बार पोस्ट किया गया, {corrections} बार सही किया गया।"
 
 msgid "Posted once, corrected 1 time."
-msgstr ""
+msgstr "एक बार पोस्ट किया गया, 1 बार सही किया गया।"
 
 msgid "Posted once, no corrections."
-msgstr ""
+msgstr "एक बार पोस्ट किया गया, कोई सुधार नहीं।"
 
 msgid "Posting"
 msgstr "अग्रिम भुगतान"
@@ -9628,7 +9631,7 @@ msgid "Pre-filled for a new item when expiry is Fixed Duration."
 msgstr "समाप्ति Fixed Duration होने पर नई वस्तु के लिए पूर्व-भरी हुई।"
 
 msgid "Pre-select material without a picking list"
-msgstr ""
+msgstr "पिकिंग सूची के बिना सामग्री पूर्व-चयन करें"
 
 msgid "Preferred Supplier"
 msgstr "पसंदीदा आपूर्तिकर्ता"
@@ -11779,7 +11782,7 @@ msgid "Signed in as {name}"
 msgstr "{name} के रूप में साइन इन किया गया"
 
 msgid "Signed quantity — negative for outbound movements"
-msgstr ""
+msgstr "हस्ताक्षरित मात्रा — बाहरी आंदोलनों के लिए नकारात्मक"
 
 msgid "Sites & locations"
 msgstr "साइटें और स्थान"
@@ -12026,7 +12029,7 @@ msgid "Steps are inherited from the inspection plan."
 msgstr "चरण निरीक्षण योजना से विरासत में मिले हैं।"
 
 msgid "Stock movement corrected"
-msgstr ""
+msgstr "स्टॉक आंदोलन सही किया गया"
 
 msgid "Stock Transfer ID"
 msgstr "स्टॉक ट्रांसफर आईडी"
@@ -14606,7 +14609,7 @@ msgid "When on, this rule fires for every target of its type. Assignment rows ar
 msgstr "जब चालू हो, तो यह नियम अपने प्रकार के प्रत्येक लक्ष्य के लिए सक्रिय होता है। असाइनमेंट पंक्तियों को अनदेखा किया जाता है लेकिन संरक्षित रखा जाता है।"
 
 msgid "When on, tracked material is pre-selected by pick order (FEFO) even without a picking list. When off, operators start on the Scan tab."
-msgstr ""
+msgstr "जब चालू हो, तो ट्रैक की गई सामग्री को पिकिंग सूची के बिना भी पिक ऑर्डर (FEFO) द्वारा पूर्व-चयनित किया जाता है। जब बंद हो, तो ऑपरेटर स्कैन टैब पर शुरू करते हैं।"
 
 msgid "When supplier responses are expected back; suppliers see this date on the RFQ portal and Carbon stops accepting late responses after it (configurable)."
 msgstr "जब आपूर्तिकर्ता प्रतिक्रिया की उम्मीद की जाती है; आपूर्तिकर्ता आरएफक्यू पोर्टल पर यह तारीख देखते हैं और कार्बन इसके बाद देर से प्रतिक्रिया स्वीकार नहीं करता है (कॉन्फ़िगर करने योग्य)।"

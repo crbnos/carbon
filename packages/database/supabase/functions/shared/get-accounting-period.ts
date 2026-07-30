@@ -96,8 +96,8 @@ export async function getAccountingPeriodForDate(
 
   if (existingPeriod.data) {
     const closeStatus =
-      (existingPeriod.data as unknown as { closeStatus?: string | null })
-        .closeStatus ?? (existingPeriod.data.closedAt ? "Closed" : "Open");
+      existingPeriod.data.closeStatus ??
+      (existingPeriod.data.closedAt ? "Closed" : "Open");
 
     // Closed is permanent — there is no reopening a closed period, so a
     // movement whose period has closed can no longer be corrected. Locked is
@@ -143,24 +143,38 @@ export async function getAccountingPeriodForDate(
     startMonth
   );
 
-  const newPeriod = await runInTransaction(db, async (trx) => {
-    return await trx
-      .insertInto("accountingPeriod")
-      .values({
-        startDate,
-        endDate,
-        companyId,
-        status: "Inactive",
-        closeStatus: "Open",
-        fiscalYear,
-        periodNumber,
-        createdBy: "system",
-      } as any)
-      .returning("id")
-      .executeTakeFirstOrThrow();
-  });
-
-  return newPeriod.id;
+  try {
+    const newPeriod = await runInTransaction(db, async (trx) => {
+      return await trx
+        .insertInto("accountingPeriod")
+        .values({
+          startDate,
+          endDate,
+          companyId,
+          status: "Inactive",
+          closeStatus: "Open",
+          fiscalYear,
+          periodNumber,
+          createdBy: "system",
+        } as any)
+        .returning("id")
+        .executeTakeFirstOrThrow();
+    });
+    return newPeriod.id;
+  } catch (err) {
+    // A concurrent caller may have created the same month's period between our
+    // lookup and insert — the unique (companyId, fiscalYear, periodNumber)
+    // index makes the loser land here. Re-select and use the winner's row.
+    const racedPeriod = await client
+      .from("accountingPeriod")
+      .select("id")
+      .eq("companyId", companyId)
+      .gte("endDate", date)
+      .lte("startDate", date)
+      .maybeSingle();
+    if (racedPeriod.data) return racedPeriod.data.id;
+    throw err;
+  }
 }
 
 // tries to get the current accounting period

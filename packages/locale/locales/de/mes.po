@@ -64,7 +64,7 @@ msgid "Account Settings"
 msgstr "Kontoeinstellungen"
 
 msgid "Acknowledge & finish"
-msgstr ""
+msgstr "Bestätigen & beenden"
 
 msgid "Active"
 msgstr "Aktiv"
@@ -448,7 +448,7 @@ msgid "Finish Anyways"
 msgstr "Trotzdem beenden"
 
 msgid "Finish with material unpicked?"
-msgstr ""
+msgstr "Mit nicht gepicktem Material abschließen?"
 
 msgid "Forgot to Clock Out?"
 msgstr "Vergessen auszustempeln?"
@@ -526,7 +526,7 @@ msgid "Jobs"
 msgstr "Aufträge"
 
 msgid "Keep picking"
-msgstr ""
+msgstr "Weiterpicken"
 
 msgid "Kit"
 msgstr "Bausatz"
@@ -1078,7 +1078,7 @@ msgid "Setup"
 msgstr "Rüsten"
 
 msgid "short"
-msgstr ""
+msgstr "kurz"
 
 msgid "Short"
 msgstr "Fehlbestand"
@@ -1176,7 +1176,7 @@ msgid "There are serial or batch tracked materials on the bill of material that 
 msgstr "Es gibt serien- oder chargenverfolgte Materialien in der Stückliste, die noch nicht vollständig ausgegeben wurden. Ein Abschluss ohne Ausgabe kann zu fehlerhaften Rückverfolgbarkeitsdaten führen."
 
 msgid "These items still have material to pick. Finishing now marks the list Partial."
-msgstr ""
+msgstr "Diese Artikel haben noch Material zum Picken. Ein Abschluss jetzt markiert die Liste als Teilweise."
 
 msgid "This lot is expired and can't be picked."
 msgstr "Dieses Los ist abgelaufen und kann nicht entnommen werden."

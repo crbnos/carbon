@@ -64,7 +64,7 @@ msgid "Account Settings"
 msgstr "Ustawienia konta"
 
 msgid "Acknowledge & finish"
-msgstr ""
+msgstr "Potwierdź i zakończ"
 
 msgid "Active"
 msgstr "Aktywne"
@@ -448,7 +448,7 @@ msgid "Finish Anyways"
 msgstr "Zakończ mimo wszystko"
 
 msgid "Finish with material unpicked?"
-msgstr ""
+msgstr "Zakończyć bez wybranego materiału?"
 
 msgid "Forgot to Clock Out?"
 msgstr "Zapomniałeś zakończyć zmianę?"
@@ -526,7 +526,7 @@ msgid "Jobs"
 msgstr "Zadania"
 
 msgid "Keep picking"
-msgstr ""
+msgstr "Kontynuuj wybieranie"
 
 msgid "Kit"
 msgstr "Zestaw"
@@ -1078,7 +1078,7 @@ msgid "Setup"
 msgstr "Ustawienie"
 
 msgid "short"
-msgstr ""
+msgstr "krótkie"
 
 msgid "Short"
 msgstr "Brakuje"
@@ -1176,7 +1176,7 @@ msgid "There are serial or batch tracked materials on the bill of material that 
 msgstr "Na liście materiałowej znajdują się materiały śledzone seryjnie lub partiami, które nie zostały w pełni wydane. Ukończenie bez wydania może skutkować nieprawidłowymi rekordami śledzenia."
 
 msgid "These items still have material to pick. Finishing now marks the list Partial."
-msgstr ""
+msgstr "Te pozycje mają jeszcze materiał do wybrania. Zakończenie teraz oznaczy listę jako Częściowa."
 
 msgid "This lot is expired and can't be picked."
 msgstr "Ta partia wygasła i nie można jej pobrać."

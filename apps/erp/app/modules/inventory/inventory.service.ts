@@ -1584,6 +1584,62 @@ export async function insertManualInventoryAdjustment(
   return { data: result.data?.itemLedger ?? null, error: null };
 }
 
+// Authoritative effective quantity for a movement's correction group: resolve
+// the ultimate root by walking correctionOfItemLedgerId, then sum the root and
+// every correction in the group (BFS — historical count corrections chained
+// fix→fix). Mirrors the walk inside the correct-stock-movement edge function;
+// the modal pre-fills from this so the user never submits a value derived from
+// an incomplete page of movements.
+export async function getStockMovementEffectiveQuantity(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  itemLedgerId: string
+) {
+  const original = await client
+    .from("itemLedger")
+    .select("id, quantity, correctionOfItemLedgerId")
+    .eq("id", itemLedgerId)
+    .eq("companyId", companyId)
+    .maybeSingle();
+  if (original.error || !original.data) {
+    return { data: null, error: original.error ?? "Stock movement not found" };
+  }
+
+  let root = original.data;
+  for (let depth = 0; root.correctionOfItemLedgerId && depth < 100; depth++) {
+    const parent = await client
+      .from("itemLedger")
+      .select("id, quantity, correctionOfItemLedgerId")
+      .eq("id", root.correctionOfItemLedgerId)
+      .eq("companyId", companyId)
+      .maybeSingle();
+    if (parent.error) return { data: null, error: parent.error };
+    if (!parent.data) break;
+    root = parent.data;
+  }
+
+  let effectiveQuantity = Number(root.quantity);
+  let frontier = [root.id];
+  const seen = new Set<string>([root.id]);
+  while (frontier.length > 0) {
+    const children = await client
+      .from("itemLedger")
+      .select("id, quantity")
+      .in("correctionOfItemLedgerId", frontier)
+      .eq("companyId", companyId);
+    if (children.error) return { data: null, error: children.error };
+    frontier = [];
+    for (const child of children.data ?? []) {
+      if (seen.has(child.id)) continue;
+      seen.add(child.id);
+      effectiveQuantity += Number(child.quantity);
+      frontier.push(child.id);
+    }
+  }
+
+  return { data: { rootId: root.id, effectiveQuantity }, error: null };
+}
+
 // Thin wrapper over the correct-stock-movement edge function: books ONE
 // opposite (delta) movement linked to the corrected movement via
 // correctionOfItemLedgerId, dated with the original's postingDate and posted

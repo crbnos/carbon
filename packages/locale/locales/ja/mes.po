@@ -64,7 +64,7 @@ msgid "Account Settings"
 msgstr "アカウント設定"
 
 msgid "Acknowledge & finish"
-msgstr ""
+msgstr "確認して完了"
 
 msgid "Active"
 msgstr "アクティブ"
@@ -448,7 +448,7 @@ msgid "Finish Anyways"
 msgstr "とにかく完了"
 
 msgid "Finish with material unpicked?"
-msgstr ""
+msgstr "材料がピッキングされていない状態で終了しますか?"
 
 msgid "Forgot to Clock Out?"
 msgstr "退勤打刻を忘れましたか？"
@@ -526,7 +526,7 @@ msgid "Jobs"
 msgstr "ジョブ"
 
 msgid "Keep picking"
-msgstr ""
+msgstr "ピッキングを続ける"
 
 msgid "Kit"
 msgstr "キット"
@@ -1078,7 +1078,7 @@ msgid "Setup"
 msgstr "段取り"
 
 msgid "short"
-msgstr ""
+msgstr "短縮"
 
 msgid "Short"
 msgstr "不足"
@@ -1176,7 +1176,7 @@ msgid "There are serial or batch tracked materials on the bill of material that 
 msgstr "部品表にシリアルまたはバッチ追跡対象の材料が完全に払い出されていません。払出なしで完了すると、トレーサビリティ記録が不正確になる可能性があります。"
 
 msgid "These items still have material to pick. Finishing now marks the list Partial."
-msgstr ""
+msgstr "これらのアイテムにはまだピッキング対象の材料があります。今完了すると、リストは部分的としてマークされます。"
 
 msgid "This lot is expired and can't be picked."
 msgstr "このロットは期限切れであり、ピックできません。"

@@ -2952,7 +2952,7 @@ msgid "Copy training unique identifier"
 msgstr "トレーニングの一意の識別子をコピー"
 
 msgid "Correct"
-msgstr ""
+msgstr "訂正"
 
 msgid "Correct Answer"
 msgstr "正解"
@@ -2961,19 +2961,19 @@ msgid "Correct Answers"
 msgstr "正解"
 
 msgid "Correct Quantity"
-msgstr ""
+msgstr "数量を訂正"
 
 msgid "Correct Stock Movement"
-msgstr ""
+msgstr "在庫移動を訂正"
 
 msgid "Corrected Quantity"
-msgstr ""
+msgstr "訂正された数量"
 
 msgid "Correction"
 msgstr "修正"
 
 msgid "Correction {correctionNumber}"
-msgstr ""
+msgstr "訂正 {correctionNumber}"
 
 msgid "Corrections"
 msgstr "修正"
@@ -3688,7 +3688,7 @@ msgid "Decide what an operator sees if they try to issue a batch or serial that'
 msgstr "オペレーターが既に期限切れのバッチまたはシリアルを発行しようとした場合に表示される内容を決定します。"
 
 msgid "Decide what happens when an operator presses Finish on the shop floor with material still unpicked."
-msgstr ""
+msgstr "オペレーターが店舗の床で材料がまだピックされていない状態で「完了」を押すとどうなるかを決定します。"
 
 msgid "Decimal Places"
 msgstr "小数位数"
@@ -5035,7 +5035,7 @@ msgid "Enter PO number"
 msgstr "PO番号を入力"
 
 msgid "Enter the quantity this movement should have been. An opposite movement for the difference is posted next to the original, in the original's time period."
-msgstr ""
+msgstr "この移動がどの数量であるべきかを入力します。差分の反対の移動は、オリジナルの横に、オリジナルの期間に投稿されます。"
 
 msgid "Entered At Receipt"
 msgstr "受領時に入力"
@@ -5800,10 +5800,10 @@ msgid "Finishes"
 msgstr "仕上げ"
 
 msgid "Finishing an incomplete pick"
-msgstr ""
+msgstr "不完全なピックの完了"
 
 msgid "Finishing is refused until every line is picked or marked Short."
-msgstr ""
+msgstr "すべてのラインがピックされるか「短い」とマークされるまで、完了は拒否されます。"
 
 msgid "First Name"
 msgstr "名"
@@ -7313,6 +7313,9 @@ msgstr "最後に読み込まれ、カットオーバー時に残高が最新の
 
 msgid "Loading associated jobs..."
 msgstr "関連するジョブを読み込み中..."
+
+msgid "Loading current quantity…"
+msgstr "現在の数量を読み込み中…"
 
 msgid "Loading item details..."
 msgstr "アイテムの詳細を読み込み中..."
@@ -9005,7 +9008,7 @@ msgid "Operator must pick a different batch/serial."
 msgstr "オペレーターは別のバッチ/シリアルを選択する必要があります。"
 
 msgid "Operator sees the missing items, can acknowledge & finish. The list is flagged Partial."
-msgstr ""
+msgstr "オペレーターは不足アイテムを確認でき、承認して完了できます。リストは「部分」フラグが付けられます。"
 
 msgid "Operators"
 msgstr "オペレーター"
@@ -9250,7 +9253,7 @@ msgid "Part Supersession"
 msgstr "パーツの廃止予定"
 
 msgid "Partial"
-msgstr ""
+msgstr "部分"
 
 msgid "Partner"
 msgstr "パートナー"
@@ -9607,13 +9610,13 @@ msgid "Posted By"
 msgstr "投稿者"
 
 msgid "Posted once, corrected {corrections} times."
-msgstr ""
+msgstr "1回投稿され、{corrections}回訂正されました。"
 
 msgid "Posted once, corrected 1 time."
-msgstr ""
+msgstr "1回投稿され、1回訂正されました。"
 
 msgid "Posted once, no corrections."
-msgstr ""
+msgstr "1回投稿され、訂正はありません。"
 
 msgid "Posting"
 msgstr "前払金"
@@ -9628,7 +9631,7 @@ msgid "Pre-filled for a new item when expiry is Fixed Duration."
 msgstr "有効期限が固定期間の場合、新しい品目に対して事前入力されます。"
 
 msgid "Pre-select material without a picking list"
-msgstr ""
+msgstr "ピックリストなしで材料を事前選択"
 
 msgid "Preferred Supplier"
 msgstr "優先仕入先"
@@ -11779,7 +11782,7 @@ msgid "Signed in as {name}"
 msgstr "{name}としてサインインしています"
 
 msgid "Signed quantity — negative for outbound movements"
-msgstr ""
+msgstr "署名された数量 — アウトバウンド移動の場合は負数"
 
 msgid "Sites & locations"
 msgstr "サイトと場所"
@@ -12026,7 +12029,7 @@ msgid "Steps are inherited from the inspection plan."
 msgstr "ステップは検査計画から継承されます。"
 
 msgid "Stock movement corrected"
-msgstr ""
+msgstr "在庫移動が訂正されました"
 
 msgid "Stock Transfer ID"
 msgstr "在庫移動ID"
@@ -14606,7 +14609,7 @@ msgid "When on, this rule fires for every target of its type. Assignment rows ar
 msgstr "オンの場合、このルールはそのタイプのすべてのターゲットに対して発火します。割り当て行は無視されますが保持されます。"
 
 msgid "When on, tracked material is pre-selected by pick order (FEFO) even without a picking list. When off, operators start on the Scan tab."
-msgstr ""
+msgstr "オンの場合、追跡材料はピックリストがなくても、ピック順序（FEFO）で事前選択されます。オフの場合、オペレーターはスキャンタブで開始します。"
 
 msgid "When supplier responses are expected back; suppliers see this date on the RFQ portal and Carbon stops accepting late responses after it (configurable)."
 msgstr "サプライヤーの応答が期待される場合。サプライヤーはRFQポータルでこの日付を確認でき、Carbonはその後の遅い応答を受け付けません(設定可能)。"

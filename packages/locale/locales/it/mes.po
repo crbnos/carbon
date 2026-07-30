@@ -64,7 +64,7 @@ msgid "Account Settings"
 msgstr "Impostazioni Account"
 
 msgid "Acknowledge & finish"
-msgstr ""
+msgstr "Riconosci e completa"
 
 msgid "Active"
 msgstr "Attivo"
@@ -448,7 +448,7 @@ msgid "Finish Anyways"
 msgstr "Termina comunque"
 
 msgid "Finish with material unpicked?"
-msgstr ""
+msgstr "Terminare con il materiale non prelevato?"
 
 msgid "Forgot to Clock Out?"
 msgstr "Hai dimenticato di timbrare l'uscita?"
@@ -526,7 +526,7 @@ msgid "Jobs"
 msgstr "Lavori"
 
 msgid "Keep picking"
-msgstr ""
+msgstr "Continua il prelievo"
 
 msgid "Kit"
 msgstr "Kit"
@@ -1078,7 +1078,7 @@ msgid "Setup"
 msgstr "Attrezzaggio"
 
 msgid "short"
-msgstr ""
+msgstr "breve"
 
 msgid "Short"
 msgstr "Carente"
@@ -1176,7 +1176,7 @@ msgid "There are serial or batch tracked materials on the bill of material that 
 msgstr "Ci sono materiali tracciati per numero di serie o lotto nella distinta base che non sono stati completamente prelevati. Completare senza prelevare potrebbe causare registrazioni di tracciabilità errate."
 
 msgid "These items still have material to pick. Finishing now marks the list Partial."
-msgstr ""
+msgstr "Questi articoli hanno ancora materiale da prelevare. Il completamento ora contrassegna l'elenco come Parziale."
 
 msgid "This lot is expired and can't be picked."
 msgstr "Questo lotto è scaduto e non può essere prelevato."

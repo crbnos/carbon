@@ -158,10 +158,18 @@ serve(async (req: Request) => {
       itemPostingGroupId: itemCostResult.data.itemPostingGroupId,
     };
 
-    if (item.itemTrackingType === "Serial" && !Number.isInteger(delta)) {
-      throw new ValidationError(
-        "Corrections on serial-tracked items must be whole numbers"
-      );
+    const isSerial = item.itemTrackingType === "Serial";
+    if (isSerial) {
+      if (!Number.isInteger(delta)) {
+        throw new ValidationError(
+          "Corrections on serial-tracked items must be whole numbers"
+        );
+      }
+      // A serial number is a single unique unit — the corrected movement can
+      // never carry more than one of it (matches inventoryAdjustmentValidator).
+      if (Math.abs(correctedQuantity) > 1) {
+        throw new ValidationError("Serial items can only have a quantity of 1");
+      }
     }
 
     // A negative delta removes stock now — it must not drive the stock target
@@ -210,6 +218,9 @@ serve(async (req: Request) => {
         throw new ValidationError(
           "Correction would make the tracked entity quantity negative"
         );
+      }
+      if (isSerial && Number(entity.data.quantity) + delta > 1) {
+        throw new ValidationError("Serial items can only have a quantity of 1");
       }
     }
 
@@ -283,6 +294,8 @@ serve(async (req: Request) => {
           .where("companyId", "=", companyId)
           .where("status", "!=", "Consumed")
           .where((eb) => eb("quantity", ">=", -delta))
+          // Serial ceiling re-checked atomically: resulting quantity ≤ 1.
+          .$if(isSerial, (qb) => qb.where((eb) => eb("quantity", "<=", 1 - delta)))
           .returning(["id"])
           .executeTakeFirst();
         if (!updated) {

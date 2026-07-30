@@ -2952,7 +2952,7 @@ msgid "Copy training unique identifier"
 msgstr "复制培训唯一标识符"
 
 msgid "Correct"
-msgstr ""
+msgstr "修正"
 
 msgid "Correct Answer"
 msgstr "正确答案"
@@ -2961,19 +2961,19 @@ msgid "Correct Answers"
 msgstr "正确答案"
 
 msgid "Correct Quantity"
-msgstr ""
+msgstr "修正数量"
 
 msgid "Correct Stock Movement"
-msgstr ""
+msgstr "修正库存移动"
 
 msgid "Corrected Quantity"
-msgstr ""
+msgstr "已修正数量"
 
 msgid "Correction"
 msgstr "纠正"
 
 msgid "Correction {correctionNumber}"
-msgstr ""
+msgstr "修正 {correctionNumber}"
 
 msgid "Corrections"
 msgstr "纠正"
@@ -3688,7 +3688,7 @@ msgid "Decide what an operator sees if they try to issue a batch or serial that'
 msgstr "决定操作员在尝试发放已过期的批次或序列号时看到的内容。"
 
 msgid "Decide what happens when an operator presses Finish on the shop floor with material still unpicked."
-msgstr ""
+msgstr "决定当操作员在车间按下完成时但材料仍未拣选时会发生什么。"
 
 msgid "Decimal Places"
 msgstr "小数位数"
@@ -5035,7 +5035,7 @@ msgid "Enter PO number"
 msgstr "输入采购订单号"
 
 msgid "Enter the quantity this movement should have been. An opposite movement for the difference is posted next to the original, in the original's time period."
-msgstr ""
+msgstr "输入此移动应该的数量。差异的相反移动将在原始时期内的原始移动旁发布。"
 
 msgid "Entered At Receipt"
 msgstr "在收货时输入"
@@ -5800,10 +5800,10 @@ msgid "Finishes"
 msgstr "表面处理"
 
 msgid "Finishing an incomplete pick"
-msgstr ""
+msgstr "完成不完整的拣选"
 
 msgid "Finishing is refused until every line is picked or marked Short."
-msgstr ""
+msgstr "拒绝完成，直到每一行都被拣选或标记为缺少。"
 
 msgid "First Name"
 msgstr "名字"
@@ -7313,6 +7313,9 @@ msgstr "最后加载，在切换时进行，以便余额是最新的。"
 
 msgid "Loading associated jobs..."
 msgstr "正在加载关联的工作..."
+
+msgid "Loading current quantity…"
+msgstr "正在加载当前数量…"
 
 msgid "Loading item details..."
 msgstr "正在加载项目详情..."
@@ -9005,7 +9008,7 @@ msgid "Operator must pick a different batch/serial."
 msgstr "操作员必须选择不同的批次/序列号。"
 
 msgid "Operator sees the missing items, can acknowledge & finish. The list is flagged Partial."
-msgstr ""
+msgstr "操作员看到缺失的项目，可以确认并完成。列表被标记为部分。"
 
 msgid "Operators"
 msgstr "操作员"
@@ -9250,7 +9253,7 @@ msgid "Part Supersession"
 msgstr "零件取代"
 
 msgid "Partial"
-msgstr ""
+msgstr "部分"
 
 msgid "Partner"
 msgstr "合作伙伴"
@@ -9607,13 +9610,13 @@ msgid "Posted By"
 msgstr "发布者"
 
 msgid "Posted once, corrected {corrections} times."
-msgstr ""
+msgstr "发布一次，修正了 {corrections} 次。"
 
 msgid "Posted once, corrected 1 time."
-msgstr ""
+msgstr "发布一次，修正了 1 次。"
 
 msgid "Posted once, no corrections."
-msgstr ""
+msgstr "发布一次，无修正。"
 
 msgid "Posting"
 msgstr "预付款"
@@ -9628,7 +9631,7 @@ msgid "Pre-filled for a new item when expiry is Fixed Duration."
 msgstr "当过期时间设置为固定期限时，为新项目预填充。"
 
 msgid "Pre-select material without a picking list"
-msgstr ""
+msgstr "不带拣选单预先选择材料"
 
 msgid "Preferred Supplier"
 msgstr "首选供应商"
@@ -11779,7 +11782,7 @@ msgid "Signed in as {name}"
 msgstr "以 {name} 身份登录"
 
 msgid "Signed quantity — negative for outbound movements"
-msgstr ""
+msgstr "有符号数量 — 出站移动为负"
 
 msgid "Sites & locations"
 msgstr "站点和位置"
@@ -12026,7 +12029,7 @@ msgid "Steps are inherited from the inspection plan."
 msgstr "步骤继承自检验计划。"
 
 msgid "Stock movement corrected"
-msgstr ""
+msgstr "库存移动已修正"
 
 msgid "Stock Transfer ID"
 msgstr "库存转移ID"
@@ -14606,7 +14609,7 @@ msgid "When on, this rule fires for every target of its type. Assignment rows ar
 msgstr "启用时，此规则对其类型的每个目标都会触发。分配行被忽略但保留。"
 
 msgid "When on, tracked material is pre-selected by pick order (FEFO) even without a picking list. When off, operators start on the Scan tab."
-msgstr ""
+msgstr "启用时，即使没有拣选单，跟踪的材料也会根据拣选顺序（FEFO）预先选择。禁用时，操作员从扫描选项卡开始。"
 
 msgid "When supplier responses are expected back; suppliers see this date on the RFQ portal and Carbon stops accepting late responses after it (configurable)."
 msgstr "何时预期供应商回复;供应商在RFQ门户上看到该日期,Carbon在之后停止接受迟到的回复(可配置)。"

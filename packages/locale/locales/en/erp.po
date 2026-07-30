@@ -7314,6 +7314,9 @@ msgstr "Loaded last, right at cutover, so balances are current."
 msgid "Loading associated jobs..."
 msgstr "Loading associated jobs..."
 
+msgid "Loading current quantity…"
+msgstr "Loading current quantity…"
+
 msgid "Loading item details..."
 msgstr "Loading item details..."
 

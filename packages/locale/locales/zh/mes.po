@@ -64,7 +64,7 @@ msgid "Account Settings"
 msgstr "账户设置"
 
 msgid "Acknowledge & finish"
-msgstr ""
+msgstr "确认并完成"
 
 msgid "Active"
 msgstr "活跃"
@@ -448,7 +448,7 @@ msgid "Finish Anyways"
 msgstr "仍然完成"
 
 msgid "Finish with material unpicked?"
-msgstr ""
+msgstr "物料未拣选完毕，是否完成？"
 
 msgid "Forgot to Clock Out?"
 msgstr "忘记打卡下班了？"
@@ -526,7 +526,7 @@ msgid "Jobs"
 msgstr "工作"
 
 msgid "Keep picking"
-msgstr ""
+msgstr "继续拣选"
 
 msgid "Kit"
 msgstr "套件"
@@ -1078,7 +1078,7 @@ msgid "Setup"
 msgstr "设置"
 
 msgid "short"
-msgstr ""
+msgstr "短缺"
 
 msgid "Short"
 msgstr "缺货"
@@ -1176,7 +1176,7 @@ msgid "There are serial or batch tracked materials on the bill of material that 
 msgstr "物料清单中有序列号或批次追踪的物料尚未完全发放。不发放即完成可能导致追溯记录不正确。"
 
 msgid "These items still have material to pick. Finishing now marks the list Partial."
-msgstr ""
+msgstr "这些项目仍有物料需要拣选。现在完成将把列表标记为部分完成。"
 
 msgid "This lot is expired and can't be picked."
 msgstr "此批次已过期，无法领取。"

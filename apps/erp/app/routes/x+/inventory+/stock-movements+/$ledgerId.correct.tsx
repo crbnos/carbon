@@ -1,11 +1,35 @@
 import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { validationError, validator } from "@carbon/form";
-import type { ActionFunctionArgs } from "react-router";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import {
   correctStockMovement,
+  getStockMovementEffectiveQuantity,
   stockMovementCorrectionValidator
 } from "~/modules/inventory";
+
+// The modal pre-fills its corrected-quantity field from this — the page's
+// visible rows can miss off-page corrections (or descendants of a correction
+// row), so the client never derives the effective quantity itself.
+export async function loader({ request, params }: LoaderFunctionArgs) {
+  const { client, companyId } = await requirePermissions(request, {
+    view: "inventory"
+  });
+
+  const { ledgerId } = params;
+  if (!ledgerId) throw new Error("Could not find ledgerId");
+
+  const effective = await getStockMovementEffectiveQuantity(
+    client,
+    companyId,
+    ledgerId
+  );
+
+  if (effective.error || !effective.data) {
+    return { effectiveQuantity: null };
+  }
+  return { effectiveQuantity: effective.data.effectiveQuantity };
+}
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
