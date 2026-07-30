@@ -179,6 +179,15 @@ export const inventoryAdjustmentValidator = z
     }
   });
 
+// Corrects a posted stock movement: the user enters the SIGNED quantity the
+// movement should have been; the edge function derives the delta against the
+// movement's current effective quantity and books one opposite movement linked
+// via correctionOfItemLedgerId.
+export const stockMovementCorrectionValidator = z.object({
+  correctedQuantity: zfd.numeric(z.number()),
+  comment: zfd.text(z.string().optional())
+});
+
 export const itemLedgerValidator = z.object({
   postingDate: zfd.text(z.string().optional()),
   entryType: z.enum(itemLedgerTypes),

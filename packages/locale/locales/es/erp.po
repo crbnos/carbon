@@ -2951,14 +2951,29 @@ msgstr "Copiar nombre del entrenamiento"
 msgid "Copy training unique identifier"
 msgstr "Copiar identificador único de capacitación"
 
+msgid "Correct"
+msgstr ""
+
 msgid "Correct Answer"
 msgstr "Respuesta Correcta"
 
 msgid "Correct Answers"
 msgstr "Respuestas Correctas"
 
+msgid "Correct Quantity"
+msgstr ""
+
+msgid "Correct Stock Movement"
+msgstr ""
+
+msgid "Corrected Quantity"
+msgstr ""
+
 msgid "Correction"
 msgstr "Corrección"
+
+msgid "Correction {correctionNumber}"
+msgstr ""
 
 msgid "Corrections"
 msgstr "Correcciones"
@@ -5018,6 +5033,9 @@ msgstr "Ingrese o escanee el número de serie"
 
 msgid "Enter PO number"
 msgstr "Ingrese el número de PO"
+
+msgid "Enter the quantity this movement should have been. An opposite movement for the difference is posted next to the original, in the original's time period."
+msgstr ""
 
 msgid "Entered At Receipt"
 msgstr "Ingresado en la Recepción"
@@ -9588,14 +9606,14 @@ msgstr "Publicado en"
 msgid "Posted By"
 msgstr "Publicado por"
 
-msgid "Posted once, no rectifications."
-msgstr "Registrado una vez, sin rectificaciones."
+msgid "Posted once, corrected {corrections} times."
+msgstr ""
 
-msgid "Posted once, rectified {rectifications} times."
-msgstr "Registrado una vez, rectificado {rectifications} veces."
+msgid "Posted once, corrected 1 time."
+msgstr ""
 
-msgid "Posted once, rectified 1 time."
-msgstr "Registrado una vez, rectificado 1 vez."
+msgid "Posted once, no corrections."
+msgstr ""
 
 msgid "Posting"
 msgstr "Anticipos"
@@ -10362,12 +10380,6 @@ msgstr "Registros"
 
 msgid "Recovery Period"
 msgstr "Registrar"
-
-msgid "Rectification {rectifyNumber}"
-msgstr "Rectificación {rectifyNumber}"
-
-msgid "Rectify"
-msgstr "Rectificar"
 
 msgid "Redirecting to verification page..."
 msgstr "Redirigiendo a la página de verificación..."
@@ -11766,6 +11778,9 @@ msgstr "Autorizaciones que deben registrarse antes de que se pueda cerrar este p
 msgid "Signed in as {name}"
 msgstr "Sesión iniciada como {name}"
 
+msgid "Signed quantity — negative for outbound movements"
+msgstr ""
+
 msgid "Sites & locations"
 msgstr "Sitios y ubicaciones"
 
@@ -12009,6 +12024,9 @@ msgstr "Los pasos se heredan de la instrucción de montaje."
 
 msgid "Steps are inherited from the inspection plan."
 msgstr "Los pasos se heredan del plan de inspección."
+
+msgid "Stock movement corrected"
+msgstr ""
 
 msgid "Stock Transfer ID"
 msgstr "ID de Transferencia de Inventario"

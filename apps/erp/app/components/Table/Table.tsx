@@ -543,7 +543,7 @@ const Table = <T extends object>({
   const [isEditing, setIsEditing] = useState(false);
   const [selectedCell, setSelectedCell] = useState<Position>(null);
 
-  // forceEditMode follows the document's state (e.g. Rectify flips a Posted
+  // forceEditMode follows the document's state (e.g. Reopen flips a Pending
   // count back to Draft via revalidation, without remounting the table) — and
   // the Edit/Lock toggle is hidden while it's set, so a stale editMode would
   // strand the table with no way to recover. Keep them in sync.

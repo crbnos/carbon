@@ -49,9 +49,9 @@ class SerialQuantityError extends InvalidLinesError {
 // applied on top of it). Each variance books through the shared posting core:
 // item ledger + cost layers + (when companySettings.accountingEnabled) a GL
 // journal against the inventory adjustment variance account.
-// (Rectify re-snapshots `systemQuantity` to current live on-hand first, so for a
-// correction the same formula resolves to "set to counted". A correction is a
-// NEW movement valued at posting-time cost — the original journal is immutable.)
+// A count posts exactly once (Posted is terminal). Fixing a posted movement
+// happens per-movement via the correct-stock-movement edge function, which
+// links the fix through itemLedger.correctionOfItemLedgerId.
 const payloadValidator = z.object({
   type: z.literal("post"),
   inventoryCountId: z.string(),
@@ -294,11 +294,6 @@ serve(async (req: Request) => {
             entryType: delta > 0 ? "Positive Adjmt." : "Negative Adjmt.",
             documentType: "Inventory Count",
             documentId: inventoryCountId,
-            // In-place rectify: if this line already posted a movement (the count
-            // was rectified), link the new fix movement back to that prior one so
-            // both stay visible and linked in the movements screens. Null on the
-            // first post.
-            correctionOfItemLedgerId: line.postedItemLedgerId ?? null,
             comment,
             companyId,
             createdBy: userId

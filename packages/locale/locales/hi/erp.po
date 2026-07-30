@@ -2951,14 +2951,29 @@ msgstr "प्रशिक्षण नाम कॉपी करें"
 msgid "Copy training unique identifier"
 msgstr "प्रशिक्षण अद्वितीय पहचानकर्ता की प्रतिलिपि बनाएं"
 
+msgid "Correct"
+msgstr ""
+
 msgid "Correct Answer"
 msgstr "सही उत्तर"
 
 msgid "Correct Answers"
 msgstr "सही उत्तर"
 
+msgid "Correct Quantity"
+msgstr ""
+
+msgid "Correct Stock Movement"
+msgstr ""
+
+msgid "Corrected Quantity"
+msgstr ""
+
 msgid "Correction"
 msgstr "सुधार"
+
+msgid "Correction {correctionNumber}"
+msgstr ""
 
 msgid "Corrections"
 msgstr "सुधार"
@@ -5018,6 +5033,9 @@ msgstr "सीरियल नंबर दर्ज करें या स्�
 
 msgid "Enter PO number"
 msgstr "PO नंबर दर्ज करें"
+
+msgid "Enter the quantity this movement should have been. An opposite movement for the difference is posted next to the original, in the original's time period."
+msgstr ""
 
 msgid "Entered At Receipt"
 msgstr "रसीद पर दर्ज"
@@ -9588,14 +9606,14 @@ msgstr "पोस्ट किया गया"
 msgid "Posted By"
 msgstr "द्वारा पोस्ट किया गया"
 
-msgid "Posted once, no rectifications."
-msgstr "एक बार पोस्ट किया गया, कोई सुधार नहीं।"
+msgid "Posted once, corrected {corrections} times."
+msgstr ""
 
-msgid "Posted once, rectified {rectifications} times."
-msgstr "एक बार पोस्ट किया गया, {rectifications} बार सुधारा गया।"
+msgid "Posted once, corrected 1 time."
+msgstr ""
 
-msgid "Posted once, rectified 1 time."
-msgstr "एक बार पोस्ट किया गया, 1 बार सुधारा गया।"
+msgid "Posted once, no corrections."
+msgstr ""
 
 msgid "Posting"
 msgstr "अग्रिम भुगतान"
@@ -10362,12 +10380,6 @@ msgstr "रिकॉर्ड"
 
 msgid "Recovery Period"
 msgstr "पंजीकृत करें"
-
-msgid "Rectification {rectifyNumber}"
-msgstr "सुधार {rectifyNumber}"
-
-msgid "Rectify"
-msgstr "सुधारें"
 
 msgid "Redirecting to verification page..."
 msgstr "सत्यापन पृष्ठ पर पुनः निर्देशित किया जा रहा है..."
@@ -11766,6 +11778,9 @@ msgstr "साइन-ऑफ जो इस समस्या को बंद �
 msgid "Signed in as {name}"
 msgstr "{name} के रूप में साइन इन किया गया"
 
+msgid "Signed quantity — negative for outbound movements"
+msgstr ""
+
 msgid "Sites & locations"
 msgstr "साइटें और स्थान"
 
@@ -12009,6 +12024,9 @@ msgstr "चरण विधानसभा निर्देश से वि�
 
 msgid "Steps are inherited from the inspection plan."
 msgstr "चरण निरीक्षण योजना से विरासत में मिले हैं।"
+
+msgid "Stock movement corrected"
+msgstr ""
 
 msgid "Stock Transfer ID"
 msgstr "स्टॉक ट्रांसफर आईडी"

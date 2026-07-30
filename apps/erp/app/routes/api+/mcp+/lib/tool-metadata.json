@@ -1,5 +1,5 @@
 {
-  "generated": "2026-07-29T14:23:29.561Z",
+  "generated": "2026-07-30T13:56:21.533Z",
   "totalTools": 1400,
   "modules": 15,
   "tools": [
@@ -6151,6 +6151,31 @@
       }
     },
     {
+      "name": "inventory_correctStockMovement",
+      "module": "inventory",
+      "classification": "WRITE",
+      "description": "correct stock movement",
+      "paramCount": 2,
+      "serviceParams": [
+        "client",
+        "correction"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "correctedQuantity": {
+            "type": "number"
+          },
+          "comment": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    {
       "name": "inventory_getInventoryCounts",
       "module": "inventory",
       "classification": "READ",
@@ -6420,29 +6445,6 @@
         "required": [
           "inventoryCountId",
           "locationId"
-        ]
-      }
-    },
-    {
-      "name": "inventory_rectifyInventoryCount",
-      "module": "inventory",
-      "classification": "WRITE",
-      "description": "rectify inventory count",
-      "paramCount": 1,
-      "serviceParams": [
-        "db",
-        "args"
-      ],
-      "injectAuth": [
-        "companyId"
-      ],
-      "schema": {
-        "type": "object",
-        "properties": {
-          "args": {}
-        },
-        "required": [
-          "args"
         ]
       }
     },

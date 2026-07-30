@@ -2951,14 +2951,29 @@ msgstr "トレーニング名をコピー"
 msgid "Copy training unique identifier"
 msgstr "トレーニングの一意の識別子をコピー"
 
+msgid "Correct"
+msgstr ""
+
 msgid "Correct Answer"
 msgstr "正解"
 
 msgid "Correct Answers"
 msgstr "正解"
 
+msgid "Correct Quantity"
+msgstr ""
+
+msgid "Correct Stock Movement"
+msgstr ""
+
+msgid "Corrected Quantity"
+msgstr ""
+
 msgid "Correction"
 msgstr "修正"
+
+msgid "Correction {correctionNumber}"
+msgstr ""
 
 msgid "Corrections"
 msgstr "修正"
@@ -5018,6 +5033,9 @@ msgstr "シリアル番号を入力またはスキャンしてください"
 
 msgid "Enter PO number"
 msgstr "PO番号を入力"
+
+msgid "Enter the quantity this movement should have been. An opposite movement for the difference is posted next to the original, in the original's time period."
+msgstr ""
 
 msgid "Entered At Receipt"
 msgstr "受領時に入力"
@@ -9588,14 +9606,14 @@ msgstr "投稿日時"
 msgid "Posted By"
 msgstr "投稿者"
 
-msgid "Posted once, no rectifications."
-msgstr "1回投稿され、修正がありません。"
+msgid "Posted once, corrected {corrections} times."
+msgstr ""
 
-msgid "Posted once, rectified {rectifications} times."
-msgstr "1回投稿され、{rectifications}回修正されました。"
+msgid "Posted once, corrected 1 time."
+msgstr ""
 
-msgid "Posted once, rectified 1 time."
-msgstr "1回投稿され、1回修正されました。"
+msgid "Posted once, no corrections."
+msgstr ""
 
 msgid "Posting"
 msgstr "前払金"
@@ -10362,12 +10380,6 @@ msgstr "記録"
 
 msgid "Recovery Period"
 msgstr "登録"
-
-msgid "Rectification {rectifyNumber}"
-msgstr "修正 {rectifyNumber}"
-
-msgid "Rectify"
-msgstr "修正"
 
 msgid "Redirecting to verification page..."
 msgstr "検証ページにリダイレクト中..."
@@ -11766,6 +11778,9 @@ msgstr "この問題を閉じる前に記録する必要があるサインオフ
 msgid "Signed in as {name}"
 msgstr "{name}としてサインインしています"
 
+msgid "Signed quantity — negative for outbound movements"
+msgstr ""
+
 msgid "Sites & locations"
 msgstr "サイトと場所"
 
@@ -12009,6 +12024,9 @@ msgstr "ステップは組立指示から継承されます。"
 
 msgid "Steps are inherited from the inspection plan."
 msgstr "ステップは検査計画から継承されます。"
+
+msgid "Stock movement corrected"
+msgstr ""
 
 msgid "Stock Transfer ID"
 msgstr "在庫移動ID"

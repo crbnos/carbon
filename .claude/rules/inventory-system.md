@@ -36,6 +36,16 @@ Key service functions (verified):
   (`functions/shared/post-adjustment.ts`). Storage-unit transfers post no GL. The valuation
   workbench tie-out offers a **Reconcile** action (`createInventoryReconciliationJournal`) that
   drafts an adjusting journal for any residual pre-feature variance.
+- `correctStockMovement` — wraps the **`correct-stock-movement` edge function**: fixes any
+  posted `itemLedger` row by booking ONE opposite (delta) movement linked to the original's
+  correction root via `itemLedger.correctionOfItemLedgerId`, carrying the ORIGINAL's
+  `postingDate` and (when accounting is on) posting its journal into the period containing
+  that date via `getAccountingPeriodForDate` (throws on Locked/Closed). The delta is
+  `correctedQuantity − effective` (effective = root + all prior corrections in the group),
+  so repeat corrections converge. `documentType`/`documentId` are copied from the original
+  so document-scoped movement views keep including the fix. Entry point: "Correct Quantity"
+  context action on `StockMovementsTable` → `stock-movements/$ledgerId/correct` route.
+  Inventory counts have NO count-level rectify; Posted is terminal.
 - Storage units: `getStorageUnit(s)`, `getStorageUnitRoots`, `getStorageUnitChildren`,
   `getStorageUnitTree`, `getStorageUnitsTreeForLocation`, `getDefaultStorageUnitForJob`,
   `getDefaultStorageUnitOrStorageUnitWithHighestQuantity` (these are the picking/job defaults).

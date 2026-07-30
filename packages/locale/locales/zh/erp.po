@@ -2951,14 +2951,29 @@ msgstr "复制培训名称"
 msgid "Copy training unique identifier"
 msgstr "复制培训唯一标识符"
 
+msgid "Correct"
+msgstr ""
+
 msgid "Correct Answer"
 msgstr "正确答案"
 
 msgid "Correct Answers"
 msgstr "正确答案"
 
+msgid "Correct Quantity"
+msgstr ""
+
+msgid "Correct Stock Movement"
+msgstr ""
+
+msgid "Corrected Quantity"
+msgstr ""
+
 msgid "Correction"
 msgstr "纠正"
+
+msgid "Correction {correctionNumber}"
+msgstr ""
 
 msgid "Corrections"
 msgstr "纠正"
@@ -5018,6 +5033,9 @@ msgstr "输入或扫描序列号"
 
 msgid "Enter PO number"
 msgstr "输入采购订单号"
+
+msgid "Enter the quantity this movement should have been. An opposite movement for the difference is posted next to the original, in the original's time period."
+msgstr ""
 
 msgid "Entered At Receipt"
 msgstr "在收货时输入"
@@ -9588,14 +9606,14 @@ msgstr "发布于"
 msgid "Posted By"
 msgstr "发布者"
 
-msgid "Posted once, no rectifications."
-msgstr "已过账一次，无纠正。"
+msgid "Posted once, corrected {corrections} times."
+msgstr ""
 
-msgid "Posted once, rectified {rectifications} times."
-msgstr "已过账一次，已纠正 {rectifications} 次。"
+msgid "Posted once, corrected 1 time."
+msgstr ""
 
-msgid "Posted once, rectified 1 time."
-msgstr "已过账一次，已纠正 1 次。"
+msgid "Posted once, no corrections."
+msgstr ""
 
 msgid "Posting"
 msgstr "预付款"
@@ -10362,12 +10380,6 @@ msgstr "记录"
 
 msgid "Recovery Period"
 msgstr "注册"
-
-msgid "Rectification {rectifyNumber}"
-msgstr "纠正 {rectifyNumber}"
-
-msgid "Rectify"
-msgstr "纠正"
 
 msgid "Redirecting to verification page..."
 msgstr "正在重定向到验证页面..."
@@ -11766,6 +11778,9 @@ msgstr "在关闭此问题之前必须记录的签署；除了工作流程所需
 msgid "Signed in as {name}"
 msgstr "以 {name} 身份登录"
 
+msgid "Signed quantity — negative for outbound movements"
+msgstr ""
+
 msgid "Sites & locations"
 msgstr "站点和位置"
 
@@ -12009,6 +12024,9 @@ msgstr "步骤继承自装配说明。"
 
 msgid "Steps are inherited from the inspection plan."
 msgstr "步骤继承自检验计划。"
+
+msgid "Stock movement corrected"
+msgstr ""
 
 msgid "Stock Transfer ID"
 msgstr "库存转移ID"

@@ -2951,14 +2951,29 @@ msgstr "Schulungsnamen kopieren"
 msgid "Copy training unique identifier"
 msgstr "Eindeutige Schulungs-ID kopieren"
 
+msgid "Correct"
+msgstr ""
+
 msgid "Correct Answer"
 msgstr "Richtige Antwort"
 
 msgid "Correct Answers"
 msgstr "Richtige Antworten"
 
+msgid "Correct Quantity"
+msgstr ""
+
+msgid "Correct Stock Movement"
+msgstr ""
+
+msgid "Corrected Quantity"
+msgstr ""
+
 msgid "Correction"
 msgstr "Korrektur"
+
+msgid "Correction {correctionNumber}"
+msgstr ""
 
 msgid "Corrections"
 msgstr "Korrektionen"
@@ -5018,6 +5033,9 @@ msgstr "Seriennummer eingeben oder scannen"
 
 msgid "Enter PO number"
 msgstr "PO-Nummer eingeben"
+
+msgid "Enter the quantity this movement should have been. An opposite movement for the difference is posted next to the original, in the original's time period."
+msgstr ""
 
 msgid "Entered At Receipt"
 msgstr "Bei Wareneingang erfasst"
@@ -9588,14 +9606,14 @@ msgstr "Gepostet am"
 msgid "Posted By"
 msgstr "Gepostet von"
 
-msgid "Posted once, no rectifications."
-msgstr "Einmal gepostet, keine Berichtigungen."
+msgid "Posted once, corrected {corrections} times."
+msgstr ""
 
-msgid "Posted once, rectified {rectifications} times."
-msgstr "Einmal gepostet, {rectifications} Mal berichtigt."
+msgid "Posted once, corrected 1 time."
+msgstr ""
 
-msgid "Posted once, rectified 1 time."
-msgstr "Einmal gepostet, 1 Mal berichtigt."
+msgid "Posted once, no corrections."
+msgstr ""
 
 msgid "Posting"
 msgstr "Vorauszahlungen"
@@ -10362,12 +10380,6 @@ msgstr "Aufzeichnungen"
 
 msgid "Recovery Period"
 msgstr "Registrieren"
-
-msgid "Rectification {rectifyNumber}"
-msgstr "Berichtigung {rectifyNumber}"
-
-msgid "Rectify"
-msgstr "Berichtigen"
 
 msgid "Redirecting to verification page..."
 msgstr "Wird zur Verifizierungsseite weitergeleitet..."
@@ -11766,6 +11778,9 @@ msgstr "Zeichen-Offs, die aufgezeichnet werden müssen, bevor diese Ausgabe gesc
 msgid "Signed in as {name}"
 msgstr "Angemeldet als {name}"
 
+msgid "Signed quantity — negative for outbound movements"
+msgstr ""
+
 msgid "Sites & locations"
 msgstr "Standorte & Lagerorte"
 
@@ -12009,6 +12024,9 @@ msgstr "Die Schritte werden von der Montageanleitungen geerbt."
 
 msgid "Steps are inherited from the inspection plan."
 msgstr "Schritte werden vom Inspektionsplan geerbt."
+
+msgid "Stock movement corrected"
+msgstr ""
 
 msgid "Stock Transfer ID"
 msgstr "Lagerbestandstransfer-ID"

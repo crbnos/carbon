@@ -2951,14 +2951,29 @@ msgstr "교육 이름 복사"
 msgid "Copy training unique identifier"
 msgstr "교육 고유 식별자 복사"
 
+msgid "Correct"
+msgstr ""
+
 msgid "Correct Answer"
 msgstr "정답"
 
 msgid "Correct Answers"
 msgstr "정답"
 
+msgid "Correct Quantity"
+msgstr ""
+
+msgid "Correct Stock Movement"
+msgstr ""
+
+msgid "Corrected Quantity"
+msgstr ""
+
 msgid "Correction"
 msgstr "수정"
+
+msgid "Correction {correctionNumber}"
+msgstr ""
 
 msgid "Corrections"
 msgstr "수정"
@@ -5018,6 +5033,9 @@ msgstr "일련번호를 입력하거나 스캔하세요"
 
 msgid "Enter PO number"
 msgstr "구매주문 번호 입력"
+
+msgid "Enter the quantity this movement should have been. An opposite movement for the difference is posted next to the original, in the original's time period."
+msgstr ""
 
 msgid "Entered At Receipt"
 msgstr "입고 시 입력됨"
@@ -9588,14 +9606,14 @@ msgstr "전기 일시"
 msgid "Posted By"
 msgstr "전기자"
 
-msgid "Posted once, no rectifications."
-msgstr "1회 게시, 수정 없음."
+msgid "Posted once, corrected {corrections} times."
+msgstr ""
 
-msgid "Posted once, rectified {rectifications} times."
-msgstr "1회 게시, {rectifications}회 수정됨."
+msgid "Posted once, corrected 1 time."
+msgstr ""
 
-msgid "Posted once, rectified 1 time."
-msgstr "1회 게시, 1회 수정됨."
+msgid "Posted once, no corrections."
+msgstr ""
 
 msgid "Posting"
 msgstr "전기"
@@ -10362,12 +10380,6 @@ msgstr "레코드"
 
 msgid "Recovery Period"
 msgstr "회수 기간"
-
-msgid "Rectification {rectifyNumber}"
-msgstr "수정 {rectifyNumber}"
-
-msgid "Rectify"
-msgstr "수정"
 
 msgid "Redirecting to verification page..."
 msgstr "인증 페이지로 이동 중..."
@@ -11766,6 +11778,9 @@ msgstr "이 이슈를 종료하기 전에 기록해야 하는 서명으로, 워�
 msgid "Signed in as {name}"
 msgstr "{name}(으)로 로그인됨"
 
+msgid "Signed quantity — negative for outbound movements"
+msgstr ""
+
 msgid "Sites & locations"
 msgstr "사이트 및 위치"
 
@@ -12009,6 +12024,9 @@ msgstr "단계는 조립 지시사항에서 상속됩니다."
 
 msgid "Steps are inherited from the inspection plan."
 msgstr "단계는 검사 계획에서 상속됩니다."
+
+msgid "Stock movement corrected"
+msgstr ""
 
 msgid "Stock Transfer ID"
 msgstr "재고 이동 ID"

@@ -2951,14 +2951,29 @@ msgstr "Копировать название обучения"
 msgid "Copy training unique identifier"
 msgstr "Скопировать уникальный идентификатор обучения"
 
+msgid "Correct"
+msgstr ""
+
 msgid "Correct Answer"
 msgstr "Правильный ответ"
 
 msgid "Correct Answers"
 msgstr "Правильные ответы"
 
+msgid "Correct Quantity"
+msgstr ""
+
+msgid "Correct Stock Movement"
+msgstr ""
+
+msgid "Corrected Quantity"
+msgstr ""
+
 msgid "Correction"
 msgstr "Исправление"
+
+msgid "Correction {correctionNumber}"
+msgstr ""
 
 msgid "Corrections"
 msgstr "Исправления"
@@ -5018,6 +5033,9 @@ msgstr "Введите или отсканируйте серийный номе
 
 msgid "Enter PO number"
 msgstr "Введите номер ПО"
+
+msgid "Enter the quantity this movement should have been. An opposite movement for the difference is posted next to the original, in the original's time period."
+msgstr ""
 
 msgid "Entered At Receipt"
 msgstr "Введено при получении"
@@ -9588,14 +9606,14 @@ msgstr "Опубликовано в"
 msgid "Posted By"
 msgstr "Опубликовано"
 
-msgid "Posted once, no rectifications."
-msgstr "Опубликовано один раз, без исправлений."
+msgid "Posted once, corrected {corrections} times."
+msgstr ""
 
-msgid "Posted once, rectified {rectifications} times."
-msgstr "Опубликовано один раз, исправлено {rectifications} раз(а)."
+msgid "Posted once, corrected 1 time."
+msgstr ""
 
-msgid "Posted once, rectified 1 time."
-msgstr "Опубликовано один раз, исправлено 1 раз."
+msgid "Posted once, no corrections."
+msgstr ""
 
 msgid "Posting"
 msgstr "Авансовые платежи"
@@ -10362,12 +10380,6 @@ msgstr "Записи"
 
 msgid "Recovery Period"
 msgstr "Зарегистрировать"
-
-msgid "Rectification {rectifyNumber}"
-msgstr "Исправление {rectifyNumber}"
-
-msgid "Rectify"
-msgstr "Исправить"
 
 msgid "Redirecting to verification page..."
 msgstr "Перенаправление на страницу проверки..."
@@ -11766,6 +11778,9 @@ msgstr "Утверждения, которые должны быть запис�
 msgid "Signed in as {name}"
 msgstr "Вы вошли как {name}"
 
+msgid "Signed quantity — negative for outbound movements"
+msgstr ""
+
 msgid "Sites & locations"
 msgstr "Объекты и местоположения"
 
@@ -12009,6 +12024,9 @@ msgstr "Этапы наследуются из инструкции по сбо�
 
 msgid "Steps are inherited from the inspection plan."
 msgstr "Этапы наследуются из плана контроля."
+
+msgid "Stock movement corrected"
+msgstr ""
 
 msgid "Stock Transfer ID"
 msgstr "ID передачи запасов"

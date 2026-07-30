@@ -2951,14 +2951,29 @@ msgstr "Eğitim adını kopyala"
 msgid "Copy training unique identifier"
 msgstr "Eğitim benzersiz tanımlayıcısını kopyala"
 
+msgid "Correct"
+msgstr ""
+
 msgid "Correct Answer"
 msgstr "Doğru Cevap"
 
 msgid "Correct Answers"
 msgstr "Doğru Cevaplar"
 
+msgid "Correct Quantity"
+msgstr ""
+
+msgid "Correct Stock Movement"
+msgstr ""
+
+msgid "Corrected Quantity"
+msgstr ""
+
 msgid "Correction"
 msgstr "Düzeltme"
+
+msgid "Correction {correctionNumber}"
+msgstr ""
 
 msgid "Corrections"
 msgstr "Düzeltmeler"
@@ -5018,6 +5033,9 @@ msgstr "Seri numarası girin veya tarayın"
 
 msgid "Enter PO number"
 msgstr "PO numarasını girin"
+
+msgid "Enter the quantity this movement should have been. An opposite movement for the difference is posted next to the original, in the original's time period."
+msgstr ""
 
 msgid "Entered At Receipt"
 msgstr "Alındığında Girildi"
@@ -9588,14 +9606,14 @@ msgstr "Gönderilen Tarih"
 msgid "Posted By"
 msgstr "Gönderen"
 
-msgid "Posted once, no rectifications."
-msgstr "Bir kez gönderildi, düzeltme yapılmadı."
+msgid "Posted once, corrected {corrections} times."
+msgstr ""
 
-msgid "Posted once, rectified {rectifications} times."
-msgstr "Bir kez gönderildi, {rectifications} kez düzeltildi."
+msgid "Posted once, corrected 1 time."
+msgstr ""
 
-msgid "Posted once, rectified 1 time."
-msgstr "Bir kez gönderildi, 1 kez düzeltildi."
+msgid "Posted once, no corrections."
+msgstr ""
 
 msgid "Posting"
 msgstr "Ön Ödemeler"
@@ -10362,12 +10380,6 @@ msgstr "Kayıtlar"
 
 msgid "Recovery Period"
 msgstr "Kayıt Yap"
-
-msgid "Rectification {rectifyNumber}"
-msgstr "Düzeltme {rectifyNumber}"
-
-msgid "Rectify"
-msgstr "Düzelt"
 
 msgid "Redirecting to verification page..."
 msgstr "Doğrulama sayfasına yönlendiriliyor..."
@@ -11766,6 +11778,9 @@ msgstr "Bu sorun kapatılmadan önce kaydedilmesi gereken onaylar; iş akışı 
 msgid "Signed in as {name}"
 msgstr "Oturum açıldı olarak {name}"
 
+msgid "Signed quantity — negative for outbound movements"
+msgstr ""
+
 msgid "Sites & locations"
 msgstr "Siteler & konumlar"
 
@@ -12009,6 +12024,9 @@ msgstr "Adımlar montaj talimatından devralınır."
 
 msgid "Steps are inherited from the inspection plan."
 msgstr "Adımlar muayene planından devralınır."
+
+msgid "Stock movement corrected"
+msgstr ""
 
 msgid "Stock Transfer ID"
 msgstr "Stok Transfer Kimliği"
