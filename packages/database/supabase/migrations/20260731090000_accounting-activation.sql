@@ -66,7 +66,8 @@ UPDATE "company" c SET
   "accountingCutoverDate" = sub."cutover"
 FROM (
   SELECT j."companyId", MIN(ap."startDate") AS "cutover"
-  FROM "journal" j JOIN "accountingPeriod" ap ON ap."id" = j."accountingPeriodId"
+  FROM "journal" j JOIN "accountingPeriod" ap
+    ON ap."id" = j."accountingPeriodId" AND ap."companyId" = j."companyId"
   WHERE j."status" = 'Posted' GROUP BY j."companyId"
 ) sub
 WHERE sub."companyId" = c."id" AND c."accountingActivatedAt" IS NULL

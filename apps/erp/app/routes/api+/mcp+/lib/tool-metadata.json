@@ -1,6 +1,6 @@
 {
-  "generated": "2026-07-30T19:33:13.963Z",
-  "totalTools": 1408,
+  "generated": "2026-07-31T13:31:35.311Z",
+  "totalTools": 1411,
   "modules": 15,
   "tools": [
     {
@@ -22405,6 +22405,89 @@
         "required": [
           "id",
           "data"
+        ]
+      }
+    },
+    {
+      "name": "production_getAssemblyInstructionVersions",
+      "module": "production",
+      "classification": "READ",
+      "description": "get assembly instruction versions",
+      "paramCount": 2,
+      "serviceParams": [
+        "client",
+        "instruction"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "rootInstructionId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "id"
+        ]
+      }
+    },
+    {
+      "name": "production_copyAssemblyInstructionAsVersion",
+      "module": "production",
+      "classification": "WRITE",
+      "description": "copy assembly instruction as version",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId",
+        "createdBy",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "copyFromId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "copyFromId"
+        ]
+      }
+    },
+    {
+      "name": "production_activateAssemblyInstructionVersion",
+      "module": "production",
+      "classification": "WRITE",
+      "description": "activate assembly instruction version",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
         ]
       }
     },

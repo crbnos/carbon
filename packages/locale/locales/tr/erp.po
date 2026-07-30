@@ -174,7 +174,7 @@ msgid "1 unposted document"
 msgstr "1 deftere geçmemiş belge"
 
 msgid "1. Readiness"
-msgstr ""
+msgstr "1. Hazırlık"
 
 msgid "12 monthly periods"
 msgstr "12 aylık dönem"
@@ -186,13 +186,13 @@ msgid "1Y"
 msgstr "1Y"
 
 msgid "2. Opening balances"
-msgstr ""
+msgstr "2. Açılış bakiyeleri"
 
 msgid "2h"
 msgstr "2s"
 
 msgid "3. Validation"
-msgstr ""
+msgstr "3. Doğrulama"
 
 msgid "30D"
 msgstr "30G"
@@ -204,7 +204,7 @@ msgid "3h"
 msgstr "3s"
 
 msgid "4. Activate"
-msgstr ""
+msgstr "4. Etkinleştir"
 
 msgid "4h"
 msgstr "4s"
@@ -510,10 +510,10 @@ msgid "Accounting"
 msgstr "Muhasebe"
 
 msgid "Accounting has not been activated yet."
-msgstr ""
+msgstr "Muhasebe henüz etkinleştirilmemiştir."
 
 msgid "Accounting is activated"
-msgstr ""
+msgstr "Muhasebe etkinleştirildi"
 
 msgid "Accounting is disabled"
 msgstr "Muhasebe devre dışı"
@@ -529,7 +529,7 @@ msgstr "Muhasebe Dönemleri"
 
 #. placeholder {0}: formatDate(accountingActivatedAt)
 msgid "Accounting was activated on {0}."
-msgstr ""
+msgstr "Muhasebe {0} tarihinde etkinleştirildi."
 
 msgid "Accounting: GL, AR, AP, and month-end close"
 msgstr "Muhasebe: GL, AR, AP ve ay sonu kapanışı"
@@ -578,6 +578,7 @@ msgstr "Biriktirme Dönemi:"
 
 msgid "Acknowledge & finish"
 msgstr "Onayla ve Bitir"
+msgstr "Onayla ve tamamla"
 
 msgid "Acquisition Cost"
 msgstr "Satın alma maliyeti"
@@ -607,13 +608,13 @@ msgid "Activate {name}"
 msgstr "*{name} Etkinleştir*"
 
 msgid "Activate accounting"
-msgstr ""
+msgstr "Muhasebyi etkinleştir"
 
 msgid "Activate Accounting"
-msgstr ""
+msgstr "Muhasebyi Etkinleştir"
 
 msgid "Activate accounting for this company: post opening balances, close pre-cutover periods, and lock the base currency and fiscal calendar. Activation is one-way."
-msgstr ""
+msgstr "Bu şirket için muhasebyi etkinleştir: açılış bakiyelerini yayınla, kesme öncesi dönemleri kapat ve temel para birimini ve mali takvimi kilitle. Etkinleştirme tek yönlüdür."
 
 msgid "Activate Process"
 msgstr "İş Akışını Aktif Et"
@@ -624,13 +625,13 @@ msgstr "İş Merkezi Etkinleştir"
 #. placeholder {0}: readiness.activatedAt ? formatDate(readiness.activatedAt) : ""
 #. placeholder {1}: readiness.cutoverDate ? formatDate(readiness.cutoverDate) : ""
 msgid "Activated on {0}. The cutover date is {1}. Base currency and fiscal settings are now locked."
-msgstr ""
+msgstr "Etkinleştirildi: {0}. Kesme tarihi {1}. Temel para birimi ve mali ayarlar artık kilitlidir."
 
 msgid "Activation fee · we advise"
 msgstr "Aktivasyon ücreti · biz tavsiye ederiz"
 
 msgid "Activation is one-way. It posts an opening balance journal dated the day before cutover, closes every earlier period, and locks the base currency and fiscal calendar."
-msgstr ""
+msgstr "Etkinleştirme tek yönlüdür. Kesme öncesi gün tarihli açılış bakiyesi günlüğü yayınlar, önceki her dönem kapatır ve temel para birimini ve mali takvimi kilitler."
 
 msgid "Active"
 msgstr "Aktif"
@@ -2005,7 +2006,7 @@ msgid "Build tailored, role-based training materials"
 msgstr "Özelleştirilmiş, rol tabanlı eğitim materyalleri oluşturun"
 
 msgid "Build the opening balances to validate."
-msgstr ""
+msgstr "Doğrulamak için açılış bakiyelerini oluştur."
 
 msgid "Built and costed as its own method"
 msgstr "Kendi yöntemi olarak oluşturulmuş ve maliyetlendirilmiş"
@@ -2335,7 +2336,7 @@ msgid "Chat"
 msgstr "Sohbet"
 
 msgid "Check"
-msgstr ""
+msgstr "Kontrol"
 
 msgid "Check the item ledger for any items with a negative on-hand quantity as of period end — usually a missing receipt or an out-of-order posting that distorts inventory value and cost of goods sold. Mark it done once reviewed, or skip with a reason."
 msgstr "Dönem sonunda negatif el altında miktarı olan herhangi bir madde için madde defterini kontrol edin — genellikle eksik bir makbuz veya envanter değerini ve satılan mal maliyetini bozacak düzensiz bir posting vardır. Gözden geçirildikten sonra tamamlandı olarak işaretleyin veya nedenli olarak atlayın."
@@ -3587,13 +3588,13 @@ msgid "Cut over, freeze the old system, and confirm you're live on Carbon."
 msgstr "Geçiş yapın, eski sistemi dondurun ve Carbon'da canlı olduğunuzu doğrulayın."
 
 msgid "Cutover"
-msgstr ""
+msgstr "Kesme"
 
 msgid "Cutover checklist"
 msgstr "Geçiş kontrol listesi"
 
 msgid "Cutover date"
-msgstr ""
+msgstr "Kesme tarihi"
 
 msgid "Cutover step"
 msgstr "Geçiş adımı"
@@ -5236,7 +5237,7 @@ msgid "Events"
 msgstr "Etkinlikler"
 
 msgid "Every check must pass before you can activate. The cutover date can only fall on the first day of a fiscal period."
-msgstr ""
+msgstr "Etkinleştirmeden önce her kontrolün geçmesi gerekir. Kesme tarihi yalnızca mali dönemin ilk gününe denk gelebilir."
 
 msgid "Every condition must match"
 msgstr "Her koşul eşleşmelidir"
@@ -5843,6 +5844,7 @@ msgstr "Bitirmek İçin"
 
 msgid "Finish with material unpicked?"
 msgstr "Seçilmemiş malzeme ile Bitir?"
+msgstr "Malzeme seçilmeden tamamla?"
 
 msgid "Finished goods"
 msgstr "Tamamlamalar"
@@ -5899,7 +5901,7 @@ msgid "Fixed Asset"
 msgstr "Sabit Kıymet"
 
 msgid "Fixed assets"
-msgstr ""
+msgstr "Sabit kıymetler"
 
 msgid "Fixed Assets"
 msgstr "Sabit Varlıklar"
@@ -6551,22 +6553,22 @@ msgid "Implementation Support"
 msgstr "Kurulum Desteği"
 
 msgid "Import"
-msgstr ""
+msgstr "İçe aktar"
 
 msgid "Import {label} CSV"
 msgstr "İçe aktarılacak {label} CSV"
 
 msgid "Import closing trial balance"
-msgstr ""
+msgstr "Kapanış mizan listesini içe aktar"
 
 msgid "Import results"
 msgstr "İçe Aktarma Sonuçları"
 
 msgid "Import trial balance"
-msgstr ""
+msgstr "Mizan listesini içe aktar"
 
 msgid "Import Trial Balance"
-msgstr ""
+msgstr "Mizan Listesini İçe Aktar"
 
 msgid "Import your BOM"
 msgstr "BOM'unuzu İçe Aktarın"
@@ -7116,7 +7118,7 @@ msgid "Journal"
 msgstr "Dergi"
 
 msgid "Journal balances"
-msgstr ""
+msgstr "Günlük bakiyeleri"
 
 msgid "Journal Entries"
 msgstr "Yevrak Girişleri"
@@ -7150,6 +7152,7 @@ msgstr "Açık Tut"
 
 msgid "Keep picking"
 msgstr "Seçmeye Devam Et"
+msgstr "Seçmeyi devam et"
 
 msgid "Key"
 msgstr "Anahtar"
@@ -8455,7 +8458,7 @@ msgid "No Access"
 msgstr "Erişim Yok"
 
 msgid "No account rows found in the file."
-msgstr ""
+msgstr "Dosyada hesap satırı bulunamadı."
 
 msgid "No action needed"
 msgstr "Yapılacak işlem yok"
@@ -8635,7 +8638,7 @@ msgstr "Bu öğe için bağlanacak açık siparişler mevcut değil."
 msgid "No open sales order lines"
 msgstr "Açık satış sipariş satırı yok"
 msgid "No opening balance lines yet."
-msgstr ""
+msgstr "Henüz açılış bakiyesi satırı yok."
 
 msgid "No operations require picking at this location"
 msgstr "Bu konumda toplama gerektiren işlem yok"
@@ -8809,7 +8812,7 @@ msgid "Not enough jobs to cover quantity"
 msgstr "Miktarı karşılayacak yeterli iş yok"
 
 msgid "Not ready"
-msgstr ""
+msgstr "Hazır değil"
 
 msgid "Not referenced anywhere yet."
 msgstr "Henüz hiçbir yerde referans verilmemiş."
@@ -9979,10 +9982,10 @@ msgid "Properties"
 msgstr "Özellikler"
 
 msgid "Propose"
-msgstr ""
+msgstr "Öner"
 
 msgid "Propose each section from your subledgers, or import a closing trial balance. Add cash, loans, and equity as journal lines until the entry balances."
-msgstr ""
+msgstr "Alt defterlerinizden her bölümü önerin veya kapanış mizan listesini içe aktarın. Giriş dengelenene kadar nakit, krediler ve özkaynağı günlük satırları olarak ekleyin."
 
 msgid "Protect the go-live date"
 msgstr "Go-live tarihini koruyun"
@@ -10305,7 +10308,7 @@ msgid "Re-keying between quoting, the floor, and finance"
 msgstr "Tekliflendirme, üretim ve muhasebe arasında veri yeniden girişi"
 
 msgid "Re-validate"
-msgstr ""
+msgstr "Yeniden doğrula"
 
 msgid "Reactivate"
 msgstr "Yeniden etkinleştir"
@@ -10576,7 +10579,7 @@ msgid "Remaining after split stays on the original row."
 msgstr "Bölme sonrası kalan orijinal satırda kalır."
 
 msgid "Remaining to balance"
-msgstr ""
+msgstr "Dengelenecek kalan"
 
 msgid "Remember this PIN. You will need it to exit console mode on MES terminals."
 msgstr "Bu PIN'i hatırlayın. MES terminallerinde konsol modundan çıkmak için buna ihtiyacınız olacak."
@@ -10786,7 +10789,7 @@ msgid "Residual Value %"
 msgstr "Artık değer %"
 
 msgid "Resolve every failing readiness check first."
-msgstr ""
+msgstr "Önce başarısız olan her hazırlık kontrolünü çözün."
 
 msgid "Resolve these before completing the NCR: every row must have a non-Pending disposition, and its linked entity quantities must match the row quantity."
 msgstr "Bu NC'yi tamamlamadan önce bunları çözün: her satırın Geçici Olmayan bir elden çıkarma durumuna sahip olması ve bağlı varlık miktarlarının satır miktarını eşleştirmesi gerekir."
@@ -10967,7 +10970,7 @@ msgid "rows"
 msgstr "satırlar"
 
 msgid "rows parsed"
-msgstr ""
+msgstr "satırlar ayrıştırıldı"
 
 msgid "Rule"
 msgstr "Kural"
@@ -11827,6 +11830,7 @@ msgstr "Üretim katı yapılandırması."
 
 msgid "short"
 msgstr "Kısa"
+msgstr "kısa"
 
 msgid "Short"
 msgstr "Azalt"
@@ -12829,7 +12833,7 @@ msgid "The department this one rolls up under for reporting and headcount hierar
 msgstr "Bunun raporlama ve başlık sayısı hiyerarşileri için toplandığı bölüm; üst düzey bölüm için boş bırakın."
 
 msgid "The draft journal must balance and tie out to each subledger within 0.01."
-msgstr ""
+msgstr "Taslak günlüğü dengelenmelidir ve her alt defterle 0,01 içinde bağlanmalıdır."
 
 msgid "The eight-disciplines quality method, modeled with the nonconformance workflow's tasks rather than hard-coded."
 msgstr "Sekiz disiplin kalite yöntemi, uyumsuzluk iş akışının görevleriyle modellenir, sabit kodlu değildir."
@@ -13362,6 +13366,7 @@ msgstr "Bu e-posta adresleri, müşterilere gönderilen tüm teklif e-postaları
 
 msgid "These items still have material to pick. Finishing now marks the list Partial."
 msgstr "Bu maddeler için hala seçilecek malzeme var. Şimdi bitirmek listeyi Kısmi olarak işaretler."
+msgstr "Bu öğelerin hala seçilecek malzeme var. Şimdi bitirmek listeyi Kısmi olarak işaretler."
 
 msgid "These jobs have operations assigned to this work center:"
 msgstr "Bu işler bu iş merkezine atanmış işlemlere sahiptir:"
@@ -13378,7 +13383,7 @@ msgstr "Bu değişiklik bildirimi uygulanmakta olduğundan, değişiklikleri kil
 msgid "This change notice is closed, so its changes are read-only."
 msgstr "Bu değişiklik bildirimi kapalı olduğundan, değişiklikleri salt okunurdur."
 msgid "This cannot be undone. Type the company name to confirm."
-msgstr ""
+msgstr "Bu geri alınamaz. Onaylamak için şirket adını yazın."
 
 msgid "This completes the Discovery step."
 msgstr "Bu, Keşif adımını tamamlar."
@@ -13581,7 +13586,7 @@ msgid "Title"
 msgstr "Unvan"
 
 msgid "to confirm"
-msgstr ""
+msgstr "onaylamak için"
 
 msgid "To Location"
 msgstr "Varış Konumu"
@@ -13833,7 +13838,7 @@ msgid "Trial Balance"
 msgstr "Mizan"
 
 msgid "Trial balance CSV"
-msgstr ""
+msgstr "Deneme Dengesi CSV"
 
 msgid "Triggers"
 msgstr "Tetikleyiciler"
@@ -14075,7 +14080,7 @@ msgid "Upload"
 msgstr "Yükle"
 
 msgid "Upload a CSV with account number, description, debit, and credit columns. Rows map to Carbon accounts by number."
-msgstr ""
+msgstr "Hesap numarası, açıklama, borç ve kredi sütunlarına sahip bir CSV yükleyin. Satırlar Carbon hesaplarına numaraya göre eşlenir."
 
 msgid "Upload a PDF first"
 msgstr "Önce bir PDF yükleyin"

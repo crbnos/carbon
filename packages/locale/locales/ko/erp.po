@@ -174,7 +174,7 @@ msgid "1 unposted document"
 msgstr "1건의 미전기 문서"
 
 msgid "1. Readiness"
-msgstr ""
+msgstr "1. 준비 완료"
 
 msgid "12 monthly periods"
 msgstr "12개월 기간"
@@ -186,13 +186,13 @@ msgid "1Y"
 msgstr "1년"
 
 msgid "2. Opening balances"
-msgstr ""
+msgstr "2. 개시 잔액"
 
 msgid "2h"
 msgstr "2시간"
 
 msgid "3. Validation"
-msgstr ""
+msgstr "3. 검증"
 
 msgid "30D"
 msgstr "30일"
@@ -204,7 +204,7 @@ msgid "3h"
 msgstr "3시간"
 
 msgid "4. Activate"
-msgstr ""
+msgstr "4. 활성화"
 
 msgid "4h"
 msgstr "4시간"
@@ -510,10 +510,10 @@ msgid "Accounting"
 msgstr "회계"
 
 msgid "Accounting has not been activated yet."
-msgstr ""
+msgstr "회계가 아직 활성화되지 않았습니다."
 
 msgid "Accounting is activated"
-msgstr ""
+msgstr "회계가 활성화되었습니다"
 
 msgid "Accounting is disabled"
 msgstr "회계가 비활성화됨"
@@ -529,7 +529,7 @@ msgstr "회계 기간"
 
 #. placeholder {0}: formatDate(accountingActivatedAt)
 msgid "Accounting was activated on {0}."
-msgstr ""
+msgstr "회계는 {0}에 활성화되었습니다."
 
 msgid "Accounting: GL, AR, AP, and month-end close"
 msgstr "회계: 총계정원장, 매출채권, 매입채무, 월마감"
@@ -607,13 +607,13 @@ msgid "Activate {name}"
 msgstr "{name} 활성화"
 
 msgid "Activate accounting"
-msgstr ""
+msgstr "회계 활성화"
 
 msgid "Activate Accounting"
-msgstr ""
+msgstr "회계 활성화"
 
 msgid "Activate accounting for this company: post opening balances, close pre-cutover periods, and lock the base currency and fiscal calendar. Activation is one-way."
-msgstr ""
+msgstr "이 회사의 회계를 활성화합니다: 개시 잔액을 전기하고 전환 전 기간을 마감하며 기본 통화 및 회계 기간을 잠깁니다. 활성화는 일방향입니다."
 
 msgid "Activate Process"
 msgstr "공정 활성화"
@@ -624,13 +624,13 @@ msgstr "작업장 활성화"
 #. placeholder {0}: readiness.activatedAt ? formatDate(readiness.activatedAt) : ""
 #. placeholder {1}: readiness.cutoverDate ? formatDate(readiness.cutoverDate) : ""
 msgid "Activated on {0}. The cutover date is {1}. Base currency and fiscal settings are now locked."
-msgstr ""
+msgstr "{0}에 활성화되었습니다. 전환 날짜는 {1}입니다. 기본 통화 및 회계 설정은 이제 잠겨있습니다."
 
 msgid "Activation fee · we advise"
 msgstr "활성화 수수료 · 저희가 자문"
 
 msgid "Activation is one-way. It posts an opening balance journal dated the day before cutover, closes every earlier period, and locks the base currency and fiscal calendar."
-msgstr ""
+msgstr "활성화는 일방향입니다. 전환 전날 날짜의 개시 잔액 분개를 전기하고 모든 이전 기간을 마감하며 기본 통화 및 회계 기간을 잠깁니다."
 
 msgid "Active"
 msgstr "활성"
@@ -2005,7 +2005,7 @@ msgid "Build tailored, role-based training materials"
 msgstr "맞춤형 역할 기반 교육 자료 제작"
 
 msgid "Build the opening balances to validate."
-msgstr ""
+msgstr "검증할 개시 잔액을 작성합니다."
 
 msgid "Built and costed as its own method"
 msgstr "독립적인 방법으로 구성되고 원가가 산정됨"
@@ -2335,7 +2335,7 @@ msgid "Chat"
 msgstr "채팅"
 
 msgid "Check"
-msgstr ""
+msgstr "확인"
 
 msgid "Check the item ledger for any items with a negative on-hand quantity as of period end — usually a missing receipt or an out-of-order posting that distorts inventory value and cost of goods sold. Mark it done once reviewed, or skip with a reason."
 msgstr "기간 종료 시점의 음수 수량 보유 항목에 대해 항목 원장을 확인하십시오. 일반적으로 누락된 수령증이나 순서 대로 포기된 게시로 인해 재고 가치와 판매 원가가 왜곡됩니다. 검토 후 완료로 표시하거나 사유와 함께 건너뜁니다."
@@ -3587,13 +3587,13 @@ msgid "Cut over, freeze the old system, and confirm you're live on Carbon."
 msgstr "전환하고, 기존 시스템을 동결한 뒤, Carbon 운영 전환을 확인하세요."
 
 msgid "Cutover"
-msgstr ""
+msgstr "전환"
 
 msgid "Cutover checklist"
 msgstr "전환 체크리스트"
 
 msgid "Cutover date"
-msgstr ""
+msgstr "전환 날짜"
 
 msgid "Cutover step"
 msgstr "전환 단계"
@@ -5236,7 +5236,7 @@ msgid "Events"
 msgstr "이벤트"
 
 msgid "Every check must pass before you can activate. The cutover date can only fall on the first day of a fiscal period."
-msgstr ""
+msgstr "활성화하기 전에 모든 확인을 통과해야 합니다. 전환 날짜는 회계 기간의 첫날에만 해당할 수 있습니다."
 
 msgid "Every condition must match"
 msgstr "모든 조건이 일치해야 함"
@@ -5843,6 +5843,7 @@ msgstr "종료 시점"
 
 msgid "Finish with material unpicked?"
 msgstr "자재가 선택되지 않은 상태로 완료하시겠습니까?"
+msgstr "자재를 선택하지 않고 완료하시겠습니까?"
 
 msgid "Finished goods"
 msgstr "완제품"
@@ -5899,7 +5900,7 @@ msgid "Fixed Asset"
 msgstr "고정자산"
 
 msgid "Fixed assets"
-msgstr ""
+msgstr "고정 자산"
 
 msgid "Fixed Assets"
 msgstr "고정자산"
@@ -6551,22 +6552,22 @@ msgid "Implementation Support"
 msgstr "구현 지원"
 
 msgid "Import"
-msgstr ""
+msgstr "가져오기"
 
 msgid "Import {label} CSV"
 msgstr "{label} CSV 가져오기"
 
 msgid "Import closing trial balance"
-msgstr ""
+msgstr "마감 시산표 가져오기"
 
 msgid "Import results"
 msgstr "가져오기 결과"
 
 msgid "Import trial balance"
-msgstr ""
+msgstr "시산표 가져오기"
 
 msgid "Import Trial Balance"
-msgstr ""
+msgstr "시산표 가져오기"
 
 msgid "Import your BOM"
 msgstr "BOM 가져오기"
@@ -7116,7 +7117,7 @@ msgid "Journal"
 msgstr "전표"
 
 msgid "Journal balances"
-msgstr ""
+msgstr "분개 잔액"
 
 msgid "Journal Entries"
 msgstr "전표 내역"
@@ -7150,6 +7151,7 @@ msgstr "열린 상태 유지"
 
 msgid "Keep picking"
 msgstr "계속 선택"
+msgstr "선택 계속"
 
 msgid "Key"
 msgstr "키"
@@ -8455,7 +8457,7 @@ msgid "No Access"
 msgstr "접근 권한 없음"
 
 msgid "No account rows found in the file."
-msgstr ""
+msgstr "파일에서 계정 행을 찾을 수 없습니다."
 
 msgid "No action needed"
 msgstr "조치가 필요하지 않습니다"
@@ -8635,7 +8637,7 @@ msgstr "이 항목에 연결할 수 있는 미결 주문이 없습니다."
 msgid "No open sales order lines"
 msgstr "미결 판매주문 라인이 없습니다."
 msgid "No opening balance lines yet."
-msgstr ""
+msgstr "개시 잔액 행이 아직 없습니다."
 
 msgid "No operations require picking at this location"
 msgstr "이 위치에서 피킹이 필요한 공정작업이 없습니다"
@@ -8809,7 +8811,7 @@ msgid "Not enough jobs to cover quantity"
 msgstr "수량을 충족할 만큼 작업이 충분하지 않습니다"
 
 msgid "Not ready"
-msgstr ""
+msgstr "준비 안 됨"
 
 msgid "Not referenced anywhere yet."
 msgstr "아직 어디에서도 참조되지 않음."
@@ -9979,10 +9981,10 @@ msgid "Properties"
 msgstr "속성"
 
 msgid "Propose"
-msgstr ""
+msgstr "제안"
 
 msgid "Propose each section from your subledgers, or import a closing trial balance. Add cash, loans, and equity as journal lines until the entry balances."
-msgstr ""
+msgstr "보조원장의 각 섹션을 제안하거나 마감 시산표를 가져옵니다. 분개가 균형을 맞을 때까지 현금, 대출 및 자본을 분개 행으로 추가합니다."
 
 msgid "Protect the go-live date"
 msgstr "도입일을 사수하세요"
@@ -10305,7 +10307,7 @@ msgid "Re-keying between quoting, the floor, and finance"
 msgstr "견적, 현장, 재무 간 데이터 재입력"
 
 msgid "Re-validate"
-msgstr ""
+msgstr "재검증"
 
 msgid "Reactivate"
 msgstr "재활성화"
@@ -10576,7 +10578,7 @@ msgid "Remaining after split stays on the original row."
 msgstr "분할 후 남은 수량은 원래 행에 유지됩니다."
 
 msgid "Remaining to balance"
-msgstr ""
+msgstr "균형을 맞추려면 남은 금액"
 
 msgid "Remember this PIN. You will need it to exit console mode on MES terminals."
 msgstr "이 PIN을 기억해 두세요. MES 단말기에서 콘솔 모드를 종료할 때 필요합니다."
@@ -10786,7 +10788,7 @@ msgid "Residual Value %"
 msgstr "잔존가치 %"
 
 msgid "Resolve every failing readiness check first."
-msgstr ""
+msgstr "먼저 모든 실패한 준비 확인을 해결합니다."
 
 msgid "Resolve these before completing the NCR: every row must have a non-Pending disposition, and its linked entity quantities must match the row quantity."
 msgstr "NCR을 완료하기 전에 다음을 해결하세요: 모든 행에 대기 중이 아닌 처리 상태가 지정되어야 하며, 연결된 개체 수량이 행 수량과 일치해야 합니다."
@@ -10967,7 +10969,7 @@ msgid "rows"
 msgstr "행"
 
 msgid "rows parsed"
-msgstr ""
+msgstr "행 구문 분석됨"
 
 msgid "Rule"
 msgstr "규칙"
@@ -12829,7 +12831,7 @@ msgid "The department this one rolls up under for reporting and headcount hierar
 msgstr "보고 및 인원 계층구조에서 이 부서가 속하는 상위 부서입니다. 최상위 부서인 경우 비워두세요."
 
 msgid "The draft journal must balance and tie out to each subledger within 0.01."
-msgstr ""
+msgstr "초안 분개는 균형을 맞추고 각 보조원장에 0.01 이내로 연결되어야 합니다."
 
 msgid "The eight-disciplines quality method, modeled with the nonconformance workflow's tasks rather than hard-coded."
 msgstr "8D 품질 기법으로, 하드코딩되지 않고 부적합 워크플로의 작업으로 모델링됩니다."
@@ -13378,7 +13380,7 @@ msgstr "이 변경 사항은 구현 중이므로 변경 사항이 잠겨 있습�
 msgid "This change notice is closed, so its changes are read-only."
 msgstr "이 변경 사항은 닫혀 있으므로 변경 사항이 읽기 전용입니다."
 msgid "This cannot be undone. Type the company name to confirm."
-msgstr ""
+msgstr "이를 실행 취소할 수 없습니다. 확인하려면 회사 이름을 입력하세요."
 
 msgid "This completes the Discovery step."
 msgstr "이것으로 발견(Discovery) 단계가 완료됩니다."
@@ -13581,7 +13583,7 @@ msgid "Title"
 msgstr "제목"
 
 msgid "to confirm"
-msgstr ""
+msgstr "확인하려면"
 
 msgid "To Location"
 msgstr "대상 위치"
@@ -13833,7 +13835,7 @@ msgid "Trial Balance"
 msgstr "시산표"
 
 msgid "Trial balance CSV"
-msgstr ""
+msgstr "시산표 CSV"
 
 msgid "Triggers"
 msgstr "트리거"
@@ -14075,7 +14077,7 @@ msgid "Upload"
 msgstr "업로드"
 
 msgid "Upload a CSV with account number, description, debit, and credit columns. Rows map to Carbon accounts by number."
-msgstr ""
+msgstr "계정번호, 설명, 차변, 대변 열이 포함된 CSV를 업로드하세요. 각 행은 계정번호로 Carbon 계정에 매핑됩니다."
 
 msgid "Upload a PDF first"
 msgstr "먼저 PDF를 업로드하세요"

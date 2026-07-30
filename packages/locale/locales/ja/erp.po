@@ -174,7 +174,7 @@ msgid "1 unposted document"
 msgstr "1件の未転記書類"
 
 msgid "1. Readiness"
-msgstr ""
+msgstr "1. 準備状況"
 
 msgid "12 monthly periods"
 msgstr "12ヶ月間の期間"
@@ -186,13 +186,13 @@ msgid "1Y"
 msgstr "1年"
 
 msgid "2. Opening balances"
-msgstr ""
+msgstr "2. 期首残高"
 
 msgid "2h"
 msgstr "2時間"
 
 msgid "3. Validation"
-msgstr ""
+msgstr "3. 検証"
 
 msgid "30D"
 msgstr "30日"
@@ -204,7 +204,7 @@ msgid "3h"
 msgstr "3時間"
 
 msgid "4. Activate"
-msgstr ""
+msgstr "4. 有効化"
 
 msgid "4h"
 msgstr "4時間"
@@ -510,10 +510,10 @@ msgid "Accounting"
 msgstr "会計"
 
 msgid "Accounting has not been activated yet."
-msgstr ""
+msgstr "会計はまだ有効化されていません。"
 
 msgid "Accounting is activated"
-msgstr ""
+msgstr "会計が有効化されました"
 
 msgid "Accounting is disabled"
 msgstr "会計は無効です"
@@ -529,7 +529,7 @@ msgstr "会計期間"
 
 #. placeholder {0}: formatDate(accountingActivatedAt)
 msgid "Accounting was activated on {0}."
-msgstr ""
+msgstr "会計は{0}に有効化されました。"
 
 msgid "Accounting: GL, AR, AP, and month-end close"
 msgstr "会計: GL、AR、AP、および月末決算"
@@ -578,6 +578,7 @@ msgstr "蓄積期間:"
 
 msgid "Acknowledge & finish"
 msgstr "認めて完了"
+msgstr "確認して完了"
 
 msgid "Acquisition Cost"
 msgstr "取得原価"
@@ -607,13 +608,13 @@ msgid "Activate {name}"
 msgstr "{name}を有効化"
 
 msgid "Activate accounting"
-msgstr ""
+msgstr "会計を有効化"
 
 msgid "Activate Accounting"
-msgstr ""
+msgstr "会計を有効化"
 
 msgid "Activate accounting for this company: post opening balances, close pre-cutover periods, and lock the base currency and fiscal calendar. Activation is one-way."
-msgstr ""
+msgstr "この企業の会計を有効化する:期首残高を転記し、カットオーバー前の期間を終了し、基本通貨と会計暦をロックします。有効化は一方向です。"
 
 msgid "Activate Process"
 msgstr "プロセスを有効化"
@@ -624,13 +625,13 @@ msgstr "ワークセンターを有効化"
 #. placeholder {0}: readiness.activatedAt ? formatDate(readiness.activatedAt) : ""
 #. placeholder {1}: readiness.cutoverDate ? formatDate(readiness.cutoverDate) : ""
 msgid "Activated on {0}. The cutover date is {1}. Base currency and fiscal settings are now locked."
-msgstr ""
+msgstr "{0}に有効化されました。カットオーバー日は{1}です。基本通貨と会計設定がロックされました。"
 
 msgid "Activation fee · we advise"
 msgstr "アクティベーション料金 · アドバイス提供"
 
 msgid "Activation is one-way. It posts an opening balance journal dated the day before cutover, closes every earlier period, and locks the base currency and fiscal calendar."
-msgstr ""
+msgstr "有効化は一方向です。カットオーバーの前日付の期首残高仕訳を転記し、それより前のすべての期間を終了し、基本通貨と会計暦をロックします。"
 
 msgid "Active"
 msgstr "有効"
@@ -2005,7 +2006,7 @@ msgid "Build tailored, role-based training materials"
 msgstr "カスタマイズされたロールベースのトレーニング資料を作成"
 
 msgid "Build the opening balances to validate."
-msgstr ""
+msgstr "検証するために期首残高を構築してください。"
 
 msgid "Built and costed as its own method"
 msgstr "独自の方法として構築および原価計算"
@@ -2335,7 +2336,7 @@ msgid "Chat"
 msgstr "チャット"
 
 msgid "Check"
-msgstr ""
+msgstr "確認"
 
 msgid "Check the item ledger for any items with a negative on-hand quantity as of period end — usually a missing receipt or an out-of-order posting that distorts inventory value and cost of goods sold. Mark it done once reviewed, or skip with a reason."
 msgstr "期末時点で保有数量がマイナスの品目がないか品目台帳を確認してください — 通常、納品漏れまたは順序外の転記により、在庫価値および売上原価が歪む可能性があります。確認済みの場合はマーク完了し、スキップする場合は理由を記入してください。"
@@ -3587,13 +3588,13 @@ msgid "Cut over, freeze the old system, and confirm you're live on Carbon."
 msgstr "切り替え、旧システムをフリーズし、Carbonで稼働していることを確認します。"
 
 msgid "Cutover"
-msgstr ""
+msgstr "カットオーバー"
 
 msgid "Cutover checklist"
 msgstr "カットオーバーチェックリスト"
 
 msgid "Cutover date"
-msgstr ""
+msgstr "カットオーバー日"
 
 msgid "Cutover step"
 msgstr "カットオーバーステップ"
@@ -5236,7 +5237,7 @@ msgid "Events"
 msgstr "イベント"
 
 msgid "Every check must pass before you can activate. The cutover date can only fall on the first day of a fiscal period."
-msgstr ""
+msgstr "有効化する前に、すべてのチェックに合格する必要があります。カットオーバー日は会計期間の最初の日だけにすることができます。"
 
 msgid "Every condition must match"
 msgstr "すべての条件が一致する必要があります"
@@ -5843,6 +5844,7 @@ msgstr "完成先"
 
 msgid "Finish with material unpicked?"
 msgstr "ピッキングされていない材料のまま完了しますか？"
+msgstr "材料が未選択のまま完了しますか?"
 
 msgid "Finished goods"
 msgstr "フィニッシュ"
@@ -5899,7 +5901,7 @@ msgid "Fixed Asset"
 msgstr "固定資産"
 
 msgid "Fixed assets"
-msgstr ""
+msgstr "固定資産"
 
 msgid "Fixed Assets"
 msgstr "固定資産"
@@ -6551,22 +6553,22 @@ msgid "Implementation Support"
 msgstr "実装サポート"
 
 msgid "Import"
-msgstr ""
+msgstr "インポート"
 
 msgid "Import {label} CSV"
 msgstr "{label} CSV をインポート"
 
 msgid "Import closing trial balance"
-msgstr ""
+msgstr "決算試算表をインポート"
 
 msgid "Import results"
 msgstr "インポート結果"
 
 msgid "Import trial balance"
-msgstr ""
+msgstr "試算表をインポート"
 
 msgid "Import Trial Balance"
-msgstr ""
+msgstr "試算表をインポート"
 
 msgid "Import your BOM"
 msgstr "BOMをインポート"
@@ -7116,7 +7118,7 @@ msgid "Journal"
 msgstr "ジャーナル"
 
 msgid "Journal balances"
-msgstr ""
+msgstr "仕訳残高"
 
 msgid "Journal Entries"
 msgstr "仕訳帳"
@@ -7150,6 +7152,7 @@ msgstr "開いたままにする"
 
 msgid "Keep picking"
 msgstr "ピッキングを続ける"
+msgstr "選択を続ける"
 
 msgid "Key"
 msgstr "キー"
@@ -8455,7 +8458,7 @@ msgid "No Access"
 msgstr "アクセスなし"
 
 msgid "No account rows found in the file."
-msgstr ""
+msgstr "ファイルにアカウント行が見つかりません。"
 
 msgid "No action needed"
 msgstr "対応は不要です"
@@ -8635,7 +8638,7 @@ msgstr "このアイテムにリンク可能なオープンオーダーはあり
 msgid "No open sales order lines"
 msgstr "オープンな販売注文行がありません"
 msgid "No opening balance lines yet."
-msgstr ""
+msgstr "期首残高行がまだありません。"
 
 msgid "No operations require picking at this location"
 msgstr "この場所でのピッキングが必要な操作はありません"
@@ -8809,7 +8812,7 @@ msgid "Not enough jobs to cover quantity"
 msgstr "数量をカバーするのに十分なジョブがありません"
 
 msgid "Not ready"
-msgstr ""
+msgstr "準備完了していない"
 
 msgid "Not referenced anywhere yet."
 msgstr "どこでも参照されていません。"
@@ -9979,10 +9982,10 @@ msgid "Properties"
 msgstr "プロパティ"
 
 msgid "Propose"
-msgstr ""
+msgstr "提案"
 
 msgid "Propose each section from your subledgers, or import a closing trial balance. Add cash, loans, and equity as journal lines until the entry balances."
-msgstr ""
+msgstr "補助簿から各セクションを提案するか、決算試算表をインポートしてください。現金、ローン、および資本金を仕訳行として追加し、仕訳がバランスするまで続けます。"
 
 msgid "Protect the go-live date"
 msgstr "ゴーライブ日を保護する"
@@ -10305,7 +10308,7 @@ msgid "Re-keying between quoting, the floor, and finance"
 msgstr "見積、現場、財務間での再入力"
 
 msgid "Re-validate"
-msgstr ""
+msgstr "再検証"
 
 msgid "Reactivate"
 msgstr "再度有効化"
@@ -10576,7 +10579,7 @@ msgid "Remaining after split stays on the original row."
 msgstr "分割後の残りは元の行に留まります。"
 
 msgid "Remaining to balance"
-msgstr ""
+msgstr "残余額"
 
 msgid "Remember this PIN. You will need it to exit console mode on MES terminals."
 msgstr "このPINを覚えておいてください。MES端末でコンソールモードを終了するために必要になります。"
@@ -10786,7 +10789,7 @@ msgid "Residual Value %"
 msgstr "残存価値 %"
 
 msgid "Resolve every failing readiness check first."
-msgstr ""
+msgstr "失敗したすべての準備完了チェックをまず解決してください。"
 
 msgid "Resolve these before completing the NCR: every row must have a non-Pending disposition, and its linked entity quantities must match the row quantity."
 msgstr "NCRを完了する前にこれらを解決してください。すべての行は保留中以外の処分を持つ必要があり、リンクされたエンティティの数量は行の数量と一致する必要があります。"
@@ -10967,7 +10970,7 @@ msgid "rows"
 msgstr "行"
 
 msgid "rows parsed"
-msgstr ""
+msgstr "行を解析"
 
 msgid "Rule"
 msgstr "ルール"
@@ -11827,6 +11830,7 @@ msgstr "生産現場の構成。"
 
 msgid "short"
 msgstr "短い"
+msgstr "不足"
 
 msgid "Short"
 msgstr "不足"
@@ -12829,7 +12833,7 @@ msgid "The department this one rolls up under for reporting and headcount hierar
 msgstr "レポートとヘッドカウント階層のために、このロールアップが行われるセクション。トップレベル部門の場合は空白のままにしてください。"
 
 msgid "The draft journal must balance and tie out to each subledger within 0.01."
-msgstr ""
+msgstr "ドラフト仕訳は残高になり、各補助簿に0.01以内で一致する必要があります。"
 
 msgid "The eight-disciplines quality method, modeled with the nonconformance workflow's tasks rather than hard-coded."
 msgstr "8つの規律品質法。ハードコーディングではなく、不適合ワークフローのタスクでモデル化されています。"
@@ -13362,6 +13366,7 @@ msgstr "これらのメールアドレスは、顧客に送信されるすべて
 
 msgid "These items still have material to pick. Finishing now marks the list Partial."
 msgstr "これらのアイテムはまだピッキングすべき材料があります。今完了するとリストが部分的になります。"
+msgstr "これらの項目にはまだ選択する材料があります。今すぐ完了するとリストが部分的にマークされます。"
 
 msgid "These jobs have operations assigned to this work center:"
 msgstr "これらのジョブにはこのワークセンターに割り当てられた操作があります:"
@@ -13378,7 +13383,7 @@ msgstr "この変更通知は実装中であるため、変更がロックされ
 msgid "This change notice is closed, so its changes are read-only."
 msgstr "この変更通知は閉じられているため、変更は読み取り専用です。"
 msgid "This cannot be undone. Type the company name to confirm."
-msgstr ""
+msgstr "これは取り消すことができません。確認するために企業名を入力してください。"
 
 msgid "This completes the Discovery step."
 msgstr "これはDiscoveryステップを完了します。"
@@ -13581,7 +13586,7 @@ msgid "Title"
 msgstr "タイトル"
 
 msgid "to confirm"
-msgstr ""
+msgstr "確認するには"
 
 msgid "To Location"
 msgstr "到着地"
@@ -13833,7 +13838,7 @@ msgid "Trial Balance"
 msgstr "試算表"
 
 msgid "Trial balance CSV"
-msgstr ""
+msgstr "試算表 CSV"
 
 msgid "Triggers"
 msgstr "トリガー"
@@ -14075,7 +14080,7 @@ msgid "Upload"
 msgstr "アップロード"
 
 msgid "Upload a CSV with account number, description, debit, and credit columns. Rows map to Carbon accounts by number."
-msgstr ""
+msgstr "勘定番号、説明、借方、貸方の列を含むCSVをアップロードしてください。行はCarbonの勘定科目に番号でマップされます。"
 
 msgid "Upload a PDF first"
 msgstr "まずPDFをアップロードしてください"

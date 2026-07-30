@@ -174,7 +174,7 @@ msgid "1 unposted document"
 msgstr "1 अपोस्ट किया गया दस्तावेज़"
 
 msgid "1. Readiness"
-msgstr ""
+msgstr "1. तैयारी"
 
 msgid "12 monthly periods"
 msgstr "12 मासिक अवधियाँ"
@@ -186,13 +186,13 @@ msgid "1Y"
 msgstr "1 वर्ष"
 
 msgid "2. Opening balances"
-msgstr ""
+msgstr "2. शुरुआती शेष राशि"
 
 msgid "2h"
 msgstr "2 घंटा"
 
 msgid "3. Validation"
-msgstr ""
+msgstr "3. सत्यापन"
 
 msgid "30D"
 msgstr "30 दिन"
@@ -204,7 +204,7 @@ msgid "3h"
 msgstr "3 घंटे"
 
 msgid "4. Activate"
-msgstr ""
+msgstr "4. सक्रिय करें"
 
 msgid "4h"
 msgstr "4 घंटे"
@@ -510,10 +510,10 @@ msgid "Accounting"
 msgstr "लेखांकन"
 
 msgid "Accounting has not been activated yet."
-msgstr ""
+msgstr "लेखांकन अभी तक सक्रिय नहीं किया गया है।"
 
 msgid "Accounting is activated"
-msgstr ""
+msgstr "लेखांकन सक्रिय है"
 
 msgid "Accounting is disabled"
 msgstr "लेखांकन अक्षम है"
@@ -529,7 +529,7 @@ msgstr "लेखांकन अवधि"
 
 #. placeholder {0}: formatDate(accountingActivatedAt)
 msgid "Accounting was activated on {0}."
-msgstr ""
+msgstr "लेखांकन {0} पर सक्रिय किया गया था।"
 
 msgid "Accounting: GL, AR, AP, and month-end close"
 msgstr "लेखांकन: GL, AR, AP, और महीने के अंत का समापन"
@@ -607,13 +607,13 @@ msgid "Activate {name}"
 msgstr "{name} को सक्रिय करें"
 
 msgid "Activate accounting"
-msgstr ""
+msgstr "लेखांकन सक्रिय करें"
 
 msgid "Activate Accounting"
-msgstr ""
+msgstr "लेखांकन सक्रिय करें"
 
 msgid "Activate accounting for this company: post opening balances, close pre-cutover periods, and lock the base currency and fiscal calendar. Activation is one-way."
-msgstr ""
+msgstr "इस कंपनी के लिए लेखांकन सक्रिय करें: शुरुआती शेष राशि पोस्ट करें, कटौती से पहले की अवधि बंद करें, और आधार मुद्रा और राजकोषीय कैलेंडर को लॉक करें। सक्रियण एकतरफा है।"
 
 msgid "Activate Process"
 msgstr "प्रक्रिया सक्रिय करें"
@@ -624,13 +624,13 @@ msgstr "वर्क सेंटर सक्रिय करें"
 #. placeholder {0}: readiness.activatedAt ? formatDate(readiness.activatedAt) : ""
 #. placeholder {1}: readiness.cutoverDate ? formatDate(readiness.cutoverDate) : ""
 msgid "Activated on {0}. The cutover date is {1}. Base currency and fiscal settings are now locked."
-msgstr ""
+msgstr "सक्रिय {0} पर। कटौती की तारीख {1} है। आधार मुद्रा और राजकोषीय सेटिंग्स अब लॉक किए गए हैं।"
 
 msgid "Activation fee · we advise"
 msgstr "सक्रियण शुल्क · हम सलाह देते हैं"
 
 msgid "Activation is one-way. It posts an opening balance journal dated the day before cutover, closes every earlier period, and locks the base currency and fiscal calendar."
-msgstr ""
+msgstr "सक्रियण एकतरफा है। यह कटौती से पहले के दिन की तारीख वाली एक शुरुआती शेष राशि जर्नल पोस्ट करता है, प्रत्येक पहली अवधि को बंद करता है, और आधार मुद्रा और राजकोषीय कैलेंडर को लॉक करता है।"
 
 msgid "Active"
 msgstr "सक्रिय"
@@ -2005,7 +2005,7 @@ msgid "Build tailored, role-based training materials"
 msgstr "अनुकूलित, भूमिका-आधारित प्रशिक्षण सामग्री बनाएं"
 
 msgid "Build the opening balances to validate."
-msgstr ""
+msgstr "सत्यापन के लिए शुरुआती शेष राशि बनाएं।"
 
 msgid "Built and costed as its own method"
 msgstr "अपनी स्वयं की विधि के रूप में निर्मित और लागत निर्धारित"
@@ -2335,7 +2335,7 @@ msgid "Chat"
 msgstr "चैट"
 
 msgid "Check"
-msgstr ""
+msgstr "जांच"
 
 msgid "Check the item ledger for any items with a negative on-hand quantity as of period end — usually a missing receipt or an out-of-order posting that distorts inventory value and cost of goods sold. Mark it done once reviewed, or skip with a reason."
 msgstr "अवधि के अंत तक नकारात्मक मौजूदा मात्रा वाली किसी भी वस्तु के लिए वस्तु खाता बही की जाँच करें — आमतौर पर एक लापता प्राप्ति या एक गलत-क्रम में पोस्टिंग जो इन्वेंटरी मूल्य और बेचे गए सामान की लागत को विकृत करती है। एक बार समीक्षा करने के बाद इसे पूर्ण चिह्नित करें, या एक कारण के साथ छोड़ दें।"
@@ -3587,13 +3587,13 @@ msgid "Cut over, freeze the old system, and confirm you're live on Carbon."
 msgstr "पुरानी प्रणाली को बंद करें, फ्रीज करें, और पुष्टि करें कि आप Carbon पर लाइव हैं।"
 
 msgid "Cutover"
-msgstr ""
+msgstr "कटौती"
 
 msgid "Cutover checklist"
 msgstr "कटओवर चेकलिस्ट"
 
 msgid "Cutover date"
-msgstr ""
+msgstr "कटौती की तारीख"
 
 msgid "Cutover step"
 msgstr "कटओवर चरण"
@@ -5236,7 +5236,7 @@ msgid "Events"
 msgstr "घटनाएं"
 
 msgid "Every check must pass before you can activate. The cutover date can only fall on the first day of a fiscal period."
-msgstr ""
+msgstr "सक्रिय करने से पहले हर जांच पास होनी चाहिए। कटौती की तारीख केवल एक राजकोषीय अवधि के पहले दिन आ सकती है।"
 
 msgid "Every condition must match"
 msgstr "हर शर्त मेल खानी चाहिए"
@@ -5843,6 +5843,7 @@ msgstr "समाप्त करने के लिए"
 
 msgid "Finish with material unpicked?"
 msgstr "सामग्री अनचुनी के साथ समाप्त करें?"
+msgstr "क्या सामग्री अभी नहीं उठाई गई है तो समाप्त करें?"
 
 msgid "Finished goods"
 msgstr "फिनिशें"
@@ -5899,7 +5900,7 @@ msgid "Fixed Asset"
 msgstr "स्थिर संपत्ति"
 
 msgid "Fixed assets"
-msgstr ""
+msgstr "निश्चित संपत्तियां"
 
 msgid "Fixed Assets"
 msgstr "स्थिर संपत्ति"
@@ -6551,22 +6552,22 @@ msgid "Implementation Support"
 msgstr "कार्यान्वयन समर्थन"
 
 msgid "Import"
-msgstr ""
+msgstr "आयात"
 
 msgid "Import {label} CSV"
 msgstr "{label} CSV आयात करें"
 
 msgid "Import closing trial balance"
-msgstr ""
+msgstr "समापन परीक्षण संतुलन आयात करें"
 
 msgid "Import results"
 msgstr "आयात परिणाम"
 
 msgid "Import trial balance"
-msgstr ""
+msgstr "परीक्षण संतुलन आयात करें"
 
 msgid "Import Trial Balance"
-msgstr ""
+msgstr "परीक्षण संतुलन आयात करें"
 
 msgid "Import your BOM"
 msgstr "अपना BOM आयात करें"
@@ -7116,7 +7117,7 @@ msgid "Journal"
 msgstr "जर्नल"
 
 msgid "Journal balances"
-msgstr ""
+msgstr "जर्नल शेष राशि"
 
 msgid "Journal Entries"
 msgstr "जर्नल प्रविष्टियां"
@@ -7150,6 +7151,7 @@ msgstr "खुला रखें"
 
 msgid "Keep picking"
 msgstr "चुनते रहें"
+msgstr "चयन जारी रखें"
 
 msgid "Key"
 msgstr "कुंजी"
@@ -8455,7 +8457,7 @@ msgid "No Access"
 msgstr "कोई एक्सेस नहीं"
 
 msgid "No account rows found in the file."
-msgstr ""
+msgstr "फ़ाइल में कोई खाता पंक्ति नहीं मिली।"
 
 msgid "No action needed"
 msgstr "कोई कार्रवाई की आवश्यकता नहीं है"
@@ -8635,7 +8637,7 @@ msgstr "इस आइटम के लिए लिंक करने के �
 msgid "No open sales order lines"
 msgstr "कोई खुली बिक्रय ऑर्डर लाइनें नहीं"
 msgid "No opening balance lines yet."
-msgstr ""
+msgstr "अभी तक कोई शुरुआती शेष राशि की लाइनें नहीं हैं।"
 
 msgid "No operations require picking at this location"
 msgstr "इस स्थान पर कोई भी ऑपरेशन पिकिंग की आवश्यकता नहीं है"
@@ -8809,7 +8811,7 @@ msgid "Not enough jobs to cover quantity"
 msgstr "पर्याप्त नौकरियां नहीं हैं मात्रा को कवर करने के लिए"
 
 msgid "Not ready"
-msgstr ""
+msgstr "तैयार नहीं है"
 
 msgid "Not referenced anywhere yet."
 msgstr "अभी तक कहीं भी संदर्भित नहीं।"
@@ -9979,10 +9981,10 @@ msgid "Properties"
 msgstr "गुण"
 
 msgid "Propose"
-msgstr ""
+msgstr "प्रस्ताव करें"
 
 msgid "Propose each section from your subledgers, or import a closing trial balance. Add cash, loans, and equity as journal lines until the entry balances."
-msgstr ""
+msgstr "अपनी सबलेजर से प्रत्येक अनुभाग का प्रस्ताव करें, या एक समापन परीक्षण संतुलन आयात करें। नकद, ऋण और इक्विटी को जर्नल लाइन के रूप में जोड़ें जब तक कि प्रविष्टि संतुलित न हो जाए।"
 
 msgid "Protect the go-live date"
 msgstr "गो-लाइव की तारीख की सुरक्षा करें"
@@ -10305,7 +10307,7 @@ msgid "Re-keying between quoting, the floor, and finance"
 msgstr "उद्धरण, फर्श और वित्त के बीच पुनः-कुंजीकरण"
 
 msgid "Re-validate"
-msgstr ""
+msgstr "पुनः सत्यापन"
 
 msgid "Reactivate"
 msgstr "पुनः सक्रिय करें"
@@ -10576,7 +10578,7 @@ msgid "Remaining after split stays on the original row."
 msgstr "विभाजन के बाद शेष मूल पंक्ति पर रहता है।"
 
 msgid "Remaining to balance"
-msgstr ""
+msgstr "संतुलन करने के लिए शेष"
 
 msgid "Remember this PIN. You will need it to exit console mode on MES terminals."
 msgstr "इस PIN को याद रखें। MES टर्मिनल पर कंसोल मोड से बाहर निकलने के लिए आपको इसकी आवश्यकता होगी।"
@@ -10786,7 +10788,7 @@ msgid "Residual Value %"
 msgstr "अवशिष्ट मूल्य %"
 
 msgid "Resolve every failing readiness check first."
-msgstr ""
+msgstr "पहले हर विफल तैयारी जांच को हल करें।"
 
 msgid "Resolve these before completing the NCR: every row must have a non-Pending disposition, and its linked entity quantities must match the row quantity."
 msgstr "इसे NCR पूरा करने से पहले हल करें: प्रत्येक पंक्ति के पास एक गैर-लंबित निपटान होना चाहिए, और इसकी जुड़ी हुई इकाई मात्रा पंक्ति मात्रा से मेल खानी चाहिए।"
@@ -10967,7 +10969,7 @@ msgid "rows"
 msgstr "पंक्तियाँ"
 
 msgid "rows parsed"
-msgstr ""
+msgstr "पंक्तियां पार्स की गईं"
 
 msgid "Rule"
 msgstr "नियम"
@@ -11827,6 +11829,7 @@ msgstr "शॉप-फ्लोर कॉन्फ़िगरेशन।"
 
 msgid "short"
 msgstr "अधूरा"
+msgstr "संक्षिप्त"
 
 msgid "Short"
 msgstr "कम"
@@ -12829,7 +12832,7 @@ msgid "The department this one rolls up under for reporting and headcount hierar
 msgstr "विभाग जिसके अंतर्गत यह रिपोर्टिंग और हेडकाउंट पदानुक्रमों के लिए रोल अप करता है; शीर्ष स्तरीय विभाग के लिए खाली छोड़ें।"
 
 msgid "The draft journal must balance and tie out to each subledger within 0.01."
-msgstr ""
+msgstr "ड्राफ्ट जर्नल को संतुलित होना चाहिए और 0.01 के भीतर प्रत्येक सबलेजर से संबंधित होना चाहिए।"
 
 msgid "The eight-disciplines quality method, modeled with the nonconformance workflow's tasks rather than hard-coded."
 msgstr "आठ अनुशासन गुणवत्ता विधि, अनुरूपता रहित वर्कफ़्लो के कार्यों के साथ मॉडल किया गया है, न कि कठोर कोडित।"
@@ -13362,6 +13365,7 @@ msgstr "ये ईमेल पते सभी ग्राहकों को 
 
 msgid "These items still have material to pick. Finishing now marks the list Partial."
 msgstr "इन आइटमों में अभी भी सामग्री चुनने के लिए है। अभी समाप्त करने से सूची को आंशिक चिह्नित किया जाता है।"
+msgstr "इन वस्तुओं में अभी भी उठाने के लिए सामग्री है। अभी समाप्त करने से सूची को आंशिक चिह्नित किया जाता है।"
 
 msgid "These jobs have operations assigned to this work center:"
 msgstr "इन कार्यों के पास इस कार्य केंद्र को सौंपे गए संचालन हैं:"
@@ -13378,7 +13382,7 @@ msgstr "यह परिवर्तन सूचना लागू की ज�
 msgid "This change notice is closed, so its changes are read-only."
 msgstr "यह परिवर्तन सूचना बंद है, इसलिए इसके परिवर्तन केवल पढ़ने के लिए हैं।"
 msgid "This cannot be undone. Type the company name to confirm."
-msgstr ""
+msgstr "यह पूर्ववत नहीं किया जा सकता। पुष्टि करने के लिए कंपनी का नाम टाइप करें।"
 
 msgid "This completes the Discovery step."
 msgstr "यह Discovery चरण को पूरा करता है।"
@@ -13581,7 +13585,7 @@ msgid "Title"
 msgstr "शीर्षक"
 
 msgid "to confirm"
-msgstr ""
+msgstr "पुष्टि करने के लिए"
 
 msgid "To Location"
 msgstr "स्थान को"
@@ -13833,7 +13837,7 @@ msgid "Trial Balance"
 msgstr "ट्रायल बैलेंस"
 
 msgid "Trial balance CSV"
-msgstr ""
+msgstr "ट्रायल बैलेंस CSV"
 
 msgid "Triggers"
 msgstr "ट्रिगर"
@@ -14075,7 +14079,7 @@ msgid "Upload"
 msgstr "अपलोड करें"
 
 msgid "Upload a CSV with account number, description, debit, and credit columns. Rows map to Carbon accounts by number."
-msgstr ""
+msgstr "एक CSV अपलोड करें जिसमें खाता संख्या, विवरण, डेबिट और क्रेडिट कॉलम हों। पंक्तियाँ कार्बन खातों को संख्या के आधार पर मैप करती हैं।"
 
 msgid "Upload a PDF first"
 msgstr "पहले एक PDF अपलोड करें"
