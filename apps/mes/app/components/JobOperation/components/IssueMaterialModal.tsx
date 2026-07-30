@@ -1677,7 +1677,7 @@ export function IssueMaterialModal({
                                         quantity: value
                                       })
                                     }
-                                    minValue={0.01}
+                                    minValue={1}
                                     maxValue={
                                       batchOptions.find(
                                         (o) => o.value === batch.id
@@ -1760,7 +1760,7 @@ export function IssueMaterialModal({
                                         quantity: value
                                       })
                                     }
-                                    minValue={0.01}
+                                    minValue={1}
                                     maxValue={
                                       batchOptions.find(
                                         (o) => o.value === batch.id
