@@ -76,6 +76,22 @@ describe("getSalesOrderJobStatus", () => {
     expect(jobLabel).toBe("Completed");
     expect(jobVariant).toBe("green");
   });
+
+  it("reports Completed when a closed job covers the line quantity", () => {
+    // Closed is treated identically to Completed for coverage.
+    const { jobLabel, jobVariant } = getSalesOrderJobStatus(
+      [
+        job({
+          status: "Closed",
+          quantityComplete: 10,
+          productionQuantity: 10
+        })
+      ],
+      line()
+    );
+    expect(jobLabel).toBe("Completed");
+    expect(jobVariant).toBe("green");
+  });
 });
 
 type IncompleteInput = Parameters<typeof hasIncompleteJobs>[0];
@@ -123,6 +139,16 @@ describe("hasIncompleteJobs", () => {
       hasIncompleteJobs({
         lines: [makeLine],
         jobs: [incompleteJob({ status: "Completed", quantityComplete: 10 })]
+      })
+    ).toBe(false);
+  });
+
+  it("treats a closed job covering the line quantity as complete", () => {
+    // Closed is treated identically to Completed for coverage.
+    expect(
+      hasIncompleteJobs({
+        lines: [makeLine],
+        jobs: [incompleteJob({ status: "Closed", quantityComplete: 10 })]
       })
     ).toBe(false);
   });
