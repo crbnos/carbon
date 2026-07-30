@@ -2967,6 +2967,24 @@ export async function cascadeItemTrackingType(
         )
       )
       .execute();
+
+    // Mirror the new tracking type onto every non-overridden BoM line — ALL
+    // method statuses, not just Draft. Unflagged means "inherits the item", and
+    // pre-override the issue function read the live item, so an Active method's
+    // line must follow the item too or future jobs snapshot a stale value.
+    // (The interlocked trio — methodType/sourcing/replenishment — stays
+    // Draft-only in cascadeSourcingAndMethodTypeToMethodMaterials.)
+    await trx
+      .updateTable("methodMaterial")
+      .set({
+        itemTrackingType: args.newType,
+        updatedBy: args.userId,
+        updatedAt
+      })
+      .where("itemId", "in", args.itemIds)
+      .where("companyId", "=", args.companyId)
+      .where("itemTrackingTypeOverridden", "=", false)
+      .execute();
   });
 }
 
@@ -3013,7 +3031,8 @@ export async function updateItemMethodAndSourcing(
       companyId: args.companyId,
       userId: args.userId,
       newSourcingType: args.cascade.sourcingType,
-      newMethodType: args.cascade.methodType
+      newMethodType: args.cascade.methodType,
+      newReplenishmentSystem: args.itemUpdate.replenishmentSystem
     });
   });
 }
@@ -3032,10 +3051,16 @@ async function cascadeSourcingAndMethodTypeToMethodMaterials(
     userId: string;
     newSourcingType?: SourcingType;
     newMethodType?: MethodType;
+    newReplenishmentSystem?: Database["public"]["Enums"]["itemReplenishmentSystem"];
   }
 ) {
   if (args.itemIds.length === 0) return;
-  if (!args.newSourcingType && !args.newMethodType) return;
+  if (
+    !args.newSourcingType &&
+    !args.newMethodType &&
+    !args.newReplenishmentSystem
+  )
+    return;
 
   const updatedAt = now(getLocalTimeZone()).toAbsoluteString();
 
@@ -3053,46 +3078,72 @@ async function cascadeSourcingAndMethodTypeToMethodMaterials(
         .where("status", "=", "Draft")
     );
 
-  const baseSet: {
-    updatedBy: string;
-    updatedAt: string;
-    sourcingType?: SourcingType;
-  } = {
-    updatedBy: args.userId,
-    updatedAt
-  };
-  if (args.newSourcingType) baseSet.sourcingType = args.newSourcingType;
+  // sourcingType / replenishmentSystem / methodType are an interlocked set
+  // (deriveItemMethodUpdate pins methodType from the other two), so all three
+  // cascade Draft-only — updating one on a frozen method while methodType
+  // stays frozen would create pairs getValidMethodTypes forbids. Tracking type
+  // is the exception (cascadeItemTrackingType): no interlock, real ledger
+  // pipeline, so it follows the item on every status.
+  if (args.newSourcingType) {
+    await trx
+      .updateTable("methodMaterial")
+      .set({
+        sourcingType: args.newSourcingType,
+        updatedBy: args.userId,
+        updatedAt
+      })
+      .where("itemId", "in", args.itemIds)
+      .where("companyId", "=", args.companyId)
+      .where("sourcingTypeOverridden", "=", false)
+      .where(onDraftMakeMethod)
+      .execute();
+  }
 
-  await trx
-    .updateTable("methodMaterial")
-    .set((eb) => ({
-      ...baseSet,
-      ...(args.newMethodType === "Make to Order"
-        ? {
-            methodType: "Make to Order" as const,
-            // materialMakeMethodId points at the component item's active make
-            // method (mirrors upsertMethodMaterial). Resolved with a correlated
-            // subquery so a single statement covers every item; null when the
-            // component has no active make method.
-            materialMakeMethodId: eb
-              .selectFrom("activeMakeMethods")
-              .select("id")
-              .whereRef(
-                "activeMakeMethods.itemId",
-                "=",
-                "methodMaterial.itemId"
-              )
-              .where("activeMakeMethods.companyId", "=", args.companyId)
-              .limit(1)
-          }
-        : args.newMethodType
-          ? { methodType: args.newMethodType, materialMakeMethodId: null }
-          : {})
-    }))
-    .where("itemId", "in", args.itemIds)
-    .where("companyId", "=", args.companyId)
-    .where(onDraftMakeMethod)
-    .execute();
+  // methodType cascade — skip overridden lines; re-resolve materialMakeMethodId
+  // for Make to Order (mirrors upsertMethodMaterial), null otherwise.
+  if (args.newMethodType) {
+    await trx
+      .updateTable("methodMaterial")
+      .set((eb) => ({
+        updatedBy: args.userId,
+        updatedAt,
+        ...(args.newMethodType === "Make to Order"
+          ? {
+              methodType: "Make to Order" as const,
+              materialMakeMethodId: eb
+                .selectFrom("activeMakeMethods")
+                .select("id")
+                .whereRef(
+                  "activeMakeMethods.itemId",
+                  "=",
+                  "methodMaterial.itemId"
+                )
+                .where("activeMakeMethods.companyId", "=", args.companyId)
+                .limit(1)
+            }
+          : { methodType: args.newMethodType, materialMakeMethodId: null })
+      }))
+      .where("itemId", "in", args.itemIds)
+      .where("companyId", "=", args.companyId)
+      .where("methodTypeOverridden", "=", false)
+      .where(onDraftMakeMethod)
+      .execute();
+  }
+
+  if (args.newReplenishmentSystem) {
+    await trx
+      .updateTable("methodMaterial")
+      .set({
+        replenishmentSystem: args.newReplenishmentSystem,
+        updatedBy: args.userId,
+        updatedAt
+      })
+      .where("itemId", "in", args.itemIds)
+      .where("companyId", "=", args.companyId)
+      .where("replenishmentSystemOverridden", "=", false)
+      .where(onDraftMakeMethod)
+      .execute();
+  }
 }
 
 export async function upsertConsumable(
@@ -3910,21 +3961,35 @@ export async function upsertMethodMaterial(
         customFields?: Json;
       })
 ) {
-  // sourcingType and methodType are item-level properties (edited in the
-  // item's Properties sidebar). A methodMaterial is a read-only mirror of its
-  // component item, so derive both from the item rather than trusting the
-  // submitted form values.
+  // Per-line overrides: methodType / sourcingType / replenishmentSystem each
+  // inherit from the component item UNLESS the caller marked that field
+  // overridden (the BoM editor sets the *Overridden flags when the user edits a
+  // line). Effective columns stay populated so downstream consumers
+  // (get_method_tree, MRP) read a concrete value either way.
   if (methodMaterial.itemId) {
     const item = await client
       .from("item")
-      .select("defaultMethodType, sourcingType")
+      .select(
+        "defaultMethodType, sourcingType, replenishmentSystem, itemTrackingType"
+      )
       .eq("id", methodMaterial.itemId)
       .single();
 
     if (item.error) return item;
-    methodMaterial.methodType =
-      item.data.defaultMethodType ?? methodMaterial.methodType;
-    methodMaterial.sourcingType = item.data.sourcingType;
+
+    if (!methodMaterial.methodTypeOverridden) {
+      methodMaterial.methodType =
+        item.data.defaultMethodType ?? methodMaterial.methodType;
+    }
+    if (!methodMaterial.sourcingTypeOverridden) {
+      methodMaterial.sourcingType = item.data.sourcingType;
+    }
+    if (!methodMaterial.replenishmentSystemOverridden) {
+      methodMaterial.replenishmentSystem = item.data.replenishmentSystem;
+    }
+    if (!methodMaterial.itemTrackingTypeOverridden) {
+      methodMaterial.itemTrackingType = item.data.itemTrackingType;
+    }
   }
 
   let materialMakeMethodId: string | null = null;

@@ -10672,6 +10672,9 @@ msgstr "PIN रीसेट करें"
 msgid "Reset PIN for {0} {1}"
 msgstr "{0} {1} के लिए PIN रीसेट करें"
 
+msgid "Reset to item default"
+msgstr "आइटम डिफ़ॉल्ट पर रीसेट करें"
+
 msgid "Reset view"
 msgstr "दृश्य रीसेट करें"
 
@@ -11879,6 +11882,9 @@ msgstr "स्रोत संस्करण"
 
 msgid "Sourcing"
 msgstr "सोर्सिंग"
+
+msgid "Sourcing type"
+msgstr "सोर्सिंग प्रकार"
 
 msgid "Sourcing Type"
 msgstr "सोर्सिंग प्रकार"
@@ -14670,6 +14676,17 @@ msgstr "जब आप डिलीवरी के लिए प्रतिब�
 
 msgid "When your fiscal and tax years start"
 msgstr "जब आपका वित्तीय और कर वर्ष शुरू होता है"
+
+msgid ""
+"Where a BOM line's part comes from.\n"
+"Specified — arrives inside its parent; this line triggers no purchase or stock pull.\n"
+"Ship from Inventory — taken from your own stock.\n"
+"Drop Ship — a supplier ships it directly for the order."
+msgstr ""
+"BOM लाइन का भाग कहाँ से आता है।\n"
+"निर्दिष्ट — इसके माता-पिता के अंदर आता है; यह लाइन कोई क्रय या स्टॉक पुल नहीं करती।\n"
+"इन्वेंटरी से शिप करें — आपके अपने स्टॉक से लिया गया।\n"
+"ड्रॉप शिप — एक आपूर्तिकर्ता इसे सीधे ऑर्डर के लिए भेजता है।"
 
 msgid "Where an operation runs; carries labor and quoting rates, with overhead the difference between them."
 msgstr "जहां एक ऑपरेशन चलता है; श्रम और उद्धरण दरें ले जाता है, ओवरहेड उनके बीच अंतर के साथ।"

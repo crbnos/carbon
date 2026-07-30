@@ -10672,6 +10672,9 @@ msgstr "PIN 재설정"
 msgid "Reset PIN for {0} {1}"
 msgstr "{0} {1}의 PIN 재설정"
 
+msgid "Reset to item default"
+msgstr "항목 기본값으로 재설정"
+
 msgid "Reset view"
 msgstr "보기 초기화"
 
@@ -11879,6 +11882,9 @@ msgstr "소스 버전"
 
 msgid "Sourcing"
 msgstr "소싱"
+
+msgid "Sourcing type"
+msgstr "소싱 유형"
 
 msgid "Sourcing Type"
 msgstr "소싱 유형"
@@ -14670,6 +14676,17 @@ msgstr "귀사가 납품하기로 약속한 시점으로, 계획에서는 이를
 
 msgid "When your fiscal and tax years start"
 msgstr "회계연도 및 세무연도가 시작되는 시기"
+
+msgid ""
+"Where a BOM line's part comes from.\n"
+"Specified — arrives inside its parent; this line triggers no purchase or stock pull.\n"
+"Ship from Inventory — taken from your own stock.\n"
+"Drop Ship — a supplier ships it directly for the order."
+msgstr ""
+"BOM 라인의 부품이 출처하는 위치입니다.\n"
+"지정됨 — 상위 항목 내에 도착합니다. 이 라인은 구매 또는 재고 인출을 트리거하지 않습니다.\n"
+"재고에서 배송 — 자신의 재고에서 취득됩니다.\n"
+"드롭 배송 — 공급업체가 주문에 대해 직접 배송합니다."
 
 msgid "Where an operation runs; carries labor and quoting rates, with overhead the difference between them."
 msgstr "공정작업이 실행되는 곳으로, 노무 및 견적 요율을 가지며 두 요율의 차이가 간접비입니다."

@@ -452,6 +452,16 @@ export const methodMaterialValidator = z.object({
       message: "Sourcing type is required"
     })
   }),
+  replenishmentSystem: z.enum(itemReplenishmentSystems, {
+    errorMap: () => ({ message: "Replenishment system is required" })
+  }),
+  itemTrackingType: z.enum(itemTrackingTypes, {
+    errorMap: () => ({ message: "Tracking type is required" })
+  }),
+  replenishmentSystemOverridden: zfd.checkbox(),
+  methodTypeOverridden: zfd.checkbox(),
+  sourcingTypeOverridden: zfd.checkbox(),
+  itemTrackingTypeOverridden: zfd.checkbox(),
   itemId: z.string().optional(),
   methodOperationId: zfd.text(z.string().optional()),
   // description: z.string().min(1, { message: "Description is required" }),

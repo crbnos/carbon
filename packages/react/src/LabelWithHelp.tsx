@@ -71,7 +71,7 @@ export function LabelWithHelp({
       <HoverCardContent
         side="top"
         align="start"
-        className="w-auto max-w-xs p-3 text-xs text-pretty leading-relaxed text-muted-foreground"
+        className="w-auto max-w-xs p-3 text-xs whitespace-pre-line text-pretty leading-relaxed text-muted-foreground"
       >
         {translatedDefinition}
         {showLearnMore && (

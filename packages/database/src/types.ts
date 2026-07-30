@@ -21704,6 +21704,9 @@ export type Database = {
           id: string
           itemId: string
           itemScrapPercentage: number
+          itemTrackingType:
+            | Database["public"]["Enums"]["itemTrackingType"]
+            | null
           itemType: string
           jobId: string
           jobMakeMethodId: string
@@ -21736,6 +21739,9 @@ export type Database = {
           id?: string
           itemId: string
           itemScrapPercentage?: number
+          itemTrackingType?:
+            | Database["public"]["Enums"]["itemTrackingType"]
+            | null
           itemType?: string
           jobId: string
           jobMakeMethodId: string
@@ -21768,6 +21774,9 @@ export type Database = {
           id?: string
           itemId?: string
           itemScrapPercentage?: number
+          itemTrackingType?:
+            | Database["public"]["Enums"]["itemTrackingType"]
+            | null
           itemType?: string
           jobId?: string
           jobMakeMethodId?: string
@@ -27709,17 +27718,23 @@ export type Database = {
           customFields: Json | null
           id: string
           itemId: string
+          itemTrackingType: Database["public"]["Enums"]["itemTrackingType"]
+          itemTrackingTypeOverridden: boolean
           itemType: string
           kit: boolean
           makeMethodId: string
           materialMakeMethodId: string | null
           methodOperationId: string | null
           methodType: Database["public"]["Enums"]["methodType"]
+          methodTypeOverridden: boolean
           order: number
           productionQuantity: number | null
           quantity: number
+          replenishmentSystem: Database["public"]["Enums"]["itemReplenishmentSystem"]
+          replenishmentSystemOverridden: boolean
           scrapQuantity: number
           sourcingType: Database["public"]["Enums"]["sourcingType"]
+          sourcingTypeOverridden: boolean
           storageUnitIds: Json
           tags: string[] | null
           unitOfMeasureCode: string
@@ -27733,17 +27748,23 @@ export type Database = {
           customFields?: Json | null
           id?: string
           itemId: string
+          itemTrackingType?: Database["public"]["Enums"]["itemTrackingType"]
+          itemTrackingTypeOverridden?: boolean
           itemType?: string
           kit?: boolean
           makeMethodId: string
           materialMakeMethodId?: string | null
           methodOperationId?: string | null
           methodType?: Database["public"]["Enums"]["methodType"]
+          methodTypeOverridden?: boolean
           order?: number
           productionQuantity?: number | null
           quantity: number
+          replenishmentSystem?: Database["public"]["Enums"]["itemReplenishmentSystem"]
+          replenishmentSystemOverridden?: boolean
           scrapQuantity?: number
           sourcingType?: Database["public"]["Enums"]["sourcingType"]
+          sourcingTypeOverridden?: boolean
           storageUnitIds?: Json
           tags?: string[] | null
           unitOfMeasureCode: string
@@ -27757,17 +27778,23 @@ export type Database = {
           customFields?: Json | null
           id?: string
           itemId?: string
+          itemTrackingType?: Database["public"]["Enums"]["itemTrackingType"]
+          itemTrackingTypeOverridden?: boolean
           itemType?: string
           kit?: boolean
           makeMethodId?: string
           materialMakeMethodId?: string | null
           methodOperationId?: string | null
           methodType?: Database["public"]["Enums"]["methodType"]
+          methodTypeOverridden?: boolean
           order?: number
           productionQuantity?: number | null
           quantity?: number
+          replenishmentSystem?: Database["public"]["Enums"]["itemReplenishmentSystem"]
+          replenishmentSystemOverridden?: boolean
           scrapQuantity?: number
           sourcingType?: Database["public"]["Enums"]["sourcingType"]
+          sourcingTypeOverridden?: boolean
           storageUnitIds?: Json
           tags?: string[] | null
           unitOfMeasureCode?: string
@@ -41889,6 +41916,9 @@ export type Database = {
           description: string
           id: string
           itemId: string
+          itemTrackingType:
+            | Database["public"]["Enums"]["itemTrackingType"]
+            | null
           itemType: string
           kit: boolean
           methodType: Database["public"]["Enums"]["methodType"]
@@ -41915,6 +41945,9 @@ export type Database = {
           description: string
           id?: string
           itemId: string
+          itemTrackingType?:
+            | Database["public"]["Enums"]["itemTrackingType"]
+            | null
           itemType?: string
           kit?: boolean
           methodType?: Database["public"]["Enums"]["methodType"]
@@ -41941,6 +41974,9 @@ export type Database = {
           description?: string
           id?: string
           itemId?: string
+          itemTrackingType?:
+            | Database["public"]["Enums"]["itemTrackingType"]
+            | null
           itemType?: string
           kit?: boolean
           methodType?: Database["public"]["Enums"]["methodType"]
@@ -61438,6 +61474,9 @@ export type Database = {
           itemReadableId: string | null
           itemReadableIdWithoutRevision: string | null
           itemScrapPercentage: number | null
+          itemTrackingType:
+            | Database["public"]["Enums"]["itemTrackingType"]
+            | null
           itemType: string | null
           jobId: string | null
           jobMakeMethodId: string | null
@@ -61454,6 +61493,8 @@ export type Database = {
           scrapQuantity: number | null
           storageUnitId: string | null
           storageUnitName: string | null
+          substitutedFromItemId: string | null
+          substitutionFactor: number | null
           unitCost: number | null
           unitOfMeasureCode: string | null
           updatedAt: string | null
@@ -64505,14 +64546,14 @@ export type Database = {
           },
           {
             foreignKeyName: "partner_id_fkey"
-            columns: ["supplierLocationId"]
+            columns: ["id"]
             isOneToOne: false
             referencedRelation: "supplierLocation"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "partner_id_fkey"
-            columns: ["id"]
+            columns: ["supplierLocationId"]
             isOneToOne: false
             referencedRelation: "supplierLocation"
             referencedColumns: ["id"]
@@ -67787,6 +67828,9 @@ export type Database = {
           description: string | null
           id: string | null
           itemId: string | null
+          itemTrackingType:
+            | Database["public"]["Enums"]["itemTrackingType"]
+            | null
           itemType: string | null
           kit: boolean | null
           methodType: Database["public"]["Enums"]["methodType"] | null
@@ -74550,6 +74594,7 @@ export type Database = {
           kit: boolean
           makeMethodId: string
           materialMakeMethodId: string
+          materialTrackingType: Database["public"]["Enums"]["itemTrackingType"]
           methodMaterialId: string
           methodOperationStepIds: Json
           methodType: Database["public"]["Enums"]["methodType"]
@@ -74996,6 +75041,7 @@ export type Database = {
           itemTrackingType: string
           itemType: string
           kit: boolean
+          materialTrackingType: Database["public"]["Enums"]["itemTrackingType"]
           methodMaterialId: string
           methodType: Database["public"]["Enums"]["methodType"]
           order: number

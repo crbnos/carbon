@@ -10672,6 +10672,9 @@ msgstr "PIN'i Sıfırla"
 msgid "Reset PIN for {0} {1}"
 msgstr "PIN'i sıfırla {0} {1}"
 
+msgid "Reset to item default"
+msgstr "Madde varsayılanına sıfırla"
+
 msgid "Reset view"
 msgstr "Görünümü sıfırla"
 
@@ -11879,6 +11882,9 @@ msgstr "Kaynak Sürüm"
 
 msgid "Sourcing"
 msgstr "Kaynak"
+
+msgid "Sourcing type"
+msgstr "Kaynak türü"
 
 msgid "Sourcing Type"
 msgstr "Kaynak Türü"
@@ -14670,6 +14676,17 @@ msgstr "Teslim etmeyi taahhüt ettiğiniz zaman; planlama bunu karşılama için
 
 msgid "When your fiscal and tax years start"
 msgstr "Mali ve vergi yıllarınız ne zaman başlar"
+
+msgid ""
+"Where a BOM line's part comes from.\n"
+"Specified — arrives inside its parent; this line triggers no purchase or stock pull.\n"
+"Ship from Inventory — taken from your own stock.\n"
+"Drop Ship — a supplier ships it directly for the order."
+msgstr ""
+"BOM satırının parçasının nereden geldiğini belirtir.\n"
+"Belirtilen — üst öğesinin içinde gelir; bu satır hiçbir satın alma veya stok çekişini tetiklemez.\n"
+"Envanterde kargo — kendi stok yönetiminizden alınır.\n"
+"Doğrudan Teslimat — bir tedarikçi bunu doğrudan sipariş için gönderir."
 
 msgid "Where an operation runs; carries labor and quoting rates, with overhead the difference between them."
 msgstr "Bir operasyonun nerede çalıştırıldığı; işçilik ve teklif oranlarını taşır, genel giderler aralarındaki fark."

@@ -10672,6 +10672,9 @@ msgstr "Réinitialiser le PIN"
 msgid "Reset PIN for {0} {1}"
 msgstr "Réinitialiser le PIN pour {0} {1}"
 
+msgid "Reset to item default"
+msgstr "Réinitialiser à la valeur par défaut de l'article"
+
 msgid "Reset view"
 msgstr "Réinitialiser la vue"
 
@@ -11879,6 +11882,9 @@ msgstr "Version source"
 
 msgid "Sourcing"
 msgstr "Approvisionnement"
+
+msgid "Sourcing type"
+msgstr "Type d'approvisionnement"
 
 msgid "Sourcing Type"
 msgstr "Type d'approvisionnement"
@@ -14670,6 +14676,17 @@ msgstr "Quand vous vous êtes engagé à livrer ; la planification traite ceci c
 
 msgid "When your fiscal and tax years start"
 msgstr "Quand commencent vos exercices fiscal et fiscal"
+
+msgid ""
+"Where a BOM line's part comes from.\n"
+"Specified — arrives inside its parent; this line triggers no purchase or stock pull.\n"
+"Ship from Inventory — taken from your own stock.\n"
+"Drop Ship — a supplier ships it directly for the order."
+msgstr ""
+"Indique la provenance de la pièce d'une ligne de nomenclature.\n"
+"Spécifiée — arrive intégrée à son composant parent ; cette ligne ne déclenche ni achat ni prélèvement de stock.\n"
+"Expédié depuis l'inventaire — prélevé dans votre propre stock.\n"
+"Expédition directe — un fournisseur l'expédie directement pour la commande."
 
 msgid "Where an operation runs; carries labor and quoting rates, with overhead the difference between them."
 msgstr "Où un opération s'exécute ; porte les taux de travail et de devis, avec frais généraux la différence entre eux."

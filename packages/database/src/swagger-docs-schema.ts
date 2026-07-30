@@ -12823,6 +12823,15 @@ export default {
             $ref: "#/parameters/rowFilter.jobMaterialWithMakeMethodId.itemScrapPercentage"
           },
           {
+            $ref: "#/parameters/rowFilter.jobMaterialWithMakeMethodId.substitutedFromItemId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobMaterialWithMakeMethodId.substitutionFactor"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobMaterialWithMakeMethodId.itemTrackingType"
+          },
+          {
             $ref: "#/parameters/rowFilter.jobMaterialWithMakeMethodId.storageUnitName"
           },
           {
@@ -14092,6 +14101,24 @@ export default {
             $ref: "#/parameters/rowFilter.methodMaterial.sourcingType"
           },
           {
+            $ref: "#/parameters/rowFilter.methodMaterial.replenishmentSystem"
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodMaterial.replenishmentSystemOverridden"
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodMaterial.methodTypeOverridden"
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodMaterial.sourcingTypeOverridden"
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodMaterial.itemTrackingType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodMaterial.itemTrackingTypeOverridden"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -14217,6 +14244,24 @@ export default {
             $ref: "#/parameters/rowFilter.methodMaterial.sourcingType"
           },
           {
+            $ref: "#/parameters/rowFilter.methodMaterial.replenishmentSystem"
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodMaterial.replenishmentSystemOverridden"
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodMaterial.methodTypeOverridden"
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodMaterial.sourcingTypeOverridden"
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodMaterial.itemTrackingType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodMaterial.itemTrackingTypeOverridden"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -14294,6 +14339,24 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.methodMaterial.sourcingType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodMaterial.replenishmentSystem"
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodMaterial.replenishmentSystemOverridden"
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodMaterial.methodTypeOverridden"
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodMaterial.sourcingTypeOverridden"
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodMaterial.itemTrackingType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodMaterial.itemTrackingTypeOverridden"
           },
           {
             $ref: "#/parameters/body.methodMaterial"
@@ -15095,6 +15158,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.quoteMaterialWithMakeMethodId.storageUnitId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteMaterialWithMakeMethodId.itemTrackingType"
           },
           {
             $ref: "#/parameters/rowFilter.quoteMaterialWithMakeMethodId.quoteMaterialMakeMethodId"
@@ -41434,6 +41500,9 @@ export default {
             $ref: "#/parameters/rowFilter.quoteMaterial.storageUnitId"
           },
           {
+            $ref: "#/parameters/rowFilter.quoteMaterial.itemTrackingType"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -41565,6 +41634,9 @@ export default {
             $ref: "#/parameters/rowFilter.quoteMaterial.storageUnitId"
           },
           {
+            $ref: "#/parameters/rowFilter.quoteMaterial.itemTrackingType"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -41648,6 +41720,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.quoteMaterial.storageUnitId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteMaterial.itemTrackingType"
           },
           {
             $ref: "#/parameters/body.quoteMaterial"
@@ -61459,6 +61534,9 @@ export default {
             $ref: "#/parameters/rowFilter.jobMaterial.substitutionFactor"
           },
           {
+            $ref: "#/parameters/rowFilter.jobMaterial.itemTrackingType"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -61608,6 +61686,9 @@ export default {
             $ref: "#/parameters/rowFilter.jobMaterial.substitutionFactor"
           },
           {
+            $ref: "#/parameters/rowFilter.jobMaterial.itemTrackingType"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -61709,6 +61790,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.jobMaterial.substitutionFactor"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobMaterial.itemTrackingType"
           },
           {
             $ref: "#/parameters/body.jobMaterial"
@@ -100085,7 +100169,7 @@ export default {
       properties: {
         id: {
           description:
-            "Note:\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
           format: "text",
           type: "string"
         },
@@ -100134,7 +100218,7 @@ export default {
         },
         supplierLocationId: {
           description:
-            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
+            "Note:\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
           format: "text",
           type: "string"
         },
@@ -100405,6 +100489,19 @@ export default {
         itemScrapPercentage: {
           format: "numeric",
           type: "number"
+        },
+        substitutedFromItemId: {
+          format: "text",
+          type: "string"
+        },
+        substitutionFactor: {
+          format: "numeric",
+          type: "number"
+        },
+        itemTrackingType: {
+          enum: ["Inventory", "Non-Inventory", "Serial", "Batch"],
+          format: 'public."itemTrackingType"',
+          type: "string"
         },
         storageUnitName: {
           format: "text",
@@ -100918,7 +101015,13 @@ export default {
         "scrapQuantity",
         "kit",
         "storageUnitIds",
-        "sourcingType"
+        "sourcingType",
+        "replenishmentSystem",
+        "replenishmentSystemOverridden",
+        "methodTypeOverridden",
+        "sourcingTypeOverridden",
+        "itemTrackingType",
+        "itemTrackingTypeOverridden"
       ],
       properties: {
         id: {
@@ -101034,6 +101137,38 @@ export default {
           enum: ["Specified", "Drop Ship", "Ship from Inventory"],
           format: 'public."sourcingType"',
           type: "string"
+        },
+        replenishmentSystem: {
+          default: "Buy",
+          enum: ["Buy", "Make", "Buy and Make"],
+          format: 'public."itemReplenishmentSystem"',
+          type: "string"
+        },
+        replenishmentSystemOverridden: {
+          default: false,
+          format: "boolean",
+          type: "boolean"
+        },
+        methodTypeOverridden: {
+          default: false,
+          format: "boolean",
+          type: "boolean"
+        },
+        sourcingTypeOverridden: {
+          default: false,
+          format: "boolean",
+          type: "boolean"
+        },
+        itemTrackingType: {
+          default: "Inventory",
+          enum: ["Inventory", "Non-Inventory", "Serial", "Batch"],
+          format: 'public."itemTrackingType"',
+          type: "string"
+        },
+        itemTrackingTypeOverridden: {
+          default: false,
+          format: "boolean",
+          type: "boolean"
         }
       },
       type: "object"
@@ -101444,6 +101579,11 @@ export default {
           description:
             "Note:\nThis is a Foreign Key to `storageUnit.id`.<fk table='storageUnit' column='id'/>",
           format: "text",
+          type: "string"
+        },
+        itemTrackingType: {
+          enum: ["Inventory", "Non-Inventory", "Serial", "Batch"],
+          format: 'public."itemTrackingType"',
           type: "string"
         },
         quoteMaterialMakeMethodId: {
@@ -114215,6 +114355,11 @@ export default {
             "Note:\nThis is a Foreign Key to `storageUnit.id`.<fk table='storageUnit' column='id'/>",
           format: "text",
           type: "string"
+        },
+        itemTrackingType: {
+          enum: ["Inventory", "Non-Inventory", "Serial", "Batch"],
+          format: 'public."itemTrackingType"',
+          type: "string"
         }
       },
       type: "object"
@@ -123734,6 +123879,11 @@ export default {
         substitutionFactor: {
           format: "numeric",
           type: "number"
+        },
+        itemTrackingType: {
+          enum: ["Inventory", "Non-Inventory", "Serial", "Batch"],
+          format: 'public."itemTrackingType"',
+          type: "string"
         }
       },
       type: "object"
@@ -141164,6 +141314,24 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.jobMaterialWithMakeMethodId.substitutedFromItemId": {
+      name: "substitutedFromItemId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.jobMaterialWithMakeMethodId.substitutionFactor": {
+      name: "substitutionFactor",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.jobMaterialWithMakeMethodId.itemTrackingType": {
+      name: "itemTrackingType",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "rowFilter.jobMaterialWithMakeMethodId.storageUnitName": {
       name: "storageUnitName",
       required: false,
@@ -141917,6 +142085,42 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.methodMaterial.replenishmentSystem": {
+      name: "replenishmentSystem",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.methodMaterial.replenishmentSystemOverridden": {
+      name: "replenishmentSystemOverridden",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.methodMaterial.methodTypeOverridden": {
+      name: "methodTypeOverridden",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.methodMaterial.sourcingTypeOverridden": {
+      name: "sourcingTypeOverridden",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.methodMaterial.itemTrackingType": {
+      name: "itemTrackingType",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.methodMaterial.itemTrackingTypeOverridden": {
+      name: "itemTrackingTypeOverridden",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.documentExtraction": {
       name: "documentExtraction",
       description: "documentExtraction",
@@ -142387,6 +142591,12 @@ export default {
     },
     "rowFilter.quoteMaterialWithMakeMethodId.storageUnitId": {
       name: "storageUnitId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.quoteMaterialWithMakeMethodId.itemTrackingType": {
+      name: "itemTrackingType",
       required: false,
       in: "query",
       type: "string"
@@ -156481,6 +156691,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.quoteMaterial.itemTrackingType": {
+      name: "itemTrackingType",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.customerStatus": {
       name: "customerStatus",
       description: "customerStatus",
@@ -167204,6 +167420,12 @@ export default {
     },
     "rowFilter.jobMaterial.substitutionFactor": {
       name: "substitutionFactor",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.jobMaterial.itemTrackingType": {
+      name: "itemTrackingType",
       required: false,
       in: "query",
       type: "string"

@@ -3209,7 +3209,7 @@ export async function generatePickingList(
   let materialsQuery = client
     .from("jobMaterial")
     .select(
-      "id, jobId, jobOperationId, jobMakeMethodId, itemId, quantityToIssue, storageUnitId, requiresSerialTracking, requiresBatchTracking"
+      "id, jobId, jobOperationId, jobMakeMethodId, itemId, itemTrackingType, quantityToIssue, storageUnitId, requiresSerialTracking, requiresBatchTracking"
     )
     .eq("companyId", args.companyId)
     .gt("quantityToIssue", 0);
@@ -3225,6 +3225,37 @@ export async function generatePickingList(
     await client.from("pickingList").delete().eq("id", plId);
     return { data: null, error: materials.error };
   }
+
+  // A line whose effective tracking type is Non-Inventory is never consumed
+  // from stock (issue/backflush skip its ledger entry), so it must not be
+  // picked either. Per-line snapshot wins; null (legacy/manually-added lines)
+  // falls back to the item. Serial/Batch pass through untouched.
+  const nullSnapshotItemIds = [
+    ...new Set(
+      (materials.data ?? [])
+        .filter((m) => m.itemTrackingType === null)
+        .map((m) => m.itemId)
+    )
+  ];
+  const itemTrackingById = new Map<string, string>();
+  if (nullSnapshotItemIds.length > 0) {
+    const trackingItems = await client
+      .from("item")
+      .select("id, itemTrackingType")
+      .in("id", nullSnapshotItemIds)
+      .eq("companyId", args.companyId);
+    if (trackingItems.error) {
+      await client.from("pickingList").delete().eq("id", plId);
+      return { data: null, error: trackingItems.error };
+    }
+    for (const i of trackingItems.data ?? []) {
+      itemTrackingById.set(i.id, i.itemTrackingType);
+    }
+  }
+  const pickableMaterials = (materials.data ?? []).filter(
+    (m) =>
+      (m.itemTrackingType ?? itemTrackingById.get(m.itemId)) !== "Non-Inventory"
+  );
 
   // Lazily resolve (and cache) the lineside destination per work center. A
   // pick is a transfer from the warehouse source to this lineside shelf;
@@ -3264,7 +3295,7 @@ export async function generatePickingList(
     companyId: string;
     createdBy: string;
   }> = [];
-  for (const mat of materials.data ?? []) {
+  for (const mat of pickableMaterials) {
     const quantityToIssue = Number(mat.quantityToIssue ?? 0);
     if (quantityToIssue <= 0) continue;
 

@@ -10672,6 +10672,9 @@ msgstr "PINをリセット"
 msgid "Reset PIN for {0} {1}"
 msgstr "{0} {1}のPINをリセット"
 
+msgid "Reset to item default"
+msgstr "アイテムのデフォルトにリセット"
+
 msgid "Reset view"
 msgstr "ビューをリセット"
 
@@ -11879,6 +11882,9 @@ msgstr "ソースバージョン"
 
 msgid "Sourcing"
 msgstr "ソーシング"
+
+msgid "Sourcing type"
+msgstr "ソーシングタイプ"
 
 msgid "Sourcing Type"
 msgstr "調達タイプ"
@@ -14670,6 +14676,17 @@ msgstr "あなたが配送を約束したいつ。計画はこれをフルフィ
 
 msgid "When your fiscal and tax years start"
 msgstr "会計年度および税務年度の開始時期"
+
+msgid ""
+"Where a BOM line's part comes from.\n"
+"Specified — arrives inside its parent; this line triggers no purchase or stock pull.\n"
+"Ship from Inventory — taken from your own stock.\n"
+"Drop Ship — a supplier ships it directly for the order."
+msgstr ""
+"BOM行部品の入手先。\n"
+"指定 — 親内に到着します。この行は購入または在庫引き出しをトリガーしません。\n"
+"在庫から発送 — 独自の在庫から取得されます。\n"
+"ドロップシップ — サプライヤーが注文に対して直接発送します。"
 
 msgid "Where an operation runs; carries labor and quoting rates, with overhead the difference between them."
 msgstr "操作が実行される場所。労働と見積もりレート、オーバーヘッドはそれらの違いです。"

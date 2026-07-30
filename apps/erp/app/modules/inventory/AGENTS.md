@@ -66,7 +66,7 @@ pnpm exec turbo run typecheck --filter=erp   # the app's package name is "erp", 
 - `getAvailableTrackedEntities` — calls `get_available_tracked_entities` RPC
 - `getReceipts` / `getReceiptLines` / `reconcileReceiptSerialEntities` — receipt management
 - `getShipments` / `getShipmentLines` / `getShipmentRelatedItems` — shipment management
-- `generatePickingList` / `getPickingListAvailability` / `getPickingSchedule` — picking operations
+- `generatePickingList` / `getPickingListAvailability` / `getPickingSchedule` — picking operations; excludes lines whose effective tracking type (`jobMaterial.itemTrackingType` snapshot ?? item) is `Non-Inventory` — those are never ledger-consumed, so they must not be picked
 - `getDefaultStorageUnitOrStorageUnitWithHighestQuantity` — picking defaults
 - `getTrackedEntities` / `getTrackedEntityExpirations` / `getShelfLifeForItems` — tracking and expiry
 - `generateInventoryCountLines` — Kysely; aggregates `itemLedger` on-hand into `inventoryCountLine` rows, scoped by the optional `storageUnitIds` + `itemType`. Excludes `Rejected` and `Consumed` tracked lots (status-aware, matching `quantityOnHand`); non-tracked rows (NULL status) always included. `getInventoryCountLines` reads the `inventoryCountLines` view (joins item + subtype tables on `id = item."readableId"` — the same predicate `get_inventory_quantities` uses, all LEFT — + `storageUnit`) so the detail table can apply generic column filters on flat columns.

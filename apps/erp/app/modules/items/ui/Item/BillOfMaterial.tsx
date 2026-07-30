@@ -71,6 +71,7 @@ import {
   Location,
   Number,
   Select,
+  SelectControlled,
   StorageUnit,
   Submit,
   UnitOfMeasure
@@ -93,12 +94,20 @@ import type {
   MethodType,
   SourcingType
 } from "~/modules/shared";
-import { methodType, sourcingType } from "~/modules/shared";
+import {
+  getValidMethodTypes,
+  methodType,
+  sourcingType
+} from "~/modules/shared";
 import type { Item as ItemType } from "~/stores";
 import { useItems } from "~/stores";
 import { path } from "~/utils/path";
 import type { methodOperationValidator } from "../../items.models";
-import { methodMaterialValidator } from "../../items.models";
+import {
+  deriveItemMethodUpdate,
+  itemReplenishmentSystems,
+  methodMaterialValidator
+} from "../../items.models";
 import type {
   ConfigurationParameter,
   ConfigurationRule,
@@ -110,6 +119,8 @@ import ReleaseLockAlert, { getReleaseLockFlags } from "./ReleaseLockAlert";
 
 type Material = z.infer<typeof methodMaterialValidator> & {
   description: string;
+  // present on loader rows (select *); absent on unsaved temporary items
+  updatedAt?: string | null;
   item: {
     name: string;
     itemTrackingType: Database["public"]["Enums"]["itemTrackingType"];
@@ -165,6 +176,12 @@ const initialMethodMaterial: Omit<Material, "makeMethodId" | "order"> & {
   itemType: "Item" as const,
   methodType: "Purchase to Order" as const,
   sourcingType: "Specified" as const,
+  replenishmentSystem: "Buy" as const,
+  itemTrackingType: "Inventory" as const,
+  replenishmentSystemOverridden: false,
+  methodTypeOverridden: false,
+  sourcingTypeOverridden: false,
+  itemTrackingTypeOverridden: false,
   description: "",
   quantity: 1,
   unitOfMeasureCode: "EA",
@@ -420,7 +437,11 @@ const BillOfMaterial = ({
               }}
             />
             <SortableListItemPanel isOpen={isOpen}>
+              {/* keyed on the row version: when the saved row changes
+                  (save, item-default cascade), remount so local state
+                  re-seeds — no sync effect needed */}
               <MaterialForm
+                key={`${item.id}:${item.data.updatedAt ?? ""}`}
                 configurable={configurable}
                 isReadOnly={isReadOnly}
                 item={item}
@@ -561,6 +582,67 @@ const BillOfMaterial = ({
 
 export default BillOfMaterial;
 
+type MaterialFormState = {
+  itemId: string;
+  methodType: MethodType;
+  sourcingType: SourcingType;
+  replenishmentSystem: string;
+  itemTrackingType: Database["public"]["Enums"]["itemTrackingType"];
+  replenishmentSystemOverridden: boolean;
+  methodTypeOverridden: boolean;
+  sourcingTypeOverridden: boolean;
+  itemTrackingTypeOverridden: boolean;
+  description: string;
+  unitOfMeasureCode: string;
+  methodOperationId: string | undefined;
+  methodOperationStepIds?: string[];
+  quantity: number;
+  kit: boolean;
+  storageUnitIds: Record<string, string>;
+  requiresBatchTracking: boolean;
+  requiresSerialTracking: boolean;
+};
+
+function seedMaterialFormState(
+  item: ItemWithData,
+  replenishmentSystem?: string
+): MaterialFormState {
+  return {
+    itemId: item.data.itemId ?? "",
+    methodType: item.data.methodType ?? "Pull from Inventory",
+    sourcingType: item.data.sourcingType ?? "Specified",
+    replenishmentSystem:
+      item.data.replenishmentSystem ??
+      item.data.item?.replenishmentSystem ??
+      replenishmentSystem ??
+      "Buy",
+    itemTrackingType:
+      item.data.itemTrackingType ??
+      item.data.item?.itemTrackingType ??
+      "Inventory",
+    replenishmentSystemOverridden:
+      item.data.replenishmentSystemOverridden ?? false,
+    methodTypeOverridden: item.data.methodTypeOverridden ?? false,
+    sourcingTypeOverridden: item.data.sourcingTypeOverridden ?? false,
+    itemTrackingTypeOverridden: item.data.itemTrackingTypeOverridden ?? false,
+    description: item.data.description ?? "",
+    unitOfMeasureCode: item.data.unitOfMeasureCode ?? "EA",
+    methodOperationId: item.data.methodOperationId ?? undefined,
+    methodOperationStepIds: (
+      (
+        item.data as {
+          methodMaterialStep?: { methodOperationStepId: string }[];
+        }
+      ).methodMaterialStep ?? []
+    ).map((s) => s.methodOperationStepId),
+    quantity: item.data.quantity ?? 1,
+    kit: item.data.kit ?? false,
+    storageUnitIds: item.data.storageUnitIds ?? {},
+    requiresBatchTracking: item.data.item?.itemTrackingType === "Batch",
+    requiresSerialTracking: item.data.item?.itemTrackingType === "Serial"
+  };
+}
+
 function MaterialForm({
   configurable,
   isReadOnly,
@@ -638,54 +720,9 @@ function MaterialForm({
   }, [item.id, methodMaterialFetcher.data, setTemporaryItems, onSubmit]);
 
   const [itemType, setItemType] = useState<MethodItemType>(item.data.itemType);
-  const [itemData, setItemData] = useState<{
-    itemId: string;
-    methodType: MethodType;
-    sourcingType: SourcingType;
-    description: string;
-    unitOfMeasureCode: string;
-    methodOperationId: string | undefined;
-    methodOperationStepIds?: string[];
-    quantity: number;
-    kit: boolean;
-    storageUnitIds: Record<string, string>;
-    requiresBatchTracking: boolean;
-    requiresSerialTracking: boolean;
-    itemReplenishmentSystem: string;
-  }>({
-    itemId: item.data.itemId ?? "",
-    methodType: item.data.methodType ?? "Pull from Inventory",
-    sourcingType: item.data.sourcingType ?? "Specified",
-    description: item.data.description ?? "",
-    unitOfMeasureCode: item.data.unitOfMeasureCode ?? "EA",
-    methodOperationId: item.data.methodOperationId ?? undefined,
-    methodOperationStepIds: (
-      (
-        item.data as {
-          methodMaterialStep?: { methodOperationStepId: string }[];
-        }
-      ).methodMaterialStep ?? []
-    ).map((s) => s.methodOperationStepId),
-    quantity: item.data.quantity ?? 1,
-    kit: item.data.kit ?? false,
-    storageUnitIds: item.data.storageUnitIds ?? {},
-    requiresBatchTracking: item.data.item?.itemTrackingType === "Batch",
-    requiresSerialTracking: item.data.item?.itemTrackingType === "Serial",
-    itemReplenishmentSystem:
-      item.data.item?.replenishmentSystem ?? replenishmentSystem ?? "Buy"
-  });
-
-  // methodType/sourcingType are read-only mirrors of the component item
-  // (see method-material-sourcing rule). Re-sync them when the loader row
-  // changes — e.g. after the properties panel updates the default method type —
-  // since the useState initializer above only runs at mount.
-  useEffect(() => {
-    setItemData((d) => ({
-      ...d,
-      methodType: item.data.methodType ?? "Pull from Inventory",
-      sourcingType: item.data.sourcingType ?? "Specified"
-    }));
-  }, [item.data.methodType, item.data.sourcingType]);
+  const [itemData, setItemData] = useState<MaterialFormState>(() =>
+    seedMaterialFormState(item, replenishmentSystem)
+  );
 
   const onTypeChange = (value: MethodItemType | "Item") => {
     if (value === itemType) return;
@@ -695,6 +732,12 @@ function MaterialForm({
       itemId: "",
       methodType: "" as "Pull from Inventory",
       sourcingType: "Specified",
+      replenishmentSystem: replenishmentSystem ?? "Buy",
+      itemTrackingType: "Inventory",
+      replenishmentSystemOverridden: false,
+      methodTypeOverridden: false,
+      sourcingTypeOverridden: false,
+      itemTrackingTypeOverridden: false,
       quantity: 1,
       description: "",
       unitOfMeasureCode: "EA",
@@ -702,8 +745,7 @@ function MaterialForm({
       storageUnitIds: {},
       methodOperationId: undefined,
       requiresBatchTracking: false,
-      requiresSerialTracking: false,
-      itemReplenishmentSystem: replenishmentSystem ?? "Buy"
+      requiresSerialTracking: false
     });
   };
 
@@ -728,8 +770,8 @@ function MaterialForm({
       return;
     }
 
-    // Method type and sourcing are item-level properties; mirror them here so
-    // the read-only display matches the item the moment it's selected.
+    // A freshly selected item inherits the component item's defaults, so mirror
+    // them and reset every per-line override flag back to false (inherit).
     setItemData((d) => ({
       ...d,
       itemId,
@@ -737,10 +779,15 @@ function MaterialForm({
       unitOfMeasureCode: item.data?.unitOfMeasureCode ?? "EA",
       methodType: item.data?.defaultMethodType ?? "Pull from Inventory",
       sourcingType: item.data?.sourcingType ?? "Specified",
+      replenishmentSystem: item.data?.replenishmentSystem ?? "Buy",
+      itemTrackingType: item.data?.itemTrackingType ?? "Inventory",
+      replenishmentSystemOverridden: false,
+      methodTypeOverridden: false,
+      sourcingTypeOverridden: false,
+      itemTrackingTypeOverridden: false,
       kit: false,
       requiresBatchTracking: item.data?.itemTrackingType === "Batch",
-      requiresSerialTracking: item.data?.itemTrackingType === "Serial",
-      itemReplenishmentSystem: item.data?.replenishmentSystem ?? "Buy"
+      requiresSerialTracking: item.data?.itemTrackingType === "Serial"
     }));
     if (item.data?.type) {
       setItemType(item.data.type as MethodItemType);
@@ -751,6 +798,120 @@ function MaterialForm({
 
   const isTracked =
     itemData.requiresBatchTracking || itemData.requiresSerialTracking;
+
+  // Editing sourcing marks it overridden and applies the same interlock the
+  // item uses (Ship from Inventory -> Pull from Inventory, Drop Ship ->
+  // Purchase to Order); a pinned methodType is itself marked overridden.
+  const onSourcingChange = (value: SourcingType) => {
+    const { cascade } = deriveItemMethodUpdate("sourcingType", value);
+    setItemData((d) => ({
+      ...d,
+      sourcingType: value,
+      sourcingTypeOverridden: true,
+      ...(cascade.methodType
+        ? { methodType: cascade.methodType, methodTypeOverridden: true }
+        : {})
+    }));
+  };
+
+  const onMethodTypeChange = (value: MethodType) => {
+    setItemData((d) => ({
+      ...d,
+      methodType: value,
+      methodTypeOverridden: true
+    }));
+  };
+
+  // Editing replenishment marks it overridden and pins the line's methodType to
+  // the derived default (mirrors deriveItemMethodUpdate on the item).
+  const onReplenishmentChange = (value: string) => {
+    const { itemUpdate } = deriveItemMethodUpdate("replenishmentSystem", value);
+    setItemData((d) => ({
+      ...d,
+      replenishmentSystem: value,
+      replenishmentSystemOverridden: true,
+      ...(itemUpdate.defaultMethodType
+        ? {
+            methodType: itemUpdate.defaultMethodType,
+            methodTypeOverridden: true
+          }
+        : {})
+    }));
+  };
+
+  // Editing tracking type marks it overridden. Only Inventory/Non-Inventory are
+  // offered (Serial/Batch stay item-level, control is hidden); no interlock.
+  const onTrackingTypeChange = (
+    value: Database["public"]["Enums"]["itemTrackingType"]
+  ) => {
+    setItemData((d) => ({
+      ...d,
+      itemTrackingType: value,
+      itemTrackingTypeOverridden: true
+    }));
+  };
+
+  const onResetToItemDefault = (
+    field:
+      | "replenishmentSystem"
+      | "methodType"
+      | "sourcingType"
+      | "itemTrackingType"
+  ) => {
+    const itemDefaults = item.data.item;
+    const itemMethodType =
+      itemDefaults?.defaultMethodType ?? "Pull from Inventory";
+
+    // methodType and replenishmentSystem are interlocked, so resetting either one
+    // alone can strand methodType outside getValidMethodTypes (e.g. reset method
+    // type to the item's "Make to Order" on a line pinned to Buy). Clamp the pair
+    // back into range, and keep the flag honest: a clamped value is no longer the
+    // item's, so it must stay overridden or the server re-derives the bad pair.
+    const reconcileMethodType = (
+      replenishmentSystem: string,
+      desired: MethodType
+    ) => {
+      const valid = getValidMethodTypes(replenishmentSystem);
+      const resolved =
+        valid.length === 0 || valid.includes(desired) ? desired : valid[0];
+      return {
+        methodType: resolved,
+        methodTypeOverridden: resolved !== itemMethodType
+      };
+    };
+
+    setItemData((d) => {
+      switch (field) {
+        case "replenishmentSystem": {
+          const replenishmentSystem =
+            itemDefaults?.replenishmentSystem ?? "Buy";
+          return {
+            ...d,
+            replenishmentSystem,
+            replenishmentSystemOverridden: false,
+            ...reconcileMethodType(replenishmentSystem, d.methodType)
+          };
+        }
+        case "methodType":
+          return {
+            ...d,
+            ...reconcileMethodType(d.replenishmentSystem, itemMethodType)
+          };
+        case "sourcingType":
+          return {
+            ...d,
+            sourcingType: itemDefaults?.sourcingType ?? "Specified",
+            sourcingTypeOverridden: false
+          };
+        case "itemTrackingType":
+          return {
+            ...d,
+            itemTrackingType: itemDefaults?.itemTrackingType ?? "Inventory",
+            itemTrackingTypeOverridden: false
+          };
+      }
+    });
+  };
 
   return (
     <ValidatedForm
@@ -776,13 +937,28 @@ function MaterialForm({
           name="storageUnitIds"
           value={JSON.stringify(itemData.storageUnitIds)}
         />
-        {/* methodType and sourcingType are item-level properties; the fields
-            above are read-only mirrors. They're still submitted to satisfy
-            methodMaterialValidator, but upsertMethodMaterial re-derives both
-            from the component item, so the submitted values are display-only —
-            don't treat them as the source of truth. */}
-        {itemData.itemReplenishmentSystem !== "Buy and Make" && (
-          <Hidden name="sourcingType" value={itemData.sourcingType} />
+        {/* replenishmentSystem / methodType / sourcingType are editable per
+            line below (their Selects submit the effective value). These flags
+            mark which of them the user overrode so upsertMethodMaterial and the
+            item->line cascade skip re-deriving that field. Submitted as "on"
+            when overridden / omitted otherwise, to match zfd.checkbox(). */}
+        {itemData.replenishmentSystemOverridden && (
+          <Hidden name="replenishmentSystemOverridden" value="on" />
+        )}
+        {itemData.methodTypeOverridden && (
+          <Hidden name="methodTypeOverridden" value="on" />
+        )}
+        {itemData.sourcingTypeOverridden && (
+          <Hidden name="sourcingTypeOverridden" value="on" />
+        )}
+        {itemData.itemTrackingTypeOverridden && (
+          <Hidden name="itemTrackingTypeOverridden" value="on" />
+        )}
+        {/* Serial/Batch items can't be overridden per line — the Tracking Type
+            Select is hidden, so submit the inherited value here. When the Select
+            renders (Inventory/Non-Inventory items) it submits the value itself. */}
+        {isTracked && (
+          <Hidden name="itemTrackingType" value={itemData.itemTrackingType} />
         )}
       </div>
 
@@ -861,55 +1037,88 @@ function MaterialForm({
           }
         />
       </div>
-      {itemData.itemReplenishmentSystem === "Buy and Make" && (
-        <div className="border border-border rounded-md shadow-sm p-4 flex flex-col gap-4 w-full">
-          <HStack
-            className="w-full justify-between cursor-pointer"
-            onClick={sourcingDisclosure.onToggle}
-          >
-            <HStack>
-              <LuTruck className="text-foreground" />
-              <Label>Sourcing</Label>
-            </HStack>
-            <HStack>
-              <Badge variant="secondary">
-                <SourcingTypeIcon
-                  type={itemData.sourcingType}
-                  className="size-3 mr-1"
-                />
-                {itemData.sourcingType}
-              </Badge>
-              <IconButton
-                icon={<LuChevronRight />}
-                aria-label={
-                  sourcingDisclosure.isOpen
-                    ? "Collapse Sourcing"
-                    : "Expand Sourcing"
-                }
-                variant="ghost"
-                size="md"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  sourcingDisclosure.onToggle();
-                }}
-                className={`transition-transform ${
-                  sourcingDisclosure.isOpen ? "rotate-90" : ""
-                }`}
-              />
-            </HStack>
+      <div className="border border-border rounded-md shadow-sm p-4 flex flex-col gap-4 w-full">
+        <HStack
+          className="w-full justify-between cursor-pointer"
+          onClick={sourcingDisclosure.onToggle}
+        >
+          <HStack>
+            <LuTruck className="text-foreground" />
+            <Label>Sourcing</Label>
           </HStack>
-          <div
-            className={`grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3 pb-4 ${
-              sourcingDisclosure.isOpen ? "" : "hidden"
-            }`}
-          >
-            {/* Read-only: sourcing is set at the item level (Properties
-                sidebar) and mirrored here. */}
-            <Select
+          <HStack>
+            <Badge variant="secondary">
+              <SourcingTypeIcon
+                type={itemData.sourcingType}
+                className="size-3 mr-1"
+              />
+              {itemData.sourcingType}
+            </Badge>
+            <IconButton
+              icon={<LuChevronRight />}
+              aria-label={
+                sourcingDisclosure.isOpen
+                  ? "Collapse Sourcing"
+                  : "Expand Sourcing"
+              }
+              variant="ghost"
+              size="md"
+              onClick={(e) => {
+                e.stopPropagation();
+                sourcingDisclosure.onToggle();
+              }}
+              className={`transition-transform ${
+                sourcingDisclosure.isOpen ? "rotate-90" : ""
+              }`}
+            />
+          </HStack>
+        </HStack>
+        <div
+          className={`grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3 pb-4 ${
+            sourcingDisclosure.isOpen ? "" : "hidden"
+          }`}
+        >
+          {/* Editable per line; defaults inherited from the component item.
+              Editing sets the field's *Overridden flag so the item->line
+              cascade won't re-stomp it. */}
+          <div className="flex flex-col gap-1">
+            <SelectControlled
+              name="replenishmentSystem"
+              label={t`Replenishment System`}
+              termId="replenishment-system"
+              value={itemData.replenishmentSystem}
+              isReadOnly={isReadOnly}
+              onChange={(option) => {
+                if (option?.value) onReplenishmentChange(option.value);
+              }}
+              options={itemReplenishmentSystems.map((s) => ({
+                value: s,
+                label: s
+              }))}
+            />
+            {itemData.replenishmentSystemOverridden && (
+              <Button
+                variant="link"
+                size="sm"
+                className="self-start px-0 h-auto text-muted-foreground"
+                isDisabled={isReadOnly}
+                onClick={() => onResetToItemDefault("replenishmentSystem")}
+              >
+                {t`Reset to item default`}
+              </Button>
+            )}
+          </div>
+          <div className="flex flex-col gap-1">
+            <SelectControlled
               name="sourcingType"
               label={t`Sourcing Type`}
+              termId="sourcing-type"
               value={itemData.sourcingType}
-              isReadOnly
+              isReadOnly={isReadOnly}
+              onChange={(option) => {
+                if (option?.value)
+                  onSourcingChange(option.value as SourcingType);
+              }}
               options={sourcingType.map((s) => ({
                 value: s,
                 label: (
@@ -920,9 +1129,61 @@ function MaterialForm({
                 )
               }))}
             />
+            {itemData.sourcingTypeOverridden && (
+              <Button
+                variant="link"
+                size="sm"
+                className="self-start px-0 h-auto text-muted-foreground"
+                isDisabled={isReadOnly}
+                onClick={() => onResetToItemDefault("sourcingType")}
+              >
+                {t`Reset to item default`}
+              </Button>
+            )}
           </div>
+          {/* Tracking Type is editable per line for Inventory/Non-Inventory
+              items only. Serial/Batch stay item-level (control hidden; the
+              inherited value is submitted via a Hidden input above). A
+              Non-Inventory line is not counted in stock when consumed. */}
+          {!isTracked && (
+            <div className="flex flex-col gap-1">
+              <SelectControlled
+                name="itemTrackingType"
+                label={t`Tracking Type`}
+                termId="item-tracking-type"
+                value={itemData.itemTrackingType}
+                isReadOnly={isReadOnly}
+                onChange={(option) => {
+                  if (option?.value)
+                    onTrackingTypeChange(
+                      option.value as Database["public"]["Enums"]["itemTrackingType"]
+                    );
+                }}
+                options={["Inventory", "Non-Inventory"].map((value) => ({
+                  value,
+                  label: (
+                    <span className="flex items-center gap-2">
+                      <TrackingTypeIcon type={value} />
+                      {value}
+                    </span>
+                  )
+                }))}
+              />
+              {itemData.itemTrackingTypeOverridden && (
+                <Button
+                  variant="link"
+                  size="sm"
+                  className="self-start px-0 h-auto text-muted-foreground"
+                  isDisabled={isReadOnly}
+                  onClick={() => onResetToItemDefault("itemTrackingType")}
+                >
+                  {t`Reset to item default`}
+                </Button>
+              )}
+            </div>
+          )}
         </div>
-      )}
+      </div>
 
       <div className="border border-border rounded-md shadow-sm p-4 flex flex-col gap-4 w-full">
         <HStack
@@ -988,32 +1249,50 @@ function MaterialForm({
             sourceDisclosure.isOpen ? "" : "hidden"
           }`}
         >
-          {/* Read-only: method type is the item's default method type
-              (Properties sidebar) and mirrored here. */}
-          <DefaultMethodType
-            name="methodType"
-            label={t`Method Type`}
-            termId="method-type"
-            value={itemData.methodType}
-            isReadOnly
-            isConfigured={rulesByField.has(key("methodType"))}
-            onConfigure={
-              configurable && !temporaryItems[item.id]
-                ? () =>
-                    onConfigure({
-                      label: t`Method Type`,
-                      field: key("methodType"),
-                      code: rulesByField.get(key("methodType"))?.code,
-                      defaultValue: itemData.methodType,
-                      returnType: {
-                        type: "enum",
-                        listOptions: methodType
-                      }
-                    })
-                : undefined
-            }
-            replenishmentSystem={itemData.itemReplenishmentSystem}
-          />
+          {/* Editable per line; options restricted to the line's replenishment
+              system. Editing marks methodType overridden so the item->line
+              cascade skips it. */}
+          <div className="flex flex-col gap-1">
+            <DefaultMethodType
+              name="methodType"
+              label={t`Method Type`}
+              termId="method-type"
+              value={itemData.methodType}
+              isReadOnly={isReadOnly}
+              onChange={(option) => {
+                if (option?.value)
+                  onMethodTypeChange(option.value as MethodType);
+              }}
+              isConfigured={rulesByField.has(key("methodType"))}
+              onConfigure={
+                configurable && !temporaryItems[item.id]
+                  ? () =>
+                      onConfigure({
+                        label: t`Method Type`,
+                        field: key("methodType"),
+                        code: rulesByField.get(key("methodType"))?.code,
+                        defaultValue: itemData.methodType,
+                        returnType: {
+                          type: "enum",
+                          listOptions: methodType
+                        }
+                      })
+                  : undefined
+              }
+              replenishmentSystem={itemData.replenishmentSystem}
+            />
+            {itemData.methodTypeOverridden && (
+              <Button
+                variant="link"
+                size="sm"
+                className="self-start px-0 h-auto text-muted-foreground"
+                isDisabled={isReadOnly}
+                onClick={() => onResetToItemDefault("methodType")}
+              >
+                {t`Reset to item default`}
+              </Button>
+            )}
+          </div>
           <Location
             name="locationId"
             label={t`Location`}

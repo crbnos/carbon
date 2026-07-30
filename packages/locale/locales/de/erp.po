@@ -10672,6 +10672,9 @@ msgstr "PIN zurücksetzen"
 msgid "Reset PIN for {0} {1}"
 msgstr "PIN zurücksetzen für {0} {1}"
 
+msgid "Reset to item default"
+msgstr "Auf Artikel-Standard zurücksetzen"
+
 msgid "Reset view"
 msgstr "Ansicht zurücksetzen"
 
@@ -11879,6 +11882,9 @@ msgstr "Quellversion"
 
 msgid "Sourcing"
 msgstr "Beschaffung"
+
+msgid "Sourcing type"
+msgstr "Beschaffungstyp"
 
 msgid "Sourcing Type"
 msgstr "Beschaffungstyp"
@@ -14670,6 +14676,17 @@ msgstr "Wann Sie sich zur Lieferung verpflichtet haben; Planung behandelt dies a
 
 msgid "When your fiscal and tax years start"
 msgstr "Wenn Ihr Geschäftsjahr und Steuerjahr beginnen"
+
+msgid ""
+"Where a BOM line's part comes from.\n"
+"Specified — arrives inside its parent; this line triggers no purchase or stock pull.\n"
+"Ship from Inventory — taken from your own stock.\n"
+"Drop Ship — a supplier ships it directly for the order."
+msgstr ""
+"Woher ein Artikel einer BOM-Zeile kommt.\n"
+"Festgelegt — kommt innerhalb des übergeordneten Artikels an; diese Zeile löst keinen Einkauf oder Bestandsentnahme aus.\n"
+"Aus Bestand versenden — aus Ihrem eigenen Bestand entnommen.\n"
+"Direktversand — ein Lieferant versendet ihn direkt für die Bestellung."
 
 msgid "Where an operation runs; carries labor and quoting rates, with overhead the difference between them."
 msgstr "Wo ein Betrieb läuft; trägt Arbeits- und Angebotstarife, mit Overhead dem Unterschied zwischen ihnen."

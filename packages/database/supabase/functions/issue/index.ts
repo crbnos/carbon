@@ -194,8 +194,8 @@ async function issueJobOperationMaterials(
     throw new Error("Job location is required");
   }
 
-  const itemIdIsTracked = new Map(
-    items.map((item) => [item.id, item.itemTrackingType === "Inventory"])
+  const itemTrackingTypeByItemId = new Map(
+    items.map((item) => [item.id, item.itemTrackingType])
   );
 
   const itemLedgerInserts: Database["public"]["Tables"]["itemLedger"]["Insert"][] =
@@ -280,7 +280,10 @@ async function issueJobOperationMaterials(
       finalStorageUnitId = bestStorageUnit.storageUnitId ?? null;
     }
 
-    const isTracked = itemIdIsTracked.get(material.itemId);
+    // Per-line snapshot wins; legacy rows (null) fall back to the item.
+    const isTracked =
+      (material.itemTrackingType ??
+        itemTrackingTypeByItemId.get(material.itemId)) === "Inventory";
 
     if (isTracked) {
       itemLedgerInserts.push({
@@ -1443,7 +1446,9 @@ serve(async (req: Request) => {
 
             if (
               material?.methodType !== "Make to Order" &&
-              item?.itemTrackingType === "Inventory"
+              // Per-line snapshot wins; legacy rows (null) fall back to the item.
+              (material?.itemTrackingType ?? item?.itemTrackingType) ===
+                "Inventory"
             ) {
               itemLedgerInserts.push({
                 entryType: "Consumption",
