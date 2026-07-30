@@ -3673,7 +3673,7 @@ msgid "Decide what an operator sees if they try to issue a batch or serial that'
 msgstr "Décidez ce qu'un opérateur voit s'il essaie d'émettre un lot ou un numéro de série qui a déjà expiré."
 
 msgid "Decide what happens when an operator presses Finish on the shop floor with material still unpicked."
-msgstr ""
+msgstr "Décidez ce qui se passe lorsqu'un opérateur appuie sur Terminer sur le sol de l'atelier avec du matériel non encore prélevé."
 
 msgid "Decimal Places"
 msgstr "Décimales"
@@ -5782,10 +5782,10 @@ msgid "Finishes"
 msgstr "Finitions"
 
 msgid "Finishing an incomplete pick"
-msgstr ""
+msgstr "Terminer une cueillette incomplète"
 
 msgid "Finishing is refused until every line is picked or marked Short."
-msgstr ""
+msgstr "La finalisation est refusée jusqu'à ce que chaque ligne soit prélevée ou marquée Courte."
 
 msgid "First Name"
 msgstr "Prénom"
@@ -8987,7 +8987,7 @@ msgid "Operator must pick a different batch/serial."
 msgstr "L'opérateur doit choisir un lot/numéro de série différent."
 
 msgid "Operator sees the missing items, can acknowledge & finish. The list is flagged Partial."
-msgstr ""
+msgstr "L'opérateur voit les articles manquants, peut les reconnaître et terminer. La liste est marquée Partielle."
 
 msgid "Operators"
 msgstr "Opérateurs"
@@ -9232,7 +9232,7 @@ msgid "Part Supersession"
 msgstr "Remplacement de pièce"
 
 msgid "Partial"
-msgstr ""
+msgstr "Partielle"
 
 msgid "Partner"
 msgstr "Partenaire"
@@ -9610,7 +9610,7 @@ msgid "Pre-filled for a new item when expiry is Fixed Duration."
 msgstr "Pré-rempli pour un nouvel article lorsque l'expiration est Durée fixe."
 
 msgid "Pre-select material without a picking list"
-msgstr ""
+msgstr "Présélectionner du matériel sans liste de cueillette"
 
 msgid "Preferred Supplier"
 msgstr "Fournisseur préféré"
@@ -14594,7 +14594,7 @@ msgid "When on, this rule fires for every target of its type. Assignment rows ar
 msgstr "Lorsqu'elle est activée, cette règle s'applique à chaque cible de son type. Les lignes d'affectation sont ignorées mais conservées."
 
 msgid "When on, tracked material is pre-selected by pick order (FEFO) even without a picking list. When off, operators start on the Scan tab."
-msgstr ""
+msgstr "Lorsqu'il est activé, le matériel suivi est présélectionné par ordre de cueillette (FEFO) même sans liste de cueillette. Lorsqu'il est désactivé, les opérateurs commencent par l'onglet Numériser."
 
 msgid "When supplier responses are expected back; suppliers see this date on the RFQ portal and Carbon stops accepting late responses after it (configurable)."
 msgstr "Quand les réponses des fournisseurs sont attendues ; les fournisseurs voient cette date sur le portail RFQ et Carbon cesse d'accepter les réponses tardives après celle-ci (configurable)."

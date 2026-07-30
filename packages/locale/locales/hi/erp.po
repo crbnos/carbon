@@ -3673,7 +3673,7 @@ msgid "Decide what an operator sees if they try to issue a batch or serial that'
 msgstr "तय करें कि यदि कोई ऑपरेटर एक बैच या सीरियल जारी करने का प्रयास करता है जो पहले से ही समाप्त हो गया है तो वह क्या देखता है।"
 
 msgid "Decide what happens when an operator presses Finish on the shop floor with material still unpicked."
-msgstr ""
+msgstr "तय करें कि जब ऑपरेटर शॉप फ़्लोर पर अभी भी अनपिक किए गए सामग्री के साथ Finish दबाता है तो क्या होता है।"
 
 msgid "Decimal Places"
 msgstr "दशमलव स्थान"
@@ -5782,10 +5782,10 @@ msgid "Finishes"
 msgstr "फिनिशेस"
 
 msgid "Finishing an incomplete pick"
-msgstr ""
+msgstr "एक अधूरी पिक को समाप्त करना"
 
 msgid "Finishing is refused until every line is picked or marked Short."
-msgstr ""
+msgstr "Finishing को तब तक अस्वीकार कर दिया जाता है जब तक कि हर पंक्ति को पिक नहीं किया जाता या Short के रूप में चिह्नित नहीं किया जाता।"
 
 msgid "First Name"
 msgstr "पहला नाम"
@@ -8987,7 +8987,7 @@ msgid "Operator must pick a different batch/serial."
 msgstr "ऑपरेटर को एक अलग बैच/सीरीज़ चुननी होगी।"
 
 msgid "Operator sees the missing items, can acknowledge & finish. The list is flagged Partial."
-msgstr ""
+msgstr "ऑपरेटर लापता आइटम देख सकता है, स्वीकार कर सकता है और समाप्त कर सकता है। सूची को Partial के रूप में चिह्नित किया जाता है।"
 
 msgid "Operators"
 msgstr "ऑपरेटर"
@@ -9232,7 +9232,7 @@ msgid "Part Supersession"
 msgstr "भाग प्रतिस्थापन"
 
 msgid "Partial"
-msgstr ""
+msgstr "आंशिक"
 
 msgid "Partner"
 msgstr "साथी"
@@ -9610,7 +9610,7 @@ msgid "Pre-filled for a new item when expiry is Fixed Duration."
 msgstr "समाप्ति Fixed Duration होने पर नई वस्तु के लिए पूर्व-भरी हुई।"
 
 msgid "Pre-select material without a picking list"
-msgstr ""
+msgstr "पिकिंग सूची के बिना सामग्री को पूर्व-चयन करें"
 
 msgid "Preferred Supplier"
 msgstr "पसंदीदा आपूर्तिकर्ता"
@@ -14594,7 +14594,7 @@ msgid "When on, this rule fires for every target of its type. Assignment rows ar
 msgstr "जब चालू हो, तो यह नियम अपने प्रकार के प्रत्येक लक्ष्य के लिए सक्रिय होता है। असाइनमेंट पंक्तियों को अनदेखा किया जाता है लेकिन संरक्षित रखा जाता है।"
 
 msgid "When on, tracked material is pre-selected by pick order (FEFO) even without a picking list. When off, operators start on the Scan tab."
-msgstr ""
+msgstr "जब चालू हो, ट्रैक की गई सामग्री को पिकिंग सूची के बिना भी पिक ऑर्डर (FEFO) द्वारा पूर्व-चयनित किया जाता है। जब बंद हो, ऑपरेटर Scan टैब पर शुरू करते हैं।"
 
 msgid "When supplier responses are expected back; suppliers see this date on the RFQ portal and Carbon stops accepting late responses after it (configurable)."
 msgstr "जब आपूर्तिकर्ता प्रतिक्रिया की उम्मीद की जाती है; आपूर्तिकर्ता आरएफक्यू पोर्टल पर यह तारीख देखते हैं और कार्बन इसके बाद देर से प्रतिक्रिया स्वीकार नहीं करता है (कॉन्फ़िगर करने योग्य)।"

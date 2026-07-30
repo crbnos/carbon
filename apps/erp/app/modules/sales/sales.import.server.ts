@@ -769,13 +769,14 @@ async function createLines(
       if (unitPrice === undefined || unitPrice < 0) {
         summary.errors.push({
           row: index,
-          reason: "Unit Price must be a number of 0 or greater",
+          reason:
+            "Line created but Unit Price must be a number of 0 or greater",
           values: record
         });
       } else if (leadTimeRaw && (leadTime === undefined || leadTime < 0)) {
         summary.errors.push({
           row: index,
-          reason: "Lead Time must be a number of 0 or greater",
+          reason: "Line created but Lead Time must be a number of 0 or greater",
           values: record
         });
       } else {

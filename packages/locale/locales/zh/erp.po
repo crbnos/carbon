@@ -3673,7 +3673,7 @@ msgid "Decide what an operator sees if they try to issue a batch or serial that'
 msgstr "决定操作员在尝试发放已过期的批次或序列号时看到的内容。"
 
 msgid "Decide what happens when an operator presses Finish on the shop floor with material still unpicked."
-msgstr ""
+msgstr "决定当操作员在车间按下「完成」但仍有物料未拣选时的处理方式。"
 
 msgid "Decimal Places"
 msgstr "小数位数"
@@ -5782,10 +5782,10 @@ msgid "Finishes"
 msgstr "表面处理"
 
 msgid "Finishing an incomplete pick"
-msgstr ""
+msgstr "完成未完成的拣选"
 
 msgid "Finishing is refused until every line is picked or marked Short."
-msgstr ""
+msgstr "在每一行都已拣选或标记为短缺之前，不允许完成。"
 
 msgid "First Name"
 msgstr "名字"
@@ -8987,7 +8987,7 @@ msgid "Operator must pick a different batch/serial."
 msgstr "操作员必须选择不同的批次/序列号。"
 
 msgid "Operator sees the missing items, can acknowledge & finish. The list is flagged Partial."
-msgstr ""
+msgstr "操作员可看到缺失的物料，可确认并完成。该清单被标记为部分完成。"
 
 msgid "Operators"
 msgstr "操作员"
@@ -9232,7 +9232,7 @@ msgid "Part Supersession"
 msgstr "零件取代"
 
 msgid "Partial"
-msgstr ""
+msgstr "部分"
 
 msgid "Partner"
 msgstr "合作伙伴"
@@ -9610,7 +9610,7 @@ msgid "Pre-filled for a new item when expiry is Fixed Duration."
 msgstr "当过期时间设置为固定期限时，为新项目预填充。"
 
 msgid "Pre-select material without a picking list"
-msgstr ""
+msgstr "在没有拣货单的情况下预选物料"
 
 msgid "Preferred Supplier"
 msgstr "首选供应商"
@@ -14594,7 +14594,7 @@ msgid "When on, this rule fires for every target of its type. Assignment rows ar
 msgstr "启用时，此规则对其类型的每个目标都会触发。分配行被忽略但保留。"
 
 msgid "When on, tracked material is pre-selected by pick order (FEFO) even without a picking list. When off, operators start on the Scan tab."
-msgstr ""
+msgstr "启用后，即使没有拣货单，也会按拣货顺序（FEFO）预选受追踪的物料。禁用后，操作员从「扫描」选项卡开始。"
 
 msgid "When supplier responses are expected back; suppliers see this date on the RFQ portal and Carbon stops accepting late responses after it (configurable)."
 msgstr "何时预期供应商回复;供应商在RFQ门户上看到该日期,Carbon在之后停止接受迟到的回复(可配置)。"

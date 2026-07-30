@@ -3673,7 +3673,7 @@ msgid "Decide what an operator sees if they try to issue a batch or serial that'
 msgstr "Operatörün zaten süresi dolmuş bir parti veya seri çıkarmaya çalışması durumunda ne göreceğini belirleyin."
 
 msgid "Decide what happens when an operator presses Finish on the shop floor with material still unpicked."
-msgstr ""
+msgstr "Operatör üretim alanında henüz seçilmeyen malzeme varken Bitir'e basıldığında ne olacağını belirleyin."
 
 msgid "Decimal Places"
 msgstr "Ondalık Basamaklar"
@@ -5782,10 +5782,10 @@ msgid "Finishes"
 msgstr "Kaplamalar"
 
 msgid "Finishing an incomplete pick"
-msgstr ""
+msgstr "Eksik seçimi tamamlama"
 
 msgid "Finishing is refused until every line is picked or marked Short."
-msgstr ""
+msgstr "Her satır seçilene veya Kısa olarak işaretlenene kadar tamamlama reddedilir."
 
 msgid "First Name"
 msgstr "Adı Soyad"
@@ -8987,7 +8987,7 @@ msgid "Operator must pick a different batch/serial."
 msgstr "Operatör farklı bir parti/seri seçmelidir."
 
 msgid "Operator sees the missing items, can acknowledge & finish. The list is flagged Partial."
-msgstr ""
+msgstr "Operatör eksik öğeleri görür, onaylayabilir ve bitirebilir. Liste Kısmi olarak işaretlenir."
 
 msgid "Operators"
 msgstr "Operatörler"
@@ -9232,7 +9232,7 @@ msgid "Part Supersession"
 msgstr "Parça Yerini Alma"
 
 msgid "Partial"
-msgstr ""
+msgstr "Kısmi"
 
 msgid "Partner"
 msgstr "İş Ortağı"
@@ -9610,7 +9610,7 @@ msgid "Pre-filled for a new item when expiry is Fixed Duration."
 msgstr "Son kullanma tarihi Sabit Süre olduğunda yeni bir ürün için önceden doldurulur."
 
 msgid "Pre-select material without a picking list"
-msgstr ""
+msgstr "Seçim listesi olmadan malzemeyi önceden seçin"
 
 msgid "Preferred Supplier"
 msgstr "Tercih Edilen Tedarikçi"
@@ -14594,7 +14594,7 @@ msgid "When on, this rule fires for every target of its type. Assignment rows ar
 msgstr "Açıkken bu kural, türündeki her hedef için tetiklenir. Atama satırları yok sayılır ancak korunur."
 
 msgid "When on, tracked material is pre-selected by pick order (FEFO) even without a picking list. When off, operators start on the Scan tab."
-msgstr ""
+msgstr "Açık olduğunda, izlenen malzeme seçim listesi olmasa bile seçim sırasına (FEFO) göre önceden seçilir. Kapalı olduğunda, operatörler Tarama sekmesinde başlarlar."
 
 msgid "When supplier responses are expected back; suppliers see this date on the RFQ portal and Carbon stops accepting late responses after it (configurable)."
 msgstr "Tedarikçi yanıtlarının ne zaman beklenmesi gerektiği; tedarikçiler RFQ portalında bu tarihi görür ve Carbon bundan sonra geç yanıtları kabul etmeyi durdurur (yapılandırılabilir)."

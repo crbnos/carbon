@@ -3673,7 +3673,7 @@ msgid "Decide what an operator sees if they try to issue a batch or serial that'
 msgstr "オペレーターが既に期限切れのバッチまたはシリアルを発行しようとした場合に表示される内容を決定します。"
 
 msgid "Decide what happens when an operator presses Finish on the shop floor with material still unpicked."
-msgstr ""
+msgstr "オペレーターがショップフロアで材料がまだ未ピックの状態で完了を押したときに何が起こるかを決定してください。"
 
 msgid "Decimal Places"
 msgstr "小数位数"
@@ -5782,10 +5782,10 @@ msgid "Finishes"
 msgstr "仕上げ"
 
 msgid "Finishing an incomplete pick"
-msgstr ""
+msgstr "不完全なピック完了"
 
 msgid "Finishing is refused until every line is picked or marked Short."
-msgstr ""
+msgstr "すべての行がピックされるか短縮とマークされるまで、完了は拒否されます。"
 
 msgid "First Name"
 msgstr "名"
@@ -8987,7 +8987,7 @@ msgid "Operator must pick a different batch/serial."
 msgstr "オペレーターは別のバッチ/シリアルを選択する必要があります。"
 
 msgid "Operator sees the missing items, can acknowledge & finish. The list is flagged Partial."
-msgstr ""
+msgstr "オペレーターは欠落したアイテムを見て、確認して完了できます。リストは部分完了とフラグが付けられます。"
 
 msgid "Operators"
 msgstr "オペレーター"
@@ -9232,7 +9232,7 @@ msgid "Part Supersession"
 msgstr "パーツの廃止予定"
 
 msgid "Partial"
-msgstr ""
+msgstr "部分完了"
 
 msgid "Partner"
 msgstr "パートナー"
@@ -9610,7 +9610,7 @@ msgid "Pre-filled for a new item when expiry is Fixed Duration."
 msgstr "有効期限が固定期間の場合、新しい品目に対して事前入力されます。"
 
 msgid "Pre-select material without a picking list"
-msgstr ""
+msgstr "ピックリストなしで材料を事前選択"
 
 msgid "Preferred Supplier"
 msgstr "優先仕入先"
@@ -14594,7 +14594,7 @@ msgid "When on, this rule fires for every target of its type. Assignment rows ar
 msgstr "オンの場合、このルールはそのタイプのすべてのターゲットに対して発火します。割り当て行は無視されますが保持されます。"
 
 msgid "When on, tracked material is pre-selected by pick order (FEFO) even without a picking list. When off, operators start on the Scan tab."
-msgstr ""
+msgstr "オンの場合、追跡対象の材料はピックリストがなくても、ピック順序（FEFO）で事前選択されます。オフの場合、オペレーターはスキャンタブから開始します。"
 
 msgid "When supplier responses are expected back; suppliers see this date on the RFQ portal and Carbon stops accepting late responses after it (configurable)."
 msgstr "サプライヤーの応答が期待される場合。サプライヤーはRFQポータルでこの日付を確認でき、Carbonはその後の遅い応答を受け付けません(設定可能)。"
