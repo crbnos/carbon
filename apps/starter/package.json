@@ -10,6 +10,7 @@
     "@carbon/logger": "workspace:*",
     "@carbon/react": "workspace:*",
     "@carbon/utils": "workspace:*",
+    "@fontsource-variable/archivo": "^5.3.0",
     "@internationalized/date": "catalog:",
     "@react-aria/i18n": "catalog:",
     "@react-router/dev": "catalog:",

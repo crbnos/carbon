@@ -243,7 +243,7 @@ const DrawerTitle = forwardRef<
   <DialogPrimitive.Title
     ref={ref}
     className={cn(
-      "text-base font-medium font-headline leading-none tracking-tight text-foreground/90 text-balance line-clamp-1",
+      "text-base font-semibold font-headline leading-none tracking-tight text-foreground/90 text-balance line-clamp-1",
       className
     )}
     {...props}

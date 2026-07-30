@@ -1,5 +1,5 @@
 @import "tailwindcss";
-@import "non.geist";
+@import "@fontsource-variable/archivo";
 @import "non.geist/mono";
 @import "../../../../packages/config/tailwind/theme.css";
 

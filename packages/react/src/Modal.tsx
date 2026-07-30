@@ -145,7 +145,7 @@ const ModalTitle = forwardRef<
   <DialogPrimitive.Title
     ref={ref}
     className={cn(
-      "text-base font-medium font-headline leading-none tracking-tight text-foreground text-balance",
+      "text-base font-semibold font-headline leading-none tracking-tight text-foreground text-balance",
       className
     )}
     {...props}

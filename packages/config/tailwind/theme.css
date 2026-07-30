@@ -125,11 +125,11 @@
 
   --text-xxs: 0.675rem;
 
-  --font-sans: "Geist Variable", ui-sans-serif, system-ui, sans-serif,
+  --font-sans: "Archivo Variable", ui-sans-serif, system-ui, sans-serif,
     "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
   --font-mono: "Geist Mono Variable", ui-monospace, SFMono-Regular, Menlo,
     Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-  --font-headline: "Geist Variable", ui-sans-serif, system-ui, sans-serif,
+  --font-headline: "Archivo Variable", ui-sans-serif, system-ui, sans-serif,
     "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
 
   --tracking-normal: -0.02em;

@@ -59,7 +59,7 @@
   --color-ed-blue-deep: #17729b;
   --color-ed-brown: #a76451;
 
-  /* Editorial DM Sans weights between Tailwind's normal(400)/medium(500)/semibold(600). */
+  /* Editorial Archivo weights between Tailwind's normal(400)/medium(500)/semibold(600). */
   --font-weight-book: 460;
   --font-weight-demi: 530;
   --font-weight-semi: 560;

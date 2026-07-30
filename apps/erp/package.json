@@ -38,6 +38,7 @@
     "@emoji-mart/data": "catalog:",
     "@emoji-mart/react": "catalog:",
     "@epic-web/remember": "1.1.0",
+    "@fontsource-variable/archivo": "^5.3.0",
     "@internationalized/date": "catalog:",
     "@lingui/core": "catalog:",
     "@lingui/react": "catalog:",
