@@ -42,7 +42,7 @@ The wake path (`20260721184852_event-queue-wake.sql`) — both helpers live in t
 `handlerType` CHECK now allows all six: `WEBHOOK, WORKFLOW, SYNC, SEARCH, AUDIT, EMBEDDING` (widened across `20260204080000` → `20260212152709` → `20260326120000`).
 
 ### PL/pgSQL functions (in `_event_system_impl` + later)
-- `dispatch_event_batch()` — AFTER STATEMENT. Reads transition tables (`batched_new`/`batched_old`), filters by active subscriptions, builds payload, `pgmq.send_batch('event_system', ...)`. Captures `actorId := auth.uid()::TEXT` (added `20260212153753`; NULL for service-role). Uses `clock_timestamp()` per event so batched events get unique microsecond timestamps (`20260427120000`).
+- `dispatch_event_batch()` — AFTER STATEMENT. Reads transition tables (`batched_new`/`batched_old`), filters by active subscriptions, builds payload, `pgmq.send_batch('event_system', ...)`. Captures `actorId := auth.uid()::TEXT` (added `20260212153753`; NULL for service-role) and `workflowRunId` from the `workflow_run_id` JWT claim (`20260730135206`). UPDATE pairs transition rows on the table's **full** primary key via `get_primary_key_columns()` (`20260717143448`, restored in `20260730135206` after `20260721184852` copied the older single-column pairing forward). Uses `clock_timestamp()` per event so batched events get unique microsecond timestamps (`20260427120000`).
 - `dispatch_event_interceptors()` — BEFORE ROW. Runs named sync interceptor functions inline (data-integrity, not async).
 - `dispatch_event_after_interceptors()` — AFTER ROW. Same but post-commit-of-row, safe for FK refs (added `20260410030406`).
 - `attach_event_trigger(table, sync_functions[], after_sync_functions[])` — helper that wires the BEFORE SYNC / AFTER SYNC / ASYNC STATEMENT triggers on a table (3rd arg added `20260410030406`).
@@ -58,7 +58,8 @@ The wake path (`20260721184852_event-queue-wake.sql`) — both helpers live in t
 
 ## TypeScript API — `packages/database/src/event.ts`
 
-Zod schemas + helpers. `QueueMessage` = `{ subscriptionId, triggerType: ROW|STATEMENT, handlerType, handlerConfig, companyId, actorId?, event }`; `event` is a discriminated union on `operation` (INSERT→`old:null`, UPDATE→both, DELETE/TRUNCATE→`new:null`). Helpers: `createEventSystemSubscription`, `deleteEventSystemSubscription`, `deleteEventSystemSubscriptionsByName` (each wraps the matching RPC). Note the param key is `type` (not `handlerType`) on `CreateSubscriptionParams`.
+Zod schemas + helpers. `QueueMessage` = `{ subscriptionId, triggerType: ROW|STATEMENT, handlerType, handlerConfig, companyId, actorId?, workflowRunId?, event }`;
+`workflowRunId` is stamped by `dispatch_event_batch()` from the `workflow_run_id` claim on the caller's JWT (`20260730135206_workflows-run-tag.sql`) — set only when a running customer workflow made the write, and the basis of the matcher's origin filter and loop guards. The WORKFLOW dispatch branch forwards `{ msgId, companyId, actorId, workflowRunId, data }` (the old `handlerConfig.workflowId` is gone — a per-table subscription serves many workflows). `event` is a discriminated union on `operation` (INSERT→`old:null`, UPDATE→both, DELETE/TRUNCATE→`new:null`). Helpers: `createEventSystemSubscription`, `deleteEventSystemSubscription`, `deleteEventSystemSubscriptionsByName` (each wraps the matching RPC). Note the param key is `type` (not `handlerType`) on `CreateSubscriptionParams`.
 
 ## Handlers — `packages/jobs/src/inngest/functions/events/`
 
@@ -67,7 +68,7 @@ Zod schemas + helpers. `QueueMessage` = `{ subscriptionId, triggerType: ROW|STAT
 | handlerType | event name | file | purpose |
 |---|---|---|---|
 | `WEBHOOK` | `carbon/event-webhook` | `webhook.ts` | `axios.post(config.url, data, { headers })` |
-| `WORKFLOW` | `carbon/event-workflow` | `workflow.ts` | dispatch by `workflowId` (<!-- UNVERIFIED: body is still a stub/no-op --> ) |
+| `WORKFLOW` | `carbon/event-workflow` | `workflow.ts` | customer-workflow matcher — announcement → catalog event ids → subscribed workflows → one `workflowRun` each (see `workflow-matcher.md`) |
 | `SYNC` | `carbon/event-sync` | `sync.ts` | accounting sync (Xero); maps table→entity, calls `@carbon/ee/accounting` |
 | `SEARCH` | `carbon/event-search` | `search.ts` | upsert/delete `search_index` via RPC per entity config |
 | `AUDIT` | `carbon/event-audit` | `audit.ts` | writes per-company audit log (uses `actorId`, `audit.config`) |

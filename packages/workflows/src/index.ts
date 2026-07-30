@@ -95,3 +95,12 @@ export {
   WORKFLOW_OPERATORS
 } from "./definition/types";
 export { validateDefinition } from "./definition/validate";
+export type { RunTrigger } from "./run-trigger";
+export { runTriggerSchema } from "./run-trigger";
+export type { DesiredSubscription, DesiredTriggerRow } from "./sync";
+export {
+  deriveWorkflowSubscriptions,
+  deriveWorkflowTriggerRows,
+  syncWorkflowSubscriptions,
+  syncWorkflowTriggers
+} from "./sync";

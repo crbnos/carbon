@@ -47,7 +47,24 @@ pnpm --filter @carbon/jobs dev:jobs   # Start local Inngest dev server
 | SEARCH | `carbon/event-search` | Upsert/delete search index |
 | AUDIT | `carbon/event-audit` | Per-company audit log |
 | EMBEDDING | `carbon/event-embedding` | AI embeddings for items/customers/suppliers |
-| WORKFLOW | `carbon/event-workflow` | Workflow dispatch (stub) |
+| WORKFLOW | `carbon/event-workflow` | Customer-workflow matcher: announcement → catalog event ids → subscribed workflows → one `workflowRun` each |
+
+## Workflow functions (`src/inngest/functions/workflows/`)
+
+| Function | Event | Purpose |
+|----------|-------|---------|
+| `workflow-moment` | `carbon/workflow-moment.raised` | Moment entry point of the same matcher (a moment already IS a catalog event id) |
+| `workflow-run` | `carbon/workflow-run.queued` | **Stub** consumer for a matched run — logs and returns; phase 4 replaces the body and adds the real concurrency keys |
+
+Both entry points call one shared core in `src/workflows/` (`event-ids.ts`, `matcher.ts`,
+`types.ts`), which imports no Inngest and is unit-tested directly. See
+`.claude/rules/workflow-matcher.md`.
+
+## Database client
+
+`getJobDatabaseClient(size = 1)` from `src/db.ts` is the package's only Kysely
+constructor — used by the event-queue drainer, the workflow matcher, and the company
+backup/export/import/restore tasks. Don't build a new pool inline.
 
 ## Cross-References
 

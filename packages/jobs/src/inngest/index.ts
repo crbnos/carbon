@@ -59,6 +59,10 @@ import {
   updatePermissionsFunction,
   userAdminFunction
 } from "./functions/tasks";
+import {
+  workflowMomentFunction,
+  workflowRunFunction
+} from "./functions/workflows";
 
 // Export all functions for serving via serve() or connect()
 export const functions = [
@@ -74,6 +78,9 @@ export const functions = [
   webhookFunction,
   workflowFunction,
   embeddingFunction,
+  // Workflows (matcher + stub consumer)
+  workflowMomentFunction,
+  workflowRunFunction,
   // Tasks
   assemblyConvertFunction,
   assemblyPlanFunction,

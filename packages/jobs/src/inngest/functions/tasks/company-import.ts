@@ -1,6 +1,7 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { chunkArray } from "@carbon/utils";
 import { sql } from "kysely";
+import { getJobDatabaseClient } from "../../../db";
 import { inngest } from "../../client";
 import {
   assertBackupImportable,
@@ -11,7 +12,6 @@ import {
   canSetReplicationRole,
   filterUnpopulated,
   getCompanyTableCatalog,
-  getJobDatabaseClient,
   isUserScopedIdentityTable,
   newIdForTable,
   RESEED_SKIPPED_TABLES,

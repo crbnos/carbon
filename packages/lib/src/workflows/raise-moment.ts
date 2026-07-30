@@ -1,5 +1,6 @@
 import { getLogger } from "@carbon/logger";
 import type { MomentKey, MomentPayload } from "@carbon/workflows";
+import { nanoid } from "nanoid";
 import { trigger } from "../trigger";
 
 const log = getLogger("lib", "workflows");
@@ -20,9 +21,21 @@ export async function raiseMoment<K extends MomentKey>(
     actorId: string | null;
   }
 ): Promise<void> {
+  // Sender-set idempotency: the same id is the payload field, the matcher's
+  // sourceEventId (`moment:<id>`), and the Inngest event id, so a double send
+  // is suppressed upstream and deduped downstream.
+  const momentId = nanoid();
   try {
-    await trigger("workflow-moment", { moment: key, ...payload });
+    await trigger(
+      "workflow-moment",
+      { momentId, moment: key, ...payload },
+      { id: momentId }
+    );
   } catch (err) {
-    log.error("Failed to raise workflow moment", { moment: key, err });
+    log.error("Failed to raise workflow moment", {
+      moment: key,
+      momentId,
+      err
+    });
   }
 }

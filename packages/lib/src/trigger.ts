@@ -37,7 +37,8 @@ const taskToEvent = {
   "update-permissions": "carbon/update-permissions",
   "user-admin": "carbon/user-admin",
   "extract-document": "carbon/extract-document",
-  "workflow-moment": "carbon/workflow-moment.raised"
+  "workflow-moment": "carbon/workflow-moment.raised",
+  "workflow-run": "carbon/workflow-run.queued"
 } as const;
 
 type TaskMap = typeof taskToEvent;
@@ -59,11 +60,16 @@ type TaskPayloads = {
  */
 export async function trigger<T extends keyof TaskPayloads>(
   taskId: T,
-  payload: TaskPayloads[T]
+  payload: TaskPayloads[T],
+  options?: { id?: string }
 ) {
   const eventName = taskToEvent[taskId];
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return inngest.send({ data: payload, name: eventName } as any);
+  return inngest.send({
+    data: payload,
+    name: eventName,
+    ...(options?.id ? { id: options.id } : {})
+  } as any);
 }
 
 /**

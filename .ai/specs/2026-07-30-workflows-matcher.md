@@ -1,6 +1,6 @@
 # Workflows — Phase 3: the matcher and the event-system wiring
 
-**Status:** Approved — not yet implemented
+**Status:** Implemented on `feat/automation` — pending e2e sign-off
 **Phase brief:** `/Users/aashu/work/carbon/plans/automations-engine/phases/phase-3-matcher.md`
 **Source documents:** `/Users/aashu/work/carbon/plans/automations-engine/prd.md`,
 `/Users/aashu/work/carbon/plans/automations-engine/technical-decisions.md`
@@ -264,9 +264,9 @@ rather than a guessed one.
 
 ### D. Subscription and trigger-event management
 
-New file `packages/database/src/workflow.ts`, exported as `@carbon/database/workflow` — the same home
-as `event.ts` and `audit.ts`, and importable by both the ERP app (phase 7's activation screen) and
-background jobs, which an ERP module service would not be.
+New file `packages/workflows/src/sync.ts`, exported from `@carbon/workflows` — importable by both the
+ERP app (phase 7's activation screen) and background jobs, which an ERP module service would not be.
+(Originally specified as `packages/database/src/workflow.ts`; moved at plan time — see Changelog.)
 
 ```ts
 export async function syncWorkflowTriggers(
@@ -339,7 +339,7 @@ reason the feature carries this name.
 | How a workflow-made change is identified | A `workflow_run_id` claim on the token `getUserScopedClient` mints, read by `dispatch_event_batch()` from `request.jwt.claims` | The engine mints a client per step anyway, so every write through it is tagged automatically and no call site can forget. Precedent for reading that GUC is `20230123004206_claims.sql:14`. Rejected: a transaction-local GUC (does not survive PostgREST, which is how the engine writes) and a request header (same migration cost, one more layer that can silently drop it) |
 | A fallback for direct-SQL writes | None | A Kysely or service-role write bypasses RLS, which phase 4's act-as-owner requirement already forbids. Recording the constraint makes a violation visible instead of survivable |
 | What `Person` and `Automation` mean | Purely the presence of the run tag | Exact, needs nothing else, and matches why the filter exists. Deciding on `actorId` would leave a posted receipt matching neither value, because posting writes from a privileged edge function with no user |
-| Where the reconciler lives | `packages/database/src/workflow.ts`, one Kysely transaction | Both the ERP app and background jobs can import it; an ERP module service could not be reached from jobs. Kysely because the invariant needs one transaction, which a loop of RPCs cannot give |
+| Where the reconciler lives | `packages/workflows/src/sync.ts`, one Kysely transaction | Both the ERP app and background jobs can import it; an ERP module service could not be reached from jobs. Kysely because the invariant needs one transaction, which a loop of RPCs cannot give |
 | Subscription granularity | One `workflow-<table>` row per company per table, `operations` derived from the subscribed events | Caps exposure to the 86 triggered tables regardless of catalog growth, and a company with no workflows pays literally nothing. Deriving operations means an unwatched operation never enters the queue at all |
 | `handlerConfig.workflowId` | Dropped; the WORKFLOW dispatch forwards `companyId`, `actorId` and `workflowRunId` instead | A per-table subscription serves many workflows, so a single id in `config` cannot express the fan-out. The two fields the matcher genuinely needs were the two the branch discarded |
 | Changed-field computation | Reuse `computeDiff` | Already handles skip-fields, empty-to-empty transitions and rich text, and is unit-tested. No watched column collides with `skipFields`, verified against all 77 |
@@ -398,7 +398,7 @@ checked for ride-along regeneration of `packages/database/src/types.ts`,
 ### New files
 
 ```
-packages/database/src/workflow.ts                          # syncWorkflowTriggers, syncWorkflowSubscriptions
+packages/workflows/src/sync.ts                             # syncWorkflowTriggers, syncWorkflowSubscriptions
 packages/jobs/src/workflows/event-ids.ts                   # announcement -> event ids (pure)
 packages/jobs/src/workflows/matcher.ts                     # subscribers, origin, loop guards, runs
 packages/jobs/src/workflows/types.ts
@@ -525,7 +525,7 @@ All resolved with the user on 2026-07-30, before this spec was written. Recorded
       engine writes), a request header (same cost, one more layer that can drop it), and deferring
       (leaves the origin filter and both loop guards inoperative).
 - [x] How far should this phase go on the reconciler, given the activation screen is phase 7? —
-      **Answer:** phase 3 builds one shared `syncWorkflowTriggers` in `packages/database/src/workflow.ts`,
+      **Answer:** phase 3 builds one shared `syncWorkflowTriggers` in `packages/workflows/src/sync.ts`,
       rewriting both tables in a single Kysely transaction; phase 7's screen just calls it. Rejected: an
       ERP module service (background jobs cannot import ERP app code, so a future repair job would need
       a second copy) and leaving it entirely to phase 7 (the matcher could then not be exercised at all
@@ -573,3 +573,16 @@ All resolved with the user on 2026-07-30, before this spec was written. Recorded
   subscriber lookup joins `workflow` for `ownerId` rather than being the single unjoined read the
   document costs it at. One correction to a fact both source documents rely on: `handlerConfig
   .workflowId` cannot serve a per-table subscription and is removed rather than reinterpreted.
+- 2026-07-30: Implemented. One deviation, decided at plan time: the reconciler lives in
+  `packages/workflows/src/sync.ts`, not `packages/database/src/workflow.ts`. It must read
+  `WORKFLOW_EVENTS`, and `@carbon/workflows` already has `@carbon/database` as a devDependency —
+  the reverse edge is a package cycle Turborepo rejects outright. Signatures, callers and the
+  placement rationale are unchanged; Kysely is imported type-only so the package gains no runtime
+  dependency. The `@carbon/database/workflow` export was therefore never added.
+- 2026-07-30: Code-quality review. Behavior unchanged; five structural fixes, all recorded in the
+  plan's Progress note. The two that alter files this spec names: the matcher's Kysely client is now
+  the package-wide `getJobDatabaseClient()` in `packages/jobs/src/db.ts` (the phase's own `workflows/
+  db.ts` was a third copy of an existing helper and is deleted), and the run trigger payload is a
+  single `runTriggerSchema` / `RunTrigger` in `packages/workflows/src/run-trigger.ts` instead of
+  three hand-restated copies. The matcher also inserts a firing's runs in one statement rather than
+  one `await` per plan.

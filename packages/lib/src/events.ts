@@ -3,6 +3,7 @@ import type {
   NotificationDestination,
   NotificationEvent
 } from "@carbon/notifications";
+import type { RunTrigger } from "@carbon/workflows";
 
 type ApprovalDocumentType = Database["public"]["Enums"]["approvalDocumentType"];
 
@@ -359,7 +360,9 @@ export type Events = {
   "carbon/event-workflow": {
     data: {
       msgId: number;
-      workflowId: string;
+      companyId: string;
+      actorId: string | null;
+      workflowRunId: string | null;
       data: {
         table: string;
         recordId: string;
@@ -566,9 +569,26 @@ export type Events = {
     };
   };
 
+  // A matched workflow firing: one event per created workflowRun row. The
+  // phase-4 engine consumes this; until then a stub logs and returns.
+  "carbon/workflow-run.queued": {
+    data: {
+      runId: string;
+      companyId: string;
+      workflowId: string;
+      workflowVersionId: string;
+      eventId: string;
+      ownerId: string;
+      sourceEventId: string;
+      trigger: RunTrigger;
+    };
+  };
+
   // Workflow moments — raised after a business action commits. Phase 3 consumes.
   "carbon/workflow-moment.raised": {
     data: {
+      /** Minted by raiseMoment (nanoid); also set as the Inngest event id. */
+      momentId: string;
       moment: string;
       companyId: string;
       /** auth.uid() of the actor; null for service-role / background writes. */

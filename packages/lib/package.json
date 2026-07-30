@@ -10,6 +10,7 @@
     "@slack/web-api": "catalog:",
     "@supabase/supabase-js": "catalog:",
     "inngest": "3.54.0",
+    "nanoid": "catalog:",
     "resend": "3.5.0",
     "sst": "catalog:",
     "supabase": "catalog:",

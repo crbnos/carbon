@@ -2666,6 +2666,9 @@ importers:
       inngest:
         specifier: 3.54.0
         version: 3.54.0(@opentelemetry/core@2.6.1(@opentelemetry/api@1.9.0))(encoding@0.1.13)(express@5.2.1)(hono@4.12.14)(next@16.2.3(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(babel-plugin-macros@3.1.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3)(zod@3.25.76)
+      nanoid:
+        specifier: 'catalog:'
+        version: 5.1.7
       resend:
         specifier: 3.5.0
         version: 3.5.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -3571,6 +3574,9 @@ importers:
       '@carbon/database':
         specifier: workspace:*
         version: link:../database
+      kysely:
+        specifier: 'catalog:'
+        version: 0.28.15
       typescript:
         specifier: 'catalog:'
         version: 5.8.3

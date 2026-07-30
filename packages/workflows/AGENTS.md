@@ -73,7 +73,34 @@ src/catalog/
 ├── labels.generated.ts     # COMMITTED. one msg`` descriptor per event id
 ├── catalog.ts              # createEventCatalog() -> WorkflowCatalog
 └── index.ts                # barrel (labels deliberately excluded)
+
+src/sync.ts       # trigger-event + subscription reconciler (phase 3)
 ```
+
+## `sync.ts` — deriving what the matcher reads
+
+Four exports, all re-exported from the package root:
+
+- `deriveWorkflowTriggerRows(nodes)` — trigger nodes → one desired `workflowTriggerEvent`
+  row per event id, carrying that node's origin (a duplicated id keeps the first origin).
+  Throws if the stored nodes do not parse.
+- `deriveWorkflowSubscriptions(eventIds)` — event ids → one `workflow-<table>`
+  `eventSystemSubscription` per distinct table with exactly the operations those events
+  need, resolved through each event's catalog `match`. Moments contribute nothing.
+- `syncWorkflowTriggers(db, companyId, workflowId)` — rewrites one workflow's trigger rows
+  **and** reconciles the company's subscriptions in one transaction. This is what upholds
+  the invariant below; call it on promote, on trigger edit, and on activate/deactivate.
+- `syncWorkflowSubscriptions(db, companyId)` — standalone repair from existing rows.
+
+Kysely is imported **type-only** (`import type { Kysely, Transaction } from "kysely"`), so
+it stays a devDependency and this package keeps its three runtime dependencies. Kysely also
+**bypasses RLS** — the caller authorizes first (phase 7's activation route gates on
+`workflows_update`).
+
+This is the one thing here that lives in this package for a dependency reason rather than a
+conceptual one: it needs `WORKFLOW_EVENTS`, and `@carbon/database` (its more natural home,
+beside `event.ts`) cannot depend on `@carbon/workflows` without creating the package cycle
+Turborepo rejects. See `.claude/rules/workflow-matcher.md`.
 
 ## The event catalog
 

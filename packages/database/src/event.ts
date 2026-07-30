@@ -51,6 +51,7 @@ export const QueueMessageSchema = z.object({
   handlerConfig: z.record(z.any()),
   companyId: z.string(),
   actorId: z.string().nullish(), // Captured from auth.uid() at trigger time
+  workflowRunId: z.string().nullish(), // Set when the write was made by a running workflow (workflow_run_id JWT claim)
   event: EventSchema
 });
 

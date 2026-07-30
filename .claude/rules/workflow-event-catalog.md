@@ -114,8 +114,11 @@ references that otherwise churn every `.po` file.
 A moment is a business event a row change cannot express. `raiseMoment` lives in
 `packages/lib/src/workflows/raise-moment.ts` (exported as `@carbon/lib/workflows`) because
 raise sites span `apps/erp` and `apps/mes`, and `@carbon/lib` is the only package both import.
-It sends one `carbon/workflow-moment.raised` Inngest event. **Nothing consumes it yet** —
-phase 3 adds the listener.
+It mints a `momentId` (nanoid) and sends one `carbon/workflow-moment.raised` Inngest event with
+that id set as **both** a payload field and the Inngest event id, so a double send is suppressed
+upstream. The listener is the `workflow-moment` function in `packages/jobs`, which feeds the same
+matcher core as record changes and uses `moment:<momentId>` as its `sourceEventId` — see
+`workflow-matcher.md`.
 
 ```ts
 await raiseMoment("production.jobReleased", {
