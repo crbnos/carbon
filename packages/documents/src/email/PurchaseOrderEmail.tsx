@@ -64,6 +64,13 @@ const PurchaseOrderEmail = ({
     company.baseCurrencyCode ?? "USD",
     locale
   );
+  // Unit prices support more precision than the currency default (2 dp) so
+  // commodity pricing like $0.00123 is not truncated — see issue #1203.
+  const unitPriceFormatter = getCurrencyFormatter(
+    company.baseCurrencyCode ?? "USD",
+    locale,
+    6
+  );
   const preview = (
     <Preview>{`${purchaseOrder.purchaseOrderId} from ${company.name}`}</Preview>
   );
@@ -262,7 +269,7 @@ const PurchaseOrderEmail = ({
                     {line.purchaseOrderLineType === "Comment"
                       ? "-"
                       : line.unitPrice
-                        ? formatter.format(line.unitPrice)
+                        ? unitPriceFormatter.format(line.unitPrice)
                         : "-"}
                   </Text>
                 </Column>

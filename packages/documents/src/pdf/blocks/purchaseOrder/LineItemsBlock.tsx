@@ -41,6 +41,13 @@ export function LineItemsBlock({
     theme,
     locale
   } = data;
+  // Unit prices support more precision than the currency default (2 dp) so
+  // commodity pricing like $0.00123 is not truncated — see issue #1203.
+  const unitPriceFormatter = new Intl.NumberFormat(locale, {
+    style: "decimal",
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 6
+  });
   const opts = { ...DEFAULT_LINE_ITEMS_OPTIONS, ...block.options };
   const overflow = itemTextOverflowStyle(opts);
   let rowIndex = 0;
@@ -158,7 +165,7 @@ export function LineItemsBlock({
                 <Text style={tw("w-[12%] text-center text-gray-600")}>
                   {line.purchaseOrderLineType === "Comment"
                     ? ""
-                    : numberFormatter.format(line.supplierUnitPrice ?? 0)}
+                    : unitPriceFormatter.format(line.supplierUnitPrice ?? 0)}
                 </Text>
                 <Text style={tw("w-[12%] text-center text-gray-600")}>
                   {line.purchaseOrderLineType === "Comment"

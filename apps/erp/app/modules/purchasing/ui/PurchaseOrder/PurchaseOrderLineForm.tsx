@@ -317,6 +317,9 @@ const PurchaseOrderLineForm = ({
 
   const deleteDisclosure = useDisclosure();
   const currencyFormatter = useCurrencyFormatter();
+  // Unit prices support more precision than the currency default (2 dp) so
+  // commodity pricing like $0.00123 is not truncated — see issue #1203.
+  const unitPriceFormatter = useCurrencyFormatter({ maximumFractionDigits: 6 });
   const percentFormatter = usePercentFormatter();
 
   const onTypeChange = (t: ItemType | "Item") => {
@@ -555,7 +558,7 @@ const PurchaseOrderLineForm = ({
                               {initialValues?.purchaseQuantity}
                             </Badge>
                             <Badge variant="green">
-                              {currencyFormatter.format(
+                              {unitPriceFormatter.format(
                                 (initialValues?.supplierUnitPrice ?? 0) +
                                   (initialValues?.supplierShippingCost ?? 0)
                               )}{" "}
@@ -728,7 +731,8 @@ const PurchaseOrderLineForm = ({
                             style: "currency",
                             currency:
                               routeData?.purchaseOrder?.currencyCode ??
-                              company.baseCurrencyCode
+                              company.baseCurrencyCode,
+                            maximumFractionDigits: 6
                           }}
                           onChange={(value) =>
                             setItemData((d) => ({
@@ -1018,7 +1022,8 @@ const PurchaseOrderLineForm = ({
                               style: "currency",
                               currency:
                                 routeData?.purchaseOrder?.currencyCode ??
-                                company.baseCurrencyCode
+                                company.baseCurrencyCode,
+                              maximumFractionDigits: 6
                             }}
                             onChange={(value) =>
                               setIndirectData((d) => ({
