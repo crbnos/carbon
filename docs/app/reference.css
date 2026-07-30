@@ -1,6 +1,6 @@
 /* ───────────────────────────────────────────────────────────────────────────
  * Editorial skin for the Reference (Fumadocs /docs) — make it read like the Guide:
- * warm paper, DM Sans, IBM Plex Mono warm-pill code, custom dot bullets, editorial
+ * warm paper, Archivo, JetBrains Mono warm-pill code, custom dot bullets, editorial
  * tables/cards/callouts, and a calmer brand-accented sidebar + TOC. The Fumadocs
  * `--fd-*` tokens are already mapped to the warm palette in global.css; this layers
  * the editorial *feel* on top. Content rules are scoped to `.prose` (Reference only);
