@@ -1,3 +1,4 @@
+import type { Operator } from "@carbon/utils";
 import {
   getFieldDef,
   isFieldAvailableOnSurfaces,
@@ -10,6 +11,12 @@ import { zfd } from "zod-form-data";
 
 export const storageRuleSeverities = ["error", "warn"] as const;
 
+/**
+ * The subset of Carbon's shared `Operator` vocabulary that storage rules accept
+ * on the wire. `satisfies` ties it to that union so a rename there breaks here
+ * rather than silently drifting; the text operators are deliberately omitted
+ * because no `field-registry` field offers them.
+ */
 export const storageRuleOperators = [
   "eq",
   "neq",
@@ -19,7 +26,7 @@ export const storageRuleOperators = [
   "isNotSet",
   "gt",
   "lt"
-] as const;
+] as const satisfies readonly Operator[];
 
 const storageRuleConditionValueSchema = z.union([
   z.string(),

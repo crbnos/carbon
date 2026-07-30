@@ -567,3 +567,56 @@ Format: `Context → Problem → Rule → Applies to`
 **Rule:** A `.refine` predicate must return a **boolean** (`false` = invalid). To attach a path/message, either pass the second `{ message, path }` argument to `.refine` and return `false` on failure, or use `.superRefine((data, ctx) => ctx.addIssue({ path, message }))` when you need per-field errors. Never return an object/array from a `.refine` callback expecting it to be an error map.
 
 **Applies to:** all `apps/erp/app/modules/**/*.models.ts` (and `apps/mes/app/services/models.ts`) zod schemas using `.refine`.
+
+## `ON DELETE SET NULL` on a composite FK nulls every referencing column, not just the pointer
+
+**Context:** A nullable pointer column that references a sibling table on Carbon's composite key, e.g. `workflow.activeVersionId` → `workflowVersion("id", "companyId")` (`20260730142317_workflows-foundation.sql`). Because every Carbon table is keyed `("id", "companyId")`, any such pointer FK is necessarily multi-column and includes `companyId`.
+
+**Problem:** A bare `FOREIGN KEY ("activeVersionId", "companyId") REFERENCES ... ON DELETE SET NULL` sets **all** referencing columns to NULL when the parent row is deleted — including `companyId`, which is `NOT NULL`. The delete then fails with `null value in column "companyId" of relation "workflow" violates not-null constraint`, and the referenced row can never be deleted. It looks correct in review, applies cleanly, and only surfaces the first time something deletes the parent.
+
+**Rule:** On a composite FK whose referencing columns include `companyId` (or any NOT NULL column), name the column in the action: `ON DELETE SET NULL ("activeVersionId")`. The column-list form needs Postgres 15+ (the local stack is 15.14). Same trap applies to `ON UPDATE SET NULL` and to `SET DEFAULT`. Always prove it with a real delete against the live schema — a migration that applies successfully tells you nothing about its referential actions.
+
+**Applies to:** any migration adding a nullable pointer column that references another table's composite `("id", "companyId")` key.
+
+## A read-time format-migration seam must run before the current-schema parse
+
+**Context:** Versioned JSON documents stored in a JSONB column with a
+`formatVersion` sibling column, upgraded on read so stored rows never need a
+backfill (`packages/documents/src/template/`, `packages/workflows/`).
+
+**Problem:** `packages/workflows` originally parsed the row against the *current*
+zod schema and only then called `migrateDefinition`. A document old enough to need
+migrating cannot satisfy the current schema by definition, so it failed the parse
+and never reached the migration — the seam was dead on arrival. Worse, the parse
+failure fell back to an empty canvas, so opening the version in the builder showed
+nothing and the next save silently destroyed the stored nodes.
+
+**Rule:** Run the migration on the **raw** JSON, before the current-schema parse.
+Default a missing `formatVersion` to `1`, never to `CURRENT_*_FORMAT_VERSION` —
+"current" skips the very migration a legacy row needs. Treat a `formatVersion`
+greater than current as an explicit failure, and return a discriminated
+`{ok: false, failure, message}` rather than an empty document, so a caller can
+refuse to save over a row it could not read.
+
+**Applies to:** any read-time `migrate*(payload, _from)` seam —
+`packages/workflows/src/definition/normalize.ts`,
+`packages/documents/src/template/defaults.ts`.
+
+## A `default:` arm silently defeats discriminated-union exhaustiveness
+
+**Context:** Several functions switching on the same discriminated union
+(`WorkflowNode["type"]` across handles, refs, outputs, type checks, config checks).
+
+**Problem:** Five switches each had a `default:` or simply returned `undefined`
+for unhandled members, so adding a seventh node type produced **zero** compile
+errors — verified with `tsgo --noEmit`. The new node type got default handles and
+no validation at all, and would activate.
+
+**Rule:** For behaviour that must exist for every member of a union, prefer one
+record keyed by a mapped type (`{ [K in Kind]: ... }`) over N switches: a missing
+key is a `TS2741` error. Where a switch is genuinely right, omit `default:` and end
+with a `never` assertion. A `Record<Union, T>` gives the same guarantee — that is
+what caught the missing `OPERATOR_LABELS` entries when `Operator` was extended.
+
+**Applies to:** `packages/workflows/src/definition/nodes.ts`, and any
+`switch (x.type)` over a zod discriminated union.

@@ -13,6 +13,14 @@ import {
   getFieldsForTargetType
 } from "./field-registry";
 
+/**
+ * Carbon's one condition-operator vocabulary, shared by every feature that lets
+ * a user build a condition (storage rules, workflows). Which operators a given
+ * field or value type may use is decided per-feature — storage rules via
+ * `availableOperators` in `./field-registry`, workflows via `OPERATORS_BY_TYPE`
+ * in `@carbon/workflows` — but the names and their meanings live here, so two
+ * builders can never offer the same user contradictory operator sets.
+ */
 export type Operator =
   | "eq"
   | "neq"
@@ -21,7 +29,12 @@ export type Operator =
   | "isSet"
   | "isNotSet"
   | "gt"
-  | "lt";
+  | "gte"
+  | "lt"
+  | "lte"
+  | "contains"
+  | "startsWith"
+  | "endsWith";
 
 export type Severity = "error" | "warn";
 
@@ -213,7 +226,19 @@ const operatorFns: Record<
   isNotSet: (l) =>
     Array.isArray(l) ? l.length === 0 : isNullish(l) || l === "",
   gt: (l, r) => typeof l === "number" && typeof r === "number" && l > r,
-  lt: (l, r) => typeof l === "number" && typeof r === "number" && l < r
+  gte: (l, r) => typeof l === "number" && typeof r === "number" && l >= r,
+  lt: (l, r) => typeof l === "number" && typeof r === "number" && l < r,
+  lte: (l, r) => typeof l === "number" && typeof r === "number" && l <= r,
+  // On a list, `contains` is membership; on a string, substring. The left
+  // operand's type decides, so one operator name covers both readings.
+  contains: (l, r) =>
+    Array.isArray(l)
+      ? l.includes(r)
+      : typeof l === "string" && typeof r === "string" && l.includes(r),
+  startsWith: (l, r) =>
+    typeof l === "string" && typeof r === "string" && l.startsWith(r),
+  endsWith: (l, r) =>
+    typeof l === "string" && typeof r === "string" && l.endsWith(r)
 };
 
 // ---------------------------------------------------------------------------
@@ -354,7 +379,12 @@ const OPERATOR_LABELS: Record<Operator, string> = {
   isSet: "is set",
   isNotSet: "is not set",
   gt: "greater than",
-  lt: "less than"
+  gte: "greater than or equal to",
+  lt: "less than",
+  lte: "less than or equal to",
+  contains: "contains",
+  startsWith: "starts with",
+  endsWith: "ends with"
 };
 
 export type InterpolateMessageOptions = {

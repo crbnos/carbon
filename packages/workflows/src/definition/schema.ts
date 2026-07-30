@@ -1,0 +1,130 @@
+import { z } from "zod";
+import {
+  clauseSchema,
+  combinatorSchema,
+  scheduleSchema,
+  valueOrRefSchema,
+  variableRefSchema
+} from "./types";
+
+export const CURRENT_DEFINITION_FORMAT_VERSION = 1;
+
+/** PRD cap, so batch mode cannot run away. */
+export const MAX_LIST_ITEMS = 100;
+/** PRD hop cap, shared with the matcher in phase 3. */
+export const MAX_CHAIN_DEPTH = 10;
+
+/** Who made the change being watched — a person, the system, or either. */
+export const originSchema = z.enum(["Person", "Automation", "Both"]);
+export type Origin = z.infer<typeof originSchema>;
+
+const nodeBase = {
+  id: z.string().min(1),
+  position: z.object({ x: z.number(), y: z.number() })
+};
+
+const triggerNode = z.object({
+  ...nodeBase,
+  type: z.literal("trigger"),
+  data: z.object({
+    events: z.array(z.string()).default([]),
+    origin: originSchema.default("Both"),
+    schedule: scheduleSchema.optional()
+  })
+});
+
+export const conditionPathSchema = z.object({
+  id: z.string().min(1),
+  kind: z.enum(["if", "elseIf", "else"]),
+  combinator: combinatorSchema.default("and"),
+  clauses: z.array(clauseSchema).default([])
+});
+export type ConditionPath = z.infer<typeof conditionPathSchema>;
+
+const conditionNode = z.object({
+  ...nodeBase,
+  type: z.literal("condition"),
+  data: z.object({
+    paths: z.array(conditionPathSchema).default([])
+  })
+});
+
+const entityNode = z.object({
+  ...nodeBase,
+  type: z.literal("entity"),
+  data: z.object({
+    operation: z.string(),
+    inputs: z.record(valueOrRefSchema).default({})
+  })
+});
+
+const lookupNode = z.object({
+  ...nodeBase,
+  type: z.literal("lookup"),
+  data: z.object({
+    entity: z.string(),
+    returns: z.enum(["one", "list"]).default("one"),
+    match: z.array(clauseSchema).default([])
+  })
+});
+
+const filterNode = z.object({
+  ...nodeBase,
+  type: z.literal("filter"),
+  data: z.object({
+    source: variableRefSchema.optional(),
+    combinator: combinatorSchema.default("and"),
+    clauses: z.array(clauseSchema).default([])
+  })
+});
+
+const actionNode = z.object({
+  ...nodeBase,
+  type: z.literal("action"),
+  data: z.object({
+    action: z.string(),
+    inputs: z.record(valueOrRefSchema).default({}),
+    batch: z.boolean().default(false)
+  })
+});
+
+export const nodeSchema = z.discriminatedUnion("type", [
+  triggerNode,
+  conditionNode,
+  entityNode,
+  lookupNode,
+  filterNode,
+  actionNode
+]);
+export type WorkflowNode = z.infer<typeof nodeSchema>;
+export type WorkflowNodeType = WorkflowNode["type"];
+
+export type TriggerNode = Extract<WorkflowNode, { type: "trigger" }>;
+export type ConditionNode = Extract<WorkflowNode, { type: "condition" }>;
+export type EntityNode = Extract<WorkflowNode, { type: "entity" }>;
+export type LookupNode = Extract<WorkflowNode, { type: "lookup" }>;
+export type FilterNode = Extract<WorkflowNode, { type: "filter" }>;
+export type ActionNode = Extract<WorkflowNode, { type: "action" }>;
+
+export const edgeSchema = z.object({
+  id: z.string().min(1),
+  source: z.string(),
+  sourceHandle: z.string(),
+  target: z.string(),
+  targetHandle: z.string()
+});
+export type WorkflowEdge = z.infer<typeof edgeSchema>;
+
+export const workflowDefinitionSchema = z.object({
+  formatVersion: z.number().int().default(CURRENT_DEFINITION_FORMAT_VERSION),
+  nodes: z.array(nodeSchema),
+  edges: z.array(edgeSchema)
+});
+export type WorkflowDefinition = z.infer<typeof workflowDefinitionSchema>;
+
+/** The default output name every node exposes its primary value under. */
+export const DEFAULT_OUTPUT = "result";
+/** The handle name a node with a single output flows onward from. */
+export const DEFAULT_HANDLE = "out";
+export const SUCCESS_HANDLE = "success";
+export const FAILURE_HANDLE = "failure";

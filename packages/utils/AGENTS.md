@@ -12,7 +12,7 @@ Pure utility functions shared across all Carbon packages and apps. Covers accoun
 ## Ask First
 
 - Adding new dependencies — this package is imported everywhere; new deps increase bundle size across all apps.
-- Modifying `storage-rules.ts` — affects Supabase storage bucket policies and file access patterns.
+- Modifying `storage-rules.ts` — the `Operator` union is shared with `@carbon/workflows`, and the evaluator gates real inventory transactions.
 - Changing `Edition` enum or `isBrowser` detection — used by `@carbon/env` and auth logic.
 
 ## Never
@@ -39,10 +39,10 @@ pnpm --filter @carbon/utils typecheck
 | `math` | Rounding, precision, numeric utilities |
 | `string` | Slugify, truncate, camelCase/titleCase conversions |
 | `status` | Status resolution, status color mapping |
-| `storage-rules` | Supabase storage bucket access policies |
+| `storage-rules` | Inventory/storage rule engine: condition AST, the shared `Operator` vocabulary, JIT-compiled evaluator |
 | `supabase` | Typed Supabase query helpers |
 | `types` | Shared TypeScript types (`Edition`, generic utility types) |
-| `field-registry` | Dynamic field registration for custom fields |
+| `field-registry` | Fields a storage rule may test, and which operators each one allows |
 | `labels` | Human-readable label generation |
 | `url` | URL construction and manipulation |
 

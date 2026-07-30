@@ -78,6 +78,39 @@ export const OPERATOR_META: Record<
     description: "Numeric <",
     icon: <LuArrowDown className="h-3.5 w-3.5" />,
     symbol: "<"
+  },
+  // Part of Carbon's shared operator vocabulary but not yet offered by any
+  // storage-rule field, so these are unreachable here today. They exist so this
+  // picker stays exhaustive, and are ready for the workflow builder to reuse.
+  gte: {
+    title: "greater than or equal to",
+    description: "Numeric ≥",
+    icon: <LuArrowUp className="h-3.5 w-3.5" />,
+    symbol: "≥"
+  },
+  lte: {
+    title: "less than or equal to",
+    description: "Numeric ≤",
+    icon: <LuArrowDown className="h-3.5 w-3.5" />,
+    symbol: "≤"
+  },
+  contains: {
+    title: "contains",
+    description: "Text contains, or list includes",
+    icon: <LuList className="h-3.5 w-3.5" />,
+    symbol: "⊇"
+  },
+  startsWith: {
+    title: "starts with",
+    description: "Text begins with",
+    icon: <LuSquareDot className="h-3.5 w-3.5" />,
+    symbol: "a…"
+  },
+  endsWith: {
+    title: "ends with",
+    description: "Text ends with",
+    icon: <LuSquareSlash className="h-3.5 w-3.5" />,
+    symbol: "…a"
   }
 };
 

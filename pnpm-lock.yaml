@@ -638,6 +638,9 @@ importers:
       '@carbon/viewer':
         specifier: workspace:*
         version: link:../../packages/viewer
+      '@carbon/workflows':
+        specifier: workspace:*
+        version: link:../../packages/workflows
       '@dagrejs/dagre':
         specifier: ^1.1.4
         version: 1.1.8
@@ -2490,6 +2493,9 @@ importers:
       '@carbon/viewer':
         specifier: workspace:*
         version: link:../viewer
+      '@carbon/workflows':
+        specifier: workspace:*
+        version: link:../workflows
       '@internationalized/date':
         specifier: 'catalog:'
         version: 3.12.0
@@ -3534,6 +3540,25 @@ importers:
       react-dom:
         specifier: 18.3.1
         version: 18.3.1(react@18.3.1)
+      typescript:
+        specifier: 'catalog:'
+        version: 5.8.3
+      vitest:
+        specifier: 'catalog:'
+        version: 4.1.6(@opentelemetry/api@1.9.0)(@types/node@26.1.0)(vite@8.0.10(@types/node@26.1.0)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3))
+
+  packages/workflows:
+    dependencies:
+      '@carbon/utils':
+        specifier: workspace:*
+        version: link:../utils
+      zod:
+        specifier: 'catalog:'
+        version: 3.25.76
+    devDependencies:
+      '@carbon/config':
+        specifier: workspace:*
+        version: link:../config
       typescript:
         specifier: 'catalog:'
         version: 5.8.3
