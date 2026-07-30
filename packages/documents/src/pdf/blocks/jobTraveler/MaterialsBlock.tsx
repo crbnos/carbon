@@ -6,13 +6,12 @@ import type { JobTravelerData } from "./types";
 // alignment. They sum to 12/12; spacing between columns comes from in-cell
 // right padding (pr-4) rather than a flex gap, which previously pushed the
 // total width past 100% and made long item ids overlap the description.
-const COL_ITEM = "w-4/12 text-left pr-4";
-const COL_DESCRIPTION = "w-4/12 text-left pr-4";
-const COL_METHOD = "w-2/12 text-left pr-4";
+const COL_ITEM = "w-5/12 text-left pr-4";
+const COL_DESCRIPTION = "w-5/12 text-left pr-4";
 const COL_QUANTITY = "w-2/12 text-right";
 
 /**
- * Opt-in Bill of Materials table (item, description, method type, quantity).
+ * Opt-in Bill of Materials table (item, description, quantity).
  * Rendered only when the company setting `includeMaterialsOnTraveler` is on and
  * the make method has materials — see JobTravelerPageContent.
  *
@@ -32,7 +31,6 @@ export function MaterialsBlock({ data }: { data: JobTravelerData }) {
     >
       <Text style={tw(COL_ITEM)}>Item</Text>
       <Text style={tw(COL_DESCRIPTION)}>Description</Text>
-      <Text style={tw(COL_METHOD)}>Method</Text>
       <Text style={tw(COL_QUANTITY)}>Quantity</Text>
     </View>
   );
@@ -46,9 +44,6 @@ export function MaterialsBlock({ data }: { data: JobTravelerData }) {
               {material.itemReadableId ?? ""}
             </Text>
             <Text style={tw(COL_DESCRIPTION)}>{material.description}</Text>
-            <Text style={tw(`${COL_METHOD} text-[10px]`)}>
-              {material.methodType ?? ""}
-            </Text>
             <Text style={tw(COL_QUANTITY)}>
               {material.quantity}
               {material.unitOfMeasureCode
