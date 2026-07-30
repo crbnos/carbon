@@ -554,6 +554,9 @@ msgstr "Akkumulationszeitraum (Wochen)"
 msgid "Accumulation Period:"
 msgstr "Akkumulationszeitraum:"
 
+msgid "Acknowledge & finish"
+msgstr "Bestätigen und beenden"
+
 msgid "Acquisition Cost"
 msgstr "Anschaffungskosten"
 
@@ -2951,14 +2954,29 @@ msgstr "Schulungsnamen kopieren"
 msgid "Copy training unique identifier"
 msgstr "Eindeutige Schulungs-ID kopieren"
 
+msgid "Correct"
+msgstr "Korrigieren"
+
 msgid "Correct Answer"
 msgstr "Richtige Antwort"
 
 msgid "Correct Answers"
 msgstr "Richtige Antworten"
 
+msgid "Correct Quantity"
+msgstr "Menge korrigieren"
+
+msgid "Correct Stock Movement"
+msgstr "Lagerbewegung korrigieren"
+
+msgid "Corrected Quantity"
+msgstr "Korrigierte Menge"
+
 msgid "Correction"
 msgstr "Korrektur"
+
+msgid "Correction {correctionNumber}"
+msgstr "Korrektur {correctionNumber}"
 
 msgid "Corrections"
 msgstr "Korrektionen"
@@ -3673,7 +3691,7 @@ msgid "Decide what an operator sees if they try to issue a batch or serial that'
 msgstr "Entscheiden Sie, was ein Bediener sieht, wenn er versucht, einen Batch oder eine Seriennummer auszugeben, die bereits abgelaufen ist."
 
 msgid "Decide what happens when an operator presses Finish on the shop floor with material still unpicked."
-msgstr "Entscheiden Sie, was passiert, wenn ein Bediener auf der Werkstatt Fertig drückt und Material noch nicht ausgewählt ist."
+msgstr "Legen Sie fest, was passiert, wenn ein Bediener auf dem Shopfloor die Funktion \"Fertig\" drückt, während Material noch nicht kommissioniert ist."
 
 msgid "Decimal Places"
 msgstr "Dezimalstellen"
@@ -5019,6 +5037,9 @@ msgstr "Seriennummer eingeben oder scannen"
 msgid "Enter PO number"
 msgstr "PO-Nummer eingeben"
 
+msgid "Enter the quantity this movement should have been. An opposite movement for the difference is posted next to the original, in the original's time period."
+msgstr "Geben Sie die Menge ein, die diese Bewegung hätte sein sollen. Eine Gegenbewegung für die Differenz wird neben dem Original in dessen Zeitraum verbucht."
+
 msgid "Entered At Receipt"
 msgstr "Bei Wareneingang erfasst"
 
@@ -5766,6 +5787,9 @@ msgstr "Onboarding abschließen"
 msgid "Finish To"
 msgstr "Fertigstellen zu"
 
+msgid "Finish with material unpicked?"
+msgstr "Material nicht entnommen beenden?"
+
 msgid "Finished goods"
 msgstr "Oberflächen"
 
@@ -5785,7 +5809,7 @@ msgid "Finishing an incomplete pick"
 msgstr "Fertigstellung einer unvollständigen Auswahl"
 
 msgid "Finishing is refused until every line is picked or marked Short."
-msgstr "Das Fertigstellen wird verweigert, bis jede Zeile ausgewählt oder als Kurz markiert ist."
+msgstr "Das Abschließen wird verweigert, bis jede Zeile kommissioniert oder als Kurzbestand markiert ist."
 
 msgid "First Name"
 msgstr "Vorname"
@@ -7049,6 +7073,9 @@ msgstr "Behalten Sie bestehende Preise, fügen Sie nur neue Artikel hinzu"
 msgid "Keep Open"
 msgstr "Offen halten"
 
+msgid "Keep picking"
+msgstr "Weiter entnehmen"
+
 msgid "Key"
 msgstr "Schlüssel"
 
@@ -7295,6 +7322,9 @@ msgstr "Zuletzt geladen, direkt bei der Umstellung, damit die Salden aktuell sin
 
 msgid "Loading associated jobs..."
 msgstr "Zugehörige Aufträge werden geladen..."
+
+msgid "Loading current quantity…"
+msgstr "Aktuelle Menge wird geladen…"
 
 msgid "Loading item details..."
 msgstr "Artikeldetails werden geladen..."
@@ -8987,7 +9017,7 @@ msgid "Operator must pick a different batch/serial."
 msgstr "Operator muss einen anderen Batch/eine andere Seriennummer auswählen."
 
 msgid "Operator sees the missing items, can acknowledge & finish. The list is flagged Partial."
-msgstr "Der Bediener sieht die fehlenden Artikel, kann bestätigen und fertig stellen. Die Liste wird als Teilweise gekennzeichnet."
+msgstr "Der Bediener sieht die fehlenden Artikel, kann bestätigen und abschließen. Die Liste ist als \"Teilbestand\" gekennzeichnet."
 
 msgid "Operators"
 msgstr "Operatoren"
@@ -9232,7 +9262,7 @@ msgid "Part Supersession"
 msgstr "Teilersatz"
 
 msgid "Partial"
-msgstr "Teilweise"
+msgstr "Teilbestand"
 
 msgid "Partner"
 msgstr "Partner"
@@ -9588,14 +9618,14 @@ msgstr "Gepostet am"
 msgid "Posted By"
 msgstr "Gepostet von"
 
-msgid "Posted once, no rectifications."
-msgstr "Einmal gepostet, keine Berichtigungen."
+msgid "Posted once, corrected {corrections} times."
+msgstr "Einmal verbucht, {corrections} mal korrigiert."
 
-msgid "Posted once, rectified {rectifications} times."
-msgstr "Einmal gepostet, {rectifications} Mal berichtigt."
+msgid "Posted once, corrected 1 time."
+msgstr "Einmal verbucht, 1 mal korrigiert."
 
-msgid "Posted once, rectified 1 time."
-msgstr "Einmal gepostet, 1 Mal berichtigt."
+msgid "Posted once, no corrections."
+msgstr "Einmal verbucht, keine Korrektionen."
 
 msgid "Posting"
 msgstr "Vorauszahlungen"
@@ -9610,7 +9640,7 @@ msgid "Pre-filled for a new item when expiry is Fixed Duration."
 msgstr "Wird für einen neuen Artikel vorausgefüllt, wenn die Verfallszeit auf Feste Dauer eingestellt ist."
 
 msgid "Pre-select material without a picking list"
-msgstr "Material vorab auswählen ohne eine Pickliste"
+msgstr "Material ohne Kommissionierliste vorauswählen"
 
 msgid "Preferred Supplier"
 msgstr "Bevorzugter Lieferant"
@@ -10368,12 +10398,6 @@ msgstr "Aufzeichnungen"
 
 msgid "Recovery Period"
 msgstr "Registrieren"
-
-msgid "Rectification {rectifyNumber}"
-msgstr "Berichtigung {rectifyNumber}"
-
-msgid "Rectify"
-msgstr "Berichtigen"
 
 msgid "Redirecting to verification page..."
 msgstr "Wird zur Verifizierungsseite weitergeleitet..."
@@ -11706,6 +11730,9 @@ msgstr "Shop-Floor-App und Planung"
 msgid "Shop-floor configuration."
 msgstr "Konfiguration der Produktionshalle."
 
+msgid "short"
+msgstr "kurz"
+
 msgid "Short"
 msgstr "Mangel"
 
@@ -11771,6 +11798,9 @@ msgstr "Zeichen-Offs, die aufgezeichnet werden müssen, bevor diese Ausgabe gesc
 
 msgid "Signed in as {name}"
 msgstr "Angemeldet als {name}"
+
+msgid "Signed quantity — negative for outbound movements"
+msgstr "Signierte Menge – negativ für ausgehende Bewegungen"
 
 msgid "Sites & locations"
 msgstr "Standorte & Lagerorte"
@@ -12015,6 +12045,9 @@ msgstr "Die Schritte werden von der Montageanleitungen geerbt."
 
 msgid "Steps are inherited from the inspection plan."
 msgstr "Schritte werden vom Inspektionsplan geerbt."
+
+msgid "Stock movement corrected"
+msgstr "Lagerbewegung korrigiert"
 
 msgid "Stock Transfer ID"
 msgstr "Lagerbestandstransfer-ID"
@@ -13228,6 +13261,9 @@ msgstr "Diese E-Mail-Adressen werden automatisch in CC auf alle an Lieferanten g
 
 msgid "These email addresses will be automatically CC'd on all quote emails sent to customers."
 msgstr "Diese E-Mail-Adressen werden automatisch in CC auf alle Angebots-E-Mails kopiert, die an Kunden versendet werden."
+
+msgid "These items still have material to pick. Finishing now marks the list Partial."
+msgstr "Diese Artikel haben noch Material zum Entnehmen. Das Beenden markiert die Liste jetzt als Teilweise."
 
 msgid "These jobs have operations assigned to this work center:"
 msgstr "Diese Aufträge haben Operationen, die diesem Arbeitszentrum zugewiesen sind:"
@@ -14594,7 +14630,7 @@ msgid "When on, this rule fires for every target of its type. Assignment rows ar
 msgstr "Wenn aktiviert, wird diese Regel für jedes Ziel ihres Typs ausgelöst. Zuordnungszeilen werden ignoriert, aber beibehalten."
 
 msgid "When on, tracked material is pre-selected by pick order (FEFO) even without a picking list. When off, operators start on the Scan tab."
-msgstr "Wenn aktiviert, wird verfolgtes Material nach Reihenfolge (FEFO) vorab ausgewählt, auch ohne Pickliste. Wenn deaktiviert, beginnen Bediener auf der Registerkarte Scannen."
+msgstr "Wenn aktiviert, wird verfolgtes Material auch ohne Kommissionierliste nach Kommissionierreihenfolge (FEFO) vorausgewählt. Wenn deaktiviert, starten Bediener auf der Registerkarte Scan."
 
 msgid "When supplier responses are expected back; suppliers see this date on the RFQ portal and Carbon stops accepting late responses after it (configurable)."
 msgstr "Wann Lieferantenreaktionen erwartet werden; Lieferanten sehen dieses Datum auf dem RFQ-Portal und Carbon akzeptiert keine späten Antworten danach (konfigurierbar)."

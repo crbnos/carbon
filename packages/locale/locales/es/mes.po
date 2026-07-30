@@ -526,7 +526,7 @@ msgid "Jobs"
 msgstr "Trabajos"
 
 msgid "Keep picking"
-msgstr "Seguir recogiendo"
+msgstr "Continuar recogiendo"
 
 msgid "Kit"
 msgstr "Kit"

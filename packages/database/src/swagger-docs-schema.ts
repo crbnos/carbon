@@ -82591,10 +82591,10 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.plmReleaseControl"
           },
           {
-            $ref: "#/parameters/rowFilter.companySettings.incompletePickingListPolicy"
+            $ref: "#/parameters/rowFilter.companySettings.autoSelectMaterialWithoutPickingList"
           },
           {
-            $ref: "#/parameters/rowFilter.companySettings.autoSelectMaterialWithoutPickingList"
+            $ref: "#/parameters/rowFilter.companySettings.incompletePickingListPolicy"
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.includeMaterialsOnTraveler"
@@ -82788,10 +82788,10 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.plmReleaseControl"
           },
           {
-            $ref: "#/parameters/rowFilter.companySettings.incompletePickingListPolicy"
+            $ref: "#/parameters/rowFilter.companySettings.autoSelectMaterialWithoutPickingList"
           },
           {
-            $ref: "#/parameters/rowFilter.companySettings.autoSelectMaterialWithoutPickingList"
+            $ref: "#/parameters/rowFilter.companySettings.incompletePickingListPolicy"
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.includeMaterialsOnTraveler"
@@ -82939,10 +82939,10 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.plmReleaseControl"
           },
           {
-            $ref: "#/parameters/rowFilter.companySettings.incompletePickingListPolicy"
+            $ref: "#/parameters/rowFilter.companySettings.autoSelectMaterialWithoutPickingList"
           },
           {
-            $ref: "#/parameters/rowFilter.companySettings.autoSelectMaterialWithoutPickingList"
+            $ref: "#/parameters/rowFilter.companySettings.incompletePickingListPolicy"
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.includeMaterialsOnTraveler"
@@ -100085,7 +100085,7 @@ export default {
       properties: {
         id: {
           description:
-            "Note:\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
           format: "text",
           type: "string"
         },
@@ -100134,7 +100134,7 @@ export default {
         },
         supplierLocationId: {
           description:
-            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
+            "Note:\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
           format: "text",
           type: "string"
         },
@@ -133723,8 +133723,8 @@ export default {
         "showCustomerReadableId",
         "autoStartOperationTimer",
         "plmReleaseControl",
-        "incompletePickingListPolicy",
         "autoSelectMaterialWithoutPickingList",
+        "incompletePickingListPolicy",
         "includeMaterialsOnTraveler"
       ],
       properties: {
@@ -133962,15 +133962,15 @@ export default {
           format: "text",
           type: "string"
         },
-        incompletePickingListPolicy: {
-          default: "warn",
-          format: "text",
-          type: "string"
-        },
         autoSelectMaterialWithoutPickingList: {
           default: false,
           format: "boolean",
           type: "boolean"
+        },
+        incompletePickingListPolicy: {
+          default: "warn",
+          format: "text",
+          type: "string"
         },
         includeMaterialsOnTraveler: {
           default: false,
@@ -178590,14 +178590,14 @@ export default {
       in: "query",
       type: "string"
     },
-    "rowFilter.companySettings.incompletePickingListPolicy": {
-      name: "incompletePickingListPolicy",
+    "rowFilter.companySettings.autoSelectMaterialWithoutPickingList": {
+      name: "autoSelectMaterialWithoutPickingList",
       required: false,
       in: "query",
       type: "string"
     },
-    "rowFilter.companySettings.autoSelectMaterialWithoutPickingList": {
-      name: "autoSelectMaterialWithoutPickingList",
+    "rowFilter.companySettings.incompletePickingListPolicy": {
+      name: "incompletePickingListPolicy",
       required: false,
       in: "query",
       type: "string"

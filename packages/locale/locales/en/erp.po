@@ -554,6 +554,9 @@ msgstr "Accumulation Period (Weeks)"
 msgid "Accumulation Period:"
 msgstr "Accumulation Period:"
 
+msgid "Acknowledge & finish"
+msgstr "Acknowledge & finish"
+
 msgid "Acquisition Cost"
 msgstr "Acquisition Cost"
 
@@ -2951,14 +2954,29 @@ msgstr "Copy training name"
 msgid "Copy training unique identifier"
 msgstr "Copy training unique identifier"
 
+msgid "Correct"
+msgstr "Correct"
+
 msgid "Correct Answer"
 msgstr "Correct Answer"
 
 msgid "Correct Answers"
 msgstr "Correct Answers"
 
+msgid "Correct Quantity"
+msgstr "Correct Quantity"
+
+msgid "Correct Stock Movement"
+msgstr "Correct Stock Movement"
+
+msgid "Corrected Quantity"
+msgstr "Corrected Quantity"
+
 msgid "Correction"
 msgstr "Correction"
+
+msgid "Correction {correctionNumber}"
+msgstr "Correction {correctionNumber}"
 
 msgid "Corrections"
 msgstr "Corrections"
@@ -5019,6 +5037,9 @@ msgstr "Enter or scan serial number"
 msgid "Enter PO number"
 msgstr "Enter PO number"
 
+msgid "Enter the quantity this movement should have been. An opposite movement for the difference is posted next to the original, in the original's time period."
+msgstr "Enter the quantity this movement should have been. An opposite movement for the difference is posted next to the original, in the original's time period."
+
 msgid "Entered At Receipt"
 msgstr "Entered At Receipt"
 
@@ -5765,6 +5786,9 @@ msgstr "Finish onboarding"
 
 msgid "Finish To"
 msgstr "Finish To"
+
+msgid "Finish with material unpicked?"
+msgstr "Finish with material unpicked?"
 
 msgid "Finished goods"
 msgstr "Finished goods"
@@ -7049,6 +7073,9 @@ msgstr "Keep existing pricing, only add new items"
 msgid "Keep Open"
 msgstr "Keep Open"
 
+msgid "Keep picking"
+msgstr "Keep picking"
+
 msgid "Key"
 msgstr "Key"
 
@@ -7295,6 +7322,9 @@ msgstr "Loaded last, right at cutover, so balances are current."
 
 msgid "Loading associated jobs..."
 msgstr "Loading associated jobs..."
+
+msgid "Loading current quantity…"
+msgstr "Loading current quantity…"
 
 msgid "Loading item details..."
 msgstr "Loading item details..."
@@ -9588,14 +9618,14 @@ msgstr "Posted At"
 msgid "Posted By"
 msgstr "Posted By"
 
-msgid "Posted once, no rectifications."
-msgstr "Posted once, no rectifications."
+msgid "Posted once, corrected {corrections} times."
+msgstr "Posted once, corrected {corrections} times."
 
-msgid "Posted once, rectified {rectifications} times."
-msgstr "Posted once, rectified {rectifications} times."
+msgid "Posted once, corrected 1 time."
+msgstr "Posted once, corrected 1 time."
 
-msgid "Posted once, rectified 1 time."
-msgstr "Posted once, rectified 1 time."
+msgid "Posted once, no corrections."
+msgstr "Posted once, no corrections."
 
 msgid "Posting"
 msgstr "Posting"
@@ -10368,12 +10398,6 @@ msgstr "Records"
 
 msgid "Recovery Period"
 msgstr "Recovery Period"
-
-msgid "Rectification {rectifyNumber}"
-msgstr "Rectification {rectifyNumber}"
-
-msgid "Rectify"
-msgstr "Rectify"
 
 msgid "Redirecting to verification page..."
 msgstr "Redirecting to verification page..."
@@ -11706,6 +11730,9 @@ msgstr "Shop-floor app and scheduling"
 msgid "Shop-floor configuration."
 msgstr "Shop-floor configuration."
 
+msgid "short"
+msgstr "short"
+
 msgid "Short"
 msgstr "Short"
 
@@ -11771,6 +11798,9 @@ msgstr "Sign-offs that must be recorded before this issue can be closed; in addi
 
 msgid "Signed in as {name}"
 msgstr "Signed in as {name}"
+
+msgid "Signed quantity — negative for outbound movements"
+msgstr "Signed quantity — negative for outbound movements"
 
 msgid "Sites & locations"
 msgstr "Sites & locations"
@@ -12015,6 +12045,9 @@ msgstr "Steps are inherited from the assembly instruction."
 
 msgid "Steps are inherited from the inspection plan."
 msgstr "Steps are inherited from the inspection plan."
+
+msgid "Stock movement corrected"
+msgstr "Stock movement corrected"
 
 msgid "Stock Transfer ID"
 msgstr "Stock Transfer ID"
@@ -13228,6 +13261,9 @@ msgstr "These email addresses will be automatically CC'd on all emails sent to s
 
 msgid "These email addresses will be automatically CC'd on all quote emails sent to customers."
 msgstr "These email addresses will be automatically CC'd on all quote emails sent to customers."
+
+msgid "These items still have material to pick. Finishing now marks the list Partial."
+msgstr "These items still have material to pick. Finishing now marks the list Partial."
 
 msgid "These jobs have operations assigned to this work center:"
 msgstr "These jobs have operations assigned to this work center:"

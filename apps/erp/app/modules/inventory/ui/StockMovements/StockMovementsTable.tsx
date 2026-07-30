@@ -1,15 +1,15 @@
-import { Badge, HStack, VStack } from "@carbon/react";
+import { Badge, HStack, MenuIcon, MenuItem, VStack } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
-import { memo, useCallback, useMemo } from "react";
+import { memo, useCallback, useMemo, useState } from "react";
 import {
   LuArrowRightLeft,
   LuBlocks,
   LuCalendar,
-  LuCornerDownRight,
   LuFileText,
   LuHash,
   LuMapPin,
+  LuMessageSquare,
   LuMoveDown,
   LuMoveUp,
   LuQrCode,
@@ -21,7 +21,7 @@ import { Link } from "react-router";
 import { EmployeeAvatar, Hyperlink, ItemThumbnail, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { useLocations } from "~/components/Form/Location";
-import { useDateFormatter, useUser } from "~/hooks";
+import { useDateFormatter, usePermissions, useUser } from "~/hooks";
 import { useDebouncedRealtime } from "~/hooks/useDebouncedRealtime";
 import type { MethodItemType } from "~/modules/shared";
 import { usePeople } from "~/stores";
@@ -31,6 +31,7 @@ import {
   itemLedgerTypes
 } from "../../inventory.models";
 import type { StockMovement } from "../../types";
+import StockMovementCorrectionModal from "./StockMovementCorrectionModal";
 
 type StockMovementsTableProps = {
   data: StockMovement[];
@@ -42,6 +43,9 @@ const StockMovementsTable = memo(
     const { t } = useLingui();
     const { formatDate } = useDateFormatter();
     const { company } = useUser();
+    const permissions = usePermissions();
+    const [correctionTarget, setCorrectionTarget] =
+      useState<StockMovement | null>(null);
     const [people] = usePeople();
     const locations = useLocations();
     const locationsById = useMemo(
@@ -198,6 +202,18 @@ const StockMovementsTable = memo(
           }
         },
         {
+          accessorKey: "comment",
+          header: t`Comment`,
+          cell: ({ row }) => (
+            <span className="truncate text-muted-foreground">
+              {row.original.comment ?? ""}
+            </span>
+          ),
+          meta: {
+            icon: <LuMessageSquare />
+          }
+        },
+        {
           accessorKey: "postingDate",
           header: t`Posting Date`,
           cell: (item) => formatDate(item.getValue<string>()),
@@ -233,115 +249,40 @@ const StockMovementsTable = memo(
       ];
     }, [people, locations, locationsById, t, formatDate]);
 
-    // Group corrections under the movement they fix. Corrections whose original
-    // is on this page are hidden from the flat list and revealed by expanding the
-    // original (chevron), like the accounting/audit-log expandable rows. A
-    // correction whose original isn't on the page stays inline (still badged).
-    const { displayData, correctionsByOriginal } = useMemo(() => {
-      const byId = new Map(data.map((m) => [m.id, m]));
-
-      // Walk a correction up its `correctionOfItemLedgerId` chain to the topmost
-      // ancestor present on this page. Corrections can chain (a rectification of
-      // a rectification links to the prior correction, not the original), so we
-      // must resolve to the ULTIMATE root — otherwise a grandchild correction
-      // would be hidden but never re-shown under any visible row.
-      const rootOf = (m: StockMovement) => {
-        let cur = m;
-        const seen = new Set<string>();
-        while (
-          cur.correctionOfItemLedgerId &&
-          byId.has(cur.correctionOfItemLedgerId) &&
-          cur.id &&
-          !seen.has(cur.id)
-        ) {
-          seen.add(cur.id);
-          cur = byId.get(cur.correctionOfItemLedgerId) as StockMovement;
-        }
-        return cur;
-      };
-
-      const byOriginal = new Map<string, StockMovement[]>();
-      const nestedIds = new Set<string>();
-      for (const m of data) {
-        if (!m.correctionOfItemLedgerId) continue;
-        const root = rootOf(m);
-        // No on-page ancestor (root resolves back to itself) → leave inline.
-        if (!root.id || root.id === m.id) continue;
-        const list = byOriginal.get(root.id) ?? [];
-        list.push(m);
-        byOriginal.set(root.id, list);
-        if (m.id) nestedIds.add(m.id);
-      }
-      // Order each group oldest-first so a chain reads original → fix → fix.
-      for (const list of byOriginal.values()) {
-        list.sort((a, b) => (a.entryNumber ?? 0) - (b.entryNumber ?? 0));
-      }
-      return {
-        correctionsByOriginal: byOriginal,
-        displayData:
-          nestedIds.size === 0
-            ? data
-            : data.filter((m) => !(m.id && nestedIds.has(m.id)))
-      };
-    }, [data]);
-
-    const canExpandRow = useCallback(
-      (row: StockMovement) => !!row.id && correctionsByOriginal.has(row.id),
-      [correctionsByOriginal]
-    );
-
-    const renderExpandedRow = useCallback(
-      (row: StockMovement) => {
-        const corrections = row.id
-          ? correctionsByOriginal.get(row.id)
-          : undefined;
-        if (!corrections?.length) return null;
-        return (
-          <div className="pl-[52px] pr-4">
-            {corrections.map((c) => (
-              <div
-                key={c.id}
-                className="grid grid-cols-[16px_minmax(0,1fr)_auto] items-center gap-x-3 py-2 text-sm"
-              >
-                <LuCornerDownRight className="size-3.5 shrink-0 text-muted-foreground" />
-                <div className="flex min-w-0 items-center gap-2.5">
-                  <Badge variant="yellow" className="shrink-0">
-                    {t`Correction`}
-                  </Badge>
-                  <Enumerable value={c.entryType} />
-                  <QuantityDelta value={c.quantity} />
-                  <span className="truncate text-muted-foreground">
-                    {c.storageUnitName ?? c.locationName ?? "—"}
-                  </span>
-                </div>
-                <div className="flex shrink-0 items-center gap-2 text-muted-foreground">
-                  <span className="tabular-nums text-xs">
-                    {formatDate(c.postingDate)}
-                  </span>
-                  <EmployeeAvatar employeeId={c.createdBy} />
-                </div>
-              </div>
-            ))}
-          </div>
-        );
-      },
-      [correctionsByOriginal, formatDate, t]
+    const renderContextMenu = useCallback(
+      (row: StockMovement) => (
+        <MenuItem
+          disabled={!permissions.can("update", "inventory")}
+          onClick={() => setCorrectionTarget(row)}
+        >
+          <MenuIcon icon={<LuWrench />} />
+          {t`Correct Quantity`}
+        </MenuItem>
+      ),
+      [permissions, t]
     );
 
     return (
-      <Table<(typeof data)[number]>
-        data={displayData}
-        columns={columns}
-        count={count}
-        defaultColumnPinning={{
-          left: ["itemReadableId"]
-        }}
-        renderExpandedRow={renderExpandedRow}
-        canExpandRow={canExpandRow}
-        title={t`Inventory Movements`}
-        table="itemLedger"
-        withSavedView
-      />
+      <>
+        <Table<(typeof data)[number]>
+          data={data}
+          columns={columns}
+          count={count}
+          defaultColumnPinning={{
+            left: ["itemReadableId"]
+          }}
+          renderContextMenu={renderContextMenu}
+          title={t`Inventory Movements`}
+          table="itemLedger"
+          withSavedView
+        />
+        {correctionTarget && (
+          <StockMovementCorrectionModal
+            movement={correctionTarget}
+            onClose={() => setCorrectionTarget(null)}
+          />
+        )}
+      </>
     );
   }
 );

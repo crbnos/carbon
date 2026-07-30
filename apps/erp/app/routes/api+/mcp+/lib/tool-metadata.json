@@ -1,6 +1,6 @@
 {
-  "generated": "2026-07-29T14:23:29.561Z",
-  "totalTools": 1400,
+  "generated": "2026-07-30T18:22:37.513Z",
+  "totalTools": 1402,
   "modules": 15,
   "tools": [
     {
@@ -6151,6 +6151,57 @@
       }
     },
     {
+      "name": "inventory_getStockMovementEffectiveQuantity",
+      "module": "inventory",
+      "classification": "READ",
+      "description": "get stock movement effective quantity",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "itemLedgerId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "itemLedgerId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "itemLedgerId"
+        ]
+      }
+    },
+    {
+      "name": "inventory_correctStockMovement",
+      "module": "inventory",
+      "classification": "WRITE",
+      "description": "correct stock movement",
+      "paramCount": 2,
+      "serviceParams": [
+        "client",
+        "correction"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "correctedQuantity": {
+            "type": "number"
+          },
+          "comment": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    {
       "name": "inventory_getInventoryCounts",
       "module": "inventory",
       "classification": "READ",
@@ -6420,29 +6471,6 @@
         "required": [
           "inventoryCountId",
           "locationId"
-        ]
-      }
-    },
-    {
-      "name": "inventory_rectifyInventoryCount",
-      "module": "inventory",
-      "classification": "WRITE",
-      "description": "rectify inventory count",
-      "paramCount": 1,
-      "serviceParams": [
-        "db",
-        "args"
-      ],
-      "injectAuth": [
-        "companyId"
-      ],
-      "schema": {
-        "type": "object",
-        "properties": {
-          "args": {}
-        },
-        "required": [
-          "args"
         ]
       }
     },
@@ -7585,6 +7613,32 @@
         },
         "required": [
           "locationId"
+        ]
+      }
+    },
+    {
+      "name": "inventory_getUnresolvedPickingListLines",
+      "module": "inventory",
+      "classification": "READ",
+      "description": "get unresolved picking list lines",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "pickingListId",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "pickingListId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "pickingListId"
         ]
       }
     },

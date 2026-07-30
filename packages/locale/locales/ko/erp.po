@@ -554,6 +554,9 @@ msgstr "누적 기간(주)"
 msgid "Accumulation Period:"
 msgstr "누적 기간:"
 
+msgid "Acknowledge & finish"
+msgstr "확인 및 완료"
+
 msgid "Acquisition Cost"
 msgstr "취득원가"
 
@@ -2951,14 +2954,29 @@ msgstr "교육 이름 복사"
 msgid "Copy training unique identifier"
 msgstr "교육 고유 식별자 복사"
 
+msgid "Correct"
+msgstr "수정"
+
 msgid "Correct Answer"
 msgstr "정답"
 
 msgid "Correct Answers"
 msgstr "정답"
 
+msgid "Correct Quantity"
+msgstr "수량 수정"
+
+msgid "Correct Stock Movement"
+msgstr "재고 이동 수정"
+
+msgid "Corrected Quantity"
+msgstr "수정된 수량"
+
 msgid "Correction"
 msgstr "수정"
+
+msgid "Correction {correctionNumber}"
+msgstr "수정 {correctionNumber}"
 
 msgid "Corrections"
 msgstr "수정"
@@ -3673,7 +3691,7 @@ msgid "Decide what an operator sees if they try to issue a batch or serial that'
 msgstr "작업자가 이미 만료된 배치 또는 일련번호를 출고하려 할 때 표시할 내용을 결정하세요."
 
 msgid "Decide what happens when an operator presses Finish on the shop floor with material still unpicked."
-msgstr "작업자가 피킹되지 않은 자재가 남아 있을 때 현장에서 완료를 누르면 어떻게 되는지 결정합니다."
+msgstr "작업자가 아직 선택되지 않은 재료가 있는 상태에서 현장에서 완료를 누를 때 발생할 사항을 결정하십시오."
 
 msgid "Decimal Places"
 msgstr "소수 자릿수"
@@ -5019,6 +5037,9 @@ msgstr "일련번호를 입력하거나 스캔하세요"
 msgid "Enter PO number"
 msgstr "구매주문 번호 입력"
 
+msgid "Enter the quantity this movement should have been. An opposite movement for the difference is posted next to the original, in the original's time period."
+msgstr "이 이동이 있었어야 할 수량을 입력하십시오. 차이에 대한 반대 이동은 원본 옆의 원본의 시간 기간에 게시됩니다."
+
 msgid "Entered At Receipt"
 msgstr "입고 시 입력됨"
 
@@ -5766,6 +5787,9 @@ msgstr "온보딩 완료"
 msgid "Finish To"
 msgstr "종료 시점"
 
+msgid "Finish with material unpicked?"
+msgstr "선택되지 않은 자재로 완료하시겠습니까?"
+
 msgid "Finished goods"
 msgstr "완제품"
 
@@ -5785,7 +5809,7 @@ msgid "Finishing an incomplete pick"
 msgstr "불완전한 피킹 완료"
 
 msgid "Finishing is refused until every line is picked or marked Short."
-msgstr "모든 라인이 피킹되거나 부족으로 표시될 때까지 완료가 거부됩니다."
+msgstr "모든 라인이 선택되거나 부족으로 표시될 때까지 완료가 거부됩니다."
 
 msgid "First Name"
 msgstr "이름"
@@ -7049,6 +7073,9 @@ msgstr "기존 가격은 유지하고 새 품목만 추가"
 msgid "Keep Open"
 msgstr "열린 상태 유지"
 
+msgid "Keep picking"
+msgstr "계속 선택"
+
 msgid "Key"
 msgstr "키"
 
@@ -7295,6 +7322,9 @@ msgstr "전환 시점에 마지막으로 불러와 잔액이 최신 상태로 �
 
 msgid "Loading associated jobs..."
 msgstr "연관된 작업을 불러오는 중..."
+
+msgid "Loading current quantity…"
+msgstr "현재 수량 로드 중…"
 
 msgid "Loading item details..."
 msgstr "품목 세부정보를 불러오는 중..."
@@ -8987,7 +9017,7 @@ msgid "Operator must pick a different batch/serial."
 msgstr "작업자는 다른 배치/일련번호를 선택해야 합니다."
 
 msgid "Operator sees the missing items, can acknowledge & finish. The list is flagged Partial."
-msgstr "작업자는 누락된 항목을 보고 승인 및 완료할 수 있습니다. 목록이 부분으로 플래그됩니다."
+msgstr "작업자가 누락된 항목을 보고 승인하고 완료할 수 있습니다. 목록은 부분으로 표시됩니다."
 
 msgid "Operators"
 msgstr "작업자"
@@ -9588,14 +9618,14 @@ msgstr "전기 일시"
 msgid "Posted By"
 msgstr "전기자"
 
-msgid "Posted once, no rectifications."
-msgstr "1회 게시, 수정 없음."
+msgid "Posted once, corrected {corrections} times."
+msgstr "한 번 게시되었으며 {corrections}번 수정되었습니다."
 
-msgid "Posted once, rectified {rectifications} times."
-msgstr "1회 게시, {rectifications}회 수정됨."
+msgid "Posted once, corrected 1 time."
+msgstr "한 번 게시되었으며 1번 수정되었습니다."
 
-msgid "Posted once, rectified 1 time."
-msgstr "1회 게시, 1회 수정됨."
+msgid "Posted once, no corrections."
+msgstr "한 번 게시되었으며 수정되지 않았습니다."
 
 msgid "Posting"
 msgstr "전기"
@@ -9610,7 +9640,7 @@ msgid "Pre-filled for a new item when expiry is Fixed Duration."
 msgstr "유효기한이 고정 기간일 때 새 품목에 자동으로 미리 입력됩니다."
 
 msgid "Pre-select material without a picking list"
-msgstr "피킹 목록 없이 자재를 미리 선택"
+msgstr "선택 목록 없이 자재를 사전 선택"
 
 msgid "Preferred Supplier"
 msgstr "선호 공급업체"
@@ -10368,12 +10398,6 @@ msgstr "레코드"
 
 msgid "Recovery Period"
 msgstr "회수 기간"
-
-msgid "Rectification {rectifyNumber}"
-msgstr "수정 {rectifyNumber}"
-
-msgid "Rectify"
-msgstr "수정"
 
 msgid "Redirecting to verification page..."
 msgstr "인증 페이지로 이동 중..."
@@ -11706,6 +11730,9 @@ msgstr "현장 앱 및 일정 관리"
 msgid "Shop-floor configuration."
 msgstr "현장 설정."
 
+msgid "short"
+msgstr "짧음"
+
 msgid "Short"
 msgstr "짧게"
 
@@ -11771,6 +11798,9 @@ msgstr "이 이슈를 종료하기 전에 기록해야 하는 서명으로, 워�
 
 msgid "Signed in as {name}"
 msgstr "{name}(으)로 로그인됨"
+
+msgid "Signed quantity — negative for outbound movements"
+msgstr "서명된 수량 — 아웃바운드 이동의 경우 음수"
 
 msgid "Sites & locations"
 msgstr "사이트 및 위치"
@@ -12015,6 +12045,9 @@ msgstr "단계는 조립 지시사항에서 상속됩니다."
 
 msgid "Steps are inherited from the inspection plan."
 msgstr "단계는 검사 계획에서 상속됩니다."
+
+msgid "Stock movement corrected"
+msgstr "재고 이동 수정됨"
 
 msgid "Stock Transfer ID"
 msgstr "재고 이동 ID"
@@ -13228,6 +13261,9 @@ msgstr "이 이메일 주소는 공급업체에 발송되는 모든 이메일(�
 
 msgid "These email addresses will be automatically CC'd on all quote emails sent to customers."
 msgstr "이 이메일 주소는 고객에게 발송되는 모든 견적 이메일에 자동으로 참조(CC)됩니다."
+
+msgid "These items still have material to pick. Finishing now marks the list Partial."
+msgstr "이 항목들은 선택할 자재가 남아 있습니다. 지금 완료하면 목록이 부분으로 표시됩니다."
 
 msgid "These jobs have operations assigned to this work center:"
 msgstr "다음 작업에 이 작업장이 지정된 공정작업이 있습니다:"
@@ -14594,7 +14630,7 @@ msgid "When on, this rule fires for every target of its type. Assignment rows ar
 msgstr "켜면 이 규칙이 해당 유형의 모든 대상에 대해 적용됩니다. 배정 행은 무시되지만 보존됩니다."
 
 msgid "When on, tracked material is pre-selected by pick order (FEFO) even without a picking list. When off, operators start on the Scan tab."
-msgstr "켜졌을 때 추적된 자재는 피킹 목록이 없어도 피킹 순서(FEFO)로 미리 선택됩니다. 꺼졌을 때 작업자는 스캔 탭에서 시작합니다."
+msgstr "켜짐 상태에서 추적된 자재는 선택 목록이 없어도 선택 순서(FEFO)에 따라 사전 선택됩니다. 꺼짐 상태에서 작업자는 스캔 탭에서 시작합니다."
 
 msgid "When supplier responses are expected back; suppliers see this date on the RFQ portal and Carbon stops accepting late responses after it (configurable)."
 msgstr "공급업체 응답이 도착할 것으로 예상되는 시점입니다. 공급업체는 RFQ 포털에서 이 날짜를 확인하며, Carbon은 이 날짜 이후의 지연 응답을 받지 않습니다(설정 가능)."

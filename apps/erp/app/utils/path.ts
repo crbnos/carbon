@@ -1162,8 +1162,6 @@ export const path = {
     inventoryCountLineUpdate: `${x}/inventory-count/lines/update`,
     inventoryCountPost: (id: string) =>
       generatePath(`${x}/inventory-count/${id}/post`),
-    inventoryCountRectify: (id: string) =>
-      generatePath(`${x}/inventory-count/${id}/rectify`),
     inventoryCountReopen: (id: string) =>
       generatePath(`${x}/inventory-count/${id}/reopen`),
     inventoryCounts: `${x}/inventory/inventory-count`,
@@ -1972,6 +1970,8 @@ export const path = {
       generatePath(`${x}/inventory/shipping-methods/${id}`),
     shippingMethods: `${x}/inventory/shipping-methods`,
     splitIssueItem: `${x}/issue/item/split`,
+    stockMovementCorrect: (id: string) =>
+      generatePath(`${x}/inventory/stock-movements/${id}/correct`),
     stockMovements: `${x}/inventory/stock-movements`,
     stockTransfer: (id: string) => generatePath(`${x}/stock-transfer/${id}`),
     stockTransferComplete: (id: string) =>

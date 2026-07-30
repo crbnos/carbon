@@ -448,7 +448,7 @@ msgid "Finish Anyways"
 msgstr "Завершить в любом случае"
 
 msgid "Finish with material unpicked?"
-msgstr "Завершить с незавешенным материалом?"
+msgstr "Завершить с неподобранным материалом?"
 
 msgid "Forgot to Clock Out?"
 msgstr "Забыли отметить уход?"
@@ -526,7 +526,7 @@ msgid "Jobs"
 msgstr "Работы"
 
 msgid "Keep picking"
-msgstr "Продолжить комплектацию"
+msgstr "Продолжить сбор"
 
 msgid "Kit"
 msgstr "Комплект"
@@ -1176,7 +1176,7 @@ msgid "There are serial or batch tracked materials on the bill of material that 
 msgstr "В спецификации есть материалы с серийным или партионным учётом, которые не были полностью выданы. Завершение без выдачи может привести к некорректным записям прослеживаемости."
 
 msgid "These items still have material to pick. Finishing now marks the list Partial."
-msgstr "Эти позиции еще имеют материал для комплектации. Завершение отметит список как Частичный."
+msgstr "Эти позиции содержат материал для подбора. Завершение отметит список как Неполный."
 
 msgid "This lot is expired and can't be picked."
 msgstr "Эта партия истекла и не может быть выбрана."

@@ -201,6 +201,11 @@ enabled = true
 verify_jwt = true
 entrypoint = "./functions/post-inventory-adjustment/index.ts"
 
+[functions.correct-stock-movement]
+enabled = true
+verify_jwt = true
+entrypoint = "./functions/correct-stock-movement/index.ts"
+
 [functions.post-nonconformance]
 enabled = true
 verify_jwt = true

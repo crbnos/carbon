@@ -554,6 +554,9 @@ msgstr "Periodo di Accumulo (Settimane)"
 msgid "Accumulation Period:"
 msgstr "Periodo di Accumulo:"
 
+msgid "Acknowledge & finish"
+msgstr "Riconosci e termina"
+
 msgid "Acquisition Cost"
 msgstr "Costo di acquisizione"
 
@@ -2951,14 +2954,29 @@ msgstr "Copia nome della formazione"
 msgid "Copy training unique identifier"
 msgstr "Copia identificatore univoco della formazione"
 
+msgid "Correct"
+msgstr "Correggi"
+
 msgid "Correct Answer"
 msgstr "Risposta Corretta"
 
 msgid "Correct Answers"
 msgstr "Risposte Corrette"
 
+msgid "Correct Quantity"
+msgstr "Correggi Quantità"
+
+msgid "Correct Stock Movement"
+msgstr "Correggi Movimento di Magazzino"
+
+msgid "Corrected Quantity"
+msgstr "Quantità Corretta"
+
 msgid "Correction"
 msgstr "Correzione"
+
+msgid "Correction {correctionNumber}"
+msgstr "Correzione {correctionNumber}"
 
 msgid "Corrections"
 msgstr "Correzioni"
@@ -3673,7 +3691,7 @@ msgid "Decide what an operator sees if they try to issue a batch or serial that'
 msgstr "Decidi cosa vede un operatore se tenta di emettere un lotto o un numero seriale già scaduto."
 
 msgid "Decide what happens when an operator presses Finish on the shop floor with material still unpicked."
-msgstr "Decide cosa succede quando un operatore preme Fine nel reparto produzione con materiale ancora da prelevare."
+msgstr "Decidi cosa accade quando un operatore preme Fine in officina con materiale ancora non prelevato."
 
 msgid "Decimal Places"
 msgstr "Posizioni Decimali"
@@ -5019,6 +5037,9 @@ msgstr "Inserisci o scansiona il numero di serie"
 msgid "Enter PO number"
 msgstr "Inserisci numero PO"
 
+msgid "Enter the quantity this movement should have been. An opposite movement for the difference is posted next to the original, in the original's time period."
+msgstr "Inserisci la quantità che questo movimento avrebbe dovuto essere. Un movimento opposto per la differenza è registrato accanto all'originale, nel periodo temporale dell'originale."
+
 msgid "Entered At Receipt"
 msgstr "Inserito al Ricevimento"
 
@@ -5766,6 +5787,9 @@ msgstr "Completa l'onboarding"
 msgid "Finish To"
 msgstr "Finisci a"
 
+msgid "Finish with material unpicked?"
+msgstr "Terminare con materiale non prelevato?"
+
 msgid "Finished goods"
 msgstr "Finiture"
 
@@ -5785,7 +5809,7 @@ msgid "Finishing an incomplete pick"
 msgstr "Completare un prelievo incompleto"
 
 msgid "Finishing is refused until every line is picked or marked Short."
-msgstr "Il completamento è rifiutato finché ogni riga non è prelevata o contrassegnata come Carente."
+msgstr "Il completamento è rifiutato finché ogni riga non è prelevata o marcata come Esaurito."
 
 msgid "First Name"
 msgstr "Nome"
@@ -7049,6 +7073,9 @@ msgstr "Mantieni i prezzi esistenti, aggiungi solo i nuovi articoli"
 msgid "Keep Open"
 msgstr "Mantieni Aperto"
 
+msgid "Keep picking"
+msgstr "Continua a prelevare"
+
 msgid "Key"
 msgstr "Chiave"
 
@@ -7295,6 +7322,9 @@ msgstr "Caricato per ultimo, proprio al momento del cutover, quindi i saldi sono
 
 msgid "Loading associated jobs..."
 msgstr "Caricamento dei lavori associati..."
+
+msgid "Loading current quantity…"
+msgstr "Caricamento della quantità attuale…"
 
 msgid "Loading item details..."
 msgstr "Caricamento dettagli articolo..."
@@ -8987,7 +9017,7 @@ msgid "Operator must pick a different batch/serial."
 msgstr "L'operatore deve scegliere un lotto/seriale diverso."
 
 msgid "Operator sees the missing items, can acknowledge & finish. The list is flagged Partial."
-msgstr "L'operatore vede gli articoli mancanti, può confermare e completare. L'elenco è contrassegnato come Parziale."
+msgstr "L'operatore vede gli articoli mancanti, può riconoscere e completare. L'elenco è contrassegnato come Parziale."
 
 msgid "Operators"
 msgstr "Operatori"
@@ -9588,14 +9618,14 @@ msgstr "Pubblicato il"
 msgid "Posted By"
 msgstr "Pubblicato da"
 
-msgid "Posted once, no rectifications."
-msgstr "Pubblicato una volta, nessuna rettifica."
+msgid "Posted once, corrected {corrections} times."
+msgstr "Registrato una volta, corretto {corrections} volte."
 
-msgid "Posted once, rectified {rectifications} times."
-msgstr "Pubblicato una volta, rettificato {rectifications} volte."
+msgid "Posted once, corrected 1 time."
+msgstr "Registrato una volta, corretto 1 volta."
 
-msgid "Posted once, rectified 1 time."
-msgstr "Pubblicato una volta, rettificato 1 volta."
+msgid "Posted once, no corrections."
+msgstr "Registrato una volta, nessuna correzione."
 
 msgid "Posting"
 msgstr "Anticipi"
@@ -9610,7 +9640,7 @@ msgid "Pre-filled for a new item when expiry is Fixed Duration."
 msgstr "Pre-compilato per un nuovo articolo quando la scadenza è Durata Fissa."
 
 msgid "Pre-select material without a picking list"
-msgstr "Preseleziona il materiale senza un elenco di prelievo"
+msgstr "Pre-seleziona materiale senza elenco di prelievo"
 
 msgid "Preferred Supplier"
 msgstr "Fornitore Preferito"
@@ -10368,12 +10398,6 @@ msgstr "Registri"
 
 msgid "Recovery Period"
 msgstr "Registrare"
-
-msgid "Rectification {rectifyNumber}"
-msgstr "Rettifica {rectifyNumber}"
-
-msgid "Rectify"
-msgstr "Rettificare"
 
 msgid "Redirecting to verification page..."
 msgstr "Reindirizzamento alla pagina di verifica..."
@@ -11706,6 +11730,9 @@ msgstr "App del reparto e pianificazione"
 msgid "Shop-floor configuration."
 msgstr "Configurazione del reparto di produzione."
 
+msgid "short"
+msgstr "breve"
+
 msgid "Short"
 msgstr "Carente"
 
@@ -11771,6 +11798,9 @@ msgstr "Autorizzazioni che devono essere registrate prima che questo problema po
 
 msgid "Signed in as {name}"
 msgstr "Accesso effettuato come {name}"
+
+msgid "Signed quantity — negative for outbound movements"
+msgstr "Quantità firmata — negativa per i movimenti in uscita"
 
 msgid "Sites & locations"
 msgstr "Siti e ubicazioni"
@@ -12015,6 +12045,9 @@ msgstr "I passaggi vengono ereditati dalle istruzioni di montaggio."
 
 msgid "Steps are inherited from the inspection plan."
 msgstr "I passaggi sono ereditati dal piano di ispezione."
+
+msgid "Stock movement corrected"
+msgstr "Movimento di magazzino corretto"
 
 msgid "Stock Transfer ID"
 msgstr "ID Trasferimento Magazzino"
@@ -13228,6 +13261,9 @@ msgstr "Questi indirizzi email verranno automaticamente messi in CC su tutte le 
 
 msgid "These email addresses will be automatically CC'd on all quote emails sent to customers."
 msgstr "Questi indirizzi email verranno automaticamente messi in CC su tutte le email di preventivo inviate ai clienti."
+
+msgid "These items still have material to pick. Finishing now marks the list Partial."
+msgstr "Questi articoli hanno ancora materiale da prelevare. Se termino ora, l'elenco sarà contrassegnato come Parziale."
 
 msgid "These jobs have operations assigned to this work center:"
 msgstr "Questi lavori hanno operazioni assegnate a questo centro di lavoro:"
@@ -14594,7 +14630,7 @@ msgid "When on, this rule fires for every target of its type. Assignment rows ar
 msgstr "Quando attivato, questa regola si attiva per ogni target del suo tipo. Le righe di assegnazione vengono ignorate ma conservate."
 
 msgid "When on, tracked material is pre-selected by pick order (FEFO) even without a picking list. When off, operators start on the Scan tab."
-msgstr "Quando è attivo, il materiale tracciato è preselezionato per ordine di prelievo (FEFO) anche senza un elenco di prelievo. Quando è disattivato, gli operatori iniziano dalla scheda Scansiona."
+msgstr "Quando attivato, il materiale tracciato è pre-selezionato per ordine di prelievo (FEFO) anche senza un elenco di prelievo. Quando disattivato, gli operatori iniziano dalla scheda Scansione."
 
 msgid "When supplier responses are expected back; suppliers see this date on the RFQ portal and Carbon stops accepting late responses after it (configurable)."
 msgstr "Quando si prevede che i fornitori rispondano; i fornitori vedono questa data sul portale RFQ e Carbon smette di accettare risposte tardive dopo di essa (configurabile)."

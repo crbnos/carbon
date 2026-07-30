@@ -554,6 +554,9 @@ msgstr "Период накопления (недели)"
 msgid "Accumulation Period:"
 msgstr "Период накопления:"
 
+msgid "Acknowledge & finish"
+msgstr "Подтвердить и завершить"
+
 msgid "Acquisition Cost"
 msgstr "Первоначальная стоимость"
 
@@ -2951,14 +2954,29 @@ msgstr "Копировать название обучения"
 msgid "Copy training unique identifier"
 msgstr "Скопировать уникальный идентификатор обучения"
 
+msgid "Correct"
+msgstr "Исправить"
+
 msgid "Correct Answer"
 msgstr "Правильный ответ"
 
 msgid "Correct Answers"
 msgstr "Правильные ответы"
 
+msgid "Correct Quantity"
+msgstr "Исправить Количество"
+
+msgid "Correct Stock Movement"
+msgstr "Исправить Движение Запаса"
+
+msgid "Corrected Quantity"
+msgstr "Исправленное Количество"
+
 msgid "Correction"
 msgstr "Исправление"
+
+msgid "Correction {correctionNumber}"
+msgstr "Исправление {correctionNumber}"
 
 msgid "Corrections"
 msgstr "Исправления"
@@ -3673,7 +3691,7 @@ msgid "Decide what an operator sees if they try to issue a batch or serial that'
 msgstr "Решите, что видит оператор при попытке выдать партию или серийный номер, срок действия которого уже истек."
 
 msgid "Decide what happens when an operator presses Finish on the shop floor with material still unpicked."
-msgstr "Решите, что происходит, когда оператор нажимает кнопку Завершить на производстве с остающимся неподобранным материалом."
+msgstr "Решите, что произойдет, когда оператор нажмет кнопку 'Завершить' на производстве с неподобранным материалом."
 
 msgid "Decimal Places"
 msgstr "Десятичные разряды"
@@ -5019,6 +5037,9 @@ msgstr "Введите или отсканируйте серийный номе
 msgid "Enter PO number"
 msgstr "Введите номер ПО"
 
+msgid "Enter the quantity this movement should have been. An opposite movement for the difference is posted next to the original, in the original's time period."
+msgstr "Введите количество, которое должно было быть в этом движении. Противоположное движение для разницы размещается рядом с оригинальным в его временном периоде."
+
 msgid "Entered At Receipt"
 msgstr "Введено при получении"
 
@@ -5766,6 +5787,9 @@ msgstr "Завершить адаптацию"
 msgid "Finish To"
 msgstr "Завершить в"
 
+msgid "Finish with material unpicked?"
+msgstr "Завершить с неподобранным материалом?"
+
 msgid "Finished goods"
 msgstr "Отделки"
 
@@ -5785,7 +5809,7 @@ msgid "Finishing an incomplete pick"
 msgstr "Завершение неполного подбора"
 
 msgid "Finishing is refused until every line is picked or marked Short."
-msgstr "Завершение отклоняется до тех пор, пока каждая строка не будет подобрана или отмечена как Короткая."
+msgstr "Завершение отклоняется до тех пор, пока каждая строка не будет подобрана или отмечена как 'Недостаточно'."
 
 msgid "First Name"
 msgstr "Имя"
@@ -7049,6 +7073,9 @@ msgstr "Сохранить существующие цены, добавить �
 msgid "Keep Open"
 msgstr "Оставить открытым"
 
+msgid "Keep picking"
+msgstr "Продолжить подбор"
+
 msgid "Key"
 msgstr "Ключ"
 
@@ -7295,6 +7322,9 @@ msgstr "Загружается в последнюю очередь, прямо 
 
 msgid "Loading associated jobs..."
 msgstr "Загрузка связанных заданий..."
+
+msgid "Loading current quantity…"
+msgstr "Загрузка текущего количества…"
 
 msgid "Loading item details..."
 msgstr "Загрузка деталей товара..."
@@ -8987,7 +9017,7 @@ msgid "Operator must pick a different batch/serial."
 msgstr "Оператор должен выбрать другую партию/серию."
 
 msgid "Operator sees the missing items, can acknowledge & finish. The list is flagged Partial."
-msgstr "Оператор видит отсутствующие позиции, может подтвердить и завершить. Список отмечен как Частичный."
+msgstr "Оператор видит отсутствующие товары, может подтвердить и завершить. Список помечен как 'Частично'."
 
 msgid "Operators"
 msgstr "Операторы"
@@ -9232,7 +9262,7 @@ msgid "Part Supersession"
 msgstr "Замена детали"
 
 msgid "Partial"
-msgstr "Частичный"
+msgstr "Частично"
 
 msgid "Partner"
 msgstr "Партнер"
@@ -9588,14 +9618,14 @@ msgstr "Опубликовано в"
 msgid "Posted By"
 msgstr "Опубликовано"
 
-msgid "Posted once, no rectifications."
-msgstr "Опубликовано один раз, без исправлений."
+msgid "Posted once, corrected {corrections} times."
+msgstr "Опубликовано один раз, исправлено {corrections} раз(а)."
 
-msgid "Posted once, rectified {rectifications} times."
-msgstr "Опубликовано один раз, исправлено {rectifications} раз(а)."
-
-msgid "Posted once, rectified 1 time."
+msgid "Posted once, corrected 1 time."
 msgstr "Опубликовано один раз, исправлено 1 раз."
+
+msgid "Posted once, no corrections."
+msgstr "Опубликовано один раз, без исправлений."
 
 msgid "Posting"
 msgstr "Авансовые платежи"
@@ -9610,7 +9640,7 @@ msgid "Pre-filled for a new item when expiry is Fixed Duration."
 msgstr "Предварительно заполняется для нового товара, когда срок действия установлен как Фиксированная продолжительность."
 
 msgid "Pre-select material without a picking list"
-msgstr "Предварительно выбранный материал без списка подбора"
+msgstr "Предварительно выбрать материал без списка подбора"
 
 msgid "Preferred Supplier"
 msgstr "Предпочитаемый поставщик"
@@ -10368,12 +10398,6 @@ msgstr "Записи"
 
 msgid "Recovery Period"
 msgstr "Зарегистрировать"
-
-msgid "Rectification {rectifyNumber}"
-msgstr "Исправление {rectifyNumber}"
-
-msgid "Rectify"
-msgstr "Исправить"
 
 msgid "Redirecting to verification page..."
 msgstr "Перенаправление на страницу проверки..."
@@ -11706,6 +11730,9 @@ msgstr "Приложение цеха и планирование"
 msgid "Shop-floor configuration."
 msgstr "Конфигурация цеха."
 
+msgid "short"
+msgstr "Краткий"
+
 msgid "Short"
 msgstr "Недостача"
 
@@ -11771,6 +11798,9 @@ msgstr "Утверждения, которые должны быть запис�
 
 msgid "Signed in as {name}"
 msgstr "Вы вошли как {name}"
+
+msgid "Signed quantity — negative for outbound movements"
+msgstr "Подписанное количество — отрицательное для исходящих движений"
 
 msgid "Sites & locations"
 msgstr "Объекты и местоположения"
@@ -12015,6 +12045,9 @@ msgstr "Этапы наследуются из инструкции по сбо�
 
 msgid "Steps are inherited from the inspection plan."
 msgstr "Этапы наследуются из плана контроля."
+
+msgid "Stock movement corrected"
+msgstr "Движение запаса исправлено"
 
 msgid "Stock Transfer ID"
 msgstr "ID передачи запасов"
@@ -13228,6 +13261,9 @@ msgstr "Эти адреса электронной почты будут авт�
 
 msgid "These email addresses will be automatically CC'd on all quote emails sent to customers."
 msgstr "Эти адреса электронной почты будут автоматически добавлены в копию на все письма с предложениями, отправляемые клиентам."
+
+msgid "These items still have material to pick. Finishing now marks the list Partial."
+msgstr "Эти позиции все еще содержат материал для подбора. Завершение сейчас отметит список как Неполный."
 
 msgid "These jobs have operations assigned to this work center:"
 msgstr "Эти задания имеют операции, назначенные этому рабочему центру:"
@@ -14594,7 +14630,7 @@ msgid "When on, this rule fires for every target of its type. Assignment rows ar
 msgstr "Когда включено, это правило срабатывает для каждой цели его типа. Строки назначения игнорируются, но сохраняются."
 
 msgid "When on, tracked material is pre-selected by pick order (FEFO) even without a picking list. When off, operators start on the Scan tab."
-msgstr "Когда включено, отслеживаемый материал предварительно выбирается по порядку подбора (FEFO) даже без списка подбора. Когда отключено, операторы начинают со вкладки Сканирование."
+msgstr "Когда включено, отслеживаемый материал предварительно выбирается по порядку подбора (FEFO) даже без списка подбора. Когда отключено, операторы начинают со вкладки 'Сканирование'."
 
 msgid "When supplier responses are expected back; suppliers see this date on the RFQ portal and Carbon stops accepting late responses after it (configurable)."
 msgstr "Когда ожидается ответ поставщиков; поставщики видят эту дату на портале RFQ, и Carbon перестает принимать поздние ответы после нее (настраивается)."

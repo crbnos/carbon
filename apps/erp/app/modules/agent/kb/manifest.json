@@ -690,6 +690,7 @@
         "Locations and storage units",
         "On hand is a ledger",
         "Movements",
+        "Correcting a movement",
         "Value",
         "Related",
         "Troubleshooting",
@@ -697,6 +698,9 @@
         "\"Serial number not found\"",
         "\"Multiple tracked entities in this storage unit — select a specific row to adjust\"",
         "\"Cannot edit expiry of a consumed tracked entity\"",
+        "\"The original movement's accounting period is closed — its movements can no longer be corrected.\"",
+        "\"Corrected quantity matches the current effective quantity — nothing to correct\"",
+        "\"Corrections on serial-tracked items must be whole numbers\"",
         "Storage unit hierarchy errors"
       ]
     },
@@ -718,7 +722,6 @@
         "\"Only a confirmed (pending) count can be made effective\"",
         "\"Only a draft count can be confirmed\"",
         "\"Only a pending count can be reopened\"",
-        "\"Only a posted count can be rectified\"",
         "\"Inventory count is no longer pending\"",
         "No journal was written for the post"
       ]
