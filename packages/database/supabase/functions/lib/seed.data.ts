@@ -225,7 +225,7 @@ export const sequences = [
     name: "Lease",
     prefix: "LSE",
     suffix: null,
-    next: 0,
+    next: 1,
     size: 6,
     step: 1
   },
@@ -234,7 +234,7 @@ export const sequences = [
     name: "Lease Run",
     prefix: "LR",
     suffix: null,
-    next: 0,
+    next: 1,
     size: 6,
     step: 1
   },

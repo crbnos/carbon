@@ -444,7 +444,13 @@ CROSS JOIN (
     ('6130', 'Variable Lease Expense',        'Operating Expenses',          'Expense',                'Income Statement', 'Expense'),
     ('6330', 'ROU Amortization Expense',      'Depreciation & Amortization', 'Other Expense',          'Income Statement', 'Expense')
 ) AS v("number", "name", parent_name, account_type, income_balance, "class")
-JOIN "account" parent
+-- LEFT JOIN so a leaf account is still created (ungrouped, NULL parentId) when a
+-- company group's chart of accounts lacks the expected parent group name. An
+-- inner join would silently drop the leaf, which then cascades to
+-- 20260730161700 seeding zero lease classes for that tenant (it joins these
+-- accounts by number). Mirrors the fixed-asset seed, which inserts with a NULL
+-- parent on miss rather than dropping the row.
+LEFT JOIN "account" parent
   ON parent."companyGroupId" = cg."id"
   AND parent."name" = v.parent_name
   AND parent."isGroup" = true

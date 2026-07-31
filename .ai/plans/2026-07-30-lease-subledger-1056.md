@@ -48,8 +48,16 @@ period-close (`20260702044133`) precedents. Conventions applied:
 - **Bare `NUMERIC`** everywhere — the `no-numeric-precision` conformance gate rejects
   `NUMERIC(x,y)` (spec's `NUMERIC(8,5)`/`NUMERIC(5,2)` stripped).
 - **RLS**: 4 policies/table. SELECT via `get_companies_with_employee_permission('accounting_view')`
-  (matches the fixed-asset sibling — financial subledger read); writes via
-  `accounting_create`/`update`/`delete`. Schema-qualified, `::text[]`.
+  — a deliberate, documented deviation from the default role-based SELECT.
+  `conventions-database.md` (§ RLS) explicitly allows a permission-scoped SELECT
+  variant, and every sensitive financial table in the accounting module gates read
+  on `accounting_view`, not company-wide role: `journal`
+  (`20260228000000_rls-refactor-3.sql`), `fixedAsset`
+  (`20260524143827_fixed-assets.sql`), and `costLedger`
+  (`20250201181148_rls-refactor.sql`). Lease subledger data is the same class of
+  sensitive financial data, so it follows that precedent rather than
+  `get_companies_with_employee_role()` (which would expose it to every employee).
+  Writes via `accounting_create`/`update`/`delete`. Schema-qualified, `::text[]`.
 - **Enum `ADD VALUE` isolated** in its own migration (can't share a txn with usage).
 
 ### Migration A1 — `20260730161500_lease-enums.sql`
@@ -107,7 +115,13 @@ Lessee **interest expense** reuses existing `7010` Interest Expense (no new acco
 - `pnpm --filter @carbon/checks test` (conformance — NUMERIC precision, RLS, etc.)
 - `pnpm --filter @carbon/checks clobbers`
 - `pnpm exec biome check` on changed files
-- `pnpm exec turbo run typecheck --filter=@carbon/database`
+- `pnpm run generate:types` **then** `pnpm exec turbo run typecheck --filter=@carbon/database`.
+  Per Lines 9-15 the committed `types.ts` is authored by hand here (regen is
+  unavailable in this env), so the `@carbon/database` typecheck only validates the
+  hand-written types against the schema — it is **not** a substitute for the
+  post-migration `generate:types` step, which must run once the migration is
+  applied on `main` before the PR B TS consumers can typecheck against the real
+  generated types.
 - Grep baseline: lease tables + `'Lease'` source value present in migrations.
 
 ---
