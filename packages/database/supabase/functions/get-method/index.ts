@@ -17,8 +17,7 @@ import {
     now,
     toCalendarDate,
 } from "npm:@internationalized/date";
-import { corsHeaders } from "../lib/headers.ts";
-import { corsPreflight } from "../lib/response.ts";
+import { corsPreflight, errorResponse, jsonResponse } from "../lib/response.ts";
 import {
     calculateQuoteLinePrices,
     getJobMethodTree,
@@ -6046,16 +6045,10 @@ serve(async (req: Request) => {
           }
         });
         if (newQuoteId) {
-          return new Response(
-            JSON.stringify({
-              success: true,
-              newQuoteId,
-            }),
-            {
-              headers: { ...corsHeaders, "Content-Type": "application/json" },
-              status: 200,
-            }
-          );
+          return jsonResponse({
+            success: true,
+            newQuoteId,
+          });
         }
         break;
       }
@@ -6063,21 +6056,11 @@ serve(async (req: Request) => {
         throw new Error(`Invalid type  ${type}`);
     }
 
-    return new Response(
-      JSON.stringify({
-        success: true,
-      }),
-      {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200,
-      }
-    );
-  } catch (err) {
-    console.error(err);
-    return new Response(JSON.stringify(err), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 500,
+    return jsonResponse({
+      success: true,
     });
+  } catch (err) {
+    return errorResponse(err, 500);
   }
 });
 

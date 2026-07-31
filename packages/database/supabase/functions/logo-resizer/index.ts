@@ -9,8 +9,7 @@ import {
   Percentage,
 } from "npm:@imagemagick/magick-wasm@0.0.30";
 
-import { corsHeaders } from "../lib/headers.ts";
-import { corsPreflight } from "../lib/response.ts";
+import { corsPreflight, errorResponse, jsonResponse } from "../lib/response.ts";
 
 const wasmBytes = await Deno.readFile(
   new URL(
@@ -119,14 +118,8 @@ serve(async (req: Request) => {
       });
     });
 
-    return new Response(
-      JSON.stringify({ monoPng, gfa, widthDots: outW, heightDots: outH }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return jsonResponse({ monoPng, gfa, widthDots: outW, heightDots: outH });
   } catch (err) {
-    return new Response(JSON.stringify({ error: (err as Error).message }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 500,
-    });
+    return errorResponse(err, 500);
   }
 });

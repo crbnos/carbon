@@ -4,8 +4,7 @@ import { z } from "npm:zod@^3.24.1";
 import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
 import { requirePermissions } from "../lib/supabase.ts";
 
-import { corsHeaders } from "../lib/headers.ts";
-import { corsPreflight } from "../lib/response.ts";
+import { corsPreflight, errorResponse } from "../lib/response.ts";
 
 const pool = getConnectionPool(1);
 const db = getDatabaseClient<DB>(pool);
@@ -62,24 +61,10 @@ serve(async (req: Request) => {
       case "executePick":
       case "completeStockTransfer":
       default:
-        return new Response(
-          JSON.stringify({ error: "Invalid operation type" }),
-          {
-            status: 400,
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-          }
-        );
+        return errorResponse("Invalid operation type", 400);
     }
   } catch (error) {
     console.error("Error in pick:", error);
-    return new Response(
-      JSON.stringify({
-        error: error instanceof Error ? error.message : "Unknown error",
-      }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }
-    );
+    return errorResponse(error, 500);
   }
 });

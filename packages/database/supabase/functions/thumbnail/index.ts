@@ -3,7 +3,7 @@ import puppeteer from "https://deno.land/x/puppeteer@16.2.0/mod.ts";
 import { z } from "npm:zod@^3.24.1";
 import { Buffer } from "node:buffer";
 import { corsHeaders } from "../lib/headers.ts";
-import { corsPreflight } from "../lib/response.ts";
+import { corsPreflight, errorResponse } from "../lib/response.ts";
 
 import {
   ImageMagick,
@@ -91,11 +91,7 @@ serve(async (req: Request) => {
       status: 200,
     });
   } catch (err) {
-    console.error(err);
-    return new Response(JSON.stringify(err), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 400,
-    });
+    return errorResponse(err, 400);
   } finally {
     if (browser) {
       await browser.close();
