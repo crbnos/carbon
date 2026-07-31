@@ -116,9 +116,11 @@ export function ScopeView() {
       <Card
         className={cn(
           "p-5 border",
+          // dark: variant is required — the Card shell's base `dark:bg-card`
+          // otherwise overrides an un-prefixed tint in dark mode.
           agreed
-            ? "border-emerald-500/30 bg-emerald-500/5"
-            : "border-primary/30 bg-primary/5"
+            ? "border-emerald-500/30 bg-emerald-500/5 dark:bg-emerald-500/5"
+            : "border-primary/30 bg-primary/5 dark:bg-primary/5"
         )}
       >
         {agreed ? (

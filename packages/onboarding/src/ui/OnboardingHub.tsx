@@ -139,7 +139,7 @@ export function OnboardingHub({
       ) : null}
 
       {done === total ? (
-        <Card className="flex-row items-center gap-4 p-6 border border-emerald-500/30 bg-emerald-500/5 motion-safe:animate-in motion-safe:fade-in-50 motion-safe:zoom-in-95 motion-safe:duration-500">
+        <Card className="flex-row items-center gap-4 p-6 border border-emerald-500/30 bg-emerald-500/5 dark:bg-emerald-500/5 motion-safe:animate-in motion-safe:fade-in-50 motion-safe:zoom-in-95 motion-safe:duration-500">
           <div className="shrink-0 size-12 rounded-lg bg-emerald-500/15 flex items-center justify-center">
             <LuPartyPopper className="text-2xl text-emerald-600 dark:text-emerald-400" />
           </div>
