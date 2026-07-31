@@ -4,6 +4,11 @@ import {
   AlertTitle,
   Badge,
   Button,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
   cn,
   Modal,
   ModalBody,
@@ -186,278 +191,274 @@ function PhaseCard({
   }, [allDone, gateStatus, step.key, onToggleGate]);
 
   return (
-    <div
-      id={planAnchorId(step.key)}
-      className="rounded-lg border bg-card shadow-button-base overflow-hidden scroll-mt-6"
-    >
-      <div className="p-5 pb-4">
-        <div className="flex items-start gap-4">
-          <span
-            className={cn(
-              "shrink-0 size-9 rounded-lg border flex items-center justify-center text-sm font-semibold tabular-nums",
-              gatePassed
-                ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-400"
-                : gateInProgress
-                  ? "bg-primary/10 border-primary/30 text-primary"
-                  : "bg-background"
-            )}
-          >
-            {step.n}
-          </span>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-base font-semibold tracking-tight">
-                {i18n._(step.title)}
-              </span>
-            </div>
-            <div className="text-xs text-muted-foreground mt-1">
-              {i18n._(step.timing)}
-              {tier !== "self_serve"
-                ? ` · ${i18n._(ownerLeadLabel(ownerForStep(step, tier)))}`
-                : null}
-            </div>
-          </div>
-          {total > 0 ? (
-            <Badge
-              variant={allDone ? "green" : "outline"}
-              className="shrink-0 tabular-nums"
-            >
-              {done} / {total} <Trans>done</Trans>
-            </Badge>
-          ) : null}
-        </div>
-
-        {step.desc ? (
-          <p className="text-sm text-muted-foreground mt-3">
-            {i18n._(step.desc)}
-          </p>
-        ) : null}
-
-        {/* The separate "Learn" block would duplicate the per-task Docs/Video
-            badges when the phase's own tasks already carry links (Configure). */}
-        {stepTasks.some((t) => t.docsUrl || t.academyUrl) ? null : (
-          <PhaseResources step={step} />
-        )}
-
-        {stepTasks.length ? (
-          <ul className="mt-4 flex flex-col gap-1">
-            {stepTasks.map((task) => {
-              const status = taskStatus(task, map);
-              const isDone = status === "done";
-              const isProg = status === "prog";
-              // Setup-Map-derived tasks have no manual tick of their own — the
-              // Setup Map is where the work actually happens.
-              const fromSetupMap = !!task.setupKeys?.length;
-              const checkbox = (
-                <span
-                  className={cn(
-                    "shrink-0 mt-0.5 size-4 rounded border flex items-center justify-center transition-colors",
-                    isDone
-                      ? "bg-emerald-500 border-emerald-500 text-white"
-                      : isProg
-                        ? "bg-primary/15 border-primary"
-                        : "bg-card border-input"
-                  )}
-                >
-                  {isDone ? <LuCheck className="size-3" /> : null}
-                </span>
-              );
-              const label = (
-                <span className="min-w-0 flex flex-col">
-                  <span
-                    className={cn(
-                      "text-sm truncate",
-                      isDone && "line-through text-muted-foreground"
-                    )}
-                  >
-                    {i18n._(task.label)}
-                  </span>
-                  {task.hint ? (
-                    <span className="text-xs text-muted-foreground truncate">
-                      {i18n._(task.hint)}
-                    </span>
-                  ) : null}
-                </span>
-              );
-
-              // Setup rows aren't tickable here — they check themselves off as
-              // their Setup Map rows are configured, so they get the derived
-              // ring (never a checkbox) and the row opens the Setup Map, with
-              // the module's Docs/Video links inline. An <a> can't nest in a
-              // <button>, so these use a flex row of separate controls.
-              if (fromSetupMap) {
-                const setupProgress = taskSetupProgress(task, map);
-                const taskName = i18n._(task.label);
-                return (
-                  <li
-                    key={task.key}
-                    className="group flex items-start gap-3 rounded-lg px-2 py-1.5 hover:bg-muted/50 transition-colors"
-                  >
-                    <DerivedStatus
-                      status={isDone ? "done" : isProg ? "prog" : "todo"}
-                      fraction={
-                        setupProgress.total > 0
-                          ? setupProgress.done / setupProgress.total
-                          : undefined
-                      }
-                      tooltip={
-                        isDone
-                          ? t`"${taskName}" is done — all ${setupProgress.total} of its Setup Map items are configured.`
-                          : t`"${taskName}" checks itself off once its ${setupProgress.total} Setup Map items are marked "Configured" — ${setupProgress.done} of ${setupProgress.total} so far.`
-                      }
-                      className="size-4 mt-0.5"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => onOpenSetupMap?.(setupAnchorId(task.key))}
-                      title={t`Open the Setup Map`}
-                      className="flex items-start gap-3 min-w-0 flex-1 text-left"
-                    >
-                      {label}
-                    </button>
-                    <div className="shrink-0 flex items-center gap-2 text-xs mt-0.5">
-                      {task.docsUrl ? (
-                        <LearnLink
-                          href={task.docsUrl}
-                          icon={<LuFileText className="size-3" />}
-                        >
-                          <Trans>Docs</Trans>
-                        </LearnLink>
-                      ) : null}
-                      {task.academyUrl ? (
-                        <LearnLink
-                          href={task.academyUrl}
-                          icon={<LuPlay className="size-3" />}
-                        >
-                          <Trans>Video</Trans>
-                        </LearnLink>
-                      ) : null}
-                    </div>
-                  </li>
-                );
-              }
-
-              return (
-                <li key={task.key}>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      onToggleTask(
-                        taskKey(task.key),
-                        "task",
-                        isDone ? "todo" : "done"
-                      )
-                    }
-                    className="group w-full flex items-start gap-3 rounded-lg px-2 py-1.5 text-left hover:bg-muted/50 transition-colors"
-                  >
-                    {checkbox}
-                    {label}
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
-        ) : null}
-      </div>
-
-      <div
-        className={cn(
-          "px-5 py-3 border-t text-xs flex items-center gap-3 transition-colors",
-          gatePassed
-            ? "bg-emerald-500/5"
-            : gateInProgress
-              ? "bg-primary/5"
-              : "bg-card"
-        )}
-      >
-        <div className="min-w-0 flex-1">
-          <span className="text-muted-foreground">
-            <Trans>Checkpoint ·</Trans>{" "}
-          </span>
-          <span className="font-medium">{i18n._(step.gate)}</span>
-          {gateInProgress ? (
-            // In-progress blue app-wide (BoP status language), not theme
-            // primary — primary is near-black on neutral themes.
-            <Badge variant="blue" className="ml-2">
-              <Trans>In progress</Trans>
-            </Badge>
-          ) : null}
-        </div>
-        <button
-          type="button"
-          onClick={() => {
-            if (gatePassed) {
-              onToggleGate(step.key, "todo");
-            } else if (openTasks.length > 0) {
-              setConfirmOpen(true);
-            } else {
-              onToggleGate(step.key, "done");
-            }
-          }}
+    <Card id={planAnchorId(step.key)} className="overflow-hidden scroll-mt-6">
+      <CardHeader className="flex-row items-start gap-4 px-5 py-4 border-b border-border">
+        <span
           className={cn(
-            "shrink-0 inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xxs font-medium transition-colors active:scale-[0.97]",
+            "shrink-0 size-9 rounded-lg border flex items-center justify-center text-sm font-semibold tabular-nums",
             gatePassed
-              ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20"
-              : "bg-card hover:border-primary hover:text-primary"
+              ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-400"
+              : gateInProgress
+                ? "bg-primary/10 border-primary/30 text-primary"
+                : "bg-background"
           )}
         >
-          {gatePassed ? (
-            <>
-              <LuCheck className="size-3" />
-              <Trans>Passed</Trans>
-              <span className="opacity-60">·</span>
-              <LuRotateCcw className="size-3" />
-              <Trans>Reopen</Trans>
-            </>
-          ) : (
-            t`Mark checkpoint passed`
-          )}
-        </button>
-      </div>
+          {step.n}
+        </span>
+        <div className="flex-1 min-w-0">
+          <CardTitle className="text-base font-semibold tracking-tight line-clamp-none">
+            {i18n._(step.title)}
+          </CardTitle>
+          <CardDescription className="mt-1">
+            {i18n._(step.timing)}
+            {tier !== "self_serve"
+              ? ` · ${i18n._(ownerLeadLabel(ownerForStep(step, tier)))}`
+              : null}
+          </CardDescription>
+        </div>
+        {total > 0 ? (
+          <Badge
+            variant={allDone ? "green" : "outline"}
+            className="shrink-0 tabular-nums"
+          >
+            {done} / {total} <Trans>done</Trans>
+          </Badge>
+        ) : null}
+      </CardHeader>
+      <CardContent className="p-0 border-0">
+        <div className="px-5 py-4">
+          {step.desc ? (
+            <p className="text-sm text-muted-foreground">{i18n._(step.desc)}</p>
+          ) : null}
 
-      <Modal open={confirmOpen} onOpenChange={setConfirmOpen}>
-        <ModalContent>
-          <ModalHeader>
-            <ModalTitle>{t`Mark "${i18n._(step.gate)}" as passed?`}</ModalTitle>
-            <ModalDescription>
-              <Trans>
-                Are you sure you want to pass this checkpoint? The{" "}
-                {i18n._(step.title)} phase still has unfinished tasks.
-              </Trans>
-            </ModalDescription>
-          </ModalHeader>
-          <ModalBody>
-            <Alert variant="destructive">
-              <LuTriangleAlert className="h-4 w-4" />
-              <AlertTitle>
-                <Trans>Tasks still open</Trans>
-              </AlertTitle>
-              <AlertDescription>
-                <Trans>The following tasks are not done yet:</Trans>
-                <ul className="list-disc py-2 pl-4">
-                  {openTasks.map((task) => (
-                    <li key={task.key}>{i18n._(task.label)}</li>
-                  ))}
-                </ul>
-              </AlertDescription>
-            </Alert>
-          </ModalBody>
-          <ModalFooter>
-            <Button variant="secondary" onClick={() => setConfirmOpen(false)}>
-              <Trans>Cancel</Trans>
-            </Button>
-            <Button
-              onClick={() => {
-                setConfirmOpen(false);
+          {/* The separate "Learn" block would duplicate the per-task Docs/Video
+            badges when the phase's own tasks already carry links (Configure). */}
+          {stepTasks.some((t) => t.docsUrl || t.academyUrl) ? null : (
+            <PhaseResources step={step} />
+          )}
+
+          {stepTasks.length ? (
+            <ul className="mt-4 flex flex-col gap-1">
+              {stepTasks.map((task) => {
+                const status = taskStatus(task, map);
+                const isDone = status === "done";
+                const isProg = status === "prog";
+                // Setup-Map-derived tasks have no manual tick of their own — the
+                // Setup Map is where the work actually happens.
+                const fromSetupMap = !!task.setupKeys?.length;
+                const checkbox = (
+                  <span
+                    className={cn(
+                      "shrink-0 mt-0.5 size-4 rounded border flex items-center justify-center transition-colors",
+                      isDone
+                        ? "bg-emerald-500 border-emerald-500 text-white"
+                        : isProg
+                          ? "bg-primary/15 border-primary"
+                          : "bg-card border-input"
+                    )}
+                  >
+                    {isDone ? <LuCheck className="size-3" /> : null}
+                  </span>
+                );
+                const label = (
+                  <span className="min-w-0 flex flex-col">
+                    <span
+                      className={cn(
+                        "text-sm truncate",
+                        isDone && "line-through text-muted-foreground"
+                      )}
+                    >
+                      {i18n._(task.label)}
+                    </span>
+                    {task.hint ? (
+                      <span className="text-xs text-muted-foreground truncate">
+                        {i18n._(task.hint)}
+                      </span>
+                    ) : null}
+                  </span>
+                );
+
+                // Setup rows aren't tickable here — they check themselves off as
+                // their Setup Map rows are configured, so they get the derived
+                // ring (never a checkbox) and the row opens the Setup Map, with
+                // the module's Docs/Video links inline. An <a> can't nest in a
+                // <button>, so these use a flex row of separate controls.
+                if (fromSetupMap) {
+                  const setupProgress = taskSetupProgress(task, map);
+                  const taskName = i18n._(task.label);
+                  return (
+                    <li
+                      key={task.key}
+                      className="group flex items-start gap-3 rounded-lg px-2 py-1.5 hover:bg-muted/50 transition-colors"
+                    >
+                      <DerivedStatus
+                        status={isDone ? "done" : isProg ? "prog" : "todo"}
+                        fraction={
+                          setupProgress.total > 0
+                            ? setupProgress.done / setupProgress.total
+                            : undefined
+                        }
+                        tooltip={
+                          isDone
+                            ? t`"${taskName}" is done — all ${setupProgress.total} of its Setup Map items are configured.`
+                            : t`"${taskName}" checks itself off once its ${setupProgress.total} Setup Map items are marked "Configured" — ${setupProgress.done} of ${setupProgress.total} so far.`
+                        }
+                        className="size-4 mt-0.5"
+                      />
+                      <button
+                        type="button"
+                        onClick={() =>
+                          onOpenSetupMap?.(setupAnchorId(task.key))
+                        }
+                        title={t`Open the Setup Map`}
+                        className="flex items-start gap-3 min-w-0 flex-1 text-left"
+                      >
+                        {label}
+                      </button>
+                      <div className="shrink-0 flex items-center gap-2 text-xs mt-0.5">
+                        {task.docsUrl ? (
+                          <LearnLink
+                            href={task.docsUrl}
+                            icon={<LuFileText className="size-3" />}
+                          >
+                            <Trans>Docs</Trans>
+                          </LearnLink>
+                        ) : null}
+                        {task.academyUrl ? (
+                          <LearnLink
+                            href={task.academyUrl}
+                            icon={<LuPlay className="size-3" />}
+                          >
+                            <Trans>Video</Trans>
+                          </LearnLink>
+                        ) : null}
+                      </div>
+                    </li>
+                  );
+                }
+
+                return (
+                  <li key={task.key}>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        onToggleTask(
+                          taskKey(task.key),
+                          "task",
+                          isDone ? "todo" : "done"
+                        )
+                      }
+                      className="group w-full flex items-start gap-3 rounded-lg px-2 py-1.5 text-left hover:bg-muted/50 transition-colors"
+                    >
+                      {checkbox}
+                      {label}
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          ) : null}
+        </div>
+
+        <div
+          className={cn(
+            "px-5 py-3 border-t text-xs flex items-center gap-3 transition-colors",
+            gatePassed
+              ? "bg-emerald-500/5"
+              : gateInProgress
+                ? "bg-primary/5"
+                : "bg-card"
+          )}
+        >
+          <div className="min-w-0 flex-1">
+            <span className="text-muted-foreground">
+              <Trans>Checkpoint ·</Trans>{" "}
+            </span>
+            <span className="font-medium">{i18n._(step.gate)}</span>
+            {gateInProgress ? (
+              // In-progress blue app-wide (BoP status language), not theme
+              // primary — primary is near-black on neutral themes.
+              <Badge variant="blue" className="ml-2">
+                <Trans>In progress</Trans>
+              </Badge>
+            ) : null}
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              if (gatePassed) {
+                onToggleGate(step.key, "todo");
+              } else if (openTasks.length > 0) {
+                setConfirmOpen(true);
+              } else {
                 onToggleGate(step.key, "done");
-              }}
-            >
-              <Trans>Mark checkpoint passed</Trans>
-            </Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
-    </div>
+              }
+            }}
+            className={cn(
+              "shrink-0 inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xxs font-medium transition-colors active:scale-[0.97]",
+              gatePassed
+                ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20"
+                : "bg-card hover:border-primary hover:text-primary"
+            )}
+          >
+            {gatePassed ? (
+              <>
+                <LuCheck className="size-3" />
+                <Trans>Passed</Trans>
+                <span className="opacity-60">·</span>
+                <LuRotateCcw className="size-3" />
+                <Trans>Reopen</Trans>
+              </>
+            ) : (
+              t`Mark checkpoint passed`
+            )}
+          </button>
+        </div>
+
+        <Modal open={confirmOpen} onOpenChange={setConfirmOpen}>
+          <ModalContent>
+            <ModalHeader>
+              <ModalTitle>{t`Mark "${i18n._(step.gate)}" as passed?`}</ModalTitle>
+              <ModalDescription>
+                <Trans>
+                  Are you sure you want to pass this checkpoint? The{" "}
+                  {i18n._(step.title)} phase still has unfinished tasks.
+                </Trans>
+              </ModalDescription>
+            </ModalHeader>
+            <ModalBody>
+              <Alert variant="destructive">
+                <LuTriangleAlert className="h-4 w-4" />
+                <AlertTitle>
+                  <Trans>Tasks still open</Trans>
+                </AlertTitle>
+                <AlertDescription>
+                  <Trans>The following tasks are not done yet:</Trans>
+                  <ul className="list-disc py-2 pl-4">
+                    {openTasks.map((task) => (
+                      <li key={task.key}>{i18n._(task.label)}</li>
+                    ))}
+                  </ul>
+                </AlertDescription>
+              </Alert>
+            </ModalBody>
+            <ModalFooter>
+              <Button variant="secondary" onClick={() => setConfirmOpen(false)}>
+                <Trans>Cancel</Trans>
+              </Button>
+              <Button
+                onClick={() => {
+                  setConfirmOpen(false);
+                  onToggleGate(step.key, "done");
+                }}
+              >
+                <Trans>Mark checkpoint passed</Trans>
+              </Button>
+            </ModalFooter>
+          </ModalContent>
+        </Modal>
+      </CardContent>
+    </Card>
   );
 }
 
