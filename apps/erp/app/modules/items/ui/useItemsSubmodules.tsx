@@ -5,6 +5,7 @@ import {
   LuAxis3D,
   LuBeef,
   LuDessert,
+  LuFileCog,
   LuGitPullRequestArrow,
   LuGlassWater,
   LuGroup,
@@ -59,6 +60,11 @@ export default function useItemsSubmodules() {
           to: path.to.services,
           icon: <LuHeadphones />,
           table: "service"
+        },
+        {
+          name: t`Engineering Data`,
+          to: path.to.engineeringData,
+          icon: <LuFileCog />
         }
       ]
     },
