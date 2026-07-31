@@ -655,10 +655,17 @@ export type PrepaidScheduleEntry = {
 
 /**
  * Straight-line prepaid amortization schedule. Emits one entry per month:
- * `round(totalAmount / months, 2)` each, with the rounding remainder folded
- * into the FINAL entry so `Σ entries === totalAmount` exactly — the GL tie-out
- * (Σ remaining vs. the prepaid account balance) never drifts. `amortizationDate`
- * is the last day of each successive month starting from `startDate`'s month.
+ * `floor(totalAmount / months)` (in whole cents) each, with the leftover cents
+ * folded into the FINAL entry so `Σ entries === totalAmount` exactly — the GL
+ * tie-out (Σ remaining vs. the prepaid account balance) never drifts.
+ * `amortizationDate` is the last day of each successive month starting from
+ * `startDate`'s month.
+ *
+ * Allocation is done in integer cents with a FLOOR-based per-month amount so the
+ * final entry absorbs a non-negative remainder — never a negative one. (A
+ * round-based per-month can overshoot: e.g. `0.02` over 4 months rounds to
+ * `0.01/mo`, leaving `0.02 - 0.03 = -0.01` for the final entry. Flooring yields
+ * `0.00/mo` with `0.02` in the final entry instead.)
  *
  * Pure/DB-independent so it ships ahead of `generate:types`; the Phase 3
  * `createPrepaidSchedule` service precomputes `prepaidScheduleEntry` rows from
@@ -671,26 +678,26 @@ export function buildPrepaidScheduleEntries(
 ): PrepaidScheduleEntry[] {
   if (!Number.isInteger(months) || months <= 0) return [];
 
-  const total = Math.round(Number(totalAmount) * 100) / 100;
-  const perMonth = Math.round((total / months) * 100) / 100;
+  const totalCents = Math.round(Number(totalAmount) * 100);
+  const perMonthCents = Math.floor(totalCents / months);
   // Parse the date components directly (not via `new Date`) so the month/year
   // are timezone-independent — the same reason `getLastDayOfMonth` builds in UTC.
   const [year, month] = startDate.split("-").map(Number); // month is 1-based
 
   const entries: PrepaidScheduleEntry[] = [];
-  let allocated = 0;
+  let allocatedCents = 0;
   for (let i = 0; i < months; i++) {
     const monthIndex = month - 1 + i; // 0-based months from January of `year`
     const entryYear = year + Math.floor(monthIndex / 12);
     const entryMonth = ((monthIndex % 12) + 12) % 12; // 0-based
     const isLast = i === months - 1;
-    const amount = isLast
-      ? Math.round((total - allocated) * 100) / 100
-      : perMonth;
-    allocated = Math.round((allocated + amount) * 100) / 100;
+    // The final entry takes all remaining cents; every prior entry takes the
+    // floor amount, which is <= the average, so the remainder is never negative.
+    const amountCents = isLast ? totalCents - allocatedCents : perMonthCents;
+    allocatedCents += amountCents;
     entries.push({
       amortizationDate: getLastDayOfMonth(entryYear, entryMonth),
-      amount
+      amount: amountCents / 100
     });
   }
   return entries;

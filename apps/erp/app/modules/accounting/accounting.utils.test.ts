@@ -850,6 +850,16 @@ describe("buildPrepaidScheduleEntries", () => {
       { amortizationDate: "2026-03-31", amount: 499.99 }
     ]);
   });
+
+  it("never emits a negative final entry when the per-month floor is below the average", () => {
+    // 0.02 over 4 months: a round-based per-month gives 0.01/mo and leaves
+    // 0.02 - 0.03 = -0.01 for the final entry. Flooring gives 0.00/mo with the
+    // whole 0.02 in the final entry — every amount stays non-negative.
+    const entries = buildPrepaidScheduleEntries(0.02, 4, "2026-01-01");
+    expect(entries.map((e) => e.amount)).toEqual([0, 0, 0, 0.02]);
+    expect(entries.every((e) => e.amount >= 0)).toBe(true);
+    expect(sum(entries)).toBe(0.02);
+  });
 });
 
 // ---------------------------------------------------------------------------

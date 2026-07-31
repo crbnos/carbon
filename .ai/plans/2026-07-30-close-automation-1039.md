@@ -53,7 +53,15 @@ pnpm run generate:types  # regenerates packages/database/src/types.ts + function
 - `companySettings.depreciationProposalsEnabled BOOLEAN NOT NULL DEFAULT true`.
 - `purchaseInvoiceLine`: `isPrepaid` / `prepaidStartDate` / `prepaidMonths` + CHECK restricting prepaid to `'G/L Account'` lines.
 - Tables (composite PK `("id","companyId")`, company FK CASCADE, accounting-permission RLS × 4, indexes):
-  `prepaidSchedule`, `prepaidScheduleEntry`, `recurringJournalTemplate`, `recurringJournalTemplateLine`.
+  `prepaidSchedule`, `prepaidScheduleEntry`, `recurringJournalTemplate`, `recurringJournalTemplateLine`. All four
+  carry the full `createdBy`/`createdAt`/`updatedBy`/`updatedAt` audit set (`createdBy` NOT NULL, `*By` inline
+  `"user"("id")`) — including the two child tables, which the services populate.
+- **Composite tenant FKs** (mirrors `20260703143904_composite-tenant-fks.sql`): the account/journal references
+  are scoped by `companyId`, so a row in company A cannot point at another company's account/journal.
+  `account`/`journal` get a trivially-unique `UNIQUE ("id","companyId")` (id is already the PK) to serve as the
+  composite target; `prepaidSchedule.{prepaidAccountId,expenseAccountId}` and `recurringJournalTemplateLine.accountId`
+  → `account("id","companyId")` (RESTRICT); `prepaidScheduleEntry.journalId` → `journal("id","companyId")` with
+  PG15 column-list `ON DELETE SET NULL ("journalId")` (nulls only `journalId`, never the NOT NULL `companyId`).
 
 **Deliberately NOT in Phase 0 — the two `periodCloseTaskDefinition` rows.** Registering a definition whose
 `autoCheckKey` has no evaluator *fails closed*: `evaluateCloseChecklist`
@@ -121,17 +129,23 @@ export async function createDepreciationRunProposal(
 - `createPrepaidSchedule(client, { companyId, purchaseInvoiceId, purchaseInvoiceLineId, description, prepaidAccountId, expenseAccountId, totalAmount, startDate, months, createdBy })`
   — inserts `prepaidSchedule` + precomputes `months` `prepaidScheduleEntry` rows via
   **`buildPrepaidScheduleEntries(totalAmount, months, startDate)`** (✅ shipped in this PR — `accounting.utils.ts`,
-  tested): `round(totalAmount/months, 2)` each, remainder folded into the **final** entry so Σ = totalAmount
-  exactly; `amortizationDate` = last day of each month from `startDate`. This service just persists what the
-  helper returns.
+  tested): `floor(totalAmount/months)` whole cents each, leftover cents folded into the **final** entry so
+  Σ = totalAmount exactly and **no entry is ever negative** (floor-based, so the final remainder is non-negative);
+  `amortizationDate` = last day of each month from `startDate`. This service just persists what the helper returns.
+  Stamp `createdBy` on both the schedule and every entry row (the migration makes `createdBy` NOT NULL on both).
 - `getPrepaidSchedules(client, companyId, { status? })` — register rows with amortized-to-date (Σ entries with
   `journalId`) and remaining rollup; plus a GL tie-out helper: Σ remaining vs the prepaid account's GL balance
   at a period end.
 - `generatePrepaidAmortizationJournals(client, { companyId })` — for each `prepaidScheduleEntry` with
   `amortizationDate <= today` AND `journalId IS NULL`: draft one journal (`sourceType:'Prepaid Amortization'`,
   Debit `expenseAccountId` / Credit `prepaidAccountId`, dimensions copied from the source line), dated the
-  entry date. **Draft only** — posting (separate, human/approval) stamps `journalId` and completes the schedule
-  when the last entry posts. Idempotent via the unique `(companyId, scheduleId, amortizationDate)` entry key.
+  entry date, and **stamp `entry.journalId` with the draft's id in the SAME transaction as the draft insert.**
+  This is the durable duplicate guard: stamping `journalId` at draft time (not at posting) means the
+  `..._due_idx` partial index (`WHERE journalId IS NULL`) stops selecting the entry immediately, so an Inngest
+  retry cannot create a second Draft journal for the same entry. Posting stays a separate human/approval step;
+  whether a journal is Posted vs still Draft is read from the **journal's own status**, not inferred from
+  `journalId` being NULL — the schedule completes when the last entry's journal reaches Posted. Belt-and-braces:
+  the unique `(companyId, scheduleId, amortizationDate)` key still dedupes the entry rows themselves.
 - `cancelPrepaidSchedule(client, { id, companyId, userId })` — only when no entry has a `journalId`; sets
   `status='Cancelled'`.
 
@@ -153,7 +167,10 @@ month 12); manual AP invoice post with a prepaid line hits `prepaymentAccount`.
 `accounting.service.ts`:
 
 - `get/insert/update/deactivateRecurringJournalTemplate(...)` — header + lines CRUD (delete-and-reinsert lines
-  on update, per repo line-editor convention). Balance validated in the model (Phase 1).
+  on update, per repo line-editor convention). Balance validated in the model (Phase 1). Populate the audit
+  columns on **both** the template and its lines — the migration gives `recurringJournalTemplateLine` the full
+  `createdBy`/`createdAt`/`updatedBy`/`updatedAt` set (`createdBy` NOT NULL), so pass `createdBy` on insert and
+  `updatedBy` on the delete-and-reinsert update path.
 - `generateRecurringJournals(client, { companyId })` — for each `active` template with `nextRunDate <= today`
   and (`endDate IS NULL` OR `nextRunDate <= endDate`): draft a journal dated `nextRunDate`
   (`sourceType:'Recurring Journal'`, lines from template), then advance `nextRunDate` via
@@ -163,9 +180,13 @@ month 12); manual AP invoice post with a prepaid line hits `prepaymentAccount`.
 - `postDueJournalReversals(client, { companyId })` — for each Posted `journal` with `autoReverseOn <= today`
   and `reversedById IS NULL`: call the existing `reverseJournalEntry(client, id, {companyId, userId:'system'})`
   but dated `autoReverseOn` (not today — extend `reverseJournalEntry` with an optional `postingDate`, defaulting
-  to today, so existing callers are unaffected). Period rules: Open/Locked → post (reversal is an **accounting**
-  source; `getOrCreateAccountingPeriod(..., "accounting")` already allows Locked); Closed → skip + log, retry
-  next day (the `check_accounting_period_open` trigger backstops). Missing period → lazy-created as today.
+  to today, so existing callers are unaffected). **Resolve the period for the posting date, not today:** the
+  reversal is posted on `autoReverseOn` (a past-or-present catch-up date that can differ from today), so resolve/
+  lazily create the period covering **`autoReverseOn`** via `getOrCreateAccountingPeriod(autoReverseOn, "accounting")`
+  before posting — creating a period for *today* leaves the `autoReverseOn` period absent (or the trigger rejects
+  the row for a date outside any active period). Period rules keyed on the `autoReverseOn` period: Open/Locked →
+  post (reversal is an **accounting** source; the `"accounting"` arg already allows Locked); Closed → skip + log,
+  retry next day (the `check_accounting_period_open` trigger backstops the closed case).
 
 **Verify:** `pnpm --filter @carbon/jobs test` (frequency advance +1/+3/+12; endDate deactivation; reversal links
 both ways).

@@ -57,6 +57,31 @@ ALTER TABLE "purchaseInvoiceLine" ADD CONSTRAINT "purchaseInvoiceLine_prepaid_ch
     )
   );
 
+-- 4b. Composite-tenant-FK targets -------------------------------------------------
+-- The new tables below carry account/journal ids alongside their own companyId.
+-- A single-column FK to account("id") / journal("id") would let a row in company
+-- A reference an account/journal owned by company B (RLS scopes the row itself,
+-- not the parent it points at). To let the database reject that, the composite FK
+-- targets need a UNIQUE ("id", "companyId") — id alone is already the PK, so this
+-- is trivially unique. Mirrors 20260703143904_composite-tenant-fks.sql (which did
+-- the same for customer/supplier). Guarded so re-application is a no-op.
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint
+    WHERE conname = 'account_id_companyId_key' AND conrelid = '"account"'::regclass
+  ) THEN
+    ALTER TABLE "account" ADD CONSTRAINT "account_id_companyId_key" UNIQUE ("id", "companyId");
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint
+    WHERE conname = 'journal_id_companyId_key' AND conrelid = '"journal"'::regclass
+  ) THEN
+    ALTER TABLE "journal" ADD CONSTRAINT "journal_id_companyId_key" UNIQUE ("id", "companyId");
+  END IF;
+END $$;
+
 -- 5. Prepaid schedules (header) ----------------------------------------------------
 -- Amounts are base currency (journalLine.amount is already base) so schedules carry
 -- no FX exposure. prepaidAccountId is the resolved accountDefault.prepaymentAccount
@@ -69,8 +94,8 @@ CREATE TABLE IF NOT EXISTS "prepaidSchedule" (
   "purchaseInvoiceId" TEXT,
   "purchaseInvoiceLineId" TEXT,
   "description" TEXT NOT NULL,
-  "prepaidAccountId" TEXT NOT NULL REFERENCES "account"("id") ON DELETE RESTRICT ON UPDATE CASCADE,
-  "expenseAccountId" TEXT NOT NULL REFERENCES "account"("id") ON DELETE RESTRICT ON UPDATE CASCADE,
+  "prepaidAccountId" TEXT NOT NULL,
+  "expenseAccountId" TEXT NOT NULL,
   "totalAmount" NUMERIC NOT NULL,
   "startDate" DATE NOT NULL,
   "months" INTEGER NOT NULL CHECK ("months" > 0),
@@ -83,7 +108,12 @@ CREATE TABLE IF NOT EXISTS "prepaidSchedule" (
   "customFields" JSONB,
   CONSTRAINT "prepaidSchedule_pkey" PRIMARY KEY ("id", "companyId"),
   CONSTRAINT "prepaidSchedule_companyId_fkey" FOREIGN KEY ("companyId")
-    REFERENCES "company"("id") ON DELETE CASCADE ON UPDATE CASCADE
+    REFERENCES "company"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  -- Composite tenant FKs: the referenced account must belong to the same company.
+  CONSTRAINT "prepaidSchedule_prepaidAccountId_fkey" FOREIGN KEY ("prepaidAccountId", "companyId")
+    REFERENCES "account"("id", "companyId") ON DELETE RESTRICT ON UPDATE CASCADE,
+  CONSTRAINT "prepaidSchedule_expenseAccountId_fkey" FOREIGN KEY ("expenseAccountId", "companyId")
+    REFERENCES "account"("id", "companyId") ON DELETE RESTRICT ON UPDATE CASCADE
 );
 CREATE INDEX "prepaidSchedule_companyId_status_idx"
   ON "prepaidSchedule" ("companyId", "status");
@@ -103,23 +133,35 @@ CREATE POLICY "DELETE" ON "public"."prepaidSchedule" FOR DELETE USING (
 );
 
 -- 6. Prepaid schedule entries (one precomputed straight-line row per month) ---------
--- journalId is stamped when the drafted amortization journal posts. The unique
--- (companyId, scheduleId, amortizationDate) key makes the job's generation
--- idempotent under Inngest retries.
+-- journalId is the durable draft-journal association: the job stamps it the moment
+-- it drafts the amortization journal (inside the same transaction as the draft),
+-- NOT at posting time. That makes the generation idempotent under Inngest retries
+-- — the `..._due_idx` partial index (WHERE journalId IS NULL) stops selecting an
+-- entry once a draft exists, so a retry never creates a second Draft journal for
+-- the same entry. Whether that journal is Posted vs still Draft is read from the
+-- journal's own status, not inferred from journalId being NULL. The unique
+-- (companyId, scheduleId, amortizationDate) key additionally dedupes entry rows.
 CREATE TABLE IF NOT EXISTS "prepaidScheduleEntry" (
   "id" TEXT NOT NULL DEFAULT id('ppde'),
   "companyId" TEXT NOT NULL,
   "scheduleId" TEXT NOT NULL,
   "amortizationDate" DATE NOT NULL,
   "amount" NUMERIC NOT NULL,
-  "journalId" TEXT REFERENCES "journal"("id") ON DELETE SET NULL ON UPDATE CASCADE,
+  "journalId" TEXT,
+  "createdBy" TEXT NOT NULL REFERENCES "user"("id"),
   "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+  "updatedBy" TEXT REFERENCES "user"("id"),
+  "updatedAt" TIMESTAMP WITH TIME ZONE,
   CONSTRAINT "prepaidScheduleEntry_pkey" PRIMARY KEY ("id", "companyId"),
   CONSTRAINT "prepaidScheduleEntry_schedule_date_key" UNIQUE ("companyId", "scheduleId", "amortizationDate"),
   CONSTRAINT "prepaidScheduleEntry_companyId_fkey" FOREIGN KEY ("companyId")
     REFERENCES "company"("id") ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT "prepaidScheduleEntry_scheduleId_fkey" FOREIGN KEY ("scheduleId", "companyId")
-    REFERENCES "prepaidSchedule"("id", "companyId") ON DELETE CASCADE ON UPDATE CASCADE
+    REFERENCES "prepaidSchedule"("id", "companyId") ON DELETE CASCADE ON UPDATE CASCADE,
+  -- Composite tenant FK: only NULL the journalId (not companyId, which is NOT NULL)
+  -- when the referenced journal is deleted — PG15 column-list SET NULL form.
+  CONSTRAINT "prepaidScheduleEntry_journalId_fkey" FOREIGN KEY ("journalId", "companyId")
+    REFERENCES "journal"("id", "companyId") ON DELETE SET NULL ("journalId") ON UPDATE CASCADE
 );
 CREATE INDEX "prepaidScheduleEntry_companyId_scheduleId_idx"
   ON "prepaidScheduleEntry" ("companyId", "scheduleId");
@@ -186,16 +228,23 @@ CREATE TABLE IF NOT EXISTS "recurringJournalTemplateLine" (
   "id" TEXT NOT NULL DEFAULT id('rjtl'),
   "companyId" TEXT NOT NULL,
   "templateId" TEXT NOT NULL,
-  "accountId" TEXT NOT NULL REFERENCES "account"("id") ON DELETE RESTRICT ON UPDATE CASCADE,
+  "accountId" TEXT NOT NULL,
   "description" TEXT,
   "debit" NUMERIC NOT NULL DEFAULT 0,
   "credit" NUMERIC NOT NULL DEFAULT 0,
   "sortOrder" INTEGER NOT NULL DEFAULT 1,
+  "createdBy" TEXT NOT NULL REFERENCES "user"("id"),
+  "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+  "updatedBy" TEXT REFERENCES "user"("id"),
+  "updatedAt" TIMESTAMP WITH TIME ZONE,
   CONSTRAINT "recurringJournalTemplateLine_pkey" PRIMARY KEY ("id", "companyId"),
   CONSTRAINT "recurringJournalTemplateLine_companyId_fkey" FOREIGN KEY ("companyId")
     REFERENCES "company"("id") ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT "recurringJournalTemplateLine_templateId_fkey" FOREIGN KEY ("templateId", "companyId")
-    REFERENCES "recurringJournalTemplate"("id", "companyId") ON DELETE CASCADE ON UPDATE CASCADE
+    REFERENCES "recurringJournalTemplate"("id", "companyId") ON DELETE CASCADE ON UPDATE CASCADE,
+  -- Composite tenant FK: the referenced account must belong to the same company.
+  CONSTRAINT "recurringJournalTemplateLine_accountId_fkey" FOREIGN KEY ("accountId", "companyId")
+    REFERENCES "account"("id", "companyId") ON DELETE RESTRICT ON UPDATE CASCADE
 );
 CREATE INDEX "recurringJournalTemplateLine_companyId_templateId_idx"
   ON "recurringJournalTemplateLine" ("companyId", "templateId");
