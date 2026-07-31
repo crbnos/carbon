@@ -1,8 +1,7 @@
 import { serve } from "https://deno.land/std@0.175.0/http/server.ts";
 import { z } from "npm:zod@^3.24.1";
 
-import { corsHeaders } from "../lib/headers.ts";
-import { corsPreflight } from "../lib/response.ts";
+import { corsPreflight, errorResponse, jsonResponse } from "../lib/response.ts";
 import { sendInngestEvent } from "../lib/inngest.ts";
 
 const recipientValidator = z.discriminatedUnion("type", [
@@ -67,20 +66,8 @@ serve(async (req: Request) => {
         throw new Error(`Invalid type  ${type}`);
     }
 
-    return new Response(
-      JSON.stringify({
-        success: true,
-      }),
-      {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200,
-      },
-    );
+    return jsonResponse({ success: true });
   } catch (err) {
-    console.error(err);
-    return new Response(JSON.stringify(err), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 500,
-    });
+    return errorResponse(err, 500);
   }
 });

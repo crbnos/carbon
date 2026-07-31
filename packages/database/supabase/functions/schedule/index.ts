@@ -2,8 +2,7 @@ import { serve } from "https://deno.land/std@0.175.0/http/server.ts";
 import { z } from "npm:zod@^3.24.1";
 
 import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
-import { corsHeaders } from "../lib/headers.ts";
-import { corsPreflight } from "../lib/response.ts";
+import { corsPreflight, errorResponse, jsonResponse } from "../lib/response.ts";
 import { SchedulingEngine } from "../lib/scheduling/scheduling-engine.ts";
 import type {
   SchedulingDirection,
@@ -56,30 +55,15 @@ serve(async (req: Request) => {
     );
     console.info(`   Assembly depth: ${result.assemblyDepth}`);
 
-    return new Response(
-      JSON.stringify({
-        ...result,
-      }),
-      {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200,
-      }
-    );
+    return jsonResponse({
+      ...result,
+    });
   } catch (error) {
     console.error(
       `❌ Scheduling failed: ${
         error instanceof Error ? error.message : String(error)
       }`
     );
-    return new Response(
-      JSON.stringify({
-        success: false,
-        message: error instanceof Error ? error.message : String(error),
-      }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }
-    );
+    return errorResponse(error, 500);
   }
 });

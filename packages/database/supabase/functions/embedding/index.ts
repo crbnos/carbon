@@ -5,38 +5,22 @@
 // Setup type definitions for built-in Supabase Runtime APIs
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { generateEmbedding } from "../lib/ai/embedding.ts";
+import { errorResponse, jsonResponse } from "../lib/response.ts";
 
 Deno.serve(async (req) => {
   try {
     const { text } = await req.json();
 
     if (!text || typeof text !== "string") {
-      return new Response(
-        JSON.stringify({ error: "Text parameter is required and must be a string" }),
-        {
-          status: 400,
-          headers: { "Content-Type": "application/json" }
-        }
-      );
+      return errorResponse("Text parameter is required and must be a string", 400);
     }
 
     const embedding = await generateEmbedding(text);
 
-    return new Response(
-      JSON.stringify({ embedding }),
-      { headers: { "Content-Type": "application/json" } }
-    );
+    return jsonResponse({ embedding });
   } catch (error) {
     console.error("Error generating embedding:", error);
-    return new Response(
-      JSON.stringify({
-        error: error instanceof Error ? error.message : "Failed to generate embedding"
-      }),
-      {
-        status: 500,
-        headers: { "Content-Type": "application/json" }
-      }
-    );
+    return errorResponse(error, 500);
   }
 })
 
