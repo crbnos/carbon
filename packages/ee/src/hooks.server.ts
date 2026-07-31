@@ -1,7 +1,17 @@
 import { emailHealthcheck } from "./email/hooks.server";
 import { jiraHealthcheck } from "./jira/hooks.server";
 import { linearHealthcheck } from "./linear/hooks.server";
+import { onshapeOnUninstall } from "./onshape/hooks.server";
 import type { IntegrationServerHooks } from "./types";
+
+// Onshape keeps its release webhook subscription in lockstep with the asset-sync
+// toggle; the integration settings save calls this. onshapeConnectionHasWriteScope
+// lets the save tell a read-only connection to reconnect before enabling sync.
+export {
+  ensureOnshapeReleaseWebhook,
+  onshapeConnectionHasWriteScope
+} from "./onshape/hooks.server";
+
 import {
   xeroHealthcheck,
   xeroOnInstall,
@@ -25,6 +35,9 @@ const serverHooks: Record<string, IntegrationServerHooks> = {
   },
   linear: {
     onHealthcheck: linearHealthcheck
+  },
+  onshape: {
+    onUninstall: onshapeOnUninstall
   },
   xero: {
     onHealthcheck: xeroHealthcheck,

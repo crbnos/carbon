@@ -9,6 +9,7 @@ import {
   recalculateJobRequirements,
   upsertJobMethod
 } from "~/modules/production";
+import { isSalesOrderClosed } from "~/modules/sales";
 import { requireUnlockedBulk } from "~/utils/lockedGuard.server";
 
 const logger = getLogger("erp", "update");
@@ -244,17 +245,61 @@ export async function action({ request }: ActionFunctionArgs) {
     case "salesOrderId":
     case "salesOrderLineId":
       if (!value) {
+        // Unlink: clear the sales order + line (customerId is left as-is).
         return await client
           .from("job")
-          .update({ salesOrderId: null, salesOrderLineId: null })
+          .update({
+            salesOrderId: null,
+            salesOrderLineId: null,
+            updatedBy: userId,
+            updatedAt: new Date().toISOString()
+          })
           .in("id", ids as string[])
           .eq("companyId", companyId);
-      } else {
+      }
+
+      // Linking is done via the line — resolve its order + customer from it.
+      if (field !== "salesOrderLineId") {
         return {
           error: { message: `Invalid value: ${value} for field: ${field}` },
           data: null
         };
       }
+
+      const salesOrderLine = await client
+        .from("salesOrderLine")
+        .select("id, salesOrderId, salesOrder(customerId, status)")
+        .eq("id", value)
+        .eq("companyId", companyId)
+        .single();
+
+      if (salesOrderLine.error || !salesOrderLine.data) {
+        return {
+          error: { message: "Sales order line not found" },
+          data: null
+        };
+      }
+
+      if (isSalesOrderClosed(salesOrderLine.data.salesOrder?.status)) {
+        return {
+          error: {
+            message: "Cannot link a job to a completed or cancelled sales order"
+          },
+          data: null
+        };
+      }
+
+      return await client
+        .from("job")
+        .update({
+          salesOrderId: salesOrderLine.data.salesOrderId,
+          salesOrderLineId: salesOrderLine.data.id,
+          customerId: salesOrderLine.data.salesOrder?.customerId ?? null,
+          updatedBy: userId,
+          updatedAt: new Date().toISOString()
+        })
+        .in("id", ids as string[])
+        .eq("companyId", companyId);
     default:
       return {
         error: { message: `Invalid field: ${field}` },

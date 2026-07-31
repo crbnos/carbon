@@ -7,12 +7,12 @@ import {
   ClientOnly,
   Heading,
   HStack,
+  LoadingBars,
   Popover,
   PopoverContent,
   PopoverTrigger,
   Separator,
   SidebarTrigger,
-  Spinner,
   Switch,
   toast,
   useInterval,
@@ -195,6 +195,7 @@ export async function loader({ context, request }: LoaderFunctionArgs) {
       (op) =>
         op.jobReadableId.toLowerCase().includes(search.toLowerCase()) ||
         op.itemReadableId.toLowerCase().includes(search.toLowerCase()) ||
+        op.itemDescription?.toLowerCase().includes(search.toLowerCase()) ||
         op.description?.toLowerCase().includes(search.toLowerCase())
     );
   }
@@ -289,7 +290,7 @@ export default function ScheduleRoute() {
     <ClientOnly
       fallback={
         <div className="flex h-screen w-[calc(100dvw-var(--sidebar-width-icon))] items-center justify-center">
-          <Spinner className="h-8 w-8" />
+          <LoadingBars />
         </div>
       }
     >

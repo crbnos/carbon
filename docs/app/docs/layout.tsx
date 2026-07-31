@@ -32,8 +32,8 @@ function toNav(nodes: TreeNode[]): DocsNavNode[] {
         {
           label: label(n.name),
           url: n.index?.url,
-          children: toNav(n.children ?? []).sort(byLabel)
-        }
+          children: toNav(n.children ?? []).sort(byLabel),
+        },
       ];
     }
     return [{ label: label(n.name), url: n.url }];
@@ -45,23 +45,89 @@ function toNav(nodes: TreeNode[]): DocsNavNode[] {
 // URLs (/docs/reference/<slug>) never move. Any reference page missing from this map is
 // appended ungrouped, so adding a new entity can never make it vanish from the nav.
 const REFERENCE_GROUPS: { label: string; slugs: string[] }[] = [
-  { label: "Items & methods", slugs: ["items", "methods", "routings"] },
-  { label: "Sales", slugs: ["quotes", "sales-orders"] },
+  {
+    label: "Items & methods",
+    slugs: [
+      "items",
+      "methods",
+      "configurator",
+      "materials",
+      "change-orders",
+      "routings",
+    ],
+  },
+  {
+    label: "Production",
+    slugs: [
+      "jobs",
+      "scheduling",
+      "kanban",
+      "mes",
+      "work-centers",
+      "maintenance",
+    ],
+  },
+  { label: "Planning", slugs: ["planning", "forecast", "reordering"] },
+  { label: "Sales", slugs: ["quotes", "pricing", "sales-orders"] },
   {
     label: "Purchasing",
-    slugs: ["purchase-orders", "suppliers-and-customers"]
+    slugs: ["purchase-orders", "supplier-quotes", "suppliers-and-customers"],
   },
-  { label: "Production", slugs: ["jobs", "work-centers", "traceability"] },
+  { label: "Fulfillment", slugs: ["shipments", "picking", "receipts"] },
+  { label: "Invoicing & payments", slugs: ["invoices", "payments"] },
+  {
+    label: "Accounting",
+    slugs: [
+      "accounting",
+      "financial-reports",
+      "period-close",
+      "dimensions",
+      "intercompany",
+      "fixed-assets",
+    ],
+  },
+  {
+    label: "Quality",
+    slugs: [
+      "quality",
+      "issues",
+      "inspections",
+      "calibration",
+      "quality-documents",
+      "risks",
+    ],
+  },
   {
     label: "Inventory",
-    slugs: ["inventory", "receipts", "shipments", "storage-rules", "shelf-life"]
+    slugs: [
+      "inventory",
+      "inventory-count",
+      "storage-rules",
+      "shelf-life",
+      "traceability",
+    ],
   },
-  { label: "Planning", slugs: ["planning", "reordering"] },
-  { label: "Accounting", slugs: ["accounting", "invoices", "fixed-assets"] },
   {
-    label: "Quality & maintenance",
-    slugs: ["quality", "approvals", "maintenance"]
-  }
+    label: "Configurations",
+    slugs: [
+      "company-settings",
+      "printing",
+      "custom-fields",
+      "audit-log",
+      "sequences",
+      "import-export",
+      "documents",
+      "api-keys",
+    ],
+  },
+  {
+    label: "People & access",
+    slugs: ["people", "training", "permissions", "account"],
+  },
+  {
+    label: "System",
+    slugs: ["onboarding", "sharing", "agent", "approvals", "notifications"],
+  },
 ];
 
 const slugOf = (url?: string) => url?.split("/").filter(Boolean).pop() ?? "";

@@ -14,10 +14,10 @@ The **item ledger** is the source of truth. On-hand is the sum of its signed mov
 
 | Entry type | Effect |
 | --- | --- |
-| Purchase / Output | Goods received or produced into stock. |
-| Sale / Consumption | Goods shipped or issued to a job. |
-| Positive / Negative Adjustment | Manual corrections. |
-| Transfer | Movement between locations or storage units. |
+| `Purchase` · `Output` · `Assembly Output` | Goods received or produced into stock. |
+| `Sale` · `Consumption` · `Assembly Consumption` | Goods shipped or issued to a job. |
+| `Positive Adjmt.` · `Negative Adjmt.` | Manual corrections. |
+| `Transfer` | Movement between locations or storage units. |
 
 Read on-hand from the **ledger**, not the cached quantity table. The ledger is the truth, and it's status-aware (it can separate what's on hold or rejected from what's truly available).
 
@@ -26,6 +26,10 @@ On hand can go **negative**. Shipping, issuing to a job, and picking all post th
 ## Movements
 
 Two kinds of transfer move stock. A **warehouse transfer** moves it between locations, and is carried out as a shipment out of one and a receipt into the other. A **stock transfer** moves it within a single location, between storage units. A manual **adjustment** posts a positive or negative entry to the ledger, or a *Set Quantity* that books the difference to a target. When accounting is enabled, every adjustment also posts a journal: a loss debits the inventory adjustment account and credits inventory, a gain is the mirror image, valued at the item's current cost. Inventory count variances post the same way. Moving stock between storage units posts no journal, because the value never left the location.
+
+## Correcting a movement
+
+The ledger is append-only — a posted movement is never edited or deleted. To fix one, use **"Correct Quantity"** on the movement in the Stock Movements screen and enter the quantity it should have been. Carbon books one **opposite movement for the difference**, linked to the original and dated with the original's posting date, so both sit in the right time period. The correction appears as its own row, flagged with a **Correction** badge that links it back to the movement it fixes. The journal for the correction posts into the original's accounting period. A **locked** period refuses the correction until it's unlocked; a **closed** period is permanent — once a movement's period has closed, it can no longer be corrected. Correcting the same movement again measures against what it currently nets to, so repeated corrections converge instead of stacking.
 
 ## Value
 
@@ -49,6 +53,15 @@ A negative adjustment on a tracked item was ambiguous: several lots/serials sit 
 
 ### "Cannot edit expiry of a consumed tracked entity"
 Expiration dates can't be changed on stock that's already **Consumed**. Only live entities (Available, On Hold) accept an expiry override.
+
+### "The original movement's accounting period is closed — its movements can no longer be corrected."
+A stock-movement correction posts its journal into the **original movement's** accounting period, and that period is closed. Closing is permanent — there is no reopening — so the movement stays as posted. The **locked** variant of this message is recoverable: unlock the period and correct again.
+
+### "Corrected quantity matches the current effective quantity — nothing to correct"
+The corrected quantity you entered equals what the movement already nets to (original plus any prior corrections). There's no difference to book.
+
+### "Corrections on serial-tracked items must be whole numbers"
+The correction delta on a serial-tracked item wasn't an integer. Serial stock moves in whole units.
 
 ### Storage unit hierarchy errors
 - "Parent storage unit … is in location …, but this unit is in location …; they must match" — parent and child bins must share a location; pick a parent in the same location.

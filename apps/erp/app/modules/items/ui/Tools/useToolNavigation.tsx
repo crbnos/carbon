@@ -73,7 +73,6 @@ export function useToolNavigation() {
     {
       name: t`Quality`,
       to: path.to.toolQuality(itemId),
-      isDisabled: !routeData?.toolSummary?.requiresInspection,
       role: ["employee"],
       permission: "quality",
       icon: LuClipboardCheck,

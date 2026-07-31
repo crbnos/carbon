@@ -3,6 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import {
   incoterms,
+  operationTypes,
   procedureStepType,
   standardFactorType
 } from "./shared.models";
@@ -252,17 +253,20 @@ const methodBomFields = {
   }
 } as const;
 
-// BOP operation. Inside operations require time units; Outside operations carry
-// costing and an optional supplier-process link — enforced in the edge function.
+// BOP operation. In-house operations (anything but Outside Processing) require time
+// units; Outside Processing operations carry costing and an optional supplier-process
+// link — enforced in the edge function, which also normalizes the legacy
+// Inside/Outside values from older CSV templates.
 const methodBopFields = {
   operationType: {
     label: "Operation Type",
     required: false,
     type: "enum",
     enumData: {
-      description: "Whether the operation is performed in-house or outsourced",
-      options: ["Inside", "Outside"],
-      default: "Inside"
+      description:
+        "The operation's classification: Process, Assembly, and Inspection run in-house; Outside Processing is subcontracted",
+      options: operationTypes,
+      default: "Process"
     }
   },
   operationOrder: {
@@ -1502,9 +1506,9 @@ export const fieldMappings = {
       type: "enum",
       enumData: {
         description:
-          "Whether the process is Inside (in-house), Outside (outsourced), or both",
-        options: ["Inside", "Outside", "Inside and Outside"],
-        default: "Inside"
+          "The default operation type for operations using this process: Process, Assembly, and Inspection run in-house; Outside Processing is subcontracted. Legacy Inside/Outside values are normalized on import",
+        options: operationTypes,
+        default: "Process"
       }
     },
     defaultStandardFactor: {

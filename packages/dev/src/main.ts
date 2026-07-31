@@ -77,6 +77,12 @@ const main = defineCommand({
           default: false,
           description:
             "Skip non-essential services (Studio, Postgres-Meta, Inbucket) to reduce memory footprint (useful for headless/CI builds)"
+        },
+        thumbnails: {
+          type: "boolean",
+          default: false,
+          description:
+            "Run a local headless Chromium container so model-thumbnail renders locally (default: skipped on local)"
         }
       },
       run: ({ args }) =>
@@ -90,7 +96,8 @@ const main = defineCommand({
           portless: args.portless !== false,
           run: typeof args.run === "string" ? args.run : undefined,
           volumes: args.volumes === true,
-          minimal: args.minimal === true
+          minimal: args.minimal === true,
+          thumbnails: args.thumbnails === true
         })
     }),
     down: defineCommand({

@@ -154,7 +154,7 @@ export const ProductionPlanningOrderDrawer = memo(
     const onAddOrder = useCallback(() => {
       if (row.id) {
         const newOrder: ProductionOrder = {
-          quantity: row.lotSize ?? row.minimumOrderQuantity ?? 0,
+          quantity: row.lotSize || row.minimumOrderQuantity || 1,
           dueDate: today(getLocalTimeZone())
             .add({ days: row.leadTime ?? 0 })
             .toString(),
@@ -396,7 +396,7 @@ export const ProductionPlanningOrderDrawer = memo(
                 <Tbody>
                   {orders.map((order, index) => (
                     <Tr key={index}>
-                      <Td className="group-hover:bg-inherit justify-between">
+                      <Td className="group-hover:bg-inherit justify-between whitespace-nowrap">
                         {order.existingReadableId && order.existingId ? (
                           <Link to={path.to.job(order.existingId)}>
                             {order.existingReadableId}

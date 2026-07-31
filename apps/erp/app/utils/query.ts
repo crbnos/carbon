@@ -141,6 +141,40 @@ export function setGenericQueryFilters<
   return query;
 }
 
+export function getSearchTokens(search: string): string[] {
+  // Strip characters that are structural in a PostgREST `.or(...)` filter
+  // (comma separates conditions, parens group them) so the search value can't
+  // alter the filter shape.
+  return search
+    .replace(/[,()\\]/g, " ")
+    .split(/\s+/)
+    .filter(Boolean);
+}
+
+export function setSearchFilter<
+  T extends GenericSchema,
+  U extends Record<string, unknown>,
+  V
+>(
+  // @ts-expect-error TS2707 - TODO: fix type
+  query: PostgrestFilterBuilder<T, U, V>,
+  search: string | null | undefined,
+  columns: string[]
+  // @ts-expect-error TS2707 - TODO: fix type
+): PostgrestFilterBuilder<T, U, V> {
+  if (!search) return query;
+
+  // Each token must match at least one column, and all tokens must match, so
+  // "M8 washer" finds "Washer, Flat, M8". Chained `.or(...)` calls are ANDed.
+  for (const token of getSearchTokens(search)) {
+    query = query.or(
+      columns.map((column) => `${column}.ilike.%${token}%`).join(",")
+    );
+  }
+
+  return query;
+}
+
 const getSafeNumber = (value: string) => {
   const number = Number(value);
   return Number.isNaN(number) ? value : number;

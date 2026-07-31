@@ -32,28 +32,22 @@ export function getLineDescriptionDetails(
 export function getLineSubtotal(
   line: Database["public"]["Views"]["salesInvoiceLines"]["Row"]
 ) {
-  if (line?.quantity && line?.convertedUnitPrice) {
-    return (
-      line.quantity * line.convertedUnitPrice +
-      (line.convertedAddOnCost ?? 0) +
-      (line.convertedNonTaxableAddOnCost ?? 0) +
-      (line.convertedShippingCost ?? 0)
-    );
-  }
-  return 0;
+  return (
+    (line?.quantity ?? 0) * (line?.convertedUnitPrice ?? 0) +
+    (line?.convertedAddOnCost ?? 0) +
+    (line?.convertedNonTaxableAddOnCost ?? 0) +
+    (line?.convertedShippingCost ?? 0)
+  );
 }
 
 export function getLineTaxableSubtotal(
   line: Database["public"]["Views"]["salesInvoiceLines"]["Row"]
 ) {
-  if (line?.quantity && line?.convertedUnitPrice) {
-    return (
-      line.quantity * line.convertedUnitPrice +
-      (line.convertedAddOnCost ?? 0) +
-      (line.convertedShippingCost ?? 0)
-    );
-  }
-  return 0;
+  return (
+    (line?.quantity ?? 0) * (line?.convertedUnitPrice ?? 0) +
+    (line?.convertedAddOnCost ?? 0) +
+    (line?.convertedShippingCost ?? 0)
+  );
 }
 
 export function getLineTaxesAndFees(

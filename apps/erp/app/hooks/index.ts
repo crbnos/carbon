@@ -20,6 +20,7 @@ import { useOnboarding } from "./useOnboarding";
 import { usePercentFormatter } from "./usePercentFormatter";
 import { usePermissions } from "./usePermissions";
 import { usePlanGate } from "./usePlanGate";
+import { useQuantityFormatter } from "./useQuantityFormatter";
 import { useRealtime } from "./useRealtime";
 import { useScrollPosition } from "./useScrollPosition";
 import { useScrollToHash } from "./useScrollToHash";
@@ -49,6 +50,7 @@ export {
   usePermissions,
   usePlanGate,
   usePrinting,
+  useQuantityFormatter,
   useRealtime,
   useRouteData,
   useScrollPosition,

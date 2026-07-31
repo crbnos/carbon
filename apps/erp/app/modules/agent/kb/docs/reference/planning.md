@@ -10,7 +10,7 @@ Without planning you'd reorder by hand. MRP nets demand against supply across th
 
 Planning runs in two distinct passes, and conflating them is the usual mistake:
 
-1. **MRP, explode and net.** The engine explodes demand through bills of material, nets it against on-hand plus open jobs and purchase orders, and writes period-bucketed demand and supply forecasts. It does **not** apply reorder points and does **not** create orders.
+1. **MRP, explode and net.** The engine explodes demand through bills of material, nets it against on-hand plus open jobs and purchase orders, and writes period-bucketed demand forecasts (plus the demand and supply *actuals* it read). It does **not** apply reorder points and does **not** create orders.
 2. **Planning views, suggest a quantity.** The production and purchasing planning pages read those forecasts, project running stock week by week, and apply each item's **reorder policy** to propose a quantity to order.
 
 MRP **suggests, it never auto-orders.** The engine only writes forecasts; turning a suggestion into a real job or PO is an explicit action you take on the planning page.

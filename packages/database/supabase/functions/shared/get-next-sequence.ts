@@ -1,5 +1,8 @@
 import { Transaction } from "kysely";
-import { DB } from "../lib/database.ts";
+// Type-only import from postgres/index.ts (not lib/database.ts) keeps the
+// Deno-only driver out of the graph so this file is also importable from the
+// node-side @carbon/database/quality engine.
+import type { KyselyDatabase as DB } from "../lib/postgres/index.ts";
 import { interpolateSequenceDate } from "../lib/utils.ts";
 
 export async function getNextSequence(

@@ -1,6 +1,6 @@
 {
-  "generated": "2026-07-23T20:18:33.549Z",
-  "totalTools": 1377,
+  "generated": "2026-07-30T18:22:37.513Z",
+  "totalTools": 1402,
   "modules": 15,
   "tools": [
     {
@@ -1636,7 +1636,7 @@
       "module": "accounting",
       "classification": "WRITE",
       "description": "update default income accounts",
-      "paramCount": 27,
+      "paramCount": 28,
       "serviceParams": [
         "client",
         "defaultAccounts"
@@ -1661,6 +1661,9 @@
             "type": "string"
           },
           "inventoryAdjustmentVarianceAccount": {
+            "type": "string"
+          },
+          "scrapAccount": {
             "type": "string"
           },
           "materialVarianceAccount": {
@@ -6148,6 +6151,57 @@
       }
     },
     {
+      "name": "inventory_getStockMovementEffectiveQuantity",
+      "module": "inventory",
+      "classification": "READ",
+      "description": "get stock movement effective quantity",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "itemLedgerId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "itemLedgerId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "itemLedgerId"
+        ]
+      }
+    },
+    {
+      "name": "inventory_correctStockMovement",
+      "module": "inventory",
+      "classification": "WRITE",
+      "description": "correct stock movement",
+      "paramCount": 2,
+      "serviceParams": [
+        "client",
+        "correction"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "correctedQuantity": {
+            "type": "number"
+          },
+          "comment": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    {
       "name": "inventory_getInventoryCounts",
       "module": "inventory",
       "classification": "READ",
@@ -6417,29 +6471,6 @@
         "required": [
           "inventoryCountId",
           "locationId"
-        ]
-      }
-    },
-    {
-      "name": "inventory_rectifyInventoryCount",
-      "module": "inventory",
-      "classification": "WRITE",
-      "description": "rectify inventory count",
-      "paramCount": 1,
-      "serviceParams": [
-        "db",
-        "args"
-      ],
-      "injectAuth": [
-        "companyId"
-      ],
-      "schema": {
-        "type": "object",
-        "properties": {
-          "args": {}
-        },
-        "required": [
-          "args"
         ]
       }
     },
@@ -7582,6 +7613,32 @@
         },
         "required": [
           "locationId"
+        ]
+      }
+    },
+    {
+      "name": "inventory_getUnresolvedPickingListLines",
+      "module": "inventory",
+      "classification": "READ",
+      "description": "get unresolved picking list lines",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "pickingListId",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "pickingListId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "pickingListId"
         ]
       }
     },
@@ -10733,6 +10790,31 @@
       "module": "items",
       "classification": "DESTRUCTIVE",
       "description": "delete method operation step",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "id"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      }
+    },
+    {
+      "name": "items_deleteMethodOperationStepSlide",
+      "module": "items",
+      "classification": "DESTRUCTIVE",
+      "description": "delete method operation step slide",
       "paramCount": 1,
       "serviceParams": [
         "client",
@@ -14166,6 +14248,58 @@
       }
     },
     {
+      "name": "items_duplicateMethodOperationStep",
+      "module": "items",
+      "classification": "WRITE",
+      "description": "duplicate method operation step",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId",
+        "createdBy",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      }
+    },
+    {
+      "name": "items_upsertMethodOperationStepSlide",
+      "module": "items",
+      "classification": "WRITE",
+      "description": "upsert method operation step slide",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "slide"
+      ],
+      "injectAuth": [
+        "companyId",
+        "createdBy",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "slide": {}
+        },
+        "required": [
+          "slide"
+        ]
+      }
+    },
+    {
       "name": "items_upsertMethodOperationParameter",
       "module": "items",
       "classification": "WRITE",
@@ -14212,6 +14346,107 @@
         },
         "required": [
           "methodOperationTool"
+        ]
+      }
+    },
+    {
+      "name": "items_replaceMethodMaterialSteps",
+      "module": "items",
+      "classification": "WRITE",
+      "description": "replace method material steps",
+      "paramCount": 2,
+      "serviceParams": [
+        "client",
+        "methodMaterialId",
+        "methodOperationStepIds"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "methodMaterialId": {
+            "type": "string"
+          },
+          "methodOperationStepIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "methodMaterialId",
+          "methodOperationStepIds"
+        ]
+      }
+    },
+    {
+      "name": "items_setMethodMaterialStepLink",
+      "module": "items",
+      "classification": "WRITE",
+      "description": "set method material step link",
+      "paramCount": 3,
+      "serviceParams": [
+        "client",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "methodMaterialId": {
+            "type": "string"
+          },
+          "methodOperationStepId": {
+            "type": "string"
+          },
+          "linked": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "methodMaterialId",
+          "methodOperationStepId",
+          "linked"
+        ]
+      }
+    },
+    {
+      "name": "items_setMethodOperationToolStepLink",
+      "module": "items",
+      "classification": "WRITE",
+      "description": "set method operation tool step link",
+      "paramCount": 3,
+      "serviceParams": [
+        "client",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "methodOperationToolId": {
+            "type": "string"
+          },
+          "methodOperationStepId": {
+            "type": "string"
+          },
+          "linked": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "methodOperationToolId",
+          "methodOperationStepId",
+          "linked"
         ]
       }
     },
@@ -14745,14 +14980,14 @@
       }
     },
     {
-      "name": "items_getChangeOrder",
+      "name": "items_getChangeNotice",
       "module": "items",
       "classification": "READ",
-      "description": "get change order",
+      "description": "get change notice",
       "paramCount": 1,
       "serviceParams": [
         "client",
-        "changeOrderId",
+        "changeNoticeId",
         "companyId"
       ],
       "injectAuth": [
@@ -14761,20 +14996,20 @@
       "schema": {
         "type": "object",
         "properties": {
-          "changeOrderId": {
+          "changeNoticeId": {
             "type": "string"
           }
         },
         "required": [
-          "changeOrderId"
+          "changeNoticeId"
         ]
       }
     },
     {
-      "name": "items_getChangeOrders",
+      "name": "items_getChangeNotices",
       "module": "items",
       "classification": "READ",
-      "description": "get change orders",
+      "description": "get change notices",
       "paramCount": 3,
       "serviceParams": [
         "client",
@@ -14810,10 +15045,10 @@
       }
     },
     {
-      "name": "items_insertChangeOrder",
+      "name": "items_insertChangeNotice",
       "module": "items",
       "classification": "WRITE",
-      "description": "insert change order",
+      "description": "insert change notice",
       "paramCount": 12,
       "serviceParams": [
         "client",
@@ -14827,7 +15062,7 @@
       "schema": {
         "type": "object",
         "properties": {
-          "changeOrderId": {
+          "changeNoticeId": {
             "type": "string"
           },
           "name": {
@@ -14839,7 +15074,7 @@
           "priority": {
             "type": "string"
           },
-          "changeOrderTypeId": {
+          "changeNoticeTypeId": {
             "type": "string"
           },
           "nonConformanceId": {
@@ -14865,10 +15100,10 @@
       }
     },
     {
-      "name": "items_updateChangeOrder",
+      "name": "items_updateChangeNotice",
       "module": "items",
       "classification": "WRITE",
-      "description": "update change order",
+      "description": "update change notice",
       "paramCount": 13,
       "serviceParams": [
         "client",
@@ -14936,14 +15171,14 @@
       }
     },
     {
-      "name": "items_deleteChangeOrder",
+      "name": "items_deleteChangeNotice",
       "module": "items",
       "classification": "DESTRUCTIVE",
-      "description": "delete change order",
+      "description": "delete change notice",
       "paramCount": 1,
       "serviceParams": [
         "client",
-        "changeOrderId",
+        "changeNoticeId",
         "companyId"
       ],
       "injectAuth": [
@@ -14952,20 +15187,20 @@
       "schema": {
         "type": "object",
         "properties": {
-          "changeOrderId": {
+          "changeNoticeId": {
             "type": "string"
           }
         },
         "required": [
-          "changeOrderId"
+          "changeNoticeId"
         ]
       }
     },
     {
-      "name": "items_updateChangeOrderStatus",
+      "name": "items_updateChangeNoticeStatus",
       "module": "items",
       "classification": "WRITE",
-      "description": "update change order status",
+      "description": "update change notice status",
       "paramCount": 4,
       "serviceParams": [
         "client",
@@ -15002,10 +15237,10 @@
       }
     },
     {
-      "name": "items_getChangeOrderTypes",
+      "name": "items_getChangeNoticeTypes",
       "module": "items",
       "classification": "READ",
-      "description": "get change order types",
+      "description": "get change notice types",
       "paramCount": 3,
       "serviceParams": [
         "client",
@@ -15041,10 +15276,10 @@
       }
     },
     {
-      "name": "items_getChangeOrderTypesList",
+      "name": "items_getChangeNoticeTypesList",
       "module": "items",
       "classification": "READ",
-      "description": "get change order types list",
+      "description": "get change notice types list",
       "paramCount": 0,
       "serviceParams": [
         "client",
@@ -15059,14 +15294,15 @@
       }
     },
     {
-      "name": "items_getChangeOrderType",
+      "name": "items_getChangeNoticeType",
       "module": "items",
       "classification": "READ",
-      "description": "get change order type",
+      "description": "get change notice type",
       "paramCount": 1,
       "serviceParams": [
         "client",
-        "id"
+        "id",
+        "companyId"
       ],
       "injectAuth": [
         "companyId"
@@ -15084,14 +15320,14 @@
       }
     },
     {
-      "name": "items_upsertChangeOrderType",
+      "name": "items_upsertChangeNoticeType",
       "module": "items",
       "classification": "WRITE",
-      "description": "upsert change order type",
+      "description": "upsert change notice type",
       "paramCount": 1,
       "serviceParams": [
         "client",
-        "changeOrderType"
+        "changeNoticeType"
       ],
       "injectAuth": [
         "companyId",
@@ -15101,22 +15337,23 @@
       "schema": {
         "type": "object",
         "properties": {
-          "changeOrderType": {}
+          "changeNoticeType": {}
         },
         "required": [
-          "changeOrderType"
+          "changeNoticeType"
         ]
       }
     },
     {
-      "name": "items_deleteChangeOrderType",
+      "name": "items_deleteChangeNoticeType",
       "module": "items",
       "classification": "DESTRUCTIVE",
-      "description": "delete change order type",
+      "description": "delete change notice type",
       "paramCount": 1,
       "serviceParams": [
         "client",
-        "id"
+        "id",
+        "companyId"
       ],
       "injectAuth": [
         "companyId"
@@ -15195,10 +15432,10 @@
       }
     },
     {
-      "name": "items_createChangeOrderDraftMethod",
+      "name": "items_createChangeNoticeDraftMethod",
       "module": "items",
       "classification": "WRITE",
-      "description": "create change order draft method",
+      "description": "create change notice draft method",
       "paramCount": 4,
       "serviceParams": [
         "client",
@@ -15212,7 +15449,7 @@
       "schema": {
         "type": "object",
         "properties": {
-          "changeOrderId": {
+          "changeNoticeId": {
             "type": "string"
           },
           "itemId": {
@@ -15224,17 +15461,17 @@
           }
         },
         "required": [
-          "changeOrderId",
+          "changeNoticeId",
           "itemId",
           "changeType"
         ]
       }
     },
     {
-      "name": "items_addChangeOrderAffectedItem",
+      "name": "items_addChangeNoticeAffectedItem",
       "module": "items",
       "classification": "WRITE",
-      "description": "add change order affected item",
+      "description": "add change notice affected item",
       "paramCount": 5,
       "serviceParams": [
         "client",
@@ -15248,7 +15485,7 @@
       "schema": {
         "type": "object",
         "properties": {
-          "changeOrderId": {
+          "changeNoticeId": {
             "type": "string"
           },
           "itemId": {
@@ -15263,16 +15500,16 @@
           }
         },
         "required": [
-          "changeOrderId",
+          "changeNoticeId",
           "changeType"
         ]
       }
     },
     {
-      "name": "items_updateChangeOrderAffectedItemChangeType",
+      "name": "items_updateChangeNoticeAffectedItemChangeType",
       "module": "items",
       "classification": "WRITE",
-      "description": "update change order affected item change type",
+      "description": "update change notice affected item change type",
       "paramCount": 2,
       "serviceParams": [
         "client",
@@ -15297,10 +15534,10 @@
       }
     },
     {
-      "name": "items_updateChangeOrderAffectedItemCutover",
+      "name": "items_updateChangeNoticeAffectedItemCutover",
       "module": "items",
       "classification": "WRITE",
-      "description": "update change order affected item cutover",
+      "description": "update change notice affected item cutover",
       "paramCount": 4,
       "serviceParams": [
         "client",
@@ -15331,14 +15568,14 @@
       }
     },
     {
-      "name": "items_getChangeOrderAffectedItems",
+      "name": "items_getChangeNoticeAffectedItems",
       "module": "items",
       "classification": "READ",
-      "description": "get change order affected items",
+      "description": "get change notice affected items",
       "paramCount": 1,
       "serviceParams": [
         "client",
-        "changeOrderId",
+        "changeNoticeId",
         "companyId"
       ],
       "injectAuth": [
@@ -15347,20 +15584,20 @@
       "schema": {
         "type": "object",
         "properties": {
-          "changeOrderId": {
+          "changeNoticeId": {
             "type": "string"
           }
         },
         "required": [
-          "changeOrderId"
+          "changeNoticeId"
         ]
       }
     },
     {
-      "name": "items_removeChangeOrderAffectedItem",
+      "name": "items_removeChangeNoticeAffectedItem",
       "module": "items",
       "classification": "WRITE",
-      "description": "remove change order affected item",
+      "description": "remove change notice affected item",
       "paramCount": 1,
       "serviceParams": [
         "client",
@@ -15383,10 +15620,10 @@
       }
     },
     {
-      "name": "items_findChangeOrdersForItem",
+      "name": "items_findChangeNoticesForItem",
       "module": "items",
       "classification": "READ",
-      "description": "find change orders for item",
+      "description": "find change notices for item",
       "paramCount": 2,
       "serviceParams": [
         "client",
@@ -15412,10 +15649,10 @@
       }
     },
     {
-      "name": "items_getChangeOrdersForNonConformance",
+      "name": "items_getChangeNoticesForNonConformance",
       "module": "items",
       "classification": "READ",
-      "description": "get change orders for non conformance",
+      "description": "get change notices for non conformance",
       "paramCount": 1,
       "serviceParams": [
         "client",
@@ -15438,10 +15675,10 @@
       }
     },
     {
-      "name": "items_findOtherOpenChangeOrdersForItem",
+      "name": "items_findOtherOpenChangeNoticesForItem",
       "module": "items",
       "classification": "READ",
-      "description": "find other open change orders for item",
+      "description": "find other open change notices for item",
       "paramCount": 2,
       "serviceParams": [
         "client",
@@ -15456,21 +15693,21 @@
           "itemId": {
             "type": "string"
           },
-          "excludeChangeOrderId": {
+          "excludeChangeNoticeId": {
             "type": "string"
           }
         },
         "required": [
           "itemId",
-          "excludeChangeOrderId"
+          "excludeChangeNoticeId"
         ]
       }
     },
     {
-      "name": "items_getItemChangeOrderData",
+      "name": "items_getItemChangeNoticeData",
       "module": "items",
       "classification": "READ",
-      "description": "get item change order data",
+      "description": "get item change notice data",
       "paramCount": 1,
       "serviceParams": [
         "client",
@@ -15493,14 +15730,14 @@
       }
     },
     {
-      "name": "items_getChangeOrderActions",
+      "name": "items_getChangeNoticeActions",
       "module": "items",
       "classification": "READ",
-      "description": "get change order actions",
+      "description": "get change notice actions",
       "paramCount": 1,
       "serviceParams": [
         "client",
-        "changeOrderId",
+        "changeNoticeId",
         "companyId"
       ],
       "injectAuth": [
@@ -15509,20 +15746,20 @@
       "schema": {
         "type": "object",
         "properties": {
-          "changeOrderId": {
+          "changeNoticeId": {
             "type": "string"
           }
         },
         "required": [
-          "changeOrderId"
+          "changeNoticeId"
         ]
       }
     },
     {
-      "name": "items_updateChangeOrderActionStatus",
+      "name": "items_updateChangeNoticeActionStatus",
       "module": "items",
       "classification": "WRITE",
-      "description": "update change order action status",
+      "description": "update change notice action status",
       "paramCount": 2,
       "serviceParams": [
         "client",
@@ -15549,10 +15786,10 @@
       }
     },
     {
-      "name": "items_deleteChangeOrderAction",
+      "name": "items_deleteChangeNoticeAction",
       "module": "items",
       "classification": "DESTRUCTIVE",
-      "description": "delete change order action",
+      "description": "delete change notice action",
       "paramCount": 1,
       "serviceParams": [
         "client",
@@ -15574,14 +15811,14 @@
       }
     },
     {
-      "name": "items_updateChangeOrderActionOrder",
+      "name": "items_updateChangeNoticeActionOrder",
       "module": "items",
       "classification": "WRITE",
-      "description": "update change order action order",
+      "description": "update change notice action order",
       "paramCount": 2,
       "serviceParams": [
         "db",
-        "updates"
+        "args"
       ],
       "injectAuth": [
         "companyId",
@@ -15590,24 +15827,39 @@
       "schema": {
         "type": "object",
         "properties": {
-          "id": {
+          "changeNoticeId": {
             "type": "string"
           },
-          "sortOrder": {
-            "type": "number"
+          "updates": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "sortOrder": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "id",
+                "sortOrder"
+              ]
+            }
           }
         },
         "required": [
-          "id",
-          "sortOrder"
+          "changeNoticeId",
+          "updates"
         ]
       }
     },
     {
-      "name": "items_getChangeOrderRequiredActions",
+      "name": "items_getChangeNoticeRequiredActions",
       "module": "items",
       "classification": "READ",
-      "description": "get change order required actions",
+      "description": "get change notice required actions",
       "paramCount": 3,
       "serviceParams": [
         "client",
@@ -15643,10 +15895,10 @@
       }
     },
     {
-      "name": "items_getChangeOrderRequiredActionsList",
+      "name": "items_getChangeNoticeRequiredActionsList",
       "module": "items",
       "classification": "READ",
-      "description": "get change order required actions list",
+      "description": "get change notice required actions list",
       "paramCount": 0,
       "serviceParams": [
         "client",
@@ -15661,14 +15913,15 @@
       }
     },
     {
-      "name": "items_getChangeOrderRequiredAction",
+      "name": "items_getChangeNoticeRequiredAction",
       "module": "items",
       "classification": "READ",
-      "description": "get change order required action",
+      "description": "get change notice required action",
       "paramCount": 1,
       "serviceParams": [
         "client",
-        "id"
+        "id",
+        "companyId"
       ],
       "injectAuth": [
         "companyId"
@@ -15686,10 +15939,10 @@
       }
     },
     {
-      "name": "items_upsertChangeOrderRequiredAction",
+      "name": "items_upsertChangeNoticeRequiredAction",
       "module": "items",
       "classification": "WRITE",
-      "description": "upsert change order required action",
+      "description": "upsert change notice required action",
       "paramCount": 3,
       "serviceParams": [
         "client",
@@ -15720,14 +15973,15 @@
       }
     },
     {
-      "name": "items_deleteChangeOrderRequiredAction",
+      "name": "items_deleteChangeNoticeRequiredAction",
       "module": "items",
       "classification": "DESTRUCTIVE",
-      "description": "delete change order required action",
+      "description": "delete change notice required action",
       "paramCount": 1,
       "serviceParams": [
         "client",
-        "id"
+        "id",
+        "companyId"
       ],
       "injectAuth": [
         "companyId"
@@ -15745,10 +15999,10 @@
       }
     },
     {
-      "name": "items_setChangeOrderActionTasks",
+      "name": "items_setChangeNoticeActionTasks",
       "module": "items",
       "classification": "WRITE",
-      "description": "set change order action tasks",
+      "description": "set change notice action tasks",
       "paramCount": 2,
       "serviceParams": [
         "client",
@@ -15761,7 +16015,7 @@
       "schema": {
         "type": "object",
         "properties": {
-          "changeOrderId": {
+          "changeNoticeId": {
             "type": "string"
           },
           "requiredActionIds": {
@@ -15772,16 +16026,16 @@
           }
         },
         "required": [
-          "changeOrderId",
+          "changeNoticeId",
           "requiredActionIds"
         ]
       }
     },
     {
-      "name": "items_seedDefaultChangeOrderActions",
+      "name": "items_seedDefaultChangeNoticeActions",
       "module": "items",
       "classification": "WRITE",
-      "description": "seed default change order actions",
+      "description": "seed default change notice actions",
       "paramCount": 1,
       "serviceParams": [
         "client",
@@ -15793,12 +16047,12 @@
       "schema": {
         "type": "object",
         "properties": {
-          "changeOrderId": {
+          "changeNoticeId": {
             "type": "string"
           }
         },
         "required": [
-          "changeOrderId"
+          "changeNoticeId"
         ]
       }
     },
@@ -15825,14 +16079,14 @@
       }
     },
     {
-      "name": "items_getChangeOrderDiff",
+      "name": "items_getChangeNoticeDiff",
       "module": "items",
       "classification": "READ",
-      "description": "get change order diff",
+      "description": "get change notice diff",
       "paramCount": 1,
       "serviceParams": [
         "client",
-        "changeOrderId",
+        "changeNoticeId",
         "companyId"
       ],
       "injectAuth": [
@@ -15841,12 +16095,12 @@
       "schema": {
         "type": "object",
         "properties": {
-          "changeOrderId": {
+          "changeNoticeId": {
             "type": "string"
           }
         },
         "required": [
-          "changeOrderId"
+          "changeNoticeId"
         ]
       }
     },
@@ -17449,6 +17703,31 @@
       "module": "production",
       "classification": "DESTRUCTIVE",
       "description": "delete job operation step",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "id"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      }
+    },
+    {
+      "name": "production_deleteJobOperationStepSlide",
+      "module": "production",
+      "classification": "DESTRUCTIVE",
+      "description": "delete job operation step slide",
       "paramCount": 1,
       "serviceParams": [
         "client",
@@ -20728,6 +21007,58 @@
       }
     },
     {
+      "name": "production_duplicateJobOperationStep",
+      "module": "production",
+      "classification": "WRITE",
+      "description": "duplicate job operation step",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId",
+        "createdBy",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      }
+    },
+    {
+      "name": "production_upsertJobOperationStepSlide",
+      "module": "production",
+      "classification": "WRITE",
+      "description": "upsert job operation step slide",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "slide"
+      ],
+      "injectAuth": [
+        "companyId",
+        "createdBy",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "slide": {}
+        },
+        "required": [
+          "slide"
+        ]
+      }
+    },
+    {
       "name": "production_upsertJobOperationParameter",
       "module": "production",
       "classification": "WRITE",
@@ -20774,6 +21105,107 @@
         },
         "required": [
           "jobOperationTool"
+        ]
+      }
+    },
+    {
+      "name": "production_replaceJobMaterialSteps",
+      "module": "production",
+      "classification": "WRITE",
+      "description": "replace job material steps",
+      "paramCount": 2,
+      "serviceParams": [
+        "client",
+        "jobMaterialId",
+        "jobOperationStepIds"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "jobMaterialId": {
+            "type": "string"
+          },
+          "jobOperationStepIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "jobMaterialId",
+          "jobOperationStepIds"
+        ]
+      }
+    },
+    {
+      "name": "production_setJobMaterialStepLink",
+      "module": "production",
+      "classification": "WRITE",
+      "description": "set job material step link",
+      "paramCount": 3,
+      "serviceParams": [
+        "client",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "jobMaterialId": {
+            "type": "string"
+          },
+          "jobOperationStepId": {
+            "type": "string"
+          },
+          "linked": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "jobMaterialId",
+          "jobOperationStepId",
+          "linked"
+        ]
+      }
+    },
+    {
+      "name": "production_setJobOperationToolStepLink",
+      "module": "production",
+      "classification": "WRITE",
+      "description": "set job operation tool step link",
+      "paramCount": 3,
+      "serviceParams": [
+        "client",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "jobOperationToolId": {
+            "type": "string"
+          },
+          "jobOperationStepId": {
+            "type": "string"
+          },
+          "linked": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "jobOperationToolId",
+          "jobOperationStepId",
+          "linked"
         ]
       }
     },
@@ -21671,6 +22103,32 @@
       }
     },
     {
+      "name": "production_getAssemblyInstructionsForItem",
+      "module": "production",
+      "classification": "READ",
+      "description": "get assembly instructions for item",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "itemId",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "itemId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "itemId"
+        ]
+      }
+    },
+    {
       "name": "production_getModelForItem",
       "module": "production",
       "classification": "READ",
@@ -22136,10 +22594,10 @@
       }
     },
     {
-      "name": "production_getAssemblyInstructionStepRequirements",
+      "name": "production_getAssemblyInstructionStepSlides",
       "module": "production",
       "classification": "READ",
-      "description": "get assembly instruction step requirements",
+      "description": "get assembly instruction step slides",
       "paramCount": 1,
       "serviceParams": [
         "client",
@@ -22164,14 +22622,14 @@
       }
     },
     {
-      "name": "production_upsertAssemblyInstructionStepRequirement",
+      "name": "production_upsertAssemblyInstructionStepSlide",
       "module": "production",
       "classification": "WRITE",
-      "description": "upsert assembly instruction step requirement",
-      "paramCount": 10,
+      "description": "upsert assembly instruction step slide",
+      "paramCount": 1,
       "serviceParams": [
         "client",
-        "data"
+        "slide"
       ],
       "injectAuth": [
         "companyId",
@@ -22181,63 +22639,18 @@
       "schema": {
         "type": "object",
         "properties": {
-          "id": {
-            "type": "string"
-          },
-          "stepId": {
-            "type": "string"
-          },
-          "type": {
-            "type": "string"
-          },
-          "itemId": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "name": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "text": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "severity": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "filePath": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "quantity": {
-            "type": "number"
-          },
-          "sortOrder": {
-            "type": "number"
-          }
+          "slide": {}
         },
         "required": [
-          "stepId",
-          "type"
+          "slide"
         ]
       }
     },
     {
-      "name": "production_getAssemblyInstructionStepRequirement",
+      "name": "production_deleteAssemblyInstructionStepSlide",
       "module": "production",
-      "classification": "READ",
-      "description": "get assembly instruction step requirement",
+      "classification": "DESTRUCTIVE",
+      "description": "delete assembly instruction step slide",
       "paramCount": 1,
       "serviceParams": [
         "client",
@@ -22259,17 +22672,46 @@
       }
     },
     {
-      "name": "production_updateAssemblyInstructionStepRequirementOrder",
+      "name": "production_getAssemblyInstructionStepTools",
+      "module": "production",
+      "classification": "READ",
+      "description": "get assembly instruction step tools",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "stepIds"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "stepIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "stepIds"
+        ]
+      }
+    },
+    {
+      "name": "production_upsertAssemblyInstructionStepTool",
       "module": "production",
       "classification": "WRITE",
-      "description": "update assembly instruction step requirement order",
-      "paramCount": 2,
+      "description": "upsert assembly instruction step tool",
+      "paramCount": 5,
       "serviceParams": [
-        "db",
-        "updates"
+        "client",
+        "data"
       ],
       "injectAuth": [
         "companyId",
+        "createdBy",
         "updatedBy"
       ],
       "schema": {
@@ -22278,21 +22720,30 @@
           "id": {
             "type": "string"
           },
+          "stepId": {
+            "type": "string"
+          },
+          "itemId": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "number"
+          },
           "sortOrder": {
             "type": "number"
           }
         },
         "required": [
-          "id",
-          "sortOrder"
+          "stepId",
+          "itemId"
         ]
       }
     },
     {
-      "name": "production_deleteAssemblyInstructionStepRequirement",
+      "name": "production_deleteAssemblyInstructionStepTool",
       "module": "production",
       "classification": "DESTRUCTIVE",
-      "description": "delete assembly instruction step requirement",
+      "description": "delete assembly instruction step tool",
       "paramCount": 1,
       "serviceParams": [
         "client",
@@ -22480,87 +22931,6 @@
         },
         "required": [
           "assemblyInstructionId"
-        ]
-      }
-    },
-    {
-      "name": "production_getAssemblyStandardNotes",
-      "module": "production",
-      "classification": "READ",
-      "description": "get assembly standard notes",
-      "paramCount": 0,
-      "serviceParams": [
-        "client",
-        "companyId"
-      ],
-      "injectAuth": [
-        "companyId"
-      ],
-      "schema": {
-        "type": "object",
-        "properties": {}
-      }
-    },
-    {
-      "name": "production_upsertAssemblyStandardNote",
-      "module": "production",
-      "classification": "WRITE",
-      "description": "upsert assembly standard note",
-      "paramCount": 4,
-      "serviceParams": [
-        "client",
-        "data"
-      ],
-      "injectAuth": [
-        "companyId",
-        "createdBy",
-        "updatedBy"
-      ],
-      "schema": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "name": {
-            "type": "string"
-          },
-          "content": {
-            "type": "string"
-          },
-          "severity": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "name",
-          "content",
-          "severity"
-        ]
-      }
-    },
-    {
-      "name": "production_deleteAssemblyStandardNote",
-      "module": "production",
-      "classification": "DESTRUCTIVE",
-      "description": "delete assembly standard note",
-      "paramCount": 1,
-      "serviceParams": [
-        "client",
-        "id"
-      ],
-      "injectAuth": [
-        "companyId"
-      ],
-      "schema": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "id"
         ]
       }
     },
@@ -22907,6 +23277,152 @@
       }
     },
     {
+      "name": "production_planAssemblyStepMarkerSync",
+      "module": "production",
+      "classification": "WRITE",
+      "description": "plan assembly step marker sync",
+      "paramCount": 2,
+      "serviceParams": [
+        "sourceStepIds",
+        "existingSynced"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "sourceStepIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "existingSynced": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "assemblyInstructionStepId": {
+                "type": "array",
+                "items": {}
+              }
+            },
+            "required": [
+              "id",
+              "assemblyInstructionStepId"
+            ]
+          }
+        },
+        "required": [
+          "sourceStepIds",
+          "existingSynced"
+        ]
+      }
+    },
+    {
+      "name": "production_maxToolQuantityByItem",
+      "module": "production",
+      "classification": "WRITE",
+      "description": "max tool quantity by item",
+      "paramCount": 2,
+      "serviceParams": [
+        "sourceTools"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "itemId": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "array",
+            "items": {}
+          }
+        },
+        "required": [
+          "itemId",
+          "quantity"
+        ]
+      }
+    },
+    {
+      "name": "production_buildAssemblyToolStepLinks",
+      "module": "production",
+      "classification": "WRITE",
+      "description": "build assembly tool step links",
+      "paramCount": 4,
+      "serviceParams": [
+        "sourceSteps",
+        "toolsByStep",
+        "toolRowIdByItemId",
+        "targetIdBySource"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "sourceSteps": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "array",
+                "items": {}
+              }
+            },
+            "required": [
+              "id"
+            ]
+          },
+          "toolsByStep": {},
+          "toolRowIdByItemId": {},
+          "targetIdBySource": {}
+        },
+        "required": [
+          "sourceSteps",
+          "toolsByStep",
+          "toolRowIdByItemId",
+          "targetIdBySource"
+        ]
+      }
+    },
+    {
+      "name": "production_syncAssemblyInstructionToOperation",
+      "module": "production",
+      "classification": "WRITE",
+      "description": "sync assembly instruction to operation",
+      "paramCount": 2,
+      "serviceParams": [
+        "db",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "assemblyInstructionId": {
+            "type": "string"
+          },
+          "operationId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "assemblyInstructionId",
+          "operationId"
+        ]
+      }
+    },
+    {
       "name": "production_generateAssemblyStepsFromPlan",
       "module": "production",
       "classification": "WRITE",
@@ -23016,6 +23532,322 @@
         "required": [
           "materials",
           "locationId"
+        ]
+      }
+    },
+    {
+      "name": "production_getInspectionDocuments",
+      "module": "production",
+      "classification": "READ",
+      "description": "get inspection documents",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "search": {
+            "type": "object",
+            "properties": {
+              "limit": {
+                "type": "integer",
+                "default": 100
+              },
+              "offset": {
+                "type": "integer",
+                "default": 0
+              }
+            }
+          }
+        },
+        "required": [
+          "search"
+        ]
+      }
+    },
+    {
+      "name": "production_getInspectionDocumentsForItem",
+      "module": "production",
+      "classification": "READ",
+      "description": "get inspection documents for item",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "itemId",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "itemId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "itemId"
+        ]
+      }
+    },
+    {
+      "name": "production_getInspectionDocument",
+      "module": "production",
+      "classification": "READ",
+      "description": "get inspection document",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "id",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      }
+    },
+    {
+      "name": "production_upsertInspectionDocument",
+      "module": "production",
+      "classification": "WRITE",
+      "description": "upsert inspection document",
+      "paramCount": 7,
+      "serviceParams": [
+        "client",
+        "diagram"
+      ],
+      "injectAuth": [
+        "companyId",
+        "createdBy",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "partId": {
+            "type": "string"
+          },
+          "drawingNumber": {
+            "type": "string"
+          },
+          "pdfUrl": {
+            "type": "string"
+          },
+          "annotations": {
+            "type": "string"
+          },
+          "features": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "partId"
+        ]
+      }
+    },
+    {
+      "name": "production_deleteInspectionDocument",
+      "module": "production",
+      "classification": "DESTRUCTIVE",
+      "description": "delete inspection document",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "id",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      }
+    },
+    {
+      "name": "production_getInspectionFeatures",
+      "module": "production",
+      "classification": "READ",
+      "description": "get inspection features",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "inspectionDocumentId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "inspectionDocumentId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "inspectionDocumentId"
+        ]
+      }
+    },
+    {
+      "name": "production_getBalloons",
+      "module": "production",
+      "classification": "READ",
+      "description": "get balloons",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "inspectionDocumentId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "inspectionDocumentId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "inspectionDocumentId"
+        ]
+      }
+    },
+    {
+      "name": "production_getInspectionPlan",
+      "module": "production",
+      "classification": "READ",
+      "description": "get inspection plan",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "inspectionDocumentId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "inspectionDocumentId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "inspectionDocumentId"
+        ]
+      }
+    },
+    {
+      "name": "production_updateInspectionDocumentSampling",
+      "module": "production",
+      "classification": "WRITE",
+      "description": "update inspection document sampling",
+      "paramCount": 6,
+      "serviceParams": [
+        "client",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "samplingPlanType": {
+            "type": "string"
+          },
+          "samplingSampleSize": {
+            "type": "number"
+          },
+          "samplingPercentage": {
+            "type": "number"
+          },
+          "samplingAql": {
+            "type": "number"
+          },
+          "samplingInspectionLevel": {
+            "type": "string"
+          },
+          "samplingSeverity": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    {
+      "name": "production_saveInspectionDocumentAtomic",
+      "module": "production",
+      "classification": "WRITE",
+      "description": "save inspection document atomic",
+      "paramCount": 7,
+      "serviceParams": [
+        "client",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "inspectionDocumentId": {
+            "type": "string"
+          },
+          "pdfUrl": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "pageCount": {
+            "type": "number"
+          },
+          "defaultPageWidth": {
+            "type": "number"
+          },
+          "defaultPageHeight": {
+            "type": "number"
+          },
+          "features": {},
+          "balloons": {}
+        },
+        "required": [
+          "inspectionDocumentId",
+          "features",
+          "balloons"
         ]
       }
     },
@@ -27027,31 +27859,6 @@
       }
     },
     {
-      "name": "quality_getIssueAction",
-      "module": "quality",
-      "classification": "READ",
-      "description": "get issue action",
-      "paramCount": 1,
-      "serviceParams": [
-        "client",
-        "id"
-      ],
-      "injectAuth": [
-        "companyId"
-      ],
-      "schema": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "id"
-        ]
-      }
-    },
-    {
       "name": "quality_getIssueActionTasks",
       "module": "quality",
       "classification": "READ",
@@ -28796,312 +29603,11 @@
       }
     },
     {
-      "name": "quality_getInspectionDocuments",
+      "name": "quality_getInspections",
       "module": "quality",
       "classification": "READ",
-      "description": "get inspection documents",
-      "paramCount": 1,
-      "serviceParams": [
-        "client",
-        "companyId",
-        "args"
-      ],
-      "injectAuth": [
-        "companyId"
-      ],
-      "schema": {
-        "type": "object",
-        "properties": {
-          "search": {
-            "type": "object",
-            "properties": {
-              "limit": {
-                "type": "integer",
-                "default": 100
-              },
-              "offset": {
-                "type": "integer",
-                "default": 0
-              }
-            }
-          }
-        },
-        "required": [
-          "search"
-        ]
-      }
-    },
-    {
-      "name": "quality_getInspectionDocument",
-      "module": "quality",
-      "classification": "READ",
-      "description": "get inspection document",
-      "paramCount": 1,
-      "serviceParams": [
-        "client",
-        "id"
-      ],
-      "injectAuth": [
-        "companyId"
-      ],
-      "schema": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "id"
-        ]
-      }
-    },
-    {
-      "name": "quality_upsertInspectionDocument",
-      "module": "quality",
-      "classification": "WRITE",
-      "description": "upsert inspection document",
-      "paramCount": 7,
-      "serviceParams": [
-        "client",
-        "diagram"
-      ],
-      "injectAuth": [
-        "companyId",
-        "createdBy",
-        "updatedBy"
-      ],
-      "schema": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "name": {
-            "type": "string"
-          },
-          "partId": {
-            "type": "string"
-          },
-          "drawingNumber": {
-            "type": "string"
-          },
-          "pdfUrl": {
-            "type": "string"
-          },
-          "annotations": {
-            "type": "string"
-          },
-          "features": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "partId"
-        ]
-      }
-    },
-    {
-      "name": "quality_deleteInspectionDocument",
-      "module": "quality",
-      "classification": "DESTRUCTIVE",
-      "description": "delete inspection document",
-      "paramCount": 1,
-      "serviceParams": [
-        "client",
-        "id"
-      ],
-      "injectAuth": [
-        "companyId"
-      ],
-      "schema": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "id"
-        ]
-      }
-    },
-    {
-      "name": "quality_getInspectionFeatures",
-      "module": "quality",
-      "classification": "READ",
-      "description": "get inspection features",
-      "paramCount": 1,
-      "serviceParams": [
-        "client",
-        "inspectionDocumentId"
-      ],
-      "injectAuth": [
-        "companyId"
-      ],
-      "schema": {
-        "type": "object",
-        "properties": {
-          "inspectionDocumentId": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "inspectionDocumentId"
-        ]
-      }
-    },
-    {
-      "name": "quality_getBalloons",
-      "module": "quality",
-      "classification": "READ",
-      "description": "get balloons",
-      "paramCount": 1,
-      "serviceParams": [
-        "client",
-        "inspectionDocumentId"
-      ],
-      "injectAuth": [
-        "companyId"
-      ],
-      "schema": {
-        "type": "object",
-        "properties": {
-          "inspectionDocumentId": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "inspectionDocumentId"
-        ]
-      }
-    },
-    {
-      "name": "quality_getInspectionPlan",
-      "module": "quality",
-      "classification": "READ",
-      "description": "get inspection plan",
-      "paramCount": 1,
-      "serviceParams": [
-        "client",
-        "inspectionDocumentId"
-      ],
-      "injectAuth": [
-        "companyId"
-      ],
-      "schema": {
-        "type": "object",
-        "properties": {
-          "inspectionDocumentId": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "inspectionDocumentId"
-        ]
-      }
-    },
-    {
-      "name": "quality_saveInspectionDocumentAtomic",
-      "module": "quality",
-      "classification": "WRITE",
-      "description": "save inspection document atomic",
-      "paramCount": 7,
-      "serviceParams": [
-        "client",
-        "args"
-      ],
-      "injectAuth": [
-        "companyId"
-      ],
-      "schema": {
-        "type": "object",
-        "properties": {
-          "inspectionDocumentId": {
-            "type": "string"
-          },
-          "pdfUrl": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "pageCount": {
-            "type": "number"
-          },
-          "defaultPageWidth": {
-            "type": "number"
-          },
-          "defaultPageHeight": {
-            "type": "number"
-          },
-          "features": {},
-          "balloons": {}
-        },
-        "required": [
-          "inspectionDocumentId",
-          "features",
-          "balloons"
-        ]
-      }
-    },
-    {
-      "name": "quality_getItemSamplingPlan",
-      "module": "quality",
-      "classification": "READ",
-      "description": "get item sampling plan",
-      "paramCount": 1,
-      "serviceParams": [
-        "client",
-        "itemId",
-        "companyId"
-      ],
-      "injectAuth": [
-        "companyId"
-      ],
-      "schema": {
-        "type": "object",
-        "properties": {
-          "itemId": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "itemId"
-        ]
-      }
-    },
-    {
-      "name": "quality_upsertItemSamplingPlan",
-      "module": "quality",
-      "classification": "WRITE",
-      "description": "upsert item sampling plan",
-      "paramCount": 1,
-      "serviceParams": [
-        "client",
-        "plan"
-      ],
-      "injectAuth": [
-        "companyId",
-        "createdBy",
-        "updatedBy"
-      ],
-      "schema": {
-        "type": "object",
-        "properties": {
-          "plan": {}
-        },
-        "required": [
-          "plan"
-        ]
-      }
-    },
-    {
-      "name": "quality_getInboundInspections",
-      "module": "quality",
-      "classification": "READ",
-      "description": "get inbound inspections",
-      "paramCount": 4,
+      "description": "get inspections",
+      "paramCount": 5,
       "serviceParams": [
         "client",
         "companyId",
@@ -29135,6 +29641,12 @@
                   "string",
                   "null"
                 ]
+              },
+              "source": {
+                "type": [
+                  "string",
+                  "null"
+                ]
               }
             }
           }
@@ -29142,10 +29654,10 @@
       }
     },
     {
-      "name": "quality_getInboundInspection",
+      "name": "quality_getInspection",
       "module": "quality",
       "classification": "READ",
-      "description": "get inbound inspection",
+      "description": "get inspection",
       "paramCount": 1,
       "serviceParams": [
         "client",
@@ -29167,10 +29679,36 @@
       }
     },
     {
-      "name": "quality_getInboundInspectionLotTrackedEntities",
+      "name": "quality_getReceiptInspections",
       "module": "quality",
       "classification": "READ",
-      "description": "get inbound inspection lot tracked entities",
+      "description": "get receipt inspections",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "receiptId",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "receiptId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "receiptId"
+        ]
+      }
+    },
+    {
+      "name": "quality_getInspectionTrackedEntities",
+      "module": "quality",
+      "classification": "READ",
+      "description": "get inspection tracked entities",
       "paramCount": 1,
       "serviceParams": [
         "client",
@@ -29189,6 +29727,114 @@
         },
         "required": [
           "receiptLineId"
+        ]
+      }
+    },
+    {
+      "name": "quality_getInspectionSamplingPlans",
+      "module": "quality",
+      "classification": "READ",
+      "description": "get inspection sampling plans",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "inspectionId",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "inspectionId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "inspectionId"
+        ]
+      }
+    },
+    {
+      "name": "quality_getInspectionMeasurements",
+      "module": "quality",
+      "classification": "READ",
+      "description": "get inspection measurements",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "inspectionId",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "inspectionId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "inspectionId"
+        ]
+      }
+    },
+    {
+      "name": "quality_getItemInspectionDocumentAssignments",
+      "module": "quality",
+      "classification": "READ",
+      "description": "get item inspection document assignments",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "itemId",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "itemId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "itemId"
+        ]
+      }
+    },
+    {
+      "name": "quality_upsertItemInspectionDocumentAssignment",
+      "module": "quality",
+      "classification": "WRITE",
+      "description": "upsert item inspection document assignment",
+      "paramCount": 2,
+      "serviceParams": [
+        "client",
+        "assignment"
+      ],
+      "injectAuth": [
+        "companyId",
+        "createdBy",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "itemId": {
+            "type": "string"
+          },
+          "usage": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "itemId"
         ]
       }
     },
@@ -35022,6 +35668,32 @@
       }
     },
     {
+      "name": "sales_getOpenSalesOrderLinesForItem",
+      "module": "sales",
+      "classification": "READ",
+      "description": "get open sales order lines for item",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "itemId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "itemId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "itemId"
+        ]
+      }
+    },
+    {
       "name": "sales_getSalesOrderLinesByItemIds",
       "module": "sales",
       "classification": "READ",
@@ -39908,6 +40580,33 @@
       }
     },
     {
+      "name": "settings_updateIncludeMaterialsOnTravelerSetting",
+      "module": "settings",
+      "classification": "WRITE",
+      "description": "update include materials on traveler setting",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "includeMaterialsOnTraveler"
+      ],
+      "injectAuth": [
+        "companyId",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "includeMaterialsOnTraveler": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "includeMaterialsOnTraveler"
+        ]
+      }
+    },
+    {
       "name": "settings_updateAccountsPayableAddressSetting",
       "module": "settings",
       "classification": "WRITE",
@@ -40301,6 +41000,64 @@
         },
         "required": [
           "showCustomerReadableId"
+        ]
+      }
+    },
+    {
+      "name": "settings_updateAutoSelectMaterialWithoutPickingListSetting",
+      "module": "settings",
+      "classification": "WRITE",
+      "description": "update auto select material without picking list setting",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "autoSelectMaterialWithoutPickingList"
+      ],
+      "injectAuth": [
+        "companyId",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "autoSelectMaterialWithoutPickingList": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "autoSelectMaterialWithoutPickingList"
+        ]
+      }
+    },
+    {
+      "name": "settings_updateIncompletePickingListPolicySetting",
+      "module": "settings",
+      "classification": "WRITE",
+      "description": "update incomplete picking list policy setting",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "incompletePickingListPolicy"
+      ],
+      "injectAuth": [
+        "companyId",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "incompletePickingListPolicy": {
+            "type": "string",
+            "enum": [
+              "warn",
+              "error"
+            ]
+          }
+        },
+        "required": [
+          "incompletePickingListPolicy"
         ]
       }
     },

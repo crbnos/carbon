@@ -1,4 +1,4 @@
-import { ValidatedForm } from "@carbon/form";
+import { useControlField, ValidatedForm } from "@carbon/form";
 import {
   Button,
   DropdownMenu,
@@ -22,7 +22,7 @@ import {
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { PostgrestResponse } from "@supabase/supabase-js";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import {
   LuCirclePlus,
   LuEllipsisVertical,
@@ -31,7 +31,7 @@ import {
 } from "react-icons/lu";
 import { useFetcher, useNavigate } from "react-router";
 import type { z } from "zod";
-import { SupplierAvatar } from "~/components";
+import { OperationTypeIcon, SupplierAvatar } from "~/components";
 import {
   Boolean,
   CustomFormFields,
@@ -47,7 +47,7 @@ import { usePermissions } from "~/hooks";
 import { SupplierProcessForm } from "~/modules/purchasing/ui/Supplier";
 
 import { processValidator } from "~/modules/resources";
-import { processTypes } from "~/modules/shared";
+import { operationTypes } from "~/modules/shared";
 import { path } from "~/utils/path";
 
 type ProcessFormProps = {
@@ -82,8 +82,6 @@ const ProcessForm = ({
   const isDisabled = isEditing
     ? !permissions.can("update", "resources")
     : !permissions.can("create", "resources");
-
-  const [processType, setProcessType] = useState(initialValues.processType);
 
   return (
     <ModalDrawerProvider type={type}>
@@ -124,38 +122,36 @@ const ProcessForm = ({
                   name="processType"
                   label={t`Process Type`}
                   termId="process-type"
-                  options={processTypes.map((pt) => ({
+                  options={operationTypes.map((pt) => ({
                     value: pt,
-                    label: pt
+                    label: (
+                      <span className="flex items-center gap-2">
+                        <OperationTypeIcon type={pt} />
+                        <span>{pt}</span>
+                      </span>
+                    )
                   }))}
-                  onChange={(newValue) => {
-                    setProcessType(
-                      newValue?.value as (typeof processTypes)[number]
-                    );
-                  }}
                 />
-                {processType !== "Outside" && (
-                  <>
-                    <StandardFactor
-                      name="defaultStandardFactor"
-                      label={t`Default Unit`}
-                      termId="process-default-unit"
-                      value={initialValues.defaultStandardFactor}
-                    />
-                    <WorkCenters
-                      name="workCenters"
-                      label={t`Work Centers`}
-                      termId="work-center"
-                    />
-                  </>
-                )}
-                {processType !== "Inside" && (
-                  <SupplierProcesses processId={initialValues.id} />
-                )}
+                {/* Work centers apply to any type (the type is just a default
+                    for new operations), but supplier links only make sense for
+                    Outside Processing — SupplierProcesses gates itself on it. */}
+                <StandardFactor
+                  name="defaultStandardFactor"
+                  label={t`Default Unit`}
+                  termId="process-default-unit"
+                  value={initialValues.defaultStandardFactor}
+                />
+                <WorkCenters
+                  name="workCenters"
+                  label={t`Work Centers`}
+                  termId="work-center"
+                />
+                <SupplierProcesses processId={initialValues.id} />
                 <Boolean
                   name="completeAllOnScan"
                   label={t`Complete all quantities on barcode scan`}
                   termId="process-complete-all-on-scan"
+                  bordered
                 />
                 <CustomFormFields table="process" />
               </VStack>
@@ -186,6 +182,10 @@ function SupplierProcesses({ processId }: { processId?: string }) {
   const navigate = useNavigate();
   const isEditing = processId !== undefined;
   const newSupplierProcessModal = useDisclosure();
+  const [processType] = useControlField<string>("processType");
+
+  // Suppliers only apply to outside-processing operations.
+  if (processType !== "Outside Processing") return null;
 
   return (
     <>

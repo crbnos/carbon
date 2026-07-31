@@ -17,8 +17,7 @@ import {
   LuHistory,
   LuInfo,
   LuRotateCcw,
-  LuSend,
-  LuWrench
+  LuSend
 } from "react-icons/lu";
 import { useFetcher, useRevalidator } from "react-router";
 import { usePermissions } from "~/hooks";
@@ -77,8 +76,6 @@ const InventoryCountDetails = ({
     message: string;
     invalidLineIds?: string[];
   }>();
-  const rectifyFetcher = useFetcher();
-
   // Rows the last post attempt rejected (an invalid serial quantity) —
   // highlighted red until the user fixes them and re-posts.
   const invalidLineIds = postFetcher.data?.invalidLineIds;
@@ -167,22 +164,6 @@ const InventoryCountDetails = ({
             </Button>
           </postFetcher.Form>
         </>
-      )}
-      {status === "Posted" && (
-        <rectifyFetcher.Form
-          method="post"
-          action={path.to.inventoryCountRectify(inventoryCount.id!)}
-        >
-          <Button
-            type="submit"
-            variant="secondary"
-            isDisabled={!canUpdate}
-            isLoading={rectifyFetcher.state !== "idle"}
-            leftIcon={<LuWrench />}
-          >
-            {t`Rectify`}
-          </Button>
-        </rectifyFetcher.Form>
       )}
     </HStack>
   );
