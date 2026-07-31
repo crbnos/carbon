@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.175.0/http/server.ts";
 import { z } from "npm:zod@^3.24.1";
 
 import { corsHeaders } from "../lib/headers.ts";
+import { corsPreflight } from "../lib/response.ts";
 import { sendInngestEvent } from "../lib/inngest.ts";
 
 const recipientValidator = z.discriminatedUnion("type", [
@@ -36,9 +37,8 @@ const payloadValidator = z.discriminatedUnion("type", [
 ]);
 
 serve(async (req: Request) => {
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
-  }
+  const preflight = corsPreflight(req);
+  if (preflight) return preflight;
   const payload = await req.json();
 
   try {

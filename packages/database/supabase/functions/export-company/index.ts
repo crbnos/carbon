@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.175.0/http/server.ts";
 import { errorResponse, jsonResponse } from "../lib/company-backup.ts";
 import { corsHeaders } from "../lib/headers.ts";
+import { corsPreflight } from "../lib/response.ts";
 import { sendInngestEvent } from "../lib/inngest.ts";
 import { requirePermissions } from "../lib/supabase.ts";
 
@@ -11,9 +12,8 @@ import { requirePermissions } from "../lib/supabase.ts";
  * bucket under `exports/`.
  */
 serve(async (req: Request) => {
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
-  }
+  const preflight = corsPreflight(req);
+  if (preflight) return preflight;
 
   try {
     const { companyId, userId, label, includeStorage } = await req.json();

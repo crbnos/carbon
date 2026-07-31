@@ -3,6 +3,7 @@ import { z } from "npm:zod@^3.24.1";
 
 import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
 import { corsHeaders } from "../lib/headers.ts";
+import { corsPreflight } from "../lib/response.ts";
 import { SchedulingEngine } from "../lib/scheduling/scheduling-engine.ts";
 import type {
   SchedulingDirection,
@@ -22,9 +23,8 @@ const payloadValidator = z.object({
 });
 
 serve(async (req: Request) => {
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
-  }
+  const preflight = corsPreflight(req);
+  if (preflight) return preflight;
 
   try {
     const payload = await req.json();

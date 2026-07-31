@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.175.0/http/server.ts";
 
 import { corsHeaders } from "../lib/headers.ts";
+import { corsPreflight } from "../lib/response.ts";
 import { sendInngestEvent } from "../lib/inngest.ts";
 import { getFunctionLogger } from "../lib/logging.ts";
 
@@ -13,9 +14,8 @@ const logger = getFunctionLogger("event-wake");
  * the queue itself is the source of truth; this is only a doorbell.
  */
 serve(async (req: Request) => {
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
-  }
+  const preflight = corsPreflight(req);
+  if (preflight) return preflight;
 
   try {
     await sendInngestEvent("carbon/event-queue.process", {});

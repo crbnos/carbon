@@ -4,6 +4,7 @@ import { nanoid } from "https://deno.land/x/nanoid@v3.0.0/nanoid.ts";
 import z from "npm:zod@^3.24.1";
 import { getConnectionPool, getDatabaseClient } from "../lib/database.ts";
 import { corsHeaders } from "../lib/headers.ts";
+import { corsPreflight } from "../lib/response.ts";
 import type { DB } from "../lib/types.ts";
 
 const pool = getConnectionPool(1);
@@ -397,9 +398,8 @@ async function triggerRework(
 
 // Main handler
 serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
-  }
+  const preflight = corsPreflight(req);
+  if (preflight) return preflight;
 
   try {
     const raw = await req.json();

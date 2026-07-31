@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.175.0/http/server.ts";
 import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
 
 import { corsHeaders } from "../lib/headers.ts";
+import { corsPreflight } from "../lib/response.ts";
 import {
   accountDefaults,
   accounts,
@@ -31,9 +32,8 @@ const pool = getConnectionPool(1);
 const db = getDatabaseClient<DB>(pool);
 
 serve(async (req: Request) => {
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
-  }
+  const preflight = corsPreflight(req);
+  if (preflight) return preflight;
   const { companyId: id, userId, parentCompanyId, identityOnly } =
     await req.json();
 

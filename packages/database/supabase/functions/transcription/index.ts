@@ -4,6 +4,7 @@ import { experimental_transcribe as transcribe } from "npm:ai@5.0.87";
 import { z } from "npm:zod@^3.24.1";
 import { openai } from "../lib/ai/openai.ts";
 import { corsHeaders } from "../lib/headers.ts";
+import { corsPreflight } from "../lib/response.ts";
 import { getSupabase } from "../lib/supabase.ts";
 import { Database } from "../lib/types.ts";
 
@@ -13,9 +14,8 @@ const transcriptionRequestSchema = z.object({
 });
 
 serve(async (req: Request) => {
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
-  }
+  const preflight = corsPreflight(req);
+  if (preflight) return preflight;
 
   console.log({
     function: "transcription",

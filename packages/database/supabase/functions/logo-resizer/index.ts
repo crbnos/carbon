@@ -10,6 +10,7 @@ import {
 } from "npm:@imagemagick/magick-wasm@0.0.30";
 
 import { corsHeaders } from "../lib/headers.ts";
+import { corsPreflight } from "../lib/response.ts";
 
 const wasmBytes = await Deno.readFile(
   new URL(
@@ -46,9 +47,8 @@ function rgbaToGFA(rgba: Uint8Array, w: number, h: number, thresh = 128): string
 }
 
 serve(async (req: Request) => {
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
-  }
+  const preflight = corsPreflight(req);
+  if (preflight) return preflight;
 
   try {
     const formData = await req.formData();

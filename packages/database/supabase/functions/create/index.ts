@@ -4,6 +4,7 @@ import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
 
 import z from "npm:zod@^3.24.1";
 import { corsHeaders } from "../lib/headers.ts";
+import { corsPreflight } from "../lib/response.ts";
 import { requirePermissions } from "../lib/supabase.ts";
 import { Database } from "../lib/types.ts";
 import { getNextSequence } from "../shared/get-next-sequence.ts";
@@ -114,9 +115,8 @@ const payloadValidator = z.discriminatedUnion("type", [
   }),
 ]);
 serve(async (req: Request) => {
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
-  }
+  const preflight = corsPreflight(req);
+  if (preflight) return preflight;
   const payload = await req.json();
 
   const { type, companyId, userId } = payloadValidator.parse(payload);
