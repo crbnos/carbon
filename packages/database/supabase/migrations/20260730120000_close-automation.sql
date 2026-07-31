@@ -58,13 +58,15 @@ ALTER TABLE "purchaseInvoiceLine" ADD CONSTRAINT "purchaseInvoiceLine_prepaid_ch
   );
 
 -- 4b. Composite-tenant-FK targets -------------------------------------------------
--- The new tables below carry account/journal ids alongside their own companyId.
--- A single-column FK to account("id") / journal("id") would let a row in company
--- A reference an account/journal owned by company B (RLS scopes the row itself,
--- not the parent it points at). To let the database reject that, the composite FK
--- targets need a UNIQUE ("id", "companyId") — id alone is already the PK, so this
--- is trivially unique. Mirrors 20260703143904_composite-tenant-fks.sql (which did
--- the same for customer/supplier). Guarded so re-application is a no-op.
+-- The new tables below carry account/journal ids AND prepaid source-document ids
+-- (purchaseInvoice/purchaseInvoiceLine) alongside their own companyId. A single-
+-- column FK to account("id") / journal("id") / purchaseInvoice("id") would let a
+-- row in company A reference a parent owned by company B (RLS scopes the row
+-- itself, not the parent it points at). To let the database reject that, each
+-- composite FK target needs a UNIQUE ("id", "companyId") — id alone is already the
+-- PK on all four tables, so this is trivially unique. Mirrors
+-- 20260703143904_composite-tenant-fks.sql (which did the same for customer/
+-- supplier). Guarded so re-application is a no-op.
 DO $$
 BEGIN
   IF NOT EXISTS (
@@ -80,14 +82,30 @@ BEGIN
   ) THEN
     ALTER TABLE "journal" ADD CONSTRAINT "journal_id_companyId_key" UNIQUE ("id", "companyId");
   END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint
+    WHERE conname = 'purchaseInvoice_id_companyId_key' AND conrelid = '"purchaseInvoice"'::regclass
+  ) THEN
+    ALTER TABLE "purchaseInvoice" ADD CONSTRAINT "purchaseInvoice_id_companyId_key" UNIQUE ("id", "companyId");
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint
+    WHERE conname = 'purchaseInvoiceLine_id_companyId_key' AND conrelid = '"purchaseInvoiceLine"'::regclass
+  ) THEN
+    ALTER TABLE "purchaseInvoiceLine" ADD CONSTRAINT "purchaseInvoiceLine_id_companyId_key" UNIQUE ("id", "companyId");
+  END IF;
 END $$;
 
 -- 5. Prepaid schedules (header) ----------------------------------------------------
 -- Amounts are base currency (journalLine.amount is already base) so schedules carry
 -- no FX exposure. prepaidAccountId is the resolved accountDefault.prepaymentAccount
 -- (stored as an account id); expenseAccountId is the amortization target from the
--- source invoice line. The invoice source columns are informational (no FK) so a
--- schedule survives independently of its originating document.
+-- source invoice line. The invoice source columns carry composite tenant FKs so a
+-- cross-company or non-existent invoice/line can't be linked, but with ON DELETE
+-- SET NULL (column-list form, nulling only the source id — companyId is NOT NULL)
+-- so the schedule still survives independently of its originating document.
 CREATE TABLE IF NOT EXISTS "prepaidSchedule" (
   "id" TEXT NOT NULL DEFAULT id('ppd'),
   "companyId" TEXT NOT NULL,
@@ -113,7 +131,15 @@ CREATE TABLE IF NOT EXISTS "prepaidSchedule" (
   CONSTRAINT "prepaidSchedule_prepaidAccountId_fkey" FOREIGN KEY ("prepaidAccountId", "companyId")
     REFERENCES "account"("id", "companyId") ON DELETE RESTRICT ON UPDATE CASCADE,
   CONSTRAINT "prepaidSchedule_expenseAccountId_fkey" FOREIGN KEY ("expenseAccountId", "companyId")
-    REFERENCES "account"("id", "companyId") ON DELETE RESTRICT ON UPDATE CASCADE
+    REFERENCES "account"("id", "companyId") ON DELETE RESTRICT ON UPDATE CASCADE,
+  -- Composite tenant FKs on the source-document pointers: the invoice/line must
+  -- belong to the same company. SET NULL (PG15 column-list form — only the source
+  -- id, never the NOT NULL companyId) so deleting the source document leaves the
+  -- schedule intact with a nulled pointer.
+  CONSTRAINT "prepaidSchedule_purchaseInvoiceId_fkey" FOREIGN KEY ("purchaseInvoiceId", "companyId")
+    REFERENCES "purchaseInvoice"("id", "companyId") ON DELETE SET NULL ("purchaseInvoiceId") ON UPDATE CASCADE,
+  CONSTRAINT "prepaidSchedule_purchaseInvoiceLineId_fkey" FOREIGN KEY ("purchaseInvoiceLineId", "companyId")
+    REFERENCES "purchaseInvoiceLine"("id", "companyId") ON DELETE SET NULL ("purchaseInvoiceLineId") ON UPDATE CASCADE
 );
 CREATE INDEX "prepaidSchedule_companyId_status_idx"
   ON "prepaidSchedule" ("companyId", "status");
