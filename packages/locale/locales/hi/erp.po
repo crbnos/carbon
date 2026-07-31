@@ -3334,10 +3334,6 @@ msgstr "भाग बनाया जा रहा है..."
 msgid "Credit"
 msgstr "क्रेडिट"
 
-#. placeholder {0}: parentCurrency ?? "Translated"
-msgid "Credit ({0})"
-msgstr "जमा ({0})"
-
 msgid "Credit / debit memo"
 msgstr "क्रेडिट / डेबिट मेमो"
 
@@ -5810,6 +5806,7 @@ msgstr "अंतिम रूप दें"
 
 msgid "Finalizing a fiscal month through the Open → Locked → Closed lifecycle; a closed period is frozen and its balances snapshotted, reversible only by explicit reopen."
 msgstr "खुली → लॉक की गई → बंद जीवनचक्र के माध्यम से एक वित्तीय माह को अंतिम रूप देना; एक बंद अवधि जमी हुई है और इसके संतुलन को स्नैपशॉट किया गया है, केवल स्पष्ट पुनः खुलने से उलटा है।"
+
 msgid "Financing Activities"
 msgstr "वित्तपोषण गतिविधियां"
 
@@ -6434,13 +6431,11 @@ msgstr "हल की गई कीमत की गणना कैसे क�
 msgid "How the sample size is decided — Inspect All, Inspect First N, Percentage of Lot, or AQL (Z1.4 / ISO 2859-1). Each mode reveals its own parameter fields below."
 msgstr "नमूना आकार कैसे तय किया जाता है — सभी निरीक्षण करें, पहले N निरीक्षण करें, बहुत की प्रतिशत या AQL (Z1.4 / ISO 2859-1)। प्रत्येक मोड नीचे अपने स्वयं के पैरामीटर फ़ील्ड प्रकट करता है।"
 
-msgid "How this gauge is used — Standard (regular checks) or Master (calibrates other gauges)."
-msgstr "यह गेज कैसे उपयोग किया जाता है — मानक (नियमित जांच) या मास्टर (अन्य गेज को कैलिब्रेट करता है)।"
 msgid "How this account's period change is classified on the statement of cash flows. Default derives from the account type."
 msgstr "नकद प्रवाह विवरण पर इस खाते के अवधि परिवर्तन को कैसे वर्गीकृत किया जाता है। डिफ़ॉल्ट खाता प्रकार से लिया जाता है।"
 
-msgid "How this gauge is used — Standard (regular checks), Master (calibrates other gauges), or Reference (audit-only)."
-msgstr "इस गेज का उपयोग कैसे किया जाता है — मानक (नियमित जांच), मास्टर (अन्य गेज को कैलिब्रेट करता है), या संदर्भ (केवल ऑडिट)।"
+msgid "How this gauge is used — Standard (regular checks) or Master (calibrates other gauges)."
+msgstr "यह गेज कैसे उपयोग किया जाता है — मानक (नियमित जांच) या मास्टर (अन्य गेज को कैलिब्रेट करता है)।"
 
 msgid "How this price was calculated"
 msgstr "इस कीमत की गणना कैसे की गई"
@@ -6615,6 +6610,7 @@ msgstr "इनबॉक्स"
 
 msgid "Include a materials (bill of materials) section on the job traveler PDF with item numbers and quantities."
 msgstr "जॉब ट्रैवलर PDF में आइटम नंबर और मात्राओं के साथ बिल ऑफ मटेरियल्स अनुभाग शामिल करें।"
+
 msgid "Include drafts"
 msgstr "ड्राफ्ट शामिल करें"
 
@@ -8730,9 +8726,6 @@ msgstr "यहाँ कोई पंक्तियाँ नहीं है�
 msgid "No rules assigned"
 msgstr "कोई नियम असाइन नहीं किया गया"
 
-msgid "No samples inspected yet."
-msgstr "अभी तक कोई नमूना निरीक्षण नहीं किया गया है।"
-
 msgid "No saved views"
 msgstr "कोई सहेजे गए दृश्य नहीं"
 
@@ -9490,6 +9483,7 @@ msgstr "अवधि"
 
 msgid "Period close"
 msgstr "अवधि बंद"
+
 msgid "Period Credits"
 msgstr "अवधि क्रेडिट"
 
@@ -9801,8 +9795,6 @@ msgstr "पिछली अवधि"
 
 msgid "Previous step"
 msgstr "पिछला कदम"
-msgid "Previous period"
-msgstr ""
 
 msgid "Previous year"
 msgstr "पिछला वर्ष"

@@ -3334,10 +3334,6 @@ msgstr "Создание детали..."
 msgid "Credit"
 msgstr "Кредит"
 
-#. placeholder {0}: parentCurrency ?? "Translated"
-msgid "Credit ({0})"
-msgstr "Кредит ({0})"
-
 msgid "Credit / debit memo"
 msgstr "Кредит-нота / Дебет-нота"
 
@@ -5810,6 +5806,7 @@ msgstr "Завершить"
 
 msgid "Finalizing a fiscal month through the Open → Locked → Closed lifecycle; a closed period is frozen and its balances snapshotted, reversible only by explicit reopen."
 msgstr "Финализация налогового месяца через цикл жизни Открыто → Заблокировано → Закрыто; закрытый период заморожен и его остатки снимаются, обратимо только явным повторным открытием."
+
 msgid "Financing Activities"
 msgstr "Финансовые виды деятельности"
 
@@ -6434,13 +6431,11 @@ msgstr "Как была рассчитана окончательная цена
 msgid "How the sample size is decided — Inspect All, Inspect First N, Percentage of Lot, or AQL (Z1.4 / ISO 2859-1). Each mode reveals its own parameter fields below."
 msgstr "Как решается размер выборки — Проверить все, Проверить первые N, Процент партии или AQL (Z1.4 / ISO 2859-1). Каждый режим раскрывает свои собственные поля параметров ниже."
 
-msgid "How this gauge is used — Standard (regular checks) or Master (calibrates other gauges)."
-msgstr "Как используется этот калибр — Стандартный (плановые проверки) или Мастер (калибрует другие калибры)."
 msgid "How this account's period change is classified on the statement of cash flows. Default derives from the account type."
 msgstr "Как классифицируется изменение периода этого счета в отчете о потоках денежных средств. По умолчанию получается из типа счета."
 
-msgid "How this gauge is used — Standard (regular checks), Master (calibrates other gauges), or Reference (audit-only)."
-msgstr "Как используется этот манометр — Стандартный (обычные проверки), Мастер (калибрует другие манометры) или Справка (только аудит)."
+msgid "How this gauge is used — Standard (regular checks) or Master (calibrates other gauges)."
+msgstr "Как используется этот калибр — Стандартный (плановые проверки) или Мастер (калибрует другие калибры)."
 
 msgid "How this price was calculated"
 msgstr "Как была рассчитана эта цена"
@@ -6615,6 +6610,7 @@ msgstr "Входящие"
 
 msgid "Include a materials (bill of materials) section on the job traveler PDF with item numbers and quantities."
 msgstr "Включить раздел материалов (спецификация материалов) в PDF путевого листа задания с номерами товаров и количествами."
+
 msgid "Include drafts"
 msgstr "Включить черновики"
 
@@ -8730,9 +8726,6 @@ msgstr "Нет строк здесь."
 msgid "No rules assigned"
 msgstr "Нет назначенных правил"
 
-msgid "No samples inspected yet."
-msgstr "Пока нет проверенных образцов."
-
 msgid "No saved views"
 msgstr "Нет сохраненных представлений"
 
@@ -9490,6 +9483,7 @@ msgstr "Период"
 
 msgid "Period close"
 msgstr "Закрытие периода"
+
 msgid "Period Credits"
 msgstr "Кредиты периода"
 
@@ -9801,8 +9795,6 @@ msgstr "Предыдущий период"
 
 msgid "Previous step"
 msgstr "Предыдущий шаг"
-msgid "Previous period"
-msgstr ""
 
 msgid "Previous year"
 msgstr "Предыдущий год"

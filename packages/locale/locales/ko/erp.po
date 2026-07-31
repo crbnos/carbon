@@ -2421,10 +2421,10 @@ msgid "Closing"
 msgstr "마감"
 
 msgid "Closing Credit"
-msgstr "종료 신용"
+msgstr "기말 대변"
 
 msgid "Closing Debit"
-msgstr "종료 차변"
+msgstr "기말 차변"
 
 msgid "Closure blocked"
 msgstr "마감 차단됨"
@@ -3333,10 +3333,6 @@ msgstr "품목 생성 중..."
 
 msgid "Credit"
 msgstr "대변"
-
-#. placeholder {0}: parentCurrency ?? "Translated"
-msgid "Credit ({0})"
-msgstr "대변 ({0})"
 
 msgid "Credit / debit memo"
 msgstr "신용 / 차변 메모"
@@ -5810,6 +5806,7 @@ msgstr "확정"
 
 msgid "Finalizing a fiscal month through the Open → Locked → Closed lifecycle; a closed period is frozen and its balances snapshotted, reversible only by explicit reopen."
 msgstr "열림 → 잠김 → 종료 라이프사이클을 통해 회계 월을 마무리하는 것으로서, 종료된 기간은 고정되고 잔액은 스냅샷되며 명시적 재개를 통해서만 취소할 수 있습니다."
+
 msgid "Financing Activities"
 msgstr "재무 활동"
 
@@ -6434,13 +6431,11 @@ msgstr "확정된 가격이 계산된 방식입니다."
 msgid "How the sample size is decided — Inspect All, Inspect First N, Percentage of Lot, or AQL (Z1.4 / ISO 2859-1). Each mode reveals its own parameter fields below."
 msgstr "샘플 크기를 결정하는 방식 — 전수 검사, 처음 N개 검사, 로트 비율, 또는 AQL(Z1.4 / ISO 2859-1). 각 모드는 아래에 고유한 파라미터 필드를 표시합니다."
 
-msgid "How this gauge is used — Standard (regular checks) or Master (calibrates other gauges)."
-msgstr "이 게이지의 사용 방식으로서, 표준(정기적인 점검) 또는 마스터(다른 게이지 교정)입니다."
 msgid "How this account's period change is classified on the statement of cash flows. Default derives from the account type."
 msgstr "이 계정의 기간 변화가 현금흐름표에서 어떻게 분류되는지입니다. 기본값은 계정 유형에서 파생됩니다."
 
-msgid "How this gauge is used — Standard (regular checks), Master (calibrates other gauges), or Reference (audit-only)."
-msgstr "이 측정기가 사용되는 방식 — 표준(정기 점검), 마스터(다른 측정기 교정), 또는 기준(감사 전용)."
+msgid "How this gauge is used — Standard (regular checks) or Master (calibrates other gauges)."
+msgstr "이 게이지의 사용 방식으로서, 표준(정기적인 점검) 또는 마스터(다른 게이지 교정)입니다."
 
 msgid "How this price was calculated"
 msgstr "이 가격이 계산된 방식"
@@ -6615,6 +6610,7 @@ msgstr "받은함"
 
 msgid "Include a materials (bill of materials) section on the job traveler PDF with item numbers and quantities."
 msgstr "작업 이동 PDF에 품목번호와 수량이 포함된 자재(부자재명세서) 섹션을 포함하세요."
+
 msgid "Include drafts"
 msgstr "초안 포함"
 
@@ -8722,16 +8718,13 @@ msgid "No results found"
 msgstr "결과가 없습니다"
 
 msgid "No Retained Earnings account found"
-msgstr "이월이익 계정을 찾을 수 없습니다"
+msgstr "이익잉여금 계정을 찾을 수 없습니다"
 
 msgid "No rows here."
 msgstr "행이 없습니다."
 
 msgid "No rules assigned"
 msgstr "배정된 규칙이 없습니다"
-
-msgid "No samples inspected yet."
-msgstr "아직 검사된 샘플이 없습니다."
 
 msgid "No saved views"
 msgstr "저장된 보기 없음"
@@ -9076,10 +9069,10 @@ msgid "Opening balance of depreciation already booked before this asset was adde
 msgstr "이 자산이 Carbon에 등록되기 전에 이미 계상된 감가상각의 기초 잔액입니다(신규 취득 자산은 0을 사용하세요)."
 
 msgid "Opening Credit"
-msgstr "개시 신용"
+msgstr "기초 대변"
 
 msgid "Opening Debit"
-msgstr "개시 차변"
+msgstr "기초 차변"
 
 msgid "Operating Activities"
 msgstr "영업 활동"
@@ -9490,8 +9483,9 @@ msgstr "기간"
 
 msgid "Period close"
 msgstr "기간 종료"
+
 msgid "Period Credits"
-msgstr "기간 신용"
+msgstr "기간 대변"
 
 msgid "Period Debits"
 msgstr "기간 차변"
@@ -9801,8 +9795,6 @@ msgstr "이전 기간"
 
 msgid "Previous step"
 msgstr "이전 단계"
-msgid "Previous period"
-msgstr ""
 
 msgid "Previous year"
 msgstr "지난 해"
@@ -9879,7 +9871,7 @@ msgid "Printing"
 msgstr "인쇄"
 
 msgid "Prior-year income is shown inside Net Income. Add an account with type Retained Earnings to split retained earnings from current-year income."
-msgstr "전년도 소득은 순이익 내에 표시됩니다. 이월이익을 당해 소득과 분리하려면 이월이익 유형의 계정을 추가하세요."
+msgstr "전년도 소득은 순이익 내에 표시됩니다. 이익잉여금을 당해 소득과 분리하려면 이익잉여금 유형의 계정을 추가하세요."
 
 msgid "Priorities"
 msgstr "우선순위"

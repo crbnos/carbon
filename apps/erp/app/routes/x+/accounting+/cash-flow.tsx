@@ -56,10 +56,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const parentCompany = companiesList.find((c) => !c.parentCompanyId);
   const parentCurrency = parentCompany?.baseCurrencyCode ?? null;
 
+  // Constrain the requested company to the group the user actually belongs to
+  // (companiesList is RLS-scoped to companyGroupId); fall back to the user's
+  // own company for an unknown/foreign id rather than trusting the raw param.
+  const companyIdSet = new Set(companiesList.map((c) => c.id));
   const selectedCompanyIds =
     companiesParam === "all"
       ? companiesList.map((c) => c.id)
-      : companiesParam
+      : companiesParam && companyIdSet.has(companiesParam)
         ? [companiesParam]
         : [companyId];
   const isMultiCompany = selectedCompanyIds.length > 1;

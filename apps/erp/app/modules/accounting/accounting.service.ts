@@ -559,7 +559,7 @@ export async function getCurrencyRatesForWindow(
   return {
     data: {
       average: average ?? closingAtEnd ?? 1,
-      closingAtStart: closingAtStart ?? 1,
+      closingAtStart: closingAtStart ?? closingAtEnd ?? 1,
       closingAtEnd: closingAtEnd ?? 1
     },
     error: null
@@ -614,28 +614,42 @@ export async function getConsolidatedCashFlowStatement(
       currencyByCompany.set(c.id, c.baseCurrencyCode ?? parentCurrency);
   }
 
-  const perCompany: TranslatedCompanyFlow[] = [];
-  for (const id of companyIds) {
-    const cf = await getCashFlowStatement(client, companyGroupId, id, args);
-    if (cf.error) return { data: null, error: cf.error };
-    if (!cf.data) continue;
+  const results = await Promise.all(
+    companyIds.map(async (id) => {
+      const cf = await getCashFlowStatement(client, companyGroupId, id, args);
+      if (cf.error) return { error: cf.error, flow: null };
+      if (!cf.data) return { error: null, flow: null };
 
-    const currency = currencyByCompany.get(id) ?? parentCurrency;
-    if (currency === parentCurrency) {
-      perCompany.push(translateCompanyFlow(cf.data, 1, 1, 1));
-      continue;
-    }
-    const rates = await getCurrencyRatesForWindow(
-      client,
-      companyGroupId,
-      currency,
-      args
-    );
-    const { average, closingAtStart, closingAtEnd } = rates.data;
-    perCompany.push(
-      translateCompanyFlow(cf.data, average, closingAtStart, closingAtEnd)
-    );
-  }
+      const currency = currencyByCompany.get(id) ?? parentCurrency;
+      if (currency === parentCurrency) {
+        return { error: null, flow: translateCompanyFlow(cf.data, 1, 1, 1) };
+      }
+      const rates = await getCurrencyRatesForWindow(
+        client,
+        companyGroupId,
+        currency,
+        args
+      );
+      if (rates.error) return { error: rates.error, flow: null };
+      const { average, closingAtStart, closingAtEnd } = rates.data;
+      return {
+        error: null,
+        flow: translateCompanyFlow(
+          cf.data,
+          average,
+          closingAtStart,
+          closingAtEnd
+        )
+      };
+    })
+  );
+
+  const firstError = results.find((r) => r.error)?.error;
+  if (firstError) return { data: null, error: firstError };
+
+  const perCompany = results
+    .map((r) => r.flow)
+    .filter((f): f is TranslatedCompanyFlow => f !== null);
 
   return { data: mergeTranslatedCashFlows(perCompany), error: null };
 }

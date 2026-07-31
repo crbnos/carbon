@@ -3334,10 +3334,6 @@ msgstr "Creating part..."
 msgid "Credit"
 msgstr "Credit"
 
-#. placeholder {0}: parentCurrency ?? "Translated"
-msgid "Credit ({0})"
-msgstr "Credit ({0})"
-
 msgid "Credit / debit memo"
 msgstr "Credit / debit memo"
 
@@ -5810,6 +5806,7 @@ msgstr "Finalize"
 
 msgid "Finalizing a fiscal month through the Open → Locked → Closed lifecycle; a closed period is frozen and its balances snapshotted, reversible only by explicit reopen."
 msgstr "Finalizing a fiscal month through the Open → Locked → Closed lifecycle; a closed period is frozen and its balances snapshotted, reversible only by explicit reopen."
+
 msgid "Financing Activities"
 msgstr "Financing Activities"
 
@@ -6434,13 +6431,11 @@ msgstr "How the resolved price was calculated."
 msgid "How the sample size is decided — Inspect All, Inspect First N, Percentage of Lot, or AQL (Z1.4 / ISO 2859-1). Each mode reveals its own parameter fields below."
 msgstr "How the sample size is decided — Inspect All, Inspect First N, Percentage of Lot, or AQL (Z1.4 / ISO 2859-1). Each mode reveals its own parameter fields below."
 
-msgid "How this gauge is used — Standard (regular checks) or Master (calibrates other gauges)."
-msgstr "How this gauge is used — Standard (regular checks) or Master (calibrates other gauges)."
 msgid "How this account's period change is classified on the statement of cash flows. Default derives from the account type."
 msgstr "How this account's period change is classified on the statement of cash flows. Default derives from the account type."
 
-msgid "How this gauge is used — Standard (regular checks), Master (calibrates other gauges), or Reference (audit-only)."
-msgstr "How this gauge is used — Standard (regular checks), Master (calibrates other gauges), or Reference (audit-only)."
+msgid "How this gauge is used — Standard (regular checks) or Master (calibrates other gauges)."
+msgstr "How this gauge is used — Standard (regular checks) or Master (calibrates other gauges)."
 
 msgid "How this price was calculated"
 msgstr "How this price was calculated"
@@ -6615,6 +6610,7 @@ msgstr "Inbox"
 
 msgid "Include a materials (bill of materials) section on the job traveler PDF with item numbers and quantities."
 msgstr "Include a materials (bill of materials) section on the job traveler PDF with item numbers and quantities."
+
 msgid "Include drafts"
 msgstr "Include drafts"
 
@@ -8730,9 +8726,6 @@ msgstr "No rows here."
 msgid "No rules assigned"
 msgstr "No rules assigned"
 
-msgid "No samples inspected yet."
-msgstr "No samples inspected yet."
-
 msgid "No saved views"
 msgstr "No saved views"
 
@@ -9490,6 +9483,7 @@ msgstr "Period"
 
 msgid "Period close"
 msgstr "Period close"
+
 msgid "Period Credits"
 msgstr "Period Credits"
 
@@ -9796,10 +9790,11 @@ msgstr "Previous Date"
 msgid "Previous page"
 msgstr "Previous page"
 
-msgid "Previous step"
-msgstr "Previous step"
 msgid "Previous period"
 msgstr "Previous period"
+
+msgid "Previous step"
+msgstr "Previous step"
 
 msgid "Previous year"
 msgstr "Previous year"

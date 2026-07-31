@@ -3334,10 +3334,6 @@ msgstr "パーツを作成中..."
 msgid "Credit"
 msgstr "クレジット"
 
-#. placeholder {0}: parentCurrency ?? "Translated"
-msgid "Credit ({0})"
-msgstr "クレジット ({0})"
-
 msgid "Credit / debit memo"
 msgstr "貸方/借方メモ"
 
@@ -5810,6 +5806,7 @@ msgstr "確定"
 
 msgid "Finalizing a fiscal month through the Open → Locked → Closed lifecycle; a closed period is frozen and its balances snapshotted, reversible only by explicit reopen."
 msgstr "開始 → ロック → クローズ ライフサイクルを通じて会計月をファイナライズします。クローズされた期間は凍結され、残高がスナップショットされ、明示的な再開でのみ取り消せます。"
+
 msgid "Financing Activities"
 msgstr "財務活動"
 
@@ -6434,13 +6431,11 @@ msgstr "解決された価格がどのように計算されたかを示します
 msgid "How the sample size is decided — Inspect All, Inspect First N, Percentage of Lot, or AQL (Z1.4 / ISO 2859-1). Each mode reveals its own parameter fields below."
 msgstr "サンプルサイズがどのように決定されるか—すべてを検査、最初のNを検査、ロットのパーセンテージまたはAQL（Z1.4 / ISO 2859-1）。各モードは下記の独自のパラメータフィールドを表示します。"
 
-msgid "How this gauge is used — Standard (regular checks) or Master (calibrates other gauges)."
-msgstr "このゲージの使用方法。標準 (定期的なチェック) またはマスター (他のゲージをキャリブレーション)。"
 msgid "How this account's period change is classified on the statement of cash flows. Default derives from the account type."
 msgstr "このアカウントの期間変更がキャッシュフロー計算書にどのように分類されるかについて。デフォルトはアカウントタイプから派生します。"
 
-msgid "How this gauge is used — Standard (regular checks), Master (calibrates other gauges), or Reference (audit-only)."
-msgstr "このゲージの使用方法—標準（定期チェック）、マスター（他のゲージを校正）、またはリファレンス（監査のみ）。"
+msgid "How this gauge is used — Standard (regular checks) or Master (calibrates other gauges)."
+msgstr "このゲージの使用方法。標準 (定期的なチェック) またはマスター (他のゲージをキャリブレーション)。"
 
 msgid "How this price was calculated"
 msgstr "この価格がどのように計算されたか"
@@ -6615,6 +6610,7 @@ msgstr "受信トレイ"
 
 msgid "Include a materials (bill of materials) section on the job traveler PDF with item numbers and quantities."
 msgstr "ジョブトラベラーPDFに品目番号と数量を含む材料（部品表）セクションを含める。"
+
 msgid "Include drafts"
 msgstr "ドラフトを含める"
 
@@ -8730,9 +8726,6 @@ msgstr "ここに行はありません。"
 msgid "No rules assigned"
 msgstr "ルールが割り当てられていません"
 
-msgid "No samples inspected yet."
-msgstr "まだサンプルが検査されていません。"
-
 msgid "No saved views"
 msgstr "保存されたビューがありません"
 
@@ -9490,6 +9483,7 @@ msgstr "期間"
 
 msgid "Period close"
 msgstr "期間クローズ"
+
 msgid "Period Credits"
 msgstr "期間クレジット"
 
@@ -9801,8 +9795,6 @@ msgstr "前期"
 
 msgid "Previous step"
 msgstr "前のステップ"
-msgid "Previous period"
-msgstr ""
 
 msgid "Previous year"
 msgstr "前年度"

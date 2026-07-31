@@ -3334,10 +3334,6 @@ msgstr "Création de la pièce..."
 msgid "Credit"
 msgstr "Crédit"
 
-#. placeholder {0}: parentCurrency ?? "Translated"
-msgid "Credit ({0})"
-msgstr "Crédit ({0})"
-
 msgid "Credit / debit memo"
 msgstr "Note de crédit / débit"
 
@@ -5810,6 +5806,7 @@ msgstr "Finaliser"
 
 msgid "Finalizing a fiscal month through the Open → Locked → Closed lifecycle; a closed period is frozen and its balances snapshotted, reversible only by explicit reopen."
 msgstr "Finalisation d'un mois fiscal via le cycle de vie Ouvert → Verrouillé → Fermé ; une période fermée est gelée et ses soldes sont capturés, réversible uniquement par une réouverture explicite."
+
 msgid "Financing Activities"
 msgstr "Activités de financement"
 
@@ -6434,13 +6431,11 @@ msgstr "Comment le prix résolu a été calculé."
 msgid "How the sample size is decided — Inspect All, Inspect First N, Percentage of Lot, or AQL (Z1.4 / ISO 2859-1). Each mode reveals its own parameter fields below."
 msgstr "Comment la taille de l'échantillon est décidée — Inspecter Tout, Inspecter les Premiers N, Pourcentage du Lot ou AQL (Z1.4 / ISO 2859-1). Chaque mode révèle ses propres champs de paramètres ci-dessous."
 
-msgid "How this gauge is used — Standard (regular checks) or Master (calibrates other gauges)."
-msgstr "Comment cet instrument de mesure est utilisé — Standard (contrôles réguliers) ou Maître (étalonner d'autres instruments)."
 msgid "How this account's period change is classified on the statement of cash flows. Default derives from the account type."
 msgstr "Comment la variation de période de ce compte est classée dans le flux de trésorerie. La valeur par défaut dérive du type de compte."
 
-msgid "How this gauge is used — Standard (regular checks), Master (calibrates other gauges), or Reference (audit-only)."
-msgstr "Comment cet appareil de mesure est utilisé — Standard (contrôles réguliers), Maître (étales d'autres appareils) ou Référence (audit uniquement)."
+msgid "How this gauge is used — Standard (regular checks) or Master (calibrates other gauges)."
+msgstr "Comment cet instrument de mesure est utilisé — Standard (contrôles réguliers) ou Maître (étalonner d'autres instruments)."
 
 msgid "How this price was calculated"
 msgstr "Comment ce prix a été calculé"
@@ -6615,6 +6610,7 @@ msgstr "Boîte de réception"
 
 msgid "Include a materials (bill of materials) section on the job traveler PDF with item numbers and quantities."
 msgstr "Inclure une section matériaux (nomenclature) sur le PDF de la fiche suiveuse avec les numéros d'article et les quantités."
+
 msgid "Include drafts"
 msgstr "Inclure les brouillons"
 
@@ -8730,9 +8726,6 @@ msgstr "Pas de lignes ici."
 msgid "No rules assigned"
 msgstr "Aucune règle assignée"
 
-msgid "No samples inspected yet."
-msgstr "Aucun échantillon inspecté pour le moment."
-
 msgid "No saved views"
 msgstr "Aucune vue enregistrée"
 
@@ -9490,6 +9483,7 @@ msgstr "Période"
 
 msgid "Period close"
 msgstr "Clôture de période"
+
 msgid "Period Credits"
 msgstr "Crédits de la période"
 
@@ -9801,8 +9795,6 @@ msgstr "Période précédente"
 
 msgid "Previous step"
 msgstr "Étape précédente"
-msgid "Previous period"
-msgstr ""
 
 msgid "Previous year"
 msgstr "Année précédente"

@@ -2213,10 +2213,10 @@ msgid "Cash & Banking"
 msgstr "Bargeld und Bankwesen"
 
 msgid "Cash at beginning of period"
-msgstr "Kasse zu Beginn der Periode"
+msgstr "Zahlungsmittelbestand zu Beginn der Periode"
 
 msgid "Cash at end of period"
-msgstr "Kasse am Ende der Periode"
+msgstr "Zahlungsmittelbestand am Ende der Periode"
 
 msgid "Cash Flow"
 msgstr "Cashflow"
@@ -3333,10 +3333,6 @@ msgstr "Teil wird erstellt..."
 
 msgid "Credit"
 msgstr "Gutschrift"
-
-#. placeholder {0}: parentCurrency ?? "Translated"
-msgid "Credit ({0})"
-msgstr "Kredit ({0})"
 
 msgid "Credit / debit memo"
 msgstr "Gut-/Lastschrift"
@@ -4901,7 +4897,7 @@ msgid "Edit Work Center"
 msgstr "Arbeitszentrum bearbeiten"
 
 msgid "Effect of exchange rate changes on cash"
-msgstr "Auswirkung von Wechselkursänderungen auf Bargeld"
+msgstr "Auswirkung von Wechselkursänderungen auf Zahlungsmittel"
 
 msgid "Eliminated"
 msgstr "Beseitigt"
@@ -5810,6 +5806,7 @@ msgstr "Abschließen"
 
 msgid "Finalizing a fiscal month through the Open → Locked → Closed lifecycle; a closed period is frozen and its balances snapshotted, reversible only by explicit reopen."
 msgstr "Abschluss eines Geschäftsmonats durch den Open → Locked → Closed-Lebenszyklus; eine geschlossene Periode ist eingefroren und ihre Salden sind erfasst, nur durch explizites Wiedereröffnen rückgängig zu machen."
+
 msgid "Financing Activities"
 msgstr "Finanzierungsaktivitäten"
 
@@ -6434,13 +6431,11 @@ msgstr "Wie der aufgelöste Preis berechnet wurde."
 msgid "How the sample size is decided — Inspect All, Inspect First N, Percentage of Lot, or AQL (Z1.4 / ISO 2859-1). Each mode reveals its own parameter fields below."
 msgstr "Wie die Stichprobengröße entschieden wird — Alle inspizieren, Erste N inspizieren, Prozentsatz des Loses oder AQL (Z1.4 / ISO 2859-1). Jeder Modus zeigt seine eigenen Parameterfelder unten."
 
-msgid "How this gauge is used — Standard (regular checks) or Master (calibrates other gauges)."
-msgstr "Wie dieses Messinstrument verwendet wird — Standard (regelmäßige Kontrollen) oder Meister (kalibriert andere Messinstrumente)."
 msgid "How this account's period change is classified on the statement of cash flows. Default derives from the account type."
 msgstr "Wie die Periodenänderung dieses Kontos in der Cashflow-Aufstellung klassifiziert wird. Der Standard leitet sich vom Kontotyp ab."
 
-msgid "How this gauge is used — Standard (regular checks), Master (calibrates other gauges), or Reference (audit-only)."
-msgstr "Wie dieser Messschieber verwendet wird — Standard (regelmäßige Überprüfungen), Meister (kalibriert andere Messschieber) oder Referenz (Nur-Audit)."
+msgid "How this gauge is used — Standard (regular checks) or Master (calibrates other gauges)."
+msgstr "Wie dieses Messinstrument verwendet wird — Standard (regelmäßige Kontrollen) oder Meister (kalibriert andere Messinstrumente)."
 
 msgid "How this price was calculated"
 msgstr "Wie dieser Preis berechnet wurde"
@@ -6615,6 +6610,7 @@ msgstr "Posteingang"
 
 msgid "Include a materials (bill of materials) section on the job traveler PDF with item numbers and quantities."
 msgstr "Einen Materialabschnitt (Stückliste) im Job-Traveler-PDF mit Artikelnummern und Mengen einfügen."
+
 msgid "Include drafts"
 msgstr "Entwürfe einbeziehen"
 
@@ -8107,7 +8103,7 @@ msgid "Net cash from investing activities"
 msgstr "Netto-Cashflow aus Investitionsaktivitäten"
 
 msgid "Net cash from operating activities"
-msgstr "Netto-Cashflow aus Betriebsaktivitäten"
+msgstr "Netto-Cashflow aus laufender Geschäftstätigkeit"
 
 msgid "Net cash from unclassified activities"
 msgstr "Netto-Cashflow aus nicht klassifizierten Aktivitäten"
@@ -8116,10 +8112,10 @@ msgid "Net Change"
 msgstr "Nettoänderung"
 
 msgid "Net change in cash"
-msgstr "Netto-Cashveränderung"
+msgstr "Nettoveränderung der Zahlungsmittel"
 
 msgid "Net Income"
-msgstr "Nettoeinkommen"
+msgstr "Jahresergebnis"
 
 msgid "Never"
 msgstr "Nie"
@@ -8730,9 +8726,6 @@ msgstr "Hier sind keine Zeilen."
 msgid "No rules assigned"
 msgstr "Keine Regeln zugewiesen"
 
-msgid "No samples inspected yet."
-msgstr "Noch keine Muster inspiziert."
-
 msgid "No saved views"
 msgstr "Keine gespeicherten Ansichten"
 
@@ -9082,7 +9075,7 @@ msgid "Opening Debit"
 msgstr "Eröffnungslastschrift"
 
 msgid "Operating Activities"
-msgstr "Betriebsaktivitäten"
+msgstr "laufende Geschäftstätigkeit"
 
 msgid "Operating Expenses"
 msgstr "Betriebsausgaben"
@@ -9490,6 +9483,7 @@ msgstr "Zeitraum"
 
 msgid "Period close"
 msgstr "Periodenschließung"
+
 msgid "Period Credits"
 msgstr "Periodenguthaben"
 
@@ -9725,7 +9719,7 @@ msgid "Posted At"
 msgstr "Gepostet am"
 
 msgid "Posted balance plus prior fiscal years' net income (computed, not posted)"
-msgstr "Gebuchter Saldo plus Nettoeinkommen der vorangegangenen Fiskaljahre (berechnet, nicht gebucht)"
+msgstr "Gebuchter Saldo plus Jahresergebnis der vorangegangenen Fiskaljahre (berechnet, nicht gebucht)"
 
 msgid "Posted By"
 msgstr "Gepostet von"
@@ -9801,8 +9795,6 @@ msgstr "Vorherige Periode"
 
 msgid "Previous step"
 msgstr "Vorheriger Schritt"
-msgid "Previous period"
-msgstr ""
 
 msgid "Previous year"
 msgstr "Vorheriges Jahr"
@@ -9879,7 +9871,7 @@ msgid "Printing"
 msgstr "Druck"
 
 msgid "Prior-year income is shown inside Net Income. Add an account with type Retained Earnings to split retained earnings from current-year income."
-msgstr "Das Einkommen des Vorjahres wird in Nettoeinkommen angezeigt. Fügen Sie ein Konto vom Typ Gewinnrücklagen hinzu, um Gewinnrücklagen vom Einkommen des laufenden Jahres zu trennen."
+msgstr "Das Einkommen des Vorjahres wird im Jahresergebnis angezeigt. Fügen Sie ein Konto vom Typ Gewinnrücklagen hinzu, um Gewinnrücklagen vom Einkommen des laufenden Jahres zu trennen."
 
 msgid "Priorities"
 msgstr "Prioritäten"

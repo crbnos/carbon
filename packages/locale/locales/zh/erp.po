@@ -3334,10 +3334,6 @@ msgstr "正在创建零件..."
 msgid "Credit"
 msgstr "信用"
 
-#. placeholder {0}: parentCurrency ?? "Translated"
-msgid "Credit ({0})"
-msgstr "贷方 ({0})"
-
 msgid "Credit / debit memo"
 msgstr "贷项 / 借项备忘录"
 
@@ -5810,6 +5806,7 @@ msgstr "完成"
 
 msgid "Finalizing a fiscal month through the Open → Locked → Closed lifecycle; a closed period is frozen and its balances snapshotted, reversible only by explicit reopen."
 msgstr "通过打开 → 锁定 → 关闭生命周期完成财政月份；关闭的期间被冻结并其余额快照，仅可通过显式重新打开来反转。"
+
 msgid "Financing Activities"
 msgstr "筹资活动"
 
@@ -6434,13 +6431,11 @@ msgstr "已解决价格的计算方式。"
 msgid "How the sample size is decided — Inspect All, Inspect First N, Percentage of Lot, or AQL (Z1.4 / ISO 2859-1). Each mode reveals its own parameter fields below."
 msgstr "样本大小如何确定——检查全部、检查前N个、批次百分比或AQL（Z1.4 / ISO 2859-1）。每种模式在下面显示自己的参数字段。"
 
-msgid "How this gauge is used — Standard (regular checks) or Master (calibrates other gauges)."
-msgstr "此量具的使用方式——标准（定期检查）或主（校准其他量具）。"
 msgid "How this account's period change is classified on the statement of cash flows. Default derives from the account type."
 msgstr "此账户的期间变化如何在现金流量表上分类。默认来自账户类型。"
 
-msgid "How this gauge is used — Standard (regular checks), Master (calibrates other gauges), or Reference (audit-only)."
-msgstr "此测量仪如何使用——标准（定期检查）、主控（校准其他测量仪）或参考（仅审计）。"
+msgid "How this gauge is used — Standard (regular checks) or Master (calibrates other gauges)."
+msgstr "此量具的使用方式——标准（定期检查）或主（校准其他量具）。"
 
 msgid "How this price was calculated"
 msgstr "此价格是如何计算的"
@@ -6615,6 +6610,7 @@ msgstr "收件箱"
 
 msgid "Include a materials (bill of materials) section on the job traveler PDF with item numbers and quantities."
 msgstr "在工作单据 PDF 中包含物料清单（BOM）部分，列出物料号和数量。"
+
 msgid "Include drafts"
 msgstr "包括草稿"
 
@@ -8730,9 +8726,6 @@ msgstr "这里没有行。"
 msgid "No rules assigned"
 msgstr "未分配规则"
 
-msgid "No samples inspected yet."
-msgstr "还没有检查任何样品。"
-
 msgid "No saved views"
 msgstr "无保存的视图"
 
@@ -9490,6 +9483,7 @@ msgstr "期间"
 
 msgid "Period close"
 msgstr "期间关闭"
+
 msgid "Period Credits"
 msgstr "期间贷方"
 
@@ -9801,8 +9795,6 @@ msgstr "上一期间"
 
 msgid "Previous step"
 msgstr "上一步"
-msgid "Previous period"
-msgstr ""
 
 msgid "Previous year"
 msgstr "前一年"

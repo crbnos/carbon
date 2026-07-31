@@ -3334,10 +3334,6 @@ msgstr "Parça oluşturuluyor..."
 msgid "Credit"
 msgstr "Kredi"
 
-#. placeholder {0}: parentCurrency ?? "Translated"
-msgid "Credit ({0})"
-msgstr "Kredi ({0})"
-
 msgid "Credit / debit memo"
 msgstr "Alacak / Borç Muhasebe Defteri"
 
@@ -5810,6 +5806,7 @@ msgstr "Onayla"
 
 msgid "Finalizing a fiscal month through the Open → Locked → Closed lifecycle; a closed period is frozen and its balances snapshotted, reversible only by explicit reopen."
 msgstr "Mali bir ayı Açık → Kilitli → Kapalı yaşam döngüsü aracılığıyla sonlandırma; kapalı bir dönem donmuştur ve bakiyeleri anlık görüntülenmiş, yalnızca açık yeniden açılarak tersine çevrilebilir."
+
 msgid "Financing Activities"
 msgstr "Finansman Faaliyetleri"
 
@@ -6434,13 +6431,11 @@ msgstr "Çözülen fiyatın nasıl hesaplandığı."
 msgid "How the sample size is decided — Inspect All, Inspect First N, Percentage of Lot, or AQL (Z1.4 / ISO 2859-1). Each mode reveals its own parameter fields below."
 msgstr "Örnek boyutu nasıl kararlaştırılır — Tümünü İncele, İlk N'yi İncele, Lot Yüzdesini veya AQL'yi İncele (Z1.4 / ISO 2859-1). Her mod aşağıda kendi parametre alanlarını ortaya koymaktadır."
 
-msgid "How this gauge is used — Standard (regular checks) or Master (calibrates other gauges)."
-msgstr "Bu göstergenin nasıl kullanıldığı — Standart (düzenli kontroller) veya Ana (diğer göstergeleri kalibre eder)."
 msgid "How this account's period change is classified on the statement of cash flows. Default derives from the account type."
 msgstr "Bu hesabın dönem değişikliğinin nakit akışı tablosunda nasıl sınıflandırıldığı. Varsayılan, hesap türünden türetilir."
 
-msgid "How this gauge is used — Standard (regular checks), Master (calibrates other gauges), or Reference (audit-only)."
-msgstr "Bu ölçü nasıl kullanılır — Standart (düzenli kontroller), Ana (diğer ölçümleri kalibre eder) veya Referans (yalnızca denetim)."
+msgid "How this gauge is used — Standard (regular checks) or Master (calibrates other gauges)."
+msgstr "Bu göstergenin nasıl kullanıldığı — Standart (düzenli kontroller) veya Ana (diğer göstergeleri kalibre eder)."
 
 msgid "How this price was calculated"
 msgstr "Bu fiyat nasıl hesaplandı"
@@ -6615,6 +6610,7 @@ msgstr "Gelen Kutusu"
 
 msgid "Include a materials (bill of materials) section on the job traveler PDF with item numbers and quantities."
 msgstr "İş yolcu PDF'sine malzemeleri (malzeme listesi) bölümü, madde numaraları ve miktarlarıyla birlikte ekleyin."
+
 msgid "Include drafts"
 msgstr "Taslakları dahil et"
 
@@ -6640,7 +6636,7 @@ msgid "Income Statement"
 msgstr "Gelir Tablosu"
 
 msgid "Income statement activity for the current fiscal year (computed, not posted)"
-msgstr "Cari mali yıl için gelir tablosu faaliyeti (hesaplanmış, nakitlenmemiş)"
+msgstr "Cari mali yıl için gelir tablosu faaliyeti (hesaplanmış, deftere kaydedilmemiş)"
 
 msgid "Income/Balance"
 msgstr "Gelir/Bakiye"
@@ -8730,9 +8726,6 @@ msgstr "Burada satır yok."
 msgid "No rules assigned"
 msgstr "Atanmış kural yok"
 
-msgid "No samples inspected yet."
-msgstr "Henüz örnek incelenmedi."
-
 msgid "No saved views"
 msgstr "Kaydedilen görünüm yok"
 
@@ -9490,6 +9483,7 @@ msgstr "Dönem"
 
 msgid "Period close"
 msgstr "Dönem Kapanışı"
+
 msgid "Period Credits"
 msgstr "Dönem Kredileri"
 
@@ -9725,7 +9719,7 @@ msgid "Posted At"
 msgstr "Gönderilen Tarih"
 
 msgid "Posted balance plus prior fiscal years' net income (computed, not posted)"
-msgstr "Nakitlenmemiş bakiye artı önceki mali yılların net geliri (hesaplanmış, nakitlenmemiş)"
+msgstr "Deftere kaydedilmiş bakiye artı önceki mali yılların net geliri (hesaplanmış, deftere kaydedilmemiş)"
 
 msgid "Posted By"
 msgstr "Gönderen"
@@ -9801,8 +9795,6 @@ msgstr "Önceki dönem"
 
 msgid "Previous step"
 msgstr "Önceki adım"
-msgid "Previous period"
-msgstr ""
 
 msgid "Previous year"
 msgstr "Geçen yıl"

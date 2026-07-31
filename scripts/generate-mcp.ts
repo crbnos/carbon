@@ -509,8 +509,12 @@ function buildToolSchema(
       }
     }
 
-    // Inline object type
-    if (param.typeStr.trim().startsWith("{")) {
+    // Inline object type (but not an inline-object array `{ ... }[]`, which
+    // typeToJsonSchema handles below as `{ type: "array", items: {...} }`)
+    if (
+      param.typeStr.trim().startsWith("{") &&
+      !param.typeStr.trim().endsWith("[]")
+    ) {
       const schema = parseInlineObjectType(param.typeStr);
       const propCount = Object.keys(
         (schema.properties as Record<string, unknown>) || {}
@@ -545,10 +549,12 @@ function buildToolSchema(
   const properties: Record<string, unknown> = {};
   const required: string[] = [];
   for (const param of userParams) {
-    if (param.typeStr.trim().startsWith("{")) {
+    const ts = param.typeStr.trim();
+    if (ts.startsWith("{") && !ts.endsWith("[]")) {
       // Inline object — wrap under param name
       properties[param.name] = parseInlineObjectType(param.typeStr);
     } else {
+      // Primitives, arrays (incl. inline-object arrays), unions, etc.
       properties[param.name] = typeToJsonSchema(param.typeStr);
     }
     if (!param.optional) required.push(param.name);
