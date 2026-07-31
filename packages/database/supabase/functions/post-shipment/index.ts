@@ -3,8 +3,7 @@ import { format } from "https://deno.land/std@0.205.0/datetime/mod.ts";
 import { nanoid } from "https://deno.land/x/nanoid@v3.0.0/mod.ts";
 import { z } from "https://deno.land/x/zod@v3.21.4/mod.ts";
 import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
-import { corsHeaders } from "../lib/headers.ts";
-import { corsPreflight } from "../lib/response.ts";
+import { corsPreflight, errorResponse, jsonResponse } from "../lib/response.ts";
 import { requirePermissions } from "../lib/supabase.ts";
 import type { Database, Json } from "../lib/types.ts";
 import { TrackedEntityAttributes, credit, debit, journalReference } from "../lib/utils.ts";
@@ -2887,15 +2886,10 @@ serve(async (req: Request) => {
       }
     }
 
-    return new Response(
-      JSON.stringify({
-        success: true,
-        splitEntityIds,
-      }),
-      {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }
-    );
+    return jsonResponse({
+      success: true,
+      splitEntityIds,
+    });
   } catch (err) {
     console.error(err);
     if ("shipmentId" in payload) {
@@ -2905,9 +2899,6 @@ serve(async (req: Request) => {
         .update({ status: "Draft" })
         .eq("id", payload.shipmentId);
     }
-    return new Response(JSON.stringify(err), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 500,
-    });
+    return errorResponse(err, 500);
   }
 });

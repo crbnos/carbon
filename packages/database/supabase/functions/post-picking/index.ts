@@ -4,8 +4,7 @@ import { getLocalTimeZone, today as getToday } from "npm:@internationalized/date
 import { nanoid } from "https://deno.land/x/nanoid@v3.0.0/nanoid.ts";
 import { z } from "https://deno.land/x/zod@v3.21.4/mod.ts";
 import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
-import { corsHeaders } from "../lib/headers.ts";
-import { corsPreflight } from "../lib/response.ts";
+import { corsPreflight, errorResponse, jsonResponse } from "../lib/response.ts";
 import type { Database } from "../lib/types.ts";
 
 const pool = getConnectionPool(1);
@@ -906,22 +905,9 @@ serve(async (req: Request) => {
       }
     }
 
-    return new Response(
-      JSON.stringify({ success: true, splitEntityId }),
-      {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200
-      }
-    );
+    return jsonResponse({ success: true, splitEntityId });
   } catch (err) {
-    console.error(err);
-    return new Response(
-      JSON.stringify({ success: false, message: (err as Error).message }),
-      {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 500
-      }
-    );
+    return errorResponse(err, 500);
   }
 });
 

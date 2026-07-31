@@ -3,8 +3,7 @@ import { format } from "https://deno.land/std@0.205.0/datetime/mod.ts";
 import { nanoid } from "https://deno.land/x/nanoid@v3.0.0/mod.ts";
 import z from "npm:zod@^3.24.1";
 import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
-import { corsHeaders } from "../lib/headers.ts";
-import { corsPreflight } from "../lib/response.ts";
+import { corsPreflight, errorResponse, jsonResponse } from "../lib/response.ts";
 import { requirePermissions } from "../lib/supabase.ts";
 import type { Database } from "../lib/types.ts";
 import { credit, debit, journalReference } from "../lib/utils.ts";
@@ -495,9 +494,7 @@ serve(async (req: Request) => {
           .execute();
       });
 
-      return new Response(JSON.stringify({ success: true }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return jsonResponse({ success: true });
     }
 
     const companyRecord = await client
@@ -2029,15 +2026,10 @@ serve(async (req: Request) => {
         .execute();
     });
 
-    return new Response(
-      JSON.stringify({
-        success: true,
-        receiptIds: createdReceiptIds,
-      }),
-      {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }
-    );
+    return jsonResponse({
+      success: true,
+      receiptIds: createdReceiptIds,
+    });
   } catch (err) {
     console.error(err);
     if (payload.type !== "void" && "invoiceId" in payload) {
@@ -2047,9 +2039,6 @@ serve(async (req: Request) => {
         .update({ status: "Draft" })
         .eq("id", payload.invoiceId);
     }
-    return new Response(JSON.stringify(err), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 500,
-    });
+    return errorResponse(err, 500);
   }
 });
