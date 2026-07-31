@@ -5,9 +5,12 @@
 // Setup type definitions for built-in Supabase Runtime APIs
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { generateEmbedding } from "../lib/ai/embedding.ts";
-import { errorResponse, jsonResponse } from "../lib/response.ts";
+import { corsPreflight, errorResponse, jsonResponse } from "../lib/response.ts";
 
 Deno.serve(async (req) => {
+  const preflight = corsPreflight(req);
+  if (preflight) return preflight;
+
   try {
     const { text } = await req.json();
 
