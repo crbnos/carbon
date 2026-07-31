@@ -46,6 +46,24 @@ describe("getSalesOrderJobStatus", () => {
     expect(jobVariant).not.toBe("green");
   });
 
+  it("reports a Make to Order line whose only job is cancelled as Requires Jobs", () => {
+    // Cancelled jobs are treated as non-existent: the line still needs jobs, so
+    // it must read red/"Requires Jobs" (matching the Sales Orders list badge),
+    // not orange/"Planned" as if an active job were queued.
+    const { jobLabel, jobVariant } = getSalesOrderJobStatus(
+      [
+        job({
+          status: "Cancelled",
+          quantityComplete: 0,
+          productionQuantity: 10
+        })
+      ],
+      line()
+    );
+    expect(jobLabel).toBe("Requires Jobs");
+    expect(jobVariant).toBe("red");
+  });
+
   it("reports a reopened job with a stale quantityComplete as In Progress, not Completed", () => {
     // quantityComplete persists after a job is reopened; completion is gated on
     // the job actually being in a completed status.
