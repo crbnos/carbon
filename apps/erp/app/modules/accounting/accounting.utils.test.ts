@@ -4,16 +4,21 @@ import {
   acquisitionLines,
   addOneMonth,
   buildDepreciationLines,
+  buildLeaseSchedule,
   calculateDepreciation,
   calculateMacrsDepreciation,
   calculateTaxDepreciation,
+  classifyLease,
   computeDisposalGainLoss,
   depreciationRunLineDisplay,
+  expandPaymentTerms,
   getLastDayOfMonth,
   getMacrsPercentage,
   getMonthsBetween,
   getMonthsElapsed,
-  getNextPeriodEnd
+  getNextPeriodEnd,
+  periodicLeaseRate,
+  presentValue
 } from "./accounting.utils";
 
 // ---------------------------------------------------------------------------
@@ -784,5 +789,260 @@ describe("buildDepreciationLines", () => {
     // Book SL: 108k/60mo * 12mo = $21,600
     // Tax MACRS 5-yr HY: 120k * 20% = $24,000
     expect(lines[0].taxAmount!).toBeGreaterThan(lines[0].amount);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Lease subledger — PV, effective-interest schedule, classification (ASC 842)
+// ---------------------------------------------------------------------------
+
+describe("presentValue", () => {
+  it("discounts an ordinary annuity (arrears) to the spec baseline", () => {
+    // 36 payments of $10,000 at 0.5%/period → $328,710.16 (spec worked example)
+    const pv = presentValue(Array(36).fill(10000), 0.005, "Arrears");
+    expect(pv).toBeCloseTo(328710.16, 2);
+  });
+
+  it("annuity-due (advance) equals the ordinary annuity grossed up one period", () => {
+    const arrears = presentValue(Array(36).fill(10000), 0.005, "Arrears");
+    const advance = presentValue(Array(36).fill(10000), 0.005, "Advance");
+    expect(advance).toBeCloseTo(arrears * 1.005, 2);
+    expect(advance).toBeGreaterThan(arrears);
+  });
+});
+
+describe("periodicLeaseRate", () => {
+  it("converts an annual rate to the payment frequency", () => {
+    expect(periodicLeaseRate(6, "Monthly")).toBeCloseTo(0.005, 10);
+    expect(periodicLeaseRate(6, "Quarterly")).toBeCloseTo(0.015, 10);
+    expect(periodicLeaseRate(6, "Annual")).toBeCloseTo(0.06, 10);
+  });
+});
+
+describe("buildLeaseSchedule — spec worked example", () => {
+  const cashflows = Array.from({ length: 36 }, (_, i) => ({
+    periodDate: `2026-${String((i % 12) + 1).padStart(2, "0")}-28`,
+    paymentAmount: 10000
+  }));
+  const result = buildLeaseSchedule({
+    cashflows,
+    annualDiscountRate: 6,
+    frequency: "Monthly",
+    timing: "Arrears"
+  });
+
+  it("computes initial liability = initial ROU = $328,710.16", () => {
+    expect(result.initialLiability).toBeCloseTo(328710.16, 2);
+    expect(result.initialRouAsset).toBeCloseTo(328710.16, 2);
+  });
+
+  it("emits 36 schedule lines", () => {
+    expect(result.lines).toHaveLength(36);
+  });
+
+  it("line 1: interest 1,643.55 / principal 8,356.45 / closing 320,353.71", () => {
+    const l1 = result.lines[0];
+    expect(l1.interestAmount).toBeCloseTo(1643.55, 2);
+    expect(l1.principalAmount).toBeCloseTo(8356.45, 2);
+    expect(l1.closingLiability).toBeCloseTo(320353.71, 2);
+  });
+
+  it("line 1 carries both expense patterns (finance + operating)", () => {
+    const l1 = result.lines[0];
+    // Finance: SL ROU amortization = 328,710.16 / 36 = 9,130.84
+    expect(l1.rouAmortizationFinance).toBeCloseTo(9130.84, 2);
+    // Finance total month-1 expense = interest + ROU amort = 10,774.39
+    expect(l1.interestAmount + l1.rouAmortizationFinance).toBeCloseTo(
+      10774.39,
+      2
+    );
+    // Operating: single straight-line lease cost = 10,000.00
+    expect(l1.leaseCostOperating).toBeCloseTo(10000.0, 2);
+    // Operating ROU amortization plug = leaseCost − interest = 8,356.45
+    expect(l1.rouAmortizationOperating).toBeCloseTo(8356.45, 2);
+  });
+
+  it("closes the liability to exactly $0.00 on the final line", () => {
+    expect(result.lines[35].closingLiability).toBe(0);
+  });
+
+  it("liability rolls forward: each opening equals the prior closing", () => {
+    for (let i = 1; i < result.lines.length; i++) {
+      expect(result.lines[i].openingLiability).toBeCloseTo(
+        result.lines[i - 1].closingLiability,
+        2
+      );
+    }
+  });
+
+  it("total expense over 36 months = $360,000 under both classifications", () => {
+    const finance = result.lines.reduce(
+      (s, l) => s + l.interestAmount + l.rouAmortizationFinance,
+      0
+    );
+    const operating = result.lines.reduce(
+      (s, l) => s + l.leaseCostOperating,
+      0
+    );
+    expect(finance).toBeCloseTo(360000, 2);
+    expect(operating).toBeCloseTo(360000, 2);
+  });
+
+  it("sum of principal repayments equals the initial liability", () => {
+    const principal = result.lines.reduce((s, l) => s + l.principalAmount, 0);
+    expect(principal).toBeCloseTo(328710.16, 2);
+  });
+});
+
+describe("buildLeaseSchedule — payment timing and frequency", () => {
+  it("Advance timing produces a larger initial liability and still closes to 0", () => {
+    const cashflows = Array.from({ length: 36 }, (_, i) => ({
+      periodDate: `2026-${String((i % 12) + 1).padStart(2, "0")}-28`,
+      paymentAmount: 10000
+    }));
+    const result = buildLeaseSchedule({
+      cashflows,
+      annualDiscountRate: 6,
+      frequency: "Monthly",
+      timing: "Advance"
+    });
+    expect(result.initialLiability).toBeCloseTo(330353.71, 2);
+    expect(result.lines[35].closingLiability).toBe(0);
+  });
+
+  it("Quarterly frequency discounts at the quarterly rate and closes to 0", () => {
+    const cashflows = Array.from({ length: 12 }, () => ({
+      periodDate: "2026-03-31",
+      paymentAmount: 30000
+    }));
+    const result = buildLeaseSchedule({
+      cashflows,
+      annualDiscountRate: 6,
+      frequency: "Quarterly",
+      timing: "Arrears"
+    });
+    // PV of 12 quarterly $30k @ 1.5%/qtr
+    expect(result.initialLiability).toBeCloseTo(
+      presentValue(Array(12).fill(30000), 0.015, "Arrears"),
+      2
+    );
+    expect(result.lines[11].closingLiability).toBe(0);
+  });
+
+  it("folds initial direct costs and incentives into the ROU asset", () => {
+    const cashflows = Array.from({ length: 12 }, () => ({
+      periodDate: "2026-01-31",
+      paymentAmount: 1000
+    }));
+    const result = buildLeaseSchedule({
+      cashflows,
+      annualDiscountRate: 6,
+      frequency: "Monthly",
+      timing: "Arrears",
+      initialDirectCosts: 500,
+      incentivesReceived: 200,
+      prepaidAmount: 100
+    });
+    // ROU = liability + IDC + prepaid − incentives
+    expect(result.initialRouAsset).toBeCloseTo(
+      result.initialLiability + 500 + 100 - 200,
+      2
+    );
+  });
+});
+
+describe("classifyLease — ASC 842-10-25-2", () => {
+  const base = {
+    ownershipTransfers: false,
+    purchaseOptionReasonablyCertain: false,
+    termMonths: 36,
+    economicLifeMonths: 120,
+    presentValueOfPayments: 328710.16,
+    guaranteedResidual: 0,
+    fairValue: 500000,
+    specializedAsset: false
+  };
+
+  it("classifies Operating when every test fails", () => {
+    const { classification, tests } = classifyLease(base);
+    expect(classification).toBe("Operating");
+    expect(Object.values(tests).some(Boolean)).toBe(false);
+  });
+
+  it("ownership transfer forces Finance", () => {
+    expect(
+      classifyLease({ ...base, ownershipTransfers: true }).classification
+    ).toBe("Finance");
+  });
+
+  it("PV ≥ 90% of fair value forces Finance", () => {
+    // fair value low enough that PV/FV ≥ 0.90
+    const { classification, tests } = classifyLease({
+      ...base,
+      fairValue: 340000
+    });
+    expect(classification).toBe("Finance");
+    expect(tests.substantiallyAllFairValue).toBe(true);
+  });
+
+  it("term ≥ 75% of economic life forces Finance", () => {
+    const { classification, tests } = classifyLease({
+      ...base,
+      termMonths: 96,
+      economicLifeMonths: 120
+    });
+    expect(classification).toBe("Finance");
+    expect(tests.majorPartOfLife).toBe(true);
+  });
+
+  it("honors overridden thresholds", () => {
+    // With a 60% major-part threshold, a 36/120 = 30% term still fails
+    expect(
+      classifyLease({ ...base, majorPartThresholdPercent: 60 }).classification
+    ).toBe("Operating");
+  });
+});
+
+describe("expandPaymentTerms", () => {
+  it("expands a flat term into one equal cashflow per period", () => {
+    const cashflows = expandPaymentTerms({
+      terms: [
+        {
+          startDate: "2026-01-01",
+          endDate: "2028-12-31",
+          amountPerPeriod: 10000
+        }
+      ],
+      commencementDate: "2026-01-01",
+      numberOfPeriods: 36,
+      frequency: "Monthly"
+    });
+    expect(cashflows).toHaveLength(36);
+    expect(cashflows.every((c) => c.paymentAmount === 10000)).toBe(true);
+    // period-end dates are strictly increasing
+    for (let i = 1; i < cashflows.length; i++) {
+      expect(cashflows[i].periodDate > cashflows[i - 1].periodDate).toBe(true);
+    }
+  });
+
+  it("applies an annual escalation from the second year onward", () => {
+    const cashflows = expandPaymentTerms({
+      terms: [
+        {
+          startDate: "2026-01-01",
+          endDate: "2028-12-31",
+          amountPerPeriod: 10000,
+          annualEscalationPercent: 3
+        }
+      ],
+      commencementDate: "2026-01-01",
+      numberOfPeriods: 36,
+      frequency: "Monthly"
+    });
+    expect(cashflows[0].paymentAmount).toBeCloseTo(10000, 2);
+    // month 13 (second year) escalates 3%
+    expect(cashflows[12].paymentAmount).toBeCloseTo(10300, 2);
+    // month 25 (third year) compounds again
+    expect(cashflows[24].paymentAmount).toBeCloseTo(10609, 2);
   });
 });
