@@ -21,7 +21,7 @@ export function HowWeWorkView() {
         </p>
       </header>
 
-      <section className="rounded-2xl border bg-card shadow-button-base overflow-hidden">
+      <section className="rounded-lg border bg-card shadow-button-base overflow-hidden">
         <div className="px-5 py-3 border-b">
           <span className="text-sm font-semibold">
             <Trans>Meeting cadence</Trans>
@@ -44,7 +44,7 @@ export function HowWeWorkView() {
         </ul>
       </section>
 
-      <section className="rounded-2xl border bg-card shadow-button-base p-5">
+      <section className="rounded-lg border bg-card shadow-button-base p-5">
         <h2 className="text-sm font-semibold mb-4">
           <Trans>If something is off track</Trans>
         </h2>
@@ -65,7 +65,7 @@ export function HowWeWorkView() {
         </ol>
       </section>
 
-      <div className="rounded-2xl border-l-2 border-l-primary bg-muted/30 px-5 py-4">
+      <div className="rounded-lg border-l-2 border-l-primary bg-muted/30 px-5 py-4">
         <p className="text-sm text-muted-foreground">
           <span className="font-medium text-foreground">
             <Trans>The principle:</Trans>

@@ -187,7 +187,7 @@ export const SearchModal = () => {
       }}
     >
       <ModalContent
-        className="rounded-xl p-0 h-[520px] max-w-2xl overflow-hidden dark:shadow-button"
+        className="rounded-lg p-0 h-[520px] max-w-2xl overflow-hidden dark:shadow-button"
         withCloseButton={false}
       >
         <Command className="h-full flex flex-col">

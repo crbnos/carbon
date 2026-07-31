@@ -162,7 +162,7 @@ const InventoryCountHistory = ({
                     </VStack>
                   </HStack>
 
-                  <div className="ml-11 rounded-xl border border-border divide-y divide-border">
+                  <div className="ml-11 rounded-lg border border-border divide-y divide-border">
                     {version.movements.map((m) => (
                       <div
                         key={m.id}

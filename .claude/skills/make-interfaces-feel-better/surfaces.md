@@ -38,7 +38,7 @@ This rule is most useful when nested surfaces are close together. If padding is 
 
 ```tsx
 // Good — outer radius accounts for padding
-<div className="rounded-2xl p-2">       {/* 16px radius, 8px padding */}
+<div className="rounded-lg p-2">       {/* 16px radius, 8px padding */}
   <div className="rounded-lg">          {/* 8px radius = 16 - 8 ✓ */}
     ...
   </div>

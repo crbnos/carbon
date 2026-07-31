@@ -28,7 +28,7 @@ export function OnboardingHubSummary({
   const { t } = useLingui();
   const pct = total > 0 ? Math.round((done / total) * 100) : 0;
   return (
-    <div className="relative rounded-2xl border bg-gradient-to-bl from-card from-50% to-background shadow-button-base p-6 pr-12 flex items-center gap-5 mb-6">
+    <div className="relative rounded-lg border bg-gradient-to-bl from-card from-50% to-background shadow-button-base p-6 pr-12 flex items-center gap-5 mb-6">
       <div className="shrink-0 size-12 rounded-xl border flex items-center justify-center">
         <img
           src="/carbon-mark-light.svg"

@@ -184,7 +184,7 @@ export function PinInOverlay({
       onClick={handleBackdropClick}
     >
       <div
-        className="w-full max-w-sm mx-4 rounded-2xl border bg-card shadow-2xl overflow-hidden relative"
+        className="w-full max-w-sm mx-4 rounded-lg border bg-card shadow-lg overflow-hidden relative"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Close button — top right, outside the search bar */}
