@@ -185,6 +185,7 @@ async function recordStep(
           : null,
     error: result.status === "Failed" ? result.error : null,
     output: result.status === "Succeeded" ? result.outputs : null,
+    detail: result.status === "Failed" ? undefined : result.detail,
     branchTaken:
       result.status === "Succeeded" ? (result.branchTaken ?? null) : null,
     startedAt

@@ -7584,6 +7584,75 @@ export default {
         tags: ["changeOrders"]
       }
     },
+    "/workflowLastRun": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.workflowLastRun.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workflowLastRun.workflowId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workflowLastRun.runId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workflowLastRun.status"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workflowLastRun.statusReason"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workflowLastRun.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workflowLastRun.startedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workflowLastRun.completedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workflowLastRun.durationMs"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/workflowLastRun"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["workflowLastRun"]
+      }
+    },
     "/dimension": {
       get: {
         parameters: [
@@ -33904,6 +33973,9 @@ export default {
             $ref: "#/parameters/rowFilter.workflowStepRun.createdAt"
           },
           {
+            $ref: "#/parameters/rowFilter.workflowStepRun.detail"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -34017,6 +34089,9 @@ export default {
             $ref: "#/parameters/rowFilter.workflowStepRun.createdAt"
           },
           {
+            $ref: "#/parameters/rowFilter.workflowStepRun.detail"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -34082,6 +34157,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.workflowStepRun.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workflowStepRun.detail"
           },
           {
             $ref: "#/parameters/body.workflowStepRun"
@@ -99036,6 +99114,50 @@ export default {
       },
       type: "object"
     },
+    workflowLastRun: {
+      properties: {
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        workflowId: {
+          format: "text",
+          type: "string"
+        },
+        runId: {
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        status: {
+          format: "text",
+          type: "string"
+        },
+        statusReason: {
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        startedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        completedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        durationMs: {
+          format: "integer",
+          type: "integer"
+        }
+      },
+      type: "object"
+    },
     dimension: {
       required: [
         "id",
@@ -111674,6 +111796,11 @@ export default {
           default: "now()",
           format: "timestamp with time zone",
           type: "string"
+        },
+        detail: {
+          description:
+            'Diagnostics only (per-clause condition evaluation). Never node data - that is "output".',
+          format: "jsonb"
         }
       },
       type: "object"
@@ -140065,6 +140192,69 @@ export default {
       in: "query",
       type: "string"
     },
+    "body.workflowLastRun": {
+      name: "workflowLastRun",
+      description: "workflowLastRun",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/workflowLastRun"
+      }
+    },
+    "rowFilter.workflowLastRun.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.workflowLastRun.workflowId": {
+      name: "workflowId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.workflowLastRun.runId": {
+      name: "runId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.workflowLastRun.status": {
+      name: "status",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.workflowLastRun.statusReason": {
+      name: "statusReason",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.workflowLastRun.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.workflowLastRun.startedAt": {
+      name: "startedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.workflowLastRun.completedAt": {
+      name: "completedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.workflowLastRun.durationMs": {
+      name: "durationMs",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.dimension": {
       name: "dimension",
       description: "dimension",
@@ -154212,6 +154402,14 @@ export default {
     },
     "rowFilter.workflowStepRun.createdAt": {
       name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.workflowStepRun.detail": {
+      name: "detail",
+      description:
+        'Diagnostics only (per-clause condition evaluation). Never node data - that is "output".',
       required: false,
       in: "query",
       type: "string"

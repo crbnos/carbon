@@ -113,7 +113,7 @@ describe("evaluateClauses", () => {
       "and",
       ctx
     );
-    expect(result).toEqual({ ok: true, passed: true });
+    expect(result).toMatchObject({ ok: true, passed: true });
   });
 
   it("passes under or when only the first clause passes", async () => {
@@ -125,14 +125,13 @@ describe("evaluateClauses", () => {
       "or",
       ctx
     );
-    expect(result).toEqual({ ok: true, passed: true });
+    expect(result).toMatchObject({ ok: true, passed: true });
   });
 
   it("passes an empty clause list", async () => {
-    expect(await evaluateClauses([], "and", ctx)).toEqual({
-      ok: true,
-      passed: true
-    });
+    const result = await evaluateClauses([], "and", ctx);
+    expect(result).toMatchObject({ ok: true, passed: true });
+    expect(result.evaluations).toEqual([]);
   });
 
   it("aborts rather than counting an operand it could not work out", async () => {
@@ -152,9 +151,62 @@ describe("evaluateClauses", () => {
       "and",
       ctx
     );
-    expect(result).toEqual({
+    expect(result).toMatchObject({
       ok: false,
       reason: "The step that produces this value did not run."
     });
+  });
+
+  it("two-clause and: returns evaluations with both sides and passed populated", async () => {
+    const result = await evaluateClauses(
+      [
+        { left: amount, operator: "gt", right: literal("number", 10000) },
+        { left: amount, operator: "lt", right: literal("number", 50000) }
+      ],
+      "and",
+      ctx
+    );
+    expect(result.ok).toBe(true);
+    expect(result.evaluations).toHaveLength(2);
+    expect(result.evaluations[0]?.passed).toBe(true);
+    expect(result.evaluations[0]?.left).not.toBeNull();
+    expect(result.evaluations[0]?.right).not.toBeNull();
+    expect(result.evaluations[1]?.passed).toBe(true);
+  });
+
+  it("unresolvable left side: ok:false, evaluations.length===1, passed:null with reason", async () => {
+    const result = await evaluateClauses(
+      [
+        {
+          left: { kind: "ref", nodeId: "gone", output: "result", path: [] },
+          operator: "eq",
+          right: literal("number", 1)
+        }
+      ],
+      "and",
+      ctx
+    );
+    expect(result.ok).toBe(false);
+    expect(result.evaluations).toHaveLength(1);
+    expect(result.evaluations[0]?.passed).toBeNull();
+    expect(result.evaluations[0]?.reason).toBeTruthy();
+  });
+
+  it("three-clause list failing on the second: evaluations.length===2", async () => {
+    const result = await evaluateClauses(
+      [
+        { left: amount, operator: "gt", right: literal("number", 10000) },
+        {
+          left: { kind: "ref", nodeId: "gone", output: "result", path: [] },
+          operator: "eq",
+          right: literal("number", 1)
+        },
+        { left: amount, operator: "lt", right: literal("number", 50000) }
+      ],
+      "and",
+      ctx
+    );
+    expect(result.ok).toBe(false);
+    expect(result.evaluations).toHaveLength(2);
   });
 });

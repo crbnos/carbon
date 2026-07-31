@@ -1218,6 +1218,9 @@ msgstr "Alpha"
 msgid "Always"
 msgstr "Always"
 
+msgid "Always taken"
+msgstr "Always taken"
+
 msgid "Amount"
 msgstr "Amount"
 
@@ -2604,6 +2607,9 @@ msgstr "Category"
 msgid "Category Name"
 msgstr "Category Name"
 
+msgid "Causing run: "
+msgstr "Causing run: "
+
 msgid "CC"
 msgstr "CC"
 
@@ -2615,6 +2621,9 @@ msgstr "Certificate Number"
 
 msgid "Certificate uploaded"
 msgstr "Certificate uploaded"
+
+msgid "Chain"
+msgstr "Chain"
 
 msgid "Champion users are available for training and data validation"
 msgstr "Champion users are available for training and data validation"
@@ -3822,6 +3831,9 @@ msgstr "Currency Translation"
 
 msgid "Currency Translation (default)"
 msgstr "Currency Translation (default)"
+
+msgid "current"
+msgstr "current"
 
 msgid "Current"
 msgstr "Current"
@@ -5453,6 +5465,9 @@ msgstr "Empty"
 msgid "Empty = match every item"
 msgstr "Empty = match every item"
 
+msgid "Empty list"
+msgstr "Empty list"
+
 msgid "Empty work centers"
 msgstr "Empty work centers"
 
@@ -5920,6 +5935,9 @@ msgstr "Extra tags for slicing your GL reporting"
 
 msgid "Fail"
 msgstr "Fail"
+
+msgid "Failed"
+msgstr "Failed"
 
 msgid "Failed features"
 msgstr "Failed features"
@@ -6875,6 +6893,9 @@ msgstr "Holidays"
 msgid "Home Phone"
 msgstr "Home Phone"
 
+msgid "Hop {depth}"
+msgstr "Hop {depth}"
+
 msgid "Host, secure, and back up the platform"
 msgstr "Host, secure, and back up the platform"
 
@@ -7216,6 +7237,9 @@ msgstr "Inherited from the group: whether this account closes to retained earnin
 
 msgid "Inherited from the parent group."
 msgstr "Inherited from the parent group."
+
+msgid "Input"
+msgstr "Input"
 
 msgid "Inputs"
 msgstr "Inputs"
@@ -7809,6 +7833,9 @@ msgstr "Last Name"
 
 msgid "Last Quarter"
 msgstr "Last Quarter"
+
+msgid "Last Run"
+msgstr "Last Run"
 
 #. placeholder {0}: formatDateTime(lastSyncedAt)
 msgid "Last synced: {0}"
@@ -9467,6 +9494,9 @@ msgstr "Not configured yet"
 msgid "Not enough jobs to cover quantity"
 msgstr "Not enough jobs to cover quantity"
 
+msgid "Not reached"
+msgstr "Not reached"
+
 msgid "Not referenced anywhere yet."
 msgstr "Not referenced anywhere yet."
 
@@ -9496,6 +9526,9 @@ msgstr "Notes"
 
 msgid "Notes (optional)"
 msgstr "Notes (optional)"
+
+msgid "Nothing"
+msgstr "Nothing"
 
 msgid "Nothing happens if this fails"
 msgstr "Nothing happens if this fails"
@@ -11007,6 +11040,9 @@ msgstr "Quantity: {0}"
 msgid "Question"
 msgstr "Question"
 
+msgid "Queued"
+msgstr "Queued"
+
 msgid "Quote"
 msgstr "Quote"
 
@@ -11796,6 +11832,15 @@ msgstr "Rules that decide where each item gets stored"
 msgid "Run acceptance testing"
 msgstr "Run acceptance testing"
 
+msgid "Run chain"
+msgstr "Run chain"
+
+msgid "Run Details"
+msgstr "Run Details"
+
+msgid "Run failed"
+msgstr "Run failed"
+
 msgid "Run hands-on sessions and sign off your team"
 msgstr "Run hands-on sessions and sign off your team"
 
@@ -11826,11 +11871,17 @@ msgstr "Run the acceptance checklist to a pass"
 msgid "Run the floor on tablets: clock labor, report progress, see instructions"
 msgstr "Run the floor on tablets: clock labor, report progress, see instructions"
 
+msgid "Running"
+msgstr "Running"
+
 msgid "Running inventory after each week's supply and demand — the line."
 msgstr "Running inventory after each week's supply and demand — the line."
 
 msgid "Running Total"
 msgstr "Running Total"
+
+msgid "Runs"
+msgstr "Runs"
 
 msgid "S-1 (coarsest special)"
 msgstr "S-1 (coarsest special)"
@@ -12856,6 +12907,9 @@ msgstr "Source Document ID"
 msgid "Source document readable"
 msgstr "Source document readable"
 
+msgid "Source event"
+msgstr "Source event"
+
 msgid "Source Item"
 msgstr "Source Item"
 
@@ -13013,6 +13067,9 @@ msgstr "Stay on this page"
 msgid "Step"
 msgstr "Step"
 
+msgid "Step detail is kept for 30 days. This run's steps have been removed."
+msgstr "Step detail is kept for 30 days. This run's steps have been removed."
+
 msgid "Step Records"
 msgstr "Step Records"
 
@@ -13166,6 +13223,9 @@ msgstr "Subtotal"
 
 msgid "Subtotal:"
 msgstr "Subtotal:"
+
+msgid "Succeeded"
+msgstr "Succeeded"
 
 msgid "Success"
 msgstr "Success"
@@ -13413,6 +13473,9 @@ msgstr "Take ownership"
 
 msgid "Take the shortest remaining shelf life across the materials consumed to make this item. Use when the product's expiry depends on its ingredients."
 msgstr "Take the shortest remaining shelf life across the materials consumed to make this item. Use when the product's expiry depends on its ingredients."
+
+msgid "taken"
+msgstr "taken"
 
 msgid "Talk to Sales"
 msgstr "Talk to Sales"
@@ -14414,6 +14477,9 @@ msgstr "This version is live"
 msgid "This version is live. Create a new version to edit."
 msgstr "This version is live. Create a new version to edit."
 
+msgid "This version's definition could not be read."
+msgstr "This version's definition could not be read."
+
 msgid "This will make this version read-only and replace any material make methods with this version."
 msgstr "This will make this version read-only and replace any material make methods with this version."
 
@@ -14776,6 +14842,9 @@ msgstr "Trash"
 
 msgid "Trial Balance"
 msgstr "Trial Balance"
+
+msgid "Trigger"
+msgstr "Trigger"
 
 msgid "Trigger type"
 msgstr "Trigger type"
@@ -15218,6 +15287,9 @@ msgstr "Values"
 
 msgid "Values apply today's unit costs to historical quantities."
 msgstr "Values apply today's unit costs to historical quantities."
+
+msgid "Values in this run have been summarised. Full detail is kept for 7 days."
+msgstr "Values in this run have been summarised. Full detail is kept for 7 days."
 
 msgid "Variance"
 msgstr "Variance"
@@ -15908,6 +15980,9 @@ msgstr "Who you buy from."
 
 msgid "Who you sell to and at what price."
 msgstr "Who you sell to and at what price."
+
+msgid "Why"
+msgstr "Why"
 
 msgid "Why is the expiration being changed?"
 msgstr "Why is the expiration being changed?"

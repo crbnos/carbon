@@ -2,7 +2,12 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { VStack } from "@carbon/react";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { getWorkflows, getWorkflowVersionNumbers } from "~/modules/workflows";
+import type { WorkflowLastRun } from "~/modules/workflows";
+import {
+  getWorkflowLastRuns,
+  getWorkflows,
+  getWorkflowVersionNumbers
+} from "~/modules/workflows";
 import WorkflowsTable from "~/modules/workflows/ui/WorkflowsTable";
 import { getGenericQueryFilters } from "~/utils/query";
 
@@ -43,15 +48,26 @@ export async function loader({ request }: LoaderFunctionArgs) {
     }
   }
 
+  const workflowIds = rows.map((row) => row.id);
+  const lastRuns: Record<string, WorkflowLastRun> = {};
+  if (workflowIds.length) {
+    const runs = await getWorkflowLastRuns(client, workflowIds, companyId);
+    for (const run of runs.data ?? []) {
+      if (run.workflowId) lastRuns[run.workflowId] = run;
+    }
+  }
+
   return {
     data: rows,
     count: workflows.count ?? 0,
-    versionNumbers
+    versionNumbers,
+    lastRuns
   };
 }
 
 export default function WorkflowsIndexRoute() {
-  const { data, count, versionNumbers } = useLoaderData<typeof loader>();
+  const { data, count, versionNumbers, lastRuns } =
+    useLoaderData<typeof loader>();
 
   return (
     <VStack spacing={0} className="h-full">
@@ -59,6 +75,7 @@ export default function WorkflowsIndexRoute() {
         data={data}
         count={count}
         versionNumbers={versionNumbers}
+        lastRuns={lastRuns}
       />
     </VStack>
   );

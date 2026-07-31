@@ -40,6 +40,7 @@ export {
   parseWorkflowDefinition,
   readWorkflowVersion
 } from "./definition/normalize";
+export { topologicalNodeOrder } from "./definition/order";
 export {
   nextOccurrenceAfter,
   nextRunAfter,
@@ -121,7 +122,9 @@ export type { RunTrigger } from "./run-trigger";
 export { runTriggerSchema } from "./run-trigger";
 export type {
   ActionOutcome,
+  ClauseEvaluation,
   EntityLoader,
+  NodeDetail,
   NodeExecutor,
   NodeResult,
   OperationOutcome,

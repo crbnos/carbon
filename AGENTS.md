@@ -84,6 +84,7 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 | Revision system | `.claude/rules/revision-system.md` |
 | Kanban | `.claude/rules/kanban-system.md` |
 | Workflows (customer automation rules) | `.claude/rules/workflow-event-catalog.md` + `.claude/rules/workflow-matcher.md` + `.claude/rules/workflow-engine.md` + `packages/workflows/AGENTS.md` |
+| Workflow run history + retention | `.claude/rules/workflow-run-history.md` |
 | Fixed assets | `.claude/rules/fixed-asset-lifecycle.md` |
 | Risk register | `.claude/rules/risk-register-module.md` |
 | **Infrastructure** | |

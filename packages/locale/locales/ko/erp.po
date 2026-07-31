@@ -1218,6 +1218,9 @@ msgstr "알파"
 msgid "Always"
 msgstr "항상"
 
+msgid "Always taken"
+msgstr ""
+
 msgid "Amount"
 msgstr "금액"
 
@@ -2604,6 +2607,9 @@ msgstr "카테고리"
 msgid "Category Name"
 msgstr "카테고리명"
 
+msgid "Causing run: "
+msgstr ""
+
 msgid "CC"
 msgstr "참조"
 
@@ -2615,6 +2621,9 @@ msgstr "인증서 번호"
 
 msgid "Certificate uploaded"
 msgstr "인증서가 업로드됨"
+
+msgid "Chain"
+msgstr ""
 
 msgid "Champion users are available for training and data validation"
 msgstr "챔피언 사용자가 교육과 데이터 검증에 참여할 수 있습니다"
@@ -3822,6 +3831,9 @@ msgstr "통화 환산"
 
 msgid "Currency Translation (default)"
 msgstr "통화 환산(기본값)"
+
+msgid "current"
+msgstr ""
 
 msgid "Current"
 msgstr "현재"
@@ -5453,6 +5465,9 @@ msgstr "비어있음"
 msgid "Empty = match every item"
 msgstr "비어 있으면 모든 품목과 일치"
 
+msgid "Empty list"
+msgstr ""
+
 msgid "Empty work centers"
 msgstr "빈 작업장"
 
@@ -5920,6 +5935,9 @@ msgstr "총계정원장 보고를 세분화하기 위한 추가 태그"
 
 msgid "Fail"
 msgstr "실패"
+
+msgid "Failed"
+msgstr ""
 
 msgid "Failed features"
 msgstr "부적합 특성"
@@ -6875,6 +6893,9 @@ msgstr "휴일"
 msgid "Home Phone"
 msgstr "자택 전화번호"
 
+msgid "Hop {depth}"
+msgstr ""
+
 msgid "Host, secure, and back up the platform"
 msgstr "플랫폼 호스팅, 보안, 백업"
 
@@ -7216,6 +7237,9 @@ msgstr "그룹에서 상속됨: 이 계정이 이익잉여금으로 마감되는
 
 msgid "Inherited from the parent group."
 msgstr "상위 그룹에서 상속됨."
+
+msgid "Input"
+msgstr ""
 
 msgid "Inputs"
 msgstr ""
@@ -7809,6 +7833,9 @@ msgstr "성"
 
 msgid "Last Quarter"
 msgstr "지난 분기"
+
+msgid "Last Run"
+msgstr ""
 
 #. placeholder {0}: formatDateTime(lastSyncedAt)
 msgid "Last synced: {0}"
@@ -9467,6 +9494,9 @@ msgstr ""
 msgid "Not enough jobs to cover quantity"
 msgstr "수량을 충족할 만큼 작업이 충분하지 않습니다"
 
+msgid "Not reached"
+msgstr ""
+
 msgid "Not referenced anywhere yet."
 msgstr "아직 어디에서도 참조되지 않음."
 
@@ -9496,6 +9526,9 @@ msgstr "메모"
 
 msgid "Notes (optional)"
 msgstr "메모(선택)"
+
+msgid "Nothing"
+msgstr ""
 
 msgid "Nothing happens if this fails"
 msgstr ""
@@ -11007,6 +11040,9 @@ msgstr "수량: {0}"
 msgid "Question"
 msgstr "질문"
 
+msgid "Queued"
+msgstr ""
+
 msgid "Quote"
 msgstr "견적"
 
@@ -11796,6 +11832,15 @@ msgstr "각 품목의 보관 위치를 결정하는 규칙"
 msgid "Run acceptance testing"
 msgstr "인수 테스트 실행"
 
+msgid "Run chain"
+msgstr ""
+
+msgid "Run Details"
+msgstr ""
+
+msgid "Run failed"
+msgstr ""
+
 msgid "Run hands-on sessions and sign off your team"
 msgstr "실습 세션을 진행하고 팀의 승인을 받으세요"
 
@@ -11826,11 +11871,17 @@ msgstr "인수 체크리스트를 통과할 때까지 진행하세요"
 msgid "Run the floor on tablets: clock labor, report progress, see instructions"
 msgstr "태블릿으로 현장을 운영하세요: 근무 시간 기록, 진행 상황 보고, 작업 지시 확인"
 
+msgid "Running"
+msgstr ""
+
 msgid "Running inventory after each week's supply and demand — the line."
 msgstr "매주 공급과 수요를 반영해 갱신되는 재고 — 그 라인입니다."
 
 msgid "Running Total"
 msgstr "누계"
+
+msgid "Runs"
+msgstr ""
 
 msgid "S-1 (coarsest special)"
 msgstr "S-1(가장 완화된 특별수준)"
@@ -12856,6 +12907,9 @@ msgstr "소스 문서 ID"
 msgid "Source document readable"
 msgstr ""
 
+msgid "Source event"
+msgstr ""
+
 msgid "Source Item"
 msgstr "소스 품목"
 
@@ -13013,6 +13067,9 @@ msgstr "이 페이지에 머무르기"
 msgid "Step"
 msgstr "단계"
 
+msgid "Step detail is kept for 30 days. This run's steps have been removed."
+msgstr ""
+
 msgid "Step Records"
 msgstr "단계 기록"
 
@@ -13166,6 +13223,9 @@ msgstr "소계"
 
 msgid "Subtotal:"
 msgstr "소계:"
+
+msgid "Succeeded"
+msgstr ""
 
 msgid "Success"
 msgstr "성공"
@@ -13413,6 +13473,9 @@ msgstr ""
 
 msgid "Take the shortest remaining shelf life across the materials consumed to make this item. Use when the product's expiry depends on its ingredients."
 msgstr "이 품목을 만드는 데 사용된 자재 중 가장 짧은 잔여 유통기한을 적용합니다. 제품의 유효기한이 원재료에 좌우될 때 사용하세요."
+
+msgid "taken"
+msgstr ""
 
 msgid "Talk to Sales"
 msgstr "영업팀에 문의"
@@ -14414,6 +14477,9 @@ msgstr ""
 msgid "This version is live. Create a new version to edit."
 msgstr ""
 
+msgid "This version's definition could not be read."
+msgstr ""
+
 msgid "This will make this version read-only and replace any material make methods with this version."
 msgstr "이렇게 하면 이 버전이 읽기 전용으로 전환되고, 자재 제조 방법이 모두 이 버전으로 교체됩니다."
 
@@ -14776,6 +14842,9 @@ msgstr "휴지통"
 
 msgid "Trial Balance"
 msgstr "시산표"
+
+msgid "Trigger"
+msgstr ""
 
 msgid "Trigger type"
 msgstr ""
@@ -15218,6 +15287,9 @@ msgstr "값"
 
 msgid "Values apply today's unit costs to historical quantities."
 msgstr "값은 오늘의 단가를 이전 수량에 적용합니다."
+
+msgid "Values in this run have been summarised. Full detail is kept for 7 days."
+msgstr ""
 
 msgid "Variance"
 msgstr "차이"
@@ -15908,6 +15980,9 @@ msgstr "누구에게서 구매하는지."
 
 msgid "Who you sell to and at what price."
 msgstr "누구에게 얼마에 판매하는지."
+
+msgid "Why"
+msgstr ""
 
 msgid "Why is the expiration being changed?"
 msgstr "유효기한을 변경하는 이유는 무엇입니까?"

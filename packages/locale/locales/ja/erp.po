@@ -1218,6 +1218,9 @@ msgstr "アルファ"
 msgid "Always"
 msgstr "常に"
 
+msgid "Always taken"
+msgstr ""
+
 msgid "Amount"
 msgstr "金額"
 
@@ -2604,6 +2607,9 @@ msgstr "カテゴリ"
 msgid "Category Name"
 msgstr "カテゴリー名"
 
+msgid "Causing run: "
+msgstr ""
+
 msgid "CC"
 msgstr "CC"
 
@@ -2615,6 +2621,9 @@ msgstr "証明書番号"
 
 msgid "Certificate uploaded"
 msgstr "証明書がアップロードされました"
+
+msgid "Chain"
+msgstr ""
 
 msgid "Champion users are available for training and data validation"
 msgstr "チャンピオンユーザーがトレーニングとデータ検証に利用可能です"
@@ -3822,6 +3831,9 @@ msgstr "通貨換算"
 
 msgid "Currency Translation (default)"
 msgstr "通貨換算（デフォルト）"
+
+msgid "current"
+msgstr ""
 
 msgid "Current"
 msgstr "現在"
@@ -5453,6 +5465,9 @@ msgstr "空"
 msgid "Empty = match every item"
 msgstr "空 = すべてのアイテムに一致"
 
+msgid "Empty list"
+msgstr ""
+
 msgid "Empty work centers"
 msgstr "空の作業センター"
 
@@ -5920,6 +5935,9 @@ msgstr "GL レポートをスライスするための追加タグ"
 
 msgid "Fail"
 msgstr "不合格"
+
+msgid "Failed"
+msgstr ""
 
 msgid "Failed features"
 msgstr "失敗した機能"
@@ -6875,6 +6893,9 @@ msgstr "休日"
 msgid "Home Phone"
 msgstr "自宅電話"
 
+msgid "Hop {depth}"
+msgstr ""
+
 msgid "Host, secure, and back up the platform"
 msgstr "プラットフォームをホストし、保護し、バックアップする"
 
@@ -7216,6 +7237,9 @@ msgstr "グループから継承：このアカウントが留保利益（収入
 
 msgid "Inherited from the parent group."
 msgstr "親グループから継承。"
+
+msgid "Input"
+msgstr ""
 
 msgid "Inputs"
 msgstr ""
@@ -7809,6 +7833,9 @@ msgstr "姓"
 
 msgid "Last Quarter"
 msgstr "前四半期"
+
+msgid "Last Run"
+msgstr ""
 
 #. placeholder {0}: formatDateTime(lastSyncedAt)
 msgid "Last synced: {0}"
@@ -9467,6 +9494,9 @@ msgstr ""
 msgid "Not enough jobs to cover quantity"
 msgstr "数量をカバーするのに十分なジョブがありません"
 
+msgid "Not reached"
+msgstr ""
+
 msgid "Not referenced anywhere yet."
 msgstr "どこでも参照されていません。"
 
@@ -9496,6 +9526,9 @@ msgstr "メモ"
 
 msgid "Notes (optional)"
 msgstr "メモ（オプション）"
+
+msgid "Nothing"
+msgstr ""
 
 msgid "Nothing happens if this fails"
 msgstr ""
@@ -11007,6 +11040,9 @@ msgstr "数量: {0}"
 msgid "Question"
 msgstr "質問"
 
+msgid "Queued"
+msgstr ""
+
 msgid "Quote"
 msgstr "見積"
 
@@ -11796,6 +11832,15 @@ msgstr "各アイテムがどこに保存されるかを決定するルール"
 msgid "Run acceptance testing"
 msgstr "受け入れテストを実行する"
 
+msgid "Run chain"
+msgstr ""
+
+msgid "Run Details"
+msgstr ""
+
+msgid "Run failed"
+msgstr ""
+
 msgid "Run hands-on sessions and sign off your team"
 msgstr "実践的なセッションを実施してチームの承認を得る"
 
@@ -11826,11 +11871,17 @@ msgstr "受け入れチェックリストを実行してパスする"
 msgid "Run the floor on tablets: clock labor, report progress, see instructions"
 msgstr "タブレットでフロアを運用：労働時間を記録、進捗を報告、指示を確認"
 
+msgid "Running"
+msgstr ""
+
 msgid "Running inventory after each week's supply and demand — the line."
 msgstr "毎週の需給の後に実行されるインベントリ — ラインです。"
 
 msgid "Running Total"
 msgstr "実行中の合計"
+
+msgid "Runs"
+msgstr ""
 
 msgid "S-1 (coarsest special)"
 msgstr "S-1（最も粗い特殊）"
@@ -12856,6 +12907,9 @@ msgstr "ソース文書ID"
 msgid "Source document readable"
 msgstr ""
 
+msgid "Source event"
+msgstr ""
+
 msgid "Source Item"
 msgstr "ソースアイテム"
 
@@ -13013,6 +13067,9 @@ msgstr "このページに留まる"
 msgid "Step"
 msgstr "ステップ"
 
+msgid "Step detail is kept for 30 days. This run's steps have been removed."
+msgstr ""
+
 msgid "Step Records"
 msgstr "ステップレコード"
 
@@ -13166,6 +13223,9 @@ msgstr "小計"
 
 msgid "Subtotal:"
 msgstr "小計:"
+
+msgid "Succeeded"
+msgstr ""
 
 msgid "Success"
 msgstr "成功"
@@ -13413,6 +13473,9 @@ msgstr ""
 
 msgid "Take the shortest remaining shelf life across the materials consumed to make this item. Use when the product's expiry depends on its ingredients."
 msgstr "このアイテムを製造するために消費される材料全体で、最も短い残りの賞味期限を取得します。製品の有効期限がその成分に依存する場合に使用します。"
+
+msgid "taken"
+msgstr ""
 
 msgid "Talk to Sales"
 msgstr "営業に相談"
@@ -14414,6 +14477,9 @@ msgstr ""
 msgid "This version is live. Create a new version to edit."
 msgstr ""
 
+msgid "This version's definition could not be read."
+msgstr ""
+
 msgid "This will make this version read-only and replace any material make methods with this version."
 msgstr "このバージョンは読み取り専用になり、すべての材料製造方法がこのバージョンに置き換わります。"
 
@@ -14776,6 +14842,9 @@ msgstr "ゴミ箱"
 
 msgid "Trial Balance"
 msgstr "試算表"
+
+msgid "Trigger"
+msgstr ""
 
 msgid "Trigger type"
 msgstr ""
@@ -15218,6 +15287,9 @@ msgstr "値"
 
 msgid "Values apply today's unit costs to historical quantities."
 msgstr "値は今日の単価を履歴数量に適用します。"
+
+msgid "Values in this run have been summarised. Full detail is kept for 7 days."
+msgstr ""
 
 msgid "Variance"
 msgstr "差異"
@@ -15908,6 +15980,9 @@ msgstr "あなたが購入する相手。"
 
 msgid "Who you sell to and at what price."
 msgstr "あなたが販売する相手と価格。"
+
+msgid "Why"
+msgstr ""
 
 msgid "Why is the expiration being changed?"
 msgstr "有効期限が変更されるのはなぜですか？"

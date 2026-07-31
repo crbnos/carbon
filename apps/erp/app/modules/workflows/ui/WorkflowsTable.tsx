@@ -5,7 +5,7 @@ import {
   MenuItem,
   useDisclosure
 } from "@carbon/react";
-import { formatDate } from "@carbon/utils";
+import { formatDate, formatRelativeTime } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo, useState } from "react";
@@ -13,6 +13,7 @@ import { flushSync } from "react-dom";
 import {
   LuCalendar,
   LuCirclePlus,
+  LuHistory,
   LuPencil,
   LuTag,
   LuText,
@@ -26,7 +27,8 @@ import { EmployeeAvatar, Hyperlink, Table } from "~/components";
 import { ConfirmDelete } from "~/components/Modals";
 import { usePermissions } from "~/hooks";
 import { path } from "~/utils/path";
-import type { Workflow } from "../workflows.service";
+import type { Workflow, WorkflowLastRun } from "../workflows.service";
+import { RunStatus } from "./Runs/RunStatus";
 import { WorkflowActiveSwitch } from "./WorkflowActiveSwitch";
 import WorkflowForm from "./WorkflowForm";
 
@@ -34,10 +36,11 @@ type WorkflowsTableProps = {
   data: Workflow[];
   count: number;
   versionNumbers: Record<string, number>;
+  lastRuns: Record<string, WorkflowLastRun>;
 };
 
 const WorkflowsTable = memo(
-  ({ data, count, versionNumbers }: WorkflowsTableProps) => {
+  ({ data, count, versionNumbers, lastRuns }: WorkflowsTableProps) => {
     const navigate = useNavigate();
     const { t } = useLingui();
     const permissions = usePermissions();
@@ -52,6 +55,7 @@ const WorkflowsTable = memo(
       () => [
         {
           accessorKey: "name",
+
           header: t`Name`,
           cell: ({ row }) => (
             <Hyperlink to={path.to.workflow(row.original.id)}>
@@ -91,6 +95,33 @@ const WorkflowsTable = memo(
           meta: { icon: <LuTag /> }
         },
         {
+          id: "lastRun",
+          header: t`Last Run`,
+          cell: ({ row }) => {
+            const lastRun = lastRuns[row.original.id];
+            if (!lastRun?.runId || !lastRun.status) return "—";
+            const ts = lastRun.completedAt ?? lastRun.createdAt;
+            return (
+              <Hyperlink
+                to={path.to.workflowRun(lastRun.runId)}
+                className="flex items-center gap-1.5"
+              >
+                <RunStatus status={lastRun.status} />
+                {ts && (
+                  <span className="text-xs text-muted-foreground">
+                    {formatRelativeTime(ts)}
+                  </span>
+                )}
+              </Hyperlink>
+            );
+          },
+          meta: {
+            icon: <LuHistory />,
+            filterHeader: t`Last Run`,
+            exportValue: (row: Workflow) => lastRuns[row.id]?.status ?? ""
+          }
+        },
+        {
           accessorKey: "active",
           header: t`Active`,
           cell: ({ row }) => (
@@ -111,7 +142,7 @@ const WorkflowsTable = memo(
           meta: { icon: <LuCalendar /> }
         }
       ],
-      [t, versionNumbers]
+      [t, versionNumbers, lastRuns]
     );
 
     const renderContextMenu = useCallback(

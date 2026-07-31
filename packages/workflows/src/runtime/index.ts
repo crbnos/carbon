@@ -15,7 +15,9 @@ export {
 } from "./resolve";
 export type {
   ActionOutcome,
+  ClauseEvaluation,
   EntityLoader,
+  NodeDetail,
   NodeExecutor,
   NodeResult,
   OperationOutcome,

@@ -1218,6 +1218,9 @@ msgstr "अल्फा"
 msgid "Always"
 msgstr "हमेशा"
 
+msgid "Always taken"
+msgstr ""
+
 msgid "Amount"
 msgstr "रकम"
 
@@ -2604,6 +2607,9 @@ msgstr "श्रेणी"
 msgid "Category Name"
 msgstr "श्रेणी का नाम"
 
+msgid "Causing run: "
+msgstr ""
+
 msgid "CC"
 msgstr "CC"
 
@@ -2615,6 +2621,9 @@ msgstr "प्रमाणपत्र संख्या"
 
 msgid "Certificate uploaded"
 msgstr "प्रमाणपत्र अपलोड किया गया"
+
+msgid "Chain"
+msgstr ""
 
 msgid "Champion users are available for training and data validation"
 msgstr "चैंपियन उपयोगकर्ता प्रशिक्षण और डेटा सत्यापन के लिए उपलब्ध हैं"
@@ -3822,6 +3831,9 @@ msgstr "मुद्रा अनुवाद"
 
 msgid "Currency Translation (default)"
 msgstr "मुद्रा अनुवाद (डिफ़ॉल्ट)"
+
+msgid "current"
+msgstr ""
 
 msgid "Current"
 msgstr "वर्तमान"
@@ -5453,6 +5465,9 @@ msgstr "खाली"
 msgid "Empty = match every item"
 msgstr "खाली = हर आइटम से मेल खाएं"
 
+msgid "Empty list"
+msgstr ""
+
 msgid "Empty work centers"
 msgstr "खाली कार्य केंद्र"
 
@@ -5920,6 +5935,9 @@ msgstr "आपकी GL रिपोर्टिंग को स्लाइस
 
 msgid "Fail"
 msgstr "विफल"
+
+msgid "Failed"
+msgstr ""
 
 msgid "Failed features"
 msgstr "विफल विशेषताएँ"
@@ -6875,6 +6893,9 @@ msgstr "छुट्टियाँ"
 msgid "Home Phone"
 msgstr "होम फोन"
 
+msgid "Hop {depth}"
+msgstr ""
+
 msgid "Host, secure, and back up the platform"
 msgstr "प्लेटफॉर्म को होस्ट करें, सुरक्षित रखें और बैकअप लें"
 
@@ -7216,6 +7237,9 @@ msgstr "समूह से विरासत में मिला: क्य
 
 msgid "Inherited from the parent group."
 msgstr "मूल समूह से विरासत में मिला।"
+
+msgid "Input"
+msgstr ""
 
 msgid "Inputs"
 msgstr ""
@@ -7809,6 +7833,9 @@ msgstr "अंतिम नाम"
 
 msgid "Last Quarter"
 msgstr "पिछली तिमाही"
+
+msgid "Last Run"
+msgstr ""
 
 #. placeholder {0}: formatDateTime(lastSyncedAt)
 msgid "Last synced: {0}"
@@ -9467,6 +9494,9 @@ msgstr ""
 msgid "Not enough jobs to cover quantity"
 msgstr "पर्याप्त नौकरियां नहीं हैं मात्रा को कवर करने के लिए"
 
+msgid "Not reached"
+msgstr ""
+
 msgid "Not referenced anywhere yet."
 msgstr "अभी तक कहीं भी संदर्भित नहीं।"
 
@@ -9496,6 +9526,9 @@ msgstr "नोट्स"
 
 msgid "Notes (optional)"
 msgstr "नोट्स (वैकल्पिक)"
+
+msgid "Nothing"
+msgstr ""
 
 msgid "Nothing happens if this fails"
 msgstr ""
@@ -11007,6 +11040,9 @@ msgstr "मात्रा: {0}"
 msgid "Question"
 msgstr "प्रश्न"
 
+msgid "Queued"
+msgstr ""
+
 msgid "Quote"
 msgstr "उद्धरण"
 
@@ -11796,6 +11832,15 @@ msgstr "नियम जो तय करते हैं कि प्रत्
 msgid "Run acceptance testing"
 msgstr "स्वीकृति परीक्षण चलाएं"
 
+msgid "Run chain"
+msgstr ""
+
+msgid "Run Details"
+msgstr ""
+
+msgid "Run failed"
+msgstr ""
+
 msgid "Run hands-on sessions and sign off your team"
 msgstr "अपनी टीम के साथ व्यावहारिक सत्र चलाएं और साइन ऑफ करें"
 
@@ -11826,11 +11871,17 @@ msgstr "स्वीकृति चेकलिस्ट को पास क�
 msgid "Run the floor on tablets: clock labor, report progress, see instructions"
 msgstr "टैबलेट पर फ़्लोर चलाएं: श्रम घड़ी, प्रगति रिपोर्ट करें, निर्देश देखें"
 
+msgid "Running"
+msgstr ""
+
 msgid "Running inventory after each week's supply and demand — the line."
 msgstr "प्रत्येक सप्ताह की आपूर्ति और मांग के बाद चलाई जाने वाली इन्वेंटरी — पंक्ति।"
 
 msgid "Running Total"
 msgstr "कुल चल रहा है"
+
+msgid "Runs"
+msgstr ""
 
 msgid "S-1 (coarsest special)"
 msgstr "S-1 (सबसे मोटे विशेष)"
@@ -12856,6 +12907,9 @@ msgstr "स्रोत दस्तावेज़ ID"
 msgid "Source document readable"
 msgstr ""
 
+msgid "Source event"
+msgstr ""
+
 msgid "Source Item"
 msgstr "स्रोत आइटम"
 
@@ -13013,6 +13067,9 @@ msgstr "इस पृष्ठ पर रहें"
 msgid "Step"
 msgstr "चरण"
 
+msgid "Step detail is kept for 30 days. This run's steps have been removed."
+msgstr ""
+
 msgid "Step Records"
 msgstr "चरण रिकॉर्ड"
 
@@ -13166,6 +13223,9 @@ msgstr "उप-कुल"
 
 msgid "Subtotal:"
 msgstr "उप-कुल:"
+
+msgid "Succeeded"
+msgstr ""
 
 msgid "Success"
 msgstr "सफलता"
@@ -13413,6 +13473,9 @@ msgstr ""
 
 msgid "Take the shortest remaining shelf life across the materials consumed to make this item. Use when the product's expiry depends on its ingredients."
 msgstr "इस आइटम को बनाने के लिए उपयोग की गई सामग्रियों में सबसे कम शेष शेल्फ लाइफ लें। जब उत्पाद की समाप्ति तारीख इसकी सामग्री पर निर्भर करती है तो उपयोग करें।"
+
+msgid "taken"
+msgstr ""
 
 msgid "Talk to Sales"
 msgstr "बिक्रय टीम से बात करें"
@@ -14414,6 +14477,9 @@ msgstr ""
 msgid "This version is live. Create a new version to edit."
 msgstr ""
 
+msgid "This version's definition could not be read."
+msgstr ""
+
 msgid "This will make this version read-only and replace any material make methods with this version."
 msgstr "यह इस संस्करण को केवल-पढ़ने योग्य बनाएगा और किसी भी सामग्री निर्माण विधि को इस संस्करण से बदल देगा।"
 
@@ -14776,6 +14842,9 @@ msgstr "ट्रैश"
 
 msgid "Trial Balance"
 msgstr "ट्रायल बैलेंस"
+
+msgid "Trigger"
+msgstr ""
 
 msgid "Trigger type"
 msgstr ""
@@ -15218,6 +15287,9 @@ msgstr "मूल्य"
 
 msgid "Values apply today's unit costs to historical quantities."
 msgstr "मान ऐतिहासिक मात्राओं पर आज की इकाई लागत को लागू करते हैं।"
+
+msgid "Values in this run have been summarised. Full detail is kept for 7 days."
+msgstr ""
 
 msgid "Variance"
 msgstr "विचरण"
@@ -15908,6 +15980,9 @@ msgstr "आप किससे खरीदते हैं।"
 
 msgid "Who you sell to and at what price."
 msgstr "आप किसे बेचते हैं और किस कीमत पर।"
+
+msgid "Why"
+msgstr ""
 
 msgid "Why is the expiration being changed?"
 msgstr "समाप्ति क्यों बदली जा रही है?"

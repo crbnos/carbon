@@ -47,7 +47,8 @@ import {
   notificationDigestFunction,
   notificationPurgeFunction,
   updateExchangeRatesFunction,
-  weeklyFunction
+  weeklyFunction,
+  workflowRunRetentionFunction
 } from "./functions/scheduled";
 import {
   assemblyConvertFunction,
@@ -123,6 +124,7 @@ export const functions = [
   updateExchangeRatesFunction,
   notificationDigestFunction,
   notificationPurgeFunction,
+  workflowRunRetentionFunction,
   // Integrations
   jiraSyncFunction,
   linearSyncFunction,

@@ -1218,6 +1218,9 @@ msgstr "Alpha"
 msgid "Always"
 msgstr "始终"
 
+msgid "Always taken"
+msgstr ""
+
 msgid "Amount"
 msgstr "金额"
 
@@ -2604,6 +2607,9 @@ msgstr "类别"
 msgid "Category Name"
 msgstr "分类名称"
 
+msgid "Causing run: "
+msgstr ""
+
 msgid "CC"
 msgstr "抄送"
 
@@ -2615,6 +2621,9 @@ msgstr "证书编号"
 
 msgid "Certificate uploaded"
 msgstr "证书已上传"
+
+msgid "Chain"
+msgstr ""
 
 msgid "Champion users are available for training and data validation"
 msgstr "冠军用户可用于培训和数据验证"
@@ -3822,6 +3831,9 @@ msgstr "货币换算"
 
 msgid "Currency Translation (default)"
 msgstr "货币换算（默认）"
+
+msgid "current"
+msgstr ""
 
 msgid "Current"
 msgstr "当前"
@@ -5453,6 +5465,9 @@ msgstr "空"
 msgid "Empty = match every item"
 msgstr "空 = 匹配每个项目"
 
+msgid "Empty list"
+msgstr ""
+
 msgid "Empty work centers"
 msgstr "空的工作中心"
 
@@ -5920,6 +5935,9 @@ msgstr "用于切分总账报告的额外标签"
 
 msgid "Fail"
 msgstr "失败"
+
+msgid "Failed"
+msgstr ""
 
 msgid "Failed features"
 msgstr "失效特性"
@@ -6875,6 +6893,9 @@ msgstr "假期"
 msgid "Home Phone"
 msgstr "家庭电话"
 
+msgid "Hop {depth}"
+msgstr ""
+
 msgid "Host, secure, and back up the platform"
 msgstr "托管、保护和备份平台"
 
@@ -7216,6 +7237,9 @@ msgstr "从组继承：此账户是否关闭到留存收益（收入）或结转
 
 msgid "Inherited from the parent group."
 msgstr "从父组继承。"
+
+msgid "Input"
+msgstr ""
 
 msgid "Inputs"
 msgstr ""
@@ -7809,6 +7833,9 @@ msgstr "姓氏"
 
 msgid "Last Quarter"
 msgstr "上一季度"
+
+msgid "Last Run"
+msgstr ""
 
 #. placeholder {0}: formatDateTime(lastSyncedAt)
 msgid "Last synced: {0}"
@@ -9467,6 +9494,9 @@ msgstr ""
 msgid "Not enough jobs to cover quantity"
 msgstr "工作数量不足以覆盖数量"
 
+msgid "Not reached"
+msgstr ""
+
 msgid "Not referenced anywhere yet."
 msgstr "还没有在任何地方被引用。"
 
@@ -9496,6 +9526,9 @@ msgstr "备注"
 
 msgid "Notes (optional)"
 msgstr "备注（可选）"
+
+msgid "Nothing"
+msgstr ""
 
 msgid "Nothing happens if this fails"
 msgstr ""
@@ -11007,6 +11040,9 @@ msgstr "数量：{0}"
 msgid "Question"
 msgstr "问题"
 
+msgid "Queued"
+msgstr ""
+
 msgid "Quote"
 msgstr "报价"
 
@@ -11796,6 +11832,15 @@ msgstr "决定每个项目存储位置的规则"
 msgid "Run acceptance testing"
 msgstr "运行验收测试"
 
+msgid "Run chain"
+msgstr ""
+
+msgid "Run Details"
+msgstr ""
+
+msgid "Run failed"
+msgstr ""
+
 msgid "Run hands-on sessions and sign off your team"
 msgstr "进行实践培训课程并获得团队的批准"
 
@@ -11826,11 +11871,17 @@ msgstr "运行验收清单直到通过"
 msgid "Run the floor on tablets: clock labor, report progress, see instructions"
 msgstr "在平板电脑上运行车间：记录劳动力、报告进度、查看说明"
 
+msgid "Running"
+msgstr ""
+
 msgid "Running inventory after each week's supply and demand — the line."
 msgstr "每周供应和需求后运行的库存 — 该行。"
 
 msgid "Running Total"
 msgstr "运行总计"
+
+msgid "Runs"
+msgstr ""
 
 msgid "S-1 (coarsest special)"
 msgstr "S-1（最粗特殊）"
@@ -12856,6 +12907,9 @@ msgstr "源单据ID"
 msgid "Source document readable"
 msgstr ""
 
+msgid "Source event"
+msgstr ""
+
 msgid "Source Item"
 msgstr "源项目"
 
@@ -13013,6 +13067,9 @@ msgstr "留在此页面"
 msgid "Step"
 msgstr "步骤"
 
+msgid "Step detail is kept for 30 days. This run's steps have been removed."
+msgstr ""
+
 msgid "Step Records"
 msgstr "步骤记录"
 
@@ -13166,6 +13223,9 @@ msgstr "小计"
 
 msgid "Subtotal:"
 msgstr "小计："
+
+msgid "Succeeded"
+msgstr ""
 
 msgid "Success"
 msgstr "成功"
@@ -13413,6 +13473,9 @@ msgstr ""
 
 msgid "Take the shortest remaining shelf life across the materials consumed to make this item. Use when the product's expiry depends on its ingredients."
 msgstr "采用消耗的材料中最短的剩余保质期来制造此物品。当产品的有效期取决于其成分时使用。"
+
+msgid "taken"
+msgstr ""
 
 msgid "Talk to Sales"
 msgstr "与销售团队联系"
@@ -14414,6 +14477,9 @@ msgstr ""
 msgid "This version is live. Create a new version to edit."
 msgstr ""
 
+msgid "This version's definition could not be read."
+msgstr ""
+
 msgid "This will make this version read-only and replace any material make methods with this version."
 msgstr "这将使此版本为只读，并用此版本替换任何物料制造方法。"
 
@@ -14776,6 +14842,9 @@ msgstr "垃圾桶"
 
 msgid "Trial Balance"
 msgstr "试算平衡表"
+
+msgid "Trigger"
+msgstr ""
 
 msgid "Trigger type"
 msgstr ""
@@ -15218,6 +15287,9 @@ msgstr "值"
 
 msgid "Values apply today's unit costs to historical quantities."
 msgstr "价值采用今日的单位成本应用于历史数量。"
+
+msgid "Values in this run have been summarised. Full detail is kept for 7 days."
+msgstr ""
 
 msgid "Variance"
 msgstr "差异"
@@ -15908,6 +15980,9 @@ msgstr "你从谁那里购买。"
 
 msgid "Who you sell to and at what price."
 msgstr "你销售给谁以及价格是多少。"
+
+msgid "Why"
+msgstr ""
 
 msgid "Why is the expiration being changed?"
 msgstr "为什么要更改过期日期？"

@@ -43,7 +43,7 @@ describe("conditionExecutor", () => {
       node([path("p1", "if", over(10000)), path("p2", "else")]),
       ctx
     );
-    expect(result).toEqual({
+    expect(result).toMatchObject({
       status: "Succeeded",
       outputs: {},
       handle: "p1",
@@ -72,7 +72,7 @@ describe("conditionExecutor", () => {
       node([path("p1", "if", over(50000))]),
       ctx
     );
-    expect(result).toEqual({
+    expect(result).toMatchObject({
       status: "Succeeded",
       outputs: {},
       handle: null,
@@ -96,9 +96,54 @@ describe("conditionExecutor", () => {
       node([missing, path("p2", "else")]),
       ctx
     );
-    expect(result).toEqual({
+    expect(result).toMatchObject({
       status: "Skipped",
       reason: "The step that produces this value did not run."
     });
+  });
+
+  it("if fails and falls to else: detail.paths length 2, first taken:false, second taken:true with empty evaluations", async () => {
+    const result = await conditionExecutor.execute(
+      node([path("p1", "if", over(50000)), path("p2", "else")]),
+      ctx
+    );
+    if (result.status !== "Succeeded") throw new Error("Expected Succeeded");
+    const detail = result.detail;
+    expect(detail).toBeDefined();
+    expect(detail?.kind).toBe("condition");
+    expect(detail?.paths).toHaveLength(2);
+    expect(detail?.paths[0]?.taken).toBe(false);
+    expect(detail?.paths[0]?.evaluations.length).toBeGreaterThan(0);
+    expect(detail?.paths[1]?.taken).toBe(true);
+    expect(detail?.paths[1]?.evaluations).toEqual([]);
+  });
+
+  it("skip: detail's last path has an evaluation carrying a reason", async () => {
+    const missingClause = [
+      {
+        left: {
+          kind: "ref" as const,
+          nodeId: "gone",
+          output: "result",
+          path: [] as string[]
+        },
+        operator: "eq" as const,
+        right: {
+          kind: "literal" as const,
+          type: { kind: "primitive" as const, of: "number" as const },
+          value: 1
+        }
+      }
+    ];
+    const result = await conditionExecutor.execute(
+      node([path("p1", "if", missingClause)]),
+      ctx
+    );
+    if (result.status !== "Skipped") throw new Error("Expected Skipped");
+    const detail = result.detail;
+    expect(detail).toBeDefined();
+    const lastPath = detail?.paths.at(-1);
+    expect(lastPath?.evaluations.length).toBeGreaterThan(0);
+    expect(lastPath?.evaluations.at(-1)?.reason).toBeTruthy();
   });
 });

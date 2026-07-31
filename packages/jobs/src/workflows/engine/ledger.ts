@@ -13,28 +13,40 @@ function toJson(value: unknown): string | null {
   return value === null || value === undefined ? null : JSON.stringify(value);
 }
 
+// Deliberately excludes bare `key`, `auth` and `session`: `itemKey` is a column of
+// this table and `authorizedBy` is ordinary ERP data. Over-redaction in a debugging
+// tool is a failure too.
 const SECRET_KEY =
-  /secret|token|password|signature|authorization|apikey|api_key/i;
+  /secret|token|password|passwd|credential|signature|authorization|apikey|api_key|client_secret|clientsecret|private_key|privatekey|bearer|cookie/i;
 const MAX_STRING_LENGTH = 4096;
-const TRUNCATED = "…(truncated)";
+const REDACTED = "[REDACTED]";
 
-/** Strips anything secret-looking and caps long strings, before it reaches the run log. */
+/** Replaces anything secret-looking and caps long strings, before it reaches the
+ * run log. The key is kept and its value replaced: a dropped key is
+ * indistinguishable from a field that was genuinely absent, and telling those two
+ * apart is the whole job of a run log. */
 export function redactForLog(value: unknown): unknown {
   if (typeof value === "string") {
-    return value.length <= MAX_STRING_LENGTH
-      ? value
-      : value.slice(0, MAX_STRING_LENGTH) + TRUNCATED;
+    if (value.length <= MAX_STRING_LENGTH) return value;
+    const dropped = value.length - MAX_STRING_LENGTH;
+    return `${value.slice(0, MAX_STRING_LENGTH)}… ${dropped} more characters`;
   }
   if (Array.isArray(value)) return value.map(redactForLog);
   if (value !== null && typeof value === "object") {
     const kept: Record<string, unknown> = {};
     for (const [key, entry] of Object.entries(value)) {
-      if (SECRET_KEY.test(key)) continue;
-      kept[key] = redactForLog(entry);
+      kept[key] = SECRET_KEY.test(key) ? REDACTED : redactForLog(entry);
     }
     return kept;
   }
   return value;
+}
+
+/** For the free-text columns. Only truncation applies to a bare string — key-name
+ * redaction needs keys — but an unbounded error message is worth capping. */
+export function redactText(value: string | null | undefined): string | null {
+  if (value === null || value === undefined) return null;
+  return redactForLog(value) as string;
 }
 
 /** The unique constraint makes the claim atomic. Losing it means a previous
@@ -87,6 +99,7 @@ export async function settleStep(
     statusReason?: string | null;
     error?: string | null;
     output?: unknown;
+    detail?: unknown;
     branchTaken?: string | null;
     startedAt: string;
   }
@@ -94,14 +107,16 @@ export async function settleStep(
   const completedAt = new Date();
   const patch: Updateable<KyselyDatabase["workflowStepRun"]> = {
     status: params.status,
-    statusReason: params.statusReason ?? null,
-    error: params.error ?? null,
+    statusReason: redactText(params.statusReason),
+    error: redactText(params.error),
     branchTaken: params.branchTaken ?? null,
     completedAt: completedAt.toISOString(),
     durationMs: completedAt.getTime() - new Date(params.startedAt).getTime()
   };
 
-  if (params.output !== undefined) patch.output = toJson(params.output);
+  if (params.output !== undefined)
+    patch.output = toJson(redactForLog(params.output));
+  if (params.detail !== undefined) patch.detail = toJson(params.detail);
 
   await db
     .updateTable("workflowStepRun")

@@ -1218,6 +1218,9 @@ msgstr "Alfa"
 msgid "Always"
 msgstr "Siempre"
 
+msgid "Always taken"
+msgstr ""
+
 msgid "Amount"
 msgstr "Cantidad"
 
@@ -2604,6 +2607,9 @@ msgstr "Categoría"
 msgid "Category Name"
 msgstr "Nombre de Categoría"
 
+msgid "Causing run: "
+msgstr ""
+
 msgid "CC"
 msgstr "CC"
 
@@ -2615,6 +2621,9 @@ msgstr "Número de Certificado"
 
 msgid "Certificate uploaded"
 msgstr "Certificado cargado"
+
+msgid "Chain"
+msgstr ""
 
 msgid "Champion users are available for training and data validation"
 msgstr "Los usuarios campeones están disponibles para capacitación y validación de datos"
@@ -3822,6 +3831,9 @@ msgstr "Conversión de Moneda"
 
 msgid "Currency Translation (default)"
 msgstr "Conversión de Moneda (predeterminada)"
+
+msgid "current"
+msgstr ""
 
 msgid "Current"
 msgstr "Actual"
@@ -5453,6 +5465,9 @@ msgstr "Vacío"
 msgid "Empty = match every item"
 msgstr "Vacío = coincide con todos los elementos"
 
+msgid "Empty list"
+msgstr ""
+
 msgid "Empty work centers"
 msgstr "Centros de trabajo vacíos"
 
@@ -5920,6 +5935,9 @@ msgstr "Etiquetas adicionales para segmentar tu informe de GL"
 
 msgid "Fail"
 msgstr "Fallar"
+
+msgid "Failed"
+msgstr ""
 
 msgid "Failed features"
 msgstr "Características fallidas"
@@ -6875,6 +6893,9 @@ msgstr "Días festivos"
 msgid "Home Phone"
 msgstr "Teléfono de Casa"
 
+msgid "Hop {depth}"
+msgstr ""
+
 msgid "Host, secure, and back up the platform"
 msgstr "Alojar, asegurar y hacer copia de seguridad de la plataforma"
 
@@ -7216,6 +7237,9 @@ msgstr "Heredado del grupo: si esta cuenta se cierra a ganancias retenidas (ingr
 
 msgid "Inherited from the parent group."
 msgstr "Heredado del grupo padre."
+
+msgid "Input"
+msgstr ""
 
 msgid "Inputs"
 msgstr ""
@@ -7809,6 +7833,9 @@ msgstr "Apellido"
 
 msgid "Last Quarter"
 msgstr "Trimestre Anterior"
+
+msgid "Last Run"
+msgstr ""
 
 #. placeholder {0}: formatDateTime(lastSyncedAt)
 msgid "Last synced: {0}"
@@ -9467,6 +9494,9 @@ msgstr ""
 msgid "Not enough jobs to cover quantity"
 msgstr "No hay suficientes trabajos para cubrir la cantidad"
 
+msgid "Not reached"
+msgstr ""
+
 msgid "Not referenced anywhere yet."
 msgstr "Sin referencias aún."
 
@@ -9496,6 +9526,9 @@ msgstr "Notas"
 
 msgid "Notes (optional)"
 msgstr "Notas (opcional)"
+
+msgid "Nothing"
+msgstr ""
 
 msgid "Nothing happens if this fails"
 msgstr ""
@@ -11007,6 +11040,9 @@ msgstr "Cantidad: {0}"
 msgid "Question"
 msgstr "Pregunta"
 
+msgid "Queued"
+msgstr ""
+
 msgid "Quote"
 msgstr "Cotización"
 
@@ -11796,6 +11832,15 @@ msgstr "Reglas que deciden dónde se almacena cada artículo"
 msgid "Run acceptance testing"
 msgstr "Ejecutar pruebas de aceptación"
 
+msgid "Run chain"
+msgstr ""
+
+msgid "Run Details"
+msgstr ""
+
+msgid "Run failed"
+msgstr ""
+
 msgid "Run hands-on sessions and sign off your team"
 msgstr "Ejecutar sesiones prácticas y aprobar a tu equipo"
 
@@ -11826,11 +11871,17 @@ msgstr "Ejecutar la lista de verificación de aceptación hasta obtener un resul
 msgid "Run the floor on tablets: clock labor, report progress, see instructions"
 msgstr "Ejecutar la planta en tablets: registrar mano de obra, reportar progreso, ver instrucciones"
 
+msgid "Running"
+msgstr ""
+
 msgid "Running inventory after each week's supply and demand — the line."
 msgstr "Inventario en ejecución después del suministro y la demanda de cada semana — la línea."
 
 msgid "Running Total"
 msgstr "Total Acumulado"
+
+msgid "Runs"
+msgstr ""
 
 msgid "S-1 (coarsest special)"
 msgstr "S-1 (más grueso especial)"
@@ -12856,6 +12907,9 @@ msgstr "ID de Documento de Origen"
 msgid "Source document readable"
 msgstr ""
 
+msgid "Source event"
+msgstr ""
+
 msgid "Source Item"
 msgstr "Artículo de origen"
 
@@ -13013,6 +13067,9 @@ msgstr "Quedarse en esta página"
 msgid "Step"
 msgstr "Paso"
 
+msgid "Step detail is kept for 30 days. This run's steps have been removed."
+msgstr ""
+
 msgid "Step Records"
 msgstr "Registros de Pasos"
 
@@ -13166,6 +13223,9 @@ msgstr "Subtotal"
 
 msgid "Subtotal:"
 msgstr "Subtotal:"
+
+msgid "Succeeded"
+msgstr ""
 
 msgid "Success"
 msgstr "Éxito"
@@ -13413,6 +13473,9 @@ msgstr ""
 
 msgid "Take the shortest remaining shelf life across the materials consumed to make this item. Use when the product's expiry depends on its ingredients."
 msgstr "Toma la vida útil restante más corta entre los materiales consumidos para hacer este artículo. Úsalo cuando la caducidad del producto dependa de sus ingredientes."
+
+msgid "taken"
+msgstr ""
 
 msgid "Talk to Sales"
 msgstr "Hablar con Ventas"
@@ -14414,6 +14477,9 @@ msgstr ""
 msgid "This version is live. Create a new version to edit."
 msgstr ""
 
+msgid "This version's definition could not be read."
+msgstr ""
+
 msgid "This will make this version read-only and replace any material make methods with this version."
 msgstr "Esto hará que esta versión sea de solo lectura y reemplazará cualquier método de fabricación de material con esta versión."
 
@@ -14776,6 +14842,9 @@ msgstr "Papelera"
 
 msgid "Trial Balance"
 msgstr "Balance de Comprobación"
+
+msgid "Trigger"
+msgstr ""
 
 msgid "Trigger type"
 msgstr ""
@@ -15218,6 +15287,9 @@ msgstr "Valores"
 
 msgid "Values apply today's unit costs to historical quantities."
 msgstr "Los valores aplican los costos unitarios de hoy a las cantidades históricas."
+
+msgid "Values in this run have been summarised. Full detail is kept for 7 days."
+msgstr ""
 
 msgid "Variance"
 msgstr "Variación"
@@ -15908,6 +15980,9 @@ msgstr "De quién compras."
 
 msgid "Who you sell to and at what price."
 msgstr "A quién le vendes y a qué precio."
+
+msgid "Why"
+msgstr ""
 
 msgid "Why is the expiration being changed?"
 msgstr "¿Por qué se está cambiando la fecha de vencimiento?"

@@ -1,5 +1,5 @@
 import { useLingui } from "@lingui/react/macro";
-import { LuWorkflow } from "react-icons/lu";
+import { LuHistory, LuWorkflow } from "react-icons/lu";
 import { usePermissions } from "~/hooks";
 import { useSavedViews } from "~/hooks/useSavedViews";
 import type { AuthenticatedRouteGroup } from "~/types";
@@ -19,6 +19,12 @@ export default function useWorkflowsSubmodules() {
           to: path.to.workflows,
           icon: <LuWorkflow />,
           table: "workflow"
+        },
+        {
+          name: t`Runs`,
+          to: path.to.workflowRuns,
+          icon: <LuHistory />,
+          table: "workflowRun"
         }
       ]
     }

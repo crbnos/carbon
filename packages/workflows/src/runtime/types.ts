@@ -4,7 +4,11 @@ import type {
   WorkflowCatalog
 } from "../definition/catalog";
 import type { WorkflowNode } from "../definition/schema";
-import type { PrimitiveKind, ScalarType } from "../definition/types";
+import type {
+  Combinator,
+  PrimitiveKind,
+  ScalarType
+} from "../definition/types";
 
 /** A value as it exists during a run, rather than the type it was declared as. */
 export type RuntimeValue =
@@ -74,6 +78,26 @@ export interface RuntimeContext {
   item?: RuntimeValue;
 }
 
+/** What a single clause resolved to. `null` values mean it could not be read. */
+export type ClauseEvaluation = {
+  left: RuntimeValue | null;
+  operator: Operator;
+  right: RuntimeValue | null;
+  passed: boolean | null;
+  reason?: string;
+};
+
+/** Why a node did what it did. Diagnostics, never node data. */
+export type NodeDetail = {
+  kind: "condition";
+  paths: Array<{
+    pathId: string;
+    combinator: Combinator;
+    evaluations: ClauseEvaluation[];
+    taken: boolean;
+  }>;
+};
+
 export type NodeResult =
   | {
       status: "Succeeded";
@@ -83,8 +107,9 @@ export type NodeResult =
       branchTaken?: string;
       /** A one-line note for the step row's statusReason. */
       summary?: string;
+      detail?: NodeDetail;
     }
-  | { status: "Skipped"; reason: string }
+  | { status: "Skipped"; reason: string; detail?: NodeDetail }
   | { status: "Failed"; error: string; handle?: string | null };
 
 export interface NodeExecutor<N extends WorkflowNode> {

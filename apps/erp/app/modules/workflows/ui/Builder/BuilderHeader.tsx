@@ -21,7 +21,7 @@ import {
 import type { WorkflowIssue } from "@carbon/workflows";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useEffect } from "react";
-import { LuLock, LuUser } from "react-icons/lu";
+import { LuHistory, LuLock, LuUser } from "react-icons/lu";
 import { useFetcher } from "react-router";
 import { EmployeeAvatar } from "~/components";
 import { usePermissions, useUser } from "~/hooks";
@@ -137,6 +137,13 @@ export function BuilderHeader({
       <SaveMarker />
 
       <div className="ml-auto flex items-center gap-2">
+        <Button variant="ghost" leftIcon={<LuHistory />} asChild>
+          <a
+            href={`${path.to.workflowRuns}?filter=workflowId:eq:${workflow.id}`}
+          >
+            {t`Runs`}
+          </a>
+        </Button>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" leftIcon={<LuUser />}>

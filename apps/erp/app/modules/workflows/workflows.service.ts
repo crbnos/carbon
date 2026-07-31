@@ -223,6 +223,89 @@ export async function deleteWorkflowVersion(
     .eq("companyId", companyId);
 }
 
+export async function getWorkflowRuns(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args?: GenericQueryFilters
+) {
+  let query = client
+    .from("workflowRun")
+    .select(
+      "id, workflowId, workflowVersionId, eventId, sourceEventId, triggerTable, triggerRecordId, ownerId, status, statusReason, rootRunId, causedByRunId, depth, path, startedAt, completedAt, durationMs, error, createdAt, workflow(name)",
+      { count: "exact" }
+    )
+    .eq("companyId", companyId);
+
+  if (args) {
+    query = setGenericQueryFilters(query, args, [
+      { column: "createdAt", ascending: false }
+    ]);
+  }
+
+  return query;
+}
+
+export async function getWorkflowRun(
+  client: SupabaseClient<Database>,
+  id: string,
+  companyId: string
+) {
+  return client
+    .from("workflowRun")
+    .select(
+      "id, workflowId, workflowVersionId, eventId, sourceEventId, triggerTable, triggerRecordId, ownerId, status, statusReason, rootRunId, causedByRunId, depth, path, startedAt, completedAt, durationMs, error, compactedAt, createdAt, workflow(name), workflowVersion(versionNumber, formatVersion, nodes, edges)"
+    )
+    .eq("id", id)
+    .eq("companyId", companyId)
+    .maybeSingle();
+}
+
+export async function getWorkflowRunSteps(
+  client: SupabaseClient<Database>,
+  runId: string,
+  companyId: string
+) {
+  return client
+    .from("workflowStepRun")
+    .select(
+      "id, runId, sequence, nodeId, nodeType, itemKey, status, statusReason, input, output, detail, branchTaken, startedAt, completedAt, durationMs, error, compactedAt"
+    )
+    .eq("runId", runId)
+    .eq("companyId", companyId)
+    .order("sequence", { ascending: true })
+    .order("itemKey", { ascending: true });
+}
+
+export async function getWorkflowRunChain(
+  client: SupabaseClient<Database>,
+  rootRunId: string,
+  companyId: string
+) {
+  return client
+    .from("workflowRun")
+    .select(
+      "id, workflowId, status, statusReason, depth, causedByRunId, createdAt, workflow(name)"
+    )
+    .eq("rootRunId", rootRunId)
+    .eq("companyId", companyId)
+    .order("depth", { ascending: true })
+    .order("createdAt", { ascending: true })
+    .limit(50);
+}
+
+export async function getWorkflowLastRuns(
+  client: SupabaseClient<Database>,
+  workflowIds: string[],
+  companyId: string
+) {
+  if (workflowIds.length === 0) return { data: [], error: null };
+  return client
+    .from("workflowLastRun")
+    .select("workflowId, runId, status, createdAt, completedAt, durationMs")
+    .in("workflowId", workflowIds)
+    .eq("companyId", companyId);
+}
+
 export type Workflow = NonNullable<
   Awaited<ReturnType<typeof getWorkflows>>["data"]
 >[number];
@@ -238,3 +321,23 @@ export type WorkflowVersionSummary = NonNullable<
 export type WorkflowVersionRow = NonNullable<
   Awaited<ReturnType<typeof getWorkflowVersion>>["data"]
 >;
+
+export type WorkflowRun = NonNullable<
+  Awaited<ReturnType<typeof getWorkflowRuns>>["data"]
+>[number];
+
+export type WorkflowRunDetail = NonNullable<
+  Awaited<ReturnType<typeof getWorkflowRun>>["data"]
+>;
+
+export type WorkflowRunStep = NonNullable<
+  Awaited<ReturnType<typeof getWorkflowRunSteps>>["data"]
+>[number];
+
+export type WorkflowRunChainEntry = NonNullable<
+  Awaited<ReturnType<typeof getWorkflowRunChain>>["data"]
+>[number];
+
+export type WorkflowLastRun = NonNullable<
+  Awaited<ReturnType<typeof getWorkflowLastRuns>>["data"]
+>[number];

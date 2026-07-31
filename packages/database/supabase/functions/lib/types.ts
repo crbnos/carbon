@@ -58202,6 +58202,7 @@ export type Database = {
           companyId: string
           completedAt: string | null
           createdAt: string
+          detail: Json | null
           durationMs: number | null
           error: string | null
           id: string
@@ -58222,6 +58223,7 @@ export type Database = {
           companyId: string
           completedAt?: string | null
           createdAt?: string
+          detail?: Json | null
           durationMs?: number | null
           error?: string | null
           id?: string
@@ -58242,6 +58244,7 @@ export type Database = {
           companyId?: string
           completedAt?: string | null
           createdAt?: string
+          detail?: Json | null
           durationMs?: number | null
           error?: string | null
           id?: string
@@ -58284,6 +58287,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "integrations"
             referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "workflowStepRun_runId_companyId_fkey"
+            columns: ["runId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "workflowLastRun"
+            referencedColumns: ["runId", "companyId"]
           },
           {
             foreignKeyName: "workflowStepRun_runId_companyId_fkey"
@@ -65431,14 +65441,14 @@ export type Database = {
           },
           {
             foreignKeyName: "partner_id_fkey"
-            columns: ["id"]
+            columns: ["supplierLocationId"]
             isOneToOne: false
             referencedRelation: "supplierLocation"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "partner_id_fkey"
-            columns: ["supplierLocationId"]
+            columns: ["id"]
             isOneToOne: false
             referencedRelation: "supplierLocation"
             referencedColumns: ["id"]
@@ -70463,7 +70473,7 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["shipmentCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -70477,7 +70487,7 @@ export type Database = {
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["shipmentCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -71024,14 +71034,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["paymentCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["paymentCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -74294,6 +74304,56 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
+          },
+        ]
+      }
+      workflowLastRun: {
+        Row: {
+          companyId: string | null
+          completedAt: string | null
+          createdAt: string | null
+          durationMs: number | null
+          runId: string | null
+          startedAt: string | null
+          status: string | null
+          statusReason: string | null
+          workflowId: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workflowRun_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workflowRun_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workflowRun_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "workflowRun_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "workflowRun_workflowId_companyId_fkey"
+            columns: ["workflowId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "workflow"
+            referencedColumns: ["id", "companyId"]
           },
         ]
       }

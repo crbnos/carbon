@@ -64,6 +64,7 @@ pnpm --filter @carbon/jobs dev:jobs   # Start local Inngest dev server
 | `workflow-run` | `carbon/workflow-run.queued` | Walks one matched run's graph — one durable step per node, acting as the workflow's owner. Thin wrapper over `src/workflows/engine/` |
 | `workflows-scheduler` | `carbon/workflow-scheduler.wake` | Self-chaining scheduler wake: scans due workflows, claims and books the next wake, dispatches Queued/Skipped runs |
 | `workflows-scheduler-backstop` | cron `0 * * * *` | Hourly: sends a wake if the chain has gone quiet (Redis TTL expired or never set) |
+| `workflow-run-retention` | cron `0 4 * * *` | Nightly: reap stale runs, purge 90-day headers, drop 30-day step detail, compact 7-day payloads via `compactForLog` |
 
 The scheduler's Inngest-free core lives in `src/workflows/scheduler.ts` — same pattern as
 `matcher.ts`. `ensureSchedulerChain()` (exported from `@carbon/jobs/inngest`) kick-starts

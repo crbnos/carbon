@@ -1,7 +1,7 @@
 import type { Operator } from "@carbon/utils";
 import type { Clause, Combinator } from "../definition/types";
 import { resolveValue } from "./resolve";
-import type { RuntimeContext, RuntimeValue } from "./types";
+import type { ClauseEvaluation, RuntimeContext, RuntimeValue } from "./types";
 import { isNull } from "./values";
 
 /** Numbers as themselves, dates as ms since epoch. Anything else is not orderable. */
@@ -87,20 +87,55 @@ export async function evaluateClauses(
   clauses: Clause[],
   combinator: Combinator,
   ctx: RuntimeContext
-): Promise<{ ok: true; passed: boolean } | { ok: false; reason: string }> {
+): Promise<
+  | { ok: true; passed: boolean; evaluations: ClauseEvaluation[] }
+  | { ok: false; reason: string; evaluations: ClauseEvaluation[] }
+> {
   const results: boolean[] = [];
+  const evaluations: ClauseEvaluation[] = [];
 
   for (const clause of clauses) {
     const left = await resolveValue(clause.left, ctx);
-    if (!left.ok) return left;
+    if (!left.ok) {
+      // Keep what was evaluated before the failure — a run that stopped on
+      // clause three still has to show clauses one and two.
+      evaluations.push({
+        left: null,
+        operator: clause.operator,
+        right: null,
+        passed: null,
+        reason: left.reason
+      });
+      return { ok: false, reason: left.reason, evaluations };
+    }
+
     const right = await resolveValue(clause.right, ctx);
-    if (!right.ok) return right;
-    results.push(compare(left.value, clause.operator, right.value));
+    if (!right.ok) {
+      evaluations.push({
+        left: left.value,
+        operator: clause.operator,
+        right: null,
+        passed: null,
+        reason: right.reason
+      });
+      return { ok: false, reason: right.reason, evaluations };
+    }
+
+    const passed = compare(left.value, clause.operator, right.value);
+    evaluations.push({
+      left: left.value,
+      operator: clause.operator,
+      right: right.value,
+      passed
+    });
+    results.push(passed);
   }
 
-  if (results.length === 0) return { ok: true, passed: true };
+  if (results.length === 0) return { ok: true, passed: true, evaluations };
   return {
     ok: true,
-    passed: combinator === "or" ? results.some(Boolean) : results.every(Boolean)
+    passed:
+      combinator === "or" ? results.some(Boolean) : results.every(Boolean),
+    evaluations
   };
 }

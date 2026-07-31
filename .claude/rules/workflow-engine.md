@@ -124,10 +124,16 @@ later read. This is what makes `before.orderTotal <= 10000` mean what it says.
 - Every `step.run` id must be deterministic: `"load"`, `"permissions"`,
   `` `node:${nodeId}` ``, `` `node:${nodeId}:${itemKey}` ``, `"finish"`. Never a
   timestamp or a counter.
-- `claimStep` writes the step's `input` through `redactForLog`, which drops any
-  key matching `/secret|token|password|signature|authorization|apikey|api_key/i`
-  and truncates strings over 4 KB. Anything new that lands in that column goes
-  through it.
+- `claimStep` writes the step's `input` through `redactForLog`; `settleStep`
+  applies the same function to `output`, `detail`, `error`, and `statusReason`
+  (via `redactText`). `redactForLog` keeps the key and replaces the value with
+  `"[REDACTED]"` for any key matching
+  `/secret|token|password|passwd|credential|signature|authorization|apikey|api_key|client_secret|clientsecret|private_key|privatekey|bearer|cookie/i`
+  and truncates strings over 4 KB. `itemKey`, `authorizedBy`, `keyword`, and
+  `sessionId` are deliberately excluded — over-redaction in a debugging tool is a
+  failure too. Anything new that lands in those columns goes through it. The
+  `detail` column holds per-clause condition evaluation diagnostics (never node
+  data), written only on Succeeded/Skipped; Failed nodes leave it null.
 - A **lost claim always returns `Skipped`**, even when the existing row is
   terminal, so a replay does not reuse that row's output. Known divergence from
   the phase-4 spec, deliberately left in place.

@@ -31,7 +31,7 @@ const count = (n: number, one: string, many: string) =>
   `${n} ${n === 1 ? one : many}`;
 
 /** Resolve a catalog label key to its English source string without calling hooks. */
-function labelText(key: string): string | undefined {
+export function labelText(key: string): string | undefined {
   const descriptor = WORKFLOW_LABELS[key as keyof typeof WORKFLOW_LABELS];
   return descriptor?.id;
 }

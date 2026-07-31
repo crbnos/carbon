@@ -1218,6 +1218,9 @@ msgstr "Alfa"
 msgid "Always"
 msgstr "Her zaman"
 
+msgid "Always taken"
+msgstr ""
+
 msgid "Amount"
 msgstr "Tutar"
 
@@ -2604,6 +2607,9 @@ msgstr "Kategori"
 msgid "Category Name"
 msgstr "Kategori Adı"
 
+msgid "Causing run: "
+msgstr ""
+
 msgid "CC"
 msgstr "Bilgi"
 
@@ -2615,6 +2621,9 @@ msgstr "Sertifika Numarası"
 
 msgid "Certificate uploaded"
 msgstr "Sertifika Yüklendi"
+
+msgid "Chain"
+msgstr ""
 
 msgid "Champion users are available for training and data validation"
 msgstr "Şampiyon kullanıcılar eğitim ve veri doğrulaması için kullanılabilir"
@@ -3822,6 +3831,9 @@ msgstr "Para Birimi Çevirisi"
 
 msgid "Currency Translation (default)"
 msgstr "Para Birimi Çevirisi (varsayılan)"
+
+msgid "current"
+msgstr ""
 
 msgid "Current"
 msgstr "Mevcut"
@@ -5453,6 +5465,9 @@ msgstr "Boş"
 msgid "Empty = match every item"
 msgstr "Boş = tüm öğeleri eşleştir"
 
+msgid "Empty list"
+msgstr ""
+
 msgid "Empty work centers"
 msgstr "Boş iş merkezleri"
 
@@ -5920,6 +5935,9 @@ msgstr "GL raporlamanızı dilimlemek için ekstra etiketler"
 
 msgid "Fail"
 msgstr "Başarısız"
+
+msgid "Failed"
+msgstr ""
 
 msgid "Failed features"
 msgstr "Başarısız özellikler"
@@ -6875,6 +6893,9 @@ msgstr "Tatiller"
 msgid "Home Phone"
 msgstr "Ev Telefonu"
 
+msgid "Hop {depth}"
+msgstr ""
+
 msgid "Host, secure, and back up the platform"
 msgstr "Platformu barındırın, güvenli hale getirin ve yedekleyin"
 
@@ -7216,6 +7237,9 @@ msgstr "Gruptan devralınan: bu hesap birikmiş karları (gelir) kapatır mı yo
 
 msgid "Inherited from the parent group."
 msgstr "Ana gruptan devralınan."
+
+msgid "Input"
+msgstr ""
 
 msgid "Inputs"
 msgstr ""
@@ -7809,6 +7833,9 @@ msgstr "Soyadı"
 
 msgid "Last Quarter"
 msgstr "Son Çeyrek"
+
+msgid "Last Run"
+msgstr ""
 
 #. placeholder {0}: formatDateTime(lastSyncedAt)
 msgid "Last synced: {0}"
@@ -9467,6 +9494,9 @@ msgstr ""
 msgid "Not enough jobs to cover quantity"
 msgstr "Miktarı karşılayacak yeterli iş yok"
 
+msgid "Not reached"
+msgstr ""
+
 msgid "Not referenced anywhere yet."
 msgstr "Henüz hiçbir yerde referans verilmemiş."
 
@@ -9496,6 +9526,9 @@ msgstr "Açıklamalar"
 
 msgid "Notes (optional)"
 msgstr "Notlar (isteğe bağlı)"
+
+msgid "Nothing"
+msgstr ""
 
 msgid "Nothing happens if this fails"
 msgstr ""
@@ -11007,6 +11040,9 @@ msgstr "Miktar: {0}"
 msgid "Question"
 msgstr "Soru"
 
+msgid "Queued"
+msgstr ""
+
 msgid "Quote"
 msgstr "Teklif"
 
@@ -11796,6 +11832,15 @@ msgstr "Her öğenin nereye depolanacağını belirleyen kurallar"
 msgid "Run acceptance testing"
 msgstr "Kabul testini çalıştır"
 
+msgid "Run chain"
+msgstr ""
+
+msgid "Run Details"
+msgstr ""
+
+msgid "Run failed"
+msgstr ""
+
 msgid "Run hands-on sessions and sign off your team"
 msgstr "Uygulamalı oturumlar düzenleyin ve ekibinizi onaylayın"
 
@@ -11826,11 +11871,17 @@ msgstr "Kabul kontrol listesini başarıyla tamamlayın"
 msgid "Run the floor on tablets: clock labor, report progress, see instructions"
 msgstr "Tabletlerde üretim katını yönetin: işçi saatini kaydedin, ilerlemeyi bildirin, talimatları görüntüleyin"
 
+msgid "Running"
+msgstr ""
+
 msgid "Running inventory after each week's supply and demand — the line."
 msgstr "Her haftalık arz ve talep sonrası çalışan envanter — satır."
 
 msgid "Running Total"
 msgstr "Kümülatif Toplam"
+
+msgid "Runs"
+msgstr ""
 
 msgid "S-1 (coarsest special)"
 msgstr "S-1 (en kalın özel)"
@@ -12856,6 +12907,9 @@ msgstr "Kaynak Belge Kimliği"
 msgid "Source document readable"
 msgstr ""
 
+msgid "Source event"
+msgstr ""
+
 msgid "Source Item"
 msgstr "Kaynak Ürün"
 
@@ -13013,6 +13067,9 @@ msgstr "Bu sayfada kal"
 msgid "Step"
 msgstr "Adım"
 
+msgid "Step detail is kept for 30 days. This run's steps have been removed."
+msgstr ""
+
 msgid "Step Records"
 msgstr "Adım Kayıtları"
 
@@ -13166,6 +13223,9 @@ msgstr "Ara Toplamı"
 
 msgid "Subtotal:"
 msgstr "Ara Toplamı:"
+
+msgid "Succeeded"
+msgstr ""
 
 msgid "Success"
 msgstr "Başarılı"
@@ -13413,6 +13473,9 @@ msgstr ""
 
 msgid "Take the shortest remaining shelf life across the materials consumed to make this item. Use when the product's expiry depends on its ingredients."
 msgstr "Bu öğeyi üretmek için tüketilen malzemelerdeki en kısa kalan raf ömrünü alır. Ürünün son kullanma tarihinin bileşenlerine bağlı olduğu durumlarda kullanılır."
+
+msgid "taken"
+msgstr ""
 
 msgid "Talk to Sales"
 msgstr "Satın Alma Ekibi ile Görüşün"
@@ -14414,6 +14477,9 @@ msgstr ""
 msgid "This version is live. Create a new version to edit."
 msgstr ""
 
+msgid "This version's definition could not be read."
+msgstr ""
+
 msgid "This will make this version read-only and replace any material make methods with this version."
 msgstr "Bu sürümü salt okunur yapacak ve herhangi bir malzeme üretim yöntemini bu sürümle değiştirecektir."
 
@@ -14776,6 +14842,9 @@ msgstr "Çöp Kutusu"
 
 msgid "Trial Balance"
 msgstr "Mizan"
+
+msgid "Trigger"
+msgstr ""
 
 msgid "Trigger type"
 msgstr ""
@@ -15218,6 +15287,9 @@ msgstr "Değerler"
 
 msgid "Values apply today's unit costs to historical quantities."
 msgstr "Değerler, tarihsel miktarlara bugünün birim maliyetlerini uygular."
+
+msgid "Values in this run have been summarised. Full detail is kept for 7 days."
+msgstr ""
 
 msgid "Variance"
 msgstr "Varyans"
@@ -15908,6 +15980,9 @@ msgstr "Kimden satın aldığınız."
 
 msgid "Who you sell to and at what price."
 msgstr "Kime sattığınız ve hangi fiyattan."
+
+msgid "Why"
+msgstr ""
 
 msgid "Why is the expiration being changed?"
 msgstr "Geçiş tarihi neden değiştiriliyor?"
