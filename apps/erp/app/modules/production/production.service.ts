@@ -4518,28 +4518,27 @@ export async function activateAssemblyInstructionVersion(
     .map((v) => v.id)
     .filter((vId) => vId !== id);
   if (otherVersionIds.length > 0) {
-    const activeJobs = await client
-      .from("job")
-      .select("id")
+    // Drive the lookup off jobOperation (bounded by this small sibling-version
+    // set) rather than first materializing every unlocked job id — that list
+    // can exceed the 1000-row cap and silently drop operations, leaving them
+    // pointed at the now-archived version. An inner join on job applies the
+    // locked-job filter server-side while keeping the row set bounded.
+    const staleOps = await client
+      .from("jobOperation")
+      .select("id, job!inner(status)")
       .eq("companyId", companyId)
-      .not("status", "in", `(${JOB_LOCKED_STATUSES.join(",")})`);
-    const activeJobIds = (activeJobs.data ?? []).map((j) => j.id);
+      .in("assemblyInstructionId", otherVersionIds)
+      .not("status", "in", "(Done,Canceled)")
+      .not("job.status", "in", `(${JOB_LOCKED_STATUSES.join(",")})`);
+    if (staleOps.error) return staleOps;
 
-    if (activeJobIds.length > 0) {
-      const staleOps = await client
+    const staleOpIds = (staleOps.data ?? []).map((o) => o.id);
+    if (staleOpIds.length > 0) {
+      const repoint = await client
         .from("jobOperation")
-        .select("id")
-        .in("assemblyInstructionId", otherVersionIds)
-        .in("jobId", activeJobIds)
-        .not("status", "in", "(Done,Canceled)");
-      const staleOpIds = (staleOps.data ?? []).map((o) => o.id);
-      if (staleOpIds.length > 0) {
-        const repoint = await client
-          .from("jobOperation")
-          .update({ assemblyInstructionId: id })
-          .in("id", staleOpIds);
-        if (repoint.error) return repoint;
-      }
+        .update({ assemblyInstructionId: id })
+        .in("id", staleOpIds);
+      if (repoint.error) return repoint;
     }
   }
 

@@ -28,6 +28,7 @@ import {
 } from "react-icons/lu";
 import { Link, useFetcher, useNavigate, useParams } from "react-router";
 import { usePanels } from "~/components/Layout";
+import { Confirm } from "~/components/Modals";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
 import {
   useDateFormatter,
@@ -64,9 +65,9 @@ const AssemblyInstructionHeader = () => {
   const { formatRelativeTime } = useDateFormatter();
   const { toggleExplorer, toggleProperties } = usePanels();
   const deleteDisclosure = useDisclosure();
+  const activateDisclosure = useDisclosure();
 
   const nameFetcher = useFetcher<{}>();
-  const activateFetcher = useFetcher<{}>();
   const newVersionFetcher = useFetcher<{}>();
   const invalidateFetcher = useFetcher<{ success: boolean }>();
 
@@ -75,7 +76,6 @@ const AssemblyInstructionHeader = () => {
   const isDraft = instruction?.status === "Draft";
   const canUpdate = permissions.can("update", "production");
   const canCreate = permissions.can("create", "production");
-  const isActivating = activateFetcher.state !== "idle";
   const isCreatingVersion = newVersionFetcher.state !== "idle";
 
   const [items] = useItems();
@@ -92,13 +92,6 @@ const AssemblyInstructionHeader = () => {
     nameFetcher.submit(formData, {
       method: "post",
       action: path.to.assemblyInstruction(id)
-    });
-  };
-
-  const onMakeActive = () => {
-    activateFetcher.submit(null, {
-      method: "post",
-      action: path.to.assemblyInstructionActivate(id)
     });
   };
 
@@ -259,9 +252,8 @@ const AssemblyInstructionHeader = () => {
             )
           : instruction && (
               <Button
-                isDisabled={!canUpdate || isActivating}
-                isLoading={isActivating}
-                onClick={onMakeActive}
+                isDisabled={!canUpdate}
+                onClick={activateDisclosure.onOpen}
               >
                 Make Active
               </Button>
@@ -285,6 +277,17 @@ const AssemblyInstructionHeader = () => {
           onSubmit={() => {
             deleteDisclosure.onClose();
           }}
+        />
+      )}
+      {activateDisclosure.isOpen && instruction && (
+        <Confirm
+          isOpen
+          title="Make Active"
+          text={`Make version ${instruction.version} active? This publishes it, archives the currently active version, and repoints in-flight job operations to it.`}
+          confirmText="Make Active"
+          action={path.to.assemblyInstructionActivate(id)}
+          onCancel={activateDisclosure.onClose}
+          onSubmit={activateDisclosure.onClose}
         />
       )}
     </div>
