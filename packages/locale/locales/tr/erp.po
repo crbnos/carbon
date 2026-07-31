@@ -2355,6 +2355,9 @@ msgstr "Kalibrasyon Tedarikçisi"
 msgid "Calibrations"
 msgstr "Kalibrasyonlar"
 
+msgid "Call an outside URL"
+msgstr ""
+
 msgid "Called a method in Carbon — the components plus operations that produce a part."
 msgstr "Carbon'da çağrılan bir yöntem — bir parça üreten bileşenler ve işlemler."
 
@@ -3385,6 +3388,9 @@ msgstr "Oluştur & Anlık Görüntü"
 msgid "Create a change order for the new revision and open it"
 msgstr "Yeni revizyon için bir değişiklik emri oluşturun ve açın"
 
+msgid "Create a job"
+msgstr ""
+
 msgid "Create a new kanban card for scan-based replenishment."
 msgstr "Tarama tabanlı ikmal için yeni bir kanban kartı oluştur."
 
@@ -3394,8 +3400,14 @@ msgstr "Ekipman onarımlarını ve bakım faaliyetlerini izlemek için yeni bir 
 msgid "Create a new production job to fulfill the sales order"
 msgstr "Satış siparişini yerine getirmek için yeni bir üretim işi oluşturun"
 
+msgid "Create a purchase order"
+msgstr ""
+
 msgid "Create a quote with a new quote ID"
 msgstr "Yeni bir teklif kimliği ile teklif oluştur"
+
+msgid "Create a sales order"
+msgstr ""
 
 msgid "Create Account"
 msgstr "Hesap Oluştur"
@@ -3405,6 +3417,9 @@ msgstr "Düzeltme girişi oluştur"
 
 msgid "Create an account"
 msgstr "Hesap oluştur"
+
+msgid "Create an issue"
+msgstr ""
 
 msgid "Create and approve purchase orders"
 msgstr "Satın alma siparişleri oluşturun ve onaylayın"
@@ -4830,6 +4845,9 @@ msgstr "Her fiziksel birim kendi izlenen varlığını ve benzersiz numarasını
 
 msgid "Each, lb, ft…"
 msgstr "Her, lb, ft…"
+
+msgid "Earliest operation start"
+msgstr ""
 
 msgid "Easier to extend"
 msgstr "Genişletmesi daha kolay"
@@ -7399,6 +7417,9 @@ msgstr "Son senkronize edildi: {0}"
 msgid "Last updated: {formattedDate}"
 msgstr "Son güncellendi: {formattedDate}"
 
+msgid "Latest operation end"
+msgstr ""
+
 msgid "Lead time"
 msgstr "Teslim Süresi"
 
@@ -8992,11 +9013,26 @@ msgstr "Bildirim"
 msgid "Notifications"
 msgstr "Bildirimler"
 
+msgid "Notify someone"
+msgstr ""
+
 msgid "Number"
 msgstr "Numara"
 
 msgid "Number of inventory units per purchase unit"
 msgstr "Satın alma birimi başına envanter birimi sayısı"
+
+msgid "Number of lines"
+msgstr ""
+
+msgid "Number of open operations"
+msgstr ""
+
+msgid "Number of open tasks"
+msgstr ""
+
+msgid "Number of operations"
+msgstr ""
 
 msgid "Numbering sequence"
 msgstr "Numaralandırma Sırası"
@@ -10301,6 +10337,9 @@ msgstr "Miktar, MES'deki tamamlanmış seri numaraları/partilerinden türetilmi
 msgid "Quantity must be greater than 0"
 msgstr "Miktar 0'dan büyük olmalıdır"
 
+msgid "Quantity on hand"
+msgstr ""
+
 msgid "Quantity on Hand"
 msgstr "Stoktaki Miktar"
 
@@ -11345,6 +11384,9 @@ msgstr "Atık / Kalite Maliyeti"
 
 msgid "Scrap Percent"
 msgstr "Hurda Yüzdesi"
+
+msgid "Scrap percentage"
+msgstr ""
 
 msgid "Scrap Qty"
 msgstr "Hurda Miktarı"
@@ -13761,6 +13803,9 @@ msgstr "Bu konumdaki tüm depolama birimlerinde öğenin toplam eldeki miktarı.
 msgid "Total quantity required across all active jobs and sales orders at this location — not just this job."
 msgstr "Bu konumdaki tüm aktif işler ve satış siparişleri genelinde gereken toplam miktar — yalnızca bu iş için değil."
 
+msgid "Total scrap quantity"
+msgstr ""
+
 msgid "Total Value"
 msgstr "Toplam Değer"
 
@@ -14058,6 +14103,36 @@ msgstr "Birim"
 
 msgid "Update"
 msgstr "Güncelle"
+
+msgid "Update a customer"
+msgstr ""
+
+msgid "Update a job"
+msgstr ""
+
+msgid "Update a purchase order"
+msgstr ""
+
+msgid "Update a quote"
+msgstr ""
+
+msgid "Update a receipt"
+msgstr ""
+
+msgid "Update a sales order"
+msgstr ""
+
+msgid "Update a shipment"
+msgstr ""
+
+msgid "Update a supplier"
+msgstr ""
+
+msgid "Update an issue"
+msgstr ""
+
+msgid "Update an item"
+msgstr ""
 
 msgid "Update costs on"
 msgstr "Maliyetleri şu konularda güncelle"

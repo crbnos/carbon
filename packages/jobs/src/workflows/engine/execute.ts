@@ -1,15 +1,23 @@
 import {
-  createEventCatalog,
+  createWorkflowCatalog,
   executorFor,
+  FAILURE_HANDLE,
+  itemKeyFor,
+  listValue,
   type NodeResult,
+  planBatch,
   type RunTrigger,
+  type RuntimeContext,
   type RuntimeValue,
   readWorkflowVersion,
+  resolveValue,
+  SUCCESS_HANDLE,
   type WorkflowCatalog,
   type WorkflowNode
 } from "@carbon/workflows";
 import { NonRetriableError } from "inngest";
 import { getJobDatabaseClient } from "../../db";
+import { createWorkflowServices } from "../actions";
 import { claimStep, failInterruptedSteps, settleStep } from "./ledger";
 import { createEntityLoader, type EntityCache, triggerOutputs } from "./loader";
 import { claimRun, finishRun, loadRunContext } from "./log";
@@ -54,6 +62,8 @@ const NO_PERMISSIONS =
   "The permissions for the owner of this workflow could not be read.";
 const NOT_AVAILABLE = "This kind of step is not available yet.";
 const TOO_MANY_STEPS = "This workflow ran too many steps.";
+const NOTHING_TO_BATCH = "This step has no list to work through.";
+const NOTHING_TO_RUN = "That list was empty, so there was nothing to do.";
 
 function noAccess(module: string): string {
   const area = module.charAt(0).toUpperCase() + module.slice(1);
@@ -64,6 +74,8 @@ interface StepOutcome {
   status: NodeResult["status"];
   handle: string | null;
   outputs: Record<string, RuntimeValue> | null;
+  /** Items that failed inside a batch whose node still succeeded. */
+  failedItems?: number;
 }
 
 interface NodeArgs {
@@ -74,33 +86,71 @@ interface NodeArgs {
   permissions: OwnerPermissions;
   catalog: WorkflowCatalog;
   cache: EntityCache;
+  companyGroupId: string;
+  /** The item a batched node is on; unset outside a batch. */
+  item?: RuntimeValue;
+}
+
+// A fresh five-minute connection per step, always tagged with the run.
+async function contextFor(args: NodeArgs): Promise<RuntimeContext> {
+  const { payload, catalog, cache } = args;
+  const client = await getOwnerClient(payload.ownerId, payload.runId);
+
+  return {
+    catalog,
+    loader: createEntityLoader({ client, companyId: payload.companyId, cache }),
+    outputs: args.outputs,
+    ...(args.item === undefined ? {} : { item: args.item }),
+    services: createWorkflowServices({
+      client,
+      catalog,
+      companyId: payload.companyId,
+      companyGroupId: args.companyGroupId,
+      ownerId: payload.ownerId,
+      runId: payload.runId,
+      workflowId: payload.workflowId
+    })
+  };
 }
 
 // The permission gate and the work come from the same registry entry, so they cannot drift.
 async function runExecutor(args: NodeArgs): Promise<NodeResult> {
-  const { payload, node, catalog, cache } = args;
+  const { payload, node, catalog } = args;
 
   const executor = executorFor(node);
   if (executor === undefined) return { status: "Failed", error: NOT_AVAILABLE };
 
-  const module = executor.permission(node, catalog);
+  const required = executor.permission(node, catalog);
   if (
-    module !== undefined &&
-    !hasPermission(args.permissions, module, "view", payload.companyId)
+    required !== undefined &&
+    !hasPermission(
+      args.permissions,
+      required.module,
+      required.action,
+      payload.companyId
+    )
   ) {
-    return { status: "Failed", error: noAccess(module) };
+    return { status: "Failed", error: noAccess(required.module) };
   }
 
-  // A fresh five-minute connection per step, always tagged with the run.
-  const client = await getOwnerClient(payload.ownerId, payload.runId);
-  return executor.execute(node, {
-    catalog,
-    loader: createEntityLoader({ client, companyId: payload.companyId, cache }),
-    outputs: args.outputs
-  });
+  return executor.execute(node, await contextFor(args));
 }
 
-async function runOneNode(args: NodeArgs): Promise<StepOutcome> {
+/** Claim-before-acting means the resolved inputs do not exist yet, so what is
+ * durable is the configuration this turn ran with, plus its item. */
+function stepInput(args: NodeArgs): unknown {
+  const data = args.node.data as { inputs?: unknown };
+  const input: Record<string, unknown> = {};
+  if (data.inputs !== undefined) input.inputs = data.inputs;
+  if (args.item !== undefined) input.item = args.item;
+  return Object.keys(input).length === 0 ? undefined : input;
+}
+
+async function recordStep(
+  args: NodeArgs,
+  itemKey: string,
+  produce: () => Promise<NodeResult>
+): Promise<StepOutcome> {
   const { payload, node } = args;
   const db = getJobDatabaseClient();
   const startedAt = new Date().toISOString();
@@ -112,15 +162,16 @@ async function runOneNode(args: NodeArgs): Promise<StepOutcome> {
     companyId: payload.companyId,
     nodeId: node.id,
     nodeType: node.type,
-    itemKey: "",
-    sequence: args.sequence
+    itemKey,
+    sequence: args.sequence,
+    input: stepInput(args)
   });
 
   if (!claim.claimed) {
     return { status: "Skipped", handle: null, outputs: null };
   }
 
-  const result = await runExecutor(args);
+  const result = await produce();
 
   await settleStep(db, {
     stepRunId: claim.stepRunId,
@@ -146,13 +197,107 @@ async function runOneNode(args: NodeArgs): Promise<StepOutcome> {
   };
 }
 
+type BatchPlan = { items: RuntimeValue[]; dropped: number } | { skip: string };
+
+/** `undefined` for a node that does not batch. Otherwise the one list it works
+ * through — the same single-list rule the validator enforces. */
+async function resolveBatchItems(
+  args: NodeArgs
+): Promise<BatchPlan | undefined> {
+  const { node } = args;
+  if (node.type !== "action" || !node.data.batch) return undefined;
+
+  const ctx = await contextFor(args);
+  for (const value of Object.values(node.data.inputs)) {
+    // Item-reading inputs are skipped, so resolving the list never recurses.
+    if (value.kind === "item") continue;
+    const resolved = await resolveValue(value, ctx);
+    if (!resolved.ok) return { skip: resolved.reason };
+    if (resolved.value.kind === "list") return planBatch(resolved.value);
+  }
+
+  return { skip: NOTHING_TO_BATCH };
+}
+
+function batchSummary(ran: number, dropped: number, failed: number): string {
+  const parts = [`Ran ${ran} of ${ran + dropped}`];
+  if (dropped > 0) parts.push(`${dropped} were not used`);
+  if (failed > 0) parts.push(`${failed} failed`);
+  return `${parts.join("; ")}.`;
+}
+
+/** One durable step per item, then one aggregated outcome for the walk. */
+async function runBatchedNode(
+  step: EngineStep,
+  args: NodeArgs,
+  plan: BatchPlan
+): Promise<StepOutcome> {
+  const { node } = args;
+
+  if ("skip" in plan || plan.items.length === 0) {
+    const reason = "skip" in plan ? plan.skip : NOTHING_TO_RUN;
+    return step.run(`node:${node.id}`, () =>
+      recordStep(args, "", async () => ({ status: "Skipped", reason }))
+    );
+  }
+
+  const results: StepOutcome[] = [];
+  for (const item of plan.items) {
+    const itemKey = itemKeyFor(item);
+    results.push(
+      await step.run(`node:${node.id}:${itemKey}`, () =>
+        recordStep({ ...args, item }, itemKey, () =>
+          runExecutor({ ...args, item })
+        )
+      )
+    );
+  }
+
+  const succeeded = results.filter((one) => one.status === "Succeeded");
+  const failed = results.filter((one) => one.status === "Failed").length;
+  const summary = batchSummary(results.length, plan.dropped, failed);
+
+  // The action's first declared output is what the rest of the graph reads.
+  const action =
+    node.type === "action"
+      ? args.catalog.getAction(node.data.action)
+      : undefined;
+  const [name, type] = Object.entries(action?.outputs ?? {})[0] ?? [];
+  const outputs =
+    name === undefined || type === undefined || type.kind === "list"
+      ? {}
+      : {
+          [name]: listValue(
+            type,
+            succeeded.flatMap((one) => {
+              const value = one.outputs?.[name];
+              return value === undefined ? [] : [value];
+            })
+          ).value
+        };
+
+  // One more row for the whole node: it is where a dropped or failed item is
+  // visible, and its handle is what the walk follows.
+  const aggregate: NodeResult =
+    succeeded.length === 0
+      ? { status: "Failed", error: summary, handle: FAILURE_HANDLE }
+      : { status: "Succeeded", outputs, handle: SUCCESS_HANDLE, summary };
+
+  const outcome = await step.run(`node:${node.id}`, () =>
+    recordStep(args, "", async () => aggregate)
+  );
+
+  // A failed item does not stop the graph, but it must not leave the run green.
+  return { ...outcome, failedItems: failed };
+}
+
 export async function executeWorkflowRun(params: {
   payload: RunPayload;
   step: EngineStep;
   logger: EngineLogger;
 }): Promise<{ runId: string; status: string; steps: number }> {
   const { payload, step, logger } = params;
-  const catalog = createEventCatalog();
+  const catalog = createWorkflowCatalog();
 
   const loaded = await step.run("load", async () => {
     const db = getJobDatabaseClient();
@@ -191,14 +336,20 @@ export async function executeWorkflowRun(params: {
       return { settled: "Duplicate" as const };
     }
 
-    return { settled: null, definition: read.definition, startedAt };
+    return {
+      settled: null,
+      definition: read.definition,
+      startedAt,
+      // Read once per run: every create action needs it, no node can change it.
+      companyGroupId: context.companyGroupId
+    };
   });
 
   if (loaded.settled !== null) {
     return { runId: payload.runId, status: loaded.settled, steps: 0 };
   }
 
-  const { definition, startedAt } = loaded;
+  const { definition, startedAt, companyGroupId } = loaded;
 
   const granted = await step.run("permissions", async () => {
     const refuse = async (error: string) => {
@@ -271,20 +422,29 @@ export async function executeWorkflowRun(params: {
       break;
     }
 
-    const outcome = await step.run(`node:${nodeId}`, () =>
-      runOneNode({
-        payload,
-        node,
-        sequence: state.sequence,
-        outputs,
-        permissions: granted.permissions,
-        catalog,
-        cache
-      })
-    );
+    const args: NodeArgs = {
+      payload,
+      node,
+      sequence: state.sequence,
+      outputs,
+      permissions: granted.permissions,
+      catalog,
+      cache,
+      companyGroupId
+    };
+
+    const plan = await resolveBatchItems(args);
+    const outcome =
+      plan === undefined
+        ? await step.run(`node:${nodeId}`, () =>
+            recordStep(args, "", () => runExecutor(args))
+          )
+        : await runBatchedNode(step, args, plan);
 
     executions += 1;
-    if (outcome.status === "Failed") failed = true;
+    if (outcome.status === "Failed" || (outcome.failedItems ?? 0) > 0) {
+      failed = true;
+    }
     if (outcome.outputs !== null) outputs[nodeId] = outcome.outputs;
     advance(state, definition, nodeId, outcome.handle);
   }

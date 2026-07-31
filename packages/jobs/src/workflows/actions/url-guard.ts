@@ -1,0 +1,72 @@
+import dns from "node:dns";
+
+export type UrlVerdict = { ok: true; url: URL } | { ok: false; reason: string };
+
+const NOT_A_URL = "That is not a valid web address.";
+const NOT_HTTPS = "Only https addresses are allowed.";
+const NOT_FOUND = "That address could not be found.";
+const PRIVATE = "That address is inside a private network.";
+
+function isPrivateV4(address: string): boolean {
+  const parts = address.split(".").map(Number);
+  const [a, b] = parts;
+  if (parts.length !== 4 || a === undefined || b === undefined) return true;
+  if (parts.some((part) => !Number.isInteger(part) || part < 0 || part > 255)) {
+    return true;
+  }
+  if (a === 0 || a === 127) return true;
+  if (a === 10) return true;
+  if (a === 172 && b >= 16 && b <= 31) return true;
+  if (a === 192 && b === 168) return true;
+  // Covers the cloud metadata address 169.254.169.254 along with all link-local.
+  if (a === 169 && b === 254) return true;
+  if (a >= 224) return true;
+  return false;
+}
+
+function isPrivateV6(address: string): boolean {
+  const lower = address.toLowerCase();
+  if (lower === "::" || lower === "::1") return true;
+  // An IPv4-mapped address is only as safe as the address it wraps.
+  const mapped = /^::ffff:(\d+\.\d+\.\d+\.\d+)$/.exec(lower)?.[1];
+  if (mapped !== undefined) return isPrivateV4(mapped);
+  const head = lower.split(":")[0] ?? "";
+  const prefix = Number.parseInt(head.padStart(4, "0").slice(0, 2), 16);
+  if (Number.isNaN(prefix)) return true;
+  // fc00::/7 unique-local, fe80::/10 link-local.
+  if (prefix >= 0xfc && prefix <= 0xfd) return true;
+  if (prefix >= 0xfe && prefix <= 0xfe) return true;
+  return false;
+}
+
+function isPrivate(address: string, family: number): boolean {
+  return family === 4 ? isPrivateV4(address) : isPrivateV6(address);
+}
+
+/** Resolves the hostname first: a public name can still point inward. */
+export async function checkOutboundUrl(raw: string): Promise<UrlVerdict> {
+  let url: URL;
+  try {
+    url = new URL(raw);
+  } catch {
+    return { ok: false, reason: NOT_A_URL };
+  }
+
+  if (url.protocol !== "https:") return { ok: false, reason: NOT_HTTPS };
+  if (url.hostname.length === 0) return { ok: false, reason: NOT_A_URL };
+
+  let addresses: { address: string; family: number }[];
+  try {
+    addresses = await dns.promises.lookup(url.hostname, { all: true });
+  } catch {
+    return { ok: false, reason: NOT_FOUND };
+  }
+  if (addresses.length === 0) return { ok: false, reason: NOT_FOUND };
+
+  // Every address, not the first: a name can resolve to both public and private.
+  for (const { address, family } of addresses) {
+    if (isPrivate(address, family)) return { ok: false, reason: PRIVATE };
+  }
+
+  return { ok: true, url };
+}

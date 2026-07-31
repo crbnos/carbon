@@ -916,6 +916,17 @@ export const WORKFLOW_ENTITIES: Record<string, Record<string, ValueType>> = {
     intercompanyCompanyId: { kind: "primitive", of: "string" },
     readableId: { kind: "primitive", of: "string" }
   },
+  group: {
+    id: { kind: "primitive", of: "string" },
+    name: { kind: "primitive", of: "string" },
+    isIdentityGroup: { kind: "primitive", of: "boolean" },
+    isEmployeeTypeGroup: { kind: "primitive", of: "boolean" },
+    isCustomerOrgGroup: { kind: "primitive", of: "boolean" },
+    isCustomerTypeGroup: { kind: "primitive", of: "boolean" },
+    isSupplierTypeGroup: { kind: "primitive", of: "boolean" },
+    isSupplierOrgGroup: { kind: "primitive", of: "boolean" },
+    createdAt: { kind: "primitive", of: "date" }
+  },
   item: {
     id: { kind: "primitive", of: "string" },
     readableId: { kind: "primitive", of: "string" },

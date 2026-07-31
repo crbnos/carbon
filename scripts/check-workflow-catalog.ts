@@ -8,6 +8,11 @@ import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import schema from "../packages/database/src/swagger-docs-schema";
+import { WORKFLOW_ACTIONS } from "../packages/workflows/src/catalog/actions";
+import {
+  WORKFLOW_ACTION_CATALOG,
+  WORKFLOW_OPERATION_CATALOG
+} from "../packages/workflows/src/catalog/actions.generated";
 import { buildCatalog, validateCatalogInputs } from "../packages/workflows/src/catalog/build";
 import { WORKFLOW_ENTITY_REGISTRY } from "../packages/workflows/src/catalog/entities";
 import {
@@ -15,11 +20,16 @@ import {
   WORKFLOW_EVENTS
 } from "../packages/workflows/src/catalog/events.generated";
 import { WORKFLOW_MOMENTS } from "../packages/workflows/src/catalog/moments";
+import { WORKFLOW_OPERATIONS } from "../packages/workflows/src/catalog/operations";
 
 const ROOT = process.cwd();
 const LABELS_FILE = path.join(
   ROOT,
   "packages/workflows/src/catalog/labels.generated.ts"
+);
+const TOOL_METADATA_FILE = path.join(
+  ROOT,
+  "apps/erp/app/routes/api+/mcp+/lib/tool-metadata.json"
 );
 
 const failures: string[] = [];
@@ -67,17 +77,43 @@ for (const key of raised.keys()) {
   }
 }
 
+// A `buildCatalog` throw reads as a stack trace, so the same problems are
+// collected here first and reported in plain English.
 for (const problem of validateCatalogInputs(
   WORKFLOW_ENTITY_REGISTRY,
   WORKFLOW_MOMENTS,
+  WORKFLOW_ACTIONS,
+  WORKFLOW_OPERATIONS,
   schema
 )) {
   fail(problem);
 }
 
+const toolNames = new Set<string>(
+  (
+    JSON.parse(fs.readFileSync(TOOL_METADATA_FILE, "utf8")) as {
+      tools: { name: string }[];
+    }
+  ).tools.map((tool) => tool.name)
+);
+for (const [id, declaration] of Object.entries(WORKFLOW_ACTIONS)) {
+  const call = (declaration as { call?: string }).call;
+  if (call !== undefined && !toolNames.has(call)) {
+    fail(
+      `Action "${id}" calls "${call}", which is not a tool in tool-metadata.json. Run pnpm run generate:mcp.`
+    );
+  }
+}
+
 // Compares data, not file text, so formatting can never make this flap.
 if (failures.length === 0) {
-  const rebuilt = buildCatalog(WORKFLOW_ENTITY_REGISTRY, WORKFLOW_MOMENTS, schema);
+  const rebuilt = buildCatalog(
+    WORKFLOW_ENTITY_REGISTRY,
+    WORKFLOW_MOMENTS,
+    WORKFLOW_ACTIONS,
+    WORKFLOW_OPERATIONS,
+    schema
+  );
   const stale =
     "The committed catalog is out of date. Run `pnpm run generate:workflow-catalog` and commit the result.";
 
@@ -101,17 +137,40 @@ if (failures.length === 0) {
     fail(`${stale} An entity's generated properties changed.`);
   }
 
+  try {
+    assert.deepStrictEqual(WORKFLOW_ACTION_CATALOG, rebuilt.actions);
+  } catch {
+    const committed = new Set(Object.keys(WORKFLOW_ACTION_CATALOG));
+    const fresh = new Set(Object.keys(rebuilt.actions));
+    const missing = [...fresh].filter((id) => !committed.has(id));
+    const extra = [...committed].filter((id) => !fresh.has(id));
+    fail(
+      `${stale}${missing.length ? ` Missing action: ${missing.join(", ")}.` : ""}${
+        extra.length ? ` No longer generated: ${extra.join(", ")}.` : ""
+      }${!missing.length && !extra.length ? " An action's inputs, outputs or permission changed." : ""}`
+    );
+  }
+
+  try {
+    assert.deepStrictEqual(WORKFLOW_OPERATION_CATALOG, rebuilt.operations);
+  } catch {
+    fail(`${stale} An operation's entity, inputs or output changed.`);
+  }
+
   // Read as text, not imported: the untransformed `msg` macro throws in plain Node.
   const labelSource = fs.readFileSync(LABELS_FILE, "utf8");
+  // Biome drops the quotes around a key that is a valid identifier.
   const labelIds = new Set(
-    [...labelSource.matchAll(/^ {2}"([^"]+)":\s*msg`/gm)].map((m) => m[1])
+    [...labelSource.matchAll(/^ {2}"?([^":\s]+)"?:\s*msg`/gm)].map((m) => m[1])
   );
   for (const id of Object.keys(rebuilt.labels)) {
-    if (!labelIds.has(id)) fail(`${stale} Event "${id}" has no label.`);
+    if (!labelIds.has(id)) fail(`${stale} "${id}" has no label.`);
   }
   for (const id of labelIds) {
     if (id !== undefined && !(id in rebuilt.labels)) {
-      fail(`${stale} Label "${id}" no longer matches an event.`);
+      fail(
+        `${stale} Label "${id}" no longer matches an event, action or operation.`
+      );
     }
   }
 }
@@ -125,5 +184,7 @@ if (failures.length > 0) {
 console.log(
   `check-workflow-catalog: ok — ${Object.keys(WORKFLOW_EVENTS).length} events, ${
     Object.keys(WORKFLOW_MOMENTS).length
-  } moments raised, ${Object.keys(WORKFLOW_ENTITIES).length} entities`
+  } moments raised, ${Object.keys(WORKFLOW_ENTITIES).length} entities, ${
+    Object.keys(WORKFLOW_ACTION_CATALOG).length
+  } actions, ${Object.keys(WORKFLOW_OPERATION_CATALOG).length} operations`
 );

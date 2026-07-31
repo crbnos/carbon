@@ -2355,6 +2355,9 @@ msgstr "교정 공급업체"
 msgid "Calibrations"
 msgstr "교정"
 
+msgid "Call an outside URL"
+msgstr ""
+
 msgid "Called a method in Carbon — the components plus operations that produce a part."
 msgstr "Carbon에서는 이를 방법(method)이라고 부릅니다 — 품목을 만드는 구성품과 공정작업의 조합입니다."
 
@@ -3385,6 +3388,9 @@ msgstr "생성 및 스냅샷"
 msgid "Create a change order for the new revision and open it"
 msgstr "새 개정에 대한 변경 주문을 만들고 열기"
 
+msgid "Create a job"
+msgstr ""
+
 msgid "Create a new kanban card for scan-based replenishment."
 msgstr "스캔 기반 보충을 위한 새 칸반 카드를 생성합니다."
 
@@ -3394,8 +3400,14 @@ msgstr "장비 수리 및 유지보수 활동을 추적할 새 유지보수 작�
 msgid "Create a new production job to fulfill the sales order"
 msgstr "판매주문을 이행할 새 생산 작업을 생성합니다"
 
+msgid "Create a purchase order"
+msgstr ""
+
 msgid "Create a quote with a new quote ID"
 msgstr "새 견적 ID로 견적을 생성합니다"
+
+msgid "Create a sales order"
+msgstr ""
 
 msgid "Create Account"
 msgstr "계정 생성"
@@ -3405,6 +3417,9 @@ msgstr "조정 전표 생성"
 
 msgid "Create an account"
 msgstr "계정 생성"
+
+msgid "Create an issue"
+msgstr ""
 
 msgid "Create and approve purchase orders"
 msgstr "구매주문 생성 및 승인"
@@ -4830,6 +4845,9 @@ msgstr "각 실물 유닛은 고유한 추적 개체와 번호를 부여받습�
 
 msgid "Each, lb, ft…"
 msgstr "개, lb, ft…"
+
+msgid "Earliest operation start"
+msgstr ""
 
 msgid "Easier to extend"
 msgstr "확장이 더 쉬움"
@@ -7399,6 +7417,9 @@ msgstr "마지막 동기화: {0}"
 msgid "Last updated: {formattedDate}"
 msgstr "마지막 업데이트: {formattedDate}"
 
+msgid "Latest operation end"
+msgstr ""
+
 msgid "Lead time"
 msgstr "리드타임"
 
@@ -8992,11 +9013,26 @@ msgstr "알림"
 msgid "Notifications"
 msgstr "알림"
 
+msgid "Notify someone"
+msgstr ""
+
 msgid "Number"
 msgstr "번호"
 
 msgid "Number of inventory units per purchase unit"
 msgstr "구매 단위당 재고 단위 수"
+
+msgid "Number of lines"
+msgstr ""
+
+msgid "Number of open operations"
+msgstr ""
+
+msgid "Number of open tasks"
+msgstr ""
+
+msgid "Number of operations"
+msgstr ""
 
 msgid "Numbering sequence"
 msgstr "번호 시퀀스"
@@ -10301,6 +10337,9 @@ msgstr "수량은 MES에서 완료된 일련번호/배치로부터 산출되며 
 msgid "Quantity must be greater than 0"
 msgstr "수량은 0보다 커야 합니다"
 
+msgid "Quantity on hand"
+msgstr ""
+
 msgid "Quantity on Hand"
 msgstr "보유 수량"
 
@@ -11345,6 +11384,9 @@ msgstr "스크랩 / 품질 원가"
 
 msgid "Scrap Percent"
 msgstr "스크랩 비율"
+
+msgid "Scrap percentage"
+msgstr ""
 
 msgid "Scrap Qty"
 msgstr "스크랩 수량"
@@ -13761,6 +13803,9 @@ msgstr "이 위치의 모든 저장 단위에 걸친 해당 품목의 총 재고
 msgid "Total quantity required across all active jobs and sales orders at this location — not just this job."
 msgstr "이 작업뿐 아니라 이 위치의 모든 진행 중인 작업과 판매주문에서 필요한 총 수량입니다."
 
+msgid "Total scrap quantity"
+msgstr ""
+
 msgid "Total Value"
 msgstr "총 가치"
 
@@ -14058,6 +14103,36 @@ msgstr "UoM"
 
 msgid "Update"
 msgstr "업데이트"
+
+msgid "Update a customer"
+msgstr ""
+
+msgid "Update a job"
+msgstr ""
+
+msgid "Update a purchase order"
+msgstr ""
+
+msgid "Update a quote"
+msgstr ""
+
+msgid "Update a receipt"
+msgstr ""
+
+msgid "Update a sales order"
+msgstr ""
+
+msgid "Update a shipment"
+msgstr ""
+
+msgid "Update a supplier"
+msgstr ""
+
+msgid "Update an issue"
+msgstr ""
+
+msgid "Update an item"
+msgstr ""
 
 msgid "Update costs on"
 msgstr "원가 업데이트 기준일"

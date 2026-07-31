@@ -1,6 +1,11 @@
-import type { ItemRef, ValueOrRef, VariableRef } from "../definition/types";
+import type {
+  ItemRef,
+  Template,
+  ValueOrRef,
+  VariableRef
+} from "../definition/types";
 import type { Resolution, RuntimeContext, RuntimeValue } from "./types";
-import { fromColumn, fromLiteral, isNull } from "./values";
+import { fromColumn, fromLiteral, isNull, primitiveValue } from "./values";
 
 export async function resolveValue(
   value: ValueOrRef,
@@ -8,7 +13,42 @@ export async function resolveValue(
 ): Promise<Resolution> {
   if (value.kind === "literal") return { ok: true, value: fromLiteral(value) };
   if (value.kind === "item") return resolveItem(value, ctx);
+  if (value.kind === "template") return renderTemplate(value, ctx);
   return resolveRef(value, ctx);
+}
+
+/** How one resolved value reads inside a sentence. */
+export function renderValue(value: RuntimeValue): string {
+  if (isNull(value)) return "";
+  if (value.kind === "list") return value.items.map(renderValue).join(", ");
+  if (value.kind === "entity") {
+    const readable = value.row?.readableId ?? value.row?.name;
+    return readable === undefined || readable === null
+      ? value.id
+      : String(readable);
+  }
+  return value.value === null ? "" : String(value.value);
+}
+
+/** An unresolvable part fails the whole template; a blank would be a silent lie. */
+export async function renderTemplate(
+  template: Template,
+  ctx: RuntimeContext
+): Promise<Resolution> {
+  const pieces: string[] = [];
+  for (const part of template.parts) {
+    if (part.kind === "text") {
+      pieces.push(part.text);
+      continue;
+    }
+    const resolved =
+      part.kind === "item"
+        ? await resolveItem(part, ctx)
+        : await resolveRef(part, ctx);
+    if (!resolved.ok) return resolved;
+    pieces.push(renderValue(resolved.value));
+  }
+  return { ok: true, value: primitiveValue("string", pieces.join("")) };
 }
 
 export async function resolveRef(

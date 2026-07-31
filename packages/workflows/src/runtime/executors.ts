@@ -1,6 +1,9 @@
 import type { WorkflowNode, WorkflowNodeType } from "../definition/schema";
+import { actionExecutor } from "./action";
 import { conditionExecutor } from "./condition";
+import { entityExecutor } from "./entity";
 import { filterExecutor } from "./filter";
+import { lookupExecutor } from "./lookup";
 import type { NodeExecutor } from "./types";
 
 // One entry per node kind that can run; a missing entry means the kind refuses to execute.
@@ -8,8 +11,11 @@ import type { NodeExecutor } from "./types";
 const EXECUTORS: {
   [K in WorkflowNodeType]?: NodeExecutor<Extract<WorkflowNode, { type: K }>>;
 } = {
+  action: actionExecutor,
   condition: conditionExecutor,
-  filter: filterExecutor
+  entity: entityExecutor,
+  filter: filterExecutor,
+  lookup: lookupExecutor
 };
 
 export function executorFor<N extends WorkflowNode>(

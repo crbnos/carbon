@@ -41,11 +41,32 @@ export type WorkflowVersionRead =
   | { ok: false; failure: WorkflowVersionReadFailure; message: string };
 
 /**
- * Upgrade a stored document to the current format; pass-through at v1. Runs on
- * raw JSON before the current-schema parse, which an old document would fail.
+ * Upgrade a stored document to the current format. Runs on raw JSON before the
+ * current-schema parse, which an old document would fail.
  */
-function migrateDefinition(raw: RawDefinition, _from: number): RawDefinition {
-  return raw;
+function migrateDefinition(raw: RawDefinition, from: number): RawDefinition {
+  let current = raw;
+  // v1 → v2: a lookup's match rules changed shape. No v1 lookup could be
+  // activated, so dropping the old rules discards nothing a customer relied on.
+  // A non-array is left alone so the parse still reports it rather than repairing it.
+  if (from < 2 && Array.isArray(current.nodes)) {
+    current = {
+      ...current,
+      formatVersion: 2,
+      nodes: current.nodes.map((node) => {
+        if (
+          typeof node !== "object" ||
+          node === null ||
+          (node as { type?: unknown }).type !== "lookup"
+        ) {
+          return node;
+        }
+        const lookup = node as { data?: Record<string, unknown> };
+        return { ...lookup, data: { ...lookup.data, match: [] } };
+      })
+    };
+  }
+  return current;
 }
 
 export function parseWorkflowDefinition(value: unknown) {

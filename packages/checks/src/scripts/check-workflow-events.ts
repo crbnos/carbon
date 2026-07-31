@@ -2,7 +2,7 @@
  * Every event id a live workflow subscribes to must still exist in the generated
  * catalog. Needs a live database: `pnpm --filter @carbon/checks workflow-events`.
  */
-import { createEventCatalog } from "@carbon/workflows";
+import { createWorkflowCatalog } from "@carbon/workflows";
 import { Client } from "pg";
 
 async function main() {
@@ -15,7 +15,7 @@ async function main() {
     process.exit(2);
   }
 
-  const catalog = createEventCatalog();
+  const catalog = createWorkflowCatalog();
   const client = new Client({ connectionString });
   await client.connect();
 

@@ -2355,6 +2355,9 @@ msgstr "Поставщик калибровки"
 msgid "Calibrations"
 msgstr "Калибровки"
 
+msgid "Call an outside URL"
+msgstr ""
+
 msgid "Called a method in Carbon — the components plus operations that produce a part."
 msgstr "Называется метод в Carbon — компоненты плюс операции, которые создают деталь."
 
@@ -3385,6 +3388,9 @@ msgstr "Создать и снимок"
 msgid "Create a change order for the new revision and open it"
 msgstr "Создать приказ об изменении для новой редакции и открыть его"
 
+msgid "Create a job"
+msgstr ""
+
 msgid "Create a new kanban card for scan-based replenishment."
 msgstr "Создайте новую карточку канбана для пополнения на основе сканирования."
 
@@ -3394,8 +3400,14 @@ msgstr "Создайте новую заявку на техническое о�
 msgid "Create a new production job to fulfill the sales order"
 msgstr "Создайте новое производственное задание для выполнения заказа"
 
+msgid "Create a purchase order"
+msgstr ""
+
 msgid "Create a quote with a new quote ID"
 msgstr "Создать предложение с новым ID предложения"
+
+msgid "Create a sales order"
+msgstr ""
 
 msgid "Create Account"
 msgstr "Создать учетную запись"
@@ -3405,6 +3417,9 @@ msgstr "Создать корректирующую запись"
 
 msgid "Create an account"
 msgstr "Создать учетную запись"
+
+msgid "Create an issue"
+msgstr ""
 
 msgid "Create and approve purchase orders"
 msgstr "Создавать и утверждать заказы на покупку"
@@ -4830,6 +4845,9 @@ msgstr "Каждая физическая единица получает сво
 
 msgid "Each, lb, ft…"
 msgstr "Каждый, фунт, фут…"
+
+msgid "Earliest operation start"
+msgstr ""
 
 msgid "Easier to extend"
 msgstr "Проще расширять"
@@ -7399,6 +7417,9 @@ msgstr "Последняя синхронизация: {0}"
 msgid "Last updated: {formattedDate}"
 msgstr "Последнее обновление: {formattedDate}"
 
+msgid "Latest operation end"
+msgstr ""
+
 msgid "Lead time"
 msgstr "Время поставки"
 
@@ -8992,11 +9013,26 @@ msgstr "Уведомление"
 msgid "Notifications"
 msgstr "Уведомления"
 
+msgid "Notify someone"
+msgstr ""
+
 msgid "Number"
 msgstr "Число"
 
 msgid "Number of inventory units per purchase unit"
 msgstr "Количество единиц запасов на единицу закупки"
+
+msgid "Number of lines"
+msgstr ""
+
+msgid "Number of open operations"
+msgstr ""
+
+msgid "Number of open tasks"
+msgstr ""
+
+msgid "Number of operations"
+msgstr ""
 
 msgid "Numbering sequence"
 msgstr "Нумерационная последовательность"
@@ -10301,6 +10337,9 @@ msgstr "Количество определяется на основе заве
 msgid "Quantity must be greater than 0"
 msgstr "Количество должно быть больше 0"
 
+msgid "Quantity on hand"
+msgstr ""
+
 msgid "Quantity on Hand"
 msgstr "Количество в наличии"
 
@@ -11345,6 +11384,9 @@ msgstr "Брак / Стоимость качества"
 
 msgid "Scrap Percent"
 msgstr "Процент брака"
+
+msgid "Scrap percentage"
+msgstr ""
 
 msgid "Scrap Qty"
 msgstr "Кол-во брака"
@@ -13761,6 +13803,9 @@ msgstr "Общее наличное количество позиции по в�
 msgid "Total quantity required across all active jobs and sales orders at this location — not just this job."
 msgstr "Общее требуемое количество по всем активным заданиям и заказам на продажу в этом местоположении — не только по этому заданию."
 
+msgid "Total scrap quantity"
+msgstr ""
+
 msgid "Total Value"
 msgstr "Общая стоимость"
 
@@ -14058,6 +14103,36 @@ msgstr "УИ"
 
 msgid "Update"
 msgstr "Обновить"
+
+msgid "Update a customer"
+msgstr ""
+
+msgid "Update a job"
+msgstr ""
+
+msgid "Update a purchase order"
+msgstr ""
+
+msgid "Update a quote"
+msgstr ""
+
+msgid "Update a receipt"
+msgstr ""
+
+msgid "Update a sales order"
+msgstr ""
+
+msgid "Update a shipment"
+msgstr ""
+
+msgid "Update a supplier"
+msgstr ""
+
+msgid "Update an issue"
+msgstr ""
+
+msgid "Update an item"
+msgstr ""
 
 msgid "Update costs on"
 msgstr "Обновлять стоимость на"

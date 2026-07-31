@@ -2355,6 +2355,9 @@ msgstr "Dostawca kalibracji"
 msgid "Calibrations"
 msgstr "Kalibracje"
 
+msgid "Call an outside URL"
+msgstr ""
+
 msgid "Called a method in Carbon — the components plus operations that produce a part."
 msgstr "Zwana metodą w Carbon — komponenty plus operacje, które tworzą część."
 
@@ -3385,6 +3388,9 @@ msgstr "Utwórz i Snapshot"
 msgid "Create a change order for the new revision and open it"
 msgstr "Utwórz zmianę zamówienia dla nowej wersji i otwórz ją"
 
+msgid "Create a job"
+msgstr ""
+
 msgid "Create a new kanban card for scan-based replenishment."
 msgstr "Utwórz nową kartę kanban do uzupełniania opartego na skanowaniu."
 
@@ -3394,8 +3400,14 @@ msgstr "Utwórz nową dyspozycję konserwacji, aby śledzić naprawy sprzętu i 
 msgid "Create a new production job to fulfill the sales order"
 msgstr "Utwórz nowe zadanie produkcyjne, aby zrealizować zamówienie sprzedaży"
 
+msgid "Create a purchase order"
+msgstr ""
+
 msgid "Create a quote with a new quote ID"
 msgstr "Utwórz ofertę z nowym identyfikatorem oferty"
+
+msgid "Create a sales order"
+msgstr ""
 
 msgid "Create Account"
 msgstr "Utwórz konto"
@@ -3405,6 +3417,9 @@ msgstr "Utwórz wpis korygujący"
 
 msgid "Create an account"
 msgstr "Utwórz konto"
+
+msgid "Create an issue"
+msgstr ""
 
 msgid "Create and approve purchase orders"
 msgstr "Twórz i zatwierdzaj zamówienia zakupu"
@@ -4830,6 +4845,9 @@ msgstr "Każda jednostka fizyczna otrzymuje swoją własną jednostkę śledzeni
 
 msgid "Each, lb, ft…"
 msgstr "Każdy, lb, ft…"
+
+msgid "Earliest operation start"
+msgstr ""
 
 msgid "Easier to extend"
 msgstr "Łatwiej rozszerzać"
@@ -7399,6 +7417,9 @@ msgstr "Ostatnia synchronizacja: {0}"
 msgid "Last updated: {formattedDate}"
 msgstr "Ostatnia aktualizacja: {formattedDate}"
 
+msgid "Latest operation end"
+msgstr ""
+
 msgid "Lead time"
 msgstr "Czas Dostawy"
 
@@ -8992,11 +9013,26 @@ msgstr "Powiadomienie"
 msgid "Notifications"
 msgstr "Powiadomienia"
 
+msgid "Notify someone"
+msgstr ""
+
 msgid "Number"
 msgstr "Liczba"
 
 msgid "Number of inventory units per purchase unit"
 msgstr "Liczba jednostek inwentarza na jednostkę zakupu"
+
+msgid "Number of lines"
+msgstr ""
+
+msgid "Number of open operations"
+msgstr ""
+
+msgid "Number of open tasks"
+msgstr ""
+
+msgid "Number of operations"
+msgstr ""
 
 msgid "Numbering sequence"
 msgstr "Sekwencja numerowania"
@@ -10301,6 +10337,9 @@ msgstr "Ilość pochodzi z ukończonych numerów seryjnych/partii w MES i nie mo
 msgid "Quantity must be greater than 0"
 msgstr "Ilość musi być większa niż 0"
 
+msgid "Quantity on hand"
+msgstr ""
+
 msgid "Quantity on Hand"
 msgstr "Ilość w magazynie"
 
@@ -11345,6 +11384,9 @@ msgstr "Złom / Koszt jakości"
 
 msgid "Scrap Percent"
 msgstr "Procent odpadów"
+
+msgid "Scrap percentage"
+msgstr ""
 
 msgid "Scrap Qty"
 msgstr "Ilość złomu"
@@ -13761,6 +13803,9 @@ msgstr "Łączna ilość dostępna dla pozycji we wszystkich jednostkach magazyn
 msgid "Total quantity required across all active jobs and sales orders at this location — not just this job."
 msgstr "Łączna ilość wymagana we wszystkich aktywnych zadaniach i zamówieniach sprzedaży w tej lokalizacji — nie tylko w tym zadaniu."
 
+msgid "Total scrap quantity"
+msgstr ""
+
 msgid "Total Value"
 msgstr "Wartość całkowita"
 
@@ -14058,6 +14103,36 @@ msgstr "UoM"
 
 msgid "Update"
 msgstr "Aktualizuj"
+
+msgid "Update a customer"
+msgstr ""
+
+msgid "Update a job"
+msgstr ""
+
+msgid "Update a purchase order"
+msgstr ""
+
+msgid "Update a quote"
+msgstr ""
+
+msgid "Update a receipt"
+msgstr ""
+
+msgid "Update a sales order"
+msgstr ""
+
+msgid "Update a shipment"
+msgstr ""
+
+msgid "Update a supplier"
+msgstr ""
+
+msgid "Update an issue"
+msgstr ""
+
+msgid "Update an item"
+msgstr ""
 
 msgid "Update costs on"
 msgstr "Aktualizuj koszty na"

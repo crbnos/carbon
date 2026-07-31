@@ -2355,6 +2355,9 @@ msgstr "अंशांकन आपूर्तिकर्ता"
 msgid "Calibrations"
 msgstr "अंशांकन"
 
+msgid "Call an outside URL"
+msgstr ""
+
 msgid "Called a method in Carbon — the components plus operations that produce a part."
 msgstr "कार्बन में एक विधि कहा जाता है — घटक और संचालन जो एक हिस्सा तैयार करते हैं।"
 
@@ -3385,6 +3388,9 @@ msgstr "बनाएं और स्नैपशॉट लें"
 msgid "Create a change order for the new revision and open it"
 msgstr "नए संशोधन के लिए एक परिवर्तन आदेश बनाएं और इसे खोलें"
 
+msgid "Create a job"
+msgstr ""
+
 msgid "Create a new kanban card for scan-based replenishment."
 msgstr "स्कैन-आधारित पुनःपूर्ति के लिए एक नया कानबन कार्ड बनाएं।"
 
@@ -3394,8 +3400,14 @@ msgstr "उपकरण मरम्मत और रखरखाव गति�
 msgid "Create a new production job to fulfill the sales order"
 msgstr "बिक्रय आदेश को पूरा करने के लिए एक नई उत्पादन नौकरी बनाएं"
 
+msgid "Create a purchase order"
+msgstr ""
+
 msgid "Create a quote with a new quote ID"
 msgstr "एक नई उद्धरण ID के साथ एक उद्धरण बनाएं"
+
+msgid "Create a sales order"
+msgstr ""
 
 msgid "Create Account"
 msgstr "खाता बनाएं"
@@ -3405,6 +3417,9 @@ msgstr "समायोजन प्रविष्टि बनाएं"
 
 msgid "Create an account"
 msgstr "एक खाता बनाएं"
+
+msgid "Create an issue"
+msgstr ""
 
 msgid "Create and approve purchase orders"
 msgstr "क्रय आदेश बनाएं और मंजूरी दें"
@@ -4830,6 +4845,9 @@ msgstr "प्रत्येक भौतिक इकाई को अपन�
 
 msgid "Each, lb, ft…"
 msgstr "प्रत्येक, lb, ft…"
+
+msgid "Earliest operation start"
+msgstr ""
 
 msgid "Easier to extend"
 msgstr "विस्तार करना आसान"
@@ -7399,6 +7417,9 @@ msgstr "अंतिम सिंक: {0}"
 msgid "Last updated: {formattedDate}"
 msgstr "अंतिम अपडेट: {formattedDate}"
 
+msgid "Latest operation end"
+msgstr ""
+
 msgid "Lead time"
 msgstr "लीड समय"
 
@@ -8992,11 +9013,26 @@ msgstr "सूचना"
 msgid "Notifications"
 msgstr "सूचनाएं"
 
+msgid "Notify someone"
+msgstr ""
+
 msgid "Number"
 msgstr "संख्या"
 
 msgid "Number of inventory units per purchase unit"
 msgstr "प्रति क्रय इकाई इन्वेंटरी इकाइयों की संख्या"
+
+msgid "Number of lines"
+msgstr ""
+
+msgid "Number of open operations"
+msgstr ""
+
+msgid "Number of open tasks"
+msgstr ""
+
+msgid "Number of operations"
+msgstr ""
 
 msgid "Numbering sequence"
 msgstr "संख्या अनुक्रम"
@@ -10301,6 +10337,9 @@ msgstr "मात्रा MES में पूर्ण सीरीज़/ब�
 msgid "Quantity must be greater than 0"
 msgstr "मात्रा 0 से अधिक होनी चाहिए"
 
+msgid "Quantity on hand"
+msgstr ""
+
 msgid "Quantity on Hand"
 msgstr "हाथ में मात्रा"
 
@@ -11345,6 +11384,9 @@ msgstr "स्क्रैप / गुणवत्ता की लागत"
 
 msgid "Scrap Percent"
 msgstr "स्क्रैप प्रतिशत"
+
+msgid "Scrap percentage"
+msgstr ""
 
 msgid "Scrap Qty"
 msgstr "स्क्रैप मात्रा"
@@ -13761,6 +13803,9 @@ msgstr "इस स्थान पर सभी भंडारण इकाइ�
 msgid "Total quantity required across all active jobs and sales orders at this location — not just this job."
 msgstr "इस स्थान पर सभी सक्रिय कार्यों और बिक्री आदेशों में आवश्यक कुल मात्रा — केवल इस कार्य के लिए नहीं।"
 
+msgid "Total scrap quantity"
+msgstr ""
+
 msgid "Total Value"
 msgstr "कुल मूल्य"
 
@@ -14058,6 +14103,36 @@ msgstr "UoM"
 
 msgid "Update"
 msgstr "अपडेट करें"
+
+msgid "Update a customer"
+msgstr ""
+
+msgid "Update a job"
+msgstr ""
+
+msgid "Update a purchase order"
+msgstr ""
+
+msgid "Update a quote"
+msgstr ""
+
+msgid "Update a receipt"
+msgstr ""
+
+msgid "Update a sales order"
+msgstr ""
+
+msgid "Update a shipment"
+msgstr ""
+
+msgid "Update a supplier"
+msgstr ""
+
+msgid "Update an issue"
+msgstr ""
+
+msgid "Update an item"
+msgstr ""
 
 msgid "Update costs on"
 msgstr "लागत अपडेट करें"

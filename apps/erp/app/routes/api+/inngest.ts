@@ -1,5 +1,9 @@
-import { functions, inngest } from "@carbon/jobs/inngest";
+import { functions, inngest, setWorkflowDispatch } from "@carbon/jobs/inngest";
 import { serve } from "inngest/remix";
+import { executeFunction } from "./mcp+/lib/direct-executor";
+
+// packages/jobs cannot import ~/modules, so the ERP app hands it the dispatcher.
+setWorkflowDispatch(executeFunction);
 
 /**
  * Inngest API endpoint.

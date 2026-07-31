@@ -1,5 +1,5 @@
 ---
-description: The workflow event catalog — two hand-written inputs generate one committed catalog of every trigger a customer can pick; never hand-edit the generated files, and every declared moment must be raised somewhere or the build fails.
+description: The workflow catalog — four hand-written inputs generate one committed catalog of every trigger, action and operation a customer can pick; never hand-edit the generated files, and every declared moment must be raised somewhere or the build fails.
 paths:
   - "packages/workflows/src/catalog/**"
   - "packages/lib/src/workflows/**"
@@ -9,7 +9,8 @@ paths:
 
 # Workflow Event Catalog
 
-The list of things a customer can trigger a workflow on. "Workflow" here is the
+The list of things a customer can trigger a workflow on, and of the actions and
+operations a workflow can then use. "Workflow" here is the
 customer-facing feature (a "when this happens, do that" rule built on a canvas) — not the
 `.claude/rules/workflow-*.md` developer-procedure files, and unrelated to
 `nonConformanceWorkflow`.
@@ -17,25 +18,30 @@ customer-facing feature (a "when this happens, do that" rule built on a canvas) 
 Spec: `.ai/specs/2026-07-30-workflows-event-catalog.md`. Package guide:
 `packages/workflows/AGENTS.md`.
 
-## Two hand-written inputs, one generated catalog
+## Four hand-written inputs, three generated files
 
 ```
-packages/workflows/src/catalog/entities.ts   HAND-WRITTEN  record types + watched columns
+packages/workflows/src/catalog/entities.ts   HAND-WRITTEN  record types + watched columns + write allowlist
 packages/workflows/src/catalog/moments.ts    HAND-WRITTEN  business events + labels + outputs
+packages/workflows/src/catalog/actions.ts    HAND-WRITTEN  the actions with no generic form
+packages/workflows/src/catalog/operations.ts HAND-WRITTEN  read-only computations
                     │
                     ▼  scripts/generate-workflow-catalog.ts  (buildCatalog, pure)
 packages/workflows/src/catalog/events.generated.ts   COMMITTED  ids, outputs, permission, match
-packages/workflows/src/catalog/labels.generated.ts   COMMITTED  one msg`` per event id
+packages/workflows/src/catalog/actions.generated.ts  COMMITTED  action + operation catalogs
+packages/workflows/src/catalog/labels.generated.ts   COMMITTED  one msg`` per event, action and operation id
 ```
 
 Today: 10 triggerable entities with 77 watched columns → 97 record events, plus 9 moments
-= **106 events**, plus property maps for 15 entities (the 10 triggerable ones and 5
-reference-only: `user`, `jobOperation`, `salesInvoice`, `purchaseInvoice`, `location`).
+= **106 events**, plus property maps for 16 entities (the 10 triggerable ones and 6
+reference-only: `user`, `group`, `jobOperation`, `salesInvoice`, `purchaseInvoice`,
+`location`), plus **16 actions** and **15 operations**.
 
-To add an entity or a moment, edit the one hand-written file and run:
+To add an entity, a moment, an action or an operation, edit the one hand-written file
+and run:
 
 ```bash
-pnpm run generate:workflow-catalog   # generates + biome-normalises the two outputs
+pnpm run generate:workflow-catalog   # generates + biome-normalises the three outputs
 pnpm run check:workflow-catalog      # the CI `catalog` job
 ```
 
@@ -65,8 +71,8 @@ A `.changed` event hands out `record`, `before` and `after`; `created`/`deleted`
 
 ## Why the schema is injected
 
-`buildCatalog(registry, moments, schema)` takes `packages/database/src/swagger-docs-schema.ts`
-as an **argument**. That file is already generated and committed and — unlike `types.ts` — is
+`buildCatalog(registry, moments, actions, operations, schema)` takes
+`packages/database/src/swagger-docs-schema.ts` as an **argument**. That file is already generated and committed and — unlike `types.ts` — is
 a runtime *value* carrying every column's type, enum values and foreign-key target, so no
 TypeScript-compiler-API parsing is needed. Injecting it keeps `@carbon/database` out of
 `@carbon/workflows`' runtime graph (it is a **devDependency, types only**) and lets the
@@ -93,7 +99,7 @@ So `events.generated.ts` imports nothing from `@lingui/*` and is what the runtim
 every check read; `labels.generated.ts` is imported only by Vite-built app code, by its
 explicit deep path. `src/catalog/index.ts` does not re-export it.
 
-Three templates cover the generated side, with the article derived from the label
+Four templates cover the generated side, with the article derived from the label
 (`An item is created`, not `A item is created`). The vowel test is wrong for u-words, so a
 registry entry can set `article: "A"` — `user` does:
 
@@ -101,9 +107,11 @@ registry entry can set `article: "A"` — `user` does:
 A/An {entity} is created
 A/An {entity} is deleted
 A/An {entity}'s {field} changes
+Update a/an {entity}                 the generated <entity>.update action
 ```
 
-Moment labels are hand-written and mandatory (a missing one is a compile error).
+Moment, action and operation labels are hand-written and mandatory (an empty one is a
+build failure from `validateCatalogInputs`).
 `packages/workflows/src` is in `lingui.config.js`'s `erp` catalog `include` and in
 `//#lingui:compile`'s `inputs` in `turbo.json`. After regenerating, run
 `pnpm run lingui:extract && pnpm run lingui:clean` — the clean step strips the origin
@@ -168,9 +176,32 @@ The nine v1 moments and their sites:
 second caller, but **nothing sends `carbon/post-transaction`** — it is dead code. Don't add a
 raise there until something triggers it.
 
-Seven further candidates are **deferred to phase 3** because each has two or more independent
-write paths: job completed, purchase order issued, sales order confirmed, quote lost,
-non-conformance opened, non-conformance closed, inspection failed.
+Seven further candidates are **still undeclared** because each has two or more independent
+write paths, so one raise site would not cover them: job completed, purchase order issued,
+sales order confirmed, quote lost, non-conformance opened, non-conformance closed,
+inspection failed.
+
+## Actions and operations
+
+The same generator also expands two more hand-written files and each entity's `write`
+allowlist into `actions.generated.ts`, which holds **both** `WORKFLOW_ACTION_CATALOG` and
+`WORKFLOW_OPERATION_CATALOG`:
+
+- **Actions** are what a workflow does. 6 hand-written (`job.create`,
+  `nonConformance.create`, `purchaseOrder.create`, `salesOrder.create`, `notify`,
+  `webhook`) plus one `<entity>.update` generated per entity that declares `write`.
+- **Operations** are read-only computations over things a property map cannot reach —
+  stored totals live only on views, and counts span child tables.
+
+`watch` and `write` sit side by side in `entities.ts` and are **not** symmetric: a watched
+column is inert, a written one is an effect the workflow performs as the owner, so `write`
+is a restrictive allowlist. `createWorkflowCatalog()` in `catalog/catalog.ts` exposes all
+four maps (`getEvent`, `getEntity`, `getAction`, `getOperation`); `getActionRoute(id)` is
+deliberately kept off `CatalogAction`.
+
+Everything about how these actually run — the dispatcher seam, the update executor's
+tenancy checks, webhook signing and the SSRF guard — is in
+[workflow-actions.md](workflow-actions.md).
 
 ## The checks
 
@@ -180,13 +211,20 @@ non-conformance opened, non-conformance closed, inspection failed.
 1. **Every declared moment has at least one raise site.** A dead trigger is worse than a
    missing one: a customer builds a rule, nothing ever raises it, and it silently never fires.
 2. **Every raise site names a declared moment** (the type system covers this too).
-3. **Every registry table and watched column still exists.** Also a compile error, via
-   type-only `TableName` / `ColumnOf<T>` from `@carbon/database/audit.config` — a migration
-   renaming a column fails `tsgo` at the registry line, naming the column. The script repeats
-   it in plain English and catches skew between the two generated schema artifacts.
-4. **The committed catalog equals a fresh build.** Compares data, not file text, so formatting
-   can never make it flap.
-5. **Every moment has a label** and names only registry entities for its outputs.
+3. **Every registry table, watched column and writable column still exists.** Also a compile
+   error, via type-only `TableName` / `ColumnOf<T>` from `@carbon/database/audit.config` — a
+   migration renaming a column fails `tsgo` at the registry line, naming the column. The
+   script repeats it in plain English and catches skew between the two generated schema
+   artifacts. A writable column that is identity or audit (`id`, `companyId`, `createdBy`,
+   `createdAt`, `updatedBy`, `updatedAt`) is refused outright.
+4. **The committed catalog equals a fresh build** — events, entities, actions and operations
+   each compared separately so the failure names which one drifted. Compares data, not file
+   text, so formatting can never make it flap.
+5. **Every moment, action and operation has a label**, and names only registry entities for
+   its outputs, inputs and output.
+6. **Every action has an implementation route** — a `call` that is a real tool in
+   `apps/erp/app/routes/api+/mcp+/lib/tool-metadata.json` (run `pnpm run generate:mcp`), or
+   membership in the built-in set (`notify`, `webhook`).
 
 Deploy-time, against a live database (so not CI — they sit with `packages/checks`' invariants):
 the `workflow-trigger-event-drift` SQL invariant and
@@ -199,11 +237,11 @@ the `workflow-trigger-event-drift` SQL invariant and
   `nonConformance`, not `issue` — `issues` is a **view**, and a view carries no trigger. "Issue"
   is only the customer-facing label.
 - Stored totals are not watchable and not dot-readable. `purchaseOrder.orderTotal` exists only
-  on the `purchaseOrders` **view**, which has no trigger and no announcement. They arrive as
-  Entity-node operations in phase 5.
+  on the `purchaseOrders` **view**, which has no trigger and no announcement. They are reachable
+  as operations instead (`purchaseOrder.total`, `salesOrder.total`).
 - Carbon's status columns are inconsistently named and the registry records reality:
   `supplier.supplierStatus`, `customer.customerStatusId`.
 - `CatalogEvent` carries `permission` and `match` but **no `label`** — labels are keyed by
-  event id in the separate generated file.
-- `write` (the field-update allowlist) is **not** in `entities.ts` yet; it belongs to phase 5's
-  action catalog.
+  event id in the separate generated file, which also holds action and operation labels.
+- A hand-written action id that collides with a generated `<entity>.update` is a build error,
+  not a silent overwrite.

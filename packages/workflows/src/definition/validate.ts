@@ -12,14 +12,21 @@ import {
   type NodeContext,
   type NodeOutputs,
   type ResolvedRef,
-  type ResolveFailure
+  type ResolveFailure,
+  type ValueSite
 } from "./nodes";
 import {
   type TriggerNode,
   type WorkflowDefinition,
   workflowDefinitionSchema
 } from "./schema";
-import type { ItemRef, ValueOrRef, ValueType, VariableRef } from "./types";
+import {
+  type ItemRef,
+  t,
+  type ValueOrRef,
+  type ValueType,
+  type VariableRef
+} from "./types";
 
 /**
  * Is this workflow well-formed enough to activate? An empty result means yes.
@@ -350,6 +357,8 @@ function createContext(
   const resolveValue = (value: ValueOrRef, atNodeId: string): ResolvedRef => {
     if (value.kind === "literal") return { type: value.type };
     if (value.kind === "item") return resolveItem(value, atNodeId);
+    // A template always reads as text; its parts are checked in layer 5.
+    if (value.kind === "template") return { type: t.string };
     return resolveRef(value, atNodeId);
   };
 
@@ -387,17 +396,27 @@ function checkReferences(
   const issues: WorkflowIssue[] = [];
 
   for (const node of definition.nodes) {
-    for (const { value, field } of getNodeValues(node)) {
-      const resolved = ctx.resolveValue(value, node.id);
+    for (const site of getNodeValues(node).flatMap(expandTemplate)) {
+      const resolved = ctx.resolveValue(site.value, node.id);
       if ("type" in resolved) continue;
-      const described = describeFailure(resolved.failure, value);
+      const described = describeFailure(resolved.failure, site.value);
       if (described !== undefined) {
-        issues.push({ ...described, nodeId: node.id, field });
+        issues.push({ ...described, nodeId: node.id, field: site.field });
       }
     }
   }
 
   return issues;
+}
+
+/** A template's variables are checked one by one, so a bad one names its own place. */
+function expandTemplate(site: ValueSite): ValueSite[] {
+  if (site.value.kind !== "template") return [site];
+  return site.value.parts.flatMap((part, index) =>
+    part.kind === "text"
+      ? []
+      : [{ value: part, field: `${site.field}.parts.${index}` }]
+  );
 }
 
 /** A failure as a customer would put it, or nothing when another layer reports the real cause. */

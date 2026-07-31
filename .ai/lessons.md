@@ -703,3 +703,42 @@ snapshot into a cache keyed by identity alone.
 **Applies to:** `packages/jobs/src/workflows/engine/loader.ts`,
 `packages/workflows/src/runtime/`, and any future cache of "the record as it is"
 that also has to represent "the record as it was".
+
+## The `user` table has no `companyId`, so the usual tenancy check cannot be applied to it
+
+**Context:** The workflow update executor must prove that every entity-typed
+value it writes belongs to the acting company, or a workflow could point a row at
+another tenant's record. The plan specified one generic
+`select id where id = ? and companyId = ?` for that check.
+
+**Problem:** Every entity-typed writable column in the workflow catalogue is an
+assignee, and they all point at `user` — which is one of the few Carbon tables
+with **no** `companyId` column. The literal check would have 400'd on every
+assignee write, i.e. on every workflow that assigns anybody.
+
+**Rule:** Membership for `user` is `userToCompany(userId, companyId)`, not a
+column on the row. Route those entities through that join instead of skipping the
+check — dropping it is the tenancy hole the check exists to close. Before writing
+a "every table has `companyId`" helper, confirm it for the specific tables it
+will actually receive.
+
+**Applies to:** `packages/jobs/src/workflows/actions/update.ts`, and any generic
+company-scoping helper that takes a table name at run time.
+
+## Biome drops quotes from valid identifier keys, so a drift check that greps for `"key":` misses them
+
+**Context:** `scripts/check-workflow-catalog.ts` verifies the committed generated
+catalogue matches what the generator would produce, partly by grepping the label
+file for its keys.
+
+**Problem:** The generator emits `"notify":` but Biome formats the committed file
+to `notify:`. A regex anchored on `^ {2}"([^"]+)":` therefore skipped exactly the
+keys that happen to be valid JS identifiers — the check passed while genuinely
+missing entries.
+
+**Rule:** A check that reads a **formatted** generated file must tolerate the
+formatter's output, not the generator's. Make the quotes optional
+(`^ {2}"?([^":\s]+)"?:`), or compare parsed data rather than text.
+
+**Applies to:** `scripts/check-workflow-catalog.ts` and any future drift check
+that greps a Biome-formatted generated file.

@@ -473,6 +473,123 @@ describe("configuration", () => {
     expect(codes(definition)).toEqual(["UNKNOWN_ENTITY"]);
   });
 
+  it("reports UNKNOWN_INPUT for a lookup matching on a property the record has not got", () => {
+    const definition = define(
+      [
+        trigger(),
+        {
+          ...lookup("l1", "part", "one"),
+          data: {
+            entity: "part",
+            returns: "one",
+            match: [
+              {
+                field: "colour",
+                operator: "eq",
+                value: literal("string", "red")
+              }
+            ]
+          }
+        }
+      ],
+      [edge("e1", "trigger", "out", "l1")]
+    );
+    const issues = validateDefinition(definition, catalog);
+    expect(issues.map((i) => i.code)).toEqual(["UNKNOWN_INPUT"]);
+    expect(issues[0]?.field).toBe("match.0.field");
+  });
+
+  it("reports TYPE_MISMATCH for a lookup comparing a property against the wrong type", () => {
+    const definition = define(
+      [
+        trigger(),
+        {
+          ...lookup("l1", "part", "one"),
+          data: {
+            entity: "part",
+            returns: "one",
+            match: [
+              { field: "name", operator: "eq", value: literal("number", 7) }
+            ]
+          }
+        }
+      ],
+      [edge("e1", "trigger", "out", "l1")]
+    );
+    const issues = validateDefinition(definition, catalog);
+    expect(issues.map((i) => i.code)).toEqual(["TYPE_MISMATCH"]);
+    expect(issues[0]?.field).toBe("match.0.value");
+  });
+
+  it("accepts a lookup matching a real property at a matching type", () => {
+    const definition = define(
+      [
+        trigger(),
+        {
+          ...lookup("l1", "part", "one"),
+          data: {
+            entity: "part",
+            returns: "one",
+            match: [
+              {
+                field: "name",
+                operator: "eq",
+                value: literal("string", "Bolt")
+              }
+            ]
+          }
+        }
+      ],
+      [edge("e1", "trigger", "out", "l1")]
+    );
+    expect(validateDefinition(definition, catalog)).toEqual([]);
+  });
+
+  it("reports UNKNOWN_INPUT for an input the catalog does not declare", () => {
+    const definition = define(
+      [
+        trigger(),
+        action("a1", {
+          action: "createIssue",
+          inputs: {
+            title: literal("string", "Something went wrong"),
+            severity: literal("string", "high")
+          }
+        })
+      ],
+      [edge("e1", "trigger", "out", "a1")]
+    );
+    const issues = validateDefinition(definition, catalog);
+    expect(issues.map((i) => i.code)).toEqual(["UNKNOWN_INPUT"]);
+    expect(issues[0]?.field).toBe("severity");
+  });
+
+  it("reports INCOMPLETE_CONFIG when no input from a required group is supplied", () => {
+    const definition = define(
+      [trigger(), action("a1", { action: "alertSomeone", inputs: {} })],
+      [edge("e1", "trigger", "out", "a1")]
+    );
+    const issues = validateDefinition(definition, catalog);
+    expect(issues.map((i) => i.code)).toEqual(["INCOMPLETE_CONFIG"]);
+    expect(issues[0]?.message).toBe(
+      "This step needs at least one of: user, role."
+    );
+  });
+
+  it("accepts a required group when one of its inputs is supplied", () => {
+    const definition = define(
+      [
+        trigger(),
+        action("a1", {
+          action: "alertSomeone",
+          inputs: { role: literal("string", "Buyer") }
+        })
+      ],
+      [edge("e1", "trigger", "out", "a1")]
+    );
+    expect(validateDefinition(definition, catalog)).toEqual([]);
+  });
+
   it("reports INCOMPLETE_CONFIG for an action with nothing chosen", () => {
     const definition = define(
       [trigger(), action("a1", { action: "" })],

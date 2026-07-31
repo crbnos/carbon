@@ -12,6 +12,8 @@ export interface RunContext {
     status: string;
   };
   workflowActive: boolean;
+  /** The company's group, which service functions need. Falls back to the company. */
+  companyGroupId: string;
   version: {
     formatVersion: number | null;
     nodes: unknown;
@@ -39,6 +41,7 @@ export async function loadRunContext(
         .onRef("v.id", "=", "r.workflowVersionId")
         .onRef("v.companyId", "=", "r.companyId")
     )
+    .leftJoin("company as c", "c.id", "r.companyId")
     .select([
       "r.id as id",
       "r.companyId as companyId",
@@ -48,6 +51,7 @@ export async function loadRunContext(
       "r.eventId as eventId",
       "r.status as status",
       "w.active as workflowActive",
+      "c.companyGroupId as companyGroupId",
       "v.formatVersion as formatVersion",
       "v.nodes as nodes",
       "v.edges as edges"
@@ -69,6 +73,7 @@ export async function loadRunContext(
       status: row.status
     },
     workflowActive: row.workflowActive === true,
+    companyGroupId: row.companyGroupId ?? row.companyId,
     version:
       row.nodes === null
         ? null

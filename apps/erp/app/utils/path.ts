@@ -2172,6 +2172,42 @@ export const getPublicModelUrl = (path: string) => {
 // Map an item to its type-specific detail route. Used where a CO references an
 // item by name and we want a link to the item page. Assemblies and unknown/blank
 // types default to the Part route (assemblies are Parts in practice).
+/** A workflow notification names its subject by catalog entity, not by route.
+ * An entity with no single page of its own returns null. */
+export const getWorkflowRecordPath = (
+  entity: string | null | undefined,
+  id: string
+): string | null => {
+  switch (entity) {
+    case "customer":
+      return path.to.customer(id);
+    case "job":
+      return path.to.job(id);
+    case "location":
+      return path.to.location(id);
+    case "nonConformance":
+      return path.to.issue(id);
+    case "purchaseInvoice":
+      return path.to.purchaseInvoice(id);
+    case "purchaseOrder":
+      return path.to.purchaseOrder(id);
+    case "quote":
+      return path.to.quote(id);
+    case "receipt":
+      return path.to.receipt(id);
+    case "salesInvoice":
+      return path.to.salesInvoice(id);
+    case "salesOrder":
+      return path.to.salesOrder(id);
+    case "shipment":
+      return path.to.shipment(id);
+    case "supplier":
+      return path.to.supplier(id);
+    default:
+      return null;
+  }
+};
+
 export const getItemDetailPath = (
   type: string | null | undefined,
   id: string

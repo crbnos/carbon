@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { WORKFLOW_ACTIONS } from "./actions";
 import type {
   MomentDeclarationLike,
   RegistryEntry,
@@ -7,6 +8,7 @@ import type {
 import { buildCatalog, validateCatalogInputs } from "./build";
 import { REGISTRY_ENTRIES, WORKFLOW_ENTITY_REGISTRY } from "./entities";
 import { WORKFLOW_MOMENTS } from "./moments";
+import { WORKFLOW_OPERATIONS } from "./operations";
 
 const text = { format: "text", type: "string" };
 
@@ -82,7 +84,10 @@ function realDefinitions(): SwaggerSchema["definitions"] {
   const definitions: SwaggerSchema["definitions"] = {};
   for (const entry of Object.values(REGISTRY_ENTRIES)) {
     const properties: Record<string, typeof text> = { id: text };
-    for (const column of Object.keys(entry.watch ?? {})) {
+    for (const column of [
+      ...Object.keys(entry.watch ?? {}),
+      ...Object.keys(entry.write ?? {})
+    ]) {
       properties[column] = text;
     }
     definitions[entry.table] = { properties };
@@ -91,7 +96,7 @@ function realDefinitions(): SwaggerSchema["definitions"] {
 }
 
 describe("buildCatalog — record events", () => {
-  const built = buildCatalog(registry, moments, schema);
+  const built = buildCatalog(registry, moments, {}, {}, schema);
   const ev = (id: string) => need(built.events[id], id);
 
   it("emits created, deleted and one changed event per watched column", () => {
@@ -160,7 +165,7 @@ describe("buildCatalog — record events", () => {
 });
 
 describe("buildCatalog — labels", () => {
-  const built = buildCatalog(registry, moments, schema);
+  const built = buildCatalog(registry, moments, {}, {}, schema);
 
   it("uses the three templates", () => {
     expect(built.labels["order.created"]).toBe("An order is created");
@@ -182,6 +187,8 @@ describe("buildCatalog — labels", () => {
         }
       },
       {},
+      {},
+      {},
       schema
     );
     expect(built2.labels["user.created"]).toBe("A user is created");
@@ -197,6 +204,8 @@ describe("buildCatalog — labels", () => {
           watch: { status: { label: "status" } }
         }
       },
+      {},
+      {},
       {},
       schema
     );
@@ -221,7 +230,7 @@ describe("buildCatalog — labels", () => {
 });
 
 describe("buildCatalog — moments", () => {
-  const built = buildCatalog(registry, moments, schema);
+  const built = buildCatalog(registry, moments, {}, {}, schema);
 
   it("passes declared outputs through unchanged and matches on the key", () => {
     expect(built.events["order.approved"]).toEqual({
@@ -245,6 +254,8 @@ describe("buildCatalog — moments", () => {
             outputs: { carrier: { kind: "entity", of: "carrier" } }
           }
         },
+        {},
+        {},
         schema
       )
     ).toThrow(/names entity "carrier"/);
@@ -261,6 +272,8 @@ describe("buildCatalog — moments", () => {
             outputs: {}
           }
         },
+        {},
+        {},
         schema
       )
     ).toThrow(/has no label/);
@@ -268,7 +281,7 @@ describe("buildCatalog — moments", () => {
 });
 
 describe("buildCatalog — entity properties", () => {
-  const built = buildCatalog(registry, moments, schema);
+  const built = buildCatalog(registry, moments, {}, {}, schema);
   const order = need(built.entities.order, "order entity");
   const person = need(built.entities.person, "person entity");
 
@@ -332,6 +345,8 @@ describe("buildCatalog — entity properties", () => {
           }
         },
         {},
+        {},
+        {},
         schema
       )
     ).toThrow(/foreign key points at "person"/);
@@ -350,6 +365,8 @@ describe("buildCatalog — entity properties", () => {
           }
         },
         {},
+        {},
+        {},
         schema
       )
     ).toThrow(/not a registry entity/);
@@ -367,6 +384,8 @@ describe("buildCatalog — entity properties", () => {
           }
         },
         {},
+        {},
+        {},
         schema
       )
     ).toThrow(/watches column "ghostColumn"/);
@@ -376,6 +395,8 @@ describe("buildCatalog — entity properties", () => {
     expect(() =>
       buildCatalog(
         { ghost: { table: "ghostTable", label: "Ghost", permission: "sales" } },
+        {},
+        {},
         {},
         schema
       )
@@ -405,6 +426,8 @@ describe("validateCatalogInputs", () => {
           outputs: { who: { kind: "entity", of: "nobody" } }
         }
       },
+      {},
+      {},
       schema
     );
     expect(problems).toHaveLength(5);
@@ -416,10 +439,74 @@ describe("validateCatalogInputs", () => {
 
   it("returns nothing for the real hand-written inputs", () => {
     expect(
-      validateCatalogInputs(WORKFLOW_ENTITY_REGISTRY, WORKFLOW_MOMENTS, {
-        definitions: realDefinitions()
-      })
+      validateCatalogInputs(
+        WORKFLOW_ENTITY_REGISTRY,
+        WORKFLOW_MOMENTS,
+        WORKFLOW_ACTIONS,
+        WORKFLOW_OPERATIONS,
+        { definitions: realDefinitions() }
+      )
     ).toEqual([]);
+  });
+
+  it("rejects a writable column that does not exist on the table", () => {
+    const problems = validateCatalogInputs(
+      {
+        order: {
+          table: "order",
+          label: "Order",
+          permission: "purchasing",
+          write: { ghostWrite: { label: "ghost" } }
+        }
+      },
+      {},
+      {},
+      {},
+      schema
+    );
+    expect(problems).toHaveLength(1);
+    expect(problems[0]).toMatch(
+      /declares writable column "ghostWrite", which does not exist/
+    );
+  });
+
+  it("rejects a writable column a workflow may never set", () => {
+    const problems = validateCatalogInputs(
+      {
+        order: {
+          table: "order",
+          label: "Order",
+          permission: "purchasing",
+          write: { companyId: { label: "company" } }
+        }
+      },
+      {},
+      {},
+      {},
+      schema
+    );
+    expect(problems).toHaveLength(1);
+    expect(problems[0]).toMatch(/which a workflow may never set/);
+  });
+
+  it("rejects a writable ref that disagrees with the schema's foreign key", () => {
+    const problems = validateCatalogInputs(
+      {
+        order: {
+          table: "order",
+          label: "Order",
+          permission: "purchasing",
+          write: { buyerId: { label: "buyer", ref: "order" } }
+        },
+        person: { table: "person", label: "Person", permission: "users" }
+      },
+      {},
+      {},
+      {},
+      schema
+    );
+    expect(problems).toHaveLength(1);
+    expect(problems[0]).toMatch(/its foreign key points at "person"/);
   });
 
   it("rejects watching a column that is dropped from every property map", () => {
@@ -434,6 +521,8 @@ describe("validateCatalogInputs", () => {
           }
         },
         {},
+        {},
+        {},
         schema
       )
     ).toThrow(/dropped from every entity's properties/);
@@ -441,15 +530,128 @@ describe("validateCatalogInputs", () => {
 });
 
 describe("buildCatalog — the real hand-written inputs", () => {
-  it("accepts the real registry and moments against a stub schema", () => {
-    const built = buildCatalog(WORKFLOW_ENTITY_REGISTRY, WORKFLOW_MOMENTS, {
-      definitions: realDefinitions()
-    });
+  it("accepts the real registry, moments, actions and operations", () => {
+    const built = buildCatalog(
+      WORKFLOW_ENTITY_REGISTRY,
+      WORKFLOW_MOMENTS,
+      WORKFLOW_ACTIONS,
+      WORKFLOW_OPERATIONS,
+      { definitions: realDefinitions() }
+    );
 
     expect(Object.keys(WORKFLOW_MOMENTS)).toHaveLength(9);
     // 77 watched columns + 10 created + 10 deleted + 9 moments.
     expect(Object.keys(built.events)).toHaveLength(106);
-    expect(Object.keys(built.labels)).toHaveLength(106);
-    expect(Object.keys(built.entities)).toHaveLength(15);
+    expect(Object.keys(built.entities)).toHaveLength(16);
+    // 10 generated `<entity>.update` plus the 6 hand-written.
+    expect(Object.keys(built.actions)).toHaveLength(16);
+    expect(Object.keys(built.operations)).toHaveLength(15);
+    expect(Object.keys(built.labels)).toHaveLength(106 + 16 + 15);
+  });
+});
+
+describe("buildCatalog — actions and operations", () => {
+  const writeRegistry: Record<string, RegistryEntry> = {
+    ...registry,
+    order: {
+      ...need(registry.order, "order"),
+      write: {
+        status: { label: "status" },
+        orderDate: { label: "order date" },
+        buyerId: { label: "buyer" }
+      }
+    }
+  };
+
+  it("expands a write allowlist into one update action", () => {
+    const built = buildCatalog(writeRegistry, {}, {}, {}, schema);
+    const action = need(built.actions["order.update"], "order.update");
+
+    expect(Object.keys(action.inputs).sort()).toEqual([
+      "buyerId",
+      "order",
+      "orderDate",
+      "status"
+    ]);
+    expect(action.inputs.order?.required).toBe(true);
+    expect(action.inputs.status?.required).toBe(false);
+    expect(action.inputs.buyerId?.type).toEqual({
+      kind: "entity",
+      of: "person"
+    });
+    expect(action.update).toEqual({ entity: "order" });
+    expect(action.permission).toEqual({
+      module: "purchasing",
+      action: "update"
+    });
+    expect(built.labels["order.update"]).toBe("Update an order");
+  });
+
+  it("generates no update action for an entity with no write allowlist", () => {
+    const built = buildCatalog(registry, {}, {}, {}, schema);
+    expect(built.actions["order.update"]).toBeUndefined();
+  });
+
+  it("throws when a hand-written action collides with a generated one", () => {
+    expect(() =>
+      buildCatalog(
+        writeRegistry,
+        {},
+        {
+          "order.update": {
+            label: "Update an order by hand",
+            permission: { module: "purchasing", action: "update" },
+            inputs: {},
+            outputs: {},
+            batchable: false,
+            call: "purchasing_upsertPurchaseOrder"
+          }
+        },
+        {},
+        schema
+      )
+    ).toThrow(/declared by hand and also generated/);
+  });
+
+  it("reports a hand-written action with no implementation route", () => {
+    const problems = validateCatalogInputs(
+      registry,
+      {},
+      {
+        "order.archive": {
+          label: "Archive an order",
+          permission: { module: "purchasing", action: "update" },
+          inputs: {},
+          outputs: {},
+          batchable: false
+        }
+      },
+      {},
+      schema
+    );
+    expect(problems).toEqual([
+      'Action "order.archive" has no implementation route.'
+    ]);
+  });
+
+  it("reports an operation naming an entity outside the registry", () => {
+    const problems = validateCatalogInputs(
+      registry,
+      {},
+      {},
+      {
+        "carrier.total": {
+          label: "Total",
+          entity: "carrier",
+          permission: { module: "sales", action: "view" },
+          inputs: {},
+          output: { kind: "primitive", of: "number" }
+        }
+      },
+      schema
+    );
+    expect(problems).toEqual([
+      'Operation "carrier.total" names entity "carrier", which is not in the registry.'
+    ]);
   });
 });

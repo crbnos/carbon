@@ -1,4 +1,8 @@
-import type { WorkflowCatalog } from "../definition/catalog";
+import type { Operator } from "@carbon/utils";
+import type {
+  RequiredPermission,
+  WorkflowCatalog
+} from "../definition/catalog";
 import type { WorkflowNode } from "../definition/schema";
 import type { PrimitiveKind, ScalarType } from "../definition/types";
 
@@ -23,9 +27,47 @@ export interface EntityLoader {
   load(entity: string, id: string): Promise<Record<string, unknown> | null>;
 }
 
+export type ActionOutcome =
+  | { ok: true; outputs: Record<string, RuntimeValue>; summary?: string }
+  | { ok: false; error: string };
+
+export type OperationOutcome =
+  | { ok: true; value: RuntimeValue }
+  | { ok: false; error: string };
+
+export type SearchOutcome =
+  | { ok: true; value: RuntimeValue; matched: number; dropped: number }
+  | { ok: false; error: string };
+
+/** One resolved match rule, ready for the query builder. */
+export interface SearchCriterion {
+  field: string;
+  operator: Operator;
+  value: RuntimeValue;
+}
+
+/** Everything that touches the world. Implemented job-side; this package stays pure. */
+export interface WorkflowServices {
+  runAction(
+    actionId: string,
+    inputs: Record<string, RuntimeValue>
+  ): Promise<ActionOutcome>;
+  runOperation(
+    operationId: string,
+    inputs: Record<string, RuntimeValue>
+  ): Promise<OperationOutcome>;
+  search(params: {
+    entity: string;
+    returns: "one" | "list";
+    criteria: SearchCriterion[];
+  }): Promise<SearchOutcome>;
+}
+
 export interface RuntimeContext {
   catalog: WorkflowCatalog;
   loader: EntityLoader;
+  /** Required, so a missing implementation is a compile error, not a run-time surprise. */
+  services: WorkflowServices;
   /** nodeId → that node's outputs, filled in as the walk proceeds. */
   outputs: Record<string, Record<string, RuntimeValue>>;
   /** The item a looping node is on; absent outside a loop. */
@@ -46,7 +88,7 @@ export type NodeResult =
   | { status: "Failed"; error: string; handle?: string | null };
 
 export interface NodeExecutor<N extends WorkflowNode> {
-  /** The permission module the owner must hold; undefined when the node reads nothing. */
-  permission(node: N, catalog: WorkflowCatalog): string | undefined;
+  /** What the owner must hold; undefined when the node touches nothing. */
+  permission(node: N, catalog: WorkflowCatalog): RequiredPermission | undefined;
   execute(node: N, ctx: RuntimeContext): Promise<NodeResult>;
 }

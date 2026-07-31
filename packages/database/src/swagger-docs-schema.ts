@@ -5650,6 +5650,9 @@ export default {
             $ref: "#/parameters/rowFilter.workflow.updatedAt"
           },
           {
+            $ref: "#/parameters/rowFilter.workflow.webhookSecret"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -5745,6 +5748,9 @@ export default {
             $ref: "#/parameters/rowFilter.workflow.updatedAt"
           },
           {
+            $ref: "#/parameters/rowFilter.workflow.webhookSecret"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -5792,6 +5798,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.workflow.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workflow.webhookSecret"
           },
           {
             $ref: "#/parameters/body.workflow"
@@ -97954,7 +97963,8 @@ export default {
         "ownerId",
         "active",
         "createdBy",
-        "createdAt"
+        "createdAt",
+        "webhookSecret"
       ],
       properties: {
         id: {
@@ -98015,6 +98025,11 @@ export default {
         },
         updatedAt: {
           format: "timestamp with time zone",
+          type: "string"
+        },
+        webhookSecret: {
+          default: "encode(extensions.gen_random_bytes(32), 'hex'::text)",
+          format: "text",
           type: "string"
         }
       },
@@ -138816,6 +138831,12 @@ export default {
     },
     "rowFilter.workflow.updatedAt": {
       name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.workflow.webhookSecret": {
+      name: "webhookSecret",
       required: false,
       in: "query",
       type: "string"

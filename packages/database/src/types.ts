@@ -57816,6 +57816,7 @@ export type Database = {
           ownerId: string
           updatedAt: string | null
           updatedBy: string | null
+          webhookSecret: string
         }
         Insert: {
           active?: boolean
@@ -57830,6 +57831,7 @@ export type Database = {
           ownerId: string
           updatedAt?: string | null
           updatedBy?: string | null
+          webhookSecret?: string
         }
         Update: {
           active?: boolean
@@ -57844,6 +57846,7 @@ export type Database = {
           ownerId?: string
           updatedAt?: string | null
           updatedBy?: string | null
+          webhookSecret?: string
         }
         Relationships: [
           {

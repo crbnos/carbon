@@ -6,13 +6,14 @@ import {
 import { getUserScopedClient } from "@carbon/auth/client.server";
 import type { Database, Json } from "@carbon/database";
 import { getLogger } from "@carbon/logger";
+import type { PermissionAction } from "@carbon/workflows";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 const log = getLogger("workflows");
 
 export type OwnerPermissions = Record<string, Permission>;
 
-export type PermissionAction = "view" | "create" | "update" | "delete";
+export type { PermissionAction } from "@carbon/workflows";
 
 /** A fresh five-minute connection as the owner. Call inside every step, never once per run. */
 export async function getOwnerClient(

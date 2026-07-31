@@ -43,7 +43,7 @@ describe("readWorkflowVersion", () => {
     if (!result.ok) return;
     expect(result.definition.nodes).toHaveLength(1);
     expect(result.definition.nodes[0]?.id).toBe("n1");
-    expect(result.definition.formatVersion).toBe(1);
+    expect(result.definition.formatVersion).toBe(2);
   });
 
   it("keeps nodes and edges apart", () => {
@@ -89,15 +89,85 @@ describe("readWorkflowVersion", () => {
     expect(result.definition.nodes).toHaveLength(1);
   });
 
-  it("treats a missing formatVersion as v1, not as the current version", () => {
-    const result = readWorkflowVersion({ nodes: [triggerNode] });
+  it("treats a missing formatVersion as v1, so its migration is not skipped", () => {
+    const result = readWorkflowVersion({
+      nodes: [
+        triggerNode,
+        {
+          id: "n2",
+          type: "lookup",
+          position: { x: 1, y: 1 },
+          data: {
+            entity: "purchaseOrder",
+            returns: "one",
+            match: [
+              {
+                left: {
+                  kind: "literal",
+                  type: { kind: "primitive", of: "string" },
+                  value: "a"
+                },
+                operator: "eq",
+                right: {
+                  kind: "literal",
+                  type: { kind: "primitive", of: "string" },
+                  value: "b"
+                }
+              }
+            ]
+          }
+        }
+      ]
+    });
     expect(result.ok).toBe(true);
     if (!result.ok) return;
-    expect(result.definition.formatVersion).toBe(1);
+    expect(result.definition.formatVersion).toBe(2);
   });
 
-  it("round-trips a v1 definition unchanged, since migration is pass-through", () => {
-    const row = { formatVersion: 1, nodes: [triggerNode], edges: [] };
+  it("opens a v1 lookup as v2 with its old two-sided rules dropped", () => {
+    const result = readWorkflowVersion({
+      formatVersion: 1,
+      nodes: [
+        triggerNode,
+        {
+          id: "n2",
+          type: "lookup",
+          position: { x: 1, y: 1 },
+          data: {
+            entity: "purchaseOrder",
+            returns: "list",
+            match: [
+              {
+                left: {
+                  kind: "ref",
+                  nodeId: "n1",
+                  output: "record",
+                  path: ["status"]
+                },
+                operator: "eq",
+                right: {
+                  kind: "literal",
+                  type: { kind: "primitive", of: "string" },
+                  value: "Draft"
+                }
+              }
+            ]
+          }
+        }
+      ],
+      edges: []
+    });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    const lookup = result.definition.nodes[1];
+    expect(lookup?.type).toBe("lookup");
+    if (lookup?.type !== "lookup") return;
+    expect(lookup.data.match).toEqual([]);
+    expect(lookup.data.returns).toBe("list");
+  });
+
+  it("round-trips a definition already at the current version", () => {
+    const row = { formatVersion: 2, nodes: [triggerNode], edges: [] };
     const once = readWorkflowVersion(row);
     expect(once.ok).toBe(true);
     if (!once.ok) return;
@@ -125,7 +195,7 @@ describe("readWorkflowVersion", () => {
 
     it("rejects a document written by a newer release rather than emptying it", () => {
       const result = readWorkflowVersion({
-        formatVersion: 2,
+        formatVersion: 3,
         nodes: [{ id: "n1", type: "brandNewKind", position: { x: 0, y: 0 } }],
         edges: []
       });

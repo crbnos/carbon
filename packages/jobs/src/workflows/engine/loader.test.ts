@@ -1,5 +1,5 @@
 import {
-  createEventCatalog,
+  createWorkflowCatalog,
   type RuntimeContext,
   type RuntimeValue,
   resolveRef
@@ -7,7 +7,7 @@ import {
 import { describe, expect, it } from "vitest";
 import { type EntityCache, triggerOutputs } from "./loader";
 
-const catalog = createEventCatalog();
+const catalog = createWorkflowCatalog();
 
 const trigger = {
   kind: "record" as const,
@@ -19,10 +19,17 @@ const trigger = {
   after: { id: "c1", name: "Acme Two" }
 };
 
+const noServices = {
+  runAction: async () => ({ ok: false as const, error: "not stubbed" }),
+  runOperation: async () => ({ ok: false as const, error: "not stubbed" }),
+  search: async () => ({ ok: false as const, error: "not stubbed" })
+};
+
 function contextFor(outputs: Record<string, RuntimeValue>): RuntimeContext {
   return {
     catalog,
     loader: { load: async () => null },
+    services: noServices,
     outputs: { trigger: outputs }
   };
 }

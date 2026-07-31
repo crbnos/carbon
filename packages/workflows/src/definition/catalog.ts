@@ -5,6 +5,15 @@ export type EventMatch =
   | { table: string; operation: "INSERT" | "UPDATE" | "DELETE"; field?: string }
   | { moment: string };
 
+export type PermissionAction = "view" | "create" | "update" | "delete";
+
+/** What the owner must hold for a node to run. */
+export interface RequiredPermission {
+  /** Lowercase permission module, e.g. "purchasing". */
+  module: string;
+  action: PermissionAction;
+}
+
 export interface CatalogEvent {
   id: string;
   outputs: Record<string, ValueType>;
@@ -23,6 +32,9 @@ export interface CatalogAction {
   inputs: Record<string, CatalogInput>;
   outputs: Record<string, ValueType>;
   batchable: boolean;
+  permission: RequiredPermission;
+  /** Each group needs at least one of its input names supplied. */
+  requireOneOf?: string[][];
 }
 
 export interface CatalogOperation {
@@ -30,11 +42,14 @@ export interface CatalogOperation {
   entity: string;
   inputs: Record<string, CatalogInput>;
   output: ValueType;
+  permission: RequiredPermission;
 }
 
 export interface CatalogEntity {
   name: string;
   properties: Record<string, ValueType>;
+  /** What the owner must hold to read one; a lookup gates on this. */
+  permission?: RequiredPermission;
 }
 
 /** What the validator needs to look up, and nothing more. */
@@ -81,12 +96,29 @@ const FIXTURE_ENTITIES: CatalogEntity[] = [
       amount: t.number,
       status: t.string,
       assignee: t.entity("user")
-    }
+    },
+    permission: { module: "purchasing", action: "view" }
   },
-  { name: "user", properties: { email: t.string, manager: t.entity("user") } },
-  { name: "part", properties: { name: t.string, unitPrice: t.number } },
-  { name: "job", properties: { name: t.string, dueDate: t.date } },
-  { name: "issue", properties: { title: t.string } }
+  {
+    name: "user",
+    properties: { email: t.string, manager: t.entity("user") },
+    permission: { module: "users", action: "view" }
+  },
+  {
+    name: "part",
+    properties: { name: t.string, unitPrice: t.number },
+    permission: { module: "parts", action: "view" }
+  },
+  {
+    name: "job",
+    properties: { name: t.string, dueDate: t.date },
+    permission: { module: "production", action: "view" }
+  },
+  {
+    name: "issue",
+    properties: { title: t.string },
+    permission: { module: "quality", action: "view" }
+  }
 ];
 
 const FIXTURE_ACTIONS: CatalogAction[] = [
@@ -97,7 +129,8 @@ const FIXTURE_ACTIONS: CatalogAction[] = [
       message: { type: t.string, required: true }
     },
     outputs: {},
-    batchable: true
+    batchable: true,
+    permission: { module: "users", action: "view" }
   },
   {
     id: "updatePart",
@@ -106,13 +139,26 @@ const FIXTURE_ACTIONS: CatalogAction[] = [
       name: { type: t.string, required: false }
     },
     outputs: { part: t.entity("part") },
-    batchable: true
+    batchable: true,
+    permission: { module: "parts", action: "update" }
   },
   {
     id: "createIssue",
     inputs: { title: { type: t.string, required: true } },
     outputs: { issue: t.entity("issue") },
-    batchable: false
+    batchable: false,
+    permission: { module: "quality", action: "create" }
+  },
+  {
+    id: "alertSomeone",
+    inputs: {
+      user: { type: t.entity("user"), required: false },
+      role: { type: t.string, required: false }
+    },
+    outputs: {},
+    batchable: false,
+    permission: { module: "users", action: "view" },
+    requireOneOf: [["user", "role"]]
   }
 ];
 
@@ -121,7 +167,8 @@ const FIXTURE_OPERATIONS: CatalogOperation[] = [
     id: "job.totalScrap",
     entity: "job",
     inputs: { job: { type: t.entity("job"), required: true } },
-    output: t.number
+    output: t.number,
+    permission: { module: "production", action: "view" }
   }
 ];
 

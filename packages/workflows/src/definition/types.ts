@@ -101,6 +101,20 @@ export const literalSchema = z.object({
 });
 export type Literal = z.infer<typeof literalSchema>;
 
+export const templatePartSchema = z.discriminatedUnion("kind", [
+  z.object({ kind: z.literal("text"), text: z.string() }),
+  variableRefSchema,
+  itemRefSchema
+]);
+export type TemplatePart = z.infer<typeof templatePartSchema>;
+
+/** Text with variables in it. Only ever valid where a string is expected. */
+export const templateSchema = z.object({
+  kind: z.literal("template"),
+  parts: z.array(templatePartSchema).default([])
+});
+export type Template = z.infer<typeof templateSchema>;
+
 function scalarValueMatches(type: ScalarType, value: unknown): boolean {
   if (type.kind === "entity") return typeof value === "string";
   switch (type.of) {
@@ -134,7 +148,12 @@ export function literalValueMatchesType(
 // The literal refinement lives here because zod's `discriminatedUnion` only
 // accepts plain objects, so `literalSchema` itself cannot be refined.
 export const valueOrRefSchema = z
-  .discriminatedUnion("kind", [literalSchema, variableRefSchema, itemRefSchema])
+  .discriminatedUnion("kind", [
+    literalSchema,
+    variableRefSchema,
+    itemRefSchema,
+    templateSchema
+  ])
   .superRefine((value, ctx) => {
     if (value.kind !== "literal") return;
     if (!literalValueMatchesType(value.type, value.value)) {
@@ -154,6 +173,14 @@ export const clauseSchema = z.object({
   right: valueOrRefSchema
 });
 export type Clause = z.infer<typeof clauseSchema>;
+
+/** A lookup names a property of the record it is searching, not a value on both sides. */
+export const lookupMatchSchema = z.object({
+  field: z.string().min(1),
+  operator: operatorSchema,
+  value: valueOrRefSchema
+});
+export type LookupMatch = z.infer<typeof lookupMatchSchema>;
 
 export const combinatorSchema = z.enum(["and", "or"]);
 export type Combinator = z.infer<typeof combinatorSchema>;

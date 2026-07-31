@@ -1,6 +1,7 @@
 /**
- * Builds events.generated.ts and labels.generated.ts from entities.ts, moments.ts
- * and the database swagger schema. Run: pnpm run generate:workflow-catalog
+ * Builds events.generated.ts, actions.generated.ts and labels.generated.ts from
+ * entities.ts, moments.ts, actions.ts, operations.ts and the database swagger
+ * schema. Run: pnpm run generate:workflow-catalog
  *
  * Labels are a separate file because `msg` is a build-time macro that throws when
  * plain Node imports it. Emitted source is unformatted; the script pipes it
@@ -9,9 +10,11 @@
 import fs from "node:fs";
 import path from "node:path";
 import schema from "../packages/database/src/swagger-docs-schema";
+import { WORKFLOW_ACTIONS } from "../packages/workflows/src/catalog/actions";
 import { buildCatalog } from "../packages/workflows/src/catalog/build";
 import { WORKFLOW_ENTITY_REGISTRY } from "../packages/workflows/src/catalog/entities";
 import { WORKFLOW_MOMENTS } from "../packages/workflows/src/catalog/moments";
+import { WORKFLOW_OPERATIONS } from "../packages/workflows/src/catalog/operations";
 
 // Resolved against the repo root; the script must be run from there.
 const CATALOG_DIR = path.join(
@@ -29,7 +32,13 @@ function sorted<T>(record: Record<string, T>): Record<string, T> {
   );
 }
 
-const built = buildCatalog(WORKFLOW_ENTITY_REGISTRY, WORKFLOW_MOMENTS, schema);
+const built = buildCatalog(
+  WORKFLOW_ENTITY_REGISTRY,
+  WORKFLOW_MOMENTS,
+  WORKFLOW_ACTIONS,
+  WORKFLOW_OPERATIONS,
+  schema
+);
 
 const events = [
   HEADER,
@@ -44,12 +53,22 @@ const events = [
   ``
 ].join("\n");
 
+const actions = [
+  HEADER,
+  `import type { BuiltAction, BuiltOperation } from "./build";`,
+  ``,
+  `export const WORKFLOW_ACTION_CATALOG: Record<string, BuiltAction> = ${JSON.stringify(sorted(built.actions))};`,
+  ``,
+  `export const WORKFLOW_OPERATION_CATALOG: Record<string, BuiltOperation> = ${JSON.stringify(sorted(built.operations))};`,
+  ``
+].join("\n");
+
 const labels = [
   HEADER,
   `import type { MessageDescriptor } from "@lingui/core";`,
   `import { msg } from "@lingui/core/macro";`,
   ``,
-  `export const WORKFLOW_EVENT_LABELS: Record<string, MessageDescriptor> = {`,
+  `export const WORKFLOW_LABELS: Record<string, MessageDescriptor> = {`,
   // A literal template per id, so Lingui's extractor sees each message.
   Object.entries(sorted(built.labels))
     .map(([id, label]) => `  ${JSON.stringify(id)}: msg\`${label}\``)
@@ -59,10 +78,13 @@ const labels = [
 ].join("\n");
 
 fs.writeFileSync(path.join(CATALOG_DIR, "events.generated.ts"), events);
+fs.writeFileSync(path.join(CATALOG_DIR, "actions.generated.ts"), actions);
 fs.writeFileSync(path.join(CATALOG_DIR, "labels.generated.ts"), labels);
 
 console.log(
   `generate-workflow-catalog: ${Object.keys(built.events).length} events, ${
     Object.keys(built.entities).length
-  } entities`
+  } entities, ${Object.keys(built.actions).length} actions, ${
+    Object.keys(built.operations).length
+  } operations`
 );

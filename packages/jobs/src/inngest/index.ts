@@ -1,4 +1,12 @@
 // Re-export the inngest client and helpers
+
+// Server-only on purpose: the app bundle imports `@carbon/jobs`, not this subpath.
+export type {
+  DispatchContext,
+  DispatchResult,
+  WorkflowDispatch
+} from "../workflows/actions/dispatcher.ts";
+export { setWorkflowDispatch } from "../workflows/actions/dispatcher.ts";
 export { inngest } from "./client.ts";
 
 import {

@@ -183,6 +183,10 @@ const defaultDestinations: Partial<
   [NotificationEvent.ResourceTrainingAssignment]: [
     NotificationDestination.Email,
     NotificationDestination.Slack
+  ],
+  [NotificationEvent.Workflow]: [
+    NotificationDestination.InApp,
+    NotificationDestination.Email
   ]
 };
 
@@ -196,7 +200,8 @@ export const notifyFunction = inngest.createFunction(
     const payload = event.data as Events["carbon/notify"]["data"];
 
     // Single-document events pass documentId; digest events pass documentIds
-    // with the first entry as the fallback link target.
+    // with the first entry as the fallback link target. Workflow notifications
+    // always supply one too — the run id when the customer named no record.
     const primaryDocumentId = payload.documentId ?? payload.documentIds?.[0];
     if (!primaryDocumentId) {
       throw new NonRetriableError(
@@ -227,8 +232,10 @@ export const notifyFunction = inngest.createFunction(
         payload.from,
         payload.documentType,
         {
+          body: payload.body,
           companyId: payload.companyId,
           documentIds: payload.documentIds,
+          title: payload.title,
           userId:
             payload.recipient.type === "user"
               ? payload.recipient.userId

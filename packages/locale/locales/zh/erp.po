@@ -2355,6 +2355,9 @@ msgstr "校准供应商"
 msgid "Calibrations"
 msgstr "校准"
 
+msgid "Call an outside URL"
+msgstr ""
+
 msgid "Called a method in Carbon — the components plus operations that produce a part."
 msgstr "在Carbon中称为方法—生成零件的组件和操作。"
 
@@ -3385,6 +3388,9 @@ msgstr "创建并快照"
 msgid "Create a change order for the new revision and open it"
 msgstr "为新修订版本创建变更单并打开它"
 
+msgid "Create a job"
+msgstr ""
+
 msgid "Create a new kanban card for scan-based replenishment."
 msgstr "为扫描式补货创建新的看板卡。"
 
@@ -3394,8 +3400,14 @@ msgstr "创建新的维护派工单以跟踪设备维修和维护活动"
 msgid "Create a new production job to fulfill the sales order"
 msgstr "创建新的生产工作以完成销售订单"
 
+msgid "Create a purchase order"
+msgstr ""
+
 msgid "Create a quote with a new quote ID"
 msgstr "使用新报价ID创建报价"
+
+msgid "Create a sales order"
+msgstr ""
 
 msgid "Create Account"
 msgstr "创建账户"
@@ -3405,6 +3417,9 @@ msgstr "创建调整分录"
 
 msgid "Create an account"
 msgstr "创建账户"
+
+msgid "Create an issue"
+msgstr ""
 
 msgid "Create and approve purchase orders"
 msgstr "创建并批准采购订单"
@@ -4830,6 +4845,9 @@ msgstr "每个物理单位都获得自己的跟踪实体和唯一编号 — 一�
 
 msgid "Each, lb, ft…"
 msgstr "每个、磅、英尺…"
+
+msgid "Earliest operation start"
+msgstr ""
 
 msgid "Easier to extend"
 msgstr "更容易扩展"
@@ -7399,6 +7417,9 @@ msgstr "最后同步: {0}"
 msgid "Last updated: {formattedDate}"
 msgstr "最后更新: {formattedDate}"
 
+msgid "Latest operation end"
+msgstr ""
+
 msgid "Lead time"
 msgstr "交货期"
 
@@ -8992,11 +9013,26 @@ msgstr "通知"
 msgid "Notifications"
 msgstr "通知"
 
+msgid "Notify someone"
+msgstr ""
+
 msgid "Number"
 msgstr "数字"
 
 msgid "Number of inventory units per purchase unit"
 msgstr "每个采购单位的库存单位数"
+
+msgid "Number of lines"
+msgstr ""
+
+msgid "Number of open operations"
+msgstr ""
+
+msgid "Number of open tasks"
+msgstr ""
+
+msgid "Number of operations"
+msgstr ""
 
 msgid "Numbering sequence"
 msgstr "编号序列"
@@ -10301,6 +10337,9 @@ msgstr "数量来自MES中已完成的序列号/批次，无法编辑。"
 msgid "Quantity must be greater than 0"
 msgstr "数量必须大于0"
 
+msgid "Quantity on hand"
+msgstr ""
+
 msgid "Quantity on Hand"
 msgstr "现有数量"
 
@@ -11345,6 +11384,9 @@ msgstr "废品 / 质量成本"
 
 msgid "Scrap Percent"
 msgstr "废料百分比"
+
+msgid "Scrap percentage"
+msgstr ""
 
 msgid "Scrap Qty"
 msgstr "废料数量"
@@ -13761,6 +13803,9 @@ msgstr "此地点所有存储单元中该物料的现有总数量。当现有数
 msgid "Total quantity required across all active jobs and sales orders at this location — not just this job."
 msgstr "此地点所有活动作业和销售订单所需的总数量——而不仅仅是此作业。"
 
+msgid "Total scrap quantity"
+msgstr ""
+
 msgid "Total Value"
 msgstr "总价值"
 
@@ -14058,6 +14103,36 @@ msgstr "计量单位"
 
 msgid "Update"
 msgstr "更新"
+
+msgid "Update a customer"
+msgstr ""
+
+msgid "Update a job"
+msgstr ""
+
+msgid "Update a purchase order"
+msgstr ""
+
+msgid "Update a quote"
+msgstr ""
+
+msgid "Update a receipt"
+msgstr ""
+
+msgid "Update a sales order"
+msgstr ""
+
+msgid "Update a shipment"
+msgstr ""
+
+msgid "Update a supplier"
+msgstr ""
+
+msgid "Update an issue"
+msgstr ""
+
+msgid "Update an item"
+msgstr ""
 
 msgid "Update costs on"
 msgstr "更新成本于"

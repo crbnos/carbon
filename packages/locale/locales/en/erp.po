@@ -2355,6 +2355,9 @@ msgstr "Calibration Supplier"
 msgid "Calibrations"
 msgstr "Calibrations"
 
+msgid "Call an outside URL"
+msgstr "Call an outside URL"
+
 msgid "Called a method in Carbon — the components plus operations that produce a part."
 msgstr "Called a method in Carbon — the components plus operations that produce a part."
 
@@ -3385,6 +3388,9 @@ msgstr "Create & Snapshot"
 msgid "Create a change order for the new revision and open it"
 msgstr "Create a change order for the new revision and open it"
 
+msgid "Create a job"
+msgstr "Create a job"
+
 msgid "Create a new kanban card for scan-based replenishment."
 msgstr "Create a new kanban card for scan-based replenishment."
 
@@ -3394,8 +3400,14 @@ msgstr "Create a new maintenance dispatch to track equipment repairs and mainten
 msgid "Create a new production job to fulfill the sales order"
 msgstr "Create a new production job to fulfill the sales order"
 
+msgid "Create a purchase order"
+msgstr "Create a purchase order"
+
 msgid "Create a quote with a new quote ID"
 msgstr "Create a quote with a new quote ID"
+
+msgid "Create a sales order"
+msgstr "Create a sales order"
 
 msgid "Create Account"
 msgstr "Create Account"
@@ -3405,6 +3417,9 @@ msgstr "Create adjusting entry"
 
 msgid "Create an account"
 msgstr "Create an account"
+
+msgid "Create an issue"
+msgstr "Create an issue"
 
 msgid "Create and approve purchase orders"
 msgstr "Create and approve purchase orders"
@@ -4830,6 +4845,9 @@ msgstr "Each physical unit gets its own tracked entity and unique number — one
 
 msgid "Each, lb, ft…"
 msgstr "Each, lb, ft…"
+
+msgid "Earliest operation start"
+msgstr "Earliest operation start"
 
 msgid "Easier to extend"
 msgstr "Easier to extend"
@@ -7399,6 +7417,9 @@ msgstr "Last synced: {0}"
 msgid "Last updated: {formattedDate}"
 msgstr "Last updated: {formattedDate}"
 
+msgid "Latest operation end"
+msgstr "Latest operation end"
+
 msgid "Lead time"
 msgstr "Lead time"
 
@@ -8992,11 +9013,26 @@ msgstr "Notification"
 msgid "Notifications"
 msgstr "Notifications"
 
+msgid "Notify someone"
+msgstr "Notify someone"
+
 msgid "Number"
 msgstr "Number"
 
 msgid "Number of inventory units per purchase unit"
 msgstr "Number of inventory units per purchase unit"
+
+msgid "Number of lines"
+msgstr "Number of lines"
+
+msgid "Number of open operations"
+msgstr "Number of open operations"
+
+msgid "Number of open tasks"
+msgstr "Number of open tasks"
+
+msgid "Number of operations"
+msgstr "Number of operations"
 
 msgid "Numbering sequence"
 msgstr "Numbering sequence"
@@ -10301,6 +10337,9 @@ msgstr "Quantity is derived from completed serials/batches in MES and cannot be 
 msgid "Quantity must be greater than 0"
 msgstr "Quantity must be greater than 0"
 
+msgid "Quantity on hand"
+msgstr "Quantity on hand"
+
 msgid "Quantity on Hand"
 msgstr "Quantity on Hand"
 
@@ -11345,6 +11384,9 @@ msgstr "Scrap / Cost of Quality"
 
 msgid "Scrap Percent"
 msgstr "Scrap Percent"
+
+msgid "Scrap percentage"
+msgstr "Scrap percentage"
 
 msgid "Scrap Qty"
 msgstr "Scrap Qty"
@@ -13761,6 +13803,9 @@ msgstr "Total quantity on hand for the item across all storage units at this loc
 msgid "Total quantity required across all active jobs and sales orders at this location — not just this job."
 msgstr "Total quantity required across all active jobs and sales orders at this location — not just this job."
 
+msgid "Total scrap quantity"
+msgstr "Total scrap quantity"
+
 msgid "Total Value"
 msgstr "Total Value"
 
@@ -14058,6 +14103,36 @@ msgstr "UoM"
 
 msgid "Update"
 msgstr "Update"
+
+msgid "Update a customer"
+msgstr "Update a customer"
+
+msgid "Update a job"
+msgstr "Update a job"
+
+msgid "Update a purchase order"
+msgstr "Update a purchase order"
+
+msgid "Update a quote"
+msgstr "Update a quote"
+
+msgid "Update a receipt"
+msgstr "Update a receipt"
+
+msgid "Update a sales order"
+msgstr "Update a sales order"
+
+msgid "Update a shipment"
+msgstr "Update a shipment"
+
+msgid "Update a supplier"
+msgstr "Update a supplier"
+
+msgid "Update an issue"
+msgstr "Update an issue"
+
+msgid "Update an item"
+msgstr "Update an item"
 
 msgid "Update costs on"
 msgstr "Update costs on"

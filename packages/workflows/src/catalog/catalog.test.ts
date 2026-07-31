@@ -1,13 +1,12 @@
 import { describe, expect, it } from "vitest";
-import type { CatalogAction, CatalogOperation } from "../definition/catalog";
 import {
   type WorkflowDefinition,
   workflowDefinitionSchema
 } from "../definition/schema";
 import { validateDefinition } from "../definition/validate";
-import { createEventCatalog } from "./catalog";
+import { createWorkflowCatalog, getActionRoute } from "./catalog";
 
-const catalog = createEventCatalog();
+const catalog = createWorkflowCatalog();
 
 function need<T>(value: T | undefined, what: string): T {
   if (value === undefined) throw new Error(`missing ${what}`);
@@ -57,7 +56,7 @@ const edge = (
   target: string
 ) => ({ id, source, sourceHandle, target, targetHandle: "in" });
 
-describe("createEventCatalog — WorkflowCatalog conformance", () => {
+describe("createWorkflowCatalog — WorkflowCatalog conformance", () => {
   it("answers for a real record event", () => {
     const event = need(
       catalog.getEvent("purchaseOrder.status.changed"),
@@ -100,35 +99,58 @@ describe("createEventCatalog — WorkflowCatalog conformance", () => {
     expect(catalog.getEntity("ghost")).toBeUndefined();
   });
 
-  it("returns undefined for actions and operations when no providers are supplied", () => {
-    expect(catalog.getAction("notify")).toBeUndefined();
-    expect(catalog.getOperation("job.totalScrap")).toBeUndefined();
+  it("answers with a generated update action, record input first", () => {
+    const action = need(
+      catalog.getAction("purchaseOrder.update"),
+      "purchaseOrder.update"
+    );
+    expect(action.inputs.purchaseOrder?.required).toBe(true);
+    expect(action.inputs.orderDate?.required).toBe(false);
+    expect(action.permission).toEqual({
+      module: "purchasing",
+      action: "update"
+    });
   });
 
-  it("delegates actions and operations to the supplied providers", () => {
-    const action: CatalogAction = {
-      id: "notify",
-      inputs: {},
-      outputs: {},
-      batchable: true
-    };
-    const operation: CatalogOperation = {
-      id: "job.totalScrap",
-      entity: "job",
-      inputs: {},
-      output: { kind: "primitive", of: "number" }
-    };
-    const withProviders = createEventCatalog({
-      getAction: (id) => (id === action.id ? action : undefined),
-      getOperation: (id) => (id === operation.id ? operation : undefined)
+  it("answers with a hand-written action and its route", () => {
+    expect(need(catalog.getAction("notify"), "notify").requireOneOf).toEqual([
+      ["user", "role"]
+    ]);
+    expect(getActionRoute("job.create")).toEqual({
+      call: "production_upsertJob"
     });
-    expect(withProviders.getAction("notify")).toBe(action);
-    expect(withProviders.getOperation("job.totalScrap")).toBe(operation);
-    expect(withProviders.getAction("ghost")).toBeUndefined();
+    expect(getActionRoute("purchaseOrder.update")).toEqual({
+      update: { entity: "purchaseOrder" }
+    });
+    expect(getActionRoute("ghost")).toBeUndefined();
+  });
+
+  it("answers with an operation and the entity it works on", () => {
+    const operation = need(
+      catalog.getOperation("job.totalScrapQuantity"),
+      "job.totalScrapQuantity"
+    );
+    expect(operation.entity).toBe("job");
+    expect(operation.permission).toEqual({
+      module: "production",
+      action: "view"
+    });
+  });
+
+  it("returns undefined for an action or operation it does not know", () => {
+    expect(catalog.getAction("purchaseOrder.teleport")).toBeUndefined();
+    expect(catalog.getOperation("job.vibes")).toBeUndefined();
+  });
+
+  it("carries the registry permission on every entity", () => {
+    expect(need(catalog.getEntity("job"), "job").permission).toEqual({
+      module: "production",
+      action: "view"
+    });
   });
 });
 
-describe("createEventCatalog — entity properties", () => {
+describe("createWorkflowCatalog — entity properties", () => {
   const purchaseOrder = need(
     catalog.getEntity("purchaseOrder"),
     "purchaseOrder entity"

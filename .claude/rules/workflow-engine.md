@@ -11,16 +11,17 @@ Takes one `workflowRun` row the matcher queued and walks it. "Workflow" here is 
 customer-facing feature — not the `.claude/rules/workflow-*.md` procedure files.
 
 Spec: `.ai/specs/2026-07-30-workflows-engine.md`. Upstream: `workflow-matcher.md`.
-Catalog: `workflow-event-catalog.md`.
+Catalog: `workflow-event-catalog.md`. What the nodes actually do:
+`workflow-actions.md`.
 
 ## The two halves
 
 ```
 packages/workflows/src/runtime/     pure. no I/O, no client, no database.
   values.ts    RuntimeValue + fromColumn coercion
-  resolve.ts   {kind:"ref"|"item"|"literal"} -> a value, or a readable reason
+  resolve.ts   {kind:"ref"|"item"|"literal"|"template"} -> a value, or a reason
   compare.ts   operator semantics + evaluateClauses
-  condition.ts filter.ts            the two executors phase 4 ships
+  condition.ts filter.ts entity.ts lookup.ts action.ts   the five executors
   executors.ts the node-kind -> executor registry
   batch.ts     planBatch + itemKeyFor
 
@@ -28,16 +29,29 @@ packages/jobs/src/workflows/engine/  everything that touches the world
   walk.ts    pure graph maths — frontier, handles, MAX_NODE_EXECUTIONS (500)
   owner.ts   getOwnerClient / readOwnerPermissions / hasPermission
   loader.ts  EntityLoader over the owner's connection + triggerOutputs
-  ledger.ts  claimStep / settleStep / failInterruptedSteps  (workflowStepRun)
+  ledger.ts  claimStep / settleStep / failInterruptedSteps / redactForLog
   log.ts     loadRunContext / claimRun / finishRun / failCrashedRun (workflowRun)
   execute.ts the orchestration: load -> permissions -> node:* -> finish
+
+packages/jobs/src/workflows/actions/  the WorkflowServices implementation
+  services.ts  createWorkflowServices — the one port the runtime calls
 ```
 
 A node kind runs only if `EXECUTORS` in `runtime/executors.ts` has an entry for
 it, and `execute.ts` takes the permission module and the work from that **same**
 entry. Two lookups could drift, and the one that drifts silently is the
-permission check — so phase 5 adds a kind by adding one registry line, never by
-extending a `node.type` chain.
+permission check — so a new kind is one registry line, never an extended
+`node.type` chain.
+
+## The services port
+
+The runtime is pure, so an executor that must reach the world calls
+`ctx.services` — `runAction`, `runOperation`, `search` — declared as
+`WorkflowServices` in `runtime/types.ts` and **required** on `RuntimeContext`.
+`execute.ts` builds one per step from the owner's freshly-minted client, so the
+port carries the owner's identity with it and cannot be handed a privileged one
+by accident. The implementations live in `packages/jobs/src/workflows/actions/`
+— see `workflow-actions.md`.
 
 `packages/jobs/src/inngest/functions/workflows/run.ts` is a thin wrapper: parse the
 payload, hand it to `executeWorkflowRun`. All the logic is in `engine/`.
@@ -53,9 +67,11 @@ A workflow must never be able to do something its owner could not do by hand.
   to tag the write. An untagged write looks like a person's, so the origin filter
   and both loop guards go blind. See `workflow-matcher.md`.
 - The declared permission is checked **explicitly** as well as by RLS — the
-  trigger event's `permission` at run start, and each node's before it executes.
-  RLS alone returns zero rows, which reads as "no data"; the PRD needs
-  `"The owner of this workflow no longer has access to Purchasing."`
+  trigger event's module at run start, and each node's `{module, action}` before
+  it executes. RLS alone returns zero rows, which reads as "no data"; a customer
+  needs `"The owner of this workflow no longer has access to Purchasing."` The
+  action is part of the gate: an owner who may view Purchasing but not update it
+  fails at the update node, not at the trigger.
 - **The only privileged access is the two run-log tables.** `getJobDatabaseClient`
   appears in `execute.ts` for `claimStep`/`settleStep`/`loadRunContext`/`claimRun`/
   `finishRun` and nowhere else. RLS on those tables is SELECT-only by design. A
@@ -98,9 +114,30 @@ later read. This is what makes `before.orderTotal <= 10000` mean what it says.
   browser too). `itemKeyFor` uses `fnv1a64` from `@carbon/utils`, which is two
   32-bit passes for that reason, and is shared with the storage-rules cache key.
 - Every `step.run` id must be deterministic: `"load"`, `"permissions"`,
-  `` `node:${nodeId}` ``, `"finish"`. Never a timestamp or a counter.
-- `lookup`, `entity` and `action` nodes return
-  `"This kind of step is not available yet."` — they arrive in phase 5. They
-  cannot be activated today, so that is a defence, not a feature.
-- Batch mode's machinery (`planBatch`, `itemKeyFor`) is built and tested but not
-  wired into the walk: no node can batch until the action executor exists.
+  `` `node:${nodeId}` ``, `` `node:${nodeId}:${itemKey}` ``, `"finish"`. Never a
+  timestamp or a counter.
+- `claimStep` writes the step's `input` through `redactForLog`, which drops any
+  key matching `/secret|token|password|signature|authorization|apikey|api_key/i`
+  and truncates strings over 4 KB. Anything new that lands in that column goes
+  through it.
+- A **lost claim always returns `Skipped`**, even when the existing row is
+  terminal, so a replay does not reuse that row's output. Known divergence from
+  the phase-4 spec, deliberately left in place.
+
+## Batch mode
+
+An action node with `batch: true` works through the one list among its inputs —
+the same single-list rule the validator enforces. `execute.ts` resolves that list
+outside the durable steps, runs `planBatch` (capped at `MAX_LIST_ITEMS`, 100),
+then runs one `` `node:${nodeId}:${itemKeyFor(item)}` `` step per item, each
+claiming under that item key. The action executor itself handles **one item
+only**: `ctx.item` is the turn's item, and the input that resolved to a list is
+replaced by it.
+
+Afterwards one aggregate row is written under `` `node:${nodeId}` `` with
+`itemKey: ""`. It succeeds if **at least one item succeeded**, and its handle is
+what the walk follows. Its `statusReason` is where a dropped or failed item
+becomes visible — `Ran 100 of 150; 50 were not used.` The node's outputs are a
+list of each successful item's primary output, in item order. A failed item does
+not stop the graph but does mark the **run** Failed, so a partial batch never
+shows a customer a green tick.

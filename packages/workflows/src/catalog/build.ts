@@ -1,5 +1,7 @@
-import type { EventMatch } from "../definition/catalog";
+import type { EventMatch, RequiredPermission } from "../definition/catalog";
 import { t, type ValueType } from "../definition/types";
+import type { ActionDeclarationLike } from "./actions";
+import type { OperationDeclarationLike } from "./operations";
 
 /** The slice of `swagger-docs-schema.ts` the builder reads. */
 export interface SwaggerProperty {
@@ -26,6 +28,12 @@ export interface WatchedColumnLike {
   ref?: string;
 }
 
+export interface WritableColumnLike {
+  label: string;
+  /** Registry entity this column points at; needed only when the schema has no fk note. */
+  ref?: string;
+}
+
 export interface RegistryEntry {
   table: string;
   label: string;
@@ -35,6 +43,8 @@ export interface RegistryEntry {
   article?: "A" | "An";
   /** Present => triggerable; absent => reference-only, no events generated. */
   watch?: Record<string, WatchedColumnLike | undefined>;
+  /** Inert columns a workflow may set. Unrelated to `watch`; the default is excluded. */
+  write?: Record<string, WritableColumnLike | undefined>;
 }
 
 export interface MomentDeclarationLike {
@@ -49,12 +59,39 @@ export interface BuiltEvent {
   match: EventMatch;
 }
 
+export interface BuiltActionInput {
+  type: ValueType;
+  required: boolean;
+}
+
+export interface BuiltAction {
+  inputs: Record<string, BuiltActionInput>;
+  outputs: Record<string, ValueType>;
+  batchable: boolean;
+  permission: RequiredPermission;
+  requireOneOf?: string[][];
+  call?: string;
+  update?: { entity: string };
+}
+
+export interface BuiltOperation {
+  entity: string;
+  inputs: Record<string, BuiltActionInput>;
+  output: ValueType;
+  permission: RequiredPermission;
+}
+
 export interface BuiltCatalog {
   events: Record<string, BuiltEvent>;
-  /** English label text per event id; the generator wraps these in msg``. */
+  /** English label text per event, action and operation id; the generator wraps these in msg``. */
   labels: Record<string, string>;
   entities: Record<string, Record<string, ValueType>>;
+  actions: Record<string, BuiltAction>;
+  operations: Record<string, BuiltOperation>;
 }
+
+/** A hand-written action with neither of these has no way to run. */
+const BUILT_IN_ACTIONS = new Set(["notify", "webhook"]);
 
 /** Tenancy, extensibility and audit columns, hidden from every entity. */
 const DROPPED_COLUMNS = new Set([
@@ -63,6 +100,16 @@ const DROPPED_COLUMNS = new Set([
   "embedding",
   "updatedAt",
   "updatedBy"
+]);
+
+/** Identity and audit columns a workflow may never set. */
+const UNWRITABLE_COLUMNS = new Set([
+  "id",
+  "companyId",
+  "createdBy",
+  "createdAt",
+  "updatedBy",
+  "updatedAt"
 ]);
 
 /** Only single-column foreign keys carry this note; composite keys have none. */
@@ -125,6 +172,8 @@ function refFor(
 export function validateCatalogInputs(
   registry: Record<string, RegistryEntry>,
   moments: Record<string, MomentDeclarationLike>,
+  actions: Record<string, ActionDeclarationLike>,
+  operations: Record<string, OperationDeclarationLike>,
   schema: SwaggerSchema
 ): string[] {
   const problems: string[] = [];
@@ -169,6 +218,38 @@ export function validateCatalogInputs(
         );
       }
     }
+
+    for (const [column, writable] of Object.entries(entry.write ?? {})) {
+      if (writable === undefined) continue;
+
+      const property = definition.properties[column];
+      if (property === undefined) {
+        problems.push(
+          `Entity "${name}" declares writable column "${column}", which does not exist on table "${entry.table}".`
+        );
+        continue;
+      }
+      if (DROPPED_COLUMNS.has(column) || UNWRITABLE_COLUMNS.has(column)) {
+        problems.push(
+          `Entity "${name}" declares writable column "${column}", which a workflow may never set.`
+        );
+      }
+
+      if (writable.ref === undefined) continue;
+      if (registry[writable.ref] === undefined) {
+        problems.push(
+          `Entity "${name}" declares ref "${writable.ref}" on writable column "${column}", which is not a registry entity.`
+        );
+      }
+      const writeFkTable = FK_TARGET.exec(property.description ?? "")?.[1];
+      const writeFkTarget =
+        writeFkTable === undefined ? undefined : byTable.get(writeFkTable);
+      if (writeFkTarget !== undefined && writable.ref !== writeFkTarget) {
+        problems.push(
+          `Entity "${name}" declares ref "${writable.ref}" on writable column "${column}", but its foreign key points at "${writeFkTable}".`
+        );
+      }
+    }
   }
 
   for (const [key, moment] of Object.entries(moments)) {
@@ -182,6 +263,54 @@ export function validateCatalogInputs(
         );
       }
     }
+  }
+
+  const checkEntityType = (
+    what: string,
+    where: string,
+    type: ValueType
+  ): void => {
+    const named =
+      type.kind === "entity"
+        ? type.of
+        : type.kind === "list" && type.of.kind === "entity"
+          ? type.of.of
+          : undefined;
+    if (named !== undefined && registry[named] === undefined) {
+      problems.push(
+        `${what} ${where} names entity "${named}", which is not in the registry.`
+      );
+    }
+  };
+
+  for (const [id, declaration] of Object.entries(actions)) {
+    if (declaration.label.trim().length === 0) {
+      problems.push(`Action "${id}" has no label.`);
+    }
+    if (declaration.call === undefined && !BUILT_IN_ACTIONS.has(id)) {
+      problems.push(`Action "${id}" has no implementation route.`);
+    }
+    for (const [input, spec] of Object.entries(declaration.inputs)) {
+      checkEntityType(`Action "${id}"`, `input "${input}"`, spec.type);
+    }
+    for (const [output, type] of Object.entries(declaration.outputs)) {
+      checkEntityType(`Action "${id}"`, `output "${output}"`, type);
+    }
+  }
+
+  for (const [id, declaration] of Object.entries(operations)) {
+    if (declaration.label.trim().length === 0) {
+      problems.push(`Operation "${id}" has no label.`);
+    }
+    if (registry[declaration.entity] === undefined) {
+      problems.push(
+        `Operation "${id}" names entity "${declaration.entity}", which is not in the registry.`
+      );
+    }
+    for (const [input, spec] of Object.entries(declaration.inputs)) {
+      checkEntityType(`Operation "${id}"`, `input "${input}"`, spec.type);
+    }
+    checkEntityType(`Operation "${id}"`, "output", declaration.output);
   }
 
   return problems;
@@ -207,21 +336,60 @@ function entityProperties(
 export function buildCatalog(
   registry: Record<string, RegistryEntry>,
   moments: Record<string, MomentDeclarationLike>,
+  handWrittenActions: Record<string, ActionDeclarationLike>,
+  handWrittenOperations: Record<string, OperationDeclarationLike>,
   schema: SwaggerSchema
 ): BuiltCatalog {
-  const problems = validateCatalogInputs(registry, moments, schema);
+  const problems = validateCatalogInputs(
+    registry,
+    moments,
+    handWrittenActions,
+    handWrittenOperations,
+    schema
+  );
   if (problems.length > 0) throw new Error(problems.join("\n"));
 
   const byTable = indexByTable(registry);
   const events: Record<string, BuiltEvent> = {};
   const labels: Record<string, string> = {};
   const entities: Record<string, Record<string, ValueType>> = {};
+  const actions: Record<string, BuiltAction> = {};
+  const operations: Record<string, BuiltOperation> = {};
 
   for (const [name, entry] of Object.entries(registry)) {
     const definition = schema.definitions[entry.table];
     if (definition === undefined) continue;
 
     entities[name] = entityProperties(entry, definition, byTable);
+
+    const writable = Object.entries(entry.write ?? {}).filter(
+      ([, column]) => column !== undefined
+    );
+    if (writable.length > 0) {
+      const id = `${name}.update`;
+      // The input keyed by the entity name is the record; the rest are the fields.
+      const inputs: Record<string, BuiltActionInput> = {
+        [name]: { type: t.entity(name), required: true }
+      };
+      for (const [column, spec] of writable) {
+        const property = definition.properties[column];
+        if (property === undefined) continue;
+        inputs[column] = {
+          type: propertyType(property, refFor(property, spec?.ref, byTable)),
+          required: false
+        };
+      }
+      actions[id] = {
+        inputs,
+        outputs: { record: t.entity(name) },
+        batchable: true,
+        permission: { module: entry.permission, action: "update" },
+        update: { entity: name }
+      };
+      labels[id] =
+        `Update ${article(lowerFirst(entry.label), entry.article).toLowerCase()} ${lowerFirst(entry.label)}`;
+    }
+
     if (entry.watch === undefined) continue;
 
     const noun = lowerFirst(entry.label);
@@ -263,5 +431,42 @@ export function buildCatalog(
     labels[key] = moment.label;
   }
 
-  return { events, labels, entities };
+  for (const [id, declaration] of Object.entries(handWrittenActions)) {
+    if (actions[id] !== undefined) {
+      throw new Error(
+        `Action "${id}" is declared by hand and also generated from the entity registry.`
+      );
+    }
+    const inputs: Record<string, BuiltActionInput> = {};
+    for (const [input, spec] of Object.entries(declaration.inputs)) {
+      inputs[input] = { type: spec.type, required: spec.required };
+    }
+    actions[id] = {
+      inputs,
+      outputs: declaration.outputs,
+      batchable: declaration.batchable,
+      permission: declaration.permission,
+      ...(declaration.requireOneOf === undefined
+        ? {}
+        : { requireOneOf: declaration.requireOneOf }),
+      ...(declaration.call === undefined ? {} : { call: declaration.call })
+    };
+    labels[id] = declaration.label;
+  }
+
+  for (const [id, declaration] of Object.entries(handWrittenOperations)) {
+    const inputs: Record<string, BuiltActionInput> = {};
+    for (const [input, spec] of Object.entries(declaration.inputs)) {
+      inputs[input] = { type: spec.type, required: spec.required };
+    }
+    operations[id] = {
+      entity: declaration.entity,
+      inputs,
+      output: declaration.output,
+      permission: declaration.permission
+    };
+    labels[id] = declaration.label;
+  }
+
+  return { events, labels, entities, actions, operations };
 }

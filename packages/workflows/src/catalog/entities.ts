@@ -1,11 +1,16 @@
 import type { ColumnOf, TableName } from "@carbon/database/audit.config";
-import type { RegistryEntry, WatchedColumnLike } from "./build";
+import type {
+  RegistryEntry,
+  WatchedColumnLike,
+  WritableColumnLike
+} from "./build";
 
-/** `watch` keys are bound to the entry's own table, so a renamed column fails to compile. */
+/** `watch` and `write` keys are bound to the entry's own table, so a renamed column fails to compile. */
 interface EntityEntry<T extends TableName>
-  extends Omit<RegistryEntry, "table" | "watch"> {
+  extends Omit<RegistryEntry, "table" | "watch" | "write"> {
   table: T;
   watch?: { [C in ColumnOf<T>]?: WatchedColumnLike };
+  write?: { [C in ColumnOf<T>]?: WritableColumnLike };
 }
 
 /** Identity helper that infers `T` so `watch` keys get checked. */
@@ -25,6 +30,11 @@ export const WORKFLOW_ENTITY_REGISTRY = {
       supplierReference: { label: "supplier reference" },
       supplierLocationId: { label: "supplier location" },
       tags: { label: "tags" }
+    },
+    write: {
+      supplierReference: { label: "supplier reference" },
+      orderDate: { label: "order date" },
+      assignee: { label: "assignee", ref: "user" }
     }
   }),
   salesOrder: entity({
@@ -40,6 +50,12 @@ export const WORKFLOW_ENTITY_REGISTRY = {
       locationId: { label: "location", ref: "location" },
       customerReference: { label: "customer reference" },
       completedDate: { label: "completed date" }
+    },
+    write: {
+      customerReference: { label: "customer reference" },
+      orderDate: { label: "order date" },
+      assignee: { label: "assignee", ref: "user" },
+      salesPersonId: { label: "salesperson", ref: "user" }
     }
   }),
   job: entity({
@@ -55,6 +71,13 @@ export const WORKFLOW_ENTITY_REGISTRY = {
       priority: { label: "priority" },
       deadlineType: { label: "deadline type" },
       scrapQuantity: { label: "scrap quantity" }
+    },
+    write: {
+      dueDate: { label: "due date" },
+      startDate: { label: "start date" },
+      assignee: { label: "assignee", ref: "user" },
+      priority: { label: "priority" },
+      deadlineType: { label: "deadline type" }
     }
   }),
   item: entity({
@@ -70,6 +93,10 @@ export const WORKFLOW_ENTITY_REGISTRY = {
       assignee: { label: "assignee", ref: "user" },
       name: { label: "name" },
       unitOfMeasureCode: { label: "unit of measure" }
+    },
+    write: {
+      name: { label: "name" },
+      assignee: { label: "assignee", ref: "user" }
     }
   }),
   receipt: entity({
@@ -84,7 +111,8 @@ export const WORKFLOW_ENTITY_REGISTRY = {
       postingDate: { label: "posting date" },
       invoiced: { label: "invoiced" },
       sourceDocument: { label: "source document" }
-    }
+    },
+    write: { assignee: { label: "assignee", ref: "user" } }
   }),
   shipment: entity({
     table: "shipment",
@@ -97,6 +125,11 @@ export const WORKFLOW_ENTITY_REGISTRY = {
       assignee: { label: "assignee", ref: "user" },
       postingDate: { label: "posting date" },
       trackingNumber: { label: "tracking number" },
+      shippingMethodId: { label: "shipping method" }
+    },
+    write: {
+      trackingNumber: { label: "tracking number" },
+      assignee: { label: "assignee", ref: "user" },
       shippingMethodId: { label: "shipping method" }
     }
   }),
@@ -113,6 +146,14 @@ export const WORKFLOW_ENTITY_REGISTRY = {
       expirationDate: { label: "expiration date" },
       dueDate: { label: "due date" },
       completedDate: { label: "completed date" }
+    },
+    write: {
+      expirationDate: { label: "expiration date" },
+      dueDate: { label: "due date" },
+      assignee: { label: "assignee", ref: "user" },
+      estimatorId: { label: "estimator", ref: "user" },
+      salesPersonId: { label: "salesperson", ref: "user" },
+      customerReference: { label: "customer reference" }
     }
   }),
   supplier: entity({
@@ -127,6 +168,11 @@ export const WORKFLOW_ENTITY_REGISTRY = {
       name: { label: "name" },
       currencyCode: { label: "currency" },
       taxPercent: { label: "tax percent" }
+    },
+    write: {
+      accountManagerId: { label: "account manager", ref: "user" },
+      assignee: { label: "assignee", ref: "user" },
+      supplierTypeId: { label: "type" }
     }
   }),
   customer: entity({
@@ -141,6 +187,11 @@ export const WORKFLOW_ENTITY_REGISTRY = {
       name: { label: "name" },
       currencyCode: { label: "currency" },
       salesContactId: { label: "sales contact" }
+    },
+    write: {
+      accountManagerId: { label: "account manager", ref: "user" },
+      assignee: { label: "assignee", ref: "user" },
+      customerTypeId: { label: "type" }
     }
   }),
   nonConformance: entity({
@@ -157,6 +208,12 @@ export const WORKFLOW_ENTITY_REGISTRY = {
       closeDate: { label: "close date" },
       locationId: { label: "location", ref: "location" },
       quantity: { label: "quantity" }
+    },
+    write: {
+      assignee: { label: "assignee", ref: "user" },
+      priority: { label: "priority" },
+      dueDate: { label: "due date" },
+      nonConformanceTypeId: { label: "type" }
     }
   }),
 
@@ -166,6 +223,11 @@ export const WORKFLOW_ENTITY_REGISTRY = {
     table: "user",
     label: "User",
     article: "A",
+    permission: "users"
+  }),
+  group: entity({
+    table: "group",
+    label: "Group",
     permission: "users"
   }),
   jobOperation: entity({

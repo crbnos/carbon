@@ -2,12 +2,13 @@ import { z } from "zod";
 import {
   clauseSchema,
   combinatorSchema,
+  lookupMatchSchema,
   scheduleSchema,
   valueOrRefSchema,
   variableRefSchema
 } from "./types";
 
-export const CURRENT_DEFINITION_FORMAT_VERSION = 1;
+export const CURRENT_DEFINITION_FORMAT_VERSION = 2;
 
 /** Cap on batch-mode iterations. */
 export const MAX_LIST_ITEMS = 100;
@@ -64,7 +65,7 @@ const lookupNode = z.object({
   data: z.object({
     entity: z.string(),
     returns: z.enum(["one", "list"]).default("one"),
-    match: z.array(clauseSchema).default([])
+    match: z.array(lookupMatchSchema).default([])
   })
 });
 

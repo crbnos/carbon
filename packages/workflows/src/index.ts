@@ -7,6 +7,8 @@ export type {
   CatalogOperation,
   EventMatch,
   FixtureCatalogOptions,
+  PermissionAction,
+  RequiredPermission,
   WorkflowCatalog
 } from "./definition/catalog";
 export { createFixtureCatalog } from "./definition/catalog";
@@ -71,9 +73,12 @@ export type {
   Combinator,
   ItemRef,
   Literal,
+  LookupMatch,
   PrimitiveKind,
   ScalarType,
   Schedule,
+  Template,
+  TemplatePart,
   ValueOrRef,
   ValueType,
   VariableRef
@@ -85,6 +90,7 @@ export {
   itemRefSchema,
   literalSchema,
   literalValueMatchesType,
+  lookupMatchSchema,
   OPERATORS_BY_TYPE,
   operatorSchema,
   operatorsForType,
@@ -92,6 +98,8 @@ export {
   scalarTypeSchema,
   scheduleSchema,
   t,
+  templatePartSchema,
+  templateSchema,
   typesEqual,
   valueOrRefSchema,
   valueTypeSchema,
@@ -102,16 +110,23 @@ export { validateDefinition } from "./definition/validate";
 export type { RunTrigger } from "./run-trigger";
 export { runTriggerSchema } from "./run-trigger";
 export type {
+  ActionOutcome,
   EntityLoader,
   NodeExecutor,
   NodeResult,
+  OperationOutcome,
   Resolution,
   RuntimeContext,
-  RuntimeValue
+  RuntimeValue,
+  SearchCriterion,
+  SearchOutcome,
+  WorkflowServices
 } from "./runtime";
 export {
+  actionExecutor,
   compare,
   conditionExecutor,
+  entityExecutor,
   entityValue,
   evaluateClauses,
   executorFor,
@@ -122,10 +137,13 @@ export {
   isNull,
   itemKeyFor,
   listValue,
+  lookupExecutor,
   NO_BRANCH,
   nullValue,
   planBatch,
   primitiveValue,
+  renderTemplate,
+  renderValue,
   resolveItem,
   resolveRef,
   resolveValue

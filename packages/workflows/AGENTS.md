@@ -1,31 +1,36 @@
 # @carbon/workflows
 
 The shared contract for a **workflow definition** — the zod schema, the read-time
-normaliser, and the validator that decides whether a workflow may be activated.
+normaliser, the validator that decides whether a workflow may be activated, the
+generated catalog of everything a customer can pick, and the pure runtime that
+evaluates a node. It runs nothing and reads no database.
 
 "Workflow" here means the customer-facing feature: a "when this happens, do that" rule a customer
 builds on a canvas. It is **not** the generic sense used by the `.claude/rules/workflow-*.md`
 developer-procedure files, and unrelated to `nonConformanceWorkflow`.
 
-Spec: `.ai/specs/2026-07-30-workflows-foundation.md`.
+Specs: `.ai/specs/2026-07-30-workflows-foundation.md` (schema, validator, runtime) and
+`.ai/specs/implemented/2026-07-30-workflows-catalogs.md` (actions and operations).
 
 ## Always
 
-- Change the schema **here**, never in a consumer. The builder (phase 7), the activation gate
-  (phase 7) and the engine (phase 4) all read this one package — if any of them can disagree about
-  what is valid, a customer can activate something broken and it will act on real records.
+- Change the schema **here**, never in a consumer. The builder, the activation gate and the
+  engine all read this one package — if any of them can disagree about what is valid, a
+  customer can activate something broken and it will act on real records.
 - Turn a stored row into a definition with `readWorkflowVersion(row)`. It is the single boundary
   where untyped JSON becomes the typed model, and it returns `{ok: true, definition}` or
   `{ok: false, failure, message}` — never a blank canvas standing in for a row it could not read,
   because the builder would then save over a definition nobody could see.
 - Upgrade an older stored shape only inside `migrateDefinition` in `src/definition/normalize.ts`.
-  It is private, pass-through at v1, and runs on the **raw JSON before** the current-schema parse —
-  a document old enough to need upgrading cannot satisfy the current schema, so migrating after that
-  parse could never run.
-- Bump `CURRENT_DEFINITION_FORMAT_VERSION` when the stored shape changes, and add the upgrade to
-  `migrateDefinition` in the same change.
-- Pass a `WorkflowCatalog` into `validateDefinition`. Phases 2 and 5 supply the real event and
-  action catalogs; `createFixtureCatalog()` is for tests only.
+  It is private and runs on the **raw JSON before** the current-schema parse — a document old
+  enough to need upgrading cannot satisfy the current schema, so migrating after that parse could
+  never run. It carries one upgrade today: v1 → v2 resets a lookup node's `match` to `[]` because
+  its shape changed, which discards nothing (no v1 lookup could be activated).
+- Bump `CURRENT_DEFINITION_FORMAT_VERSION` (now **2**, in `src/definition/schema.ts`) when the
+  stored shape changes, and add the upgrade to `migrateDefinition` in the same change.
+- Pass a `WorkflowCatalog` into `validateDefinition`. `createWorkflowCatalog()` in
+  `src/catalog/catalog.ts` is the real one — events, entities, actions and operations behind one
+  interface; `createFixtureCatalog()` is for tests only.
 - Add a node type by adding one entry to `NODE_KINDS` in `src/definition/nodes.ts`. The mapped type
   makes a missing entry a compile error, which is the only thing stopping a new node type from
   validating clean with no handles and no checks at all.
@@ -34,8 +39,17 @@ Spec: `.ai/specs/2026-07-30-workflows-foundation.md`.
   invent names.
 - Keep zod unions **flat** and avoid recursive generics. `apps/erp` sits near TypeScript's
   instantiation budget, so new type surface here can trip TS2589 in unrelated files.
-- Add an entity or a moment by editing **one hand-written file** in `src/catalog/`, then run
-  `pnpm run generate:workflow-catalog`. Nothing else is authored by hand.
+- Add an entity, a moment, an action or an operation by editing **one hand-written file** in
+  `src/catalog/` — `entities.ts`, `moments.ts`, `actions.ts`, `operations.ts` — then run
+  `pnpm run generate:workflow-catalog`. Nothing else in `src/catalog/` is authored by hand.
+- Declare a `permission: { module, action }` on every action and operation. It is **required** on
+  `CatalogAction` and `CatalogOperation` (optional on `CatalogEntity`), and it is what the engine
+  checks before the node runs — `NodeExecutor.permission` returns it, so the gate and the work come
+  from the same catalog entry and cannot drift.
+- Reach the world from `src/runtime/` only through `ctx.services` — the `WorkflowServices` port
+  (`runAction` / `runOperation` / `search`) declared in `src/runtime/types.ts` and **required** on
+  `RuntimeContext`, so a missing implementation is a compile error rather than a run-time surprise.
+  `@carbon/jobs` supplies the one implementation.
 
 ## Never
 
@@ -44,54 +58,72 @@ Spec: `.ai/specs/2026-07-30-workflows-foundation.md`.
   never import it as a value. Runtime dependencies are `zod`, `@carbon/utils` and `@lingui/core`,
   which is what lets both the browser builder and the server engine use this package.
 - Never hand-edit `src/catalog/*.generated.ts` — regenerate instead.
-- Never import `src/catalog/labels.generated.ts` from anything but a Vite-built app. `msg` is a
-  build-time macro; plain Node (the phase-3 matcher, any vitest run) throws on import. That is why
-  labels are a separate file from the runtime catalog, and why `src/catalog/index.ts` does not
-  re-export them.
+- Never import `src/catalog/labels.generated.ts` (`WORKFLOW_LABELS`) from anything but a Vite-built
+  app. `msg` is a build-time macro; plain Node (the matcher, the engine, any vitest run) throws on
+  import. That is why labels are a separate file from the runtime catalog, and why
+  `src/catalog/index.ts` does not re-export them.
 - Never import `src/catalog/` from `src/definition/`. The catalog is injected into the validator,
   not baked into it; `createFixtureCatalog`'s `omit*` options exist to prove that.
 - Never let a stored node/edge shape reach a consumer without going through the schema.
 - Never represent a list of lists — a list's `of` accepts scalars only, by construction.
+- Never import a Node builtin (`node:crypto`, `node:dns`, …) or write a BigInt literal here.
+  `apps/erp` compiles this package's source for the browser at **ES2019** — that is why hashing
+  goes through `fnv1a64` from `@carbon/utils` and why the webhook's HMAC and DNS guard live in
+  `@carbon/jobs`, behind `WorkflowServices`.
 
 ## Layout
 
 ```
 src/definition/
-├── types.ts      # value types, operators, refs, literals, clauses, schedules
+├── types.ts      # value types, operators, refs, literals, templates, clauses, schedules
 ├── issues.ts     # WorkflowIssueCode + WorkflowIssue
-├── schema.ts     # node/edge/definition schemas, format version, handle names, PRD caps
+├── schema.ts     # node/edge/definition schemas, format version, handle names, caps
 ├── nodes.ts      # NODE_KINDS — what each node type declares about itself
 ├── normalize.ts  # readWorkflowVersion + the migrateDefinition seam
-├── catalog.ts    # the WorkflowCatalog interface + walkPath + createFixtureCatalog
+├── catalog.ts    # WorkflowCatalog + RequiredPermission + walkPath + createFixtureCatalog
 └── validate.ts   # validateDefinition -> WorkflowIssue[]
 
 src/catalog/
-├── entities.ts             # HAND-WRITTEN. 10 triggerable record types + 5 reference-only
+├── entities.ts             # HAND-WRITTEN. 16 record types — 10 triggerable (watch) + 6 reference-only; write = the update allowlist
 ├── moments.ts              # HAND-WRITTEN. 9 business events, their labels and outputs
-├── build.ts                # buildCatalog(registry, moments, schema) — pure, schema injected
-├── events.generated.ts     # COMMITTED. ids, outputs, permission, match. No Lingui import
-├── labels.generated.ts     # COMMITTED. one msg`` descriptor per event id
-├── catalog.ts              # createEventCatalog() -> WorkflowCatalog
+├── actions.ts              # HAND-WRITTEN. 6 actions — 4 creates, notify, webhook
+├── operations.ts           # HAND-WRITTEN. 15 read-only computations over one record
+├── build.ts                # buildCatalog(registry, moments, actions, operations, schema) — pure, schema injected
+├── events.generated.ts     # COMMITTED. WORKFLOW_EVENTS (106) + WORKFLOW_ENTITIES (16). No Lingui import
+├── actions.generated.ts    # COMMITTED. WORKFLOW_ACTION_CATALOG (16) + WORKFLOW_OPERATION_CATALOG (15)
+├── labels.generated.ts     # COMMITTED. WORKFLOW_LABELS — one msg`` per event, action and operation id
+├── catalog.ts              # createWorkflowCatalog() -> WorkflowCatalog, plus getActionRoute
 └── index.ts                # barrel (labels deliberately excluded)
 
 src/runtime/
-├── types.ts     # RuntimeValue, Resolution, EntityLoader, RuntimeContext, NodeResult, NodeExecutor
+├── types.ts     # RuntimeValue, Resolution, EntityLoader, WorkflowServices, RuntimeContext, NodeResult, NodeExecutor
 ├── values.ts    # value constructors + fromColumn coercion
-├── resolve.ts   # structured refs and the current item -> a value, or a readable reason
+├── resolve.ts   # refs, the current item and templates -> a value, or a readable reason
 ├── compare.ts   # operator semantics + clause evaluation
 ├── condition.ts # the Condition executor
 ├── filter.ts    # the Filter executor
+├── entity.ts    # the Entity executor — one catalog operation
+├── lookup.ts    # the Lookup executor — one search
+├── action.ts    # the Action executor — one item, never a loop
+├── executors.ts # EXECUTORS: node kind -> executor. A kind with no entry refuses to run
 ├── batch.ts     # planBatch + itemKeyFor
+├── template.ts  # re-export of renderTemplate / renderValue (they live in resolve.ts)
 ├── fixtures.ts  # TEST-ONLY fake loader/context. Not exported from the package root
 └── index.ts     # barrel
 
-src/sync.ts       # trigger-event + subscription reconciler (phase 3)
+src/run-trigger.ts # runTriggerSchema — what fired a run; shared with @carbon/lib and @carbon/jobs
+src/sync.ts        # trigger-event + subscription reconciler
 ```
 
 `src/runtime/` is pure: no I/O, no database client, no Supabase. Records are read
-through the injected `EntityLoader`, which the engine in `@carbon/jobs` implements
-over the workflow owner's own connection. Comparison semantics live in
-`runtime/compare.ts` and must not be re-implemented anywhere else.
+through the injected `EntityLoader`, and everything else that touches the world goes
+through `WorkflowServices`; `@carbon/jobs` implements both over the workflow owner's
+own connection. Comparison semantics live in `runtime/compare.ts` and must not be
+re-implemented anywhere else.
+
+Permission and execution share one `EXECUTORS` entry per node kind. Two lookups could
+drift, and the one that drifts silently is the permission check — so a new kind is one
+registry line, never an extended `node.type` chain.
 
 ## `sync.ts` — deriving what the matcher reads
 
@@ -109,9 +141,9 @@ Four exports, all re-exported from the package root:
 - `syncWorkflowSubscriptions(db, companyId)` — standalone repair from existing rows.
 
 Kysely is imported **type-only** (`import type { Kysely, Transaction } from "kysely"`), so
-it stays a devDependency and this package keeps its three runtime dependencies. Kysely also
-**bypasses RLS** — the caller authorizes first (phase 7's activation route gates on
-`workflows_update`).
+it stays a devDependency and this package keeps its three runtime dependencies
+(`zod`, `@carbon/utils`, `@lingui/core`). Kysely also **bypasses RLS** — the caller
+authorizes first (the activation route gates on `workflows_update`).
 
 This is the one thing here that lives in this package for a dependency reason rather than a
 conceptual one: it needs `WORKFLOW_EVENTS`, and `@carbon/database` (its more natural home,
@@ -124,7 +156,7 @@ One customer-facing concept — an **event** — from two hand-written inputs. A
 8 watched columns yields 10 events (created, deleted, one per column); there is deliberately
 **no generic `updated` event**. Moments cover what a row change cannot express. Downstream,
 nothing knows which input produced an event: only the `match` block distinguishes them, and only
-the phase-3 matcher reads it.
+the matcher in `@carbon/jobs` reads it.
 
 `buildCatalog` takes the swagger schema as an argument rather than importing it, which is what
 keeps `@carbon/database` out of this package's runtime graph and lets the transform be unit-tested
@@ -133,9 +165,49 @@ property by typing a dot; a foreign key becomes an entity ref only when its targ
 registry, and a `ref` that disagrees with the schema's foreign key is a build error.
 
 `scripts/check-workflow-catalog.ts` (CI job `catalog`) enforces: every moment is raised somewhere,
-every raise site names a declared moment, every watched column still exists, and the committed
-catalog matches a fresh build. A declared-but-never-raised moment is a trigger a customer can
-subscribe to that can never fire — worse than a missing one, so it fails the build.
+every raise site names a declared moment, every watched and writable column still exists, every
+action's `call` names a real tool in `tool-metadata.json`, and the committed catalog — events,
+entities, actions, operations and labels — matches a fresh build. A declared-but-never-raised
+moment is a trigger a customer can subscribe to that can never fire — worse than a missing one, so
+it fails the build.
+
+## Actions and operations
+
+The other half of the catalog: what a workflow can **do**, and what it can **work out**. Both are
+built by the same `buildCatalog` into `src/catalog/actions.generated.ts`.
+
+- **Actions** (`WORKFLOW_ACTION_CATALOG`, 16). Six are hand-written in `actions.ts` — four record
+  creates (`job.create`, `nonConformance.create`, `purchaseOrder.create`, `salesOrder.create`),
+  plus `notify` and `webhook`. The other ten are the `<entity>.update` family, **generated from
+  each registry entry's `write` allowlist** — an entity with no `write` block yields no update
+  action, which is how "a workflow may set this field" stays a deliberate, reviewed decision
+  rather than the whole table. `build.ts` refuses identity and audit columns outright, and a
+  hand-written id colliding with a generated one is a build error.
+- **Operations** (`WORKFLOW_OPERATION_CATALOG`, 15). Read-only computations over a **single**
+  record — one input, one scalar out — for things a property map cannot reach: stored totals live
+  only on views (no trigger, not dot-readable) and counts span child tables.
+
+Two fields exist for the job side and are deliberately kept **off** `CatalogAction`, which the
+validator reads: `call` (a tool name in `tool-metadata.json`, so a create goes through the ERP's
+own upsert service function) and `update` (the entity whose columns to write). Read them through
+`getActionRoute(id)` — routing off the shape of an id would let something that merely reads like
+`x.update` reach the update path. `requireOneOf` is on `CatalogAction`, because "at least one of
+user or role" is a validation rule, not a routing detail. `tool-metadata.json` lives at
+`apps/erp/app/routes/api+/mcp+/lib/`; after changing a service signature run `pnpm run generate:mcp`.
+
+Implementations live in `packages/jobs/src/workflows/actions/` — see
+`.claude/rules/workflow-actions.md`. Every action and operation declares the permission its
+implementation needs; nothing here executes anything.
+
+## Values a customer can plug in
+
+`valueOrRefSchema` is a flat union of four forms: a `literal`, a `{kind:"variable"}` ref, the
+`{kind:"item"}` current item, and a `{kind:"template"}` — text with variable and item parts
+interleaved, which is how a customer writes "Order {record.readableId} needs attention". A template
+is **only** valid where a `string` is expected; anywhere else is a `TYPE_MISMATCH` saying a message
+can only be text. Its parts are checked one at a time so a bad variable names its own place, and
+`renderTemplate` (in `src/runtime/resolve.ts`, re-exported from `template.ts` to avoid an import
+cycle) fails the **whole** template if any part fails to resolve — a blank would be a silent lie.
 
 ## Node kinds
 
@@ -162,8 +234,12 @@ previous passed, so a customer is never shown type errors that are really a brok
    upstream value with a resolvable property path, and "the current item" is only read inside a step
    that works through a list.
 6. Types — required inputs supplied, types match, a `list<T>` never feeds a single-`T` input unless
-   the action is in batch mode.
-7. Configuration — every event/action/operation/entity id exists; nothing left half-configured.
+   the action is in batch mode, and an input the catalog does not declare is `UNKNOWN_INPUT` (a
+   lookup rule naming a property the entity does not have uses the same code). Without that check a
+   definition could quietly carry a field the executor would silently drop.
+7. Configuration — every event/action/operation/entity id exists; a batching action has settled on
+   exactly one list; every `requireOneOf` group has at least one of its inputs supplied; nothing
+   left half-configured.
 
 There is **one** resolver and one failure vocabulary (`ResolveFailure`): layer 5 walks every value,
 whatever form it takes, and every layer's type question goes through it. Adding a second private
@@ -181,7 +257,7 @@ ancestor, which is what stops a node reading its own output and is why the outpu
 re-entry guard; and a literal's `value` is checked against its declared `type` at parse time, since
 every other check compares declared types only.
 
-## The `workflowTriggerEvent` invariant (for phase 7)
+## The `workflowTriggerEvent` invariant
 
 A `workflowTriggerEvent` row exists **if and only if** the workflow is active, has a promoted
 version, and that version's trigger nodes list that event id. Promoting a version, editing the
@@ -200,7 +276,7 @@ event id still exists in the catalog.
 pnpm --filter @carbon/workflows test               # vitest
 pnpm --filter @carbon/workflows exec tsgo --noEmit # typecheck
 pnpm exec biome check packages/workflows           # lint
-pnpm run generate:workflow-catalog                 # after editing entities.ts / moments.ts
+pnpm run generate:workflow-catalog                 # after editing entities/moments/actions/operations.ts
 pnpm run check:workflow-catalog                    # the CI `catalog` job
 ```
 

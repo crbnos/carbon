@@ -166,6 +166,22 @@ function checkInputs(
       continue;
     }
 
+    if (supplied.kind === "template") {
+      if (
+        declaration.type.kind === "primitive" &&
+        declaration.type.of === "string"
+      ) {
+        continue;
+      }
+      issues.push({
+        code: "TYPE_MISMATCH",
+        nodeId: node.id,
+        field: name,
+        message: `"${name}" takes ${describeType(declaration.type)}, and a message can only be text.`
+      });
+      continue;
+    }
+
     const type = ctx.typeOf(supplied, node.id);
     if (type === undefined) continue;
 
@@ -188,6 +204,17 @@ function checkInputs(
         message: `"${name}" takes ${describeType(declaration.type)}, but this is ${describeType(type)}.`
       });
     }
+  }
+
+  // Without this a definition could quietly carry a field the executor would drop.
+  for (const name of Object.keys(inputs)) {
+    if (declared[name] !== undefined) continue;
+    issues.push({
+      code: "UNKNOWN_INPUT",
+      nodeId: node.id,
+      field: name,
+      message: `"${name}" is not something this step can set.`
+    });
   }
 
   return issues;
@@ -317,7 +344,11 @@ export const NODE_KINDS: {
 
   lookup: {
     handles: () => [SUCCESS_HANDLE, FAILURE_HANDLE],
-    values: (node) => clauseValues(node.data.match, "match"),
+    values: (node) =>
+      node.data.match.map((rule, index) => ({
+        value: rule.value,
+        field: `match.${index}.value`
+      })),
     outputs: (node, ctx) => {
       const entity = ctx.catalog.getEntity(node.data.entity);
       if (entity === undefined) return undefined;
@@ -330,8 +361,53 @@ export const NODE_KINDS: {
     loopList: () => undefined,
     configured: (node, ctx) =>
       ctx.catalog.getEntity(node.data.entity) !== undefined,
-    checkTypes: (node, ctx) =>
-      checkClauses(node, node.data.match, "match", ctx),
+    checkTypes: (node, ctx) => {
+      const entity = ctx.catalog.getEntity(node.data.entity);
+      if (entity === undefined) return [];
+      const issues: WorkflowIssue[] = [];
+
+      node.data.match.forEach((rule, index) => {
+        const field = `match.${index}`;
+        const property = entity.properties[rule.field];
+        if (property === undefined) {
+          issues.push({
+            code: "UNKNOWN_INPUT",
+            nodeId: node.id,
+            field: `${field}.field`,
+            message: `A ${entity.name} has no "${rule.field}".`
+          });
+          return;
+        }
+
+        if (!operatorsForType(property).includes(rule.operator)) {
+          issues.push({
+            code: "TYPE_MISMATCH",
+            nodeId: node.id,
+            field: `${field}.operator`,
+            message: `"${rule.operator}" is not a test you can apply to ${describeType(property)}.`
+          });
+          return;
+        }
+
+        const supplied = ctx.typeOf(rule.value, node.id);
+        if (supplied === undefined) return;
+        // `contains` on a list tests membership, so the value is one item.
+        const expected =
+          property.kind === "list" && rule.operator === "contains"
+            ? property.of
+            : property;
+        if (!typesEqual(supplied, expected)) {
+          issues.push({
+            code: "TYPE_MISMATCH",
+            nodeId: node.id,
+            field: `${field}.value`,
+            message: `This compares ${describeType(property)} against ${describeType(supplied)}.`
+          });
+        }
+      });
+
+      return issues;
+    },
     checkConfig: (node, ctx) => {
       if (node.data.entity.length === 0) {
         return [
@@ -431,6 +507,18 @@ export const NODE_KINDS: {
             )
           ];
         }
+      }
+      const action = ctx.catalog.getAction(node.data.action);
+      for (const group of action?.requireOneOf ?? []) {
+        if (group.some((name) => node.data.inputs[name] !== undefined))
+          continue;
+        return [
+          incomplete(
+            node,
+            group[0] ?? "inputs",
+            `This step needs at least one of: ${group.join(", ")}.`
+          )
+        ];
       }
       return [];
     }

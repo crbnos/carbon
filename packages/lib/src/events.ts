@@ -28,6 +28,9 @@ export type Events = {
         | { type: "users"; userIds: string[] };
       from?: string;
       documentType?: ApprovalDocumentType;
+      /** Set by a workflow: the message is authored by the customer, not read from a document. */
+      title?: string;
+      body?: string;
       // Caller-selected fan-out targets. inApp is always added by the notify
       // function regardless of what's passed; email and slack are opt-in.
       destinations?: NotificationDestination[];

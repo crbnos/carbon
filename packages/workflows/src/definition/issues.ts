@@ -11,6 +11,7 @@ export type WorkflowIssueCode =
   | "CYCLE"
   | "UNREACHABLE_NODE"
   | "MISSING_INPUT"
+  | "UNKNOWN_INPUT"
   | "TYPE_MISMATCH"
   | "LIST_INTO_SINGLE"
   | "UNKNOWN_VARIABLE"

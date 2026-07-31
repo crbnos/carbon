@@ -5,12 +5,12 @@ import type {
   CatalogOperation,
   WorkflowCatalog
 } from "../definition/catalog";
+import {
+  WORKFLOW_ACTION_CATALOG,
+  WORKFLOW_OPERATION_CATALOG
+} from "./actions.generated";
+import { REGISTRY_ENTRIES } from "./entities";
 import { WORKFLOW_ENTITIES, WORKFLOW_EVENTS } from "./events.generated";
-
-export interface EventCatalogOptions {
-  getAction?: (id: string) => CatalogAction | undefined;
-  getOperation?: (id: string) => CatalogOperation | undefined;
-}
 
 // Built once at module load, as audit.config.ts does for its derived indexes.
 const EVENTS: Map<string, CatalogEvent> = new Map(
@@ -18,20 +18,49 @@ const EVENTS: Map<string, CatalogEvent> = new Map(
 );
 
 const ENTITIES: Map<string, CatalogEntity> = new Map(
-  Object.entries(WORKFLOW_ENTITIES).map(([name, properties]) => [
-    name,
-    { name, properties }
+  Object.entries(WORKFLOW_ENTITIES).map(([name, properties]) => {
+    const module = REGISTRY_ENTRIES[name]?.permission;
+    return [
+      name,
+      module === undefined
+        ? { name, properties }
+        : { name, properties, permission: { module, action: "view" as const } }
+    ];
+  })
+);
+
+const ACTIONS: Map<string, CatalogAction> = new Map(
+  Object.entries(WORKFLOW_ACTION_CATALOG).map(([id, action]) => [
+    id,
+    { id, ...action }
   ])
 );
 
-/** Backed by the generated event file; actions and operations answer only if supplied. */
-export function createEventCatalog(
-  options: EventCatalogOptions = {}
-): WorkflowCatalog {
+const OPERATIONS: Map<string, CatalogOperation> = new Map(
+  Object.entries(WORKFLOW_OPERATION_CATALOG).map(([id, operation]) => [
+    id,
+    { id, ...operation }
+  ])
+);
+
+/** The one catalog every consumer reads: events, entities, actions and operations. */
+export function createWorkflowCatalog(): WorkflowCatalog {
   return {
     getEvent: (id) => EVENTS.get(id),
     getEntity: (name) => ENTITIES.get(name),
-    getAction: (id) => options.getAction?.(id),
-    getOperation: (id) => options.getOperation?.(id)
+    getAction: (id) => ACTIONS.get(id),
+    getOperation: (id) => OPERATIONS.get(id)
+  };
+}
+
+/** How a job-side action is actually run. Kept off `CatalogAction`, which the validator reads. */
+export function getActionRoute(
+  id: string
+): { call?: string; update?: { entity: string } } | undefined {
+  const action = WORKFLOW_ACTION_CATALOG[id];
+  if (action === undefined) return undefined;
+  return {
+    ...(action.call === undefined ? {} : { call: action.call }),
+    ...(action.update === undefined ? {} : { update: action.update })
   };
 }

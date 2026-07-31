@@ -50,7 +50,7 @@ import { useDateFormatter, useNotifications, useUser } from "~/hooks";
 import type { ApprovalDocumentType } from "~/modules/shared";
 import { usePeople } from "~/stores";
 import type { Notification as NotificationRecord } from "~/types";
-import { path } from "~/utils/path";
+import { getWorkflowRecordPath, path } from "~/utils/path";
 
 type OutstandingTraining = {
   trainingAssignmentId: string;
@@ -405,6 +405,16 @@ function GenericNotification({
         <Notification
           icon={<LuGraduationCap />}
           to={path.to.training(id)}
+          {...props}
+        />
+      );
+    case NotificationEvent.Workflow:
+      return (
+        <Notification
+          icon={<LuGitPullRequestArrow />}
+          to={
+            getWorkflowRecordPath(documentType, id) ?? path.to.authenticatedRoot
+          }
           {...props}
         />
       );
