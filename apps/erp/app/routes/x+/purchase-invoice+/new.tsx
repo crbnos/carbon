@@ -19,6 +19,7 @@ import {
   upsertPurchaseInvoiceLine
 } from "~/modules/invoicing";
 import { resolveItemIdFromExtractedText } from "~/modules/items";
+import { getEdgeFunctionErrorMessage } from "~/utils/error";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -57,7 +58,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
           request.headers.get("Referer") ?? path.to.purchaseOrders,
           await flash(
             request,
-            error(result.error, "Failed to create purchase invoice")
+            error(
+              result.error,
+              await getEdgeFunctionErrorMessage(
+                result.error,
+                "Failed to create purchase invoice"
+              )
+            )
           )
         );
       }

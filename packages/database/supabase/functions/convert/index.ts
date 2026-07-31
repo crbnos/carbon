@@ -811,13 +811,13 @@ serve(async (req: Request) => {
             .single(),
         ]);
 
-        if (!salesOrder.data) throw new Error("Purchase order not found");
+        if (!salesOrder.data) throw new Error("Sales order not found");
         if (salesOrderLines.error)
           throw new Error(salesOrderLines.error.message);
         if (!salesOrderPayment.data)
-          throw new Error("Purchase order payment not found");
+          throw new Error("Sales order payment details not found");
         if (!salesOrderShipment.data)
-          throw new Error("Purchase order delivery not found");
+          throw new Error("Sales order delivery details not found");
 
         const uninvoicedLines = salesOrderLines?.data?.reduce<
           (typeof salesOrderLines)["data"]
@@ -878,7 +878,7 @@ serve(async (req: Request) => {
             .returning(["id"])
             .executeTakeFirstOrThrow();
 
-          if (!salesInvoice.id) throw new Error("Purchase invoice not created");
+          if (!salesInvoice.id) throw new Error("Sales invoice not created");
           salesInvoiceId = salesInvoice.id;
 
           await trx
@@ -1334,9 +1334,9 @@ serve(async (req: Request) => {
               .eq("shipped", true),
           ]);
 
+        if (shipment.error) throw shipment.error;
         if (shipmentLines.error) throw shipmentLines.error;
-        if (shipmentFixedAssetLines.error)
-          throw shipmentFixedAssetLines.error;
+        if (shipmentFixedAssetLines.error) throw shipmentFixedAssetLines.error;
 
         // Accumulate quantities for each sales order line
         const quantitiesByLine = shipmentLines.data.reduce<
@@ -1359,7 +1359,9 @@ serve(async (req: Request) => {
           !shipment.data?.sourceDocumentId ||
           shipment.data?.sourceDocument !== "Sales Order"
         ) {
-          throw new Error("Shipment has no source document id");
+          throw new Error(
+            "This shipment isn't linked to a sales order, so there's nothing to invoice."
+          );
         }
 
         const [
@@ -1386,13 +1388,13 @@ serve(async (req: Request) => {
             .single(),
         ]);
 
-        if (!salesOrder.data) throw new Error("Purchase order not found");
+        if (!salesOrder.data) throw new Error("Sales order not found");
         if (salesOrderLines.error)
           throw new Error(salesOrderLines.error.message);
         if (!salesOrderPayment.data)
-          throw new Error("Purchase order payment not found");
+          throw new Error("Sales order payment details not found");
         if (!salesOrderShipment.data)
-          throw new Error("Purchase order delivery not found");
+          throw new Error("Sales order delivery details not found");
 
         const uninvoicedLines = salesOrderLines?.data?.reduce<
           (typeof salesOrderLines)["data"]
@@ -1466,7 +1468,7 @@ serve(async (req: Request) => {
             .returning(["id"])
             .executeTakeFirstOrThrow();
 
-          if (!salesInvoice.id) throw new Error("Purchase invoice not created");
+          if (!salesInvoice.id) throw new Error("Sales invoice not created");
           salesInvoiceId = salesInvoice.id;
 
           await trx
@@ -2037,9 +2039,17 @@ serve(async (req: Request) => {
     );
   } catch (err) {
     console.error(err);
-    return new Response(JSON.stringify(err), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 500,
-    });
+    // JSON.stringify(err) → "{}" for Errors (non-enumerable properties); use .message
+    // duck-typing. Omit key when empty so the caller's fallback string wins.
+    const message = (err as { message?: unknown })?.message;
+    return new Response(
+      JSON.stringify(
+        typeof message === "string" && message !== "" ? { message } : {}
+      ),
+      {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 500,
+      }
+    );
   }
 });

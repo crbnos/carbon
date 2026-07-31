@@ -132,6 +132,21 @@ export async function convertSalesOrderLinesToJobs(
     return { data: null, error: "No lines found" };
   }
 
+  // Lines converted individually must not be converted a second time here
+  const existingJobs = await client
+    .from("job")
+    .select("salesOrderLineId")
+    .eq("companyId", companyId)
+    .in("salesOrderLineId", lines.map((line) => line.id).filter(Boolean));
+
+  if (existingJobs.error) {
+    return existingJobs;
+  }
+
+  const lineIdsWithJobs = new Set(
+    existingJobs.data.map((job) => job.salesOrderLineId)
+  );
+
   const opportunity = await client
     .from("opportunity")
     .select("*, quotes(*), salesOrders(*)")
@@ -145,7 +160,11 @@ export async function convertSalesOrderLinesToJobs(
   let jobsCreated = 0;
 
   for await (const line of lines) {
-    if (line.methodType === "Make to Order" && line.itemId) {
+    if (
+      line.methodType === "Make to Order" &&
+      line.itemId &&
+      !lineIdsWithJobs.has(line.id)
+    ) {
       const manufacturing = await client
         .from("itemReplenishment")
         .select("*")

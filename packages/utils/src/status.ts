@@ -165,7 +165,7 @@ export const getSalesOrderJobStatus = (
   return { jobVariant, jobLabel, jobs: filteredJobs };
 };
 
-type SalesOrderForProductionCheck = {
+export type SalesOrderForProductionCheck = {
   jobs?: Array<{
     salesOrderLineId: string;
     productionQuantity: number;
@@ -177,6 +177,22 @@ type SalesOrderForProductionCheck = {
     methodType: "Purchase to Order" | "Make to Order" | "Pull from Inventory";
     saleQuantity: number;
   }>;
+};
+
+/**
+ * Checks if a Sales Order still has "Make" lines with no job at all.
+ * Gate the convert-to-jobs actions on this, not on whether the order has any
+ * job — converting one line individually must leave the rest convertible.
+ */
+export const hasLinesRequiringJobs = (
+  salesOrder: SalesOrderForProductionCheck
+): boolean => {
+  const jobs = salesOrder.jobs ?? [];
+  return (salesOrder.lines ?? []).some(
+    (line) =>
+      line.methodType === "Make to Order" &&
+      !jobs.some((job) => job.salesOrderLineId === line.id)
+  );
 };
 
 /**

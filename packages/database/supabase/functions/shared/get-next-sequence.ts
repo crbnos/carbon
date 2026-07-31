@@ -1,7 +1,6 @@
 import { Transaction } from "kysely";
-// Type-only import from postgres/index.ts (not lib/database.ts) keeps the
-// Deno-only driver out of the graph so this file is also importable from the
-// node-side @carbon/database/quality engine.
+// Type-only import from postgres/index.ts keeps the Deno driver out of the graph
+// so this file is importable from the Node-side @carbon/database package too.
 import type { KyselyDatabase as DB } from "../lib/postgres/index.ts";
 import { interpolateSequenceDate } from "../lib/utils.ts";
 
@@ -10,16 +9,21 @@ export async function getNextSequence(
   tableName: string,
   companyId: string
 ) {
-  // get current purchase invoice sequence number
   const sequence = await trx
     .selectFrom("sequence")
     .selectAll()
     .where("table", "=", tableName)
     .where("companyId", "=", companyId)
-    .executeTakeFirstOrThrow();
+    .executeTakeFirst();
+
+  if (!sequence) {
+    throw new Error(
+      `No number sequence is configured for ${tableName}. Add one in Settings > Sequences before creating this document.`
+    );
+  }
 
   const { prefix, suffix, next, size, step } = sequence;
-  if (!Number.isInteger(step)) throw new Error("Next is not an integer");
+  if (!Number.isInteger(next)) throw new Error("Next is not an integer");
   if (!Number.isInteger(step)) throw new Error("Step is not an integer");
   if (!Number.isInteger(size)) throw new Error("Size is not an integer");
 

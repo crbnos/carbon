@@ -20,7 +20,7 @@ import {
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { LuTriangleAlert } from "react-icons/lu";
 import { useFetcher } from "react-router";
 import {
@@ -68,6 +68,17 @@ export function QuantityModal({
   const [confirmedUnissued, setConfirmedUnissued] = useState(false);
   const submitted = useRef(false);
   const isSubmitting = fetcher.state !== "idle";
+  // `operation` is live-patched via realtime; after submit it already includes what we
+  // just logged, so snapshot at submit time — not mount — to avoid double-counting.
+  const [submittedBaseline, setSubmittedBaseline] = useState<{
+    complete: number;
+    reworked: number;
+  } | null>(null);
+
+  const baseline = submittedBaseline ?? {
+    complete: operation.quantityComplete,
+    reworked: operation.quantityReworked ?? 0
+  };
 
   useEffect(() => {
     if (submitted.current && fetcher.state === "idle") {
@@ -82,8 +93,7 @@ export function QuantityModal({
     finish: t`Finish ${operation.itemReadableId}`
   };
 
-  const isOperationComplete =
-    operation.quantityComplete >= operation.operationQuantity;
+  const isOperationComplete = baseline.complete >= operation.operationQuantity;
 
   const descriptionMap = {
     scrap: t`Select a scrap quantity and reason`,
@@ -113,25 +123,17 @@ export function QuantityModal({
     finish: finishValidator
   };
 
-  const hasUnissuedTrackedMaterials = useMemo(() => {
-    const totalPartsAfterCompletion = parentIsSerial
-      ? 1
-      : operation.quantityComplete + quantity;
+  const totalPartsAfterCompletion = parentIsSerial
+    ? 1
+    : baseline.complete + quantity;
 
-    return materials.some(
-      (material) =>
-        (material.requiresSerialTracking || material.requiresBatchTracking) &&
-        material.jobOperationId === operation.id &&
-        (material?.quantityIssued ?? 0) <
-          (material?.quantity ?? 0) * totalPartsAfterCompletion
-    );
-  }, [
-    materials,
-    operation.id,
-    operation.quantityComplete,
-    quantity,
-    parentIsSerial
-  ]);
+  const hasUnissuedTrackedMaterials = materials.some(
+    (material) =>
+      (material.requiresSerialTracking || material.requiresBatchTracking) &&
+      material.jobOperationId === operation.id &&
+      (material?.quantityIssued ?? 0) <
+        (material?.quantity ?? 0) * totalPartsAfterCompletion
+  );
 
   return (
     <Modal
@@ -161,6 +163,10 @@ export function QuantityModal({
           fetcher={fetcher}
           onSubmit={() => {
             submitted.current = true;
+            setSubmittedBaseline({
+              complete: operation.quantityComplete,
+              reworked: operation.quantityReworked ?? 0
+            });
           }}
         >
           <ModalHeader>
@@ -266,8 +272,8 @@ export function QuantityModal({
                       onClick={() =>
                         setQuantity(
                           operation.operationQuantity -
-                            operation.quantityComplete -
-                            (operation.quantityReworked ?? 0)
+                            baseline.complete -
+                            baseline.reworked
                         )
                       }
                     >
@@ -294,8 +300,8 @@ export function QuantityModal({
                     value={
                       quantity +
                       (type === "rework"
-                        ? operation.quantityReworked
-                        : operation.quantityComplete)
+                        ? baseline.reworked
+                        : baseline.complete)
                     }
                     isReadOnly
                   />

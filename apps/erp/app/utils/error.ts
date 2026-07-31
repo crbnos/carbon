@@ -28,8 +28,15 @@ export async function getEdgeFunctionErrorMessage(
       // body wasn't JSON or already consumed — fall through
     }
   }
-  if (err && typeof (err as { message?: string }).message === "string") {
-    return (err as { message: string }).message;
+  const message = (err as { message?: unknown })?.message;
+  // FunctionsHttpError.message is always this fixed wrapper text, which says nothing —
+  // let the caller's fallback win instead of showing it to the user.
+  if (
+    typeof message === "string" &&
+    message !== "" &&
+    message !== "Edge Function returned a non-2xx status code"
+  ) {
+    return message;
   }
   return fallback;
 }

@@ -20,7 +20,8 @@ import {
   useDisclosure,
   VStack
 } from "@carbon/react";
-import { getSalesOrderJobStatus } from "@carbon/utils";
+import type { SalesOrderForProductionCheck } from "@carbon/utils";
+import { getSalesOrderJobStatus, hasLinesRequiringJobs } from "@carbon/utils";
 import {
   getLocalTimeZone,
   isSameDay,
@@ -123,10 +124,10 @@ const SalesOrderSummary = ({
   const total = subtotal + tax + convertedShippingCost;
   const permissions = usePermissions();
 
-  // Check if there are any lines with "Make" method type that would require jobs
-  const hasMakeItems =
-    routeData?.lines?.some((line) => line.methodType === "Make to Order") ??
-    false;
+  const linesRequireJobs = hasLinesRequiringJobs({
+    jobs: routeData?.salesOrder?.jobs as SalesOrderForProductionCheck["jobs"],
+    lines: routeData?.salesOrder?.lines as SalesOrderForProductionCheck["lines"]
+  });
 
   // Services never ship, so an all-service order confirms straight to
   // "To Invoice" (getSalesOrderStatus counts Service lines as shipped) and
@@ -150,8 +151,7 @@ const SalesOrderSummary = ({
       {jobsCardStatusMatches &&
         permissions.can("create", "production") &&
         permissions.is("employee") &&
-        !routeData?.salesOrder?.jobs &&
-        hasMakeItems && (
+        linesRequireJobs && (
           <Card>
             <CardHeader>
               <CardTitle className="flex flex-row gap-2">
