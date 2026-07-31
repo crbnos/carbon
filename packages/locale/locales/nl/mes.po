@@ -376,7 +376,7 @@ msgid "In Progress"
 msgstr ""
 
 msgid "Instructions"
-msgstr ""
+msgstr "Instructies"
 
 msgid "Insufficient quantity"
 msgstr ""
