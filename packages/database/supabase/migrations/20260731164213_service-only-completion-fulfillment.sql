@@ -15,8 +15,9 @@
 --
 -- Fix: only genuine Service lines (salesOrderLineType = 'Service') fulfill by
 -- completion — matching the shipment-creation gate. Everything else fulfills via
--- post-shipment. Plus a tightly-scoped, idempotent data repair for lines already
--- corrupted by the old behaviour.
+-- post-shipment. Plus an idempotent data repair that rebuilds each affected
+-- line's fulfillment from its POSTED shipments (covering both no-shipment and
+-- partially-shipped lines the old behaviour corrupted).
 --
 -- CREATE OR REPLACE preserves each function's signature/OID, so attached event
 -- triggers (attach_event_trigger('job', ...)) keep pointing at them — no re-wiring.
@@ -803,37 +804,67 @@ $$;
 
 
 -- -----------------------------------------------------------------------------
--- (3) Data repair — reset lines already corrupted by the old completion logic.
---     Scope (all conditions required, so this is safe + idempotent):
---       * item is Non-Inventory AND the line is NOT a Service line (the exact
---         class the old guard over-matched),
---       * sentComplete = true,
---       * the line has a Completed/Closed job (i.e. it was completion-fulfilled),
---       * NO shipmentLine with shippedQuantity > 0 exists (no real shipment ever
---         happened — a genuinely-shipped line always has one, so it is left alone).
---     Fixed Asset lines are excluded (no itemId join / no job). Re-running is a
---     no-op once sentComplete flips to false.
+-- (3) Data repair — rebuild fulfillment from real shipments for every line the
+--     old completion logic could have corrupted. For a non-Service line,
+--     quantitySent must reflect ONLY posted shipments (post-shipment increments
+--     it by each posted shipmentLine.shippedQuantity; completion should never
+--     have touched it). So recompute quantitySent = SUM of shippedQuantity over
+--     POSTED shipments and re-derive sentComplete/sentDate from it.
+--
+--     Corruption signature (the exact class the old guard over-matched):
+--       * item is Non-Inventory AND the line is NOT a Service line,
+--       * the line has a Completed/Closed job (what triggered the bad fulfill).
+--     Both the no-shipment phantom "Shipped" (posted sum = 0 → reset) and the
+--     partially-shipped-but-inflated case (posted sum < saleQuantity → drops
+--     sentComplete, keeps the true shipped qty) collapse into this one rule.
+--     Only POSTED shipments count — a Draft/Pending shipmentLine carries an
+--     editable shippedQuantity that has not yet advanced quantitySent, so it
+--     must be excluded. Idempotent: it is a no-op for never-corrupted lines
+--     (their quantitySent already equals the posted sum). Fixed Asset lines are
+--     excluded (no itemId join / no job).
 -- -----------------------------------------------------------------------------
 UPDATE "salesOrderLine" sol
-SET "quantitySent" = 0,
-    "sentComplete" = false,
-    "sentDate" = NULL,
+SET "quantitySent" = fix."postedQty",
+    "sentComplete" = (
+      COALESCE(fix."saleQuantity", 0) > 0
+      AND fix."postedQty" >= fix."saleQuantity"
+    ),
+    "sentDate" = CASE
+      WHEN COALESCE(fix."saleQuantity", 0) > 0
+        AND fix."postedQty" >= fix."saleQuantity"
+      THEN COALESCE(fix."sentDate", CURRENT_DATE)
+      ELSE NULL
+    END,
     "updatedAt" = NOW()
-FROM "item" i
-WHERE i."id" = sol."itemId"
-  AND i."companyId" = sol."companyId"
-  AND i."itemTrackingType" = 'Non-Inventory'
-  AND sol."salesOrderLineType" IS DISTINCT FROM 'Service'
-  AND sol."sentComplete" = true
-  AND EXISTS (
-    SELECT 1 FROM "job" j
-    WHERE j."salesOrderLineId" = sol."id"
-      AND j."companyId" = sol."companyId"
-      AND j."status" IN ('Completed', 'Closed')
-  )
-  AND NOT EXISTS (
-    SELECT 1 FROM "shipmentLine" sl
-    WHERE sl."lineId" = sol."id"
-      AND sl."companyId" = sol."companyId"
-      AND COALESCE(sl."shippedQuantity", 0) > 0
-  );
+FROM (
+  SELECT
+    sol2."id" AS "lineId",
+    sol2."companyId" AS "companyId",
+    sol2."saleQuantity" AS "saleQuantity",
+    sol2."sentDate" AS "sentDate",
+    COALESCE(ps."qty", 0) AS "postedQty"
+  FROM "salesOrderLine" sol2
+  JOIN "item" i
+    ON i."id" = sol2."itemId"
+   AND i."companyId" = sol2."companyId"
+  LEFT JOIN (
+    SELECT sl."lineId", sl."companyId", SUM(sl."shippedQuantity") AS "qty"
+    FROM "shipmentLine" sl
+    JOIN "shipment" s ON s."id" = sl."shipmentId"
+    WHERE s."status" = 'Posted'
+      AND sl."lineId" IS NOT NULL
+    GROUP BY sl."lineId", sl."companyId"
+  ) ps
+    ON ps."lineId" = sol2."id"
+   AND ps."companyId" = sol2."companyId"
+  WHERE i."itemTrackingType" = 'Non-Inventory'
+    AND sol2."salesOrderLineType" IS DISTINCT FROM 'Service'
+    AND EXISTS (
+      SELECT 1 FROM "job" j
+      WHERE j."salesOrderLineId" = sol2."id"
+        AND j."companyId" = sol2."companyId"
+        AND j."status" IN ('Completed', 'Closed')
+    )
+) fix
+WHERE sol."id" = fix."lineId"
+  AND sol."companyId" = fix."companyId";
