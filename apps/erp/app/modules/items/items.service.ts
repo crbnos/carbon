@@ -7975,3 +7975,209 @@ export async function getChangeNoticeDiff(
 
   return { data: { items }, error: null };
 }
+
+// =============================================================================
+// Onshape sync state — what the part page's Onshape block reads. Two bulk
+// queries, both companyId-scoped: the per-asset state rows, plus the item's
+// Onshape mapping rows. `externalIntegrationMapping.entityId` is polymorphic
+// and carries no foreign key, so the mapping rows can't be embedded on the
+// item and are matched in memory instead.
+// =============================================================================
+
+type OnshapeDocumentLocatorSource = {
+  documentId?: string | null;
+  versionId?: string | null;
+  elementId?: string | null;
+};
+
+export type OnshapeDocumentLocator = {
+  documentId: string;
+  versionId: string;
+  elementId: string;
+};
+
+function readOnshapeDocumentLocator(
+  source: OnshapeDocumentLocatorSource | null | undefined
+): OnshapeDocumentLocator | null {
+  if (!source?.documentId || !source.versionId || !source.elementId) {
+    return null;
+  }
+  return {
+    documentId: source.documentId,
+    versionId: source.versionId,
+    elementId: source.elementId
+  };
+}
+
+export async function getOnshapeItemState(
+  client: SupabaseClient<Database>,
+  itemId: string,
+  companyId: string
+) {
+  const [syncState, mappings, integration] = await Promise.all([
+    client
+      .from("onshapeItemSyncState")
+      .select(
+        "assetKind, status, source, skipReason, error, observedOnly, revision, releaseState, documentId, versionId, elementId, createdAt, createdBy, updatedAt, updatedBy"
+      )
+      .eq("companyId", companyId)
+      .eq("itemId", itemId),
+    client
+      .from("externalIntegrationMapping")
+      .select("integration, metadata, lastSyncedAt, updatedAt")
+      .eq("companyId", companyId)
+      .eq("entityType", "item")
+      .eq("entityId", itemId)
+      .in("integration", ["onshape", "onshapeData"]),
+    // Enterprise Onshape accounts live on custom domains; the integration's
+    // stored baseUrl is the authority for outbound document links. Reading it
+    // needs settings_view, so a null here just means "use the default host".
+    client
+      .from("companyIntegration")
+      .select("metadata")
+      .eq("companyId", companyId)
+      .eq("id", "onshape")
+      .maybeSingle()
+  ]);
+
+  const stateRows = syncState.data ?? [];
+  const model = stateRows.find((row) => row.assetKind === "model") ?? null;
+  const drawing = stateRows.find((row) => row.assetKind === "drawing") ?? null;
+
+  const mappingRows = mappings.data ?? [];
+  const documentMapping =
+    mappingRows.find((row) => row.integration === "onshape") ?? null;
+  const bomMapping =
+    mappingRows.find((row) => row.integration === "onshapeData") ?? null;
+
+  const integrationMetadata = integration.data?.metadata as {
+    baseUrl?: unknown;
+  } | null;
+  const onshapeBaseUrl =
+    typeof integrationMetadata?.baseUrl === "string" &&
+    integrationMetadata.baseUrl.startsWith("https://")
+      ? integrationMetadata.baseUrl
+      : null;
+
+  return {
+    linked: stateRows.length > 0 || mappingRows.length > 0,
+    model,
+    drawing,
+    // The document mapping is the authority on where this part lives in
+    // Onshape; the model row's own identifiers cover a part that only ever
+    // arrived through a released-asset sync.
+    docLocator:
+      readOnshapeDocumentLocator(
+        documentMapping?.metadata as OnshapeDocumentLocatorSource | null
+      ) ?? readOnshapeDocumentLocator(model),
+    onshapeBaseUrl,
+    bomLastSyncedAt:
+      documentMapping?.lastSyncedAt ?? bomMapping?.updatedAt ?? null
+  };
+}
+
+// The bulk-sync run history the dashboard renders, newest first. Retention keeps
+// the table small (the trigger route prunes past the newest 50 per company), so
+// `limit` is about how much history a surface wants, not about protecting the DB.
+export async function getOnshapeSyncRuns(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: { limit: number }
+) {
+  return client
+    .from("onshapeSyncRun")
+    .select("*")
+    .eq("companyId", companyId)
+    .order("createdAt", { ascending: false })
+    .limit(args.limit);
+}
+
+// Every part × asset the sync has touched, for the dashboard's Items tab. The
+// item's display fields come from a second bulk query rather than an embed:
+// `onshapeItemSyncState.itemId` has a single-column FK to `item` (no composite
+// tenant key), so the join stays explicit and companyId-scoped on both reads.
+export async function getOnshapeSyncItemStates(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: GenericQueryFilters & {
+    search: string | null;
+    status?: string | null;
+  }
+) {
+  let query = client
+    .from("onshapeItemSyncState")
+    .select("*", { count: "exact" })
+    .eq("companyId", companyId);
+
+  query = setSearchFilter(query, args.search, [
+    "partNumber",
+    "revision",
+    "documentPath"
+  ]);
+
+  if (args.status) {
+    query = query.eq("status", args.status);
+  }
+
+  query = setGenericQueryFilters(query, args, [
+    { column: "createdAt", ascending: false }
+  ]);
+
+  const states = await query;
+
+  if (states.error) {
+    return { data: [], count: 0, error: states.error };
+  }
+
+  const stateRows = states.data ?? [];
+  const itemIds = [...new Set(stateRows.map((row) => row.itemId))];
+
+  const items = itemIds.length
+    ? await client
+        .from("item")
+        .select("id, readableIdWithRevision, name, type")
+        .eq("companyId", companyId)
+        .in("id", itemIds)
+    : { data: [], error: null };
+
+  if (items.error) {
+    return { data: [], count: 0, error: items.error };
+  }
+
+  const itemsById = new Map(
+    (items.data ?? []).map((item) => [item.id, item] as const)
+  );
+
+  return {
+    data: stateRows.map((row) => {
+      const item = itemsById.get(row.itemId);
+      return {
+        ...row,
+        itemReadableId: item?.readableIdWithRevision ?? null,
+        itemName: item?.name ?? null,
+        itemType: item?.type ?? null
+      };
+    }),
+    count: states.count ?? 0,
+    error: null
+  };
+}
+
+export async function getOnshapeEngineeringData(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: GenericQueryFilters & { search: string | null }
+) {
+  let query = client
+    .from("onshapeEngineeringData")
+    .select("*", { count: "exact" })
+    .eq("companyId", companyId);
+
+  query = setSearchFilter(query, args.search, ["readableId", "name"]);
+
+  query = setGenericQueryFilters(query, args, [
+    { column: "readableId", ascending: true }
+  ]);
+
+  return query;
+}

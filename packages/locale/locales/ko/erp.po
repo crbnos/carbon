@@ -2367,6 +2367,9 @@ msgstr "품질 플래그와 알림 자동화"
 msgid "Automate your business processes with event-driven workflows that trigger actions when things happen in Carbon."
 msgstr "Carbon에서 발생하는 사건에 따라 작업을 트리거하는 이벤트 기반 워크플로우로 비즈니스 프로세스를 자동화합니다."
 
+msgid "Automatic"
+msgstr ""
+
 msgid "Automatic Cost Updates"
 msgstr "자동 원가 업데이트"
 
@@ -2651,6 +2654,9 @@ msgstr "일괄 가져오기"
 
 msgid "Bulk Jobs"
 msgstr "일괄 작업"
+
+msgid "Bulk sync"
+msgstr ""
 
 msgid "Business moment"
 msgstr "비즈니스 순간"
@@ -6243,6 +6249,9 @@ msgstr "면세 증명서"
 msgid "Exemption Reason"
 msgstr "면세 사유"
 
+msgid "Existing attachment confirmed"
+msgstr ""
+
 msgid "Existing mappings. Pick a different provider account to re-map."
 msgstr "기존 매핑입니다. 다시 매핑하려면 다른 공급자 계정을 선택하세요."
 
@@ -6425,7 +6434,7 @@ msgid "Fail"
 msgstr "실패"
 
 msgid "Failed"
-msgstr "실패"
+msgstr ""
 
 msgid "Failed features"
 msgstr "부적합 특성"
@@ -6824,6 +6833,9 @@ msgstr "파일 크기가 10MB 제한을 초과했습니다"
 #. placeholder {0}: SIZE_LIMIT.format()
 msgid "File size too big (max. {0})"
 msgstr "파일 크기가 너무 큽니다(최대 {0})"
+
+msgid "File too large to sync"
+msgstr ""
 
 msgid "File type not supported"
 msgstr "지원하지 않는 파일 형식입니다"
@@ -8989,6 +9001,9 @@ msgstr "일치함"
 msgid "matches"
 msgstr "일치"
 
+msgid "Matches more than one part"
+msgstr ""
+
 msgid "Matching Pairs"
 msgstr "일치하는 쌍"
 
@@ -9228,6 +9243,9 @@ msgstr "누락된 공급업체"
 
 msgid "Mobile Phone"
 msgstr "휴대전화"
+
+msgid "Model"
+msgstr ""
 
 msgid "Model Number"
 msgstr "모델 번호"
@@ -9853,6 +9871,9 @@ msgstr "이 항목에 대한 초안 제작 방법이 아직 없습니다."
 msgid "No draft versions available"
 msgstr "사용 가능한 초안 버전이 없습니다"
 
+msgid "No drawing synced"
+msgstr ""
+
 msgid "No due date"
 msgstr "마감일 없음"
 
@@ -10036,6 +10057,9 @@ msgstr "프로세스를 선택하지 않았습니다"
 msgid "No production events recorded for this operation yet"
 msgstr "이 공정작업에 대해 아직 기록된 생산 이벤트가 없습니다"
 
+msgid "No progress for 30 minutes"
+msgstr ""
+
 msgid "No purchases in this period"
 msgstr "이 기간에 구매가 없습니다"
 
@@ -10056,6 +10080,9 @@ msgstr "기록을 찾을 수 없습니다"
 
 msgid "No reference image"
 msgstr "참조 이미지 없음"
+
+msgid "No released revision found"
+msgstr ""
 
 msgid "No remaining entities to inspect."
 msgstr "검사할 개체가 남아 있지 않습니다."
@@ -10192,6 +10219,9 @@ msgstr "인증되지 않음"
 msgid "Not enough jobs to cover quantity"
 msgstr "수량을 충족할 만큼 작업이 충분하지 않습니다"
 
+msgid "Not linked to Onshape"
+msgstr ""
+
 msgid "Not reached"
 msgstr "도달하지 않음"
 
@@ -10215,6 +10245,9 @@ msgstr "시작되지 않음"
 
 msgid "Not started training for"
 msgstr "다음 교육을 시작하지 않음:"
+
+msgid "Not synced"
+msgstr ""
 
 msgid "Not yet"
 msgstr "아직 아님"
@@ -10394,6 +10427,9 @@ msgstr "초안 상태의 절차만 수정할 수 있습니다. 활성 또는 보
 msgid "Only empty, open periods can be deleted."
 msgstr "비어있는 열린 기간만 삭제할 수 있습니다."
 
+msgid "Onshape"
+msgstr ""
+
 msgid "Onshape authorized the connection but saving it failed. Try connecting again."
 msgstr "Onshape가 연결을 승인했지만 저장하지 못했습니다. 다시 연결해 보세요."
 
@@ -10459,6 +10495,9 @@ msgstr "변경 공지 {ids}에서 열기. 새 버전 또는 개정본을 만들�
 
 msgid "Open in MES"
 msgstr "MES에서 열기"
+
+msgid "Open in Onshape"
+msgstr ""
 
 msgid "Open Issues"
 msgstr "미결 이슈"
@@ -11628,6 +11667,9 @@ msgstr "회계에서 가져오기"
 msgid "Pull from Inventory"
 msgstr "재고에서 가져오기"
 
+msgid "Pull from Onshape"
+msgstr ""
+
 msgid "Pull, map, and load your data"
 msgstr "데이터를 가져와서 매핑하고 로드하세요"
 
@@ -11895,7 +11937,7 @@ msgid "Question"
 msgstr "질문"
 
 msgid "Queued"
-msgstr "대기 중"
+msgstr ""
 
 msgid "Quote"
 msgstr "견적"
@@ -12676,6 +12718,9 @@ msgstr "리비전 {0}"
 msgid "Revision status"
 msgstr "개정판 상태"
 
+msgid "Revision unknown"
+msgstr ""
+
 msgid "Revisions"
 msgstr "리비전"
 
@@ -12840,7 +12885,7 @@ msgid "Run this workflow now?"
 msgstr "이 워크플로우를 지금 실행하시겠습니까?"
 
 msgid "Running"
-msgstr "실행 중"
+msgstr ""
 
 msgid "Running inventory after each week's supply and demand — the line."
 msgstr "매주 공급과 수요를 반영해 갱신되는 재고 — 그 라인입니다."
@@ -14599,6 +14644,12 @@ msgstr "동기화"
 msgid "Sync Activity"
 msgstr "동기화 활동"
 
+msgid "Sync details"
+msgstr ""
+
+msgid "Sync did not complete — try again"
+msgstr ""
+
 msgid "Sync operation"
 msgstr "동기화 작업"
 
@@ -14606,7 +14657,13 @@ msgid "Sync Tie-Out"
 msgstr "동기화 일치"
 
 msgid "Synced"
-msgstr "동기화됨"
+msgstr ""
+
+msgid "Synced by {actorName}"
+msgstr ""
+
+msgid "Syncing"
+msgstr ""
 
 msgid "System"
 msgstr "시스템"

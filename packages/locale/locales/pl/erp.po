@@ -2367,6 +2367,9 @@ msgstr "Automatyzuj flagi jakości i powiadomienia"
 msgid "Automate your business processes with event-driven workflows that trigger actions when things happen in Carbon."
 msgstr "Automatyzuj swoje procesy biznesowe za pomocą przepływów pracy opartych na zdarzeniach, które wyzwalają akcje, gdy coś się zdarzy w Carbon."
 
+msgid "Automatic"
+msgstr ""
+
 msgid "Automatic Cost Updates"
 msgstr "Automatyczne aktualizacje kosztów"
 
@@ -2651,6 +2654,9 @@ msgstr "Import zbiorczy"
 
 msgid "Bulk Jobs"
 msgstr "Zadania zbiorcze"
+
+msgid "Bulk sync"
+msgstr ""
 
 msgid "Business moment"
 msgstr "Moment biznesowy"
@@ -6243,6 +6249,9 @@ msgstr "Certifikat Zwolnienia"
 msgid "Exemption Reason"
 msgstr "Powód Zwolnienia"
 
+msgid "Existing attachment confirmed"
+msgstr ""
+
 msgid "Existing mappings. Pick a different provider account to re-map."
 msgstr "Istniejące mapowania. Wybierz inne konto dostawcy, aby ponownie zmapować."
 
@@ -6425,7 +6434,7 @@ msgid "Fail"
 msgstr "Nie powiodło się"
 
 msgid "Failed"
-msgstr "Nieudane"
+msgstr ""
 
 msgid "Failed features"
 msgstr "Cechy nie powiodły się"
@@ -6824,6 +6833,9 @@ msgstr "Rozmiar pliku przekracza limit 10MB"
 #. placeholder {0}: SIZE_LIMIT.format()
 msgid "File size too big (max. {0})"
 msgstr "Rozmiar pliku zbyt duży (maks. {0})"
+
+msgid "File too large to sync"
+msgstr ""
 
 msgid "File type not supported"
 msgstr "Typ pliku nie jest obsługiwany"
@@ -8989,6 +9001,9 @@ msgstr "Dopasowane"
 msgid "matches"
 msgstr "pasuje do"
 
+msgid "Matches more than one part"
+msgstr ""
+
 msgid "Matching Pairs"
 msgstr "Pary dopasowań"
 
@@ -9228,6 +9243,9 @@ msgstr "Brakujący dostawcy"
 
 msgid "Mobile Phone"
 msgstr "Telefon komórkowy"
+
+msgid "Model"
+msgstr ""
 
 msgid "Model Number"
 msgstr "Numer modelu"
@@ -9853,6 +9871,9 @@ msgstr "Brak jeszcze wersji roboczej metody wytwarzania dla tego elementu."
 msgid "No draft versions available"
 msgstr "Brak dostępnych wersji roboczych"
 
+msgid "No drawing synced"
+msgstr ""
+
 msgid "No due date"
 msgstr "Brak daty terminu"
 
@@ -10036,6 +10057,9 @@ msgstr "Nie wybrano procesu"
 msgid "No production events recorded for this operation yet"
 msgstr "Brak zarejestrowanych zdarzeń produkcyjnych dla tej operacji"
 
+msgid "No progress for 30 minutes"
+msgstr ""
+
 msgid "No purchases in this period"
 msgstr "Brak zakupów w tym okresie"
 
@@ -10056,6 +10080,9 @@ msgstr "Nie znaleziono rekordów"
 
 msgid "No reference image"
 msgstr "Brak obrazu referencyjnego"
+
+msgid "No released revision found"
+msgstr ""
 
 msgid "No remaining entities to inspect."
 msgstr "Brak pozostałych jednostek do sprawdzenia."
@@ -10192,6 +10219,9 @@ msgstr "Nie certyfikowany"
 msgid "Not enough jobs to cover quantity"
 msgstr "Niewystarczająca liczba zadań do pokrycia ilości"
 
+msgid "Not linked to Onshape"
+msgstr ""
+
 msgid "Not reached"
 msgstr "Nieosiągnięty"
 
@@ -10215,6 +10245,9 @@ msgstr "Nie rozpoczęte"
 
 msgid "Not started training for"
 msgstr "Nie rozpoczęto szkolenia dla"
+
+msgid "Not synced"
+msgstr ""
 
 msgid "Not yet"
 msgstr "Jeszcze nie"
@@ -10394,6 +10427,9 @@ msgstr "Edytowalne są tylko procedury w wersji roboczej. Utwórz nową wersję,
 msgid "Only empty, open periods can be deleted."
 msgstr "Usunięte mogą być tylko puste, otwarte okresy."
 
+msgid "Onshape"
+msgstr ""
+
 msgid "Onshape authorized the connection but saving it failed. Try connecting again."
 msgstr "Onshape autoryzował połączenie, ale jego zapisanie nie udało się. Spróbuj połączyć się ponownie."
 
@@ -10459,6 +10495,9 @@ msgstr "Otwórz w zgłoszeniach zmian {ids}. Wydaj je, aby utworzyć nowe wersje
 
 msgid "Open in MES"
 msgstr "Otwórz w MES"
+
+msgid "Open in Onshape"
+msgstr ""
 
 msgid "Open Issues"
 msgstr "Otwarte problemy"
@@ -11628,6 +11667,9 @@ msgstr "Pobierz z systemu księgowego"
 msgid "Pull from Inventory"
 msgstr "Pobierz z magazynu"
 
+msgid "Pull from Onshape"
+msgstr ""
+
 msgid "Pull, map, and load your data"
 msgstr "Pobierz, mapuj i załaduj swoje dane"
 
@@ -11895,7 +11937,7 @@ msgid "Question"
 msgstr "Pytanie"
 
 msgid "Queued"
-msgstr "W kolejce"
+msgstr ""
 
 msgid "Quote"
 msgstr "Oferta"
@@ -12676,6 +12718,9 @@ msgstr "Wersja {0}"
 msgid "Revision status"
 msgstr "Status wersji"
 
+msgid "Revision unknown"
+msgstr ""
+
 msgid "Revisions"
 msgstr "Wersje"
 
@@ -12840,7 +12885,7 @@ msgid "Run this workflow now?"
 msgstr "Uruchomić ten przepływ pracy teraz?"
 
 msgid "Running"
-msgstr "Uruchomione"
+msgstr ""
 
 msgid "Running inventory after each week's supply and demand — the line."
 msgstr "Zapasy uruchomiane po tygodniowej podaży i popycie — linia."
@@ -14599,6 +14644,12 @@ msgstr "Synchronizuj"
 msgid "Sync Activity"
 msgstr "Działalność synchronizacji"
 
+msgid "Sync details"
+msgstr ""
+
+msgid "Sync did not complete — try again"
+msgstr ""
+
 msgid "Sync operation"
 msgstr "Operacja synchronizacji"
 
@@ -14606,7 +14657,13 @@ msgid "Sync Tie-Out"
 msgstr "Wyrównanie synchronizacji"
 
 msgid "Synced"
-msgstr "Zsynchronizowano"
+msgstr ""
+
+msgid "Synced by {actorName}"
+msgstr ""
+
+msgid "Syncing"
+msgstr ""
 
 msgid "System"
 msgstr "System"

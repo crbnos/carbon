@@ -2367,6 +2367,9 @@ msgstr "品質フラグと通知を自動化"
 msgid "Automate your business processes with event-driven workflows that trigger actions when things happen in Carbon."
 msgstr "Carbonで発生するときにアクションをトリガーするイベント駆動型ワークフローでビジネスプロセスを自動化します。"
 
+msgid "Automatic"
+msgstr ""
+
 msgid "Automatic Cost Updates"
 msgstr "自動コスト更新"
 
@@ -2651,6 +2654,9 @@ msgstr "一括インポート"
 
 msgid "Bulk Jobs"
 msgstr "一括ジョブ"
+
+msgid "Bulk sync"
+msgstr ""
 
 msgid "Business moment"
 msgstr "ビジネスモーメント"
@@ -6243,6 +6249,9 @@ msgstr "免除証明書"
 msgid "Exemption Reason"
 msgstr "免除理由"
 
+msgid "Existing attachment confirmed"
+msgstr ""
+
 msgid "Existing mappings. Pick a different provider account to re-map."
 msgstr "既存のマッピング。再マップするには別のプロバイダー勘定科目を選択してください。"
 
@@ -6425,7 +6434,7 @@ msgid "Fail"
 msgstr "不合格"
 
 msgid "Failed"
-msgstr "失敗"
+msgstr ""
 
 msgid "Failed features"
 msgstr "失敗した機能"
@@ -6824,6 +6833,9 @@ msgstr "ファイルサイズが10MBの制限を超えています"
 #. placeholder {0}: SIZE_LIMIT.format()
 msgid "File size too big (max. {0})"
 msgstr "ファイルサイズが大きすぎます (最大 {0})"
+
+msgid "File too large to sync"
+msgstr ""
 
 msgid "File type not supported"
 msgstr "ファイル形式がサポートされていません"
@@ -8989,6 +9001,9 @@ msgstr "照合済み"
 msgid "matches"
 msgstr "一致する"
 
+msgid "Matches more than one part"
+msgstr ""
+
 msgid "Matching Pairs"
 msgstr "マッチングペア"
 
@@ -9228,6 +9243,9 @@ msgstr "サプライヤーが見つかりません"
 
 msgid "Mobile Phone"
 msgstr "携帯電話"
+
+msgid "Model"
+msgstr ""
 
 msgid "Model Number"
 msgstr "型番"
@@ -9853,6 +9871,9 @@ msgstr "このアイテムのドラフト製造方法はまだありません。
 msgid "No draft versions available"
 msgstr "ドラフト版は利用できません"
 
+msgid "No drawing synced"
+msgstr ""
+
 msgid "No due date"
 msgstr "期限なし"
 
@@ -10036,6 +10057,9 @@ msgstr "プロセスが選択されていません"
 msgid "No production events recorded for this operation yet"
 msgstr "この操作で記録された生産イベントはまだありません"
 
+msgid "No progress for 30 minutes"
+msgstr ""
+
 msgid "No purchases in this period"
 msgstr "この期間に購入がありません"
 
@@ -10056,6 +10080,9 @@ msgstr "レコードが見つかりません"
 
 msgid "No reference image"
 msgstr "参照画像がありません"
+
+msgid "No released revision found"
+msgstr ""
 
 msgid "No remaining entities to inspect."
 msgstr "検査する残りのエンティティはありません。"
@@ -10192,6 +10219,9 @@ msgstr "認定されていない"
 msgid "Not enough jobs to cover quantity"
 msgstr "数量をカバーするのに十分なジョブがありません"
 
+msgid "Not linked to Onshape"
+msgstr ""
+
 msgid "Not reached"
 msgstr "未到達"
 
@@ -10215,6 +10245,9 @@ msgstr "未開始"
 
 msgid "Not started training for"
 msgstr "まだトレーニングを開始していません"
+
+msgid "Not synced"
+msgstr ""
 
 msgid "Not yet"
 msgstr "まだ"
@@ -10394,6 +10427,9 @@ msgstr "編集可能なのは下書き手順のみです。アクティブまた
 msgid "Only empty, open periods can be deleted."
 msgstr "空のオープン期間のみ削除できます。"
 
+msgid "Onshape"
+msgstr ""
+
 msgid "Onshape authorized the connection but saving it failed. Try connecting again."
 msgstr "Onshape は接続を承認しましたが、保存に失敗しました。もう一度接続してください。"
 
@@ -10459,6 +10495,9 @@ msgstr "変更通知{ids}で開いています。新しいバージョンまた�
 
 msgid "Open in MES"
 msgstr "MESで開く"
+
+msgid "Open in Onshape"
+msgstr ""
 
 msgid "Open Issues"
 msgstr "未解決の問題"
@@ -11628,6 +11667,9 @@ msgstr "会計から引き出す"
 msgid "Pull from Inventory"
 msgstr "在庫から取得"
 
+msgid "Pull from Onshape"
+msgstr ""
+
 msgid "Pull, map, and load your data"
 msgstr "データをプル、マップ、ロードする"
 
@@ -11895,7 +11937,7 @@ msgid "Question"
 msgstr "質問"
 
 msgid "Queued"
-msgstr "待機中"
+msgstr ""
 
 msgid "Quote"
 msgstr "見積"
@@ -12676,6 +12718,9 @@ msgstr "リビジョン {0}"
 msgid "Revision status"
 msgstr "リビジョンステータス"
 
+msgid "Revision unknown"
+msgstr ""
+
 msgid "Revisions"
 msgstr "リビジョン"
 
@@ -12840,7 +12885,7 @@ msgid "Run this workflow now?"
 msgstr "このワークフローを今すぐ実行しますか？"
 
 msgid "Running"
-msgstr "実行中"
+msgstr ""
 
 msgid "Running inventory after each week's supply and demand — the line."
 msgstr "毎週の需給の後に実行されるインベントリ — ラインです。"
@@ -14599,6 +14644,12 @@ msgstr "同期"
 msgid "Sync Activity"
 msgstr "同期アクティビティ"
 
+msgid "Sync details"
+msgstr ""
+
+msgid "Sync did not complete — try again"
+msgstr ""
+
 msgid "Sync operation"
 msgstr "同期操作"
 
@@ -14606,7 +14657,13 @@ msgid "Sync Tie-Out"
 msgstr "同期一致"
 
 msgid "Synced"
-msgstr "同期済み"
+msgstr ""
+
+msgid "Synced by {actorName}"
+msgstr ""
+
+msgid "Syncing"
+msgstr ""
 
 msgid "System"
 msgstr "システム"

@@ -28,6 +28,10 @@ import type {
   getMethodMaterials,
   getMethodOperations,
   getMethodTreeArray,
+  getOnshapeEngineeringData,
+  getOnshapeItemState,
+  getOnshapeSyncItemStates,
+  getOnshapeSyncRuns,
   getPart,
   getParts,
   getPickMethods,
@@ -194,6 +198,38 @@ export type MethodMaterial = NonNullable<
 export type MethodOperation = NonNullable<
   Awaited<ReturnType<typeof getMethodOperations>>["data"]
 >[number];
+
+// The Onshape sync view model the part sidebar block renders: per-asset state
+// rows plus the document locator and BOM freshness resolved from the item's
+// Onshape mappings.
+export type OnshapeItemState = Awaited<ReturnType<typeof getOnshapeItemState>>;
+
+export type OnshapeItemAssetState = NonNullable<OnshapeItemState["model"]>;
+
+// One bulk sync, as the dashboard's run card and Runs tab read it.
+export type OnshapeSyncRun = NonNullable<
+  Awaited<ReturnType<typeof getOnshapeSyncRuns>>["data"]
+>[number];
+
+// One part × asset sync state, with the item's display fields resolved.
+export type OnshapeSyncItemState = Awaited<
+  ReturnType<typeof getOnshapeSyncItemStates>
+>["data"][number];
+
+// One synced part's engineering data — release state plus the mass, material and
+// vendor read off its BOM row — with the freshness of each of the two sources.
+export type OnshapeEngineeringDataRow = NonNullable<
+  Awaited<ReturnType<typeof getOnshapeEngineeringData>>["data"]
+>[number];
+
+// A released Onshape revision the latest run could not attribute to exactly one
+// part: either nothing matched, or several parts did.
+export type OnshapeReleaseException = {
+  partNumber: string | null;
+  revision: string | null;
+  state: string | null;
+  reason: "unmatched" | "ambiguous";
+};
 
 export type Part = Database["public"]["Views"]["parts"]["Row"];
 

@@ -1,6 +1,6 @@
 {
-  "generated": "2026-08-27T06:54:51.985Z",
-  "totalTools": 1448,
+  "generated": "2026-08-27T09:57:44.687Z",
+  "totalTools": 1452,
   "modules": 15,
   "tools": [
     {
@@ -17264,6 +17264,142 @@
         "required": [
           "changeNoticeId"
         ]
+      }
+    },
+    {
+      "name": "items_getOnshapeItemState",
+      "module": "items",
+      "classification": "READ",
+      "description": "get onshape item state",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "itemId",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "itemId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "itemId"
+        ]
+      }
+    },
+    {
+      "name": "items_getOnshapeSyncRuns",
+      "module": "items",
+      "classification": "READ",
+      "description": "get onshape sync runs",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "limit": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "limit"
+        ]
+      }
+    },
+    {
+      "name": "items_getOnshapeSyncItemStates",
+      "module": "items",
+      "classification": "READ",
+      "description": "get onshape sync item states",
+      "paramCount": 4,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "args": {
+            "type": "object",
+            "properties": {
+              "limit": {
+                "type": "integer",
+                "default": 100
+              },
+              "offset": {
+                "type": "integer",
+                "default": 0
+              },
+              "search": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "status": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "items_getOnshapeEngineeringData",
+      "module": "items",
+      "classification": "READ",
+      "description": "get onshape engineering data",
+      "paramCount": 3,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "args": {
+            "type": "object",
+            "properties": {
+              "limit": {
+                "type": "integer",
+                "default": 100
+              },
+              "offset": {
+                "type": "integer",
+                "default": 0
+              },
+              "search": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          }
+        }
       }
     },
     {

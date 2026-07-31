@@ -2367,6 +2367,9 @@ msgstr "Kalite bayraklarını ve bildirimleri otomatikleştir"
 msgid "Automate your business processes with event-driven workflows that trigger actions when things happen in Carbon."
 msgstr "Karbon'da olaylar meydana geldiğinde işlemleri tetikleyen olay temelli iş akışları ile iş süreçlerinizi otomatikleştirin."
 
+msgid "Automatic"
+msgstr ""
+
 msgid "Automatic Cost Updates"
 msgstr "Otomatik Maliyet Güncellemeleri"
 
@@ -2651,6 +2654,9 @@ msgstr "Toplu İçe Aktarma"
 
 msgid "Bulk Jobs"
 msgstr "Toplu İşler"
+
+msgid "Bulk sync"
+msgstr ""
 
 msgid "Business moment"
 msgstr "İş anı"
@@ -6243,6 +6249,9 @@ msgstr "İstisnai Sertifika"
 msgid "Exemption Reason"
 msgstr "İstisnai Nedeni"
 
+msgid "Existing attachment confirmed"
+msgstr ""
+
 msgid "Existing mappings. Pick a different provider account to re-map."
 msgstr "Mevcut haritalamalar. Yeniden haritalamak için farklı bir sağlayıcı hesabı seçin."
 
@@ -6425,7 +6434,7 @@ msgid "Fail"
 msgstr "Başarısız"
 
 msgid "Failed"
-msgstr "Başarısız"
+msgstr ""
 
 msgid "Failed features"
 msgstr "Başarısız özellikler"
@@ -6824,6 +6833,9 @@ msgstr "Dosya boyutu 10MB sınırını aşıyor"
 #. placeholder {0}: SIZE_LIMIT.format()
 msgid "File size too big (max. {0})"
 msgstr "Dosya boyutu çok büyük (maks. {0})"
+
+msgid "File too large to sync"
+msgstr ""
 
 msgid "File type not supported"
 msgstr "Desteklenmeyen dosya türü"
@@ -8989,6 +9001,9 @@ msgstr "Eşleştirildi"
 msgid "matches"
 msgstr "eşleşir"
 
+msgid "Matches more than one part"
+msgstr ""
+
 msgid "Matching Pairs"
 msgstr "Eşleştirme Çiftleri"
 
@@ -9228,6 +9243,9 @@ msgstr "Tedarikçi Eksikleri"
 
 msgid "Mobile Phone"
 msgstr "Cep Telefonu"
+
+msgid "Model"
+msgstr ""
 
 msgid "Model Number"
 msgstr "Model Numarası"
@@ -9853,6 +9871,9 @@ msgstr "Bu öğe için henüz taslak yapım yöntemi yok."
 msgid "No draft versions available"
 msgstr "Taslak sürüm mevcut değil"
 
+msgid "No drawing synced"
+msgstr ""
+
 msgid "No due date"
 msgstr "Teslim tarihi yok"
 
@@ -10036,6 +10057,9 @@ msgstr "Hiçbir işlem seçilmedi"
 msgid "No production events recorded for this operation yet"
 msgstr "Bu işlem için henüz üretim etkinliği kaydedilmedi"
 
+msgid "No progress for 30 minutes"
+msgstr ""
+
 msgid "No purchases in this period"
 msgstr "Bu dönemde satın alma yok"
 
@@ -10056,6 +10080,9 @@ msgstr "Kayıt bulunamadı"
 
 msgid "No reference image"
 msgstr "Referans resim yok"
+
+msgid "No released revision found"
+msgstr ""
 
 msgid "No remaining entities to inspect."
 msgstr "İncelenecek kalan varlık yok."
@@ -10192,6 +10219,9 @@ msgstr "Sertifikalı değil"
 msgid "Not enough jobs to cover quantity"
 msgstr "Miktarı karşılayacak yeterli iş yok"
 
+msgid "Not linked to Onshape"
+msgstr ""
+
 msgid "Not reached"
 msgstr "Ulaşılmadı"
 
@@ -10215,6 +10245,9 @@ msgstr "Başlanmadı"
 
 msgid "Not started training for"
 msgstr "Henüz eğitim alınmadı"
+
+msgid "Not synced"
+msgstr ""
 
 msgid "Not yet"
 msgstr "Henüz değil"
@@ -10394,6 +10427,9 @@ msgstr "Yalnızca Taslak prosedürler düzenlenebilir. Aktif veya Arşivlenmiş 
 msgid "Only empty, open periods can be deleted."
 msgstr "Yalnızca boş, açık dönemler silinebilir."
 
+msgid "Onshape"
+msgstr ""
+
 msgid "Onshape authorized the connection but saving it failed. Try connecting again."
 msgstr "Onshape bağlantıyı yetkilendirdi ancak kaydetme başarısız oldu. Yeniden bağlanmayı deneyin."
 
@@ -10459,6 +10495,9 @@ msgstr "{ids} değişiklik bildirimlerinde aç. Yeni sürümler veya revizyonlar
 
 msgid "Open in MES"
 msgstr "MES'te Aç"
+
+msgid "Open in Onshape"
+msgstr ""
 
 msgid "Open Issues"
 msgstr "Açık Sorunlar"
@@ -11628,6 +11667,9 @@ msgstr "Muhasebeden çek"
 msgid "Pull from Inventory"
 msgstr "Stoktan Çek"
 
+msgid "Pull from Onshape"
+msgstr ""
+
 msgid "Pull, map, and load your data"
 msgstr "Verilerinizi çekin, eşleyin ve yükleyin"
 
@@ -11895,7 +11937,7 @@ msgid "Question"
 msgstr "Soru"
 
 msgid "Queued"
-msgstr "Sırada"
+msgstr ""
 
 msgid "Quote"
 msgstr "Teklif"
@@ -12676,6 +12718,9 @@ msgstr "Revizyon {0}"
 msgid "Revision status"
 msgstr "Revizyon durumu"
 
+msgid "Revision unknown"
+msgstr ""
+
 msgid "Revisions"
 msgstr "Revizyonlar"
 
@@ -12840,7 +12885,7 @@ msgid "Run this workflow now?"
 msgstr "Bu iş akışı şimdi çalıştırılsın mı?"
 
 msgid "Running"
-msgstr "Çalışıyor"
+msgstr ""
 
 msgid "Running inventory after each week's supply and demand — the line."
 msgstr "Her haftalık arz ve talep sonrası çalışan envanter — satır."
@@ -14599,6 +14644,12 @@ msgstr "Senkronize Et"
 msgid "Sync Activity"
 msgstr "Senkronizasyon Etkinliği"
 
+msgid "Sync details"
+msgstr ""
+
+msgid "Sync did not complete — try again"
+msgstr ""
+
 msgid "Sync operation"
 msgstr "Senkronizasyon işlemi"
 
@@ -14606,7 +14657,13 @@ msgid "Sync Tie-Out"
 msgstr "Senkronizasyon Uyumu"
 
 msgid "Synced"
-msgstr "Eşitlendi"
+msgstr ""
+
+msgid "Synced by {actorName}"
+msgstr ""
+
+msgid "Syncing"
+msgstr ""
 
 msgid "System"
 msgstr "Sistem"

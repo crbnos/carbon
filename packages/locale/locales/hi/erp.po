@@ -2367,6 +2367,9 @@ msgstr "गुणवत्ता फ़्लैग और सूचनाओं
 msgid "Automate your business processes with event-driven workflows that trigger actions when things happen in Carbon."
 msgstr "कार्बन में चीजें होने पर कार्रवाई करने वाले इवेंट-संचालित वर्कफ़्लो के साथ अपनी व्यावसायिक प्रक्रियाओं को स्वचालित करें।"
 
+msgid "Automatic"
+msgstr ""
+
 msgid "Automatic Cost Updates"
 msgstr "स्वचालित लागत अपडेट"
 
@@ -2651,6 +2654,9 @@ msgstr "बल्क आयात"
 
 msgid "Bulk Jobs"
 msgstr "बल्क जॉब्स"
+
+msgid "Bulk sync"
+msgstr ""
 
 msgid "Business moment"
 msgstr "व्यावसायिक क्षण"
@@ -6243,6 +6249,9 @@ msgstr "छूट प्रमाणपत्र"
 msgid "Exemption Reason"
 msgstr "छूट कारण"
 
+msgid "Existing attachment confirmed"
+msgstr ""
+
 msgid "Existing mappings. Pick a different provider account to re-map."
 msgstr "मौजूदा मानचित्रण। पुनः मानचित्रण के लिए एक अलग प्रदाता खाता चुनें।"
 
@@ -6425,7 +6434,7 @@ msgid "Fail"
 msgstr "विफल"
 
 msgid "Failed"
-msgstr "विफल"
+msgstr ""
 
 msgid "Failed features"
 msgstr "विफल विशेषताएँ"
@@ -6824,6 +6833,9 @@ msgstr "फ़ाइल का आकार 10MB की सीमा से अ�
 #. placeholder {0}: SIZE_LIMIT.format()
 msgid "File size too big (max. {0})"
 msgstr "फ़ाइल का आकार बहुत बड़ा है (अधिकतम {0})"
+
+msgid "File too large to sync"
+msgstr ""
 
 msgid "File type not supported"
 msgstr "फ़ाइल प्रकार समर्थित नहीं है"
@@ -8989,6 +9001,9 @@ msgstr "मेल खाया"
 msgid "matches"
 msgstr "मेल खाता है"
 
+msgid "Matches more than one part"
+msgstr ""
+
 msgid "Matching Pairs"
 msgstr "मिलान जोड़े"
 
@@ -9228,6 +9243,9 @@ msgstr "आपूर्तिकर्ता गायब हैं"
 
 msgid "Mobile Phone"
 msgstr "मोबाइल फोन"
+
+msgid "Model"
+msgstr ""
 
 msgid "Model Number"
 msgstr "मॉडल नंबर"
@@ -9853,6 +9871,9 @@ msgstr "इस आइटम के लिए अभी तक कोई ड्�
 msgid "No draft versions available"
 msgstr "कोई ड्राफ्ट संस्करण उपलब्ध नहीं है"
 
+msgid "No drawing synced"
+msgstr ""
+
 msgid "No due date"
 msgstr "कोई नियत तारीख नहीं"
 
@@ -10036,6 +10057,9 @@ msgstr "कोई प्रक्रिया चयनित नहीं ह�
 msgid "No production events recorded for this operation yet"
 msgstr "इस ऑपरेशन के लिए अभी तक कोई उत्पादन घटना रिकॉर्ड नहीं की गई है"
 
+msgid "No progress for 30 minutes"
+msgstr ""
+
 msgid "No purchases in this period"
 msgstr "इस अवधि में कोई खरीद नहीं"
 
@@ -10056,6 +10080,9 @@ msgstr "कोई रिकॉर्ड नहीं मिला"
 
 msgid "No reference image"
 msgstr "कोई संदर्भ छवि नहीं"
+
+msgid "No released revision found"
+msgstr ""
 
 msgid "No remaining entities to inspect."
 msgstr "निरीक्षण के लिए कोई शेष इकाई नहीं है।"
@@ -10192,6 +10219,9 @@ msgstr "प्रमाणित नहीं"
 msgid "Not enough jobs to cover quantity"
 msgstr "पर्याप्त नौकरियां नहीं हैं मात्रा को कवर करने के लिए"
 
+msgid "Not linked to Onshape"
+msgstr ""
+
 msgid "Not reached"
 msgstr "प्राप्त नहीं"
 
@@ -10215,6 +10245,9 @@ msgstr "शुरू नहीं किया गया"
 
 msgid "Not started training for"
 msgstr "प्रशिक्षण शुरू नहीं किया गया"
+
+msgid "Not synced"
+msgstr ""
 
 msgid "Not yet"
 msgstr "अभी नहीं"
@@ -10394,6 +10427,9 @@ msgstr "केवल ड्राफ्ट प्रक्रियाएं स
 msgid "Only empty, open periods can be deleted."
 msgstr "केवल खाली, खुली अवधियों को हटाया जा सकता है।"
 
+msgid "Onshape"
+msgstr ""
+
 msgid "Onshape authorized the connection but saving it failed. Try connecting again."
 msgstr "Onshape ने कनेक्शन को अधिकृत किया, लेकिन उसे सहेजना विफल रहा। दोबारा कनेक्ट करने का प्रयास करें।"
 
@@ -10459,6 +10495,9 @@ msgstr "परिवर्तन सूचनाओं {ids} में खोल
 
 msgid "Open in MES"
 msgstr "MES में खोलें"
+
+msgid "Open in Onshape"
+msgstr ""
 
 msgid "Open Issues"
 msgstr "खुले मुद्दे"
@@ -11628,6 +11667,9 @@ msgstr "लेखांकन से खींचें"
 msgid "Pull from Inventory"
 msgstr "इन्वेंटरी से खींचें"
 
+msgid "Pull from Onshape"
+msgstr ""
+
 msgid "Pull, map, and load your data"
 msgstr "अपना डेटा खींचें, मैप करें, और लोड करें"
 
@@ -11895,7 +11937,7 @@ msgid "Question"
 msgstr "प्रश्न"
 
 msgid "Queued"
-msgstr "कतार में"
+msgstr ""
 
 msgid "Quote"
 msgstr "उद्धरण"
@@ -12676,6 +12718,9 @@ msgstr "संस्करण {0}"
 msgid "Revision status"
 msgstr "संशोधन स्थिति"
 
+msgid "Revision unknown"
+msgstr ""
+
 msgid "Revisions"
 msgstr "संशोधन"
 
@@ -12840,7 +12885,7 @@ msgid "Run this workflow now?"
 msgstr "अभी यह वर्कफ़्लो चलाएं?"
 
 msgid "Running"
-msgstr "चल रहा है"
+msgstr ""
 
 msgid "Running inventory after each week's supply and demand — the line."
 msgstr "प्रत्येक सप्ताह की आपूर्ति और मांग के बाद चलाई जाने वाली इन्वेंटरी — पंक्ति।"
@@ -14599,6 +14644,12 @@ msgstr "सिंक करें"
 msgid "Sync Activity"
 msgstr "सिंक गतिविधि"
 
+msgid "Sync details"
+msgstr ""
+
+msgid "Sync did not complete — try again"
+msgstr ""
+
 msgid "Sync operation"
 msgstr "सिंक संचालन"
 
@@ -14606,7 +14657,13 @@ msgid "Sync Tie-Out"
 msgstr "सिंक समंजन"
 
 msgid "Synced"
-msgstr "सिंक किया गया"
+msgstr ""
+
+msgid "Synced by {actorName}"
+msgstr ""
+
+msgid "Syncing"
+msgstr ""
 
 msgid "System"
 msgstr "सिस्टम"

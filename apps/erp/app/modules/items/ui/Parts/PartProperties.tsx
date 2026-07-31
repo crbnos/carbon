@@ -35,6 +35,7 @@ import CustomFormInlineFields from "~/components/Form/CustomFormInlineFields";
 import { ReplenishmentSystemIcon } from "~/components/Icons";
 import { ItemThumbnailUpload } from "~/components/ItemThumnailUpload";
 import { useRouteData } from "~/hooks";
+import { useIntegrations } from "~/hooks/useIntegrations";
 import { methodType } from "~/modules/shared";
 import type { action } from "~/routes/x+/items+/update";
 import { useSuppliers } from "~/stores";
@@ -50,12 +51,18 @@ import type { UnreleasedChangeOrderItem } from "../../items.server";
 import type {
   ItemFile,
   MakeMethod,
+  OnshapeItemState,
   PartSummary,
   PickMethod,
   SupplierPart
 } from "../../types";
 import { ItemChangeNoticeLock } from "../ChangeNotice/ItemChangeNoticeLock";
-import { FileBadge, ItemDescription, SourcingTypeProperty } from "../Item";
+import {
+  FileBadge,
+  ItemDescription,
+  OnshapeBlock,
+  SourcingTypeProperty
+} from "../Item";
 
 export type PartPropertiesData = {
   itemId: string;
@@ -143,6 +150,7 @@ const PartProperties = ({
     }>;
     // Set while the change notice that minted this item is still open.
     unreleasedChangeOrder?: UnreleasedChangeOrderItem | null;
+    onshapeItemState?: Promise<OnshapeItemState>;
   }>(path.to.part(itemId));
   const routeData = data ?? routeDataFromRoute;
 
@@ -245,6 +253,12 @@ const PartProperties = ({
     : routeData?.unreleasedChangeOrder?.changeOrderReadableId;
 
   const [suppliers] = useSuppliers();
+
+  const integrations = useIntegrations();
+  // The Onshape state is deferred off the part route's loader, so the block
+  // belongs to that part only — an injected `data` (a selected BOM component,
+  // or the change-order card) describes a different item.
+  const showOnshapeBlock = !embedded && !data && integrations.has("onshape");
 
   // Image + files, factored so they can render inline ("all") or as the sole
   // content of the "files" section without duplicating the markup.
@@ -739,6 +753,13 @@ const PartProperties = ({
           />
         ))}
       </VStack>
+      {showOnshapeBlock && (
+        <OnshapeBlock
+          itemId={itemId}
+          state={routeDataFromRoute?.onshapeItemState}
+          className={spanFull}
+        />
+      )}
       {/* Active is a lifecycle flag the change notice controls at release — not a
           user-editable attribute in the CO card. Keep it on the part page only. */}
       {!embedded && (

@@ -2367,6 +2367,9 @@ msgstr "Automatizar banderas de calidad y notificaciones"
 msgid "Automate your business processes with event-driven workflows that trigger actions when things happen in Carbon."
 msgstr "Automatiza tus procesos comerciales con flujos de trabajo basados en eventos que disparan acciones cuando ocurren cosas en Carbon."
 
+msgid "Automatic"
+msgstr ""
+
 msgid "Automatic Cost Updates"
 msgstr "Actualizaciones automáticas de costos"
 
@@ -2651,6 +2654,9 @@ msgstr "Importación masiva"
 
 msgid "Bulk Jobs"
 msgstr "Trabajos en Lote"
+
+msgid "Bulk sync"
+msgstr ""
 
 msgid "Business moment"
 msgstr "Momento empresarial"
@@ -6243,6 +6249,9 @@ msgstr "Certificado de Exención"
 msgid "Exemption Reason"
 msgstr "Motivo de Exención"
 
+msgid "Existing attachment confirmed"
+msgstr ""
+
 msgid "Existing mappings. Pick a different provider account to re-map."
 msgstr "Asignaciones existentes. Selecciona una cuenta de proveedor diferente para reasignar."
 
@@ -6425,7 +6434,7 @@ msgid "Fail"
 msgstr "Fallar"
 
 msgid "Failed"
-msgstr "Fallido"
+msgstr ""
 
 msgid "Failed features"
 msgstr "Características fallidas"
@@ -6824,6 +6833,9 @@ msgstr "El tamaño del archivo excede el límite de 10MB"
 #. placeholder {0}: SIZE_LIMIT.format()
 msgid "File size too big (max. {0})"
 msgstr "El tamaño del archivo es demasiado grande (máx. {0})"
+
+msgid "File too large to sync"
+msgstr ""
 
 msgid "File type not supported"
 msgstr "Tipo de archivo no compatible"
@@ -8989,6 +9001,9 @@ msgstr "Emparejado"
 msgid "matches"
 msgstr "coincide"
 
+msgid "Matches more than one part"
+msgstr ""
+
 msgid "Matching Pairs"
 msgstr "Pares de coincidencia"
 
@@ -9228,6 +9243,9 @@ msgstr "Proveedores Faltantes"
 
 msgid "Mobile Phone"
 msgstr "Teléfono Móvil"
+
+msgid "Model"
+msgstr ""
 
 msgid "Model Number"
 msgstr "Número de Modelo"
@@ -9853,6 +9871,9 @@ msgstr "Sin método de fabricación en borrador para este elemento aún."
 msgid "No draft versions available"
 msgstr "No hay versiones en borrador disponibles"
 
+msgid "No drawing synced"
+msgstr ""
+
 msgid "No due date"
 msgstr "Sin fecha de vencimiento"
 
@@ -10036,6 +10057,9 @@ msgstr "Ningún proceso seleccionado"
 msgid "No production events recorded for this operation yet"
 msgstr "Aún no se han registrado eventos de producción para esta operación"
 
+msgid "No progress for 30 minutes"
+msgstr ""
+
 msgid "No purchases in this period"
 msgstr "Sin compras en este período"
 
@@ -10056,6 +10080,9 @@ msgstr "No se encontraron registros"
 
 msgid "No reference image"
 msgstr "Sin imagen de referencia"
+
+msgid "No released revision found"
+msgstr ""
 
 msgid "No remaining entities to inspect."
 msgstr "No hay entidades restantes para inspeccionar."
@@ -10192,6 +10219,9 @@ msgstr "No certificado"
 msgid "Not enough jobs to cover quantity"
 msgstr "No hay suficientes trabajos para cubrir la cantidad"
 
+msgid "Not linked to Onshape"
+msgstr ""
+
 msgid "Not reached"
 msgstr "No alcanzado"
 
@@ -10215,6 +10245,9 @@ msgstr "No iniciado"
 
 msgid "Not started training for"
 msgstr "Sin comenzar el entrenamiento para"
+
+msgid "Not synced"
+msgstr ""
 
 msgid "Not yet"
 msgstr "Aún no"
@@ -10394,6 +10427,9 @@ msgstr "Solo los procedimientos en borrador son editables. Cree una nueva versi�
 msgid "Only empty, open periods can be deleted."
 msgstr "Solo se pueden eliminar los períodos vacíos y abiertos."
 
+msgid "Onshape"
+msgstr ""
+
 msgid "Onshape authorized the connection but saving it failed. Try connecting again."
 msgstr "Onshape autorizó la conexión, pero no se pudo guardar. Vuelve a intentar la conexión."
 
@@ -10459,6 +10495,9 @@ msgstr "Abierto en avisos de cambio {ids}. Libérelos para crear nuevas versione
 
 msgid "Open in MES"
 msgstr "Abrir en MES"
+
+msgid "Open in Onshape"
+msgstr ""
 
 msgid "Open Issues"
 msgstr "Problemas Abiertos"
@@ -11628,6 +11667,9 @@ msgstr "Extraer de contabilidad"
 msgid "Pull from Inventory"
 msgstr "Extraer del Inventario"
 
+msgid "Pull from Onshape"
+msgstr ""
+
 msgid "Pull, map, and load your data"
 msgstr "Extraer, asignar y cargar sus datos"
 
@@ -11895,7 +11937,7 @@ msgid "Question"
 msgstr "Pregunta"
 
 msgid "Queued"
-msgstr "En cola"
+msgstr ""
 
 msgid "Quote"
 msgstr "Cotización"
@@ -12676,6 +12718,9 @@ msgstr "Revisión {0}"
 msgid "Revision status"
 msgstr "Estado de revisión"
 
+msgid "Revision unknown"
+msgstr ""
+
 msgid "Revisions"
 msgstr "Revisiones"
 
@@ -12840,7 +12885,7 @@ msgid "Run this workflow now?"
 msgstr "¿Ejecutar este flujo de trabajo ahora?"
 
 msgid "Running"
-msgstr "Ejecutando"
+msgstr ""
 
 msgid "Running inventory after each week's supply and demand — the line."
 msgstr "Inventario en ejecución después del suministro y la demanda de cada semana — la línea."
@@ -14599,6 +14644,12 @@ msgstr "Sincronizar"
 msgid "Sync Activity"
 msgstr "Actividad de sincronización"
 
+msgid "Sync details"
+msgstr ""
+
+msgid "Sync did not complete — try again"
+msgstr ""
+
 msgid "Sync operation"
 msgstr "Operación de sincronización"
 
@@ -14606,7 +14657,13 @@ msgid "Sync Tie-Out"
 msgstr "Sincronización de Cierre"
 
 msgid "Synced"
-msgstr "Sincronizado"
+msgstr ""
+
+msgid "Synced by {actorName}"
+msgstr ""
+
+msgid "Syncing"
+msgstr ""
 
 msgid "System"
 msgstr "Sistema"

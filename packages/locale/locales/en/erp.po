@@ -2367,6 +2367,9 @@ msgstr "Automate quality flags and notifications"
 msgid "Automate your business processes with event-driven workflows that trigger actions when things happen in Carbon."
 msgstr "Automate your business processes with event-driven workflows that trigger actions when things happen in Carbon."
 
+msgid "Automatic"
+msgstr "Automatic"
+
 msgid "Automatic Cost Updates"
 msgstr "Automatic Cost Updates"
 
@@ -2651,6 +2654,9 @@ msgstr "Bulk Import"
 
 msgid "Bulk Jobs"
 msgstr "Bulk Jobs"
+
+msgid "Bulk sync"
+msgstr "Bulk sync"
 
 msgid "Business moment"
 msgstr "Business moment"
@@ -6243,6 +6249,9 @@ msgstr "Exemption Certificate"
 msgid "Exemption Reason"
 msgstr "Exemption Reason"
 
+msgid "Existing attachment confirmed"
+msgstr "Existing attachment confirmed"
+
 msgid "Existing mappings. Pick a different provider account to re-map."
 msgstr "Existing mappings. Pick a different provider account to re-map."
 
@@ -6824,6 +6833,9 @@ msgstr "File size exceeds 10MB limit"
 #. placeholder {0}: SIZE_LIMIT.format()
 msgid "File size too big (max. {0})"
 msgstr "File size too big (max. {0})"
+
+msgid "File too large to sync"
+msgstr "File too large to sync"
 
 msgid "File type not supported"
 msgstr "File type not supported"
@@ -8989,6 +9001,9 @@ msgstr "Matched"
 msgid "matches"
 msgstr "matches"
 
+msgid "Matches more than one part"
+msgstr "Matches more than one part"
+
 msgid "Matching Pairs"
 msgstr "Matching Pairs"
 
@@ -9228,6 +9243,9 @@ msgstr "Missing Suppliers"
 
 msgid "Mobile Phone"
 msgstr "Mobile Phone"
+
+msgid "Model"
+msgstr "Model"
 
 msgid "Model Number"
 msgstr "Model Number"
@@ -9853,6 +9871,9 @@ msgstr "No draft make method for this item yet."
 msgid "No draft versions available"
 msgstr "No draft versions available"
 
+msgid "No drawing synced"
+msgstr "No drawing synced"
+
 msgid "No due date"
 msgstr "No due date"
 
@@ -10036,6 +10057,9 @@ msgstr "No process selected"
 msgid "No production events recorded for this operation yet"
 msgstr "No production events recorded for this operation yet"
 
+msgid "No progress for 30 minutes"
+msgstr "No progress for 30 minutes"
+
 msgid "No purchases in this period"
 msgstr "No purchases in this period"
 
@@ -10056,6 +10080,9 @@ msgstr "No records found"
 
 msgid "No reference image"
 msgstr "No reference image"
+
+msgid "No released revision found"
+msgstr "No released revision found"
 
 msgid "No remaining entities to inspect."
 msgstr "No remaining entities to inspect."
@@ -10192,6 +10219,9 @@ msgstr "Not certified"
 msgid "Not enough jobs to cover quantity"
 msgstr "Not enough jobs to cover quantity"
 
+msgid "Not linked to Onshape"
+msgstr "Not linked to Onshape"
+
 msgid "Not reached"
 msgstr "Not reached"
 
@@ -10215,6 +10245,9 @@ msgstr "Not started"
 
 msgid "Not started training for"
 msgstr "Not started training for"
+
+msgid "Not synced"
+msgstr "Not synced"
 
 msgid "Not yet"
 msgstr "Not yet"
@@ -10394,6 +10427,9 @@ msgstr "Only Draft procedures are editable. Create a new version to change an Ac
 msgid "Only empty, open periods can be deleted."
 msgstr "Only empty, open periods can be deleted."
 
+msgid "Onshape"
+msgstr "Onshape"
+
 msgid "Onshape authorized the connection but saving it failed. Try connecting again."
 msgstr "Onshape authorized the connection but saving it failed. Try connecting again."
 
@@ -10459,6 +10495,9 @@ msgstr "Open in change notices {ids}. Release them to create new versions or rev
 
 msgid "Open in MES"
 msgstr "Open in MES"
+
+msgid "Open in Onshape"
+msgstr "Open in Onshape"
 
 msgid "Open Issues"
 msgstr "Open Issues"
@@ -11628,6 +11667,9 @@ msgstr "Pull from accounting"
 msgid "Pull from Inventory"
 msgstr "Pull from Inventory"
 
+msgid "Pull from Onshape"
+msgstr "Pull from Onshape"
+
 msgid "Pull, map, and load your data"
 msgstr "Pull, map, and load your data"
 
@@ -12675,6 +12717,9 @@ msgstr "Revision {0}"
 
 msgid "Revision status"
 msgstr "Revision status"
+
+msgid "Revision unknown"
+msgstr "Revision unknown"
 
 msgid "Revisions"
 msgstr "Revisions"
@@ -14599,6 +14644,12 @@ msgstr "Sync"
 msgid "Sync Activity"
 msgstr "Sync Activity"
 
+msgid "Sync details"
+msgstr "Sync details"
+
+msgid "Sync did not complete — try again"
+msgstr "Sync did not complete — try again"
+
 msgid "Sync operation"
 msgstr "Sync operation"
 
@@ -14607,6 +14658,12 @@ msgstr "Sync Tie-Out"
 
 msgid "Synced"
 msgstr "Synced"
+
+msgid "Synced by {actorName}"
+msgstr "Synced by {actorName}"
+
+msgid "Syncing"
+msgstr "Syncing"
 
 msgid "System"
 msgstr "System"

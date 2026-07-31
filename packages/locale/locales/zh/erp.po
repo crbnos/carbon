@@ -2367,6 +2367,9 @@ msgstr "自动化质量标志和通知"
 msgid "Automate your business processes with event-driven workflows that trigger actions when things happen in Carbon."
 msgstr "通过事件驱动的工作流自动化您的业务流程，当 Carbon 中发生事情时触发操作。"
 
+msgid "Automatic"
+msgstr ""
+
 msgid "Automatic Cost Updates"
 msgstr "自动成本更新"
 
@@ -2651,6 +2654,9 @@ msgstr "批量导入"
 
 msgid "Bulk Jobs"
 msgstr "批量作业"
+
+msgid "Bulk sync"
+msgstr ""
 
 msgid "Business moment"
 msgstr "业务时刻"
@@ -6243,6 +6249,9 @@ msgstr "豁免证书"
 msgid "Exemption Reason"
 msgstr "豁免原因"
 
+msgid "Existing attachment confirmed"
+msgstr ""
+
 msgid "Existing mappings. Pick a different provider account to re-map."
 msgstr "现有映射。选择不同的提供商账户以重新映射。"
 
@@ -6425,7 +6434,7 @@ msgid "Fail"
 msgstr "失败"
 
 msgid "Failed"
-msgstr "失败"
+msgstr ""
 
 msgid "Failed features"
 msgstr "失效特性"
@@ -6824,6 +6833,9 @@ msgstr "文件大小超过10MB限制"
 #. placeholder {0}: SIZE_LIMIT.format()
 msgid "File size too big (max. {0})"
 msgstr "文件大小过大（最大 {0}）"
+
+msgid "File too large to sync"
+msgstr ""
 
 msgid "File type not supported"
 msgstr "不支持的文件类型"
@@ -8989,6 +9001,9 @@ msgstr "已匹配"
 msgid "matches"
 msgstr "匹配"
 
+msgid "Matches more than one part"
+msgstr ""
+
 msgid "Matching Pairs"
 msgstr "匹配对"
 
@@ -9228,6 +9243,9 @@ msgstr "缺少供应商"
 
 msgid "Mobile Phone"
 msgstr "手机"
+
+msgid "Model"
+msgstr ""
 
 msgid "Model Number"
 msgstr "型号"
@@ -9853,6 +9871,9 @@ msgstr "此项目还没有草稿制造方法。"
 msgid "No draft versions available"
 msgstr "没有可用的草稿版本"
 
+msgid "No drawing synced"
+msgstr ""
+
 msgid "No due date"
 msgstr "无截止日期"
 
@@ -10036,6 +10057,9 @@ msgstr "未选择工艺"
 msgid "No production events recorded for this operation yet"
 msgstr "此操作尚未记录任何生产事件"
 
+msgid "No progress for 30 minutes"
+msgstr ""
+
 msgid "No purchases in this period"
 msgstr "此期间无采购"
 
@@ -10056,6 +10080,9 @@ msgstr "未找到记录"
 
 msgid "No reference image"
 msgstr "没有参考图像"
+
+msgid "No released revision found"
+msgstr ""
 
 msgid "No remaining entities to inspect."
 msgstr "没有剩余的实体可检查。"
@@ -10192,6 +10219,9 @@ msgstr "未认证"
 msgid "Not enough jobs to cover quantity"
 msgstr "工作数量不足以覆盖数量"
 
+msgid "Not linked to Onshape"
+msgstr ""
+
 msgid "Not reached"
 msgstr "未到达"
 
@@ -10215,6 +10245,9 @@ msgstr "未开始"
 
 msgid "Not started training for"
 msgstr "未开始培训"
+
+msgid "Not synced"
+msgstr ""
 
 msgid "Not yet"
 msgstr "还未"
@@ -10394,6 +10427,9 @@ msgstr "只有草稿程序可以编辑。创建新版本以更改活动或已归
 msgid "Only empty, open periods can be deleted."
 msgstr "仅可删除空白的开放期间。"
 
+msgid "Onshape"
+msgstr ""
+
 msgid "Onshape authorized the connection but saving it failed. Try connecting again."
 msgstr "Onshape 已授权此连接，但保存失败。请重新连接。"
 
@@ -10459,6 +10495,9 @@ msgstr "在更改单{ids}中打开。发布它们以创建新版本或修订版�
 
 msgid "Open in MES"
 msgstr "在MES中打开"
+
+msgid "Open in Onshape"
+msgstr ""
 
 msgid "Open Issues"
 msgstr "未解决的问题"
@@ -11628,6 +11667,9 @@ msgstr "从会计系统拉取"
 msgid "Pull from Inventory"
 msgstr "从库存中提取"
 
+msgid "Pull from Onshape"
+msgstr ""
+
 msgid "Pull, map, and load your data"
 msgstr "拉取、映射和加载您的数据"
 
@@ -11895,7 +11937,7 @@ msgid "Question"
 msgstr "问题"
 
 msgid "Queued"
-msgstr "已排队"
+msgstr ""
 
 msgid "Quote"
 msgstr "报价"
@@ -12676,6 +12718,9 @@ msgstr "修订版本 {0}"
 msgid "Revision status"
 msgstr "版本状态"
 
+msgid "Revision unknown"
+msgstr ""
+
 msgid "Revisions"
 msgstr "版本"
 
@@ -12840,7 +12885,7 @@ msgid "Run this workflow now?"
 msgstr "立即运行此工作流？"
 
 msgid "Running"
-msgstr "运行中"
+msgstr ""
 
 msgid "Running inventory after each week's supply and demand — the line."
 msgstr "每周供应和需求后运行的库存 — 该行。"
@@ -14599,6 +14644,12 @@ msgstr "同步"
 msgid "Sync Activity"
 msgstr "同步活动"
 
+msgid "Sync details"
+msgstr ""
+
+msgid "Sync did not complete — try again"
+msgstr ""
+
 msgid "Sync operation"
 msgstr "同步操作"
 
@@ -14606,7 +14657,13 @@ msgid "Sync Tie-Out"
 msgstr "同步对账"
 
 msgid "Synced"
-msgstr "已同步"
+msgstr ""
+
+msgid "Synced by {actorName}"
+msgstr ""
+
+msgid "Syncing"
+msgstr ""
 
 msgid "System"
 msgstr "系统"

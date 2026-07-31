@@ -36,6 +36,7 @@ import {
   getMakeMethodById,
   getMakeMethods,
   getMethodTree,
+  getOnshapeItemState,
   getPart,
   getPartUsedIn,
   getPickMethods,
@@ -168,6 +169,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     pickMethods: pickMethods.data ?? [],
     makeMethods: makeMethodsPromise,
     tags: tags.data ?? [],
+    // Deferred: the properties sidebar's Onshape block renders on every part
+    // tab, so the state hangs off this layout loader rather than each tab's.
+    onshapeItemState: getOnshapeItemState(client, itemId, companyId),
     usedIn: getPartUsedIn(client, itemId, companyId),
     methodTree,
     changeNotices,
