@@ -69,7 +69,9 @@ import {
 } from "./functions/tasks";
 import {
   workflowMomentFunction,
-  workflowRunFunction
+  workflowRunFunction,
+  workflowSchedulerBackstopFunction,
+  workflowSchedulerFunction
 } from "./functions/workflows";
 
 // Export all functions for serving via serve() or connect()
@@ -89,6 +91,8 @@ export const functions = [
   // Workflows
   workflowMomentFunction,
   workflowRunFunction,
+  workflowSchedulerFunction,
+  workflowSchedulerBackstopFunction,
   // Tasks
   assemblyConvertFunction,
   assemblyPlanFunction,

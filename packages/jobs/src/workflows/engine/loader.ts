@@ -61,6 +61,10 @@ export function triggerOutputs(params: {
   const declared = catalog.getEvent(eventId)?.outputs ?? {};
   const outputs: Record<string, RuntimeValue> = {};
 
+  // A schedule starts with no record, so the trigger node hands out nothing and seeds no cache.
+  // This mirrors NODE_KINDS.trigger.outputs, which already returns {} for a scheduled trigger.
+  if (trigger.kind === "schedule") return outputs;
+
   if (trigger.kind === "moment") {
     for (const [name, type] of Object.entries(declared)) {
       const supplied = trigger.outputs[name];

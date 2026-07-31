@@ -99,12 +99,10 @@ describe("planRuns", () => {
     expect(plans).toHaveLength(1);
     expect(plans[0]!.status).toBe("Queued");
     expect(plans[0]!.statusReason).toBeNull();
-    expect(plans[0]!.trace).toEqual({
-      rootRunId: null,
-      causedByRunId: null,
-      depth: 0,
-      path: []
-    });
+    expect(plans[0]!.rootRunId).toBeNull();
+    expect(plans[0]!.causedByRunId).toBeNull();
+    expect(plans[0]!.depth).toBe(0);
+    expect(plans[0]!.path).toEqual([]);
   });
 
   it("blocks a workflow that already ran in this chain", () => {
@@ -142,7 +140,7 @@ describe("planRuns", () => {
 
     expect(plans[0]!.status).toBe("Blocked");
     expect(plans[0]!.statusReason).toBe("Chain depth limit reached (10 hops)");
-    expect(plans[0]!.trace.depth).toBe(10);
+    expect(plans[0]!.depth).toBe(10);
   });
 
   it("still queues one hop below the limit", () => {
@@ -160,7 +158,7 @@ describe("planRuns", () => {
     });
 
     expect(plans[0]!.status).toBe("Queued");
-    expect(plans[0]!.trace.depth).toBe(9);
+    expect(plans[0]!.depth).toBe(9);
   });
 
   it("plans one run per workflow, keeping the first matching event id", () => {
@@ -178,6 +176,6 @@ describe("planRuns", () => {
     });
 
     expect(plans).toHaveLength(1);
-    expect(plans[0]!.subscriber.eventId).toBe("purchaseOrder.status.changed");
+    expect(plans[0]!.eventId).toBe("purchaseOrder.status.changed");
   });
 });

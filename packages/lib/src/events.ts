@@ -586,6 +586,15 @@ export type Events = {
     };
   };
 
+  // The self-chaining scheduler's own wake. Each wake books the next one as a future-dated send;
+  // `bookedFor` is the booking this wake was created by, or null from the hourly backstop, which
+  // always adopts the chain.
+  "carbon/workflow-scheduler.wake": {
+    data: {
+      bookedFor: number | null;
+    };
+  };
+
   // Workflow moments — raised after a business action commits.
   "carbon/workflow-moment.raised": {
     data: {

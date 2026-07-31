@@ -55,8 +55,12 @@ Specs: `.ai/specs/2026-07-30-workflows-foundation.md` (schema, validator, runtim
 
 - Never import from `@carbon/react` or anything app-specific. `@carbon/database` is a
   **devDependency used for types only** (`ColumnOf` / `TableName` in `src/catalog/entities.ts`) —
-  never import it as a value. Runtime dependencies are `zod`, `@carbon/utils` and `@lingui/core`,
-  which is what lets both the browser builder and the server engine use this package.
+  never import it as a value. Runtime dependencies are `zod`, `@carbon/utils`, `@lingui/core`, and
+  `@internationalized/date` (browser-safe, ES2019-safe date/timezone maths). Do not add a fifth
+  without asking first.
+- Never reimplement timezone-aware schedule maths in a consumer. The next-occurrence logic lives in
+  `src/definition/schedule.ts` (`nextOccurrenceAfter`, `nextRunAfter`, `scheduleOffsetSeconds`) and
+  is used by the scheduler and the phase-8 preview; both must call this, not re-derive it.
 - Never hand-edit `src/catalog/*.generated.ts` — regenerate instead.
 - Never import `src/catalog/labels.generated.ts` (`WORKFLOW_LABELS`) from anything but a Vite-built
   app. `msg` is a build-time macro; plain Node (the matcher, the engine, any vitest run) throws on
@@ -127,7 +131,7 @@ registry line, never an extended `node.type` chain.
 
 ## `sync.ts` — deriving what the matcher reads
 
-Four exports, all re-exported from the package root:
+Five exports, all re-exported from the package root:
 
 - `deriveWorkflowTriggerRows(nodes)` — trigger nodes → one desired `workflowTriggerEvent`
   row per event id, carrying that node's origin (a duplicated id keeps the first origin).
@@ -135,15 +139,18 @@ Four exports, all re-exported from the package root:
 - `deriveWorkflowSubscriptions(eventIds)` — event ids → one `workflow-<table>`
   `eventSystemSubscription` per distinct table with exactly the operations those events
   need, resolved through each event's catalog `match`. Moments contribute nothing.
-- `syncWorkflowTriggers(db, companyId, workflowId)` — rewrites one workflow's trigger rows
-  **and** reconciles the company's subscriptions in one transaction. This is what upholds
-  the invariant below; call it on promote, on trigger edit, and on activate/deactivate.
+- `findTriggerSchedule(nodes)` — returns the `Schedule` from the trigger node, or `null` if
+  the workflow is event-triggered. Throws if nodes fail to parse.
+- `syncWorkflowTriggers(db, companyId, workflowId)` — rewrites one workflow's trigger rows,
+  **writes `workflow.nextRunAt`** (the scheduler's bookmark), and reconciles the company's
+  subscriptions in one transaction. Returns `{ eventIds, tables, scheduled }`. Call it on
+  promote, on trigger edit, and on activate/deactivate.
 - `syncWorkflowSubscriptions(db, companyId)` — standalone repair from existing rows.
 
 Kysely is imported **type-only** (`import type { Kysely, Transaction } from "kysely"`), so
-it stays a devDependency and this package keeps its three runtime dependencies
-(`zod`, `@carbon/utils`, `@lingui/core`). Kysely also **bypasses RLS** — the caller
-authorizes first (the activation route gates on `workflows_update`).
+it stays a devDependency and this package keeps its four runtime dependencies
+(`zod`, `@carbon/utils`, `@lingui/core`, `@internationalized/date`). Kysely also **bypasses
+RLS** — the caller authorizes first (the activation route gates on `workflows_update`).
 
 This is the one thing here that lives in this package for a dependency reason rather than a
 conceptual one: it needs `WORKFLOW_EVENTS`, and `@carbon/database` (its more natural home,

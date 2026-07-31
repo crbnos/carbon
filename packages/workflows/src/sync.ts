@@ -2,7 +2,9 @@ import type { KyselyDatabase } from "@carbon/database/client";
 import type { Kysely, Transaction } from "kysely";
 import { z } from "zod";
 import { WORKFLOW_EVENTS } from "./catalog";
+import { nextRunAfter } from "./definition/schedule";
 import { nodeSchema, type Origin } from "./definition/schema";
+import type { Schedule } from "./definition/types";
 
 export type DesiredTriggerRow = { eventId: string; origin: Origin };
 
@@ -12,6 +14,21 @@ export type DesiredSubscription = {
 };
 
 const nodesSchema = z.array(nodeSchema);
+
+/** The schedule on the version's trigger node, or null if it is event-triggered. */
+export function findTriggerSchedule(nodes: unknown): Schedule | null {
+  const parsed = nodesSchema.safeParse(nodes);
+  if (!parsed.success) {
+    throw new Error(
+      `workflowVersion nodes failed to parse: ${parsed.error.message}`
+    );
+  }
+  for (const node of parsed.data) {
+    if (node.type === "trigger" && node.data.schedule)
+      return node.data.schedule;
+  }
+  return null;
+}
 
 /** One row per event id per trigger node; a duplicate event id keeps the first node's origin. */
 export function deriveWorkflowTriggerRows(nodes: unknown): DesiredTriggerRow[] {
@@ -122,7 +139,7 @@ export async function syncWorkflowTriggers(
   db: Kysely<KyselyDatabase>,
   companyId: string,
   workflowId: string
-): Promise<{ eventIds: string[]; tables: string[] }> {
+): Promise<{ eventIds: string[]; tables: string[]; scheduled: boolean }> {
   return db.transaction().execute(async (trx) => {
     const workflow = await trx
       .selectFrom("workflow")
@@ -133,6 +150,7 @@ export async function syncWorkflowTriggers(
 
     let versionId: string | null = null;
     let desired: DesiredTriggerRow[] = [];
+    let schedule: Schedule | null = null;
     if (workflow?.active && workflow.activeVersionId) {
       const version = await trx
         .selectFrom("workflowVersion")
@@ -143,6 +161,7 @@ export async function syncWorkflowTriggers(
       if (version) {
         versionId = version.id;
         desired = deriveWorkflowTriggerRows(version.nodes);
+        schedule = findTriggerSchedule(version.nodes);
       }
     }
 
@@ -167,8 +186,26 @@ export async function syncWorkflowTriggers(
         .execute();
     }
 
+    // Sole writer of workflow.nextRunAt. Folded in here so a promote or toggle cannot wire
+    // trigger rows and forget the due time — the failure would be silent (workflow never runs).
+    const nextRunAt =
+      schedule && versionId
+        ? nextRunAfter(schedule, workflowId, new Date()).toISOString()
+        : null;
+
+    await trx
+      .updateTable("workflow")
+      .set({ nextRunAt })
+      .where("id", "=", workflowId)
+      .where("companyId", "=", companyId)
+      .execute();
+
     const { tables } = await reconcileWorkflowSubscriptions(trx, companyId);
-    return { eventIds: desired.map((d) => d.eventId), tables };
+    return {
+      eventIds: desired.map((d) => d.eventId),
+      tables,
+      scheduled: nextRunAt !== null
+    };
   });
 }
 

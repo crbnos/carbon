@@ -40,6 +40,11 @@ export {
   parseWorkflowDefinition,
   readWorkflowVersion
 } from "./definition/normalize";
+export {
+  nextOccurrenceAfter,
+  nextRunAfter,
+  scheduleOffsetSeconds
+} from "./definition/schedule";
 export type {
   ActionNode,
   ConditionNode,
@@ -152,6 +157,7 @@ export type { DesiredSubscription, DesiredTriggerRow } from "./sync";
 export {
   deriveWorkflowSubscriptions,
   deriveWorkflowTriggerRows,
+  findTriggerSchedule,
   syncWorkflowSubscriptions,
   syncWorkflowTriggers
 } from "./sync";

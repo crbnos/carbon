@@ -15,6 +15,11 @@ export const runTriggerSchema = z.discriminatedUnion("kind", [
     kind: z.literal("moment"),
     moment: z.string(),
     outputs: z.record(z.object({ id: z.string() }).passthrough())
+  }),
+  z.object({
+    kind: z.literal("schedule"),
+    /** The claimed nextRunAt, ISO 8601 in UTC. */
+    dueAt: z.string()
   })
 ]);
 

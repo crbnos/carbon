@@ -99,7 +99,8 @@ replay can never double-fire:
 
 - `sourceEventId` identifies the announcement: `pgmq:<msgId>` (record change),
   `moment:<momentId>` (moment; `raiseMoment` mints the nanoid and reuses it as the Inngest
-  event id), `schedule:<workflowId>:<dueAtIso>` reserved for phase 6.
+  event id), `schedule:<workflowId>:<dueAtIso>` (scheduler — the dueAt is the `nextRunAt` the
+  scheduler claimed before advancing it).
 - The unique constraint `workflowRun_dedupe_key (workflowId, companyId, workflowVersionId,
   sourceEventId)` + `ON CONFLICT DO NOTHING` means a second attempt inserts nothing and
   sends nothing.
@@ -116,9 +117,12 @@ replay can never double-fire:
 - `deriveWorkflowSubscriptions(eventIds)` — event ids → one `workflow-<table>`
   `eventSystemSubscription` per distinct table, `operations` the exact union those events
   need. Moments resolve to no table and contribute nothing.
+- `findTriggerSchedule(nodes)` — returns the `Schedule` from the trigger node, or `null`.
 - `syncWorkflowTriggers(db, companyId, workflowId)` — rewrite one workflow's trigger rows
-  (delete-then-insert; the table has no UPDATE policy by design) **and** reconcile the
-  company's subscriptions. Call it on promote, on trigger edit, and on activate/deactivate.
+  (delete-then-insert; the table has no UPDATE policy by design), **write `workflow.nextRunAt`**
+  (the scheduler's bookmark, or null for event-triggered workflows), and reconcile the company's
+  subscriptions. Returns `{ eventIds, tables, scheduled }`. Call it on promote, on trigger edit,
+  and on activate/deactivate.
 - `syncWorkflowSubscriptions(db, companyId)` — standalone repair from existing rows.
 
 Reconciliation is surgical: only `handlerType = 'WORKFLOW'` rows are touched, matched by

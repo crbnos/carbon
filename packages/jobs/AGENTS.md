@@ -62,9 +62,16 @@ pnpm --filter @carbon/jobs dev:jobs   # Start local Inngest dev server
 |----------|-------|---------|
 | `workflow-moment` | `carbon/workflow-moment.raised` | Moment entry point of the same matcher (a moment already IS a catalog event id) |
 | `workflow-run` | `carbon/workflow-run.queued` | Walks one matched run's graph — one durable step per node, acting as the workflow's owner. Thin wrapper over `src/workflows/engine/` |
+| `workflows-scheduler` | `carbon/workflow-scheduler.wake` | Self-chaining scheduler wake: scans due workflows, claims and books the next wake, dispatches Queued/Skipped runs |
+| `workflows-scheduler-backstop` | cron `0 * * * *` | Hourly: sends a wake if the chain has gone quiet (Redis TTL expired or never set) |
 
-Both entry points call one shared core in `src/workflows/` (`event-ids.ts`, `matcher.ts`,
-`types.ts`), which imports no Inngest and is unit-tested directly. See
+The scheduler's Inngest-free core lives in `src/workflows/scheduler.ts` — same pattern as
+`matcher.ts`. `ensureSchedulerChain()` (exported from `@carbon/jobs/inngest`) kick-starts
+the chain immediately when a scheduled workflow is first activated; the backstop revives it
+if it ever goes quiet.
+
+All entry points call one shared core in `src/workflows/` (`event-ids.ts`, `matcher.ts`,
+`scheduler.ts`, `types.ts`), which imports no Inngest and is unit-tested directly. See
 `.claude/rules/workflow-matcher.md`.
 
 The engine lives in `src/workflows/engine/` (`walk.ts`, `owner.ts`, `loader.ts`,

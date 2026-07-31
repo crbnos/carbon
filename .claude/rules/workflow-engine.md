@@ -92,6 +92,14 @@ A workflow must never be able to do something its owner could not do by hand.
 - A node reached from two branches runs **once**. The second arrival is skipped
   in the walk; the unique constraint means a second row cannot exist anyway.
 
+## `RunTrigger` — three variants
+
+`runTriggerSchema` / `RunTrigger` in `packages/workflows/src/run-trigger.ts` is a three-member
+discriminated union: `kind: "record"` (a DB row change), `kind: "moment"` (a business event),
+and `kind: "schedule"` (a scheduler wake, carrying only `dueAt: string`). `triggerOutputs` in
+`engine/loader.ts` returns `{}` for `"schedule"` — a scheduled run starts with no record
+and seeds no entity cache.
+
 ## `before` and `after` share an id
 
 A change trigger hands out `record`, `before` and `after`, and all three are the

@@ -49,17 +49,25 @@ export function evaluateLoopGuard(
   return { blocked: false };
 }
 
+/**
+ * A planned workflowRun row — the flat shape both the matcher and the scheduler produce.
+ * The scheduler adds `Skipped`; the matcher produces only `Queued` and `Blocked`.
+ */
 export type PlannedRun = {
-  subscriber: Subscriber;
-  status: "Queued" | "Blocked";
+  workflowId: string;
+  workflowVersionId: string;
+  eventId: string;
+  ownerId: string;
+  status: "Queued" | "Blocked" | "Skipped";
   statusReason: string | null;
-  trace: RunTrace;
+  rootRunId: string | null;
+  causedByRunId: string | null;
+  depth: number;
+  path: string[];
 };
 
-/**
- * One run per workflow — the first matching event id in catalog order wins.
- * A blocked firing is planned as a Blocked run, never dropped.
- */
+/** One run per workflow — the first matching event id in catalog order wins.
+ * A blocked firing is planned as a Blocked run, never dropped. */
 export function planRuns(input: {
   subscribers: Subscriber[];
   eventIds: string[];
@@ -85,9 +93,18 @@ export function planRuns(input: {
 
   return survivors.map((subscriber) => {
     const guard = evaluateLoopGuard(subscriber.workflowId, trace);
-    return guard.blocked
-      ? { subscriber, status: "Blocked", statusReason: guard.reason, trace }
-      : { subscriber, status: "Queued", statusReason: null, trace };
+    return {
+      workflowId: subscriber.workflowId,
+      workflowVersionId: subscriber.workflowVersionId,
+      eventId: subscriber.eventId,
+      ownerId: subscriber.ownerId,
+      status: guard.blocked ? ("Blocked" as const) : ("Queued" as const),
+      statusReason: guard.blocked ? guard.reason : null,
+      rootRunId: trace.rootRunId,
+      causedByRunId: trace.causedByRunId,
+      depth: trace.depth,
+      path: trace.path
+    };
   });
 }
 
@@ -112,6 +129,91 @@ export type MatchResult = {
   blocked: number;
   deduped: number;
 };
+
+/**
+ * The one place a workflowRun is created. One statement, so the whole firing lands or none of
+ * it does; ON CONFLICT returns only the genuinely new rows, which is also the dedupe count.
+ * Only Queued rows produce an event — Blocked and Skipped rows exist to be read in run history.
+ */
+export async function insertRunsAndBuildEvents(
+  db: Kysely<KyselyDatabase>,
+  params: {
+    companyId: string;
+    sourceEventId: string;
+    triggerTable: string | null;
+    triggerRecordId: string | null;
+    trigger: MatchInput["trigger"];
+    planned: PlannedRun[];
+  }
+): Promise<MatchResult> {
+  const {
+    companyId,
+    sourceEventId,
+    triggerTable,
+    triggerRecordId,
+    trigger,
+    planned
+  } = params;
+
+  const inserted = await db
+    .insertInto("workflowRun")
+    .values(
+      planned.map((plan) => ({
+        companyId,
+        workflowId: plan.workflowId,
+        workflowVersionId: plan.workflowVersionId,
+        eventId: plan.eventId,
+        sourceEventId,
+        triggerTable,
+        triggerRecordId,
+        ownerId: plan.ownerId,
+        status: plan.status,
+        statusReason: plan.statusReason,
+        rootRunId: plan.rootRunId,
+        causedByRunId: plan.causedByRunId,
+        depth: plan.depth,
+        path: plan.path
+      }))
+    )
+    .onConflict((oc) => oc.constraint("workflowRun_dedupe_key").doNothing())
+    .returning(["id", "workflowId"])
+    .execute();
+
+  const runIdByWorkflow = new Map(inserted.map((r) => [r.workflowId, r.id]));
+
+  const result: MatchResult = {
+    events: [],
+    queued: 0,
+    blocked: 0,
+    deduped: planned.length - inserted.length
+  };
+
+  for (const plan of planned) {
+    const runId = runIdByWorkflow.get(plan.workflowId);
+    if (!runId) continue;
+    if (plan.status === "Blocked" || plan.status === "Skipped") {
+      if (plan.status === "Blocked") result.blocked += 1;
+      continue;
+    }
+    result.queued += 1;
+    result.events.push({
+      name: "carbon/workflow-run.queued",
+      id: `${plan.workflowId}:${plan.workflowVersionId}:${sourceEventId}`,
+      data: {
+        runId,
+        companyId,
+        workflowId: plan.workflowId,
+        workflowVersionId: plan.workflowVersionId,
+        eventId: plan.eventId,
+        ownerId: plan.ownerId,
+        sourceEventId,
+        trigger
+      }
+    });
+  }
+
+  return result;
+}
 
 /**
  * Subscribers -> origin filter -> loop guards -> one workflowRun row per
@@ -178,65 +280,12 @@ export async function matchAndQueue(
     return { events: [], queued: 0, blocked: 0, deduped: 0 };
   }
 
-  // One statement, so the whole firing lands or none of it does. ON CONFLICT
-  // returns only the genuinely new rows, which is also the dedupe count.
-  const inserted = await db
-    .insertInto("workflowRun")
-    .values(
-      planned.map((plan) => ({
-        companyId: input.companyId,
-        workflowId: plan.subscriber.workflowId,
-        workflowVersionId: plan.subscriber.workflowVersionId,
-        eventId: plan.subscriber.eventId,
-        sourceEventId: input.sourceEventId,
-        triggerTable: input.triggerTable,
-        triggerRecordId: input.triggerRecordId,
-        ownerId: plan.subscriber.ownerId,
-        status: plan.status,
-        statusReason: plan.statusReason,
-        rootRunId: plan.trace.rootRunId,
-        causedByRunId: plan.trace.causedByRunId,
-        depth: plan.trace.depth,
-        path: plan.trace.path
-      }))
-    )
-    .onConflict((oc) => oc.constraint("workflowRun_dedupe_key").doNothing())
-    .returning(["id", "workflowId"])
-    .execute();
-
-  // Safe as a key: planRuns emits at most one plan per workflow.
-  const runIdByWorkflow = new Map(inserted.map((r) => [r.workflowId, r.id]));
-
-  const result: MatchResult = {
-    events: [],
-    queued: 0,
-    blocked: 0,
-    deduped: planned.length - inserted.length
-  };
-
-  for (const plan of planned) {
-    const runId = runIdByWorkflow.get(plan.subscriber.workflowId);
-    if (!runId) continue;
-    if (plan.status === "Blocked") {
-      result.blocked += 1;
-      continue;
-    }
-    result.queued += 1;
-    result.events.push({
-      name: "carbon/workflow-run.queued",
-      id: `${plan.subscriber.workflowId}:${plan.subscriber.workflowVersionId}:${input.sourceEventId}`,
-      data: {
-        runId,
-        companyId: input.companyId,
-        workflowId: plan.subscriber.workflowId,
-        workflowVersionId: plan.subscriber.workflowVersionId,
-        eventId: plan.subscriber.eventId,
-        ownerId: plan.subscriber.ownerId,
-        sourceEventId: input.sourceEventId,
-        trigger: input.trigger
-      }
-    });
-  }
-
-  return result;
+  return insertRunsAndBuildEvents(db, {
+    companyId: input.companyId,
+    sourceEventId: input.sourceEventId,
+    triggerTable: input.triggerTable,
+    triggerRecordId: input.triggerRecordId,
+    trigger: input.trigger,
+    planned
+  });
 }

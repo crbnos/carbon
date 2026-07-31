@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { deriveWorkflowSubscriptions, deriveWorkflowTriggerRows } from "./sync";
+import {
+  deriveWorkflowSubscriptions,
+  deriveWorkflowTriggerRows,
+  findTriggerSchedule
+} from "./sync";
 
 function triggerNode(
   events: string[],
@@ -58,6 +62,50 @@ describe("deriveWorkflowTriggerRows", () => {
 
   it("throws on malformed nodes", () => {
     expect(() => deriveWorkflowTriggerRows([{ type: "nope" }])).toThrow(
+      /failed to parse/
+    );
+  });
+});
+
+describe("findTriggerSchedule", () => {
+  it("returns the schedule from a scheduled trigger node", () => {
+    const nodes = [
+      {
+        id: "t1",
+        position: { x: 0, y: 0 },
+        type: "trigger",
+        data: {
+          events: [],
+          origin: "Person",
+          schedule: {
+            freq: "Daily",
+            hour: 9,
+            minute: 0,
+            tz: "America/New_York"
+          }
+        }
+      }
+    ];
+    expect(findTriggerSchedule(nodes)).toEqual({
+      freq: "Daily",
+      hour: 9,
+      minute: 0,
+      tz: "America/New_York"
+    });
+  });
+
+  it("returns null for an event-only trigger node", () => {
+    expect(
+      findTriggerSchedule([triggerNode(["purchaseOrder.created"])])
+    ).toBeNull();
+  });
+
+  it("returns null for an empty node list", () => {
+    expect(findTriggerSchedule([])).toBeNull();
+  });
+
+  it("throws on unparseable nodes", () => {
+    expect(() => findTriggerSchedule("not-an-array")).toThrow(
       /failed to parse/
     );
   });
