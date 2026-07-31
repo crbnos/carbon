@@ -555,7 +555,7 @@ msgid "Accumulation Period:"
 msgstr "संचय अवधि:"
 
 msgid "Acknowledge & finish"
-msgstr ""
+msgstr "स्वीकार करें और समाप्त करें"
 
 msgid "Acquisition Cost"
 msgstr "अधिग्रहण लागत"
@@ -5788,7 +5788,7 @@ msgid "Finish To"
 msgstr "समाप्त करने के लिए"
 
 msgid "Finish with material unpicked?"
-msgstr ""
+msgstr "सामग्री अनचुनी के साथ समाप्त करें?"
 
 msgid "Finished goods"
 msgstr "फिनिशें"
@@ -7074,7 +7074,7 @@ msgid "Keep Open"
 msgstr "खुला रखें"
 
 msgid "Keep picking"
-msgstr ""
+msgstr "चुनते रहें"
 
 msgid "Key"
 msgstr "कुंजी"
@@ -11725,7 +11725,7 @@ msgid "Shop-floor configuration."
 msgstr "शॉप-फ्लोर कॉन्फ़िगरेशन।"
 
 msgid "short"
-msgstr ""
+msgstr "अधूरा"
 
 msgid "Short"
 msgstr "कम"
@@ -13257,7 +13257,7 @@ msgid "These email addresses will be automatically CC'd on all quote emails sent
 msgstr "ये ईमेल पते सभी ग्राहकों को भेजे गए उद्धरण ईमेल पर स्वचालित रूप से CC किए जाएंगे।"
 
 msgid "These items still have material to pick. Finishing now marks the list Partial."
-msgstr ""
+msgstr "इन आइटमों में अभी भी सामग्री चुनने के लिए है। अभी समाप्त करने से सूची को आंशिक चिह्नित किया जाता है।"
 
 msgid "These jobs have operations assigned to this work center:"
 msgstr "इन कार्यों के पास इस कार्य केंद्र को सौंपे गए संचालन हैं:"

@@ -555,7 +555,7 @@ msgid "Accumulation Period:"
 msgstr "Akkumulationszeitraum:"
 
 msgid "Acknowledge & finish"
-msgstr ""
+msgstr "Bestätigen & beenden"
 
 msgid "Acquisition Cost"
 msgstr "Anschaffungskosten"
@@ -5788,7 +5788,7 @@ msgid "Finish To"
 msgstr "Fertigstellen zu"
 
 msgid "Finish with material unpicked?"
-msgstr ""
+msgstr "Mit nicht gepicktem Material beenden?"
 
 msgid "Finished goods"
 msgstr "Oberflächen"
@@ -7074,7 +7074,7 @@ msgid "Keep Open"
 msgstr "Offen halten"
 
 msgid "Keep picking"
-msgstr ""
+msgstr "Weiter kommissionieren"
 
 msgid "Key"
 msgstr "Schlüssel"
@@ -11725,7 +11725,7 @@ msgid "Shop-floor configuration."
 msgstr "Konfiguration der Produktionshalle."
 
 msgid "short"
-msgstr ""
+msgstr "kurz"
 
 msgid "Short"
 msgstr "Mangel"
@@ -13257,7 +13257,7 @@ msgid "These email addresses will be automatically CC'd on all quote emails sent
 msgstr "Diese E-Mail-Adressen werden automatisch in CC auf alle Angebots-E-Mails kopiert, die an Kunden versendet werden."
 
 msgid "These items still have material to pick. Finishing now marks the list Partial."
-msgstr ""
+msgstr "Diese Artikel enthalten noch Material zum Kommissionieren. Das Beenden markiert die Liste als Teilweise."
 
 msgid "These jobs have operations assigned to this work center:"
 msgstr "Diese Aufträge haben Operationen, die diesem Arbeitszentrum zugewiesen sind:"

@@ -4139,7 +4139,11 @@ export async function getAssemblyInstructions(
   }
 ) {
   let query = client
-    .from("assemblyInstruction")
+    // "assemblyInstructions" (plural) is the version-collapsing view: one row
+    // per version group (root = rootInstructionId ?? id), latest version shown,
+    // all siblings rolled into a "versions" jsonb array. See the
+    // 20260730153412_assembly-instructions-view migration.
+    .from("assemblyInstructions")
     .select("*, modelUpload(id, name, componentCount, processingStatus)", {
       count: "exact"
     })
