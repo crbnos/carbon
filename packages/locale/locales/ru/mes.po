@@ -483,6 +483,9 @@ msgstr "Проверить элемент"
 msgid "inspected"
 msgstr "проверенный"
 
+msgid "Instructions"
+msgstr "Инструкции"
+
 msgid "Insufficient quantity"
 msgstr "Недостаточное количество"
 

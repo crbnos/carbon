@@ -483,6 +483,9 @@ msgstr "检验物品"
 msgid "inspected"
 msgstr "已检验"
 
+msgid "Instructions"
+msgstr "作业指导"
+
 msgid "Insufficient quantity"
 msgstr "数量不足"
 

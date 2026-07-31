@@ -483,6 +483,9 @@ msgstr "Inspect Item"
 msgid "inspected"
 msgstr "inspected"
 
+msgid "Instructions"
+msgstr "Instructions"
+
 msgid "Insufficient quantity"
 msgstr "Insufficient quantity"
 

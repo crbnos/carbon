@@ -483,6 +483,9 @@ msgstr "Ürünü İncele"
 msgid "inspected"
 msgstr "incelendi"
 
+msgid "Instructions"
+msgstr "Talimatlar"
+
 msgid "Insufficient quantity"
 msgstr "Yetersiz miktar"
 

@@ -483,6 +483,9 @@ msgstr "Artikel prüfen"
 msgid "inspected"
 msgstr "geprüft"
 
+msgid "Instructions"
+msgstr "Anweisungen"
+
 msgid "Insufficient quantity"
 msgstr "Unzureichende Menge"
 
