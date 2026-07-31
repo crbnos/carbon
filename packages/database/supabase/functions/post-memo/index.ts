@@ -265,7 +265,10 @@ serve(async (req: Request) => {
         companyId,
         isAR,
         direction: memo.data.direction as "Credit" | "Debit",
-        amountBase: Number(memo.data.amount) * Number(memo.data.exchangeRate),
+        // memo.amount is already base currency (the form captures it as the
+        // company base currency), so it posts RAW — matching the base
+        // invoiceSettlement.appliedAmount reductions and the tie-out RPCs.
+        amountBase: Number(memo.data.amount),
         journalLineReference,
         controlAccountId,
         reasonAccountId,

@@ -784,14 +784,6 @@ serve(async (req: Request) => {
       throw new Error("Error getting account defaults");
     }
 
-    // Invoice exchange rate (defaults to 1 for base-currency invoices).
-    // The payment chain (post-payment/build-payment-journal) relieves AP at
-    // `applied × exchangeRate`, so posting applies the same multiplier to the
-    // line totals (header shipping included, already divided to base above)
-    // to keep AP credit == what payments will debit. See the FX-convention
-    // spec for the planned normalization of this multiplier.
-    const invoiceExchangeRate = purchaseInvoice.data?.exchangeRate ?? 1;
-
     for await (const invoiceLine of purchaseInvoiceLines.data) {
       const invoiceLineQuantityInInventoryUnit =
         invoiceLine.quantity * (invoiceLine.conversionFactor ?? 1);
@@ -813,10 +805,13 @@ serve(async (req: Request) => {
             : totalLineCost / totalLinesCost;
       const lineWeightedShippingCost =
         shippingCost * lineCostPercentageOfTotalCost;
-      // Line cost and weighted shipping are both base currency here; the
-      // exchange-rate multiplier matches the payment chain's AP relief.
+      // purchaseInvoiceLine.unitPrice is ALREADY base (generated as
+      // supplierUnitPrice / exchangeRate), and the header shipping was divided to
+      // base above, so the line totals reach the GL unscaled — matching the
+      // base-denominated purchaseInvoices view balance that the payment chain
+      // relieves AP against. No exchange-rate multiplier.
       const totalLineCostWithWeightedShipping =
-        (totalLineCost + lineWeightedShippingCost) * invoiceExchangeRate;
+        totalLineCost + lineWeightedShippingCost;
 
       const invoiceLineUnitCostInInventoryUnit =
         totalLineCostWithWeightedShipping /

@@ -15,6 +15,16 @@ import {
 // that the entry balances in debit/credit space (signedDebitTotal ≈ 0). The
 // matrix covers AR/AP × full/partial/over × discount/write-off × FX gain/loss,
 // so the ledger that hits the books is provably correct, not merely inspected.
+//
+// Convention: exchange rates are FOREIGN units per BASE unit (targetExchangeRate
+// = invoice rate, sourceExchangeRate = payment rate). The stored settlement
+// amounts (appliedAmount / discountAmount / writeOffAmount) and totalAmount are
+// ALREADY base currency, so control / discount / write-off / unapplied post RAW.
+// A settled principal booked to control at its base value at the invoice rate
+// (= appliedAmount) settles for appliedAmount × invRate/payRate base at the
+// payment rate; the difference is the realized FX. So a LOWER payment rate than
+// the invoice rate (the foreign currency strengthened) is an AR gain, and a
+// HIGHER payment rate (it weakened) is an AR loss — the mirror for AP.
 
 const ACCOUNTS: PaymentJournalAccounts = {
   controlAccountId: "control", // receivables (AR) or payables (AP); driver resolves
@@ -154,7 +164,7 @@ Deno.test("AR discount: bank 90 / receivables 100 / discount expense 10", () => 
   );
 
   assertEquals(line(lines, "Bank / Cash")!.amount, 90);
-  assertEquals(line(lines, "Accounts Receivable")!.amount, -100); // (90+10)*1
+  assertEquals(line(lines, "Accounts Receivable")!.amount, -100); // 90+10
   const discount = line(lines, "Customer Payment Discount")!;
   assertEquals(discount.accountId, "discount");
   assertEquals(discount.amount, 10); // debit expense
@@ -208,14 +218,17 @@ Deno.test("AP write-off: vendor write-off income credited (revenue)", () => {
 });
 
 // ---------------------------------------------------------------------------
-// Realized FX — the sign convention. These pin that AR collected high = gain,
-// AP paid high = LOSS (the case a reviewer mis-called as inverted).
+// Realized FX — the sign convention under foreign-per-base rates. A settled
+// principal is booked to control at appliedAmount (its base value at the invoice
+// rate) and settles for appliedAmount × invRate/payRate base. AR collecting when
+// the foreign currency STRENGTHENED (payRate < invRate) is a gain; when it
+// WEAKENED (payRate > invRate) a loss. AP is the mirror.
 // ---------------------------------------------------------------------------
 
-Deno.test("AR collected above booked rate → FX Gain (credit revenue)", () => {
+Deno.test("AR foreign strengthened (payRate < invRate) → FX Gain (credit revenue)", () => {
   const { lines, signedDebitTotal } = buildPaymentJournal(
     arBase({
-      exchangeRate: 1.2,
+      exchangeRate: 0.8,
       applications: [
         {
           targetSalesInvoiceId: "si_1",
@@ -223,25 +236,25 @@ Deno.test("AR collected above booked rate → FX Gain (credit revenue)", () => {
           discountAmount: 0,
           writeOffAmount: 0,
           targetExchangeRate: 1.0,
-          sourceExchangeRate: 1.2,
+          sourceExchangeRate: 0.8,
         },
       ],
     })
   );
 
-  assertEquals(line(lines, "Bank / Cash")!.amount, 120); // 100 × 1.2
-  assertEquals(line(lines, "Accounts Receivable")!.amount, -100); // 100 × 1.0
+  assertEquals(line(lines, "Bank / Cash")!.amount, 125); // 100 × 1.0/0.8
+  assertEquals(line(lines, "Accounts Receivable")!.amount, -100); // raw base
   const fx = line(lines, "Realized FX Gain")!;
   assertEquals(fx.accountId, "fxgain");
-  assertEquals(fx.amount, 20); // credit revenue
+  assertEquals(fx.amount, 25); // credit revenue: 100 × (1.0/0.8 − 1)
   assert(line(lines, "Realized FX Loss") === undefined);
   assert(balanced(signedDebitTotal));
 });
 
-Deno.test("AR collected below booked rate → FX Loss (debit expense)", () => {
+Deno.test("AR foreign weakened (payRate > invRate) → FX Loss (debit expense)", () => {
   const { lines, signedDebitTotal } = buildPaymentJournal(
     arBase({
-      exchangeRate: 0.8,
+      exchangeRate: 1.25,
       applications: [
         {
           targetSalesInvoiceId: "si_1",
@@ -249,47 +262,23 @@ Deno.test("AR collected below booked rate → FX Loss (debit expense)", () => {
           discountAmount: 0,
           writeOffAmount: 0,
           targetExchangeRate: 1.0,
-          sourceExchangeRate: 0.8,
+          sourceExchangeRate: 1.25,
         },
       ],
     })
   );
 
+  assertEquals(line(lines, "Bank / Cash")!.amount, 80); // 100 × 1.0/1.25
   const fx = line(lines, "Realized FX Loss")!;
   assertEquals(fx.accountId, "fxloss");
-  assertEquals(fx.amount, 20); // debit expense
+  assertEquals(fx.amount, 20); // debit expense: 100 × (1 − 1.0/1.25)
   assert(line(lines, "Realized FX Gain") === undefined);
   assert(balanced(signedDebitTotal));
 });
 
-Deno.test("AP paid ABOVE booked rate → FX Loss (debit expense)", () => {
-  // The case a reviewer wrongly flagged as a sign inversion. Paying a supplier
-  // at a higher rate than the liability was booked is a real loss.
-  const { lines, signedDebitTotal } = buildPaymentJournal(
-    apBase({
-      exchangeRate: 1.2,
-      applications: [
-        {
-          targetPurchaseInvoiceId: "pi_1",
-          appliedAmount: 100,
-          discountAmount: 0,
-          writeOffAmount: 0,
-          targetExchangeRate: 1.0,
-          sourceExchangeRate: 1.2,
-        },
-      ],
-    })
-  );
-
-  assertEquals(line(lines, "Bank / Cash")!.amount, -120); // credit asset 100×1.2
-  const fx = line(lines, "Realized FX Loss")!;
-  assertEquals(fx.accountId, "fxloss");
-  assertEquals(fx.amount, 20); // debit expense
-  assert(line(lines, "Realized FX Gain") === undefined);
-  assert(balanced(signedDebitTotal));
-});
-
-Deno.test("AP paid BELOW booked rate → FX Gain (credit revenue)", () => {
+Deno.test("AP foreign strengthened (payRate < invRate) → FX Loss (debit expense)", () => {
+  // Paying a supplier when the foreign currency strengthened costs more base
+  // than the liability was booked at — a real loss.
   const { lines, signedDebitTotal } = buildPaymentJournal(
     apBase({
       exchangeRate: 0.8,
@@ -306,6 +295,32 @@ Deno.test("AP paid BELOW booked rate → FX Gain (credit revenue)", () => {
     })
   );
 
+  assertEquals(line(lines, "Bank / Cash")!.amount, -125); // credit asset 100×1.0/0.8
+  const fx = line(lines, "Realized FX Loss")!;
+  assertEquals(fx.accountId, "fxloss");
+  assertEquals(fx.amount, 25); // debit expense
+  assert(line(lines, "Realized FX Gain") === undefined);
+  assert(balanced(signedDebitTotal));
+});
+
+Deno.test("AP foreign weakened (payRate > invRate) → FX Gain (credit revenue)", () => {
+  const { lines, signedDebitTotal } = buildPaymentJournal(
+    apBase({
+      exchangeRate: 1.25,
+      applications: [
+        {
+          targetPurchaseInvoiceId: "pi_1",
+          appliedAmount: 100,
+          discountAmount: 0,
+          writeOffAmount: 0,
+          targetExchangeRate: 1.0,
+          sourceExchangeRate: 1.25,
+        },
+      ],
+    })
+  );
+
+  assertEquals(line(lines, "Bank / Cash")!.amount, -80); // credit asset 100×1.0/1.25
   const fx = line(lines, "Realized FX Gain")!;
   assertEquals(fx.accountId, "fxgain");
   assertEquals(fx.amount, 20); // credit revenue
@@ -396,9 +411,10 @@ Deno.test("AR two invoices with discount and FX all balance", () => {
     })
   );
 
-  // Two control lines, one discount, one FX gain, cash — and it balances.
+  // Two control lines, one discount, one FX loss (payRate > invRate), cash — and
+  // it balances.
   assert(line(lines, "Customer Payment Discount") !== undefined);
-  assert(line(lines, "Realized FX Gain") !== undefined);
+  assert(line(lines, "Realized FX Loss") !== undefined);
   assert(balanced(signedDebitTotal));
 });
 
@@ -446,7 +462,7 @@ Deno.test("throws when an FX gain arises but no FX gain account is set", () => {
     () =>
       buildPaymentJournal(
         arBase({
-          exchangeRate: 1.2,
+          exchangeRate: 0.8,
           accounts: { ...ACCOUNTS, fxGainAccountId: null },
           applications: [
             {
@@ -455,7 +471,7 @@ Deno.test("throws when an FX gain arises but no FX gain account is set", () => {
               discountAmount: 0,
               writeOffAmount: 0,
               targetExchangeRate: 1.0,
-              sourceExchangeRate: 1.2,
+              sourceExchangeRate: 0.8, // payRate < invRate → AR gain
             },
           ],
         })
@@ -615,8 +631,8 @@ Deno.test("AP underpayment across multiple invoices builds credit", () => {
 Deno.test("AR discount + write-off + FX on one invoice all coexist, balanced", () => {
   const { lines, signedDebitTotal } = buildPaymentJournal(
     arBase({
-      exchangeRate: 1.2,
-      totalAmount: 80, // pays 80 cash; 10 discount + 10 write-off settle a 100 invoice
+      exchangeRate: 0.8,
+      totalAmount: 80, // pays 80 base applied; 10 discount + 10 write-off settle a 100 invoice
       applications: [
         {
           targetSalesInvoiceId: "si_1",
@@ -624,17 +640,17 @@ Deno.test("AR discount + write-off + FX on one invoice all coexist, balanced", (
           discountAmount: 10,
           writeOffAmount: 10,
           targetExchangeRate: 1.0,
-          sourceExchangeRate: 1.2,
+          sourceExchangeRate: 0.8, // payRate < invRate → AR gain
         },
       ],
     })
   );
 
-  assertEquals(line(lines, "Bank / Cash")!.amount, 96); // 80 × 1.2
-  assertEquals(line(lines, "Accounts Receivable")!.amount, -100); // (80+10+10) × 1.0
-  assertEquals(line(lines, "Customer Payment Discount")!.amount, 10); // 10 × 1.0
-  assertEquals(line(lines, "Bad Debt Expense")!.amount, 10); // 10 × 1.0
-  assertEquals(line(lines, "Realized FX Gain")!.amount, 16); // 80 × (1.2 − 1.0)
+  assertEquals(line(lines, "Bank / Cash")!.amount, 100); // 80 × 1.0/0.8
+  assertEquals(line(lines, "Accounts Receivable")!.amount, -100); // 80+10+10 raw
+  assertEquals(line(lines, "Customer Payment Discount")!.amount, 10); // raw
+  assertEquals(line(lines, "Bad Debt Expense")!.amount, 10); // raw
+  assertEquals(line(lines, "Realized FX Gain")!.amount, 20); // 80 × (1.0/0.8 − 1)
   assert(balanced(signedDebitTotal));
 });
 
@@ -665,10 +681,10 @@ Deno.test("opposing per-invoice FX nets to zero → no FX plug line", () => {
   const { lines, signedDebitTotal, totalFxImpact } = buildPaymentJournal(
     arBase({
       exchangeRate: 1.0,
-      totalAmount: 200,
+      totalAmount: 225,
       applications: [
-        { targetSalesInvoiceId: "si_1", appliedAmount: 100, discountAmount: 0, writeOffAmount: 0, targetExchangeRate: 1.0, sourceExchangeRate: 1.1 }, // +10
-        { targetSalesInvoiceId: "si_2", appliedAmount: 100, discountAmount: 0, writeOffAmount: 0, targetExchangeRate: 1.0, sourceExchangeRate: 0.9 }, // −10
+        { targetSalesInvoiceId: "si_1", appliedAmount: 100, discountAmount: 0, writeOffAmount: 0, targetExchangeRate: 1.0, sourceExchangeRate: 0.8 }, // 100 × (1.25 − 1) = +25
+        { targetSalesInvoiceId: "si_2", appliedAmount: 125, discountAmount: 0, writeOffAmount: 0, targetExchangeRate: 1.0, sourceExchangeRate: 1.25 }, // 125 × (0.8 − 1) = −25
       ],
     })
   );
@@ -685,12 +701,11 @@ Deno.test("opposing per-invoice FX nets to zero → no FX plug line", () => {
 // ---------------------------------------------------------------------------
 
 Deno.test("magnitudes round to 4 dp and the entry still balances", () => {
-  // Consistent rates (cash exchangeRate == application paymentExchangeRate).
-  // cash = 100 × 1.11111 = 111.111; control = 100 × 1.0 = 100;
-  // FX = 100 × (1.11111 − 1.0) = 11.111 → all land on 4 dp and net to zero.
+  // invRate 1.0, payRate 0.9 → cash = 100 / 0.9 = 111.1111; control = 100 raw;
+  // FX = 100 × (1.0/0.9 − 1) = 11.1111 → all land on 4 dp and net to zero.
   const { lines, signedDebitTotal } = buildPaymentJournal(
     arBase({
-      exchangeRate: 1.11111,
+      exchangeRate: 0.9,
       totalAmount: 100,
       applications: [
         {
@@ -699,23 +714,23 @@ Deno.test("magnitudes round to 4 dp and the entry still balances", () => {
           discountAmount: 0,
           writeOffAmount: 0,
           targetExchangeRate: 1.0,
-          sourceExchangeRate: 1.11111,
+          sourceExchangeRate: 0.9,
         },
       ],
     })
   );
 
-  assertEquals(line(lines, "Bank / Cash")!.amount, 111.111);
+  assertEquals(line(lines, "Bank / Cash")!.amount, 111.1111);
   assertEquals(line(lines, "Accounts Receivable")!.amount, -100);
-  assertEquals(line(lines, "Realized FX Gain")!.amount, 11.111);
+  assertEquals(line(lines, "Realized FX Gain")!.amount, 11.1111);
   assert(balanced(signedDebitTotal));
 });
 
 // ---------------------------------------------------------------------------
 // Subledger tie-out — the property the SQL tie-out RPCs depend on. For every
-// application, the magnitude posted to the control account equals the settled
-// amount (applied + discount + write-off) at the INVOICE rate, so the GL
-// reconciles to the subledger invoice-by-invoice.
+// application, the magnitude posted to the control account equals the RAW base
+// settled amount (applied + discount + write-off), so the GL reconciles to the
+// subledger invoice-by-invoice.
 // ---------------------------------------------------------------------------
 
 Deno.test("control posting ties out to subledger settled per invoice (AR & AP)", () => {
@@ -742,7 +757,7 @@ Deno.test("control posting ties out to subledger settled per invoice (AR & AP)",
     });
 
     apps.forEach((a, i) => {
-      const expected = round4((a.applied + a.discount + a.writeOff) * a.invRate);
+      const expected = round4(a.applied + a.discount + a.writeOff);
       assertEquals(controlMagnitudeFor(lines, `inv_${i}`), expected);
     });
     assert(balanced(signedDebitTotal));
@@ -751,8 +766,8 @@ Deno.test("control posting ties out to subledger settled per invoice (AR & AP)",
 
 // ---------------------------------------------------------------------------
 // Property matrix — every AR/AP × rate × relief combination must balance and
-// must post the correct FX side (gain when collected/under-paid high, loss when
-// collected low / over-paid high).
+// must post the correct FX side (gain when the foreign currency strengthened
+// for AR / weakened for AP, loss the other way).
 // ---------------------------------------------------------------------------
 
 Deno.test("matrix: every scenario balances with the correct FX side", () => {
@@ -793,7 +808,7 @@ Deno.test("matrix: every scenario balances with the correct FX side", () => {
           );
 
           const expectedFx =
-            (isReceipt ? 1 : -1) * applied * (payRate - invRate);
+            (isReceipt ? 1 : -1) * applied * (invRate / payRate - 1);
           if (Math.abs(expectedFx) > 0.0001) {
             const side = expectedFx > 0 ? "Realized FX Gain" : "Realized FX Loss";
             const wrong = expectedFx > 0 ? "Realized FX Loss" : "Realized FX Gain";

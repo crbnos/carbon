@@ -18,21 +18,38 @@
 // AR refund (cash out to a customer against a credit memo): isAR && !cashIn.
 // AP refund (cash in from a supplier against a debit memo): !isAR && cashIn.
 //
-// Posting model (all amounts converted to base currency):
-//   1) Cash      — DR Bank (cashIn) / CR Bank (!cashIn) for the full cash.
-//   2) Per app   — control account (AR/AP) at the TARGET rate so it reverses the
-//                  original booking exactly; discount and write-off (also
-//                  invoice-currency reliefs) at the target rate; realized FX on
-//                  the cash-settled principal accumulated for a single plug.
-//   3) Unapplied — cash beyond what was applied becomes new on-account credit;
-//                  applying more than the cash draws down existing credit (the
-//                  inverse posting side).
+// Currency convention: `exchangeRate` values (targetExchangeRate = the invoice's
+// rate, sourceExchangeRate = the payment's rate) are FOREIGN units per BASE unit,
+// so a foreign amount F has base value F / rate. The stored settlement amounts
+// (appliedAmount / discountAmount / writeOffAmount) and `totalAmount` are ALREADY
+// base currency — they equal the base-denominated invoice-view balances the user
+// settles against — so control / discount / write-off / unapplied post RAW, with
+// no rate applied. Rates appear only where a foreign principal booked at the
+// invoice rate is later settled at the payment rate: its base value differs, and
+// that difference is the realized FX.
+//
+// Posting model (all amounts in base currency):
+//   1) Cash      — DR Bank (cashIn) / CR Bank (!cashIn) for the real base cash:
+//                  the base value at the PAYMENT rate of every settled principal
+//                  (applied × invRate/payRate), plus any unapplied base cash.
+//   2) Per app   — control account (AR/AP) = RAW settled base (applied + discount
+//                  + write-off), reversing the original base booking exactly;
+//                  discount and write-off post RAW (invoice-currency reliefs carry
+//                  no FX); realized FX on the cash-settled principal accumulated
+//                  for a single plug.
+//   3) Unapplied — base cash beyond what was applied becomes new on-account credit
+//                  (RAW, no FX); applying more than the cash draws down existing
+//                  credit (the inverse posting side).
 //   4) FX plug   — one Realized FX Gain / Loss line for the accumulated FX.
 //
-// FX sign convention: `totalFxImpact` is normalized by the (isAR ? 1 : -1)
-// factor so a POSITIVE value ALWAYS means a gain and a NEGATIVE value ALWAYS
-// means a loss, for both AR and AP. This is the same quantity the stored
-// `invoiceSettlement.fxGainLossAmount` captures, so the subledger reconciles.
+// Realized FX on a cash-settled principal (base) = applied × (invRate/payRate − 1):
+// the principal was booked to control at its base value at the invoice rate
+// (= applied) and settles for applied × invRate/payRate base at the payment rate.
+// `totalFxImpact` is normalized by the (isAR ? 1 : -1) factor so a POSITIVE value
+// ALWAYS means a gain and a NEGATIVE value ALWAYS means a loss, for both AR and AP.
+// This mirrors the stored `invoiceSettlement.fxGainLossAmount` generated column
+// (applied × (targetExchangeRate − sourceExchangeRate) / sourceExchangeRate), so
+// the subledger reconciles.
 
 import { credit, debit } from "../lib/utils.ts";
 
@@ -114,7 +131,10 @@ export function buildPaymentJournal(
     isAR,
     cashIn,
     totalAmount,
-    exchangeRate,
+    // `exchangeRate` (payment-level) is intentionally not destructured: every
+    // stored amount is already base and the per-application rates carry the
+    // realized FX, so it no longer scales any line. It stays on the input type
+    // for the driver's call site and backward compatibility.
     bankAccount,
     journalLineReference,
     applications,
@@ -168,16 +188,39 @@ export function buildPaymentJournal(
     });
   };
 
-  // 1) Cash: DR Bank (cash in) / CR Bank (cash out), full cash in base.
-  const cashBase = round4(totalAmount * exchangeRate);
+  // 1) Per application: control / discount / write-off post RAW base; realized FX
+  //    on the cash-settled principal is accumulated (single plug below), and the
+  //    base value of the settled principals at the payment rate is summed for the
+  //    cash line. The cash line is pushed FIRST (below) so we compute here.
+  let totalFxImpact = 0; // base ccy; +ve = gain, −ve = loss (both AR and AP)
+  let totalAppliedBase = 0; // Σ applied (base at the invoice rate)
+  let totalAppliedCashBase = 0; // Σ applied × invRate/payRate (base at payment rate)
+  for (const app of applications) {
+    const applied = Number(app.appliedAmount);
+    const invRate = Number(app.targetExchangeRate);
+    const payRate = Number(app.sourceExchangeRate);
+    totalAppliedBase += applied;
+    totalAppliedCashBase += applied * (invRate / payRate);
+    // Realized FX on the cash-settled principal only: applied ×
+    // (invRate/payRate − 1). Discount and write-off are invoice-currency reliefs
+    // booked at their base value, so they carry no FX. The (isAR ? 1 : −1) factor
+    // normalizes the sign so +ve is always a gain.
+    totalFxImpact += (isAR ? 1 : -1) * applied * (invRate / payRate - 1);
+  }
+
+  // Unapplied base cash: positive builds new on-account credit; negative means
+  // this payment applied more than its cash (drawing down existing credit). It
+  // carries no FX (there is no invoice principal behind it).
+  const unappliedBase = totalAmount - totalAppliedBase;
+
+  // Cash: DR Bank (cash in) / CR Bank (cash out) for the real base cash — the base
+  // value at the payment rate of every settled principal, plus the unapplied base.
+  const cashBase = round4(totalAppliedCashBase + unappliedBase);
   pushLine(cashIn ? "debit" : "credit", "asset", cashBase, {
     accountId: bankAccount,
     description: "Bank / Cash",
   });
 
-  // 2) Per application: control at TARGET rate; discount / write-off at target
-  //    rate. FX is accumulated and plugged once below.
-  let totalFxImpact = 0; // base ccy; +ve = gain, −ve = loss (both AR and AP)
   for (const app of applications) {
     const invId = (isAR
       ? app.targetSalesInvoiceId
@@ -185,15 +228,13 @@ export function buildPaymentJournal(
     const applied = Number(app.appliedAmount);
     const discount = Number(app.discountAmount);
     const writeOff = Number(app.writeOffAmount);
-    const invRate = Number(app.targetExchangeRate);
-    const payRate = Number(app.sourceExchangeRate);
 
-    // Control account (AR/AP): at target rate (mirrors the original booking).
-    // Side follows the cash direction so it offsets the bank line.
+    // Control account (AR/AP): RAW base settled amount (mirrors the original base
+    // booking). Side follows the cash direction so it offsets the bank line.
     pushLine(
       cashIn ? "credit" : "debit",
       isAR ? "asset" : "liability",
-      round4((applied + discount + writeOff) * invRate),
+      round4(applied + discount + writeOff),
       {
         accountId: controlAccountId,
         description: isAR ? "Accounts Receivable" : "Accounts Payable",
@@ -201,16 +242,16 @@ export function buildPaymentJournal(
       }
     );
 
-    // Discount: at TARGET rate (an invoice-currency relief, not cash, so it
-    // carries no FX). AR debits (forgone revenue); AP credits (vendor allowance
-    // reduces our cost).
+    // Discount: RAW base (an invoice-currency relief, not cash, so it carries no
+    // FX). AR debits (forgone revenue); AP credits (vendor allowance reduces our
+    // cost).
     if (discount > 0) {
       if (!discountAccountId) {
         throw new Error(
           `Missing ${isAR ? "customer" : "supplier"} payment discount account default`
         );
       }
-      pushLine(cashIn ? "debit" : "credit", "expense", round4(discount * invRate), {
+      pushLine(cashIn ? "debit" : "credit", "expense", round4(discount), {
         accountId: discountAccountId,
         description: isAR
           ? "Customer Payment Discount"
@@ -219,8 +260,8 @@ export function buildPaymentJournal(
       });
     }
 
-    // Write-off: at TARGET rate (an invoice-currency relief, not cash, so it
-    // carries no FX). AR is bad debt (expense); AP is vendor write-off (income —
+    // Write-off: RAW base (an invoice-currency relief, not cash, so it carries no
+    // FX). AR is bad debt (expense); AP is vendor write-off (income —
     // class=Revenue).
     if (writeOff > 0) {
       if (!writeOffAccountId) {
@@ -231,7 +272,7 @@ export function buildPaymentJournal(
       pushLine(
         cashIn ? "debit" : "credit",
         isAR ? "expense" : "revenue",
-        round4(writeOff * invRate),
+        round4(writeOff),
         {
           accountId: writeOffAccountId,
           description: isAR ? "Bad Debt Expense" : "Vendor Write-Off Income",
@@ -239,27 +280,18 @@ export function buildPaymentJournal(
         }
       );
     }
-
-    // Realized FX on the cash-settled principal only: applied × (sourceRate −
-    // targetRate). Discount and write-off are invoice-currency reliefs booked at
-    // the target rate above, so they carry no FX. The (isAR ? 1 : −1) factor
-    // normalizes the sign so +ve is always a gain. Matches the stored
-    // invoiceSettlement.fxGainLossAmount so the subledger reconciles.
-    totalFxImpact += (isAR ? 1 : -1) * applied * (payRate - invRate);
   }
 
-  // 3) Unapplied cash → control account (no invoice anchor), payment rate.
+  // 3) Unapplied base cash → control account (no invoice anchor), RAW base.
   //    Positive: cash beyond what was applied becomes new on-account credit.
   //    Negative: this payment applied more than its cash, drawing down the
   //    party's existing on-account credit (the inverse posting side).
-  const unappliedInPaymentCcy =
-    totalAmount - applications.reduce((sum, a) => sum + Number(a.appliedAmount), 0);
-  if (Math.abs(unappliedInPaymentCcy) > 0.0001) {
-    const buildingCredit = unappliedInPaymentCcy > 0;
+  if (Math.abs(unappliedBase) > 0.0001) {
+    const buildingCredit = unappliedBase > 0;
     pushLine(
       cashIn === buildingCredit ? "credit" : "debit",
       isAR ? "asset" : "liability",
-      round4(Math.abs(unappliedInPaymentCcy) * exchangeRate),
+      round4(Math.abs(unappliedBase)),
       {
         accountId: controlAccountId,
         description: isAR

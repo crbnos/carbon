@@ -616,9 +616,14 @@ serve(async (req: Request) => {
         if (purchaseOrderDelivery.error)
           throw new Error("Failed to fetch purchase order delivery");
 
+        // supplierShippingCost is a supplier-currency amount; exchangeRate is
+        // foreign-per-base, so supplier→base is DIVIDE (matching
+        // post-purchase-invoice and the purchaseInvoices view). This keeps the
+        // receipt's inventory/GR-IR cost layers consistent with the invoice-side
+        // AP relief for foreign-currency POs.
         const shippingCost =
-          (purchaseOrderDelivery.data?.supplierShippingCost ?? 0) *
-          (purchaseOrder.data?.exchangeRate ?? 1);
+          (purchaseOrderDelivery.data?.supplierShippingCost ?? 0) /
+          (purchaseOrder.data?.exchangeRate || 1);
 
         const totalLinesCost = receiptLines.data.reduce((acc, receiptLine) => {
           const safeReceivedQuantity =

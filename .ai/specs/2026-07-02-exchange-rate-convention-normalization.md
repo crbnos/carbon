@@ -131,17 +131,45 @@ formatting, `$paymentId.tsx` credit conversion.
 | Partial deployment (one function updated, another not) breaks the closed loop | High | Ship as one PR; the invariant "AP/AR credit == what payment debits" must hold at every commit |
 | Hidden consumers assuming ×R magnitudes (reports, Xero sync) | Med | Grep for exchangeRate usages across packages/ee and jobs before implementation |
 
-## Open Questions
+## Open Questions — resolved (2026-07-31, issue #1030)
 
-> HARD STOP: Do not proceed with implementation until these are answered.
+- [x] Should `payment.totalAmount` store base or document currency? → **Base.**
+      Matches the Design Decisions table and the existing seeding flow
+      (`payments/new.tsx` seeds `Σ balance` = base and `PaymentForm` formats it
+      as `baseCurrencyCode`); `memo.amount` is base for the same reason. No
+      seeding migration. Realized FX is derived from the per-application invoice
+      vs payment rates, not from `totalAmount`, so it stays non-zero when the
+      payment rate is edited even though `totalAmount` is not recomputed.
+- [x] Restate or leave historic FX journals? → **Leave** (forward-only). The
+      `fxGainLossAmount` generated column is rebuilt (recomputes for existing
+      rows), but posted journals are not restated.
+- [x] Does Xero sync push affected amounts? → **No magnitude change.** BillSyncer
+      / SalesInvoiceSyncer push document-currency stored/line values plus a
+      pass-through `exchangeRate`; they never derive amounts from `journalLine`
+      base magnitudes. Verified read-only across `packages/ee/src/accounting`.
 
-- [ ] Should `payment.totalAmount` store base or document currency? (Base
-      avoids migration of the seeding flow; document matches the remittance
-      mental model.)
-- [ ] Restate or leave historic FX journals? (Proposal: leave.)
-- [ ] Does Xero sync (BillSyncer/SalesInvoiceSyncer) push amounts derived
-      from the affected fields, and in which currency does Xero expect them?
+## Implementation notes (as built)
+
+- Both `salesInvoices` and `purchaseInvoices` views were already base-correct in
+  `20260702224219` (sales sums base `unitPrice`; purchase divides header
+  shipping), so the migration changes **no views** — only the
+  `invoiceSettlement.fxGainLossAmount` generated column and the six AR/AP
+  tie-out / drill-down / aging RPCs (dropping the `× exchangeRate` on
+  already-base amounts).
+- `build-payment-journal` cash line is computed from the applications
+  (`Σ applied × invRate/payRate + unapplied base`) rather than
+  `totalAmount × rate`, guaranteeing the journal balances against the raw-base
+  control relief and the derived realized-FX plug.
+- `post-receipt` header shipping flipped from `× rate` to `÷ rate` to match the
+  invoice-side base costing (audit P1/receipt inconsistency).
 
 ## Changelog
 
 - 2026-07-02: Created from the invoice/payment audit findings (P2 + Pay1).
+- 2026-07-31: Implemented (issue #1030). Open questions resolved above.
+  Migration `20260731143829_fx-convention-normalization.sql`; edge functions
+  `post-sales-invoice`, `post-purchase-invoice`, `post-receipt`, `post-payment`
+  (`build-payment-journal` + driver), `post-memo`; app
+  `payments/$paymentId.tsx` + `invoicing.service.getAvailableOnAccountCredit`;
+  golden-master tests rewritten for foreign-per-base. Not yet moved to
+  `implemented/` (PR open, awaiting merge/deploy evidence).

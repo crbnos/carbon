@@ -274,15 +274,17 @@ serve(async (req: Request) => {
       }
     }
 
-    // Cash vs applied (base ccy). When applied < cash the remainder is new
-    // on-account credit; when applied > cash the excess must be funded by the
-    // party's existing on-account credit (validated under lock inside the
-    // commit transaction below, where prior posted payments are serialized).
+    // Cash vs applied (base ccy). The stored appliedAmount and totalAmount are
+    // already base (they equal the base invoice-view balances), so no rate is
+    // applied. When applied < cash the remainder is new on-account credit; when
+    // applied > cash the excess must be funded by the party's existing on-account
+    // credit (validated under lock inside the commit transaction below, where
+    // prior posted payments are serialized).
     const totalAppliedBase = applications.data.reduce(
-      (sum, a) => sum + Number(a.appliedAmount) * Number(a.sourceExchangeRate),
+      (sum, a) => sum + Number(a.appliedAmount),
       0
     );
-    const paymentTotalBase = Number(payment.data.totalAmount) * Number(payment.data.exchangeRate);
+    const paymentTotalBase = Number(payment.data.totalAmount);
     const overAppliedBase = round4(totalAppliedBase - paymentTotalBase);
 
     // --------------------------------------------------------------
@@ -696,13 +698,12 @@ serve(async (req: Request) => {
             appliedBaseByPayment.set(
               a.paymentId,
               (appliedBaseByPayment.get(a.paymentId) ?? 0) +
-                Number(a.appliedAmount) * Number(a.sourceExchangeRate)
+                Number(a.appliedAmount)
             );
           }
           for (const p of postedPayments) {
             availableCreditBase +=
-              Number(p.totalAmount) * Number(p.exchangeRate) -
-              (appliedBaseByPayment.get(p.id) ?? 0);
+              Number(p.totalAmount) - (appliedBaseByPayment.get(p.id) ?? 0);
           }
         }
 
