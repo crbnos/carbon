@@ -4507,6 +4507,9 @@ msgstr "Миграция данных элементов из карты миг�
 msgid "Data scattered across spreadsheets and disconnected tools"
 msgstr "Данные разбросаны по электронным таблицам и отключенным инструментам"
 
+msgid "Data synced"
+msgstr ""
+
 msgid "Data Type"
 msgstr "Тип данных"
 
@@ -6051,6 +6054,9 @@ msgstr "Инженерные изменения и САПР"
 
 msgid "Engineering Contact"
 msgstr "Контакт инженера"
+
+msgid "Engineering Data"
+msgstr ""
 
 msgid "Enroll"
 msgstr "Зарегистрировать"
@@ -9025,6 +9031,9 @@ msgstr "Отметить как недостача"
 msgid "Mark to delete"
 msgstr "Отметить для удаления"
 
+msgid "Mass"
+msgstr ""
+
 msgid "Master gauge"
 msgstr "Мастер-калибр"
 
@@ -10044,6 +10053,9 @@ msgstr "Совпадений не найдено. Введите текст дл
 
 msgid "No matching bins"
 msgstr "Нет подходящих ячеек"
+
+msgid "No matching part"
+msgstr ""
 
 msgid "No matching part"
 msgstr ""
@@ -12402,6 +12414,9 @@ msgstr "Выпустить задание"
 msgid "Release state"
 msgstr ""
 
+msgid "Release State"
+msgstr ""
+
 msgid "Released"
 msgstr "Выпущено"
 
@@ -12943,6 +12958,9 @@ msgstr "Правила, которые автоматически коррект
 
 msgid "Rules that decide where each item gets stored"
 msgstr "Правила, определяющие, где хранится каждый товар"
+
+msgid "Run a BOM sync from a part's <0>BoM Explorer</0> to populate this table"
+msgstr ""
 
 msgid "Run acceptance testing"
 msgstr "Провести приемочное тестирование"
@@ -14328,6 +14346,8 @@ msgstr "Штат / Провинция"
 
 msgid "State province"
 msgstr "Штат/провинция"
+msgid "State synced"
+msgstr ""
 
 #. placeholder {0}: lotEntities.length
 #. placeholder {1}: Math.max(0, lotEntities.length - inspected)
@@ -16877,6 +16897,9 @@ msgstr "Только отклонения"
 
 msgid "VAT Number"
 msgstr "Номер НДС"
+
+msgid "Vendor"
+msgstr ""
 
 msgid "Vendor Write-Off Income"
 msgstr "Доход от списания задолженности перед поставщиком"

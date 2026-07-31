@@ -4507,6 +4507,9 @@ msgstr "データ移行マップ上のアイテムのデータ移行"
 msgid "Data scattered across spreadsheets and disconnected tools"
 msgstr "データがスプレッドシートと切り離されたツール全体に散在している"
 
+msgid "Data synced"
+msgstr ""
+
 msgid "Data Type"
 msgstr "データ型"
 
@@ -6051,6 +6054,9 @@ msgstr "エンジニアリング変更とCAD"
 
 msgid "Engineering Contact"
 msgstr "エンジニアリング担当者"
+
+msgid "Engineering Data"
+msgstr ""
 
 msgid "Enroll"
 msgstr "登録"
@@ -9025,6 +9031,9 @@ msgstr "短い数量をマーク"
 msgid "Mark to delete"
 msgstr "削除対象にマーク"
 
+msgid "Mass"
+msgstr ""
+
 msgid "Master gauge"
 msgstr "マスター ゲージ"
 
@@ -10044,6 +10053,9 @@ msgstr "一致するものがありません。作成するには入力してく
 
 msgid "No matching bins"
 msgstr "一致するビンがありません"
+
+msgid "No matching part"
+msgstr ""
 
 msgid "No matching part"
 msgstr ""
@@ -12402,6 +12414,9 @@ msgstr "ジョブをリリース"
 msgid "Release state"
 msgstr ""
 
+msgid "Release State"
+msgstr ""
+
 msgid "Released"
 msgstr "リリース済み"
 
@@ -12943,6 +12958,9 @@ msgstr "数量または顧客に基づいて価格を自動的に調整するル
 
 msgid "Rules that decide where each item gets stored"
 msgstr "各アイテムがどこに保存されるかを決定するルール"
+
+msgid "Run a BOM sync from a part's <0>BoM Explorer</0> to populate this table"
+msgstr ""
 
 msgid "Run acceptance testing"
 msgstr "受け入れテストを実行する"
@@ -14328,6 +14346,8 @@ msgstr "都道府県"
 
 msgid "State province"
 msgstr "都道府県"
+msgid "State synced"
+msgstr ""
 
 #. placeholder {0}: lotEntities.length
 #. placeholder {1}: Math.max(0, lotEntities.length - inspected)
@@ -16877,6 +16897,9 @@ msgstr "差異のみ"
 
 msgid "VAT Number"
 msgstr "VAT番号"
+
+msgid "Vendor"
+msgstr ""
 
 msgid "Vendor Write-Off Income"
 msgstr "仕入先償却益"

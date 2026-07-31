@@ -4507,6 +4507,9 @@ msgstr "Veri Geçişi Haritasındaki öğelerin veri geçişi"
 msgid "Data scattered across spreadsheets and disconnected tools"
 msgstr "Veriler elektronik tablolara dağılmış ve bağlantısız araçlara yayılmış"
 
+msgid "Data synced"
+msgstr ""
+
 msgid "Data Type"
 msgstr "Veri Türü"
 
@@ -6051,6 +6054,9 @@ msgstr "Mühendislik Değişiklikleri ve CAD"
 
 msgid "Engineering Contact"
 msgstr "Mühendislik İletişim Kişisi"
+
+msgid "Engineering Data"
+msgstr ""
 
 msgid "Enroll"
 msgstr "Kaydol"
@@ -9025,6 +9031,9 @@ msgstr "Az eksik olarak işaretle"
 msgid "Mark to delete"
 msgstr "Silmek için işaretle"
 
+msgid "Mass"
+msgstr ""
+
 msgid "Master gauge"
 msgstr "Ana Gösterge"
 
@@ -10044,6 +10053,9 @@ msgstr "Eşleşme yok. Bir tane oluşturmak için yazın."
 
 msgid "No matching bins"
 msgstr "Eşleşen kutu yok"
+
+msgid "No matching part"
+msgstr ""
 
 msgid "No matching part"
 msgstr ""
@@ -12402,6 +12414,9 @@ msgstr "İşi Yayınla"
 msgid "Release state"
 msgstr ""
 
+msgid "Release State"
+msgstr ""
+
 msgid "Released"
 msgstr "Yayınlandı"
 
@@ -12943,6 +12958,9 @@ msgstr "Fiyatları miktara veya müşteriye göre otomatik olarak ayarlayan kura
 
 msgid "Rules that decide where each item gets stored"
 msgstr "Her öğenin nereye depolanacağını belirleyen kurallar"
+
+msgid "Run a BOM sync from a part's <0>BoM Explorer</0> to populate this table"
+msgstr ""
 
 msgid "Run acceptance testing"
 msgstr "Kabul testini çalıştır"
@@ -14328,6 +14346,8 @@ msgstr "Eyalet / İl"
 
 msgid "State province"
 msgstr "İl/Bölge"
+msgid "State synced"
+msgstr ""
 
 #. placeholder {0}: lotEntities.length
 #. placeholder {1}: Math.max(0, lotEntities.length - inspected)
@@ -16877,6 +16897,9 @@ msgstr "Yalnızca fark"
 
 msgid "VAT Number"
 msgstr "KDV Numarası"
+
+msgid "Vendor"
+msgstr ""
 
 msgid "Vendor Write-Off Income"
 msgstr "Satıcı Silme Geliri"

@@ -4507,6 +4507,9 @@ msgstr "데이터 마이그레이션 맵에 있는 항목의 데이터 마이그
 msgid "Data scattered across spreadsheets and disconnected tools"
 msgstr "스프레드시트와 서로 연결되지 않은 도구에 흩어진 데이터"
 
+msgid "Data synced"
+msgstr ""
+
 msgid "Data Type"
 msgstr "데이터 유형"
 
@@ -6051,6 +6054,9 @@ msgstr "엔지니어링 변경 및 CAD"
 
 msgid "Engineering Contact"
 msgstr "엔지니어링 담당자"
+
+msgid "Engineering Data"
+msgstr ""
 
 msgid "Enroll"
 msgstr "등록"
@@ -9025,6 +9031,9 @@ msgstr "부족으로 표시"
 msgid "Mark to delete"
 msgstr "삭제 대상으로 표시"
 
+msgid "Mass"
+msgstr ""
+
 msgid "Master gauge"
 msgstr "마스터 게이지"
 
@@ -10044,6 +10053,9 @@ msgstr "일치하는 항목 없음. 입력하여 새로 만드세요."
 
 msgid "No matching bins"
 msgstr "일치하는 빈이 없습니다"
+
+msgid "No matching part"
+msgstr ""
 
 msgid "No matching part"
 msgstr ""
@@ -12402,6 +12414,9 @@ msgstr "작업 릴리즈"
 msgid "Release state"
 msgstr ""
 
+msgid "Release State"
+msgstr ""
+
 msgid "Released"
 msgstr "릴리즈됨"
 
@@ -12943,6 +12958,9 @@ msgstr "수량이나 고객에 따라 가격을 자동으로 조정하는 규칙
 
 msgid "Rules that decide where each item gets stored"
 msgstr "각 품목의 보관 위치를 결정하는 규칙"
+
+msgid "Run a BOM sync from a part's <0>BoM Explorer</0> to populate this table"
+msgstr ""
 
 msgid "Run acceptance testing"
 msgstr "인수 테스트 실행"
@@ -14328,6 +14346,8 @@ msgstr "주/도"
 
 msgid "State province"
 msgstr "주/도"
+msgid "State synced"
+msgstr ""
 
 #. placeholder {0}: lotEntities.length
 #. placeholder {1}: Math.max(0, lotEntities.length - inspected)
@@ -16877,6 +16897,9 @@ msgstr "편차만"
 
 msgid "VAT Number"
 msgstr "VAT 번호"
+
+msgid "Vendor"
+msgstr ""
 
 msgid "Vendor Write-Off Income"
 msgstr "공급업체 상각 수익"

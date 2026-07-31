@@ -4507,6 +4507,9 @@ msgstr "डेटा माइग्रेशन मैप पर आइटम �
 msgid "Data scattered across spreadsheets and disconnected tools"
 msgstr "डेटा स्प्रेडशीट और डिस्कनेक्ट किए गए टूल्स में बिखरा हुआ है"
 
+msgid "Data synced"
+msgstr ""
+
 msgid "Data Type"
 msgstr "डेटा प्रकार"
 
@@ -6051,6 +6054,9 @@ msgstr "इंजीनियरिंग परिवर्तन और CAD"
 
 msgid "Engineering Contact"
 msgstr "इंजीनियरिंग संपर्क"
+
+msgid "Engineering Data"
+msgstr ""
 
 msgid "Enroll"
 msgstr "नामांकन करें"
@@ -9025,6 +9031,9 @@ msgstr "कम चिह्नित करें"
 msgid "Mark to delete"
 msgstr "हटाने के लिए चिह्नित करें"
 
+msgid "Mass"
+msgstr ""
+
 msgid "Master gauge"
 msgstr "मास्टर गेज"
 
@@ -10044,6 +10053,9 @@ msgstr "कोई मेल नहीं। एक बनाने के लि
 
 msgid "No matching bins"
 msgstr "कोई मिलान बिन नहीं"
+
+msgid "No matching part"
+msgstr ""
 
 msgid "No matching part"
 msgstr ""
@@ -12402,6 +12414,9 @@ msgstr "जॉब रिलीज़ करें"
 msgid "Release state"
 msgstr ""
 
+msgid "Release State"
+msgstr ""
+
 msgid "Released"
 msgstr "जारी किया गया"
 
@@ -12943,6 +12958,9 @@ msgstr "नियम जो मात्रा या ग्राहक के 
 
 msgid "Rules that decide where each item gets stored"
 msgstr "नियम जो तय करते हैं कि प्रत्येक आइटम कहाँ संग्रहीत होता है"
+
+msgid "Run a BOM sync from a part's <0>BoM Explorer</0> to populate this table"
+msgstr ""
 
 msgid "Run acceptance testing"
 msgstr "स्वीकृति परीक्षण चलाएं"
@@ -14328,6 +14346,8 @@ msgstr "राज्य / प्रांत"
 
 msgid "State province"
 msgstr "राज्य प्रांत"
+msgid "State synced"
+msgstr ""
 
 #. placeholder {0}: lotEntities.length
 #. placeholder {1}: Math.max(0, lotEntities.length - inspected)
@@ -16877,6 +16897,9 @@ msgstr "केवल भिन्नता"
 
 msgid "VAT Number"
 msgstr "VAT संख्या"
+
+msgid "Vendor"
+msgstr ""
 
 msgid "Vendor Write-Off Income"
 msgstr "विक्रेता राइट-ऑफ आय"

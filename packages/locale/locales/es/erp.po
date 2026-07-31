@@ -4507,6 +4507,9 @@ msgstr "Migración de datos de los elementos en el Mapa de Migración de Datos"
 msgid "Data scattered across spreadsheets and disconnected tools"
 msgstr "Datos dispersos en hojas de cálculo y herramientas desconectadas"
 
+msgid "Data synced"
+msgstr ""
+
 msgid "Data Type"
 msgstr "Tipo de Dato"
 
@@ -6051,6 +6054,9 @@ msgstr "Cambios de Ingeniería y CAD"
 
 msgid "Engineering Contact"
 msgstr "Contacto de Ingeniería"
+
+msgid "Engineering Data"
+msgstr ""
 
 msgid "Enroll"
 msgstr "Inscribir"
@@ -9025,6 +9031,9 @@ msgstr "Marcar como faltante"
 msgid "Mark to delete"
 msgstr "Marcar para eliminar"
 
+msgid "Mass"
+msgstr ""
+
 msgid "Master gauge"
 msgstr "Instrumento maestro"
 
@@ -10044,6 +10053,9 @@ msgstr "Sin coincidencias. Escribe para crear una."
 
 msgid "No matching bins"
 msgstr "Sin contenedores coincidentes"
+
+msgid "No matching part"
+msgstr ""
 
 msgid "No matching part"
 msgstr ""
@@ -12402,6 +12414,9 @@ msgstr "Liberar Trabajo"
 msgid "Release state"
 msgstr ""
 
+msgid "Release State"
+msgstr ""
+
 msgid "Released"
 msgstr "Liberado"
 
@@ -12943,6 +12958,9 @@ msgstr "Reglas que ajustan precios automáticamente por cantidad o cliente"
 
 msgid "Rules that decide where each item gets stored"
 msgstr "Reglas que deciden dónde se almacena cada artículo"
+
+msgid "Run a BOM sync from a part's <0>BoM Explorer</0> to populate this table"
+msgstr ""
 
 msgid "Run acceptance testing"
 msgstr "Ejecutar pruebas de aceptación"
@@ -14328,6 +14346,8 @@ msgstr "Estado / Provincia"
 
 msgid "State province"
 msgstr "Estado/Provincia"
+msgid "State synced"
+msgstr ""
 
 #. placeholder {0}: lotEntities.length
 #. placeholder {1}: Math.max(0, lotEntities.length - inspected)
@@ -16877,6 +16897,9 @@ msgstr "Solo varianza"
 
 msgid "VAT Number"
 msgstr "Número de IVA"
+
+msgid "Vendor"
+msgstr ""
 
 msgid "Vendor Write-Off Income"
 msgstr "Ingresos por Cancelación de Proveedores"
