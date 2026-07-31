@@ -115,7 +115,7 @@ export function ScopeView() {
 
       <section
         className={cn(
-          "rounded-2xl border p-5 shadow-button-base",
+          "rounded-lg border p-5 shadow-button-base",
           agreed
             ? "border-emerald-500/30 bg-emerald-500/5"
             : "border-primary/30 bg-primary/5"

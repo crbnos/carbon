@@ -50,6 +50,9 @@ const FIELD_LABELS: Record<string, string> = {
   workCenterId: "Work center",
   procedureId: "Procedure",
   operationSupplierProcessId: "Supplier process",
+  assemblyInstructionId: "Assembly instruction",
+  inspectionDocumentId: "Inspection plan",
+  operationType: "Operation type",
   operationLeadTime: "Lead time",
   operationUnitCost: "Unit cost",
   operationMinimumCost: "Minimum cost",
@@ -95,8 +98,6 @@ const NOISE_FIELDS = new Set<string>([
   "stagedOperationId",
   "makeMethodId",
   "operationId",
-  // Internal linkage id with no user-facing name — never show its raw UUID.
-  "assemblyInstructionId",
   "itemType",
   "itemReadableId",
   "toolReadableId",

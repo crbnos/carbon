@@ -2947,6 +2947,7 @@ export type Database = {
           modelUploadId: string
           name: string
           publishedAt: string | null
+          rootInstructionId: string | null
           settings: Json | null
           status: Database["public"]["Enums"]["assemblyInstructionStatus"]
           tags: string[] | null
@@ -2965,6 +2966,7 @@ export type Database = {
           modelUploadId: string
           name: string
           publishedAt?: string | null
+          rootInstructionId?: string | null
           settings?: Json | null
           status?: Database["public"]["Enums"]["assemblyInstructionStatus"]
           tags?: string[] | null
@@ -2983,6 +2985,7 @@ export type Database = {
           modelUploadId?: string
           name?: string
           publishedAt?: string | null
+          rootInstructionId?: string | null
           settings?: Json | null
           status?: Database["public"]["Enums"]["assemblyInstructionStatus"]
           tags?: string[] | null
@@ -3125,6 +3128,20 @@ export type Database = {
             referencedColumns: ["modelId"]
           },
           {
+            foreignKeyName: "assemblyInstruction_rootInstructionId_fkey"
+            columns: ["rootInstructionId"]
+            isOneToOne: false
+            referencedRelation: "assemblyInstruction"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assemblyInstruction_rootInstructionId_fkey"
+            columns: ["rootInstructionId"]
+            isOneToOne: false
+            referencedRelation: "assemblyInstructions"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "assemblyInstruction_updatedBy_fkey"
             columns: ["updatedBy"]
             isOneToOne: false
@@ -3264,6 +3281,13 @@ export type Database = {
             columns: ["assemblyInstructionId"]
             isOneToOne: false
             referencedRelation: "assemblyInstruction"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assemblyInstructionStep_assemblyInstructionId_fkey"
+            columns: ["assemblyInstructionId"]
+            isOneToOne: false
+            referencedRelation: "assemblyInstructions"
             referencedColumns: ["id"]
           },
           {
@@ -22210,6 +22234,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "jobOperation_assemblyInstructionId_fkey"
+            columns: ["assemblyInstructionId"]
+            isOneToOne: false
+            referencedRelation: "assemblyInstructions"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "jobOperation_assignee_fkey"
             columns: ["assignee"]
             isOneToOne: false
@@ -28117,6 +28148,13 @@ export type Database = {
             columns: ["assemblyInstructionId"]
             isOneToOne: false
             referencedRelation: "assemblyInstruction"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "methodOperation_assemblyInstructionId_fkey"
+            columns: ["assemblyInstructionId"]
+            isOneToOne: false
+            referencedRelation: "assemblyInstructions"
             referencedColumns: ["id"]
           },
           {
@@ -42338,6 +42376,13 @@ export type Database = {
             columns: ["assemblyInstructionId"]
             isOneToOne: false
             referencedRelation: "assemblyInstruction"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quoteOperation_assemblyInstructionId_fkey"
+            columns: ["assemblyInstructionId"]
+            isOneToOne: false
+            referencedRelation: "assemblyInstructions"
             referencedColumns: ["id"]
           },
           {
@@ -58468,6 +58513,214 @@ export type Database = {
           },
         ]
       }
+      assemblyInstructions: {
+        Row: {
+          assemblyPlanJobId: string | null
+          companyId: string | null
+          createdAt: string | null
+          createdBy: string | null
+          customFields: Json | null
+          id: string | null
+          itemId: string | null
+          modelUploadId: string | null
+          name: string | null
+          publishedAt: string | null
+          rootInstructionId: string | null
+          settings: Json | null
+          status:
+            | Database["public"]["Enums"]["assemblyInstructionStatus"]
+            | null
+          tags: string[] | null
+          updatedAt: string | null
+          updatedBy: string | null
+          version: number | null
+          versions: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assemblyInstruction_assemblyPlanJobId_fkey"
+            columns: ["assemblyPlanJobId"]
+            isOneToOne: false
+            referencedRelation: "assemblyPlanJob"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assemblyInstruction_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assemblyInstruction_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assemblyInstruction_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "assemblyInstruction_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "assemblyInstruction_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assemblyInstruction_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assemblyInstruction_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assemblyInstruction_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assemblyInstruction_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "assemblyInstruction_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "consumables"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assemblyInstruction_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "item"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assemblyInstruction_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "materials"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assemblyInstruction_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "parts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assemblyInstruction_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assemblyInstruction_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "tools"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assemblyInstruction_modelUploadId_fkey"
+            columns: ["modelUploadId"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["modelId"]
+          },
+          {
+            foreignKeyName: "assemblyInstruction_modelUploadId_fkey"
+            columns: ["modelUploadId"]
+            isOneToOne: false
+            referencedRelation: "modelUpload"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assemblyInstruction_modelUploadId_fkey"
+            columns: ["modelUploadId"]
+            isOneToOne: false
+            referencedRelation: "salesRfqLines"
+            referencedColumns: ["modelId"]
+          },
+          {
+            foreignKeyName: "assemblyInstruction_rootInstructionId_fkey"
+            columns: ["rootInstructionId"]
+            isOneToOne: false
+            referencedRelation: "assemblyInstruction"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assemblyInstruction_rootInstructionId_fkey"
+            columns: ["rootInstructionId"]
+            isOneToOne: false
+            referencedRelation: "assemblyInstructions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assemblyInstruction_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assemblyInstruction_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assemblyInstruction_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assemblyInstruction_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assemblyInstruction_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+        ]
+      }
       changeOrders: {
         Row: {
           affectedItems: Json | null
@@ -61843,6 +62096,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "jobOperation_assemblyInstructionId_fkey"
+            columns: ["assemblyInstructionId"]
+            isOneToOne: false
+            referencedRelation: "assemblyInstructions"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "jobOperation_assignee_fkey"
             columns: ["assignee"]
             isOneToOne: false
@@ -62140,6 +62400,13 @@ export type Database = {
             columns: ["assemblyInstructionId"]
             isOneToOne: false
             referencedRelation: "assemblyInstruction"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobOperation_assemblyInstructionId_fkey"
+            columns: ["assemblyInstructionId"]
+            isOneToOne: false
+            referencedRelation: "assemblyInstructions"
             referencedColumns: ["id"]
           },
           {
@@ -69544,14 +69811,14 @@ export type Database = {
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["invoiceCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["invoiceCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]

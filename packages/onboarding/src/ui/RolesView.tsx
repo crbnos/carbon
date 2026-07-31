@@ -37,7 +37,7 @@ export function RolesView() {
         </div>
       </header>
 
-      <section className="rounded-2xl border border-emerald-500/30 bg-emerald-500/5 shadow-button-base p-5">
+      <section className="rounded-lg border border-emerald-500/30 bg-emerald-500/5 shadow-button-base p-5">
         <h2 className="text-sm font-semibold mb-3 flex items-center gap-2">
           <span className="size-2 rounded-full bg-emerald-500" />
           <Trans>What you need to do</Trans>
@@ -65,7 +65,7 @@ export function RolesView() {
         {ROLES.map((step) => (
           <div
             key={step.stepKey}
-            className="rounded-2xl border bg-card shadow-button-base overflow-hidden"
+            className="rounded-lg border bg-card shadow-button-base overflow-hidden"
           >
             <div className="px-5 py-3 border-b">
               <span className="text-sm font-semibold">

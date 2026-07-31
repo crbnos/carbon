@@ -33106,6 +33106,9 @@ export default {
             $ref: "#/parameters/rowFilter.assemblyInstruction.updatedAt"
           },
           {
+            $ref: "#/parameters/rowFilter.assemblyInstruction.rootInstructionId"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -33213,6 +33216,9 @@ export default {
             $ref: "#/parameters/rowFilter.assemblyInstruction.updatedAt"
           },
           {
+            $ref: "#/parameters/rowFilter.assemblyInstruction.rootInstructionId"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -33272,6 +33278,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.assemblyInstruction.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.assemblyInstruction.rootInstructionId"
           },
           {
             $ref: "#/parameters/body.assemblyInstruction"
@@ -59163,6 +59172,102 @@ export default {
         tags: ["ability"]
       }
     },
+    "/assemblyInstructions": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.assemblyInstructions.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.assemblyInstructions.name"
+          },
+          {
+            $ref: "#/parameters/rowFilter.assemblyInstructions.modelUploadId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.assemblyInstructions.itemId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.assemblyInstructions.assemblyPlanJobId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.assemblyInstructions.status"
+          },
+          {
+            $ref: "#/parameters/rowFilter.assemblyInstructions.version"
+          },
+          {
+            $ref: "#/parameters/rowFilter.assemblyInstructions.publishedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.assemblyInstructions.settings"
+          },
+          {
+            $ref: "#/parameters/rowFilter.assemblyInstructions.rootInstructionId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.assemblyInstructions.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.assemblyInstructions.customFields"
+          },
+          {
+            $ref: "#/parameters/rowFilter.assemblyInstructions.tags"
+          },
+          {
+            $ref: "#/parameters/rowFilter.assemblyInstructions.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.assemblyInstructions.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.assemblyInstructions.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.assemblyInstructions.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.assemblyInstructions.versions"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/assemblyInstructions"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["assemblyInstructions"]
+      }
+    },
     "/dimensionValues": {
       get: {
         parameters: [
@@ -82591,10 +82696,10 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.plmReleaseControl"
           },
           {
-            $ref: "#/parameters/rowFilter.companySettings.incompletePickingListPolicy"
+            $ref: "#/parameters/rowFilter.companySettings.autoSelectMaterialWithoutPickingList"
           },
           {
-            $ref: "#/parameters/rowFilter.companySettings.autoSelectMaterialWithoutPickingList"
+            $ref: "#/parameters/rowFilter.companySettings.incompletePickingListPolicy"
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.includeMaterialsOnTraveler"
@@ -82788,10 +82893,10 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.plmReleaseControl"
           },
           {
-            $ref: "#/parameters/rowFilter.companySettings.incompletePickingListPolicy"
+            $ref: "#/parameters/rowFilter.companySettings.autoSelectMaterialWithoutPickingList"
           },
           {
-            $ref: "#/parameters/rowFilter.companySettings.autoSelectMaterialWithoutPickingList"
+            $ref: "#/parameters/rowFilter.companySettings.incompletePickingListPolicy"
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.includeMaterialsOnTraveler"
@@ -82939,10 +83044,10 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.plmReleaseControl"
           },
           {
-            $ref: "#/parameters/rowFilter.companySettings.incompletePickingListPolicy"
+            $ref: "#/parameters/rowFilter.companySettings.autoSelectMaterialWithoutPickingList"
           },
           {
-            $ref: "#/parameters/rowFilter.companySettings.autoSelectMaterialWithoutPickingList"
+            $ref: "#/parameters/rowFilter.companySettings.incompletePickingListPolicy"
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.includeMaterialsOnTraveler"
@@ -110193,6 +110298,12 @@ export default {
         updatedAt: {
           format: "timestamp with time zone",
           type: "string"
+        },
+        rootInstructionId: {
+          description:
+            "Note:\nThis is a Foreign Key to `assemblyInstruction.id`.<fk table='assemblyInstruction' column='id'/>",
+          format: "text",
+          type: "string"
         }
       },
       type: "object"
@@ -122322,6 +122433,99 @@ export default {
       },
       type: "object"
     },
+    assemblyInstructions: {
+      properties: {
+        id: {
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        name: {
+          format: "text",
+          type: "string"
+        },
+        modelUploadId: {
+          description:
+            "Note:\nThis is a Foreign Key to `modelUpload.id`.<fk table='modelUpload' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        itemId: {
+          description:
+            "Note:\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        assemblyPlanJobId: {
+          description:
+            "Note:\nThis is a Foreign Key to `assemblyPlanJob.id`.<fk table='assemblyPlanJob' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        status: {
+          enum: ["Draft", "Published", "Archived"],
+          format: 'public."assemblyInstructionStatus"',
+          type: "string"
+        },
+        version: {
+          format: "integer",
+          type: "integer"
+        },
+        publishedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        settings: {
+          format: "jsonb"
+        },
+        rootInstructionId: {
+          description:
+            "Note:\nThis is a Foreign Key to `assemblyInstruction.id`.<fk table='assemblyInstruction' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        customFields: {
+          format: "jsonb"
+        },
+        tags: {
+          format: "text[]",
+          items: {
+            type: "string"
+          },
+          type: "array"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        versions: {
+          format: "jsonb"
+        }
+      },
+      type: "object"
+    },
     dimensionValues: {
       properties: {
         dimensionId: {
@@ -133723,8 +133927,8 @@ export default {
         "showCustomerReadableId",
         "autoStartOperationTimer",
         "plmReleaseControl",
-        "incompletePickingListPolicy",
         "autoSelectMaterialWithoutPickingList",
+        "incompletePickingListPolicy",
         "includeMaterialsOnTraveler"
       ],
       properties: {
@@ -133962,15 +134166,15 @@ export default {
           format: "text",
           type: "string"
         },
-        incompletePickingListPolicy: {
-          default: "warn",
-          format: "text",
-          type: "string"
-        },
         autoSelectMaterialWithoutPickingList: {
           default: false,
           format: "boolean",
           type: "boolean"
+        },
+        incompletePickingListPolicy: {
+          default: "warn",
+          format: "text",
+          type: "string"
         },
         includeMaterialsOnTraveler: {
           default: false,
@@ -152189,6 +152393,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.assemblyInstruction.rootInstructionId": {
+      name: "rootInstructionId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.purchaseOrderStatusHistory": {
       name: "purchaseOrderStatusHistory",
       description: "purchaseOrderStatusHistory",
@@ -165661,6 +165871,123 @@ export default {
       in: "query",
       type: "string"
     },
+    "body.assemblyInstructions": {
+      name: "assemblyInstructions",
+      description: "assemblyInstructions",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/assemblyInstructions"
+      }
+    },
+    "rowFilter.assemblyInstructions.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.assemblyInstructions.name": {
+      name: "name",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.assemblyInstructions.modelUploadId": {
+      name: "modelUploadId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.assemblyInstructions.itemId": {
+      name: "itemId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.assemblyInstructions.assemblyPlanJobId": {
+      name: "assemblyPlanJobId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.assemblyInstructions.status": {
+      name: "status",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.assemblyInstructions.version": {
+      name: "version",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.assemblyInstructions.publishedAt": {
+      name: "publishedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.assemblyInstructions.settings": {
+      name: "settings",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.assemblyInstructions.rootInstructionId": {
+      name: "rootInstructionId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.assemblyInstructions.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.assemblyInstructions.customFields": {
+      name: "customFields",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.assemblyInstructions.tags": {
+      name: "tags",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.assemblyInstructions.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.assemblyInstructions.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.assemblyInstructions.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.assemblyInstructions.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.assemblyInstructions.versions": {
+      name: "versions",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.dimensionValues": {
       name: "dimensionValues",
       description: "dimensionValues",
@@ -178590,14 +178917,14 @@ export default {
       in: "query",
       type: "string"
     },
-    "rowFilter.companySettings.incompletePickingListPolicy": {
-      name: "incompletePickingListPolicy",
+    "rowFilter.companySettings.autoSelectMaterialWithoutPickingList": {
+      name: "autoSelectMaterialWithoutPickingList",
       required: false,
       in: "query",
       type: "string"
     },
-    "rowFilter.companySettings.autoSelectMaterialWithoutPickingList": {
-      name: "autoSelectMaterialWithoutPickingList",
+    "rowFilter.companySettings.incompletePickingListPolicy": {
+      name: "incompletePickingListPolicy",
       required: false,
       in: "query",
       type: "string"

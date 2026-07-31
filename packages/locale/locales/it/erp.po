@@ -554,6 +554,9 @@ msgstr "Periodo di Accumulo (Settimane)"
 msgid "Accumulation Period:"
 msgstr "Periodo di Accumulo:"
 
+msgid "Acknowledge & finish"
+msgstr "Riconosci e completa"
+
 msgid "Acquisition Cost"
 msgstr "Costo di acquisizione"
 
@@ -5784,6 +5787,9 @@ msgstr "Completa l'onboarding"
 msgid "Finish To"
 msgstr "Finisci a"
 
+msgid "Finish with material unpicked?"
+msgstr "Terminare con materiale non prelevato?"
+
 msgid "Finished goods"
 msgstr "Finiture"
 
@@ -7066,6 +7072,9 @@ msgstr "Mantieni i prezzi esistenti, aggiungi solo i nuovi articoli"
 
 msgid "Keep Open"
 msgstr "Mantieni Aperto"
+
+msgid "Keep picking"
+msgstr "Continua il prelievo"
 
 msgid "Key"
 msgstr "Chiave"
@@ -11715,6 +11724,9 @@ msgstr "App del reparto e pianificazione"
 msgid "Shop-floor configuration."
 msgstr "Configurazione del reparto di produzione."
 
+msgid "short"
+msgstr "breve"
+
 msgid "Short"
 msgstr "Carente"
 
@@ -13243,6 +13255,9 @@ msgstr "Questi indirizzi email verranno automaticamente messi in CC su tutte le 
 
 msgid "These email addresses will be automatically CC'd on all quote emails sent to customers."
 msgstr "Questi indirizzi email verranno automaticamente messi in CC su tutte le email di preventivo inviate ai clienti."
+
+msgid "These items still have material to pick. Finishing now marks the list Partial."
+msgstr "Questi articoli hanno ancora materiale da prelevare. Il completamento ora contrassegna l'elenco come Parziale."
 
 msgid "These jobs have operations assigned to this work center:"
 msgstr "Questi lavori hanno operazioni assegnate a questo centro di lavoro:"

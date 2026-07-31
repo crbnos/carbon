@@ -44,7 +44,9 @@ Key service functions (verified):
   `correctedQuantity − effective` (effective = root + all prior corrections in the group),
   so repeat corrections converge. `documentType`/`documentId` are copied from the original
   so document-scoped movement views keep including the fix. Entry point: "Correct Quantity"
-  context action on `StockMovementsTable` → `stock-movements/$ledgerId/correct` route.
+  context action on `StockMovementsTable` → `stock-movements/$ledgerId/correct` route (whose
+  loader returns the authoritative effective quantity for the modal pre-fill). Corrections
+  render as normal flat rows with an `isCorrection` badge — no nesting/expandable grouping.
   Inventory counts have NO count-level rectify; Posted is terminal.
 - Storage units: `getStorageUnit(s)`, `getStorageUnitRoots`, `getStorageUnitChildren`,
   `getStorageUnitTree`, `getStorageUnitsTreeForLocation`, `getDefaultStorageUnitForJob`,

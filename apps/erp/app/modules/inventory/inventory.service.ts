@@ -2984,6 +2984,60 @@ export async function upsertPickingList(
     .single();
 }
 
+export type UnresolvedPickingListLine = {
+  itemName: string;
+  outstanding: number;
+};
+
+// Lines still owing material when Finish is pressed. "Unresolved" = a line the
+// operator neither fully picked, cancelled, nor explicitly marked Short — i.e.
+// silently left behind. `hasShort` reports whether any acknowledged shortfall
+// exists, which forces the final header status to Partial rather than Completed.
+export async function getUnresolvedPickingListLines(
+  client: SupabaseClient<Database>,
+  pickingListId: string,
+  companyId: string
+): Promise<{
+  unresolved: UnresolvedPickingListLine[];
+  hasShort: boolean;
+  error: unknown;
+}> {
+  const { data, error } = await client
+    .from("pickingListLine")
+    .select(
+      "status, quantityToPick, quantityPicked, item:item(name, readableId)"
+    )
+    .eq("pickingListId", pickingListId)
+    .eq("companyId", companyId);
+
+  if (error) return { unresolved: [], hasShort: false, error };
+
+  const lines = data ?? [];
+  const hasShort = lines.some((line) => line.status === "Short");
+
+  const unresolved = lines
+    .filter(
+      (line) =>
+        line.status !== "Cancelled" &&
+        line.status !== "Short" &&
+        Number(line.quantityPicked ?? 0) < Number(line.quantityToPick ?? 0)
+    )
+    .map((line) => {
+      const item = line.item as
+        | { name?: string | null; readableId?: string | null }
+        | { name?: string | null; readableId?: string | null }[]
+        | null;
+      const itemRecord = Array.isArray(item) ? item[0] : item;
+      return {
+        itemName: itemRecord?.name ?? itemRecord?.readableId ?? "Material",
+        outstanding:
+          Number(line.quantityToPick ?? 0) - Number(line.quantityPicked ?? 0)
+      };
+    });
+
+  return { unresolved, hasShort, error: null };
+}
+
 export async function updatePickingListStatus(
   client: SupabaseClient<Database>,
   pickingListId: string,

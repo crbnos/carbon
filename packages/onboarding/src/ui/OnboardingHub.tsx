@@ -94,7 +94,7 @@ export function OnboardingHub({
   return (
     <div className="w-full max-w-3xl mx-auto flex flex-col gap-6">
       <header className="flex flex-col items-center text-center gap-3 pt-2">
-        <div className="size-14 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center mb-1">
+        <div className="size-14 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center mb-1">
           <img
             src="/carbon-mark-light.svg"
             alt="Carbon"
@@ -131,8 +131,8 @@ export function OnboardingHub({
       ) : null}
 
       {done === total ? (
-        <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/5 p-6 flex items-center gap-4 motion-safe:animate-in motion-safe:fade-in-50 motion-safe:zoom-in-95 motion-safe:duration-500">
-          <div className="shrink-0 size-12 rounded-2xl bg-emerald-500/15 flex items-center justify-center">
+        <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-6 flex items-center gap-4 motion-safe:animate-in motion-safe:fade-in-50 motion-safe:zoom-in-95 motion-safe:duration-500">
+          <div className="shrink-0 size-12 rounded-lg bg-emerald-500/15 flex items-center justify-center">
             <LuPartyPopper className="text-2xl text-emerald-600 dark:text-emerald-400" />
           </div>
           <div className="flex-1 min-w-0">
@@ -154,7 +154,7 @@ export function OnboardingHub({
         </div>
       ) : null}
 
-      <div className="rounded-2xl border bg-card overflow-hidden">
+      <div className="rounded-lg border bg-card overflow-hidden">
         <div className="flex items-end justify-between gap-4 flex-wrap p-6 pb-4 border-b">
           <div className="text-base font-medium tracking-tight">
             <Trans>
@@ -244,8 +244,8 @@ function NextStepCard({
     : undefined;
 
   return (
-    <div className="rounded-2xl border border-border bg-card p-5 flex items-start gap-4 motion-safe:animate-in motion-safe:fade-in-50 motion-safe:slide-in-from-bottom-2 motion-safe:duration-300">
-      <div className="shrink-0 size-9 rounded-xl bg-primary/15 flex items-center justify-center text-sm font-medium tabular-nums text-primary">
+    <div className="rounded-lg border border-border bg-card p-5 flex items-start gap-4 motion-safe:animate-in motion-safe:fade-in-50 motion-safe:slide-in-from-bottom-2 motion-safe:duration-300">
+      <div className="shrink-0 size-9 rounded-xl bg-primary/15 flex items-center justify-center text-sm font-medium tabular-nums">
         {action.gateNumber}
       </div>
       <div className="flex-1 min-w-0">
@@ -347,7 +347,7 @@ function GateRow({
           <div className="flex items-center gap-2 flex-wrap">
             <span
               className={cn(
-                "text-sm font-medium transition-colors group-hover:text-primary",
+                "text-sm font-medium transition-colors group-hover",
                 status === "done" && "line-through text-muted-foreground"
               )}
             >
@@ -365,7 +365,7 @@ function GateRow({
             ) : null}
             <LuArrowRight
               className={cn(
-                "size-4 shrink-0 text-muted-foreground/50 transition group-hover:translate-x-0.5 group-hover:text-primary",
+                "size-4 shrink-0 text-muted-foreground/50 transition group-hover:translate-x-0.5 group-hover",
                 tier === "self_serve" && "ml-auto"
               )}
             />
@@ -375,7 +375,7 @@ function GateRow({
               {i18n._(step.desc)}
             </p>
           ) : null}
-          <span className="text-xxs font-medium text-muted-foreground/80 mt-2 inline-block transition-colors group-hover:text-primary">
+          <span className="text-xxs font-medium text-muted-foreground/80 mt-2 inline-block transition-colors group-hover">
             <Trans>View in project plan</Trans>
           </span>
         </button>

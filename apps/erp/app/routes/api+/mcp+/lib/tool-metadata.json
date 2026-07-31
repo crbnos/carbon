@@ -1,6 +1,6 @@
 {
-  "generated": "2026-07-31T05:04:41.516Z",
-  "totalTools": 1401,
+  "generated": "2026-07-31T05:48:08.334Z",
+  "totalTools": 1405,
   "modules": 15,
   "tools": [
     {
@@ -7613,6 +7613,32 @@
         },
         "required": [
           "locationId"
+        ]
+      }
+    },
+    {
+      "name": "inventory_getUnresolvedPickingListLines",
+      "module": "inventory",
+      "classification": "READ",
+      "description": "get unresolved picking list lines",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "pickingListId",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "pickingListId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "pickingListId"
         ]
       }
     },
@@ -22229,6 +22255,89 @@
         "required": [
           "id",
           "data"
+        ]
+      }
+    },
+    {
+      "name": "production_getAssemblyInstructionVersions",
+      "module": "production",
+      "classification": "READ",
+      "description": "get assembly instruction versions",
+      "paramCount": 2,
+      "serviceParams": [
+        "client",
+        "instruction"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "rootInstructionId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "id"
+        ]
+      }
+    },
+    {
+      "name": "production_copyAssemblyInstructionAsVersion",
+      "module": "production",
+      "classification": "WRITE",
+      "description": "copy assembly instruction as version",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId",
+        "createdBy",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "copyFromId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "copyFromId"
+        ]
+      }
+    },
+    {
+      "name": "production_activateAssemblyInstructionVersion",
+      "module": "production",
+      "classification": "WRITE",
+      "description": "activate assembly instruction version",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
         ]
       }
     },

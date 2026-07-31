@@ -114,6 +114,12 @@ serve(async (req: Request) => {
       );
     }
 
+    // A correction row shows only its delta (+4), which doesn't tell the reader
+    // the from→to intent — so when the user gives no reason, self-document it.
+    const resolvedComment =
+      comment?.trim() ||
+      `Corrected from ${effectiveQuantity} to ${correctedQuantity}`;
+
     const [itemResult, itemCostResult, accountingSettings, trackingQuantities] =
       await Promise.all([
         client
@@ -275,9 +281,7 @@ serve(async (req: Request) => {
               inventoryAdjustmentVarianceAccount:
                 accountDefaults.data.inventoryAdjustmentVarianceAccount,
             },
-            description: comment?.trim()
-              ? `Stock Movement Correction — ${comment.trim()}`
-              : "Stock Movement Correction",
+            description: `Stock Movement Correction — ${resolvedComment}`,
             userId,
             dimensions: dimensionMap,
           }
@@ -317,7 +321,7 @@ serve(async (req: Request) => {
           documentType: root.documentType,
           documentId: root.documentId,
           correctionOfItemLedgerId: root.id,
-          comment: comment ?? null,
+          comment: resolvedComment,
           companyId,
           createdBy: userId,
         },

@@ -7,7 +7,7 @@ Shared UI component library — primitives, layout, data display, and overlays b
 - **Use existing components first.** Grep `packages/react/src/` before writing custom UI. Prefer built-in `variant` props over ad-hoc `bg-*`/`text-*` classes.
 - **Use `cn()` for class merging** (`import { cn } from "@carbon/react"` — it's `twMerge(clsx(...))`). Never raw string concatenation for conditional classes.
 - **Components live flat in `src/`** (e.g. `src/Button.tsx`), not under a `components/` subdirectory. Follow this convention for new components.
-- **Concentric border radius**: outer radius = inner radius + padding. Card shell is `rounded-2xl`; don't re-add borders/radius on CardContent.
+- **Concentric border radius**: outer radius = inner radius + padding. Card shell is `rounded-lg`; don't re-add borders/radius on CardContent.
 - **Popover inside Drawer/Dialog**: `stopPropagation` on `onWheel`/`onTouchMove` of `PopoverContent` to prevent scroll-lock from swallowing events.
 
 ## Ask First

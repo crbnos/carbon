@@ -188,13 +188,13 @@ function PhaseCard({
   return (
     <div
       id={planAnchorId(step.key)}
-      className="rounded-2xl border bg-card shadow-button-base overflow-hidden scroll-mt-6"
+      className="rounded-lg border bg-card shadow-button-base overflow-hidden scroll-mt-6"
     >
       <div className="p-5 pb-4">
         <div className="flex items-start gap-4">
           <span
             className={cn(
-              "shrink-0 size-9 rounded-xl border flex items-center justify-center text-sm font-semibold tabular-nums",
+              "shrink-0 size-9 rounded-lg border flex items-center justify-center text-sm font-semibold tabular-nums",
               gatePassed
                 ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-400"
                 : gateInProgress

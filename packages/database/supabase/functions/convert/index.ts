@@ -811,11 +811,14 @@ serve(async (req: Request) => {
             .single(),
         ]);
 
+        if (salesOrder.error) throw new Error(salesOrder.error.message);
         if (!salesOrder.data) throw new Error("Sales order not found");
         if (salesOrderLines.error)
           throw new Error(salesOrderLines.error.message);
+        if (salesOrderPayment.error) throw new Error(salesOrderPayment.error.message);
         if (!salesOrderPayment.data)
           throw new Error("Sales order payment details not found");
+        if (salesOrderShipment.error) throw new Error(salesOrderShipment.error.message);
         if (!salesOrderShipment.data)
           throw new Error("Sales order delivery details not found");
 
@@ -1388,11 +1391,14 @@ serve(async (req: Request) => {
             .single(),
         ]);
 
+        if (salesOrder.error) throw new Error(salesOrder.error.message);
         if (!salesOrder.data) throw new Error("Sales order not found");
         if (salesOrderLines.error)
           throw new Error(salesOrderLines.error.message);
+        if (salesOrderPayment.error) throw new Error(salesOrderPayment.error.message);
         if (!salesOrderPayment.data)
           throw new Error("Sales order payment details not found");
+        if (salesOrderShipment.error) throw new Error(salesOrderShipment.error.message);
         if (!salesOrderShipment.data)
           throw new Error("Sales order delivery details not found");
 

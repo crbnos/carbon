@@ -554,6 +554,9 @@ msgstr "累积期（周）"
 msgid "Accumulation Period:"
 msgstr "累积期间："
 
+msgid "Acknowledge & finish"
+msgstr "确认并完成"
+
 msgid "Acquisition Cost"
 msgstr "收购成本"
 
@@ -5784,6 +5787,9 @@ msgstr "完成入职"
 msgid "Finish To"
 msgstr "完成至"
 
+msgid "Finish with material unpicked?"
+msgstr "完成但物料未领取？"
+
 msgid "Finished goods"
 msgstr "表面处理"
 
@@ -7066,6 +7072,9 @@ msgstr "保留现有定价，仅添加新项目"
 
 msgid "Keep Open"
 msgstr "保持开放"
+
+msgid "Keep picking"
+msgstr "继续领取"
 
 msgid "Key"
 msgstr "钥匙"
@@ -11715,6 +11724,9 @@ msgstr "车间应用和排程"
 msgid "Shop-floor configuration."
 msgstr "车间配置。"
 
+msgid "short"
+msgstr "短缺"
+
 msgid "Short"
 msgstr "缺货"
 
@@ -13243,6 +13255,9 @@ msgstr "这些电子邮件地址将自动抄送到发送给供应商的所有电
 
 msgid "These email addresses will be automatically CC'd on all quote emails sent to customers."
 msgstr "这些电子邮件地址将自动抄送到发送给客户的所有报价电子邮件中。"
+
+msgid "These items still have material to pick. Finishing now marks the list Partial."
+msgstr "这些物料仍需领取。现在完成将标记列表为部分。"
 
 msgid "These jobs have operations assigned to this work center:"
 msgstr "这些工作有分配给此工作中心的操作："

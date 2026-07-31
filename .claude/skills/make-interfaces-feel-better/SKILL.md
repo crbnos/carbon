@@ -106,7 +106,7 @@ Always present changes as a markdown table with **Before** and **After** columns
 #### Concentric border radius
 | Before | After |
 | --- | --- |
-| `rounded-xl` on card + `rounded-xl` on inner button (`p-2`) | `rounded-2xl` on card (`12 + 8`), `rounded-lg` on inner button |
+| `rounded-xl` on card + `rounded-xl` on inner button (`p-2`) | `rounded-lg` on card (`12 + 8`), `rounded-lg` on inner button |
 | `border-radius: 16px` on both nested surfaces | Outer `24px`, inner `16px` with `8px` padding |
 
 #### Tabular numbers

@@ -554,6 +554,9 @@ msgstr "Período de Acumulação (Semanas)"
 msgid "Accumulation Period:"
 msgstr "Período de Acumulação:"
 
+msgid "Acknowledge & finish"
+msgstr "Reconhecer e finalizar"
+
 msgid "Acquisition Cost"
 msgstr "Custo de aquisição"
 
@@ -5784,6 +5787,9 @@ msgstr "Concluir integração"
 msgid "Finish To"
 msgstr "Terminar Em"
 
+msgid "Finish with material unpicked?"
+msgstr "Finalizar com material não coletado?"
+
 msgid "Finished goods"
 msgstr "Acabamentos"
 
@@ -7066,6 +7072,9 @@ msgstr "Manter preços existentes, adicionar apenas novos itens"
 
 msgid "Keep Open"
 msgstr "Manter Aberto"
+
+msgid "Keep picking"
+msgstr "Continuar coletando"
 
 msgid "Key"
 msgstr "Chave"
@@ -11715,6 +11724,9 @@ msgstr "Aplicativo de chão de fábrica e agendamento"
 msgid "Shop-floor configuration."
 msgstr "Configuração do chão de fábrica."
 
+msgid "short"
+msgstr "curto"
+
 msgid "Short"
 msgstr "Falta"
 
@@ -13243,6 +13255,9 @@ msgstr "Estes endereços de email serão automaticamente copiados em todos os em
 
 msgid "These email addresses will be automatically CC'd on all quote emails sent to customers."
 msgstr "Estes endereços de email serão automaticamente copiados em todos os emails de cotação enviados aos clientes."
+
+msgid "These items still have material to pick. Finishing now marks the list Partial."
+msgstr "Esses itens ainda têm material para coletar. Finalizar agora marca a lista como Parcial."
 
 msgid "These jobs have operations assigned to this work center:"
 msgstr "Estes trabalhos têm operações atribuídas a este centro de trabalho:"

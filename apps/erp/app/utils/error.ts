@@ -21,8 +21,13 @@ export async function getEdgeFunctionErrorMessage(
   if (ctx && typeof ctx.clone === "function") {
     try {
       const body = await ctx.clone().json();
-      if (body && typeof body.message === "string") {
-        return body.message;
+      const bodyMessage = body?.message;
+      if (
+        typeof bodyMessage === "string" &&
+        bodyMessage !== "" &&
+        bodyMessage !== "Edge Function returned a non-2xx status code"
+      ) {
+        return bodyMessage;
       }
     } catch {
       // body wasn't JSON or already consumed — fall through

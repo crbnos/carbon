@@ -72,7 +72,7 @@ export default function SelectCompany() {
   }, [companies, companiesLabel]);
 
   return (
-    <div className="w-full max-w-[26rem] overflow-hidden rounded-2xl bg-card text-card-foreground shadow-2xl ring-1 ring-black/5 antialiased dark:ring-white/10">
+    <div className="w-full max-w-[26rem] overflow-hidden rounded-lg bg-card text-card-foreground shadow-lg ring-1 ring-black/5 antialiased dark:ring-white/10">
       <div className="flex flex-col items-center gap-4 px-8 pb-6 pt-9">
         <img
           src={CONTROLLED_ENVIRONMENT ? "/flag.png" : "/carbon-mark-light.svg"}
@@ -135,7 +135,7 @@ export default function SelectCompany() {
                       <button
                         type="submit"
                         disabled={isBusy}
-                        className="group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left hover:bg-accent focus-visible:bg-accent focus-visible:outline-none disabled:pointer-events-none disabled:opacity-60"
+                        className="group flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left hover:bg-accent focus-visible:bg-accent focus-visible:outline-none disabled:pointer-events-none disabled:opacity-60"
                       >
                         <Avatar
                           size="md"

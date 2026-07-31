@@ -554,6 +554,9 @@ msgstr "Okres akumulacji (tygodnie)"
 msgid "Accumulation Period:"
 msgstr "Okres akumulacji:"
 
+msgid "Acknowledge & finish"
+msgstr "Potwierdź i zakończ"
+
 msgid "Acquisition Cost"
 msgstr "Koszt nabycia"
 
@@ -5784,6 +5787,9 @@ msgstr "Zakończ wdrażanie"
 msgid "Finish To"
 msgstr "Zakończyć do"
 
+msgid "Finish with material unpicked?"
+msgstr "Zakończyć bez rozliczenia materiału?"
+
 msgid "Finished goods"
 msgstr "Wykończenia"
 
@@ -7066,6 +7072,9 @@ msgstr "Zachowaj istniejące ceny, dodaj tylko nowe pozycje"
 
 msgid "Keep Open"
 msgstr "Utrzymaj otwarte"
+
+msgid "Keep picking"
+msgstr "Kontynuuj pobieranie"
 
 msgid "Key"
 msgstr "Klucz"
@@ -11715,6 +11724,9 @@ msgstr "Aplikacja hali produkcyjnej i planowanie"
 msgid "Shop-floor configuration."
 msgstr "Konfiguracja hali produkcyjnej."
 
+msgid "short"
+msgstr "krótko"
+
 msgid "Short"
 msgstr "Brakuje"
 
@@ -13243,6 +13255,9 @@ msgstr "Te adresy e-mail będą automatycznie dodawane w polu DW do wszystkich w
 
 msgid "These email addresses will be automatically CC'd on all quote emails sent to customers."
 msgstr "Te adresy e-mail będą automatycznie dodawane w polu DW do wszystkich wiadomości e-mail z ofertami wysyłanych do klientów."
+
+msgid "These items still have material to pick. Finishing now marks the list Partial."
+msgstr "Te elementy mają jeszcze materiał do pobrania. Zakończenie teraz oznaczy listę jako Częściowa."
 
 msgid "These jobs have operations assigned to this work center:"
 msgstr "Te zadania mają operacje przypisane do tego centrum pracy:"
