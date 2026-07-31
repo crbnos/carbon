@@ -708,10 +708,14 @@ serve(async (req: Request) => {
         }
       } catch (err) {
         console.error(err);
-        return new Response(JSON.stringify(err), {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 500,
-        });
+        const message = (err as { message?: unknown })?.message;
+        return new Response(
+          JSON.stringify(typeof message === "string" && message !== "" ? { message } : {}),
+          {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 500,
+          }
+        );
       }
 
       return new Response(
@@ -763,10 +767,14 @@ serve(async (req: Request) => {
         );
       } catch (err) {
         console.error(err);
-        return new Response(JSON.stringify(err), {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 500,
-        });
+        const message = (err as { message?: unknown })?.message;
+        return new Response(
+          JSON.stringify(typeof message === "string" && message !== "" ? { message } : {}),
+          {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 500,
+          }
+        );
       }
     }
     case "receiptFromPurchaseOrder": {
@@ -1041,10 +1049,14 @@ serve(async (req: Request) => {
         );
       } catch (err) {
         console.error(err);
-        return new Response(JSON.stringify(err), {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 500,
-        });
+        const message = (err as { message?: unknown })?.message;
+        return new Response(
+          JSON.stringify(typeof message === "string" && message !== "" ? { message } : {}),
+          {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 500,
+          }
+        );
       }
     }
     case "receiptFromInboundTransfer": {
@@ -1215,10 +1227,14 @@ serve(async (req: Request) => {
         });
       } catch (err) {
         console.error(err);
-        return new Response(JSON.stringify(err), {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 500,
-        });
+        const message = (err as { message?: unknown })?.message;
+        return new Response(
+          JSON.stringify(typeof message === "string" && message !== "" ? { message } : {}),
+          {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 500,
+          }
+        );
       }
     }
     case "receiptFromWarehouseTransfer": {
@@ -1395,10 +1411,14 @@ serve(async (req: Request) => {
         });
       } catch (err) {
         console.error(err);
-        return new Response(JSON.stringify(err), {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 500,
-        });
+        const message = (err as { message?: unknown })?.message;
+        return new Response(
+          JSON.stringify(typeof message === "string" && message !== "" ? { message } : {}),
+          {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 500,
+          }
+        );
       }
     }
     case "receiptLineSplit": {
@@ -1530,10 +1550,14 @@ serve(async (req: Request) => {
         );
       } catch (err) {
         console.error(err);
-        return new Response(JSON.stringify(err), {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 500,
-        });
+        const message = (err as { message?: unknown })?.message;
+        return new Response(
+          JSON.stringify(typeof message === "string" && message !== "" ? { message } : {}),
+          {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 500,
+          }
+        );
       }
     }
     case "shipmentDefault": {
@@ -1576,10 +1600,14 @@ serve(async (req: Request) => {
         );
       } catch (err) {
         console.error(err);
-        return new Response(JSON.stringify(err), {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 500,
-        });
+        const message = (err as { message?: unknown })?.message;
+        return new Response(
+          JSON.stringify(typeof message === "string" && message !== "" ? { message } : {}),
+          {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 500,
+          }
+        );
       }
     }
     case "shipmentFromWarehouseTransfer": {
@@ -1748,10 +1776,14 @@ serve(async (req: Request) => {
         });
       } catch (err) {
         console.error(err);
-        return new Response(JSON.stringify(err), {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 500,
-        });
+        const message = (err as { message?: unknown })?.message;
+        return new Response(
+          JSON.stringify(typeof message === "string" && message !== "" ? { message } : {}),
+          {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 500,
+          }
+        );
       }
     }
     case "shipmentFromPurchaseOrder": {
@@ -1954,10 +1986,14 @@ serve(async (req: Request) => {
         );
       } catch (err) {
         console.error(err);
-        return new Response(JSON.stringify(err), {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 500,
-        });
+        const message = (err as { message?: unknown })?.message;
+        return new Response(
+          JSON.stringify(typeof message === "string" && message !== "" ? { message } : {}),
+          {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 500,
+          }
+        );
       }
     }
     case "shipmentFromSalesOrder": {
@@ -2314,10 +2350,14 @@ serve(async (req: Request) => {
         );
       } catch (err) {
         console.error(err);
-        return new Response(JSON.stringify(err), {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 500,
-        });
+        const message = (err as { message?: unknown })?.message;
+        return new Response(
+          JSON.stringify(typeof message === "string" && message !== "" ? { message } : {}),
+          {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 500,
+          }
+        );
       }
     }
     case "shipmentFromSalesOrderLine": {
@@ -2587,10 +2627,14 @@ serve(async (req: Request) => {
         );
       } catch (err) {
         console.error(err);
-        return new Response(JSON.stringify(err), {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 500,
-        });
+        const message = (err as { message?: unknown })?.message;
+        return new Response(
+          JSON.stringify(typeof message === "string" && message !== "" ? { message } : {}),
+          {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 500,
+          }
+        );
       }
     }
     case "shipmentLineSplit": {
@@ -2656,10 +2700,14 @@ serve(async (req: Request) => {
         );
       } catch (err) {
         console.error(err);
-        return new Response(JSON.stringify(err), {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 500,
-        });
+        const message = (err as { message?: unknown })?.message;
+        return new Response(
+          JSON.stringify(typeof message === "string" && message !== "" ? { message } : {}),
+          {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 500,
+          }
+        );
       }
     }
     case "journalEntry": {
@@ -2701,10 +2749,14 @@ serve(async (req: Request) => {
         );
       } catch (err) {
         console.error(err);
-        return new Response(JSON.stringify(err), {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 500,
-        });
+        const message = (err as { message?: unknown })?.message;
+        return new Response(
+          JSON.stringify(typeof message === "string" && message !== "" ? { message } : {}),
+          {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 500,
+          }
+        );
       }
     }
     default:

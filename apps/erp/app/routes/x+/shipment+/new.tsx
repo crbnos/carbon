@@ -8,6 +8,7 @@ import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import type { ShipmentSourceDocument } from "~/modules/inventory";
 import { getUserDefaults } from "~/modules/users/users.server";
+import { getEdgeFunctionErrorMessage } from "~/utils/error";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -53,7 +54,13 @@ export async function action({ request }: ActionFunctionArgs) {
           path.to.salesOrder(sourceDocumentId),
           await flash(
             request,
-            error(salesOrderShipment.error, "Failed to create shipment")
+            error(
+              salesOrderShipment.error,
+              await getEdgeFunctionErrorMessage(
+                salesOrderShipment.error,
+                "Failed to create shipment"
+              )
+            )
           )
         );
       }
@@ -80,7 +87,13 @@ export async function action({ request }: ActionFunctionArgs) {
           path.to.purchaseOrder(sourceDocumentId),
           await flash(
             request,
-            error(purchaseOrderShipment.error, "Failed to create shipment")
+            error(
+              purchaseOrderShipment.error,
+              await getEdgeFunctionErrorMessage(
+                purchaseOrderShipment.error,
+                "Failed to create shipment"
+              )
+            )
           )
         );
       }
@@ -106,7 +119,13 @@ export async function action({ request }: ActionFunctionArgs) {
           path.to.warehouseTransferDetails(sourceDocumentId),
           await flash(
             request,
-            error(warehouseTransferShipment.error, "Failed to create shipment")
+            error(
+              warehouseTransferShipment.error,
+              await getEdgeFunctionErrorMessage(
+                warehouseTransferShipment.error,
+                "Failed to create shipment"
+              )
+            )
           )
         );
       }
@@ -132,7 +151,16 @@ export async function action({ request }: ActionFunctionArgs) {
         });
         throw redirect(
           path.to.shipments,
-          await flash(request, error(error, "Failed to create shipment"))
+          await flash(
+            request,
+            error(
+              defaultShipment.error,
+              await getEdgeFunctionErrorMessage(
+                defaultShipment.error,
+                "Failed to create shipment"
+              )
+            )
+          )
         );
       }
 
