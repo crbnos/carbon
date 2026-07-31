@@ -3175,6 +3175,55 @@ async function resolveWarehouseSource(
   return null;
 }
 
+/**
+ * Whether an item has any WAREHOUSE (non-lineside) on-hand at a location,
+ * INCLUDING the unassigned (null storage unit) bin.
+ *
+ * This is the stock *test*, deliberately decoupled from `resolveWarehouseSource`
+ * (which selects a concrete source shelf and so cannot see null-bin stock). The
+ * picking UI (`PickingListLines`) likewise treats unassigned-bin on-hand as real
+ * stock, so a `Consume First` predecessor must not be judged "out of stock"
+ * merely because all of its on-hand sits in the unassigned bin — that would
+ * spuriously redirect the pick to the successor and leave predecessor stock
+ * unused.
+ */
+async function hasWarehouseStock(
+  client: SupabaseClient<Database>,
+  args: { itemId: string; locationId: string; companyId: string }
+): Promise<boolean> {
+  const quantities = await getItemStorageUnitQuantities(
+    client,
+    args.itemId,
+    args.companyId,
+    args.locationId
+  );
+
+  const perUnit = new Map<string, number>();
+  let unassignedQty = 0;
+  for (const row of quantities.data ?? []) {
+    const unitId = (row as { storageUnitId?: string | null }).storageUnitId;
+    const qty = Number((row as { quantity?: number | null }).quantity ?? 0);
+    // The unassigned (null) bin is warehouse stock — it has no work center.
+    if (!unitId) {
+      unassignedQty += qty;
+    } else {
+      perUnit.set(unitId, (perUnit.get(unitId) ?? 0) + qty);
+    }
+  }
+  if (unassignedQty > 0) return true;
+
+  for (const [storageUnitId, qty] of perUnit) {
+    if (qty <= 0) continue;
+    const effectiveWc = await client.rpc("get_effective_work_center_id", {
+      p_storage_unit_id: storageUnitId
+    });
+    // Any non-lineside bin with on-hand counts as available warehouse stock.
+    if (!effectiveWc.data) return true;
+  }
+
+  return false;
+}
+
 export async function generatePickingList(
   client: SupabaseClient<Database>,
   args: {
@@ -3384,22 +3433,25 @@ export async function generatePickingList(
     // 6. Honor supersession: decide which item this pick targets. Consume First
     // needs to know whether the predecessor is out of warehouse stock (and the
     // successor has stock), so probe those sources first — for that mode only.
+    // The stock TEST uses total non-lineside on-hand (including the unassigned
+    // bin) rather than a resolvable concrete source, so predecessor stock sitting
+    // only in the unassigned bin still blocks a spurious successor redirect.
     const supersession = supersessionByItem.get(mat.itemId);
     let predecessorInStock = true;
     let successorInStock = true;
     if (supersession?.supersessionMode === "Consume First") {
-      const predSource = await resolveWarehouseSource(
-        client,
-        await onHandFor(mat.itemId)
-      );
-      predecessorInStock = predSource !== null;
+      predecessorInStock = await hasWarehouseStock(client, {
+        itemId: mat.itemId,
+        locationId: args.locationId,
+        companyId: args.companyId
+      });
       const successorId = effectiveSuccessorId(supersession, asOfDate);
       if (successorId && !predecessorInStock) {
-        const succSource = await resolveWarehouseSource(
-          client,
-          await onHandFor(successorId)
-        );
-        successorInStock = succSource !== null;
+        successorInStock = await hasWarehouseStock(client, {
+          itemId: successorId,
+          locationId: args.locationId,
+          companyId: args.companyId
+        });
       }
     }
 

@@ -34,9 +34,11 @@ Picking ignores `itemSupersession` entirely:
 
 ## Design decisions
 
-- **D1 — No schema/type changes.** RPCs keep their exact `RETURNS TABLE` (filter rows / augment the
-  availability number only); substitution reuses existing columns. `itemSupersession` is already in
-  the committed generated types, so the whole change typechecks without `generate:types` (no local DB).
+- **D1 — No schema/type changes.** RPCs keep their exact `RETURNS TABLE` (filter rows only);
+  substitution reuses existing columns and `itemSupersession` is already in the generated types, so
+  no generated type is expected to change. Even so, per repo convention **run `pnpm run generate:types`
+  after any migration change, before typechecking** (regenerate in CI or an approved DB environment
+  when local Postgres is unavailable) rather than relying on the committed generated types.
 - **D2 — Picking-specific redirect semantics** (differs from MRP's map):
   | Mode | Pick behavior |
   |------|---------------|
@@ -52,10 +54,12 @@ Picking ignores `itemSupersession` entirely:
 - **D4 — Discontinuation date does NOT suppress picks.** Planning suppresses *new orders* past
   discontinuation; picking *fulfills existing job demand*. A job that already needs the part must
   still be pickable. Only supersession *mode* + successor effectivity gate picking.
-- **D5 — Availability RPC** folds the effective successor's warehouse on-hand (÷ conversionFactor,
-  predecessor-equivalent units) into `availableQuantity` for a superseded line, so the "No Stock"
-  warning does not false-fire when a successor can cover (covers legacy lines + Consume First lines
-  still on the predecessor). Shape unchanged.
+- **D5 — Availability RPC** reports the line's OWN pick item warehouse on-hand. Because generation
+  already redirects a substituted line's `itemId` to the effective successor (D2/D3), `availableQuantity`
+  reflects exactly what the line consumes — no successor fold-in. Folding a successor's stock into a
+  line still targeting the predecessor is deliberately avoided: with no line-splitting (D3) that line
+  consumes the predecessor, so a fold-in would mask a real predecessor shortage and could double-count
+  a successor that also has its own line on the list. Shape unchanged.
 - **D6 — UI marker** (polish): `getPickingListLines` also selects `jobMaterial(itemId)`; the line
   table shows a "↩ from &lt;predecessor&gt;" marker when `line.itemId != jobMaterial.itemId`.
 
@@ -65,8 +69,8 @@ Picking ignores `itemSupersession` entirely:
    - `CREATE OR REPLACE FUNCTION get_picking_schedule(...)` — same signature/return; in the `picks`
      CTE add a LEFT JOIN LATERAL resolving each material's `pickItemId` (D2, single-hop), exclude
      rows where `pickItemId IS NULL`, and key the staged-lineside check on `pickItemId`.
-   - `CREATE OR REPLACE FUNCTION get_picking_list_availability(...)` — same signature/return; add the
-     effective-successor fold-in (D5).
+   - `CREATE OR REPLACE FUNCTION get_picking_list_availability(...)` — same signature/return; the
+     line's own pick-item warehouse on-hand, no successor fold-in (D5).
    - Verify: no precision on `NUMERIC`; `SECURITY INVOKER`; identical `RETURNS TABLE`.
 2. **`generatePickingList`** (`inventory.service.ts`): fetch `itemSupersession` for the materials'
    items; a pure `resolvePickTarget(...)` helper (D2) chooses `{ itemId, factor }` or skip; compute
@@ -75,8 +79,10 @@ Picking ignores `itemSupersession` entirely:
 4. **UI** `PickingListLines.tsx`: render the substituted-from marker (D6).
 5. **Test** (`inventory` vitest): unit-test `resolvePickTarget` across all four modes + effectivity +
    conversion + out-of-stock branch (red→green).
-6. **Verify:** `pnpm exec turbo run typecheck --filter=erp --filter=@carbon/database`; `pnpm run lint`;
-   the new unit test. (No local DB → RPC bodies verified by SQL review, not applied.)
+6. **Verify:** `pnpm run generate:types` (after the migration, before typecheck — run in CI/an approved
+   DB env if local Postgres is unavailable); `pnpm exec turbo run typecheck --filter=erp
+   --filter=@carbon/database`; `pnpm run lint`; the new unit test. (No local DB → RPC bodies verified by
+   SQL review, not applied.)
 
 ## Out of scope / risks
 

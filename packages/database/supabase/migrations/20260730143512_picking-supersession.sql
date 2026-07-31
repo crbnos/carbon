@@ -18,12 +18,13 @@
 --      new orders). Successor on-hand is compared in successor units via the
 --      conversion factor.
 --
---   2. get_picking_list_availability — a superseded line's warehouse
---      availability folds in its effective successor's warehouse on-hand
---      (predecessor-equivalent units, i.e. / conversionFactor) so the "No Stock"
---      warning does not false-fire when a successor can cover the pick (covers
---      Consume First lines still on the predecessor and legacy lists created
---      before substitution existed).
+--   2. get_picking_list_availability — warehouse availability is the line's OWN
+--      pick item's non-lineside on-hand. Because generation already redirects a
+--      substituted line's "itemId" to the effective successor, this reflects
+--      exactly what the line consumes. Successor on-hand is NOT folded into a line
+--      still targeting the predecessor: with no line-splitting that line consumes
+--      the predecessor, so folding it in would mask a real predecessor shortage
+--      and could double-count a successor that also has its own line.
 --
 -- Redirect gating is picking-specific and intentionally differs from the MRP /
 -- job-creation map in functions/lib/supersession-pick.ts (which redirects only
@@ -251,7 +252,17 @@ SECURITY INVOKER
 AS $$
   SELECT
     pll."id" AS "pickingListLineId",
-    -- Warehouse (non-lineside) on-hand of the line's own item ...
+    -- Warehouse (non-lineside) on-hand of the line's OWN pick item — exactly what
+    -- this line consumes. A supersession redirect is already resolved at
+    -- generation time (a substituted line's "itemId" is the effective successor),
+    -- so availability reflects the real pick item without any fold-in.
+    --
+    -- We deliberately do NOT add a successor's on-hand to a line still targeting
+    -- the predecessor: with no line-splitting, such a line consumes the
+    -- PREDECESSOR, so folding in successor stock would (a) mask a genuine
+    -- predecessor shortage (suppressing the "No Stock" warning while the line
+    -- cannot actually be covered) and (b) double-count the successor's stock when
+    -- the same list also carries a separate line for that successor item.
     COALESCE((
       SELECT SUM(il."quantity")
       FROM "itemLedger" il
@@ -259,30 +270,8 @@ AS $$
         AND il."companyId" = pl."companyId"
         AND il."locationId" = pl."locationId"
         AND get_effective_work_center_id(il."storageUnitId") IS NULL
-    ), 0)
-    -- ... plus, when the line's item is superseded with an effective successor,
-    -- that successor's warehouse on-hand in predecessor-equivalent units
-    -- (/ conversionFactor), so the "No Stock" warning does not false-fire when a
-    -- successor can cover the pick.
-    + CASE
-        WHEN ss."successorItemId" IS NOT NULL
-          AND ss."supersessionMode" IN ('Consume First', 'Prefer New', 'Stock Only')
-          AND (ss."successorEffectivityDate" IS NULL
-               OR ss."successorEffectivityDate" <= CURRENT_DATE)
-        THEN COALESCE((
-          SELECT SUM(il2."quantity")
-          FROM "itemLedger" il2
-          WHERE il2."itemId" = ss."successorItemId"
-            AND il2."companyId" = pl."companyId"
-            AND il2."locationId" = pl."locationId"
-            AND get_effective_work_center_id(il2."storageUnitId") IS NULL
-        ), 0) / COALESCE(NULLIF(ss."conversionFactor", 0), 1)
-        ELSE 0
-      END AS "availableQuantity"
+    ), 0) AS "availableQuantity"
   FROM "pickingListLine" pll
   JOIN "pickingList" pl ON pl."id" = pll."pickingListId"
-  LEFT JOIN "itemSupersession" ss
-    ON ss."itemId" = pll."itemId"
-    AND ss."companyId" = pl."companyId"
   WHERE pll."pickingListId" = p_picking_list_id;
 $$;

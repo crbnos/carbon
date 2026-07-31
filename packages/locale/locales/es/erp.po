@@ -556,7 +556,6 @@ msgstr "Período de Acumulación:"
 
 msgid "Acknowledge & finish"
 msgstr "Confirmar y finalizar"
-msgstr "Reconocer y finalizar"
 
 msgid "Acquisition Cost"
 msgstr "Costo de adquisición"
@@ -5790,7 +5789,6 @@ msgstr "Terminar En"
 
 msgid "Finish with material unpicked?"
 msgstr "¿Finalizar sin recoger el material?"
-msgstr "¿Finalizar con material sin recopilar?"
 
 msgid "Finished goods"
 msgstr "Acabados"
@@ -7080,7 +7078,6 @@ msgstr "Mantener Abierto"
 
 msgid "Keep picking"
 msgstr "Continuar recogiendo"
-msgstr "Continuar recopilando"
 
 msgid "Key"
 msgstr "Clave"
@@ -13267,7 +13264,6 @@ msgstr "Estas direcciones de correo electrónico se copiarán automáticamente e
 
 msgid "These items still have material to pick. Finishing now marks the list Partial."
 msgstr "Estos elementos aún tienen material para recoger. Finalizar ahora marca la lista como Parcial."
-msgstr "Estos artículos aún tienen material para recopilar. Finalizar ahora marca la lista como Parcial."
 
 msgid "These jobs have operations assigned to this work center:"
 msgstr "Estos trabajos tienen operaciones asignadas a este centro de trabajo:"

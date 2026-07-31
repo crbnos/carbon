@@ -5789,7 +5789,6 @@ msgstr "Завершить в"
 
 msgid "Finish with material unpicked?"
 msgstr "Завершить с непобранным материалом?"
-msgstr "Завершить с незакомплектованным материалом?"
 
 msgid "Finished goods"
 msgstr "Отделки"
@@ -11730,7 +11729,6 @@ msgstr "Конфигурация цеха."
 
 msgid "short"
 msgstr "короткий"
-msgstr "краткий"
 
 msgid "Short"
 msgstr "Недостача"
@@ -13266,7 +13264,6 @@ msgstr "Эти адреса электронной почты будут авт�
 
 msgid "These items still have material to pick. Finishing now marks the list Partial."
 msgstr "У этих товаров все еще есть материал для комплектации. Завершение сейчас отметит список как Частичный."
-msgstr "Эти материалы еще не скомплектованы. Завершение отметит список как Частичный."
 
 msgid "These jobs have operations assigned to this work center:"
 msgstr "Эти задания имеют операции, назначенные этому рабочему центру:"
