@@ -655,4 +655,3 @@ AS $$
       + COALESCE(ib."bucket4", 0) + COALESCE(u."unapplied", 0) <> 0
   ORDER BY "total" DESC;
 $$;
-</content>

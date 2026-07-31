@@ -47,9 +47,11 @@
 // (= applied) and settles for applied × invRate/payRate base at the payment rate.
 // `totalFxImpact` is normalized by the (isAR ? 1 : -1) factor so a POSITIVE value
 // ALWAYS means a gain and a NEGATIVE value ALWAYS means a loss, for both AR and AP.
-// This mirrors the stored `invoiceSettlement.fxGainLossAmount` generated column
-// (applied × (targetExchangeRate − sourceExchangeRate) / sourceExchangeRate), so
-// the subledger reconciles.
+// Only the MAGNITUDE mirrors the stored `invoiceSettlement.fxGainLossAmount`
+// generated column (applied × (targetExchangeRate − sourceExchangeRate) /
+// sourceExchangeRate), which is NOT sign-normalized: for AP the stored column is
+// the negation of `totalFxImpact`. Reconcile the subledger by applying the
+// (isAR ? 1 : −1) factor — never compare the two values directly.
 
 import { credit, debit } from "../lib/utils.ts";
 
