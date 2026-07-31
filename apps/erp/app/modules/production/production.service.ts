@@ -22,6 +22,7 @@ import {
 import { parseDate } from "@internationalized/date";
 import type { FileObject, StorageError } from "@supabase/storage-js";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
+import { nanoid } from "nanoid";
 import type { z } from "zod";
 import type { StorageItem } from "~/types";
 import type { GenericQueryFilters } from "~/utils/query";
@@ -74,6 +75,7 @@ import {
   fastenerSchema,
   getAssemblyModelState,
   isJobOrderStatusHidden,
+  JOB_LOCKED_STATUSES,
   JOB_SUPPLY_STATUS_PRIORITY,
   motionSchema,
   PO_STATUS_PRIORITY,
@@ -4165,7 +4167,11 @@ export async function getAssemblyInstructions(
   }
 ) {
   let query = client
-    .from("assemblyInstruction")
+    // "assemblyInstructions" (plural) is the version-collapsing view: one row
+    // per version group (root = rootInstructionId ?? id), latest version shown,
+    // all siblings rolled into a "versions" jsonb array. See the
+    // 20260730153412_assembly-instructions-view migration.
+    .from("assemblyInstructions")
     .select("*, modelUpload(id, name, componentCount, processingStatus)", {
       count: "exact"
     })
@@ -4301,30 +4307,270 @@ export async function updateAssemblyInstructionStatus(
     updatedBy: string;
   }
 ) {
-  // Each publish bumps the version ("Edit N" in the header)
-  let version: number | undefined;
-  if (data.status === "Published") {
-    const current = await client
-      .from("assemblyInstruction")
-      .select("version")
-      .eq("id", id)
-      .single();
-    version = (current.data?.version ?? 0) + 1;
-  }
-
+  // Version is assigned when a new version is copied (see
+  // copyAssemblyInstructionAsVersion), not bumped on publish. Activating a
+  // version goes through activateAssemblyInstructionVersion; this remains for
+  // any direct status write.
   return client
     .from("assemblyInstruction")
     .update({
       status: data.status,
       publishedAt:
         data.status === "Published" ? new Date().toISOString() : undefined,
-      ...(version !== undefined ? { version } : {}),
       updatedBy: data.updatedBy,
       updatedAt: new Date().toISOString()
     })
     .eq("id", id)
     .select("id")
     .single();
+}
+
+/**
+ * Sibling versions of an instruction, for the header's version switcher. All
+ * versions of one instruction share a group root: NULL rootInstructionId means
+ * "I am the root", so the group root is `rootInstructionId ?? id` and siblings
+ * are the rows whose id = root OR whose rootInstructionId = root.
+ */
+export async function getAssemblyInstructionVersions(
+  client: SupabaseClient<Database>,
+  instruction: {
+    id: string;
+    rootInstructionId?: string | null;
+    companyId: string;
+  }
+) {
+  const root = instruction.rootInstructionId ?? instruction.id;
+  return client
+    .from("assemblyInstruction")
+    .select("id, name, version, status, rootInstructionId")
+    .eq("companyId", instruction.companyId)
+    .or(`id.eq.${root},rootInstructionId.eq.${root}`)
+    .order("version", { ascending: false });
+}
+
+/**
+ * Create a new editable Draft version as a perfect copy of an existing
+ * instruction: a fresh assemblyInstruction row (new id, version = max+1,
+ * status Draft) plus deep copies of every step (parentStepId remapped through
+ * the self-referential tree) and each step's live child rows (materials,
+ * slides, tools). Non-atomic multi-insert — a partial copy leaves a deletable
+ * Draft, matching the procedure/make-method copy precedents.
+ */
+export async function copyAssemblyInstructionAsVersion(
+  client: SupabaseClient<Database>,
+  args: { copyFromId: string; companyId: string; userId: string }
+) {
+  const { copyFromId, companyId, userId } = args;
+
+  const source = await client
+    .from("assemblyInstruction")
+    .select("*")
+    .eq("id", copyFromId)
+    .eq("companyId", companyId)
+    .single();
+  if (source.error) return source;
+
+  const root = source.data.rootInstructionId ?? source.data.id;
+
+  // Highest version across the group determines the next version number.
+  const siblings = await client
+    .from("assemblyInstruction")
+    .select("version")
+    .eq("companyId", companyId)
+    .or(`id.eq.${root},rootInstructionId.eq.${root}`)
+    .order("version", { ascending: false })
+    .limit(1);
+  const nextVersion =
+    (siblings.data?.[0]?.version ?? source.data.version ?? 0) + 1;
+
+  const insert = await client
+    .from("assemblyInstruction")
+    .insert({
+      name: source.data.name,
+      modelUploadId: source.data.modelUploadId,
+      itemId: source.data.itemId,
+      assemblyPlanJobId: source.data.assemblyPlanJobId,
+      settings: source.data.settings,
+      tags: source.data.tags,
+      status: "Draft",
+      version: nextVersion,
+      rootInstructionId: root,
+      companyId,
+      createdBy: userId
+    })
+    .select("id")
+    .single();
+  if (insert.error) return insert;
+  const newInstructionId = insert.data.id;
+
+  // Copy steps, pre-generating ids so parentStepId can be remapped in one pass.
+  const sourceSteps = await client
+    .from("assemblyInstructionStep")
+    .select("*")
+    .eq("assemblyInstructionId", copyFromId)
+    .order("sortOrder", { ascending: true });
+  if (sourceSteps.error) return sourceSteps;
+
+  const stepIdMap = new Map<string, string>();
+  for (const step of sourceSteps.data ?? []) {
+    stepIdMap.set(step.id, nanoid());
+  }
+
+  if ((sourceSteps.data?.length ?? 0) > 0) {
+    const stepRows = sourceSteps.data.map((step) => {
+      // Strip identity/audit columns; keep every authored field verbatim.
+      // biome-ignore lint/correctness/noUnusedVariables: destructure omits identity/audit columns before re-insert
+      const { id, createdAt, updatedAt, updatedBy, ...rest } = step;
+      return {
+        ...rest,
+        id: stepIdMap.get(step.id)!,
+        assemblyInstructionId: newInstructionId,
+        parentStepId: step.parentStepId
+          ? (stepIdMap.get(step.parentStepId) ?? null)
+          : null,
+        companyId,
+        createdBy: userId
+      };
+    });
+    const insertSteps = await client
+      .from("assemblyInstructionStep")
+      .insert(stepRows);
+    if (insertSteps.error) return insertSteps;
+  }
+
+  // Copy each step's live child rows, remapping stepId.
+  const sourceStepIds = [...stepIdMap.keys()];
+  if (sourceStepIds.length > 0) {
+    const copyChildTable = async (
+      table:
+        | "assemblyInstructionStepMaterial"
+        | "assemblyInstructionStepSlide"
+        | "assemblyInstructionStepTool"
+    ) => {
+      const rows = await client
+        .from(table)
+        .select("*")
+        .in("stepId", sourceStepIds);
+      if (rows.error) return rows;
+      if (!rows.data?.length) return rows;
+      const inserts = rows.data.map((row: any) => {
+        // biome-ignore lint/correctness/noUnusedVariables: destructure omits identity/audit columns before re-insert
+        const { id, createdAt, updatedAt, updatedBy, ...rest } = row;
+        return {
+          ...rest,
+          stepId: stepIdMap.get(row.stepId)!,
+          companyId,
+          createdBy: userId
+        };
+      });
+      return client.from(table).insert(inserts);
+    };
+
+    for (const table of [
+      "assemblyInstructionStepMaterial",
+      "assemblyInstructionStepSlide",
+      "assemblyInstructionStepTool"
+    ] as const) {
+      const copied = await copyChildTable(table);
+      if (copied.error) return copied;
+    }
+  }
+
+  return insert;
+}
+
+/**
+ * Make a version the active (Published) one: archive whichever sibling is
+ * currently Published, publish the target, and repoint in-flight work to it —
+ * but only active job operations (status not Done/Canceled) on active jobs
+ * (status not Completed/Closed/Cancelled). Method operations are intentionally
+ * left untouched.
+ */
+export async function activateAssemblyInstructionVersion(
+  client: SupabaseClient<Database>,
+  args: { id: string; companyId: string; userId: string }
+) {
+  const { id, companyId, userId } = args;
+
+  const target = await client
+    .from("assemblyInstruction")
+    .select("id, rootInstructionId")
+    .eq("id", id)
+    .eq("companyId", companyId)
+    .single();
+  if (target.error) return target;
+
+  const root = target.data.rootInstructionId ?? target.data.id;
+
+  const group = await client
+    .from("assemblyInstruction")
+    .select("id, status")
+    .eq("companyId", companyId)
+    .or(`id.eq.${root},rootInstructionId.eq.${root}`);
+  if (group.error) return group;
+
+  const now = new Date().toISOString();
+
+  // Archive the currently-active sibling(s).
+  const previouslyActive = (group.data ?? []).filter(
+    (v) => v.id !== id && v.status === "Published"
+  );
+  if (previouslyActive.length > 0) {
+    const archive = await client
+      .from("assemblyInstruction")
+      .update({ status: "Archived", updatedBy: userId, updatedAt: now })
+      .in(
+        "id",
+        previouslyActive.map((v) => v.id)
+      );
+    if (archive.error) return archive;
+  }
+
+  // Publish the target.
+  const publish = await client
+    .from("assemblyInstruction")
+    .update({
+      status: "Published",
+      publishedAt: now,
+      updatedBy: userId,
+      updatedAt: now
+    })
+    .eq("id", id)
+    .select("id")
+    .single();
+  if (publish.error) return publish;
+
+  // Repoint in-flight work: active job operations on active jobs that point at
+  // any other version in this group → the newly-active version.
+  const otherVersionIds = (group.data ?? [])
+    .map((v) => v.id)
+    .filter((vId) => vId !== id);
+  if (otherVersionIds.length > 0) {
+    // Drive the lookup off jobOperation (bounded by this small sibling-version
+    // set) rather than first materializing every unlocked job id — that list
+    // can exceed the 1000-row cap and silently drop operations, leaving them
+    // pointed at the now-archived version. An inner join on job applies the
+    // locked-job filter server-side while keeping the row set bounded.
+    const staleOps = await client
+      .from("jobOperation")
+      .select("id, job!inner(status)")
+      .eq("companyId", companyId)
+      .in("assemblyInstructionId", otherVersionIds)
+      .not("status", "in", "(Done,Canceled)")
+      .not("job.status", "in", `(${JOB_LOCKED_STATUSES.join(",")})`);
+    if (staleOps.error) return staleOps;
+
+    const staleOpIds = (staleOps.data ?? []).map((o) => o.id);
+    if (staleOpIds.length > 0) {
+      const repoint = await client
+        .from("jobOperation")
+        .update({ assemblyInstructionId: id })
+        .in("id", staleOpIds);
+      if (repoint.error) return repoint;
+    }
+  }
+
+  return publish;
 }
 
 export async function deleteAssemblyInstruction(

@@ -39,6 +39,7 @@ import {
   getAssemblyInstructionStepSlides,
   getAssemblyInstructionSteps,
   getAssemblyInstructionStepTools,
+  getAssemblyInstructionVersions,
   getAssemblyPlanJson,
   getAssemblyUnits,
   getFlattenedBomMaterials,
@@ -108,7 +109,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     componentMappings,
     units,
     bomMaterials,
-    assemblerAvailable
+    assemblerAvailable,
+    versions
   ] = await Promise.all([
     getAssemblyInstructionStepMaterials(client, stepIds),
     getAssemblyInstructionStepSlides(client, stepIds),
@@ -128,7 +130,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     instruction.data.itemId
       ? getFlattenedBomMaterials(client, instruction.data.itemId, companyId)
       : Promise.resolve([]),
-    isAssemblerServiceHealthy()
+    isAssemblerServiceHealthy(),
+    getAssemblyInstructionVersions(client, instruction.data)
   ]);
 
   return {
@@ -142,7 +145,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     planJob: planJob.data ?? null,
     componentMappings: componentMappings.data ?? [],
     bomMaterials,
-    assemblerAvailable
+    assemblerAvailable,
+    versions: versions.data ?? []
   };
 }
 

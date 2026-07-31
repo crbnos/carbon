@@ -13,7 +13,7 @@ Tracks item quantities across locations and storage units. Manages receipts, shi
 - **Warehouse Transfer** — moves inventory between locations (inter-location).
 - **Picking List** — generated pick instructions with FEFO/FIFO ordering and tracked entity allocation.
 - **Kanban** — pull-based replenishment signal between storage units.
-- **Inventory Count** — physical/cycle count. Created with an optional scope (`storageUnitIds` + `itemType`) recorded in the header's `scope` JSONB (written at create; not yet read back). `generateInventoryCountLines` snapshots on-hand into `inventoryCountLine` rows, **excluding Rejected AND Consumed tracked lots**. The count **detail** table filters lines by item type / storage unit / storage type / tags / material attributes via the `inventoryCountLines` **view** (line → item → subtype tables → storageUnit, flattened) — the same generic column-filter set the quantities screen uses. There is no material-attribute scope at create time.
+- **Inventory Count** — physical/cycle count. Posted is terminal (there is no count-level "Rectify" — fixing a posted movement happens per-movement via `correctStockMovement`). Created with an optional scope (`storageUnitIds` + `itemType`) recorded in the header's `scope` JSONB (written at create; not yet read back). `generateInventoryCountLines` snapshots on-hand into `inventoryCountLine` rows, **excluding Rejected AND Consumed tracked lots**. The count **detail** table filters lines by item type / storage unit / storage type / tags / material attributes via the `inventoryCountLines` **view** (line → item → subtype tables → storageUnit, flattened) — the same generic column-filter set the quantities screen uses. There is no material-attribute scope at create time.
 
 ## Safety
 
@@ -61,6 +61,7 @@ pnpm exec turbo run typecheck --filter=erp   # the app's package name is "erp", 
 - `getInventoryItems` / `getInventoryItemsCount` — calls `get_inventory_quantities` RPC for on-hand quantities
 - `getItemLedgerPage` / `getItemLedgerActivity` — paginated ledger history
 - `insertManualInventoryAdjustment` — adjustments with tracked entity handling; wraps the `post-inventory-adjustment` edge function, which also maintains cost layers and posts GL journals (5310 vs RM/FG) in one transaction when accounting is enabled
+- `correctStockMovement` — wraps the `correct-stock-movement` edge function: fixes a posted `itemLedger` row by booking ONE opposite (delta) movement linked via `correctionOfItemLedgerId`, dated with the original's `postingDate` and posted into the original's accounting period (fails if Locked/Closed). The delta is derived against the movement's current effective quantity (original + prior corrections), so repeat corrections converge
 - `getStorageUnit(s)` / `getStorageUnitTree` / `getStorageUnitsTreeForLocation` — storage hierarchy
 - `getAvailableTrackedEntities` — calls `get_available_tracked_entities` RPC
 - `getReceipts` / `getReceiptLines` / `reconcileReceiptSerialEntities` — receipt management

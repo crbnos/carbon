@@ -5,21 +5,21 @@ export const contentType = "image/png";
 
 /**
  * Dynamic Open Graph card — `/og?title=…&eyebrow=…`. Rendered with the editorial
- * warm-paper palette and our display font (DM Sans), matching the site.
+ * warm-paper palette and our display font (Archivo), matching the site.
  *
  * Satori needs a TrueType/OTF/WOFF buffer (not woff2, which is all next/font emits),
- * so DM Sans is fetched at request time: Google's css2 endpoint serves a `truetype`
+ * so Archivo is fetched at request time: Google's css2 endpoint serves a `truetype`
  * src when the request is subset by `text=` and not announced as woff2-capable. The
  * result is cached immutably per URL, so the fetch happens once per (title, eyebrow).
  */
-async function loadDmSans(weight: number, text: string): Promise<ArrayBuffer> {
-  const url = `https://fonts.googleapis.com/css2?family=DM+Sans:wght@${weight}&text=${encodeURIComponent(text)}`;
+async function loadArchivo(weight: number, text: string): Promise<ArrayBuffer> {
+  const url = `https://fonts.googleapis.com/css2?family=Archivo:wght@${weight}&text=${encodeURIComponent(text)}`;
   const css = await (await fetch(url)).text();
   const src =
     css.match(
       /src:\s*url\((https:[^)]+)\)\s*format\(['"]?truetype['"]?\)/
     )?.[1] ?? css.match(/src:\s*url\((https:[^)]+\.ttf)\)/)?.[1];
-  if (!src) throw new Error("Failed to resolve DM Sans TrueType source");
+  if (!src) throw new Error("Failed to resolve Archivo TrueType source");
   return (await fetch(src)).arrayBuffer();
 }
 
@@ -33,8 +33,8 @@ export async function GET(request: Request) {
   // Subset the font to just the glyphs this card draws.
   const glyphs = `${title}${eyebrow}Carbon carbon.ms`;
   const [semibold, regular] = await Promise.all([
-    loadDmSans(600, glyphs),
-    loadDmSans(400, glyphs)
+    loadArchivo(600, glyphs),
+    loadArchivo(400, glyphs)
   ]);
 
   const titleSize = title.length > 70 ? 54 : title.length > 44 ? 62 : 74;
@@ -50,7 +50,7 @@ export async function GET(request: Request) {
         height: "100%",
         padding: "76px 80px",
         background: "#FFFFFF",
-        fontFamily: "DM Sans"
+        fontFamily: "Archivo"
       }}
     >
       {/* Hairline inset frame */}
@@ -177,8 +177,8 @@ export async function GET(request: Request) {
       width: 1200,
       height: 630,
       fonts: [
-        { name: "DM Sans", data: semibold, weight: 600, style: "normal" },
-        { name: "DM Sans", data: regular, weight: 400, style: "normal" }
+        { name: "Archivo", data: semibold, weight: 600, style: "normal" },
+        { name: "Archivo", data: regular, weight: 400, style: "normal" }
       ],
       headers: { "cache-control": "public, max-age=31536000, immutable" }
     }

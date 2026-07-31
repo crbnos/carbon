@@ -63,6 +63,9 @@ msgstr "Accept lot?"
 msgid "Account Settings"
 msgstr "Account Settings"
 
+msgid "Acknowledge & finish"
+msgstr "Acknowledge & finish"
+
 msgid "Active"
 msgstr "Active"
 
@@ -444,6 +447,9 @@ msgstr "Finish {0}"
 msgid "Finish Anyways"
 msgstr "Finish Anyways"
 
+msgid "Finish with material unpicked?"
+msgstr "Finish with material unpicked?"
+
 msgid "Forgot to Clock Out?"
 msgstr "Forgot to Clock Out?"
 
@@ -518,6 +524,9 @@ msgstr "Job Traveler"
 
 msgid "Jobs"
 msgstr "Jobs"
+
+msgid "Keep picking"
+msgstr "Keep picking"
 
 msgid "Kit"
 msgstr "Kit"
@@ -1068,6 +1077,9 @@ msgstr "Set clock-out time"
 msgid "Setup"
 msgstr "Setup"
 
+msgid "short"
+msgstr "short"
+
 msgid "Short"
 msgstr "Short"
 
@@ -1162,6 +1174,9 @@ msgstr "The lot will still be dispositioned, but an NCR cannot be created until 
 
 msgid "There are serial or batch tracked materials on the bill of material that have not been fully issued. Completing without issuing may result in incorrect traceability records."
 msgstr "There are serial or batch tracked materials on the bill of material that have not been fully issued. Completing without issuing may result in incorrect traceability records."
+
+msgid "These items still have material to pick. Finishing now marks the list Partial."
+msgstr "These items still have material to pick. Finishing now marks the list Partial."
 
 msgid "This lot is expired and can't be picked."
 msgstr "This lot is expired and can't be picked."

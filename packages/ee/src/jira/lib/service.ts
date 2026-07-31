@@ -2,6 +2,8 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database } from "@carbon/database";
 import { getLogger } from "@carbon/logger";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import type { ActionTaskEntityType } from "../../lib/actionTaskEntity";
+import { actionTaskEntities } from "../../lib/actionTaskEntity";
 import { adfToTiptap } from "./richtext";
 import type { JiraCredentials, JiraIssue, JiraIssueMapping } from "./types";
 import { JiraIssueMappingSchema } from "./types";
@@ -85,6 +87,7 @@ export async function linkActionToJiraIssue(
   client: SupabaseClient<Database>,
   companyId: string,
   input: {
+    entityType: ActionTaskEntityType;
     actionId: string;
     issue: JiraIssue;
     siteUrl: string;
@@ -92,6 +95,7 @@ export async function linkActionToJiraIssue(
     syncNotes?: boolean;
   }
 ) {
+  const entity = actionTaskEntities[input.entityType];
   const mapping = issueToMapping(input.issue, input.siteUrl);
 
   // Convert Jira description (ADF) to Tiptap format for notes
@@ -121,11 +125,11 @@ export async function linkActionToJiraIssue(
 
   // Update the task fields
   const result = await client
-    .from("nonConformanceActionTask")
+    .from(entity.table)
     .update(updateData)
     .eq("companyId", companyId)
     .eq("id", input.actionId)
-    .select("nonConformanceId");
+    .select(entity.parentColumn);
 
   // Delete any existing Jira mapping for this action
   // Use service role to bypass RLS (no DELETE policy for authenticated users)
@@ -133,13 +137,14 @@ export async function linkActionToJiraIssue(
   await serviceRoleForLink
     .from("externalIntegrationMapping")
     .delete()
-    .eq("entityType", "nonConformanceActionTask")
+    .eq("companyId", companyId)
+    .eq("entityType", input.entityType)
     .eq("entityId", input.actionId)
     .eq("integration", "jira");
 
   // Create the new mapping
   await client.from("externalIntegrationMapping").insert({
-    entityType: "nonConformanceActionTask",
+    entityType: input.entityType,
     entityId: input.actionId,
     integration: "jira",
     externalId: input.issue.id,
@@ -157,23 +162,27 @@ export async function unlinkActionFromJiraIssue(
   client: SupabaseClient<Database>,
   companyId: string,
   input: {
+    entityType: ActionTaskEntityType;
     actionId: string;
     assignee?: string | null;
   }
 ) {
+  const entity = actionTaskEntities[input.entityType];
+
   // Delete the Jira mapping using service role to bypass RLS
   const serviceRole = getCarbonServiceRole();
   await serviceRole
     .from("externalIntegrationMapping")
     .delete()
-    .eq("entityType", "nonConformanceActionTask")
+    .eq("companyId", companyId)
+    .eq("entityType", input.entityType)
     .eq("entityId", input.actionId)
     .eq("integration", "jira");
 
-  // Return the nonConformanceId for the action task
+  // Return the parent id for the action task
   return client
-    .from("nonConformanceActionTask")
-    .select("nonConformanceId")
+    .from(entity.table)
+    .select(entity.parentColumn)
     .eq("companyId", companyId)
     .eq("id", input.actionId);
 }
@@ -184,12 +193,13 @@ export async function unlinkActionFromJiraIssue(
 export const getJiraIssueFromExternalId = async (
   client: SupabaseClient<Database>,
   companyId: string,
-  actionId: string
+  actionId: string,
+  entityType: ActionTaskEntityType
 ): Promise<JiraIssueMapping | null> => {
   const { data: mapping } = await client
     .from("externalIntegrationMapping")
     .select("metadata")
-    .eq("entityType", "nonConformanceActionTask")
+    .eq("entityType", entityType)
     .eq("entityId", actionId)
     .eq("integration", "jira")
     .eq("companyId", companyId)
@@ -229,12 +239,13 @@ export async function updateJiraIssueMapping(
   client: SupabaseClient<Database>,
   companyId: string,
   actionId: string,
-  mapping: JiraIssueMapping
+  mapping: JiraIssueMapping,
+  entityType: ActionTaskEntityType
 ) {
   return await client
     .from("externalIntegrationMapping")
     .update({ metadata: mapping as any })
-    .eq("entityType", "nonConformanceActionTask")
+    .eq("entityType", entityType)
     .eq("entityId", actionId)
     .eq("integration", "jira")
     .eq("companyId", companyId);

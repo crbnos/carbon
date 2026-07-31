@@ -36,7 +36,6 @@ import {
 } from "react-router";
 import { GroupedContentSidebar } from "~/components/Layout";
 import { CollapsibleSidebarProvider } from "~/components/Layout/Navigation";
-import { MeshGradientBackground } from "~/components/MeshGradientBackground";
 import { useSettings, useUser } from "~/hooks";
 import {
   setCustomerPreview,
@@ -253,7 +252,6 @@ export default function GetStartedLayout() {
       <div className="grid grid-cols-[auto_1fr] grid-rows-[minmax(0,1fr)] w-full h-full overflow-hidden">
         <GroupedContentSidebar groups={groups} exactMatch />
         <div className="relative min-w-0 overflow-hidden">
-          <MeshGradientBackground darkOnly />
           <div ref={scrollRef} className="relative z-10 h-full overflow-y-auto">
             {isInternal ? (
               <PreviewBar previewing={previewingAsCustomer} />

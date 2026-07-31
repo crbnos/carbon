@@ -1,5 +1,5 @@
 // Card-shell + list primitives. The hub's surfaces are all "titled card wrapping
-// a divided list"; this replaces ~15 copy-pasted `rounded-2xl border bg-card …`
+// a divided list"; this replaces ~15 copy-pasted `rounded-lg border bg-card …`
 // blocks. Compose: <Section title aside><SectionList>{rows}</SectionList></Section>.
 
 import { cn } from "@carbon/react";
@@ -27,7 +27,7 @@ export function Section({
     <section
       id={id}
       className={cn(
-        "rounded-2xl border bg-card shadow-button-base overflow-hidden",
+        "rounded-lg border bg-card shadow-button-base overflow-hidden",
         className
       )}
     >
@@ -82,7 +82,7 @@ export function Panel({
   return (
     <section
       className={cn(
-        "rounded-2xl border bg-card shadow-button-base p-5",
+        "rounded-lg border bg-card shadow-button-base p-5",
         className
       )}
     >

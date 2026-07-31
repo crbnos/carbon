@@ -1,6 +1,6 @@
 # @carbon/jobs
 
-Background job system built on Inngest. Handles event system processing (webhooks, sync, search, audit, embeddings), integrations (Jira, Linear, Xero, Slack), notifications, scheduled tasks, and async workflows.
+Background job system built on Inngest. Handles event system processing (webhooks, sync, search, audit, embeddings), integrations (Jira, Linear, Xero, Slack, Onshape), notifications, scheduled tasks, and async workflows.
 
 ## Always
 

@@ -37,7 +37,7 @@ export default async function ResourcePage(props: Params) {
       <Breadcrumb
         items={[{ label: "API", href: "/api-reference" }, { label: mod.name }]}
       />
-      <h1 className="m-0 mt-2 text-ed-32 font-semi leading-[120%] text-ed-ink">
+      <h1 className="m-0 mt-2 text-ed-32 font-semibold tracking-tight leading-[120%] text-ed-ink">
         {r.name}
       </h1>
       <p className="m-0 mt-3 max-w-160 text-ed-16 leading-[160%] text-ed-ink/80">

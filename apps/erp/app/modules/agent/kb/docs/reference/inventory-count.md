@@ -12,7 +12,7 @@ A count moves through three statuses in order. Posting is atomic, so a count is 
   - **Pending**: Counting is confirmed and the count is queued to post. The entered quantities are locked in for review; nothing has hit the ledger yet.
   - **Posted**: Every non-zero variance has been booked as a Positive or Negative Adjustment, tracked-entity quantities updated, and (when accounting is on) a journal written. This is the pivotal transition.
 
-A Posted count isn't a dead end. **"Rectify"** reopens it to **"Draft"**, re-baselines each line's system quantity to current on-hand, and lets you re-post. The re-post writes fresh adjustment movements that link back to the ones they correct, so the original count and its fix both stay visible in the stock-movement screens.
+Posting is final — a Posted count is never reopened. If a posted movement turns out to be wrong, correct that **movement** from the stock-movements screen: enter the quantity it should have been, and Carbon books an opposite movement for the difference, linked to the original and dated with the original's posting date. The original count and its fix both stay visible in the stock-movement screens, in the right time period.
 
 ## Creating a count
 
@@ -50,7 +50,7 @@ Reconciling against the snapshot delta (not live on-hand) is deliberate. If a re
 
 Both end in the same place — a Positive or Negative Adjustment on the ledger, and the same journal when accounting is on. The difference is the workflow:
 
-  - **Inventory count**: A **bulk, reviewable document**. Snapshot many lots at once, count them, review the variances, then post them all in one atomic transaction. It has a Draft → Pending → Posted lifecycle and can be rectified.
+  - **Inventory count**: A **bulk, reviewable document**. Snapshot many lots at once, count them, review the variances, then post them all in one atomic transaction. It has a Draft → Pending → Posted lifecycle.
   - **Manual adjustment**: A **single, immediate movement** on one item in one storage unit. No snapshot, no review step, no lifecycle — you enter a delta or a *Set Quantity* target and it posts on the spot.
 
 Reach for a count when you're reconciling a shelf or a whole location; reach for an adjustment when you already know one specific quantity is wrong.
@@ -62,7 +62,7 @@ Reach for a count when you're reconciling a shelf or a whole location; reach for
 
 ## Troubleshooting
 
-Exact errors from counting, posting, and rectifying.
+Exact errors from counting and posting.
 
 ### "… serial line(s) must be counted as 0 or 1 — a serial number is a single unit."
 The post found serial-tracked lines counted to something other than 0 or 1. A serial number is one unique unit, so it's either present (1) or not (0). The message counts the offending lines and the post returns their ids so those rows are flagged — fix them and post again.
@@ -77,13 +77,10 @@ Post was attempted on a count that isn't **"Pending"**. Confirm the count first 
 Confirm was attempted on a count that isn't **"Draft"**. Only a Draft count moves to Pending.
 
 ### "Only a pending count can be reopened"
-Reopen (Pending → Draft) only works from **"Pending"**. To reopen an already-**Posted** count, use **"Rectify"** instead.
-
-### "Only a posted count can be rectified"
-Rectify only applies to a **"Posted"** count. It reopens the count to **"Draft"**, re-baselines each line's system quantity to current on-hand, and lets you re-post with correcting adjustments that link back to the originals.
+Reopen (Pending → Draft) only works from **"Pending"**. A **Posted** count is final — to fix a posted movement, correct that movement from the stock-movements screen instead.
 
 ### "Inventory count is no longer pending"
-A concurrent post or rectify already moved the count out of **"Pending"** while this post was running. Reload the count to see its current state before acting again.
+A concurrent post already moved the count out of **"Pending"** while this post was running. Reload the count to see its current state before acting again.
 
 ### No journal was written for the post
 GL journals are only written when the company has **accounting enabled**. With accounting off, the post still books the quantity variances (Positive/Negative Adjmt.) and maintains cost layers — it just skips the GL entry. All post actions require the **inventory update** permission.

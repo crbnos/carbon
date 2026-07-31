@@ -13,7 +13,7 @@ export function DocEyebrow({ children }: { children: ReactNode }) {
 }
 
 export function DocTitle({ children }: { children: ReactNode }) {
-  return <h1 className="m-0 mt-2 text-ed-32 font-semi leading-[120%] text-ed-ink">{children}</h1>;
+  return <h1 className="m-0 mt-2 text-ed-32 font-semibold tracking-tight leading-[120%] text-ed-ink">{children}</h1>;
 }
 
 export function Lead({ children }: { children: ReactNode }) {
@@ -28,7 +28,7 @@ export function H2({ children, id }: { children: ReactNode; id?: string }) {
   return (
     <h2
       id={id}
-      className="m-0 mt-11 mb-0.5 scroll-mt-22 text-ed-24 font-semi leading-[130%] text-ed-ink"
+      className="m-0 mt-11 mb-0.5 scroll-mt-22 text-ed-24 font-semibold tracking-tight leading-[130%] text-ed-ink"
     >
       {children}
     </h2>

@@ -1265,6 +1265,11 @@ export const assemblyInstructionStatusValidator = z.object({
   status: z.enum(assemblyInstructionStatuses)
 });
 
+// Spin a new editable Draft version as a perfect copy of an existing instruction.
+export const assemblyInstructionVersionValidator = z.object({
+  copyFromId: z.string().min(1, { message: "Source instruction is required" })
+});
+
 /**
  * Optional tiptap-doc transform: same coercion as the shared
  * operationStepValidator description, but optional because "Add Step" posts

@@ -1,11 +1,12 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { NotificationEvent } from "@carbon/notifications";
-import { MODEL_RAW_KEEP_MAX_BYTES } from "@carbon/utils";
 import { inngest } from "../../client";
 
 // Raw CAD in `temp-staging` is transient — the optimise/assembly jobs read it,
-// then only the gated GLB is kept in `private`. Prune raws over the served cap
-// older than this so huge sources never linger; small raws stay (downloadable).
+// and the compact pipeline COPIES what must survive into `private` (never an
+// instant move/delete: that races concurrent jobs holding a temp-staging
+// source pointer). This sweep is the ONLY thing that deletes from staging:
+// stale objects that were copied to durable, or that no modelUpload references.
 const STAGED_RAW_TTL_DAYS = 7;
 
 // Agent chat threads are transient — purge after 30 days of inactivity.
@@ -23,8 +24,14 @@ type NotifyEvent = {
 
 export const cleanupFunction = inngest.createFunction(
   { id: "cleanup", retries: 2 },
-  { cron: "0 7,12,17 * * *" },
+  { cron: "0 7 * * *" },
   async ({ step, logger }) => {
+    // Jitter: spread the daily run across the hour so every environment
+    // sharing infrastructure doesn't hammer storage/DB at exactly 07:00 UTC.
+    // The random offset is computed once when the step first executes and
+    // memoized in the run state — replays reuse the recorded wake time.
+    await step.sleep("jitter", `${Math.floor(Math.random() * 3600)}s`);
+
     const serviceRole = getCarbonServiceRole();
 
     await step.run("expire-quotes-and-rfqs", async () => {
@@ -378,7 +385,7 @@ export const cleanupFunction = inngest.createFunction(
     });
 
     await step.run("prune-staged-raw-models", async () => {
-      logger.info("Pruning stale large staged raw models...");
+      logger.info("Pruning stale staged raw models...");
       const cutoff = new Date(
         Date.now() - STAGED_RAW_TTL_DAYS * 24 * 60 * 60 * 1000
       ).toISOString();
@@ -386,7 +393,7 @@ export const cleanupFunction = inngest.createFunction(
       const stale = await serviceRole
         .schema("storage")
         .from("objects")
-        .select("name, metadata")
+        .select("name")
         .eq("bucket_id", "temp-staging")
         .lt("created_at", cutoff)
         .limit(1000);
@@ -395,70 +402,90 @@ export const cleanupFunction = inngest.createFunction(
         logger.error("Error listing stale staged raws", { error: stale.error });
         return;
       }
-
-      // Prune only UNCOMPACTED fat raws — the compact pipeline replaces a raw
-      // with `raw.<ext>.zst` / `raw.xbf.zst` (the permanent lazy-plan source,
-      // never pruned even when its compressed size still exceeds the cap).
-      const big = (stale.data ?? [])
-        .filter(
-          (o) =>
-            !o.name?.toLowerCase().endsWith(".zst") &&
-            Number((o.metadata as { size?: number } | null)?.size ?? 0) >
-              MODEL_RAW_KEEP_MAX_BYTES
-        )
+      const staleNames = (stale.data ?? [])
         .map((o) => o.name)
         .filter((n): n is string => Boolean(n));
-
-      if (big.length === 0) {
-        logger.info("No large staged raws to prune");
+      if (staleNames.length === 0) {
+        logger.info("No stale staged raws");
         return;
       }
 
-      // Orphans only — never delete an object a modelUpload still points at,
-      // via EITHER column: `modelPath` (a referenced fat raw means compaction
-      // hasn't succeeded yet) or `originalPath` (xbf compaction repoints
-      // `modelPath` at the derived `.xbf.zst` but retains the customer's
-      // original, which must survive for downloads). True strays (upload
-      // recorded no row, or the row was deleted) are the actual dead weight.
-      const [referenced, referencedOriginals] = await Promise.all([
-        serviceRole
-          .from("modelUpload")
-          .select("modelPath")
-          .in("modelPath", big),
-        serviceRole
-          .from("modelUpload")
-          .select("originalPath")
-          .in("originalPath", big)
-      ]);
-      if (referenced.error || referencedOriginals.error) {
-        logger.error(
-          "Error resolving referenced staged raws — skipping prune",
-          {
-            error: referenced.error ?? referencedOriginals.error
-          }
+      // Rule 1 — RELOCATED: the compact pipeline copies survivors to `private`
+      // under the same key (copy, not move — a move races concurrent jobs
+      // holding a temp-staging source pointer). Once the durable copy exists,
+      // the staged one is redundant regardless of size or references: every
+      // reader probes/falls back to `private`.
+      const relocated = new Set<string>();
+      const CHUNK = 20;
+      for (let i = 0; i < staleNames.length; i += CHUNK) {
+        const chunk = staleNames.slice(i, i + CHUNK);
+        const probes = await Promise.all(
+          chunk.map((name) =>
+            serviceRole.storage
+              .from("private")
+              .info(name)
+              .then((r) => (!r.error && r.data ? name : null))
+              .catch(() => null)
+          )
         );
-        return;
+        for (const name of probes) {
+          if (name) relocated.add(name);
+        }
       }
-      const referencedPaths = new Set([
-        ...(referenced.data ?? []).map((r) => r.modelPath),
-        ...(referencedOriginals.data ?? []).map((r) => r.originalPath)
-      ]);
-      const orphans = big.filter((n) => !referencedPaths.has(n));
-      if (orphans.length === 0) {
-        logger.info("No orphaned large staged raws to prune", {
-          referenced: big.length
+
+      // Rule 2 — ORPHANED: no modelUpload points at it via EITHER column
+      // (`modelPath`: a referenced staging-only raw means compaction hasn't
+      // succeeded yet or the object is the only copy of an oversized source;
+      // `originalPath`: the retained original behind an xbf compaction). A
+      // referenced object with no durable copy is NEVER deleted — it may be
+      // the only copy of the customer's file.
+      const candidates = staleNames.filter((n) => !relocated.has(n));
+      const referencedPaths = new Set<string>();
+      if (candidates.length > 0) {
+        const [referenced, referencedOriginals] = await Promise.all([
+          serviceRole
+            .from("modelUpload")
+            .select("modelPath")
+            .in("modelPath", candidates),
+          serviceRole
+            .from("modelUpload")
+            .select("originalPath")
+            .in("originalPath", candidates)
+        ]);
+        if (referenced.error || referencedOriginals.error) {
+          logger.error(
+            "Error resolving referenced staged raws — skipping orphan prune",
+            { error: referenced.error ?? referencedOriginals.error }
+          );
+          return;
+        }
+        for (const r of referenced.data ?? []) {
+          if (r.modelPath) referencedPaths.add(r.modelPath);
+        }
+        for (const r of referencedOriginals.data ?? []) {
+          if (r.originalPath) referencedPaths.add(r.originalPath);
+        }
+      }
+      const orphans = candidates.filter((n) => !referencedPaths.has(n));
+
+      const toRemove = [...relocated, ...orphans];
+      if (toRemove.length === 0) {
+        logger.info("No prunable staged raws", {
+          stale: staleNames.length,
+          referenced: referencedPaths.size
         });
         return;
       }
 
       const removed = await serviceRole.storage
         .from("temp-staging")
-        .remove(orphans);
+        .remove(toRemove);
       if (removed.error) {
         logger.error("Error pruning staged raws", { error: removed.error });
       } else {
-        logger.info("Pruned orphaned staged raw models", {
-          count: orphans.length
+        logger.info("Pruned stale staged raws", {
+          relocated: relocated.size,
+          orphaned: orphans.length
         });
       }
     });

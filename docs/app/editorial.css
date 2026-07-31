@@ -1,11 +1,11 @@
 /* Editorial design system — ported verbatim from the cofounder how-to reference.
- * Warm paper theme, DM Sans, glass pills, callout boxes, ink text. Powers the
+ * Warm paper theme, Archivo, glass pills, callout boxes, ink text. Powers the
  * product/Guide surface (app/guides/*). Loaded AFTER global.css so its font
  * overrides win. */
 
-/* DM Sans for body text, Fira Code for code/labels (self-hosted via next/font) */
+/* Archivo for body text, JetBrains Mono for code/labels (self-hosted via next/font) */
 :root {
-  --font-mono: var(--font-fira-code), ui-monospace, monospace;
+  --font-mono: var(--font-jetbrains-mono), ui-monospace, monospace;
 }
 
 body {
@@ -140,7 +140,7 @@ body {
   box-shadow: 0 0.5px 0.5px 0 rgba(0, 0, 0, 0.1), 0 2px 1px 0 #fff, 0 -1px 1px 0 rgba(0, 0, 0, 0.03);
 }
 
-/* Shiki-highlighted code in the API reference dark panels (Fira Code, panel bg shows through) */
+/* Shiki-highlighted code in the API reference dark panels (JetBrains Mono, panel bg shows through) */
 .api-shiki .shiki,
 .api-shiki-response .shiki {
   margin: 0;

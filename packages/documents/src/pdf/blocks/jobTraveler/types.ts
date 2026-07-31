@@ -15,6 +15,16 @@ export type JobOperationWithSteps =
     jobOperationStep?: JobOperationStep[];
   };
 
+/** One BOM line rendered in the opt-in Materials section. */
+export interface JobTravelerMaterial {
+  id: string;
+  itemReadableId?: string | null;
+  description: string;
+  quantity: number;
+  unitOfMeasureCode?: string | null;
+  methodType?: string | null;
+}
+
 /** Everything a Job Traveler block renderer might need. */
 export interface JobTravelerData {
   company: Company;
@@ -28,6 +38,9 @@ export interface JobTravelerData {
   notes?: JSONContent;
   thumbnail?: string | null;
   methodRevision?: string | null;
+  /** Company-setting opt-in (companySettings.includeMaterialsOnTraveler). */
+  includeMaterials?: boolean;
+  materials?: JobTravelerMaterial[];
   theme: DocumentTheme;
   sections: Record<string, ResolvedSection>;
   vars: Record<string, string>;

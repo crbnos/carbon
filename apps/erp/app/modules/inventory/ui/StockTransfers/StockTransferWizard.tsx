@@ -1266,7 +1266,7 @@ const StockTransferWizardWidget = ({ locationId }: { locationId: string }) => {
   return (
     <div className="fixed bottom-6 right-6 z-[9999]">
       <div
-        className={`bg-card border-2 border-border rounded-2xl shadow-2xl transition-all duration-300 ease-in-out ${
+        className={`bg-card border-2 border-border rounded-lg shadow-2xl transition-all duration-300 ease-in-out ${
           isExpanded ? "w-96 h-[32rem]" : "w-80 h-auto"
         }`}
       >

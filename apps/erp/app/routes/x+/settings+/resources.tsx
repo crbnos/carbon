@@ -27,6 +27,7 @@ import { useEffect, useState } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { redirect, useFetcher, useLoaderData } from "react-router";
 import { Users } from "~/components/Form";
+import SettingsSectionHeader from "~/components/SettingsSectionHeader";
 import {
   getCompany,
   getCompanySettings,
@@ -188,6 +189,75 @@ export default function ResourcesSettingsRoute() {
           <Trans>Resources</Trans>
         </Heading>
 
+        <SettingsSectionHeader>
+          <Trans>Maintenance</Trans>
+        </SettingsSectionHeader>
+
+        <Card>
+          <ValidatedForm
+            method="post"
+            validator={maintenanceSettingsValidator}
+            defaultValues={{
+              maintenanceGenerateInAdvance:
+                companySettings.maintenanceGenerateInAdvance ?? false,
+              maintenanceAdvanceDays:
+                companySettings.maintenanceAdvanceDays ?? 7
+            }}
+            fetcher={fetcher}
+          >
+            <input type="hidden" name="intent" value="maintenance" />
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Trans>Maintenance Scheduling</Trans>
+              </CardTitle>
+              <CardDescription>
+                <Trans>
+                  Configure how preventative maintenance dispatches are
+                  automatically generated from maintenance schedules.
+                </Trans>
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-col gap-6 max-w-[400px]">
+                <div className="flex flex-col gap-2">
+                  <Boolean
+                    name="maintenanceGenerateInAdvance"
+                    description="Create maintenance dispatches in advance"
+                    value={maintenanceGenerateInAdvance}
+                    onChange={setMaintenanceGenerateInAdvance}
+                    bordered
+                  />
+                </div>
+                {maintenanceGenerateInAdvance && (
+                  <div className="flex flex-col gap-2">
+                    <Number
+                      name="maintenanceAdvanceDays"
+                      label={t`Days in advance to generate dispatches`}
+                      minValue={1}
+                      maxValue={365}
+                    />
+                  </div>
+                )}
+              </div>
+            </CardContent>
+            <CardFooter>
+              <Submit
+                isDisabled={fetcher.state !== "idle"}
+                isLoading={
+                  fetcher.state !== "idle" &&
+                  fetcher.formData?.get("intent") === "maintenance"
+                }
+              >
+                <Trans>Save</Trans>
+              </Submit>
+            </CardFooter>
+          </ValidatedForm>
+        </Card>
+
+        <SettingsSectionHeader>
+          <Trans>Notifications</Trans>
+        </SettingsSectionHeader>
+
         <Card>
           <ValidatedForm
             method="post"
@@ -274,67 +344,6 @@ export default function ResourcesSettingsRoute() {
                   fetcher.state !== "idle" &&
                   fetcher.formData?.get("intent") ===
                     "maintenanceDispatchNotifications"
-                }
-              >
-                <Trans>Save</Trans>
-              </Submit>
-            </CardFooter>
-          </ValidatedForm>
-        </Card>
-
-        <Card>
-          <ValidatedForm
-            method="post"
-            validator={maintenanceSettingsValidator}
-            defaultValues={{
-              maintenanceGenerateInAdvance:
-                companySettings.maintenanceGenerateInAdvance ?? false,
-              maintenanceAdvanceDays:
-                companySettings.maintenanceAdvanceDays ?? 7
-            }}
-            fetcher={fetcher}
-          >
-            <input type="hidden" name="intent" value="maintenance" />
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Trans>Maintenance Scheduling</Trans>
-              </CardTitle>
-              <CardDescription>
-                <Trans>
-                  Configure how preventative maintenance dispatches are
-                  automatically generated from maintenance schedules.
-                </Trans>
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-col gap-6 max-w-[400px]">
-                <div className="flex flex-col gap-2">
-                  <Boolean
-                    name="maintenanceGenerateInAdvance"
-                    description="Create maintenance dispatches in advance"
-                    value={maintenanceGenerateInAdvance}
-                    onChange={setMaintenanceGenerateInAdvance}
-                    bordered
-                  />
-                </div>
-                {maintenanceGenerateInAdvance && (
-                  <div className="flex flex-col gap-2">
-                    <Number
-                      name="maintenanceAdvanceDays"
-                      label={t`Days in advance to generate dispatches`}
-                      minValue={1}
-                      maxValue={365}
-                    />
-                  </div>
-                )}
-              </div>
-            </CardContent>
-            <CardFooter>
-              <Submit
-                isDisabled={fetcher.state !== "idle"}
-                isLoading={
-                  fetcher.state !== "idle" &&
-                  fetcher.formData?.get("intent") === "maintenance"
                 }
               >
                 <Trans>Save</Trans>

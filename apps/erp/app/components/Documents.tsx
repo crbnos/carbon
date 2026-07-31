@@ -21,17 +21,18 @@ import {
   Tr,
   toast
 } from "@carbon/react";
-import {
-  convertKbToString,
-  isModelRawDownloadable,
-  MODEL_RAW_KEEP_MAX_BYTES
-} from "@carbon/utils";
+import { convertKbToString, MODEL_RAW_KEEP_MAX_BYTES } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ChangeEvent } from "react";
 import { useCallback } from "react";
 import { LuAxis3D, LuEllipsisVertical, LuUpload } from "react-icons/lu";
 import { Link, useFetchers, useRevalidator, useSubmit } from "react-router";
-import { DocumentPreview, FileDropzone, Hyperlink } from "~/components";
+import {
+  DocumentPreview,
+  FileDropzone,
+  Hyperlink,
+  ModelOptimizedIndicator
+} from "~/components";
 import DocumentIcon from "~/components/DocumentIcon";
 import { useDateFormatter, usePermissions, useUser } from "~/hooks";
 import type { OptimisticFileObject } from "~/modules/shared";
@@ -297,6 +298,9 @@ const Documents = ({
                       >
                         {modelUpload.modelName}
                       </Hyperlink>
+                      <ModelOptimizedIndicator
+                        modelPath={modelUpload.modelPath}
+                      />
                     </HStack>
                   </Td>
                   <Td className="text-xs font-mono">
@@ -318,13 +322,14 @@ const Documents = ({
                           />
                         </DropdownMenuTrigger>
                         <DropdownMenuContent>
-                          {isModelRawDownloadable(modelUpload.modelPath) && (
-                            <DropdownMenuItem
-                              onClick={() => downloadModel(modelUpload)}
-                            >
-                              <Trans>Download</Trans>
-                            </DropdownMenuItem>
-                          )}
+                          {/* Always offered: the server resolves the retained
+                              original (xbf rows included); only legacy rows
+                              404 → surfaced as a toast. */}
+                          <DropdownMenuItem
+                            onClick={() => downloadModel(modelUpload)}
+                          >
+                            <Trans>Download</Trans>
+                          </DropdownMenuItem>
                           <DropdownMenuItem asChild>
                             <Link
                               to={

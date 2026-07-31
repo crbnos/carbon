@@ -176,6 +176,11 @@ type BillOfProcessProps = {
   parameters?: ConfigurationParameter[];
   tags: { name: string }[];
   selectedMaterialId?: string;
+  // Extra read-only reason from the embedding surface (e.g. a change notice whose
+  // engineering content is frozen at Implementation).
+  isDisabled?: boolean;
+  // What to tell the user when isDisabled is what made this read-only.
+  disabledReason?: ReactNode;
 } & ReleaseLockProps;
 
 type PendingWorkInstructions = {
@@ -229,7 +234,9 @@ const BillOfProcess = ({
   tags,
   selectedMaterialId,
   revisionStatus,
-  releaseControl
+  releaseControl,
+  isDisabled = false,
+  disabledReason
 }: BillOfProcessProps) => {
   const permissions = usePermissions();
   const { t } = useLingui();
@@ -240,7 +247,8 @@ const BillOfProcess = ({
   const isReadOnly =
     permissions.can("update", "parts") === false ||
     makeMethod.status !== "Draft" ||
-    isReleaseLocked;
+    isReleaseLocked ||
+    isDisabled;
 
   const makeMethodId = makeMethod.id;
 
@@ -807,7 +815,28 @@ const BillOfProcess = ({
       <HStack className="justify-between">
         <CardHeader>
           <CardTitle className="flex flex-row items-center gap-2">
-            Bill of Process {isReadOnly && <LuLock />}
+            <Trans>Bill of Process</Trans>
+            {isReadOnly && (
+              <Tooltip>
+                <TooltipTrigger className="text-muted-foreground">
+                  <LuLock />
+                </TooltipTrigger>
+                <TooltipContent className="max-w-xs">
+                  {makeMethod.status !== "Draft" ? (
+                    <Trans>
+                      This method version is read-only. Create a new version
+                      from the method menu to make changes.
+                    </Trans>
+                  ) : isDisabled && disabledReason ? (
+                    disabledReason
+                  ) : (
+                    <Trans>
+                      You don't have permission to edit this bill of process.
+                    </Trans>
+                  )}
+                </TooltipContent>
+              </Tooltip>
+            )}
           </CardTitle>
         </CardHeader>
 

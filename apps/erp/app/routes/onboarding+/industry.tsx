@@ -264,7 +264,7 @@ export default function OnboardingIndustry() {
             <input type="hidden" name="dataChoice" value="import" />
             <label
               className={cn(
-                "flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed p-6 text-center transition-colors",
+                "flex cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed p-6 text-center transition-colors",
                 "border-border hover:border-primary/50 hover:bg-accent/50"
               )}
             >

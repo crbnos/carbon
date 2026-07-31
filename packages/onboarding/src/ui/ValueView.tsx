@@ -37,7 +37,7 @@ export function ValueView() {
         {VALUE_METRICS.map((metric) => (
           <div
             key={metric.key}
-            className="rounded-2xl border bg-card shadow-button-base p-5 flex flex-col gap-1"
+            className="rounded-lg border bg-card shadow-button-base p-5 flex flex-col gap-1"
           >
             <EditableField
               fieldKey={`${metric.key}.value`}

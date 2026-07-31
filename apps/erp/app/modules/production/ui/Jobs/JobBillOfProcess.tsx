@@ -4227,7 +4227,7 @@ function OperationChat({ jobOperationId }: { jobOperationId: string }) {
                         )}
                         <div
                           className={cn(
-                            "rounded-2xl p-3 w-full flex flex-col gap-1",
+                            "rounded-lg p-3 w-full flex flex-col gap-1",
                             isUser ? "bg-blue-500 text-white" : "bg-muted"
                           )}
                         >

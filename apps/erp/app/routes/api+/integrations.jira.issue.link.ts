@@ -1,6 +1,12 @@
 import { getAppUrl } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import {
+  actionTaskEntities,
+  actionTaskParentId,
+  actionTaskPermissions,
+  isActionTaskEntityType
+} from "@carbon/ee/action-task-entity";
+import {
   getJiraClient,
   getJiraIssueFromExternalId,
   linkActionToJiraIssue,
@@ -10,20 +16,51 @@ import {
 import { getLogger } from "@carbon/logger";
 import type { ActionFunction, LoaderFunction } from "react-router";
 import { data } from "react-router";
-import { getIssueAction } from "~/modules/quality/quality.service";
+import { requireChangeNoticeEditable } from "~/modules/items/items.server";
+import { getActionTaskWithParent } from "~/services/action-task.server";
 
 const jira = getJiraClient();
 const logger = getLogger("erp", "jira", "issue-link");
 
 export const action: ActionFunction = async ({ request }) => {
   try {
-    const { companyId, client } = await requirePermissions(request, {});
     const form = await request.formData();
 
     const actionId = form.get("actionId") as string;
+    const entityType = form.get("entityType") as string | null;
 
     if (!actionId) {
       return { success: false, message: "Missing required fields: actionId" };
+    }
+
+    if (!isActionTaskEntityType(entityType)) {
+      return { success: false, message: "Invalid entityType" };
+    }
+
+    const { companyId, client } = await requirePermissions(
+      request,
+      actionTaskPermissions(entityType)
+    );
+
+    if (entityType === "changeOrderActionTask") {
+      const task = await getActionTaskWithParent(
+        client,
+        entityType,
+        actionId,
+        companyId
+      );
+
+      const locked = task.parentId
+        ? await requireChangeNoticeEditable(client, {
+            changeNoticeId: task.parentId,
+            companyId,
+            scope: "workflow"
+          })
+        : { error: { message: "Could not find change notice" } };
+
+      if (locked) {
+        return { success: false, message: locked.error.message };
+      }
     }
 
     switch (request.method) {
@@ -38,7 +75,7 @@ export const action: ActionFunction = async ({ request }) => {
         }
 
         const [carbonIssue, issue, siteUrl] = await Promise.all([
-          getIssueAction(client, actionId),
+          getActionTaskWithParent(client, entityType, actionId, companyId),
           jira.getIssue(companyId, issueId),
           jira.getSiteUrl(companyId)
         ]);
@@ -60,6 +97,7 @@ export const action: ActionFunction = async ({ request }) => {
         }
 
         const linked = await linkActionToJiraIssue(client, companyId, {
+          entityType,
           actionId,
           issue,
           siteUrl,
@@ -70,12 +108,14 @@ export const action: ActionFunction = async ({ request }) => {
           return { success: false, message: "Failed to link issue" };
         }
 
-        const nonConformanceId = linked.data?.[0].nonConformanceId;
+        const parentId = actionTaskParentId(linked.data, entityType) ?? "";
 
-        const url = getAppUrl() + `/x/issue/${nonConformanceId}/details`;
+        const url =
+          getAppUrl() +
+          `${actionTaskEntities[entityType].detailPath(parentId)}/details`;
 
         // Update the Jira issue description with the task's notes
-        const notes = carbonIssue.data?.notes;
+        const notes = carbonIssue.notes;
         if (notes && typeof notes === "object") {
           try {
             const adfDescription = tiptapToAdf(notes as any);
@@ -94,9 +134,7 @@ export const action: ActionFunction = async ({ request }) => {
           companyId,
           issue.id,
           url,
-          `Linked Carbon Issue: ${
-            carbonIssue.data?.nonConformance?.nonConformanceId ?? ""
-          }`
+          `Linked Carbon Issue: ${carbonIssue.parentReadableId ?? ""}`
         );
 
         return { success: true, message: "Linked successfully" };
@@ -106,11 +144,13 @@ export const action: ActionFunction = async ({ request }) => {
         const mapping = await getJiraIssueFromExternalId(
           client,
           companyId,
-          actionId
+          actionId,
+          entityType
         );
 
         // Unlink from Carbon's DB first
         const unlinked = await unlinkActionFromJiraIssue(client, companyId, {
+          entityType,
           actionId
         });
 
@@ -155,8 +195,18 @@ export const action: ActionFunction = async ({ request }) => {
 };
 
 export const loader: LoaderFunction = async ({ request }) => {
-  const { companyId } = await requirePermissions(request, {});
   const url = new URL(request.url);
+
+  const entityType = url.searchParams.get("entityType");
+
+  if (!isActionTaskEntityType(entityType)) {
+    return { issues: [] };
+  }
+
+  const { companyId } = await requirePermissions(
+    request,
+    actionTaskPermissions(entityType)
+  );
 
   const query = url.searchParams.get("search") as string;
 

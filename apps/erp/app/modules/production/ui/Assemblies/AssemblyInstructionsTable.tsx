@@ -1,4 +1,8 @@
 import {
+  Badge,
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
   MenuIcon,
   MenuItem,
   Status,
@@ -14,6 +18,8 @@ import {
   LuBox,
   LuCalendar,
   LuCircleCheck,
+  LuEllipsisVertical,
+  LuGitPullRequest,
   LuPencil,
   LuSquareStack,
   LuTrash
@@ -67,9 +73,14 @@ const AssemblyInstructionsTable = memo(
           accessorKey: "name",
           header: "Name",
           cell: ({ row }) => (
-            <Hyperlink to={path.to.assemblyInstruction(row.original.id)}>
-              {row.original.name}
-            </Hyperlink>
+            <div className="flex flex-col gap-0">
+              <Hyperlink to={path.to.assemblyInstruction(row.original.id!)}>
+                {row.original.name}
+              </Hyperlink>
+              <span className="text-sm text-muted-foreground">
+                Version {row.original.version}
+              </span>
+            </div>
           ),
           meta: {
             icon: <LuBlocks />
@@ -151,6 +162,56 @@ const AssemblyInstructionsTable = memo(
           meta: {
             icon: <LuCalendar />
           }
+        },
+        {
+          id: "versions",
+          header: "Versions",
+          cell: ({ row }) => {
+            const versions = (row.original?.versions ?? []) as Array<{
+              id: string;
+              version: number;
+              status: "Draft" | "Published" | "Archived";
+            }>;
+
+            return (
+              <HoverCard>
+                <HoverCardTrigger>
+                  <Badge variant="secondary" className="cursor-pointer">
+                    {versions.length} Version
+                    {versions.length === 1 ? "" : "s"}
+                    <LuEllipsisVertical className="w-3 h-3 ml-2" />
+                  </Badge>
+                </HoverCardTrigger>
+                <HoverCardContent>
+                  <div className="flex flex-col w-full gap-4 text-sm">
+                    {versions
+                      .sort((a, b) => a.version - b.version)
+                      .map((version) => (
+                        <div
+                          key={version.id}
+                          className="flex items-center justify-between gap-2"
+                        >
+                          <Hyperlink
+                            to={path.to.assemblyInstruction(version.id)}
+                            className="flex items-center justify-start gap-1"
+                          >
+                            Version {version.version}
+                          </Hyperlink>
+                          <div className="flex items-center justify-end">
+                            <AssemblyInstructionStatus
+                              status={version.status}
+                            />
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                </HoverCardContent>
+              </HoverCard>
+            );
+          },
+          meta: {
+            icon: <LuGitPullRequest />
+          }
         }
       ],
       [items]
@@ -163,7 +224,7 @@ const AssemblyInstructionsTable = memo(
             <MenuItem
               disabled={!permissions.can("update", "production")}
               onClick={() => {
-                navigate(path.to.assemblyInstruction(row.id));
+                navigate(path.to.assemblyInstruction(row.id!));
               }}
             >
               <MenuIcon icon={<LuPencil />} />
@@ -207,7 +268,7 @@ const AssemblyInstructionsTable = memo(
         />
         {deleteDisclosure.isOpen && selectedInstruction && (
           <ConfirmDelete
-            action={path.to.deleteAssemblyInstruction(selectedInstruction.id)}
+            action={path.to.deleteAssemblyInstruction(selectedInstruction.id!)}
             isOpen
             onCancel={() => {
               setSelectedInstruction(null);

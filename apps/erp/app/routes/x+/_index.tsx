@@ -28,7 +28,6 @@ import { LuRocket } from "react-icons/lu";
 import type { LoaderFunctionArgs } from "react-router";
 import { Link, redirect, useFetcher } from "react-router";
 import { Greeting } from "~/components/Greeting";
-import { MeshGradientBackground } from "~/components/MeshGradientBackground";
 import { useModules, usePermissions, useUser } from "~/hooks";
 import { useHubDismissed } from "~/hooks/useHubDismissed";
 import type { Authenticated, NavItem } from "~/types";
@@ -124,7 +123,6 @@ export default function AppIndexRoute() {
 
   return (
     <div className="relative w-full h-full overflow-hidden">
-      <MeshGradientBackground darkOnly />
       <div className="relative z-10 p-8 w-full h-full overflow-y-auto">
         <Greeting size="h3" />
         <Subheading>{formatter.format(date)}</Subheading>
@@ -151,12 +149,12 @@ export default function AppIndexRoute() {
             action={path.to.getStartedEnroll}
             className="mb-6"
           >
-            <div className="rounded-2xl ring-2 ring-transparent bg-gradient-to-bl from-card/70 from-50% to-background/70 backdrop-blur-md shadow-button-base p-6 flex items-start gap-4">
-              <div className="shrink-0 size-11 rounded-2xl bg-accent flex items-center justify-center text-primary">
+            <div className="rounded-lg ring-2 ring-transparent bg-gradient-to-bl from-card/70 from-50% to-background/70 backdrop-blur-md shadow-button-base p-6 flex items-start gap-4">
+              <div className="shrink-0 size-11 rounded-lg bg-accent flex items-center justify-center text-primary">
                 <LuRocket className="text-xl" />
               </div>
               <div className="flex-1 min-w-0">
-                <div className="text-xxs uppercase tracking-wide font-medium text-primary">
+                <div className="text-xxs uppercase tracking-wide font-medium">
                   <Trans>Get Started</Trans>
                 </div>
                 <div className="text-base font-semibold tracking-tight mt-0.5 text-balance">
