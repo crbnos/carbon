@@ -121,12 +121,16 @@ Do these in `apps/erp/app/modules/accounting/` beside fixed assets. Order:
    `leaseEventValidator`, `leaseRunValidator` + enum arrays (`leaseRoles`,
    `lesseeClassifications`, `lessorClassifications`, `leasePaymentFrequencies`,
    `leasePaymentTimings`, `leaseEventTypes`, `leaseOptionTypes`).
-2. **utils** — `accounting.utils.ts`: `presentValue()`, `expandPaymentTerms()`,
+2. **utils** — ✅ **DONE (commit `afdfd7cf9`, on branch/PR #1289).**
+   `accounting.utils.ts`: `presentValue()`, `periodicLeaseRate()`, `expandPaymentTerms()`,
    `classifyLease()`, `buildLeaseSchedule()` (emits both expense patterns per line;
-   last line absorbs rounding to close liability to 0). **Unit-test first (TDD)** to
-   the spec's worked example: 36mo × $10,000 arrears @ 6% → liability $328,710.16;
-   line 1 interest $1,643.55 / principal $8,356.45 / closing $320,353.71; line 36 → $0.00.
-   Cover Advance timing + quarterly frequency.
+   last line absorbs rounding to close liability to 0). Pure/DB-independent, so it
+   shipped ahead of type regen. 21 unit tests (TDD) prove the spec's worked example:
+   36mo × $10,000 arrears @ 6% → liability $328,710.16; line 1 interest $1,643.55 /
+   principal $8,356.45 / closing $320,353.71; line 36 → $0.00; Advance timing +
+   quarterly frequency + IDC/incentives + all five classification tests covered.
+   Gates green here: vitest (90), biome, `erp` typecheck. **The service/server layer
+   (step 4) consumes these calc fns; still needs regen.**
 3. **service** — `accounting.service.ts`: CRUD + `getLeases`, `getLeaseSchedule`,
    `getLeaseRun(s)`, `getLeaseMaturityAnalysis`, `getLeaseWeightedAverages`,
    `getLeaseCashPaidSummary` (disclosures §8).
