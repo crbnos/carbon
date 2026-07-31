@@ -1,3 +1,4 @@
+import swaggerDocsSchema from "@carbon/database/swagger-docs-schema";
 import { describe, expect, it } from "vitest";
 import { WORKFLOW_ACTIONS } from "./actions";
 import type {
@@ -222,10 +223,47 @@ describe("buildCatalog — labels", () => {
     expect(built.labels["order.approved"]).toBe("An order is approved");
   });
 
-  it("emits exactly one label per event", () => {
-    expect(Object.keys(built.labels).sort()).toEqual(
-      Object.keys(built.events).sort()
-    );
+  it("emits a label for every event", () => {
+    for (const id of Object.keys(built.events)) {
+      expect(built.labels[id]).toBeDefined();
+    }
+  });
+
+  it("emits an entity label for each registry entity", () => {
+    expect(built.labels["entity.order"]).toBe("Order");
+    expect(built.labels["entity.person"]).toBe("Person");
+  });
+
+  it("sentence-cases a hand-written column label", () => {
+    // supplierId is in `watch` with label "supplier"
+    expect(built.labels["entity.order.supplierId"]).toBe("Supplier");
+    expect(built.labels["entity.order.status"]).toBe("Status");
+  });
+
+  it("humanizes an uncurated column", () => {
+    // vendorId is not in watch or write
+    expect(built.labels["entity.order.vendorId"]).toBe("Vendor");
+    // orderDate is not in watch or write
+    expect(built.labels["entity.order.orderDate"]).toBe("Order date");
+  });
+
+  it("throws when a column label contains a backtick", () => {
+    expect(() =>
+      buildCatalog(
+        {
+          order: {
+            table: "order",
+            label: "Order",
+            permission: "purchasing",
+            watch: { status: { label: "`template`" } }
+          }
+        },
+        {},
+        {},
+        {},
+        schema
+      )
+    ).toThrow(/contains a backtick/);
   });
 });
 
@@ -402,6 +440,15 @@ describe("buildCatalog — entity properties", () => {
       )
     ).toThrow(/not in the database schema/);
   });
+
+  it("collects enum values for a column that declares them", () => {
+    expect(built.enums.order?.status).toEqual(["Draft", "Sent"]);
+  });
+
+  it("does not collect enums for non-enum columns", () => {
+    expect(built.enums.order?.total).toBeUndefined();
+    expect(built.enums.order?.revision).toBeUndefined();
+  });
 });
 
 describe("validateCatalogInputs", () => {
@@ -527,18 +574,46 @@ describe("validateCatalogInputs", () => {
       )
     ).toThrow(/dropped from every entity's properties/);
   });
+
+  it("rejects a template input typed as a non-string", () => {
+    const problems = validateCatalogInputs(
+      registry,
+      {},
+      {
+        "order.archive": {
+          label: "Archive an order",
+          permission: { module: "purchasing", action: "update" },
+          call: "purchasing_archiveOrder",
+          inputs: {
+            score: {
+              type: { kind: "primitive", of: "number" },
+              required: false,
+              label: "score",
+              template: true
+            }
+          },
+          outputs: {},
+          batchable: false
+        }
+      },
+      {},
+      schema
+    );
+    expect(problems).toHaveLength(1);
+    expect(problems[0]).toMatch(/is a template but is not a string/);
+  });
 });
 
 describe("buildCatalog — the real hand-written inputs", () => {
-  it("accepts the real registry, moments, actions and operations", () => {
-    const built = buildCatalog(
-      WORKFLOW_ENTITY_REGISTRY,
-      WORKFLOW_MOMENTS,
-      WORKFLOW_ACTIONS,
-      WORKFLOW_OPERATIONS,
-      { definitions: realDefinitions() }
-    );
+  const built = buildCatalog(
+    WORKFLOW_ENTITY_REGISTRY,
+    WORKFLOW_MOMENTS,
+    WORKFLOW_ACTIONS,
+    WORKFLOW_OPERATIONS,
+    { definitions: realDefinitions() }
+  );
 
+  it("accepts the real registry, moments, actions and operations", () => {
     expect(Object.keys(WORKFLOW_MOMENTS)).toHaveLength(9);
     // 77 watched columns + 10 created + 10 deleted + 9 moments.
     expect(Object.keys(built.events)).toHaveLength(106);
@@ -546,7 +621,59 @@ describe("buildCatalog — the real hand-written inputs", () => {
     // 10 generated `<entity>.update` plus the 6 hand-written.
     expect(Object.keys(built.actions)).toHaveLength(16);
     expect(Object.keys(built.operations)).toHaveLength(15);
-    expect(Object.keys(built.labels)).toHaveLength(106 + 16 + 15);
+    // 106 events + 16 actions + 15 operations + 16 entity labels + 94 column labels
+    // + 22 action input labels + 15 operation input labels
+    expect(Object.keys(built.labels)).toHaveLength(284);
+  });
+
+  it("sets template: true on inputs marked as templates", () => {
+    expect(built.actions.notify?.inputs.subject?.template).toBe(true);
+    expect(built.actions.notify?.inputs.message?.template).toBe(true);
+    expect(built.actions.webhook?.inputs.body?.template).toBe(true);
+  });
+
+  it("does not set template on non-template inputs", () => {
+    expect(built.actions.webhook?.inputs.url?.template).toBeUndefined();
+    expect(built.actions.notify?.inputs.user?.template).toBeUndefined();
+  });
+
+  it("emits action input labels", () => {
+    expect(built.labels["action.notify.input.subject"]).toBe("Subject");
+    expect(built.labels["action.webhook.input.url"]).toBe("URL");
+    expect(built.labels["action.job.create.input.dueDate"]).toBe("Due date");
+  });
+
+  it("emits operation input labels", () => {
+    expect(
+      built.labels["operation.purchaseOrder.total.input.purchaseOrder"]
+    ).toBe("Record");
+    expect(built.labels["operation.job.scrapPercentage.input.job"]).toBe(
+      "Record"
+    );
+  });
+});
+
+describe("buildCatalog — enums from real schema", () => {
+  const built = buildCatalog(
+    WORKFLOW_ENTITY_REGISTRY,
+    WORKFLOW_MOMENTS,
+    WORKFLOW_ACTIONS,
+    WORKFLOW_OPERATIONS,
+    swaggerDocsSchema as SwaggerSchema
+  );
+
+  it("populates deadlineType enum values for job entity", () => {
+    expect(built.enums.job?.deadlineType).toEqual([
+      "No Deadline",
+      "ASAP",
+      "Soft Deadline",
+      "Hard Deadline"
+    ]);
+  });
+
+  it("does not populate enums for numeric columns", () => {
+    // priority is a number column (double precision), not an enum
+    expect(built.enums.job?.priority).toBeUndefined();
   });
 });
 

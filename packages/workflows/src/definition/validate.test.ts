@@ -626,6 +626,84 @@ describe("configuration", () => {
     expect(issues.map((i) => i.code)).toEqual(["INCOMPLETE_CONFIG"]);
     expect(issues[0]?.field).toBe("source");
   });
+
+  it("reports INCOMPLETE_CONFIG for a choices input given an out-of-list literal", () => {
+    const definition = define(
+      [
+        trigger(),
+        action("a1", {
+          action: "alertSomeone",
+          inputs: { role: literal("string", "CEO") }
+        })
+      ],
+      [edge("e1", "trigger", "out", "a1")]
+    );
+    const issues = validateDefinition(definition, catalog);
+    const choicesIssue = issues.find(
+      (i) => i.code === "INCOMPLETE_CONFIG" && i.field === "inputs.role"
+    );
+    expect(choicesIssue).toBeDefined();
+    expect(choicesIssue?.field).toBe("inputs.role");
+  });
+
+  it("accepts a choices input given an in-list literal", () => {
+    const definition = define(
+      [
+        trigger(),
+        action("a1", {
+          action: "alertSomeone",
+          inputs: { role: literal("string", "Manager") }
+        })
+      ],
+      [edge("e1", "trigger", "out", "a1")]
+    );
+    const issues = validateDefinition(definition, catalog);
+    expect(issues.filter((i) => i.code === "INCOMPLETE_CONFIG")).toEqual([]);
+  });
+
+  it("does not check choices when the value is a ref", () => {
+    const definition = define(
+      [
+        trigger(),
+        action("a1", {
+          action: "alertSomeone",
+          inputs: { role: ref("trigger", "purchaseOrder", ["status"]) }
+        })
+      ],
+      [edge("e1", "trigger", "out", "a1")]
+    );
+    const issues = validateDefinition(definition, catalog);
+    expect(issues.filter((i) => i.code === "INCOMPLETE_CONFIG")).toEqual([]);
+  });
+
+  it("does not emit INCOMPLETE_CONFIG for an enum-valued lookup match when omitEnums is true", () => {
+    const thin = createFixtureCatalog({ omitEnums: true });
+    const definition = define(
+      [
+        trigger(),
+        {
+          ...lookup("l1", "purchaseOrder", "one"),
+          data: {
+            entity: "purchaseOrder",
+            returns: "one",
+            match: [
+              {
+                field: "status",
+                operator: "eq",
+                value: literal("string", "InvalidStatus")
+              }
+            ]
+          }
+        }
+      ],
+      [edge("e1", "trigger", "out", "l1")]
+    );
+    expect(
+      validateDefinition(definition, thin).filter(
+        (i) => i.code === "INCOMPLETE_CONFIG"
+      )
+    ).toEqual([]);
+  });
 });
 
 describe("the current item", () => {

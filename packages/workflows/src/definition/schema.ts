@@ -21,6 +21,8 @@ export type Origin = z.infer<typeof originSchema>;
 
 const nodeBase = {
   id: z.string().min(1),
+  /** Customer-given name. Optional, so every stored definition still parses. */
+  title: z.string().optional(),
   position: z.object({ x: z.number(), y: z.number() })
 };
 

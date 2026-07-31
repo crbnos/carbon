@@ -4,8 +4,6 @@ import { useReactFlow } from "@xyflow/react";
 import { LuX } from "react-icons/lu";
 import { useBuilderStore } from "./context";
 
-// Issues anchor to a node, not a field: `WorkflowIssue.field` is a dotted path
-// into `data` and cannot resolve to a control until the controls exist.
 export function IssuesPanel({ onDismiss }: { onDismiss: () => void }) {
   const { setCenter } = useReactFlow();
   const issues = useBuilderStore((state) => state.issues);

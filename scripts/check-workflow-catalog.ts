@@ -173,6 +173,18 @@ if (failures.length === 0) {
       );
     }
   }
+
+  // Check every entity and property has a label.
+  for (const [entityName, properties] of Object.entries(rebuilt.entities)) {
+    if (!rebuilt.labels[`entity.${entityName}`]) {
+      fail(`${entityName} has no label. Run pnpm run generate:workflow-catalog.`);
+    }
+    for (const [column] of Object.entries(properties)) {
+      if (!rebuilt.labels[`entity.${entityName}.${column}`]) {
+        fail(`${entityName}.${column} has no label. Run pnpm run generate:workflow-catalog.`);
+      }
+    }
+  }
 }
 
 if (failures.length > 0) {

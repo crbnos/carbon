@@ -56,7 +56,8 @@ export const WORKFLOW_ACTION_CATALOG: Record<string, BuiltAction> = {
       priority: { type: { kind: "primitive", of: "number" }, required: false },
       deadlineType: {
         type: { kind: "primitive", of: "string" },
-        required: false
+        required: false,
+        choices: ["No Deadline", "ASAP", "Soft Deadline", "Hard Deadline"]
       }
     },
     outputs: { record: { kind: "entity", of: "job" } },
@@ -71,7 +72,11 @@ export const WORKFLOW_ACTION_CATALOG: Record<string, BuiltAction> = {
         type: { kind: "primitive", of: "string" },
         required: false
       },
-      priority: { type: { kind: "primitive", of: "string" }, required: false },
+      priority: {
+        type: { kind: "primitive", of: "string" },
+        required: false,
+        choices: ["Low", "Medium", "High", "Critical"]
+      },
       locationId: { type: { kind: "entity", of: "location" }, required: false }
     },
     outputs: { record: { kind: "entity", of: "nonConformance" } },
@@ -86,7 +91,11 @@ export const WORKFLOW_ACTION_CATALOG: Record<string, BuiltAction> = {
         required: true
       },
       assignee: { type: { kind: "entity", of: "user" }, required: false },
-      priority: { type: { kind: "primitive", of: "string" }, required: false },
+      priority: {
+        type: { kind: "primitive", of: "string" },
+        required: false,
+        choices: ["Low", "Medium", "High", "Critical"]
+      },
       dueDate: { type: { kind: "primitive", of: "date" }, required: false },
       nonConformanceTypeId: {
         type: { kind: "primitive", of: "string" },
@@ -102,8 +111,16 @@ export const WORKFLOW_ACTION_CATALOG: Record<string, BuiltAction> = {
     inputs: {
       user: { type: { kind: "entity", of: "user" }, required: false },
       role: { type: { kind: "entity", of: "group" }, required: false },
-      subject: { type: { kind: "primitive", of: "string" }, required: true },
-      message: { type: { kind: "primitive", of: "string" }, required: false },
+      subject: {
+        type: { kind: "primitive", of: "string" },
+        required: true,
+        template: true
+      },
+      message: {
+        type: { kind: "primitive", of: "string" },
+        required: false,
+        template: true
+      },
       aboutId: { type: { kind: "primitive", of: "string" }, required: false },
       aboutType: { type: { kind: "primitive", of: "string" }, required: false }
     },
@@ -247,7 +264,11 @@ export const WORKFLOW_ACTION_CATALOG: Record<string, BuiltAction> = {
   webhook: {
     inputs: {
       url: { type: { kind: "primitive", of: "string" }, required: true },
-      body: { type: { kind: "primitive", of: "string" }, required: false }
+      body: {
+        type: { kind: "primitive", of: "string" },
+        required: false,
+        template: true
+      }
     },
     outputs: { status: { kind: "primitive", of: "number" } },
     batchable: true,

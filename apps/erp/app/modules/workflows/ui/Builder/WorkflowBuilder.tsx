@@ -1,3 +1,8 @@
+import {
+  ResizableHandle,
+  ResizablePanel,
+  ResizablePanelGroup
+} from "@carbon/react";
 import type { WorkflowNodeType } from "@carbon/workflows";
 import type { IsValidConnection } from "@xyflow/react";
 import {
@@ -17,6 +22,7 @@ import { edgeTypes } from "./edges/WorkflowEdge";
 import { wouldCreateCycle } from "./graph";
 import { NodePalette } from "./NodePalette";
 import { nodeTypes } from "./nodes";
+import { ConfigPanel } from "./panel/ConfigPanel";
 
 const proOptions = { hideAttribution: true };
 
@@ -79,44 +85,73 @@ export function WorkflowBuilder() {
   }, []);
 
   return (
-    <div className="flex flex-1 overflow-hidden">
-      {!isReadOnly && <NodePalette />}
-      <div
-        className="relative flex-1"
-        onKeyDownCapture={onKeyDownCapture}
-        onDrop={onDrop}
-        onDragOver={(event) => {
-          event.preventDefault();
-          event.dataTransfer.dropEffect = "move";
-        }}
-      >
-        <ReactFlow<BuilderNode, BuilderEdge>
-          nodes={nodes}
-          edges={edges}
-          onNodesChange={onNodesChange}
-          onEdgesChange={onEdgesChange}
-          onConnect={onConnect}
-          isValidConnection={isValidConnection}
-          onNodeClick={(_, node) => setSelected(node.id)}
-          onPaneClick={() => setSelected(null)}
-          nodeTypes={nodeTypes}
-          edgeTypes={edgeTypes}
-          proOptions={proOptions}
-          minZoom={0.25}
-          maxZoom={2}
-          fitView
-          nodesDraggable={!isReadOnly}
-          nodesConnectable={!isReadOnly}
-          elementsSelectable
-          deleteKeyCode={isReadOnly ? null : ["Backspace", "Delete"]}
-          onlyRenderVisibleElements
-          defaultEdgeOptions={{ type: "workflow" }}
+    <ResizablePanelGroup
+      direction="horizontal"
+      autoSaveId="workflow-builder"
+      className="flex-1 overflow-hidden"
+    >
+      {!isReadOnly && (
+        <ResizablePanel
+          id="palette"
+          order={1}
+          defaultSize={14}
+          minSize={10}
+          maxSize={22}
         >
-          <Background variant={BackgroundVariant.Dots} gap={16} />
-          <Controls showInteractive={false} />
-          <MiniMap pannable zoomable />
-        </ReactFlow>
-      </div>
-    </div>
+          <NodePalette />
+        </ResizablePanel>
+      )}
+      {!isReadOnly && <ResizableHandle withHandle />}
+      <ResizablePanel id="canvas" order={2} defaultSize={62} minSize={30}>
+        <div
+          className="relative h-full"
+          onKeyDownCapture={onKeyDownCapture}
+          onDrop={onDrop}
+          onDragOver={(event) => {
+            event.preventDefault();
+            event.dataTransfer.dropEffect = "move";
+          }}
+        >
+          <ReactFlow<BuilderNode, BuilderEdge>
+            nodes={nodes}
+            edges={edges}
+            onNodesChange={onNodesChange}
+            onEdgesChange={onEdgesChange}
+            onConnect={onConnect}
+            isValidConnection={isValidConnection}
+            onNodeClick={(_, node) => setSelected(node.id)}
+            onPaneClick={() => setSelected(null)}
+            nodeTypes={nodeTypes}
+            edgeTypes={edgeTypes}
+            proOptions={proOptions}
+            minZoom={0.25}
+            maxZoom={2}
+            fitView
+            nodesDraggable={!isReadOnly}
+            nodesConnectable={!isReadOnly}
+            elementsSelectable
+            deleteKeyCode={isReadOnly ? null : ["Backspace", "Delete"]}
+            onlyRenderVisibleElements
+            defaultEdgeOptions={{ type: "workflow" }}
+          >
+            <Background variant={BackgroundVariant.Dots} gap={16} />
+            <Controls showInteractive={false} />
+            <MiniMap pannable zoomable />
+          </ReactFlow>
+        </div>
+      </ResizablePanel>
+      {!isReadOnly && <ResizableHandle withHandle />}
+      {!isReadOnly && (
+        <ResizablePanel
+          id="config"
+          order={3}
+          defaultSize={24}
+          minSize={18}
+          maxSize={40}
+        >
+          <ConfigPanel />
+        </ResizablePanel>
+      )}
+    </ResizablePanelGroup>
   );
 }

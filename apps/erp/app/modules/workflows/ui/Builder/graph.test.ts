@@ -119,6 +119,26 @@ describe("toReactFlow", () => {
     const flow = toReactFlow(definition);
     expect(fromReactFlow(flow.nodes, flow.edges)).toEqual(definition);
   });
+
+  it("round-trips a node's title through fromReactFlow → toReactFlow → fromReactFlow", () => {
+    const a = createNode("trigger", { x: 0, y: 0 });
+    const b = {
+      ...createNode("action", { x: 0, y: 260 }),
+      title: "Send alert"
+    };
+    const definition = fromReactFlow([a, b] as unknown as BuilderNode[], [
+      edge("e1", a.id, b.id)
+    ]);
+
+    expect(definition.nodes[1].title).toBe("Send alert");
+
+    const flow = toReactFlow(definition);
+    expect(flow.nodes[1].title).toBe("Send alert");
+
+    const roundTripped = fromReactFlow(flow.nodes, flow.edges);
+    expect(roundTripped.nodes[1].title).toBe("Send alert");
+    expect(roundTripped.nodes[0].title).toBeUndefined();
+  });
 });
 
 describe("nextNodePosition", () => {

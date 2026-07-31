@@ -62,6 +62,8 @@ export interface BuiltEvent {
 export interface BuiltActionInput {
   type: ValueType;
   required: boolean;
+  choices?: readonly string[];
+  template?: boolean;
 }
 
 export interface BuiltAction {
@@ -86,6 +88,8 @@ export interface BuiltCatalog {
   /** English label text per event, action and operation id; the generator wraps these in msg``. */
   labels: Record<string, string>;
   entities: Record<string, Record<string, ValueType>>;
+  /** Allowed values per entity + property, only for enum columns. */
+  enums: Record<string, Record<string, readonly string[]>>;
   actions: Record<string, BuiltAction>;
   operations: Record<string, BuiltOperation>;
 }
@@ -118,6 +122,13 @@ const FK_TARGET = /<fk table='([^']+)'/;
 /** Lowercase only the first character, so "Purchase order" reads mid-sentence. */
 function lowerFirst(label: string): string {
   return label.charAt(0).toLowerCase() + label.slice(1);
+}
+
+/** `nonConformanceTypeId` -> `Non conformance type`. */
+function humanizeColumn(column: string): string {
+  const withoutId = column.replace(/Id$/, "");
+  const spaced = withoutId.replace(/([a-z0-9])([A-Z])/g, "$1 $2").toLowerCase();
+  return spaced.charAt(0).toUpperCase() + spaced.slice(1);
 }
 
 /** The vowel test is wrong for u-words ("a user"), so an entry can override it. */
@@ -292,6 +303,12 @@ export function validateCatalogInputs(
     }
     for (const [input, spec] of Object.entries(declaration.inputs)) {
       checkEntityType(`Action "${id}"`, `input "${input}"`, spec.type);
+      if (
+        spec.template === true &&
+        !(spec.type.kind === "primitive" && spec.type.of === "string")
+      ) {
+        problems.push(`${id}.${input} is a template but is not a string.`);
+      }
     }
     for (const [output, type] of Object.entries(declaration.outputs)) {
       checkEntityType(`Action "${id}"`, `output "${output}"`, type);
@@ -314,6 +331,15 @@ export function validateCatalogInputs(
   }
 
   return problems;
+}
+
+/** The enum a column declares, or undefined. `SwaggerProperty.enum` already exists. */
+function enumFor(
+  schema: SwaggerSchema,
+  table: string,
+  column: string
+): readonly string[] | undefined {
+  return schema.definitions[table]?.properties?.[column]?.enum;
 }
 
 function entityProperties(
@@ -353,6 +379,7 @@ export function buildCatalog(
   const events: Record<string, BuiltEvent> = {};
   const labels: Record<string, string> = {};
   const entities: Record<string, Record<string, ValueType>> = {};
+  const enums: Record<string, Record<string, readonly string[]>> = {};
   const actions: Record<string, BuiltAction> = {};
   const operations: Record<string, BuiltOperation> = {};
 
@@ -361,6 +388,40 @@ export function buildCatalog(
     if (definition === undefined) continue;
 
     entities[name] = entityProperties(entry, definition, byTable);
+
+    // Collect enum values for any column that declares them.
+    const entityEnumMap: Record<string, readonly string[]> = {};
+    for (const [column, property] of Object.entries(definition.properties)) {
+      if (
+        property?.enum &&
+        property.enum.length > 0 &&
+        !DROPPED_COLUMNS.has(column)
+      ) {
+        entityEnumMap[column] = property.enum;
+      }
+    }
+    if (Object.keys(entityEnumMap).length > 0) enums[name] = entityEnumMap;
+
+    // entity.<name> label
+    labels[`entity.${name}`] = entry.label;
+
+    // entity.<name>.<column> labels for all non-dropped properties
+    for (const [column] of Object.entries(definition.properties)) {
+      if (DROPPED_COLUMNS.has(column)) continue;
+      const watchedLabel = entry.watch?.[column]?.label;
+      const writableLabel = entry.write?.[column]?.label;
+      const rawLabel = watchedLabel ?? writableLabel;
+      const label =
+        rawLabel !== undefined
+          ? rawLabel.charAt(0).toUpperCase() + rawLabel.slice(1)
+          : humanizeColumn(column);
+      if (label.includes("`") || label.includes("${")) {
+        throw new Error(
+          `Label for entity.${name}.${column} contains a backtick or template literal: "${label}"`
+        );
+      }
+      labels[`entity.${name}.${column}`] = label;
+    }
 
     const writable = Object.entries(entry.write ?? {}).filter(
       ([, column]) => column !== undefined
@@ -378,6 +439,10 @@ export function buildCatalog(
           type: propertyType(property, refFor(property, spec?.ref, byTable)),
           required: false
         };
+        const enumValues = enumFor(schema, entry.table, column);
+        if (enumValues !== undefined && enumValues.length > 0) {
+          inputs[column].choices = enumValues;
+        }
       }
       actions[id] = {
         inputs,
@@ -439,7 +504,20 @@ export function buildCatalog(
     }
     const inputs: Record<string, BuiltActionInput> = {};
     for (const [input, spec] of Object.entries(declaration.inputs)) {
-      inputs[input] = { type: spec.type, required: spec.required };
+      inputs[input] = {
+        type: spec.type,
+        required: spec.required,
+        ...(spec.template ? { template: true } : {})
+      };
+      const [entityPrefix] = id.split(".");
+      const table =
+        entityPrefix !== undefined ? registry[entityPrefix]?.table : undefined;
+      if (table !== undefined) {
+        const values = enumFor(schema, table, input);
+        if (values !== undefined && values.length > 0) {
+          inputs[input].choices = values;
+        }
+      }
     }
     actions[id] = {
       inputs,
@@ -452,6 +530,16 @@ export function buildCatalog(
       ...(declaration.call === undefined ? {} : { call: declaration.call })
     };
     labels[id] = declaration.label;
+    for (const [input, spec] of Object.entries(declaration.inputs)) {
+      const rawLabel = spec.label;
+      const label = rawLabel.charAt(0).toUpperCase() + rawLabel.slice(1);
+      if (label.includes("`") || label.includes("${")) {
+        throw new Error(
+          `Label for action.${id}.input.${input} contains a backtick or template literal: "${label}"`
+        );
+      }
+      labels[`action.${id}.input.${input}`] = label;
+    }
   }
 
   for (const [id, declaration] of Object.entries(handWrittenOperations)) {
@@ -466,7 +554,12 @@ export function buildCatalog(
       permission: declaration.permission
     };
     labels[id] = declaration.label;
+    for (const [input, spec] of Object.entries(declaration.inputs)) {
+      const rawLabel = spec.label;
+      const label = rawLabel.charAt(0).toUpperCase() + rawLabel.slice(1);
+      labels[`operation.${id}.input.${input}`] = label;
+    }
   }
 
-  return { events, labels, entities, actions, operations };
+  return { events, labels, entities, enums, actions, operations };
 }

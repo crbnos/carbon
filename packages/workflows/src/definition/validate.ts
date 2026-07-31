@@ -1,17 +1,12 @@
-import { type WorkflowCatalog, walkPath } from "./catalog";
+import type { WorkflowCatalog } from "./catalog";
 import type { WorkflowIssue, WorkflowIssueCode } from "./issues";
 import {
   checkNodeConfig,
   checkNodeTypes,
   getNodeHandles,
-  getNodeLoopList,
-  getNodeOutputs,
   getNodeValues,
   isNodeConfigured,
-  type LoopList,
   type NodeContext,
-  type NodeOutputs,
-  type ResolvedRef,
   type ResolveFailure,
   type ValueSite
 } from "./nodes";
@@ -20,13 +15,8 @@ import {
   type WorkflowDefinition,
   workflowDefinitionSchema
 } from "./schema";
-import {
-  type ItemRef,
-  t,
-  type ValueOrRef,
-  type ValueType,
-  type VariableRef
-} from "./types";
+import type { ValueOrRef } from "./types";
+import { buildAdjacency, createContext, reachableFrom } from "./variables";
 
 /**
  * Is this workflow well-formed enough to activate? An empty result means yes.
@@ -58,15 +48,15 @@ export function validateDefinition(
   const graph = checkGraph(parsed.data);
   if (graph.length > 0) return graph;
 
-  const ctx = createContext(parsed.data, catalog);
+  const { context } = createContext(parsed.data, catalog);
 
-  const references = checkReferences(parsed.data, ctx);
+  const references = checkReferences(parsed.data, context);
   if (references.length > 0) return references;
 
-  const types = checkTypes(parsed.data, ctx);
+  const types = checkTypes(parsed.data, context);
   if (types.length > 0) return types;
 
-  return checkConfig(parsed.data, ctx);
+  return checkConfig(parsed.data, context);
 }
 
 function checkDuplicateIds(definition: WorkflowDefinition): WorkflowIssue[] {
@@ -261,131 +251,6 @@ function checkGraph(definition: WorkflowDefinition): WorkflowIssue[] {
   }
 
   return issues;
-}
-
-function buildAdjacency(
-  definition: WorkflowDefinition,
-  direction: "forward" | "reverse"
-): Map<string, string[]> {
-  const adjacency = new Map<string, string[]>();
-  for (const node of definition.nodes) adjacency.set(node.id, []);
-  for (const edge of definition.edges) {
-    const [from, to] =
-      direction === "forward"
-        ? [edge.source, edge.target]
-        : [edge.target, edge.source];
-    adjacency.get(from)?.push(to);
-  }
-  return adjacency;
-}
-
-function reachableFrom(
-  start: string,
-  adjacency: Map<string, string[]>
-): Set<string> {
-  const reachable = new Set<string>([start]);
-  const queue = [start];
-  for (let i = 0; i < queue.length; i++) {
-    const id = queue[i];
-    if (id === undefined) continue;
-    for (const next of adjacency.get(id) ?? []) {
-      if (!reachable.has(next)) {
-        reachable.add(next);
-        queue.push(next);
-      }
-    }
-  }
-  return reachable;
-}
-
-/** Answers the questions node kinds ask about the rest of the definition. */
-function createContext(
-  definition: WorkflowDefinition,
-  catalog: WorkflowCatalog
-): NodeContext {
-  const byId = new Map(definition.nodes.map((node) => [node.id, node]));
-  const reverse = buildAdjacency(definition, "reverse");
-  const ancestorCache = new Map<string, Set<string>>();
-  const outputCache = new Map<string, NodeOutputs | undefined>();
-  const loopCache = new Map<string, LoopList | undefined>();
-
-  /** Every node whose value can legitimately be read at `nodeId`. */
-  const ancestorsOf = (nodeId: string): Set<string> => {
-    const cached = ancestorCache.get(nodeId);
-    if (cached !== undefined) return cached;
-    const ancestors = reachableFrom(nodeId, reverse);
-    ancestors.delete(nodeId);
-    ancestorCache.set(nodeId, ancestors);
-    return ancestors;
-  };
-
-  // No re-entry guard needed: refs resolve only to strict ancestors and layer 4
-  // proved the graph acyclic, so each hop moves strictly upstream.
-  const outputsOf = (nodeId: string): NodeOutputs | undefined => {
-    if (outputCache.has(nodeId)) return outputCache.get(nodeId);
-    const node = byId.get(nodeId);
-    const outputs = node === undefined ? undefined : getNodeOutputs(node, ctx);
-    outputCache.set(nodeId, outputs);
-    return outputs;
-  };
-
-  const resolveRef = (ref: VariableRef, atNodeId: string): ResolvedRef => {
-    if (!byId.has(ref.nodeId)) return { failure: "unknown-node" };
-    // A node may not read its own output, so this covers the self-reference too.
-    if (!ancestorsOf(atNodeId).has(ref.nodeId)) {
-      return { failure: "not-upstream" };
-    }
-    const outputs = outputsOf(ref.nodeId);
-    if (outputs === undefined) return { failure: "unconfigured" };
-
-    const declared = outputs[ref.output];
-    if (declared === undefined) return { failure: "unknown" };
-
-    const resolved = walkPath(declared, ref.path, catalog);
-    if (resolved === undefined) return { failure: "unknown" };
-    return { type: resolved };
-  };
-
-  const resolveItem = (ref: ItemRef, atNodeId: string): ResolvedRef => {
-    const loop = loopListOf(atNodeId);
-    if (loop === undefined) return { failure: "no-loop" };
-    if (!("type" in loop)) return loop;
-    const resolved = walkPath(loop.type.of, ref.path, catalog);
-    return resolved === undefined ? { failure: "unknown" } : { type: resolved };
-  };
-
-  const resolveValue = (value: ValueOrRef, atNodeId: string): ResolvedRef => {
-    if (value.kind === "literal") return { type: value.type };
-    if (value.kind === "item") return resolveItem(value, atNodeId);
-    // A template always reads as text; its parts are checked in layer 5.
-    if (value.kind === "template") return { type: t.string };
-    return resolveRef(value, atNodeId);
-  };
-
-  const typeOf = (
-    value: ValueOrRef,
-    atNodeId: string
-  ): ValueType | undefined => {
-    const resolved = resolveValue(value, atNodeId);
-    return "type" in resolved ? resolved.type : undefined;
-  };
-
-  const loopListOf = (nodeId: string): LoopList | undefined => {
-    if (loopCache.has(nodeId)) return loopCache.get(nodeId);
-    const node = byId.get(nodeId);
-    const loop = node === undefined ? undefined : getNodeLoopList(node, ctx);
-    loopCache.set(nodeId, loop);
-    return loop;
-  };
-
-  const ctx: NodeContext = {
-    catalog,
-    resolveValue,
-    typeOf,
-    outputsOf,
-    loopListOf
-  };
-  return ctx;
 }
 
 /** Layer 5 — every variable names a real upstream value, and items are only read inside a loop. */

@@ -204,6 +204,20 @@ function checkInputs(
         message: `"${name}" takes ${describeType(declaration.type)}, but this is ${describeType(type)}.`
       });
     }
+
+    if (
+      declaration.choices !== undefined &&
+      supplied.kind === "literal" &&
+      typeof supplied.value === "string" &&
+      !declaration.choices.includes(supplied.value)
+    ) {
+      issues.push({
+        code: "INCOMPLETE_CONFIG",
+        message: `"${supplied.value}" is not a valid ${name}.`,
+        nodeId: node.id,
+        field: `inputs.${name}`
+      });
+    }
   }
 
   // Without this a definition could quietly carry a field the executor would drop.
@@ -414,15 +428,34 @@ export const NODE_KINDS: {
           incomplete(node, "entity", "Choose what kind of record to find.")
         ];
       }
-      if (ctx.catalog.getEntity(node.data.entity) !== undefined) return [];
-      return [
-        {
-          code: "UNKNOWN_ENTITY",
-          nodeId: node.id,
-          field: "entity",
-          message: `"${node.data.entity}" is not a kind of record we know.`
+      if (ctx.catalog.getEntity(node.data.entity) === undefined) {
+        return [
+          {
+            code: "UNKNOWN_ENTITY",
+            nodeId: node.id,
+            field: "entity",
+            message: `"${node.data.entity}" is not a kind of record we know.`
+          }
+        ];
+      }
+      const issues: WorkflowIssue[] = [];
+      node.data.match.forEach((rule, index) => {
+        const choices = ctx.catalog.getEnum(node.data.entity, rule.field);
+        if (
+          choices !== undefined &&
+          rule.value.kind === "literal" &&
+          typeof rule.value.value === "string" &&
+          !choices.includes(rule.value.value)
+        ) {
+          issues.push({
+            code: "INCOMPLETE_CONFIG",
+            message: `"${rule.value.value}" is not a valid ${rule.field}.`,
+            nodeId: node.id,
+            field: `match.${index}.value`
+          });
         }
-      ];
+      });
+      return issues;
     }
   },
 

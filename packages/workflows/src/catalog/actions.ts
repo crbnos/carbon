@@ -5,6 +5,7 @@ export interface ActionInputLike {
   type: ValueType;
   required: boolean;
   label: string;
+  template?: boolean;
 }
 
 export interface ActionDeclarationLike {
@@ -106,8 +107,18 @@ export const WORKFLOW_ACTIONS = {
     inputs: {
       user: { type: t.entity("user"), required: false, label: "person" },
       role: { type: t.entity("group"), required: false, label: "role" },
-      subject: { type: t.string, required: true, label: "subject" },
-      message: { type: t.string, required: false, label: "message" },
+      subject: {
+        type: t.string,
+        required: true,
+        label: "subject",
+        template: true
+      },
+      message: {
+        type: t.string,
+        required: false,
+        label: "message",
+        template: true
+      },
       // The value model has no "any record" type, so the record is named in two parts.
       aboutId: { type: t.string, required: false, label: "about" },
       aboutType: { type: t.string, required: false, label: "kind of record" }
@@ -121,7 +132,7 @@ export const WORKFLOW_ACTIONS = {
     permission: { module: "workflows", action: "update" },
     inputs: {
       url: { type: t.string, required: true, label: "URL" },
-      body: { type: t.string, required: false, label: "body" }
+      body: { type: t.string, required: false, label: "body", template: true }
     },
     outputs: { status: t.number },
     batchable: true

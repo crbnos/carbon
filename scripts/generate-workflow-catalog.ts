@@ -50,6 +50,8 @@ const events = [
   `export const WORKFLOW_EVENTS: Record<string, BuiltEvent> = ${JSON.stringify(sorted(built.events))};`,
   ``,
   `export const WORKFLOW_ENTITIES: Record<string, Record<string, ValueType>> = ${JSON.stringify(sorted(built.entities))};`,
+  ``,
+  `export const WORKFLOW_ENTITY_ENUMS: Record<string, Record<string, readonly string[]>> = ${JSON.stringify(sorted(built.enums))};`,
   ``
 ].join("\n");
 

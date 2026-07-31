@@ -19,6 +19,7 @@ export function toBuilderNode(node: WorkflowNode): BuilderNode {
     id: node.id,
     type: node.type,
     position: node.position,
+    ...(node.title !== undefined ? { title: node.title } : {}),
     data: node.data as Record<string, unknown>
   };
 }
@@ -51,6 +52,7 @@ export function fromReactFlow(
       (node) =>
         ({
           id: node.id,
+          ...(node.title !== undefined ? { title: node.title } : {}),
           type: node.type,
           position: { x: node.position.x, y: node.position.y },
           data: node.data

@@ -35,6 +35,12 @@ export type BuilderState = {
   setIssues: (issues: WorkflowIssue[]) => void;
   setSaveState: (state: SaveState) => void;
   rebaseline: () => void;
+  /** Merge a patch into one node's `data`. The only way node configuration changes. */
+  updateNodeData: (id: string, patch: Record<string, unknown>) => void;
+  /** Set or clear a node's customer-given name. Empty string clears it. */
+  renameNode: (id: string, title: string) => void;
+  /** Delete a node and its edges. Refuses the trigger. */
+  removeNode: (id: string) => void;
 };
 
 export const snapshot = (nodes: BuilderNode[], edges: BuilderEdge[]) =>
@@ -151,6 +157,31 @@ export function createBuilderStore(initial: {
     rebaseline: () => {
       const { nodes, edges } = get();
       set({ baseline: snapshot(nodes, edges) });
+    },
+
+    updateNodeData: (id, patch) =>
+      set(({ nodes }) => ({
+        nodes: nodes.map((n) =>
+          n.id === id ? { ...n, data: { ...n.data, ...patch } } : n
+        )
+      })),
+
+    renameNode: (id, title) =>
+      set(({ nodes }) => ({
+        nodes: nodes.map((n) =>
+          n.id === id ? { ...n, title: title === "" ? undefined : title } : n
+        )
+      })),
+
+    removeNode: (id) => {
+      const { nodes, edges, selectedNodeId } = get();
+      const node = nodes.find((n) => n.id === id);
+      if (!node || node.type === "trigger") return;
+      set({
+        nodes: nodes.filter((n) => n.id !== id),
+        edges: edges.filter((e) => e.source !== id && e.target !== id),
+        selectedNodeId: selectedNodeId === id ? null : selectedNodeId
+      });
     }
   }));
 }

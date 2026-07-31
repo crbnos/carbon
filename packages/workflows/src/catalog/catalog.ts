@@ -10,7 +10,11 @@ import {
   WORKFLOW_OPERATION_CATALOG
 } from "./actions.generated";
 import { REGISTRY_ENTRIES } from "./entities";
-import { WORKFLOW_ENTITIES, WORKFLOW_EVENTS } from "./events.generated";
+import {
+  WORKFLOW_ENTITIES,
+  WORKFLOW_ENTITY_ENUMS,
+  WORKFLOW_EVENTS
+} from "./events.generated";
 
 // Built once at module load, as audit.config.ts does for its derived indexes.
 const EVENTS: Map<string, CatalogEvent> = new Map(
@@ -43,13 +47,18 @@ const OPERATIONS: Map<string, CatalogOperation> = new Map(
   ])
 );
 
+const ENUMS: Map<string, Record<string, readonly string[]>> = new Map(
+  Object.entries(WORKFLOW_ENTITY_ENUMS)
+);
+
 /** The one catalog every consumer reads: events, entities, actions and operations. */
 export function createWorkflowCatalog(): WorkflowCatalog {
   return {
     getEvent: (id) => EVENTS.get(id),
     getEntity: (name) => ENTITIES.get(name),
     getAction: (id) => ACTIONS.get(id),
-    getOperation: (id) => OPERATIONS.get(id)
+    getOperation: (id) => OPERATIONS.get(id),
+    getEnum: (entity, property) => ENUMS.get(entity)?.[property]
   };
 }
 

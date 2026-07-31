@@ -25,6 +25,10 @@ export interface CatalogEvent {
 export interface CatalogInput {
   type: ValueType;
   required: boolean;
+  /** Allowed literal values, where the underlying column is an enum. */
+  choices?: readonly string[];
+  /** Prose that may interleave text and variables; the builder renders a chip editor. */
+  template?: boolean;
 }
 
 export interface CatalogAction {
@@ -58,6 +62,8 @@ export interface WorkflowCatalog {
   getAction(id: string): CatalogAction | undefined;
   getOperation(id: string): CatalogOperation | undefined;
   getEntity(name: string): CatalogEntity | undefined;
+  /** Allowed values for an entity's column, or undefined when it is not an enum. */
+  getEnum(entity: string, property: string): readonly string[] | undefined;
 }
 
 /** The type at the end of a property path, or undefined where it does not exist. */
@@ -153,7 +159,11 @@ const FIXTURE_ACTIONS: CatalogAction[] = [
     id: "alertSomeone",
     inputs: {
       user: { type: t.entity("user"), required: false },
-      role: { type: t.string, required: false }
+      role: {
+        type: t.string,
+        required: false,
+        choices: ["Buyer", "Manager", "Admin"]
+      }
     },
     outputs: {},
     batchable: false,
@@ -172,11 +182,16 @@ const FIXTURE_OPERATIONS: CatalogOperation[] = [
   }
 ];
 
+const FIXTURE_ENUMS: Record<string, Record<string, readonly string[]>> = {
+  purchaseOrder: { status: ["Draft", "Planned", "To Receive"] }
+};
+
 export interface FixtureCatalogOptions {
   omitEvents?: string[];
   omitActions?: string[];
   omitOperations?: string[];
   omitEntities?: string[];
+  omitEnums?: boolean;
 }
 
 /** An in-memory catalog for tests; `omit*` drops entries to simulate a stale catalog. */
@@ -203,6 +218,9 @@ export function createFixtureCatalog(
     getEvent: (id) => events.get(id),
     getAction: (id) => actions.get(id),
     getOperation: (id) => operations.get(id),
-    getEntity: (name) => entities.get(name)
+    getEntity: (name) => entities.get(name),
+    getEnum: options.omitEnums
+      ? () => undefined
+      : (entity, property) => FIXTURE_ENUMS[entity]?.[property]
   };
 }

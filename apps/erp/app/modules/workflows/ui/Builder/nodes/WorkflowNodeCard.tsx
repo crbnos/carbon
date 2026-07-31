@@ -1,10 +1,11 @@
 import type { WorkflowNode, WorkflowNodeType } from "@carbon/workflows";
-import { getNodeHandles } from "@carbon/workflows";
+import { FAILURE_HANDLE, getNodeHandles } from "@carbon/workflows";
 import { WORKFLOW_LABELS } from "@carbon/workflows/labels";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { NodeProps } from "@xyflow/react";
 import { useStore } from "@xyflow/react";
 import { memo } from "react";
+import { LuTriangleAlert } from "react-icons/lu";
 import { LOD_ZOOM } from "../constants";
 import { useBuilderStore } from "../context";
 import { asWorkflowNode } from "../graph";
@@ -37,7 +38,7 @@ function portsFor(node: WorkflowNode): NodePort[] {
 }
 
 // Every node kind renders through this one component; what differs between kinds
-// is data in `NODE_KIND_META`, not code. The body is still a placeholder slot.
+// is data in `NODE_KIND_META`, not code.
 function WorkflowNodeCardImpl({ id, type, data, selected }: NodeProps) {
   const { i18n } = useLingui();
   const node = asWorkflowNode(id, type as WorkflowNodeType, data);
@@ -47,6 +48,7 @@ function WorkflowNodeCardImpl({ id, type, data, selected }: NodeProps) {
   const issueCount = useBuilderStore(
     (state) => state.issues.filter((issue) => issue.nodeId === id).length
   );
+  const edges = useBuilderStore((state) => state.edges);
 
   const catalogId = meta.catalogId?.(node);
   const label = catalogId
@@ -54,12 +56,22 @@ function WorkflowNodeCardImpl({ id, type, data, selected }: NodeProps) {
       catalogId
     : undefined;
 
+  const summary = label ?? meta.summary?.(node);
+
+  // Failure-path affordance: action and lookup have a "failure" handle; warn
+  // when nothing is wired to it (card-level only, not a WorkflowIssue).
+  const handles = getNodeHandles(node);
+  const hasFailureHandle = handles.includes(FAILURE_HANDLE);
+  const hasFailureEdge = hasFailureHandle
+    ? edges.some((e) => e.source === id && e.sourceHandle === FAILURE_HANDLE)
+    : false;
+
   return (
     <NodeCard
       kind={meta.name}
       title={label ?? meta.title?.(node) ?? meta.defaultTitle}
       description={meta.description}
-      summary={label ?? meta.summary?.(node)}
+      summary={summary}
       accent={meta.accent}
       icon={<meta.Icon className="size-3.5" />}
       ports={portsFor(node)}
@@ -68,9 +80,21 @@ function WorkflowNodeCardImpl({ id, type, data, selected }: NodeProps) {
       isSelected={!!selected}
       isCollapsed={isCollapsed}
     >
-      <p className="text-[10.5px] italic text-muted-foreground">
-        <Trans>Not configured yet</Trans>
-      </p>
+      {summary ? (
+        <p className="truncate text-[10.5px] text-muted-foreground">
+          {summary}
+        </p>
+      ) : (
+        <p className="text-[10.5px] italic text-muted-foreground">
+          <Trans>Not configured yet</Trans>
+        </p>
+      )}
+      {hasFailureHandle && !hasFailureEdge && (
+        <p className="mt-1 flex items-center gap-1 text-[10.5px] text-amber-600 dark:text-amber-400">
+          <LuTriangleAlert className="size-3 shrink-0" />
+          <Trans>Nothing happens if this fails</Trans>
+        </p>
+      )}
     </NodeCard>
   );
 }

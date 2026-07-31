@@ -1304,3 +1304,189 @@ export const WORKFLOW_ENTITIES: Record<string, Record<string, ValueType>> = {
     phone: { kind: "primitive", of: "string" }
   }
 };
+
+export const WORKFLOW_ENTITY_ENUMS: Record<
+  string,
+  Record<string, readonly string[]>
+> = {
+  item: {
+    type: ["Part", "Material", "Tool", "Service", "Consumable", "Fixture"],
+    replenishmentSystem: ["Buy", "Make", "Buy and Make"],
+    defaultMethodType: [
+      "Purchase to Order",
+      "Pull from Inventory",
+      "Make to Order"
+    ],
+    itemTrackingType: ["Inventory", "Non-Inventory", "Serial", "Batch"],
+    sourcingType: ["Specified", "Drop Ship", "Ship from Inventory"],
+    revisionStatus: ["Design", "Prototype", "Production", "Obsolete"]
+  },
+  job: {
+    status: [
+      "Draft",
+      "Ready",
+      "In Progress",
+      "Paused",
+      "Completed",
+      "Cancelled",
+      "Overdue",
+      "Due Today",
+      "Planned",
+      "Closed"
+    ],
+    deadlineType: ["No Deadline", "ASAP", "Soft Deadline", "Hard Deadline"]
+  },
+  jobOperation: {
+    setupUnit: [
+      "Hours/Piece",
+      "Hours/100 Pieces",
+      "Hours/1000 Pieces",
+      "Minutes/Piece",
+      "Minutes/100 Pieces",
+      "Minutes/1000 Pieces",
+      "Pieces/Hour",
+      "Pieces/Minute",
+      "Seconds/Piece",
+      "Total Hours",
+      "Total Minutes"
+    ],
+    laborUnit: [
+      "Hours/Piece",
+      "Hours/100 Pieces",
+      "Hours/1000 Pieces",
+      "Minutes/Piece",
+      "Minutes/100 Pieces",
+      "Minutes/1000 Pieces",
+      "Pieces/Hour",
+      "Pieces/Minute",
+      "Seconds/Piece",
+      "Total Hours",
+      "Total Minutes"
+    ],
+    machineUnit: [
+      "Hours/Piece",
+      "Hours/100 Pieces",
+      "Hours/1000 Pieces",
+      "Minutes/Piece",
+      "Minutes/100 Pieces",
+      "Minutes/1000 Pieces",
+      "Pieces/Hour",
+      "Pieces/Minute",
+      "Seconds/Piece",
+      "Total Hours",
+      "Total Minutes"
+    ],
+    operationOrder: ["After Previous", "With Previous"],
+    operationType: ["Process", "Assembly", "Inspection", "Outside Processing"],
+    status: [
+      "Canceled",
+      "Done",
+      "In Progress",
+      "Paused",
+      "Ready",
+      "Todo",
+      "Waiting"
+    ]
+  },
+  nonConformance: {
+    source: ["Internal", "External"],
+    status: ["Registered", "In Progress", "Closed"],
+    priority: ["Low", "Medium", "High", "Critical"]
+  },
+  purchaseInvoice: {
+    status: [
+      "Draft",
+      "Pending",
+      "Open",
+      "Return",
+      "Debit Note Issued",
+      "Paid",
+      "Partially Paid",
+      "Overdue",
+      "Voided"
+    ]
+  },
+  purchaseOrder: {
+    status: [
+      "Draft",
+      "To Review",
+      "Rejected",
+      "To Receive",
+      "To Receive and Invoice",
+      "To Invoice",
+      "Completed",
+      "Closed",
+      "Planned",
+      "Needs Approval"
+    ],
+    purchaseOrderType: ["Purchase", "Return", "Outside Processing"]
+  },
+  quote: {
+    status: [
+      "Draft",
+      "Sent",
+      "Ordered",
+      "Partial",
+      "Lost",
+      "Cancelled",
+      "Expired"
+    ]
+  },
+  receipt: {
+    sourceDocument: [
+      "Sales Order",
+      "Sales Invoice",
+      "Sales Return Order",
+      "Purchase Order",
+      "Purchase Invoice",
+      "Purchase Return Order",
+      "Inbound Transfer",
+      "Outbound Transfer",
+      "Manufacturing Consumption",
+      "Manufacturing Output"
+    ],
+    status: ["Draft", "Pending", "Posted", "Voided"]
+  },
+  salesInvoice: {
+    status: [
+      "Draft",
+      "Pending",
+      "Submitted",
+      "Return",
+      "Credit Note Issued",
+      "Paid",
+      "Partially Paid",
+      "Overdue",
+      "Voided"
+    ]
+  },
+  salesOrder: {
+    status: [
+      "Draft",
+      "Needs Approval",
+      "Confirmed",
+      "In Progress",
+      "Completed",
+      "Invoiced",
+      "Cancelled",
+      "Closed",
+      "To Ship and Invoice",
+      "To Ship",
+      "To Invoice"
+    ]
+  },
+  shipment: {
+    sourceDocument: [
+      "Sales Order",
+      "Sales Invoice",
+      "Sales Return Order",
+      "Purchase Order",
+      "Purchase Invoice",
+      "Purchase Return Order",
+      "Inbound Transfer",
+      "Outbound Transfer"
+    ],
+    status: ["Draft", "Pending", "Posted", "Voided"]
+  },
+  supplier: { supplierStatus: ["Active", "Inactive", "Pending", "Rejected"] }
+};

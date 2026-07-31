@@ -71,6 +71,38 @@ describe("node defaults", () => {
     expect(parsed.data.inputs).toEqual({});
   });
 
+  it("parses a node without title and leaves title undefined", () => {
+    const parsed = nodeSchema.parse({
+      id: "n1",
+      type: "trigger",
+      position: { x: 0, y: 0 },
+      data: {}
+    });
+    expect(parsed.title).toBeUndefined();
+  });
+
+  it("round-trips a node with a title", () => {
+    const parsed = nodeSchema.parse({
+      id: "n1",
+      type: "trigger",
+      position: { x: 0, y: 0 },
+      title: "Open POs",
+      data: {}
+    });
+    expect(parsed.title).toBe("Open POs");
+  });
+
+  it("accepts an empty string title", () => {
+    const parsed = nodeSchema.parse({
+      id: "n1",
+      type: "trigger",
+      position: { x: 0, y: 0 },
+      title: "",
+      data: {}
+    });
+    expect(parsed.title).toBe("");
+  });
+
   it("defaults a variable reference's property path to empty", () => {
     const parsed = variableRefSchema.parse({
       kind: "ref",
