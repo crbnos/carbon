@@ -2128,7 +2128,21 @@ export const path = {
       generatePath(`${x}/resources/work-centers/${id}`),
     workCenterActivate: (id: string) =>
       generatePath(`${x}/resources/work-centers/activate/${id}`),
-    workCenters: `${x}/resources/work-centers`
+    workCenters: `${x}/resources/work-centers`,
+    workflow: (id: string) => generatePath(`${x}/workflow/${id}`),
+    workflowDelete: (id: string) => generatePath(`${x}/workflows/delete/${id}`),
+    workflowNew: `${x}/workflows/new`,
+    workflowOwner: (id: string) => generatePath(`${x}/workflow/${id}/owner`),
+    workflowPublish: (id: string) =>
+      generatePath(`${x}/workflow/${id}/publish`),
+    workflowRename: (id: string) => generatePath(`${x}/workflows/${id}/rename`),
+    workflowSave: (id: string) => generatePath(`${x}/workflow/${id}/save`),
+    workflows: `${x}/workflows`,
+    workflowToggle: (id: string) => generatePath(`${x}/workflow/${id}/toggle`),
+    workflowVersionDelete: (id: string, versionId: string) =>
+      generatePath(`${x}/workflow/${id}/version/delete/${versionId}`),
+    workflowVersionNew: (id: string) =>
+      generatePath(`${x}/workflow/${id}/version/new`)
   }
 } as const;
 

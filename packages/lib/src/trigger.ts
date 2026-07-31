@@ -38,7 +38,8 @@ const taskToEvent = {
   "user-admin": "carbon/user-admin",
   "extract-document": "carbon/extract-document",
   "workflow-moment": "carbon/workflow-moment.raised",
-  "workflow-run": "carbon/workflow-run.queued"
+  "workflow-run": "carbon/workflow-run.queued",
+  "workflow-scheduler-wake": "carbon/workflow-scheduler.wake"
 } as const;
 
 type TaskMap = typeof taskToEvent;

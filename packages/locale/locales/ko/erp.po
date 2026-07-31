@@ -73,6 +73,10 @@ msgstr "매핑할 라인 {0}개"
 msgid "{0} orders"
 msgstr "주문 {0}건"
 
+#. placeholder {0}: issues.length
+msgid "{0} problems — not published"
+msgstr ""
+
 #. placeholder {0}: selectedProcesses.length
 msgid "{0} Processes"
 msgstr "공정 {0}개"
@@ -169,6 +173,9 @@ msgstr "1일"
 
 msgid "1 draft journal entry"
 msgstr "1건의 임시 분개"
+
+msgid "1 problem — not published"
+msgstr ""
 
 msgid "1 unposted document"
 msgstr "1건의 미전기 문서"
@@ -673,6 +680,9 @@ msgstr "공구는 여러 작업에 걸쳐 사용할 수 있는, 부품 제작에
 
 msgid "A user records the expiry date on each batch or serial when the goods are received. Use when suppliers ship lots with different expiry dates."
 msgstr "재화가 입고될 때 사용자가 각 배치 또는 일련번호에 유효기한을 기록합니다. 공급업체가 서로 다른 유효기한의 로트를 출하할 때 사용하세요."
+
+msgid "A workflow can only have one trigger"
+msgstr ""
 
 msgid "abilities"
 msgstr "역량"
@@ -1773,6 +1783,9 @@ msgstr "이 제안을 삭제하시겠습니까? 이 작업은 되돌릴 수 없�
 msgid "Are you sure you want to delete this timecard? This cannot be undone."
 msgstr "이 근무기록을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다."
 
+msgid "Are you sure you want to delete this workflow? Its versions and run history go with it."
+msgstr ""
+
 msgid "Are you sure you want to finalize the quote?"
 msgstr "견적을 확정하시겠습니까?"
 
@@ -2025,6 +2038,9 @@ msgstr "열 때 타이머 자동 시작"
 
 msgid "Auto-suggest purchases from demand and reorder points"
 msgstr "수요와 재주문점을 기반으로 구매를 자동 제안"
+
+msgid "Automate"
+msgstr ""
 
 msgid "Automate quality flags and notifications"
 msgstr "품질 플래그와 알림 자동화"
@@ -3119,6 +3135,9 @@ msgstr "구매주문, 입고, 청구서 라인에서 공급업체의 구매 단�
 msgid "Copied link to clipboard"
 msgstr "링크가 클립보드에 복사됨"
 
+msgid "Copied webhook secret"
+msgstr ""
+
 msgid "Copy"
 msgstr "복사"
 
@@ -3254,6 +3273,9 @@ msgstr "이 링크를 복사하여 고객과 견적을 공유하세요"
 msgid "Copy this link to share the quote with a supplier"
 msgstr "이 링크를 복사하여 공급업체와 견적을 공유하세요"
 
+msgid "Copy this webhook secret now — it is the only time it is shown. You need it to verify signed webhook calls this workflow sends."
+msgstr ""
+
 msgid "Copy tool number"
 msgstr "공구 번호 복사"
 
@@ -3340,6 +3362,9 @@ msgstr "분석을 위한 영역 이미지를 준비할 수 없습니다"
 msgid "Could not read the document: {0}"
 msgstr "문서를 읽을 수 없습니다: {0}"
 
+msgid "Could not save"
+msgstr ""
+
 msgid "Couldn't load documents"
 msgstr "문서를 불러올 수 없습니다"
 
@@ -3399,6 +3424,9 @@ msgstr "장비 수리 및 유지보수 활동을 추적할 새 유지보수 작�
 
 msgid "Create a new production job to fulfill the sales order"
 msgstr "판매주문을 이행할 새 생산 작업을 생성합니다"
+
+msgid "Create a new version to make changes."
+msgstr ""
 
 msgid "Create a purchase order"
 msgstr ""
@@ -4387,6 +4415,9 @@ msgstr "공급업체 유형 삭제"
 msgid "Delete the price break for quantity {0}? This can't be undone."
 msgstr "수량 {0}에 대한 가격 구간을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다."
 
+msgid "Delete this version"
+msgstr ""
+
 msgid "Delete Timecard"
 msgstr "근무기록 삭제"
 
@@ -4416,6 +4447,9 @@ msgstr "창고 이동 삭제"
 
 msgid "Delete Webhook"
 msgstr "웹훅 삭제"
+
+msgid "Delete Workflow"
+msgstr ""
 
 msgid "Delivery Date"
 msgstr "배송일"
@@ -5169,6 +5203,9 @@ msgstr "웹훅 수정"
 
 msgid "Edit Work Center"
 msgstr "작업장 수정"
+
+msgid "editing"
+msgstr ""
 
 msgid "Eliminated"
 msgstr "제거됨"
@@ -7563,11 +7600,20 @@ msgstr "목록 옵션"
 msgid "List Parameters"
 msgstr "목록 파라미터"
 
+msgid "live"
+msgstr ""
+
+msgid "Live"
+msgstr ""
+
 msgid "Live on Carbon"
 msgstr "Carbon 도입 완료"
 
 msgid "Live reloading"
 msgstr "실시간 새로고침"
+
+msgid "Live Version"
+msgstr ""
 
 msgid "Load newer"
 msgstr "최신 항목 불러오기"
@@ -8578,6 +8624,9 @@ msgstr "새 이동 라인"
 msgid "New Unit of Measure"
 msgstr "새 측정 단위"
 
+msgid "New version"
+msgstr ""
+
 msgid "New Version"
 msgstr "새 버전"
 
@@ -8589,6 +8638,9 @@ msgstr "새 웹훅"
 
 msgid "New Work Center"
 msgstr "새 작업장"
+
+msgid "New Workflow"
+msgstr ""
 
 msgid "Newest first"
 msgstr "최신순"
@@ -8971,6 +9023,9 @@ msgstr "일반"
 msgid "Not a table but a general-ledger balance: cost accumulates as job materials are issued and clears when the job is received to stock."
 msgstr "테이블이 아니라 총계정원장 잔액입니다. 작업 자재가 투입되면서 원가가 누적되고, 작업이 재고로 입고되면 정산됩니다."
 
+msgid "Not configured yet"
+msgstr ""
+
 msgid "Not enough jobs to cover quantity"
 msgstr "수량을 충족할 만큼 작업이 충분하지 않습니다"
 
@@ -9219,6 +9274,12 @@ msgstr "설정 맵 열기"
 
 msgid "Open transactions"
 msgstr "미결 거래"
+
+msgid "Open workflow"
+msgstr ""
+
+msgid "Open Workflow"
+msgstr ""
 
 msgid "Opened"
 msgstr "열림"
@@ -10144,6 +10205,14 @@ msgstr "공개"
 msgid "Publish"
 msgstr "게시"
 
+#. placeholder {0}: current.versionNumber
+msgid "Publish v{0}"
+msgstr ""
+
+#. placeholder {0}: current.versionNumber
+msgid "Publish v{0}?"
+msgstr ""
+
 msgid "Published by Carbon"
 msgstr "Carbon에서 게시함"
 
@@ -10778,6 +10847,9 @@ msgstr "도구 제거"
 msgid "Removed"
 msgstr "제거됨"
 
+msgid "Rename Workflow"
+msgstr ""
+
 msgid "Rendering label preview..."
 msgstr "라벨 미리보기 생성 중..."
 
@@ -11313,8 +11385,14 @@ msgstr "저장 방법"
 msgid "Save View"
 msgstr "보기 저장"
 
+msgid "Saved"
+msgstr ""
+
 msgid "Saving..."
 msgstr "저장 중..."
+
+msgid "Saving…"
+msgstr ""
 
 msgid "Scan"
 msgstr "스캔"
@@ -12639,6 +12717,9 @@ msgstr "태그"
 msgid "Tailor this hub for the customer. Changes apply live for everyone viewing it. Never shown to the customer here."
 msgstr "이 허브를 고객에 맞게 조정하세요. 변경 사항은 이를 보는 모든 사람에게 즉시 적용됩니다. 이 화면은 고객에게 표시되지 않습니다."
 
+msgid "Take ownership"
+msgstr ""
+
 msgid "Take the shortest remaining shelf life across the materials consumed to make this item. Use when the product's expiry depends on its ingredients."
 msgstr "이 품목을 만드는 데 사용된 자재 중 가장 짧은 잔여 유통기한을 적용합니다. 제품의 유효기한이 원재료에 좌우될 때 사용하세요."
 
@@ -13599,6 +13680,15 @@ msgstr "이 공급업체"
 msgid "This updates the theme for all users of the application"
 msgstr "이 설정은 애플리케이션의 모든 사용자에 대한 테마를 업데이트합니다"
 
+msgid "This version cannot be opened"
+msgstr ""
+
+msgid "This version is live"
+msgstr ""
+
+msgid "This version is live. Create a new version to edit."
+msgstr ""
+
 msgid "This will make this version read-only and replace any material make methods with this version."
 msgstr "이렇게 하면 이 버전이 읽기 전용으로 전환되고, 자재 제조 방법이 모두 이 버전으로 교체됩니다."
 
@@ -14407,6 +14497,10 @@ msgstr "이메일을 인증하세요"
 msgid "Version"
 msgstr "버전"
 
+#. placeholder {0}: live.versionNumber
+msgid "Version {0} is live now and will be replaced."
+msgstr ""
+
 msgid "Version:"
 msgstr "버전:"
 
@@ -15128,6 +15222,12 @@ msgstr "근무 교대 추적이 활성화되어 있습니다."
 msgid "Workflow"
 msgstr "워크플로"
 
+msgid "Workflow created"
+msgstr ""
+
+msgid "Workflows"
+msgstr ""
+
 msgid "Working sessions on configuration and data"
 msgstr "설정 및 데이터에 대한 작업 세션"
 
@@ -15198,6 +15298,9 @@ msgid ""
 "                        ordered quantity of {1}. What would you like\n"
 "                        to do with the extra parts?"
 msgstr "주문 수량 {1}보다 {leftoverQuantity}개 더 많은 {0}을(를) 완료했습니다. 초과분을 어떻게 처리하시겠습니까?"
+
+msgid "You do not have permission to edit workflows"
+msgstr ""
 
 msgid "You don't have permission to edit this bill of material."
 msgstr "이 자재명세서를 수정할 권한이 없습니다."

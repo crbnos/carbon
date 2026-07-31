@@ -73,6 +73,10 @@ msgstr "{0} लाइनें मैप करने के लिए"
 msgid "{0} orders"
 msgstr "{0} ऑर्डर"
 
+#. placeholder {0}: issues.length
+msgid "{0} problems — not published"
+msgstr ""
+
 #. placeholder {0}: selectedProcesses.length
 msgid "{0} Processes"
 msgstr "{0} प्रक्रियाएं"
@@ -169,6 +173,9 @@ msgstr "1 दिन"
 
 msgid "1 draft journal entry"
 msgstr "1 ड्राफ्ट जर्नल प्रविष्टि"
+
+msgid "1 problem — not published"
+msgstr ""
 
 msgid "1 unposted document"
 msgstr "1 अपोस्ट किया गया दस्तावेज़"
@@ -673,6 +680,9 @@ msgstr "एक उपकरण एक भौतिक वस्तु है ज
 
 msgid "A user records the expiry date on each batch or serial when the goods are received. Use when suppliers ship lots with different expiry dates."
 msgstr "एक उपयोगकर्ता प्रत्येक बैच या सीरीज पर समाप्ति तिथि दर्ज करता है जब माल प्राप्त होता है। जब आपूर्तिकर्ता विभिन्न समाप्ति तिथियों के साथ लॉट भेजते हैं तो इसका उपयोग करें।"
+
+msgid "A workflow can only have one trigger"
+msgstr ""
 
 msgid "abilities"
 msgstr "क्षमताओं"
@@ -1773,6 +1783,9 @@ msgstr "क्या आप सुनिश्चित हैं कि आप 
 msgid "Are you sure you want to delete this timecard? This cannot be undone."
 msgstr "क्या आप सुनिश्चित हैं कि आप इस टाइमकार्ड को हटाना चाहते हैं? यह पूर्ववत नहीं किया जा सकता।"
 
+msgid "Are you sure you want to delete this workflow? Its versions and run history go with it."
+msgstr ""
+
 msgid "Are you sure you want to finalize the quote?"
 msgstr "क्या आप सुनिश्चित हैं कि आप उद्धरण को अंतिम रूप देना चाहते हैं?"
 
@@ -2025,6 +2038,9 @@ msgstr "खोलने पर टाइमर को स्वचालित �
 
 msgid "Auto-suggest purchases from demand and reorder points"
 msgstr "मांग और पुनः ऑर्डर बिंदुओं से स्वचालित रूप से खरीद सुझाएं"
+
+msgid "Automate"
+msgstr ""
 
 msgid "Automate quality flags and notifications"
 msgstr "गुणवत्ता फ़्लैग और सूचनाओं को स्वचालित करें"
@@ -3119,6 +3135,9 @@ msgstr "एक आपूर्तिकर्ता की खरीद इक�
 msgid "Copied link to clipboard"
 msgstr "क्लिपबोर्ड में लिंक कॉपी किया गया"
 
+msgid "Copied webhook secret"
+msgstr ""
+
 msgid "Copy"
 msgstr "कॉपी करें"
 
@@ -3254,6 +3273,9 @@ msgstr "इस लिंक को कॉपी करें ताकि आप
 msgid "Copy this link to share the quote with a supplier"
 msgstr "इस लिंक को कॉपी करें सप्लायर के साथ कोट साझा करने के लिए"
 
+msgid "Copy this webhook secret now — it is the only time it is shown. You need it to verify signed webhook calls this workflow sends."
+msgstr ""
+
 msgid "Copy tool number"
 msgstr "टूल नंबर कॉपी करें"
 
@@ -3340,6 +3362,9 @@ msgstr "विश्लेषण के लिए क्षेत्र छव�
 msgid "Could not read the document: {0}"
 msgstr "दस्तावेज़ नहीं पढ़ा जा सका: {0}"
 
+msgid "Could not save"
+msgstr ""
+
 msgid "Couldn't load documents"
 msgstr "दस्तावेज़ लोड नहीं हो सके"
 
@@ -3399,6 +3424,9 @@ msgstr "उपकरण मरम्मत और रखरखाव गति�
 
 msgid "Create a new production job to fulfill the sales order"
 msgstr "बिक्रय आदेश को पूरा करने के लिए एक नई उत्पादन नौकरी बनाएं"
+
+msgid "Create a new version to make changes."
+msgstr ""
 
 msgid "Create a purchase order"
 msgstr ""
@@ -4387,6 +4415,9 @@ msgstr "आपूर्तिकर्ता प्रकार हटाएं"
 msgid "Delete the price break for quantity {0}? This can't be undone."
 msgstr "मात्रा {0} के लिए मूल्य ब्रेक हटाएं? इसे पूर्ववत नहीं किया जा सकता।"
 
+msgid "Delete this version"
+msgstr ""
+
 msgid "Delete Timecard"
 msgstr "टाइमकार्ड हटाएं"
 
@@ -4416,6 +4447,9 @@ msgstr "गोदाम स्थानांतरण हटाएं"
 
 msgid "Delete Webhook"
 msgstr "वेबहुक हटाएं"
+
+msgid "Delete Workflow"
+msgstr ""
 
 msgid "Delivery Date"
 msgstr "डिलीवरी तारीख"
@@ -5169,6 +5203,9 @@ msgstr "वेबहुक संपादित करें"
 
 msgid "Edit Work Center"
 msgstr "कार्य केंद्र संपादित करें"
+
+msgid "editing"
+msgstr ""
 
 msgid "Eliminated"
 msgstr "समाप्त किया गया"
@@ -7563,11 +7600,20 @@ msgstr "सूची विकल्प"
 msgid "List Parameters"
 msgstr "सूची पैरामीटर"
 
+msgid "live"
+msgstr ""
+
+msgid "Live"
+msgstr ""
+
 msgid "Live on Carbon"
 msgstr "Carbon पर लाइव"
 
 msgid "Live reloading"
 msgstr "लाइव रीलोडिंग"
+
+msgid "Live Version"
+msgstr ""
 
 msgid "Load newer"
 msgstr "नया लोड करें"
@@ -8578,6 +8624,9 @@ msgstr "नई ट्रांसफर लाइन"
 msgid "New Unit of Measure"
 msgstr "नई माप की इकाई"
 
+msgid "New version"
+msgstr ""
+
 msgid "New Version"
 msgstr "नया संस्करण"
 
@@ -8589,6 +8638,9 @@ msgstr "नया Webhook"
 
 msgid "New Work Center"
 msgstr "नया वर्क सेंटर"
+
+msgid "New Workflow"
+msgstr ""
 
 msgid "Newest first"
 msgstr "नवीनतम पहले"
@@ -8971,6 +9023,9 @@ msgstr "सामान्य"
 msgid "Not a table but a general-ledger balance: cost accumulates as job materials are issued and clears when the job is received to stock."
 msgstr "एक तालिका नहीं बल्कि एक सामान्य-बहीखाता संतुलन: काम की सामग्री जारी होने पर लागत जमा होती है और जब काम स्टॉक में प्राप्त होता है तो स्पष्ट हो जाता है।"
 
+msgid "Not configured yet"
+msgstr ""
+
 msgid "Not enough jobs to cover quantity"
 msgstr "पर्याप्त नौकरियां नहीं हैं मात्रा को कवर करने के लिए"
 
@@ -9219,6 +9274,12 @@ msgstr "सेटअप मैप खोलें"
 
 msgid "Open transactions"
 msgstr "खुले लेनदेन"
+
+msgid "Open workflow"
+msgstr ""
+
+msgid "Open Workflow"
+msgstr ""
 
 msgid "Opened"
 msgstr "खुला हुआ"
@@ -10144,6 +10205,14 @@ msgstr "सार्वजनिक"
 msgid "Publish"
 msgstr "प्रकाशित करें"
 
+#. placeholder {0}: current.versionNumber
+msgid "Publish v{0}"
+msgstr ""
+
+#. placeholder {0}: current.versionNumber
+msgid "Publish v{0}?"
+msgstr ""
+
 msgid "Published by Carbon"
 msgstr "Carbon द्वारा प्रकाशित"
 
@@ -10778,6 +10847,9 @@ msgstr "उपकरण हटाएँ"
 msgid "Removed"
 msgstr "हटाया गया"
 
+msgid "Rename Workflow"
+msgstr ""
+
 msgid "Rendering label preview..."
 msgstr "लेबल पूर्वावलोकन प्रस्तुत किया जा रहा है..."
 
@@ -11313,8 +11385,14 @@ msgstr "विधि सहेजें"
 msgid "Save View"
 msgstr "दृश्य सहेजें"
 
+msgid "Saved"
+msgstr ""
+
 msgid "Saving..."
 msgstr "सहेज रहे हैं..."
+
+msgid "Saving…"
+msgstr ""
 
 msgid "Scan"
 msgstr "स्कैन करें"
@@ -12639,6 +12717,9 @@ msgstr "टैग"
 msgid "Tailor this hub for the customer. Changes apply live for everyone viewing it. Never shown to the customer here."
 msgstr "इस हब को ग्राहक के लिए अनुकूलित करें। परिवर्तन सभी के लिए लाइव लागू होते हैं जो इसे देख रहे हैं। ग्राहक को यहां कभी नहीं दिखाया जाता है।"
 
+msgid "Take ownership"
+msgstr ""
+
 msgid "Take the shortest remaining shelf life across the materials consumed to make this item. Use when the product's expiry depends on its ingredients."
 msgstr "इस आइटम को बनाने के लिए उपयोग की गई सामग्रियों में सबसे कम शेष शेल्फ लाइफ लें। जब उत्पाद की समाप्ति तारीख इसकी सामग्री पर निर्भर करती है तो उपयोग करें।"
 
@@ -13599,6 +13680,15 @@ msgstr "यह आपूर्तिकर्ता"
 msgid "This updates the theme for all users of the application"
 msgstr "यह एप्लिकेशन के सभी उपयोगकर्ताओं के लिए थीम को अपडेट करता है"
 
+msgid "This version cannot be opened"
+msgstr ""
+
+msgid "This version is live"
+msgstr ""
+
+msgid "This version is live. Create a new version to edit."
+msgstr ""
+
 msgid "This will make this version read-only and replace any material make methods with this version."
 msgstr "यह इस संस्करण को केवल-पढ़ने योग्य बनाएगा और किसी भी सामग्री निर्माण विधि को इस संस्करण से बदल देगा।"
 
@@ -14407,6 +14497,10 @@ msgstr "अपनी ईमेल सत्यापित करें"
 msgid "Version"
 msgstr "संस्करण"
 
+#. placeholder {0}: live.versionNumber
+msgid "Version {0} is live now and will be replaced."
+msgstr ""
+
 msgid "Version:"
 msgstr "संस्करण:"
 
@@ -15128,6 +15222,12 @@ msgstr "कार्य पारी ट्रैकिंग सक्रिय
 msgid "Workflow"
 msgstr "वर्कफ़्लो"
 
+msgid "Workflow created"
+msgstr ""
+
+msgid "Workflows"
+msgstr ""
+
 msgid "Working sessions on configuration and data"
 msgstr "कॉन्फ़िगरेशन और डेटा पर कार्य सत्र"
 
@@ -15198,6 +15298,9 @@ msgid ""
 "                        ordered quantity of {1}. What would you like\n"
 "                        to do with the extra parts?"
 msgstr "आपने {leftoverQuantity} अधिक {0} पूरा किया है जो {1} की ऑर्डर की गई मात्रा से अधिक है। आप अतिरिक्त भागों के साथ क्या करना चाहते हैं?"
+
+msgid "You do not have permission to edit workflows"
+msgstr ""
 
 msgid "You don't have permission to edit this bill of material."
 msgstr "आपको इस सामग्री सूची को संपादित करने की अनुमति नहीं है।"

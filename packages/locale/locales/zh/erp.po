@@ -73,6 +73,10 @@ msgstr "{0} 行待映射"
 msgid "{0} orders"
 msgstr "{0} 个订单"
 
+#. placeholder {0}: issues.length
+msgid "{0} problems — not published"
+msgstr ""
+
 #. placeholder {0}: selectedProcesses.length
 msgid "{0} Processes"
 msgstr "{0} 个流程"
@@ -169,6 +173,9 @@ msgstr "1 天"
 
 msgid "1 draft journal entry"
 msgstr "1 份草稿日记账条目"
+
+msgid "1 problem — not published"
+msgstr ""
 
 msgid "1 unposted document"
 msgstr "1 份未过账单据"
@@ -673,6 +680,9 @@ msgstr "工具是用于制造零件的物理项目，可以在多个工作中使
 
 msgid "A user records the expiry date on each batch or serial when the goods are received. Use when suppliers ship lots with different expiry dates."
 msgstr "用户在收到货物时在每个批次或序列号上记录过期日期。当供应商发货的批次具有不同的过期日期时使用。"
+
+msgid "A workflow can only have one trigger"
+msgstr ""
 
 msgid "abilities"
 msgstr "功能"
@@ -1773,6 +1783,9 @@ msgstr "你确定要删除此建议吗？此操作无法撤销。"
 msgid "Are you sure you want to delete this timecard? This cannot be undone."
 msgstr "你确定要删除此时卡吗？此操作无法撤销。"
 
+msgid "Are you sure you want to delete this workflow? Its versions and run history go with it."
+msgstr ""
+
 msgid "Are you sure you want to finalize the quote?"
 msgstr "你确定要完成报价吗？"
 
@@ -2025,6 +2038,9 @@ msgstr "打开时自动启动计时器"
 
 msgid "Auto-suggest purchases from demand and reorder points"
 msgstr "根据需求和重新订购点自动建议采购"
+
+msgid "Automate"
+msgstr ""
 
 msgid "Automate quality flags and notifications"
 msgstr "自动化质量标志和通知"
@@ -3119,6 +3135,9 @@ msgstr "将供应商的采购单位转换为采购订单、收据或发票行中
 msgid "Copied link to clipboard"
 msgstr "已复制链接到剪贴板"
 
+msgid "Copied webhook secret"
+msgstr ""
+
 msgid "Copy"
 msgstr "复制"
 
@@ -3254,6 +3273,9 @@ msgstr "复制此链接以与客户分享报价"
 msgid "Copy this link to share the quote with a supplier"
 msgstr "复制此链接以与供应商共享报价"
 
+msgid "Copy this webhook secret now — it is the only time it is shown. You need it to verify signed webhook calls this workflow sends."
+msgstr ""
+
 msgid "Copy tool number"
 msgstr "复制工具编号"
 
@@ -3340,6 +3362,9 @@ msgstr "无法准备区域图像以进行分析"
 msgid "Could not read the document: {0}"
 msgstr "无法读取文档：{0}"
 
+msgid "Could not save"
+msgstr ""
+
 msgid "Couldn't load documents"
 msgstr "无法加载文档"
 
@@ -3399,6 +3424,9 @@ msgstr "创建新的维护派工单以跟踪设备维修和维护活动"
 
 msgid "Create a new production job to fulfill the sales order"
 msgstr "创建新的生产工作以完成销售订单"
+
+msgid "Create a new version to make changes."
+msgstr ""
 
 msgid "Create a purchase order"
 msgstr ""
@@ -4387,6 +4415,9 @@ msgstr "删除供应商类型"
 msgid "Delete the price break for quantity {0}? This can't be undone."
 msgstr "删除数量{0}的价格区间？此操作无法撤销。"
 
+msgid "Delete this version"
+msgstr ""
+
 msgid "Delete Timecard"
 msgstr "删除时间卡"
 
@@ -4416,6 +4447,9 @@ msgstr "删除仓库转移"
 
 msgid "Delete Webhook"
 msgstr "删除 Webhook"
+
+msgid "Delete Workflow"
+msgstr ""
 
 msgid "Delivery Date"
 msgstr "交货日期"
@@ -5169,6 +5203,9 @@ msgstr "编辑 Webhook"
 
 msgid "Edit Work Center"
 msgstr "编辑工作中心"
+
+msgid "editing"
+msgstr ""
 
 msgid "Eliminated"
 msgstr "已消除"
@@ -7563,11 +7600,20 @@ msgstr "列表选项"
 msgid "List Parameters"
 msgstr "列表参数"
 
+msgid "live"
+msgstr ""
+
+msgid "Live"
+msgstr ""
+
 msgid "Live on Carbon"
 msgstr "在 Carbon 上线"
 
 msgid "Live reloading"
 msgstr "实时重新加载"
+
+msgid "Live Version"
+msgstr ""
 
 msgid "Load newer"
 msgstr "加载更新"
@@ -8578,6 +8624,9 @@ msgstr "新转移行"
 msgid "New Unit of Measure"
 msgstr "新计量单位"
 
+msgid "New version"
+msgstr ""
+
 msgid "New Version"
 msgstr "新版本"
 
@@ -8589,6 +8638,9 @@ msgstr "新建 Webhook"
 
 msgid "New Work Center"
 msgstr "新工作中心"
+
+msgid "New Workflow"
+msgstr ""
 
 msgid "Newest first"
 msgstr "最新优先"
@@ -8971,6 +9023,9 @@ msgstr "正常"
 msgid "Not a table but a general-ledger balance: cost accumulates as job materials are issued and clears when the job is received to stock."
 msgstr "不是表格而是总账余额：当发出工作物料时成本积累，当工作收到库存时清除。"
 
+msgid "Not configured yet"
+msgstr ""
+
 msgid "Not enough jobs to cover quantity"
 msgstr "工作数量不足以覆盖数量"
 
@@ -9219,6 +9274,12 @@ msgstr "打开设置地图"
 
 msgid "Open transactions"
 msgstr "未结交易"
+
+msgid "Open workflow"
+msgstr ""
+
+msgid "Open Workflow"
+msgstr ""
 
 msgid "Opened"
 msgstr "打开"
@@ -10144,6 +10205,14 @@ msgstr "公开"
 msgid "Publish"
 msgstr "发布"
 
+#. placeholder {0}: current.versionNumber
+msgid "Publish v{0}"
+msgstr ""
+
+#. placeholder {0}: current.versionNumber
+msgid "Publish v{0}?"
+msgstr ""
+
 msgid "Published by Carbon"
 msgstr "由 Carbon 发布"
 
@@ -10778,6 +10847,9 @@ msgstr "移除工具"
 msgid "Removed"
 msgstr "已移除"
 
+msgid "Rename Workflow"
+msgstr ""
+
 msgid "Rendering label preview..."
 msgstr "正在渲染标签预览..."
 
@@ -11313,8 +11385,14 @@ msgstr "保存方法"
 msgid "Save View"
 msgstr "保存视图"
 
+msgid "Saved"
+msgstr ""
+
 msgid "Saving..."
 msgstr "保存中..."
+
+msgid "Saving…"
+msgstr ""
 
 msgid "Scan"
 msgstr "扫描"
@@ -12639,6 +12717,9 @@ msgstr "标签"
 msgid "Tailor this hub for the customer. Changes apply live for everyone viewing it. Never shown to the customer here."
 msgstr "为客户定制此中心。更改对所有查看者实时生效。永远不会向客户显示此内容。"
 
+msgid "Take ownership"
+msgstr ""
+
 msgid "Take the shortest remaining shelf life across the materials consumed to make this item. Use when the product's expiry depends on its ingredients."
 msgstr "采用消耗的材料中最短的剩余保质期来制造此物品。当产品的有效期取决于其成分时使用。"
 
@@ -13599,6 +13680,15 @@ msgstr "此供应商"
 msgid "This updates the theme for all users of the application"
 msgstr "这会更新应用程序所有用户的主题"
 
+msgid "This version cannot be opened"
+msgstr ""
+
+msgid "This version is live"
+msgstr ""
+
+msgid "This version is live. Create a new version to edit."
+msgstr ""
+
 msgid "This will make this version read-only and replace any material make methods with this version."
 msgstr "这将使此版本为只读，并用此版本替换任何物料制造方法。"
 
@@ -14407,6 +14497,10 @@ msgstr "验证您的电子邮件"
 msgid "Version"
 msgstr "版本"
 
+#. placeholder {0}: live.versionNumber
+msgid "Version {0} is live now and will be replaced."
+msgstr ""
+
 msgid "Version:"
 msgstr "版本："
 
@@ -15128,6 +15222,12 @@ msgstr "工作班次跟踪处于活跃状态。"
 msgid "Workflow"
 msgstr "工作流"
 
+msgid "Workflow created"
+msgstr ""
+
+msgid "Workflows"
+msgstr ""
+
 msgid "Working sessions on configuration and data"
 msgstr "配置和数据工作会议"
 
@@ -15198,6 +15298,9 @@ msgid ""
 "                        ordered quantity of {1}. What would you like\n"
 "                        to do with the extra parts?"
 msgstr "您完成了 {leftoverQuantity} 个以上的 {0}，超过了订购数量 {1}。您想如何处理这些额外的零件？"
+
+msgid "You do not have permission to edit workflows"
+msgstr ""
 
 msgid "You don't have permission to edit this bill of material."
 msgstr "您没有编辑此物料清单的权限。"

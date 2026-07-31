@@ -73,6 +73,10 @@ msgstr "{0}件のラインをマップします"
 msgid "{0} orders"
 msgstr "{0}件の注文"
 
+#. placeholder {0}: issues.length
+msgid "{0} problems — not published"
+msgstr ""
+
 #. placeholder {0}: selectedProcesses.length
 msgid "{0} Processes"
 msgstr "{0}個のプロセス"
@@ -169,6 +173,9 @@ msgstr "1日"
 
 msgid "1 draft journal entry"
 msgstr "1件の下書き仕訳"
+
+msgid "1 problem — not published"
+msgstr ""
 
 msgid "1 unposted document"
 msgstr "1件の未転記書類"
@@ -673,6 +680,9 @@ msgstr "ツールは、複数のジョブで使用できるパーツを作成す
 
 msgid "A user records the expiry date on each batch or serial when the goods are received. Use when suppliers ship lots with different expiry dates."
 msgstr "ユーザーが商品を受け取る際に、各バッチまたはシリアルの有効期限を記録します。サプライヤーが異なる有効期限のロットを出荷する場合に使用します。"
+
+msgid "A workflow can only have one trigger"
+msgstr ""
 
 msgid "abilities"
 msgstr "能力"
@@ -1773,6 +1783,9 @@ msgstr "本当にこの提案を削除してもよろしいですか？この操
 msgid "Are you sure you want to delete this timecard? This cannot be undone."
 msgstr "このタイムカードを削除してもよろしいですか？この操作は取り消せません。"
 
+msgid "Are you sure you want to delete this workflow? Its versions and run history go with it."
+msgstr ""
+
 msgid "Are you sure you want to finalize the quote?"
 msgstr "見積書を確定してもよろしいですか？"
 
@@ -2025,6 +2038,9 @@ msgstr "開くときにタイマーを自動開始"
 
 msgid "Auto-suggest purchases from demand and reorder points"
 msgstr "需要に基づいて購買を自動提案し、再注文ポイントを設定"
+
+msgid "Automate"
+msgstr ""
 
 msgid "Automate quality flags and notifications"
 msgstr "品質フラグと通知を自動化"
@@ -3119,6 +3135,9 @@ msgstr "サプライヤーの購入単位をPO、領収書、または請求書�
 msgid "Copied link to clipboard"
 msgstr "クリップボードにリンクをコピーしました"
 
+msgid "Copied webhook secret"
+msgstr ""
+
 msgid "Copy"
 msgstr "コピー"
 
@@ -3254,6 +3273,9 @@ msgstr "このリンクをコピーして、顧客と見積書を共有してく
 msgid "Copy this link to share the quote with a supplier"
 msgstr "このリンクをコピーして、サプライヤーと見積もりを共有してください"
 
+msgid "Copy this webhook secret now — it is the only time it is shown. You need it to verify signed webhook calls this workflow sends."
+msgstr ""
+
 msgid "Copy tool number"
 msgstr "ツール番号をコピー"
 
@@ -3340,6 +3362,9 @@ msgstr "分析用の領域画像を準備できませんでした"
 msgid "Could not read the document: {0}"
 msgstr "ドキュメントを読み込めませんでした: {0}"
 
+msgid "Could not save"
+msgstr ""
+
 msgid "Couldn't load documents"
 msgstr "ドキュメントを読み込めませんでした"
 
@@ -3399,6 +3424,9 @@ msgstr "新しい保守ディスパッチを作成して、機器の修理と保
 
 msgid "Create a new production job to fulfill the sales order"
 msgstr "販売注文を履行するための新しい生産ジョブを作成します"
+
+msgid "Create a new version to make changes."
+msgstr ""
 
 msgid "Create a purchase order"
 msgstr ""
@@ -4387,6 +4415,9 @@ msgstr "サプライヤータイプを削除"
 msgid "Delete the price break for quantity {0}? This can't be undone."
 msgstr "数量{0}の価格ブレークを削除しますか？この操作は元に戻せません。"
 
+msgid "Delete this version"
+msgstr ""
+
 msgid "Delete Timecard"
 msgstr "タイムカードを削除"
 
@@ -4416,6 +4447,9 @@ msgstr "倉庫移動を削除"
 
 msgid "Delete Webhook"
 msgstr "Webhookを削除"
+
+msgid "Delete Workflow"
+msgstr ""
 
 msgid "Delivery Date"
 msgstr "配送日"
@@ -5169,6 +5203,9 @@ msgstr "Webhookを編集"
 
 msgid "Edit Work Center"
 msgstr "ワークセンターを編集"
+
+msgid "editing"
+msgstr ""
 
 msgid "Eliminated"
 msgstr "削除済み"
@@ -7563,11 +7600,20 @@ msgstr "リストオプション"
 msgid "List Parameters"
 msgstr "リストパラメータ"
 
+msgid "live"
+msgstr ""
+
+msgid "Live"
+msgstr ""
+
 msgid "Live on Carbon"
 msgstr "Carbonで稼働中"
 
 msgid "Live reloading"
 msgstr "ライブリロード中"
+
+msgid "Live Version"
+msgstr ""
 
 msgid "Load newer"
 msgstr "新しいものを読み込む"
@@ -8578,6 +8624,9 @@ msgstr "新しい転送ライン"
 msgid "New Unit of Measure"
 msgstr "新しい測定単位"
 
+msgid "New version"
+msgstr ""
+
 msgid "New Version"
 msgstr "新しいバージョン"
 
@@ -8589,6 +8638,9 @@ msgstr "新しいWebhook"
 
 msgid "New Work Center"
 msgstr "新しい作業センター"
+
+msgid "New Workflow"
+msgstr ""
 
 msgid "Newest first"
 msgstr "最新順"
@@ -8971,6 +9023,9 @@ msgstr "通常"
 msgid "Not a table but a general-ledger balance: cost accumulates as job materials are issued and clears when the job is received to stock."
 msgstr "テーブルではなく、総勘定元帳残高：ジョブ材料が発行されるにつれてコストが蓄積され、ジョブが在庫に受け取られるとクリアになります。"
 
+msgid "Not configured yet"
+msgstr ""
+
 msgid "Not enough jobs to cover quantity"
 msgstr "数量をカバーするのに十分なジョブがありません"
 
@@ -9219,6 +9274,12 @@ msgstr "セットアップマップを開く"
 
 msgid "Open transactions"
 msgstr "未処理トランザクション"
+
+msgid "Open workflow"
+msgstr ""
+
+msgid "Open Workflow"
+msgstr ""
 
 msgid "Opened"
 msgstr "開いている"
@@ -10144,6 +10205,14 @@ msgstr "公開"
 msgid "Publish"
 msgstr "公開"
 
+#. placeholder {0}: current.versionNumber
+msgid "Publish v{0}"
+msgstr ""
+
+#. placeholder {0}: current.versionNumber
+msgid "Publish v{0}?"
+msgstr ""
+
 msgid "Published by Carbon"
 msgstr "Carbonによって公開"
 
@@ -10778,6 +10847,9 @@ msgstr "ツールを削除"
 msgid "Removed"
 msgstr "削除済み"
 
+msgid "Rename Workflow"
+msgstr ""
+
 msgid "Rendering label preview..."
 msgstr "ラベルプレビューをレンダリング中..."
 
@@ -11313,8 +11385,14 @@ msgstr "メソッドを保存"
 msgid "Save View"
 msgstr "ビューを保存"
 
+msgid "Saved"
+msgstr ""
+
 msgid "Saving..."
 msgstr "保存中..."
+
+msgid "Saving…"
+msgstr ""
 
 msgid "Scan"
 msgstr "スキャン"
@@ -12639,6 +12717,9 @@ msgstr "タグ"
 msgid "Tailor this hub for the customer. Changes apply live for everyone viewing it. Never shown to the customer here."
 msgstr "このハブを顧客向けにカスタマイズします。変更はそれを表示している全員にリアルタイムで適用されます。顧客にはここに表示されません。"
 
+msgid "Take ownership"
+msgstr ""
+
 msgid "Take the shortest remaining shelf life across the materials consumed to make this item. Use when the product's expiry depends on its ingredients."
 msgstr "このアイテムを製造するために消費される材料全体で、最も短い残りの賞味期限を取得します。製品の有効期限がその成分に依存する場合に使用します。"
 
@@ -13599,6 +13680,15 @@ msgstr "このサプライヤー"
 msgid "This updates the theme for all users of the application"
 msgstr "これはアプリケーションのすべてのユーザーのテーマを更新します"
 
+msgid "This version cannot be opened"
+msgstr ""
+
+msgid "This version is live"
+msgstr ""
+
+msgid "This version is live. Create a new version to edit."
+msgstr ""
+
 msgid "This will make this version read-only and replace any material make methods with this version."
 msgstr "このバージョンは読み取り専用になり、すべての材料製造方法がこのバージョンに置き換わります。"
 
@@ -14407,6 +14497,10 @@ msgstr "メールアドレスを確認"
 msgid "Version"
 msgstr "バージョン"
 
+#. placeholder {0}: live.versionNumber
+msgid "Version {0} is live now and will be replaced."
+msgstr ""
+
 msgid "Version:"
 msgstr "バージョン:"
 
@@ -15128,6 +15222,12 @@ msgstr "勤務シフト追跡がアクティブです。"
 msgid "Workflow"
 msgstr "ワークフロー"
 
+msgid "Workflow created"
+msgstr ""
+
+msgid "Workflows"
+msgstr ""
+
 msgid "Working sessions on configuration and data"
 msgstr "設定とデータに関するワーキングセッション"
 
@@ -15198,6 +15298,9 @@ msgid ""
 "                        ordered quantity of {1}. What would you like\n"
 "                        to do with the extra parts?"
 msgstr "あなたは注文数量 {1} より {leftoverQuantity} 個多く {0} を完了しました。余った部品をどうしたいですか？"
+
+msgid "You do not have permission to edit workflows"
+msgstr ""
 
 msgid "You don't have permission to edit this bill of material."
 msgstr "この部品表を編集する権限がありません。"

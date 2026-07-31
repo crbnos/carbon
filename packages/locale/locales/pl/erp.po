@@ -73,6 +73,10 @@ msgstr "{0} linii do mapowania"
 msgid "{0} orders"
 msgstr "{0} zamówień"
 
+#. placeholder {0}: issues.length
+msgid "{0} problems — not published"
+msgstr ""
+
 #. placeholder {0}: selectedProcesses.length
 msgid "{0} Processes"
 msgstr "{0} Procesy"
@@ -169,6 +173,9 @@ msgstr "1 dzień"
 
 msgid "1 draft journal entry"
 msgstr "1 wpis dziennika w wersji roboczej"
+
+msgid "1 problem — not published"
+msgstr ""
 
 msgid "1 unposted document"
 msgstr "1 nieopublikowany dokument"
@@ -673,6 +680,9 @@ msgstr "Narzędzie to element fizyczny używany do wykonania części, którą m
 
 msgid "A user records the expiry date on each batch or serial when the goods are received. Use when suppliers ship lots with different expiry dates."
 msgstr "Użytkownik rejestruje datę wygaśnięcia dla każdej partii lub numeru seryjnego po otrzymaniu towaru. Używaj, gdy dostawcy wysyłają partie z różnymi datami wygaśnięcia."
+
+msgid "A workflow can only have one trigger"
+msgstr ""
 
 msgid "abilities"
 msgstr "możliwości"
@@ -1773,6 +1783,9 @@ msgstr "Czy na pewno chcesz usunąć tę sugestię? Tej czynności nie można co
 msgid "Are you sure you want to delete this timecard? This cannot be undone."
 msgstr "Czy na pewno chcesz usunąć tę kartę czasu pracy? Tej operacji nie można cofnąć."
 
+msgid "Are you sure you want to delete this workflow? Its versions and run history go with it."
+msgstr ""
+
 msgid "Are you sure you want to finalize the quote?"
 msgstr "Czy na pewno chcesz sfinalizować ofertę?"
 
@@ -2025,6 +2038,9 @@ msgstr "Automatycznie uruchom timer przy otwarciu"
 
 msgid "Auto-suggest purchases from demand and reorder points"
 msgstr "Automatycznie sugeruj zakupy na podstawie popytu i punktów ponownego zamówienia"
+
+msgid "Automate"
+msgstr ""
 
 msgid "Automate quality flags and notifications"
 msgstr "Automatyzuj flagi jakości i powiadomienia"
@@ -3119,6 +3135,9 @@ msgstr "Konwertuje jednostkę zakupu dostawcy na jednostkę zapasów w wierszu z
 msgid "Copied link to clipboard"
 msgstr "Skopiowano link do schowka"
 
+msgid "Copied webhook secret"
+msgstr ""
+
 msgid "Copy"
 msgstr "Kopiuj"
 
@@ -3254,6 +3273,9 @@ msgstr "Skopiuj ten link, aby udostępnić ofertę klientowi"
 msgid "Copy this link to share the quote with a supplier"
 msgstr "Skopiuj ten link, aby udostępnić ofertę dostawcy"
 
+msgid "Copy this webhook secret now — it is the only time it is shown. You need it to verify signed webhook calls this workflow sends."
+msgstr ""
+
 msgid "Copy tool number"
 msgstr "Skopiuj numer narzędzia"
 
@@ -3340,6 +3362,9 @@ msgstr "Nie można przygotować obrazu regionu do analizy"
 msgid "Could not read the document: {0}"
 msgstr "Nie można odczytać dokumentu: {0}"
 
+msgid "Could not save"
+msgstr ""
+
 msgid "Couldn't load documents"
 msgstr "Nie udało się załadować dokumentów"
 
@@ -3399,6 +3424,9 @@ msgstr "Utwórz nową dyspozycję konserwacji, aby śledzić naprawy sprzętu i 
 
 msgid "Create a new production job to fulfill the sales order"
 msgstr "Utwórz nowe zadanie produkcyjne, aby zrealizować zamówienie sprzedaży"
+
+msgid "Create a new version to make changes."
+msgstr ""
 
 msgid "Create a purchase order"
 msgstr ""
@@ -4387,6 +4415,9 @@ msgstr "Usuń typ dostawcy"
 msgid "Delete the price break for quantity {0}? This can't be undone."
 msgstr "Usunąć przerwę cenową dla ilości {0}? Tej operacji nie można cofnąć."
 
+msgid "Delete this version"
+msgstr ""
+
 msgid "Delete Timecard"
 msgstr "Usuń kartę czasu pracy"
 
@@ -4416,6 +4447,9 @@ msgstr "Usuń transfer magazynowy"
 
 msgid "Delete Webhook"
 msgstr "Usuń Webhook"
+
+msgid "Delete Workflow"
+msgstr ""
 
 msgid "Delivery Date"
 msgstr "Data dostawy"
@@ -5169,6 +5203,9 @@ msgstr "Edytuj Webhook"
 
 msgid "Edit Work Center"
 msgstr "Edytuj Centrum Pracy"
+
+msgid "editing"
+msgstr ""
 
 msgid "Eliminated"
 msgstr "Wyeliminowane"
@@ -7563,11 +7600,20 @@ msgstr "Opcje listy"
 msgid "List Parameters"
 msgstr "Parametry listy"
 
+msgid "live"
+msgstr ""
+
+msgid "Live"
+msgstr ""
+
 msgid "Live on Carbon"
 msgstr "Na żywo w Carbon"
 
 msgid "Live reloading"
 msgstr "Odświeżanie na żywo"
+
+msgid "Live Version"
+msgstr ""
 
 msgid "Load newer"
 msgstr "Załaduj nowsze"
@@ -8578,6 +8624,9 @@ msgstr "Nowa linia transferu"
 msgid "New Unit of Measure"
 msgstr "Nowa jednostka miary"
 
+msgid "New version"
+msgstr ""
+
 msgid "New Version"
 msgstr "Nowa wersja"
 
@@ -8589,6 +8638,9 @@ msgstr "Nowy Webhook"
 
 msgid "New Work Center"
 msgstr "Nowe Centrum Pracy"
+
+msgid "New Workflow"
+msgstr ""
 
 msgid "Newest first"
 msgstr "Najnowsze najpierw"
@@ -8971,6 +9023,9 @@ msgstr "Normalny"
 msgid "Not a table but a general-ledger balance: cost accumulates as job materials are issued and clears when the job is received to stock."
 msgstr "Nie tabela, ale saldo księgi głównej: koszt gromadzi się w miarę wystawiania materiałów zadania i jest czyszczony po otrzymaniu zadania na magazyn."
 
+msgid "Not configured yet"
+msgstr ""
+
 msgid "Not enough jobs to cover quantity"
 msgstr "Niewystarczająca liczba zadań do pokrycia ilości"
 
@@ -9219,6 +9274,12 @@ msgstr "Otwórz mapę konfiguracji"
 
 msgid "Open transactions"
 msgstr "Otwarte transakcje"
+
+msgid "Open workflow"
+msgstr ""
+
+msgid "Open Workflow"
+msgstr ""
 
 msgid "Opened"
 msgstr "Otwarty"
@@ -10144,6 +10205,14 @@ msgstr "Publiczny"
 msgid "Publish"
 msgstr "Opublikuj"
 
+#. placeholder {0}: current.versionNumber
+msgid "Publish v{0}"
+msgstr ""
+
+#. placeholder {0}: current.versionNumber
+msgid "Publish v{0}?"
+msgstr ""
+
 msgid "Published by Carbon"
 msgstr "Opublikowano przez Carbon"
 
@@ -10778,6 +10847,9 @@ msgstr "Usuń narzędzie"
 msgid "Removed"
 msgstr "Usunięte"
 
+msgid "Rename Workflow"
+msgstr ""
+
 msgid "Rendering label preview..."
 msgstr "Renderowanie podglądu etykiety..."
 
@@ -11313,8 +11385,14 @@ msgstr "Zapisz metodę"
 msgid "Save View"
 msgstr "Zapisz Widok"
 
+msgid "Saved"
+msgstr ""
+
 msgid "Saving..."
 msgstr "Zapisywanie..."
+
+msgid "Saving…"
+msgstr ""
 
 msgid "Scan"
 msgstr "Skanuj"
@@ -12639,6 +12717,9 @@ msgstr "Tagi"
 msgid "Tailor this hub for the customer. Changes apply live for everyone viewing it. Never shown to the customer here."
 msgstr "Dostosuj ten hub dla klienta. Zmiany są stosowane na żywo dla wszystkich go przeglądających. Nigdy nie jest pokazywane klientowi tutaj."
 
+msgid "Take ownership"
+msgstr ""
+
 msgid "Take the shortest remaining shelf life across the materials consumed to make this item. Use when the product's expiry depends on its ingredients."
 msgstr "Weź najkrótszy pozostały okres przydatności spośród materiałów zużytych do produkcji tego artykułu. Użyj, gdy okres przydatności produktu zależy od jego składników."
 
@@ -13599,6 +13680,15 @@ msgstr "ten dostawca"
 msgid "This updates the theme for all users of the application"
 msgstr "To aktualizuje motyw dla wszystkich użytkowników aplikacji"
 
+msgid "This version cannot be opened"
+msgstr ""
+
+msgid "This version is live"
+msgstr ""
+
+msgid "This version is live. Create a new version to edit."
+msgstr ""
+
 msgid "This will make this version read-only and replace any material make methods with this version."
 msgstr "To spowoduje, że ta wersja będzie tylko do odczytu i zastąpi wszystkie metody produkcji materiałów tą wersją."
 
@@ -14407,6 +14497,10 @@ msgstr "Zweryfikuj swój email"
 msgid "Version"
 msgstr "Wersja"
 
+#. placeholder {0}: live.versionNumber
+msgid "Version {0} is live now and will be replaced."
+msgstr ""
+
 msgid "Version:"
 msgstr "Wersja:"
 
@@ -15128,6 +15222,12 @@ msgstr "Śledzenie zmian pracy jest aktywne."
 msgid "Workflow"
 msgstr "Przepływ pracy"
 
+msgid "Workflow created"
+msgstr ""
+
+msgid "Workflows"
+msgstr ""
+
 msgid "Working sessions on configuration and data"
 msgstr "Sesje robocze dotyczące konfiguracji i danych"
 
@@ -15198,6 +15298,9 @@ msgid ""
 "                        ordered quantity of {1}. What would you like\n"
 "                        to do with the extra parts?"
 msgstr "Ukończyłeś {leftoverQuantity} więcej {0} niż zamówiona ilość {1}. Co chciałbyś zrobić z dodatkowymi częściami?"
+
+msgid "You do not have permission to edit workflows"
+msgstr ""
 
 msgid "You don't have permission to edit this bill of material."
 msgstr "Nie masz uprawnień do edytowania tej listy materiałów."
