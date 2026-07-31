@@ -996,10 +996,15 @@ describe("classifyLease — ASC 842-10-25-2", () => {
   });
 
   it("honors overridden thresholds", () => {
-    // With a 60% major-part threshold, a 36/120 = 30% term still fails
-    expect(
-      classifyLease({ ...base, majorPartThresholdPercent: 60 }).classification
-    ).toBe("Operating");
+    // 36/120 = 30% term: Operating by default, Finance once the major-part
+    // bright line drops below 30% — so the override alone flips the result.
+    expect(classifyLease(base).classification).toBe("Operating");
+    const overridden = classifyLease({
+      ...base,
+      majorPartThresholdPercent: 25
+    });
+    expect(overridden.tests.majorPartOfLife).toBe(true);
+    expect(overridden.classification).toBe("Finance");
   });
 });
 
@@ -1044,5 +1049,28 @@ describe("expandPaymentTerms", () => {
     expect(cashflows[12].paymentAmount).toBeCloseTo(10300, 2);
     // month 25 (third year) compounds again
     expect(cashflows[24].paymentAmount).toBeCloseTo(10609, 2);
+  });
+
+  it("escalates on the anniversary month for a mid-month term start", () => {
+    // Term starts 2026-06-15; period cashflows are dated to month-end, so the
+    // first escalation must land on the June 2027 period (the anniversary
+    // month) and not on the preceding May 2027 period.
+    const cashflows = expandPaymentTerms({
+      terms: [
+        {
+          startDate: "2026-06-15",
+          endDate: "2029-12-31",
+          amountPerPeriod: 1000,
+          annualEscalationPercent: 10
+        }
+      ],
+      commencementDate: "2026-06-15",
+      numberOfPeriods: 24,
+      frequency: "Monthly"
+    });
+    // May 2027 period — still within year one, unescalated
+    expect(cashflows[11].paymentAmount).toBeCloseTo(1000, 2);
+    // June 2027 period — the anniversary month, first escalation applies
+    expect(cashflows[12].paymentAmount).toBeCloseTo(1100, 2);
   });
 });
