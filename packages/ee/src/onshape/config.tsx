@@ -43,8 +43,20 @@ export const Onshape = defineIntegration({
       description:
         "Pull released Onshape assets onto all matching Carbon items now (link-only). Requires asset sync enabled.",
       endpoint: "/api/integrations/onshape/backfill",
+      // The sync dashboard is where a started backfill becomes watchable, so go
+      // there once it has started rather than leaving the drawer open.
+      redirectTo: "/x/settings/integrations/onshape/sync",
       // Only shown once asset sync is enabled (the backfill route is gated on it
       // too, so hide the button rather than show one that errors).
+      enabledWhenSetting: "assetSyncEnabled"
+    },
+    {
+      id: "sync-dashboard",
+      kind: "link",
+      label: "View sync dashboard",
+      description:
+        "Sync progress, per-part status, run history and release exceptions.",
+      href: "/x/settings/integrations/onshape/sync",
       enabledWhenSetting: "assetSyncEnabled"
     }
   ],

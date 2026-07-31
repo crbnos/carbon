@@ -8163,6 +8163,75 @@ export async function getOnshapeSyncItemStates(
   };
 }
 
+/**
+ * How much of the catalog actually carries CAD, from two angles: what the sync
+ * has landed of what it tried, and how many parts hold a model at all (which
+ * includes hand-uploaded ones). Count-only queries — no rows are transferred.
+ */
+export async function getOnshapeSyncCoverage(
+  client: SupabaseClient<Database>,
+  companyId: string
+) {
+  const countSyncStateRows = (assetKind: string, status?: string) => {
+    let query = client
+      .from("onshapeItemSyncState")
+      .select("id", { count: "exact", head: true })
+      .eq("companyId", companyId)
+      .eq("assetKind", assetKind);
+    if (status) query = query.eq("status", status);
+    return query;
+  };
+
+  const [
+    modelsSynced,
+    modelsTracked,
+    drawingsSynced,
+    drawingsTracked,
+    partsWithModel,
+    partsTotal
+  ] = await Promise.all([
+    countSyncStateRows("model", "synced"),
+    countSyncStateRows("model"),
+    countSyncStateRows("drawing", "synced"),
+    countSyncStateRows("drawing"),
+    client
+      .from("item")
+      .select("id", { count: "exact", head: true })
+      .eq("companyId", companyId)
+      .eq("type", "Part")
+      .not("modelUploadId", "is", null),
+    client
+      .from("item")
+      .select("id", { count: "exact", head: true })
+      .eq("companyId", companyId)
+      .eq("type", "Part")
+  ]);
+
+  const firstError =
+    modelsSynced.error ??
+    modelsTracked.error ??
+    drawingsSynced.error ??
+    drawingsTracked.error ??
+    partsWithModel.error ??
+    partsTotal.error;
+
+  if (firstError) {
+    return { data: null, error: firstError };
+  }
+
+  return {
+    data: {
+      modelsSynced: modelsSynced.count ?? 0,
+      modelsTracked: modelsTracked.count ?? 0,
+      drawingsSynced: drawingsSynced.count ?? 0,
+      drawingsTracked: drawingsTracked.count ?? 0,
+      partsWithModel: partsWithModel.count ?? 0,
+      partsTotal: partsTotal.count ?? 0
+    },
+    error: null
+  };
+}
+
 export async function getOnshapeEngineeringData(
   client: SupabaseClient<Database>,
   companyId: string,

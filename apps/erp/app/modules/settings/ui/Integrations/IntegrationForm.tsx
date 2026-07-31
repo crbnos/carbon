@@ -1,5 +1,7 @@
 import type {
   IntegrationAction,
+  IntegrationLinkAction,
+  IntegrationRunAction,
   IntegrationSetting,
   IntegrationSettingGroup,
   IntegrationSettingOption
@@ -40,19 +42,40 @@ import { SUPPORT_EMAIL } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useParams } from "react-router";
+import { Link, useNavigate, useParams } from "react-router";
 import { Processes } from "~/components/Form";
 import { MethodIcon, TrackingTypeIcon } from "~/components/Icons";
 import { usePermissions, useUser } from "~/hooks";
 import { path } from "~/utils/path";
 
-function IntegrationActionButton({
+// The shared row chrome for every action: what it does on the left, its control
+// on the right.
+function IntegrationActionRow({
+  action,
+  children
+}: {
+  action: IntegrationAction;
+  children: ReactNode;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-4 p-3 border rounded-lg w-full">
+      <div className="flex flex-col flex-1 min-w-0">
+        <p className="text-sm font-medium">{action.label}</p>
+        <p className="text-xs text-muted-foreground">{action.description}</p>
+      </div>
+      <div className="shrink-0">{children}</div>
+    </div>
+  );
+}
+
+function IntegrationRunActionButton({
   action,
   isDisabled
 }: {
-  action: IntegrationAction;
+  action: IntegrationRunAction;
   isDisabled: boolean;
 }) {
+  const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   const [status, setStatus] = useState<"idle" | "running" | "completed">(
     "idle"
@@ -77,6 +100,7 @@ function IntegrationActionButton({
       if (data?.success) {
         toast.success(`${action.label} started`);
         setStatus("completed");
+        if (action.redirectTo) navigate(action.redirectTo);
       } else {
         setStatus("idle");
         toast.error(data?.error || `Failed to start ${action.label}`);
@@ -87,26 +111,52 @@ function IntegrationActionButton({
     } finally {
       setIsLoading(false);
     }
-  }, [action]);
+  }, [action, navigate]);
 
   return (
-    <div className="flex items-center justify-between gap-4 p-3 border rounded-lg w-full">
-      <div className="flex flex-col flex-1 min-w-0">
-        <p className="text-sm font-medium">{action.label}</p>
-        <p className="text-xs text-muted-foreground">{action.description}</p>
-      </div>
-      <div className="shrink-0">
-        <Button
-          variant="secondary"
-          size="sm"
-          onClick={handleClick}
-          isLoading={isLoading}
-          isDisabled={isDisabled || status === "running"}
-        >
-          {status === "completed" ? "Started" : "Run"}
-        </Button>
-      </div>
-    </div>
+    <IntegrationActionRow action={action}>
+      <Button
+        variant="secondary"
+        size="sm"
+        onClick={handleClick}
+        isLoading={isLoading}
+        isDisabled={isDisabled || status === "running"}
+      >
+        {status === "completed" ? "Started" : "Run"}
+      </Button>
+    </IntegrationActionRow>
+  );
+}
+
+function IntegrationLinkActionButton({
+  action
+}: {
+  action: IntegrationLinkAction;
+}) {
+  return (
+    <IntegrationActionRow action={action}>
+      <Button variant="secondary" size="sm" asChild>
+        <Link to={action.href}>
+          <Trans>Open</Trans>
+        </Link>
+      </Button>
+    </IntegrationActionRow>
+  );
+}
+
+// A link needs no permission to follow — the destination gates itself — so only
+// the run variant takes `isDisabled`.
+function IntegrationActionButton({
+  action,
+  isDisabled
+}: {
+  action: IntegrationAction;
+  isDisabled: boolean;
+}) {
+  return action.kind === "link" ? (
+    <IntegrationLinkActionButton action={action} />
+  ) : (
+    <IntegrationRunActionButton action={action} isDisabled={isDisabled} />
   );
 }
 

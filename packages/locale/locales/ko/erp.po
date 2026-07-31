@@ -81,6 +81,11 @@ msgstr "{0}이(가) 삭제되었습니다"
 msgid "{0} draft journal entries"
 msgstr "{0}건의 임시 분개"
 
+#. placeholder {0}: row.original.failed
+#. placeholder {0}: run.failed
+msgid "{0} failed"
+msgstr ""
+
 #. placeholder {0}: jobs.length
 msgid "{0} jobs created"
 msgstr "{0}개 작업이 생성됨"
@@ -152,6 +157,9 @@ msgstr "매입채무의 {apOverduePct}%"
 
 msgid "{arOverduePct}% of receivables"
 msgstr "매출채권의 {arOverduePct}%"
+
+msgid "{catalogPercent}% of parts have a model"
+msgstr ""
 
 msgid "{chainLabel}. Consider pointing this part directly at the final successor."
 msgstr "{chainLabel}. 이 품목을 최종 후속 품목으로 직접 연결하는 것을 고려하세요."
@@ -793,6 +801,9 @@ msgstr "공급업체의 세율이 변경됨"
 msgid "A supplier's type changes"
 msgstr "공급업체의 유형이 변경됨"
 
+msgid "A sync is already running — cancel it before starting another"
+msgstr ""
+
 msgid "A taxable surcharge (handling, setup, fuel) added to the line; rolls into the tax base."
 msgstr "라인에 추가되는 과세 대상 추가요금(취급료, 셋업비, 유류비 등)으로, 과세표준에 포함됩니다."
 
@@ -1396,6 +1407,9 @@ msgstr "확인 후 계속 진행 허용"
 msgid "Alpha"
 msgstr "알파"
 
+msgid "Already synced"
+msgstr ""
+
 msgid "Always"
 msgstr "항상"
 
@@ -1539,11 +1553,17 @@ msgstr "그리고"
 msgid "And {0} more — resolve these to see the rest."
 msgstr "그리고 {0}건 더 — 이를 해결하면 나머지를 볼 수 있습니다."
 
+msgid "and {ambiguousOverflow} more matching more than one part"
+msgstr ""
+
 msgid "and {hidden} more"
 msgstr "및 {hidden}개 더"
 
 msgid "and {remaining} more"
 msgstr "외 {remaining}개"
+
+msgid "and {unmatchedOverflow} more with no matching part"
+msgstr ""
 
 msgid "Annotation added"
 msgstr "주석이 추가됨"
@@ -2793,11 +2813,23 @@ msgstr "판매주문 + 선택한 {0}개 취소"
 msgid "Cancel SO only"
 msgstr "판매주문만 취소"
 
+msgid "Cancel sync"
+msgstr ""
+
+msgid "Cancel this sync? Items already synced are kept. This action is recorded."
+msgstr ""
+
 msgid "Canceled"
 msgstr "취소됨"
 
 msgid "Cancelled"
 msgstr "취소됨"
+
+msgid "Cancelled by"
+msgstr ""
+
+msgid "Cancelled by {cancelledByName}"
+msgstr ""
 
 msgid "Cannot add parameters to unsaved operation"
 msgstr "저장되지 않은 공정작업에는 파라미터를 추가할 수 없습니다"
@@ -5400,6 +5432,9 @@ msgstr "도면 번호"
 msgid "Drawing replaced. Balloon placements were removed; feature rows are unchanged."
 msgstr "도면이 교체되었습니다. 벌룬 배치는 제거되었으며, 피처 행은 변경되지 않습니다."
 
+msgid "Drawings {drawingsSynced}/{drawingsTracked}"
+msgstr ""
+
 msgid "Drop Shipment"
 msgstr "직송 출하"
 
@@ -6207,6 +6242,9 @@ msgstr "설정한 시스템에서 귀사의 데이터로 범위 내 모든 테�
 msgid "Every match"
 msgstr "모든 일치"
 
+msgid "Every released revision in the latest sync matched exactly one part"
+msgstr ""
+
 msgid "Every required task must be Done or Skipped before the period can be closed."
 msgstr "기간을 종료하기 전에 모든 필수 작업을 완료하거나 건너뛰어야 합니다."
 
@@ -6434,6 +6472,10 @@ msgid "Fail"
 msgstr "실패"
 
 msgid "Failed"
+msgstr ""
+
+#. placeholder {0}: run.failed
+msgid "Failed {0}"
 msgstr ""
 
 msgid "Failed features"
@@ -6834,6 +6876,9 @@ msgstr "파일 크기가 10MB 제한을 초과했습니다"
 msgid "File size too big (max. {0})"
 msgstr "파일 크기가 너무 큽니다(최대 {0})"
 
+msgid "File too large"
+msgstr ""
+
 msgid "File too large to sync"
 msgstr ""
 
@@ -6881,6 +6926,9 @@ msgstr "종료 시점"
 
 msgid "Finish with material unpicked?"
 msgstr "자재가 선택되지 않은 상태로 완료하시겠습니까?"
+
+msgid "Finished"
+msgstr ""
 
 msgid "Finished goods"
 msgstr "완제품"
@@ -8325,6 +8373,9 @@ msgstr "열린 상태 유지"
 msgid "Keep picking"
 msgstr "계속 선택"
 
+msgid "Keep syncing"
+msgstr ""
+
 msgid "Keeps orders, quotes, and settings behind a second check"
 msgstr "주문, 견적 및 설정을 이중 확인으로 보호합니다"
 
@@ -8430,6 +8481,9 @@ msgstr "지난 분기"
 
 msgid "Last Run"
 msgstr "마지막 실행"
+
+msgid "Last synced"
+msgstr ""
 
 msgid "Last synced: <0/>"
 msgstr "마지막 동기화: <0/>"
@@ -8611,6 +8665,12 @@ msgstr "Carbon 도입 완료"
 
 msgid "Live reloading"
 msgstr "실시간 새로고침"
+
+msgid "Live updates paused — retrying"
+msgstr ""
+
+msgid "Live Version"
+msgstr "실시간 버전"
 
 msgid "Load newer"
 msgstr "최신 항목 불러오기"
@@ -9268,6 +9328,12 @@ msgstr "라인에서 모델이 제거됨"
 msgid "Model upload"
 msgstr "모델 업로드"
 
+msgid "Models {modelsSynced}/{modelsTracked}"
+msgstr ""
+
+msgid "Models and drawings synced, out of the parts this sync has tried. {partsWithModel} of {partsTotal} parts in the catalog carry a CAD model, including any uploaded by hand."
+msgstr ""
+
 msgid "Modified"
 msgstr "수정됨"
 
@@ -9820,6 +9886,9 @@ msgstr "BOM 투입 항목 중 유효기간 정책이 설정된 항목이 없습�
 msgid "No CAD model to preview."
 msgstr "미리 볼 수 있는 CAD 모델이 없습니다."
 
+msgid "No CAD synced yet"
+msgstr ""
+
 msgid "No calibration records found"
 msgstr "교정 기록이 없습니다"
 
@@ -9940,6 +10009,9 @@ msgstr "품목 없음"
 msgid "No items have inventory activity here yet."
 msgstr "아직 여기에 재고 활동이 있는 항목이 없습니다."
 
+msgid "No items match these filters"
+msgstr ""
+
 msgid "No jobs were created"
 msgstr "생성된 작업이 없음"
 
@@ -9972,6 +10044,9 @@ msgstr "일치하는 항목 없음. 입력하여 새로 만드세요."
 
 msgid "No matching bins"
 msgstr "일치하는 빈이 없습니다"
+
+msgid "No matching part"
+msgstr ""
 
 msgid "No new notifications"
 msgstr "새 알림이 없습니다"
@@ -10129,6 +10204,12 @@ msgstr "아직 공급업체가 없습니다"
 msgid "No sync operations yet"
 msgstr "아직 동기화 작업 없음"
 
+msgid "No synced items yet — run a sync to populate this table"
+msgstr ""
+
+msgid "No syncs have run yet"
+msgstr ""
+
 msgid "No time entries for this week"
 msgstr "이번 주 시간 기록이 없습니다"
 
@@ -10209,6 +10290,9 @@ msgstr "없음"
 
 msgid "Normal"
 msgstr "일반"
+
+msgid "Not a model"
+msgstr ""
 
 msgid "Not a table but a general-ledger balance: cost accumulates as job materials are issued and clears when the job is received to stock."
 msgstr "테이블이 아니라 총계정원장 잔액입니다. 작업 자재가 투입되면서 원가가 누적되고, 작업이 재고로 입고되면 정산됩니다."
@@ -10447,6 +10531,12 @@ msgstr "Onshape가 인증을 거부했습니다"
 
 msgid "Onshape Status"
 msgstr "Onshape 상태"
+
+msgid "Onshape sync"
+msgstr ""
+
+msgid "Onshape Sync"
+msgstr ""
 
 msgid "Oops! The link you're trying to access has expired or is no longer valid."
 msgstr "이런! 접근하려는 링크가 만료되었거나 더 이상 유효하지 않습니다."
@@ -10896,6 +10986,9 @@ msgstr "품목 ID"
 
 msgid "Part is configured for manufacturing"
 msgstr "제조용으로 설정된 품목입니다"
+
+msgid "Part number"
+msgstr ""
 
 msgid "Part Number"
 msgstr "부품 번호"
@@ -11673,6 +11766,9 @@ msgstr ""
 msgid "Pull, map, and load your data"
 msgstr "데이터를 가져와서 매핑하고 로드하세요"
 
+msgid "Pulling the latest released CAD from Onshape"
+msgstr ""
+
 msgid "Purchase & manufacture from MRP"
 msgstr "MRP 기반 구매 및 제조"
 
@@ -12297,8 +12393,14 @@ msgstr "릴리스 제어"
 msgid "Release Control"
 msgstr "릴리스 제어"
 
+msgid "Release exceptions"
+msgstr ""
+
 msgid "Release Job"
 msgstr "작업 릴리즈"
+
+msgid "Release state"
+msgstr ""
 
 msgid "Released"
 msgstr "릴리즈됨"
@@ -12897,7 +12999,7 @@ msgid "Running…"
 msgstr "실행 중…"
 
 msgid "Runs"
-msgstr "실행"
+msgstr ""
 
 msgid "S-1 (coarsest special)"
 msgstr "S-1(가장 완화된 특별수준)"
@@ -13112,6 +13214,13 @@ msgstr "인증 앱(예: Google Authenticator 또는 1Password)으로 이 QR 코�
 
 msgid "Scan this with your authenticator app, then enter the 6-digit code it shows."
 msgstr "인증자 앱으로 이것을 스캔한 후 표시된 6자리 코드를 입력하세요."
+
+msgid "Scanned"
+msgstr ""
+
+#. placeholder {0}: run.revisionsScanned
+msgid "Scanned {0}"
+msgstr ""
 
 msgid "SCAR"
 msgstr "SCAR"
@@ -13890,6 +13999,10 @@ msgstr "공급업체 ID 표시"
 msgid "Show sync options"
 msgstr "동기화 옵션 표시"
 
+#. placeholder {0}: run.failed
+msgid "Show the {0} parts that failed"
+msgstr ""
+
 msgid "Show Trailing Zeros"
 msgstr "후행 0 표시"
 
@@ -13992,6 +14105,10 @@ msgstr "릴리즈되었지만 시작되지 않은 상태를 건너뜁니다 — 
 
 msgid "Skipped"
 msgstr "건너뜀"
+
+#. placeholder {0}: countSkipped(run)
+msgid "Skipped {0}"
+msgstr ""
 
 msgid "Slack"
 msgstr "Slack"
@@ -14150,6 +14267,9 @@ msgstr "시작"
 msgid "Start {0} Day Free Trial"
 msgstr "{0}일 무료 체험 시작"
 
+msgid "Start a sync to pull released Onshape models and drawings onto matching parts."
+msgstr ""
+
 msgid "Start counting"
 msgstr "실사 시작"
 
@@ -14171,6 +14291,12 @@ msgstr "공정 시작 시 유효기한 시작"
 msgid "Start Here"
 msgstr "여기서 시작하기"
 
+msgid "Start Learning"
+msgstr "학습 시작"
+
+msgid "Start new sync"
+msgstr ""
+
 msgid "Start Now"
 msgstr "지금 시작"
 
@@ -14179,6 +14305,9 @@ msgstr "회계연도 시작"
 
 msgid "Start of Tax Year"
 msgstr "세무연도 시작"
+
+msgid "Start sync"
+msgstr ""
 
 msgid "Start Time"
 msgstr "시작 시간"
@@ -14191,6 +14320,8 @@ msgstr "시작됨"
 
 msgid "Starting…"
 msgstr "시작 중…"
+msgid "Started by"
+msgstr ""
 
 msgid "State / Province"
 msgstr "주/도"
@@ -14644,6 +14775,9 @@ msgstr "동기화"
 msgid "Sync Activity"
 msgstr "동기화 활동"
 
+msgid "Sync again"
+msgstr ""
+
 msgid "Sync details"
 msgstr ""
 
@@ -14653,10 +14787,20 @@ msgstr ""
 msgid "Sync operation"
 msgstr "동기화 작업"
 
+msgid "Sync started"
+msgstr ""
+
 msgid "Sync Tie-Out"
 msgstr "동기화 일치"
 
 msgid "Synced"
+msgstr ""
+
+#. placeholder {0}: run.synced
+msgid "Synced {0}"
+msgstr ""
+
+msgid "Synced by"
 msgstr ""
 
 msgid "Synced by {actorName}"
@@ -17612,6 +17756,9 @@ msgstr "주문 수량 {1}보다 {leftoverQuantity}개 더 많은 {0}을(를) 완
 
 msgid "You do not have permission to edit workflows"
 msgstr "워크플로우를 편집할 권한이 없습니다."
+
+msgid "You do not have permission to start a sync"
+msgstr ""
 
 msgid "You don't have permission to edit this bill of material."
 msgstr "이 자재명세서를 수정할 권한이 없습니다."

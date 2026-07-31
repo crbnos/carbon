@@ -1,6 +1,6 @@
 {
-  "generated": "2026-08-27T09:57:44.687Z",
-  "totalTools": 1452,
+  "generated": "2026-08-27T09:58:00.034Z",
+  "totalTools": 1453,
   "modules": 15,
   "tools": [
     {
@@ -17361,6 +17361,24 @@
             }
           }
         }
+      }
+    },
+    {
+      "name": "items_getOnshapeSyncCoverage",
+      "module": "items",
+      "classification": "READ",
+      "description": "get onshape sync coverage",
+      "paramCount": 0,
+      "serviceParams": [
+        "client",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {}
       }
     },
     {

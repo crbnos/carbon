@@ -81,6 +81,11 @@ msgstr "{0} सफलतापूर्वक हटाया गया"
 msgid "{0} draft journal entries"
 msgstr "{0} ड्राफ्ट जर्नल प्रविष्टियाँ"
 
+#. placeholder {0}: row.original.failed
+#. placeholder {0}: run.failed
+msgid "{0} failed"
+msgstr ""
+
 #. placeholder {0}: jobs.length
 msgid "{0} jobs created"
 msgstr "{0} नौकरियाँ बनाई गई"
@@ -152,6 +157,9 @@ msgstr "{apOverduePct}% देय राशि का"
 
 msgid "{arOverduePct}% of receivables"
 msgstr "{arOverduePct}% प्राप्य"
+
+msgid "{catalogPercent}% of parts have a model"
+msgstr ""
 
 msgid "{chainLabel}. Consider pointing this part directly at the final successor."
 msgstr "{chainLabel}. इस भाग को सीधे अंतिम उत्तराधिकारी की ओर इंगित करने पर विचार करें।"
@@ -793,6 +801,9 @@ msgstr "एक आपूर्तिकर्ता के कर प्रत�
 msgid "A supplier's type changes"
 msgstr "एक आपूर्तिकर्ता के प्रकार में परिवर्तन"
 
+msgid "A sync is already running — cancel it before starting another"
+msgstr ""
+
 msgid "A taxable surcharge (handling, setup, fuel) added to the line; rolls into the tax base."
 msgstr "एक कर योग्य अधिभार (हैंडलिंग, सेटअप, ईंधन) जो पंक्ति में जोड़ा जाता है और कर आधार में शामिल किया जाता है।"
 
@@ -1396,6 +1407,9 @@ msgstr "स्वीकार करने और जारी रखने क�
 msgid "Alpha"
 msgstr "अल्फा"
 
+msgid "Already synced"
+msgstr ""
+
 msgid "Always"
 msgstr "हमेशा"
 
@@ -1539,11 +1553,17 @@ msgstr "और"
 msgid "And {0} more — resolve these to see the rest."
 msgstr "और {0} अधिक — बाकी देखने के लिए इन्हें हल करें।"
 
+msgid "and {ambiguousOverflow} more matching more than one part"
+msgstr ""
+
 msgid "and {hidden} more"
 msgstr "और {hidden} अधिक"
 
 msgid "and {remaining} more"
 msgstr "और {remaining} अधिक"
+
+msgid "and {unmatchedOverflow} more with no matching part"
+msgstr ""
 
 msgid "Annotation added"
 msgstr "एनोटेशन जोड़ा गया"
@@ -2793,11 +2813,23 @@ msgstr "SO रद्द करें + {0} चयनित"
 msgid "Cancel SO only"
 msgstr "केवल SO रद्द करें"
 
+msgid "Cancel sync"
+msgstr ""
+
+msgid "Cancel this sync? Items already synced are kept. This action is recorded."
+msgstr ""
+
 msgid "Canceled"
 msgstr "रद्द किया गया"
 
 msgid "Cancelled"
 msgstr "रद्द किया गया"
+
+msgid "Cancelled by"
+msgstr ""
+
+msgid "Cancelled by {cancelledByName}"
+msgstr ""
 
 msgid "Cannot add parameters to unsaved operation"
 msgstr "असहेजे ऑपरेशन में पैरामीटर नहीं जोड़ सकते"
@@ -5400,6 +5432,9 @@ msgstr "ड्राइंग नंबर"
 msgid "Drawing replaced. Balloon placements were removed; feature rows are unchanged."
 msgstr "ड्राइंग बदल दी गई। बैलून प्लेसमेंट हटा दिए गए; फीचर पंक्तियां अपरिवर्तित हैं।"
 
+msgid "Drawings {drawingsSynced}/{drawingsTracked}"
+msgstr ""
+
 msgid "Drop Shipment"
 msgstr "ड्रॉप शिपमेंट"
 
@@ -6207,6 +6242,9 @@ msgstr "आपकी कॉन्फ़िगर की गई सिस्ट�
 msgid "Every match"
 msgstr "हर मेल"
 
+msgid "Every released revision in the latest sync matched exactly one part"
+msgstr ""
+
 msgid "Every required task must be Done or Skipped before the period can be closed."
 msgstr "अवधि बंद करने से पहले प्रत्येक आवश्यक कार्य को पूर्ण या छोड़ा जाना चाहिए।"
 
@@ -6434,6 +6472,10 @@ msgid "Fail"
 msgstr "विफल"
 
 msgid "Failed"
+msgstr ""
+
+#. placeholder {0}: run.failed
+msgid "Failed {0}"
 msgstr ""
 
 msgid "Failed features"
@@ -6834,6 +6876,9 @@ msgstr "फ़ाइल का आकार 10MB की सीमा से अ�
 msgid "File size too big (max. {0})"
 msgstr "फ़ाइल का आकार बहुत बड़ा है (अधिकतम {0})"
 
+msgid "File too large"
+msgstr ""
+
 msgid "File too large to sync"
 msgstr ""
 
@@ -6881,6 +6926,9 @@ msgstr "समाप्त करने के लिए"
 
 msgid "Finish with material unpicked?"
 msgstr "सामग्री अनचुनी के साथ समाप्त करें?"
+
+msgid "Finished"
+msgstr ""
 
 msgid "Finished goods"
 msgstr "फिनिशें"
@@ -8325,6 +8373,9 @@ msgstr "खुला रखें"
 msgid "Keep picking"
 msgstr "चुनते रहें"
 
+msgid "Keep syncing"
+msgstr ""
+
 msgid "Keeps orders, quotes, and settings behind a second check"
 msgstr "ऑर्डर, कोट्स और सेटिंग्स को एक दूसरी जांच के पीछे रखता है"
 
@@ -8430,6 +8481,9 @@ msgstr "पिछली तिमाही"
 
 msgid "Last Run"
 msgstr "अंतिम रन"
+
+msgid "Last synced"
+msgstr ""
 
 msgid "Last synced: <0/>"
 msgstr "अंतिम सिंक: <0/>"
@@ -8611,6 +8665,12 @@ msgstr "Carbon पर लाइव"
 
 msgid "Live reloading"
 msgstr "लाइव रीलोडिंग"
+
+msgid "Live updates paused — retrying"
+msgstr ""
+
+msgid "Live Version"
+msgstr "लाइव संस्करण"
 
 msgid "Load newer"
 msgstr "नया लोड करें"
@@ -9268,6 +9328,12 @@ msgstr "मॉडल लाइन से हटाया गया"
 msgid "Model upload"
 msgstr "मॉडल अपलोड"
 
+msgid "Models {modelsSynced}/{modelsTracked}"
+msgstr ""
+
+msgid "Models and drawings synced, out of the parts this sync has tried. {partsWithModel} of {partsTotal} parts in the catalog carry a CAD model, including any uploaded by hand."
+msgstr ""
+
 msgid "Modified"
 msgstr "संशोधित"
 
@@ -9820,6 +9886,9 @@ msgstr "कोई BOM इनपुट शेल्फ-लाइफ नीति 
 msgid "No CAD model to preview."
 msgstr "पूर्वावलोकन के लिए कोई CAD मॉडल नहीं है।"
 
+msgid "No CAD synced yet"
+msgstr ""
+
 msgid "No calibration records found"
 msgstr "कोई अंशांकन रिकॉर्ड नहीं मिला"
 
@@ -9940,6 +10009,9 @@ msgstr "कोई आइटम नहीं"
 msgid "No items have inventory activity here yet."
 msgstr "अभी तक यहाँ कोई आइटम इन्वेंटरी गतिविधि नहीं है।"
 
+msgid "No items match these filters"
+msgstr ""
+
 msgid "No jobs were created"
 msgstr "कोई नौकरी नहीं बनाई गई"
 
@@ -9972,6 +10044,9 @@ msgstr "कोई मेल नहीं। एक बनाने के लि
 
 msgid "No matching bins"
 msgstr "कोई मिलान बिन नहीं"
+
+msgid "No matching part"
+msgstr ""
 
 msgid "No new notifications"
 msgstr "कोई नई सूचनाएं नहीं"
@@ -10129,6 +10204,12 @@ msgstr "अभी तक कोई आपूर्तिकर्ता नह�
 msgid "No sync operations yet"
 msgstr "अभी तक कोई सिंक परिचालन नहीं है"
 
+msgid "No synced items yet — run a sync to populate this table"
+msgstr ""
+
+msgid "No syncs have run yet"
+msgstr ""
+
 msgid "No time entries for this week"
 msgstr "इस सप्ताह के लिए कोई समय प्रविष्टि नहीं"
 
@@ -10209,6 +10290,9 @@ msgstr "कोई नहीं"
 
 msgid "Normal"
 msgstr "सामान्य"
+
+msgid "Not a model"
+msgstr ""
 
 msgid "Not a table but a general-ledger balance: cost accumulates as job materials are issued and clears when the job is received to stock."
 msgstr "एक तालिका नहीं बल्कि एक सामान्य-बहीखाता संतुलन: काम की सामग्री जारी होने पर लागत जमा होती है और जब काम स्टॉक में प्राप्त होता है तो स्पष्ट हो जाता है।"
@@ -10447,6 +10531,12 @@ msgstr "Onshape ने प्राधिकरण अस्वीकार क�
 
 msgid "Onshape Status"
 msgstr "Onshape स्थिति"
+
+msgid "Onshape sync"
+msgstr ""
+
+msgid "Onshape Sync"
+msgstr ""
 
 msgid "Oops! The link you're trying to access has expired or is no longer valid."
 msgstr "अरे! आप जिस लिंक को एक्सेस करने का प्रयास कर रहे हैं वह समाप्त हो गया है या अब वैध नहीं है।"
@@ -10896,6 +10986,9 @@ msgstr "पार्ट आईडी"
 
 msgid "Part is configured for manufacturing"
 msgstr "भाग विनिर्माण के लिए कॉन्फ़िगर किया गया है"
+
+msgid "Part number"
+msgstr ""
 
 msgid "Part Number"
 msgstr "भाग संख्या"
@@ -11673,6 +11766,9 @@ msgstr ""
 msgid "Pull, map, and load your data"
 msgstr "अपना डेटा खींचें, मैप करें, और लोड करें"
 
+msgid "Pulling the latest released CAD from Onshape"
+msgstr ""
+
 msgid "Purchase & manufacture from MRP"
 msgstr "MRP से खरीद और निर्माण करें"
 
@@ -12297,8 +12393,14 @@ msgstr "जारी करने का नियंत्रण"
 msgid "Release Control"
 msgstr "जारी करने का नियंत्रण"
 
+msgid "Release exceptions"
+msgstr ""
+
 msgid "Release Job"
 msgstr "जॉब रिलीज़ करें"
+
+msgid "Release state"
+msgstr ""
 
 msgid "Released"
 msgstr "जारी किया गया"
@@ -12897,7 +12999,7 @@ msgid "Running…"
 msgstr "चल रहा है…"
 
 msgid "Runs"
-msgstr "रन"
+msgstr ""
 
 msgid "S-1 (coarsest special)"
 msgstr "S-1 (सबसे मोटे विशेष)"
@@ -13112,6 +13214,13 @@ msgstr "अपने ऑथेंटिकेटर ऐप (जैसे Google 
 
 msgid "Scan this with your authenticator app, then enter the 6-digit code it shows."
 msgstr "अपने प्रमाणकर्ता ऐप से इसे स्कैन करें, फिर इसके द्वारा दिखाया गया 6-अंकीय कोड दर्ज करें।"
+
+msgid "Scanned"
+msgstr ""
+
+#. placeholder {0}: run.revisionsScanned
+msgid "Scanned {0}"
+msgstr ""
 
 msgid "SCAR"
 msgstr "SCAR"
@@ -13890,6 +13999,10 @@ msgstr "आपूर्तिकर्ता आईडी दिखाएं"
 msgid "Show sync options"
 msgstr "सिंक विकल्प दिखाएं"
 
+#. placeholder {0}: run.failed
+msgid "Show the {0} parts that failed"
+msgstr ""
+
 msgid "Show Trailing Zeros"
 msgstr "अनुगामी शून्य दिखाएं"
 
@@ -13992,6 +14105,10 @@ msgstr "जारी-लेकिन-शुरू नहीं की गई स
 
 msgid "Skipped"
 msgstr "छोड़ा गया"
+
+#. placeholder {0}: countSkipped(run)
+msgid "Skipped {0}"
+msgstr ""
 
 msgid "Slack"
 msgstr "Slack"
@@ -14150,6 +14267,9 @@ msgstr "शुरू करें"
 msgid "Start {0} Day Free Trial"
 msgstr "{0} दिन की निःशुल्क परीक्षण शुरू करें"
 
+msgid "Start a sync to pull released Onshape models and drawings onto matching parts."
+msgstr ""
+
 msgid "Start counting"
 msgstr "गिनती शुरू करें"
 
@@ -14171,6 +14291,12 @@ msgstr "प्रक्रिया शुरुआत पर समाप्त
 msgid "Start Here"
 msgstr "यहाँ शुरू करें"
 
+msgid "Start Learning"
+msgstr "सीखना शुरू करें"
+
+msgid "Start new sync"
+msgstr ""
+
 msgid "Start Now"
 msgstr "अभी शुरू करें"
 
@@ -14179,6 +14305,9 @@ msgstr "वित्तीय वर्ष की शुरुआत"
 
 msgid "Start of Tax Year"
 msgstr "कर वर्ष की शुरुआत"
+
+msgid "Start sync"
+msgstr ""
 
 msgid "Start Time"
 msgstr "शुरुआत का समय"
@@ -14191,6 +14320,8 @@ msgstr "शुरू किया गया"
 
 msgid "Starting…"
 msgstr "शुरू हो रहा है…"
+msgid "Started by"
+msgstr ""
 
 msgid "State / Province"
 msgstr "राज्य / प्रांत"
@@ -14644,6 +14775,9 @@ msgstr "सिंक करें"
 msgid "Sync Activity"
 msgstr "सिंक गतिविधि"
 
+msgid "Sync again"
+msgstr ""
+
 msgid "Sync details"
 msgstr ""
 
@@ -14653,10 +14787,20 @@ msgstr ""
 msgid "Sync operation"
 msgstr "सिंक संचालन"
 
+msgid "Sync started"
+msgstr ""
+
 msgid "Sync Tie-Out"
 msgstr "सिंक समंजन"
 
 msgid "Synced"
+msgstr ""
+
+#. placeholder {0}: run.synced
+msgid "Synced {0}"
+msgstr ""
+
+msgid "Synced by"
 msgstr ""
 
 msgid "Synced by {actorName}"
@@ -17612,6 +17756,9 @@ msgstr "आपने {leftoverQuantity} अधिक {0} पूरा किय�
 
 msgid "You do not have permission to edit workflows"
 msgstr "आपके पास वर्कफ़्लो संपादित करने की अनुमति नहीं है"
+
+msgid "You do not have permission to start a sync"
+msgstr ""
 
 msgid "You don't have permission to edit this bill of material."
 msgstr "आपको इस सामग्री सूची को संपादित करने की अनुमति नहीं है।"

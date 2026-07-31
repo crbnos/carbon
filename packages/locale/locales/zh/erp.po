@@ -81,6 +81,11 @@ msgstr "{0} 已成功删除"
 msgid "{0} draft journal entries"
 msgstr "{0} 份草稿日记账条目"
 
+#. placeholder {0}: row.original.failed
+#. placeholder {0}: run.failed
+msgid "{0} failed"
+msgstr ""
+
 #. placeholder {0}: jobs.length
 msgid "{0} jobs created"
 msgstr "{0} 个作业已创建"
@@ -152,6 +157,9 @@ msgstr "{apOverduePct}% 的应付账款"
 
 msgid "{arOverduePct}% of receivables"
 msgstr "{arOverduePct}% 的应收账款"
+
+msgid "{catalogPercent}% of parts have a model"
+msgstr ""
 
 msgid "{chainLabel}. Consider pointing this part directly at the final successor."
 msgstr "{chainLabel}。考虑将此零件直接指向最终后继产品。"
@@ -793,6 +801,9 @@ msgstr "供应商的税率百分比已更改"
 msgid "A supplier's type changes"
 msgstr "供应商的类型已更改"
 
+msgid "A sync is already running — cancel it before starting another"
+msgstr ""
+
 msgid "A taxable surcharge (handling, setup, fuel) added to the line; rolls into the tax base."
 msgstr "应税附加费（搬运、设置、燃料），添加到行中并包含在税基中。"
 
@@ -1396,6 +1407,9 @@ msgstr "允许确认并继续"
 msgid "Alpha"
 msgstr "Alpha"
 
+msgid "Already synced"
+msgstr ""
+
 msgid "Always"
 msgstr "始终"
 
@@ -1539,11 +1553,17 @@ msgstr "且"
 msgid "And {0} more — resolve these to see the rest."
 msgstr "还有 {0} 份 — 解决这些以查看其余部分。"
 
+msgid "and {ambiguousOverflow} more matching more than one part"
+msgstr ""
+
 msgid "and {hidden} more"
 msgstr "以及{hidden}个更多"
 
 msgid "and {remaining} more"
 msgstr "和 {remaining} 个更多"
+
+msgid "and {unmatchedOverflow} more with no matching part"
+msgstr ""
 
 msgid "Annotation added"
 msgstr "注释已添加"
@@ -2793,11 +2813,23 @@ msgstr "取消 SO + {0} 已选择"
 msgid "Cancel SO only"
 msgstr "仅取消销售订单"
 
+msgid "Cancel sync"
+msgstr ""
+
+msgid "Cancel this sync? Items already synced are kept. This action is recorded."
+msgstr ""
+
 msgid "Canceled"
 msgstr "已取消"
 
 msgid "Cancelled"
 msgstr "已取消"
+
+msgid "Cancelled by"
+msgstr ""
+
+msgid "Cancelled by {cancelledByName}"
+msgstr ""
 
 msgid "Cannot add parameters to unsaved operation"
 msgstr "无法向未保存的操作添加参数"
@@ -5400,6 +5432,9 @@ msgstr "图纸编号"
 msgid "Drawing replaced. Balloon placements were removed; feature rows are unchanged."
 msgstr "图纸已替换。气球位置已移除；功能行保持不变。"
 
+msgid "Drawings {drawingsSynced}/{drawingsTracked}"
+msgstr ""
+
 msgid "Drop Shipment"
 msgstr "直运"
 
@@ -6207,6 +6242,9 @@ msgstr "您配置的系统中的每项范围内测试都通过了，使用您的
 msgid "Every match"
 msgstr "每次匹配"
 
+msgid "Every released revision in the latest sync matched exactly one part"
+msgstr ""
+
 msgid "Every required task must be Done or Skipped before the period can be closed."
 msgstr "期间关闭前，每项必需任务都必须完成或跳过。"
 
@@ -6434,6 +6472,10 @@ msgid "Fail"
 msgstr "失败"
 
 msgid "Failed"
+msgstr ""
+
+#. placeholder {0}: run.failed
+msgid "Failed {0}"
 msgstr ""
 
 msgid "Failed features"
@@ -6834,6 +6876,9 @@ msgstr "文件大小超过10MB限制"
 msgid "File size too big (max. {0})"
 msgstr "文件大小过大（最大 {0}）"
 
+msgid "File too large"
+msgstr ""
+
 msgid "File too large to sync"
 msgstr ""
 
@@ -6881,6 +6926,9 @@ msgstr "完成至"
 
 msgid "Finish with material unpicked?"
 msgstr "完成但物料未领取？"
+
+msgid "Finished"
+msgstr ""
 
 msgid "Finished goods"
 msgstr "表面处理"
@@ -8325,6 +8373,9 @@ msgstr "保持开放"
 msgid "Keep picking"
 msgstr "继续领取"
 
+msgid "Keep syncing"
+msgstr ""
+
 msgid "Keeps orders, quotes, and settings behind a second check"
 msgstr "让订单、报价单和设置受到第二道检查的保护"
 
@@ -8430,6 +8481,9 @@ msgstr "上一季度"
 
 msgid "Last Run"
 msgstr "最后运行"
+
+msgid "Last synced"
+msgstr ""
 
 msgid "Last synced: <0/>"
 msgstr "上次同步: <0/>"
@@ -8611,6 +8665,12 @@ msgstr "在 Carbon 上线"
 
 msgid "Live reloading"
 msgstr "实时重新加载"
+
+msgid "Live updates paused — retrying"
+msgstr ""
+
+msgid "Live Version"
+msgstr "实时版本"
 
 msgid "Load newer"
 msgstr "加载更新"
@@ -9268,6 +9328,12 @@ msgstr "模型已从行中移除"
 msgid "Model upload"
 msgstr "模型上传"
 
+msgid "Models {modelsSynced}/{modelsTracked}"
+msgstr ""
+
+msgid "Models and drawings synced, out of the parts this sync has tried. {partsWithModel} of {partsTotal} parts in the catalog carry a CAD model, including any uploaded by hand."
+msgstr ""
+
 msgid "Modified"
 msgstr "已修改"
 
@@ -9820,6 +9886,9 @@ msgstr "没有物料清单输入具有保质期政策"
 msgid "No CAD model to preview."
 msgstr "没有CAD模型可预览。"
 
+msgid "No CAD synced yet"
+msgstr ""
+
 msgid "No calibration records found"
 msgstr "未找到校准记录"
 
@@ -9940,6 +10009,9 @@ msgstr "无项目"
 msgid "No items have inventory activity here yet."
 msgstr "此处尚无项目的库存活动。"
 
+msgid "No items match these filters"
+msgstr ""
+
 msgid "No jobs were created"
 msgstr "没有创建任何作业"
 
@@ -9972,6 +10044,9 @@ msgstr "无匹配项。输入内容以创建一个。"
 
 msgid "No matching bins"
 msgstr "无匹配的箱子"
+
+msgid "No matching part"
+msgstr ""
 
 msgid "No new notifications"
 msgstr "没有新通知"
@@ -10129,6 +10204,12 @@ msgstr "还没有供应商"
 msgid "No sync operations yet"
 msgstr "尚无同步操作"
 
+msgid "No synced items yet — run a sync to populate this table"
+msgstr ""
+
+msgid "No syncs have run yet"
+msgstr ""
+
 msgid "No time entries for this week"
 msgstr "本周没有时间条目"
 
@@ -10209,6 +10290,9 @@ msgstr "无"
 
 msgid "Normal"
 msgstr "正常"
+
+msgid "Not a model"
+msgstr ""
 
 msgid "Not a table but a general-ledger balance: cost accumulates as job materials are issued and clears when the job is received to stock."
 msgstr "不是表格而是总账余额：当发出工作物料时成本积累，当工作收到库存时清除。"
@@ -10447,6 +10531,12 @@ msgstr "Onshape 拒绝了授权"
 
 msgid "Onshape Status"
 msgstr "Onshape 状态"
+
+msgid "Onshape sync"
+msgstr ""
+
+msgid "Onshape Sync"
+msgstr ""
 
 msgid "Oops! The link you're trying to access has expired or is no longer valid."
 msgstr "哎呀！您尝试访问的链接已过期或不再有效。"
@@ -10896,6 +10986,9 @@ msgstr "零件ID"
 
 msgid "Part is configured for manufacturing"
 msgstr "零件已配置用于制造"
+
+msgid "Part number"
+msgstr ""
 
 msgid "Part Number"
 msgstr "零件编号"
@@ -11673,6 +11766,9 @@ msgstr ""
 msgid "Pull, map, and load your data"
 msgstr "拉取、映射和加载您的数据"
 
+msgid "Pulling the latest released CAD from Onshape"
+msgstr ""
+
 msgid "Purchase & manufacture from MRP"
 msgstr "从 MRP 采购和制造"
 
@@ -12297,8 +12393,14 @@ msgstr "发布控制"
 msgid "Release Control"
 msgstr "发布控制"
 
+msgid "Release exceptions"
+msgstr ""
+
 msgid "Release Job"
 msgstr "发布工作"
+
+msgid "Release state"
+msgstr ""
 
 msgid "Released"
 msgstr "已发布"
@@ -12897,7 +12999,7 @@ msgid "Running…"
 msgstr "运行中…"
 
 msgid "Runs"
-msgstr "运行"
+msgstr ""
 
 msgid "S-1 (coarsest special)"
 msgstr "S-1（最粗特殊）"
@@ -13112,6 +13214,13 @@ msgstr "使用您的身份验证器应用(例如 Google Authenticator 或 1Passw
 
 msgid "Scan this with your authenticator app, then enter the 6-digit code it shows."
 msgstr "使用您的身份验证器应用扫描此内容，然后输入它显示的6位数代码。"
+
+msgid "Scanned"
+msgstr ""
+
+#. placeholder {0}: run.revisionsScanned
+msgid "Scanned {0}"
+msgstr ""
 
 msgid "SCAR"
 msgstr "SCAR"
@@ -13890,6 +13999,10 @@ msgstr "显示供应商ID"
 msgid "Show sync options"
 msgstr "显示同步选项"
 
+#. placeholder {0}: run.failed
+msgid "Show the {0} parts that failed"
+msgstr ""
+
 msgid "Show Trailing Zeros"
 msgstr "显示尾随零"
 
@@ -13992,6 +14105,10 @@ msgstr "跳过已发布但未启动的状态 - 扫描时工作立即开始。"
 
 msgid "Skipped"
 msgstr "已跳过"
+
+#. placeholder {0}: countSkipped(run)
+msgid "Skipped {0}"
+msgstr ""
 
 msgid "Slack"
 msgstr "Slack"
@@ -14150,6 +14267,9 @@ msgstr "开始"
 msgid "Start {0} Day Free Trial"
 msgstr "开始 {0} 天免费试用"
 
+msgid "Start a sync to pull released Onshape models and drawings onto matching parts."
+msgstr ""
+
 msgid "Start counting"
 msgstr "开始盘点"
 
@@ -14171,6 +14291,12 @@ msgstr "在流程开始时开始过期"
 msgid "Start Here"
 msgstr "从这里开始"
 
+msgid "Start Learning"
+msgstr "开始学习"
+
+msgid "Start new sync"
+msgstr ""
+
 msgid "Start Now"
 msgstr "立即开始"
 
@@ -14179,6 +14305,9 @@ msgstr "财政年度开始"
 
 msgid "Start of Tax Year"
 msgstr "税年开始"
+
+msgid "Start sync"
+msgstr ""
 
 msgid "Start Time"
 msgstr "开始时间"
@@ -14191,6 +14320,8 @@ msgstr "开始于"
 
 msgid "Starting…"
 msgstr "正在启动…"
+msgid "Started by"
+msgstr ""
 
 msgid "State / Province"
 msgstr "州/省"
@@ -14644,6 +14775,9 @@ msgstr "同步"
 msgid "Sync Activity"
 msgstr "同步活动"
 
+msgid "Sync again"
+msgstr ""
+
 msgid "Sync details"
 msgstr ""
 
@@ -14653,10 +14787,20 @@ msgstr ""
 msgid "Sync operation"
 msgstr "同步操作"
 
+msgid "Sync started"
+msgstr ""
+
 msgid "Sync Tie-Out"
 msgstr "同步对账"
 
 msgid "Synced"
+msgstr ""
+
+#. placeholder {0}: run.synced
+msgid "Synced {0}"
+msgstr ""
+
+msgid "Synced by"
 msgstr ""
 
 msgid "Synced by {actorName}"
@@ -17612,6 +17756,9 @@ msgstr "您完成了 {leftoverQuantity} 个以上的 {0}，超过了订购数量
 
 msgid "You do not have permission to edit workflows"
 msgstr "您没有权限编辑工作流"
+
+msgid "You do not have permission to start a sync"
+msgstr ""
 
 msgid "You don't have permission to edit this bill of material."
 msgstr "您没有编辑此物料清单的权限。"

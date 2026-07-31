@@ -81,6 +81,11 @@ msgstr "{0} успешно удален"
 msgid "{0} draft journal entries"
 msgstr "{0} черновых записей в журнале"
 
+#. placeholder {0}: row.original.failed
+#. placeholder {0}: run.failed
+msgid "{0} failed"
+msgstr ""
+
 #. placeholder {0}: jobs.length
 msgid "{0} jobs created"
 msgstr "{0} заданий создано"
@@ -152,6 +157,9 @@ msgstr "{apOverduePct}% кредиторской задолженности"
 
 msgid "{arOverduePct}% of receivables"
 msgstr "{arOverduePct}% дебиторской задолженности"
+
+msgid "{catalogPercent}% of parts have a model"
+msgstr ""
 
 msgid "{chainLabel}. Consider pointing this part directly at the final successor."
 msgstr "{chainLabel}. Рассмотрите возможность указания этой детали непосредственно на финального преемника."
@@ -793,6 +801,9 @@ msgstr "Процент налога поставщика изменяется"
 msgid "A supplier's type changes"
 msgstr "Тип поставщика изменяется"
 
+msgid "A sync is already running — cancel it before starting another"
+msgstr ""
+
 msgid "A taxable surcharge (handling, setup, fuel) added to the line; rolls into the tax base."
 msgstr "Налоговый сбор (погрузка, наладка, топливо), добавляемый к строке и включаемый в налоговую базу."
 
@@ -1396,6 +1407,9 @@ msgstr "Позволяет подтвердить и продолжить"
 msgid "Alpha"
 msgstr "Альфа"
 
+msgid "Already synced"
+msgstr ""
+
 msgid "Always"
 msgstr "Всегда"
 
@@ -1539,11 +1553,17 @@ msgstr "И"
 msgid "And {0} more — resolve these to see the rest."
 msgstr "И {0} ещё — разрешите эти, чтобы увидеть остальное."
 
+msgid "and {ambiguousOverflow} more matching more than one part"
+msgstr ""
+
 msgid "and {hidden} more"
 msgstr "и {hidden} еще"
 
 msgid "and {remaining} more"
 msgstr "и ещё {remaining}"
+
+msgid "and {unmatchedOverflow} more with no matching part"
+msgstr ""
 
 msgid "Annotation added"
 msgstr "Аннотация добавлена"
@@ -2793,11 +2813,23 @@ msgstr "Отменить ПЗ + {0} выбрано"
 msgid "Cancel SO only"
 msgstr "Отменить только ПЗ"
 
+msgid "Cancel sync"
+msgstr ""
+
+msgid "Cancel this sync? Items already synced are kept. This action is recorded."
+msgstr ""
+
 msgid "Canceled"
 msgstr "Отменено"
 
 msgid "Cancelled"
 msgstr "Отменено"
+
+msgid "Cancelled by"
+msgstr ""
+
+msgid "Cancelled by {cancelledByName}"
+msgstr ""
 
 msgid "Cannot add parameters to unsaved operation"
 msgstr "Невозможно добавить параметры к несохраненной операции"
@@ -5400,6 +5432,9 @@ msgstr "Номер чертежа"
 msgid "Drawing replaced. Balloon placements were removed; feature rows are unchanged."
 msgstr "Рисунок заменён. Размещение выносок удалено; строки функций не изменены."
 
+msgid "Drawings {drawingsSynced}/{drawingsTracked}"
+msgstr ""
+
 msgid "Drop Shipment"
 msgstr "Прямая поставка"
 
@@ -6207,6 +6242,9 @@ msgstr "Все тесты в области действия проходят в
 msgid "Every match"
 msgstr "Каждое совпадение"
 
+msgid "Every released revision in the latest sync matched exactly one part"
+msgstr ""
+
 msgid "Every required task must be Done or Skipped before the period can be closed."
 msgstr "Каждая требуемая задача должна быть завершена или пропущена перед закрытием периода."
 
@@ -6434,6 +6472,10 @@ msgid "Fail"
 msgstr "Не пройти"
 
 msgid "Failed"
+msgstr ""
+
+#. placeholder {0}: run.failed
+msgid "Failed {0}"
 msgstr ""
 
 msgid "Failed features"
@@ -6834,6 +6876,9 @@ msgstr "Размер файла превышает лимит 10МБ"
 msgid "File size too big (max. {0})"
 msgstr "Размер файла слишком большой (макс. {0})"
 
+msgid "File too large"
+msgstr ""
+
 msgid "File too large to sync"
 msgstr ""
 
@@ -6881,6 +6926,9 @@ msgstr "Завершить в"
 
 msgid "Finish with material unpicked?"
 msgstr "Завершить с непобранным материалом?"
+
+msgid "Finished"
+msgstr ""
 
 msgid "Finished goods"
 msgstr "Отделки"
@@ -8325,6 +8373,9 @@ msgstr "Оставить открытым"
 msgid "Keep picking"
 msgstr "Продолжить комплектацию"
 
+msgid "Keep syncing"
+msgstr ""
+
 msgid "Keeps orders, quotes, and settings behind a second check"
 msgstr "Защищает заказы, предложения и параметры вторым уровнем проверки"
 
@@ -8430,6 +8481,9 @@ msgstr "Последний квартал"
 
 msgid "Last Run"
 msgstr "Последний запуск"
+
+msgid "Last synced"
+msgstr ""
 
 msgid "Last synced: <0/>"
 msgstr "Последняя синхронизация: <0/>"
@@ -8611,6 +8665,12 @@ msgstr "Работает на Carbon"
 
 msgid "Live reloading"
 msgstr "Живая перезагрузка"
+
+msgid "Live updates paused — retrying"
+msgstr ""
+
+msgid "Live Version"
+msgstr "Активная версия"
 
 msgid "Load newer"
 msgstr "Загрузить новые"
@@ -9268,6 +9328,12 @@ msgstr "Модель удалена из строки"
 msgid "Model upload"
 msgstr "Загрузка модели"
 
+msgid "Models {modelsSynced}/{modelsTracked}"
+msgstr ""
+
+msgid "Models and drawings synced, out of the parts this sync has tried. {partsWithModel} of {partsTotal} parts in the catalog carry a CAD model, including any uploaded by hand."
+msgstr ""
+
 msgid "Modified"
 msgstr "Изменено"
 
@@ -9820,6 +9886,9 @@ msgstr "Ни один вход BOM не имеет политики срока �
 msgid "No CAD model to preview."
 msgstr "Нет модели CAD для предпросмотра."
 
+msgid "No CAD synced yet"
+msgstr ""
+
 msgid "No calibration records found"
 msgstr "Записи о калибровке не найдены"
 
@@ -9940,6 +10009,9 @@ msgstr "Нет позиций"
 msgid "No items have inventory activity here yet."
 msgstr "Здесь еще нет активности с товарами."
 
+msgid "No items match these filters"
+msgstr ""
+
 msgid "No jobs were created"
 msgstr "Никаких заданий не было создано"
 
@@ -9972,6 +10044,9 @@ msgstr "Совпадений не найдено. Введите текст дл
 
 msgid "No matching bins"
 msgstr "Нет подходящих ячеек"
+
+msgid "No matching part"
+msgstr ""
 
 msgid "No new notifications"
 msgstr "Нет новых уведомлений"
@@ -10129,6 +10204,12 @@ msgstr "Поставщиков еще нет"
 msgid "No sync operations yet"
 msgstr "Операции синхронизации еще не выполнены"
 
+msgid "No synced items yet — run a sync to populate this table"
+msgstr ""
+
+msgid "No syncs have run yet"
+msgstr ""
+
 msgid "No time entries for this week"
 msgstr "Нет записей о времени на эту неделю"
 
@@ -10209,6 +10290,9 @@ msgstr "Нет"
 
 msgid "Normal"
 msgstr "Обычный"
+
+msgid "Not a model"
+msgstr ""
 
 msgid "Not a table but a general-ledger balance: cost accumulates as job materials are issued and clears when the job is received to stock."
 msgstr "Не таблица, а баланс главной книги: стоимость накапливается по мере выдачи материалов задания и очищается при поступлении задания на склад."
@@ -10447,6 +10531,12 @@ msgstr "Onshape отклонил авторизацию"
 
 msgid "Onshape Status"
 msgstr "Статус Onshape"
+
+msgid "Onshape sync"
+msgstr ""
+
+msgid "Onshape Sync"
+msgstr ""
 
 msgid "Oops! The link you're trying to access has expired or is no longer valid."
 msgstr "Упс! Ссылка, которую вы пытаетесь открыть, истекла или больше не действительна."
@@ -10896,6 +10986,9 @@ msgstr "ID детали"
 
 msgid "Part is configured for manufacturing"
 msgstr "Деталь настроена для производства"
+
+msgid "Part number"
+msgstr ""
 
 msgid "Part Number"
 msgstr "Номер детали"
@@ -11673,6 +11766,9 @@ msgstr ""
 msgid "Pull, map, and load your data"
 msgstr "Извлеките, сопоставьте и загрузите ваши данные"
 
+msgid "Pulling the latest released CAD from Onshape"
+msgstr ""
+
 msgid "Purchase & manufacture from MRP"
 msgstr "Закупка и производство из MRP"
 
@@ -12297,8 +12393,14 @@ msgstr "Контроль выпуска"
 msgid "Release Control"
 msgstr "Контроль выпуска"
 
+msgid "Release exceptions"
+msgstr ""
+
 msgid "Release Job"
 msgstr "Выпустить задание"
+
+msgid "Release state"
+msgstr ""
 
 msgid "Released"
 msgstr "Выпущено"
@@ -12897,7 +12999,7 @@ msgid "Running…"
 msgstr "Выполняется…"
 
 msgid "Runs"
-msgstr "Запуски"
+msgstr ""
 
 msgid "S-1 (coarsest special)"
 msgstr "S-1 (самый грубый специальный)"
@@ -13112,6 +13214,13 @@ msgstr "Сканируйте этот QR-код с помощью приложе
 
 msgid "Scan this with your authenticator app, then enter the 6-digit code it shows."
 msgstr "Отсканируйте это в приложении аутентификации, а затем введите 6-значный код, который оно показывает."
+
+msgid "Scanned"
+msgstr ""
+
+#. placeholder {0}: run.revisionsScanned
+msgid "Scanned {0}"
+msgstr ""
 
 msgid "SCAR"
 msgstr "SCAR"
@@ -13890,6 +13999,10 @@ msgstr "Показать ID поставщиков"
 msgid "Show sync options"
 msgstr "Показать параметры синхронизации"
 
+#. placeholder {0}: run.failed
+msgid "Show the {0} parts that failed"
+msgstr ""
+
 msgid "Show Trailing Zeros"
 msgstr "Показывать завершающие нули"
 
@@ -13992,6 +14105,10 @@ msgstr "Пропустить состояние «выпущено, но не н
 
 msgid "Skipped"
 msgstr "Пропущено"
+
+#. placeholder {0}: countSkipped(run)
+msgid "Skipped {0}"
+msgstr ""
 
 msgid "Slack"
 msgstr "Slack"
@@ -14150,6 +14267,9 @@ msgstr "Начать"
 msgid "Start {0} Day Free Trial"
 msgstr "Начать {0}-дневный бесплатный пробный период"
 
+msgid "Start a sync to pull released Onshape models and drawings onto matching parts."
+msgstr ""
+
 msgid "Start counting"
 msgstr "Начать подсчёт"
 
@@ -14171,6 +14291,12 @@ msgstr "Начать истечение срока действия при за�
 msgid "Start Here"
 msgstr "Начните отсюда"
 
+msgid "Start Learning"
+msgstr "Начать обучение"
+
+msgid "Start new sync"
+msgstr ""
+
 msgid "Start Now"
 msgstr "Начать сейчас"
 
@@ -14179,6 +14305,9 @@ msgstr "Начало финансового года"
 
 msgid "Start of Tax Year"
 msgstr "Начало налогового года"
+
+msgid "Start sync"
+msgstr ""
 
 msgid "Start Time"
 msgstr "Время начала"
@@ -14191,6 +14320,8 @@ msgstr "Начал"
 
 msgid "Starting…"
 msgstr "Начинаю…"
+msgid "Started by"
+msgstr ""
 
 msgid "State / Province"
 msgstr "Штат / Провинция"
@@ -14644,6 +14775,9 @@ msgstr "Синхронизация"
 msgid "Sync Activity"
 msgstr "Активность синхронизации"
 
+msgid "Sync again"
+msgstr ""
+
 msgid "Sync details"
 msgstr ""
 
@@ -14653,10 +14787,20 @@ msgstr ""
 msgid "Sync operation"
 msgstr "Операция синхронизации"
 
+msgid "Sync started"
+msgstr ""
+
 msgid "Sync Tie-Out"
 msgstr "Проверка синхронизации"
 
 msgid "Synced"
+msgstr ""
+
+#. placeholder {0}: run.synced
+msgid "Synced {0}"
+msgstr ""
+
+msgid "Synced by"
 msgstr ""
 
 msgid "Synced by {actorName}"
@@ -17612,6 +17756,9 @@ msgstr "Вы завершили {leftoverQuantity} больше {0}, чем за
 
 msgid "You do not have permission to edit workflows"
 msgstr "У вас нет разрешения на редактирование рабочих процессов"
+
+msgid "You do not have permission to start a sync"
+msgstr ""
 
 msgid "You don't have permission to edit this bill of material."
 msgstr "У вас нет разрешения на редактирование этой ведомости материалов."

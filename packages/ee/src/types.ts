@@ -1,16 +1,34 @@
 import type { ZodType } from "zod";
 
-export type IntegrationAction = {
+type IntegrationActionBase = {
   id: string;
   label: string;
   description: string;
-  endpoint: string;
   /**
    * Name of a boolean setting that must be enabled for this action to be shown.
    * Omit to always show the action on an installed integration.
    */
   enabledWhenSetting?: string;
 };
+
+/**
+ * An action that starts work: the drawer POSTs `endpoint` and reports whether it
+ * started. `redirectTo` navigates there once it has, for integrations whose work
+ * has a surface worth watching.
+ */
+export type IntegrationRunAction = IntegrationActionBase & {
+  kind?: "run";
+  endpoint: string;
+  redirectTo?: string;
+};
+
+/** An action that just navigates somewhere in the app. */
+export type IntegrationLinkAction = IntegrationActionBase & {
+  kind: "link";
+  href: string;
+};
+
+export type IntegrationAction = IntegrationRunAction | IntegrationLinkAction;
 
 /**
  * A quick-install connector: an external link-out with no DB state, shown
