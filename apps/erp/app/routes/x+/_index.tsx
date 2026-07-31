@@ -156,7 +156,7 @@ export default function AppIndexRoute() {
                 <LuRocket className="text-xl" />
               </div>
               <div className="flex-1 min-w-0">
-                <div className="text-xxs uppercase tracking-wide font-medium text-primary">
+                <div className="text-xxs uppercase tracking-wide font-medium">
                   <Trans>Get Started</Trans>
                 </div>
                 <div className="text-base font-semibold tracking-tight mt-0.5 text-balance">

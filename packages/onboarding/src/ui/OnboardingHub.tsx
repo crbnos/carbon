@@ -245,7 +245,7 @@ function NextStepCard({
 
   return (
     <div className="rounded-2xl border border-border bg-card p-5 flex items-start gap-4 motion-safe:animate-in motion-safe:fade-in-50 motion-safe:slide-in-from-bottom-2 motion-safe:duration-300">
-      <div className="shrink-0 size-9 rounded-xl bg-primary/15 flex items-center justify-center text-sm font-medium tabular-nums text-primary">
+      <div className="shrink-0 size-9 rounded-xl bg-primary/15 flex items-center justify-center text-sm font-medium tabular-nums">
         {action.gateNumber}
       </div>
       <div className="flex-1 min-w-0">
@@ -347,7 +347,7 @@ function GateRow({
           <div className="flex items-center gap-2 flex-wrap">
             <span
               className={cn(
-                "text-sm font-medium transition-colors group-hover:text-primary",
+                "text-sm font-medium transition-colors group-hover",
                 status === "done" && "line-through text-muted-foreground"
               )}
             >
@@ -365,7 +365,7 @@ function GateRow({
             ) : null}
             <LuArrowRight
               className={cn(
-                "size-4 shrink-0 text-muted-foreground/50 transition group-hover:translate-x-0.5 group-hover:text-primary",
+                "size-4 shrink-0 text-muted-foreground/50 transition group-hover:translate-x-0.5 group-hover",
                 tier === "self_serve" && "ml-auto"
               )}
             />
@@ -375,7 +375,7 @@ function GateRow({
               {i18n._(step.desc)}
             </p>
           ) : null}
-          <span className="text-xxs font-medium text-muted-foreground/80 mt-2 inline-block transition-colors group-hover:text-primary">
+          <span className="text-xxs font-medium text-muted-foreground/80 mt-2 inline-block transition-colors group-hover">
             <Trans>View in project plan</Trans>
           </span>
         </button>
