@@ -116,6 +116,7 @@ const payloadValidator = z.discriminatedUnion("type", [
 serve(async (req: Request) => {
   const preflight = corsPreflight(req);
   if (preflight) return preflight;
+  try {
   const payload = await req.json();
 
   const { type, companyId, userId } = payloadValidator.parse(payload);
@@ -2556,6 +2557,10 @@ serve(async (req: Request) => {
     }
     default:
       return errorResponse("Invalid document type", 400);
+  }
+  } catch (err) {
+    if (err instanceof z.ZodError) return errorResponse("Invalid payload", 400);
+    return errorResponse(err, 500);
   }
 });
 
