@@ -1,7 +1,5 @@
 import { serve } from "https://deno.land/std@0.175.0/http/server.ts";
-import { errorResponse, jsonResponse } from "../lib/company-backup.ts";
-import { corsHeaders } from "../lib/headers.ts";
-import { corsPreflight } from "../lib/response.ts";
+import { corsPreflight, errorResponse, jsonResponse } from "../lib/response.ts";
 import { sendInngestEvent } from "../lib/inngest.ts";
 import { requirePermissions } from "../lib/supabase.ts";
 
@@ -35,8 +33,8 @@ serve(async (req: Request) => {
       includeStorage: includeStorage ?? "none"
     });
 
-    return jsonResponse({ success: true }, 202, corsHeaders);
+    return jsonResponse({ success: true }, 202);
   } catch (err) {
-    return errorResponse(err, 400, corsHeaders);
+    return errorResponse(err, 400);
   }
 });
