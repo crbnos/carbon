@@ -18,6 +18,18 @@ import {
   syncOnshapeDrawingAssetsToItem,
   syncOnshapeElementAssetsToItem
 } from "./onshape-sync-element";
+import {
+  accumulateRunCounters,
+  captureAmbiguousReleases,
+  captureUnmatchedReleases,
+  createRunProgress,
+  finalizeRun,
+  markRunRunning,
+  type OnshapeReleaseReference,
+  type OnshapeSyncAssetKind,
+  upsertItemSyncState,
+  writeRunProgress
+} from "./onshape-sync-state";
 
 // Backfill / reconcile: pull released Onshape assets onto existing Carbon items.
 // Onshape-DRIVEN and LINK-ONLY, and call-light: enumerate the company's released
@@ -48,19 +60,38 @@ export interface OnshapeBackfillInput {
   onshapeCompanyId?: string; // resolved via getCompanies if omitted
   after?: string; // ISO date — only revisions released after this (incremental)
   pageLimit?: number; // revisions per page (default 50)
+  runId?: string; // the onshapeSyncRun row this run reports into (absent = untracked)
 }
 
 // One matched export+attach, produced by the page-match step and executed as
 // its own Inngest step.
 export interface OnshapeBackfillWorkItem {
-  kind: "model" | "drawing";
+  kind: OnshapeSyncAssetKind;
   label: string; // for logs, e.g. "model PRT-002033 rev A"
   itemId: string; // resolved Carbon item
+  partNumber: string;
+  revision: string;
+  releaseState: string;
   documentId: string;
   versionId: string;
   elementId: string;
   modelElementKind?: "partstudio" | "assembly"; // kind === "model" only
   assetBaseName?: string;
+}
+
+// A release whose asset the matched item ALREADY has. Recorded as sync state so
+// a pre-v2 fleet reads as synced (by observation) instead of never-synced —
+// without spending an export call re-downloading what is already attached.
+export interface OnshapeBackfillObservedMatch {
+  assetKind: OnshapeSyncAssetKind;
+  itemId: string;
+  partNumber: string;
+  revision: string;
+  releaseState: string;
+  documentId: string;
+  versionId: string;
+  elementId: string;
+  modelUploadId: string | null;
 }
 
 export interface OnshapeBackfillPageResult {
@@ -69,9 +100,16 @@ export interface OnshapeBackfillPageResult {
   skippedAlreadySynced: number; // item already has this asset — skipped to save API calls
   skippedNonModel: number; // unknown element type (not part studio / assembly / drawing)
   workItems: OnshapeBackfillWorkItem[]; // matched exports for the per-item sync steps
+  observedMatches: OnshapeBackfillObservedMatch[]; // matched, already attached
+  unmatchedReleases: OnshapeReleaseReference[]; // released with no matching item
+  ambiguousReleases: OnshapeReleaseReference[]; // released matching several items
   hasMore: boolean;
   nextCursor: string | null; // Onshape `next` cursor URL for the following page
 }
+
+// Every revision that reaches the match loop survived the isObsolete filter, so
+// the release state recorded for it is Onshape's released state.
+const RELEASED_STATE = "Released";
 
 const RATE_LIMIT_DEFAULT_WAIT_SECONDS = 60;
 // Clamp Onshape's Retry-After so a bad/huge value can't schedule an absurd wait.
@@ -229,6 +267,9 @@ export async function matchOnshapeBackfillPage(
     skippedAlreadySynced: 0,
     skippedNonModel: 0,
     workItems: [],
+    observedMatches: [],
+    unmatchedReleases: [],
+    ambiguousReleases: [],
     hasMore,
     nextCursor
   };
@@ -275,6 +316,11 @@ export async function matchOnshapeBackfillPage(
 
   for (const revision of revisions) {
     result.revisionsScanned++;
+    const releaseReference: OnshapeReleaseReference = {
+      partNumber: revision.partNumber,
+      revision: revision.revision,
+      state: RELEASED_STATE
+    };
 
     // DRAWING (elementType 2): released as its own DRW-xxxx element. Attach its
     // PDF to the model item sharing its number (PRT/ASM); never create a DRW item.
@@ -282,6 +328,7 @@ export async function matchOnshapeBackfillPage(
       const suffix = sharedNumberSuffix(revision.partNumber);
       if (suffix.length < 2) {
         result.skippedNoItem++;
+        result.unmatchedReleases.push(releaseReference);
         continue;
       }
       const candidates = await carbon
@@ -300,17 +347,38 @@ export async function matchOnshapeBackfillPage(
       const target = items.length === 1 ? items[0] : undefined;
       if (!target) {
         result.skippedNoItem++;
+        // An ambiguous match is its own release exception: several parts share
+        // this number + revision, so no single item row may claim the skip.
+        if (items.length > 1) {
+          result.ambiguousReleases.push(releaseReference);
+        } else {
+          result.unmatchedReleases.push(releaseReference);
+        }
         continue;
       }
       // Already has a drawing PDF => skip the export (save an Onshape call).
       if (await itemHasPdfDocument(carbon, input.companyId, target.id)) {
         result.skippedAlreadySynced++;
+        result.observedMatches.push({
+          assetKind: "drawing",
+          itemId: target.id,
+          partNumber: revision.partNumber,
+          revision: revision.revision,
+          releaseState: RELEASED_STATE,
+          documentId: revision.documentId,
+          versionId: revision.versionId,
+          elementId: revision.elementId,
+          modelUploadId: null
+        });
         continue;
       }
       result.workItems.push({
         kind: "drawing",
         label: `drawing ${revision.partNumber} rev ${revision.revision}`,
         itemId: target.id,
+        partNumber: revision.partNumber,
+        revision: revision.revision,
+        releaseState: RELEASED_STATE,
         documentId: revision.documentId,
         versionId: revision.versionId,
         elementId: revision.elementId,
@@ -330,17 +398,32 @@ export async function matchOnshapeBackfillPage(
     );
     if (!match) {
       result.skippedNoItem++;
+      result.unmatchedReleases.push(releaseReference);
       continue;
     }
     // Already has a model => skip the export (save an Onshape call).
     if (match.modelUploadId) {
       result.skippedAlreadySynced++;
+      result.observedMatches.push({
+        assetKind: "model",
+        itemId: match.id,
+        partNumber: revision.partNumber,
+        revision: revision.revision,
+        releaseState: RELEASED_STATE,
+        documentId: revision.documentId,
+        versionId: revision.versionId,
+        elementId: revision.elementId,
+        modelUploadId: match.modelUploadId
+      });
       continue;
     }
     result.workItems.push({
       kind: "model",
       label: `model ${revision.partNumber} rev ${revision.revision}`,
       itemId: match.id,
+      partNumber: revision.partNumber,
+      revision: revision.revision,
+      releaseState: RELEASED_STATE,
       documentId: revision.documentId,
       versionId: revision.versionId,
       elementId: revision.elementId,
@@ -414,19 +497,112 @@ export async function syncOnshapeBackfillWorkItem(
   }
 }
 
+// --- Sync-state bookkeeping -------------------------------------------------
+// Every write below goes through the helpers in onshape-sync-state.ts, which
+// catch and log rather than throw: a bookkeeping failure must never turn a
+// completed export into an Inngest retry. Tracking is skipped wholesale for a
+// run without a `runId` (an event queued before sync tracking existed).
+
+// The identity + provenance every item row for this run shares.
+function itemStateForWorkItem(
+  input: OnshapeBackfillInput,
+  workItem: OnshapeBackfillWorkItem
+) {
+  return {
+    companyId: input.companyId,
+    userId: input.userId, // the user who started the run
+    itemId: workItem.itemId,
+    assetKind: workItem.kind,
+    source: "backfill" as const,
+    partNumber: workItem.partNumber,
+    revision: workItem.revision,
+    releaseState: workItem.releaseState,
+    documentId: workItem.documentId,
+    versionId: workItem.versionId,
+    elementId: workItem.elementId,
+    runId: input.runId ?? null
+  };
+}
+
+// The work-item step body: the v1 export+attach plus this item's sync-state row,
+// written INSIDE the step so it neither replays nor can fail the export.
+async function syncBackfillWorkItemWithState(
+  carbon: CarbonClient,
+  input: OnshapeBackfillInput,
+  workItem: OnshapeBackfillWorkItem
+) {
+  const tracked = Boolean(input.runId);
+  try {
+    const attached = await syncOnshapeBackfillWorkItem(carbon, input, workItem);
+    if (tracked) {
+      await upsertItemSyncState(carbon, {
+        ...itemStateForWorkItem(input, workItem),
+        status: attached.skippedTooLarge ? "skipped" : "synced",
+        skipReason: attached.skippedTooLarge ? "asset-too-large" : null,
+        modelUploadId: workItem.kind === "model" ? attached.modelUploadId : null
+      });
+    }
+    return attached;
+  } catch (syncError) {
+    // A rate-limit reschedule is not an outcome — the same step runs again after
+    // the wait, so it must not surface as a failed item.
+    if (tracked && !(syncError instanceof RetryAfterError)) {
+      await upsertItemSyncState(carbon, {
+        ...itemStateForWorkItem(input, workItem),
+        status: "failed",
+        error:
+          syncError instanceof Error ? syncError.message : String(syncError)
+      });
+    }
+    throw syncError;
+  }
+}
+
+// Already-attached matches: recorded as synced BY OBSERVATION (D10) so a fleet
+// synced before v2 reads truthfully without re-downloading a single asset.
+async function recordObservedMatches(
+  carbon: CarbonClient,
+  input: OnshapeBackfillInput,
+  observedMatches: OnshapeBackfillObservedMatch[]
+): Promise<{ recorded: number }> {
+  for (const observed of observedMatches) {
+    await upsertItemSyncState(carbon, {
+      companyId: input.companyId,
+      userId: input.userId,
+      itemId: observed.itemId,
+      assetKind: observed.assetKind,
+      status: "synced",
+      source: "backfill",
+      observedOnly: true,
+      partNumber: observed.partNumber,
+      revision: observed.revision,
+      releaseState: observed.releaseState,
+      documentId: observed.documentId,
+      versionId: observed.versionId,
+      elementId: observed.elementId,
+      modelUploadId: observed.modelUploadId,
+      runId: input.runId ?? null
+    });
+  }
+  return { recorded: observedMatches.length };
+}
+
 // --- Inngest function -------------------------------------------------------
 // CONFIGURABLE: runs only when the company has explicitly enabled Onshape asset
 // sync (companyIntegration.metadata.assetSyncEnabled === true) and the integration
 // is active. Default is OFF — nothing runs unless turned on. Fired via
-// trigger("onshape-backfill", { companyId, userId, after? }).
+// trigger("onshape-backfill", { companyId, userId, runId?, after? }).
 
 const OnshapeBackfillPayloadSchema = z.object({
   companyId: z.string(),
   userId: z.string(),
   onshapeCompanyId: z.string().optional(),
   after: z.string().optional(),
-  pageLimit: z.number().optional()
+  pageLimit: z.number().optional(),
+  runId: z.string().optional()
 });
+
+type OnshapeBackfillPayload = z.infer<typeof OnshapeBackfillPayloadSchema>;
 
 export const onshapeBackfillFunction = inngest.createFunction(
   {
@@ -440,12 +616,35 @@ export const onshapeBackfillFunction = inngest.createFunction(
     // One backfill per company at a time — stops a double-click (or a full run
     // overlapping an incremental reconcile) from racing on the "already synced"
     // check and double-exporting.
-    concurrency: { key: "event.data.companyId", limit: 1 }
+    concurrency: { key: "event.data.companyId", limit: 1 },
+    // The cancel route records `cancelled` (with who cancelled) on the run row
+    // BEFORE firing this event, so the killed run needs no cleanup of its own.
+    cancelOn: [
+      {
+        event: "carbon/onshape-backfill.cancel",
+        if: "async.data.runId == event.data.runId"
+      }
+    ],
+    // Terminal failure is an explicit write, never inferred from the run's absence.
+    onFailure: async ({ event }) => {
+      const { companyId, userId, runId } = event.data.event
+        .data as OnshapeBackfillPayload;
+      await finalizeRun(getCarbonServiceRole(), {
+        companyId,
+        userId,
+        runId,
+        status: "failed",
+        error: event.data.error.message
+      });
+    }
   },
   { event: "carbon/onshape-backfill" },
   async ({ event, step }) => {
     const payload = OnshapeBackfillPayloadSchema.parse(event.data);
     const carbon = getCarbonServiceRole();
+    // Absent on events queued before sync tracking existed — those runs do all
+    // of the syncing and none of the tracking.
+    const runId = payload.runId;
 
     // Gate check runs on every execution (not inside a step) so flipping the
     // toggle off also kills an in-flight retry.
@@ -453,7 +652,31 @@ export const onshapeBackfillFunction = inngest.createFunction(
       console.log("onshape-backfill: skipped (disabled or inactive)", {
         companyId: payload.companyId
       });
+      // Close the run row out rather than leaving it `queued` forever — a
+      // non-terminal run blocks every later start (the 409 guard yields only to
+      // an explicit terminal state).
+      if (runId) {
+        await step.run("finalize-run-disabled", () =>
+          finalizeRun(carbon, {
+            companyId: payload.companyId,
+            userId: payload.userId,
+            runId,
+            status: "failed",
+            error: "Onshape asset sync is turned off — the sync did not run."
+          })
+        );
+      }
       return { skipped: true as const };
+    }
+
+    if (runId) {
+      await step.run("mark-run-running", () =>
+        markRunRunning(carbon, {
+          companyId: payload.companyId,
+          userId: payload.userId,
+          runId
+        })
+      );
     }
 
     const onshapeCompanyId =
@@ -463,15 +686,10 @@ export const onshapeBackfillFunction = inngest.createFunction(
       ));
     const input = { ...payload, onshapeCompanyId };
 
-    const totals = {
-      revisionsScanned: 0,
-      synced: 0,
-      skippedNoItem: 0,
-      skippedAlreadySynced: 0,
-      skippedNonModel: 0,
-      skippedTooLarge: 0, // export exceeds Carbon's upload limits
-      failed: 0
-    };
+    // Single accumulator for both the run row's counters and this function's
+    // return value. Folded from memoized step results only, so it rebuilds
+    // identically on every replay of the function body.
+    let runProgress = createRunProgress();
     // A failure streak means something systemic (auth, sustained rate limiting,
     // outage) — abort instead of marching the whole catalog burning quota.
     let consecutiveFailures = 0;
@@ -487,10 +705,31 @@ export const onshapeBackfillFunction = inngest.createFunction(
         () => matchOnshapeBackfillPage(carbon, input, currentCursor)
       );
 
-      totals.revisionsScanned += pageResult.revisionsScanned;
-      totals.skippedNoItem += pageResult.skippedNoItem;
-      totals.skippedAlreadySynced += pageResult.skippedAlreadySynced;
-      totals.skippedNonModel += pageResult.skippedNonModel;
+      runProgress = accumulateRunCounters(runProgress, {
+        pagesProcessed: 1,
+        revisionsScanned: pageResult.revisionsScanned,
+        // Matched = every release resolved to exactly one item, whether it needs
+        // an export or already has the asset.
+        matched:
+          pageResult.workItems.length + pageResult.observedMatches.length,
+        skippedNoItem: pageResult.skippedNoItem,
+        skippedAlreadySynced: pageResult.skippedAlreadySynced,
+        skippedNonModel: pageResult.skippedNonModel
+      });
+      runProgress = captureUnmatchedReleases(
+        runProgress,
+        pageResult.unmatchedReleases
+      );
+      runProgress = captureAmbiguousReleases(
+        runProgress,
+        pageResult.ambiguousReleases
+      );
+
+      if (runId && pageResult.observedMatches.length > 0) {
+        await step.run(`observed-page-${pageIndex}`, () =>
+          recordObservedMatches(carbon, input, pageResult.observedMatches)
+        );
+      }
 
       // One memoized step per matched export+attach, so each Inngest HTTP call
       // stays short and a retry resumes at the first unfinished item. A step
@@ -502,14 +741,13 @@ export const onshapeBackfillFunction = inngest.createFunction(
         try {
           const attached = await step.run(
             `sync-page-${pageIndex}-item-${workIndex}`,
-            () => syncOnshapeBackfillWorkItem(carbon, input, workItem)
+            () => syncBackfillWorkItemWithState(carbon, input, workItem)
           );
           consecutiveFailures = 0;
-          if (attached.skippedTooLarge) {
-            totals.skippedTooLarge++;
-          } else {
-            totals.synced++;
-          }
+          runProgress = accumulateRunCounters(
+            runProgress,
+            attached.skippedTooLarge ? { skippedTooLarge: 1 } : { synced: 1 }
+          );
           // Every attached model is a RAW export — the assembler compresses it
           // into the viewer GLB via model-optimize.
           if (attached.modelUploadId) {
@@ -525,7 +763,7 @@ export const onshapeBackfillFunction = inngest.createFunction(
             `onshape-backfill: ${workItem.label} failed`,
             syncError
           );
-          totals.failed++;
+          runProgress = accumulateRunCounters(runProgress, { failed: 1 });
           consecutiveFailures++;
           if (consecutiveFailures >= MAX_CONSECUTIVE_FAILURES) {
             throw new Error(
@@ -565,6 +803,20 @@ export const onshapeBackfillFunction = inngest.createFunction(
         );
       }
 
+      if (runId) {
+        // One memoized progress write per page — the memoization IS the dedupe,
+        // so a replaying body never rewrites a page's progress.
+        const pageProgress = runProgress;
+        await step.run(`progress-page-${pageIndex}`, () =>
+          writeRunProgress(carbon, {
+            companyId: payload.companyId,
+            userId: payload.userId,
+            runId,
+            progress: pageProgress
+          })
+        );
+      }
+
       if (!pageResult.hasMore || !pageResult.nextCursor) {
         break;
       }
@@ -572,6 +824,27 @@ export const onshapeBackfillFunction = inngest.createFunction(
       pageIndex++;
     }
 
-    return totals;
+    if (runId) {
+      const finalProgress = runProgress;
+      await step.run("finalize-run", () =>
+        finalizeRun(carbon, {
+          companyId: payload.companyId,
+          userId: payload.userId,
+          runId,
+          status: "completed",
+          progress: finalProgress
+        })
+      );
+    }
+
+    return {
+      revisionsScanned: runProgress.revisionsScanned,
+      synced: runProgress.synced,
+      skippedNoItem: runProgress.skippedNoItem,
+      skippedAlreadySynced: runProgress.skippedAlreadySynced,
+      skippedNonModel: runProgress.skippedNonModel,
+      skippedTooLarge: runProgress.skippedTooLarge, // export exceeds Carbon's upload limits
+      failed: runProgress.failed
+    };
   }
 );

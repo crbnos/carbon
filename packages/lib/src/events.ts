@@ -574,6 +574,29 @@ export type Events = {
       onshapeCompanyId?: string;
       after?: string;
       pageLimit?: number;
+      // The `onshapeSyncRun` row the trigger route inserted, which this run
+      // reports progress and its terminal state into. Optional: events queued
+      // before sync tracking existed carry none and run untracked.
+      runId?: string;
+    };
+  };
+
+  // Cancel an in-flight Onshape backfill. The cancel route records the
+  // `cancelled` state (with who cancelled) BEFORE firing this — the run is
+  // killed by Inngest and performs no cleanup of its own.
+  "carbon/onshape-backfill.cancel": {
+    data: {
+      companyId: string;
+      runId: string;
+    };
+  };
+
+  // Onshape per-item re-pull: re-export one item's released assets on demand
+  "carbon/onshape-item-sync": {
+    data: {
+      companyId: string;
+      userId: string;
+      itemId: string;
     };
   };
 
