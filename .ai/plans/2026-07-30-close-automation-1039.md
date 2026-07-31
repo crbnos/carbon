@@ -3,7 +3,16 @@
 > Spec: `.ai/specs/2026-07-04-close-automation.md`
 > Issue: [crbnos/carbon#1039](https://github.com/crbnos/carbon/issues/1039)
 > Branch: `feat/close-automation-1039` → `main`
-> Status: **Phase 0 (schema foundation) shipped in this PR. Phases 1–7 (TS) are execute-ready and blocked only on `pnpm run generate:types` against a live DB.**
+> Status: **Phase 0 (schema foundation) + the pure amortization/date math (from Phases 3–4) shipped in this PR. The remaining TS — service/edge/route/UI/job/checklist layers — is execute-ready and blocked only on `pnpm run generate:types` against a live DB.**
+>
+> **Pulled forward (pure, DB-independent, no type regen needed):** `accounting.utils.ts` gained
+> `buildPrepaidScheduleEntries(totalAmount, months, startDate)` (straight-line, remainder folded into the
+> **final** entry so Σ === total exactly; `amortizationDate` = last day of each month) and
+> `advanceRecurringDate(dateStr, frequency)` (+1/+3/+12 months, clamps day to the target month's length so
+> Jan 31 → Feb 28/29, never rolls forward). 17 TDD unit tests (module suite 80 passing). Gates green here:
+> vitest, biome, `erp` typecheck. Phase 3's `createPrepaidSchedule` precompute and Phase 4's
+> `generateRecurringJournals` advance-step consume these directly — the DB-touching wrappers are all that
+> remains for those two mechanics.
 
 ## Dependency status
 
@@ -110,9 +119,11 @@ export async function createDepreciationRunProposal(
 `accounting.service.ts`:
 
 - `createPrepaidSchedule(client, { companyId, purchaseInvoiceId, purchaseInvoiceLineId, description, prepaidAccountId, expenseAccountId, totalAmount, startDate, months, createdBy })`
-  — inserts `prepaidSchedule` + precomputes `months` `prepaidScheduleEntry` rows: `round(totalAmount/months, 2)`
-  each, remainder folded into the **final** entry so Σ = totalAmount exactly; `amortizationDate` = last day of
-  each month from `startDate`.
+  — inserts `prepaidSchedule` + precomputes `months` `prepaidScheduleEntry` rows via
+  **`buildPrepaidScheduleEntries(totalAmount, months, startDate)`** (✅ shipped in this PR — `accounting.utils.ts`,
+  tested): `round(totalAmount/months, 2)` each, remainder folded into the **final** entry so Σ = totalAmount
+  exactly; `amortizationDate` = last day of each month from `startDate`. This service just persists what the
+  helper returns.
 - `getPrepaidSchedules(client, companyId, { status? })` — register rows with amortized-to-date (Σ entries with
   `journalId`) and remaining rollup; plus a GL tie-out helper: Σ remaining vs the prepaid account's GL balance
   at a period end.
@@ -145,9 +156,10 @@ month 12); manual AP invoice post with a prepaid line hits `prepaymentAccount`.
   on update, per repo line-editor convention). Balance validated in the model (Phase 1).
 - `generateRecurringJournals(client, { companyId })` — for each `active` template with `nextRunDate <= today`
   and (`endDate IS NULL` OR `nextRunDate <= endDate`): draft a journal dated `nextRunDate`
-  (`sourceType:'Recurring Journal'`, lines from template), then advance `nextRunDate` by frequency
-  (+1/+3/+12 months); if the advanced date passes `endDate`, set `active=false`. Advance in the **same
-  transaction** as the draft insert (idempotency under retry).
+  (`sourceType:'Recurring Journal'`, lines from template), then advance `nextRunDate` via
+  **`advanceRecurringDate(nextRunDate, frequency)`** (✅ shipped in this PR — `accounting.utils.ts`, tested;
+  +1/+3/+12 months, day clamped to the target month's length); if the advanced date passes `endDate`, set
+  `active=false`. Advance in the **same transaction** as the draft insert (idempotency under retry).
 - `postDueJournalReversals(client, { companyId })` — for each Posted `journal` with `autoReverseOn <= today`
   and `reversedById IS NULL`: call the existing `reverseJournalEntry(client, id, {companyId, userId:'system'})`
   but dated `autoReverseOn` (not today — extend `reverseJournalEntry` with an optional `postingDate`, defaulting

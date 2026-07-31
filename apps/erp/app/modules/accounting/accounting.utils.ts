@@ -642,3 +642,93 @@ export function buildDepreciationLines(
 
   return lines;
 }
+
+// ---------------------------------------------------------------------------
+// Prepaid-expense amortization (close automation, #1039)
+// ---------------------------------------------------------------------------
+
+export type PrepaidScheduleEntry = {
+  /** Last day of the amortization month, `YYYY-MM-DD`. */
+  amortizationDate: string;
+  amount: number;
+};
+
+/**
+ * Straight-line prepaid amortization schedule. Emits one entry per month:
+ * `round(totalAmount / months, 2)` each, with the rounding remainder folded
+ * into the FINAL entry so `Σ entries === totalAmount` exactly — the GL tie-out
+ * (Σ remaining vs. the prepaid account balance) never drifts. `amortizationDate`
+ * is the last day of each successive month starting from `startDate`'s month.
+ *
+ * Pure/DB-independent so it ships ahead of `generate:types`; the Phase 3
+ * `createPrepaidSchedule` service precomputes `prepaidScheduleEntry` rows from
+ * this.
+ */
+export function buildPrepaidScheduleEntries(
+  totalAmount: number,
+  months: number,
+  startDate: string
+): PrepaidScheduleEntry[] {
+  if (!Number.isInteger(months) || months <= 0) return [];
+
+  const total = Math.round(Number(totalAmount) * 100) / 100;
+  const perMonth = Math.round((total / months) * 100) / 100;
+  // Parse the date components directly (not via `new Date`) so the month/year
+  // are timezone-independent — the same reason `getLastDayOfMonth` builds in UTC.
+  const [year, month] = startDate.split("-").map(Number); // month is 1-based
+
+  const entries: PrepaidScheduleEntry[] = [];
+  let allocated = 0;
+  for (let i = 0; i < months; i++) {
+    const monthIndex = month - 1 + i; // 0-based months from January of `year`
+    const entryYear = year + Math.floor(monthIndex / 12);
+    const entryMonth = ((monthIndex % 12) + 12) % 12; // 0-based
+    const isLast = i === months - 1;
+    const amount = isLast
+      ? Math.round((total - allocated) * 100) / 100
+      : perMonth;
+    allocated = Math.round((allocated + amount) * 100) / 100;
+    entries.push({
+      amortizationDate: getLastDayOfMonth(entryYear, entryMonth),
+      amount
+    });
+  }
+  return entries;
+}
+
+// ---------------------------------------------------------------------------
+// Recurring journal templates (close automation, #1039)
+// ---------------------------------------------------------------------------
+
+export type RecurringJournalFrequency = "Monthly" | "Quarterly" | "Annually";
+
+const recurringFrequencyMonths: Record<RecurringJournalFrequency, number> = {
+  Monthly: 1,
+  Quarterly: 3,
+  Annually: 12
+};
+
+/**
+ * Advance a recurring-journal run date by its frequency (+1 / +3 / +12 months),
+ * clamping the day to the target month's length so e.g. `2026-01-31` + Monthly
+ * → `2026-02-28` rather than rolling forward into March. Returns `YYYY-MM-DD`.
+ *
+ * Pure/DB-independent; the Phase 4 `generateRecurringJournals` service uses this
+ * to advance `nextRunDate` after drafting each journal.
+ */
+export function advanceRecurringDate(
+  dateStr: string,
+  frequency: RecurringJournalFrequency
+): string {
+  const [year, month, day] = dateStr.split("-").map(Number); // month is 1-based
+  const monthIndex = month - 1 + recurringFrequencyMonths[frequency];
+  const targetYear = year + Math.floor(monthIndex / 12);
+  const targetMonth = ((monthIndex % 12) + 12) % 12; // 0-based
+  const lastDay = Number(
+    getLastDayOfMonth(targetYear, targetMonth).split("-")[2]
+  );
+  const targetDay = Math.min(day, lastDay);
+  const mm = String(targetMonth + 1).padStart(2, "0");
+  const dd = String(targetDay).padStart(2, "0");
+  return `${targetYear}-${mm}-${dd}`;
+}

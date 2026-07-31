@@ -3,7 +3,9 @@ import { describe, expect, it } from "vitest";
 import {
   acquisitionLines,
   addOneMonth,
+  advanceRecurringDate,
   buildDepreciationLines,
+  buildPrepaidScheduleEntries,
   calculateDepreciation,
   calculateMacrsDepreciation,
   calculateTaxDepreciation,
@@ -784,5 +786,99 @@ describe("buildDepreciationLines", () => {
     // Book SL: 108k/60mo * 12mo = $21,600
     // Tax MACRS 5-yr HY: 120k * 20% = $24,000
     expect(lines[0].taxAmount!).toBeGreaterThan(lines[0].amount);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Prepaid amortization schedule (#1039)
+// ---------------------------------------------------------------------------
+
+describe("buildPrepaidScheduleEntries", () => {
+  const sum = (entries: { amount: number }[]) =>
+    Math.round(entries.reduce((acc, e) => acc + e.amount, 0) * 100) / 100;
+
+  it("evenly divisible amount splits into equal monthly entries", () => {
+    const entries = buildPrepaidScheduleEntries(1200, 12, "2026-01-15");
+    expect(entries).toHaveLength(12);
+    expect(entries.every((e) => e.amount === 100)).toBe(true);
+    expect(sum(entries)).toBe(1200);
+  });
+
+  it("folds the rounding remainder into the FINAL entry so Σ === total", () => {
+    // 1000 / 12 = 83.333… → 83.33/mo, remainder in month 12.
+    const entries = buildPrepaidScheduleEntries(1000, 12, "2026-01-01");
+    expect(entries).toHaveLength(12);
+    for (let i = 0; i < 11; i++) expect(entries[i].amount).toBe(83.33);
+    // 1000 - 83.33 * 11 = 83.37
+    expect(entries[11].amount).toBe(83.37);
+    expect(sum(entries)).toBe(1000);
+  });
+
+  it("handles a 3-month schedule where the remainder is a rounding-up", () => {
+    // 100 / 3 = 33.33/mo; final = 100 - 66.66 = 33.34.
+    const entries = buildPrepaidScheduleEntries(100, 3, "2026-06-01");
+    expect(entries.map((e) => e.amount)).toEqual([33.33, 33.33, 33.34]);
+    expect(sum(entries)).toBe(100);
+  });
+
+  it("dates each entry to the last day of successive months, rolling years", () => {
+    const entries = buildPrepaidScheduleEntries(300, 3, "2026-11-10");
+    expect(entries.map((e) => e.amortizationDate)).toEqual([
+      "2026-11-30",
+      "2026-12-31",
+      "2027-01-31"
+    ]);
+  });
+
+  it("uses Feb's real month length (leap year) for the amortization date", () => {
+    const entries = buildPrepaidScheduleEntries(200, 2, "2028-01-01");
+    expect(entries.map((e) => e.amortizationDate)).toEqual([
+      "2028-01-31",
+      "2028-02-29"
+    ]);
+  });
+
+  it("returns no entries for a non-positive or non-integer month count", () => {
+    expect(buildPrepaidScheduleEntries(500, 0, "2026-01-01")).toEqual([]);
+    expect(buildPrepaidScheduleEntries(500, -3, "2026-01-01")).toEqual([]);
+    expect(buildPrepaidScheduleEntries(500, 1.5, "2026-01-01")).toEqual([]);
+  });
+
+  it("single-month schedule books the whole amount once", () => {
+    const entries = buildPrepaidScheduleEntries(499.99, 1, "2026-03-05");
+    expect(entries).toEqual([
+      { amortizationDate: "2026-03-31", amount: 499.99 }
+    ]);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Recurring journal date advancement (#1039)
+// ---------------------------------------------------------------------------
+
+describe("advanceRecurringDate", () => {
+  it("advances Monthly / Quarterly / Annually by 1 / 3 / 12 months", () => {
+    expect(advanceRecurringDate("2026-01-15", "Monthly")).toBe("2026-02-15");
+    expect(advanceRecurringDate("2026-01-15", "Quarterly")).toBe("2026-04-15");
+    expect(advanceRecurringDate("2026-01-15", "Annually")).toBe("2027-01-15");
+  });
+
+  it("rolls the year over when advancing past December", () => {
+    expect(advanceRecurringDate("2026-11-01", "Quarterly")).toBe("2027-02-01");
+    expect(advanceRecurringDate("2026-12-10", "Monthly")).toBe("2027-01-10");
+  });
+
+  it("clamps the day to the target month's length instead of rolling forward", () => {
+    // Jan 31 + 1 month is Feb, which has no 31st → clamp to Feb 28 (not Mar 3).
+    expect(advanceRecurringDate("2026-01-31", "Monthly")).toBe("2026-02-28");
+    // Leap year → Feb 29.
+    expect(advanceRecurringDate("2028-01-31", "Monthly")).toBe("2028-02-29");
+    // Aug 31 + 1 month → Sep 30.
+    expect(advanceRecurringDate("2026-08-31", "Monthly")).toBe("2026-09-30");
+  });
+
+  it("preserves the day when the target month is long enough", () => {
+    expect(advanceRecurringDate("2026-03-31", "Quarterly")).toBe("2026-06-30");
+    expect(advanceRecurringDate("2026-10-31", "Monthly")).toBe("2026-11-30");
   });
 });
