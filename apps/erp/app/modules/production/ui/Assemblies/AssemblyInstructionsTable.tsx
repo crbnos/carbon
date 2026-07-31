@@ -9,7 +9,7 @@ import {
   useDisclosure,
   VStack
 } from "@carbon/react";
-import { formatDate } from "@carbon/utils";
+import { formatDate, getItemById, getItemReadableId } from "@carbon/utils";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo, useState } from "react";
 import { flushSync } from "react-dom";
@@ -25,7 +25,7 @@ import {
   LuTrash
 } from "react-icons/lu";
 import { useNavigate } from "react-router";
-import { Hyperlink, New, Table } from "~/components";
+import { exportOnlyColumn, Hyperlink, New, Table } from "~/components";
 import { ConfirmDelete } from "~/components/Modals";
 import { usePermissions } from "~/hooks";
 import { getLinkToItemDetails } from "~/modules/items/ui/Item/ItemForm";
@@ -115,9 +115,18 @@ const AssemblyInstructionsTable = memo(
             );
           },
           meta: {
-            icon: <LuSquareStack />
+            icon: <LuSquareStack />,
+            // Without this the exporter substitutes the item's name for the id
+            // (Download.tsx idNameMaps), losing the readable id the cell shows.
+            exportValue: (row) => getItemReadableId(items, row.itemId) ?? null
           }
         },
+        exportOnlyColumn<AssemblyInstructionListItem>({
+          id: "itemName",
+          header: "Item Name",
+          value: (row) =>
+            row.itemId ? (getItemById(items, row.itemId)?.name ?? null) : null
+        }),
         {
           id: "model",
           header: "Model",

@@ -6964,6 +6964,9 @@ msgstr "Товар должен соответствовать выбранно�
 msgid "Item must match a selected type OR a selected group"
 msgstr "Товар должен соответствовать выбранному типу ИЛИ выбранной группе"
 
+msgid "Item Name"
+msgstr "Название позиции"
+
 msgid "Item Scope"
 msgstr "Область применения товара"
 

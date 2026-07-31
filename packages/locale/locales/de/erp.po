@@ -6964,6 +6964,9 @@ msgstr "Element muss einem ausgewählten Typ UND einer ausgewählten Gruppe ents
 msgid "Item must match a selected type OR a selected group"
 msgstr "Artikel muss einem ausgewählten Typ ODER einer ausgewählten Gruppe entsprechen"
 
+msgid "Item Name"
+msgstr "Artikelname"
+
 msgid "Item Scope"
 msgstr "Artikelbereich"
 

@@ -6964,6 +6964,9 @@ msgstr "आइटम को एक चयनित प्रकार और ए
 msgid "Item must match a selected type OR a selected group"
 msgstr "आइटम को एक चयनित प्रकार OR एक चयनित समूह से मेल खाना चाहिए"
 
+msgid "Item Name"
+msgstr "आइटम नाम"
+
 msgid "Item Scope"
 msgstr "आइटम स्कोप"
 

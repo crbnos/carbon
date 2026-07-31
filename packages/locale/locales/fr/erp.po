@@ -6964,6 +6964,9 @@ msgstr "L'article doit correspondre à un type sélectionné ET à un groupe sé
 msgid "Item must match a selected type OR a selected group"
 msgstr "L'article doit correspondre à un type sélectionné OU à un groupe sélectionné"
 
+msgid "Item Name"
+msgstr "Nom de l'article"
+
 msgid "Item Scope"
 msgstr "Portée des articles"
 

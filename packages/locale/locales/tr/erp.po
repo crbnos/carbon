@@ -6964,6 +6964,9 @@ msgstr "Öğe seçilen bir tür VE seçilen bir grup ile eşleşmelidir"
 msgid "Item must match a selected type OR a selected group"
 msgstr "Öğe seçilen bir tür VEYA seçilen bir gruba uymalıdır"
 
+msgid "Item Name"
+msgstr "Kalem Adı"
+
 msgid "Item Scope"
 msgstr "Ürün Kapsamı"
 

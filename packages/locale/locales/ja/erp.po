@@ -6964,6 +6964,9 @@ msgstr "アイテムは選択されたタイプと選択されたグループの
 msgid "Item must match a selected type OR a selected group"
 msgstr "アイテムは選択されたタイプまたは選択されたグループと一致する必要があります"
 
+msgid "Item Name"
+msgstr "品目名"
+
 msgid "Item Scope"
 msgstr "アイテムスコープ"
 

@@ -6964,6 +6964,9 @@ msgstr "项目必须匹配选定的类型和选定的组"
 msgid "Item must match a selected type OR a selected group"
 msgstr "项目必须匹配选定的类型或选定的组"
 
+msgid "Item Name"
+msgstr "物料名称"
+
 msgid "Item Scope"
 msgstr "物品范围"
 

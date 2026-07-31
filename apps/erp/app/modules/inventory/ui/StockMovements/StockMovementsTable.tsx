@@ -18,7 +18,13 @@ import {
   LuWrench
 } from "react-icons/lu";
 import { Link } from "react-router";
-import { EmployeeAvatar, Hyperlink, ItemThumbnail, Table } from "~/components";
+import {
+  EmployeeAvatar,
+  exportOnlyColumn,
+  Hyperlink,
+  ItemThumbnail,
+  Table
+} from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { useLocations } from "~/components/Form/Location";
 import { useDateFormatter, usePermissions, useUser } from "~/hooks";
@@ -86,6 +92,11 @@ const StockMovementsTable = memo(
             icon: <LuBlocks />
           }
         },
+        exportOnlyColumn<StockMovement>({
+          id: "itemName",
+          header: t`Item Name`,
+          value: (row) => row.itemDescription ?? null
+        }),
         {
           accessorKey: "entryType",
           header: t`Entry Type`,

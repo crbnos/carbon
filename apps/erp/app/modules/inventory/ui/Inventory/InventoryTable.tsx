@@ -39,6 +39,7 @@ import {
 } from "react-icons/lu";
 import { useFetcher } from "react-router";
 import {
+  exportOnlyColumn,
   Hyperlink,
   ItemThumbnail,
   MethodItemTypeIcon,
@@ -139,6 +140,11 @@ const InventoryTable = memo(
             icon: <LuBookMarked />
           }
         },
+        exportOnlyColumn<InventoryItem>({
+          id: "itemName",
+          header: t`Item Name`,
+          value: (row) => row.name ?? null
+        }),
 
         {
           accessorKey: "quantityOnHand",

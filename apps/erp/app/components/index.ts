@@ -40,7 +40,7 @@ import SearchFilter from "./SearchFilter";
 import { SearchLandingPage } from "./SearchLandingPage";
 import Select from "./Select";
 import SupplierAvatar from "./SupplierAvatar";
-import Table from "./Table";
+import Table, { exportOnlyColumn } from "./Table";
 
 export {
   Assignee,
@@ -86,5 +86,6 @@ export {
   Table,
   TimeTypeIcon,
   TrackingTypeIcon,
+  exportOnlyColumn,
   useOptimisticAssignment
 };

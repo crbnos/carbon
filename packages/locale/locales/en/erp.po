@@ -6964,6 +6964,9 @@ msgstr "Item must match a selected type AND a selected group"
 msgid "Item must match a selected type OR a selected group"
 msgstr "Item must match a selected type OR a selected group"
 
+msgid "Item Name"
+msgstr "Item Name"
+
 msgid "Item Scope"
 msgstr "Item Scope"
 
