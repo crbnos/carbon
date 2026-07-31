@@ -11,6 +11,34 @@ import { getNextSequence } from "../shared/get-next-sequence.ts";
 const pool = getConnectionPool(1);
 const db = getDatabaseClient<DB>(pool);
 
+// Resolves a fallback location when a caller omits locationId, so creating a
+// blank shipment degrades gracefully instead of failing payload validation.
+// Prefers the creating user's assigned employeeJob location, then the company's
+// earliest-created location. Only safe where locationId does not scope which
+// source-document lines are shipped (i.e. shipmentDefault).
+async function getFallbackLocationId(
+  client: Awaited<ReturnType<typeof requirePermissions>>,
+  companyId: string,
+  userId: string,
+): Promise<string | null> {
+  const employeeJob = await client
+    .from("employeeJob")
+    .select("locationId")
+    .eq("id", userId)
+    .eq("companyId", companyId)
+    .maybeSingle();
+  if (employeeJob.data?.locationId) return employeeJob.data.locationId;
+
+  const location = await client
+    .from("location")
+    .select("id")
+    .eq("companyId", companyId)
+    .order("createdAt", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+  return location.data?.id ?? null;
+}
+
 const payloadValidator = z.discriminatedUnion("type", [
   z.object({
     type: z.literal("nonConformanceTasks"),
@@ -64,7 +92,7 @@ const payloadValidator = z.discriminatedUnion("type", [
   }),
   z.object({
     type: z.literal("shipmentDefault"),
-    locationId: z.string(),
+    locationId: z.string().optional(),
     companyId: z.string(),
     userId: z.string(),
   }),
@@ -1474,6 +1502,9 @@ serve(async (req: Request) => {
         userId,
       });
       try {
+        const effectiveLocationId =
+          locationId ?? (await getFallbackLocationId(client, companyId, userId));
+
         await db.transaction().execute(async (trx) => {
           createdDocumentId = await getNextSequence(trx, "shipment", companyId);
 
@@ -1482,7 +1513,7 @@ serve(async (req: Request) => {
             .values({
               shipmentId: createdDocumentId,
               companyId: companyId,
-              locationId: locationId,
+              locationId: effectiveLocationId,
               createdBy: userId,
             })
             .returning(["id", "shipmentId"])
