@@ -915,6 +915,9 @@ msgstr "Alfa"
 msgid "Always"
 msgstr "Her zaman"
 
+msgid "Amortization Entries"
+msgstr ""
+
 msgid "Amortized"
 msgstr ""
 
@@ -1169,6 +1172,9 @@ msgstr "{0} siparişini iptal etmek istediğinizden emin misiniz? Bu siparişi k
 msgid "Are you sure you want to cancel this job? It will no longer be available on the shop floor."
 msgstr "Bu işi iptal etmek istediğinizden emin misiniz? Artık atölyede kullanılamayacak."
 
+msgid "Are you sure you want to cancel this prepaid schedule? This can only be done before any amortization has posted."
+msgstr ""
+
 msgid "Are you sure you want to change the {propertyName} property? Since you use generated material IDs this will change the part ID of this part, and all related revisions."
 msgstr "Bu {propertyName} özelliğini değiştirmek istediğinizden emin misiniz? Üretilen malzeme kimlikleri kullandığınız için bu, parçanın ve tüm ilgili revizyonların parça kimliğini değiştirecektir."
 
@@ -1201,6 +1207,10 @@ msgstr "{label} yapılandırma kuralını devre dışı bırakmak istediğinizde
 
 msgid "Are you sure you want to deactivate the process: {name}? It will no longer appear in dropdowns."
 msgstr "İş sürecini devre dışı bırakmak istediğinizden emin misiniz: {name}? Artık açılır menülerde görünmeyecektir."
+
+#. placeholder {0}: template.name
+msgid "Are you sure you want to deactivate the recurring journal: {0}? It will stop generating new journals."
+msgstr ""
 
 msgid "Are you sure you want to deactivate these users?"
 msgstr "Bu kullanıcıları devre dışı bırakmak istediğinizden emin misiniz?"
@@ -2076,11 +2086,17 @@ msgstr "İşi İptal Et"
 msgid "Cancel Order"
 msgstr "Siparişi İptal Et"
 
+msgid "Cancel prepaid schedule"
+msgstr ""
+
 msgid "Cancel Purchase Order"
 msgstr "Satın Alma Siparişini İptal Et"
 
 msgid "Cancel Sales Order"
 msgstr "Satış Siparişini İptal Et"
+
+msgid "Cancel Schedule"
+msgstr ""
 
 msgid "Cancel SO"
 msgstr "SO'yu İptal Et"

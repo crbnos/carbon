@@ -8,12 +8,14 @@ import {
   LuBuilding2,
   LuCalendar1,
   LuCalendarCheck,
+  LuCalendarClock,
   LuClock,
   LuCoins,
   LuEuro,
   LuFileSpreadsheet,
   LuHandCoins,
   LuLayers,
+  LuRepeat,
   LuScale,
   LuSheet,
   LuTrendingUp
@@ -31,7 +33,9 @@ const accountingOnlyRoutes = new Set<string>([
   path.to.accountingJournals,
   path.to.accountingPeriods,
   path.to.fixedAssets,
-  path.to.depreciationRuns
+  path.to.depreciationRuns,
+  path.to.recurringJournals,
+  path.to.prepaidSchedules
 ]);
 
 export default function useAccountingSubmodules() {
@@ -81,6 +85,18 @@ export default function useAccountingSubmodules() {
             to: path.to.accountingPeriods,
             role: "employee",
             icon: <LuCalendarCheck />
+          },
+          {
+            name: t`Recurring Journals`,
+            to: path.to.recurringJournals,
+            role: "employee",
+            icon: <LuRepeat />
+          },
+          {
+            name: t`Prepaid Schedules`,
+            to: path.to.prepaidSchedules,
+            role: "employee",
+            icon: <LuCalendarClock />
           }
         ]
       },

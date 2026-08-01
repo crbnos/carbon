@@ -12,7 +12,11 @@ import type {
   getJournalEntries,
   getJournalEntry,
   getPaymentTerms,
-  getPeriodCloseReadiness
+  getPeriodCloseReadiness,
+  getPrepaidSchedule,
+  getPrepaidSchedules,
+  getRecurringJournalTemplate,
+  getRecurringJournalTemplates
 } from "./accounting.service";
 
 export type Account = NonNullable<
@@ -376,6 +380,30 @@ export type PaymentTermCalculationMethod =
 
 export type PaymentTerm = NonNullable<
   Awaited<ReturnType<typeof getPaymentTerms>>["data"]
+>[number];
+
+// -- Close automation (#1039): recurring journals & prepaid schedules --
+
+export type RecurringJournalTemplate = NonNullable<
+  Awaited<ReturnType<typeof getRecurringJournalTemplate>>["data"]
+>;
+
+export type RecurringJournalTemplateLine =
+  RecurringJournalTemplate["recurringJournalTemplateLine"][number];
+
+export type RecurringJournalTemplateListItem = NonNullable<
+  Awaited<ReturnType<typeof getRecurringJournalTemplates>>["data"]
+>[number];
+
+export type PrepaidSchedule = NonNullable<
+  Awaited<ReturnType<typeof getPrepaidSchedule>>["data"]
+>;
+
+export type PrepaidScheduleEntry =
+  PrepaidSchedule["prepaidScheduleEntry"][number];
+
+export type PrepaidScheduleListItem = NonNullable<
+  Awaited<ReturnType<typeof getPrepaidSchedules>>["data"]
 >[number];
 
 export type Transaction = {

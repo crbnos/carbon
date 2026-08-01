@@ -1529,6 +1529,7 @@ export const path = {
     newQuoteOperationStep: `${x}/quote/methods/operation/step/new`,
     newQuoteOperationTool: `${x}/quote/methods/operation/tool/new`,
     newReceipt: `${x}/receipt/new`,
+    newRecurringJournal: `${x}/accounting/recurring-journals/new`,
     newRequiredAction: `${x}/quality/required-actions/new`,
     newRevision: `${x}/items/revisions/new`,
     newRisk: `${x}/quality/risks/new`,
@@ -1665,6 +1666,12 @@ export const path = {
     pickingSchedule: `${x}/picking-list/schedule`,
     postJournalEntry: (id: string) =>
       generatePath(`${x}/journal-entry/${id}/post`),
+    prepaidSchedule: (id: string) =>
+      generatePath(`${x}/accounting/prepaid-schedules/${id}`),
+    prepaidScheduleCancel: (id: string) =>
+      generatePath(`${x}/accounting/prepaid-schedules/${id}/cancel`),
+    prepaidSchedules: `${x}/accounting/prepaid-schedules`,
+    prepaidSchedulesGenerate: `${x}/accounting/prepaid-schedules/generate`,
     priceOverride: (id: string) => generatePath(`${x}/sales/price-list/${id}`),
     pricingRule: (id: string) => generatePath(`${x}/sales/pricing-rules/${id}`),
     printingSettings: `${x}/settings/printing`,
@@ -1841,6 +1848,12 @@ export const path = {
     receiptVoid: (id: string) => generatePath(`${x}/receipt/${id}/void`),
     receivables: `${x}/invoicing/receivables`,
     receivablesAdjust: `${x}/invoicing/receivables/adjust`,
+    recurringJournal: (id: string) =>
+      generatePath(`${x}/accounting/recurring-journals/${id}`),
+    recurringJournalDelete: (id: string) =>
+      generatePath(`${x}/accounting/recurring-journals/${id}/delete`),
+    recurringJournals: `${x}/accounting/recurring-journals`,
+    recurringJournalsGenerate: `${x}/accounting/recurring-journals/generate`,
     refreshSession: "/refresh-session",
     repeatDepreciationRun: (id: string) =>
       generatePath(`${x}/depreciation-run/${id}/repeat`),

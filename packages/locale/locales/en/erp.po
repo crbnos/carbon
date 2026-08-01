@@ -915,6 +915,9 @@ msgstr "Alpha"
 msgid "Always"
 msgstr "Always"
 
+msgid "Amortization Entries"
+msgstr "Amortization Entries"
+
 msgid "Amortized"
 msgstr "Amortized"
 
@@ -1169,6 +1172,9 @@ msgstr "Are you sure you want to cancel {0}? This will close the order."
 msgid "Are you sure you want to cancel this job? It will no longer be available on the shop floor."
 msgstr "Are you sure you want to cancel this job? It will no longer be available on the shop floor."
 
+msgid "Are you sure you want to cancel this prepaid schedule? This can only be done before any amortization has posted."
+msgstr "Are you sure you want to cancel this prepaid schedule? This can only be done before any amortization has posted."
+
 msgid "Are you sure you want to change the {propertyName} property? Since you use generated material IDs this will change the part ID of this part, and all related revisions."
 msgstr "Are you sure you want to change the {propertyName} property? Since you use generated material IDs this will change the part ID of this part, and all related revisions."
 
@@ -1201,6 +1207,10 @@ msgstr "Are you sure you want to deactivate the {label} configuration rule?"
 
 msgid "Are you sure you want to deactivate the process: {name}? It will no longer appear in dropdowns."
 msgstr "Are you sure you want to deactivate the process: {name}? It will no longer appear in dropdowns."
+
+#. placeholder {0}: template.name
+msgid "Are you sure you want to deactivate the recurring journal: {0}? It will stop generating new journals."
+msgstr "Are you sure you want to deactivate the recurring journal: {0}? It will stop generating new journals."
 
 msgid "Are you sure you want to deactivate these users?"
 msgstr "Are you sure you want to deactivate these users?"
@@ -2076,11 +2086,17 @@ msgstr "Cancel Job"
 msgid "Cancel Order"
 msgstr "Cancel Order"
 
+msgid "Cancel prepaid schedule"
+msgstr "Cancel prepaid schedule"
+
 msgid "Cancel Purchase Order"
 msgstr "Cancel Purchase Order"
 
 msgid "Cancel Sales Order"
 msgstr "Cancel Sales Order"
+
+msgid "Cancel Schedule"
+msgstr "Cancel Schedule"
 
 msgid "Cancel SO"
 msgstr "Cancel SO"

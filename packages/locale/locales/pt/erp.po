@@ -915,6 +915,9 @@ msgstr "Alfa"
 msgid "Always"
 msgstr "Sempre"
 
+msgid "Amortization Entries"
+msgstr ""
+
 msgid "Amortized"
 msgstr ""
 
@@ -1169,6 +1172,9 @@ msgstr "Tem certeza que deseja cancelar {0}? Isso fechará o pedido."
 msgid "Are you sure you want to cancel this job? It will no longer be available on the shop floor."
 msgstr "Tem a certeza de que deseja cancelar este trabalho? Deixará de estar disponível no chão de fábrica."
 
+msgid "Are you sure you want to cancel this prepaid schedule? This can only be done before any amortization has posted."
+msgstr ""
+
 msgid "Are you sure you want to change the {propertyName} property? Since you use generated material IDs this will change the part ID of this part, and all related revisions."
 msgstr "Tem a certeza de que deseja alterar a propriedade {propertyName}? Como utiliza IDs de material gerados, isto alterará o ID da peça desta peça e todas as revisões relacionadas."
 
@@ -1201,6 +1207,10 @@ msgstr "Tem a certeza de que deseja desativar a regra de configuração {label}?
 
 msgid "Are you sure you want to deactivate the process: {name}? It will no longer appear in dropdowns."
 msgstr "Tem a certeza de que deseja desativar o processo: {name}? Deixará de aparecer nas listas suspensas."
+
+#. placeholder {0}: template.name
+msgid "Are you sure you want to deactivate the recurring journal: {0}? It will stop generating new journals."
+msgstr ""
 
 msgid "Are you sure you want to deactivate these users?"
 msgstr "Tem a certeza de que deseja desativar estes utilizadores?"
@@ -2076,11 +2086,17 @@ msgstr "Cancelar Trabalho"
 msgid "Cancel Order"
 msgstr "Cancelar pedido"
 
+msgid "Cancel prepaid schedule"
+msgstr ""
+
 msgid "Cancel Purchase Order"
 msgstr "Cancelar ordem de compra"
 
 msgid "Cancel Sales Order"
 msgstr "Cancelar Pedido de Venda"
+
+msgid "Cancel Schedule"
+msgstr ""
 
 msgid "Cancel SO"
 msgstr "Cancelar SO"

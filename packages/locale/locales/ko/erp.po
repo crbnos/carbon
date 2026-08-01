@@ -915,6 +915,9 @@ msgstr "알파"
 msgid "Always"
 msgstr "항상"
 
+msgid "Amortization Entries"
+msgstr ""
+
 msgid "Amortized"
 msgstr ""
 
@@ -1169,6 +1172,9 @@ msgstr "{0}을(를) 취소하시겠습니까? 주문이 종료됩니다."
 msgid "Are you sure you want to cancel this job? It will no longer be available on the shop floor."
 msgstr "이 작업을 취소하시겠습니까? 더 이상 현장에서 사용할 수 없게 됩니다."
 
+msgid "Are you sure you want to cancel this prepaid schedule? This can only be done before any amortization has posted."
+msgstr ""
+
 msgid "Are you sure you want to change the {propertyName} property? Since you use generated material IDs this will change the part ID of this part, and all related revisions."
 msgstr "{propertyName} 속성을 변경하시겠습니까? 자동 생성된 자재 ID를 사용하고 있으므로, 이 변경으로 해당 품목의 품목 ID와 관련된 모든 리비전이 변경됩니다."
 
@@ -1201,6 +1207,10 @@ msgstr "{label} 설정 규칙을 비활성화하시겠습니까?"
 
 msgid "Are you sure you want to deactivate the process: {name}? It will no longer appear in dropdowns."
 msgstr "공정 {name}을(를) 비활성화하시겠습니까? 더 이상 드롭다운에 표시되지 않습니다."
+
+#. placeholder {0}: template.name
+msgid "Are you sure you want to deactivate the recurring journal: {0}? It will stop generating new journals."
+msgstr ""
 
 msgid "Are you sure you want to deactivate these users?"
 msgstr "이 사용자들을 비활성화하시겠습니까?"
@@ -2076,11 +2086,17 @@ msgstr "작업 취소"
 msgid "Cancel Order"
 msgstr "주문 취소"
 
+msgid "Cancel prepaid schedule"
+msgstr ""
+
 msgid "Cancel Purchase Order"
 msgstr "구매주문 취소"
 
 msgid "Cancel Sales Order"
 msgstr "판매주문 취소"
+
+msgid "Cancel Schedule"
+msgstr ""
 
 msgid "Cancel SO"
 msgstr "판매주문 취소"

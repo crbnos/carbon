@@ -915,6 +915,9 @@ msgstr "अल्फा"
 msgid "Always"
 msgstr "हमेशा"
 
+msgid "Amortization Entries"
+msgstr ""
+
 msgid "Amortized"
 msgstr ""
 
@@ -1169,6 +1172,9 @@ msgstr "क्या आप वाकई {0} रद्द करना चाह
 msgid "Are you sure you want to cancel this job? It will no longer be available on the shop floor."
 msgstr "क्या आप सुनिश्चित हैं कि आप इस कार्य को रद्द करना चाहते हैं? यह अब शॉप फ्लोर पर उपलब्ध नहीं होगा।"
 
+msgid "Are you sure you want to cancel this prepaid schedule? This can only be done before any amortization has posted."
+msgstr ""
+
 msgid "Are you sure you want to change the {propertyName} property? Since you use generated material IDs this will change the part ID of this part, and all related revisions."
 msgstr "क्या आप सुनिश्चित हैं कि आप {propertyName} प्रॉपर्टी को बदलना चाहते हैं? चूंकि आप जेनरेट की गई मटेरियल आईडी का उपयोग करते हैं, यह इस पार्ट की पार्ट आईडी और सभी संबंधित संशोधनों को बदल देगा।"
 
@@ -1201,6 +1207,10 @@ msgstr "क्या आप सुनिश्चित हैं कि आप 
 
 msgid "Are you sure you want to deactivate the process: {name}? It will no longer appear in dropdowns."
 msgstr "क्या आप सुनिश्चित हैं कि आप प्रक्रिया को निष्क्रिय करना चाहते हैं: {name}? यह अब ड्रॉपडाउन में दिखाई नहीं देगा।"
+
+#. placeholder {0}: template.name
+msgid "Are you sure you want to deactivate the recurring journal: {0}? It will stop generating new journals."
+msgstr ""
 
 msgid "Are you sure you want to deactivate these users?"
 msgstr "क्या आप सुनिश्चित हैं कि आप इन उपयोगकर्ताओं को निष्क्रिय करना चाहते हैं?"
@@ -2076,11 +2086,17 @@ msgstr "नौकरी रद्द करें"
 msgid "Cancel Order"
 msgstr "ऑर्डर रद्द करें"
 
+msgid "Cancel prepaid schedule"
+msgstr ""
+
 msgid "Cancel Purchase Order"
 msgstr "क्रय ऑर्डर रद्द करें"
 
 msgid "Cancel Sales Order"
 msgstr "बिक्रय आदेश रद्द करें"
+
+msgid "Cancel Schedule"
+msgstr ""
 
 msgid "Cancel SO"
 msgstr "SO को रद्द करें"

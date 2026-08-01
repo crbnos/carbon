@@ -915,6 +915,9 @@ msgstr "Alpha"
 msgid "Always"
 msgstr "Sempre"
 
+msgid "Amortization Entries"
+msgstr ""
+
 msgid "Amortized"
 msgstr ""
 
@@ -1169,6 +1172,9 @@ msgstr "Sei sicuro di voler annullare {0}? Questo chiuderà l'ordine."
 msgid "Are you sure you want to cancel this job? It will no longer be available on the shop floor."
 msgstr "Sei sicuro di voler annullare questo lavoro? Non sarà più disponibile in officina."
 
+msgid "Are you sure you want to cancel this prepaid schedule? This can only be done before any amortization has posted."
+msgstr ""
+
 msgid "Are you sure you want to change the {propertyName} property? Since you use generated material IDs this will change the part ID of this part, and all related revisions."
 msgstr "Sei sicuro di voler cambiare la proprietà {propertyName}? Poiché utilizzi ID materiale generati, questo cambierà l'ID parte di questa parte e tutte le revisioni correlate."
 
@@ -1201,6 +1207,10 @@ msgstr "Sei sicuro di voler disattivare la regola di configurazione {label}?"
 
 msgid "Are you sure you want to deactivate the process: {name}? It will no longer appear in dropdowns."
 msgstr "Sei sicuro di voler disattivare il processo: {name}? Non apparirà più nei menu a discesa."
+
+#. placeholder {0}: template.name
+msgid "Are you sure you want to deactivate the recurring journal: {0}? It will stop generating new journals."
+msgstr ""
 
 msgid "Are you sure you want to deactivate these users?"
 msgstr "Sei sicuro di voler disattivare questi utenti?"
@@ -2076,11 +2086,17 @@ msgstr "Annulla Lavoro"
 msgid "Cancel Order"
 msgstr "Annulla ordine"
 
+msgid "Cancel prepaid schedule"
+msgstr ""
+
 msgid "Cancel Purchase Order"
 msgstr "Annulla ordine d'acquisto"
 
 msgid "Cancel Sales Order"
 msgstr "Annulla Ordine di Vendita"
+
+msgid "Cancel Schedule"
+msgstr ""
 
 msgid "Cancel SO"
 msgstr "Annulla SO"
