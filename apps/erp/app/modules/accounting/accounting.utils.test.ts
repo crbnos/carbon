@@ -854,6 +854,32 @@ describe("computeNettingPosition", () => {
     expect(pos.residualAmount).toBe(100.01);
     expect(pos.residualPayerCompanyId).toBe("B");
   });
+
+  it("rounds half-cent balances up decimal-safely (1.005 → 1.01, not 1.00)", () => {
+    // Regression: naive Math.round(1.005 * 100) / 100 mis-rounds to 1.00
+    // because 1.005 * 100 is 100.49999… in binary floating point.
+    const pos = computeNettingPosition({
+      companyAId: "A",
+      companyBId: "B",
+      grossReceivableAtoB: 1.005,
+      grossReceivableBtoA: 0
+    });
+    expect(pos.residualAmount).toBe(1.01);
+    expect(pos.nettedAmount).toBe(0);
+    expect(pos.residualPayerCompanyId).toBe("B");
+  });
+
+  it("nets a half-cent balance decimal-safely (both sides 1.005 → net 1.01)", () => {
+    const pos = computeNettingPosition({
+      companyAId: "A",
+      companyBId: "B",
+      grossReceivableAtoB: 1.005,
+      grossReceivableBtoA: 1.005
+    });
+    expect(pos.nettedAmount).toBe(1.01);
+    expect(pos.residualAmount).toBe(0);
+    expect(pos.residualPayerCompanyId).toBeNull();
+  });
 });
 
 describe("allocateNettingApplications", () => {
@@ -932,5 +958,26 @@ describe("allocateNettingApplications", () => {
       { id: "c", openAmount: 20, appliedAmount: 13.34 }
     ]);
     expect(totalApplied).toBe(33.34);
+  });
+
+  it("rounds a half-cent target decimal-safely (1.005 → 1.01, not 1.00)", () => {
+    // Regression: naive Math.round(1.005 * 100) / 100 mis-rounds to 1.00.
+    const { applications, totalApplied, unapplied } =
+      allocateNettingApplications(1.005, [{ id: "a", openAmount: 100 }]);
+    expect(applications).toEqual([
+      { id: "a", openAmount: 100, appliedAmount: 1.01 }
+    ]);
+    expect(totalApplied).toBe(1.01);
+    expect(unapplied).toBe(0);
+  });
+
+  it("rounds a half-cent open item decimal-safely (1.005 → 1.01)", () => {
+    const { applications, totalApplied, unapplied } =
+      allocateNettingApplications(100, [{ id: "a", openAmount: 1.005 }]);
+    expect(applications).toEqual([
+      { id: "a", openAmount: 1.01, appliedAmount: 1.01 }
+    ]);
+    expect(totalApplied).toBe(1.01);
+    expect(unapplied).toBe(98.99);
   });
 });

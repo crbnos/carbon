@@ -1,4 +1,4 @@
-import { credit, debit, roundAmount, toStoredAmount } from "@carbon/utils";
+import { credit, debit, toStoredAmount } from "@carbon/utils";
 
 /**
  * Gain/(loss) on disposal of a fixed asset = sale proceeds − net book value
@@ -655,6 +655,19 @@ export function buildDepreciationLines(
 // open items it reads.
 // ---------------------------------------------------------------------------
 
+/**
+ * Round a monetary value to cents, decimal-safe. The naive
+ * `Math.round(value * 100) / 100` mis-rounds half-cent values whose scaled
+ * product lands just below the .5 boundary in binary floating point — e.g.
+ * `1.005 * 100` is `100.49999…`, so `Math.round` yields `1.00` instead of
+ * `1.01`. Re-parsing the value's own decimal string with a shifted exponent
+ * (`"1.005e2"` → `100.5` exactly) sidesteps that error before rounding. Used by
+ * the netting kernel so `nettedAmount`/`residualAmount`/`appliedAmount` tie out.
+ */
+function roundToCents(value: number): number {
+  return Number(`${Math.round(Number(`${value}e2`))}e-2`);
+}
+
 export type NettingPosition = {
   /** min(gross A→B, gross B→A) — the overlap both directions clear at once. */
   nettedAmount: number;
@@ -681,11 +694,11 @@ export function computeNettingPosition(args: {
 }): NettingPosition {
   const { companyAId, companyBId, grossReceivableAtoB, grossReceivableBtoA } =
     args;
-  const bOwesA = roundAmount(Math.max(0, grossReceivableAtoB));
-  const aOwesB = roundAmount(Math.max(0, grossReceivableBtoA));
+  const bOwesA = roundToCents(Math.max(0, grossReceivableAtoB));
+  const aOwesB = roundToCents(Math.max(0, grossReceivableBtoA));
 
-  const nettedAmount = roundAmount(Math.min(bOwesA, aOwesB));
-  const residualAmount = roundAmount(Math.abs(bOwesA - aOwesB));
+  const nettedAmount = roundToCents(Math.min(bOwesA, aOwesB));
+  const residualAmount = roundToCents(Math.abs(bOwesA - aOwesB));
   const residualPayerCompanyId =
     bOwesA > aOwesB ? companyBId : aOwesB > bOwesA ? companyAId : null;
 
@@ -723,19 +736,19 @@ export function allocateNettingApplications(
   totalApplied: number;
   unapplied: number;
 } {
-  const target = roundAmount(Math.max(0, targetAmount));
+  const target = roundToCents(Math.max(0, targetAmount));
   const applications: NettingApplication[] = [];
   let remaining = target;
 
   for (const item of openItems) {
     if (remaining <= 0) break;
-    const open = roundAmount(item.openAmount);
+    const open = roundToCents(item.openAmount);
     if (open <= 0) continue;
-    const appliedAmount = roundAmount(Math.min(remaining, open));
+    const appliedAmount = roundToCents(Math.min(remaining, open));
     applications.push({ id: item.id, openAmount: open, appliedAmount });
-    remaining = roundAmount(remaining - appliedAmount);
+    remaining = roundToCents(remaining - appliedAmount);
   }
 
-  const totalApplied = roundAmount(target - remaining);
-  return { applications, totalApplied, unapplied: roundAmount(remaining) };
+  const totalApplied = roundToCents(target - remaining);
+  return { applications, totalApplied, unapplied: roundToCents(remaining) };
 }
