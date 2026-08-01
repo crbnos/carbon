@@ -703,6 +703,24 @@ export function buildPrepaidScheduleEntries(
   return entries;
 }
 
+/**
+ * Summarize a prepaid schedule's progress: the amortized total (entries whose
+ * amortization journal has been drafted, i.e. `journalId` is set) and the
+ * remaining balance. Single source of truth for the prepaid-schedules table and
+ * the detail route — keeping the "amortized" definition here means both surfaces
+ * always agree, even if the definition later changes (e.g. to exclude reversed
+ * journals).
+ */
+export function summarizePrepaidAmortization(
+  entries: Array<{ amount: number | string | null; journalId: string | null }>,
+  totalAmount: number | string | null
+): { amortized: number; remaining: number } {
+  const amortized = entries
+    .filter((e) => e.journalId != null)
+    .reduce((sum, e) => sum + Number(e.amount ?? 0), 0);
+  return { amortized, remaining: Number(totalAmount ?? 0) - amortized };
+}
+
 // ---------------------------------------------------------------------------
 // Recurring journal templates (close automation, #1039)
 // ---------------------------------------------------------------------------

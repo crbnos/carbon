@@ -37,14 +37,20 @@ export const periodCloseAutomationFunction = inngest.createFunction(
           { body: { companyId: company.id, userId: "system" } }
         );
         if (result.error) {
+          // Throw so the step fails: Inngest's retry policy re-attempts this
+          // company (already-succeeded companies are memoized and not re-run),
+          // and the function surfaces the failure instead of logging it and
+          // reporting success — which would leave accruals unreversed silently.
           logger.error(`Close automation failed for company ${company.id}`, {
             error: result.error
           });
-        } else {
-          logger.info(`Close automation ran for company ${company.id}`, {
-            result: result.data
-          });
+          throw new Error(
+            `Close automation failed for company ${company.id}: ${result.error.message}`
+          );
         }
+        logger.info(`Close automation ran for company ${company.id}`, {
+          result: result.data
+        });
         return result.data ?? null;
       });
     }

@@ -12,7 +12,7 @@ import {
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  const { client, companyId } = await requirePermissions(request, {
     view: "accounting"
   });
   const { recurringJournalId } = params;
@@ -20,7 +20,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const template = await getRecurringJournalTemplate(
     client,
-    recurringJournalId
+    recurringJournalId,
+    companyId
   );
   if (template.error) {
     throw redirect(
@@ -36,7 +37,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client, userId } = await requirePermissions(request, {
+  const { client, companyId, userId } = await requirePermissions(request, {
     delete: "accounting"
   });
 
@@ -53,6 +54,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const deactivate = await deactivateRecurringJournalTemplate(client, {
     id: recurringJournalId,
+    companyId,
     updatedBy: userId
   });
   if (deactivate.error) {

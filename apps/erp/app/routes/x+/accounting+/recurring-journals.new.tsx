@@ -54,7 +54,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
   throw redirect(
     `${path.to.recurringJournals}?${getParams(request)}`,
-    await flash(request, success("Recurring journal created"))
+    await flash(request, success("Created recurring journal"))
   );
 }
 

@@ -30,6 +30,11 @@ export async function action({ request }: ActionFunctionArgs) {
   const drafted = result.data?.drafted ?? 0;
   throw redirect(
     `${path.to.recurringJournals}?${getParams(request)}`,
-    await flash(request, success(`${drafted} recurring journal(s) drafted`))
+    await flash(
+      request,
+      success(
+        `${drafted} recurring ${drafted === 1 ? "journal" : "journals"} drafted`
+      )
+    )
   );
 }

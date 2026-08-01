@@ -4,6 +4,7 @@ import z from "npm:zod@^3.24.1";
 import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
 import { corsPreflight, errorResponse, jsonResponse } from "../lib/response.ts";
 import { getSupabaseServiceRole } from "../lib/supabase.ts";
+import { getOrCreateAdjustmentAccountingPeriod } from "../shared/get-accounting-period.ts";
 import { getNextSequence } from "../shared/get-next-sequence.ts";
 
 const pool = getConnectionPool(1);
@@ -81,13 +82,26 @@ async function draftJournal(
   await trx
     .insertInto("journalLine")
     .values(
-      args.lines.map((line) => ({
-        journalId: inserted.id,
-        accountId: line.accountId,
-        amount: toStoredAmount(line.debit, line.credit, classes.get(line.accountId) ?? null),
-        journalLineReference: crypto.randomUUID(),
-        companyId: args.companyId,
-      })),
+      args.lines.map((line) => {
+        // A missing/renamed account has no class — signing the line off a null
+        // class would silently treat it as natural-credit and post a
+        // sign-flipped amount. Throw instead so the transaction rolls back,
+        // mirroring `Account not found` in the app-side draftJournalWithLines.
+        if (!classes.has(line.accountId)) {
+          throw new Error(`Account not found: ${line.accountId}`);
+        }
+        return {
+          journalId: inserted.id,
+          accountId: line.accountId,
+          amount: toStoredAmount(
+            line.debit,
+            line.credit,
+            classes.get(line.accountId) ?? null,
+          ),
+          journalLineReference: crypto.randomUUID(),
+          companyId: args.companyId,
+        };
+      }),
     )
     .execute();
   return inserted.id;
@@ -176,7 +190,22 @@ serve(async (req: Request) => {
 
     for (const template of dueRecurring.data ?? []) {
       const t = template as any;
-      if (t.endDate && t.nextRunDate > t.endDate) continue;
+      if (t.endDate && t.nextRunDate > t.endDate) {
+        // Past its end date with a still-due nextRunDate — deactivate so it is
+        // not re-selected on every run (and stops showing as permanently
+        // overdue) instead of being skipped forever.
+        await db
+          .updateTable("recurringJournalTemplate")
+          .set({
+            active: false,
+            updatedBy: userId,
+            updatedAt: new Date().toISOString(),
+          })
+          .where("id", "=", t.id)
+          .where("companyId", "=", companyId)
+          .execute();
+        continue;
+      }
       const lines = (t.recurringJournalTemplateLine ?? []).map((l: any) => ({
         accountId: l.accountId,
         debit: Number(l.debit ?? 0),
@@ -224,18 +253,19 @@ serve(async (req: Request) => {
       const j = journal as any;
       const reverseDate: string = j.autoReverseOn;
 
-      // Resolve the target period for the reversal date. Accounting adjustments
-      // may post into a Locked period; a Closed one is skipped (retried next run).
-      const period = await client
-        .from("accountingPeriod")
-        .select("id, closeStatus, closedAt")
-        .eq("companyId", companyId)
-        .lte("startDate", reverseDate)
-        .gte("endDate", reverseDate)
-        .maybeSingle();
-      const closeStatus =
-        period.data?.closeStatus ?? (period.data?.closedAt ? "Closed" : "Open");
-      if (period.data && closeStatus === "Closed") continue;
+      // Resolve (or lazily create) the target period for the reversal date.
+      // Accounting adjustments may post into a Locked period; a Closed one is
+      // skipped (retried next run). Creating a missing period keeps the reversal
+      // from posting with a NULL accountingPeriodId when autoReverseOn falls in a
+      // month whose period has not been generated yet — mirrors the app-side
+      // getOrCreateAccountingPeriod("accounting") path in reverseJournalEntry.
+      const period = await getOrCreateAdjustmentAccountingPeriod(
+        client,
+        companyId,
+        db,
+        reverseDate,
+      );
+      if (period.closeStatus === "Closed") continue;
 
       const originalLines = await client
         .from("journalLine")
@@ -252,7 +282,7 @@ serve(async (req: Request) => {
             companyId,
             description: `Reversal of ${j.journalEntryId}`,
             postingDate: reverseDate,
-            accountingPeriodId: period.data?.id ?? null,
+            accountingPeriodId: period.id,
             sourceType: "Manual",
             reversalOfId: j.id,
             status: "Posted",

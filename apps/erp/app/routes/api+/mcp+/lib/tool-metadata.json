@@ -1,5 +1,5 @@
 {
-  "generated": "2026-08-01T09:34:32.608Z",
+  "generated": "2026-08-01T10:15:56.196Z",
   "totalTools": 1416,
   "modules": 15,
   "tools": [
@@ -3578,7 +3578,8 @@
       "paramCount": 1,
       "serviceParams": [
         "client",
-        "id"
+        "id",
+        "companyId"
       ],
       "injectAuth": [
         "companyId"
@@ -3628,7 +3629,7 @@
       "paramCount": 1,
       "serviceParams": [
         "client",
-        "{ id, updatedBy }"
+        "{\n    id,\n    companyId,\n    updatedBy\n  }"
       ],
       "injectAuth": [
         "companyId"
@@ -3698,7 +3699,8 @@
       "paramCount": 1,
       "serviceParams": [
         "client",
-        "id"
+        "id",
+        "companyId"
       ],
       "injectAuth": [
         "companyId"

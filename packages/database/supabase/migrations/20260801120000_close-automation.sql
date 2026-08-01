@@ -146,7 +146,7 @@ CREATE INDEX "prepaidSchedule_companyId_status_idx"
 
 ALTER TABLE "public"."prepaidSchedule" ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "SELECT" ON "public"."prepaidSchedule" FOR SELECT USING (
-  "companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting_view'))::text[])
+  "companyId" = ANY ((SELECT get_companies_with_employee_role())::text[])
 );
 CREATE POLICY "INSERT" ON "public"."prepaidSchedule" FOR INSERT WITH CHECK (
   "companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting_create'))::text[])
@@ -196,7 +196,7 @@ CREATE INDEX "prepaidScheduleEntry_due_idx"
 
 ALTER TABLE "public"."prepaidScheduleEntry" ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "SELECT" ON "public"."prepaidScheduleEntry" FOR SELECT USING (
-  "companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting_view'))::text[])
+  "companyId" = ANY ((SELECT get_companies_with_employee_role())::text[])
 );
 CREATE POLICY "INSERT" ON "public"."prepaidScheduleEntry" FOR INSERT WITH CHECK (
   "companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting_create'))::text[])
@@ -235,7 +235,7 @@ CREATE INDEX "recurringJournalTemplate_due_idx"
 
 ALTER TABLE "public"."recurringJournalTemplate" ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "SELECT" ON "public"."recurringJournalTemplate" FOR SELECT USING (
-  "companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting_view'))::text[])
+  "companyId" = ANY ((SELECT get_companies_with_employee_role())::text[])
 );
 CREATE POLICY "INSERT" ON "public"."recurringJournalTemplate" FOR INSERT WITH CHECK (
   "companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting_create'))::text[])
@@ -278,7 +278,7 @@ CREATE INDEX "recurringJournalTemplateLine_companyId_templateId_idx"
 
 ALTER TABLE "public"."recurringJournalTemplateLine" ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "SELECT" ON "public"."recurringJournalTemplateLine" FOR SELECT USING (
-  "companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting_view'))::text[])
+  "companyId" = ANY ((SELECT get_companies_with_employee_role())::text[])
 );
 CREATE POLICY "INSERT" ON "public"."recurringJournalTemplateLine" FOR INSERT WITH CHECK (
   "companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting_create'))::text[])

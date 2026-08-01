@@ -331,7 +331,7 @@ const RecurringJournalForm = ({
             </ModalDrawerBody>
             <ModalDrawerFooter>
               <HStack>
-                <Submit isDisabled={isDisabled}>
+                <Submit isDisabled={isDisabled || !isBalanced}>
                   <Trans>Save</Trans>
                 </Submit>
               </HStack>

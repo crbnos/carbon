@@ -13,7 +13,7 @@ import { RecurringJournalForm } from "~/modules/accounting/ui/RecurringJournals"
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  const { client, companyId } = await requirePermissions(request, {
     view: "accounting",
     role: "employee"
   });
@@ -23,19 +23,34 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const template = await getRecurringJournalTemplate(
     client,
-    recurringJournalId
+    recurringJournalId,
+    companyId
   );
+  // Surface the failure / missing record instead of collapsing it to null —
+  // otherwise the form silently switches to create mode and duplicates.
+  if (template.error || !template.data) {
+    throw redirect(
+      `${path.to.recurringJournals}?${getParams(request)}`,
+      await flash(
+        request,
+        error(template.error, "Failed to get recurring journal")
+      )
+    );
+  }
 
   return {
-    template: template?.data ?? null
+    template: template.data
   };
 }
 
-export async function action({ request }: ActionFunctionArgs) {
+export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  const { client, companyId, userId } = await requirePermissions(request, {
     update: "accounting"
   });
+
+  const { recurringJournalId } = params;
+  if (!recurringJournalId) throw notFound("recurringJournalId not found");
 
   const formData = await request.formData();
   const validation = await validator(
@@ -47,11 +62,25 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   const { id, ...rest } = validation.data;
-  if (!id) throw new Error("id not found");
+  // The record identity is the route segment, never the client-controlled body
+  // id — reject a mismatch so a POST to /…/A cannot update template B.
+  if (id && id !== recurringJournalId) {
+    return data(
+      {},
+      await flash(
+        request,
+        error(
+          { id, recurringJournalId },
+          "Recurring journal id does not match the route"
+        )
+      )
+    );
+  }
 
   const update = await upsertRecurringJournalTemplate(client, {
-    id,
+    id: recurringJournalId,
     ...rest,
+    companyId,
     updatedBy: userId
   });
 

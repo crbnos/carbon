@@ -4174,6 +4174,7 @@ export async function createDepreciationRunProposal(
   const usageLogs = await client
     .from("fixedAssetUsageLog")
     .select("fixedAssetId, unitsProduced")
+    .eq("companyId", companyId)
     .eq("periodEnd", periodEnd);
   const usageMap = new Map(
     (usageLogs.data ?? []).map((u) => [u.fixedAssetId, u])
@@ -4236,12 +4237,14 @@ export async function getRecurringJournalTemplates(
 
 export async function getRecurringJournalTemplate(
   client: SupabaseClient<Database>,
-  id: string
+  id: string,
+  companyId: string
 ) {
   return client
     .from("recurringJournalTemplate")
     .select("*, recurringJournalTemplateLine(*)")
     .eq("id", id)
+    .eq("companyId", companyId)
     .single();
 }
 
@@ -4254,10 +4257,27 @@ export async function upsertRecurringJournalTemplate(
       })
     | (Omit<z.infer<typeof recurringJournalTemplateValidator>, "id"> & {
         id: string;
+        companyId: string;
         updatedBy: string;
       })
 ) {
   const { lines, ...header } = data;
+
+  // Balance gate (Σdebits = Σcredits) — the single documented validation point
+  // for the template, mirroring postJournalEntry's tolerance. Both generators
+  // draft directly from these lines, so an unbalanced template would otherwise
+  // produce an unbalanced journal on every run, far from where it was created.
+  const totalDebit = lines.reduce((sum, l) => sum + Number(l.debit ?? 0), 0);
+  const totalCredit = lines.reduce((sum, l) => sum + Number(l.credit ?? 0), 0);
+  if (totalDebit <= 0 || Math.abs(totalDebit - totalCredit) > 0.001) {
+    return {
+      data: null,
+      error: {
+        message:
+          "Recurring journal template is unbalanced — total debits must equal total credits and be greater than zero"
+      }
+    };
+  }
 
   // Line writer shared by insert/update — delete-and-reinsert per repo
   // convention. Each line carries its own class-signed nothing (debit/credit are
@@ -4331,6 +4351,7 @@ export async function upsertRecurringJournalTemplate(
       })
     )
     .eq("id", header.id)
+    .eq("companyId", header.companyId)
     .select("id, companyId")
     .single();
   if (updated.error || !updated.data) return updated;
@@ -4338,7 +4359,8 @@ export async function upsertRecurringJournalTemplate(
   const del = await client
     .from("recurringJournalTemplateLine")
     .delete()
-    .eq("templateId", header.id);
+    .eq("templateId", header.id)
+    .eq("companyId", header.companyId);
   if (del.error) return { data: null, error: del.error };
 
   const lineResult = await insertLines(
@@ -4352,12 +4374,17 @@ export async function upsertRecurringJournalTemplate(
 
 export async function deactivateRecurringJournalTemplate(
   client: SupabaseClient<Database>,
-  { id, updatedBy }: { id: string; updatedBy: string }
+  {
+    id,
+    companyId,
+    updatedBy
+  }: { id: string; companyId: string; updatedBy: string }
 ) {
   return client
     .from("recurringJournalTemplate")
     .update({ active: false, updatedBy, updatedAt: new Date().toISOString() })
     .eq("id", id)
+    .eq("companyId", companyId)
     .select("id")
     .single();
 }
@@ -4394,12 +4421,14 @@ export async function getPrepaidSchedules(
 
 export async function getPrepaidSchedule(
   client: SupabaseClient<Database>,
-  id: string
+  id: string,
+  companyId: string
 ) {
   return client
     .from("prepaidSchedule")
     .select("*, prepaidScheduleEntry(*)")
     .eq("id", id)
+    .eq("companyId", companyId)
     .single();
 }
 
@@ -4577,7 +4606,22 @@ export async function generateRecurringJournals(
   let drafted = 0;
   for (const template of due.data ?? []) {
     const t = template as any;
-    if (t.endDate && t.nextRunDate > t.endDate) continue;
+    if (t.endDate && t.nextRunDate > t.endDate) {
+      // Past its end date with a still-due nextRunDate — deactivate so it stops
+      // being re-selected every run (and stops the recurring-journals close
+      // warning from flagging it as permanently overdue) instead of skipping it.
+      const deactivate = await client
+        .from("recurringJournalTemplate")
+        .update({
+          active: false,
+          updatedBy: userId,
+          updatedAt: new Date().toISOString()
+        })
+        .eq("id", t.id)
+        .eq("companyId", companyId);
+      if (deactivate.error) return { data: null, error: deactivate.error };
+      continue;
+    }
     const lines = (t.recurringJournalTemplateLine ?? []) as Array<{
       accountId: string;
       debit: number;

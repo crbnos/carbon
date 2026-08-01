@@ -17,6 +17,7 @@ import { Hyperlink, Table } from "~/components";
 import { usePermissions, useUrlParams, useUser } from "~/hooks";
 import { useCurrencyFormatter } from "~/hooks/useCurrencyFormatter";
 import { path } from "~/utils/path";
+import { summarizePrepaidAmortization } from "../../accounting.utils";
 import type { PrepaidScheduleListItem } from "../../types";
 
 type PrepaidSchedulesTableProps = {
@@ -78,9 +79,10 @@ const PrepaidSchedulesTable = memo(
           id: "amortized",
           header: t`Amortized`,
           cell: ({ row }) => {
-            const amortized = (row.original.prepaidScheduleEntry ?? [])
-              .filter((e) => e.journalId != null)
-              .reduce((sum, e) => sum + Number(e.amount ?? 0), 0);
+            const { amortized } = summarizePrepaidAmortization(
+              row.original.prepaidScheduleEntry ?? [],
+              row.original.totalAmount
+            );
             return currencyFormatter.format(amortized);
           },
           meta: {
@@ -91,10 +93,10 @@ const PrepaidSchedulesTable = memo(
           id: "remaining",
           header: t`Remaining`,
           cell: ({ row }) => {
-            const amortized = (row.original.prepaidScheduleEntry ?? [])
-              .filter((e) => e.journalId != null)
-              .reduce((sum, e) => sum + Number(e.amount ?? 0), 0);
-            const remaining = Number(row.original.totalAmount ?? 0) - amortized;
+            const { remaining } = summarizePrepaidAmortization(
+              row.original.prepaidScheduleEntry ?? [],
+              row.original.totalAmount
+            );
             return currencyFormatter.format(remaining);
           },
           meta: {

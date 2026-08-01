@@ -28,10 +28,11 @@ import { Confirm } from "~/components/Modals";
 import { usePermissions, useUser } from "~/hooks";
 import { useCurrencyFormatter } from "~/hooks/useCurrencyFormatter";
 import { getPrepaidSchedule } from "~/modules/accounting";
+import { summarizePrepaidAmortization } from "~/modules/accounting/accounting.utils";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  const { client, companyId } = await requirePermissions(request, {
     view: "accounting",
     role: "employee"
   });
@@ -39,7 +40,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { prepaidScheduleId } = params;
   if (!prepaidScheduleId) throw notFound("prepaidScheduleId not found");
 
-  const schedule = await getPrepaidSchedule(client, prepaidScheduleId);
+  const schedule = await getPrepaidSchedule(
+    client,
+    prepaidScheduleId,
+    companyId
+  );
   if (schedule.error || !schedule.data) {
     throw redirect(
       path.to.prepaidSchedules,
@@ -67,10 +72,10 @@ export default function PrepaidScheduleDetailRoute() {
     .slice()
     .sort((a, b) => a.amortizationDate.localeCompare(b.amortizationDate));
 
-  const amortized = entries
-    .filter((e) => e.journalId != null)
-    .reduce((sum, e) => sum + Number(e.amount ?? 0), 0);
-  const remaining = Number(schedule.totalAmount ?? 0) - amortized;
+  const { amortized, remaining } = summarizePrepaidAmortization(
+    entries,
+    schedule.totalAmount
+  );
 
   const hasPosted = entries.some((e) => e.journalId != null);
   const canCancel =

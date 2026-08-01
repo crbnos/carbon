@@ -117,6 +117,19 @@ export async function getAccountingPeriodForDate(
     return existingPeriod.data.id;
   }
 
+  return createAccountingPeriodForDate(client, companyId, db, date);
+}
+
+// Lazily create the calendar month's accounting period for `date` (status
+// 'Inactive' — the Active flip is owned by getCurrentAccountingPeriod — with
+// closeStatus 'Open'). Returns the new period's id. Shared by
+// getAccountingPeriodForDate and getOrCreateAdjustmentAccountingPeriod.
+async function createAccountingPeriodForDate(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  db: Kysely<DB>,
+  date: string
+): Promise<string> {
   const [yearStr, monthStr] = date.split("-");
   const year = Number(yearStr);
   const month = Number(monthStr);
@@ -175,6 +188,43 @@ export async function getAccountingPeriodForDate(
     if (racedPeriod.data) return racedPeriod.data.id;
     throw err;
   }
+}
+
+// Resolve the period for an accounting ADJUSTMENT posting date (e.g. an
+// auto-reversing accrual's mirror). Unlike getAccountingPeriodForDate this does
+// NOT throw on Locked — accounting adjustments may post into a Locked period —
+// and it does not decide the Closed policy itself: it returns `closeStatus` so
+// the caller can skip a Closed period and retry it on a later run. When no
+// period covers `date` it lazily creates an Open one, so a reversal dated into a
+// not-yet-generated period still lands with a real accountingPeriodId instead of
+// a NULL that orphans it from period-scoped balances and the close lock.
+export async function getOrCreateAdjustmentAccountingPeriod(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  db: Kysely<DB>,
+  date: string
+): Promise<{ id: string; closeStatus: "Open" | "Locked" | "Closed" }> {
+  const existingPeriod = await client
+    .from("accountingPeriod")
+    .select("id, closeStatus, closedAt")
+    .eq("companyId", companyId)
+    .gte("endDate", date)
+    .lte("startDate", date)
+    .maybeSingle();
+
+  if (existingPeriod.error) {
+    throw new Error("Failed to fetch accounting period");
+  }
+
+  if (existingPeriod.data) {
+    const closeStatus =
+      (existingPeriod.data.closeStatus as "Open" | "Locked" | "Closed" | null) ??
+      (existingPeriod.data.closedAt ? "Closed" : "Open");
+    return { id: existingPeriod.data.id, closeStatus };
+  }
+
+  const id = await createAccountingPeriodForDate(client, companyId, db, date);
+  return { id, closeStatus: "Open" };
 }
 
 // tries to get the current accounting period
