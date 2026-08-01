@@ -201,7 +201,9 @@ both ways).
    (proposal missing) **OR** a covering run has `status='Draft'` (proposed, unposted). Passes only when a
    covering run is Posted.
 2. **Add** `prepaid-amortization` (Warning): fail when any `prepaidScheduleEntry` with `amortizationDate <=`
-   period end lacks a posted `journalId`.
+   period end is still undrafted (`journalId IS NULL`) under an `Active` schedule. A drafted-but-unposted
+   entry is a Draft journal dated in-period, already surfaced by the `draft-journals` check — the two
+   checks together ensure amortization is both drafted and posted before close.
 3. **Add** `recurring-journals` (Warning): fail when any `active` `recurringJournalTemplate` has
    `nextRunDate <=` period end (generation overdue).
 
@@ -209,9 +211,11 @@ Register the two new definitions **in the same PR as the evaluators** — three 
 
 - Migration (new file, Phase 5): `INSERT INTO "periodCloseTaskDefinition" (...) SELECT c.id, d.* FROM company c
   CROSS JOIN (VALUES ('Prepaid amortization posted','Auto','prepaid-amortization',9,true,'Warning'),
-  ('Recurring journals generated','Auto','recurring-journals',10,true,'Warning')) d(...) ... ON CONFLICT
-  ("companyId","name") DO NOTHING WHERE EXISTS (SELECT 1 FROM "user" WHERE id='system')` — additive, matches
-  `20260702044133`'s idempotent form (not the destructive wipe in `20260712142905`).
+  ('Recurring journals generated','Auto','recurring-journals',10,true,'Warning')) d(...)
+  WHERE EXISTS (SELECT 1 FROM "user" WHERE id='system') ON CONFLICT
+  ("companyId","name") DO NOTHING` — the `WHERE EXISTS` filters the `SELECT` (Postgres forbids a `WHERE`
+  after `DO NOTHING`); additive, matches `20260702044133`'s idempotent form (not the destructive wipe in
+  `20260712142905`).
 - `packages/database/supabase/functions/lib/seed.data.ts` `periodCloseTaskDefinitions` array (`:869`) — add the
   two objects so **new** companies get them.
 - The `computePeriodReadiness` `checks[]` — the actual evaluators (above).
