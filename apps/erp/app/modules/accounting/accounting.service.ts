@@ -39,7 +39,11 @@ import type {
   recurringJournalTemplateValidator,
   taxDepreciationMethods
 } from "./accounting.models";
-import { buildDepreciationLines, getNextPeriodEnd } from "./accounting.utils";
+import {
+  advanceRecurringDate,
+  buildDepreciationLines,
+  getNextPeriodEnd
+} from "./accounting.utils";
 import type {
   AccountLedgerLine,
   Transaction,
@@ -4397,6 +4401,263 @@ export async function getPrepaidSchedule(
     .select("*, prepaidScheduleEntry(*)")
     .eq("id", id)
     .single();
+}
+
+/**
+ * Draft a balanced journal with its lines in Draft status. Shared by the prepaid
+ * and recurring generators. Resolves each line's account class for the sign-aware
+ * `toStoredAmount`, exactly as `saveJournalEntryWithLines`. Returns the new
+ * journal id. NOT transactional (supabase-js): on a line failure it deletes the
+ * orphaned header so a retry starts clean.
+ */
+async function draftJournalWithLines(
+  client: SupabaseClient<Database>,
+  data: {
+    companyId: string;
+    createdBy: string;
+    sourceType: Database["public"]["Enums"]["journalEntrySourceType"];
+    postingDate: string;
+    description: string;
+    lines: Array<{ accountId: string; debit: number; credit: number }>;
+  }
+): Promise<{
+  data: { id: string } | null;
+  error: PostgrestError | { message: string } | null;
+}> {
+  const seq = await client.rpc("get_next_sequence", {
+    sequence_name: "journalEntry",
+    company_id: data.companyId
+  });
+  if (seq.error || !seq.data) {
+    return {
+      data: null,
+      error: seq.error ?? {
+        message: "Failed to generate journalEntry sequence"
+      }
+    };
+  }
+
+  const header = await client
+    .from("journal")
+    .insert({
+      journalEntryId: seq.data,
+      companyId: data.companyId,
+      description: data.description,
+      postingDate: data.postingDate,
+      sourceType: data.sourceType,
+      status: "Draft" as const,
+      createdBy: data.createdBy
+    } as any)
+    .select("id")
+    .single();
+  if (header.error || !header.data) return header;
+
+  const accountIds = [...new Set(data.lines.map((l) => l.accountId))];
+  const accounts = await client
+    .from("account")
+    .select("id, class")
+    .in("id", accountIds);
+  if (accounts.error) {
+    await client.from("journal").delete().eq("id", header.data.id);
+    return { data: null, error: accounts.error };
+  }
+  const accountClass = new Map(accounts.data.map((a) => [a.id, a.class]));
+
+  let insertError: PostgrestError | { message: string } | null = null;
+  const rows = data.lines.map((line) => {
+    const cls = accountClass.get(line.accountId);
+    if (!cls) insertError = { message: `Account not found: ${line.accountId}` };
+    return {
+      journalId: header.data.id,
+      accountId: line.accountId,
+      amount: cls ? toStoredAmount(line.debit, line.credit, cls) : 0,
+      journalLineReference: crypto.randomUUID(),
+      companyId: data.companyId
+    };
+  });
+  if (insertError) {
+    await client.from("journal").delete().eq("id", header.data.id);
+    return { data: null, error: insertError };
+  }
+
+  const lineResult = await client.from("journalLine").insert(rows as any);
+  if (lineResult.error) {
+    await client.from("journal").delete().eq("id", header.data.id);
+    return { data: null, error: lineResult.error };
+  }
+  return { data: { id: header.data.id }, error: null };
+}
+
+/**
+ * Draft amortization journals for every prepaid entry due on or before today
+ * that has not been drafted yet (`journalId IS NULL`), under still-Active
+ * schedules. Each journal is dated the entry's amortizationDate and books
+ * Dr expenseAccount / Cr prepaidAccount; `entry.journalId` is stamped immediately
+ * so a re-run does not re-draft (belt-and-braces with the due partial index). The
+ * journal is left Draft — posting stays a human/approval step. Returns the count.
+ */
+export async function generatePrepaidAmortizationJournals(
+  client: SupabaseClient<Database>,
+  { companyId, userId }: { companyId: string; userId: string }
+): Promise<{
+  data: { drafted: number } | null;
+  error: { message: string } | null;
+}> {
+  const today = new Date().toISOString().split("T")[0];
+  const due = await client
+    .from("prepaidScheduleEntry")
+    .select(
+      "id, amortizationDate, amount, scheduleId, prepaidSchedule!inner(prepaidAccountId, expenseAccountId, description, status)"
+    )
+    .eq("companyId", companyId)
+    .is("journalId", null)
+    .lte("amortizationDate", today)
+    .eq("prepaidSchedule.status", "Active");
+  if (due.error) return { data: null, error: due.error };
+
+  let drafted = 0;
+  for (const entry of due.data ?? []) {
+    const schedule = (entry as any).prepaidSchedule as {
+      prepaidAccountId: string;
+      expenseAccountId: string;
+      description: string;
+    };
+    const amount = Number((entry as any).amount);
+    const journal = await draftJournalWithLines(client, {
+      companyId,
+      createdBy: userId,
+      sourceType: "Prepaid Amortization",
+      postingDate: (entry as any).amortizationDate,
+      description: `Prepaid amortization: ${schedule.description}`,
+      lines: [
+        { accountId: schedule.expenseAccountId, debit: amount, credit: 0 },
+        { accountId: schedule.prepaidAccountId, debit: 0, credit: amount }
+      ]
+    });
+    if (journal.error || !journal.data) {
+      return { data: null, error: journal.error };
+    }
+    // Stamp immediately (idempotency): the entry stops being "due" at once.
+    const stamp = await client
+      .from("prepaidScheduleEntry")
+      .update({ journalId: journal.data.id, updatedBy: userId })
+      .eq("id", (entry as any).id)
+      .eq("companyId", companyId);
+    if (stamp.error) {
+      await client.from("journal").delete().eq("id", journal.data.id);
+      return { data: null, error: stamp.error };
+    }
+    drafted++;
+  }
+  return { data: { drafted }, error: null };
+}
+
+/**
+ * Draft recurring journals for every active template due on or before today, then
+ * advance `nextRunDate` by the template frequency (deactivating once it passes
+ * `endDate`). The advance is written right after the draft so a re-run does not
+ * duplicate. Returns the count drafted.
+ */
+export async function generateRecurringJournals(
+  client: SupabaseClient<Database>,
+  { companyId, userId }: { companyId: string; userId: string }
+): Promise<{
+  data: { drafted: number } | null;
+  error: { message: string } | null;
+}> {
+  const today = new Date().toISOString().split("T")[0];
+  const due = await client
+    .from("recurringJournalTemplate")
+    .select("*, recurringJournalTemplateLine(*)")
+    .eq("companyId", companyId)
+    .eq("active", true)
+    .lte("nextRunDate", today);
+  if (due.error) return { data: null, error: due.error };
+
+  let drafted = 0;
+  for (const template of due.data ?? []) {
+    const t = template as any;
+    if (t.endDate && t.nextRunDate > t.endDate) continue;
+    const lines = (t.recurringJournalTemplateLine ?? []) as Array<{
+      accountId: string;
+      debit: number;
+      credit: number;
+    }>;
+    const journal = await draftJournalWithLines(client, {
+      companyId,
+      createdBy: userId,
+      sourceType: "Recurring Journal",
+      postingDate: t.nextRunDate,
+      description: t.name,
+      lines: lines.map((l) => ({
+        accountId: l.accountId,
+        debit: Number(l.debit ?? 0),
+        credit: Number(l.credit ?? 0)
+      }))
+    });
+    if (journal.error || !journal.data) {
+      return { data: null, error: journal.error };
+    }
+
+    const advanced = advanceRecurringDate(t.nextRunDate, t.frequency);
+    const passedEnd = t.endDate != null && advanced > t.endDate;
+    const update = await client
+      .from("recurringJournalTemplate")
+      .update({
+        nextRunDate: advanced,
+        active: !passedEnd,
+        updatedBy: userId,
+        updatedAt: new Date().toISOString()
+      })
+      .eq("id", t.id)
+      .eq("companyId", companyId);
+    if (update.error) {
+      await client.from("journal").delete().eq("id", journal.data.id);
+      return { data: null, error: update.error };
+    }
+    drafted++;
+  }
+  return { data: { drafted }, error: null };
+}
+
+/**
+ * Post the mirror reversal for every Posted journal whose `autoReverseOn` has
+ * arrived and that has not been reversed yet. The reversal posts on the
+ * `autoReverseOn` date (its own period, resolved as an accounting adjustment), so
+ * a Locked target still accepts and only a Closed one skips (retried next day).
+ * Returns the count reversed.
+ */
+export async function postDueJournalReversals(
+  client: SupabaseClient<Database>,
+  { companyId, userId }: { companyId: string; userId: string }
+): Promise<{ data: { reversed: number }; error: { message: string } | null }> {
+  const today = new Date().toISOString().split("T")[0];
+  const due = await client
+    .from("journal")
+    .select("id, autoReverseOn")
+    .eq("companyId", companyId)
+    .eq("status", "Posted")
+    .is("reversedById", null)
+    .not("autoReverseOn", "is", null)
+    .lte("autoReverseOn", today);
+  if (due.error) return { data: { reversed: 0 }, error: due.error };
+
+  let reversed = 0;
+  for (const journal of due.data ?? []) {
+    const result = await reverseJournalEntry(client, (journal as any).id, {
+      companyId,
+      userId,
+      postingDate: (journal as any).autoReverseOn ?? undefined
+    });
+    // A Closed target period is skipped (not fatal) and retried next day; any
+    // other error aborts so the caller surfaces it.
+    if (result.error) {
+      if (/closed/i.test(result.error.message)) continue;
+      return { data: { reversed }, error: result.error };
+    }
+    reversed++;
+  }
+  return { data: { reversed }, error: null };
 }
 
 /**

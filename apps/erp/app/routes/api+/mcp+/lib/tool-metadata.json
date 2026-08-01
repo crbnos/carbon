@@ -1,6 +1,6 @@
 {
-  "generated": "2026-08-01T09:30:31.175Z",
-  "totalTools": 1413,
+  "generated": "2026-08-01T09:34:32.608Z",
+  "totalTools": 1416,
   "modules": 15,
   "tools": [
     {
@@ -3713,6 +3713,64 @@
         "required": [
           "id"
         ]
+      }
+    },
+    {
+      "name": "accounting_generatePrepaidAmortizationJournals",
+      "module": "accounting",
+      "classification": "WRITE",
+      "description": "generate prepaid amortization journals",
+      "paramCount": 0,
+      "serviceParams": [
+        "client",
+        "{ companyId, userId }"
+      ],
+      "injectAuth": [
+        "companyId",
+        "createdBy",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    {
+      "name": "accounting_generateRecurringJournals",
+      "module": "accounting",
+      "classification": "WRITE",
+      "description": "generate recurring journals",
+      "paramCount": 0,
+      "serviceParams": [
+        "client",
+        "{ companyId, userId }"
+      ],
+      "injectAuth": [
+        "companyId",
+        "createdBy",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    {
+      "name": "accounting_postDueJournalReversals",
+      "module": "accounting",
+      "classification": "WRITE",
+      "description": "post due journal reversals",
+      "paramCount": 0,
+      "serviceParams": [
+        "client",
+        "{ companyId, userId }"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {}
       }
     },
     {
