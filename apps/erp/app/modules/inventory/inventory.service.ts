@@ -3358,7 +3358,13 @@ export async function generatePickingList(
       supersessionByItem.set(row.itemId, row);
     }
   }
-  const asOfDate = today(getLocalTimeZone()).toString();
+  // Business date for supersession effectivity. Uses UTC to match the SQL
+  // schedule/availability path — get_picking_schedule and
+  // get_picking_list_availability compare successorEffectivityDate against the
+  // UTC calendar date ((now() AT TIME ZONE 'UTC')::date) — so generation and
+  // those RPCs never resolve a different effective successor at a timezone
+  // boundary.
+  const asOfDate = today("UTC").toString();
 
   // Cache per-item on-hand-by-bin so a supersession redirect doesn't refetch.
   const onHandCache = new Map<string, Map<string, number>>();

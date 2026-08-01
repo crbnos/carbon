@@ -16,7 +16,10 @@
 --      successor still appear. Discontinuation date does NOT suppress a pick:
 --      picking fulfills existing job demand (unlike planning, which suppresses
 --      new orders). Successor on-hand is compared in successor units via the
---      conversion factor.
+--      conversion factor. Successor effectivity is evaluated against the UTC
+--      calendar date ((now() AT TIME ZONE 'UTC')::date); generatePickingList in
+--      the app uses today("UTC") to match, so both layers resolve the same
+--      effective successor regardless of the DB session or server timezone.
 --
 --   2. get_picking_list_availability — warehouse availability is the line's OWN
 --      pick item's non-lineside on-hand. Because generation already redirects a
@@ -122,7 +125,7 @@ AS $$
             CASE
               WHEN ss."successorItemId" IS NOT NULL
                 AND (ss."successorEffectivityDate" IS NULL
-                     OR ss."successorEffectivityDate" <= CURRENT_DATE)
+                     OR ss."successorEffectivityDate" <= (now() AT TIME ZONE 'UTC')::date)
               THEN ss."successorItemId"
               ELSE jm."itemId"
             END
@@ -130,7 +133,7 @@ AS $$
             CASE
               WHEN ss."successorItemId" IS NOT NULL
                 AND (ss."successorEffectivityDate" IS NULL
-                     OR ss."successorEffectivityDate" <= CURRENT_DATE)
+                     OR ss."successorEffectivityDate" <= (now() AT TIME ZONE 'UTC')::date)
               THEN ss."successorItemId"
               ELSE NULL
             END
@@ -141,7 +144,7 @@ AS $$
           WHEN ss."supersessionMode" IN ('Prefer New', 'Stock Only')
             AND ss."successorItemId" IS NOT NULL
             AND (ss."successorEffectivityDate" IS NULL
-                 OR ss."successorEffectivityDate" <= CURRENT_DATE)
+                 OR ss."successorEffectivityDate" <= (now() AT TIME ZONE 'UTC')::date)
           THEN COALESCE(ss."conversionFactor", 1)
           ELSE 1
         END AS "pickFactor"

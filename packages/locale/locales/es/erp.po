@@ -12171,7 +12171,7 @@ msgid "substituted from"
 msgstr "sustituido de"
 
 msgid "Substituted from {substitutedFrom}"
-msgstr "Sustituido desde {substitutedFrom}"
+msgstr "Sustituido de {substitutedFrom}"
 
 msgid "Subtotal"
 msgstr "Subtotal"

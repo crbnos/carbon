@@ -54,6 +54,11 @@ Picking ignores `itemSupersession` entirely:
 - **D4 — Discontinuation date does NOT suppress picks.** Planning suppresses *new orders* past
   discontinuation; picking *fulfills existing job demand*. A job that already needs the part must
   still be pickable. Only supersession *mode* + successor effectivity gate picking.
+  - **Effective-date rule (one basis for both layers).** Successor effectivity is evaluated against
+    the **UTC calendar date** everywhere: the SQL uses `(now() AT TIME ZONE 'UTC')::date` and
+    `generatePickingList` uses `today("UTC")`. This removes any DB-session / server-process timezone
+    skew, so generation and the schedule/availability RPCs always resolve the same effective successor
+    (no boundary case where availability checks the predecessor while generation writes the successor).
 - **D5 — Availability RPC** reports the line's OWN pick item warehouse on-hand. Because generation
   already redirects a substituted line's `itemId` to the effective successor (D2/D3), `availableQuantity`
   reflects exactly what the line consumes — no successor fold-in. Folding a successor's stock into a
