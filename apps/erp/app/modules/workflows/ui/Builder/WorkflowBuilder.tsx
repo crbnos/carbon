@@ -22,7 +22,6 @@ import { edgeTypes } from "./edges/WorkflowEdge";
 import { wouldCreateCycle } from "./graph";
 import { NodePalette } from "./NodePalette";
 import { nodeTypes } from "./nodes";
-import { ConfigPanel } from "./panel/ConfigPanel";
 
 const proOptions = { hideAttribution: true };
 
@@ -140,18 +139,6 @@ export function WorkflowBuilder() {
           </ReactFlow>
         </div>
       </ResizablePanel>
-      {!isReadOnly && <ResizableHandle withHandle />}
-      {!isReadOnly && (
-        <ResizablePanel
-          id="config"
-          order={3}
-          defaultSize={24}
-          minSize={18}
-          maxSize={40}
-        >
-          <ConfigPanel />
-        </ResizablePanel>
-      )}
     </ResizablePanelGroup>
   );
 }

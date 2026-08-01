@@ -4,18 +4,22 @@ import type { ReactNode } from "react";
 
 export type NodePort = { id: string; label: string };
 
+const HANDLE_CLASS =
+  "!size-3 !border-2 !border-card !bg-primary transition-transform " +
+  "hover:!scale-[1.35] hover:!shadow-[0_0_0_4px_hsl(var(--primary)/0.18)]";
+
 type NodeCardProps = {
   kind: string;
   title: string;
   description?: string;
-  accent: string;
   icon: ReactNode;
   ports: NodePort[];
   hasTarget?: boolean;
   issueCount?: number;
   isSelected?: boolean;
-  isCollapsed?: boolean;
+  isExpanded?: boolean;
   summary?: string;
+  menu?: ReactNode;
   children?: ReactNode;
 };
 
@@ -23,14 +27,14 @@ export function NodeCard({
   kind,
   title,
   description,
-  accent,
   icon,
   ports,
   hasTarget = true,
   issueCount = 0,
   isSelected = false,
-  isCollapsed = false,
+  isExpanded = true,
   summary,
+  menu,
   children
 }: NodeCardProps) {
   const hasIssues = issueCount > 0;
@@ -38,18 +42,23 @@ export function NodeCard({
   return (
     <div
       className={cn(
-        "w-[260px] rounded-lg border bg-card shadow-sm transition-shadow",
-        isSelected && "border-foreground ring-2 ring-foreground/15",
+        "rounded-lg border bg-card shadow-sm transition-shadow",
+        isExpanded ? "w-[440px]" : "w-[260px]",
+        isSelected && "border-primary ring-2 ring-primary/20",
         hasIssues && "border-destructive ring-2 ring-destructive/20"
       )}
     >
-      {hasTarget && <Handle type="target" position={Position.Top} id="in" />}
+      {hasTarget && (
+        <Handle
+          type="target"
+          position={Position.Left}
+          id="in"
+          className={HANDLE_CLASS}
+        />
+      )}
 
       <div className="flex items-start gap-2 p-2.5">
-        <div
-          className="flex size-6 shrink-0 items-center justify-center rounded-md text-white"
-          style={{ backgroundColor: accent }}
-        >
+        <div className="flex size-6 shrink-0 items-center justify-center rounded-md bg-primary text-primary-foreground">
           {icon}
         </div>
         <div className="min-w-0 flex-1">
@@ -59,7 +68,7 @@ export function NodeCard({
           <div className="truncate text-xs font-semibold text-pretty">
             {title}
           </div>
-          {isCollapsed
+          {!isExpanded
             ? summary && (
                 <div className="truncate text-[10.5px] text-muted-foreground">
                   {summary}
@@ -76,30 +85,32 @@ export function NodeCard({
             </Badge>
           )}
         </div>
+        {menu && <div className="shrink-0">{menu}</div>}
       </div>
 
-      {!isCollapsed && children && (
-        <div className="border-t px-2.5 py-2">{children}</div>
+      {isExpanded && children && (
+        <div className="nodrag border-t px-2.5 py-2">{children}</div>
       )}
 
       <div
-        className={cn(
-          "relative flex gap-1.5 px-2.5",
-          isCollapsed ? "pb-0.5 pt-0" : "border-t pb-2 pt-1.5"
-        )}
+        className={cn("flex flex-col", isExpanded ? "border-t py-1.5" : "pb-1")}
       >
         {ports.map((port) => (
-          <div key={port.id} className="relative">
-            {!isCollapsed && (
-              <span className="rounded-full border bg-muted px-1.5 py-px text-[9.5px] text-muted-foreground">
+          <div
+            key={port.id}
+            className="relative flex items-center justify-end px-2.5 py-1"
+          >
+            {isExpanded && (
+              <span className="text-[9.5px] text-muted-foreground">
                 {port.label}
               </span>
             )}
             <Handle
               type="source"
-              position={Position.Bottom}
+              position={Position.Right}
               id={port.id}
-              style={{ left: "50%", bottom: -6 }}
+              className={HANDLE_CLASS}
+              style={{ top: "50%", right: -6 }}
             />
           </div>
         ))}

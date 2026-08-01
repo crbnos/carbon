@@ -3,15 +3,16 @@ import { FAILURE_HANDLE, getNodeHandles } from "@carbon/workflows";
 import { WORKFLOW_LABELS } from "@carbon/workflows/labels";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { NodeProps } from "@xyflow/react";
-import { useStore } from "@xyflow/react";
 import { memo } from "react";
 import { LuTriangleAlert } from "react-icons/lu";
-import { LOD_ZOOM } from "../constants";
-import { useBuilderStore } from "../context";
+import { NODE_FORMS } from "../config/forms/index";
+import { NodeNameField } from "../config/NodeNameField";
+import { useBuilderStore, useBuilderStoreShallow } from "../context";
 import { asWorkflowNode } from "../graph";
 import type { NodePort } from "../NodeCard";
 import { NodeCard } from "../NodeCard";
 import { NODE_KIND_META } from "./meta";
+import { NodeMenu } from "./NodeMenu";
 
 const PORT_LABEL: Record<string, string> = {
   out: "next",
@@ -44,10 +45,16 @@ function WorkflowNodeCardImpl({ id, type, data, selected }: NodeProps) {
   const node = asWorkflowNode(id, type as WorkflowNodeType, data);
   const meta = NODE_KIND_META[node.type];
 
-  const isCollapsed = useStore((state) => state.transform[2] < LOD_ZOOM);
-  const issueCount = useBuilderStore(
-    (state) => state.issues.filter((issue) => issue.nodeId === id).length
+  const builderNode = useBuilderStore((state) =>
+    state.nodes.find((n) => n.id === id)
   );
+  const isExpanded = builderNode?.expanded ?? true;
+
+  const nodeIssues = useBuilderStoreShallow((state) =>
+    state.issues.filter((issue) => issue.nodeId === id)
+  );
+  const issueCount = nodeIssues.length;
+
   const edges = useBuilderStore((state) => state.edges);
 
   const catalogId = meta.catalogId?.(node);
@@ -66,28 +73,27 @@ function WorkflowNodeCardImpl({ id, type, data, selected }: NodeProps) {
     ? edges.some((e) => e.source === id && e.sourceHandle === FAILURE_HANDLE)
     : false;
 
+  const Form = NODE_FORMS[node.type];
+
   return (
     <NodeCard
       kind={meta.name}
       title={label ?? meta.title?.(node) ?? meta.defaultTitle}
       description={meta.description}
       summary={summary}
-      accent={meta.accent}
       icon={<meta.Icon className="size-3.5" />}
       ports={portsFor(node)}
       hasTarget={meta.hasTarget}
       issueCount={issueCount}
       isSelected={!!selected}
-      isCollapsed={isCollapsed}
+      isExpanded={isExpanded}
+      menu={builderNode && <NodeMenu node={builderNode} />}
     >
-      {summary ? (
-        <p className="truncate text-[10.5px] text-muted-foreground">
-          {summary}
-        </p>
-      ) : (
-        <p className="text-[10.5px] italic text-muted-foreground">
-          <Trans>Not configured yet</Trans>
-        </p>
+      {builderNode && (
+        <div className="space-y-3">
+          <NodeNameField key={id} node={builderNode} />
+          <Form key={id} node={builderNode} issues={nodeIssues} />
+        </div>
       )}
       {hasFailureHandle && !hasFailureEdge && (
         <p className="mt-1 flex items-center gap-1 text-[10.5px] text-amber-600 dark:text-amber-400">

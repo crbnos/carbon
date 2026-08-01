@@ -39,6 +39,8 @@ export type BuilderState = {
   updateNodeData: (id: string, patch: Record<string, unknown>) => void;
   /** Set or clear a node's customer-given name. Empty string clears it. */
   renameNode: (id: string, title: string) => void;
+  /** Expand or collapse a node. Persists on the node itself, not in data. */
+  setNodeExpanded: (id: string, expanded: boolean) => void;
   /** Delete a node and its edges. Refuses the trigger. */
   removeNode: (id: string) => void;
 };
@@ -171,6 +173,11 @@ export function createBuilderStore(initial: {
         nodes: nodes.map((n) =>
           n.id === id ? { ...n, title: title === "" ? undefined : title } : n
         )
+      })),
+
+    setNodeExpanded: (id, expanded) =>
+      set(({ nodes }) => ({
+        nodes: nodes.map((n) => (n.id === id ? { ...n, expanded } : n))
       })),
 
     removeNode: (id) => {

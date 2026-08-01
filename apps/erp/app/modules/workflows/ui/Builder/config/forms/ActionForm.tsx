@@ -14,7 +14,6 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-  Switch,
   VStack
 } from "@carbon/react";
 import type { ValueOrRef, ValueType } from "@carbon/workflows";
@@ -484,20 +483,6 @@ export function ActionForm({ node, issues }: NodeFormProps) {
                   <Trans>Run once per item</Trans>
                 </button>
               </div>
-            </div>
-          )}
-
-          {/* Batch toggle */}
-          {actionDef.batchable && (
-            <div className="flex items-center gap-3 rounded-md border bg-muted/40 px-3 py-2">
-              <Switch
-                checked={isBatch}
-                onCheckedChange={(v) => updateNodeData(node.id, { batch: v })}
-                variant="small"
-              />
-              <span className="text-sm">
-                <Trans>Run once for each item in the list</Trans>
-              </span>
             </div>
           )}
         </>

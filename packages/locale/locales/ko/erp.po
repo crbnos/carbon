@@ -3239,9 +3239,6 @@ msgstr "구매주문, 입고, 청구서 라인에서 공급업체의 구매 단�
 msgid "Copied link to clipboard"
 msgstr "링크가 클립보드에 복사됨"
 
-msgid "Copied webhook secret"
-msgstr ""
-
 msgid "Copy"
 msgstr "복사"
 
@@ -3376,9 +3373,6 @@ msgstr "이 링크를 복사하여 고객과 견적을 공유하세요"
 
 msgid "Copy this link to share the quote with a supplier"
 msgstr "이 링크를 복사하여 공급업체와 견적을 공유하세요"
-
-msgid "Copy this webhook secret now — it is the only time it is shown. You need it to verify signed webhook calls this workflow sends."
-msgstr ""
 
 msgid "Copy tool number"
 msgstr "공구 번호 복사"
@@ -8574,6 +8568,9 @@ msgstr "데이터 마이그레이션"
 msgid "Min Qty"
 msgstr "최소 수량"
 
+msgid "Minimize"
+msgstr ""
+
 msgid "Minimum"
 msgstr "최소"
 
@@ -9488,9 +9485,6 @@ msgstr "일반"
 msgid "Not a table but a general-ledger balance: cost accumulates as job materials are issued and clears when the job is received to stock."
 msgstr "테이블이 아니라 총계정원장 잔액입니다. 작업 자재가 투입되면서 원가가 누적되고, 작업이 재고로 입고되면 정산됩니다."
 
-msgid "Not configured yet"
-msgstr ""
-
 msgid "Not enough jobs to cover quantity"
 msgstr "수량을 충족할 만큼 작업이 충분하지 않습니다"
 
@@ -9775,9 +9769,6 @@ msgstr "설정 맵 열기"
 
 msgid "Open transactions"
 msgstr "미결 거래"
-
-msgid "Open workflow"
-msgstr ""
 
 msgid "Open Workflow"
 msgstr ""
@@ -13070,6 +13061,9 @@ msgstr "단계"
 msgid "Step detail is kept for 30 days. This run's steps have been removed."
 msgstr ""
 
+msgid "Step options"
+msgstr ""
+
 msgid "Step Records"
 msgstr "단계 기록"
 
@@ -16072,9 +16066,6 @@ msgstr "근무 교대 추적이 활성화되어 있습니다."
 
 msgid "Workflow"
 msgstr "워크플로"
-
-msgid "Workflow created"
-msgstr ""
 
 msgid "Workflows"
 msgstr ""

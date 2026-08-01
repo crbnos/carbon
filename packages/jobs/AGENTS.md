@@ -110,7 +110,7 @@ Routing is off the catalog's `getActionRoute(id)`, never off the shape of an id.
 | `notify.ts` | `runNotifyAction` — one `trigger("notify", …)` with `NotificationEvent.Workflow`. A role IS a group and every user has an identity group whose id is their user id, so both recipient inputs collapse to `groupIds` |
 | `search.ts` | `runSearch` — one Lookup node's search, translated to PostgREST filters that mean exactly what `runtime/compare.ts` says (`contains`/`startsWith`/`endsWith` → `ilike`). Reads `MAX_LIST_ITEMS + 1` so an over-cap list is detectable |
 | `operations.ts` | `runOperation` — the 15 read-only computations, one `COMPUTATIONS` entry per catalog operation id. An id with no implementation refuses rather than falls through; a throw becomes a failed node, never a thrown walk |
-| `webhook.ts` | `runWebhookAction` — POST with an HMAC-SHA256 `Carbon-Signature` over `v1:<timestamp>:<body>` using the workflow row's `webhookSecret`, `redirect: "manual"`, 10s timeout, 2 KB response excerpt for the step summary |
+| `webhook.ts` | `runWebhookAction` — POST to the configured URL, SSRF-guarded, `redirect: "manual"`, 10s timeout, 2 KB response excerpt for the step summary |
 | `url-guard.ts` | `checkOutboundUrl` — https only, DNS-resolves the host and rejects if **any** returned address is private/loopback/link-local (169.254.0.0/16 covers cloud metadata) |
 | `index.ts` | Barrel; `engine/execute.ts` imports `createWorkflowServices` from here |
 

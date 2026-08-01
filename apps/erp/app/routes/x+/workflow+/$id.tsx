@@ -7,6 +7,7 @@ import {
   VStack
 } from "@carbon/react";
 import { readWorkflowVersion } from "@carbon/workflows";
+import { msg } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import { ReactFlowProvider } from "@xyflow/react";
 import XYFlowStyle from "@xyflow/react/dist/style.css?url";
@@ -30,11 +31,21 @@ import { toReactFlow } from "~/modules/workflows/ui/Builder/graph";
 import { IssuesPanel } from "~/modules/workflows/ui/Builder/IssuesPanel";
 import { WorkflowBuilder } from "~/modules/workflows/ui/Builder/WorkflowBuilder";
 import WorkflowLockAlert from "~/modules/workflows/ui/WorkflowLockAlert";
+import type { Handle } from "~/utils/handle";
+import { detailBreadcrumb } from "~/utils/handle";
 import { path } from "~/utils/path";
 
 export const links: LinksFunction = () => [
   { rel: "stylesheet", href: XYFlowStyle }
 ];
+
+export const handle: Handle = {
+  breadcrumb: detailBreadcrumb(
+    { breadcrumb: msg`Workflows`, to: path.to.workflows },
+    (data) => data?.workflow?.name
+  ),
+  module: "workflows"
+};
 
 // An autosave must not revalidate the loader — that re-seeds the canvas from
 // server state mid-edit and loses the selection and any in-flight drag.

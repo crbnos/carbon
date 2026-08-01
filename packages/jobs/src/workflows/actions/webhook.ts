@@ -1,4 +1,3 @@
-import { createHmac } from "node:crypto";
 import type { Database } from "@carbon/database";
 import {
   type ActionOutcome,
@@ -14,7 +13,6 @@ const TIMEOUT_MS = 10_000;
 const MAX_EXCERPT_BYTES = 2048;
 
 const NO_URL = "This step needs a web address to call.";
-const NO_SECRET = "This workflow has no signing secret.";
 const REDIRECTED = "That address redirected, which is not allowed.";
 const UNREACHABLE = "The address could not be reached.";
 
@@ -30,7 +28,7 @@ export async function runWebhookAction(params: {
   workflowId: string;
   inputs: Record<string, RuntimeValue>;
 }): Promise<ActionOutcome> {
-  const { client, companyId, workflowId, inputs } = params;
+  const { inputs } = params;
 
   const rawUrl = asText(inputs.url);
   if (rawUrl === undefined) return { ok: false, error: NO_URL };
@@ -38,33 +36,13 @@ export async function runWebhookAction(params: {
   const verdict = await checkOutboundUrl(rawUrl);
   if (!verdict.ok) return { ok: false, error: verdict.reason };
 
-  const workflow = await client
-    .from("workflow")
-    .select("webhookSecret")
-    .eq("id", workflowId)
-    .eq("companyId", companyId)
-    .single();
-  const secret = workflow.data?.webhookSecret;
-  if (workflow.error !== null || !secret) {
-    return { ok: false, error: NO_SECRET };
-  }
-
-  // Signed over the exact bytes sent, so the receiver can verify what it got.
   const rawBody = asText(inputs.body) ?? "";
-  const timestamp = Math.floor(Date.now() / 1000);
-  const signature = createHmac("sha256", secret)
-    .update(`v1:${timestamp}:${rawBody}`)
-    .digest("hex");
 
   let response: Response;
   try {
     response = await fetch(verdict.url, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Carbon-Timestamp": String(timestamp),
-        "Carbon-Signature": `v1=${signature}`
-      },
+      headers: { "Content-Type": "application/json" },
       body: rawBody,
       redirect: "manual",
       signal: AbortSignal.timeout(TIMEOUT_MS)

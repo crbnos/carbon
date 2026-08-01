@@ -7,7 +7,7 @@ import { CURRENT_DEFINITION_FORMAT_VERSION } from "@carbon/workflows";
 import { nanoid } from "nanoid";
 import type { BuilderEdge, BuilderNode } from "../../types";
 
-const NODE_WIDTH = 260;
+const NODE_WIDTH = 440;
 const NODE_HEIGHT = 180;
 const GAP_X = 40;
 const GAP_Y = 80;
@@ -20,6 +20,7 @@ export function toBuilderNode(node: WorkflowNode): BuilderNode {
     type: node.type,
     position: node.position,
     ...(node.title !== undefined ? { title: node.title } : {}),
+    expanded: node.expanded ?? true,
     data: node.data as Record<string, unknown>
   };
 }
@@ -55,6 +56,7 @@ export function fromReactFlow(
           ...(node.title !== undefined ? { title: node.title } : {}),
           type: node.type,
           position: { x: node.position.x, y: node.position.y },
+          expanded: node.expanded ?? true,
           data: node.data
         }) as WorkflowNode
     ),
@@ -111,13 +113,20 @@ export function createNode(
 
   switch (type) {
     case "trigger":
-      return { id, type, position, data: { events: [], origin: "Both" } };
+      return {
+        id,
+        type,
+        position,
+        expanded: true,
+        data: { events: [], origin: "Both" }
+      };
     case "condition":
       // A condition's output handles ARE its paths — seeding two keeps it wireable.
       return {
         id,
         type,
         position,
+        expanded: true,
         data: {
           paths: [
             { id: nanoid(), kind: "if", combinator: "and", clauses: [] },
@@ -126,27 +135,42 @@ export function createNode(
         }
       };
     case "entity":
-      return { id, type, position, data: { operation: "", inputs: {} } };
+      return {
+        id,
+        type,
+        position,
+        expanded: true,
+        data: { operation: "", inputs: {} }
+      };
     case "lookup":
       return {
         id,
         type,
         position,
+        expanded: true,
         data: { entity: "", returns: "one", match: [] }
       };
     case "filter":
-      return { id, type, position, data: { combinator: "and", clauses: [] } };
+      return {
+        id,
+        type,
+        position,
+        expanded: true,
+        data: { combinator: "and", clauses: [] }
+      };
     case "action":
       return {
         id,
         type,
         position,
+        expanded: true,
         data: { action: "", inputs: {}, batch: false }
       };
   }
 }
 
-// Below `from` (or below the lowest node), nudged right until nothing collides.
+// To the right of `from` (or to the right of the rightmost node), nudged down
+// until nothing collides.
 export function nextNodePosition(
   nodes: BuilderNode[],
   from: BuilderNode | undefined
@@ -154,13 +178,13 @@ export function nextNodePosition(
   const anchor =
     from ??
     nodes.reduce<BuilderNode | undefined>(
-      (lowest, node) =>
-        !lowest || node.position.y > lowest.position.y ? node : lowest,
+      (rightmost, node) =>
+        !rightmost || node.position.x > rightmost.position.x ? node : rightmost,
       undefined
     );
 
   const start = anchor
-    ? { x: anchor.position.x, y: anchor.position.y + NODE_HEIGHT + GAP_Y }
+    ? { x: anchor.position.x + NODE_WIDTH + GAP_X, y: anchor.position.y }
     : { ...TRIGGER_POSITION };
 
   const collides = (candidate: { x: number; y: number }) =>
@@ -172,7 +196,7 @@ export function nextNodePosition(
 
   const position = { ...start };
   while (collides(position)) {
-    position.x += NODE_WIDTH + GAP_X;
+    position.y += NODE_HEIGHT + GAP_Y;
   }
 
   return position;

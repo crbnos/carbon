@@ -2,6 +2,7 @@ import type { PropsWithChildren } from "react";
 import { createContext, useContext, useRef } from "react";
 import type { StoreApi } from "zustand";
 import { useStore } from "zustand";
+import { useShallow } from "zustand/react/shallow";
 import type { BuilderEdge, BuilderNode } from "../../types";
 import type { BuilderState } from "./store";
 import { createBuilderStore } from "./store";
@@ -17,6 +18,14 @@ export function useBuilderStore<T>(selector: (state: BuilderState) => T): T {
     );
   }
   return useStore(store, selector);
+}
+
+// Use this when the selector returns a new array/object every call (e.g. .filter()).
+// Compares by shallow equality (element-by-element) instead of reference.
+export function useBuilderStoreShallow<T>(
+  selector: (state: BuilderState) => T
+): T {
+  return useBuilderStore(useShallow(selector));
 }
 
 export function useBuilderStoreApi(): StoreApi<BuilderState> {

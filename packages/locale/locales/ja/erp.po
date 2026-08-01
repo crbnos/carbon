@@ -3239,9 +3239,6 @@ msgstr "サプライヤーの購入単位をPO、領収書、または請求書�
 msgid "Copied link to clipboard"
 msgstr "クリップボードにリンクをコピーしました"
 
-msgid "Copied webhook secret"
-msgstr ""
-
 msgid "Copy"
 msgstr "コピー"
 
@@ -3376,9 +3373,6 @@ msgstr "このリンクをコピーして、顧客と見積書を共有してく
 
 msgid "Copy this link to share the quote with a supplier"
 msgstr "このリンクをコピーして、サプライヤーと見積もりを共有してください"
-
-msgid "Copy this webhook secret now — it is the only time it is shown. You need it to verify signed webhook calls this workflow sends."
-msgstr ""
 
 msgid "Copy tool number"
 msgstr "ツール番号をコピー"
@@ -8574,6 +8568,9 @@ msgstr "データを移行"
 msgid "Min Qty"
 msgstr "最小数量"
 
+msgid "Minimize"
+msgstr ""
+
 msgid "Minimum"
 msgstr "最小"
 
@@ -9488,9 +9485,6 @@ msgstr "通常"
 msgid "Not a table but a general-ledger balance: cost accumulates as job materials are issued and clears when the job is received to stock."
 msgstr "テーブルではなく、総勘定元帳残高：ジョブ材料が発行されるにつれてコストが蓄積され、ジョブが在庫に受け取られるとクリアになります。"
 
-msgid "Not configured yet"
-msgstr ""
-
 msgid "Not enough jobs to cover quantity"
 msgstr "数量をカバーするのに十分なジョブがありません"
 
@@ -9775,9 +9769,6 @@ msgstr "セットアップマップを開く"
 
 msgid "Open transactions"
 msgstr "未処理トランザクション"
-
-msgid "Open workflow"
-msgstr ""
 
 msgid "Open Workflow"
 msgstr ""
@@ -13070,6 +13061,9 @@ msgstr "ステップ"
 msgid "Step detail is kept for 30 days. This run's steps have been removed."
 msgstr ""
 
+msgid "Step options"
+msgstr ""
+
 msgid "Step Records"
 msgstr "ステップレコード"
 
@@ -16072,9 +16066,6 @@ msgstr "勤務シフト追跡がアクティブです。"
 
 msgid "Workflow"
 msgstr "ワークフロー"
-
-msgid "Workflow created"
-msgstr ""
 
 msgid "Workflows"
 msgstr ""

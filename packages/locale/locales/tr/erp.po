@@ -3239,9 +3239,6 @@ msgstr "Bir tedarikçinin satın alma birimini bir PO, makbuz veya fatura satır
 msgid "Copied link to clipboard"
 msgstr "Bağlantı panoya kopyalandı"
 
-msgid "Copied webhook secret"
-msgstr ""
-
 msgid "Copy"
 msgstr "Kopyala"
 
@@ -3376,9 +3373,6 @@ msgstr "Bu bağlantıyı bir müşteriyle paylaşmak için kopyalayın"
 
 msgid "Copy this link to share the quote with a supplier"
 msgstr "Bu teklifi bir tedarikçiyle paylaşmak için bu bağlantıyı kopyalayın"
-
-msgid "Copy this webhook secret now — it is the only time it is shown. You need it to verify signed webhook calls this workflow sends."
-msgstr ""
 
 msgid "Copy tool number"
 msgstr "Araç numarasını kopyala"
@@ -8574,6 +8568,9 @@ msgstr "Verileri Taşı"
 msgid "Min Qty"
 msgstr "Min Miktar"
 
+msgid "Minimize"
+msgstr ""
+
 msgid "Minimum"
 msgstr "Minimum"
 
@@ -9488,9 +9485,6 @@ msgstr "Normal"
 msgid "Not a table but a general-ledger balance: cost accumulates as job materials are issued and clears when the job is received to stock."
 msgstr "Bir tablo değil, bir genel muhasebe dengesi: iş malzemeleri verildiğinde maliyetler birikir ve iş envantere alındığında temizlenir."
 
-msgid "Not configured yet"
-msgstr ""
-
 msgid "Not enough jobs to cover quantity"
 msgstr "Miktarı karşılayacak yeterli iş yok"
 
@@ -9775,9 +9769,6 @@ msgstr "Kurulum Haritasını Aç"
 
 msgid "Open transactions"
 msgstr "Açık işlemler"
-
-msgid "Open workflow"
-msgstr ""
 
 msgid "Open Workflow"
 msgstr ""
@@ -13070,6 +13061,9 @@ msgstr "Adım"
 msgid "Step detail is kept for 30 days. This run's steps have been removed."
 msgstr ""
 
+msgid "Step options"
+msgstr ""
+
 msgid "Step Records"
 msgstr "Adım Kayıtları"
 
@@ -16072,9 +16066,6 @@ msgstr "Çalışma vardiyası takibi aktif."
 
 msgid "Workflow"
 msgstr "İş Akışı"
-
-msgid "Workflow created"
-msgstr ""
 
 msgid "Workflows"
 msgstr ""

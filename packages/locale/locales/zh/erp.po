@@ -3239,9 +3239,6 @@ msgstr "将供应商的采购单位转换为采购订单、收据或发票行中
 msgid "Copied link to clipboard"
 msgstr "已复制链接到剪贴板"
 
-msgid "Copied webhook secret"
-msgstr ""
-
 msgid "Copy"
 msgstr "复制"
 
@@ -3376,9 +3373,6 @@ msgstr "复制此链接以与客户分享报价"
 
 msgid "Copy this link to share the quote with a supplier"
 msgstr "复制此链接以与供应商共享报价"
-
-msgid "Copy this webhook secret now — it is the only time it is shown. You need it to verify signed webhook calls this workflow sends."
-msgstr ""
 
 msgid "Copy tool number"
 msgstr "复制工具编号"
@@ -8574,6 +8568,9 @@ msgstr "迁移数据"
 msgid "Min Qty"
 msgstr "最小数量"
 
+msgid "Minimize"
+msgstr ""
+
 msgid "Minimum"
 msgstr "最小值"
 
@@ -9488,9 +9485,6 @@ msgstr "正常"
 msgid "Not a table but a general-ledger balance: cost accumulates as job materials are issued and clears when the job is received to stock."
 msgstr "不是表格而是总账余额：当发出工作物料时成本积累，当工作收到库存时清除。"
 
-msgid "Not configured yet"
-msgstr ""
-
 msgid "Not enough jobs to cover quantity"
 msgstr "工作数量不足以覆盖数量"
 
@@ -9775,9 +9769,6 @@ msgstr "打开设置地图"
 
 msgid "Open transactions"
 msgstr "未结交易"
-
-msgid "Open workflow"
-msgstr ""
 
 msgid "Open Workflow"
 msgstr ""
@@ -13070,6 +13061,9 @@ msgstr "步骤"
 msgid "Step detail is kept for 30 days. This run's steps have been removed."
 msgstr ""
 
+msgid "Step options"
+msgstr ""
+
 msgid "Step Records"
 msgstr "步骤记录"
 
@@ -16072,9 +16066,6 @@ msgstr "工作班次跟踪处于活跃状态。"
 
 msgid "Workflow"
 msgstr "工作流"
-
-msgid "Workflow created"
-msgstr ""
 
 msgid "Workflows"
 msgstr ""

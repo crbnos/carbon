@@ -201,41 +201,16 @@ rendered — nothing here reads a template. When the customer named no record, t
 
 ## The webhook action
 
-`actions/webhook.ts`. The secret is per-workflow: `workflow.webhookSecret`, added
-by `20260731025358_workflows-webhook-secret.sql` as
-`TEXT NOT NULL DEFAULT encode(gen_random_bytes(32), 'hex')`. The migration's own
-comment records the limitation — Postgres has no column-level RLS, so anyone who
-can read the workflow can read the secret. No secret, or an unreadable workflow
-row, is `"This workflow has no signing secret."`
-
-The signed string is the exact bytes sent, prefixed by version and timestamp:
-
-```ts
-const timestamp = Math.floor(Date.now() / 1000);
-const signature = createHmac("sha256", secret)
-  .update(`v1:${timestamp}:${rawBody}`)
-  .digest("hex");
-```
-
-and it ships as two headers, alongside `Content-Type: application/json`:
-
-```
-Carbon-Timestamp: <unix seconds>
-Carbon-Signature: v1=<hex>
-```
-
-Signing over the body **as sent** is what lets a receiver verify what it actually
-got; the timestamp is inside the signed string so a replay cannot be re-stamped.
-
-`redirect: "manual"` and a 10s `AbortSignal.timeout`. A 3xx is refused
+`actions/webhook.ts`. POSTs the body as-is to the configured URL. No signing —
+if a customer needs request verification they can add an auth header in the action
+inputs. `redirect: "manual"` and a 10s `AbortSignal.timeout`. A 3xx is refused
 (`"That address redirected, which is not allowed."`) — following it would leave
 the guard behind. Non-2xx reports the status. On success the action outputs
 `status` and puts up to 2048 bytes of the response body in the step summary.
 
 ### The SSRF guard
 
-`actions/url-guard.ts`, `checkOutboundUrl(raw)`, called **before** the secret is
-read:
+`actions/url-guard.ts`, `checkOutboundUrl(raw)`, called before the fetch:
 
 - `https:` only; anything else is `"Only https addresses are allowed."`
 - Resolves the hostname with `dns.promises.lookup(..., { all: true })` — a public
@@ -259,7 +234,7 @@ Three things in this repo are called "webhook". Only the first is new:
 
 | | What | Where |
 |---|---|---|
-| **Workflow action** | Outbound, per-workflow HMAC, SSRF-guarded, https-only | `packages/jobs/src/workflows/actions/webhook.ts` |
+| **Workflow action** | Outbound, SSRF-guarded, https-only | `packages/jobs/src/workflows/actions/webhook.ts` |
 | Event-system `WEBHOOK` handler | Outbound `axios.post` on `carbon/event-webhook` to a subscription's configured URL with its configured headers — **no signing, no URL guard** | `packages/jobs/src/inngest/functions/events/webhook.ts` |
 | Integration webhooks | **Inbound** routes for Jira, Linear, Paperless Parts, Stripe and Xero | `apps/erp/app/routes/api+/webhook.{jira,linear,paperless-parts,stripe,xero}*.ts` |
 

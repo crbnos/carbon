@@ -69,10 +69,5 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  // The webhook secret is returned once, for the create modal's success state.
-  // There is no reveal-later route.
-  return data(
-    { id: created.data.id, webhookSecret: created.data.webhookSecret },
-    { status: 201 }
-  );
+  return data({ id: created.data.id }, { status: 201 });
 }

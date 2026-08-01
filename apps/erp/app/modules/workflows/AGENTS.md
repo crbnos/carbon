@@ -6,7 +6,7 @@ The definition schema, validator, catalogs, matcher and engine all live outside 
 
 ## Key Domain Concepts
 
-- **Workflow** — the `workflow` row. Carries `ownerId`, `active` (the on/off kill switch), `activeVersionId` (the promoted version pointer) and a `webhookSecret`. The pointer and the boolean are separate columns on purpose: turning a workflow off and back on restores whichever version was promoted.
+- **Workflow** — the `workflow` row. Carries `ownerId`, `active` (the on/off kill switch), and `activeVersionId` (the promoted version pointer). The pointer and the boolean are separate columns on purpose: turning a workflow off and back on restores whichever version was promoted.
 - **Version** — a `workflowVersion` row holding `nodes`, `edges` and `formatVersion`. Numbered, never named.
 - **Definition** — `{ formatVersion, nodes, edges }`, validated by `workflowDefinitionSchema` from `@carbon/workflows`. `CURRENT_DEFINITION_FORMAT_VERSION` is **2**; the SQL column default is a stale **1**, so the app always writes the constant explicitly.
 - **Publish** — validate → set `activeVersionId` → set `active` → `syncWorkflowTriggers` → wake the scheduler. One route does all five; splitting them leaves a workflow that looks active and never fires.
@@ -62,7 +62,7 @@ Routes split in two trees: `x+/workflows+/` (list, create, rename, delete, with 
 
 - `getWorkflows` / `getWorkflow` — list and detail reads
 - `getWorkflowVersions` / `getWorkflowVersion` / `getWorkflowVersionNumbers` — version reads (flat selects; nested embeds across `workflow` + `workflowVersion` trip TS2589 in this app)
-- `insertWorkflow` / `updateWorkflow` — separate rather than one `upsert*`, because only the insert may select `webhookSecret` back
+- `insertWorkflow` / `updateWorkflow` — separate rather than one `upsert*`
 - `insertWorkflowVersion` / `updateWorkflowDefinition` / `deleteWorkflowVersion`
 - `updateWorkflowOwner` — takes the session user, never a submitted id
 - `getWorkflowLockFlags` / `checkWorkflowVersionLock` (server) — the live-version lock

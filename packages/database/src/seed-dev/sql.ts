@@ -296,7 +296,8 @@ const SUMMARY_TABLES = [
   "jobOperation",
   "nonConformance",
   "changeOrder",
-  "fixedAsset"
+  "fixedAsset",
+  "workflow"
 ];
 
 export async function printSummary(

@@ -10,15 +10,10 @@ import {
   LuZap
 } from "react-icons/lu";
 
-/**
- * The one place per-kind presentation lives. The palette, the node card and the
- * accent swatch all read this, so a kind cannot look like one thing on the rail
- * and another on the canvas.
- */
+/** The one place per-kind presentation lives. Palette and node card both read this. */
 export type NodeKindMeta = {
   name: string;
   Icon: IconType;
-  accent: string;
   description: string;
   defaultTitle: string;
   hasTarget: boolean;
@@ -40,7 +35,6 @@ export const NODE_KIND_META: Record<WorkflowNodeType, NodeKindMeta> = {
   trigger: {
     name: "Trigger",
     Icon: LuZap,
-    accent: "#f59e0b",
     description: "Starts the workflow",
     defaultTitle: "When this happens",
     hasTarget: false,
@@ -59,7 +53,6 @@ export const NODE_KIND_META: Record<WorkflowNodeType, NodeKindMeta> = {
   condition: {
     name: "Condition",
     Icon: LuSplit,
-    accent: "#2563eb",
     description: "Sends the run down one path",
     defaultTitle: "Only if",
     hasTarget: true,
@@ -84,7 +77,6 @@ export const NODE_KIND_META: Record<WorkflowNodeType, NodeKindMeta> = {
   action: {
     name: "Action",
     Icon: LuPlay,
-    accent: "#059669",
     description: "Notifies, sends or calls out",
     defaultTitle: "Do something",
     hasTarget: true,
@@ -98,7 +90,6 @@ export const NODE_KIND_META: Record<WorkflowNodeType, NodeKindMeta> = {
   entity: {
     name: "Record",
     Icon: LuPencilRuler,
-    accent: "#7c3aed",
     description: "Writes to a record in Carbon",
     defaultTitle: "Create or update a record",
     hasTarget: true,
@@ -112,7 +103,6 @@ export const NODE_KIND_META: Record<WorkflowNodeType, NodeKindMeta> = {
   lookup: {
     name: "Find",
     Icon: LuSearch,
-    accent: "#0891b2",
     description: "Looks a record up to use later",
     defaultTitle: "Find a record",
     hasTarget: true,
@@ -133,7 +123,6 @@ export const NODE_KIND_META: Record<WorkflowNodeType, NodeKindMeta> = {
   filter: {
     name: "Filter",
     Icon: LuFilter,
-    accent: "#db2777",
     description: "Keeps only the items that match",
     defaultTitle: "Narrow a list",
     hasTarget: true,

@@ -3239,9 +3239,6 @@ msgstr "Convertit l'unité d'achat d'un fournisseur en votre unité d'inventaire
 msgid "Copied link to clipboard"
 msgstr "Lien copié dans le presse-papiers"
 
-msgid "Copied webhook secret"
-msgstr ""
-
 msgid "Copy"
 msgstr "Copier"
 
@@ -3376,9 +3373,6 @@ msgstr "Copiez ce lien pour partager le devis avec un client"
 
 msgid "Copy this link to share the quote with a supplier"
 msgstr "Copiez ce lien pour partager le devis avec un fournisseur"
-
-msgid "Copy this webhook secret now — it is the only time it is shown. You need it to verify signed webhook calls this workflow sends."
-msgstr ""
 
 msgid "Copy tool number"
 msgstr "Copier le numéro d'outil"
@@ -8574,6 +8568,9 @@ msgstr "Migrer les données"
 msgid "Min Qty"
 msgstr "Qté min"
 
+msgid "Minimize"
+msgstr ""
+
 msgid "Minimum"
 msgstr "Minimum"
 
@@ -9488,9 +9485,6 @@ msgstr "Normal"
 msgid "Not a table but a general-ledger balance: cost accumulates as job materials are issued and clears when the job is received to stock."
 msgstr "Pas un tableau mais un solde du grand livre : le coût s'accumule au fur et à mesure que les matériaux de travail sont émis et s'efface lorsque le travail est reçu en stock."
 
-msgid "Not configured yet"
-msgstr ""
-
 msgid "Not enough jobs to cover quantity"
 msgstr "Pas assez de tâches pour couvrir la quantité"
 
@@ -9775,9 +9769,6 @@ msgstr "Ouvrir la carte de configuration"
 
 msgid "Open transactions"
 msgstr "Transactions ouvertes"
-
-msgid "Open workflow"
-msgstr ""
 
 msgid "Open Workflow"
 msgstr ""
@@ -13070,6 +13061,9 @@ msgstr "Étape"
 msgid "Step detail is kept for 30 days. This run's steps have been removed."
 msgstr ""
 
+msgid "Step options"
+msgstr ""
+
 msgid "Step Records"
 msgstr "Enregistrements d'étapes"
 
@@ -16072,9 +16066,6 @@ msgstr "Le suivi des quarts de travail est actif."
 
 msgid "Workflow"
 msgstr "Flux de travail"
-
-msgid "Workflow created"
-msgstr ""
 
 msgid "Workflows"
 msgstr ""

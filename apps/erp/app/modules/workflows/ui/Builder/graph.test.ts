@@ -34,8 +34,8 @@ describe("fromReactFlow", () => {
         ...createNode("trigger", { x: 0, y: 0 }),
         selected: true,
         dragging: false,
-        measured: { width: 260, height: 180 },
-        width: 260,
+        measured: { width: 440, height: 180 },
+        width: 440,
         height: 180
       },
       createNode("action", { x: 0, y: 260 })
@@ -47,6 +47,7 @@ describe("fromReactFlow", () => {
 
     expect(Object.keys(definition.nodes[0]).sort()).toEqual([
       "data",
+      "expanded",
       "id",
       "position",
       "type"
@@ -64,6 +65,33 @@ describe("fromReactFlow", () => {
 
     expect(definition.edges).toHaveLength(1);
     expect(definition.edges[0].id).toBe("e2");
+  });
+
+  it("round-trips expanded: false through fromReactFlow and toReactFlow", () => {
+    const a = {
+      ...createNode("trigger", { x: 0, y: 0 }),
+      expanded: false
+    } as unknown as BuilderNode;
+    const definition = fromReactFlow([a], []);
+    expect(definition.nodes[0].expanded).toBe(false);
+    const flow = toReactFlow(definition);
+    expect(flow.nodes[0].expanded).toBe(false);
+  });
+
+  it("defaults expanded to true when missing from a stored definition", () => {
+    const raw = {
+      id: "n1",
+      type: "trigger",
+      position: { x: 0, y: 0 },
+      data: { events: [], origin: "Both" }
+    };
+    const definition = workflowDefinitionSchema.parse({
+      formatVersion: 2,
+      nodes: [raw],
+      edges: []
+    });
+    const flow = toReactFlow(definition);
+    expect(flow.nodes[0].expanded).toBe(true);
   });
 });
 
@@ -146,11 +174,20 @@ describe("nextNodePosition", () => {
     expect(nextNodePosition([], undefined)).toEqual({ x: 0, y: 0 });
   });
 
-  it("nudges right when the slot below is taken", () => {
+  it("places to the right of the anchor at the same y", () => {
     const a = { ...createNode("trigger", { x: 0, y: 0 }) } as BuilderNode;
-    const taken = { ...createNode("action", { x: 0, y: 260 }) } as BuilderNode;
+    const position = nextNodePosition([a], a);
+    expect(position.x).toBeGreaterThan(a.position.x);
+    expect(position.y).toBe(a.position.y);
+  });
+
+  it("nudges down when the position to the right is occupied", () => {
+    const a = { ...createNode("trigger", { x: 0, y: 0 }) } as BuilderNode;
+    const taken = {
+      ...createNode("action", { x: 480, y: 0 })
+    } as BuilderNode;
     const position = nextNodePosition([a, taken], a);
-    expect(position.y).toBe(260);
-    expect(position.x).toBeGreaterThan(0);
+    expect(position.x).toBe(480);
+    expect(position.y).toBeGreaterThan(0);
   });
 });

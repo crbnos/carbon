@@ -3239,9 +3239,6 @@ msgstr "Преобразует единицу покупки поставщик�
 msgid "Copied link to clipboard"
 msgstr "Ссылка скопирована в буфер обмена"
 
-msgid "Copied webhook secret"
-msgstr ""
-
 msgid "Copy"
 msgstr "Копировать"
 
@@ -3376,9 +3373,6 @@ msgstr "Скопируйте эту ссылку, чтобы поделитьс�
 
 msgid "Copy this link to share the quote with a supplier"
 msgstr "Скопируйте эту ссылку, чтобы поделиться предложением с поставщиком"
-
-msgid "Copy this webhook secret now — it is the only time it is shown. You need it to verify signed webhook calls this workflow sends."
-msgstr ""
 
 msgid "Copy tool number"
 msgstr "Скопировать номер инструмента"
@@ -8574,6 +8568,9 @@ msgstr "Перенос данных"
 msgid "Min Qty"
 msgstr "Мин. кол-во"
 
+msgid "Minimize"
+msgstr ""
+
 msgid "Minimum"
 msgstr "Минимум"
 
@@ -9488,9 +9485,6 @@ msgstr "Обычный"
 msgid "Not a table but a general-ledger balance: cost accumulates as job materials are issued and clears when the job is received to stock."
 msgstr "Не таблица, а баланс главной книги: стоимость накапливается по мере выдачи материалов задания и очищается при поступлении задания на склад."
 
-msgid "Not configured yet"
-msgstr ""
-
 msgid "Not enough jobs to cover quantity"
 msgstr "Недостаточно заданий для покрытия количества"
 
@@ -9775,9 +9769,6 @@ msgstr "Открыть карту настройки"
 
 msgid "Open transactions"
 msgstr "Открытые транзакции"
-
-msgid "Open workflow"
-msgstr ""
 
 msgid "Open Workflow"
 msgstr ""
@@ -13070,6 +13061,9 @@ msgstr "Шаг"
 msgid "Step detail is kept for 30 days. This run's steps have been removed."
 msgstr ""
 
+msgid "Step options"
+msgstr ""
+
 msgid "Step Records"
 msgstr "Записи этапов"
 
@@ -16072,9 +16066,6 @@ msgstr "Отслеживание рабочих смен активно."
 
 msgid "Workflow"
 msgstr "Рабочий процесс"
-
-msgid "Workflow created"
-msgstr ""
 
 msgid "Workflows"
 msgstr ""

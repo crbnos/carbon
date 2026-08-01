@@ -3239,9 +3239,6 @@ msgstr "Convierte la unidad de compra de un proveedor a su unidad de inventario 
 msgid "Copied link to clipboard"
 msgstr "Enlace copiado al portapapeles"
 
-msgid "Copied webhook secret"
-msgstr ""
-
 msgid "Copy"
 msgstr "Copiar"
 
@@ -3376,9 +3373,6 @@ msgstr "Copia este enlace para compartir la cotización con un cliente"
 
 msgid "Copy this link to share the quote with a supplier"
 msgstr "Copia este enlace para compartir la cotización con un proveedor"
-
-msgid "Copy this webhook secret now — it is the only time it is shown. You need it to verify signed webhook calls this workflow sends."
-msgstr ""
 
 msgid "Copy tool number"
 msgstr "Copiar número de herramienta"
@@ -8574,6 +8568,9 @@ msgstr "Migrar datos"
 msgid "Min Qty"
 msgstr "Cant. Mín"
 
+msgid "Minimize"
+msgstr ""
+
 msgid "Minimum"
 msgstr "Mínimo"
 
@@ -9488,9 +9485,6 @@ msgstr "Normal"
 msgid "Not a table but a general-ledger balance: cost accumulates as job materials are issued and clears when the job is received to stock."
 msgstr "No es una tabla sino un saldo del libro mayor: el costo se acumula cuando se emiten materiales de trabajo y se borra cuando el trabajo se recibe en inventario."
 
-msgid "Not configured yet"
-msgstr ""
-
 msgid "Not enough jobs to cover quantity"
 msgstr "No hay suficientes trabajos para cubrir la cantidad"
 
@@ -9775,9 +9769,6 @@ msgstr "Abrir el Mapa de Configuración"
 
 msgid "Open transactions"
 msgstr "Transacciones abiertas"
-
-msgid "Open workflow"
-msgstr ""
 
 msgid "Open Workflow"
 msgstr ""
@@ -13070,6 +13061,9 @@ msgstr "Paso"
 msgid "Step detail is kept for 30 days. This run's steps have been removed."
 msgstr ""
 
+msgid "Step options"
+msgstr ""
+
 msgid "Step Records"
 msgstr "Registros de Pasos"
 
@@ -16072,9 +16066,6 @@ msgstr "El seguimiento de turnos de trabajo está activo."
 
 msgid "Workflow"
 msgstr "Flujo de trabajo"
-
-msgid "Workflow created"
-msgstr ""
 
 msgid "Workflows"
 msgstr ""

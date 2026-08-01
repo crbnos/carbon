@@ -3239,9 +3239,6 @@ msgstr "Converts a supplier's purchase unit to your inventory unit on a PO, rece
 msgid "Copied link to clipboard"
 msgstr "Copied link to clipboard"
 
-msgid "Copied webhook secret"
-msgstr "Copied webhook secret"
-
 msgid "Copy"
 msgstr "Copy"
 
@@ -3376,9 +3373,6 @@ msgstr "Copy this link to share the quote with a customer"
 
 msgid "Copy this link to share the quote with a supplier"
 msgstr "Copy this link to share the quote with a supplier"
-
-msgid "Copy this webhook secret now — it is the only time it is shown. You need it to verify signed webhook calls this workflow sends."
-msgstr "Copy this webhook secret now — it is the only time it is shown. You need it to verify signed webhook calls this workflow sends."
 
 msgid "Copy tool number"
 msgstr "Copy tool number"
@@ -8574,6 +8568,9 @@ msgstr "Migrate data"
 msgid "Min Qty"
 msgstr "Min Qty"
 
+msgid "Minimize"
+msgstr "Minimize"
+
 msgid "Minimum"
 msgstr "Minimum"
 
@@ -9488,9 +9485,6 @@ msgstr "Normal"
 msgid "Not a table but a general-ledger balance: cost accumulates as job materials are issued and clears when the job is received to stock."
 msgstr "Not a table but a general-ledger balance: cost accumulates as job materials are issued and clears when the job is received to stock."
 
-msgid "Not configured yet"
-msgstr "Not configured yet"
-
 msgid "Not enough jobs to cover quantity"
 msgstr "Not enough jobs to cover quantity"
 
@@ -9775,9 +9769,6 @@ msgstr "Open the Setup Map"
 
 msgid "Open transactions"
 msgstr "Open transactions"
-
-msgid "Open workflow"
-msgstr "Open workflow"
 
 msgid "Open Workflow"
 msgstr "Open Workflow"
@@ -13070,6 +13061,9 @@ msgstr "Step"
 msgid "Step detail is kept for 30 days. This run's steps have been removed."
 msgstr "Step detail is kept for 30 days. This run's steps have been removed."
 
+msgid "Step options"
+msgstr "Step options"
+
 msgid "Step Records"
 msgstr "Step Records"
 
@@ -16072,9 +16066,6 @@ msgstr "Work shift tracking is active."
 
 msgid "Workflow"
 msgstr "Workflow"
-
-msgid "Workflow created"
-msgstr "Workflow created"
 
 msgid "Workflows"
 msgstr "Workflows"

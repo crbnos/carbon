@@ -90,8 +90,6 @@ export async function getWorkflowVersion(
     .maybeSingle();
 }
 
-// Insert and update are separate rather than one `upsert*` because only the insert
-// may ever select `webhookSecret` back — it is shown once, at creation.
 export async function insertWorkflow(
   client: SupabaseClient<Database>,
   workflow: Omit<z.infer<typeof workflowValidator>, "id"> & {
@@ -109,7 +107,7 @@ export async function insertWorkflow(
       createdBy: workflow.createdBy,
       active: false
     })
-    .select("id, webhookSecret")
+    .select("id")
     .single();
 }
 

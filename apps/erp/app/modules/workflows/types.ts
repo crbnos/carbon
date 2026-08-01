@@ -6,5 +6,6 @@ export type BuilderNode = Node<
   WorkflowNode["type"]
 > & {
   title?: string;
+  expanded?: boolean;
 };
 export type BuilderEdge = Edge;
