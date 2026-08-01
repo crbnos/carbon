@@ -486,7 +486,15 @@ export const journalEntrySourceTypes = [
   "Credit Memo",
   "Debit Memo",
   "Non-Conformance",
-  "Inbound Inspection"
+  "Inbound Inspection",
+  "Prepaid Amortization",
+  "Recurring Journal"
+] as const;
+
+export const recurringJournalFrequencies = [
+  "Monthly",
+  "Quarterly",
+  "Annually"
 ] as const;
 
 export const journalEntryStatuses = ["Draft", "Posted", "Reversed"] as const;
@@ -553,10 +561,82 @@ export const periodCloseTaskDefinitionValidator = z.object({
   defaultAssigneeId: zfd.text(z.string().optional())
 });
 
-export const journalEntryValidator = z.object({
-  id: zfd.text(z.string().optional()),
-  description: z.string().optional(),
-  postingDate: z.string().min(1, { message: "Posting date is required" })
+export const journalEntryValidator = z
+  .object({
+    id: zfd.text(z.string().optional()),
+    description: z.string().optional(),
+    postingDate: z.string().min(1, { message: "Posting date is required" }),
+    // Auto-reversing accruals (close automation, #1039): when set, a scheduled
+    // job posts the mirror reversal on this date. Must be strictly after the
+    // posting date (mirrors journal_autoReverseOn_check in the DB).
+    autoReverseOn: zfd.text(z.string().optional())
+  })
+  .refine(
+    (data) =>
+      !data.autoReverseOn ||
+      !data.postingDate ||
+      data.autoReverseOn > data.postingDate,
+    {
+      message: "Auto-reverse date must be after the posting date",
+      path: ["autoReverseOn"]
+    }
+  );
+
+// Recurring journal templates (close automation, #1039). A template header plus
+// its balanced lines; the scheduled job drafts a journal per run and advances
+// nextRunDate. Balance (Σ debit = Σ credit) is validated here, matching
+// postJournalEntry's 0.001 tolerance.
+export const recurringJournalTemplateLineValidator = z
+  .object({
+    id: zfd.text(z.string().optional()),
+    accountId: z.string().min(1, { message: "Account is required" }),
+    description: zfd.text(z.string().optional()),
+    debit: zfd.numeric(z.number().min(0)),
+    credit: zfd.numeric(z.number().min(0)),
+    sortOrder: zfd.numeric(z.number().int().min(0).optional())
+  })
+  .refine((data) => !(data.debit > 0 && data.credit > 0), {
+    message: "A line cannot have both debit and credit",
+    path: ["credit"]
+  });
+
+export const recurringJournalTemplateValidator = z
+  .object({
+    id: zfd.text(z.string().optional()),
+    name: z.string().min(1, { message: "Name is required" }),
+    description: zfd.text(z.string().optional()),
+    frequency: z.enum(recurringJournalFrequencies, {
+      errorMap: () => ({ message: "Frequency is required" })
+    }),
+    nextRunDate: z.string().min(1, { message: "Next run date is required" }),
+    endDate: zfd.text(z.string().optional()),
+    active: zfd.checkbox(),
+    lines: z
+      .array(recurringJournalTemplateLineValidator)
+      .min(1, { message: "At least one line is required" })
+  })
+  .superRefine((data, ctx) => {
+    const totalDebit = data.lines.reduce((sum, l) => sum + (l.debit || 0), 0);
+    const totalCredit = data.lines.reduce((sum, l) => sum + (l.credit || 0), 0);
+    if (Math.abs(totalDebit - totalCredit) > 0.001) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Total debits must equal total credits",
+        path: ["lines"]
+      });
+    }
+    if (data.endDate && data.endDate < data.nextRunDate) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "End date must be on or after the next run date",
+        path: ["endDate"]
+      });
+    }
+  });
+
+// Cancel a prepaid schedule (only allowed while no entry has been posted).
+export const prepaidScheduleCancelValidator = z.object({
+  id: z.string().min(1, { message: "Schedule is required" })
 });
 
 export const journalEntryLineValidator = z

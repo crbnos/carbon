@@ -108,7 +108,8 @@ export default function NewPurchaseInvoiceLineRoute() {
     supplierUnitPrice: 0,
     supplierShippingCost: 0,
     supplierTaxAmount: 0,
-    exchangeRate: purchaseInvoiceData?.purchaseInvoice?.exchangeRate ?? 1
+    exchangeRate: purchaseInvoiceData?.purchaseInvoice?.exchangeRate ?? 1,
+    isPrepaid: false
   };
 
   return <PurchaseInvoiceLineForm initialValues={initialValues} />;

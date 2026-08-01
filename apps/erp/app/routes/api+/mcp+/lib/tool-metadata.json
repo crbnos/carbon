@@ -1,6 +1,6 @@
 {
-  "generated": "2026-07-31T05:48:08.334Z",
-  "totalTools": 1405,
+  "generated": "2026-08-01T09:26:22.905Z",
+  "totalTools": 1413,
   "modules": 15,
   "tools": [
     {
@@ -2562,7 +2562,7 @@
       "module": "accounting",
       "classification": "WRITE",
       "description": "create journal entry",
-      "paramCount": 3,
+      "paramCount": 1,
       "serviceParams": [
         "client",
         "data"
@@ -2575,18 +2575,10 @@
       "schema": {
         "type": "object",
         "properties": {
-          "id": {
-            "type": "string"
-          },
-          "description": {
-            "type": "string"
-          },
-          "postingDate": {
-            "type": "string"
-          }
+          "data": {}
         },
         "required": [
-          "postingDate"
+          "data"
         ]
       }
     },
@@ -2777,6 +2769,9 @@
             "type": "object",
             "properties": {
               "journalEntryId": {
+                "type": "string"
+              },
+              "postingDate": {
                 "type": "string"
               }
             }
@@ -3513,6 +3508,235 @@
         },
         "required": [
           "data"
+        ]
+      }
+    },
+    {
+      "name": "accounting_createDepreciationRunProposal",
+      "module": "accounting",
+      "classification": "WRITE",
+      "description": "create depreciation run proposal",
+      "paramCount": 0,
+      "serviceParams": [
+        "client",
+        "{ companyId, userId }"
+      ],
+      "injectAuth": [
+        "companyId",
+        "createdBy",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    {
+      "name": "accounting_getRecurringJournalTemplates",
+      "module": "accounting",
+      "classification": "READ",
+      "description": "get recurring journal templates",
+      "paramCount": 3,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "args": {
+            "type": "object",
+            "properties": {
+              "limit": {
+                "type": "integer",
+                "default": 100
+              },
+              "offset": {
+                "type": "integer",
+                "default": 0
+              },
+              "search": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "accounting_getRecurringJournalTemplate",
+      "module": "accounting",
+      "classification": "READ",
+      "description": "get recurring journal template",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "id"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      }
+    },
+    {
+      "name": "accounting_upsertRecurringJournalTemplate",
+      "module": "accounting",
+      "classification": "WRITE",
+      "description": "upsert recurring journal template",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "data"
+      ],
+      "injectAuth": [
+        "companyId",
+        "createdBy",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "data": {}
+        },
+        "required": [
+          "data"
+        ]
+      }
+    },
+    {
+      "name": "accounting_deactivateRecurringJournalTemplate",
+      "module": "accounting",
+      "classification": "WRITE",
+      "description": "deactivate recurring journal template",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "{ id, updatedBy }"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      }
+    },
+    {
+      "name": "accounting_getPrepaidSchedules",
+      "module": "accounting",
+      "classification": "READ",
+      "description": "get prepaid schedules",
+      "paramCount": 4,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "args": {
+            "type": "object",
+            "properties": {
+              "limit": {
+                "type": "integer",
+                "default": 100
+              },
+              "offset": {
+                "type": "integer",
+                "default": 0
+              },
+              "search": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "status": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "accounting_getPrepaidSchedule",
+      "module": "accounting",
+      "classification": "READ",
+      "description": "get prepaid schedule",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "id"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      }
+    },
+    {
+      "name": "accounting_cancelPrepaidSchedule",
+      "module": "accounting",
+      "classification": "WRITE",
+      "description": "cancel prepaid schedule",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "{ id, companyId, userId }"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
         ]
       }
     },

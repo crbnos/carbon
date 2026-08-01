@@ -78,7 +78,8 @@ export default function PurchaseInvoiceExplorer() {
     supplierUnitPrice: 0,
     supplierShippingCost: 0,
     supplierTaxAmount: 0,
-    exchangeRate: purchaseInvoiceData?.purchaseInvoice?.exchangeRate ?? 1
+    exchangeRate: purchaseInvoiceData?.purchaseInvoice?.exchangeRate ?? 1,
+    isPrepaid: false
   };
 
   const newPurchaseInvoiceLineDisclosure = useDisclosure();

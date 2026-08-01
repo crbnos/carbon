@@ -131,8 +131,27 @@ export const purchaseInvoiceLineValidator = z
     requiredDate: zfd.text(z.string().optional()),
     locationId: zfd.text(z.string().optional()),
     storageUnitId: zfd.text(z.string().optional()),
-    exchangeRate: zfd.numeric(z.number().optional())
+    exchangeRate: zfd.numeric(z.number().optional()),
+    // Prepaid amortization (close automation, #1039). Only valid on G/L Account
+    // lines; the DB mirrors this with purchaseInvoiceLine_prepaid_check.
+    isPrepaid: zfd.checkbox(),
+    prepaidStartDate: zfd.text(z.string().optional()),
+    prepaidMonths: zfd.numeric(z.number().int().positive().optional())
   })
+  .refine(
+    (data) =>
+      data.isPrepaid
+        ? data.invoiceLineType === "G/L Account" &&
+          !!data.prepaidStartDate &&
+          !!data.prepaidMonths &&
+          data.prepaidMonths > 0
+        : true,
+    {
+      message:
+        "Prepaid lines require a G/L Account, a start date, and a positive number of months",
+      path: ["prepaidMonths"]
+    }
+  )
   .refine(
     (data) =>
       ["Part", "Service", "Material", "Tool", "Consumable"].includes(

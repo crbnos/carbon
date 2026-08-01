@@ -165,6 +165,10 @@ export default function EditPurchaseInvoiceLineRoute() {
     taxPercent: purchaseInvoiceLine?.taxPercent ?? 0,
     assetReadableId: (purchaseInvoiceLine as any)?.assetReadableId ?? "",
     assetName: (purchaseInvoiceLine as any)?.assetName ?? "",
+    isPrepaid: (purchaseInvoiceLine as any)?.isPrepaid ?? false,
+    prepaidStartDate:
+      (purchaseInvoiceLine as any)?.prepaidStartDate ?? undefined,
+    prepaidMonths: (purchaseInvoiceLine as any)?.prepaidMonths ?? undefined,
     ...getCustomFields(purchaseInvoiceLine?.customFields)
   };
 

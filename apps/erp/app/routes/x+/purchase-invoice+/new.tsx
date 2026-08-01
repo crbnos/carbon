@@ -156,6 +156,7 @@ export async function action({ request }: ActionFunctionArgs) {
           quantity: item.quantity || 1,
           supplierUnitPrice: item.unitPrice || 0,
           supplierShippingCost: 0,
+          isPrepaid: false,
           supplierTaxAmount: lineTax,
           locationId: d.locationId,
           companyId,

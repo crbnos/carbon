@@ -36,8 +36,10 @@ import type {
   periodCloseTaskSeverities,
   periodCloseTaskStatuses,
   periodCloseTaskTypes,
+  recurringJournalTemplateValidator,
   taxDepreciationMethods
 } from "./accounting.models";
+import { buildDepreciationLines, getNextPeriodEnd } from "./accounting.utils";
 import type {
   AccountLedgerLine,
   Transaction,
@@ -3439,6 +3441,10 @@ export async function reverseJournalEntry(
     journalEntryId?: string;
     companyId: string;
     userId: string;
+    // Auto-reversing accruals (#1039) post their mirror on the accrual's
+    // `autoReverseOn` date rather than today. Existing callers omit it and
+    // keep the today-dated behavior.
+    postingDate?: string;
   }
 ) {
   // 1. Fetch original
@@ -3471,10 +3477,13 @@ export async function reverseJournalEntry(
     journalEntryId = seq.data;
   }
 
-  // 2b. The reversing entry is dated today and posts as an "accounting" source,
-  // so it lands in the current period (never the original's, which may be
-  // Closed). A Closed current period rejects; a Locked one still accepts.
-  const postingDate = new Date().toISOString().split("T")[0];
+  // 2b. The reversing entry posts as an "accounting" source into the period
+  // covering its posting date (today by default, or the accrual's autoReverseOn
+  // for scheduled reversals) — never the original's, which may be Closed. That
+  // period is resolved/created here; a Closed target rejects, a Locked one still
+  // accepts.
+  const postingDate =
+    data.postingDate ?? new Date().toISOString().split("T")[0];
   const period = await getOrCreateAccountingPeriod(
     client,
     data.companyId,
@@ -4017,6 +4026,352 @@ export async function upsertFixedAssetUsageLog(
   return client
     .from("fixedAssetUsageLog")
     .insert([data as any])
+    .select("id")
+    .single();
+}
+
+// ===========================================================================
+// Close automation (#1039)
+// ===========================================================================
+
+// -- Depreciation proposals --------------------------------------------------
+
+/**
+ * Create a Draft depreciation run covering the next un-run period. Extracted
+ * verbatim from `depreciation-runs.new.tsx` so both the manual route and the
+ * scheduled close-automation path (via the edge function) share ONE code path.
+ *
+ * Returns a discriminated result: `alreadyExists` is a no-op (a run already
+ * covers the next period), NOT an error — the caller flashes or skips silently.
+ * `createdBy` is the user id ("system" for the scheduled path).
+ */
+export async function createDepreciationRunProposal(
+  client: SupabaseClient<Database>,
+  { companyId, userId }: { companyId: string; userId: string }
+): Promise<{
+  data: { id: string; depreciationRunId: string } | null;
+  error: PostgrestError | { message: string } | null;
+  alreadyExists: boolean;
+}> {
+  // Next un-run period from the last run (posted or draft).
+  const lastRun = await client
+    .from("depreciationRun")
+    .select("periodEnd, status")
+    .eq("companyId", companyId)
+    .order("periodEnd", { ascending: false })
+    .limit(1);
+
+  const lastPeriodEnd =
+    lastRun.data && lastRun.data.length > 0 ? lastRun.data[0].periodEnd : null;
+  const periodEnd = getNextPeriodEnd(lastPeriodEnd);
+
+  const existing = await client
+    .from("depreciationRun")
+    .select("id")
+    .eq("periodEnd", periodEnd)
+    .eq("companyId", companyId);
+
+  if (existing.data && existing.data.length > 0) {
+    return { data: null, error: null, alreadyExists: true };
+  }
+
+  const companySettings = await client
+    .from("companySettings")
+    .select("assetTaxDepreciationEnabled")
+    .eq("id", companyId)
+    .single();
+  const taxEnabled =
+    (companySettings.data as any)?.assetTaxDepreciationEnabled ?? false;
+
+  const assets = await client
+    .from("fixedAsset")
+    .select("*")
+    .eq("companyId", companyId)
+    .eq("status", "Active");
+  if (assets.error) {
+    return { data: null, error: assets.error, alreadyExists: false };
+  }
+
+  const lastPostedRun = await client
+    .from("depreciationRun")
+    .select("periodEnd")
+    .eq("companyId", companyId)
+    .eq("status", "Posted")
+    .order("periodEnd", { ascending: false })
+    .limit(1);
+  const lastPostedPeriodEnd =
+    lastPostedRun.data && lastPostedRun.data.length > 0
+      ? lastPostedRun.data[0].periodEnd
+      : null;
+
+  const usageLogs = await client
+    .from("fixedAssetUsageLog")
+    .select("fixedAssetId, unitsProduced")
+    .eq("periodEnd", periodEnd);
+  const usageMap = new Map(
+    (usageLogs.data ?? []).map((u) => [u.fixedAssetId, u])
+  );
+
+  const lines = buildDepreciationLines(
+    (assets.data ?? []).map((a) => ({
+      ...(a as any),
+      accumulatedTaxDepreciation: Number(
+        (a as any).accumulatedTaxDepreciation ?? 0
+      ),
+      taxDepreciationMethod: (a as any).taxDepreciationMethod ?? null,
+      taxUsefulLifeMonths: (a as any).taxUsefulLifeMonths ?? null,
+      taxResidualValuePercent: (a as any).taxResidualValuePercent ?? null,
+      macrsPropertyClass: (a as any).macrsPropertyClass ?? null,
+      macrsConvention: (a as any).macrsConvention ?? null,
+      bonusDepreciationPercent: (a as any).bonusDepreciationPercent ?? null
+    })),
+    periodEnd,
+    lastPostedPeriodEnd,
+    taxEnabled,
+    usageMap
+  );
+
+  const result = await insertDepreciationRun(client, {
+    periodEnd,
+    lines,
+    companyId,
+    createdBy: userId
+  });
+
+  return {
+    data: result.data ?? null,
+    error: result.error,
+    alreadyExists: false
+  };
+}
+
+// -- Recurring journal templates ---------------------------------------------
+
+export async function getRecurringJournalTemplates(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: GenericQueryFilters & { search: string | null }
+) {
+  let query = client
+    .from("recurringJournalTemplate")
+    .select("*", { count: "exact" })
+    .eq("companyId", companyId);
+
+  if (args.search) {
+    query = query.ilike("name", `%${args.search}%`);
+  }
+
+  query = setGenericQueryFilters(query, args, [
+    { column: "nextRunDate", ascending: true }
+  ]);
+  return query;
+}
+
+export async function getRecurringJournalTemplate(
+  client: SupabaseClient<Database>,
+  id: string
+) {
+  return client
+    .from("recurringJournalTemplate")
+    .select("*, recurringJournalTemplateLine(*)")
+    .eq("id", id)
+    .single();
+}
+
+export async function upsertRecurringJournalTemplate(
+  client: SupabaseClient<Database>,
+  data:
+    | (Omit<z.infer<typeof recurringJournalTemplateValidator>, "id"> & {
+        companyId: string;
+        createdBy: string;
+      })
+    | (Omit<z.infer<typeof recurringJournalTemplateValidator>, "id"> & {
+        id: string;
+        updatedBy: string;
+      })
+) {
+  const { lines, ...header } = data;
+
+  // Line writer shared by insert/update — delete-and-reinsert per repo
+  // convention. Each line carries its own class-signed nothing (debit/credit are
+  // stored raw on the template line; the journal draft applies toStoredAmount at
+  // generation time, not here).
+  const insertLines = async (
+    templateId: string,
+    companyId: string,
+    createdBy: string
+  ) => {
+    if (lines.length === 0) return { error: null };
+    const rows = lines.map((line, index) => ({
+      templateId,
+      companyId,
+      accountId: line.accountId,
+      description: line.description ?? null,
+      debit: line.debit ?? 0,
+      credit: line.credit ?? 0,
+      sortOrder: line.sortOrder ?? index + 1,
+      createdBy
+    }));
+    return client.from("recurringJournalTemplateLine").insert(rows as any);
+  };
+
+  if ("createdBy" in header) {
+    const inserted = await client
+      .from("recurringJournalTemplate")
+      .insert({
+        name: header.name,
+        description: header.description ?? null,
+        frequency: header.frequency,
+        nextRunDate: header.nextRunDate,
+        endDate: header.endDate ?? null,
+        active: header.active,
+        companyId: header.companyId,
+        createdBy: header.createdBy
+      } as any)
+      .select("id")
+      .single();
+    if (inserted.error || !inserted.data) return inserted;
+
+    const lineResult = await insertLines(
+      inserted.data.id,
+      header.companyId,
+      header.createdBy
+    );
+    if (lineResult.error) {
+      // Roll back the orphaned header (no transaction on the supabase-js path).
+      await client
+        .from("recurringJournalTemplate")
+        .delete()
+        .eq("id", inserted.data.id);
+      return { data: null, error: lineResult.error };
+    }
+    return inserted;
+  }
+
+  // Update path: update header, replace lines.
+  const updated = await client
+    .from("recurringJournalTemplate")
+    .update(
+      sanitize({
+        name: header.name,
+        description: header.description ?? null,
+        frequency: header.frequency,
+        nextRunDate: header.nextRunDate,
+        endDate: header.endDate ?? null,
+        active: header.active,
+        updatedBy: header.updatedBy,
+        updatedAt: new Date().toISOString()
+      })
+    )
+    .eq("id", header.id)
+    .select("id, companyId")
+    .single();
+  if (updated.error || !updated.data) return updated;
+
+  const del = await client
+    .from("recurringJournalTemplateLine")
+    .delete()
+    .eq("templateId", header.id);
+  if (del.error) return { data: null, error: del.error };
+
+  const lineResult = await insertLines(
+    header.id,
+    updated.data.companyId,
+    header.updatedBy
+  );
+  if (lineResult.error) return { data: null, error: lineResult.error };
+  return updated;
+}
+
+export async function deactivateRecurringJournalTemplate(
+  client: SupabaseClient<Database>,
+  { id, updatedBy }: { id: string; updatedBy: string }
+) {
+  return client
+    .from("recurringJournalTemplate")
+    .update({ active: false, updatedBy, updatedAt: new Date().toISOString() })
+    .eq("id", id)
+    .select("id")
+    .single();
+}
+
+// -- Prepaid schedules -------------------------------------------------------
+
+export async function getPrepaidSchedules(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: GenericQueryFilters & { search: string | null; status: string | null }
+) {
+  let query = client
+    .from("prepaidSchedule")
+    .select(
+      "*, prepaidScheduleEntry(id, amortizationDate, amount, journalId)",
+      {
+        count: "exact"
+      }
+    )
+    .eq("companyId", companyId);
+
+  if (args.search) {
+    query = query.ilike("description", `%${args.search}%`);
+  }
+  if (args.status) {
+    query = query.eq("status", args.status);
+  }
+
+  query = setGenericQueryFilters(query, args, [
+    { column: "startDate", ascending: false }
+  ]);
+  return query;
+}
+
+export async function getPrepaidSchedule(
+  client: SupabaseClient<Database>,
+  id: string
+) {
+  return client
+    .from("prepaidSchedule")
+    .select("*, prepaidScheduleEntry(*)")
+    .eq("id", id)
+    .single();
+}
+
+/**
+ * Cancel a prepaid schedule. Only permitted while NO entry has been drafted/
+ * posted (every `journalId` is NULL) — otherwise cancelling would strand posted
+ * amortization. Sets `status='Cancelled'`.
+ */
+export async function cancelPrepaidSchedule(
+  client: SupabaseClient<Database>,
+  { id, companyId, userId }: { id: string; companyId: string; userId: string }
+) {
+  const entries = await client
+    .from("prepaidScheduleEntry")
+    .select("id, journalId")
+    .eq("scheduleId", id)
+    .eq("companyId", companyId);
+  if (entries.error) return { data: null, error: entries.error };
+
+  const hasPosted = (entries.data ?? []).some((e) => e.journalId != null);
+  if (hasPosted) {
+    return {
+      data: null,
+      error: {
+        message:
+          "Cannot cancel a schedule that has already amortized — reverse the posted journals first"
+      }
+    };
+  }
+
+  return client
+    .from("prepaidSchedule")
+    .update({
+      status: "Cancelled",
+      updatedBy: userId,
+      updatedAt: new Date().toISOString()
+    })
+    .eq("id", id)
+    .eq("companyId", companyId)
     .select("id")
     .single();
 }
