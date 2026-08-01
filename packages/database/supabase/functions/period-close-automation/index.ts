@@ -83,21 +83,20 @@ async function draftJournal(
     .insertInto("journalLine")
     .values(
       args.lines.map((line) => {
-        // A missing/renamed account has no class — signing the line off a null
-        // class would silently treat it as natural-credit and post a
-        // sign-flipped amount. Throw instead so the transaction rolls back,
-        // mirroring `Account not found` in the app-side draftJournalWithLines.
-        if (!classes.has(line.accountId)) {
+        // A missing/renamed account — or one whose `class` is NULL — has no sign
+        // convention; a null class would silently be treated as natural-credit
+        // and post a sign-flipped amount. Guard on a falsy class (not just a
+        // missing key) and throw so the transaction rolls back, mirroring the
+        // `!cls` → `Account not found` behavior in the app-side
+        // draftJournalWithLines.
+        const cls = classes.get(line.accountId);
+        if (!cls) {
           throw new Error(`Account not found: ${line.accountId}`);
         }
         return {
           journalId: inserted.id,
           accountId: line.accountId,
-          amount: toStoredAmount(
-            line.debit,
-            line.credit,
-            classes.get(line.accountId) ?? null,
-          ),
+          amount: toStoredAmount(line.debit, line.credit, cls),
           journalLineReference: crypto.randomUUID(),
           companyId: args.companyId,
         };
