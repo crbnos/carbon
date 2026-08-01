@@ -492,7 +492,7 @@ function SourceTable({
                       ? null
                       : {
                           itemId: row.original.itemId,
-                          storageUnitId: row.original.storageUnitId!
+                          storageUnitId: row.original.storageUnitId
                         }
                   )
                 }
@@ -760,14 +760,27 @@ function DestinationBinRow({
       l.toStorageUnitId === bin.storageUnitId
   );
   const isAdded = !!line;
-  // You can't move out more than the source bin holds.
-  const maxQuantity = Math.max(0, source.quantityAvailable);
+  // You can't move out more than the source bin holds — and the cap is the
+  // capacity *remaining* after the other destinations already drawing on this
+  // same bin, or N destinations could each claim the full amount.
+  const allocatedElsewhere = lines
+    .filter(
+      (l) =>
+        l.itemId === source.itemId &&
+        l.fromStorageUnitId === source.storageUnitId &&
+        l.toStorageUnitId !== bin.storageUnitId
+    )
+    .reduce((sum, l) => sum + (l.quantity ?? 0), 0);
+  const maxQuantity = Math.max(
+    0,
+    source.quantityAvailable - allocatedElsewhere
+  );
   const shortfall = Math.max(0, bin.quantityRequired - bin.quantityOnHand);
 
   const onAdd = () => {
     // Prefer the destination's shortfall, but `Required` is open-job demand and
     // is zero on most rows — defaulting to 0 would make Add look like a no-op.
-    // With no demand, seed the source bin's full availability instead.
+    // With no demand, seed whatever capacity the source bin has left.
     const defaultQuantity =
       shortfall > 0 ? Math.min(shortfall, maxQuantity) : maxQuantity;
     addTransferLine({
@@ -775,9 +788,9 @@ function DestinationBinRow({
       itemReadableId: source.itemReadableId,
       description: source.description,
       thumbnailPath: source.thumbnailPath,
-      fromStorageUnitId: source.storageUnitId!,
+      fromStorageUnitId: source.storageUnitId,
       fromStorageUnitName: source.storageUnitName!,
-      toStorageUnitId: bin.storageUnitId!,
+      toStorageUnitId: bin.storageUnitId,
       toStorageUnitName: bin.storageUnitName!,
       quantityAvailable: source.quantityAvailable,
       quantity: defaultQuantity,
@@ -837,8 +850,8 @@ function DestinationBinRow({
                 if (value === null || Number.isNaN(value)) return;
                 updateTransferLineQuantity(
                   source.itemId,
-                  source.storageUnitId!,
-                  bin.storageUnitId!,
+                  source.storageUnitId,
+                  bin.storageUnitId,
                   Math.min(Math.max(0, value), maxQuantity)
                 );
               }}
@@ -855,8 +868,8 @@ function DestinationBinRow({
               isAdded
                 ? removeTransferLine(
                     source.itemId,
-                    source.storageUnitId!,
-                    bin.storageUnitId!
+                    source.storageUnitId,
+                    bin.storageUnitId
                   )
                 : onAdd()
             }

@@ -8,10 +8,12 @@ export type StockTransferWizardLine = {
   itemReadableId: string;
   description: string;
   thumbnailPath: string;
-  fromStorageUnitId: string;
-  fromStorageUnitName: string;
-  toStorageUnitId: string;
-  toStorageUnitName: string;
+  // Nullable: ledger rows can record stock against the location rather than a
+  // bin, and the server validator accepts `nullish()` for both.
+  fromStorageUnitId: string | null;
+  fromStorageUnitName: string | null;
+  toStorageUnitId: string | null;
+  toStorageUnitName: string | null;
   quantityAvailable: number;
   quantity?: number;
   requiresSerialTracking: boolean;
@@ -20,7 +22,7 @@ export type StockTransferWizardLine = {
 
 export type StockTransferSource = {
   itemId: string;
-  storageUnitId: string;
+  storageUnitId: string | null;
 };
 
 export type StockTransferWizardState = {
@@ -60,7 +62,10 @@ export const setActiveSource = (source: StockTransferSource | null) => {
   $wizardStore.set({ ...currentWizard, activeSource: source });
 };
 
-export const isActiveSource = (itemId: string, storageUnitId: string) => {
+export const isActiveSource = (
+  itemId: string,
+  storageUnitId: string | null
+) => {
   const { activeSource } = $wizardStore.get();
   return (
     activeSource?.itemId === itemId &&
@@ -98,8 +103,8 @@ export const addTransferLine = (line: StockTransferWizardLine) => {
 
 export const removeTransferLine = (
   itemId: string,
-  fromStorageUnitId: string,
-  toStorageUnitId: string
+  fromStorageUnitId: string | null,
+  toStorageUnitId: string | null
 ) => {
   const currentWizard = $wizardStore.get();
   const updatedLines = currentWizard.lines.filter(
@@ -115,8 +120,8 @@ export const removeTransferLine = (
 
 export const updateTransferLineQuantity = (
   itemId: string,
-  fromStorageUnitId: string,
-  toStorageUnitId: string,
+  fromStorageUnitId: string | null,
+  toStorageUnitId: string | null,
   quantity: number
 ) => {
   const currentWizard = $wizardStore.get();

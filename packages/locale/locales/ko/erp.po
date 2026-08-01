@@ -9490,7 +9490,7 @@ msgid "Pick Order"
 msgstr "피킹 순서"
 
 msgid "Pick the bin stock is coming from, then pick the bins it goes to."
-msgstr "재고가 오는 보관함을 선택한 후 이동할 보관함을 선택하세요."
+msgstr "재고가 출발하는 보관함을 선택한 다음, 재고가 도착하는 보관함을 선택하세요."
 
 msgid "Pick tracked item"
 msgstr "추적 품목 선택"
