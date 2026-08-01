@@ -120,7 +120,9 @@ const SupplierProcessForm = ({
                   label={t`Minimum Cost`}
                   formatOptions={{
                     style: "currency",
-                    currency: baseCurrency
+                    currency: baseCurrency,
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 5
                   }}
                   minValue={0}
                   termId="supplier-process-minimum-cost"
