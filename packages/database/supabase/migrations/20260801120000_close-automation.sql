@@ -289,3 +289,23 @@ CREATE POLICY "UPDATE" ON "public"."recurringJournalTemplateLine" FOR UPDATE USI
 CREATE POLICY "DELETE" ON "public"."recurringJournalTemplateLine" FOR DELETE USING (
   "companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting_delete'))::text[])
 );
+
+-- 9. Register the two new close-checklist definitions -------------------------
+-- Safe to register HERE (unlike the schema-foundation stage) because this PR
+-- also adds their evaluators to computePeriodReadiness — the prepaid-amortization
+-- and recurring-journals autoCheckKeys now resolve to real checks instead of
+-- failing closed. Idempotent via the (companyId, name) unique key; mirrors the
+-- additive form of 20260702044133 (NOT the destructive reconcile in ..142905).
+-- Matches the seed.data.ts periodCloseTaskDefinitions array for new companies.
+INSERT INTO "periodCloseTaskDefinition"
+  ("companyId", "name", "taskType", "autoCheckKey", "sortOrder", "required", "severity", "active", "isSystem", "createdBy")
+SELECT
+  c."id", d."name", d."taskType", d."autoCheckKey", d."sortOrder", d."required", d."severity", true, true, 'system'
+FROM "company" c
+CROSS JOIN (
+  VALUES
+    ('Post prepaid amortization due this period',    'Auto', 'prepaid-amortization',  9, true, 'Warning'),
+    ('Generate recurring journals due this period',  'Auto', 'recurring-journals',   10, true, 'Warning')
+) AS d("name", "taskType", "autoCheckKey", "sortOrder", "required", "severity")
+WHERE EXISTS (SELECT 1 FROM "user" u WHERE u."id" = 'system')
+ON CONFLICT ("companyId", "name") DO NOTHING;

@@ -946,6 +946,28 @@ export const periodCloseTaskDefinitions = [
     severity: null,
     active: true,
     isSystem: true
+  },
+  // Close automation (#1039). Warning-severity Auto checks evaluated by
+  // computePeriodReadiness (prepaid-amortization / recurring-journals).
+  {
+    name: "Post prepaid amortization due this period",
+    taskType: "Auto",
+    autoCheckKey: "prepaid-amortization",
+    sortOrder: 9,
+    required: true,
+    severity: "Warning",
+    active: true,
+    isSystem: true
+  },
+  {
+    name: "Generate recurring journals due this period",
+    taskType: "Auto",
+    autoCheckKey: "recurring-journals",
+    sortOrder: 10,
+    required: true,
+    severity: "Warning",
+    active: true,
+    isSystem: true
   }
 ];
 

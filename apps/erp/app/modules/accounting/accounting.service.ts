@@ -1274,7 +1274,12 @@ async function computePeriodReadiness(
     pendingSalesInvoices,
     pendingPurchaseInvoices,
     pendingPayments,
-    pendingMemos
+    pendingMemos,
+    // Close automation (#1039)
+    postedDepreciation,
+    activeAssets,
+    duePrepaid,
+    dueRecurring
   ] = await Promise.all([
     client
       .from("journal")
@@ -1359,7 +1364,43 @@ async function computePeriodReadiness(
       .eq("status", "Draft")
       .or(unpostedDateFilter)
       .order("memoId", { ascending: true })
-      .limit(UNPOSTED_DOCUMENT_LIMIT)
+      .limit(UNPOSTED_DOCUMENT_LIMIT),
+    // Close automation (#1039):
+    // Posted depreciation runs covering this period (tightens draft-depreciation).
+    client
+      .from("depreciationRun")
+      .select("id", { count: "exact", head: true })
+      .eq("companyId", companyId)
+      .eq("status", "Posted")
+      .gte("periodEnd", startDate)
+      .lte("periodEnd", endDate),
+    // Active fixed assets — only require a covering run when there is something
+    // to depreciate (asset-less companies never trip the "missing proposal" case).
+    client
+      .from("fixedAsset")
+      .select("id", { count: "exact", head: true })
+      .eq("companyId", companyId)
+      .eq("status", "Active"),
+    // Prepaid amortization entries due by period end that have not been drafted
+    // yet (journalId IS NULL), under still-Active schedules. A drafted-but-unposted
+    // entry is a Draft journal dated in-period, already caught by draft-journals.
+    client
+      .from("prepaidScheduleEntry")
+      .select("id, prepaidSchedule!inner(status)", {
+        count: "exact",
+        head: true
+      })
+      .eq("companyId", companyId)
+      .is("journalId", null)
+      .lte("amortizationDate", endDate)
+      .eq("prepaidSchedule.status", "Active"),
+    // Active recurring templates whose next run is due by period end.
+    client
+      .from("recurringJournalTemplate")
+      .select("id", { count: "exact", head: true })
+      .eq("companyId", companyId)
+      .eq("active", true)
+      .lte("nextRunDate", endDate)
   ]);
 
   const unbalanced = (journalsInPeriod.data ?? []).filter(
@@ -1451,10 +1492,16 @@ async function computePeriodReadiness(
       count: unbalanced.length
     },
     {
+      // Tightened (#1039): with Active assets present, this passes only when a
+      // Posted run covers the period — it now also fails when the covering run is
+      // still Draft OR no run exists at all (proposal missing), not just on Drafts.
       autoCheckKey: "draft-depreciation",
       severity: "Warning",
-      label: "Draft depreciation runs ending in this period",
-      failing: (draftDepreciation.count ?? 0) > 0,
+      label: "Depreciation run covering this period is missing or unposted",
+      failing:
+        (activeAssets.count ?? 0) > 0 &&
+        ((draftDepreciation.count ?? 0) > 0 ||
+          (postedDepreciation.count ?? 0) === 0),
       count: draftDepreciation.count ?? 0
     },
     {
@@ -1463,6 +1510,22 @@ async function computePeriodReadiness(
       label: "Unmatched intercompany transactions involving this company",
       failing: (unmatchedIC.count ?? 0) > 0,
       count: unmatchedIC.count ?? 0
+    },
+    {
+      // Close automation (#1039)
+      autoCheckKey: "prepaid-amortization",
+      severity: "Warning",
+      label:
+        "Prepaid amortization entries due in this period are not yet posted",
+      failing: (duePrepaid.count ?? 0) > 0,
+      count: duePrepaid.count ?? 0
+    },
+    {
+      autoCheckKey: "recurring-journals",
+      severity: "Warning",
+      label: "Recurring journals are overdue for generation",
+      failing: (dueRecurring.count ?? 0) > 0,
+      count: dueRecurring.count ?? 0
     }
   ];
 
