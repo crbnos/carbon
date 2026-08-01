@@ -915,6 +915,9 @@ msgstr "알파"
 msgid "Always"
 msgstr "항상"
 
+msgid "Amortized"
+msgstr ""
+
 msgid "Amount"
 msgstr "금액"
 
@@ -3260,6 +3263,9 @@ msgstr "결제조건 생성됨"
 msgid "Created process"
 msgstr "공정 생성됨"
 
+msgid "Created recurring journal"
+msgstr ""
+
 msgid "Created required action"
 msgstr "필수 조치 생성됨"
 
@@ -4771,6 +4777,9 @@ msgstr "사유 수정"
 msgid "Edit Receipt"
 msgstr "입고 수정"
 
+msgid "Edit Recurring Journal"
+msgstr ""
+
 msgid "Edit Revision"
 msgstr "리비전 수정"
 
@@ -5461,6 +5470,9 @@ msgstr "결제조건 생성 실패: {0}"
 msgid "Failed to create process: {0}"
 msgstr "공정 생성 실패: {0}"
 
+msgid "Failed to create recurring journal"
+msgstr ""
+
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create service: {0}"
 msgstr "서비스 생성 실패: {0}"
@@ -6002,6 +6014,9 @@ msgstr "새 4자리 PIN을 생성합니다. 오퍼레이터에게 전달하여 M
 
 msgid "Generate and send customer invoices"
 msgstr "고객 인보이스 생성 및 발송"
+
+msgid "Generate due now"
+msgstr ""
 
 msgid "Generate fiscal year"
 msgstr "회계연도 생성"
@@ -7931,6 +7946,9 @@ msgstr "귀사가 받아야 할 금액"
 msgid "Money you owe"
 msgstr "귀사가 지급해야 할 금액"
 
+msgid "Months"
+msgstr ""
+
 msgid "Months over which this asset depreciates for tax purposes (when not using MACRS)."
 msgstr "MACRS를 사용하지 않을 경우, 이 자산을 세무상 상각하는 개월 수입니다."
 
@@ -8251,6 +8269,9 @@ msgstr "새 입고"
 msgid "New record created"
 msgstr "새 레코드가 생성되었습니다"
 
+msgid "New Recurring Journal"
+msgstr ""
+
 msgid "New Revision"
 msgstr "새 리비전"
 
@@ -8355,6 +8376,9 @@ msgstr "다음 예정일"
 
 msgid "Next page"
 msgstr "다음 페이지"
+
+msgid "Next Run Date"
+msgstr ""
 
 msgid "Next Sequence"
 msgstr "다음 순번"
@@ -9651,6 +9675,9 @@ msgstr "선호 공급업체"
 msgid "Prefix"
 msgstr "접두사"
 
+msgid "Prepaid Schedules"
+msgstr ""
+
 msgid "Prepayments"
 msgstr "선급금"
 
@@ -10395,6 +10422,12 @@ msgstr "레코드"
 
 msgid "Recovery Period"
 msgstr "회수 기간"
+
+msgid "Recurring Journal"
+msgstr ""
+
+msgid "Recurring Journals"
+msgstr ""
 
 msgid "Redirecting to verification page..."
 msgstr "인증 페이지로 이동 중..."
@@ -13770,6 +13803,9 @@ msgstr "규칙 할당 해제"
 
 msgid "Unassigned"
 msgstr "미배정"
+
+msgid "Unbalanced"
+msgstr ""
 
 msgid "Unballoon"
 msgstr "벌룬 해제"

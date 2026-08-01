@@ -38,6 +38,7 @@ import {
   mrpFunction,
   notificationDigestFunction,
   notificationPurgeFunction,
+  periodCloseAutomationFunction,
   updateExchangeRatesFunction,
   weeklyFunction
 } from "./functions/scheduled";
@@ -102,6 +103,7 @@ export const functions = [
   mrpFunction,
   weeklyFunction,
   updateExchangeRatesFunction,
+  periodCloseAutomationFunction,
   notificationDigestFunction,
   notificationPurgeFunction,
   // Integrations

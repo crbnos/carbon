@@ -915,6 +915,9 @@ msgstr "अल्फा"
 msgid "Always"
 msgstr "हमेशा"
 
+msgid "Amortized"
+msgstr ""
+
 msgid "Amount"
 msgstr "रकम"
 
@@ -3260,6 +3263,9 @@ msgstr "भुगतान शर्त बनाई गई"
 msgid "Created process"
 msgstr "प्रक्रिया बनाई गई"
 
+msgid "Created recurring journal"
+msgstr ""
+
 msgid "Created required action"
 msgstr "आवश्यक कार्रवाई बनाई गई"
 
@@ -4771,6 +4777,9 @@ msgstr "कारण संपादित करें"
 msgid "Edit Receipt"
 msgstr "रसीद संपादित करें"
 
+msgid "Edit Recurring Journal"
+msgstr ""
+
 msgid "Edit Revision"
 msgstr "संशोधन संपादित करें"
 
@@ -5461,6 +5470,9 @@ msgstr "भुगतान शर्त बनाने में विफल: 
 msgid "Failed to create process: {0}"
 msgstr "प्रक्रिया बनाने में विफल: {0}"
 
+msgid "Failed to create recurring journal"
+msgstr ""
+
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create service: {0}"
 msgstr "सेवा बनाने में विफल: {0}"
@@ -6002,6 +6014,9 @@ msgstr "एक नया 4-अंकीय PIN जेनरेट करें�
 
 msgid "Generate and send customer invoices"
 msgstr "ग्राहक चालान उत्पन्न करें और भेजें"
+
+msgid "Generate due now"
+msgstr ""
 
 msgid "Generate fiscal year"
 msgstr "वित्तीय वर्ष उत्पन्न करें"
@@ -7931,6 +7946,9 @@ msgstr "आपको देय धन"
 msgid "Money you owe"
 msgstr "आप जो पैसे देते हैं"
 
+msgid "Months"
+msgstr ""
+
 msgid "Months over which this asset depreciates for tax purposes (when not using MACRS)."
 msgstr "महीनों की संख्या जिसके दौरान यह संपत्ति कर उद्देश्यों के लिए मूल्यह्रास होती है (जब MACRS का उपयोग नहीं किया जा रहा है)।"
 
@@ -8251,6 +8269,9 @@ msgstr "नई रसीद"
 msgid "New record created"
 msgstr "नया रिकॉर्ड बनाया गया"
 
+msgid "New Recurring Journal"
+msgstr ""
+
 msgid "New Revision"
 msgstr "नया संस्करण"
 
@@ -8355,6 +8376,9 @@ msgstr "अगला देय"
 
 msgid "Next page"
 msgstr "अगला पृष्ठ"
+
+msgid "Next Run Date"
+msgstr ""
 
 msgid "Next Sequence"
 msgstr "अगला क्रम"
@@ -9651,6 +9675,9 @@ msgstr "पसंदीदा आपूर्तिकर्ता"
 msgid "Prefix"
 msgstr "उपसर्ग"
 
+msgid "Prepaid Schedules"
+msgstr ""
+
 msgid "Prepayments"
 msgstr "अग्रिम भुगतान (डिफ़ॉल्ट)"
 
@@ -10395,6 +10422,12 @@ msgstr "रिकॉर्ड"
 
 msgid "Recovery Period"
 msgstr "पंजीकृत करें"
+
+msgid "Recurring Journal"
+msgstr ""
+
+msgid "Recurring Journals"
+msgstr ""
 
 msgid "Redirecting to verification page..."
 msgstr "सत्यापन पृष्ठ पर पुनः निर्देशित किया जा रहा है..."
@@ -13770,6 +13803,9 @@ msgstr "नियम को अनअसाइन करें"
 
 msgid "Unassigned"
 msgstr "अनुत्तरित"
+
+msgid "Unbalanced"
+msgstr ""
 
 msgid "Unballoon"
 msgstr "गुब्बारा हटाएं"

@@ -915,6 +915,9 @@ msgstr "Alpha"
 msgid "Always"
 msgstr "始终"
 
+msgid "Amortized"
+msgstr ""
+
 msgid "Amount"
 msgstr "金额"
 
@@ -3260,6 +3263,9 @@ msgstr "已创建付款条款"
 msgid "Created process"
 msgstr "已创建流程"
 
+msgid "Created recurring journal"
+msgstr ""
+
 msgid "Created required action"
 msgstr "已创建必需操作"
 
@@ -4771,6 +4777,9 @@ msgstr "编辑原因"
 msgid "Edit Receipt"
 msgstr "编辑收据"
 
+msgid "Edit Recurring Journal"
+msgstr ""
+
 msgid "Edit Revision"
 msgstr "编辑修订版本"
 
@@ -5461,6 +5470,9 @@ msgstr "创建付款条款失败：{0}"
 msgid "Failed to create process: {0}"
 msgstr "创建流程失败：{0}"
 
+msgid "Failed to create recurring journal"
+msgstr ""
+
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create service: {0}"
 msgstr "创建服务失败：{0}"
@@ -6002,6 +6014,9 @@ msgstr "生成新的4位PIN码。与操作员分享，以便他们可以在MES�
 
 msgid "Generate and send customer invoices"
 msgstr "生成并发送客户发票"
+
+msgid "Generate due now"
+msgstr ""
 
 msgid "Generate fiscal year"
 msgstr "生成会计年度"
@@ -7931,6 +7946,9 @@ msgstr "你欠的钱"
 msgid "Money you owe"
 msgstr "你欠的钱"
 
+msgid "Months"
+msgstr ""
+
 msgid "Months over which this asset depreciates for tax purposes (when not using MACRS)."
 msgstr "该资产按税务目的折旧的月数（不使用MACRS时）。"
 
@@ -8251,6 +8269,9 @@ msgstr "新收据"
 msgid "New record created"
 msgstr "新记录已创建"
 
+msgid "New Recurring Journal"
+msgstr ""
+
 msgid "New Revision"
 msgstr "新修订版"
 
@@ -8355,6 +8376,9 @@ msgstr "下次到期"
 
 msgid "Next page"
 msgstr "下一页"
+
+msgid "Next Run Date"
+msgstr ""
 
 msgid "Next Sequence"
 msgstr "下一个序列"
@@ -9651,6 +9675,9 @@ msgstr "首选供应商"
 msgid "Prefix"
 msgstr "前缀"
 
+msgid "Prepaid Schedules"
+msgstr ""
+
 msgid "Prepayments"
 msgstr "预付款（默认）"
 
@@ -10395,6 +10422,12 @@ msgstr "记录"
 
 msgid "Recovery Period"
 msgstr "注册"
+
+msgid "Recurring Journal"
+msgstr ""
+
+msgid "Recurring Journals"
+msgstr ""
 
 msgid "Redirecting to verification page..."
 msgstr "正在重定向到验证页面..."
@@ -13770,6 +13803,9 @@ msgstr "取消分配规则"
 
 msgid "Unassigned"
 msgstr "未分配"
+
+msgid "Unbalanced"
+msgstr ""
 
 msgid "Unballoon"
 msgstr "取消气球标注"

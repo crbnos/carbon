@@ -915,6 +915,9 @@ msgstr "Alpha"
 msgid "Always"
 msgstr "Always"
 
+msgid "Amortized"
+msgstr "Amortized"
+
 msgid "Amount"
 msgstr "Amount"
 
@@ -3260,6 +3263,9 @@ msgstr "Created payment term"
 msgid "Created process"
 msgstr "Created process"
 
+msgid "Created recurring journal"
+msgstr "Created recurring journal"
+
 msgid "Created required action"
 msgstr "Created required action"
 
@@ -4771,6 +4777,9 @@ msgstr "Edit Reason"
 msgid "Edit Receipt"
 msgstr "Edit Receipt"
 
+msgid "Edit Recurring Journal"
+msgstr "Edit Recurring Journal"
+
 msgid "Edit Revision"
 msgstr "Edit Revision"
 
@@ -5461,6 +5470,9 @@ msgstr "Failed to create payment term: {0}"
 msgid "Failed to create process: {0}"
 msgstr "Failed to create process: {0}"
 
+msgid "Failed to create recurring journal"
+msgstr "Failed to create recurring journal"
+
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create service: {0}"
 msgstr "Failed to create service: {0}"
@@ -6002,6 +6014,9 @@ msgstr "Generate a new 4-digit PIN. Share it with the operator so they can pin i
 
 msgid "Generate and send customer invoices"
 msgstr "Generate and send customer invoices"
+
+msgid "Generate due now"
+msgstr "Generate due now"
 
 msgid "Generate fiscal year"
 msgstr "Generate fiscal year"
@@ -7931,6 +7946,9 @@ msgstr "Money owed to you"
 msgid "Money you owe"
 msgstr "Money you owe"
 
+msgid "Months"
+msgstr "Months"
+
 msgid "Months over which this asset depreciates for tax purposes (when not using MACRS)."
 msgstr "Months over which this asset depreciates for tax purposes (when not using MACRS)."
 
@@ -8251,6 +8269,9 @@ msgstr "New Receipt"
 msgid "New record created"
 msgstr "New record created"
 
+msgid "New Recurring Journal"
+msgstr "New Recurring Journal"
+
 msgid "New Revision"
 msgstr "New Revision"
 
@@ -8355,6 +8376,9 @@ msgstr "Next Due"
 
 msgid "Next page"
 msgstr "Next page"
+
+msgid "Next Run Date"
+msgstr "Next Run Date"
 
 msgid "Next Sequence"
 msgstr "Next Sequence"
@@ -9651,6 +9675,9 @@ msgstr "Preferred Supplier"
 msgid "Prefix"
 msgstr "Prefix"
 
+msgid "Prepaid Schedules"
+msgstr "Prepaid Schedules"
+
 msgid "Prepayments"
 msgstr "Prepayments"
 
@@ -10395,6 +10422,12 @@ msgstr "Records"
 
 msgid "Recovery Period"
 msgstr "Recovery Period"
+
+msgid "Recurring Journal"
+msgstr "Recurring Journal"
+
+msgid "Recurring Journals"
+msgstr "Recurring Journals"
 
 msgid "Redirecting to verification page..."
 msgstr "Redirecting to verification page..."
@@ -13770,6 +13803,9 @@ msgstr "Unassign rule"
 
 msgid "Unassigned"
 msgstr "Unassigned"
+
+msgid "Unbalanced"
+msgstr "Unbalanced"
 
 msgid "Unballoon"
 msgstr "Unballoon"

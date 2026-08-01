@@ -915,6 +915,9 @@ msgstr "アルファ"
 msgid "Always"
 msgstr "常に"
 
+msgid "Amortized"
+msgstr ""
+
 msgid "Amount"
 msgstr "金額"
 
@@ -3260,6 +3263,9 @@ msgstr "支払い条件を作成しました"
 msgid "Created process"
 msgstr "プロセスを作成しました"
 
+msgid "Created recurring journal"
+msgstr ""
+
 msgid "Created required action"
 msgstr "必須アクションを作成しました"
 
@@ -4771,6 +4777,9 @@ msgstr "理由を編集"
 msgid "Edit Receipt"
 msgstr "領収書を編集"
 
+msgid "Edit Recurring Journal"
+msgstr ""
+
 msgid "Edit Revision"
 msgstr "リビジョンを編集"
 
@@ -5461,6 +5470,9 @@ msgstr "支払い条件の作成に失敗しました: {0}"
 msgid "Failed to create process: {0}"
 msgstr "プロセスの作成に失敗しました: {0}"
 
+msgid "Failed to create recurring journal"
+msgstr ""
+
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create service: {0}"
 msgstr "サービスの作成に失敗しました: {0}"
@@ -6002,6 +6014,9 @@ msgstr "新しい4桁のPINを生成します。オペレーターと共有し�
 
 msgid "Generate and send customer invoices"
 msgstr "顧客請求書を生成して送信"
+
+msgid "Generate due now"
+msgstr ""
 
 msgid "Generate fiscal year"
 msgstr "会計年度を生成"
@@ -7931,6 +7946,9 @@ msgstr "あなたに支払われるべき金額"
 msgid "Money you owe"
 msgstr "あなたが負っている金額"
 
+msgid "Months"
+msgstr ""
+
 msgid "Months over which this asset depreciates for tax purposes (when not using MACRS)."
 msgstr "このアセットが税務上償却される月数（MACRS使用時以外）。"
 
@@ -8251,6 +8269,9 @@ msgstr "新しい領収書"
 msgid "New record created"
 msgstr "新しいレコードが作成されました"
 
+msgid "New Recurring Journal"
+msgstr ""
+
 msgid "New Revision"
 msgstr "新しいリビジョン"
 
@@ -8355,6 +8376,9 @@ msgstr "次回期限"
 
 msgid "Next page"
 msgstr "次のページ"
+
+msgid "Next Run Date"
+msgstr ""
 
 msgid "Next Sequence"
 msgstr "次のシーケンス"
@@ -9651,6 +9675,9 @@ msgstr "優先仕入先"
 msgid "Prefix"
 msgstr "プレフィックス"
 
+msgid "Prepaid Schedules"
+msgstr ""
+
 msgid "Prepayments"
 msgstr "前払金（デフォルト）"
 
@@ -10395,6 +10422,12 @@ msgstr "記録"
 
 msgid "Recovery Period"
 msgstr "登録"
+
+msgid "Recurring Journal"
+msgstr ""
+
+msgid "Recurring Journals"
+msgstr ""
 
 msgid "Redirecting to verification page..."
 msgstr "検証ページにリダイレクト中..."
@@ -13770,6 +13803,9 @@ msgstr "ルールの割り当てを解除"
 
 msgid "Unassigned"
 msgstr "未割り当て"
+
+msgid "Unbalanced"
+msgstr ""
 
 msgid "Unballoon"
 msgstr "バルーンを削除"

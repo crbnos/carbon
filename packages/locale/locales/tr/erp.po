@@ -915,6 +915,9 @@ msgstr "Alfa"
 msgid "Always"
 msgstr "Her zaman"
 
+msgid "Amortized"
+msgstr ""
+
 msgid "Amount"
 msgstr "Tutar"
 
@@ -3260,6 +3263,9 @@ msgstr "Oluşturulan ödeme vadesi"
 msgid "Created process"
 msgstr "Oluşturulan süreç"
 
+msgid "Created recurring journal"
+msgstr ""
+
 msgid "Created required action"
 msgstr "Gerekli eylem oluşturuldu"
 
@@ -4771,6 +4777,9 @@ msgstr "Nedeni Düzenle"
 msgid "Edit Receipt"
 msgstr "Makbuzu Düzenle"
 
+msgid "Edit Recurring Journal"
+msgstr ""
+
 msgid "Edit Revision"
 msgstr "Revizyon Düzenle"
 
@@ -5461,6 +5470,9 @@ msgstr "Ödeme vadesi oluşturulamadı: {0}"
 msgid "Failed to create process: {0}"
 msgstr "İşlemi oluşturulamadı: {0}"
 
+msgid "Failed to create recurring journal"
+msgstr ""
+
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create service: {0}"
 msgstr "Hizmet oluşturma başarısız: {0}"
@@ -6002,6 +6014,9 @@ msgstr "Yeni bir 4 haneli PIN oluşturun. Operatörün MES terminallerinde giri�
 
 msgid "Generate and send customer invoices"
 msgstr "Müşteri faturalarını oluştur ve gönder"
+
+msgid "Generate due now"
+msgstr ""
 
 msgid "Generate fiscal year"
 msgstr "Mali yıl oluştur"
@@ -7931,6 +7946,9 @@ msgstr "Size borçlu"
 msgid "Money you owe"
 msgstr "Borçlu olduğunuz para"
 
+msgid "Months"
+msgstr ""
+
 msgid "Months over which this asset depreciates for tax purposes (when not using MACRS)."
 msgstr "Bu varlığın vergi amaçları için amorti edildiği aylar (MACRS kullanılmıyorsa)."
 
@@ -8251,6 +8269,9 @@ msgstr "Yeni Alış"
 msgid "New record created"
 msgstr "Yeni kayıt oluşturuldu"
 
+msgid "New Recurring Journal"
+msgstr ""
+
 msgid "New Revision"
 msgstr "Yeni Revizyon"
 
@@ -8355,6 +8376,9 @@ msgstr "Sonraki Teslim Tarihi"
 
 msgid "Next page"
 msgstr "Sonraki sayfa"
+
+msgid "Next Run Date"
+msgstr ""
 
 msgid "Next Sequence"
 msgstr "Sonraki Sıra"
@@ -9651,6 +9675,9 @@ msgstr "Tercih Edilen Tedarikçi"
 msgid "Prefix"
 msgstr "Ön Ek"
 
+msgid "Prepaid Schedules"
+msgstr ""
+
 msgid "Prepayments"
 msgstr "Ön Ödemeler (varsayılan)"
 
@@ -10395,6 +10422,12 @@ msgstr "Kayıtlar"
 
 msgid "Recovery Period"
 msgstr "Kayıt Yap"
+
+msgid "Recurring Journal"
+msgstr ""
+
+msgid "Recurring Journals"
+msgstr ""
 
 msgid "Redirecting to verification page..."
 msgstr "Doğrulama sayfasına yönlendiriliyor..."
@@ -13770,6 +13803,9 @@ msgstr "Kuralı kaldır"
 
 msgid "Unassigned"
 msgstr "Atanmamış"
+
+msgid "Unbalanced"
+msgstr ""
 
 msgid "Unballoon"
 msgstr "Balonu Kaldır"

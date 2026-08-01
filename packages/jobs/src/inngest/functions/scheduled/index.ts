@@ -4,5 +4,6 @@ export { dispatchFunction } from "./dispatch";
 export { mrpFunction } from "./mrp";
 export { notificationDigestFunction } from "./notification-digest";
 export { notificationPurgeFunction } from "./notification-purge";
+export { periodCloseAutomationFunction } from "./period-close-automation";
 export { updateExchangeRatesFunction } from "./update-exchange-rates";
 export { weeklyFunction } from "./weekly";

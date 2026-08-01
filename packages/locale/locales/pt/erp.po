@@ -915,6 +915,9 @@ msgstr "Alfa"
 msgid "Always"
 msgstr "Sempre"
 
+msgid "Amortized"
+msgstr ""
+
 msgid "Amount"
 msgstr "Valor"
 
@@ -3260,6 +3263,9 @@ msgstr "Termo de pagamento criado"
 msgid "Created process"
 msgstr "Processo criado"
 
+msgid "Created recurring journal"
+msgstr ""
+
 msgid "Created required action"
 msgstr "Ação obrigatória criada"
 
@@ -4771,6 +4777,9 @@ msgstr "Editar Motivo"
 msgid "Edit Receipt"
 msgstr "Editar Recebimento"
 
+msgid "Edit Recurring Journal"
+msgstr ""
+
 msgid "Edit Revision"
 msgstr "Editar Revisão"
 
@@ -5461,6 +5470,9 @@ msgstr "Falha ao criar termo de pagamento: {0}"
 msgid "Failed to create process: {0}"
 msgstr "Falha ao criar processo: {0}"
 
+msgid "Failed to create recurring journal"
+msgstr ""
+
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create service: {0}"
 msgstr "Falha ao criar serviço: {0}"
@@ -6002,6 +6014,9 @@ msgstr "Gere um novo PIN de 4 dígitos. Compartilhe-o com o operador para que el
 
 msgid "Generate and send customer invoices"
 msgstr "Gerar e enviar faturas de cliente"
+
+msgid "Generate due now"
+msgstr ""
 
 msgid "Generate fiscal year"
 msgstr "Gerar ano fiscal"
@@ -7931,6 +7946,9 @@ msgstr "Dinheiro que lhe devem"
 msgid "Money you owe"
 msgstr "Dinheiro que você deve"
 
+msgid "Months"
+msgstr ""
+
 msgid "Months over which this asset depreciates for tax purposes (when not using MACRS)."
 msgstr "Meses durante os quais este ativo se deprecia para fins fiscais (quando não está usando MACRS)."
 
@@ -8251,6 +8269,9 @@ msgstr "Novo Recebimento"
 msgid "New record created"
 msgstr "Novo registro criado"
 
+msgid "New Recurring Journal"
+msgstr ""
+
 msgid "New Revision"
 msgstr "Nova Revisão"
 
@@ -8355,6 +8376,9 @@ msgstr "Próximo Vencimento"
 
 msgid "Next page"
 msgstr "Próxima página"
+
+msgid "Next Run Date"
+msgstr ""
 
 msgid "Next Sequence"
 msgstr "Próxima Sequência"
@@ -9651,6 +9675,9 @@ msgstr "Fornecedor Preferido"
 msgid "Prefix"
 msgstr "Prefixo"
 
+msgid "Prepaid Schedules"
+msgstr ""
+
 msgid "Prepayments"
 msgstr "Adiantamentos (padrão)"
 
@@ -10395,6 +10422,12 @@ msgstr "Registros"
 
 msgid "Recovery Period"
 msgstr "Registrar"
+
+msgid "Recurring Journal"
+msgstr ""
+
+msgid "Recurring Journals"
+msgstr ""
 
 msgid "Redirecting to verification page..."
 msgstr "Redirecionando para página de verificação..."
@@ -13770,6 +13803,9 @@ msgstr "Desatribuir regra"
 
 msgid "Unassigned"
 msgstr "Não atribuído"
+
+msgid "Unbalanced"
+msgstr ""
 
 msgid "Unballoon"
 msgstr "Remover balão"

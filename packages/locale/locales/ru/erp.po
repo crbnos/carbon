@@ -915,6 +915,9 @@ msgstr "Альфа"
 msgid "Always"
 msgstr "Всегда"
 
+msgid "Amortized"
+msgstr ""
+
 msgid "Amount"
 msgstr "Сумма"
 
@@ -3260,6 +3263,9 @@ msgstr "Условие оплаты создано"
 msgid "Created process"
 msgstr "Процесс создан"
 
+msgid "Created recurring journal"
+msgstr ""
+
 msgid "Created required action"
 msgstr "Требуемое действие создано"
 
@@ -4771,6 +4777,9 @@ msgstr "Редактировать причину"
 msgid "Edit Receipt"
 msgstr "Редактировать квитанцию"
 
+msgid "Edit Recurring Journal"
+msgstr ""
+
 msgid "Edit Revision"
 msgstr "Редактировать ревизию"
 
@@ -5461,6 +5470,9 @@ msgstr "Не удалось создать условие платежа: {0}"
 msgid "Failed to create process: {0}"
 msgstr "Ошибка при создании процесса: {0}"
 
+msgid "Failed to create recurring journal"
+msgstr ""
+
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create service: {0}"
 msgstr "Ошибка при создании услуги: {0}"
@@ -6002,6 +6014,9 @@ msgstr "Создайте новый 4-значный PIN-код. Поделит�
 
 msgid "Generate and send customer invoices"
 msgstr "Создавать и отправлять счета клиентам"
+
+msgid "Generate due now"
+msgstr ""
 
 msgid "Generate fiscal year"
 msgstr "Генерировать финансовый год"
@@ -7931,6 +7946,9 @@ msgstr "Деньги, которые вам должны"
 msgid "Money you owe"
 msgstr "Деньги, которые вы должны"
 
+msgid "Months"
+msgstr ""
+
 msgid "Months over which this asset depreciates for tax purposes (when not using MACRS)."
 msgstr "Месяцы, в течение которых это имущество амортизируется в налоговых целях (при отсутствии MACRS)."
 
@@ -8251,6 +8269,9 @@ msgstr "Новая квитанция"
 msgid "New record created"
 msgstr "Создана новая запись"
 
+msgid "New Recurring Journal"
+msgstr ""
+
 msgid "New Revision"
 msgstr "Новая редакция"
 
@@ -8355,6 +8376,9 @@ msgstr "Следующий срок"
 
 msgid "Next page"
 msgstr "Следующая страница"
+
+msgid "Next Run Date"
+msgstr ""
 
 msgid "Next Sequence"
 msgstr "Следующая последовательность"
@@ -9651,6 +9675,9 @@ msgstr "Предпочитаемый поставщик"
 msgid "Prefix"
 msgstr "Префикс"
 
+msgid "Prepaid Schedules"
+msgstr ""
+
 msgid "Prepayments"
 msgstr "Авансовые платежи (по умолчанию)"
 
@@ -10395,6 +10422,12 @@ msgstr "Записи"
 
 msgid "Recovery Period"
 msgstr "Зарегистрировать"
+
+msgid "Recurring Journal"
+msgstr ""
+
+msgid "Recurring Journals"
+msgstr ""
 
 msgid "Redirecting to verification page..."
 msgstr "Перенаправление на страницу проверки..."
@@ -13770,6 +13803,9 @@ msgstr "Отменить назначение правила"
 
 msgid "Unassigned"
 msgstr "Не назначено"
+
+msgid "Unbalanced"
+msgstr ""
 
 msgid "Unballoon"
 msgstr "Удалить выноску"
