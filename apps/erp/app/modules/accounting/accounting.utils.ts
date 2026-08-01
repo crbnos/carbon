@@ -1,4 +1,4 @@
-import { credit, debit, toStoredAmount } from "@carbon/utils";
+import { credit, debit, roundAmount, toStoredAmount } from "@carbon/utils";
 
 /**
  * Gain/(loss) on disposal of a fixed asset = sale proceeds − net book value
@@ -641,4 +641,101 @@ export function buildDepreciationLines(
   }
 
   return lines;
+}
+
+// ---------------------------------------------------------------------------
+// Intercompany netting (workbench math — spec §4, issue #1058)
+//
+// Pure, DB-independent kernel for the netting workbench, pulled forward ahead
+// of type regen (same split as the schema foundation). Consumed by the deferred
+// `createNettingStatement` snapshot precompute (per-invoice `appliedAmount` on
+// `intercompanyNettingStatementLine`) and by the settlement path that stages the
+// paired Receipt/Disbursement payments through the existing `invoiceSettlement`
+// machinery. No RLS, no queries — the RPC/edge fn composes these against the
+// open items it reads.
+// ---------------------------------------------------------------------------
+
+export type NettingPosition = {
+  /** min(gross A→B, gross B→A) — the overlap both directions clear at once. */
+  nettedAmount: number;
+  /** |gross A→B − gross B→A| — the surplus the net debtor still owes in cash. */
+  residualAmount: number;
+  /** The net debtor after netting (owes the residual), or null when balanced. */
+  residualPayerCompanyId: string | null;
+};
+
+/**
+ * Net a company pair's mutual open IC balances. `grossReceivableAtoB` is what
+ * company B owes company A (A's open AR to the IC customer B); `grossReceivableBtoA`
+ * is what A owes B. The netted amount is the smaller of the two — the overlap both
+ * sides can clear at once — and the residual is the surplus the net debtor still
+ * owes and settles in real cash outside the statement. Equal balances net fully
+ * (no residual, no payer). Negative inputs are floored to zero and both figures
+ * round to cents so the statement's `nettedAmount`/`residualAmount` tie out.
+ */
+export function computeNettingPosition(args: {
+  companyAId: string;
+  companyBId: string;
+  grossReceivableAtoB: number;
+  grossReceivableBtoA: number;
+}): NettingPosition {
+  const { companyAId, companyBId, grossReceivableAtoB, grossReceivableBtoA } =
+    args;
+  const bOwesA = roundAmount(Math.max(0, grossReceivableAtoB));
+  const aOwesB = roundAmount(Math.max(0, grossReceivableBtoA));
+
+  const nettedAmount = roundAmount(Math.min(bOwesA, aOwesB));
+  const residualAmount = roundAmount(Math.abs(bOwesA - aOwesB));
+  const residualPayerCompanyId =
+    bOwesA > aOwesB ? companyBId : aOwesB > bOwesA ? companyAId : null;
+
+  return { nettedAmount, residualAmount, residualPayerCompanyId };
+}
+
+export type NettingOpenItem = {
+  id: string;
+  openAmount: number;
+};
+
+export type NettingApplication = {
+  id: string;
+  openAmount: number;
+  appliedAmount: number;
+};
+
+/**
+ * Allocate a settlement `targetAmount` across one direction's open IC invoices,
+ * oldest-first (the caller pre-sorts). Each invoice absorbs up to its own
+ * `openAmount`; earlier invoices close fully and the last touched invoice takes
+ * the remainder as a partial settlement — the standard oldest-first application
+ * order the `invoiceSettlement` trail uses. Zero/negative open items are skipped.
+ *
+ * Returns one application row per invoice that receives a nonzero apply (in
+ * input order), `totalApplied` (= min(targetAmount, sum of open amounts)), and
+ * `unapplied` (the target the open items could not absorb — the net debtor's
+ * shortfall). Amounts round to cents so the applied rows tie out to the total.
+ */
+export function allocateNettingApplications(
+  targetAmount: number,
+  openItems: NettingOpenItem[]
+): {
+  applications: NettingApplication[];
+  totalApplied: number;
+  unapplied: number;
+} {
+  const target = roundAmount(Math.max(0, targetAmount));
+  const applications: NettingApplication[] = [];
+  let remaining = target;
+
+  for (const item of openItems) {
+    if (remaining <= 0) break;
+    const open = roundAmount(item.openAmount);
+    if (open <= 0) continue;
+    const appliedAmount = roundAmount(Math.min(remaining, open));
+    applications.push({ id: item.id, openAmount: open, appliedAmount });
+    remaining = roundAmount(remaining - appliedAmount);
+  }
+
+  const totalApplied = roundAmount(target - remaining);
+  return { applications, totalApplied, unapplied: roundAmount(remaining) };
 }
