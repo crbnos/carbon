@@ -43,14 +43,18 @@ import type {
 const LineItems = ({
   currencyCode,
   presentationCurrencyFormatter,
+  presentationUnitPriceFormatter,
   formatter,
+  unitPriceFormatter,
   locale,
   purchaseInvoiceLines,
   shouldConvertCurrency
 }: {
   currencyCode: string;
   presentationCurrencyFormatter: Intl.NumberFormat;
+  presentationUnitPriceFormatter: Intl.NumberFormat;
   formatter: Intl.NumberFormat;
+  unitPriceFormatter: Intl.NumberFormat;
   locale: string;
   purchaseInvoiceLines: PurchaseInvoiceLine[];
   shouldConvertCurrency: boolean;
@@ -194,7 +198,7 @@ const LineItems = ({
                           </Badge>
                         )}
                         <Badge variant="green">
-                          {formatter.format(line.unitPrice ?? 0)}{" "}
+                          {unitPriceFormatter.format(line.unitPrice ?? 0)}{" "}
                           {
                             unitOfMeasures.find(
                               (uom) =>
@@ -264,10 +268,12 @@ const LineItems = ({
                       </Td>
                       <Td className="text-right">
                         <VStack spacing={0}>
-                          <span>{formatter.format(line.unitPrice ?? 0)}</span>
+                          <span>
+                            {unitPriceFormatter.format(line.unitPrice ?? 0)}
+                          </span>
                           {shouldConvertCurrency && (
                             <span className="text-muted-foreground text-xs">
-                              {presentationCurrencyFormatter.format(
+                              {presentationUnitPriceFormatter.format(
                                 line.supplierUnitPrice ?? 0
                               )}
                             </span>
@@ -384,6 +390,16 @@ const PurchaseInvoiceSummary = ({
   const presentationCurrencyFormatter = useCurrencyFormatter({
     currency: routeData?.purchaseInvoice?.currencyCode ?? "USD"
   });
+  // Unit prices support more precision than the currency default (2 dp) so
+  // commodity pricing like $0.00123 is not truncated — see issue #1203.
+  const unitPriceFormatter = useCurrencyFormatter({
+    currency: company?.baseCurrencyCode ?? "USD",
+    maximumFractionDigits: 6
+  });
+  const presentationUnitPriceFormatter = useCurrencyFormatter({
+    currency: routeData?.purchaseInvoice?.currencyCode ?? "USD",
+    maximumFractionDigits: 6
+  });
 
   const isEditable = !isPurchaseInvoiceLocked(
     routeData?.purchaseInvoice?.status
@@ -451,7 +467,9 @@ const PurchaseInvoiceSummary = ({
         <LineItems
           currencyCode={company?.baseCurrencyCode ?? "USD"}
           presentationCurrencyFormatter={presentationCurrencyFormatter}
+          presentationUnitPriceFormatter={presentationUnitPriceFormatter}
           formatter={formatter}
+          unitPriceFormatter={unitPriceFormatter}
           locale={locale}
           purchaseInvoiceLines={routeData?.purchaseInvoiceLines ?? []}
           shouldConvertCurrency={shouldConvertCurrency}
