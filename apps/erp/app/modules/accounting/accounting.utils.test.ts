@@ -814,6 +814,14 @@ describe("roundToCents", () => {
     expect(roundToCents(-Infinity)).toBe(0);
     expect(roundToCents(NaN)).toBe(0);
   });
+
+  it("floors large finite inputs whose cent-scaling overflows to Infinity", () => {
+    // 1e307 * 100 overflows to Infinity, which shifts back to the string
+    // "Infinitye-2" → NaN; the finite re-check floors that to 0.
+    expect(roundToCents(1e307)).toBe(0);
+    expect(roundToCents(Number.MAX_VALUE)).toBe(0);
+    expect(Number.isNaN(roundToCents(1e307))).toBe(false);
+  });
 });
 
 describe("computeNettingPosition", () => {

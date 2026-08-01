@@ -667,8 +667,11 @@ export function buildDepreciationLines(
  * than by appending `"e2"` — a naive `` `${value}e2` `` breaks on
  * scientific-notation inputs (`1e-7` → the malformed string `"1e-7e2"` → `NaN`).
  * Non-finite inputs (`Infinity`, `-Infinity`, `NaN`) floor to `0` so the netting
- * kernel's statement-row APIs can never receive or return `NaN`. Used so
- * `nettedAmount`/`residualAmount`/`appliedAmount` tie out.
+ * kernel's statement-row APIs can never receive or return `NaN`. A finite input
+ * so large that scaling by 100 overflows to `Infinity` (e.g. `Number.MAX_VALUE`,
+ * `1e307`) would round-trip back to `NaN`, so the scaled result is re-checked and
+ * floored to `0` as well. Used so `nettedAmount`/`residualAmount`/`appliedAmount`
+ * tie out.
  */
 export function roundToCents(value: number): number {
   if (!Number.isFinite(value)) return 0;
@@ -676,7 +679,8 @@ export function roundToCents(value: number): number {
     const [mantissa, exponent] = String(n).split("e");
     return Number(`${mantissa}e${(exponent ? Number(exponent) : 0) + places}`);
   };
-  return shift(Math.round(shift(value, 2)), -2);
+  const rounded = shift(Math.round(shift(value, 2)), -2);
+  return Number.isFinite(rounded) ? rounded : 0;
 }
 
 export type NettingPosition = {
