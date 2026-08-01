@@ -15,7 +15,8 @@ import {
   getMacrsPercentage,
   getMonthsBetween,
   getMonthsElapsed,
-  getNextPeriodEnd
+  getNextPeriodEnd,
+  roundToCents
 } from "./accounting.utils";
 
 // ---------------------------------------------------------------------------
@@ -793,6 +794,28 @@ describe("buildDepreciationLines", () => {
 // Intercompany netting (workbench math — spec §4)
 // ---------------------------------------------------------------------------
 
+describe("roundToCents", () => {
+  it("rounds half-cents decimal-safe (1.005 → 1.01, not 1.00)", () => {
+    // Math.round(1.005 * 100) / 100 gives 1 because 1.005 is not representable
+    // in binary; roundToCents re-parses at a shifted exponent so it lands on 1.01.
+    expect(roundToCents(1.005)).toBe(1.01);
+    expect(roundToCents(2.675)).toBe(2.68);
+  });
+
+  it("normalizes scientific-notation inputs (1e-7 → 0, never NaN)", () => {
+    // A naive `${1e-7}e2` builds the malformed string "1e-7e2" → NaN.
+    const rounded = roundToCents(1e-7);
+    expect(rounded).toBe(0);
+    expect(Number.isNaN(rounded)).toBe(false);
+  });
+
+  it("guards non-finite inputs so netting rows can never carry NaN", () => {
+    expect(roundToCents(Infinity)).toBe(0);
+    expect(roundToCents(-Infinity)).toBe(0);
+    expect(roundToCents(NaN)).toBe(0);
+  });
+});
+
 describe("computeNettingPosition", () => {
   it("nets the smaller of the two mutual balances; residual owed by the net debtor", () => {
     // B owes A 100, A owes B 80 → net 80 clears both directions, B still owes 20
@@ -853,6 +876,22 @@ describe("computeNettingPosition", () => {
     expect(pos.nettedAmount).toBe(0);
     expect(pos.residualAmount).toBe(100.01);
     expect(pos.residualPayerCompanyId).toBe("B");
+  });
+
+  it("a sub-cent scientific-notation balance never yields NaN in the row", () => {
+    // 1e-7 stringifies as "1e-7"; the old `${value}e2` shift produced "1e-7e2"
+    // → NaN, which would poison nettedAmount/residualAmount on the statement row.
+    const pos = computeNettingPosition({
+      companyAId: "A",
+      companyBId: "B",
+      grossReceivableAtoB: 1e-7,
+      grossReceivableBtoA: 100
+    });
+    expect(Number.isNaN(pos.nettedAmount)).toBe(false);
+    expect(Number.isNaN(pos.residualAmount)).toBe(false);
+    expect(pos.nettedAmount).toBe(0);
+    expect(pos.residualAmount).toBe(100);
+    expect(pos.residualPayerCompanyId).toBe("A");
   });
 
   it("rounds half-cent balances up decimal-safely (1.005 → 1.01, not 1.00)", () => {

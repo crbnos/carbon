@@ -661,11 +661,22 @@ export function buildDepreciationLines(
  * product lands just below the .5 boundary in binary floating point — e.g.
  * `1.005 * 100` is `100.49999…`, so `Math.round` yields `1.00` instead of
  * `1.01`. Re-parsing the value's own decimal string with a shifted exponent
- * (`"1.005e2"` → `100.5` exactly) sidesteps that error before rounding. Used by
- * the netting kernel so `nettedAmount`/`residualAmount`/`appliedAmount` tie out.
+ * (`"1.005e2"` → `100.5` exactly) sidesteps that error before rounding.
+ *
+ * The exponent is shifted numerically off the value's own decimal string rather
+ * than by appending `"e2"` — a naive `` `${value}e2` `` breaks on
+ * scientific-notation inputs (`1e-7` → the malformed string `"1e-7e2"` → `NaN`).
+ * Non-finite inputs (`Infinity`, `-Infinity`, `NaN`) floor to `0` so the netting
+ * kernel's statement-row APIs can never receive or return `NaN`. Used so
+ * `nettedAmount`/`residualAmount`/`appliedAmount` tie out.
  */
-function roundToCents(value: number): number {
-  return Number(`${Math.round(Number(`${value}e2`))}e-2`);
+export function roundToCents(value: number): number {
+  if (!Number.isFinite(value)) return 0;
+  const shift = (n: number, places: number): number => {
+    const [mantissa, exponent] = String(n).split("e");
+    return Number(`${mantissa}e${(exponent ? Number(exponent) : 0) + places}`);
+  };
+  return shift(Math.round(shift(value, 2)), -2);
 }
 
 export type NettingPosition = {
