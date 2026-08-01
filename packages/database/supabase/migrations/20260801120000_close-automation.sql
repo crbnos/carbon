@@ -58,24 +58,22 @@ ALTER TABLE "purchaseInvoiceLine" ADD CONSTRAINT "purchaseInvoiceLine_prepaid_ch
   );
 
 -- 4b. Composite-tenant-FK targets -------------------------------------------------
--- The new tables below carry account/journal ids AND prepaid source-document ids
--- (purchaseInvoice/purchaseInvoiceLine) alongside their own companyId. A single-
--- column FK to account("id") / journal("id") / purchaseInvoice("id") would let a
--- row in company A reference a parent owned by company B (RLS scopes the row
--- itself, not the parent it points at). To let the database reject that, each
--- composite FK target needs a UNIQUE ("id", "companyId") — id alone is already the
--- PK on all four tables, so this is trivially unique. Mirrors
--- 20260703143904_composite-tenant-fks.sql (which did the same for customer/
--- supplier). Guarded so re-application is a no-op.
+-- The prepaid schedule below carries source-document ids (purchaseInvoice /
+-- purchaseInvoiceLine) and a journal id alongside its own companyId. A single-
+-- column FK to journal("id") / purchaseInvoice("id") would let a row in company A
+-- reference a parent owned by company B (RLS scopes the row itself, not the parent
+-- it points at). To let the database reject that, each composite FK target needs a
+-- UNIQUE ("id", "companyId") — id alone is already the PK on all three, so this is
+-- trivially unique. Mirrors 20260703143904_composite-tenant-fks.sql (which did the
+-- same for customer/supplier). Guarded so re-application is a no-op.
+--
+-- NOTE: "account" is deliberately excluded. Unlike these tables it has NO
+-- companyId column — accounts are scoped by "companyGroupId" and shared across a
+-- company group, so a same-company FK is neither possible nor correct. Account
+-- references below use a plain account("id") FK, matching the established
+-- journalLine.accountId convention (20260703143904 likewise never touched account).
 DO $$
 BEGIN
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_constraint
-    WHERE conname = 'account_id_companyId_key' AND conrelid = '"account"'::regclass
-  ) THEN
-    ALTER TABLE "account" ADD CONSTRAINT "account_id_companyId_key" UNIQUE ("id", "companyId");
-  END IF;
-
   IF NOT EXISTS (
     SELECT 1 FROM pg_constraint
     WHERE conname = 'journal_id_companyId_key' AND conrelid = '"journal"'::regclass
@@ -127,11 +125,13 @@ CREATE TABLE IF NOT EXISTS "prepaidSchedule" (
   CONSTRAINT "prepaidSchedule_pkey" PRIMARY KEY ("id", "companyId"),
   CONSTRAINT "prepaidSchedule_companyId_fkey" FOREIGN KEY ("companyId")
     REFERENCES "company"("id") ON DELETE CASCADE ON UPDATE CASCADE,
-  -- Composite tenant FKs: the referenced account must belong to the same company.
-  CONSTRAINT "prepaidSchedule_prepaidAccountId_fkey" FOREIGN KEY ("prepaidAccountId", "companyId")
-    REFERENCES "account"("id", "companyId") ON DELETE RESTRICT ON UPDATE CASCADE,
-  CONSTRAINT "prepaidSchedule_expenseAccountId_fkey" FOREIGN KEY ("expenseAccountId", "companyId")
-    REFERENCES "account"("id", "companyId") ON DELETE RESTRICT ON UPDATE CASCADE,
+  -- Account references use a plain account("id") FK (account is companyGroup-scoped,
+  -- not companyId-scoped — see §4b), matching the journalLine.accountId convention.
+  -- RESTRICT: an account backing an active schedule cannot be deleted out from under it.
+  CONSTRAINT "prepaidSchedule_prepaidAccountId_fkey" FOREIGN KEY ("prepaidAccountId")
+    REFERENCES "account"("id") ON DELETE RESTRICT ON UPDATE CASCADE,
+  CONSTRAINT "prepaidSchedule_expenseAccountId_fkey" FOREIGN KEY ("expenseAccountId")
+    REFERENCES "account"("id") ON DELETE RESTRICT ON UPDATE CASCADE,
   -- Composite tenant FKs on the source-document pointers: the invoice/line must
   -- belong to the same company. SET NULL (PG15 column-list form — only the source
   -- id, never the NOT NULL companyId) so deleting the source document leaves the
@@ -268,9 +268,10 @@ CREATE TABLE IF NOT EXISTS "recurringJournalTemplateLine" (
     REFERENCES "company"("id") ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT "recurringJournalTemplateLine_templateId_fkey" FOREIGN KEY ("templateId", "companyId")
     REFERENCES "recurringJournalTemplate"("id", "companyId") ON DELETE CASCADE ON UPDATE CASCADE,
-  -- Composite tenant FK: the referenced account must belong to the same company.
-  CONSTRAINT "recurringJournalTemplateLine_accountId_fkey" FOREIGN KEY ("accountId", "companyId")
-    REFERENCES "account"("id", "companyId") ON DELETE RESTRICT ON UPDATE CASCADE
+  -- Plain account("id") FK (account is companyGroup-scoped, not companyId-scoped —
+  -- see §4b), matching the journalLine.accountId convention.
+  CONSTRAINT "recurringJournalTemplateLine_accountId_fkey" FOREIGN KEY ("accountId")
+    REFERENCES "account"("id") ON DELETE RESTRICT ON UPDATE CASCADE
 );
 CREATE INDEX "recurringJournalTemplateLine_companyId_templateId_idx"
   ON "recurringJournalTemplateLine" ("companyId", "templateId");

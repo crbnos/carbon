@@ -6733,6 +6733,7 @@ export type Database = {
           consoleEnabled: boolean
           defaultCustomerCc: string[] | null
           defaultSupplierCc: string[] | null
+          depreciationProposalsEnabled: boolean
           digitalQuoteEnabled: boolean
           digitalQuoteIncludesPurchaseOrders: boolean
           digitalQuoteNotificationGroup: string[]
@@ -6781,6 +6782,7 @@ export type Database = {
           consoleEnabled?: boolean
           defaultCustomerCc?: string[] | null
           defaultSupplierCc?: string[] | null
+          depreciationProposalsEnabled?: boolean
           digitalQuoteEnabled?: boolean
           digitalQuoteIncludesPurchaseOrders?: boolean
           digitalQuoteNotificationGroup?: string[]
@@ -6829,6 +6831,7 @@ export type Database = {
           consoleEnabled?: boolean
           defaultCustomerCc?: string[] | null
           defaultSupplierCc?: string[] | null
+          depreciationProposalsEnabled?: boolean
           digitalQuoteEnabled?: boolean
           digitalQuoteIncludesPurchaseOrders?: boolean
           digitalQuoteNotificationGroup?: string[]
@@ -23654,6 +23657,7 @@ export type Database = {
       journal: {
         Row: {
           accountingPeriodId: string | null
+          autoReverseOn: string | null
           companyId: string
           createdAt: string
           createdBy: string | null
@@ -23676,6 +23680,7 @@ export type Database = {
         }
         Insert: {
           accountingPeriodId?: string | null
+          autoReverseOn?: string | null
           companyId: string
           createdAt?: string
           createdBy?: string | null
@@ -23698,6 +23703,7 @@ export type Database = {
         }
         Update: {
           accountingPeriodId?: string | null
+          autoReverseOn?: string | null
           companyId?: string
           createdAt?: string
           createdBy?: string | null
@@ -35675,6 +35681,380 @@ export type Database = {
         }
         Relationships: []
       }
+      prepaidSchedule: {
+        Row: {
+          companyId: string
+          createdAt: string
+          createdBy: string
+          customFields: Json | null
+          description: string
+          expenseAccountId: string
+          id: string
+          method: string
+          months: number
+          prepaidAccountId: string
+          purchaseInvoiceId: string | null
+          purchaseInvoiceLineId: string | null
+          startDate: string
+          status: string
+          totalAmount: number
+          updatedAt: string | null
+          updatedBy: string | null
+        }
+        Insert: {
+          companyId: string
+          createdAt?: string
+          createdBy: string
+          customFields?: Json | null
+          description: string
+          expenseAccountId: string
+          id?: string
+          method?: string
+          months: number
+          prepaidAccountId: string
+          purchaseInvoiceId?: string | null
+          purchaseInvoiceLineId?: string | null
+          startDate: string
+          status?: string
+          totalAmount: number
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Update: {
+          companyId?: string
+          createdAt?: string
+          createdBy?: string
+          customFields?: Json | null
+          description?: string
+          expenseAccountId?: string
+          id?: string
+          method?: string
+          months?: number
+          prepaidAccountId?: string
+          purchaseInvoiceId?: string | null
+          purchaseInvoiceLineId?: string | null
+          startDate?: string
+          status?: string
+          totalAmount?: number
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prepaidSchedule_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prepaidSchedule_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prepaidSchedule_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "prepaidSchedule_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "prepaidSchedule_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prepaidSchedule_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prepaidSchedule_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prepaidSchedule_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prepaidSchedule_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "prepaidSchedule_expenseAccountId_fkey"
+            columns: ["expenseAccountId"]
+            isOneToOne: false
+            referencedRelation: "account"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prepaidSchedule_expenseAccountId_fkey"
+            columns: ["expenseAccountId"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prepaidSchedule_prepaidAccountId_fkey"
+            columns: ["prepaidAccountId"]
+            isOneToOne: false
+            referencedRelation: "account"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prepaidSchedule_prepaidAccountId_fkey"
+            columns: ["prepaidAccountId"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prepaidSchedule_purchaseInvoiceId_fkey"
+            columns: ["purchaseInvoiceId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "purchaseInvoice"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "prepaidSchedule_purchaseInvoiceId_fkey"
+            columns: ["purchaseInvoiceId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "purchaseInvoices"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "prepaidSchedule_purchaseInvoiceLineId_fkey"
+            columns: ["purchaseInvoiceLineId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "purchaseInvoiceLine"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "prepaidSchedule_purchaseInvoiceLineId_fkey"
+            columns: ["purchaseInvoiceLineId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "purchaseInvoiceLines"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "prepaidSchedule_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prepaidSchedule_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prepaidSchedule_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prepaidSchedule_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prepaidSchedule_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+        ]
+      }
+      prepaidScheduleEntry: {
+        Row: {
+          amortizationDate: string
+          amount: number
+          companyId: string
+          createdAt: string
+          createdBy: string
+          id: string
+          journalId: string | null
+          scheduleId: string
+          updatedAt: string | null
+          updatedBy: string | null
+        }
+        Insert: {
+          amortizationDate: string
+          amount: number
+          companyId: string
+          createdAt?: string
+          createdBy: string
+          id?: string
+          journalId?: string | null
+          scheduleId: string
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Update: {
+          amortizationDate?: string
+          amount?: number
+          companyId?: string
+          createdAt?: string
+          createdBy?: string
+          id?: string
+          journalId?: string | null
+          scheduleId?: string
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prepaidScheduleEntry_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prepaidScheduleEntry_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prepaidScheduleEntry_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "prepaidScheduleEntry_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "prepaidScheduleEntry_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prepaidScheduleEntry_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prepaidScheduleEntry_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prepaidScheduleEntry_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prepaidScheduleEntry_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "prepaidScheduleEntry_journalId_fkey"
+            columns: ["journalId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "journal"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "prepaidScheduleEntry_journalId_fkey"
+            columns: ["journalId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "journalEntries"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "prepaidScheduleEntry_scheduleId_fkey"
+            columns: ["scheduleId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "prepaidSchedule"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "prepaidScheduleEntry_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prepaidScheduleEntry_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prepaidScheduleEntry_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prepaidScheduleEntry_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prepaidScheduleEntry_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+        ]
+      }
       pricingRule: {
         Row: {
           active: boolean
@@ -37567,11 +37947,14 @@ export type Database = {
           inventoryUnitOfMeasureCode: string | null
           invoiceId: string
           invoiceLineType: Database["public"]["Enums"]["payableLineType"]
+          isPrepaid: boolean
           itemId: string | null
           jobOperationId: string | null
           locationId: string | null
           modelUploadId: string | null
           ownerId: string | null
+          prepaidMonths: number | null
+          prepaidStartDate: string | null
           purchaseOrderId: string | null
           purchaseOrderLineId: string | null
           purchaseUnitOfMeasureCode: string | null
@@ -37610,11 +37993,14 @@ export type Database = {
           inventoryUnitOfMeasureCode?: string | null
           invoiceId: string
           invoiceLineType: Database["public"]["Enums"]["payableLineType"]
+          isPrepaid?: boolean
           itemId?: string | null
           jobOperationId?: string | null
           locationId?: string | null
           modelUploadId?: string | null
           ownerId?: string | null
+          prepaidMonths?: number | null
+          prepaidStartDate?: string | null
           purchaseOrderId?: string | null
           purchaseOrderLineId?: string | null
           purchaseUnitOfMeasureCode?: string | null
@@ -37653,11 +38039,14 @@ export type Database = {
           inventoryUnitOfMeasureCode?: string | null
           invoiceId?: string
           invoiceLineType?: Database["public"]["Enums"]["payableLineType"]
+          isPrepaid?: boolean
           itemId?: string | null
           jobOperationId?: string | null
           locationId?: string | null
           modelUploadId?: string | null
           ownerId?: string | null
+          prepaidMonths?: number | null
+          prepaidStartDate?: string | null
           purchaseOrderId?: string | null
           purchaseOrderLineId?: string | null
           purchaseUnitOfMeasureCode?: string | null
@@ -44186,6 +44575,318 @@ export type Database = {
           },
           {
             foreignKeyName: "receiptLine_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+        ]
+      }
+      recurringJournalTemplate: {
+        Row: {
+          active: boolean
+          companyId: string
+          createdAt: string
+          createdBy: string
+          customFields: Json | null
+          description: string | null
+          endDate: string | null
+          frequency: string
+          id: string
+          name: string
+          nextRunDate: string
+          updatedAt: string | null
+          updatedBy: string | null
+        }
+        Insert: {
+          active?: boolean
+          companyId: string
+          createdAt?: string
+          createdBy: string
+          customFields?: Json | null
+          description?: string | null
+          endDate?: string | null
+          frequency?: string
+          id?: string
+          name: string
+          nextRunDate: string
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Update: {
+          active?: boolean
+          companyId?: string
+          createdAt?: string
+          createdBy?: string
+          customFields?: Json | null
+          description?: string | null
+          endDate?: string | null
+          frequency?: string
+          id?: string
+          name?: string
+          nextRunDate?: string
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recurringJournalTemplate_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recurringJournalTemplate_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recurringJournalTemplate_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "recurringJournalTemplate_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "recurringJournalTemplate_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recurringJournalTemplate_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recurringJournalTemplate_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recurringJournalTemplate_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recurringJournalTemplate_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "recurringJournalTemplate_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recurringJournalTemplate_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recurringJournalTemplate_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recurringJournalTemplate_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recurringJournalTemplate_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+        ]
+      }
+      recurringJournalTemplateLine: {
+        Row: {
+          accountId: string
+          companyId: string
+          createdAt: string
+          createdBy: string
+          credit: number
+          debit: number
+          description: string | null
+          id: string
+          sortOrder: number
+          templateId: string
+          updatedAt: string | null
+          updatedBy: string | null
+        }
+        Insert: {
+          accountId: string
+          companyId: string
+          createdAt?: string
+          createdBy: string
+          credit?: number
+          debit?: number
+          description?: string | null
+          id?: string
+          sortOrder?: number
+          templateId: string
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Update: {
+          accountId?: string
+          companyId?: string
+          createdAt?: string
+          createdBy?: string
+          credit?: number
+          debit?: number
+          description?: string | null
+          id?: string
+          sortOrder?: number
+          templateId?: string
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recurringJournalTemplateLine_accountId_fkey"
+            columns: ["accountId"]
+            isOneToOne: false
+            referencedRelation: "account"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recurringJournalTemplateLine_accountId_fkey"
+            columns: ["accountId"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recurringJournalTemplateLine_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recurringJournalTemplateLine_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recurringJournalTemplateLine_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "recurringJournalTemplateLine_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "recurringJournalTemplateLine_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recurringJournalTemplateLine_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recurringJournalTemplateLine_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recurringJournalTemplateLine_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recurringJournalTemplateLine_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "recurringJournalTemplateLine_templateId_fkey"
+            columns: ["templateId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "recurringJournalTemplate"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "recurringJournalTemplateLine_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recurringJournalTemplateLine_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recurringJournalTemplateLine_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recurringJournalTemplateLine_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recurringJournalTemplateLine_updatedBy_fkey"
             columns: ["updatedBy"]
             isOneToOne: false
             referencedRelation: "userDefaults"
@@ -64772,14 +65473,14 @@ export type Database = {
           },
           {
             foreignKeyName: "partner_id_fkey"
-            columns: ["supplierLocationId"]
+            columns: ["id"]
             isOneToOne: false
             referencedRelation: "supplierLocation"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "partner_id_fkey"
-            columns: ["id"]
+            columns: ["supplierLocationId"]
             isOneToOne: false
             referencedRelation: "supplierLocation"
             referencedColumns: ["id"]
@@ -76462,6 +77163,8 @@ export type Database = {
         | "Debit Memo"
         | "Non-Conformance"
         | "Inbound Inspection"
+        | "Prepaid Amortization"
+        | "Recurring Journal"
       journalEntryStatus: "Draft" | "Posted" | "Reversed"
       journalLineDocumentType:
         | "Receipt"
@@ -77843,6 +78546,8 @@ export const Constants = {
         "Debit Memo",
         "Non-Conformance",
         "Inbound Inspection",
+        "Prepaid Amortization",
+        "Recurring Journal",
       ],
       journalEntryStatus: ["Draft", "Posted", "Reversed"],
       journalLineDocumentType: [
