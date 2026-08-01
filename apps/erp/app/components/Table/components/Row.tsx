@@ -16,6 +16,9 @@ type RowProps<T> = ComponentProps<typeof Tr> & {
   isFrozenColumn?: boolean;
   isRowSelected?: boolean;
   pinnedColumns: string;
+  // See Cell.tsx — primitive render key so memoized rows/cells pick up the
+  // pinned-edge shadow when the horizontal scroll position changes.
+  pinnedShadow?: string;
   selectedCell: Position;
   row: RowType<T>;
   rowIsSelected: boolean;
@@ -32,6 +35,7 @@ const Row = <T extends object>({
   isFrozenColumn = false,
   isRowSelected = false,
   pinnedColumns,
+  pinnedShadow,
   row,
   rowIsSelected,
   selectedCell,
@@ -71,6 +75,7 @@ const Row = <T extends object>({
             isEditing={isEditing}
             isEditMode={isEditMode}
             pinnedColumns={pinnedColumns}
+            pinnedShadow={pinnedShadow}
             getPinnedStyles={getPinnedStyles}
             onClick={
               isEditMode
@@ -96,7 +101,8 @@ const MemoizedRow = memo(
     next.selectedCell?.column === prev.selectedCell?.column &&
     next.isEditing === prev.isEditing &&
     next.isEditMode === prev.isEditMode &&
-    next.pinnedColumns === prev.pinnedColumns
+    next.pinnedColumns === prev.pinnedColumns &&
+    next.pinnedShadow === prev.pinnedShadow
 ) as typeof Row;
 
 export default MemoizedRow;
