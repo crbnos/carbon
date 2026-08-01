@@ -120,6 +120,9 @@ msgstr "{from}–{to} из {count}"
 msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
 msgstr "{inserted} вставлено, {updated} обновлено, {0} требуют исправления, {1} пропущено."
 
+msgid "{linesCount, plural, one {# line} other {# lines}}"
+msgstr "{linesCount, plural, one {# строка} other {# строк}}"
+
 msgid "{maxSizeMB}MB limit"
 msgstr "{maxSizeMB}МБ максимум"
 
@@ -137,6 +140,9 @@ msgstr "{total} этапов, чтобы ваша компания начала 
 
 msgid "{total} phases to go live"
 msgstr "{total} этапов до запуска"
+
+msgid "{totalQuantity, plural, one {# unit} other {# units}}"
+msgstr "{totalQuantity, plural, one {# единица} other {# единиц}}"
 
 msgid "{uncounted, plural, one {# uncounted line} other {# uncounted lines}}"
 msgstr "{uncounted, plural, one {# непосчитанная строка} other {# непосчитанные строки}}"
@@ -775,6 +781,9 @@ msgstr "Добавить шаг"
 
 msgid "Add steps to preview the operator view."
 msgstr "Добавьте шаги для предварительного просмотра представления оператора."
+
+msgid "Add Stock Transfer"
+msgstr "Добавить передачу запасов"
 
 msgid "Add Supplier"
 msgstr "Добавить поставщика"
@@ -2310,6 +2319,9 @@ msgstr "Выберите номер партии"
 msgid "Choose a company"
 msgstr "Выберите компанию"
 
+msgid "Choose a row on the left to see where its stock can go."
+msgstr "Выберите строку слева, чтобы увидеть, где могут отправиться ее запасы."
+
 msgid "Choose a serial number"
 msgstr "Выберите серийный номер"
 
@@ -3156,6 +3168,9 @@ msgstr "Создать редакцию"
 
 msgid "Create Rule"
 msgstr "Создать правило"
+
+msgid "Create Transfer"
+msgstr "Создать передачу"
 
 msgid "Create User"
 msgstr "Создать пользователя"
@@ -6589,6 +6604,9 @@ msgstr "Отчет о прибылях и убытках"
 msgid "Income/Balance"
 msgstr "Доход/Баланс"
 
+msgid "incoming"
+msgstr "входящий"
+
 msgid "Incoming"
 msgstr "Входящие"
 
@@ -8527,8 +8545,14 @@ msgstr "Типы проблем не настроены"
 msgid "No items"
 msgstr "Нет позиций"
 
+msgid "No items have inventory activity here yet."
+msgstr "Здесь еще нет активности с товарами."
+
 msgid "No lines to map"
 msgstr "Нет строк для сопоставления"
+
+msgid "No lines yet"
+msgstr "Нет строк"
 
 msgid "No locations found."
 msgstr "Локации не найдены."
@@ -8571,6 +8595,9 @@ msgstr "Опция не найдена."
 
 msgid "No options found."
 msgstr "Нет доступных вариантов."
+
+msgid "No other bins hold this item"
+msgstr "Нет других контейнеров с этим товаром"
 
 msgid "No other employees found. Add employees to enable ownership transfer."
 msgstr "Других сотрудников не найдено. Добавьте сотрудников, чтобы включить передачу прав собственности."
@@ -8656,8 +8683,14 @@ msgstr "Сортировка не применена к этому предст�
 msgid "No stock"
 msgstr "Нет запасов"
 
+msgid "No stock at this location"
+msgstr "Нет запасов в этом месте"
+
 msgid "No stockout projected in the next 48 weeks"
 msgstr "Отсутствие дефицита запасов не прогнозируется в течение следующих 48 недель"
+
+msgid "No storage unit"
+msgstr "Нет единицы хранения"
 
 msgid "No suppliers yet"
 msgstr "Поставщиков еще нет"
@@ -8761,6 +8794,9 @@ msgstr "Примечания"
 msgid "Notes (optional)"
 msgstr "Примечания (опционально)"
 
+msgid "Nothing else at this location has this item to receive stock."
+msgstr "Ничто другое в этом месте не может получить запасы этого товара."
+
 msgid "Nothing in the archive"
 msgstr "Ничего в архиве"
 
@@ -8799,6 +8835,9 @@ msgstr "Сначала самые старые"
 
 msgid "On cutover day, work the checklist below in order. Acceptance tests come from your in-scope requirements. Support details are at the bottom."
 msgstr "В день переключения выполняйте контрольный список ниже по порядку. Тесты приемки основаны на ваших требованиях в области действия. Детали поддержки находятся внизу."
+
+msgid "on hand"
+msgstr "в наличии"
 
 msgid "On hand"
 msgstr "На складе"
@@ -8934,6 +8973,9 @@ msgstr "Открыть в MES"
 
 msgid "Open Issues"
 msgstr "Открытые проблемы"
+
+msgid "Open job demand plus outstanding transfers out of this bin"
+msgstr "Открытый спрос на работы плюс незавершенные передачи из этого контейнера"
 
 msgid "Open jobs"
 msgstr "Открытые заказы"
@@ -9446,6 +9488,9 @@ msgstr "Список подбора"
 
 msgid "Pick Order"
 msgstr "Порядок комплектации"
+
+msgid "Pick the bin stock is coming from, then pick the bins it goes to."
+msgstr "Выберите контейнер, из которого берутся запасы, затем выберите контейнеры, куда они идут."
 
 msgid "Pick tracked item"
 msgstr "Выбрать отслеживаемый товар"
@@ -10511,8 +10556,8 @@ msgstr "Удалить фильтры"
 msgid "Remove from Price List"
 msgstr "Удалить из прайс-листа"
 
-msgid "Remove item"
-msgstr "Удалить товар"
+msgid "Remove line"
+msgstr "Удалить строку"
 
 msgid "Remove order"
 msgstr "Удалить заказ"
@@ -10761,6 +10806,9 @@ msgstr "Отменить связанные записи в журнале"
 
 msgid "Reversed"
 msgstr "Сторнировано"
+
+msgid "Review"
+msgstr "Обзор"
 
 msgid "Review each item's changes, then confirm — releasing can't be undone."
 msgstr "Просмотрите изменения каждого элемента, затем подтвердите — выпуск нельзя отменить."
@@ -11196,6 +11244,9 @@ msgstr "Поиск полей..."
 msgid "Search for existing or create a new one"
 msgstr "Поиск существующей или создание новой"
 
+msgid "Search items or bins"
+msgstr "Поиск товаров или контейнеров"
+
 msgid "Search Job"
 msgstr "Поиск задания"
 
@@ -11271,6 +11322,9 @@ msgstr "Выберите причину, по которой предложен�
 
 msgid "Select a shape first to see available options"
 msgstr "Сначала выберите форму, чтобы увидеть доступные варианты"
+
+msgid "Select a source"
+msgstr "Выберите источник"
 
 msgid "Select a substance and shape first to see available options"
 msgstr "Сначала выберите вещество и форму, чтобы увидеть доступные варианты"
@@ -11765,6 +11819,10 @@ msgstr "Показать ID поставщиков"
 
 msgid "Show sync options"
 msgstr "Показать параметры синхронизации"
+
+#. placeholder {0}: data.length
+msgid "Showing {0} of {totalCount} — refine your search"
+msgstr "Показано {0} из {totalCount} — уточните поиск"
 
 msgid "Shown as a faint background behind every page of generated PDFs"
 msgstr "Отображается как бледный фон на каждой странице сгенерированных PDF-файлов"

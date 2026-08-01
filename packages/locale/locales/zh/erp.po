@@ -120,6 +120,9 @@ msgstr "{from}–{to} 共 {count}"
 msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
 msgstr "{inserted}条插入，{updated}条更新，{0}条需要修复，{1}条跳过。"
 
+msgid "{linesCount, plural, one {# line} other {# lines}}"
+msgstr "{linesCount, plural, one {# 行} other {# 行}}"
+
 msgid "{maxSizeMB}MB limit"
 msgstr "{maxSizeMB}MB 限制"
 
@@ -137,6 +140,9 @@ msgstr "{total}个阶段让您的公司在Carbon上线。每个阶段都以检�
 
 msgid "{total} phases to go live"
 msgstr "{total} 个阶段即可上线"
+
+msgid "{totalQuantity, plural, one {# unit} other {# units}}"
+msgstr "{totalQuantity, plural, one {# 件} other {# 件}}"
 
 msgid "{uncounted, plural, one {# uncounted line} other {# uncounted lines}}"
 msgstr "{uncounted, plural, one {# 未计数行} other {# 未计数行}}"
@@ -775,6 +781,9 @@ msgstr "添加步骤"
 
 msgid "Add steps to preview the operator view."
 msgstr "添加步骤以预览操作员视图。"
+
+msgid "Add Stock Transfer"
+msgstr "添加库存转移"
 
 msgid "Add Supplier"
 msgstr "添加供应商"
@@ -2310,6 +2319,9 @@ msgstr "选择批号"
 msgid "Choose a company"
 msgstr "选择公司"
 
+msgid "Choose a row on the left to see where its stock can go."
+msgstr "选择左侧的行以查看其库存可以转移到何处。"
+
 msgid "Choose a serial number"
 msgstr "选择序列号"
 
@@ -3156,6 +3168,9 @@ msgstr "创建修订版"
 
 msgid "Create Rule"
 msgstr "创建规则"
+
+msgid "Create Transfer"
+msgstr "创建转移"
 
 msgid "Create User"
 msgstr "创建用户"
@@ -6589,6 +6604,9 @@ msgstr "利润表"
 msgid "Income/Balance"
 msgstr "收入/余额"
 
+msgid "incoming"
+msgstr "来货"
+
 msgid "Incoming"
 msgstr "传入"
 
@@ -8527,8 +8545,14 @@ msgstr "未配置问题类型"
 msgid "No items"
 msgstr "无项目"
 
+msgid "No items have inventory activity here yet."
+msgstr "此处尚无项目的库存活动。"
+
 msgid "No lines to map"
 msgstr "没有行需要映射"
+
+msgid "No lines yet"
+msgstr "还没有行"
 
 msgid "No locations found."
 msgstr "未找到位置。"
@@ -8571,6 +8595,9 @@ msgstr "未找到选项。"
 
 msgid "No options found."
 msgstr "未找到选项。"
+
+msgid "No other bins hold this item"
+msgstr "其他地点没有此项目"
 
 msgid "No other employees found. Add employees to enable ownership transfer."
 msgstr "未找到其他员工。添加员工以启用所有权转移。"
@@ -8656,8 +8683,14 @@ msgstr "此视图未应用排序"
 msgid "No stock"
 msgstr "无库存"
 
+msgid "No stock at this location"
+msgstr "此位置没有库存"
+
 msgid "No stockout projected in the next 48 weeks"
 msgstr "未来48周内未预测到库存短缺"
+
+msgid "No storage unit"
+msgstr "无存储单元"
 
 msgid "No suppliers yet"
 msgstr "还没有供应商"
@@ -8761,6 +8794,9 @@ msgstr "备注"
 msgid "Notes (optional)"
 msgstr "备注（可选）"
 
+msgid "Nothing else at this location has this item to receive stock."
+msgstr "此位置没有其他此项目可接收库存。"
+
 msgid "Nothing in the archive"
 msgstr "存档中没有任何内容"
 
@@ -8799,6 +8835,9 @@ msgstr "最早优先"
 
 msgid "On cutover day, work the checklist below in order. Acceptance tests come from your in-scope requirements. Support details are at the bottom."
 msgstr "在切换日期，按顺序完成下面的检查清单。验收测试来自您的范围内需求。支持详情在下方。"
+
+msgid "on hand"
+msgstr "现有库存"
 
 msgid "On hand"
 msgstr "现有"
@@ -8934,6 +8973,9 @@ msgstr "在MES中打开"
 
 msgid "Open Issues"
 msgstr "未解决的问题"
+
+msgid "Open job demand plus outstanding transfers out of this bin"
+msgstr "未完成工作需求加上此地点的未完成转移"
 
 msgid "Open jobs"
 msgstr "未结工单"
@@ -9446,6 +9488,9 @@ msgstr "拣货单"
 
 msgid "Pick Order"
 msgstr "拣选顺序"
+
+msgid "Pick the bin stock is coming from, then pick the bins it goes to."
+msgstr "选择库存来自的位置，然后选择它要转移到的位置。"
 
 msgid "Pick tracked item"
 msgstr "拣选追踪项目"
@@ -10511,8 +10556,8 @@ msgstr "移除筛选"
 msgid "Remove from Price List"
 msgstr "从价格列表中移除"
 
-msgid "Remove item"
-msgstr "删除项目"
+msgid "Remove line"
+msgstr "删除行"
 
 msgid "Remove order"
 msgstr "删除订单"
@@ -10761,6 +10806,9 @@ msgstr "反转相关日记账分录"
 
 msgid "Reversed"
 msgstr "已冲销"
+
+msgid "Review"
+msgstr "查看"
 
 msgid "Review each item's changes, then confirm — releasing can't be undone."
 msgstr "审查每个项目的更改，然后确认 — 发布无法撤销。"
@@ -11196,6 +11244,9 @@ msgstr "搜索字段..."
 msgid "Search for existing or create a new one"
 msgstr "搜索现有问题或创建新问题"
 
+msgid "Search items or bins"
+msgstr "搜索项目或位置"
+
 msgid "Search Job"
 msgstr "搜索任务"
 
@@ -11271,6 +11322,9 @@ msgstr "选择未创建报价的原因。"
 
 msgid "Select a shape first to see available options"
 msgstr "请先选择形状以查看可用选项"
+
+msgid "Select a source"
+msgstr "选择来源"
 
 msgid "Select a substance and shape first to see available options"
 msgstr "请先选择物质和形状以查看可用选项"
@@ -11765,6 +11819,10 @@ msgstr "显示供应商ID"
 
 msgid "Show sync options"
 msgstr "显示同步选项"
+
+#. placeholder {0}: data.length
+msgid "Showing {0} of {totalCount} — refine your search"
+msgstr "显示 {0} 个，共 {totalCount} 个 — 优化搜索"
 
 msgid "Shown as a faint background behind every page of generated PDFs"
 msgstr "作为淡色背景显示在每个生成的PDF页面后面"

@@ -120,6 +120,9 @@ msgstr "{from}–{to} of {count}"
 msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
 msgstr "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
 
+msgid "{linesCount, plural, one {# line} other {# lines}}"
+msgstr "{linesCount, plural, one {# line} other {# lines}}"
+
 msgid "{maxSizeMB}MB limit"
 msgstr "{maxSizeMB}MB limit"
 
@@ -137,6 +140,9 @@ msgstr "{total} phases to get your company live on Carbon. Each one ends at a ch
 
 msgid "{total} phases to go live"
 msgstr "{total} phases to go live"
+
+msgid "{totalQuantity, plural, one {# unit} other {# units}}"
+msgstr "{totalQuantity, plural, one {# unit} other {# units}}"
 
 msgid "{uncounted, plural, one {# uncounted line} other {# uncounted lines}}"
 msgstr "{uncounted, plural, one {# uncounted line} other {# uncounted lines}}"
@@ -775,6 +781,9 @@ msgstr "Add Step"
 
 msgid "Add steps to preview the operator view."
 msgstr "Add steps to preview the operator view."
+
+msgid "Add Stock Transfer"
+msgstr "Add Stock Transfer"
 
 msgid "Add Supplier"
 msgstr "Add Supplier"
@@ -2310,6 +2319,9 @@ msgstr "Choose a batch number"
 msgid "Choose a company"
 msgstr "Choose a company"
 
+msgid "Choose a row on the left to see where its stock can go."
+msgstr "Choose a row on the left to see where its stock can go."
+
 msgid "Choose a serial number"
 msgstr "Choose a serial number"
 
@@ -3156,6 +3168,9 @@ msgstr "Create Revision"
 
 msgid "Create Rule"
 msgstr "Create Rule"
+
+msgid "Create Transfer"
+msgstr "Create Transfer"
 
 msgid "Create User"
 msgstr "Create User"
@@ -6589,6 +6604,9 @@ msgstr "Income Statement"
 msgid "Income/Balance"
 msgstr "Income/Balance"
 
+msgid "incoming"
+msgstr "incoming"
+
 msgid "Incoming"
 msgstr "Incoming"
 
@@ -8527,8 +8545,14 @@ msgstr "No issue types configured"
 msgid "No items"
 msgstr "No items"
 
+msgid "No items have inventory activity here yet."
+msgstr "No items have inventory activity here yet."
+
 msgid "No lines to map"
 msgstr "No lines to map"
+
+msgid "No lines yet"
+msgstr "No lines yet"
 
 msgid "No locations found."
 msgstr "No locations found."
@@ -8571,6 +8595,9 @@ msgstr "No option found."
 
 msgid "No options found."
 msgstr "No options found."
+
+msgid "No other bins hold this item"
+msgstr "No other bins hold this item"
 
 msgid "No other employees found. Add employees to enable ownership transfer."
 msgstr "No other employees found. Add employees to enable ownership transfer."
@@ -8656,8 +8683,14 @@ msgstr "No sorts applied to this view"
 msgid "No stock"
 msgstr "No stock"
 
+msgid "No stock at this location"
+msgstr "No stock at this location"
+
 msgid "No stockout projected in the next 48 weeks"
 msgstr "No stockout projected in the next 48 weeks"
+
+msgid "No storage unit"
+msgstr "No storage unit"
 
 msgid "No suppliers yet"
 msgstr "No suppliers yet"
@@ -8761,6 +8794,9 @@ msgstr "Notes"
 msgid "Notes (optional)"
 msgstr "Notes (optional)"
 
+msgid "Nothing else at this location has this item to receive stock."
+msgstr "Nothing else at this location has this item to receive stock."
+
 msgid "Nothing in the archive"
 msgstr "Nothing in the archive"
 
@@ -8799,6 +8835,9 @@ msgstr "Oldest first"
 
 msgid "On cutover day, work the checklist below in order. Acceptance tests come from your in-scope requirements. Support details are at the bottom."
 msgstr "On cutover day, work the checklist below in order. Acceptance tests come from your in-scope requirements. Support details are at the bottom."
+
+msgid "on hand"
+msgstr "on hand"
 
 msgid "On hand"
 msgstr "On hand"
@@ -8934,6 +8973,9 @@ msgstr "Open in MES"
 
 msgid "Open Issues"
 msgstr "Open Issues"
+
+msgid "Open job demand plus outstanding transfers out of this bin"
+msgstr "Open job demand plus outstanding transfers out of this bin"
 
 msgid "Open jobs"
 msgstr "Open jobs"
@@ -9446,6 +9488,9 @@ msgstr "Pick List"
 
 msgid "Pick Order"
 msgstr "Pick Order"
+
+msgid "Pick the bin stock is coming from, then pick the bins it goes to."
+msgstr "Pick the bin stock is coming from, then pick the bins it goes to."
 
 msgid "Pick tracked item"
 msgstr "Pick tracked item"
@@ -10511,8 +10556,8 @@ msgstr "Remove Filters"
 msgid "Remove from Price List"
 msgstr "Remove from Price List"
 
-msgid "Remove item"
-msgstr "Remove item"
+msgid "Remove line"
+msgstr "Remove line"
 
 msgid "Remove order"
 msgstr "Remove order"
@@ -10761,6 +10806,9 @@ msgstr "Reverse the related journal entries"
 
 msgid "Reversed"
 msgstr "Reversed"
+
+msgid "Review"
+msgstr "Review"
 
 msgid "Review each item's changes, then confirm — releasing can't be undone."
 msgstr "Review each item's changes, then confirm — releasing can't be undone."
@@ -11196,6 +11244,9 @@ msgstr "Search fields..."
 msgid "Search for existing or create a new one"
 msgstr "Search for existing or create a new one"
 
+msgid "Search items or bins"
+msgstr "Search items or bins"
+
 msgid "Search Job"
 msgstr "Search Job"
 
@@ -11271,6 +11322,9 @@ msgstr "Select a reason for why the quote was not created."
 
 msgid "Select a shape first to see available options"
 msgstr "Select a shape first to see available options"
+
+msgid "Select a source"
+msgstr "Select a source"
 
 msgid "Select a substance and shape first to see available options"
 msgstr "Select a substance and shape first to see available options"
@@ -11765,6 +11819,10 @@ msgstr "Show Supplier IDs"
 
 msgid "Show sync options"
 msgstr "Show sync options"
+
+#. placeholder {0}: data.length
+msgid "Showing {0} of {totalCount} — refine your search"
+msgstr "Showing {0} of {totalCount} — refine your search"
 
 msgid "Shown as a faint background behind every page of generated PDFs"
 msgstr "Shown as a faint background behind every page of generated PDFs"

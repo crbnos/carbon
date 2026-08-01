@@ -120,6 +120,9 @@ msgstr "{from}–{to} di {count}"
 msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
 msgstr "{inserted} inseriti, {updated} aggiornati, {0} richiedono correzione, {1} saltati."
 
+msgid "{linesCount, plural, one {# line} other {# lines}}"
+msgstr "{linesCount, plural, one {# riga} other {# righe}}"
+
 msgid "{maxSizeMB}MB limit"
 msgstr "{maxSizeMB}MB limite"
 
@@ -137,6 +140,9 @@ msgstr "{total} fasi per mettere la tua azienda online su Carbon. Ognuna termina
 
 msgid "{total} phases to go live"
 msgstr "{total} fasi per andare live"
+
+msgid "{totalQuantity, plural, one {# unit} other {# units}}"
+msgstr "{totalQuantity, plural, one {# unità} other {# unità}}"
 
 msgid "{uncounted, plural, one {# uncounted line} other {# uncounted lines}}"
 msgstr "{uncounted, plural, one {# riga non conteggiata} other {# righe non conteggiate}}"
@@ -775,6 +781,9 @@ msgstr "Aggiungi Passaggio"
 
 msgid "Add steps to preview the operator view."
 msgstr "Aggiungi passaggi per visualizzare in anteprima la vista operatore."
+
+msgid "Add Stock Transfer"
+msgstr "Aggiungi trasferimento di stock"
 
 msgid "Add Supplier"
 msgstr "Aggiungi Fornitore"
@@ -2310,6 +2319,9 @@ msgstr "Scegli un numero di lotto"
 msgid "Choose a company"
 msgstr "Scegli un'azienda"
 
+msgid "Choose a row on the left to see where its stock can go."
+msgstr "Scegli una riga a sinistra per vedere dove può andare il suo stock."
+
 msgid "Choose a serial number"
 msgstr "Scegli un numero di serie"
 
@@ -3156,6 +3168,9 @@ msgstr "Crea Revisione"
 
 msgid "Create Rule"
 msgstr "Crea Regola"
+
+msgid "Create Transfer"
+msgstr "Crea trasferimento"
 
 msgid "Create User"
 msgstr "Crea Utente"
@@ -6589,6 +6604,9 @@ msgstr "Conto Economico"
 msgid "Income/Balance"
 msgstr "Reddito/Saldo"
 
+msgid "incoming"
+msgstr "in arrivo"
+
 msgid "Incoming"
 msgstr "In arrivo"
 
@@ -8527,8 +8545,14 @@ msgstr "Nessun tipo di problema configurato"
 msgid "No items"
 msgstr "Nessun articolo"
 
+msgid "No items have inventory activity here yet."
+msgstr "Nessun articolo ha attività di inventario qui ancora."
+
 msgid "No lines to map"
 msgstr "Nessuna riga da mappare"
+
+msgid "No lines yet"
+msgstr "Nessuna riga ancora"
 
 msgid "No locations found."
 msgstr "Nessuna posizione trovata."
@@ -8571,6 +8595,9 @@ msgstr "Nessuna opzione trovata."
 
 msgid "No options found."
 msgstr "Nessuna opzione trovata."
+
+msgid "No other bins hold this item"
+msgstr "Nessun altro contenitore contiene questo articolo"
 
 msgid "No other employees found. Add employees to enable ownership transfer."
 msgstr "Nessun altro dipendente trovato. Aggiungi dipendenti per abilitare il trasferimento della proprietà."
@@ -8656,8 +8683,14 @@ msgstr "Nessun ordinamento applicato a questa visualizzazione"
 msgid "No stock"
 msgstr "Nessun stock"
 
+msgid "No stock at this location"
+msgstr "Nessuno stock in questa posizione"
+
 msgid "No stockout projected in the next 48 weeks"
 msgstr "Nessuna esaurimento previsto nelle prossime 48 settimane"
+
+msgid "No storage unit"
+msgstr "Nessuna unità di stoccaggio"
 
 msgid "No suppliers yet"
 msgstr "Nessun fornitore ancora"
@@ -8761,6 +8794,9 @@ msgstr "Note"
 msgid "Notes (optional)"
 msgstr "Note (facoltativo)"
 
+msgid "Nothing else at this location has this item to receive stock."
+msgstr "Niente altro in questa posizione ha questo articolo per ricevere stock."
+
 msgid "Nothing in the archive"
 msgstr "Niente nell'archivio"
 
@@ -8799,6 +8835,9 @@ msgstr "Più vecchio prima"
 
 msgid "On cutover day, work the checklist below in order. Acceptance tests come from your in-scope requirements. Support details are at the bottom."
 msgstr "Nel giorno del cutover, esegui la checklist sottostante in ordine. I test di accettazione provengono dai tuoi requisiti in ambito. I dettagli di supporto sono in fondo."
+
+msgid "on hand"
+msgstr "a portata di mano"
 
 msgid "On hand"
 msgstr "A portata di mano"
@@ -8934,6 +8973,9 @@ msgstr "Apri in MES"
 
 msgid "Open Issues"
 msgstr "Problemi Aperti"
+
+msgid "Open job demand plus outstanding transfers out of this bin"
+msgstr "Domanda di lavoro aperta più trasferimenti in sospeso da questo contenitore"
 
 msgid "Open jobs"
 msgstr "Lavori aperti"
@@ -9446,6 +9488,9 @@ msgstr "Elenco di prelievo"
 
 msgid "Pick Order"
 msgstr "Ordine di Prelievo"
+
+msgid "Pick the bin stock is coming from, then pick the bins it goes to."
+msgstr "Scegli il contenitore da cui proviene lo stock, quindi scegli i contenitori a cui va."
 
 msgid "Pick tracked item"
 msgstr "Seleziona articolo tracciato"
@@ -10511,8 +10556,8 @@ msgstr "Rimuovi filtri"
 msgid "Remove from Price List"
 msgstr "Rimuovi da Listino Prezzi"
 
-msgid "Remove item"
-msgstr "Rimuovi elemento"
+msgid "Remove line"
+msgstr "Rimuovi riga"
 
 msgid "Remove order"
 msgstr "Rimuovi ordine"
@@ -10761,6 +10806,9 @@ msgstr "Storna le relative registrazioni contabili"
 
 msgid "Reversed"
 msgstr "Stornato"
+
+msgid "Review"
+msgstr "Revisione"
 
 msgid "Review each item's changes, then confirm — releasing can't be undone."
 msgstr "Rivedi i cambiamenti di ogni elemento, poi conferma — il rilascio non può essere annullato."
@@ -11196,6 +11244,9 @@ msgstr "Cerca campi..."
 msgid "Search for existing or create a new one"
 msgstr "Cerca uno esistente o creane uno nuovo"
 
+msgid "Search items or bins"
+msgstr "Cerca articoli o contenitori"
+
 msgid "Search Job"
 msgstr "Cerca Job"
 
@@ -11271,6 +11322,9 @@ msgstr "Seleziona un motivo per cui l'offerta non è stata creata."
 
 msgid "Select a shape first to see available options"
 msgstr "Seleziona prima una forma per visualizzare le opzioni disponibili"
+
+msgid "Select a source"
+msgstr "Seleziona una fonte"
 
 msgid "Select a substance and shape first to see available options"
 msgstr "Seleziona prima una sostanza e una forma per visualizzare le opzioni disponibili"
@@ -11765,6 +11819,10 @@ msgstr "Mostra ID Fornitore"
 
 msgid "Show sync options"
 msgstr "Mostra opzioni di sincronizzazione"
+
+#. placeholder {0}: data.length
+msgid "Showing {0} of {totalCount} — refine your search"
+msgstr "Mostrando {0} di {totalCount} — raffina la tua ricerca"
 
 msgid "Shown as a faint background behind every page of generated PDFs"
 msgstr "Mostrato come sfondo tenue dietro ogni pagina dei PDF generati"

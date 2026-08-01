@@ -120,6 +120,9 @@ msgstr "{from}–{to} में से {count}"
 msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
 msgstr "{inserted} डाले गए, {updated} अपडेट किए गए, {0} को ठीक करने की आवश्यकता है, {1} छोड़ दिए गए।"
 
+msgid "{linesCount, plural, one {# line} other {# lines}}"
+msgstr "{linesCount, plural, one {# लाइन} other {# लाइनें}}"
+
 msgid "{maxSizeMB}MB limit"
 msgstr "{maxSizeMB}MB सीमा"
 
@@ -137,6 +140,9 @@ msgstr "{total} phases to get your company live on Carbon. Each one ends at a ch
 
 msgid "{total} phases to go live"
 msgstr "{total} चरण लाइव होने के लिए"
+
+msgid "{totalQuantity, plural, one {# unit} other {# units}}"
+msgstr "{totalQuantity, plural, one {# इकाई} other {# इकाइयाँ}}"
 
 msgid "{uncounted, plural, one {# uncounted line} other {# uncounted lines}}"
 msgstr "{uncounted, plural, one {# अनगिनती लाइन} other {# अनगिनती लाइनें}}"
@@ -775,6 +781,9 @@ msgstr "स्टेप जोड़ें"
 
 msgid "Add steps to preview the operator view."
 msgstr "ऑपरेटर व्यू की प्रीव्यू के लिए कदम जोड़ें।"
+
+msgid "Add Stock Transfer"
+msgstr "स्टॉक ट्रांसफर जोड़ें"
 
 msgid "Add Supplier"
 msgstr "आपूर्तिकर्ता जोड़ें"
@@ -2310,6 +2319,9 @@ msgstr "एक बैच नंबर चुनें"
 msgid "Choose a company"
 msgstr "कंपनी चुनें"
 
+msgid "Choose a row on the left to see where its stock can go."
+msgstr "बाईं ओर एक पंक्ति चुनें यह देखने के लिए कि इसका स्टॉक कहाँ जा सकता है।"
+
 msgid "Choose a serial number"
 msgstr "एक सीरियल नंबर चुनें"
 
@@ -3156,6 +3168,9 @@ msgstr "संशोधन बनाएं"
 
 msgid "Create Rule"
 msgstr "नियम बनाएं"
+
+msgid "Create Transfer"
+msgstr "ट्रांसफर बनाएं"
 
 msgid "Create User"
 msgstr "उपयोगकर्ता बनाएं"
@@ -6589,6 +6604,9 @@ msgstr "आय विवरण"
 msgid "Income/Balance"
 msgstr "आय/शेष"
 
+msgid "incoming"
+msgstr "आने वाला"
+
 msgid "Incoming"
 msgstr "आने वाली"
 
@@ -8527,8 +8545,14 @@ msgstr "कोई समस्या प्रकार कॉन्फ़िग
 msgid "No items"
 msgstr "कोई आइटम नहीं"
 
+msgid "No items have inventory activity here yet."
+msgstr "अभी तक यहाँ कोई आइटम इन्वेंटरी गतिविधि नहीं है।"
+
 msgid "No lines to map"
 msgstr "मैप करने के लिए कोई लाइनें नहीं"
+
+msgid "No lines yet"
+msgstr "अभी तक कोई लाइन नहीं"
 
 msgid "No locations found."
 msgstr "कोई स्थान नहीं मिला।"
@@ -8571,6 +8595,9 @@ msgstr "कोई विकल्प नहीं मिला।"
 
 msgid "No options found."
 msgstr "कोई विकल्प नहीं मिला।"
+
+msgid "No other bins hold this item"
+msgstr "कोई अन्य बिन इस आइटम को नहीं रखता"
 
 msgid "No other employees found. Add employees to enable ownership transfer."
 msgstr "कोई अन्य कर्मचारी नहीं मिला। स्वामित्व हस्तांतरण सक्षम करने के लिए कर्मचारियों को जोड़ें।"
@@ -8656,8 +8683,14 @@ msgstr "इस दृश्य पर कोई सॉर्ट लागू न
 msgid "No stock"
 msgstr "स्टॉक नहीं"
 
+msgid "No stock at this location"
+msgstr "इस स्थान पर कोई स्टॉक नहीं"
+
 msgid "No stockout projected in the next 48 weeks"
 msgstr "अगले 48 सप्ताह में कोई स्टॉकआउट प्रक्षेपित नहीं है"
+
+msgid "No storage unit"
+msgstr "कोई स्टोरेज यूनिट नहीं"
 
 msgid "No suppliers yet"
 msgstr "अभी तक कोई आपूर्तिकर्ता नहीं"
@@ -8761,6 +8794,9 @@ msgstr "नोट्स"
 msgid "Notes (optional)"
 msgstr "नोट्स (वैकल्पिक)"
 
+msgid "Nothing else at this location has this item to receive stock."
+msgstr "इस स्थान पर कुछ और नहीं है जो इस आइटम को स्टॉक प्राप्त करने के लिए प्राप्त कर सके।"
+
 msgid "Nothing in the archive"
 msgstr "आर्काइव में कुछ नहीं है"
 
@@ -8799,6 +8835,9 @@ msgstr "सबसे पुराना पहले"
 
 msgid "On cutover day, work the checklist below in order. Acceptance tests come from your in-scope requirements. Support details are at the bottom."
 msgstr "कटओवर दिन पर, नीचे दी गई चेकलिस्ट को क्रम में काम करें। स्वीकृति परीक्षण आपकी स्कोप में शामिल आवश्यकताओं से आते हैं। समर्थन विवरण नीचे हैं।"
+
+msgid "on hand"
+msgstr "हाथ में"
 
 msgid "On hand"
 msgstr "हाथ में"
@@ -8934,6 +8973,9 @@ msgstr "MES में खोलें"
 
 msgid "Open Issues"
 msgstr "खुले मुद्दे"
+
+msgid "Open job demand plus outstanding transfers out of this bin"
+msgstr "खुली नौकरी की मांग प्लस इस बिन से बकाया ट्रांसफर"
 
 msgid "Open jobs"
 msgstr "खुली नौकरियां"
@@ -9446,6 +9488,9 @@ msgstr "पिक लिस्ट"
 
 msgid "Pick Order"
 msgstr "पिक ऑर्डर"
+
+msgid "Pick the bin stock is coming from, then pick the bins it goes to."
+msgstr "उस बिन को चुनें जहाँ से स्टॉक आ रहा है, फिर उन बिन को चुनें जहाँ यह जाता है।"
 
 msgid "Pick tracked item"
 msgstr "ट्रैक किए गए आइटम को चुनें"
@@ -10511,8 +10556,8 @@ msgstr "फ़िल्टर हटाएं"
 msgid "Remove from Price List"
 msgstr "मूल्य सूची से हटाएं"
 
-msgid "Remove item"
-msgstr "आइटम हटाएं"
+msgid "Remove line"
+msgstr "लाइन हटाएं"
 
 msgid "Remove order"
 msgstr "ऑर्डर हटाएं"
@@ -10761,6 +10806,9 @@ msgstr "संबंधित जर्नल प्रविष्टियो�
 
 msgid "Reversed"
 msgstr "उलट दिया गया"
+
+msgid "Review"
+msgstr "समीक्षा"
 
 msgid "Review each item's changes, then confirm — releasing can't be undone."
 msgstr "प्रत्येक आइटम के परिवर्तनों की समीक्षा करें, फिर पुष्टि करें — जारी करना वापस नहीं किया जा सकता।"
@@ -11196,6 +11244,9 @@ msgstr "फ़ील्ड खोजें..."
 msgid "Search for existing or create a new one"
 msgstr "मौजूदा को खोजें या नया बनाएं"
 
+msgid "Search items or bins"
+msgstr "आइटम या बिन खोजें"
+
 msgid "Search Job"
 msgstr "Job खोजें"
 
@@ -11271,6 +11322,9 @@ msgstr "उद्धरण क्यों नहीं बनाया गय�
 
 msgid "Select a shape first to see available options"
 msgstr "उपलब्ध विकल्प देखने के लिए पहले एक आकार चुनें"
+
+msgid "Select a source"
+msgstr "एक स्रोत चुनें"
 
 msgid "Select a substance and shape first to see available options"
 msgstr "उपलब्ध विकल्प देखने के लिए पहले एक पदार्थ और आकार चुनें"
@@ -11765,6 +11819,10 @@ msgstr "आपूर्तिकर्ता आईडी दिखाएं"
 
 msgid "Show sync options"
 msgstr "सिंक विकल्प दिखाएं"
+
+#. placeholder {0}: data.length
+msgid "Showing {0} of {totalCount} — refine your search"
+msgstr "दिखा रहा है {0} का {totalCount} — अपनी खोज को परिष्कृत करें"
 
 msgid "Shown as a faint background behind every page of generated PDFs"
 msgstr "जनरेट की गई PDF के हर पेज के पीछे हल्की पृष्ठभूमि के रूप में दिखाया जाता है"

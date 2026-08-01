@@ -120,6 +120,9 @@ msgstr "{from}–{to} / {count}"
 msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
 msgstr "{inserted}件挿入、{updated}件更新、{0}件修正が必要、{1}件スキップ。"
 
+msgid "{linesCount, plural, one {# line} other {# lines}}"
+msgstr "{linesCount, plural, one {# 行} other {# 行}}"
+
 msgid "{maxSizeMB}MB limit"
 msgstr "{maxSizeMB}MB制限"
 
@@ -137,6 +140,9 @@ msgstr "{total}個のフェーズでお客様の企業をCarbonで稼働させ�
 
 msgid "{total} phases to go live"
 msgstr "{total}個のフェーズをライブにする"
+
+msgid "{totalQuantity, plural, one {# unit} other {# units}}"
+msgstr "{totalQuantity, plural, one {# 個} other {# 個}}"
 
 msgid "{uncounted, plural, one {# uncounted line} other {# uncounted lines}}"
 msgstr "{uncounted, plural, one {# 未計数行} other {# 未計数行}}"
@@ -775,6 +781,9 @@ msgstr "ステップを追加"
 
 msgid "Add steps to preview the operator view."
 msgstr "オペレータビューをプレビューするステップを追加してください。"
+
+msgid "Add Stock Transfer"
+msgstr "在庫移動を追加"
 
 msgid "Add Supplier"
 msgstr "サプライヤーを追加"
@@ -2310,6 +2319,9 @@ msgstr "バッチ番号を選択"
 msgid "Choose a company"
 msgstr "会社を選択"
 
+msgid "Choose a row on the left to see where its stock can go."
+msgstr "左側の行を選択して、その在庫をどこに移動できるかを確認します。"
+
 msgid "Choose a serial number"
 msgstr "シリアル番号を選択"
 
@@ -3156,6 +3168,9 @@ msgstr "リビジョンを作成"
 
 msgid "Create Rule"
 msgstr "ルールを作成"
+
+msgid "Create Transfer"
+msgstr "移動を作成"
 
 msgid "Create User"
 msgstr "ユーザーを作成"
@@ -6589,6 +6604,9 @@ msgstr "損益計算書"
 msgid "Income/Balance"
 msgstr "収入/残高"
 
+msgid "incoming"
+msgstr "入庫"
+
 msgid "Incoming"
 msgstr "入荷予定"
 
@@ -8527,8 +8545,14 @@ msgstr "問題タイプが設定されていません"
 msgid "No items"
 msgstr "アイテムなし"
 
+msgid "No items have inventory activity here yet."
+msgstr "ここにはまだアイテムの在庫活動がありません。"
+
 msgid "No lines to map"
 msgstr "マップするラインがありません"
+
+msgid "No lines yet"
+msgstr "行がまだありません"
 
 msgid "No locations found."
 msgstr "ロケーションが見つかりません。"
@@ -8571,6 +8595,9 @@ msgstr "オプションが見つかりません。"
 
 msgid "No options found."
 msgstr "オプションが見つかりません。"
+
+msgid "No other bins hold this item"
+msgstr "他のビンはこのアイテムを保持していません"
 
 msgid "No other employees found. Add employees to enable ownership transfer."
 msgstr "他の従業員が見つかりません。所有権の譲渡を有効にするために従業員を追加してください。"
@@ -8656,8 +8683,14 @@ msgstr "このビューに適用されたソートはありません"
 msgid "No stock"
 msgstr "在庫なし"
 
+msgid "No stock at this location"
+msgstr "この場所には在庫がありません"
+
 msgid "No stockout projected in the next 48 weeks"
 msgstr "今後48週間の在庫切れは予測されていません"
+
+msgid "No storage unit"
+msgstr "ストレージユニットがありません"
 
 msgid "No suppliers yet"
 msgstr "まだサプライヤーがありません"
@@ -8761,6 +8794,9 @@ msgstr "メモ"
 msgid "Notes (optional)"
 msgstr "メモ（オプション）"
 
+msgid "Nothing else at this location has this item to receive stock."
+msgstr "この場所の他にはこのアイテムを受け取るための在庫がありません。"
+
 msgid "Nothing in the archive"
 msgstr "アーカイブに何もありません"
 
@@ -8799,6 +8835,9 @@ msgstr "最も古いものから"
 
 msgid "On cutover day, work the checklist below in order. Acceptance tests come from your in-scope requirements. Support details are at the bottom."
 msgstr "カットオーバー当日は、以下のチェックリストを順番に実行してください。受け入れテストはスコープ内の要件から実施されます。サポートの詳細は下部にあります。"
+
+msgid "on hand"
+msgstr "手元在庫"
 
 msgid "On hand"
 msgstr "手持在庫"
@@ -8934,6 +8973,9 @@ msgstr "MESで開く"
 
 msgid "Open Issues"
 msgstr "未解決の問題"
+
+msgid "Open job demand plus outstanding transfers out of this bin"
+msgstr "オープンジョブの需要とこのビンからの未決済移動"
 
 msgid "Open jobs"
 msgstr "未処理ジョブ"
@@ -9446,6 +9488,9 @@ msgstr "ピッキングリスト"
 
 msgid "Pick Order"
 msgstr "ピック順序"
+
+msgid "Pick the bin stock is coming from, then pick the bins it goes to."
+msgstr "在庫がどこから来ているかのビンを選択してから、それがどこに行くかのビンを選択してください。"
 
 msgid "Pick tracked item"
 msgstr "追跡品目をピック"
@@ -10511,8 +10556,8 @@ msgstr "フィルターを削除"
 msgid "Remove from Price List"
 msgstr "価格リストから削除"
 
-msgid "Remove item"
-msgstr "アイテムを削除"
+msgid "Remove line"
+msgstr "行を削除"
 
 msgid "Remove order"
 msgstr "注文を削除"
@@ -10761,6 +10806,9 @@ msgstr "関連する仕訳エントリを取り消す"
 
 msgid "Reversed"
 msgstr "反転"
+
+msgid "Review"
+msgstr "確認"
 
 msgid "Review each item's changes, then confirm — releasing can't be undone."
 msgstr "各アイテムの変更をレビューしてから確認してください。リリースは取り消せません。"
@@ -11196,6 +11244,9 @@ msgstr "フィールドを検索..."
 msgid "Search for existing or create a new one"
 msgstr "既存のものを検索するか、新しいものを作成してください"
 
+msgid "Search items or bins"
+msgstr "アイテムまたはビンを検索"
+
 msgid "Search Job"
 msgstr "ジョブを検索"
 
@@ -11271,6 +11322,9 @@ msgstr "見積が作成されなかった理由を選択してください。"
 
 msgid "Select a shape first to see available options"
 msgstr "形状を先に選択すると、利用可能なオプションが表示されます。"
+
+msgid "Select a source"
+msgstr "ソースを選択"
 
 msgid "Select a substance and shape first to see available options"
 msgstr "物質と形状を先に選択すると、利用可能なオプションが表示されます。"
@@ -11765,6 +11819,10 @@ msgstr "仕入先IDを表示"
 
 msgid "Show sync options"
 msgstr "同期オプションを表示"
+
+#. placeholder {0}: data.length
+msgid "Showing {0} of {totalCount} — refine your search"
+msgstr "{0} / {totalCount} を表示中 — 検索を絞り込みます"
 
 msgid "Shown as a faint background behind every page of generated PDFs"
 msgstr "生成されたPDFの各ページの背景に薄く表示されます"

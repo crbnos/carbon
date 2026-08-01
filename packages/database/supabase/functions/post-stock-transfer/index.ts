@@ -326,7 +326,9 @@ serve(async (req: Request) => {
                 "Stock Transfer Line": stockTransferLineId,
                 "From Location": locationId,
                 "To Location": locationId,
-                "From Shelf": stockTransferLine.fromStorageUnitId,
+                // The line's own column is overwritten with this same payload
+                // value later in the transaction — read the payload directly.
+                "From Shelf": fromStorageUnitId,
                 "To Shelf": stockTransferLine.toStorageUnitId,
               },
               companyId,
@@ -600,7 +602,9 @@ serve(async (req: Request) => {
                 "Stock Transfer Line": stockTransferLineId,
                 "From Location": locationId,
                 "To Location": locationId,
-                "From Shelf": stockTransferLine.fromStorageUnitId,
+                // The line's own column is overwritten with this same payload
+                // value later in the transaction — read the payload directly.
+                "From Shelf": fromStorageUnitId,
                 "To Shelf": stockTransferLine.toStorageUnitId,
               },
               companyId,
@@ -620,14 +624,8 @@ serve(async (req: Request) => {
             })
             .execute();
 
-          // Update tracked entity status to consumed
-          await trx
-            .updateTable("trackedEntity")
-            .set({
-              status: "Consumed",
-            })
-            .where("id", "=", trackedEntityId)
-            .execute();
+          // A transfer MOVES the batch between bins — it stays Available
+          // (consumed at production). Matches the serial case and post-picking.
 
           // Create item ledger entries for transfer
           itemLedgerInserts.push(

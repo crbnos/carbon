@@ -120,6 +120,9 @@ msgstr "{from}–{to} / {count}"
 msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
 msgstr "{inserted} eklendi, {updated} güncellendi, {0} düzeltme gerekli, {1} atlandı."
 
+msgid "{linesCount, plural, one {# line} other {# lines}}"
+msgstr "{linesCount, plural, one {# satır} other {# satırlar}}"
+
 msgid "{maxSizeMB}MB limit"
 msgstr "{maxSizeMB}MB sınırı"
 
@@ -137,6 +140,9 @@ msgstr "{total} aşama şirketinizi Carbon'da canlı hale getirmek için. Her bi
 
 msgid "{total} phases to go live"
 msgstr "{total} aşama canlı yayına alınacak"
+
+msgid "{totalQuantity, plural, one {# unit} other {# units}}"
+msgstr "{totalQuantity, plural, one {# birim} other {# birimler}}"
 
 msgid "{uncounted, plural, one {# uncounted line} other {# uncounted lines}}"
 msgstr "{uncounted, plural, one {# sayılmamış satır} other {# sayılmamış satırlar}}"
@@ -775,6 +781,9 @@ msgstr "Adım Ekle"
 
 msgid "Add steps to preview the operator view."
 msgstr "Operatör görünümünü önizlemek için adımlar ekleyin."
+
+msgid "Add Stock Transfer"
+msgstr "Stok Transferi Ekle"
 
 msgid "Add Supplier"
 msgstr "Tedarikçi Ekle"
@@ -2310,6 +2319,9 @@ msgstr "Bir parti numarası seçin"
 msgid "Choose a company"
 msgstr "Bir şirket seçin"
 
+msgid "Choose a row on the left to see where its stock can go."
+msgstr "Stokun nereye gidebileceğini görmek için sol taraftaki bir satırı seçin."
+
 msgid "Choose a serial number"
 msgstr "Bir seri numarası seçin"
 
@@ -3156,6 +3168,9 @@ msgstr "Revizyon Oluştur"
 
 msgid "Create Rule"
 msgstr "Kural Oluştur"
+
+msgid "Create Transfer"
+msgstr "Transfer Oluştur"
 
 msgid "Create User"
 msgstr "Kullanıcı Oluştur"
@@ -6589,6 +6604,9 @@ msgstr "Gelir Tablosu"
 msgid "Income/Balance"
 msgstr "Gelir/Bakiye"
 
+msgid "incoming"
+msgstr "gelen"
+
 msgid "Incoming"
 msgstr "Gelen"
 
@@ -8527,8 +8545,14 @@ msgstr "Hiçbir sorun türü yapılandırılmamış"
 msgid "No items"
 msgstr "Öğe yok"
 
+msgid "No items have inventory activity here yet."
+msgstr "Burada henüz hiçbir maddenin envanter hareketi yok."
+
 msgid "No lines to map"
 msgstr "Eşlenecek satır yok"
+
+msgid "No lines yet"
+msgstr "Henüz satır yok"
 
 msgid "No locations found."
 msgstr "Konum bulunamadı."
@@ -8571,6 +8595,9 @@ msgstr "Hiç seçenek bulunamadı."
 
 msgid "No options found."
 msgstr "Seçenek bulunamadı."
+
+msgid "No other bins hold this item"
+msgstr "Başka hiçbir depo bu maddeyi tutmuyor"
 
 msgid "No other employees found. Add employees to enable ownership transfer."
 msgstr "Başka çalışan bulunamadı. Mülkiyet devrini etkinleştirmek için çalışan ekleyin."
@@ -8656,8 +8683,14 @@ msgstr "Bu görünüme herhangi bir sıralama uygulanmadı"
 msgid "No stock"
 msgstr "Stok yok"
 
+msgid "No stock at this location"
+msgstr "Bu konumda stok yok"
+
 msgid "No stockout projected in the next 48 weeks"
 msgstr "Önümüzdeki 48 haftada stok tükenmesi öngörülmemiştir"
+
+msgid "No storage unit"
+msgstr "Depolama birimi yok"
 
 msgid "No suppliers yet"
 msgstr "Henüz tedarikçi yok"
@@ -8761,6 +8794,9 @@ msgstr "Açıklamalar"
 msgid "Notes (optional)"
 msgstr "Notlar (isteğe bağlı)"
 
+msgid "Nothing else at this location has this item to receive stock."
+msgstr "Bu konumdaki başka hiçbir şey bu maddeyi stok olarak almıyor."
+
 msgid "Nothing in the archive"
 msgstr "Arşivde hiçbir şey yok"
 
@@ -8799,6 +8835,9 @@ msgstr "En eski önce"
 
 msgid "On cutover day, work the checklist below in order. Acceptance tests come from your in-scope requirements. Support details are at the bottom."
 msgstr "Kesme günü, aşağıdaki kontrol listesini sırasıyla çalışın. Kabul testleri kapsamınızdaki gereksinimlerden gelir. Destek ayrıntıları altta yer almaktadır."
+
+msgid "on hand"
+msgstr "eldeki"
 
 msgid "On hand"
 msgstr "Eldeki"
@@ -8934,6 +8973,9 @@ msgstr "MES'te Aç"
 
 msgid "Open Issues"
 msgstr "Açık Sorunlar"
+
+msgid "Open job demand plus outstanding transfers out of this bin"
+msgstr "Açık iş talebi artı bu depodan giden bekleyen transferler"
 
 msgid "Open jobs"
 msgstr "Açık işler"
@@ -9446,6 +9488,9 @@ msgstr "Seçim Listesi"
 
 msgid "Pick Order"
 msgstr "Seçim Sırası"
+
+msgid "Pick the bin stock is coming from, then pick the bins it goes to."
+msgstr "Stokun geldiği depoyu seçin, ardından nereye gittiği depoları seçin."
 
 msgid "Pick tracked item"
 msgstr "Takip edilen öğeyi seç"
@@ -10511,8 +10556,8 @@ msgstr "Filtreleri Kaldır"
 msgid "Remove from Price List"
 msgstr "Fiyat Listesinden Kaldır"
 
-msgid "Remove item"
-msgstr "Ürünü kaldır"
+msgid "Remove line"
+msgstr "Satırı Kaldır"
 
 msgid "Remove order"
 msgstr "Siparişi kaldır"
@@ -10761,6 +10806,9 @@ msgstr "İlgili günlük girişlerini tersine çevir"
 
 msgid "Reversed"
 msgstr "Ters Çevrilmiş"
+
+msgid "Review"
+msgstr "İncele"
 
 msgid "Review each item's changes, then confirm — releasing can't be undone."
 msgstr "Her ürünün değişikliklerini gözden geçirin, sonra onaylayın — yayınlama geri alınamaz."
@@ -11196,6 +11244,9 @@ msgstr "Alanları ara..."
 msgid "Search for existing or create a new one"
 msgstr "Mevcut birini arayın veya yeni bir tane oluşturun"
 
+msgid "Search items or bins"
+msgstr "Maddeleri veya depoları ara"
+
 msgid "Search Job"
 msgstr "İş Ara"
 
@@ -11271,6 +11322,9 @@ msgstr "Teklifin neden oluşturulmadığına dair bir sebep seçin."
 
 msgid "Select a shape first to see available options"
 msgstr "Mevcut seçenekleri görmek için önce bir şekil seçin"
+
+msgid "Select a source"
+msgstr "Bir kaynak seçin"
 
 msgid "Select a substance and shape first to see available options"
 msgstr "Mevcut seçenekleri görmek için önce bir madde ve şekil seçin"
@@ -11765,6 +11819,10 @@ msgstr "Tedarikçi Kimliklerini Göster"
 
 msgid "Show sync options"
 msgstr "Senkronizasyon seçeneklerini göster"
+
+#. placeholder {0}: data.length
+msgid "Showing {0} of {totalCount} — refine your search"
+msgstr "{0} / {totalCount} gösteriliyor — aramanızı daraltın"
 
 msgid "Shown as a faint background behind every page of generated PDFs"
 msgstr "Oluşturulan PDF'lerin her sayfasının arkasında soluk bir arka plan olarak gösterilir"

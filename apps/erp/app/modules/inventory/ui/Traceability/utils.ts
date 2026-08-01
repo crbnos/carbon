@@ -6,6 +6,7 @@ import type {
   TrackedEntity
 } from "~/modules/inventory";
 import { NODE_SIZE } from "./constants";
+import { isMovementActivity } from "./metadata";
 
 export type EntityNodeData = {
   kind: "entity";
@@ -22,7 +23,7 @@ export type ActivityNodeData = {
 export type LineageNode = Node<EntityNodeData | ActivityNodeData>;
 
 export type LineageEdgeData = {
-  kind: "input" | "output";
+  kind: "input" | "output" | "movement";
   quantity: number;
   dimmed: boolean;
   weight?: number;
@@ -115,16 +116,26 @@ export function payloadToFlow(
   const seenEdgeIds = new Set<string>();
   const edges: LineageEdge[] = [];
 
+  const activityTypeById = new Map(
+    payload.activities.map((a) => [a.id, a.type])
+  );
+
   for (const input of payload.inputs) {
     const id = `in:${input.trackedActivityId}:${input.trackedEntityId}`;
     if (seenEdgeIds.has(id)) continue;
     seenEdgeIds.add(id);
+    // A move consumes nothing — the entity keeps its id and stays Available.
+    const kind = isMovementActivity(
+      activityTypeById.get(input.trackedActivityId)
+    )
+      ? "movement"
+      : "input";
     edges.push({
       id,
       type: "quantity",
       source: input.trackedEntityId,
       target: input.trackedActivityId,
-      data: { kind: "input", quantity: input.quantity, dimmed: false }
+      data: { kind, quantity: input.quantity, dimmed: false }
     });
   }
 

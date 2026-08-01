@@ -120,6 +120,9 @@ msgstr "{count}개 중 {from}–{to}"
 msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
 msgstr "{inserted}개 추가, {updated}개 업데이트, {0}개 수정 필요, {1}개 건너뜀."
 
+msgid "{linesCount, plural, one {# line} other {# lines}}"
+msgstr "{linesCount, plural, one {# 줄} other {# 줄}}"
+
 msgid "{maxSizeMB}MB limit"
 msgstr "{maxSizeMB}MB 제한"
 
@@ -137,6 +140,9 @@ msgstr "귀사가 Carbon을 도입하기까지 {total}단계가 있습니다. �
 
 msgid "{total} phases to go live"
 msgstr "도입까지 {total}단계"
+
+msgid "{totalQuantity, plural, one {# unit} other {# units}}"
+msgstr "{totalQuantity, plural, one {# 단위} other {# 단위}}"
 
 msgid "{uncounted, plural, one {# uncounted line} other {# uncounted lines}}"
 msgstr "미실사 라인 {uncounted}개"
@@ -775,6 +781,9 @@ msgstr "단계 추가"
 
 msgid "Add steps to preview the operator view."
 msgstr "운영자 보기를 미리 보기 위해 단계를 추가하세요."
+
+msgid "Add Stock Transfer"
+msgstr "재고 이전 추가"
 
 msgid "Add Supplier"
 msgstr "공급업체 추가"
@@ -2310,6 +2319,9 @@ msgstr "배치 번호를 선택하세요"
 msgid "Choose a company"
 msgstr "회사를 선택하세요"
 
+msgid "Choose a row on the left to see where its stock can go."
+msgstr "왼쪽의 행을 선택하여 재고가 어디로 이동할 수 있는지 확인하세요."
+
 msgid "Choose a serial number"
 msgstr "일련번호를 선택하세요"
 
@@ -3156,6 +3168,9 @@ msgstr "리비전 생성"
 
 msgid "Create Rule"
 msgstr "규칙 생성"
+
+msgid "Create Transfer"
+msgstr "이전 생성"
 
 msgid "Create User"
 msgstr "사용자 생성"
@@ -6589,6 +6604,9 @@ msgstr "손익계산서"
 msgid "Income/Balance"
 msgstr "손익/재무상태"
 
+msgid "incoming"
+msgstr "입고"
+
 msgid "Incoming"
 msgstr "입고"
 
@@ -8527,8 +8545,14 @@ msgstr "설정된 이슈 유형이 없습니다"
 msgid "No items"
 msgstr "품목 없음"
 
+msgid "No items have inventory activity here yet."
+msgstr "아직 여기에 재고 활동이 있는 항목이 없습니다."
+
 msgid "No lines to map"
 msgstr "매핑할 라인이 없습니다"
+
+msgid "No lines yet"
+msgstr "아직 줄이 없습니다"
 
 msgid "No locations found."
 msgstr "위치가 없습니다."
@@ -8571,6 +8595,9 @@ msgstr "옵션이 없습니다."
 
 msgid "No options found."
 msgstr "옵션이 없습니다."
+
+msgid "No other bins hold this item"
+msgstr "다른 보관함에 이 항목이 없습니다"
 
 msgid "No other employees found. Add employees to enable ownership transfer."
 msgstr "다른 직원이 없습니다. 소유권 이전을 활성화하려면 직원을 추가하세요."
@@ -8656,8 +8683,14 @@ msgstr "이 보기에는 정렬이 적용되지 않았습니다"
 msgid "No stock"
 msgstr "재고 없음"
 
+msgid "No stock at this location"
+msgstr "이 위치에 재고가 없습니다"
+
 msgid "No stockout projected in the next 48 weeks"
 msgstr "향후 48주간 재고 소진이 예상되지 않습니다"
+
+msgid "No storage unit"
+msgstr "저장 단위 없음"
 
 msgid "No suppliers yet"
 msgstr "아직 공급업체가 없습니다"
@@ -8761,6 +8794,9 @@ msgstr "메모"
 msgid "Notes (optional)"
 msgstr "메모(선택)"
 
+msgid "Nothing else at this location has this item to receive stock."
+msgstr "이 위치의 다른 곳에는 재고를 받을 이 항목이 없습니다."
+
 msgid "Nothing in the archive"
 msgstr "보관함이 비어 있습니다"
 
@@ -8799,6 +8835,9 @@ msgstr "오래된순"
 
 msgid "On cutover day, work the checklist below in order. Acceptance tests come from your in-scope requirements. Support details are at the bottom."
 msgstr "전환일 당일에는 아래 체크리스트를 순서대로 진행하세요. 승인 테스트는 범위 내 요구사항을 기준으로 하며, 지원 관련 세부 정보는 하단에 있습니다."
+
+msgid "on hand"
+msgstr "현재"
 
 msgid "On hand"
 msgstr "보유수량"
@@ -8934,6 +8973,9 @@ msgstr "MES에서 열기"
 
 msgid "Open Issues"
 msgstr "미결 이슈"
+
+msgid "Open job demand plus outstanding transfers out of this bin"
+msgstr "미결 작업 수요에 이 보관함에서 미완료된 이전을 더합니다"
 
 msgid "Open jobs"
 msgstr "미결 작업"
@@ -9446,6 +9488,9 @@ msgstr "피킹 목록"
 
 msgid "Pick Order"
 msgstr "피킹 순서"
+
+msgid "Pick the bin stock is coming from, then pick the bins it goes to."
+msgstr "재고가 오는 보관함을 선택한 후 이동할 보관함을 선택하세요."
 
 msgid "Pick tracked item"
 msgstr "추적 품목 선택"
@@ -10511,8 +10556,8 @@ msgstr "필터 제거"
 msgid "Remove from Price List"
 msgstr "가격표에서 제거"
 
-msgid "Remove item"
-msgstr "품목 제거"
+msgid "Remove line"
+msgstr "줄 제거"
 
 msgid "Remove order"
 msgstr "주문 제거"
@@ -10761,6 +10806,9 @@ msgstr "관련 분개 취소"
 
 msgid "Reversed"
 msgstr "역순됨"
+
+msgid "Review"
+msgstr "검토"
 
 msgid "Review each item's changes, then confirm — releasing can't be undone."
 msgstr "각 항목의 변경 사항을 검토한 후 확인하세요 — 릴리스는 실행 취소할 수 없습니다."
@@ -11196,6 +11244,9 @@ msgstr "필드 검색..."
 msgid "Search for existing or create a new one"
 msgstr "기존 항목을 검색하거나 새로 생성하세요"
 
+msgid "Search items or bins"
+msgstr "항목 또는 보관함 검색"
+
 msgid "Search Job"
 msgstr "작업 검색"
 
@@ -11271,6 +11322,9 @@ msgstr "견적이 생성되지 않은 사유를 선택하세요."
 
 msgid "Select a shape first to see available options"
 msgstr "먼저 형상을 선택하면 사용 가능한 옵션이 표시됩니다"
+
+msgid "Select a source"
+msgstr "소스 선택"
 
 msgid "Select a substance and shape first to see available options"
 msgstr "먼저 재질과 형상을 선택하면 사용 가능한 옵션이 표시됩니다"
@@ -11765,6 +11819,10 @@ msgstr "공급업체 ID 표시"
 
 msgid "Show sync options"
 msgstr "동기화 옵션 표시"
+
+#. placeholder {0}: data.length
+msgid "Showing {0} of {totalCount} — refine your search"
+msgstr "{0}개/총 {totalCount}개 표시 — 검색 범위 좁혀보기"
 
 msgid "Shown as a faint background behind every page of generated PDFs"
 msgstr "생성된 PDF의 모든 페이지 배경에 옅게 표시됩니다"

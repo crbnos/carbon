@@ -120,6 +120,9 @@ msgstr "{from}–{to} z {count}"
 msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
 msgstr "{inserted} wstawiono, {updated} zaktualizowano, {0} wymagają naprawy, {1} pominięte."
 
+msgid "{linesCount, plural, one {# line} other {# lines}}"
+msgstr "{linesCount, plural, one {# linia} other {# linii}}"
+
 msgid "{maxSizeMB}MB limit"
 msgstr "{maxSizeMB}MB limit"
 
@@ -137,6 +140,9 @@ msgstr "{total} faz do uruchomienia Twojej firmy na Carbon. Każda kończy się 
 
 msgid "{total} phases to go live"
 msgstr "{total} faz do uruchomienia"
+
+msgid "{totalQuantity, plural, one {# unit} other {# units}}"
+msgstr "{totalQuantity, plural, one {# jednostka} other {# jednostek}}"
 
 msgid "{uncounted, plural, one {# uncounted line} other {# uncounted lines}}"
 msgstr "{uncounted, plural, one {# niepoliczony wiersz} other {# niepoliczone wiersze}}"
@@ -775,6 +781,9 @@ msgstr "Dodaj krok"
 
 msgid "Add steps to preview the operator view."
 msgstr "Dodaj kroki, aby wyświetlić podgląd widoku operatora."
+
+msgid "Add Stock Transfer"
+msgstr "Dodaj transfer magazynowy"
 
 msgid "Add Supplier"
 msgstr "Dodaj dostawcę"
@@ -2310,6 +2319,9 @@ msgstr "Wybierz numer partii"
 msgid "Choose a company"
 msgstr "Wybierz firmę"
 
+msgid "Choose a row on the left to see where its stock can go."
+msgstr "Wybierz wiersz po lewej stronie, aby zobaczyć, gdzie może pójść jego magazyn."
+
 msgid "Choose a serial number"
 msgstr "Wybierz numer seryjny"
 
@@ -3156,6 +3168,9 @@ msgstr "Utwórz wersję"
 
 msgid "Create Rule"
 msgstr "Utwórz Regułę"
+
+msgid "Create Transfer"
+msgstr "Utwórz transfer"
 
 msgid "Create User"
 msgstr "Utwórz użytkownika"
@@ -6589,6 +6604,9 @@ msgstr "Rachunek zysków i strat"
 msgid "Income/Balance"
 msgstr "Dochód/Saldo"
 
+msgid "incoming"
+msgstr "przychodzący"
+
 msgid "Incoming"
 msgstr "Przychodzące"
 
@@ -8527,8 +8545,14 @@ msgstr "Brak skonfigurowanych typów problemów"
 msgid "No items"
 msgstr "Brak artykułów"
 
+msgid "No items have inventory activity here yet."
+msgstr "Brak aktywności magazynowej tutaj."
+
 msgid "No lines to map"
 msgstr "Brak linii do mapowania"
+
+msgid "No lines yet"
+msgstr "Brak wierszy"
 
 msgid "No locations found."
 msgstr "Nie znaleziono lokalizacji."
@@ -8571,6 +8595,9 @@ msgstr "Nie znaleziono opcji."
 
 msgid "No options found."
 msgstr "Nie znaleziono opcji."
+
+msgid "No other bins hold this item"
+msgstr "Żaden inny pojemnik nie zawiera tego przedmiotu"
 
 msgid "No other employees found. Add employees to enable ownership transfer."
 msgstr "Nie znaleziono innych pracowników. Dodaj pracowników, aby umożliwić transfer własności."
@@ -8656,8 +8683,14 @@ msgstr "Brak zastosowanych sortowań w tym widoku"
 msgid "No stock"
 msgstr "Brak zapasu"
 
+msgid "No stock at this location"
+msgstr "Brak magazynu w tej lokalizacji"
+
 msgid "No stockout projected in the next 48 weeks"
 msgstr "Brak prognozowanego braku zapasów w ciągu następnych 48 tygodni"
+
+msgid "No storage unit"
+msgstr "Brak jednostki magazynowania"
 
 msgid "No suppliers yet"
 msgstr "Brak dostawców"
@@ -8761,6 +8794,9 @@ msgstr "Notatki"
 msgid "Notes (optional)"
 msgstr "Notatki (opcjonalnie)"
 
+msgid "Nothing else at this location has this item to receive stock."
+msgstr "Nic innego w tej lokalizacji nie posiada tego przedmiotu do otrzymania magazynu."
+
 msgid "Nothing in the archive"
 msgstr "Nic w archiwum"
 
@@ -8799,6 +8835,9 @@ msgstr "Najstarsze najpierw"
 
 msgid "On cutover day, work the checklist below in order. Acceptance tests come from your in-scope requirements. Support details are at the bottom."
 msgstr "W dniu przejścia pracuj nad listą kontrolną poniżej w kolejności. Testy akceptacyjne pochodzą z Twoich wymagań objętych zakresem. Szczegóły dotyczące wsparcia znajdują się na dole."
+
+msgid "on hand"
+msgstr "dostępny"
 
 msgid "On hand"
 msgstr "W magazynie"
@@ -8934,6 +8973,9 @@ msgstr "Otwórz w MES"
 
 msgid "Open Issues"
 msgstr "Otwarte problemy"
+
+msgid "Open job demand plus outstanding transfers out of this bin"
+msgstr "Otwarte żądanie zadania plus zaległe transfery z tego pojemnika"
 
 msgid "Open jobs"
 msgstr "Otwarte zadania"
@@ -9446,6 +9488,9 @@ msgstr "Lista pobrania"
 
 msgid "Pick Order"
 msgstr "Kolejność pobrania"
+
+msgid "Pick the bin stock is coming from, then pick the bins it goes to."
+msgstr "Wybierz pojemnik, z którego pochodzi magazyn, a następnie wybierz pojemniki, do których się przenosi."
 
 msgid "Pick tracked item"
 msgstr "Wybierz śledzony element"
@@ -10511,8 +10556,8 @@ msgstr "Usuń filtry"
 msgid "Remove from Price List"
 msgstr "Usuń z listy cen"
 
-msgid "Remove item"
-msgstr "Usuń element"
+msgid "Remove line"
+msgstr "Usuń wiersz"
 
 msgid "Remove order"
 msgstr "Usuń zamówienie"
@@ -10761,6 +10806,9 @@ msgstr "Odwróć powiązane wpisy w dzienniku"
 
 msgid "Reversed"
 msgstr "Wycofane"
+
+msgid "Review"
+msgstr "Przegląd"
 
 msgid "Review each item's changes, then confirm — releasing can't be undone."
 msgstr "Przejrzyj zmiany każdego elementu, a następnie potwierdź — wydanie nie może być cofnięte."
@@ -11196,6 +11244,9 @@ msgstr "Wyszukaj pola..."
 msgid "Search for existing or create a new one"
 msgstr "Wyszukaj istniejący lub utwórz nowy"
 
+msgid "Search items or bins"
+msgstr "Szukaj przedmiotów lub pojemników"
+
 msgid "Search Job"
 msgstr "Szukaj zadania"
 
@@ -11271,6 +11322,9 @@ msgstr "Wybierz powód, dla którego oferta nie została utworzona."
 
 msgid "Select a shape first to see available options"
 msgstr "Najpierw wybierz kształt, aby zobaczyć dostępne opcje"
+
+msgid "Select a source"
+msgstr "Wybierz źródło"
 
 msgid "Select a substance and shape first to see available options"
 msgstr "Najpierw wybierz substancję i kształt, aby zobaczyć dostępne opcje"
@@ -11765,6 +11819,10 @@ msgstr "Pokaż identyfikatory dostawców"
 
 msgid "Show sync options"
 msgstr "Pokaż opcje synchronizacji"
+
+#. placeholder {0}: data.length
+msgid "Showing {0} of {totalCount} — refine your search"
+msgstr "Wyświetlanie {0} z {totalCount} — uściśl wyszukiwanie"
 
 msgid "Shown as a faint background behind every page of generated PDFs"
 msgstr "Wyświetlany jako delikatne tło za każdą stroną wygenerowanych plików PDF"
