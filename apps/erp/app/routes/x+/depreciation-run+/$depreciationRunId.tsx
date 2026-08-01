@@ -18,6 +18,7 @@ import {
   useDisclosure
 } from "@carbon/react";
 import { formatDate } from "@carbon/utils";
+import { msg } from "@lingui/core/macro";
 import { LuEllipsisVertical, LuRepeat, LuTrash } from "react-icons/lu";
 import type { LoaderFunctionArgs } from "react-router";
 import {
@@ -43,7 +44,7 @@ import { path } from "~/utils/path";
 
 export const handle: Handle = {
   breadcrumb: detailBreadcrumb(
-    { breadcrumb: "Depreciation", to: path.to.depreciationRuns },
+    { breadcrumb: msg`Depreciation`, to: path.to.depreciationRuns },
     (data) => data?.run?.depreciationRunId
   )
 };

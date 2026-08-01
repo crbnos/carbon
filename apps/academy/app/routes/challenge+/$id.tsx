@@ -1,17 +1,13 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getLogger } from "@carbon/logger";
-import { Alert, AlertDescription, AlertTitle, Button, cn } from "@carbon/react";
+import { cn } from "@carbon/react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import ConfettiExplosion from "react-confetti-explosion";
-import {
-  LuChevronLeft,
-  LuCircleCheck,
-  LuFlag,
-  LuRefreshCcw,
-  LuTriangleAlert
-} from "react-icons/lu";
+import { LuFlag, LuRefreshCcw, LuTriangleAlert } from "react-icons/lu";
 import type { ActionFunctionArgs } from "react-router";
 import { Form, Link, useActionData, useParams, useSubmit } from "react-router";
+import { Breadcrumb } from "~/components/Breadcrumb";
+import { LearnShell } from "~/components/LearnShell";
 import { useOptionalUser } from "~/hooks/useUser";
 import { path } from "~/utils/path";
 import { findTopicContext } from "~/utils/video";
@@ -175,255 +171,240 @@ export default function ChallengeRoute() {
   const getAnswerStyles = (status: string | null) => {
     switch (status) {
       case "correct":
-        return "bg-emerald-100 border-emerald-500 text-emerald-800 dark:bg-emerald-900 dark:border-emerald-500 dark:text-emerald-500";
+        return "border-ed-green-border bg-ed-green-bg text-ed-green-text";
       case "incorrect":
-        return "bg-red-100 border-red-500 text-red-800 dark:bg-red-900 dark:border-red-500 dark:text-red-500";
+        return "border-ed-red-border bg-ed-red-bg text-ed-red";
       default:
-        return "hover:bg-accent";
+        return "border-ed-hairline bg-ed-paper hover:bg-white/70";
     }
   };
 
   return (
-    <div className="w-full px-4 max-w-5xl mx-auto mt-8 pb-24 flex flex-col gap-8">
-      <div className="flex items-center gap-2">
-        <Button
-          variant="primary"
-          leftIcon={<LuChevronLeft />}
-          className="mr-2"
-          asChild
-        >
-          <Link to={path.to.course(module.id, course.id)}>Back to course</Link>
-        </Button>
+    <LearnShell activeCourseId={course.id}>
+      <div className="max-w-190">
+        <Breadcrumb
+          items={[
+            { label: "Courses", href: path.to.root },
+            {
+              label: course.name,
+              href: path.to.course(module.id, course.id)
+            },
+            { label: topic.name }
+          ]}
+        />
 
-        <Button
-          variant="link"
-          className="text-sm text-muted-foreground"
-          asChild
-        >
-          <Link to={path.to.course(module.id, course.id)}>{course.name}</Link>
-        </Button>
-
-        <span className="text-muted-foreground text-sm">/</span>
-
-        <span className="text-muted-foreground text-sm font-bold">
-          {topic.name}
-        </span>
-      </div>
-
-      <div className="flex flex-col w-full">
-        <div
-          className="border rounded-lg rounded-b-none p-4"
-          style={{
-            backgroundColor: module?.background,
-            color: module?.foreground
-          }}
-        >
-          <div className="flex flex-col gap-4">
-            <div className="flex items-start gap-4">
-              <div
-                className="flex-shrink-0 size-12 text-2xl p-3 rounded-full border"
-                style={{
-                  backgroundColor: module?.background,
-                  borderColor: module?.foreground,
-                  color: module?.foreground
-                }}
-              >
-                <LuFlag />
-              </div>
-              <div className="flex flex-col">
-                <h1 className="uppercase text-[10px] font-display font-bold">
-                  Challenge
-                </h1>
-                <h2 className="text-2xl font-display tracking-tight">
-                  {topic.name}
-                </h2>
-              </div>
-            </div>
-          </div>
+        <div className="mt-4 flex items-center gap-2 font-mono text-ed-11 uppercase tracking-[0.08em] text-ed-ink/50">
+          <LuFlag className="size-3.5 text-ed-ink/45" />
+          Challenge
         </div>
-        <div className="flex flex-col gap-4 border rounded-b-lg border-t-0 px-6 py-4">
-          <p className="text-base text-muted-foreground">
-            Test your knowledge with these multiple choice questions. You need
-            to get at least 100% correct to pass.
-          </p>
-        </div>
-      </div>
+        <h1 className="reference-title mt-1.5">{topic.name}</h1>
+        <p className="reference-desc mt-3">
+          Test your knowledge with these multiple-choice questions. You need to
+          score 100% to pass.
+        </p>
 
-      {isSubmitted && actionData && (
-        <div className="border rounded-lg px-6 py-10">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="flex flex-col items-center justify-center gap-2">
-              <span className="text-sm font-display uppercase">Scoreboard</span>
-              <span
-                className={cn(
-                  "text-xl font-display uppercase font-bold tracking-tight",
-                  actionData.passed ? "text-emerald-500" : "text-red-500"
-                )}
-              >
-                You Scored
-              </span>
-              <div
-                className={cn(
-                  "text-6xl font-display font-bold",
-                  actionData.passed ? "text-emerald-500" : "text-red-500"
-                )}
-              >
-                {Math.round(
-                  (actionData.score / actionData.totalQuestions) * 100
-                )}
-                %
-              </div>
-            </div>
-            <div className="flex flex-col gap-4">
-              <p className="text-base text-muted-foreground">
-                You can continue by returning to the course listing or you can
-                retry this challenge and try for 100%.
-              </p>
-              <div className="flex items-center gap-4 w-full justify-between">
-                <Button
-                  size="lg"
-                  variant="secondary"
-                  leftIcon={<LuChevronLeft />}
-                  asChild
+        {isSubmitted && actionData && (
+          <div className="callout-box mt-8 p-8">
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+              <div className="flex flex-col items-center justify-center gap-1.5">
+                <span className="font-mono text-ed-11 uppercase tracking-[0.08em] text-ed-ink/50">
+                  Scoreboard
+                </span>
+                <span
+                  className={cn(
+                    "text-6xl font-semi",
+                    actionData.passed ? "text-ed-green-strong" : "text-ed-red"
+                  )}
                 >
-                  <Link to={path.to.course(module.id, course.id)}>
-                    Return to Course Page
-                  </Link>
-                </Button>
-                {!actionData?.passed && (
-                  <Button
-                    size="lg"
-                    variant="primary"
-                    onClick={onTryAgain}
-                    rightIcon={<LuRefreshCcw />}
+                  {Math.round(
+                    (actionData.score / actionData.totalQuestions) * 100
+                  )}
+                  %
+                </span>
+                <span
+                  className={cn(
+                    "text-ed-13 font-book",
+                    actionData.passed ? "text-ed-green-strong" : "text-ed-red"
+                  )}
+                >
+                  {actionData.passed ? "You passed" : "Not quite"}
+                </span>
+              </div>
+              <div className="flex flex-col justify-center gap-4">
+                <p className="text-ed-15 leading-[1.6] text-ed-ink-78">
+                  You can continue by returning to the course, or retry this
+                  challenge and aim for 100%.
+                </p>
+                <div className="flex flex-wrap items-center gap-3">
+                  <Link
+                    to={path.to.course(module.id, course.id)}
+                    className="glass-pill inline-flex h-10 items-center justify-center rounded-lg px-4 text-ed-14 font-book text-ink-ui no-underline transition-colors hover:text-ed-ink"
                   >
-                    Retry Challenge
-                  </Button>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {user ? (
-        <Form method="post" className="flex flex-col gap-6">
-          <input type="hidden" name="topicId" value={id} />
-          <input type="hidden" name="answers" value={JSON.stringify(answers)} />
-
-          {shuffledQuestions.map((question, questionIndex) => (
-            <div key={question.id} className="border rounded-lg p-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="flex flex-col gap-2">
-                  <h3 className="text-lg font-display font-bold">
-                    Question {questionIndex + 1}:
-                  </h3>
-                  <p className="text-base text-muted-foreground">
-                    {question.question}
-                  </p>
-                </div>
-                <div className="flex flex-col gap-3">
-                  {question.options.map((option, optionIndex) => {
-                    const answerStatus = getAnswerStatus(
-                      questionIndex,
-                      optionIndex
-                    );
-                    const isDisabled = isSubmitted && !!actionData;
-
-                    return (
-                      <label
-                        key={optionIndex}
-                        className={`flex items-center gap-3 p-3 border rounded-md cursor-pointer transition-colors ${
-                          isDisabled ? "cursor-default" : "hover:bg-accent"
-                        } ${getAnswerStyles(answerStatus)}`}
-                      >
-                        <input
-                          type="radio"
-                          name={`question-${questionIndex}`}
-                          value={optionIndex}
-                          checked={answers[questionIndex] === optionIndex}
-                          onChange={() =>
-                            onAnswerChange(questionIndex, optionIndex)
-                          }
-                          disabled={isDisabled}
-                          className="size-4"
-                        />
-                        <span className="text-sm">{option}</span>
-                        {answerStatus && (
-                          <span className="ml-auto text-xs font-medium">
-                            {answerStatus === "correct" && "✓ Correct"}
-                            {answerStatus === "incorrect" && "✗ Incorrect"}
-                          </span>
-                        )}
-                      </label>
-                    );
-                  })}
+                    Return to course
+                  </Link>
+                  {!actionData.passed && (
+                    <button
+                      type="button"
+                      onClick={onTryAgain}
+                      className="group relative inline-flex h-10 items-center justify-center gap-2 rounded-lg px-4"
+                    >
+                      <span
+                        aria-hidden="true"
+                        className="pointer-events-none absolute inset-0 rounded-lg cta-btn-dark"
+                      />
+                      <span
+                        aria-hidden="true"
+                        className="pointer-events-none absolute inset-0 rounded-lg btn-dark-hover opacity-0 transition-opacity duration-200 ease-out group-hover:opacity-100"
+                      />
+                      <span className="text-on-dark relative z-10 inline-flex items-center gap-2 text-ed-14 font-book tracking-[0.15px]">
+                        <LuRefreshCcw className="size-3.5" />
+                        Retry challenge
+                      </span>
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
-          ))}
-
-          {!isSubmitted && (
-            <div className="rounded-lg border flex flex-row-reverse justify-between p-6 gap-12 items-center">
-              <Button
-                type="button"
-                size="lg"
-                variant="primary"
-                leftIcon={<LuCircleCheck />}
-                onClick={onSubmit}
-                disabled={answers.length !== topic.challenge.length}
-                className={
-                  answers.length !== topic.challenge.length
-                    ? "opacity-50 cursor-not-allowed"
-                    : ""
-                }
-              >
-                Submit Answers
-              </Button>
-              <Alert variant="warning" className="border-none">
-                <LuTriangleAlert className="h-4 w-4" />
-                <AlertTitle>
-                  Please ensure that all questions are answered correctly
-                </AlertTitle>
-                <AlertDescription>
-                  You can retake challenges, but they will be completely
-                  randomized when a new one is started.
-                </AlertDescription>
-              </Alert>
-            </div>
-          )}
-        </Form>
-      ) : (
-        <div className="flex justify-between items-center gap-4 border rounded-lg py-6 px-8">
-          <div className="flex flex-col gap-1">
-            <h3 className="text-lg font-display font-bold">Challenge Rules</h3>
-            <p className="text-base text-muted-foreground">
-              There is no limit on attempts, but retries will be randomized.
-            </p>
           </div>
-          <Button size="lg" variant="primary" asChild>
-            <Link to={`${path.to.login}?redirectTo=${path.to.challenge(id)}`}>
-              Login to Take Challenge
-            </Link>
-          </Button>
-        </div>
-      )}
+        )}
 
-      {actionData?.passed && (
-        <>
-          <audio ref={audioRef} preload="auto">
-            <source src="/victory.mp3" type="audio/mpeg" />
-          </audio>
-          <div className="fixed inset-0 flex items-center justify-center pointer-events-none">
-            <ConfettiExplosion
-              particleCount={200}
-              force={1}
-              duration={3000}
-              width={1600}
+        {user ? (
+          <Form method="post" className="mt-8 flex flex-col gap-5">
+            <input type="hidden" name="topicId" value={id} />
+            <input
+              type="hidden"
+              name="answers"
+              value={JSON.stringify(answers)}
             />
+
+            {shuffledQuestions.map((question, questionIndex) => (
+              <div key={question.id} className="callout-box p-6">
+                <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+                  <div className="flex flex-col gap-2">
+                    <span className="font-mono text-ed-10 font-semibold uppercase tracking-[0.08em] text-ed-ink/50">
+                      Question {questionIndex + 1} of {shuffledQuestions.length}
+                    </span>
+                    <p className="text-ed-16 font-demi leading-[1.5] text-ed-ink">
+                      {question.question}
+                    </p>
+                  </div>
+                  <div className="flex flex-col gap-3">
+                    {question.options.map((option, optionIndex) => {
+                      const answerStatus = getAnswerStatus(
+                        questionIndex,
+                        optionIndex
+                      );
+                      const isDisabled = isSubmitted && !!actionData;
+
+                      return (
+                        <label
+                          key={optionIndex}
+                          className={`flex items-center gap-3 rounded-lg border px-4 py-3 transition-colors ${
+                            isDisabled ? "cursor-default" : "cursor-pointer"
+                          } ${getAnswerStyles(answerStatus)}`}
+                        >
+                          <input
+                            type="radio"
+                            name={`question-${questionIndex}`}
+                            value={optionIndex}
+                            checked={answers[questionIndex] === optionIndex}
+                            onChange={() =>
+                              onAnswerChange(questionIndex, optionIndex)
+                            }
+                            disabled={isDisabled}
+                            className="size-4 accent-ed-brand"
+                          />
+                          <span className="text-ed-14">{option}</span>
+                          {answerStatus && (
+                            <span className="ml-auto font-mono text-ed-11 font-medium uppercase">
+                              {answerStatus === "correct" && "Correct"}
+                              {answerStatus === "incorrect" && "Incorrect"}
+                            </span>
+                          )}
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            ))}
+
+            {!isSubmitted && (
+              <div className="callout-box flex flex-col gap-4 p-6 sm:flex-row-reverse sm:items-center sm:justify-between">
+                <button
+                  type="button"
+                  onClick={onSubmit}
+                  disabled={answers.length !== topic.challenge.length}
+                  className={`group relative inline-flex h-11 shrink-0 items-center justify-center rounded-lg px-5 ${
+                    answers.length !== topic.challenge.length
+                      ? "cursor-not-allowed opacity-50"
+                      : ""
+                  }`}
+                >
+                  <span
+                    aria-hidden="true"
+                    className="pointer-events-none absolute inset-0 rounded-lg cta-btn-dark"
+                  />
+                  <span className="text-on-dark relative z-10 text-ed-15 font-book tracking-[0.15px]">
+                    Submit answers
+                  </span>
+                </button>
+                <div className="flex items-start gap-2.5 text-ed-amber-text">
+                  <LuTriangleAlert className="mt-0.5 size-4 shrink-0" />
+                  <div className="flex flex-col gap-0.5">
+                    <p className="text-ed-14 font-demi">
+                      Answer every question before submitting
+                    </p>
+                    <p className="text-ed-13 text-ed-ink/60">
+                      You can retake challenges, but they are fully randomized
+                      each time.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </Form>
+        ) : (
+          <div className="callout-box mt-8 flex flex-col items-start justify-between gap-4 p-6 sm:flex-row sm:items-center">
+            <div className="flex flex-col gap-1">
+              <h3 className="text-ed-16 font-demi text-ed-ink">
+                Challenge rules
+              </h3>
+              <p className="text-ed-14 text-ed-ink-78">
+                There is no limit on attempts, but retries are randomized.
+              </p>
+            </div>
+            <Link
+              to={`${path.to.login}?redirectTo=${path.to.challenge(id)}`}
+              className="group relative inline-flex h-11 shrink-0 items-center justify-center rounded-lg px-5 no-underline"
+            >
+              <span
+                aria-hidden="true"
+                className="pointer-events-none absolute inset-0 rounded-lg cta-btn-dark"
+              />
+              <span className="text-on-dark relative z-10 text-ed-15 font-book tracking-[0.15px]">
+                Login to take challenge
+              </span>
+            </Link>
           </div>
-        </>
-      )}
-    </div>
+        )}
+
+        {actionData?.passed && (
+          <>
+            <audio ref={audioRef} preload="auto">
+              <source src="/victory.mp3" type="audio/mpeg" />
+            </audio>
+            <div className="fixed inset-0 flex items-center justify-center pointer-events-none">
+              <ConfettiExplosion
+                particleCount={200}
+                force={1}
+                duration={3000}
+                width={1600}
+              />
+            </div>
+          </>
+        )}
+      </div>
+    </LearnShell>
   );
 }

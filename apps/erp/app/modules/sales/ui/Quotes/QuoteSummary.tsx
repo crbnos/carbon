@@ -219,7 +219,7 @@ const LineItems = ({
                       </motion.div>
                     </HStack>
                   </div>
-                  <span className="text-muted-foreground text-base truncate">
+                  <span className="text-muted-foreground text-sm truncate">
                     {line.description}
                   </span>
                 </div>
@@ -860,7 +860,7 @@ const QuoteSummary = ({
           <div className="flex flex-col gap-1 items-end">
             <CustomerAvatar customerId={routeData?.quote.customerId ?? null} />
             {routeData?.quote?.expirationDate && (
-              <span className="text-muted-foreground text-sm">
+              <span className="text-xs text-muted-foreground tracking-tight">
                 Expires {formatDate(routeData?.quote.expirationDate)}
               </span>
             )}
@@ -877,7 +877,7 @@ const QuoteSummary = ({
         />
 
         <VStack spacing={2} className="mt-8">
-          <HStack className="justify-between text-base text-muted-foreground w-full">
+          <HStack className="justify-between text-sm text-muted-foreground w-full">
             <span>Subtotal:</span>
             <MotionNumber
               value={subtotal + totalDiscount}
@@ -889,7 +889,7 @@ const QuoteSummary = ({
             />
           </HStack>
           {totalDiscount > 0 && (
-            <HStack className="justify-between text-base text-muted-foreground w-full">
+            <HStack className="justify-between text-sm text-muted-foreground w-full">
               <span>Discount:</span>
               <span className="text-muted-foreground">
                 -
@@ -904,7 +904,7 @@ const QuoteSummary = ({
               </span>
             </HStack>
           )}
-          <HStack className="justify-between text-base text-muted-foreground w-full">
+          <HStack className="justify-between text-sm text-muted-foreground w-full">
             <span>Tax:</span>
             <MotionNumber
               value={tax}
@@ -915,7 +915,7 @@ const QuoteSummary = ({
               locales={locale}
             />
           </HStack>
-          <HStack className="justify-between text-base text-muted-foreground w-full">
+          <HStack className="justify-between text-sm text-muted-foreground w-full">
             {convertedShippingCost > 0 ? (
               <>
                 <VStack spacing={0}>
@@ -942,14 +942,14 @@ const QuoteSummary = ({
               <Button
                 variant="link"
                 size="sm"
-                className="text-muted-foreground"
+                className="text-primary"
                 onClick={onEditShippingCost}
               >
                 <Trans>Add Shipping</Trans>
               </Button>
             ) : null}
           </HStack>
-          <HStack className="justify-between text-xl font-bold w-full">
+          <HStack className="justify-between text-xl font-semibold w-full">
             <span>Total:</span>
             <MotionNumber
               value={total}

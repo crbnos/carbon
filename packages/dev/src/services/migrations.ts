@@ -233,6 +233,31 @@ async function repairStaleMigrations(
 }
 
 // ---------------------------------------------------------------------------
+// Config row (pg_net push targets)
+// ---------------------------------------------------------------------------
+
+// The singleton "config" row is what SECURITY DEFINER functions
+// (wake_event_queue, webhook_insert/update/delete) read to POST to edge
+// functions via pg_net. Without it those pushes silently no-op, so the
+// event-queue wake and local webhooks never fire in dev. `apiUrl` must be the
+// in-network Kong URL — pg_net runs inside the postgres container, which
+// can't reach host ports.
+export async function ensureConfigRow(
+  dbPort: number,
+  anonKey: string
+): Promise<void> {
+  await withClient(dbPort, (c) =>
+    c.query(
+      `INSERT INTO "config" ("id", "apiUrl", "anonKey")
+       VALUES (TRUE, 'http://kong:8000', $1)
+       ON CONFLICT ("id") DO UPDATE
+         SET "apiUrl" = EXCLUDED."apiUrl", "anonKey" = EXCLUDED."anonKey"`,
+      [anonKey]
+    )
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Smoke-test user
 // ---------------------------------------------------------------------------
 

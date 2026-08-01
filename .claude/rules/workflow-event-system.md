@@ -20,7 +20,8 @@ the procedure, not a re-description — it does not repeat that detail.
 | --- | --- |
 | Handler functions (one per type) | `packages/jobs/src/inngest/functions/events/<type>.ts` |
 | Handler barrel | `packages/jobs/src/inngest/functions/events/index.ts` |
-| Cron dispatcher (drains pgmq, fans out) | `packages/jobs/src/inngest/functions/events/queue.ts` |
+| Drainer (event-triggered, drains pgmq, fans out) | `packages/jobs/src/inngest/functions/events/queue.ts` |
+| Wake edge fn (DB → Inngest doorbell) | `packages/database/supabase/functions/event-wake/index.ts` |
 | Served `functions` array | `packages/jobs/src/inngest/index.ts` |
 | Event-name type registry (`Events`) | `packages/lib/src/events.ts` (re-exported, NOT defined, by `packages/jobs/src/events.ts`) |
 | Zod schemas + subscription helpers | `packages/database/src/event.ts` |
@@ -189,7 +190,7 @@ export const yourHandlerFunction = inngest.createFunction(
 );
 ```
 
-### 5. Add a dispatch branch in the queue cron
+### 5. Add a dispatch branch in the queue drainer
 
 In `packages/jobs/src/inngest/functions/events/queue.ts`:
 
@@ -200,8 +201,10 @@ In `packages/jobs/src/inngest/functions/events/queue.ts`:
      YOUR_NEW_TYPE: [],
    };
    ```
-2. Add a dispatch block. Use `chunk(..., CHUNK_SIZE)` to stay under Inngest's 256KB
-   event limit. **Batched** (like SEARCH — one event per chunk, `data.records` is an array):
+2. Add a dispatch block **inside the drain loop** (the body runs once per `pass`;
+   step ids must include the pass suffix or replays break). Use
+   `chunk(..., CHUNK_SIZE)` to stay under Inngest's 256KB event limit.
+   **Batched** (like SEARCH — one event per chunk, `data.records` is an array):
    ```typescript
    if (grouped.YOUR_NEW_TYPE.length > 0) {
      const records = grouped.YOUR_NEW_TYPE.map((job) => ({
@@ -210,7 +213,7 @@ In `packages/jobs/src/inngest/functions/events/queue.ts`:
      }));
      const chunks = chunk(records, CHUNK_SIZE);
      for (let i = 0; i < chunks.length; i++) {
-       await step.sendEvent(`dispatch-your-new-type-${i}`, {
+       await step.sendEvent(`dispatch-your-new-type-${pass}-${i}`, {
          name: "carbon/event-your-new-type" as const,
          data: { records: chunks[i] },
        });
@@ -248,17 +251,25 @@ that path; it does not exist.
   SELECT * FROM "eventSystemSubscription" WHERE "companyId" = '…' AND "active";
   SELECT * FROM "eventSystemTrigger" WHERE "table" = 'yourTable'; -- view over pg_trigger
   ```
-- **Inngest:** in the dashboard (or local Dev Server), confirm `event-queue` (cron,
-  `* * * * *`) is draining, then check the downstream `event-handler-<type>` runs. Local:
+- **Wake path (push):** the DB posts to the `event-wake` edge fn via pg_net; check
+  ```sql
+  SELECT * FROM net._http_response ORDER BY created DESC LIMIT 5;  -- 200 = wake delivered
+  SELECT * FROM cron.job_run_details WHERE jobid = (SELECT jobid FROM cron.job WHERE jobname = 'event-queue-sweeper') ORDER BY start_time DESC LIMIT 5;
+  SELECT * FROM "config";  -- must be seeded (apiUrl/anonKey) or wakes silently no-op
+  ```
+- **Inngest:** in the dashboard (or local Dev Server), confirm the
+  `carbon/event-queue.process` event arrives and `event-queue` (event-triggered,
+  `concurrency: 1`) drains, then check the downstream `event-handler-<type>` runs. Local:
   ```bash
   npx inngest-cli@latest dev -u http://localhost:3000/api/inngest   # UI at :8288
   ```
 
 ## Pitfalls
 
-1. **Latency** — handlers fire on the 1-minute cron cadence, not instantly. For
+1. **Latency** — handlers fire ~3–5s after the write (sub-second wake + the drain run), worst
+   case ~1 min via the pg_cron sweeper if a push is lost. Still async, not inline: for
    data-integrity / real-time needs use sync interceptors (`attach_event_trigger`'s 2nd/3rd
-   arg), not subscriptions.
+   arg), not subscriptions. A missing `config` row means events never process at all.
 2. **Missing `companyId`** — events without a `companyId` are skipped; subscriptions are
    company-scoped.
 3. **Operation casing** — `["INSERT"]`, not `["insert"]`.

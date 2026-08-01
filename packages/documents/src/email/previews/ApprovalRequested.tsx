@@ -9,7 +9,7 @@ export default function ApprovalRequestedPreview() {
       preview={"Approval requested"}
       message={"Purchase order PO-00099 requires your approval"}
       reference={"PO-00099"}
-      recipientName={"Naveen"}
+      recipientName={"John Doe"}
       ctaLabel={"Review approval"}
       ctaUrl={"https://app.carbon.ms/x/purchase-order/1"}
       details={[

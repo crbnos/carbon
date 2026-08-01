@@ -960,3 +960,33 @@ export function resolveSamplingPlan(
     standard
   };
 }
+
+export type FeatureSamplingRule = {
+  samplingPlanType?: SamplingPlanType | null;
+  samplingSampleSize?: number | null;
+  samplingPercentage?: number | null;
+  samplingAql?: number | null;
+  samplingInspectionLevel?: InspectionLevel | null;
+  samplingSeverity?: InspectionSeverity | null;
+};
+
+// Per-feature resolution: a feature's own rule wins, else the inspection
+// document's default rule, else 100% inspection.
+export function resolveFeatureSamplingPlan(
+  feature: FeatureSamplingRule | null | undefined,
+  defaultPlan: SamplingPlanInput | null | undefined,
+  lotSize: number,
+  standard: SamplingStandard
+): SamplingResult {
+  const plan: SamplingPlanInput = feature?.samplingPlanType
+    ? {
+        type: feature.samplingPlanType,
+        sampleSize: feature.samplingSampleSize ?? undefined,
+        percentage: feature.samplingPercentage ?? undefined,
+        aql: feature.samplingAql ?? undefined,
+        inspectionLevel: feature.samplingInspectionLevel ?? undefined,
+        severity: feature.samplingSeverity ?? undefined
+      }
+    : (defaultPlan ?? { type: "All" });
+  return resolveSamplingPlan(plan, lotSize, standard);
+}

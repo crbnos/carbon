@@ -1,7 +1,7 @@
 import { GizmoHelper, GizmoViewcube, OrbitControls } from "@react-three/drei";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { type ReactNode, useEffect, useRef } from "react";
-import { Vector3 } from "three";
+import { type ReactNode, useEffect, useMemo, useRef } from "react";
+import { type DirectionalLight, Object3D, Vector3 } from "three";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import { cn } from "./utils";
 
@@ -30,13 +30,7 @@ export function AssemblyViewer({
   const isDarkMode = mode === "dark";
 
   return (
-    <div
-      className={cn(
-        "relative h-full w-full",
-        isDarkMode ? "bg-[#141619]" : "bg-white",
-        className
-      )}
-    >
+    <div className={cn("relative h-full w-full bg-card", className)}>
       <Canvas
         // Logarithmic depth buffer: distributes depth precision across a huge
         // CAD scale range (metre-scale body, mm-scale parts) so coplanar faces
@@ -57,7 +51,16 @@ export function AssemblyViewer({
           far: 100000
         }}
         resize={{ debounce: 0 }}
-        style={{ position: "absolute", inset: 0 }}
+        // Explicit CSS background on the canvas element: with alpha:true the
+        // canvas layer is otherwise transparent, and Chrome's recomposite
+        // during page unload/reload flashes such layers white in dark mode.
+        // Use the theme's card token so the viewer matches the surrounding cards
+        // in every theme instead of a hardcoded color.
+        style={{
+          position: "absolute",
+          inset: 0,
+          background: "hsl(var(--card))"
+        }}
       >
         <ambientLight intensity={isDarkMode ? 0.6 : 0.8} />
         <hemisphereLight
@@ -65,8 +68,12 @@ export function AssemblyViewer({
           groundColor={isDarkMode ? 0x202329 : 0xd4d4d8}
           intensity={0.5}
         />
-        <directionalLight position={[1, 1, 1]} intensity={1.6} />
-        <directionalLight position={[-1, 0.5, -1]} intensity={0.8} />
+        {/* CAD-style headlamp: the key light follows the camera so the facing
+            side is always lit (static world-space lights leave the model's far
+            side dark once you orbit around). See HeadLight below. */}
+        <HeadLight intensity={1.6} />
+        {/* Weak static back fill so silhouettes keep a rim of depth. */}
+        <directionalLight position={[-1, 0.5, -1]} intensity={0.4} />
         <OrbitControls
           makeDefault
           enabled={interactive}
@@ -96,6 +103,47 @@ export function AssemblyViewer({
         {children}
       </Canvas>
     </div>
+  );
+}
+
+/**
+ * Camera-following key light (CAD headlamp). Repositioned every frame at the
+ * camera, offset toward the camera's up+right so the lighting keeps some
+ * directionality (a light exactly on the view axis flattens all shading), and
+ * aimed at the orbit target so the lit side is always the one facing the user.
+ */
+function HeadLight({ intensity }: { intensity: number }) {
+  const camera = useThree((state) => state.camera);
+  const controls = useThree(
+    (state) => state.controls
+  ) as unknown as OrbitControlsImpl | null;
+  const light = useRef<DirectionalLight>(null);
+  // The directional light aims at a target object, which must live in the
+  // scene graph for its matrix to update — see the <primitive> below.
+  const target = useMemo(() => new Object3D(), []);
+  const up = useRef(new Vector3());
+  const right = useRef(new Vector3());
+
+  useFrame(() => {
+    const l = light.current;
+    if (!l) return;
+    const anchor = controls?.target ?? target.position;
+    const dist = Math.max(camera.position.distanceTo(anchor), 1);
+    up.current.set(0, 1, 0).applyQuaternion(camera.quaternion);
+    right.current.set(1, 0, 0).applyQuaternion(camera.quaternion);
+    l.position
+      .copy(camera.position)
+      .addScaledVector(up.current, dist * 0.35)
+      .addScaledVector(right.current, dist * 0.35);
+    if (controls) target.position.copy(controls.target);
+    target.updateMatrixWorld();
+  });
+
+  return (
+    <>
+      <directionalLight ref={light} target={target} intensity={intensity} />
+      <primitive object={target} />
+    </>
   );
 }
 

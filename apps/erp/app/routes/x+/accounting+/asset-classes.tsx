@@ -1,5 +1,6 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { Button, VStack } from "@carbon/react";
+import { msg } from "@lingui/core/macro";
 import { LuCirclePlus } from "react-icons/lu";
 import type { LoaderFunctionArgs } from "react-router";
 import { Outlet, useLoaderData, useNavigate } from "react-router";
@@ -12,7 +13,7 @@ import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
 
 export const handle: Handle = {
-  breadcrumb: "Asset Classes",
+  breadcrumb: msg`Asset Classes`,
   to: path.to.assetClasses
 };
 

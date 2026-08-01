@@ -162,7 +162,9 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         role={asChild ? undefined : "button"}
         ref={ref}
       >
-        {isLoading && <Spinner className="mr-2 size-4" />}
+        {isLoading && (
+          <Spinner className={cn("size-4 flex-shrink-0", !isIcon && "mr-2")} />
+        )}
         {!isLoading &&
           leftIcon &&
           cloneElement(leftIcon, {
@@ -170,7 +172,9 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
               ? cn("mr-2 h-4 w-4 flex-shrink-0", leftIcon.props.className)
               : cn("mr-2 flex-shrink-0", leftIcon.props.className)
           })}
-        <Slottable>{children}</Slottable>
+        {/* An icon button's icon arrives as children — while loading, the
+            spinner must REPLACE it or both clip inside the square hit area. */}
+        {isIcon && isLoading ? null : <Slottable>{children}</Slottable>}
         {rightIcon &&
           cloneElement(rightIcon, {
             className: !rightIcon.props?.size

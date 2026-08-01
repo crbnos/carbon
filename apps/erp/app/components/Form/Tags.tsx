@@ -62,7 +62,6 @@ const Tags = ({ table, availableTags, ...props }: TagsSelectProps) => {
       label={props?.label ?? "Tag"}
       options={options}
       {...props}
-      showCreateOptionOnEmpty={false}
       inline={props.inline ? TagsPreview : undefined}
       inlineIcon={<LuTags />}
       onCreateOption={(option) => {

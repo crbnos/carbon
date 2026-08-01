@@ -1,12 +1,16 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { NotificationEvent } from "@carbon/notifications";
-import { MODEL_RAW_KEEP_MAX_BYTES } from "@carbon/utils";
 import { inngest } from "../../client";
 
 // Raw CAD in `temp-staging` is transient — the optimise/assembly jobs read it,
-// then only the gated GLB is kept in `private`. Prune raws over the served cap
-// older than this so huge sources never linger; small raws stay (downloadable).
+// and the compact pipeline COPIES what must survive into `private` (never an
+// instant move/delete: that races concurrent jobs holding a temp-staging
+// source pointer). This sweep is the ONLY thing that deletes from staging:
+// stale objects that were copied to durable, or that no modelUpload references.
 const STAGED_RAW_TTL_DAYS = 7;
+
+// Agent chat threads are transient — purge after 30 days of inactivity.
+const AGENT_THREAD_TTL_DAYS = 30;
 
 type NotifyEvent = {
   name: "carbon/notify";
@@ -20,8 +24,14 @@ type NotifyEvent = {
 
 export const cleanupFunction = inngest.createFunction(
   { id: "cleanup", retries: 2 },
-  { cron: "0 7,12,17 * * *" },
+  { cron: "0 7 * * *" },
   async ({ step, logger }) => {
+    // Jitter: spread the daily run across the hour so every environment
+    // sharing infrastructure doesn't hammer storage/DB at exactly 07:00 UTC.
+    // The random offset is computed once when the step first executes and
+    // memoized in the run state — replays reuse the recorded wake time.
+    await step.sleep("jitter", `${Math.floor(Math.random() * 3600)}s`);
+
     const serviceRole = getCarbonServiceRole();
 
     await step.run("expire-quotes-and-rfqs", async () => {
@@ -317,8 +327,65 @@ export const cleanupFunction = inngest.createFunction(
       logger.info(`Cleanup tasks completed: ${new Date().toISOString()}`);
     });
 
+    await step.run("purge-old-agent-threads", async () => {
+      logger.info("Purging agent chat threads older than 30 days...");
+      const cutoff = new Date(
+        Date.now() - AGENT_THREAD_TTL_DAYS * 24 * 60 * 60 * 1000
+      ).toISOString();
+
+      // Small batches: the ids ride in PostgREST query strings below, and the
+      // job runs 3×/day, so any backlog drains within a few runs.
+      const old = await serviceRole
+        .from("agentThread")
+        .select("id")
+        .lt("createdAt", cutoff)
+        .limit(200);
+      if (old.error) {
+        logger.error("Error fetching old agent threads", { error: old.error });
+        return;
+      }
+      const ids = old.data.map((t) => t.id);
+      if (ids.length === 0) {
+        logger.info("No old agent threads to purge");
+        return;
+      }
+
+      // Age by last activity, not creation — a thread the user is still
+      // talking in stays, even if it was started over 30 days ago.
+      const active = await serviceRole
+        .from("agentMessage")
+        .select("threadId")
+        .in("threadId", ids)
+        .gte("createdAt", cutoff);
+      if (active.error) {
+        logger.error("Error checking agent thread activity", {
+          error: active.error
+        });
+        return;
+      }
+      const activeIds = new Set(active.data.map((m) => m.threadId));
+      const purgeIds = ids.filter((id) => !activeIds.has(id));
+      if (purgeIds.length === 0) {
+        logger.info("No stale agent threads to purge", {
+          stillActive: activeIds.size
+        });
+        return;
+      }
+
+      // Messages and parts cascade with the thread.
+      const purged = await serviceRole
+        .from("agentThread")
+        .delete()
+        .in("id", purgeIds);
+      if (purged.error) {
+        logger.error("Error purging agent threads", { error: purged.error });
+      } else {
+        logger.info("Purged stale agent threads", { count: purgeIds.length });
+      }
+    });
+
     await step.run("prune-staged-raw-models", async () => {
-      logger.info("Pruning stale large staged raw models...");
+      logger.info("Pruning stale staged raw models...");
       const cutoff = new Date(
         Date.now() - STAGED_RAW_TTL_DAYS * 24 * 60 * 60 * 1000
       ).toISOString();
@@ -326,7 +393,7 @@ export const cleanupFunction = inngest.createFunction(
       const stale = await serviceRole
         .schema("storage")
         .from("objects")
-        .select("name, metadata")
+        .select("name")
         .eq("bucket_id", "temp-staging")
         .lt("created_at", cutoff)
         .limit(1000);
@@ -335,34 +402,91 @@ export const cleanupFunction = inngest.createFunction(
         logger.error("Error listing stale staged raws", { error: stale.error });
         return;
       }
-
-      // Prune only UNCOMPACTED fat raws — a successful optimise replaces its raw
-      // with a compacted `raw.<ext>.zst` (the permanent lazy-plan source, never
-      // pruned even when its compressed size still exceeds the cap). A leftover
-      // non-`.zst` raw over the cap means optimise never completed, so it's dead
-      // weight past the TTL.
-      const big = (stale.data ?? [])
-        .filter(
-          (o) =>
-            !o.name?.toLowerCase().endsWith(".zst") &&
-            Number((o.metadata as { size?: number } | null)?.size ?? 0) >
-              MODEL_RAW_KEEP_MAX_BYTES
-        )
+      const staleNames = (stale.data ?? [])
         .map((o) => o.name)
         .filter((n): n is string => Boolean(n));
+      if (staleNames.length === 0) {
+        logger.info("No stale staged raws");
+        return;
+      }
 
-      if (big.length === 0) {
-        logger.info("No large staged raws to prune");
+      // Rule 1 — RELOCATED: the compact pipeline copies survivors to `private`
+      // under the same key (copy, not move — a move races concurrent jobs
+      // holding a temp-staging source pointer). Once the durable copy exists,
+      // the staged one is redundant regardless of size or references: every
+      // reader probes/falls back to `private`.
+      const relocated = new Set<string>();
+      const CHUNK = 20;
+      for (let i = 0; i < staleNames.length; i += CHUNK) {
+        const chunk = staleNames.slice(i, i + CHUNK);
+        const probes = await Promise.all(
+          chunk.map((name) =>
+            serviceRole.storage
+              .from("private")
+              .info(name)
+              .then((r) => (!r.error && r.data ? name : null))
+              .catch(() => null)
+          )
+        );
+        for (const name of probes) {
+          if (name) relocated.add(name);
+        }
+      }
+
+      // Rule 2 — ORPHANED: no modelUpload points at it via EITHER column
+      // (`modelPath`: a referenced staging-only raw means compaction hasn't
+      // succeeded yet or the object is the only copy of an oversized source;
+      // `originalPath`: the retained original behind an xbf compaction). A
+      // referenced object with no durable copy is NEVER deleted — it may be
+      // the only copy of the customer's file.
+      const candidates = staleNames.filter((n) => !relocated.has(n));
+      const referencedPaths = new Set<string>();
+      if (candidates.length > 0) {
+        const [referenced, referencedOriginals] = await Promise.all([
+          serviceRole
+            .from("modelUpload")
+            .select("modelPath")
+            .in("modelPath", candidates),
+          serviceRole
+            .from("modelUpload")
+            .select("originalPath")
+            .in("originalPath", candidates)
+        ]);
+        if (referenced.error || referencedOriginals.error) {
+          logger.error(
+            "Error resolving referenced staged raws — skipping orphan prune",
+            { error: referenced.error ?? referencedOriginals.error }
+          );
+          return;
+        }
+        for (const r of referenced.data ?? []) {
+          if (r.modelPath) referencedPaths.add(r.modelPath);
+        }
+        for (const r of referencedOriginals.data ?? []) {
+          if (r.originalPath) referencedPaths.add(r.originalPath);
+        }
+      }
+      const orphans = candidates.filter((n) => !referencedPaths.has(n));
+
+      const toRemove = [...relocated, ...orphans];
+      if (toRemove.length === 0) {
+        logger.info("No prunable staged raws", {
+          stale: staleNames.length,
+          referenced: referencedPaths.size
+        });
         return;
       }
 
       const removed = await serviceRole.storage
         .from("temp-staging")
-        .remove(big);
+        .remove(toRemove);
       if (removed.error) {
         logger.error("Error pruning staged raws", { error: removed.error });
       } else {
-        logger.info("Pruned large staged raw models", { count: big.length });
+        logger.info("Pruned stale staged raws", {
+          relocated: relocated.size,
+          orphaned: orphans.length
+        });
       }
     });
   }

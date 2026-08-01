@@ -9,6 +9,7 @@ import {
   VStack
 } from "@carbon/react";
 import { formatDate } from "@carbon/utils";
+import { msg } from "@lingui/core/macro";
 import { LuCirclePlus } from "react-icons/lu";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useNavigate } from "react-router";
@@ -22,7 +23,7 @@ import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
 
 export const handle: Handle = {
-  breadcrumb: "Depreciation",
+  breadcrumb: msg`Depreciation`,
   to: path.to.depreciationRuns
 };
 

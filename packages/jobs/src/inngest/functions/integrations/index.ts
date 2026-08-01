@@ -3,6 +3,8 @@ export { accountingConsolidationFunction } from "./accounting-consolidation";
 export { accountingReconciliationFunction } from "./accounting-reconciliation";
 export { jiraSyncFunction, syncIssueFromJiraSchema } from "./jira";
 export { linearSyncFunction, syncIssueFromLinearSchema } from "./linear";
+export { onshapeBackfillFunction } from "./onshape-backfill";
+export { onshapeRevisionSyncFunction } from "./onshape-revision-sync";
 export { paperlessPartsFunction } from "./paperless-parts";
 export { quickbooksCdcFunction } from "./quickbooks-cdc";
 export {

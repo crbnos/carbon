@@ -78,6 +78,60 @@ export function buildColumnMaps<T>(
   return { accessors, exportValues, sortKeyToLabel, exportOnlyColumns };
 }
 
+// The columns a CSV export should emit, in the current view's order. A column
+// id doubles as its data accessor key; ids absent from columnAccessors
+// (selection, expand, actions) are dropped.
+export function selectExportColumns(args: {
+  columnAccessors: Record<string, string>;
+  columnOrder: string[];
+  columnVisibility: Record<string, boolean>;
+  exportOnlyColumns: string[];
+}): string[] {
+  const { columnAccessors, columnOrder, columnVisibility, exportOnlyColumns } =
+    args;
+
+  // A saved view stores the column order from when it was saved, so it omits
+  // export-only columns added since. They render nowhere in the grid, so the
+  // user can never reorder them back in — append any the stored order missed
+  // rather than silently dropping them from the export.
+  const order = columnOrder.length
+    ? [
+        ...columnOrder,
+        ...exportOnlyColumns.filter((id) => !columnOrder.includes(id))
+      ]
+    : Object.keys(columnAccessors);
+
+  return order.filter(
+    (id) =>
+      id in columnAccessors &&
+      // Export-only columns export regardless of grid visibility; everything
+      // else follows the visible-in-the-current-view rule.
+      (exportOnlyColumns.includes(id) || columnVisibility[id] !== false)
+  );
+}
+
+// A column that exists only to add a field to the CSV — never rendered in the
+// grid (Table force-hides `exportOnly`). `header` is blank so the column stays
+// out of the visibility menu; the CSV heading comes from `filterHeader`.
+export function exportOnlyColumn<T>(opts: {
+  // Column id, doubles as the export key. Cannot contain '_' (buildColumnMaps).
+  id: string;
+  // Already-translated heading, e.g. t`Item Name`.
+  header: string;
+  value: (row: T) => string | number | boolean | null | undefined;
+}): ColumnDef<T, unknown> {
+  return {
+    id: opts.id,
+    header: "",
+    cell: () => null,
+    meta: {
+      exportOnly: true,
+      filterHeader: opts.header,
+      exportValue: opts.value
+    }
+  };
+}
+
 export function updateNestedProperty(
   obj: object,
   path: string | string[],

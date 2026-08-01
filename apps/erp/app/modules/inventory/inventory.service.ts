@@ -10,7 +10,7 @@ import { getNextSequence } from "~/modules/settings";
 import type { StorageItem } from "~/types";
 import { getEdgeFunctionErrorMessage } from "~/utils/error";
 import type { GenericQueryFilters } from "~/utils/query";
-import { setGenericQueryFilters } from "~/utils/query";
+import { setGenericQueryFilters, setSearchFilter } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
 import { getItemStorageUnitQuantities } from "../items/items.service";
 import type {
@@ -24,6 +24,7 @@ import type {
   receiptValidator,
   shipmentValidator,
   shippingMethodValidator,
+  stockMovementCorrectionValidator,
   stockTransferLineValidator,
   stockTransferValidator,
   storageTypeValidator,
@@ -288,11 +289,10 @@ export async function getInventoryItems(
     }
   );
 
-  if (args?.search) {
-    query = query.or(
-      `name.ilike.%${args.search}%,readableIdWithRevision.ilike.%${args.search}%`
-    );
-  }
+  query = setSearchFilter(query, args?.search, [
+    "name",
+    "readableIdWithRevision"
+  ]);
 
   query = setGenericQueryFilters(query, args, [
     { column: "readableIdWithRevision", ascending: true }
@@ -317,11 +317,10 @@ export async function getInventoryItemsCount(
     .neq("itemTrackingType", "Non-Inventory")
     .eq("companyId", companyId);
 
-  if (args?.search) {
-    query = query.or(
-      `name.ilike.%${args.search}%,readableIdWithRevision.ilike.%${args.search}%`
-    );
-  }
+  query = setSearchFilter(query, args?.search, [
+    "name",
+    "readableIdWithRevision"
+  ]);
 
   query = setGenericQueryFilters(query, args);
 
@@ -1585,6 +1584,96 @@ export async function insertManualInventoryAdjustment(
   return { data: result.data?.itemLedger ?? null, error: null };
 }
 
+// Authoritative effective quantity for a movement's correction group: resolve
+// the ultimate root by walking correctionOfItemLedgerId, then sum the root and
+// every correction in the group (BFS — historical count corrections chained
+// fix→fix). Mirrors the walk inside the correct-stock-movement edge function;
+// the modal pre-fills from this so the user never submits a value derived from
+// an incomplete page of movements.
+export async function getStockMovementEffectiveQuantity(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  itemLedgerId: string
+) {
+  const original = await client
+    .from("itemLedger")
+    .select("id, quantity, correctionOfItemLedgerId")
+    .eq("id", itemLedgerId)
+    .eq("companyId", companyId)
+    .maybeSingle();
+  if (original.error || !original.data) {
+    return { data: null, error: original.error ?? "Stock movement not found" };
+  }
+
+  let root = original.data;
+  for (let depth = 0; root.correctionOfItemLedgerId && depth < 100; depth++) {
+    const parent = await client
+      .from("itemLedger")
+      .select("id, quantity, correctionOfItemLedgerId")
+      .eq("id", root.correctionOfItemLedgerId)
+      .eq("companyId", companyId)
+      .maybeSingle();
+    if (parent.error) return { data: null, error: parent.error };
+    if (!parent.data) break;
+    root = parent.data;
+  }
+
+  let effectiveQuantity = Number(root.quantity);
+  let frontier = [root.id];
+  const seen = new Set<string>([root.id]);
+  while (frontier.length > 0) {
+    const children = await client
+      .from("itemLedger")
+      .select("id, quantity")
+      .in("correctionOfItemLedgerId", frontier)
+      .eq("companyId", companyId);
+    if (children.error) return { data: null, error: children.error };
+    frontier = [];
+    for (const child of children.data ?? []) {
+      if (seen.has(child.id)) continue;
+      seen.add(child.id);
+      effectiveQuantity += Number(child.quantity);
+      frontier.push(child.id);
+    }
+  }
+
+  return { data: { rootId: root.id, effectiveQuantity }, error: null };
+}
+
+// Thin wrapper over the correct-stock-movement edge function: books ONE
+// opposite (delta) movement linked to the corrected movement via
+// correctionOfItemLedgerId, dated with the original's postingDate and posted
+// into the original's accounting period.
+export async function correctStockMovement(
+  client: SupabaseClient<Database>,
+  correction: z.infer<typeof stockMovementCorrectionValidator> & {
+    itemLedgerId: string;
+    companyId: string;
+    createdBy: string;
+  }
+) {
+  const { companyId, createdBy, ...rest } = correction;
+
+  const result = await client.functions.invoke<{
+    success: boolean;
+    itemLedger: { id: string } | null;
+  }>("correct-stock-movement", {
+    body: { ...rest, companyId, userId: createdBy }
+  });
+
+  if (result.error) {
+    return {
+      data: null,
+      error: await getEdgeFunctionErrorMessage(
+        result.error,
+        "Failed to correct stock movement"
+      )
+    };
+  }
+
+  return { data: result.data?.itemLedger ?? null, error: null };
+}
+
 // ===========================================================================
 // Inventory Count / Cycle Count
 // ===========================================================================
@@ -1683,9 +1772,10 @@ export async function getInventoryCountLineSummary(
   };
 }
 
-// Every item-ledger adjustment a count posted (including rectify corrections),
-// found via the movement's `documentType`/`documentId` back-reference. Used to
-// show a posted count what it actually did to inventory. Chronological.
+// Every item-ledger adjustment a count posted (including stock-movement
+// corrections, which copy the count's documentType/documentId), found via the
+// movement's `documentType`/`documentId` back-reference. Used to show a posted
+// count what it actually did to inventory. Chronological.
 export async function getInventoryCountMovements(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1865,130 +1955,6 @@ export async function generateInventoryCountLines(
       .execute();
 
     return buckets.length;
-  });
-}
-
-// Refresh a count's frozen `systemQuantity` to the current live on-hand WITHOUT
-// touching the entered `countedQuantity`. Used by Rectify: reopening a Posted
-// count re-baselines the snapshot to now, so re-posting applies the corrected
-// count on top of current stock. A full regenerate would wipe the counts; this
-// only moves the baseline forward. The calling route guards status; re-stamps
-// `snapshotAt`.
-type ResnapshotInventoryCountArgs = {
-  inventoryCountId: string;
-  companyId: string;
-  locationId: string;
-  updatedBy: string;
-};
-
-// Re-baseline each line's `systemQuantity` to fresh live on-hand, inside a
-// caller-supplied transaction. A `Transaction` is a `Kysely`, so callers pass
-// `trx`; this never opens its own transaction, letting a caller (rectify) bundle
-// it with a status guard + status flip atomically.
-async function resnapshotInventoryCountLinesInTrx(
-  trx: Kysely<KyselyDatabase>,
-  args: ResnapshotInventoryCountArgs
-) {
-  const { inventoryCountId, companyId, locationId, updatedBy } = args;
-
-  const bucketKey = (
-    itemId: string,
-    storageUnitId: string | null,
-    trackedEntityId: string | null
-  ) => `${itemId}|${storageUnitId ?? ""}|${trackedEntityId ?? ""}`;
-
-  const lines = await trx
-    .selectFrom("inventoryCountLine")
-    .select(["id", "itemId", "storageUnitId", "trackedEntityId"])
-    .where("inventoryCountId", "=", inventoryCountId)
-    .where("companyId", "=", companyId)
-    .execute();
-
-  // Fresh status-aware on-hand for the location, grouped by bucket (matches
-  // `generateInventoryCountLines`): exclude Rejected and Consumed lots.
-  const onHandRows = await trx
-    .selectFrom("itemLedger")
-    .select(["itemId", "storageUnitId", "trackedEntityId"])
-    .select((eb) => eb.fn.sum<number>("quantity").as("quantity"))
-    .where("companyId", "=", companyId)
-    .where("locationId", "=", locationId)
-    .where((eb) =>
-      eb.or([
-        eb("trackedEntityStatus", "is", null),
-        eb("trackedEntityStatus", "not in", ["Rejected", "Consumed"])
-      ])
-    )
-    .groupBy(["itemId", "storageUnitId", "trackedEntityId"])
-    .execute();
-
-  const onHandByBucket = new Map(
-    onHandRows.map((r) => [
-      bucketKey(r.itemId, r.storageUnitId, r.trackedEntityId),
-      Number(r.quantity ?? 0)
-    ])
-  );
-
-  const now = new Date().toISOString();
-  for (const line of lines) {
-    await trx
-      .updateTable("inventoryCountLine")
-      .set({
-        systemQuantity:
-          onHandByBucket.get(
-            bucketKey(line.itemId, line.storageUnitId, line.trackedEntityId)
-          ) ?? 0,
-        updatedBy,
-        updatedAt: now
-      })
-      .where("id", "=", line.id)
-      .where("companyId", "=", companyId)
-      .execute();
-  }
-
-  await trx
-    .updateTable("inventoryCount")
-    .set({ snapshotAt: now, updatedBy, updatedAt: now })
-    .where("id", "=", inventoryCountId)
-    .where("companyId", "=", companyId)
-    .execute();
-
-  return lines.length;
-}
-
-// Rectify a posted count in one transaction: lock the row, verify it is still
-// Posted, re-baseline the lines, and flip it back to Draft — all-or-nothing.
-// This closes the race the previous two-step route left open (a count could be
-// re-snapshotted while remaining Posted if the second write failed or a
-// concurrent request slipped in between). Throws on rollback; the route maps it
-// to a flash. Kysely bypasses RLS — authorize at the route first.
-export async function rectifyInventoryCount(
-  db: Kysely<KyselyDatabase>,
-  args: ResnapshotInventoryCountArgs
-) {
-  const { inventoryCountId, companyId, updatedBy } = args;
-  return db.transaction().execute(async (trx) => {
-    const locked = await trx
-      .selectFrom("inventoryCount")
-      .select(["id", "status"])
-      .where("id", "=", inventoryCountId)
-      .where("companyId", "=", companyId)
-      .forUpdate()
-      .executeTakeFirst();
-
-    if (!locked) throw new Error("Inventory count not found");
-    if (locked.status !== "Posted") {
-      throw new Error("Only a posted count can be rectified");
-    }
-
-    await resnapshotInventoryCountLinesInTrx(trx, args);
-
-    await trx
-      .updateTable("inventoryCount")
-      .set({ status: "Draft", updatedBy, updatedAt: new Date().toISOString() })
-      .where("id", "=", inventoryCountId)
-      .where("companyId", "=", companyId)
-      .where("status", "=", "Posted")
-      .execute();
   });
 }
 
@@ -3018,6 +2984,60 @@ export async function upsertPickingList(
     .single();
 }
 
+export type UnresolvedPickingListLine = {
+  itemName: string;
+  outstanding: number;
+};
+
+// Lines still owing material when Finish is pressed. "Unresolved" = a line the
+// operator neither fully picked, cancelled, nor explicitly marked Short — i.e.
+// silently left behind. `hasShort` reports whether any acknowledged shortfall
+// exists, which forces the final header status to Partial rather than Completed.
+export async function getUnresolvedPickingListLines(
+  client: SupabaseClient<Database>,
+  pickingListId: string,
+  companyId: string
+): Promise<{
+  unresolved: UnresolvedPickingListLine[];
+  hasShort: boolean;
+  error: unknown;
+}> {
+  const { data, error } = await client
+    .from("pickingListLine")
+    .select(
+      "status, quantityToPick, quantityPicked, item:item(name, readableId)"
+    )
+    .eq("pickingListId", pickingListId)
+    .eq("companyId", companyId);
+
+  if (error) return { unresolved: [], hasShort: false, error };
+
+  const lines = data ?? [];
+  const hasShort = lines.some((line) => line.status === "Short");
+
+  const unresolved = lines
+    .filter(
+      (line) =>
+        line.status !== "Cancelled" &&
+        line.status !== "Short" &&
+        Number(line.quantityPicked ?? 0) < Number(line.quantityToPick ?? 0)
+    )
+    .map((line) => {
+      const item = line.item as
+        | { name?: string | null; readableId?: string | null }
+        | { name?: string | null; readableId?: string | null }[]
+        | null;
+      const itemRecord = Array.isArray(item) ? item[0] : item;
+      return {
+        itemName: itemRecord?.name ?? itemRecord?.readableId ?? "Material",
+        outstanding:
+          Number(line.quantityToPick ?? 0) - Number(line.quantityPicked ?? 0)
+      };
+    });
+
+  return { unresolved, hasShort, error: null };
+}
+
 export async function updatePickingListStatus(
   client: SupabaseClient<Database>,
   pickingListId: string,
@@ -3198,32 +3218,71 @@ export async function generatePickingList(
 
   const plId = headerInsert.data.id;
 
-  // 3. Get jobMaterial records for those operations with quantityToIssue > 0
-  const materials = await client
+  // 3. Map each operation to its work center (for the lineside destination)
+  // and find the earliest selected operation of each make method (lowest
+  // "order", id tie-break) — materials with no operation assignment attach to
+  // it, mirroring get_picking_schedule's first-operation attribution.
+  const operations = await client
+    .from("jobOperation")
+    .select("id, workCenterId, jobMakeMethodId, order")
+    .in("id", args.jobOperationIds);
+
+  if (operations.error) {
+    await client.from("pickingList").delete().eq("id", plId);
+    return { data: null, error: operations.error };
+  }
+
+  const workCenterByOperation = new Map<string, string | null>();
+  const firstSelectedOpByMakeMethod = new Map<
+    string,
+    { id: string; order: number }
+  >();
+  for (const op of operations.data ?? []) {
+    workCenterByOperation.set(op.id, op.workCenterId ?? null);
+    if (op.jobMakeMethodId) {
+      const order = Number(op.order ?? 0);
+      const current = firstSelectedOpByMakeMethod.get(op.jobMakeMethodId);
+      if (
+        !current ||
+        order < current.order ||
+        (order === current.order && op.id < current.id)
+      ) {
+        firstSelectedOpByMakeMethod.set(op.jobMakeMethodId, {
+          id: op.id,
+          order
+        });
+      }
+    }
+  }
+  const makeMethodIds = Array.from(firstSelectedOpByMakeMethod.keys());
+
+  // 4. Get jobMaterial records with quantityToIssue > 0: those assigned to the
+  // selected operations, plus unassigned ones (jobOperationId NULL — demanded
+  // at every operation of their method in MES) on the selected make methods.
+  const quoted = (ids: string[]) => ids.map((id) => `"${id}"`).join(",");
+  let materialsQuery = client
     .from("jobMaterial")
     .select(
-      "id, jobId, jobOperationId, itemId, quantityToIssue, storageUnitId, requiresSerialTracking, requiresBatchTracking"
+      "id, jobId, jobOperationId, jobMakeMethodId, itemId, quantityToIssue, storageUnitId, requiresSerialTracking, requiresBatchTracking"
     )
-    .in("jobOperationId", args.jobOperationIds)
+    .eq("companyId", args.companyId)
     .gt("quantityToIssue", 0);
+  materialsQuery =
+    makeMethodIds.length > 0
+      ? materialsQuery.or(
+          `jobOperationId.in.(${quoted(args.jobOperationIds)}),and(jobOperationId.is.null,jobMakeMethodId.in.(${quoted(makeMethodIds)}))`
+        )
+      : materialsQuery.in("jobOperationId", args.jobOperationIds);
+  const materials = await materialsQuery;
 
   if (materials.error) {
     await client.from("pickingList").delete().eq("id", plId);
     return { data: null, error: materials.error };
   }
 
-  // Map each operation to its work center, then lazily resolve (and cache) the
-  // lineside destination per work center. A pick is a transfer from the
-  // warehouse source to this lineside shelf; production later consumes from it.
-  const operations = await client
-    .from("jobOperation")
-    .select("id, workCenterId")
-    .in("id", args.jobOperationIds);
-
-  const workCenterByOperation = new Map<string, string | null>();
-  for (const op of operations.data ?? []) {
-    workCenterByOperation.set(op.id, op.workCenterId ?? null);
-  }
+  // Lazily resolve (and cache) the lineside destination per work center. A
+  // pick is a transfer from the warehouse source to this lineside shelf;
+  // production later consumes from it.
 
   const linesideByWorkCenter = new Map<string, string | null>();
   const resolveLineside = async (
@@ -3263,11 +3322,18 @@ export async function generatePickingList(
     const quantityToIssue = Number(mat.quantityToIssue ?? 0);
     if (quantityToIssue <= 0) continue;
 
-    const opWorkCenterId = mat.jobOperationId
-      ? (workCenterByOperation.get(mat.jobOperationId) ?? null)
+    // Unassigned materials attach to the earliest selected operation of their
+    // make method; its work center drives the lineside destination.
+    const effectiveOperationId =
+      mat.jobOperationId ??
+      firstSelectedOpByMakeMethod.get(mat.jobMakeMethodId)?.id ??
+      null;
+
+    const opWorkCenterId = effectiveOperationId
+      ? (workCenterByOperation.get(effectiveOperationId) ?? null)
       : null;
 
-    // 4. Resolve the destination: the operation's work-center lineside shelf.
+    // 5. Resolve the destination: the operation's work-center lineside shelf.
     const toStorageUnitId = await resolveLineside(opWorkCenterId);
 
     // On-hand of this item per bin at the location (computed once, reused below
@@ -3290,7 +3356,7 @@ export async function generatePickingList(
       continue;
     }
 
-    // 5. Determine the source (warehouse) shelf. Use the jobMaterial's shelf
+    // 6. Determine the source (warehouse) shelf. Use the jobMaterial's shelf
     // only when it's a warehouse (non-lineside) shelf; otherwise resolve a
     // warehouse source by on-hand — never rob another work center's lineside.
     // A null source = a shortage the kitter/planner must resolve.
@@ -3310,7 +3376,7 @@ export async function generatePickingList(
       pickingListId: plId,
       jobId: mat.jobId,
       jobMaterialId: mat.id,
-      jobOperationId: mat.jobOperationId,
+      jobOperationId: effectiveOperationId,
       itemId: mat.itemId,
       quantityToPick: quantityToIssue,
       storageUnitId: sourceStorageUnitId,

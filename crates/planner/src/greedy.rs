@@ -183,25 +183,35 @@ pub fn plan_removal(
         let (_index, direction, recorded) = if clear.len() == 1 || full_world.is_none() {
             clear[0]
         } else {
+            // Argmin over (blockers, index), evaluated in index order with an
+            // early stop at zero — (0, earlier-index) is unbeatable, so this is
+            // verdict-identical to scoring every clear direction.
             let full = full_world.unwrap();
             let samples_segment = (path_samples / 3).max(12);
             let mut extra: Exempt = HashMap::new();
             extra.insert(part.node_id.clone(), f64::INFINITY);
-            *clear
-                .iter()
-                .min_by_key(|(index, direction, recorded)| {
-                    let blockers = path_blockers(
-                        part,
-                        full,
-                        &[(*direction, *recorded)],
-                        samples_segment,
-                        fasteners,
-                        Some(&extra),
-                        tolerance,
-                    );
-                    (blockers.len(), *index)
-                })
-                .unwrap()
+            let mut best = clear[0];
+            let mut best_blockers = usize::MAX;
+            for &(index, direction, recorded) in &clear {
+                let blockers = path_blockers(
+                    part,
+                    full,
+                    &[(direction, recorded)],
+                    samples_segment,
+                    fasteners,
+                    Some(&extra),
+                    tolerance,
+                )
+                .len();
+                if blockers < best_blockers {
+                    best_blockers = blockers;
+                    best = (index, direction, recorded);
+                    if blockers == 0 {
+                        break;
+                    }
+                }
+            }
+            best
         };
         let confidence = if part.is_proxy { "low" } else { "high" };
         return Some(PlannedComponent {
@@ -1052,11 +1062,26 @@ pub fn greedy_disassembly(
     let mut frozen: HashMap<String, HashSet<String>> = HashMap::new();
     let mut bounds_epoch: Option<(Vector3<f64>, Vector3<f64>)> = None;
     let (mut memo_skips_p1, mut memo_skips_p2) = (0usize, 0usize);
+    let (mut memo_wipes, mut wiped_p1, mut rounds, mut p1_evals) = (0usize, 0usize, 0usize, 0usize);
     let watch_margin = tolerance + 2.0 * MAX_SAMPLE_SPACING_MM;
+
+    // Phase-4 retry backoff. The group hunt is the priciest whole-world search
+    // (up to MAX_GROUP_TESTS sweeps) and runs on every stalled round; on
+    // stall-heavy models it re-fails near-identically dozens of times in a row,
+    // because the only world change between consecutive stalls is a flagged
+    // (immobile) part leaving. After repeated consecutive failures the hunt
+    // runs on exponentially sparse stalls instead of every one. Any REAL
+    // progress (a linear/L, escape, merge, or group removal — a genuine world
+    // change) resets the backoff, so models where subassemblies exist keep
+    // finding them immediately; a skipped hunt on an always-failing model
+    // changes nothing in the output.
+    let mut p4_failures = 0usize;
+    let mut p4_stalls_skipped = 0usize;
 
     let mut progressed = true;
     while !remaining.is_empty() && progressed {
         progressed = false;
+        rounds += 1;
         let _ts = std::time::Instant::now();
 
         // Bounds shrink when an extremal part leaves; exit_travel shrinks with
@@ -1069,6 +1094,8 @@ pub fn greedy_disassembly(
                 .map(|(lo, hi)| lo != bounds.0 || hi != bounds.1)
                 .unwrap_or(true);
             if changed {
+                memo_wipes += 1;
+                wiped_p1 += blocked_p1.len();
                 blocked_p1.clear();
                 blocked_p2.clear();
                 bounds_epoch = Some(bounds);
@@ -1093,6 +1120,7 @@ pub fn greedy_disassembly(
                 .into_iter()
                 .filter(|id| !blocked_p1.contains_key(id))
                 .collect();
+            p1_evals += tryable.len();
             let result = par_first_success(
                 &tryable,
                 &remaining,
@@ -1137,6 +1165,7 @@ pub fn greedy_disassembly(
                 blocked_memo_invalidate(&mut blocked_p1, &id);
                 blocked_memo_invalidate(&mut blocked_p2, &id);
                 blocked_memo_invalidate(&mut frozen, &id);
+                p4_failures = 0;
                 progressed = true;
             }
         }
@@ -1229,6 +1258,7 @@ pub fn greedy_disassembly(
                 blocked_memo_invalidate(&mut blocked_p1, &id);
                 blocked_memo_invalidate(&mut blocked_p2, &id);
                 blocked_memo_invalidate(&mut frozen, &id);
+                p4_failures = 0;
                 progressed = true;
             }
         }
@@ -1349,6 +1379,7 @@ pub fn greedy_disassembly(
                     blocked_memo_invalidate(memo, &id);
                     blocked_memo_invalidate(memo, &host_id);
                 }
+                p4_failures = 0;
                 progressed = true;
                 break;
             }
@@ -1359,8 +1390,14 @@ pub fn greedy_disassembly(
 
         t_p3 += _ts.elapsed().as_secs_f64();
         let _ts = std::time::Instant::now();
-        // Phase 4: subassembly extraction.
-        if !progressed && remaining.len() > 2 {
+        // Phase 4: subassembly extraction. `backoff`: 1 for the first two
+        // consecutive failures (every stall hunts), then 2, 4, 8, capped 16.
+        let p4_backoff = 1usize << p4_failures.saturating_sub(2).min(4);
+        if !progressed && remaining.len() > 2 && {
+            p4_stalls_skipped += 1;
+            p4_stalls_skipped >= p4_backoff
+        } {
+            p4_stalls_skipped = 0;
             let mut group = plan_group_removal(
                 &remaining,
                 &mut world,
@@ -1389,9 +1426,11 @@ pub fn greedy_disassembly(
                 removal_order.push(entry);
                 group_units.insert(rep, (combined, members));
                 *tiers.get_mut("group").unwrap() += 1;
+                p4_failures = 0;
                 progressed = true;
                 continue;
             }
+            p4_failures += 1;
         }
 
         t_p4 += _ts.elapsed().as_secs_f64();
@@ -1514,7 +1553,7 @@ pub fn greedy_disassembly(
         t_p5 += _ts.elapsed().as_secs_f64();
     }
     if _timing {
-        eprintln!("    greedy phases: p1_removal={:.1}s p2_escape={:.1}s p3_merge={:.1}s p4_group={:.1}s p5_flag={:.1}s memo_skips p1={memo_skips_p1} p2={memo_skips_p2}", t_p1, t_p2, t_p3, t_p4, t_p5);
+        eprintln!("    greedy phases: p1_removal={:.1}s p2_escape={:.1}s p3_merge={:.1}s p4_group={:.1}s p5_flag={:.1}s memo_skips p1={memo_skips_p1} p2={memo_skips_p2} rounds={rounds} p1_evals={p1_evals} memo_wipes={memo_wipes} wiped_p1={wiped_p1}", t_p1, t_p2, t_p3, t_p4, t_p5);
     }
 
     let sequence: Vec<String> = removal_order

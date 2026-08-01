@@ -33,11 +33,16 @@ import {
   useDisclosure,
   VStack
 } from "@carbon/react";
-import { parseMentionsFromDocument } from "@carbon/utils";
+import {
+  documentHasImages,
+  parseMentionsFromDocument,
+  stripSpecialCharacters,
+  tiptapToText
+} from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useNumberFormatter } from "@react-aria/i18n";
 import { nanoid } from "nanoid";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   LuChevronDown,
   LuChevronRight,
@@ -48,6 +53,7 @@ import {
 } from "react-icons/lu";
 import { useFetcher } from "react-router";
 import { ProcedureStepTypeIcon } from "~/components/Icons";
+import { ImageZoomViewer } from "~/components/ImageZoomViewer";
 import ItemThumbnail from "~/components/ItemThumbnail";
 import { useDateFormatter, useUser } from "~/hooks";
 import { stepRecordValidator } from "~/services/models";
@@ -55,6 +61,34 @@ import type { JobOperationStep } from "~/services/types";
 import { useItems, usePeople } from "~/stores";
 import { getPrivateUrl, path } from "~/utils/path";
 import FileDropzone from "../../FileDropzone";
+
+// Reference-image annotation pins (mirrors ImageZoomViewer's Annotation shape). The
+// slide row stores these as JSON, so we cast when passing them to the viewer.
+type SlideAnnotation = {
+  id: string;
+  x: number;
+  y: number;
+  label?: string | null;
+  color?: string | null;
+  toolId?: string | null;
+};
+
+// An empty step description is persisted by the ERP editors as
+// JSON.stringify({}) === "{}" (and some legacy rows carry it as a tiptap doc
+// whose only text is literally "{}"). Treat an empty object, empty doc, or
+// "{}"-only text as "no description" so we render nothing instead of a bare "{}".
+function hasStepDescription(
+  description: JobOperationStep["description"]
+): boolean {
+  if (!description) return false;
+  const doc = description as JSONContent;
+  const text = tiptapToText(doc).trim();
+  if (text.length > 0 && text !== "{}") return true;
+  if (parseMentionsFromDocument(doc).length > 0) return true;
+  // A step's reference imagery is frequently an image-only description (no text,
+  // no @-mention). Without this the description block — and its <img> — is hidden.
+  return documentHasImages(doc);
+}
 
 export function StepsListItem({
   activeStep,
@@ -79,13 +113,33 @@ export function StepsListItem({
   const { name, description, type, unitOfMeasureCode, minValue, maxValue } =
     step;
 
-  const hasDescription = description && Object.keys(description).length > 0;
+  const hasDescription = hasStepDescription(description);
   const mentionIds = hasDescription
     ? parseMentionsFromDocument(description as JSONContent)
     : [];
   const disclosure = useDisclosure({
-    defaultIsOpen: !!hasDescription
+    defaultIsOpen: hasDescription
   });
+
+  // Reference images ("slides") attached to this step in the Bill of Process. A slide
+  // is image XOR model; only image slides (imagePath) render here — model slides need a
+  // modelUpload join the standard-view loader doesn't fetch, so they're skipped.
+  const imageSlides = (step.jobOperationStepSlide ?? [])
+    .filter((slide) => !!slide.imagePath)
+    .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))
+    .map((slide) => ({
+      id: slide.id,
+      url: getPrivateUrl(slide.imagePath as string),
+      caption: slide.caption,
+      // Slides copied from the method (get-method) can persist annotations as a
+      // non-array JSON value ({}), so normalize before the viewer calls .map().
+      annotations: Array.isArray(slide.annotations)
+        ? (slide.annotations as SlideAnnotation[])
+        : []
+    }));
+  const [viewerIndex, setViewerIndex] = useState<number | null>(null);
+  const activeSlide =
+    viewerIndex !== null ? (imageSlides[viewerIndex] ?? null) : null;
 
   if (!operationId) return null;
   const record = step.jobOperationStepRecord.find(
@@ -227,6 +281,30 @@ export function StepsListItem({
           )}
         </div>
       </div>
+      {imageSlides.length > 0 && (
+        <div className="mt-4 flex flex-wrap gap-2">
+          {imageSlides.map((slide, i) => (
+            <button
+              key={slide.id}
+              type="button"
+              aria-label={slide.caption || `Reference image ${i + 1}`}
+              title={slide.caption ?? undefined}
+              onClick={() => setViewerIndex(i)}
+              className={cn(
+                "relative flex h-24 w-32 shrink-0 items-center justify-center overflow-hidden rounded-lg border bg-muted/40",
+                "transition-transform active:scale-[0.96]"
+              )}
+            >
+              <img
+                src={slide.url}
+                alt={slide.caption || ""}
+                className="h-full w-full object-cover"
+                loading="lazy"
+              />
+            </button>
+          ))}
+        </div>
+      )}
       {disclosure.isOpen && hasDescription && (
         <div
           className="my-4 text-sm prose prose-sm dark:prose-invert"
@@ -236,6 +314,13 @@ export function StepsListItem({
         />
       )}
       {mentionIds.length > 0 && <ItemsSummaryTable itemsIds={mentionIds} />}
+      <ImageZoomViewer
+        open={viewerIndex !== null}
+        src={activeSlide?.url ?? null}
+        caption={activeSlide?.caption}
+        annotations={activeSlide?.annotations ?? []}
+        onClose={() => setViewerIndex(null)}
+      />
     </div>
   );
 }
@@ -372,16 +457,26 @@ export function RecordModal({
   const { company } = useUser();
   const [file, setFile] = useState<File | null>(null);
   const [filePath, setFilePath] = useState<string | null>(null);
+  // Bumped on every drop/remove so a stale in-flight upload can't set state
+  const uploadIdRef = useRef(0);
   const fetcher = useFetcher<{ success: boolean }>();
+
+  const removeFile = () => {
+    uploadIdRef.current += 1;
+    setFile(null);
+    setFilePath(null);
+  };
 
   const onDrop = async (acceptedFiles: File[]) => {
     if (!acceptedFiles[0] || !carbon) return;
     const fileUpload = acceptedFiles[0];
+    const uploadId = ++uploadIdRef.current;
 
     setFile(fileUpload);
     toast.info(t`Uploading ${fileUpload.name}`);
 
-    const fileName = `${company.id}/job/${attribute.operationId}/${attribute.id}/${nanoid()}/${fileUpload.name}`;
+    const safeName = stripSpecialCharacters(fileUpload.name) || "file";
+    const fileName = `${company.id}/job/${attribute.operationId}/${attribute.id}/${nanoid()}/${safeName}`;
 
     const upload = await carbon?.storage
       .from("private")
@@ -390,8 +485,11 @@ export function RecordModal({
         upsert: true
       });
 
+    if (uploadIdRef.current !== uploadId) return;
+
     if (upload.error) {
       toast.error(t`Failed to upload file: ${fileUpload.name}`);
+      removeFile();
     } else if (upload.data?.path) {
       toast.success(t`Uploaded: ${fileUpload.name}`);
       setFilePath(upload.data.path);
@@ -467,7 +565,7 @@ export function RecordModal({
               </>
             )}
             <VStack spacing={4}>
-              {attribute.description && (
+              {hasStepDescription(attribute.description) && (
                 <div
                   className="flex flex-col gap-2"
                   dangerouslySetInnerHTML={{
@@ -514,14 +612,7 @@ export function RecordModal({
                   <div className="flex flex-col gap-2 items-center justify-center py-6 w-full">
                     <LuFile className="size-10 text-muted-foreground" />
                     <p className="text-sm text-muted-foreground">{file.name}</p>
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      onClick={() => {
-                        setFile(null);
-                        setFilePath(null);
-                      }}
-                    >
+                    <Button variant="secondary" size="sm" onClick={removeFile}>
                       <Trans>Remove</Trans>
                     </Button>
                   </div>
@@ -539,10 +630,7 @@ export function RecordModal({
                       <Button
                         variant="secondary"
                         size="sm"
-                        onClick={() => {
-                          setFile(null);
-                          setFilePath(null);
-                        }}
+                        onClick={removeFile}
                       >
                         Remove
                       </Button>

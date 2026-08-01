@@ -201,6 +201,16 @@ enabled = true
 verify_jwt = true
 entrypoint = "./functions/post-inventory-adjustment/index.ts"
 
+[functions.correct-stock-movement]
+enabled = true
+verify_jwt = true
+entrypoint = "./functions/correct-stock-movement/index.ts"
+
+[functions.post-nonconformance]
+enabled = true
+verify_jwt = true
+entrypoint = "./functions/post-nonconformance/index.ts"
+
 
 [functions.transcription]
 enabled = true
@@ -211,6 +221,11 @@ entrypoint = "./functions/transcription/index.ts"
 # Specifies static files to be bundled with the function. Supports glob patterns.
 # For example, if you want to serve static HTML pages in your function:
 # static_files = [ "./functions/transcription/*.html" ]
+
+[functions.event-wake]
+enabled = true
+verify_jwt = true
+entrypoint = "./functions/event-wake/index.ts"
 
 [functions.embedding]
 enabled = true

@@ -260,6 +260,33 @@ export function assertAssemblerDepsBuilt(): void {
   }
 }
 
+const auxChildren = new Set<ExecaChildProcess>();
+
+function trackAuxChild(child: ExecaChildProcess): void {
+  auxChildren.add(child);
+  child.once("exit", () => auxChildren.delete(child));
+}
+
+export function stopAuxApps(): void {
+  for (const child of auxChildren) {
+    if (child.exitCode !== null || !child.pid) continue;
+    try {
+      process.kill(-child.pid, "SIGTERM");
+    } catch {
+      try {
+        child.kill("SIGTERM");
+        // biome-ignore lint/suspicious/noEmptyBlockStatements: best-effort kill
+      } catch {}
+    }
+  }
+}
+
+export function whenAuxAppExits(): Promise<void> {
+  return new Promise<void>((resolve) => {
+    for (const child of auxChildren) child.once("exit", () => resolve());
+  });
+}
+
 export function spawnAssembler(opts: {
   root: string;
   ports: PortMap;
@@ -320,16 +347,62 @@ export function spawnAssembler(opts: {
   pipe(child.stdout, process.stdout);
   pipe(child.stderr, process.stderr);
 
-  onShutdown(() => {
-    if (child.exitCode !== null || !child.pid) return;
-    try {
-      process.kill(-child.pid, "SIGTERM");
-    } catch {
-      try {
-        child.kill("SIGTERM");
-      } catch {}
-    }
+  trackAuxChild(child);
+  onShutdown(() => stopAuxApps());
+
+  return child;
+}
+
+const EMAIL_PREFIX = pc.green(pc.bold("eml | "));
+
+const EMAIL_STARTUP_PATTERNS: RegExp[] = [
+  /^\s*React Email\b/,
+  /^\s*Running preview at:/,
+  /Getting react-email preview server ready/,
+  /^\s*[✔✓]\s*Ready in\b/
+];
+
+function isEmailStartupLine(line: string): boolean {
+  // biome-ignore lint/suspicious/noControlCharactersInRegex: strip SGR codes
+  const plain = line.replace(/\x1b\[[0-9;]*m/g, "");
+  return EMAIL_STARTUP_PATTERNS.some((re) => re.test(plain));
+}
+
+export function spawnEmailPreview(opts: {
+  root: string;
+  ports: PortMap;
+  command?: () => { file: string; args: string[] };
+}): ExecaChildProcess {
+  const { root, ports, command } = opts;
+  const port = ports.PORT_EMAIL;
+  const { file, args } = command?.() ?? {
+    file: "pnpm",
+    args: ["run", "email:previews"]
+  };
+
+  const child = execa(file, args, {
+    cwd: join(root, "packages", "documents"),
+    env: { ...process.env, EMAIL_DEV_PORT: String(port) },
+    reject: false,
+    stdin: "ignore",
+    detached: true
   });
+
+  const pipe = (
+    stream: NodeJS.ReadableStream | null,
+    sink: NodeJS.WriteStream
+  ) => {
+    if (!stream) return;
+    readLines(stream, (line) => {
+      if (isNoiseLine(line) || isEmailStartupLine(line)) return;
+      sink.write(`${EMAIL_PREFIX}${line}\n`);
+    });
+  };
+  pipe(child.stdout, process.stdout);
+  pipe(child.stderr, process.stderr);
+
+  trackAuxChild(child);
+  onShutdown(() => stopAuxApps());
 
   return child;
 }
@@ -410,7 +483,9 @@ export async function installSkills(root: string): Promise<boolean> {
 // reliable since ports are unique per worktree (allocated in the slot
 // registry). Best-effort — silently skips ports with nothing listening.
 export async function killOrphanedApps(ports: PortMap): Promise<void> {
-  const appPorts = [ports.PORT_ERP, ports.PORT_MES];
+  const appPorts = [ports.PORT_ERP, ports.PORT_MES, ports.PORT_EMAIL].filter(
+    (p) => typeof p === "number"
+  );
   for (const port of appPorts) {
     const r = await execa("lsof", ["-ti", `:${port}`], { reject: false });
     if (r.exitCode !== 0) continue;

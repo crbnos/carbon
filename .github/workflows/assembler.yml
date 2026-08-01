@@ -1,12 +1,19 @@
-name: Assembler Image
+name: Deploy Assembler
 
 # Isolated from deploy.yml so an assembler/crates change builds ONLY the
 # assembler image (and vice versa — erp/mes pushes never rebuild this).
 # Builds carbon/assembler:${sha} from apps/assembler/Dockerfile, which links the
 # prebuilt carbon/occt base (built here on demand — it's a ~30 min OCCT compile,
-# so it is NOT part of every run). The Lambda/ECS *deploy* is separate (P2/P3).
+# so it is NOT part of every run). The deploy job runs ci/src/assembler.ts
+# (same pattern as deploy.yml -> ci/src/deploy.ts) against the standalone
+# apps/assembler/sst.config.ts stack.
 #
-# Prereq: ECR repos carbon/assembler + carbon/occt exist (created out-of-band).
+# Auth: the assembler lives in the PROD account, NOT the govcloud account the
+# shared AWS_* secrets target — so this workflow uses dedicated ASSEMBLER_AWS_*
+# secrets. Their account must match each workspace row's aws_account_id (the
+# Lambda pulls the image same-account).
+#
+# Prereq: ECR repos carbon/assembler + carbon/occt exist in that account.
 
 on:
   push:
@@ -42,9 +49,9 @@ jobs:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
+          aws-access-key-id: ${{ secrets.ASSEMBLER_AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.ASSEMBLER_AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.ASSEMBLER_AWS_REGION }}
 
       - name: Login to Amazon ECR
         id: login-ecr
@@ -53,16 +60,43 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build and push OCCT base
+      # The 8.0.0-p1 tag is immutable (OCCT version + patch level) — if it's
+      # already in ECR, the ~30 min compile is pointless; skip it.
+      - name: Check if OCCT base already exists
+        id: occt-exists
+        run: |
+          if aws ecr describe-images --repository-name carbon/occt \
+               --image-ids imageTag=8.0.0-p1 >/dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            echo "carbon/occt:8.0.0-p1 already in ECR — skipping build"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      # Split build from push: the ~30 min OCCT compile is combined with `push`
+      # in a single buildkit solve, so a push failure aborts before the GHA
+      # cache flushes and the whole compile is lost on retry. `load: true`
+      # finishes the build (and the cache-to export) into the local daemon
+      # first; the separate `docker push` then can't cost the compile.
+      - name: Build OCCT base
+        if: steps.occt-exists.outputs.exists != 'true'
         uses: docker/build-push-action@v5
         with:
           context: apps/assembler
           file: apps/assembler/occt.Dockerfile
-          push: true
+          load: true
           tags: ${{ steps.login-ecr.outputs.registry }}/carbon/occt:8.0.0-p1
           cache-from: type=gha
           cache-to: type=gha,mode=max
           platforms: linux/amd64
+          # Lambda rejects OCI image indexes — attestations turn the pushed
+          # manifest into one, so both must stay off.
+          provenance: false
+          sbom: false
+
+      - name: Push OCCT base
+        if: steps.occt-exists.outputs.exists != 'true'
+        run: docker push ${{ steps.login-ecr.outputs.registry }}/carbon/occt:8.0.0-p1
 
   build:
     name: Build assembler image
@@ -71,7 +105,12 @@ jobs:
     # ECR repos + AWS secrets exist in the CI account, an automatic build on a
     # main merge would just fail red. Manual workflow_dispatch always works —
     # running it by hand is intentional.
-    if: github.event_name == 'workflow_dispatch' || vars.ASSEMBLER_CI_ENABLED == 'true'
+    #
+    # `needs: occt-base` so a dispatch that (re)builds the base finishes it
+    # BEFORE this job pulls it. When occt-base is skipped (the normal case),
+    # `!failure()` lets this job run anyway — `needs` alone would skip it too.
+    needs: occt-base
+    if: ${{ !failure() && !cancelled() && (github.event_name == 'workflow_dispatch' || vars.ASSEMBLER_CI_ENABLED == 'true') }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -80,13 +119,26 @@ jobs:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
+          aws-access-key-id: ${{ secrets.ASSEMBLER_AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.ASSEMBLER_AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.ASSEMBLER_AWS_REGION }}
 
       - name: Login to Amazon ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
+
+      # Fail fast if the immutable OCCT base isn't in ECR — the assembler image
+      # links it via OCCT_IMAGE, so without it the build would die cryptically at
+      # `FROM`. The base is built on demand (dispatch with build_occt_base=true),
+      # not on every deploy.
+      - name: Require OCCT base image
+        run: |
+          aws ecr describe-images --repository-name carbon/occt \
+            --image-ids imageTag=8.0.0-p1 >/dev/null 2>&1 || {
+            echo "carbon/occt:8.0.0-p1 is not in ECR."
+            echo "Dispatch this workflow once with build_occt_base=true to build it."
+            exit 1
+          }
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -108,6 +160,10 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
           platforms: linux/amd64
+          # Lambda rejects OCI image indexes — attestations turn the pushed
+          # manifest into one, so both must stay off.
+          provenance: false
+          sbom: false
 
       # Report-only for now (exit-code 0). Flip to '1' to fail the build on
       # CRITICAL/HIGH once the base image's findings are triaged.
@@ -119,28 +175,35 @@ jobs:
           ignore-unfixed: true
           exit-code: "0"
 
-  # P2/P3 deploy — MANUAL ONLY, never auto-fires. Gated on the explicit `deploy`
-  # dispatch input so a main push only builds the image (above); the Lambda/ECS
-  # rollout happens when a human triggers it AFTER filling the DECISION: env in
-  # apps/assembler/sst.config.ts and adding the deploy secrets. This is an
-  # UNVALIDATED scaffold (see the sst.config.ts header) — validate against a
-  # throwaway stage first.
+  # Deploys automatically after a successful build on a main push (matching
+  # deploy.yml's ERP/MES continuous deploy), or on dispatch with `deploy=true`.
+  # Runs ci/src/assembler.ts, which fans out over the workspaces table (same as
+  # deploy.yml -> ci/src/deploy.ts): each workspace with `assembler = true`
+  # gets the image pushed by `build` (carbon/assembler:${github.sha}) deployed
+  # to its own AWS account. All per-workspace config (account, region, redis,
+  # api key, cert, domain) comes from the workspaces row — no per-value secrets.
   deploy:
-    name: Deploy assembler (Lambda + optional ECS service)
-    if: ${{ github.event_name == 'workflow_dispatch' && inputs.deploy }}
+    name: Deploy assembler
+    # `!cancelled()` is required: occt-base is skipped on a normal deploy, and
+    # that skip propagates down the needs-chain — without this guard GitHub
+    # skips deploy too (build escapes the same way). The explicit
+    # build.result check still blocks a deploy after a failed image build.
+    if: ${{ !cancelled() && needs.build.result == 'success' && (github.event_name == 'push' || inputs.deploy) }}
     needs: build
     runs-on: ubuntu-latest
     env:
-      IMAGE_TAG: ${{ github.sha }}
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
     steps:
       - uses: actions/checkout@v4
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
+          aws-access-key-id: ${{ secrets.ASSEMBLER_AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.ASSEMBLER_AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.ASSEMBLER_AWS_REGION }}
 
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
@@ -157,24 +220,8 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      # Deploys apps/assembler/sst.config.ts. The image was pushed by `build`
-      # above (carbon/assembler:${github.sha}); IMAGE_TAG points the Lambda + ECS
-      # task at it. Consumers' ASSEMBLER_SERVICE_URL / ASSEMBLER_ECS_SERVICE_URL /
-      # ASSEMBLER_SYNC_ENABLED are wired from the stack outputs after this runs.
-      - name: Deploy (sst)
-        working-directory: apps/assembler
+      - name: Deploy
         env:
-          AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
-          AWS_REGION: ${{ secrets.AWS_REGION }}
-          ASSEMBLER_SERVICE_API_KEY: ${{ secrets.ASSEMBLER_SERVICE_API_KEY }}
-          # DECISION: fill the rest from secrets before enabling —
-          #   ASSEMBLER_ALLOWED_URL_HOSTS, ASSEMBLER_REDIS_URL,
-          #   ASSEMBLER_ECS_ENABLED (default off), ASSEMBLER_SERVICE_HOSTNAME,
-          #   ASSEMBLER_SERVICE_CERT_ARN, ASSEMBLER_ECS_MIN/MAX.
-        # TODO(P2/P3): the standalone SST app needs an sst toolchain in
-        # apps/assembler (or run via the root's sst). Wire the actual command once
-        # the toolchain + stage naming are settled.
-        run: |
-          echo "TODO: npx sst deploy --stage ${{ inputs.stage }}"
-          echo "Scaffold only — filling DECISION env + sst toolchain is the human deploy step."
-          exit 1
+          IMAGE_TAG: ${{ github.sha }}
+          STAGE: ${{ inputs.stage }}
+        run: pnpm --filter ci ci:assembler

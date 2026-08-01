@@ -143,16 +143,7 @@ export default function AuthCallback() {
   return (
     <div className="flex flex-col items-center justify-center">
       <div className="flex justify-center mb-8">
-        <img
-          src="/carbon-mark-light.svg"
-          alt="Carbon Logo"
-          className="w-24 dark:hidden"
-        />
-        <img
-          src="/carbon-mark-dark.svg"
-          alt="Carbon Logo"
-          className="w-24 hidden dark:block"
-        />
+        <img src="/carbon-mark-light.svg" alt="Carbon Logo" className="w-24" />
       </div>
       {error ? (
         <div className="rounded-lg md:bg-card md:border md:border-border md:shadow-lg p-8 mt-8 w-[380px]">

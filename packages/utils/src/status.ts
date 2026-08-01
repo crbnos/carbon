@@ -106,8 +106,16 @@ export const getSalesOrderJobStatus = (
     (acc, job) => acc + (job.productionQuantity ?? 0),
     0
   );
+  // A job's quantityComplete persists after the job is reopened, so completion
+  // must be gated on the job actually being in a completed status. Otherwise a
+  // reopened (In Progress) job that still has quantityComplete >= saleQuantity
+  // would keep the line reading "Completed" (or "Shipped").
   const totalCompleted = filteredJobs.reduce(
-    (acc, job) => acc + job.quantityComplete,
+    (acc, job) =>
+      acc +
+      (["Completed", "Closed"].includes(job.status ?? "")
+        ? job.quantityComplete
+        : 0),
     0
   );
   const totalReleased = filteredJobs.reduce((acc, job) => {
@@ -157,7 +165,7 @@ export const getSalesOrderJobStatus = (
   return { jobVariant, jobLabel, jobs: filteredJobs };
 };
 
-type SalesOrderForProductionCheck = {
+export type SalesOrderForProductionCheck = {
   jobs?: Array<{
     salesOrderLineId: string;
     productionQuantity: number;
@@ -169,6 +177,22 @@ type SalesOrderForProductionCheck = {
     methodType: "Purchase to Order" | "Make to Order" | "Pull from Inventory";
     saleQuantity: number;
   }>;
+};
+
+/**
+ * Checks if a Sales Order still has "Make" lines with no job at all.
+ * Gate the convert-to-jobs actions on this, not on whether the order has any
+ * job — converting one line individually must leave the rest convertible.
+ */
+export const hasLinesRequiringJobs = (
+  salesOrder: SalesOrderForProductionCheck
+): boolean => {
+  const jobs = salesOrder.jobs ?? [];
+  return (salesOrder.lines ?? []).some(
+    (line) =>
+      line.methodType === "Make to Order" &&
+      !jobs.some((job) => job.salesOrderLineId === line.id)
+  );
 };
 
 /**

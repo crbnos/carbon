@@ -30,10 +30,40 @@ export async function action({ request }: ActionFunctionArgs) {
     action: productionAction,
     timezone,
     trackedEntityId,
+    unitIndex,
+    exclusive,
     ...d
   } = validation.data;
 
   if (productionAction === "Start") {
+    // Single-phase (assembly) clocking: end any other open work type for this
+    // operator on this operation before starting, so Setup and Labor can never
+    // run simultaneously. Post each ended event so its cost still books.
+    if (exclusive === "true") {
+      const openOthers = await client
+        .from("productionEvent")
+        .select("id")
+        .eq("jobOperationId", d.jobOperationId)
+        .eq("employeeId", userId)
+        .is("endTime", null)
+        .neq("type", d.type);
+      if (openOthers.data && openOthers.data.length > 0) {
+        const serviceRole = await getCarbonServiceRole();
+        const endTime = now(timezone ?? getLocalTimeZone()).toAbsoluteString();
+        for (const ev of openOthers.data) {
+          const ended = await endProductionEvent(client, {
+            id: ev.id,
+            endTime,
+            employeeId: userId
+          });
+          if (ended.data && ended.data.length > 0) {
+            await serviceRole.functions.invoke("post-production-event", {
+              body: { productionEventId: ended.data[0].id, userId, companyId }
+            });
+          }
+        }
+      }
+    }
     const startEvent = await startProductionEvent(
       client,
       {
@@ -43,7 +73,8 @@ export async function action({ request }: ActionFunctionArgs) {
         companyId,
         createdBy: userId
       },
-      trackedEntityId
+      trackedEntityId,
+      unitIndex
     );
 
     if (startEvent.error) {

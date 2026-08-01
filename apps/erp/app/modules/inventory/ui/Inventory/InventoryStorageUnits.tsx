@@ -269,7 +269,9 @@ const InventoryStorageUnits = ({
                 <Tr key={index}>
                   <Td>
                     {storageUnits.find((s) => s.value === item.storageUnitId)
-                      ?.label || item.storageUnitId}
+                      ?.label ||
+                      item.storageUnitName ||
+                      item.storageUnitId}
                   </Td>
 
                   <Td>

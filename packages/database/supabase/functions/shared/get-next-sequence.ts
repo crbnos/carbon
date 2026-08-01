@@ -1,5 +1,8 @@
-import { Transaction } from "kysely";
-import { DB } from "../lib/database.ts";
+import { sql, Transaction } from "kysely";
+// Type-only import from postgres/index.ts (not lib/database.ts) keeps the
+// Deno-only driver out of the graph so this file is also importable from the
+// node-side @carbon/database/quality engine.
+import type { KyselyDatabase as DB } from "../lib/postgres/index.ts";
 import { interpolateSequenceDate } from "../lib/utils.ts";
 
 export async function getNextSequence(
@@ -7,33 +10,27 @@ export async function getNextSequence(
   tableName: string,
   companyId: string
 ) {
-  // get current purchase invoice sequence number
+  // Atomic increment: the UPDATE takes the row lock before reading, so two
+  // concurrent transactions can't both read the same "next" and return the
+  // same sequence number.
   const sequence = await trx
-    .selectFrom("sequence")
-    .selectAll()
-    .where("table", "=", tableName)
-    .where("companyId", "=", companyId)
-    .executeTakeFirstOrThrow();
-
-  const { prefix, suffix, next, size, step } = sequence;
-  if (!Number.isInteger(step)) throw new Error("Next is not an integer");
-  if (!Number.isInteger(step)) throw new Error("Step is not an integer");
-  if (!Number.isInteger(size)) throw new Error("Size is not an integer");
-
-  const nextValue = next! + step!;
-  const nextSequence = nextValue.toString().padStart(size!, "0");
-  const derivedPrefix = interpolateSequenceDate(prefix);
-  const derivedSuffix = interpolateSequenceDate(suffix);
-
-  await trx
     .updateTable("sequence")
     .set({
-      next: nextValue,
+      next: sql<number>`"next" + "step"`,
       updatedBy: "system",
     })
     .where("table", "=", tableName)
     .where("companyId", "=", companyId)
-    .execute();
+    .returning(["next", "prefix", "suffix", "size"])
+    .executeTakeFirstOrThrow();
+
+  const { prefix, suffix, next, size } = sequence;
+  if (!Number.isInteger(next)) throw new Error("Next is not an integer");
+  if (!Number.isInteger(size)) throw new Error("Size is not an integer");
+
+  const nextSequence = next!.toString().padStart(size!, "0");
+  const derivedPrefix = interpolateSequenceDate(prefix);
+  const derivedSuffix = interpolateSequenceDate(suffix);
 
   return `${derivedPrefix}${nextSequence}${derivedSuffix}`;
 }
@@ -45,6 +42,14 @@ export async function getNextRevisionSequence(
   sequenceValue: string,
   companyId: string
 ) {
+  // There is no counter row to lock — the next revision is max(revisionId) + 1,
+  // and a concurrent transaction's uncommitted insert is invisible to us. An
+  // advisory transaction lock serializes revision creation per entity so two
+  // transactions can't both compute the same max.
+  await sql`SELECT pg_advisory_xact_lock(hashtextextended(${`revision:${tableName}:${sequenceColumn}:${sequenceValue}:${companyId}`}, 0))`.execute(
+    trx
+  );
+
   const relatedSequences = await trx
     // @ts-ignore - we're using variables for table names
     .selectFrom(tableName)

@@ -35,11 +35,14 @@ import {
 } from "react-icons/lu";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { redirect, useFetcher, useLoaderData } from "react-router";
+import SettingsSectionHeader from "~/components/SettingsSectionHeader";
 import {
   getCompanySettings,
+  incompletePickingListPolicyValidator,
   kanbanOutputTypes,
   kanbanOutputValidator,
   shelfLifeSettingsValidator,
+  updateIncompletePickingListPolicySetting,
   updateKanbanOutputSetting,
   updateShelfLifeSettings
 } from "~/modules/settings";
@@ -49,6 +52,7 @@ import { path } from "~/utils/path";
 
 type CalculatedInputScope = "AllInputs" | "ManagedInputsOnly";
 type ExpiredEntityPolicy = "Warn" | "Block" | "BlockWithOverride";
+type IncompletePickingListPolicy = "warn" | "error";
 
 export const handle: Handle = {
   breadcrumb: msg`Inventory`,
@@ -128,6 +132,32 @@ export async function action({ request }: ActionFunctionArgs) {
         success: true,
         message: "Shelf life & expiry settings updated"
       };
+
+    case "incompletePickingListPolicy":
+      const pickingPolicyValidation = await validator(
+        incompletePickingListPolicyValidator
+      ).validate(formData);
+
+      if (pickingPolicyValidation.error) {
+        return { success: false, message: "Invalid form data" };
+      }
+
+      const pickingPolicyResult =
+        await updateIncompletePickingListPolicySetting(
+          client,
+          companyId,
+          pickingPolicyValidation.data.incompletePickingListPolicy
+        );
+      if (pickingPolicyResult.error)
+        return {
+          success: false,
+          message: pickingPolicyResult.error.message
+        };
+
+      return {
+        success: true,
+        message: "Picking list completion policy updated"
+      };
   }
 
   return { success: false, message: "Invalid form data" };
@@ -163,6 +193,11 @@ export default function InventorySettingsRoute() {
         <Heading size="h3">
           <Trans>Inventory</Trans>
         </Heading>
+
+        <SettingsSectionHeader>
+          <Trans>Kanban</Trans>
+        </SettingsSectionHeader>
+
         <Card>
           <ValidatedForm
             method="post"
@@ -204,6 +239,10 @@ export default function InventorySettingsRoute() {
             </CardFooter>
           </ValidatedForm>
         </Card>
+
+        <SettingsSectionHeader>
+          <Trans>Traceability</Trans>
+        </SettingsSectionHeader>
 
         <Card>
           <ValidatedForm
@@ -255,6 +294,44 @@ export default function InventorySettingsRoute() {
                   />
                   <ExpiredEntityPolicyChoice />
                 </div>
+              </div>
+            </CardContent>
+            <CardFooter>
+              <Submit>
+                <Trans>Save</Trans>
+              </Submit>
+            </CardFooter>
+          </ValidatedForm>
+        </Card>
+
+        <Card>
+          <ValidatedForm
+            method="post"
+            validator={incompletePickingListPolicyValidator}
+            defaultValues={{
+              incompletePickingListPolicy:
+                (companySettings.incompletePickingListPolicy as
+                  | IncompletePickingListPolicy
+                  | null
+                  | undefined) ?? "warn"
+            }}
+            fetcher={fetcher}
+          >
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Trans>Finishing an incomplete pick</Trans>
+              </CardTitle>
+              <CardDescription>
+                <Trans>
+                  Decide what happens when an operator presses Finish on the
+                  shop floor with material still unpicked.
+                </Trans>
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Hidden name="intent" value="incompletePickingListPolicy" />
+              <div className="flex flex-col gap-3 max-w-[640px]">
+                <IncompletePickingListPolicyChoice />
               </div>
             </CardContent>
             <CardFooter>
@@ -382,6 +459,40 @@ function ExpiredEntityPolicyChoice() {
         ]}
       />
       <input type="hidden" name="expiredEntityPolicy" value={current} />
+    </>
+  );
+}
+
+// ChoiceSelect for the incomplete-picking-list completion policy. Warn lets the
+// operator acknowledge & finish (list flagged Partial); Error blocks Finish
+// until every line is picked or marked Short.
+function IncompletePickingListPolicyChoice() {
+  const { t } = useLingui();
+  const [value, setValue] = useControlField<IncompletePickingListPolicy>(
+    "incompletePickingListPolicy"
+  );
+  const current: IncompletePickingListPolicy = value ?? "warn";
+  return (
+    <>
+      <ChoiceSelect<IncompletePickingListPolicy>
+        value={current}
+        onChange={setValue}
+        options={[
+          {
+            value: "warn",
+            title: t`Warn but allow`,
+            description: t`Operator sees the missing items, can acknowledge & finish. The list is flagged Partial.`,
+            icon: <LuTriangleAlert />
+          },
+          {
+            value: "error",
+            title: t`Block with an error`,
+            description: t`Finishing is refused until every line is picked or marked Short.`,
+            icon: <LuShield />
+          }
+        ]}
+      />
+      <input type="hidden" name="incompletePickingListPolicy" value={current} />
     </>
   );
 }

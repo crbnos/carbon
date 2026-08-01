@@ -1,3 +1,4 @@
+import { useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import type { ReactNode } from "react";
 import { memo, useMemo } from "react";
@@ -33,11 +34,12 @@ type IntercompanyTransactionTableProps = {
 
 const IntercompanyTransactionTable = memo(
   ({ data, count, primaryAction }: IntercompanyTransactionTableProps) => {
+    const { t } = useLingui();
     const columns = useMemo<ColumnDef<IntercompanyTransaction>[]>(() => {
       const defaultColumns: ColumnDef<IntercompanyTransaction>[] = [
         {
           accessorKey: "sourceCompany",
-          header: "Source",
+          header: t`Source`,
           cell: ({ row }) => row.original.sourceCompany?.name ?? "—",
           meta: {
             icon: <LuBuilding2 />
@@ -45,7 +47,7 @@ const IntercompanyTransactionTable = memo(
         },
         {
           accessorKey: "targetCompany",
-          header: "Target",
+          header: t`Target`,
           cell: ({ row }) => row.original.targetCompany?.name ?? "—",
           meta: {
             icon: <LuBuilding2 />
@@ -53,7 +55,7 @@ const IntercompanyTransactionTable = memo(
         },
         {
           accessorKey: "amount",
-          header: "Amount",
+          header: t`Amount`,
           cell: ({ row }) => {
             const formatted = new Intl.NumberFormat("en-US", {
               style: "currency",
@@ -67,7 +69,7 @@ const IntercompanyTransactionTable = memo(
         },
         {
           accessorKey: "description",
-          header: "Description",
+          header: t`Description`,
           cell: ({ row }) => (
             <div className="max-w-[240px] truncate">
               {row.original.description || row.original.documentType || "—"}
@@ -79,7 +81,7 @@ const IntercompanyTransactionTable = memo(
         },
         {
           accessorKey: "status",
-          header: "Status",
+          header: t`Status`,
           cell: ({ row }) => (
             <IntercompanyTransactionStatus
               status={
@@ -101,13 +103,13 @@ const IntercompanyTransactionTable = memo(
         },
         {
           accessorKey: "createdAt",
-          header: "Created",
+          header: t`Created`,
           cell: ({ row }) =>
             new Date(row.original.createdAt).toLocaleDateString()
         }
       ];
       return defaultColumns;
-    }, []);
+    }, [t]);
 
     return (
       <Table<IntercompanyTransaction>
@@ -115,7 +117,7 @@ const IntercompanyTransactionTable = memo(
         columns={columns}
         count={count}
         primaryAction={primaryAction}
-        title="Intercompany Transactions"
+        title={t`Intercompany Transactions`}
       />
     );
   }

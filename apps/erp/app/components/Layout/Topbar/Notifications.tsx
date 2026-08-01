@@ -25,6 +25,7 @@ import {
   LuCirclePlay,
   LuClipboardCheck,
   LuDollarSign,
+  LuGitPullRequestArrow,
   LuGraduationCap,
   LuHammer,
   LuInbox,
@@ -33,6 +34,7 @@ import {
   LuLoader,
   LuMailCheck,
   LuMessageSquare,
+  LuPackageSearch,
   LuShieldAlert,
   LuShieldX,
   LuShoppingCart,
@@ -208,6 +210,16 @@ function GenericNotification({
           {...props}
         />
       );
+    case NotificationEvent.ChangeNoticeStarted:
+    case NotificationEvent.ChangeNoticeImplementation:
+    case NotificationEvent.ChangeNoticeDone:
+      return (
+        <Notification
+          icon={<LuGitPullRequestArrow />}
+          to={path.to.changeNoticeDetails(id)}
+          {...props}
+        />
+      );
     case NotificationEvent.DigitalQuoteResponse:
       return (
         <Notification
@@ -287,6 +299,14 @@ function GenericNotification({
         <Notification
           icon={<LuShoppingCart />}
           to={path.to.purchaseInvoiceDetails(id)}
+          {...props}
+        />
+      );
+    case NotificationEvent.PurchasingRfqAssignment:
+      return (
+        <Notification
+          icon={<LuPackageSearch />}
+          to={path.to.purchasingRfq(id)}
           {...props}
         />
       );
@@ -565,8 +585,10 @@ const Notifications = () => {
           isIcon
           className="w-8 h-8 flex items-center relative"
         >
-          {hasUnseenNotifications && (
-            <div className="w-2 h-2 bg-red-500 rounded-full absolute top-0 right-0" />
+          {unreadNotifications.length > 0 && (
+            <span className="absolute top-0 right-0 min-w-4 h-4 px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-medium leading-4 text-center tabular-nums">
+              {unreadNotifications.length}
+            </span>
           )}
           <LuBell size={16} />
         </Button>
@@ -581,7 +603,7 @@ const Notifications = () => {
           value={activeTab}
           onValueChange={setActiveTab}
         >
-          <TabsList className="w-full border-b py-6 rounded-none bg-muted/50">
+          <TabsList className="w-full border-b py-2 rounded-none bg-muted/50">
             <TabsTrigger value="inbox" className="font-normal">
               <Trans>Inbox</Trans>
             </TabsTrigger>

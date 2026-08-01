@@ -82,7 +82,7 @@ export function ModelConvertProgress({
 
   return (
     <div className="flex h-full w-full items-center justify-center p-6">
-      <div className="flex w-[340px] flex-col gap-4 rounded-xl border border-border bg-card p-6 shadow-lg">
+      <div className="flex w-[340px] flex-col gap-4 rounded-lg border border-border bg-card p-6 shadow-lg">
         <BarProgress progress={fraction} max={1} activeClassName="bg-primary" />
         <div className="flex flex-col gap-2.5">
           {STEPS.map((step, i) => {

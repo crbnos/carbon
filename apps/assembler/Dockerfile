@@ -53,6 +53,7 @@ RUN MARCH="${MARCH:-$( [ "$TARGETARCH" = arm64 ] && echo armv8.2-a || echo x86-6
         -DCMAKE_INSTALL_PREFIX=/opt/fcl -DCMAKE_PREFIX_PATH=/opt/fcl \
         -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
         -DCMAKE_CXX_FLAGS_RELEASE="-O3 -march=${MARCH}" \
+        -DCMAKE_CXX_STANDARD=17 -DCMAKE_CXX_STANDARD_REQUIRED=ON \
         -DFCL_STATIC_LIBRARY=ON -DFCL_WITH_OCTOMAP=OFF -DFCL_BUILD_TESTS=OFF \
     && cmake --build /fcl/b --target install
 

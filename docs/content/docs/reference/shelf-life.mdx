@@ -16,7 +16,7 @@ a build unless someone with permission overrides it.
 
 ## How a date gets set: the three modes
 
-An item's shelf-life policy has one **mode**, and the mode decides how the expiration date is computed:
+An item's shelf-life policy has one **mode**. `NotManaged` is the default — no expiry is tracked, and choosing it removes any existing policy. The other three modes each decide how the expiration date is computed:
 
 | Mode | The date is… | Applies to |
 | --- | --- | --- |
@@ -123,3 +123,16 @@ Setting a shelf-life policy is only allowed on **Serial** or **Batch** items. Fu
     The other inventory guard: validate transactions instead of dating stock.
   </Card>
 </Cards>
+
+<AgentContext>
+## Troubleshooting
+
+### "Cannot consume expired tracked entity" / "Cannot consume expired tracked entities"
+The expired-entity policy is **Block** (the default) and a material issue, stock transfer, or maintenance consumption touched a batch past its date. Options: pick a non-expired lot (FEFO ordering surfaces the oldest valid stock first), correct the expiration date on the entity (reason required), or switch the policy to *Warn* or *BlockWithOverride* in Settings → Inventory.
+
+### "Cannot post shipment with expired batch"
+The shipping counterpart of the block above — the full message names the batch id. Allocate a different batch, fix the entity's expiration date, or relax the company rule to Warn.
+
+### "Cannot edit expiry of a consumed tracked entity"
+Expiry can only be overridden on live stock. A **Consumed** entity's date is history and stays as recorded.
+</AgentContext>

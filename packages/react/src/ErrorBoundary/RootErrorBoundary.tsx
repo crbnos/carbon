@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { isRouteErrorResponse, useNavigate } from "react-router";
 import { ErrorScreen, type ErrorScreenProps } from "./ErrorScreen";
 
@@ -21,6 +22,19 @@ import { ErrorScreen, type ErrorScreenProps } from "./ErrorScreen";
  */
 export function RootErrorBoundary({ error }: { error: unknown }) {
   const navigate = useNavigate();
+
+  // Route errors (e.g. an unmatched fetcher.load) are otherwise invisible —
+  // React Router hands them to the boundary without logging anywhere.
+  useEffect(() => {
+    const summary = isRouteErrorResponse(error)
+      ? `${error.status} ${error.statusText || "route error response"}`
+      : error instanceof Error
+        ? error.message
+        : String(error);
+    // biome-ignore lint/suspicious/noConsole: surfacing the swallowed error is the point
+    console.error(`[ErrorBoundary] ${summary}`, error);
+  }, [error]);
+
   const config = resolveConfig(error, () => navigate(0));
   return <ErrorScreen {...config} />;
 }

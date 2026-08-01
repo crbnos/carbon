@@ -246,7 +246,7 @@ export default function QuoteRoute() {
               <ResizablePanels
                 explorer={<QuoteExplorer methods={methods} />}
                 content={
-                  <div className="h-[calc(100dvh-99px)] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent w-full">
+                  <div className="h-[calc(100dvh-99px)] overflow-y-auto scrollbar-hide w-full">
                     <VStack spacing={2} className="p-2">
                       <Outlet />
                     </VStack>

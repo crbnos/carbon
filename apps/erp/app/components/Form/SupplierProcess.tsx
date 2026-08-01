@@ -1,7 +1,8 @@
 import type { ComboboxProps } from "@carbon/form";
-import { CreatableCombobox } from "@carbon/form";
-import { useDisclosure, useMount } from "@carbon/react";
-import { useMemo, useRef } from "react";
+import { CreatableCombobox, FieldEmptyState } from "@carbon/form";
+import { useDisclosure } from "@carbon/react";
+import { useLingui } from "@lingui/react/macro";
+import { useEffect, useMemo, useRef } from "react";
 import { useFetcher } from "react-router";
 import type { getSupplierProcessesByProcess } from "~/modules/purchasing";
 import { SupplierProcessForm } from "~/modules/purchasing/ui/Supplier";
@@ -33,9 +34,17 @@ const SupplierProcess = ({
     };
   });
 
-  const emptyMessage = useEmptyState(
-    "supplierProcess",
-    processId ? { onCreate: () => newSupplierProcessModal.onOpen() } : undefined
+  const { t } = useLingui();
+  const supplierProcessEmptyMessage = useEmptyState("supplierProcess", {
+    onCreate: () => newSupplierProcessModal.onOpen()
+  });
+  const emptyMessage = processId ? (
+    supplierProcessEmptyMessage
+  ) : (
+    <FieldEmptyState
+      title={t`No process selected`}
+      description={t`Select a process first to choose its supplier.`}
+    />
   );
 
   return (
@@ -79,9 +88,13 @@ export const useSupplierProcesses = (args: { processId?: string }) => {
   const fetcher =
     useFetcher<Awaited<ReturnType<typeof getSupplierProcessesByProcess>>>();
 
-  useMount(() => {
-    fetcher.load(path.to.api.supplierProcesses(processId));
-  });
+  // An empty processId would build a URL with an empty segment that matches no
+  // route — the resulting 404 bubbles to the root error boundary.
+  useEffect(() => {
+    if (processId) {
+      fetcher.load(path.to.api.supplierProcesses(processId));
+    }
+  }, [processId]);
 
   const supplierProcesses = useMemo(
     () => (fetcher.data?.data ? fetcher.data?.data : []),

@@ -17,6 +17,7 @@ const ItemStorageFields = () => {
       name="defaultStorageUnitId"
       label={t`Default Storage Unit`}
       locationId={userLocationId}
+      isOptional
       disabled={!userLocationId}
       helperText={
         userLocationId

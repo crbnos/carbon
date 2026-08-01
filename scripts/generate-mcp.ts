@@ -88,9 +88,13 @@ const DESCRIPTION_OVERRIDES: Record<string, string> = {
 // spread of their injected args:
 //   - inventory_insertManualInventoryAdjustment → itemLedger
 //   - accounting_upsertFixedAssetUsageLog       → fixedAssetUsageLog
+// account_upsertNotificationPreference spreads its argument into an upsert on
+// notificationPreference, which (like userModulePreference) carries no
+// createdBy/updatedBy columns at all — injecting them breaks the write.
 const INJECT_AUTH_OVERRIDES: Record<string, AuthField[]> = {
   inventory_insertManualInventoryAdjustment: ["companyId", "createdBy"],
   accounting_upsertFixedAssetUsageLog: ["companyId", "createdBy"],
+  account_upsertNotificationPreference: ["companyId"],
 };
 
 // ---------------------------------------------------------------------------

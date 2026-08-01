@@ -2,6 +2,8 @@
   "name": "@carbon/viewer",
   "dependencies": {
     "@carbon/react": "workspace:*",
+    "@carbon/utils": "workspace:*",
+    "@tanstack/react-query": "5.97.0",
     "@react-three/drei": "9.122.0",
     "@react-three/fiber": "8.18.0",
     "occt-import-js": "0.0.23",
@@ -25,7 +27,9 @@
     ".": "./src/index.ts",
     "./steps": "./src/steps.ts",
     "./canvas": "./src/ModelCanvas.tsx",
-    "./model-preview": "./src/ModelPreview.tsx"
+    "./model-preview": "./src/ModelPreview.tsx",
+    "./optimize-progress": "./src/OptimizeProgress.tsx",
+    "./use-optimized-model": "./src/useOptimizedModel.ts"
   },
   "peerDependencies": {
     "react": "catalog:",

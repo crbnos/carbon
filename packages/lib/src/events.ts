@@ -130,6 +130,22 @@ export type Events = {
       companyId: string;
       userId: string;
       // format is derived from the stored file inside the job, not passed here.
+      // Force a fresh optimise of an already-Successful model (the badge's
+      // refresh action) — bypasses the already-optimized guard and mints a
+      // fresh assembler job id (the stable id would attach to the previous
+      // run's cached result and finish instantly).
+      force?: boolean;
+    };
+  };
+
+  // Compact the retained raw (STEP → BinXCAF `.xbf.zst`, mesh → `.{ext}.zst`)
+  // so it never lingers as the fat upload. Fired after model-optimize settles
+  // (success, already-optimized, or failure) — decoupled so an optimize
+  // failure can't strand a fat raw for the prune to delete.
+  "carbon/model-compact": {
+    data: {
+      modelUploadId: string;
+      companyId: string;
     };
   };
 
@@ -321,7 +337,8 @@ export type Events = {
     };
   };
 
-  // Event queue processing (PGMQ consumer)
+  // Wake event for the PGMQ drainer (event-queue). Pushed by the database via
+  // the event-wake edge function whenever events are enqueued or pending.
   "carbon/event-queue.process": {
     data: Record<string, never>;
   };
@@ -481,6 +498,33 @@ export type Events = {
         vendors?: boolean;
         items?: boolean;
       };
+    };
+  };
+
+  // Onshape released-asset backfill / reconcile
+  "carbon/onshape-backfill": {
+    data: {
+      companyId: string;
+      userId: string;
+      onshapeCompanyId?: string;
+      after?: string;
+      pageLimit?: number;
+    };
+  };
+
+  // Onshape go-forward sync: one released revision (from the
+  // onshape.revision.created webhook) -> attach assets to the matching item
+  "carbon/onshape-revision-sync": {
+    data: {
+      companyId: string;
+      userId: string;
+      messageId: string; // Onshape webhook messageId — idempotency key
+      partNumber: string;
+      documentId: string;
+      versionId: string;
+      elementId: string;
+      elementType: number; // 0 = part studio, 1 = assembly, 2 = drawing
+      revisionId?: string;
     };
   };
 

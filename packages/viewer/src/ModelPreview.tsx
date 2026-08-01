@@ -1,11 +1,14 @@
-import { cn, IconButton } from "@carbon/react";
+import { Button, cn, IconButton } from "@carbon/react";
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import {
+  LuBox,
   LuChevronDown,
   LuDownload,
   LuMaximize,
   LuRotateCw,
-  LuTrash2
+  LuTrash2,
+  LuTriangleAlert,
+  LuX
 } from "react-icons/lu";
 import type { ModelMetrics } from "./ModelCanvas";
 import { isRawRenderable } from "./raw/formats";
@@ -16,20 +19,18 @@ const ModelCanvas = lazy(() =>
   import("./ModelCanvas").then((m) => ({ default: m.ModelCanvas }))
 );
 
-// Build-time switch for the in-browser raw-CAD (WASM) fallback tier: renders the
-// user's original upload (GLB/STL directly; STEP/IGES via occt-import-js) when
-// no assembler artifact exists. ON by default; a deployment that relies purely on
-// assembler artifacts opts out with VITE_CAD_VIEWER_USE_SERVER=true, and the
-// exact `import.meta.env.X` form is statically replaced by Vite so the whole
-// tier — occt WASM included — is then dead-code-eliminated from the build.
-const WASM_RAW_ENABLED = import.meta.env.VITE_CAD_VIEWER_USE_SERVER !== "true";
-const RawModelCanvas = WASM_RAW_ENABLED
-  ? lazy(() =>
-      import("./raw/RawModelCanvas").then((m) => ({
-        default: m.RawModelCanvas
-      }))
-    )
-  : null;
+// The in-browser raw-CAD (WASM) fallback tier renders the user's original upload
+// (GLB/STL directly; STEP/IGES via occt-import-js) whenever no assembler artifact
+// exists yet — a not-yet-optimised legacy model, or the window while an optimise
+// runs. It is ALWAYS the fallback, independent of whether the assembler is
+// configured: server artifacts stay strictly preferred (`hasServerModel` wins
+// below), the raw tier only renders when there is no server GLB. `RawModelCanvas`
+// is a `lazy()` chunk, so its occt WASM only downloads when a raw actually mounts.
+const RawModelCanvas = lazy(() =>
+  import("./raw/RawModelCanvas").then((m) => ({
+    default: m.RawModelCanvas
+  }))
+);
 
 export type ModelPreviewProps = {
   /** True while a server GLB might still arrive (upload / optimise in flight).
@@ -44,15 +45,32 @@ export type ModelPreviewProps = {
   /** Static poster image (thumbnail PNG) shown before any 3D loads. */
   thumbnailUrl?: string | null;
   /** The raw uploaded file's auth-proxied URL — the WASM fallback tier renders
-   *  it in-browser when no assembler artifact exists (build-flag gated). */
+   *  it in-browser when no assembler artifact exists yet. */
   rawUrl?: string | null;
+  /** A background optimise is running while the raw tier renders — shows a small
+   *  non-blocking "Optimizing" chip so the user knows a better GLB is coming. */
+  optimizing?: boolean;
+  /** The last optimise Failed and won't auto-retry — surfaces a small "Optimize
+   *  failed · Retry" chip over the raw tier so the user can re-fire it (otherwise
+   *  a Failed model that renders via WASM has no retry affordance at all). */
+  optimizeFailed?: boolean;
   /** A just-dropped local File for the same tier — instant preview while the
    *  upload / optimise is still in flight. */
   rawFile?: File | null;
   /** Filename for the download-GLB action (defaults to the URL basename). */
   downloadName?: string;
+  /** The source file no longer exists in storage (legacy delete, or the upload
+   *  never completed) — nothing can render or regenerate. The settled state
+   *  says so instead of the generate-on-demand invitation. */
+  sourceMissing?: boolean;
   /** Re-run optimise when the model settled with no GLB (shows a Retry button). */
   onRetry?: () => void;
+  /** Label for the retry action — e.g. "Load Preview" when the model was never
+   *  optimised (first-time affordance) vs the default "Retry" after a failure. */
+  retryLabel?: string;
+  /** Called when the user cancels the "preparing" wait — the host should cancel
+   *  the in-flight optimise (job + run) so the row doesn't stay stuck. */
+  onCancelWait?: () => void;
   mode?: "dark" | "light";
   onDelete?: () => void;
   className?: string;
@@ -61,11 +79,11 @@ export type ModelPreviewProps = {
 /**
  * Progressive model preview. Renders the assembler's artifacts with three.js
  * (`ModelCanvas`): the single-draw LOD paints instantly, the full optimised GLB
- * cross-fades in on top. When there is no server GLB it shows a spinner (while
- * one may still arrive) or a "preview unavailable" notice — there is no
- * in-browser tessellation fallback. The renderer is lazy-imported and only
- * mounts once the viewer scrolls into view. Chrome: dimensions/properties, unit
- * toggle, download, reset view, click-to-interact.
+ * cross-fades in on top. With no server GLB the raw (WASM) tier renders the
+ * original upload in-browser; failing that, a cancellable preparing state
+ * (optimise in flight) or a generate-on-demand invitation. The renderer is
+ * lazy-imported and only mounts once the viewer scrolls into view. Chrome:
+ * dimensions/properties, unit toggle, download, reset view, click-to-interact.
  */
 export function ModelPreview({
   awaitingModel = false,
@@ -74,9 +92,14 @@ export function ModelPreview({
   glbUrl = null,
   thumbnailUrl = null,
   rawUrl = null,
+  optimizing = false,
+  optimizeFailed = false,
   rawFile = null,
   downloadName,
+  sourceMissing = false,
   onRetry,
+  retryLabel = "Retry",
+  onCancelWait,
   mode = "dark",
   onDelete,
   className
@@ -89,6 +112,12 @@ export function ModelPreview({
   // Gate orbit until the user opts in, so scrolling the page over the viewer
   // doesn't hijack the wheel (matches the WASM viewer's "click to interact").
   const [interactive, setInteractive] = useState(false);
+  // User escape from the "preparing" spinner (optimise can run minutes) —
+  // drops to the settled state early. Re-arms when a retry restarts the wait.
+  const [waitDismissed, setWaitDismissed] = useState(false);
+  useEffect(() => {
+    if (awaitingModel) setWaitDismissed(false);
+  }, [awaitingModel]);
 
   const interactiveUrl = optimizedUrl ?? glbUrl;
   // The instant 3D layer: the LOD if it's distinct from the interactive model
@@ -96,20 +125,19 @@ export function ModelPreview({
   const showLodLayer = Boolean(lodUrl && interactiveUrl && !fullLoaded);
   const mainUrl = interactiveUrl ?? lodUrl;
   const hasServerModel = Boolean(mainUrl);
-  // Raw (WASM) fallback tier — only when compiled in, no artifact exists, and
-  // the raw source's format is one the in-browser loaders speak.
+  // Raw (WASM) fallback tier — no server artifact exists yet, and the raw
+  // source's format is one the in-browser loaders speak.
   const rawFilename = rawFile?.name ?? rawUrl?.split("?")[0] ?? "";
   const useRawTier = Boolean(
-    !hasServerModel &&
-      RawModelCanvas &&
-      (rawFile || rawUrl) &&
-      isRawRenderable(rawFilename)
+    !hasServerModel && (rawFile || rawUrl) && isRawRenderable(rawFilename)
   );
 
   return (
     <div
       ref={containerRef}
-      role="img"
+      // `group`, not `img`: the container holds interactive controls (retry,
+      // download, reset, delete) — an `img` role hides those descendants from AT.
+      role="group"
       aria-label="3D model preview"
       className={cn(
         "relative h-full min-h-[400px] w-full overflow-hidden rounded-lg border border-border bg-gradient-to-bl from-card from-50% via-card to-background shadow-md dark:border-none",
@@ -118,8 +146,10 @@ export function ModelPreview({
     >
       {hasServerModel || useRawTier ? (
         <>
-          {/* Tier 0: instant poster — thumbnail image while the 3D boots. */}
-          {thumbnailUrl && !fullLoaded && (
+          {/* Tier 0: instant poster — thumbnail image while the 3D boots.
+              Light mode only: the generated PNGs have an opaque white
+              background, which reads as a white flash on a dark viewer. */}
+          {thumbnailUrl && !fullLoaded && mode === "light" && (
             <img
               src={thumbnailUrl}
               alt=""
@@ -146,7 +176,7 @@ export function ModelPreview({
                 className="absolute inset-0 transition-opacity duration-300"
                 style={{ opacity: fullLoaded || !showLodLayer ? 1 : 0 }}
               >
-                {useRawTier && RawModelCanvas ? (
+                {useRawTier ? (
                   <RawModelCanvas
                     url={rawUrl}
                     file={rawFile}
@@ -169,6 +199,66 @@ export function ModelPreview({
                 )}
               </div>
             </Suspense>
+          )}
+
+          {/* Background optimise running behind the raw tier — a small,
+              non-blocking hint that a better GLB is on its way. Swaps out for the
+              "Optimized GLB" size badge once the server model arrives. */}
+          {optimizing && useRawTier && (
+            <div className="absolute bottom-2 left-2 z-20 flex items-center gap-1.5 rounded-md border border-border bg-popover px-2 py-1 text-xs text-muted-foreground shadow-sm">
+              <svg
+                className="size-3 shrink-0 animate-spin"
+                viewBox="0 0 24 24"
+                fill="none"
+                aria-hidden
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                />
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                />
+              </svg>
+              <span>Optimizing…</span>
+              {/* Escape hatch: without it, a run that orphans mid-flight (worker
+                  crash, externally cancelled run) leaves the chip spinning with
+                  no way out — cancel stamps the row Failed → retry chip shows. */}
+              {onCancelWait && (
+                <button
+                  type="button"
+                  aria-label="Cancel optimization"
+                  onClick={onCancelWait}
+                  className="ml-0.5 rounded p-0.5 hover:bg-muted"
+                >
+                  <LuX className="size-3" />
+                </button>
+              )}
+            </div>
+          )}
+
+          {/* The optimise Failed and won't auto-retry — the raw tier still renders,
+              but without this the user has no way to re-fire the optimise. Mutually
+              exclusive with the Optimizing chip (hidden once a retry is in flight). */}
+          {onRetry && optimizeFailed && !optimizing && useRawTier && (
+            <div className="absolute bottom-2 left-2 z-20 flex items-center gap-1.5 rounded-md border border-border bg-popover px-2 py-1 text-xs text-muted-foreground shadow-sm">
+              <LuTriangleAlert className="size-3 shrink-0 text-amber-500" />
+              <span>Optimize failed</span>
+              <button
+                type="button"
+                onClick={onRetry}
+                className="flex items-center gap-1 font-medium text-foreground underline-offset-2 hover:underline"
+              >
+                <LuRotateCw className="size-3" />
+                Retry
+              </button>
+            </div>
           )}
 
           {/* Measurements + unit toggle (top-left), like the WASM viewer. */}
@@ -219,9 +309,11 @@ export function ModelPreview({
             )}
           </div>
         </>
-      ) : inView && awaitingModel ? (
-        // Server GLB still being prepared (upload / optimise in flight) — spinner.
-        <div className="absolute inset-0 flex items-center justify-center">
+      ) : inView && awaitingModel && !waitDismissed ? (
+        // Server GLB still being prepared (upload / optimise in flight) —
+        // spinner with a cancel escape (optimise can take minutes; never trap
+        // the user in an unbounded wait).
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-3">
           <svg
             className="h-6 w-6 animate-spin text-muted-foreground"
             viewBox="0 0 24 24"
@@ -242,35 +334,50 @@ export function ModelPreview({
               d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
             />
           </svg>
+          <button
+            type="button"
+            onClick={() => {
+              setWaitDismissed(true);
+              onCancelWait?.();
+            }}
+            className="text-xs text-muted-foreground underline-offset-2 opacity-70 transition-opacity hover:opacity-100 hover:underline"
+          >
+            Cancel
+          </button>
+        </div>
+      ) : inView && sourceMissing ? (
+        // The source file is gone from storage — no tier can render and no
+        // regenerate can succeed. Say so plainly (a bare "3D preview" card
+        // with no action reads as broken) and offer removal when the host
+        // allows it, so the dead reference can be cleared.
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 p-4 text-center">
+          <div className="flex size-11 items-center justify-center rounded-full bg-muted/60">
+            <LuBox className="size-5 text-muted-foreground" />
+          </div>
+          <div className="flex flex-col gap-1">
+            <p className="text-sm font-medium text-foreground">
+              Model file unavailable
+            </p>
+            <p className="text-xs text-muted-foreground">
+              The source file no longer exists in storage.
+            </p>
+          </div>
+          {onDelete && (
+            <Button variant="secondary" onClick={onDelete}>
+              Remove model
+            </Button>
+          )}
         </div>
       ) : inView ? (
-        // Settled with no server GLB (optimise failed / non-mesh). No in-browser
-        // tessellation fallback — surface the state instead of a dead spinner.
-        <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 p-4 text-center">
-          <p className="text-sm text-muted-foreground">
-            3D preview unavailable
-          </p>
-          <div className="flex items-center gap-2">
-            {onRetry && (
-              <button
-                type="button"
-                onClick={onRetry}
-                className="flex items-center gap-1.5 rounded-md border border-border bg-popover px-3 py-1.5 text-xs font-medium text-foreground shadow-sm transition-transform hover:bg-accent active:scale-[0.96]"
-              >
-                <LuRotateCw className="size-3.5" />
-                Retry
-              </button>
-            )}
-            {onDelete && (
-              <IconButton
-                aria-label="Delete model"
-                className="text-muted-foreground hover:bg-destructive hover:text-destructive-foreground"
-                icon={<LuTrash2 />}
-                variant="ghost"
-                onClick={onDelete}
-              />
-            )}
+        // Settled with no renderable tier. Framed as an invitation, not a
+        // failure: the preview simply hasn't been generated yet (or the raw is
+        // over the in-browser cap) — the primary action generates it on demand.
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 p-4 text-center">
+          <div className="flex size-11 items-center justify-center rounded-full bg-muted/60">
+            <LuBox className="size-5 text-muted-foreground" />
           </div>
+          <p className="text-sm font-medium text-foreground">3D preview</p>
+          {onRetry && <Button onClick={onRetry}>{retryLabel}</Button>}
         </div>
       ) : null}
     </div>

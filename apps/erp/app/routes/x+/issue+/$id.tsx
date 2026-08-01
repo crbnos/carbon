@@ -15,7 +15,7 @@ import {
 } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
 import {
-  getChangeOrdersForNonConformance,
+  getChangeNoticesForNonConformance,
   getItemFiles
 } from "~/modules/items";
 import {
@@ -59,7 +59,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     requiredActions,
     suppliers,
     tags,
-    changeOrders
+    changeNotices
   ] = await Promise.all([
     getIssue(client, id),
     getIssueTypesList(client, companyId),
@@ -67,7 +67,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     getIssueSuppliers(client, id, companyId),
     getTagsList(client, companyId, "nonConformance"),
     // Reverse Linked-NCR cross-link (4a): COs referencing this issue.
-    getChangeOrdersForNonConformance(client, id, companyId)
+    getChangeNoticesForNonConformance(client, id, companyId)
   ]);
 
   if (nonConformance.error) {
@@ -85,7 +85,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     requiredActions: requiredActions.data ?? [],
     suppliers: suppliers.data ?? [],
     tags: tags.data ?? [],
-    changeOrders: changeOrders.data ?? []
+    changeNotices: changeNotices.data ?? []
   };
 }
 
@@ -172,13 +172,12 @@ export default function IssueRoute() {
                           children: resolvedAssociations.suppliers
                         },
                         {
-                          key: "inboundInspections",
-                          name: t`Inbound Inspection`,
-                          pluralName: t`Inbound Inspections`,
+                          key: "inspections",
+                          name: t`Inspection`,
+                          pluralName: t`Inspections`,
                           module: "quality",
                           children:
-                            (resolvedAssociations as any).inboundInspections ??
-                            []
+                            (resolvedAssociations as any).inspections ?? []
                         }
                       ];
                       return (

@@ -140,13 +140,24 @@ impl JobStore {
         }
     }
 
-    /// The internal status of an active job (pending/running/uploading), for the
-    /// create handler's idempotency attach. None if unknown or terminal.
+    /// The EXTERNAL status of an active job (queued/running), for the create
+    /// handler's idempotency-attach 202 response. None if unknown or terminal.
     pub async fn existing_active(&self, id: &str) -> Option<String> {
+        self.internal_active(id)
+            .await
+            .map(|s| external_status(&s).to_string())
+    }
+
+    /// The INTERNAL status of an active job (pending/running/uploading). The
+    /// worker inlet dedupes deliveries on these exact names — the external
+    /// mapping folds pending->queued and uploading->running, which would make
+    /// the worker's pending/uploading branches unreachable (every Lambda job
+    /// no-op'd forever).
+    pub async fn internal_active(&self, id: &str) -> Option<String> {
         self.read(id)
             .await
             .filter(|j| matches!(j.status.as_str(), "pending" | "running" | "uploading"))
-            .map(|j| external_status(&j.status).to_string())
+            .map(|j| j.status)
     }
 
     pub async fn set_pending(

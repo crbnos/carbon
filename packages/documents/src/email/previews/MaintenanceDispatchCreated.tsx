@@ -9,7 +9,7 @@ export default function MaintenanceDispatchCreatedPreview() {
       preview={"New maintenance dispatch"}
       message={"New maintenance dispatch MD-0012 created"}
       reference={"MD-0012"}
-      recipientName={"Naveen"}
+      recipientName={"John Doe"}
       ctaLabel={"View details"}
       ctaUrl={"https://app.carbon.ms/x/maintenance/1"}
       details={[

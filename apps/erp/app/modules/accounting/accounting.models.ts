@@ -297,6 +297,7 @@ export const defaultIncomeAcountValidator = z.object({
   inventoryAdjustmentVarianceAccount: z.string().min(1, {
     message: "Inventory adjustment variance account is required"
   }),
+  scrapAccount: z.string().optional(),
   materialVarianceAccount: z.string().min(1, {
     message: "Material usage variance account is required"
   }),
@@ -483,7 +484,9 @@ export const journalEntrySourceTypes = [
   "Asset Disposal",
   "Payment",
   "Credit Memo",
-  "Debit Memo"
+  "Debit Memo",
+  "Non-Conformance",
+  "Inbound Inspection"
 ] as const;
 
 export const journalEntryStatuses = ["Draft", "Posted", "Reversed"] as const;

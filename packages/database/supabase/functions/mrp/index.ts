@@ -18,7 +18,7 @@ import {
 
 import { Kysely, sql } from "npm:kysely";
 import z from "npm:zod@^3.24.1";
-import { corsHeaders } from "../lib/headers.ts";
+import { corsPreflight, errorResponse, jsonResponse } from "../lib/response.ts";
 import { requirePermissions } from "../lib/supabase.ts";
 import { Database } from "../lib/types.ts";
 import { buildSupersessionRedirectMap } from "../lib/supersession-pick.ts";
@@ -72,9 +72,8 @@ const payloadValidator = z.discriminatedUnion("type", [
 ]);
 
 serve(async (req: Request) => {
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
-  }
+  const preflight = corsPreflight(req);
+  if (preflight) return preflight;
   const payload = await req.json();
 
   const parsedPayload = payloadValidator.parse(payload);
@@ -865,23 +864,12 @@ serve(async (req: Request) => {
           .execute();
       }
 
-      return new Response(JSON.stringify({ success: true }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 201,
-      });
+      return jsonResponse({ success: true }, 201);
     } catch (err) {
-      console.error(err);
-      return new Response(JSON.stringify(err), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 500,
-      });
+      return errorResponse(err, 500);
     }
   } catch (err) {
-    console.error(err);
-    return new Response(JSON.stringify(err), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 500,
-    });
+    return errorResponse(err, 500);
   }
 });
 

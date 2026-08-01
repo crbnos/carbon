@@ -36,10 +36,11 @@ import {
   getAssemblyComponentMappings,
   getAssemblyInstruction,
   getAssemblyInstructionStepMaterials,
-  getAssemblyInstructionStepRequirements,
+  getAssemblyInstructionStepSlides,
   getAssemblyInstructionSteps,
+  getAssemblyInstructionStepTools,
+  getAssemblyInstructionVersions,
   getAssemblyPlanJson,
-  getAssemblyStandardNotes,
   getAssemblyUnits,
   getFlattenedBomMaterials,
   getLatestAssemblyPlanJob,
@@ -72,10 +73,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { id } = params;
   if (!id) throw new Error("Could not find id");
 
-  const [instruction, steps, standardNotes] = await Promise.all([
+  const [instruction, steps] = await Promise.all([
     getAssemblyInstruction(client, id),
-    getAssemblyInstructionSteps(client, id),
-    getAssemblyStandardNotes(client, companyId)
+    getAssemblyInstructionSteps(client, id)
   ]);
 
   const instructionError = instruction.error;
@@ -101,17 +101,20 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const stepIds = (steps.data ?? []).map((step) => step.id);
   const [
-    requirements,
     stepMaterials,
+    stepSlides,
+    stepTools,
     plan,
     planJob,
     componentMappings,
     units,
     bomMaterials,
-    assemblerAvailable
+    assemblerAvailable,
+    versions
   ] = await Promise.all([
-    getAssemblyInstructionStepRequirements(client, stepIds),
     getAssemblyInstructionStepMaterials(client, stepIds),
+    getAssemblyInstructionStepSlides(client, stepIds),
+    getAssemblyInstructionStepTools(client, stepIds),
     instruction.data.modelUploadId
       ? getAssemblyPlanJson(client, instruction.data.modelUploadId)
       : Promise.resolve(null),
@@ -127,21 +130,23 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     instruction.data.itemId
       ? getFlattenedBomMaterials(client, instruction.data.itemId, companyId)
       : Promise.resolve([]),
-    isAssemblerServiceHealthy()
+    isAssemblerServiceHealthy(),
+    getAssemblyInstructionVersions(client, instruction.data)
   ]);
 
   return {
     instruction: instruction.data,
     steps: steps.data ?? [],
-    requirements: requirements.data ?? [],
     stepMaterials: stepMaterials.data ?? [],
-    standardNotes: standardNotes.data ?? [],
+    stepSlides: stepSlides.data ?? [],
+    stepTools: stepTools.data ?? [],
     units: units.data ?? [],
     plan,
     planJob: planJob.data ?? null,
     componentMappings: componentMappings.data ?? [],
     bomMaterials,
-    assemblerAvailable
+    assemblerAvailable,
+    versions: versions.data ?? []
   };
 }
 
@@ -193,9 +198,9 @@ export default function AssemblyInstructionRoute() {
   const {
     instruction,
     steps,
-    requirements,
     stepMaterials,
-    standardNotes,
+    stepSlides,
+    stepTools,
     units,
     plan,
     planJob,
@@ -385,21 +390,26 @@ export default function AssemblyInstructionRoute() {
 
   const viewerSteps = useMemo(() => steps.map(toViewerStep), [steps]);
 
-  // Per-step requirements/materials for the properties panel — memoized so a
+  // Per-step slides/tools/materials for the properties panel — memoized so a
   // per-frame motion-drag re-render (draftMotion) doesn't hand the panel new
   // array identities and re-render it.
   const activeStepId = selectedStep?.id ?? null;
-  const stepRequirements = useMemo(
-    () =>
-      activeStepId ? requirements.filter((r) => r.stepId === activeStepId) : [],
-    [requirements, activeStepId]
-  );
   const selectedStepMaterials = useMemo(
     () =>
       activeStepId
         ? stepMaterials.filter((m) => m.stepId === activeStepId)
         : [],
     [stepMaterials, activeStepId]
+  );
+  const selectedStepSlides = useMemo(
+    () =>
+      activeStepId ? stepSlides.filter((s) => s.stepId === activeStepId) : [],
+    [stepSlides, activeStepId]
+  );
+  const selectedStepTools = useMemo(
+    () =>
+      activeStepId ? stepTools.filter((t) => t.stepId === activeStepId) : [],
+    [stepTools, activeStepId]
   );
 
   // Authored subassembly units, normalized for step-title derivation: a step
@@ -671,10 +681,10 @@ export default function AssemblyInstructionRoute() {
                   onStopEditMotion={onStopEditMotion}
                   onSetCamera={onSetCamera}
                   onClearCamera={onClearCamera}
-                  requirements={stepRequirements}
                   stepMaterials={selectedStepMaterials}
+                  stepSlides={selectedStepSlides}
+                  stepTools={selectedStepTools}
                   bomMaterials={bomMaterials}
-                  standardNotes={standardNotes}
                 />
               }
             />

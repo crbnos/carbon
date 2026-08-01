@@ -270,6 +270,7 @@ function PickingListLineItem({
   const isResolved = isPicked || isShort;
   const isTracked =
     item?.itemTrackingType === "Serial" || item?.itemTrackingType === "Batch";
+  const isBatch = item?.itemTrackingType === "Batch";
   const source = (line as { storageUnit?: { name?: string } }).storageUnit
     ?.name;
   // Warehouse on-hand available (incl. the unassigned/null bin). A null source
@@ -360,6 +361,20 @@ function PickingListLineItem({
             </TooltipContent>
           </Tooltip>
         ) : null}
+        {pickedLots.length > 0 && (
+          <HStack spacing={1} className="max-w-[280px] flex-wrap justify-end">
+            {pickedLots.map((lot) => (
+              <Badge
+                key={lot.trackedEntityId}
+                variant="secondary"
+                className="font-mono tabular-nums normal-case"
+              >
+                {lot.trackedEntity?.readableId ?? lot.trackedEntityId}
+                {isBatch && ` × ${Number(lot.quantityPicked ?? 0)}`}
+              </Badge>
+            ))}
+          </HStack>
+        )}
         {isTracked ? (
           <Badge
             variant={isPicked ? "green" : quantityPicked > 0 ? "orange" : "red"}

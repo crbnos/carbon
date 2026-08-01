@@ -19,6 +19,12 @@ export const path = {
       batchNumbers: (itemId: string) =>
         generatePath(`${api}/batch-numbers?itemId=${itemId}`),
       failureModes: `${api}/failure-modes`,
+      modelArtifacts: (modelUploadId: string) =>
+        generatePath(`${api}/model/artifacts/${modelUploadId}`),
+      modelDownload: (modelUploadId: string) =>
+        generatePath(`${api}/model/download/${modelUploadId}`),
+      modelOptimizeCancel: `${api}/model/optimize-cancel`,
+      modelReoptimize: `${api}/model/reoptimize`,
       pickedAllocation: (jobMaterialId: string) =>
         generatePath(`${api}/picked-allocation?jobMaterialId=${jobMaterialId}`),
       qualityIssueTypes: `${api}/quality-issue-types`,
@@ -33,19 +39,20 @@ export const path = {
           `${api}/suggested-allocation?itemId=${itemId}&locationId=${locationId}&quantity=${quantity}`
         )
     },
+    assembly: (id: string) => generatePath(`${x}/assembly/${id}`),
     assigned: `${x}/assigned`,
     authenticatedRoot: x,
     callback: "/callback",
     companySwitch: (companyId: string) =>
       generatePath(`${x}/company/switch/${companyId}`),
     complete: `${x}/complete`,
+    completeAllSteps: `${x}/steps/complete-all`,
     consolePinIn: `${x}/console/pin-in`,
     consolePinOut: `${x}/console/pin-out`,
     consoleToggle: `${x}/console/toggle`,
     convertEntity: (id: string) => generatePath(`${x}/entity/${id}/convert`),
     endOperation: (id: string) => generatePath(`${x}/end/${id}`),
     endShift: `${x}/end-shift`,
-    feedback: `${x}/feedback`,
     file: {
       jobTraveler: (id: string) => `${getAppUrl()}${file}/traveler/${id}.pdf`,
       operationLabelsPdf: (
@@ -118,6 +125,16 @@ export const path = {
     },
     finish: `${x}/finish`,
     health: "/health",
+    inspection: (operationId: string) =>
+      generatePath(`${x}/inspection/${operationId}`),
+    inspectionCompletePassed: (id: string) =>
+      generatePath(`${x}/inspection-lot/${id}/complete-passed`),
+    inspectionDisposition: (id: string) =>
+      generatePath(`${x}/inspection-lot/${id}/disposition`),
+    inspectionMeasurement: (id: string) =>
+      generatePath(`${x}/inspection-lot/${id}/measurement`),
+    inspectionSample: (id: string) =>
+      generatePath(`${x}/inspection-lot/${id}/sample`),
     inspectionSteps: `${x}/steps/inspection`,
     inventoryAdjustment: `${x}/adjustment`,
     issue: `${x}/issue`,
@@ -191,6 +208,12 @@ export const removeSubdomain = (url?: string): string => {
 
 export const getPrivateUrl = (path: string) => {
   return `/file/preview/private/${path}`;
+};
+
+// Raw model source for the viewer's WASM fallback tier — the bucket varies
+// (temp-staging for current uploads, private for pre-assembler rows).
+export const getRawModelUrl = (bucket: string, path: string) => {
+  return `/file/preview/${bucket}/${path}`;
 };
 
 export const getStoragePath = (bucket: string, path: string) => {

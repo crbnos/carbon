@@ -1,4 +1,4 @@
-/* Shared primitives for the on-brand editorial SVGs — warm paper palette, DM Sans
+/* Shared primitives for the on-brand editorial SVGs — warm paper palette, Archivo
  * (inherited), #00B0FF accent, made=blue / bought=amber tags matching the content
  * badges. Both the static `illustrations.tsx` registry and the data-driven
  * `status-flow.tsx` import from here so every diagram stays visually locked.

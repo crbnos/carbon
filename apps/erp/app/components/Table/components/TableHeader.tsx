@@ -79,6 +79,9 @@ type HeaderProps<T> = {
     label: string;
   }[];
   primaryAction?: ReactNode;
+  // Extra controls in the toolbar row next to search/filter (e.g. quick
+  // filter toggles that write their own `filter` URL params).
+  headerActions?: ReactNode;
   pagination: PaginationProps;
   selectedRows: T[];
   setColumnOrder: (newOrder: ColumnOrderState) => void;
@@ -111,6 +114,7 @@ const TableHeader = <T extends object>({
   isEmpty,
   importCSV,
   primaryAction,
+  headerActions,
   pagination,
   selectedRows,
   renderActions,
@@ -316,6 +320,7 @@ const TableHeader = <T extends object>({
               <SearchFilter param="search" size="sm" placeholder={t`Search`} />
             )}
             {!!filters?.length && <Filter filters={filters} />}
+            {headerActions}
           </HStack>
           <HStack>
             {sort === undefined ? (
@@ -391,7 +396,12 @@ const TableHeader = <T extends object>({
           </HStack>
         </HStack>
       )}
-      {currentFilters.length > 0 && (
+      {/* Only filters with a declared column filter render a chip — gate the
+          row on those so undeclared filters (e.g. headerActions toggles) don't
+          leave an empty strip behind. */}
+      {currentFilters.some((f) =>
+        filters.some((cf) => cf.accessorKey === f.split(":")[0])
+      ) && (
         <HStack
           className={cn(
             compact

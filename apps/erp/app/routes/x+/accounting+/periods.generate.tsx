@@ -19,6 +19,7 @@ import {
   formatDate,
   MONTH_NUMBER
 } from "@carbon/utils";
+import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
@@ -38,7 +39,7 @@ import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
 export const handle: Handle = {
-  breadcrumb: "Generate Fiscal Year",
+  breadcrumb: msg`Generate Fiscal Year`,
   to: path.to.accountingPeriods
 };
 

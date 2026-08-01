@@ -27,13 +27,23 @@ import {
   LuUsers
 } from "react-icons/lu";
 import { useNavigate } from "react-router";
-import { EmployeeAvatar, Hyperlink, New, Table } from "~/components";
+import {
+  EmployeeAvatar,
+  Hyperlink,
+  New,
+  OperationTypeIcon,
+  Table
+} from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { useWorkCenters } from "~/components/Form/WorkCenter";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import type { Process } from "~/modules/resources";
-import { standardFactorType } from "~/modules/shared";
+import {
+  type OperationType,
+  operationTypes,
+  standardFactorType
+} from "~/modules/shared";
 import { usePeople } from "~/stores";
 import { path } from "~/utils/path";
 
@@ -64,7 +74,7 @@ const ProcessesTable = memo(({ data, count }: ProcessesTableProps) => {
         accessorKey: "name",
         header: t`Process`,
         cell: ({ row }) =>
-          row.original.processType === "Outside" ||
+          row.original.processType === "Outside Processing" ||
           ((row.original.workCenters as any[]) ?? []).length > 0 ? (
             <Hyperlink to={row.original.id!}>
               <Enumerable
@@ -87,14 +97,40 @@ const ProcessesTable = memo(({ data, count }: ProcessesTableProps) => {
       {
         accessorKey: "processType",
         header: t`Process Type`,
-        cell: (item) =>
-          item.getValue() === "Outside" ? (
-            <Badge>Outside</Badge>
+        cell: (item) => {
+          const value = item.getValue<string>();
+          const icon = (
+            <OperationTypeIcon
+              type={value as OperationType}
+              className="mr-1 h-3 w-3 text-current"
+            />
+          );
+          return value === "Outside Processing" ? (
+            <Badge>
+              {icon}
+              Outside Processing
+            </Badge>
           ) : (
-            <Badge variant="secondary">{item.getValue<string>()}</Badge>
-          ),
+            <Badge variant="secondary">
+              {icon}
+              {value}
+            </Badge>
+          );
+        },
         meta: {
-          icon: <LuFactory />
+          icon: <LuFactory />,
+          filter: {
+            type: "static",
+            options: operationTypes.map((pt) => ({
+              value: pt,
+              label: (
+                <span className="flex items-center gap-2">
+                  <OperationTypeIcon type={pt} />
+                  <span>{pt}</span>
+                </span>
+              )
+            }))
+          }
         }
       },
       {

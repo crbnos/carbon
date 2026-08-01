@@ -117,6 +117,14 @@ export function Divider() {
   return <hr className="my-12 border-none border-t border-ed-hairline" />;
 }
 
+/** Agent-only context. Renders nothing on the site — the wrapped MDX is invisible to
+ *  human readers — but `scripts/generate-agent-kb.ts` unwraps it into the in-app agent's
+ *  knowledge base (`apps/erp/app/modules/agent/kb/<slug>.md`). Use it to give the agent
+ *  extra detail about the underlying code/behavior that shouldn't ship to readers. */
+export function AgentContext(_props: { children?: ReactNode }) {
+  return null;
+}
+
 function Paragraph(props: ComponentPropsWithoutRef<"p">) {
   return (
     <p
@@ -175,7 +183,7 @@ function Heading2({ id, children, ...props }: ComponentPropsWithoutRef<"h2">) {
     <h2
       {...props}
       id={id}
-      className="group scroll-mt-30 m-0 pt-[50px] text-ed-24 font-normal leading-[115%] text-ink"
+      className="group scroll-mt-30 m-0 pt-[50px] text-ed-24 font-semibold tracking-tight leading-[115%] text-ink"
     >
       {children}
       {id ? <HeadingAnchor id={id} /> : null}
@@ -188,7 +196,7 @@ function Heading3({ id, children, ...props }: ComponentPropsWithoutRef<"h3">) {
     <h3
       {...props}
       id={id}
-      className="group m-0 mt-12 scroll-mt-30 text-ed-20 font-demi leading-[140%] tracking-[0.24px] text-ink"
+      className="group m-0 mt-12 scroll-mt-30 text-ed-20 font-semibold leading-[140%] tracking-tight text-ink"
     >
       {children}
       {id ? <HeadingAnchor id={id} /> : null}
@@ -197,7 +205,7 @@ function Heading3({ id, children, ...props }: ComponentPropsWithoutRef<"h3">) {
 }
 
 function Heading4(props: ComponentPropsWithoutRef<"h4">) {
-  return <h4 {...props} className="m-0 mt-8 text-ed-16 font-demi leading-[140%] tracking-[0.15px] text-ink" />;
+  return <h4 {...props} className="m-0 mt-8 text-ed-16 font-semibold leading-[140%] tracking-tight text-ink" />;
 }
 
 function Blockquote(props: ComponentPropsWithoutRef<"blockquote">) {
@@ -244,4 +252,5 @@ export const editorialMdxComponents = {
   Field,
   StatusFlow,
   Status,
+  AgentContext,
 };

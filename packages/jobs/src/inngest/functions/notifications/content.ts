@@ -27,6 +27,16 @@ export function buildNotificationLink(
   return `${ERP_URL}/api/link?${params.toString()}`;
 }
 
+// Routed through /api/link so the company-switch flow runs before landing on
+// the settings page.
+export function buildNotificationSettingsLink(companyId: string): string {
+  const params = new URLSearchParams({
+    page: "notification-settings",
+    companyId
+  });
+  return `${ERP_URL}/api/link?${params.toString()}`;
+}
+
 // One document inside a digest-shaped notification. documentId + description
 // drive the in-app child rows; the rest renders in the digest email.
 export type DigestItem = {
@@ -109,6 +119,20 @@ type EventContentOptions = {
   documentIds?: string[];
   userId?: string;
 };
+
+function changeNoticeStageDescription(
+  type: NotificationEvent,
+  readableId: string
+): string {
+  switch (type) {
+    case NotificationEvent.ChangeNoticeStarted:
+      return `Change notice ${readableId} has started`;
+    case NotificationEvent.ChangeNoticeImplementation:
+      return `Change notice ${readableId} has moved to implementation`;
+    default:
+      return `Change notice ${readableId} is complete`;
+  }
+}
 
 async function buildEventContent(
   client: ReturnType<typeof getCarbonServiceRole>,
@@ -895,6 +919,35 @@ async function buildEventContent(
       };
     }
 
+    case NotificationEvent.PurchasingRfqAssignment: {
+      const purchasingRfq = await client
+        .from("purchasingRfq")
+        .select("*")
+        .eq("id", documentId)
+        .single();
+
+      if (purchasingRfq.error) {
+        console.error("Failed to get purchasing RFQ", purchasingRfq.error);
+        throw purchasingRfq.error;
+      }
+
+      return {
+        description: `Purchasing RFQ ${purchasingRfq?.data?.rfqId} assigned to you`,
+        reference: purchasingRfq?.data?.rfqId ?? undefined,
+        details: buildDetails([
+          {
+            label: "RFQ date",
+            value: formatDetailDate(purchasingRfq.data?.rfqDate)
+          },
+          {
+            label: "Expires",
+            value: formatDetailDate(purchasingRfq.data?.expirationDate)
+          },
+          { label: "Status", value: purchasingRfq.data?.status }
+        ])
+      };
+    }
+
     case NotificationEvent.SupplierQuoteAssignment: {
       const supplierQuoteAssignment = await client
         .from("supplierQuote")
@@ -1032,7 +1085,9 @@ async function buildEventContent(
         }
 
         return {
-          description: `Quality document "${qd.data.name ?? "Untitled"}" ${docPhrase}`,
+          description: `Quality document "${
+            qd.data.name ?? "Untitled"
+          }" ${docPhrase}`,
           details: buildDetails([
             {
               label: "Version",
@@ -1052,36 +1107,76 @@ async function buildEventContent(
       };
     }
 
-    case NotificationEvent.ChangeOrderSubmittedForReview:
-    case NotificationEvent.ChangeOrderApproved:
-    case NotificationEvent.ChangeOrderRejected:
-    case NotificationEvent.ChangeOrderReleased: {
-      const changeOrder = await client
-        .from("changeOrder")
-        .select("changeOrderId, status")
-        .eq("id", documentId)
-        .single();
-
-      if (changeOrder.error || !changeOrder.data) {
-        console.error("Failed to get changeOrder", changeOrder.error);
-        throw changeOrder.error;
+    case NotificationEvent.ChangeNoticeStarted:
+    case NotificationEvent.ChangeNoticeImplementation:
+    case NotificationEvent.ChangeNoticeDone: {
+      // Company-scope both lookups: readable ids (ECO-…) repeat across tenants.
+      const companyId = opts?.companyId;
+      if (!companyId) {
+        throw new Error(
+          `companyId is required to resolve change notice ${documentId}`
+        );
       }
 
-      const readableId = changeOrder.data.changeOrderId;
-      const description =
-        type === NotificationEvent.ChangeOrderSubmittedForReview
-          ? `Change order ${readableId} is ready for your review`
-          : type === NotificationEvent.ChangeOrderApproved
-            ? `Change order ${readableId} was approved`
-            : type === NotificationEvent.ChangeOrderRejected
-              ? `Change order ${readableId} was rejected`
-              : `Change order ${readableId} was released`;
+      // documentId may be the row id (co_…) or the readable id (ECO-…) — try both.
+      const changeNoticeColumns =
+        "changeOrderId, name, type, priority, status, dueDate, assignee";
+      const rowLookup = await client
+        .from("changeOrder")
+        .select(changeNoticeColumns)
+        .eq("id", documentId)
+        .eq("companyId", companyId)
+        .maybeSingle();
+      if (rowLookup.error) {
+        console.error("Failed to get changeOrder", rowLookup.error);
+        throw rowLookup.error;
+      }
+
+      let changeNoticeData = rowLookup.data;
+      if (!changeNoticeData) {
+        const readableIdLookup = await client
+          .from("changeOrder")
+          .select(changeNoticeColumns)
+          .eq("changeOrderId", documentId)
+          .eq("companyId", companyId)
+          .maybeSingle();
+        if (readableIdLookup.error) {
+          console.error("Failed to get changeOrder", readableIdLookup.error);
+          throw readableIdLookup.error;
+        }
+        changeNoticeData = readableIdLookup.data;
+      }
+
+      if (!changeNoticeData) {
+        throw new Error(`Change notice not found for documentId ${documentId}`);
+      }
+
+      const readableId = changeNoticeData.changeOrderId;
+      const description = changeNoticeStageDescription(type, readableId);
+
+      let assigneeName: string | null = null;
+      if (changeNoticeData.assignee) {
+        const assignee = await client
+          .from("user")
+          .select("fullName")
+          .eq("id", changeNoticeData.assignee)
+          .maybeSingle();
+        if (assignee.error) {
+          console.error("Failed to get change notice assignee", assignee.error);
+        }
+        assigneeName = assignee.data?.fullName ?? null;
+      }
 
       return {
         description,
         reference: readableId ?? undefined,
         details: buildDetails([
-          { label: "Status", value: changeOrder.data?.status }
+          { label: "Name", value: changeNoticeData.name },
+          { label: "Type", value: changeNoticeData.type },
+          { label: "Priority", value: changeNoticeData.priority },
+          { label: "Due", value: formatDetailDate(changeNoticeData.dueDate) },
+          { label: "Status", value: changeNoticeData.status },
+          { label: "Assignee", value: assigneeName }
         ])
       };
     }
@@ -1172,6 +1267,7 @@ export async function getNotificationContent(
 // Template dispatch: add a case to give a notification type its own email;
 // everything else renders the generic NotificationEmail card.
 export function getNotificationEmailComponent(args: {
+  companyId: string;
   content: NotificationContent;
   ctaLabel: string;
   ctaUrl: string;
@@ -1199,7 +1295,8 @@ export function getNotificationEmailComponent(args: {
         message: args.content.description,
         preview: args.heading,
         recipientName: args.recipientName,
-        reference: args.content.reference
+        reference: args.content.reference,
+        settingsUrl: buildNotificationSettingsLink(args.companyId)
       });
   }
 }

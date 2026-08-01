@@ -9,7 +9,7 @@ export default function QuoteExpiredPreview() {
       preview={"Quote expired"}
       message={"Quote Q-00012 has expired"}
       reference={"Q-00012"}
-      recipientName={"Naveen"}
+      recipientName={"John Doe"}
       ctaLabel={"View quote"}
       ctaUrl={"https://app.carbon.ms/x/quote/1"}
       details={[

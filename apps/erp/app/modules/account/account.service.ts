@@ -2,6 +2,37 @@ import type { Database } from "@carbon/database";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { sanitize } from "~/utils/supabase";
 
+export async function getNotificationPreferences(
+  client: SupabaseClient<Database>,
+  userId: string,
+  companyId: string
+) {
+  return client
+    .from("notificationPreference")
+    .select("topic, channel, enabled")
+    .eq("userId", userId)
+    .eq("companyId", companyId);
+}
+
+export async function upsertNotificationPreference(
+  client: SupabaseClient<Database>,
+  preference: {
+    userId: string;
+    companyId: string;
+    topic: string;
+    channel: "email" | "slack";
+    enabled: boolean;
+  }
+) {
+  return client.from("notificationPreference").upsert(
+    {
+      ...preference,
+      updatedAt: new Date().toISOString()
+    },
+    { onConflict: "userId,companyId,channel,topic" }
+  );
+}
+
 export async function deleteUserAttributeValue(
   client: SupabaseClient<Database>,
   args: {

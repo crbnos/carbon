@@ -4,7 +4,7 @@ import { getLocalTimeZone, today as getToday } from "npm:@internationalized/date
 import { nanoid } from "https://deno.land/x/nanoid@v3.0.0/nanoid.ts";
 import { z } from "https://deno.land/x/zod@v3.21.4/mod.ts";
 import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
-import { corsHeaders } from "../lib/headers.ts";
+import { corsPreflight, errorResponse, jsonResponse } from "../lib/response.ts";
 import type { Database } from "../lib/types.ts";
 
 const pool = getConnectionPool(1);
@@ -92,9 +92,8 @@ const payloadValidator = z.discriminatedUnion("type", [
 ]);
 
 serve(async (req: Request) => {
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
-  }
+  const preflight = corsPreflight(req);
+  if (preflight) return preflight;
 
   const today = format(getToday(getLocalTimeZone()).toDate(getLocalTimeZone()), "yyyy-MM-dd");
 
@@ -744,7 +743,42 @@ serve(async (req: Request) => {
             .executeTakeFirstOrThrow();
 
           const lineside = line.toStorageUnitId;
-          const source = line.storageUnitId;
+
+          // Return target = the bin this lot was actually PICKED from, recorded
+          // on its Pick trackedActivity at pick time — not the line's stale
+          // generation-time source bin, which can be wrong per-lot and is null
+          // for a shortage line that later got picked anyway.
+          const pickActivities = await trx
+            .selectFrom("trackedActivity as ta")
+            .innerJoin(
+              "trackedActivityInput as tai",
+              "tai.trackedActivityId",
+              "ta.id"
+            )
+            .where("ta.type", "=", "Pick")
+            .where("ta.sourceDocument", "=", "Picking List")
+            .where("ta.sourceDocumentId", "=", line.pickingListId)
+            .where("tai.trackedEntityId", "=", trackedEntityId)
+            .where("ta.companyId", "=", companyId)
+            .where("tai.companyId", "=", companyId)
+            .orderBy("ta.createdAt", "desc")
+            .select("ta.attributes")
+            .execute();
+
+          // Use the LATEST pick for this line (activities are newest-first). Its
+          // "From Shelf" is the current truth — even if null (picked from an
+          // unassigned bin), fall through to the line bin rather than reusing an
+          // older pick's stale shelf.
+          const latestPickForLine = pickActivities
+            .map((a) => a.attributes as Record<string, unknown> | null)
+            // Disambiguate if the same entity was picked on multiple lines.
+            .find((a) => a?.["Picking List Line"] === pickingListLineId);
+          const pickedFromShelf = latestPickForLine?.["From Shelf"] as
+            | string
+            | null
+            | undefined;
+
+          const source = pickedFromShelf ?? line.storageUnitId;
           // No lineside stage or no source to return to → nothing to do.
           if (!lineside || !source) return;
 
@@ -871,22 +905,9 @@ serve(async (req: Request) => {
       }
     }
 
-    return new Response(
-      JSON.stringify({ success: true, splitEntityId }),
-      {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200
-      }
-    );
+    return jsonResponse({ success: true, splitEntityId });
   } catch (err) {
-    console.error(err);
-    return new Response(
-      JSON.stringify({ success: false, message: (err as Error).message }),
-      {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 500
-      }
-    );
+    return errorResponse(err, 500);
   }
 });
 

@@ -24,7 +24,7 @@ a step. Code outside steps executes again on every invocation.
 | Concept | v3 (Carbon — USE THIS) | v4 (do NOT copy) |
 |---|---|---|
 | Function shape | `createFunction({ id, ... }, { event: "x" }, handler)` — trigger is the 2nd positional arg | `triggers: [...]` inside the first arg |
-| Multiple triggers | not supported | `triggers: [{event}, {cron}]` |
+| Multiple triggers | supported — pass an array as the 2nd positional arg: `createFunction(opts, [{event: "x"}, {cron: "..."}], handler)` (verified in inngest@3.54 types: `SingleOrArray<InngestFunction.Trigger>`) | `triggers: [{event}, {cron}]` inside the first arg |
 | Event typing | `EventSchemas` + the `Events` type in `packages/lib/src/events.ts` | `eventType()` / `staticSchema<T>()` |
 | Testing | no `@inngest/test` (needs v4) — test handlers as plain functions with mocked services | `InngestTestEngine` |
 | Local dev mode | v3 defaults to dev mode locally | v4 defaults to Cloud; needs `INNGEST_DEV=1` |

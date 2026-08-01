@@ -14,6 +14,13 @@ export type Workspace = {
   aws_account_id: string | null;
   aws_region: string | null;
 
+  // Assembler (CAD -> GLB) Configuration — deployed separately by
+  // ci/src/assembler.ts, gated on `assembler`.
+  assembler: boolean;
+  assembler_api_key: string | null;
+  cert_arn_assembler: string | null;
+  assembler_domain: string | null;
+
   // Domain Configuration
   domain_name: string | null;
   cert_arn_erp: string | null;

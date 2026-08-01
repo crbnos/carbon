@@ -1,8 +1,21 @@
 // Card-shell + list primitives. The hub's surfaces are all "titled card wrapping
-// a divided list"; this replaces ~15 copy-pasted `rounded-2xl border bg-card …`
-// blocks. Compose: <Section title aside><SectionList>{rows}</SectionList></Section>.
+// a divided list", composed the design-system way: a `CardHeader` (title bar,
+// sitting on the `Card` shell) over a `CardContent` (the white `bg-card` surface
+// holding the list — the `Card` shell itself is the muted `bg-accent` tray in
+// light mode, so the body must live in a `CardContent` or it reads gray).
+// `CardContent` is `border-0`: the `Card`'s `shadow-button-base` already draws
+// the crisp outer edge, so a `CardContent` border on top of it reads as a blurry
+// double line. The header/body divider is a `border-b` on the `CardHeader`.
+// Compose: <Section title aside><SectionList>{rows}</SectionList></Section>.
 
-import { cn } from "@carbon/react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  cn
+} from "@carbon/react";
 import type { ReactNode } from "react";
 
 export function Section({
@@ -24,15 +37,9 @@ export function Section({
 }) {
   const hasHeader = title != null || aside != null;
   return (
-    <section
-      id={id}
-      className={cn(
-        "rounded-2xl border bg-card shadow-button-base overflow-hidden",
-        className
-      )}
-    >
+    <Card id={id} className={cn("overflow-hidden", className)}>
       {hasHeader ? (
-        <div className="px-5 py-3 border-b flex items-start justify-between gap-3">
+        <CardHeader className="flex-row items-start justify-between gap-3 px-5 py-3 border-b border-border">
           <div className="flex items-start gap-3 min-w-0">
             {number != null ? (
               <span className="shrink-0 size-6 rounded-lg border bg-background flex items-center justify-center text-xs font-semibold tabular-nums">
@@ -41,18 +48,18 @@ export function Section({
             ) : null}
             <div className="min-w-0">
               {title != null ? (
-                <div className="text-sm font-semibold">{title}</div>
+                <CardTitle className="text-sm font-semibold">{title}</CardTitle>
               ) : null}
               {subtitle != null ? (
-                <div className="text-xs text-muted-foreground">{subtitle}</div>
+                <CardDescription>{subtitle}</CardDescription>
               ) : null}
             </div>
           </div>
           {aside != null ? <div className="shrink-0">{aside}</div> : null}
-        </div>
+        </CardHeader>
       ) : null}
-      {children}
-    </section>
+      <CardContent className="p-0 border-0">{children}</CardContent>
+    </Card>
   );
 }
 
@@ -66,8 +73,10 @@ export function SectionList({
   return <ul className={cn("divide-y", className)}>{children}</ul>;
 }
 
-// The other card idiom: a padded card with an inline heading (no header bar, no
-// divided list). Used for prose/summary blocks (Scope sections, support, etc.).
+// The other card idiom: a padded card for prose/summary blocks (Scope sections,
+// support, etc.). Same design-system composition as `Section` — a titled `Panel`
+// puts its heading in a `CardHeader` over the `CardContent` body; an untitled one
+// is just the `CardContent` surface.
 export function Panel({
   title,
   aside,
@@ -79,22 +88,20 @@ export function Panel({
   children: ReactNode;
   className?: string;
 }) {
+  const hasHeader = title != null || aside != null;
   return (
-    <section
-      className={cn(
-        "rounded-2xl border bg-card shadow-button-base p-5",
-        className
-      )}
-    >
-      {title != null || aside != null ? (
-        <div className="flex items-start justify-between gap-3 mb-3">
+    <Card className="overflow-hidden">
+      {hasHeader ? (
+        <CardHeader className="flex-row items-start justify-between gap-3 px-5 py-3 border-b border-border">
           {title != null ? (
-            <h2 className="text-sm font-semibold">{title}</h2>
+            <CardTitle className="text-sm font-semibold">{title}</CardTitle>
           ) : null}
           {aside != null ? <div className="shrink-0">{aside}</div> : null}
-        </div>
+        </CardHeader>
       ) : null}
-      {children}
-    </section>
+      <CardContent className={cn("p-5 border-0", className)}>
+        {children}
+      </CardContent>
+    </Card>
   );
 }

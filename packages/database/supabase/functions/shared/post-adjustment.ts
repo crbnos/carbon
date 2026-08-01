@@ -28,8 +28,15 @@ export interface BookAdjustmentArgs {
     trackedEntityId: string | null;
     entryType: "Positive Adjmt." | "Negative Adjmt.";
     // itemLedgerDocumentType — manual adjustments stay NULL (ledger rows keep
-    // today's shape; 'Inventory Adjustment' exists only on journalLineDocumentType)
-    documentType?: "Inventory Count" | null;
+    // today's shape; 'Inventory Adjustment' exists only on journalLineDocumentType).
+    // Non-Conformance / Inbound Inspection tag NCR-disposition & inspection-reject
+    // write-offs (these also flow to the journal line's documentType). The full
+    // enum is accepted because stock-movement corrections copy the ORIGINAL
+    // movement's documentType so document-scoped movement views keep including
+    // the fix.
+    documentType?:
+      | Database["public"]["Enums"]["itemLedgerDocumentType"]
+      | null;
     documentId?: string | null;
     correctionOfItemLedgerId?: string | null;
     comment?: string | null;
@@ -52,6 +59,15 @@ export interface BookAdjustmentArgs {
       finishedGoodsAccount: string;
       inventoryAdjustmentVarianceAccount: string;
     };
+    // Offset (non-inventory) side of the balanced pair. Defaults to
+    // inventoryAdjustmentVarianceAccount; NCR-disposition / inspection-reject
+    // write-offs pass the company's scrapAccount so cost of quality is separable
+    // on the P&L.
+    offsetAccount?: string | null;
+    offsetDescription?: string;
+    // journal.sourceType for a header this call creates (default
+    // 'Inventory Adjustment'). Ignored when getJournalId supplies a shared journal.
+    sourceType?: Database["public"]["Enums"]["journalEntrySourceType"];
     description: string;
     userId: string;
     // active dimensions for the company group, entityType → dimension id
@@ -70,6 +86,24 @@ export interface BookAdjustmentArgs {
   skipValuation?: boolean;
 }
 
+// itemLedgerDocumentType values that also exist on journalLineDocumentType.
+// The journal line falls back to 'Inventory Adjustment' for ledger documentType
+// values the journal enum doesn't carry (e.g. 'Sales Invoice', 'Direct
+// Transfer', 'Posted Assembly') — inserting those would fail the enum cast.
+const JOURNAL_LINE_SAFE_DOCUMENT_TYPES: ReadonlySet<string> = new Set([
+  "Sales Shipment",
+  "Purchase Receipt",
+  "Purchase Invoice",
+  "Transfer Shipment",
+  "Job Consumption",
+  "Job Receipt",
+  "Batch Split",
+  "Maintenance Consumption",
+  "Inventory Count",
+  "Non-Conformance",
+  "Inbound Inspection",
+]);
+
 export interface BookAdjustmentResult {
   itemLedgerId: string;
   journalId: string | null;
@@ -82,6 +116,7 @@ export interface CreateAdjustmentJournalArgs {
   description: string;
   postingDate: string;
   userId: string;
+  sourceType?: Database["public"]["Enums"]["journalEntrySourceType"];
 }
 
 // One journal header for adjustment postings ('Inventory Adjustment' source,
@@ -104,7 +139,7 @@ export async function createAdjustmentJournal(
       description: args.description,
       postingDate: args.postingDate,
       companyId: args.companyId,
-      sourceType: "Inventory Adjustment",
+      sourceType: args.sourceType ?? "Inventory Adjustment",
       status: "Posted",
       postedAt: new Date().toISOString(),
       postedBy: args.userId,
@@ -267,6 +302,7 @@ export async function bookAdjustment(
         description: accounting.description,
         postingDate: ledger.postingDate,
         userId: accounting.userId,
+        sourceType: accounting.sourceType,
       });
 
   const inventoryAccount = resolveInventoryAccount(
@@ -274,7 +310,12 @@ export async function bookAdjustment(
     accounting.accountDefaults
   );
   const journalLineReference = nanoid();
-  const journalLineDocumentType = ledger.documentType ?? "Inventory Adjustment";
+  const journalLineDocumentType = (
+    ledger.documentType &&
+    JOURNAL_LINE_SAFE_DOCUMENT_TYPES.has(ledger.documentType)
+      ? ledger.documentType
+      : "Inventory Adjustment"
+  ) as Database["public"]["Enums"]["journalLineDocumentType"];
   const isGain = ledger.quantity > 0;
 
   const journalLines = await trx
@@ -293,8 +334,10 @@ export async function bookAdjustment(
       },
       {
         journalId,
-        accountId: accounting.accountDefaults.inventoryAdjustmentVarianceAccount,
-        description: "Inventory Adjustment",
+        accountId:
+          accounting.offsetAccount ??
+          accounting.accountDefaults.inventoryAdjustmentVarianceAccount,
+        description: accounting.offsetDescription ?? "Inventory Adjustment",
         amount: isGain ? credit("expense", cost) : debit("expense", cost),
         quantity: absQuantity,
         documentType: journalLineDocumentType,

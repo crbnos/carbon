@@ -19,8 +19,10 @@ import type { Theme } from "@carbon/utils";
 import { getPreferenceHeaders, modeValidator, themes } from "@carbon/utils";
 import { faviconLinks } from "@carbon/utils/favicon";
 import { I18nProvider } from "@react-aria/i18n";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Analytics } from "@vercel/analytics/react";
 import type React from "react";
+import { useState } from "react";
 import type {
   ActionFunctionArgs,
   LoaderFunctionArgs,
@@ -66,6 +68,7 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
     AUTH_PROVIDERS,
     CARBON_EDITION,
     CARBON_API_URL,
+    CARBON_SLACK_ENABLED,
     CONTROLLED_ENVIRONMENT,
     ERP_URL,
     LOG_LEVEL,
@@ -89,6 +92,7 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
         AUTH_PROVIDERS,
         CARBON_EDITION,
         CARBON_API_URL,
+        CARBON_SLACK_ENABLED,
         CONTROLLED_ENVIRONMENT,
         ERP_URL,
         LOG_LEVEL,
@@ -212,7 +216,7 @@ function Document({
             }}
           />
         ) : null}
-        <Toaster position="bottom-right" visibleToasts={5} />
+        <Toaster position="bottom-left" visibleToasts={5} />
         <ScrollRestoration />
         <Scripts />
         {!CONTROLLED_ENVIRONMENT && import.meta.env.PROD && <Analytics />}
@@ -232,18 +236,31 @@ export default function App() {
   /* Dark/Light Mode */
   const mode = useMode();
 
+  // Backs hook-based useQuery (the viewer's useOptimizedModel); MES has no
+  // clientLoader cache convention, so this client exists only for hooks.
+  const [queryClient] = useState(
+    () =>
+      new QueryClient({
+        defaultOptions: {
+          queries: { refetchOnWindowFocus: false }
+        }
+      })
+  );
+
   return (
-    <OperatingSystemContextProvider platform={prefs.platform}>
-      <LocaleProvider locale={appLanguage} catalog={linguiCatalog}>
-        <I18nProvider locale={prefs.locale}>
-          <TooltipProvider delayDuration={200}>
-            <Document mode={mode} theme={theme} lang={appLanguage} env={env}>
-              <Outlet />
-            </Document>
-          </TooltipProvider>
-        </I18nProvider>
-      </LocaleProvider>
-    </OperatingSystemContextProvider>
+    <QueryClientProvider client={queryClient}>
+      <OperatingSystemContextProvider platform={prefs.platform}>
+        <LocaleProvider locale={appLanguage} catalog={linguiCatalog}>
+          <I18nProvider locale={prefs.locale}>
+            <TooltipProvider delayDuration={200}>
+              <Document mode={mode} theme={theme} lang={appLanguage} env={env}>
+                <Outlet />
+              </Document>
+            </TooltipProvider>
+          </I18nProvider>
+        </LocaleProvider>
+      </OperatingSystemContextProvider>
+    </QueryClientProvider>
   );
 }
 

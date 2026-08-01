@@ -32,7 +32,17 @@ const supportedFileTypes: Record<string, string> = {
   fbx: "application/fbx",
   ply: "application/ply",
   off: "application/off",
-  step: "application/step"
+  step: "application/step",
+  stp: "application/step",
+  iges: "application/iges",
+  igs: "application/iges",
+  brep: "application/octet-stream",
+  "3dm": "application/octet-stream",
+  "3ds": "application/octet-stream",
+  "3mf": "model/3mf",
+  amf: "application/octet-stream",
+  bim: "application/octet-stream",
+  dae: "model/vnd.collada+xml"
 };
 
 export let loader = async ({ request, params }: LoaderFunctionArgs) => {
@@ -59,8 +69,10 @@ export let loader = async ({ request, params }: LoaderFunctionArgs) => {
   const effectiveType = isZst
     ? path.slice(0, -4).split(".").pop()?.toLowerCase()
     : fileType;
+  // Unknown extensions still get a Content-Type — a bare octet-stream beats
+  // omitting the header (browsers may otherwise sniff or mangle the download).
   const contentType = effectiveType
-    ? supportedFileTypes[effectiveType]
+    ? (supportedFileTypes[effectiveType] ?? "application/octet-stream")
     : undefined;
 
   // Authorize against the companyId as a full path segment (prefix or
@@ -93,7 +105,10 @@ export let loader = async ({ request, params }: LoaderFunctionArgs) => {
     await new Promise((resolve) => setTimeout(resolve, 1000));
     fileData = await downloadFile();
     if (!fileData) {
-      throw new Error("Failed to download file after retry");
+      // A missing object is a clean 404, not a 500 — consumers (e.g. the model
+      // download flow) branch on the status; an opaque error page body must
+      // never be saved to disk as if it were the file.
+      return new Response(null, { status: 404 });
     }
   }
 

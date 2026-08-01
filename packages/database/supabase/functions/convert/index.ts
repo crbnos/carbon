@@ -9,7 +9,7 @@ import { z } from "npm:zod@^3.24.1";
 import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
 
 import { format } from "https://deno.land/std@0.205.0/datetime/format.ts";
-import { corsHeaders } from "../lib/headers.ts";
+import { corsPreflight, errorResponse, jsonResponse } from "../lib/response.ts";
 import { requirePermissions } from "../lib/supabase.ts";
 import { Database } from "../lib/types.ts";
 import { getNextSequence } from "../shared/get-next-sequence.ts";
@@ -131,9 +131,8 @@ const payloadValidator = z.discriminatedUnion("type", [
 ]);
 
 serve(async (req: Request) => {
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
-  }
+  const preflight = corsPreflight(req);
+  if (preflight) return preflight;
   const payload = await req.json();
   let convertedId = "";
   try {
@@ -441,14 +440,11 @@ serve(async (req: Request) => {
             .execute();
         });
 
-        return new Response(
-          JSON.stringify({
-            id: purchaseInvoiceId,
-          }),
+        return jsonResponse(
           {
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-            status: 201,
-          }
+            id: purchaseInvoiceId,
+          },
+          201
         );
       }
       case "quoteToSalesOrder": {
@@ -811,13 +807,16 @@ serve(async (req: Request) => {
             .single(),
         ]);
 
-        if (!salesOrder.data) throw new Error("Purchase order not found");
+        if (salesOrder.error) throw new Error(salesOrder.error.message);
+        if (!salesOrder.data) throw new Error("Sales order not found");
         if (salesOrderLines.error)
           throw new Error(salesOrderLines.error.message);
+        if (salesOrderPayment.error) throw new Error(salesOrderPayment.error.message);
         if (!salesOrderPayment.data)
-          throw new Error("Purchase order payment not found");
+          throw new Error("Sales order payment details not found");
+        if (salesOrderShipment.error) throw new Error(salesOrderShipment.error.message);
         if (!salesOrderShipment.data)
-          throw new Error("Purchase order delivery not found");
+          throw new Error("Sales order delivery details not found");
 
         const uninvoicedLines = salesOrderLines?.data?.reduce<
           (typeof salesOrderLines)["data"]
@@ -878,7 +877,7 @@ serve(async (req: Request) => {
             .returning(["id"])
             .executeTakeFirstOrThrow();
 
-          if (!salesInvoice.id) throw new Error("Purchase invoice not created");
+          if (!salesInvoice.id) throw new Error("Sales invoice not created");
           salesInvoiceId = salesInvoice.id;
 
           await trx
@@ -940,14 +939,11 @@ serve(async (req: Request) => {
           }
         });
 
-        return new Response(
-          JSON.stringify({
-            id: salesInvoiceId,
-          }),
+        return jsonResponse(
           {
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-            status: 201,
-          }
+            id: salesInvoiceId,
+          },
+          201
         );
       }
       case "salesRfqToQuote": {
@@ -1334,9 +1330,9 @@ serve(async (req: Request) => {
               .eq("shipped", true),
           ]);
 
+        if (shipment.error) throw shipment.error;
         if (shipmentLines.error) throw shipmentLines.error;
-        if (shipmentFixedAssetLines.error)
-          throw shipmentFixedAssetLines.error;
+        if (shipmentFixedAssetLines.error) throw shipmentFixedAssetLines.error;
 
         // Accumulate quantities for each sales order line
         const quantitiesByLine = shipmentLines.data.reduce<
@@ -1359,7 +1355,9 @@ serve(async (req: Request) => {
           !shipment.data?.sourceDocumentId ||
           shipment.data?.sourceDocument !== "Sales Order"
         ) {
-          throw new Error("Shipment has no source document id");
+          throw new Error(
+            "This shipment isn't linked to a sales order, so there's nothing to invoice."
+          );
         }
 
         const [
@@ -1386,13 +1384,16 @@ serve(async (req: Request) => {
             .single(),
         ]);
 
-        if (!salesOrder.data) throw new Error("Purchase order not found");
+        if (salesOrder.error) throw new Error(salesOrder.error.message);
+        if (!salesOrder.data) throw new Error("Sales order not found");
         if (salesOrderLines.error)
           throw new Error(salesOrderLines.error.message);
+        if (salesOrderPayment.error) throw new Error(salesOrderPayment.error.message);
         if (!salesOrderPayment.data)
-          throw new Error("Purchase order payment not found");
+          throw new Error("Sales order payment details not found");
+        if (salesOrderShipment.error) throw new Error(salesOrderShipment.error.message);
         if (!salesOrderShipment.data)
-          throw new Error("Purchase order delivery not found");
+          throw new Error("Sales order delivery details not found");
 
         const uninvoicedLines = salesOrderLines?.data?.reduce<
           (typeof salesOrderLines)["data"]
@@ -1466,7 +1467,7 @@ serve(async (req: Request) => {
             .returning(["id"])
             .executeTakeFirstOrThrow();
 
-          if (!salesInvoice.id) throw new Error("Purchase invoice not created");
+          if (!salesInvoice.id) throw new Error("Sales invoice not created");
           salesInvoiceId = salesInvoice.id;
 
           await trx
@@ -1528,14 +1529,11 @@ serve(async (req: Request) => {
           }
         });
 
-        return new Response(
-          JSON.stringify({
-            id: salesInvoiceId,
-          }),
+        return jsonResponse(
           {
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-            status: 201,
-          }
+            id: salesInvoiceId,
+          },
+          201
         );
       }
       case "supplierQuoteToPurchaseOrder": {
@@ -2026,20 +2024,10 @@ serve(async (req: Request) => {
         throw new Error(`Invalid type  ${type}`);
     }
 
-    return new Response(
-      JSON.stringify({
-        convertedId,
-      }),
-      {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200,
-      }
-    );
-  } catch (err) {
-    console.error(err);
-    return new Response(JSON.stringify(err), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 500,
+    return jsonResponse({
+      convertedId,
     });
+  } catch (err) {
+    return errorResponse(err, 500);
   }
 });

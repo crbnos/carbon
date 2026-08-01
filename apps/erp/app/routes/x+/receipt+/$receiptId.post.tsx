@@ -47,9 +47,22 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // fire here too.
   const { data: receiptForSurface } = await serviceRole
     .from("receipt")
-    .select("sourceDocument")
+    .select("sourceDocument, status")
     .eq("id", receiptId)
+    .eq("companyId", companyId)
     .single();
+
+  // A voided receipt has already been reversed — re-posting would duplicate
+  // ledger entries, cost layers and journal lines. Block it before mutating
+  // any state (the route flips status to "Pending" below, which is why this
+  // guard lives here and not in the edge function).
+  if (receiptForSurface?.status === "Voided") {
+    throw redirect(
+      path.to.receipt(receiptId),
+      await flash(request, error(null, "Cannot post a voided receipt"))
+    );
+  }
+
   const surfaces: ("receipt" | "warehouseTransfer")[] = ["receipt"];
   if (receiptForSurface?.sourceDocument === "Inbound Transfer") {
     surfaces.push("warehouseTransfer");
@@ -151,12 +164,20 @@ export async function action({ request, params }: ActionFunctionArgs) {
     lines: lines ?? []
   });
 
+  // Make the transition to Pending atomic with the voided guard above: the
+  // early check and this update are separated by rule evaluation + reconcile,
+  // so a concurrent void could slip in between. Conditioning the write on the
+  // status still not being "Voided" (and detecting a zero-row match) closes
+  // that race — a voided receipt won't be flipped back to Pending and reposted.
   const setPendingState = await client
     .from("receipt")
     .update({
       status: "Pending"
     })
-    .eq("id", receiptId);
+    .eq("id", receiptId)
+    .eq("companyId", companyId)
+    .neq("status", "Voided")
+    .select("id");
 
   if (setPendingState.error) {
     throw redirect(
@@ -165,6 +186,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
         request,
         error(setPendingState.error, "Failed to post receipt")
       )
+    );
+  }
+
+  if (!setPendingState.data?.length) {
+    throw redirect(
+      path.to.receipt(receiptId),
+      await flash(request, error(null, "Cannot post a voided receipt"))
     );
   }
 

@@ -9,7 +9,7 @@ import { Field, FieldTable } from "@/components/editorial/field-table";
 import { Glossary } from "@/components/editorial/glossary";
 // Figure/Screenshot + the shared Zoomable island so the Reference gets the same
 // click-to-enlarge visuals as the Guide (one component, both surfaces).
-import { Figure, Screenshot } from "@/components/editorial/mdx";
+import { AgentContext, Figure, Screenshot } from "@/components/editorial/mdx";
 // Editorial Callout/Card so the Reference matches the Guide (not Fumadocs defaults).
 import { Callout, Card, Cards, EnvVar, EnvVars, PlanBadge } from "@/components/editorial/reference-components";
 import { StatusFlow, Status } from "@/components/editorial/status-flow";
@@ -75,6 +75,7 @@ export function getMDXComponents(components?: MDXComponents) {
     Check,
     Frame,
     Eyebrow,
+    AgentContext,
     ...components,
   } satisfies MDXComponents;
 }

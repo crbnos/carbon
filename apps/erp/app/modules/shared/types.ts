@@ -12,6 +12,8 @@ import type {
   operationParameterValidator,
   operationStepValidator,
   operationToolValidator,
+  SlideAnnotation,
+  SlideSize,
   sourcingType,
   standardFactorType
 } from "./shared.models";
@@ -102,11 +104,24 @@ export type Note = NonNullable<
   Awaited<ReturnType<typeof getNotes>>["data"]
 >[number];
 
+export type OperationStepSlide = {
+  id: string;
+  stepId: string;
+  // A slide is image XOR model: exactly one of imagePath / modelUploadId is set.
+  imagePath: string | null;
+  modelUploadId: string | null;
+  caption: string | null;
+  sortOrder: number;
+  size: SlideSize | null;
+  annotations: SlideAnnotation[] | null;
+};
+
 export type OperationStep = z.infer<typeof operationStepValidator> & {
   createdBy: string;
   createdAt: string;
   updatedBy: string | null;
   updatedAt: string | null;
+  methodOperationStepSlide?: OperationStepSlide[];
 };
 
 export type OperationTool = z.infer<typeof operationToolValidator> & {
@@ -114,6 +129,11 @@ export type OperationTool = z.infer<typeof operationToolValidator> & {
   createdAt: string;
   updatedBy: string | null;
   updatedAt: string | null;
+  // Phase 2 (tool ↔ step, many-to-many): the step ids this tool is scoped to. Empty = the
+  // whole operation. Not part of the tier-agnostic validator; populated by the loader from
+  // the methodOperationToolStep / jobOperationToolStep join rows.
+  methodOperationStepIds?: string[];
+  jobOperationStepIds?: string[];
 };
 
 export type OperationParameter = z.infer<typeof operationParameterValidator> & {

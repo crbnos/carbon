@@ -122,7 +122,7 @@ export function HowToLayout({ bodies }: { bodies: ReactNode[] }) {
   const nextInFlow = flowChapters[posInFlow + 1];
 
   return (
-    <main className="min-h-screen bg-ed-paper" style={{ paddingTop: "116px" }}>
+    <main className="min-h-screen bg-[#fbfbf8]" style={{ paddingTop: "116px" }}>
       <MobileContextBar chapter={currentChapter.title} section={currentChapter.items[active.item]?.title} />
       <div className="mx-auto flex w-full max-w-360 px-5">
         {/* Sidebar (desktop) — sticky, self-start so it tracks the page scroll instead
@@ -155,7 +155,7 @@ export function HowToLayout({ bodies }: { bodies: ReactNode[] }) {
               </span>
             </div>
 
-            <h1 className="mt-[18px] text-ed-32 font-normal leading-[112%] text-ink md:text-ed-40">
+            <h1 className="mt-[18px] text-ed-32 font-semibold tracking-tight leading-[112%] text-ink md:text-ed-40">
               {currentChapter.title}
             </h1>
 

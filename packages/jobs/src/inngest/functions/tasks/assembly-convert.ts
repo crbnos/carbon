@@ -2,9 +2,12 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Json } from "@carbon/database";
 import { inngest } from "../../client";
 import {
+  ASSEMBLER_CONCURRENCY,
   assemblerEnabled,
   internalizeStorageUrl,
-  runAssemblerJob
+  resolveModelSourceBucket,
+  runAssemblerJob,
+  signSourceUrl
 } from "./assembler-client";
 
 const SIGNED_URL_EXPIRY = 60 * 60; // seconds — the source (read) URL only.
@@ -24,9 +27,7 @@ export const assemblyConvertFunction = inngest.createFunction(
   {
     id: "assembly-convert",
     retries: 2,
-    // This function holds its run for the whole convert (it long-polls to
-    // completion); keep per-company fan-out from starving other tenants.
-    concurrency: [{ limit: 4 }, { key: "event.data.companyId", limit: 2 }],
+    concurrency: ASSEMBLER_CONCURRENCY,
     onFailure: async ({ event }) => {
       const { modelUploadId } = event.data.event.data;
       const client = getCarbonServiceRole();
@@ -124,14 +125,18 @@ export const assemblyConvertFunction = inngest.createFunction(
       logger,
       buildBody: async () => {
         const client = getCarbonServiceRole();
-        // Raw source lives in `temp-staging` (2.5 GB cap); assembly artifacts
-        // (glb/graph) are written to `private`.
-        const source = await client.storage
-          .from("temp-staging")
-          .createSignedUrl(job.modelPath, SIGNED_URL_EXPIRY);
-        if (source.error) {
-          throw new Error(`Failed to sign source URL: ${source.error.message}`);
-        }
+        // Legacy (pre-assembler) raws live in `private`, current ones in
+        // `temp-staging`; assembly artifacts (glb/graph) are written to `private`.
+        const sourceBucket = await resolveModelSourceBucket(
+          client,
+          job.modelPath
+        );
+        const signedUrl = await signSourceUrl(
+          client,
+          sourceBucket,
+          job.modelPath,
+          SIGNED_URL_EXPIRY
+        );
 
         // Content identity for the service's result cache: with a contentHash a
         // repeat convert of unchanged bytes is served without re-downloading the
@@ -140,7 +145,7 @@ export const assemblyConvertFunction = inngest.createFunction(
         let contentHash: string | undefined;
         try {
           const info = await client.storage
-            .from("temp-staging")
+            .from(sourceBucket)
             .info(job.modelPath);
           const etag = info.data?.etag?.replaceAll('"', "");
           if (!info.error && etag) {
@@ -152,7 +157,7 @@ export const assemblyConvertFunction = inngest.createFunction(
 
         return {
           source: {
-            url: internalizeStorageUrl(source.data.signedUrl),
+            url: internalizeStorageUrl(signedUrl),
             format: "step",
             ...(contentHash ? { contentHash } : {})
           },
