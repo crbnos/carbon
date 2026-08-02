@@ -87,7 +87,7 @@ Standing rules for every task:
       `none` → `exclude/FAMILY_OFF`.
 - Verify: `pnpm --filter @carbon/ee test` green.
 
-### 1.4 Record dispositions in the event path
+### 1.4 Record dispositions in the event path ✅ (afca82fcb)
 - Files: `packages/jobs/src/inngest/functions/events/sync.ts`,
   `packages/jobs/src/inngest/functions/integrations/accounting-sync-operations.ts`
 - [ ] On `exclude` decisions, insert a terminal `Excluded` operation (idempotency key =
@@ -104,7 +104,7 @@ Standing rules for every task:
   excluded insert, idempotent re-delivery, backfill decides unrecorded journals.
 - Verify: `pnpm --filter @carbon/jobs test` green; typecheck filter set green.
 
-### 1.5 Per-source-type consolidation partitions
+### 1.5 Per-source-type consolidation partitions ✅ (1e46cc75d)
 - Files: `packages/jobs/src/inngest/functions/integrations/accounting-consolidation.ts`,
   `packages/ee/src/accounting/core/posting.ts` (`aggregateJournalEntriesForDate`)
 - [ ] Claim filter selects only journals whose resolved granularity is `daily-summary`
@@ -117,7 +117,7 @@ Standing rules for every task:
 - Tests: partition math, member ejection, memo contents (pure helpers).
 - Verify: `pnpm --filter @carbon/jobs test` + `pnpm --filter @carbon/ee test` green.
 
-### 1.6 Settings UI: policy table
+### 1.6 Settings UI: policy table ✅ (7eede0ad3)
 - Files: `apps/erp/app/routes/x+/settings+/integrations.$id.tsx` (+ its posting-sync form
   component under `apps/erp/app/modules/settings/ui/` — follow where the v2 posting-sync
   form lives; extend, don't fork)
@@ -131,11 +131,13 @@ Standing rules for every task:
 - Verify: typecheck erp green; browser-verify via `/auth` + `/test` (settings page renders
   all 21 rows, toggling persists, doc-backed rows read-only) — record screenshots for the PR.
 
-### 1.7 Inbox: Excluded + drill-back
+### 1.7 Inbox: Excluded + drill-back ✅ (landed with 6d1160c88)
 - Files: the sync-activity table component under the integration detail route
-- [ ] `Excluded` status chip + reason column value; status filter includes it; batch rows
-      expand member journals from `metadata.journalIds` (Drawer for journal detail, house
-      convention).
+- [x] `Excluded` status chip + reason column value; status filter includes it; batch
+      drill-back via the existing operation detail Drawer, which renders errorCode,
+      message, and the full metadata (journalIds/consolidatedInto/backingDocument).
+      *(Amended: a dedicated expandable member list was unnecessary — the detail Drawer
+      already surfaces the batch membership.)*
 - Verify: typecheck green; browser-verify inbox filter + batch expansion.
 
 ### 1.8 Completeness service (foundation for tie-out)

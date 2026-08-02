@@ -1,4 +1,5 @@
 import type { Database, Json } from "@carbon/database";
+import { fetchAllFromTable } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import type { PeriodPostingSource } from "@carbon/utils";
 import {
@@ -4019,4 +4020,232 @@ export async function upsertFixedAssetUsageLog(
     .insert([data as any])
     .select("id")
     .single();
+}
+
+// /********************************************************\
+// *        Posting-sync completeness (spec v3, I1)         *
+// \********************************************************/
+
+export type JournalSyncCompleteness = {
+  totalJournals: number;
+  dispositions: {
+    /** Operation Completed — pushed (individually or inside a batch). */
+    synced: number;
+    /** Operation Pending / In Flight. */
+    pending: number;
+    /** Operation Failed / Warning (incl. decision-time DOC_SYNC_DISABLED). */
+    blocked: number;
+    /** Excluded by policy (FAMILY_OFF / SOURCE_TYPE_DISABLED / MANUAL_DISABLED). */
+    excluded: number;
+    /** Human opt-out. */
+    skipped: number;
+    /**
+     * Excluded/DOC_BACKED — delivered only while the backing document
+     * actually synced (external mapping exists); payments and
+     * entity-synced inventory adjustments are provider-native and count
+     * delivered by definition.
+     */
+    docBacked: { delivered: number; undelivered: number };
+  };
+  /** Posted journals with NO operation row — a missed event (backfill repair). */
+  unaccountedJournalIds: string[];
+  /** DOC_BACKED journals whose backing document has not reached the provider. */
+  undeliveredDocBackedJournalIds: string[];
+};
+
+/**
+ * The I1 completeness check: every Posted journal since the posting-sync
+ * start date must carry exactly one recorded disposition in the
+ * accountingSyncOperation ledger. The caller resolves posting-sync settings
+ * (this module deliberately does not import @carbon/ee/accounting — see the
+ * TS2589 notes in the settings Integrations components) and passes
+ * syncFromDate explicitly.
+ */
+export async function getJournalSyncCompleteness(
+  client: SupabaseClient<Database>,
+  args: {
+    companyId: string;
+    /** companyIntegration id, e.g. "xero" | "quickbooks" | "rillet". */
+    integrationId: string;
+    /** YYYY-MM-DD; journals dated before this are out of scope. */
+    syncFromDate: string;
+    /** Restrict to one accounting period (the close auto-check). */
+    accountingPeriodId?: string;
+  }
+): Promise<{ data: JournalSyncCompleteness | null; error: string | null }> {
+  const journals = await fetchAllFromTable<{
+    id: string;
+    sourceType: string | null;
+  }>(client, "journal", "id, sourceType", (query: any) => {
+    let filtered = query
+      .eq("companyId", args.companyId)
+      .in("status", ["Posted", "Reversed"])
+      .is("reversalOfId", null)
+      .gte("postingDate", args.syncFromDate);
+    if (args.accountingPeriodId) {
+      filtered = filtered.eq("accountingPeriodId", args.accountingPeriodId);
+    }
+    return filtered.order("id", { ascending: true });
+  });
+  if (journals.error) {
+    return { data: null, error: journals.error.message };
+  }
+
+  const operations = await fetchAllFromTable<{
+    entityId: string;
+    status: string;
+    errorCode: string | null;
+    metadata: Json | null;
+  }>(
+    client,
+    "accountingSyncOperation",
+    "entityId, status, errorCode, metadata",
+    (query: any) =>
+      query
+        .eq("companyId", args.companyId)
+        .eq("integration", args.integrationId)
+        .eq("entityType", "journalEntry")
+  );
+  if (operations.error) {
+    return { data: null, error: operations.error.message };
+  }
+
+  // Original-push operations only: reversal ops (":reversal") supplement the
+  // original's disposition, and "daily:" markers are batch bookkeeping
+  const operationByJournalId = new Map<
+    string,
+    { status: string; errorCode: string | null; metadata: Json | null }
+  >();
+  for (const operation of operations.data ?? []) {
+    if (operation.entityId.startsWith("daily:")) continue;
+    if (operation.entityId.endsWith(":reversal")) continue;
+    operationByJournalId.set(operation.entityId, operation);
+  }
+
+  const summary: JournalSyncCompleteness = {
+    totalJournals: (journals.data ?? []).length,
+    dispositions: {
+      synced: 0,
+      pending: 0,
+      blocked: 0,
+      excluded: 0,
+      skipped: 0,
+      docBacked: { delivered: 0, undelivered: 0 }
+    },
+    unaccountedJournalIds: [],
+    undeliveredDocBackedJournalIds: []
+  };
+
+  // DOC_BACKED journals whose backing entity is a Carbon-pushed document
+  // (invoice/bill) must have that document actually synced to count as
+  // delivered — collect them for the mapping check below
+  const docBackedByJournalId = new Map<string, "invoice" | "bill">();
+
+  for (const journal of journals.data ?? []) {
+    const operation = operationByJournalId.get(journal.id);
+    if (!operation) {
+      summary.unaccountedJournalIds.push(journal.id);
+      continue;
+    }
+
+    switch (operation.status) {
+      case "Completed":
+        summary.dispositions.synced++;
+        break;
+      case "Pending":
+      case "In Flight":
+        summary.dispositions.pending++;
+        break;
+      case "Failed":
+      case "Warning":
+        summary.dispositions.blocked++;
+        break;
+      case "Skipped":
+        summary.dispositions.skipped++;
+        break;
+      case "Excluded": {
+        if (operation.errorCode === "DOC_BACKED") {
+          const backing =
+            operation.metadata &&
+            typeof operation.metadata === "object" &&
+            !Array.isArray(operation.metadata)
+              ? (operation.metadata as Record<string, unknown>).backingDocument
+              : null;
+          const backingEntityType =
+            backing && typeof backing === "object" && !Array.isArray(backing)
+              ? (backing as Record<string, unknown>).entityType
+              : null;
+          if (backingEntityType === "invoice" || backingEntityType === "bill") {
+            docBackedByJournalId.set(journal.id, backingEntityType);
+          } else {
+            // payment / inventoryAdjustment: provider-native representation
+            summary.dispositions.docBacked.delivered++;
+          }
+        } else {
+          summary.dispositions.excluded++;
+        }
+        break;
+      }
+      default:
+        summary.dispositions.blocked++;
+        break;
+    }
+  }
+
+  if (docBackedByJournalId.size > 0) {
+    const journalIds = [...docBackedByJournalId.keys()];
+    const CHUNK = 300;
+
+    // journal → backing document id via the lines' document linkage
+    const documentIdByJournalId = new Map<string, string>();
+    for (let i = 0; i < journalIds.length; i += CHUNK) {
+      const chunk = journalIds.slice(i, i + CHUNK);
+      const lines = await client
+        .from("journalLine")
+        .select("journalId, documentId")
+        .eq("companyId", args.companyId)
+        .in("journalId", chunk)
+        .not("documentId", "is", null);
+      if (lines.error) {
+        return { data: null, error: lines.error.message };
+      }
+      for (const line of lines.data ?? []) {
+        if (line.journalId && line.documentId) {
+          documentIdByJournalId.set(line.journalId, line.documentId);
+        }
+      }
+    }
+
+    const documentIds = [...new Set(documentIdByJournalId.values())];
+    const syncedDocumentIds = new Set<string>();
+    for (let i = 0; i < documentIds.length; i += CHUNK) {
+      const chunk = documentIds.slice(i, i + CHUNK);
+      const mappings = await client
+        .from("externalIntegrationMapping")
+        .select("entityId")
+        .eq("companyId", args.companyId)
+        .eq("integration", args.integrationId)
+        .in("entityType", ["invoice", "bill"])
+        .in("entityId", chunk)
+        .not("externalId", "is", null);
+      if (mappings.error) {
+        return { data: null, error: mappings.error.message };
+      }
+      for (const mapping of mappings.data ?? []) {
+        syncedDocumentIds.add(mapping.entityId);
+      }
+    }
+
+    for (const journalId of journalIds) {
+      const documentId = documentIdByJournalId.get(journalId);
+      if (documentId && syncedDocumentIds.has(documentId)) {
+        summary.dispositions.docBacked.delivered++;
+      } else {
+        summary.dispositions.docBacked.undelivered++;
+        summary.undeliveredDocBackedJournalIds.push(journalId);
+      }
+    }
+  }
+
+  return { data: summary, error: null };
 }
