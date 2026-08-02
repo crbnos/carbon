@@ -435,6 +435,7 @@ export const path = {
     closeIssue: (id: string) => generatePath(`${x}/issue/${id}/close`),
     companies: `${x}/settings/companies`,
     company: `${x}/settings/company`,
+    companyGroupSettings: `${x}/settings/company-group`,
     companySwitch: (companyId: string) =>
       generatePath(`${x}/settings/company/switch/${companyId}`),
     completeTrainingAssignment: (id: string) =>
@@ -1157,6 +1158,10 @@ export const path = {
       generatePath(`${x}/settings/integrations/deactivate/${id}`),
     integrations: `${x}/settings/integrations`,
     intercompany: `${x}/accounting/intercompany`,
+    intercompanyMirroring: `${x}/accounting/intercompany-mirroring`,
+    intercompanyNetting: `${x}/accounting/intercompany-netting`,
+    intercompanyNettingStatement: (id: string) =>
+      generatePath(`${x}/accounting/intercompany-netting/${id}`),
     inventory: `${x}/inventory/quantities`,
     inventoryCount: (id: string) => generatePath(`${x}/inventory-count/${id}`),
     inventoryCountConfirm: (id: string) =>
@@ -1445,6 +1450,7 @@ export const path = {
     newGroup: `${x}/users/groups/new`,
     newHoliday: `${x}/people/holidays/new`,
     newInspectionDocument: `${x}/production/inspection/new`,
+    newIntercompanyNettingStatement: `${x}/accounting/intercompany-netting/new`,
     newIntercompanyTransaction: `${x}/accounting/intercompany/new`,
     newInventoryCount: `${x}/inventory/inventory-count/new`,
     newInvestigationType: `${x}/quality/investigation-types/new`,

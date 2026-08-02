@@ -179,6 +179,42 @@ export async function action(args: ActionFunctionArgs) {
     );
   }
 
+  // Intercompany document mirroring: a released PO on an intercompany supplier
+  // drafts a matching sales order in the partner company. Best-effort — never
+  // block the release on the mirror trigger.
+  try {
+    if (purchaseOrder.data.supplierId) {
+      const [supplier, company] = await Promise.all([
+        serviceRole
+          .from("supplier")
+          .select("intercompanyCompanyId")
+          .eq("id", purchaseOrder.data.supplierId)
+          .single(),
+        getCompany(serviceRole, companyId)
+      ]);
+      const targetCompanyId = supplier.data?.intercompanyCompanyId;
+      const companyGroupId = company.data?.companyGroupId;
+      if (targetCompanyId && companyGroupId) {
+        const group = await serviceRole
+          .from("companyGroup")
+          .select("intercompanyDocumentMirroring")
+          .eq("id", companyGroupId)
+          .single();
+        if (group.data?.intercompanyDocumentMirroring) {
+          await trigger("carbon/intercompany-mirror-po", {
+            purchaseOrderId: orderId,
+            sourceCompanyId: companyId,
+            targetCompanyId,
+            companyGroupId,
+            userId
+          });
+        }
+      }
+    }
+  } catch (e) {
+    logger.error("Failed to trigger intercompany PO mirror", { error: e });
+  }
+
   // Check if we should update prices on purchase order finalize
   const companySettings = await getCompanySettings(serviceRole, companyId);
   if (

@@ -6,10 +6,15 @@ import {
   LuBuilding2,
   LuCircleDollarSign,
   LuFileText,
+  LuGitCompareArrows,
   LuStar
 } from "react-icons/lu";
 import { Table } from "~/components";
-import { intercompanyTransactionStatuses } from "../../accounting.models";
+import {
+  intercompanyDifferenceKinds,
+  intercompanyTransactionStatuses
+} from "../../accounting.models";
+import IntercompanyDifferenceKind from "./IntercompanyDifferenceKind";
 import IntercompanyTransactionStatus from "./IntercompanyTransactionStatus";
 
 type IntercompanyTransaction = {
@@ -21,6 +26,8 @@ type IntercompanyTransaction = {
   description: string | null;
   status: string;
   documentType: string | null;
+  differenceKind: string | null;
+  matchedDifference: number | null;
   createdAt: string;
   sourceCompany: { name: string } | null;
   targetCompany: { name: string } | null;
@@ -99,6 +106,42 @@ const IntercompanyTransactionTable = memo(
               }))
             },
             icon: <LuStar />
+          }
+        },
+        {
+          accessorKey: "differenceKind",
+          header: t`Difference`,
+          cell: ({ row }) => {
+            if (!row.original.differenceKind) return "—";
+            const diff = row.original.matchedDifference;
+            return (
+              <div className="flex items-center gap-2">
+                <IntercompanyDifferenceKind
+                  differenceKind={
+                    row.original
+                      .differenceKind as (typeof intercompanyDifferenceKinds)[number]
+                  }
+                />
+                {diff != null ? (
+                  <span className="text-xs text-muted-foreground">
+                    {new Intl.NumberFormat("en-US", {
+                      style: "currency",
+                      currency: row.original.currencyCode || "USD"
+                    }).format(diff)}
+                  </span>
+                ) : null}
+              </div>
+            );
+          },
+          meta: {
+            filter: {
+              type: "static",
+              options: intercompanyDifferenceKinds.map((v) => ({
+                label: v,
+                value: v
+              }))
+            },
+            icon: <LuGitCompareArrows />
           }
         },
         {

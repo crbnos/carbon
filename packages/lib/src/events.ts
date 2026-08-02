@@ -597,4 +597,28 @@ export type Events = {
       companyId: string;
     };
   };
+
+  // Intercompany document mirroring — a released purchase order on an
+  // intercompany supplier drafts a matching sales order in the partner company.
+  "carbon/intercompany-mirror-po": {
+    data: {
+      purchaseOrderId: string;
+      sourceCompanyId: string;
+      targetCompanyId: string;
+      companyGroupId: string;
+      userId: string;
+    };
+  };
+
+  // Intercompany document mirroring — a posted sales invoice to an intercompany
+  // customer drafts a matching purchase invoice in the buyer company.
+  "carbon/intercompany-mirror-invoice": {
+    data: {
+      salesInvoiceId: string;
+      sourceCompanyId: string;
+      targetCompanyId: string;
+      companyGroupId: string;
+      userId: string;
+    };
+  };
 };

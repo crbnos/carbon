@@ -227,6 +227,9 @@ msgstr "9-12 hafta"
 msgid "90D"
 msgstr "90G"
 
+msgid "A → B"
+msgstr "A → B"
+
 msgid "A Carbon-run data migration — you load your own data"
 msgstr "Bir Carbon tarafından yönetilen veri taşıması — kendi verilerinizi yüklersiniz"
 
@@ -846,11 +849,17 @@ msgstr "Sonra"
 msgid "After (calculation method)"
 msgstr "Sonra (hesaplama yöntemi)"
 
+msgid "Agree"
+msgstr "Kabul Et"
+
 msgid "Agree on the scope"
 msgstr "Kapsamda anlaş"
 
 msgid "Agree who owns what and set a working rhythm"
 msgstr "Kimin neyi sahip olduğunu belirleyin ve çalışma ritmi oluşturun"
+
+msgid "Agreed"
+msgstr "Kabul Edildi"
 
 msgid "AI Tokens"
 msgstr "Yapay Zeka Jetonları"
@@ -1762,6 +1771,9 @@ msgstr "Kapatma Ortalama Günler"
 msgid "Awaiting approval"
 msgstr "Onay bekliyor"
 
+msgid "B → A"
+msgstr "B → A"
+
 msgid "Back"
 msgstr "Geri"
 
@@ -2479,6 +2491,12 @@ msgstr "Şirketler"
 msgid "Company"
 msgstr "Şirket"
 
+msgid "Company A"
+msgstr "Şirket A"
+
+msgid "Company B"
+msgstr "Şirket B"
+
 msgid "Company group"
 msgstr "Şirket grubu"
 
@@ -2580,6 +2598,9 @@ msgstr "Kalite panosu için varsayılan ayarları yapılandırın."
 
 msgid "Configure how preventative maintenance dispatches are automatically generated from maintenance schedules."
 msgstr "Önleyici bakım sevklerinin bakım programlarından otomatik olarak nasıl oluşturulacağını yapılandırın."
+
+msgid "Configure intercompany matching tolerance and document mirroring across the company group."
+msgstr "Şirketler arası eşleşme toleransını ve belge yansıtmasını şirket grubu genelinde yapılandırın."
 
 msgid "Configure Item"
 msgstr "Öğe Yapılandır"
@@ -3168,6 +3189,9 @@ msgstr "Revizyon Oluştur"
 
 msgid "Create Rule"
 msgstr "Kural Oluştur"
+
+msgid "Create statement"
+msgstr "Tasnif İfadesi Oluştur"
 
 msgid "Create Transfer"
 msgstr "Transfer Oluştur"
@@ -4219,6 +4243,12 @@ msgstr "Değişiklimin Açıklaması"
 msgid "Description of Issue"
 msgstr "Sorun Açıklaması"
 
+msgid "Detach Link"
+msgstr "Bağlantıyı Ayır"
+
+msgid "Detached"
+msgstr "Ayrılmış"
+
 msgid "Detail"
 msgstr "Detay"
 
@@ -4227,6 +4257,9 @@ msgstr "Detaylar"
 
 msgid "Diagram saved"
 msgstr "Şema kaydedildi"
+
+msgid "Difference"
+msgstr "Fark"
 
 msgid "Digital Quote"
 msgstr "Dijital Teklif"
@@ -4945,6 +4978,9 @@ msgstr "Verilerinizi izlemeye başlamak için ayarlar'dan denetim günlüklemesi
 msgid "Enable digital quotes for your company. This will allow you to send digital quotes to your customers, and allow them to accept them online."
 msgstr "Şirketiniz için dijital teklifleri etkinleştirin. Bu, müşterilerinize dijital teklifler göndermenizi ve onların bunları çevrimiçi olarak kabul etmesine olanak tanır."
 
+msgid "Enable document mirroring"
+msgstr "Belge Yansıtmasını Etkinleştir"
+
 msgid "Enable full accrual accounting with journal entries, financial reports, and general ledger posting."
 msgstr "Yevmiye kayıtları, finansal raporlar ve genel defter kaydı ile tam tahakkuk muhasebesini etkinleştirin."
 
@@ -5217,6 +5253,9 @@ msgstr "Başlangıç'tan her şey"
 msgid "Exceeds {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB total — remove some attachments to send."
 msgstr "Toplamda {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB'ı aşıyor — göndermek için bazı ekler kaldırın."
 
+msgid "Exception"
+msgstr "İstisna"
+
 msgid "Exchange Rate"
 msgstr "Döviz Kuru"
 
@@ -5375,6 +5414,9 @@ msgid "Extra tags for slicing your GL reporting"
 msgstr "GL raporlamanızı dilimlemek için ekstra etiketler"
 
 msgid "Fail"
+msgstr "Başarısız"
+
+msgid "Failed"
 msgstr "Başarısız"
 
 msgid "Failed features"
@@ -5707,6 +5749,9 @@ msgstr "Arıza Modu"
 msgid "Failure Modes"
 msgstr "Arıza Modları"
 
+msgid "Failure Reason"
+msgstr "Başarısızlık Nedeni"
+
 msgid "Favorite"
 msgstr "Favori"
 
@@ -5951,6 +5996,9 @@ msgstr "Tamamen Amortismana Tabi Tutulmuş"
 
 msgid "Fully trained for"
 msgstr "Tamamen eğitilmiş"
+
+msgid "FX"
+msgstr "FX"
 
 msgid "FX G/L"
 msgstr "FX K/Z"
@@ -6255,6 +6303,9 @@ msgstr "Üye Grupları"
 
 msgid "Group Name"
 msgstr "Grup Adı"
+
+msgid "Group Settings"
+msgstr "Grup Ayarları"
 
 msgid "Groups"
 msgstr "Gruplar"
@@ -6726,6 +6777,9 @@ msgstr "Şirketler Arası"
 
 msgid "Intercompany Balances"
 msgstr "Şirketler Arası Bakiyeler"
+
+msgid "Intercompany matching tolerance"
+msgstr "Şirketler Arası Eşleşme Toleransı"
 
 msgid "Intercompany Transactions"
 msgstr "Şirketler Arası İşlemler"
@@ -7895,6 +7949,12 @@ msgstr "Dakika/1000 Parça"
 msgid "Minutes/Piece"
 msgstr "Dakika/Adet"
 
+msgid "Mirrored"
+msgstr "Yansıtılmış"
+
+msgid "Mirrored Documents"
+msgstr "Yansıtılan Belgeler"
+
 msgid "Missing Information"
 msgstr "Eksik Bilgi"
 
@@ -8011,6 +8071,9 @@ msgstr "MRP otomatik olarak her 3 saatte bir çalışır, ancak buradan manuel o
 msgid "Must be in the same location"
 msgstr "Aynı konumda olmalıdır"
 
+msgid "Mutual open intercompany balances by company pair and currency. Create a netting statement to offset the two directions."
+msgstr "Şirket çifti ve para birimi ile açık karşılıklı şirketler arası bakiyeler. İki yönü dengelemek için bir tasnif ifadesi oluşturun."
+
 msgid "My Documents"
 msgstr "Belgelerim"
 
@@ -8061,6 +8124,18 @@ msgstr "Net Defter Değeri"
 
 msgid "Net Change"
 msgstr "Net Değişim"
+
+msgid "Netted"
+msgstr "Netleştirildi"
+
+msgid "Netted Amount"
+msgstr "Net Tutar"
+
+msgid "Netting Matrix"
+msgstr "Tasnif Matrisi"
+
+msgid "Netting Statements"
+msgstr "Tasnif İfadeleri"
 
 msgid "Never"
 msgstr "Asla"
@@ -8568,6 +8643,9 @@ msgstr "\"{query}\" için eşleşme bulunamadı. Farklı bir arama terbi deneyin
 
 msgid "No matches. Type to create one."
 msgstr "Eşleşme yok. Bir tane oluşturmak için yazın."
+
+msgid "No mutual intercompany balances"
+msgstr "Karşılıklı şirketler arası bakiye yok"
 
 msgid "No new notifications"
 msgstr "Yeni bildirim yok"
@@ -9943,6 +10021,12 @@ msgstr "Planlanan Tarih"
 msgid "Properties"
 msgstr "Özellikler"
 
+msgid "Propose"
+msgstr "Öner"
+
+msgid "Proposed"
+msgstr "Önerilen"
+
 msgid "Protect the go-live date"
 msgstr "Go-live tarihini koruyun"
 
@@ -10732,6 +10816,9 @@ msgstr "PIN'i sıfırla {0} {1}"
 msgid "Reset view"
 msgstr "Görünümü sıfırla"
 
+msgid "Residual"
+msgstr "Artık"
+
 msgid "Residual value"
 msgstr "Artık değer"
 
@@ -10779,6 +10866,9 @@ msgstr "Bir varlığı hurdaya ayırarak veya satarak hizmetten çekmek; net def
 
 msgid "Retry"
 msgstr "Tekrar Dene"
+
+msgid "Retry Mirror"
+msgstr "Yansıtmayı Yeniden Dene"
 
 msgid "Return Home"
 msgstr "Ana Sayfaya Dön"
@@ -11607,6 +11697,12 @@ msgstr "Bir depolama birimi seçmek için varsayılan konumunuzu profil ayarlar�
 msgid "Settings"
 msgstr "Ayarlar"
 
+msgid "Settle"
+msgstr "Çöz"
+
+msgid "Settled"
+msgstr "Çözüldü"
+
 msgid "Setup"
 msgstr "Kurulum"
 
@@ -12059,6 +12155,9 @@ msgstr "Başlangıç"
 msgid "State / Province"
 msgstr "Eyalet / İl"
 
+msgid "Statement"
+msgstr "İfade"
+
 #. placeholder {0}: lotEntities.length
 #. placeholder {1}: Math.max(0, lotEntities.length - inspected)
 msgid "Statistical acceptance failed, so the entire lot is considered non-conforming (ISO 9001:2015 §8.7). All {0} entities — {passes} sampled pass(es), {fails} failure(s), and {1} un-inspected — will be marked Rejected."
@@ -12483,6 +12582,9 @@ msgstr "Müşterileri türlerine göre hedefleyin."
 
 msgid "Target disposition row"
 msgstr "Hedef durum satırı"
+
+msgid "Target Document"
+msgstr "Hedef Belge"
 
 msgid "Target go-live"
 msgstr "Hedef canlı yayın"
@@ -13594,6 +13696,9 @@ msgstr "Tol-"
 
 msgid "Tol+"
 msgstr "Tolerans+"
+
+msgid "Tolerance"
+msgstr "Tolerans"
 
 msgid "Tolerance (+/-)"
 msgstr "Tolerans (+/-)"

@@ -227,6 +227,9 @@ msgstr "9-12 周"
 msgid "90D"
 msgstr "90天"
 
+msgid "A → B"
+msgstr "A → B"
+
 msgid "A Carbon-run data migration — you load your own data"
 msgstr "Carbon 运行的数据迁移 — 您加载自己的数据"
 
@@ -846,11 +849,17 @@ msgstr "之后"
 msgid "After (calculation method)"
 msgstr "之后（计算方法）"
 
+msgid "Agree"
+msgstr "同意"
+
 msgid "Agree on the scope"
 msgstr "就范围达成一致"
 
 msgid "Agree who owns what and set a working rhythm"
 msgstr "同意谁拥有什么并设定工作节奏"
+
+msgid "Agreed"
+msgstr "已同意"
 
 msgid "AI Tokens"
 msgstr "AI 代币"
@@ -1762,6 +1771,9 @@ msgstr "平均关闭天数"
 msgid "Awaiting approval"
 msgstr "等待批准"
 
+msgid "B → A"
+msgstr "B → A"
+
 msgid "Back"
 msgstr "返回"
 
@@ -2479,6 +2491,12 @@ msgstr "公司"
 msgid "Company"
 msgstr "公司"
 
+msgid "Company A"
+msgstr "公司A"
+
+msgid "Company B"
+msgstr "公司B"
+
 msgid "Company group"
 msgstr "公司组"
 
@@ -2580,6 +2598,9 @@ msgstr "为质量仪表板配置默认值。"
 
 msgid "Configure how preventative maintenance dispatches are automatically generated from maintenance schedules."
 msgstr "配置如何从维护计划自动生成预防性维护派遣。"
+
+msgid "Configure intercompany matching tolerance and document mirroring across the company group."
+msgstr "配置跨公司集团的公司间匹配容差和文件镜像。"
 
 msgid "Configure Item"
 msgstr "配置项目"
@@ -3168,6 +3189,9 @@ msgstr "创建修订版"
 
 msgid "Create Rule"
 msgstr "创建规则"
+
+msgid "Create statement"
+msgstr "创建声明"
 
 msgid "Create Transfer"
 msgstr "创建转移"
@@ -4219,6 +4243,12 @@ msgstr "变更说明"
 msgid "Description of Issue"
 msgstr "问题描述"
 
+msgid "Detach Link"
+msgstr "分离链接"
+
+msgid "Detached"
+msgstr "已分离"
+
 msgid "Detail"
 msgstr "详情"
 
@@ -4227,6 +4257,9 @@ msgstr "详情"
 
 msgid "Diagram saved"
 msgstr "图表已保存"
+
+msgid "Difference"
+msgstr "差异"
 
 msgid "Digital Quote"
 msgstr "数字报价"
@@ -4945,6 +4978,9 @@ msgstr "在设置中启用审计日志以开始跟踪数据的更改。"
 msgid "Enable digital quotes for your company. This will allow you to send digital quotes to your customers, and allow them to accept them online."
 msgstr "为您的公司启用数字报价。这将允许您向客户发送数字报价，并允许他们在线接受。"
 
+msgid "Enable document mirroring"
+msgstr "启用文件镜像"
+
 msgid "Enable full accrual accounting with journal entries, financial reports, and general ledger posting."
 msgstr "启用完整的权责发生制会计，包括日记账分录、财务报告和总账过账。"
 
@@ -5217,6 +5253,9 @@ msgstr "Starter 中的所有功能"
 msgid "Exceeds {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB total — remove some attachments to send."
 msgstr "超过 {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB 总限制 — 请删除一些附件以发送。"
 
+msgid "Exception"
+msgstr "异常"
+
 msgid "Exchange Rate"
 msgstr "汇率"
 
@@ -5375,6 +5414,9 @@ msgid "Extra tags for slicing your GL reporting"
 msgstr "用于切分总账报告的额外标签"
 
 msgid "Fail"
+msgstr "失败"
+
+msgid "Failed"
 msgstr "失败"
 
 msgid "Failed features"
@@ -5707,6 +5749,9 @@ msgstr "故障模式"
 msgid "Failure Modes"
 msgstr "故障模式"
 
+msgid "Failure Reason"
+msgstr "失败原因"
+
 msgid "Favorite"
 msgstr "收藏"
 
@@ -5951,6 +5996,9 @@ msgstr "完全折旧"
 
 msgid "Fully trained for"
 msgstr "完全培训"
+
+msgid "FX"
+msgstr "外汇"
 
 msgid "FX G/L"
 msgstr "外汇损益"
@@ -6255,6 +6303,9 @@ msgstr "群组成员"
 
 msgid "Group Name"
 msgstr "组名"
+
+msgid "Group Settings"
+msgstr "组设置"
 
 msgid "Groups"
 msgstr "组"
@@ -6726,6 +6777,9 @@ msgstr "公司间"
 
 msgid "Intercompany Balances"
 msgstr "公司间余额"
+
+msgid "Intercompany matching tolerance"
+msgstr "公司间匹配容差"
 
 msgid "Intercompany Transactions"
 msgstr "公司间交易"
@@ -7895,6 +7949,12 @@ msgstr "分钟/1000件"
 msgid "Minutes/Piece"
 msgstr "分钟/件"
 
+msgid "Mirrored"
+msgstr "已镜像"
+
+msgid "Mirrored Documents"
+msgstr "已镜像的文件"
+
 msgid "Missing Information"
 msgstr "缺少信息"
 
@@ -8011,6 +8071,9 @@ msgstr "MRP 每 3 小时自动运行一次，但您也可以在此手动运行�
 msgid "Must be in the same location"
 msgstr "必须在同一位置"
 
+msgid "Mutual open intercompany balances by company pair and currency. Create a netting statement to offset the two directions."
+msgstr "按公司对和货币的相互开放公司间余额。创建抵消声明以抵消两个方向。"
+
 msgid "My Documents"
 msgstr "我的文档"
 
@@ -8061,6 +8124,18 @@ msgstr "账面净值"
 
 msgid "Net Change"
 msgstr "净变化"
+
+msgid "Netted"
+msgstr "已抵消"
+
+msgid "Netted Amount"
+msgstr "已抵消金额"
+
+msgid "Netting Matrix"
+msgstr "抵消矩阵"
+
+msgid "Netting Statements"
+msgstr "抵消声明"
 
 msgid "Never"
 msgstr "永不"
@@ -8568,6 +8643,9 @@ msgstr "没有匹配\"{query}\"的结果。请尝试不同的搜索词。"
 
 msgid "No matches. Type to create one."
 msgstr "无匹配项。输入内容以创建一个。"
+
+msgid "No mutual intercompany balances"
+msgstr "没有相互公司间余额"
 
 msgid "No new notifications"
 msgstr "没有新通知"
@@ -9943,6 +10021,12 @@ msgstr "承诺日期"
 msgid "Properties"
 msgstr "属性"
 
+msgid "Propose"
+msgstr "提议"
+
+msgid "Proposed"
+msgstr "已提议"
+
 msgid "Protect the go-live date"
 msgstr "保护上线日期"
 
@@ -10732,6 +10816,9 @@ msgstr "重置 {0} {1} 的 PIN"
 msgid "Reset view"
 msgstr "重置视图"
 
+msgid "Residual"
+msgstr "残差"
+
 msgid "Residual value"
 msgstr "残差值"
 
@@ -10779,6 +10866,9 @@ msgstr "通过报废或出售将资产退出使用，将收益或损失计入账
 
 msgid "Retry"
 msgstr "重试"
+
+msgid "Retry Mirror"
+msgstr "重试镜像"
 
 msgid "Return Home"
 msgstr "返回首页"
@@ -11607,6 +11697,12 @@ msgstr "在个人资料设置中设置默认位置以选择存储单位。"
 msgid "Settings"
 msgstr "设置"
 
+msgid "Settle"
+msgstr "结算"
+
+msgid "Settled"
+msgstr "已结算"
+
 msgid "Setup"
 msgstr "设置"
 
@@ -12059,6 +12155,9 @@ msgstr "开始于"
 msgid "State / Province"
 msgstr "州/省"
 
+msgid "Statement"
+msgstr "声明"
+
 #. placeholder {0}: lotEntities.length
 #. placeholder {1}: Math.max(0, lotEntities.length - inspected)
 msgid "Statistical acceptance failed, so the entire lot is considered non-conforming (ISO 9001:2015 §8.7). All {0} entities — {passes} sampled pass(es), {fails} failure(s), and {1} un-inspected — will be marked Rejected."
@@ -12483,6 +12582,9 @@ msgstr "目标项目"
 
 msgid "Target disposition row"
 msgstr "目标处置行"
+
+msgid "Target Document"
+msgstr "目标文件"
 
 msgid "Target go-live"
 msgstr "目标上线日期"
@@ -13594,6 +13696,9 @@ msgstr "容差-"
 
 msgid "Tol+"
 msgstr "公差+"
+
+msgid "Tolerance"
+msgstr "容差"
 
 msgid "Tolerance (+/-)"
 msgstr "容差 (+/-)"

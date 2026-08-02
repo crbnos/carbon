@@ -113,6 +113,43 @@ export async function action(args: ActionFunctionArgs) {
     };
   }
 
+  // Intercompany document mirroring: a posted sales invoice to an intercompany
+  // customer drafts a matching purchase invoice in the buyer company.
+  // Best-effort — never fail the post over the mirror trigger.
+  try {
+    const invoiceCustomerId = salesInvoice.data.customerId;
+    const [customer, company] = await Promise.all([
+      invoiceCustomerId
+        ? serviceRole
+            .from("customer")
+            .select("intercompanyCompanyId")
+            .eq("id", invoiceCustomerId)
+            .single()
+        : Promise.resolve({ data: null }),
+      getCompany(serviceRole, companyId)
+    ]);
+    const targetCompanyId = customer.data?.intercompanyCompanyId;
+    const companyGroupId = company.data?.companyGroupId;
+    if (targetCompanyId && companyGroupId) {
+      const group = await serviceRole
+        .from("companyGroup")
+        .select("intercompanyDocumentMirroring")
+        .eq("id", companyGroupId)
+        .single();
+      if (group.data?.intercompanyDocumentMirroring) {
+        await trigger("carbon/intercompany-mirror-invoice", {
+          salesInvoiceId: invoiceId,
+          sourceCompanyId: companyId,
+          targetCompanyId,
+          companyGroupId,
+          userId
+        });
+      }
+    }
+  } catch {
+    // Best-effort mirror — ignore failures here.
+  }
+
   const acceptLanguage = request.headers.get("accept-language");
   const locales = parseAcceptLanguage(acceptLanguage, {
     validate: Intl.DateTimeFormat.supportedLocalesOf

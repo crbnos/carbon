@@ -13,6 +13,8 @@ import {
 import { extractDocumentFunction } from "./functions/extraction";
 import {
   accountingBackfillFunction,
+  intercompanyMirrorInvoiceFunction,
+  intercompanyMirrorPoFunction,
   jiraSyncFunction,
   linearSyncFunction,
   onshapeBackfillFunction,
@@ -117,6 +119,9 @@ export const functions = [
   slackDocumentTaskUpdateFunction,
   slackDocumentAssignmentUpdateFunction,
   timeCardAutoCloseFunction,
+  // Intercompany document mirroring
+  intercompanyMirrorPoFunction,
+  intercompanyMirrorInvoiceFunction,
   // Document extraction
   extractDocumentFunction
 ];

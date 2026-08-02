@@ -227,6 +227,9 @@ msgstr "9-12 weeks"
 msgid "90D"
 msgstr "90D"
 
+msgid "A → B"
+msgstr "A → B"
+
 msgid "A Carbon-run data migration — you load your own data"
 msgstr "A Carbon-run data migration — you load your own data"
 
@@ -846,11 +849,17 @@ msgstr "After"
 msgid "After (calculation method)"
 msgstr "After (calculation method)"
 
+msgid "Agree"
+msgstr "Agree"
+
 msgid "Agree on the scope"
 msgstr "Agree on the scope"
 
 msgid "Agree who owns what and set a working rhythm"
 msgstr "Agree who owns what and set a working rhythm"
+
+msgid "Agreed"
+msgstr "Agreed"
 
 msgid "AI Tokens"
 msgstr "AI Tokens"
@@ -1762,6 +1771,9 @@ msgstr "Avg Days to Close"
 msgid "Awaiting approval"
 msgstr "Awaiting approval"
 
+msgid "B → A"
+msgstr "B → A"
+
 msgid "Back"
 msgstr "Back"
 
@@ -2479,6 +2491,12 @@ msgstr "Companies"
 msgid "Company"
 msgstr "Company"
 
+msgid "Company A"
+msgstr "Company A"
+
+msgid "Company B"
+msgstr "Company B"
+
 msgid "Company group"
 msgstr "Company group"
 
@@ -2580,6 +2598,9 @@ msgstr "Configure defaults for the quality dashboard."
 
 msgid "Configure how preventative maintenance dispatches are automatically generated from maintenance schedules."
 msgstr "Configure how preventative maintenance dispatches are automatically generated from maintenance schedules."
+
+msgid "Configure intercompany matching tolerance and document mirroring across the company group."
+msgstr "Configure intercompany matching tolerance and document mirroring across the company group."
 
 msgid "Configure Item"
 msgstr "Configure Item"
@@ -3168,6 +3189,9 @@ msgstr "Create Revision"
 
 msgid "Create Rule"
 msgstr "Create Rule"
+
+msgid "Create statement"
+msgstr "Create statement"
 
 msgid "Create Transfer"
 msgstr "Create Transfer"
@@ -4219,6 +4243,12 @@ msgstr "Description of Change"
 msgid "Description of Issue"
 msgstr "Description of Issue"
 
+msgid "Detach Link"
+msgstr "Detach Link"
+
+msgid "Detached"
+msgstr "Detached"
+
 msgid "Detail"
 msgstr "Detail"
 
@@ -4227,6 +4257,9 @@ msgstr "Details"
 
 msgid "Diagram saved"
 msgstr "Diagram saved"
+
+msgid "Difference"
+msgstr "Difference"
 
 msgid "Digital Quote"
 msgstr "Digital Quote"
@@ -4945,6 +4978,9 @@ msgstr "Enable audit logging in settings to start tracking changes to your data.
 msgid "Enable digital quotes for your company. This will allow you to send digital quotes to your customers, and allow them to accept them online."
 msgstr "Enable digital quotes for your company. This will allow you to send digital quotes to your customers, and allow them to accept them online."
 
+msgid "Enable document mirroring"
+msgstr "Enable document mirroring"
+
 msgid "Enable full accrual accounting with journal entries, financial reports, and general ledger posting."
 msgstr "Enable full accrual accounting with journal entries, financial reports, and general ledger posting."
 
@@ -5217,6 +5253,9 @@ msgstr "Everything from Starter"
 msgid "Exceeds {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB total — remove some attachments to send."
 msgstr "Exceeds {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB total — remove some attachments to send."
 
+msgid "Exception"
+msgstr "Exception"
+
 msgid "Exchange Rate"
 msgstr "Exchange Rate"
 
@@ -5376,6 +5415,9 @@ msgstr "Extra tags for slicing your GL reporting"
 
 msgid "Fail"
 msgstr "Fail"
+
+msgid "Failed"
+msgstr "Failed"
 
 msgid "Failed features"
 msgstr "Failed features"
@@ -5707,6 +5749,9 @@ msgstr "Failure Mode"
 msgid "Failure Modes"
 msgstr "Failure Modes"
 
+msgid "Failure Reason"
+msgstr "Failure Reason"
+
 msgid "Favorite"
 msgstr "Favorite"
 
@@ -5951,6 +5996,9 @@ msgstr "Fully Depreciated"
 
 msgid "Fully trained for"
 msgstr "Fully trained for"
+
+msgid "FX"
+msgstr "FX"
 
 msgid "FX G/L"
 msgstr "FX G/L"
@@ -6255,6 +6303,9 @@ msgstr "Group Members"
 
 msgid "Group Name"
 msgstr "Group Name"
+
+msgid "Group Settings"
+msgstr "Group Settings"
 
 msgid "Groups"
 msgstr "Groups"
@@ -6726,6 +6777,9 @@ msgstr "Intercompany"
 
 msgid "Intercompany Balances"
 msgstr "Intercompany Balances"
+
+msgid "Intercompany matching tolerance"
+msgstr "Intercompany matching tolerance"
 
 msgid "Intercompany Transactions"
 msgstr "Intercompany Transactions"
@@ -7895,6 +7949,12 @@ msgstr "Minutes/1000 Pieces"
 msgid "Minutes/Piece"
 msgstr "Minutes/Piece"
 
+msgid "Mirrored"
+msgstr "Mirrored"
+
+msgid "Mirrored Documents"
+msgstr "Mirrored Documents"
+
 msgid "Missing Information"
 msgstr "Missing Information"
 
@@ -8011,6 +8071,9 @@ msgstr "MRP runs automatically every 3 hours, but you can run it manually here."
 msgid "Must be in the same location"
 msgstr "Must be in the same location"
 
+msgid "Mutual open intercompany balances by company pair and currency. Create a netting statement to offset the two directions."
+msgstr "Mutual open intercompany balances by company pair and currency. Create a netting statement to offset the two directions."
+
 msgid "My Documents"
 msgstr "My Documents"
 
@@ -8061,6 +8124,18 @@ msgstr "Net Book Value"
 
 msgid "Net Change"
 msgstr "Net Change"
+
+msgid "Netted"
+msgstr "Netted"
+
+msgid "Netted Amount"
+msgstr "Netted Amount"
+
+msgid "Netting Matrix"
+msgstr "Netting Matrix"
+
+msgid "Netting Statements"
+msgstr "Netting Statements"
 
 msgid "Never"
 msgstr "Never"
@@ -8568,6 +8643,9 @@ msgstr "No matches for \"{query}\". Try a different search term."
 
 msgid "No matches. Type to create one."
 msgstr "No matches. Type to create one."
+
+msgid "No mutual intercompany balances"
+msgstr "No mutual intercompany balances"
 
 msgid "No new notifications"
 msgstr "No new notifications"
@@ -9943,6 +10021,12 @@ msgstr "Promised Date"
 msgid "Properties"
 msgstr "Properties"
 
+msgid "Propose"
+msgstr "Propose"
+
+msgid "Proposed"
+msgstr "Proposed"
+
 msgid "Protect the go-live date"
 msgstr "Protect the go-live date"
 
@@ -10732,6 +10816,9 @@ msgstr "Reset PIN for {0} {1}"
 msgid "Reset view"
 msgstr "Reset view"
 
+msgid "Residual"
+msgstr "Residual"
+
 msgid "Residual value"
 msgstr "Residual value"
 
@@ -10779,6 +10866,9 @@ msgstr "Retiring an asset from service by scrapping or sale, booking any gain or
 
 msgid "Retry"
 msgstr "Retry"
+
+msgid "Retry Mirror"
+msgstr "Retry Mirror"
 
 msgid "Return Home"
 msgstr "Return Home"
@@ -11607,6 +11697,12 @@ msgstr "Set your default location in profile settings to pick a storage unit."
 msgid "Settings"
 msgstr "Settings"
 
+msgid "Settle"
+msgstr "Settle"
+
+msgid "Settled"
+msgstr "Settled"
+
 msgid "Setup"
 msgstr "Setup"
 
@@ -12059,6 +12155,9 @@ msgstr "Started"
 msgid "State / Province"
 msgstr "State / Province"
 
+msgid "Statement"
+msgstr "Statement"
+
 #. placeholder {0}: lotEntities.length
 #. placeholder {1}: Math.max(0, lotEntities.length - inspected)
 msgid "Statistical acceptance failed, so the entire lot is considered non-conforming (ISO 9001:2015 §8.7). All {0} entities — {passes} sampled pass(es), {fails} failure(s), and {1} un-inspected — will be marked Rejected."
@@ -12483,6 +12582,9 @@ msgstr "Target customers by type."
 
 msgid "Target disposition row"
 msgstr "Target disposition row"
+
+msgid "Target Document"
+msgstr "Target Document"
 
 msgid "Target go-live"
 msgstr "Target go-live"
@@ -13594,6 +13696,9 @@ msgstr "Tol-"
 
 msgid "Tol+"
 msgstr "Tol+"
+
+msgid "Tolerance"
+msgstr "Tolerance"
 
 msgid "Tolerance (+/-)"
 msgstr "Tolerance (+/-)"

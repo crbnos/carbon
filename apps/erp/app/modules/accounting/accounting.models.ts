@@ -465,6 +465,49 @@ export const intercompanyTransactionValidator = z
     }
   );
 
+// The kind of base-currency difference absorbed when an intercompany pair matches
+// on something other than an exact base amount. Mirrors the DB CHECK on
+// intercompanyTransaction.differenceKind.
+export const intercompanyDifferenceKinds = ["Tolerance", "FX"] as const;
+
+// Per-company-group intercompany settings: the base-currency matching tolerance
+// (pass 3 of matchIntercompanyTransactions) and the document-mirroring flag.
+export const intercompanyMatchingSettingsValidator = z.object({
+  intercompanyMatchingTolerance: zfd.numeric(
+    z.number().min(0, { message: "Tolerance must be zero or greater" })
+  ),
+  intercompanyDocumentMirroring: zfd.checkbox()
+});
+
+// Netting statement lifecycle. Mirrors the DB CHECK on
+// intercompanyNettingStatement.status.
+export const nettingStatementStatuses = [
+  "Draft",
+  "Proposed",
+  "Agreed",
+  "Settled",
+  "Exception",
+  "Cancelled"
+] as const;
+
+// Document-mirror link lifecycle (workstream 3). Mirrors the status column on
+// intercompanyDocumentLink; the mirror job processes Pending links.
+export const intercompanyDocumentLinkStatuses = [
+  "Pending",
+  "Mirrored",
+  "Failed",
+  "Exception",
+  "Detached"
+] as const;
+
+// Draft a netting statement for a company pair + currency from their mutual open
+// intercompany balances.
+export const createNettingStatementValidator = z.object({
+  companyAId: z.string().min(1),
+  companyBId: z.string().min(1),
+  currencyCode: z.string().min(1)
+});
+
 export const journalEntrySourceTypes = [
   "Manual",
   "Purchase Receipt",

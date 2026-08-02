@@ -227,6 +227,9 @@ msgstr "9～12週間"
 msgid "90D"
 msgstr "90日"
 
+msgid "A → B"
+msgstr "A → B"
+
 msgid "A Carbon-run data migration — you load your own data"
 msgstr "Carbon実行のデータ移行 — あなたが自分のデータをロードします"
 
@@ -846,11 +849,17 @@ msgstr "後"
 msgid "After (calculation method)"
 msgstr "後（計算方法）"
 
+msgid "Agree"
+msgstr "同意する"
+
 msgid "Agree on the scope"
 msgstr "スコープに同意する"
 
 msgid "Agree who owns what and set a working rhythm"
 msgstr "誰が何を所有するかを合意し、作業リズムを設定する"
+
+msgid "Agreed"
+msgstr "同意済み"
 
 msgid "AI Tokens"
 msgstr "AIトークン"
@@ -1762,6 +1771,9 @@ msgstr "平均クローズ日数"
 msgid "Awaiting approval"
 msgstr "承認待ち"
 
+msgid "B → A"
+msgstr "B → A"
+
 msgid "Back"
 msgstr "戻る"
 
@@ -2479,6 +2491,12 @@ msgstr "企業"
 msgid "Company"
 msgstr "会社"
 
+msgid "Company A"
+msgstr "Company A"
+
+msgid "Company B"
+msgstr "Company B"
+
 msgid "Company group"
 msgstr "会社グループ"
 
@@ -2580,6 +2598,9 @@ msgstr "品質ダッシュボードのデフォルトを設定します。"
 
 msgid "Configure how preventative maintenance dispatches are automatically generated from maintenance schedules."
 msgstr "予防保全ディスパッチが保全スケジュールから自動的に生成される方法を設定します。"
+
+msgid "Configure intercompany matching tolerance and document mirroring across the company group."
+msgstr "企業間のマッチング許容値とドキュメントミラーリングをカンパニーグループ全体で構成します。"
 
 msgid "Configure Item"
 msgstr "アイテムを構成"
@@ -3168,6 +3189,9 @@ msgstr "リビジョンを作成"
 
 msgid "Create Rule"
 msgstr "ルールを作成"
+
+msgid "Create statement"
+msgstr "ステートメントを作成"
 
 msgid "Create Transfer"
 msgstr "移動を作成"
@@ -4219,6 +4243,12 @@ msgstr "変更の説明"
 msgid "Description of Issue"
 msgstr "問題の説明"
 
+msgid "Detach Link"
+msgstr "リンクをデタッチ"
+
+msgid "Detached"
+msgstr "デタッチされた"
+
 msgid "Detail"
 msgstr "詳細"
 
@@ -4227,6 +4257,9 @@ msgstr "詳細"
 
 msgid "Diagram saved"
 msgstr "図が保存されました"
+
+msgid "Difference"
+msgstr "差異"
 
 msgid "Digital Quote"
 msgstr "デジタル見積"
@@ -4945,6 +4978,9 @@ msgstr "設定で監査ログを有効にして、データへの変更の追跡
 msgid "Enable digital quotes for your company. This will allow you to send digital quotes to your customers, and allow them to accept them online."
 msgstr "貴社のデジタル見積もりを有効にします。これにより、顧客にデジタル見積もりを送信でき、顧客がオンラインで承認することができます。"
 
+msgid "Enable document mirroring"
+msgstr "ドキュメントミラーリングを有効にする"
+
 msgid "Enable full accrual accounting with journal entries, financial reports, and general ledger posting."
 msgstr "完全な発生主義会計を有効にし、仕訳帳エントリ、財務報告書、および総勘定元帳への転記を行います。"
 
@@ -5217,6 +5253,9 @@ msgstr "スターターのすべての機能"
 msgid "Exceeds {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB total — remove some attachments to send."
 msgstr "{PO_EMAIL_ATTACHMENT_LIMIT_MB} MB を超えています — 送信するには添付ファイルを削除してください。"
 
+msgid "Exception"
+msgstr "例外"
+
 msgid "Exchange Rate"
 msgstr "為替レート"
 
@@ -5376,6 +5415,9 @@ msgstr "GL レポートをスライスするための追加タグ"
 
 msgid "Fail"
 msgstr "不合格"
+
+msgid "Failed"
+msgstr "失敗"
 
 msgid "Failed features"
 msgstr "失敗した機能"
@@ -5707,6 +5749,9 @@ msgstr "故障モード"
 msgid "Failure Modes"
 msgstr "障害モード"
 
+msgid "Failure Reason"
+msgstr "失敗理由"
+
 msgid "Favorite"
 msgstr "お気に入り"
 
@@ -5951,6 +5996,9 @@ msgstr "完全償却済み"
 
 msgid "Fully trained for"
 msgstr "完全に訓練済み"
+
+msgid "FX"
+msgstr "FX"
 
 msgid "FX G/L"
 msgstr "FX G/L"
@@ -6255,6 +6303,9 @@ msgstr "グループメンバー"
 
 msgid "Group Name"
 msgstr "グループ名"
+
+msgid "Group Settings"
+msgstr "グループ設定"
 
 msgid "Groups"
 msgstr "グループ"
@@ -6726,6 +6777,9 @@ msgstr "企業間"
 
 msgid "Intercompany Balances"
 msgstr "企業間残高"
+
+msgid "Intercompany matching tolerance"
+msgstr "企業間マッチング許容値"
 
 msgid "Intercompany Transactions"
 msgstr "企業間取引"
@@ -7895,6 +7949,12 @@ msgstr "分/1000個"
 msgid "Minutes/Piece"
 msgstr "分/個"
 
+msgid "Mirrored"
+msgstr "ミラーリング済み"
+
+msgid "Mirrored Documents"
+msgstr "ミラーリングされたドキュメント"
+
 msgid "Missing Information"
 msgstr "不足している情報"
 
@@ -8011,6 +8071,9 @@ msgstr "MRPは3時間ごとに自動的に実行されますが、ここで手�
 msgid "Must be in the same location"
 msgstr "同じ場所にある必要があります"
 
+msgid "Mutual open intercompany balances by company pair and currency. Create a netting statement to offset the two directions."
+msgstr "企業ペアと通貨による相互オープンな企業間残高。相殺するためのネッティングステートメントを作成します。"
+
 msgid "My Documents"
 msgstr "マイドキュメント"
 
@@ -8061,6 +8124,18 @@ msgstr "純簿価額"
 
 msgid "Net Change"
 msgstr "純変化"
+
+msgid "Netted"
+msgstr "ネッティング済み"
+
+msgid "Netted Amount"
+msgstr "ネッティング額"
+
+msgid "Netting Matrix"
+msgstr "ネッティングマトリックス"
+
+msgid "Netting Statements"
+msgstr "ネッティングステートメント"
 
 msgid "Never"
 msgstr "なし"
@@ -8568,6 +8643,9 @@ msgstr "\"{query}\"に一致するものがありません。別の検索用語�
 
 msgid "No matches. Type to create one."
 msgstr "一致するものがありません。作成するには入力してください。"
+
+msgid "No mutual intercompany balances"
+msgstr "相互企業間残高がありません"
 
 msgid "No new notifications"
 msgstr "新しい通知はありません"
@@ -9943,6 +10021,12 @@ msgstr "約束日"
 msgid "Properties"
 msgstr "プロパティ"
 
+msgid "Propose"
+msgstr "提案する"
+
+msgid "Proposed"
+msgstr "提案済み"
+
 msgid "Protect the go-live date"
 msgstr "ゴーライブ日を保護する"
 
@@ -10732,6 +10816,9 @@ msgstr "{0} {1}のPINをリセット"
 msgid "Reset view"
 msgstr "ビューをリセット"
 
+msgid "Residual"
+msgstr "残差"
+
 msgid "Residual value"
 msgstr "残存価値"
 
@@ -10779,6 +10866,9 @@ msgstr "除却または売却により資産を稼働から除外し、正味簿
 
 msgid "Retry"
 msgstr "再試行"
+
+msgid "Retry Mirror"
+msgstr "ミラーリングを再試行"
 
 msgid "Return Home"
 msgstr "ホームに戻る"
@@ -11607,6 +11697,12 @@ msgstr "プロフィール設定でデフォルトの場所を設定して、保
 msgid "Settings"
 msgstr "設定"
 
+msgid "Settle"
+msgstr "決済"
+
+msgid "Settled"
+msgstr "決済済み"
+
 msgid "Setup"
 msgstr "セットアップ"
 
@@ -12059,6 +12155,9 @@ msgstr "開始"
 msgid "State / Province"
 msgstr "都道府県"
 
+msgid "Statement"
+msgstr "ステートメント"
+
 #. placeholder {0}: lotEntities.length
 #. placeholder {1}: Math.max(0, lotEntities.length - inspected)
 msgid "Statistical acceptance failed, so the entire lot is considered non-conforming (ISO 9001:2015 §8.7). All {0} entities — {passes} sampled pass(es), {fails} failure(s), and {1} un-inspected — will be marked Rejected."
@@ -12483,6 +12582,9 @@ msgstr "対象アイテム"
 
 msgid "Target disposition row"
 msgstr "対象の処分行"
+
+msgid "Target Document"
+msgstr "ターゲットドキュメント"
 
 msgid "Target go-live"
 msgstr "目標ゴーライブ"
@@ -13594,6 +13696,9 @@ msgstr "許容差-"
 
 msgid "Tol+"
 msgstr "許容差+"
+
+msgid "Tolerance"
+msgstr "許容値"
 
 msgid "Tolerance (+/-)"
 msgstr "許容範囲 (+/-)"

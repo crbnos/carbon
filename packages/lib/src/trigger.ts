@@ -38,7 +38,9 @@ const taskToEvent = {
   "sync-issue-from-linear": "carbon/linear-sync",
   "update-permissions": "carbon/update-permissions",
   "user-admin": "carbon/user-admin",
-  "extract-document": "carbon/extract-document"
+  "extract-document": "carbon/extract-document",
+  "carbon/intercompany-mirror-po": "carbon/intercompany-mirror-po",
+  "carbon/intercompany-mirror-invoice": "carbon/intercompany-mirror-invoice"
 } as const;
 
 type TaskMap = typeof taskToEvent;
