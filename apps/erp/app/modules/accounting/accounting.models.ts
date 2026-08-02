@@ -479,6 +479,35 @@ export const intercompanyMatchingSettingsValidator = z.object({
   intercompanyDocumentMirroring: zfd.checkbox()
 });
 
+// Netting statement lifecycle. Mirrors the DB CHECK on
+// intercompanyNettingStatement.status.
+export const nettingStatementStatuses = [
+  "Draft",
+  "Proposed",
+  "Agreed",
+  "Settled",
+  "Exception",
+  "Cancelled"
+] as const;
+
+// Document-mirror link lifecycle (workstream 3). Mirrors the status column on
+// intercompanyDocumentLink; the mirror job processes Pending links.
+export const intercompanyDocumentLinkStatuses = [
+  "Pending",
+  "Mirrored",
+  "Failed",
+  "Exception",
+  "Detached"
+] as const;
+
+// Draft a netting statement for a company pair + currency from their mutual open
+// intercompany balances.
+export const createNettingStatementValidator = z.object({
+  companyAId: z.string().min(1),
+  companyBId: z.string().min(1),
+  currencyCode: z.string().min(1)
+});
+
 export const journalEntrySourceTypes = [
   "Manual",
   "Purchase Receipt",

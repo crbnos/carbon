@@ -1231,7 +1231,15 @@ serve(async (req: Request) => {
                 sourceCompanyId: companyId,
                 targetCompanyId: intercompanyPartnerId,
                 sourceJournalLineId: icJournalLineId,
-                amount: totalLinesCost,
+                // amount is the SOURCE company's BASE-currency figure (matches the
+                // reversed GL journal line, which is booked in base) so pass-1/pass-3
+                // matching and getIntercompanyBalance stay consistent. documentAmount
+                // is the DOCUMENT-currency figure (currencyCode) that the FX pass
+                // (pass 2) matches on: two sides agreeing on documentAmount but
+                // differing on base amount = a legitimate FX-rate difference.
+                // base = document * invoiceExchangeRate (rate 1 ⇒ they coincide).
+                amount: totalLinesCost * invoiceExchangeRate,
+                documentAmount: totalLinesCost,
                 currencyCode: salesInvoice.data?.currencyCode ?? "USD",
                 description: `Sales Invoice ${salesInvoice.data?.invoiceId}`,
                 documentType: "Invoice",

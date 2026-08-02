@@ -12,7 +12,14 @@ import {
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 import { sql } from "kysely";
 import type { z } from "zod";
+import {
+  getOpenPurchaseInvoicesForSupplier,
+  getOpenSalesInvoicesForCustomer,
+  replaceInvoiceSettlements,
+  upsertPayment
+} from "~/modules/invoicing";
 import { getNextSequence } from "~/modules/settings";
+import { getDatabaseClient } from "~/services/database.server";
 import type { GenericQueryFilters } from "~/utils/query";
 import { setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
@@ -38,6 +45,10 @@ import type {
   periodCloseTaskTypes,
   taxDepreciationMethods
 } from "./accounting.models";
+import {
+  allocateNettingApplications,
+  computeNettingPosition
+} from "./accounting.utils";
 import type {
   AccountLedgerLine,
   Transaction,
@@ -3034,6 +3045,7 @@ export async function createIntercompanyTransaction(
       targetCompanyId: input.targetCompanyId,
       sourceJournalLineId: journalLines.data[0].id,
       amount: input.amount,
+      documentAmount: input.amount,
       currencyCode: input.currencyCode,
       description: input.description,
       status: "Unmatched"
@@ -3086,6 +3098,817 @@ export async function getExchangeRateHistory(
     .eq("currencyCode", currencyCode)
     .gte("effectiveDate", sixMonthsAgo.toISOString().split("T")[0])
     .order("effectiveDate", { ascending: true });
+}
+
+// -- Intercompany netting (workstream 4) --
+//
+// IC party resolution: a customer in company X that represents company Y is the
+// unique `customer WHERE companyId = X AND intercompanyCompanyId = Y` (same shape
+// for supplier). The netting math (min/residual/oldest-first allocation) lives in
+// accounting.utils; these functions compose it against the open AR/AP an
+// intercompany pair carries against each other.
+
+async function getIntercompanyCustomerId(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  intercompanyCompanyId: string
+): Promise<string | null> {
+  const { data } = await client
+    .from("customer")
+    .select("id")
+    .eq("companyId", companyId)
+    .eq("intercompanyCompanyId", intercompanyCompanyId)
+    .maybeSingle();
+  return data?.id ?? null;
+}
+
+async function getIntercompanySupplierId(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  intercompanyCompanyId: string
+): Promise<string | null> {
+  const { data } = await client
+    .from("supplier")
+    .select("id")
+    .eq("companyId", companyId)
+    .eq("intercompanyCompanyId", intercompanyCompanyId)
+    .maybeSingle();
+  return data?.id ?? null;
+}
+
+export async function getCompanyGroupIntercompanySettings(
+  client: SupabaseClient<Database>,
+  companyGroupId: string
+) {
+  return client
+    .from("companyGroup")
+    .select("intercompanyMatchingTolerance, intercompanyDocumentMirroring")
+    .eq("id", companyGroupId)
+    .single();
+}
+
+export async function updateCompanyGroupIntercompanySettings(
+  client: SupabaseClient<Database>,
+  companyGroupId: string,
+  update: {
+    intercompanyMatchingTolerance?: number;
+    intercompanyDocumentMirroring?: boolean;
+    updatedBy: string;
+  }
+) {
+  return client
+    .from("companyGroup")
+    .update(sanitize({ ...update, updatedAt: new Date().toISOString() }))
+    .eq("id", companyGroupId);
+}
+
+export type NettingMatrixRow = {
+  companyAId: string;
+  companyAName: string;
+  companyBId: string;
+  companyBName: string;
+  currencyCode: string;
+  grossReceivableAtoB: number;
+  grossReceivableBtoA: number;
+  nettedAmount: number;
+  residualAmount: number;
+  residualPayerCompanyId: string | null;
+};
+
+// The netting workbench matrix: for every unordered company pair (A.id < B.id) in
+// the group and every currency they transact in, the two gross receivable
+// directions and their netted/residual position. Directions with no IC customer
+// contribute zero; fully-empty pairs are omitted.
+export async function getNettingMatrix(
+  client: SupabaseClient<Database>,
+  companyGroupId: string
+): Promise<{ data: NettingMatrixRow[] | null; error: PostgrestError | null }> {
+  const companiesResult = await getCompaniesInGroup(client, companyGroupId);
+  if (companiesResult.error) {
+    return { data: null, error: companiesResult.error };
+  }
+
+  const companies = [...(companiesResult.data ?? [])].sort((a, b) =>
+    a.id < b.id ? -1 : a.id > b.id ? 1 : 0
+  );
+
+  const sumByCurrency = (
+    invoices: { currencyCode: string | null; balance: number | null }[]
+  ) => {
+    const totals = new Map<string, number>();
+    for (const inv of invoices) {
+      const code = inv.currencyCode;
+      if (!code) continue;
+      totals.set(code, (totals.get(code) ?? 0) + Number(inv.balance ?? 0));
+    }
+    return totals;
+  };
+
+  const rows: NettingMatrixRow[] = [];
+
+  for (let i = 0; i < companies.length; i++) {
+    for (let j = i + 1; j < companies.length; j++) {
+      const a = companies[i];
+      const b = companies[j];
+
+      const [custBinA, custAinB] = await Promise.all([
+        getIntercompanyCustomerId(client, a.id, b.id),
+        getIntercompanyCustomerId(client, b.id, a.id)
+      ]);
+
+      let aToB = new Map<string, number>();
+      let bToA = new Map<string, number>();
+
+      if (custBinA) {
+        const res = await getOpenSalesInvoicesForCustomer(
+          client,
+          a.id,
+          custBinA
+        );
+        if (res.error) return { data: null, error: res.error };
+        aToB = sumByCurrency(res.data ?? []);
+      }
+      if (custAinB) {
+        const res = await getOpenSalesInvoicesForCustomer(
+          client,
+          b.id,
+          custAinB
+        );
+        if (res.error) return { data: null, error: res.error };
+        bToA = sumByCurrency(res.data ?? []);
+      }
+
+      const currencies = new Set<string>([...aToB.keys(), ...bToA.keys()]);
+      for (const currencyCode of currencies) {
+        const grossReceivableAtoB = aToB.get(currencyCode) ?? 0;
+        const grossReceivableBtoA = bToA.get(currencyCode) ?? 0;
+        if (grossReceivableAtoB === 0 && grossReceivableBtoA === 0) continue;
+
+        const pos = computeNettingPosition({
+          companyAId: a.id,
+          companyBId: b.id,
+          grossReceivableAtoB,
+          grossReceivableBtoA
+        });
+
+        rows.push({
+          companyAId: a.id,
+          companyAName: a.name,
+          companyBId: b.id,
+          companyBName: b.name,
+          currencyCode,
+          grossReceivableAtoB,
+          grossReceivableBtoA,
+          nettedAmount: pos.nettedAmount,
+          residualAmount: pos.residualAmount,
+          residualPayerCompanyId: pos.residualPayerCompanyId
+        });
+      }
+    }
+  }
+
+  return { data: rows, error: null };
+}
+
+// Draft a netting statement for one company pair + currency. Snapshots each side's
+// open AR/AP (in that currency) into statement lines with a per-invoice
+// oldest-first `appliedAmount` precompute, so the later settlement path just
+// replays the applications. Returns an error when the pair has no mutual balance
+// to net.
+export async function createNettingStatement(
+  client: SupabaseClient<Database>,
+  args: {
+    companyGroupId: string;
+    companyAId: string;
+    companyBId: string;
+    currencyCode: string;
+    userId: string;
+  }
+): Promise<{
+  data: { id: string; statementId: string } | null;
+  error: PostgrestError | null;
+}> {
+  const { companyGroupId, companyAId, companyBId, currencyCode, userId } = args;
+
+  const [custBinA, suppBinA, custAinB, suppAinB] = await Promise.all([
+    getIntercompanyCustomerId(client, companyAId, companyBId),
+    getIntercompanySupplierId(client, companyAId, companyBId),
+    getIntercompanyCustomerId(client, companyBId, companyAId),
+    getIntercompanySupplierId(client, companyBId, companyAId)
+  ]);
+
+  const aARres = custBinA
+    ? await getOpenSalesInvoicesForCustomer(client, companyAId, custBinA)
+    : null;
+  if (aARres?.error) return { data: null, error: aARres.error };
+
+  const aAPres = suppBinA
+    ? await getOpenPurchaseInvoicesForSupplier(client, companyAId, suppBinA)
+    : null;
+  if (aAPres?.error) return { data: null, error: aAPres.error };
+
+  const bARres = custAinB
+    ? await getOpenSalesInvoicesForCustomer(client, companyBId, custAinB)
+    : null;
+  if (bARres?.error) return { data: null, error: bARres.error };
+
+  const bAPres = suppAinB
+    ? await getOpenPurchaseInvoicesForSupplier(client, companyBId, suppAinB)
+    : null;
+  if (bAPres?.error) return { data: null, error: bAPres.error };
+
+  const aAR = (aARres?.data ?? []).filter(
+    (i) => i.currencyCode === currencyCode
+  );
+  const aAP = (aAPres?.data ?? []).filter(
+    (i) => i.currencyCode === currencyCode
+  );
+  const bAR = (bARres?.data ?? []).filter(
+    (i) => i.currencyCode === currencyCode
+  );
+  const bAP = (bAPres?.data ?? []).filter(
+    (i) => i.currencyCode === currencyCode
+  );
+
+  const grossAtoB = aAR.reduce((s, i) => s + Number(i.balance ?? 0), 0);
+  const grossBtoA = bAR.reduce((s, i) => s + Number(i.balance ?? 0), 0);
+
+  const pos = computeNettingPosition({
+    companyAId,
+    companyBId,
+    grossReceivableAtoB: grossAtoB,
+    grossReceivableBtoA: grossBtoA
+  });
+
+  if (pos.nettedAmount <= 0) {
+    return {
+      data: null,
+      error: {
+        message:
+          "No mutual open intercompany balance to net for this company pair and currency."
+      } as unknown as PostgrestError
+    };
+  }
+
+  const statementId = await getNextSequence(
+    client,
+    "intercompanyNettingStatement",
+    companyAId
+  );
+  if (statementId.error) {
+    return { data: null, error: statementId.error };
+  }
+
+  const statement = await client
+    .from("intercompanyNettingStatement")
+    .insert({
+      statementId: statementId.data,
+      companyGroupId,
+      companyAId,
+      companyBId,
+      currencyCode,
+      nettedAmount: pos.nettedAmount,
+      residualAmount: pos.residualAmount,
+      residualPayerCompanyId: pos.residualPayerCompanyId,
+      status: "Draft",
+      createdBy: userId
+    })
+    .select("id, statementId")
+    .single();
+  if (statement.error) {
+    return { data: null, error: statement.error };
+  }
+  const statementRow = statement.data;
+
+  type LineInsert =
+    Database["public"]["Tables"]["intercompanyNettingStatementLine"]["Insert"];
+
+  const buildLines = (
+    invoices: { id: string | null; balance: number | null }[],
+    lineCompanyId: string,
+    kind: "sales" | "purchase"
+  ): LineInsert[] => {
+    const alloc = allocateNettingApplications(
+      pos.nettedAmount,
+      invoices.map((i) => ({
+        id: i.id ?? "",
+        openAmount: Number(i.balance ?? 0)
+      }))
+    );
+    return alloc.applications
+      .filter((application) => application.appliedAmount > 0)
+      .map((application) => ({
+        statementId: statementRow.id,
+        companyId: lineCompanyId,
+        salesInvoiceId: kind === "sales" ? application.id : null,
+        purchaseInvoiceId: kind === "purchase" ? application.id : null,
+        openAmount: application.openAmount,
+        appliedAmount: application.appliedAmount
+      }));
+  };
+
+  const lines: LineInsert[] = [
+    ...buildLines(aAR, companyAId, "sales"),
+    ...buildLines(aAP, companyAId, "purchase"),
+    ...buildLines(bAR, companyBId, "sales"),
+    ...buildLines(bAP, companyBId, "purchase")
+  ];
+
+  if (lines.length > 0) {
+    const lineInsert = await client
+      .from("intercompanyNettingStatementLine")
+      .insert(lines);
+    if (lineInsert.error) {
+      // Best-effort cleanup so a failed line write leaves no orphan statement.
+      await client
+        .from("intercompanyNettingStatement")
+        .delete()
+        .eq("id", statementRow.id);
+      return { data: null, error: lineInsert.error };
+    }
+  }
+
+  return { data: statementRow, error: null };
+}
+
+export async function getNettingStatements(
+  client: SupabaseClient<Database>,
+  companyGroupId: string,
+  args: GenericQueryFilters & { status: string | null }
+) {
+  let query = client
+    .from("intercompanyNettingStatement")
+    .select(
+      "*, companyA:company!intercompanyNettingStatement_companyAId_fkey(name), companyB:company!intercompanyNettingStatement_companyBId_fkey(name)",
+      { count: "exact" }
+    )
+    .eq("companyGroupId", companyGroupId);
+
+  if (args.status) {
+    query = query.eq("status", args.status);
+  }
+
+  query = setGenericQueryFilters(query, args, [
+    { column: "createdAt", ascending: false }
+  ]);
+  return query;
+}
+
+export async function getNettingStatement(
+  client: SupabaseClient<Database>,
+  id: string
+) {
+  const statement = await client
+    .from("intercompanyNettingStatement")
+    .select(
+      "*, companyA:company!intercompanyNettingStatement_companyAId_fkey(name), companyB:company!intercompanyNettingStatement_companyBId_fkey(name)"
+    )
+    .eq("id", id)
+    .single();
+  if (statement.error) {
+    return { data: null, error: statement.error };
+  }
+
+  const lines = await client
+    .from("intercompanyNettingStatementLine")
+    .select("*")
+    .eq("statementId", id);
+  if (lines.error) {
+    return { data: null, error: lines.error };
+  }
+
+  return {
+    data: { ...statement.data, lines: lines.data ?? [] },
+    error: null
+  };
+}
+
+export async function proposeNettingStatement(
+  client: SupabaseClient<Database>,
+  id: string,
+  userId: string
+) {
+  const now = new Date().toISOString();
+  return client
+    .from("intercompanyNettingStatement")
+    .update({
+      status: "Proposed",
+      proposedBy: userId,
+      proposedAt: now,
+      updatedBy: userId,
+      updatedAt: now
+    })
+    .eq("id", id)
+    .eq("status", "Draft")
+    .select("id")
+    .single();
+}
+
+export async function agreeNettingStatement(
+  client: SupabaseClient<Database>,
+  id: string,
+  userId: string
+) {
+  const now = new Date().toISOString();
+  return client
+    .from("intercompanyNettingStatement")
+    .update({
+      status: "Agreed",
+      agreedBy: userId,
+      agreedAt: now,
+      updatedBy: userId,
+      updatedAt: now
+    })
+    .eq("id", id)
+    .eq("status", "Proposed")
+    .select("id")
+    .single();
+}
+
+export async function cancelNettingStatement(
+  client: SupabaseClient<Database>,
+  id: string,
+  userId: string
+) {
+  return client
+    .from("intercompanyNettingStatement")
+    .update({
+      status: "Cancelled",
+      updatedBy: userId,
+      updatedAt: new Date().toISOString()
+    })
+    .eq("id", id)
+    .in("status", ["Draft", "Proposed", "Agreed"])
+    .select("id")
+    .single();
+}
+
+// Settle an Agreed statement: replay each company's snapshotted applications as a
+// paired Receipt (AR) / Disbursement (AP) payment against that company's
+// intercompany netting clearing account, post each via the post-payment edge
+// function, then flip the statement to Settled. Best-effort sequential — on the
+// first error it returns without flipping to Settled (leaving Agreed) rather than
+// unwinding already-posted payments across companies.
+export async function settleNettingStatement(
+  serviceRole: SupabaseClient<Database>,
+  args: { statementId: string; userId: string }
+): Promise<{
+  data: { success: true } | null;
+  error: PostgrestError | null;
+}> {
+  const { statementId, userId } = args;
+  const today = new Date().toISOString().split("T")[0];
+
+  const statementResult = await serviceRole
+    .from("intercompanyNettingStatement")
+    .select("*")
+    .eq("id", statementId)
+    .single();
+  if (statementResult.error) {
+    return { data: null, error: statementResult.error };
+  }
+  const statement = statementResult.data;
+
+  if (statement.status !== "Agreed") {
+    return {
+      data: null,
+      error: {
+        message: "Only an Agreed netting statement can be settled."
+      } as unknown as PostgrestError
+    };
+  }
+
+  const linesResult = await serviceRole
+    .from("intercompanyNettingStatementLine")
+    .select("*")
+    .eq("statementId", statementId);
+  if (linesResult.error) {
+    return { data: null, error: linesResult.error };
+  }
+  const lines = linesResult.data ?? [];
+
+  const [defaultsA, defaultsB] = await Promise.all([
+    getDefaultAccounts(serviceRole, statement.companyAId),
+    getDefaultAccounts(serviceRole, statement.companyBId)
+  ]);
+  const clearingA = defaultsA.data?.intercompanyNettingAccount ?? null;
+  const clearingB = defaultsB.data?.intercompanyNettingAccount ?? null;
+  if (!clearingA) {
+    return {
+      data: null,
+      error: {
+        message: `Intercompany netting clearing account is not configured for company ${statement.companyAId}`
+      } as unknown as PostgrestError
+    };
+  }
+  if (!clearingB) {
+    return {
+      data: null,
+      error: {
+        message: `Intercompany netting clearing account is not configured for company ${statement.companyBId}`
+      } as unknown as PostgrestError
+    };
+  }
+
+  const [custBinA, suppBinA, custAinB, suppAinB] = await Promise.all([
+    getIntercompanyCustomerId(
+      serviceRole,
+      statement.companyAId,
+      statement.companyBId
+    ),
+    getIntercompanySupplierId(
+      serviceRole,
+      statement.companyAId,
+      statement.companyBId
+    ),
+    getIntercompanyCustomerId(
+      serviceRole,
+      statement.companyBId,
+      statement.companyAId
+    ),
+    getIntercompanySupplierId(
+      serviceRole,
+      statement.companyBId,
+      statement.companyAId
+    )
+  ]);
+
+  // Exchange rate per referenced invoice (payment/settlement need the target
+  // invoice's rate). Read the AR/AP views the open-item fetchers use.
+  const salesIds = lines
+    .map((l) => l.salesInvoiceId)
+    .filter((id): id is string => Boolean(id));
+  const purchaseIds = lines
+    .map((l) => l.purchaseInvoiceId)
+    .filter((id): id is string => Boolean(id));
+  const rateById = new Map<string, number>();
+  if (salesIds.length > 0) {
+    const res = await serviceRole
+      .from("salesInvoices")
+      .select("id, exchangeRate")
+      .in("id", salesIds);
+    if (res.error) return { data: null, error: res.error };
+    for (const row of res.data ?? []) {
+      if (row.id) rateById.set(row.id, Number(row.exchangeRate ?? 1));
+    }
+  }
+  if (purchaseIds.length > 0) {
+    const res = await serviceRole
+      .from("purchaseInvoices")
+      .select("id, exchangeRate")
+      .in("id", purchaseIds);
+    if (res.error) return { data: null, error: res.error };
+    for (const row of res.data ?? []) {
+      if (row.id) rateById.set(row.id, Number(row.exchangeRate ?? 1));
+    }
+  }
+
+  const groups: {
+    companyId: string;
+    paymentType: "Receipt" | "Disbursement";
+    partyId: string | null;
+    clearing: string;
+    lines: typeof lines;
+  }[] = [
+    {
+      companyId: statement.companyAId,
+      paymentType: "Receipt",
+      partyId: custBinA,
+      clearing: clearingA,
+      lines: lines.filter(
+        (l) => l.companyId === statement.companyAId && l.salesInvoiceId
+      )
+    },
+    {
+      companyId: statement.companyAId,
+      paymentType: "Disbursement",
+      partyId: suppBinA,
+      clearing: clearingA,
+      lines: lines.filter(
+        (l) => l.companyId === statement.companyAId && l.purchaseInvoiceId
+      )
+    },
+    {
+      companyId: statement.companyBId,
+      paymentType: "Receipt",
+      partyId: custAinB,
+      clearing: clearingB,
+      lines: lines.filter(
+        (l) => l.companyId === statement.companyBId && l.salesInvoiceId
+      )
+    },
+    {
+      companyId: statement.companyBId,
+      paymentType: "Disbursement",
+      partyId: suppAinB,
+      clearing: clearingB,
+      lines: lines.filter(
+        (l) => l.companyId === statement.companyBId && l.purchaseInvoiceId
+      )
+    }
+  ];
+
+  for (const group of groups) {
+    const totalAmount = group.lines.reduce(
+      (s, l) => s + Number(l.appliedAmount),
+      0
+    );
+    if (totalAmount <= 0) continue;
+
+    if (!group.partyId) {
+      return {
+        data: null,
+        error: {
+          message: `Intercompany ${
+            group.paymentType === "Receipt" ? "customer" : "supplier"
+          } is not configured for company ${group.companyId}`
+        } as unknown as PostgrestError
+      };
+    }
+    const partyId: string = group.partyId;
+
+    const firstInvoiceId =
+      group.paymentType === "Receipt"
+        ? group.lines[0].salesInvoiceId
+        : group.lines[0].purchaseInvoiceId;
+    const paymentExchangeRate = firstInvoiceId
+      ? (rateById.get(firstInvoiceId) ?? 1)
+      : 1;
+
+    const paymentSeq = await getNextSequence(
+      serviceRole,
+      "payment",
+      group.companyId
+    );
+    if (paymentSeq.error) return { data: null, error: paymentSeq.error };
+
+    const paymentInsert = await upsertPayment(serviceRole, {
+      paymentId: paymentSeq.data,
+      companyId: group.companyId,
+      createdBy: userId,
+      paymentType: group.paymentType,
+      customerId: group.paymentType === "Receipt" ? partyId : undefined,
+      supplierId: group.paymentType === "Disbursement" ? partyId : undefined,
+      paymentDate: today,
+      currencyCode: statement.currencyCode,
+      exchangeRate: paymentExchangeRate,
+      totalAmount,
+      bankAccount: group.clearing,
+      reference: statement.statementId,
+      memo: `Intercompany netting ${statement.statementId}`
+    });
+    if (paymentInsert.error) {
+      return { data: null, error: paymentInsert.error };
+    }
+    const paymentRecordId = paymentInsert.data.id;
+
+    // paymentValidator has no nettingStatementId field, so upsertPayment cannot
+    // carry it; stamp the audit back-reference in a follow-up update.
+    const backref = await serviceRole
+      .from("payment")
+      .update({ nettingStatementId: statement.id })
+      .eq("id", paymentRecordId);
+    if (backref.error) {
+      return { data: null, error: backref.error };
+    }
+
+    try {
+      await replaceInvoiceSettlements(getDatabaseClient(), {
+        paymentId: paymentRecordId,
+        companyId: group.companyId,
+        createdBy: userId,
+        applications: group.lines.map((l) => {
+          const invoiceId =
+            group.paymentType === "Receipt"
+              ? l.salesInvoiceId
+              : l.purchaseInvoiceId;
+          const targetExchangeRate = invoiceId
+            ? (rateById.get(invoiceId) ?? 1)
+            : 1;
+          return {
+            targetSalesInvoiceId:
+              group.paymentType === "Receipt"
+                ? (invoiceId ?? undefined)
+                : undefined,
+            targetPurchaseInvoiceId:
+              group.paymentType === "Disbursement"
+                ? (invoiceId ?? undefined)
+                : undefined,
+            appliedAmount: Number(l.appliedAmount),
+            discountAmount: 0,
+            writeOffAmount: 0,
+            sourceExchangeRate: paymentExchangeRate,
+            targetExchangeRate,
+            appliedDate: today
+          };
+        })
+      });
+    } catch (e) {
+      return {
+        data: null,
+        error: { message: (e as Error).message } as unknown as PostgrestError
+      };
+    }
+
+    const posted = await serviceRole.functions.invoke("post-payment", {
+      body: {
+        type: "post",
+        paymentId: paymentRecordId,
+        userId,
+        companyId: group.companyId
+      }
+    });
+    if (posted.error) {
+      const message =
+        (posted.data as { message?: string } | undefined)?.message ??
+        posted.error.message ??
+        "Failed to post netting payment";
+      return {
+        data: null,
+        error: { message } as unknown as PostgrestError
+      };
+    }
+  }
+
+  const now = new Date().toISOString();
+  const settled = await serviceRole
+    .from("intercompanyNettingStatement")
+    .update({
+      status: "Settled",
+      settledBy: userId,
+      settledAt: now,
+      settlementDate: today,
+      updatedBy: userId,
+      updatedAt: now
+    })
+    .eq("id", statementId)
+    .eq("status", "Agreed");
+  if (settled.error) {
+    return { data: null, error: settled.error };
+  }
+
+  return { data: { success: true }, error: null };
+}
+
+// -- Intercompany document mirroring (workstream 3 support) --
+
+export async function getIntercompanyDocumentLinks(
+  client: SupabaseClient<Database>,
+  companyGroupId: string,
+  args: GenericQueryFilters & { status: string | null }
+) {
+  let query = client
+    .from("intercompanyDocumentLink")
+    .select(
+      "*, sourceCompany:company!intercompanyDocumentLink_sourceCompanyId_fkey(name), targetCompany:company!intercompanyDocumentLink_targetCompanyId_fkey(name)",
+      { count: "exact" }
+    )
+    .eq("companyGroupId", companyGroupId);
+
+  if (args.status) {
+    query = query.eq("status", args.status);
+  }
+
+  query = setGenericQueryFilters(query, args, [
+    { column: "createdAt", ascending: false }
+  ]);
+  return query;
+}
+
+export async function retryIntercompanyMirror(
+  client: SupabaseClient<Database>,
+  id: string,
+  userId: string
+) {
+  return client
+    .from("intercompanyDocumentLink")
+    .update({
+      status: "Pending",
+      failureReason: null,
+      updatedBy: userId,
+      updatedAt: new Date().toISOString()
+    })
+    .eq("id", id)
+    .in("status", ["Failed", "Exception"])
+    .select("id")
+    .single();
+}
+
+export async function detachIntercompanyLink(
+  client: SupabaseClient<Database>,
+  id: string,
+  userId: string
+) {
+  return client
+    .from("intercompanyDocumentLink")
+    .update({
+      status: "Detached",
+      updatedBy: userId,
+      updatedAt: new Date().toISOString()
+    })
+    .eq("id", id)
+    .select("id")
+    .single();
 }
 
 // -- Journal Entries --

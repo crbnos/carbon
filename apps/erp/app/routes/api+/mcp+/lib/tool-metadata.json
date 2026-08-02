@@ -1,6 +1,6 @@
 {
-  "generated": "2026-08-02T01:42:25.565Z",
-  "totalTools": 1405,
+  "generated": "2026-08-02T02:01:14.069Z",
+  "totalTools": 1418,
   "modules": 15,
   "tools": [
     {
@@ -2484,6 +2484,373 @@
         },
         "required": [
           "currencyCode"
+        ]
+      }
+    },
+    {
+      "name": "accounting_getCompanyGroupIntercompanySettings",
+      "module": "accounting",
+      "classification": "READ",
+      "description": "get company group intercompany settings",
+      "paramCount": 0,
+      "serviceParams": [
+        "client",
+        "companyGroupId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    {
+      "name": "accounting_updateCompanyGroupIntercompanySettings",
+      "module": "accounting",
+      "classification": "WRITE",
+      "description": "update company group intercompany settings",
+      "paramCount": 2,
+      "serviceParams": [
+        "client",
+        "companyGroupId",
+        "update"
+      ],
+      "injectAuth": [
+        "companyId",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "intercompanyMatchingTolerance": {
+            "type": "number"
+          },
+          "intercompanyDocumentMirroring": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    {
+      "name": "accounting_getNettingMatrix",
+      "module": "accounting",
+      "classification": "READ",
+      "description": "get netting matrix",
+      "paramCount": 0,
+      "serviceParams": [
+        "client",
+        "companyGroupId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    {
+      "name": "accounting_createNettingStatement",
+      "module": "accounting",
+      "classification": "WRITE",
+      "description": "create netting statement",
+      "paramCount": 3,
+      "serviceParams": [
+        "client",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId",
+        "createdBy",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "companyAId": {
+            "type": "string"
+          },
+          "companyBId": {
+            "type": "string"
+          },
+          "currencyCode": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "companyAId",
+          "companyBId",
+          "currencyCode"
+        ]
+      }
+    },
+    {
+      "name": "accounting_getNettingStatements",
+      "module": "accounting",
+      "classification": "READ",
+      "description": "get netting statements",
+      "paramCount": 3,
+      "serviceParams": [
+        "client",
+        "companyGroupId",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "args": {
+            "type": "object",
+            "properties": {
+              "limit": {
+                "type": "integer",
+                "default": 100
+              },
+              "offset": {
+                "type": "integer",
+                "default": 0
+              },
+              "status": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "accounting_getNettingStatement",
+      "module": "accounting",
+      "classification": "READ",
+      "description": "get netting statement",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "id"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      }
+    },
+    {
+      "name": "accounting_proposeNettingStatement",
+      "module": "accounting",
+      "classification": "WRITE",
+      "description": "propose netting statement",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "id",
+        "userId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      }
+    },
+    {
+      "name": "accounting_agreeNettingStatement",
+      "module": "accounting",
+      "classification": "WRITE",
+      "description": "agree netting statement",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "id",
+        "userId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      }
+    },
+    {
+      "name": "accounting_cancelNettingStatement",
+      "module": "accounting",
+      "classification": "WRITE",
+      "description": "cancel netting statement",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "id",
+        "userId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      }
+    },
+    {
+      "name": "accounting_settleNettingStatement",
+      "module": "accounting",
+      "classification": "WRITE",
+      "description": "settle netting statement",
+      "paramCount": 2,
+      "serviceParams": [
+        "serviceRole",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "serviceRole": {},
+          "args": {
+            "type": "object",
+            "properties": {
+              "statementId": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "statementId"
+            ]
+          }
+        },
+        "required": [
+          "serviceRole",
+          "args"
+        ]
+      }
+    },
+    {
+      "name": "accounting_getIntercompanyDocumentLinks",
+      "module": "accounting",
+      "classification": "READ",
+      "description": "get intercompany document links",
+      "paramCount": 3,
+      "serviceParams": [
+        "client",
+        "companyGroupId",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "args": {
+            "type": "object",
+            "properties": {
+              "limit": {
+                "type": "integer",
+                "default": 100
+              },
+              "offset": {
+                "type": "integer",
+                "default": 0
+              },
+              "status": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "accounting_retryIntercompanyMirror",
+      "module": "accounting",
+      "classification": "WRITE",
+      "description": "retry intercompany mirror",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "id",
+        "userId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      }
+    },
+    {
+      "name": "accounting_detachIntercompanyLink",
+      "module": "accounting",
+      "classification": "WRITE",
+      "description": "detach intercompany link",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "id",
+        "userId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
         ]
       }
     },
