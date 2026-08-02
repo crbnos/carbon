@@ -597,6 +597,276 @@ export default {
         tags: ["noQuoteReason"]
       }
     },
+    "/accountingSyncOperation": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.integration"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.entityType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.entityId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.direction"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.trigger"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.status"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.idempotencyKey"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.attemptCount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.lastAttemptAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.completedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.errorCode"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.errorMessage"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.externalId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.metadata"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.updatedAt"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/accountingSyncOperation"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["accountingSyncOperation"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.accountingSyncOperation"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["accountingSyncOperation"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.integration"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.entityType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.entityId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.direction"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.trigger"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.status"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.idempotencyKey"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.attemptCount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.lastAttemptAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.completedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.errorCode"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.errorMessage"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.externalId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.metadata"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.updatedAt"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["accountingSyncOperation"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.integration"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.entityType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.entityId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.direction"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.trigger"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.status"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.idempotencyKey"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.attemptCount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.lastAttemptAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.completedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.errorCode"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.errorMessage"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.externalId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.metadata"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.updatedAt"
+          },
+          {
+            $ref: "#/parameters/body.accountingSyncOperation"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["accountingSyncOperation"]
+      }
+    },
     "/service": {
       get: {
         parameters: [
@@ -94902,6 +95172,124 @@ export default {
       },
       type: "object"
     },
+    accountingSyncOperation: {
+      required: [
+        "id",
+        "companyId",
+        "integration",
+        "entityType",
+        "entityId",
+        "direction",
+        "trigger",
+        "status",
+        "idempotencyKey",
+        "attemptCount",
+        "createdBy",
+        "createdAt"
+      ],
+      properties: {
+        id: {
+          default: "public.id('syncop'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        integration: {
+          format: "text",
+          type: "string"
+        },
+        entityType: {
+          format: "text",
+          type: "string"
+        },
+        entityId: {
+          format: "text",
+          type: "string"
+        },
+        direction: {
+          format: "text",
+          type: "string"
+        },
+        trigger: {
+          format: "text",
+          type: "string"
+        },
+        status: {
+          default: "Pending",
+          enum: [
+            "Pending",
+            "In Flight",
+            "Completed",
+            "Failed",
+            "Warning",
+            "Skipped",
+            "Excluded"
+          ],
+          format: 'public."syncOperationStatus"',
+          type: "string"
+        },
+        idempotencyKey: {
+          format: "text",
+          type: "string"
+        },
+        attemptCount: {
+          default: 0,
+          format: "integer",
+          type: "integer"
+        },
+        lastAttemptAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        completedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        errorCode: {
+          format: "text",
+          type: "string"
+        },
+        errorMessage: {
+          format: "text",
+          type: "string"
+        },
+        externalId: {
+          format: "text",
+          type: "string"
+        },
+        metadata: {
+          format: "jsonb"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        }
+      },
+      type: "object"
+    },
     service: {
       required: [
         "id",
@@ -100190,7 +100578,7 @@ export default {
       properties: {
         id: {
           description:
-            "Note:\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
           format: "text",
           type: "string"
         },
@@ -100239,7 +100627,7 @@ export default {
         },
         supplierLocationId: {
           description:
-            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
+            "Note:\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
           format: "text",
           type: "string"
         },
@@ -135100,6 +135488,135 @@ export default {
     },
     "rowFilter.noQuoteReason.customFields": {
       name: "customFields",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "body.accountingSyncOperation": {
+      name: "accountingSyncOperation",
+      description: "accountingSyncOperation",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/accountingSyncOperation"
+      }
+    },
+    "rowFilter.accountingSyncOperation.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountingSyncOperation.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountingSyncOperation.integration": {
+      name: "integration",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountingSyncOperation.entityType": {
+      name: "entityType",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountingSyncOperation.entityId": {
+      name: "entityId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountingSyncOperation.direction": {
+      name: "direction",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountingSyncOperation.trigger": {
+      name: "trigger",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountingSyncOperation.status": {
+      name: "status",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountingSyncOperation.idempotencyKey": {
+      name: "idempotencyKey",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountingSyncOperation.attemptCount": {
+      name: "attemptCount",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountingSyncOperation.lastAttemptAt": {
+      name: "lastAttemptAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountingSyncOperation.completedAt": {
+      name: "completedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountingSyncOperation.errorCode": {
+      name: "errorCode",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountingSyncOperation.errorMessage": {
+      name: "errorMessage",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountingSyncOperation.externalId": {
+      name: "externalId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountingSyncOperation.metadata": {
+      name: "metadata",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountingSyncOperation.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountingSyncOperation.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountingSyncOperation.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountingSyncOperation.updatedAt": {
+      name: "updatedAt",
       required: false,
       in: "query",
       type: "string"

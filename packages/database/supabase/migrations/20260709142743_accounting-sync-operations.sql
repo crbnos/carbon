@@ -66,4 +66,4 @@ CREATE POLICY "UPDATE" ON "public"."accountingSyncOperation" FOR UPDATE USING (
 -- No INSERT/DELETE policies: rows are created and removed by jobs via service role only.
 
 -- Posting-sync trigger source: journal UPDATEs flow into the event system (PGMQ)
-SELECT attach_event_trigger('journal', ARRAY[]::TEXT[]);
+SELECT attach_event_trigger('journal', ARRAY[]::TEXT[], ARRAY[]::TEXT[]);
