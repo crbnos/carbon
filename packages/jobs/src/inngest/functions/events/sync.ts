@@ -19,10 +19,12 @@ import {
   type DrainSummary,
   drainSyncOperations,
   enqueueSyncOperations,
-  getJournalPostingDecision,
   getSyncOperationActor,
+  insertTerminalSyncOperations,
   isJournalEntryPostingEnabled,
-  type SyncOperationRequest
+  planJournalPostingOperation,
+  type SyncOperationRequest,
+  type TerminalSyncOperationRequest
 } from "../integrations/accounting-sync-operations";
 
 const SyncRecordSchema = z.object({
@@ -138,6 +140,9 @@ export const syncFunction = inngest.createFunction(
             // Journal posting transitions enqueue with trigger "posting"
             // (the ledger trigger is per enqueue call, not per request)
             const postingRequests: SyncOperationRequest[] = [];
+            // Decision-time dispositions (Excluded/Warning) — recorded so
+            // every posted journal is accounted for (spec I1)
+            const terminalRequests: TerminalSyncOperationRequest[] = [];
 
             for (const r of records) {
               const entityType = getEntityTypeFromTable(r.event.table);
@@ -153,7 +158,9 @@ export const syncFunction = inngest.createFunction(
               // Journal rows enqueue when INSERTed born Posted (the post-*
               // edge functions never UPDATE from Draft; reversal inserts
               // skip via reversalOfId) or when an UPDATE transitions status
-              // to Posted/Reversed — non-transition UPDATEs and DELETEs skip
+              // to Posted/Reversed — non-transition UPDATEs and DELETEs skip.
+              // Posting events then route through the v3 policy decision:
+              // push, or a recorded terminal disposition.
               if (entityType === "journalEntry") {
                 if (!journalEntryPostingEnabled) {
                   stepSummary.skipped.push({
@@ -164,22 +171,26 @@ export const syncFunction = inngest.createFunction(
                   continue;
                 }
 
-                const decision = getJournalPostingDecision(r.event);
+                const plan = await planJournalPostingOperation({
+                  client,
+                  companyId,
+                  event: r.event,
+                  integrationMetadata: integration.metadata
+                });
 
-                if (decision.action === "skip") {
+                if (plan.action === "skip") {
                   stepSummary.skipped.push({
                     recordId: r.event.recordId,
-                    reason: decision.reason
+                    reason: plan.reason
                   });
                   continue;
                 }
 
-                postingRequests.push({
-                  entityType,
-                  entityId: decision.entityId,
-                  direction: "push-to-accounting",
-                  ...(decision.reversal ? { metadata: { reversal: true } } : {})
-                });
+                if (plan.action === "push") {
+                  postingRequests.push(plan.request);
+                } else {
+                  terminalRequests.push(plan.request);
+                }
                 continue;
               }
 
@@ -223,6 +234,14 @@ export const syncFunction = inngest.createFunction(
                 createdBy: getSyncOperationActor(integration),
                 scope: enqueueScope,
                 requests: postingRequests
+              })),
+              ...(await insertTerminalSyncOperations(client, {
+                companyId,
+                integration: provider,
+                trigger: "posting",
+                createdBy: getSyncOperationActor(integration),
+                scope: enqueueScope,
+                requests: terminalRequests
               }))
             ];
 

@@ -25,6 +25,7 @@ import {
   getProviderIntegration,
   ProviderID,
   RatelimitError,
+  resolvePostingSyncSettings,
   type SyncDirection,
   type XeroProvider
 } from "@carbon/ee/accounting";
@@ -36,7 +37,11 @@ import {
   drainSyncOperations,
   enqueueSyncOperations,
   getSyncOperationActor,
-  type SyncOperationRequest
+  insertTerminalSyncOperations,
+  isJournalEntryPostingEnabled,
+  planJournalPostingOperation,
+  type SyncOperationRequest,
+  type TerminalSyncOperationRequest
 } from "./accounting-sync-operations";
 
 const log = getLogger("jobs", "accounting-backfill");
@@ -175,6 +180,192 @@ export const accountingBackfillFunction = inngest.createFunction(
         shouldPull: itemConfig?.enabled && shouldPull(itemConfig.direction),
         shouldPush: itemConfig?.enabled && shouldPush(itemConfig.direction)
       }
+    });
+
+    // ============================================================
+    // PHASE 0: Journal posting dispositions (spec I1 missed-event repair)
+    //
+    // Every posted journal since postingSync.syncFromDate must have an
+    // operation row — pushable journals whose event was missed enqueue,
+    // policy-excluded ones get their terminal disposition recorded. Runs
+    // only when posting sync is enabled AND an explicit syncFromDate is
+    // set (no silent mass-push of a company's whole history).
+    // ============================================================
+
+    await step.run("backfill-journal-dispositions", async () => {
+      const phaseClient = getCarbonServiceRole();
+      const phaseIntegration = await getAccountingIntegration(
+        phaseClient,
+        payload.companyId,
+        payload.provider
+      );
+
+      const summary = {
+        enqueued: 0,
+        recorded: 0,
+        alreadyCovered: 0,
+        pages: 0,
+        truncated: false,
+        skippedReason: null as string | null
+      };
+
+      if (!isJournalEntryPostingEnabled(phaseIntegration.metadata)) {
+        summary.skippedReason = "posting sync (journalEntry) disabled";
+        return summary;
+      }
+
+      const settings = resolvePostingSyncSettings(phaseIntegration.metadata);
+      if (!settings.enabled) {
+        summary.skippedReason = "postingSync.enabled is false";
+        return summary;
+      }
+
+      const syncFromDate = settings.syncFromDate?.slice(0, 10);
+      if (!syncFromDate) {
+        summary.skippedReason =
+          "postingSync.syncFromDate is not set — journal backfill requires an explicit start date";
+        return summary;
+      }
+
+      const createdBy = getSyncOperationActor(phaseIntegration);
+      const pageSize = 200;
+      const maxPages = 50; // bound the step; re-run the backfill for more
+      let offset = 0;
+
+      for (let pageIndex = 0; pageIndex < maxPages; pageIndex++) {
+        const journals = await phaseClient
+          .from("journal")
+          .select("id, sourceType, status, reversalOfId")
+          .eq("companyId", payload.companyId)
+          .in("status", ["Posted", "Reversed"])
+          .is("reversalOfId", null)
+          .gte("postingDate", syncFromDate)
+          .order("id", { ascending: true })
+          .range(offset, offset + pageSize - 1);
+
+        if (journals.error) {
+          throw new Error(
+            `Failed to page journals for disposition backfill: ${journals.error.message}`
+          );
+        }
+
+        const rows = journals.data ?? [];
+        if (rows.length === 0) break;
+        summary.pages++;
+
+        const candidateEntityIds = rows.flatMap((row) =>
+          row.status === "Reversed" ? [row.id, `${row.id}:reversal`] : [row.id]
+        );
+
+        const existing = await phaseClient
+          .from("accountingSyncOperation")
+          .select("entityId")
+          .eq("companyId", payload.companyId)
+          .eq("integration", payload.provider)
+          .eq("entityType", "journalEntry")
+          .in("entityId", candidateEntityIds);
+
+        if (existing.error) {
+          throw new Error(
+            `Failed to load existing journal operations: ${existing.error.message}`
+          );
+        }
+
+        const covered = new Set(
+          (existing.data ?? []).map((row) => row.entityId)
+        );
+
+        const pushRequests: SyncOperationRequest[] = [];
+        const terminalRequests: TerminalSyncOperationRequest[] = [];
+
+        for (const row of rows) {
+          if (covered.has(row.id)) {
+            summary.alreadyCovered++;
+          } else {
+            const plan = await planJournalPostingOperation({
+              client: phaseClient,
+              companyId: payload.companyId,
+              event: {
+                operation: "INSERT",
+                recordId: row.id,
+                new: {
+                  status: "Posted",
+                  reversalOfId: null,
+                  sourceType: row.sourceType
+                },
+                old: null
+              },
+              integrationMetadata: phaseIntegration.metadata
+            });
+
+            if (plan.action === "push") {
+              pushRequests.push(plan.request);
+            } else if (plan.action === "terminal") {
+              terminalRequests.push(plan.request);
+            }
+          }
+
+          // A Reversed journal's reversal push rides the original's policy
+          // decision (same source type); record it when missing too
+          if (row.status === "Reversed" && !covered.has(`${row.id}:reversal`)) {
+            const reversalPlan = await planJournalPostingOperation({
+              client: phaseClient,
+              companyId: payload.companyId,
+              event: {
+                operation: "UPDATE",
+                recordId: row.id,
+                new: {
+                  status: "Reversed",
+                  reversalOfId: null,
+                  sourceType: row.sourceType
+                },
+                old: { status: "Posted" }
+              },
+              integrationMetadata: phaseIntegration.metadata
+            });
+
+            if (reversalPlan.action === "push") {
+              pushRequests.push(reversalPlan.request);
+            } else if (reversalPlan.action === "terminal") {
+              terminalRequests.push(reversalPlan.request);
+            }
+          }
+        }
+
+        const enqueueOutcomes = await enqueueSyncOperations(phaseClient, {
+          companyId: payload.companyId,
+          integration: payload.provider,
+          trigger: "backfill",
+          createdBy,
+          scope: backfillRunId,
+          requests: pushRequests
+        });
+        summary.enqueued += enqueueOutcomes.filter(
+          (outcome) => outcome.outcome === "enqueued"
+        ).length;
+
+        const terminalOutcomes = await insertTerminalSyncOperations(
+          phaseClient,
+          {
+            companyId: payload.companyId,
+            integration: payload.provider,
+            trigger: "backfill",
+            createdBy,
+            scope: backfillRunId,
+            requests: terminalRequests
+          }
+        );
+        summary.recorded += terminalOutcomes.filter(
+          (outcome) => outcome.outcome === "enqueued"
+        ).length;
+
+        if (rows.length < pageSize) break;
+        offset += pageSize;
+        if (pageIndex === maxPages - 1) summary.truncated = true;
+      }
+
+      log.info("[BACKFILL] Journal disposition phase complete", summary);
+      return summary;
     });
 
     // ============================================================

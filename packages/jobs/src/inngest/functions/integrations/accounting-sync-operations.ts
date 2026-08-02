@@ -36,6 +36,8 @@ import {
   enqueueSyncOperation,
   failOperation,
   getJournalEntrySyncEntityId,
+  getJournalPostingPolicyDecision,
+  insertTerminalSyncOperation,
   isJournalEntrySyncFailure,
   netJournalLinesPerAccount,
   parseJournalEntrySyncEntityId,
@@ -218,6 +220,239 @@ export function isJournalEntryPostingEnabled(
   integrationMetadata: unknown
 ): boolean {
   return resolveSyncConfig(integrationMetadata).entities.journalEntry.enabled;
+}
+
+/**
+ * Resolve which AR/AP side a Payment journal's lines touch, from the
+ * company's control accounts (accountDefault.receivablesAccount /
+ * payablesAccount). Deterministic per build-payment-journal (a payment
+ * journal books against exactly one control side); returns null when
+ * neither or both sides appear — the policy decision parks that as
+ * PAYMENT_FAMILY_UNRESOLVED when the family modes diverge.
+ */
+export async function resolvePaymentJournalFamily(
+  client: SupabaseClient<Database>,
+  args: { companyId: string; journalId: string }
+): Promise<"ar" | "ap" | null> {
+  const defaults = await client
+    .from("accountDefault")
+    .select("receivablesAccount, payablesAccount")
+    .eq("companyId", args.companyId)
+    .maybeSingle();
+
+  if (defaults.error || !defaults.data) return null;
+
+  const lines = await client
+    .from("journalLine")
+    .select("accountId")
+    .eq("companyId", args.companyId)
+    .eq("journalId", args.journalId);
+
+  if (lines.error || !lines.data) return null;
+
+  const accountIds = new Set(
+    lines.data
+      .map((line) => line.accountId)
+      .filter((id): id is string => typeof id === "string" && id.length > 0)
+  );
+
+  const touchesReceivables = accountIds.has(defaults.data.receivablesAccount);
+  const touchesPayables = accountIds.has(defaults.data.payablesAccount);
+
+  if (touchesReceivables && !touchesPayables) return "ar";
+  if (touchesPayables && !touchesReceivables) return "ap";
+  return null;
+}
+
+export type TerminalSyncOperationRequest = {
+  entityType: string;
+  entityId: string;
+  direction: SyncOperationDirection;
+  status: "Excluded" | "Warning";
+  errorCode: string;
+  errorMessage: string;
+  metadata?: Record<string, unknown>;
+};
+
+/**
+ * What to do with one journal posting event after the transition check AND
+ * the v3 policy decision: skip (not a posting event), enqueue a push, or
+ * record a terminal disposition (Excluded/Warning) so the journal is
+ * accounted for either way (spec I1).
+ */
+export type JournalPostingOperationPlan =
+  | { action: "skip"; reason: string }
+  | { action: "push"; request: SyncOperationRequest }
+  | { action: "terminal"; request: TerminalSyncOperationRequest };
+
+/**
+ * Compose the event-transition check with the posting-policy decision for
+ * one `journal` table event. The Payment control-account lookup runs only
+ * when the source type is Payment AND the AR/AP family modes diverge
+ * (otherwise the side cannot change the outcome).
+ */
+export async function planJournalPostingOperation(args: {
+  client: SupabaseClient<Database>;
+  companyId: string;
+  event: JournalPostingEventInput;
+  integrationMetadata: unknown;
+}): Promise<JournalPostingOperationPlan> {
+  const transition = getJournalPostingDecision(args.event);
+  if (transition.action === "skip") {
+    return { action: "skip", reason: transition.reason };
+  }
+
+  const settings = resolvePostingSyncSettings(args.integrationMetadata);
+  const syncConfig = resolveSyncConfig(args.integrationMetadata);
+
+  const sourceType =
+    typeof args.event.new?.sourceType === "string"
+      ? args.event.new.sourceType
+      : null;
+
+  const paymentFamily =
+    sourceType === "Payment" && settings.families.ar !== settings.families.ap
+      ? await resolvePaymentJournalFamily(args.client, {
+          companyId: args.companyId,
+          journalId: args.event.recordId
+        })
+      : null;
+
+  const decision = getJournalPostingPolicyDecision({
+    sourceType,
+    settings,
+    docSync: {
+      invoiceEnabled: syncConfig.entities.invoice.enabled,
+      billEnabled: syncConfig.entities.bill.enabled
+    },
+    paymentFamily,
+    inventoryAdjustmentEntitySyncEnabled:
+      syncConfig.entities.inventoryAdjustment.enabled
+  });
+
+  const baseMetadata = {
+    ...(transition.reversal ? { reversal: true } : {}),
+    ...(sourceType ? { sourceType } : {})
+  };
+
+  if (decision.kind === "push") {
+    return {
+      action: "push",
+      request: {
+        entityType: "journalEntry",
+        entityId: transition.entityId,
+        direction: "push-to-accounting",
+        metadata: { ...baseMetadata, granularity: decision.granularity }
+      }
+    };
+  }
+
+  if (decision.kind === "exclude") {
+    return {
+      action: "terminal",
+      request: {
+        entityType: "journalEntry",
+        entityId: transition.entityId,
+        direction: "push-to-accounting",
+        status: "Excluded",
+        errorCode: decision.reason,
+        errorMessage: decision.message,
+        metadata: {
+          ...baseMetadata,
+          ...(decision.backingDocument
+            ? { backingDocument: decision.backingDocument }
+            : {})
+        }
+      }
+    };
+  }
+
+  return {
+    action: "terminal",
+    request: {
+      entityType: "journalEntry",
+      entityId: transition.entityId,
+      direction: "push-to-accounting",
+      status: "Warning",
+      errorCode: decision.code,
+      errorMessage: decision.message,
+      metadata: baseMetadata
+    }
+  };
+}
+
+/**
+ * Record terminal dispositions (Excluded/Warning at decision time), one
+ * ledger row per unique request. Existing rows for a journal absorb the
+ * insert (see insertTerminalSyncOperation) — re-deliveries and backfills
+ * never churn duplicate terminal rows.
+ */
+export async function insertTerminalSyncOperations(
+  client: SupabaseClient<Database>,
+  args: {
+    companyId: string;
+    integration: string;
+    trigger: SyncOperationTrigger;
+    createdBy: string;
+    scope: string;
+    requests: TerminalSyncOperationRequest[];
+  }
+): Promise<EnqueueOutcome[]> {
+  const outcomes: EnqueueOutcome[] = [];
+  const seen = new Set<string>();
+
+  for (const request of args.requests) {
+    const idempotencyKey = getSyncOperationIdempotencyKey({
+      entityType: request.entityType,
+      entityId: request.entityId,
+      direction: request.direction,
+      scope: args.scope
+    });
+
+    if (seen.has(idempotencyKey)) continue;
+    seen.add(idempotencyKey);
+
+    const { data, error } = await insertTerminalSyncOperation(client, {
+      companyId: args.companyId,
+      integration: args.integration,
+      entityType: request.entityType,
+      entityId: request.entityId,
+      direction: request.direction,
+      trigger: args.trigger,
+      idempotencyKey,
+      createdBy: args.createdBy,
+      status: request.status,
+      errorCode: request.errorCode,
+      errorMessage: request.errorMessage,
+      ...(request.metadata ? { metadata: request.metadata } : {})
+    });
+
+    if (error) {
+      outcomes.push({
+        entityType: request.entityType,
+        entityId: request.entityId,
+        direction: request.direction,
+        outcome: "error",
+        error
+      });
+    } else if (data) {
+      outcomes.push({
+        entityType: request.entityType,
+        entityId: request.entityId,
+        direction: request.direction,
+        outcome: "enqueued"
+      });
+    } else {
+      outcomes.push({
+        entityType: request.entityType,
+        entityId: request.entityId,
+        direction: request.direction,
+        outcome: "cooldown"
+      });
+    }
+  }
+
+  return outcomes;
 }
 
 export type EnqueueOutcome = {

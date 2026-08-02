@@ -1,3 +1,5 @@
+import type { Database } from "@carbon/database";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { describe, expect, it } from "vitest";
 import {
   compareMonthlyTotals,
@@ -19,6 +21,8 @@ import {
   mergePostingSyncReconciliation,
   mergePullCursor,
   partitionConsolidationOperations,
+  planJournalPostingOperation,
+  resolvePaymentJournalFamily,
   toIsoDateString
 } from "./accounting-sync-operations";
 
@@ -877,5 +881,309 @@ describe("mergePullCursor", () => {
     expect(mergePullCursor(null, "2026-07-08T00:00:00.000Z")).toEqual({
       settings: { pullCursor: "2026-07-08T00:00:00.000Z" }
     });
+  });
+});
+
+// ── v3 posting dispositions (plan + payment family) ─────────────────────────
+
+/**
+ * Minimal supabase stub for resolvePaymentJournalFamily: accountDefault
+ * resolves the control accounts, journalLine resolves the line accountIds.
+ */
+function stubPaymentClient(args: {
+  receivables: string;
+  payables: string;
+  lineAccounts: string[];
+}): SupabaseClient<Database> {
+  return {
+    from(table: string) {
+      if (table === "accountDefault") {
+        return {
+          select: () => ({
+            eq: () => ({
+              maybeSingle: async () => ({
+                data: {
+                  receivablesAccount: args.receivables,
+                  payablesAccount: args.payables
+                },
+                error: null
+              })
+            })
+          })
+        };
+      }
+      return {
+        select: () => ({
+          eq: () => ({
+            eq: async () => ({
+              data: args.lineAccounts.map((accountId) => ({ accountId })),
+              error: null
+            })
+          })
+        })
+      };
+    }
+  } as unknown as SupabaseClient<Database>;
+}
+
+/** Client that throws if touched — non-Payment paths must not query. */
+const untouchableClient = new Proxy(
+  {},
+  {
+    get() {
+      throw new Error("planJournalPostingOperation touched the client");
+    }
+  }
+) as SupabaseClient<Database>;
+
+const postingEnabledMetadata = (overrides?: {
+  postingSync?: Record<string, unknown>;
+  entities?: Record<string, Record<string, unknown>>;
+}) => ({
+  syncConfig: {
+    entities: {
+      journalEntry: { enabled: true, direction: "push-to-accounting" },
+      ...(overrides?.entities ?? {})
+    }
+  },
+  settings: {
+    postingSync: { enabled: true, ...(overrides?.postingSync ?? {}) }
+  }
+});
+
+describe("resolvePaymentJournalFamily", () => {
+  it("resolves AR when the lines touch the receivables control account", async () => {
+    const family = await resolvePaymentJournalFamily(
+      stubPaymentClient({
+        receivables: "acc-ar",
+        payables: "acc-ap",
+        lineAccounts: ["acc-bank", "acc-ar"]
+      }),
+      { companyId: "co_1", journalId: "je_1" }
+    );
+    expect(family).toBe("ar");
+  });
+
+  it("resolves AP when the lines touch the payables control account", async () => {
+    const family = await resolvePaymentJournalFamily(
+      stubPaymentClient({
+        receivables: "acc-ar",
+        payables: "acc-ap",
+        lineAccounts: ["acc-bank", "acc-ap"]
+      }),
+      { companyId: "co_1", journalId: "je_1" }
+    );
+    expect(family).toBe("ap");
+  });
+
+  it("returns null when neither or both control sides appear", async () => {
+    expect(
+      await resolvePaymentJournalFamily(
+        stubPaymentClient({
+          receivables: "acc-ar",
+          payables: "acc-ap",
+          lineAccounts: ["acc-bank"]
+        }),
+        { companyId: "co_1", journalId: "je_1" }
+      )
+    ).toBeNull();
+
+    expect(
+      await resolvePaymentJournalFamily(
+        stubPaymentClient({
+          receivables: "acc-ar",
+          payables: "acc-ap",
+          lineAccounts: ["acc-ar", "acc-ap"]
+        }),
+        { companyId: "co_1", journalId: "je_1" }
+      )
+    ).toBeNull();
+  });
+});
+
+describe("planJournalPostingOperation", () => {
+  it("skips non-posting events without touching the policy", async () => {
+    const plan = await planJournalPostingOperation({
+      client: untouchableClient,
+      companyId: "co_1",
+      event: {
+        operation: "INSERT",
+        recordId: "je_1",
+        new: { id: "je_1", status: "Draft" },
+        old: null
+      },
+      integrationMetadata: postingEnabledMetadata()
+    });
+    expect(plan.action).toBe("skip");
+  });
+
+  it("plans a push with granularity + sourceType metadata for enabled journal types", async () => {
+    const plan = await planJournalPostingOperation({
+      client: untouchableClient,
+      companyId: "co_1",
+      event: {
+        operation: "INSERT",
+        recordId: "je_1",
+        new: {
+          id: "je_1",
+          status: "Posted",
+          reversalOfId: null,
+          sourceType: "Production Event"
+        },
+        old: null
+      },
+      integrationMetadata: postingEnabledMetadata()
+    });
+
+    expect(plan).toEqual({
+      action: "push",
+      request: {
+        entityType: "journalEntry",
+        entityId: "je_1",
+        direction: "push-to-accounting",
+        metadata: {
+          sourceType: "Production Event",
+          granularity: "daily-summary"
+        }
+      }
+    });
+  });
+
+  it("records DOC_BACKED exclusions with the backing document entity", async () => {
+    const plan = await planJournalPostingOperation({
+      client: untouchableClient,
+      companyId: "co_1",
+      event: {
+        operation: "INSERT",
+        recordId: "je_1",
+        new: {
+          id: "je_1",
+          status: "Posted",
+          reversalOfId: null,
+          sourceType: "Sales Invoice"
+        },
+        old: null
+      },
+      integrationMetadata: postingEnabledMetadata()
+    });
+
+    expect(plan.action).toBe("terminal");
+    if (plan.action !== "terminal") throw new Error("expected terminal");
+    expect(plan.request.status).toBe("Excluded");
+    expect(plan.request.errorCode).toBe("DOC_BACKED");
+    expect(plan.request.metadata).toMatchObject({
+      sourceType: "Sales Invoice",
+      backingDocument: { entityType: "invoice" }
+    });
+  });
+
+  it("parks DOC_SYNC_DISABLED as a Warning when the backing document sync is off", async () => {
+    const plan = await planJournalPostingOperation({
+      client: untouchableClient,
+      companyId: "co_1",
+      event: {
+        operation: "INSERT",
+        recordId: "je_1",
+        new: {
+          id: "je_1",
+          status: "Posted",
+          reversalOfId: null,
+          sourceType: "Sales Invoice"
+        },
+        old: null
+      },
+      integrationMetadata: postingEnabledMetadata({
+        entities: { invoice: { enabled: false } }
+      })
+    });
+
+    expect(plan.action).toBe("terminal");
+    if (plan.action !== "terminal") throw new Error("expected terminal");
+    expect(plan.request.status).toBe("Warning");
+    expect(plan.request.errorCode).toBe("DOC_SYNC_DISABLED");
+  });
+
+  it("suffixes reversal pushes and stamps reversal metadata", async () => {
+    const plan = await planJournalPostingOperation({
+      client: untouchableClient,
+      companyId: "co_1",
+      event: {
+        operation: "UPDATE",
+        recordId: "je_1",
+        new: { id: "je_1", status: "Reversed", sourceType: "Purchase Receipt" },
+        old: { id: "je_1", status: "Posted" }
+      },
+      integrationMetadata: postingEnabledMetadata()
+    });
+
+    expect(plan).toEqual({
+      action: "push",
+      request: {
+        entityType: "journalEntry",
+        entityId: "je_1:reversal",
+        direction: "push-to-accounting",
+        metadata: {
+          reversal: true,
+          sourceType: "Purchase Receipt",
+          granularity: "individual"
+        }
+      }
+    });
+  });
+
+  it("resolves the Payment side from control-account lines when family modes diverge", async () => {
+    const metadata = postingEnabledMetadata({
+      postingSync: {
+        families: { ar: "journals", ap: "documents" }
+      },
+      entities: { invoice: { enabled: false } }
+    });
+
+    const arPlan = await planJournalPostingOperation({
+      client: stubPaymentClient({
+        receivables: "acc-ar",
+        payables: "acc-ap",
+        lineAccounts: ["acc-bank", "acc-ar"]
+      }),
+      companyId: "co_1",
+      event: {
+        operation: "INSERT",
+        recordId: "je_1",
+        new: {
+          id: "je_1",
+          status: "Posted",
+          reversalOfId: null,
+          sourceType: "Payment"
+        },
+        old: null
+      },
+      integrationMetadata: metadata
+    });
+    expect(arPlan.action).toBe("push");
+
+    const unresolvedPlan = await planJournalPostingOperation({
+      client: stubPaymentClient({
+        receivables: "acc-ar",
+        payables: "acc-ap",
+        lineAccounts: ["acc-bank"]
+      }),
+      companyId: "co_1",
+      event: {
+        operation: "INSERT",
+        recordId: "je_2",
+        new: {
+          id: "je_2",
+          status: "Posted",
+          reversalOfId: null,
+          sourceType: "Payment"
+        },
+        old: null
+      },
+      integrationMetadata: metadata
+    });
+    expect(unresolvedPlan.action).toBe("terminal");
+    if (unresolvedPlan.action !== "terminal")
+      throw new Error("expected terminal");
+    expect(unresolvedPlan.request.errorCode).toBe("PAYMENT_FAMILY_UNRESOLVED");
   });
 });

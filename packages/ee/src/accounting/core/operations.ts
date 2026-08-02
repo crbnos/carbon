@@ -116,10 +116,12 @@ export function getClaimEntityTypeFilterError(args: {
     : null;
 }
 
-// TODO: remove the cast once generate:types picks up the
-// accounting-sync-operations migration and "accountingSyncOperation" exists
-// in the generated Database types. Until then the query builder is untyped;
-// row payloads are typed locally via SyncOperation (core/models.ts).
+// Generated types now include "accountingSyncOperation" (regenerated with
+// the v3 work), but dropping this cast trades it for Json-vs-Record friction
+// on every metadata write in this file — a standalone cleanup. Until then
+// the query builder stays untyped; row payloads are typed locally via
+// SyncOperation (core/models.ts).
+// biome-ignore lint/suspicious/noExplicitAny: see above
 function syncOperationTable(client: SupabaseClient<Database>): any {
   return client.from("accountingSyncOperation" as any);
 }
@@ -249,6 +251,96 @@ export async function enqueueSyncOperation(
 
       const liveRetry = await getLiveOperation(client, op);
       if (liveRetry.data) return liveRetry;
+    }
+
+    return { data: null, error: inserted.error.message };
+  }
+
+  return { data: inserted.data as SyncOperation, error: null };
+}
+
+export type InsertTerminalSyncOperationInput = EnqueueSyncOperationInput & {
+  /** Decision-time disposition: Excluded (policy) or Warning (config hole). */
+  status: "Excluded" | "Warning";
+  errorCode: string;
+  errorMessage: string;
+};
+
+async function getLatestOperationForTuple(
+  client: SupabaseClient<Database>,
+  op: Pick<
+    EnqueueSyncOperationInput,
+    "companyId" | "integration" | "entityType" | "entityId" | "direction"
+  >
+): Promise<{ data: SyncOperation | null; error: string | null }> {
+  const result = await syncOperationTable(client)
+    .select("*")
+    .eq("companyId", op.companyId)
+    .eq("integration", op.integration)
+    .eq("entityType", op.entityType)
+    .eq("entityId", op.entityId)
+    .eq("direction", op.direction)
+    .order("createdAt", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (result.error) return { data: null, error: result.error.message };
+  return { data: (result.data as SyncOperation | null) ?? null, error: null };
+}
+
+/**
+ * Record a decision-time disposition directly in a terminal status
+ * (spec I1: every posted journal gets exactly one recorded disposition —
+ * `Excluded` for policy exclusions, `Warning` for config holes like
+ * DOC_SYNC_DISABLED). Idempotent:
+ *
+ * - same (companyId, integration, idempotencyKey) → returns the existing row;
+ * - ANY existing operation for the (entityType, entityId, direction) tuple →
+ *   returns it untouched (the journal already has a disposition or a live
+ *   push — re-deliveries and backfills never churn new terminal rows);
+ * - a concurrent insert losing the unique-index race (23505) is absorbed.
+ *
+ * `completedAt` is stamped as the disposition-recorded time so the inbox
+ * sorts terminal rows consistently with Completed pushes.
+ */
+export async function insertTerminalSyncOperation(
+  client: SupabaseClient<Database>,
+  op: InsertTerminalSyncOperationInput
+): Promise<{ data: SyncOperation | null; error: string | null }> {
+  const existingByKey = await getOperationByIdempotencyKey(client, op);
+  if (existingByKey.error) return existingByKey;
+  if (existingByKey.data) return existingByKey;
+
+  const existingForTuple = await getLatestOperationForTuple(client, op);
+  if (existingForTuple.error) return existingForTuple;
+  if (existingForTuple.data) return existingForTuple;
+
+  const inserted = await syncOperationTable(client)
+    .insert({
+      companyId: op.companyId,
+      integration: op.integration,
+      entityType: op.entityType,
+      entityId: op.entityId,
+      direction: op.direction,
+      trigger: op.trigger,
+      status: op.status,
+      idempotencyKey: op.idempotencyKey,
+      errorCode: op.errorCode,
+      errorMessage: op.errorMessage,
+      completedAt: new Date().toISOString(),
+      metadata: op.metadata ?? null,
+      createdBy: op.createdBy
+    })
+    .select("*")
+    .single();
+
+  if (inserted.error) {
+    if (inserted.error.code === UNIQUE_VIOLATION) {
+      const byKey = await getOperationByIdempotencyKey(client, op);
+      if (byKey.data) return byKey;
+
+      const forTuple = await getLatestOperationForTuple(client, op);
+      if (forTuple.data) return forTuple;
     }
 
     return { data: null, error: inserted.error.message };

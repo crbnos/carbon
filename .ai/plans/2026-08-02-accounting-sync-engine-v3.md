@@ -20,8 +20,8 @@ Standing rules for every task:
 
 ## Phase 1 — Policy table + recorded dispositions
 
-### 1.1 Migration: `Excluded` sync-operation status
-- [ ] `pnpm db:migrate:new sync-operation-excluded-status`
+### 1.1 Migration: `Excluded` sync-operation status ✅ (9a106faf3)
+- [x] `pnpm db:migrate:new sync-operation-excluded-status`
 - Files: new `packages/database/supabase/migrations/*_sync-operation-excluded-status.sql`
 - SQL: `ALTER TYPE "syncOperationStatus" ADD VALUE IF NOT EXISTS 'Excluded';` — follow
   `.claude/rules/database-migration-patterns.md` for enum-addition placement/transaction
@@ -31,7 +31,7 @@ Standing rules for every task:
   `Excluded`; migration re-runs cleanly (idempotent); validate in a rolled-back txn first
   per the migration-validation lesson.
 
-### 1.2 `POSTING_POLICY` total record + v3 settings schema + shim
+### 1.2 `POSTING_POLICY` total record + v3 settings schema + shim ✅ (6d1160c88, with 1.3)
 - Files: `packages/ee/src/accounting/core/models.ts`
 - [ ] Add `POSTING_POLICY: Record<JournalEntrySourceType, { representation; defaultEnabled; defaultGranularity }>`
       covering all 21 enum values (source the enum from generated types so growth breaks compile).
@@ -63,7 +63,7 @@ Standing rules for every task:
 - Verify: `pnpm --filter @carbon/ee test` green;
   `pnpm exec turbo run typecheck --filter=@carbon/ee` green.
 
-### 1.3 Decision function returns a disposition
+### 1.3 Decision function returns a disposition ✅ (6d1160c88, with 1.2)
 - Files: `packages/ee/src/accounting/core/posting.ts`
 - [ ] `getJournalPostingDecision(...)` → `{ kind: "push", granularity } | { kind: "exclude", reason, backingDocument? } | { kind: "warn", code } | { kind: "none" }`
       (`none` = posting sync off / no integration → no row). Fold
@@ -71,11 +71,15 @@ Standing rules for every task:
 - [ ] Doc-represented source types route by the journal's family (static per source type;
       `Payment` inspected from control-account lines) and the company's `families` setting:
       `documents` + entity sync enabled → `exclude/DOC_BACKED` with
-      `backingDocument: { entityType, entityId }` (derive entityId from the journal's
-      `documentId`); `documents` + entity sync disabled → `warn/DOC_SYNC_DISABLED`;
+      `backingDocument: { entityType }` — entityType only: document linkage lives on
+      `journalLine.documentId`, not the journal header, so the concrete document is
+      resolved at read time by the completeness service (1.8) via the journal's lines;
+      `documents` + entity sync disabled → `warn/DOC_SYNC_DISABLED`;
       `journals` → `push` with granularity forced `individual` (`warn/DOUBLE_REPRESENTATION`
       if the family's document entity sync is somehow also enabled); `none` →
-      `exclude/FAMILY_OFF`.
+      `exclude/FAMILY_OFF`. *(Amended 2026-08-02 during implementation: the original
+      "derive entityId from the journal's documentId" assumed a header column that does
+      not exist.)*
 - [ ] Granularity resolved per source type from settings (shimmed), falling back to policy default.
 - Tests: every branch incl. reversal suffix handling; doc-backed → `exclude/DOC_BACKED`
       with backingDocument; doc sync disabled → `warn/DOC_SYNC_DISABLED`; family routing
