@@ -128,6 +128,11 @@ LANGUAGE "plpgsql"
 SECURITY INVOKER
 SET search_path = public
 AS $$
+-- The RETURNS TABLE OUT columns (id, amount, status, ...) share names with real
+-- table columns referenced unqualified in the body (e.g. companyGroup."id" in the
+-- tolerance fetch, intercompanyTransaction."id" in the greedy pass). Resolve every
+-- such ambiguity to the COLUMN, never the OUT variable.
+#variable_conflict use_column
 DECLARE
   v_tolerance NUMERIC;
   v_pair RECORD;
