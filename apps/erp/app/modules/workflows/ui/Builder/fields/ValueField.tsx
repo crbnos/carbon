@@ -22,7 +22,7 @@ export function ValueField({
   const isRef = value?.kind === "ref" || value?.kind === "item";
   const nodeTitle =
     value?.kind === "ref"
-      ? (nodes.find((n) => n.id === value.nodeId)?.title ?? value.nodeId)
+      ? (nodes.find((n) => n.id === value.nodeId)?.name ?? value.nodeId)
       : undefined;
 
   const literalValue =

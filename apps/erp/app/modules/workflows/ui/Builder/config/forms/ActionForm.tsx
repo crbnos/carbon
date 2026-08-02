@@ -1,4 +1,5 @@
 import {
+  Checkbox,
   Command,
   CommandEmpty,
   CommandGroup,
@@ -234,6 +235,7 @@ export function ActionForm({ node, issues }: NodeFormProps) {
   const isBatch = data.batch ?? false;
 
   const actionDef = actionId ? catalog.getAction(actionId) : undefined;
+  const isBatchable = !!actionDef?.batchable;
 
   // Upstream entity types for soft-ranking the action list
   const upstreamEntities = useMemo(() => {
@@ -465,6 +467,21 @@ export function ActionForm({ node, issues }: NodeFormProps) {
                 inLoop={isBatch}
               />
             </div>
+          )}
+
+          {/* Batch toggle — only shown for batchable actions */}
+          {isBatchable && (
+            <label className="nodrag nopan flex cursor-pointer items-center gap-2">
+              <Checkbox
+                checked={isBatch}
+                onCheckedChange={(checked) =>
+                  updateNodeData(node.id, { batch: checked === true })
+                }
+              />
+              <span className="text-sm">
+                <Trans>Run once per item in the list</Trans>
+              </span>
+            </label>
           )}
 
           {/* Batch: list-mismatch suggestion */}

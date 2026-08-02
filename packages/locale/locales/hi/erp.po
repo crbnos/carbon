@@ -650,6 +650,9 @@ msgstr ""
 msgid "A shipment's tracking number changes"
 msgstr ""
 
+msgid "A step needs a name."
+msgstr ""
+
 msgid "A supplier is created"
 msgstr ""
 
@@ -691,9 +694,6 @@ msgstr "एक उपकरण एक भौतिक वस्तु है ज
 
 msgid "A user records the expiry date on each batch or serial when the goods are received. Use when suppliers ship lots with different expiry dates."
 msgstr "एक उपयोगकर्ता प्रत्येक बैच या सीरीज पर समाप्ति तिथि दर्ज करता है जब माल प्राप्त होता है। जब आपूर्तिकर्ता विभिन्न समाप्ति तिथियों के साथ लॉट भेजते हैं तो इसका उपयोग करें।"
-
-msgid "A workflow can only have one trigger"
-msgstr ""
 
 msgid "abilities"
 msgstr "क्षमताओं"
@@ -958,6 +958,9 @@ msgstr "कैलिब्रेशन रिकॉर्ड जोड़ें"
 
 msgid "Add Child Storage Unit"
 msgstr "बाल भंडारण इकाई जोड़ें"
+
+msgid "Add clause"
+msgstr ""
 
 msgid "Add Company"
 msgstr "कंपनी जोड़ें"
@@ -2765,6 +2768,9 @@ msgstr "माल की प्राप्ति और आपूर्ति�
 
 msgid "Clearing account for goods received / invoice received matching"
 msgstr "माल की प्राप्ति / चालान प्राप्ति मिलान के लिए समाशोधन खाता"
+
+msgid "Click to rename"
+msgstr ""
 
 msgid "Click to upload a PDF drawing"
 msgstr "PDF ड्राइंग अपलोड करने के लिए क्लिक करें"
@@ -5399,17 +5405,11 @@ msgstr "वेबहुक संपादित करें"
 msgid "Edit Work Center"
 msgstr "कार्य केंद्र संपादित करें"
 
-msgid "editing"
-msgstr ""
-
 msgid "Eliminated"
 msgstr "समाप्त किया गया"
 
 msgid "Elimination entity"
 msgstr "उन्मूलन इकाई"
-
-msgid "Else if"
-msgstr ""
 
 msgid "email"
 msgstr "ईमेल"
@@ -7046,9 +7046,6 @@ msgstr "पहचानकर्ता"
 msgid "IDs and descriptions are generated for raw materials."
 msgstr "कच्चे माल के लिए आईडी और विवरण उत्पन्न किए जाते हैं।"
 
-msgid "If"
-msgstr ""
-
 msgid "If it can't wait for the next call, the leads on both sides decide."
 msgstr "अगर यह अगली कॉल तक इंतज़ार नहीं कर सकता, तो दोनों तरफ के लीड फैसला लेते हैं।"
 
@@ -7996,9 +7993,6 @@ msgstr "सूची विकल्प"
 msgid "List Parameters"
 msgstr "सूची पैरामीटर"
 
-msgid "live"
-msgstr ""
-
 msgid "Live"
 msgstr ""
 
@@ -8567,9 +8561,6 @@ msgstr "डेटा माइग्रेट करें"
 
 msgid "Min Qty"
 msgstr "न्यूनतम मात्रा"
-
-msgid "Minimize"
-msgstr ""
 
 msgid "Minimum"
 msgstr "न्यूनतम"
@@ -9178,6 +9169,9 @@ msgstr "कोई परिवर्तन दर्ज नहीं किय�
 
 msgid "No changes yet."
 msgstr "अभी तक कोई परिवर्तन नहीं।"
+
+msgid "No clauses yet. Add one above."
+msgstr ""
 
 msgid "No comments yet. Be the first to add a comment."
 msgstr "अभी तक कोई टिप्पणी नहीं है। टिप्पणी जोड़ने वाले पहले व्यक्ति बनें।"
@@ -9933,9 +9927,6 @@ msgstr "विक्रेता शेष राशि के लिए अन�
 msgid "Other Type"
 msgstr "अन्य प्रकार"
 
-msgid "Otherwise"
-msgstr ""
-
 msgid "Out"
 msgstr "बाहर"
 
@@ -10122,6 +10113,12 @@ msgstr "पास किया गया"
 
 msgid "Path"
 msgstr "पथ"
+
+msgid "Path {idx}"
+msgstr ""
+
+msgid "Path else"
+msgstr ""
 
 msgid "Pay Rate"
 msgstr "भुगतान दर"
@@ -10770,11 +10767,11 @@ msgid "Publish"
 msgstr "प्रकाशित करें"
 
 #. placeholder {0}: current.versionNumber
-msgid "Publish v{0}"
+msgid "Publish Version {0}"
 msgstr ""
 
 #. placeholder {0}: current.versionNumber
-msgid "Publish v{0}?"
+msgid "Publish Version {0}?"
 msgstr ""
 
 msgid "Published by Carbon"
@@ -11844,10 +11841,10 @@ msgstr "रन आईडी"
 msgid "Run month-end close and standard reconciliations"
 msgstr "महीने के अंत का बंद करना और मानक समन्वय चलाएं"
 
-msgid "Run once for each item in the list"
+msgid "Run once per item"
 msgstr ""
 
-msgid "Run once per item"
+msgid "Run once per item in the list"
 msgstr ""
 
 msgid "Run payment batches and track aging"
@@ -13061,9 +13058,6 @@ msgstr "चरण"
 msgid "Step detail is kept for 30 days. This run's steps have been removed."
 msgstr ""
 
-msgid "Step options"
-msgstr ""
-
 msgid "Step Records"
 msgstr "चरण रिकॉर्ड"
 
@@ -13462,9 +13456,6 @@ msgstr "टैग"
 msgid "Tailor this hub for the customer. Changes apply live for everyone viewing it. Never shown to the customer here."
 msgstr "इस हब को ग्राहक के लिए अनुकूलित करें। परिवर्तन सभी के लिए लाइव लागू होते हैं जो इसे देख रहे हैं। ग्राहक को यहां कभी नहीं दिखाया जाता है।"
 
-msgid "Take ownership"
-msgstr ""
-
 msgid "Take the shortest remaining shelf life across the materials consumed to make this item. Use when the product's expiry depends on its ingredients."
 msgstr "इस आइटम को बनाने के लिए उपयोग की गई सामग्रियों में सबसे कम शेष शेल्फ लाइफ लें। जब उत्पाद की समाप्ति तारीख इसकी सामग्री पर निर्भर करती है तो उपयोग करें।"
 
@@ -13620,6 +13611,9 @@ msgstr "परीक्षण मान"
 
 msgid "Text size"
 msgstr "पाठ आकार"
+
+msgid "That name is already used by another step."
+msgstr ""
 
 #. placeholder {0}: i18n._(step.title)
 msgid "The \"{0}\" phase checks itself off once all of its tasks in the project plan are done."
@@ -14443,6 +14437,9 @@ msgid "This sales order has lines that require jobs to be created"
 msgstr "इस बिक्रय आदेश में ऐसी पंक्तियाँ हैं जिनके लिए नौकरियाँ बनाई जानी आवश्यक हैं"
 
 msgid "This step and its connections will be removed. This cannot be undone."
+msgstr ""
+
+msgid "This step chooses which path runs next — it doesn't produce values of its own. Reference earlier steps further down each path."
 msgstr ""
 
 #. placeholder {0}: usageCount === 1 ? "" : "s"

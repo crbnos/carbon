@@ -1,4 +1,3 @@
-import { cn, Tooltip, TooltipContent, TooltipTrigger } from "@carbon/react";
 import { Trans } from "@lingui/react/macro";
 import { NODE_DRAG_TYPE } from "./constants";
 import { useBuilderStore } from "./context";
@@ -6,9 +5,6 @@ import { NODE_KIND_META, NODE_KIND_ORDER } from "./nodes/meta";
 
 export function NodePalette() {
   const addNode = useBuilderStore((state) => state.addNode);
-  const hasTrigger = useBuilderStore((state) =>
-    state.nodes.some((node) => node.type === "trigger")
-  );
 
   return (
     <aside className="flex h-full flex-col gap-1 overflow-y-auto border-r bg-background p-2">
@@ -17,25 +13,18 @@ export function NodePalette() {
       </p>
       {NODE_KIND_ORDER.map((type) => {
         const meta = NODE_KIND_META[type];
-        const disabled = type === "trigger" && hasTrigger;
 
-        const button = (
+        return (
           <button
             type="button"
             key={type}
-            disabled={disabled}
-            draggable={!disabled}
+            draggable
             onDragStart={(event) => {
               event.dataTransfer.setData(NODE_DRAG_TYPE, type);
               event.dataTransfer.effectAllowed = "move";
             }}
             onClick={() => addNode(type)}
-            className={cn(
-              "flex w-full items-start gap-2 rounded-md px-2 py-1.5 text-left transition-colors",
-              disabled
-                ? "cursor-not-allowed opacity-40"
-                : "hover:bg-accent active:scale-[0.96]"
-            )}
+            className="flex w-full items-start gap-2 rounded-md px-2 py-1.5 text-left transition-colors hover:bg-accent active:scale-[0.96]"
           >
             <div className="flex size-7 shrink-0 items-center justify-center rounded-md bg-primary text-primary-foreground">
               <meta.Icon className="size-3.5" />
@@ -51,19 +40,6 @@ export function NodePalette() {
               )}
             </div>
           </button>
-        );
-
-        return disabled ? (
-          <Tooltip key={type}>
-            <TooltipTrigger asChild>
-              <span>{button}</span>
-            </TooltipTrigger>
-            <TooltipContent>
-              <Trans>A workflow can only have one trigger</Trans>
-            </TooltipContent>
-          </Tooltip>
-        ) : (
-          button
         );
       })}
     </aside>

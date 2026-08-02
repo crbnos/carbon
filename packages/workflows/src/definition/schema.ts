@@ -8,7 +8,7 @@ import {
   variableRefSchema
 } from "./types";
 
-export const CURRENT_DEFINITION_FORMAT_VERSION = 2;
+export const CURRENT_DEFINITION_FORMAT_VERSION = 3;
 
 /** Cap on batch-mode iterations. */
 export const MAX_LIST_ITEMS = 100;
@@ -21,8 +21,11 @@ export type Origin = z.infer<typeof originSchema>;
 
 const nodeBase = {
   id: z.string().min(1),
-  /** Customer-given name. Optional, so every stored definition still parses. */
-  title: z.string().optional(),
+  /** Unique within the definition. The label users see; refs bind to `id`, not this. */
+  name: z.string().regex(/^[a-z0-9_]+$/, {
+    message:
+      "A node name may only contain lowercase letters, numbers and underscores"
+  }),
   position: z.object({ x: z.number(), y: z.number() }),
   /** Presentation only. Optional; consumers treat undefined as true. */
   expanded: z.boolean().optional()

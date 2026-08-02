@@ -18,13 +18,20 @@ export default function useWorkflowsSubmodules() {
           name: t`Workflows`,
           to: path.to.workflows,
           icon: <LuWorkflow />,
-          table: "workflow"
+          table: "workflow",
+          isActive: (pathname: string) =>
+            pathname === path.to.workflows ||
+            (pathname.startsWith(`${path.to.workflows}/`) &&
+              !pathname.startsWith(`${path.to.workflowRuns}`))
         },
         {
           name: t`Runs`,
           to: path.to.workflowRuns,
           icon: <LuHistory />,
-          table: "workflowRun"
+          table: "workflowRun",
+          isActive: (pathname: string) =>
+            pathname === path.to.workflowRuns ||
+            pathname.startsWith(`${path.to.workflowRuns}/`)
         }
       ]
     }

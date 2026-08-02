@@ -650,6 +650,9 @@ msgstr ""
 msgid "A shipment's tracking number changes"
 msgstr ""
 
+msgid "A step needs a name."
+msgstr ""
+
 msgid "A supplier is created"
 msgstr ""
 
@@ -691,9 +694,6 @@ msgstr "ツールは、複数のジョブで使用できるパーツを作成す
 
 msgid "A user records the expiry date on each batch or serial when the goods are received. Use when suppliers ship lots with different expiry dates."
 msgstr "ユーザーが商品を受け取る際に、各バッチまたはシリアルの有効期限を記録します。サプライヤーが異なる有効期限のロットを出荷する場合に使用します。"
-
-msgid "A workflow can only have one trigger"
-msgstr ""
 
 msgid "abilities"
 msgstr "能力"
@@ -958,6 +958,9 @@ msgstr "キャリブレーション記録を追加"
 
 msgid "Add Child Storage Unit"
 msgstr "子ストレージユニットを追加"
+
+msgid "Add clause"
+msgstr ""
 
 msgid "Add Company"
 msgstr "会社を追加"
@@ -2765,6 +2768,9 @@ msgstr "商品受領と仕入先請求書間の相殺勘定; 両方が転記さ�
 
 msgid "Clearing account for goods received / invoice received matching"
 msgstr "商品受領/請求書受領照合用相殺勘定"
+
+msgid "Click to rename"
+msgstr ""
 
 msgid "Click to upload a PDF drawing"
 msgstr "PDFドローイングをアップロードするにはクリック"
@@ -5399,17 +5405,11 @@ msgstr "Webhookを編集"
 msgid "Edit Work Center"
 msgstr "ワークセンターを編集"
 
-msgid "editing"
-msgstr ""
-
 msgid "Eliminated"
 msgstr "削除済み"
 
 msgid "Elimination entity"
 msgstr "相殺エンティティ"
-
-msgid "Else if"
-msgstr ""
 
 msgid "email"
 msgstr "メール"
@@ -7046,9 +7046,6 @@ msgstr "識別子"
 msgid "IDs and descriptions are generated for raw materials."
 msgstr "IDと説明は原材料に対して生成されます。"
 
-msgid "If"
-msgstr ""
-
 msgid "If it can't wait for the next call, the leads on both sides decide."
 msgstr "次の通話を待つことができない場合、両側のリーダーが決定します。"
 
@@ -7996,9 +7993,6 @@ msgstr "リストオプション"
 msgid "List Parameters"
 msgstr "リストパラメータ"
 
-msgid "live"
-msgstr ""
-
 msgid "Live"
 msgstr ""
 
@@ -8567,9 +8561,6 @@ msgstr "データを移行"
 
 msgid "Min Qty"
 msgstr "最小数量"
-
-msgid "Minimize"
-msgstr ""
 
 msgid "Minimum"
 msgstr "最小"
@@ -9178,6 +9169,9 @@ msgstr "変更が記録されていません"
 
 msgid "No changes yet."
 msgstr "まだ変更がありません。"
+
+msgid "No clauses yet. Add one above."
+msgstr ""
 
 msgid "No comments yet. Be the first to add a comment."
 msgstr "まだコメントがありません。最初のコメントを追加してください。"
@@ -9933,9 +9927,6 @@ msgstr "仕入先残高が全額支払いなしでAP決済時にクリアされ�
 msgid "Other Type"
 msgstr "その他のタイプ"
 
-msgid "Otherwise"
-msgstr ""
-
 msgid "Out"
 msgstr "対象外"
 
@@ -10122,6 +10113,12 @@ msgstr "完了"
 
 msgid "Path"
 msgstr "パス"
+
+msgid "Path {idx}"
+msgstr ""
+
+msgid "Path else"
+msgstr ""
 
 msgid "Pay Rate"
 msgstr "支払レート"
@@ -10770,11 +10767,11 @@ msgid "Publish"
 msgstr "公開"
 
 #. placeholder {0}: current.versionNumber
-msgid "Publish v{0}"
+msgid "Publish Version {0}"
 msgstr ""
 
 #. placeholder {0}: current.versionNumber
-msgid "Publish v{0}?"
+msgid "Publish Version {0}?"
 msgstr ""
 
 msgid "Published by Carbon"
@@ -11844,10 +11841,10 @@ msgstr "実行ID"
 msgid "Run month-end close and standard reconciliations"
 msgstr "月末クローズと標準的な照合を実行"
 
-msgid "Run once for each item in the list"
+msgid "Run once per item"
 msgstr ""
 
-msgid "Run once per item"
+msgid "Run once per item in the list"
 msgstr ""
 
 msgid "Run payment batches and track aging"
@@ -13061,9 +13058,6 @@ msgstr "ステップ"
 msgid "Step detail is kept for 30 days. This run's steps have been removed."
 msgstr ""
 
-msgid "Step options"
-msgstr ""
-
 msgid "Step Records"
 msgstr "ステップレコード"
 
@@ -13462,9 +13456,6 @@ msgstr "タグ"
 msgid "Tailor this hub for the customer. Changes apply live for everyone viewing it. Never shown to the customer here."
 msgstr "このハブを顧客向けにカスタマイズします。変更はそれを表示している全員にリアルタイムで適用されます。顧客にはここに表示されません。"
 
-msgid "Take ownership"
-msgstr ""
-
 msgid "Take the shortest remaining shelf life across the materials consumed to make this item. Use when the product's expiry depends on its ingredients."
 msgstr "このアイテムを製造するために消費される材料全体で、最も短い残りの賞味期限を取得します。製品の有効期限がその成分に依存する場合に使用します。"
 
@@ -13620,6 +13611,9 @@ msgstr "テスト値"
 
 msgid "Text size"
 msgstr "テキストサイズ"
+
+msgid "That name is already used by another step."
+msgstr ""
 
 #. placeholder {0}: i18n._(step.title)
 msgid "The \"{0}\" phase checks itself off once all of its tasks in the project plan are done."
@@ -14443,6 +14437,9 @@ msgid "This sales order has lines that require jobs to be created"
 msgstr "この販売注文には、ジョブを作成する必要があるラインがあります"
 
 msgid "This step and its connections will be removed. This cannot be undone."
+msgstr ""
+
+msgid "This step chooses which path runs next — it doesn't produce values of its own. Reference earlier steps further down each path."
 msgstr ""
 
 #. placeholder {0}: usageCount === 1 ? "" : "s"

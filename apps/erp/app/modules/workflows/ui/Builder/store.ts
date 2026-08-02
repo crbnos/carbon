@@ -1,5 +1,9 @@
 import type { WorkflowIssue, WorkflowNodeType } from "@carbon/workflows";
-import { getNodeHandles } from "@carbon/workflows";
+import {
+  getNodeHandles,
+  slugifyNodeName,
+  uniqueNodeName
+} from "@carbon/workflows";
 import type { Connection, EdgeChange, NodeChange } from "@xyflow/react";
 import { addEdge, applyEdgeChanges, applyNodeChanges } from "@xyflow/react";
 import { nanoid } from "nanoid";
@@ -37,11 +41,11 @@ export type BuilderState = {
   rebaseline: () => void;
   /** Merge a patch into one node's `data`. The only way node configuration changes. */
   updateNodeData: (id: string, patch: Record<string, unknown>) => void;
-  /** Set or clear a node's customer-given name. Empty string clears it. */
-  renameNode: (id: string, title: string) => void;
+  /** Rename a node. Slugifies the value and picks the nearest unique name if taken. */
+  renameNode: (id: string, name: string) => void;
   /** Expand or collapse a node. Persists on the node itself, not in data. */
   setNodeExpanded: (id: string, expanded: boolean) => void;
-  /** Delete a node and its edges. Refuses the trigger. */
+  /** Delete a node and its edges. Refuses if it's the last trigger node. */
   removeNode: (id: string) => void;
 };
 
@@ -66,11 +70,20 @@ export function createBuilderStore(initial: {
       const { isReadOnly, nodes } = get();
       if (isReadOnly) return;
 
-      // Every definition needs exactly one trigger, so its removal is dropped.
-      const triggerId = nodes.find((node) => node.type === "trigger")?.id;
-      const allowed = changes.filter(
-        (change) => !(change.type === "remove" && change.id === triggerId)
+      // Protect the last trigger — deletion is allowed only when another remains.
+      const isRemove = (
+        c: NodeChange<BuilderNode>
+      ): c is { type: "remove"; id: string } => c.type === "remove";
+      const triggerIds = new Set(
+        nodes.filter((n) => n.type === "trigger").map((n) => n.id)
       );
+      const triggerRemoveCount = changes
+        .filter(isRemove)
+        .filter((c) => triggerIds.has(c.id)).length;
+      const allowed =
+        triggerRemoveCount >= triggerIds.size
+          ? changes.filter((c) => !(isRemove(c) && triggerIds.has(c.id)))
+          : changes;
       if (!allowed.length) return;
 
       set({ nodes: applyNodeChanges(allowed, nodes) });
@@ -116,10 +129,15 @@ export function createBuilderStore(initial: {
       const { isReadOnly, nodes, edges, selectedNodeId } = get();
       if (isReadOnly) return;
 
+      const takenNames = new Set(nodes.map((n) => n.name));
       const from = position
         ? undefined
         : nodes.find((node) => node.id === selectedNodeId);
-      const node = createNode(type, position ?? nextNodePosition(nodes, from));
+      const node = createNode(
+        type,
+        position ?? nextNodePosition(nodes, from),
+        takenNames
+      );
 
       const freeHandle = from
         ? getNodeHandles(
@@ -168,12 +186,18 @@ export function createBuilderStore(initial: {
         )
       })),
 
-    renameNode: (id, title) =>
-      set(({ nodes }) => ({
-        nodes: nodes.map((n) =>
-          n.id === id ? { ...n, title: title === "" ? undefined : title } : n
-        )
-      })),
+    renameNode: (id, name) =>
+      set(({ nodes }) => {
+        const slug = slugifyNodeName(name);
+        if (slug === "") return {};
+        const taken = new Set(
+          nodes.filter((n) => n.id !== id).map((n) => n.name)
+        );
+        const unique = uniqueNodeName(slug, taken);
+        return {
+          nodes: nodes.map((n) => (n.id === id ? { ...n, name: unique } : n))
+        };
+      }),
 
     setNodeExpanded: (id, expanded) =>
       set(({ nodes }) => ({
@@ -183,7 +207,12 @@ export function createBuilderStore(initial: {
     removeNode: (id) => {
       const { nodes, edges, selectedNodeId } = get();
       const node = nodes.find((n) => n.id === id);
-      if (!node || node.type === "trigger") return;
+      if (!node) return;
+      if (
+        node.type === "trigger" &&
+        nodes.filter((n) => n.type === "trigger").length <= 1
+      )
+        return;
       set({
         nodes: nodes.filter((n) => n.id !== id),
         edges: edges.filter((e) => e.source !== id && e.target !== id),

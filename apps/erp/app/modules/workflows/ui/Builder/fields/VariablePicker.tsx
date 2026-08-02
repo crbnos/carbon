@@ -82,11 +82,16 @@ export function VariablePicker({
   const definition = fromReactFlow(nodes, edges);
   const variables = availableVariables(definition, nodeId, catalog);
 
-  // Group by nodeTitle (preserving insertion order from availableVariables)
-  const groups = new Map<string, typeof variables>();
+  // Group by nodeId (preserving insertion order from availableVariables).
+  // Keying by nodeId (not nodeName) prevents two nodes with the same name from collapsing.
+  const groups = new Map<
+    string,
+    { nodeName: string; vars: typeof variables }
+  >();
   for (const v of variables) {
-    if (!groups.has(v.nodeTitle)) groups.set(v.nodeTitle, []);
-    groups.get(v.nodeTitle)!.push(v);
+    if (!groups.has(v.nodeId))
+      groups.set(v.nodeId, { nodeName: v.nodeName, vars: [] });
+    groups.get(v.nodeId)!.vars.push(v);
   }
 
   const isCompatible = (type: ValueType): boolean =>
@@ -127,7 +132,7 @@ export function VariablePicker({
     // We allow further drilling only if drill.path.length + 1 < 2 (cap: 2 hops total).
     const canDrillDeeper = drill.path.length === 0;
 
-    const breadcrumb = [v.nodeTitle, v.output, ...drill.path].join(" › ");
+    const breadcrumb = [v.nodeName, v.output, ...drill.path].join(" › ");
 
     return (
       <>
@@ -200,8 +205,8 @@ export function VariablePicker({
 
   const rootContent = (
     <>
-      {[...groups.entries()].map(([nodeTitle, vars]) => (
-        <CommandGroup key={nodeTitle} heading={nodeTitle}>
+      {[...groups.entries()].map(([nid, { nodeName, vars }]) => (
+        <CommandGroup key={nid} heading={nodeName}>
           {vars.map((v) => {
             const compat = isCompatible(v.type);
             const reason = incompatibilityReason(v.type);
@@ -217,7 +222,7 @@ export function VariablePicker({
             return (
               <CommandItem
                 key={`${v.nodeId}:${v.output}`}
-                value={`${v.nodeTitle} ${v.output} ${describeValueType(v.type)}`}
+                value={`${v.nodeName} ${v.output} ${describeValueType(v.type)}`}
                 disabled={!clickable}
                 onSelect={() => {
                   if (isDrillable) {

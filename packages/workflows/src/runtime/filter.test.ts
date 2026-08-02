@@ -29,6 +29,7 @@ const dueBefore: Clause[] = [
 
 const node = (clauses: Clause[], source = true): FilterNode => ({
   id: "f1",
+  name: "f1",
   type: "filter",
   position: { x: 0, y: 0 },
   data: {

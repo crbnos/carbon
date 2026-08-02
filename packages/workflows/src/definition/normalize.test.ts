@@ -43,7 +43,7 @@ describe("readWorkflowVersion", () => {
     if (!result.ok) return;
     expect(result.definition.nodes).toHaveLength(1);
     expect(result.definition.nodes[0]?.id).toBe("n1");
-    expect(result.definition.formatVersion).toBe(2);
+    expect(result.definition.formatVersion).toBe(3);
   });
 
   it("keeps nodes and edges apart", () => {
@@ -121,7 +121,7 @@ describe("readWorkflowVersion", () => {
     });
     expect(result.ok).toBe(true);
     if (!result.ok) return;
-    expect(result.definition.formatVersion).toBe(2);
+    expect(result.definition.formatVersion).toBe(3);
   });
 
   it("opens a v1 lookup as v2 with its old two-sided rules dropped", () => {
@@ -171,6 +171,7 @@ describe("readWorkflowVersion", () => {
     const once = readWorkflowVersion(row);
     expect(once.ok).toBe(true);
     if (!once.ok) return;
+    // Reading the migrated definition a second time returns the same result.
     expect(readWorkflowVersion(once.definition)).toEqual(once);
   });
 
@@ -195,7 +196,7 @@ describe("readWorkflowVersion", () => {
 
     it("rejects a document written by a newer release rather than emptying it", () => {
       const result = readWorkflowVersion({
-        formatVersion: 3,
+        formatVersion: 4,
         nodes: [{ id: "n1", type: "brandNewKind", position: { x: 0, y: 0 } }],
         edges: []
       });
@@ -209,5 +210,151 @@ describe("readWorkflowVersion", () => {
     const first = emptyDefinition();
     first.nodes.push(triggerNode as never);
     expect(emptyDefinition().nodes).toHaveLength(0);
+  });
+
+  describe("v2 → v3 migration: backfills node names", () => {
+    it("assigns positional names when nodes have no title", () => {
+      const result = readWorkflowVersion({
+        formatVersion: 2,
+        nodes: [
+          {
+            id: "n1",
+            type: "trigger",
+            position: { x: 0, y: 0 },
+            data: { events: [], origin: "Both" }
+          },
+          {
+            id: "n2",
+            type: "condition",
+            position: { x: 1, y: 0 },
+            data: { paths: [] }
+          },
+          {
+            id: "n3",
+            type: "condition",
+            position: { x: 2, y: 0 },
+            data: { paths: [] }
+          }
+        ],
+        edges: []
+      });
+      expect(result.ok).toBe(true);
+      if (!result.ok) return;
+      expect(result.definition.nodes[0]?.name).toBe("trigger_0");
+      expect(result.definition.nodes[1]?.name).toBe("condition_0");
+      expect(result.definition.nodes[2]?.name).toBe("condition_1");
+    });
+
+    it("slugifies a title into a name", () => {
+      const result = readWorkflowVersion({
+        formatVersion: 2,
+        nodes: [
+          {
+            id: "n1",
+            type: "action",
+            position: { x: 0, y: 0 },
+            data: { action: "", inputs: {}, batch: false },
+            title: "Check Order"
+          }
+        ],
+        edges: []
+      });
+      expect(result.ok).toBe(true);
+      if (!result.ok) return;
+      expect(result.definition.nodes[0]?.name).toBe("check_order");
+    });
+
+    it("deduplicates two nodes that slugify to the same name", () => {
+      const result = readWorkflowVersion({
+        formatVersion: 2,
+        nodes: [
+          {
+            id: "n1",
+            type: "action",
+            position: { x: 0, y: 0 },
+            data: { action: "", inputs: {}, batch: false },
+            title: "Check"
+          },
+          {
+            id: "n2",
+            type: "action",
+            position: { x: 1, y: 0 },
+            data: { action: "", inputs: {}, batch: false },
+            title: "Check"
+          }
+        ],
+        edges: []
+      });
+      expect(result.ok).toBe(true);
+      if (!result.ok) return;
+      expect(result.definition.nodes[0]?.name).toBe("check");
+      expect(result.definition.nodes[1]?.name).toBe("check_2");
+    });
+
+    it("falls back to positional name when title slugifies to empty", () => {
+      const result = readWorkflowVersion({
+        formatVersion: 2,
+        nodes: [
+          {
+            id: "n1",
+            type: "trigger",
+            position: { x: 0, y: 0 },
+            data: { events: [], origin: "Both" },
+            title: "!!!"
+          }
+        ],
+        edges: []
+      });
+      expect(result.ok).toBe(true);
+      if (!result.ok) return;
+      expect(result.definition.nodes[0]?.name).toBe("trigger_0");
+    });
+
+    it("reading the same document twice produces identical names", () => {
+      const row = {
+        formatVersion: 2,
+        nodes: [
+          {
+            id: "n1",
+            type: "trigger",
+            position: { x: 0, y: 0 },
+            data: { events: [], origin: "Both" }
+          },
+          {
+            id: "n2",
+            type: "action",
+            position: { x: 1, y: 0 },
+            data: { action: "", inputs: {}, batch: false }
+          }
+        ],
+        edges: []
+      };
+      const first = readWorkflowVersion(row);
+      const second = readWorkflowVersion(row);
+      expect(first).toEqual(second);
+    });
+
+    it("runs both migrations on a v1 document and ends at formatVersion 3", () => {
+      const result = readWorkflowVersion({
+        formatVersion: 1,
+        nodes: [triggerNode],
+        edges: []
+      });
+      expect(result.ok).toBe(true);
+      if (!result.ok) return;
+      expect(result.definition.formatVersion).toBe(3);
+      expect(result.definition.nodes[0]?.name).toBe("trigger_0");
+    });
+
+    it("rejects a document at formatVersion 4 as future-format", () => {
+      const result = readWorkflowVersion({
+        formatVersion: 4,
+        nodes: [],
+        edges: []
+      });
+      expect(result.ok).toBe(false);
+      if (result.ok) return;
+      expect(result.failure).toBe("future-format");
+    });
   });
 });

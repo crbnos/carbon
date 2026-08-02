@@ -3,7 +3,10 @@ import type {
   WorkflowNode,
   WorkflowNodeType
 } from "@carbon/workflows";
-import { CURRENT_DEFINITION_FORMAT_VERSION } from "@carbon/workflows";
+import {
+  CURRENT_DEFINITION_FORMAT_VERSION,
+  nextNodeName
+} from "@carbon/workflows";
 import { nanoid } from "nanoid";
 import type { BuilderEdge, BuilderNode } from "../../types";
 
@@ -19,7 +22,7 @@ export function toBuilderNode(node: WorkflowNode): BuilderNode {
     id: node.id,
     type: node.type,
     position: node.position,
-    ...(node.title !== undefined ? { title: node.title } : {}),
+    name: node.name,
     expanded: node.expanded ?? true,
     data: node.data as Record<string, unknown>
   };
@@ -53,7 +56,7 @@ export function fromReactFlow(
       (node) =>
         ({
           id: node.id,
-          ...(node.title !== undefined ? { title: node.title } : {}),
+          name: node.name,
           type: node.type,
           position: { x: node.position.x, y: node.position.y },
           expanded: node.expanded ?? true,
@@ -79,7 +82,7 @@ export function asWorkflowNode(
   type: WorkflowNode["type"],
   data: unknown
 ): WorkflowNode {
-  return { id, type, position: { x: 0, y: 0 }, data } as WorkflowNode;
+  return { id, name: id, type, position: { x: 0, y: 0 }, data } as WorkflowNode;
 }
 
 export function wouldCreateCycle(
@@ -107,14 +110,17 @@ export function wouldCreateCycle(
 
 export function createNode(
   type: WorkflowNodeType,
-  position: { x: number; y: number }
+  position: { x: number; y: number },
+  takenNames: Iterable<string> = []
 ): WorkflowNode {
   const id = nanoid();
+  const name = nextNodeName(type, takenNames);
 
   switch (type) {
     case "trigger":
       return {
         id,
+        name,
         type,
         position,
         expanded: true,
@@ -124,6 +130,7 @@ export function createNode(
       // A condition's output handles ARE its paths — seeding two keeps it wireable.
       return {
         id,
+        name,
         type,
         position,
         expanded: true,
@@ -137,6 +144,7 @@ export function createNode(
     case "entity":
       return {
         id,
+        name,
         type,
         position,
         expanded: true,
@@ -145,6 +153,7 @@ export function createNode(
     case "lookup":
       return {
         id,
+        name,
         type,
         position,
         expanded: true,
@@ -153,6 +162,7 @@ export function createNode(
     case "filter":
       return {
         id,
+        name,
         type,
         position,
         expanded: true,
@@ -161,6 +171,7 @@ export function createNode(
     case "action":
       return {
         id,
+        name,
         type,
         position,
         expanded: true,

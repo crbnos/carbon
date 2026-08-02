@@ -12,6 +12,7 @@ function triggerNode(
 ) {
   return {
     id,
+    name: id,
     position: { x: 0, y: 0 },
     type: "trigger",
     data: { events, origin }
@@ -48,6 +49,7 @@ describe("deriveWorkflowTriggerRows", () => {
     const rows = deriveWorkflowTriggerRows([
       {
         id: "a1",
+        name: "a1",
         position: { x: 0, y: 0 },
         type: "action",
         data: { action: "send-email", inputs: {}, batch: false }
@@ -72,6 +74,7 @@ describe("findTriggerSchedule", () => {
     const nodes = [
       {
         id: "t1",
+        name: "t1",
         position: { x: 0, y: 0 },
         type: "trigger",
         data: {

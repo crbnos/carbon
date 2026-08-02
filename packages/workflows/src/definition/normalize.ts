@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { nextNodeName, slugifyNodeName, uniqueNodeName } from "./names";
 import {
   CURRENT_DEFINITION_FORMAT_VERSION,
   type WorkflowDefinition,
@@ -63,6 +64,29 @@ function migrateDefinition(raw: RawDefinition, from: number): RawDefinition {
         }
         const lookup = node as { data?: Record<string, unknown> };
         return { ...lookup, data: { ...lookup.data, match: [] } };
+      })
+    };
+  }
+  // v2 → v3: `title` (an optional caption) became `name` (a required, unique
+  // identifier shown in the variable picker). Iteration order is the array order,
+  // so the same stored row always migrates to the same names.
+  if (from < 3 && Array.isArray(current.nodes)) {
+    const taken = new Set<string>();
+    current = {
+      ...current,
+      formatVersion: 3,
+      nodes: current.nodes.map((node) => {
+        if (typeof node !== "object" || node === null) return node;
+        const n = node as { type?: unknown; title?: unknown };
+        const type = typeof n.type === "string" ? n.type : "node";
+        const fromTitle =
+          typeof n.title === "string" ? slugifyNodeName(n.title) : "";
+        const desired =
+          fromTitle === "" ? nextNodeName(type, taken) : fromTitle;
+        const name = uniqueNodeName(desired, taken);
+        taken.add(name);
+        const { title: _title, ...rest } = n as Record<string, unknown>;
+        return { ...rest, name };
       })
     };
   }

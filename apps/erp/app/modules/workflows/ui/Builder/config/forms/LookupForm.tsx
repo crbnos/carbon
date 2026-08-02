@@ -11,7 +11,7 @@ import {
   useWorkflowLabel
 } from "../../catalog";
 import { useBuilderStore } from "../../context";
-import ClauseRow from "../ClauseRow";
+import ClauseRow, { CLAUSE_GRID_CLASS } from "../ClauseRow";
 import type { NodeFormProps } from "./index";
 
 const SECTION =
@@ -181,6 +181,19 @@ export function LookupForm({ node }: NodeFormProps) {
             <div className={SECTION}>
               <Trans>Match</Trans>
             </div>
+            {match.length > 0 && (
+              <div className={CLAUSE_GRID_CLASS}>
+                <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground pl-3">
+                  <Trans>Input</Trans>
+                </span>
+                <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                  <Trans>Operator</Trans>
+                </span>
+                <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                  <Trans>Value</Trans>
+                </span>
+              </div>
+            )}
             {match.map((m, idx) => (
               <ClauseRow
                 key={idx}

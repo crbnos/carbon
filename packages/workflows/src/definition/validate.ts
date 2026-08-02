@@ -39,6 +39,9 @@ export function validateDefinition(
   const duplicates = checkDuplicateIds(parsed.data);
   if (duplicates.length > 0) return duplicates;
 
+  const duplicateNames = checkDuplicateNames(parsed.data);
+  if (duplicateNames.length > 0) return duplicateNames;
+
   const trigger = checkTrigger(parsed.data);
   if (trigger.length > 0) return trigger;
 
@@ -75,7 +78,46 @@ function checkDuplicateIds(definition: WorkflowDefinition): WorkflowIssue[] {
   return issues;
 }
 
-/** Layer 2 — exactly one trigger, configured to actually be able to fire. */
+function checkDuplicateNames(definition: WorkflowDefinition): WorkflowIssue[] {
+  const issues: WorkflowIssue[] = [];
+  const seen = new Map<string, string>();
+  for (const node of definition.nodes) {
+    const first = seen.get(node.name);
+    if (first === undefined) {
+      seen.set(node.name, node.id);
+    } else {
+      issues.push({
+        code: "DUPLICATE_NODE_NAME",
+        nodeId: node.id,
+        message: `Two steps are called "${node.name}". Every step needs a different name.`
+      });
+    }
+  }
+  // Also flag the first occurrence so both offending nodes are highlighted.
+  if (issues.length > 0) {
+    const duplicatedNames = new Set(
+      issues.map((i) => {
+        const node = definition.nodes.find((n) => n.id === i.nodeId);
+        return node?.name;
+      })
+    );
+    for (const node of definition.nodes) {
+      if (
+        duplicatedNames.has(node.name) &&
+        !issues.some((i) => i.nodeId === node.id)
+      ) {
+        issues.push({
+          code: "DUPLICATE_NODE_NAME",
+          nodeId: node.id,
+          message: `Two steps are called "${node.name}". Every step needs a different name.`
+        });
+      }
+    }
+  }
+  return issues;
+}
+
+/** Layer 2 — at least one trigger, each configured to actually be able to fire. */
 function checkTrigger(definition: WorkflowDefinition): WorkflowIssue[] {
   const triggers = definition.nodes.filter(
     (node): node is TriggerNode => node.type === "trigger"
@@ -89,17 +131,49 @@ function checkTrigger(definition: WorkflowDefinition): WorkflowIssue[] {
       }
     ];
   }
-  if (triggers.length > 1) {
-    return triggers.slice(1).map((node) => ({
-      code: "MULTIPLE_TRIGGERS" as const,
+
+  // A scheduled workflow runs on its own clock, so it cannot also be event-driven.
+  const scheduled = triggers.filter((node) => node.data.schedule !== undefined);
+  if (scheduled.length > 0 && triggers.length > 1) {
+    return scheduled.map((node) => ({
+      code: "CONFLICTING_TRIGGER" as const,
       nodeId: node.id,
-      message: "A workflow can only have one trigger."
+      message:
+        "A workflow that runs on a schedule cannot have any other trigger."
     }));
   }
 
-  const trigger = triggers[0];
-  if (trigger === undefined) return [];
+  const perNode = triggers.flatMap(checkOneTrigger);
+  if (perNode.length > 0) return perNode;
 
+  return checkDuplicateTriggerEvents(triggers);
+}
+
+/** The same event on two triggers would fire the workflow twice for one change. */
+function checkDuplicateTriggerEvents(triggers: TriggerNode[]): WorkflowIssue[] {
+  const issues: WorkflowIssue[] = [];
+  const owner = new Map<string, string>();
+
+  for (const node of triggers) {
+    for (const eventId of node.data.events) {
+      const first = owner.get(eventId);
+      if (first === undefined) {
+        owner.set(eventId, node.id);
+        continue;
+      }
+      issues.push({
+        code: "DUPLICATE_TRIGGER_EVENT",
+        nodeId: node.id,
+        field: eventId,
+        message: `Another trigger already watches "${eventId}". Remove it from one of them.`
+      });
+    }
+  }
+
+  return issues;
+}
+
+function checkOneTrigger(trigger: TriggerNode): WorkflowIssue[] {
   const { events, schedule } = trigger.data;
   const hasEvents = events.length > 0;
 
@@ -235,10 +309,13 @@ function checkGraph(definition: WorkflowDefinition): WorkflowIssue[] {
     return issues;
   }
 
-  const trigger = definition.nodes.find((node) => node.type === "trigger");
-  if (trigger === undefined) return issues;
+  const triggers = definition.nodes.filter((node) => node.type === "trigger");
+  if (triggers.length === 0) return issues;
 
-  const reachable = reachableFrom(trigger.id, adjacency);
+  const reachable = new Set<string>();
+  for (const trigger of triggers) {
+    for (const id of reachableFrom(trigger.id, adjacency)) reachable.add(id);
+  }
   for (const node of definition.nodes) {
     if (node.type === "trigger") continue;
     if (!reachable.has(node.id)) {

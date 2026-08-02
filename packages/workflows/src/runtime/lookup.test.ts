@@ -22,6 +22,7 @@ const node = (
   match: LookupNode["data"]["match"] = [isOpen]
 ): LookupNode => ({
   id: "find",
+  name: "find",
   type: "lookup",
   position: { x: 0, y: 0 },
   data: { entity: "purchaseOrder", returns, match }

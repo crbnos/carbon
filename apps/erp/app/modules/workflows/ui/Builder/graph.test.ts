@@ -49,6 +49,7 @@ describe("fromReactFlow", () => {
       "data",
       "expanded",
       "id",
+      "name",
       "position",
       "type"
     ]);
@@ -81,12 +82,13 @@ describe("fromReactFlow", () => {
   it("defaults expanded to true when missing from a stored definition", () => {
     const raw = {
       id: "n1",
+      name: "trigger",
       type: "trigger",
       position: { x: 0, y: 0 },
       data: { events: [], origin: "Both" }
     };
     const definition = workflowDefinitionSchema.parse({
-      formatVersion: 2,
+      formatVersion: 3,
       nodes: [raw],
       edges: []
     });
@@ -148,24 +150,24 @@ describe("toReactFlow", () => {
     expect(fromReactFlow(flow.nodes, flow.edges)).toEqual(definition);
   });
 
-  it("round-trips a node's title through fromReactFlow → toReactFlow → fromReactFlow", () => {
+  it("round-trips a node's name through fromReactFlow → toReactFlow → fromReactFlow", () => {
     const a = createNode("trigger", { x: 0, y: 0 });
     const b = {
       ...createNode("action", { x: 0, y: 260 }),
-      title: "Send alert"
+      name: "send_alert"
     };
     const definition = fromReactFlow([a, b] as unknown as BuilderNode[], [
       edge("e1", a.id, b.id)
     ]);
 
-    expect(definition.nodes[1].title).toBe("Send alert");
+    expect(definition.nodes[1].name).toBe("send_alert");
 
     const flow = toReactFlow(definition);
-    expect(flow.nodes[1].title).toBe("Send alert");
+    expect(flow.nodes[1].name).toBe("send_alert");
 
     const roundTripped = fromReactFlow(flow.nodes, flow.edges);
-    expect(roundTripped.nodes[1].title).toBe("Send alert");
-    expect(roundTripped.nodes[0].title).toBeUndefined();
+    expect(roundTripped.nodes[1].name).toBe("send_alert");
+    expect(roundTripped.nodes[0].name).toBe(a.name);
   });
 });
 

@@ -12,6 +12,7 @@ import {
   PopoverTrigger,
   VStack
 } from "@carbon/react";
+
 import type { Clause, VariableRef } from "@carbon/workflows";
 import { availableVariables } from "@carbon/workflows";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -20,7 +21,8 @@ import { LuChevronDown, LuPlus } from "react-icons/lu";
 import { catalog, describeValueType } from "../../catalog";
 import { useBuilderStore } from "../../context";
 import { fromReactFlow } from "../../graph";
-import ClauseRow from "../ClauseRow";
+import ClauseRow, { CLAUSE_GRID_CLASS } from "../ClauseRow";
+import { CombinatorToggle } from "../CombinatorToggle";
 import type { NodeFormProps } from "./index";
 
 const SECTION =
@@ -123,7 +125,7 @@ export function FilterForm({ node }: NodeFormProps) {
                 className={cn("truncate", !source && "text-muted-foreground")}
               >
                 {sourceVar
-                  ? `${sourceVar.nodeTitle} › ${sourceVar.output}`
+                  ? `${sourceVar.nodeName} › ${sourceVar.output}`
                   : t`Pick a list variable…`}
               </span>
               <LuChevronDown className="ml-2 h-4 w-4 shrink-0 text-muted-foreground" />
@@ -145,13 +147,13 @@ export function FilterForm({ node }: NodeFormProps) {
                   {listVars.map((v) => (
                     <CommandItem
                       key={`${v.nodeId}:${v.output}`}
-                      value={`${v.nodeTitle} ${v.output} ${describeValueType(v.type)}`}
+                      value={`${v.nodeName} ${v.output} ${describeValueType(v.type)}`}
                       onSelect={() => handleSourceSelect(v.nodeId, v.output)}
                       className="flex flex-col items-start gap-0.5 px-3 py-2"
                     >
                       <span className="text-sm font-medium">{v.output}</span>
                       <span className="text-xs text-muted-foreground">
-                        {v.nodeTitle} · {describeValueType(v.type)}
+                        {v.nodeName} · {describeValueType(v.type)}
                       </span>
                     </CommandItem>
                   ))}
@@ -183,44 +185,44 @@ export function FilterForm({ node }: NodeFormProps) {
             </div>
 
             {/* Combinator toggle */}
-            <div className="flex overflow-hidden rounded-md border text-xs">
-              <button
-                type="button"
-                className={cn(
-                  "px-2 py-1 transition-colors",
-                  combinator === "and"
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-background hover:bg-muted"
-                )}
-                onClick={() => updateNodeData(node.id, { combinator: "and" })}
-              >
-                AND
-              </button>
-              <button
-                type="button"
-                className={cn(
-                  "border-l px-2 py-1 transition-colors",
-                  combinator === "or"
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-background hover:bg-muted"
-                )}
-                onClick={() => updateNodeData(node.id, { combinator: "or" })}
-              >
-                OR
-              </button>
-            </div>
+            <CombinatorToggle
+              value={combinator}
+              onChange={(v) => updateNodeData(node.id, { combinator: v })}
+            />
           </div>
 
+          {clauses.length > 0 && (
+            <div className={CLAUSE_GRID_CLASS}>
+              <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground pl-3">
+                <Trans>Input</Trans>
+              </span>
+              <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                <Trans>Operator</Trans>
+              </span>
+              <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                <Trans>Value</Trans>
+              </span>
+            </div>
+          )}
           {clauses.map((clause, i) => (
-            <ClauseRow
-              key={i}
-              clause={clause}
-              index={i}
-              canRemove={clauses.length > 1}
-              onChange={handleClauseChange}
-              onRemove={handleClauseRemove}
-              context={context}
-            />
+            <div key={i}>
+              <ClauseRow
+                clause={clause}
+                index={i}
+                canRemove={clauses.length > 1}
+                onChange={handleClauseChange}
+                onRemove={handleClauseRemove}
+                context={context}
+              />
+              {i < clauses.length - 1 && (
+                <div className="flex justify-center py-1">
+                  <CombinatorToggle
+                    value={combinator}
+                    onChange={(v) => updateNodeData(node.id, { combinator: v })}
+                  />
+                </div>
+              )}
+            </div>
           ))}
 
           <Button

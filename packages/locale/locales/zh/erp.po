@@ -650,6 +650,9 @@ msgstr ""
 msgid "A shipment's tracking number changes"
 msgstr ""
 
+msgid "A step needs a name."
+msgstr ""
+
 msgid "A supplier is created"
 msgstr ""
 
@@ -691,9 +694,6 @@ msgstr "工具是用于制造零件的物理项目，可以在多个工作中使
 
 msgid "A user records the expiry date on each batch or serial when the goods are received. Use when suppliers ship lots with different expiry dates."
 msgstr "用户在收到货物时在每个批次或序列号上记录过期日期。当供应商发货的批次具有不同的过期日期时使用。"
-
-msgid "A workflow can only have one trigger"
-msgstr ""
 
 msgid "abilities"
 msgstr "功能"
@@ -958,6 +958,9 @@ msgstr "添加校准记录"
 
 msgid "Add Child Storage Unit"
 msgstr "添加子存储单元"
+
+msgid "Add clause"
+msgstr ""
 
 msgid "Add Company"
 msgstr "添加公司"
@@ -2765,6 +2768,9 @@ msgstr "商品收据和供应商发票之间的清算账户; 当两者都已过�
 
 msgid "Clearing account for goods received / invoice received matching"
 msgstr "商品收据/发票收据匹配的清算账户"
+
+msgid "Click to rename"
+msgstr ""
 
 msgid "Click to upload a PDF drawing"
 msgstr "点击上传 PDF 图纸"
@@ -5399,17 +5405,11 @@ msgstr "编辑 Webhook"
 msgid "Edit Work Center"
 msgstr "编辑工作中心"
 
-msgid "editing"
-msgstr ""
-
 msgid "Eliminated"
 msgstr "已消除"
 
 msgid "Elimination entity"
 msgstr "消除实体"
-
-msgid "Else if"
-msgstr ""
 
 msgid "email"
 msgstr "邮件"
@@ -7046,9 +7046,6 @@ msgstr "标识符"
 msgid "IDs and descriptions are generated for raw materials."
 msgstr "ID 和描述是为原材料生成的。"
 
-msgid "If"
-msgstr ""
-
 msgid "If it can't wait for the next call, the leads on both sides decide."
 msgstr "如果不能等到下次通话，双方的负责人会做出决定。"
 
@@ -7996,9 +7993,6 @@ msgstr "列表选项"
 msgid "List Parameters"
 msgstr "列表参数"
 
-msgid "live"
-msgstr ""
-
 msgid "Live"
 msgstr ""
 
@@ -8567,9 +8561,6 @@ msgstr "迁移数据"
 
 msgid "Min Qty"
 msgstr "最小数量"
-
-msgid "Minimize"
-msgstr ""
 
 msgid "Minimum"
 msgstr "最小值"
@@ -9178,6 +9169,9 @@ msgstr "未记录任何更改"
 
 msgid "No changes yet."
 msgstr "还没有变更。"
+
+msgid "No clauses yet. Add one above."
+msgstr ""
 
 msgid "No comments yet. Be the first to add a comment."
 msgstr "还没有评论。成为第一个添加评论的人。"
@@ -9933,9 +9927,6 @@ msgstr "其他收入账户，用于在应付账款结算时清除未全额支付
 msgid "Other Type"
 msgstr "其他类型"
 
-msgid "Otherwise"
-msgstr ""
-
 msgid "Out"
 msgstr "出"
 
@@ -10122,6 +10113,12 @@ msgstr "已通过"
 
 msgid "Path"
 msgstr "路径"
+
+msgid "Path {idx}"
+msgstr ""
+
+msgid "Path else"
+msgstr ""
 
 msgid "Pay Rate"
 msgstr "支付汇率"
@@ -10770,11 +10767,11 @@ msgid "Publish"
 msgstr "发布"
 
 #. placeholder {0}: current.versionNumber
-msgid "Publish v{0}"
+msgid "Publish Version {0}"
 msgstr ""
 
 #. placeholder {0}: current.versionNumber
-msgid "Publish v{0}?"
+msgid "Publish Version {0}?"
 msgstr ""
 
 msgid "Published by Carbon"
@@ -11844,10 +11841,10 @@ msgstr "运行ID"
 msgid "Run month-end close and standard reconciliations"
 msgstr "运行月末结账和标准对账"
 
-msgid "Run once for each item in the list"
+msgid "Run once per item"
 msgstr ""
 
-msgid "Run once per item"
+msgid "Run once per item in the list"
 msgstr ""
 
 msgid "Run payment batches and track aging"
@@ -13061,9 +13058,6 @@ msgstr "步骤"
 msgid "Step detail is kept for 30 days. This run's steps have been removed."
 msgstr ""
 
-msgid "Step options"
-msgstr ""
-
 msgid "Step Records"
 msgstr "步骤记录"
 
@@ -13462,9 +13456,6 @@ msgstr "标签"
 msgid "Tailor this hub for the customer. Changes apply live for everyone viewing it. Never shown to the customer here."
 msgstr "为客户定制此中心。更改对所有查看者实时生效。永远不会向客户显示此内容。"
 
-msgid "Take ownership"
-msgstr ""
-
 msgid "Take the shortest remaining shelf life across the materials consumed to make this item. Use when the product's expiry depends on its ingredients."
 msgstr "采用消耗的材料中最短的剩余保质期来制造此物品。当产品的有效期取决于其成分时使用。"
 
@@ -13620,6 +13611,9 @@ msgstr "测试值"
 
 msgid "Text size"
 msgstr "文本大小"
+
+msgid "That name is already used by another step."
+msgstr ""
 
 #. placeholder {0}: i18n._(step.title)
 msgid "The \"{0}\" phase checks itself off once all of its tasks in the project plan are done."
@@ -14443,6 +14437,9 @@ msgid "This sales order has lines that require jobs to be created"
 msgstr "此销售订单有需要创建工作的行项目"
 
 msgid "This step and its connections will be removed. This cannot be undone."
+msgstr ""
+
+msgid "This step chooses which path runs next — it doesn't produce values of its own. Reference earlier steps further down each path."
 msgstr ""
 
 #. placeholder {0}: usageCount === 1 ? "" : "s"

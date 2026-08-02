@@ -18,7 +18,7 @@ import { VariablePicker } from "./VariablePicker";
 function tokenLabel(ref: VariableRef | ItemRef, nodes: BuilderNode[]): string {
   if (ref.kind === "item") return "Current item";
   const node = nodes.find((n) => n.id === ref.nodeId);
-  const nodeTitle = node?.title ?? node?.type ?? ref.nodeId;
+  const nodeTitle = node?.name ?? node?.type ?? ref.nodeId;
   return `${nodeTitle} › ${ref.output}`;
 }
 

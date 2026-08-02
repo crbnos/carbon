@@ -45,8 +45,7 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  // Seed version 1 with a single trigger node so the canvas is never empty and
-  // the "exactly one trigger" rule holds from the first render.
+  // Seed version 1 with one trigger node so the canvas is never empty.
   const trigger = createNode("trigger", TRIGGER_POSITION);
 
   const version = await insertWorkflowVersion(client, {

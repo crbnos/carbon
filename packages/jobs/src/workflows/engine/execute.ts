@@ -31,7 +31,7 @@ import {
   advance,
   alreadyExecuted,
   createWalkState,
-  findTriggerNode,
+  findTriggerNodeForEvent,
   MAX_NODE_EXECUTIONS,
   nextNode
 } from "./walk";
@@ -391,7 +391,7 @@ export async function executeWorkflowRun(params: {
 
   const cache: EntityCache = new Map();
   const outputs: Record<string, Record<string, RuntimeValue>> = {};
-  const trigger = findTriggerNode(definition);
+  const trigger = findTriggerNodeForEvent(definition, payload.eventId);
   if (trigger !== undefined) {
     outputs[trigger.id] = triggerOutputs({
       eventId: payload.eventId,
@@ -402,7 +402,7 @@ export async function executeWorkflowRun(params: {
   }
 
   const byId = new Map(definition.nodes.map((node) => [node.id, node]));
-  const state = createWalkState(definition);
+  const state = createWalkState(definition, trigger?.id);
   let executions = 0;
   let failed = false;
   let capped = false;

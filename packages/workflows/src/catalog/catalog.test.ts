@@ -19,6 +19,7 @@ function define(nodes: unknown[], edges: unknown[] = []): WorkflowDefinition {
 
 const trigger = (events: string[]) => ({
   id: "trigger",
+  name: "trigger",
   type: "trigger",
   position: { x: 0, y: 0 },
   data: { events }
@@ -39,6 +40,7 @@ const literal = (of: string, value: unknown) => ({
 
 const condition = (id: string, clauses: unknown[]) => ({
   id,
+  name: id,
   type: "condition",
   position: { x: 0, y: 0 },
   data: {

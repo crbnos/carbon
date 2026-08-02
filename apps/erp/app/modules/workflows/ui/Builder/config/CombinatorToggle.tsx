@@ -1,0 +1,37 @@
+import { cn, ToggleGroup, ToggleGroupItem } from "@carbon/react";
+import { Trans } from "@lingui/react/macro";
+
+type Props = {
+  value: "and" | "or";
+  onChange: (v: "and" | "or") => void;
+  isDisabled?: boolean;
+};
+
+export function CombinatorToggle({ value, onChange, isDisabled }: Props) {
+  return (
+    <ToggleGroup
+      type="single"
+      value={value}
+      onValueChange={(v) => {
+        if (v === "and" || v === "or") onChange(v);
+      }}
+      className={cn(
+        "nodrag nopan gap-0 rounded-md border text-xs",
+        isDisabled && "pointer-events-none opacity-50"
+      )}
+    >
+      <ToggleGroupItem
+        value="and"
+        className="h-6 rounded-l-md rounded-r-none border-r px-2 text-xs data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
+      >
+        <Trans>AND</Trans>
+      </ToggleGroupItem>
+      <ToggleGroupItem
+        value="or"
+        className="h-6 rounded-l-none rounded-r-md px-2 text-xs data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
+      >
+        <Trans>OR</Trans>
+      </ToggleGroupItem>
+    </ToggleGroup>
+  );
+}

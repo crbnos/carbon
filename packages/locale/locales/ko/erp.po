@@ -650,6 +650,9 @@ msgstr ""
 msgid "A shipment's tracking number changes"
 msgstr ""
 
+msgid "A step needs a name."
+msgstr ""
+
 msgid "A supplier is created"
 msgstr ""
 
@@ -691,9 +694,6 @@ msgstr "공구는 여러 작업에 걸쳐 사용할 수 있는, 부품 제작에
 
 msgid "A user records the expiry date on each batch or serial when the goods are received. Use when suppliers ship lots with different expiry dates."
 msgstr "재화가 입고될 때 사용자가 각 배치 또는 일련번호에 유효기한을 기록합니다. 공급업체가 서로 다른 유효기한의 로트를 출하할 때 사용하세요."
-
-msgid "A workflow can only have one trigger"
-msgstr ""
 
 msgid "abilities"
 msgstr "역량"
@@ -958,6 +958,9 @@ msgstr "교정 기록 추가"
 
 msgid "Add Child Storage Unit"
 msgstr "하위 저장 단위 추가"
+
+msgid "Add clause"
+msgstr ""
 
 msgid "Add Company"
 msgstr "회사 추가"
@@ -2765,6 +2768,9 @@ msgstr "입고와 공급업체 인보이스 사이의 경과 계정으로, 둘 �
 
 msgid "Clearing account for goods received / invoice received matching"
 msgstr "입고/인보이스 수취 매칭을 위한 경과 계정"
+
+msgid "Click to rename"
+msgstr ""
 
 msgid "Click to upload a PDF drawing"
 msgstr "클릭하여 PDF 도면을 업로드하세요"
@@ -5399,17 +5405,11 @@ msgstr "웹훅 수정"
 msgid "Edit Work Center"
 msgstr "작업장 수정"
 
-msgid "editing"
-msgstr ""
-
 msgid "Eliminated"
 msgstr "제거됨"
 
 msgid "Elimination entity"
 msgstr "소거 항목"
-
-msgid "Else if"
-msgstr ""
 
 msgid "email"
 msgstr "이메일"
@@ -7046,9 +7046,6 @@ msgstr "식별자"
 msgid "IDs and descriptions are generated for raw materials."
 msgstr "원자재에 대한 ID와 설명이 자동으로 생성됩니다."
 
-msgid "If"
-msgstr ""
-
 msgid "If it can't wait for the next call, the leads on both sides decide."
 msgstr "다음 통화까지 기다릴 수 없는 경우, 양측 담당자가 결정합니다."
 
@@ -7996,9 +7993,6 @@ msgstr "목록 옵션"
 msgid "List Parameters"
 msgstr "목록 파라미터"
 
-msgid "live"
-msgstr ""
-
 msgid "Live"
 msgstr ""
 
@@ -8567,9 +8561,6 @@ msgstr "데이터 마이그레이션"
 
 msgid "Min Qty"
 msgstr "최소 수량"
-
-msgid "Minimize"
-msgstr ""
 
 msgid "Minimum"
 msgstr "최소"
@@ -9178,6 +9169,9 @@ msgstr "기록된 변경 사항이 없습니다"
 
 msgid "No changes yet."
 msgstr "아직 변경사항이 없습니다."
+
+msgid "No clauses yet. Add one above."
+msgstr ""
 
 msgid "No comments yet. Be the first to add a comment."
 msgstr "아직 댓글이 없습니다. 첫 댓글을 남겨보세요."
@@ -9933,9 +9927,6 @@ msgstr "매입채무 정산 시 전액 지급 없이 상계된 거래처 잔액�
 msgid "Other Type"
 msgstr "기타 유형"
 
-msgid "Otherwise"
-msgstr ""
-
 msgid "Out"
 msgstr "출고"
 
@@ -10122,6 +10113,12 @@ msgstr "합격됨"
 
 msgid "Path"
 msgstr "경로"
+
+msgid "Path {idx}"
+msgstr ""
+
+msgid "Path else"
+msgstr ""
 
 msgid "Pay Rate"
 msgstr "급여율"
@@ -10770,11 +10767,11 @@ msgid "Publish"
 msgstr "게시"
 
 #. placeholder {0}: current.versionNumber
-msgid "Publish v{0}"
+msgid "Publish Version {0}"
 msgstr ""
 
 #. placeholder {0}: current.versionNumber
-msgid "Publish v{0}?"
+msgid "Publish Version {0}?"
 msgstr ""
 
 msgid "Published by Carbon"
@@ -11844,10 +11841,10 @@ msgstr "실행 ID"
 msgid "Run month-end close and standard reconciliations"
 msgstr "월마감 및 표준 조정 작업을 수행하세요"
 
-msgid "Run once for each item in the list"
+msgid "Run once per item"
 msgstr ""
 
-msgid "Run once per item"
+msgid "Run once per item in the list"
 msgstr ""
 
 msgid "Run payment batches and track aging"
@@ -13061,9 +13058,6 @@ msgstr "단계"
 msgid "Step detail is kept for 30 days. This run's steps have been removed."
 msgstr ""
 
-msgid "Step options"
-msgstr ""
-
 msgid "Step Records"
 msgstr "단계 기록"
 
@@ -13462,9 +13456,6 @@ msgstr "태그"
 msgid "Tailor this hub for the customer. Changes apply live for everyone viewing it. Never shown to the customer here."
 msgstr "이 허브를 고객에 맞게 조정하세요. 변경 사항은 이를 보는 모든 사람에게 즉시 적용됩니다. 이 화면은 고객에게 표시되지 않습니다."
 
-msgid "Take ownership"
-msgstr ""
-
 msgid "Take the shortest remaining shelf life across the materials consumed to make this item. Use when the product's expiry depends on its ingredients."
 msgstr "이 품목을 만드는 데 사용된 자재 중 가장 짧은 잔여 유통기한을 적용합니다. 제품의 유효기한이 원재료에 좌우될 때 사용하세요."
 
@@ -13620,6 +13611,9 @@ msgstr "테스트 값"
 
 msgid "Text size"
 msgstr "글자 크기"
+
+msgid "That name is already used by another step."
+msgstr ""
 
 #. placeholder {0}: i18n._(step.title)
 msgid "The \"{0}\" phase checks itself off once all of its tasks in the project plan are done."
@@ -14443,6 +14437,9 @@ msgid "This sales order has lines that require jobs to be created"
 msgstr "이 판매주문에는 작업 생성이 필요한 라인이 있습니다"
 
 msgid "This step and its connections will be removed. This cannot be undone."
+msgstr ""
+
+msgid "This step chooses which path runs next — it doesn't produce values of its own. Reference earlier steps further down each path."
 msgstr ""
 
 #. placeholder {0}: usageCount === 1 ? "" : "s"

@@ -650,6 +650,9 @@ msgstr ""
 msgid "A shipment's tracking number changes"
 msgstr ""
 
+msgid "A step needs a name."
+msgstr ""
+
 msgid "A supplier is created"
 msgstr ""
 
@@ -691,9 +694,6 @@ msgstr "Bir takım, birden fazla işte kullanılabilecek bir parça yapmak için
 
 msgid "A user records the expiry date on each batch or serial when the goods are received. Use when suppliers ship lots with different expiry dates."
 msgstr "Kullanıcı, mallar alındığında her parti veya seri için son kullanma tarihini kaydeder. Tedarikçiler farklı son kullanma tarihlerine sahip partiler gönderdiğinde kullanılır."
-
-msgid "A workflow can only have one trigger"
-msgstr ""
 
 msgid "abilities"
 msgstr "yetenekler"
@@ -958,6 +958,9 @@ msgstr "Kalibrasyon Kaydı Ekle"
 
 msgid "Add Child Storage Unit"
 msgstr "Alt Depo Birimi Ekle"
+
+msgid "Add clause"
+msgstr ""
 
 msgid "Add Company"
 msgstr "Şirket Ekle"
@@ -2765,6 +2768,9 @@ msgstr "Mal alımı ve tedarikçi faturası arasındaki mahsup hesabı; her ikis
 
 msgid "Clearing account for goods received / invoice received matching"
 msgstr "Mal alımı / fatura alımı eşleştirmesi için mahsup hesabı"
+
+msgid "Click to rename"
+msgstr ""
 
 msgid "Click to upload a PDF drawing"
 msgstr "PDF çizimi yüklemek için tıklayın"
@@ -5399,17 +5405,11 @@ msgstr "Webhook Düzenle"
 msgid "Edit Work Center"
 msgstr "İş Merkezi Düzenle"
 
-msgid "editing"
-msgstr ""
-
 msgid "Eliminated"
 msgstr "Ortadan Kaldırılmış"
 
 msgid "Elimination entity"
 msgstr "İndirim Varlığı"
-
-msgid "Else if"
-msgstr ""
 
 msgid "email"
 msgstr "e-posta"
@@ -7046,9 +7046,6 @@ msgstr "Tanımlayıcılar"
 msgid "IDs and descriptions are generated for raw materials."
 msgstr "Kimlikler ve açıklamalar ham malzemeler için oluşturulur."
 
-msgid "If"
-msgstr ""
-
 msgid "If it can't wait for the next call, the leads on both sides decide."
 msgstr "Eğer bir sonraki çağrıyı bekleyemezse, her iki tarafın da liderler karar verir."
 
@@ -7996,9 +7993,6 @@ msgstr "Liste Seçenekleri"
 msgid "List Parameters"
 msgstr "Liste Parametreleri"
 
-msgid "live"
-msgstr ""
-
 msgid "Live"
 msgstr ""
 
@@ -8567,9 +8561,6 @@ msgstr "Verileri Taşı"
 
 msgid "Min Qty"
 msgstr "Min Miktar"
-
-msgid "Minimize"
-msgstr ""
 
 msgid "Minimum"
 msgstr "Minimum"
@@ -9178,6 +9169,9 @@ msgstr "Değişiklik kaydedilmedi"
 
 msgid "No changes yet."
 msgstr "Henüz değişiklik yok."
+
+msgid "No clauses yet. Add one above."
+msgstr ""
 
 msgid "No comments yet. Be the first to add a comment."
 msgstr "Henüz yorum yok. İlk yorumu siz yapın."
@@ -9933,9 +9927,6 @@ msgstr "Satıcı bakiyelerinin AP kapatılması sırasında tam ödeme yapılmad
 msgid "Other Type"
 msgstr "Diğer Tür"
 
-msgid "Otherwise"
-msgstr ""
-
 msgid "Out"
 msgstr "Dışı"
 
@@ -10122,6 +10113,12 @@ msgstr "Geçti"
 
 msgid "Path"
 msgstr "Yol"
+
+msgid "Path {idx}"
+msgstr ""
+
+msgid "Path else"
+msgstr ""
 
 msgid "Pay Rate"
 msgstr "Ödeme Oranı"
@@ -10770,11 +10767,11 @@ msgid "Publish"
 msgstr "Yayınla"
 
 #. placeholder {0}: current.versionNumber
-msgid "Publish v{0}"
+msgid "Publish Version {0}"
 msgstr ""
 
 #. placeholder {0}: current.versionNumber
-msgid "Publish v{0}?"
+msgid "Publish Version {0}?"
 msgstr ""
 
 msgid "Published by Carbon"
@@ -11844,10 +11841,10 @@ msgstr "Çalıştırma ID'si"
 msgid "Run month-end close and standard reconciliations"
 msgstr "Ay sonu kapanışını ve standart mutabakatları çalıştırın"
 
-msgid "Run once for each item in the list"
+msgid "Run once per item"
 msgstr ""
 
-msgid "Run once per item"
+msgid "Run once per item in the list"
 msgstr ""
 
 msgid "Run payment batches and track aging"
@@ -13061,9 +13058,6 @@ msgstr "Adım"
 msgid "Step detail is kept for 30 days. This run's steps have been removed."
 msgstr ""
 
-msgid "Step options"
-msgstr ""
-
 msgid "Step Records"
 msgstr "Adım Kayıtları"
 
@@ -13462,9 +13456,6 @@ msgstr "Etiketler"
 msgid "Tailor this hub for the customer. Changes apply live for everyone viewing it. Never shown to the customer here."
 msgstr "Bu hub'ı müşteri için özelleştirin. Değişiklikler bunu görüntüleyen herkes için canlı olarak uygulanır. Müşteriye burada asla gösterilmez."
 
-msgid "Take ownership"
-msgstr ""
-
 msgid "Take the shortest remaining shelf life across the materials consumed to make this item. Use when the product's expiry depends on its ingredients."
 msgstr "Bu öğeyi üretmek için tüketilen malzemelerdeki en kısa kalan raf ömrünü alır. Ürünün son kullanma tarihinin bileşenlerine bağlı olduğu durumlarda kullanılır."
 
@@ -13620,6 +13611,9 @@ msgstr "Test Değeri"
 
 msgid "Text size"
 msgstr "Metin boyutu"
+
+msgid "That name is already used by another step."
+msgstr ""
 
 #. placeholder {0}: i18n._(step.title)
 msgid "The \"{0}\" phase checks itself off once all of its tasks in the project plan are done."
@@ -14443,6 +14437,9 @@ msgid "This sales order has lines that require jobs to be created"
 msgstr "Bu satış siparişi, iş oluşturulmasını gerektiren satırlara sahiptir."
 
 msgid "This step and its connections will be removed. This cannot be undone."
+msgstr ""
+
+msgid "This step chooses which path runs next — it doesn't produce values of its own. Reference earlier steps further down each path."
 msgstr ""
 
 #. placeholder {0}: usageCount === 1 ? "" : "s"

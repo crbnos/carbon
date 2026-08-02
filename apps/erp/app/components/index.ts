@@ -41,6 +41,7 @@ import { SearchLandingPage } from "./SearchLandingPage";
 import Select from "./Select";
 import SupplierAvatar from "./SupplierAvatar";
 import Table from "./Table";
+import { VersionMenu } from "./VersionMenu";
 
 export {
   Assignee,
@@ -86,5 +87,6 @@ export {
   Table,
   TimeTypeIcon,
   TrackingTypeIcon,
-  useOptimisticAssignment
+  useOptimisticAssignment,
+  VersionMenu
 };

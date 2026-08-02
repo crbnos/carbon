@@ -177,7 +177,7 @@ export function createContext(
 export interface AvailableVariable {
   nodeId: string;
   /** The node's name, for grouping in the picker. */
-  nodeTitle: string;
+  nodeName: string;
   nodeType: WorkflowNodeType;
   /** The output name on that node, e.g. "record", "before", "result". */
   output: string;
@@ -196,7 +196,7 @@ export function availableVariables(
   catalog: WorkflowCatalog
 ): AvailableVariable[] {
   const { context, ancestorsOf } = createContext(definition, catalog);
-  const trigger = definition.nodes.find((n) => n.type === "trigger");
+  const triggers = definition.nodes.filter((n) => n.type === "trigger");
   const ancestors = ancestorsOf(nodeId);
 
   if (ancestors.size === 0) return [];
@@ -204,20 +204,18 @@ export function availableVariables(
   const byId = new Map(definition.nodes.map((n) => [n.id, n]));
   const forward = buildAdjacency(definition, "forward");
 
-  // BFS distances from trigger (for ordering)
+  // BFS distances from every trigger at once, for ordering only.
   const distanceFromTrigger = new Map<string, number>();
-  if (trigger !== undefined) {
-    const queue: Array<[string, number]> = [[trigger.id, 0]];
-    for (let i = 0; i < queue.length; i++) {
-      const entry = queue[i];
-      if (entry === undefined) continue;
-      const [id, dist] = entry;
-      if (distanceFromTrigger.has(id)) continue;
-      distanceFromTrigger.set(id, dist);
-      for (const next of forward.get(id) ?? []) {
-        if (!distanceFromTrigger.has(next)) {
-          queue.push([next, dist + 1]);
-        }
+  const queue: Array<[string, number]> = triggers.map((n) => [n.id, 0]);
+  for (let i = 0; i < queue.length; i++) {
+    const entry = queue[i];
+    if (entry === undefined) continue;
+    const [id, dist] = entry;
+    if (distanceFromTrigger.has(id)) continue;
+    distanceFromTrigger.set(id, dist);
+    for (const next of forward.get(id) ?? []) {
+      if (!distanceFromTrigger.has(next)) {
+        queue.push([next, dist + 1]);
       }
     }
   }
@@ -230,19 +228,21 @@ export function availableVariables(
     const outputs = context.outputsOf(ancestorId);
     if (outputs === undefined) continue;
 
-    // An ancestor is guaranteed if it dominates nodeId from the trigger —
-    // i.e., removing it makes nodeId unreachable from the trigger.
+    // Guaranteed only if EVERY trigger loses sight of nodeId once this
+    // ancestor is removed — otherwise some firing reaches nodeId without it.
     const guaranteed =
-      trigger !== undefined
-        ? !reachableFromExcluding(trigger.id, forward, ancestorId).has(nodeId)
-        : false;
+      triggers.length > 0 &&
+      triggers.every(
+        (trig) =>
+          !reachableFromExcluding(trig.id, forward, ancestorId).has(nodeId)
+      );
 
-    const nodeTitle = node.title ?? node.type;
+    const nodeName = node.name;
 
     for (const [output, type] of Object.entries(outputs)) {
       variables.push({
         nodeId: ancestorId,
-        nodeTitle,
+        nodeName,
         nodeType: node.type,
         output,
         type,

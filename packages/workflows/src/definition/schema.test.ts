@@ -10,6 +10,7 @@ import { scheduleSchema, valueTypeSchema, variableRefSchema } from "./types";
 
 const triggerNode = {
   id: "n1",
+  name: "trigger_0",
   type: "trigger",
   position: { x: 0, y: 0 },
   data: { events: ["purchaseOrder.status.changed"] }
@@ -49,6 +50,7 @@ describe("node defaults", () => {
   it("defaults a trigger's events and origin", () => {
     const parsed = nodeSchema.parse({
       id: "n1",
+      name: "trigger_0",
       type: "trigger",
       position: { x: 0, y: 0 },
       data: {}
@@ -62,6 +64,7 @@ describe("node defaults", () => {
   it("defaults an action's batch flag to false", () => {
     const parsed = nodeSchema.parse({
       id: "n2",
+      name: "action_0",
       type: "action",
       position: { x: 0, y: 0 },
       data: { action: "notify" }
@@ -71,36 +74,36 @@ describe("node defaults", () => {
     expect(parsed.data.inputs).toEqual({});
   });
 
-  it("parses a node without title and leaves title undefined", () => {
+  it("round-trips a node with a name", () => {
     const parsed = nodeSchema.parse({
       id: "n1",
+      name: "check_order",
       type: "trigger",
       position: { x: 0, y: 0 },
       data: {}
     });
-    expect(parsed.title).toBeUndefined();
+    expect(parsed.name).toBe("check_order");
   });
 
-  it("round-trips a node with a title", () => {
-    const parsed = nodeSchema.parse({
+  it("rejects a name with uppercase letters", () => {
+    const result = nodeSchema.safeParse({
       id: "n1",
+      name: "CheckOrder",
       type: "trigger",
       position: { x: 0, y: 0 },
-      title: "Open POs",
       data: {}
     });
-    expect(parsed.title).toBe("Open POs");
+    expect(result.success).toBe(false);
   });
 
-  it("accepts an empty string title", () => {
-    const parsed = nodeSchema.parse({
+  it("rejects a node without a name", () => {
+    const result = nodeSchema.safeParse({
       id: "n1",
       type: "trigger",
       position: { x: 0, y: 0 },
-      title: "",
       data: {}
     });
-    expect(parsed.title).toBe("");
+    expect(result.success).toBe(false);
   });
 
   it("defaults a variable reference's property path to empty", () => {
@@ -117,6 +120,7 @@ describe("getNodeHandles", () => {
   it("gives an action success and failure handles", () => {
     const node = nodeSchema.parse({
       id: "n2",
+      name: "action_0",
       type: "action",
       position: { x: 0, y: 0 },
       data: { action: "notify" }
@@ -127,6 +131,7 @@ describe("getNodeHandles", () => {
   it("gives a condition one handle per path", () => {
     const node = nodeSchema.parse({
       id: "n3",
+      name: "condition_0",
       type: "condition",
       position: { x: 0, y: 0 },
       data: {

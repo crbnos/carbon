@@ -13,6 +13,11 @@ export type {
 } from "./definition/catalog";
 export { createFixtureCatalog } from "./definition/catalog";
 export type { WorkflowIssue, WorkflowIssueCode } from "./definition/issues";
+export {
+  nextNodeName,
+  slugifyNodeName,
+  uniqueNodeName
+} from "./definition/names";
 export type {
   LoopList,
   NodeContext,
@@ -41,6 +46,8 @@ export {
   readWorkflowVersion
 } from "./definition/normalize";
 export { topologicalNodeOrder } from "./definition/order";
+export type { PathPosition } from "./definition/paths";
+export { pathLabel } from "./definition/paths";
 export {
   nextOccurrenceAfter,
   nextRunAfter,

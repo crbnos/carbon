@@ -3,9 +3,9 @@ import {
   Button,
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuIcon,
-  DropdownMenuItem,
   DropdownMenuTrigger,
+  MenuIcon,
+  MenuItem,
   Modal,
   ModalBody,
   ModalContent,
@@ -21,18 +21,23 @@ import {
 import type { WorkflowIssue } from "@carbon/workflows";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useEffect } from "react";
-import { LuHistory, LuLock, LuUser } from "react-icons/lu";
+import {
+  LuChevronDown,
+  LuEllipsisVertical,
+  LuHistory,
+  LuLock,
+  LuTrash
+} from "react-icons/lu";
 import { useFetcher } from "react-router";
-import { EmployeeAvatar } from "~/components";
-import { usePermissions, useUser } from "~/hooks";
+import { VersionMenu } from "~/components";
+import { usePermissions } from "~/hooks";
 import { path } from "~/utils/path";
 import type {
   WorkflowDetail,
   WorkflowVersionSummary
 } from "../../workflows.service";
-import { WorkflowActiveSwitch } from "../WorkflowActiveSwitch";
 import { useBuilderStore, useBuilderStoreApi } from "./context";
-import { VersionMenu } from "./VersionMenu";
+import { WorkflowVersionStatus } from "./WorkflowVersionStatus";
 
 type BuilderHeaderProps = {
   workflow: WorkflowDetail;
@@ -65,16 +70,15 @@ export function BuilderHeader({
   onIssues
 }: BuilderHeaderProps) {
   const { t } = useLingui();
-  const { id: userId } = useUser();
   const permissions = usePermissions();
   const store = useBuilderStoreApi();
   const isReadOnly = useBuilderStore((state) => state.isReadOnly);
 
-  const ownerFetcher = useFetcher<{ success?: boolean }>();
   const publishFetcher = useFetcher<{
     ok?: boolean;
     issues?: WorkflowIssue[];
   }>();
+  const versionFetcher = useFetcher();
   const confirmPublish = useDisclosure();
 
   const current = versions.find((version) => version.id === versionId);
@@ -104,13 +108,6 @@ export function BuilderHeader({
     <header className="flex h-[49px] shrink-0 items-center gap-3 border-b px-4">
       <h1 className="truncate text-sm font-semibold">{workflow.name}</h1>
 
-      {current && (
-        <Badge variant="outline">
-          v{current.versionNumber}
-          {!isLiveVersion && ` · ${t`editing`}`}
-        </Badge>
-      )}
-
       {isReadOnly && (
         <Tooltip>
           <TooltipTrigger asChild>
@@ -128,12 +125,6 @@ export function BuilderHeader({
         </Tooltip>
       )}
 
-      {live && !isLiveVersion && (
-        <Badge variant="green">
-          v{live.versionNumber} {t`live`}
-        </Badge>
-      )}
-
       <SaveMarker />
 
       <div className="ml-auto flex items-center gap-2">
@@ -144,42 +135,64 @@ export function BuilderHeader({
             {t`Runs`}
           </a>
         </Button>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" leftIcon={<LuUser />}>
-              <EmployeeAvatar employeeId={workflow.ownerId} />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem
-              disabled={
-                workflow.ownerId === userId ||
-                !permissions.can("update", "workflows")
-              }
-              onClick={() =>
-                ownerFetcher.submit(new FormData(), {
-                  method: "post",
-                  action: path.to.workflowOwner(workflow.id)
-                })
-              }
-            >
-              <DropdownMenuIcon icon={<LuUser />} />
-              <Trans>Take ownership</Trans>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-
-        <WorkflowActiveSwitch
-          workflowId={workflow.id}
-          active={workflow.active}
-        />
-
         <VersionMenu
-          workflowId={workflow.id}
-          versionId={versionId}
-          activeVersionId={workflow.activeVersionId}
           versions={versions}
+          currentVersionId={versionId}
+          getKey={(v) => v.id}
+          getHref={(v) => `${path.to.workflow(workflow.id)}?version=${v.id}`}
+          label={
+            current && (
+              <div className="flex items-center gap-2">
+                <Badge variant="outline">Version {current.versionNumber}</Badge>
+                <WorkflowVersionStatus isLive={isLiveVersion} />
+              </div>
+            )
+          }
+          renderLabel={(v) => <span>Version {v.versionNumber}</span>}
+          renderStatus={(v) => (
+            <WorkflowVersionStatus isLive={v.id === workflow.activeVersionId} />
+          )}
+          onNewVersion={
+            permissions.can("create", "workflows")
+              ? () => {
+                  const formData = new FormData();
+                  formData.set("copyFromVersionId", versionId);
+                  versionFetcher.submit(formData, {
+                    method: "post",
+                    action: path.to.workflowVersionNew(workflow.id)
+                  });
+                }
+              : undefined
+          }
         />
+        {permissions.can("delete", "workflows") &&
+          versionId !== workflow.activeVersionId &&
+          versions.length > 1 && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" rightIcon={<LuChevronDown />}>
+                  <LuEllipsisVertical />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <MenuItem
+                  destructive
+                  onClick={() => {
+                    versionFetcher.submit(new FormData(), {
+                      method: "post",
+                      action: path.to.workflowVersionDelete(
+                        workflow.id,
+                        versionId
+                      )
+                    });
+                  }}
+                >
+                  <MenuIcon icon={<LuTrash />} />
+                  <Trans>Delete this version</Trans>
+                </MenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
 
         <Button
           isDisabled={
@@ -194,7 +207,7 @@ export function BuilderHeader({
             else publish();
           }}
         >
-          {current ? t`Publish v${current.versionNumber}` : t`Publish`}
+          {current ? t`Publish Version ${current.versionNumber}` : t`Publish`}
         </Button>
       </div>
 
@@ -208,7 +221,7 @@ export function BuilderHeader({
           <ModalOverlay />
           <ModalContent>
             <ModalHeader>
-              <ModalTitle>{t`Publish v${current.versionNumber}?`}</ModalTitle>
+              <ModalTitle>{t`Publish Version ${current.versionNumber}?`}</ModalTitle>
             </ModalHeader>
             <ModalBody>
               <p className="text-sm text-muted-foreground">

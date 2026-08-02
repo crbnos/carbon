@@ -650,6 +650,9 @@ msgstr "A shipment's status changes"
 msgid "A shipment's tracking number changes"
 msgstr "A shipment's tracking number changes"
 
+msgid "A step needs a name."
+msgstr "A step needs a name."
+
 msgid "A supplier is created"
 msgstr "A supplier is created"
 
@@ -691,9 +694,6 @@ msgstr "A tool is a physical item used to make a part that can be used across mu
 
 msgid "A user records the expiry date on each batch or serial when the goods are received. Use when suppliers ship lots with different expiry dates."
 msgstr "A user records the expiry date on each batch or serial when the goods are received. Use when suppliers ship lots with different expiry dates."
-
-msgid "A workflow can only have one trigger"
-msgstr "A workflow can only have one trigger"
 
 msgid "abilities"
 msgstr "abilities"
@@ -958,6 +958,9 @@ msgstr "Add Calibration Record"
 
 msgid "Add Child Storage Unit"
 msgstr "Add Child Storage Unit"
+
+msgid "Add clause"
+msgstr "Add clause"
 
 msgid "Add Company"
 msgstr "Add Company"
@@ -2765,6 +2768,9 @@ msgstr "Clearing account between goods receipt and supplier invoice; balances wh
 
 msgid "Clearing account for goods received / invoice received matching"
 msgstr "Clearing account for goods received / invoice received matching"
+
+msgid "Click to rename"
+msgstr "Click to rename"
 
 msgid "Click to upload a PDF drawing"
 msgstr "Click to upload a PDF drawing"
@@ -5399,17 +5405,11 @@ msgstr "Edit Webhook"
 msgid "Edit Work Center"
 msgstr "Edit Work Center"
 
-msgid "editing"
-msgstr "editing"
-
 msgid "Eliminated"
 msgstr "Eliminated"
 
 msgid "Elimination entity"
 msgstr "Elimination entity"
-
-msgid "Else if"
-msgstr "Else if"
 
 msgid "email"
 msgstr "email"
@@ -7046,9 +7046,6 @@ msgstr "Identifiers"
 msgid "IDs and descriptions are generated for raw materials."
 msgstr "IDs and descriptions are generated for raw materials."
 
-msgid "If"
-msgstr "If"
-
 msgid "If it can't wait for the next call, the leads on both sides decide."
 msgstr "If it can't wait for the next call, the leads on both sides decide."
 
@@ -7996,9 +7993,6 @@ msgstr "List Options"
 msgid "List Parameters"
 msgstr "List Parameters"
 
-msgid "live"
-msgstr "live"
-
 msgid "Live"
 msgstr "Live"
 
@@ -8567,9 +8561,6 @@ msgstr "Migrate data"
 
 msgid "Min Qty"
 msgstr "Min Qty"
-
-msgid "Minimize"
-msgstr "Minimize"
 
 msgid "Minimum"
 msgstr "Minimum"
@@ -9178,6 +9169,9 @@ msgstr "No changes recorded"
 
 msgid "No changes yet."
 msgstr "No changes yet."
+
+msgid "No clauses yet. Add one above."
+msgstr "No clauses yet. Add one above."
 
 msgid "No comments yet. Be the first to add a comment."
 msgstr "No comments yet. Be the first to add a comment."
@@ -9933,9 +9927,6 @@ msgstr "Other Income account for vendor balances cleared without full payment on
 msgid "Other Type"
 msgstr "Other Type"
 
-msgid "Otherwise"
-msgstr "Otherwise"
-
 msgid "Out"
 msgstr "Out"
 
@@ -10122,6 +10113,12 @@ msgstr "Passed"
 
 msgid "Path"
 msgstr "Path"
+
+msgid "Path {idx}"
+msgstr "Path {idx}"
+
+msgid "Path else"
+msgstr "Path else"
 
 msgid "Pay Rate"
 msgstr "Pay Rate"
@@ -10770,12 +10767,12 @@ msgid "Publish"
 msgstr "Publish"
 
 #. placeholder {0}: current.versionNumber
-msgid "Publish v{0}"
-msgstr "Publish v{0}"
+msgid "Publish Version {0}"
+msgstr "Publish Version {0}"
 
 #. placeholder {0}: current.versionNumber
-msgid "Publish v{0}?"
-msgstr "Publish v{0}?"
+msgid "Publish Version {0}?"
+msgstr "Publish Version {0}?"
 
 msgid "Published by Carbon"
 msgstr "Published by Carbon"
@@ -11844,11 +11841,11 @@ msgstr "Run ID"
 msgid "Run month-end close and standard reconciliations"
 msgstr "Run month-end close and standard reconciliations"
 
-msgid "Run once for each item in the list"
-msgstr "Run once for each item in the list"
-
 msgid "Run once per item"
 msgstr "Run once per item"
+
+msgid "Run once per item in the list"
+msgstr "Run once per item in the list"
 
 msgid "Run payment batches and track aging"
 msgstr "Run payment batches and track aging"
@@ -13061,9 +13058,6 @@ msgstr "Step"
 msgid "Step detail is kept for 30 days. This run's steps have been removed."
 msgstr "Step detail is kept for 30 days. This run's steps have been removed."
 
-msgid "Step options"
-msgstr "Step options"
-
 msgid "Step Records"
 msgstr "Step Records"
 
@@ -13462,9 +13456,6 @@ msgstr "Tags"
 msgid "Tailor this hub for the customer. Changes apply live for everyone viewing it. Never shown to the customer here."
 msgstr "Tailor this hub for the customer. Changes apply live for everyone viewing it. Never shown to the customer here."
 
-msgid "Take ownership"
-msgstr "Take ownership"
-
 msgid "Take the shortest remaining shelf life across the materials consumed to make this item. Use when the product's expiry depends on its ingredients."
 msgstr "Take the shortest remaining shelf life across the materials consumed to make this item. Use when the product's expiry depends on its ingredients."
 
@@ -13620,6 +13611,9 @@ msgstr "Test Value"
 
 msgid "Text size"
 msgstr "Text size"
+
+msgid "That name is already used by another step."
+msgstr "That name is already used by another step."
 
 #. placeholder {0}: i18n._(step.title)
 msgid "The \"{0}\" phase checks itself off once all of its tasks in the project plan are done."
@@ -14444,6 +14438,9 @@ msgstr "This sales order has lines that require jobs to be created"
 
 msgid "This step and its connections will be removed. This cannot be undone."
 msgstr "This step and its connections will be removed. This cannot be undone."
+
+msgid "This step chooses which path runs next — it doesn't produce values of its own. Reference earlier steps further down each path."
+msgstr "This step chooses which path runs next — it doesn't produce values of its own. Reference earlier steps further down each path."
 
 #. placeholder {0}: usageCount === 1 ? "" : "s"
 msgid "This storage type is currently used by {usageCount} storage unit{0}."

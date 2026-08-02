@@ -20,6 +20,7 @@ const node = (
   inputs: EntityNode["data"]["inputs"] = { job: jobRef }
 ): EntityNode => ({
   id: "scrap",
+  name: "scrap",
   type: "entity",
   position: { x: 0, y: 0 },
   data: { operation, inputs }

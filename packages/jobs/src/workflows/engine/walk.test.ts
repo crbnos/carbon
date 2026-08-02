@@ -11,6 +11,7 @@ import {
   alreadyExecuted,
   createWalkState,
   findTriggerNode,
+  findTriggerNodeForEvent,
   MAX_NODE_EXECUTIONS,
   nextNode,
   outgoing,
@@ -22,6 +23,7 @@ const position = { x: 0, y: 0 };
 function trigger(id: string): WorkflowNode {
   return {
     id,
+    name: id,
     type: "trigger",
     position,
     data: { events: ["purchaseOrder.status.changed"], origin: "Both" }
@@ -31,6 +33,7 @@ function trigger(id: string): WorkflowNode {
 function action(id: string): WorkflowNode {
   return {
     id,
+    name: id,
     type: "action",
     position,
     data: { action: "purchaseOrder.release", inputs: {}, batch: false }
@@ -40,6 +43,7 @@ function action(id: string): WorkflowNode {
 function condition(id: string, pathIds: string[]): WorkflowNode {
   return {
     id,
+    name: id,
     type: "condition",
     position,
     data: {
@@ -273,5 +277,66 @@ describe("walking", () => {
     expect(nextNode(state)).toBe("join");
     expect(alreadyExecuted(state, "join")).toBe(true);
     expect(nextNode(state)).toBeUndefined();
+  });
+});
+
+describe("findTriggerNodeForEvent", () => {
+  const t1 = trigger("t1");
+  const t2: WorkflowNode = {
+    id: "t2",
+    name: "t2",
+    type: "trigger",
+    position,
+    data: { events: ["part.created"], origin: "Both" }
+  };
+
+  it("returns the trigger whose events list contains the event id", () => {
+    const def = definition([t1, t2, action("a")], []);
+    expect(findTriggerNodeForEvent(def, "part.created")?.id).toBe("t2");
+    expect(
+      findTriggerNodeForEvent(def, "purchaseOrder.status.changed")?.id
+    ).toBe("t1");
+  });
+
+  it("falls back to the first trigger when no event matches (scheduled run)", () => {
+    const def = definition([t1, t2, action("a")], []);
+    expect(findTriggerNodeForEvent(def, "unknown.event")?.id).toBe("t1");
+  });
+
+  it("returns undefined when there is no trigger node", () => {
+    const def = definition([action("a")], []);
+    expect(
+      findTriggerNodeForEvent(def, "purchaseOrder.status.changed")
+    ).toBeUndefined();
+  });
+});
+
+describe("createWalkState with triggerNodeId", () => {
+  const t1 = trigger("t1");
+  const t2: WorkflowNode = {
+    id: "t2",
+    name: "t2",
+    type: "trigger",
+    position,
+    data: { events: ["part.created"], origin: "Both" }
+  };
+
+  it("seeds frontier from the specified trigger only", () => {
+    const def = definition(
+      [t1, t2, action("a1"), action("a2")],
+      [edge("t1", DEFAULT_HANDLE, "a1"), edge("t2", DEFAULT_HANDLE, "a2")]
+    );
+    const state = createWalkState(def, "t2");
+    expect(state.frontier).toEqual(["a2"]);
+    expect(state.frontier).not.toContain("a1");
+  });
+
+  it("seeds frontier from the first trigger when no triggerNodeId is passed", () => {
+    const def = definition(
+      [t1, t2, action("a1"), action("a2")],
+      [edge("t1", DEFAULT_HANDLE, "a1"), edge("t2", DEFAULT_HANDLE, "a2")]
+    );
+    const state = createWalkState(def);
+    expect(state.frontier).toEqual(["a1"]);
   });
 });

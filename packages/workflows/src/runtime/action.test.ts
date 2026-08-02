@@ -21,6 +21,7 @@ const node = (
   batch = false
 ): ActionNode => ({
   id: "act",
+  name: "act",
   type: "action",
   position: { x: 0, y: 0 },
   data: { action, inputs, batch }

@@ -1,14 +1,10 @@
 import {
   Badge,
-  Button,
   Copy,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuIcon,
   DropdownMenuItem,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
   Heading,
   HStack,
@@ -20,15 +16,13 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import type { PostgrestResponse } from "@supabase/supabase-js";
 import { Suspense, useEffect } from "react";
 import {
-  LuChevronDown,
-  LuCirclePlus,
   LuEllipsisVertical,
-  LuGitPullRequestArrow,
   LuPanelLeft,
   LuPanelRight,
   LuTrash
 } from "react-icons/lu";
-import { Await, useNavigate, useParams } from "react-router";
+import { Await, useParams } from "react-router";
+import { VersionMenu } from "~/components";
 import { usePanels } from "~/components/Layout";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
 import { usePermissions, useRouteData } from "~/hooks";
@@ -47,7 +41,6 @@ const ProcedureHeader = () => {
     versions: PostgrestResponse<Procedure>;
   }>(path.to.procedure(id));
 
-  const navigate = useNavigate();
   const permissions = usePermissions();
   const { toggleExplorer, toggleProperties } = usePanels();
   const newVersionDisclosure = useDisclosure();
@@ -102,63 +95,31 @@ const ProcedureHeader = () => {
       <div className="flex flex-shrink-0 gap-1 items-center justify-end">
         <Suspense fallback={null}>
           <Await resolve={routeData?.versions}>
-            {(versions) => (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="secondary"
-                    leftIcon={<LuGitPullRequestArrow />}
-                    rightIcon={<LuChevronDown />}
-                  >
-                    <Trans>Versions</Trans>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  {permissions.can("create", "production") && (
+            {(versions) => {
+              const allVersions =
+                versions?.data ??
+                (routeData?.procedure ? [routeData.procedure] : []);
+              return (
+                <VersionMenu
+                  versions={allVersions}
+                  currentVersionId={id}
+                  getKey={(v) => v.id}
+                  getHref={(v) => path.to.procedure(v.id)}
+                  renderLabel={(v) => (
                     <>
-                      <DropdownMenuItem onClick={newVersionDisclosure.onOpen}>
-                        <DropdownMenuIcon icon={<LuCirclePlus />} />
-                        <Trans>New Version</Trans>
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
+                      <Badge variant="outline">V{v.version}</Badge>
+                      <span>{v.name}</span>
                     </>
                   )}
-                  <DropdownMenuRadioGroup
-                    value={id}
-                    onValueChange={(value) =>
-                      navigate(path.to.procedure(value))
-                    }
-                  >
-                    {routeData?.procedure && (
-                      <DropdownMenuRadioItem
-                        key={routeData.procedure.id}
-                        value={routeData.procedure.id}
-                        className="flex items-center justify-between gap-2"
-                      >
-                        <Badge variant="outline">
-                          V{routeData.procedure.version}
-                        </Badge>
-                        <span>{routeData.procedure.name}</span>
-                        <ProcedureStatus status={routeData.procedure.status} />
-                      </DropdownMenuRadioItem>
-                    )}
-                    {versions?.data
-                      ?.filter((v) => v.id !== id)
-                      .map((version) => (
-                        <DropdownMenuRadioItem
-                          key={version.id}
-                          value={version.id}
-                          className="flex items-center justify-between gap-2"
-                        >
-                          <Badge variant="outline">V{version.version}</Badge>
-                          <span>{version.name}</span>
-                          <ProcedureStatus status={version.status} />
-                        </DropdownMenuRadioItem>
-                      ))}
-                  </DropdownMenuRadioGroup>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )}
+                  renderStatus={(v) => <ProcedureStatus status={v.status} />}
+                  onNewVersion={
+                    permissions.can("create", "production")
+                      ? newVersionDisclosure.onOpen
+                      : undefined
+                  }
+                />
+              );
+            }}
           </Await>
         </Suspense>
         <IconButton

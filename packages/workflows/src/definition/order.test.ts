@@ -12,6 +12,7 @@ function makeDefinition(
 const trigger = (id: string) =>
   ({
     id,
+    name: id,
     type: "trigger" as const,
     position: { x: 0, y: 0 },
     data: { events: [], origin: "Both" as const }
@@ -20,6 +21,7 @@ const trigger = (id: string) =>
 const condition = (id: string) =>
   ({
     id,
+    name: id,
     type: "condition" as const,
     position: { x: 0, y: 0 },
     data: { paths: [] }
@@ -28,6 +30,7 @@ const condition = (id: string) =>
 const action = (id: string) =>
   ({
     id,
+    name: id,
     type: "action" as const,
     position: { x: 0, y: 0 },
     data: { action: "", inputs: {}, batch: false }

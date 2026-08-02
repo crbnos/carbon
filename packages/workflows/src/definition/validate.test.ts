@@ -21,6 +21,7 @@ function codes(definition: WorkflowDefinition): WorkflowIssueCode[] {
 
 const trigger = (data: Record<string, unknown> = {}) => ({
   id: "trigger",
+  name: "trigger",
   type: "trigger",
   position: { x: 0, y: 0 },
   data: { events: ["purchaseOrder.status.changed"], ...data }
@@ -28,6 +29,7 @@ const trigger = (data: Record<string, unknown> = {}) => ({
 
 const action = (id: string, data: Record<string, unknown> = {}) => ({
   id,
+  name: id,
   type: "action",
   position: { x: 0, y: 0 },
   data: { action: "createIssue", inputs: {}, ...data }
@@ -49,6 +51,31 @@ describe("shape", () => {
     const definition = define([trigger(), { ...trigger(), type: "trigger" }]);
     expect(codes(definition)).toContain("MALFORMED_DEFINITION");
   });
+
+  it("reports DUPLICATE_NODE_NAME for two nodes with the same name", () => {
+    const definition = define([
+      trigger(),
+      {
+        ...condition("cond_a", [{ id: "p1", kind: "if", clauses: [] }]),
+        name: "shared"
+      },
+      { ...action("cond_b"), name: "shared" }
+    ]);
+    const issues = validateDefinition(definition, catalog);
+    expect(issues.map((i) => i.code)).toEqual([
+      "DUPLICATE_NODE_NAME",
+      "DUPLICATE_NODE_NAME"
+    ]);
+  });
+
+  it("does not report DUPLICATE_NODE_NAME when all names are unique", () => {
+    const definition = define([
+      trigger(),
+      condition("condition_0", [{ id: "p1", kind: "if", clauses: [] }]),
+      condition("condition_1", [{ id: "p2", kind: "if", clauses: [] }])
+    ]);
+    expect(codes(definition)).not.toContain("DUPLICATE_NODE_NAME");
+  });
 });
 
 describe("trigger", () => {
@@ -56,9 +83,46 @@ describe("trigger", () => {
     expect(codes(define([action("a1")]))).toEqual(["NO_TRIGGER"]);
   });
 
-  it("reports MULTIPLE_TRIGGERS when there are two", () => {
-    const definition = define([trigger(), { ...trigger(), id: "trigger2" }]);
-    expect(codes(definition)).toEqual(["MULTIPLE_TRIGGERS"]);
+  it("accepts two triggers watching different events", () => {
+    const definition = define([
+      trigger(),
+      {
+        ...trigger(),
+        id: "trigger2",
+        name: "trigger2",
+        data: { events: ["part.created"] }
+      }
+    ]);
+    expect(codes(definition)).toEqual([]);
+  });
+
+  it("reports DUPLICATE_TRIGGER_EVENT when two triggers share an event", () => {
+    const definition = define([
+      trigger(),
+      { ...trigger(), id: "trigger2", name: "trigger2" }
+    ]);
+    expect(codes(definition)).toEqual(["DUPLICATE_TRIGGER_EVENT"]);
+  });
+
+  it("reports CONFLICTING_TRIGGER for a schedule alongside another trigger", () => {
+    const definition = define([
+      trigger({
+        events: [],
+        schedule: { freq: "Daily", hour: 9, minute: 0, tz: "America/Chicago" }
+      }),
+      { ...trigger(), id: "trigger2", name: "trigger2" }
+    ]);
+    expect(codes(definition)).toEqual(["CONFLICTING_TRIGGER"]);
+  });
+
+  it("reports EMPTY_TRIGGER naming the unconfigured trigger of two", () => {
+    const definition = define([
+      trigger(),
+      { ...trigger(), id: "trigger2", name: "trigger2", data: { events: [] } }
+    ]);
+    const issues = validateDefinition(definition, catalog);
+    expect(issues.map((issue) => issue.code)).toEqual(["EMPTY_TRIGGER"]);
+    expect(issues[0]?.nodeId).toBe("trigger2");
   });
 
   it("reports EMPTY_TRIGGER for neither events nor a schedule", () => {
@@ -141,6 +205,7 @@ describe("edges", () => {
   it("reports UNKNOWN_HANDLE for a condition path the node does not declare", () => {
     const condition = {
       id: "c1",
+      name: "c1",
       type: "condition",
       position: { x: 0, y: 0 },
       data: { paths: [{ id: "p1", kind: "if", clauses: [] }] }
@@ -192,6 +257,23 @@ describe("graph", () => {
     );
     expect(codes(definition)).not.toContain("UNREACHABLE_NODE");
   });
+
+  it("does not call a node unreachable when a second trigger feeds it", () => {
+    const definition = define(
+      [
+        trigger(),
+        {
+          ...trigger(),
+          id: "trigger2",
+          name: "trigger2",
+          data: { events: ["part.created"] }
+        },
+        action("a1")
+      ],
+      [edge("e1", "trigger2", "out", "a1")]
+    );
+    expect(codes(definition)).not.toContain("UNREACHABLE_NODE");
+  });
 });
 
 const ref = (nodeId: string, output: string, path: string[] = []) => ({
@@ -209,6 +291,7 @@ const literal = (of: string, value: unknown) => ({
 
 const condition = (id: string, paths: unknown[]) => ({
   id,
+  name: id,
   type: "condition",
   position: { x: 0, y: 0 },
   data: { paths }
@@ -216,6 +299,7 @@ const condition = (id: string, paths: unknown[]) => ({
 
 const lookup = (id: string, entity: string, returns: "one" | "list") => ({
   id,
+  name: id,
   type: "lookup",
   position: { x: 0, y: 0 },
   data: { entity, returns, match: [] }
@@ -297,16 +381,16 @@ describe("references", () => {
           { id: "yes", kind: "if", clauses: [] },
           { id: "no", kind: "else", clauses: [] }
         ]),
-        lookup("onIf", "part", "one"),
-        action("onElse", {
+        lookup("on_if", "part", "one"),
+        action("on_else", {
           action: "updatePart",
-          inputs: { part: ref("onIf", "result") }
+          inputs: { part: ref("on_if", "result") }
         })
       ],
       [
         edge("e1", "trigger", "out", "check"),
-        edge("e2", "check", "yes", "onIf"),
-        edge("e3", "check", "no", "onElse")
+        edge("e2", "check", "yes", "on_if"),
+        edge("e3", "check", "no", "on_else")
       ]
     );
     expect(codes(definition)).toEqual(["REF_NOT_UPSTREAM"]);
@@ -427,6 +511,7 @@ describe("types", () => {
         lookup("find", "part", "one"),
         {
           id: "f1",
+          name: "f1",
           type: "filter",
           position: { x: 0, y: 0 },
           data: { source: ref("find", "result"), clauses: [] }
@@ -455,6 +540,7 @@ describe("configuration", () => {
         trigger(),
         {
           id: "e1",
+          name: "e1",
           type: "entity",
           position: { x: 0, y: 0 },
           data: { operation: "job.vibes", inputs: {} }
@@ -615,6 +701,7 @@ describe("configuration", () => {
         trigger(),
         {
           id: "f1",
+          name: "f1",
           type: "filter",
           position: { x: 0, y: 0 },
           data: { clauses: [] }
@@ -716,6 +803,7 @@ describe("the current item", () => {
         lookup("find", "part", "list"),
         {
           id: "f1",
+          name: "f1",
           type: "filter",
           position: { x: 0, y: 0 },
           data: { source: ref("find", "result"), clauses }
@@ -793,6 +881,7 @@ describe("the current item", () => {
         trigger(),
         {
           id: "f1",
+          name: "f1",
           type: "filter",
           position: { x: 0, y: 0 },
           data: {
@@ -882,6 +971,7 @@ describe("regressions", () => {
         trigger(),
         {
           id: "f",
+          name: "f",
           type: "filter",
           position: { x: 0, y: 0 },
           data: {
@@ -898,6 +988,7 @@ describe("regressions", () => {
   it("rejects two filters that read each other", () => {
     const filter = (id: string, sourceNode: string) => ({
       id,
+      name: id,
       type: "filter",
       position: { x: 0, y: 0 },
       data: {
@@ -960,6 +1051,7 @@ describe("regressions", () => {
         trigger(),
         {
           id: "c",
+          name: "c",
           type: "condition",
           position: { x: 0, y: 0 },
           data: {

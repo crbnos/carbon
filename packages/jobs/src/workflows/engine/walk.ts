@@ -14,6 +14,20 @@ export function findTriggerNode(
   );
 }
 
+/** The trigger that listed this event, or the first one when nothing matches
+ * (a scheduled run carries no catalog event id). */
+export function findTriggerNodeForEvent(
+  definition: WorkflowDefinition,
+  eventId: string
+): TriggerNode | undefined {
+  const triggers = definition.nodes.filter(
+    (node): node is TriggerNode => node.type === "trigger"
+  );
+  return (
+    triggers.find((node) => node.data.events.includes(eventId)) ?? triggers[0]
+  );
+}
+
 /** Target node ids for one handle, in stored edge order. */
 export function outgoing(
   definition: WorkflowDefinition,
@@ -32,10 +46,13 @@ export interface WalkState {
   sequence: number;
 }
 
-export function createWalkState(definition: WorkflowDefinition): WalkState {
-  const trigger = findTriggerNode(definition);
+export function createWalkState(
+  definition: WorkflowDefinition,
+  triggerNodeId?: string
+): WalkState {
+  const id = triggerNodeId ?? findTriggerNode(definition)?.id;
   return {
-    frontier: trigger ? outgoing(definition, trigger.id, DEFAULT_HANDLE) : [],
+    frontier: id ? outgoing(definition, id, DEFAULT_HANDLE) : [],
     executed: new Set<string>(),
     sequence: 0
   };

@@ -11,6 +11,7 @@ function define(nodes: unknown[], edges: unknown[] = []): WorkflowDefinition {
 
 const trigger = (data: Record<string, unknown> = {}) => ({
   id: "trigger",
+  name: "trigger",
   type: "trigger",
   position: { x: 0, y: 0 },
   data: { events: ["purchaseOrder.status.changed"], ...data }
@@ -18,6 +19,7 @@ const trigger = (data: Record<string, unknown> = {}) => ({
 
 const action = (id: string, data: Record<string, unknown> = {}) => ({
   id,
+  name: id,
   type: "action",
   position: { x: 0, y: 0 },
   data: { action: "createIssue", inputs: {}, ...data }
@@ -29,6 +31,7 @@ const lookup = (
   returns: "one" | "list" = "one"
 ) => ({
   id,
+  name: id,
   type: "lookup",
   position: { x: 0, y: 0 },
   data: { entity, returns, match: [] }
@@ -36,6 +39,7 @@ const lookup = (
 
 const condition = (id: string, paths: unknown[]) => ({
   id,
+  name: id,
   type: "condition",
   position: { x: 0, y: 0 },
   data: { paths }
@@ -91,14 +95,14 @@ describe("availableVariables", () => {
           { id: "yes", kind: "if", clauses: [] },
           { id: "no", kind: "else", clauses: [] }
         ]),
-        lookup("lkpA", "part", "one"),
+        lookup("lkp_a", "part", "one"),
         action("act")
       ],
       [
         edge("e1", "trigger", "out", "cond"),
-        edge("e2", "cond", "yes", "lkpA"),
+        edge("e2", "cond", "yes", "lkp_a"),
         edge("e3", "cond", "no", "act"),
-        edge("e4", "lkpA", "success", "act")
+        edge("e4", "lkp_a", "success", "act")
       ]
     );
 
@@ -117,7 +121,7 @@ describe("availableVariables", () => {
 
     // lkpA is NOT guaranteed — the "no" path skips it
     const lkpVar = vars.find(
-      (v) => v.nodeId === "lkpA" && v.output === "result"
+      (v) => v.nodeId === "lkp_a" && v.output === "result"
     );
     expect(lkpVar).toBeDefined();
     expect(lkpVar?.guaranteed).toBe(false);
@@ -171,5 +175,60 @@ describe("availableVariables", () => {
     const vars = availableVariables(withAction, "act", thinCatalog);
     // Trigger's outputsOf returns undefined (event not found) → nothing emitted
     expect(vars).toHaveLength(0);
+  });
+});
+
+describe("multiple triggers", () => {
+  // t1 watches purchaseOrder.status.changed, t2 watches part.created
+  const t1 = trigger();
+  const t2 = {
+    ...trigger(),
+    id: "trigger2",
+    name: "trigger2",
+    data: { events: ["part.created"] }
+  };
+
+  it("offers both triggers outputs when both can reach the node", () => {
+    const definition = define(
+      [t1, t2, action("act")],
+      [
+        edge("e1", "trigger", "out", "act"),
+        edge("e2", "trigger2", "out", "act")
+      ]
+    );
+    const vars = availableVariables(definition, "act", catalog);
+    expect(vars.some((v) => v.nodeId === "trigger")).toBe(true);
+    expect(vars.some((v) => v.nodeId === "trigger2")).toBe(true);
+  });
+
+  it("marks both trigger outputs non-guaranteed when both can reach the node", () => {
+    const definition = define(
+      [t1, t2, action("act")],
+      [
+        edge("e1", "trigger", "out", "act"),
+        edge("e2", "trigger2", "out", "act")
+      ]
+    );
+    const vars = availableVariables(definition, "act", catalog);
+    const triggerVars = vars.filter(
+      (v) => v.nodeId === "trigger" || v.nodeId === "trigger2"
+    );
+    expect(triggerVars.every((v) => v.guaranteed === false)).toBe(true);
+  });
+
+  it("marks the only reachable trigger guaranteed and excludes the other", () => {
+    // t1 → act1, t2 → act2 (no fan-in)
+    const definition = define(
+      [t1, t2, action("act1"), action("act2")],
+      [
+        edge("e1", "trigger", "out", "act1"),
+        edge("e2", "trigger2", "out", "act2")
+      ]
+    );
+    const vars = availableVariables(definition, "act1", catalog);
+    expect(
+      vars.some((v) => v.nodeId === "trigger" && v.guaranteed === true)
+    ).toBe(true);
+    expect(vars.some((v) => v.nodeId === "trigger2")).toBe(false);
   });
 });

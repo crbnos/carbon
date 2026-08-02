@@ -5,7 +5,7 @@ export type BuilderNode = Node<
   Record<string, unknown>,
   WorkflowNode["type"]
 > & {
-  title?: string;
+  name: string;
   expanded?: boolean;
 };
 export type BuilderEdge = Edge;

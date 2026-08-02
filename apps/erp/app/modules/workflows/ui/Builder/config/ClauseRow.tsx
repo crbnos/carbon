@@ -3,6 +3,7 @@ import type { Operator } from "@carbon/utils";
 import type { Clause, ValueType } from "@carbon/workflows";
 import { operatorsForType } from "@carbon/workflows";
 import { useLingui } from "@lingui/react/macro";
+import type React from "react";
 import { memo, useEffect, useMemo } from "react";
 import { LuX } from "react-icons/lu";
 import OperatorCombobox from "~/modules/storage-rules/ui/OperatorCombobox";
@@ -28,6 +29,8 @@ type ClauseRowProps = {
   leftMode?: "value" | "column";
   /** In "column" mode: the entity whose columns the left side may name */
   entity?: string;
+  /** Optional drag grip element rendered before the clause body */
+  grip?: React.ReactNode;
 };
 
 function ClauseRowImpl({
@@ -38,7 +41,8 @@ function ClauseRowImpl({
   onRemove,
   context,
   leftMode = "value",
-  entity
+  entity,
+  grip
 }: ClauseRowProps) {
   const { t } = useLingui();
   const label = useWorkflowLabel();
@@ -101,6 +105,7 @@ function ClauseRowImpl({
 
   return (
     <div className="flex w-full items-center gap-2">
+      {grip}
       <div
         className={cn(
           "group flex-1 min-w-0 rounded-lg border border-border bg-card p-3",

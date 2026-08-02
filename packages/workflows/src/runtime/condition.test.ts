@@ -26,6 +26,7 @@ const over = (value: number): ConditionPath["clauses"] => [
 
 const node = (paths: ConditionPath[]): ConditionNode => ({
   id: "check",
+  name: "check",
   type: "condition",
   position: { x: 0, y: 0 },
   data: { paths }

@@ -82,10 +82,14 @@ const GroupedContentSidebar = ({
                 {group.name}
               </h4>
               {group.routes.map((route) => {
-                const isActive = exactMatch
-                  ? location.pathname === route.to
-                  : location.pathname.includes(route.to) &&
-                    !`${location.pathname}${location.search}`.includes("view=");
+                const isActive = route.isActive
+                  ? route.isActive(location.pathname)
+                  : exactMatch
+                    ? location.pathname === route.to
+                    : location.pathname.includes(route.to) &&
+                      !`${location.pathname}${location.search}`.includes(
+                        "view="
+                      );
 
                 const hasViews = route.views && route.views.length > 0;
                 const isExpanded = expandedViews[route.name];

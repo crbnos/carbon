@@ -9,8 +9,7 @@ const HANDLE_CLASS =
   "hover:!scale-[1.35] hover:!shadow-[0_0_0_4px_hsl(var(--primary)/0.18)]";
 
 type NodeCardProps = {
-  kind: string;
-  title: string;
+  title: ReactNode;
   description?: string;
   icon: ReactNode;
   ports: NodePort[];
@@ -19,12 +18,11 @@ type NodeCardProps = {
   isSelected?: boolean;
   isExpanded?: boolean;
   summary?: string;
-  menu?: ReactNode;
+  actions?: ReactNode;
   children?: ReactNode;
 };
 
 export function NodeCard({
-  kind,
   title,
   description,
   icon,
@@ -34,7 +32,7 @@ export function NodeCard({
   isSelected = false,
   isExpanded = true,
   summary,
-  menu,
+  actions,
   children
 }: NodeCardProps) {
   const hasIssues = issueCount > 0;
@@ -57,17 +55,21 @@ export function NodeCard({
         />
       )}
 
+      {ports.length === 1 && (
+        <Handle
+          type="source"
+          position={Position.Right}
+          id={ports[0].id}
+          className={HANDLE_CLASS}
+        />
+      )}
+
       <div className="flex items-start gap-2 p-2.5">
         <div className="flex size-6 shrink-0 items-center justify-center rounded-md bg-primary text-primary-foreground">
           {icon}
         </div>
         <div className="min-w-0 flex-1">
-          <div className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">
-            {kind}
-          </div>
-          <div className="truncate text-xs font-semibold text-pretty">
-            {title}
-          </div>
+          {title}
           {!isExpanded
             ? summary && (
                 <div className="truncate text-[10.5px] text-muted-foreground">
@@ -85,36 +87,41 @@ export function NodeCard({
             </Badge>
           )}
         </div>
-        {menu && <div className="shrink-0">{menu}</div>}
+        {actions && <div className="shrink-0">{actions}</div>}
       </div>
 
       {isExpanded && children && (
         <div className="nodrag border-t px-2.5 py-2">{children}</div>
       )}
 
-      <div
-        className={cn("flex flex-col", isExpanded ? "border-t py-1.5" : "pb-1")}
-      >
-        {ports.map((port) => (
-          <div
-            key={port.id}
-            className="relative flex items-center justify-end px-2.5 py-1"
-          >
-            {isExpanded && (
-              <span className="text-[9.5px] text-muted-foreground">
-                {port.label}
-              </span>
-            )}
-            <Handle
-              type="source"
-              position={Position.Right}
-              id={port.id}
-              className={HANDLE_CLASS}
-              style={{ top: "50%", right: -6 }}
-            />
-          </div>
-        ))}
-      </div>
+      {ports.length > 1 && (
+        <div
+          className={cn(
+            "flex flex-col",
+            isExpanded ? "border-t py-1.5" : "pb-1"
+          )}
+        >
+          {ports.map((port) => (
+            <div
+              key={port.id}
+              className="relative flex items-center justify-end px-2.5 py-1"
+            >
+              {isExpanded && (
+                <span className="text-[9.5px] text-muted-foreground">
+                  {port.label}
+                </span>
+              )}
+              <Handle
+                type="source"
+                position={Position.Right}
+                id={port.id}
+                className={HANDLE_CLASS}
+                style={{ top: "50%", right: -6 }}
+              />
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
