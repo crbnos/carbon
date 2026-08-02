@@ -192,10 +192,10 @@ const DateKanban = ({
   // active job and reads the drag-start priority, so a direct and a circuitous
   // drag ending on the same target produce the same command.
   function computePlacement(
-    over: DragOverEvent["over"]
+    over: DragOverEvent["over"],
+    origin: DragOrigin
   ): { columnId: string; priority: number } | null {
-    const origin = originRef.current;
-    if (!over || !origin) return null;
+    if (!over) return null;
 
     const overId = over.id.toString();
     if (overId === origin.item.id) return null; // self target
@@ -277,7 +277,7 @@ const DateKanban = ({
   function onDragOver(event: DragOverEvent) {
     const origin = originRef.current;
     if (!origin) return;
-    const placement = computePlacement(event.over);
+    const placement = computePlacement(event.over, origin);
     setDraft(placement ? { id: origin.item.id, ...placement } : null);
   }
 
@@ -291,7 +291,7 @@ const DateKanban = ({
     if (!origin) return;
 
     // Cancel / outside / invalid / stale / self all resolve to no placement.
-    const placement = computePlacement(event.over);
+    const placement = computePlacement(event.over, origin);
     if (!placement) return;
 
     // Returning to the original logical slot in the same bucket is a no-op even

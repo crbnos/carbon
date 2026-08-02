@@ -2,7 +2,10 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
-import { scheduleJobUpdateValidator } from "~/modules/production/production.models";
+import {
+  isJobLocked,
+  scheduleJobUpdateValidator
+} from "~/modules/production/production.models";
 import { triggerJobSchedule } from "~/modules/production/production.service";
 
 const logger = getLogger("erp", "dates-update");
@@ -20,6 +23,26 @@ export async function action({ request }: ActionFunctionArgs) {
     return {
       success: false,
       message: "Invalid form data"
+    };
+  }
+
+  // Completed, Closed, and Cancelled jobs are locked — reject the reschedule
+  // before persisting the new due date/priority so a drag on a locked card
+  // cannot rewrite its dates or trigger the scheduling engine.
+  const { data: job, error: jobError } = await client
+    .from("job")
+    .select("status")
+    .eq("id", validation.data.id)
+    .single();
+
+  if (jobError || !job) {
+    return { success: false, message: "Job not found" };
+  }
+
+  if (isJobLocked(job.status)) {
+    return {
+      success: false,
+      message: "This job is locked and cannot be rescheduled"
     };
   }
 
