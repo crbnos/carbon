@@ -1394,6 +1394,9 @@ msgstr "本当に販売注文行 {0} {1} を削除してもよろしいですか
 msgid "Are you sure you want to delete the scrap reason: {0}? This cannot be undone."
 msgstr "スクラップ理由「{0}」を削除してもよろしいですか？この操作は取り消せません。"
 
+msgid "Are you sure you want to delete the serial number sequence for {itemLabel}? This cannot be undone."
+msgstr "{itemLabel} 用のシリアル番号シーケンスを削除してもよろしいですか？この操作は取り消すことができません。"
+
 msgid "Are you sure you want to delete the shift: {name} from {locationName}? This cannot be undone."
 msgstr "シフト「{name}」を{locationName}から削除してもよろしいですか？この操作は取り消せません。"
 
@@ -4803,6 +4806,9 @@ msgstr "スケジュール済みメンテナンスを編集"
 
 msgid "Edit Sequence"
 msgstr "シーケンスを編集"
+
+msgid "Edit Serial Number"
+msgstr "シリアル番号を編集"
 
 msgid "Edit Service"
 msgstr "サービスを編集"
@@ -8284,6 +8290,9 @@ msgstr "新しい販売注文行"
 msgid "New Scheduled Maintenance"
 msgstr "新しいスケジュール済みメンテナンス"
 
+msgid "New Serial Number"
+msgstr "新しいシリアル番号"
+
 msgid "New Service"
 msgstr "新規サービス"
 
@@ -11504,6 +11513,12 @@ msgstr "シリアル番号"
 msgid "Serial Number:"
 msgstr "シリアル番号:"
 
+msgid "Serial Numbers"
+msgstr "シリアル番号"
+
+msgid "Serial numbers are only generated for serial- or batch-tracked items."
+msgstr "シリアル番号は、シリアルまたはバッチ追跡アイテムに対してのみ生成されます。"
+
 msgid "Serial or Batch Tracking Required"
 msgstr "シリアルまたはバッチ追跡が必要です"
 
@@ -13358,6 +13373,9 @@ msgstr "これはあなたの会計年度が始まる月です。"
 
 msgid "This is the month your tax year starts."
 msgstr "これはあなたの税務年度が始まる月です。"
+
+msgid "this item"
+msgstr "このアイテム"
 
 msgid "This item is built via a configurator and resolves its components per-order; jobs created for it inherit the configurator's resolved BOM."
 msgstr "このアイテムはコンフィグレータを使用して構築され、注文ごとにコンポーネントを解決します。このために作成されたジョブは、コンフィグレータの解決されたBOMを継承します。"

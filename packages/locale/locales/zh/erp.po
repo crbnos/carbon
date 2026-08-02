@@ -1394,6 +1394,9 @@ msgstr "您确定要删除销售订单行 {0} {1} 吗？此操作无法撤销。
 msgid "Are you sure you want to delete the scrap reason: {0}? This cannot be undone."
 msgstr "您确定要删除废料原因：{0}？此操作无法撤销。"
 
+msgid "Are you sure you want to delete the serial number sequence for {itemLabel}? This cannot be undone."
+msgstr "你确定要删除 {itemLabel} 的序列号序列吗？这无法撤销。"
+
 msgid "Are you sure you want to delete the shift: {name} from {locationName}? This cannot be undone."
 msgstr "您确定要删除班次：{name} 从 {locationName}？此操作无法撤销。"
 
@@ -4803,6 +4806,9 @@ msgstr "编辑计划维护"
 
 msgid "Edit Sequence"
 msgstr "编辑序列"
+
+msgid "Edit Serial Number"
+msgstr "编辑序列号"
 
 msgid "Edit Service"
 msgstr "编辑服务"
@@ -8284,6 +8290,9 @@ msgstr "新销售订单行"
 msgid "New Scheduled Maintenance"
 msgstr "新的定期维护"
 
+msgid "New Serial Number"
+msgstr "新序列号"
+
 msgid "New Service"
 msgstr "新服务"
 
@@ -11504,6 +11513,12 @@ msgstr "序列号"
 msgid "Serial Number:"
 msgstr "序列号："
 
+msgid "Serial Numbers"
+msgstr "序列号"
+
+msgid "Serial numbers are only generated for serial- or batch-tracked items."
+msgstr "序列号仅为序列号或批次跟踪的物料生成。"
+
 msgid "Serial or Batch Tracking Required"
 msgstr "序列号或批次跟踪必需"
 
@@ -13358,6 +13373,9 @@ msgstr "这是您的财政年度开始的月份。"
 
 msgid "This is the month your tax year starts."
 msgstr "这是您的税务年度开始的月份。"
+
+msgid "this item"
+msgstr "此物料"
 
 msgid "This item is built via a configurator and resolves its components per-order; jobs created for it inherit the configurator's resolved BOM."
 msgstr "该项目通过配置器构建，并按订单解析其组件；为其创建的工作继承配置器的解析BOM。"

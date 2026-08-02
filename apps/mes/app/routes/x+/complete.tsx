@@ -11,7 +11,9 @@ import { data, redirect } from "react-router";
 import { nonScrapQuantityValidator } from "~/services/models";
 import {
   finishJobOperation,
-  insertProductionQuantity
+  getTrackedEntitiesByMakeMethodId,
+  insertProductionQuantity,
+  isSerialEntityIncompleteForOperation
 } from "~/services/operations.service";
 import { path } from "~/utils/path";
 
@@ -149,7 +151,6 @@ export async function action({ request }: ActionFunctionArgs) {
       });
     }
 
-    const trackedEntityId = newTrackedEntityId;
     if (response.error) {
       return data(
         {},
@@ -186,12 +187,37 @@ export async function action({ request }: ActionFunctionArgs) {
       );
     }
 
-    if (trackedEntityId) {
+    // Old lazy-split flow: the issue function spawned the next reserved entity.
+    if (newTrackedEntityId) {
       return redirect(
         `${path.to.operation(
           validation.data.jobOperationId
-        )}?trackedEntityId=${trackedEntityId}`
+        )}?trackedEntityId=${newTrackedEntityId}`
       );
+    }
+
+    // Pre-split flow: no new entity was spawned (all units already exist), so
+    // advance to the next incomplete serial unit for this operation. When none
+    // remain, fall through to the operation view below.
+    if (jobOperation.data.jobMakeMethodId) {
+      const remainingTrackedEntities = await getTrackedEntitiesByMakeMethodId(
+        serviceRole,
+        jobOperation.data.jobMakeMethodId
+      );
+      const nextTrackedEntity = (remainingTrackedEntities.data ?? []).find(
+        (entity) =>
+          isSerialEntityIncompleteForOperation(
+            entity,
+            validation.data.jobOperationId
+          )
+      );
+      if (nextTrackedEntity) {
+        return redirect(
+          `${path.to.operation(
+            validation.data.jobOperationId
+          )}?trackedEntityId=${nextTrackedEntity.id}`
+        );
+      }
     }
 
     return redirect(`${path.to.operation(validation.data.jobOperationId)}`);

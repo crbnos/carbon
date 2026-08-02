@@ -28,6 +28,7 @@ import type {
   accountsReceivableBillingAddressValidator,
   apiKeyValidator,
   companyValidator,
+  itemSerialSequenceValidator,
   kanbanOutputTypes,
   purchasePriceUpdateTimingTypes,
   sequenceValidator,
@@ -459,6 +460,93 @@ export async function getSequencesList(
     .eq("table", table)
     .eq("companyId", companyId)
     .order("table");
+}
+
+export async function getItemSerialSequences(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: GenericQueryFilters & {
+    search: string | null;
+  }
+) {
+  let query = client
+    .from("itemSerialSequences")
+    .select("*", {
+      count: "exact"
+    })
+    .eq("companyId", companyId);
+
+  if (args.search) {
+    query = query.or(
+      `itemReadableId.ilike.%${args.search}%,itemName.ilike.%${args.search}%`
+    );
+  }
+
+  query = setGenericQueryFilters(query, args, [
+    { column: "itemReadableId", ascending: true }
+  ]);
+  return query;
+}
+
+export async function getItemSerialSequence(
+  client: SupabaseClient<Database>,
+  id: string,
+  companyId: string
+) {
+  return client
+    .from("itemSerialSequences")
+    .select("*")
+    .eq("id", id)
+    .eq("companyId", companyId)
+    .single();
+}
+
+export async function getItemSerialSequenceByItemId(
+  client: SupabaseClient<Database>,
+  itemId: string,
+  companyId: string
+) {
+  return client
+    .from("itemSerialSequence")
+    .select("*")
+    .eq("itemId", itemId)
+    .eq("companyId", companyId)
+    .maybeSingle();
+}
+
+export async function upsertItemSerialSequence(
+  client: SupabaseClient<Database>,
+  itemSerialSequence:
+    | (Omit<z.infer<typeof itemSerialSequenceValidator>, "id"> & {
+        companyId: string;
+        createdBy: string;
+      })
+    | (Omit<z.infer<typeof itemSerialSequenceValidator>, "id"> & {
+        id: string;
+        updatedBy: string;
+      })
+) {
+  if ("createdBy" in itemSerialSequence) {
+    return client
+      .from("itemSerialSequence")
+      .insert([itemSerialSequence])
+      .select("id")
+      .single();
+  }
+  const { id, ...update } = itemSerialSequence;
+  return client
+    .from("itemSerialSequence")
+    .update(sanitize(update))
+    .eq("id", id)
+    .select("id")
+    .single();
+}
+
+export async function deleteItemSerialSequence(
+  client: SupabaseClient<Database>,
+  id: string
+) {
+  return client.from("itemSerialSequence").delete().eq("id", id);
 }
 
 export async function getSubsidiaries(

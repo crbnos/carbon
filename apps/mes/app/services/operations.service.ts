@@ -1165,6 +1165,48 @@ export async function getTrackedEntitiesByMakeMethodId(
     .order("createdAt", { ascending: true });
 }
 
+type SerialEntityForSelection = Pick<
+  Database["public"]["Tables"]["trackedEntity"]["Row"],
+  "attributes" | "status"
+>;
+
+/**
+ * A serial tracked entity is still "incomplete" for a job operation when its
+ * attributes carry no `Operation ${jobOperationId}` completion marker and it has
+ * not been consumed. Shared by the serial auto-selection (routes) and the manual
+ * serial picker (`useOperation`) so both agree on "done for this operation".
+ */
+export function isSerialEntityIncompleteForOperation(
+  entity: SerialEntityForSelection,
+  jobOperationId: string
+): boolean {
+  const attributes = (entity.attributes ?? {}) as Record<string, unknown>;
+  return (
+    !(`Operation ${jobOperationId}` in attributes) &&
+    entity.status !== "Consumed"
+  );
+}
+
+/**
+ * The next serial unit an operator should work on for a job operation. Entities
+ * must be ordered by `createdAt` ascending (as `getTrackedEntitiesByMakeMethodId`
+ * returns them). Returns the first entity still incomplete for this operation;
+ * when every entity is already complete it falls back to the last entity, which
+ * preserves the prior end-state behavior. This unifies both the pre-split flow
+ * (all N `quantity=1` entities exist up front) and the old lazy-split flow (the
+ * `issue` edge function spawns the next entity on each completion).
+ */
+export function getNextIncompleteSerialEntity<
+  T extends SerialEntityForSelection
+>(entities: T[], jobOperationId: string): T | undefined {
+  if (entities.length === 0) return undefined;
+  return (
+    entities.find((entity) =>
+      isSerialEntityIncompleteForOperation(entity, jobOperationId)
+    ) ?? entities[entities.length - 1]
+  );
+}
+
 export async function getTrackedEntity(
   client: SupabaseClient<Database>,
   id: string

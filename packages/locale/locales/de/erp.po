@@ -1394,6 +1394,9 @@ msgstr "Sind Sie sicher, dass Sie die Verkaufsauftragsposition für {0} {1} lös
 msgid "Are you sure you want to delete the scrap reason: {0}? This cannot be undone."
 msgstr "Sind Sie sicher, dass Sie den Verschrottungsgrund: {0}? löschen möchten? Dies kann nicht rückgängig gemacht werden."
 
+msgid "Are you sure you want to delete the serial number sequence for {itemLabel}? This cannot be undone."
+msgstr "Sind Sie sicher, dass Sie die Seriennummernfolge für {itemLabel} löschen möchten? Dies kann nicht rückgängig gemacht werden."
+
 msgid "Are you sure you want to delete the shift: {name} from {locationName}? This cannot be undone."
 msgstr "Sind Sie sicher, dass Sie die Schicht: {name} von {locationName} löschen möchten? Dies kann nicht rückgängig gemacht werden."
 
@@ -4803,6 +4806,9 @@ msgstr "Geplante Wartung bearbeiten"
 
 msgid "Edit Sequence"
 msgstr "Sequenz bearbeiten"
+
+msgid "Edit Serial Number"
+msgstr "Seriennummer bearbeiten"
 
 msgid "Edit Service"
 msgstr "Dienstleistung bearbeiten"
@@ -8284,6 +8290,9 @@ msgstr "Neue Verkaufsauftragsposition"
 msgid "New Scheduled Maintenance"
 msgstr "Neue geplante Wartung"
 
+msgid "New Serial Number"
+msgstr "Neue Seriennummer"
+
 msgid "New Service"
 msgstr "Neue Dienstleistung"
 
@@ -11504,6 +11513,12 @@ msgstr "Seriennummer"
 msgid "Serial Number:"
 msgstr "Seriennummer:"
 
+msgid "Serial Numbers"
+msgstr "Seriennummern"
+
+msgid "Serial numbers are only generated for serial- or batch-tracked items."
+msgstr "Seriennummern werden nur für Artikel mit Serien- oder Chargenverfolgung generiert."
+
 msgid "Serial or Batch Tracking Required"
 msgstr "Serien- oder Chargenverfolgung erforderlich"
 
@@ -13358,6 +13373,9 @@ msgstr "Dies ist der Monat, in dem Ihr Geschäftsjahr beginnt."
 
 msgid "This is the month your tax year starts."
 msgstr "Dies ist der Monat, in dem Ihr Steuerjahr beginnt."
+
+msgid "this item"
+msgstr "diesen Artikel"
 
 msgid "This item is built via a configurator and resolves its components per-order; jobs created for it inherit the configurator's resolved BOM."
 msgstr "Dieser Artikel wird über einen Konfigurator gebaut und löst seine Komponenten pro Bestellung auf; für ihn erstellte Aufträge erben die aufgelöste Stückliste des Konfigurators."

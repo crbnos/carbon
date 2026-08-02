@@ -1394,6 +1394,9 @@ msgstr "Are you sure you want to delete the sales order line for {0} {1}? This c
 msgid "Are you sure you want to delete the scrap reason: {0}? This cannot be undone."
 msgstr "Are you sure you want to delete the scrap reason: {0}? This cannot be undone."
 
+msgid "Are you sure you want to delete the serial number sequence for {itemLabel}? This cannot be undone."
+msgstr "Are you sure you want to delete the serial number sequence for {itemLabel}? This cannot be undone."
+
 msgid "Are you sure you want to delete the shift: {name} from {locationName}? This cannot be undone."
 msgstr "Are you sure you want to delete the shift: {name} from {locationName}? This cannot be undone."
 
@@ -4803,6 +4806,9 @@ msgstr "Edit Scheduled Maintenance"
 
 msgid "Edit Sequence"
 msgstr "Edit Sequence"
+
+msgid "Edit Serial Number"
+msgstr "Edit Serial Number"
 
 msgid "Edit Service"
 msgstr "Edit Service"
@@ -8284,6 +8290,9 @@ msgstr "New Sales Order Line"
 msgid "New Scheduled Maintenance"
 msgstr "New Scheduled Maintenance"
 
+msgid "New Serial Number"
+msgstr "New Serial Number"
+
 msgid "New Service"
 msgstr "New Service"
 
@@ -11504,6 +11513,12 @@ msgstr "Serial Number"
 msgid "Serial Number:"
 msgstr "Serial Number:"
 
+msgid "Serial Numbers"
+msgstr "Serial Numbers"
+
+msgid "Serial numbers are only generated for serial- or batch-tracked items."
+msgstr "Serial numbers are only generated for serial- or batch-tracked items."
+
 msgid "Serial or Batch Tracking Required"
 msgstr "Serial or Batch Tracking Required"
 
@@ -13358,6 +13373,9 @@ msgstr "This is the month your fiscal year starts."
 
 msgid "This is the month your tax year starts."
 msgstr "This is the month your tax year starts."
+
+msgid "this item"
+msgstr "this item"
 
 msgid "This item is built via a configurator and resolves its components per-order; jobs created for it inherit the configurator's resolved BOM."
 msgstr "This item is built via a configurator and resolves its components per-order; jobs created for it inherit the configurator's resolved BOM."

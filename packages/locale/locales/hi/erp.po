@@ -1394,6 +1394,9 @@ msgstr "क्या आप सुनिश्चित हैं कि आप 
 msgid "Are you sure you want to delete the scrap reason: {0}? This cannot be undone."
 msgstr "क्या आप सुनिश्चित हैं कि आप स्क्रैप कारण को हटाना चाहते हैं: {0}? यह पूर्ववत नहीं किया जा सकता।"
 
+msgid "Are you sure you want to delete the serial number sequence for {itemLabel}? This cannot be undone."
+msgstr "क्या आप {itemLabel} के लिए सीरियल नंबर अनुक्रम को हटाना निश्चित हैं? इसे पूर्ववत नहीं किया जा सकता।"
+
 msgid "Are you sure you want to delete the shift: {name} from {locationName}? This cannot be undone."
 msgstr "क्या आप सुनिश्चित हैं कि आप शिफ्ट को हटाना चाहते हैं: {name} से {locationName}? यह पूर्ववत नहीं किया जा सकता।"
 
@@ -4803,6 +4806,9 @@ msgstr "निर्धारित रखरखाव संपादित क
 
 msgid "Edit Sequence"
 msgstr "अनुक्रम संपादित करें"
+
+msgid "Edit Serial Number"
+msgstr "सीरियल नंबर संपादित करें"
 
 msgid "Edit Service"
 msgstr "सेवा संपादित करें"
@@ -8284,6 +8290,9 @@ msgstr "नई बिक्रय आदेश पंक्ति"
 msgid "New Scheduled Maintenance"
 msgstr "नया निर्धारित रखरखाव"
 
+msgid "New Serial Number"
+msgstr "नया सीरियल नंबर"
+
 msgid "New Service"
 msgstr "नई सेवा"
 
@@ -11504,6 +11513,12 @@ msgstr "सीरियल नंबर"
 msgid "Serial Number:"
 msgstr "सीरियल नंबर:"
 
+msgid "Serial Numbers"
+msgstr "सीरियल नंबर"
+
+msgid "Serial numbers are only generated for serial- or batch-tracked items."
+msgstr "सीरियल नंबर केवल सीरियल या बैच-ट्रैक किए गए आइटम के लिए उत्पन्न होते हैं।"
+
 msgid "Serial or Batch Tracking Required"
 msgstr "सीरियल या बैच ट्रैकिंग आवश्यक है"
 
@@ -13358,6 +13373,9 @@ msgstr "यह वह महीना है जब आपका वित्त
 
 msgid "This is the month your tax year starts."
 msgstr "यह वह महीना है जब आपका कर वर्ष शुरू होता है।"
+
+msgid "this item"
+msgstr "यह आइटम"
 
 msgid "This item is built via a configurator and resolves its components per-order; jobs created for it inherit the configurator's resolved BOM."
 msgstr "इस आइटम को एक कॉन्फ़िगरेटर के माध्यम से बनाया जाता है और प्रति-आदेश अपने घटकों को हल करता है; इसके लिए बनाई गई नौकरियां कॉन्फ़िगरेटर के हल बिल को विरासत में पाती हैं।"

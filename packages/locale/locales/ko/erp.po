@@ -1394,6 +1394,9 @@ msgstr "{0} {1}의 판매주문 라인을 삭제하시겠습니까? 이 작업�
 msgid "Are you sure you want to delete the scrap reason: {0}? This cannot be undone."
 msgstr "스크랩 사유 {0}을(를) 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다."
 
+msgid "Are you sure you want to delete the serial number sequence for {itemLabel}? This cannot be undone."
+msgstr "{itemLabel}의 시리얼 번호 시퀀스를 삭제하시겠습니까? 이 작업은 실행 취소할 수 없습니다."
+
 msgid "Are you sure you want to delete the shift: {name} from {locationName}? This cannot be undone."
 msgstr "{locationName}의 교대 {name}을(를) 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다."
 
@@ -4803,6 +4806,9 @@ msgstr "예정된 유지보수 수정"
 
 msgid "Edit Sequence"
 msgstr "순서 수정"
+
+msgid "Edit Serial Number"
+msgstr "시리얼 번호 편집"
 
 msgid "Edit Service"
 msgstr "서비스 편집"
@@ -8284,6 +8290,9 @@ msgstr "새 판매주문 라인"
 msgid "New Scheduled Maintenance"
 msgstr "새 예정된 유지보수"
 
+msgid "New Serial Number"
+msgstr "새 시리얼 번호"
+
 msgid "New Service"
 msgstr "새 서비스"
 
@@ -11504,6 +11513,12 @@ msgstr "일련번호"
 msgid "Serial Number:"
 msgstr "일련번호:"
 
+msgid "Serial Numbers"
+msgstr "시리얼 번호"
+
+msgid "Serial numbers are only generated for serial- or batch-tracked items."
+msgstr "시리얼 번호는 시리얼 또는 배치 추적 항목에만 생성됩니다."
+
 msgid "Serial or Batch Tracking Required"
 msgstr "일련번호 또는 배치 추적 필요"
 
@@ -13358,6 +13373,9 @@ msgstr "회계연도가 시작되는 월입니다."
 
 msgid "This is the month your tax year starts."
 msgstr "세무연도가 시작되는 월입니다."
+
+msgid "this item"
+msgstr "이 항목"
 
 msgid "This item is built via a configurator and resolves its components per-order; jobs created for it inherit the configurator's resolved BOM."
 msgstr "이 품목은 컨피규레이터를 통해 제작되며 구성품을 주문별로 결정합니다. 이를 위해 생성된 작업은 컨피규레이터가 결정한 BOM을 상속받습니다."

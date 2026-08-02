@@ -1394,6 +1394,9 @@ msgstr "Czy na pewno chcesz usunąć linię zamówienia sprzedaży dla {0} {1}? 
 msgid "Are you sure you want to delete the scrap reason: {0}? This cannot be undone."
 msgstr "Czy na pewno chcesz usunąć przyczynę braku: {0}? Tej czynności nie można cofnąć."
 
+msgid "Are you sure you want to delete the serial number sequence for {itemLabel}? This cannot be undone."
+msgstr "Czy na pewno chcesz usunąć sekwencję numeru seryjnego dla {itemLabel}? Tej akcji nie można cofnąć."
+
 msgid "Are you sure you want to delete the shift: {name} from {locationName}? This cannot be undone."
 msgstr "Czy na pewno chcesz usunąć zmianę: {name} z {locationName}? Tej czynności nie można cofnąć."
 
@@ -4803,6 +4806,9 @@ msgstr "Edytuj zaplanowaną konserwację"
 
 msgid "Edit Sequence"
 msgstr "Edytuj sekwencję"
+
+msgid "Edit Serial Number"
+msgstr "Edytuj numer seryjny"
 
 msgid "Edit Service"
 msgstr "Edytuj usługę"
@@ -8284,6 +8290,9 @@ msgstr "Nowa linia zamówienia sprzedaży"
 msgid "New Scheduled Maintenance"
 msgstr "Nowa zaplanowana konserwacja"
 
+msgid "New Serial Number"
+msgstr "Nowy numer seryjny"
+
 msgid "New Service"
 msgstr "Nowa usługa"
 
@@ -11504,6 +11513,12 @@ msgstr "Numer seryjny"
 msgid "Serial Number:"
 msgstr "Numer seryjny:"
 
+msgid "Serial Numbers"
+msgstr "Numery seryjne"
+
+msgid "Serial numbers are only generated for serial- or batch-tracked items."
+msgstr "Numery seryjne są generowane tylko dla elementów śledzonych numerem seryjnym lub partią."
+
 msgid "Serial or Batch Tracking Required"
 msgstr "Wymagane śledzenie seryjne lub partyjne"
 
@@ -13358,6 +13373,9 @@ msgstr "To jest miesiąc, w którym rozpoczyna się Twój rok obrachunkowy."
 
 msgid "This is the month your tax year starts."
 msgstr "To jest miesiąc, w którym rozpoczyna się Twój rok podatkowy."
+
+msgid "this item"
+msgstr "ten element"
 
 msgid "This item is built via a configurator and resolves its components per-order; jobs created for it inherit the configurator's resolved BOM."
 msgstr "Ten artykuł jest zbudowany za pośrednictwem konfiguratora i rozwiązuje jego komponenty na zamówienie; zadania dla niego dziedziczą rozwiązaną BOM konfiguratora."

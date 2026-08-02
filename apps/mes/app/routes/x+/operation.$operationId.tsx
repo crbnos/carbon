@@ -15,12 +15,14 @@ import {
   getJobOperationById,
   getJobOperationProcedure,
   getKanbanByJobId,
+  getNextIncompleteSerialEntity,
   getNonConformanceActions,
   getProductionEventsForJobOperation,
   getProductionQuantitiesForJobOperation,
   getThumbnailPathByItemId,
   getTrackedEntitiesByMakeMethodId,
-  getWorkCenter
+  getWorkCenter,
+  isSerialEntityIncompleteForOperation
 } from "~/services/operations.service";
 import type { OperationWithDetails } from "~/services/types";
 
@@ -109,23 +111,24 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const autoSelectMaterialWithoutPickingList =
     companySettings.data?.autoSelectMaterialWithoutPickingList ?? false;
 
-  // If no trackedEntityId is provided in the URL but trackedEntities exist,
-  // redirect to the same URL with the last trackedEntityId as a search param
+  // If no trackedEntityId is provided in the URL but a serial unit still needs
+  // work for this operation, redirect to the same URL with that unit selected.
+  // Picks the first incomplete unit (createdAt asc) so pre-split jobs advance
+  // #1..#N in order instead of always re-selecting the last unit. When every
+  // unit is already complete, nothing is auto-selected (no redirect).
   if (
     !trackedEntityId &&
     trackedEntities.data &&
-    trackedEntities.data.length > 0 &&
-    // Check if any tracked entity has an attribute for this operation
-    !trackedEntities.data.every((entity) => {
-      const attributes = entity.attributes as Record<string, unknown>;
-      return Object.keys(attributes).some((key) => key.startsWith(`Operation`));
-    })
+    trackedEntities.data.length > 0
   ) {
-    const lastTrackedEntity =
-      trackedEntities.data[trackedEntities.data.length - 1];
-    const redirectUrl = new URL(request.url);
-    redirectUrl.searchParams.set("trackedEntityId", lastTrackedEntity.id);
-    throw redirect(`${redirectUrl.pathname}${redirectUrl.search}`);
+    const nextTrackedEntity = trackedEntities.data.find((entity) =>
+      isSerialEntityIncompleteForOperation(entity, operationId)
+    );
+    if (nextTrackedEntity) {
+      const redirectUrl = new URL(request.url);
+      redirectUrl.searchParams.set("trackedEntityId", nextTrackedEntity.id);
+      throw redirect(`${redirectUrl.pathname}${redirectUrl.search}`);
+    }
   }
 
   return {
@@ -150,7 +153,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     files: getJobFiles(serviceRole, companyId, job.data, operation.data),
     materials: getJobMaterialsByOperationId(serviceRole, {
       operation: operation.data?.[0],
-      trackedEntityId: trackedEntityId ?? trackedEntities?.data?.[0]?.id,
+      trackedEntityId:
+        trackedEntityId ??
+        getNextIncompleteSerialEntity(trackedEntities.data ?? [], operationId)
+          ?.id,
       requiresSerialTracking:
         jobMakeMethod.data?.requiresSerialTracking ?? false
     }),

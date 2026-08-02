@@ -328,6 +328,13 @@ export async function convertSalesOrderLinesToJobs(
           }
         });
 
+        await assignJobSerialNumbers(client, {
+          jobId: createJob.data.id,
+          itemId: data.itemId,
+          companyId,
+          userId
+        });
+
         jobsCreated++;
       }
     }
@@ -2831,6 +2838,14 @@ export async function insertJob(
     }
   }
 
+  // Assign configured serial numbers to the job's tracked entities (best-effort).
+  await assignJobSerialNumbers(client, {
+    jobId: createdJobId,
+    itemId: input.itemId,
+    companyId: input.companyId,
+    userId: input.createdBy
+  });
+
   if (!options?.skipRecalculate) {
     await client.functions.invoke("recalculate", {
       body: {
@@ -2843,6 +2858,36 @@ export async function insertJob(
   }
 
   return { data: { id: createdJobId, jobId }, error: null };
+}
+
+/**
+ * Assign configured serial numbers to a freshly-created job's tracked entities.
+ * Best-effort and cheap: it skips the edge function entirely unless the item has
+ * an `itemSerialSequence` configured. Shared by every job-creation path so serial
+ * numbering is applied consistently (insertJob, sales-order conversion, ...).
+ */
+async function assignJobSerialNumbers(
+  client: SupabaseClient<Database>,
+  args: { jobId: string; itemId: string; companyId: string; userId: string }
+) {
+  const serialSequence = await client
+    .from("itemSerialSequence")
+    .select("id")
+    .eq("itemId", args.itemId)
+    .eq("companyId", args.companyId)
+    .maybeSingle();
+  if (!serialSequence.data) return;
+
+  const { error } = await client.functions.invoke("assign-serial-numbers", {
+    body: {
+      jobId: args.jobId,
+      companyId: args.companyId,
+      userId: args.userId
+    }
+  });
+  if (error) {
+    logger.error("Failed to assign serial numbers", { error });
+  }
 }
 
 export async function updateJob(

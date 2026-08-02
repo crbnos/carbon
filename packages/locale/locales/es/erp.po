@@ -1394,6 +1394,9 @@ msgstr "¿Estás seguro de que deseas eliminar la línea de pedido de venta para
 msgid "Are you sure you want to delete the scrap reason: {0}? This cannot be undone."
 msgstr "¿Estás seguro de que deseas eliminar la razón de rechazo: {0}? Esto no se puede deshacer."
 
+msgid "Are you sure you want to delete the serial number sequence for {itemLabel}? This cannot be undone."
+msgstr "¿Está seguro de que desea eliminar la secuencia de número de serie de {itemLabel}? Esto no se puede deshacer."
+
 msgid "Are you sure you want to delete the shift: {name} from {locationName}? This cannot be undone."
 msgstr "¿Estás seguro de que deseas eliminar el turno: {name} de {locationName}? Esto no se puede deshacer."
 
@@ -4803,6 +4806,9 @@ msgstr "Editar Mantenimiento Programado"
 
 msgid "Edit Sequence"
 msgstr "Editar Secuencia"
+
+msgid "Edit Serial Number"
+msgstr "Editar Número de Serie"
 
 msgid "Edit Service"
 msgstr "Editar servicio"
@@ -8284,6 +8290,9 @@ msgstr "Nueva Línea de Orden de Venta"
 msgid "New Scheduled Maintenance"
 msgstr "Nuevo Mantenimiento Programado"
 
+msgid "New Serial Number"
+msgstr "Nuevo Número de Serie"
+
 msgid "New Service"
 msgstr "Nuevo servicio"
 
@@ -11504,6 +11513,12 @@ msgstr "Número de Serie"
 msgid "Serial Number:"
 msgstr "Número de Serie:"
 
+msgid "Serial Numbers"
+msgstr "Números de Serie"
+
+msgid "Serial numbers are only generated for serial- or batch-tracked items."
+msgstr "Los números de serie se generan solo para artículos con seguimiento de serie o lote."
+
 msgid "Serial or Batch Tracking Required"
 msgstr "Seguimiento Serial o por Lote Requerido"
 
@@ -13358,6 +13373,9 @@ msgstr "Este es el mes en que comienza tu año fiscal."
 
 msgid "This is the month your tax year starts."
 msgstr "Este es el mes en que comienza tu año fiscal."
+
+msgid "this item"
+msgstr "este artículo"
 
 msgid "This item is built via a configurator and resolves its components per-order; jobs created for it inherit the configurator's resolved BOM."
 msgstr "Este artículo se construye a través de un configurador y resuelve sus componentes por pedido; los trabajos creados para él heredan la BOM resuelta del configurador."

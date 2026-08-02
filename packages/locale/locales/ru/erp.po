@@ -1394,6 +1394,9 @@ msgstr "Вы уверены, что хотите удалить строку з�
 msgid "Are you sure you want to delete the scrap reason: {0}? This cannot be undone."
 msgstr "Вы уверены, что хотите удалить причину брака: {0}? Это действие невозможно отменить."
 
+msgid "Are you sure you want to delete the serial number sequence for {itemLabel}? This cannot be undone."
+msgstr "Вы уверены, что хотите удалить последовательность серийных номеров для {itemLabel}? Это невозможно отменить."
+
 msgid "Are you sure you want to delete the shift: {name} from {locationName}? This cannot be undone."
 msgstr "Вы уверены, что хотите удалить смену: {name} из {locationName}? Это действие невозможно отменить."
 
@@ -4803,6 +4806,9 @@ msgstr "Редактировать плановое обслуживание"
 
 msgid "Edit Sequence"
 msgstr "Редактировать последовательность"
+
+msgid "Edit Serial Number"
+msgstr "Редактировать серийный номер"
 
 msgid "Edit Service"
 msgstr "Редактировать услугу"
@@ -8284,6 +8290,9 @@ msgstr "Новая строка заказа продажи"
 msgid "New Scheduled Maintenance"
 msgstr "Новое плановое обслуживание"
 
+msgid "New Serial Number"
+msgstr "Новый серийный номер"
+
 msgid "New Service"
 msgstr "Новая услуга"
 
@@ -11504,6 +11513,12 @@ msgstr "Серийный номер"
 msgid "Serial Number:"
 msgstr "Серийный номер:"
 
+msgid "Serial Numbers"
+msgstr "Серийные номера"
+
+msgid "Serial numbers are only generated for serial- or batch-tracked items."
+msgstr "Серийные номера генерируются только для серийных или партионно отслеживаемых товаров."
+
 msgid "Serial or Batch Tracking Required"
 msgstr "Требуется отслеживание по серийному номеру или партии"
 
@@ -13358,6 +13373,9 @@ msgstr "Это месяц, когда начинается ваш финансо
 
 msgid "This is the month your tax year starts."
 msgstr "Это месяц, когда начинается ваш налоговый год."
+
+msgid "this item"
+msgstr "этот товар"
 
 msgid "This item is built via a configurator and resolves its components per-order; jobs created for it inherit the configurator's resolved BOM."
 msgstr "Этот элемент строится через конфигуратор и разрешает его компоненты в зависимости от заказа; задания, созданные для него, наследуют разрешенный BOM конфигуратора."

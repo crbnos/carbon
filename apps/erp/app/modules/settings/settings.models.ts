@@ -314,6 +314,16 @@ export const sequenceValidator = z.object({
   size: zfd.numeric(z.number().min(1).max(20))
 });
 
+export const itemSerialSequenceValidator = z.object({
+  id: zfd.text(z.string().optional()),
+  itemId: z.string().min(1, { message: "Item is required" }),
+  prefix: zfd.text(z.string().optional()),
+  suffix: zfd.text(z.string().optional()),
+  next: zfd.numeric(z.number().min(0)),
+  step: zfd.numeric(z.number().min(1)),
+  size: zfd.numeric(z.number().min(1).max(20))
+});
+
 export const themes = [
   "zinc",
   "neutral",

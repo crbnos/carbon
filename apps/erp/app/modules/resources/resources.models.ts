@@ -71,6 +71,7 @@ export const locationValidator = z
   .object({
     id: zfd.text(z.string().optional()),
     name: z.string().min(1, { message: "Name is required" }),
+    code: zfd.text(z.string().optional()),
     addressLine1: z.string().min(1, { message: "Address is required" }),
     addressLine2: z.string().optional(),
     city: z.string().min(1, { message: "City is required" }),

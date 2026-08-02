@@ -5,7 +5,6 @@ import {
   useInterval,
   useRealtimeChannel
 } from "@carbon/react";
-import type { TrackedEntityAttributes } from "@carbon/utils";
 import {
   getLocalTimeZone,
   now,
@@ -16,6 +15,7 @@ import type { RealtimeChannel } from "@supabase/supabase-js";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useRevalidator } from "react-router";
 import { useUrlParams, useUser } from "~/hooks";
+import { isSerialEntityIncompleteForOperation } from "~/services/operations.service";
 import type {
   JobMaterial,
   JobOperationParameter,
@@ -260,12 +260,8 @@ export function useOperation({
   // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   useEffect(() => {
     if (trackedEntityParam) return;
-    const uncompletedEntities = trackedEntities.filter(
-      (entity) =>
-        !(
-          `Operation ${operationId}` in
-          ((entity.attributes as TrackedEntityAttributes) ?? {})
-        )
+    const uncompletedEntities = trackedEntities.filter((entity) =>
+      isSerialEntityIncompleteForOperation(entity, operationId ?? "")
     );
     if (uncompletedEntities.length > 0) serialModal.onOpen();
     setAvailableEntities(uncompletedEntities);

@@ -1394,6 +1394,9 @@ msgstr "Tem a certeza de que deseja eliminar a linha de encomenda de vendas para
 msgid "Are you sure you want to delete the scrap reason: {0}? This cannot be undone."
 msgstr "Tem a certeza de que deseja eliminar o motivo de sucata: {0}? Isto não pode ser desfeito."
 
+msgid "Are you sure you want to delete the serial number sequence for {itemLabel}? This cannot be undone."
+msgstr "Tem certeza de que deseja deletar a sequência de número de série para {itemLabel}? Isso não pode ser desfeito."
+
 msgid "Are you sure you want to delete the shift: {name} from {locationName}? This cannot be undone."
 msgstr "Tem a certeza de que deseja eliminar o turno: {name} de {locationName}? Esta ação não pode ser desfeita."
 
@@ -4803,6 +4806,9 @@ msgstr "Editar Manutenção Agendada"
 
 msgid "Edit Sequence"
 msgstr "Editar Sequência"
+
+msgid "Edit Serial Number"
+msgstr "Editar Número de Série"
 
 msgid "Edit Service"
 msgstr "Editar Serviço"
@@ -8284,6 +8290,9 @@ msgstr "Nova Linha de Pedido de Venda"
 msgid "New Scheduled Maintenance"
 msgstr "Nova Manutenção Agendada"
 
+msgid "New Serial Number"
+msgstr "Novo Número de Série"
+
 msgid "New Service"
 msgstr "Novo Serviço"
 
@@ -11504,6 +11513,12 @@ msgstr "Número de Série"
 msgid "Serial Number:"
 msgstr "Número de Série:"
 
+msgid "Serial Numbers"
+msgstr "Números de Série"
+
+msgid "Serial numbers are only generated for serial- or batch-tracked items."
+msgstr "Números de série são gerados apenas para itens rastreados por série ou lote."
+
 msgid "Serial or Batch Tracking Required"
 msgstr "Rastreamento Serial ou em Lote Obrigatório"
 
@@ -13358,6 +13373,9 @@ msgstr "Este é o mês em que seu ano fiscal começa."
 
 msgid "This is the month your tax year starts."
 msgstr "Este é o mês em que seu ano fiscal começa."
+
+msgid "this item"
+msgstr "este item"
 
 msgid "This item is built via a configurator and resolves its components per-order; jobs created for it inherit the configurator's resolved BOM."
 msgstr "Este item é construído por meio de um configurador e resolve seus componentes por pedido; os trabalhos criados para ele herdam a BOM resolvida do configurador."

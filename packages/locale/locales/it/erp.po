@@ -1394,6 +1394,9 @@ msgstr "Sei sicuro di voler eliminare la riga dell'ordine di vendita per {0} {1}
 msgid "Are you sure you want to delete the scrap reason: {0}? This cannot be undone."
 msgstr "Sei sicuro di voler eliminare il motivo di scarto: {0}? Questa azione non può essere annullata."
 
+msgid "Are you sure you want to delete the serial number sequence for {itemLabel}? This cannot be undone."
+msgstr "Sei sicuro di voler eliminare la sequenza del numero di serie per {itemLabel}? Questa azione non può essere annullata."
+
 msgid "Are you sure you want to delete the shift: {name} from {locationName}? This cannot be undone."
 msgstr "Sei sicuro di voler eliminare il turno: {name} da {locationName}? Questa azione non può essere annullata."
 
@@ -4803,6 +4806,9 @@ msgstr "Modifica Manutenzione Programmata"
 
 msgid "Edit Sequence"
 msgstr "Modifica Sequenza"
+
+msgid "Edit Serial Number"
+msgstr "Modifica Numero di Serie"
 
 msgid "Edit Service"
 msgstr "Modifica Servizio"
@@ -8284,6 +8290,9 @@ msgstr "Nuova Riga Ordine Vendita"
 msgid "New Scheduled Maintenance"
 msgstr "Nuova Manutenzione Programmata"
 
+msgid "New Serial Number"
+msgstr "Nuovo Numero di Serie"
+
 msgid "New Service"
 msgstr "Nuovo Servizio"
 
@@ -11504,6 +11513,12 @@ msgstr "Numero di Serie"
 msgid "Serial Number:"
 msgstr "Numero di Serie:"
 
+msgid "Serial Numbers"
+msgstr "Numeri di Serie"
+
+msgid "Serial numbers are only generated for serial- or batch-tracked items."
+msgstr "I numeri di serie vengono generati solo per articoli tracciati in serie o per lotto."
+
 msgid "Serial or Batch Tracking Required"
 msgstr "Tracciamento Seriale o Batch Richiesto"
 
@@ -13358,6 +13373,9 @@ msgstr "Questo è il mese in cui inizia il tuo anno fiscale."
 
 msgid "This is the month your tax year starts."
 msgstr "Questo è il mese in cui inizia il tuo anno fiscale."
+
+msgid "this item"
+msgstr "questo articolo"
 
 msgid "This item is built via a configurator and resolves its components per-order; jobs created for it inherit the configurator's resolved BOM."
 msgstr "Questo articolo viene costruito tramite un configuratore e risolve i suoi componenti per ordine; i lavori creati per esso ereditano il BOM risolto del configuratore."

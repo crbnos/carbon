@@ -97,6 +97,7 @@ const LocationForm = ({
               <Hidden name="type" value={type} />
               <VStack spacing={4}>
                 <Input name="name" label={t`Location Name`} />
+                <Input name="code" label={t`Code`} />
                 <AddressAutocomplete />
                 <Timezone
                   name="timezone"

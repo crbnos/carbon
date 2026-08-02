@@ -17,6 +17,7 @@ import {
   LuLayoutDashboard,
   LuNetwork,
   LuPrinter,
+  LuScanBarcode,
   LuSheet,
   LuShoppingCart,
   LuUsers,
@@ -190,6 +191,12 @@ export default function useSettingsSubmodules() {
             to: path.to.sequences,
             role: "employee",
             icon: <LuSheet />
+          },
+          {
+            name: t`Serial Numbers`,
+            to: path.to.serialNumberSequences,
+            role: "employee",
+            icon: <LuScanBarcode />
           },
           {
             name: t`Webhooks`,

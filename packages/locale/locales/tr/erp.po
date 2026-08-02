@@ -1394,6 +1394,9 @@ msgstr "Satır siparişi için {0} {1} satırını silmek istediğinizden emin m
 msgid "Are you sure you want to delete the scrap reason: {0}? This cannot be undone."
 msgstr "Atık nedeni: {0}'ı silmek istediğinizden emin misiniz? Bu geri alınamaz."
 
+msgid "Are you sure you want to delete the serial number sequence for {itemLabel}? This cannot be undone."
+msgstr "Seri numarası dizisini {itemLabel} için silmek istediğinizden emin misiniz? Bu geri alınamaz."
+
 msgid "Are you sure you want to delete the shift: {name} from {locationName}? This cannot be undone."
 msgstr "Vardığınız vardiyayı silmek istediğinizden emin misiniz: {name} adlı vardiya, {locationName}'dan mı? Bu işlem geri alınamaz."
 
@@ -4803,6 +4806,9 @@ msgstr "Planlanmış Bakımı Düzenle"
 
 msgid "Edit Sequence"
 msgstr "Sıralamayı Düzenle"
+
+msgid "Edit Serial Number"
+msgstr "Seri Numarasını Düzenle"
 
 msgid "Edit Service"
 msgstr "Hizmeti Düzenle"
@@ -8284,6 +8290,9 @@ msgstr "Yeni Satış Siparişi Kalemi"
 msgid "New Scheduled Maintenance"
 msgstr "Yeni Planlanmış Bakım"
 
+msgid "New Serial Number"
+msgstr "Yeni Seri Numarası"
+
 msgid "New Service"
 msgstr "Yeni Hizmet"
 
@@ -11504,6 +11513,12 @@ msgstr "Seri Numarası"
 msgid "Serial Number:"
 msgstr "Seri Numarası:"
 
+msgid "Serial Numbers"
+msgstr "Seri Numaraları"
+
+msgid "Serial numbers are only generated for serial- or batch-tracked items."
+msgstr "Seri numaraları yalnızca seri- veya batch-izlenen öğeler için oluşturulur."
+
 msgid "Serial or Batch Tracking Required"
 msgstr "Seri veya Parti Takibi Gerekli"
 
@@ -13358,6 +13373,9 @@ msgstr "Bu, mali yılınızın başladığı aydır."
 
 msgid "This is the month your tax year starts."
 msgstr "Bu, vergi yılınızın başladığı aydır."
+
+msgid "this item"
+msgstr "bu öğe"
 
 msgid "This item is built via a configurator and resolves its components per-order; jobs created for it inherit the configurator's resolved BOM."
 msgstr "Bu öğe bir configuratör aracılığıyla oluşturulmuş ve bileşenlerini siparişe göre çözer; bunun için oluşturulan işler configuratörün çözülmüş BOM'unu devralır."

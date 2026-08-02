@@ -1,6 +1,6 @@
 {
-  "generated": "2026-07-31T05:48:08.334Z",
-  "totalTools": 1405,
+  "generated": "2026-08-02T23:26:50.161Z",
+  "totalTools": 1410,
   "modules": 15,
   "tools": [
     {
@@ -39499,6 +39499,167 @@
         },
         "required": [
           "table"
+        ]
+      }
+    },
+    {
+      "name": "settings_getItemSerialSequences",
+      "module": "settings",
+      "classification": "READ",
+      "description": "get item serial sequences",
+      "paramCount": 3,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "args": {
+            "type": "object",
+            "properties": {
+              "limit": {
+                "type": "integer",
+                "default": 100
+              },
+              "offset": {
+                "type": "integer",
+                "default": 0
+              },
+              "search": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "settings_getItemSerialSequence",
+      "module": "settings",
+      "classification": "READ",
+      "description": "get item serial sequence",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "id",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      }
+    },
+    {
+      "name": "settings_getItemSerialSequenceByItemId",
+      "module": "settings",
+      "classification": "READ",
+      "description": "get item serial sequence by item id",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "itemId",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "itemId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "itemId"
+        ]
+      }
+    },
+    {
+      "name": "settings_upsertItemSerialSequence",
+      "module": "settings",
+      "classification": "WRITE",
+      "description": "upsert item serial sequence",
+      "paramCount": 7,
+      "serviceParams": [
+        "client",
+        "itemSerialSequence"
+      ],
+      "injectAuth": [
+        "companyId",
+        "createdBy",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "itemId": {
+            "type": "string"
+          },
+          "prefix": {
+            "type": "string"
+          },
+          "suffix": {
+            "type": "string"
+          },
+          "next": {
+            "type": "number"
+          },
+          "step": {
+            "type": "number"
+          },
+          "size": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "itemId"
+        ]
+      }
+    },
+    {
+      "name": "settings_deleteItemSerialSequence",
+      "module": "settings",
+      "classification": "DESTRUCTIVE",
+      "description": "delete item serial sequence",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "id"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
         ]
       }
     },
