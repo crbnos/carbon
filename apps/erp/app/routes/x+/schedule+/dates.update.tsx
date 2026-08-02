@@ -33,6 +33,7 @@ export async function action({ request }: ActionFunctionArgs) {
     .from("job")
     .select("status")
     .eq("id", validation.data.id)
+    .eq("companyId", companyId)
     .single();
 
   if (jobError || !job) {
@@ -71,7 +72,8 @@ export async function action({ request }: ActionFunctionArgs) {
   const { error } = await client
     .from("job")
     .update(updateData)
-    .eq("id", validation.data.id);
+    .eq("id", validation.data.id)
+    .eq("companyId", companyId);
 
   if (error) {
     return { success: false, message: error.message };
