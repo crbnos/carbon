@@ -10,7 +10,7 @@ Chart of accounts, journal entries, general ledger, fiscal periods, currencies, 
 - **Dimensions** — analytical tags on journal lines (Location, Department, Project, etc.). Entity-type dimensions resolve values from their source table; Custom dimensions use `dimensionValue`.
 - **Cost Centers** — hierarchical organizational units for cost allocation via `parentCostCenterId`.
 - **Fixed Assets** — capital assets with depreciation. Supports straight-line, declining balance, MACRS, and units-of-production methods. Depreciation runs generate journal entries. See `.claude/rules/fixed-asset-lifecycle.md`.
-- **Intercompany** — transactions between companies in a group. `runIntercompanyMatching` pairs them; `generateEliminations` creates reversing entries for consolidation.
+- **Intercompany** — transactions between companies in a group. `runIntercompanyMatching` pairs them via a three-pass matcher in `matchIntercompanyTransactions` (exact base amount → FX document-currency equality → same-base-currency tolerance within `companyGroup.intercompanyMatchingTolerance`, default 1.00), recording `intercompanyTransaction.differenceKind`/`matchedDifference`. `generateEliminations` creates reversing entries for consolidation and posts any FX/tolerance residual to `accountDefault.intercompanyDifferenceAccount` (account 7095; unset ⇒ explicit error, never a silent imbalance). Netting (`intercompanyNettingStatement`) turns the balance matrix into paired zero-cash settlements through `accountDefault.intercompanyNettingAccount` (1135); document mirroring (`intercompanyDocumentLink`) drafts a partner-company SO/purchase-invoice on PO release / sales-invoice post via an Inngest job.
 - **Net Income** — computed equity line on the balance sheet, never a posted account. Uses synthetic `NET_INCOME_ACCOUNT_ID` constant.
 
 ## Safety
@@ -60,6 +60,9 @@ pnpm --filter @carbon/erp test -- --testPathPattern=accounting
 | `depreciationRun` / `depreciationRunLine` | Batch depreciation processing |
 | `fixedAssetDisposal` / `fixedAssetUsageLog` | Asset disposal and usage tracking |
 | `intercompanyTransaction` | Cross-company transaction matching |
+| `intercompanyNettingStatement` / `intercompanyNettingStatementLine` | Netting workbench statements + settled invoice lines |
+| `intercompanyDocumentLink` | PO→SO / invoice mirror links + status machine (Pending→Mirrored/Failed/Exception/Detached) |
+| `intercompanyItemLink` | Cross-company item map for mirroring, auto-seeded by `(readableId, revision, type)` |
 | `fiscalYearSettings` | Fiscal and tax year configuration |
 
 ## Key Service Functions

@@ -349,6 +349,8 @@ export type Database = {
           finishedGoodsAccount: string
           goodsReceivedNotInvoicedAccount: string
           indirectCostAccount: string
+          intercompanyDifferenceAccount: string | null
+          intercompanyNettingAccount: string | null
           intercompanyReceivablesAccount: string | null
           interestAccount: string
           inventoryAdjustmentVarianceAccount: string
@@ -403,6 +405,8 @@ export type Database = {
           finishedGoodsAccount: string
           goodsReceivedNotInvoicedAccount: string
           indirectCostAccount: string
+          intercompanyDifferenceAccount?: string | null
+          intercompanyNettingAccount?: string | null
           intercompanyReceivablesAccount?: string | null
           interestAccount: string
           inventoryAdjustmentVarianceAccount: string
@@ -457,6 +461,8 @@ export type Database = {
           finishedGoodsAccount?: string
           goodsReceivedNotInvoicedAccount?: string
           indirectCostAccount?: string
+          intercompanyDifferenceAccount?: string | null
+          intercompanyNettingAccount?: string | null
           intercompanyReceivablesAccount?: string | null
           interestAccount?: string
           inventoryAdjustmentVarianceAccount?: string
@@ -781,6 +787,34 @@ export type Database = {
           {
             foreignKeyName: "accountDefault_indirectCostAccount_fkey"
             columns: ["indirectCostAccount"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "accountDefault_intercompanyDifferenceAccount_fkey"
+            columns: ["intercompanyDifferenceAccount"]
+            isOneToOne: false
+            referencedRelation: "account"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "accountDefault_intercompanyDifferenceAccount_fkey"
+            columns: ["intercompanyDifferenceAccount"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "accountDefault_intercompanyNettingAccount_fkey"
+            columns: ["intercompanyNettingAccount"]
+            isOneToOne: false
+            referencedRelation: "account"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "accountDefault_intercompanyNettingAccount_fkey"
+            columns: ["intercompanyNettingAccount"]
             isOneToOne: false
             referencedRelation: "accounts"
             referencedColumns: ["id"]
@@ -6437,6 +6471,8 @@ export type Database = {
           createdAt: string
           createdBy: string | null
           id: string
+          intercompanyDocumentMirroring: boolean
+          intercompanyMatchingTolerance: number
           name: string
           ownerId: string | null
           updatedAt: string | null
@@ -6446,6 +6482,8 @@ export type Database = {
           createdAt?: string
           createdBy?: string | null
           id?: string
+          intercompanyDocumentMirroring?: boolean
+          intercompanyMatchingTolerance?: number
           name: string
           ownerId?: string | null
           updatedAt?: string | null
@@ -6455,6 +6493,8 @@ export type Database = {
           createdAt?: string
           createdBy?: string | null
           id?: string
+          intercompanyDocumentMirroring?: boolean
+          intercompanyMatchingTolerance?: number
           name?: string
           ownerId?: string | null
           updatedAt?: string | null
@@ -17900,6 +17940,900 @@ export type Database = {
         }
         Relationships: []
       }
+      intercompanyDocumentLink: {
+        Row: {
+          companyGroupId: string
+          createdAt: string
+          createdBy: string | null
+          failureReason: string | null
+          id: string
+          lastSyncedAt: string | null
+          sourceCompanyId: string
+          sourceDocumentId: string
+          sourceDocumentType: string
+          status: string
+          targetCompanyId: string
+          targetDocumentId: string | null
+          targetDocumentType: string
+          updatedAt: string | null
+          updatedBy: string | null
+        }
+        Insert: {
+          companyGroupId: string
+          createdAt?: string
+          createdBy?: string | null
+          failureReason?: string | null
+          id?: string
+          lastSyncedAt?: string | null
+          sourceCompanyId: string
+          sourceDocumentId: string
+          sourceDocumentType: string
+          status?: string
+          targetCompanyId: string
+          targetDocumentId?: string | null
+          targetDocumentType: string
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Update: {
+          companyGroupId?: string
+          createdAt?: string
+          createdBy?: string | null
+          failureReason?: string | null
+          id?: string
+          lastSyncedAt?: string | null
+          sourceCompanyId?: string
+          sourceDocumentId?: string
+          sourceDocumentType?: string
+          status?: string
+          targetCompanyId?: string
+          targetDocumentId?: string | null
+          targetDocumentType?: string
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "intercompanyDocumentLink_companyGroupId_fkey"
+            columns: ["companyGroupId"]
+            isOneToOne: false
+            referencedRelation: "companyGroup"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intercompanyDocumentLink_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intercompanyDocumentLink_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intercompanyDocumentLink_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intercompanyDocumentLink_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intercompanyDocumentLink_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "intercompanyDocumentLink_sourceCompanyId_fkey"
+            columns: ["sourceCompanyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intercompanyDocumentLink_sourceCompanyId_fkey"
+            columns: ["sourceCompanyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intercompanyDocumentLink_sourceCompanyId_fkey"
+            columns: ["sourceCompanyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "intercompanyDocumentLink_sourceCompanyId_fkey"
+            columns: ["sourceCompanyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "intercompanyDocumentLink_targetCompanyId_fkey"
+            columns: ["targetCompanyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intercompanyDocumentLink_targetCompanyId_fkey"
+            columns: ["targetCompanyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intercompanyDocumentLink_targetCompanyId_fkey"
+            columns: ["targetCompanyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "intercompanyDocumentLink_targetCompanyId_fkey"
+            columns: ["targetCompanyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "intercompanyDocumentLink_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intercompanyDocumentLink_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intercompanyDocumentLink_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intercompanyDocumentLink_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intercompanyDocumentLink_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+        ]
+      }
+      intercompanyItemLink: {
+        Row: {
+          companyGroupId: string
+          createdAt: string
+          createdBy: string | null
+          id: string
+          matchMethod: string
+          readableIdWithRevision: string
+          sourceCompanyId: string
+          sourceItemId: string
+          targetCompanyId: string
+          targetItemId: string
+          updatedAt: string | null
+          updatedBy: string | null
+        }
+        Insert: {
+          companyGroupId: string
+          createdAt?: string
+          createdBy?: string | null
+          id?: string
+          matchMethod?: string
+          readableIdWithRevision: string
+          sourceCompanyId: string
+          sourceItemId: string
+          targetCompanyId: string
+          targetItemId: string
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Update: {
+          companyGroupId?: string
+          createdAt?: string
+          createdBy?: string | null
+          id?: string
+          matchMethod?: string
+          readableIdWithRevision?: string
+          sourceCompanyId?: string
+          sourceItemId?: string
+          targetCompanyId?: string
+          targetItemId?: string
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "intercompanyItemLink_companyGroupId_fkey"
+            columns: ["companyGroupId"]
+            isOneToOne: false
+            referencedRelation: "companyGroup"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intercompanyItemLink_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intercompanyItemLink_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intercompanyItemLink_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intercompanyItemLink_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intercompanyItemLink_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "intercompanyItemLink_sourceCompanyId_fkey"
+            columns: ["sourceCompanyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intercompanyItemLink_sourceCompanyId_fkey"
+            columns: ["sourceCompanyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intercompanyItemLink_sourceCompanyId_fkey"
+            columns: ["sourceCompanyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "intercompanyItemLink_sourceCompanyId_fkey"
+            columns: ["sourceCompanyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "intercompanyItemLink_sourceItemId_fkey"
+            columns: ["sourceItemId"]
+            isOneToOne: false
+            referencedRelation: "consumables"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intercompanyItemLink_sourceItemId_fkey"
+            columns: ["sourceItemId"]
+            isOneToOne: false
+            referencedRelation: "item"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intercompanyItemLink_sourceItemId_fkey"
+            columns: ["sourceItemId"]
+            isOneToOne: false
+            referencedRelation: "materials"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intercompanyItemLink_sourceItemId_fkey"
+            columns: ["sourceItemId"]
+            isOneToOne: false
+            referencedRelation: "parts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intercompanyItemLink_sourceItemId_fkey"
+            columns: ["sourceItemId"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intercompanyItemLink_sourceItemId_fkey"
+            columns: ["sourceItemId"]
+            isOneToOne: false
+            referencedRelation: "tools"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intercompanyItemLink_targetCompanyId_fkey"
+            columns: ["targetCompanyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intercompanyItemLink_targetCompanyId_fkey"
+            columns: ["targetCompanyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intercompanyItemLink_targetCompanyId_fkey"
+            columns: ["targetCompanyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "intercompanyItemLink_targetCompanyId_fkey"
+            columns: ["targetCompanyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "intercompanyItemLink_targetItemId_fkey"
+            columns: ["targetItemId"]
+            isOneToOne: false
+            referencedRelation: "consumables"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intercompanyItemLink_targetItemId_fkey"
+            columns: ["targetItemId"]
+            isOneToOne: false
+            referencedRelation: "item"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intercompanyItemLink_targetItemId_fkey"
+            columns: ["targetItemId"]
+            isOneToOne: false
+            referencedRelation: "materials"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intercompanyItemLink_targetItemId_fkey"
+            columns: ["targetItemId"]
+            isOneToOne: false
+            referencedRelation: "parts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intercompanyItemLink_targetItemId_fkey"
+            columns: ["targetItemId"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intercompanyItemLink_targetItemId_fkey"
+            columns: ["targetItemId"]
+            isOneToOne: false
+            referencedRelation: "tools"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intercompanyItemLink_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intercompanyItemLink_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intercompanyItemLink_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intercompanyItemLink_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intercompanyItemLink_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+        ]
+      }
+      intercompanyNettingStatement: {
+        Row: {
+          agreedAt: string | null
+          agreedBy: string | null
+          companyAId: string
+          companyBId: string
+          companyGroupId: string
+          createdAt: string
+          createdBy: string
+          currencyCode: string
+          id: string
+          nettedAmount: number
+          proposedAt: string | null
+          proposedBy: string | null
+          residualAmount: number
+          residualPayerCompanyId: string | null
+          settledAt: string | null
+          settledBy: string | null
+          settlementDate: string | null
+          statementId: string
+          status: string
+          updatedAt: string | null
+          updatedBy: string | null
+        }
+        Insert: {
+          agreedAt?: string | null
+          agreedBy?: string | null
+          companyAId: string
+          companyBId: string
+          companyGroupId: string
+          createdAt?: string
+          createdBy: string
+          currencyCode: string
+          id?: string
+          nettedAmount: number
+          proposedAt?: string | null
+          proposedBy?: string | null
+          residualAmount?: number
+          residualPayerCompanyId?: string | null
+          settledAt?: string | null
+          settledBy?: string | null
+          settlementDate?: string | null
+          statementId: string
+          status?: string
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Update: {
+          agreedAt?: string | null
+          agreedBy?: string | null
+          companyAId?: string
+          companyBId?: string
+          companyGroupId?: string
+          createdAt?: string
+          createdBy?: string
+          currencyCode?: string
+          id?: string
+          nettedAmount?: number
+          proposedAt?: string | null
+          proposedBy?: string | null
+          residualAmount?: number
+          residualPayerCompanyId?: string | null
+          settledAt?: string | null
+          settledBy?: string | null
+          settlementDate?: string | null
+          statementId?: string
+          status?: string
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "intercompanyNettingStatement_agreedBy_fkey"
+            columns: ["agreedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intercompanyNettingStatement_agreedBy_fkey"
+            columns: ["agreedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intercompanyNettingStatement_agreedBy_fkey"
+            columns: ["agreedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intercompanyNettingStatement_agreedBy_fkey"
+            columns: ["agreedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intercompanyNettingStatement_agreedBy_fkey"
+            columns: ["agreedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "intercompanyNettingStatement_companyAId_fkey"
+            columns: ["companyAId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intercompanyNettingStatement_companyAId_fkey"
+            columns: ["companyAId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intercompanyNettingStatement_companyAId_fkey"
+            columns: ["companyAId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "intercompanyNettingStatement_companyAId_fkey"
+            columns: ["companyAId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "intercompanyNettingStatement_companyBId_fkey"
+            columns: ["companyBId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intercompanyNettingStatement_companyBId_fkey"
+            columns: ["companyBId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intercompanyNettingStatement_companyBId_fkey"
+            columns: ["companyBId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "intercompanyNettingStatement_companyBId_fkey"
+            columns: ["companyBId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "intercompanyNettingStatement_companyGroupId_fkey"
+            columns: ["companyGroupId"]
+            isOneToOne: false
+            referencedRelation: "companyGroup"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intercompanyNettingStatement_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intercompanyNettingStatement_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intercompanyNettingStatement_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intercompanyNettingStatement_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intercompanyNettingStatement_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "intercompanyNettingStatement_proposedBy_fkey"
+            columns: ["proposedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intercompanyNettingStatement_proposedBy_fkey"
+            columns: ["proposedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intercompanyNettingStatement_proposedBy_fkey"
+            columns: ["proposedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intercompanyNettingStatement_proposedBy_fkey"
+            columns: ["proposedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intercompanyNettingStatement_proposedBy_fkey"
+            columns: ["proposedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "intercompanyNettingStatement_residualPayerCompanyId_fkey"
+            columns: ["residualPayerCompanyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intercompanyNettingStatement_residualPayerCompanyId_fkey"
+            columns: ["residualPayerCompanyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intercompanyNettingStatement_residualPayerCompanyId_fkey"
+            columns: ["residualPayerCompanyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "intercompanyNettingStatement_residualPayerCompanyId_fkey"
+            columns: ["residualPayerCompanyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "intercompanyNettingStatement_settledBy_fkey"
+            columns: ["settledBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intercompanyNettingStatement_settledBy_fkey"
+            columns: ["settledBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intercompanyNettingStatement_settledBy_fkey"
+            columns: ["settledBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intercompanyNettingStatement_settledBy_fkey"
+            columns: ["settledBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intercompanyNettingStatement_settledBy_fkey"
+            columns: ["settledBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "intercompanyNettingStatement_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intercompanyNettingStatement_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intercompanyNettingStatement_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intercompanyNettingStatement_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intercompanyNettingStatement_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+        ]
+      }
+      intercompanyNettingStatementLine: {
+        Row: {
+          appliedAmount: number
+          companyId: string
+          createdAt: string
+          id: string
+          openAmount: number
+          purchaseInvoiceId: string | null
+          salesInvoiceId: string | null
+          statementId: string
+        }
+        Insert: {
+          appliedAmount: number
+          companyId: string
+          createdAt?: string
+          id?: string
+          openAmount: number
+          purchaseInvoiceId?: string | null
+          salesInvoiceId?: string | null
+          statementId: string
+        }
+        Update: {
+          appliedAmount?: number
+          companyId?: string
+          createdAt?: string
+          id?: string
+          openAmount?: number
+          purchaseInvoiceId?: string | null
+          salesInvoiceId?: string | null
+          statementId?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "intercompanyNettingStatementLine_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intercompanyNettingStatementLine_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intercompanyNettingStatementLine_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "intercompanyNettingStatementLine_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "intercompanyNettingStatementLine_purchaseInvoiceId_fkey"
+            columns: ["purchaseInvoiceId"]
+            isOneToOne: false
+            referencedRelation: "purchaseInvoice"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intercompanyNettingStatementLine_purchaseInvoiceId_fkey"
+            columns: ["purchaseInvoiceId"]
+            isOneToOne: false
+            referencedRelation: "purchaseInvoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intercompanyNettingStatementLine_salesInvoiceId_fkey"
+            columns: ["salesInvoiceId"]
+            isOneToOne: false
+            referencedRelation: "salesInvoice"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intercompanyNettingStatementLine_salesInvoiceId_fkey"
+            columns: ["salesInvoiceId"]
+            isOneToOne: false
+            referencedRelation: "salesInvoiceLocations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intercompanyNettingStatementLine_salesInvoiceId_fkey"
+            columns: ["salesInvoiceId"]
+            isOneToOne: false
+            referencedRelation: "salesInvoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intercompanyNettingStatementLine_statementId_fkey"
+            columns: ["statementId"]
+            isOneToOne: false
+            referencedRelation: "intercompanyNettingStatement"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       intercompanyTransaction: {
         Row: {
           amount: number
@@ -17907,12 +18841,15 @@ export type Database = {
           createdAt: string
           currencyCode: string
           description: string | null
+          differenceKind: string | null
+          documentAmount: number | null
           documentId: string | null
           documentType:
             | Database["public"]["Enums"]["journalLineDocumentType"]
             | null
           eliminationJournalId: string | null
           id: string
+          matchedDifference: number | null
           sourceCompanyId: string
           sourceJournalLineId: string
           status: string
@@ -17926,12 +18863,15 @@ export type Database = {
           createdAt?: string
           currencyCode: string
           description?: string | null
+          differenceKind?: string | null
+          documentAmount?: number | null
           documentId?: string | null
           documentType?:
             | Database["public"]["Enums"]["journalLineDocumentType"]
             | null
           eliminationJournalId?: string | null
           id?: string
+          matchedDifference?: number | null
           sourceCompanyId: string
           sourceJournalLineId: string
           status?: string
@@ -17945,12 +18885,15 @@ export type Database = {
           createdAt?: string
           currencyCode?: string
           description?: string | null
+          differenceKind?: string | null
+          documentAmount?: number | null
           documentId?: string | null
           documentType?:
             | Database["public"]["Enums"]["journalLineDocumentType"]
             | null
           eliminationJournalId?: string | null
           id?: string
+          matchedDifference?: number | null
           sourceCompanyId?: string
           sourceJournalLineId?: string
           status?: string
@@ -33982,6 +34925,7 @@ export type Database = {
           id: string
           journalId: string | null
           memo: string | null
+          nettingStatementId: string | null
           paymentDate: string
           paymentId: string
           paymentType: Database["public"]["Enums"]["paymentType"]
@@ -34009,6 +34953,7 @@ export type Database = {
           id?: string
           journalId?: string | null
           memo?: string | null
+          nettingStatementId?: string | null
           paymentDate: string
           paymentId: string
           paymentType: Database["public"]["Enums"]["paymentType"]
@@ -34036,6 +34981,7 @@ export type Database = {
           id?: string
           journalId?: string | null
           memo?: string | null
+          nettingStatementId?: string | null
           paymentDate?: string
           paymentId?: string
           paymentType?: Database["public"]["Enums"]["paymentType"]
@@ -34169,6 +35115,13 @@ export type Database = {
             columns: ["journalId"]
             isOneToOne: false
             referencedRelation: "journalEntries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_nettingStatementId_fkey"
+            columns: ["nettingStatementId"]
+            isOneToOne: false
+            referencedRelation: "intercompanyNettingStatement"
             referencedColumns: ["id"]
           },
           {
@@ -64772,14 +65725,14 @@ export type Database = {
           },
           {
             foreignKeyName: "partner_id_fkey"
-            columns: ["supplierLocationId"]
+            columns: ["id"]
             isOneToOne: false
             referencedRelation: "supplierLocation"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "partner_id_fkey"
-            columns: ["id"]
+            columns: ["supplierLocationId"]
             isOneToOne: false
             referencedRelation: "supplierLocation"
             referencedColumns: ["id"]
@@ -75713,7 +76666,9 @@ export type Database = {
         Args: { p_company_group_id: string }
         Returns: {
           amount: number
+          differenceKind: string
           id: string
+          matchedDifference: number
           matchedWithId: string
           sourceCompanyId: string
           status: string
