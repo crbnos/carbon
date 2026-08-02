@@ -9,8 +9,9 @@ import {
   getProviderIntegration,
   getSyncOperations,
   getUnmappedPostingAccounts,
+  JOURNAL_ENTRY_SOURCE_TYPES,
   matchAccountsByCode,
-  POSTING_SYNC_DEFAULT_SOURCE_TYPES,
+  POSTING_POLICY,
   ProviderID,
   type QboProvider,
   type RilletProvider,
@@ -444,27 +445,32 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     ? await getAccountMappingTabData(companyId, integrationId, chartAccounts)
     : null;
 
-  // Bridge the resolved v3 settings (per-source-type record) onto the
-  // current v2-shaped Posting tab until the per-source-type policy UI lands
-  // (plan task 1.6). The save action still writes the v2 shape; the schema
-  // shim upgrades it on read.
   const resolvedPostingSettings = isAccountingInstalled
     ? resolvePostingSyncSettings(metadata)
     : null;
+  const mappedAccountCount =
+    accountMapping?.mappings.filter((mapping) => mapping.externalId).length ??
+    0;
   const postingSync = resolvedPostingSettings
     ? {
         settings: {
           enabled: resolvedPostingSettings.enabled,
-          sourceTypes: POSTING_SYNC_DEFAULT_SOURCE_TYPES.filter(
-            (sourceType) =>
-              resolvedPostingSettings.sourceTypes[sourceType].enabled
-          ),
-          includeManual: resolvedPostingSettings.sourceTypes.Manual.enabled,
-          consolidation: resolvedPostingSettings.consolidation,
+          families: resolvedPostingSettings.families,
+          sourceTypes: resolvedPostingSettings.sourceTypes,
           periodLockPolicy: resolvedPostingSettings.periodLockPolicy,
           lockDate: resolvedPostingSettings.lockDate
         },
-        sourceTypeOptions: [...POSTING_SYNC_DEFAULT_SOURCE_TYPES]
+        policy: JOURNAL_ENTRY_SOURCE_TYPES.map((sourceType) => ({
+          sourceType,
+          representation: POSTING_POLICY[sourceType].representation,
+          family: POSTING_POLICY[sourceType].family ?? null
+        })),
+        mappingReadiness: accountMapping
+          ? {
+              mapped: mappedAccountCount,
+              required: mappedAccountCount + accountMapping.unmapped.length
+            }
+          : null
       }
     : null;
 
@@ -674,12 +680,39 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
     const {
       enabled,
-      sourceTypes,
-      includeManual,
-      consolidation,
+      sourceTypeConfigs,
+      familyAr,
+      familyAp,
       periodLockPolicy,
       lockDate
     } = validation.data;
+
+    // "<sourceType>|<granularity>" hidden fields → the v3 per-source-type
+    // record (journal-represented types only; document-represented types
+    // fill from POSTING_POLICY defaults at resolution time)
+    const sourceTypes: Record<
+      string,
+      { enabled: boolean; granularity: "individual" | "daily-summary" }
+    > = {};
+    const enabledConfigs = new Map(
+      sourceTypeConfigs.map((config) => {
+        const separator = config.lastIndexOf("|");
+        return [
+          config.slice(0, separator),
+          config.slice(separator + 1) as "individual" | "daily-summary"
+        ] as const;
+      })
+    );
+    for (const sourceType of JOURNAL_ENTRY_SOURCE_TYPES) {
+      if (POSTING_POLICY[sourceType].representation !== "journal") continue;
+      const granularity = enabledConfigs.get(sourceType);
+      sourceTypes[sourceType] = granularity
+        ? { enabled: true, granularity }
+        : {
+            enabled: false,
+            granularity: POSTING_POLICY[sourceType].defaultGranularity
+          };
+    }
 
     const existing = await getIntegration(client, integrationId, companyId);
     if (existing.error || !existing.data) {
@@ -698,10 +731,18 @@ export async function action({ request, params }: ActionFunctionArgs) {
       (existingMetadata.settings as Record<string, unknown> | undefined) ?? {};
     // Spread the existing postingSync so keys this form doesn't own —
     // lastReconciliation is written by the weekly reconciliation cron —
-    // survive a settings save
-    const existingPostingSync =
-      (existingSettings.postingSync as Record<string, unknown> | undefined) ??
-      {};
+    // survive a settings save. The v2 shim-marker keys (includeManual,
+    // consolidation, the legacy sourceTypes array) are stripped: saving
+    // writes the v3 shape, and leaving a marker behind would make the
+    // schema shim mis-read the stored fragment as v2.
+    const {
+      includeManual: _legacyIncludeManual,
+      consolidation: _legacyConsolidation,
+      sourceTypes: _legacySourceTypes,
+      ...existingPostingSync
+    } = ((existingSettings.postingSync as
+      | Record<string, unknown>
+      | undefined) ?? {}) as Record<string, unknown>;
 
     // The Posting toggle must flip BOTH gates: the syncers' shouldSync
     // reads settings.postingSync.enabled, while the enqueue path
@@ -722,9 +763,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
         postingSync: {
           ...existingPostingSync,
           enabled,
+          families: { ar: familyAr, ap: familyAp },
           sourceTypes,
-          includeManual,
-          consolidation,
           periodLockPolicy,
           ...(lockDate ? { lockDate } : {})
         }
@@ -962,7 +1002,8 @@ export default function IntegrationRoute() {
       content: (
         <PostingSyncSettings
           settings={postingSync.settings}
-          sourceTypeOptions={postingSync.sourceTypeOptions}
+          policy={postingSync.policy}
+          mappingReadiness={postingSync.mappingReadiness}
         />
       )
     });

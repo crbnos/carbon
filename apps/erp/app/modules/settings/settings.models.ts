@@ -428,17 +428,29 @@ export const accountMappingBulkUpsertValidator = z.object({
 
 /**
  * Posting-sync settings persisted (deep-merged) at
- * companyIntegration.metadata.settings.postingSync. Field semantics mirror
- * @carbon/ee/accounting's PostingSyncSettingsSchema; switches arrive as
- * checkbox values ("on"/absent) and the sourceTypes checklist as a
- * repeated field.
+ * companyIntegration.metadata.settings.postingSync in the v3 shape. Field
+ * semantics mirror @carbon/ee/accounting's PostingSyncSettingsSchema:
+ * `sourceTypeConfigs` is a repeated hidden field of
+ * "<sourceType>|<granularity>" for the ENABLED journal-represented source
+ * types (absent = disabled); `familyAr`/`familyAp` are the AR/AP
+ * representation modes ("journals" is schema-valid but UI-gated until the
+ * spec's Phase 4 ships).
  */
 export const postingSyncSettingsValidator = z.object({
   intent: z.literal("update-posting-settings"),
   enabled: zfd.checkbox(),
-  sourceTypes: zfd.repeatable(z.array(z.string())),
-  includeManual: zfd.checkbox(),
-  consolidation: z.enum(["individual", "daily"]),
+  sourceTypeConfigs: zfd.repeatable(
+    z.array(
+      z
+        .string()
+        .regex(
+          /^[^|]+\|(individual|daily-summary)$/,
+          "Malformed source-type config"
+        )
+    )
+  ),
+  familyAr: z.enum(["documents", "journals", "none"]),
+  familyAp: z.enum(["documents", "journals", "none"]),
   periodLockPolicy: z.enum(["park", "redate"]),
   lockDate: zfd.text(z.string().optional())
 });

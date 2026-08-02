@@ -73,6 +73,11 @@ msgstr "{0} lançamentos de diário em rascunho"
 msgid "{0} lines to map"
 msgstr "{0} linhas para mapear"
 
+#. placeholder {0}: mappingReadiness.mapped
+#. placeholder {1}: mappingReadiness.required
+msgid "{0} of {1} posting accounts mapped"
+msgstr "{0} de {1} contas de lançamento mapeadas"
+
 #. placeholder {0}: history.length
 msgid "{0} orders"
 msgstr "{0} pedidos"
@@ -1035,6 +1040,9 @@ msgstr "Qualquer tipo de item"
 msgid "Anything not explicitly listed in scope above"
 msgstr "Qualquer coisa não explicitamente listada no escopo acima"
 
+msgid "AP"
+msgstr "AP"
+
 msgid "AP Clerk"
 msgstr "Assistente de Contas a Pagar"
 
@@ -1147,6 +1155,12 @@ msgstr "AQL"
 msgid "AQL (Z1.4 / ISO 2859-1)"
 msgstr "AQL (Z1.4 / ISO 2859-1)"
 
+msgid "AR"
+msgstr "AR"
+
+msgid "AR / AP representation"
+msgstr "Representação AR / AP"
+
 msgid "AR Clerk"
 msgstr "Funcionário de Contas a Receber"
 
@@ -1155,6 +1169,9 @@ msgstr "AR Pendente"
 
 msgid "AR Overdue"
 msgstr "AR Vencido"
+
+msgid "AR/AP"
+msgstr "AR/AP"
 
 msgid "Archive"
 msgstr "Arquivo"
@@ -2729,9 +2746,6 @@ msgstr "O modo console está ativado"
 
 msgid "Console Operator"
 msgstr "Operador de Console"
-
-msgid "Consolidation"
-msgstr "Consolidação"
 
 msgid "consumable"
 msgstr "consumível"
@@ -4391,6 +4405,9 @@ msgstr "Documento:"
 
 msgid "Documents"
 msgstr "Documentos"
+
+msgid "Documents pushes invoices, bills and payments as native provider documents; their journals are recorded as covered by the document. Off records them as deliberately excluded."
+msgstr "Documentos envia faturas, contas e pagamentos como documentos nativos do provedor; seus lançamentos são registrados como cobertos pelo documento. Desativado registra-os como deliberadamente excluídos."
 
 msgid "Don't Cancel"
 msgstr "Não Cancelar"
@@ -6665,12 +6682,6 @@ msgstr "Materiais Indiretos e Serviços"
 msgid "Indirect Materials & Services (default)"
 msgstr "Materiais Indiretos e Serviços (padrão)"
 
-msgid "Individual"
-msgstr "Individual"
-
-msgid "Individual pushes one provider journal per Carbon journal. Daily summary pushes one aggregated journal per posting date."
-msgstr "Individual envia um periódico de provedor por periódico Carbon. O resumo diário envia um periódico agregado por data de lançamento."
-
 msgid "Infrastructure"
 msgstr "Infraestrutura"
 
@@ -7643,9 +7654,6 @@ msgstr "Gerente"
 msgid "Manual"
 msgstr "Manual"
 
-msgid "Manual journals are pushed only when explicitly enabled."
-msgstr "Os periódicos manuais são enviados apenas quando explicitamente habilitados."
-
 msgid "Manufacturer"
 msgstr "Fabricante"
 
@@ -7654,6 +7662,9 @@ msgstr "Número de Peça do Fabricante"
 
 msgid "Manufacturing"
 msgstr "Fabricação"
+
+msgid "Map accounts"
+msgstr "Mapear contas"
 
 msgid "Map Carbon accounts to the provider's chart of accounts. Posted journals push using the mapped provider account code."
 msgstr "Mapeie contas Carbon para o plano de contas do provedor. Os periódicos lançados são enviados usando o código de conta de provedor mapeado."
@@ -8895,6 +8906,9 @@ msgstr "OEM (fabricante de equipamento original)"
 msgid "of"
 msgstr "de"
 
+msgid "Off — handled outside the sync"
+msgstr "Desativado — tratado fora da sincronização"
+
 msgid "Off — released revisions stay editable"
 msgstr "Desativado — revisões lançadas permanecem editáveis"
 
@@ -9413,6 +9427,9 @@ msgstr "Taxa de Pagamento"
 msgid "Payables"
 msgstr "Contas a Pagar (padrão)"
 
+msgid "Payables (AP)"
+msgstr "Contas a Pagar (AP)"
+
 msgid "Payables (default)"
 msgstr "prazo de pagamento"
 
@@ -9734,8 +9751,8 @@ msgstr "Postado em"
 msgid "Posted By"
 msgstr "Postado Por"
 
-msgid "Posted journals with these source types are pushed. Document-backed journals (invoices, payments) are always excluded — the synced document already books them."
-msgstr "Os periódicos lançados com estes tipos de origem são enviados. Os periódicos com suporte de documento (faturas, pagamentos) são sempre excluídos — o documento sincronizado já os registra."
+msgid "Posted journals with these source types are pushed. Daily summary groups a day's journals into one provider entry per account."
+msgstr "Lançamentos contabilizados com esses tipos de origem são enviados. Resumo diário agrupa os lançamentos de um dia em uma entrada de provedor por conta."
 
 msgid "Posted once, corrected {corrections} times."
 msgstr "Lançado uma vez, corrigido {corrections} vezes."
@@ -10379,6 +10396,9 @@ msgstr "ID legível"
 msgid "Reading the document..."
 msgstr "Lendo o documento..."
 
+msgid "Ready"
+msgstr "Pronto"
+
 msgid "Ready for Quote"
 msgstr "Pronto para Cotação"
 
@@ -10450,6 +10470,9 @@ msgstr "Recebimentos, remessas, faturas de vendas, faturas de compra, pagamentos
 
 msgid "Receivables"
 msgstr "Contas a Receber (padrão)"
+
+msgid "Receivables (AR)"
+msgstr "Contas a Receber (AR)"
 
 msgid "Receivables (default)"
 msgstr "Reconciliação de um pedido de compra com o que foi recebido e faturado — implícito em Carbon, através das quantidades de linha e saldo GR/IR."

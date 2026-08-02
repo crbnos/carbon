@@ -2,61 +2,120 @@ import {
   Boolean as BooleanField,
   DatePicker,
   Radios,
+  Select,
   Submit,
   ValidatedForm
 } from "@carbon/form";
-import { Checkbox, DrawerBody, DrawerFooter, HStack } from "@carbon/react";
+import {
+  Badge,
+  Checkbox,
+  DrawerBody,
+  DrawerFooter,
+  HStack
+} from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
 import { usePermissions } from "~/hooks";
 import { postingSyncSettingsValidator } from "~/modules/settings/settings.models";
 
 /**
- * Local structural mirror of @carbon/ee/accounting's PostingSyncSettings
- * (z.output of PostingSyncSettingsSchema). Deliberately NOT imported (even
- * type-only) to keep this component's type graph light: marginal additions
- * around the settings module push unrelated supabase select-string parses
- * over TS2589's instantiation-depth limit (see SyncActivity.tsx and the
- * note in ./index.ts — this component isn't barrel-exported for the same
- * reason). The route passes the resolved settings, so drift fails
+ * Local structural mirrors of @carbon/ee/accounting's PostingSyncSettings /
+ * POSTING_POLICY rows (v3). Deliberately NOT imported (even type-only) to
+ * keep this component's type graph light: marginal additions around the
+ * settings module push unrelated supabase select-string parses over
+ * TS2589's instantiation-depth limit (see SyncActivity.tsx and the note in
+ * ./index.ts — this component isn't barrel-exported for the same reason).
+ * The route passes the resolved settings + policy rows, so drift fails
  * typecheck at that call site.
  */
+export type PostingSyncFamilyMode = "documents" | "journals" | "none";
+
 export type PostingSyncSettingsValues = {
   enabled: boolean;
-  /** Overrides the default source-type list when present. */
-  sourceTypes?: string[];
-  includeManual: boolean;
-  consolidation: "individual" | "daily";
+  families: { ar: PostingSyncFamilyMode; ap: PostingSyncFamilyMode };
+  sourceTypes: Record<
+    string,
+    { enabled: boolean; granularity: "individual" | "daily-summary" }
+  >;
   periodLockPolicy: "park" | "redate";
   lockDate?: string;
 };
 
+export type PostingSyncPolicyRow = {
+  sourceType: string;
+  representation: "journal" | "document";
+  family: "ar" | "ap" | "per-line" | null;
+};
+
 type PostingSyncSettingsProps = {
   settings: PostingSyncSettingsValues;
-  /** Full pushable source-type list (the defaults), provided by the loader. */
-  sourceTypeOptions: string[];
+  /** POSTING_POLICY rows (every source type), provided by the loader. */
+  policy: PostingSyncPolicyRow[];
+  /** Posting-account mapping coverage, from the account-mapping tab data. */
+  mappingReadiness: { mapped: number; required: number } | null;
+};
+
+type SourceTypeRowState = {
+  enabled: boolean;
+  dailySummary: boolean;
 };
 
 export function PostingSyncSettings({
   settings,
-  sourceTypeOptions
+  policy,
+  mappingReadiness
 }: PostingSyncSettingsProps) {
   const { t } = useLingui();
   const permissions = usePermissions();
   const canUpdate = permissions.can("update", "settings");
 
-  // No stored override means the defaults (the full list) are enabled.
-  const [enabledSourceTypes, setEnabledSourceTypes] = useState<string[]>(
-    () => settings.sourceTypes ?? sourceTypeOptions
+  const journalRows = policy.filter((row) => row.representation === "journal");
+  const documentRows = policy.filter(
+    (row) => row.representation === "document"
   );
-  const [includeManual, setIncludeManual] = useState(settings.includeManual);
 
-  const toggleSourceType = (sourceType: string, checked: boolean) => {
-    setEnabledSourceTypes((current) =>
-      checked
-        ? [...current.filter((value) => value !== sourceType), sourceType]
-        : current.filter((value) => value !== sourceType)
-    );
+  const [rowState, setRowState] = useState<Record<string, SourceTypeRowState>>(
+    () =>
+      Object.fromEntries(
+        journalRows.map((row) => {
+          const config = settings.sourceTypes[row.sourceType];
+          return [
+            row.sourceType,
+            {
+              enabled: config?.enabled ?? false,
+              dailySummary: config?.granularity === "daily-summary"
+            }
+          ];
+        })
+      )
+  );
+
+  const setRow = (
+    sourceType: string,
+    patch: Partial<SourceTypeRowState>
+  ): void => {
+    setRowState((current) => ({
+      ...current,
+      [sourceType]: {
+        enabled: current[sourceType]?.enabled ?? false,
+        dailySummary: current[sourceType]?.dailySummary ?? false,
+        ...patch
+      }
+    }));
+  };
+
+  // The AR/AP "journals" representation ships with Phase 4 of the v3 spec;
+  // until then only documents/none are offered.
+  const familyOptions = [
+    { label: t`Documents`, value: "documents" },
+    { label: t`Off — handled outside the sync`, value: "none" }
+  ];
+
+  const familyLabel = (family: PostingSyncPolicyRow["family"]) => {
+    if (family === "ar") return t`AR`;
+    if (family === "ap") return t`AP`;
+    if (family === "per-line") return t`AR/AP`;
+    return null;
   };
 
   return (
@@ -66,24 +125,34 @@ export function PostingSyncSettings({
       defaultValues={{
         intent: "update-posting-settings",
         enabled: settings.enabled,
-        consolidation: settings.consolidation,
+        familyAr:
+          settings.families.ar === "journals"
+            ? "documents"
+            : settings.families.ar,
+        familyAp:
+          settings.families.ap === "journals"
+            ? "documents"
+            : settings.families.ap,
         periodLockPolicy: settings.periodLockPolicy,
         lockDate: settings.lockDate
       }}
       className="flex h-full min-h-0 flex-1 flex-col"
     >
       <input type="hidden" name="intent" value="update-posting-settings" />
-      {enabledSourceTypes
-        .filter((sourceType) => sourceTypeOptions.includes(sourceType))
-        .map((sourceType) => (
+      {journalRows
+        .filter((row) => rowState[row.sourceType]?.enabled)
+        .map((row) => (
           <input
-            key={sourceType}
+            key={row.sourceType}
             type="hidden"
-            name="sourceTypes"
-            value={sourceType}
+            name="sourceTypeConfigs"
+            value={`${row.sourceType}|${
+              rowState[row.sourceType]?.dailySummary
+                ? "daily-summary"
+                : "individual"
+            }`}
           />
         ))}
-      {includeManual && <input type="hidden" name="includeManual" value="on" />}
       <DrawerBody className="gap-6">
         <BooleanField
           name="enabled"
@@ -91,6 +160,28 @@ export function PostingSyncSettings({
           label={t`Enable posting sync`}
           description={t`Push posted journals for the enabled source types to the accounting provider.`}
         />
+        {mappingReadiness && (
+          <div className="flex items-center justify-between rounded-lg border border-border px-3 py-2.5 text-sm">
+            <span>
+              <Trans>
+                {mappingReadiness.mapped} of {mappingReadiness.required} posting
+                accounts mapped
+              </Trans>
+            </span>
+            {mappingReadiness.mapped < mappingReadiness.required ? (
+              <a
+                className="text-primary underline-offset-2 hover:underline"
+                href="?tab=account-mapping"
+              >
+                <Trans>Map accounts</Trans>
+              </a>
+            ) : (
+              <Badge variant="green">
+                <Trans>Ready</Trans>
+              </Badge>
+            )}
+          </div>
+        )}
 
         <section className="flex w-full flex-col gap-2">
           <div className="flex flex-col gap-0.5">
@@ -99,76 +190,99 @@ export function PostingSyncSettings({
             </span>
             <p className="text-xs text-muted-foreground">
               <Trans>
-                Posted journals with these source types are pushed.
-                Document-backed journals (invoices, payments) are always
-                excluded — the synced document already books them.
+                Posted journals with these source types are pushed. Daily
+                summary groups a day's journals into one provider entry per
+                account.
               </Trans>
             </p>
           </div>
           <div className="flex w-full flex-col divide-y divide-border rounded-lg border border-border">
-            {sourceTypeOptions.map((sourceType) => {
-              const checked = enabledSourceTypes.includes(sourceType);
+            {journalRows.map((row) => {
+              const state = rowState[row.sourceType];
               return (
                 <div
-                  key={sourceType}
+                  key={row.sourceType}
                   className="flex items-center gap-3 px-3 py-2.5"
                 >
                   <Checkbox
-                    id={`postingSourceType:${sourceType}`}
-                    checked={checked}
+                    id={`postingSourceType:${row.sourceType}`}
+                    checked={state?.enabled ?? false}
                     disabled={!canUpdate}
                     onCheckedChange={(next) =>
-                      toggleSourceType(sourceType, next === true)
+                      setRow(row.sourceType, { enabled: next === true })
                     }
                   />
                   <label
-                    htmlFor={`postingSourceType:${sourceType}`}
-                    className="cursor-pointer text-sm"
+                    htmlFor={`postingSourceType:${row.sourceType}`}
+                    className="flex-1 cursor-pointer text-sm"
                   >
-                    {sourceType}
+                    {row.sourceType}
                   </label>
+                  {state?.enabled && (
+                    <div className="flex items-center gap-2">
+                      <Checkbox
+                        id={`postingGranularity:${row.sourceType}`}
+                        checked={state.dailySummary}
+                        disabled={!canUpdate}
+                        onCheckedChange={(next) =>
+                          setRow(row.sourceType, {
+                            dailySummary: next === true
+                          })
+                        }
+                      />
+                      <label
+                        htmlFor={`postingGranularity:${row.sourceType}`}
+                        className="cursor-pointer text-xs text-muted-foreground"
+                      >
+                        <Trans>Daily summary</Trans>
+                      </label>
+                    </div>
+                  )}
                 </div>
               );
             })}
           </div>
-          <div className="flex w-full items-center gap-3 rounded-lg border border-border px-3 py-2.5">
-            <Checkbox
-              id="postingSourceType:Manual"
-              checked={includeManual}
-              disabled={!canUpdate}
-              onCheckedChange={(next) => setIncludeManual(next === true)}
-            />
-            <div className="flex flex-col">
-              <label
-                htmlFor="postingSourceType:Manual"
-                className="cursor-pointer text-sm"
-              >
-                <Trans>Manual</Trans>
-              </label>
-              <span className="text-xs text-muted-foreground">
-                <Trans>
-                  Manual journals are pushed only when explicitly enabled.
-                </Trans>
-              </span>
-            </div>
-          </div>
         </section>
 
-        <section className="flex w-full flex-col gap-3 border-t border-border pt-4">
-          <Radios
-            name="consolidation"
-            label={t`Consolidation`}
-            options={[
-              { label: t`Individual`, value: "individual" },
-              { label: t`Daily summary`, value: "daily" }
-            ]}
-          />
-          <p className="text-xs text-muted-foreground">
-            <Trans>
-              Individual pushes one provider journal per Carbon journal. Daily
-              summary pushes one aggregated journal per posting date.
-            </Trans>
-          </p>
+        <section className="flex w-full flex-col gap-2 border-t border-border pt-4">
+          <div className="flex flex-col gap-0.5">
+            <span className="text-[0.6875rem] font-semibold uppercase tracking-wider text-foreground/70">
+              <Trans>AR / AP representation</Trans>
+            </span>
+            <p className="text-xs text-muted-foreground">
+              <Trans>
+                Documents pushes invoices, bills and payments as native provider
+                documents; their journals are recorded as covered by the
+                document. Off records them as deliberately excluded.
+              </Trans>
+            </p>
+          </div>
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+            <Select
+              name="familyAr"
+              label={t`Receivables (AR)`}
+              options={familyOptions}
+            />
+            <Select
+              name="familyAp"
+              label={t`Payables (AP)`}
+              options={familyOptions}
+            />
+          </div>
+          <div className="flex w-full flex-col divide-y divide-border rounded-lg border border-border">
+            {documentRows.map((row) => (
+              <div
+                key={row.sourceType}
+                className="flex items-center gap-3 px-3 py-2.5"
+              >
+                <span className="flex-1 text-sm">{row.sourceType}</span>
+                <Badge variant="secondary">{familyLabel(row.family)}</Badge>
+                <Badge variant="outline">
+                  <Trans>Document</Trans>
+                </Badge>
+              </div>
+            ))}
+          </div>
         </section>
 
         <section className="flex w-full flex-col gap-3 border-t border-border pt-4">

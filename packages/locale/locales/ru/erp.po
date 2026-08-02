@@ -73,6 +73,11 @@ msgstr "{0} черновых записей в журнале"
 msgid "{0} lines to map"
 msgstr "{0} строк для сопоставления"
 
+#. placeholder {0}: mappingReadiness.mapped
+#. placeholder {1}: mappingReadiness.required
+msgid "{0} of {1} posting accounts mapped"
+msgstr "{0} из {1} счетов сопоставлено"
+
 #. placeholder {0}: history.length
 msgid "{0} orders"
 msgstr "{0} заказов"
@@ -1035,6 +1040,9 @@ msgstr "Любой тип товара"
 msgid "Anything not explicitly listed in scope above"
 msgstr "Все, что не указано явно в области действия выше"
 
+msgid "AP"
+msgstr "КЗ"
+
 msgid "AP Clerk"
 msgstr "Специалист по учету кредиторской задолженности"
 
@@ -1147,6 +1155,12 @@ msgstr "AQL"
 msgid "AQL (Z1.4 / ISO 2859-1)"
 msgstr "АПК (Z1.4 / ISO 2859-1)"
 
+msgid "AR"
+msgstr "ДЗ"
+
+msgid "AR / AP representation"
+msgstr "Представление ДЗ/КЗ"
+
 msgid "AR Clerk"
 msgstr "Специалист по расчетам с дебиторами"
 
@@ -1155,6 +1169,9 @@ msgstr "Дебиторская задолженность"
 
 msgid "AR Overdue"
 msgstr "Просроченная дебиторская задолженность"
+
+msgid "AR/AP"
+msgstr "ДЗ/КЗ"
 
 msgid "Archive"
 msgstr "Архив"
@@ -2729,9 +2746,6 @@ msgstr "Режим консоли включен"
 
 msgid "Console Operator"
 msgstr "Оператор консоли"
-
-msgid "Consolidation"
-msgstr "Консолидация"
 
 msgid "consumable"
 msgstr "расходное"
@@ -4391,6 +4405,9 @@ msgstr "Документ:"
 
 msgid "Documents"
 msgstr "Документы"
+
+msgid "Documents pushes invoices, bills and payments as native provider documents; their journals are recorded as covered by the document. Off records them as deliberately excluded."
+msgstr "Документы направляют счета-фактуры, счета и платежи в качестве собственных документов провайдера; их журналы записываются как охватываемые документом. Отключено записывает их как намеренно исключенные."
 
 msgid "Don't Cancel"
 msgstr "Не отменять"
@@ -6665,12 +6682,6 @@ msgstr "Косвенные материалы и услуги"
 msgid "Indirect Materials & Services (default)"
 msgstr "Косвенные материалы и услуги (по умолчанию)"
 
-msgid "Individual"
-msgstr "По отдельности"
-
-msgid "Individual pushes one provider journal per Carbon journal. Daily summary pushes one aggregated journal per posting date."
-msgstr "По отдельности отправляет один журнал системы на один журнал Carbon. Ежедневный отчет отправляет один объединенный журнал на каждую дату проводки."
-
 msgid "Infrastructure"
 msgstr "Инфраструктура"
 
@@ -7643,9 +7654,6 @@ msgstr "Менеджер"
 msgid "Manual"
 msgstr "Ручной"
 
-msgid "Manual journals are pushed only when explicitly enabled."
-msgstr "Ручные журналы отправляются только при явном включении."
-
 msgid "Manufacturer"
 msgstr "Производитель"
 
@@ -7654,6 +7662,9 @@ msgstr "Номер детали производителя"
 
 msgid "Manufacturing"
 msgstr "Производство"
+
+msgid "Map accounts"
+msgstr "Сопоставить счета"
 
 msgid "Map Carbon accounts to the provider's chart of accounts. Posted journals push using the mapped provider account code."
 msgstr "Сопоставьте счета Carbon с планом счетов системы. Проводимые журналы отправляются, используя сопоставленный код счета системы."
@@ -8895,6 +8906,9 @@ msgstr "OEM (производитель оригинального оборуд�
 msgid "of"
 msgstr "из"
 
+msgid "Off — handled outside the sync"
+msgstr "Отключено — обработано вне синхронизации"
+
 msgid "Off — released revisions stay editable"
 msgstr "Выключено — выпущенные версии остаются редактируемыми"
 
@@ -9413,6 +9427,9 @@ msgstr "Курс платежа"
 msgid "Payables"
 msgstr "Кредиторская задолженность (по умолчанию)"
 
+msgid "Payables (AP)"
+msgstr "Кредиторская задолженность (КЗ)"
+
 msgid "Payables (default)"
 msgstr "условие платежа"
 
@@ -9734,8 +9751,8 @@ msgstr "Опубликовано в"
 msgid "Posted By"
 msgstr "Опубликовано"
 
-msgid "Posted journals with these source types are pushed. Document-backed journals (invoices, payments) are always excluded — the synced document already books them."
-msgstr "Проводимые журналы с этими типами источников отправляются. Журналы, основанные на документах (счета-фактуры, платежи), всегда исключаются — синхронизированный документ уже их учитывает."
+msgid "Posted journals with these source types are pushed. Daily summary groups a day's journals into one provider entry per account."
+msgstr "Опубликованные журналы с этими типами источников отправляются. Ежедневная сводка объединяет журналы дня в одну запись провайдера по каждому счету."
 
 msgid "Posted once, corrected {corrections} times."
 msgstr "Опубликовано один раз, исправлено {corrections} раз(а)."
@@ -10379,6 +10396,9 @@ msgstr "Читаемый ID"
 msgid "Reading the document..."
 msgstr "Чтение документа..."
 
+msgid "Ready"
+msgstr "Готово"
+
 msgid "Ready for Quote"
 msgstr "Готово к предложению"
 
@@ -10450,6 +10470,9 @@ msgstr "Приёмки, отгрузки, счета-фактуры продаж
 
 msgid "Receivables"
 msgstr "Дебиторская задолженность (по умолчанию)"
+
+msgid "Receivables (AR)"
+msgstr "Дебиторская задолженность (ДЗ)"
 
 msgid "Receivables (default)"
 msgstr "Сверка заказа на покупку с полученным и выставленным счетом — неявно в Carbon через количество строк и остаток GR/IR."
