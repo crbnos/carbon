@@ -3,7 +3,9 @@ import { ProviderID } from "../../core/models";
 import type {
   AccountingEntityType,
   GlobalSyncConfig,
+  ListChangesResult,
   ProviderCapabilities,
+  ProviderChange,
   ProviderConfig,
   ProviderCredentials
 } from "../../core/types";
@@ -747,7 +749,73 @@ export class QboProvider extends BaseProvider {
 
     return changes;
   }
+
+  /**
+   * QBO's CDC endpoint reaches back at most 30 days; clamped to 29 to
+   * keep a margin for clock skew and call latency.
+   */
+  readonly pullLookbackDays = 29;
+
+  /**
+   * SupportsIncrementalPull: CDC changes for every entity whose RESOLVED
+   * sync config direction includes pull, normalized for the generic
+   * accounting-pull-sweep cron. Push-only entities (item and
+   * purchaseOrder under the defaults) never flow QBO → Carbon and are not
+   * fetched. Unknown entity names are logged and dropped.
+   */
+  async listChanges(args: { since: string }): Promise<ListChangesResult> {
+    const entityNames = (
+      Object.keys(QBO_CDC_ENTITY_TYPES) as QboCdcEntityName[]
+    ).filter((entityName) => {
+      const entityConfig = this.getSyncConfig(QBO_CDC_ENTITY_TYPES[entityName]);
+      return (
+        entityConfig.enabled &&
+        (entityConfig.direction === "pull-from-accounting" ||
+          entityConfig.direction === "two-way")
+      );
+    });
+
+    if (entityNames.length === 0) {
+      return { changes: [] };
+    }
+
+    const entries = await this.changeDataCapture(entityNames, args.since);
+
+    const changes: ProviderChange[] = [];
+    for (const entry of entries) {
+      const entityType =
+        (QBO_CDC_ENTITY_TYPES as Record<string, AccountingEntityType>)[
+          entry.entityName
+        ] ?? null;
+      if (!entityType) {
+        console.warn(
+          `[QBO] ignoring CDC change for unmapped entity "${entry.entityName}"`
+        );
+        continue;
+      }
+      changes.push({
+        entityType,
+        remoteId: entry.id,
+        updatedAt: entry.lastUpdatedTime,
+        deleted: entry.deleted
+      });
+    }
+
+    return { changes };
+  }
 }
+
+/** QBO CDC entity names → Carbon entity types. */
+export const QBO_CDC_ENTITY_TYPES = {
+  Customer: "customer",
+  Vendor: "vendor",
+  Item: "item",
+  Invoice: "invoice",
+  Bill: "bill",
+  PurchaseOrder: "purchaseOrder"
+} as const satisfies Record<string, AccountingEntityType>;
+
+export type QboCdcEntityName = keyof typeof QBO_CDC_ENTITY_TYPES;
 
 /**
  * Envelope returned by GET /cdc. Each CDCResponse carries one

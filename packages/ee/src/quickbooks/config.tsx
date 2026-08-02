@@ -26,8 +26,7 @@ export const QuickBooks = defineIntegration({
 });
 
 /**
- * Shared QuickBooks logo — also used by the QuickBooks Desktop integration
- * config (../quickbooks-desktop/config.tsx). Exported like Onshape's Logo.
+ * QuickBooks logo. Exported like Onshape's Logo.
  */
 export function Logo(props: ComponentProps<"svg">) {
   return (

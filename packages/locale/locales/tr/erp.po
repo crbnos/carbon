@@ -2194,9 +2194,6 @@ msgstr "Carbon sütunu"
 msgid "Carbon is configured the way your company runs, your data is loaded, and your team is confident using it. When that's true, you're ready to go live."
 msgstr "Carbon, şirketinizin çalışma şekline göre yapılandırılmış, verileriniz yüklenmiş ve ekibiniz bunu kullanmakta kendinden emin. Bu doğru olduğunda, canlı yayına geçmeye hazırsınız."
 
-msgid "Carbon issues a username and one-time password for the QuickBooks Web Connector. After generating, download the .qwc file and install it in the Web Connector on the QuickBooks machine."
-msgstr ""
-
 msgid "Carbon leads"
 msgstr "Carbon yönetir"
 
@@ -2331,9 +2328,6 @@ msgstr "Hesap Planı"
 
 msgid "Chat"
 msgstr "Sohbet"
-
-msgid "Check that the QuickBooks machine is on and the QuickBooks Web Connector is running with the Carbon application enabled."
-msgstr ""
 
 msgid "Check the item ledger for any items with a negative on-hand quantity as of period end — usually a missing receipt or an out-of-order posting that distorts inventory value and cost of goods sold. Mark it done once reviewed, or skip with a reason."
 msgstr "Dönem sonunda negatif el altında miktarı olan herhangi bir madde için madde defterini kontrol edin — genellikle eksik bir makbuz veya envanter değerini ve satılan mal maliyetini bozacak düzensiz bir posting vardır. Gözden geçirildikten sonra tamamlandı olarak işaretleyin veya nedenli olarak atlayın."
@@ -2552,9 +2546,6 @@ msgstr "İşi Tamamla"
 msgid "Complete Stock Transfer"
 msgstr "Stok Transferini Tamamla"
 
-msgid "Complete the account mapping so posted journal lines resolve to accounts in your QuickBooks chart of accounts."
-msgstr ""
-
 msgid "Completed"
 msgstr "Tamamlandı"
 
@@ -2723,9 +2714,6 @@ msgstr "Şirketinizin zaten kullandığı dış araçları bağlayın"
 
 msgid "Connected to"
 msgstr "Bağlı"
-
-msgid "Connection"
-msgstr ""
 
 msgid "Console Mode"
 msgstr "Konsol Modu"
@@ -2954,9 +2942,6 @@ msgstr "Parça numarasını kopyala"
 
 msgid "Copy part unique identifier"
 msgstr "Parça benzersiz tanımlayıcısını kopyala"
-
-msgid "Copy password"
-msgstr ""
 
 msgid "Copy PIN"
 msgstr "PIN'i Kopyala"
@@ -4421,9 +4406,6 @@ msgstr "Günlük işlemler bizim olmadan sorunsuz çalıştığında tamamlanır
 
 msgid "Download"
 msgstr "İndir"
-
-msgid "Download .qwc file"
-msgstr ""
 
 #. placeholder {0}: errors.length
 msgid "Download {0} row(s) to fix"
@@ -6076,9 +6058,6 @@ msgstr "Yeni bir 4 haneli PIN oluşturun. Operatörün MES terminallerinde giri�
 msgid "Generate and send customer invoices"
 msgstr "Müşteri faturalarını oluştur ve gönder"
 
-msgid "Generate credentials"
-msgstr ""
-
 msgid "Generate fiscal year"
 msgstr "Mali yıl oluştur"
 
@@ -6604,9 +6583,6 @@ msgstr "Devam ediyor"
 
 msgid "In Progress"
 msgstr "Devam Ediyor"
-
-msgid "In QuickBooks Web Connector, choose Add an Application and select the downloaded carbon-quickbooks.qwc file, then enter the password when prompted. The connector polls Carbon every 5 minutes."
-msgstr ""
 
 msgid "in scope"
 msgstr "kapsamında"
@@ -7242,9 +7218,6 @@ msgstr "Geçen Ay"
 
 msgid "Last Name"
 msgstr "Soyadı"
-
-msgid "Last poll"
-msgstr ""
 
 msgid "Last Quarter"
 msgstr "Son Çeyrek"
@@ -9030,9 +9003,6 @@ msgstr "Aç"
 msgid "Open a change notice"
 msgstr "Bir değişiklik bildirisi aç"
 
-msgid "Open Account Mapping"
-msgstr ""
-
 msgid "Open Actions"
 msgstr "Açık Aksiyonlar"
 
@@ -9113,9 +9083,6 @@ msgstr "Kurulum Haritasını Aç"
 
 msgid "Open transactions"
 msgstr "Açık işlemler"
-
-msgid "Open your company file in QuickBooks as Admin in single-user mode. When the Web Connector first connects, approve the Carbon application certificate — choose \"Yes, always; allow access even if QuickBooks is not running\" so sync runs unattended."
-msgstr ""
 
 msgid "Opened"
 msgstr "Açık"
@@ -9506,9 +9473,6 @@ msgstr "PDF Filigranı"
 msgid "Pending"
 msgstr "Beklemede"
 
-msgid "Pending operations wait for the Web Connector poll. Generate credentials and install the .qwc file below to start syncing."
-msgstr ""
-
 msgid "people"
 msgstr "Sabit kıymetler için dönemsel amortisman gideri"
 
@@ -9583,9 +9547,6 @@ msgstr "Topla"
 
 msgid "Pick a column to sort by"
 msgstr "Sıralamak için bir sütun seçin"
-
-msgid "Pick a conversion date with your bookkeeper. Only documents and journals dated after the cutover should sync — earlier history stays in QuickBooks."
-msgstr ""
 
 msgid "Pick a customer or customer type to view their pricing."
 msgstr "Fiyatlandırmalarını görüntülemek için bir müşteri veya müşteri türü seçin."
@@ -11044,12 +11005,6 @@ msgstr "Yeni çalışanlar için varsayılan izinleri ayarlayan roller"
 msgid "Room to grow without bolting on more tools"
 msgstr "Daha fazla araç eklemeden büyüme için yer"
 
-msgid "Rotate password"
-msgstr ""
-
-msgid "Rotate Web Connector password"
-msgstr ""
-
 msgid "Rounding Account"
 msgstr "Yuvarlama hesabı"
 
@@ -11758,9 +11713,6 @@ msgstr "Kurulum"
 
 msgid "Setup & Controls"
 msgstr "Kurulum ve Kontroller"
-
-msgid "Setup checklist"
-msgstr ""
 
 msgid "Setup instructions"
 msgstr "Kurulum talimatları"
@@ -12876,9 +12828,6 @@ msgstr "Bu lot/seri numarası için düzeltilmiş son kullanma tarihi; mevcut el
 msgid "The currencies you trade in and their rates"
 msgstr "Ticaret yaptığınız para birimleri ve bunların oranları"
 
-msgid "The current password stops working immediately and syncing pauses until you enter the new password in the QuickBooks Web Connector on the QuickBooks machine. The installed .qwc file stays valid — do not re-add it."
-msgstr ""
-
 msgid "The customer record this portal account links to; only contacts already on that customer can be selected as the account holder below."
 msgstr "Bu portal hesabının bağlı olduğu müşteri kaydı; yalnızca bu müşteri üzerinde bulunan kişiler aşağıda hesap sahibi olarak seçilebilir."
 
@@ -13441,12 +13390,6 @@ msgstr "Bu alıntının mallarının gönderileceği depo; müşterinin Sevkiyat
 msgid "The ways equipment fails, for maintenance and quality tracking"
 msgstr "Ekipmanın arızalanma şekilleri, bakım ve kalite takibi için"
 
-msgid "The Web Connector has never connected"
-msgstr ""
-
-msgid "The Web Connector has not polled in the last 24 hours"
-msgstr ""
-
 msgid "The work center's own bin where picked material is staged for production to draw down, as opposed to its warehouse source shelf."
 msgstr "Üretimin çekilmesi için seçilen malzemenin hazırlandığı ve depo kaynak rafının aksine olan iş merkezinin kendi konteynerdir."
 
@@ -13959,9 +13902,6 @@ msgstr "Salı"
 msgid "Turn on the built-in pieces"
 msgstr "Yerleşik parçaları açın"
 
-msgid "Turn QuickBooks inventory features off. Carbon owns inventory and posts its value as journal entries; items sync as non-inventory items."
-msgstr ""
-
 msgid "Type"
 msgstr "Tür"
 
@@ -14292,9 +14232,6 @@ msgstr "Kullanıcı"
 
 msgid "User roles"
 msgstr "Kullanıcı rolleri"
-
-msgid "Username"
-msgstr ""
 
 msgid "users"
 msgstr "kullanıcılar"
@@ -14670,12 +14607,6 @@ msgstr "Doğrulama kodunu {signupEmail}'e gönderdik"
 
 msgid "We've sent you a magic link to sign in to your account."
 msgstr "Hesabınıza giriş yapmak için size bir sihirli bağlantı gönderdik."
-
-msgid "Web Connector connection"
-msgstr ""
-
-msgid "Web Connector password"
-msgstr ""
 
 msgid "Webhook"
 msgstr "Web Kancası"
@@ -15194,9 +15125,6 @@ msgstr "Kullanıcı arayüzü stilini tema ayarları aracılığıyla istediğin
 
 msgid "You can only see this key once. Store it safely."
 msgstr "Bu anahtarı yalnızca bir kez görebilirsiniz. Güvenli bir yerde saklayın."
-
-msgid "You can only see this password once. Enter it in the QuickBooks Web Connector."
-msgstr ""
 
 #. placeholder {0}: new Date(openClockEntry.clockIn).toLocaleString(locale)
 msgid "You clocked in at {0}. You can edit your clock-out time below or acknowledge that you're still working."

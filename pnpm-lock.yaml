@@ -171,9 +171,6 @@ catalogs:
     dompurify:
       specifier: 3.4.0
       version: 3.4.0
-    fast-xml-parser:
-      specifier: 5.3.1
-      version: 5.3.1
     framer-motion:
       specifier: 11.18.2
       version: 11.18.2
@@ -2237,9 +2234,6 @@ importers:
       dompurify:
         specifier: 'catalog:'
         version: 3.4.0
-      fast-xml-parser:
-        specifier: 'catalog:'
-        version: 5.3.1
       kysely:
         specifier: 'catalog:'
         version: 0.28.15
@@ -2280,6 +2274,12 @@ importers:
       '@carbon/config':
         specifier: workspace:*
         version: link:../config
+      '@logtape/logtape':
+        specifier: 'catalog:'
+        version: 2.2.3
+      '@logtape/testing':
+        specifier: 'catalog:'
+        version: 2.2.3(@logtape/logtape@2.2.3)
       '@types/nodemailer':
         specifier: 6.4.21
         version: 6.4.21
@@ -11960,10 +11960,6 @@ packages:
 
   fast-xml-builder@1.1.9:
     resolution: {integrity: sha512-jcyKVSEX13iseJqg7n/KWw+xnu/7fdrZ333Fac54KjHDIELVCfDDJXYIm6DTJ0Su4gSzrhqiK0DzY/wZbF40mw==}
-
-  fast-xml-parser@5.3.1:
-    resolution: {integrity: sha512-jbNkWiv2Ec1A7wuuxk0br0d0aTMUtQ4IkL+l/i1r9PRf6pLXjDgsBsWwO+UyczmQlnehi4Tbc8/KIvxGQe+I/A==}
-    hasBin: true
 
   fast-xml-parser@5.7.2:
     resolution: {integrity: sha512-P7oW7tLbYnhOLQk/Gv7cZgzgMPP/XN03K02/Jy6Y/NHzyIAIpxuZIM/YqAkfiXFPxA2CTm7NtCijK9EDu09u2w==}
@@ -26403,10 +26399,6 @@ snapshots:
   fast-xml-builder@1.1.9:
     dependencies:
       path-expression-matcher: 1.5.0
-
-  fast-xml-parser@5.3.1:
-    dependencies:
-      strnum: 2.3.0
 
   fast-xml-parser@5.7.2:
     dependencies:

@@ -415,7 +415,11 @@ export class QboJournalEntrySyncer extends BaseEntitySyncer<
 
     const sourceTypeSkipReason = getPostingSyncSourceTypeSkipReason(
       local.sourceType,
-      settings
+      settings,
+      {
+        inventoryAdjustmentEntitySyncEnabled:
+          this.provider.getSyncConfig("inventoryAdjustment")?.enabled ?? false
+      }
     );
     if (sourceTypeSkipReason) return sourceTypeSkipReason;
 

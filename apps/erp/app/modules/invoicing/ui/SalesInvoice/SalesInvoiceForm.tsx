@@ -107,12 +107,11 @@ const SalesInvoiceForm = ({ initialValues }: SalesInvoiceFormProps) => {
 
       const [customerData, paymentTermData] = await Promise.all([
         // @ts-ignore TS2589: the composite customerShipping embed sits on the
-        // instantiation-depth cliff — it trips tsc's limit but not tsgo's, and
-        // the cliff returned here when the QBWC SOAP route pulled
-        // @carbon/ee/accounting/qbwc into the program (same class as the
-        // purchasing.service suppression). ts-ignore (not ts-expect-error) is
-        // used so it satisfies both checkers — tsgo would flag an unused
-        // expect-error directive in CI — and it survives the cliff receding.
+        // instantiation-depth cliff — the cliff shifts as unrelated modules
+        // join the program (same class as the purchasing.service
+        // suppression). ts-ignore (not ts-expect-error) is used so it
+        // satisfies both checkers — tsgo would flag an unused expect-error
+        // directive in CI — and it survives the cliff receding.
         carbon
           ?.from("customer")
           .select(

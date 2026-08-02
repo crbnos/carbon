@@ -3,8 +3,8 @@ import { getLogger } from "@carbon/logger";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import z from "zod";
 import type { AccountingProvider } from "../providers";
-import { QbdProvider } from "../providers/quickbooks-desktop";
 import { QboProvider } from "../providers/quickbooks-online";
+import { RilletProvider } from "../providers/rillet";
 import { XeroProvider } from "../providers/xero";
 import type { ProviderID } from "./models";
 import {
@@ -142,9 +142,9 @@ export function getProviderIntegration(
 export function getProviderIntegration(
   client: SupabaseClient<Database>,
   companyId: string,
-  provider: ProviderID.QUICKBOOKS_DESKTOP,
+  provider: ProviderID.RILLET,
   config?: ProviderIntegrationMetadata
-): QbdProvider;
+): RilletProvider;
 export function getProviderIntegration(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -220,10 +220,10 @@ export function getProviderIntegration(
   };
 
   switch (provider) {
-    case "quickbooks-desktop": {
-      // No OAuth client: the Web Connector credentials variant is the
-      // whole connection (the QBWC SOAP handshake performs the real auth)
-      return new QbdProvider({
+    case "rillet": {
+      // API-key provider: no OAuth client and no token refresh — the apiKey
+      // credentials variant is the whole connection
+      return new RilletProvider({
         companyId,
         credentials,
         syncConfig

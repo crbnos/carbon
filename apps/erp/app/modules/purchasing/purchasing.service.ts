@@ -2461,11 +2461,9 @@ export async function getPurchasingRFQSuppliers(
   client: SupabaseClient<Database>,
   purchasingRfqId: string
 ): Promise<PostgrestResponse<PurchasingRfqSupplierWithSupplier>> {
-  // @ts-ignore TS2589 — supabase select-string instantiation depth exceeds
-  // tsgo's limit; the cliff also shifted here when the quickbooks-desktop
-  // connection modules joined the program (same class as the suppression that
-  // previously lived in SalesInvoiceForm.tsx). ts-ignore, not ts-expect-error,
-  // so it satisfies both tsc and tsgo.
+  // @ts-ignore TS2589 — supabase select-string instantiation depth sits on
+  // tsgo's limit; the cliff shifts as unrelated modules join the program.
+  // ts-ignore, not ts-expect-error, so it satisfies both tsc and tsgo.
   return client
     .from("purchasingRfqSupplier")
     .select("*, supplier(id, name)")

@@ -1,17 +1,13 @@
 import { describe, expect, it } from "vitest";
 import {
   compareMonthlyTotals,
-  drainSyncOperations,
-  getAdvancedCdcCursor,
-  getCdcCursorDecision,
-  getCdcEntityType,
-  getCdcIdempotencyScope,
-  getCdcPullEntityNames,
+  getAdvancedPullCursor,
   getDailyConsolidationBatchKey,
-  getDrainTransportSkipReason,
   getJournalPostingDecision,
   getNettedPositiveCents,
   getPositiveCents,
+  getPullCursorDecision,
+  getPullIdempotencyScope,
   getSyncOperationFailureRecord,
   getSyncOperationIdempotencyKey,
   getUtcDateString,
@@ -20,10 +16,9 @@ import {
   isJournalEntryPostingEnabled,
   type JournalPostingEventInput,
   MAX_RECONCILIATION_DRIFT_ENTRIES,
-  mergeCdcCursor,
   mergePostingSyncReconciliation,
+  mergePullCursor,
   partitionConsolidationOperations,
-  QBO_CDC_ENTITY_TYPES,
   toIsoDateString
 } from "./accounting-sync-operations";
 
@@ -671,78 +666,22 @@ describe("mergePostingSyncReconciliation", () => {
   });
 });
 
-// ── QBO CDC decisions (Task C9) ──────────────────────────────────────────────
+// ── Pull-sweep cursor decisions ──────────────────────────────────────────────
 
-describe("getCdcEntityType", () => {
-  it("maps the six CDC entity names onto Carbon entity types", () => {
-    expect(QBO_CDC_ENTITY_TYPES).toEqual({
-      Customer: "customer",
-      Vendor: "vendor",
-      Item: "item",
-      Invoice: "invoice",
-      Bill: "bill",
-      PurchaseOrder: "purchaseOrder"
-    });
-    expect(getCdcEntityType("Customer")).toBe("customer");
-    expect(getCdcEntityType("PurchaseOrder")).toBe("purchaseOrder");
-    expect(getCdcEntityType("Employee")).toBeNull();
-  });
-});
-
-describe("getCdcPullEntityNames", () => {
-  it("watches only entities whose default direction includes pull", () => {
-    // DEFAULT_SYNC_CONFIG: customer/vendor/invoice/bill are two-way;
-    // item and purchaseOrder are push-only and never flow QBO → Carbon
-    expect(getCdcPullEntityNames(undefined)).toEqual([
-      "Customer",
-      "Vendor",
-      "Invoice",
-      "Bill"
-    ]);
-  });
-
-  it("respects stored overrides: pull-capable items join, disabled customers leave", () => {
-    expect(
-      getCdcPullEntityNames({
-        syncConfig: {
-          entities: {
-            item: { direction: "two-way" },
-            customer: { enabled: false },
-            bill: { direction: "pull-from-accounting" }
-          }
-        }
-      })
-    ).toEqual(["Vendor", "Item", "Invoice", "Bill"]);
-  });
-
-  it("returns [] when every pull-capable entity is disabled or push-only", () => {
-    expect(
-      getCdcPullEntityNames({
-        syncConfig: {
-          entities: {
-            customer: { direction: "push-to-accounting" },
-            vendor: { direction: "push-to-accounting" },
-            invoice: { enabled: false },
-            bill: { enabled: false }
-          }
-        }
-      })
-    ).toEqual([]);
-  });
-});
-
-describe("getCdcCursorDecision", () => {
+describe("getPullCursorDecision", () => {
   const now = new Date("2026-07-09T12:00:00.000Z");
   // 29 days before `now` (QBO CDC caps the lookback at 30)
   const clampFloor = "2026-06-10T12:00:00.000Z";
+  const maxLookbackDays = 29;
 
-  it("uses the stored settings.cdcCursor, normalized to UTC", () => {
+  it("uses the stored settings.pullCursor, normalized to UTC", () => {
     expect(
-      getCdcCursorDecision({
+      getPullCursorDecision({
         integrationMetadata: {
-          settings: { cdcCursor: "2026-07-08T13:07:59-07:00" }
+          settings: { pullCursor: "2026-07-08T13:07:59-07:00" }
         },
         integrationUpdatedAt: "2026-07-01T00:00:00.000Z",
+        maxLookbackDays,
         now
       })
     ).toEqual({
@@ -754,9 +693,10 @@ describe("getCdcCursorDecision", () => {
 
   it("defaults to the integration's updatedAt (connect time) when no cursor is stored", () => {
     expect(
-      getCdcCursorDecision({
+      getPullCursorDecision({
         integrationMetadata: { settings: {} },
         integrationUpdatedAt: "2026-07-01T00:00:00.000Z",
+        maxLookbackDays,
         now
       })
     ).toEqual({
@@ -766,13 +706,14 @@ describe("getCdcCursorDecision", () => {
     });
   });
 
-  it("clamps cursors older than the 29-day CDC window and reports it", () => {
+  it("clamps cursors older than a capped provider's window and reports it", () => {
     expect(
-      getCdcCursorDecision({
+      getPullCursorDecision({
         integrationMetadata: {
-          settings: { cdcCursor: "2026-01-01T00:00:00.000Z" }
+          settings: { pullCursor: "2026-01-01T00:00:00.000Z" }
         },
         integrationUpdatedAt: null,
+        maxLookbackDays,
         now
       })
     ).toEqual({
@@ -784,9 +725,10 @@ describe("getCdcCursorDecision", () => {
 
   it("clamps a stale connect-time default the same way", () => {
     expect(
-      getCdcCursorDecision({
+      getPullCursorDecision({
         integrationMetadata: null,
         integrationUpdatedAt: "2026-01-01T00:00:00.000Z",
+        maxLookbackDays,
         now
       })
     ).toEqual({
@@ -798,9 +740,10 @@ describe("getCdcCursorDecision", () => {
 
   it("falls back to the clamp floor when neither a parseable cursor nor updatedAt exists", () => {
     expect(
-      getCdcCursorDecision({
-        integrationMetadata: { settings: { cdcCursor: "not a date" } },
+      getPullCursorDecision({
+        integrationMetadata: { settings: { pullCursor: "not a date" } },
         integrationUpdatedAt: null,
+        maxLookbackDays,
         now
       })
     ).toEqual({
@@ -809,12 +752,42 @@ describe("getCdcCursorDecision", () => {
       source: "fallback"
     });
   });
+
+  it("never clamps a provider without a lookback cap (Rillet)", () => {
+    expect(
+      getPullCursorDecision({
+        integrationMetadata: {
+          settings: { pullCursor: "2026-01-01T00:00:00.000Z" }
+        },
+        integrationUpdatedAt: null,
+        now
+      })
+    ).toEqual({
+      changedSince: "2026-01-01T00:00:00.000Z",
+      clamped: false,
+      source: "cursor"
+    });
+  });
+
+  it("uncapped fallback is `now` when nothing usable is stored", () => {
+    expect(
+      getPullCursorDecision({
+        integrationMetadata: null,
+        integrationUpdatedAt: null,
+        now
+      })
+    ).toEqual({
+      changedSince: now.toISOString(),
+      clamped: false,
+      source: "fallback"
+    });
+  });
 });
 
-describe("getAdvancedCdcCursor", () => {
+describe("getAdvancedPullCursor", () => {
   it("advances to the max LastUpdatedTime seen, normalizing offsets to UTC", () => {
     expect(
-      getAdvancedCdcCursor({
+      getAdvancedPullCursor({
         changedSince: "2026-07-08T00:00:00.000Z",
         lastUpdatedTimes: [
           "2026-07-08T23:00:00Z",
@@ -829,14 +802,14 @@ describe("getAdvancedCdcCursor", () => {
 
   it("never regresses: an empty or all-older change set keeps changedSince", () => {
     expect(
-      getAdvancedCdcCursor({
+      getAdvancedPullCursor({
         changedSince: "2026-07-08T00:00:00.000Z",
         lastUpdatedTimes: []
       })
     ).toBe("2026-07-08T00:00:00.000Z");
 
     expect(
-      getAdvancedCdcCursor({
+      getAdvancedPullCursor({
         changedSince: "2026-07-08T00:00:00.000Z",
         lastUpdatedTimes: ["2026-07-01T00:00:00.000Z", "garbage", null]
       })
@@ -844,19 +817,19 @@ describe("getAdvancedCdcCursor", () => {
   });
 });
 
-describe("getCdcIdempotencyScope", () => {
-  it("scopes by the change's LastUpdatedTime — stable across cron retries", () => {
+describe("getPullIdempotencyScope", () => {
+  it("scopes by the change's updatedAt — stable across cron retries", () => {
     expect(
-      getCdcIdempotencyScope(
+      getPullIdempotencyScope(
         "2026-07-08T13:07:59-07:00",
         "2026-07-08T00:00:00.000Z"
       )
-    ).toBe("cdc:2026-07-08T13:07:59-07:00");
+    ).toBe("pull:2026-07-08T13:07:59-07:00");
   });
 
   it("falls back to the run's changedSince when the record has no timestamp", () => {
-    expect(getCdcIdempotencyScope(null, "2026-07-08T00:00:00.000Z")).toBe(
-      "cdc:2026-07-08T00:00:00.000Z"
+    expect(getPullIdempotencyScope(null, "2026-07-08T00:00:00.000Z")).toBe(
+      "pull:2026-07-08T00:00:00.000Z"
     );
   });
 
@@ -866,28 +839,28 @@ describe("getCdcIdempotencyScope", () => {
         entityType: "customer",
         entityId: "63",
         direction: "pull-from-accounting",
-        scope: getCdcIdempotencyScope(
+        scope: getPullIdempotencyScope(
           "2026-07-08T13:07:59-07:00",
           "2026-07-08T00:00:00.000Z"
         )
       })
-    ).toBe("customer:63:pull-from-accounting:cdc:2026-07-08T13:07:59-07:00");
+    ).toBe("customer:63:pull-from-accounting:pull:2026-07-08T13:07:59-07:00");
   });
 });
 
-describe("mergeCdcCursor", () => {
-  it("writes settings.cdcCursor (NOT under postingSync) preserving every sibling", () => {
+describe("mergePullCursor", () => {
+  it("writes settings.pullCursor (NOT under postingSync) preserving every sibling", () => {
     const metadata = {
       credentials: { type: "oauth2", accessToken: "secret" },
       syncConfig: { entities: { customer: { enabled: true } } },
       settings: {
         postingSync: { enabled: true, consolidation: "daily" },
         other: { keep: true },
-        cdcCursor: "2026-07-01T00:00:00.000Z"
+        pullCursor: "2026-07-01T00:00:00.000Z"
       }
     };
 
-    const merged = mergeCdcCursor(metadata, "2026-07-08T20:07:59.000Z");
+    const merged = mergePullCursor(metadata, "2026-07-08T20:07:59.000Z");
 
     expect(merged.credentials).toEqual(metadata.credentials);
     expect(merged.syncConfig).toEqual(metadata.syncConfig);
@@ -897,69 +870,12 @@ describe("mergeCdcCursor", () => {
       consolidation: "daily"
     });
     expect(settings.other).toEqual({ keep: true });
-    expect(settings.cdcCursor).toBe("2026-07-08T20:07:59.000Z");
+    expect(settings.pullCursor).toBe("2026-07-08T20:07:59.000Z");
   });
 
   it("builds the settings path from nothing", () => {
-    expect(mergeCdcCursor(null, "2026-07-08T00:00:00.000Z")).toEqual({
-      settings: { cdcCursor: "2026-07-08T00:00:00.000Z" }
-    });
-  });
-});
-
-// ── Polled-transport drain gate ──────────────────────────────────────────────
-// Polled providers (QuickBooks Desktop via the Web Connector) never drain
-// through drainSyncOperations: their operations must accumulate as Pending
-// for the QBWC session loop. Only the DRAIN is gated — enqueue paths are
-// untouched.
-
-describe("getDrainTransportSkipReason", () => {
-  it("skips polled-transport providers", () => {
-    expect(getDrainTransportSkipReason({ transport: "polled" })).toBe(
-      "polled-transport"
-    );
-  });
-
-  it("drains REST providers normally", () => {
-    expect(getDrainTransportSkipReason({ transport: "rest" })).toBeNull();
-  });
-
-  it("drains bridge providers normally", () => {
-    expect(getDrainTransportSkipReason({ transport: "bridge" })).toBeNull();
-  });
-
-  it("treats absent capabilities as legacy REST (Xero) and drains", () => {
-    expect(getDrainTransportSkipReason(undefined)).toBeNull();
-  });
-});
-
-describe("drainSyncOperations polled-transport gate", () => {
-  it("returns an empty summary with skippedReason before touching the ledger", async () => {
-    // client/database are never used when the gate fires — empty stubs
-    // prove the early return happens before any claim
-    const summary = await drainSyncOperations({
-      client: {} as never,
-      database: {} as never,
-      companyId: "company-1",
-      integration: "quickbooks-desktop",
-      provider: {
-        id: "quickbooks-desktop",
-        capabilities: {
-          transport: "polled",
-          supportsWebhooks: false,
-          supportsJournalPush: true
-        }
-      } as never,
-      integrationMetadata: null
-    });
-
-    expect(summary).toEqual({
-      claimed: 0,
-      completed: 0,
-      failed: 0,
-      skipped: 0,
-      groups: [],
-      skippedReason: "polled-transport"
+    expect(mergePullCursor(null, "2026-07-08T00:00:00.000Z")).toEqual({
+      settings: { pullCursor: "2026-07-08T00:00:00.000Z" }
     });
   });
 });

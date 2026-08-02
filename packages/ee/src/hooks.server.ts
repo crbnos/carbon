@@ -3,6 +3,11 @@ import { jiraHealthcheck } from "./jira/hooks.server";
 import { linearHealthcheck } from "./linear/hooks.server";
 import { onshapeOnUninstall } from "./onshape/hooks.server";
 import { quickbooksOnInstall } from "./quickbooks/hooks.server";
+import {
+  rilletHealthcheck,
+  rilletOnInstall,
+  rilletOnUninstall
+} from "./rillet/hooks.server";
 import type { IntegrationServerHooks } from "./types";
 
 // Onshape keeps its release webhook subscription in lockstep with the asset-sync
@@ -42,6 +47,11 @@ const serverHooks: Record<string, IntegrationServerHooks> = {
   },
   quickbooks: {
     onInstall: quickbooksOnInstall
+  },
+  rillet: {
+    onHealthcheck: rilletHealthcheck,
+    onInstall: rilletOnInstall,
+    onUninstall: rilletOnUninstall
   },
   xero: {
     onHealthcheck: xeroHealthcheck,

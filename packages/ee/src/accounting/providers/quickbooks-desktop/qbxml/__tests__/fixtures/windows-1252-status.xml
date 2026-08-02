@@ -1,6 +1,0 @@
-<?xml version="1.0" encoding="windows-1252"?>
-<QBXML>
-<QBXMLMsgsRs>
-<InvoiceAddRs requestID="op-inv-7" statusCode="3140" statusSeverity="Error" statusMessage="There is an invalid reference to QuickBooks Item Widget’s Kit in the Invoice line." />
-</QBXMLMsgsRs>
-</QBXML>

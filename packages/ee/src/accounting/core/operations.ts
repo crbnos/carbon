@@ -367,10 +367,9 @@ export async function claimPendingOperations(
 }
 
 /**
- * Fetch operations by id, companyId-scoped. The QBWC work loop re-loads
- * the operations pinned to a session (qbwcSession.claimedOperationIds)
- * across stateless SOAP callbacks — claim state lives in the ledger, not
- * in handler memory.
+ * Fetch operations by id, companyId-scoped. Claim state lives in the
+ * ledger, not in caller memory, so stateless callers can re-load the
+ * operations they hold by id.
  */
 export async function getSyncOperationsByIds(
   client: SupabaseClient<Database>,
@@ -388,13 +387,11 @@ export async function getSyncOperationsByIds(
 }
 
 /**
- * Replace an operation's metadata without touching its status. The QBWC
- * work loop persists polled-transport progression on "In Flight"
- * operations between SOAP callbacks (metadata.qbdPhase before a request is
- * sent, the editSequenceRetry flag on a stale-EditSequence retry) —
- * completeOperation/failOperation cannot express that because they always
- * transition the status. Same replace-not-merge metadata contract as those
- * two.
+ * Replace an operation's metadata without touching its status — for
+ * callers that need to persist progression on an "In Flight" operation
+ * where completeOperation/failOperation don't apply (they always
+ * transition the status). Same replace-not-merge metadata contract as
+ * those two.
  */
 export async function updateOperationMetadata(
   client: SupabaseClient<Database>,

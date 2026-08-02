@@ -13,7 +13,7 @@ function withNullable<T extends z.ZodTypeAny>(schema: T) {
 export enum ProviderID {
   XERO = "xero",
   QUICKBOOKS = "quickbooks",
-  QUICKBOOKS_DESKTOP = "quickbooks-desktop"
+  RILLET = "rillet"
   // SAGE = "sage",
 }
 
@@ -31,12 +31,12 @@ export const ProviderCredentialsSchema = z.discriminatedUnion("type", [
     providerMetadata: z.record(z.string(), z.unknown()).optional() // xero: { tenantId, tenantName }; qbo: { realmId }
   }),
   z.object({
-    type: z.literal("webConnector"),
-    username: z.string(),
-    passwordHash: z.string(),
-    ownerId: z.string(), // GUID in the generated .QWC
-    fileId: z.string().optional(), // stamped on first connect
-    qbxmlVersion: z.string().optional()
+    type: z.literal("apiKey"),
+    apiKey: z.string().min(1),
+    /** Which host the key belongs to — API keys are environment-specific. */
+    environment: z.enum(["production", "sandbox"]).default("production"),
+    // rillet: { subsidiaryId?, webhookToken? }
+    providerMetadata: z.record(z.string(), z.unknown()).optional()
   }),
   z.object({
     type: z.literal("bridge"),
@@ -261,7 +261,9 @@ export const POSTING_SYNC_DEFAULT_SOURCE_TYPES = [
   "Job Receipt",
   "Job Close",
   "Asset Depreciation",
-  "Asset Disposal"
+  "Asset Disposal",
+  "Non-Conformance",
+  "Inbound Inspection"
 ] as const;
 
 /**

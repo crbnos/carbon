@@ -7,6 +7,7 @@ import {
   extractQboErrorDetails,
   isQboDuplicateNameError,
   isQboStaleObjectError,
+  QBO_CDC_ENTITY_TYPES,
   QBO_FAULT_CODES,
   type QboEnvironment,
   QboProvider
@@ -474,5 +475,98 @@ describe("QboProvider entity reads/writes", () => {
 
     const { provider } = makeProvider();
     await expect(provider.getCustomer("missing")).resolves.toBeNull();
+  });
+});
+
+describe("listChanges (SupportsIncrementalPull)", () => {
+  it("maps the six CDC entity names onto Carbon entity types", () => {
+    expect(QBO_CDC_ENTITY_TYPES).toEqual({
+      Customer: "customer",
+      Vendor: "vendor",
+      Item: "item",
+      Invoice: "invoice",
+      Bill: "bill",
+      PurchaseOrder: "purchaseOrder"
+    });
+  });
+
+  it("declares the 29-day CDC lookback cap", () => {
+    const { provider } = makeProvider();
+    expect(provider.pullLookbackDays).toBe(29);
+  });
+
+  it("fetches only pull-direction entities and normalizes changes", async () => {
+    const { provider } = makeProvider();
+
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse({
+        CDCResponse: [
+          {
+            QueryResponse: [
+              {
+                Customer: [
+                  {
+                    Id: "63",
+                    MetaData: { LastUpdatedTime: "2026-07-08T13:07:59-07:00" }
+                  }
+                ],
+                Invoice: [{ Id: "7", status: "Deleted", MetaData: {} }]
+              }
+            ]
+          }
+        ]
+      })
+    );
+
+    const result = await provider.listChanges({
+      since: "2026-07-08T00:00:00.000Z"
+    });
+
+    // DEFAULT_SYNC_CONFIG: customer/vendor/invoice/bill are two-way; item
+    // and purchaseOrder are push-only and never requested
+    const cdcUrl = fetchMock.mock.calls[0]?.[0] as string;
+    expect(cdcUrl).toContain(
+      `entities=${encodeURIComponent("Customer,Vendor,Invoice,Bill")}`
+    );
+
+    expect(result.changes).toEqual([
+      {
+        entityType: "customer",
+        remoteId: "63",
+        updatedAt: "2026-07-08T13:07:59-07:00",
+        deleted: false
+      },
+      {
+        entityType: "invoice",
+        remoteId: "7",
+        updatedAt: null,
+        deleted: true
+      }
+    ]);
+  });
+
+  it("returns no changes without an API call when nothing has a pull direction", async () => {
+    const { provider } = makeProvider();
+    const pushOnlyConfig = structuredClone(DEFAULT_SYNC_CONFIG);
+    for (const entityConfig of Object.values(pushOnlyConfig.entities)) {
+      entityConfig.direction = "push-to-accounting";
+    }
+    const pushOnly = new QboProvider({
+      companyId: "company-1",
+      clientId: "client-id",
+      clientSecret: "client-secret",
+      accessToken: "token",
+      refreshToken: "refresh",
+      realmId: REALM_ID,
+      syncConfig: pushOnlyConfig,
+      onTokenRefresh: async () => undefined
+    });
+
+    const result = await pushOnly.listChanges({
+      since: "2026-07-08T00:00:00.000Z"
+    });
+    expect(result.changes).toEqual([]);
+    expect(fetchMock).not.toHaveBeenCalled();
+    void provider;
   });
 });

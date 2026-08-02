@@ -10,6 +10,14 @@ import { QboItemSyncer } from "../providers/quickbooks-online/entities/item";
 import { QboJournalEntrySyncer } from "../providers/quickbooks-online/entities/journal-entry";
 import { QboPurchaseOrderSyncer } from "../providers/quickbooks-online/entities/purchase-order";
 import { QboVendorSyncer } from "../providers/quickbooks-online/entities/vendor";
+import { rilletSyncerRegistry } from "../providers/rillet";
+import { RilletBillSyncer } from "../providers/rillet/entities/bill";
+import { RilletCustomerSyncer } from "../providers/rillet/entities/customer";
+import { RilletSalesInvoiceSyncer } from "../providers/rillet/entities/invoice";
+import { RilletItemSyncer } from "../providers/rillet/entities/item";
+import { RilletJournalEntrySyncer } from "../providers/rillet/entities/journal-entry";
+import { RilletPaymentSyncer } from "../providers/rillet/entities/payment";
+import { RilletVendorSyncer } from "../providers/rillet/entities/vendor";
 import { xeroSyncerRegistry } from "../providers/xero";
 import { BillSyncer } from "../providers/xero/entities/bill";
 import { ContactSyncer } from "../providers/xero/entities/contact";
@@ -169,6 +177,56 @@ describe("SyncFactory", () => {
     expect(
       SyncFactory.getSyncer(makeContext("journalEntry", qbo))
     ).toBeInstanceOf(QboJournalEntrySyncer);
+  });
+
+  it("registers exactly the expected Rillet entity types", () => {
+    expect(Object.keys(rilletSyncerRegistry).sort()).toEqual(
+      [
+        "bill",
+        "customer",
+        "invoice",
+        "item",
+        "journalEntry",
+        "payment",
+        "vendor"
+      ].sort()
+    );
+  });
+
+  it("constructs instances of the exact registered Rillet classes", () => {
+    const rillet = ProviderID.RILLET;
+    expect(
+      SyncFactory.getSyncer(makeContext("customer", rillet))
+    ).toBeInstanceOf(RilletCustomerSyncer);
+    expect(SyncFactory.getSyncer(makeContext("vendor", rillet))).toBeInstanceOf(
+      RilletVendorSyncer
+    );
+    expect(SyncFactory.getSyncer(makeContext("item", rillet))).toBeInstanceOf(
+      RilletItemSyncer
+    );
+    expect(SyncFactory.getSyncer(makeContext("bill", rillet))).toBeInstanceOf(
+      RilletBillSyncer
+    );
+    expect(
+      SyncFactory.getSyncer(makeContext("invoice", rillet))
+    ).toBeInstanceOf(RilletSalesInvoiceSyncer);
+    expect(
+      SyncFactory.getSyncer(makeContext("journalEntry", rillet))
+    ).toBeInstanceOf(RilletJournalEntrySyncer);
+    expect(
+      SyncFactory.getSyncer(makeContext("payment", rillet))
+    ).toBeInstanceOf(RilletPaymentSyncer);
+  });
+
+  it("throws for entity types Rillet does not implement (no PO endpoint)", () => {
+    expect(() =>
+      SyncFactory.getSyncer(makeContext("purchaseOrder", ProviderID.RILLET))
+    ).toThrow(/No Syncer implementation found/);
+    expect(() =>
+      SyncFactory.getSyncer(
+        makeContext("inventoryAdjustment", ProviderID.RILLET)
+      )
+    ).toThrow(/No Syncer implementation found/);
   });
 
   it("merges when registering the same provider twice", () => {

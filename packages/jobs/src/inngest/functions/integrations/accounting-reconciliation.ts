@@ -479,10 +479,13 @@ export const accountingReconciliationFunction = inngest.createFunction(
     const client = getCarbonServiceRole();
 
     const targets = await step.run("find-posting-sync-targets", async () => {
+      // Xero-only: the reconciliation reader calls Xero-specific provider
+      // methods (getManualJournal). Widening this filter requires a
+      // per-provider journal reader.
       const integrations = await client
         .from("companyIntegration")
         .select("id, companyId, metadata")
-        .in("id", Object.values(ProviderID))
+        .eq("id", ProviderID.XERO)
         .eq("active", true);
 
       if (integrations.error) {

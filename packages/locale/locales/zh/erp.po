@@ -2194,9 +2194,6 @@ msgstr "Carbon 列"
 msgid "Carbon is configured the way your company runs, your data is loaded, and your team is confident using it. When that's true, you're ready to go live."
 msgstr "Carbon已按照您公司的运营方式进行配置，您的数据已加载，您的团队对使用它充满信心。当这一切都实现时，您就可以上线了。"
 
-msgid "Carbon issues a username and one-time password for the QuickBooks Web Connector. After generating, download the .qwc file and install it in the Web Connector on the QuickBooks machine."
-msgstr ""
-
 msgid "Carbon leads"
 msgstr "Carbon 主导"
 
@@ -2331,9 +2328,6 @@ msgstr "会计科目表"
 
 msgid "Chat"
 msgstr "聊天"
-
-msgid "Check that the QuickBooks machine is on and the QuickBooks Web Connector is running with the Carbon application enabled."
-msgstr ""
 
 msgid "Check the item ledger for any items with a negative on-hand quantity as of period end — usually a missing receipt or an out-of-order posting that distorts inventory value and cost of goods sold. Mark it done once reviewed, or skip with a reason."
 msgstr "检查物料分类账中期末库存数量为负的任何物料——通常是缺少收货或发布顺序不对导致库存价值和销货成本失真。审查后标记为完成，或跳过并说明原因。"
@@ -2552,9 +2546,6 @@ msgstr "完成工作"
 msgid "Complete Stock Transfer"
 msgstr "完成库存转移"
 
-msgid "Complete the account mapping so posted journal lines resolve to accounts in your QuickBooks chart of accounts."
-msgstr ""
-
 msgid "Completed"
 msgstr "已完成"
 
@@ -2723,9 +2714,6 @@ msgstr "连接您的公司已在使用的外部工具"
 
 msgid "Connected to"
 msgstr "连接到"
-
-msgid "Connection"
-msgstr ""
 
 msgid "Console Mode"
 msgstr "控制台模式"
@@ -2954,9 +2942,6 @@ msgstr "复制零件号"
 
 msgid "Copy part unique identifier"
 msgstr "复制零件唯一标识符"
-
-msgid "Copy password"
-msgstr ""
 
 msgid "Copy PIN"
 msgstr "复制PIN"
@@ -4421,9 +4406,6 @@ msgstr "完成时日常运营无需我们在场"
 
 msgid "Download"
 msgstr "下载"
-
-msgid "Download .qwc file"
-msgstr ""
 
 #. placeholder {0}: errors.length
 msgid "Download {0} row(s) to fix"
@@ -6076,9 +6058,6 @@ msgstr "生成新的4位PIN码。与操作员分享，以便他们可以在MES�
 msgid "Generate and send customer invoices"
 msgstr "生成并发送客户发票"
 
-msgid "Generate credentials"
-msgstr ""
-
 msgid "Generate fiscal year"
 msgstr "生成会计年度"
 
@@ -6604,9 +6583,6 @@ msgstr "进行中"
 
 msgid "In Progress"
 msgstr "进行中"
-
-msgid "In QuickBooks Web Connector, choose Add an Application and select the downloaded carbon-quickbooks.qwc file, then enter the password when prompted. The connector polls Carbon every 5 minutes."
-msgstr ""
 
 msgid "in scope"
 msgstr "在范围内"
@@ -7242,9 +7218,6 @@ msgstr "上个月"
 
 msgid "Last Name"
 msgstr "姓氏"
-
-msgid "Last poll"
-msgstr ""
 
 msgid "Last Quarter"
 msgstr "上一季度"
@@ -9030,9 +9003,6 @@ msgstr "打开"
 msgid "Open a change notice"
 msgstr "打开更改单"
 
-msgid "Open Account Mapping"
-msgstr ""
-
 msgid "Open Actions"
 msgstr "开放操作"
 
@@ -9113,9 +9083,6 @@ msgstr "打开设置地图"
 
 msgid "Open transactions"
 msgstr "未结交易"
-
-msgid "Open your company file in QuickBooks as Admin in single-user mode. When the Web Connector first connects, approve the Carbon application certificate — choose \"Yes, always; allow access even if QuickBooks is not running\" so sync runs unattended."
-msgstr ""
 
 msgid "Opened"
 msgstr "打开"
@@ -9506,9 +9473,6 @@ msgstr "PDF 水印"
 msgid "Pending"
 msgstr "待处理"
 
-msgid "Pending operations wait for the Web Connector poll. Generate credentials and install the .qwc file below to start syncing."
-msgstr ""
-
 msgid "people"
 msgstr "固定资产定期折旧费用"
 
@@ -9583,9 +9547,6 @@ msgstr "拣选"
 
 msgid "Pick a column to sort by"
 msgstr "选择要排序的列"
-
-msgid "Pick a conversion date with your bookkeeper. Only documents and journals dated after the cutover should sync — earlier history stays in QuickBooks."
-msgstr ""
 
 msgid "Pick a customer or customer type to view their pricing."
 msgstr "选择客户或客户类型以查看其定价。"
@@ -11044,12 +11005,6 @@ msgstr "为新员工设置默认权限的角色"
 msgid "Room to grow without bolting on more tools"
 msgstr "无需添加更多工具即可扩展"
 
-msgid "Rotate password"
-msgstr ""
-
-msgid "Rotate Web Connector password"
-msgstr ""
-
 msgid "Rounding Account"
 msgstr "舍入账户"
 
@@ -11758,9 +11713,6 @@ msgstr "设置"
 
 msgid "Setup & Controls"
 msgstr "设置和控制"
-
-msgid "Setup checklist"
-msgstr ""
 
 msgid "Setup instructions"
 msgstr "设置说明"
@@ -12876,9 +12828,6 @@ msgstr "此批次/序列号的修正有效期；更改后，现有库存会根�
 msgid "The currencies you trade in and their rates"
 msgstr "您交易的货币及其汇率"
 
-msgid "The current password stops working immediately and syncing pauses until you enter the new password in the QuickBooks Web Connector on the QuickBooks machine. The installed .qwc file stays valid — do not re-add it."
-msgstr ""
-
 msgid "The customer record this portal account links to; only contacts already on that customer can be selected as the account holder below."
 msgstr "此门户帐户链接到的客户记录；只有该客户上已有的联系人才能被选为以下帐户持有人。"
 
@@ -13441,12 +13390,6 @@ msgstr "此报价的商品将从其发货的仓库；客户的发货地点是他
 msgid "The ways equipment fails, for maintenance and quality tracking"
 msgstr "设备故障的方式，用于维护和质量跟踪"
 
-msgid "The Web Connector has never connected"
-msgstr ""
-
-msgid "The Web Connector has not polled in the last 24 hours"
-msgstr ""
-
 msgid "The work center's own bin where picked material is staged for production to draw down, as opposed to its warehouse source shelf."
 msgstr "工作中心自己的料仓，用于暂存拣取的物料供生产领用，与其仓库源货架相对。"
 
@@ -13959,9 +13902,6 @@ msgstr "星期二"
 msgid "Turn on the built-in pieces"
 msgstr "启用内置功能"
 
-msgid "Turn QuickBooks inventory features off. Carbon owns inventory and posts its value as journal entries; items sync as non-inventory items."
-msgstr ""
-
 msgid "Type"
 msgstr "类型"
 
@@ -14292,9 +14232,6 @@ msgstr "用户"
 
 msgid "User roles"
 msgstr "用户角色"
-
-msgid "Username"
-msgstr ""
 
 msgid "users"
 msgstr "用户"
@@ -14670,12 +14607,6 @@ msgstr "我们已向 {signupEmail} 发送了验证码"
 
 msgid "We've sent you a magic link to sign in to your account."
 msgstr "我们已向您发送了一个魔法链接以登录您的账户。"
-
-msgid "Web Connector connection"
-msgstr ""
-
-msgid "Web Connector password"
-msgstr ""
 
 msgid "Webhook"
 msgstr "Webhook"
@@ -15194,9 +15125,6 @@ msgstr "您可以随时通过主题设置更改UI样式"
 
 msgid "You can only see this key once. Store it safely."
 msgstr "您只能看到此密钥一次。请妥善保管。"
-
-msgid "You can only see this password once. Enter it in the QuickBooks Web Connector."
-msgstr ""
 
 #. placeholder {0}: new Date(openClockEntry.clockIn).toLocaleString(locale)
 msgid "You clocked in at {0}. You can edit your clock-out time below or acknowledge that you're still working."

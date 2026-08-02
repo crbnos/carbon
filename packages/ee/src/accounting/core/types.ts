@@ -72,23 +72,71 @@ export type ProviderConfig<T = unknown> = {
 
 /**
  * Static description of how a provider communicates and what it supports.
- * The jobs drain branches on `transport`: "polled" providers are skipped by
- * drainSyncOperations — their claimed work is performed by an external poll
- * (the QuickBooks Web Connector session loop), so operations must
- * accumulate as Pending instead of being pushed synchronously.
  */
 export interface ProviderCapabilities {
   /**
    * How the provider is reached: "rest" = Carbon calls the provider API
-   * synchronously; "polled" = the provider's agent polls Carbon and drains
-   * queued operations (QuickBooks Web Connector); "bridge" = a third-party
-   * vendor bridge performs the calls.
+   * synchronously; "bridge" = a third-party vendor bridge performs the calls.
    */
-  transport: "rest" | "polled" | "bridge";
+  transport: "rest" | "bridge";
   /** Whether the provider can push change notifications to Carbon. */
   supportsWebhooks: boolean;
   /** Whether Carbon journals can be pushed as provider journal entries. */
   supportsJournalPush: boolean;
+}
+
+/**
+ * One remote change observed by an incremental pull (the sweep cron).
+ */
+export interface ProviderChange {
+  entityType: AccountingEntityType;
+  /**
+   * Remote id used as the sync operation's entityId. Composite ids are
+   * allowed where an entity is only addressable through its parent (e.g.
+   * Rillet payments use "<invoiceRemoteId>:<paymentRemoteId>").
+   */
+  remoteId: string;
+  /** Remote last-updated timestamp (ISO 8601) driving cursor advance. */
+  updatedAt: string | null;
+  /** Remote deletion stub — logged and skipped (DELETE sync is unimplemented). */
+  deleted?: boolean;
+  /**
+   * Local mapping this change's processing depends on. The sweep skips the
+   * change (without a ledger row) when the mapping is absent — the
+   * ownership filter for providers whose org is shared by several Carbon
+   * instances (e.g. Rillet payments on another subsidiary's invoices).
+   */
+  dependsOnMapping?: { entityType: AccountingEntityType; remoteId: string };
+}
+
+export interface ListChangesResult {
+  changes: ProviderChange[];
+}
+
+/**
+ * Incremental remote-change pull, implemented by providers the generic
+ * accounting-pull-sweep cron can poll (webhooks are a latency
+ * optimization; the sweep is the correctness guarantee). Providers filter
+ * internally to entities whose resolved sync config allows pull; the
+ * sweep owns cursor state and clamps `since` to `pullLookbackDays` before
+ * calling.
+ */
+export interface SupportsIncrementalPull {
+  /**
+   * Days the provider's change feed can reach back, when capped (QBO CDC:
+   * 30, clamped to 29 for margin). Absent = unbounded.
+   */
+  readonly pullLookbackDays?: number;
+  listChanges(args: { since: string }): Promise<ListChangesResult>;
+}
+
+export function providerSupportsIncrementalPull<T extends BaseProvider>(
+  provider: T
+): provider is T & SupportsIncrementalPull {
+  return (
+    typeof (provider as Partial<SupportsIncrementalPull>).listChanges ===
+    "function"
+  );
 }
 
 export abstract class BaseProvider {

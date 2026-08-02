@@ -2,8 +2,10 @@ import { describe, expect, it } from "vitest";
 import {
   aggregateJournalEntriesForDate,
   getDailyConsolidationNarration,
+  getPostingSyncSourceTypeSkipReason,
   JournalEntrySyncError,
-  netJournalLinesPerAccount
+  netJournalLinesPerAccount,
+  resolvePostingSyncSettings
 } from "./posting";
 import type { Accounting } from "./types";
 
@@ -218,5 +220,54 @@ describe("getDailyConsolidationNarration", () => {
     expect(getDailyConsolidationNarration("2026-07-08", 12)).toBe(
       "Carbon daily summary 2026-07-08 — 12 journals"
     );
+  });
+});
+
+// ── Source-type gate ─────────────────────────────────────────────────────────
+
+describe("getPostingSyncSourceTypeSkipReason", () => {
+  const settings = resolvePostingSyncSettings(null);
+
+  it("pushes the quality-scrap source types by default", () => {
+    expect(
+      getPostingSyncSourceTypeSkipReason("Non-Conformance", settings)
+    ).toBeNull();
+    expect(
+      getPostingSyncSourceTypeSkipReason("Inbound Inspection", settings)
+    ).toBeNull();
+  });
+
+  it("pushes Inventory Adjustment journals by default", () => {
+    expect(
+      getPostingSyncSourceTypeSkipReason("Inventory Adjustment", settings)
+    ).toBeNull();
+    expect(
+      getPostingSyncSourceTypeSkipReason("Inventory Adjustment", settings, {
+        inventoryAdjustmentEntitySyncEnabled: false
+      })
+    ).toBeNull();
+  });
+
+  it("skips Inventory Adjustment journals while the entity syncer owns them", () => {
+    const reason = getPostingSyncSourceTypeSkipReason(
+      "Inventory Adjustment",
+      settings,
+      { inventoryAdjustmentEntitySyncEnabled: true }
+    );
+    expect(reason).toContain("double-post");
+  });
+
+  it("keeps document-backed source types excluded regardless of the guard", () => {
+    expect(
+      getPostingSyncSourceTypeSkipReason("Sales Invoice", settings, {
+        inventoryAdjustmentEntitySyncEnabled: true
+      })
+    ).toContain("document-backed");
+  });
+
+  it("skips unknown source types with a not-enabled reason", () => {
+    expect(
+      getPostingSyncSourceTypeSkipReason("Not A Source Type", settings)
+    ).toContain("not enabled");
   });
 });

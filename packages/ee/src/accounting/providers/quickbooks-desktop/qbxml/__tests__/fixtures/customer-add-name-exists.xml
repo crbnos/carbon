@@ -1,6 +1,0 @@
-<?xml version="1.0" ?>
-<QBXML>
-<QBXMLMsgsRs>
-<CustomerAddRs requestID="op-cust-2" statusCode="3100" statusSeverity="Error" statusMessage="The name &quot;Acme Manufacturing&quot; of the list element is already in use." />
-</QBXMLMsgsRs>
-</QBXML>

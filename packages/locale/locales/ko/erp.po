@@ -17,7 +17,7 @@ msgstr " 공급업체는 귀사에 부품이나 서비스를 판매하는 회사
 
 #. placeholder {0}: formatDateTime(lastReconciliation.runAt)
 msgid "— last checked {0}"
-msgstr ""
+msgstr "— 마지막 확인 {0}"
 
 msgid ", {residual}% residual"
 msgstr ", {residual}% 잔존"
@@ -120,7 +120,7 @@ msgid "{from}–{to} of {count}"
 msgstr "{count}개 중 {from}–{to}"
 
 msgid "{from}–{to} of {count} operations"
-msgstr ""
+msgstr "{from}–{to} / {count}개 작업"
 
 #. placeholder {0}: errors.length
 #. placeholder {1}: skipped.length
@@ -131,13 +131,13 @@ msgid "{maxSizeMB}MB limit"
 msgstr "{maxSizeMB}MB 제한"
 
 msgid "{mismatchCount} months with mismatched totals"
-msgstr ""
+msgstr "총액이 일치하지 않는 {mismatchCount}개월"
 
 msgid "{missingCount} journals missing in the provider"
-msgstr ""
+msgstr "공급자에서 누락된 {missingCount}개 분개"
 
 msgid "{missingCount} missing journals and {mismatchCount} mismatched months"
-msgstr ""
+msgstr "{missingCount}개 누락된 분개 및 {mismatchCount}개 일치하지 않는 월"
 
 msgid "{name} deleted"
 msgstr "{name} 삭제됨"
@@ -178,7 +178,7 @@ msgid "<0>Add a supplier part</0> for this item to set a preferred supplier."
 msgstr "이 품목에 <0>공급업체 부품 추가</0>를 하여 선호 공급업체를 설정하세요."
 
 msgid "0 operations"
-msgstr ""
+msgstr "0개 작업"
 
 msgid "0-4 weeks"
 msgstr "0-4주"
@@ -499,7 +499,7 @@ msgid "Account Manager"
 msgstr "계정 관리자"
 
 msgid "Account Mapping"
-msgstr ""
+msgstr "계정 매핑"
 
 msgid "Account Number"
 msgstr "계좌번호"
@@ -553,7 +553,7 @@ msgid "Accounts receivable for amounts owed by customers"
 msgstr "고객이 지급할 금액에 대한 매출채권"
 
 msgid "Accounts referenced by posting defaults or journal history that have no provider mapping yet."
-msgstr ""
+msgstr "게시 기본값 또는 분개 기록에서 참조되지만 공급자 매핑이 아직 없는 계정입니다."
 
 msgid "Accumulated Depreciation"
 msgstr "감가상각누계액"
@@ -914,7 +914,7 @@ msgid "All members of selected groups and selected individuals will be able to a
 msgstr "선택한 그룹의 모든 구성원과 선택한 개인이 요청을 승인할 수 있습니다"
 
 msgid "All posting accounts are mapped"
-msgstr ""
+msgstr "모든 게시 계정이 매핑됨"
 
 msgid "All rows imported — {inserted} inserted, {updated} updated."
 msgstr "모든 행을 가져왔습니다 — {inserted}개 추가, {updated}개 업데이트."
@@ -1686,7 +1686,7 @@ msgid "Attachments"
 msgstr "첨부파일"
 
 msgid "Attempts"
-msgstr ""
+msgstr "시도"
 
 msgid "Attribute"
 msgstr "속성"
@@ -1961,7 +1961,7 @@ msgid "Book Depreciation"
 msgstr "장부 감가상각"
 
 msgid "Books lock date (manual)"
-msgstr ""
+msgstr "장부 잠금 날짜(수동)"
 
 msgid "Breadcrumb"
 msgstr "이동 경로"
@@ -2177,7 +2177,7 @@ msgid "Carbon + you"
 msgstr "Carbon + 당신"
 
 msgid "Carbon account"
-msgstr ""
+msgstr "Carbon 계정"
 
 msgid "Carbon client is not available"
 msgstr "Carbon 클라이언트를 사용할 수 없습니다"
@@ -2193,9 +2193,6 @@ msgstr "Carbon 열"
 
 msgid "Carbon is configured the way your company runs, your data is loaded, and your team is confident using it. When that's true, you're ready to go live."
 msgstr "Carbon이 귀사의 운영 방식에 맞게 설정되었고, 데이터가 적재되었으며, 팀이 자신 있게 사용할 수 있는 상태입니다. 이 조건이 충족되면 실제 운영을 시작할 준비가 된 것입니다."
-
-msgid "Carbon issues a username and one-time password for the QuickBooks Web Connector. After generating, download the .qwc file and install it in the Web Connector on the QuickBooks machine."
-msgstr ""
 
 msgid "Carbon leads"
 msgstr "Carbon 주도"
@@ -2331,9 +2328,6 @@ msgstr "계정과목표"
 
 msgid "Chat"
 msgstr "채팅"
-
-msgid "Check that the QuickBooks machine is on and the QuickBooks Web Connector is running with the Carbon application enabled."
-msgstr ""
 
 msgid "Check the item ledger for any items with a negative on-hand quantity as of period end — usually a missing receipt or an out-of-order posting that distorts inventory value and cost of goods sold. Mark it done once reviewed, or skip with a reason."
 msgstr "기간 종료 시점의 음수 수량 보유 항목에 대해 항목 원장을 확인하십시오. 일반적으로 누락된 수령증이나 순서 대로 포기된 게시로 인해 재고 가치와 판매 원가가 왜곡됩니다. 검토 후 완료로 표시하거나 사유와 함께 건너뜁니다."
@@ -2552,9 +2546,6 @@ msgstr "작업 완료"
 msgid "Complete Stock Transfer"
 msgstr "재고 이동 완료"
 
-msgid "Complete the account mapping so posted journal lines resolve to accounts in your QuickBooks chart of accounts."
-msgstr ""
-
 msgid "Completed"
 msgstr "완료됨"
 
@@ -2671,7 +2662,7 @@ msgid "Confirm & release"
 msgstr "확인 및 릴리스"
 
 msgid "Confirm all"
-msgstr ""
+msgstr "모두 확인"
 
 msgid "Confirm and sign the scope"
 msgstr "범위를 확인하고 서명하세요"
@@ -2724,9 +2715,6 @@ msgstr "귀사가 이미 사용 중인 외부 도구와 연동하세요"
 msgid "Connected to"
 msgstr "연결 대상"
 
-msgid "Connection"
-msgstr ""
-
 msgid "Console Mode"
 msgstr "콘솔 모드"
 
@@ -2743,7 +2731,7 @@ msgid "Console Operator"
 msgstr "콘솔 운영자"
 
 msgid "Consolidation"
-msgstr ""
+msgstr "통합"
 
 msgid "consumable"
 msgstr "소모품"
@@ -2954,9 +2942,6 @@ msgstr "품목 번호 복사"
 
 msgid "Copy part unique identifier"
 msgstr "품목 고유 식별자 복사"
-
-msgid "Copy password"
-msgstr ""
 
 msgid "Copy PIN"
 msgstr "PIN 복사"
@@ -3615,7 +3600,7 @@ msgid "Daily check-ins while your team finds its feet on the live system"
 msgstr "팀이 실제 운영 시스템에 적응하는 동안 매일 체크인"
 
 msgid "Daily summary"
-msgstr ""
+msgstr "일일 요약"
 
 msgid "Daily Usage"
 msgstr "일일 사용량"
@@ -4422,9 +4407,6 @@ msgstr "저희가 없어도 일상 업무가 원활하게 돌아가면 완료입
 msgid "Download"
 msgstr "다운로드"
 
-msgid "Download .qwc file"
-msgstr ""
-
 #. placeholder {0}: errors.length
 msgid "Download {0} row(s) to fix"
 msgstr "수정할 {0}개 행 다운로드"
@@ -5004,7 +4986,7 @@ msgid "Enable notifications when an RFQ is marked as ready for quote."
 msgstr "RFQ가 견적 준비 완료로 표시될 때 알림을 활성화하세요."
 
 msgid "Enable posting sync"
-msgstr ""
+msgstr "게시 동기화 활성화"
 
 msgid "Enable shared workstation mode for MES terminals. Operators identify themselves via PIN before performing work."
 msgstr "MES 단말기에 공유 워크스테이션 모드를 활성화하세요. 작업자는 작업 수행 전에 PIN으로 본인을 인증합니다."
@@ -5288,7 +5270,7 @@ msgid "Exemption Reason"
 msgstr "면세 사유"
 
 msgid "Existing mappings. Pick a different provider account to re-map."
-msgstr ""
+msgstr "기존 매핑입니다. 다시 매핑하려면 다른 공급자 계정을 선택하세요."
 
 msgid "Expand"
 msgstr "펼치기"
@@ -5415,7 +5397,7 @@ msgid "External"
 msgstr "외부"
 
 msgid "External ID"
-msgstr ""
+msgstr "외부 ID"
 
 msgid "External Notes"
 msgstr "외부 메모"
@@ -6076,9 +6058,6 @@ msgstr "새 4자리 PIN을 생성합니다. 오퍼레이터에게 전달하여 M
 msgid "Generate and send customer invoices"
 msgstr "고객 인보이스 생성 및 발송"
 
-msgid "Generate credentials"
-msgstr ""
-
 msgid "Generate fiscal year"
 msgstr "회계연도 생성"
 
@@ -6525,7 +6504,7 @@ msgid "Ideas, suggestions or problems?"
 msgstr "아이디어, 제안, 또는 문제가 있으신가요?"
 
 msgid "Idempotency key"
-msgstr ""
+msgstr "멱등성 키"
 
 msgid "Identifiers"
 msgstr "식별자"
@@ -6604,9 +6583,6 @@ msgstr "진행 중"
 
 msgid "In Progress"
 msgstr "진행 중"
-
-msgid "In QuickBooks Web Connector, choose Add an Application and select the downloaded carbon-quickbooks.qwc file, then enter the password when prompted. The connector polls Carbon every 5 minutes."
-msgstr ""
 
 msgid "in scope"
 msgstr "범위 내"
@@ -6690,10 +6666,10 @@ msgid "Indirect Materials & Services (default)"
 msgstr "간접 자재 및 서비스(기본값)"
 
 msgid "Individual"
-msgstr ""
+msgstr "개별"
 
 msgid "Individual pushes one provider journal per Carbon journal. Daily summary pushes one aggregated journal per posting date."
-msgstr ""
+msgstr "개별은 Carbon 분개당 하나의 공급자 분개를 푸시합니다. 일일 요약은 게시 날짜당 하나의 집계된 분개를 푸시합니다."
 
 msgid "Infrastructure"
 msgstr "인프라"
@@ -7144,7 +7120,7 @@ msgid "Journal Entry"
 msgstr "분개"
 
 msgid "Journals dated on or before this date are treated as locked. Merged with the provider-reported lock date when both exist."
-msgstr ""
+msgstr "이 날짜 이전의 분개는 잠금으로 처리됩니다. 둘 다 존재하면 공급자에서 보고한 잠금 날짜와 병합됩니다."
 
 msgid "Kanban"
 msgstr "칸반"
@@ -7223,10 +7199,10 @@ msgid "Language"
 msgstr "언어"
 
 msgid "Last attempt"
-msgstr ""
+msgstr "마지막 시도"
 
 msgid "Last Attempt"
-msgstr ""
+msgstr "마지막 시도"
 
 msgid "Last Calibration"
 msgstr "마지막 교정"
@@ -7242,9 +7218,6 @@ msgstr "지난달"
 
 msgid "Last Name"
 msgstr "성"
-
-msgid "Last poll"
-msgstr ""
 
 msgid "Last Quarter"
 msgstr "지난 분기"
@@ -7671,7 +7644,7 @@ msgid "Manual"
 msgstr "수동"
 
 msgid "Manual journals are pushed only when explicitly enabled."
-msgstr ""
+msgstr "수동 분개는 명시적으로 활성화된 경우에만 푸시됩니다."
 
 msgid "Manufacturer"
 msgstr "제조사"
@@ -7683,7 +7656,7 @@ msgid "Manufacturing"
 msgstr "제조"
 
 msgid "Map Carbon accounts to the provider's chart of accounts. Posted journals push using the mapped provider account code."
-msgstr ""
+msgstr "Carbon 계정을 공급자의 계정 과목표에 매핑합니다. 게시된 분개는 매핑된 공급자 계정 코드를 사용하여 푸시됩니다."
 
 msgid "Map Extracted Invoice Lines"
 msgstr "추출된 인보이스 라인 매핑"
@@ -7698,7 +7671,7 @@ msgid "Map your current process, systems, and data"
 msgstr "현재 프로세스, 시스템, 데이터를 매핑하세요"
 
 msgid "Mapped accounts"
-msgstr ""
+msgstr "매핑된 계정"
 
 #. placeholder {0}: i18n._(step.gate)
 msgid "Mark \"{0}\" as passed?"
@@ -7771,7 +7744,7 @@ msgid "Match any (OR)"
 msgstr "하나라도 일치(OR)"
 
 msgid "Match by code"
-msgstr ""
+msgstr "코드로 일치"
 
 msgid "Match none"
 msgstr "일치 안 함"
@@ -7924,7 +7897,7 @@ msgid "Message"
 msgstr "메시지"
 
 msgid "Metadata"
-msgstr ""
+msgstr "메타데이터"
 
 msgid "Method"
 msgstr "제조방법"
@@ -7993,10 +7966,10 @@ msgid "Minutes/Piece"
 msgstr "분/개"
 
 msgid "Mismatch"
-msgstr ""
+msgstr "불일치"
 
 msgid "Missing"
-msgstr ""
+msgstr "누락"
 
 msgid "Missing Information"
 msgstr "누락된 정보"
@@ -8495,7 +8468,7 @@ msgstr "{0}이(가) 없습니다"
 
 #. placeholder {0}: status.toLowerCase()
 msgid "No {0} sync operations"
-msgstr ""
+msgstr "{0} 동기화 작업 없음"
 
 #. placeholder {0}: copy.pluralNoun
 msgid "No {0} yet"
@@ -8508,7 +8481,7 @@ msgid "No Access"
 msgstr "접근 권한 없음"
 
 msgid "No accounts mapped yet"
-msgstr ""
+msgstr "아직 매핑된 계정 없음"
 
 msgid "No action needed"
 msgstr "조치가 필요하지 않습니다"
@@ -8791,7 +8764,7 @@ msgid "No suppliers yet"
 msgstr "아직 공급업체가 없습니다"
 
 msgid "No sync operations yet"
-msgstr ""
+msgstr "아직 동기화 작업 없음"
 
 msgid "No time entries for this week"
 msgstr "이번 주 시간 기록이 없습니다"
@@ -8806,7 +8779,7 @@ msgid "No transactions in this period"
 msgstr "이 기간에 거래가 없습니다"
 
 msgid "No unmapped accounts match a provider code"
-msgstr ""
+msgstr "매핑되지 않은 계정이 공급자 코드와 일치하지 않음"
 
 msgid "No value needed"
 msgstr "값이 필요하지 않습니다"
@@ -9030,9 +9003,6 @@ msgstr "열림"
 msgid "Open a change notice"
 msgstr "변경 공지 열기"
 
-msgid "Open Account Mapping"
-msgstr ""
-
 msgid "Open Actions"
 msgstr "미결 조치"
 
@@ -9113,9 +9083,6 @@ msgstr "설정 맵 열기"
 
 msgid "Open transactions"
 msgstr "미결 거래"
-
-msgid "Open your company file in QuickBooks as Admin in single-user mode. When the Web Connector first connects, approve the Carbon application certificate — choose \"Yes, always; allow access even if QuickBooks is not running\" so sync runs unattended."
-msgstr ""
 
 msgid "Opened"
 msgstr "열림"
@@ -9384,7 +9351,7 @@ msgid "Pareto by Type"
 msgstr "유형별 파레토"
 
 msgid "Park as error"
-msgstr ""
+msgstr "오류로 보관"
 
 msgid "part"
 msgstr "품목"
@@ -9506,9 +9473,6 @@ msgstr "PDF 워터마크"
 msgid "Pending"
 msgstr "대기 중"
 
-msgid "Pending operations wait for the Web Connector poll. Generate credentials and install the .qwc file below to start syncing."
-msgstr ""
-
 msgid "people"
 msgstr "인력"
 
@@ -9543,7 +9507,7 @@ msgid "Period End"
 msgstr "기간 종료"
 
 msgid "Period lock policy"
-msgstr ""
+msgstr "기간 잠금 정책"
 
 msgid "Periodic depreciation expense for fixed assets"
 msgstr "고정자산에 대한 정기 감가상각비"
@@ -9583,9 +9547,6 @@ msgstr "피킹"
 
 msgid "Pick a column to sort by"
 msgstr "정렬할 열을 선택하세요"
-
-msgid "Pick a conversion date with your bookkeeper. Only documents and journals dated after the cutover should sync — earlier history stays in QuickBooks."
-msgstr ""
 
 msgid "Pick a customer or customer type to view their pricing."
 msgstr "가격을 확인할 고객 또는 고객 유형을 선택하세요."
@@ -9774,7 +9735,7 @@ msgid "Posted By"
 msgstr "전기자"
 
 msgid "Posted journals with these source types are pushed. Document-backed journals (invoices, payments) are always excluded — the synced document already books them."
-msgstr ""
+msgstr "이러한 소스 유형의 게시된 분개가 푸시됩니다. 문서 기반 분개(인보이스, 결제)는 항상 제외됩니다. 동기화된 문서가 이미 기록합니다."
 
 msgid "Posted once, corrected {corrections} times."
 msgstr "한 번 게시되었으며 {corrections}번 수정되었습니다."
@@ -10054,7 +10015,7 @@ msgid "Properties"
 msgstr "속성"
 
 msgid "Proposed matches where the Carbon account number equals the provider account code exactly."
-msgstr ""
+msgstr "Carbon 계정 번호가 공급자 계정 코드와 정확히 일치하는 제안된 일치 항목입니다."
 
 msgid "Protect the go-live date"
 msgstr "도입일을 사수하세요"
@@ -10066,10 +10027,10 @@ msgid "Provide process knowledge and inputs"
 msgstr "공정 지식과 의견을 제공하세요"
 
 msgid "Provider"
-msgstr ""
+msgstr "공급자"
 
 msgid "Provider account"
-msgstr ""
+msgstr "공급자 계정"
 
 msgid "Public"
 msgstr "공개"
@@ -10081,13 +10042,13 @@ msgid "Published by Carbon"
 msgstr "Carbon에서 게시함"
 
 msgid "Pull"
-msgstr ""
+msgstr "가져오기"
 
 msgid "Pull From"
 msgstr "가져오기 출처"
 
 msgid "Pull from accounting"
-msgstr ""
+msgstr "회계에서 가져오기"
 
 msgid "Pull from Inventory"
 msgstr "재고에서 가져오기"
@@ -10204,16 +10165,16 @@ msgid "Purchasing Unit of Measure"
 msgstr "구매 단위"
 
 msgid "Push"
-msgstr ""
+msgstr "푸시"
 
 msgid "Push posted journals for the enabled source types to the accounting provider."
-msgstr ""
+msgstr "활성화된 소스 유형에 대한 전기 분개를 회계 공급자에게 푸시합니다."
 
 msgid "Push record changes to external systems the moment they happen."
 msgstr "레코드 변경 사항이 발생하는 즉시 외부 시스템으로 전송합니다."
 
 msgid "Push to accounting"
-msgstr ""
+msgstr "회계로 푸시"
 
 #. placeholder {0}: row.original.replenishmentSystem === "Make" ? "Job" : "Order"
 msgid "QR Code to create a {0} for this kanban"
@@ -10395,13 +10356,13 @@ msgid "Raw Materials (default)"
 msgstr "원자재 (기본값)"
 
 msgid "Re-date to first open day"
-msgstr ""
+msgstr "첫 개설 날짜로 다시 설정"
 
 msgid "Re-keying between quoting, the floor, and finance"
 msgstr "견적, 현장, 재무 간 데이터 재입력"
 
 msgid "Re-send"
-msgstr ""
+msgstr "다시 보내기"
 
 msgid "Reactivate"
 msgstr "재활성화"
@@ -10549,7 +10510,7 @@ msgid "Reconcile"
 msgstr "조정"
 
 msgid "Reconciliation found discrepancies with the provider"
-msgstr ""
+msgstr "조정 중에 공급자와의 불일치를 발견했습니다"
 
 msgid "Reconciling a purchase order against what was received and invoiced — implicit in Carbon, via the line quantities and GR/IR balance."
 msgstr "구매주문을 실제 입고 및 청구 내역과 대조하는 작업 — Carbon에서는 라인 수량과 GR/IR 잔액을 통해 암묵적으로 처리됩니다."
@@ -10924,7 +10885,7 @@ msgid "Retry"
 msgstr "재시도"
 
 msgid "Retry all"
-msgstr ""
+msgstr "모두 다시 시도"
 
 msgid "Return Home"
 msgstr "홈으로 돌아가기"
@@ -11043,12 +11004,6 @@ msgstr "신규 직원의 기본 권한을 설정하는 역할"
 
 msgid "Room to grow without bolting on more tools"
 msgstr "추가 도구 없이도 성장할 수 있는 여유"
-
-msgid "Rotate password"
-msgstr ""
-
-msgid "Rotate Web Connector password"
-msgstr ""
 
 msgid "Rounding Account"
 msgstr "반올림 계정"
@@ -11557,7 +11512,7 @@ msgid "Select Printer"
 msgstr "프린터 선택"
 
 msgid "Select provider account"
-msgstr ""
+msgstr "공급자 계정 선택"
 
 msgid "Select Quantities"
 msgstr "수량 선택"
@@ -11758,9 +11713,6 @@ msgstr "설정"
 
 msgid "Setup & Controls"
 msgstr "설정 및 관리"
-
-msgid "Setup checklist"
-msgstr ""
 
 msgid "Setup instructions"
 msgstr "설정 안내"
@@ -12093,7 +12045,7 @@ msgid "Source Method"
 msgstr "소스 방법"
 
 msgid "Source types"
-msgstr ""
+msgstr "소스 유형"
 
 msgid "Source Version"
 msgstr "소스 버전"
@@ -12591,10 +12543,10 @@ msgid "Sync"
 msgstr "동기화"
 
 msgid "Sync Activity"
-msgstr ""
+msgstr "동기화 활동"
 
 msgid "Sync operation"
-msgstr ""
+msgstr "동기화 작업"
 
 msgid "System"
 msgstr "시스템"
@@ -12875,9 +12827,6 @@ msgstr "이 로트/일련번호의 수정된 유효기한으로, 변경 후 기�
 
 msgid "The currencies you trade in and their rates"
 msgstr "거래에 사용하는 통화와 환율"
-
-msgid "The current password stops working immediately and syncing pauses until you enter the new password in the QuickBooks Web Connector on the QuickBooks machine. The installed .qwc file stays valid — do not re-add it."
-msgstr ""
 
 msgid "The customer record this portal account links to; only contacts already on that customer can be selected as the account holder below."
 msgstr "이 포털 계정이 연결된 고객 레코드로, 아래에서 계정 소유자로 선택할 수 있는 대상은 해당 고객에 이미 등록된 담당자로 한정됩니다."
@@ -13441,12 +13390,6 @@ msgstr "이 견적의 재화가 출하될 창고입니다. 고객의 배송지�
 msgid "The ways equipment fails, for maintenance and quality tracking"
 msgstr "유지보수 및 품질 추적을 위한 설비 고장 방식"
 
-msgid "The Web Connector has never connected"
-msgstr ""
-
-msgid "The Web Connector has not polled in the last 24 hours"
-msgstr ""
-
 msgid "The work center's own bin where picked material is staged for production to draw down, as opposed to its warehouse source shelf."
 msgstr "생산이 인출하기 위해 픽킹된 자재가 준비되는 작업 센터 자체의 빈으로, 창고 소스 선반과는 다름."
 
@@ -13948,7 +13891,7 @@ msgid "Trial Balance"
 msgstr "시산표"
 
 msgid "Trigger"
-msgstr ""
+msgstr "트리거"
 
 msgid "Triggers"
 msgstr "트리거"
@@ -13958,9 +13901,6 @@ msgstr "화요일"
 
 msgid "Turn on the built-in pieces"
 msgstr "내장 기능을 켜세요"
-
-msgid "Turn QuickBooks inventory features off. Carbon owns inventory and posts its value as journal entries; items sync as non-inventory items."
-msgstr ""
 
 msgid "Type"
 msgstr "유형"
@@ -14080,7 +14020,7 @@ msgid "Unlock"
 msgstr "잠금 해제"
 
 msgid "Unmapped accounts"
-msgstr ""
+msgstr "매핑되지 않은 계정"
 
 msgid "Unmapped Extracted Lines"
 msgstr "매핑되지 않은 추출 라인"
@@ -14292,9 +14232,6 @@ msgstr "사용자"
 
 msgid "User roles"
 msgstr "사용자 역할"
-
-msgid "Username"
-msgstr ""
 
 msgid "users"
 msgstr "사용자"
@@ -14671,12 +14608,6 @@ msgstr "{signupEmail}로 인증 코드를 보냈습니다"
 msgid "We've sent you a magic link to sign in to your account."
 msgstr "계정에 로그인할 수 있는 매직 링크를 보내드렸습니다."
 
-msgid "Web Connector connection"
-msgstr ""
-
-msgid "Web Connector password"
-msgstr ""
-
 msgid "Webhook"
 msgstr "웹훅"
 
@@ -14770,7 +14701,7 @@ msgid "What data"
 msgstr "어떤 데이터"
 
 msgid "What happens when a journal is dated in a locked period: park it as a warning to fix, or push it re-dated to the first open day with the original date in the narration."
-msgstr ""
+msgstr "분개가 잠긴 기간에 날짜를 지정하면 어떻게 됩니까: 수정 경고로 보관하거나 분개 설명에 원래 날짜를 포함하여 첫 개설 날짜로 다시 지정하여 푸시합니다."
 
 msgid "What is {translatedTerm}?"
 msgstr "{translatedTerm}란 무엇인가요?"
@@ -15194,9 +15125,6 @@ msgstr "테마 설정을 통해 언제든지 UI 스타일을 변경할 수 있�
 
 msgid "You can only see this key once. Store it safely."
 msgstr "이 키는 한 번만 확인할 수 있습니다. 안전하게 보관하세요."
-
-msgid "You can only see this password once. Enter it in the QuickBooks Web Connector."
-msgstr ""
 
 #. placeholder {0}: new Date(openClockEntry.clockIn).toLocaleString(locale)
 msgid "You clocked in at {0}. You can edit your clock-out time below or acknowledge that you're still working."

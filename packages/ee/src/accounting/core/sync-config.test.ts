@@ -1,10 +1,25 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { configureSync, reset } from "@logtape/logtape";
+import { createLogRecorder } from "@logtape/testing";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { DEFAULT_SYNC_CONFIG } from "./models";
 import { resolveSyncConfig } from "./service";
 
+const recorder = createLogRecorder();
+
 describe("resolveSyncConfig", () => {
-  afterEach(() => {
-    vi.restoreAllMocks();
+  beforeEach(() => {
+    recorder.clear();
+    configureSync({
+      reset: true,
+      sinks: { recorder: recorder.sink },
+      loggers: [
+        { category: ["carbon"], lowestLevel: "trace", sinks: ["recorder"] }
+      ]
+    });
+  });
+
+  afterEach(async () => {
+    await reset();
   });
 
   it("returns the defaults when no config is stored", () => {
@@ -41,8 +56,6 @@ describe("resolveSyncConfig", () => {
   });
 
   it("ignores invalid fragments with a warning and keeps the default", () => {
-    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
-
     const resolved = resolveSyncConfig({
       syncConfig: {
         entities: {
@@ -56,7 +69,11 @@ describe("resolveSyncConfig", () => {
     expect(resolved.entities.customer).toEqual(
       DEFAULT_SYNC_CONFIG.entities.customer
     );
-    expect(warn).toHaveBeenCalledTimes(1);
+    const warnings = recorder.records.filter((r) => r.level === "warning");
+    expect(warnings).toHaveLength(1);
+    expect(warnings[0]?.message.join("")).toContain(
+      "Ignoring invalid stored sync config"
+    );
 
     // Valid fragment in the same config still applies
     expect(resolved.entities.item.enabled).toBe(false);

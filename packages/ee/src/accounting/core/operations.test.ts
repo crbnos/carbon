@@ -194,7 +194,7 @@ describe("getClaimEntityTypeFilterError", () => {
 });
 
 // /********************************************************\
-// *      QBWC work-loop additions (byIds + metadata)       *
+// *      Stateless-caller additions (byIds + metadata)     *
 // \********************************************************/
 // Minimal chainable stub emulating the exact supabase-js chains these two
 // functions use (select().eq().in() thenable; update().eq().eq().select()

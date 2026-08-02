@@ -63,17 +63,34 @@ describe("parseStoredCredentials", () => {
     expect(parseStoredCredentials(parsed)).toEqual(credentials);
   });
 
-  it("parses webConnector credentials", () => {
+  it("parses apiKey credentials", () => {
     const credentials = {
-      type: "webConnector",
-      username: "carbon-sync",
-      passwordHash: "scrypt$abc",
-      ownerId: "0b2a8c1e-0000-0000-0000-000000000000",
-      fileId: "9f1d2b3c-0000-0000-0000-000000000000",
-      qbxmlVersion: "16.0"
+      type: "apiKey",
+      apiKey: "rk_live_abc123",
+      environment: "sandbox",
+      providerMetadata: { subsidiaryId: "11111111-1111-1111-1111-111111111111" }
     };
 
     expect(parseStoredCredentials(credentials)).toEqual(credentials);
+  });
+
+  it("defaults apiKey environment to production", () => {
+    const parsed = parseStoredCredentials({
+      type: "apiKey",
+      apiKey: "rk_live_abc123"
+    });
+
+    expect(parsed).toEqual({
+      type: "apiKey",
+      apiKey: "rk_live_abc123",
+      environment: "production"
+    });
+  });
+
+  it("rejects an apiKey credential with an empty key", () => {
+    expect(() =>
+      parseStoredCredentials({ type: "apiKey", apiKey: "" })
+    ).toThrow();
   });
 
   it("parses bridge credentials", () => {

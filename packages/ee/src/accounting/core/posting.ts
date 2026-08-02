@@ -62,6 +62,10 @@ export function resolvePostingSyncSettings(
  * Skip reason for a journal's sourceType under the resolved posting-sync
  * settings, or null when the journal is pushable:
  * - excluded (doc-backed) source types never push, regardless of settings;
+ * - "Inventory Adjustment" never pushes while the company's
+ *   inventoryAdjustment ENTITY sync is enabled for the provider — the
+ *   entity syncer pushes the same economic event from the itemLedger, and
+ *   pushing the journal too would double-post;
  * - "Manual" pushes only when `includeManual` is on;
  * - everything else pushes when listed in `sourceTypes` (default list when
  *   the company stored none);
@@ -69,7 +73,8 @@ export function resolvePostingSyncSettings(
  */
 export function getPostingSyncSourceTypeSkipReason(
   sourceType: string | null | undefined,
-  settings: PostingSyncSettings
+  settings: PostingSyncSettings,
+  options?: { inventoryAdjustmentEntitySyncEnabled?: boolean }
 ): string | null {
   if (!sourceType) {
     return "Journal has no source type; only configured source types are pushed";
@@ -81,6 +86,13 @@ export function getPostingSyncSourceTypeSkipReason(
     )
   ) {
     return `Source type "${sourceType}" is document-backed and excluded from posting sync (the synced document already books it)`;
+  }
+
+  if (
+    sourceType === "Inventory Adjustment" &&
+    options?.inventoryAdjustmentEntitySyncEnabled
+  ) {
+    return 'Source type "Inventory Adjustment" is excluded while inventory-adjustment entity sync is enabled (the entity syncer already pushes it; pushing the journal too would double-post)';
   }
 
   if (sourceType === "Manual") {

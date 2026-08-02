@@ -38,7 +38,6 @@ import {
   getJournalEntrySyncEntityId,
   isJournalEntrySyncFailure,
   netJournalLinesPerAccount,
-  type ProviderCapabilities,
   parseJournalEntrySyncEntityId,
   RatelimitError,
   resolvePostingSyncSettings,
@@ -298,29 +297,7 @@ export type DrainSummary = {
   failed: number;
   skipped: number;
   groups: DrainedGroup[];
-  /**
-   * Set when the drain returned without claiming anything because the
-   * provider's transport is polled: its operations must accumulate as
-   * Pending for the external poll (the QuickBooks Web Connector session
-   * loop) instead of being pushed synchronously.
-   */
-  skippedReason?: "polled-transport";
 };
-
-/**
- * Whether a drain must skip this provider entirely, as a reason string
- * (null = drain normally). Polled providers (capabilities.transport
- * "polled", e.g. QuickBooks Desktop via the Web Connector) never drain
- * here — the QBWC handler claims and completes their operations during the
- * poll. Providers without a capability declaration are legacy REST (Xero)
- * and drain normally. The ENQUEUE paths are intentionally untouched:
- * operations must accumulate for the poll.
- */
-export function getDrainTransportSkipReason(
-  capabilities: Pick<ProviderCapabilities, "transport"> | undefined
-): "polled-transport" | null {
-  return capabilities?.transport === "polled" ? "polled-transport" : null;
-}
 
 function toSyncErrorMessage(error: unknown): string {
   if (error instanceof Error) return error.message;
@@ -408,16 +385,6 @@ export async function drainSyncOperations(args: {
     skipped: 0,
     groups: []
   };
-
-  // Polled-transport gate: the Web Connector poll drains these operations
-  // (QBWC handler → syncer buildRequest/processResponse); claiming them
-  // here would strand them In Flight with no transport to send them on.
-  const transportSkipReason = getDrainTransportSkipReason(
-    args.provider.capabilities
-  );
-  if (transportSkipReason) {
-    return { ...summary, skippedReason: transportSkipReason };
-  }
 
   const postingSyncSettings = resolvePostingSyncSettings(
     args.integrationMetadata
@@ -819,58 +786,6 @@ export function mergePostingSyncReconciliation(
  * entity types the QBO integration syncs. The CDC call is asked only about
  * these names.
  */
-export const QBO_CDC_ENTITY_TYPES = {
-  Customer: "customer",
-  Vendor: "vendor",
-  Item: "item",
-  Invoice: "invoice",
-  Bill: "bill",
-  PurchaseOrder: "purchaseOrder"
-} as const satisfies Record<string, AccountingEntityType>;
-
-export type QboCdcEntityName = keyof typeof QBO_CDC_ENTITY_TYPES;
-
-/** Carbon entity type for a CDC entity name; null for unknown names. */
-export function getCdcEntityType(
-  entityName: string
-): AccountingEntityType | null {
-  return (
-    (QBO_CDC_ENTITY_TYPES as Record<string, AccountingEntityType>)[
-      entityName
-    ] ?? null
-  );
-}
-
-/**
- * QBO entity names worth a CDC subscription for a company: entities whose
- * RESOLVED sync config is enabled with a direction that includes pull.
- * Push-only entities (item and purchaseOrder under DEFAULT_SYNC_CONFIG)
- * never flow QBO → Carbon, so their remote changes are not fetched.
- */
-export function getCdcPullEntityNames(
-  integrationMetadata: unknown
-): QboCdcEntityName[] {
-  const config = resolveSyncConfig(integrationMetadata);
-  return (Object.keys(QBO_CDC_ENTITY_TYPES) as QboCdcEntityName[]).filter(
-    (entityName) => {
-      const entityConfig = config.entities[QBO_CDC_ENTITY_TYPES[entityName]];
-      return (
-        entityConfig.enabled &&
-        (entityConfig.direction === "pull-from-accounting" ||
-          entityConfig.direction === "two-way")
-      );
-    }
-  );
-}
-
-/**
- * QBO's CDC endpoint reaches back at most 30 days; the cron clamps its
- * cursor to 29 to keep a margin for clock skew and call latency.
- */
-export const QBO_CDC_MAX_LOOKBACK_DAYS = 29;
-
-const QBO_CDC_MAX_LOOKBACK_MS = QBO_CDC_MAX_LOOKBACK_DAYS * 24 * 60 * 60_000;
-
 /**
  * Normalize any ISO 8601 string (offsets included — QBO timestamps arrive
  * like "2026-07-08T13:07:59-07:00") to UTC ISO; null when unparseable.
@@ -881,32 +796,35 @@ function toUtcIsoString(value: unknown): string | null {
   return Number.isNaN(parsed.getTime()) ? null : parsed.toISOString();
 }
 
-export type CdcCursorDecision = {
-  /** UTC ISO timestamp for the CDC call's changedSince parameter. */
+export type PullCursorDecision = {
+  /** UTC ISO timestamp for the listChanges call's since parameter. */
   changedSince: string;
-  /** True when the wanted cursor predates the CDC lookback cap. */
+  /** True when the wanted cursor predates the provider's lookback cap. */
   clamped: boolean;
   /** Where the pre-clamp cursor came from. */
   source: "cursor" | "connectTime" | "fallback";
 };
 
 /**
- * Resolve the changedSince cursor for one CDC run:
+ * Resolve the since cursor for one pull-sweep run:
  *
- * - Stored cursor `metadata.settings.cdcCursor` (advanced by prior runs).
+ * - Stored cursor `metadata.settings.pullCursor` (advanced by prior runs).
  * - Default: the integration row's `updatedAt` — the closest thing to
  *   connect time available (companyIntegration has no createdAt column);
- *   it is at-or-after the OAuth connect, so pre-connect history is never
+ *   it is at-or-after the install, so pre-connect history is never
  *   pulled.
- * - Clamp: CDC only reaches back 30 days, so older cursors are clamped to
- *   QBO_CDC_MAX_LOOKBACK_DAYS ago and reported (`clamped`); the pre-window
- *   tail is left to two-way owner semantics / a manual backfill to recover.
+ * - Clamp: providers whose change feed is capped (QBO CDC reaches back 30
+ *   days; `pullLookbackDays` 29 keeps a margin) have older cursors clamped
+ *   and reported (`clamped`); the pre-window tail is left to two-way owner
+ *   semantics / a manual backfill to recover. Providers without a cap are
+ *   never clamped.
  */
-export function getCdcCursorDecision(args: {
+export function getPullCursorDecision(args: {
   integrationMetadata: unknown;
   integrationUpdatedAt: string | null;
+  maxLookbackDays?: number;
   now?: Date;
-}): CdcCursorDecision {
+}): PullCursorDecision {
   const now = args.now ?? new Date();
 
   const settings =
@@ -916,24 +834,31 @@ export function getCdcCursorDecision(args: {
       : undefined;
   const storedCursor = toUtcIsoString(
     typeof settings === "object" && settings !== null
-      ? (settings as Record<string, unknown>).cdcCursor
+      ? (settings as Record<string, unknown>).pullCursor
       : undefined
   );
   const connectTime = toUtcIsoString(args.integrationUpdatedAt);
 
-  const clampFloor = new Date(
-    now.getTime() - QBO_CDC_MAX_LOOKBACK_MS
-  ).toISOString();
+  const clampFloor =
+    args.maxLookbackDays !== undefined
+      ? new Date(
+          now.getTime() - args.maxLookbackDays * 24 * 60 * 60_000
+        ).toISOString()
+      : null;
 
   const cursor = storedCursor ?? connectTime;
   if (!cursor) {
-    return { changedSince: clampFloor, clamped: false, source: "fallback" };
+    return {
+      changedSince: clampFloor ?? now.toISOString(),
+      clamped: false,
+      source: "fallback"
+    };
   }
 
   const source = storedCursor ? ("cursor" as const) : ("connectTime" as const);
   // Both sides are toISOString output, so lexicographic order is
   // chronological order
-  if (cursor < clampFloor) {
+  if (clampFloor && cursor < clampFloor) {
     return { changedSince: clampFloor, clamped: true, source };
   }
   return { changedSince: cursor, clamped: false, source };
@@ -941,13 +866,13 @@ export function getCdcCursorDecision(args: {
 
 /**
  * Cursor advance rule (Celigo: the cursor only moves over provably-covered
- * work): the max of the changedSince actually used and every
- * LastUpdatedTime CDC returned — deleted stubs included, because
- * log-and-skip is their terminal handling. Never the CDC response's server
- * time, which could outrun a lagging snapshot. The cron calls this only
- * after every enqueue succeeded and the drain returned.
+ * work): the max of the changedSince actually used and every remote
+ * updated-at the provider returned — deleted stubs and dependency-skipped
+ * changes included, because log-and-skip is their terminal handling. Never
+ * a server time, which could outrun a lagging snapshot. The sweep calls
+ * this only after every enqueue succeeded and the drain returned.
  */
-export function getAdvancedCdcCursor(args: {
+export function getAdvancedPullCursor(args: {
   changedSince: string;
   lastUpdatedTimes: ReadonlyArray<string | null>;
 }): string {
@@ -960,28 +885,28 @@ export function getAdvancedCdcCursor(args: {
 }
 
 /**
- * Idempotency scope for one CDC-observed change: `cdc:<LastUpdatedTime>`
- * is stable across cron retries — the cursor only advances after success,
- * so a retried run re-reads the same window and rebuilds the same keys,
- * absorbing into the existing ledger rows. Records missing
- * LastUpdatedTime fall back to the run's changedSince (still stable for
- * unclamped runs; live-row absorption and the completed-row cooldown cover
- * the clamped edge, where changedSince shifts with `now`).
+ * Idempotency scope for one sweep-observed change: `pull:<updatedAt>` is
+ * stable across cron retries — the cursor only advances after success, so
+ * a retried run re-reads the same window and rebuilds the same keys,
+ * absorbing into the existing ledger rows. Changes missing an updatedAt
+ * fall back to the run's changedSince (still stable for unclamped runs;
+ * live-row absorption and the completed-row cooldown cover the clamped
+ * edge, where changedSince shifts with `now`).
  */
-export function getCdcIdempotencyScope(
-  lastUpdatedTime: string | null,
+export function getPullIdempotencyScope(
+  updatedAt: string | null,
   changedSince: string
 ): string {
-  return `cdc:${lastUpdatedTime ?? changedSince}`;
+  return `pull:${updatedAt ?? changedSince}`;
 }
 
 /**
- * Merge `cursor` into `metadata.settings.cdcCursor` without clobbering any
- * sibling key — same raw-metadata read-modify-write contract as
+ * Merge `cursor` into `metadata.settings.pullCursor` without clobbering
+ * any sibling key — same raw-metadata read-modify-write contract as
  * mergePostingSyncReconciliation, but the cursor is a settings-level key,
  * NOT a postingSync one.
  */
-export function mergeCdcCursor(
+export function mergePullCursor(
   metadata: unknown,
   cursor: string
 ): Record<string, unknown> {
@@ -998,7 +923,7 @@ export function mergeCdcCursor(
     ...base,
     settings: {
       ...settings,
-      cdcCursor: cursor
+      pullCursor: cursor
     }
   };
 }

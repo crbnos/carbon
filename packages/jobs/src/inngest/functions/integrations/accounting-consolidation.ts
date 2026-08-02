@@ -440,7 +440,10 @@ async function consolidateCompany(args: {
       const skipReason =
         journal.status !== "Posted"
           ? `Journal must be Posted before syncing (current status: ${journal.status})`
-          : getPostingSyncSourceTypeSkipReason(journal.sourceType, settings);
+          : getPostingSyncSourceTypeSkipReason(journal.sourceType, settings, {
+              inventoryAdjustmentEntitySyncEnabled:
+                provider.getSyncConfig("inventoryAdjustment")?.enabled ?? false
+            });
 
       if (skipReason) {
         // Terminal for this attempt, same as the drain's handling of
@@ -651,10 +654,14 @@ export const accountingConsolidationFunction = inngest.createFunction(
     const targets = await step.run(
       "find-daily-consolidation-targets",
       async () => {
+        // Xero-only: the consolidation path calls Xero-specific provider
+        // methods (createManualJournal). QBO/Rillet posting sync supports
+        // "individual" mode only; widening this filter requires a
+        // per-provider consolidation push.
         const integrations = await client
           .from("companyIntegration")
           .select("id, companyId, metadata")
-          .in("id", Object.values(ProviderID))
+          .eq("id", ProviderID.XERO)
           .eq("active", true);
 
         if (integrations.error) {

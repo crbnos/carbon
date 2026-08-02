@@ -2194,9 +2194,6 @@ msgstr "कार्बन कॉलम"
 msgid "Carbon is configured the way your company runs, your data is loaded, and your team is confident using it. When that's true, you're ready to go live."
 msgstr "Carbon को आपकी कंपनी के तरीके से कॉन्फ़िगर किया गया है, आपका डेटा लोड किया गया है, और आपकी टीम इसे उपयोग करने में आत्मविश्वास रखती है। जब यह सच हो, तो आप लाइव जाने के लिए तैयार हैं।"
 
-msgid "Carbon issues a username and one-time password for the QuickBooks Web Connector. After generating, download the .qwc file and install it in the Web Connector on the QuickBooks machine."
-msgstr ""
-
 msgid "Carbon leads"
 msgstr "कार्बन नेतृत्व करता है"
 
@@ -2331,9 +2328,6 @@ msgstr "खातों की सूची"
 
 msgid "Chat"
 msgstr "चैट"
-
-msgid "Check that the QuickBooks machine is on and the QuickBooks Web Connector is running with the Carbon application enabled."
-msgstr ""
 
 msgid "Check the item ledger for any items with a negative on-hand quantity as of period end — usually a missing receipt or an out-of-order posting that distorts inventory value and cost of goods sold. Mark it done once reviewed, or skip with a reason."
 msgstr "अवधि के अंत तक नकारात्मक मौजूदा मात्रा वाली किसी भी वस्तु के लिए वस्तु खाता बही की जाँच करें — आमतौर पर एक लापता प्राप्ति या एक गलत-क्रम में पोस्टिंग जो इन्वेंटरी मूल्य और बेचे गए सामान की लागत को विकृत करती है। एक बार समीक्षा करने के बाद इसे पूर्ण चिह्नित करें, या एक कारण के साथ छोड़ दें।"
@@ -2552,9 +2546,6 @@ msgstr "नौकरी पूरी करें"
 msgid "Complete Stock Transfer"
 msgstr "स्टॉक ट्रांसफर पूरा करें"
 
-msgid "Complete the account mapping so posted journal lines resolve to accounts in your QuickBooks chart of accounts."
-msgstr ""
-
 msgid "Completed"
 msgstr "पूर्ण"
 
@@ -2723,9 +2714,6 @@ msgstr "उन बाहरी उपकरणों को कनेक्ट �
 
 msgid "Connected to"
 msgstr "को जोड़ा गया"
-
-msgid "Connection"
-msgstr ""
 
 msgid "Console Mode"
 msgstr "कंसोल मोड"
@@ -2954,9 +2942,6 @@ msgstr "भाग संख्या कॉपी करें"
 
 msgid "Copy part unique identifier"
 msgstr "भाग के अद्वितीय पहचानकर्ता की प्रतिलिपि बनाएं"
-
-msgid "Copy password"
-msgstr ""
 
 msgid "Copy PIN"
 msgstr "PIN कॉपी करें"
@@ -4421,9 +4406,6 @@ msgstr "दिन-प्रतिदिन की कार्यप्रणा
 
 msgid "Download"
 msgstr "डाउनलोड करें"
-
-msgid "Download .qwc file"
-msgstr ""
 
 #. placeholder {0}: errors.length
 msgid "Download {0} row(s) to fix"
@@ -6076,9 +6058,6 @@ msgstr "एक नया 4-अंकीय PIN जेनरेट करें�
 msgid "Generate and send customer invoices"
 msgstr "ग्राहक चालान उत्पन्न करें और भेजें"
 
-msgid "Generate credentials"
-msgstr ""
-
 msgid "Generate fiscal year"
 msgstr "वित्तीय वर्ष उत्पन्न करें"
 
@@ -6604,9 +6583,6 @@ msgstr "प्रगति में"
 
 msgid "In Progress"
 msgstr "प्रगति में"
-
-msgid "In QuickBooks Web Connector, choose Add an Application and select the downloaded carbon-quickbooks.qwc file, then enter the password when prompted. The connector polls Carbon every 5 minutes."
-msgstr ""
 
 msgid "in scope"
 msgstr "दायरे में"
@@ -7242,9 +7218,6 @@ msgstr "पिछला महीना"
 
 msgid "Last Name"
 msgstr "अंतिम नाम"
-
-msgid "Last poll"
-msgstr ""
 
 msgid "Last Quarter"
 msgstr "पिछली तिमाही"
@@ -9030,9 +9003,6 @@ msgstr "खोलें"
 msgid "Open a change notice"
 msgstr "एक परिवर्तन सूचना खोलें"
 
-msgid "Open Account Mapping"
-msgstr ""
-
 msgid "Open Actions"
 msgstr "खुली कार्रवाइयाँ"
 
@@ -9113,9 +9083,6 @@ msgstr "सेटअप मैप खोलें"
 
 msgid "Open transactions"
 msgstr "खुले लेनदेन"
-
-msgid "Open your company file in QuickBooks as Admin in single-user mode. When the Web Connector first connects, approve the Carbon application certificate — choose \"Yes, always; allow access even if QuickBooks is not running\" so sync runs unattended."
-msgstr ""
 
 msgid "Opened"
 msgstr "खुला हुआ"
@@ -9506,9 +9473,6 @@ msgstr "PDF वॉटरमार्क"
 msgid "Pending"
 msgstr "लंबित"
 
-msgid "Pending operations wait for the Web Connector poll. Generate credentials and install the .qwc file below to start syncing."
-msgstr ""
-
 msgid "people"
 msgstr "स्थिर संपत्ति के लिए आवधिक मूल्यह्रास व्यय"
 
@@ -9583,9 +9547,6 @@ msgstr "चुनें"
 
 msgid "Pick a column to sort by"
 msgstr "सॉर्ट करने के लिए एक कॉलम चुनें"
-
-msgid "Pick a conversion date with your bookkeeper. Only documents and journals dated after the cutover should sync — earlier history stays in QuickBooks."
-msgstr ""
 
 msgid "Pick a customer or customer type to view their pricing."
 msgstr "उनकी मूल्य निर्धारण देखने के लिए एक ग्राहक या ग्राहक प्रकार चुनें।"
@@ -11044,12 +11005,6 @@ msgstr "नई कर्मचारियों के लिए डिफ़�
 msgid "Room to grow without bolting on more tools"
 msgstr "बिना अतिरिक्त उपकरण जोड़े बढ़ने की गुंजाइश"
 
-msgid "Rotate password"
-msgstr ""
-
-msgid "Rotate Web Connector password"
-msgstr ""
-
 msgid "Rounding Account"
 msgstr "राउंडिंग खाता"
 
@@ -11758,9 +11713,6 @@ msgstr "सेटअप"
 
 msgid "Setup & Controls"
 msgstr "सेटअप और नियंत्रण"
-
-msgid "Setup checklist"
-msgstr ""
 
 msgid "Setup instructions"
 msgstr "सेटअप निर्देश"
@@ -12876,9 +12828,6 @@ msgstr "इस लॉट/सीरीज़ के लिए सही की �
 msgid "The currencies you trade in and their rates"
 msgstr "आप जिन मुद्राओं में व्यापार करते हैं और उनकी दरें"
 
-msgid "The current password stops working immediately and syncing pauses until you enter the new password in the QuickBooks Web Connector on the QuickBooks machine. The installed .qwc file stays valid — do not re-add it."
-msgstr ""
-
 msgid "The customer record this portal account links to; only contacts already on that customer can be selected as the account holder below."
 msgstr "ग्राहक रिकॉर्ड जिससे यह पोर्टल खाता जुड़ा है; केवल वे संपर्क जो उस ग्राहक के साथ पहले से हैं, नीचे खाता धारक के रूप में चुने जा सकते हैं।"
 
@@ -13441,12 +13390,6 @@ msgstr "गोदाम जिससे इस उद्धरण पर सा�
 msgid "The ways equipment fails, for maintenance and quality tracking"
 msgstr "उपकरण विफल होने के तरीके, रखरखाव और गुणवत्ता ट्रैकिंग के लिए"
 
-msgid "The Web Connector has never connected"
-msgstr ""
-
-msgid "The Web Connector has not polled in the last 24 hours"
-msgstr ""
-
 msgid "The work center's own bin where picked material is staged for production to draw down, as opposed to its warehouse source shelf."
 msgstr "कार्य केंद्र का अपना बिन जहां चुनी गई सामग्री उत्पादन के लिए तैयार की जाती है, इसके गोदाम स्रोत शेल्फ के विपरीत।"
 
@@ -13959,9 +13902,6 @@ msgstr "मंगलवार"
 msgid "Turn on the built-in pieces"
 msgstr "बिल्ट-इन पीसेस को चालू करें"
 
-msgid "Turn QuickBooks inventory features off. Carbon owns inventory and posts its value as journal entries; items sync as non-inventory items."
-msgstr ""
-
 msgid "Type"
 msgstr "प्रकार"
 
@@ -14292,9 +14232,6 @@ msgstr "उपयोगकर्ता"
 
 msgid "User roles"
 msgstr "उपयोगकर्ता भूमिकाएं"
-
-msgid "Username"
-msgstr ""
 
 msgid "users"
 msgstr "उपयोगकर्ता"
@@ -14670,12 +14607,6 @@ msgstr "हमने {signupEmail} को एक सत्यापन कोड
 
 msgid "We've sent you a magic link to sign in to your account."
 msgstr "हमने आपके खाते में साइन इन करने के लिए आपको एक जादुई लिंक भेजा है।"
-
-msgid "Web Connector connection"
-msgstr ""
-
-msgid "Web Connector password"
-msgstr ""
 
 msgid "Webhook"
 msgstr "वेबहुक"
@@ -15194,9 +15125,6 @@ msgstr "आप किसी भी समय थीम सेटिंग के
 
 msgid "You can only see this key once. Store it safely."
 msgstr "आप इस कुंजी को केवल एक बार देख सकते हैं। इसे सुरक्षित रूप से संग्रहीत करें।"
-
-msgid "You can only see this password once. Enter it in the QuickBooks Web Connector."
-msgstr ""
 
 #. placeholder {0}: new Date(openClockEntry.clockIn).toLocaleString(locale)
 msgid "You clocked in at {0}. You can edit your clock-out time below or acknowledge that you're still working."

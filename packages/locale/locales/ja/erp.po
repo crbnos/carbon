@@ -2194,9 +2194,6 @@ msgstr "Carbonカラム"
 msgid "Carbon is configured the way your company runs, your data is loaded, and your team is confident using it. When that's true, you're ready to go live."
 msgstr "Carbonがあなたの会社の運営方法に合わせて設定され、データが読み込まれ、チームがそれを自信を持って使用できるようになっています。その状態になれば、本番環境への移行準備が整っています。"
 
-msgid "Carbon issues a username and one-time password for the QuickBooks Web Connector. After generating, download the .qwc file and install it in the Web Connector on the QuickBooks machine."
-msgstr ""
-
 msgid "Carbon leads"
 msgstr "Carbonがリード"
 
@@ -2331,9 +2328,6 @@ msgstr "勘定科目表"
 
 msgid "Chat"
 msgstr "チャット"
-
-msgid "Check that the QuickBooks machine is on and the QuickBooks Web Connector is running with the Carbon application enabled."
-msgstr ""
 
 msgid "Check the item ledger for any items with a negative on-hand quantity as of period end — usually a missing receipt or an out-of-order posting that distorts inventory value and cost of goods sold. Mark it done once reviewed, or skip with a reason."
 msgstr "期末時点で保有数量がマイナスの品目がないか品目台帳を確認してください — 通常、納品漏れまたは順序外の転記により、在庫価値および売上原価が歪む可能性があります。確認済みの場合はマーク完了し、スキップする場合は理由を記入してください。"
@@ -2552,9 +2546,6 @@ msgstr "ジョブを完了"
 msgid "Complete Stock Transfer"
 msgstr "在庫移動を完了"
 
-msgid "Complete the account mapping so posted journal lines resolve to accounts in your QuickBooks chart of accounts."
-msgstr ""
-
 msgid "Completed"
 msgstr "完了"
 
@@ -2723,9 +2714,6 @@ msgstr "貴社が既に使用している外部ツールを接続する"
 
 msgid "Connected to"
 msgstr "接続先"
-
-msgid "Connection"
-msgstr ""
 
 msgid "Console Mode"
 msgstr "コンソールモード"
@@ -2954,9 +2942,6 @@ msgstr "部品番号をコピー"
 
 msgid "Copy part unique identifier"
 msgstr "部品の一意の識別子をコピー"
-
-msgid "Copy password"
-msgstr ""
 
 msgid "Copy PIN"
 msgstr "PINをコピー"
@@ -4421,9 +4406,6 @@ msgstr "日常業務が私たちなしで円滑に進むようになったら完
 
 msgid "Download"
 msgstr "ダウンロード"
-
-msgid "Download .qwc file"
-msgstr ""
 
 #. placeholder {0}: errors.length
 msgid "Download {0} row(s) to fix"
@@ -6076,9 +6058,6 @@ msgstr "新しい4桁のPINを生成します。オペレーターと共有し�
 msgid "Generate and send customer invoices"
 msgstr "顧客請求書を生成して送信"
 
-msgid "Generate credentials"
-msgstr ""
-
 msgid "Generate fiscal year"
 msgstr "会計年度を生成"
 
@@ -6604,9 +6583,6 @@ msgstr "進行中"
 
 msgid "In Progress"
 msgstr "進行中"
-
-msgid "In QuickBooks Web Connector, choose Add an Application and select the downloaded carbon-quickbooks.qwc file, then enter the password when prompted. The connector polls Carbon every 5 minutes."
-msgstr ""
 
 msgid "in scope"
 msgstr "スコープ内"
@@ -7242,9 +7218,6 @@ msgstr "先月"
 
 msgid "Last Name"
 msgstr "姓"
-
-msgid "Last poll"
-msgstr ""
 
 msgid "Last Quarter"
 msgstr "前四半期"
@@ -9030,9 +9003,6 @@ msgstr "開く"
 msgid "Open a change notice"
 msgstr "変更通知を開く"
 
-msgid "Open Account Mapping"
-msgstr ""
-
 msgid "Open Actions"
 msgstr "オープンアクション"
 
@@ -9113,9 +9083,6 @@ msgstr "セットアップマップを開く"
 
 msgid "Open transactions"
 msgstr "未処理トランザクション"
-
-msgid "Open your company file in QuickBooks as Admin in single-user mode. When the Web Connector first connects, approve the Carbon application certificate — choose \"Yes, always; allow access even if QuickBooks is not running\" so sync runs unattended."
-msgstr ""
 
 msgid "Opened"
 msgstr "開いている"
@@ -9506,9 +9473,6 @@ msgstr "PDF透かし"
 msgid "Pending"
 msgstr "保留中"
 
-msgid "Pending operations wait for the Web Connector poll. Generate credentials and install the .qwc file below to start syncing."
-msgstr ""
-
 msgid "people"
 msgstr "固定資産の定期的な減価償却費"
 
@@ -9583,9 +9547,6 @@ msgstr "ピック"
 
 msgid "Pick a column to sort by"
 msgstr "ソート対象の列を選択"
-
-msgid "Pick a conversion date with your bookkeeper. Only documents and journals dated after the cutover should sync — earlier history stays in QuickBooks."
-msgstr ""
 
 msgid "Pick a customer or customer type to view their pricing."
 msgstr "顧客または顧客タイプを選択して、その価格を表示します。"
@@ -11044,12 +11005,6 @@ msgstr "新しい従業員のデフォルト権限を設定するロール"
 msgid "Room to grow without bolting on more tools"
 msgstr "さらに多くのツールを追加することなく成長する余地"
 
-msgid "Rotate password"
-msgstr ""
-
-msgid "Rotate Web Connector password"
-msgstr ""
-
 msgid "Rounding Account"
 msgstr "丸めアカウント"
 
@@ -11758,9 +11713,6 @@ msgstr "セットアップ"
 
 msgid "Setup & Controls"
 msgstr "セットアップとコントロール"
-
-msgid "Setup checklist"
-msgstr ""
 
 msgid "Setup instructions"
 msgstr "セットアップ手順"
@@ -12876,9 +12828,6 @@ msgstr "このロット/シリアル番号の修正された有効期限。変�
 msgid "The currencies you trade in and their rates"
 msgstr "あなたが取引する通貨とそのレート"
 
-msgid "The current password stops working immediately and syncing pauses until you enter the new password in the QuickBooks Web Connector on the QuickBooks machine. The installed .qwc file stays valid — do not re-add it."
-msgstr ""
-
 msgid "The customer record this portal account links to; only contacts already on that customer can be selected as the account holder below."
 msgstr "このポータルアカウントがリンクされているカスタマーレコード。そのカスタマー上にすでにある連絡先のみが、以下のアカウント所有者として選択できます。"
 
@@ -13441,12 +13390,6 @@ msgstr "このクォートの商品が配送される倉庫。カスタマーの
 msgid "The ways equipment fails, for maintenance and quality tracking"
 msgstr "機器が故障する方法、保守と品質追跡用"
 
-msgid "The Web Connector has never connected"
-msgstr ""
-
-msgid "The Web Connector has not polled in the last 24 hours"
-msgstr ""
-
 msgid "The work center's own bin where picked material is staged for production to draw down, as opposed to its warehouse source shelf."
 msgstr "ワークセンター独自のビン。ピック済みの材料は本番環境で取り出すためにステージされます。倉庫のソースシェルフとは異なります。"
 
@@ -13959,9 +13902,6 @@ msgstr "火曜日"
 msgid "Turn on the built-in pieces"
 msgstr "組み込み機能をオンにする"
 
-msgid "Turn QuickBooks inventory features off. Carbon owns inventory and posts its value as journal entries; items sync as non-inventory items."
-msgstr ""
-
 msgid "Type"
 msgstr "種類"
 
@@ -14292,9 +14232,6 @@ msgstr "ユーザー"
 
 msgid "User roles"
 msgstr "ユーザーロール"
-
-msgid "Username"
-msgstr ""
 
 msgid "users"
 msgstr "ユーザー"
@@ -14670,12 +14607,6 @@ msgstr "検証コードを {signupEmail} に送信しました"
 
 msgid "We've sent you a magic link to sign in to your account."
 msgstr "あなたのアカウントにサインインするためのマジックリンクを送信しました。"
-
-msgid "Web Connector connection"
-msgstr ""
-
-msgid "Web Connector password"
-msgstr ""
 
 msgid "Webhook"
 msgstr "ウェブフック"
@@ -15194,9 +15125,6 @@ msgstr "テーマ設定からいつでもUIスタイルを変更できます"
 
 msgid "You can only see this key once. Store it safely."
 msgstr "このキーは一度だけ表示されます。安全に保管してください。"
-
-msgid "You can only see this password once. Enter it in the QuickBooks Web Connector."
-msgstr ""
 
 #. placeholder {0}: new Date(openClockEntry.clockIn).toLocaleString(locale)
 msgid "You clocked in at {0}. You can edit your clock-out time below or acknowledge that you're still working."

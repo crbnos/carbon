@@ -60,23 +60,18 @@ Phases A+B; C and D get their own plans after the Phase-D transport veto.
         │  accountingSyncOperation (NEW — durable outbox / per-record ledger) │
         │  Pending → InFlight → Completed | Failed | Warning | Skipped        │
         └─────────────────────────────────────────────────────────────────────┘
-                │ drained by Inngest (REST providers: immediately;
-                │ QBD/QBWC: when the Web Connector polls; QBD/bridge: immediately)
+                │ drained by Inngest (REST providers: immediately)
                 ▼
         SyncFactory.getSyncer(entityType) ──► BaseEntitySyncer subclasses
                 │                                    │
                 ▼                                    ▼
-        Provider (XeroProvider │ QboProvider │ QbdProvider)
-                                                     │
-                                          QbdTransport (interface)
-                                          ├─ QbwcTransport (self-hosted SOAP endpoint — CHOSEN)
-                                          └─ BridgeTransport (future swap-in option)
+        Provider (XeroProvider │ QboProvider │ RilletProvider)
 ```
 
 Entity sync (documents) keeps its current shape — syncers, mapping table, direction/owner
 config — but every push/pull is recorded as a sync operation. Posting sync is a new
 `journalEntry` entity type whose syncer reads Posted journals and writes provider journal
-entries (Xero Manual Journals, QBO/QBD JournalEntryAdd), with account mapping resolved through
+entries (Xero Manual Journals, QBO JournalEntryAdd, Rillet journal entries), with account mapping resolved through
 `externalIntegrationMapping(entityType='account')`.
 
 ### Phase A — engine hardening + sync-operation ledger
@@ -86,8 +81,9 @@ entries (Xero Manual Journals, QBO/QBD JournalEntryAdd), with account mapping re
      JSONB for provider-specific fields (Xero `tenantId`/`tenantName`, QBO `realmId`).
      Existing stored credentials are read through a compatibility shim (old flat shape →
      new shape on read; written back in new shape on next refresh).
-   - `webConnector` — QBD self-host: `username`, `passwordHash`, `ownerId` (GUID),
-     `fileId` (GUID, stamped on first connect), `qbxmlVersion`.
+   - `apiKey` — key-based REST providers (Rillet): `apiKey`, `environment`
+     (production|sandbox), `providerMetadata` (Rillet: `subsidiaryId`, `webhookToken`).
+     (Replaced the `webConnector` variant when QBD was removed on 2026-08-01.)
    - `bridge` — vendor-managed connection: `vendor` (e.g. `"conductor"`),
      `externalConnectionId` (e.g. Conductor end-user id). Vendor API keys are platform env
      vars, never per-company rows.
@@ -182,76 +178,50 @@ QBO webhooks are a stretch goal. Closed-books date: captured from the admin at c
 (setting), pre-flight validated. Requires Intuit app credentials (`QUICKBOOKS_CLIENT_ID`
 already referenced from `@carbon/auth`).
 
-### Phase D — QuickBooks Desktop provider (self-hosted QBWC endpoint — DECIDED 2026-07-09)
+### Phase D — QuickBooks Desktop provider (REMOVED 2026-08-01)
 
-Carbon implements the QuickBooks Web Connector service itself. The polling model inverts the
-transport: QBWC (a Windows app next to QuickBooks) calls **our** HTTPS SOAP endpoint on a
-schedule; each session drains that company's `Pending` operations from
-`accountingSyncOperation` as qbXML request/response round-trips.
+Phase D shipped (self-hosted QBWC SOAP endpoint, qbXML layer, `qbwcSession`
+table, polled-transport drain gate) and was then **removed in full on
+2026-08-01** in favor of a Rillet provider: QuickBooks Desktop was dropped
+from the product. The QBWC/qbXML implementation, its migration, routes, UI,
+`fast-xml-parser` dependency, the `webConnector` credentials variant, and
+the `"polled"` transport were all deleted. QuickBooks Online (Phase C) and
+Xero are unaffected.
 
-**D1 — SOAP endpoint** (`apps/erp/app/routes/api+/integrations.quickbooks-desktop.qbwc.ts`,
-a resource route accepting `POST text/xml`; no `requirePermissions` — auth is the QBWC
-credential handshake; rate-limited via `@carbon/kv`). Implements the eight QBWC operations
-with hand-rolled SOAP envelopes (fixed WSDL, namespace `http://developer.intuit.com/`;
-parameter names are load-bearing):
+Its replacement is the **Rillet provider** (`providers/rillet/`): API-key
+REST transport (`Authorization: Bearer` + pinned `X-Rillet-API-Version: 4`),
+push-only journal/customer/vendor/item/invoice(AR_ONLY)/bill syncers,
+chart-of-accounts pull for account mapping, and the codebase's first
+`payment` syncer — inbound AR invoice payments via a signed webhook
+(`/api/webhook/rillet/:companyId`, HMAC-SHA256 over
+`$timestamp.$id.$entity.$event.$body`) that writes Carbon `payment` +
+`invoiceSettlement` rows and flips `salesInvoice` status.
 
-- `authenticate(user, password)` → verify against the company's `webConnector` credentials
-  (password hashed with Node `crypto.scrypt`, constant-time compare; no new dependency),
-  create a `qbwcSession` row, return `[ticket, "" | "none" | "nvu"]` — `""` = use the
-  currently-open company file; `"none"` when no `Pending` operations exist.
-- `sendRequestXML(...)` → claim the next batch (up to 20 operations, FIFO) for the session,
-  build one `QBXMLMsgsRq` message set (version from the handshake's `qbXMLMajorVers`, stamped
-  `newMessageSetID` = session-batch GUID persisted on the session row), return it.
-- `receiveResponseXML(ticket, response, hresult, message)` → parse per-request
-  `statusCode`/`statusSeverity`, complete/fail each operation (error-code mapping table:
-  3100 name-exists, 3120 not-found, 3140 bad-ref, 3170/3171 closing-date lock → `Warning`;
-  3175/3176/3180 busy/transient → `Failed` retryable; 3200 stale EditSequence → refetch +
-  one in-place retry), store returned `ListID`/`TxnID` + `EditSequence` in the mapping row,
-  and return percent-done (`remaining === 0 ? 100 : 0–99`).
-- `connectionError` / `getLastError` / `closeConnection` / `serverVersion` / `clientVersion`
-  per the protocol contract in the research file; `getLastError` returns `"NoOp"` (pause)
-  when a transient condition should make QBWC retry in 5s.
-- **Write-safety (mandated by the QBWC guide):** every writing message set carries
-  `newMessageSetID`; an `authenticate` arriving while a session batch is `In Flight` (crash
-  recovery) first sends an `oldMessageSetID` query so QuickBooks replays the stored response
-  instead of double-posting. Operations additionally stamp the Carbon id into `RefNumber`/
-  `Memo` and query-before-insert as belt-and-braces (RefNumber uniqueness is NOT enforced by
-  QB).
+### Phase E — Generic pull sweep (added 2026-08-01)
 
-**D2 — connection setup**: settings connection card generates per-company `webConnector`
-credentials (username = derived stable id, password generated + shown once, scrypt hash
-stored) and serves the **.QWC file** download (`AppName` "Carbon", `AppURL` = canonical
-public base URL + endpoint path — must be HTTPS with a public-CA cert, `AppSupport` same
-domain, `OwnerID` = fixed Carbon app GUID constant, `FileID` = per-company GUID stored in
-credentials, `QBType` QBFS, `Scheduler/RunEveryNMinutes` default 5, `UnattendedModePref`
-umpOptional, `PersonalDataPref` pdpNotNeeded). Setup checklist rendered in the card: QB admin
-grant in single-user mode (unattended-mode option), QB inventory features off, account
-mapping complete, tax N/A v1, conversion date. Health surface: session `lastSeenAt` shown as
-"Last poll"; no poll in 24h → Warning banner in the sync activity tab.
+Webhooks are a latency optimization, not the correctness guarantee: Rillet
+disables a webhook after repeated delivery failures, Xero's inbound sync
+was webhook-only, and firewalled self-hosted instances cannot receive
+webhooks at all. The **accounting-pull-sweep** cron
+(`packages/jobs/.../accounting-pull-sweep.ts`, every 30 min) is the
+guarantee. Providers opt in by implementing `SupportsIncrementalPull`
+(`listChanges({ since })` → normalized `ProviderChange[]`, optional
+`pullLookbackDays` cap): QBO wraps Intuit CDC (folded from the former
+`quickbooks-cdc.ts`; 29-day clamp now provider-declared), Rillet lists
+changed invoice payments via `GET /invoice-payments?updated.gt` with a
+composite `<invoiceRemoteId>:<paymentRemoteId>` entity id. Cursor state
+lives at `metadata.settings.pullCursor` (advance-after-drain, Celigo
+rule); the ledger's idempotency + cooldown make webhook- and
+sweep-triggered pulls collapse into one operation.
 
-**D3 — qbXML layer** (`packages/ee/src/accounting/providers/quickbooks-desktop/qbxml/`):
-request builders + response parsers per entity over `fast-xml-parser` (**new production
-dependency — approved with this decision**; repo has no XML library). Entity coverage mirrors
-the live Xero set + posting sync: CustomerAdd/Mod/Query, VendorAdd/Mod/Query,
-ItemNonInventoryAdd/Query (**1:1 Non-inventory items**, 31-char name limit), InvoiceAdd,
-BillAdd, PurchaseOrderAdd, **JournalEntryAdd** (debits=credits asserted; AR/AP-line rule made
-unreachable by the Phase B control-account safety net). qbXML constraints enforced pre-flight:
-name lengths (41 customer/vendor, 31 item/account per level) → `Warning` `NAME_TOO_LONG`
-(never silent truncation); shared name namespace collision (3100) → `Warning` with
-remediation text; one currency per QB customer/vendor. Reads page via iterators
-(`iteratorID`, `MaxReturned`).
-
-**D4 — `QbdProvider` + syncers** extend `BaseEntitySyncer` like Xero's; `QbdTransport`
-interface retained (`QbwcTransport` = enqueue-and-wait-for-poll; a `BridgeTransport` remains
-a future swap-in). References stored as `ListID`/`TxnID` (+ `EditSequence`) in mapping
-metadata — never `FullName` after first resolution.
-
-**Testability without Windows**: the endpoint logic lives in a pure handler
-(`handleQbwcRequest(soapXml, ctx)`) so vitest drives full protocol conversations (authenticate
-→ sendRequestXML → receiveResponseXML → closeConnection) with golden qbXML fixtures — no
-QuickBooks needed for CI. Final verification against a real QB Desktop Enterprise 24 company
-file (Windows machine + QBWC) is a documented manual gate. IIF/Transaction Pro documented as
-the degraded-mode fallback only.
+**Multi-instance Rillet** (several self-hosted Carbon databases writing to
+one Rillet org as different subsidiaries): outbound partitions naturally by
+the per-instance `subsidiaryId` (stamped on journals/invoices/bills, plus a
+`carbon-company` external reference for audit); inbound ownership is
+decided by the local invoice mapping — the sweep drops changes whose
+`dependsOnMapping` is absent (no ledger noise), and the payment syncer's
+`shouldSync` benignly skips webhook-delivered payments on unmapped invoices
+(another instance's subsidiary, or a Rillet-native invoice).
 
 ### Design Decisions
 
@@ -337,31 +307,9 @@ CREATE POLICY "SELECT" ON "accountingSyncOperation" FOR SELECT
 -- No INSERT/UPDATE/DELETE policies: writes via service role (jobs) only.
 ```
 
-```sql
--- Phase D: QBWC session state (serverless ERP → sessions must live in the DB, not memory)
-CREATE TABLE "qbwcSession" (
-    "id" TEXT NOT NULL DEFAULT id('qbwc'),        -- doubles as the opaque session ticket
-    "companyId" TEXT NOT NULL,
-    "integration" TEXT NOT NULL,                   -- 'quickbooks-desktop'
-    "status" TEXT NOT NULL DEFAULT 'Open' CHECK ("status" IN ('Open','Closed','Error')),
-    "currentMessageSetId" TEXT,                    -- newMessageSetID of the in-flight batch
-    "claimedOperationIds" TEXT[],                  -- accountingSyncOperation ids in the batch
-    "requestsSent" INTEGER NOT NULL DEFAULT 0,
-    "qbxmlMajorVersion" TEXT,                      -- from the session handshake
-    "lastSeenAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-    "closedAt" TIMESTAMP WITH TIME ZONE,
-    "errorMessage" TEXT,
-    "createdBy" TEXT NOT NULL REFERENCES "user"("id"),  -- the user who created the connection credentials
-    "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-    "updatedBy" TEXT REFERENCES "user"("id"),
-    "updatedAt" TIMESTAMP WITH TIME ZONE,
-    CONSTRAINT "qbwcSession_pkey" PRIMARY KEY ("id", "companyId"),
-    CONSTRAINT "qbwcSession_companyId_fkey" FOREIGN KEY ("companyId")
-      REFERENCES "company"("id") ON DELETE CASCADE ON UPDATE CASCADE
-);
--- Indexes on companyId + FKs; RLS: SELECT for employees (health display); no user write
--- policies (all writes via service role from the SOAP endpoint).
-```
+(The Phase D `qbwcSession` table was removed with QBD on 2026-08-01; its
+migration was deleted before ever reaching main. The `integration` registry
+gained a seed row for `rillet` instead.)
 
 - **Event wiring**: migration attaches the standard event trigger to `journal` (same helper as
   existing event-system tables) so UPDATEs enqueue into PGMQ; the SYNC handler maps
@@ -395,15 +343,9 @@ All in `packages/ee` unless noted; service functions take `client` first, return
   cron. **Prerequisite refactor (first C task): `SyncFactory` becomes a provider-keyed
   registry** — today `core/sync.ts` imports Xero syncers directly and switches on entityType
   only.
-- `providers/quickbooks-desktop/` (Phase D): `qbxml/` (envelope builder, response parser,
-  error-code mapping, iterator helper, per-entity request builders/parsers over
-  `fast-xml-parser`), `qbwc/` (pure `handleQbwcRequest(soapXml, ctx)` protocol handler +
-  session service over `qbwcSession`), `QbdProvider` + entity syncers, `QbdTransport`
-  interface with `QbwcTransport`.
-- New ERP routes (Phase D): `api+/integrations.quickbooks-desktop.qbwc.ts` (SOAP POST
-  resource route — thin wrapper over `handleQbwcRequest`; no `requirePermissions`; KV
-  rate-limited) and a QWC-download + credential-generation action on the integration detail
-  route (`settings_update`).
+- (Phase D file surface — `providers/quickbooks-desktop/`, the QBWC SOAP
+  route, the `.qwc` download route — was deleted with QBD on 2026-08-01;
+  `providers/rillet/` + `api+/webhook.rillet.$companyId.ts` replace it.)
 - `packages/jobs`: `events/sync.ts` — add `journal` to `TABLE_TO_ENTITY_MAP`, enqueue
   operations instead of direct dispatch; `sync-external-accounting.ts` /
   `accounting-backfill.ts` — enqueue + drain through operations; NEW
@@ -477,29 +419,14 @@ Phase C (accepted at its own plan)
       `SyncFactory` provider registry proven by both providers running side by side in one
       company-agnostic test.
 
-Phase D (accepted at its own plan)
-- [ ] A vitest-scripted QBWC conversation (authenticate → sendRequestXML →
-      receiveResponseXML → closeConnection) against seeded Pending operations completes them
-      with correct qbXML payloads (golden fixtures) and 100-percent-done termination.
-- [ ] Wrong password → `nvu`; nothing Pending → `none`; transient QB busy (3176) →
-      operation Failed-retryable and `getLastError` returns a readable message.
-- [ ] Crash recovery: a batch left `In Flight` + a fresh authenticate issues an
-      `oldMessageSetID` query FIRST and does not re-send the writes until the stored
-      response is processed (no double-post in the fixture).
-- [ ] Error mapping fixtures: 3100 name-exists → Warning with remediation text; 3140 bad
-      ref → Warning; 3170 closing-date lock → Warning per period-lock policy; 3200 stale
-      EditSequence → one automatic refetch-retry then Completed.
-- [ ] QWC download: valid XML (AppURL = HTTPS canonical base + endpoint path, AppSupport
-      same domain, uppercase OwnerID/FileID GUIDs, QBType QBFS, RunEveryNMinutes 5);
-      password shown exactly once; re-download preserves FileID; regenerate rotates the
-      password hash without changing FileID.
-- [ ] Journal push: a Posted Carbon journal (mapped accounts) becomes a balanced
-      JournalEntryAdd with Carbon ids stamped in Memo; doc-backed sourceTypes excluded
-      exactly as on Xero.
-- [ ] Manual gate (requires a Windows machine + QB Desktop Enterprise 24 + QBWC; documented
-      checklist, not CI): install QWC, grant unattended access, run two poll cycles —
-      customer + invoice + journal round-trip verified in QuickBooks, then a name-collision
-      case surfaces as Warning in the sync activity tab.
+Phase D — criteria retired with the QBD removal on 2026-08-01 (see the
+Phase D tombstone). Rillet acceptance criteria live with its work on branch
+feat/quickbooks-enterprise-v1: provider unit tests (headers, idempotency
+keys, rate-limit mapping, RFC 9457 errors, chart normalization, sync-config
+forcing), pure-mapper tests (journal DEBIT/CREDIT + UNMAPPED_ACCOUNTS,
+contacts, payment status transitions), webhook signature tests, and a
+sandbox live-fire gate (journal + AR_ONLY invoice push, signed
+payment webhook → Carbon payment + settlement rows).
 
 ## Risks
 
@@ -560,3 +487,9 @@ Phase D (accepted at its own plan)
   sharpened (provider-keyed `SyncFactory` refactor as its first task; split
   Customer/Vendor syncers). Plans added: .ai/plans/2026-07-09-accounting-sync-engine-phase-c.md
   and .ai/plans/2026-07-09-accounting-sync-engine-phase-d.md.
+- 2026-08-01: **Phase D removed; Rillet provider added** (branch
+  feat/quickbooks-enterprise-v1). QuickBooks Desktop/QBWC deleted in full
+  (see the Phase D tombstone). Rillet: push-everything + inbound payment
+  webhook; posting-sync defaults gained `Non-Conformance` and
+  `Inbound Inspection` (quality scrap posting merged from main) and a
+  config-aware Inventory Adjustment double-post guard.
