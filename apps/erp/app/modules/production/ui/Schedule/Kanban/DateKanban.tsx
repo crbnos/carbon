@@ -1,6 +1,10 @@
 import { getLogger } from "@carbon/logger";
 import { ClientOnly, toast } from "@carbon/react";
-import type { DragOverEvent, DragStartEvent } from "@dnd-kit/core";
+import type {
+  DragEndEvent,
+  DragOverEvent,
+  DragStartEvent
+} from "@dnd-kit/core";
 import {
   DndContext,
   DragOverlay,
@@ -29,6 +33,25 @@ type DateKanbanProps = {
   progressByItemId: Record<string, Progress>;
   tags: { name: string }[];
 } & DisplaySettings;
+
+// Sentinel columns whose drop command intentionally clears the job's due date
+// (server sets dueDate = null). Their existing null-producing semantics are
+// preserved by this fix.
+const SENTINEL_COLUMN_IDS = ["unscheduled", "next-week", "next-month"];
+
+// Immutable snapshot captured when a drag begins. Every preview projection and
+// the final drop commit derive from this, never from an intermediate hover.
+type DragOrigin = {
+  item: JobItem;
+  columnId: string; // display bucket at drag start
+  dueDate: string | null; // exact persisted due date, or null
+  priority: number; // fractional priority at drag start
+  slotIndex: number; // logical position among the bucket's other jobs
+};
+
+// Gesture-local preview of the active job's placement. Updated on drag-over with
+// zero network requests; cleared on drop/cancel.
+type DragDraft = { id: string; columnId: string; priority: number };
 
 function usePendingItems() {
   type PendingItem = ReturnType<typeof useFetchers>[number] & {
@@ -109,6 +132,14 @@ const DateKanban = ({
     setColumnOrder(columns.map((col) => col.id));
   }, [columns]);
 
+  // Immutable origin snapshot for the in-flight gesture (drag-start → drop/cancel).
+  const originRef = useRef<DragOrigin | null>(null);
+  // Gesture-local preview; a drag-over updates this WITHOUT any network request.
+  const [draft, setDraft] = useState<DragDraft | null>(null);
+  const [activeItem, setActiveItem] = useState<JobItem | null>(null);
+
+  // Base optimistic projection: loader items merged with in-flight drop commits
+  // (their per-job fetchers), independent of the current gesture draft.
   const itemsById = new Map<string, JobItem>(
     initialItems.map((item) => [item.id, item])
   );
@@ -124,11 +155,30 @@ const DateKanban = ({
     }
   }
 
-  const items = Array.from(itemsById.values()).sort(
+  // Neighbor math (priority, slot, before/after) reads the base projection so it
+  // is path-independent and never sees the active job's own moving preview.
+  const baseItems = Array.from(itemsById.values()).sort(
     (a, b) => a.priority - b.priority
   );
 
-  const [activeItem, setActiveItem] = useState<JobItem | null>(null);
+  // Rendered items layer the gesture-local draft on top of the base projection so
+  // the card follows the pointer/keyboard without persisting anything.
+  const renderById = new Map(itemsById);
+  if (draft) {
+    const active = renderById.get(draft.id);
+    if (active) {
+      renderById.set(draft.id, {
+        ...active,
+        columnId: draft.columnId,
+        priority: draft.priority
+      });
+    }
+  }
+  const items = Array.from(renderById.values()).sort(
+    (a, b) => a.priority - b.priority
+  );
+
+  const columnIdSet = new Set(columns.map((col) => col.id));
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -137,135 +187,160 @@ const DateKanban = ({
     })
   );
 
+  // Derive the display bucket + fractional priority for a drop/preview target.
+  // Returns null for a null/missing/self/stale target. Neighbor math excludes the
+  // active job and reads the drag-start priority, so a direct and a circuitous
+  // drag ending on the same target produce the same command.
+  function computePlacement(
+    over: DragOverEvent["over"]
+  ): { columnId: string; priority: number } | null {
+    const origin = originRef.current;
+    if (!over || !origin) return null;
+
+    const overId = over.id.toString();
+    if (overId === origin.item.id) return null; // self target
+
+    const overData = over.data.current;
+
+    // Column background / empty column: retain the drag-start priority.
+    if (overData?.type === "column") {
+      if (!columnIdSet.has(overId)) return null; // stale target
+      return { columnId: overId, priority: origin.priority };
+    }
+
+    // Card target.
+    if (overData?.type === "item") {
+      const overItem = itemsById.get(overId);
+      if (!overItem) return null; // stale target
+      const columnId = overItem.columnId;
+
+      const columnItems = baseItems.filter(
+        (item) => item.columnId === columnId && item.id !== origin.item.id
+      );
+
+      const movingWithinBucket = columnId === origin.columnId;
+      const movingUp = origin.priority > overItem.priority;
+
+      let priorityBefore = 0;
+      let priorityAfter = 0;
+
+      if (!movingWithinBucket || movingUp) {
+        // Upward within a bucket, or any cross-bucket move: place BEFORE target.
+        priorityAfter = overItem.priority;
+        const predecessors = columnItems.filter(
+          (item) => item.priority < priorityAfter
+        );
+        priorityBefore = predecessors.length
+          ? predecessors[predecessors.length - 1].priority
+          : 0;
+      } else {
+        // Downward within a bucket: place AFTER target.
+        priorityBefore = overItem.priority;
+        priorityAfter =
+          columnItems.find((item) => item.priority > priorityBefore)
+            ?.priority ?? priorityBefore + 1;
+      }
+
+      return { columnId, priority: (priorityBefore + priorityAfter) / 2 };
+    }
+
+    return null;
+  }
+
   function onDragStart(event: DragStartEvent) {
     if (!hasDraggableData(event.active)) return;
     const data = event.active.data.current;
 
     // Only handle item dragging, not column dragging (dates are fixed)
-    if (data?.type === "item") {
-      setActiveItem(data.item as JobItem);
-      return;
-    }
+    if (data?.type !== "item") return;
+
+    const item = data.item as JobItem;
+    const columnOthers = baseItems.filter(
+      (other) => other.columnId === item.columnId && other.id !== item.id
+    );
+
+    originRef.current = {
+      item,
+      columnId: item.columnId,
+      dueDate: item.dueDate ?? null,
+      priority: item.priority,
+      slotIndex: columnOthers.filter((other) => other.priority < item.priority)
+        .length
+    };
+    setDraft(null);
+    setActiveItem(item);
   }
 
-  function onDragEnd() {
-    setActiveItem(null);
-  }
-
+  // Drag-over is preview-only: update gesture-local state, never submit. A
+  // null/missing/invalid/stale/self target restores the origin projection rather
+  // than retaining an earlier valid hover.
   function onDragOver(event: DragOverEvent) {
-    const { active, over } = event;
-    if (!over) return;
+    const origin = originRef.current;
+    if (!origin) return;
+    const placement = computePlacement(event.over);
+    setDraft(placement ? { id: origin.item.id, ...placement } : null);
+  }
 
-    const activeId = active.id;
-    const overId = over.id;
+  // Drag-end is the single commit boundary. Recompute from the FINAL target and
+  // submit at most one request, only when the placement differs from the origin.
+  function onDragEnd(event: DragEndEvent) {
+    const origin = originRef.current;
+    setDraft(null);
+    setActiveItem(null);
+    originRef.current = null;
+    if (!origin) return;
 
-    if (activeId === overId) return;
+    // Cancel / outside / invalid / stale / self all resolve to no placement.
+    const placement = computePlacement(event.over);
+    if (!placement) return;
 
-    if (!hasDraggableData(active) || !hasDraggableData(over)) return;
-
-    const activeData = active.data.current;
-    const overData = over.data.current;
-
-    const isActiveAnItem = activeData?.type === "item";
-    const isOverAnItem = overData?.type === "item";
-
-    if (!isActiveAnItem) return;
-
-    const activeItem = itemsById.get(activeId.toString());
-    const overItem = itemsById.get(overId.toString());
-
-    // Dropping a job over another job
-    if (isActiveAnItem && isOverAnItem && activeItem && overItem) {
-      // Calculate priority
-      let priorityBefore = 0;
-      let priorityAfter = 0;
-
-      if (
-        activeItem.priority > overItem.priority ||
-        activeItem.columnId !== overItem.columnId
-      ) {
-        priorityAfter = overItem.priority;
-
-        for (let i = items.length - 1; i >= 0; i--) {
-          const item = items[i];
-          if (
-            item.columnId === overItem.columnId &&
-            item.priority < priorityAfter
-          ) {
-            priorityBefore = item.priority ?? 0;
-            break;
-          }
-        }
-      } else {
-        priorityBefore = overItem.priority;
-        priorityAfter =
-          items.find(
-            (item) =>
-              item.columnId === overItem.columnId &&
-              item.priority > priorityBefore
-          )?.priority ?? priorityBefore + 1;
-      }
-
-      const newPriority = (priorityBefore + priorityAfter) / 2;
-
-      // Submit update when moving to a different column (date)
-      if (activeItem.columnId !== overItem.columnId) {
-        submit(
-          {
-            id: activeItem.id,
-            columnId: overItem.columnId,
-            priority: newPriority
-          },
-          {
-            method: "post",
-            action: path.to.scheduleDatesUpdate,
-            navigate: false,
-            fetcherKey: `job:${activeItem.id}`
-          }
-        );
-        return;
-      }
-
-      // Update priority within the same column
-      if (activeItem && overItem) {
-        submit(
-          {
-            id: activeItem.id,
-            columnId: activeItem.columnId,
-            priority: newPriority
-          },
-          {
-            method: "post",
-            action: path.to.scheduleDatesUpdate,
-            navigate: false,
-            fetcherKey: `job:${activeItem.id}`
-          }
-        );
-      }
+    // Returning to the original logical slot in the same bucket is a no-op even
+    // if the recomputed fractional priority differs.
+    if (placement.columnId === origin.columnId) {
+      const others = baseItems.filter(
+        (item) =>
+          item.columnId === origin.columnId && item.id !== origin.item.id
+      );
+      const newSlotIndex = others.filter(
+        (item) => item.priority < placement.priority
+      ).length;
+      if (newSlotIndex === origin.slotIndex) return;
     }
 
-    const isOverAColumn = overData?.type === "column";
+    // Display bucket and persistence command are distinct. A same-bucket reorder
+    // persists the job's exact original due date (or its source sentinel), so the
+    // due date is never rewritten to the bucket's first day.
+    const isSentinel = SENTINEL_COLUMN_IDS.includes(placement.columnId);
+    const persistedColumnId =
+      !isSentinel && placement.columnId === origin.columnId
+        ? (origin.dueDate ?? origin.columnId)
+        : placement.columnId;
 
-    // Dropping a job over a column
-    if (isActiveAnItem && isOverAColumn && activeItem) {
-      const newColumnId = overId as string;
-
-      if (activeItem.columnId !== newColumnId) {
-        submit(
-          {
-            id: activeItem.id,
-            columnId: newColumnId,
-            priority: activeItem.priority
-          },
-          {
-            method: "post",
-            action: path.to.scheduleDatesUpdate,
-            navigate: false,
-            fetcherKey: `job:${activeItem.id}`
-          }
-        );
-      }
+    const payload: Record<string, string | number> = {
+      id: origin.item.id,
+      columnId: persistedColumnId,
+      priority: placement.priority
+    };
+    // Diverge the optimistic display bucket from the persistence command only
+    // when they actually differ (same-bucket reorder), matching the inline
+    // due-date editor's payload shape.
+    if (placement.columnId !== persistedColumnId) {
+      payload.optimisticColumnId = placement.columnId;
     }
+
+    submit(payload, {
+      method: "post",
+      action: path.to.scheduleDatesUpdate,
+      navigate: false,
+      fetcherKey: `job:${origin.item.id}`
+    });
+  }
+
+  // Escape / cancellation restores the origin and submits nothing.
+  function onDragCancel() {
+    setDraft(null);
+    setActiveItem(null);
+    originRef.current = null;
   }
 
   const columnsMap = new Map(columns.map((col) => [col.id, col]));
@@ -292,6 +367,7 @@ const DateKanban = ({
         onDragStart={onDragStart}
         onDragEnd={onDragEnd}
         onDragOver={onDragOver}
+        onDragCancel={onDragCancel}
       >
         <BoardContainer>
           {columnOrder.map((colId) => {
