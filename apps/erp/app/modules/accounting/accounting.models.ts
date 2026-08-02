@@ -486,7 +486,8 @@ export const journalEntrySourceTypes = [
   "Credit Memo",
   "Debit Memo",
   "Non-Conformance",
-  "Inbound Inspection"
+  "Inbound Inspection",
+  "Opening Balance"
 ] as const;
 
 export const journalEntryStatuses = ["Draft", "Posted", "Reversed"] as const;
@@ -754,3 +755,100 @@ export const fixedAssetUsageLogValidator = z.object({
 export const fixedAssetDisposalValidator = z.object({
   disposalDate: z.string().min(1, { message: "Disposal date is required" })
 });
+
+// -- Accounting Cutover & Activation (#1057) --------------------------------
+// One-way per-company activation event: readiness → opening balances → validate
+// → activate. See .ai/specs/2026-07-04-accounting-cutover-activation.md.
+
+// The auto-proposable sections of the opening-balance journal. "Everything else"
+// (cash, loans, equity) is entered by hand through the journal-line editor and
+// has no section key.
+export const openingBalanceSections = [
+  "inventory",
+  "ar",
+  "ap",
+  "fixedAssets"
+] as const;
+export type OpeningBalanceSection = (typeof openingBalanceSections)[number];
+
+// (Re)generate one section's proposed lines on the Draft 'Opening Balance'
+// journal. Idempotent per section (its control-account lines are replaced).
+export const proposeOpeningBalanceValidator = z.object({
+  intent: z.literal("propose"),
+  cutoverDate: z.string().min(1, { message: "Cutover date is required" }),
+  section: z.enum(openingBalanceSections, {
+    errorMap: () => ({ message: "Section is required" })
+  })
+});
+
+// CSV closing-trial-balance path — replaces ALL proposal lines with mapped rows.
+// `rows` arrives as a JSON-encoded array of { accountNumber, description?,
+// debit, credit } (parsed and mapped to Carbon accounts server-side).
+export const importTrialBalanceValidator = z.object({
+  intent: z.literal("import-tb"),
+  cutoverDate: z.string().min(1, { message: "Cutover date is required" }),
+  rows: z.string().min(1, { message: "A trial balance is required" })
+});
+
+// Re-run the four opening-balance validations (journal resolved server-side).
+export const validateOpeningBalanceValidator = z.object({
+  intent: z.literal("validate")
+});
+
+// The one-way activation. `confirmation` must equal the company name.
+export const activateAccountingValidator = z.object({
+  intent: z.literal("activate"),
+  cutoverDate: z.string().min(1, { message: "Cutover date is required" }),
+  confirmation: z
+    .string()
+    .trim()
+    .min(1, { message: "Type the company name to confirm" })
+});
+
+// One parsed row of an imported closing trial balance.
+export type TrialBalanceImportRow = {
+  accountNumber: string;
+  description?: string;
+  debit: number;
+  credit: number;
+};
+
+// A single pre-cutover readiness check surfaced on wizard step 1.
+export type ActivationReadinessCheck = {
+  key: string;
+  label: string;
+  status: "pass" | "fail" | "info";
+  detail?: string;
+  // Deep link to the settings/config surface that resolves a failing check.
+  to?: string;
+};
+
+export type ActivationReadiness = {
+  activated: boolean;
+  activatedAt: string | null;
+  activatedBy: string | null;
+  cutoverDate: string | null;
+  companyName: string;
+  checks: ActivationReadinessCheck[];
+  // First-day-of-period dates the cutover may fall on (period starts only).
+  cutoverDateOptions: string[];
+  ready: boolean;
+};
+
+// One tie-out card: the draft journal side vs the subledger side.
+export type OpeningBalanceTieOut = {
+  draftAmount: number;
+  subledgerAmount: number;
+  variance: number;
+  pass: boolean;
+};
+
+export type OpeningBalanceValidation = {
+  balanced: OpeningBalanceTieOut;
+  arTieOut: OpeningBalanceTieOut;
+  apTieOut: OpeningBalanceTieOut;
+  inventoryTieOut: OpeningBalanceTieOut;
+  // Null when the company has no fixed assets (the check is skipped).
+  fixedAssetTieOut: OpeningBalanceTieOut | null;
+  allPass: boolean;
+};

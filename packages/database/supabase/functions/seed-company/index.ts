@@ -444,6 +444,83 @@ serve(async (req: Request) => {
           }))
         )
         .execute();
+
+      // GA path (spec §4): activate accounting at creation with a zero ledger —
+      // no opening balances, no wizard. Env-gated until the GA gate is met so
+      // internal companies exercise it first. Stamps the activation columns,
+      // generates the current fiscal year's periods, closes the pre-creation
+      // ones (empty-pre-history invariant), and flips accountingEnabled on.
+      if (Deno.env.get("SEED_ACCOUNTING_ACTIVE") === "true") {
+        const MONTHS = [
+          "January", "February", "March", "April", "May", "June",
+          "July", "August", "September", "October", "November", "December",
+        ];
+        const startMonth = Math.max(
+          1,
+          MONTHS.indexOf(fiscalYearSettings.startMonth) + 1
+        );
+        const now = new Date();
+        const creationYear = now.getUTCFullYear();
+        const creationMonthIndex = now.getUTCMonth(); // 0-indexed
+        const M = creationMonthIndex + 1; // 1-12
+        const cutoverDate = new Date(Date.UTC(creationYear, creationMonthIndex, 1))
+          .toISOString()
+          .split("T")[0];
+        const periodNumber = ((M - startMonth + 12) % 12) + 1;
+        const fiscalYear =
+          startMonth === 1
+            ? creationYear
+            : M >= startMonth
+              ? creationYear + 1
+              : creationYear;
+        const firstYear = startMonth === 1 ? fiscalYear : fiscalYear - 1;
+
+        const periods = [];
+        for (let p = 1; p <= 12; p++) {
+          const monthIndex = (startMonth - 1 + (p - 1)) % 12;
+          const year =
+            firstYear + Math.floor((startMonth - 1 + (p - 1)) / 12);
+          const startDate = new Date(Date.UTC(year, monthIndex, 1))
+            .toISOString()
+            .split("T")[0];
+          const endDate = new Date(Date.UTC(year, monthIndex + 1, 0))
+            .toISOString()
+            .split("T")[0];
+          const isBeforeCutover = endDate < cutoverDate;
+          periods.push({
+            startDate,
+            endDate,
+            companyId,
+            status: p === periodNumber ? "Active" : "Inactive",
+            closeStatus: isBeforeCutover ? "Closed" : "Open",
+            fiscalYear,
+            periodNumber: p,
+            closedAt: isBeforeCutover ? now.toISOString() : null,
+            closedBy: isBeforeCutover ? userId : null,
+            createdBy: userId,
+          });
+        }
+        await (trx as any)
+          .insertInto("accountingPeriod")
+          .values(periods)
+          .execute();
+
+        await (trx as any)
+          .updateTable("company")
+          .set({
+            accountingActivatedAt: now.toISOString(),
+            accountingActivatedBy: userId,
+            accountingCutoverDate: cutoverDate,
+          })
+          .where("id", "=", companyId)
+          .execute();
+
+        await (trx as any)
+          .updateTable("companySettings")
+          .set({ accountingEnabled: true })
+          .where("id", "=", companyId)
+          .execute();
+      }
       } // end if (!identityOnly)
 
       const user = await client

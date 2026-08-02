@@ -179,6 +179,9 @@ msgstr "1 черновая запись в журнале"
 msgid "1 unposted document"
 msgstr "1 неопубликованный документ"
 
+msgid "1. Readiness"
+msgstr "1. Готовность"
+
 msgid "12 monthly periods"
 msgstr "12 ежемесячных периодов"
 
@@ -188,8 +191,14 @@ msgstr "13+ недель"
 msgid "1Y"
 msgstr "1 год"
 
+msgid "2. Opening balances"
+msgstr "2. Начальные остатки"
+
 msgid "2h"
 msgstr "2ч"
+
+msgid "3. Validation"
+msgstr "3. Проверка"
 
 msgid "30D"
 msgstr "30 дней"
@@ -199,6 +208,9 @@ msgstr "3D модель"
 
 msgid "3h"
 msgstr "3ч"
+
+msgid "4. Activate"
+msgstr "4. Активировать"
 
 msgid "4h"
 msgstr "4ч"
@@ -503,6 +515,12 @@ msgstr "бухгалтерия"
 msgid "Accounting"
 msgstr "Бухгалтерия"
 
+msgid "Accounting has not been activated yet."
+msgstr "Учет еще не активирован."
+
+msgid "Accounting is activated"
+msgstr "Учет активирован"
+
 msgid "Accounting is disabled"
 msgstr "Бухгалтерский учет отключен"
 
@@ -514,6 +532,10 @@ msgstr "Учетный период"
 
 msgid "Accounting Periods"
 msgstr "Периоды бухгалтерского учета"
+
+#. placeholder {0}: formatDate(accountingActivatedAt)
+msgid "Accounting was activated on {0}."
+msgstr "Учет был активирован {0}."
 
 msgid "Accounting: GL, AR, AP, and month-end close"
 msgstr "Бухгалтерия: ГЛ, АР, АП и закрытие месяца"
@@ -590,14 +612,31 @@ msgstr "Активировать"
 msgid "Activate {name}"
 msgstr "Активировать {name}"
 
+msgid "Activate accounting"
+msgstr "Активировать учет"
+
+msgid "Activate Accounting"
+msgstr "Активировать учет"
+
+msgid "Activate accounting for this company: post opening balances, close pre-cutover periods, and lock the base currency and fiscal calendar. Activation is one-way."
+msgstr "Активировать учет для этой компании: разместить начальные остатки, закрыть периоды до переноса и заблокировать базовую валюту и фискальный календарь. Активация необратима."
+
 msgid "Activate Process"
 msgstr "Активировать процесс"
 
 msgid "Activate Work Center"
 msgstr "Активировать рабочий центр"
 
+#. placeholder {0}: readiness.activatedAt ? formatDate(readiness.activatedAt) : ""
+#. placeholder {1}: readiness.cutoverDate ? formatDate(readiness.cutoverDate) : ""
+msgid "Activated on {0}. The cutover date is {1}. Base currency and fiscal settings are now locked."
+msgstr "Активировано {0}. Дата переноса: {1}. Базовая валюта и параметры фискального периода заблокированы."
+
 msgid "Activation fee · we advise"
 msgstr "Плата за активацию · мы консультируем"
+
+msgid "Activation is one-way. It posts an opening balance journal dated the day before cutover, closes every earlier period, and locks the base currency and fiscal calendar."
+msgstr "Активация необратима. Она размещает начальный баланс на дату дня перед переносом, закрывает все более ранние периоды и блокирует базовую валюту и фискальный календарь."
 
 msgid "Active"
 msgstr "Активно"
@@ -1974,6 +2013,9 @@ msgstr "Создавайте учебные материалы на основе
 msgid "Build tailored, role-based training materials"
 msgstr "Создавайте адаптированные учебные материалы на основе ролей"
 
+msgid "Build the opening balances to validate."
+msgstr "Построить начальные остатки для проверки."
+
 msgid "Built and costed as its own method"
 msgstr "Построен и рассчитан как собственный метод"
 
@@ -2300,6 +2342,9 @@ msgstr "План счетов"
 
 msgid "Chat"
 msgstr "Чат"
+
+msgid "Check"
+msgstr "Проверка"
 
 msgid "Check the item ledger for any items with a negative on-hand quantity as of period end — usually a missing receipt or an out-of-order posting that distorts inventory value and cost of goods sold. Mark it done once reviewed, or skip with a reason."
 msgstr "Проверьте реестр товаров на наличие товаров с отрицательным количеством в наличии на конец периода — обычно это отсутствующая квитанция или неправильно размещенная проводка, которая искажает стоимость запасов и себестоимость продаж. Отметьте как выполненное после проверки или пропустите с указанием причины."
@@ -3556,8 +3601,14 @@ msgstr "Перейти на Carbon и заморозить старую сист
 msgid "Cut over, freeze the old system, and confirm you're live on Carbon."
 msgstr "Переключитесь, заморозьте старую систему и подтвердите, что вы работаете на Carbon."
 
+msgid "Cutover"
+msgstr "Перенос"
+
 msgid "Cutover checklist"
 msgstr "Контрольный список переключения"
+
+msgid "Cutover date"
+msgstr "Дата переноса"
 
 msgid "Cutover step"
 msgstr "Этап переключения"
@@ -5199,6 +5250,9 @@ msgstr "Тип события"
 msgid "Events"
 msgstr "События"
 
+msgid "Every check must pass before you can activate. The cutover date can only fall on the first day of a fiscal period."
+msgstr "Все проверки должны пройти перед активацией. Дата переноса может быть только первым днем фискального периода."
+
 msgid "Every condition must match"
 msgstr "Каждое условие должно совпадать"
 
@@ -5804,6 +5858,7 @@ msgstr "Завершить в"
 
 msgid "Finish with material unpicked?"
 msgstr "Завершить с непобранным материалом?"
+msgstr "Завершить с недобранным материалом?"
 
 msgid "Finished goods"
 msgstr "Отделки"
@@ -5858,6 +5913,9 @@ msgstr "Отклонение амортизации постоянных зат�
 
 msgid "Fixed Asset"
 msgstr "Основное средство"
+
+msgid "Fixed assets"
+msgstr "Основные средства"
 
 msgid "Fixed Assets"
 msgstr "Основные средства"
@@ -6508,11 +6566,23 @@ msgstr "Руководитель внедрения"
 msgid "Implementation Support"
 msgstr "Поддержка внедрения"
 
+msgid "Import"
+msgstr "Импорт"
+
 msgid "Import {label} CSV"
 msgstr "Импорт {label} CSV"
 
+msgid "Import closing trial balance"
+msgstr "Импортировать закрывающий пробный баланс"
+
 msgid "Import results"
 msgstr "Результаты импорта"
+
+msgid "Import trial balance"
+msgstr "Импортировать пробный баланс"
+
+msgid "Import Trial Balance"
+msgstr "Импортировать пробный баланс"
 
 msgid "Import your BOM"
 msgstr "Импортируйте вашу BOM"
@@ -7064,6 +7134,9 @@ msgstr "Присоединиться к {0}"
 msgid "Journal"
 msgstr "Журнал"
 
+msgid "Journal balances"
+msgstr "Балансы журнала"
+
 msgid "Journal Entries"
 msgstr "Записи в журнале"
 
@@ -7096,6 +7169,7 @@ msgstr "Оставить открытым"
 
 msgid "Keep picking"
 msgstr "Продолжить комплектацию"
+msgstr "Продолжить подбор"
 
 msgid "Key"
 msgstr "Ключ"
@@ -8400,6 +8474,9 @@ msgstr "Нет добавленных навыков"
 msgid "No Access"
 msgstr "Нет доступа"
 
+msgid "No account rows found in the file."
+msgstr "В файле не найдено рядов с учетом."
+
 msgid "No action needed"
 msgstr "Никаких действий не требуется"
 
@@ -8583,6 +8660,8 @@ msgstr "Нет открытых заказов для этого товара, �
 
 msgid "No open sales order lines"
 msgstr "Нет открытых строк заказа продажи"
+msgid "No opening balance lines yet."
+msgstr "Пока нет строк начального баланса."
 
 msgid "No operations require picking at this location"
 msgstr "На этом месте нет операций, требующих комплектации"
@@ -8763,6 +8842,9 @@ msgstr "Не таблица, а баланс главной книги: стои
 
 msgid "Not enough jobs to cover quantity"
 msgstr "Недостаточно заданий для покрытия количества"
+
+msgid "Not ready"
+msgstr "Не готово"
 
 msgid "Not referenced anywhere yet."
 msgstr "Пока не на что-либо ссылается."
@@ -9943,6 +10025,12 @@ msgstr "Обещанная дата"
 msgid "Properties"
 msgstr "Свойства"
 
+msgid "Propose"
+msgstr "Предложить"
+
+msgid "Propose each section from your subledgers, or import a closing trial balance. Add cash, loans, and equity as journal lines until the entry balances."
+msgstr "Предложите каждый раздел из ваших вспомогательных счетов или импортируйте закрывающий пробный баланс. Добавьте наличные, кредиты и капитал в виде строк журнала, пока запись не будет сбалансирована."
+
 msgid "Protect the go-live date"
 msgstr "Защитите дату запуска"
 
@@ -10263,6 +10351,9 @@ msgstr "Сырьё и материалы (по умолчанию)"
 msgid "Re-keying between quoting, the floor, and finance"
 msgstr "Повторный ввод данных между расчётом, цехом и финансами"
 
+msgid "Re-validate"
+msgstr "Перепроверить"
+
 msgid "Reactivate"
 msgstr "Переактивировать"
 
@@ -10531,6 +10622,9 @@ msgstr "Остаток"
 msgid "Remaining after split stays on the original row."
 msgstr "Остаток после разделения остается в исходной строке."
 
+msgid "Remaining to balance"
+msgstr "Оставшаяся сумма для балансирования"
+
 msgid "Remember this PIN. You will need it to exit console mode on MES terminals."
 msgstr "Запомните этот PIN-код. Он потребуется вам для выхода из режима консоли на терминалах MES."
 
@@ -10738,6 +10832,9 @@ msgstr "Остаточная стоимость"
 msgid "Residual Value %"
 msgstr "Остаточная стоимость %"
 
+msgid "Resolve every failing readiness check first."
+msgstr "Сначала разрешите все неудачные проверки готовности."
+
 msgid "Resolve these before completing the NCR: every row must have a non-Pending disposition, and its linked entity quantities must match the row quantity."
 msgstr "Разрешите эти проблемы перед завершением NCR: каждая строка должна иметь статус, отличный от «Ожидание», и количество связанных сущностей должно совпадать с количеством строки."
 
@@ -10918,6 +11015,9 @@ msgstr "Маршрут операций"
 
 msgid "rows"
 msgstr "строк"
+
+msgid "rows parsed"
+msgstr "строк разобрано"
 
 msgid "Rule"
 msgstr "Правило"
@@ -11783,6 +11883,7 @@ msgstr "Конфигурация цеха."
 
 msgid "short"
 msgstr "короткий"
+msgstr "недостаток"
 
 msgid "Short"
 msgstr "Недостача"
@@ -12788,6 +12889,9 @@ msgstr "Стандартная налоговая ставка, применяе
 msgid "The department this one rolls up under for reporting and headcount hierarchies; leave empty for a top-level department."
 msgstr "Отдел, под который это накапливается для отчетности и иерархий подсчета; оставить пусто для отдела верхнего уровня."
 
+msgid "The draft journal must balance and tie out to each subledger within 0.01."
+msgstr "Черновик журнала должен быть сбалансирован и согласован с каждым вспомогательным счетом с точностью до 0,01."
+
 msgid "The eight-disciplines quality method, modeled with the nonconformance workflow's tasks rather than hard-coded."
 msgstr "Метод качества восьми дисциплин, моделируемый с помощью задач рабочего процесса несоответствия, а не жестко закодированный."
 
@@ -13319,6 +13423,7 @@ msgstr "Эти адреса электронной почты будут авт�
 
 msgid "These items still have material to pick. Finishing now marks the list Partial."
 msgstr "У этих товаров все еще есть материал для комплектации. Завершение сейчас отметит список как Частичный."
+msgstr "Эти позиции все еще имеют материал для подбора. Завершение сейчас отметит список как Частичный."
 
 msgid "These jobs have operations assigned to this work center:"
 msgstr "Эти задания имеют операции, назначенные этому рабочему центру:"
@@ -13334,6 +13439,8 @@ msgstr "Это уведомление об изменении реализует
 
 msgid "This change notice is closed, so its changes are read-only."
 msgstr "Это уведомление об изменении закрыто, поэтому его изменения доступны только для чтения."
+msgid "This cannot be undone. Type the company name to confirm."
+msgstr "Это не может быть отменено. Введите название компании для подтверждения."
 
 msgid "This completes the Discovery step."
 msgstr "Это завершает этап Discovery."
@@ -13534,6 +13641,9 @@ msgstr "Часовой пояс"
 
 msgid "Title"
 msgstr "Название"
+
+msgid "to confirm"
+msgstr "для подтверждения"
 
 msgid "To Location"
 msgstr "На локацию"
@@ -13784,6 +13894,9 @@ msgstr "Корзина"
 msgid "Trial Balance"
 msgstr "Пробный баланс"
 
+msgid "Trial balance CSV"
+msgstr "Пробный баланс CSV"
+
 msgid "Triggers"
 msgstr "Триггеры"
 
@@ -14022,6 +14135,9 @@ msgstr "Обновитесь, чтобы разблокировать истор
 
 msgid "Upload"
 msgstr "Загрузить"
+
+msgid "Upload a CSV with account number, description, debit, and credit columns. Rows map to Carbon accounts by number."
+msgstr "Загрузите CSV со столбцами номера счета, описания, дебета и кредита. Строки соответствуют счетам Carbon по номеру."
 
 msgid "Upload a PDF first"
 msgstr "Сначала загрузите PDF"

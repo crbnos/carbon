@@ -179,6 +179,9 @@ msgstr "1 Entwurfs-Journaleintrag"
 msgid "1 unposted document"
 msgstr "1 unveröffentlichtes Dokument"
 
+msgid "1. Readiness"
+msgstr "1. Bereitschaft"
+
 msgid "12 monthly periods"
 msgstr "12 monatliche Perioden"
 
@@ -188,8 +191,14 @@ msgstr "13+ Wochen"
 msgid "1Y"
 msgstr "1 Jahr"
 
+msgid "2. Opening balances"
+msgstr "2. Eröffnungssalden"
+
 msgid "2h"
 msgstr "2h"
+
+msgid "3. Validation"
+msgstr "3. Validierung"
 
 msgid "30D"
 msgstr "30 Tage"
@@ -199,6 +208,9 @@ msgstr "3D-Modell"
 
 msgid "3h"
 msgstr "3h"
+
+msgid "4. Activate"
+msgstr "4. Aktivieren"
 
 msgid "4h"
 msgstr "4h"
@@ -503,6 +515,12 @@ msgstr "Buchhaltung"
 msgid "Accounting"
 msgstr "Buchhaltung"
 
+msgid "Accounting has not been activated yet."
+msgstr "Buchhaltung wurde noch nicht aktiviert."
+
+msgid "Accounting is activated"
+msgstr "Buchhaltung ist aktiviert"
+
 msgid "Accounting is disabled"
 msgstr "Buchhaltung ist deaktiviert"
 
@@ -514,6 +532,10 @@ msgstr "Abrechnungsperiode"
 
 msgid "Accounting Periods"
 msgstr "Abrechnungsperioden"
+
+#. placeholder {0}: formatDate(accountingActivatedAt)
+msgid "Accounting was activated on {0}."
+msgstr "Buchhaltung wurde am {0} aktiviert."
 
 msgid "Accounting: GL, AR, AP, and month-end close"
 msgstr "Buchhaltung: Hauptbuch, Debitorenbuchhaltung, Kreditorenbuchhaltung und Monatsabschluss"
@@ -562,6 +584,7 @@ msgstr "Akkumulationszeitraum:"
 
 msgid "Acknowledge & finish"
 msgstr "Bestätigen & beenden"
+msgstr "Bestätigen und beenden"
 
 msgid "Acquisition Cost"
 msgstr "Anschaffungskosten"
@@ -590,14 +613,31 @@ msgstr "Aktivieren"
 msgid "Activate {name}"
 msgstr "Aktivieren {name}"
 
+msgid "Activate accounting"
+msgstr "Buchhaltung aktivieren"
+
+msgid "Activate Accounting"
+msgstr "Buchhaltung aktivieren"
+
+msgid "Activate accounting for this company: post opening balances, close pre-cutover periods, and lock the base currency and fiscal calendar. Activation is one-way."
+msgstr "Buchhaltung für diese Unternehmung aktivieren: Eröffnungssalden buchen, vorgelagerte Perioden schließen und Basiswährung sowie Fiskaljahr sperren. Die Aktivierung ist unumkehrbar."
+
 msgid "Activate Process"
 msgstr "Prozess aktivieren"
 
 msgid "Activate Work Center"
 msgstr "Arbeitszentrum aktivieren"
 
+#. placeholder {0}: readiness.activatedAt ? formatDate(readiness.activatedAt) : ""
+#. placeholder {1}: readiness.cutoverDate ? formatDate(readiness.cutoverDate) : ""
+msgid "Activated on {0}. The cutover date is {1}. Base currency and fiscal settings are now locked."
+msgstr "Aktiviert am {0}. Das Umstellungsdatum ist {1}. Basiswährung und Fiskaleinstellungen sind nun gesperrt."
+
 msgid "Activation fee · we advise"
 msgstr "Aktivierungsgebühr · wir beraten"
+
+msgid "Activation is one-way. It posts an opening balance journal dated the day before cutover, closes every earlier period, and locks the base currency and fiscal calendar."
+msgstr "Die Aktivierung ist unumkehrbar. Sie bucht ein Eröffnungssaldo-Journal mit Datum des Tages vor der Umstellung, schließt jede frühere Periode und sperrt die Basiswährung und den Fiskalkalender."
 
 msgid "Active"
 msgstr "Aktiv"
@@ -1974,6 +2014,9 @@ msgstr "Erstellen Sie rollenbasierte Schulungsmaterialien"
 msgid "Build tailored, role-based training materials"
 msgstr "Erstellen Sie maßgeschneiderte, rollenbasierte Schulungsmaterialien"
 
+msgid "Build the opening balances to validate."
+msgstr "Erstellen Sie die Eröffnungssalden zur Validierung."
+
 msgid "Built and costed as its own method"
 msgstr "Als eigene Methode aufgebaut und kalkuliert"
 
@@ -2300,6 +2343,9 @@ msgstr "Kontenplan"
 
 msgid "Chat"
 msgstr "Chat"
+
+msgid "Check"
+msgstr "Überprüfung"
 
 msgid "Check the item ledger for any items with a negative on-hand quantity as of period end — usually a missing receipt or an out-of-order posting that distorts inventory value and cost of goods sold. Mark it done once reviewed, or skip with a reason."
 msgstr "Überprüfen Sie das Artikelhauptbuch auf Artikel mit negativem Bestand am Ende der Periode — normalerweise eine fehlende Rechnung oder eine falsch angeordnete Buchung, die den Bestandswert und die Herstellungskosten verfälscht. Markieren Sie es als erledigt, nachdem Sie es überprüft haben, oder überspringen Sie es mit einem Grund."
@@ -3556,8 +3602,14 @@ msgstr "Zu Carbon wechseln und das alte System einfrieren"
 msgid "Cut over, freeze the old system, and confirm you're live on Carbon."
 msgstr "Wechsel durchführen, altes System einfrieren und bestätigen, dass Sie auf Carbon live sind."
 
+msgid "Cutover"
+msgstr "Umstellung"
+
 msgid "Cutover checklist"
 msgstr "Umstiegscheckliste"
+
+msgid "Cutover date"
+msgstr "Umstellungsdatum"
 
 msgid "Cutover step"
 msgstr "Umstellungsschritt"
@@ -5199,6 +5251,9 @@ msgstr "Ereignistyp"
 msgid "Events"
 msgstr "Ereignisse"
 
+msgid "Every check must pass before you can activate. The cutover date can only fall on the first day of a fiscal period."
+msgstr "Jede Überprüfung muss bestanden sein, bevor Sie aktivieren können. Das Umstellungsdatum kann nur auf den ersten Tag einer Fiskalperiode fallen."
+
 msgid "Every condition must match"
 msgstr "Jede Bedingung muss erfüllt sein"
 
@@ -5804,6 +5859,7 @@ msgstr "Fertigstellen zu"
 
 msgid "Finish with material unpicked?"
 msgstr "Mit nicht gepicktem Material beenden?"
+msgstr "Mit unkomissioniertem Material beenden?"
 
 msgid "Finished goods"
 msgstr "Oberflächen"
@@ -5857,6 +5913,9 @@ msgid "Fixed asset"
 msgstr "Abweichung der Fixkostenabschreibung, wenn die Losgröße vom Standard abweicht"
 
 msgid "Fixed Asset"
+msgstr "Anlagevermögen"
+
+msgid "Fixed assets"
 msgstr "Anlagevermögen"
 
 msgid "Fixed Assets"
@@ -6508,11 +6567,23 @@ msgstr "Implementierungsleiter"
 msgid "Implementation Support"
 msgstr "Implementierungsunterstützung"
 
+msgid "Import"
+msgstr "Importieren"
+
 msgid "Import {label} CSV"
 msgstr "Importiere {label} CSV"
 
+msgid "Import closing trial balance"
+msgstr "Schlussbilanzprobe importieren"
+
 msgid "Import results"
 msgstr "Importergebnisse"
+
+msgid "Import trial balance"
+msgstr "Bilanzprobe importieren"
+
+msgid "Import Trial Balance"
+msgstr "Bilanzprobe importieren"
 
 msgid "Import your BOM"
 msgstr "Importieren Sie Ihre Stückliste"
@@ -7064,6 +7135,9 @@ msgstr "Treten Sie {0} bei"
 msgid "Journal"
 msgstr "Tagebuch"
 
+msgid "Journal balances"
+msgstr "Journal-Salden"
+
 msgid "Journal Entries"
 msgstr "Journaleinträge"
 
@@ -7096,6 +7170,7 @@ msgstr "Offen halten"
 
 msgid "Keep picking"
 msgstr "Weiter kommissionieren"
+msgstr "Kommissionierung fortsetzen"
 
 msgid "Key"
 msgstr "Schlüssel"
@@ -8400,6 +8475,9 @@ msgstr "Keine Fähigkeiten hinzugefügt"
 msgid "No Access"
 msgstr "Kein Zugriff"
 
+msgid "No account rows found in the file."
+msgstr "Keine Kontoreihen in der Datei gefunden."
+
 msgid "No action needed"
 msgstr "Keine Aktion erforderlich"
 
@@ -8583,6 +8661,8 @@ msgstr "Für diesen Artikel sind keine offenen Bestellungen zum Verknüpfen verf
 
 msgid "No open sales order lines"
 msgstr "Keine offenen Verkaufsbestellpositionen"
+msgid "No opening balance lines yet."
+msgstr "Noch keine Eröffnungssaldozeilen."
 
 msgid "No operations require picking at this location"
 msgstr "Keine Operationen erfordern Kommissionierung an diesem Standort"
@@ -8763,6 +8843,9 @@ msgstr "Nicht eine Tabelle, sondern ein Hauptbuch-Saldo: Kosten sammeln sich, we
 
 msgid "Not enough jobs to cover quantity"
 msgstr "Nicht genug Aufträge zur Deckung der Menge"
+
+msgid "Not ready"
+msgstr "Nicht bereit"
 
 msgid "Not referenced anywhere yet."
 msgstr "Noch nirgendwo referenziert."
@@ -9943,6 +10026,12 @@ msgstr "Zugesagtes Datum"
 msgid "Properties"
 msgstr "Eigenschaften"
 
+msgid "Propose"
+msgstr "Vorschlag"
+
+msgid "Propose each section from your subledgers, or import a closing trial balance. Add cash, loans, and equity as journal lines until the entry balances."
+msgstr "Schlagen Sie jeden Abschnitt Ihrer Nebenbücher vor oder importieren Sie eine Schlussbilanzprobe. Fügen Sie Bargeld, Darlehen und Eigenkapital als Journalzeilen hinzu, bis die Buchung ausgleicht."
+
 msgid "Protect the go-live date"
 msgstr "Schützen Sie das Go-Live-Datum"
 
@@ -10263,6 +10352,9 @@ msgstr "Rohstoffe (Standard)"
 msgid "Re-keying between quoting, the floor, and finance"
 msgstr "Erneute Eingabe zwischen Angebotserstellung, Produktion und Finanzen"
 
+msgid "Re-validate"
+msgstr "Neu validieren"
+
 msgid "Reactivate"
 msgstr "Reaktivieren"
 
@@ -10531,6 +10623,9 @@ msgstr "Verbleibend"
 msgid "Remaining after split stays on the original row."
 msgstr "Verbleibende Menge bleibt in der ursprünglichen Zeile."
 
+msgid "Remaining to balance"
+msgstr "Noch auszugleichen"
+
 msgid "Remember this PIN. You will need it to exit console mode on MES terminals."
 msgstr "Merken Sie sich diese PIN. Sie benötigen sie, um den Konsolenmodus auf MES-Terminals zu beenden."
 
@@ -10738,6 +10833,9 @@ msgstr "Restwert"
 msgid "Residual Value %"
 msgstr "Restwert %"
 
+msgid "Resolve every failing readiness check first."
+msgstr "Beheben Sie zuerst jeden fehlgeschlagenen Bereitschaftscheck."
+
 msgid "Resolve these before completing the NCR: every row must have a non-Pending disposition, and its linked entity quantities must match the row quantity."
 msgstr "Beheben Sie diese vor Abschluss des NCR: Jede Zeile muss eine nicht ausstehende Disposition haben, und ihre verknüpften Entitätsmengen müssen mit der Zeilenmenge übereinstimmen."
 
@@ -10918,6 +11016,9 @@ msgstr "Arbeitsplan"
 
 msgid "rows"
 msgstr "Zeilen"
+
+msgid "rows parsed"
+msgstr "Zeilen analysiert"
 
 msgid "Rule"
 msgstr "Regel"
@@ -11783,6 +11884,7 @@ msgstr "Konfiguration der Produktionshalle."
 
 msgid "short"
 msgstr "kurz"
+msgstr "Manko"
 
 msgid "Short"
 msgstr "Mangel"
@@ -12788,6 +12890,9 @@ msgstr "Der für diesen Kunden geltende Standard-Steuersatz, der auf Angebots- u
 msgid "The department this one rolls up under for reporting and headcount hierarchies; leave empty for a top-level department."
 msgstr "Die Abteilung, unter die diese für Berichterstattung und Kopfzahlen-Hierarchien untergeordnet ist; leer lassen für eine Abteilung der obersten Ebene."
 
+msgid "The draft journal must balance and tie out to each subledger within 0.01."
+msgstr "Das Entwurfs-Journal muss ausgleichen und sich mit jedem Nebenbuch auf 0,01 abstimmen."
+
 msgid "The eight-disciplines quality method, modeled with the nonconformance workflow's tasks rather than hard-coded."
 msgstr "Die Qualitätsmethode nach acht Disziplinen, modelliert mit den Aufgaben des Abweichungs-Workflows anstelle von hart codierter Logik."
 
@@ -13319,6 +13424,7 @@ msgstr "Diese E-Mail-Adressen werden automatisch in CC auf alle Angebots-E-Mails
 
 msgid "These items still have material to pick. Finishing now marks the list Partial."
 msgstr "Diese Artikel enthalten noch Material zum Kommissionieren. Das Beenden markiert die Liste als Teilweise."
+msgstr "Diese Artikel haben noch Material zum Kommissionieren. Das Beenden markiert die Liste jetzt als Teilweise."
 
 msgid "These jobs have operations assigned to this work center:"
 msgstr "Diese Aufträge haben Operationen, die diesem Arbeitszentrum zugewiesen sind:"
@@ -13334,6 +13440,8 @@ msgstr "Diese Änderungsmitteilung wird gerade implementiert, daher sind ihre Ä
 
 msgid "This change notice is closed, so its changes are read-only."
 msgstr "Diese Änderungsmitteilung ist geschlossen, daher sind ihre Änderungen schreibgeschützt."
+msgid "This cannot be undone. Type the company name to confirm."
+msgstr "Dies kann nicht rückgängig gemacht werden. Geben Sie den Namen des Unternehmens ein, um zu bestätigen."
 
 msgid "This completes the Discovery step."
 msgstr "Dies schließt den Discovery-Schritt ab."
@@ -13534,6 +13642,9 @@ msgstr "Zeitzone"
 
 msgid "Title"
 msgstr "Titel"
+
+msgid "to confirm"
+msgstr "zur Bestätigung"
 
 msgid "To Location"
 msgstr "Zielort"
@@ -13784,6 +13895,9 @@ msgstr "Papierkorb"
 msgid "Trial Balance"
 msgstr "Rohbilanz"
 
+msgid "Trial balance CSV"
+msgstr "Versuchsbilanz CSV"
+
 msgid "Triggers"
 msgstr "Auslöser"
 
@@ -14022,6 +14136,9 @@ msgstr "Upgrade freischalten, um Audit-Verlauf zu entsperren"
 
 msgid "Upload"
 msgstr "Hochladen"
+
+msgid "Upload a CSV with account number, description, debit, and credit columns. Rows map to Carbon accounts by number."
+msgstr "Laden Sie eine CSV-Datei mit Kontonummer, Beschreibung, Soll- und Habenspalten hoch. Zeilen werden Carbon-Konten nach Nummer zugeordnet."
 
 msgid "Upload a PDF first"
 msgstr "Laden Sie zuerst eine PDF-Datei hoch"

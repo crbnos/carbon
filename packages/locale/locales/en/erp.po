@@ -179,6 +179,9 @@ msgstr "1 draft journal entry"
 msgid "1 unposted document"
 msgstr "1 unposted document"
 
+msgid "1. Readiness"
+msgstr "1. Readiness"
+
 msgid "12 monthly periods"
 msgstr "12 monthly periods"
 
@@ -188,8 +191,14 @@ msgstr "13+ weeks"
 msgid "1Y"
 msgstr "1Y"
 
+msgid "2. Opening balances"
+msgstr "2. Opening balances"
+
 msgid "2h"
 msgstr "2h"
+
+msgid "3. Validation"
+msgstr "3. Validation"
 
 msgid "30D"
 msgstr "30D"
@@ -199,6 +208,9 @@ msgstr "3D Model"
 
 msgid "3h"
 msgstr "3h"
+
+msgid "4. Activate"
+msgstr "4. Activate"
 
 msgid "4h"
 msgstr "4h"
@@ -503,6 +515,12 @@ msgstr "accounting"
 msgid "Accounting"
 msgstr "Accounting"
 
+msgid "Accounting has not been activated yet."
+msgstr "Accounting has not been activated yet."
+
+msgid "Accounting is activated"
+msgstr "Accounting is activated"
+
 msgid "Accounting is disabled"
 msgstr "Accounting is disabled"
 
@@ -514,6 +532,10 @@ msgstr "Accounting period"
 
 msgid "Accounting Periods"
 msgstr "Accounting Periods"
+
+#. placeholder {0}: formatDate(accountingActivatedAt)
+msgid "Accounting was activated on {0}."
+msgstr "Accounting was activated on {0}."
 
 msgid "Accounting: GL, AR, AP, and month-end close"
 msgstr "Accounting: GL, AR, AP, and month-end close"
@@ -590,14 +612,31 @@ msgstr "Activate"
 msgid "Activate {name}"
 msgstr "Activate {name}"
 
+msgid "Activate accounting"
+msgstr "Activate accounting"
+
+msgid "Activate Accounting"
+msgstr "Activate Accounting"
+
+msgid "Activate accounting for this company: post opening balances, close pre-cutover periods, and lock the base currency and fiscal calendar. Activation is one-way."
+msgstr "Activate accounting for this company: post opening balances, close pre-cutover periods, and lock the base currency and fiscal calendar. Activation is one-way."
+
 msgid "Activate Process"
 msgstr "Activate Process"
 
 msgid "Activate Work Center"
 msgstr "Activate Work Center"
 
+#. placeholder {0}: readiness.activatedAt ? formatDate(readiness.activatedAt) : ""
+#. placeholder {1}: readiness.cutoverDate ? formatDate(readiness.cutoverDate) : ""
+msgid "Activated on {0}. The cutover date is {1}. Base currency and fiscal settings are now locked."
+msgstr "Activated on {0}. The cutover date is {1}. Base currency and fiscal settings are now locked."
+
 msgid "Activation fee · we advise"
 msgstr "Activation fee · we advise"
+
+msgid "Activation is one-way. It posts an opening balance journal dated the day before cutover, closes every earlier period, and locks the base currency and fiscal calendar."
+msgstr "Activation is one-way. It posts an opening balance journal dated the day before cutover, closes every earlier period, and locks the base currency and fiscal calendar."
 
 msgid "Active"
 msgstr "Active"
@@ -1974,6 +2013,9 @@ msgstr "Build role-based training materials"
 msgid "Build tailored, role-based training materials"
 msgstr "Build tailored, role-based training materials"
 
+msgid "Build the opening balances to validate."
+msgstr "Build the opening balances to validate."
+
 msgid "Built and costed as its own method"
 msgstr "Built and costed as its own method"
 
@@ -2300,6 +2342,9 @@ msgstr "Chart of Accounts"
 
 msgid "Chat"
 msgstr "Chat"
+
+msgid "Check"
+msgstr "Check"
 
 msgid "Check the item ledger for any items with a negative on-hand quantity as of period end — usually a missing receipt or an out-of-order posting that distorts inventory value and cost of goods sold. Mark it done once reviewed, or skip with a reason."
 msgstr "Check the item ledger for any items with a negative on-hand quantity as of period end — usually a missing receipt or an out-of-order posting that distorts inventory value and cost of goods sold. Mark it done once reviewed, or skip with a reason."
@@ -3556,8 +3601,14 @@ msgstr "Cut over to Carbon and freeze the old system"
 msgid "Cut over, freeze the old system, and confirm you're live on Carbon."
 msgstr "Cut over, freeze the old system, and confirm you're live on Carbon."
 
+msgid "Cutover"
+msgstr "Cutover"
+
 msgid "Cutover checklist"
 msgstr "Cutover checklist"
+
+msgid "Cutover date"
+msgstr "Cutover date"
 
 msgid "Cutover step"
 msgstr "Cutover step"
@@ -5199,6 +5250,9 @@ msgstr "Event Type"
 msgid "Events"
 msgstr "Events"
 
+msgid "Every check must pass before you can activate. The cutover date can only fall on the first day of a fiscal period."
+msgstr "Every check must pass before you can activate. The cutover date can only fall on the first day of a fiscal period."
+
 msgid "Every condition must match"
 msgstr "Every condition must match"
 
@@ -5859,6 +5913,9 @@ msgstr "Fixed asset"
 msgid "Fixed Asset"
 msgstr "Fixed Asset"
 
+msgid "Fixed assets"
+msgstr "Fixed assets"
+
 msgid "Fixed Assets"
 msgstr "Fixed Assets"
 
@@ -6508,11 +6565,23 @@ msgstr "Implementation Lead"
 msgid "Implementation Support"
 msgstr "Implementation Support"
 
+msgid "Import"
+msgstr "Import"
+
 msgid "Import {label} CSV"
 msgstr "Import {label} CSV"
 
+msgid "Import closing trial balance"
+msgstr "Import closing trial balance"
+
 msgid "Import results"
 msgstr "Import results"
+
+msgid "Import trial balance"
+msgstr "Import trial balance"
+
+msgid "Import Trial Balance"
+msgstr "Import Trial Balance"
 
 msgid "Import your BOM"
 msgstr "Import your BOM"
@@ -7063,6 +7132,9 @@ msgstr "Join {0}"
 
 msgid "Journal"
 msgstr "Journal"
+
+msgid "Journal balances"
+msgstr "Journal balances"
 
 msgid "Journal Entries"
 msgstr "Journal Entries"
@@ -8400,6 +8472,9 @@ msgstr "No abilities added"
 msgid "No Access"
 msgstr "No Access"
 
+msgid "No account rows found in the file."
+msgstr "No account rows found in the file."
+
 msgid "No action needed"
 msgstr "No action needed"
 
@@ -8583,6 +8658,8 @@ msgstr "No open orders for this item are available to link."
 
 msgid "No open sales order lines"
 msgstr "No open sales order lines"
+msgid "No opening balance lines yet."
+msgstr "No opening balance lines yet."
 
 msgid "No operations require picking at this location"
 msgstr "No operations require picking at this location"
@@ -8763,6 +8840,9 @@ msgstr "Not a table but a general-ledger balance: cost accumulates as job materi
 
 msgid "Not enough jobs to cover quantity"
 msgstr "Not enough jobs to cover quantity"
+
+msgid "Not ready"
+msgstr "Not ready"
 
 msgid "Not referenced anywhere yet."
 msgstr "Not referenced anywhere yet."
@@ -9943,6 +10023,12 @@ msgstr "Promised Date"
 msgid "Properties"
 msgstr "Properties"
 
+msgid "Propose"
+msgstr "Propose"
+
+msgid "Propose each section from your subledgers, or import a closing trial balance. Add cash, loans, and equity as journal lines until the entry balances."
+msgstr "Propose each section from your subledgers, or import a closing trial balance. Add cash, loans, and equity as journal lines until the entry balances."
+
 msgid "Protect the go-live date"
 msgstr "Protect the go-live date"
 
@@ -10263,6 +10349,9 @@ msgstr "Raw Materials (default)"
 msgid "Re-keying between quoting, the floor, and finance"
 msgstr "Re-keying between quoting, the floor, and finance"
 
+msgid "Re-validate"
+msgstr "Re-validate"
+
 msgid "Reactivate"
 msgstr "Reactivate"
 
@@ -10531,6 +10620,9 @@ msgstr "Remaining"
 msgid "Remaining after split stays on the original row."
 msgstr "Remaining after split stays on the original row."
 
+msgid "Remaining to balance"
+msgstr "Remaining to balance"
+
 msgid "Remember this PIN. You will need it to exit console mode on MES terminals."
 msgstr "Remember this PIN. You will need it to exit console mode on MES terminals."
 
@@ -10738,6 +10830,9 @@ msgstr "Residual value"
 msgid "Residual Value %"
 msgstr "Residual Value %"
 
+msgid "Resolve every failing readiness check first."
+msgstr "Resolve every failing readiness check first."
+
 msgid "Resolve these before completing the NCR: every row must have a non-Pending disposition, and its linked entity quantities must match the row quantity."
 msgstr "Resolve these before completing the NCR: every row must have a non-Pending disposition, and its linked entity quantities must match the row quantity."
 
@@ -10918,6 +11013,9 @@ msgstr "Routing"
 
 msgid "rows"
 msgstr "rows"
+
+msgid "rows parsed"
+msgstr "rows parsed"
 
 msgid "Rule"
 msgstr "Rule"
@@ -12788,6 +12886,9 @@ msgstr "The default tax rate applied to this customer's quote and sales-order li
 msgid "The department this one rolls up under for reporting and headcount hierarchies; leave empty for a top-level department."
 msgstr "The department this one rolls up under for reporting and headcount hierarchies; leave empty for a top-level department."
 
+msgid "The draft journal must balance and tie out to each subledger within 0.01."
+msgstr "The draft journal must balance and tie out to each subledger within 0.01."
+
 msgid "The eight-disciplines quality method, modeled with the nonconformance workflow's tasks rather than hard-coded."
 msgstr "The eight-disciplines quality method, modeled with the nonconformance workflow's tasks rather than hard-coded."
 
@@ -13334,6 +13435,8 @@ msgstr "This change notice is being implemented, so its changes are locked. Reop
 
 msgid "This change notice is closed, so its changes are read-only."
 msgstr "This change notice is closed, so its changes are read-only."
+msgid "This cannot be undone. Type the company name to confirm."
+msgstr "This cannot be undone. Type the company name to confirm."
 
 msgid "This completes the Discovery step."
 msgstr "This completes the Discovery step."
@@ -13534,6 +13637,9 @@ msgstr "Timezone"
 
 msgid "Title"
 msgstr "Title"
+
+msgid "to confirm"
+msgstr "to confirm"
 
 msgid "To Location"
 msgstr "To Location"
@@ -13784,6 +13890,9 @@ msgstr "Trash"
 msgid "Trial Balance"
 msgstr "Trial Balance"
 
+msgid "Trial balance CSV"
+msgstr "Trial balance CSV"
+
 msgid "Triggers"
 msgstr "Triggers"
 
@@ -14022,6 +14131,9 @@ msgstr "Upgrade to unlock audit history"
 
 msgid "Upload"
 msgstr "Upload"
+
+msgid "Upload a CSV with account number, description, debit, and credit columns. Rows map to Carbon accounts by number."
+msgstr "Upload a CSV with account number, description, debit, and credit columns. Rows map to Carbon accounts by number."
 
 msgid "Upload a PDF first"
 msgstr "Upload a PDF first"

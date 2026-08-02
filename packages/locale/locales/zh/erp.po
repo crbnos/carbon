@@ -179,6 +179,9 @@ msgstr "1 份草稿日记账条目"
 msgid "1 unposted document"
 msgstr "1 份未过账单据"
 
+msgid "1. Readiness"
+msgstr "1. 准备就绪"
+
 msgid "12 monthly periods"
 msgstr "12个月度期间"
 
@@ -188,8 +191,14 @@ msgstr "13周以上"
 msgid "1Y"
 msgstr "1年"
 
+msgid "2. Opening balances"
+msgstr "2. 期初余额"
+
 msgid "2h"
 msgstr "2小时"
+
+msgid "3. Validation"
+msgstr "3. 验证"
 
 msgid "30D"
 msgstr "30天"
@@ -199,6 +208,9 @@ msgstr "3D 模型"
 
 msgid "3h"
 msgstr "3小时"
+
+msgid "4. Activate"
+msgstr "4. 激活"
 
 msgid "4h"
 msgstr "4小时"
@@ -503,6 +515,12 @@ msgstr "会计"
 msgid "Accounting"
 msgstr "会计"
 
+msgid "Accounting has not been activated yet."
+msgstr "会计尚未激活。"
+
+msgid "Accounting is activated"
+msgstr "会计已激活"
+
 msgid "Accounting is disabled"
 msgstr "会计已禁用"
 
@@ -514,6 +532,10 @@ msgstr "会计期间"
 
 msgid "Accounting Periods"
 msgstr "会计期间"
+
+#. placeholder {0}: formatDate(accountingActivatedAt)
+msgid "Accounting was activated on {0}."
+msgstr "会计已于 {0} 激活。"
 
 msgid "Accounting: GL, AR, AP, and month-end close"
 msgstr "会计：总账、应收账款、应付账款和月末结账"
@@ -590,14 +612,31 @@ msgstr "激活"
 msgid "Activate {name}"
 msgstr "激活 {name}"
 
+msgid "Activate accounting"
+msgstr "激活会计"
+
+msgid "Activate Accounting"
+msgstr "激活会计"
+
+msgid "Activate accounting for this company: post opening balances, close pre-cutover periods, and lock the base currency and fiscal calendar. Activation is one-way."
+msgstr "为该公司激活会计：过账期初余额、结束转换前的期间、锁定基础货币和会计期间。激活是单向的。"
+
 msgid "Activate Process"
 msgstr "激活流程"
 
 msgid "Activate Work Center"
 msgstr "激活工作中心"
 
+#. placeholder {0}: readiness.activatedAt ? formatDate(readiness.activatedAt) : ""
+#. placeholder {1}: readiness.cutoverDate ? formatDate(readiness.cutoverDate) : ""
+msgid "Activated on {0}. The cutover date is {1}. Base currency and fiscal settings are now locked."
+msgstr "已于 {0} 激活。转换日期为 {1}。基础货币和会计期间设置现已锁定。"
+
 msgid "Activation fee · we advise"
 msgstr "激活费 · 我们建议"
+
+msgid "Activation is one-way. It posts an opening balance journal dated the day before cutover, closes every earlier period, and locks the base currency and fiscal calendar."
+msgstr "激活是单向的。它过账一份日期为转换前一天的期初余额日志，结束所有较早的期间，并锁定基础货币和会计期间。"
 
 msgid "Active"
 msgstr "活跃"
@@ -1974,6 +2013,9 @@ msgstr "构建基于角色的培训材料"
 msgid "Build tailored, role-based training materials"
 msgstr "构建定制化、基于角色的培训材料"
 
+msgid "Build the opening balances to validate."
+msgstr "构建期初余额以进行验证。"
+
 msgid "Built and costed as its own method"
 msgstr "作为独立方法构建和计算成本"
 
@@ -2300,6 +2342,9 @@ msgstr "会计科目表"
 
 msgid "Chat"
 msgstr "聊天"
+
+msgid "Check"
+msgstr "检查"
 
 msgid "Check the item ledger for any items with a negative on-hand quantity as of period end — usually a missing receipt or an out-of-order posting that distorts inventory value and cost of goods sold. Mark it done once reviewed, or skip with a reason."
 msgstr "检查物料分类账中期末库存数量为负的任何物料——通常是缺少收货或发布顺序不对导致库存价值和销货成本失真。审查后标记为完成，或跳过并说明原因。"
@@ -3556,8 +3601,14 @@ msgstr "切换到 Carbon 并冻结旧系统"
 msgid "Cut over, freeze the old system, and confirm you're live on Carbon."
 msgstr "切换系统，冻结旧系统，并确认您已在 Carbon 上线。"
 
+msgid "Cutover"
+msgstr "转换"
+
 msgid "Cutover checklist"
 msgstr "转换检查清单"
+
+msgid "Cutover date"
+msgstr "转换日期"
 
 msgid "Cutover step"
 msgstr "转换步骤"
@@ -5199,6 +5250,9 @@ msgstr "事件类型"
 msgid "Events"
 msgstr "事件"
 
+msgid "Every check must pass before you can activate. The cutover date can only fall on the first day of a fiscal period."
+msgstr "在激活之前必须通过每项检查。转换日期只能落在会计期间的第一天。"
+
 msgid "Every condition must match"
 msgstr "每个条件都必须匹配"
 
@@ -5804,6 +5858,7 @@ msgstr "完成至"
 
 msgid "Finish with material unpicked?"
 msgstr "完成但物料未领取？"
+msgstr "完成但材料未领取？"
 
 msgid "Finished goods"
 msgstr "表面处理"
@@ -5857,6 +5912,9 @@ msgid "Fixed asset"
 msgstr "批量大小与标准不同时的固定成本摊销差异"
 
 msgid "Fixed Asset"
+msgstr "固定资产"
+
+msgid "Fixed assets"
 msgstr "固定资产"
 
 msgid "Fixed Assets"
@@ -6508,11 +6566,23 @@ msgstr "实施主管"
 msgid "Implementation Support"
 msgstr "实施支持"
 
+msgid "Import"
+msgstr "导入"
+
 msgid "Import {label} CSV"
 msgstr "导入 {label} CSV"
 
+msgid "Import closing trial balance"
+msgstr "导入期末试算平衡表"
+
 msgid "Import results"
 msgstr "导入结果"
+
+msgid "Import trial balance"
+msgstr "导入试算平衡表"
+
+msgid "Import Trial Balance"
+msgstr "导入试算平衡表"
 
 msgid "Import your BOM"
 msgstr "导入您的物料清单"
@@ -7063,6 +7133,9 @@ msgstr "加入 {0}"
 
 msgid "Journal"
 msgstr "日记"
+
+msgid "Journal balances"
+msgstr "日志余额"
 
 msgid "Journal Entries"
 msgstr "日记账分录"
@@ -8400,6 +8473,9 @@ msgstr "未添加任何能力"
 msgid "No Access"
 msgstr "无权限"
 
+msgid "No account rows found in the file."
+msgstr "文件中未找到帐户行。"
+
 msgid "No action needed"
 msgstr "无需操作"
 
@@ -8583,6 +8659,8 @@ msgstr "此项目没有可链接的未结订单。"
 
 msgid "No open sales order lines"
 msgstr "没有未结销售订单行"
+msgid "No opening balance lines yet."
+msgstr "还没有期初余额行。"
 
 msgid "No operations require picking at this location"
 msgstr "此位置不需要进行任何操作拣选"
@@ -8763,6 +8841,9 @@ msgstr "不是表格而是总账余额：当发出工作物料时成本积累，
 
 msgid "Not enough jobs to cover quantity"
 msgstr "工作数量不足以覆盖数量"
+
+msgid "Not ready"
+msgstr "未准备好"
 
 msgid "Not referenced anywhere yet."
 msgstr "还没有在任何地方被引用。"
@@ -9943,6 +10024,12 @@ msgstr "承诺日期"
 msgid "Properties"
 msgstr "属性"
 
+msgid "Propose"
+msgstr "建议"
+
+msgid "Propose each section from your subledgers, or import a closing trial balance. Add cash, loans, and equity as journal lines until the entry balances."
+msgstr "从子分类帐提议每个部分，或导入期末试算平衡表。添加现金、贷款和权益作为日志行，直到条目平衡。"
+
 msgid "Protect the go-live date"
 msgstr "保护上线日期"
 
@@ -10263,6 +10350,9 @@ msgstr "原材料（默认）"
 msgid "Re-keying between quoting, the floor, and finance"
 msgstr "在报价、车间和财务之间重复输入数据"
 
+msgid "Re-validate"
+msgstr "重新验证"
+
 msgid "Reactivate"
 msgstr "重新激活"
 
@@ -10531,6 +10621,9 @@ msgstr "剩余"
 msgid "Remaining after split stays on the original row."
 msgstr "分割后的剩余部分保留在原始行上。"
 
+msgid "Remaining to balance"
+msgstr "待平衡余额"
+
 msgid "Remember this PIN. You will need it to exit console mode on MES terminals."
 msgstr "记住此PIN。您需要它来退出MES终端上的控制台模式。"
 
@@ -10738,6 +10831,9 @@ msgstr "残差值"
 msgid "Residual Value %"
 msgstr "残差值 %"
 
+msgid "Resolve every failing readiness check first."
+msgstr "首先解决每个失败的准备就绪检查。"
+
 msgid "Resolve these before completing the NCR: every row must have a non-Pending disposition, and its linked entity quantities must match the row quantity."
 msgstr "在完成NCR之前解决这些问题：每一行必须有一个非待处理的处置，其关联实体数量必须与行数量匹配。"
 
@@ -10918,6 +11014,9 @@ msgstr "工艺路线"
 
 msgid "rows"
 msgstr "行"
+
+msgid "rows parsed"
+msgstr "已解析行数"
 
 msgid "Rule"
 msgstr "规则"
@@ -12788,6 +12887,9 @@ msgstr "适用于此客户的报价和销售订单行的默认税率，在每行
 msgid "The department this one rolls up under for reporting and headcount hierarchies; leave empty for a top-level department."
 msgstr "该部门汇总用于报告和人员数量层级的部门；对于顶级部门，请留空。"
 
+msgid "The draft journal must balance and tie out to each subledger within 0.01."
+msgstr "草稿日志必须平衡并与每个子分类帐对应，误差在 0.01 以内。"
+
 msgid "The eight-disciplines quality method, modeled with the nonconformance workflow's tasks rather than hard-coded."
 msgstr "8D质量方法，用不符合工作流程的任务建模，而不是硬编码。"
 
@@ -13319,6 +13421,7 @@ msgstr "这些电子邮件地址将自动抄送到发送给客户的所有报价
 
 msgid "These items still have material to pick. Finishing now marks the list Partial."
 msgstr "这些物料仍需领取。现在完成将标记列表为部分。"
+msgstr "这些项目仍有材料待领取。现在完成将列表标记为部分。"
 
 msgid "These jobs have operations assigned to this work center:"
 msgstr "这些工作有分配给此工作中心的操作："
@@ -13334,6 +13437,8 @@ msgstr "此变更通知正在实施中，因此其更改已锁定。重新打开
 
 msgid "This change notice is closed, so its changes are read-only."
 msgstr "此变更通知已关闭，因此其更改为只读。"
+msgid "This cannot be undone. Type the company name to confirm."
+msgstr "无法撤销。输入公司名称以确认。"
 
 msgid "This completes the Discovery step."
 msgstr "这完成了发现步骤。"
@@ -13534,6 +13639,9 @@ msgstr "时区"
 
 msgid "Title"
 msgstr "标题"
+
+msgid "to confirm"
+msgstr "以确认"
 
 msgid "To Location"
 msgstr "至位置"
@@ -13784,6 +13892,9 @@ msgstr "垃圾桶"
 msgid "Trial Balance"
 msgstr "试算平衡表"
 
+msgid "Trial balance CSV"
+msgstr "试算表 CSV"
+
 msgid "Triggers"
 msgstr "触发器"
 
@@ -14022,6 +14133,9 @@ msgstr "升级以解锁审计历史"
 
 msgid "Upload"
 msgstr "上传"
+
+msgid "Upload a CSV with account number, description, debit, and credit columns. Rows map to Carbon accounts by number."
+msgstr "上传 CSV，其中包含科目编号、描述、借方和贷方列。按编号将行映射到 Carbon 账户。"
 
 msgid "Upload a PDF first"
 msgstr "先上传 PDF"

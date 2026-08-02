@@ -12,6 +12,7 @@ Chart of accounts, journal entries, general ledger, fiscal periods, currencies, 
 - **Fixed Assets** — capital assets with depreciation. Supports straight-line, declining balance, MACRS, and units-of-production methods. Depreciation runs generate journal entries. See `.claude/rules/fixed-asset-lifecycle.md`.
 - **Intercompany** — transactions between companies in a group. `runIntercompanyMatching` pairs them; `generateEliminations` creates reversing entries for consolidation.
 - **Net Income** — computed equity line on the balance sheet, never a posted account. Uses synthetic `NET_INCOME_ACCOUNT_ID` constant.
+- **Cutover & Activation** — a one-way, per-company event (`/x/accounting/activation`) that turns accounting always-on. Readiness check → opening-balance journal (`journalEntrySourceType` `'Opening Balance'`, dated cutover − 1) → four tie-out validations → post + close every pre-cutover period + stamp `company.accountingActivatedAt/By`/`accountingCutoverDate` + set `companySettings.accountingEnabled = true`. `check_accounting_config_locked` (trigger on `company` + `fiscalYearSettings`) freezes `baseCurrencyCode` and fiscal `startMonth` once activated. `seed-company` activates new companies with a zero ledger behind the `SEED_ACCOUNTING_ACTIVE` env flag. See `.ai/specs/2026-07-04-accounting-cutover-activation.md`.
 
 ## Safety
 
@@ -81,6 +82,7 @@ pnpm --filter @carbon/erp test -- --testPathPattern=accounting
 - `getCostCenters` / `getCostCentersTree` — cost center hierarchy
 - `getFixedAssets` / `insertFixedAsset` / `insertDepreciationRun` — fixed asset lifecycle
 - `createIntercompanyTransaction` / `runIntercompanyMatching` / `generateEliminations` — IC processing
+- `getActivationReadiness` / `buildOpeningBalanceProposal` / `importOpeningTrialBalance` / `validateOpeningBalance` / `activateAccounting` / `closePreCutoverPeriods` — cutover activation (see Cutover & Activation above)
 
 ## Key Exports
 

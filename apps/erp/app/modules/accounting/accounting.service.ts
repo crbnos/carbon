@@ -17,6 +17,8 @@ import type { GenericQueryFilters } from "~/utils/query";
 import { setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
 import type {
+  ActivationReadiness,
+  ActivationReadinessCheck,
   accountValidator,
   costCenterValidator,
   currencyValidator,
@@ -30,6 +32,9 @@ import type {
   journalEntryValidator,
   macrsConventions,
   macrsPropertyClasses,
+  OpeningBalanceSection,
+  OpeningBalanceTieOut,
+  OpeningBalanceValidation,
   paymentTermValidator,
   periodCloseStatuses,
   periodCloseTaskDefinitionValidator,
@@ -4019,4 +4024,1145 @@ export async function upsertFixedAssetUsageLog(
     .insert([data as any])
     .select("id")
     .single();
+}
+
+// ===========================================================================
+// Accounting Cutover & Activation (#1057)
+// One-way per-company activation event: readiness → opening balances → validate
+// → activate. See .ai/specs/2026-07-04-accounting-cutover-activation.md.
+//
+// The `company` activation columns (accountingActivatedAt/By, cutoverDate) and
+// the 'Opening Balance' journalEntrySourceType value are cloud-generated and not
+// yet in the committed DB types, so they are read/written through casts —
+// mirroring the accountingPeriod close-column pattern used above.
+// ===========================================================================
+
+const OPENING_BALANCE_SOURCE =
+  "Opening Balance" as unknown as Database["public"]["Enums"]["journalEntrySourceType"];
+
+// Tolerance for every opening-balance tie-out and the balance check.
+const OPENING_BALANCE_TOLERANCE = 0.01;
+
+type CompanyActivationRow = {
+  name: string;
+  baseCurrencyCode: string | null;
+  accountingActivatedAt: string | null;
+  accountingActivatedBy: string | null;
+  accountingCutoverDate: string | null;
+};
+
+// A section's proposed opening line, pre-sign-conversion (display debit/credit).
+type OpeningLine = {
+  accountId: string;
+  description: string;
+  debit: number;
+  credit: number;
+};
+
+function previousDay(date: string): string {
+  const d = new Date(`${date}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() - 1);
+  return d.toISOString().split("T")[0];
+}
+
+// First day of a fiscal period, mirroring createFiscalYearPeriods' arithmetic.
+function periodStartDate(
+  fiscalYear: number,
+  periodNumber: number,
+  startMonth: number
+): string {
+  const firstYear = startMonth === 1 ? fiscalYear : fiscalYear - 1;
+  const monthIndex = (startMonth - 1 + (periodNumber - 1)) % 12;
+  const year =
+    firstYear + Math.floor((startMonth - 1 + (periodNumber - 1)) / 12);
+  return new Date(Date.UTC(year, monthIndex, 1)).toISOString().split("T")[0];
+}
+
+async function getCompanyActivationRow(
+  client: SupabaseClient<Database>,
+  companyId: string
+): Promise<{
+  data: CompanyActivationRow | null;
+  error: PostgrestError | null;
+}> {
+  const result = await (client.from("company") as any)
+    .select(
+      "name, baseCurrencyCode, accountingActivatedAt, accountingActivatedBy, accountingCutoverDate"
+    )
+    .eq("id", companyId)
+    .single();
+  return result as {
+    data: CompanyActivationRow | null;
+    error: PostgrestError | null;
+  };
+}
+
+// Map account id -> class for the given ids (leaf accounts carry a class).
+async function getAccountClassMap(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  accountIds: string[]
+) {
+  const ids = [...new Set(accountIds.filter(Boolean))];
+  if (ids.length === 0) return new Map<string, string | null>();
+  const { data } = await client
+    .from("account")
+    .select("id, class")
+    .eq("companyId", companyId)
+    .in("id", ids);
+  return new Map<string, string | null>(
+    (data ?? []).map((a) => [a.id, a.class as string | null])
+  );
+}
+
+// Inventory GL account resolution — mirrors the edge functions'
+// resolveInventoryAccount: Make / Buy and Make roll up to finished goods.
+function isFinishedGoods(replenishmentSystem: string | null): boolean {
+  return (
+    replenishmentSystem === "Make" || replenishmentSystem === "Buy and Make"
+  );
+}
+
+/**
+ * The pre-cutover readiness checklist (spec §1). All non-informational checks
+ * must pass before activation is allowed. Also returns the fiscal-period-start
+ * dates the cutover may fall on.
+ */
+export async function getActivationReadiness(
+  client: SupabaseClient<Database>,
+  companyId: string
+): Promise<{ data: ActivationReadiness | null; error: PostgrestError | null }> {
+  const [company, defaults, fiscal, accounts, assetCount] = await Promise.all([
+    getCompanyActivationRow(client, companyId),
+    getDefaultAccounts(client, companyId),
+    getFiscalYearSettings(client, companyId),
+    client.from("account").select("id, active").eq("companyId", companyId),
+    client
+      .from("fixedAsset")
+      .select("id", { count: "exact", head: true })
+      .eq("companyId", companyId)
+  ]);
+
+  if (company.error || !company.data) {
+    return { data: null, error: company.error };
+  }
+
+  const activeAccountIds = new Set(
+    (accounts.data ?? []).filter((a) => a.active).map((a) => a.id)
+  );
+
+  const checks: ActivationReadinessCheck[] = [];
+
+  // 1. Chart of accounts.
+  checks.push({
+    key: "chartOfAccounts",
+    label: "Chart of accounts has at least one active account",
+    status: activeAccountIds.size > 0 ? "pass" : "fail",
+    detail:
+      activeAccountIds.size > 0
+        ? `${activeAccountIds.size} active accounts`
+        : "No active accounts found"
+  });
+
+  // 2. Account defaults — the control accounts the opening journal posts to must
+  //    be set and resolve to an active account.
+  const requiredDefaults: Array<{ key: string; label: string }> = [
+    { key: "receivablesAccount", label: "Accounts receivable" },
+    { key: "payablesAccount", label: "Accounts payable" },
+    { key: "retainedEarningsAccount", label: "Retained earnings" },
+    { key: "rawMaterialsAccount", label: "Raw materials inventory" },
+    { key: "finishedGoodsAccount", label: "Finished goods inventory" }
+  ];
+  const defaultsRow = (defaults.data ?? {}) as Record<string, string | null>;
+  const missingDefaults = requiredDefaults.filter((d) => {
+    const value = defaultsRow[d.key];
+    return !value || !activeAccountIds.has(value);
+  });
+  checks.push({
+    key: "accountDefaults",
+    label: "Default GL accounts are configured",
+    status: defaults.data && missingDefaults.length === 0 ? "pass" : "fail",
+    detail: !defaults.data
+      ? "No account defaults configured"
+      : missingDefaults.length > 0
+        ? `Missing or inactive: ${missingDefaults
+            .map((d) => d.label)
+            .join(", ")}`
+        : "All required control accounts resolve"
+  });
+
+  // 3. Base currency (locks at activation).
+  checks.push({
+    key: "baseCurrency",
+    label: "Base currency is set",
+    status: company.data.baseCurrencyCode ? "pass" : "fail",
+    detail: company.data.baseCurrencyCode ?? "Not set"
+  });
+
+  // 4. Fiscal settings (start month locks at activation).
+  const startMonthName = fiscal.data?.startMonth ?? null;
+  checks.push({
+    key: "fiscalSettings",
+    label: "Fiscal year settings exist",
+    status: fiscal.data ? "pass" : "fail",
+    detail: startMonthName
+      ? `Fiscal year starts in ${startMonthName}`
+      : "Not configured"
+  });
+
+  // 5. Fixed assets — informational: surfaced only when a register exists.
+  if ((assetCount.count ?? 0) > 0) {
+    checks.push({
+      key: "fixedAssets",
+      label: "Fixed-asset register will seed opening balances",
+      status: "info",
+      detail: `${assetCount.count} assets on the register`
+    });
+  }
+
+  const startMonth = fiscal.data?.startMonth
+    ? (MONTH_NUMBER[fiscal.data.startMonth] ?? 1)
+    : 1;
+  const currentFiscalYear = fiscalYearAndPeriodFor(
+    new Date(),
+    startMonth
+  ).fiscalYear;
+
+  const cutoverDateOptions: string[] = [];
+  for (let fy = currentFiscalYear - 1; fy <= currentFiscalYear + 1; fy++) {
+    for (let p = 1; p <= 12; p++) {
+      cutoverDateOptions.push(periodStartDate(fy, p, startMonth));
+    }
+  }
+  cutoverDateOptions.sort();
+
+  const ready = checks.every((c) => c.status !== "fail");
+
+  return {
+    data: {
+      activated: company.data.accountingActivatedAt != null,
+      activatedAt: company.data.accountingActivatedAt,
+      activatedBy: company.data.accountingActivatedBy,
+      cutoverDate: company.data.accountingCutoverDate,
+      companyName: company.data.name,
+      checks,
+      cutoverDateOptions,
+      ready
+    },
+    error: null
+  };
+}
+
+// Latest 'Opening Balance' journal for the company (any status), so activation
+// can resume after a posted-but-not-yet-stamped partial run.
+async function getOpeningBalanceJournal(
+  client: SupabaseClient<Database>,
+  companyId: string
+): Promise<{
+  data: { id: string; status: string; postingDate: string | null } | null;
+  error: PostgrestError | null;
+}> {
+  const result = await (client.from("journal") as any)
+    .select("id, status, postingDate")
+    .eq("companyId", companyId)
+    .eq("sourceType", OPENING_BALANCE_SOURCE)
+    .order("createdAt", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  return result as {
+    data: { id: string; status: string; postingDate: string | null } | null;
+    error: PostgrestError | null;
+  };
+}
+
+async function getOrCreateOpeningBalanceJournal(
+  client: SupabaseClient<Database>,
+  args: { companyId: string; cutoverDate: string; userId: string }
+): Promise<{ data: string | null; error: { message: string } | null }> {
+  const existing = await getOpeningBalanceJournal(client, args.companyId);
+  if (existing.error) {
+    return { data: null, error: existing.error };
+  }
+  // Reuse the existing Draft journal; a Posted one means already activated.
+  // Realign its posting date to cutover − 1 in case the wizard's cutover date
+  // changed since the journal was created.
+  if (existing.data && existing.data.status === "Draft") {
+    const postingDate = previousDay(args.cutoverDate);
+    if (existing.data.postingDate !== postingDate) {
+      await client
+        .from("journal")
+        .update({ postingDate, updatedBy: args.userId })
+        .eq("id", existing.data.id)
+        .eq("status", "Draft");
+    }
+    return { data: existing.data.id, error: null };
+  }
+  if (existing.data && existing.data.status !== "Draft") {
+    return {
+      data: null,
+      error: { message: "The opening balance journal has already been posted" }
+    };
+  }
+
+  const seq = await client.rpc("get_next_sequence", {
+    sequence_name: "journalEntry",
+    company_id: args.companyId
+  });
+  if (seq.error || !seq.data) {
+    return {
+      data: null,
+      error: { message: "Failed to generate a journal entry number" }
+    };
+  }
+
+  const inserted = await (client.from("journal") as any)
+    .insert({
+      journalEntryId: seq.data,
+      sourceType: OPENING_BALANCE_SOURCE,
+      status: "Draft",
+      postingDate: previousDay(args.cutoverDate),
+      description: "Opening Balance",
+      companyId: args.companyId,
+      createdBy: args.userId
+    })
+    .select("id")
+    .single();
+
+  if (inserted.error) {
+    return {
+      data: null,
+      error: { message: "Failed to create the opening balance journal" }
+    };
+  }
+  return { data: inserted.data.id, error: null };
+}
+
+// Which control accounts a section owns, so regenerating it replaces only its
+// own lines (idempotent per section).
+async function getSectionAccounts(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  section: OpeningBalanceSection
+): Promise<{ accountIds: string[]; error: { message: string } | null }> {
+  const defaults = await getDefaultAccounts(client, companyId);
+  const row = (defaults.data ?? {}) as Record<string, string | null>;
+  if (section === "ar") {
+    return {
+      accountIds: [row.receivablesAccount].filter(Boolean) as string[],
+      error: null
+    };
+  }
+  if (section === "ap") {
+    return {
+      accountIds: [row.payablesAccount].filter(Boolean) as string[],
+      error: null
+    };
+  }
+  if (section === "inventory") {
+    return {
+      accountIds: [row.finishedGoodsAccount, row.rawMaterialsAccount].filter(
+        Boolean
+      ) as string[],
+      error: null
+    };
+  }
+  // fixedAssets: every class's asset + accumulated-depreciation account.
+  const classes = await client
+    .from("fixedAssetClass")
+    .select("assetAccountId, accumulatedDepreciationAccountId")
+    .eq("companyId", companyId);
+  const ids = new Set<string>();
+  for (const c of classes.data ?? []) {
+    if (c.assetAccountId) ids.add(c.assetAccountId);
+    if (c.accumulatedDepreciationAccountId)
+      ids.add(c.accumulatedDepreciationAccountId);
+  }
+  return { accountIds: [...ids], error: null };
+}
+
+// Replace a set of accounts' lines on the opening journal with new ones.
+async function replaceOpeningLines(
+  client: SupabaseClient<Database>,
+  args: {
+    journalId: string;
+    companyId: string;
+    accountIdsToClear: string[];
+    lines: OpeningLine[];
+  }
+): Promise<{
+  data: { lineCount: number } | null;
+  error: { message: string } | null;
+}> {
+  if (args.accountIdsToClear.length > 0) {
+    const del = await client
+      .from("journalLine")
+      .delete()
+      .eq("journalId", args.journalId)
+      .in("accountId", args.accountIdsToClear);
+    if (del.error) return { data: null, error: del.error };
+  }
+
+  const nonZero = args.lines.filter(
+    (l) => Math.abs(l.debit) > 0.0001 || Math.abs(l.credit) > 0.0001
+  );
+  if (nonZero.length === 0) return { data: { lineCount: 0 }, error: null };
+
+  const classMap = await getAccountClassMap(
+    client,
+    args.companyId,
+    nonZero.map((l) => l.accountId)
+  );
+
+  const inserts = [];
+  for (const line of nonZero) {
+    const accountClass = classMap.get(line.accountId);
+    if (accountClass == null) {
+      return {
+        data: null,
+        error: {
+          message: `Account ${line.accountId} is missing or not a posting account`
+        }
+      };
+    }
+    inserts.push({
+      journalId: args.journalId,
+      accountId: line.accountId,
+      description: line.description,
+      amount: toStoredAmount(
+        line.debit,
+        line.credit,
+        accountClass as Parameters<typeof toStoredAmount>[2]
+      ),
+      journalLineReference: crypto.randomUUID(),
+      companyId: args.companyId
+    });
+  }
+
+  const result = await client.from("journalLine").insert(inserts).select("id");
+  if (result.error) return { data: null, error: result.error };
+  return { data: { lineCount: inserts.length }, error: null };
+}
+
+// Compute one section's proposed opening lines from the subledgers.
+async function computeSectionLines(
+  client: SupabaseClient<Database>,
+  args: { companyId: string; asOfDate: string; section: OpeningBalanceSection }
+): Promise<{ lines: OpeningLine[]; error: { message: string } | null }> {
+  const defaults = await getDefaultAccounts(client, args.companyId);
+  const row = (defaults.data ?? {}) as Record<string, string | null>;
+
+  if (args.section === "ar") {
+    const ar = await client.rpc("get_ar_open_by_customer", {
+      _company_id: args.companyId,
+      _as_of_date: args.asOfDate
+    });
+    if (ar.error) return { lines: [], error: ar.error };
+    const total = (ar.data ?? []).reduce(
+      (sum: number, r: any) => sum + Number(r.openInBase ?? 0),
+      0
+    );
+    if (!row.receivablesAccount) {
+      return {
+        lines: [],
+        error: { message: "Receivables account is not set" }
+      };
+    }
+    return {
+      lines: [
+        {
+          accountId: row.receivablesAccount,
+          description: "Opening accounts receivable",
+          debit: total,
+          credit: 0
+        }
+      ],
+      error: null
+    };
+  }
+
+  if (args.section === "ap") {
+    const ap = await client.rpc("get_ap_open_by_supplier", {
+      _company_id: args.companyId,
+      _as_of_date: args.asOfDate
+    });
+    if (ap.error) return { lines: [], error: ap.error };
+    const total = (ap.data ?? []).reduce(
+      (sum: number, r: any) => sum + Number(r.openInBase ?? 0),
+      0
+    );
+    if (!row.payablesAccount) {
+      return { lines: [], error: { message: "Payables account is not set" } };
+    }
+    return {
+      lines: [
+        {
+          accountId: row.payablesAccount,
+          description: "Opening accounts payable",
+          debit: 0,
+          credit: total
+        }
+      ],
+      error: null
+    };
+  }
+
+  if (args.section === "inventory") {
+    const inv = await client.rpc("get_inventory_valuation", {
+      company_id: args.companyId,
+      as_of_date: args.asOfDate,
+      location_id: undefined
+    });
+    if (inv.error) return { lines: [], error: inv.error };
+    let finished = 0;
+    let raw = 0;
+    for (const r of (inv.data ?? []) as any[]) {
+      const value = Number(r.totalValue ?? 0);
+      if (isFinishedGoods(r.replenishmentSystem ?? null)) finished += value;
+      else raw += value;
+    }
+    if (!row.finishedGoodsAccount || !row.rawMaterialsAccount) {
+      return {
+        lines: [],
+        error: { message: "Inventory accounts are not set" }
+      };
+    }
+    return {
+      lines: [
+        {
+          accountId: row.finishedGoodsAccount,
+          description: "Opening inventory — finished goods",
+          debit: finished,
+          credit: 0
+        },
+        {
+          accountId: row.rawMaterialsAccount,
+          description: "Opening inventory — raw materials",
+          debit: raw,
+          credit: 0
+        }
+      ],
+      error: null
+    };
+  }
+
+  // fixedAssets
+  const [assets, classes] = await Promise.all([
+    client
+      .from("fixedAsset")
+      .select("acquisitionCost, accumulatedDepreciation, fixedAssetClassId")
+      .eq("companyId", args.companyId),
+    client
+      .from("fixedAssetClass")
+      .select("id, name, assetAccountId, accumulatedDepreciationAccountId")
+      .eq("companyId", args.companyId)
+  ]);
+  if (assets.error) return { lines: [], error: assets.error };
+  if (classes.error) return { lines: [], error: classes.error };
+
+  const classById = new Map((classes.data ?? []).map((c) => [c.id, c]));
+  const costByClass = new Map<string, number>();
+  const accumByClass = new Map<string, number>();
+  for (const a of assets.data ?? []) {
+    if (!a.fixedAssetClassId) continue;
+    costByClass.set(
+      a.fixedAssetClassId,
+      (costByClass.get(a.fixedAssetClassId) ?? 0) +
+        Number(a.acquisitionCost ?? 0)
+    );
+    accumByClass.set(
+      a.fixedAssetClassId,
+      (accumByClass.get(a.fixedAssetClassId) ?? 0) +
+        Number(a.accumulatedDepreciation ?? 0)
+    );
+  }
+
+  const lines: OpeningLine[] = [];
+  for (const [classId, cost] of costByClass) {
+    const cls = classById.get(classId);
+    if (!cls) continue;
+    if (cls.assetAccountId) {
+      lines.push({
+        accountId: cls.assetAccountId,
+        description: `Opening fixed assets — ${cls.name}`,
+        debit: cost,
+        credit: 0
+      });
+    }
+    const accum = accumByClass.get(classId) ?? 0;
+    if (cls.accumulatedDepreciationAccountId && Math.abs(accum) > 0.0001) {
+      lines.push({
+        accountId: cls.accumulatedDepreciationAccountId,
+        description: `Opening accumulated depreciation — ${cls.name}`,
+        debit: 0,
+        credit: accum
+      });
+    }
+  }
+  return { lines, error: null };
+}
+
+/**
+ * (Re)generate one section's proposed lines on the Draft 'Opening Balance'
+ * journal, creating the journal (dated cutover − 1) if needed. Idempotent per
+ * section: the section's control-account lines are replaced.
+ */
+export async function buildOpeningBalanceProposal(
+  client: SupabaseClient<Database>,
+  args: {
+    companyId: string;
+    cutoverDate: string;
+    section: OpeningBalanceSection;
+    userId: string;
+  }
+): Promise<{
+  data: { journalId: string; lineCount: number } | null;
+  error: { message: string } | null;
+}> {
+  const journal = await getOrCreateOpeningBalanceJournal(client, {
+    companyId: args.companyId,
+    cutoverDate: args.cutoverDate,
+    userId: args.userId
+  });
+  if (journal.error || !journal.data) {
+    return { data: null, error: journal.error };
+  }
+
+  const asOfDate = previousDay(args.cutoverDate);
+  const [computed, sectionAccounts] = await Promise.all([
+    computeSectionLines(client, {
+      companyId: args.companyId,
+      asOfDate,
+      section: args.section
+    }),
+    getSectionAccounts(client, args.companyId, args.section)
+  ]);
+  if (computed.error) return { data: null, error: computed.error };
+  if (sectionAccounts.error)
+    return { data: null, error: sectionAccounts.error };
+
+  const replaced = await replaceOpeningLines(client, {
+    journalId: journal.data,
+    companyId: args.companyId,
+    accountIdsToClear: sectionAccounts.accountIds,
+    lines: computed.lines
+  });
+  if (replaced.error || !replaced.data) {
+    return { data: null, error: replaced.error };
+  }
+  return {
+    data: { journalId: journal.data, lineCount: replaced.data.lineCount },
+    error: null
+  };
+}
+
+/**
+ * CSV closing-trial-balance path: replace ALL lines on the opening journal with
+ * the imported rows mapped to Carbon accounts by account number. Unmapped
+ * account numbers are rejected with the offending numbers listed.
+ */
+export async function importOpeningTrialBalance(
+  client: SupabaseClient<Database>,
+  args: {
+    companyId: string;
+    cutoverDate: string;
+    rows: Array<{
+      accountNumber: string;
+      description?: string;
+      debit: number;
+      credit: number;
+    }>;
+    userId: string;
+  }
+): Promise<{
+  data: { journalId: string; lineCount: number } | null;
+  error: { message: string } | null;
+}> {
+  const journal = await getOrCreateOpeningBalanceJournal(client, {
+    companyId: args.companyId,
+    cutoverDate: args.cutoverDate,
+    userId: args.userId
+  });
+  if (journal.error || !journal.data) {
+    return { data: null, error: journal.error };
+  }
+
+  const numbers = [...new Set(args.rows.map((r) => r.accountNumber.trim()))];
+  const accounts = await client
+    .from("account")
+    .select("id, number, class")
+    .eq("companyId", args.companyId)
+    .in("number", numbers);
+  if (accounts.error) return { data: null, error: accounts.error };
+
+  const byNumber = new Map((accounts.data ?? []).map((a) => [a.number, a]));
+  const unmapped = numbers.filter((n) => !byNumber.has(n));
+  if (unmapped.length > 0) {
+    return {
+      data: null,
+      error: {
+        message: `Unmapped account numbers: ${unmapped.join(", ")}`
+      }
+    };
+  }
+
+  // Clear ALL existing lines, then insert the mapped TB rows.
+  const del = await client
+    .from("journalLine")
+    .delete()
+    .eq("journalId", journal.data);
+  if (del.error) return { data: null, error: del.error };
+
+  const inserts = args.rows
+    .filter((r) => Math.abs(r.debit) > 0.0001 || Math.abs(r.credit) > 0.0001)
+    .map((r) => {
+      const account = byNumber.get(r.accountNumber.trim())!;
+      return {
+        journalId: journal.data!,
+        accountId: account.id,
+        description: r.description ?? `Opening balance ${r.accountNumber}`,
+        amount: toStoredAmount(
+          r.debit,
+          r.credit,
+          account.class as Parameters<typeof toStoredAmount>[2]
+        ),
+        journalLineReference: crypto.randomUUID(),
+        companyId: args.companyId
+      };
+    });
+
+  if (inserts.length === 0) {
+    return { data: { journalId: journal.data, lineCount: 0 }, error: null };
+  }
+  const result = await client.from("journalLine").insert(inserts).select("id");
+  if (result.error) return { data: null, error: result.error };
+  return {
+    data: { journalId: journal.data, lineCount: inserts.length },
+    error: null
+  };
+}
+
+/**
+ * The four opening-balance validations (spec §2): journal balances, AR/AP
+ * tie-outs, inventory valuation vs GL, fixed-asset register vs GL. Compares the
+ * Draft journal's control-account lines against the subledger RPC totals as of
+ * cutover − 1 (the journal's posting date).
+ */
+export async function validateOpeningBalance(
+  client: SupabaseClient<Database>,
+  args: { companyId: string; journalId?: string }
+): Promise<{
+  data: OpeningBalanceValidation | null;
+  error: { message: string } | null;
+}> {
+  let journalId = args.journalId;
+  let postingDate: string | null = null;
+  if (!journalId) {
+    const journal = await getOpeningBalanceJournal(client, args.companyId);
+    if (journal.error) return { data: null, error: journal.error };
+    if (!journal.data) {
+      return {
+        data: null,
+        error: { message: "No opening balance journal exists yet" }
+      };
+    }
+    journalId = journal.data.id;
+    postingDate = journal.data.postingDate;
+  }
+
+  const entry = await getJournalEntry(client, journalId);
+  if (entry.error) return { data: null, error: entry.error };
+  postingDate = postingDate ?? entry.data.postingDate ?? null;
+  if (!postingDate) {
+    return {
+      data: null,
+      error: { message: "Opening balance journal has no posting date" }
+    };
+  }
+  const asOfDate = postingDate;
+  const lines = entry.data.journalLine ?? [];
+
+  // Decode each line to display debit/credit by account class, accumulating a
+  // net-debit figure per account so section sums are class-correct.
+  let totalDebit = 0;
+  let totalCredit = 0;
+  const netDebitByAccount = new Map<string, number>();
+  for (const l of lines) {
+    const account = l.account as
+      | { class?: string }
+      | { class?: string }[]
+      | null;
+    const accountClass = (
+      Array.isArray(account) ? account[0]?.class : account?.class
+    ) as Parameters<typeof toDisplayDebit>[1] | undefined;
+    if (!accountClass) continue;
+    const debit = toDisplayDebit(Number(l.amount), accountClass);
+    const credit = toDisplayCredit(Number(l.amount), accountClass);
+    totalDebit += debit;
+    totalCredit += credit;
+    const key = (l as { accountId: string }).accountId;
+    netDebitByAccount.set(
+      key,
+      (netDebitByAccount.get(key) ?? 0) + debit - credit
+    );
+  }
+
+  const netDebit = (accountId: string | null | undefined) =>
+    accountId ? (netDebitByAccount.get(accountId) ?? 0) : 0;
+
+  const tieOut = (draft: number, subledger: number): OpeningBalanceTieOut => {
+    const variance = draft - subledger;
+    return {
+      draftAmount: draft,
+      subledgerAmount: subledger,
+      variance,
+      pass: Math.abs(variance) <= OPENING_BALANCE_TOLERANCE
+    };
+  };
+
+  const balanced: OpeningBalanceTieOut = {
+    draftAmount: totalDebit,
+    subledgerAmount: totalCredit,
+    variance: totalDebit - totalCredit,
+    pass: Math.abs(totalDebit - totalCredit) <= OPENING_BALANCE_TOLERANCE
+  };
+
+  const defaults = await getDefaultAccounts(client, args.companyId);
+  const row = (defaults.data ?? {}) as Record<string, string | null>;
+
+  const [ar, ap, inv, assets, classes] = await Promise.all([
+    client.rpc("get_ar_open_by_customer", {
+      _company_id: args.companyId,
+      _as_of_date: asOfDate
+    }),
+    client.rpc("get_ap_open_by_supplier", {
+      _company_id: args.companyId,
+      _as_of_date: asOfDate
+    }),
+    client.rpc("get_inventory_valuation", {
+      company_id: args.companyId,
+      as_of_date: asOfDate,
+      location_id: undefined
+    }),
+    client
+      .from("fixedAsset")
+      .select("acquisitionCost, accumulatedDepreciation")
+      .eq("companyId", args.companyId),
+    client
+      .from("fixedAssetClass")
+      .select("assetAccountId, accumulatedDepreciationAccountId")
+      .eq("companyId", args.companyId)
+  ]);
+
+  const arSubledger = (ar.data ?? []).reduce(
+    (s: number, r: any) => s + Number(r.openInBase ?? 0),
+    0
+  );
+  const apSubledger = (ap.data ?? []).reduce(
+    (s: number, r: any) => s + Number(r.openInBase ?? 0),
+    0
+  );
+  const invSubledger = ((inv.data ?? []) as any[]).reduce(
+    (s: number, r: any) => s + Number(r.totalValue ?? 0),
+    0
+  );
+
+  const arTieOut = tieOut(netDebit(row.receivablesAccount), arSubledger);
+  const apTieOut = tieOut(-netDebit(row.payablesAccount), apSubledger);
+  const inventoryTieOut = tieOut(
+    netDebit(row.finishedGoodsAccount) + netDebit(row.rawMaterialsAccount),
+    invSubledger
+  );
+
+  let fixedAssetTieOut: OpeningBalanceTieOut | null = null;
+  const assetRows = assets.data ?? [];
+  if (assetRows.length > 0) {
+    const registerNet = assetRows.reduce(
+      (s, a) =>
+        s +
+        Number(a.acquisitionCost ?? 0) -
+        Number(a.accumulatedDepreciation ?? 0),
+      0
+    );
+    let draftNet = 0;
+    for (const c of classes.data ?? []) {
+      draftNet += netDebit(c.assetAccountId);
+      draftNet += netDebit(c.accumulatedDepreciationAccountId);
+    }
+    fixedAssetTieOut = tieOut(draftNet, registerNet);
+  }
+
+  const allPass =
+    balanced.pass &&
+    arTieOut.pass &&
+    apTieOut.pass &&
+    inventoryTieOut.pass &&
+    (fixedAssetTieOut ? fixedAssetTieOut.pass : true);
+
+  return {
+    data: {
+      balanced,
+      arTieOut,
+      apTieOut,
+      inventoryTieOut,
+      fixedAssetTieOut,
+      allPass
+    },
+    error: null
+  };
+}
+
+/**
+ * Close every period ending before the cutover date — a dedicated bulk path
+ * (Design Decision 10) that bypasses the close checklist because these periods
+ * are empty except the opening journal. Oldest-first, snapshotting each period
+ * inside the transaction so balance reads stay fast. Audit trail: each period's
+ * closedAt/closedBy is stamped.
+ */
+export async function closePreCutoverPeriods(
+  client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
+  args: { companyId: string; cutoverDate: string; userId: string }
+): Promise<{
+  data: { closedCount: number } | null;
+  error: { message: string } | null;
+}> {
+  const periods = await (client.from("accountingPeriod") as any)
+    .select("id, closeStatus")
+    .eq("companyId", args.companyId)
+    .lt("endDate", args.cutoverDate)
+    .order("startDate", { ascending: true });
+  if (periods.error) {
+    return { data: null, error: periods.error };
+  }
+
+  const toClose = (
+    (periods.data ?? []) as Array<{
+      id: string;
+      closeStatus: string | null;
+    }>
+  ).filter((p) => p.closeStatus !== "Closed");
+  if (toClose.length === 0) {
+    return { data: { closedCount: 0 }, error: null };
+  }
+
+  const now = new Date().toISOString();
+  try {
+    await db.transaction().execute(async (trx) => {
+      const tx = trx as any;
+      for (const period of toClose) {
+        await tx
+          .updateTable("accountingPeriod")
+          .set({
+            closeStatus: "Closed",
+            closedAt: now,
+            closedBy: args.userId,
+            updatedBy: args.userId,
+            updatedAt: now
+          })
+          .where("id", "=", period.id)
+          .where("companyId", "=", args.companyId)
+          .execute();
+        await sql`SELECT "snapshotAccountingPeriodBalances"(${args.companyId}, ${period.id}, ${args.userId})`.execute(
+          trx
+        );
+      }
+    });
+  } catch (err) {
+    return {
+      data: null,
+      error: {
+        message:
+          err instanceof Error
+            ? err.message
+            : "Failed to close pre-cutover periods"
+      }
+    };
+  }
+  return { data: { closedCount: toClose.length }, error: null };
+}
+
+/**
+ * The one-way activation event (spec §1). Re-runs readiness + validation
+ * server-side, posts the opening journal dated cutover − 1, generates the
+ * cutover fiscal year's periods, closes every pre-cutover period, stamps the
+ * activation columns, and flips accountingEnabled on. Rejects unless every
+ * readiness check and validation passes and `confirmation` equals the company
+ * name. Resumable: a re-run after a posted-but-unstamped partial completes.
+ */
+export async function activateAccounting(
+  client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
+  args: {
+    companyId: string;
+    userId: string;
+    confirmation: string;
+    cutoverDate: string;
+  }
+): Promise<{
+  data: { journalId: string } | null;
+  error: { message: string } | null;
+}> {
+  const company = await getCompanyActivationRow(client, args.companyId);
+  if (company.error || !company.data) {
+    return { data: null, error: { message: "Company not found" } };
+  }
+  if (company.data.accountingActivatedAt) {
+    return {
+      data: null,
+      error: { message: "Accounting is already activated" }
+    };
+  }
+  if (args.confirmation.trim() !== company.data.name) {
+    return {
+      data: null,
+      error: { message: "Confirmation does not match the company name" }
+    };
+  }
+
+  const readiness = await getActivationReadiness(client, args.companyId);
+  if (readiness.error || !readiness.data) {
+    return { data: null, error: { message: "Failed to evaluate readiness" } };
+  }
+  if (!readiness.data.ready) {
+    return {
+      data: null,
+      error: { message: "Resolve all readiness checks before activating" }
+    };
+  }
+  if (!readiness.data.cutoverDateOptions.includes(args.cutoverDate)) {
+    return {
+      data: null,
+      error: {
+        message: "Cutover must fall on the first day of a fiscal period"
+      }
+    };
+  }
+
+  const journal = await getOpeningBalanceJournal(client, args.companyId);
+  if (journal.error) {
+    return { data: null, error: { message: journal.error.message } };
+  }
+  if (!journal.data) {
+    return {
+      data: null,
+      error: { message: "Build the opening balances before activating" }
+    };
+  }
+  const journalId = journal.data.id;
+  const expectedPostingDate = previousDay(args.cutoverDate);
+  if (journal.data.postingDate !== expectedPostingDate) {
+    return {
+      data: null,
+      error: {
+        message:
+          "The opening balance journal date does not match the cutover date. Re-generate the opening balances."
+      }
+    };
+  }
+
+  // Validate (skipped if already posted in a prior partial run).
+  if (journal.data.status === "Draft") {
+    const validation = await validateOpeningBalance(client, {
+      companyId: args.companyId,
+      journalId
+    });
+    if (validation.error || !validation.data) {
+      return {
+        data: null,
+        error: validation.error ?? { message: "Failed to validate" }
+      };
+    }
+    if (!validation.data.allPass) {
+      return {
+        data: null,
+        error: {
+          message:
+            "Opening balances do not validate. Resolve the tie-out variances first."
+        }
+      };
+    }
+  }
+
+  // Generate the cutover fiscal year's periods and ensure the prior period
+  // (containing cutover − 1) exists before the opening journal posts into it.
+  const fiscal = await getFiscalYearSettings(client, args.companyId);
+  const startMonth = fiscal.data?.startMonth
+    ? (MONTH_NUMBER[fiscal.data.startMonth] ?? 1)
+    : 1;
+  const cutoverFiscalYear = fiscalYearAndPeriodFor(
+    new Date(args.cutoverDate),
+    startMonth
+  ).fiscalYear;
+  const genCutover = await createFiscalYearPeriods(client, {
+    companyId: args.companyId,
+    fiscalYear: cutoverFiscalYear,
+    userId: args.userId
+  });
+  if (genCutover.error) {
+    return {
+      data: null,
+      error: { message: "Failed to generate fiscal periods" }
+    };
+  }
+  const priorPeriod = await getOrCreateAccountingPeriod(
+    client,
+    args.companyId,
+    expectedPostingDate,
+    "accounting"
+  );
+  if (priorPeriod.error) {
+    return { data: null, error: priorPeriod.error };
+  }
+
+  // Post the opening journal (Draft → Posted), dated cutover − 1, into the still
+  // open prior period.
+  if (journal.data.status === "Draft") {
+    const posted = await postJournalEntry(client, journalId, args.userId);
+    if (posted.error) {
+      return { data: null, error: posted.error };
+    }
+  }
+
+  // Close every pre-cutover period (the opening journal is now the only bridge).
+  const closed = await closePreCutoverPeriods(client, db, {
+    companyId: args.companyId,
+    cutoverDate: args.cutoverDate,
+    userId: args.userId
+  });
+  if (closed.error) {
+    return { data: null, error: closed.error };
+  }
+
+  // Stamp activation + flip the flag in one transaction. The config-lock trigger
+  // allows this because the OLD activation stamp is still NULL.
+  const now = new Date().toISOString();
+  try {
+    await db.transaction().execute(async (trx) => {
+      const tx = trx as any;
+      await tx
+        .updateTable("company")
+        .set({
+          accountingActivatedAt: now,
+          accountingActivatedBy: args.userId,
+          accountingCutoverDate: args.cutoverDate
+        })
+        .where("id", "=", args.companyId)
+        .execute();
+      await tx
+        .updateTable("companySettings")
+        .set({ accountingEnabled: true })
+        .where("id", "=", args.companyId)
+        .execute();
+    });
+  } catch (err) {
+    return {
+      data: null,
+      error: {
+        message:
+          err instanceof Error ? err.message : "Failed to stamp activation"
+      }
+    };
+  }
+
+  return { data: { journalId }, error: null };
 }
