@@ -1,4 +1,8 @@
 export { accountingBackfillFunction } from "./accounting-backfill";
+export {
+  intercompanyMirrorInvoiceFunction,
+  intercompanyMirrorPoFunction
+} from "./intercompany-mirror";
 export { jiraSyncFunction, syncIssueFromJiraSchema } from "./jira";
 export { linearSyncFunction, syncIssueFromLinearSchema } from "./linear";
 export { onshapeBackfillFunction } from "./onshape-backfill";

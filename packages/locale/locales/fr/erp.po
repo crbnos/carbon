@@ -227,6 +227,9 @@ msgstr "9-12 semaines"
 msgid "90D"
 msgstr "90 jours"
 
+msgid "A → B"
+msgstr ""
+
 msgid "A Carbon-run data migration — you load your own data"
 msgstr "Une migration de données gérée par Carbon — vous chargez vos propres données"
 
@@ -846,11 +849,17 @@ msgstr "Après"
 msgid "After (calculation method)"
 msgstr "Après (méthode de calcul)"
 
+msgid "Agree"
+msgstr ""
+
 msgid "Agree on the scope"
 msgstr "Convenir sur la portée"
 
 msgid "Agree who owns what and set a working rhythm"
 msgstr "Convenir de qui est responsable de quoi et établir un rythme de travail"
+
+msgid "Agreed"
+msgstr ""
 
 msgid "AI Tokens"
 msgstr "Jetons IA"
@@ -1762,6 +1771,9 @@ msgstr "Jours moy. pour fermer"
 msgid "Awaiting approval"
 msgstr "En attente d'approbation"
 
+msgid "B → A"
+msgstr ""
+
 msgid "Back"
 msgstr "Retour"
 
@@ -2479,6 +2491,12 @@ msgstr "Entreprises"
 msgid "Company"
 msgstr "Entreprise"
 
+msgid "Company A"
+msgstr ""
+
+msgid "Company B"
+msgstr ""
+
 msgid "Company group"
 msgstr "Groupe d'entreprises"
 
@@ -2580,6 +2598,9 @@ msgstr "Configurez les paramètres par défaut du tableau de bord qualité."
 
 msgid "Configure how preventative maintenance dispatches are automatically generated from maintenance schedules."
 msgstr "Configurez la façon dont les ordres de travail de maintenance préventive sont générés automatiquement à partir des calendriers de maintenance."
+
+msgid "Configure intercompany matching tolerance and document mirroring across the company group."
+msgstr ""
 
 msgid "Configure Item"
 msgstr "Configurer l'article"
@@ -3168,6 +3189,9 @@ msgstr "Créer une révision"
 
 msgid "Create Rule"
 msgstr "Créer une règle"
+
+msgid "Create statement"
+msgstr ""
 
 msgid "Create Transfer"
 msgstr "Créer un transfert"
@@ -4219,6 +4243,12 @@ msgstr "Description du changement"
 msgid "Description of Issue"
 msgstr "Description du problème"
 
+msgid "Detach Link"
+msgstr ""
+
+msgid "Detached"
+msgstr ""
+
 msgid "Detail"
 msgstr "Détail"
 
@@ -4227,6 +4257,9 @@ msgstr "Détails"
 
 msgid "Diagram saved"
 msgstr "Diagramme enregistré"
+
+msgid "Difference"
+msgstr ""
 
 msgid "Digital Quote"
 msgstr "Devis Numérique"
@@ -4945,6 +4978,9 @@ msgstr "Activez la journalisation d'audit dans les paramètres pour commencer à
 msgid "Enable digital quotes for your company. This will allow you to send digital quotes to your customers, and allow them to accept them online."
 msgstr "Activez les devis numériques pour votre entreprise. Cela vous permettra d'envoyer des devis numériques à vos clients et de leur permettre de les accepter en ligne."
 
+msgid "Enable document mirroring"
+msgstr ""
+
 msgid "Enable full accrual accounting with journal entries, financial reports, and general ledger posting."
 msgstr "Activez la comptabilité d'exercice complète avec les écritures de journal, les rapports financiers et la validation du grand livre."
 
@@ -5217,6 +5253,9 @@ msgstr "Tout de Starter"
 msgid "Exceeds {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB total — remove some attachments to send."
 msgstr "Dépasse {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB au total — supprimez certaines pièces jointes pour envoyer."
 
+msgid "Exception"
+msgstr ""
+
 msgid "Exchange Rate"
 msgstr "Taux de change"
 
@@ -5376,6 +5415,9 @@ msgstr "Balises supplémentaires pour segmenter vos rapports GL"
 
 msgid "Fail"
 msgstr "Échouer"
+
+msgid "Failed"
+msgstr ""
 
 msgid "Failed features"
 msgstr "Caractéristiques échouées"
@@ -5707,6 +5749,9 @@ msgstr "Mode de défaillance"
 msgid "Failure Modes"
 msgstr "Modes de défaillance"
 
+msgid "Failure Reason"
+msgstr ""
+
 msgid "Favorite"
 msgstr "Favori"
 
@@ -5951,6 +5996,9 @@ msgstr "Entièrement amorti"
 
 msgid "Fully trained for"
 msgstr "Entièrement formé pour"
+
+msgid "FX"
+msgstr ""
 
 msgid "FX G/L"
 msgstr "G/P de change"
@@ -6255,6 +6303,9 @@ msgstr "Membres du groupe"
 
 msgid "Group Name"
 msgstr "Nom du groupe"
+
+msgid "Group Settings"
+msgstr ""
 
 msgid "Groups"
 msgstr "Groupes"
@@ -6726,6 +6777,9 @@ msgstr "Intercompany"
 
 msgid "Intercompany Balances"
 msgstr "Soldes interentreprises"
+
+msgid "Intercompany matching tolerance"
+msgstr ""
 
 msgid "Intercompany Transactions"
 msgstr "Transactions interentreprises"
@@ -7895,6 +7949,12 @@ msgstr "Minutes/1000 Pièces"
 msgid "Minutes/Piece"
 msgstr "Minutes/Pièce"
 
+msgid "Mirrored"
+msgstr ""
+
+msgid "Mirrored Documents"
+msgstr ""
+
 msgid "Missing Information"
 msgstr "Informations manquantes"
 
@@ -8011,6 +8071,9 @@ msgstr "MRP s'exécute automatiquement toutes les 3 heures, mais vous pouvez l'e
 msgid "Must be in the same location"
 msgstr "Doit être au même endroit"
 
+msgid "Mutual open intercompany balances by company pair and currency. Create a netting statement to offset the two directions."
+msgstr ""
+
 msgid "My Documents"
 msgstr "Mes Documents"
 
@@ -8061,6 +8124,18 @@ msgstr "Valeur nette comptable"
 
 msgid "Net Change"
 msgstr "Variation nette"
+
+msgid "Netted"
+msgstr ""
+
+msgid "Netted Amount"
+msgstr ""
+
+msgid "Netting Matrix"
+msgstr ""
+
+msgid "Netting Statements"
+msgstr ""
 
 msgid "Never"
 msgstr "Jamais"
@@ -8568,6 +8643,9 @@ msgstr "Aucune correspondance pour « {query} ». Essayez un terme de recherche 
 
 msgid "No matches. Type to create one."
 msgstr "Aucune correspondance. Tapez pour en créer une."
+
+msgid "No mutual intercompany balances"
+msgstr ""
 
 msgid "No new notifications"
 msgstr "Aucune nouvelle notification"
@@ -9943,6 +10021,12 @@ msgstr "Date promise"
 msgid "Properties"
 msgstr "Propriétés"
 
+msgid "Propose"
+msgstr ""
+
+msgid "Proposed"
+msgstr ""
+
 msgid "Protect the go-live date"
 msgstr "Protéger la date de mise en production"
 
@@ -10732,6 +10816,9 @@ msgstr "Réinitialiser le PIN pour {0} {1}"
 msgid "Reset view"
 msgstr "Réinitialiser la vue"
 
+msgid "Residual"
+msgstr ""
+
 msgid "Residual value"
 msgstr "Valeur résiduelle"
 
@@ -10779,6 +10866,9 @@ msgstr "Mise hors service d'un actif par mise au rebut ou par vente, en comptabi
 
 msgid "Retry"
 msgstr "Réessayer"
+
+msgid "Retry Mirror"
+msgstr ""
 
 msgid "Return Home"
 msgstr "Retour à l'accueil"
@@ -11607,6 +11697,12 @@ msgstr "Définissez votre emplacement par défaut dans les paramètres de profil
 msgid "Settings"
 msgstr "Paramètres"
 
+msgid "Settle"
+msgstr ""
+
+msgid "Settled"
+msgstr ""
+
 msgid "Setup"
 msgstr "Configuration"
 
@@ -12059,6 +12155,9 @@ msgstr "Commencé"
 msgid "State / Province"
 msgstr "État / Province"
 
+msgid "Statement"
+msgstr ""
+
 #. placeholder {0}: lotEntities.length
 #. placeholder {1}: Math.max(0, lotEntities.length - inspected)
 msgid "Statistical acceptance failed, so the entire lot is considered non-conforming (ISO 9001:2015 §8.7). All {0} entities — {passes} sampled pass(es), {fails} failure(s), and {1} un-inspected — will be marked Rejected."
@@ -12483,6 +12582,9 @@ msgstr "Élément cible"
 
 msgid "Target disposition row"
 msgstr "Ligne de disposition cible"
+
+msgid "Target Document"
+msgstr ""
 
 msgid "Target go-live"
 msgstr "Cible de mise en ligne"
@@ -13594,6 +13696,9 @@ msgstr "Tol-"
 
 msgid "Tol+"
 msgstr "Tol+"
+
+msgid "Tolerance"
+msgstr ""
 
 msgid "Tolerance (+/-)"
 msgstr "Tolérance (+/-)"
