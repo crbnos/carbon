@@ -68,6 +68,12 @@ export default function useSettingsSubmodules() {
             icon: <LuNetwork />
           },
           {
+            name: t`Group Settings`,
+            to: path.to.companyGroupSettings,
+            role: "employee",
+            icon: <LuNetwork />
+          },
+          {
             name: t`Document Templates`,
             to: path.to.documentTemplates,
             role: "employee",
