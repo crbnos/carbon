@@ -73,10 +73,11 @@ import {
 import { PostgresDriver } from "kysely";
 import { inngest } from "../../client";
 import {
-  getDailyConsolidationBatchKey,
+  type ConsolidationGroup,
   getSyncOperationActor,
   getSyncOperationFailureRecord,
   getUtcDateString,
+  hasDailySummarySourceTypes,
   isClaimableConsolidationOperation,
   isDailyConsolidationMarker,
   partitionConsolidationOperations,
@@ -162,12 +163,21 @@ async function consolidateCompany(args: {
   );
 
   // Re-check the gate inside the step: settings may have changed between
-  // enumeration and execution
+  // enumeration and execution. The cron runs for pure-daily configs
+  // (transitional v2 shims) AND for any config with daily-summary source
+  // types (v3 per-source-type granularity).
   const settings: PostingSyncSettings = resolvePostingSyncSettings(
     integration.metadata
   );
-  if (!settings.enabled || settings.consolidation !== "daily") {
-    return { ...summary, skippedReason: "posting sync not in daily mode" };
+  if (
+    !settings.enabled ||
+    (settings.consolidation !== "daily" &&
+      !hasDailySummarySourceTypes(settings))
+  ) {
+    return {
+      ...summary,
+      skippedReason: "posting sync has no daily-summary work"
+    };
   }
 
   const provider = getProviderIntegration(
@@ -220,13 +230,17 @@ async function consolidateCompany(args: {
     operations: claimable,
     postingDateByJournalId,
     today,
-    consolidatedDates: new Set()
+    integration: providerId,
+    consolidatedBatchKeys: new Set()
   });
 
-  const candidateDates = [...planned.byDate.keys()].sort();
+  const candidateGroups = [...planned.byGroup.values()].sort((a, b) =>
+    a.batchKey.localeCompare(b.batchKey)
+  );
   const hasWork =
-    candidateDates.length > 0 ||
+    candidateGroups.length > 0 ||
     planned.reversals.length > 0 ||
+    planned.individual.length > 0 ||
     planned.missing.length > 0 ||
     planned.markers.length > 0;
 
@@ -237,40 +251,48 @@ async function consolidateCompany(args: {
     return summary;
   }
 
-  // ── 2. Reserve/check the batch marker per candidate date BEFORE claiming ─
-  const enqueueMarker = async (date: string) => {
-    const key = getDailyConsolidationBatchKey(providerId, date);
+  // ── 2. Reserve/check the batch marker per candidate group BEFORE claiming ─
+  const enqueueMarker = async (
+    group: Pick<
+      ConsolidationGroup<SyncOperation>,
+      "batchKey" | "postingDate" | "sourceType"
+    >
+  ) => {
     return enqueueSyncOperation(client, {
       companyId,
       integration: providerId,
       entityType: "journalEntry",
-      entityId: key,
+      entityId: group.batchKey,
       direction: "push-to-accounting",
       trigger: "posting",
-      idempotencyKey: key,
+      idempotencyKey: group.batchKey,
       createdBy,
-      metadata: { consolidation: true, postingDate: date }
+      metadata: {
+        consolidation: true,
+        postingDate: group.postingDate,
+        ...(group.sourceType ? { sourceType: group.sourceType } : {})
+      }
     });
   };
 
-  // Dates whose summary already went out (marker Completed): members push
+  // Batches whose summary already went out (marker Completed): members push
   // individually instead
-  const consolidatedDates = new Set<string>();
-  const markersByDate = new Map<string, SyncOperation>();
+  const consolidatedBatchKeys = new Set<string>();
+  const markersByBatchKey = new Map<string, SyncOperation>();
 
-  for (const date of candidateDates) {
-    const marker = await enqueueMarker(date);
+  for (const group of candidateGroups) {
+    const marker = await enqueueMarker(group);
     if (marker.error || !marker.data) {
       throw new Error(
-        `Failed to reserve consolidation marker for ${date}: ${
+        `Failed to reserve consolidation marker for ${group.batchKey}: ${
           marker.error ?? "no row returned"
         }`
       );
     }
     if (marker.data.status === "Completed") {
-      consolidatedDates.add(date);
+      consolidatedBatchKeys.add(group.batchKey);
     } else {
-      markersByDate.set(date, marker.data);
+      markersByBatchKey.set(group.batchKey, marker.data);
     }
   }
 
@@ -322,7 +344,8 @@ async function consolidateCompany(args: {
     operations: claimedOperations,
     postingDateByJournalId,
     today,
-    consolidatedDates
+    integration: providerId,
+    consolidatedBatchKeys
   });
 
   summary.held = partition.held.length;
@@ -390,22 +413,22 @@ async function consolidateCompany(args: {
   await pushIndividually(partition.reversals);
   await pushIndividually(partition.individual);
 
-  // ── 7. One aggregated push per candidate date ────────────────────────────
+  // ── 7. One aggregated push per candidate (source type, date) group ───────
   const processedMarkerIds = new Set<string>();
 
-  for (const [date, operations] of [...partition.byDate.entries()].sort(
-    ([a], [b]) => a.localeCompare(b)
+  for (const group of [...partition.byGroup.values()].sort((a, b) =>
+    a.batchKey.localeCompare(b.batchKey)
   )) {
-    const batchKey = getDailyConsolidationBatchKey(providerId, date);
+    const { batchKey, postingDate: date, operations } = group;
 
-    let marker = markersByDate.get(date);
+    let marker = markersByBatchKey.get(batchKey);
     if (!marker) {
-      // Date surfaced by the claim race (enqueued between pre-scan and
+      // Group surfaced by the claim race (enqueued between pre-scan and
       // claim) — reserve its marker now
-      const lateMarker = await enqueueMarker(date);
+      const lateMarker = await enqueueMarker(group);
       if (lateMarker.error || !lateMarker.data) {
         console.error(
-          `[CONSOLIDATION] Could not reserve marker for late date ${date}; leaving ${operations.length} operation(s) In Flight for the next run`
+          `[CONSOLIDATION] Could not reserve marker for late batch ${batchKey}; leaving ${operations.length} operation(s) In Flight for the next run`
         );
         continue;
       }
@@ -480,8 +503,48 @@ async function consolidateCompany(args: {
       members.push({ operation, journal });
     }
 
+    // The SAME pre-flight inputs the individual pushes use (cached on the
+    // syncer instance across groups)
+    const accountCodesById = await syncer.getAccountCodesById();
+    const controlAccountIds = await syncer.getControlAccountIds();
+    const lockDate = await syncer.getLockDate(settings);
+
+    // Per-member pre-flight ejection (v3): a member that fails (unmapped
+    // accounts, control-account line, unbalanced) parks on its OWN
+    // operation with the structured failure, and the batch proceeds with
+    // the survivors — one bad journal no longer blocks the whole day.
+    const survivors: typeof members = [];
+    for (const member of members) {
+      const memberPreflight = runJournalEntryPreflight({
+        journal: member.journal,
+        accountCodesById,
+        controlAccountIds,
+        lockDate,
+        settings
+      });
+      if (memberPreflight.failure) {
+        summary.membersFailed++;
+        await failOperation(client, {
+          id: member.operation.id,
+          companyId: member.operation.companyId,
+          errorMessage: memberPreflight.failure.message,
+          errorCode: memberPreflight.failure.errorCode,
+          warning: memberPreflight.failure.warning,
+          metadata: {
+            ...(member.operation.metadata ?? {}),
+            ...(memberPreflight.failure.metadata ?? {}),
+            ejectedFromBatch: batchKey
+          }
+        });
+        continue;
+      }
+      survivors.push(member);
+    }
+    members.length = 0;
+    members.push(...survivors);
+
     if (members.length === 0) {
-      // Nothing pushable — close the marker so the date is settled; any
+      // Nothing pushable — close the marker so the batch is settled; any
       // future backdated member pushes individually
       await completeOperation(client, {
         id: marker.id,
@@ -490,6 +553,7 @@ async function consolidateCompany(args: {
           ...(marker.metadata ?? {}),
           consolidation: true,
           postingDate: date,
+          ...(group.sourceType ? { sourceType: group.sourceType } : {}),
           journalCount: 0
         }
       });
@@ -504,14 +568,9 @@ async function consolidateCompany(args: {
         batchId: batchKey,
         companyId,
         postingDate: date,
+        sourceType: group.sourceType,
         journals: members.map(({ journal }) => journal)
       });
-
-      // The SAME pre-flight inputs the individual pushes use (cached on the
-      // syncer instance across dates)
-      const accountCodesById = await syncer.getAccountCodesById();
-      const controlAccountIds = await syncer.getControlAccountIds();
-      const lockDate = await syncer.getLockDate(settings);
 
       const preflight = runJournalEntryPreflight({
         journal: aggregate.journal,
@@ -673,7 +732,11 @@ export const accountingConsolidationFunction = inngest.createFunction(
         return (integrations.data ?? [])
           .filter((row) => {
             const settings = resolvePostingSyncSettings(row.metadata);
-            return settings.enabled && settings.consolidation === "daily";
+            return (
+              settings.enabled &&
+              (settings.consolidation === "daily" ||
+                hasDailySummarySourceTypes(settings))
+            );
           })
           .map((row) => ({ companyId: row.companyId, providerId: row.id }));
       }

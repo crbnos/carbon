@@ -221,6 +221,12 @@ describe("getDailyConsolidationNarration", () => {
       "Carbon daily summary 2026-07-08 — 12 journals"
     );
   });
+
+  it("carries the source type for v3 per-source-type batches", () => {
+    expect(
+      getDailyConsolidationNarration("2026-07-08", 3, "Production Event")
+    ).toBe("Carbon daily summary 2026-07-08 — Production Event — 3 journals");
+  });
 });
 
 // ── Source-type gate ─────────────────────────────────────────────────────────

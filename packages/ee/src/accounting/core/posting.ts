@@ -556,12 +556,14 @@ export function netJournalLinesPerAccount(
   return netted;
 }
 
-/** Narration for one daily-consolidation batch. */
+/** Narration for one daily-consolidation batch (sourceType since v3 partitions). */
 export function getDailyConsolidationNarration(
   postingDate: string,
-  journalCount: number
+  journalCount: number,
+  sourceType?: string | null
 ): string {
-  return `Carbon daily summary ${postingDate} — ${journalCount} journals`;
+  const sourceTypeLabel = sourceType ? ` — ${sourceType}` : "";
+  return `Carbon daily summary ${postingDate}${sourceTypeLabel} — ${journalCount} journals`;
 }
 
 export type DailyJournalEntryAggregate = {
@@ -594,11 +596,13 @@ export type DailyJournalEntryAggregate = {
  * to book).
  */
 export function aggregateJournalEntriesForDate(args: {
-  /** Batch key, e.g. "daily:xero:2026-07-08" — becomes the synthetic journal id. */
+  /** Batch key, e.g. "daily:xero:production-event:2026-07-08" — becomes the synthetic journal id. */
   batchId: string;
   companyId: string;
   /** YYYY-MM-DD posting date shared by every member journal. */
   postingDate: string;
+  /** Source type shared by the batch's members (v3 per-source-type partitions); null for legacy mixed batches. */
+  sourceType?: string | null;
   journals: Accounting.JournalEntry[];
 }): DailyJournalEntryAggregate {
   const postingDay = args.postingDate.slice(0, 10);
@@ -646,7 +650,8 @@ export function aggregateJournalEntriesForDate(args: {
 
   const narration = getDailyConsolidationNarration(
     postingDay,
-    args.journals.length
+    args.journals.length,
+    args.sourceType
   );
 
   return {
@@ -657,7 +662,7 @@ export function aggregateJournalEntriesForDate(args: {
       description: narration,
       postingDate: postingDay,
       status: "Posted",
-      sourceType: null,
+      sourceType: args.sourceType ?? null,
       reversalOfId: null,
       reversedById: null,
       reversal: false,

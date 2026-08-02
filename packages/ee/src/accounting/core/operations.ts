@@ -121,7 +121,6 @@ export function getClaimEntityTypeFilterError(args: {
 // on every metadata write in this file — a standalone cleanup. Until then
 // the query builder stays untyped; row payloads are typed locally via
 // SyncOperation (core/models.ts).
-// biome-ignore lint/suspicious/noExplicitAny: see above
 function syncOperationTable(client: SupabaseClient<Database>): any {
   return client.from("accountingSyncOperation" as any);
 }
@@ -375,6 +374,15 @@ export async function claimPendingOperations(
     limit?: number;
     entityTypes?: string[];
     excludeEntityTypes?: string[];
+    /**
+     * Leave journalEntry operations stamped `metadata.granularity =
+     * "daily-summary"` un-claimed (still Pending) — they belong to the
+     * daily-consolidation cron. Individual-granularity (and legacy
+     * unstamped) journal operations claim normally. The event-path drain
+     * sets this whenever it is not holding ALL journal operations via the
+     * transitional consolidation flag.
+     */
+    holdDailySummaryJournalEntries?: boolean;
   }
 ): Promise<{ data: SyncOperation[]; error: string | null }> {
   const filterError = getClaimEntityTypeFilterError(args);
@@ -384,6 +392,9 @@ export async function claimPendingOperations(
   const inclusion =
     args.entityTypes && args.entityTypes.length > 0 ? args.entityTypes : null;
   const exclusion = getClaimEntityTypeExclusion(args.excludeEntityTypes);
+  // NOT (entityType = journalEntry AND metadata->>granularity = daily-summary)
+  const dailySummaryHold =
+    "entityType.neq.journalEntry,metadata->>granularity.is.null,metadata->>granularity.neq.daily-summary";
   const now = new Date();
   const staleBefore = new Date(
     now.getTime() - SYNC_OPERATION_STALE_IN_FLIGHT_MS
@@ -399,6 +410,9 @@ export async function claimPendingOperations(
     pendingQuery = pendingQuery.in("entityType", inclusion);
   } else if (exclusion) {
     pendingQuery = pendingQuery.not("entityType", "in", exclusion);
+  }
+  if (args.holdDailySummaryJournalEntries) {
+    pendingQuery = pendingQuery.or(dailySummaryHold);
   }
 
   const pending = await pendingQuery
@@ -418,6 +432,9 @@ export async function claimPendingOperations(
     staleQuery = staleQuery.in("entityType", inclusion);
   } else if (exclusion) {
     staleQuery = staleQuery.not("entityType", "in", exclusion);
+  }
+  if (args.holdDailySummaryJournalEntries) {
+    staleQuery = staleQuery.or(dailySummaryHold);
   }
 
   const stale = await staleQuery

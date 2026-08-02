@@ -282,16 +282,33 @@ describe("getSyncOperationIdempotencyKey", () => {
 // ── Daily-consolidation decisions (Task 12) ──────────────────────────────────
 
 describe("getDailyConsolidationBatchKey", () => {
-  it("builds daily:<integration>:<postingDate>", () => {
+  it("builds daily:<integration>:<postingDate> (legacy, no source type)", () => {
     expect(getDailyConsolidationBatchKey("xero", "2026-07-08")).toBe(
       "daily:xero:2026-07-08"
     );
+    expect(getDailyConsolidationBatchKey("xero", "2026-07-08", null)).toBe(
+      "daily:xero:2026-07-08"
+    );
+  });
+
+  it("builds daily:<integration>:<source-type-slug>:<postingDate> for v3 partitions", () => {
+    expect(
+      getDailyConsolidationBatchKey("xero", "2026-07-08", "Production Event")
+    ).toBe("daily:xero:production-event:2026-07-08");
+    expect(
+      getDailyConsolidationBatchKey("xero", "2026-07-08", "Job Consumption")
+    ).toBe("daily:xero:job-consumption:2026-07-08");
   });
 
   it("round-trips through the marker detector", () => {
     expect(
       isDailyConsolidationMarker(
         getDailyConsolidationBatchKey("xero", "2026-07-08")
+      )
+    ).toBe(true);
+    expect(
+      isDailyConsolidationMarker(
+        getDailyConsolidationBatchKey("xero", "2026-07-08", "Production Event")
       )
     ).toBe(true);
     expect(isDailyConsolidationMarker("journal_123")).toBe(false);
@@ -382,12 +399,18 @@ describe("isClaimableConsolidationOperation", () => {
 
 describe("partitionConsolidationOperations", () => {
   const today = "2026-07-09";
+  const integration = "xero";
 
   const op = (
     id: string,
     entityId: string,
     metadata: Record<string, unknown> | null = null
   ) => ({ id, entityId, metadata });
+
+  const groupIds = (
+    partition: ReturnType<typeof partitionConsolidationOperations>,
+    batchKey: string
+  ) => partition.byGroup.get(batchKey)?.operations.map((o) => o.id);
 
   it("splits markers, reversals, dated members, held and missing", () => {
     const partition = partitionConsolidationOperations({
@@ -410,7 +433,8 @@ describe("partitionConsolidationOperations", () => {
         ["j_today", "2026-07-09"]
       ]),
       today,
-      consolidatedDates: new Set()
+      integration,
+      consolidatedBatchKeys: new Set()
     });
 
     expect(partition.markers.map((o) => o.id)).toEqual(["op_marker"]);
@@ -418,20 +442,79 @@ describe("partitionConsolidationOperations", () => {
       "op_rev_meta",
       "op_rev_suffix"
     ]);
-    expect([...partition.byDate.keys()].sort()).toEqual([
-      "2026-07-05",
-      "2026-07-08"
+    // Unstamped (legacy) ops group under the sourceType-less legacy key
+    expect([...partition.byGroup.keys()].sort()).toEqual([
+      "daily:xero:2026-07-05",
+      "daily:xero:2026-07-08"
     ]);
-    expect(partition.byDate.get("2026-07-08")?.map((o) => o.id)).toEqual([
+    expect(groupIds(partition, "daily:xero:2026-07-08")).toEqual([
       "op_yesterday_a",
       "op_yesterday_b"
     ]);
-    expect(partition.byDate.get("2026-07-05")?.map((o) => o.id)).toEqual([
-      "op_older"
-    ]);
+    expect(groupIds(partition, "daily:xero:2026-07-05")).toEqual(["op_older"]);
     expect(partition.held.map((o) => o.id)).toEqual(["op_today"]);
     expect(partition.missing.map((o) => o.id)).toEqual(["op_missing"]);
     expect(partition.individual).toEqual([]);
+  });
+
+  it("groups stamped members per (source type, posting date) batch key", () => {
+    const partition = partitionConsolidationOperations({
+      operations: [
+        op("op_pe_1", "j_1", {
+          sourceType: "Production Event",
+          granularity: "daily-summary"
+        }),
+        op("op_pe_2", "j_2", {
+          sourceType: "Production Event",
+          granularity: "daily-summary"
+        }),
+        op("op_jc", "j_3", {
+          sourceType: "Job Consumption",
+          granularity: "daily-summary"
+        }),
+        op("op_legacy", "j_4")
+      ],
+      postingDateByJournalId: new Map([
+        ["j_1", "2026-07-08"],
+        ["j_2", "2026-07-08"],
+        ["j_3", "2026-07-08"],
+        ["j_4", "2026-07-08"]
+      ]),
+      today,
+      integration,
+      consolidatedBatchKeys: new Set()
+    });
+
+    expect([...partition.byGroup.keys()].sort()).toEqual([
+      "daily:xero:2026-07-08",
+      "daily:xero:job-consumption:2026-07-08",
+      "daily:xero:production-event:2026-07-08"
+    ]);
+    expect(
+      groupIds(partition, "daily:xero:production-event:2026-07-08")
+    ).toEqual(["op_pe_1", "op_pe_2"]);
+    expect(
+      partition.byGroup.get("daily:xero:production-event:2026-07-08")
+        ?.sourceType
+    ).toBe("Production Event");
+    expect(groupIds(partition, "daily:xero:2026-07-08")).toEqual(["op_legacy"]);
+  });
+
+  it("routes individual-granularity ops to the individual path, never consolidating them", () => {
+    const partition = partitionConsolidationOperations({
+      operations: [
+        op("op_individual", "j_ind", {
+          sourceType: "Purchase Receipt",
+          granularity: "individual"
+        })
+      ],
+      postingDateByJournalId: new Map([["j_ind", "2026-07-08"]]),
+      today,
+      integration,
+      consolidatedBatchKeys: new Set()
+    });
+    expect(partition.individual.map((o) => o.id)).toEqual(["op_individual"]);
+    expect(partition.byGroup.size).toBe(0);
   });
 
   it("holds journals dated after today (post-dated) as well", () => {
@@ -439,12 +522,13 @@ describe("partitionConsolidationOperations", () => {
       operations: [op("op_future", "j_future")],
       postingDateByJournalId: new Map([["j_future", "2026-08-01"]]),
       today,
-      consolidatedDates: new Set()
+      integration,
+      consolidatedBatchKeys: new Set()
     });
     expect(partition.held.map((o) => o.id)).toEqual(["op_future"]);
   });
 
-  it("routes members of an already-consolidated date (marker Completed) to the individual path", () => {
+  it("routes members of an already-consolidated batch (marker Completed) to the individual path", () => {
     const partition = partitionConsolidationOperations({
       operations: [op("op_backdated", "j_late"), op("op_normal", "j_new")],
       postingDateByJournalId: new Map([
@@ -452,13 +536,12 @@ describe("partitionConsolidationOperations", () => {
         ["j_new", "2026-07-08"]
       ]),
       today,
-      consolidatedDates: new Set(["2026-07-01"])
+      integration,
+      consolidatedBatchKeys: new Set(["daily:xero:2026-07-01"])
     });
 
     expect(partition.individual.map((o) => o.id)).toEqual(["op_backdated"]);
-    expect(partition.byDate.get("2026-07-08")?.map((o) => o.id)).toEqual([
-      "op_normal"
-    ]);
+    expect(groupIds(partition, "daily:xero:2026-07-08")).toEqual(["op_normal"]);
   });
 });
 

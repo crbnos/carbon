@@ -40,6 +40,7 @@ import {
   insertTerminalSyncOperation,
   isJournalEntrySyncFailure,
   netJournalLinesPerAccount,
+  type PostingSyncSettings,
   parseJournalEntrySyncEntityId,
   RatelimitError,
   resolvePostingSyncSettings,
@@ -624,6 +625,11 @@ export async function drainSyncOperations(args: {
   const postingSyncSettings = resolvePostingSyncSettings(
     args.integrationMetadata
   );
+  // Two hold mechanisms for the consolidation cron's work:
+  // - transitional: pure-daily configs (v2 shims) hold ALL journal ops by
+  //   entity type — covers legacy Pending rows with no granularity stamp;
+  // - v3: otherwise hold only journal ops stamped granularity
+  //   "daily-summary"; individual ones drain right here in the event path.
   const excludeEntityTypes: AccountingEntityType[] | undefined =
     postingSyncSettings.consolidation === "daily"
       ? ["journalEntry"]
@@ -633,7 +639,9 @@ export async function drainSyncOperations(args: {
     const claimed = await claimPendingOperations(args.client, {
       companyId: args.companyId,
       integration: args.integration,
-      ...(excludeEntityTypes ? { excludeEntityTypes } : {})
+      ...(excludeEntityTypes
+        ? { excludeEntityTypes }
+        : { holdDailySummaryJournalEntries: true })
     });
 
     if (claimed.error) {
@@ -746,16 +754,42 @@ export async function drainSyncOperations(args: {
 
 export const DAILY_CONSOLIDATION_PREFIX = "daily:";
 
+/** "Production Event" → "production-event" (batch-key segment). */
+export function getDailyConsolidationSourceTypeSlug(
+  sourceType: string
+): string {
+  return sourceType.toLowerCase().replace(/\s+/g, "-");
+}
+
 /**
- * Batch key for one integration + posting date. Used as the marker
- * operation's entityId AND idempotencyKey, and recorded on member
- * operations as `metadata.consolidatedInto`.
+ * Batch key for one integration + posting date (+ source type since the v3
+ * per-source-type partitions). Used as the marker operation's entityId AND
+ * idempotencyKey, and recorded on member operations as
+ * `metadata.consolidatedInto`. The sourceType-less form is the legacy key
+ * shape — kept so markers completed before the partition change still
+ * dedupe their date's legacy members.
  */
 export function getDailyConsolidationBatchKey(
   integration: string,
-  postingDate: string
+  postingDate: string,
+  sourceType?: string | null
 ): string {
-  return `${DAILY_CONSOLIDATION_PREFIX}${integration}:${postingDate}`;
+  return sourceType
+    ? `${DAILY_CONSOLIDATION_PREFIX}${integration}:${getDailyConsolidationSourceTypeSlug(sourceType)}:${postingDate}`
+    : `${DAILY_CONSOLIDATION_PREFIX}${integration}:${postingDate}`;
+}
+
+/**
+ * True when any enabled journal-represented source type is configured for
+ * daily-summary granularity — the v3 trigger for the consolidation cron
+ * (alongside the transitional pure-daily `consolidation` flag).
+ */
+export function hasDailySummarySourceTypes(
+  settings: PostingSyncSettings
+): boolean {
+  return Object.values(settings.sourceTypes).some(
+    (config) => config.enabled && config.granularity === "daily-summary"
+  );
 }
 
 /** Marker operations are recognized by their entityId prefix. */
@@ -808,16 +842,30 @@ export type ConsolidationOperation = Pick<
   "id" | "entityId" | "metadata"
 >;
 
+export type ConsolidationGroup<T> = {
+  batchKey: string;
+  postingDate: string;
+  /** Source type shared by the group's members; null = legacy unstamped ops. */
+  sourceType: string | null;
+  operations: T[];
+};
+
 export type ConsolidationPartition<T extends ConsolidationOperation> = {
   /** Batch marker rows (entityId prefixed "daily:"). */
   markers: T[];
   /** Reversal pushes — individual syncer path, never consolidated. */
   reversals: T[];
-  /** Consolidation members grouped by posting date (strictly before today). */
-  byDate: Map<string, T[]>;
   /**
-   * Members of a date whose daily summary was already pushed (marker
-   * Completed) — late backdated arrivals, pushed individually.
+   * Consolidation members grouped per (source type, posting date) batch key
+   * (dates strictly before today). Legacy ops with no sourceType stamp
+   * group under the sourceType-less legacy batch key.
+   */
+  byGroup: Map<string, ConsolidationGroup<T>>;
+  /**
+   * Pushed individually through the normal syncer path: members of a batch
+   * whose marker already Completed (late backdated arrivals) and
+   * v3 operations stamped granularity "individual" (they normally drain in
+   * the event path; the cron just pushes any it happens to claim).
    */
   individual: T[];
   /** Dated today or later — left In Flight for a later run. */
@@ -837,12 +885,14 @@ export function partitionConsolidationOperations<
   operations: T[];
   postingDateByJournalId: ReadonlyMap<string, string>;
   today: string;
-  consolidatedDates: ReadonlySet<string>;
+  integration: string;
+  /** Batch keys whose marker is already Completed (summary already pushed). */
+  consolidatedBatchKeys: ReadonlySet<string>;
 }): ConsolidationPartition<T> {
   const partition: ConsolidationPartition<T> = {
     markers: [],
     reversals: [],
-    byDate: new Map(),
+    byGroup: new Map(),
     individual: [],
     held: [],
     missing: []
@@ -862,6 +912,12 @@ export function partitionConsolidationOperations<
       continue;
     }
 
+    // v3: individual-granularity journal ops never consolidate
+    if (operation.metadata?.granularity === "individual") {
+      partition.individual.push(operation);
+      continue;
+    }
+
     const postingDate = args.postingDateByJournalId.get(journalId);
     if (!postingDate) {
       partition.missing.push(operation);
@@ -873,16 +929,31 @@ export function partitionConsolidationOperations<
       continue;
     }
 
-    if (args.consolidatedDates.has(postingDate)) {
+    const sourceType =
+      typeof operation.metadata?.sourceType === "string"
+        ? operation.metadata.sourceType
+        : null;
+    const batchKey = getDailyConsolidationBatchKey(
+      args.integration,
+      postingDate,
+      sourceType
+    );
+
+    if (args.consolidatedBatchKeys.has(batchKey)) {
       partition.individual.push(operation);
       continue;
     }
 
-    const group = partition.byDate.get(postingDate);
+    const group = partition.byGroup.get(batchKey);
     if (group) {
-      group.push(operation);
+      group.operations.push(operation);
     } else {
-      partition.byDate.set(postingDate, [operation]);
+      partition.byGroup.set(batchKey, {
+        batchKey,
+        postingDate,
+        sourceType,
+        operations: [operation]
+      });
     }
   }
 
