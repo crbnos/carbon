@@ -228,7 +228,7 @@ msgid "90D"
 msgstr "90 Tage"
 
 msgid "A → B"
-msgstr ""
+msgstr "A → B"
 
 msgid "A Carbon-run data migration — you load your own data"
 msgstr "Eine von Carbon durchgeführte Datenmigration – Sie laden Ihre eigenen Daten"
@@ -850,7 +850,7 @@ msgid "After (calculation method)"
 msgstr "Nach (Berechnungsmethode)"
 
 msgid "Agree"
-msgstr ""
+msgstr "Zustimmen"
 
 msgid "Agree on the scope"
 msgstr "Einigen Sie sich auf den Umfang"
@@ -859,7 +859,7 @@ msgid "Agree who owns what and set a working rhythm"
 msgstr "Vereinbaren Sie, wer wofür verantwortlich ist, und legen Sie einen Arbeitsrhythmus fest"
 
 msgid "Agreed"
-msgstr ""
+msgstr "Zugestimmt"
 
 msgid "AI Tokens"
 msgstr "KI-Token"
@@ -1772,7 +1772,7 @@ msgid "Awaiting approval"
 msgstr "Genehmigung ausstehend"
 
 msgid "B → A"
-msgstr ""
+msgstr "B → A"
 
 msgid "Back"
 msgstr "Zurück"
@@ -2492,10 +2492,10 @@ msgid "Company"
 msgstr "Unternehmen"
 
 msgid "Company A"
-msgstr ""
+msgstr "Unternehmen A"
 
 msgid "Company B"
-msgstr ""
+msgstr "Unternehmen B"
 
 msgid "Company group"
 msgstr "Unternehmensgruppe"
@@ -2600,7 +2600,7 @@ msgid "Configure how preventative maintenance dispatches are automatically gener
 msgstr "Konfigurieren Sie, wie vorbeugende Wartungseinsätze automatisch aus Wartungsplänen generiert werden."
 
 msgid "Configure intercompany matching tolerance and document mirroring across the company group."
-msgstr ""
+msgstr "Konfigurieren Sie die Toleranz für den Konzernabgleich und die Dokumentspiegelung in der Unternehmensgruppe."
 
 msgid "Configure Item"
 msgstr "Artikel konfigurieren"
@@ -3191,7 +3191,7 @@ msgid "Create Rule"
 msgstr "Regel erstellen"
 
 msgid "Create statement"
-msgstr ""
+msgstr "Auszug erstellen"
 
 msgid "Create Transfer"
 msgstr "Übertrag erstellen"
@@ -4244,10 +4244,10 @@ msgid "Description of Issue"
 msgstr "Problembeschreibung"
 
 msgid "Detach Link"
-msgstr ""
+msgstr "Verknüpfung aufheben"
 
 msgid "Detached"
-msgstr ""
+msgstr "Abgelöst"
 
 msgid "Detail"
 msgstr "Detail"
@@ -4259,7 +4259,7 @@ msgid "Diagram saved"
 msgstr "Diagramm gespeichert"
 
 msgid "Difference"
-msgstr ""
+msgstr "Differenz"
 
 msgid "Digital Quote"
 msgstr "Digitales Angebot"
@@ -4979,7 +4979,7 @@ msgid "Enable digital quotes for your company. This will allow you to send digit
 msgstr "Aktivieren Sie digitale Angebote für Ihr Unternehmen. Dies ermöglicht es Ihnen, digitale Angebote an Ihre Kunden zu senden und ihnen, diese online zu akzeptieren."
 
 msgid "Enable document mirroring"
-msgstr ""
+msgstr "Dokumentspiegelung aktivieren"
 
 msgid "Enable full accrual accounting with journal entries, financial reports, and general ledger posting."
 msgstr "Aktivieren Sie die vollständige Periodenrechnung mit Journaleinträgen, Finanzberichten und Hauptbuchbuchungen."
@@ -5254,7 +5254,7 @@ msgid "Exceeds {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB total — remove some attachmen
 msgstr "Überschreitet {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB insgesamt – entfernen Sie einige Anhänge zum Senden."
 
 msgid "Exception"
-msgstr ""
+msgstr "Ausnahme"
 
 msgid "Exchange Rate"
 msgstr "Wechselkurs"
@@ -5417,7 +5417,7 @@ msgid "Fail"
 msgstr "Fehlgeschlagen"
 
 msgid "Failed"
-msgstr ""
+msgstr "Fehlgeschlagen"
 
 msgid "Failed features"
 msgstr "Fehlgeschlagene Merkmale"
@@ -5750,7 +5750,7 @@ msgid "Failure Modes"
 msgstr "Fehlermodi"
 
 msgid "Failure Reason"
-msgstr ""
+msgstr "Fehlergrund"
 
 msgid "Favorite"
 msgstr "Favorit"
@@ -5998,7 +5998,7 @@ msgid "Fully trained for"
 msgstr "Vollständig geschult für"
 
 msgid "FX"
-msgstr ""
+msgstr "FX"
 
 msgid "FX G/L"
 msgstr "FX G/L"
@@ -6305,7 +6305,7 @@ msgid "Group Name"
 msgstr "Gruppenname"
 
 msgid "Group Settings"
-msgstr ""
+msgstr "Gruppeneinstellungen"
 
 msgid "Groups"
 msgstr "Gruppen"
@@ -6779,7 +6779,7 @@ msgid "Intercompany Balances"
 msgstr "Konzernausgleiche"
 
 msgid "Intercompany matching tolerance"
-msgstr ""
+msgstr "Toleranz für den Konzernabgleich"
 
 msgid "Intercompany Transactions"
 msgstr "Konzerngeschäfte"
@@ -7950,10 +7950,10 @@ msgid "Minutes/Piece"
 msgstr "Minuten/Stück"
 
 msgid "Mirrored"
-msgstr ""
+msgstr "Gespiegelt"
 
 msgid "Mirrored Documents"
-msgstr ""
+msgstr "Gespiegelte Dokumente"
 
 msgid "Missing Information"
 msgstr "Fehlende Informationen"
@@ -8072,7 +8072,7 @@ msgid "Must be in the same location"
 msgstr "Muss sich am selben Ort befinden"
 
 msgid "Mutual open intercompany balances by company pair and currency. Create a netting statement to offset the two directions."
-msgstr ""
+msgstr "Gegenseitige offene Konzernforderungen und -verbindlichkeiten nach Unternehmensgruppe und Währung. Erstellen Sie einen Ausgleichsauszug, um die beiden Richtungen auszugleichen."
 
 msgid "My Documents"
 msgstr "Meine Dokumente"
@@ -8126,16 +8126,16 @@ msgid "Net Change"
 msgstr "Nettoänderung"
 
 msgid "Netted"
-msgstr ""
+msgstr "Verrechnet"
 
 msgid "Netted Amount"
-msgstr ""
+msgstr "Nettobetrag"
 
 msgid "Netting Matrix"
-msgstr ""
+msgstr "Verrechnungsmatrix"
 
 msgid "Netting Statements"
-msgstr ""
+msgstr "Verrechnungsauszüge"
 
 msgid "Never"
 msgstr "Nie"
@@ -8645,7 +8645,7 @@ msgid "No matches. Type to create one."
 msgstr "Keine Übereinstimmungen. Geben Sie ein, um eine zu erstellen."
 
 msgid "No mutual intercompany balances"
-msgstr ""
+msgstr "Keine gegenseitigen Konzernforderungen und -verbindlichkeiten"
 
 msgid "No new notifications"
 msgstr "Keine neuen Benachrichtigungen"
@@ -10022,10 +10022,10 @@ msgid "Properties"
 msgstr "Eigenschaften"
 
 msgid "Propose"
-msgstr ""
+msgstr "Vorschlagen"
 
 msgid "Proposed"
-msgstr ""
+msgstr "Vorgeschlagen"
 
 msgid "Protect the go-live date"
 msgstr "Schützen Sie das Go-Live-Datum"
@@ -10817,7 +10817,7 @@ msgid "Reset view"
 msgstr "Ansicht zurücksetzen"
 
 msgid "Residual"
-msgstr ""
+msgstr "Restbetrag"
 
 msgid "Residual value"
 msgstr "Restwert"
@@ -10868,7 +10868,7 @@ msgid "Retry"
 msgstr "Erneut versuchen"
 
 msgid "Retry Mirror"
-msgstr ""
+msgstr "Spiegelung erneut versuchen"
 
 msgid "Return Home"
 msgstr "Zur Startseite zurück"
@@ -11698,10 +11698,10 @@ msgid "Settings"
 msgstr "Einstellungen"
 
 msgid "Settle"
-msgstr ""
+msgstr "Ausgleichen"
 
 msgid "Settled"
-msgstr ""
+msgstr "Ausgeglichen"
 
 msgid "Setup"
 msgstr "Einrichtung"
@@ -12156,7 +12156,7 @@ msgid "State / Province"
 msgstr "Bundesland / Provinz"
 
 msgid "Statement"
-msgstr ""
+msgstr "Auszug"
 
 #. placeholder {0}: lotEntities.length
 #. placeholder {1}: Math.max(0, lotEntities.length - inspected)
@@ -12584,7 +12584,7 @@ msgid "Target disposition row"
 msgstr "Zieldispositionszeile"
 
 msgid "Target Document"
-msgstr ""
+msgstr "Zieldokument"
 
 msgid "Target go-live"
 msgstr "Zieltermin für Live-Schaltung"
@@ -13698,7 +13698,7 @@ msgid "Tol+"
 msgstr "Tol+"
 
 msgid "Tolerance"
-msgstr ""
+msgstr "Toleranz"
 
 msgid "Tolerance (+/-)"
 msgstr "Toleranz (+/-)"

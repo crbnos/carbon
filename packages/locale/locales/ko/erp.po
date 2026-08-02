@@ -228,7 +228,7 @@ msgid "90D"
 msgstr "90일"
 
 msgid "A → B"
-msgstr ""
+msgstr "A → B"
 
 msgid "A Carbon-run data migration — you load your own data"
 msgstr "Carbon이 진행하는 데이터 마이그레이션 — 직접 데이터를 업로드"
@@ -850,7 +850,7 @@ msgid "After (calculation method)"
 msgstr "이후(계산 방법)"
 
 msgid "Agree"
-msgstr ""
+msgstr "동의"
 
 msgid "Agree on the scope"
 msgstr "범위에 합의"
@@ -859,7 +859,7 @@ msgid "Agree who owns what and set a working rhythm"
 msgstr "역할 분담에 합의하고 업무 리듬을 설정하세요"
 
 msgid "Agreed"
-msgstr ""
+msgstr "동의됨"
 
 msgid "AI Tokens"
 msgstr "AI 토큰"
@@ -1772,7 +1772,7 @@ msgid "Awaiting approval"
 msgstr "승인 대기 중"
 
 msgid "B → A"
-msgstr ""
+msgstr "B → A"
 
 msgid "Back"
 msgstr "뒤로"
@@ -2492,10 +2492,10 @@ msgid "Company"
 msgstr "회사"
 
 msgid "Company A"
-msgstr ""
+msgstr "회사 A"
 
 msgid "Company B"
-msgstr ""
+msgstr "회사 B"
 
 msgid "Company group"
 msgstr "회사 그룹"
@@ -2600,7 +2600,7 @@ msgid "Configure how preventative maintenance dispatches are automatically gener
 msgstr "유지보수 일정에서 예방 유지보수 작업지시가 자동 생성되는 방식을 설정하세요."
 
 msgid "Configure intercompany matching tolerance and document mirroring across the company group."
-msgstr ""
+msgstr "회사 간 일치 허용 오차를 구성하고 회사 그룹 전체에서 문서 미러링을 구성합니다."
 
 msgid "Configure Item"
 msgstr "품목 설정"
@@ -3191,7 +3191,7 @@ msgid "Create Rule"
 msgstr "규칙 생성"
 
 msgid "Create statement"
-msgstr ""
+msgstr "명세서 생성"
 
 msgid "Create Transfer"
 msgstr "이전 생성"
@@ -4244,10 +4244,10 @@ msgid "Description of Issue"
 msgstr "이슈 설명"
 
 msgid "Detach Link"
-msgstr ""
+msgstr "링크 분리"
 
 msgid "Detached"
-msgstr ""
+msgstr "분리됨"
 
 msgid "Detail"
 msgstr "상세"
@@ -4259,7 +4259,7 @@ msgid "Diagram saved"
 msgstr "다이어그램이 저장됨"
 
 msgid "Difference"
-msgstr ""
+msgstr "차액"
 
 msgid "Digital Quote"
 msgstr "디지털 견적"
@@ -4979,7 +4979,7 @@ msgid "Enable digital quotes for your company. This will allow you to send digit
 msgstr "귀사에 디지털 견적을 활성화하세요. 이를 통해 고객에게 디지털 견적을 발송할 수 있고, 고객은 온라인으로 이를 승인할 수 있습니다."
 
 msgid "Enable document mirroring"
-msgstr ""
+msgstr "문서 미러링 활성화"
 
 msgid "Enable full accrual accounting with journal entries, financial reports, and general ledger posting."
 msgstr "전표, 재무 보고서, 총계정원장 전기를 포함한 완전 발생주의 회계를 활성화하세요."
@@ -5254,7 +5254,7 @@ msgid "Exceeds {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB total — remove some attachmen
 msgstr "총 {PO_EMAIL_ATTACHMENT_LIMIT_MB}MB를 초과합니다 — 발송하려면 일부 첨부 파일을 제거하세요."
 
 msgid "Exception"
-msgstr ""
+msgstr "예외"
 
 msgid "Exchange Rate"
 msgstr "환율"
@@ -5417,7 +5417,7 @@ msgid "Fail"
 msgstr "실패"
 
 msgid "Failed"
-msgstr ""
+msgstr "실패"
 
 msgid "Failed features"
 msgstr "부적합 특성"
@@ -5750,7 +5750,7 @@ msgid "Failure Modes"
 msgstr "고장 모드"
 
 msgid "Failure Reason"
-msgstr ""
+msgstr "실패 사유"
 
 msgid "Favorite"
 msgstr "즐겨찾기"
@@ -5998,7 +5998,7 @@ msgid "Fully trained for"
 msgstr "다음에 대해 완전히 교육됨"
 
 msgid "FX"
-msgstr ""
+msgstr "환율"
 
 msgid "FX G/L"
 msgstr "외환 손익"
@@ -6305,7 +6305,7 @@ msgid "Group Name"
 msgstr "그룹 이름"
 
 msgid "Group Settings"
-msgstr ""
+msgstr "그룹 설정"
 
 msgid "Groups"
 msgstr "그룹"
@@ -6779,7 +6779,7 @@ msgid "Intercompany Balances"
 msgstr "회사 간 잔액"
 
 msgid "Intercompany matching tolerance"
-msgstr ""
+msgstr "회사 간 일치 허용 오차"
 
 msgid "Intercompany Transactions"
 msgstr "회사 간 거래"
@@ -7950,10 +7950,10 @@ msgid "Minutes/Piece"
 msgstr "분/개"
 
 msgid "Mirrored"
-msgstr ""
+msgstr "미러링됨"
 
 msgid "Mirrored Documents"
-msgstr ""
+msgstr "미러링된 문서"
 
 msgid "Missing Information"
 msgstr "누락된 정보"
@@ -8072,7 +8072,7 @@ msgid "Must be in the same location"
 msgstr "동일한 위치에 있어야 합니다"
 
 msgid "Mutual open intercompany balances by company pair and currency. Create a netting statement to offset the two directions."
-msgstr ""
+msgstr "회사 쌍 및 통화별 상호 미결 회사 간 잔액. 두 방향을 상쇄하기 위해 순결제 명세서를 생성합니다."
 
 msgid "My Documents"
 msgstr "내 문서"
@@ -8126,16 +8126,16 @@ msgid "Net Change"
 msgstr "순변동"
 
 msgid "Netted"
-msgstr ""
+msgstr "순결제됨"
 
 msgid "Netted Amount"
-msgstr ""
+msgstr "순결제 금액"
 
 msgid "Netting Matrix"
-msgstr ""
+msgstr "순결제 매트릭스"
 
 msgid "Netting Statements"
-msgstr ""
+msgstr "순결제 명세서"
 
 msgid "Never"
 msgstr "안 함"
@@ -8645,7 +8645,7 @@ msgid "No matches. Type to create one."
 msgstr "일치하는 항목 없음. 입력하여 새로 만드세요."
 
 msgid "No mutual intercompany balances"
-msgstr ""
+msgstr "상호 회사 간 잔액 없음"
 
 msgid "No new notifications"
 msgstr "새 알림이 없습니다"
@@ -10022,10 +10022,10 @@ msgid "Properties"
 msgstr "속성"
 
 msgid "Propose"
-msgstr ""
+msgstr "제안"
 
 msgid "Proposed"
-msgstr ""
+msgstr "제안됨"
 
 msgid "Protect the go-live date"
 msgstr "도입일을 사수하세요"
@@ -10817,7 +10817,7 @@ msgid "Reset view"
 msgstr "보기 초기화"
 
 msgid "Residual"
-msgstr ""
+msgstr "잔액"
 
 msgid "Residual value"
 msgstr "잔존가치"
@@ -10868,7 +10868,7 @@ msgid "Retry"
 msgstr "재시도"
 
 msgid "Retry Mirror"
-msgstr ""
+msgstr "미러링 다시 시도"
 
 msgid "Return Home"
 msgstr "홈으로 돌아가기"
@@ -11698,10 +11698,10 @@ msgid "Settings"
 msgstr "설정"
 
 msgid "Settle"
-msgstr ""
+msgstr "결제"
 
 msgid "Settled"
-msgstr ""
+msgstr "결제됨"
 
 msgid "Setup"
 msgstr "설정"
@@ -12156,7 +12156,7 @@ msgid "State / Province"
 msgstr "주/도"
 
 msgid "Statement"
-msgstr ""
+msgstr "명세서"
 
 #. placeholder {0}: lotEntities.length
 #. placeholder {1}: Math.max(0, lotEntities.length - inspected)
@@ -12584,7 +12584,7 @@ msgid "Target disposition row"
 msgstr "대상 처리 행"
 
 msgid "Target Document"
-msgstr ""
+msgstr "대상 문서"
 
 msgid "Target go-live"
 msgstr "목표 도입일"
@@ -13698,7 +13698,7 @@ msgid "Tol+"
 msgstr "공차+"
 
 msgid "Tolerance"
-msgstr ""
+msgstr "허용 오차"
 
 msgid "Tolerance (+/-)"
 msgstr "공차(+/-)"

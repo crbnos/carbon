@@ -228,7 +228,7 @@ msgid "90D"
 msgstr "90日"
 
 msgid "A → B"
-msgstr ""
+msgstr "A → B"
 
 msgid "A Carbon-run data migration — you load your own data"
 msgstr "Carbon実行のデータ移行 — あなたが自分のデータをロードします"
@@ -850,7 +850,7 @@ msgid "After (calculation method)"
 msgstr "後（計算方法）"
 
 msgid "Agree"
-msgstr ""
+msgstr "同意する"
 
 msgid "Agree on the scope"
 msgstr "スコープに同意する"
@@ -859,7 +859,7 @@ msgid "Agree who owns what and set a working rhythm"
 msgstr "誰が何を所有するかを合意し、作業リズムを設定する"
 
 msgid "Agreed"
-msgstr ""
+msgstr "同意済み"
 
 msgid "AI Tokens"
 msgstr "AIトークン"
@@ -1772,7 +1772,7 @@ msgid "Awaiting approval"
 msgstr "承認待ち"
 
 msgid "B → A"
-msgstr ""
+msgstr "B → A"
 
 msgid "Back"
 msgstr "戻る"
@@ -2492,10 +2492,10 @@ msgid "Company"
 msgstr "会社"
 
 msgid "Company A"
-msgstr ""
+msgstr "Company A"
 
 msgid "Company B"
-msgstr ""
+msgstr "Company B"
 
 msgid "Company group"
 msgstr "会社グループ"
@@ -2600,7 +2600,7 @@ msgid "Configure how preventative maintenance dispatches are automatically gener
 msgstr "予防保全ディスパッチが保全スケジュールから自動的に生成される方法を設定します。"
 
 msgid "Configure intercompany matching tolerance and document mirroring across the company group."
-msgstr ""
+msgstr "企業間のマッチング許容値とドキュメントミラーリングをカンパニーグループ全体で構成します。"
 
 msgid "Configure Item"
 msgstr "アイテムを構成"
@@ -3191,7 +3191,7 @@ msgid "Create Rule"
 msgstr "ルールを作成"
 
 msgid "Create statement"
-msgstr ""
+msgstr "ステートメントを作成"
 
 msgid "Create Transfer"
 msgstr "移動を作成"
@@ -4244,10 +4244,10 @@ msgid "Description of Issue"
 msgstr "問題の説明"
 
 msgid "Detach Link"
-msgstr ""
+msgstr "リンクをデタッチ"
 
 msgid "Detached"
-msgstr ""
+msgstr "デタッチされた"
 
 msgid "Detail"
 msgstr "詳細"
@@ -4259,7 +4259,7 @@ msgid "Diagram saved"
 msgstr "図が保存されました"
 
 msgid "Difference"
-msgstr ""
+msgstr "差異"
 
 msgid "Digital Quote"
 msgstr "デジタル見積"
@@ -4979,7 +4979,7 @@ msgid "Enable digital quotes for your company. This will allow you to send digit
 msgstr "貴社のデジタル見積もりを有効にします。これにより、顧客にデジタル見積もりを送信でき、顧客がオンラインで承認することができます。"
 
 msgid "Enable document mirroring"
-msgstr ""
+msgstr "ドキュメントミラーリングを有効にする"
 
 msgid "Enable full accrual accounting with journal entries, financial reports, and general ledger posting."
 msgstr "完全な発生主義会計を有効にし、仕訳帳エントリ、財務報告書、および総勘定元帳への転記を行います。"
@@ -5254,7 +5254,7 @@ msgid "Exceeds {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB total — remove some attachmen
 msgstr "{PO_EMAIL_ATTACHMENT_LIMIT_MB} MB を超えています — 送信するには添付ファイルを削除してください。"
 
 msgid "Exception"
-msgstr ""
+msgstr "例外"
 
 msgid "Exchange Rate"
 msgstr "為替レート"
@@ -5417,7 +5417,7 @@ msgid "Fail"
 msgstr "不合格"
 
 msgid "Failed"
-msgstr ""
+msgstr "失敗"
 
 msgid "Failed features"
 msgstr "失敗した機能"
@@ -5750,7 +5750,7 @@ msgid "Failure Modes"
 msgstr "障害モード"
 
 msgid "Failure Reason"
-msgstr ""
+msgstr "失敗理由"
 
 msgid "Favorite"
 msgstr "お気に入り"
@@ -5998,7 +5998,7 @@ msgid "Fully trained for"
 msgstr "完全に訓練済み"
 
 msgid "FX"
-msgstr ""
+msgstr "FX"
 
 msgid "FX G/L"
 msgstr "FX G/L"
@@ -6305,7 +6305,7 @@ msgid "Group Name"
 msgstr "グループ名"
 
 msgid "Group Settings"
-msgstr ""
+msgstr "グループ設定"
 
 msgid "Groups"
 msgstr "グループ"
@@ -6779,7 +6779,7 @@ msgid "Intercompany Balances"
 msgstr "企業間残高"
 
 msgid "Intercompany matching tolerance"
-msgstr ""
+msgstr "企業間マッチング許容値"
 
 msgid "Intercompany Transactions"
 msgstr "企業間取引"
@@ -7950,10 +7950,10 @@ msgid "Minutes/Piece"
 msgstr "分/個"
 
 msgid "Mirrored"
-msgstr ""
+msgstr "ミラーリング済み"
 
 msgid "Mirrored Documents"
-msgstr ""
+msgstr "ミラーリングされたドキュメント"
 
 msgid "Missing Information"
 msgstr "不足している情報"
@@ -8072,7 +8072,7 @@ msgid "Must be in the same location"
 msgstr "同じ場所にある必要があります"
 
 msgid "Mutual open intercompany balances by company pair and currency. Create a netting statement to offset the two directions."
-msgstr ""
+msgstr "企業ペアと通貨による相互オープンな企業間残高。相殺するためのネッティングステートメントを作成します。"
 
 msgid "My Documents"
 msgstr "マイドキュメント"
@@ -8126,16 +8126,16 @@ msgid "Net Change"
 msgstr "純変化"
 
 msgid "Netted"
-msgstr ""
+msgstr "ネッティング済み"
 
 msgid "Netted Amount"
-msgstr ""
+msgstr "ネッティング額"
 
 msgid "Netting Matrix"
-msgstr ""
+msgstr "ネッティングマトリックス"
 
 msgid "Netting Statements"
-msgstr ""
+msgstr "ネッティングステートメント"
 
 msgid "Never"
 msgstr "なし"
@@ -8645,7 +8645,7 @@ msgid "No matches. Type to create one."
 msgstr "一致するものがありません。作成するには入力してください。"
 
 msgid "No mutual intercompany balances"
-msgstr ""
+msgstr "相互企業間残高がありません"
 
 msgid "No new notifications"
 msgstr "新しい通知はありません"
@@ -10022,10 +10022,10 @@ msgid "Properties"
 msgstr "プロパティ"
 
 msgid "Propose"
-msgstr ""
+msgstr "提案する"
 
 msgid "Proposed"
-msgstr ""
+msgstr "提案済み"
 
 msgid "Protect the go-live date"
 msgstr "ゴーライブ日を保護する"
@@ -10817,7 +10817,7 @@ msgid "Reset view"
 msgstr "ビューをリセット"
 
 msgid "Residual"
-msgstr ""
+msgstr "残差"
 
 msgid "Residual value"
 msgstr "残存価値"
@@ -10868,7 +10868,7 @@ msgid "Retry"
 msgstr "再試行"
 
 msgid "Retry Mirror"
-msgstr ""
+msgstr "ミラーリングを再試行"
 
 msgid "Return Home"
 msgstr "ホームに戻る"
@@ -11698,10 +11698,10 @@ msgid "Settings"
 msgstr "設定"
 
 msgid "Settle"
-msgstr ""
+msgstr "決済"
 
 msgid "Settled"
-msgstr ""
+msgstr "決済済み"
 
 msgid "Setup"
 msgstr "セットアップ"
@@ -12156,7 +12156,7 @@ msgid "State / Province"
 msgstr "都道府県"
 
 msgid "Statement"
-msgstr ""
+msgstr "ステートメント"
 
 #. placeholder {0}: lotEntities.length
 #. placeholder {1}: Math.max(0, lotEntities.length - inspected)
@@ -12584,7 +12584,7 @@ msgid "Target disposition row"
 msgstr "対象の処分行"
 
 msgid "Target Document"
-msgstr ""
+msgstr "ターゲットドキュメント"
 
 msgid "Target go-live"
 msgstr "目標ゴーライブ"
@@ -13698,7 +13698,7 @@ msgid "Tol+"
 msgstr "許容差+"
 
 msgid "Tolerance"
-msgstr ""
+msgstr "許容値"
 
 msgid "Tolerance (+/-)"
 msgstr "許容範囲 (+/-)"
