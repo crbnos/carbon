@@ -1,3 +1,4 @@
+import type { Database } from "@carbon/database";
 import type { Kysely, KyselyDatabase, KyselyTx } from "@carbon/database/client";
 import type z from "zod";
 import type { ExternalIntegrationMapping } from "./external-mapping";
@@ -83,6 +84,26 @@ async function getCompanyGroupId(
 
   return company?.companyGroupId ?? null;
 }
+
+/**
+ * Compile-time totality guard for collectAccountDefaultAccountIds: every
+ * column of the generated accountDefault Row type except the two
+ * non-account columns must match the /Account(Id)?$/ suffix the collector
+ * relies on. A future default-account column named differently fails
+ * typecheck here instead of silently escaping the required mapping set.
+ * (Spec Appendix: .ai/specs/2026-08-02-accounting-sync-engine-v3.md.)
+ */
+type AccountDefaultRow = Database["public"]["Tables"]["accountDefault"]["Row"];
+type AccountDefaultNonAccountColumns = "companyId" | "updatedBy";
+type AccountDefaultAccountColumns = Exclude<
+  keyof AccountDefaultRow,
+  AccountDefaultNonAccountColumns
+>;
+type AssertAccountSuffix<T extends `${string}Account` | `${string}AccountId`> =
+  T;
+// biome-ignore lint/correctness/noUnusedVariables: compile-time assertion
+type _accountDefaultColumnsAllMatchCollectorPattern =
+  AssertAccountSuffix<AccountDefaultAccountColumns>;
 
 /**
  * Every account reference on the accountDefault row lives in a column

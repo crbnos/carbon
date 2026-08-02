@@ -444,9 +444,26 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     ? await getAccountMappingTabData(companyId, integrationId, chartAccounts)
     : null;
 
-  const postingSync = isAccountingInstalled
+  // Bridge the resolved v3 settings (per-source-type record) onto the
+  // current v2-shaped Posting tab until the per-source-type policy UI lands
+  // (plan task 1.6). The save action still writes the v2 shape; the schema
+  // shim upgrades it on read.
+  const resolvedPostingSettings = isAccountingInstalled
+    ? resolvePostingSyncSettings(metadata)
+    : null;
+  const postingSync = resolvedPostingSettings
     ? {
-        settings: resolvePostingSyncSettings(metadata),
+        settings: {
+          enabled: resolvedPostingSettings.enabled,
+          sourceTypes: POSTING_SYNC_DEFAULT_SOURCE_TYPES.filter(
+            (sourceType) =>
+              resolvedPostingSettings.sourceTypes[sourceType].enabled
+          ),
+          includeManual: resolvedPostingSettings.sourceTypes.Manual.enabled,
+          consolidation: resolvedPostingSettings.consolidation,
+          periodLockPolicy: resolvedPostingSettings.periodLockPolicy,
+          lockDate: resolvedPostingSettings.lockDate
+        },
         sourceTypeOptions: [...POSTING_SYNC_DEFAULT_SOURCE_TYPES]
       }
     : null;

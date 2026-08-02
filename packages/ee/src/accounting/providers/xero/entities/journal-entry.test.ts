@@ -60,13 +60,17 @@ const ACCOUNT_CODES: ReadonlyMap<string, string> = new Map([
   ["acc-accrual", "2150"]
 ]);
 
+/**
+ * Build settings through the resolver so stored-fragment shapes (including
+ * v2 `sourceTypes: string[]` / `includeManual` overrides — upgraded by the
+ * schema shim) are exercised exactly as production reads them.
+ */
 const makeSettings = (
-  overrides?: Partial<PostingSyncSettings>
-): PostingSyncSettings => ({
-  ...DEFAULT_POSTING_SYNC_SETTINGS,
-  enabled: true,
-  ...overrides
-});
+  fragment?: Record<string, unknown>
+): PostingSyncSettings =>
+  resolvePostingSyncSettings({
+    settings: { postingSync: { enabled: true, ...fragment } }
+  });
 
 const passingPreflightArgs = () => ({
   journal: makeJournal(),
@@ -272,20 +276,30 @@ describe("runJournalEntryPreflight", () => {
 });
 
 describe("getPostingSyncSourceTypeSkipReason", () => {
-  it("never pushes doc-backed (excluded) source types, even when listed in sourceTypes", () => {
+  it("never pushes document-represented source types in documents mode, even when listed in sourceTypes", () => {
+    // Doc-backed types (a synced document carries the amounts) exclude;
+    // memos/returns have NO document representation yet, so their skip
+    // reason is the loud delivery-hole message instead — either way the
+    // journal is never pushed in documents mode.
+    const backed = ["Sales Invoice", "Purchase Invoice", "Payment"];
+
     for (const sourceType of POSTING_SYNC_EXCLUDED_SOURCE_TYPES) {
+      const expected = backed.includes(sourceType)
+        ? "excluded from posting sync"
+        : "no document representation";
+
       expect(
         getPostingSyncSourceTypeSkipReason(sourceType, makeSettings()),
-        `${sourceType} should be excluded`
-      ).toContain("excluded from posting sync");
+        `${sourceType} should not push`
+      ).toContain(expected);
 
       expect(
         getPostingSyncSourceTypeSkipReason(
           sourceType,
           makeSettings({ sourceTypes: [sourceType] })
         ),
-        `${sourceType} should stay excluded when explicitly listed`
-      ).toContain("excluded from posting sync");
+        `${sourceType} should stay unpushed when explicitly listed`
+      ).toContain(expected);
     }
   });
 
@@ -338,15 +352,31 @@ describe("resolvePostingSyncSettings", () => {
     expect(resolvePostingSyncSettings({ settings: {} })).toEqual(
       DEFAULT_POSTING_SYNC_SETTINGS
     );
-    expect(DEFAULT_POSTING_SYNC_SETTINGS).toEqual({
+
+    // v3 defaults: disabled, documents-mode families, source-type record
+    // total over the enum with policy defaults, warn on unmapped dims
+    expect(DEFAULT_POSTING_SYNC_SETTINGS.enabled).toBe(false);
+    expect(DEFAULT_POSTING_SYNC_SETTINGS.families).toEqual({
+      ar: "documents",
+      ap: "documents"
+    });
+    expect(DEFAULT_POSTING_SYNC_SETTINGS.periodLockPolicy).toBe("park");
+    expect(DEFAULT_POSTING_SYNC_SETTINGS.onUnmappedDimensionValue).toBe("warn");
+    expect(DEFAULT_POSTING_SYNC_SETTINGS.dimensionSlots).toEqual([]);
+    expect(DEFAULT_POSTING_SYNC_SETTINGS.consolidation).toBe("individual");
+    expect(
+      DEFAULT_POSTING_SYNC_SETTINGS.sourceTypes["Purchase Receipt"]
+    ).toEqual({ enabled: true, granularity: "individual" });
+    expect(
+      DEFAULT_POSTING_SYNC_SETTINGS.sourceTypes["Production Event"]
+    ).toEqual({ enabled: true, granularity: "daily-summary" });
+    expect(DEFAULT_POSTING_SYNC_SETTINGS.sourceTypes.Manual).toEqual({
       enabled: false,
-      includeManual: false,
-      consolidation: "individual",
-      periodLockPolicy: "park"
+      granularity: "individual"
     });
   });
 
-  it("parses a stored fragment and fills the defaults", () => {
+  it("upgrades a stored v2 fragment (global daily consolidation) through the shim", () => {
     const resolved = resolvePostingSyncSettings({
       settings: {
         postingSync: {
@@ -357,13 +387,42 @@ describe("resolvePostingSyncSettings", () => {
       }
     });
 
-    expect(resolved).toEqual({
+    expect(resolved.enabled).toBe(true);
+    expect(resolved.lockDate).toBe("2026-06-30");
+    expect(resolved.periodLockPolicy).toBe("park");
+    // v2 daily consolidation → every enabled type daily-summary, so the
+    // transitional derived hold flag stays "daily"
+    expect(resolved.consolidation).toBe("daily");
+    expect(resolved.sourceTypes["Purchase Receipt"]).toEqual({
       enabled: true,
-      includeManual: false,
-      consolidation: "daily",
-      periodLockPolicy: "park",
-      lockDate: "2026-06-30"
+      granularity: "daily-summary"
     });
+    expect(resolved.sourceTypes.Manual.enabled).toBe(false);
+    expect(resolved.families).toEqual({ ar: "documents", ap: "documents" });
+  });
+
+  it("upgrades a stored v2 sourceTypes array + includeManual through the shim", () => {
+    const resolved = resolvePostingSyncSettings({
+      settings: {
+        postingSync: {
+          enabled: true,
+          sourceTypes: ["Purchase Receipt"],
+          includeManual: true,
+          consolidation: "individual"
+        }
+      }
+    });
+
+    expect(resolved.sourceTypes["Purchase Receipt"]).toEqual({
+      enabled: true,
+      granularity: "individual"
+    });
+    expect(resolved.sourceTypes["Sales Shipment"].enabled).toBe(false);
+    expect(resolved.sourceTypes.Manual).toEqual({
+      enabled: true,
+      granularity: "individual"
+    });
+    expect(resolved.consolidation).toBe("individual");
   });
 
   it("ignores an invalid stored fragment instead of throwing", () => {

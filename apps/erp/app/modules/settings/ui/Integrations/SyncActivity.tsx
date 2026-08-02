@@ -54,7 +54,8 @@ export type SyncOperationStatus =
   | "Completed"
   | "Failed"
   | "Warning"
-  | "Skipped";
+  | "Skipped"
+  | "Excluded";
 
 export type SyncActivityOperation = {
   id: string;
@@ -124,7 +125,8 @@ const STATUS_FILTERS: SyncOperationStatus[] = [
   "Completed",
   "Failed",
   "Warning",
-  "Skipped"
+  "Skipped",
+  "Excluded"
 ];
 
 const STATUS_COLORS: Record<
@@ -136,7 +138,8 @@ const STATUS_COLORS: Record<
   Completed: "green",
   Failed: "red",
   Warning: "orange",
-  Skipped: "gray"
+  Skipped: "gray",
+  Excluded: "gray"
 };
 
 /**
@@ -189,7 +192,8 @@ function formatTrigger(trigger: string): string {
 /**
  * UI actions by status (mirrors the service's transition guard):
  * Retry (Failed/Warning → Pending), Skip (Failed/Warning/Pending → Skipped),
- * Re-send (Completed → Pending).
+ * Re-send (Completed/Excluded → Pending — an Excluded journal re-decides
+ * against the current posting-policy config).
  */
 function getAvailableTransitions(status: SyncOperationStatus): {
   retry: boolean;
@@ -199,7 +203,7 @@ function getAvailableTransitions(status: SyncOperationStatus): {
   return {
     retry: status === "Failed" || status === "Warning",
     skip: status === "Failed" || status === "Warning" || status === "Pending",
-    resend: status === "Completed"
+    resend: status === "Completed" || status === "Excluded"
   };
 }
 

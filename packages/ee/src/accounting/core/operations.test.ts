@@ -17,11 +17,13 @@ const ALL_STATUSES = SyncOperationStatusSchema.options;
 
 describe("getSyncOperationTransitionError", () => {
   // Retry (Failed/Warning → Pending), Skip (Failed/Warning/Pending →
-  // Skipped), Re-send (Completed → Pending)
+  // Skipped), Re-send (Completed/Excluded → Pending — an Excluded journal
+  // re-decides against the current policy config)
   const allowed: Array<[SyncOperationStatus, SyncOperationStatus]> = [
     ["Failed", "Pending"],
     ["Warning", "Pending"],
     ["Completed", "Pending"],
+    ["Excluded", "Pending"],
     ["Failed", "Skipped"],
     ["Warning", "Skipped"],
     ["Pending", "Skipped"]

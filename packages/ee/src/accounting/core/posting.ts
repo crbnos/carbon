@@ -1,7 +1,9 @@
 import type z from "zod";
 import {
-  POSTING_SYNC_DEFAULT_SOURCE_TYPES,
-  POSTING_SYNC_EXCLUDED_SOURCE_TYPES,
+  type JournalEntrySourceType,
+  POSTING_POLICY,
+  type PostingDecisionReasonCode,
+  type PostingGranularity,
   PostingSyncSettingsSchema
 } from "./models";
 import type { Accounting } from "./types";
@@ -58,56 +60,246 @@ export function resolvePostingSyncSettings(
   return parsed.data;
 }
 
+// /********************************************************\
+// *              Posting policy decision (v3)              *
+// \********************************************************/
+
 /**
- * Skip reason for a journal's sourceType under the resolved posting-sync
- * settings, or null when the journal is pushable:
- * - excluded (doc-backed) source types never push, regardless of settings;
- * - "Inventory Adjustment" never pushes while the company's
- *   inventoryAdjustment ENTITY sync is enabled for the provider — the
- *   entity syncer pushes the same economic event from the itemLedger, and
- *   pushing the journal too would double-post;
- * - "Manual" pushes only when `includeManual` is on;
- * - everything else pushes when listed in `sourceTypes` (default list when
- *   the company stored none);
- * - a journal without a sourceType is never pushed.
+ * Whether each backing DOCUMENT entity sync is enabled in the company's
+ * resolved sync config — decides delivery for document-represented source
+ * types in `documents` family mode.
+ */
+export type PostingSyncDocumentSyncFlags = {
+  invoiceEnabled: boolean;
+  billEnabled: boolean;
+};
+
+export type JournalPostingPolicyDecision =
+  | { kind: "push"; granularity: PostingGranularity }
+  | {
+      kind: "exclude";
+      reason: PostingDecisionReasonCode;
+      message: string;
+      /** The synced entity that carries this journal's amounts (DOC_BACKED). */
+      backingDocument?: { entityType: string };
+    }
+  | {
+      kind: "warn";
+      code:
+        | "DOC_SYNC_DISABLED"
+        | "DOUBLE_REPRESENTATION"
+        | "PAYMENT_FAMILY_UNRESOLVED";
+      message: string;
+    };
+
+/**
+ * The v3 posting policy decision for one posted journal (spec §1–2): every
+ * journal gets exactly one disposition. Pure — the caller resolves the
+ * settings, the doc-sync flags, and (for Payment journals when the AR/AP
+ * family modes diverge) which side the journal's control-account lines
+ * touch.
+ *
+ * - journal-represented types: push per the per-source-type config
+ *   (Manual → MANUAL_DISABLED when off; others → SOURCE_TYPE_DISABLED);
+ * - "Inventory Adjustment" while the inventoryAdjustment ENTITY sync is
+ *   enabled → DOC_BACKED (the entity syncer pushes the same economic event;
+ *   pushing the journal too would double-post);
+ * - document-represented types follow the family mode:
+ *   `documents` → DOC_BACKED when the backing document actually syncs
+ *   (invoice/bill enabled; Payment is provider-native cash application),
+ *   `Warning/DOC_SYNC_DISABLED` when it does not (a silent delivery hole is
+ *   the one outcome this system must not produce);
+ *   `journals` → push (forced individual granularity), or
+ *   `Warning/DOUBLE_REPRESENTATION` if the document sync is somehow also on;
+ *   `none` → FAMILY_OFF (explicit, visible opt-out).
+ */
+export function getJournalPostingPolicyDecision(args: {
+  sourceType: string | null | undefined;
+  settings: PostingSyncSettings;
+  docSync: PostingSyncDocumentSyncFlags;
+  /**
+   * "ar" | "ap" for Payment journals, resolved from which control account
+   * the lines touch; null when unresolved. Ignored for static-family types.
+   */
+  paymentFamily?: "ar" | "ap" | null;
+  inventoryAdjustmentEntitySyncEnabled?: boolean;
+}): JournalPostingPolicyDecision {
+  const { settings } = args;
+
+  if (!args.sourceType) {
+    return {
+      kind: "exclude",
+      reason: "SOURCE_TYPE_DISABLED",
+      message:
+        "Journal has no source type; only configured source types are pushed"
+    };
+  }
+
+  const sourceType = args.sourceType as JournalEntrySourceType;
+  const policy = POSTING_POLICY[sourceType];
+
+  if (!policy) {
+    return {
+      kind: "exclude",
+      reason: "SOURCE_TYPE_DISABLED",
+      message: `Source type "${args.sourceType}" is not enabled for posting sync`
+    };
+  }
+
+  if (
+    sourceType === "Inventory Adjustment" &&
+    args.inventoryAdjustmentEntitySyncEnabled
+  ) {
+    return {
+      kind: "exclude",
+      reason: "DOC_BACKED",
+      message:
+        'Source type "Inventory Adjustment" is excluded while inventory-adjustment entity sync is enabled (the entity syncer already pushes it; pushing the journal too would double-post)',
+      backingDocument: { entityType: "inventoryAdjustment" }
+    };
+  }
+
+  const config = settings.sourceTypes[sourceType];
+
+  if (policy.representation === "journal") {
+    if (!config.enabled) {
+      if (sourceType === "Manual") {
+        return {
+          kind: "exclude",
+          reason: "MANUAL_DISABLED",
+          message: "Manual journals are not enabled for posting sync"
+        };
+      }
+      return {
+        kind: "exclude",
+        reason: "SOURCE_TYPE_DISABLED",
+        message: `Source type "${sourceType}" is not enabled for posting sync`
+      };
+    }
+    return { kind: "push", granularity: config.granularity };
+  }
+
+  // Document-represented: resolve the family, then the family mode.
+  const family =
+    policy.family === "per-line" ? (args.paymentFamily ?? null) : policy.family;
+
+  if (!family) {
+    // Payment with modes diverging and no resolvable side. Unreachable when
+    // both families share a mode (callers may skip line inspection then).
+    if (settings.families.ar === settings.families.ap) {
+      return decideDocumentFamily({
+        sourceType,
+        policy,
+        mode: settings.families.ar,
+        docSync: args.docSync
+      });
+    }
+    return {
+      kind: "warn",
+      code: "PAYMENT_FAMILY_UNRESOLVED",
+      message: `Journal source type "Payment" could not be resolved to AR or AP from its control-account lines while the family modes diverge (ar: ${settings.families.ar}, ap: ${settings.families.ap}); resolve the payment's side or align the family modes, then retry.`
+    };
+  }
+
+  return decideDocumentFamily({
+    sourceType,
+    policy,
+    mode: settings.families[family],
+    docSync: args.docSync
+  });
+}
+
+function decideDocumentFamily(args: {
+  sourceType: JournalEntrySourceType;
+  policy: (typeof POSTING_POLICY)[JournalEntrySourceType];
+  mode: PostingSyncSettings["families"]["ar"];
+  docSync: PostingSyncDocumentSyncFlags;
+}): JournalPostingPolicyDecision {
+  const backingEntityType = args.policy.backingEntityType ?? null;
+  const documentSyncEnabled =
+    backingEntityType === "invoice"
+      ? args.docSync.invoiceEnabled
+      : backingEntityType === "bill"
+        ? args.docSync.billEnabled
+        : backingEntityType === "payment"
+          ? true // cash application is provider-native, not a Carbon-pushed document
+          : false; // memos/returns have no document representation yet
+
+  if (args.mode === "none") {
+    return {
+      kind: "exclude",
+      reason: "FAMILY_OFF",
+      message: `Source type "${args.sourceType}" is excluded: its AR/AP family is set to "none" (this family is handled outside the sync).`
+    };
+  }
+
+  if (args.mode === "journals") {
+    if (backingEntityType && backingEntityType !== "payment") {
+      // journals mode requires the family's document sync to be OFF; a
+      // contradictory config must be loud, never a double-post.
+      if (documentSyncEnabled) {
+        return {
+          kind: "warn",
+          code: "DOUBLE_REPRESENTATION",
+          message: `Source type "${args.sourceType}" is set to journal representation, but the ${backingEntityType} document sync is also enabled — pushing both would double-post. Disable the document sync or switch the family back to documents, then retry.`
+        };
+      }
+    }
+    // AR/AP journals are forced individual: provider constraints (QBO's one
+    // AR/AP line per JE with a party ref) make cross-document summaries
+    // structurally impossible.
+    return { kind: "push", granularity: "individual" };
+  }
+
+  // documents mode
+  if (!documentSyncEnabled) {
+    const detail =
+      backingEntityType === null
+        ? `Source type "${args.sourceType}" has no document representation yet (credit/debit memos and returns are not pushed as provider documents), so its amounts have NOT reached the external GL. Switch the family to journal representation when available, or handle these in the provider.`
+        : `Source type "${args.sourceType}" is document-represented, but the ${backingEntityType} document sync is disabled — its amounts would never reach the external GL. Enable the ${backingEntityType} sync (or switch the family representation), then retry.`;
+    return { kind: "warn", code: "DOC_SYNC_DISABLED", message: detail };
+  }
+
+  return {
+    kind: "exclude",
+    reason: "DOC_BACKED",
+    message: `Source type "${args.sourceType}" is document-backed and excluded from posting sync (the synced document already books it)`,
+    ...(backingEntityType
+      ? { backingDocument: { entityType: backingEntityType } }
+      : {})
+  };
+}
+
+/**
+ * Backstop source-type gate used by the provider journal syncers at drain
+ * time (the authoritative disposition is recorded at enqueue by
+ * getJournalPostingPolicyDecision — this keeps a conservatively-excluding
+ * second gate in front of any provider call). Returns a human-readable skip
+ * reason, or null when the journal is pushable. The backstop lacks the
+ * resolved sync config, so it assumes a SELF-CONSISTENT one (document sync
+ * on exactly for documents-mode families) — contradictions are the enqueue
+ * decision's job to surface; the backstop's job is never pushing a
+ * doc-backed or family-off journal.
  */
 export function getPostingSyncSourceTypeSkipReason(
   sourceType: string | null | undefined,
   settings: PostingSyncSettings,
   options?: { inventoryAdjustmentEntitySyncEnabled?: boolean }
 ): string | null {
-  if (!sourceType) {
-    return "Journal has no source type; only configured source types are pushed";
-  }
+  const decision = getJournalPostingPolicyDecision({
+    sourceType,
+    settings,
+    docSync: {
+      invoiceEnabled: settings.families.ar === "documents",
+      billEnabled: settings.families.ap === "documents"
+    },
+    paymentFamily: null,
+    inventoryAdjustmentEntitySyncEnabled:
+      options?.inventoryAdjustmentEntitySyncEnabled ?? false
+  });
 
-  if (
-    (POSTING_SYNC_EXCLUDED_SOURCE_TYPES as readonly string[]).includes(
-      sourceType
-    )
-  ) {
-    return `Source type "${sourceType}" is document-backed and excluded from posting sync (the synced document already books it)`;
-  }
-
-  if (
-    sourceType === "Inventory Adjustment" &&
-    options?.inventoryAdjustmentEntitySyncEnabled
-  ) {
-    return 'Source type "Inventory Adjustment" is excluded while inventory-adjustment entity sync is enabled (the entity syncer already pushes it; pushing the journal too would double-post)';
-  }
-
-  if (sourceType === "Manual") {
-    return settings.includeManual
-      ? null
-      : "Manual journals are not enabled for posting sync";
-  }
-
-  const enabledSourceTypes =
-    settings.sourceTypes ??
-    (POSTING_SYNC_DEFAULT_SOURCE_TYPES as readonly string[]);
-
-  return enabledSourceTypes.includes(sourceType)
-    ? null
-    : `Source type "${sourceType}" is not enabled for posting sync`;
+  if (decision.kind === "push") return null;
+  return decision.message;
 }
 
 // /********************************************************\
@@ -161,7 +353,15 @@ export const JOURNAL_ENTRY_SYNC_ERROR_CODES = [
   // for user-fixable name failures: QBO's shared name namespace rejects
   // duplicates (Intuit fault 6240) and caps names at 100 characters.
   "NAME_EXISTS",
-  "NAME_TOO_LONG"
+  "NAME_TOO_LONG",
+  // Decision-time Warnings (recorded at enqueue by the posting policy):
+  // a doc-represented journal whose backing document sync is off, a
+  // journals-mode family whose document sync is contradictorily on, and a
+  // Payment journal whose AR/AP side could not be resolved while the
+  // family modes diverge.
+  "DOC_SYNC_DISABLED",
+  "DOUBLE_REPRESENTATION",
+  "PAYMENT_FAMILY_UNRESOLVED"
 ] as const;
 
 export type JournalEntrySyncErrorCode =
