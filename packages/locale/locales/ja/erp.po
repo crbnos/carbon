@@ -2319,8 +2319,8 @@ msgstr "バッチ番号を選択"
 msgid "Choose a company"
 msgstr "会社を選択"
 
-msgid "Choose a row on the left to see where its stock can go."
-msgstr "左側の行を選択して、その在庫をどこに移動できるかを確認します。"
+msgid "Choose a row on the left to see where its stock can come from."
+msgstr "左側の行を選択して、在庫がどこから来るかを確認します。"
 
 msgid "Choose a serial number"
 msgstr "シリアル番号を選択"
@@ -5046,9 +5046,6 @@ msgstr "1～{0}の数量を入力してください。"
 msgid "Enter and approve vendor bills against a PO (three-way match)"
 msgstr "ベンダー請求書をPOに対して入力および承認する（3者間照合）"
 
-msgid "Enter or scan serial number"
-msgstr "シリアル番号を入力またはスキャンしてください"
-
 msgid "Enter PO number"
 msgstr "PO番号を入力"
 
@@ -5072,9 +5069,6 @@ msgstr "分割するエンティティ"
 
 msgid "Entity"
 msgstr "エンティティ"
-
-msgid "Entity is {status}"
-msgstr "エンティティは {status} です"
 
 msgid "Entity Type"
 msgstr "エンティティタイプ"
@@ -5159,9 +5153,6 @@ msgstr "販売請求書行からモデルを削除するエラー"
 
 msgid "Error removing model from sales order line"
 msgstr "販売注文行からモデルを削除するエラー"
-
-msgid "Error validating serial number"
-msgstr "シリアル番号の検証エラー"
 
 msgid "Escalate to the project leads"
 msgstr "プロジェクトリーダーにエスカレートする"
@@ -6936,9 +6927,6 @@ msgstr "アイテム"
 
 msgid "Item"
 msgstr "アイテム"
-
-msgid "Item {scannedItem} is not the same as the item {expectedItem}"
-msgstr "アイテム {scannedItem} は、アイテム {expectedItem} と同じではありません"
 
 msgid "Item / Location"
 msgstr "品目 / 場所"
@@ -8794,8 +8782,8 @@ msgstr "メモ"
 msgid "Notes (optional)"
 msgstr "メモ（オプション）"
 
-msgid "Nothing else at this location has this item to receive stock."
-msgstr "この場所の他にはこのアイテムを受け取るための在庫がありません。"
+msgid "Nothing else at this location has stock to pull from."
+msgstr "この場所には他に引き出す在庫がありません。"
 
 msgid "Nothing in the archive"
 msgstr "アーカイブに何もありません"
@@ -9489,8 +9477,8 @@ msgstr "ピッキングリスト"
 msgid "Pick Order"
 msgstr "ピック順序"
 
-msgid "Pick the bin stock is coming from, then pick the bins it goes to."
-msgstr "在庫がどこから来ているかのビンを選択してから、それがどこに行くかのビンを選択してください。"
+msgid "Pick the bin that needs stock, then pick the bins to pull it from."
+msgstr "在庫が必要なビンを選択してから、引き出すビンを選択します。"
 
 msgid "Pick tracked item"
 msgstr "追跡品目をピック"
@@ -11130,6 +11118,12 @@ msgstr "スキャン"
 msgid "Scan a label or search by item ID or tracking ID."
 msgstr "ラベルをスキャンするか、アイテムIDまたはトラッキングIDで検索してください。"
 
+msgid "Scan or choose a batch number"
+msgstr "バッチ番号をスキャンまたは選択"
+
+msgid "Scan or choose a serial number"
+msgstr "シリアル番号をスキャンまたは選択"
+
 msgid "Scan or enter tracked entity ID, serial, or batch"
 msgstr "スキャンするか、追跡対象エンティティID、シリアル番号、またはバッチ番号を入力してください"
 
@@ -11141,9 +11135,6 @@ msgstr "スキャンまたは検索..."
 
 msgid "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
 msgstr "このロットから追跡対象エンティティをスキャンまたは選択してサンプル列として追加し、グリッドにその結果を記録します。"
-
-msgid "Scan the tracking ID for this line"
-msgstr "このラインのトラッキングIDをスキャンしてください"
 
 msgid "SCAR"
 msgstr "SCAR"
@@ -11289,6 +11280,9 @@ msgstr "担当者を選択"
 msgid "Select a default approver"
 msgstr "デフォルト承認者を選択"
 
+msgid "Select a destination"
+msgstr "宛先を選択"
+
 msgid "Select a document"
 msgstr "ドキュメントを選択"
 
@@ -11322,9 +11316,6 @@ msgstr "見積が作成されなかった理由を選択してください。"
 
 msgid "Select a shape first to see available options"
 msgstr "形状を先に選択すると、利用可能なオプションが表示されます。"
-
-msgid "Select a source"
-msgstr "ソースを選択"
 
 msgid "Select a substance and shape first to see available options"
 msgstr "物質と形状を先に選択すると、利用可能なオプションが表示されます。"
@@ -11509,9 +11500,6 @@ msgstr "シリアル品は販売注文が必要です"
 
 msgid "Serial Number"
 msgstr "シリアル番号"
-
-msgid "Serial number not found"
-msgstr "シリアル番号が見つかりません"
 
 msgid "Serial Number:"
 msgstr "シリアル番号:"
@@ -13705,9 +13693,6 @@ msgstr "追跡されたエンティティ"
 
 msgid "Tracked Entity"
 msgstr "追跡対象エンティティ"
-
-msgid "Tracked entity already picked"
-msgstr "既に追跡対象が選択されています"
 
 msgid "Tracked entity ID is required but none was found"
 msgstr "追跡対象エンティティIDが必要ですが、見つかりませんでした"

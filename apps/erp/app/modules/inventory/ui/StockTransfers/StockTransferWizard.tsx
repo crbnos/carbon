@@ -53,13 +53,16 @@ import {
 } from "react-icons/lu";
 import { ItemThumbnail, Table } from "~/components";
 import { useUser } from "~/hooks";
-import type { StockTransferSource, StockTransferWizardLine } from "~/stores";
+import type {
+  StockTransferDestination,
+  StockTransferWizardLine
+} from "~/stores";
 import {
   addTransferLine,
   clearStockTransferWizard,
   clearTransferLines,
   removeTransferLine,
-  setActiveSource,
+  setActiveDestination,
   updateTransferLineQuantity,
   useStockTransferWizard,
   useStockTransferWizardLinesCount,
@@ -72,10 +75,10 @@ const logger = getLogger("erp", "stocktransferwizard");
 // The RPC returns every item×bin with activity at the location. There's no
 // server-side paging and the shared Table doesn't virtualize, so cap the DOM
 // and say so when the list is truncated.
-const MAX_VISIBLE_SOURCES = 250;
+const MAX_VISIBLE_DESTINATIONS = 250;
 
-// Panes read left-to-right in the direction stock moves: pick the bin you're
-// pulling from (1), then the bins it goes to (2).
+// Pull-based: start from the bin that needs stock (1), then choose the bins to
+// pull it from (2).
 function StepBadge({ step, active }: { step: number; active: boolean }) {
   return (
     <span
@@ -119,7 +122,7 @@ export function StockTransferWizard({
           </DrawerTitle>
           <DrawerDescription className="sr-only">
             <Trans>
-              Pick the bin stock is coming from, then pick the bins it goes to.
+              Pick the bin that needs stock, then pick the bins to pull it from.
             </Trans>
           </DrawerDescription>
         </DrawerHeader>
@@ -174,100 +177,102 @@ function TransferGrid({ locationId }: { locationId: string }) {
   } = useUser();
 
   const [wizard] = useStockTransferWizard();
-  const activeSource = wizard.activeSource;
+  const activeDestination = wizard.activeDestination;
 
-  const [sourceBins, setSourceBins] = useState<BinRow[]>([]);
-  const [sourcesLoading, setSourcesLoading] = useState(false);
+  const [destinationRows, setDestinationRows] = useState<BinRow[]>([]);
+  const [destinationsLoading, setDestinationsLoading] = useState(false);
   const [search, setSearch] = useState("");
 
-  const [destinationBins, setDestinationBins] = useState<BinRow[]>([]);
-  const [destinationsLoading, setDestinationsLoading] = useState(false);
+  const [sourceRows, setSourceRows] = useState<BinRow[]>([]);
+  const [sourcesLoading, setSourcesLoading] = useState(false);
 
   useMount(() => {
     const load = async () => {
       if (!carbon) return;
-      setSourcesLoading(true);
+      setDestinationsLoading(true);
       const { data, error } = await carbon.rpc(
         "get_item_storage_unit_requirements_by_location",
         { company_id: companyId, location_id: locationId }
       );
       if (error) {
         toast.error(error.message);
-        setSourceBins([]);
+        setDestinationRows([]);
       } else {
-        setSourceBins((data ?? []).map(mapBinRow));
+        setDestinationRows((data ?? []).map(mapBinRow));
       }
-      setSourcesLoading(false);
+      setDestinationsLoading(false);
     };
     load();
   });
 
-  // Destinations are scoped to the active source's item. One call, not N.
+  // Sources are scoped to the active destination's item. One call, not N.
   useEffect(() => {
     let cancelled = false;
     const load = async () => {
-      if (!carbon || !activeSource) {
-        setDestinationBins([]);
+      if (!carbon || !activeDestination) {
+        setSourceRows([]);
         return;
       }
-      setDestinationsLoading(true);
+      setSourcesLoading(true);
       const { data, error } = await carbon.rpc(
         "get_item_storage_unit_requirements_by_location_and_item",
         {
           company_id: companyId,
           location_id: locationId,
-          item_id: activeSource.itemId
+          item_id: activeDestination.itemId
         }
       );
       if (cancelled) return;
       if (error) {
         logger.error(error);
         toast.error(error.message);
-        setDestinationBins([]);
+        setSourceRows([]);
       } else {
-        // The RPC returns every bin for the item, including the source itself.
-        setDestinationBins(
+        // The RPC returns every bin for the item, including the destination.
+        setSourceRows(
           (data ?? [])
             .map(mapBinRow)
-            .filter((bin) => bin.storageUnitId !== activeSource.storageUnitId)
+            .filter(
+              (bin) => bin.storageUnitId !== activeDestination.storageUnitId
+            )
         );
       }
-      setDestinationsLoading(false);
+      setSourcesLoading(false);
     };
     load();
     return () => {
       cancelled = true;
     };
-  }, [carbon, companyId, locationId, activeSource]);
+  }, [carbon, companyId, locationId, activeDestination]);
 
-  const filteredSources = useMemo(() => {
+  const filteredDestinations = useMemo(() => {
     const term = search.trim().toLowerCase();
     const rows = term
-      ? sourceBins.filter(
+      ? destinationRows.filter(
           (row) =>
             row.itemReadableId.toLowerCase().includes(term) ||
             (row.description ?? "").toLowerCase().includes(term) ||
             (row.storageUnitName ?? "").toLowerCase().includes(term)
         )
-      : sourceBins;
-    // The RPC orders neediest-first, which suited a destination picker. As a
-    // source picker, the bins worth pulling from are the ones with stock.
-    return [...rows].sort((a, b) => b.quantityAvailable - a.quantityAvailable);
-  }, [sourceBins, search]);
+      : destinationRows;
+    // The RPC already orders neediest-first (net available ascending), which is
+    // exactly the order a destination picker wants — don't re-sort.
+    return rows;
+  }, [destinationRows, search]);
 
-  const visibleSources = useMemo(
-    () => filteredSources.slice(0, MAX_VISIBLE_SOURCES),
-    [filteredSources]
+  const visibleDestinations = useMemo(
+    () => filteredDestinations.slice(0, MAX_VISIBLE_DESTINATIONS),
+    [filteredDestinations]
   );
 
-  const activeSourceRow = useMemo(
+  const activeDestinationRow = useMemo(
     () =>
-      sourceBins.find(
+      destinationRows.find(
         (row) =>
-          row.itemId === activeSource?.itemId &&
-          row.storageUnitId === activeSource?.storageUnitId
+          row.itemId === activeDestination?.itemId &&
+          row.storageUnitId === activeDestination?.storageUnitId
       ) ?? null,
-    [sourceBins, activeSource]
+    [destinationRows, activeDestination]
   );
 
   return (
@@ -282,13 +287,13 @@ function TransferGrid({ locationId }: { locationId: string }) {
             minSize={35}
             className="flex flex-col min-h-0 overflow-hidden"
           >
-            <SourceTable
-              data={visibleSources}
-              totalCount={filteredSources.length}
-              isLoading={sourcesLoading}
+            <DestinationTable
+              data={visibleDestinations}
+              totalCount={filteredDestinations.length}
+              isLoading={destinationsLoading}
               search={search}
               onSearchChange={setSearch}
-              activeSource={activeSource}
+              activeDestination={activeDestination}
               lines={wizard.lines}
             />
           </ResizablePanel>
@@ -298,20 +303,20 @@ function TransferGrid({ locationId }: { locationId: string }) {
             minSize={25}
             className="flex flex-col min-h-0 overflow-hidden"
           >
-            <DestinationBinList
-              source={activeSourceRow}
-              bins={destinationBins}
-              isLoading={destinationsLoading}
+            <SourceBinList
+              destination={activeDestinationRow}
+              bins={sourceRows}
+              isLoading={sourcesLoading}
               lines={wizard.lines}
               emptyTitle={
-                activeSourceRow
+                activeDestinationRow
                   ? t`No other bins hold this item`
-                  : t`Select a source`
+                  : t`Select a destination`
               }
               emptyHint={
-                activeSourceRow
-                  ? t`Nothing else at this location has this item to receive stock.`
-                  : t`Choose a row on the left to see where its stock can go.`
+                activeDestinationRow
+                  ? t`Nothing else at this location has stock to pull from.`
+                  : t`Choose a row on the left to see where its stock can come from.`
               }
             />
           </ResizablePanel>
@@ -346,13 +351,13 @@ function RequiredHeader() {
   );
 }
 
-function SourceTable({
+function DestinationTable({
   data,
   totalCount,
   isLoading,
   search,
   onSearchChange,
-  activeSource,
+  activeDestination,
   lines
 }: {
   data: BinRow[];
@@ -360,20 +365,20 @@ function SourceTable({
   isLoading: boolean;
   search: string;
   onSearchChange: (value: string) => void;
-  activeSource: StockTransferSource | null;
+  activeDestination: StockTransferDestination | null;
   lines: StockTransferWizardLine[];
 }) {
   const { t } = useLingui();
   const formatter = useNumberFormatter();
 
-  // Quantity leaving this bin across every line built so far.
-  const outgoingFor = useCallback(
+  // Quantity arriving in this bin across every line built so far.
+  const incomingFor = useCallback(
     (row: BinRow) =>
       lines
         .filter(
           (line) =>
             line.itemId === row.itemId &&
-            line.fromStorageUnitId === row.storageUnitId
+            line.toStorageUnitId === row.storageUnitId
         )
         .reduce((sum, line) => sum + (line.quantity ?? 0), 0),
     [lines]
@@ -427,7 +432,7 @@ function SourceTable({
         cell: ({ row }) => (
           <QuantityDelta
             base={row.original.quantityOnHand}
-            delta={-outgoingFor(row.original)}
+            delta={incomingFor(row.original)}
             formatter={formatter}
           />
         )
@@ -445,14 +450,17 @@ function SourceTable({
         accessorKey: "quantityAvailable",
         header: t`Available`,
         cell: ({ row }) => {
-          const outgoing = outgoingFor(row.original);
+          // Flag a bin that open demand still outruns even counting incoming
+          // supply — the shortage this wizard exists to close.
+          const short =
+            row.original.quantityAvailable + row.original.quantityIncoming <
+            row.original.quantityRequired;
           return (
             <QuantityDelta
               base={row.original.quantityAvailable}
-              delta={-outgoing}
+              delta={incomingFor(row.original)}
               formatter={formatter}
-              // Flag when the lines you've built would overdraw this bin.
-              flagged={row.original.quantityAvailable - outgoing < 0}
+              flagged={short}
             />
           );
         }
@@ -467,16 +475,16 @@ function SourceTable({
         )
       },
       {
-        id: "source",
+        id: "destination",
         header: "",
         cell: ({ row }) => {
           const isActive =
-            activeSource?.itemId === row.original.itemId &&
-            activeSource?.storageUnitId === row.original.storageUnitId;
+            activeDestination?.itemId === row.original.itemId &&
+            activeDestination?.storageUnitId === row.original.storageUnitId;
           const lineCount = lines.filter(
             (line) =>
               line.itemId === row.original.itemId &&
-              line.fromStorageUnitId === row.original.storageUnitId &&
+              line.toStorageUnitId === row.original.storageUnitId &&
               (line.quantity ?? 0) > 0
           ).length;
 
@@ -487,7 +495,7 @@ function SourceTable({
                 variant={isActive ? "primary" : "secondary"}
                 rightIcon={<LuArrowRight />}
                 onClick={() =>
-                  setActiveSource(
+                  setActiveDestination(
                     isActive
                       ? null
                       : {
@@ -504,7 +512,7 @@ function SourceTable({
         }
       }
     ],
-    [t, formatter, activeSource, lines, outgoingFor]
+    [t, formatter, activeDestination, lines, incomingFor]
   );
 
   return (
@@ -514,7 +522,7 @@ function SourceTable({
           compact
           data={data}
           columns={columns}
-          title={t`Transfer From`}
+          title={t`Transfer To`}
           titleBadge={<StepBadge step={1} active />}
           // Every URL-param-driven feature is off: this table lives in a drawer
           // stacked over the stock-transfers list, which is itself a Table
@@ -525,8 +533,10 @@ function SourceTable({
           withSavedView={false}
           withSimpleSorting={false}
           sort={null}
+          // The trigger toggles the app sidebar — meaningless inside a drawer.
+          withSidebarTrigger={false}
           // The action column must stay reachable while scrolling horizontally.
-          defaultColumnPinning={{ left: [], right: ["source"] }}
+          defaultColumnPinning={{ left: [], right: ["destination"] }}
           headerActions={
             <InputGroup size="sm">
               <InputLeftElement>
@@ -635,15 +645,15 @@ function WizardEmptyState({
   );
 }
 
-function DestinationBinList({
-  source,
+function SourceBinList({
+  destination,
   bins,
   isLoading,
   lines,
   emptyTitle,
   emptyHint
 }: {
-  source: BinRow | null;
+  destination: BinRow | null;
   bins: BinRow[];
   isLoading: boolean;
   lines: StockTransferWizardLine[];
@@ -652,16 +662,14 @@ function DestinationBinList({
 }) {
   const { t } = useLingui();
 
-  // Default bin first, then the bins that most need stock.
+  // Default bin first, then most stock — the bins worth pulling from.
   const sorted = useMemo(
     () =>
       [...bins].sort((a, b) => {
         if (a.isDefaultStorageUnit !== b.isDefaultStorageUnit) {
           return a.isDefaultStorageUnit ? -1 : 1;
         }
-        const shortfallA = a.quantityRequired - a.quantityOnHand;
-        const shortfallB = b.quantityRequired - b.quantityOnHand;
-        return shortfallB - shortfallA;
+        return b.quantityAvailable - a.quantityAvailable;
       }),
     [bins]
   );
@@ -672,35 +680,35 @@ function DestinationBinList({
         spacing={2}
         className="px-4 py-3 border-b w-full flex-shrink-0 items-center"
       >
-        <StepBadge step={2} active={!!source} />
+        <StepBadge step={2} active={!!destination} />
         <Heading size="h4">
-          <Trans>Transfer To</Trans>
+          <Trans>Transfer From</Trans>
         </Heading>
       </HStack>
 
-      {source && (
+      {destination && (
         <HStack
           spacing={2}
           className="px-4 py-3 border-b w-full flex-shrink-0 bg-primary/5"
         >
           <ItemThumbnail
-            thumbnailPath={source.thumbnailPath}
+            thumbnailPath={destination.thumbnailPath}
             type="Part"
             size="sm"
           />
           <VStack spacing={0} className="min-w-0">
             <span className="text-sm font-medium truncate">
-              {source.itemReadableId}
+              {destination.itemReadableId}
             </span>
             <span className="text-xs text-muted-foreground truncate">
-              {source.description}
+              {destination.description}
             </span>
           </VStack>
           <HStack spacing={1} className="flex-shrink-0 ml-auto">
-            <Badge variant="outline">
-              {binLabel(source.storageUnitName, t`No storage unit`)}
-            </Badge>
             <LuArrowRight className="size-3.5 text-muted-foreground" />
+            <Badge variant="outline">
+              {binLabel(destination.storageUnitName, t`No storage unit`)}
+            </Badge>
           </HStack>
         </HStack>
       )}
@@ -710,10 +718,10 @@ function DestinationBinList({
           <div className="flex h-full w-full items-center justify-center">
             <Spinner className="size-8" />
           </div>
-        ) : sorted.length === 0 || !source ? (
+        ) : sorted.length === 0 || !destination ? (
           <WizardEmptyState
             icon={
-              source ? (
+              destination ? (
                 <LuPackageSearch className="h-6 w-6 flex-shrink-0" />
               ) : (
                 <LuMousePointerClick className="h-6 w-6 flex-shrink-0" />
@@ -726,10 +734,10 @@ function DestinationBinList({
           <ScrollArea className="h-full w-full">
             <VStack spacing={0} className="p-4">
               {sorted.map((bin) => (
-                <DestinationBinRow
+                <SourceBinRow
                   key={bin.storageUnitId}
                   bin={bin}
-                  source={source}
+                  destination={destination}
                   lines={lines}
                 />
               ))}
@@ -741,13 +749,13 @@ function DestinationBinList({
   );
 }
 
-function DestinationBinRow({
+function SourceBinRow({
   bin,
-  source,
+  destination,
   lines
 }: {
   bin: BinRow;
-  source: BinRow;
+  destination: BinRow;
   lines: StockTransferWizardLine[];
 }) {
   const { t } = useLingui();
@@ -755,47 +763,48 @@ function DestinationBinRow({
 
   const line = lines.find(
     (l) =>
-      l.itemId === source.itemId &&
-      l.fromStorageUnitId === source.storageUnitId &&
-      l.toStorageUnitId === bin.storageUnitId
+      l.itemId === destination.itemId &&
+      l.fromStorageUnitId === bin.storageUnitId &&
+      l.toStorageUnitId === destination.storageUnitId
   );
   const isAdded = !!line;
-  // You can't move out more than the source bin holds — and the cap is the
-  // capacity *remaining* after the other destinations already drawing on this
-  // same bin, or N destinations could each claim the full amount.
+  // You can't pull more than this source bin holds — and the cap is the
+  // capacity *remaining* after the other destinations already drawing on it,
+  // or N destinations could each claim the full amount.
   const allocatedElsewhere = lines
     .filter(
       (l) =>
-        l.itemId === source.itemId &&
-        l.fromStorageUnitId === source.storageUnitId &&
-        l.toStorageUnitId !== bin.storageUnitId
+        l.itemId === destination.itemId &&
+        l.fromStorageUnitId === bin.storageUnitId &&
+        l.toStorageUnitId !== destination.storageUnitId
     )
     .reduce((sum, l) => sum + (l.quantity ?? 0), 0);
-  const maxQuantity = Math.max(
+  const maxQuantity = Math.max(0, bin.quantityAvailable - allocatedElsewhere);
+  // How short the destination is — what this transfer is trying to close.
+  const shortfall = Math.max(
     0,
-    source.quantityAvailable - allocatedElsewhere
+    destination.quantityRequired - destination.quantityOnHand
   );
-  const shortfall = Math.max(0, bin.quantityRequired - bin.quantityOnHand);
 
   const onAdd = () => {
     // Prefer the destination's shortfall, but `Required` is open-job demand and
     // is zero on most rows — defaulting to 0 would make Add look like a no-op.
-    // With no demand, seed whatever capacity the source bin has left.
+    // With no demand, seed whatever capacity this source bin has left.
     const defaultQuantity =
       shortfall > 0 ? Math.min(shortfall, maxQuantity) : maxQuantity;
     addTransferLine({
-      itemId: source.itemId,
-      itemReadableId: source.itemReadableId,
-      description: source.description,
-      thumbnailPath: source.thumbnailPath,
-      fromStorageUnitId: source.storageUnitId,
-      fromStorageUnitName: source.storageUnitName!,
-      toStorageUnitId: bin.storageUnitId,
-      toStorageUnitName: bin.storageUnitName!,
-      quantityAvailable: source.quantityAvailable,
+      itemId: destination.itemId,
+      itemReadableId: destination.itemReadableId,
+      description: destination.description,
+      thumbnailPath: destination.thumbnailPath,
+      fromStorageUnitId: bin.storageUnitId,
+      fromStorageUnitName: bin.storageUnitName,
+      toStorageUnitId: destination.storageUnitId,
+      toStorageUnitName: destination.storageUnitName,
+      quantityAvailable: bin.quantityAvailable,
       quantity: defaultQuantity,
-      requiresSerialTracking: source.itemTrackingType === "Serial",
-      requiresBatchTracking: source.itemTrackingType === "Batch"
+      requiresSerialTracking: destination.itemTrackingType === "Serial",
+      requiresBatchTracking: destination.itemTrackingType === "Batch"
     });
   };
 
@@ -824,13 +833,8 @@ function DestinationBinRow({
             )}
           </HStack>
           <span className="text-xs text-muted-foreground tabular-nums">
+            {formatter.format(bin.quantityAvailable)} {t`available`} ·{" "}
             {formatter.format(bin.quantityOnHand)} {t`on hand`}
-            {shortfall > 0 && (
-              <>
-                {" · "}
-                {formatter.format(shortfall)} {t`short`}
-              </>
-            )}
             {bin.quantityIncoming > 0 && (
               <>
                 {" · "}
@@ -849,9 +853,9 @@ function DestinationBinRow({
               onChange={(value: number) => {
                 if (value === null || Number.isNaN(value)) return;
                 updateTransferLineQuantity(
-                  source.itemId,
-                  source.storageUnitId,
+                  destination.itemId,
                   bin.storageUnitId,
+                  destination.storageUnitId,
                   Math.min(Math.max(0, value), maxQuantity)
                 );
               }}
@@ -867,9 +871,9 @@ function DestinationBinRow({
             onClick={() =>
               isAdded
                 ? removeTransferLine(
-                    source.itemId,
-                    source.storageUnitId,
-                    bin.storageUnitId
+                    destination.itemId,
+                    bin.storageUnitId,
+                    destination.storageUnitId
                   )
                 : onAdd()
             }

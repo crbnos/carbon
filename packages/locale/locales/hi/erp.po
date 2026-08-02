@@ -2319,8 +2319,8 @@ msgstr "एक बैच नंबर चुनें"
 msgid "Choose a company"
 msgstr "कंपनी चुनें"
 
-msgid "Choose a row on the left to see where its stock can go."
-msgstr "बाईं ओर एक पंक्ति चुनें यह देखने के लिए कि इसका स्टॉक कहाँ जा सकता है।"
+msgid "Choose a row on the left to see where its stock can come from."
+msgstr "यह देखने के लिए बाईं ओर की पंक्ति को चुनें कि इसका स्टॉक कहां से आ सकता है।"
 
 msgid "Choose a serial number"
 msgstr "एक सीरियल नंबर चुनें"
@@ -5046,9 +5046,6 @@ msgstr "1 और {0} के बीच मात्रा दर्ज करे�
 msgid "Enter and approve vendor bills against a PO (three-way match)"
 msgstr "विक्रेता बिलों को PO के विरुद्ध दर्ज करें और अनुमोदित करें (तीन-तरफा मिलान)"
 
-msgid "Enter or scan serial number"
-msgstr "सीरियल नंबर दर्ज करें या स्कैन करें"
-
 msgid "Enter PO number"
 msgstr "PO नंबर दर्ज करें"
 
@@ -5072,9 +5069,6 @@ msgstr "विभाजित करने के लिए इकाइया�
 
 msgid "Entity"
 msgstr "इकाई"
-
-msgid "Entity is {status}"
-msgstr "Entity {status} है"
 
 msgid "Entity Type"
 msgstr "इकाई प्रकार"
@@ -5159,9 +5153,6 @@ msgstr "बिक्री चालान लाइन से मॉडल ह�
 
 msgid "Error removing model from sales order line"
 msgstr "बिक्रय आदेश लाइन से मॉडल हटाने में त्रुटि"
-
-msgid "Error validating serial number"
-msgstr "सीरियल नंबर को मान्य करने में त्रुटि"
 
 msgid "Escalate to the project leads"
 msgstr "परियोजना नेताओं को बढ़ाएं"
@@ -6936,9 +6927,6 @@ msgstr "आइटम"
 
 msgid "Item"
 msgstr "आइटम"
-
-msgid "Item {scannedItem} is not the same as the item {expectedItem}"
-msgstr "आइटम {scannedItem} आइटम {expectedItem} के समान नहीं है"
 
 msgid "Item / Location"
 msgstr "आइटम / स्थान"
@@ -8794,8 +8782,8 @@ msgstr "नोट्स"
 msgid "Notes (optional)"
 msgstr "नोट्स (वैकल्पिक)"
 
-msgid "Nothing else at this location has this item to receive stock."
-msgstr "इस स्थान पर कुछ और नहीं है जो इस आइटम को स्टॉक प्राप्त करने के लिए प्राप्त कर सके।"
+msgid "Nothing else at this location has stock to pull from."
+msgstr "इस स्थान पर कोई अन्य स्टॉक नहीं है जहां से खींचा जा सकता है।"
 
 msgid "Nothing in the archive"
 msgstr "आर्काइव में कुछ नहीं है"
@@ -9489,8 +9477,8 @@ msgstr "पिक लिस्ट"
 msgid "Pick Order"
 msgstr "पिक ऑर्डर"
 
-msgid "Pick the bin stock is coming from, then pick the bins it goes to."
-msgstr "उस बिन को चुनें जहाँ से स्टॉक आ रहा है, फिर उन बिन को चुनें जहाँ यह जाता है।"
+msgid "Pick the bin that needs stock, then pick the bins to pull it from."
+msgstr "स्टॉक की जरूरत वाली बिन को चुनें, फिर उन बिन को चुनें जहां से स्टॉक खींचना है।"
 
 msgid "Pick tracked item"
 msgstr "ट्रैक किए गए आइटम को चुनें"
@@ -11130,6 +11118,12 @@ msgstr "स्कैन करें"
 msgid "Scan a label or search by item ID or tracking ID."
 msgstr "एक लेबल स्कैन करें या आइटम ID या ट्रैकिंग ID से खोजें।"
 
+msgid "Scan or choose a batch number"
+msgstr "बैच नंबर स्कैन करें या चुनें"
+
+msgid "Scan or choose a serial number"
+msgstr "सीरियल नंबर स्कैन करें या चुनें"
+
 msgid "Scan or enter tracked entity ID, serial, or batch"
 msgstr "ट्रैक किए गए इकाई ID, सीरीज़ या बैच को स्कैन करें या दर्ज करें"
 
@@ -11141,9 +11135,6 @@ msgstr "स्कैन या खोजें..."
 
 msgid "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
 msgstr "इस लॉट से एक ट्रैक की गई इकाई को स्कैन या चुनें इसे एक नमूना कॉलम के रूप में जोड़ने के लिए, फिर ग्रिड में इसके परिणाम को रिकॉर्ड करें।"
-
-msgid "Scan the tracking ID for this line"
-msgstr "इस लाइन के लिए ट्रैकिंग आईडी स्कैन करें"
 
 msgid "SCAR"
 msgstr "SCAR"
@@ -11289,6 +11280,9 @@ msgstr "एक असाइनी चुनें"
 msgid "Select a default approver"
 msgstr "एक डिफ़ॉल्ट अनुमोदक चुनें"
 
+msgid "Select a destination"
+msgstr "गंतव्य चुनें"
+
 msgid "Select a document"
 msgstr "एक दस्तावेज़ चुनें"
 
@@ -11322,9 +11316,6 @@ msgstr "उद्धरण क्यों नहीं बनाया गय�
 
 msgid "Select a shape first to see available options"
 msgstr "उपलब्ध विकल्प देखने के लिए पहले एक आकार चुनें"
-
-msgid "Select a source"
-msgstr "एक स्रोत चुनें"
 
 msgid "Select a substance and shape first to see available options"
 msgstr "उपलब्ध विकल्प देखने के लिए पहले एक पदार्थ और आकार चुनें"
@@ -11509,9 +11500,6 @@ msgstr "सीरियल आइटम के लिए बिक्री आ�
 
 msgid "Serial Number"
 msgstr "सीरियल नंबर"
-
-msgid "Serial number not found"
-msgstr "सीरियल नंबर नहीं मिला"
 
 msgid "Serial Number:"
 msgstr "सीरियल नंबर:"
@@ -13705,9 +13693,6 @@ msgstr "ट्रैक की गई इकाई"
 
 msgid "Tracked Entity"
 msgstr "ट्रैक किया गया इकाई"
-
-msgid "Tracked entity already picked"
-msgstr "ट्रैक किया गया इकाई पहले से ही चुनी जा चुकी है"
 
 msgid "Tracked entity ID is required but none was found"
 msgstr "ट्रैक किया गया इकाई ID आवश्यक है लेकिन कोई नहीं मिला"

@@ -2319,8 +2319,8 @@ msgstr "选择批号"
 msgid "Choose a company"
 msgstr "选择公司"
 
-msgid "Choose a row on the left to see where its stock can go."
-msgstr "选择左侧的行以查看其库存可以转移到何处。"
+msgid "Choose a row on the left to see where its stock can come from."
+msgstr "选择左侧的行以查看其库存可能来自何处。"
 
 msgid "Choose a serial number"
 msgstr "选择序列号"
@@ -5046,9 +5046,6 @@ msgstr "请输入 1 至 {0} 之间的数量。"
 msgid "Enter and approve vendor bills against a PO (three-way match)"
 msgstr "输入并批准针对采购订单的供应商账单（三方匹配）"
 
-msgid "Enter or scan serial number"
-msgstr "输入或扫描序列号"
-
 msgid "Enter PO number"
 msgstr "输入采购订单号"
 
@@ -5072,9 +5069,6 @@ msgstr "要分割的实体"
 
 msgid "Entity"
 msgstr "实体"
-
-msgid "Entity is {status}"
-msgstr "实体为 {status}"
 
 msgid "Entity Type"
 msgstr "实体类型"
@@ -5159,9 +5153,6 @@ msgstr "从销售发票行中删除模型时出错"
 
 msgid "Error removing model from sales order line"
 msgstr "从销售订单行中删除模型时出错"
-
-msgid "Error validating serial number"
-msgstr "验证序列号时出错"
 
 msgid "Escalate to the project leads"
 msgstr "升级到项目负责人"
@@ -6936,9 +6927,6 @@ msgstr "项"
 
 msgid "Item"
 msgstr "物品"
-
-msgid "Item {scannedItem} is not the same as the item {expectedItem}"
-msgstr "项目 {scannedItem} 与项目 {expectedItem} 不相同"
 
 msgid "Item / Location"
 msgstr "物品 / 位置"
@@ -8794,8 +8782,8 @@ msgstr "备注"
 msgid "Notes (optional)"
 msgstr "备注（可选）"
 
-msgid "Nothing else at this location has this item to receive stock."
-msgstr "此位置没有其他此项目可接收库存。"
+msgid "Nothing else at this location has stock to pull from."
+msgstr "此位置没有其他可提取的库存。"
 
 msgid "Nothing in the archive"
 msgstr "存档中没有任何内容"
@@ -9489,8 +9477,8 @@ msgstr "拣货单"
 msgid "Pick Order"
 msgstr "拣选顺序"
 
-msgid "Pick the bin stock is coming from, then pick the bins it goes to."
-msgstr "选择库存来自的位置，然后选择它要转移到的位置。"
+msgid "Pick the bin that needs stock, then pick the bins to pull it from."
+msgstr "先选择需要库存的箱，再选择要从中提取库存的箱。"
 
 msgid "Pick tracked item"
 msgstr "拣选追踪项目"
@@ -11130,6 +11118,12 @@ msgstr "扫描"
 msgid "Scan a label or search by item ID or tracking ID."
 msgstr "扫描标签或按项目 ID 或跟踪 ID 搜索。"
 
+msgid "Scan or choose a batch number"
+msgstr "扫描或选择批号"
+
+msgid "Scan or choose a serial number"
+msgstr "扫描或选择序列号"
+
 msgid "Scan or enter tracked entity ID, serial, or batch"
 msgstr "扫描或输入跟踪实体ID、序列号或批次号"
 
@@ -11141,9 +11135,6 @@ msgstr "扫描或搜索..."
 
 msgid "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
 msgstr "从此批次扫描或选择被追踪的实体以将其作为样本列添加，然后在网格中记录其结果。"
-
-msgid "Scan the tracking ID for this line"
-msgstr "扫描此行的跟踪ID"
 
 msgid "SCAR"
 msgstr "SCAR"
@@ -11289,6 +11280,9 @@ msgstr "选择受理人"
 msgid "Select a default approver"
 msgstr "选择默认审批人"
 
+msgid "Select a destination"
+msgstr "选择目标位置"
+
 msgid "Select a document"
 msgstr "选择文件"
 
@@ -11322,9 +11316,6 @@ msgstr "选择未创建报价的原因。"
 
 msgid "Select a shape first to see available options"
 msgstr "请先选择形状以查看可用选项"
-
-msgid "Select a source"
-msgstr "选择来源"
 
 msgid "Select a substance and shape first to see available options"
 msgstr "请先选择物质和形状以查看可用选项"
@@ -11509,9 +11500,6 @@ msgstr "序列项目需要销售订单"
 
 msgid "Serial Number"
 msgstr "序列号"
-
-msgid "Serial number not found"
-msgstr "序列号未找到"
 
 msgid "Serial Number:"
 msgstr "序列号："
@@ -13705,9 +13693,6 @@ msgstr "跟踪的实体"
 
 msgid "Tracked Entity"
 msgstr "追踪实体"
-
-msgid "Tracked entity already picked"
-msgstr "已追踪实体已被拣选"
 
 msgid "Tracked entity ID is required but none was found"
 msgstr "已跟踪实体ID是必需的，但未找到"

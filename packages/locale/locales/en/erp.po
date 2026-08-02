@@ -2319,8 +2319,8 @@ msgstr "Choose a batch number"
 msgid "Choose a company"
 msgstr "Choose a company"
 
-msgid "Choose a row on the left to see where its stock can go."
-msgstr "Choose a row on the left to see where its stock can go."
+msgid "Choose a row on the left to see where its stock can come from."
+msgstr "Choose a row on the left to see where its stock can come from."
 
 msgid "Choose a serial number"
 msgstr "Choose a serial number"
@@ -5046,9 +5046,6 @@ msgstr "Enter a quantity between 1 and {0}."
 msgid "Enter and approve vendor bills against a PO (three-way match)"
 msgstr "Enter and approve vendor bills against a PO (three-way match)"
 
-msgid "Enter or scan serial number"
-msgstr "Enter or scan serial number"
-
 msgid "Enter PO number"
 msgstr "Enter PO number"
 
@@ -5072,9 +5069,6 @@ msgstr "Entities to split off"
 
 msgid "Entity"
 msgstr "Entity"
-
-msgid "Entity is {status}"
-msgstr "Entity is {status}"
 
 msgid "Entity Type"
 msgstr "Entity Type"
@@ -5159,9 +5153,6 @@ msgstr "Error removing model from sales invoice line"
 
 msgid "Error removing model from sales order line"
 msgstr "Error removing model from sales order line"
-
-msgid "Error validating serial number"
-msgstr "Error validating serial number"
 
 msgid "Escalate to the project leads"
 msgstr "Escalate to the project leads"
@@ -6936,9 +6927,6 @@ msgstr "item"
 
 msgid "Item"
 msgstr "Item"
-
-msgid "Item {scannedItem} is not the same as the item {expectedItem}"
-msgstr "Item {scannedItem} is not the same as the item {expectedItem}"
 
 msgid "Item / Location"
 msgstr "Item / Location"
@@ -8794,8 +8782,8 @@ msgstr "Notes"
 msgid "Notes (optional)"
 msgstr "Notes (optional)"
 
-msgid "Nothing else at this location has this item to receive stock."
-msgstr "Nothing else at this location has this item to receive stock."
+msgid "Nothing else at this location has stock to pull from."
+msgstr "Nothing else at this location has stock to pull from."
 
 msgid "Nothing in the archive"
 msgstr "Nothing in the archive"
@@ -9489,8 +9477,8 @@ msgstr "Pick List"
 msgid "Pick Order"
 msgstr "Pick Order"
 
-msgid "Pick the bin stock is coming from, then pick the bins it goes to."
-msgstr "Pick the bin stock is coming from, then pick the bins it goes to."
+msgid "Pick the bin that needs stock, then pick the bins to pull it from."
+msgstr "Pick the bin that needs stock, then pick the bins to pull it from."
 
 msgid "Pick tracked item"
 msgstr "Pick tracked item"
@@ -11130,6 +11118,12 @@ msgstr "Scan"
 msgid "Scan a label or search by item ID or tracking ID."
 msgstr "Scan a label or search by item ID or tracking ID."
 
+msgid "Scan or choose a batch number"
+msgstr "Scan or choose a batch number"
+
+msgid "Scan or choose a serial number"
+msgstr "Scan or choose a serial number"
+
 msgid "Scan or enter tracked entity ID, serial, or batch"
 msgstr "Scan or enter tracked entity ID, serial, or batch"
 
@@ -11141,9 +11135,6 @@ msgstr "Scan or search..."
 
 msgid "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
 msgstr "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
-
-msgid "Scan the tracking ID for this line"
-msgstr "Scan the tracking ID for this line"
 
 msgid "SCAR"
 msgstr "SCAR"
@@ -11289,6 +11280,9 @@ msgstr "Select a assignee"
 msgid "Select a default approver"
 msgstr "Select a default approver"
 
+msgid "Select a destination"
+msgstr "Select a destination"
+
 msgid "Select a document"
 msgstr "Select a document"
 
@@ -11322,9 +11316,6 @@ msgstr "Select a reason for why the quote was not created."
 
 msgid "Select a shape first to see available options"
 msgstr "Select a shape first to see available options"
-
-msgid "Select a source"
-msgstr "Select a source"
 
 msgid "Select a substance and shape first to see available options"
 msgstr "Select a substance and shape first to see available options"
@@ -11509,9 +11500,6 @@ msgstr "Serial items require a sales order"
 
 msgid "Serial Number"
 msgstr "Serial Number"
-
-msgid "Serial number not found"
-msgstr "Serial number not found"
 
 msgid "Serial Number:"
 msgstr "Serial Number:"
@@ -13705,9 +13693,6 @@ msgstr "Tracked entity"
 
 msgid "Tracked Entity"
 msgstr "Tracked Entity"
-
-msgid "Tracked entity already picked"
-msgstr "Tracked entity already picked"
 
 msgid "Tracked entity ID is required but none was found"
 msgstr "Tracked entity ID is required but none was found"

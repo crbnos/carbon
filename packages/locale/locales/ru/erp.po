@@ -2319,8 +2319,8 @@ msgstr "Выберите номер партии"
 msgid "Choose a company"
 msgstr "Выберите компанию"
 
-msgid "Choose a row on the left to see where its stock can go."
-msgstr "Выберите строку слева, чтобы увидеть, где могут отправиться ее запасы."
+msgid "Choose a row on the left to see where its stock can come from."
+msgstr "Выберите строку слева, чтобы увидеть, откуда может поступить её запас."
 
 msgid "Choose a serial number"
 msgstr "Выберите серийный номер"
@@ -5046,9 +5046,6 @@ msgstr "Введите количество от 1 до {0}."
 msgid "Enter and approve vendor bills against a PO (three-way match)"
 msgstr "Ввести и утвердить счета поставщиков по сравнению с ПО (трёхсторонняя сверка)"
 
-msgid "Enter or scan serial number"
-msgstr "Введите или отсканируйте серийный номер"
-
 msgid "Enter PO number"
 msgstr "Введите номер ПО"
 
@@ -5072,9 +5069,6 @@ msgstr "Сущности для разделения"
 
 msgid "Entity"
 msgstr "Сущность"
-
-msgid "Entity is {status}"
-msgstr "Сущность имеет статус {status}"
 
 msgid "Entity Type"
 msgstr "Тип Сущности"
@@ -5159,9 +5153,6 @@ msgstr "Ошибка при удалении модели из строки сч
 
 msgid "Error removing model from sales order line"
 msgstr "Ошибка при удалении модели из строки заказа на продажу"
-
-msgid "Error validating serial number"
-msgstr "Ошибка при проверке серийного номера"
 
 msgid "Escalate to the project leads"
 msgstr "Передайте проблему руководителям проекта"
@@ -6936,9 +6927,6 @@ msgstr "элемент"
 
 msgid "Item"
 msgstr "Товар"
-
-msgid "Item {scannedItem} is not the same as the item {expectedItem}"
-msgstr "Товар {scannedItem} не совпадает с товаром {expectedItem}"
 
 msgid "Item / Location"
 msgstr "Товар / Местоположение"
@@ -8794,8 +8782,8 @@ msgstr "Примечания"
 msgid "Notes (optional)"
 msgstr "Примечания (опционально)"
 
-msgid "Nothing else at this location has this item to receive stock."
-msgstr "Ничто другое в этом месте не может получить запасы этого товара."
+msgid "Nothing else at this location has stock to pull from."
+msgstr "На этом месте больше нечего извлекать из запаса."
 
 msgid "Nothing in the archive"
 msgstr "Ничего в архиве"
@@ -9489,8 +9477,8 @@ msgstr "Список подбора"
 msgid "Pick Order"
 msgstr "Порядок комплектации"
 
-msgid "Pick the bin stock is coming from, then pick the bins it goes to."
-msgstr "Выберите контейнер, из которого берутся запасы, затем выберите контейнеры, куда они идут."
+msgid "Pick the bin that needs stock, then pick the bins to pull it from."
+msgstr "Выберите контейнер, который нуждается в запасе, затем выберите контейнеры, из которых его извлечь."
 
 msgid "Pick tracked item"
 msgstr "Выбрать отслеживаемый товар"
@@ -11130,6 +11118,12 @@ msgstr "Сканировать"
 msgid "Scan a label or search by item ID or tracking ID."
 msgstr "Отсканируйте этикетку или выполните поиск по ID товара или ID отслеживания."
 
+msgid "Scan or choose a batch number"
+msgstr "Отсканируйте или выберите номер партии"
+
+msgid "Scan or choose a serial number"
+msgstr "Отсканируйте или выберите серийный номер"
+
 msgid "Scan or enter tracked entity ID, serial, or batch"
 msgstr "Отсканируйте или введите ID отслеживаемого объекта, серийный номер или партию"
 
@@ -11141,9 +11135,6 @@ msgstr "Сканировать или искать..."
 
 msgid "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
 msgstr "Отсканируйте или выберите отслеживаемую сущность из этой партии, чтобы добавить её в качестве столбца образца, затем запишите её результат в сетку."
-
-msgid "Scan the tracking ID for this line"
-msgstr "Отсканируйте идентификатор отслеживания для этой строки"
 
 msgid "SCAR"
 msgstr "SCAR"
@@ -11289,6 +11280,9 @@ msgstr "Выберите исполнителя"
 msgid "Select a default approver"
 msgstr "Выберите утверждающего по умолчанию"
 
+msgid "Select a destination"
+msgstr "Выберите пункт назначения"
+
 msgid "Select a document"
 msgstr "Выберите документ"
 
@@ -11322,9 +11316,6 @@ msgstr "Выберите причину, по которой предложен�
 
 msgid "Select a shape first to see available options"
 msgstr "Сначала выберите форму, чтобы увидеть доступные варианты"
-
-msgid "Select a source"
-msgstr "Выберите источник"
 
 msgid "Select a substance and shape first to see available options"
 msgstr "Сначала выберите вещество и форму, чтобы увидеть доступные варианты"
@@ -11509,9 +11500,6 @@ msgstr "Товары с серийным номером требуют зака�
 
 msgid "Serial Number"
 msgstr "Серийный номер"
-
-msgid "Serial number not found"
-msgstr "Серийный номер не найден"
 
 msgid "Serial Number:"
 msgstr "Серийный номер:"
@@ -13705,9 +13693,6 @@ msgstr "Отслеживаемая сущность"
 
 msgid "Tracked Entity"
 msgstr "Отслеживаемая сущность"
-
-msgid "Tracked entity already picked"
-msgstr "Отслеживаемая сущность уже выбрана"
 
 msgid "Tracked entity ID is required but none was found"
 msgstr "ID отслеживаемой сущности требуется, но ничего не найдено"

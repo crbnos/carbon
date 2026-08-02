@@ -2319,8 +2319,8 @@ msgstr "배치 번호를 선택하세요"
 msgid "Choose a company"
 msgstr "회사를 선택하세요"
 
-msgid "Choose a row on the left to see where its stock can go."
-msgstr "왼쪽의 행을 선택하여 재고가 어디로 이동할 수 있는지 확인하세요."
+msgid "Choose a row on the left to see where its stock can come from."
+msgstr "왼쪽의 행을 선택하여 해당 재고가 어디서 올 수 있는지 확인하세요."
 
 msgid "Choose a serial number"
 msgstr "일련번호를 선택하세요"
@@ -5046,9 +5046,6 @@ msgstr "1과 {0} 사이의 수량을 입력하세요."
 msgid "Enter and approve vendor bills against a PO (three-way match)"
 msgstr "구매주문(PO)에 대한 공급업체 청구서를 입력하고 승인하세요(3자 대조)"
 
-msgid "Enter or scan serial number"
-msgstr "일련번호를 입력하거나 스캔하세요"
-
 msgid "Enter PO number"
 msgstr "구매주문 번호 입력"
 
@@ -5072,9 +5069,6 @@ msgstr "분리할 개체"
 
 msgid "Entity"
 msgstr "개체"
-
-msgid "Entity is {status}"
-msgstr "개체 상태: {status}"
 
 msgid "Entity Type"
 msgstr "개체 유형"
@@ -5159,9 +5153,6 @@ msgstr "판매 인보이스 라인에서 모델 제거 오류"
 
 msgid "Error removing model from sales order line"
 msgstr "판매주문 라인에서 모델 제거 오류"
-
-msgid "Error validating serial number"
-msgstr "일련번호 검증 오류"
 
 msgid "Escalate to the project leads"
 msgstr "프로젝트 책임자에게 에스컬레이션"
@@ -6936,9 +6927,6 @@ msgstr "품목"
 
 msgid "Item"
 msgstr "품목"
-
-msgid "Item {scannedItem} is not the same as the item {expectedItem}"
-msgstr "품목 {scannedItem}이(가) 품목 {expectedItem}과(와) 일치하지 않습니다"
 
 msgid "Item / Location"
 msgstr "항목 / 위치"
@@ -8794,8 +8782,8 @@ msgstr "메모"
 msgid "Notes (optional)"
 msgstr "메모(선택)"
 
-msgid "Nothing else at this location has this item to receive stock."
-msgstr "이 위치의 다른 곳에는 재고를 받을 이 항목이 없습니다."
+msgid "Nothing else at this location has stock to pull from."
+msgstr "이 위치에는 더 이상 가져올 재고가 없습니다."
 
 msgid "Nothing in the archive"
 msgstr "보관함이 비어 있습니다"
@@ -9489,8 +9477,8 @@ msgstr "피킹 목록"
 msgid "Pick Order"
 msgstr "피킹 순서"
 
-msgid "Pick the bin stock is coming from, then pick the bins it goes to."
-msgstr "재고가 출발하는 보관함을 선택한 다음, 재고가 도착하는 보관함을 선택하세요."
+msgid "Pick the bin that needs stock, then pick the bins to pull it from."
+msgstr "재고가 필요한 상자를 선택한 후 가져올 상자를 선택하세요."
 
 msgid "Pick tracked item"
 msgstr "추적 품목 선택"
@@ -11130,6 +11118,12 @@ msgstr "스캔"
 msgid "Scan a label or search by item ID or tracking ID."
 msgstr "라벨을 스캔하거나 품목 ID 또는 추적 ID로 검색하세요."
 
+msgid "Scan or choose a batch number"
+msgstr "배치 번호를 스캔하거나 선택하세요"
+
+msgid "Scan or choose a serial number"
+msgstr "일련 번호를 스캔하거나 선택하세요"
+
 msgid "Scan or enter tracked entity ID, serial, or batch"
 msgstr "추적 개체 ID, 일련번호 또는 배치를 스캔하거나 입력하세요"
 
@@ -11141,9 +11135,6 @@ msgstr "스캔 또는 검색..."
 
 msgid "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
 msgstr "이 로트에서 추적 엔티티를 스캔하거나 선택하여 샘플 열로 추가한 후 그리드에 결과를 기록하세요."
-
-msgid "Scan the tracking ID for this line"
-msgstr "이 라인의 추적 ID를 스캔하세요"
 
 msgid "SCAR"
 msgstr "SCAR"
@@ -11289,6 +11280,9 @@ msgstr "담당자 선택"
 msgid "Select a default approver"
 msgstr "기본 승인자 선택"
 
+msgid "Select a destination"
+msgstr "목적지 선택"
+
 msgid "Select a document"
 msgstr "문서 선택"
 
@@ -11322,9 +11316,6 @@ msgstr "견적이 생성되지 않은 사유를 선택하세요."
 
 msgid "Select a shape first to see available options"
 msgstr "먼저 형상을 선택하면 사용 가능한 옵션이 표시됩니다"
-
-msgid "Select a source"
-msgstr "소스 선택"
 
 msgid "Select a substance and shape first to see available options"
 msgstr "먼저 재질과 형상을 선택하면 사용 가능한 옵션이 표시됩니다"
@@ -11509,9 +11500,6 @@ msgstr "일련번호 품목에는 판매주문이 필요합니다"
 
 msgid "Serial Number"
 msgstr "일련번호"
-
-msgid "Serial number not found"
-msgstr "일련번호를 찾을 수 없습니다"
 
 msgid "Serial Number:"
 msgstr "일련번호:"
@@ -13705,9 +13693,6 @@ msgstr "추적 개체"
 
 msgid "Tracked Entity"
 msgstr "추적 개체"
-
-msgid "Tracked entity already picked"
-msgstr "이미 피킹된 추적 개체입니다"
 
 msgid "Tracked entity ID is required but none was found"
 msgstr "추적 개체 ID가 필요하지만 찾을 수 없습니다"

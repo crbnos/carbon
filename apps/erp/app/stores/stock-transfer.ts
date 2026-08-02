@@ -20,20 +20,20 @@ export type StockTransferWizardLine = {
   requiresBatchTracking: boolean;
 };
 
-export type StockTransferSource = {
+export type StockTransferDestination = {
   itemId: string;
   storageUnitId: string | null;
 };
 
 export type StockTransferWizardState = {
-  // The source row (item + bin) stock is being moved out of. Focus only —
-  // changing it never mutates lines, so lines accumulate across sources.
-  activeSource: StockTransferSource | null;
+  // The destination row (item + bin) stock is being pulled into. Focus only —
+  // changing it never mutates lines, so lines accumulate across destinations.
+  activeDestination: StockTransferDestination | null;
   lines: StockTransferWizardLine[];
 };
 
 const $wizardStore = atom<StockTransferWizardState>({
-  activeSource: null,
+  activeDestination: null,
   lines: []
 });
 
@@ -55,21 +55,23 @@ export const useStockTransferWizardTotalQuantity = () =>
 
 // Stock Transfer Wizard actions
 
-// Focus a source (item + bin) to move stock out of. Clicking the active one
+// Focus a destination (item + bin) to pull stock into. Clicking the active one
 // again clears focus. Lines are never touched — removal is always explicit.
-export const setActiveSource = (source: StockTransferSource | null) => {
+export const setActiveDestination = (
+  destination: StockTransferDestination | null
+) => {
   const currentWizard = $wizardStore.get();
-  $wizardStore.set({ ...currentWizard, activeSource: source });
+  $wizardStore.set({ ...currentWizard, activeDestination: destination });
 };
 
-export const isActiveSource = (
+export const isActiveDestination = (
   itemId: string,
   storageUnitId: string | null
 ) => {
-  const { activeSource } = $wizardStore.get();
+  const { activeDestination } = $wizardStore.get();
   return (
-    activeSource?.itemId === itemId &&
-    activeSource?.storageUnitId === storageUnitId
+    activeDestination?.itemId === itemId &&
+    activeDestination?.storageUnitId === storageUnitId
   );
 };
 
@@ -144,7 +146,7 @@ export const updateTransferLineQuantity = (
 
 export const clearStockTransferWizard = () => {
   $wizardStore.set({
-    activeSource: null,
+    activeDestination: null,
     lines: []
   });
 };

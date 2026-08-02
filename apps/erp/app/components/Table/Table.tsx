@@ -123,6 +123,9 @@ interface TableProps<T extends object> {
   withSavedView?: boolean;
   withSearch?: boolean;
   withSelectableRows?: boolean;
+  // Forwarded to TableHeader — hide the app-sidebar toggle when this Table is
+  // rendered inside a drawer or modal.
+  withSidebarTrigger?: boolean;
   withSimpleSorting?: boolean;
   sort?: ReactNode;
   getRowId?: (originalRow: T, index: number) => string;
@@ -272,6 +275,7 @@ const Table = <T extends object>({
   withSavedView = false,
   withSearch = true,
   withSelectableRows = false,
+  withSidebarTrigger = true,
   withSimpleSorting = true,
   sort,
   getRowId,
@@ -1068,6 +1072,7 @@ const Table = <T extends object>({
         withSavedView={withSavedView}
         withSearch={withSearch}
         withSelectableRows={withSelectableRows}
+        withSidebarTrigger={withSidebarTrigger}
         sort={sort}
       />
 

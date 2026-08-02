@@ -2319,8 +2319,8 @@ msgstr "Escolha um número de lote"
 msgid "Choose a company"
 msgstr "Escolha uma empresa"
 
-msgid "Choose a row on the left to see where its stock can go."
-msgstr "Escolha uma linha à esquerda para ver para onde seu estoque pode ir."
+msgid "Choose a row on the left to see where its stock can come from."
+msgstr "Escolha uma linha à esquerda para ver de onde seu estoque pode vir."
 
 msgid "Choose a serial number"
 msgstr "Escolha um número de série"
@@ -5046,9 +5046,6 @@ msgstr "Digite uma quantidade entre 1 e {0}."
 msgid "Enter and approve vendor bills against a PO (three-way match)"
 msgstr "Inserir e aprovar faturas de fornecedores contra uma PO (correspondência de três vias)"
 
-msgid "Enter or scan serial number"
-msgstr "Insira ou digitalize o número de série"
-
 msgid "Enter PO number"
 msgstr "Insira o número da PO"
 
@@ -5072,9 +5069,6 @@ msgstr "Entidades a separar"
 
 msgid "Entity"
 msgstr "Entidade"
-
-msgid "Entity is {status}"
-msgstr "Entidade é {status}"
 
 msgid "Entity Type"
 msgstr "Tipo de Entidade"
@@ -5159,9 +5153,6 @@ msgstr "Erro ao remover modelo da linha de fatura de vendas"
 
 msgid "Error removing model from sales order line"
 msgstr "Erro ao remover modelo da linha de pedido de venda"
-
-msgid "Error validating serial number"
-msgstr "Erro ao validar número de série"
 
 msgid "Escalate to the project leads"
 msgstr "Escalar para os líderes do projeto"
@@ -6936,9 +6927,6 @@ msgstr "item"
 
 msgid "Item"
 msgstr "Item"
-
-msgid "Item {scannedItem} is not the same as the item {expectedItem}"
-msgstr "Item {scannedItem} não é o mesmo que o item {expectedItem}"
 
 msgid "Item / Location"
 msgstr "Item / Local"
@@ -8794,8 +8782,8 @@ msgstr "Notas"
 msgid "Notes (optional)"
 msgstr "Notas (opcional)"
 
-msgid "Nothing else at this location has this item to receive stock."
-msgstr "Nada mais neste local tem este item para receber estoque."
+msgid "Nothing else at this location has stock to pull from."
+msgstr "Nada mais neste local tem estoque para puxar."
 
 msgid "Nothing in the archive"
 msgstr "Nada no arquivo"
@@ -9489,8 +9477,8 @@ msgstr "Lista de Coleta"
 msgid "Pick Order"
 msgstr "Ordem de Coleta"
 
-msgid "Pick the bin stock is coming from, then pick the bins it goes to."
-msgstr "Escolha o recipiente do qual o estoque vem, depois escolha os recipientes para os quais ele vai."
+msgid "Pick the bin that needs stock, then pick the bins to pull it from."
+msgstr "Escolha o bin que precisa de estoque, depois escolha os bins de onde puxar."
 
 msgid "Pick tracked item"
 msgstr "Selecionar item rastreado"
@@ -11130,6 +11118,12 @@ msgstr "Digitalizar"
 msgid "Scan a label or search by item ID or tracking ID."
 msgstr "Digitalize um rótulo ou pesquise por ID do item ou ID de rastreamento."
 
+msgid "Scan or choose a batch number"
+msgstr "Digitalize ou escolha um número de lote"
+
+msgid "Scan or choose a serial number"
+msgstr "Digitalize ou escolha um número de série"
+
 msgid "Scan or enter tracked entity ID, serial, or batch"
 msgstr "Digitalize ou insira ID da entidade rastreada, série ou lote"
 
@@ -11141,9 +11135,6 @@ msgstr "Digitalize ou pesquise..."
 
 msgid "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
 msgstr "Digitalize ou selecione uma entidade rastreada deste lote para adicioná-la como coluna de amostra e, em seguida, registre seu resultado na grade."
-
-msgid "Scan the tracking ID for this line"
-msgstr "Digitalize o ID de rastreamento para esta linha"
 
 msgid "SCAR"
 msgstr "SCAR"
@@ -11289,6 +11280,9 @@ msgstr "Selecione um responsável"
 msgid "Select a default approver"
 msgstr "Selecione um aprovador padrão"
 
+msgid "Select a destination"
+msgstr "Selecione um destino"
+
 msgid "Select a document"
 msgstr "Selecione um documento"
 
@@ -11322,9 +11316,6 @@ msgstr "Selecione um motivo pelo qual a cotação não foi criada."
 
 msgid "Select a shape first to see available options"
 msgstr "Selecione uma forma primeiro para ver as opções disponíveis"
-
-msgid "Select a source"
-msgstr "Selecionar uma origem"
 
 msgid "Select a substance and shape first to see available options"
 msgstr "Selecione uma substância e forma primeiro para ver as opções disponíveis"
@@ -11509,9 +11500,6 @@ msgstr "Itens seriais requerem uma ordem de venda"
 
 msgid "Serial Number"
 msgstr "Número de Série"
-
-msgid "Serial number not found"
-msgstr "Número de série não encontrado"
 
 msgid "Serial Number:"
 msgstr "Número de Série:"
@@ -13705,9 +13693,6 @@ msgstr "Entidade rastreada"
 
 msgid "Tracked Entity"
 msgstr "Entidade Rastreada"
-
-msgid "Tracked entity already picked"
-msgstr "Entidade rastreada já foi selecionada"
 
 msgid "Tracked entity ID is required but none was found"
 msgstr "ID da entidade rastreada é obrigatório, mas nenhum foi encontrado"
