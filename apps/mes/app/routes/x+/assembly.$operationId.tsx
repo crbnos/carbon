@@ -224,7 +224,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       .limit(1)
       .maybeSingle()
   ]);
-  const isFirstOperation = !priorDependency.data;
+  // Fail closed: a query error also returns null data, so treat an errored lookup
+  // as "not first" — later ops require scan/select, which is the safe default when
+  // we can't confirm the operation has no predecessor.
+  const isFirstOperation = !priorDependency.error && !priorDependency.data;
 
   return {
     job: job.data,

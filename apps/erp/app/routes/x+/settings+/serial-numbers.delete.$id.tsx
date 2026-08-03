@@ -35,14 +35,18 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  const { client, companyId } = await requirePermissions(request, {
     delete: "settings"
   });
 
   const { id } = params;
   if (!id) throw notFound("id not found");
 
-  const { error: deleteError } = await deleteItemSerialSequence(client, id);
+  const { error: deleteError } = await deleteItemSerialSequence(
+    client,
+    id,
+    companyId
+  );
   if (deleteError) {
     throw redirect(
       `${path.to.serialNumberSequences}?${getParams(request)}`,

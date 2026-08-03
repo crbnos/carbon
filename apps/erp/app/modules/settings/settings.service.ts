@@ -477,8 +477,11 @@ export async function getItemSerialSequences(
     .eq("companyId", companyId);
 
   if (args.search) {
+    // Strip PostgREST filter-grammar characters so a search term can't alter the
+    // `or` expression or filter unintended columns (mirrors inventory.service.ts).
+    const search = args.search.replace(/[,()\\]/g, " ");
     query = query.or(
-      `itemReadableId.ilike.%${args.search}%,itemName.ilike.%${args.search}%`
+      `itemReadableId.ilike.%${search}%,itemName.ilike.%${search}%`
     );
   }
 
@@ -523,6 +526,7 @@ export async function upsertItemSerialSequence(
       })
     | (Omit<z.infer<typeof itemSerialSequenceValidator>, "id"> & {
         id: string;
+        companyId: string;
         updatedBy: string;
       })
 ) {
@@ -533,20 +537,26 @@ export async function upsertItemSerialSequence(
       .select("id")
       .single();
   }
-  const { id, ...update } = itemSerialSequence;
+  const { id, companyId, ...update } = itemSerialSequence;
   return client
     .from("itemSerialSequence")
     .update(sanitize(update))
     .eq("id", id)
+    .eq("companyId", companyId)
     .select("id")
     .single();
 }
 
 export async function deleteItemSerialSequence(
   client: SupabaseClient<Database>,
-  id: string
+  id: string,
+  companyId: string
 ) {
-  return client.from("itemSerialSequence").delete().eq("id", id);
+  return client
+    .from("itemSerialSequence")
+    .delete()
+    .eq("id", id)
+    .eq("companyId", companyId);
 }
 
 export async function getSubsidiaries(

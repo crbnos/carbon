@@ -2876,6 +2876,16 @@ async function assignJobSerialNumbers(
     .eq("itemId", args.itemId)
     .eq("companyId", args.companyId)
     .maybeSingle();
+  // A query error (DB/RLS) also returns null data — distinguish it from "no
+  // sequence configured" so a failure can't silently create an unnumbered job.
+  if (serialSequence.error) {
+    logger.error("Failed to check item serial sequence", {
+      error: serialSequence.error,
+      itemId: args.itemId,
+      companyId: args.companyId
+    });
+    return;
+  }
   if (!serialSequence.data) return;
 
   const { error } = await client.functions.invoke("assign-serial-numbers", {

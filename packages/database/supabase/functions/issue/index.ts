@@ -1299,12 +1299,14 @@ serve(async (req: Request) => {
                   .from("job")
                   .select("locationId")
                   .eq("id", jobIdForLocation)
+                  .eq("companyId", companyId)
                   .single();
                 if (jobRow.data?.locationId) {
                   const loc = await client
                     .from("location")
                     .select("code, name")
                     .eq("id", jobRow.data.locationId)
+                    .eq("companyId", companyId)
                     .single();
                   locationCode = loc.data?.code ?? null;
                   locationName = loc.data?.name ?? null;

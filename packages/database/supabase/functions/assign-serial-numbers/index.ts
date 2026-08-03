@@ -53,6 +53,7 @@ serve(async (req: Request) => {
         .selectFrom("item")
         .select(["itemTrackingType"])
         .where("id", "=", job.itemId)
+        .where("companyId", "=", companyId)
         .executeTakeFirst();
       const trackingType = item?.itemTrackingType;
       if (trackingType !== "Serial" && trackingType !== "Batch") {
@@ -76,6 +77,7 @@ serve(async (req: Request) => {
           .selectFrom("location")
           .select(["code", "name"])
           .where("id", "=", job.locationId)
+          .where("companyId", "=", companyId)
           .executeTakeFirst();
         locationCode = location?.code ?? null;
         locationName = location?.name ?? null;
@@ -93,6 +95,11 @@ serve(async (req: Request) => {
         .where(sql<boolean>`attributes->>'Job Material' IS NULL`)
         .where(sql<boolean>`attributes->>'Split Entity ID' IS NULL`)
         .orderBy("createdAt", "asc")
+        // Lock the seed row for the duration of the transaction so concurrent
+        // invocations for the same job serialize here: the second waits, then
+        // sees the readableId the first assigned and no-ops the idempotency guard
+        // below instead of reserving a duplicate range and inserting duplicates.
+        .forUpdate()
         .execute();
 
       // Idempotency: already split into many, or already numbered → do nothing.

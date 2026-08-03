@@ -1756,7 +1756,7 @@ export const JobOperation = ({
                                   {entity.id === trackedEntityId && (
                                     <LuCheck className="text-emerald-500 size-4 shrink-0" />
                                   )}
-                                  <Copy text={entity.readableId ?? entity.id} />
+                                  <Copy text={entity.readableId || entity.id} />
                                 </div>
                               </Td>
 

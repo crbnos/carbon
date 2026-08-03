@@ -129,7 +129,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     .eq("operationId", operationId)
     .limit(1)
     .maybeSingle();
-  const isFirstOperation = !priorDependency.data;
+  // Fail closed: a query error also returns null data, so treat an errored lookup
+  // as "not first" — later ops require scan/select, which is the safe default when
+  // we can't confirm the operation has no predecessor.
+  const isFirstOperation = !priorDependency.error && !priorDependency.data;
 
   // On the first operation only, auto-select the first incomplete unit when none
   // is in the URL. Later operations leave it unset so the client presents the

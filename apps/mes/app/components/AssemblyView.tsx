@@ -1276,7 +1276,11 @@ export function AssemblyView({
     // finishes the operation server-side and redirects, so `result` is undefined
     // there and nothing happens.
     if (navigatesByEntity && result?.completed) {
-      const next = trackedEntities.find((entity) =>
+      // Search the capped unit axis (unitEntities), not the raw prop: a job can
+      // pre-generate more serials than the operation quantity, and navigating to
+      // one of those would fall outside currentUnitIndex / the maxNavigableUnitIndex
+      // clamp and desync the URL from the rendered unit.
+      const next = unitEntities.find((entity) =>
         isUnitIncompleteForOperation(entity, operationId)
       );
       if (!next) return;
@@ -1295,7 +1299,9 @@ export function AssemblyView({
   useEffect(() => {
     if (!navigatesByEntity || isFirstOperation) return;
     if (arrivalPromptedRef.current) return;
-    const hasIncomplete = trackedEntities.some((entity) =>
+    // Cap to the unit axis (see the settle effect): don't prompt for serials the
+    // job pre-generated beyond the operation quantity.
+    const hasIncomplete = unitEntities.some((entity) =>
       isUnitIncompleteForOperation(entity, operationId)
     );
     if (!hasIncomplete) return;

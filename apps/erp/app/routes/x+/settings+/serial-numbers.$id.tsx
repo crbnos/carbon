@@ -37,7 +37,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  const { client, companyId, userId } = await requirePermissions(request, {
     update: "settings"
   });
 
@@ -57,6 +57,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const update = await upsertItemSerialSequence(client, {
     id,
     ...d,
+    companyId,
     updatedBy: userId
   });
 
