@@ -204,10 +204,9 @@ const updateJobQuantities = async (
     .where("id", "=", tree.id)
     .executeTakeFirst();
 
-  if (
-    jobMaterial?.itemScrapPercentage != null &&
-    jobMaterial.itemScrapPercentage > 0
-  ) {
+  // A stored 0 is intentional (locked at job creation) — only a NULL falls
+  // back to the item's current replenishment scrap percentage.
+  if (jobMaterial?.itemScrapPercentage != null) {
     scrapPercentage = Number(jobMaterial.itemScrapPercentage);
   } else {
     // Fall back to itemReplenishment
