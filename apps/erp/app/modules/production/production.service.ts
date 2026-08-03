@@ -6513,7 +6513,9 @@ export async function generateAssemblyStepsFromPlan(
         ok: false,
         reason: "steps-locked",
         modelUploadId,
-        message: `${locked.length} ${locked.length === 1 ? "step is" : "steps are"} manually authored or done — delete or reset them before regenerating`
+        message: `${locked.length} ${
+          locked.length === 1 ? "step is" : "steps are"
+        } manually authored or done — delete or reset them before regenerating`
       };
     }
     const removed = await client
