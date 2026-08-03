@@ -1,19 +1,11 @@
 name: Deploy Assembler
 
-# Builds carbon/assembler:${sha} from apps/assembler/Dockerfile (isolated from
-# deploy.yml so erp/mes pushes never rebuild this, and vice versa) and mirrors it
-# to BOTH ECRs: prod (ASSEMBLER_AWS_* secrets) and govcloud (shared AWS_* secrets).
-# A Lambda pulls its image same-account, so each target account needs the image.
-# The image links the prebuilt carbon/occt base (a ~30 min OCCT compile, built on
-# demand via workflow_dispatch — not every run). deploy runs ci/src/assembler.ts
-# against apps/assembler/sst.config.ts, fanning over the workspaces table.
-#
-# provenance/sbom stay off everywhere: Lambda rejects OCI image indexes and
-# attestations turn the pushed manifest into one.
-#
-# Prereq: ECR repos carbon/assembler + carbon/occt exist in the prod account, and
-# carbon/assembler exists in the govcloud account (occt is not needed at govcloud
-# runtime — the assembler image bakes it in — but is mirrored for symmetry).
+# Builds carbon/assembler and mirrors it to BOTH the prod (ASSEMBLER_AWS_*) and
+# govcloud (shared AWS_*) ECRs — a Lambda pulls same-account, so each account needs
+# its own copy. Links the prebuilt carbon/occt base, rebuilt on demand only
+# (workflow_dispatch, ~30 min compile). provenance/sbom stay off: Lambda rejects the
+# OCI image index attestations produce.
+# Prereq: carbon/assembler + carbon/occt ECR repos in prod; carbon/assembler in govcloud.
 
 on:
   push:
@@ -36,20 +28,16 @@ on:
 jobs:
   build:
     name: Build assembler image
-    # Disabled by default: the push trigger only fires once the repo variable
-    # ASSEMBLER_CI_ENABLED is 'true' (Settings -> Variables). Manual dispatch
-    # always works — running it by hand is intentional.
+    # Push builds only fire when repo var ASSEMBLER_CI_ENABLED is 'true'; dispatch
+    # always runs.
     if: ${{ github.event_name == 'workflow_dispatch' || vars.ASSEMBLER_CI_ENABLED == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # Two ECR logins in one job: prod + govcloud live in different accounts
-      # (different registry hosts), so both credentials coexist in
-      # ~/.docker/config.json and every later `docker push` to either host works.
-      # The exists-checks below pass creds inline per-call rather than relying on
-      # whichever configure-aws-credentials ran last.
+      # Log into both ECRs up front — different accounts and hosts, so both
+      # credentials coexist in ~/.docker/config.json for the pushes below.
       - name: Login to prod ECR
         id: prod-ecr
         uses: aws-actions/amazon-ecr-login@v2
@@ -69,11 +57,8 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      # OCCT base (workflow_dispatch + build_occt_base only). Build once into the
-      # local daemon, then push to whichever registries lack it. The 8.0.0-p1 tag
-      # is immutable, so re-pushing an existing tag errors — hence the per-registry
-      # exists-check gating each push. occt.Dockerfile builds from source (no ECR
-      # FROM), so the build itself needs no ECR read.
+      # OCCT base on demand. 8.0.0-p1 is immutable, so check each registry and push
+      # only where it's missing (re-pushing an existing tag errors).
       - name: Build and mirror OCCT base
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.build_occt_base }}
         run: |
@@ -106,8 +91,7 @@ jobs:
           if [ "$prod" = 0 ]; then docker push "$PROD_TAG"; else echo "occt already in prod — not re-pushing"; fi
           if [ "$gov" = 0 ]; then docker push "$GOV_TAG"; else echo "occt already in govcloud — not re-pushing"; fi
 
-      # Fail fast if the prod OCCT base is missing — the assembler build links it
-      # via OCCT_IMAGE (from prod ECR), so without it `FROM` dies cryptically.
+      # Fail fast: the assembler build's FROM links the prod OCCT base.
       - name: Require prod OCCT base image
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.ASSEMBLER_AWS_ACCESS_KEY_ID }}
@@ -121,9 +105,8 @@ jobs:
             exit 1
           }
 
-      # Context is the repo root (the cargo workspace spans crates/* + apps/assembler).
-      # Build once into the local daemon (load), then push to both registries —
-      # avoids a second solve and lets Trivy scan the local image.
+      # Repo-root context (cargo workspace). Build once (load), scan, then push to
+      # both registries.
       - name: Build assembler image
         uses: docker/build-push-action@v5
         with:
@@ -143,8 +126,7 @@ jobs:
           provenance: false
           sbom: false
 
-      # Report-only for now (exit-code 0). Flip to '1' to fail on CRITICAL/HIGH
-      # once the base image's findings are triaged.
+      # Report-only (exit-code 0). Flip to '1' to fail on CRITICAL/HIGH once triaged.
       - name: Scan image (Trivy)
         uses: aquasecurity/trivy-action@master
         with:
@@ -160,15 +142,9 @@ jobs:
           docker push ${{ steps.gov-ecr.outputs.registry }}/carbon/assembler:latest
           docker push ${{ steps.gov-ecr.outputs.registry }}/carbon/assembler:${{ github.sha }}
 
-  # Deploys after a successful build on a main push (matching deploy.yml's
-  # continuous deploy) or on dispatch with `deploy=true`. ci/src/assembler.ts fans
-  # out over the workspaces table: each workspace with `assembler = true` deploys
-  # the built image to its own account (all config from the workspace row).
-  # One build, both environments: a matrix leg per account (prod ASSEMBLER_AWS_*
-  # and govcloud AWS_*) so a single run deploys everywhere in parallel — no need
-  # to dispatch twice. Each leg configures its own creds; ci/src/assembler.ts
-  # (via the sts-resolved DEPLOY_AWS_ACCOUNT_ID) only deploys rows in that leg's
-  # account, so the two never collide across the aws-us-gov partition boundary.
+  # A matrix leg per account (prod + govcloud) so one build deploys both in
+  # parallel. Each leg deploys only its own account's rows (see
+  # DEPLOY_AWS_ACCOUNT_ID below). Runs on a main push or dispatch with deploy=true.
   deploy:
     name: Deploy assembler (${{ matrix.env.stage }})
     if: ${{ needs.build.result == 'success' && (github.event_name == 'push' || inputs.deploy) }}
@@ -200,9 +176,8 @@ jobs:
           aws-secret-access-key: ${{ secrets[matrix.env.secret_access_key] }}
           aws-region: ${{ secrets[matrix.env.region] }}
 
-      # Scope the workspace fan-out to this leg's account — ci/src/assembler.ts
-      # skips rows in any other account so the prod and govcloud legs never touch
-      # each other's workspaces.
+      # ci/src/assembler.ts uses this to skip rows in other accounts, so the two
+      # legs never touch each other's workspaces.
       - name: Resolve deploy account
         run: echo "DEPLOY_AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)" >> "$GITHUB_ENV"
 
@@ -212,7 +187,7 @@ jobs:
           node-version: "22"
           cache: pnpm
 
-      # SST v3 is Pulumi-based; pin the same engine version deploy.yml uses.
+      # SST v3 runs on Pulumi; pin the version deploy.yml uses.
       - name: Install compatible Pulumi version
         run: |
           curl -fsSL https://get.pulumi.com | sh -s -- --version 3.212.0
