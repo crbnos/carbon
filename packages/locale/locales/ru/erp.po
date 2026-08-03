@@ -9301,10 +9301,11 @@ msgstr "Здесь еще нет активности с товарами."
 msgid "No lines to map"
 msgstr "Нет строк для сопоставления"
 
-msgid "No list variables available upstream."
-msgstr ""
 msgid "No lines yet"
 msgstr "Нет строк"
+
+msgid "No list variables available upstream."
+msgstr ""
 
 msgid "No locations found."
 msgstr "Локации не найдены."
@@ -9560,6 +9561,7 @@ msgstr "Примечания (опционально)"
 
 msgid "Nothing"
 msgstr ""
+
 msgid "Nothing else at this location has stock to pull from."
 msgstr "На этом месте больше нечего извлекать из запаса."
 
@@ -9625,6 +9627,7 @@ msgstr ""
 
 msgid "On days"
 msgstr ""
+
 msgid "on hand"
 msgstr "в наличии"
 

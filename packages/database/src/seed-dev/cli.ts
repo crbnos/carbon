@@ -9,10 +9,16 @@ import * as dotenv from "dotenv";
 export function loadEnv() {
   const here = path.dirname(fileURLToPath(import.meta.url));
   const repoRoot = path.resolve(here, "..", "..", "..", "..");
+  // Caller-supplied vars win: `crbn up` passes localhost URLs, while .env.local
+  // holds portless hosts that don't resolve until aliases are registered.
+  const preset = { ...process.env };
   dotenv.config();
   for (const file of [".env", ".env.local"]) {
     const envPath = path.join(repoRoot, file);
     if (existsSync(envPath)) dotenv.config({ path: envPath, override: true });
+  }
+  for (const [key, value] of Object.entries(preset)) {
+    if (value !== undefined) process.env[key] = value;
   }
 }
 

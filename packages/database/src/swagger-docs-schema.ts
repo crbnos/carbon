@@ -5650,9 +5650,6 @@ export default {
             $ref: "#/parameters/rowFilter.workflow.updatedAt"
           },
           {
-            $ref: "#/parameters/rowFilter.workflow.webhookSecret"
-          },
-          {
             $ref: "#/parameters/select"
           },
           {
@@ -5748,9 +5745,6 @@ export default {
             $ref: "#/parameters/rowFilter.workflow.updatedAt"
           },
           {
-            $ref: "#/parameters/rowFilter.workflow.webhookSecret"
-          },
-          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -5798,9 +5792,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.workflow.updatedAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.workflow.webhookSecret"
           },
           {
             $ref: "#/parameters/body.workflow"
@@ -98173,8 +98164,7 @@ export default {
         "ownerId",
         "active",
         "createdBy",
-        "createdAt",
-        "webhookSecret"
+        "createdAt"
       ],
       properties: {
         id: {
@@ -98235,11 +98225,6 @@ export default {
         },
         updatedAt: {
           format: "timestamp with time zone",
-          type: "string"
-        },
-        webhookSecret: {
-          default: "encode(extensions.gen_random_bytes(32), 'hex'::text)",
-          format: "text",
           type: "string"
         }
       },
@@ -101540,7 +101525,7 @@ export default {
       properties: {
         id: {
           description:
-            "Note:\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
           format: "text",
           type: "string"
         },
@@ -101589,7 +101574,7 @@ export default {
         },
         supplierLocationId: {
           description:
-            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
+            "Note:\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
           format: "text",
           type: "string"
         },
@@ -139207,12 +139192,6 @@ export default {
     },
     "rowFilter.workflow.updatedAt": {
       name: "updatedAt",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.workflow.webhookSecret": {
-      name: "webhookSecret",
       required: false,
       in: "query",
       type: "string"

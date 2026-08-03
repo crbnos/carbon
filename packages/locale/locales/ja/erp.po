@@ -9301,10 +9301,11 @@ msgstr "ここにはまだアイテムの在庫活動がありません。"
 msgid "No lines to map"
 msgstr "マップするラインがありません"
 
-msgid "No list variables available upstream."
-msgstr ""
 msgid "No lines yet"
 msgstr "行がまだありません"
+
+msgid "No list variables available upstream."
+msgstr ""
 
 msgid "No locations found."
 msgstr "ロケーションが見つかりません。"
@@ -9560,6 +9561,7 @@ msgstr "メモ（オプション）"
 
 msgid "Nothing"
 msgstr ""
+
 msgid "Nothing else at this location has stock to pull from."
 msgstr "この場所には他に引き出す在庫がありません。"
 
@@ -9625,6 +9627,7 @@ msgstr ""
 
 msgid "On days"
 msgstr ""
+
 msgid "on hand"
 msgstr "手元在庫"
 

@@ -57870,7 +57870,6 @@ export type Database = {
           ownerId: string
           updatedAt: string | null
           updatedBy: string | null
-          webhookSecret: string
         }
         Insert: {
           active?: boolean
@@ -57885,7 +57884,6 @@ export type Database = {
           ownerId: string
           updatedAt?: string | null
           updatedBy?: string | null
-          webhookSecret?: string
         }
         Update: {
           active?: boolean
@@ -57900,7 +57898,6 @@ export type Database = {
           ownerId?: string
           updatedAt?: string | null
           updatedBy?: string | null
-          webhookSecret?: string
         }
         Relationships: [
           {
@@ -65441,14 +65438,14 @@ export type Database = {
           },
           {
             foreignKeyName: "partner_id_fkey"
-            columns: ["supplierLocationId"]
+            columns: ["id"]
             isOneToOne: false
             referencedRelation: "supplierLocation"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "partner_id_fkey"
-            columns: ["id"]
+            columns: ["supplierLocationId"]
             isOneToOne: false
             referencedRelation: "supplierLocation"
             referencedColumns: ["id"]
@@ -67087,14 +67084,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["supplierCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["supplierCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -70473,7 +70470,7 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["shipmentCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -70487,7 +70484,7 @@ export type Database = {
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["shipmentCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]

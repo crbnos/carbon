@@ -9301,10 +9301,11 @@ msgstr "아직 여기에 재고 활동이 있는 항목이 없습니다."
 msgid "No lines to map"
 msgstr "매핑할 라인이 없습니다"
 
-msgid "No list variables available upstream."
-msgstr ""
 msgid "No lines yet"
 msgstr "아직 줄이 없습니다"
+
+msgid "No list variables available upstream."
+msgstr ""
 
 msgid "No locations found."
 msgstr "위치가 없습니다."
@@ -9560,6 +9561,7 @@ msgstr "메모(선택)"
 
 msgid "Nothing"
 msgstr ""
+
 msgid "Nothing else at this location has stock to pull from."
 msgstr "이 위치에는 더 이상 가져올 재고가 없습니다."
 
@@ -9625,6 +9627,7 @@ msgstr ""
 
 msgid "On days"
 msgstr ""
+
 msgid "on hand"
 msgstr "현재"
 

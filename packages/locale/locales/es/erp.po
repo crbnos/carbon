@@ -9301,10 +9301,11 @@ msgstr "Aún no hay actividad de inventario de artículos aquí."
 msgid "No lines to map"
 msgstr "Sin líneas para mapear"
 
-msgid "No list variables available upstream."
-msgstr ""
 msgid "No lines yet"
 msgstr "Sin líneas aún"
+
+msgid "No list variables available upstream."
+msgstr ""
 
 msgid "No locations found."
 msgstr "No se encontraron ubicaciones."
@@ -9560,6 +9561,7 @@ msgstr "Notas (opcional)"
 
 msgid "Nothing"
 msgstr ""
+
 msgid "Nothing else at this location has stock to pull from."
 msgstr "Nada más en esta ubicación tiene stock para extraer."
 
@@ -9625,6 +9627,7 @@ msgstr ""
 
 msgid "On days"
 msgstr ""
+
 msgid "on hand"
 msgstr "en existencia"
 

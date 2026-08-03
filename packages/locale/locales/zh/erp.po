@@ -9301,10 +9301,11 @@ msgstr "此处尚无项目的库存活动。"
 msgid "No lines to map"
 msgstr "没有行需要映射"
 
-msgid "No list variables available upstream."
-msgstr ""
 msgid "No lines yet"
 msgstr "还没有行"
+
+msgid "No list variables available upstream."
+msgstr ""
 
 msgid "No locations found."
 msgstr "未找到位置。"
@@ -9560,6 +9561,7 @@ msgstr "备注（可选）"
 
 msgid "Nothing"
 msgstr ""
+
 msgid "Nothing else at this location has stock to pull from."
 msgstr "此位置没有其他可提取的库存。"
 
@@ -9625,6 +9627,7 @@ msgstr ""
 
 msgid "On days"
 msgstr ""
+
 msgid "on hand"
 msgstr "现有库存"
 

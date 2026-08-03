@@ -9301,10 +9301,11 @@ msgstr "Burada henüz hiçbir maddenin envanter hareketi yok."
 msgid "No lines to map"
 msgstr "Eşlenecek satır yok"
 
-msgid "No list variables available upstream."
-msgstr ""
 msgid "No lines yet"
 msgstr "Henüz satır yok"
+
+msgid "No list variables available upstream."
+msgstr ""
 
 msgid "No locations found."
 msgstr "Konum bulunamadı."
@@ -9560,6 +9561,7 @@ msgstr "Notlar (isteğe bağlı)"
 
 msgid "Nothing"
 msgstr ""
+
 msgid "Nothing else at this location has stock to pull from."
 msgstr "Bu konumda çekilecek başka hiçbir stok yok."
 
@@ -9625,6 +9627,7 @@ msgstr ""
 
 msgid "On days"
 msgstr ""
+
 msgid "on hand"
 msgstr "eldeki"
 
