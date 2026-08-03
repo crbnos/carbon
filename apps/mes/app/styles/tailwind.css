@@ -137,3 +137,16 @@ p.is-editor-empty:first-child:before {
 .mention {
   @apply inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-400;
 }
+
+@keyframes spinner-fade {
+  0% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.15;
+  }
+}
+
+.animate-spinner {
+  animation: spinner-fade 1.2s linear infinite;
+}
