@@ -215,9 +215,10 @@ export type InspectionOutcomeState = {
   // the serial double-count guard; the quantity sum is the non-serial one.
   linkedSampleIds: Set<string>;
   linkedProductionQuantity: number;
-  // Operation quantity column bookkeeping. `opRemaining` nets out EVERY
-  // posting — complete, scrapped, reworked, linked or not — so escape-hatch
-  // menu postings can never be double-counted by the orchestration.
+  // Operation quantity column bookkeeping. `opRemaining` nets out completed
+  // and scrapped postings (linked or not) — reworked units return to the
+  // operation to be re-completed, so they still count as remaining. Escape-
+  // hatch menu postings can never be double-counted by the orchestration.
   opTarget: number;
   opAccounted: number;
   opRemaining: number;

@@ -100,8 +100,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       )
     : 1;
 
+  // Mirror the DB auto-Done predicate (complete + scrapped >= target) so the
+  // pre-flight and finish call agree with the trigger.
   const willBeFinished =
-    quantityToComplete + currentQuantity >=
+    quantityToComplete +
+      currentQuantity +
+      (jobOperation.data.quantityScrapped ?? 0) >=
     (jobOperation.data.targetQuantity ??
       jobOperation.data.operationQuantity ??
       0);

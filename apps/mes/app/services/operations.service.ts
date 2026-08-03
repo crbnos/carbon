@@ -162,7 +162,8 @@ export async function finishJobOperation(
       status: "Done",
       updatedBy: args.userId
     })
-    .eq("id", args.jobOperationId);
+    .eq("id", args.jobOperationId)
+    .eq("companyId", args.companyId);
 
   if (!result.error) {
     // Post any completed-but-unposted labor/machine time for this operation.
@@ -172,6 +173,7 @@ export async function finishJobOperation(
       .from("productionEvent")
       .select("id")
       .eq("jobOperationId", args.jobOperationId)
+      .eq("companyId", args.companyId)
       .not("endTime", "is", null)
       .eq("postedToGL", false);
 
