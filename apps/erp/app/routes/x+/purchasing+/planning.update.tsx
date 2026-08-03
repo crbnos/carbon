@@ -160,7 +160,8 @@ export async function action({ request }: ActionFunctionArgs) {
           client
             .from("supplier")
             .select("id, name, taxPercent, currencyCode")
-            .in("id", Array.from(supplierIds)),
+            .in("id", Array.from(supplierIds))
+            .eq("companyId", companyId),
           client
             .from("supplierPart")
             .select("*")
@@ -234,6 +235,7 @@ export async function action({ request }: ActionFunctionArgs) {
             .from("purchaseOrderLine")
             .select("id, supplierUnitPrice, supplierShippingCost, taxPercent")
             .eq("id", order.existingLineId!)
+            .eq("companyId", companyId)
             .single();
           if (existingLine.error) {
             errors.push(
@@ -258,7 +260,8 @@ export async function action({ request }: ActionFunctionArgs) {
               requiredDate: order.dueDate ?? null,
               updatedBy: userId
             })
-            .eq("id", order.existingLineId!);
+            .eq("id", order.existingLineId!)
+            .eq("companyId", companyId);
           if (updateLine.error) {
             errors.push(
               `Failed to update existing PO line ${order.existingLineId}: ${updateLine.error.message}`
@@ -378,6 +381,7 @@ export async function action({ request }: ActionFunctionArgs) {
               )
               .eq("purchaseOrderId", purchaseOrderId)
               .eq("itemId", itemId)
+              .eq("companyId", companyId)
               .limit(1);
 
             if (existingLines?.[0]) {
@@ -396,7 +400,8 @@ export async function action({ request }: ActionFunctionArgs) {
                     (existing.taxPercent ?? 0),
                   updatedBy: userId
                 })
-                .eq("id", existing.id);
+                .eq("id", existing.id)
+                .eq("companyId", companyId);
 
               if (updateLine.error) {
                 errors.push(
