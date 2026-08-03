@@ -1,9 +1,10 @@
 import {
   Boolean as BooleanField,
+  ChoiceCardGroup,
   DatePicker,
-  Radios,
   Select,
   Submit,
+  useControlField,
   ValidatedForm
 } from "@carbon/form";
 import {
@@ -14,6 +15,7 @@ import {
   HStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
+import type { ReactNode } from "react";
 import { useState } from "react";
 import { usePermissions } from "~/hooks";
 import { postingSyncSettingsValidator } from "~/modules/settings/settings.models";
@@ -48,6 +50,8 @@ export type PostingSyncPolicyRow = {
 };
 
 type PostingSyncSettingsProps = {
+  /** Shared tab bar, rendered at the top of this tab's body card. */
+  tabs?: ReactNode;
   settings: PostingSyncSettingsValues;
   /** POSTING_POLICY rows (every source type), provided by the loader. */
   policy: PostingSyncPolicyRow[];
@@ -60,7 +64,50 @@ type SourceTypeRowState = {
   dailySummary: boolean;
 };
 
+/**
+ * Period-lock policy picker rendered as card-style radios — the same
+ * affordance as the Rillet Production/Sandbox environment selector.
+ * Bound into the surrounding ValidatedForm via `useControlField` + a hidden
+ * input (the controlled `ChoiceCardGroup` doesn't post a value on its own).
+ */
+function PeriodLockPolicyChoice() {
+  const { t } = useLingui();
+  const [value, setValue] = useControlField<string>("periodLockPolicy");
+  const current = value === "redate" ? "redate" : "park";
+
+  return (
+    <div className="w-full">
+      <div className="flex flex-col gap-0.5 pb-2">
+        <div className="text-sm font-medium text-foreground">
+          {t`Period lock policy`}
+        </div>
+        <p className="text-xs text-muted-foreground">
+          {t`What happens when a journal is dated in a locked period.`}
+        </p>
+      </div>
+      <ChoiceCardGroup
+        value={current}
+        onChange={setValue}
+        options={[
+          {
+            value: "park",
+            title: t`Park as error`,
+            description: t`Hold the journal as a warning to fix.`
+          },
+          {
+            value: "redate",
+            title: t`Re-date to first open day`,
+            description: t`Push it re-dated to the first open day, keeping the original date in the narration.`
+          }
+        ]}
+      />
+      <input type="hidden" name="periodLockPolicy" value={current} />
+    </div>
+  );
+}
+
 export function PostingSyncSettings({
+  tabs,
   settings,
   policy,
   mappingReadiness
@@ -154,6 +201,7 @@ export function PostingSyncSettings({
           />
         ))}
       <DrawerBody className="gap-6">
+        {tabs}
         <BooleanField
           name="enabled"
           bordered
@@ -286,21 +334,7 @@ export function PostingSyncSettings({
         </section>
 
         <section className="flex w-full flex-col gap-3 border-t border-border pt-4">
-          <Radios
-            name="periodLockPolicy"
-            label={t`Period lock policy`}
-            options={[
-              { label: t`Park as error`, value: "park" },
-              { label: t`Re-date to first open day`, value: "redate" }
-            ]}
-          />
-          <p className="text-xs text-muted-foreground">
-            <Trans>
-              What happens when a journal is dated in a locked period: park it
-              as a warning to fix, or push it re-dated to the first open day
-              with the original date in the narration.
-            </Trans>
-          </p>
+          <PeriodLockPolicyChoice />
         </section>
 
         <section className="flex w-full flex-col gap-3 border-t border-border pt-4">

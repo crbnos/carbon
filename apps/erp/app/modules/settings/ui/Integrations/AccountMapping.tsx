@@ -66,6 +66,8 @@ export type AccountMatchProposalRow = {
 };
 
 type AccountMappingProps = {
+  /** Shared tab bar, rendered at the top of this tab's body card. */
+  tabs?: ReactNode;
   mappings: AccountMappingRow[];
   unmapped: UnmappedAccountRow[];
   chart: AccountMappingChartAccount[];
@@ -73,6 +75,7 @@ type AccountMappingProps = {
 };
 
 export function AccountMapping({
+  tabs,
   mappings,
   unmapped,
   chart,
@@ -98,6 +101,7 @@ export function AccountMapping({
   return (
     <>
       <DrawerBody className="gap-6">
+        {tabs}
         <div className="flex w-full flex-wrap items-center justify-between gap-2">
           <p className="max-w-prose text-xs leading-relaxed text-muted-foreground">
             <Trans>

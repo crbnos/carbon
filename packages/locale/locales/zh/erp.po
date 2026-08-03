@@ -6364,6 +6364,9 @@ msgstr "历史汇率（权益）"
 msgid "History"
 msgstr "历史"
 
+msgid "Hold the journal as a warning to fix."
+msgstr "暂存该日记帐作为警告以供修复"
+
 msgid "Holiday"
 msgstr "假期"
 
@@ -10183,6 +10186,9 @@ msgstr "采购计量单位"
 
 msgid "Push"
 msgstr "推送"
+
+msgid "Push it re-dated to the first open day, keeping the original date in the narration."
+msgstr "将其推送至第一个可用日期，在备注中保留原始日期"
 
 msgid "Push posted journals for the enabled source types to the accounting provider."
 msgstr "将已过账日记账的启用源类型推送到会计提供商。"
@@ -14723,8 +14729,8 @@ msgstr "当您迁移到 Carbon 时会发生什么变化，以及大致的价值�
 msgid "What data"
 msgstr "什么数据"
 
-msgid "What happens when a journal is dated in a locked period: park it as a warning to fix, or push it re-dated to the first open day with the original date in the narration."
-msgstr "当日记账的日期在锁定期间时会发生什么：将其作为警告停放以供修复，或推送已重新日期至第一个开放日的日记账，原始日期在摘要中。"
+msgid "What happens when a journal is dated in a locked period."
+msgstr "当日记帐日期在锁定期间时会发生什么"
 
 msgid "What is {translatedTerm}?"
 msgstr "{translatedTerm}是什么?"

@@ -55,6 +55,7 @@ export type IntegrationSetting = {
     | "text"
     | "number"
     | "password"
+    | "secret"
     | "switch"
     | "processes"
     | "options"

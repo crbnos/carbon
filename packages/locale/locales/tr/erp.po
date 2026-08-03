@@ -6364,6 +6364,9 @@ msgstr "Tarihi Oran (Öz Sermaye)"
 msgid "History"
 msgstr "Geçmiş"
 
+msgid "Hold the journal as a warning to fix."
+msgstr "Günlüğü uyarı olarak tut ve düzelt."
+
 msgid "Holiday"
 msgstr "Tatil"
 
@@ -10183,6 +10186,9 @@ msgstr "Satın Alma Birimi"
 
 msgid "Push"
 msgstr "Gönder"
+
+msgid "Push it re-dated to the first open day, keeping the original date in the narration."
+msgstr "İlk açık güne yeniden tarihlendir, orijinal tarihi açıklamada tut."
 
 msgid "Push posted journals for the enabled source types to the accounting provider."
 msgstr "Etkinleştirilen kaynak türleri için yayınlanan günlükleri muhasebe sağlayıcısına gönderin."
@@ -14723,8 +14729,8 @@ msgstr "Carbon'a geçtiğinizde neler değişir ve kabaca ne kadar değerli olur
 msgid "What data"
 msgstr "Hangi veri"
 
-msgid "What happens when a journal is dated in a locked period: park it as a warning to fix, or push it re-dated to the first open day with the original date in the narration."
-msgstr "Bir günlük kilitli bir dönemde tarihlendirildiğinde ne olur: bunu düzeltmek için bir uyarı olarak park edin veya orijinal tarih anlatımda olacak şekilde ilk açık güne yeniden tarihlendirilmiş olarak gönderin."
+msgid "What happens when a journal is dated in a locked period."
+msgstr "Kilitli bir dönemde günlüğe tarih atanırsa ne olur?"
 
 msgid "What is {translatedTerm}?"
 msgstr "{translatedTerm} nedir?"

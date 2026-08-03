@@ -6364,6 +6364,9 @@ msgstr "Kurs Historyczny (Kapitał Własny)"
 msgid "History"
 msgstr "Historia"
 
+msgid "Hold the journal as a warning to fix."
+msgstr "Zatrzymaj dziennik jako ostrzeżenie do naprawy."
+
 msgid "Holiday"
 msgstr "Święto"
 
@@ -10183,6 +10186,9 @@ msgstr "Jednostka miary zakupu"
 
 msgid "Push"
 msgstr "Wyślij"
+
+msgid "Push it re-dated to the first open day, keeping the original date in the narration."
+msgstr "Przesuń go z nową datą na pierwszy otwarty dzień, zachowując oryginalną datę w naracji."
 
 msgid "Push posted journals for the enabled source types to the accounting provider."
 msgstr "Wyślij zaksięgowane dzienniki dla włączonych typów źródła do dostawcy systemu księgowego."
@@ -14723,8 +14729,8 @@ msgstr "Co się zmienia, gdy przechodzisz na Carbon i mniej więcej ile to warte
 msgid "What data"
 msgstr "Jakie dane"
 
-msgid "What happens when a journal is dated in a locked period: park it as a warning to fix, or push it re-dated to the first open day with the original date in the narration."
-msgstr "Co się dzieje, gdy dziennik ma datę w zablokowanym okresie: zatrzymaj go jako ostrzeżenie do naprawy, lub wyślij go ze zmienioną datą na pierwszy otwarty dzień z oryginalną datą w notatce."
+msgid "What happens when a journal is dated in a locked period."
+msgstr "Co się dzieje, gdy dziennik jest datowany w zablokowanym okresie."
 
 msgid "What is {translatedTerm}?"
 msgstr "Co to jest {translatedTerm}?"

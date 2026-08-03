@@ -6364,6 +6364,9 @@ msgstr "Historischer Kurs (Eigenkapital)"
 msgid "History"
 msgstr "Verlauf"
 
+msgid "Hold the journal as a warning to fix."
+msgstr "Das Journal als Warnung zum Beheben halten."
+
 msgid "Holiday"
 msgstr "Feiertag"
 
@@ -10183,6 +10186,9 @@ msgstr "Einkaufsmaßeinheit"
 
 msgid "Push"
 msgstr "Senden"
+
+msgid "Push it re-dated to the first open day, keeping the original date in the narration."
+msgstr "Es mit neuem Datum zum ersten offenen Tag verschieben und das ursprüngliche Datum in der Erzählung behalten."
 
 msgid "Push posted journals for the enabled source types to the accounting provider."
 msgstr "Gebuchte Journale für die aktivierten Quellentypen an den Buchhaltungsanbieter senden."
@@ -14723,8 +14729,8 @@ msgstr "Was sich ändert, wenn Sie zu Carbon wechseln, und ungefähr, was es wer
 msgid "What data"
 msgstr "Welche Daten"
 
-msgid "What happens when a journal is dated in a locked period: park it as a warning to fix, or push it re-dated to the first open day with the original date in the narration."
-msgstr "Was passiert, wenn ein Journal in einer gesperrten Periode datiert ist: Parken Sie es als Warnung zum Beheben, oder senden Sie es mit neuem Datum auf den ersten offenen Tag mit dem ursprünglichen Datum in der Erläuterung."
+msgid "What happens when a journal is dated in a locked period."
+msgstr "Was passiert, wenn ein Journal in einem gesperrten Zeitraum datiert ist."
 
 msgid "What is {translatedTerm}?"
 msgstr "{translatedTerm} ist was?"

@@ -6364,6 +6364,9 @@ msgstr "역사적 환율(자본)"
 msgid "History"
 msgstr "이력"
 
+msgid "Hold the journal as a warning to fix."
+msgstr "수정할 수 있도록 경고로 저널을 보류합니다."
+
 msgid "Holiday"
 msgstr "휴일"
 
@@ -10183,6 +10186,9 @@ msgstr "구매 단위"
 
 msgid "Push"
 msgstr "푸시"
+
+msgid "Push it re-dated to the first open day, keeping the original date in the narration."
+msgstr "원본 날짜를 설명에 유지하면서 첫 번째 개시 날짜로 재날짜를 지정합니다."
 
 msgid "Push posted journals for the enabled source types to the accounting provider."
 msgstr "활성화된 소스 유형에 대한 전기 분개를 회계 공급자에게 푸시합니다."
@@ -14723,8 +14729,8 @@ msgstr "Carbon으로 전환하면 무엇이 달라지고 그 가치는 대략 �
 msgid "What data"
 msgstr "어떤 데이터"
 
-msgid "What happens when a journal is dated in a locked period: park it as a warning to fix, or push it re-dated to the first open day with the original date in the narration."
-msgstr "분개가 잠긴 기간에 날짜를 지정하면 어떻게 됩니까: 수정 경고로 보관하거나 분개 설명에 원래 날짜를 포함하여 첫 개설 날짜로 다시 지정하여 푸시합니다."
+msgid "What happens when a journal is dated in a locked period."
+msgstr "저널이 잠긴 기간에 날짜가 지정되면 어떻게 됩니까?"
 
 msgid "What is {translatedTerm}?"
 msgstr "{translatedTerm}란 무엇인가요?"

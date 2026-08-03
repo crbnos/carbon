@@ -6364,6 +6364,9 @@ msgstr "Tasso Storico (Patrimonio)"
 msgid "History"
 msgstr "Cronologia"
 
+msgid "Hold the journal as a warning to fix."
+msgstr "Mantieni il giornale come avvertimento da correggere."
+
 msgid "Holiday"
 msgstr "Festività"
 
@@ -10183,6 +10186,9 @@ msgstr "Unità di Misura di Acquisto"
 
 msgid "Push"
 msgstr "Invia"
+
+msgid "Push it re-dated to the first open day, keeping the original date in the narration."
+msgstr "Spingerlo ri-datato al primo giorno aperto, mantenendo la data originale nella narrazione."
 
 msgid "Push posted journals for the enabled source types to the accounting provider."
 msgstr "Invia i giornali registrati per i tipi di origine abilitati al provider contabile."
@@ -14723,8 +14729,8 @@ msgstr "Cosa cambia quando passi a Carbon e approssimativamente quanto vale. Sti
 msgid "What data"
 msgstr "Quali dati"
 
-msgid "What happens when a journal is dated in a locked period: park it as a warning to fix, or push it re-dated to the first open day with the original date in the narration."
-msgstr "Cosa succede quando un giornale è datato in un periodo bloccato: parcheggiarlo come avviso da correggere, o inviarlo con una nuova data al primo giorno aperto con la data originale nella narrazione."
+msgid "What happens when a journal is dated in a locked period."
+msgstr "Cosa accade quando un giornale è datato in un periodo bloccato."
 
 msgid "What is {translatedTerm}?"
 msgstr "Cos'è {translatedTerm}?"

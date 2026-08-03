@@ -6364,6 +6364,9 @@ msgstr "Исторический курс (Капитал)"
 msgid "History"
 msgstr "История"
 
+msgid "Hold the journal as a warning to fix."
+msgstr "Удержать журнал как предупреждение для исправления."
+
 msgid "Holiday"
 msgstr "Праздник"
 
@@ -10183,6 +10186,9 @@ msgstr "Единица измерения закупки"
 
 msgid "Push"
 msgstr "Отправить"
+
+msgid "Push it re-dated to the first open day, keeping the original date in the narration."
+msgstr "Переместить его с переустановленной датой на первый открытый день, сохраняя исходную дату в примечании."
 
 msgid "Push posted journals for the enabled source types to the accounting provider."
 msgstr "Отправить опубликованные журналы для включенных типов источников поставщику учета."
@@ -14723,8 +14729,8 @@ msgstr "Что изменится при переходе на Carbon и при�
 msgid "What data"
 msgstr "Какие данные"
 
-msgid "What happens when a journal is dated in a locked period: park it as a warning to fix, or push it re-dated to the first open day with the original date in the narration."
-msgstr "Что происходит, когда журнал датирован в заблокированном периоде: припарковать его как предупреждение для исправления или отправить с измененной датой на первый открытый день с исходной датой в описании."
+msgid "What happens when a journal is dated in a locked period."
+msgstr "Что происходит, когда журнал датирован в закрытом периоде."
 
 msgid "What is {translatedTerm}?"
 msgstr "Что такое {translatedTerm}?"

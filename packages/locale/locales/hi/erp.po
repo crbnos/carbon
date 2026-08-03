@@ -6364,6 +6364,9 @@ msgstr "ऐतिहासिक दर (इक्विटी)"
 msgid "History"
 msgstr "इतिहास"
 
+msgid "Hold the journal as a warning to fix."
+msgstr "जर्नल को ठीक करने के लिए एक चेतावनी के रूप में रखें।"
+
 msgid "Holiday"
 msgstr "छुट्टी"
 
@@ -10183,6 +10186,9 @@ msgstr "क्रय माप की इकाई"
 
 msgid "Push"
 msgstr "धकेलें"
+
+msgid "Push it re-dated to the first open day, keeping the original date in the narration."
+msgstr "इसे पहले खुले दिन तक पुनः-तारीखित करें, मूल तारीख को विवरण में रखते हुए।"
 
 msgid "Push posted journals for the enabled source types to the accounting provider."
 msgstr "सक्षम स्रोत प्रकारों के लिए पोस्ट की गई जर्नल को लेखांकन प्रदाता को धकेलें।"
@@ -14723,8 +14729,8 @@ msgstr "जब आप Carbon पर जाते हैं तो क्या �
 msgid "What data"
 msgstr "कौन सा डेटा"
 
-msgid "What happens when a journal is dated in a locked period: park it as a warning to fix, or push it re-dated to the first open day with the original date in the narration."
-msgstr "जब कोई जर्नल एक बंद अवधि में डेट किया जाता है तो क्या होता है: इसे ठीक करने के लिए एक चेतावनी के रूप में पार्क करें, या इसे मूल तारीख को कथा में पहले खुले दिन को फिर से डेट करके धकेलें।"
+msgid "What happens when a journal is dated in a locked period."
+msgstr "जब कोई जर्नल लॉक की गई अवधि में तारीख दी जाती है तो क्या होता है।"
 
 msgid "What is {translatedTerm}?"
 msgstr "{translatedTerm} क्या है?"

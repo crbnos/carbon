@@ -6364,6 +6364,9 @@ msgstr "Taux Historique (Capitaux Propres)"
 msgid "History"
 msgstr "Historique"
 
+msgid "Hold the journal as a warning to fix."
+msgstr "Mettre le journal en attente comme avertissement pour correction."
+
 msgid "Holiday"
 msgstr "Jour férié"
 
@@ -10183,6 +10186,9 @@ msgstr "Unité de mesure d'achat"
 
 msgid "Push"
 msgstr "Envoyer"
+
+msgid "Push it re-dated to the first open day, keeping the original date in the narration."
+msgstr "Repousser sa date au premier jour ouvert, en conservant la date d'origine dans la narration."
 
 msgid "Push posted journals for the enabled source types to the accounting provider."
 msgstr "Envoyer les journaux validés pour les types de source activés au fournisseur comptable."
@@ -14723,8 +14729,8 @@ msgstr "Ce qui change quand vous passez à Carbon, et à peu près ce que cela v
 msgid "What data"
 msgstr "Quelles données"
 
-msgid "What happens when a journal is dated in a locked period: park it as a warning to fix, or push it re-dated to the first open day with the original date in the narration."
-msgstr "Ce qui se passe quand un journal est daté dans une période verrouillée : le laisser comme avertissement à corriger, ou l'envoyer redaté au premier jour ouvert avec la date originale dans la narration."
+msgid "What happens when a journal is dated in a locked period."
+msgstr "Que se passe-t-il quand un journal est daté dans une période verrouillée ?"
 
 msgid "What is {translatedTerm}?"
 msgstr "Qu'est-ce que {translatedTerm} ?"

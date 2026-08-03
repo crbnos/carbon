@@ -6364,6 +6364,9 @@ msgstr "Historical Rate (Equity)"
 msgid "History"
 msgstr "History"
 
+msgid "Hold the journal as a warning to fix."
+msgstr "Hold the journal as a warning to fix."
+
 msgid "Holiday"
 msgstr "Holiday"
 
@@ -10183,6 +10186,9 @@ msgstr "Purchasing Unit of Measure"
 
 msgid "Push"
 msgstr "Push"
+
+msgid "Push it re-dated to the first open day, keeping the original date in the narration."
+msgstr "Push it re-dated to the first open day, keeping the original date in the narration."
 
 msgid "Push posted journals for the enabled source types to the accounting provider."
 msgstr "Push posted journals for the enabled source types to the accounting provider."
@@ -14723,8 +14729,8 @@ msgstr "What changes when you move to Carbon, and roughly what it's worth. Estim
 msgid "What data"
 msgstr "What data"
 
-msgid "What happens when a journal is dated in a locked period: park it as a warning to fix, or push it re-dated to the first open day with the original date in the narration."
-msgstr "What happens when a journal is dated in a locked period: park it as a warning to fix, or push it re-dated to the first open day with the original date in the narration."
+msgid "What happens when a journal is dated in a locked period."
+msgstr "What happens when a journal is dated in a locked period."
 
 msgid "What is {translatedTerm}?"
 msgstr "What is {translatedTerm}?"

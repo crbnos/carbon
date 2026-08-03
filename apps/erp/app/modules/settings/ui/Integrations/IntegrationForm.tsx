@@ -19,6 +19,7 @@ import {
 import {
   Badge,
   Button,
+  Copy,
   cn,
   Drawer,
   DrawerBody,
@@ -118,6 +119,23 @@ function GatedIntegrationActionButton({
 }
 
 /**
+ * Fills runtime placeholders in a setting's help text — the webhook host and
+ * company ID that only exist at render time. Lets a static config description
+ * (e.g. Rillet's webhook URL `https://<your-carbon-host>/api/webhook/rillet/<your company ID>`)
+ * render as a concrete, copy-pasteable URL.
+ */
+function fillSettingPlaceholders(
+  description: string | undefined,
+  host: string,
+  companyId: string
+): string | undefined {
+  if (!description) return description;
+  return description
+    .replaceAll("<your-carbon-host>", host || "<your-carbon-host>")
+    .replaceAll("<your company ID>", companyId);
+}
+
+/**
  * Helper to normalize option to consistent format
  */
 function normalizeOption(option: IntegrationSettingOption) {
@@ -202,6 +220,9 @@ function SettingFieldInner({ setting }: { setting: IntegrationSetting }) {
         </div>
       );
 
+    case "secret":
+      return <SecretField setting={setting} />;
+
     case "cards":
       return <CardSelector setting={setting} />;
 
@@ -283,6 +304,35 @@ function SettingFieldInner({ setting }: { setting: IntegrationSetting }) {
     default:
       return null;
   }
+}
+
+/**
+ * A masked-but-recoverable credential field. Reuses the `Password` field
+ * (form binding + reveal toggle) and adds a copy button that reads the live
+ * form value via `useControlField`, so a stored secret prefilled by the
+ * loader can be revealed and copied without being re-typed. The value stays
+ * editable — pasting a new secret overwrites it. The copy button only shows
+ * once the field has a value.
+ */
+function SecretField({ setting }: { setting: IntegrationSetting }) {
+  const [value] = useControlField<string>(setting.name);
+  const current = typeof value === "string" ? value : "";
+
+  return (
+    <div className="w-full">
+      <div className="flex items-end gap-2">
+        <div className="min-w-0 flex-1">
+          <Password name={setting.name} label={setting.label} />
+        </div>
+        {current.length > 0 && <Copy text={current} className="shrink-0" />}
+      </div>
+      {setting.description && (
+        <p className="text-xs text-muted-foreground mt-1.5">
+          {setting.description}
+        </p>
+      )}
+    </div>
+  );
 }
 
 /**
@@ -504,7 +554,13 @@ function SettingsGroup({
 export type IntegrationFormTab = {
   value: string;
   label: ReactNode;
-  content: ReactNode;
+  /**
+   * Render function receiving the shared tab bar, so each tab can render it
+   * at the top of its own body card (the white section) instead of the bar
+   * living in the gray header. The tab's content component renders `tabs` as
+   * the first child of its `DrawerBody`.
+   */
+  content: (tabs: ReactNode) => ReactNode;
 };
 
 interface IntegrationFormProps {
@@ -537,6 +593,8 @@ export function IntegrationForm({
   const {
     company: { id: companyId }
   } = useUser();
+  // Host for filling webhook-URL placeholders in setting help text (client-only).
+  const webhookHost = typeof window !== "undefined" ? window.location.host : "";
 
   const { id: integrationId } = useParams();
 
@@ -580,14 +638,21 @@ export function IntegrationForm({
       const ungrouped: IntegrationSetting[] = [];
       const grouped = new Map<string, IntegrationSetting[]>();
 
-      for (const baseSetting of integration.settings) {
-        // Merge dynamic options if available for this setting
-        const setting: IntegrationSetting = dynamicOptions[baseSetting.name]
-          ? {
-              ...baseSetting,
-              listOptions: dynamicOptions[baseSetting.name]
-            }
-          : (baseSetting as IntegrationSetting);
+      for (const rawSetting of integration.settings) {
+        const baseSetting = rawSetting as IntegrationSetting;
+        // Fill runtime placeholders (webhook host + company ID) in help text,
+        // then merge dynamic options if available for this setting.
+        const setting: IntegrationSetting = {
+          ...baseSetting,
+          description: fillSettingPlaceholders(
+            baseSetting.description,
+            webhookHost,
+            companyId
+          ),
+          ...(dynamicOptions[baseSetting.name]
+            ? { listOptions: dynamicOptions[baseSetting.name] }
+            : {})
+        };
 
         if (!setting.group) {
           ungrouped.push(setting);
@@ -612,7 +677,7 @@ export function IntegrationForm({
         groupNames: [...grouped.keys()],
         groupDescriptions: descriptions
       };
-    }, [integration, dynamicOptions]);
+    }, [integration, dynamicOptions, webhookHost, companyId]);
 
   const initialValues = useMemo(() => {
     if (!integration) return {};
@@ -674,6 +739,21 @@ export function IntegrationForm({
     </div>
   );
 
+  // Shared tab bar, rendered at the top of each tab's body card (the white
+  // section) rather than in the gray header. Null when there are no tabs.
+  const tabBar = hasTabs ? (
+    <TabsList className="mb-3 self-start">
+      <TabsTrigger value="settings">
+        <Trans>Settings</Trans>
+      </TabsTrigger>
+      {tabs.map((tab) => (
+        <TabsTrigger key={tab.value} value={tab.value}>
+          {tab.label}
+        </TabsTrigger>
+      ))}
+    </TabsList>
+  ) : null;
+
   const settingsForm = (
     <ValidatedForm
       validator={integration.schema}
@@ -684,6 +764,7 @@ export function IntegrationForm({
     >
       {!hasTabs && <DrawerHeader>{headerContent}</DrawerHeader>}
       <DrawerBody>
+        {tabBar}
         <ScrollArea
           className={cn(
             "-mx-2 pb-8",
@@ -804,19 +885,9 @@ export function IntegrationForm({
             onValueChange={setActiveTab}
             className="flex h-full min-h-0 flex-col"
           >
-            <DrawerHeader>
-              {headerContent}
-              <TabsList className="mt-3 self-start">
-                <TabsTrigger value="settings">
-                  <Trans>Settings</Trans>
-                </TabsTrigger>
-                {tabs.map((tab) => (
-                  <TabsTrigger key={tab.value} value={tab.value}>
-                    {tab.label}
-                  </TabsTrigger>
-                ))}
-              </TabsList>
-            </DrawerHeader>
+            <DrawerHeader>{headerContent}</DrawerHeader>
+            {/* Tab bar now lives inside each tab's body card (rendered by the
+                content via `tabBar`), so it sits on the white section. */}
             <TabsContent
               forceMount
               value="settings"
@@ -831,7 +902,7 @@ export function IntegrationForm({
                 value={tab.value}
                 className="flex min-h-0 flex-1 flex-col overflow-hidden outline-none data-[state=inactive]:hidden"
               >
-                {tab.content}
+                {tab.content(tabBar)}
               </TabsContent>
             ))}
           </Tabs>

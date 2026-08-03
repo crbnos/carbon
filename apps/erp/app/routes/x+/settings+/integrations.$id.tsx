@@ -73,11 +73,13 @@ const logger = getLogger("erp", "integrations-id");
  * Rillet authenticates with an API key entered on the standard install
  * form. The engine reads credentials exclusively from
  * `metadata.credentials` (top-level metadata keys are stripped by
- * ProviderIntegrationMetadataSchema and would echo back into the form's
- * password field), so fold the form fields into the canonical apiKey
- * credentials variant. What's submitted is what's stored: a blank
- * webhookToken turns inbound payments off; re-saving requires re-entering
- * the key (sandbox and production keys differ anyway).
+ * ProviderIntegrationMetadataSchema), so fold the form fields into the
+ * canonical apiKey credentials variant. The loader mirrors this with
+ * `unfoldRilletCredentials`, so the drawer prefills from stored
+ * credentials — meaning a re-save round-trips the real values instead of
+ * wiping environment/subsidiaryId/webhookToken back to their defaults.
+ * What's submitted is what's stored: clearing the webhook token turns
+ * inbound payments off.
  */
 function foldRilletCredentials(
   metadata: Record<string, unknown>
@@ -102,6 +104,43 @@ function foldRilletCredentials(
       environment: environment === "sandbox" ? "sandbox" : "production",
       ...(Object.keys(providerMetadata).length > 0 ? { providerMetadata } : {})
     }
+  };
+}
+
+/**
+ * Inverse of `foldRilletCredentials`: unfold the stored
+ * `metadata.credentials` back into the flat apiKey/environment/
+ * subsidiaryId/webhookToken fields the settings form binds to. Without
+ * this the drawer opens with every Connection/Webhooks field blank, and
+ * re-saving (which requires the API key) rebuilds credentials from those
+ * blank defaults — silently wiping the environment, subsidiary, and
+ * webhook token. The loader reads raw metadata (getIntegration does not
+ * strip `credentials`), so the values are available here.
+ */
+function unfoldRilletCredentials(
+  metadata: Record<string, unknown>
+): Record<string, unknown> {
+  const credentials = metadata.credentials as
+    | Record<string, unknown>
+    | undefined;
+  if (!credentials || credentials.type !== "apiKey") return metadata;
+
+  const providerMetadata =
+    (credentials.providerMetadata as Record<string, unknown> | undefined) ?? {};
+
+  return {
+    ...metadata,
+    apiKey: typeof credentials.apiKey === "string" ? credentials.apiKey : "",
+    environment:
+      credentials.environment === "sandbox" ? "sandbox" : "production",
+    subsidiaryId:
+      typeof providerMetadata.subsidiaryId === "string"
+        ? providerMetadata.subsidiaryId
+        : "",
+    webhookToken:
+      typeof providerMetadata.webhookToken === "string"
+        ? providerMetadata.webhookToken
+        : ""
   };
 }
 
@@ -328,7 +367,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     string,
     unknown
   >;
-  const flattenedMetadata = flattenSyncConfigToOwnerSettings(metadata);
+  let flattenedMetadata = flattenSyncConfigToOwnerSettings(metadata);
+  // Rillet keeps its API credentials under metadata.credentials; unfold
+  // them into the flat form fields so the drawer prefills instead of
+  // showing blanks (which a re-save would then persist over the real
+  // stored connection).
+  if (integrationId === "rillet") {
+    flattenedMetadata = unfoldRilletCredentials(flattenedMetadata);
+  }
 
   // Fetch dynamic options for Xero integration (chart of accounts)
   let dynamicOptions: Record<
@@ -985,8 +1031,9 @@ export default function IntegrationRoute() {
     tabs.push({
       value: "account-mapping",
       label: <Trans>Account Mapping</Trans>,
-      content: (
+      content: (tabBar) => (
         <AccountMapping
+          tabs={tabBar}
           mappings={accountMapping.mappings}
           unmapped={accountMapping.unmapped}
           chart={accountMapping.chart}
@@ -999,8 +1046,9 @@ export default function IntegrationRoute() {
     tabs.push({
       value: "posting",
       label: <Trans>Posting</Trans>,
-      content: (
+      content: (tabBar) => (
         <PostingSyncSettings
+          tabs={tabBar}
           settings={postingSync.settings}
           policy={postingSync.policy}
           mappingReadiness={postingSync.mappingReadiness}
@@ -1012,8 +1060,9 @@ export default function IntegrationRoute() {
     tabs.push({
       value: "sync-activity",
       label: <Trans>Sync Activity</Trans>,
-      content: (
+      content: (tabBar) => (
         <SyncActivity
+          tabs={tabBar}
           operations={syncActivity.operations}
           count={syncActivity.count}
           status={syncActivity.status}

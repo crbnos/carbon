@@ -6364,6 +6364,9 @@ msgstr "Taxa Histórica (Patrimônio)"
 msgid "History"
 msgstr "Histórico"
 
+msgid "Hold the journal as a warning to fix."
+msgstr "Manter o diário como aviso para correção."
+
 msgid "Holiday"
 msgstr "Feriado"
 
@@ -10183,6 +10186,9 @@ msgstr "Unidade de Medida de Compra"
 
 msgid "Push"
 msgstr "Empurrar"
+
+msgid "Push it re-dated to the first open day, keeping the original date in the narration."
+msgstr "Redatá-lo para o primeiro dia aberto, mantendo a data original na narração."
 
 msgid "Push posted journals for the enabled source types to the accounting provider."
 msgstr "Enviar diários postados para os tipos de origem ativados para o provedor de contabilidade."
@@ -14723,8 +14729,8 @@ msgstr "O que muda quando você migra para o Carbon e aproximadamente quanto val
 msgid "What data"
 msgstr "Que dados"
 
-msgid "What happens when a journal is dated in a locked period: park it as a warning to fix, or push it re-dated to the first open day with the original date in the narration."
-msgstr "O que acontece quando um diário é datado em um período bloqueado: estacioná-lo como um aviso para corrigir, ou enviá-lo re-datado para o primeiro dia aberto com a data original na narração."
+msgid "What happens when a journal is dated in a locked period."
+msgstr "O que acontece quando um diário é datado em um período bloqueado."
 
 msgid "What is {translatedTerm}?"
 msgstr "O que é {translatedTerm}?"

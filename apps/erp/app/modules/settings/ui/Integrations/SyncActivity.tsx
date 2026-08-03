@@ -106,6 +106,8 @@ export type SyncReconciliationReport = {
 };
 
 type SyncActivityProps = {
+  /** Shared tab bar, rendered at the top of this tab's body card. */
+  tabs?: ReactNode;
   operations: SyncActivityOperation[];
   count: number;
   status: SyncOperationStatus | null;
@@ -208,6 +210,7 @@ function getAvailableTransitions(status: SyncOperationStatus): {
 }
 
 export function SyncActivity({
+  tabs,
   operations,
   count,
   status,
@@ -284,6 +287,7 @@ export function SyncActivity({
   return (
     <>
       <DrawerBody className="gap-4">
+        {tabs}
         <ReconciliationDrift lastReconciliation={lastReconciliation} />
 
         <div className="flex w-full flex-wrap items-center justify-between gap-2">

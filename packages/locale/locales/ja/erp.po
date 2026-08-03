@@ -6364,6 +6364,9 @@ msgstr "歴史レート（エクイティ）"
 msgid "History"
 msgstr "履歴"
 
+msgid "Hold the journal as a warning to fix."
+msgstr "修正する警告としてジャーナルを保持する"
+
 msgid "Holiday"
 msgstr "祝日"
 
@@ -10183,6 +10186,9 @@ msgstr "購買単位"
 
 msgid "Push"
 msgstr "プッシュ"
+
+msgid "Push it re-dated to the first open day, keeping the original date in the narration."
+msgstr "元の日付を説明に保持しながら、最初の開いている日に再日付してプッシュする"
 
 msgid "Push posted journals for the enabled source types to the accounting provider."
 msgstr "有効なソースタイプの転記済みジャーナルを会計プロバイダにプッシュします。"
@@ -14723,8 +14729,8 @@ msgstr "Carbonに移行するときに何が変わるか、およびおおよそ
 msgid "What data"
 msgstr "どのデータ"
 
-msgid "What happens when a journal is dated in a locked period: park it as a warning to fix, or push it re-dated to the first open day with the original date in the narration."
-msgstr "ジャーナルがロックされた期間に日付が付けられた場合、修正を警告として保留するか、元の日付が説明に記載された最初の営業日に再日付けされたジャーナルをプッシュします。"
+msgid "What happens when a journal is dated in a locked period."
+msgstr "ジャーナルがロックされた期間に日付が付けられた場合、何が起こるか"
 
 msgid "What is {translatedTerm}?"
 msgstr "{translatedTerm}とは何ですか?"
