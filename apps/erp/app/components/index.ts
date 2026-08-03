@@ -40,7 +40,7 @@ import SearchFilter from "./SearchFilter";
 import { SearchLandingPage } from "./SearchLandingPage";
 import Select from "./Select";
 import SupplierAvatar from "./SupplierAvatar";
-import Table from "./Table";
+import Table, { exportOnlyColumn } from "./Table";
 import { VersionMenu } from "./VersionMenu";
 
 export {
@@ -87,6 +87,8 @@ export {
   Table,
   TimeTypeIcon,
   TrackingTypeIcon,
+  exportOnlyColumn,
   useOptimisticAssignment,
   VersionMenu
+
 };

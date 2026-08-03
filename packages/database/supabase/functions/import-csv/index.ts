@@ -4,7 +4,7 @@ import { nanoid } from "https://deno.land/x/nanoid@v3.0.0/mod.ts";
 import { sql } from "npm:kysely@0.27.6";
 import z from "npm:zod@^3.24.1";
 import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
-import { corsHeaders } from "../lib/headers.ts";
+import { corsPreflight, errorResponse, jsonResponse } from "../lib/response.ts";
 import { requirePermissions } from "../lib/supabase.ts";
 import { Database } from "../lib/types.ts";
 import { getReadableIdWithRevision } from "../lib/utils.ts";
@@ -821,9 +821,8 @@ async function upsertTaxIdentifiers(
 }
 
 serve(async (req: Request) => {
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
-  }
+  const preflight = corsPreflight(req);
+  if (preflight) return preflight;
   const payload = await req.json();
 
   try {
@@ -2314,25 +2313,15 @@ serve(async (req: Request) => {
     const withValues = (issues: Array<{ row: number; reason: string }>) =>
       issues.map((issue) => ({ ...issue, values: parsedCsv[issue.row] ?? {} }));
 
-    return new Response(
-      JSON.stringify({
-        success: true,
-        inserted: summary.inserted,
-        updated: summary.updated,
-        errors: withValues(summary.errors),
-        skipped: withValues(summary.skipped),
-      }),
-      {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200,
-      }
-    );
-  } catch (err) {
-    console.error(err);
-    return new Response(JSON.stringify(err), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 500,
+    return jsonResponse({
+      success: true,
+      inserted: summary.inserted,
+      updated: summary.updated,
+      errors: withValues(summary.errors),
+      skipped: withValues(summary.skipped),
     });
+  } catch (err) {
+    return errorResponse(err, 500);
   }
 });
 

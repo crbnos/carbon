@@ -128,6 +128,9 @@ msgstr "{from}–{to} von {count}"
 msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
 msgstr "{inserted} eingefügt, {updated} aktualisiert, {0} benötigen Behebung, {1} übersprungen."
 
+msgid "{linesCount, plural, one {# line} other {# lines}}"
+msgstr "{linesCount, plural, one {# Zeile} other {# Zeilen}}"
+
 msgid "{maxSizeMB}MB limit"
 msgstr "{maxSizeMB}MB-Limit"
 
@@ -145,6 +148,9 @@ msgstr "{total} Phasen, um Ihr Unternehmen auf Carbon live zu schalten. Jede end
 
 msgid "{total} phases to go live"
 msgstr "{total} Phasen bis zur Live-Schaltung"
+
+msgid "{totalQuantity, plural, one {# unit} other {# units}}"
+msgstr "{totalQuantity, plural, one {# Einheit} other {# Einheiten}}"
 
 msgid "{uncounted, plural, one {# uncounted line} other {# uncounted lines}}"
 msgstr "{uncounted, plural, one {# nicht gezählte Zeile} other {# nicht gezählte Zeilen}}"
@@ -1071,6 +1077,9 @@ msgstr "Schritt hinzufügen"
 
 msgid "Add steps to preview the operator view."
 msgstr "Schritte hinzufügen, um die Bedieneransicht in der Vorschau anzuzeigen."
+
+msgid "Add Stock Transfer"
+msgstr "Bestandsübertrag hinzufügen"
 
 msgid "Add Supplier"
 msgstr "Lieferant hinzufügen"
@@ -2720,6 +2729,9 @@ msgstr "Wählen Sie eine Chargennummer"
 msgid "Choose a company"
 msgstr "Wählen Sie ein Unternehmen"
 
+msgid "Choose a row on the left to see where its stock can come from."
+msgstr "Wählen Sie eine Zeile auf der linken Seite, um zu sehen, woher der Bestand kommen kann."
+
 msgid "Choose a serial number"
 msgstr "Wählen Sie eine Seriennummer"
 
@@ -3626,6 +3638,9 @@ msgstr "Revision erstellen"
 
 msgid "Create Rule"
 msgstr "Regel erstellen"
+
+msgid "Create Transfer"
+msgstr "Übertrag erstellen"
 
 msgid "Create User"
 msgstr "Benutzer erstellen"
@@ -5583,9 +5598,6 @@ msgstr "Geben Sie eine Menge zwischen 1 und {0} ein."
 msgid "Enter and approve vendor bills against a PO (three-way match)"
 msgstr "Lieferantenrechnungen gegen eine Bestellung eingeben und genehmigen (dreigliedriger Abgleich)"
 
-msgid "Enter or scan serial number"
-msgstr "Seriennummer eingeben oder scannen"
-
 msgid "Enter PO number"
 msgstr "PO-Nummer eingeben"
 
@@ -5609,9 +5621,6 @@ msgstr "Zu teilende Entitäten"
 
 msgid "Entity"
 msgstr "Entität"
-
-msgid "Entity is {status}"
-msgstr "Entity ist {status}"
 
 msgid "Entity Type"
 msgstr "Entitätstyp"
@@ -5696,9 +5705,6 @@ msgstr "Fehler beim Entfernen des Modells aus der Verkaufsrechnungszeile"
 
 msgid "Error removing model from sales order line"
 msgstr "Fehler beim Entfernen des Modells aus der Bestellzeile"
-
-msgid "Error validating serial number"
-msgstr "Fehler beim Validieren der Seriennummer"
 
 msgid "Escalate to the project leads"
 msgstr "Eskalieren Sie an die Projektleiter"
@@ -7201,6 +7207,9 @@ msgstr "Gewinn- und Verlustrechnung"
 msgid "Income/Balance"
 msgstr "Einnahmen/Bilanz"
 
+msgid "incoming"
+msgstr "eingehend"
+
 msgid "Incoming"
 msgstr "Eingehend"
 
@@ -7585,9 +7594,6 @@ msgstr "Artikel"
 msgid "Item"
 msgstr "Artikel"
 
-msgid "Item {scannedItem} is not the same as the item {expectedItem}"
-msgstr "Artikel {scannedItem} ist nicht derselbe wie der Artikel {expectedItem}"
-
 msgid "Item / Location"
 msgstr "Artikel / Standort"
 
@@ -7629,6 +7635,9 @@ msgstr "Element muss einem ausgewählten Typ UND einer ausgewählten Gruppe ents
 
 msgid "Item must match a selected type OR a selected group"
 msgstr "Artikel muss einem ausgewählten Typ ODER einer ausgewählten Gruppe entsprechen"
+
+msgid "Item Name"
+msgstr "Artikelname"
 
 msgid "Item Scope"
 msgstr "Artikelbereich"
@@ -9286,11 +9295,16 @@ msgstr "Keine Problemtypen konfiguriert"
 msgid "No items"
 msgstr "Keine Artikel"
 
+msgid "No items have inventory activity here yet."
+msgstr "Hier gibt es noch keine Bestandsbewegungen."
+
 msgid "No lines to map"
 msgstr "Keine Zeilen zum Zuordnen"
 
 msgid "No list variables available upstream."
 msgstr ""
+msgid "No lines yet"
+msgstr "Noch keine Zeilen"
 
 msgid "No locations found."
 msgstr "Keine Standorte gefunden."
@@ -9336,6 +9350,9 @@ msgstr "Keine Option gefunden."
 
 msgid "No options found."
 msgstr "Keine Optionen gefunden."
+
+msgid "No other bins hold this item"
+msgstr "Keine anderen Behälter halten diesen Artikel"
 
 msgid "No other employees found. Add employees to enable ownership transfer."
 msgstr "Keine anderen Mitarbeiter gefunden. Fügen Sie Mitarbeiter hinzu, um die Eigentumsübertragung zu aktivieren."
@@ -9421,8 +9438,14 @@ msgstr "Keine Sortierungen auf diese Ansicht angewendet"
 msgid "No stock"
 msgstr "Kein Bestand"
 
+msgid "No stock at this location"
+msgstr "Kein Bestand an diesem Ort"
+
 msgid "No stockout projected in the next 48 weeks"
 msgstr "Keine Lagerbestände-Ausfall wird in den nächsten 48 Wochen prognostiziert"
+
+msgid "No storage unit"
+msgstr "Keine Lagereinheit"
 
 msgid "No suppliers yet"
 msgstr "Noch keine Lieferanten"
@@ -9537,6 +9560,8 @@ msgstr "Notizen (optional)"
 
 msgid "Nothing"
 msgstr ""
+msgid "Nothing else at this location has stock to pull from."
+msgstr "Keine anderen Artikel an diesem Ort haben Bestand zum Entnehmen."
 
 msgid "Nothing in the archive"
 msgstr "Nichts im Archiv"
@@ -9600,6 +9625,8 @@ msgstr ""
 
 msgid "On days"
 msgstr ""
+msgid "on hand"
+msgstr "verfügbar"
 
 msgid "On hand"
 msgstr "Verfügbar"
@@ -9738,6 +9765,9 @@ msgstr "Im MES öffnen"
 
 msgid "Open Issues"
 msgstr "Offene Probleme"
+
+msgid "Open job demand plus outstanding transfers out of this bin"
+msgstr "Offene Auftragsanforderung plus ausstehende Transfers aus diesem Behälter"
 
 msgid "Open jobs"
 msgstr "Offene Aufträge"
@@ -10307,6 +10337,9 @@ msgstr "Pickliste"
 
 msgid "Pick Order"
 msgstr "Entnahmereihenfol­ge"
+
+msgid "Pick the bin that needs stock, then pick the bins to pull it from."
+msgstr "Wählen Sie das Behältnis, das Bestand benötigt, und wählen Sie dann die Behältnisse zum Entnehmen aus."
 
 msgid "Pick tracked item"
 msgstr "Verfolgtes Element auswählen"
@@ -11436,8 +11469,8 @@ msgstr "Filter entfernen"
 msgid "Remove from Price List"
 msgstr "Aus Preisliste entfernen"
 
-msgid "Remove item"
-msgstr "Element entfernen"
+msgid "Remove line"
+msgstr "Zeile entfernen"
 
 msgid "Remove order"
 msgstr "Bestellung entfernen"
@@ -11702,6 +11735,9 @@ msgstr "Kehren Sie die zugehörigen Journaleinträge um"
 
 msgid "Reversed"
 msgstr "Rückgängig gemacht"
+
+msgid "Review"
+msgstr "Überprüfung"
 
 msgid "Review each item's changes, then confirm — releasing can't be undone."
 msgstr "Überprüfen Sie die Änderungen jedes Elements, und bestätigen Sie dann – die Freigabe kann nicht rückgängig gemacht werden."
@@ -12065,6 +12101,12 @@ msgstr "Scannen"
 msgid "Scan a label or search by item ID or tracking ID."
 msgstr "Scannen Sie ein Etikett oder suchen Sie nach Artikel-ID oder Tracking-ID."
 
+msgid "Scan or choose a batch number"
+msgstr "Scannieren oder wählen Sie eine Chargennummer"
+
+msgid "Scan or choose a serial number"
+msgstr "Scannieren oder wählen Sie eine Seriennummer"
+
 msgid "Scan or enter tracked entity ID, serial, or batch"
 msgstr "Scannen oder geben Sie die Kennung der verfolgten Entität, Seriennummer oder Chargennummer ein"
 
@@ -12076,9 +12118,6 @@ msgstr "Scannen oder suchen..."
 
 msgid "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
 msgstr "Scannen Sie eine verfolgbare Entität aus dieser Charge oder wählen Sie eine aus, um sie als Beispielspalte hinzuzufügen, und erfassen Sie dann ihr Ergebnis in der Tabelle."
-
-msgid "Scan the tracking ID for this line"
-msgstr "Scannen Sie die Tracking-ID für diese Zeile"
 
 msgid "SCAR"
 msgstr "SCAR"
@@ -12191,6 +12230,9 @@ msgstr "Felder durchsuchen..."
 msgid "Search for existing or create a new one"
 msgstr "Suchen Sie nach einem vorhandenen oder erstellen Sie einen neuen"
 
+msgid "Search items or bins"
+msgstr "Artikel oder Behälter durchsuchen"
+
 msgid "Search Job"
 msgstr "Job durchsuchen"
 
@@ -12241,6 +12283,9 @@ msgstr "Wählen Sie einen Bevollmächtigten"
 
 msgid "Select a default approver"
 msgstr "Wählen Sie einen Standard-Genehmiger"
+
+msgid "Select a destination"
+msgstr "Wählen Sie ein Ziel aus"
 
 msgid "Select a document"
 msgstr "Dokument auswählen"
@@ -12471,9 +12516,6 @@ msgstr "Serienartikel erfordern einen Verkaufsauftrag"
 
 msgid "Serial Number"
 msgstr "Seriennummer"
-
-msgid "Serial number not found"
-msgstr "Seriennummer nicht gefunden"
 
 msgid "Serial Number:"
 msgstr "Seriennummer:"
@@ -12790,6 +12832,10 @@ msgstr "Lieferanten-IDs anzeigen"
 
 msgid "Show sync options"
 msgstr "Synchronisierungsoptionen anzeigen"
+
+#. placeholder {0}: data.length
+msgid "Showing {0} of {totalCount} — refine your search"
+msgstr "Zeige {0} von {totalCount} — verfeinern Sie Ihre Suche"
 
 msgid "Shown as a faint background behind every page of generated PDFs"
 msgstr "Wird als schwacher Hintergrund hinter jeder Seite generierter PDFs angezeigt"
@@ -14768,9 +14814,6 @@ msgstr "Verfolgtes Unternehmen"
 
 msgid "Tracked Entity"
 msgstr "Verfolgtes Objekt"
-
-msgid "Tracked entity already picked"
-msgstr "Verfolgtes Element bereits ausgewählt"
 
 msgid "Tracked entity ID is required but none was found"
 msgstr "Tracked Entity ID ist erforderlich, aber keine wurde gefunden"

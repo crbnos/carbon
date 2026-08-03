@@ -501,7 +501,7 @@ export const JobOperation = ({
                   <Trans>Model</Trans>
                 </TabsTrigger>
                 <TabsTrigger value="procedure">
-                  <Trans>Procedure</Trans>
+                  <Trans>Instructions</Trans>
                 </TabsTrigger>
                 <TabsTrigger value="chat">
                   <Trans>Chat</Trans>

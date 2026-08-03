@@ -22,6 +22,7 @@
     "./quality": "./src/quality.ts",
     "./ratelimit": "./src/ratelimit.ts",
     "./sampling": "./src/sampling.ts",
+    "./sequence": "./src/sequence.ts",
     "./audit": "./src/audit.ts",
     "./audit.config": "./src/audit.config.ts",
     "./audit.types": "./src/audit.types.ts",

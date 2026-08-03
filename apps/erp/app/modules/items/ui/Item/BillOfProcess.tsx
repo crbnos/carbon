@@ -24,6 +24,7 @@ import {
   IconButton,
   Label,
   Loading,
+  ScrollArea,
   ToggleGroup,
   ToggleGroupItem,
   Tooltip,
@@ -882,14 +883,16 @@ const BillOfProcess = ({
         {isProductionRevision && (
           <ReleaseLockAlert isLocked={isReleaseLocked} className="mb-4" />
         )}
-        <SortableList
-          isReadOnly={isReadOnly}
-          items={items}
-          onReorder={onReorder}
-          onToggleItem={onToggleItem}
-          onRemoveItem={onRemoveItem}
-          renderItem={renderListItem}
-        />
+        <ScrollArea type="auto" className="max-h-[60dvh]">
+          <SortableList
+            isReadOnly={isReadOnly}
+            items={items}
+            onReorder={onReorder}
+            onToggleItem={onToggleItem}
+            onRemoveItem={onRemoveItem}
+            renderItem={renderListItem}
+          />
+        </ScrollArea>
       </CardContent>
       {configuratorDisclosure.isOpen && configuration && (
         <ConfigurationEditor

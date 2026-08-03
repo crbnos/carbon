@@ -3,13 +3,17 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { Button } from "@carbon/react";
 import { Trans } from "@lingui/react/macro";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { LuChevronUp } from "react-icons/lu";
 import type { LoaderFunctionArgs } from "react-router";
 import { redirect, useLoaderData } from "react-router";
 import InfiniteScroll from "~/components/InfiniteScroll";
 import type { ItemLedger } from "~/modules/inventory";
-import { getItemLedgerActivity, InventoryActivity } from "~/modules/inventory";
+import {
+  collapseTransferPairs,
+  getItemLedgerActivity,
+  InventoryActivity
+} from "~/modules/inventory";
 import { getLocationsList } from "~/modules/resources";
 import { getUserDefaults } from "~/modules/users/users.server";
 import { path } from "~/utils/path";
@@ -132,6 +136,12 @@ export default function ItemInventoryActivityRoute() {
 
   const [itemLedgers, setItemLedgers] =
     useState<ItemLedger[]>(initialItemLedgers);
+  // A stock transfer writes an outbound and an inbound ledger row; collapse
+  // each pair so one move reads as one activity entry.
+  const activityItems = useMemo(
+    () => collapseTransferPairs(itemLedgers),
+    [itemLedgers]
+  );
   const [hasOlder, setHasOlder] = useState(initialHasOlder);
   const [hasNewer, setHasNewer] = useState(initialHasNewer);
   const [isLoadingNewer, setIsLoadingNewer] = useState(false);
@@ -219,7 +229,7 @@ export default function ItemInventoryActivityRoute() {
 
       <InfiniteScroll
         component={InventoryActivity}
-        items={itemLedgers}
+        items={activityItems}
         loadMore={loadOlder}
         hasMore={hasOlder}
         highlightId={highlightId ?? undefined}

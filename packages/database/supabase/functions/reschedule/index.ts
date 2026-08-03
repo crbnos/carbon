@@ -1,7 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import type { Transaction } from "kysely";
 import { getConnectionPool, getDatabaseClient } from "../lib/database.ts";
-import { corsHeaders } from "../lib/headers.ts";
+import { corsPreflight, errorResponse, jsonResponse } from "../lib/response.ts";
 import type { DB } from "../lib/types.ts";
 
 const pool = getConnectionPool(1);
@@ -381,9 +381,8 @@ async function recalculatePriorities(
 
 // Main handler
 serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
-  }
+  const preflight = corsPreflight(req);
+  if (preflight) return preflight;
 
   try {
     const { jobId, companyId, userId } = await req.json();
@@ -458,24 +457,13 @@ serve(async (req) => {
       };
     });
 
-    return new Response(JSON.stringify({ success: true, ...result }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return jsonResponse({ success: true, ...result });
   } catch (error) {
     console.error(
       `❌ Reschedule failed: ${
         error instanceof Error ? error.message : String(error)
       }`
     );
-    return new Response(
-      JSON.stringify({
-        success: false,
-        message: error instanceof Error ? error.message : String(error),
-      }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }
-    );
+    return errorResponse(error, 500);
   }
 });

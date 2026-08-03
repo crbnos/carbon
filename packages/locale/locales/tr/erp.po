@@ -128,6 +128,9 @@ msgstr "{from}–{to} / {count}"
 msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
 msgstr "{inserted} eklendi, {updated} güncellendi, {0} düzeltme gerekli, {1} atlandı."
 
+msgid "{linesCount, plural, one {# line} other {# lines}}"
+msgstr "{linesCount, plural, one {# satır} other {# satırlar}}"
+
 msgid "{maxSizeMB}MB limit"
 msgstr "{maxSizeMB}MB sınırı"
 
@@ -145,6 +148,9 @@ msgstr "{total} aşama şirketinizi Carbon'da canlı hale getirmek için. Her bi
 
 msgid "{total} phases to go live"
 msgstr "{total} aşama canlı yayına alınacak"
+
+msgid "{totalQuantity, plural, one {# unit} other {# units}}"
+msgstr "{totalQuantity, plural, one {# birim} other {# birimler}}"
 
 msgid "{uncounted, plural, one {# uncounted line} other {# uncounted lines}}"
 msgstr "{uncounted, plural, one {# sayılmamış satır} other {# sayılmamış satırlar}}"
@@ -1071,6 +1077,9 @@ msgstr "Adım Ekle"
 
 msgid "Add steps to preview the operator view."
 msgstr "Operatör görünümünü önizlemek için adımlar ekleyin."
+
+msgid "Add Stock Transfer"
+msgstr "Stok Transferi Ekle"
 
 msgid "Add Supplier"
 msgstr "Tedarikçi Ekle"
@@ -2720,6 +2729,9 @@ msgstr "Bir parti numarası seçin"
 msgid "Choose a company"
 msgstr "Bir şirket seçin"
 
+msgid "Choose a row on the left to see where its stock can come from."
+msgstr "Stokun nereden gelebileceğini görmek için sol taraftaki bir satırı seçin."
+
 msgid "Choose a serial number"
 msgstr "Bir seri numarası seçin"
 
@@ -3626,6 +3638,9 @@ msgstr "Revizyon Oluştur"
 
 msgid "Create Rule"
 msgstr "Kural Oluştur"
+
+msgid "Create Transfer"
+msgstr "Transfer Oluştur"
 
 msgid "Create User"
 msgstr "Kullanıcı Oluştur"
@@ -5583,9 +5598,6 @@ msgstr "1 ile {0} arasında bir miktar girin."
 msgid "Enter and approve vendor bills against a PO (three-way match)"
 msgstr "Satıcı faturalarını bir PO'ya karşı girin ve onaylayın (üç yönlü eşleştirme)"
 
-msgid "Enter or scan serial number"
-msgstr "Seri numarası girin veya tarayın"
-
 msgid "Enter PO number"
 msgstr "PO numarasını girin"
 
@@ -5609,9 +5621,6 @@ msgstr "Ayrılacak varlıklar"
 
 msgid "Entity"
 msgstr "Varlık"
-
-msgid "Entity is {status}"
-msgstr "Varlık {status}'da"
 
 msgid "Entity Type"
 msgstr "Varlık Türü"
@@ -5696,9 +5705,6 @@ msgstr "Satır faturası modelini kaldırmada hata"
 
 msgid "Error removing model from sales order line"
 msgstr "Satır satış siparişinden model kaldırma hatası"
-
-msgid "Error validating serial number"
-msgstr "Seri numarası doğrulama hatası"
 
 msgid "Escalate to the project leads"
 msgstr "Proje liderlerine yükselt"
@@ -7201,6 +7207,9 @@ msgstr "Gelir Tablosu"
 msgid "Income/Balance"
 msgstr "Gelir/Bakiye"
 
+msgid "incoming"
+msgstr "gelen"
+
 msgid "Incoming"
 msgstr "Gelen"
 
@@ -7585,9 +7594,6 @@ msgstr "öğe"
 msgid "Item"
 msgstr "Ürün"
 
-msgid "Item {scannedItem} is not the same as the item {expectedItem}"
-msgstr "Ürün {scannedItem}, ürün {expectedItem} ile aynı değil"
-
 msgid "Item / Location"
 msgstr "Ürün / Konum"
 
@@ -7629,6 +7635,9 @@ msgstr "Öğe seçilen bir tür VE seçilen bir grup ile eşleşmelidir"
 
 msgid "Item must match a selected type OR a selected group"
 msgstr "Öğe seçilen bir tür VEYA seçilen bir gruba uymalıdır"
+
+msgid "Item Name"
+msgstr "Kalem Adı"
 
 msgid "Item Scope"
 msgstr "Ürün Kapsamı"
@@ -9286,11 +9295,16 @@ msgstr "Hiçbir sorun türü yapılandırılmamış"
 msgid "No items"
 msgstr "Öğe yok"
 
+msgid "No items have inventory activity here yet."
+msgstr "Burada henüz hiçbir maddenin envanter hareketi yok."
+
 msgid "No lines to map"
 msgstr "Eşlenecek satır yok"
 
 msgid "No list variables available upstream."
 msgstr ""
+msgid "No lines yet"
+msgstr "Henüz satır yok"
 
 msgid "No locations found."
 msgstr "Konum bulunamadı."
@@ -9336,6 +9350,9 @@ msgstr "Hiç seçenek bulunamadı."
 
 msgid "No options found."
 msgstr "Seçenek bulunamadı."
+
+msgid "No other bins hold this item"
+msgstr "Başka hiçbir depo bu maddeyi tutmuyor"
 
 msgid "No other employees found. Add employees to enable ownership transfer."
 msgstr "Başka çalışan bulunamadı. Mülkiyet devrini etkinleştirmek için çalışan ekleyin."
@@ -9421,8 +9438,14 @@ msgstr "Bu görünüme herhangi bir sıralama uygulanmadı"
 msgid "No stock"
 msgstr "Stok yok"
 
+msgid "No stock at this location"
+msgstr "Bu konumda stok yok"
+
 msgid "No stockout projected in the next 48 weeks"
 msgstr "Önümüzdeki 48 haftada stok tükenmesi öngörülmemiştir"
+
+msgid "No storage unit"
+msgstr "Depolama birimi yok"
 
 msgid "No suppliers yet"
 msgstr "Henüz tedarikçi yok"
@@ -9537,6 +9560,8 @@ msgstr "Notlar (isteğe bağlı)"
 
 msgid "Nothing"
 msgstr ""
+msgid "Nothing else at this location has stock to pull from."
+msgstr "Bu konumda çekilecek başka hiçbir stok yok."
 
 msgid "Nothing in the archive"
 msgstr "Arşivde hiçbir şey yok"
@@ -9600,6 +9625,8 @@ msgstr ""
 
 msgid "On days"
 msgstr ""
+msgid "on hand"
+msgstr "eldeki"
 
 msgid "On hand"
 msgstr "Eldeki"
@@ -9738,6 +9765,9 @@ msgstr "MES'te Aç"
 
 msgid "Open Issues"
 msgstr "Açık Sorunlar"
+
+msgid "Open job demand plus outstanding transfers out of this bin"
+msgstr "Açık iş talebi artı bu depodan giden bekleyen transferler"
 
 msgid "Open jobs"
 msgstr "Açık işler"
@@ -10307,6 +10337,9 @@ msgstr "Seçim Listesi"
 
 msgid "Pick Order"
 msgstr "Seçim Sırası"
+
+msgid "Pick the bin that needs stock, then pick the bins to pull it from."
+msgstr "Stok gereken kutuyu seçin, ardından çekilecek kutuları seçin."
 
 msgid "Pick tracked item"
 msgstr "Takip edilen öğeyi seç"
@@ -11436,8 +11469,8 @@ msgstr "Filtreleri Kaldır"
 msgid "Remove from Price List"
 msgstr "Fiyat Listesinden Kaldır"
 
-msgid "Remove item"
-msgstr "Ürünü kaldır"
+msgid "Remove line"
+msgstr "Satırı Kaldır"
 
 msgid "Remove order"
 msgstr "Siparişi kaldır"
@@ -11702,6 +11735,9 @@ msgstr "İlgili günlük girişlerini tersine çevir"
 
 msgid "Reversed"
 msgstr "Ters Çevrilmiş"
+
+msgid "Review"
+msgstr "İncele"
 
 msgid "Review each item's changes, then confirm — releasing can't be undone."
 msgstr "Her ürünün değişikliklerini gözden geçirin, sonra onaylayın — yayınlama geri alınamaz."
@@ -12065,6 +12101,12 @@ msgstr "Tara"
 msgid "Scan a label or search by item ID or tracking ID."
 msgstr "Bir etiketi tarayın veya ürün kimliği veya takip kimliği ile arama yapın."
 
+msgid "Scan or choose a batch number"
+msgstr "Toplu iş numarasını tarayın veya seçin"
+
+msgid "Scan or choose a serial number"
+msgstr "Seri numarasını tarayın veya seçin"
+
 msgid "Scan or enter tracked entity ID, serial, or batch"
 msgstr "Barkod veya izlenen varlık kimliği, seri numarası veya parti girin"
 
@@ -12076,9 +12118,6 @@ msgstr "Tarama veya arayın..."
 
 msgid "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
 msgstr "Bu lottan izlenen bir varlığı taramak veya seçmek için bunu örnek sütun olarak ekleyin, ardından sonucunu ızgarada kaydedin."
-
-msgid "Scan the tracking ID for this line"
-msgstr "Bu satır için takip kimliğini tarayın"
 
 msgid "SCAR"
 msgstr "SCAR"
@@ -12191,6 +12230,9 @@ msgstr "Alanları ara..."
 msgid "Search for existing or create a new one"
 msgstr "Mevcut birini arayın veya yeni bir tane oluşturun"
 
+msgid "Search items or bins"
+msgstr "Maddeleri veya depoları ara"
+
 msgid "Search Job"
 msgstr "İş Ara"
 
@@ -12241,6 +12283,9 @@ msgstr "Bir atanan seçin"
 
 msgid "Select a default approver"
 msgstr "Varsayılan onaylayıcı seçin"
+
+msgid "Select a destination"
+msgstr "Hedefi seçin"
 
 msgid "Select a document"
 msgstr "Belge seçin"
@@ -12471,9 +12516,6 @@ msgstr "Seri ürünler satış siparişi gerektirir"
 
 msgid "Serial Number"
 msgstr "Seri Numarası"
-
-msgid "Serial number not found"
-msgstr "Seri numarası bulunamadı"
 
 msgid "Serial Number:"
 msgstr "Seri Numarası:"
@@ -12790,6 +12832,10 @@ msgstr "Tedarikçi Kimliklerini Göster"
 
 msgid "Show sync options"
 msgstr "Senkronizasyon seçeneklerini göster"
+
+#. placeholder {0}: data.length
+msgid "Showing {0} of {totalCount} — refine your search"
+msgstr "{0} / {totalCount} gösteriliyor — aramanızı daraltın"
 
 msgid "Shown as a faint background behind every page of generated PDFs"
 msgstr "Oluşturulan PDF'lerin her sayfasının arkasında soluk bir arka plan olarak gösterilir"
@@ -14768,9 +14814,6 @@ msgstr "İzlenen varlık"
 
 msgid "Tracked Entity"
 msgstr "Takip Edilen Varlık"
-
-msgid "Tracked entity already picked"
-msgstr "Takip edilen varlık zaten alındı"
 
 msgid "Tracked entity ID is required but none was found"
 msgstr "Takip edilen varlık kimliği gerekli ancak hiçbiri bulunamadı"

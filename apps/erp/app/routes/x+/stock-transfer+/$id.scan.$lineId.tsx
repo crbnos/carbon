@@ -1,55 +1,93 @@
 import type { Result } from "@carbon/auth";
-import { error, success, useCarbon } from "@carbon/auth";
+import { error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { Hidden, ValidatedForm } from "@carbon/form";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
-import {
-  Alert,
-  AlertTitle,
-  Button,
-  cn,
-  Input,
-  InputGroup,
-  InputRightElement,
-  Modal,
-  ModalBody,
-  ModalContent,
-  ModalDescription,
-  ModalFooter,
-  ModalHeader,
-  ModalTitle,
-  toast
-} from "@carbon/react";
-import { Trans, useLingui } from "@lingui/react/macro";
-import { useEffect, useState } from "react";
-import {
-  LuCheck,
-  LuCircleCheck,
-  LuQrCode,
-  LuTriangleAlert,
-  LuX
-} from "react-icons/lu";
-import type { ActionFunctionArgs } from "react-router";
+import { TrackedEntityPicker, toast } from "@carbon/react";
+import { useLingui } from "@lingui/react/macro";
+import { useEffect, useMemo } from "react";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import {
   data,
   redirect,
   useFetcher,
+  useLoaderData,
   useNavigate,
   useParams
 } from "react-router";
 import { useRouteData } from "~/hooks";
 import type { StockTransfer, StockTransferLine } from "~/modules/inventory";
 import {
+  getAvailableTrackedEntities,
   getStockTransfer,
   stockTransferLineScanValidator
 } from "~/modules/inventory";
 import { getItemStorageUnitQuantities } from "~/modules/items";
+import { getCompanySettings } from "~/modules/settings";
 import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
 
 const logger = getLogger("erp", "id-scan-lineid");
+
+/**
+ * Loads the lots available to pick for this line so the picker can offer a
+ * Select tab, not just Scan — the same contract the picking-list picker uses.
+ */
+export async function loader({ request, params }: LoaderFunctionArgs) {
+  const { client, companyId } = await requirePermissions(request, {
+    view: "inventory"
+  });
+
+  const { lineId } = params;
+  if (!lineId) throw new Response("Not found", { status: 404 });
+
+  const line = await client
+    .from("stockTransferLine")
+    .select(
+      "id, itemId, quantity, pickedQuantity, requiresSerialTracking, stockTransfer(locationId)"
+    )
+    .eq("id", lineId)
+    .single();
+
+  if (line.error || !line.data) {
+    throw new Response("Stock transfer line not found", { status: 404 });
+  }
+
+  const locationId = (line.data.stockTransfer as { locationId: string } | null)
+    ?.locationId;
+
+  const entities =
+    locationId && line.data.itemId
+      ? await getAvailableTrackedEntities(client, {
+          itemId: line.data.itemId,
+          companyId,
+          locationId,
+          // A stock transfer moves stock between bins in the warehouse, so
+          // lineside (work-center) bins are not valid sources.
+          excludeLineside: true
+        })
+      : { data: [] };
+
+  const settings = await getCompanySettings(client, companyId);
+  const shelfLife = (settings.data?.inventoryShelfLife ?? {}) as {
+    nearExpiryWarningDays?: number | null;
+    expiredEntityPolicy?: "Warn" | "Block" | "BlockWithOverride";
+  };
+
+  return {
+    entities: entities.data ?? [],
+    trackingType: line.data.requiresSerialTracking
+      ? ("Serial" as const)
+      : ("Batch" as const),
+    quantityRequired: Math.max(
+      0,
+      Number(line.data.quantity ?? 0) - Number(line.data.pickedQuantity ?? 0)
+    ),
+    nearExpiryWarningDays: shelfLife.nearExpiryWarningDays ?? 0,
+    expiredEntityPolicy: shelfLife.expiredEntityPolicy ?? "Warn"
+  };
+}
 
 export async function action({ request, params }: ActionFunctionArgs) {
   const { client, companyId, userId } = await requirePermissions(request, {
@@ -186,6 +224,15 @@ export default function StockTransferScan() {
   const { id, lineId } = useParams();
   if (!id) throw new Error("id not found");
   if (!lineId) throw new Error("lineId not found");
+
+  const {
+    entities,
+    trackingType,
+    quantityRequired,
+    nearExpiryWarningDays,
+    expiredEntityPolicy
+  } = useLoaderData<typeof loader>();
+
   const routeData = useRouteData<{
     stockTransfer: StockTransfer;
     stockTransferLines: StockTransferLine[];
@@ -198,15 +245,9 @@ export default function StockTransferScan() {
   if (!stockTransferLine) throw new Error("stock transfer line not found");
 
   const navigate = useNavigate();
+  const { t } = useLingui();
   const onClose = () =>
     navigate(path.to.stockTransfer(stockTransferLine.stockTransferId!));
-
-  const { carbon } = useCarbon();
-  const { t } = useLingui();
-  const [isLoading, setIsLoading] = useState(false);
-  const [validationError, setValidationError] = useState<string | null>(null);
-  const [isValid, setIsValid] = useState<boolean | null>(null);
-  const [serialNumber, setSerialNumber] = useState("");
 
   const fetcher = useFetcher<Result>();
 
@@ -216,20 +257,33 @@ export default function StockTransferScan() {
     }
   }, [fetcher.data?.message, fetcher.data?.success]);
 
-  const locationId =
-    useRouteData<{
-      stockTransfer: StockTransfer;
-    }>(path.to.stockTransfer(stockTransferLine.stockTransferId!))?.stockTransfer
-      .locationId ?? "";
+  const locationId = routeData?.stockTransfer.locationId ?? "";
 
-  const onPick = (trackedEntityId?: string) => {
+  // A lot already picked onto another line of this transfer isn't available to
+  // pick again — the availability RPC has no way to know that.
+  const pickedElsewhere = useMemo(
+    () =>
+      new Set(
+        (routeData?.stockTransferLines ?? [])
+          .filter((line) => line.id !== lineId && line.trackedEntityId)
+          .map((line) => line.trackedEntityId as string)
+      ),
+    [routeData?.stockTransferLines, lineId]
+  );
+
+  const options = useMemo(
+    () => entities.filter((e) => !pickedElsewhere.has(e.trackedEntityId)),
+    [entities, pickedElsewhere]
+  );
+
+  const onPick = (trackedEntityId: string) => {
     fetcher.submit(
       {
         id: stockTransferLine.id!,
         stockTransferId: stockTransferLine.stockTransferId!,
-        trackedEntityId: trackedEntityId!,
+        trackedEntityId,
         itemId: stockTransferLine.itemId!,
-        locationId: locationId
+        locationId
       },
       {
         method: "POST",
@@ -238,172 +292,21 @@ export default function StockTransferScan() {
     );
   };
 
-  const validateTrackedEntity = async (trackedEntityId: string) => {
-    if (!trackedEntityId.trim()) {
-      setValidationError(null);
-      setIsValid(null);
-      return;
-    }
-
-    if (
-      routeData?.stockTransferLines.some(
-        (line) => line.trackedEntityId === trackedEntityId
-      )
-    ) {
-      setValidationError(t`Tracked entity already picked`);
-      setIsValid(false);
-      return;
-    }
-
-    setIsLoading(true);
-    setValidationError(null);
-    setIsValid(null);
-
-    try {
-      const result = await carbon
-        ?.from("trackedEntity")
-        .select("*")
-        .eq("id", trackedEntityId)
-        .eq("companyId", stockTransferLine.companyId!)
-        .single();
-
-      if (result?.error || !result?.data) {
-        setValidationError(t`Serial number not found`);
-        setIsValid(false);
-      } else if (result.data.status !== "Available") {
-        const status = result.data.status;
-        setValidationError(t`Entity is ${status}`);
-        setIsValid(false);
-      } else if (result.data.sourceDocumentId !== stockTransferLine.itemId!) {
-        const scannedItem = result.data.sourceDocumentReadableId;
-        const expectedItem = stockTransferLine.itemReadableId;
-        setValidationError(
-          t`Item ${scannedItem} is not the same as the item ${expectedItem}`
-        );
-        setIsValid(false);
-      } else {
-        setValidationError(null);
-        setIsValid(true);
-        onPick(trackedEntityId);
-      }
-      // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
-    } catch (error) {
-      setValidationError(t`Error validating serial number`);
-      setIsValid(false);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleSerialNumberChange = (value: string) => {
-    setSerialNumber(value);
-    // Clear validation state when user types
-    if (validationError || isValid !== null) {
-      setValidationError(null);
-      setIsValid(null);
-    }
-  };
-
-  const handleBlur = () => {
-    validateTrackedEntity(serialNumber);
-  };
-
-  const handleKeyDown = (event: React.KeyboardEvent) => {
-    if (event.key === "Enter") {
-      event.preventDefault();
-      validateTrackedEntity(serialNumber);
-    }
-  };
-
   return (
-    <Modal
-      open
-      onOpenChange={(open) => {
-        if (!open) {
-          onClose();
-        }
-      }}
-    >
-      <ValidatedForm
-        method="post"
-        validator={stockTransferLineScanValidator}
-        defaultValues={{
-          id: stockTransferLine.id!,
-          stockTransferId: stockTransferLine.stockTransferId!,
-          itemId: stockTransferLine.itemId!,
-          locationId: locationId,
-          trackedEntityId: ""
-        }}
-      >
-        <ModalContent>
-          <ModalHeader>
-            <ModalTitle>{stockTransferLine?.itemReadableId}</ModalTitle>
-            <ModalDescription>
-              <Trans>Scan the tracking ID for this line</Trans>
-            </ModalDescription>
-          </ModalHeader>
-          <ModalBody>
-            <Hidden name="id" />
-            <Hidden name="stockTransferId" />
-            <Hidden name="itemId" />
-            <Hidden name="locationId" />
-
-            <div className="space-y-4">
-              {validationError && (
-                <Alert variant="destructive">
-                  <LuTriangleAlert className="h-4 w-4" />
-                  <AlertTitle>{validationError}</AlertTitle>
-                </Alert>
-              )}
-              <InputGroup>
-                <Input
-                  name="trackedEntityId"
-                  value={serialNumber}
-                  isDisabled={fetcher.state !== "idle"}
-                  onChange={(e) => handleSerialNumberChange(e.target.value)}
-                  onBlur={handleBlur}
-                  onKeyDown={handleKeyDown}
-                  autoFocus
-                  placeholder={t`Enter or scan serial number`}
-                  className={cn(
-                    validationError && "border-destructive",
-                    isValid && "border-emerald-500"
-                  )}
-                  disabled={isLoading}
-                />
-                <InputRightElement className="pl-2">
-                  {isLoading ? (
-                    <div className="animate-spin h-4 w-4 border-2 border-gray-300 border-t-gray-600 rounded-full" />
-                  ) : validationError ? (
-                    <LuX className="text-destructive" />
-                  ) : isValid ? (
-                    <LuCheck className="text-emerald-500" />
-                  ) : (
-                    <LuQrCode />
-                  )}
-                </InputRightElement>
-              </InputGroup>
-            </div>
-          </ModalBody>
-          <ModalFooter>
-            <Button
-              variant="secondary"
-              isDisabled={fetcher.state !== "idle"}
-              onClick={() => onClose()}
-            >
-              <Trans>Cancel</Trans>
-            </Button>
-            <Button
-              leftIcon={<LuCircleCheck />}
-              isLoading={fetcher.state !== "idle"}
-              isDisabled={fetcher.state !== "idle"}
-              onClick={() => validateTrackedEntity(serialNumber)}
-            >
-              <Trans>Pick</Trans>
-            </Button>
-          </ModalFooter>
-        </ModalContent>
-      </ValidatedForm>
-    </Modal>
+    <TrackedEntityPicker
+      trackingType={trackingType}
+      entities={options}
+      quantityRequired={quantityRequired}
+      title={stockTransferLine.itemReadableId ?? undefined}
+      description={
+        trackingType === "Serial"
+          ? t`Scan or choose a serial number`
+          : t`Scan or choose a batch number`
+      }
+      nearExpiryWarningDays={nearExpiryWarningDays}
+      expiredEntityPolicy={expiredEntityPolicy}
+      onSelect={(selection) => onPick(selection.trackedEntityId)}
+      onClose={onClose}
+    />
   );
 }

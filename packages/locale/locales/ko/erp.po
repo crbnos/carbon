@@ -128,6 +128,9 @@ msgstr "{count}개 중 {from}–{to}"
 msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
 msgstr "{inserted}개 추가, {updated}개 업데이트, {0}개 수정 필요, {1}개 건너뜀."
 
+msgid "{linesCount, plural, one {# line} other {# lines}}"
+msgstr "{linesCount, plural, one {# 줄} other {# 줄}}"
+
 msgid "{maxSizeMB}MB limit"
 msgstr "{maxSizeMB}MB 제한"
 
@@ -145,6 +148,9 @@ msgstr "귀사가 Carbon을 도입하기까지 {total}단계가 있습니다. �
 
 msgid "{total} phases to go live"
 msgstr "도입까지 {total}단계"
+
+msgid "{totalQuantity, plural, one {# unit} other {# units}}"
+msgstr "{totalQuantity, plural, one {# 단위} other {# 단위}}"
 
 msgid "{uncounted, plural, one {# uncounted line} other {# uncounted lines}}"
 msgstr "미실사 라인 {uncounted}개"
@@ -1071,6 +1077,9 @@ msgstr "단계 추가"
 
 msgid "Add steps to preview the operator view."
 msgstr "운영자 보기를 미리 보기 위해 단계를 추가하세요."
+
+msgid "Add Stock Transfer"
+msgstr "재고 이전 추가"
 
 msgid "Add Supplier"
 msgstr "공급업체 추가"
@@ -2720,6 +2729,9 @@ msgstr "배치 번호를 선택하세요"
 msgid "Choose a company"
 msgstr "회사를 선택하세요"
 
+msgid "Choose a row on the left to see where its stock can come from."
+msgstr "왼쪽의 행을 선택하여 해당 재고가 어디서 올 수 있는지 확인하세요."
+
 msgid "Choose a serial number"
 msgstr "일련번호를 선택하세요"
 
@@ -3626,6 +3638,9 @@ msgstr "리비전 생성"
 
 msgid "Create Rule"
 msgstr "규칙 생성"
+
+msgid "Create Transfer"
+msgstr "이전 생성"
 
 msgid "Create User"
 msgstr "사용자 생성"
@@ -5583,9 +5598,6 @@ msgstr "1과 {0} 사이의 수량을 입력하세요."
 msgid "Enter and approve vendor bills against a PO (three-way match)"
 msgstr "구매주문(PO)에 대한 공급업체 청구서를 입력하고 승인하세요(3자 대조)"
 
-msgid "Enter or scan serial number"
-msgstr "일련번호를 입력하거나 스캔하세요"
-
 msgid "Enter PO number"
 msgstr "구매주문 번호 입력"
 
@@ -5609,9 +5621,6 @@ msgstr "분리할 개체"
 
 msgid "Entity"
 msgstr "개체"
-
-msgid "Entity is {status}"
-msgstr "개체 상태: {status}"
 
 msgid "Entity Type"
 msgstr "개체 유형"
@@ -5696,9 +5705,6 @@ msgstr "판매 인보이스 라인에서 모델 제거 오류"
 
 msgid "Error removing model from sales order line"
 msgstr "판매주문 라인에서 모델 제거 오류"
-
-msgid "Error validating serial number"
-msgstr "일련번호 검증 오류"
 
 msgid "Escalate to the project leads"
 msgstr "프로젝트 책임자에게 에스컬레이션"
@@ -7201,6 +7207,9 @@ msgstr "손익계산서"
 msgid "Income/Balance"
 msgstr "손익/재무상태"
 
+msgid "incoming"
+msgstr "입고"
+
 msgid "Incoming"
 msgstr "입고"
 
@@ -7585,9 +7594,6 @@ msgstr "품목"
 msgid "Item"
 msgstr "품목"
 
-msgid "Item {scannedItem} is not the same as the item {expectedItem}"
-msgstr "품목 {scannedItem}이(가) 품목 {expectedItem}과(와) 일치하지 않습니다"
-
 msgid "Item / Location"
 msgstr "항목 / 위치"
 
@@ -7629,6 +7635,9 @@ msgstr "품목은 선택한 유형과 선택한 그룹을 모두 충족해야 �
 
 msgid "Item must match a selected type OR a selected group"
 msgstr "품목은 선택한 유형 또는 선택한 그룹 중 하나를 충족해야 합니다"
+
+msgid "Item Name"
+msgstr "품목명"
 
 msgid "Item Scope"
 msgstr "품목 범위"
@@ -9286,11 +9295,16 @@ msgstr "설정된 이슈 유형이 없습니다"
 msgid "No items"
 msgstr "품목 없음"
 
+msgid "No items have inventory activity here yet."
+msgstr "아직 여기에 재고 활동이 있는 항목이 없습니다."
+
 msgid "No lines to map"
 msgstr "매핑할 라인이 없습니다"
 
 msgid "No list variables available upstream."
 msgstr ""
+msgid "No lines yet"
+msgstr "아직 줄이 없습니다"
 
 msgid "No locations found."
 msgstr "위치가 없습니다."
@@ -9336,6 +9350,9 @@ msgstr "옵션이 없습니다."
 
 msgid "No options found."
 msgstr "옵션이 없습니다."
+
+msgid "No other bins hold this item"
+msgstr "다른 보관함에 이 항목이 없습니다"
 
 msgid "No other employees found. Add employees to enable ownership transfer."
 msgstr "다른 직원이 없습니다. 소유권 이전을 활성화하려면 직원을 추가하세요."
@@ -9421,8 +9438,14 @@ msgstr "이 보기에는 정렬이 적용되지 않았습니다"
 msgid "No stock"
 msgstr "재고 없음"
 
+msgid "No stock at this location"
+msgstr "이 위치에 재고가 없습니다"
+
 msgid "No stockout projected in the next 48 weeks"
 msgstr "향후 48주간 재고 소진이 예상되지 않습니다"
+
+msgid "No storage unit"
+msgstr "저장 단위 없음"
 
 msgid "No suppliers yet"
 msgstr "아직 공급업체가 없습니다"
@@ -9537,6 +9560,8 @@ msgstr "메모(선택)"
 
 msgid "Nothing"
 msgstr ""
+msgid "Nothing else at this location has stock to pull from."
+msgstr "이 위치에는 더 이상 가져올 재고가 없습니다."
 
 msgid "Nothing in the archive"
 msgstr "보관함이 비어 있습니다"
@@ -9600,6 +9625,8 @@ msgstr ""
 
 msgid "On days"
 msgstr ""
+msgid "on hand"
+msgstr "현재"
 
 msgid "On hand"
 msgstr "보유수량"
@@ -9738,6 +9765,9 @@ msgstr "MES에서 열기"
 
 msgid "Open Issues"
 msgstr "미결 이슈"
+
+msgid "Open job demand plus outstanding transfers out of this bin"
+msgstr "미결 작업 수요에 이 보관함에서 미완료된 이전을 더합니다"
 
 msgid "Open jobs"
 msgstr "미결 작업"
@@ -10307,6 +10337,9 @@ msgstr "피킹 목록"
 
 msgid "Pick Order"
 msgstr "피킹 순서"
+
+msgid "Pick the bin that needs stock, then pick the bins to pull it from."
+msgstr "재고가 필요한 상자를 선택한 후 가져올 상자를 선택하세요."
 
 msgid "Pick tracked item"
 msgstr "추적 품목 선택"
@@ -11436,8 +11469,8 @@ msgstr "필터 제거"
 msgid "Remove from Price List"
 msgstr "가격표에서 제거"
 
-msgid "Remove item"
-msgstr "품목 제거"
+msgid "Remove line"
+msgstr "줄 제거"
 
 msgid "Remove order"
 msgstr "주문 제거"
@@ -11702,6 +11735,9 @@ msgstr "관련 분개 취소"
 
 msgid "Reversed"
 msgstr "역순됨"
+
+msgid "Review"
+msgstr "검토"
 
 msgid "Review each item's changes, then confirm — releasing can't be undone."
 msgstr "각 항목의 변경 사항을 검토한 후 확인하세요 — 릴리스는 실행 취소할 수 없습니다."
@@ -12065,6 +12101,12 @@ msgstr "스캔"
 msgid "Scan a label or search by item ID or tracking ID."
 msgstr "라벨을 스캔하거나 품목 ID 또는 추적 ID로 검색하세요."
 
+msgid "Scan or choose a batch number"
+msgstr "배치 번호를 스캔하거나 선택하세요"
+
+msgid "Scan or choose a serial number"
+msgstr "일련 번호를 스캔하거나 선택하세요"
+
 msgid "Scan or enter tracked entity ID, serial, or batch"
 msgstr "추적 개체 ID, 일련번호 또는 배치를 스캔하거나 입력하세요"
 
@@ -12076,9 +12118,6 @@ msgstr "스캔 또는 검색..."
 
 msgid "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
 msgstr "이 로트에서 추적 엔티티를 스캔하거나 선택하여 샘플 열로 추가한 후 그리드에 결과를 기록하세요."
-
-msgid "Scan the tracking ID for this line"
-msgstr "이 라인의 추적 ID를 스캔하세요"
 
 msgid "SCAR"
 msgstr "SCAR"
@@ -12191,6 +12230,9 @@ msgstr "필드 검색..."
 msgid "Search for existing or create a new one"
 msgstr "기존 항목을 검색하거나 새로 생성하세요"
 
+msgid "Search items or bins"
+msgstr "항목 또는 보관함 검색"
+
 msgid "Search Job"
 msgstr "작업 검색"
 
@@ -12241,6 +12283,9 @@ msgstr "담당자 선택"
 
 msgid "Select a default approver"
 msgstr "기본 승인자 선택"
+
+msgid "Select a destination"
+msgstr "목적지 선택"
 
 msgid "Select a document"
 msgstr "문서 선택"
@@ -12471,9 +12516,6 @@ msgstr "일련번호 품목에는 판매주문이 필요합니다"
 
 msgid "Serial Number"
 msgstr "일련번호"
-
-msgid "Serial number not found"
-msgstr "일련번호를 찾을 수 없습니다"
 
 msgid "Serial Number:"
 msgstr "일련번호:"
@@ -12790,6 +12832,10 @@ msgstr "공급업체 ID 표시"
 
 msgid "Show sync options"
 msgstr "동기화 옵션 표시"
+
+#. placeholder {0}: data.length
+msgid "Showing {0} of {totalCount} — refine your search"
+msgstr "{0}개/총 {totalCount}개 표시 — 검색 범위 좁혀보기"
 
 msgid "Shown as a faint background behind every page of generated PDFs"
 msgstr "생성된 PDF의 모든 페이지 배경에 옅게 표시됩니다"
@@ -14768,9 +14814,6 @@ msgstr "추적 개체"
 
 msgid "Tracked Entity"
 msgstr "추적 개체"
-
-msgid "Tracked entity already picked"
-msgstr "이미 피킹된 추적 개체입니다"
 
 msgid "Tracked entity ID is required but none was found"
 msgstr "추적 개체 ID가 필요하지만 찾을 수 없습니다"

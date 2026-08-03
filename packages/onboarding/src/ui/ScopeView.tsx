@@ -1,4 +1,4 @@
-import { Button, cn } from "@carbon/react";
+import { Button, Card, cn } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { LuCheck, LuX } from "react-icons/lu";
 import { PAGE_COPY, UI_TEXT } from "../content";
@@ -113,12 +113,14 @@ export function ScopeView() {
         </p>
       </Panel>
 
-      <section
+      <Card
         className={cn(
-          "rounded-lg border p-5 shadow-button-base",
+          "p-5 border",
+          // dark: variant is required — the Card shell's base `dark:bg-card`
+          // otherwise overrides an un-prefixed tint in dark mode.
           agreed
-            ? "border-emerald-500/30 bg-emerald-500/5"
-            : "border-primary/30 bg-primary/5"
+            ? "border-emerald-500/30 bg-emerald-500/5 dark:bg-emerald-500/5"
+            : "border-primary/30 bg-primary/5 dark:bg-primary/5"
         )}
       >
         {agreed ? (
@@ -160,7 +162,7 @@ export function ScopeView() {
             </Button>
           </div>
         )}
-      </section>
+      </Card>
     </div>
   );
 }

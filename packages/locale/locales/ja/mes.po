@@ -483,6 +483,9 @@ msgstr "アイテムを検査"
 msgid "inspected"
 msgstr "検査済み"
 
+msgid "Instructions"
+msgstr "作業手順"
+
 msgid "Insufficient quantity"
 msgstr "数量が不足しています"
 

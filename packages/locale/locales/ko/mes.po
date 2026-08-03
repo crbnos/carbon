@@ -483,6 +483,9 @@ msgstr "항목 검사"
 msgid "inspected"
 msgstr "검사됨"
 
+msgid "Instructions"
+msgstr "작업 지침"
+
 msgid "Insufficient quantity"
 msgstr "수량 부족"
 

@@ -483,6 +483,9 @@ msgstr "आइटम का निरीक्षण करें"
 msgid "inspected"
 msgstr "निरीक्षण किया गया"
 
+msgid "Instructions"
+msgstr "निर्देश"
+
 msgid "Insufficient quantity"
 msgstr "अपर्याप्त मात्रा"
 

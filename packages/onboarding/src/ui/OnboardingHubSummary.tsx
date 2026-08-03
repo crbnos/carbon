@@ -1,4 +1,4 @@
-import { cn, IconButton } from "@carbon/react";
+import { Card, cn, IconButton } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
 import { LuX } from "react-icons/lu";
@@ -28,7 +28,7 @@ export function OnboardingHubSummary({
   const { t } = useLingui();
   const pct = total > 0 ? Math.round((done / total) * 100) : 0;
   return (
-    <div className="relative rounded-lg border bg-gradient-to-bl from-card from-50% to-background shadow-button-base p-6 pr-12 flex items-center gap-5 mb-6">
+    <Card className="relative flex-row items-center gap-5 p-6 pr-12 mb-6 bg-gradient-to-bl from-card from-50% to-background">
       <div className="shrink-0 size-12 rounded-xl border flex items-center justify-center">
         <img
           src="/carbon-mark-light.svg"
@@ -75,6 +75,6 @@ export function OnboardingHubSummary({
           className="absolute top-2 right-2 text-muted-foreground"
         />
       ) : null}
-    </div>
+    </Card>
   );
 }

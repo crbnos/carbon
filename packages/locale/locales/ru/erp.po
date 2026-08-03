@@ -128,6 +128,9 @@ msgstr "{from}–{to} из {count}"
 msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
 msgstr "{inserted} вставлено, {updated} обновлено, {0} требуют исправления, {1} пропущено."
 
+msgid "{linesCount, plural, one {# line} other {# lines}}"
+msgstr "{linesCount, plural, one {# строка} other {# строк}}"
+
 msgid "{maxSizeMB}MB limit"
 msgstr "{maxSizeMB}МБ максимум"
 
@@ -145,6 +148,9 @@ msgstr "{total} этапов, чтобы ваша компания начала 
 
 msgid "{total} phases to go live"
 msgstr "{total} этапов до запуска"
+
+msgid "{totalQuantity, plural, one {# unit} other {# units}}"
+msgstr "{totalQuantity, plural, one {# единица} other {# единиц}}"
 
 msgid "{uncounted, plural, one {# uncounted line} other {# uncounted lines}}"
 msgstr "{uncounted, plural, one {# непосчитанная строка} other {# непосчитанные строки}}"
@@ -1071,6 +1077,9 @@ msgstr "Добавить шаг"
 
 msgid "Add steps to preview the operator view."
 msgstr "Добавьте шаги для предварительного просмотра представления оператора."
+
+msgid "Add Stock Transfer"
+msgstr "Добавить передачу запасов"
 
 msgid "Add Supplier"
 msgstr "Добавить поставщика"
@@ -2720,6 +2729,9 @@ msgstr "Выберите номер партии"
 msgid "Choose a company"
 msgstr "Выберите компанию"
 
+msgid "Choose a row on the left to see where its stock can come from."
+msgstr "Выберите строку слева, чтобы увидеть, откуда может поступить её запас."
+
 msgid "Choose a serial number"
 msgstr "Выберите серийный номер"
 
@@ -3626,6 +3638,9 @@ msgstr "Создать редакцию"
 
 msgid "Create Rule"
 msgstr "Создать правило"
+
+msgid "Create Transfer"
+msgstr "Создать передачу"
 
 msgid "Create User"
 msgstr "Создать пользователя"
@@ -5583,9 +5598,6 @@ msgstr "Введите количество от 1 до {0}."
 msgid "Enter and approve vendor bills against a PO (three-way match)"
 msgstr "Ввести и утвердить счета поставщиков по сравнению с ПО (трёхсторонняя сверка)"
 
-msgid "Enter or scan serial number"
-msgstr "Введите или отсканируйте серийный номер"
-
 msgid "Enter PO number"
 msgstr "Введите номер ПО"
 
@@ -5609,9 +5621,6 @@ msgstr "Сущности для разделения"
 
 msgid "Entity"
 msgstr "Сущность"
-
-msgid "Entity is {status}"
-msgstr "Сущность имеет статус {status}"
 
 msgid "Entity Type"
 msgstr "Тип Сущности"
@@ -5696,9 +5705,6 @@ msgstr "Ошибка при удалении модели из строки сч
 
 msgid "Error removing model from sales order line"
 msgstr "Ошибка при удалении модели из строки заказа на продажу"
-
-msgid "Error validating serial number"
-msgstr "Ошибка при проверке серийного номера"
 
 msgid "Escalate to the project leads"
 msgstr "Передайте проблему руководителям проекта"
@@ -7201,6 +7207,9 @@ msgstr "Отчет о прибылях и убытках"
 msgid "Income/Balance"
 msgstr "Доход/Баланс"
 
+msgid "incoming"
+msgstr "входящий"
+
 msgid "Incoming"
 msgstr "Входящие"
 
@@ -7585,9 +7594,6 @@ msgstr "элемент"
 msgid "Item"
 msgstr "Товар"
 
-msgid "Item {scannedItem} is not the same as the item {expectedItem}"
-msgstr "Товар {scannedItem} не совпадает с товаром {expectedItem}"
-
 msgid "Item / Location"
 msgstr "Товар / Местоположение"
 
@@ -7629,6 +7635,9 @@ msgstr "Товар должен соответствовать выбранно�
 
 msgid "Item must match a selected type OR a selected group"
 msgstr "Товар должен соответствовать выбранному типу ИЛИ выбранной группе"
+
+msgid "Item Name"
+msgstr "Название позиции"
 
 msgid "Item Scope"
 msgstr "Область применения товара"
@@ -9286,11 +9295,16 @@ msgstr "Типы проблем не настроены"
 msgid "No items"
 msgstr "Нет позиций"
 
+msgid "No items have inventory activity here yet."
+msgstr "Здесь еще нет активности с товарами."
+
 msgid "No lines to map"
 msgstr "Нет строк для сопоставления"
 
 msgid "No list variables available upstream."
 msgstr ""
+msgid "No lines yet"
+msgstr "Нет строк"
 
 msgid "No locations found."
 msgstr "Локации не найдены."
@@ -9336,6 +9350,9 @@ msgstr "Опция не найдена."
 
 msgid "No options found."
 msgstr "Нет доступных вариантов."
+
+msgid "No other bins hold this item"
+msgstr "Нет других контейнеров с этим товаром"
 
 msgid "No other employees found. Add employees to enable ownership transfer."
 msgstr "Других сотрудников не найдено. Добавьте сотрудников, чтобы включить передачу прав собственности."
@@ -9421,8 +9438,14 @@ msgstr "Сортировка не применена к этому предст�
 msgid "No stock"
 msgstr "Нет запасов"
 
+msgid "No stock at this location"
+msgstr "Нет запасов в этом месте"
+
 msgid "No stockout projected in the next 48 weeks"
 msgstr "Отсутствие дефицита запасов не прогнозируется в течение следующих 48 недель"
+
+msgid "No storage unit"
+msgstr "Нет единицы хранения"
 
 msgid "No suppliers yet"
 msgstr "Поставщиков еще нет"
@@ -9537,6 +9560,8 @@ msgstr "Примечания (опционально)"
 
 msgid "Nothing"
 msgstr ""
+msgid "Nothing else at this location has stock to pull from."
+msgstr "На этом месте больше нечего извлекать из запаса."
 
 msgid "Nothing in the archive"
 msgstr "Ничего в архиве"
@@ -9600,6 +9625,8 @@ msgstr ""
 
 msgid "On days"
 msgstr ""
+msgid "on hand"
+msgstr "в наличии"
 
 msgid "On hand"
 msgstr "На складе"
@@ -9738,6 +9765,9 @@ msgstr "Открыть в MES"
 
 msgid "Open Issues"
 msgstr "Открытые проблемы"
+
+msgid "Open job demand plus outstanding transfers out of this bin"
+msgstr "Открытый спрос на работы плюс незавершенные передачи из этого контейнера"
 
 msgid "Open jobs"
 msgstr "Открытые заказы"
@@ -10307,6 +10337,9 @@ msgstr "Список подбора"
 
 msgid "Pick Order"
 msgstr "Порядок комплектации"
+
+msgid "Pick the bin that needs stock, then pick the bins to pull it from."
+msgstr "Выберите контейнер, который нуждается в запасе, затем выберите контейнеры, из которых его извлечь."
 
 msgid "Pick tracked item"
 msgstr "Выбрать отслеживаемый товар"
@@ -11436,8 +11469,8 @@ msgstr "Удалить фильтры"
 msgid "Remove from Price List"
 msgstr "Удалить из прайс-листа"
 
-msgid "Remove item"
-msgstr "Удалить товар"
+msgid "Remove line"
+msgstr "Удалить строку"
 
 msgid "Remove order"
 msgstr "Удалить заказ"
@@ -11702,6 +11735,9 @@ msgstr "Отменить связанные записи в журнале"
 
 msgid "Reversed"
 msgstr "Сторнировано"
+
+msgid "Review"
+msgstr "Обзор"
 
 msgid "Review each item's changes, then confirm — releasing can't be undone."
 msgstr "Просмотрите изменения каждого элемента, затем подтвердите — выпуск нельзя отменить."
@@ -12065,6 +12101,12 @@ msgstr "Сканировать"
 msgid "Scan a label or search by item ID or tracking ID."
 msgstr "Отсканируйте этикетку или выполните поиск по ID товара или ID отслеживания."
 
+msgid "Scan or choose a batch number"
+msgstr "Отсканируйте или выберите номер партии"
+
+msgid "Scan or choose a serial number"
+msgstr "Отсканируйте или выберите серийный номер"
+
 msgid "Scan or enter tracked entity ID, serial, or batch"
 msgstr "Отсканируйте или введите ID отслеживаемого объекта, серийный номер или партию"
 
@@ -12076,9 +12118,6 @@ msgstr "Сканировать или искать..."
 
 msgid "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
 msgstr "Отсканируйте или выберите отслеживаемую сущность из этой партии, чтобы добавить её в качестве столбца образца, затем запишите её результат в сетку."
-
-msgid "Scan the tracking ID for this line"
-msgstr "Отсканируйте идентификатор отслеживания для этой строки"
 
 msgid "SCAR"
 msgstr "SCAR"
@@ -12191,6 +12230,9 @@ msgstr "Поиск полей..."
 msgid "Search for existing or create a new one"
 msgstr "Поиск существующей или создание новой"
 
+msgid "Search items or bins"
+msgstr "Поиск товаров или контейнеров"
+
 msgid "Search Job"
 msgstr "Поиск задания"
 
@@ -12241,6 +12283,9 @@ msgstr "Выберите исполнителя"
 
 msgid "Select a default approver"
 msgstr "Выберите утверждающего по умолчанию"
+
+msgid "Select a destination"
+msgstr "Выберите пункт назначения"
 
 msgid "Select a document"
 msgstr "Выберите документ"
@@ -12471,9 +12516,6 @@ msgstr "Товары с серийным номером требуют зака�
 
 msgid "Serial Number"
 msgstr "Серийный номер"
-
-msgid "Serial number not found"
-msgstr "Серийный номер не найден"
 
 msgid "Serial Number:"
 msgstr "Серийный номер:"
@@ -12790,6 +12832,10 @@ msgstr "Показать ID поставщиков"
 
 msgid "Show sync options"
 msgstr "Показать параметры синхронизации"
+
+#. placeholder {0}: data.length
+msgid "Showing {0} of {totalCount} — refine your search"
+msgstr "Показано {0} из {totalCount} — уточните поиск"
 
 msgid "Shown as a faint background behind every page of generated PDFs"
 msgstr "Отображается как бледный фон на каждой странице сгенерированных PDF-файлов"
@@ -14768,9 +14814,6 @@ msgstr "Отслеживаемая сущность"
 
 msgid "Tracked Entity"
 msgstr "Отслеживаемая сущность"
-
-msgid "Tracked entity already picked"
-msgstr "Отслеживаемая сущность уже выбрана"
 
 msgid "Tracked entity ID is required but none was found"
 msgstr "ID отслеживаемой сущности требуется, но ничего не найдено"

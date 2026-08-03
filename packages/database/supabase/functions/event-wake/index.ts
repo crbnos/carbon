@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.175.0/http/server.ts";
 
-import { corsHeaders } from "../lib/headers.ts";
+import { corsPreflight, errorResponse, jsonResponse } from "../lib/response.ts";
 import { sendInngestEvent } from "../lib/inngest.ts";
 import { getFunctionLogger } from "../lib/logging.ts";
 
@@ -13,24 +13,17 @@ const logger = getFunctionLogger("event-wake");
  * the queue itself is the source of truth; this is only a doorbell.
  */
 serve(async (req: Request) => {
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
-  }
+  const preflight = corsPreflight(req);
+  if (preflight) return preflight;
 
   try {
     await sendInngestEvent("carbon/event-queue.process", {});
 
-    return new Response(JSON.stringify({ success: true }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 200,
-    });
+    return jsonResponse({ success: true });
   } catch (err) {
     // A failed wake is harmless: the pg_cron sweeper re-fires while the
     // queue is non-empty.
     logger.error("Error in event-wake", { error: (err as Error).message });
-    return new Response(JSON.stringify({ error: (err as Error).message }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 500,
-    });
+    return errorResponse(err, 500);
   }
 });

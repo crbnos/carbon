@@ -35,7 +35,12 @@ import {
   LuSquareChartGantt
 } from "react-icons/lu";
 import { useFetcher } from "react-router";
-import { ItemThumbnail, MethodItemTypeIcon, Table } from "~/components";
+import {
+  exportOnlyColumn,
+  ItemThumbnail,
+  MethodItemTypeIcon,
+  Table
+} from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { useLocations } from "~/components/Form/Location";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
@@ -291,6 +296,11 @@ const ProductionPlanningTable = ({
           icon: <LuBookMarked />
         }
       },
+      exportOnlyColumn<ProductionPlanningItem>({
+        id: "itemName",
+        header: t`Item Name`,
+        value: (row) => row.name ?? null
+      }),
       {
         accessorKey: "unitOfMeasureCode",
         header: "",

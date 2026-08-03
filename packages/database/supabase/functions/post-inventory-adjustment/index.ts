@@ -3,7 +3,7 @@ import { serve } from "https://deno.land/std@0.175.0/http/server.ts";
 import { z } from "https://deno.land/x/zod@v3.21.4/mod.ts";
 import { Transaction } from "kysely";
 import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
-import { corsHeaders } from "../lib/headers.ts";
+import { corsPreflight, errorResponse, jsonResponse } from "../lib/response.ts";
 import { getFunctionLogger } from "../lib/logging.ts";
 import { requirePermissions } from "../lib/supabase.ts";
 import type { Json } from "../lib/types.ts";
@@ -47,9 +47,8 @@ const payloadValidator = z.object({
 class ValidationError extends Error {}
 
 serve(async (req: Request) => {
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
-  }
+  const preflight = corsPreflight(req);
+  if (preflight) return preflight;
 
   try {
     const payload = await req.json();
@@ -563,27 +562,15 @@ serve(async (req: Request) => {
       resultLedgerId = booked.itemLedgerId;
     });
 
-    return new Response(
-      JSON.stringify({
-        success: true,
-        itemLedger: resultLedgerId ? { id: resultLedgerId } : null,
-      }),
-      {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200,
-      }
-    );
+    return jsonResponse({
+      success: true,
+      itemLedger: resultLedgerId ? { id: resultLedgerId } : null,
+    });
   } catch (err) {
     logger.error("post-inventory-adjustment failed", {
       error: String((err as Error).stack ?? err),
     });
     const isValidationError = err instanceof ValidationError;
-    return new Response(
-      JSON.stringify({ message: (err as Error).message }),
-      {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: isValidationError ? 400 : 500,
-      }
-    );
+    return errorResponse(err, isValidationError ? 400 : 500);
   }
 });

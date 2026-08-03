@@ -1,38 +1,7 @@
-import type { Kysely, KyselyDatabase, KyselyTx } from "@carbon/database/client";
+import type { Kysely, KyselyDatabase } from "@carbon/database/client";
+import { getNextSequence } from "@carbon/database/sequence";
 import { toStoredAmount } from "@carbon/utils";
-import { sql } from "kysely";
-import { interpolateSequenceDate } from "~/utils/string";
 import { acquisitionLines } from "./accounting.utils";
-
-async function getNextSequence(
-  trx: KyselyTx,
-  tableName: string,
-  companyId: string
-) {
-  // Atomic increment: the UPDATE takes the row lock before reading, so two
-  // concurrent transactions can't both read the same "next" and return the
-  // same sequence number.
-  const sequence = await trx
-    .updateTable("sequence")
-    .set({
-      next: sql<number>`"next" + "step"`,
-      updatedBy: "system"
-    })
-    .where("table", "=", tableName)
-    .where("companyId", "=", companyId)
-    .returning(["next", "prefix", "suffix", "size"])
-    .executeTakeFirstOrThrow();
-
-  const { prefix, suffix, next, size } = sequence;
-  if (!Number.isInteger(next)) throw new Error("Next is not an integer");
-  if (!Number.isInteger(size)) throw new Error("Size is not an integer");
-
-  const nextSequence = next!.toString().padStart(size!, "0");
-  const derivedPrefix = interpolateSequenceDate(prefix);
-  const derivedSuffix = interpolateSequenceDate(suffix);
-
-  return `${derivedPrefix}${nextSequence}${derivedSuffix}`;
-}
 
 export async function postDisposal(
   db: Kysely<KyselyDatabase>,
