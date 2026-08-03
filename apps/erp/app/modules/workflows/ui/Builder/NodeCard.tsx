@@ -1,27 +1,11 @@
-import { Badge, cn } from "@carbon/react";
+import { cn } from "@carbon/react";
 import { Handle, Position, useUpdateNodeInternals } from "@xyflow/react";
 import type { ReactNode } from "react";
 import { useEffect, useRef } from "react";
+import { LuTriangleAlert } from "react-icons/lu";
+import { HANDLE_CLASS } from "./handles";
+import { OutputHandle } from "./OutputHandle";
 import type { BuilderPort } from "./ports";
-
-export type PortTone = "default" | "success" | "failure";
-
-const HANDLE_BASE =
-  "!size-3.5 !min-w-0 !min-h-0 !rounded-full !border-2 !border-card !transition-shadow";
-
-const HANDLE_TONE: Record<PortTone, string> = {
-  default: "!bg-primary hover:!shadow-[0_0_0_5px_hsl(var(--primary)/0.22)]",
-  success:
-    "!bg-emerald-500 hover:!shadow-[0_0_0_5px_rgb(16_185_129/0.3)] dark:!bg-emerald-400",
-  failure:
-    "!bg-red-500 hover:!shadow-[0_0_0_5px_rgb(239_68_68/0.3)] dark:!bg-red-400"
-};
-
-export function handleClass(tone: PortTone = "default"): string {
-  return `${HANDLE_BASE} ${HANDLE_TONE[tone]}`;
-}
-
-export const HANDLE_CLASS = handleClass();
 
 // Type scale for the config form, so no form restates its own sizes. Controls are all
 // `text-sm`: the variable editor cannot shrink below its chip's line box.
@@ -61,7 +45,8 @@ type NodeCardProps = {
   icon: ReactNode;
   ports: BuilderPort[];
   hasTarget?: boolean;
-  issueCount?: number;
+  /** Already filtered by the caller — a card shows only the problems worth acting on. */
+  issues?: string[];
   isSelected?: boolean;
   isExpanded?: boolean;
   width?: number;
@@ -77,7 +62,7 @@ export function NodeCard({
   icon,
   ports,
   hasTarget = true,
-  issueCount = 0,
+  issues = [],
   isSelected = false,
   isExpanded = true,
   width = 440,
@@ -85,7 +70,9 @@ export function NodeCard({
   actions,
   children
 }: NodeCardProps) {
-  const hasIssues = issueCount > 0;
+  // Two checks can word the same complaint; one line per distinct message.
+  const messages = Array.from(new Set(issues));
+  const hasIssues = messages.length > 0;
   const bodyRef = useBodyDragFilter();
 
   // An `inline` port is drawn by the form, so the card only owns it when the form
@@ -104,6 +91,8 @@ export function NodeCard({
     updateNodeInternals(nodeId);
   }, [nodeId, portKey, isExpanded, updateNodeInternals]);
 
+  // One width in both states: a card that narrowed on collapse would drag every
+  // edge attached to it sideways, and the canvas would appear to reflow itself.
   return (
     <div
       className={cn(
@@ -111,7 +100,7 @@ export function NodeCard({
         isSelected && "border-primary ring-2 ring-primary/20",
         hasIssues && "border-destructive ring-2 ring-destructive/20"
       )}
-      style={{ width: isExpanded ? width : 260 }}
+      style={{ width }}
     >
       {hasTarget && (
         <Handle
@@ -123,14 +112,8 @@ export function NodeCard({
       )}
 
       {cardPorts.length === 1 && (
-        <Handle
-          type="source"
-          position={Position.Right}
-          id={cardPorts[0].id}
-          title={cardPorts[0].label}
-          aria-label={cardPorts[0].label}
-          className={handleClass(cardPorts[0].tone)}
-        />
+        // A lone handle needs no label — there is nothing to tell it apart from.
+        <OutputHandle nodeId={nodeId} port={cardPorts[0]} showLabel={false} />
       )}
 
       <div className="flex items-start gap-2 p-2.5">
@@ -150,40 +133,60 @@ export function NodeCard({
                   {description}
                 </div>
               )}
-          {hasIssues && (
-            <Badge variant="destructive" className="mt-1">
-              {issueCount === 1 ? "1 problem" : `${issueCount} problems`}
-            </Badge>
-          )}
         </div>
         {actions && <div className="shrink-0">{actions}</div>}
       </div>
 
-      {/* `overflow-hidden`: the card has a fixed width, so anything that cannot shrink
-          must be clipped rather than drawn over the canvas. */}
+      {/* Never clip: the condition form draws its own handles, and they straddle the
+          card's right border. Every control inside is `min-w-0` instead. */}
       {isExpanded && children && (
-        <div
-          ref={bodyRef}
-          className={cn("overflow-hidden border-t px-2.5 py-2", BODY_TYPE)}
-        >
+        <div ref={bodyRef} className={cn("border-t px-2.5 py-2", BODY_TYPE)}>
           {children}
+        </div>
+      )}
+
+      {/* Below the form, so the last thing read is what to fix. Shown collapsed
+          too — a red border with no reason is worse than no border. */}
+      {hasIssues && (
+        <div className="rounded-b-lg border-t border-destructive/40 bg-destructive/5 px-2.5 py-1.5">
+          {messages.map((message) => (
+            <p
+              key={message}
+              className="flex items-start gap-1 text-[10.5px] leading-snug text-destructive"
+            >
+              <LuTriangleAlert className="mt-[1px] size-3 shrink-0" />
+              <span>{message}</span>
+            </p>
+          ))}
         </div>
       )}
 
       {cardPorts.length > 1 && (
         // Handles straddle the card's midline instead of trailing the body, so a
-        // tall form never pushes them to the bottom.
-        <div className="pointer-events-none absolute inset-y-0 right-0 flex flex-col justify-center gap-6">
-          {cardPorts.map((port) => (
+        // tall form never pushes them to the bottom. Collapsed, the gap closes and
+        // every handle stacks on the midline, reading as a single dot — that is
+        // what lets a many-path card (condition) collapse at all.
+        <div
+          className={cn(
+            "pointer-events-none absolute inset-y-0 right-0 flex flex-col justify-center",
+            isExpanded ? "gap-12" : "gap-0"
+          )}
+        >
+          {cardPorts.map((port, index) => (
             // Zero-width row: the Handle's own `right: -4px` lands it on the border.
-            <div key={port.id} className="pointer-events-auto relative">
-              <Handle
-                type="source"
-                position={Position.Right}
-                id={port.id}
-                title={port.label}
-                aria-label={port.label}
-                className={handleClass(port.tone)}
+            // Descending z-index so the stack collapses onto the FIRST port, not the
+            // last — otherwise a collapsed action card hands its clicks to "Failure".
+            <div
+              key={port.id}
+              className="pointer-events-auto relative"
+              style={{ zIndex: cardPorts.length - index }}
+            >
+              {/* Stacked labels would smear into each other; `title`/`aria-label`
+                  on the handle still name every port. */}
+              <OutputHandle
+                nodeId={nodeId}
+                port={port}
+                showLabel={isExpanded}
               />
             </div>
           ))}

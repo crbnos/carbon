@@ -1354,6 +1354,9 @@ msgstr "AND"
 msgid "And {0} more — resolve these to see the rest."
 msgstr "And {0} more — resolve these to see the rest."
 
+msgid "and {hidden} more"
+msgstr "and {hidden} more"
+
 msgid "and {remaining} more"
 msgstr "and {remaining} more"
 
@@ -2138,6 +2141,10 @@ msgstr "Available"
 
 msgid "Available Actions (click to add)"
 msgstr "Available Actions (click to add)"
+
+#. placeholder {0}: port.label
+msgid "Available after {0}"
+msgstr "Available after {0}"
 
 msgid "Avatar url"
 msgstr "Avatar url"
@@ -9586,6 +9593,9 @@ msgstr "Nothing else at this location has stock to pull from."
 msgid "Nothing in the archive"
 msgstr "Nothing in the archive"
 
+msgid "Nothing yet. A step only offers values once it is configured."
+msgstr "Nothing yet. A step only offers values once it is configured."
+
 msgid "Notification"
 msgstr "Notification"
 
@@ -10184,9 +10194,6 @@ msgstr "Passed"
 
 msgid "Path"
 msgstr "Path"
-
-msgid "Path {position}"
-msgstr "Path {position}"
 
 msgid "Pay Rate"
 msgstr "Pay Rate"
@@ -14521,6 +14528,9 @@ msgstr "This part is obsolete (No Stock)."
 
 msgid "This part is superseded and set to Stock Only — it's replenished to its spares reserve floor, independent of demand."
 msgstr "This part is superseded and set to Stock Only — it's replenished to its spares reserve floor, independent of demand."
+
+msgid "This path only decides what runs next"
+msgstr "This path only decides what runs next"
 
 msgid "This period has no journal entries posted to it and can be permanently deleted. This cannot be undone."
 msgstr "This period has no journal entries posted to it and can be permanently deleted. This cannot be undone."

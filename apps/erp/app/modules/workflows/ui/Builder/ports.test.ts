@@ -3,7 +3,7 @@ import { getNodeHandles, NODE_KINDS } from "@carbon/workflows";
 import type { MessageDescriptor } from "@lingui/core";
 import { describe, expect, it, vi } from "vitest";
 import { createNode } from "./graph";
-import { conditionPathLabel, conditionPortLabel, portsFor } from "./ports";
+import { conditionPathLabel, portsFor } from "./ports";
 
 // `msg` is a compile-time macro and plain vitest doesn't transform it, so the raw
 // export throws on access. Stub it to the interpolated source string.
@@ -69,16 +69,12 @@ describe("conditionPathLabel", () => {
     );
   });
 
-  it("labels ports by position, not by kind", () => {
+  it("labels ports with the same words as the path pill", () => {
     const node = createNode("condition", { x: 0, y: 0 });
     if (node.type !== "condition") throw new Error("wrong kind");
     for (const port of portsFor(node, t)) {
-      expect(port.label).toBe(conditionPortLabel(node.data.paths, port.id, t));
+      expect(port.label).toBe(conditionPathLabel(node.data.paths, port.id, t));
     }
-    const [ifPath, elsePath] = node.data.paths;
-    expect(conditionPortLabel(node.data.paths, ifPath.id, t)).toBe("Path 0");
-    expect(conditionPortLabel(node.data.paths, elsePath.id, t)).toBe(
-      "Otherwise"
-    );
+    expect(portsFor(node, t).map((p) => p.label)).toEqual(["If", "Otherwise"]);
   });
 });

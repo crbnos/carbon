@@ -1,5 +1,9 @@
 import type { AvailableVariable, WorkflowDefinition } from "@carbon/workflows";
-import { availableVariables } from "@carbon/workflows";
+import {
+  availableVariables,
+  createContext,
+  variablesFromHandle
+} from "@carbon/workflows";
 import { useCallback, useMemo } from "react";
 import { catalog } from "./catalog";
 import { useBuilderStoreApi, useBuilderStoreShallow } from "./context";
@@ -31,4 +35,30 @@ export function useVariablesGetter(nodeId: string): () => AvailableVariable[] {
     const { nodes, edges } = store.getState();
     return availableVariables(fromReactFlow(nodes, edges), nodeId, catalog);
   }, [store, nodeId]);
+}
+
+export type HandlePreview = {
+  variables: AvailableVariable[];
+  /** The node adds nothing of its own — it only routes what reaches it. */
+  routesOnly: boolean;
+};
+
+/** What a node wired to this handle would see. On demand for the same reason. */
+export function useHandlePreviewGetter(
+  nodeId: string,
+  handleId: string
+): () => HandlePreview {
+  const store = useBuilderStoreApi();
+  return useCallback(() => {
+    const { nodes, edges } = store.getState();
+    const definition = fromReactFlow(nodes, edges);
+    // Defined-but-empty means "routes only"; undefined means "not configured yet".
+    const outputs = createContext(definition, catalog).context.outputsOf(
+      nodeId
+    );
+    return {
+      variables: variablesFromHandle(definition, nodeId, handleId, catalog),
+      routesOnly: outputs !== undefined && Object.keys(outputs).length === 0
+    };
+  }, [store, nodeId, handleId]);
 }

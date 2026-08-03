@@ -19,8 +19,8 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { nanoid } from "nanoid";
 import { LuGripVertical, LuInfo, LuPlus, LuX } from "react-icons/lu";
 import { useBuilderStore } from "../../context";
-import { PortAnchor } from "../../PortAnchor";
-import { conditionPathLabel, conditionPortLabel } from "../../ports";
+import { OutputHandle } from "../../OutputHandle";
+import { conditionPathLabel } from "../../ports";
 import ClauseRow from "../ClauseRow";
 import { CombinatorToggle } from "../CombinatorToggle";
 import { FormStack } from "../layout";
@@ -264,9 +264,16 @@ export function ConditionForm({ node, issues }: NodeFormProps<"condition">) {
                 )}
               </div>
             </div>
-            <PortAnchor
-              id={path.id}
-              label={conditionPortLabel(paths, path.id, t)}
+            {/* Centres on the whole block because the wrapper above is `relative`
+                and full-bleed, so the handle lands on the card's border. */}
+            <OutputHandle
+              nodeId={node.id}
+              port={{
+                id: path.id,
+                label: kindLabel,
+                tone: "default",
+                anchor: "inline"
+              }}
             />
 
             <div className="rounded-md border border-border bg-muted/30 p-2.5">

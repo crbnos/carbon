@@ -13,11 +13,10 @@ import type { FieldContext } from "../fields/types";
 import { ValueField } from "../fields/ValueField";
 import { issueForField } from "../issues";
 
-// Property on its own line, operator and value beneath. Three across left ~145px a cell
-// in a 540px card — too narrow for a variable chip, and why the text used to overlap.
-export const CLAUSE_GRID_CLASS = "flex w-full min-w-0 flex-col gap-2";
-const CLAUSE_SECOND_ROW_CLASS =
-  "grid w-full min-w-0 grid-cols-[minmax(0,auto)_minmax(0,1fr)] items-start gap-2";
+// One row: property, operator, value. `minmax(0,…)` on every track so a long variable
+// chip shrinks its own cell instead of stretching the grid past the card.
+export const CLAUSE_GRID_CLASS =
+  "grid w-full min-w-0 grid-cols-[minmax(0,1fr)_minmax(0,8.5rem)_minmax(0,1fr)] items-start gap-2";
 
 function pickDefaultOp(ops: readonly Operator[]): Operator {
   return ops.includes("eq") ? "eq" : (ops[0] ?? "eq");
@@ -134,7 +133,6 @@ function ClauseRowImpl({
           block, and a box per row reads as three nested frames. */}
       <div className="min-w-0 flex-1">
         <div className={CLAUSE_GRID_CLASS}>
-          {/* Left side */}
           {leftMode === "column" ? (
             <Field label={t`Property`} hideLabel={hideLabel}>
               <Combobox
@@ -189,45 +187,43 @@ function ClauseRowImpl({
             />
           )}
 
-          <div className={CLAUSE_SECOND_ROW_CLASS}>
-            <Field label={t`Operator`} hideLabel={hideLabel}>
-              <OperatorCombobox
-                value={clause.operator}
-                onChange={(op: Operator) =>
-                  onChange(index, {
-                    operator: op as Clause["operator"],
-                    right: undefined
-                  })
-                }
-                available={Array.from(availableOps)}
-                disabled={!leftType}
-              />
-            </Field>
+          <Field label={t`Operator`} hideLabel={hideLabel}>
+            <OperatorCombobox
+              value={clause.operator}
+              onChange={(op: Operator) =>
+                onChange(index, {
+                  operator: op as Clause["operator"],
+                  right: undefined
+                })
+              }
+              available={Array.from(availableOps)}
+              disabled={!leftType}
+            />
+          </Field>
 
-            {leftType ? (
-              <ValueField
-                label={t`Value`}
-                hideLabel={hideLabel}
-                placeholder={t`Type '{' for a variable`}
-                type={leftType}
-                choices={rightChoices}
-                value={clause.right}
-                onChange={(next) => onChange(index, { right: next })}
-                context={context}
-                issue={issueForField(
-                  issues,
-                  `${fieldPath}.right`,
-                  `${fieldPath}.value`
-                )}
-              />
-            ) : (
-              <Field label={t`Value`} hideLabel={hideLabel}>
-                <div className="flex h-9 items-center rounded-md border border-dashed border-border px-3 text-xs text-muted-foreground">
-                  {t`Pick a property first`}
-                </div>
-              </Field>
-            )}
-          </div>
+          {leftType ? (
+            <ValueField
+              label={t`Value`}
+              hideLabel={hideLabel}
+              placeholder={t`Type '{' for a variable`}
+              type={leftType}
+              choices={rightChoices}
+              value={clause.right}
+              onChange={(next) => onChange(index, { right: next })}
+              context={context}
+              issue={issueForField(
+                issues,
+                `${fieldPath}.right`,
+                `${fieldPath}.value`
+              )}
+            />
+          ) : (
+            <Field label={t`Value`} hideLabel={hideLabel}>
+              <div className="flex h-9 items-center rounded-md border border-dashed border-border px-3 text-xs text-muted-foreground">
+                {t`Pick a property first`}
+              </div>
+            </Field>
+          )}
         </div>
       </div>
 

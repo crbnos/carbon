@@ -1354,6 +1354,9 @@ msgstr "I"
 msgid "And {0} more — resolve these to see the rest."
 msgstr "I {0} więcej — rozwiąż te, aby zobaczyć resztę."
 
+msgid "and {hidden} more"
+msgstr ""
+
 msgid "and {remaining} more"
 msgstr "i {remaining} więcej"
 
@@ -2138,6 +2141,10 @@ msgstr "Dostępne"
 
 msgid "Available Actions (click to add)"
 msgstr "Dostępne akcje (kliknij, aby dodać)"
+
+#. placeholder {0}: port.label
+msgid "Available after {0}"
+msgstr ""
 
 msgid "Avatar url"
 msgstr ""
@@ -9586,6 +9593,9 @@ msgstr "W tym miejscu nic innego nie ma zapasów do pobrania."
 msgid "Nothing in the archive"
 msgstr "Nic w archiwum"
 
+msgid "Nothing yet. A step only offers values once it is configured."
+msgstr ""
+
 msgid "Notification"
 msgstr "Powiadomienie"
 
@@ -10184,9 +10194,6 @@ msgstr "Zaliczone"
 
 msgid "Path"
 msgstr "Ścieżka"
-
-msgid "Path {position}"
-msgstr ""
 
 msgid "Pay Rate"
 msgstr "Kurs płatności"
@@ -14521,6 +14528,9 @@ msgstr "Ta część jest przestarzała (Brak zapasu)."
 
 msgid "This part is superseded and set to Stock Only — it's replenished to its spares reserve floor, independent of demand."
 msgstr "Ta część jest zastąpiona i ustawiona na Stock Only — jest uzupełniana do poziomu rezerwy części zamiennych, niezależnie od popytu."
+
+msgid "This path only decides what runs next"
+msgstr ""
 
 msgid "This period has no journal entries posted to it and can be permanently deleted. This cannot be undone."
 msgstr "Ten okres nie ma żadnych wpisów w dzienniku i może być trwale usunięty. Tej operacji nie można cofnąć."

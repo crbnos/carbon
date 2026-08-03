@@ -1354,6 +1354,9 @@ msgstr "VE"
 msgid "And {0} more — resolve these to see the rest."
 msgstr "Ve {0} tane daha — bunları çözmek için geri kalanını görmek için."
 
+msgid "and {hidden} more"
+msgstr ""
+
 msgid "and {remaining} more"
 msgstr "ve daha fazla"
 
@@ -2138,6 +2141,10 @@ msgstr "Mevcut"
 
 msgid "Available Actions (click to add)"
 msgstr "Mevcut işlemler (eklemek için tıklayın)"
+
+#. placeholder {0}: port.label
+msgid "Available after {0}"
+msgstr ""
 
 msgid "Avatar url"
 msgstr ""
@@ -9586,6 +9593,9 @@ msgstr "Bu konumda çekilecek başka hiçbir stok yok."
 msgid "Nothing in the archive"
 msgstr "Arşivde hiçbir şey yok"
 
+msgid "Nothing yet. A step only offers values once it is configured."
+msgstr ""
+
 msgid "Notification"
 msgstr "Bildirim"
 
@@ -10184,9 +10194,6 @@ msgstr "Geçti"
 
 msgid "Path"
 msgstr "Yol"
-
-msgid "Path {position}"
-msgstr ""
 
 msgid "Pay Rate"
 msgstr "Ödeme Oranı"
@@ -14521,6 +14528,9 @@ msgstr "Bu parça kullanımdan kaldırılmıştır (Stok Yok)."
 
 msgid "This part is superseded and set to Stock Only — it's replenished to its spares reserve floor, independent of demand."
 msgstr "Bu parça kullanımdan kaldırılmış ve Yalnızca Stok olarak ayarlanmıştır — talep bağımsız olarak yedek rezerv tabanına kadar yenilenir."
+
+msgid "This path only decides what runs next"
+msgstr ""
 
 msgid "This period has no journal entries posted to it and can be permanently deleted. This cannot be undone."
 msgstr "Bu döneme nakledilen günlük girişi yoktur ve kalıcı olarak silinebilir. Bu geri alınamaz."

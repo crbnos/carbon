@@ -25,10 +25,11 @@ import { NodeCard } from "../NodeCard";
 import { portsFor } from "../ports";
 import {
   selectHasEdgeFrom,
+  selectIsConnected,
   selectNode,
   selectTriggerCount
 } from "../selectors";
-import { NODE_CAN_COLLAPSE, NODE_CARD_WIDTH } from "./kinds";
+import { NODE_CARD_WIDTH } from "./kinds";
 import { NODE_KIND_META } from "./meta";
 
 // Every node kind renders through this one component; what differs between kinds
@@ -40,13 +41,17 @@ function WorkflowNodeCardImpl({ id, type, data, selected }: NodeProps) {
 
   const store = useBuilderStoreApi();
   const builderNode = useBuilderStore(selectNode(id));
-  const canCollapse = NODE_CAN_COLLAPSE[node.type];
-  const isExpanded = canCollapse ? (builderNode?.expanded ?? true) : true;
+  const isExpanded = builderNode?.expanded ?? true;
 
   const nodeIssues = useBuilderStoreShallow((state) =>
     state.issues.filter((issue) => issue.nodeId === id)
   );
-  const issueCount = nodeIssues.length;
+
+  // A node wired to nothing is a draft the user parked on the canvas, not a broken
+  // step — the run can't reach it, so flagging it would only be noise. The forms
+  // still show their own field errors; this governs the card's border and footer.
+  const isConnected = useBuilderStore(selectIsConnected(id));
+  const cardIssues = isConnected ? nodeIssues : [];
 
   const isReadOnly = useBuilderStore((state) => state.isReadOnly);
   const renameNode = useBuilderStore((state) => state.renameNode);
@@ -104,18 +109,16 @@ function WorkflowNodeCardImpl({ id, type, data, selected }: NodeProps) {
   const actionsSlot =
     !isReadOnly && builderNode ? (
       <div className="nodrag nopan flex shrink-0 items-center gap-0.5">
-        {canCollapse && (
-          <IconButton
-            aria-label={isExpanded ? t`Collapse` : t`Expand`}
-            icon={isExpanded ? <LuMinimize2 /> : <LuMaximize2 />}
-            variant="ghost"
-            size="sm"
-            onClick={(e) => {
-              e.stopPropagation();
-              setNodeExpanded(id, !isExpanded);
-            }}
-          />
-        )}
+        <IconButton
+          aria-label={isExpanded ? t`Collapse` : t`Expand`}
+          icon={isExpanded ? <LuMinimize2 /> : <LuMaximize2 />}
+          variant="ghost"
+          size="sm"
+          onClick={(e) => {
+            e.stopPropagation();
+            setNodeExpanded(id, !isExpanded);
+          }}
+        />
         {canDelete && (
           <IconButton
             aria-label={armed ? t`Confirm delete` : t`Delete step`}
@@ -144,7 +147,7 @@ function WorkflowNodeCardImpl({ id, type, data, selected }: NodeProps) {
         icon={<meta.Icon className="size-3.5" />}
         ports={ports}
         hasTarget={meta.hasTarget}
-        issueCount={issueCount}
+        issues={cardIssues.map((issue) => issue.message)}
         isSelected={!!selected}
         isExpanded={isExpanded}
         width={NODE_CARD_WIDTH[node.type]}

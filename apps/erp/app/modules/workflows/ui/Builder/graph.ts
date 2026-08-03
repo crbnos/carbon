@@ -125,7 +125,7 @@ export function createNode(
         type,
         position,
         expanded: true,
-        data: { events: [], origin: "Both" }
+        data: { events: [], origin: "Person" }
       };
     case "condition":
       // A condition's output handles ARE its paths — seeding two keeps it wireable.

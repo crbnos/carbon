@@ -1354,6 +1354,9 @@ msgstr "И"
 msgid "And {0} more — resolve these to see the rest."
 msgstr "И {0} ещё — разрешите эти, чтобы увидеть остальное."
 
+msgid "and {hidden} more"
+msgstr ""
+
 msgid "and {remaining} more"
 msgstr "и ещё {remaining}"
 
@@ -2138,6 +2141,10 @@ msgstr "Доступно"
 
 msgid "Available Actions (click to add)"
 msgstr "Доступные действия (нажмите, чтобы добавить)"
+
+#. placeholder {0}: port.label
+msgid "Available after {0}"
+msgstr ""
 
 msgid "Avatar url"
 msgstr ""
@@ -9586,6 +9593,9 @@ msgstr "На этом месте больше нечего извлекать и
 msgid "Nothing in the archive"
 msgstr "Ничего в архиве"
 
+msgid "Nothing yet. A step only offers values once it is configured."
+msgstr ""
+
 msgid "Notification"
 msgstr "Уведомление"
 
@@ -10184,9 +10194,6 @@ msgstr "Пройдено"
 
 msgid "Path"
 msgstr "Путь"
-
-msgid "Path {position}"
-msgstr ""
 
 msgid "Pay Rate"
 msgstr "Курс платежа"
@@ -14521,6 +14528,9 @@ msgstr "Эта деталь снята с производства (нет в н
 
 msgid "This part is superseded and set to Stock Only — it's replenished to its spares reserve floor, independent of demand."
 msgstr "Эта деталь снята с производства и установлена в режим «Только запас» — она пополняется до минимального уровня резервного запаса независимо от спроса."
+
+msgid "This path only decides what runs next"
+msgstr ""
 
 msgid "This period has no journal entries posted to it and can be permanently deleted. This cannot be undone."
 msgstr "В этот период не размещены записи журнала, и он может быть окончательно удален. Это действие нельзя отменить."

@@ -1354,6 +1354,9 @@ msgstr "且"
 msgid "And {0} more — resolve these to see the rest."
 msgstr "还有 {0} 份 — 解决这些以查看其余部分。"
 
+msgid "and {hidden} more"
+msgstr ""
+
 msgid "and {remaining} more"
 msgstr "和 {remaining} 个更多"
 
@@ -2138,6 +2141,10 @@ msgstr "可用"
 
 msgid "Available Actions (click to add)"
 msgstr "可用的操作（点击添加）"
+
+#. placeholder {0}: port.label
+msgid "Available after {0}"
+msgstr ""
 
 msgid "Avatar url"
 msgstr ""
@@ -9586,6 +9593,9 @@ msgstr "此位置没有其他可提取的库存。"
 msgid "Nothing in the archive"
 msgstr "存档中没有任何内容"
 
+msgid "Nothing yet. A step only offers values once it is configured."
+msgstr ""
+
 msgid "Notification"
 msgstr "通知"
 
@@ -10184,9 +10194,6 @@ msgstr "已通过"
 
 msgid "Path"
 msgstr "路径"
-
-msgid "Path {position}"
-msgstr ""
 
 msgid "Pay Rate"
 msgstr "支付汇率"
@@ -14521,6 +14528,9 @@ msgstr "这个零件已过时（无库存）。"
 
 msgid "This part is superseded and set to Stock Only — it's replenished to its spares reserve floor, independent of demand."
 msgstr "此零件已被替代并设置为仅库存 — 它补充到其备件储备下限，与需求无关。"
+
+msgid "This path only decides what runs next"
+msgstr ""
 
 msgid "This period has no journal entries posted to it and can be permanently deleted. This cannot be undone."
 msgstr "此期间未过账任何日记账分录，可以永久删除。此操作无法撤销。"

@@ -28,7 +28,7 @@ export function FormStack({
 
 export function Section({ children }: { children: ReactNode }) {
   return (
-    <div className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+    <div className="text-[11px] font-semibold text-muted-foreground">
       {children}
     </div>
   );

@@ -7,7 +7,7 @@ import {
 } from "@carbon/workflows";
 import type { MessageDescriptor } from "@lingui/core";
 import { msg } from "@lingui/core/macro";
-import type { PortTone } from "./NodeCard";
+import type { PortTone } from "./handles";
 
 /** `card` handles float on the card's right edge; `inline` ones are drawn by the form. */
 export type PortAnchorKind = "card" | "inline";
@@ -35,8 +35,8 @@ function staticLabel(handle: string, t: Translate): string {
   return handle;
 }
 
-/** The pill in `ConditionForm`. The handle beside it is labelled by position instead
- * — see `conditionPortLabel` — so the two are deliberately different vocabularies. */
+/** Names a path the way the user wrote it. Both the pill in `ConditionForm` and the
+ * handle beside it use this — a visible handle label must not contradict the pill. */
 export function conditionPathLabel(
   paths: ConditionPath[],
   pathId: string,
@@ -48,19 +48,6 @@ export function conditionPathLabel(
   if (path.kind === "if") return t(msg`If`);
   const position = conditionPathIndex(paths, pathId);
   return t(msg`Else if ${position}`);
-}
-
-/** Handle label. Positional, because the handle sits outside the box that names the path. */
-export function conditionPortLabel(
-  paths: ConditionPath[],
-  pathId: string,
-  t: Translate
-): string {
-  const path = paths.find((candidate) => candidate.id === pathId);
-  if (!path) return pathId;
-  if (path.kind === "else") return t(msg`Otherwise`);
-  const position = conditionPathIndex(paths, pathId);
-  return t(msg`Path ${position}`);
 }
 
 /** Position among the non-else paths. Zero-based, matching the port order. */
@@ -80,7 +67,7 @@ export function portsFor(node: WorkflowNode, t: Translate): BuilderPort[] {
     if (node.type === "condition") {
       return {
         id: handle,
-        label: conditionPortLabel(node.data.paths, handle, t),
+        label: conditionPathLabel(node.data.paths, handle, t),
         tone: "default" as PortTone,
         anchor: "inline" as PortAnchorKind
       };

@@ -124,7 +124,11 @@ export type {
   AvailableVariable,
   DefinitionContext
 } from "./definition/variables";
-export { availableVariables, createContext } from "./definition/variables";
+export {
+  availableVariables,
+  createContext,
+  variablesFromHandle
+} from "./definition/variables";
 export type { RunTrigger } from "./run-trigger";
 export { runTriggerSchema } from "./run-trigger";
 export type {

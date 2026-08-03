@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { createFixtureCatalog } from "./catalog";
 import { type WorkflowDefinition, workflowDefinitionSchema } from "./schema";
-import { availableVariables } from "./variables";
+import { availableVariables, variablesFromHandle } from "./variables";
 
 const catalog = createFixtureCatalog();
 
@@ -230,5 +230,54 @@ describe("multiple triggers", () => {
       vars.some((v) => v.nodeId === "trigger" && v.guaranteed === true)
     ).toBe(true);
     expect(vars.some((v) => v.nodeId === "trigger2")).toBe(false);
+  });
+});
+
+describe("variablesFromHandle", () => {
+  it("includes the node's own outputs, unlike the view from that node", () => {
+    const definition = define(
+      [trigger(), lookup("lkp", "part", "one")],
+      [edge("e1", "trigger", "out", "lkp")]
+    );
+
+    const atNode = availableVariables(definition, "lkp", catalog);
+    expect(atNode.some((v) => v.nodeId === "lkp")).toBe(false);
+
+    const afterHandle = variablesFromHandle(
+      definition,
+      "lkp",
+      "success",
+      catalog
+    );
+    expect(
+      afterHandle.some((v) => v.nodeId === "lkp" && v.output === "result")
+    ).toBe(true);
+    expect(afterHandle.some((v) => v.nodeId === "trigger")).toBe(true);
+  });
+
+  it("hides what only the other branch of a condition produces", () => {
+    // trigger → cond, cond:yes → lkp_a, cond:no → act
+    const definition = define(
+      [
+        trigger(),
+        condition("cond", [
+          { id: "yes", kind: "if", combinator: "and", clauses: [] },
+          { id: "no", kind: "else", combinator: "and", clauses: [] }
+        ]),
+        lookup("lkp_a", "part", "one"),
+        action("act")
+      ],
+      [
+        edge("e1", "trigger", "out", "cond"),
+        edge("e2", "cond", "yes", "lkp_a"),
+        edge("e3", "cond", "no", "act")
+      ]
+    );
+
+    const fromNo = variablesFromHandle(definition, "cond", "no", catalog);
+    expect(fromNo.some((v) => v.nodeId === "lkp_a")).toBe(false);
+    expect(fromNo.some((v) => v.nodeId === "trigger" && v.guaranteed)).toBe(
+      true
+    );
   });
 });

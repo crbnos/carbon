@@ -263,3 +263,46 @@ export function availableVariables(
 
   return variables;
 }
+
+/**
+ * What a node wired to `nodeId`'s `handleId` would be able to read — this node's
+ * own outputs plus everything already flowing into it.
+ *
+ * Answered by asking `availableVariables` on behalf of a throwaway node hung off
+ * that handle, so branch reachability and the `guaranteed` flag stay in one place.
+ */
+export function variablesFromHandle(
+  definition: WorkflowDefinition,
+  nodeId: string,
+  handleId: string,
+  catalog: WorkflowCatalog
+): AvailableVariable[] {
+  const probeId = `__probe__${nodeId}__${handleId}`;
+  return availableVariables(
+    {
+      ...definition,
+      nodes: [
+        ...definition.nodes,
+        {
+          id: probeId,
+          name: "probe",
+          type: "filter",
+          position: { x: 0, y: 0 },
+          data: { combinator: "and", clauses: [] }
+        }
+      ],
+      edges: [
+        ...definition.edges,
+        {
+          id: probeId,
+          source: nodeId,
+          sourceHandle: handleId,
+          target: probeId,
+          targetHandle: "in"
+        }
+      ]
+    },
+    probeId,
+    catalog
+  );
+}

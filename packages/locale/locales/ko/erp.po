@@ -1354,6 +1354,9 @@ msgstr "그리고"
 msgid "And {0} more — resolve these to see the rest."
 msgstr "그리고 {0}건 더 — 이를 해결하면 나머지를 볼 수 있습니다."
 
+msgid "and {hidden} more"
+msgstr ""
+
 msgid "and {remaining} more"
 msgstr "외 {remaining}개"
 
@@ -2138,6 +2141,10 @@ msgstr "사용 가능"
 
 msgid "Available Actions (click to add)"
 msgstr "사용 가능한 조치(클릭하여 추가)"
+
+#. placeholder {0}: port.label
+msgid "Available after {0}"
+msgstr ""
 
 msgid "Avatar url"
 msgstr ""
@@ -9586,6 +9593,9 @@ msgstr "이 위치에는 더 이상 가져올 재고가 없습니다."
 msgid "Nothing in the archive"
 msgstr "보관함이 비어 있습니다"
 
+msgid "Nothing yet. A step only offers values once it is configured."
+msgstr ""
+
 msgid "Notification"
 msgstr "알림"
 
@@ -10184,9 +10194,6 @@ msgstr "합격됨"
 
 msgid "Path"
 msgstr "경로"
-
-msgid "Path {position}"
-msgstr ""
 
 msgid "Pay Rate"
 msgstr "급여율"
@@ -14521,6 +14528,9 @@ msgstr "이 품목은 단종되었습니다(재고 없음)."
 
 msgid "This part is superseded and set to Stock Only — it's replenished to its spares reserve floor, independent of demand."
 msgstr "이 품목은 대체되어 재고 전용으로 설정되었습니다 — 수요와 무관하게 예비 재고 하한선까지 보충됩니다."
+
+msgid "This path only decides what runs next"
+msgstr ""
 
 msgid "This period has no journal entries posted to it and can be permanently deleted. This cannot be undone."
 msgstr "이 기간에는 게시된 분개가 없으며 영구적으로 삭제할 수 있습니다. 이는 되돌릴 수 없습니다."

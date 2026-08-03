@@ -41,12 +41,43 @@ function pad(n: number): string {
   return String(n).padStart(2, "0");
 }
 
+const TZ_OPTIONS = timezones.flatMap((group) =>
+  group.options.map((option) => option.value)
+);
+
+function offsetMinutes(tz: string, at: Date): number | null {
+  try {
+    return (
+      (new Date(at.toLocaleString("en-US", { timeZone: tz })).getTime() -
+        new Date(at.toLocaleString("en-US", { timeZone: "UTC" })).getTime()) /
+      60000
+    );
+  } catch {
+    return null;
+  }
+}
+
+/** The picker offers 35 zones, and the browser's own zone is often an alias of one
+ * of them (`Asia/Calcutta` for `Asia/Kolkata`) — an unlisted value shows as blank,
+ * so fall back to whichever listed zone is on the same offset right now. */
+function resolveTimezone(tz?: string): string {
+  const wanted = tz || getLocalTimeZone();
+  if (TZ_OPTIONS.includes(wanted)) return wanted;
+  const now = new Date();
+  const target = offsetMinutes(wanted, now);
+  const match =
+    target === null
+      ? undefined
+      : TZ_OPTIONS.find((option) => offsetMinutes(option, now) === target);
+  return match ?? TZ_OPTIONS[0]!;
+}
+
 function defaultSchedule(): Schedule {
   return {
     freq: "Daily",
     hour: 9,
     minute: 0,
-    tz: getLocalTimeZone()
+    tz: resolveTimezone()
   };
 }
 
@@ -167,8 +198,7 @@ type ScheduleEditorProps = {
 function ScheduleEditor({ schedule, onChange }: ScheduleEditorProps) {
   const { t } = useLingui();
 
-  // A schedule saved before we defaulted the zone can carry an empty tz.
-  const tz = schedule.tz || getLocalTimeZone();
+  const tz = resolveTimezone(schedule.tz);
 
   return (
     <FormStack spacing={3}>
@@ -372,7 +402,7 @@ export function TriggerForm({ node }: NodeFormProps<"trigger">) {
   function switchToEvents() {
     updateNodeData(node.id, {
       events: [],
-      origin: "Both" satisfies Origin,
+      origin: "Person" satisfies Origin,
       schedule: undefined
     });
   }
