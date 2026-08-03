@@ -5,13 +5,14 @@ import {
 } from "@carbon/react/VariableText";
 import type { ValueOrRef, ValueType } from "@carbon/workflows";
 import { useLingui } from "@lingui/react/macro";
-import { useCallback } from "react";
-import { catalog } from "../catalog";
+import { useCallback, useEffect } from "react";
 import { useBuilderStoreApi } from "../context";
-import { useVariablesGetter } from "../useDefinition";
+import { InlineVariableMenu } from "./InlineVariableMenu";
+import { publishVariableMenuData, retractVariableMenuData } from "./menuBridge";
+import { leafOfLabel } from "./tokenId";
 import type { FieldContext } from "./types";
+import { useVariableMenuData } from "./useVariableMenuData";
 import { fromEditorParts, toEditorParts } from "./valueParts";
-import { variableMenuItems } from "./variableMenu";
 
 /** Typing this opens the variable menu. The closing brace is drawn by the chip. */
 const TRIGGER = "{";
@@ -26,6 +27,8 @@ type Props = {
   /** Short wording for narrow columns; the full sentence does not fit a clause cell. */
   placeholder?: string;
   hasIssue?: boolean;
+  /** Rows tall before the field scrolls. Prose fields want more than the default. */
+  maxRows?: number;
 };
 
 export function InlineValueEditor({
@@ -34,11 +37,12 @@ export function InlineValueEditor({
   onChange,
   context,
   placeholder,
-  hasIssue
+  hasIssue,
+  maxRows
 }: Props) {
   const { t } = useLingui();
   const store = useBuilderStoreApi();
-  const getVariables = useVariablesGetter(context.nodeId);
+  const getMenuData = useVariableMenuData(context, accepts);
 
   // Read without subscribing: `nodes` is replaced on every drag frame. Names are
   // display-only here, so a rename elsewhere lands on the next render.
@@ -47,28 +51,37 @@ export function InlineValueEditor({
     [store]
   );
 
-  const items = useCallback(
-    () =>
-      variableMenuItems(getVariables(), catalog, {
-        accepts,
-        inLoop: context.inLoop
-      }),
-    [getVariables, accepts, context.inLoop]
-  );
+  // Hand the bridge over on focus, never on mount: every field on the card mounts an
+  // editor, and the last one to mount would otherwise own the slot for all of them.
+  useEffect(() => () => retractVariableMenuData(getMenuData), [getMenuData]);
+
+  // The plugin still needs a non-empty list to open the popup at all; the menu does its
+  // own searching, so this stays unfiltered.
+  const items = useCallback(() => getMenuData().flat, [getMenuData]);
 
   return (
-    <VariableText
-      value={toEditorParts(value, nodeName)}
-      onChange={(next: VariableTextPart[]) =>
-        onChange(
-          fromEditorParts(next, { collapseSingleRef: accepts !== undefined })
-        )
-      }
-      placeholder={placeholder ?? t`Type ${TRIGGER} to insert a variable`}
-      multiline={false}
-      suggestionChar={TRIGGER}
-      suggestionItems={items}
-      className={cn("w-full", hasIssue && "border-destructive")}
-    />
+    // `focusin` bubbles, so this fires for the contenteditable inside — before any
+    // keystroke can open the menu.
+    <div
+      className="min-w-0 flex-1"
+      onFocusCapture={() => publishVariableMenuData(getMenuData)}
+    >
+      <VariableText
+        value={toEditorParts(value, nodeName)}
+        onChange={(next: VariableTextPart[]) =>
+          onChange(
+            fromEditorParts(next, { collapseSingleRef: accepts !== undefined })
+          )
+        }
+        placeholder={placeholder ?? t`Type ${TRIGGER} to insert a variable`}
+        multiline={false}
+        suggestionChar={TRIGGER}
+        suggestionItems={items}
+        menuComponent={InlineVariableMenu}
+        renderTokenLabel={leafOfLabel}
+        maxRows={maxRows}
+        className={cn("w-full", hasIssue && "border-destructive")}
+      />
+    </div>
   );
 }

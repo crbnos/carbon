@@ -2777,6 +2777,9 @@ msgstr "清除搜索查询"
 msgid "Clear this invoice with the party's posted credits as well as cash. Credits apply directly — no posting needed."
 msgstr "用该方的已过账贷项和现金清算此发票。贷项直接应用——无需过账。"
 
+msgid "Clear value"
+msgstr ""
+
 msgid "Clearing account between goods receipt and supplier invoice; balances when both have posted."
 msgstr "商品收据和供应商发票之间的清算账户; 当两者都已过帐时余额。"
 
@@ -5598,8 +5601,17 @@ msgstr "请输入 1 至 {0} 之间的数量。"
 msgid "Enter and approve vendor bills against a PO (three-way match)"
 msgstr "输入并批准针对采购订单的供应商账单（三方匹配）"
 
+msgid "Enter number…"
+msgstr ""
+
 msgid "Enter PO number"
 msgstr "输入采购订单号"
+
+msgid "Enter record id…"
+msgstr ""
+
+msgid "Enter text…"
+msgstr ""
 
 msgid "Enter the quantity this movement should have been. An opposite movement for the difference is posted next to the original, in the original's time period."
 msgstr "输入此移动应该的数量。差异的相反移动将在原始时期内的原始移动旁发布。"
@@ -9469,6 +9481,12 @@ msgstr "不需要值"
 msgid "No values available"
 msgstr "没有可用的值"
 
+msgid "No variable matches {query}"
+msgstr ""
+
+msgid "No variables available"
+msgstr ""
+
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "此项目没有仓库库存记录。您仍然可以拣选它——现有库存将变为负数，直到库存被核对。"
 
@@ -10319,6 +10337,9 @@ msgstr "选择客户或客户类型以查看其定价。"
 
 msgid "Pick a date or leave blank to clear it."
 msgstr "选择日期或留空以清除。"
+
+msgid "Pick a list from an earlier step"
+msgstr ""
 
 msgid "Pick a list variable…"
 msgstr ""
@@ -12263,6 +12284,9 @@ msgstr "搜索供应商..."
 msgid "Search tools..."
 msgstr "搜索工具..."
 
+msgid "Search variables…"
+msgstr ""
+
 msgid "Search..."
 msgstr "搜索..."
 
@@ -12452,6 +12476,9 @@ msgstr "选择值"
 
 msgid "Select values"
 msgstr "选择值"
+
+msgid "Select…"
+msgstr ""
 
 msgid "Selected"
 msgstr "已选择"
@@ -13128,6 +13155,9 @@ msgstr ""
 
 msgid "Step Records"
 msgstr "步骤记录"
+
+msgid "Step removed — pick a new value"
+msgstr ""
 
 msgid "steps"
 msgstr "步骤"
@@ -15354,6 +15384,9 @@ msgid "Values apply today's unit costs to historical quantities."
 msgstr "价值采用今日的单位成本应用于历史数量。"
 
 msgid "Values in this run have been summarised. Full detail is kept for 7 days."
+msgstr ""
+
+msgid "Variables"
 msgstr ""
 
 msgid "Variance"

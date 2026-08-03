@@ -1,11 +1,14 @@
 "use client";
 
+import "./variable-text.css";
+
 import {
   createMentionExtension,
   EditorContent,
   type EditorInstance,
   EditorRoot,
   type JSONContent,
+  type MentionListComponent,
   Placeholder,
   StarterKit
 } from "@carbon/tiptap";
@@ -38,6 +41,14 @@ export type VariableTextProps = {
   suggestionItems?: () => VariableTextSuggestion[];
   /** Where the popup mounts. Keeps it inside a transformed or scrolling panel. */
   popupContainerRef?: RefObject<Element> | null;
+  /** Rows tall before the field starts scrolling. */
+  maxRows?: number;
+  /** Rows tall when empty. */
+  minRows?: number;
+  /** Renders the token menu instead of the built-in list. */
+  menuComponent?: MentionListComponent;
+  /** Shortens the text drawn inside a token chip. The stored label is untouched. */
+  renderTokenLabel?: (label: string) => string;
 };
 
 export type VariableTextHandle = {
@@ -98,9 +109,15 @@ function contentKey(parts: VariableTextPart[]): string {
 // A char no keyboard produces, so the menu stays dormant when no trigger is given.
 const NO_TRIGGER = "\0";
 
-/** The editor shell, exported so a read-only rendition of the same value matches. */
+/** The editor shell, exported so a read-only rendition of the same value matches.
+ * No `min-h-*`: the height range is computed from `minRows`/`maxRows` below. */
 export const VARIABLE_TEXT_SHELL_CLASS =
-  "min-h-[2.5rem] cursor-text rounded-md border border-input bg-background px-3 py-2 text-sm";
+  "cursor-text overflow-y-auto overscroll-contain break-words rounded-md border border-input bg-background px-3 py-2 text-sm";
+
+// A `text-sm` line box plus `py-2`, so one row is 2.5rem — the old fixed floor.
+const ROW_REM = 1.25;
+const PADDING_REM = 1.25;
+const heightFor = (rows: number) => `${rows * ROW_REM + PADDING_REM}rem`;
 
 // --- component ---
 
@@ -114,7 +131,11 @@ export const VariableText = forwardRef<VariableTextHandle, VariableTextProps>(
       multiline,
       suggestionChar,
       suggestionItems,
-      popupContainerRef
+      popupContainerRef,
+      maxRows = 5,
+      minRows = 1,
+      menuComponent,
+      renderTokenLabel
     },
     ref
   ) {
@@ -124,6 +145,8 @@ export const VariableText = forwardRef<VariableTextHandle, VariableTextProps>(
     // which would tear the editor down mid-keystroke.
     const itemsRef = useRef(suggestionItems);
     itemsRef.current = suggestionItems;
+    const renderTokenLabelRef = useRef(renderTokenLabel);
+    renderTokenLabelRef.current = renderTokenLabel;
     const menuOpen = useRef(false);
     const valueRef = useRef(value);
     valueRef.current = value;
@@ -137,17 +160,25 @@ export const VariableText = forwardRef<VariableTextHandle, VariableTextProps>(
           name: "variable",
           char: suggestionChar ?? NO_TRIGGER,
           items: () => (suggestionChar ? (itemsRef.current?.() ?? []) : []),
-          filter: (item, query) =>
-            item.label.toLowerCase().includes(query.toLowerCase()),
+          // A custom menu does its own searching and grouping — filtering here would hide
+          // rows it wants to show.
+          filter: menuComponent
+            ? () => true
+            : (item, query) =>
+                item.label.toLowerCase().includes(query.toLowerCase()),
           // The default is `[" "]`, which ignores the trigger mid-word.
           allowedPrefixes: null,
           elementRef: popupContainerRef,
-          renderLabel: ({ id, label }) => `{${label ?? id}}`,
+          listComponent: menuComponent,
+          renderLabel: ({ id, label }) => {
+            const full = label ?? id ?? "";
+            return `{${renderTokenLabelRef.current?.(full) ?? full}}`;
+          },
           onActiveChange: (active) => {
             menuOpen.current = active;
           }
         }),
-      [suggestionChar, popupContainerRef]
+      [suggestionChar, popupContainerRef, menuComponent]
     );
 
     const extensions = useMemo(
@@ -198,30 +229,40 @@ export const VariableText = forwardRef<VariableTextHandle, VariableTextProps>(
 
     return (
       <EditorRoot>
-        <EditorContent
+        {/* The shell is a wrapper, not `EditorContent`'s own div, because `EditorContent`
+            forwards unknown props to the editor rather than to the element — it has no
+            `style` passthrough, and the row range has to be an inline height. */}
+        <div
           className={cn(VARIABLE_TEXT_SHELL_CLASS, className)}
-          initialContent={initialContent}
-          extensions={extensions}
-          editorProps={{
-            handleKeyDown(_view, event) {
-              // Never swallow the popup's Enter: ProseMirror consults these props
-              // before the suggestion plugin gets a look.
-              if (menuOpen.current) return false;
-              if (multiline === false && event.key === "Enter") return true;
-              return false;
-            },
-            attributes: {
-              class: "focus:outline-none prose-sm dark:prose-invert max-w-full"
-            }
+          style={{
+            minHeight: heightFor(minRows),
+            maxHeight: heightFor(maxRows)
           }}
-          onCreate={({ editor }) => {
-            editorRef.current = editor;
-          }}
-          onUpdate={({ editor }) => {
-            editorRef.current = editor;
-            onChange(docToParts(editor.getJSON()));
-          }}
-        />
+        >
+          <EditorContent
+            initialContent={initialContent}
+            extensions={extensions}
+            editorProps={{
+              handleKeyDown(_view, event) {
+                // Never swallow the popup's Enter: ProseMirror consults these props
+                // before the suggestion plugin gets a look.
+                if (menuOpen.current) return false;
+                if (multiline === false && event.key === "Enter") return true;
+                return false;
+              },
+              attributes: {
+                class: "focus:outline-none max-w-full"
+              }
+            }}
+            onCreate={({ editor }) => {
+              editorRef.current = editor;
+            }}
+            onUpdate={({ editor }) => {
+              editorRef.current = editor;
+              onChange(docToParts(editor.getJSON()));
+            }}
+          />
+        </div>
       </EditorRoot>
     );
   }

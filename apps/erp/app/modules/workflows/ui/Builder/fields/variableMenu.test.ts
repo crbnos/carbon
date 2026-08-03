@@ -2,7 +2,11 @@ import type { AvailableVariable } from "@carbon/workflows";
 import { createWorkflowCatalog } from "@carbon/workflows";
 import { describe, expect, it } from "vitest";
 import { decodeTokenId } from "./tokenId";
-import { variableMenuItems } from "./variableMenu";
+import {
+  type VariableTreeNode,
+  variableMenuItems,
+  variableTree
+} from "./variableMenu";
 
 const catalog = createWorkflowCatalog();
 
@@ -68,5 +72,78 @@ describe("variableMenuItems", () => {
       catalog
     );
     expect(item.helper).toContain("may be empty");
+  });
+});
+
+const text = { kind: "primitive", of: "string" } as const;
+const number = { kind: "primitive", of: "number" } as const;
+
+const output = (name: string, type: AvailableVariable["type"]) => ({
+  ...variable,
+  output: name,
+  type
+});
+
+/** Every node in the subtree, so a test can assert on leaves without walking by hand. */
+function flatten(nodes: VariableTreeNode[]): VariableTreeNode[] {
+  return nodes.flatMap((n) => [n, ...flatten(n.children ?? [])]);
+}
+
+describe("variableTree", () => {
+  it("groups a step's outputs under one root", () => {
+    const tree = variableTree(
+      [output("subject", text), output("body", text)],
+      catalog
+    );
+    expect(tree).toHaveLength(1);
+    expect(tree[0].label).toBe("when-order-created");
+    expect(tree[0].children?.map((c) => c.label)).toEqual(["subject", "body"]);
+    expect(tree[0].children?.every((c) => c.item)).toBe(true);
+  });
+
+  it("collapses a step with a single output into one row", () => {
+    const tree = variableTree([output("subject", text)], catalog);
+    expect(tree).toHaveLength(1);
+    expect(tree[0].item).toBeDefined();
+    expect(tree[0].children).toBeUndefined();
+  });
+
+  it("opens an entity output into its properties", () => {
+    const tree = variableTree([variable], catalog);
+    expect(tree[0].item).toBeDefined();
+    expect(tree[0].children?.length).toBeGreaterThan(1);
+  });
+
+  it("never offers a path deeper than the flat menu allows", () => {
+    for (const node of flatten(variableTree([variable], catalog))) {
+      if (!node.item) continue;
+      expect(decodeTokenId(node.item.id)?.path.length ?? 0).toBeLessThanOrEqual(
+        2
+      );
+    }
+  });
+
+  it("keeps an incompatible property visible but unpickable, and says why", () => {
+    const tree = variableTree([variable], catalog, { accepts: number });
+    const strings = flatten(tree).filter(
+      (n) => !n.item && n.helper?.includes("this field takes a number")
+    );
+    expect(strings.length).toBeGreaterThan(0);
+  });
+
+  it("offers the current item only inside a loop", () => {
+    expect(
+      variableTree([], catalog, { inLoop: true }).some((n) => n.key === "item")
+    ).toBe(true);
+    expect(
+      variableTree([], catalog, { inLoop: false }).some((n) => n.key === "item")
+    ).toBe(false);
+  });
+
+  it("labels properties through the resolver, not the raw column name", () => {
+    const tree = variableTree([variable], catalog, {
+      labelFor: (key) => `L:${key}`
+    });
+    expect(tree[0].children?.every((c) => c.label.startsWith("L:"))).toBe(true);
   });
 });

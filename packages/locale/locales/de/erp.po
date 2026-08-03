@@ -2777,6 +2777,9 @@ msgstr "Suchanfrage löschen"
 msgid "Clear this invoice with the party's posted credits as well as cash. Credits apply directly — no posting needed."
 msgstr "Begleichen Sie diese Rechnung mit den gebuchten Gutschriften der Partei sowie mit Bargeld. Gutschriften werden direkt angewendet — keine Buchung erforderlich."
 
+msgid "Clear value"
+msgstr ""
+
 msgid "Clearing account between goods receipt and supplier invoice; balances when both have posted."
 msgstr "Verrechnungskonto zwischen Wareneingang und Lieferantenrechnung; wird ausgeglichen, wenn beide gebucht wurden."
 
@@ -5598,8 +5601,17 @@ msgstr "Geben Sie eine Menge zwischen 1 und {0} ein."
 msgid "Enter and approve vendor bills against a PO (three-way match)"
 msgstr "Lieferantenrechnungen gegen eine Bestellung eingeben und genehmigen (dreigliedriger Abgleich)"
 
+msgid "Enter number…"
+msgstr ""
+
 msgid "Enter PO number"
 msgstr "PO-Nummer eingeben"
+
+msgid "Enter record id…"
+msgstr ""
+
+msgid "Enter text…"
+msgstr ""
 
 msgid "Enter the quantity this movement should have been. An opposite movement for the difference is posted next to the original, in the original's time period."
 msgstr "Geben Sie die Menge ein, die diese Bewegung hätte sein sollen. Eine Gegenbewegung für die Differenz wird neben dem Original in dessen Zeitraum verbucht."
@@ -9469,6 +9481,12 @@ msgstr "Kein Wert erforderlich"
 msgid "No values available"
 msgstr "Keine Werte verfügbar"
 
+msgid "No variable matches {query}"
+msgstr ""
+
+msgid "No variables available"
+msgstr ""
+
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "Kein Lagerbestand für diesen Artikel ist erfasst. Sie können ihn trotzdem kommissionieren — der verfügbare Bestand wird negativ, bis die Inventur abgestimmt ist."
 
@@ -10319,6 +10337,9 @@ msgstr "Wählen Sie einen Kunden oder einen Kundentyp aus, um deren Preise anzuz
 
 msgid "Pick a date or leave blank to clear it."
 msgstr "Wählen Sie ein Datum oder lassen Sie es leer, um es zu löschen."
+
+msgid "Pick a list from an earlier step"
+msgstr ""
 
 msgid "Pick a list variable…"
 msgstr ""
@@ -12263,6 +12284,9 @@ msgstr "Lieferanten durchsuchen..."
 msgid "Search tools..."
 msgstr "Werkzeuge durchsuchen..."
 
+msgid "Search variables…"
+msgstr ""
+
 msgid "Search..."
 msgstr "Suchen..."
 
@@ -12452,6 +12476,9 @@ msgstr "Wert auswählen"
 
 msgid "Select values"
 msgstr "Werte auswählen"
+
+msgid "Select…"
+msgstr ""
 
 msgid "Selected"
 msgstr "Ausgewählt"
@@ -13128,6 +13155,9 @@ msgstr ""
 
 msgid "Step Records"
 msgstr "Schrittdatensätze"
+
+msgid "Step removed — pick a new value"
+msgstr ""
 
 msgid "steps"
 msgstr "Schritte"
@@ -15354,6 +15384,9 @@ msgid "Values apply today's unit costs to historical quantities."
 msgstr "Die Werte wenden die heutigen Stückkosten auf historische Mengen an."
 
 msgid "Values in this run have been summarised. Full detail is kept for 7 days."
+msgstr ""
+
+msgid "Variables"
 msgstr ""
 
 msgid "Variance"

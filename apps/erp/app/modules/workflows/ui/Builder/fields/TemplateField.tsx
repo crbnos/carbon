@@ -26,11 +26,14 @@ export function TemplateField({
           : undefined
       }
     >
+      {/* These are the prose inputs — a subject, a message body, a webhook payload.
+          Five rows is too short for any of them. */}
       <InlineValueEditor
         value={value}
         onChange={onChange}
         context={context}
         hasIssue={!!issue}
+        maxRows={10}
       />
     </Field>
   );

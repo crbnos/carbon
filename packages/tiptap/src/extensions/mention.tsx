@@ -9,9 +9,12 @@ import type {
   SuggestionKeyDownProps,
   SuggestionProps
 } from "@tiptap/suggestion";
-import type { RefObject } from "react";
+import type { ComponentType, RefAttributes, RefObject } from "react";
 import tippy, { type Instance, type Props } from "tippy.js";
-import type { MentionListRef } from "../components/mention-list";
+import type {
+  MentionListProps,
+  MentionListRef
+} from "../components/mention-list";
 import { MentionList } from "../components/mention-list";
 
 export interface MentionSuggestion {
@@ -19,6 +22,14 @@ export interface MentionSuggestion {
   label: string;
   helper?: string;
 }
+
+/**
+ * A drop-in replacement for `MentionList`. Must forward a `MentionListRef` so the
+ * suggestion plugin can delegate key handling to it.
+ */
+export type MentionListComponent = ComponentType<
+  MentionListProps & RefAttributes<MentionListRef>
+>;
 
 export interface CreateMentionSuggestionOptions {
   /**
@@ -48,6 +59,11 @@ export interface CreateMentionSuggestionOptions {
    * so a host that swallows Enter would swallow the popup's Enter too.
    */
   onActiveChange?: (active: boolean) => void;
+  /**
+   * Renders the popup instead of the built-in `MentionList`. Use when the host needs its own
+   * list behaviour (grouping, drill-down, its own search). Defaults to `MentionList`.
+   */
+  listComponent?: MentionListComponent;
 }
 
 const startsWithQuery = (item: MentionSuggestion, query: string) =>
@@ -59,7 +75,8 @@ export function createMentionSuggestion({
   elementRef,
   filter,
   allowedPrefixes,
-  onActiveChange
+  onActiveChange,
+  listComponent
 }: CreateMentionSuggestionOptions): MentionOptions["suggestion"] {
   const match = filter ?? startsWithQuery;
   return {
@@ -76,7 +93,7 @@ export function createMentionSuggestion({
       return {
         onStart: (props: SuggestionProps<MentionSuggestion>) => {
           onActiveChange?.(true);
-          component = new ReactRenderer(MentionList, {
+          component = new ReactRenderer(listComponent ?? MentionList, {
             props,
             editor: props.editor
           });
@@ -157,11 +174,20 @@ export interface CreateMentionExtensionOptions {
   allowedPrefixes?: string[] | null;
   /** See `CreateMentionSuggestionOptions`. */
   onActiveChange?: (active: boolean) => void;
+  /**
+   * Renders the popup instead of the built-in `MentionList`. Use when the host needs its own
+   * list behaviour (grouping, drill-down, its own search). Defaults to `MentionList`.
+   */
+  listComponent?: MentionListComponent;
 }
 
-/** The chip styling, exported so a non-editable rendition of the same token matches. */
+/**
+ * The chip styling, exported so a non-editable rendition of the same token matches.
+ * `inline-block`, not `inline-flex` — `text-overflow: ellipsis` never applies to a flex
+ * container's anonymous item, so a long label used to overflow onto the line below.
+ */
 export const MENTION_CHIP_CLASS =
-  "inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-400";
+  "inline-block max-w-[14rem] overflow-hidden text-ellipsis whitespace-nowrap align-middle rounded-full px-1.5 py-0 text-[0.8125rem] font-medium leading-5 bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-400";
 
 /**
  * Creates a configured mention extension for a specific type of mention.
@@ -196,7 +222,8 @@ export function createMentionExtension({
   filter,
   renderLabel,
   allowedPrefixes,
-  onActiveChange
+  onActiveChange,
+  listComponent
 }: CreateMentionExtensionOptions) {
   const text = renderLabel
     ? ({ node }: { node: ProseMirrorNode }) =>
@@ -214,13 +241,19 @@ export function createMentionExtension({
       elementRef,
       filter,
       allowedPrefixes,
-      onActiveChange
+      onActiveChange,
+      listComponent
     }),
     ...(text && {
       renderText: text,
+      // `HTMLAttributes` in `configure` is static, so the per-node title — the full label, for
+      // when the chip is truncated — has to be merged here.
       renderHTML: ({ node, options }) => [
         "span",
-        options.HTMLAttributes,
+        {
+          ...options.HTMLAttributes,
+          title: node.attrs.label ?? node.attrs.id
+        },
         text({ node })
       ]
     })

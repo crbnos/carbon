@@ -2777,6 +2777,9 @@ msgstr "Очистить поисковый запрос"
 msgid "Clear this invoice with the party's posted credits as well as cash. Credits apply directly — no posting needed."
 msgstr "Погасите этот счет с помощью опубликованных кредитов стороны, а также наличных средств. Кредиты применяются напрямую — публикация не требуется."
 
+msgid "Clear value"
+msgstr ""
+
 msgid "Clearing account between goods receipt and supplier invoice; balances when both have posted."
 msgstr "Транзитный счет между поступлением товаров и счетом поставщика; уравновешивается, когда оба были выполнены."
 
@@ -5598,8 +5601,17 @@ msgstr "Введите количество от 1 до {0}."
 msgid "Enter and approve vendor bills against a PO (three-way match)"
 msgstr "Ввести и утвердить счета поставщиков по сравнению с ПО (трёхсторонняя сверка)"
 
+msgid "Enter number…"
+msgstr ""
+
 msgid "Enter PO number"
 msgstr "Введите номер ПО"
+
+msgid "Enter record id…"
+msgstr ""
+
+msgid "Enter text…"
+msgstr ""
 
 msgid "Enter the quantity this movement should have been. An opposite movement for the difference is posted next to the original, in the original's time period."
 msgstr "Введите количество, которое должно было быть в этом движении. Противоположное движение для разницы размещается рядом с оригинальным в его временном периоде."
@@ -9469,6 +9481,12 @@ msgstr "Значение не требуется"
 msgid "No values available"
 msgstr "Нет доступных значений"
 
+msgid "No variable matches {query}"
+msgstr ""
+
+msgid "No variables available"
+msgstr ""
+
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "На складе нет записей о наличии этого товара. Вы все равно можете его отобрать — остаток на руках станет отрицательным до тех пор, пока инвентаризация не будет согласована."
 
@@ -10319,6 +10337,9 @@ msgstr "Выберите клиента или тип клиента для пр
 
 msgid "Pick a date or leave blank to clear it."
 msgstr "Выберите дату или оставьте пустым, чтобы очистить."
+
+msgid "Pick a list from an earlier step"
+msgstr ""
 
 msgid "Pick a list variable…"
 msgstr ""
@@ -12263,6 +12284,9 @@ msgstr "Поиск поставщиков..."
 msgid "Search tools..."
 msgstr "Поиск инструментов..."
 
+msgid "Search variables…"
+msgstr ""
+
 msgid "Search..."
 msgstr "Поиск..."
 
@@ -12452,6 +12476,9 @@ msgstr "Выберите значение"
 
 msgid "Select values"
 msgstr "Выберите значения"
+
+msgid "Select…"
+msgstr ""
 
 msgid "Selected"
 msgstr "Выбрано"
@@ -13128,6 +13155,9 @@ msgstr ""
 
 msgid "Step Records"
 msgstr "Записи этапов"
+
+msgid "Step removed — pick a new value"
+msgstr ""
 
 msgid "steps"
 msgstr "шаги"
@@ -15354,6 +15384,9 @@ msgid "Values apply today's unit costs to historical quantities."
 msgstr "Значения применяют текущие цены за единицу к историческим количествам."
 
 msgid "Values in this run have been summarised. Full detail is kept for 7 days."
+msgstr ""
+
+msgid "Variables"
 msgstr ""
 
 msgid "Variance"

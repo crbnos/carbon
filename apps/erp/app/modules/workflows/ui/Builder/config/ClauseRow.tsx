@@ -13,8 +13,11 @@ import type { FieldContext } from "../fields/types";
 import { ValueField } from "../fields/ValueField";
 import { issueForField } from "../issues";
 
-// Property, operator, value read as one sentence, so they sit on one line.
-export const CLAUSE_GRID_CLASS = "grid w-full grid-cols-3 items-start gap-2";
+// Property on its own line, operator and value beneath. Three across left ~145px a cell
+// in a 540px card — too narrow for a variable chip, and why the text used to overlap.
+export const CLAUSE_GRID_CLASS = "flex w-full min-w-0 flex-col gap-2";
+const CLAUSE_SECOND_ROW_CLASS =
+  "grid w-full min-w-0 grid-cols-[minmax(0,auto)_minmax(0,1fr)] items-start gap-2";
 
 function pickDefaultOp(ops: readonly Operator[]): Operator {
   return ops.includes("eq") ? "eq" : (ops[0] ?? "eq");
@@ -186,45 +189,45 @@ function ClauseRowImpl({
             />
           )}
 
-          {/* Operator */}
-          <Field label={t`Operator`} hideLabel={hideLabel}>
-            <OperatorCombobox
-              value={clause.operator}
-              onChange={(op: Operator) =>
-                onChange(index, {
-                  operator: op as Clause["operator"],
-                  right: undefined
-                })
-              }
-              available={Array.from(availableOps)}
-              disabled={!leftType}
-            />
-          </Field>
-
-          {/* Right side */}
-          {leftType ? (
-            <ValueField
-              label={t`Value`}
-              hideLabel={hideLabel}
-              placeholder={t`Type '{' for a variable`}
-              type={leftType}
-              choices={rightChoices}
-              value={clause.right}
-              onChange={(next) => onChange(index, { right: next })}
-              context={context}
-              issue={issueForField(
-                issues,
-                `${fieldPath}.right`,
-                `${fieldPath}.value`
-              )}
-            />
-          ) : (
-            <Field label={t`Value`} hideLabel={hideLabel}>
-              <div className="flex h-9 items-center rounded-md border border-dashed border-border px-3 text-xs text-muted-foreground">
-                {t`Pick a property first`}
-              </div>
+          <div className={CLAUSE_SECOND_ROW_CLASS}>
+            <Field label={t`Operator`} hideLabel={hideLabel}>
+              <OperatorCombobox
+                value={clause.operator}
+                onChange={(op: Operator) =>
+                  onChange(index, {
+                    operator: op as Clause["operator"],
+                    right: undefined
+                  })
+                }
+                available={Array.from(availableOps)}
+                disabled={!leftType}
+              />
             </Field>
-          )}
+
+            {leftType ? (
+              <ValueField
+                label={t`Value`}
+                hideLabel={hideLabel}
+                placeholder={t`Type '{' for a variable`}
+                type={leftType}
+                choices={rightChoices}
+                value={clause.right}
+                onChange={(next) => onChange(index, { right: next })}
+                context={context}
+                issue={issueForField(
+                  issues,
+                  `${fieldPath}.right`,
+                  `${fieldPath}.value`
+                )}
+              />
+            ) : (
+              <Field label={t`Value`} hideLabel={hideLabel}>
+                <div className="flex h-9 items-center rounded-md border border-dashed border-border px-3 text-xs text-muted-foreground">
+                  {t`Pick a property first`}
+                </div>
+              </Field>
+            )}
+          </div>
         </div>
       </div>
 

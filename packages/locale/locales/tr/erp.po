@@ -2777,6 +2777,9 @@ msgstr "Arama sorgusunu temizle"
 msgid "Clear this invoice with the party's posted credits as well as cash. Credits apply directly — no posting needed."
 msgstr "Bu faturayı tarafın deftere nakledilmiş kredileri ve nakit ile kapatın. Krediler doğrudan uygulanır — deftere nakil gerekmez."
 
+msgid "Clear value"
+msgstr ""
+
 msgid "Clearing account between goods receipt and supplier invoice; balances when both have posted."
 msgstr "Mal alımı ve tedarikçi faturası arasındaki mahsup hesabı; her ikisi de deftere geçirildiğinde bakiye alınır."
 
@@ -5598,8 +5601,17 @@ msgstr "1 ile {0} arasında bir miktar girin."
 msgid "Enter and approve vendor bills against a PO (three-way match)"
 msgstr "Satıcı faturalarını bir PO'ya karşı girin ve onaylayın (üç yönlü eşleştirme)"
 
+msgid "Enter number…"
+msgstr ""
+
 msgid "Enter PO number"
 msgstr "PO numarasını girin"
+
+msgid "Enter record id…"
+msgstr ""
+
+msgid "Enter text…"
+msgstr ""
 
 msgid "Enter the quantity this movement should have been. An opposite movement for the difference is posted next to the original, in the original's time period."
 msgstr "Bu hareketin olması gereken miktarı girin. Farktaki ters hareket, orijinalin zaman döneminde orijinalin yanında deftere kaydedilir."
@@ -9469,6 +9481,12 @@ msgstr "Değer gerekmiyor"
 msgid "No values available"
 msgstr "Mevcut değerler yok"
 
+msgid "No variable matches {query}"
+msgstr ""
+
+msgid "No variables available"
+msgstr ""
+
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "Bu ürün için depoda kayıtlı stok bulunmamaktadır. Sayım yeniden düzenlenene kadar eldeki stok negatif olacaktır, ancak yine de alabilirsiniz."
 
@@ -10319,6 +10337,9 @@ msgstr "Fiyatlandırmalarını görüntülemek için bir müşteri veya müşter
 
 msgid "Pick a date or leave blank to clear it."
 msgstr "Bir tarih seçin veya temizlemek için boş bırakın."
+
+msgid "Pick a list from an earlier step"
+msgstr ""
 
 msgid "Pick a list variable…"
 msgstr ""
@@ -12263,6 +12284,9 @@ msgstr "Tedarikçileri ara..."
 msgid "Search tools..."
 msgstr "Araç ara..."
 
+msgid "Search variables…"
+msgstr ""
+
 msgid "Search..."
 msgstr "Ara..."
 
@@ -12452,6 +12476,9 @@ msgstr "Değer seçin"
 
 msgid "Select values"
 msgstr "Değerleri seçin"
+
+msgid "Select…"
+msgstr ""
 
 msgid "Selected"
 msgstr "Seçili"
@@ -13128,6 +13155,9 @@ msgstr ""
 
 msgid "Step Records"
 msgstr "Adım Kayıtları"
+
+msgid "Step removed — pick a new value"
+msgstr ""
 
 msgid "steps"
 msgstr "adımlar"
@@ -15354,6 +15384,9 @@ msgid "Values apply today's unit costs to historical quantities."
 msgstr "Değerler, tarihsel miktarlara bugünün birim maliyetlerini uygular."
 
 msgid "Values in this run have been summarised. Full detail is kept for 7 days."
+msgstr ""
+
+msgid "Variables"
 msgstr ""
 
 msgid "Variance"

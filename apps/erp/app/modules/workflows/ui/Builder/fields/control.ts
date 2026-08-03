@@ -25,6 +25,3 @@ export function pickControl(
   if (value?.kind === "ref" || value?.kind === "item") return "chip";
   return "literal";
 }
-
-/** The inline editor offers `{`, so it is the only control that needs no button. */
-export const needsPicker = (kind: ControlKind) => kind !== "inline";

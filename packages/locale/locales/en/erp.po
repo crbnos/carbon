@@ -2777,6 +2777,9 @@ msgstr "Clear search query"
 msgid "Clear this invoice with the party's posted credits as well as cash. Credits apply directly — no posting needed."
 msgstr "Clear this invoice with the party's posted credits as well as cash. Credits apply directly — no posting needed."
 
+msgid "Clear value"
+msgstr "Clear value"
+
 msgid "Clearing account between goods receipt and supplier invoice; balances when both have posted."
 msgstr "Clearing account between goods receipt and supplier invoice; balances when both have posted."
 
@@ -5598,8 +5601,17 @@ msgstr "Enter a quantity between 1 and {0}."
 msgid "Enter and approve vendor bills against a PO (three-way match)"
 msgstr "Enter and approve vendor bills against a PO (three-way match)"
 
+msgid "Enter number…"
+msgstr "Enter number…"
+
 msgid "Enter PO number"
 msgstr "Enter PO number"
+
+msgid "Enter record id…"
+msgstr "Enter record id…"
+
+msgid "Enter text…"
+msgstr "Enter text…"
 
 msgid "Enter the quantity this movement should have been. An opposite movement for the difference is posted next to the original, in the original's time period."
 msgstr "Enter the quantity this movement should have been. An opposite movement for the difference is posted next to the original, in the original's time period."
@@ -9469,6 +9481,12 @@ msgstr "No value needed"
 msgid "No values available"
 msgstr "No values available"
 
+msgid "No variable matches {query}"
+msgstr "No variable matches {query}"
+
+msgid "No variables available"
+msgstr "No variables available"
+
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 
@@ -10319,6 +10337,9 @@ msgstr "Pick a customer or customer type to view their pricing."
 
 msgid "Pick a date or leave blank to clear it."
 msgstr "Pick a date or leave blank to clear it."
+
+msgid "Pick a list from an earlier step"
+msgstr "Pick a list from an earlier step"
 
 msgid "Pick a list variable…"
 msgstr "Pick a list variable…"
@@ -12263,6 +12284,9 @@ msgstr "Search suppliers..."
 msgid "Search tools..."
 msgstr "Search tools..."
 
+msgid "Search variables…"
+msgstr "Search variables…"
+
 msgid "Search..."
 msgstr "Search..."
 
@@ -12452,6 +12476,9 @@ msgstr "Select value"
 
 msgid "Select values"
 msgstr "Select values"
+
+msgid "Select…"
+msgstr "Select…"
 
 msgid "Selected"
 msgstr "Selected"
@@ -13128,6 +13155,9 @@ msgstr "Step detail is kept for 30 days. This run's steps have been removed."
 
 msgid "Step Records"
 msgstr "Step Records"
+
+msgid "Step removed — pick a new value"
+msgstr "Step removed — pick a new value"
 
 msgid "steps"
 msgstr "steps"
@@ -15355,6 +15385,9 @@ msgstr "Values apply today's unit costs to historical quantities."
 
 msgid "Values in this run have been summarised. Full detail is kept for 7 days."
 msgstr "Values in this run have been summarised. Full detail is kept for 7 days."
+
+msgid "Variables"
+msgstr "Variables"
 
 msgid "Variance"
 msgstr "Variance"

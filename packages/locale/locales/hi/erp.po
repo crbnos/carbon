@@ -2777,6 +2777,9 @@ msgstr "खोज क्वेरी साफ़ करें"
 msgid "Clear this invoice with the party's posted credits as well as cash. Credits apply directly — no posting needed."
 msgstr "इस चालान को पार्टी के पोस्ट किए गए क्रेडिट के साथ-साथ नकद से साफ़ करें। क्रेडिट सीधे लागू होते हैं — कोई पोस्टिंग की आवश्यकता नहीं है।"
 
+msgid "Clear value"
+msgstr ""
+
 msgid "Clearing account between goods receipt and supplier invoice; balances when both have posted."
 msgstr "माल की प्राप्ति और आपूर्तिकर्ता चालान के बीच समाशोधन खाता; जब दोनों को पोस्ट किया जाता है तो संतुलन होता है।"
 
@@ -5598,8 +5601,17 @@ msgstr "1 और {0} के बीच मात्रा दर्ज करे�
 msgid "Enter and approve vendor bills against a PO (three-way match)"
 msgstr "विक्रेता बिलों को PO के विरुद्ध दर्ज करें और अनुमोदित करें (तीन-तरफा मिलान)"
 
+msgid "Enter number…"
+msgstr ""
+
 msgid "Enter PO number"
 msgstr "PO नंबर दर्ज करें"
+
+msgid "Enter record id…"
+msgstr ""
+
+msgid "Enter text…"
+msgstr ""
 
 msgid "Enter the quantity this movement should have been. An opposite movement for the difference is posted next to the original, in the original's time period."
 msgstr "वह मात्रा दर्ज करें जो यह आंदोलन होना चाहिए था। अंतर के लिए एक विपरीत आंदोलन मूल के बगल में, मूल की समय अवधि में पोस्ट किया जाता है।"
@@ -9469,6 +9481,12 @@ msgstr "कोई मान आवश्यक नहीं"
 msgid "No values available"
 msgstr "कोई मान उपलब्ध नहीं"
 
+msgid "No variable matches {query}"
+msgstr ""
+
+msgid "No variables available"
+msgstr ""
+
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "इस आइटम के लिए कोई गोदाम स्टॉक रिकॉर्ड पर नहीं है। आप इसे अभी भी चुन सकते हैं — गणना के समाधान तक हाथ पर नकारात्मक हो जाएगा।"
 
@@ -10319,6 +10337,9 @@ msgstr "उनकी मूल्य निर्धारण देखने �
 
 msgid "Pick a date or leave blank to clear it."
 msgstr "एक तारीख चुनें या इसे साफ करने के लिए खाली छोड़ें।"
+
+msgid "Pick a list from an earlier step"
+msgstr ""
 
 msgid "Pick a list variable…"
 msgstr ""
@@ -12263,6 +12284,9 @@ msgstr "आपूर्तिकर्ताओं को खोजें..."
 msgid "Search tools..."
 msgstr "उपकरण खोजें..."
 
+msgid "Search variables…"
+msgstr ""
+
 msgid "Search..."
 msgstr "खोजें..."
 
@@ -12452,6 +12476,9 @@ msgstr "मान चुनें"
 
 msgid "Select values"
 msgstr "मान चुनें"
+
+msgid "Select…"
+msgstr ""
 
 msgid "Selected"
 msgstr "चयनित"
@@ -13128,6 +13155,9 @@ msgstr ""
 
 msgid "Step Records"
 msgstr "चरण रिकॉर्ड"
+
+msgid "Step removed — pick a new value"
+msgstr ""
 
 msgid "steps"
 msgstr "कदम"
@@ -15354,6 +15384,9 @@ msgid "Values apply today's unit costs to historical quantities."
 msgstr "मान ऐतिहासिक मात्राओं पर आज की इकाई लागत को लागू करते हैं।"
 
 msgid "Values in this run have been summarised. Full detail is kept for 7 days."
+msgstr ""
+
+msgid "Variables"
 msgstr ""
 
 msgid "Variance"

@@ -58,3 +58,14 @@ export function refLabel(ref: RefPart, nodeName?: string): string {
   if (ref.kind === "item") return ["Current item", ...ref.path].join(" › ");
   return [nodeName ?? ref.nodeId, ref.output, ...ref.path].join(" › ");
 }
+
+/** Just the last segment — what a chip shows when the full path will not fit. `refLabel`
+ * stays the tooltip and the search text, so this is a short form, not a second source. */
+export function refLeafLabel(ref: RefPart): string {
+  const last = ref.path[ref.path.length - 1];
+  if (last !== undefined) return last;
+  return ref.kind === "item" ? "Current item" : ref.output;
+}
+
+/** The leaf of an already-rendered `refLabel` string. */
+export const leafOfLabel = (label: string) => label.split(" › ").pop() ?? label;

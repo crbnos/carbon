@@ -49,7 +49,6 @@ type SortableClauseItemProps = {
   onRemove: (index: number) => void;
   context: { nodeId: string; inLoop: boolean };
   combinator: "and" | "or";
-  isFirst: boolean;
   isLast: boolean;
   onCombinatorChange: (v: "and" | "or") => void;
   fieldPath: string;
@@ -65,7 +64,6 @@ function SortableClauseItem({
   onRemove,
   context,
   combinator,
-  isFirst,
   isLast,
   onCombinatorChange,
   fieldPath,
@@ -109,7 +107,7 @@ function SortableClauseItem({
         onRemove={onRemove}
         context={context}
         grip={grip}
-        showLabels={isFirst}
+        showLabels
         fieldPath={fieldPath}
         issues={issues}
       />
@@ -311,7 +309,6 @@ export function ConditionForm({ node, issues }: NodeFormProps<"condition">) {
                           onRemove={(idx) => removeClause(path.id, idx)}
                           context={context}
                           combinator={path.combinator ?? "and"}
-                          isFirst={i === 0}
                           isLast={i === path.clauses.length - 1}
                           onCombinatorChange={(v) =>
                             updatePath(path.id, { combinator: v })

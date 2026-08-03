@@ -1,0 +1,10 @@
+/* Tiptap's Placeholder extension only adds a class and a `data-placeholder` attribute —
+   the visible text is this rule. It ships with the component because the app stylesheet
+   that used to hold it (apps/erp/app/styles/prosemirror.css) is imported nowhere. */
+.ProseMirror .is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  color: hsl(var(--muted-foreground));
+  pointer-events: none;
+  height: 0;
+}

@@ -23,15 +23,15 @@ export function handleClass(tone: PortTone = "default"): string {
 
 export const HANDLE_CLASS = handleClass();
 
-// Type scale for the config form. Scoped here so every field — including ones
-// from @carbon/react — shrinks without each form restating its own sizes.
+// Type scale for the config form, so no form restates its own sizes. Controls are all
+// `text-sm`: the variable editor cannot shrink below its chip's line box.
 const BODY_TYPE = [
   "text-xs",
   "[&_label]:text-[11px]",
-  "[&_input]:text-xs",
-  "[&_textarea]:text-xs",
-  "[&_button]:text-xs",
-  "[&_[role=combobox]]:text-xs"
+  "[&_input]:text-sm",
+  "[&_textarea]:text-sm",
+  "[&_button]:text-sm",
+  "[&_[role=combobox]]:text-sm"
 ].join(" ");
 
 const INTERACTIVE =
@@ -159,8 +159,13 @@ export function NodeCard({
         {actions && <div className="shrink-0">{actions}</div>}
       </div>
 
+      {/* `overflow-hidden`: the card has a fixed width, so anything that cannot shrink
+          must be clipped rather than drawn over the canvas. */}
       {isExpanded && children && (
-        <div ref={bodyRef} className={cn("border-t px-2.5 py-2", BODY_TYPE)}>
+        <div
+          ref={bodyRef}
+          className={cn("overflow-hidden border-t px-2.5 py-2", BODY_TYPE)}
+        >
           {children}
         </div>
       )}
