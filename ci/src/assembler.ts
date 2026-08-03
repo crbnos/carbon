@@ -23,6 +23,14 @@ async function deploy(): Promise<void> {
   // fresh empty-named stage (colliding on the account-global custom domain).
   const stage = process.env.STAGE || "prod";
 
+  // Each deploy matrix leg configures ONE account's credentials (prod
+  // ASSEMBLER_AWS_* or govcloud AWS_*). SST deploys into whatever account those
+  // creds resolve to, so skip any workspace in a different account — otherwise the
+  // govcloud leg would try to deploy prod rows (and vice versa) and fail across
+  // the aws-us-gov partition boundary. The leg resolves this via
+  // `aws sts get-caller-identity`.
+  const deployAccountId = process.env.DEPLOY_AWS_ACCOUNT_ID;
+
   const { data: workspaces, error } = await client
     .from("workspaces")
     .select("*");
@@ -52,6 +60,12 @@ async function deploy(): Promise<void> {
 
     if (!aws_account_id) {
       console.log(`🔴 🍳 Missing AWS account id for ${id}`);
+      continue;
+    }
+    if (deployAccountId && aws_account_id !== deployAccountId) {
+      console.log(
+        `⏭️ Skipping ${id} — account ${aws_account_id} != deploy account ${deployAccountId}`,
+      );
       continue;
     }
     if (!aws_region) {

@@ -1,19 +1,19 @@
 name: Deploy Assembler
 
-# Isolated from deploy.yml so an assembler/crates change builds ONLY the
-# assembler image (and vice versa — erp/mes pushes never rebuild this).
-# Builds carbon/assembler:${sha} from apps/assembler/Dockerfile, which links the
-# prebuilt carbon/occt base (built here on demand — it's a ~30 min OCCT compile,
-# so it is NOT part of every run). The deploy job runs ci/src/assembler.ts
-# (same pattern as deploy.yml -> ci/src/deploy.ts) against the standalone
-# apps/assembler/sst.config.ts stack.
+# Builds carbon/assembler:${sha} from apps/assembler/Dockerfile (isolated from
+# deploy.yml so erp/mes pushes never rebuild this, and vice versa) and mirrors it
+# to BOTH ECRs: prod (ASSEMBLER_AWS_* secrets) and govcloud (shared AWS_* secrets).
+# A Lambda pulls its image same-account, so each target account needs the image.
+# The image links the prebuilt carbon/occt base (a ~30 min OCCT compile, built on
+# demand via workflow_dispatch — not every run). deploy runs ci/src/assembler.ts
+# against apps/assembler/sst.config.ts, fanning over the workspaces table.
 #
-# Auth: the assembler lives in the PROD account, NOT the govcloud account the
-# shared AWS_* secrets target — so this workflow uses dedicated ASSEMBLER_AWS_*
-# secrets. Their account must match each workspace row's aws_account_id (the
-# Lambda pulls the image same-account).
+# provenance/sbom stay off everywhere: Lambda rejects OCI image indexes and
+# attestations turn the pushed manifest into one.
 #
-# Prereq: ECR repos carbon/assembler + carbon/occt exist in that account.
+# Prereq: ECR repos carbon/assembler + carbon/occt exist in the prod account, and
+# carbon/assembler exists in the govcloud account (occt is not needed at govcloud
+# runtime — the assembler image bakes it in — but is mirrored for symmetry).
 
 on:
   push:
@@ -32,165 +32,160 @@ on:
         description: "Deploy the Lambda (+ optional ECS service) after building"
         type: boolean
         default: false
-      stage:
-        description: "SST stage to deploy (e.g. prod, govcloud)"
-        type: string
-        default: "prod"
 
 jobs:
-  occt-base:
-    name: OCCT base image
-    if: ${{ github.event_name == 'workflow_dispatch' && inputs.build_occt_base }}
+  build:
+    name: Build assembler image
+    # Disabled by default: the push trigger only fires once the repo variable
+    # ASSEMBLER_CI_ENABLED is 'true' (Settings -> Variables). Manual dispatch
+    # always works — running it by hand is intentional.
+    if: ${{ github.event_name == 'workflow_dispatch' || vars.ASSEMBLER_CI_ENABLED == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.ASSEMBLER_AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.ASSEMBLER_AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.ASSEMBLER_AWS_REGION }}
-
-      - name: Login to Amazon ECR
-        id: login-ecr
+      # Two ECR logins in one job: prod + govcloud live in different accounts
+      # (different registry hosts), so both credentials coexist in
+      # ~/.docker/config.json and every later `docker push` to either host works.
+      # The exists-checks below pass creds inline per-call rather than relying on
+      # whichever configure-aws-credentials ran last.
+      - name: Login to prod ECR
+        id: prod-ecr
         uses: aws-actions/amazon-ecr-login@v2
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.ASSEMBLER_AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.ASSEMBLER_AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ secrets.ASSEMBLER_AWS_REGION }}
+
+      - name: Login to govcloud ECR
+        id: gov-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      # The 8.0.0-p1 tag is immutable (OCCT version + patch level) — if it's
-      # already in ECR, the ~30 min compile is pointless; skip it.
-      - name: Check if OCCT base already exists
-        id: occt-exists
+      # OCCT base (workflow_dispatch + build_occt_base only). Build once into the
+      # local daemon, then push to whichever registries lack it. The 8.0.0-p1 tag
+      # is immutable, so re-pushing an existing tag errors — hence the per-registry
+      # exists-check gating each push. occt.Dockerfile builds from source (no ECR
+      # FROM), so the build itself needs no ECR read.
+      - name: Build and mirror OCCT base
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.build_occt_base }}
         run: |
-          if aws ecr describe-images --repository-name carbon/occt \
-               --image-ids imageTag=8.0.0-p1 >/dev/null 2>&1; then
-            echo "exists=true" >> "$GITHUB_OUTPUT"
-            echo "carbon/occt:8.0.0-p1 already in ECR — skipping build"
-          else
-            echo "exists=false" >> "$GITHUB_OUTPUT"
+          PROD_TAG="${{ steps.prod-ecr.outputs.registry }}/carbon/occt:8.0.0-p1"
+          GOV_TAG="${{ steps.gov-ecr.outputs.registry }}/carbon/occt:8.0.0-p1"
+
+          prod_has() { AWS_ACCESS_KEY_ID="${{ secrets.ASSEMBLER_AWS_ACCESS_KEY_ID }}" \
+            AWS_SECRET_ACCESS_KEY="${{ secrets.ASSEMBLER_AWS_SECRET_ACCESS_KEY }}" \
+            AWS_DEFAULT_REGION="${{ secrets.ASSEMBLER_AWS_REGION }}" \
+            aws ecr describe-images --repository-name carbon/occt --image-ids imageTag=8.0.0-p1 >/dev/null 2>&1; }
+          gov_has() { AWS_ACCESS_KEY_ID="${{ secrets.AWS_ACCESS_KEY_ID }}" \
+            AWS_SECRET_ACCESS_KEY="${{ secrets.AWS_SECRET_ACCESS_KEY }}" \
+            AWS_DEFAULT_REGION="${{ secrets.AWS_REGION }}" \
+            aws ecr describe-images --repository-name carbon/occt --image-ids imageTag=8.0.0-p1 >/dev/null 2>&1; }
+
+          prod_has && prod=1 || prod=0
+          gov_has && gov=1 || gov=0
+
+          if [ "$prod" = 1 ] && [ "$gov" = 1 ]; then
+            echo "carbon/occt:8.0.0-p1 already in both registries — skipping build"
+            exit 0
           fi
 
-      # Split build from push: the ~30 min OCCT compile is combined with `push`
-      # in a single buildkit solve, so a push failure aborts before the GHA
-      # cache flushes and the whole compile is lost on retry. `load: true`
-      # finishes the build (and the cache-to export) into the local daemon
-      # first; the separate `docker push` then can't cost the compile.
-      - name: Build OCCT base
-        if: steps.occt-exists.outputs.exists != 'true'
-        uses: docker/build-push-action@v5
-        with:
-          context: apps/assembler
-          file: apps/assembler/occt.Dockerfile
-          load: true
-          tags: ${{ steps.login-ecr.outputs.registry }}/carbon/occt:8.0.0-p1
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-          platforms: linux/amd64
-          # Lambda rejects OCI image indexes — attestations turn the pushed
-          # manifest into one, so both must stay off.
-          provenance: false
-          sbom: false
+          docker buildx build apps/assembler \
+            --file apps/assembler/occt.Dockerfile \
+            --platform linux/amd64 --provenance=false --sbom=false \
+            --cache-from type=gha --cache-to type=gha,mode=max \
+            --tag "$PROD_TAG" --tag "$GOV_TAG" --load
 
-      - name: Push OCCT base
-        if: steps.occt-exists.outputs.exists != 'true'
-        run: docker push ${{ steps.login-ecr.outputs.registry }}/carbon/occt:8.0.0-p1
+          if [ "$prod" = 0 ]; then docker push "$PROD_TAG"; else echo "occt already in prod — not re-pushing"; fi
+          if [ "$gov" = 0 ]; then docker push "$GOV_TAG"; else echo "occt already in govcloud — not re-pushing"; fi
 
-  build:
-    name: Build assembler image
-    # Disabled by default: the push trigger only fires once the repo variable
-    # ASSEMBLER_CI_ENABLED is set to 'true' (Settings -> Variables). Until the
-    # ECR repos + AWS secrets exist in the CI account, an automatic build on a
-    # main merge would just fail red. Manual workflow_dispatch always works —
-    # running it by hand is intentional.
-    #
-    # `needs: occt-base` so a dispatch that (re)builds the base finishes it
-    # BEFORE this job pulls it. When occt-base is skipped (the normal case),
-    # `!failure()` lets this job run anyway — `needs` alone would skip it too.
-    needs: occt-base
-    if: ${{ !failure() && !cancelled() && (github.event_name == 'workflow_dispatch' || vars.ASSEMBLER_CI_ENABLED == 'true') }}
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.ASSEMBLER_AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.ASSEMBLER_AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.ASSEMBLER_AWS_REGION }}
-
-      - name: Login to Amazon ECR
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v2
-
-      # Fail fast if the immutable OCCT base isn't in ECR — the assembler image
-      # links it via OCCT_IMAGE, so without it the build would die cryptically at
-      # `FROM`. The base is built on demand (dispatch with build_occt_base=true),
-      # not on every deploy.
-      - name: Require OCCT base image
+      # Fail fast if the prod OCCT base is missing — the assembler build links it
+      # via OCCT_IMAGE (from prod ECR), so without it `FROM` dies cryptically.
+      - name: Require prod OCCT base image
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.ASSEMBLER_AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.ASSEMBLER_AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: ${{ secrets.ASSEMBLER_AWS_REGION }}
         run: |
           aws ecr describe-images --repository-name carbon/occt \
             --image-ids imageTag=8.0.0-p1 >/dev/null 2>&1 || {
-            echo "carbon/occt:8.0.0-p1 is not in ECR."
+            echo "carbon/occt:8.0.0-p1 is not in prod ECR."
             echo "Dispatch this workflow once with build_occt_base=true to build it."
             exit 1
           }
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      # Context is the repo root (the cargo workspace spans crates/* + apps/assembler);
-      # the Dockerfile links the prebuilt OCCT base via the OCCT_IMAGE build-arg.
-      - name: Build and push assembler image
-        id: build
+      # Context is the repo root (the cargo workspace spans crates/* + apps/assembler).
+      # Build once into the local daemon (load), then push to both registries —
+      # avoids a second solve and lets Trivy scan the local image.
+      - name: Build assembler image
         uses: docker/build-push-action@v5
         with:
           context: .
           file: apps/assembler/Dockerfile
           build-args: |
-            OCCT_IMAGE=${{ steps.login-ecr.outputs.registry }}/carbon/occt:8.0.0-p1
-          push: true
+            OCCT_IMAGE=${{ steps.prod-ecr.outputs.registry }}/carbon/occt:8.0.0-p1
+          load: true
           tags: |
-            ${{ steps.login-ecr.outputs.registry }}/carbon/assembler:latest
-            ${{ steps.login-ecr.outputs.registry }}/carbon/assembler:${{ github.sha }}
+            ${{ steps.prod-ecr.outputs.registry }}/carbon/assembler:latest
+            ${{ steps.prod-ecr.outputs.registry }}/carbon/assembler:${{ github.sha }}
+            ${{ steps.gov-ecr.outputs.registry }}/carbon/assembler:latest
+            ${{ steps.gov-ecr.outputs.registry }}/carbon/assembler:${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
           platforms: linux/amd64
-          # Lambda rejects OCI image indexes — attestations turn the pushed
-          # manifest into one, so both must stay off.
           provenance: false
           sbom: false
 
-      # Report-only for now (exit-code 0). Flip to '1' to fail the build on
-      # CRITICAL/HIGH once the base image's findings are triaged.
+      # Report-only for now (exit-code 0). Flip to '1' to fail on CRITICAL/HIGH
+      # once the base image's findings are triaged.
       - name: Scan image (Trivy)
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: ${{ steps.login-ecr.outputs.registry }}/carbon/assembler:${{ github.sha }}
+          image-ref: ${{ steps.prod-ecr.outputs.registry }}/carbon/assembler:${{ github.sha }}
           severity: CRITICAL,HIGH
           ignore-unfixed: true
           exit-code: "0"
 
-  # Deploys automatically after a successful build on a main push (matching
-  # deploy.yml's ERP/MES continuous deploy), or on dispatch with `deploy=true`.
-  # Runs ci/src/assembler.ts, which fans out over the workspaces table (same as
-  # deploy.yml -> ci/src/deploy.ts): each workspace with `assembler = true`
-  # gets the image pushed by `build` (carbon/assembler:${github.sha}) deployed
-  # to its own AWS account. All per-workspace config (account, region, redis,
-  # api key, cert, domain) comes from the workspaces row — no per-value secrets.
+      - name: Push assembler image (prod + govcloud)
+        run: |
+          docker push ${{ steps.prod-ecr.outputs.registry }}/carbon/assembler:latest
+          docker push ${{ steps.prod-ecr.outputs.registry }}/carbon/assembler:${{ github.sha }}
+          docker push ${{ steps.gov-ecr.outputs.registry }}/carbon/assembler:latest
+          docker push ${{ steps.gov-ecr.outputs.registry }}/carbon/assembler:${{ github.sha }}
+
+  # Deploys after a successful build on a main push (matching deploy.yml's
+  # continuous deploy) or on dispatch with `deploy=true`. ci/src/assembler.ts fans
+  # out over the workspaces table: each workspace with `assembler = true` deploys
+  # the built image to its own account (all config from the workspace row).
+  # One build, both environments: a matrix leg per account (prod ASSEMBLER_AWS_*
+  # and govcloud AWS_*) so a single run deploys everywhere in parallel — no need
+  # to dispatch twice. Each leg configures its own creds; ci/src/assembler.ts
+  # (via the sts-resolved DEPLOY_AWS_ACCOUNT_ID) only deploys rows in that leg's
+  # account, so the two never collide across the aws-us-gov partition boundary.
   deploy:
-    name: Deploy assembler
-    # `!cancelled()` is required: occt-base is skipped on a normal deploy, and
-    # that skip propagates down the needs-chain — without this guard GitHub
-    # skips deploy too (build escapes the same way). The explicit
-    # build.result check still blocks a deploy after a failed image build.
-    if: ${{ !cancelled() && needs.build.result == 'success' && (github.event_name == 'push' || inputs.deploy) }}
+    name: Deploy assembler (${{ matrix.env.stage }})
+    if: ${{ needs.build.result == 'success' && (github.event_name == 'push' || inputs.deploy) }}
     needs: build
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        env:
+          - stage: prod
+            access_key_id: ASSEMBLER_AWS_ACCESS_KEY_ID
+            secret_access_key: ASSEMBLER_AWS_SECRET_ACCESS_KEY
+            region: ASSEMBLER_AWS_REGION
+          - stage: govcloud
+            access_key_id: AWS_ACCESS_KEY_ID
+            secret_access_key: AWS_SECRET_ACCESS_KEY
+            region: AWS_REGION
     env:
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
       SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
@@ -201,9 +196,15 @@ jobs:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-access-key-id: ${{ secrets.ASSEMBLER_AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.ASSEMBLER_AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.ASSEMBLER_AWS_REGION }}
+          aws-access-key-id: ${{ secrets[matrix.env.access_key_id] }}
+          aws-secret-access-key: ${{ secrets[matrix.env.secret_access_key] }}
+          aws-region: ${{ secrets[matrix.env.region] }}
+
+      # Scope the workspace fan-out to this leg's account — ci/src/assembler.ts
+      # skips rows in any other account so the prod and govcloud legs never touch
+      # each other's workspaces.
+      - name: Resolve deploy account
+        run: echo "DEPLOY_AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)" >> "$GITHUB_ENV"
 
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
@@ -223,5 +224,5 @@ jobs:
       - name: Deploy
         env:
           IMAGE_TAG: ${{ github.sha }}
-          STAGE: ${{ inputs.stage }}
+          STAGE: ${{ matrix.env.stage }}
         run: pnpm --filter ci ci:assembler
