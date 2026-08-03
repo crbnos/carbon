@@ -120,10 +120,6 @@ msgstr "{count, plural, one {# कोर्स} other {# कोर्स}}"
 msgid "{done} of {total} phases complete"
 msgstr "{done} में से {total} चरण पूर्ण"
 
-#. placeholder {0}: downstreamCount === 1 ? "later step uses" : "later steps use"
-msgid "{downstreamCount} {0} this step. Those references will be broken and shown as \"Step removed\" until you reconnect them."
-msgstr ""
-
 msgid "{from}–{to} of {count}"
 msgstr "{from}–{to} में से {count}"
 
@@ -3056,6 +3052,9 @@ msgstr "स्कोप की पुष्टि करें और हस्�
 msgid "Confirm Count"
 msgstr "गणना की पुष्टि करें"
 
+msgid "Confirm delete"
+msgstr ""
+
 msgid "Confirm how your company runs and lock the scope."
 msgstr "अपनी कंपनी कैसे चलती है यह पुष्टि करें और स्कोप को लॉक करें।"
 
@@ -4594,9 +4593,6 @@ msgstr "आपूर्तिकर्ता प्रकार हटाएं"
 #. placeholder {0}: pendingDelete.quantity
 msgid "Delete the price break for quantity {0}? This can't be undone."
 msgstr "मात्रा {0} के लिए मूल्य ब्रेक हटाएं? इसे पूर्ववत नहीं किया जा सकता।"
-
-msgid "Delete this step?"
-msgstr ""
 
 msgid "Delete Timecard"
 msgstr "टाइमकार्ड हटाएं"
@@ -14431,9 +14427,6 @@ msgstr "इस बिक्रय आदेश के संबंधित क�
 
 msgid "This sales order has lines that require jobs to be created"
 msgstr "इस बिक्रय आदेश में ऐसी पंक्तियाँ हैं जिनके लिए नौकरियाँ बनाई जानी आवश्यक हैं"
-
-msgid "This step and its connections will be removed. This cannot be undone."
-msgstr ""
 
 msgid "This step chooses which path runs next — it doesn't produce values of its own. Reference earlier steps further down each path."
 msgstr ""

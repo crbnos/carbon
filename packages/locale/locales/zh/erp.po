@@ -120,10 +120,6 @@ msgstr "{count, plural, one {# 门课程} other {# 门课程}}"
 msgid "{done} of {total} phases complete"
 msgstr "{done} 个，共 {total} 个阶段已完成"
 
-#. placeholder {0}: downstreamCount === 1 ? "later step uses" : "later steps use"
-msgid "{downstreamCount} {0} this step. Those references will be broken and shown as \"Step removed\" until you reconnect them."
-msgstr ""
-
 msgid "{from}–{to} of {count}"
 msgstr "{from}–{to} 共 {count}"
 
@@ -3056,6 +3052,9 @@ msgstr "确认并签署范围"
 msgid "Confirm Count"
 msgstr "确认盘点"
 
+msgid "Confirm delete"
+msgstr ""
+
 msgid "Confirm how your company runs and lock the scope."
 msgstr "确认您的公司如何运营并锁定范围。"
 
@@ -4594,9 +4593,6 @@ msgstr "删除供应商类型"
 #. placeholder {0}: pendingDelete.quantity
 msgid "Delete the price break for quantity {0}? This can't be undone."
 msgstr "删除数量{0}的价格区间？此操作无法撤销。"
-
-msgid "Delete this step?"
-msgstr ""
 
 msgid "Delete Timecard"
 msgstr "删除时间卡"
@@ -14431,9 +14427,6 @@ msgstr "此销售订单有关联的工作。选择如何处理它们。"
 
 msgid "This sales order has lines that require jobs to be created"
 msgstr "此销售订单有需要创建工作的行项目"
-
-msgid "This step and its connections will be removed. This cannot be undone."
-msgstr ""
 
 msgid "This step chooses which path runs next — it doesn't produce values of its own. Reference earlier steps further down each path."
 msgstr ""

@@ -120,10 +120,6 @@ msgstr "{count, plural, one {# kurs} other {# kurs}}"
 msgid "{done} of {total} phases complete"
 msgstr "{done} / {total} aşama tamamlandı"
 
-#. placeholder {0}: downstreamCount === 1 ? "later step uses" : "later steps use"
-msgid "{downstreamCount} {0} this step. Those references will be broken and shown as \"Step removed\" until you reconnect them."
-msgstr ""
-
 msgid "{from}–{to} of {count}"
 msgstr "{from}–{to} / {count}"
 
@@ -3056,6 +3052,9 @@ msgstr "Kapsamı onaylayın ve imzalayın"
 msgid "Confirm Count"
 msgstr "Sayımı Onayla"
 
+msgid "Confirm delete"
+msgstr ""
+
 msgid "Confirm how your company runs and lock the scope."
 msgstr "Şirketinizin nasıl çalıştığını doğrulayın ve kapsamı kilitleyin."
 
@@ -4594,9 +4593,6 @@ msgstr "Tedarikçi Türünü Sil"
 #. placeholder {0}: pendingDelete.quantity
 msgid "Delete the price break for quantity {0}? This can't be undone."
 msgstr "{0} miktarı için fiyat kırılımı silinsin mi? Bu işlem geri alınamaz."
-
-msgid "Delete this step?"
-msgstr ""
 
 msgid "Delete Timecard"
 msgstr "Çalışma Kaydını Sil"
@@ -14431,9 +14427,6 @@ msgstr "Bu satış siparişi ilgili işlere sahiptir. Onlarla ne yapılacağına
 
 msgid "This sales order has lines that require jobs to be created"
 msgstr "Bu satış siparişi, iş oluşturulmasını gerektiren satırlara sahiptir."
-
-msgid "This step and its connections will be removed. This cannot be undone."
-msgstr ""
 
 msgid "This step chooses which path runs next — it doesn't produce values of its own. Reference earlier steps further down each path."
 msgstr ""

@@ -120,10 +120,6 @@ msgstr "{count, plural, one {# kurs} other {# kursy}}"
 msgid "{done} of {total} phases complete"
 msgstr "{done} z {total} faz ukończonych"
 
-#. placeholder {0}: downstreamCount === 1 ? "later step uses" : "later steps use"
-msgid "{downstreamCount} {0} this step. Those references will be broken and shown as \"Step removed\" until you reconnect them."
-msgstr ""
-
 msgid "{from}–{to} of {count}"
 msgstr "{from}–{to} z {count}"
 
@@ -3056,6 +3052,9 @@ msgstr "Potwierdź i podpisz zakres"
 msgid "Confirm Count"
 msgstr "Potwierdź liczbę"
 
+msgid "Confirm delete"
+msgstr ""
+
 msgid "Confirm how your company runs and lock the scope."
 msgstr "Potwierdź, jak działa Twoja firma i zablokuj zakres."
 
@@ -4594,9 +4593,6 @@ msgstr "Usuń typ dostawcy"
 #. placeholder {0}: pendingDelete.quantity
 msgid "Delete the price break for quantity {0}? This can't be undone."
 msgstr "Usunąć przerwę cenową dla ilości {0}? Tej operacji nie można cofnąć."
-
-msgid "Delete this step?"
-msgstr ""
 
 msgid "Delete Timecard"
 msgstr "Usuń kartę czasu pracy"
@@ -14431,9 +14427,6 @@ msgstr "To zamówienie sprzedaży ma powiązane zadania. Wybierz, co z nimi zrob
 
 msgid "This sales order has lines that require jobs to be created"
 msgstr "To zamówienie sprzedaży zawiera linie, które wymagają utworzenia zadań"
-
-msgid "This step and its connections will be removed. This cannot be undone."
-msgstr ""
 
 msgid "This step chooses which path runs next — it doesn't produce values of its own. Reference earlier steps further down each path."
 msgstr ""

@@ -1,29 +1,34 @@
-import { IconButton } from "@carbon/react";
+import { cn, IconButton } from "@carbon/react";
 import type { WorkflowNode, WorkflowNodeType } from "@carbon/workflows";
 import { FAILURE_HANDLE, getNodeHandles } from "@carbon/workflows";
 import { WORKFLOW_LABELS } from "@carbon/workflows/labels";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { NodeProps } from "@xyflow/react";
-import { memo, useState } from "react";
+import { memo, useEffect, useState } from "react";
 import {
-  LuCircleX,
   LuMaximize2,
   LuMinimize2,
-  LuTriangleAlert
+  LuTrash2,
+  LuTriangleAlert,
+  LuX
 } from "react-icons/lu";
 import { NODE_FORMS } from "../config/forms/index";
 import { InlineNodeName } from "../config/InlineNodeName";
 import { useBuilderStore, useBuilderStoreShallow } from "../context";
-import { DeleteNodeDialog } from "../DeleteNodeDialog";
 import { asWorkflowNode } from "../graph";
-import type { NodePort } from "../NodeCard";
+import type { NodePort, PortTone } from "../NodeCard";
 import { NodeCard } from "../NodeCard";
 import { NODE_KIND_META } from "./meta";
 
 const PORT_LABEL: Record<string, string> = {
-  out: "next",
-  success: "worked",
-  failure: "failed"
+  out: "Next",
+  success: "Success",
+  failure: "Failure"
+};
+
+const PORT_TONE: Record<string, PortTone> = {
+  success: "success",
+  failure: "failure"
 };
 
 // Handles come from `getNodeHandles` — the same function the validator uses — so
@@ -39,7 +44,11 @@ function portsFor(node: WorkflowNode): NodePort[] {
         : handle;
       return { id: handle, label };
     }
-    return { id: handle, label: PORT_LABEL[handle] ?? handle };
+    return {
+      id: handle,
+      label: PORT_LABEL[handle] ?? handle,
+      tone: PORT_TONE[handle]
+    };
   });
 }
 
@@ -69,7 +78,16 @@ function WorkflowNodeCardImpl({ id, type, data, selected }: NodeProps) {
     (state) => state.nodes.filter((n) => n.type === "trigger").length
   );
 
-  const [deleteOpen, setDeleteOpen] = useState(false);
+  // Two-click delete instead of a confirm dialog: the first click arms the
+  // button, the second removes. Disarms itself so a stray click never lingers.
+  const [armed, setArmed] = useState(false);
+  const removeNode = useBuilderStore((state) => state.removeNode);
+
+  useEffect(() => {
+    if (!armed) return;
+    const timer = setTimeout(() => setArmed(false), 3000);
+    return () => clearTimeout(timer);
+  }, [armed]);
 
   const catalogId = meta.catalogId?.(node);
   const label = catalogId
@@ -128,15 +146,17 @@ function WorkflowNodeCardImpl({ id, type, data, selected }: NodeProps) {
         />
         {canDelete && (
           <IconButton
-            aria-label={t`Delete step`}
-            icon={<LuCircleX />}
+            aria-label={armed ? t`Confirm delete` : t`Delete step`}
+            icon={armed ? <LuTrash2 /> : <LuX />}
             variant="ghost"
             size="sm"
-            className="text-destructive hover:text-destructive"
+            className={cn(armed && "text-destructive hover:text-destructive")}
             onClick={(e) => {
               e.stopPropagation();
-              setDeleteOpen(true);
+              if (armed) removeNode(id);
+              else setArmed(true);
             }}
+            onBlur={() => setArmed(false)}
           />
         )}
       </div>
@@ -171,9 +191,6 @@ function WorkflowNodeCardImpl({ id, type, data, selected }: NodeProps) {
           </p>
         )}
       </NodeCard>
-      {deleteOpen && (
-        <DeleteNodeDialog nodeId={id} onClose={() => setDeleteOpen(false)} />
-      )}
     </>
   );
 }

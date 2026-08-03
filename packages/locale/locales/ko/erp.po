@@ -120,10 +120,6 @@ msgstr "교육과정 {count}개"
 msgid "{done} of {total} phases complete"
 msgstr "{done}개 중 {total}개 단계 완료"
 
-#. placeholder {0}: downstreamCount === 1 ? "later step uses" : "later steps use"
-msgid "{downstreamCount} {0} this step. Those references will be broken and shown as \"Step removed\" until you reconnect them."
-msgstr ""
-
 msgid "{from}–{to} of {count}"
 msgstr "{count}개 중 {from}–{to}"
 
@@ -3056,6 +3052,9 @@ msgstr "범위를 확인하고 서명하세요"
 msgid "Confirm Count"
 msgstr "실사 확인"
 
+msgid "Confirm delete"
+msgstr ""
+
 msgid "Confirm how your company runs and lock the scope."
 msgstr "귀사의 운영 방식을 확인하고 범위를 고정하세요."
 
@@ -4594,9 +4593,6 @@ msgstr "공급업체 유형 삭제"
 #. placeholder {0}: pendingDelete.quantity
 msgid "Delete the price break for quantity {0}? This can't be undone."
 msgstr "수량 {0}에 대한 가격 구간을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다."
-
-msgid "Delete this step?"
-msgstr ""
 
 msgid "Delete Timecard"
 msgstr "근무기록 삭제"
@@ -14431,9 +14427,6 @@ msgstr "이 판매주문에는 연결된 작업이 있습니다. 처리 방법�
 
 msgid "This sales order has lines that require jobs to be created"
 msgstr "이 판매주문에는 작업 생성이 필요한 라인이 있습니다"
-
-msgid "This step and its connections will be removed. This cannot be undone."
-msgstr ""
 
 msgid "This step chooses which path runs next — it doesn't produce values of its own. Reference earlier steps further down each path."
 msgstr ""

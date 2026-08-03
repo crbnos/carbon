@@ -120,10 +120,6 @@ msgstr "{count, plural, one {# course} other {# courses}}"
 msgid "{done} of {total} phases complete"
 msgstr "{done} of {total} phases complete"
 
-#. placeholder {0}: downstreamCount === 1 ? "later step uses" : "later steps use"
-msgid "{downstreamCount} {0} this step. Those references will be broken and shown as \"Step removed\" until you reconnect them."
-msgstr "{downstreamCount} {0} this step. Those references will be broken and shown as \"Step removed\" until you reconnect them."
-
 msgid "{from}–{to} of {count}"
 msgstr "{from}–{to} of {count}"
 
@@ -3056,6 +3052,9 @@ msgstr "Confirm and sign the scope"
 msgid "Confirm Count"
 msgstr "Confirm Count"
 
+msgid "Confirm delete"
+msgstr "Confirm delete"
+
 msgid "Confirm how your company runs and lock the scope."
 msgstr "Confirm how your company runs and lock the scope."
 
@@ -4594,9 +4593,6 @@ msgstr "Delete Supplier Type"
 #. placeholder {0}: pendingDelete.quantity
 msgid "Delete the price break for quantity {0}? This can't be undone."
 msgstr "Delete the price break for quantity {0}? This can't be undone."
-
-msgid "Delete this step?"
-msgstr "Delete this step?"
 
 msgid "Delete Timecard"
 msgstr "Delete Timecard"
@@ -14431,9 +14427,6 @@ msgstr "This sales order has associated jobs. Choose what to do with them."
 
 msgid "This sales order has lines that require jobs to be created"
 msgstr "This sales order has lines that require jobs to be created"
-
-msgid "This step and its connections will be removed. This cannot be undone."
-msgstr "This step and its connections will be removed. This cannot be undone."
 
 msgid "This step chooses which path runs next — it doesn't produce values of its own. Reference earlier steps further down each path."
 msgstr "This step chooses which path runs next — it doesn't produce values of its own. Reference earlier steps further down each path."

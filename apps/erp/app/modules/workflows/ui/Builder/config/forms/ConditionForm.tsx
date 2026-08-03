@@ -234,25 +234,27 @@ export function ConditionForm({ node }: NodeFormProps) {
         const posLabel = isElse ? t`Path else` : t`Path ${idx}`;
 
         return (
-          <div key={path.id} className="space-y-1">
-            {/* Semantic kind pill — full-bleed so the handle lands on the card edge */}
-            <div className="relative -mx-2.5 flex items-center justify-between px-2.5">
+          // Full-bleed + `relative` centres the handle on the whole block (pill and
+          // box). `gap` not `space-y`, or the absolute handle would gain a margin.
+          <div
+            key={path.id}
+            className="relative -mx-2.5 flex flex-col gap-1 px-2.5"
+          >
+            <div className="flex items-center justify-between">
               <span className="rounded-full border border-border bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
                 {KIND_PILL[path.kind]}
               </span>
-              <div className="flex items-center gap-1 pr-2">
-                {!isIf && (
-                  <IconButton
-                    icon={<LuX />}
-                    aria-label={t`Remove path`}
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => removePath(path.id)}
-                  />
-                )}
-              </div>
-              <PortAnchor id={path.id} />
+              {!isIf && (
+                <IconButton
+                  icon={<LuX />}
+                  aria-label={t`Remove path`}
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => removePath(path.id)}
+                />
+              )}
             </div>
+            <PortAnchor id={path.id} />
 
             {/* Bordered block */}
             <div className="rounded-md border border-border p-3 space-y-3">
