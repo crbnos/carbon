@@ -460,7 +460,16 @@ async function applyFkSnapshots(
         query = query.eq("companyId", companyId);
       }
       const { data, error } = await query;
-      if (error || !data) return null;
+      if (error || !data) {
+        // A rejected query (e.g. a tenancy filter on a table without
+        // companyId) silently degrades the affected diffs to raw ids —
+        // make that visible.
+        log.error(`FK snapshot lookup failed for table "${table}"`, {
+          error,
+          tenantScoped
+        });
+        return null;
+      }
       return data as Array<Record<string, unknown>>;
     } catch (err) {
       log.error(`FK snapshot lookup failed for table "${table}"`, {
