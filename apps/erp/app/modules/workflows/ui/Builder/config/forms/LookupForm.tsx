@@ -44,7 +44,7 @@ function clauseToMatch(c: Clause): WorkingMatch {
   };
 }
 
-export function LookupForm({ node }: NodeFormProps<"lookup">) {
+export function LookupForm({ node, issues }: NodeFormProps<"lookup">) {
   const updateNodeData = useBuilderStore((s) => s.updateNodeData);
   const label = useWorkflowLabel();
   const { t } = useLingui();
@@ -181,6 +181,8 @@ export function LookupForm({ node }: NodeFormProps<"lookup">) {
                 context={{ nodeId: node.id, inLoop: false }}
                 leftMode="column"
                 entity={entity}
+                fieldPath={`match.${idx}`}
+                issues={issues}
               />
             ))}
             <button

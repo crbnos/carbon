@@ -1,5 +1,9 @@
-import type { MentionOptions } from "@tiptap/extension-mention";
+import type {
+  MentionNodeAttrs,
+  MentionOptions
+} from "@tiptap/extension-mention";
 import Mention from "@tiptap/extension-mention";
+import type { Node as ProseMirrorNode } from "@tiptap/pm/model";
 import { ReactRenderer } from "@tiptap/react";
 import type {
   SuggestionKeyDownProps,
@@ -29,20 +33,41 @@ export interface CreateMentionSuggestionOptions {
    * Optional ref to the element to append the popup to
    */
   elementRef?: RefObject<Element> | null;
+  /**
+   * Overrides the default prefix match. Use for substring or fuzzy matching.
+   */
+  filter?: (item: MentionSuggestion, query: string) => boolean;
+  /**
+   * What may precede the trigger character. `@tiptap/suggestion` defaults to
+   * `[" "]`, so the trigger is ignored mid-word; pass `null` to allow it anywhere.
+   */
+  allowedPrefixes?: string[] | null;
+  /**
+   * Fires when the popup opens and closes. The host needs this to stop competing
+   * for keys — ProseMirror consults `editorProps.handleKeyDown` before plugins,
+   * so a host that swallows Enter would swallow the popup's Enter too.
+   */
+  onActiveChange?: (active: boolean) => void;
 }
+
+const startsWithQuery = (item: MentionSuggestion, query: string) =>
+  item.label.toLowerCase().startsWith(query.toLowerCase());
 
 export function createMentionSuggestion({
   char,
   items,
-  elementRef
+  elementRef,
+  filter,
+  allowedPrefixes,
+  onActiveChange
 }: CreateMentionSuggestionOptions): MentionOptions["suggestion"] {
+  const match = filter ?? startsWithQuery;
   return {
     char,
+    ...(allowedPrefixes !== undefined && { allowedPrefixes }),
     items: ({ query }) => {
       const itemList = typeof items === "function" ? items() : items;
-      return itemList.filter((item) =>
-        item.label.toLowerCase().startsWith(query.toLowerCase())
-      );
+      return itemList.filter((item) => match(item, query));
     },
     render: () => {
       let component: ReactRenderer<MentionListRef> | null = null;
@@ -50,6 +75,7 @@ export function createMentionSuggestion({
 
       return {
         onStart: (props: SuggestionProps<MentionSuggestion>) => {
+          onActiveChange?.(true);
           component = new ReactRenderer(MentionList, {
             props,
             editor: props.editor
@@ -92,6 +118,7 @@ export function createMentionSuggestion({
         },
 
         onExit() {
+          onActiveChange?.(false);
           popup?.[0]?.destroy();
           component?.destroy();
         }
@@ -117,7 +144,24 @@ export interface CreateMentionExtensionOptions {
    * Optional ref to append popup to
    */
   elementRef?: RefObject<Element> | null;
+  /**
+   * Overrides the default prefix match. Use for substring or fuzzy matching.
+   */
+  filter?: (item: MentionSuggestion, query: string) => boolean;
+  /**
+   * Overrides the text shown inside the chip. Defaults to the trigger char
+   * followed by the label, which is TipTap's own default.
+   */
+  renderLabel?: (attrs: { id: string | null; label?: string | null }) => string;
+  /** See `CreateMentionSuggestionOptions`. */
+  allowedPrefixes?: string[] | null;
+  /** See `CreateMentionSuggestionOptions`. */
+  onActiveChange?: (active: boolean) => void;
 }
+
+/** The chip styling, exported so a non-editable rendition of the same token matches. */
+export const MENTION_CHIP_CLASS =
+  "inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-400";
 
 /**
  * Creates a configured mention extension for a specific type of mention.
@@ -148,15 +192,38 @@ export function createMentionExtension({
   name,
   char,
   items,
-  elementRef
+  elementRef,
+  filter,
+  renderLabel,
+  allowedPrefixes,
+  onActiveChange
 }: CreateMentionExtensionOptions) {
+  const text = renderLabel
+    ? ({ node }: { node: ProseMirrorNode }) =>
+        renderLabel(node.attrs as MentionNodeAttrs)
+    : undefined;
+
   return Mention.configure({
     HTMLAttributes: {
-      class:
-        "inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-400",
+      class: MENTION_CHIP_CLASS,
       "data-mention-type": name
     },
-    suggestion: createMentionSuggestion({ char, items, elementRef })
+    suggestion: createMentionSuggestion({
+      char,
+      items,
+      elementRef,
+      filter,
+      allowedPrefixes,
+      onActiveChange
+    }),
+    ...(text && {
+      renderText: text,
+      renderHTML: ({ node, options }) => [
+        "span",
+        options.HTMLAttributes,
+        text({ node })
+      ]
+    })
   }).extend({
     name
   });

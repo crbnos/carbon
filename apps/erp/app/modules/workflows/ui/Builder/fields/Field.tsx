@@ -1,0 +1,54 @@
+import { cn } from "@carbon/react";
+import type { ReactNode } from "react";
+
+type FieldProps = {
+  label: string;
+  required?: boolean;
+  /** Message from a validation issue whose `field` path resolves here. */
+  issue?: string;
+  /** Advisory text shown only when there is no issue to report. */
+  hint?: string;
+  /** Repeated rows label their columns once, up top. Kept as `aria-label` here. */
+  hideLabel?: boolean;
+  children: ReactNode;
+};
+
+/** The label / required marker / message shell every value control sits in. */
+export function Field({
+  label,
+  required,
+  issue,
+  hint,
+  hideLabel,
+  children
+}: FieldProps) {
+  return (
+    <div className="flex w-full min-w-0 flex-col gap-1">
+      {/* Still rendered when hidden: an `aria-label` on a plain div is ignored. */}
+      <label
+        className={cn(
+          "text-sm font-medium text-foreground",
+          hideLabel && "sr-only"
+        )}
+      >
+        {label}
+        {required && <span className="ml-0.5 text-destructive">*</span>}
+      </label>
+      <div
+        className={cn(
+          "flex items-center gap-1",
+          issue && "rounded-md ring-2 ring-destructive ring-offset-1"
+        )}
+      >
+        {children}
+      </div>
+      {issue ? (
+        <p className="text-xs text-destructive">{issue}</p>
+      ) : (
+        hint && (
+          <p className="text-xs text-amber-600 dark:text-amber-400">{hint}</p>
+        )
+      )}
+    </div>
+  );
+}

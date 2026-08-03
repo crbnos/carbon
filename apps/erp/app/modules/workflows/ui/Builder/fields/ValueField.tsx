@@ -1,11 +1,14 @@
-import { cn } from "@carbon/react";
+import { useLingui } from "@lingui/react/macro";
 import { useState } from "react";
-import { LuVariable } from "react-icons/lu";
-import { useBuilderStore } from "../context";
+import { useBuilderStoreApi } from "../context";
+import { needsPicker, pickControl } from "./control";
+import { Field } from "./Field";
+import { InlineValueEditor } from "./InlineValueEditor";
 import { LiteralControl } from "./LiteralControl";
 import type { ValueFieldProps } from "./types";
 import { VariableChip } from "./VariableChip";
-import { VariablePicker } from "./VariablePicker";
+import { VariablePickerButton } from "./VariablePickerButton";
+import { hasStrayBrace } from "./valueParts";
 
 export function ValueField({
   label,
@@ -15,101 +18,88 @@ export function ValueField({
   value,
   onChange,
   context,
+  hideLabel,
+  placeholder,
   issue
 }: ValueFieldProps) {
+  const { t } = useLingui();
+  const store = useBuilderStoreApi();
   const [pickerOpen, setPickerOpen] = useState(false);
-  const nodes = useBuilderStore((s) => s.nodes);
-  const isRef = value?.kind === "ref" || value?.kind === "item";
+  const control = pickControl(type, value, choices);
+  const ref =
+    value?.kind === "ref" || value?.kind === "item" ? value : undefined;
+
+  // Undefined when the step is gone — `VariableChip` keys its "step removed"
+  // state off that, so it must not be defaulted to the id.
   const nodeTitle =
-    value?.kind === "ref"
-      ? (nodes.find((n) => n.id === value.nodeId)?.name ?? value.nodeId)
+    ref?.kind === "ref"
+      ? store.getState().nodes.find((n) => n.id === ref.nodeId)?.name
       : undefined;
 
-  const literalValue =
-    value?.kind === "literal"
-      ? (value.value as string | number | boolean | null | undefined)
-      : undefined;
-
-  const refValue = isRef ? value : undefined;
+  if (control === "inline") {
+    return (
+      <Field
+        label={label}
+        required={required}
+        hideLabel={hideLabel}
+        issue={issue}
+        hint={
+          hasStrayBrace(value)
+            ? t`A plain { is sent as-is. Pick a variable from the menu.`
+            : undefined
+        }
+      >
+        <InlineValueEditor
+          accepts={type}
+          value={value}
+          onChange={onChange}
+          context={context}
+          placeholder={placeholder}
+          hasIssue={!!issue}
+        />
+      </Field>
+    );
+  }
 
   return (
-    <div className="flex w-full flex-col gap-1">
-      <label className="text-sm font-medium text-foreground">
-        {label}
-        {required && <span className="ml-0.5 text-destructive">*</span>}
-      </label>
-
-      <div
-        className={cn(
-          "flex items-center gap-1",
-          issue && "rounded-md ring-2 ring-destructive ring-offset-1"
-        )}
-      >
-        {isRef ? (
-          <>
-            <div className="min-w-0 flex-1">
-              <VariableChip
-                variable={value}
-                nodeTitle={nodeTitle}
-                onRemove={() => onChange(undefined)}
-                onReopen={() => setPickerOpen(true)}
-              />
-            </div>
-            <VariablePicker
-              accepts={type}
-              nodeId={context.nodeId}
-              inLoop={context.inLoop}
-              value={refValue}
-              onChange={(next) => onChange(next)}
-              open={pickerOpen}
-              onOpenChange={setPickerOpen}
-            >
-              <button
-                type="button"
-                title="Change variable"
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-input bg-muted text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-                aria-label="Change variable"
-                onClick={() => setPickerOpen(true)}
-              >
-                <LuVariable className="h-4 w-4" />
-              </button>
-            </VariablePicker>
-          </>
+    <Field
+      label={label}
+      required={required}
+      hideLabel={hideLabel}
+      issue={issue}
+    >
+      <div className="min-w-0 flex-1">
+        {control === "chip" && ref ? (
+          <VariableChip
+            variable={ref}
+            nodeTitle={nodeTitle}
+            onRemove={() => onChange(undefined)}
+            onReopen={() => setPickerOpen(true)}
+          />
         ) : (
-          <>
-            <div className="min-w-0 flex-1">
-              <LiteralControl
-                type={type}
-                choices={choices}
-                value={literalValue}
-                onChange={onChange}
-              />
-            </div>
-            <VariablePicker
-              accepts={type}
-              nodeId={context.nodeId}
-              inLoop={context.inLoop}
-              value={refValue}
-              onChange={(next) => onChange(next)}
-              open={pickerOpen}
-              onOpenChange={setPickerOpen}
-            >
-              <button
-                type="button"
-                title="Pick a variable"
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-input bg-muted text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-                aria-label="Pick variable"
-                onClick={() => setPickerOpen(true)}
-              >
-                <LuVariable className="h-4 w-4" />
-              </button>
-            </VariablePicker>
-          </>
+          <LiteralControl
+            type={type}
+            choices={choices}
+            value={
+              value?.kind === "literal"
+                ? (value.value as string | number | boolean | null | undefined)
+                : undefined
+            }
+            onChange={onChange}
+          />
         )}
       </div>
-
-      {issue && <p className="text-xs text-destructive">{issue}</p>}
-    </div>
+      {needsPicker(control) && (
+        <VariablePickerButton
+          accepts={type}
+          context={context}
+          value={ref}
+          onChange={onChange}
+          open={pickerOpen}
+          onOpenChange={setPickerOpen}
+        />
+      )}
+    </Field>
   );
 }
 

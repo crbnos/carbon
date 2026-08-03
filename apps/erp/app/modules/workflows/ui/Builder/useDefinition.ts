@@ -1,8 +1,8 @@
-import type { WorkflowDefinition } from "@carbon/workflows";
+import type { AvailableVariable, WorkflowDefinition } from "@carbon/workflows";
 import { availableVariables } from "@carbon/workflows";
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import { catalog } from "./catalog";
-import { useBuilderStoreShallow } from "./context";
+import { useBuilderStoreApi, useBuilderStoreShallow } from "./context";
 import { fromReactFlow } from "./graph";
 
 /** The current graph as a definition. Memoised so the graph is built once per change. */
@@ -21,4 +21,14 @@ export function useAvailableVariables(nodeId: string) {
     () => availableVariables(definition, nodeId, catalog),
     [definition, nodeId]
   );
+}
+
+/** The same list, computed on demand. Subscribing re-renders every field on every
+ * drag frame; a menu only needs the list at the moment it opens. */
+export function useVariablesGetter(nodeId: string): () => AvailableVariable[] {
+  const store = useBuilderStoreApi();
+  return useCallback(() => {
+    const { nodes, edges } = store.getState();
+    return availableVariables(fromReactFlow(nodes, edges), nodeId, catalog);
+  }, [store, nodeId]);
 }

@@ -412,6 +412,9 @@ msgstr "Uma peça contém as informações sobre um item específico que pode se
 msgid "A physical pull signal — a printed card or QR code living with the stock — that raises a purchase order or a job the moment it's scanned to refill a bin."
 msgstr "Um sinal de puxada física — um cartão impresso ou código QR vivendo com o estoque — que levanta um pedido de compra ou trabalho no momento em que é digitalizado para reabastecer uma caixa."
 
+msgid "A plain { is sent as-is. Pick a variable from the menu."
+msgstr ""
+
 msgid "A posted accounting entry: a header plus balanced debit and credit lines against GL accounts."
 msgstr "Um lançamento contábil postado: um cabeçalho mais linhas de débito e crédito equilibradas contra contas GL."
 
@@ -2672,6 +2675,9 @@ msgstr "Tipo de mudança"
 msgid "Change Type"
 msgstr "Alterar Tipo"
 
+msgid "Change variable"
+msgstr ""
+
 msgid "Changed By"
 msgstr "Alterado por"
 
@@ -2764,6 +2770,9 @@ msgstr "Conta de compensação entre recebimento de mercadorias e fatura do forn
 
 msgid "Clearing account for goods received / invoice received matching"
 msgstr "Conta de compensação para recebimento de mercadorias / correspondência de recebimento de fatura"
+
+msgid "Click again to disconnect"
+msgstr ""
 
 msgid "Click to rename"
 msgstr ""
@@ -5410,6 +5419,9 @@ msgstr "Eliminado"
 msgid "Elimination entity"
 msgstr "Entidade de eliminação"
 
+msgid "Else if {position}"
+msgstr ""
+
 msgid "email"
 msgstr "email"
 
@@ -6256,6 +6268,9 @@ msgstr "Falha ao carregar PDF"
 msgid "Failed to upload thumbnail"
 msgstr "Falha ao carregar miniatura"
 
+msgid "Failure"
+msgstr ""
+
 msgid "Failure Mode"
 msgstr "Modo de Falha"
 
@@ -7047,6 +7062,9 @@ msgstr "Identificadores"
 
 msgid "IDs and descriptions are generated for raw materials."
 msgstr "IDs e descrições são gerados para matérias-primas."
+
+msgid "If"
+msgstr ""
 
 msgid "If it can't wait for the next call, the leads on both sides decide."
 msgstr "Se não puder esperar pela próxima chamada, os líderes de ambos os lados decidem."
@@ -7881,9 +7899,6 @@ msgstr "Sair desta página"
 
 msgid "Ledger"
 msgstr "Livro razão"
-
-msgid "Left"
-msgstr ""
 
 msgid "Left item"
 msgstr "Item esquerdo"
@@ -9172,7 +9187,7 @@ msgstr "Nenhuma alteração registrada"
 msgid "No changes yet."
 msgstr "Nenhuma mudança ainda."
 
-msgid "No clauses yet. Add one above."
+msgid "No clauses yet. Use Add clause above."
 msgstr ""
 
 msgid "No comments yet. Be the first to add a comment."
@@ -9929,6 +9944,9 @@ msgstr "Conta de Outras Receitas para saldos de fornecedores liquidados sem paga
 msgid "Other Type"
 msgstr "Outro Tipo"
 
+msgid "Otherwise"
+msgstr ""
+
 msgid "Out"
 msgstr "Fora"
 
@@ -10116,11 +10134,7 @@ msgstr "Aprovado"
 msgid "Path"
 msgstr "Caminho"
 
-#. placeholder {0}: conditionPathIndex(paths, path.id)
-msgid "Path {0}"
-msgstr ""
-
-msgid "Path else"
+msgid "Path {position}"
 msgstr ""
 
 msgid "Pay Rate"
@@ -10264,9 +10278,6 @@ msgstr "Impressoras físicas disponíveis para atribuição."
 msgid "Pick"
 msgstr "Selecionar"
 
-msgid "Pick a column"
-msgstr ""
-
 msgid "Pick a column to sort by"
 msgstr "Escolha uma coluna para ordenar"
 
@@ -10276,13 +10287,19 @@ msgstr "Selecione um cliente ou tipo de cliente para visualizar seus preços."
 msgid "Pick a date or leave blank to clear it."
 msgstr "Escolha uma data ou deixe em branco para limpar."
 
-msgid "Pick a left operand first"
-msgstr ""
-
 msgid "Pick a list variable…"
 msgstr ""
 
+msgid "Pick a property"
+msgstr ""
+
+msgid "Pick a property first"
+msgstr ""
+
 msgid "Pick a record type…"
+msgstr ""
+
+msgid "Pick a variable"
 msgstr ""
 
 msgid "Pick List"
@@ -10753,6 +10770,9 @@ msgstr "Data Prometida"
 
 msgid "Properties"
 msgstr "Propriedades"
+
+msgid "Property"
+msgstr ""
 
 msgid "Protect the go-live date"
 msgstr "Proteja a data de ativação"
@@ -13425,6 +13445,12 @@ msgstr "Alternar"
 msgid "Switch a module off to remove it everywhere: Requirements, Data, Training, Scope."
 msgstr "Desative um módulo para removê-lo em todos os lugares: Requisitos, Dados, Treinamento, Escopo."
 
+msgid "Switch to pan mode"
+msgstr ""
+
+msgid "Switch to select mode"
+msgstr ""
+
 msgid "Switch users over and confirm access"
 msgstr "Mudar utilizadores e confirmar acesso"
 
@@ -14608,9 +14634,6 @@ msgstr "Alternar Explorador"
 msgid "Toggle level"
 msgstr "Alternar nível"
 
-msgid "Toggle pan mode"
-msgstr ""
-
 msgid "Toggle Properties"
 msgstr "Alternar Propriedades"
 
@@ -14853,6 +14876,12 @@ msgstr "Ativar os componentes integrados"
 
 msgid "Type"
 msgstr "Tipo"
+
+msgid "Type { for a variable"
+msgstr ""
+
+msgid "Type {TRIGGER} to insert a variable"
+msgstr ""
 
 msgid "Type a message..."
 msgstr "Digite uma mensagem..."

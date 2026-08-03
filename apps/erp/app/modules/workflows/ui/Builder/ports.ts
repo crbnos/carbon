@@ -5,6 +5,8 @@ import {
   getNodeHandles,
   SUCCESS_HANDLE
 } from "@carbon/workflows";
+import type { MessageDescriptor } from "@lingui/core";
+import { msg } from "@lingui/core/macro";
 import type { PortTone } from "./NodeCard";
 
 /** `card` handles float on the card's right edge; `inline` ones are drawn by the form. */
@@ -17,11 +19,9 @@ export type BuilderPort = {
   anchor: PortAnchorKind;
 };
 
-/** The `t` from `useLingui()`, passed in so this module stays callable outside React. */
-type Translate = (
-  strings: TemplateStringsArray,
-  ...values: unknown[]
-) => string;
+/** `useLingui()`'s `t`. Descriptors, not tagged templates: the macro only rewrites
+ * `` t`…` `` inside a component, so a `t` passed here would return an empty string. */
+type Translate = (descriptor: MessageDescriptor) => string;
 
 const TONE: Record<string, PortTone> = {
   [SUCCESS_HANDLE]: "success",
@@ -29,13 +29,14 @@ const TONE: Record<string, PortTone> = {
 };
 
 function staticLabel(handle: string, t: Translate): string {
-  if (handle === DEFAULT_HANDLE) return t`Next`;
-  if (handle === SUCCESS_HANDLE) return t`Success`;
-  if (handle === FAILURE_HANDLE) return t`Failure`;
+  if (handle === DEFAULT_HANDLE) return t(msg`Next`);
+  if (handle === SUCCESS_HANDLE) return t(msg`Success`);
+  if (handle === FAILURE_HANDLE) return t(msg`Failure`);
   return handle;
 }
 
-/** The pill in `ConditionForm` and the port tooltip both read this, so they cannot disagree. */
+/** The pill in `ConditionForm`. The handle beside it is labelled by position instead
+ * — see `conditionPortLabel` — so the two are deliberately different vocabularies. */
 export function conditionPathLabel(
   paths: ConditionPath[],
   pathId: string,
@@ -43,10 +44,23 @@ export function conditionPathLabel(
 ): string {
   const path = paths.find((candidate) => candidate.id === pathId);
   if (!path) return pathId;
-  if (path.kind === "else") return t`Otherwise`;
-  if (path.kind === "if") return t`If`;
+  if (path.kind === "else") return t(msg`Otherwise`);
+  if (path.kind === "if") return t(msg`If`);
   const position = conditionPathIndex(paths, pathId);
-  return t`Else if ${position}`;
+  return t(msg`Else if ${position}`);
+}
+
+/** Handle label. Positional, because the handle sits outside the box that names the path. */
+export function conditionPortLabel(
+  paths: ConditionPath[],
+  pathId: string,
+  t: Translate
+): string {
+  const path = paths.find((candidate) => candidate.id === pathId);
+  if (!path) return pathId;
+  if (path.kind === "else") return t(msg`Otherwise`);
+  const position = conditionPathIndex(paths, pathId);
+  return t(msg`Path ${position}`);
 }
 
 /** Position among the non-else paths. Zero-based, matching the port order. */
@@ -66,7 +80,7 @@ export function portsFor(node: WorkflowNode, t: Translate): BuilderPort[] {
     if (node.type === "condition") {
       return {
         id: handle,
-        label: conditionPathLabel(node.data.paths, handle, t),
+        label: conditionPortLabel(node.data.paths, handle, t),
         tone: "default" as PortTone,
         anchor: "inline" as PortAnchorKind
       };

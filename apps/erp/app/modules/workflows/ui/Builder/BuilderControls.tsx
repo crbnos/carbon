@@ -2,14 +2,15 @@ import { cn, IconButton } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
 import { MiniMap, Panel, useReactFlow } from "@xyflow/react";
 import {
-  LuChevronsDownUp,
-  LuChevronsUpDown,
   LuHand,
   LuMaximize,
+  LuMaximize2,
+  LuMinimize2,
   LuMinus,
+  LuMousePointer2,
   LuPlus
 } from "react-icons/lu";
-import { useBuilderStoreApi } from "./context";
+import { useBuilderStore, useBuilderStoreApi } from "./context";
 
 type Props = {
   panOnScroll: boolean;
@@ -25,6 +26,12 @@ export function BuilderControls({ panOnScroll, onTogglePanOnScroll }: Props) {
     const { nodes, setNodeExpanded } = store.getState();
     for (const n of nodes) setNodeExpanded(n.id, expanded);
   };
+
+  // A boolean selector only re-renders when the answer flips, so subscribing here
+  // survives the per-frame `nodes` churn.
+  const allExpanded = useBuilderStore((s) =>
+    s.nodes.every((n) => n.expanded !== false)
+  );
 
   return (
     // One Panel owns the whole bottom-right overlay. The minimap is a Panel of its
@@ -54,25 +61,23 @@ export function BuilderControls({ panOnScroll, onTogglePanOnScroll }: Props) {
         />
         <div className="mx-0.5 h-4 w-px bg-border" />
         <IconButton
-          aria-label={t`Collapse all`}
-          icon={<LuChevronsDownUp />}
+          aria-label={allExpanded ? t`Collapse all` : t`Expand all`}
+          icon={allExpanded ? <LuMinimize2 /> : <LuMaximize2 />}
           variant="ghost"
           size="sm"
-          onClick={() => expandAll(false)}
-        />
-        <IconButton
-          aria-label={t`Expand all`}
-          icon={<LuChevronsUpDown />}
-          variant="ghost"
-          size="sm"
-          onClick={() => expandAll(true)}
+          aria-pressed={!allExpanded}
+          className={cn(!allExpanded && "bg-muted")}
+          onClick={() => expandAll(!allExpanded)}
         />
         <div className="mx-0.5 h-4 w-px bg-border" />
         <IconButton
-          aria-label={t`Toggle pan mode`}
-          icon={<LuHand />}
+          aria-label={
+            panOnScroll ? t`Switch to select mode` : t`Switch to pan mode`
+          }
+          icon={panOnScroll ? <LuHand /> : <LuMousePointer2 />}
           variant="ghost"
           size="sm"
+          aria-pressed={panOnScroll}
           className={cn(panOnScroll && "bg-muted")}
           onClick={onTogglePanOnScroll}
         />

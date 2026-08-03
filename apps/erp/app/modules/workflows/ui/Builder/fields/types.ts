@@ -14,6 +14,10 @@ export type ValueFieldProps = {
   value: ValueOrRef | undefined;
   onChange: (next: ValueOrRef | undefined) => void;
   context: FieldContext;
+  /** Repeated rows (clause lists) label the columns once, at the top. */
+  hideLabel?: boolean;
+  /** Short placeholder for narrow columns; falls back to the field's own wording. */
+  placeholder?: string;
   /** Message from a publish issue whose `field` path resolves here. */
   issue?: string;
 };

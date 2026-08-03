@@ -23,6 +23,17 @@ export function handleClass(tone: PortTone = "default"): string {
 
 export const HANDLE_CLASS = handleClass();
 
+// Type scale for the config form. Scoped here so every field — including ones
+// from @carbon/react — shrinks without each form restating its own sizes.
+const BODY_TYPE = [
+  "text-xs",
+  "[&_label]:text-[11px]",
+  "[&_input]:text-xs",
+  "[&_textarea]:text-xs",
+  "[&_button]:text-xs",
+  "[&_[role=combobox]]:text-xs"
+].join(" ");
+
 const INTERACTIVE =
   "input,textarea,select,button,a,[role=button],[role=combobox],[contenteditable=true]";
 
@@ -149,7 +160,7 @@ export function NodeCard({
       </div>
 
       {isExpanded && children && (
-        <div ref={bodyRef} className="border-t px-2.5 py-2">
+        <div ref={bodyRef} className={cn("border-t px-2.5 py-2", BODY_TYPE)}>
           {children}
         </div>
       )}

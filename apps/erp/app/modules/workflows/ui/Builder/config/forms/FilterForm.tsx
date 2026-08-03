@@ -38,7 +38,7 @@ const newClause = (): Clause => ({
   }
 });
 
-export function FilterForm({ node }: NodeFormProps<"filter">) {
+export function FilterForm({ node, issues }: NodeFormProps<"filter">) {
   const updateNodeData = useBuilderStore((s) => s.updateNodeData);
   const { t } = useLingui();
 
@@ -186,6 +186,8 @@ export function FilterForm({ node }: NodeFormProps<"filter">) {
                 onChange={handleClauseChange}
                 onRemove={handleClauseRemove}
                 context={context}
+                fieldPath={`clauses.${i}`}
+                issues={issues}
               />
               {i < clauses.length - 1 && (
                 <div className="flex justify-center py-1">

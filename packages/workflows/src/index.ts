@@ -11,7 +11,7 @@ export type {
   RequiredPermission,
   WorkflowCatalog
 } from "./definition/catalog";
-export { createFixtureCatalog } from "./definition/catalog";
+export { createFixtureCatalog, walkPath } from "./definition/catalog";
 export type { WorkflowIssue, WorkflowIssueCode } from "./definition/issues";
 export {
   nextNodeName,

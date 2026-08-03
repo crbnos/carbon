@@ -17,8 +17,6 @@ export type NodeKindMeta = {
   description: string;
   defaultTitle: string;
   hasTarget: boolean;
-  /** Card width in px when expanded. Collapsed cards are always 260px. */
-  width: number;
   catalogId?: (node: WorkflowNode) => string | undefined;
   title?: (node: WorkflowNode) => string | undefined;
   summary?: (node: WorkflowNode) => string | undefined;
@@ -40,7 +38,6 @@ export const NODE_KIND_META: Record<WorkflowNodeType, NodeKindMeta> = {
     description: "Starts the workflow",
     defaultTitle: "When this happens",
     hasTarget: false,
-    width: 360,
     catalogId: (node) =>
       node.type === "trigger" ? node.data.events?.[0] : undefined,
     summary: (node) => {
@@ -59,7 +56,6 @@ export const NODE_KIND_META: Record<WorkflowNodeType, NodeKindMeta> = {
     description: "Sends the run down one path",
     defaultTitle: "Only if",
     hasTarget: true,
-    width: 460,
     summary: (node) => {
       if (node.type !== "condition") return undefined;
       const paths = node.data.paths ?? [];
@@ -84,7 +80,6 @@ export const NODE_KIND_META: Record<WorkflowNodeType, NodeKindMeta> = {
     description: "Notifies, sends or calls out",
     defaultTitle: "Do something",
     hasTarget: true,
-    width: 420,
     catalogId: (node) =>
       node.type === "action" ? node.data.action || undefined : undefined,
     summary: (node) => {
@@ -98,7 +93,6 @@ export const NODE_KIND_META: Record<WorkflowNodeType, NodeKindMeta> = {
     description: "Writes to a record in Carbon",
     defaultTitle: "Create or update a record",
     hasTarget: true,
-    width: 420,
     catalogId: (node) =>
       node.type === "entity" ? node.data.operation || undefined : undefined,
     summary: (node) => {
@@ -112,7 +106,6 @@ export const NODE_KIND_META: Record<WorkflowNodeType, NodeKindMeta> = {
     description: "Looks a record up to use later",
     defaultTitle: "Find a record",
     hasTarget: true,
-    width: 440,
     title: (node) =>
       node.type === "lookup" && node.data.entity
         ? `Find ${node.data.entity}`
@@ -133,7 +126,6 @@ export const NODE_KIND_META: Record<WorkflowNodeType, NodeKindMeta> = {
     description: "Keeps only the items that match",
     defaultTitle: "Narrow a list",
     hasTarget: true,
-    width: 440,
     summary: (node) => {
       if (node.type !== "filter") return undefined;
       const n = node.data.clauses?.length ?? 0;

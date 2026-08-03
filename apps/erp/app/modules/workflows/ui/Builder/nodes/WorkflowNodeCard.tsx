@@ -28,6 +28,7 @@ import {
   selectNode,
   selectTriggerCount
 } from "../selectors";
+import { NODE_CAN_COLLAPSE, NODE_CARD_WIDTH } from "./kinds";
 import { NODE_KIND_META } from "./meta";
 
 // Every node kind renders through this one component; what differs between kinds
@@ -39,7 +40,8 @@ function WorkflowNodeCardImpl({ id, type, data, selected }: NodeProps) {
 
   const store = useBuilderStoreApi();
   const builderNode = useBuilderStore(selectNode(id));
-  const isExpanded = builderNode?.expanded ?? true;
+  const canCollapse = NODE_CAN_COLLAPSE[node.type];
+  const isExpanded = canCollapse ? (builderNode?.expanded ?? true) : true;
 
   const nodeIssues = useBuilderStoreShallow((state) =>
     state.issues.filter((issue) => issue.nodeId === id)
@@ -102,16 +104,18 @@ function WorkflowNodeCardImpl({ id, type, data, selected }: NodeProps) {
   const actionsSlot =
     !isReadOnly && builderNode ? (
       <div className="nodrag nopan flex shrink-0 items-center gap-0.5">
-        <IconButton
-          aria-label={isExpanded ? t`Collapse` : t`Expand`}
-          icon={isExpanded ? <LuMinimize2 /> : <LuMaximize2 />}
-          variant="ghost"
-          size="sm"
-          onClick={(e) => {
-            e.stopPropagation();
-            setNodeExpanded(id, !isExpanded);
-          }}
-        />
+        {canCollapse && (
+          <IconButton
+            aria-label={isExpanded ? t`Collapse` : t`Expand`}
+            icon={isExpanded ? <LuMinimize2 /> : <LuMaximize2 />}
+            variant="ghost"
+            size="sm"
+            onClick={(e) => {
+              e.stopPropagation();
+              setNodeExpanded(id, !isExpanded);
+            }}
+          />
+        )}
         {canDelete && (
           <IconButton
             aria-label={armed ? t`Confirm delete` : t`Delete step`}
@@ -143,7 +147,7 @@ function WorkflowNodeCardImpl({ id, type, data, selected }: NodeProps) {
         issueCount={issueCount}
         isSelected={!!selected}
         isExpanded={isExpanded}
-        width={meta.width}
+        width={NODE_CARD_WIDTH[node.type]}
         actions={actionsSlot}
       >
         {builderNode && (

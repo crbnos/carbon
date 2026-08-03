@@ -33,6 +33,7 @@ import {
 import { useBuilderStore } from "../../context";
 import { TemplateField } from "../../fields/TemplateField";
 import { ValueField } from "../../fields/ValueField";
+import { issueForField } from "../../issues";
 import { useAvailableVariables } from "../../useDefinition";
 import { FormStack, Section } from "../layout";
 import type { NodeFormProps } from "./index";
@@ -332,9 +333,7 @@ export function ActionForm({ node, issues }: NodeFormProps<"action">) {
     if (!inputDef) return null;
     const inputLabel = label(actionInputLabelKey(actionId, name), name);
     const fieldContext = { nodeId: node.id, inLoop: isBatch };
-    const fieldIssue = issues?.find(
-      (i) => i.field === name || i.field === `inputs.${name}`
-    )?.message;
+    const fieldIssue = issueForField(issues, name, `inputs.${name}`);
 
     if (inputDef.template) {
       return (
@@ -346,6 +345,7 @@ export function ActionForm({ node, issues }: NodeFormProps<"action">) {
           value={inputs[name]}
           onChange={(v) => handleInputChange(name, v)}
           context={fieldContext}
+          issue={fieldIssue}
         />
       );
     }

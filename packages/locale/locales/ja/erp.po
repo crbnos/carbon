@@ -412,6 +412,9 @@ msgstr "パーツには、購入または製造できる特定の品目に関す
 msgid "A physical pull signal — a printed card or QR code living with the stock — that raises a purchase order or a job the moment it's scanned to refill a bin."
 msgstr "物理的なプル信号 (在庫と一緒に保管される印刷されたカードまたは QR コード)。スキャンされてビンを補充する瞬間に、購買注文またはジョブを起動します。"
 
+msgid "A plain { is sent as-is. Pick a variable from the menu."
+msgstr ""
+
 msgid "A posted accounting entry: a header plus balanced debit and credit lines against GL accounts."
 msgstr "投稿されたエントリ：GLアカウントに対してバランスの取れたヘッダープラスデビットおよびクレジットラインのペアリング。"
 
@@ -2672,6 +2675,9 @@ msgstr "種類を変更"
 msgid "Change Type"
 msgstr "タイプを変更"
 
+msgid "Change variable"
+msgstr ""
+
 msgid "Changed By"
 msgstr "変更者"
 
@@ -2764,6 +2770,9 @@ msgstr "商品受領と仕入先請求書間の相殺勘定; 両方が転記さ�
 
 msgid "Clearing account for goods received / invoice received matching"
 msgstr "商品受領/請求書受領照合用相殺勘定"
+
+msgid "Click again to disconnect"
+msgstr ""
 
 msgid "Click to rename"
 msgstr ""
@@ -5410,6 +5419,9 @@ msgstr "削除済み"
 msgid "Elimination entity"
 msgstr "相殺エンティティ"
 
+msgid "Else if {position}"
+msgstr ""
+
 msgid "email"
 msgstr "メール"
 
@@ -6256,6 +6268,9 @@ msgstr "PDFのアップロードに失敗しました"
 msgid "Failed to upload thumbnail"
 msgstr "サムネイルのアップロードに失敗しました"
 
+msgid "Failure"
+msgstr ""
+
 msgid "Failure Mode"
 msgstr "故障モード"
 
@@ -7047,6 +7062,9 @@ msgstr "識別子"
 
 msgid "IDs and descriptions are generated for raw materials."
 msgstr "IDと説明は原材料に対して生成されます。"
+
+msgid "If"
+msgstr ""
 
 msgid "If it can't wait for the next call, the leads on both sides decide."
 msgstr "次の通話を待つことができない場合、両側のリーダーが決定します。"
@@ -7881,9 +7899,6 @@ msgstr "このページを離れる"
 
 msgid "Ledger"
 msgstr "元帳"
-
-msgid "Left"
-msgstr ""
 
 msgid "Left item"
 msgstr "左側の項目"
@@ -9172,7 +9187,7 @@ msgstr "変更が記録されていません"
 msgid "No changes yet."
 msgstr "まだ変更がありません。"
 
-msgid "No clauses yet. Add one above."
+msgid "No clauses yet. Use Add clause above."
 msgstr ""
 
 msgid "No comments yet. Be the first to add a comment."
@@ -9929,6 +9944,9 @@ msgstr "仕入先残高が全額支払いなしでAP決済時にクリアされ�
 msgid "Other Type"
 msgstr "その他のタイプ"
 
+msgid "Otherwise"
+msgstr ""
+
 msgid "Out"
 msgstr "対象外"
 
@@ -10116,11 +10134,7 @@ msgstr "完了"
 msgid "Path"
 msgstr "パス"
 
-#. placeholder {0}: conditionPathIndex(paths, path.id)
-msgid "Path {0}"
-msgstr ""
-
-msgid "Path else"
+msgid "Path {position}"
 msgstr ""
 
 msgid "Pay Rate"
@@ -10264,9 +10278,6 @@ msgstr "割り当て可能な物理プリンター。"
 msgid "Pick"
 msgstr "ピック"
 
-msgid "Pick a column"
-msgstr ""
-
 msgid "Pick a column to sort by"
 msgstr "ソート対象の列を選択"
 
@@ -10276,13 +10287,19 @@ msgstr "顧客または顧客タイプを選択して、その価格を表示し
 msgid "Pick a date or leave blank to clear it."
 msgstr "日付を選択するか、空白のままにしてクリアしてください。"
 
-msgid "Pick a left operand first"
-msgstr ""
-
 msgid "Pick a list variable…"
 msgstr ""
 
+msgid "Pick a property"
+msgstr ""
+
+msgid "Pick a property first"
+msgstr ""
+
 msgid "Pick a record type…"
+msgstr ""
+
+msgid "Pick a variable"
 msgstr ""
 
 msgid "Pick List"
@@ -10753,6 +10770,9 @@ msgstr "約束日"
 
 msgid "Properties"
 msgstr "プロパティ"
+
+msgid "Property"
+msgstr ""
 
 msgid "Protect the go-live date"
 msgstr "ゴーライブ日を保護する"
@@ -13425,6 +13445,12 @@ msgstr "切り替え"
 msgid "Switch a module off to remove it everywhere: Requirements, Data, Training, Scope."
 msgstr "モジュールをオフにして、すべての場所から削除します：要件、データ、トレーニング、スコープ。"
 
+msgid "Switch to pan mode"
+msgstr ""
+
+msgid "Switch to select mode"
+msgstr ""
+
 msgid "Switch users over and confirm access"
 msgstr "ユーザーを切り替えてアクセスを確認"
 
@@ -14608,9 +14634,6 @@ msgstr "エクスプローラーを切り替え"
 msgid "Toggle level"
 msgstr "レベルを切り替え"
 
-msgid "Toggle pan mode"
-msgstr ""
-
 msgid "Toggle Properties"
 msgstr "プロパティを切り替え"
 
@@ -14853,6 +14876,12 @@ msgstr "組み込み機能をオンにする"
 
 msgid "Type"
 msgstr "種類"
+
+msgid "Type { for a variable"
+msgstr ""
+
+msgid "Type {TRIGGER} to insert a variable"
+msgstr ""
 
 msgid "Type a message..."
 msgstr "メッセージを入力..."

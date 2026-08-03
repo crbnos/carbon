@@ -24,6 +24,7 @@ import {
 } from "../../catalog";
 import { useBuilderStore } from "../../context";
 import { ValueField } from "../../fields/ValueField";
+import { issueForField } from "../../issues";
 import { FormStack, Section } from "../layout";
 import type { NodeFormProps } from "./index";
 
@@ -114,7 +115,7 @@ function OperationPicker({ selected, onSelect, label }: OperationPickerProps) {
 
 // ── EntityForm ────────────────────────────────────────────────────────────────
 
-export function EntityForm({ node }: NodeFormProps<"entity">) {
+export function EntityForm({ node, issues }: NodeFormProps<"entity">) {
   const updateNodeData = useBuilderStore((s) => s.updateNodeData);
   const label = useWorkflowLabel();
 
@@ -188,6 +189,7 @@ export function EntityForm({ node }: NodeFormProps<"entity">) {
                 value={inputs[name]}
                 onChange={(v) => handleInputChange(name, v)}
                 context={{ nodeId: node.id, inLoop: false }}
+                issue={issueForField(issues, name, `inputs.${name}`)}
               />
             );
           })}

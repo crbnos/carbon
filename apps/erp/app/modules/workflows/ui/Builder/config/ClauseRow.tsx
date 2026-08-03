@@ -1,6 +1,6 @@
 import { Combobox, cn, IconButton } from "@carbon/react";
 import type { Operator } from "@carbon/utils";
-import type { Clause, ValueType } from "@carbon/workflows";
+import type { Clause, ValueType, WorkflowIssue } from "@carbon/workflows";
 import { operatorsForType } from "@carbon/workflows";
 import { useLingui } from "@lingui/react/macro";
 import type React from "react";
@@ -8,14 +8,25 @@ import { memo, useEffect, useMemo } from "react";
 import { LuX } from "react-icons/lu";
 import OperatorCombobox from "~/modules/storage-rules/ui/OperatorCombobox";
 import { catalog, propertyLabelKey, useWorkflowLabel } from "../catalog";
+import { Field } from "../fields/Field";
 import type { FieldContext } from "../fields/types";
 import { ValueField } from "../fields/ValueField";
+import { issueForField } from "../issues";
 
-export const CLAUSE_GRID_CLASS = "grid w-full grid-cols-1 gap-2";
+// Property, operator, value read as one sentence, so they sit on one line.
+export const CLAUSE_GRID_CLASS = "grid w-full grid-cols-3 items-start gap-2";
 
 function pickDefaultOp(ops: readonly Operator[]): Operator {
   return ops.includes("eq") ? "eq" : (ops[0] ?? "eq");
 }
+
+/** A clause always has a left operand, so clearing the field empties it rather
+ * than removing it — `clauseSchema.left` is required. */
+const EMPTY_LEFT: Clause["left"] = {
+  kind: "literal",
+  type: { kind: "primitive", of: "string" },
+  value: ""
+};
 
 type ClauseRowProps = {
   clause: Clause;
@@ -30,6 +41,11 @@ type ClauseRowProps = {
   entity?: string;
   /** Optional drag grip element rendered before the clause body */
   grip?: React.ReactNode;
+  /** Only the first row of a clause list names its columns; the rest align under it. */
+  showLabels?: boolean;
+  /** Validator field path for this row, e.g. `clauses.0` or `paths.<id>.clauses.0`. */
+  fieldPath: string;
+  issues?: WorkflowIssue[];
 };
 
 function ClauseRowImpl({
@@ -41,23 +57,29 @@ function ClauseRowImpl({
   context,
   leftMode = "value",
   entity,
-  grip
+  grip,
+  showLabels = true,
+  fieldPath,
+  issues
 }: ClauseRowProps) {
+  const hideLabel = !showLabels;
   const { t } = useLingui();
   const label = useWorkflowLabel();
 
   // Derive the left operand's type for operator selection
+  // `left` is optional here on purpose: a clause mid-edit can be missing it, and a
+  // crash in one row white-screens the whole builder.
   const leftType = useMemo<ValueType | undefined>(() => {
     if (leftMode === "column") {
       const colName =
-        clause.left.kind === "literal" && typeof clause.left.value === "string"
+        clause.left?.kind === "literal" && typeof clause.left.value === "string"
           ? clause.left.value
           : undefined;
       if (!colName || !entity) return undefined;
       return catalog.getEntity(entity)?.properties[colName];
     }
     // "value" mode: derive from the embedded literal type only
-    return clause.left.kind === "literal" ? clause.left.type : undefined;
+    return clause.left?.kind === "literal" ? clause.left.type : undefined;
   }, [leftMode, clause.left, entity]);
 
   const availableOps = useMemo<readonly Operator[]>(
@@ -88,7 +110,7 @@ function ClauseRowImpl({
 
   const currentColumn =
     leftMode === "column" &&
-    clause.left.kind === "literal" &&
+    clause.left?.kind === "literal" &&
     typeof clause.left.value === "string"
       ? clause.left.value
       : undefined;
@@ -105,41 +127,42 @@ function ClauseRowImpl({
   return (
     <div className="flex w-full items-center gap-2">
       {grip}
-      <div
-        className={cn(
-          "group flex-1 min-w-0 rounded-lg border border-border bg-card p-3",
-          "transition-colors hover:border-border/80"
-        )}
-      >
+      {/* No border of its own: the clause list already sits inside a bordered
+          block, and a box per row reads as three nested frames. */}
+      <div className="min-w-0 flex-1">
         <div className={CLAUSE_GRID_CLASS}>
           {/* Left side */}
           {leftMode === "column" ? (
-            <Combobox
-              size="md"
-              placeholder={t`Pick a column`}
-              value={currentColumn}
-              options={columnOptions}
-              onChange={(col) => {
-                const colType = entity
-                  ? catalog.getEntity(entity)?.properties[col]
-                  : undefined;
-                const nextOps = colType
-                  ? Array.from(operatorsForType(colType))
-                  : [];
-                onChange(index, {
-                  left: {
-                    kind: "literal",
-                    type: { kind: "primitive", of: "string" },
-                    value: col
-                  },
-                  operator: pickDefaultOp(nextOps),
-                  right: undefined
-                });
-              }}
-            />
+            <Field label={t`Property`} hideLabel={hideLabel}>
+              <Combobox
+                size="md"
+                placeholder={t`Pick a property`}
+                value={currentColumn}
+                options={columnOptions}
+                onChange={(col) => {
+                  const colType = entity
+                    ? catalog.getEntity(entity)?.properties[col]
+                    : undefined;
+                  const nextOps = colType
+                    ? Array.from(operatorsForType(colType))
+                    : [];
+                  onChange(index, {
+                    left: {
+                      kind: "literal",
+                      type: { kind: "primitive", of: "string" },
+                      value: col
+                    },
+                    operator: pickDefaultOp(nextOps),
+                    right: undefined
+                  });
+                }}
+              />
+            </Field>
           ) : (
             <ValueField
-              label={t`Left`}
+              label={t`Property`}
+              hideLabel={hideLabel}
+              placeholder={t`Type { for a variable`}
               type={leftType ?? { kind: "primitive", of: "string" }}
               value={clause.left}
               onChange={(next) => {
@@ -149,42 +172,58 @@ function ClauseRowImpl({
                   ? Array.from(operatorsForType(nextType))
                   : [];
                 onChange(index, {
-                  left: next,
+                  left: next ?? EMPTY_LEFT,
                   operator: pickDefaultOp(nextOps),
                   right: undefined
                 });
               }}
               context={context}
+              issue={issueForField(
+                issues,
+                `${fieldPath}.left`,
+                `${fieldPath}.field`
+              )}
             />
           )}
 
           {/* Operator */}
-          <OperatorCombobox
-            value={clause.operator}
-            onChange={(op: Operator) =>
-              onChange(index, {
-                operator: op as Clause["operator"],
-                right: undefined
-              })
-            }
-            available={Array.from(availableOps)}
-            disabled={!leftType}
-          />
+          <Field label={t`Operator`} hideLabel={hideLabel}>
+            <OperatorCombobox
+              value={clause.operator}
+              onChange={(op: Operator) =>
+                onChange(index, {
+                  operator: op as Clause["operator"],
+                  right: undefined
+                })
+              }
+              available={Array.from(availableOps)}
+              disabled={!leftType}
+            />
+          </Field>
 
           {/* Right side */}
           {leftType ? (
             <ValueField
               label={t`Value`}
+              hideLabel={hideLabel}
+              placeholder={t`Type { for a variable`}
               type={leftType}
               choices={rightChoices}
               value={clause.right}
               onChange={(next) => onChange(index, { right: next })}
               context={context}
+              issue={issueForField(
+                issues,
+                `${fieldPath}.right`,
+                `${fieldPath}.value`
+              )}
             />
           ) : (
-            <div className="flex h-9 items-center rounded-md border border-dashed border-border px-3 text-sm text-muted-foreground">
-              {t`Pick a left operand first`}
-            </div>
+            <Field label={t`Value`} hideLabel={hideLabel}>
+              <div className="flex h-9 items-center rounded-md border border-dashed border-border px-3 text-xs text-muted-foreground">
+                {t`Pick a property first`}
+              </div>
+            </Field>
           )}
         </div>
       </div>

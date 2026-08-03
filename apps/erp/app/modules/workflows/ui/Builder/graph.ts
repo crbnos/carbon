@@ -9,8 +9,9 @@ import {
 } from "@carbon/workflows";
 import { nanoid } from "nanoid";
 import type { BuilderEdge, BuilderNode } from "../../types";
+import { MAX_NODE_CARD_WIDTH } from "./nodes/kinds";
 
-const NODE_WIDTH = 440;
+const NODE_WIDTH = MAX_NODE_CARD_WIDTH;
 const NODE_HEIGHT = 180;
 const GAP_X = 40;
 const GAP_Y = 80;

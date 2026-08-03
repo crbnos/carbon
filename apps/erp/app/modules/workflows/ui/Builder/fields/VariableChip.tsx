@@ -6,6 +6,7 @@ import {
   TooltipTrigger
 } from "@carbon/react";
 import type { ItemRef, VariableRef } from "@carbon/workflows";
+import { refLabel } from "./tokenId";
 
 type Props = {
   variable: VariableRef | ItemRef;
@@ -39,7 +40,10 @@ export function VariableChip({
     );
   }
 
-  const label = buildLabel(refVal, nodeTitle, typeName);
+  // Same builder the inline tokens use, so one reference reads identically everywhere.
+  const label = typeName
+    ? `${refLabel(refVal, nodeTitle)} › ${typeName}`
+    : refLabel(refVal, nodeTitle);
 
   return (
     <Tooltip>
@@ -58,22 +62,4 @@ export function VariableChip({
       <TooltipContent>{label}</TooltipContent>
     </Tooltip>
   );
-}
-
-function buildLabel(
-  ref: VariableRef | ItemRef,
-  nodeTitle?: string,
-  typeName?: string
-): string {
-  const parts: string[] = [];
-  if (ref.kind === "ref") {
-    if (nodeTitle) parts.push(nodeTitle);
-    if (ref.output) parts.push(ref.output);
-    if (ref.path.length > 0) parts.push(ref.path.join("."));
-  } else {
-    parts.push("current item");
-    if (ref.path.length > 0) parts.push(ref.path.join("."));
-  }
-  if (typeName) parts.push(typeName);
-  return parts.join(" › ");
 }

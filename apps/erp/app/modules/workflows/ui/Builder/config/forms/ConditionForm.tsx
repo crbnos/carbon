@@ -1,5 +1,5 @@
 import { Alert, AlertDescription, Button, IconButton } from "@carbon/react";
-import type { Clause, ConditionPath } from "@carbon/workflows";
+import type { Clause, ConditionPath, WorkflowIssue } from "@carbon/workflows";
 import {
   closestCenter,
   DndContext,
@@ -20,7 +20,7 @@ import { nanoid } from "nanoid";
 import { LuGripVertical, LuInfo, LuPlus, LuX } from "react-icons/lu";
 import { useBuilderStore } from "../../context";
 import { PortAnchor } from "../../PortAnchor";
-import { conditionPathIndex, conditionPathLabel } from "../../ports";
+import { conditionPathLabel, conditionPortLabel } from "../../ports";
 import ClauseRow from "../ClauseRow";
 import { CombinatorToggle } from "../CombinatorToggle";
 import { FormStack } from "../layout";
@@ -49,8 +49,11 @@ type SortableClauseItemProps = {
   onRemove: (index: number) => void;
   context: { nodeId: string; inLoop: boolean };
   combinator: "and" | "or";
+  isFirst: boolean;
   isLast: boolean;
   onCombinatorChange: (v: "and" | "or") => void;
+  fieldPath: string;
+  issues?: WorkflowIssue[];
 };
 
 function SortableClauseItem({
@@ -62,8 +65,11 @@ function SortableClauseItem({
   onRemove,
   context,
   combinator,
+  isFirst,
   isLast,
-  onCombinatorChange
+  onCombinatorChange,
+  fieldPath,
+  issues
 }: SortableClauseItemProps) {
   const { t } = useLingui();
   const {
@@ -103,9 +109,12 @@ function SortableClauseItem({
         onRemove={onRemove}
         context={context}
         grip={grip}
+        showLabels={isFirst}
+        fieldPath={fieldPath}
+        issues={issues}
       />
       {!isLast && (
-        <div className="flex justify-center py-1">
+        <div className="flex justify-center py-1.5">
           <CombinatorToggle value={combinator} onChange={onCombinatorChange} />
         </div>
       )}
@@ -113,7 +122,7 @@ function SortableClauseItem({
   );
 }
 
-export function ConditionForm({ node }: NodeFormProps<"condition">) {
+export function ConditionForm({ node, issues }: NodeFormProps<"condition">) {
   const updateNodeData = useBuilderStore((s) => s.updateNodeData);
   const onEdgesChange = useBuilderStore((s) => s.onEdgesChange);
   const edges = useBuilderStore((s) => s.edges);
@@ -217,11 +226,7 @@ export function ConditionForm({ node }: NodeFormProps<"condition">) {
       {paths.map((path) => {
         const isElse = path.kind === "else";
         const isIf = path.kind === "if";
-        // Same helper the port tooltip uses, so the two can never disagree.
         const kindLabel = conditionPathLabel(paths, path.id, t);
-        const posLabel = isElse
-          ? t`Path else`
-          : t`Path ${conditionPathIndex(paths, path.id)}`;
 
         return (
           // Full-bleed + `relative` centres the handle on the whole block (pill and
@@ -230,28 +235,11 @@ export function ConditionForm({ node }: NodeFormProps<"condition">) {
             key={path.id}
             className="relative -mx-2.5 flex flex-col gap-1 px-2.5"
           >
-            <div className="flex items-center justify-between">
-              <span className="rounded-full border border-border bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+            <div className="flex items-center justify-between gap-2">
+              <span className="rounded-full border border-border bg-muted px-2 py-0.5 text-[11px] font-semibold text-foreground">
                 {kindLabel}
               </span>
-              {!isIf && (
-                <IconButton
-                  icon={<LuX />}
-                  aria-label={t`Remove path`}
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => removePath(path.id)}
-                />
-              )}
-            </div>
-            <PortAnchor id={path.id} />
-
-            {/* Bordered block */}
-            <div className="rounded-md border border-border p-3 space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-                  {posLabel}
-                </span>
+              <div className="flex items-center gap-0.5">
                 {!isElse && (
                   <Button
                     type="button"
@@ -267,10 +255,25 @@ export function ConditionForm({ node }: NodeFormProps<"condition">) {
                     <Trans>Add clause</Trans>
                   </Button>
                 )}
+                {!isIf && (
+                  <IconButton
+                    icon={<LuX />}
+                    aria-label={t`Remove path`}
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => removePath(path.id)}
+                  />
+                )}
               </div>
+            </div>
+            <PortAnchor
+              id={path.id}
+              label={conditionPortLabel(paths, path.id, t)}
+            />
 
+            <div className="rounded-md border border-border bg-muted/30 p-2.5">
               {isElse ? (
-                <p className="text-sm text-muted-foreground">
+                <p className="text-xs text-muted-foreground">
                   <Trans>
                     Connect the Otherwise handle to a node to run when no
                     condition matches.
@@ -308,18 +311,21 @@ export function ConditionForm({ node }: NodeFormProps<"condition">) {
                           onRemove={(idx) => removeClause(path.id, idx)}
                           context={context}
                           combinator={path.combinator ?? "and"}
+                          isFirst={i === 0}
                           isLast={i === path.clauses.length - 1}
                           onCombinatorChange={(v) =>
                             updatePath(path.id, { combinator: v })
                           }
+                          fieldPath={`paths.${path.id}.clauses.${i}`}
+                          issues={issues}
                         />
                       ))}
                     </SortableContext>
                   </DndContext>
 
                   {path.clauses.length === 0 && (
-                    <p className="text-sm text-muted-foreground">
-                      <Trans>No clauses yet. Add one above.</Trans>
+                    <p className="text-xs text-muted-foreground">
+                      <Trans>No clauses yet. Use Add clause above.</Trans>
                     </p>
                   )}
                 </>

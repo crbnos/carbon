@@ -412,6 +412,9 @@ msgstr "A part contains the information about a specific item that can be purcha
 msgid "A physical pull signal — a printed card or QR code living with the stock — that raises a purchase order or a job the moment it's scanned to refill a bin."
 msgstr "A physical pull signal — a printed card or QR code living with the stock — that raises a purchase order or a job the moment it's scanned to refill a bin."
 
+msgid "A plain { is sent as-is. Pick a variable from the menu."
+msgstr "A plain { is sent as-is. Pick a variable from the menu."
+
 msgid "A posted accounting entry: a header plus balanced debit and credit lines against GL accounts."
 msgstr "A posted accounting entry: a header plus balanced debit and credit lines against GL accounts."
 
@@ -2672,6 +2675,9 @@ msgstr "Change type"
 msgid "Change Type"
 msgstr "Change Type"
 
+msgid "Change variable"
+msgstr "Change variable"
+
 msgid "Changed By"
 msgstr "Changed By"
 
@@ -2764,6 +2770,9 @@ msgstr "Clearing account between goods receipt and supplier invoice; balances wh
 
 msgid "Clearing account for goods received / invoice received matching"
 msgstr "Clearing account for goods received / invoice received matching"
+
+msgid "Click again to disconnect"
+msgstr "Click again to disconnect"
 
 msgid "Click to rename"
 msgstr "Click to rename"
@@ -5410,6 +5419,9 @@ msgstr "Eliminated"
 msgid "Elimination entity"
 msgstr "Elimination entity"
 
+msgid "Else if {position}"
+msgstr "Else if {position}"
+
 msgid "email"
 msgstr "email"
 
@@ -6256,6 +6268,9 @@ msgstr "Failed to upload PDF"
 msgid "Failed to upload thumbnail"
 msgstr "Failed to upload thumbnail"
 
+msgid "Failure"
+msgstr "Failure"
+
 msgid "Failure Mode"
 msgstr "Failure Mode"
 
@@ -7047,6 +7062,9 @@ msgstr "Identifiers"
 
 msgid "IDs and descriptions are generated for raw materials."
 msgstr "IDs and descriptions are generated for raw materials."
+
+msgid "If"
+msgstr "If"
 
 msgid "If it can't wait for the next call, the leads on both sides decide."
 msgstr "If it can't wait for the next call, the leads on both sides decide."
@@ -7881,9 +7899,6 @@ msgstr "Leave this page"
 
 msgid "Ledger"
 msgstr "Ledger"
-
-msgid "Left"
-msgstr "Left"
 
 msgid "Left item"
 msgstr "Left item"
@@ -9172,8 +9187,8 @@ msgstr "No changes recorded"
 msgid "No changes yet."
 msgstr "No changes yet."
 
-msgid "No clauses yet. Add one above."
-msgstr "No clauses yet. Add one above."
+msgid "No clauses yet. Use Add clause above."
+msgstr "No clauses yet. Use Add clause above."
 
 msgid "No comments yet. Be the first to add a comment."
 msgstr "No comments yet. Be the first to add a comment."
@@ -9929,6 +9944,9 @@ msgstr "Other Income account for vendor balances cleared without full payment on
 msgid "Other Type"
 msgstr "Other Type"
 
+msgid "Otherwise"
+msgstr "Otherwise"
+
 msgid "Out"
 msgstr "Out"
 
@@ -10116,12 +10134,8 @@ msgstr "Passed"
 msgid "Path"
 msgstr "Path"
 
-#. placeholder {0}: conditionPathIndex(paths, path.id)
-msgid "Path {0}"
-msgstr "Path {0}"
-
-msgid "Path else"
-msgstr "Path else"
+msgid "Path {position}"
+msgstr "Path {position}"
 
 msgid "Pay Rate"
 msgstr "Pay Rate"
@@ -10264,9 +10278,6 @@ msgstr "Physical printers available for assignment."
 msgid "Pick"
 msgstr "Pick"
 
-msgid "Pick a column"
-msgstr "Pick a column"
-
 msgid "Pick a column to sort by"
 msgstr "Pick a column to sort by"
 
@@ -10276,14 +10287,20 @@ msgstr "Pick a customer or customer type to view their pricing."
 msgid "Pick a date or leave blank to clear it."
 msgstr "Pick a date or leave blank to clear it."
 
-msgid "Pick a left operand first"
-msgstr "Pick a left operand first"
-
 msgid "Pick a list variable…"
 msgstr "Pick a list variable…"
 
+msgid "Pick a property"
+msgstr "Pick a property"
+
+msgid "Pick a property first"
+msgstr "Pick a property first"
+
 msgid "Pick a record type…"
 msgstr "Pick a record type…"
+
+msgid "Pick a variable"
+msgstr "Pick a variable"
 
 msgid "Pick List"
 msgstr "Pick List"
@@ -10753,6 +10770,9 @@ msgstr "Promised Date"
 
 msgid "Properties"
 msgstr "Properties"
+
+msgid "Property"
+msgstr "Property"
 
 msgid "Protect the go-live date"
 msgstr "Protect the go-live date"
@@ -13425,6 +13445,12 @@ msgstr "Switch"
 msgid "Switch a module off to remove it everywhere: Requirements, Data, Training, Scope."
 msgstr "Switch a module off to remove it everywhere: Requirements, Data, Training, Scope."
 
+msgid "Switch to pan mode"
+msgstr "Switch to pan mode"
+
+msgid "Switch to select mode"
+msgstr "Switch to select mode"
+
 msgid "Switch users over and confirm access"
 msgstr "Switch users over and confirm access"
 
@@ -14608,9 +14634,6 @@ msgstr "Toggle Explorer"
 msgid "Toggle level"
 msgstr "Toggle level"
 
-msgid "Toggle pan mode"
-msgstr "Toggle pan mode"
-
 msgid "Toggle Properties"
 msgstr "Toggle Properties"
 
@@ -14853,6 +14876,12 @@ msgstr "Turn on the built-in pieces"
 
 msgid "Type"
 msgstr "Type"
+
+msgid "Type { for a variable"
+msgstr "Type { for a variable"
+
+msgid "Type {TRIGGER} to insert a variable"
+msgstr "Type {TRIGGER} to insert a variable"
 
 msgid "Type a message..."
 msgstr "Type a message..."

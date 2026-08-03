@@ -76,10 +76,20 @@ Routes split in two trees: `x+/workflows+/` (list, create, rename, delete, with 
 - Drawn loops are blocked at connection time by `isValidConnection` + `wouldCreateCycle`. The validator's `CYCLE` check stays as the backstop.
 - Converging edges are allowed: the engine is a first-arrival OR-join by design.
 - The trigger node cannot be deleted — `onNodesChange` filters its `remove` change.
-- Nodes collapse to a one-line summary via a per-node `expanded` flag (`store.ts` `setNodeExpanded`), toggled by the card's button and by `BuilderControls`' collapse/expand-all. There is no zoom threshold.
+- Nodes collapse to a one-line summary via a per-node `expanded` flag (`store.ts` `setNodeExpanded`), toggled by the card's button and by `BuilderControls`' collapse/expand-all. There is no zoom threshold. `NODE_CAN_COLLAPSE` in `nodes/kinds.ts` is enforced in `store.ts` `setNodeExpanded`, so a kind that cannot collapse (condition) never gets `expanded: false` written into the saved definition; the card only uses it to hide the button.
 - Every node kind has a form in `ui/Builder/config/forms/`. `NodeFormProps<K>` narrows `node.data` to the kind's slice of the shared definition schema — never re-declare a node's data shape in a form.
 - Ports get their id, label, tone and anchor from `ui/Builder/ports.ts`, which derives ids from `getNodeHandles`. Never hand-write a handle list, and never label a port anywhere else — `ports.test.ts` enforces the first rule.
 - Node cards subscribe through `ui/Builder/selectors.ts` (scalars) or read once via `useBuilderStoreApi()`. Subscribing to `state.nodes` re-renders every card on every drag frame.
+
+### Value fields
+
+- `fields/control.ts` `pickControl` is the single ordered decision for which control a value renders in — `inline` (the `{` editor), `chip` (an already-picked reference) or `literal` (everything `LiteralControl` dispatches). Order matters: `choices` must disqualify the free-text rule or every enum column loses its dropdown. Add a case there, never an `if` in `ValueField`.
+- `fields/Field.tsx` owns the label / required marker / issue-or-hint shell. No control re-implements it.
+- **`{…}` is display only.** A reference is stored as `{ kind: "ref", nodeId, output, path }` and binds to the node **id**; the braces and the label are a rendering of it, so a rename never touches storage. `fields/tokenId.ts` is the only encoder/decoder and `fields/valueParts.ts` the only converter — a token label must come from `refLabel` so an inserted chip and a stored chip read identically (a mismatch trips the editor's remount check and steals focus mid-keystroke).
+- Serialization rule in `valueParts.ts`: plain text stays a `literal`, a lone variable stays a bare `ref`, only mixed content becomes a `template`. Templates are legal only where a string is expected (`packages/workflows/src/definition/nodes.ts`).
+- Both variable menus read through `useVariablesGetter` (computed on demand from `getState()`), never `useAvailableVariables`, which subscribes and re-renders on every drag frame. Reserve the subscribing hook for code that renders from the list.
+- `nodes/kinds.ts` holds the per-kind facts layout and store code need (`NODE_CARD_WIDTH`, `NODE_CAN_COLLAPSE`). It exists because `nodes/meta.ts` reaches the translation catalog, which the unit-test runner cannot compile — importing `meta.ts` from `graph.ts` breaks `graph.test.ts`. Anything macro-free that non-React code needs belongs in `kinds.ts`; label-bearing presentation stays in `meta.ts`, and pure label helpers live in `labelKeys.ts` (re-exported by `catalog.ts` for React callers).
+- Per-field issue messages go through `ui/Builder/issues.ts` `issueForField`, which also matches `<field>.parts.<n>` so a bad variable inside a template has somewhere to show. Validation still runs server-side on publish only.
 
 ## Related
 

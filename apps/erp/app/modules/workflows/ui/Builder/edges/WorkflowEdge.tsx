@@ -3,7 +3,7 @@ import { useLingui } from "@lingui/react/macro";
 import type { EdgeProps } from "@xyflow/react";
 import { EdgeLabelRenderer, getSmoothStepPath, useStore } from "@xyflow/react";
 import { memo, useEffect, useState } from "react";
-import { LuCircleX } from "react-icons/lu";
+import { LuX } from "react-icons/lu";
 import { useBuilderStore } from "../context";
 
 function WorkflowEdgeImpl({
@@ -71,12 +71,16 @@ function WorkflowEdgeImpl({
           >
             <IconButton
               aria-label={armed ? t`Confirm disconnect` : t`Disconnect`}
-              icon={<LuCircleX />}
-              variant="ghost"
+              title={armed ? t`Click again to disconnect` : t`Disconnect`}
+              icon={<LuX />}
+              variant="secondary"
               size="sm"
+              isRound
+              // Opaque, because the edge runs underneath. `after:` widens the hit
+              // box without growing the dot on the canvas.
               className={cn(
-                "rounded-full bg-card shadow-sm",
-                armed && "text-destructive hover:text-destructive"
+                "!bg-card after:absolute after:-inset-2 after:content-['']",
+                armed && "border-destructive text-destructive"
               )}
               onClick={(e) => {
                 e.stopPropagation();

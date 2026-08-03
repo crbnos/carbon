@@ -17,6 +17,7 @@ import {
   toBuilderNode,
   wouldCreateCycle
 } from "./graph";
+import { NODE_CAN_COLLAPSE } from "./nodes/kinds";
 
 export type SaveState = "idle" | "saving" | "saved" | "error";
 
@@ -199,9 +200,13 @@ export function createBuilderStore(initial: {
         };
       }),
 
+    // Enforced here, not at the card: otherwise "collapse all" would persist
+    // `expanded: false` into the saved definition for a card that draws expanded.
     setNodeExpanded: (id, expanded) =>
       set(({ nodes }) => ({
-        nodes: nodes.map((n) => (n.id === id ? { ...n, expanded } : n))
+        nodes: nodes.map((n) =>
+          n.id === id && NODE_CAN_COLLAPSE[n.type] ? { ...n, expanded } : n
+        )
       })),
 
     removeNode: (id) => {

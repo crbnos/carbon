@@ -185,11 +185,11 @@ describe("nextNodePosition", () => {
 
   it("nudges down when the position to the right is occupied", () => {
     const a = { ...createNode("trigger", { x: 0, y: 0 }) } as BuilderNode;
-    const taken = {
-      ...createNode("action", { x: 480, y: 0 })
-    } as BuilderNode;
+    // Derived, not a magic number: card widths change and the gap follows them.
+    const free = nextNodePosition([a], a);
+    const taken = { ...createNode("action", free) } as BuilderNode;
     const position = nextNodePosition([a, taken], a);
-    expect(position.x).toBe(480);
-    expect(position.y).toBeGreaterThan(0);
+    expect(position.x).toBe(free.x);
+    expect(position.y).toBeGreaterThan(free.y);
   });
 });

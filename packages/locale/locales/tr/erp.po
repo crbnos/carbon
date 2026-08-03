@@ -412,6 +412,9 @@ msgstr "Bir parça, satın alınabilir veya üretilebilir belirli bir öğe hakk
 msgid "A physical pull signal — a printed card or QR code living with the stock — that raises a purchase order or a job the moment it's scanned to refill a bin."
 msgstr "Stokla yaşayan fiziksel bir çekme sinyali — basılı bir kart veya QR kodu — bir bin'i doldurmak için tarandığı anda bir satın alma siparişi veya iş oluşturur."
 
+msgid "A plain { is sent as-is. Pick a variable from the menu."
+msgstr ""
+
 msgid "A posted accounting entry: a header plus balanced debit and credit lines against GL accounts."
 msgstr "Deftere geçirilen muhasebe girişi: GL hesaplarına karşı dengeli debit ve kredi satırları artı başlık."
 
@@ -2672,6 +2675,9 @@ msgstr "Türü değiştir"
 msgid "Change Type"
 msgstr "Tipi Değiştir"
 
+msgid "Change variable"
+msgstr ""
+
 msgid "Changed By"
 msgstr "Değiştiren"
 
@@ -2764,6 +2770,9 @@ msgstr "Mal alımı ve tedarikçi faturası arasındaki mahsup hesabı; her ikis
 
 msgid "Clearing account for goods received / invoice received matching"
 msgstr "Mal alımı / fatura alımı eşleştirmesi için mahsup hesabı"
+
+msgid "Click again to disconnect"
+msgstr ""
 
 msgid "Click to rename"
 msgstr ""
@@ -5410,6 +5419,9 @@ msgstr "Ortadan Kaldırılmış"
 msgid "Elimination entity"
 msgstr "İndirim Varlığı"
 
+msgid "Else if {position}"
+msgstr ""
+
 msgid "email"
 msgstr "e-posta"
 
@@ -6256,6 +6268,9 @@ msgstr "PDF yüklenemedi"
 msgid "Failed to upload thumbnail"
 msgstr "Küçük resim yüklenemedi"
 
+msgid "Failure"
+msgstr ""
+
 msgid "Failure Mode"
 msgstr "Arıza Modu"
 
@@ -7047,6 +7062,9 @@ msgstr "Tanımlayıcılar"
 
 msgid "IDs and descriptions are generated for raw materials."
 msgstr "Kimlikler ve açıklamalar ham malzemeler için oluşturulur."
+
+msgid "If"
+msgstr ""
 
 msgid "If it can't wait for the next call, the leads on both sides decide."
 msgstr "Eğer bir sonraki çağrıyı bekleyemezse, her iki tarafın da liderler karar verir."
@@ -7881,9 +7899,6 @@ msgstr "Bu sayfadan ayrıl"
 
 msgid "Ledger"
 msgstr "Büyük Defter"
-
-msgid "Left"
-msgstr ""
 
 msgid "Left item"
 msgstr "Sol öğe"
@@ -9172,7 +9187,7 @@ msgstr "Değişiklik kaydedilmedi"
 msgid "No changes yet."
 msgstr "Henüz değişiklik yok."
 
-msgid "No clauses yet. Add one above."
+msgid "No clauses yet. Use Add clause above."
 msgstr ""
 
 msgid "No comments yet. Be the first to add a comment."
@@ -9929,6 +9944,9 @@ msgstr "Satıcı bakiyelerinin AP kapatılması sırasında tam ödeme yapılmad
 msgid "Other Type"
 msgstr "Diğer Tür"
 
+msgid "Otherwise"
+msgstr ""
+
 msgid "Out"
 msgstr "Dışı"
 
@@ -10116,11 +10134,7 @@ msgstr "Geçti"
 msgid "Path"
 msgstr "Yol"
 
-#. placeholder {0}: conditionPathIndex(paths, path.id)
-msgid "Path {0}"
-msgstr ""
-
-msgid "Path else"
+msgid "Path {position}"
 msgstr ""
 
 msgid "Pay Rate"
@@ -10264,9 +10278,6 @@ msgstr "Atama için kullanılabilecek fiziksel yazıcılar."
 msgid "Pick"
 msgstr "Topla"
 
-msgid "Pick a column"
-msgstr ""
-
 msgid "Pick a column to sort by"
 msgstr "Sıralamak için bir sütun seçin"
 
@@ -10276,13 +10287,19 @@ msgstr "Fiyatlandırmalarını görüntülemek için bir müşteri veya müşter
 msgid "Pick a date or leave blank to clear it."
 msgstr "Bir tarih seçin veya temizlemek için boş bırakın."
 
-msgid "Pick a left operand first"
-msgstr ""
-
 msgid "Pick a list variable…"
 msgstr ""
 
+msgid "Pick a property"
+msgstr ""
+
+msgid "Pick a property first"
+msgstr ""
+
 msgid "Pick a record type…"
+msgstr ""
+
+msgid "Pick a variable"
 msgstr ""
 
 msgid "Pick List"
@@ -10753,6 +10770,9 @@ msgstr "Planlanan Tarih"
 
 msgid "Properties"
 msgstr "Özellikler"
+
+msgid "Property"
+msgstr ""
 
 msgid "Protect the go-live date"
 msgstr "Go-live tarihini koruyun"
@@ -13425,6 +13445,12 @@ msgstr "Değiştir"
 msgid "Switch a module off to remove it everywhere: Requirements, Data, Training, Scope."
 msgstr "Bir modülü kapatarak her yerde kaldırın: Gereksinimler, Veri, Eğitim, Kapsam."
 
+msgid "Switch to pan mode"
+msgstr ""
+
+msgid "Switch to select mode"
+msgstr ""
+
 msgid "Switch users over and confirm access"
 msgstr "Kullanıcıları değiştir ve erişimi onayla"
 
@@ -14608,9 +14634,6 @@ msgstr "Gezgini Aç/Kapat"
 msgid "Toggle level"
 msgstr "Seviye değiştir"
 
-msgid "Toggle pan mode"
-msgstr ""
-
 msgid "Toggle Properties"
 msgstr "Özellikleri Aç/Kapat"
 
@@ -14853,6 +14876,12 @@ msgstr "Yerleşik parçaları açın"
 
 msgid "Type"
 msgstr "Tür"
+
+msgid "Type { for a variable"
+msgstr ""
+
+msgid "Type {TRIGGER} to insert a variable"
+msgstr ""
 
 msgid "Type a message..."
 msgstr "Bir mesaj yaz..."

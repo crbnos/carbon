@@ -10,22 +10,19 @@ import {
   PopoverContent,
   PopoverTrigger
 } from "@carbon/react";
-import type {
-  ItemRef,
-  ValueType,
-  VariableRef,
-  WorkflowCatalog
-} from "@carbon/workflows";
-import { typesEqual } from "@carbon/workflows";
-import { useState } from "react";
+import type { ItemRef, ValueType, VariableRef } from "@carbon/workflows";
+import { typesEqual, walkPath } from "@carbon/workflows";
+import { useMemo, useState } from "react";
 import { LuArrowLeft, LuChevronRight } from "react-icons/lu";
 import {
   catalog,
   describeValueType,
+  describeVariable,
   propertyLabelKey,
   useWorkflowLabel
 } from "../catalog";
-import { useAvailableVariables } from "../useDefinition";
+import { useVariablesGetter } from "../useDefinition";
+import { MAX_PATH } from "./variableMenu";
 
 type DrillState = {
   nodeId: string;
@@ -45,24 +42,6 @@ type VariablePickerProps = {
   children: React.ReactNode;
 };
 
-/** Resolves a property path through entity types using the catalog. */
-function walkType(
-  type: ValueType,
-  path: string[],
-  cat: WorkflowCatalog
-): ValueType | undefined {
-  let current = type;
-  for (const segment of path) {
-    if (current.kind !== "entity") return undefined;
-    const entity = cat.getEntity(current.of);
-    if (!entity) return undefined;
-    const next = entity.properties[segment];
-    if (!next) return undefined;
-    current = next;
-  }
-  return current;
-}
-
 export function VariablePicker({
   accepts,
   acceptsAny,
@@ -76,7 +55,13 @@ export function VariablePicker({
   const label = useWorkflowLabel();
   const [drill, setDrill] = useState<DrillState>(null);
 
-  const variables = useAvailableVariables(nodeId);
+  // Computed when the popup opens, not subscribed: `nodes` changes every drag
+  // frame and this is mounted once per input.
+  const getVariables = useVariablesGetter(nodeId);
+  const variables = useMemo(
+    () => (open ? getVariables() : []),
+    [open, getVariables]
+  );
 
   // Group by nodeId (preserving insertion order from availableVariables).
   // Keying by nodeId (not nodeName) prevents two nodes with the same name from collapsing.
@@ -92,11 +77,6 @@ export function VariablePicker({
 
   const isCompatible = (type: ValueType): boolean =>
     acceptsAny ? true : typesEqual(type, accepts);
-
-  function incompatibilityReason(type: ValueType): string | undefined {
-    if (isCompatible(type)) return undefined;
-    return `This is ${describeValueType(type)}; this field takes ${describeValueType(accepts)}.`;
-  }
 
   function selectRef(nId: string, output: string, path: string[]) {
     onChange({ kind: "ref", nodeId: nId, output, path });
@@ -118,15 +98,13 @@ export function VariablePicker({
     );
     if (!v) return null;
 
-    const currentType = walkType(v.type, drill.path, catalog);
+    const currentType = walkPath(v.type, drill.path, catalog);
     if (!currentType || currentType.kind !== "entity") return null;
 
     const entity = catalog.getEntity(currentType.of);
     if (!entity) return null;
 
-    // After one drill, the selected path has length drill.path.length + 1.
-    // We allow further drilling only if drill.path.length + 1 < 2 (cap: 2 hops total).
-    const canDrillDeeper = drill.path.length === 0;
+    const canDrillDeeper = drill.path.length + 1 < MAX_PATH;
 
     const breadcrumb = [v.nodeName, v.output, ...drill.path].join(" › ");
 
@@ -148,16 +126,15 @@ export function VariablePicker({
           {Object.entries(entity.properties).map(([prop, propType]) => {
             const selectionPath = [...drill.path, prop];
             const compat = isCompatible(propType);
-            const reason = incompatibilityReason(propType);
             // Only drill deeper if: prop is entity, not yet compatible, and within cap
             const canDrillProp =
               canDrillDeeper && propType.kind === "entity" && !compat;
             const clickable = compat || canDrillProp;
-            const subDesc = reason
-              ? reason
-              : !v.guaranteed
-                ? `${describeValueType(propType)} · may be empty on this path`
-                : describeValueType(propType);
+            const subDesc = describeVariable(
+              propType,
+              v.guaranteed,
+              compat ? undefined : accepts
+            );
 
             return (
               <CommandItem
@@ -205,15 +182,14 @@ export function VariablePicker({
         <CommandGroup key={nid} heading={nodeName}>
           {vars.map((v) => {
             const compat = isCompatible(v.type);
-            const reason = incompatibilityReason(v.type);
             // Entity that isn't directly compatible is drillable
             const isDrillable = v.type.kind === "entity" && !compat;
             const clickable = compat || isDrillable;
-            const subDesc = reason
-              ? reason
-              : !v.guaranteed
-                ? `${describeValueType(v.type)} · may be empty on this path`
-                : describeValueType(v.type);
+            const subDesc = describeVariable(
+              v.type,
+              v.guaranteed,
+              compat ? undefined : accepts
+            );
 
             return (
               <CommandItem

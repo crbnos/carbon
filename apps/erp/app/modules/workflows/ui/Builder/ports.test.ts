@@ -1,12 +1,22 @@
 import type { WorkflowNodeType } from "@carbon/workflows";
 import { getNodeHandles, NODE_KINDS } from "@carbon/workflows";
-import { describe, expect, it } from "vitest";
+import type { MessageDescriptor } from "@lingui/core";
+import { describe, expect, it, vi } from "vitest";
 import { createNode } from "./graph";
-import { conditionPathLabel, portsFor } from "./ports";
+import { conditionPathLabel, conditionPortLabel, portsFor } from "./ports";
 
-/** Stand-in for `useLingui()`'s `t`: interpolates without needing a catalog. */
-const t = (strings: TemplateStringsArray, ...values: unknown[]): string =>
-  strings.reduce((out, part, i) => out + part + (values[i] ?? ""), "");
+// `msg` is a compile-time macro and plain vitest doesn't transform it, so the raw
+// export throws on access. Stub it to the interpolated source string.
+vi.mock("@lingui/core/macro", () => ({
+  msg: (strings: TemplateStringsArray, ...values: unknown[]) =>
+    strings.reduce((out, part, i) => out + part + (values[i] ?? ""), "")
+}));
+
+/** Stand-in for `useLingui()`'s `t`: resolves a descriptor without a catalog. */
+const t = (descriptor: MessageDescriptor): string =>
+  typeof descriptor === "string"
+    ? descriptor
+    : (descriptor.message ?? descriptor.id);
 
 describe("portsFor", () => {
   it("returns exactly the handles the validator knows about, for every kind", () => {
@@ -59,11 +69,16 @@ describe("conditionPathLabel", () => {
     );
   });
 
-  it("matches the port label for the same path", () => {
+  it("labels ports by position, not by kind", () => {
     const node = createNode("condition", { x: 0, y: 0 });
     if (node.type !== "condition") throw new Error("wrong kind");
     for (const port of portsFor(node, t)) {
-      expect(port.label).toBe(conditionPathLabel(node.data.paths, port.id, t));
+      expect(port.label).toBe(conditionPortLabel(node.data.paths, port.id, t));
     }
+    const [ifPath, elsePath] = node.data.paths;
+    expect(conditionPortLabel(node.data.paths, ifPath.id, t)).toBe("Path 0");
+    expect(conditionPortLabel(node.data.paths, elsePath.id, t)).toBe(
+      "Otherwise"
+    );
   });
 });
