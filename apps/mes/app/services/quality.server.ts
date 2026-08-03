@@ -323,10 +323,11 @@ export async function getInspectionOutcomeState(
   );
 
   const opTarget = operation.targetQuantity ?? operation.operationQuantity ?? 0;
+  // Reworked units return to this same operation to be re-completed, so they
+  // don't count toward the target (mirrors complete.tsx and
+  // sync_update_job_operation_quantities).
   const opAccounted =
-    (operation.quantityComplete ?? 0) +
-    (operation.quantityScrapped ?? 0) +
-    (operation.quantityReworked ?? 0);
+    (operation.quantityComplete ?? 0) + (operation.quantityScrapped ?? 0);
   const opRemaining = Math.max(0, opTarget - opAccounted);
 
   const entities = (trackedEntities?.data ?? []).map((e) => ({

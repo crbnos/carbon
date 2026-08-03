@@ -165,27 +165,47 @@ export async function finishJobOperation(
     .eq("id", args.jobOperationId);
 
   if (!result.error) {
-    client
+    // Post any completed-but-unposted labor/machine time for this operation.
+    // This must be awaited — a fire-and-forget chain races server shutdown, and
+    // mid-route operations have no backup path that posts these events later.
+    const unpostedEvents = await client
       .from("productionEvent")
       .select("id")
       .eq("jobOperationId", args.jobOperationId)
       .not("endTime", "is", null)
-      .eq("postedToGL", false)
-      .then((unpostedEvents) => {
-        if (unpostedEvents.data?.length) {
-          Promise.all(
-            unpostedEvents.data.map((event) =>
-              client.functions.invoke("post-production-event", {
-                body: {
-                  productionEventId: event.id,
-                  userId: args.userId,
-                  companyId: args.companyId
-                }
-              })
-            )
-          );
-        }
+      .eq("postedToGL", false);
+
+    if (unpostedEvents.error) {
+      log.error("Failed to fetch unposted production events at finish", {
+        error: unpostedEvents.error,
+        jobOperationId: args.jobOperationId,
+        companyId: args.companyId
       });
+    } else if (unpostedEvents.data.length) {
+      // `functions.invoke` resolves to `{ data, error }` rather than rejecting,
+      // so a failed posting never surfaces through Promise.all — inspect each
+      // result and log it, otherwise the labor cost is lost silently.
+      const results = await Promise.all(
+        unpostedEvents.data.map((event) =>
+          client.functions.invoke("post-production-event", {
+            body: {
+              productionEventId: event.id,
+              userId: args.userId,
+              companyId: args.companyId
+            }
+          })
+        )
+      );
+      for (const { error } of results) {
+        if (error) {
+          log.error("post-production-event failed at operation finish", {
+            error,
+            jobOperationId: args.jobOperationId,
+            companyId: args.companyId
+          });
+        }
+      }
+    }
 
     // The status='Done' write fires the sync_finish_job_operation trigger, which
     // completes the job to inventory (job.status → 'Completed') when this was the
@@ -1596,6 +1616,34 @@ export async function startProductionEvent(
   trackedEntityId: string | undefined,
   unitIndex?: number
 ) {
+  // Idempotent start: a double-tap or a second device must not open a duplicate
+  // timer for work that is already running. Setup/Labor events are tracked per
+  // employee, while Machine events are tracked per operation (see useOperation's
+  // activeEvents), so Machine dedupes without the employee filter.
+  let openEventQuery = client
+    .from("productionEvent")
+    .select("id")
+    .eq("jobOperationId", data.jobOperationId)
+    .eq("type", data.type)
+    .eq("companyId", data.companyId)
+    .is("endTime", null);
+  if (data.type !== "Machine") {
+    openEventQuery = openEventQuery.eq("employeeId", data.employeeId);
+  }
+  const openEvent = await openEventQuery.limit(1).maybeSingle();
+  if (openEvent.error) return openEvent;
+  if (openEvent.data) {
+    // Return the existing open event in the same shape the insert path below
+    // would produce, so callers can't tell an idempotent start from a fresh one.
+    return trackedEntityId
+      ? client
+          .from("productionEvent")
+          .select("id")
+          .eq("id", openEvent.data.id)
+          .single()
+      : client.from("productionEvent").select("*").eq("id", openEvent.data.id);
+  }
+
   if (trackedEntityId) {
     const activityId = nanoid();
 

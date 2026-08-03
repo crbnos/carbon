@@ -111,9 +111,11 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
+  // Reworked units return to this same operation to be re-completed, so they
+  // must not count toward the target — only completed and scrapped units do
+  // (mirrors sync_update_job_operation_quantities).
   const totalAccountedQuantity =
     (jobOperation.data.quantityComplete ?? 0) +
-    (jobOperation.data.quantityReworked ?? 0) +
     (jobOperation.data.quantityScrapped ?? 0) +
     validation.data.quantity;
 
