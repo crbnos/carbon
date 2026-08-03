@@ -38,6 +38,9 @@ CREATE TABLE "workflow" (
     "active" BOOLEAN NOT NULL DEFAULT FALSE,
     "activeVersionId" TEXT,
     "nextRunAt" TIMESTAMP WITH TIME ZONE,
+    -- Builder canvas view state: `{ x, y, zoom, panOnScroll }`. Per workflow, not
+    -- per user — a shared canvas should reopen where the team left it.
+    "canvasState" JSONB,
     "createdBy" TEXT NOT NULL REFERENCES "user"("id"),
     "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     "updatedBy" TEXT REFERENCES "user"("id"),

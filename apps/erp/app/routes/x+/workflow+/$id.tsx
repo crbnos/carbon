@@ -22,7 +22,8 @@ import { usePermissions } from "~/hooks";
 import {
   getWorkflow,
   getWorkflowVersion,
-  getWorkflowVersions
+  getWorkflowVersions,
+  workflowCanvasStateSchema
 } from "~/modules/workflows";
 import { Autosave } from "~/modules/workflows/ui/Builder/Autosave";
 import { BuilderHeader } from "~/modules/workflows/ui/Builder/BuilderHeader";
@@ -48,10 +49,10 @@ export const handle: Handle = {
   module: "workflows"
 };
 
-// An autosave must not revalidate the loader — that re-seeds the canvas from
-// server state mid-edit and loses the selection and any in-flight drag.
+// Neither write may revalidate the loader: a save would re-seed the canvas mid-edit
+// and lose the selection, a canvas write would snap the viewport back.
 export function shouldRevalidate({ formAction }: ShouldRevalidateFunctionArgs) {
-  return !formAction?.includes("/save");
+  return !formAction?.includes("/save") && !formAction?.includes("/canvas");
 }
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -66,6 +67,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const found = await getWorkflow(client, id, companyId);
   if (found.error || !found.data) throw redirect(path.to.workflows);
   const workflow = found.data;
+
+  const stored = workflowCanvasStateSchema.safeParse(workflow.canvasState);
+  const canvasState = stored.success ? stored.data : null;
 
   const versions = await getWorkflowVersions(client, id, companyId);
   const all = versions.data ?? [];
@@ -86,6 +90,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!versionId) {
     return {
       workflow,
+      canvasState,
       versions: all,
       versionId: null,
       definition: null,
@@ -105,6 +110,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!read.ok) {
     return {
       workflow,
+      canvasState,
       versions: all,
       versionId,
       definition: null,
@@ -116,6 +122,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   return {
     workflow,
+    canvasState,
     versions: all,
     versionId,
     definition: read.definition,
@@ -130,6 +137,7 @@ export default function WorkflowBuilderRoute() {
   const issuesDisclosure = useDisclosure();
   const {
     workflow,
+    canvasState,
     versions,
     versionId,
     definition,
@@ -171,7 +179,11 @@ export default function WorkflowBuilderRoute() {
             onIssues={issuesDisclosure.onOpen}
           />
           <div className="relative flex flex-1 overflow-hidden">
-            <WorkflowBuilder />
+            <WorkflowBuilder
+              workflowId={workflow.id}
+              canvasState={canvasState}
+              canPersistCanvasState={permissions.can("update", "workflows")}
+            />
             {issuesDisclosure.isOpen && (
               <IssuesPanel onDismiss={issuesDisclosure.onClose} />
             )}

@@ -57860,6 +57860,7 @@ export type Database = {
         Row: {
           active: boolean
           activeVersionId: string | null
+          canvasState: Json | null
           companyId: string
           createdAt: string
           createdBy: string
@@ -57874,6 +57875,7 @@ export type Database = {
         Insert: {
           active?: boolean
           activeVersionId?: string | null
+          canvasState?: Json | null
           companyId: string
           createdAt?: string
           createdBy: string
@@ -57888,6 +57890,7 @@ export type Database = {
         Update: {
           active?: boolean
           activeVersionId?: string | null
+          canvasState?: Json | null
           companyId?: string
           createdAt?: string
           createdBy?: string
@@ -65438,14 +65441,14 @@ export type Database = {
           },
           {
             foreignKeyName: "partner_id_fkey"
-            columns: ["id"]
+            columns: ["supplierLocationId"]
             isOneToOne: false
             referencedRelation: "supplierLocation"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "partner_id_fkey"
-            columns: ["supplierLocationId"]
+            columns: ["id"]
             isOneToOne: false
             referencedRelation: "supplierLocation"
             referencedColumns: ["id"]

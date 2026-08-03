@@ -8,6 +8,7 @@ The definition schema, validator, catalogs, matcher and engine all live outside 
 
 - **Workflow** — the `workflow` row. Carries `ownerId`, `active` (the on/off kill switch), and `activeVersionId` (the promoted version pointer). The pointer and the boolean are separate columns on purpose: turning a workflow off and back on restores whichever version was promoted.
 - **Version** — a `workflowVersion` row holding `nodes`, `edges` and `formatVersion`. Numbered, never named.
+- **Canvas state** — `workflow.canvasState` JSONB: `{ x, y, zoom, panOnScroll }`. Per workflow (not per user, not per version), written by `$id.canvas.tsx` through `updateWorkflowCanvasState`, restored as `defaultViewport`. Node collapse is NOT here — `expanded` lives on each node in the definition and rides the autosave. Both `/save` and `/canvas` are excluded from `shouldRevalidate`; revalidating on a canvas write would snap the viewport back to where it was on load.
 - **Definition** — `{ formatVersion, nodes, edges }`, validated by `workflowDefinitionSchema` from `@carbon/workflows`. `CURRENT_DEFINITION_FORMAT_VERSION` is **3**; the SQL column default is a stale **1**, so the app always writes the constant explicitly.
 - **Publish** — validate → set `activeVersionId` → set `active` → `syncWorkflowTriggers` → wake the scheduler. One route does all five; splitting them leaves a workflow that looks active and never fires.
 - **The live version is read-only.** Editing a live workflow means creating a new version, the same rule released item revisions follow.

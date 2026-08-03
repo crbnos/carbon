@@ -39,7 +39,7 @@ export async function getWorkflow(
   return client
     .from("workflow")
     .select(
-      "id, name, description, ownerId, active, activeVersionId, nextRunAt, createdAt, updatedAt"
+      "id, name, description, ownerId, active, activeVersionId, nextRunAt, canvasState, createdAt, updatedAt"
     )
     .eq("id", id)
     .eq("companyId", companyId)
@@ -180,6 +180,23 @@ export async function updateWorkflowDefinition(
     })
     .eq("id", definition.versionId)
     .eq("companyId", definition.companyId);
+}
+
+// No audit bump: panning the canvas is not an edit to the workflow, and stamping
+// `updatedAt` here would reorder the list on every scroll.
+export async function updateWorkflowCanvasState(
+  client: SupabaseClient<Database>,
+  {
+    id,
+    companyId,
+    canvasState
+  }: { id: string; companyId: string; canvasState: Json }
+) {
+  return client
+    .from("workflow")
+    .update({ canvasState })
+    .eq("id", id)
+    .eq("companyId", companyId);
 }
 
 export async function updateWorkflowOwner(

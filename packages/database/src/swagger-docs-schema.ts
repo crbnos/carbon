@@ -5638,6 +5638,9 @@ export default {
             $ref: "#/parameters/rowFilter.workflow.nextRunAt"
           },
           {
+            $ref: "#/parameters/rowFilter.workflow.canvasState"
+          },
+          {
             $ref: "#/parameters/rowFilter.workflow.createdBy"
           },
           {
@@ -5733,6 +5736,9 @@ export default {
             $ref: "#/parameters/rowFilter.workflow.nextRunAt"
           },
           {
+            $ref: "#/parameters/rowFilter.workflow.canvasState"
+          },
+          {
             $ref: "#/parameters/rowFilter.workflow.createdBy"
           },
           {
@@ -5780,6 +5786,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.workflow.nextRunAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workflow.canvasState"
           },
           {
             $ref: "#/parameters/rowFilter.workflow.createdBy"
@@ -98206,6 +98215,9 @@ export default {
           format: "timestamp with time zone",
           type: "string"
         },
+        canvasState: {
+          format: "jsonb"
+        },
         createdBy: {
           description:
             "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
@@ -139168,6 +139180,12 @@ export default {
     },
     "rowFilter.workflow.nextRunAt": {
       name: "nextRunAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.workflow.canvasState": {
+      name: "canvasState",
       required: false,
       in: "query",
       type: "string"

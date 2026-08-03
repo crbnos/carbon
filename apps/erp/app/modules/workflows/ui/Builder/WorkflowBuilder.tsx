@@ -12,8 +12,9 @@ import {
   useReactFlow
 } from "@xyflow/react";
 import type { KeyboardEvent } from "react";
-import { useCallback, useState } from "react";
+import { useCallback } from "react";
 import type { BuilderEdge, BuilderNode } from "../../types";
+import type { WorkflowCanvasState } from "../../workflows.models";
 import { BuilderControls } from "./BuilderControls";
 import { NODE_DRAG_TYPE } from "./constants";
 import { useBuilderStore, useBuilderStoreApi } from "./context";
@@ -21,6 +22,7 @@ import { edgeTypes } from "./edges/WorkflowEdge";
 import { wouldCreateCycle } from "./graph";
 import { NodePalette } from "./NodePalette";
 import { nodeTypes } from "./nodes";
+import { useCanvasState } from "./useCanvasState";
 
 const proOptions = { hideAttribution: true };
 
@@ -28,10 +30,26 @@ const proOptions = { hideAttribution: true };
 const OVERLAY_SELECTOR =
   "[data-radix-popper-content-wrapper],[role=menu],[role=listbox],[role=dialog]";
 
-export function WorkflowBuilder() {
+type Props = {
+  workflowId: string;
+  canvasState: WorkflowCanvasState | null;
+  /** Viewport is remembered for anyone who may edit, live version or not. */
+  canPersistCanvasState: boolean;
+};
+
+export function WorkflowBuilder({
+  workflowId,
+  canvasState,
+  canPersistCanvasState
+}: Props) {
   const store = useBuilderStoreApi();
   const { screenToFlowPosition } = useReactFlow();
-  const [panOnScroll, setPanOnScroll] = useState(false);
+  const { panOnScroll, togglePanOnScroll, onMoveEnd, initialViewport } =
+    useCanvasState({
+      workflowId,
+      initial: canvasState,
+      canPersist: canPersistCanvasState
+    });
 
   const nodes = useBuilderStore((state) => state.nodes);
   const edges = useBuilderStore((state) => state.edges);
@@ -125,7 +143,10 @@ export function WorkflowBuilder() {
             proOptions={proOptions}
             minZoom={0.25}
             maxZoom={2}
-            fitView
+            {...(initialViewport
+              ? { defaultViewport: initialViewport }
+              : { fitView: true })}
+            onMoveEnd={onMoveEnd}
             nodesDraggable={!isReadOnly}
             nodesConnectable={!isReadOnly}
             elementsSelectable
@@ -138,7 +159,7 @@ export function WorkflowBuilder() {
             <Background variant={BackgroundVariant.Dots} gap={16} />
             <BuilderControls
               panOnScroll={panOnScroll}
-              onTogglePanOnScroll={() => setPanOnScroll((p) => !p)}
+              onTogglePanOnScroll={togglePanOnScroll}
             />
           </ReactFlow>
         </div>
