@@ -351,11 +351,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   // Mirror complete.tsx: the quantity interceptor auto-flips Done when the
-  // column sum reaches a positive target; the explicit finish covers
+  // completed + scrapped sum reaches a positive target (reworked units return
+  // to the operation, so they don't count); the explicit finish covers
   // targetQuantity = 0 operations.
   const willBeFinished =
     (postedTotal > 0 || decision === "Accept") &&
-    state.opAccounted + postedTotal >=
+    state.opAccounted + completionQuantity + scrapTotal >=
       (state.operation.targetQuantity ??
         state.operation.operationQuantity ??
         0);

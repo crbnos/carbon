@@ -88,12 +88,15 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     productionQuantities.data?.reduce((acc, curr) => acc + curr.quantity, 0) ??
     0;
 
+  // Remaining to complete = target − completed − scrapped. Reworked units
+  // return to this operation to be re-completed, so they are still remaining
+  // and must not be subtracted (mirrors sync_update_job_operation_quantities).
   const quantityToComplete = completeAll
     ? Math.max(
         0,
         (jobOperation.data.operationQuantity ?? 0) -
           currentQuantity -
-          (jobOperation.data.quantityReworked ?? 0)
+          (jobOperation.data.quantityScrapped ?? 0)
       )
     : 1;
 

@@ -384,12 +384,13 @@ export function InspectionView({
     return ids;
   }, [samples, sampleStatuses]);
 
+  // Reworked units return to this operation to be re-completed, so they still
+  // count as remaining (mirrors opRemaining in quality.server.ts).
   const opRemaining = Math.max(
     0,
     (operation.targetQuantity ?? operation.operationQuantity ?? 0) -
       (operation.quantityComplete ?? 0) -
-      (operation.quantityScrapped ?? 0) -
-      (operation.quantityReworked ?? 0)
+      (operation.quantityScrapped ?? 0)
   );
 
   // Passed but not yet posted — the "Complete passed (n)" affordance.
