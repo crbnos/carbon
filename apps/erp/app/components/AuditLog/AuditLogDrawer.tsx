@@ -11,6 +11,9 @@ import {
   DrawerTitle,
   HStack,
   Skeleton,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
   VStack
 } from "@carbon/react";
 import { Trans } from "@lingui/react/macro";
@@ -345,6 +348,19 @@ function humanizeColumnKey(key: string, hasSnapshot: boolean): string {
     .trim();
 }
 
+// Raw "oldId → newId" transition for a multi-column snapshot header, or
+// undefined when neither side is a string id.
+function formatIdTransition(
+  change: import("@carbon/database/audit.types").AuditDiffEntry
+): string | undefined {
+  if (typeof change.old !== "string" && typeof change.new !== "string") {
+    return undefined;
+  }
+  const oldId = typeof change.old === "string" ? change.old : "—";
+  const newId = typeof change.new === "string" ? change.new : "—";
+  return `${oldId} → ${newId}`;
+}
+
 // Pick the snapshot value for a given snapshot column from old or new sides.
 function snapshotValue(
   snapshot: Record<string, unknown> | undefined,
@@ -353,10 +369,31 @@ function snapshotValue(
   return snapshot && col in snapshot ? snapshot[col] : undefined;
 }
 
+// Wraps children in a styled tooltip carrying the raw id(s) — the forensic
+// anchor behind a resolved display name. Instant-ish (root provider sets a
+// 200ms delay), unlike the native `title` attribute which needs a ~1s
+// motionless hover.
+function IdTooltip({
+  id,
+  children
+}: {
+  id: string;
+  children: React.ReactElement;
+}) {
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>{children}</TooltipTrigger>
+      <TooltipContent>
+        <span className="font-mono text-xs">{id}</span>
+      </TooltipContent>
+    </Tooltip>
+  );
+}
+
 // Linear-style pill: when a display value is present, show that as primary
-// sans-serif text and stash the underlying raw value on the title attribute
-// (hover to inspect). When no display value is supplied, fall back to
-// mono-rendering the raw value — appropriate for IDs, booleans, numbers.
+// sans-serif text with the underlying raw value in a hover tooltip. When no
+// display value is supplied, fall back to mono-rendering the raw value —
+// appropriate for IDs, booleans, numbers.
 function ChangePill({
   value,
   display,
@@ -387,11 +424,9 @@ function ChangePill({
       : "bg-green-500/10 text-green-500"
   );
   const tooltip = hasDisplay && typeof value === "string" ? value : undefined;
-  return (
-    <span className={className} title={tooltip}>
-      {text}
-    </span>
-  );
+  const pill = <span className={className}>{text}</span>;
+  if (!tooltip) return pill;
+  return <IdTooltip id={tooltip}>{pill}</IdTooltip>;
 }
 
 // One labeled side-by-side row: "label  [old]  →  [new]". Used for both
@@ -439,7 +474,7 @@ function ChangeLine({
 //   • multi-key snap    → humanized FK header + indented sub-rows per
 //                         snapshot column, with the raw id shown last as a
 //                         muted forensic anchor
-function ChangeRow({
+export function ChangeRow({
   columnKey,
   change
 }: {
@@ -480,22 +515,15 @@ function ChangeRow({
   // the raw FK id is demoted to a hover tooltip on the section header —
   // Linear-style. Power users still see the id transition without crowding
   // the visual flow.
-  const idTooltip = ((): string | undefined => {
-    if (typeof change.old !== "string" && typeof change.new !== "string") {
-      return undefined;
-    }
-    const oldId = typeof change.old === "string" ? change.old : "—";
-    const newId = typeof change.new === "string" ? change.new : "—";
-    return `${oldId} → ${newId}`;
-  })();
+  const idTooltip = formatIdTransition(change);
+  const header = (
+    <div className="text-sm text-muted-foreground font-medium w-fit">
+      {label}
+    </div>
+  );
   return (
     <div className="py-1">
-      <div
-        className="text-sm text-muted-foreground font-medium"
-        title={idTooltip}
-      >
-        {label}
-      </div>
+      {idTooltip ? <IdTooltip id={idTooltip}>{header}</IdTooltip> : header}
       <div className="space-y-1 mt-1">
         {Array.from(snapKeys).map((col) => (
           <ChangeLine
