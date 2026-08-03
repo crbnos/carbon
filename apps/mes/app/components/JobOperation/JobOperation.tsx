@@ -1728,11 +1728,26 @@ export const JobOperation = ({
                             >
                               <Td>
                                 <div className="flex gap-2 items-center">
-                                  <span>{entity.id}</span>
+                                  <div className="flex flex-col min-w-0">
+                                    {entity.readableId ? (
+                                      <>
+                                        <span className="font-medium truncate">
+                                          {entity.readableId}
+                                        </span>
+                                        <span className="text-xs text-muted-foreground font-mono truncate">
+                                          {entity.id}
+                                        </span>
+                                      </>
+                                    ) : (
+                                      <span className="font-mono truncate">
+                                        {entity.id}
+                                      </span>
+                                    )}
+                                  </div>
                                   {entity.id === trackedEntityId && (
-                                    <LuCheck className="text-emerald-500 size-4" />
+                                    <LuCheck className="text-emerald-500 size-4 shrink-0" />
                                   )}
-                                  <Copy text={entity.id} />
+                                  <Copy text={entity.readableId ?? entity.id} />
                                 </div>
                               </Td>
 

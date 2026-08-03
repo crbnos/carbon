@@ -17,6 +17,7 @@ import { useNavigate } from "react-router";
 import { Hyperlink, New, Table } from "~/components";
 import { usePermissions, useUrlParams } from "~/hooks";
 import type { ItemSerialSequence } from "~/modules/settings";
+import { useItems } from "~/stores/items";
 import { path } from "~/utils/path";
 
 type ItemSerialSequencesTableProps = {
@@ -30,6 +31,7 @@ const ItemSerialSequencesTable = memo(
     const [params] = useUrlParams();
     const navigate = useNavigate();
     const permissions = usePermissions();
+    const [items] = useItems();
 
     const columns = useMemo<ColumnDef<(typeof data)[number]>[]>(() => {
       return [
@@ -42,7 +44,14 @@ const ItemSerialSequencesTable = memo(
             </Hyperlink>
           ),
           meta: {
-            icon: <LuPackage />
+            icon: <LuPackage />,
+            filter: {
+              type: "static",
+              options: items?.map((item) => ({
+                value: item.readableIdWithRevision,
+                label: item.readableIdWithRevision
+              }))
+            }
           }
         },
         {
@@ -94,7 +103,7 @@ const ItemSerialSequencesTable = memo(
           }
         }
       ];
-    }, [t]);
+    }, [items, t]);
 
     const renderContextMenu = useCallback(
       (row: (typeof data)[number]) => {

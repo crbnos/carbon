@@ -256,17 +256,25 @@ export function useOperation({
   const [availableEntities, setAvailableEntities] = useState<TrackedEntity[]>(
     []
   );
-  // show the serial selector with the remaining serial numbers for the operation
+  // Show the serial selector with the remaining serial numbers for the operation.
+  // Opens on first load when no unit is selected AND, crucially, right after a
+  // unit is completed: the loader appends the just-finished unit as
+  // `?trackedEntityId=`, so we can't gate purely on "no param" — we re-open the
+  // picker whenever the selected unit is no longer incomplete but others remain,
+  // which advances the operator to the next unit regardless of redirect timing.
   // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   useEffect(() => {
-    if (trackedEntityParam) return;
     const uncompletedEntities = trackedEntities.filter((entity) =>
       isSerialEntityIncompleteForOperation(entity, operationId ?? "")
     );
-    if (uncompletedEntities.length > 0) serialModal.onOpen();
     setAvailableEntities(uncompletedEntities);
+    if (uncompletedEntities.length === 0) return;
+    const selectedIsIncomplete =
+      !!trackedEntityParam &&
+      uncompletedEntities.some((entity) => entity.id === trackedEntityParam);
+    if (!selectedIsIncomplete) serialModal.onOpen();
     // causes an infinite loop on navigation
-  }, [trackedEntities, trackedEntityParam]);
+  }, [trackedEntities, trackedEntityParam, operationId]);
 
   return {
     active,

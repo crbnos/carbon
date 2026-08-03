@@ -46,8 +46,11 @@ const ItemSerialSequenceForm = ({
   const [step, setStep] = useState(initialValues.step ?? 1);
 
   const makePreview = () => {
-    const p = interpolateSequenceDate(prefix);
-    const s = interpolateSequenceDate(suffix);
+    // %{location} is resolved at issue time from the item's location; for the
+    // preview we stand in a sample location code ("HQ") so the token doesn't
+    // show through literally.
+    const p = interpolateSequenceDate(prefix).replace(/%{location}/g, "HQ");
+    const s = interpolateSequenceDate(suffix).replace(/%{location}/g, "HQ");
     // Preview the NEXT number that will be issued (current counter + step),
     // not the current counter itself — so a fresh sequence shows "00001".
     return `${p}${(next + step).toString().padStart(size, "0")}${s}`;

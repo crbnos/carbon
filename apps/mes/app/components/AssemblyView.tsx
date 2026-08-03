@@ -1524,13 +1524,27 @@ export function AssemblyView({
               </p>
             )}
             {!isMultiQuantity && currentEntity ? (
-              <div className="mt-1.5 flex items-center gap-1.5">
-                <Badge variant="secondary" className="font-mono text-[10px]">
+              <div className="mt-1.5 flex items-center gap-1.5 min-w-0">
+                <Badge
+                  variant="secondary"
+                  className="font-mono text-[10px] shrink-0"
+                >
                   {requiresBatchTracking ? "Batch" : "S/N"}
                 </Badge>
-                <span className="truncate font-mono text-[10px] text-muted-foreground">
-                  {currentEntity.readableId ?? currentEntity.id.slice(0, 8)}
-                </span>
+                {currentEntity.readableId ? (
+                  <span className="flex min-w-0 items-center gap-1.5">
+                    <span className="truncate text-[10px] font-medium">
+                      {currentEntity.readableId}
+                    </span>
+                    <span className="truncate font-mono text-[10px] text-muted-foreground">
+                      {currentEntity.id.slice(0, 8)}
+                    </span>
+                  </span>
+                ) : (
+                  <span className="truncate font-mono text-[10px] text-muted-foreground">
+                    {currentEntity.id.slice(0, 8)}
+                  </span>
+                )}
               </div>
             ) : null}
           </div>
@@ -2936,11 +2950,12 @@ function StepCompleteAction({
 // Units section for the left sidebar — its own labeled section (like Time), sitting
 // directly below the timers. A compact prev/next pager sits top-right by the label,
 // and the full, scrollable list of EVERY unit gives full visibility. A serial parent
-// binds a distinct entity per unit, so it lists those by readableId; a batch parent
-// binds a single lot to unit 0 (the rest are null), so listing that one id is more
-// noise than signal — batch and untracked parents both list "Unit 1 / Unit 2 / …".
-// The list auto-scrolls to keep the current unit in view; units with an out-of-spec
-// measurement (or a failed inspection) are flagged red, fully-recorded units green.
+// binds a distinct entity per unit, so it lists those by readableId (with muted
+// entity id when both exist); a batch parent binds a single lot to unit 0 (the rest
+// are null), so listing that one id is more noise than signal — batch and untracked
+// parents both list "Unit 1 / Unit 2 / …". The list auto-scrolls to keep the current
+// unit in view; units with an out-of-spec measurement (or a failed inspection) are
+// flagged red, fully-recorded units green.
 function UnitNavigator({
   units,
   currentUnitIndex,
@@ -2975,10 +2990,6 @@ function UnitNavigator({
     labelByEntity && !!u.entity;
   const isNavigable = (u: (typeof units)[number]) =>
     u.index <= maxNavigableIndex;
-  const labelFor = (u: (typeof units)[number]) =>
-    labelByEntity && u.entity
-      ? (u.entity.readableId ?? u.entity.id.slice(0, 8))
-      : `Unit ${u.index + 1}`;
 
   // Keep the selected unit visible as the operator pages/jumps between units.
   // currentUnitIndex is a real dep: the ref points at a different row after it
@@ -3057,9 +3068,24 @@ function UnitNavigator({
                       : "bg-transparent"
                 )}
               />
-              <span className={cn("truncate", isEntityLabel(u) && "font-mono")}>
-                {labelFor(u)}
-              </span>
+              {isEntityLabel(u) && u.entity ? (
+                u.entity.readableId ? (
+                  <span className="flex min-w-0 flex-col">
+                    <span className="truncate font-medium">
+                      {u.entity.readableId}
+                    </span>
+                    <span className="truncate font-mono text-[10px] text-muted-foreground">
+                      {u.entity.id.slice(0, 8)}
+                    </span>
+                  </span>
+                ) : (
+                  <span className="truncate font-mono">
+                    {u.entity.id.slice(0, 8)}
+                  </span>
+                )
+              ) : (
+                <span className="truncate">{`Unit ${u.index + 1}`}</span>
+              )}
             </button>
           );
         })}
