@@ -14,8 +14,7 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
-  VStack
+  SelectValue
 } from "@carbon/react";
 import type { ValueOrRef, ValueType } from "@carbon/workflows";
 import {
@@ -36,12 +35,10 @@ import { useBuilderStore } from "../../context";
 import { TemplateField } from "../../fields/TemplateField";
 import { ValueField } from "../../fields/ValueField";
 import { fromReactFlow } from "../../graph";
+import { FormStack, Section } from "../layout";
 import type { NodeFormProps } from "./index";
 
 // ── helpers ───────────────────────────────────────────────────────────────────
-
-const SECTION =
-  "text-[11px] font-semibold uppercase tracking-wide text-muted-foreground";
 
 /** Returns 1 if all required entity inputs for this action are available upstream; 0 if not. */
 function actionRank(id: string, upstream: Set<string>): number {
@@ -187,7 +184,7 @@ function NotifyAboutField({
   }
 
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex w-full flex-col gap-2">
       <label className="text-sm font-medium text-foreground">
         <Trans>About</Trans>
       </label>
@@ -397,12 +394,12 @@ export function ActionForm({ node, issues }: NodeFormProps) {
   // ── render ──────────────────────────────────────────────────────────────────
 
   return (
-    <VStack spacing={4}>
+    <FormStack spacing={4}>
       {/* Action selector */}
       <div className="space-y-1">
-        <div className={SECTION}>
+        <Section>
           <Trans>Action</Trans>
-        </div>
+        </Section>
         <ActionPicker
           selected={actionId}
           onSelect={handleActionSelect}
@@ -416,9 +413,9 @@ export function ActionForm({ node, issues }: NodeFormProps) {
           {/* requireOneOf group selectors */}
           {requireOneOf.map((group, i) => (
             <div key={i} className="space-y-1">
-              <div className={SECTION}>
+              <Section>
                 <Trans>Notify</Trans>
-              </div>
+              </Section>
               <div className="flex overflow-hidden rounded-md border">
                 {group.map((name) => (
                   <button
@@ -445,9 +442,9 @@ export function ActionForm({ node, issues }: NodeFormProps) {
           {/* Inputs */}
           {visibleInputNames.length > 0 && (
             <div className="space-y-3">
-              <div className={SECTION}>
+              <Section>
                 <Trans>Inputs</Trans>
-              </div>
+              </Section>
               {visibleInputNames.map(renderInput)}
             </div>
           )}
@@ -455,9 +452,9 @@ export function ActionForm({ node, issues }: NodeFormProps) {
           {/* Notify about — only for the notify action */}
           {isNotify && (
             <div className="space-y-1">
-              <div className={SECTION}>
+              <Section>
                 <Trans>Context</Trans>
-              </div>
+              </Section>
               {/* The only hand-written field: notify names its subject in two loose strings
                   because the value model has no "any record" type. Not a pattern. */}
               <NotifyAboutField
@@ -504,6 +501,6 @@ export function ActionForm({ node, issues }: NodeFormProps) {
           )}
         </>
       )}
-    </VStack>
+    </FormStack>
   );
 }

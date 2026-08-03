@@ -4598,9 +4598,6 @@ msgstr "{0} miktarı için fiyat kırılımı silinsin mi? Bu işlem geri alına
 msgid "Delete this step?"
 msgstr ""
 
-msgid "Delete this version"
-msgstr ""
-
 msgid "Delete Timecard"
 msgstr "Çalışma Kaydını Sil"
 
@@ -6408,6 +6405,9 @@ msgstr "Mali Yıldan Bugüne"
 
 msgid "Fiscal Years"
 msgstr "Mali Yıllar"
+
+msgid "Fit view"
+msgstr ""
 
 msgid "Fixed"
 msgstr "Sabit"
@@ -10767,10 +10767,6 @@ msgid "Publish"
 msgstr "Yayınla"
 
 #. placeholder {0}: current.versionNumber
-msgid "Publish Version {0}"
-msgstr ""
-
-#. placeholder {0}: current.versionNumber
 msgid "Publish Version {0}?"
 msgstr ""
 
@@ -14611,6 +14607,9 @@ msgstr "Gezgini Aç/Kapat"
 
 msgid "Toggle level"
 msgstr "Seviye değiştir"
+
+msgid "Toggle pan mode"
+msgstr ""
 
 msgid "Toggle Properties"
 msgstr "Özellikleri Aç/Kapat"

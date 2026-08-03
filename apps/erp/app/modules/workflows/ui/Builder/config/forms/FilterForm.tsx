@@ -9,8 +9,7 @@ import {
   cn,
   Popover,
   PopoverContent,
-  PopoverTrigger,
-  VStack
+  PopoverTrigger
 } from "@carbon/react";
 
 import type { Clause, VariableRef } from "@carbon/workflows";
@@ -21,12 +20,10 @@ import { LuChevronDown, LuPlus } from "react-icons/lu";
 import { catalog, describeValueType } from "../../catalog";
 import { useBuilderStore } from "../../context";
 import { fromReactFlow } from "../../graph";
-import ClauseRow, { CLAUSE_GRID_CLASS } from "../ClauseRow";
+import ClauseRow from "../ClauseRow";
 import { CombinatorToggle } from "../CombinatorToggle";
+import { FormStack, Section } from "../layout";
 import type { NodeFormProps } from "./index";
-
-const SECTION =
-  "text-[11px] font-semibold uppercase tracking-wide text-muted-foreground";
 
 const newClause = (): Clause => ({
   left: {
@@ -108,12 +105,12 @@ export function FilterForm({ node }: NodeFormProps) {
   const context = { nodeId: node.id, inLoop: true };
 
   return (
-    <VStack spacing={4}>
+    <FormStack spacing={4}>
       {/* Source list picker */}
       <div className="space-y-1">
-        <div className={SECTION}>
+        <Section>
           <Trans>Source list</Trans>
-        </div>
+        </Section>
 
         <Popover open={sourceOpen} onOpenChange={setSourceOpen}>
           <PopoverTrigger asChild>
@@ -178,11 +175,11 @@ export function FilterForm({ node }: NodeFormProps) {
       {source && (
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <div className={SECTION}>
+            <Section>
               {entityName
                 ? t`Keep only the ${entityName} where…`
                 : t`Keep only items where…`}
-            </div>
+            </Section>
 
             {/* Combinator toggle */}
             <CombinatorToggle
@@ -191,19 +188,6 @@ export function FilterForm({ node }: NodeFormProps) {
             />
           </div>
 
-          {clauses.length > 0 && (
-            <div className={CLAUSE_GRID_CLASS}>
-              <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground pl-3">
-                <Trans>Input</Trans>
-              </span>
-              <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-                <Trans>Operator</Trans>
-              </span>
-              <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-                <Trans>Value</Trans>
-              </span>
-            </div>
-          )}
           {clauses.map((clause, i) => (
             <div key={i}>
               <ClauseRow
@@ -236,6 +220,6 @@ export function FilterForm({ node }: NodeFormProps) {
           </Button>
         </div>
       )}
-    </VStack>
+    </FormStack>
   );
 }

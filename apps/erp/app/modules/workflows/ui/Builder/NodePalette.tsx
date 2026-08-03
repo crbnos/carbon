@@ -1,4 +1,3 @@
-import { Trans } from "@lingui/react/macro";
 import { NODE_DRAG_TYPE } from "./constants";
 import { useBuilderStore } from "./context";
 import { NODE_KIND_META, NODE_KIND_ORDER } from "./nodes/meta";
@@ -8,9 +7,6 @@ export function NodePalette() {
 
   return (
     <aside className="flex h-full flex-col gap-1 overflow-y-auto border-r bg-background p-2">
-      <p className="px-1 pb-1 text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">
-        <Trans>Add</Trans>
-      </p>
       {NODE_KIND_ORDER.map((type) => {
         const meta = NODE_KIND_META[type];
 

@@ -4598,9 +4598,6 @@ msgstr "数量{0}の価格ブレークを削除しますか？この操作は元
 msgid "Delete this step?"
 msgstr ""
 
-msgid "Delete this version"
-msgstr ""
-
 msgid "Delete Timecard"
 msgstr "タイムカードを削除"
 
@@ -6408,6 +6405,9 @@ msgstr "会計年度初めから現在まで"
 
 msgid "Fiscal Years"
 msgstr "会計年度"
+
+msgid "Fit view"
+msgstr ""
 
 msgid "Fixed"
 msgstr "固定"
@@ -10767,10 +10767,6 @@ msgid "Publish"
 msgstr "公開"
 
 #. placeholder {0}: current.versionNumber
-msgid "Publish Version {0}"
-msgstr ""
-
-#. placeholder {0}: current.versionNumber
 msgid "Publish Version {0}?"
 msgstr ""
 
@@ -14611,6 +14607,9 @@ msgstr "エクスプローラーを切り替え"
 
 msgid "Toggle level"
 msgstr "レベルを切り替え"
+
+msgid "Toggle pan mode"
+msgstr ""
 
 msgid "Toggle Properties"
 msgstr "プロパティを切り替え"

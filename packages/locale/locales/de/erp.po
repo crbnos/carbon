@@ -4598,9 +4598,6 @@ msgstr "Den Preisrabatt für Menge {0} löschen? Dies kann nicht rückgängig ge
 msgid "Delete this step?"
 msgstr ""
 
-msgid "Delete this version"
-msgstr ""
-
 msgid "Delete Timecard"
 msgstr "Zeitkarte löschen"
 
@@ -6408,6 +6405,9 @@ msgstr "Geschäftsjahr bis heute"
 
 msgid "Fiscal Years"
 msgstr "Geschäftsjahre"
+
+msgid "Fit view"
+msgstr ""
 
 msgid "Fixed"
 msgstr "Fest"
@@ -10767,10 +10767,6 @@ msgid "Publish"
 msgstr "Veröffentlichen"
 
 #. placeholder {0}: current.versionNumber
-msgid "Publish Version {0}"
-msgstr ""
-
-#. placeholder {0}: current.versionNumber
 msgid "Publish Version {0}?"
 msgstr ""
 
@@ -14611,6 +14607,9 @@ msgstr "Explorer umschalten"
 
 msgid "Toggle level"
 msgstr "Ebene umschalten"
+
+msgid "Toggle pan mode"
+msgstr ""
 
 msgid "Toggle Properties"
 msgstr "Eigenschaften umschalten"

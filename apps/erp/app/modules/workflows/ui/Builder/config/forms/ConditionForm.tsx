@@ -1,10 +1,4 @@
-import {
-  Alert,
-  AlertDescription,
-  Button,
-  IconButton,
-  VStack
-} from "@carbon/react";
+import { Alert, AlertDescription, Button, IconButton } from "@carbon/react";
 import type { Clause, ConditionPath } from "@carbon/workflows";
 import {
   closestCenter,
@@ -25,8 +19,10 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { nanoid } from "nanoid";
 import { LuGripVertical, LuInfo, LuPlus, LuX } from "react-icons/lu";
 import { useBuilderStore } from "../../context";
-import ClauseRow, { CLAUSE_GRID_CLASS } from "../ClauseRow";
+import { PortAnchor } from "../../PortAnchor";
+import ClauseRow from "../ClauseRow";
 import { CombinatorToggle } from "../CombinatorToggle";
+import { FormStack } from "../layout";
 import type { NodeFormProps } from "./index";
 
 const newClause = (): Clause => ({
@@ -220,7 +216,7 @@ export function ConditionForm({ node }: NodeFormProps) {
   );
 
   return (
-    <VStack spacing={4}>
+    <FormStack spacing={4}>
       <Alert>
         <LuInfo />
         <AlertDescription>
@@ -239,20 +235,23 @@ export function ConditionForm({ node }: NodeFormProps) {
 
         return (
           <div key={path.id} className="space-y-1">
-            {/* Semantic kind pill — outside the bordered block */}
-            <div className="flex items-center justify-between">
+            {/* Semantic kind pill — full-bleed so the handle lands on the card edge */}
+            <div className="relative -mx-2.5 flex items-center justify-between px-2.5">
               <span className="rounded-full border border-border bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
                 {KIND_PILL[path.kind]}
               </span>
-              {!isIf && (
-                <IconButton
-                  icon={<LuX />}
-                  aria-label={t`Remove path`}
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => removePath(path.id)}
-                />
-              )}
+              <div className="flex items-center gap-1 pr-2">
+                {!isIf && (
+                  <IconButton
+                    icon={<LuX />}
+                    aria-label={t`Remove path`}
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => removePath(path.id)}
+                  />
+                )}
+              </div>
+              <PortAnchor id={path.id} />
             </div>
 
             {/* Bordered block */}
@@ -287,21 +286,6 @@ export function ConditionForm({ node }: NodeFormProps) {
                 </p>
               ) : (
                 <>
-                  {/* Column headers */}
-                  {path.clauses.length > 0 && (
-                    <div className={CLAUSE_GRID_CLASS}>
-                      <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground pl-3">
-                        <Trans>Input</Trans>
-                      </span>
-                      <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-                        <Trans>Operator</Trans>
-                      </span>
-                      <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-                        <Trans>Value</Trans>
-                      </span>
-                    </div>
-                  )}
-
                   <DndContext
                     sensors={sensors}
                     collisionDetection={closestCenter}
@@ -376,6 +360,6 @@ export function ConditionForm({ node }: NodeFormProps) {
           <Trans>Add otherwise</Trans>
         </Button>
       )}
-    </VStack>
+    </FormStack>
   );
 }

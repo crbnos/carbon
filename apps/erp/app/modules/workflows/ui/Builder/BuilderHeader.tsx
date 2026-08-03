@@ -1,11 +1,5 @@
 import {
-  Badge,
   Button,
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuTrigger,
-  MenuIcon,
-  MenuItem,
   Modal,
   ModalBody,
   ModalContent,
@@ -21,13 +15,7 @@ import {
 import type { WorkflowIssue } from "@carbon/workflows";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useEffect } from "react";
-import {
-  LuChevronDown,
-  LuEllipsisVertical,
-  LuHistory,
-  LuLock,
-  LuTrash
-} from "react-icons/lu";
+import { LuLock } from "react-icons/lu";
 import { useFetcher } from "react-router";
 import { VersionMenu } from "~/components";
 import { usePermissions } from "~/hooks";
@@ -128,26 +116,12 @@ export function BuilderHeader({
       <SaveMarker />
 
       <div className="ml-auto flex items-center gap-2">
-        <Button variant="ghost" leftIcon={<LuHistory />} asChild>
-          <a
-            href={`${path.to.workflowRuns}?filter=workflowId:eq:${workflow.id}`}
-          >
-            {t`Runs`}
-          </a>
-        </Button>
         <VersionMenu
           versions={versions}
           currentVersionId={versionId}
           getKey={(v) => v.id}
           getHref={(v) => `${path.to.workflow(workflow.id)}?version=${v.id}`}
-          label={
-            current && (
-              <div className="flex items-center gap-2">
-                <Badge variant="outline">Version {current.versionNumber}</Badge>
-                <WorkflowVersionStatus isLive={isLiveVersion} />
-              </div>
-            )
-          }
+          label={current && <span>Version {current.versionNumber}</span>}
           renderLabel={(v) => <span>Version {v.versionNumber}</span>}
           renderStatus={(v) => (
             <WorkflowVersionStatus isLive={v.id === workflow.activeVersionId} />
@@ -165,35 +139,6 @@ export function BuilderHeader({
               : undefined
           }
         />
-        {permissions.can("delete", "workflows") &&
-          versionId !== workflow.activeVersionId &&
-          versions.length > 1 && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" rightIcon={<LuChevronDown />}>
-                  <LuEllipsisVertical />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <MenuItem
-                  destructive
-                  onClick={() => {
-                    versionFetcher.submit(new FormData(), {
-                      method: "post",
-                      action: path.to.workflowVersionDelete(
-                        workflow.id,
-                        versionId
-                      )
-                    });
-                  }}
-                >
-                  <MenuIcon icon={<LuTrash />} />
-                  <Trans>Delete this version</Trans>
-                </MenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
-
         <Button
           isDisabled={
             !permissions.can("update", "workflows") ||
@@ -207,7 +152,7 @@ export function BuilderHeader({
             else publish();
           }}
         >
-          {current ? t`Publish Version ${current.versionNumber}` : t`Publish`}
+          <Trans>Publish</Trans>
         </Button>
       </div>
 

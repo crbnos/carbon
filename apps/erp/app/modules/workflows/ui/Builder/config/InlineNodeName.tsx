@@ -1,4 +1,3 @@
-import { Input } from "@carbon/react";
 import { slugifyNodeName } from "@carbon/workflows";
 import { useLingui } from "@lingui/react/macro";
 import { useRef, useState } from "react";
@@ -66,9 +65,9 @@ export function InlineNodeName({ name, isReadOnly, isTaken, onCommit }: Props) {
   if (isEditing) {
     return (
       <div className="nodrag nopan min-w-0">
-        <Input
+        <input
           autoFocus
-          size="sm"
+          className="w-full bg-transparent text-xs font-semibold focus:outline-none"
           defaultValue={name}
           onFocus={(e) => e.currentTarget.select()}
           onBlur={(e) => tryCommit(e.currentTarget.value)}

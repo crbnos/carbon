@@ -4598,9 +4598,6 @@ msgstr "Eliminare il break di prezzo per la quantità {0}? Questa azione non pu�
 msgid "Delete this step?"
 msgstr ""
 
-msgid "Delete this version"
-msgstr ""
-
 msgid "Delete Timecard"
 msgstr "Elimina Foglio Presenze"
 
@@ -6408,6 +6405,9 @@ msgstr "Anno fiscale a oggi"
 
 msgid "Fiscal Years"
 msgstr "Anni Fiscali"
+
+msgid "Fit view"
+msgstr ""
 
 msgid "Fixed"
 msgstr "Fisso"
@@ -10767,10 +10767,6 @@ msgid "Publish"
 msgstr "Pubblica"
 
 #. placeholder {0}: current.versionNumber
-msgid "Publish Version {0}"
-msgstr ""
-
-#. placeholder {0}: current.versionNumber
 msgid "Publish Version {0}?"
 msgstr ""
 
@@ -14611,6 +14607,9 @@ msgstr "Attiva/Disattiva Esplora"
 
 msgid "Toggle level"
 msgstr "Attiva/disattiva livello"
+
+msgid "Toggle pan mode"
+msgstr ""
 
 msgid "Toggle Properties"
 msgstr "Attiva/Disattiva Proprietà"

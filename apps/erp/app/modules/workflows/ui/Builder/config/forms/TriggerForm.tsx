@@ -17,8 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
   ToggleGroup,
-  ToggleGroupItem,
-  VStack
+  ToggleGroupItem
 } from "@carbon/react";
 import { timezones } from "@carbon/utils";
 import type { Origin, Schedule } from "@carbon/workflows";
@@ -32,10 +31,8 @@ import { useMemo, useState } from "react";
 import { LuCheck, LuChevronsUpDown } from "react-icons/lu";
 import { entityLabelKey, useWorkflowLabel } from "../../catalog";
 import { useBuilderStore } from "../../context";
+import { FormStack, Section } from "../layout";
 import type { NodeFormProps } from "./index";
-
-const SECTION =
-  "text-[11px] font-semibold uppercase tracking-wide text-muted-foreground";
 
 const WEEKDAY_ABBR = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
 
@@ -170,12 +167,12 @@ function ScheduleEditor({ schedule, onChange }: ScheduleEditorProps) {
   const { t } = useLingui();
 
   return (
-    <VStack spacing={3}>
+    <FormStack spacing={3}>
       {/* Frequency */}
       <div className="space-y-1">
-        <div className={SECTION}>
+        <Section>
           <Trans>Frequency</Trans>
-        </div>
+        </Section>
         <Select
           value={schedule.freq}
           onValueChange={(v) => onChange({ freq: v as Schedule["freq"] })}
@@ -200,9 +197,9 @@ function ScheduleEditor({ schedule, onChange }: ScheduleEditorProps) {
       {/* Weekdays (Weekly only) */}
       {schedule.freq === "Weekly" && (
         <div className="space-y-1">
-          <div className={SECTION}>
+          <Section>
             <Trans>On days</Trans>
-          </div>
+          </Section>
           <div className="flex gap-1">
             {WEEKDAY_ABBR.map((day, i) => {
               const active = schedule.weekdays?.includes(i) ?? false;
@@ -238,9 +235,9 @@ function ScheduleEditor({ schedule, onChange }: ScheduleEditorProps) {
       {/* Day of month (Monthly only) */}
       {schedule.freq === "Monthly" && (
         <div className="space-y-1">
-          <div className={SECTION}>
+          <Section>
             <Trans>On day</Trans>
-          </div>
+          </Section>
           <Select
             value={String(schedule.day ?? 1)}
             onValueChange={(v) =>
@@ -266,9 +263,9 @@ function ScheduleEditor({ schedule, onChange }: ScheduleEditorProps) {
 
       {/* Time */}
       <div className="space-y-1">
-        <div className={SECTION}>
+        <Section>
           <Trans>Time of day</Trans>
-        </div>
+        </Section>
         <div className="flex items-center gap-2">
           <Select
             value={String(schedule.hour)}
@@ -306,9 +303,9 @@ function ScheduleEditor({ schedule, onChange }: ScheduleEditorProps) {
 
       {/* Timezone */}
       <div className="space-y-1">
-        <div className={SECTION}>
+        <Section>
           <Trans>Timezone</Trans>
-        </div>
+        </Section>
         <Select value={schedule.tz} onValueChange={(v) => onChange({ tz: v })}>
           <SelectTrigger className="w-full">
             <SelectValue />
@@ -327,7 +324,7 @@ function ScheduleEditor({ schedule, onChange }: ScheduleEditorProps) {
           </SelectContent>
         </Select>
       </div>
-    </VStack>
+    </FormStack>
   );
 }
 
@@ -417,12 +414,12 @@ export function TriggerForm({ node }: NodeFormProps) {
   }, [schedule]);
 
   return (
-    <VStack spacing={4}>
+    <FormStack spacing={4}>
       {/* Mode toggle */}
       <div className="space-y-1">
-        <div className={SECTION}>
+        <Section>
           <Trans>Trigger type</Trans>
-        </div>
+        </Section>
         <div className="flex overflow-hidden rounded-md border">
           <button
             type="button"
@@ -455,9 +452,9 @@ export function TriggerForm({ node }: NodeFormProps) {
         <>
           {/* Event selection */}
           <div className="space-y-2">
-            <div className={SECTION}>
+            <Section>
               <Trans>Events</Trans>
-            </div>
+            </Section>
             <EventPicker
               selected={events}
               onToggle={toggleEvent}
@@ -489,9 +486,9 @@ export function TriggerForm({ node }: NodeFormProps) {
 
           {/* Origin selector */}
           <div className="space-y-2">
-            <div className={SECTION}>
+            <Section>
               <Trans>Triggered by</Trans>
-            </div>
+            </Section>
             <ToggleGroup
               type="single"
               value={origin}
@@ -536,6 +533,6 @@ export function TriggerForm({ node }: NodeFormProps) {
           )}
         </>
       )}
-    </VStack>
+    </FormStack>
   );
 }

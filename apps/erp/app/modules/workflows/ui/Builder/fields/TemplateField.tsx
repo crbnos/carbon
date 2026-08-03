@@ -95,7 +95,7 @@ export function TemplateField({
   }
 
   return (
-    <div className="flex flex-col gap-1">
+    <div className="flex w-full flex-col gap-1">
       <label className="text-sm font-medium text-foreground">
         {label}
         {required && <span className="ml-0.5 text-destructive">*</span>}
@@ -106,7 +106,7 @@ export function TemplateField({
           issue && "rounded-md ring-2 ring-destructive ring-offset-1"
         )}
       >
-        <div className="flex-1">
+        <div className="min-w-0 flex-1">
           <VariableText
             ref={handle}
             value={initialParts}

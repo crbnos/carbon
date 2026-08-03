@@ -8,8 +8,7 @@ import {
   cn,
   Popover,
   PopoverContent,
-  PopoverTrigger,
-  VStack
+  PopoverTrigger
 } from "@carbon/react";
 import type { ValueOrRef } from "@carbon/workflows";
 import { WORKFLOW_OPERATION_CATALOG } from "@carbon/workflows";
@@ -25,10 +24,8 @@ import {
 } from "../../catalog";
 import { useBuilderStore } from "../../context";
 import { ValueField } from "../../fields/ValueField";
+import { FormStack, Section } from "../layout";
 import type { NodeFormProps } from "./index";
-
-const SECTION =
-  "text-[11px] font-semibold uppercase tracking-wide text-muted-foreground";
 
 // ── OperationPicker ───────────────────────────────────────────────────────────
 
@@ -162,12 +159,12 @@ export function EntityForm({ node }: NodeFormProps) {
   }
 
   return (
-    <VStack spacing={4}>
+    <FormStack spacing={4}>
       {/* Operation picker */}
       <div className="space-y-1">
-        <div className={SECTION}>
+        <Section>
           <Trans>Operation</Trans>
-        </div>
+        </Section>
         <OperationPicker
           selected={operationId}
           onSelect={handleOperationSelect}
@@ -177,9 +174,9 @@ export function EntityForm({ node }: NodeFormProps) {
 
       {opDef && orderedInputNames.length > 0 && (
         <div className="space-y-3">
-          <div className={SECTION}>
+          <Section>
             <Trans>Inputs</Trans>
-          </div>
+          </Section>
           {orderedInputNames.map((name) => {
             const inputDef = opDef.inputs[name];
             if (!inputDef) return null;
@@ -210,6 +207,6 @@ export function EntityForm({ node }: NodeFormProps) {
           <span className="font-medium text-foreground">{outputDesc}</span>
         </p>
       )}
-    </VStack>
+    </FormStack>
   );
 }

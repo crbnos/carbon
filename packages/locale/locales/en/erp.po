@@ -4598,9 +4598,6 @@ msgstr "Delete the price break for quantity {0}? This can't be undone."
 msgid "Delete this step?"
 msgstr "Delete this step?"
 
-msgid "Delete this version"
-msgstr "Delete this version"
-
 msgid "Delete Timecard"
 msgstr "Delete Timecard"
 
@@ -6408,6 +6405,9 @@ msgstr "Fiscal Year to Date"
 
 msgid "Fiscal Years"
 msgstr "Fiscal Years"
+
+msgid "Fit view"
+msgstr "Fit view"
 
 msgid "Fixed"
 msgstr "Fixed"
@@ -10767,10 +10767,6 @@ msgid "Publish"
 msgstr "Publish"
 
 #. placeholder {0}: current.versionNumber
-msgid "Publish Version {0}"
-msgstr "Publish Version {0}"
-
-#. placeholder {0}: current.versionNumber
 msgid "Publish Version {0}?"
 msgstr "Publish Version {0}?"
 
@@ -14611,6 +14607,9 @@ msgstr "Toggle Explorer"
 
 msgid "Toggle level"
 msgstr "Toggle level"
+
+msgid "Toggle pan mode"
+msgstr "Toggle pan mode"
 
 msgid "Toggle Properties"
 msgstr "Toggle Properties"

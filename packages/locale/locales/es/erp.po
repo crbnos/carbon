@@ -4598,9 +4598,6 @@ msgstr "¿Eliminar el descuento por cantidad {0}? Esto no se puede deshacer."
 msgid "Delete this step?"
 msgstr ""
 
-msgid "Delete this version"
-msgstr ""
-
 msgid "Delete Timecard"
 msgstr "Eliminar Tarjeta de Tiempo"
 
@@ -6408,6 +6405,9 @@ msgstr "Año Fiscal hasta la Fecha"
 
 msgid "Fiscal Years"
 msgstr "Años Fiscales"
+
+msgid "Fit view"
+msgstr ""
 
 msgid "Fixed"
 msgstr "Fijo"
@@ -10767,10 +10767,6 @@ msgid "Publish"
 msgstr "Publicar"
 
 #. placeholder {0}: current.versionNumber
-msgid "Publish Version {0}"
-msgstr ""
-
-#. placeholder {0}: current.versionNumber
 msgid "Publish Version {0}?"
 msgstr ""
 
@@ -14611,6 +14607,9 @@ msgstr "Alternar Explorador"
 
 msgid "Toggle level"
 msgstr "Alternar nivel"
+
+msgid "Toggle pan mode"
+msgstr ""
 
 msgid "Toggle Properties"
 msgstr "Alternar Propiedades"

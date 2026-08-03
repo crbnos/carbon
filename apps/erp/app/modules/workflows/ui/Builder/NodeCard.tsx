@@ -1,14 +1,36 @@
 import { Badge, cn } from "@carbon/react";
-import { Handle, Position } from "@xyflow/react";
+import { Handle, Position, useUpdateNodeInternals } from "@xyflow/react";
 import type { ReactNode } from "react";
+import { useEffect, useRef } from "react";
 
 export type NodePort = { id: string; label: string };
 
-const HANDLE_CLASS =
-  "!size-3 !border-2 !border-card !bg-primary transition-transform " +
-  "hover:!scale-[1.35] hover:!shadow-[0_0_0_4px_hsl(var(--primary)/0.18)]";
+export const HANDLE_CLASS =
+  "!size-3.5 !min-w-0 !min-h-0 !rounded-full !border-2 !border-card !bg-primary " +
+  "!transition-shadow hover:!shadow-[0_0_0_5px_hsl(var(--primary)/0.22)]";
+
+const INTERACTIVE =
+  "input,textarea,select,button,a,[role=button],[role=combobox],[contenteditable=true]";
+
+// Body drags, controls don't. Toggles `nodrag` in the capture phase, which beats
+// React Flow's listener; stopPropagation here would wedge every Radix dropdown open.
+function useBodyDragFilter() {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const onPointerDown = (event: PointerEvent) => {
+      const target = event.target as HTMLElement | null;
+      el.classList.toggle("nodrag", !!target?.closest(INTERACTIVE));
+    };
+    el.addEventListener("pointerdown", onPointerDown, true);
+    return () => el.removeEventListener("pointerdown", onPointerDown, true);
+  }, []);
+  return ref;
+}
 
 type NodeCardProps = {
+  nodeId: string;
   title: ReactNode;
   description?: string;
   icon: ReactNode;
@@ -17,12 +39,15 @@ type NodeCardProps = {
   issueCount?: number;
   isSelected?: boolean;
   isExpanded?: boolean;
+  width?: number;
+  hidePortStrip?: boolean;
   summary?: string;
   actions?: ReactNode;
   children?: ReactNode;
 };
 
 export function NodeCard({
+  nodeId,
   title,
   description,
   icon,
@@ -31,20 +56,32 @@ export function NodeCard({
   issueCount = 0,
   isSelected = false,
   isExpanded = true,
+  width = 440,
+  hidePortStrip = false,
   summary,
   actions,
   children
 }: NodeCardProps) {
   const hasIssues = issueCount > 0;
+  const bodyRef = useBodyDragFilter();
+
+  const updateNodeInternals = useUpdateNodeInternals();
+  const portKey = ports.map((p) => p.id).join("|");
+
+  // React Flow caches handle bounds; expanding, collapsing, or adding a path
+  // moves them, so it must be told to re-measure.
+  useEffect(() => {
+    updateNodeInternals(nodeId);
+  }, [nodeId, portKey, isExpanded, updateNodeInternals]);
 
   return (
     <div
       className={cn(
         "rounded-lg border bg-card shadow-sm transition-shadow",
-        isExpanded ? "w-[440px]" : "w-[260px]",
         isSelected && "border-primary ring-2 ring-primary/20",
         hasIssues && "border-destructive ring-2 ring-destructive/20"
       )}
+      style={{ width: isExpanded ? width : 260 }}
     >
       {hasTarget && (
         <Handle
@@ -91,10 +128,12 @@ export function NodeCard({
       </div>
 
       {isExpanded && children && (
-        <div className="nodrag border-t px-2.5 py-2">{children}</div>
+        <div ref={bodyRef} className="border-t px-2.5 py-2">
+          {children}
+        </div>
       )}
 
-      {ports.length > 1 && (
+      {ports.length > 1 && !hidePortStrip && (
         <div
           className={cn(
             "flex flex-col",
@@ -116,7 +155,6 @@ export function NodeCard({
                 position={Position.Right}
                 id={port.id}
                 className={HANDLE_CLASS}
-                style={{ top: "50%", right: -6 }}
               />
             </div>
           ))}

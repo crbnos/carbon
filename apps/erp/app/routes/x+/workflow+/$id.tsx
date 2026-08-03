@@ -27,16 +27,17 @@ import {
 import { Autosave } from "~/modules/workflows/ui/Builder/Autosave";
 import { BuilderHeader } from "~/modules/workflows/ui/Builder/BuilderHeader";
 import { WorkflowBuilderProvider } from "~/modules/workflows/ui/Builder/context";
+import WorkflowEdgeStyle from "~/modules/workflows/ui/Builder/edges/workflow-edge.css?url";
 import { toReactFlow } from "~/modules/workflows/ui/Builder/graph";
 import { IssuesPanel } from "~/modules/workflows/ui/Builder/IssuesPanel";
 import { WorkflowBuilder } from "~/modules/workflows/ui/Builder/WorkflowBuilder";
-import WorkflowLockAlert from "~/modules/workflows/ui/WorkflowLockAlert";
 import type { Handle } from "~/utils/handle";
 import { detailBreadcrumb } from "~/utils/handle";
 import { path } from "~/utils/path";
 
 export const links: LinksFunction = () => [
-  { rel: "stylesheet", href: XYFlowStyle }
+  { rel: "stylesheet", href: XYFlowStyle },
+  { rel: "stylesheet", href: WorkflowEdgeStyle }
 ];
 
 export const handle: Handle = {
@@ -70,15 +71,16 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const all = versions.data ?? [];
 
   const requested = new URL(request.url).searchParams.get("version");
+  const mostRecent = [...all].sort(
+    (a, b) =>
+      new Date(b.updatedAt ?? 0).getTime() -
+      new Date(a.updatedAt ?? 0).getTime()
+  )[0];
   const versionId =
     (requested && all.some((version) => version.id === requested)
       ? requested
       : null) ??
-    (workflow.activeVersionId &&
-    all.some((version) => version.id === workflow.activeVersionId)
-      ? workflow.activeVersionId
-      : null) ??
-    all[0]?.id ??
+    mostRecent?.id ??
     null;
 
   if (!versionId) {
@@ -168,13 +170,6 @@ export default function WorkflowBuilderRoute() {
             versionId={versionId}
             onIssues={issuesDisclosure.onOpen}
           />
-          {isLiveVersion && (
-            <WorkflowLockAlert
-              workflowId={workflow.id}
-              versionId={versionId}
-              className="rounded-none border-x-0 border-t-0"
-            />
-          )}
           <div className="relative flex flex-1 overflow-hidden">
             <WorkflowBuilder />
             {issuesDisclosure.isOpen && (

@@ -11,8 +11,7 @@ import { catalog, propertyLabelKey, useWorkflowLabel } from "../catalog";
 import type { FieldContext } from "../fields/types";
 import { ValueField } from "../fields/ValueField";
 
-export const CLAUSE_GRID_CLASS =
-  "grid grid-cols-1 gap-2 sm:grid-cols-[minmax(0,1.2fr)_minmax(0,0.9fr)_minmax(0,1fr)]";
+export const CLAUSE_GRID_CLASS = "grid w-full grid-cols-1 gap-2";
 
 function pickDefaultOp(ops: readonly Operator[]): Operator {
   return ops.includes("eq") ? "eq" : (ops[0] ?? "eq");

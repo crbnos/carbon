@@ -33,7 +33,7 @@ export function ValueField({
   const refValue = isRef ? value : undefined;
 
   return (
-    <div className="flex flex-col gap-1">
+    <div className="flex w-full flex-col gap-1">
       <label className="text-sm font-medium text-foreground">
         {label}
         {required && <span className="ml-0.5 text-destructive">*</span>}
@@ -47,7 +47,7 @@ export function ValueField({
       >
         {isRef ? (
           <>
-            <div className="flex-1">
+            <div className="min-w-0 flex-1">
               <VariableChip
                 variable={value}
                 nodeTitle={nodeTitle}
@@ -77,7 +77,7 @@ export function ValueField({
           </>
         ) : (
           <>
-            <div className="flex-1">
+            <div className="min-w-0 flex-1">
               <LiteralControl
                 type={type}
                 choices={choices}

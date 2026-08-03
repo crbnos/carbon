@@ -8,14 +8,15 @@ import type { IsValidConnection } from "@xyflow/react";
 import {
   Background,
   BackgroundVariant,
-  Controls,
   MiniMap,
+  Panel,
   ReactFlow,
   useReactFlow
 } from "@xyflow/react";
 import type { KeyboardEvent } from "react";
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import type { BuilderEdge, BuilderNode } from "../../types";
+import { BuilderControls } from "./BuilderControls";
 import { NODE_DRAG_TYPE } from "./constants";
 import { useBuilderStore, useBuilderStoreApi } from "./context";
 import { edgeTypes } from "./edges/WorkflowEdge";
@@ -32,6 +33,7 @@ const OVERLAY_SELECTOR =
 export function WorkflowBuilder() {
   const store = useBuilderStoreApi();
   const { screenToFlowPosition } = useReactFlow();
+  const [panOnScroll, setPanOnScroll] = useState(false);
 
   const nodes = useBuilderStore((state) => state.nodes);
   const edges = useBuilderStore((state) => state.edges);
@@ -132,9 +134,16 @@ export function WorkflowBuilder() {
             deleteKeyCode={isReadOnly ? null : ["Backspace", "Delete"]}
             onlyRenderVisibleElements
             defaultEdgeOptions={{ type: "workflow" }}
+            panOnScroll={panOnScroll}
+            zoomOnScroll={!panOnScroll}
           >
             <Background variant={BackgroundVariant.Dots} gap={16} />
-            <Controls showInteractive={false} />
+            <Panel position="bottom-right" style={{ bottom: 136, right: 10 }}>
+              <BuilderControls
+                panOnScroll={panOnScroll}
+                onTogglePanOnScroll={() => setPanOnScroll((p) => !p)}
+              />
+            </Panel>
             <MiniMap pannable zoomable />
           </ReactFlow>
         </div>

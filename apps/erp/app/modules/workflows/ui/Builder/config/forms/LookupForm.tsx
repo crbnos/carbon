@@ -1,4 +1,4 @@
-import { Combobox, cn, VStack } from "@carbon/react";
+import { Combobox, cn } from "@carbon/react";
 import type { Operator } from "@carbon/utils";
 import type { Clause, ValueOrRef } from "@carbon/workflows";
 import { REGISTRY_ENTRIES } from "@carbon/workflows";
@@ -11,11 +11,9 @@ import {
   useWorkflowLabel
 } from "../../catalog";
 import { useBuilderStore } from "../../context";
-import ClauseRow, { CLAUSE_GRID_CLASS } from "../ClauseRow";
+import ClauseRow from "../ClauseRow";
+import { FormStack, Section } from "../layout";
 import type { NodeFormProps } from "./index";
-
-const SECTION =
-  "text-[11px] font-semibold uppercase tracking-wide text-muted-foreground";
 
 /** Partial match during editing — `value` may be absent while the user is filling in the row. */
 type WorkingMatch = {
@@ -126,12 +124,12 @@ export function LookupForm({ node }: NodeFormProps) {
   }
 
   return (
-    <VStack spacing={4}>
+    <FormStack spacing={4}>
       {/* Entity picker */}
       <div className="space-y-1">
-        <div className={SECTION}>
+        <Section>
           <Trans>Record type</Trans>
-        </div>
+        </Section>
         <Combobox
           size="md"
           value={entity}
@@ -145,9 +143,9 @@ export function LookupForm({ node }: NodeFormProps) {
         <>
           {/* Returns toggle */}
           <div className="space-y-1">
-            <div className={SECTION}>
+            <Section>
               <Trans>How many</Trans>
-            </div>
+            </Section>
             <div className="flex overflow-hidden rounded-md border">
               <button
                 type="button"
@@ -178,22 +176,9 @@ export function LookupForm({ node }: NodeFormProps) {
 
           {/* Match rows */}
           <div className="space-y-2">
-            <div className={SECTION}>
+            <Section>
               <Trans>Match</Trans>
-            </div>
-            {match.length > 0 && (
-              <div className={CLAUSE_GRID_CLASS}>
-                <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground pl-3">
-                  <Trans>Input</Trans>
-                </span>
-                <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-                  <Trans>Operator</Trans>
-                </span>
-                <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-                  <Trans>Value</Trans>
-                </span>
-              </div>
-            )}
+            </Section>
             {match.map((m, idx) => (
               <ClauseRow
                 key={idx}
@@ -226,6 +211,6 @@ export function LookupForm({ node }: NodeFormProps) {
           )}
         </>
       )}
-    </VStack>
+    </FormStack>
   );
 }

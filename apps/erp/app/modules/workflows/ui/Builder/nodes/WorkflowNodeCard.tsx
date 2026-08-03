@@ -91,6 +91,11 @@ function WorkflowNodeCardImpl({ id, type, data, selected }: NodeProps) {
 
   const canDelete = node.type !== "trigger" || triggerCount > 1;
 
+  // The condition form draws its own per-path handles; the strip would duplicate
+  // every id. Collapsed nodes have no form, so there the strip is the only source.
+  const hidePortStrip =
+    node.type === "condition" && isExpanded && !!builderNode;
+
   const takenNames = new Set(
     allNodes.filter((n) => n.id !== id).map((n) => n.name)
   );
@@ -140,6 +145,7 @@ function WorkflowNodeCardImpl({ id, type, data, selected }: NodeProps) {
   return (
     <>
       <NodeCard
+        nodeId={id}
         title={titleSlot}
         description={meta.description}
         summary={summary}
@@ -149,6 +155,8 @@ function WorkflowNodeCardImpl({ id, type, data, selected }: NodeProps) {
         issueCount={issueCount}
         isSelected={!!selected}
         isExpanded={isExpanded}
+        width={meta.width}
+        hidePortStrip={hidePortStrip}
         actions={actionsSlot}
       >
         {builderNode && (
