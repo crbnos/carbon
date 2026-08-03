@@ -3055,6 +3055,9 @@ msgstr "गणना की पुष्टि करें"
 msgid "Confirm delete"
 msgstr ""
 
+msgid "Confirm disconnect"
+msgstr ""
+
 msgid "Confirm how your company runs and lock the scope."
 msgstr "अपनी कंपनी कैसे चलती है यह पुष्टि करें और स्कोप को लॉक करें।"
 
@@ -4770,6 +4773,9 @@ msgstr "अक्षम"
 
 msgid "Discard"
 msgstr "त्यागें"
+
+msgid "Disconnect"
+msgstr ""
 
 msgid "Discontinuation date"
 msgstr "बंद करने की तारीख"
@@ -9229,6 +9235,9 @@ msgstr "अभी तक कोई अतिरिक्त आवश्यक�
 msgid "No extra setup items yet. Add anything specific to this customer."
 msgstr "अभी तक कोई अतिरिक्त सेटअप आइटम नहीं हैं। इस ग्राहक के लिए कुछ भी विशिष्ट जोड़ें।"
 
+msgid "No failure path — the run stops here and is marked failed"
+msgstr ""
+
 msgid "No fields found."
 msgstr "कोई फ़ील्ड नहीं मिला।"
 
@@ -9512,9 +9521,6 @@ msgid "Notes (optional)"
 msgstr "नोट्स (वैकल्पिक)"
 
 msgid "Nothing"
-msgstr ""
-
-msgid "Nothing happens if this fails"
 msgstr ""
 
 msgid "Nothing in the archive"
@@ -10110,7 +10116,8 @@ msgstr "पास किया गया"
 msgid "Path"
 msgstr "पथ"
 
-msgid "Path {idx}"
+#. placeholder {0}: conditionPathIndex(paths, path.id)
+msgid "Path {0}"
 msgstr ""
 
 msgid "Path else"

@@ -3055,6 +3055,9 @@ msgstr "Confirmer le décompte"
 msgid "Confirm delete"
 msgstr ""
 
+msgid "Confirm disconnect"
+msgstr ""
+
 msgid "Confirm how your company runs and lock the scope."
 msgstr "Confirmez le fonctionnement de votre entreprise et verrouillez la portée."
 
@@ -4770,6 +4773,9 @@ msgstr "Désactivé"
 
 msgid "Discard"
 msgstr "Rejeter"
+
+msgid "Disconnect"
+msgstr ""
 
 msgid "Discontinuation date"
 msgstr "Date d'arrêt"
@@ -9229,6 +9235,9 @@ msgstr "Pas de conditions supplémentaires pour le moment. Ajoutez tout ce qui e
 msgid "No extra setup items yet. Add anything specific to this customer."
 msgstr "Aucun élément de configuration supplémentaire pour le moment. Ajoutez tout ce qui est spécifique à ce client."
 
+msgid "No failure path — the run stops here and is marked failed"
+msgstr ""
+
 msgid "No fields found."
 msgstr "Aucun champ trouvé."
 
@@ -9512,9 +9521,6 @@ msgid "Notes (optional)"
 msgstr "Notes (facultatif)"
 
 msgid "Nothing"
-msgstr ""
-
-msgid "Nothing happens if this fails"
 msgstr ""
 
 msgid "Nothing in the archive"
@@ -10110,7 +10116,8 @@ msgstr "Réussi"
 msgid "Path"
 msgstr "Chemin"
 
-msgid "Path {idx}"
+#. placeholder {0}: conditionPathIndex(paths, path.id)
+msgid "Path {0}"
 msgstr ""
 
 msgid "Path else"

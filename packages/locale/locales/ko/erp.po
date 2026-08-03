@@ -3055,6 +3055,9 @@ msgstr "실사 확인"
 msgid "Confirm delete"
 msgstr ""
 
+msgid "Confirm disconnect"
+msgstr ""
+
 msgid "Confirm how your company runs and lock the scope."
 msgstr "귀사의 운영 방식을 확인하고 범위를 고정하세요."
 
@@ -4770,6 +4773,9 @@ msgstr "비활성화됨"
 
 msgid "Discard"
 msgstr "폐기"
+
+msgid "Disconnect"
+msgstr ""
 
 msgid "Discontinuation date"
 msgstr "중단 날짜"
@@ -9229,6 +9235,9 @@ msgstr "아직 추가된 요구사항이 없습니다. 이 고객에게 특화�
 msgid "No extra setup items yet. Add anything specific to this customer."
 msgstr "아직 추가된 설정 항목이 없습니다. 이 고객에게 특화된 항목을 추가하세요."
 
+msgid "No failure path — the run stops here and is marked failed"
+msgstr ""
+
 msgid "No fields found."
 msgstr "필드가 없습니다."
 
@@ -9512,9 +9521,6 @@ msgid "Notes (optional)"
 msgstr "메모(선택)"
 
 msgid "Nothing"
-msgstr ""
-
-msgid "Nothing happens if this fails"
 msgstr ""
 
 msgid "Nothing in the archive"
@@ -10110,7 +10116,8 @@ msgstr "합격됨"
 msgid "Path"
 msgstr "경로"
 
-msgid "Path {idx}"
+#. placeholder {0}: conditionPathIndex(paths, path.id)
+msgid "Path {0}"
 msgstr ""
 
 msgid "Path else"

@@ -3055,6 +3055,9 @@ msgstr "Sayımı Onayla"
 msgid "Confirm delete"
 msgstr ""
 
+msgid "Confirm disconnect"
+msgstr ""
+
 msgid "Confirm how your company runs and lock the scope."
 msgstr "Şirketinizin nasıl çalıştığını doğrulayın ve kapsamı kilitleyin."
 
@@ -4770,6 +4773,9 @@ msgstr "Devre Dışı"
 
 msgid "Discard"
 msgstr "Atıkla"
+
+msgid "Disconnect"
+msgstr ""
 
 msgid "Discontinuation date"
 msgstr "Kullanımdan kaldırılma tarihi"
@@ -9229,6 +9235,9 @@ msgstr "Henüz ek gereksinim yok. Bu müşteriye özgü herhangi bir şey ekleyi
 msgid "No extra setup items yet. Add anything specific to this customer."
 msgstr "Henüz ekstra kurulum öğesi yok. Bu müşteriye özgü herhangi bir şey ekleyin."
 
+msgid "No failure path — the run stops here and is marked failed"
+msgstr ""
+
 msgid "No fields found."
 msgstr "Bul alan bulunamadı."
 
@@ -9512,9 +9521,6 @@ msgid "Notes (optional)"
 msgstr "Notlar (isteğe bağlı)"
 
 msgid "Nothing"
-msgstr ""
-
-msgid "Nothing happens if this fails"
 msgstr ""
 
 msgid "Nothing in the archive"
@@ -10110,7 +10116,8 @@ msgstr "Geçti"
 msgid "Path"
 msgstr "Yol"
 
-msgid "Path {idx}"
+#. placeholder {0}: conditionPathIndex(paths, path.id)
+msgid "Path {0}"
 msgstr ""
 
 msgid "Path else"

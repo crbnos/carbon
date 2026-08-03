@@ -26,6 +26,7 @@ import {
   WORKFLOW_ENTITY_REGISTRY,
   WORKFLOW_EVENTS
 } from "@carbon/workflows";
+import { getLocalTimeZone } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useMemo, useState } from "react";
 import { LuCheck, LuChevronsUpDown } from "react-icons/lu";
@@ -45,7 +46,7 @@ function defaultSchedule(): Schedule {
     freq: "Daily",
     hour: 9,
     minute: 0,
-    tz: Intl.DateTimeFormat().resolvedOptions().timeZone
+    tz: getLocalTimeZone()
   };
 }
 
@@ -165,6 +166,9 @@ type ScheduleEditorProps = {
 
 function ScheduleEditor({ schedule, onChange }: ScheduleEditorProps) {
   const { t } = useLingui();
+
+  // A schedule saved before we defaulted the zone can carry an empty tz.
+  const tz = schedule.tz || getLocalTimeZone();
 
   return (
     <FormStack spacing={3}>
@@ -306,7 +310,7 @@ function ScheduleEditor({ schedule, onChange }: ScheduleEditorProps) {
         <Section>
           <Trans>Timezone</Trans>
         </Section>
-        <Select value={schedule.tz} onValueChange={(v) => onChange({ tz: v })}>
+        <Select value={tz} onValueChange={(v) => onChange({ tz: v })}>
           <SelectTrigger className="w-full">
             <SelectValue />
           </SelectTrigger>
@@ -330,20 +334,12 @@ function ScheduleEditor({ schedule, onChange }: ScheduleEditorProps) {
 
 // ─── TriggerForm ─────────────────────────────────────────────────────────────
 
-export function TriggerForm({ node }: NodeFormProps) {
+export function TriggerForm({ node }: NodeFormProps<"trigger">) {
   const updateNodeData = useBuilderStore((s) => s.updateNodeData);
   const label = useWorkflowLabel();
 
-  const data = node.data as {
-    events: string[];
-    origin: Origin;
-    schedule?: Schedule;
-  };
-
-  const isScheduleMode = !!data.schedule;
-  const events = data.events ?? [];
-  const origin = data.origin ?? "Both";
-  const schedule = data.schedule;
+  const { events, origin, schedule } = node.data;
+  const isScheduleMode = !!schedule;
 
   // Build entity groups once
   const registryEntities = useMemo(

@@ -3055,6 +3055,9 @@ msgstr "Confirm Count"
 msgid "Confirm delete"
 msgstr "Confirm delete"
 
+msgid "Confirm disconnect"
+msgstr "Confirm disconnect"
+
 msgid "Confirm how your company runs and lock the scope."
 msgstr "Confirm how your company runs and lock the scope."
 
@@ -4770,6 +4773,9 @@ msgstr "Disabled"
 
 msgid "Discard"
 msgstr "Discard"
+
+msgid "Disconnect"
+msgstr "Disconnect"
 
 msgid "Discontinuation date"
 msgstr "Discontinuation date"
@@ -9229,6 +9235,9 @@ msgstr "No extra requirements yet. Add anything specific to this customer."
 msgid "No extra setup items yet. Add anything specific to this customer."
 msgstr "No extra setup items yet. Add anything specific to this customer."
 
+msgid "No failure path — the run stops here and is marked failed"
+msgstr "No failure path — the run stops here and is marked failed"
+
 msgid "No fields found."
 msgstr "No fields found."
 
@@ -9513,9 +9522,6 @@ msgstr "Notes (optional)"
 
 msgid "Nothing"
 msgstr "Nothing"
-
-msgid "Nothing happens if this fails"
-msgstr "Nothing happens if this fails"
 
 msgid "Nothing in the archive"
 msgstr "Nothing in the archive"
@@ -10110,8 +10116,9 @@ msgstr "Passed"
 msgid "Path"
 msgstr "Path"
 
-msgid "Path {idx}"
-msgstr "Path {idx}"
+#. placeholder {0}: conditionPathIndex(paths, path.id)
+msgid "Path {0}"
+msgstr "Path {0}"
 
 msgid "Path else"
 msgstr "Path else"

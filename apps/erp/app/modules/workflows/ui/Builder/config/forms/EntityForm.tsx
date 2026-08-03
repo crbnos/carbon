@@ -114,17 +114,11 @@ function OperationPicker({ selected, onSelect, label }: OperationPickerProps) {
 
 // ── EntityForm ────────────────────────────────────────────────────────────────
 
-export function EntityForm({ node }: NodeFormProps) {
+export function EntityForm({ node }: NodeFormProps<"entity">) {
   const updateNodeData = useBuilderStore((s) => s.updateNodeData);
   const label = useWorkflowLabel();
 
-  const data = node.data as {
-    operation?: string;
-    inputs?: Record<string, ValueOrRef>;
-  };
-
-  const operationId = data.operation ?? "";
-  const inputs = (data.inputs ?? {}) as Record<string, ValueOrRef>;
+  const { operation: operationId, inputs } = node.data;
 
   const opDef = operationId ? catalog.getOperation(operationId) : undefined;
 

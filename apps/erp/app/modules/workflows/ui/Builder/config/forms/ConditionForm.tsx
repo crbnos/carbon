@@ -20,6 +20,7 @@ import { nanoid } from "nanoid";
 import { LuGripVertical, LuInfo, LuPlus, LuX } from "react-icons/lu";
 import { useBuilderStore } from "../../context";
 import { PortAnchor } from "../../PortAnchor";
+import { conditionPathIndex, conditionPathLabel } from "../../ports";
 import ClauseRow from "../ClauseRow";
 import { CombinatorToggle } from "../CombinatorToggle";
 import { FormStack } from "../layout";
@@ -112,20 +113,13 @@ function SortableClauseItem({
   );
 }
 
-const KIND_PILL: Record<ConditionPath["kind"], string> = {
-  if: "If",
-  elseIf: "Else if",
-  else: "Else"
-};
-
-export function ConditionForm({ node }: NodeFormProps) {
+export function ConditionForm({ node }: NodeFormProps<"condition">) {
   const updateNodeData = useBuilderStore((s) => s.updateNodeData);
   const onEdgesChange = useBuilderStore((s) => s.onEdgesChange);
   const edges = useBuilderStore((s) => s.edges);
   const { t } = useLingui();
 
-  const data = node.data as { paths: ConditionPath[] };
-  const paths = (data.paths ?? []) as ConditionPath[];
+  const { paths } = node.data;
 
   const hasElse = paths.some((p) => p.kind === "else");
 
@@ -201,13 +195,6 @@ export function ConditionForm({ node }: NodeFormProps) {
     );
   }
 
-  // Positional index for if/elseIf paths
-  function pathIndex(pathId: string): number {
-    return paths
-      .filter((p) => p.kind !== "else")
-      .findIndex((p) => p.id === pathId);
-  }
-
   const context = { nodeId: node.id, inLoop: false };
 
   const sensors = useSensors(
@@ -230,8 +217,11 @@ export function ConditionForm({ node }: NodeFormProps) {
       {paths.map((path) => {
         const isElse = path.kind === "else";
         const isIf = path.kind === "if";
-        const idx = isElse ? null : pathIndex(path.id);
-        const posLabel = isElse ? t`Path else` : t`Path ${idx}`;
+        // Same helper the port tooltip uses, so the two can never disagree.
+        const kindLabel = conditionPathLabel(paths, path.id, t);
+        const posLabel = isElse
+          ? t`Path else`
+          : t`Path ${conditionPathIndex(paths, path.id)}`;
 
         return (
           // Full-bleed + `relative` centres the handle on the whole block (pill and
@@ -242,7 +232,7 @@ export function ConditionForm({ node }: NodeFormProps) {
           >
             <div className="flex items-center justify-between">
               <span className="rounded-full border border-border bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
-                {KIND_PILL[path.kind]}
+                {kindLabel}
               </span>
               {!isIf && (
                 <IconButton

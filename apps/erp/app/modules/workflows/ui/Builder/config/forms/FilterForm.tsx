@@ -12,14 +12,13 @@ import {
   PopoverTrigger
 } from "@carbon/react";
 
-import type { Clause, VariableRef } from "@carbon/workflows";
-import { availableVariables } from "@carbon/workflows";
+import type { Clause } from "@carbon/workflows";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useMemo, useState } from "react";
 import { LuChevronDown, LuPlus } from "react-icons/lu";
-import { catalog, describeValueType } from "../../catalog";
+import { describeValueType } from "../../catalog";
 import { useBuilderStore } from "../../context";
-import { fromReactFlow } from "../../graph";
+import { useAvailableVariables } from "../../useDefinition";
 import ClauseRow from "../ClauseRow";
 import { CombinatorToggle } from "../CombinatorToggle";
 import { FormStack, Section } from "../layout";
@@ -39,30 +38,20 @@ const newClause = (): Clause => ({
   }
 });
 
-export function FilterForm({ node }: NodeFormProps) {
+export function FilterForm({ node }: NodeFormProps<"filter">) {
   const updateNodeData = useBuilderStore((s) => s.updateNodeData);
-  const nodes = useBuilderStore((s) => s.nodes);
-  const edges = useBuilderStore((s) => s.edges);
   const { t } = useLingui();
 
-  const data = node.data as {
-    source?: VariableRef;
-    combinator: "and" | "or";
-    clauses: Clause[];
-  };
-
-  const source = data.source;
-  const combinator = data.combinator ?? "and";
-  const clauses = (data.clauses ?? []) as Clause[];
+  const { source, combinator, clauses } = node.data;
 
   const [sourceOpen, setSourceOpen] = useState(false);
 
   // Only list-type variables are valid sources
-  const listVars = useMemo(() => {
-    const definition = fromReactFlow(nodes, edges);
-    const vars = availableVariables(definition, node.id, catalog);
-    return vars.filter((v) => v.type.kind === "list");
-  }, [nodes, edges, node.id]);
+  const vars = useAvailableVariables(node.id);
+  const listVars = useMemo(
+    () => vars.filter((v) => v.type.kind === "list"),
+    [vars]
+  );
 
   const sourceVar = source
     ? listVars.find(

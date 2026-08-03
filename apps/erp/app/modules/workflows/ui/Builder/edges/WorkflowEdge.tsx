@@ -1,6 +1,10 @@
+import { cn, IconButton } from "@carbon/react";
+import { useLingui } from "@lingui/react/macro";
 import type { EdgeProps } from "@xyflow/react";
-import { getSmoothStepPath, useStore } from "@xyflow/react";
-import { memo } from "react";
+import { EdgeLabelRenderer, getSmoothStepPath, useStore } from "@xyflow/react";
+import { memo, useEffect, useState } from "react";
+import { LuCircleX } from "react-icons/lu";
+import { useBuilderStore } from "../context";
 
 function WorkflowEdgeImpl({
   id,
@@ -14,13 +18,26 @@ function WorkflowEdgeImpl({
   source,
   target
 }: EdgeProps) {
+  const { t } = useLingui();
   const isNodeSelected = useStore((s) =>
     s.nodes.some((n) => n.selected && (n.id === source || n.id === target))
   );
   const anySelected = useStore((s) => s.nodes.some((n) => n.selected));
   const highlighted = selected || isNodeSelected;
 
-  const [edgePath] = getSmoothStepPath({
+  const isReadOnly = useBuilderStore((s) => s.isReadOnly);
+  const onEdgesChange = useBuilderStore((s) => s.onEdgesChange);
+  const [armed, setArmed] = useState(false);
+
+  // Two-click disconnect, same as the node delete button. Disarms itself so a
+  // stray click never lingers.
+  useEffect(() => {
+    if (!armed) return;
+    const timer = setTimeout(() => setArmed(false), 3000);
+    return () => clearTimeout(timer);
+  }, [armed]);
+
+  const [edgePath, labelX, labelY] = getSmoothStepPath({
     sourceX,
     sourceY,
     sourcePosition,
@@ -31,17 +48,47 @@ function WorkflowEdgeImpl({
   });
 
   return (
-    <path
-      id={id}
-      d={edgePath}
-      fill="none"
-      stroke="hsl(var(--primary))"
-      strokeWidth={highlighted ? 2.5 : 1.75}
-      strokeLinecap="round"
-      strokeDasharray="8 4"
-      strokeOpacity={anySelected ? (highlighted ? 1 : 0.28) : 0.85}
-      className="workflow-edge-animated"
-    />
+    <>
+      <path
+        id={id}
+        d={edgePath}
+        fill="none"
+        stroke="hsl(var(--primary))"
+        strokeWidth={highlighted ? 2.5 : 1.75}
+        strokeLinecap="round"
+        strokeDasharray="8 4"
+        strokeOpacity={anySelected ? (highlighted ? 1 : 0.28) : 0.85}
+        className="workflow-edge-animated"
+      />
+      {!isReadOnly && (
+        <EdgeLabelRenderer>
+          {/* The renderer's container is pointer-events:none, so the button opts back in. */}
+          <div
+            className="nodrag nopan pointer-events-auto absolute"
+            style={{
+              transform: `translate(-50%, -50%) translate(${labelX}px, ${labelY}px)`
+            }}
+          >
+            <IconButton
+              aria-label={armed ? t`Confirm disconnect` : t`Disconnect`}
+              icon={<LuCircleX />}
+              variant="ghost"
+              size="sm"
+              className={cn(
+                "rounded-full bg-card shadow-sm",
+                armed && "text-destructive hover:text-destructive"
+              )}
+              onClick={(e) => {
+                e.stopPropagation();
+                if (armed) onEdgesChange([{ type: "remove", id }]);
+                else setArmed(true);
+              }}
+              onBlur={() => setArmed(false)}
+            />
+          </div>
+        </EdgeLabelRenderer>
+      )}
+    </>
   );
 }
 

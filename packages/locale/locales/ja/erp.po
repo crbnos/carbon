@@ -3055,6 +3055,9 @@ msgstr "数量確認"
 msgid "Confirm delete"
 msgstr ""
 
+msgid "Confirm disconnect"
+msgstr ""
+
 msgid "Confirm how your company runs and lock the scope."
 msgstr "貴社の運営方法を確認し、スコープをロックします。"
 
@@ -4770,6 +4773,9 @@ msgstr "無効"
 
 msgid "Discard"
 msgstr "破棄"
+
+msgid "Disconnect"
+msgstr ""
 
 msgid "Discontinuation date"
 msgstr "廃止日"
@@ -9229,6 +9235,9 @@ msgstr "まだ追加の要件がありません。このお客様に固有のも
 msgid "No extra setup items yet. Add anything specific to this customer."
 msgstr "このカスタマーに固有のセットアップ項目はまだありません。追加してください。"
 
+msgid "No failure path — the run stops here and is marked failed"
+msgstr ""
+
 msgid "No fields found."
 msgstr "フィールドが見つかりません。"
 
@@ -9512,9 +9521,6 @@ msgid "Notes (optional)"
 msgstr "メモ（オプション）"
 
 msgid "Nothing"
-msgstr ""
-
-msgid "Nothing happens if this fails"
 msgstr ""
 
 msgid "Nothing in the archive"
@@ -10110,7 +10116,8 @@ msgstr "完了"
 msgid "Path"
 msgstr "パス"
 
-msgid "Path {idx}"
+#. placeholder {0}: conditionPathIndex(paths, path.id)
+msgid "Path {0}"
 msgstr ""
 
 msgid "Path else"

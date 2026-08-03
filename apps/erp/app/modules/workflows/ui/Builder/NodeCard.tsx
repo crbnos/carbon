@@ -2,10 +2,9 @@ import { Badge, cn } from "@carbon/react";
 import { Handle, Position, useUpdateNodeInternals } from "@xyflow/react";
 import type { ReactNode } from "react";
 import { useEffect, useRef } from "react";
+import type { BuilderPort } from "./ports";
 
 export type PortTone = "default" | "success" | "failure";
-
-export type NodePort = { id: string; label: string; tone?: PortTone };
 
 const HANDLE_BASE =
   "!size-3.5 !min-w-0 !min-h-0 !rounded-full !border-2 !border-card !transition-shadow";
@@ -23,12 +22,6 @@ export function handleClass(tone: PortTone = "default"): string {
 }
 
 export const HANDLE_CLASS = handleClass();
-
-const PORT_LABEL_TONE: Record<PortTone, string> = {
-  default: "text-muted-foreground",
-  success: "text-emerald-600 dark:text-emerald-400",
-  failure: "text-red-600 dark:text-red-400"
-};
 
 const INTERACTIVE =
   "input,textarea,select,button,a,[role=button],[role=combobox],[contenteditable=true]";
@@ -55,13 +48,12 @@ type NodeCardProps = {
   title: ReactNode;
   description?: string;
   icon: ReactNode;
-  ports: NodePort[];
+  ports: BuilderPort[];
   hasTarget?: boolean;
   issueCount?: number;
   isSelected?: boolean;
   isExpanded?: boolean;
   width?: number;
-  hidePortStrip?: boolean;
   summary?: string;
   actions?: ReactNode;
   children?: ReactNode;
@@ -78,7 +70,6 @@ export function NodeCard({
   isSelected = false,
   isExpanded = true,
   width = 440,
-  hidePortStrip = false,
   summary,
   actions,
   children
@@ -86,8 +77,15 @@ export function NodeCard({
   const hasIssues = issueCount > 0;
   const bodyRef = useBodyDragFilter();
 
+  // An `inline` port is drawn by the form, so the card only owns it when the form
+  // isn't showing — otherwise both would render the same handle id.
+  const formVisible = isExpanded && !!children;
+  const cardPorts = ports.filter(
+    (port) => port.anchor === "card" || !formVisible
+  );
+
   const updateNodeInternals = useUpdateNodeInternals();
-  const portKey = ports.map((p) => p.id).join("|");
+  const portKey = cardPorts.map((p) => p.id).join("|");
 
   // React Flow caches handle bounds; expanding, collapsing, or adding a path
   // moves them, so it must be told to re-measure.
@@ -98,7 +96,7 @@ export function NodeCard({
   return (
     <div
       className={cn(
-        "rounded-lg border bg-card shadow-sm transition-shadow",
+        "relative rounded-lg border bg-card shadow-sm transition-shadow",
         isSelected && "border-primary ring-2 ring-primary/20",
         hasIssues && "border-destructive ring-2 ring-destructive/20"
       )}
@@ -113,12 +111,14 @@ export function NodeCard({
         />
       )}
 
-      {ports.length === 1 && (
+      {cardPorts.length === 1 && (
         <Handle
           type="source"
           position={Position.Right}
-          id={ports[0].id}
-          className={handleClass(ports[0].tone)}
+          id={cardPorts[0].id}
+          title={cardPorts[0].label}
+          aria-label={cardPorts[0].label}
+          className={handleClass(cardPorts[0].tone)}
         />
       )}
 
@@ -154,29 +154,19 @@ export function NodeCard({
         </div>
       )}
 
-      {ports.length > 1 && !hidePortStrip && (
-        <div className={cn("flex flex-col", isExpanded && "border-t")}>
-          {ports.map((port) => (
-            // `relative` anchors the handle to this row's right edge, so the row
-            // must stay tall enough that stacked handles never touch.
-            <div
-              key={port.id}
-              className="relative flex h-9 items-center justify-end px-3"
-            >
-              {isExpanded && (
-                <span
-                  className={cn(
-                    "text-[10px] font-medium uppercase tracking-wide",
-                    PORT_LABEL_TONE[port.tone ?? "default"]
-                  )}
-                >
-                  {port.label}
-                </span>
-              )}
+      {cardPorts.length > 1 && (
+        // Handles straddle the card's midline instead of trailing the body, so a
+        // tall form never pushes them to the bottom.
+        <div className="pointer-events-none absolute inset-y-0 right-0 flex flex-col justify-center gap-6">
+          {cardPorts.map((port) => (
+            // Zero-width row: the Handle's own `right: -4px` lands it on the border.
+            <div key={port.id} className="pointer-events-auto relative">
               <Handle
                 type="source"
                 position={Position.Right}
                 id={port.id}
+                title={port.label}
+                aria-label={port.label}
                 className={handleClass(port.tone)}
               />
             </div>

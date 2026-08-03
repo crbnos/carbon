@@ -3055,6 +3055,9 @@ msgstr "Подтвердить подсчет"
 msgid "Confirm delete"
 msgstr ""
 
+msgid "Confirm disconnect"
+msgstr ""
+
 msgid "Confirm how your company runs and lock the scope."
 msgstr "Подтвердите, как работает ваша компания, и зафиксируйте область охвата."
 
@@ -4770,6 +4773,9 @@ msgstr "Отключено"
 
 msgid "Discard"
 msgstr "Отклонить"
+
+msgid "Disconnect"
+msgstr ""
 
 msgid "Discontinuation date"
 msgstr "Дата прекращения"
@@ -9229,6 +9235,9 @@ msgstr "Нет дополнительных требований. Добавьт
 msgid "No extra setup items yet. Add anything specific to this customer."
 msgstr "Нет дополнительных элементов настройки. Добавьте что-нибудь специфичное для этого клиента."
 
+msgid "No failure path — the run stops here and is marked failed"
+msgstr ""
+
 msgid "No fields found."
 msgstr "Поля не найдены."
 
@@ -9512,9 +9521,6 @@ msgid "Notes (optional)"
 msgstr "Примечания (опционально)"
 
 msgid "Nothing"
-msgstr ""
-
-msgid "Nothing happens if this fails"
 msgstr ""
 
 msgid "Nothing in the archive"
@@ -10110,7 +10116,8 @@ msgstr "Пройдено"
 msgid "Path"
 msgstr "Путь"
 
-msgid "Path {idx}"
+#. placeholder {0}: conditionPathIndex(paths, path.id)
+msgid "Path {0}"
 msgstr ""
 
 msgid "Path else"

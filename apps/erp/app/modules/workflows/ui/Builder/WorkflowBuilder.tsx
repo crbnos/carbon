@@ -8,8 +8,6 @@ import type { IsValidConnection } from "@xyflow/react";
 import {
   Background,
   BackgroundVariant,
-  MiniMap,
-  Panel,
   ReactFlow,
   useReactFlow
 } from "@xyflow/react";
@@ -138,13 +136,10 @@ export function WorkflowBuilder() {
             zoomOnScroll={!panOnScroll}
           >
             <Background variant={BackgroundVariant.Dots} gap={16} />
-            <Panel position="bottom-right" style={{ bottom: 136, right: 10 }}>
-              <BuilderControls
-                panOnScroll={panOnScroll}
-                onTogglePanOnScroll={() => setPanOnScroll((p) => !p)}
-              />
-            </Panel>
-            <MiniMap pannable zoomable />
+            <BuilderControls
+              panOnScroll={panOnScroll}
+              onTogglePanOnScroll={() => setPanOnScroll((p) => !p)}
+            />
           </ReactFlow>
         </div>
       </ResizablePanel>

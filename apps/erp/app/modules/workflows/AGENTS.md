@@ -8,7 +8,7 @@ The definition schema, validator, catalogs, matcher and engine all live outside 
 
 - **Workflow** — the `workflow` row. Carries `ownerId`, `active` (the on/off kill switch), and `activeVersionId` (the promoted version pointer). The pointer and the boolean are separate columns on purpose: turning a workflow off and back on restores whichever version was promoted.
 - **Version** — a `workflowVersion` row holding `nodes`, `edges` and `formatVersion`. Numbered, never named.
-- **Definition** — `{ formatVersion, nodes, edges }`, validated by `workflowDefinitionSchema` from `@carbon/workflows`. `CURRENT_DEFINITION_FORMAT_VERSION` is **2**; the SQL column default is a stale **1**, so the app always writes the constant explicitly.
+- **Definition** — `{ formatVersion, nodes, edges }`, validated by `workflowDefinitionSchema` from `@carbon/workflows`. `CURRENT_DEFINITION_FORMAT_VERSION` is **3**; the SQL column default is a stale **1**, so the app always writes the constant explicitly.
 - **Publish** — validate → set `activeVersionId` → set `active` → `syncWorkflowTriggers` → wake the scheduler. One route does all five; splitting them leaves a workflow that looks active and never fires.
 - **The live version is read-only.** Editing a live workflow means creating a new version, the same rule released item revisions follow.
 
@@ -76,8 +76,10 @@ Routes split in two trees: `x+/workflows+/` (list, create, rename, delete, with 
 - Drawn loops are blocked at connection time by `isValidConnection` + `wouldCreateCycle`. The validator's `CYCLE` check stays as the backstop.
 - Converging edges are allowed: the engine is a first-arrival OR-join by design.
 - The trigger node cannot be deleted — `onNodesChange` filters its `remove` change.
-- Nodes collapse to a one-line summary below `LOD_ZOOM` (0.66).
-- Node bodies render a `Not configured yet` placeholder. The fields are phase 8.
+- Nodes collapse to a one-line summary via a per-node `expanded` flag (`store.ts` `setNodeExpanded`), toggled by the card's button and by `BuilderControls`' collapse/expand-all. There is no zoom threshold.
+- Every node kind has a form in `ui/Builder/config/forms/`. `NodeFormProps<K>` narrows `node.data` to the kind's slice of the shared definition schema — never re-declare a node's data shape in a form.
+- Ports get their id, label, tone and anchor from `ui/Builder/ports.ts`, which derives ids from `getNodeHandles`. Never hand-write a handle list, and never label a port anywhere else — `ports.test.ts` enforces the first rule.
+- Node cards subscribe through `ui/Builder/selectors.ts` (scalars) or read once via `useBuilderStoreApi()`. Subscribing to `state.nodes` re-renders every card on every drag frame.
 
 ## Related
 

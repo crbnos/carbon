@@ -3055,6 +3055,9 @@ msgstr "确认盘点"
 msgid "Confirm delete"
 msgstr ""
 
+msgid "Confirm disconnect"
+msgstr ""
+
 msgid "Confirm how your company runs and lock the scope."
 msgstr "确认您的公司如何运营并锁定范围。"
 
@@ -4770,6 +4773,9 @@ msgstr "已禁用"
 
 msgid "Discard"
 msgstr "丢弃"
+
+msgid "Disconnect"
+msgstr ""
 
 msgid "Discontinuation date"
 msgstr "停用日期"
@@ -9229,6 +9235,9 @@ msgstr "还没有额外的需求。添加特定于此客户的任何内容。"
 msgid "No extra setup items yet. Add anything specific to this customer."
 msgstr "还没有额外的设置项。添加此客户特定的任何内容。"
 
+msgid "No failure path — the run stops here and is marked failed"
+msgstr ""
+
 msgid "No fields found."
 msgstr "未找到字段。"
 
@@ -9512,9 +9521,6 @@ msgid "Notes (optional)"
 msgstr "备注（可选）"
 
 msgid "Nothing"
-msgstr ""
-
-msgid "Nothing happens if this fails"
 msgstr ""
 
 msgid "Nothing in the archive"
@@ -10110,7 +10116,8 @@ msgstr "已通过"
 msgid "Path"
 msgstr "路径"
 
-msgid "Path {idx}"
+#. placeholder {0}: conditionPathIndex(paths, path.id)
+msgid "Path {0}"
 msgstr ""
 
 msgid "Path else"

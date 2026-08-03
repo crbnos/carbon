@@ -16,7 +16,7 @@ import type {
   VariableRef,
   WorkflowCatalog
 } from "@carbon/workflows";
-import { availableVariables, typesEqual } from "@carbon/workflows";
+import { typesEqual } from "@carbon/workflows";
 import { useState } from "react";
 import { LuArrowLeft, LuChevronRight } from "react-icons/lu";
 import {
@@ -25,8 +25,7 @@ import {
   propertyLabelKey,
   useWorkflowLabel
 } from "../catalog";
-import { useBuilderStore } from "../context";
-import { fromReactFlow } from "../graph";
+import { useAvailableVariables } from "../useDefinition";
 
 type DrillState = {
   nodeId: string;
@@ -74,13 +73,10 @@ export function VariablePicker({
   onOpenChange,
   children
 }: VariablePickerProps) {
-  const nodes = useBuilderStore((s) => s.nodes);
-  const edges = useBuilderStore((s) => s.edges);
   const label = useWorkflowLabel();
   const [drill, setDrill] = useState<DrillState>(null);
 
-  const definition = fromReactFlow(nodes, edges);
-  const variables = availableVariables(definition, nodeId, catalog);
+  const variables = useAvailableVariables(nodeId);
 
   // Group by nodeId (preserving insertion order from availableVariables).
   // Keying by nodeId (not nodeName) prevents two nodes with the same name from collapsing.

@@ -1,6 +1,6 @@
 import { Combobox, cn } from "@carbon/react";
 import type { Operator } from "@carbon/utils";
-import type { Clause, ValueOrRef } from "@carbon/workflows";
+import type { Clause, LookupMatch, ValueOrRef } from "@carbon/workflows";
 import { REGISTRY_ENTRIES } from "@carbon/workflows";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useCallback, useMemo } from "react";
@@ -15,10 +15,8 @@ import ClauseRow from "../ClauseRow";
 import { FormStack, Section } from "../layout";
 import type { NodeFormProps } from "./index";
 
-/** Partial match during editing — `value` may be absent while the user is filling in the row. */
-type WorkingMatch = {
-  field: string;
-  operator: Operator;
+/** The shared match, with `value` allowed to be absent mid-edit. Derived, never re-declared. */
+type WorkingMatch = Omit<LookupMatch, "value"> & {
   value: ValueOrRef | undefined;
 };
 
@@ -46,20 +44,13 @@ function clauseToMatch(c: Clause): WorkingMatch {
   };
 }
 
-export function LookupForm({ node }: NodeFormProps) {
+export function LookupForm({ node }: NodeFormProps<"lookup">) {
   const updateNodeData = useBuilderStore((s) => s.updateNodeData);
   const label = useWorkflowLabel();
   const { t } = useLingui();
 
-  const data = node.data as {
-    entity?: string;
-    returns?: "one" | "list";
-    match?: WorkingMatch[];
-  };
-
-  const entity = data.entity ?? "";
-  const returns = data.returns ?? "one";
-  const match: WorkingMatch[] = (data.match as WorkingMatch[]) ?? [];
+  const { entity, returns } = node.data;
+  const match: WorkingMatch[] = node.data.match;
 
   // Entities that have a permission (all registry entries do)
   const entityOptions = useMemo(

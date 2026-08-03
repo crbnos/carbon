@@ -18,7 +18,6 @@ import {
 } from "@carbon/react";
 import type { ValueOrRef, ValueType } from "@carbon/workflows";
 import {
-  availableVariables,
   WORKFLOW_ACTION_CATALOG,
   WORKFLOW_ENTITY_REGISTRY
 } from "@carbon/workflows";
@@ -34,7 +33,7 @@ import {
 import { useBuilderStore } from "../../context";
 import { TemplateField } from "../../fields/TemplateField";
 import { ValueField } from "../../fields/ValueField";
-import { fromReactFlow } from "../../graph";
+import { useAvailableVariables } from "../../useDefinition";
 import { FormStack, Section } from "../layout";
 import type { NodeFormProps } from "./index";
 
@@ -215,29 +214,19 @@ function NotifyAboutField({
 
 // ── ActionForm ────────────────────────────────────────────────────────────────
 
-export function ActionForm({ node, issues }: NodeFormProps) {
+export function ActionForm({ node, issues }: NodeFormProps<"action">) {
   const updateNodeData = useBuilderStore((s) => s.updateNodeData);
-  const nodes = useBuilderStore((s) => s.nodes);
-  const edges = useBuilderStore((s) => s.edges);
   const label = useWorkflowLabel();
 
-  const data = node.data as {
-    action: string;
-    inputs: Record<string, ValueOrRef>;
-    batch: boolean;
-  };
-
-  const actionId = data.action ?? "";
-  const inputs = (data.inputs ?? {}) as Record<string, ValueOrRef>;
-  const isBatch = data.batch ?? false;
+  const { action: actionId, inputs, batch: isBatch } = node.data;
 
   const actionDef = actionId ? catalog.getAction(actionId) : undefined;
   const isBatchable = !!actionDef?.batchable;
 
   // Upstream entity types for soft-ranking the action list
+  const vars = useAvailableVariables(node.id);
+
   const upstreamEntities = useMemo(() => {
-    const definition = fromReactFlow(nodes, edges);
-    const vars = availableVariables(definition, node.id, catalog);
     const types = new Set<string>();
     for (const v of vars) {
       if (v.type.kind === "entity") types.add(v.type.of);
@@ -245,7 +234,7 @@ export function ActionForm({ node, issues }: NodeFormProps) {
         types.add(v.type.of.of);
     }
     return types;
-  }, [nodes, edges, node.id]);
+  }, [vars]);
 
   // For each requireOneOf group, track which member is selected
   const requireOneOf = actionDef?.requireOneOf ?? [];
@@ -285,8 +274,6 @@ export function ActionForm({ node, issues }: NodeFormProps) {
   // Detect list-type mismatches for batch suggestion
   const listMismatches = useMemo((): string[] => {
     if (!actionDef || isBatch) return [];
-    const definition = fromReactFlow(nodes, edges);
-    const vars = availableVariables(definition, node.id, catalog);
     const varMap = new Map(
       vars.map((v) => [`${v.nodeId}:${v.output}`, v.type as ValueType])
     );
@@ -301,7 +288,7 @@ export function ActionForm({ node, issues }: NodeFormProps) {
       }
     }
     return mismatched;
-  }, [actionDef, isBatch, nodes, edges, node.id, inputs]);
+  }, [actionDef, isBatch, vars, inputs]);
 
   // ── event handlers ──────────────────────────────────────────────────────────
 
