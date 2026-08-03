@@ -1732,10 +1732,12 @@ serve(async (req: Request) => {
               const key = `${line.itemId}-${quote.data.supplierId}`;
               const selectedLine = selectedLines![line.id!];
               const exchangeRate = quote.data.exchangeRate ?? 1;
-              const unitPriceInInventoryUnit =
-                (selectedLine.supplierUnitPrice /
-                  (exchangeRate === 0 ? 1 : exchangeRate)) /
-                (line.conversionFactor ?? 1);
+              // supplierPart.unitPrice is stored in PURCHASE units (readers
+              // divide by conversionFactor when they need inventory-unit
+              // cost) — only the exchange rate is applied here.
+              const unitPriceInPurchaseUnit =
+                selectedLine.supplierUnitPrice /
+                (exchangeRate === 0 ? 1 : exchangeRate);
               supplierPartMap.set(key, {
                 companyId,
                 supplierId: quote.data?.supplierId!,
@@ -1744,7 +1746,7 @@ serve(async (req: Request) => {
                 conversionFactor: line.conversionFactor,
                 itemId: line.itemId!,
                 createdBy: userId,
-                unitPrice: unitPriceInInventoryUnit,
+                unitPrice: unitPriceInPurchaseUnit,
               });
             });
 
@@ -1794,18 +1796,18 @@ serve(async (req: Request) => {
 
               const selectedLine = selectedLines![line.id!];
               const exchangeRate = quote.data.exchangeRate ?? 1;
-              const conversionFactor = line.conversionFactor ?? 1;
-              const unitPriceInInventoryUnit =
-                (selectedLine.supplierUnitPrice /
-                  (exchangeRate === 0 ? 1 : exchangeRate)) /
-                conversionFactor;
+              // Purchase-unit price, matching update-purchased-prices and
+              // every reader of supplierPartPrice.unitPrice.
+              const unitPriceInPurchaseUnit =
+                selectedLine.supplierUnitPrice /
+                (exchangeRate === 0 ? 1 : exchangeRate);
 
               await trx
                 .insertInto("supplierPartPrice")
                 .values({
                   supplierPartId: spId,
                   quantity: selectedLine.quantity,
-                  unitPrice: unitPriceInInventoryUnit,
+                  unitPrice: unitPriceInPurchaseUnit,
                   leadTime: selectedLine.leadTime ?? 0,
                   sourceType: "Purchase Order",
                   sourceDocumentId: insertedPurchaseOrderId,

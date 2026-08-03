@@ -189,13 +189,12 @@ serve(async (req: Request) => {
           purchaseOrderLine.purchaseQuantity &&
           purchaseOrderLine.purchaseQuantity > 0
         ) {
-          const invoicedQuantityInPurchaseUnit =
-            invoiceLine.quantity / (invoiceLine.conversionFactor ?? 1);
-
+          // Both quantityInvoiced and invoiceLine.quantity are purchase-unit
+          // (the post path adds invoiceLine.quantity directly) — no
+          // conversion-factor math here.
           const newQuantityInvoiced = Math.max(
             0,
-            (purchaseOrderLine.quantityInvoiced ?? 0) -
-            invoicedQuantityInPurchaseUnit
+            (purchaseOrderLine.quantityInvoiced ?? 0) - invoiceLine.quantity
           );
 
           // Short-close aware: compare against the billable (received)

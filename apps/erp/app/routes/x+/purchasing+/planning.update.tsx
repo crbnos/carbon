@@ -230,10 +230,31 @@ export async function action({ request }: ActionFunctionArgs) {
 
         // ── UPDATE existing draft/planned lines ──
         for (const { order } of existingLineUpdates) {
+          const existingLine = await client
+            .from("purchaseOrderLine")
+            .select("id, supplierUnitPrice, supplierShippingCost, taxPercent")
+            .eq("id", order.existingLineId!)
+            .single();
+          if (existingLine.error) {
+            errors.push(
+              `Failed to fetch existing PO line ${order.existingLineId}: ${existingLine.error.message}`
+            );
+            continue;
+          }
+
+          // Recompute tax at the new quantity with the line's own effective
+          // tax rate: (unitPrice × qty + shipping) × taxPercent — the same
+          // formula PurchaseOrderLineForm applies on quantity changes.
+          const supplierTaxAmount =
+            ((existingLine.data.supplierUnitPrice ?? 0) * order.quantity +
+              (existingLine.data.supplierShippingCost ?? 0)) *
+            (existingLine.data.taxPercent ?? 0);
+
           const updateLine = await client
             .from("purchaseOrderLine")
             .update({
               purchaseQuantity: order.quantity,
+              supplierTaxAmount,
               requiredDate: order.dueDate ?? null,
               updatedBy: userId
             })
@@ -352,18 +373,27 @@ export async function action({ request }: ActionFunctionArgs) {
             // Check if this PO already has a line for the same item
             const { data: existingLines } = await client
               .from("purchaseOrderLine")
-              .select("id, purchaseQuantity")
+              .select(
+                "id, purchaseQuantity, supplierUnitPrice, supplierShippingCost, taxPercent"
+              )
               .eq("purchaseOrderId", purchaseOrderId)
               .eq("itemId", itemId)
               .limit(1);
 
             if (existingLines?.[0]) {
               const existing = existingLines[0];
+              const newQuantity =
+                (existing.purchaseQuantity ?? 0) + adjustedQuantity;
               const updateLine = await client
                 .from("purchaseOrderLine")
                 .update({
-                  purchaseQuantity:
-                    (existing.purchaseQuantity ?? 0) + adjustedQuantity,
+                  purchaseQuantity: newQuantity,
+                  // Recompute tax at the merged quantity with the line's own
+                  // effective tax rate (same formula as the create path).
+                  supplierTaxAmount:
+                    ((existing.supplierUnitPrice ?? 0) * newQuantity +
+                      (existing.supplierShippingCost ?? 0)) *
+                    (existing.taxPercent ?? 0),
                   updatedBy: userId
                 })
                 .eq("id", existing.id);
@@ -387,10 +417,13 @@ export async function action({ request }: ActionFunctionArgs) {
                 inventoryUnitOfMeasureCode: order.unitOfMeasureCode,
                 conversionFactor: supplierPart?.conversionFactor ?? 1,
                 supplierUnitPrice: supplierPart?.unitPrice ?? 0,
+                // Canonical line-tax formula: (unitPrice × qty + shipping) ×
+                // taxPercent, where taxPercent is already a 0..1 fraction and
+                // shipping is 0 on this path.
                 supplierTaxAmount:
-                  ((supplierPart?.unitPrice ?? 0) *
-                    (supplier.taxPercent ?? 0)) /
-                  100,
+                  (supplierPart?.unitPrice ?? 0) *
+                  adjustedQuantity *
+                  (supplier.taxPercent ?? 0),
                 supplierShippingCost: 0,
                 requiredDate: order.dueDate ?? undefined,
                 locationId,

@@ -5082,7 +5082,7 @@ export async function getSupplierPriceBreaksForItems(
 
   const supplierParts = await client
     .from("supplierPart")
-    .select("id, itemId, unitPrice")
+    .select("id, itemId, unitPrice, conversionFactor")
     .in("itemId", itemIds);
 
   if (!supplierParts.data?.length) return {};
@@ -5097,8 +5097,17 @@ export async function getSupplierPriceBreaksForItems(
 
   // Build a lookup from supplierPartId → itemId
   const spToItem = new Map<string, string>();
+  // Supplier prices are per PURCHASE unit (e.g. per pack); quote material
+  // costs are per INVENTORY unit. Divide by the conversion factor
+  // (inventory units per purchase unit) at read time. The validator allows
+  // 0, so guard against divide-by-zero.
+  const cfBySupplierPartId = new Map<string, number>();
   for (const sp of supplierParts.data) {
     spToItem.set(sp.id, sp.itemId);
+    cfBySupplierPartId.set(
+      sp.id,
+      sp.conversionFactor && sp.conversionFactor > 0 ? sp.conversionFactor : 1
+    );
   }
 
   const result: SupplierPriceMap = {};
@@ -5108,9 +5117,15 @@ export async function getSupplierPriceBreaksForItems(
     if (!result[sp.itemId]) {
       result[sp.itemId] = { priceBreaks: [], fallbackUnitPrice: null };
     }
+    const cf = cfBySupplierPartId.get(sp.id) ?? 1;
+    const unitPriceInInventoryUnit =
+      sp.unitPrice != null ? sp.unitPrice / cf : null;
     const current = result[sp.itemId].fallbackUnitPrice;
-    if (sp.unitPrice != null && (current === null || sp.unitPrice < current)) {
-      result[sp.itemId].fallbackUnitPrice = sp.unitPrice;
+    if (
+      unitPriceInInventoryUnit != null &&
+      (current === null || unitPriceInInventoryUnit < current)
+    ) {
+      result[sp.itemId].fallbackUnitPrice = unitPriceInInventoryUnit;
     }
   }
 
@@ -5118,9 +5133,10 @@ export async function getSupplierPriceBreaksForItems(
   for (const price of prices.data ?? []) {
     const itemId = spToItem.get(price.supplierPartId);
     if (itemId && result[itemId]) {
+      const cf = cfBySupplierPartId.get(price.supplierPartId) ?? 1;
       result[itemId].priceBreaks.push({
         quantity: price.quantity,
-        unitPrice: price.unitPrice
+        unitPrice: price.unitPrice / cf
       });
     }
   }
