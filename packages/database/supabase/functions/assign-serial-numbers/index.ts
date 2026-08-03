@@ -5,7 +5,7 @@ import { z } from "npm:zod@^3.24.1";
 import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
 import { corsPreflight, errorResponse, jsonResponse } from "../lib/response.ts";
 import { requirePermissions } from "../lib/supabase.ts";
-import { interpolateSerialNumber } from "../lib/utils.ts";
+import { getNextSerialNumbers } from "../shared/get-next-serial-number.ts";
 
 const pool = getConnectionPool(1);
 const db = getDatabaseClient<DB>(pool);
@@ -105,31 +105,15 @@ serve(async (req: Request) => {
         trackingType === "Batch" ? 1 : Math.round(Number(job.quantity));
       if (count < 1) return { assigned: 0 };
 
-      // 7. Atomically reserve the next `count` values (row-locking UPDATE).
-      const reserved = await trx
-        .updateTable("itemSerialSequence")
-        .set({
-          next: sql<number>`"next" + ${count} * "step"`,
-          updatedBy: userId,
-          updatedAt: new Date().toISOString(),
-        })
-        .where("itemId", "=", job.itemId)
-        .where("companyId", "=", companyId)
-        .returning(["next", "prefix", "suffix", "size", "step"])
-        .executeTakeFirstOrThrow();
-
-      const size = reserved.size ?? 5;
-      const step = reserved.step ?? 1;
-      const startNext = reserved.next - count * step;
-      const context = { locationCode, locationName };
-      const serials: string[] = [];
-      for (let i = 1; i <= count; i++) {
-        const value = startNext + i * step;
-        const counter = value.toString().padStart(size, "0");
-        const prefix = interpolateSerialNumber(reserved.prefix, context);
-        const suffix = interpolateSerialNumber(reserved.suffix, context);
-        serials.push(`${prefix}${counter}${suffix}`);
-      }
+      // 7. Atomically reserve + format the next `count` serial numbers.
+      const serials = await getNextSerialNumbers(trx, {
+        itemId: job.itemId,
+        companyId,
+        count,
+        locationCode,
+        locationName,
+      });
+      if (serials.length === 0) return { assigned: 0 };
 
       // 8. Assign. Batch keeps the single whole-quantity seed; Serial splits it
       //    into `count` quantity-1 entities, one number each (seed becomes #1).

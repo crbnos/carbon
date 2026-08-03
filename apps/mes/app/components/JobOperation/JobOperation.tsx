@@ -174,6 +174,7 @@ type JobOperationProps = {
   job: Job;
   thumbnailPath: string | null;
   trackedEntities: TrackedEntity[];
+  isFirstOperation: boolean;
   workCenter: Promise<
     PostgrestSingleResponse<{
       name: string;
@@ -227,6 +228,7 @@ export const JobOperation = ({
   procedure,
   thumbnailPath,
   trackedEntities,
+  isFirstOperation,
   workCenter
 }: JobOperationProps) => {
   const { t } = useLingui();
@@ -296,8 +298,15 @@ export const JobOperation = ({
     operation: originalOperation,
     events,
     trackedEntities,
+    isFirstOperation,
     pauseInterval: isModalOpen,
-    procedure
+    procedure,
+    // First operation only (no labels to scan yet): auto-select the next unit.
+    // `activeStep` follows `trackedEntityId` via the sync effect above, so setting
+    // the URL param is all that's needed.
+    onAdvanceToUnit: (entity) => {
+      setParams({ trackedEntityId: entity.id });
+    }
   });
 
   const controlsHeight = useMemo(() => {

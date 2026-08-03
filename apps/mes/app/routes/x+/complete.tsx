@@ -11,9 +11,7 @@ import { data, redirect } from "react-router";
 import { nonScrapQuantityValidator } from "~/services/models";
 import {
   finishJobOperation,
-  getTrackedEntitiesByMakeMethodId,
-  insertProductionQuantity,
-  isSerialEntityIncompleteForOperation
+  insertProductionQuantity
 } from "~/services/operations.service";
 import { path } from "~/utils/path";
 
@@ -187,40 +185,21 @@ export async function action({ request }: ActionFunctionArgs) {
       );
     }
 
-    // Old lazy-split flow: the issue function spawned the next reserved entity.
-    if (newTrackedEntityId) {
-      return redirect(
-        `${path.to.operation(
-          validation.data.jobOperationId
-        )}?trackedEntityId=${newTrackedEntityId}`
-      );
-    }
-
-    // Pre-split flow: no new entity was spawned (all units already exist), so
-    // advance to the next incomplete serial unit for this operation. When none
-    // remain, fall through to the operation view below.
-    if (jobOperation.data.jobMakeMethodId) {
-      const remainingTrackedEntities = await getTrackedEntitiesByMakeMethodId(
-        serviceRole,
-        jobOperation.data.jobMakeMethodId
-      );
-      const nextTrackedEntity = (remainingTrackedEntities.data ?? []).find(
-        (entity) =>
-          isSerialEntityIncompleteForOperation(
-            entity,
-            validation.data.jobOperationId
-          )
-      );
-      if (nextTrackedEntity) {
-        return redirect(
-          `${path.to.operation(
-            validation.data.jobOperationId
-          )}?trackedEntityId=${nextTrackedEntity.id}`
-        );
-      }
-    }
-
-    return redirect(`${path.to.operation(validation.data.jobOperationId)}`);
+    // Not finished: complete this unit and let the client (useOperation for the
+    // operation view, AssemblyView for assembly ops) decide how to advance —
+    // auto-select the next unit on the first operation, or open the scan/select
+    // picker on later operations. Returning data (instead of redirecting to a
+    // specific next unit) keeps the just-completed unit in the URL and revalidates
+    // the loader, so the client is the single advancement authority and nothing
+    // races it. The `{ completed: true }` marker lets AssemblyView tell a
+    // successful completion apart from a failure (which returns an empty `{}`).
+    return data(
+      { completed: true },
+      await flash(request, {
+        ...success("Completed"),
+        flash: "success"
+      })
+    );
   } else if (validation.data.trackingType === "Batch") {
     const response = await serviceRole.functions.invoke("issue", {
       body: {

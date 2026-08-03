@@ -98,6 +98,7 @@ import { ReworkModal } from "~/components/JobOperation/components/ReworkModal";
 import { SerialSelectorModal } from "~/components/JobOperation/components/SerialSelectorModal";
 import { RecordModal } from "~/components/JobOperation/components/Step";
 import { useUser } from "~/hooks";
+import { isSerialEntityIncompleteForOperation } from "~/services/operations.service";
 import type {
   JobMaterial,
   JobOperationStep,
@@ -270,6 +271,7 @@ type Props = {
     id: string;
     readableId?: string | null;
     status?: string | null;
+    attributes?: unknown;
   }[];
   trackedEntityId: string | null;
   materials: { materials?: any[]; trackedInputs?: any[] } | null;
@@ -287,6 +289,7 @@ type Props = {
   ncrs: any[];
   requiresSerialTracking: boolean;
   requiresBatchTracking: boolean;
+  isFirstOperation: boolean;
   openEvent: { id: string; startTime: string } | null;
   events: ProductionEvent[];
   nonConformanceActions: ContainmentAction[];
@@ -470,6 +473,21 @@ function SlidePins({
   );
 }
 
+// The view's `trackedEntities` prop is a hand-written subset of the DB row that widens
+// `status`/`attributes`, so bridge to the shared helper's Row-derived shape here rather
+// than duplicating the "done for this operation" rule.
+function isUnitIncompleteForOperation(
+  entity: { attributes?: unknown; status?: string | null },
+  operationId: string
+): boolean {
+  return isSerialEntityIncompleteForOperation(
+    entity as unknown as Parameters<
+      typeof isSerialEntityIncompleteForOperation
+    >[0],
+    operationId
+  );
+}
+
 export function AssemblyView({
   operationId,
   job,
@@ -483,6 +501,7 @@ export function AssemblyView({
   ncrs,
   requiresSerialTracking,
   requiresBatchTracking,
+  isFirstOperation,
   openEvent,
   events,
   nonConformanceActions,
@@ -519,7 +538,10 @@ export function AssemblyView({
   const completeAllFetcher = useFetcher<{ success?: boolean }>();
   // Silent auto-completion of a single unit once its final step is recorded
   // (multi-quantity assembly builds one at a time — see the effect below).
-  const completeUnitFetcher = useFetcher<{ id?: string }>();
+  const completeUnitFetcher = useFetcher<{
+    id?: string;
+    completed?: boolean;
+  }>();
   // Lazily creates NCR containment inspection steps for this operation (see effect below).
   const inspectionStepsFetcher = useFetcher();
   const imageViewer = useDisclosure();
@@ -1167,8 +1189,14 @@ export function AssemblyView({
     if (!isMultiQuantity || unitsRemaining <= 0) return;
     // Only auto-complete the unit currently being built. Guards against
     // re-completing an already-finished unit whose step records still read
-    // "done" if the operator navigates back to it.
-    if (currentUnitIndex < quantityComplete) return;
+    // "done" if the operator navigates back to it. Serial parents may be worked
+    // in any order (scan/select on later ops), so "already built" is per-entity
+    // (its completion marker); batch/untracked build strictly in order by index.
+    const currentAlreadyBuilt =
+      navigatesByEntity && currentEntity
+        ? !isUnitIncompleteForOperation(currentEntity, operationId)
+        : currentUnitIndex < quantityComplete;
+    if (currentAlreadyBuilt) return;
     if (!allStepsRecorded) {
       // On a not-yet-finished unit — arm for its eventual completion.
       autoCompleteSubmittedRef.current = false;
@@ -1223,6 +1251,7 @@ export function AssemblyView({
   // auto-complete effect only re-fires when its deps actually change, and a
   // failed completion leaves quantityComplete (hence unitsRemaining) unchanged.
   const prevCompleteUnitStateRef = useRef(completeUnitFetcher.state);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: settle-detect on the fetcher
   useEffect(() => {
     const settled =
       prevCompleteUnitStateRef.current !== "idle" &&
@@ -1235,8 +1264,44 @@ export function AssemblyView({
       !Array.isArray(result) &&
       typeof result === "object" &&
       Object.keys(result).length === 0;
-    if (failed) autoCompleteSubmittedRef.current = false;
+    if (failed) {
+      autoCompleteSubmittedRef.current = false;
+      return;
+    }
+    // A serial unit just completed (complete.tsx returns { completed: true } and no
+    // longer redirects to a next unit — the client is the single advancement
+    // authority). Advance to the next unit still to build: on the first operation
+    // auto-select it (no printed labels to scan yet); on later operations prompt the
+    // operator to scan/select (every unit already carries a label). The final unit
+    // finishes the operation server-side and redirects, so `result` is undefined
+    // there and nothing happens.
+    if (navigatesByEntity && result?.completed) {
+      const next = trackedEntities.find((entity) =>
+        isUnitIncompleteForOperation(entity, operationId)
+      );
+      if (!next) return;
+      if (isFirstOperation) navigateEntity(next);
+      else serialModal.onOpen();
+    }
   }, [completeUnitFetcher.state, completeUnitFetcher.data]);
+
+  // Later operations: prompt the operator to scan/select the unit on arrival. Every
+  // unit already carries a printed label (labels print at the first operation's
+  // completion), so there is nothing to auto-select. Prompt once per mount — even if
+  // the loader seeded a ?trackedEntityId — and only while units remain to build. The
+  // first operation auto-selects instead (loader default + the settle effect above).
+  const arrivalPromptedRef = useRef(false);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: one-shot arrival prompt
+  useEffect(() => {
+    if (!navigatesByEntity || isFirstOperation) return;
+    if (arrivalPromptedRef.current) return;
+    const hasIncomplete = trackedEntities.some((entity) =>
+      isUnitIncompleteForOperation(entity, operationId)
+    );
+    if (!hasIncomplete) return;
+    arrivalPromptedRef.current = true;
+    serialModal.onOpen();
+  }, [navigatesByEntity, isFirstOperation, trackedEntities, operationId]);
 
   // Return to step 1 on a new unit. Whenever the active unit changes — the
   // auto-complete rolls quantityComplete forward (untracked), a serial/batch
@@ -2283,7 +2348,11 @@ export function AssemblyView({
 
       {serialModal.isOpen && (
         <SerialSelectorModal
-          availableEntities={unitEntities as never}
+          availableEntities={
+            unitEntities.filter((entity) =>
+              isUnitIncompleteForOperation(entity, operationId)
+            ) as never
+          }
           onClose={serialModal.onClose}
           onCancel={serialModal.onClose}
           onSelect={(entity) => {

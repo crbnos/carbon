@@ -192,7 +192,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       ? navEntities[0]?.id
       : navEntities[unitIndex]?.id;
 
-  const [materials, openEvent] = await Promise.all([
+  const [materials, openEvent, priorDependency] = await Promise.all([
     getJobMaterialsByOperationId(serviceRole, {
       operation: op,
       trackedEntityId: effectiveEntityId,
@@ -211,8 +211,20 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       .is("endTime", null)
       .order("startTime", { ascending: false })
       .limit(1)
+      .maybeSingle(),
+    // Is this the first operation in the routing? A serial unit only earns a printed
+    // label when completed at its first operation, so the first op flows unit-by-unit
+    // (auto-select), and later ops scan/select (labels exist). "First" means nothing
+    // precedes it — no jobOperationDependency row keyed to this operation. `order` is
+    // only a display/sort field and isn't a reliable precedence signal.
+    serviceRole
+      .from("jobOperationDependency")
+      .select("operationId")
+      .eq("operationId", operationId)
+      .limit(1)
       .maybeSingle()
   ]);
+  const isFirstOperation = !priorDependency.data;
 
   return {
     job: job.data,
@@ -228,6 +240,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     ncrs: ncrs.data ?? [],
     requiresSerialTracking: jobMakeMethod.data?.requiresSerialTracking ?? false,
     requiresBatchTracking: jobMakeMethod.data?.requiresBatchTracking ?? false,
+    isFirstOperation,
     openEvent: openEvent.data ?? null,
     events: events.data ?? [],
     nonConformanceActions,

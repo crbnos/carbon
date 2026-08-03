@@ -111,13 +111,32 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const autoSelectMaterialWithoutPickingList =
     companySettings.data?.autoSelectMaterialWithoutPickingList ?? false;
 
-  // If no trackedEntityId is provided in the URL but a serial unit still needs
-  // work for this operation, redirect to the same URL with that unit selected.
-  // Picks the first incomplete unit (createdAt asc) so pre-split jobs advance
-  // #1..#N in order instead of always re-selecting the last unit. When every
-  // unit is already complete, nothing is auto-selected (no redirect).
+  // Is this the first operation in the routing? A serial unit only earns a
+  // printed label when it is completed at its first operation, so:
+  //  - first operation: no labels exist yet → the operator flows unit-by-unit
+  //    (auto-select here on arrival, and in the client after each completion);
+  //  - later operations: every unit already has a label → the operator
+  //    scans/selects each unit (no auto-select, here or in the client).
+  // An operation is "first" when nothing precedes it in the routing — i.e. it has
+  // no jobOperationDependency (a row means this op depends on / comes after
+  // another). `order` is only a display/sort field and isn't a reliable
+  // precedence signal, so it's not used here. A first op has no printed labels
+  // yet (they print on its completion), so its units are auto-selected; later
+  // ops already have labels, so the operator scans/selects.
+  const priorDependency = await serviceRole
+    .from("jobOperationDependency")
+    .select("operationId")
+    .eq("operationId", operationId)
+    .limit(1)
+    .maybeSingle();
+  const isFirstOperation = !priorDependency.data;
+
+  // On the first operation only, auto-select the first incomplete unit when none
+  // is in the URL. Later operations leave it unset so the client presents the
+  // scan/select picker for every unit (including the first one picked up).
   if (
     !trackedEntityId &&
+    isFirstOperation &&
     trackedEntities.data &&
     trackedEntities.data.length > 0
   ) {
@@ -161,6 +180,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         jobMakeMethod.data?.requiresSerialTracking ?? false
     }),
     trackedEntities: trackedEntities.data ?? [],
+    isFirstOperation,
     nonConformanceActions: getNonConformanceActions(serviceRole, {
       itemId: operation.data?.[0].itemId,
       processId: operation.data?.[0].processId,
@@ -203,6 +223,7 @@ export default function OperationRoute() {
     procedure,
     thumbnailPath,
     trackedEntities,
+    isFirstOperation,
     workCenter,
     nonConformanceActions
   } = useLoaderData<typeof loader>();
@@ -220,6 +241,7 @@ export default function OperationRoute() {
       materials={materials}
       method={jobMakeMethod}
       trackedEntities={trackedEntities}
+      isFirstOperation={isFirstOperation}
       nonConformanceActions={nonConformanceActions}
       operation={operation}
       procedure={procedure}
