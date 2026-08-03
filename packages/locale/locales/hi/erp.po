@@ -412,7 +412,7 @@ msgstr "एक पार्ट में एक विशिष्ट आइट�
 msgid "A physical pull signal — a printed card or QR code living with the stock — that raises a purchase order or a job the moment it's scanned to refill a bin."
 msgstr "एक भौतिक पुल सिग्नल — एक मुद्रित कार्ड या क्यूआर कोड जो स्टॉक के साथ रहता है — जो एक खरीद आदेश या नौकरी को उठाता है जैसे ही इसे बिन को फिर से भरने के लिए स्कैन किया जाता है।"
 
-msgid "A plain { is sent as-is. Pick a variable from the menu."
+msgid "A plain '{' is sent as-is. Pick a variable from the menu."
 msgstr ""
 
 msgid "A posted accounting entry: a header plus balanced debit and credit lines against GL accounts."
@@ -14877,7 +14877,7 @@ msgstr "बिल्ट-इन पीसेस को चालू करें"
 msgid "Type"
 msgstr "प्रकार"
 
-msgid "Type { for a variable"
+msgid "Type '{' for a variable"
 msgstr ""
 
 msgid "Type {TRIGGER} to insert a variable"

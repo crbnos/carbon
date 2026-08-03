@@ -412,7 +412,7 @@ msgstr "Uma peça contém as informações sobre um item específico que pode se
 msgid "A physical pull signal — a printed card or QR code living with the stock — that raises a purchase order or a job the moment it's scanned to refill a bin."
 msgstr "Um sinal de puxada física — um cartão impresso ou código QR vivendo com o estoque — que levanta um pedido de compra ou trabalho no momento em que é digitalizado para reabastecer uma caixa."
 
-msgid "A plain { is sent as-is. Pick a variable from the menu."
+msgid "A plain '{' is sent as-is. Pick a variable from the menu."
 msgstr ""
 
 msgid "A posted accounting entry: a header plus balanced debit and credit lines against GL accounts."
@@ -14877,7 +14877,7 @@ msgstr "Ativar os componentes integrados"
 msgid "Type"
 msgstr "Tipo"
 
-msgid "Type { for a variable"
+msgid "Type '{' for a variable"
 msgstr ""
 
 msgid "Type {TRIGGER} to insert a variable"

@@ -412,8 +412,8 @@ msgstr "A part contains the information about a specific item that can be purcha
 msgid "A physical pull signal — a printed card or QR code living with the stock — that raises a purchase order or a job the moment it's scanned to refill a bin."
 msgstr "A physical pull signal — a printed card or QR code living with the stock — that raises a purchase order or a job the moment it's scanned to refill a bin."
 
-msgid "A plain { is sent as-is. Pick a variable from the menu."
-msgstr "A plain { is sent as-is. Pick a variable from the menu."
+msgid "A plain '{' is sent as-is. Pick a variable from the menu."
+msgstr "A plain '{' is sent as-is. Pick a variable from the menu."
 
 msgid "A posted accounting entry: a header plus balanced debit and credit lines against GL accounts."
 msgstr "A posted accounting entry: a header plus balanced debit and credit lines against GL accounts."
@@ -14877,8 +14877,8 @@ msgstr "Turn on the built-in pieces"
 msgid "Type"
 msgstr "Type"
 
-msgid "Type { for a variable"
-msgstr "Type { for a variable"
+msgid "Type '{' for a variable"
+msgstr "Type '{' for a variable"
 
 msgid "Type {TRIGGER} to insert a variable"
 msgstr "Type {TRIGGER} to insert a variable"

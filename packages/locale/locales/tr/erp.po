@@ -412,7 +412,7 @@ msgstr "Bir parça, satın alınabilir veya üretilebilir belirli bir öğe hakk
 msgid "A physical pull signal — a printed card or QR code living with the stock — that raises a purchase order or a job the moment it's scanned to refill a bin."
 msgstr "Stokla yaşayan fiziksel bir çekme sinyali — basılı bir kart veya QR kodu — bir bin'i doldurmak için tarandığı anda bir satın alma siparişi veya iş oluşturur."
 
-msgid "A plain { is sent as-is. Pick a variable from the menu."
+msgid "A plain '{' is sent as-is. Pick a variable from the menu."
 msgstr ""
 
 msgid "A posted accounting entry: a header plus balanced debit and credit lines against GL accounts."
@@ -14877,7 +14877,7 @@ msgstr "Yerleşik parçaları açın"
 msgid "Type"
 msgstr "Tür"
 
-msgid "Type { for a variable"
+msgid "Type '{' for a variable"
 msgstr ""
 
 msgid "Type {TRIGGER} to insert a variable"

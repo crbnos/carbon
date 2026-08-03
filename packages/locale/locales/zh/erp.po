@@ -412,7 +412,7 @@ msgstr "零件包含可以购买或制造的特定项目的信息。"
 msgid "A physical pull signal — a printed card or QR code living with the stock — that raises a purchase order or a job the moment it's scanned to refill a bin."
 msgstr "一个物理拉取信号——一张与库存一起放置的印刷卡片或二维码——在扫描以补充容器时立即生成采购订单或工作。"
 
-msgid "A plain { is sent as-is. Pick a variable from the menu."
+msgid "A plain '{' is sent as-is. Pick a variable from the menu."
 msgstr ""
 
 msgid "A posted accounting entry: a header plus balanced debit and credit lines against GL accounts."
@@ -14877,7 +14877,7 @@ msgstr "启用内置功能"
 msgid "Type"
 msgstr "类型"
 
-msgid "Type { for a variable"
+msgid "Type '{' for a variable"
 msgstr ""
 
 msgid "Type {TRIGGER} to insert a variable"

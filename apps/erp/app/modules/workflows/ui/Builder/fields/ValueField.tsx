@@ -45,7 +45,7 @@ export function ValueField({
         issue={issue}
         hint={
           hasStrayBrace(value)
-            ? t`A plain { is sent as-is. Pick a variable from the menu.`
+            ? t`A plain '{' is sent as-is. Pick a variable from the menu.`
             : undefined
         }
       >

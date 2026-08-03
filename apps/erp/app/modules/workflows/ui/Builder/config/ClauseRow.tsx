@@ -162,7 +162,7 @@ function ClauseRowImpl({
             <ValueField
               label={t`Property`}
               hideLabel={hideLabel}
-              placeholder={t`Type { for a variable`}
+              placeholder={t`Type '{' for a variable`}
               type={leftType ?? { kind: "primitive", of: "string" }}
               value={clause.left}
               onChange={(next) => {
@@ -206,7 +206,7 @@ function ClauseRowImpl({
             <ValueField
               label={t`Value`}
               hideLabel={hideLabel}
-              placeholder={t`Type { for a variable`}
+              placeholder={t`Type '{' for a variable`}
               type={leftType}
               choices={rightChoices}
               value={clause.right}
