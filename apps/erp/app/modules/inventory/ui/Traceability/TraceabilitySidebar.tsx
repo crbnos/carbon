@@ -131,8 +131,14 @@ export function TraceabilitySidebar({
           if (selfLoopActivityIds.has(i.trackedActivityId)) continue;
           const a = activityById.get(i.trackedActivityId);
           if (!a) continue;
-          // A transfer/pick relocated the lot — it did not consume it.
-          if (isMovementActivity(a.type)) {
+          // A Split draws a portion off this lot and leaves the rest on the
+          // shelf — the lot is an input but was NOT consumed. (Legacy splits
+          // recorded the survivor as input AND output; the self-loop skip above
+          // catches those.)
+          if (a.type === "Split") {
+            splits.push({ activity: a, quantity: i.quantity });
+          } else if (isMovementActivity(a.type)) {
+            // A transfer/pick relocated the lot — it did not consume it.
             movedBy.push({ activity: a, quantity: i.quantity });
           } else {
             consumedBy.push({ activity: a, quantity: i.quantity });

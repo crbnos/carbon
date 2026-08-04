@@ -76,29 +76,31 @@ async function expandActivitySiblings(
       .in("trackedActivityId", activityIds)
   ]);
 
+  // These rows are the AUTHORITATIVE edge quantities — how much actually flowed
+  // through this activity. Always overwrite: the BFS seeds edges from the
+  // traversal RPCs, whose `quantity` column is the neighbour ENTITY's current
+  // quantity (`te."quantity"`), not the edge's. Left as-is, a lot that was later
+  // drawn down paints its post-hoc quantity onto a historical edge (a 6-unit
+  // split reading "4" after 2 were consumed).
   const siblingEntityIds = new Set<string>();
   for (const row of siblingInputs.data ?? []) {
     const key = `${row.trackedActivityId}:${row.trackedEntityId}`;
-    if (!inputs.has(key)) {
-      inputs.set(key, {
-        trackedActivityId: row.trackedActivityId,
-        trackedEntityId: row.trackedEntityId,
-        quantity: row.quantity
-      });
-    }
+    inputs.set(key, {
+      trackedActivityId: row.trackedActivityId,
+      trackedEntityId: row.trackedEntityId,
+      quantity: row.quantity
+    });
     if (!entities.has(row.trackedEntityId)) {
       siblingEntityIds.add(row.trackedEntityId);
     }
   }
   for (const row of siblingOutputs.data ?? []) {
     const key = `${row.trackedActivityId}:${row.trackedEntityId}`;
-    if (!outputs.has(key)) {
-      outputs.set(key, {
-        trackedActivityId: row.trackedActivityId,
-        trackedEntityId: row.trackedEntityId,
-        quantity: row.quantity
-      });
-    }
+    outputs.set(key, {
+      trackedActivityId: row.trackedActivityId,
+      trackedEntityId: row.trackedEntityId,
+      quantity: row.quantity
+    });
     if (!entities.has(row.trackedEntityId)) {
       siblingEntityIds.add(row.trackedEntityId);
     }

@@ -86,7 +86,7 @@ const getActivityText = (
           ? ` to ${ledgerRecord.storageUnit.name}`
           : ""
       }${
-        trackedEntityLabel ? ` from ${trackingNoun} ${trackedEntityLabel}` : ""
+        trackedEntityLabel ? ` of ${trackingNoun} ${trackedEntityLabel}` : ""
       }`;
     case "Purchase Invoice":
       return `invoiced ${ledgerRecord.quantity} units${
@@ -201,7 +201,7 @@ const getActivityText = (
             : ""}
           {trackedEntityLabel ? (
             <>
-              from {trackingNoun} {trackedEntityLabel}{" "}
+              of {trackingNoun} {trackedEntityLabel}{" "}
             </>
           ) : null}
           {ledgerRecord.documentLineId && ledgerRecord.documentId ? (
@@ -244,7 +244,7 @@ const getActivityText = (
             : ""}
           {trackedEntityLabel ? (
             <>
-              from {trackingNoun} {trackedEntityLabel}{" "}
+              of {trackingNoun} {trackedEntityLabel}{" "}
             </>
           ) : null}
           {ledgerRecord.documentId ? (
