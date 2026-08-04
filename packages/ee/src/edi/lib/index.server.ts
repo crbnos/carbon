@@ -1,7 +1,7 @@
 // Server barrel: provider registry + pure resolution/build helpers.
-// The Orderful adapter registers itself with the provider registry when its
-// config module is imported (see packages/ee/src/index.ts).
+// Importing the Orderful adapter registers it with the provider registry.
 export * from "../build";
+export { orderfulProvider } from "../orderful/lib/client";
 export * from "../provider";
 export * from "../types";
 export * from "../validate";
