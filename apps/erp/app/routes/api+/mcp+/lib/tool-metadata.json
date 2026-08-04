@@ -1,6 +1,6 @@
 {
-  "generated": "2026-08-03T05:37:07.055Z",
-  "totalTools": 1410,
+  "generated": "2026-08-04T13:52:01.098Z",
+  "totalTools": 1411,
   "modules": 15,
   "tools": [
     {
@@ -28149,6 +28149,36 @@
         },
         "required": [
           "nonConformanceTypeId"
+        ]
+      }
+    },
+    {
+      "name": "quality_getIssueTypeByName",
+      "module": "quality",
+      "classification": "READ",
+      "description": "get issue type by name",
+      "paramCount": 2,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "name",
+        "excludeId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "excludeId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
         ]
       }
     },
