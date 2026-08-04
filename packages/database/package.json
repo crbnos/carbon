@@ -23,6 +23,7 @@
     "./ratelimit": "./src/ratelimit.ts",
     "./sampling": "./src/sampling.ts",
     "./sequence": "./src/sequence.ts",
+    "./seed-workflows": "./src/seed-dev/tiers/workflow-definitions.ts",
     "./audit": "./src/audit.ts",
     "./audit.config": "./src/audit.config.ts",
     "./audit.types": "./src/audit.types.ts",
