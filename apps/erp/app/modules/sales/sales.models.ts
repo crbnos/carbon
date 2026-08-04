@@ -985,3 +985,43 @@ export function isSalesRfqLocked(status: string | null | undefined): boolean {
 export function isQuoteLocked(status: string | null | undefined): boolean {
   return status !== null && status !== undefined && status !== "Draft";
 }
+
+// EDI (Electronic Data Interchange) — sell-side trading partner config.
+// Enum arrays mirror the DB enums exactly (see the edi-support migration).
+export const ediReleaseModeType = ["Automatic", "Review"] as const;
+export const ediDocumentTypeType = [
+  "Purchase Order",
+  "Purchase Order Acknowledgment",
+  "Advance Ship Notice",
+  "Invoice"
+] as const;
+export const ediDocumentStatusType = [
+  "Received",
+  "Needs Review",
+  "Posted",
+  "Rejected",
+  "Pending",
+  "Sent",
+  "Acknowledged",
+  "Failed"
+] as const;
+export const ediDocumentDirectionType = ["Inbound", "Outbound"] as const;
+
+export const ediTradingPartnerValidator = z.object({
+  id: zfd.text(z.string().optional()),
+  customerId: z.string().min(1, { message: "Customer is required" }),
+  externalId: zfd.text(z.string().optional()),
+  active: zfd.checkbox(),
+  releaseMode: z.enum(ediReleaseModeType),
+  priceTolerancePercent: zfd.numeric(z.number().min(0).max(1)),
+  // Enabled document keys as "<documentType>:<direction>" strings from a checkbox group
+  documents: z.array(z.string()).optional()
+});
+
+export const ediTradingPartnerLocationValidator = z.object({
+  id: zfd.text(z.string().optional()),
+  externalCode: z.string().min(1, { message: "Location code is required" }),
+  customerLocationId: z
+    .string()
+    .min(1, { message: "Customer location is required" })
+});
