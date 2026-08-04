@@ -839,7 +839,9 @@ export async function getNotes(
 ) {
   return client
     .from("note")
-    .select("id, note, createdAt, user(id, fullName, avatarUrl)")
+    .select(
+      "id, note, createdAt, user!notes_createdBy_fkey(id, fullName, avatarUrl)"
+    )
     .eq("documentId", documentId)
     .eq("active", true)
     .order("createdAt");
