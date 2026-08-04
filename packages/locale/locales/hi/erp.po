@@ -1774,6 +1774,9 @@ msgstr "क्या आप सुनिश्चित हैं कि आप 
 msgid "Are you sure you want to delete the scrap reason: {0}? This cannot be undone."
 msgstr "क्या आप सुनिश्चित हैं कि आप स्क्रैप कारण को हटाना चाहते हैं: {0}? यह पूर्ववत नहीं किया जा सकता।"
 
+msgid "Are you sure you want to delete the serial number sequence for {itemLabel}? This cannot be undone."
+msgstr "क्या आप {itemLabel} के लिए सीरियल नंबर अनुक्रम को हटाना निश्चित हैं? इसे पूर्ववत नहीं किया जा सकता।"
+
 msgid "Are you sure you want to delete the shift: {name} from {locationName}? This cannot be undone."
 msgstr "क्या आप सुनिश्चित हैं कि आप शिफ्ट को हटाना चाहते हैं: {name} से {locationName}? यह पूर्ववत नहीं किया जा सकता।"
 
@@ -2040,8 +2043,14 @@ msgstr "इस इकाई को लाइनसाइड सामग्र�
 msgid "At each gate"
 msgstr "हर गेट पर"
 
+msgid "At job completion"
+msgstr "जॉब पूरी होने पर"
+
 msgid "At least one condition must match"
 msgstr "कम से कम एक शर्त मेल खानी चाहिए"
+
+msgid "At operation completion"
+msgstr "ऑपरेशन पूरी होने पर"
 
 msgid "Attach File"
 msgstr "फ़ाइल संलग्न करें"
@@ -4237,6 +4246,9 @@ msgstr "तय करें कि यदि कोई ऑपरेटर एक
 msgid "Decide what happens when an operator presses Finish on the shop floor with material still unpicked."
 msgstr "तय करें कि जब ऑपरेटर शॉप फ्लोर पर फिनिश दबाता है तो क्या होता है जब सामग्री अभी भी अनचुनी होती है।"
 
+msgid "Decide when material picked to a work center but not consumed flows back to the warehouse."
+msgstr "तय करें कि वर्क सेंटर में चुनी गई अप्रयुक्त सामग्री कब गोदाम में वापस जाए।"
+
 msgid "Decimal Places"
 msgstr "दशमलव स्थान"
 
@@ -5117,6 +5129,9 @@ msgstr "उदाहरण के लिए पहले 3 से 4 सप्त
 msgid "e.g. Zebra 2x1"
 msgstr "उदाहरण के लिए Zebra 2x1"
 
+msgid "Each operation's unused material returns as soon as the operation is done."
+msgstr "प्रत्येक ऑपरेशन की अप्रयुक्त सामग्री ऑपरेशन पूरी होते ही वापस आती है।"
+
 msgid "Each physical unit gets its own tracked entity and unique number — one entity, one unit."
 msgstr "प्रत्येक भौतिक इकाई को अपनी खुद की ट्रैक की गई इकाई और अद्वितीय संख्या मिलती है — एक इकाई, एक इकाई।"
 
@@ -5368,6 +5383,9 @@ msgstr "निर्धारित रखरखाव संपादित क
 
 msgid "Edit Sequence"
 msgstr "अनुक्रम संपादित करें"
+
+msgid "Edit Serial Number"
+msgstr "सीरियल नंबर संपादित करें"
 
 msgid "Edit Service"
 msgstr "सेवा संपादित करें"
@@ -7946,6 +7964,9 @@ msgstr "बाईं ओर की वस्तु"
 msgid "Leftover Parts Detected"
 msgstr "बचे हुए पार्ट्स का पता चला"
 
+msgid "Leftover staged material returns when the whole job completes."
+msgstr "बची हुई सामग्री पूरी जॉब पूरी होने पर वापस आती है।"
+
 msgid "Less manual work"
 msgstr "कम मैनुअल काम"
 
@@ -9056,6 +9077,9 @@ msgstr "नई बिक्रय आदेश पंक्ति"
 msgid "New Scheduled Maintenance"
 msgstr "नया निर्धारित रखरखाव"
 
+msgid "New Serial Number"
+msgstr "नया सीरियल नंबर"
+
 msgid "New Service"
 msgstr "नई सेवा"
 
@@ -9350,6 +9374,9 @@ msgstr "\"{query}\" के लिए कोई मिलान नहीं। �
 msgid "No matches. Type to create one."
 msgstr "कोई मेल नहीं। एक बनाने के लिए टाइप करें।"
 
+msgid "No matching bins"
+msgstr "कोई मेल खाने वाले बिन नहीं"
+
 msgid "No new notifications"
 msgstr "कोई नई सूचनाएं नहीं"
 
@@ -9595,6 +9622,10 @@ msgstr "नोट्स (वैकल्पिक)"
 
 msgid "Nothing"
 msgstr ""
+
+#. placeholder {0}: search.trim()
+msgid "Nothing at this location matches \"{0}\"."
+msgstr "इस स्थान पर \"{0}\" से कुछ भी मेल नहीं खाता।"
 
 msgid "Nothing else at this location has stock to pull from."
 msgstr "इस स्थान पर कोई अन्य स्टॉक नहीं है जहां से खींचा जा सकता है।"
@@ -11755,6 +11786,12 @@ msgstr "पुनः प्रयास करें"
 msgid "Return Home"
 msgstr "घर लौटें"
 
+msgid "Returned"
+msgstr "लौटाया गया"
+
+msgid "Returning unused picked material"
+msgstr "अप्रयुक्त सामग्री को वापस किया जा रहा है"
+
 msgid "Returns:"
 msgstr ""
 
@@ -12571,6 +12608,12 @@ msgstr "सीरियल नंबर"
 
 msgid "Serial Number:"
 msgstr "सीरियल नंबर:"
+
+msgid "Serial Numbers"
+msgstr "सीरियल नंबर"
+
+msgid "Serial numbers are only generated for serial- or batch-tracked items."
+msgstr "सीरियल नंबर केवल सीरियल या बैच-ट्रैक किए गए आइटम के लिए उत्पन्न होते हैं।"
 
 msgid "Serial or Batch Tracking Required"
 msgstr "सीरियल या बैच ट्रैकिंग आवश्यक है"
@@ -14532,6 +14575,9 @@ msgstr "यह वह महीना है जब आपका वित्त
 msgid "This is the month your tax year starts."
 msgstr "यह वह महीना है जब आपका कर वर्ष शुरू होता है।"
 
+msgid "this item"
+msgstr "यह आइटम"
+
 msgid "This item is built via a configurator and resolves its components per-order; jobs created for it inherit the configurator's resolved BOM."
 msgstr "इस आइटम को एक कॉन्फ़िगरेटर के माध्यम से बनाया जाता है और प्रति-आदेश अपने घटकों को हल करता है; इसके लिए बनाई गई नौकरियां कॉन्फ़िगरेटर के हल बिल को विरासत में पाती हैं।"
 
@@ -15161,6 +15207,9 @@ msgstr "बिना शीर्षक वाला आरेख"
 
 msgid "Untitled line"
 msgstr "बिना शीर्षक की पंक्ति"
+
+msgid "Unused picked material flushed back from the work center to the warehouse."
+msgstr "अप्रयुक्त सामग्री को वर्क सेंटर से गोदाम में वापस भेजा गया।"
 
 msgid "UoM"
 msgstr "UoM"

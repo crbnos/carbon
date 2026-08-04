@@ -18942,6 +18942,93 @@ export default {
         tags: ["jobs"]
       }
     },
+    "/itemSerialSequences": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.itemSerialSequences.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemSerialSequences.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemSerialSequences.itemId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemSerialSequences.prefix"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemSerialSequences.suffix"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemSerialSequences.next"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemSerialSequences.size"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemSerialSequences.step"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemSerialSequences.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemSerialSequences.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemSerialSequences.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemSerialSequences.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemSerialSequences.itemReadableId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemSerialSequences.itemName"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemSerialSequences.itemTrackingType"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/itemSerialSequences"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["itemSerialSequences"]
+      }
+    },
     "/department": {
       get: {
         parameters: [
@@ -22882,6 +22969,9 @@ export default {
             $ref: "#/parameters/rowFilter.location.tags"
           },
           {
+            $ref: "#/parameters/rowFilter.location.code"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -22995,6 +23085,9 @@ export default {
             $ref: "#/parameters/rowFilter.location.tags"
           },
           {
+            $ref: "#/parameters/rowFilter.location.code"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -23060,6 +23153,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.location.tags"
+          },
+          {
+            $ref: "#/parameters/rowFilter.location.code"
           },
           {
             $ref: "#/parameters/body.location"
@@ -46216,6 +46312,9 @@ export default {
             $ref: "#/parameters/rowFilter.pickingListLine.customFields"
           },
           {
+            $ref: "#/parameters/rowFilter.pickingListLine.quantityReturned"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -46329,6 +46428,9 @@ export default {
             $ref: "#/parameters/rowFilter.pickingListLine.customFields"
           },
           {
+            $ref: "#/parameters/rowFilter.pickingListLine.quantityReturned"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -46394,6 +46496,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.pickingListLine.customFields"
+          },
+          {
+            $ref: "#/parameters/rowFilter.pickingListLine.quantityReturned"
           },
           {
             $ref: "#/parameters/body.pickingListLine"
@@ -63640,6 +63745,204 @@ export default {
           }
         },
         tags: ["nonConformanceActionProcess"]
+      }
+    },
+    "/itemSerialSequence": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.itemSerialSequence.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemSerialSequence.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemSerialSequence.itemId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemSerialSequence.prefix"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemSerialSequence.suffix"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemSerialSequence.next"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemSerialSequence.size"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemSerialSequence.step"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemSerialSequence.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemSerialSequence.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemSerialSequence.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemSerialSequence.updatedAt"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/itemSerialSequence"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["itemSerialSequence"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.itemSerialSequence"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["itemSerialSequence"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.itemSerialSequence.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemSerialSequence.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemSerialSequence.itemId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemSerialSequence.prefix"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemSerialSequence.suffix"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemSerialSequence.next"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemSerialSequence.size"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemSerialSequence.step"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemSerialSequence.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemSerialSequence.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemSerialSequence.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemSerialSequence.updatedAt"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["itemSerialSequence"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.itemSerialSequence.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemSerialSequence.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemSerialSequence.itemId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemSerialSequence.prefix"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemSerialSequence.suffix"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemSerialSequence.next"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemSerialSequence.size"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemSerialSequence.step"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemSerialSequence.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemSerialSequence.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemSerialSequence.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemSerialSequence.updatedAt"
+          },
+          {
+            $ref: "#/parameters/body.itemSerialSequence"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["itemSerialSequence"]
       }
     },
     "/batchProperty": {
@@ -83863,6 +84166,9 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.includeMaterialsOnTraveler"
           },
           {
+            $ref: "#/parameters/rowFilter.companySettings.returnPickedMaterialTiming"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -84060,6 +84366,9 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.includeMaterialsOnTraveler"
           },
           {
+            $ref: "#/parameters/rowFilter.companySettings.returnPickedMaterialTiming"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -84209,6 +84518,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.includeMaterialsOnTraveler"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.returnPickedMaterialTiming"
           },
           {
             $ref: "#/parameters/body.companySettings"
@@ -104728,6 +105040,81 @@ export default {
       },
       type: "object"
     },
+    itemSerialSequences: {
+      properties: {
+        id: {
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        itemId: {
+          description:
+            "Note:\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        prefix: {
+          format: "text",
+          type: "string"
+        },
+        suffix: {
+          format: "text",
+          type: "string"
+        },
+        next: {
+          format: "integer",
+          type: "integer"
+        },
+        size: {
+          format: "integer",
+          type: "integer"
+        },
+        step: {
+          format: "integer",
+          type: "integer"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        itemReadableId: {
+          format: "text",
+          type: "string"
+        },
+        itemName: {
+          format: "text",
+          type: "string"
+        },
+        itemTrackingType: {
+          enum: ["Inventory", "Non-Inventory", "Serial", "Batch"],
+          format: 'public."itemTrackingType"',
+          type: "string"
+        }
+      },
+      type: "object"
+    },
     department: {
       required: ["id", "name", "companyId", "createdBy", "createdAt"],
       properties: {
@@ -106525,6 +106912,10 @@ export default {
             type: "string"
           },
           type: "array"
+        },
+        code: {
+          format: "text",
+          type: "string"
         }
       },
       type: "object"
@@ -117681,7 +118072,8 @@ export default {
         "status",
         "companyId",
         "createdBy",
-        "createdAt"
+        "createdAt",
+        "quantityReturned"
       ],
       properties: {
         id: {
@@ -117780,6 +118172,11 @@ export default {
         },
         customFields: {
           format: "jsonb"
+        },
+        quantityReturned: {
+          default: 0,
+          format: "numeric",
+          type: "number"
         }
       },
       type: "object"
@@ -125800,6 +126197,83 @@ export default {
           description:
             "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
           format: "text",
+          type: "string"
+        }
+      },
+      type: "object"
+    },
+    itemSerialSequence: {
+      required: [
+        "id",
+        "companyId",
+        "itemId",
+        "next",
+        "size",
+        "step",
+        "createdBy",
+        "createdAt"
+      ],
+      properties: {
+        id: {
+          default: "public.id('iss'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        itemId: {
+          description:
+            "Note:\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        prefix: {
+          format: "text",
+          type: "string"
+        },
+        suffix: {
+          format: "text",
+          type: "string"
+        },
+        next: {
+          default: 0,
+          format: "integer",
+          type: "integer"
+        },
+        size: {
+          default: 5,
+          format: "integer",
+          type: "integer"
+        },
+        step: {
+          default: 1,
+          format: "integer",
+          type: "integer"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
           type: "string"
         }
       },
@@ -135539,7 +136013,8 @@ export default {
         "plmReleaseControl",
         "autoSelectMaterialWithoutPickingList",
         "incompletePickingListPolicy",
-        "includeMaterialsOnTraveler"
+        "includeMaterialsOnTraveler",
+        "returnPickedMaterialTiming"
       ],
       properties: {
         id: {
@@ -135790,6 +136265,11 @@ export default {
           default: false,
           format: "boolean",
           type: "boolean"
+        },
+        returnPickedMaterialTiming: {
+          default: "job",
+          format: "text",
+          type: "string"
         }
       },
       type: "object"
@@ -146501,6 +146981,105 @@ export default {
       in: "query",
       type: "string"
     },
+    "body.itemSerialSequences": {
+      name: "itemSerialSequences",
+      description: "itemSerialSequences",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/itemSerialSequences"
+      }
+    },
+    "rowFilter.itemSerialSequences.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.itemSerialSequences.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.itemSerialSequences.itemId": {
+      name: "itemId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.itemSerialSequences.prefix": {
+      name: "prefix",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.itemSerialSequences.suffix": {
+      name: "suffix",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.itemSerialSequences.next": {
+      name: "next",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.itemSerialSequences.size": {
+      name: "size",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.itemSerialSequences.step": {
+      name: "step",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.itemSerialSequences.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.itemSerialSequences.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.itemSerialSequences.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.itemSerialSequences.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.itemSerialSequences.itemReadableId": {
+      name: "itemReadableId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.itemSerialSequences.itemName": {
+      name: "itemName",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.itemSerialSequences.itemTrackingType": {
+      name: "itemTrackingType",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.department": {
       name: "department",
       description: "department",
@@ -148474,6 +149053,12 @@ export default {
     },
     "rowFilter.location.tags": {
       name: "tags",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.location.code": {
+      name: "code",
       required: false,
       in: "query",
       type: "string"
@@ -161001,6 +161586,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.pickingListLine.quantityReturned": {
+      name: "quantityReturned",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.storageType": {
       name: "storageType",
       description: "storageType",
@@ -169954,6 +170545,87 @@ export default {
     },
     "rowFilter.nonConformanceActionProcess.updatedBy": {
       name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "body.itemSerialSequence": {
+      name: "itemSerialSequence",
+      description: "itemSerialSequence",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/itemSerialSequence"
+      }
+    },
+    "rowFilter.itemSerialSequence.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.itemSerialSequence.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.itemSerialSequence.itemId": {
+      name: "itemId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.itemSerialSequence.prefix": {
+      name: "prefix",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.itemSerialSequence.suffix": {
+      name: "suffix",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.itemSerialSequence.next": {
+      name: "next",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.itemSerialSequence.size": {
+      name: "size",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.itemSerialSequence.step": {
+      name: "step",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.itemSerialSequence.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.itemSerialSequence.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.itemSerialSequence.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.itemSerialSequence.updatedAt": {
+      name: "updatedAt",
       required: false,
       in: "query",
       type: "string"
@@ -181078,6 +181750,12 @@ export default {
     },
     "rowFilter.companySettings.includeMaterialsOnTraveler": {
       name: "includeMaterialsOnTraveler",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.companySettings.returnPickedMaterialTiming": {
+      name: "returnPickedMaterialTiming",
       required: false,
       in: "query",
       type: "string"

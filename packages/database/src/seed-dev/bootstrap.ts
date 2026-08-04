@@ -363,8 +363,8 @@ export async function bootstrap(
 
     // After accountDefaults — the location trigger copies posting groups from it.
     const locationResult = await client.query(
-      `INSERT INTO location (name, "addressLine1", city, "stateProvince", "postalCode", "countryCode", timezone, "companyId", "createdBy")
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'system') RETURNING id`,
+      `INSERT INTO location (name, "code", "addressLine1", city, "stateProvince", "postalCode", "countryCode", timezone, "companyId", "createdBy")
+       VALUES ($1, 'HQ', $2, $3, $4, $5, $6, $7, $8, 'system') RETURNING id`,
       [
         defaultLocation.name,
         defaultLocation.addressLine1,

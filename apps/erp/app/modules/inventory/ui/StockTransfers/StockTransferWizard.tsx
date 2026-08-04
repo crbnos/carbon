@@ -550,11 +550,29 @@ function DestinationTable({
               />
             </InputGroup>
           }
+          // The search below is local state, not a URL param — tell the table so
+          // it keeps the toolbar (and this input) mounted when a search matches
+          // nothing. Otherwise the search box unmounts and the term is stuck.
+          isFiltered={search.trim().length > 0}
           emptyState={
             isLoading ? (
               <div className="flex w-full items-center justify-center py-16">
                 <Spinner className="size-8" />
               </div>
+            ) : search.trim() ? (
+              <WizardEmptyState
+                icon={<LuPackageSearch className="h-6 w-6 flex-shrink-0" />}
+                title={t`No matching bins`}
+                hint={t`Nothing at this location matches "${search.trim()}".`}
+                action={
+                  <Button
+                    variant="secondary"
+                    onClick={() => onSearchChange("")}
+                  >
+                    {t`Clear search`}
+                  </Button>
+                }
+              />
             ) : (
               <WizardEmptyState
                 icon={<LuPackageSearch className="h-6 w-6 flex-shrink-0" />}
@@ -619,11 +637,13 @@ function QuantityDelta({
 function WizardEmptyState({
   icon,
   title,
-  hint
+  hint,
+  action
 }: {
   icon: React.ReactNode;
   title: string;
   hint?: string;
+  action?: React.ReactNode;
 }) {
   return (
     <VStack
@@ -641,6 +661,7 @@ function WizardEmptyState({
           {hint}
         </span>
       )}
+      {action}
     </VStack>
   );
 }

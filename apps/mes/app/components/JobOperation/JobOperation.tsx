@@ -174,6 +174,7 @@ type JobOperationProps = {
   job: Job;
   thumbnailPath: string | null;
   trackedEntities: TrackedEntity[];
+  isFirstOperation: boolean;
   workCenter: Promise<
     PostgrestSingleResponse<{
       name: string;
@@ -227,6 +228,7 @@ export const JobOperation = ({
   procedure,
   thumbnailPath,
   trackedEntities,
+  isFirstOperation,
   workCenter
 }: JobOperationProps) => {
   const { t } = useLingui();
@@ -296,8 +298,15 @@ export const JobOperation = ({
     operation: originalOperation,
     events,
     trackedEntities,
+    isFirstOperation,
     pauseInterval: isModalOpen,
-    procedure
+    procedure,
+    // First operation only (no labels to scan yet): auto-select the next unit.
+    // `activeStep` follows `trackedEntityId` via the sync effect above, so setting
+    // the URL param is all that's needed.
+    onAdvanceToUnit: (entity) => {
+      setParams({ trackedEntityId: entity.id });
+    }
   });
 
   const controlsHeight = useMemo(() => {
@@ -311,6 +320,10 @@ export const JobOperation = ({
     operation.machineDuration,
     operation.setupDuration
   ]);
+
+  // The side control panel only exists on some tabs; content reserves space for
+  // it via --controls-gutter so the two never overlap.
+  const showControls = !["chat", "procedure"].includes(activeTab);
 
   const mode = useMode();
   const { operationId } = useParams();
@@ -470,9 +483,12 @@ export const JobOperation = ({
         key={`operation-${operation.id}`}
         value={activeTab}
         onValueChange={setActiveTab}
-        className="w-full h-screen bg-card relative"
+        className="w-full min-w-0 h-screen bg-card relative"
         style={
-          { "--controls-height": `${controlsHeight}px` } as React.CSSProperties
+          {
+            "--controls-height": `${controlsHeight}px`,
+            "--controls-gutter": showControls ? "var(--controls-width)" : "0px"
+          } as React.CSSProperties
         }
       >
         <header className="flex h-[var(--header-height)] shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12 border-b px-2">
@@ -511,8 +527,8 @@ export const JobOperation = ({
           </HStack>
         </header>
 
-        <div className="flex flex-wrap items-center justify-between px-4 lg:pl-6 py-2 min-h-[var(--header-height)] bg-background gap-2 md:gap-4 max-w-[100vw] overflow-x-hidden scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent">
-          <HStack className="min-w-22 justify-between">
+        <div className="flex flex-nowrap items-center justify-between px-4 lg:pl-6 py-2 min-h-[var(--header-height)] bg-background gap-2 md:gap-4 w-full min-w-0 overflow-hidden">
+          <HStack className="min-w-22 shrink-0 justify-between">
             <Heading size="h4">{operation.jobReadableId}</Heading>
 
             <DropdownMenu>
@@ -554,23 +570,23 @@ export const JobOperation = ({
             </DropdownMenu>
           </HStack>
 
-          <HStack className="hidden md:flex justify-end items-center gap-2">
+          <HStack className="hidden lg:flex min-w-0 flex-1 justify-end items-center gap-3 overflow-hidden">
             {job.customer?.name && (
-              <HStack className="justify-start space-x-2">
-                <LuSquareUser className="text-muted-foreground" />
+              <HStack className="min-w-0 justify-start space-x-2">
+                <LuSquareUser className="text-muted-foreground shrink-0" />
                 <span className="text-sm truncate">{job.customer.name}</span>
               </HStack>
             )}
             {operation.description && (
-              <HStack className="justify-start space-x-2">
-                <LuClipboardCheck className="text-muted-foreground" />
+              <HStack className="min-w-0 justify-start space-x-2">
+                <LuClipboardCheck className="text-muted-foreground shrink-0" />
                 <span className="text-sm truncate">
                   {operation.description}
                 </span>
               </HStack>
             )}
             {operation.operationStatus && (
-              <HStack className="justify-start space-x-2">
+              <HStack className="min-w-0 shrink-0 justify-start space-x-2">
                 <OperationStatusIcon
                   status={
                     operation.jobStatus === "Paused"
@@ -586,15 +602,15 @@ export const JobOperation = ({
               </HStack>
             )}
             {typeof operation.duration === "number" && (
-              <HStack className="justify-start space-x-2">
-                <LuTimer className="text-muted-foreground" />
-                <span className="text-sm truncate">
+              <HStack className="min-w-0 shrink-0 justify-start space-x-2">
+                <LuTimer className="text-muted-foreground shrink-0" />
+                <span className="text-sm truncate tabular-nums">
                   {formatDurationMilliseconds(operation.duration)}
                 </span>
               </HStack>
             )}
             {operation.jobDeadlineType && (
-              <HStack className="justify-start space-x-2">
+              <HStack className="min-w-0 shrink-0 justify-start space-x-2">
                 <DeadlineIcon
                   deadlineType={operation.jobDeadlineType}
                   overdue={isOverdue}
@@ -623,13 +639,13 @@ export const JobOperation = ({
         <Separator />
 
         <TabsContent value="details" className="flex flex-col">
-          <ScrollArea className="w-full md:pr-[calc(var(--controls-width))] h-[calc(100dvh-var(--header-height)*2-var(--controls-height)-2rem)] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent">
-            <div className="flex items-start justify-between p-4 lg:p-6">
-              <HStack>
+          <ScrollArea className="w-full min-w-0 lg:pr-[var(--controls-gutter)] h-[calc(100dvh-var(--header-height)*2-var(--controls-height)-2rem)] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent">
+            <div className="flex items-start justify-between gap-4 p-4 lg:p-6">
+              <HStack className="min-w-0">
                 {thumbnailPath && (
                   <ItemThumbnail thumbnailPath={thumbnailPath} size="xl" />
                 )}
-                <div className="flex flex-col flex-grow">
+                <div className="flex flex-col flex-grow min-w-0">
                   <HStack spacing={2}>
                     <Heading size="h3" className="line-clamp-1">
                       {operation.description}
@@ -641,7 +657,7 @@ export const JobOperation = ({
                   </p>
                 </div>
               </HStack>
-              <div className="flex flex-col flex-shrink items-end">
+              <div className="flex flex-col shrink-0 items-end">
                 <Heading size="h2">
                   {formatDurationMilliseconds(
                     ((progress.setup ?? 0) +
@@ -660,7 +676,7 @@ export const JobOperation = ({
             </div>
             <Separator />
             <div className="flex items-start p-4 lg:p-6">
-              <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-3 w-full">
+              <div className="grid gap-4 grid-cols-1 md:grid-cols-2 xl:grid-cols-3 w-full min-w-0">
                 <Card>
                   <CardHeader className="flex flex-row items-center gap-2 justify-between">
                     <CardTitle>
@@ -1098,16 +1114,19 @@ export const JobOperation = ({
                                         <Td>
                                           <HStack
                                             spacing={2}
-                                            className="justify-between"
+                                            className="justify-between min-w-0"
                                           >
-                                            <VStack spacing={0}>
-                                              <span className="font-semibold text-base">
+                                            <VStack
+                                              spacing={0}
+                                              className="min-w-0"
+                                            >
+                                              <span className="font-semibold text-base truncate max-w-full">
                                                 {getItemReadableId(
                                                   items,
                                                   material.itemId ?? ""
                                                 )}
                                               </span>
-                                              <span className="text-muted-foreground text-sm">
+                                              <span className="text-muted-foreground text-sm truncate max-w-full">
                                                 {material.description}
                                               </span>
                                             </VStack>
@@ -1296,16 +1315,19 @@ export const JobOperation = ({
                                               <Td className="pl-10">
                                                 <HStack
                                                   spacing={2}
-                                                  className="justify-between"
+                                                  className="justify-between min-w-0"
                                                 >
-                                                  <VStack spacing={0}>
-                                                    <span className="font-semibold">
+                                                  <VStack
+                                                    spacing={0}
+                                                    className="min-w-0"
+                                                  >
+                                                    <span className="font-semibold truncate max-w-full">
                                                       {getItemReadableId(
                                                         items,
                                                         kittedChild.itemId
                                                       )}
                                                     </span>
-                                                    <span className="text-muted-foreground text-xs">
+                                                    <span className="text-muted-foreground text-xs truncate max-w-full">
                                                       {kittedChild.description}
                                                     </span>
                                                   </VStack>
@@ -1693,6 +1715,7 @@ export const JobOperation = ({
                             variant="secondary"
                             size="lg"
                             leftIcon={<LuBarcode />}
+                            onClick={serialModal.onOpen}
                           >
                             <Trans>Scan</Trans>
                           </Button>
@@ -1728,11 +1751,26 @@ export const JobOperation = ({
                             >
                               <Td>
                                 <div className="flex gap-2 items-center">
-                                  <span>{entity.id}</span>
+                                  <div className="flex flex-col min-w-0">
+                                    {entity.readableId ? (
+                                      <>
+                                        <span className="font-medium truncate">
+                                          {entity.readableId}
+                                        </span>
+                                        <span className="text-xs text-muted-foreground font-mono truncate">
+                                          {entity.id}
+                                        </span>
+                                      </>
+                                    ) : (
+                                      <span className="font-mono truncate">
+                                        {entity.id}
+                                      </span>
+                                    )}
+                                  </div>
                                   {entity.id === trackedEntityId && (
-                                    <LuCheck className="text-emerald-500 size-4" />
+                                    <LuCheck className="text-emerald-500 size-4 shrink-0" />
                                   )}
-                                  <Copy text={entity.id} />
+                                  <Copy text={entity.readableId || entity.id} />
                                 </div>
                               </Td>
 
@@ -1785,7 +1823,7 @@ export const JobOperation = ({
           </ScrollArea>
         </TabsContent>
         <TabsContent value="model">
-          <div className="relative w-full h-[calc(100dvh-var(--header-height)*2)] p-0">
+          <div className="relative w-full min-w-0 lg:pr-[var(--controls-gutter)] h-[calc(100dvh-var(--header-height)*2-var(--controls-height)-2rem)] p-0">
             {modelPath ? (
               <ModelPreview
                 key={modelPath}
@@ -2097,7 +2135,7 @@ export const JobOperation = ({
         <TabsContent value="chat">
           <OperationChat operation={operation} />
         </TabsContent>
-        {!["chat", "procedure"].includes(activeTab) && (
+        {showControls && (
           <Controls>
             <div className="flex flex-col items-center gap-2 p-4">
               <VStack spacing={2}>
@@ -2131,7 +2169,7 @@ export const JobOperation = ({
                 </VStack>
               </VStack>
 
-              <div className="md:hidden flex flex-col items-center gap-2 w-full">
+              <div className="lg:hidden flex flex-col items-center gap-2 w-full">
                 <VStack spacing={1}>
                   <span className="text-muted-foreground text-xs">
                     <Trans>Job</Trans>
@@ -2224,7 +2262,7 @@ export const JobOperation = ({
                 }
                 trackedEntityId={trackedEntityId}
               />
-              <div className="flex flex-row md:flex-col items-center gap-2 justify-center">
+              <div className="flex flex-row lg:flex-col items-center gap-2 justify-center">
                 <IconButtonWithTooltip
                   disabled={
                     parentIsSerial &&

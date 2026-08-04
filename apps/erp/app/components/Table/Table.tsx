@@ -111,6 +111,11 @@ interface TableProps<T extends object> {
   // Optional controls rendered in the toolbar row next to the search/filter
   // (e.g. quick filter toggles that write their own `filter` URL params).
   headerActions?: ReactNode;
+  // Set when the caller narrows `data` itself (local search/filter state the
+  // table can't see in the URL). Without it a caller-filtered-to-zero table
+  // looks "genuinely empty" and the toolbar — including the caller's own search
+  // box in `headerActions` — is hidden, leaving no way to undo the filter.
+  isFiltered?: boolean;
   table?: string;
   title?: string;
   // Optional node rendered immediately after the title (e.g. a status badge).
@@ -266,6 +271,7 @@ const Table = <T extends object>({
   primaryAction,
   emptyState,
   headerActions,
+  isFiltered = false,
   table: tableName,
   title,
   titleBadge,
@@ -1028,6 +1034,7 @@ const Table = <T extends object>({
   // the title bar + primary action.
   const isTableEmpty =
     data.length === 0 &&
+    !isFiltered &&
     !hasFilters &&
     params.getAll("sort").filter(Boolean).length === 0 &&
     !params.get("search")?.trim();

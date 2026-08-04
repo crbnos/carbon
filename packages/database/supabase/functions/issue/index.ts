@@ -17,6 +17,7 @@ import { TrackedEntityAttributes, credit, debit, journalReference } from "../lib
 
 import { getCurrentAccountingPeriod } from "../shared/get-accounting-period.ts";
 import { getNextSequence } from "../shared/get-next-sequence.ts";
+import { getNextSerialNumbers } from "../shared/get-next-serial-number.ts";
 import {
   getDefaultPostingGroup,
   resolveInventoryAccount,
@@ -1280,6 +1281,47 @@ serve(async (req: Request) => {
             trackedEntities.data.length <
             (jobOperation.data.operationQuantity ?? 0)
           ) {
+            // Number this lazily-spawned unit from the item's serial sequence, if
+            // one is configured. This unit wasn't part of the initial pre-split at
+            // job creation (e.g. the job quantity was increased afterwards, or the
+            // sequence was configured later), so it would otherwise be created with
+            // a null readableId. Resolve the job's location for the %{location}
+            // token; the reservation runs in this transaction, atomic with the spawn.
+            let spawnReadableId: string | null = null;
+            if (trackedEntity.itemId) {
+              let locationCode: string | null = null;
+              let locationName: string | null = null;
+              const jobIdForLocation = (
+                trackedEntity.attributes as Record<string, unknown>
+              ).Job;
+              if (typeof jobIdForLocation === "string") {
+                const jobRow = await client
+                  .from("job")
+                  .select("locationId")
+                  .eq("id", jobIdForLocation)
+                  .eq("companyId", companyId)
+                  .single();
+                if (jobRow.data?.locationId) {
+                  const loc = await client
+                    .from("location")
+                    .select("code, name")
+                    .eq("id", jobRow.data.locationId)
+                    .eq("companyId", companyId)
+                    .single();
+                  locationCode = loc.data?.code ?? null;
+                  locationName = loc.data?.name ?? null;
+                }
+              }
+              const spawnSerials = await getNextSerialNumbers(trx, {
+                itemId: trackedEntity.itemId,
+                companyId,
+                count: 1,
+                locationCode,
+                locationName,
+              });
+              spawnReadableId = spawnSerials[0] ?? null;
+            }
+
             // Create a new trackedEntity with the same attributes but status = Reserved
             const newTrackedEntityResult = await trx
               .insertInto("trackedEntity")
@@ -1293,6 +1335,7 @@ serve(async (req: Request) => {
                 attributes: trackedEntity.attributes,
                 itemId: trackedEntity.itemId ?? null,
                 expirationDate: trackedEntity.expirationDate ?? null,
+                readableId: spawnReadableId,
                 companyId,
                 createdBy: userId,
               })

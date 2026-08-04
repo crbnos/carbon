@@ -1774,6 +1774,9 @@ msgstr "Sind Sie sicher, dass Sie die Verkaufsauftragsposition für {0} {1} lös
 msgid "Are you sure you want to delete the scrap reason: {0}? This cannot be undone."
 msgstr "Sind Sie sicher, dass Sie den Verschrottungsgrund: {0}? löschen möchten? Dies kann nicht rückgängig gemacht werden."
 
+msgid "Are you sure you want to delete the serial number sequence for {itemLabel}? This cannot be undone."
+msgstr "Sind Sie sicher, dass Sie die Seriennummernfolge für {itemLabel} löschen möchten? Dies kann nicht rückgängig gemacht werden."
+
 msgid "Are you sure you want to delete the shift: {name} from {locationName}? This cannot be undone."
 msgstr "Sind Sie sicher, dass Sie die Schicht: {name} von {locationName} löschen möchten? Dies kann nicht rückgängig gemacht werden."
 
@@ -2040,8 +2043,14 @@ msgstr "Weist diese Einheit einem Arbeitsplatz für Linienside-Material zu, dami
 msgid "At each gate"
 msgstr "Bei jedem Gate"
 
+msgid "At job completion"
+msgstr "Nach Auftragsabschluss"
+
 msgid "At least one condition must match"
 msgstr "Mindestens eine Bedingung muss erfüllt sein"
+
+msgid "At operation completion"
+msgstr "Nach Vorgangsabschluss"
 
 msgid "Attach File"
 msgstr "Datei anhängen"
@@ -4237,6 +4246,9 @@ msgstr "Entscheiden Sie, was ein Bediener sieht, wenn er versucht, einen Batch o
 msgid "Decide what happens when an operator presses Finish on the shop floor with material still unpicked."
 msgstr "Legen Sie fest, was passiert, wenn ein Bediener auf dem Shopfloor die Funktion \"Fertig\" drückt, während Material noch nicht kommissioniert ist."
 
+msgid "Decide when material picked to a work center but not consumed flows back to the warehouse."
+msgstr "Entscheiden Sie, wann Material, das zu einem Arbeitszentrum gepickt, aber nicht verbraucht wurde, ins Lager zurückfließt."
+
 msgid "Decimal Places"
 msgstr "Dezimalstellen"
 
@@ -5117,6 +5129,9 @@ msgstr "z.B. die ersten 3 bis 4 Wochen"
 msgid "e.g. Zebra 2x1"
 msgstr "z.B. Zebra 2x1"
 
+msgid "Each operation's unused material returns as soon as the operation is done."
+msgstr "Das ungenutzte Material jedes Vorgangs wird sofort nach Abschluss des Vorgangs zurückgegeben."
+
 msgid "Each physical unit gets its own tracked entity and unique number — one entity, one unit."
 msgstr "Jede physische Einheit erhält ihre eigene nachverfocgte Einheit und eindeutige Nummer — eine Einheit, eine Einheit."
 
@@ -5368,6 +5383,9 @@ msgstr "Geplante Wartung bearbeiten"
 
 msgid "Edit Sequence"
 msgstr "Sequenz bearbeiten"
+
+msgid "Edit Serial Number"
+msgstr "Seriennummer bearbeiten"
 
 msgid "Edit Service"
 msgstr "Dienstleistung bearbeiten"
@@ -7946,6 +7964,9 @@ msgstr "Linkes Element"
 msgid "Leftover Parts Detected"
 msgstr "Überschüssige Teile erkannt"
 
+msgid "Leftover staged material returns when the whole job completes."
+msgstr "Überschüssiges bereitgestelltes Material wird zurückgegeben, wenn der gesamte Auftrag abgeschlossen ist."
+
 msgid "Less manual work"
 msgstr "Weniger manuelle Arbeit"
 
@@ -9056,6 +9077,9 @@ msgstr "Neue Verkaufsauftragsposition"
 msgid "New Scheduled Maintenance"
 msgstr "Neue geplante Wartung"
 
+msgid "New Serial Number"
+msgstr "Neue Seriennummer"
+
 msgid "New Service"
 msgstr "Neue Dienstleistung"
 
@@ -9350,6 +9374,9 @@ msgstr "Keine Übereinstimmungen für \"{query}\". Versuchen Sie einen anderen S
 msgid "No matches. Type to create one."
 msgstr "Keine Übereinstimmungen. Geben Sie ein, um eine zu erstellen."
 
+msgid "No matching bins"
+msgstr "Keine übereinstimmenden Behälter"
+
 msgid "No new notifications"
 msgstr "Keine neuen Benachrichtigungen"
 
@@ -9595,6 +9622,10 @@ msgstr "Notizen (optional)"
 
 msgid "Nothing"
 msgstr ""
+
+#. placeholder {0}: search.trim()
+msgid "Nothing at this location matches \"{0}\"."
+msgstr "Nichts an diesem Ort entspricht \"{0}\"."
 
 msgid "Nothing else at this location has stock to pull from."
 msgstr "Keine anderen Artikel an diesem Ort haben Bestand zum Entnehmen."
@@ -11755,6 +11786,12 @@ msgstr "Erneut versuchen"
 msgid "Return Home"
 msgstr "Zur Startseite zurück"
 
+msgid "Returned"
+msgstr "Zurückgegeben"
+
+msgid "Returning unused picked material"
+msgstr "Rückgabe ungenutzten Pickmaterials"
+
 msgid "Returns:"
 msgstr ""
 
@@ -12571,6 +12608,12 @@ msgstr "Seriennummer"
 
 msgid "Serial Number:"
 msgstr "Seriennummer:"
+
+msgid "Serial Numbers"
+msgstr "Seriennummern"
+
+msgid "Serial numbers are only generated for serial- or batch-tracked items."
+msgstr "Seriennummern werden nur für Artikel mit Serien- oder Chargenverfolgung generiert."
 
 msgid "Serial or Batch Tracking Required"
 msgstr "Serien- oder Chargenverfolgung erforderlich"
@@ -14532,6 +14575,9 @@ msgstr "Dies ist der Monat, in dem Ihr Geschäftsjahr beginnt."
 msgid "This is the month your tax year starts."
 msgstr "Dies ist der Monat, in dem Ihr Steuerjahr beginnt."
 
+msgid "this item"
+msgstr "diesen Artikel"
+
 msgid "This item is built via a configurator and resolves its components per-order; jobs created for it inherit the configurator's resolved BOM."
 msgstr "Dieser Artikel wird über einen Konfigurator gebaut und löst seine Komponenten pro Bestellung auf; für ihn erstellte Aufträge erben die aufgelöste Stückliste des Konfigurators."
 
@@ -15161,6 +15207,9 @@ msgstr "Unbenanntes Diagramm"
 
 msgid "Untitled line"
 msgstr "Unbenannte Zeile"
+
+msgid "Unused picked material flushed back from the work center to the warehouse."
+msgstr "Ungenutztes Pickmaterial aus dem Arbeitszentrum zurück ins Lager gespült."
 
 msgid "UoM"
 msgstr "UoM"

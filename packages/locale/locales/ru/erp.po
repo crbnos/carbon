@@ -1774,6 +1774,9 @@ msgstr "Вы уверены, что хотите удалить строку з�
 msgid "Are you sure you want to delete the scrap reason: {0}? This cannot be undone."
 msgstr "Вы уверены, что хотите удалить причину брака: {0}? Это действие невозможно отменить."
 
+msgid "Are you sure you want to delete the serial number sequence for {itemLabel}? This cannot be undone."
+msgstr "Вы уверены, что хотите удалить последовательность серийных номеров для {itemLabel}? Это невозможно отменить."
+
 msgid "Are you sure you want to delete the shift: {name} from {locationName}? This cannot be undone."
 msgstr "Вы уверены, что хотите удалить смену: {name} из {locationName}? Это действие невозможно отменить."
 
@@ -2040,8 +2043,14 @@ msgstr "Назначает эту единицу рабочему центру �
 msgid "At each gate"
 msgstr "На каждом этапе"
 
+msgid "At job completion"
+msgstr "При завершении работы"
+
 msgid "At least one condition must match"
 msgstr "По крайней мере одно условие должно совпадать"
+
+msgid "At operation completion"
+msgstr "При завершении операции"
 
 msgid "Attach File"
 msgstr "Прикрепить файл"
@@ -4237,6 +4246,9 @@ msgstr "Решите, что видит оператор при попытке �
 msgid "Decide what happens when an operator presses Finish on the shop floor with material still unpicked."
 msgstr "Решите, что произойдет, когда оператор нажмет кнопку 'Завершить' на производстве с неподобранным материалом."
 
+msgid "Decide when material picked to a work center but not consumed flows back to the warehouse."
+msgstr "Решение о том, когда материал, отобранный в рабочий центр, но не использованный, поступает обратно на склад."
+
 msgid "Decimal Places"
 msgstr "Десятичные разряды"
 
@@ -5117,6 +5129,9 @@ msgstr "например, первые 3-4 недели"
 msgid "e.g. Zebra 2x1"
 msgstr "например Zebra 2x1"
 
+msgid "Each operation's unused material returns as soon as the operation is done."
+msgstr "Неиспользованный материал каждой операции возвращается сразу после завершения операции."
+
 msgid "Each physical unit gets its own tracked entity and unique number — one entity, one unit."
 msgstr "Каждая физическая единица получает свою собственную отслеживаемую сущность и уникальный номер — одна сущность, одна единица."
 
@@ -5368,6 +5383,9 @@ msgstr "Редактировать плановое обслуживание"
 
 msgid "Edit Sequence"
 msgstr "Редактировать последовательность"
+
+msgid "Edit Serial Number"
+msgstr "Редактировать серийный номер"
 
 msgid "Edit Service"
 msgstr "Редактировать услугу"
@@ -7946,6 +7964,9 @@ msgstr "Левый элемент"
 msgid "Leftover Parts Detected"
 msgstr "Обнаружены лишние детали"
 
+msgid "Leftover staged material returns when the whole job completes."
+msgstr "Оставшийся подготовленный материал возвращается по завершении всей работы."
+
 msgid "Less manual work"
 msgstr "Меньше ручной работы"
 
@@ -9056,6 +9077,9 @@ msgstr "Новая строка заказа продажи"
 msgid "New Scheduled Maintenance"
 msgstr "Новое плановое обслуживание"
 
+msgid "New Serial Number"
+msgstr "Новый серийный номер"
+
 msgid "New Service"
 msgstr "Новая услуга"
 
@@ -9350,6 +9374,9 @@ msgstr "Нет совпадений для \"{query}\". Попробуйте д�
 msgid "No matches. Type to create one."
 msgstr "Совпадений не найдено. Введите текст для создания."
 
+msgid "No matching bins"
+msgstr "Нет подходящих ячеек"
+
 msgid "No new notifications"
 msgstr "Нет новых уведомлений"
 
@@ -9595,6 +9622,10 @@ msgstr "Примечания (опционально)"
 
 msgid "Nothing"
 msgstr ""
+
+#. placeholder {0}: search.trim()
+msgid "Nothing at this location matches \"{0}\"."
+msgstr "На этом месте нет совпадений с \"{0}\"."
 
 msgid "Nothing else at this location has stock to pull from."
 msgstr "На этом месте больше нечего извлекать из запаса."
@@ -11755,6 +11786,12 @@ msgstr "Повторить"
 msgid "Return Home"
 msgstr "Вернуться на главную"
 
+msgid "Returned"
+msgstr "Возвращено"
+
+msgid "Returning unused picked material"
+msgstr "Возврат неиспользованного отобранного материала"
+
 msgid "Returns:"
 msgstr ""
 
@@ -12571,6 +12608,12 @@ msgstr "Серийный номер"
 
 msgid "Serial Number:"
 msgstr "Серийный номер:"
+
+msgid "Serial Numbers"
+msgstr "Серийные номера"
+
+msgid "Serial numbers are only generated for serial- or batch-tracked items."
+msgstr "Серийные номера генерируются только для серийных или партионно отслеживаемых товаров."
 
 msgid "Serial or Batch Tracking Required"
 msgstr "Требуется отслеживание по серийному номеру или партии"
@@ -14532,6 +14575,9 @@ msgstr "Это месяц, когда начинается ваш финансо
 msgid "This is the month your tax year starts."
 msgstr "Это месяц, когда начинается ваш налоговый год."
 
+msgid "this item"
+msgstr "этот товар"
+
 msgid "This item is built via a configurator and resolves its components per-order; jobs created for it inherit the configurator's resolved BOM."
 msgstr "Этот элемент строится через конфигуратор и разрешает его компоненты в зависимости от заказа; задания, созданные для него, наследуют разрешенный BOM конфигуратора."
 
@@ -15161,6 +15207,9 @@ msgstr "Безымянная диаграмма"
 
 msgid "Untitled line"
 msgstr "Безымянная строка"
+
+msgid "Unused picked material flushed back from the work center to the warehouse."
+msgstr "Неиспользованный отобранный материал поступает обратно из рабочего центра на склад."
 
 msgid "UoM"
 msgstr "УИ"

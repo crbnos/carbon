@@ -245,8 +245,10 @@ export default function AuthenticatedRoute() {
     });
   });
 
+  // Scroll stays unlocked until lg, where the controls dock beside the content
+  // instead of stacking below it.
   return (
-    <div className="h-screen w-screen overflow-y-auto md:overflow-hidden">
+    <div className="h-screen w-full overflow-y-auto lg:overflow-hidden">
       {user?.acknowledgedITAR === false && CONTROLLED_ENVIRONMENT ? (
         <ItarPopup
           acknowledgeAction={path.to.acknowledge}

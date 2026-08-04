@@ -1774,6 +1774,9 @@ msgstr "Are you sure you want to delete the sales order line for {0} {1}? This c
 msgid "Are you sure you want to delete the scrap reason: {0}? This cannot be undone."
 msgstr "Are you sure you want to delete the scrap reason: {0}? This cannot be undone."
 
+msgid "Are you sure you want to delete the serial number sequence for {itemLabel}? This cannot be undone."
+msgstr "Are you sure you want to delete the serial number sequence for {itemLabel}? This cannot be undone."
+
 msgid "Are you sure you want to delete the shift: {name} from {locationName}? This cannot be undone."
 msgstr "Are you sure you want to delete the shift: {name} from {locationName}? This cannot be undone."
 
@@ -2040,8 +2043,14 @@ msgstr "Assigns this unit to a work center for lineside material, so operators s
 msgid "At each gate"
 msgstr "At each gate"
 
+msgid "At job completion"
+msgstr "At job completion"
+
 msgid "At least one condition must match"
 msgstr "At least one condition must match"
+
+msgid "At operation completion"
+msgstr "At operation completion"
 
 msgid "Attach File"
 msgstr "Attach File"
@@ -4237,6 +4246,9 @@ msgstr "Decide what an operator sees if they try to issue a batch or serial that
 msgid "Decide what happens when an operator presses Finish on the shop floor with material still unpicked."
 msgstr "Decide what happens when an operator presses Finish on the shop floor with material still unpicked."
 
+msgid "Decide when material picked to a work center but not consumed flows back to the warehouse."
+msgstr "Decide when material picked to a work center but not consumed flows back to the warehouse."
+
 msgid "Decimal Places"
 msgstr "Decimal Places"
 
@@ -5117,6 +5129,9 @@ msgstr "e.g. the first 3 to 4 weeks"
 msgid "e.g. Zebra 2x1"
 msgstr "e.g. Zebra 2x1"
 
+msgid "Each operation's unused material returns as soon as the operation is done."
+msgstr "Each operation's unused material returns as soon as the operation is done."
+
 msgid "Each physical unit gets its own tracked entity and unique number — one entity, one unit."
 msgstr "Each physical unit gets its own tracked entity and unique number — one entity, one unit."
 
@@ -5368,6 +5383,9 @@ msgstr "Edit Scheduled Maintenance"
 
 msgid "Edit Sequence"
 msgstr "Edit Sequence"
+
+msgid "Edit Serial Number"
+msgstr "Edit Serial Number"
 
 msgid "Edit Service"
 msgstr "Edit Service"
@@ -7946,6 +7964,9 @@ msgstr "Left item"
 msgid "Leftover Parts Detected"
 msgstr "Leftover Parts Detected"
 
+msgid "Leftover staged material returns when the whole job completes."
+msgstr "Leftover staged material returns when the whole job completes."
+
 msgid "Less manual work"
 msgstr "Less manual work"
 
@@ -9056,6 +9077,9 @@ msgstr "New Sales Order Line"
 msgid "New Scheduled Maintenance"
 msgstr "New Scheduled Maintenance"
 
+msgid "New Serial Number"
+msgstr "New Serial Number"
+
 msgid "New Service"
 msgstr "New Service"
 
@@ -9350,6 +9374,9 @@ msgstr "No matches for \"{query}\". Try a different search term."
 msgid "No matches. Type to create one."
 msgstr "No matches. Type to create one."
 
+msgid "No matching bins"
+msgstr "No matching bins"
+
 msgid "No new notifications"
 msgstr "No new notifications"
 
@@ -9595,6 +9622,10 @@ msgstr "Notes (optional)"
 
 msgid "Nothing"
 msgstr "Nothing"
+
+#. placeholder {0}: search.trim()
+msgid "Nothing at this location matches \"{0}\"."
+msgstr "Nothing at this location matches \"{0}\"."
 
 msgid "Nothing else at this location has stock to pull from."
 msgstr "Nothing else at this location has stock to pull from."
@@ -11755,6 +11786,12 @@ msgstr "Retry"
 msgid "Return Home"
 msgstr "Return Home"
 
+msgid "Returned"
+msgstr "Returned"
+
+msgid "Returning unused picked material"
+msgstr "Returning unused picked material"
+
 msgid "Returns:"
 msgstr "Returns:"
 
@@ -12571,6 +12608,12 @@ msgstr "Serial Number"
 
 msgid "Serial Number:"
 msgstr "Serial Number:"
+
+msgid "Serial Numbers"
+msgstr "Serial Numbers"
+
+msgid "Serial numbers are only generated for serial- or batch-tracked items."
+msgstr "Serial numbers are only generated for serial- or batch-tracked items."
 
 msgid "Serial or Batch Tracking Required"
 msgstr "Serial or Batch Tracking Required"
@@ -14532,6 +14575,9 @@ msgstr "This is the month your fiscal year starts."
 msgid "This is the month your tax year starts."
 msgstr "This is the month your tax year starts."
 
+msgid "this item"
+msgstr "this item"
+
 msgid "This item is built via a configurator and resolves its components per-order; jobs created for it inherit the configurator's resolved BOM."
 msgstr "This item is built via a configurator and resolves its components per-order; jobs created for it inherit the configurator's resolved BOM."
 
@@ -15161,6 +15207,9 @@ msgstr "Untitled Diagram"
 
 msgid "Untitled line"
 msgstr "Untitled line"
+
+msgid "Unused picked material flushed back from the work center to the warehouse."
+msgstr "Unused picked material flushed back from the work center to the warehouse."
 
 msgid "UoM"
 msgstr "UoM"

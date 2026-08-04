@@ -42,6 +42,7 @@ import { getMode, setMode } from "~/services/mode.server";
 import Background from "~/styles/background.css?url";
 import NProgress from "~/styles/nprogress.css?url";
 import Tailwind from "~/styles/tailwind.css?url";
+import "@carbon/lib/shims";
 import type { Route } from "./+types/root";
 import { getTheme } from "./services/theme.server";
 

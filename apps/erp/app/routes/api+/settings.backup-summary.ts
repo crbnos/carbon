@@ -1,7 +1,7 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { isInternalEmail } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { LoaderFunctionArgs } from "react-router";
+import { canAccessBackups } from "~/utils/backups";
 
 // Recognizable entities a backup carries, grouped for the "what's in a backup"
 // popover. Not exhaustive (the export covers every scoped table) — just the
@@ -93,7 +93,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
     request,
     { view: "settings" }
   );
-  if (!isInternalEmail(email)) throw new Response("Not found", { status: 404 });
+  if (!canAccessBackups(email))
+    throw new Response("Not found", { status: 404 });
 
   const groups = await Promise.all(
     GROUPS.map(async (group) => {
