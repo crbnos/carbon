@@ -24,6 +24,8 @@ export type EntityNodeData = {
   stateCount?: number;
   /** Last state of the chain — this is where the lot's stock sits today. */
   isCurrentState?: boolean;
+  /** Bin this state sits in — what makes two states either side of a move differ. */
+  stateLocation?: string | null;
 };
 
 export type ActivityNodeData = {
@@ -118,6 +120,9 @@ type LotEvent = {
   createdAt: string;
   inQty: number | null;
   outQty: number | null;
+  /** Bin names, enriched server-side onto movement activities. */
+  fromBin: string | null;
+  toBin: string | null;
 };
 
 type LotEventWiring = {
@@ -133,6 +138,8 @@ type LotEventWiring = {
 
 type LotTimeline = {
   stateQuantities: number[];
+  /** Bin each state sits in, when a movement made it knowable. */
+  stateLocations: (string | null)[];
   wiring: LotEventWiring[];
 };
 
@@ -209,15 +216,21 @@ function buildLotTimeline(
     }
   }
 
-  // Forward pass: assign state indexes.
+  // Forward pass: assign state indexes and track where the lot sits. A
+  // movement is the only event that tells us a bin, so locations stay null
+  // until one appears, then carry forward.
   const stateQuantities: number[] = [];
+  const stateLocations: (string | null)[] = [];
   const wiring: LotEventWiring[] = [];
+  let location: string | null = null;
   for (let i = 0; i < events.length; i++) {
     const ev = events[i];
     let beforeState: number | null = null;
     if (before[i] !== null) {
       if (stateQuantities.length === 0) {
+        location = ev.movement ? ev.fromBin : null;
         stateQuantities.push(before[i]!);
+        stateLocations.push(location);
       } else if (
         Math.abs(stateQuantities[stateQuantities.length - 1] - before[i]!) >
         QTY_EPSILON
@@ -225,13 +238,18 @@ function buildLotTimeline(
         return null;
       }
       beforeState = stateQuantities.length - 1;
+      // A later movement names the bin the lot was already sitting in —
+      // backfill it so the pre-move state isn't left blank.
+      if (ev.movement && ev.fromBin && stateLocations[beforeState] === null) {
+        stateLocations[beforeState] = ev.fromBin;
+        if (beforeState === stateQuantities.length - 1) location = ev.fromBin;
+      }
     }
     let afterState: number | null = null;
-    // Movements relocate the lot without transforming it — same id, same
-    // quantity. They dangle off the live state as an event marker instead of
-    // minting an identical-looking successor state.
-    if (after[i] !== null && !ev.movement) {
+    if (after[i] !== null) {
+      if (ev.movement && ev.toBin) location = ev.toBin;
       stateQuantities.push(after[i]!);
+      stateLocations.push(location);
       afterState = stateQuantities.length - 1;
     }
     wiring.push({
@@ -244,7 +262,7 @@ function buildLotTimeline(
     });
   }
   if (stateQuantities.length === 0) return null;
-  return { stateQuantities, wiring };
+  return { stateQuantities, stateLocations, wiring };
 }
 
 export function payloadToFlow(
@@ -264,13 +282,16 @@ export function payloadToFlow(
     let ev = events.get(activityId);
     if (ev === undefined) {
       const activity = activityById.get(activityId);
+      const attrs = activity?.attributes as Record<string, unknown> | undefined;
       ev = {
         activityId,
         type: activity?.type ?? null,
         movement: isMovementActivity(activity?.type),
         createdAt: (activity?.createdAt as string | undefined) ?? "",
         inQty: null,
-        outQty: null
+        outQty: null,
+        fromBin: (attrs?.["From Shelf Name"] as string | undefined) ?? null,
+        toBin: (attrs?.["To Shelf Name"] as string | undefined) ?? null
       };
       events.set(activityId, ev);
     }
@@ -335,7 +356,8 @@ export function payloadToFlow(
           stateQuantity: stateQuantities[k],
           stateIndex: k,
           stateCount: stateQuantities.length,
-          isCurrentState: k === stateQuantities.length - 1
+          isCurrentState: k === stateQuantities.length - 1,
+          stateLocation: timeline?.stateLocations[k] ?? null
         }
       });
     }

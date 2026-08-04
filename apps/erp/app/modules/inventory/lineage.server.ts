@@ -1,5 +1,5 @@
 import type { Database } from "@carbon/database";
-import { pluckUnique } from "@carbon/utils";
+import { indexByMapped, pluckUnique } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type {
   Activity,
@@ -498,4 +498,63 @@ export function toGraphData(payload: LineagePayload): GraphData {
   ];
 
   return { nodes, links };
+}
+
+/**
+ * Resolve the storage-unit ids that movement activities carry in their
+ * attributes ("From Shelf" / "To Shelf") into names, written back as
+ * "From Shelf Name" / "To Shelf Name".
+ *
+ * The graph renders a lot as a chain of states; a movement produces two states
+ * with the SAME quantity, so the bin is the only thing that distinguishes
+ * them. Without this they render identically and a Pick looks like a no-op.
+ * Enriching here keeps the ids server-side and needs no extra plumbing — the
+ * activities already flow through the payload to the layout worker.
+ */
+export async function enrichActivityBinNames(
+  client: SupabaseClient<Database>,
+  payload: LineagePayload
+): Promise<LineagePayload> {
+  const binIds = new Set<string>();
+  for (const activity of payload.activities) {
+    const attrs = activity.attributes as Record<string, unknown> | null;
+    for (const key of ["From Shelf", "To Shelf"]) {
+      const id = attrs?.[key];
+      if (typeof id === "string" && id) binIds.add(id);
+    }
+  }
+  if (binIds.size === 0) return payload;
+
+  const storageUnits = await client
+    .from("storageUnit")
+    .select("id, name")
+    .in("id", Array.from(binIds));
+  if (storageUnits.error || !storageUnits.data?.length) return payload;
+
+  const nameById = indexByMapped(
+    storageUnits.data,
+    (row) => row.id,
+    (row) => row.name
+  );
+
+  return {
+    ...payload,
+    activities: payload.activities.map((activity) => {
+      const attrs = activity.attributes as Record<string, unknown> | null;
+      const from = attrs?.["From Shelf"];
+      const to = attrs?.["To Shelf"];
+      const fromName =
+        typeof from === "string" ? nameById.get(from) : undefined;
+      const toName = typeof to === "string" ? nameById.get(to) : undefined;
+      if (!fromName && !toName) return activity;
+      return {
+        ...activity,
+        attributes: {
+          ...(attrs ?? {}),
+          ...(fromName ? { "From Shelf Name": fromName } : {}),
+          ...(toName ? { "To Shelf Name": toName } : {})
+        }
+      };
+    })
+  };
 }

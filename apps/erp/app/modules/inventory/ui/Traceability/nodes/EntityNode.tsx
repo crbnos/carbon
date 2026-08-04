@@ -3,8 +3,12 @@ import { Handle, type NodeProps, Position, useStore } from "@xyflow/react";
 import { memo } from "react";
 import { LuChevronDown, LuChevronUp, LuMinus } from "react-icons/lu";
 import { NODE_RADIUS, NODE_SIZE } from "../constants";
-import { entityStatusMeta } from "../metadata";
+import { ACTIVITY_KIND_META, entityStatusMeta } from "../metadata";
 import { type EntityNodeData, entityHeadline, formatQuantity } from "../utils";
+
+// Bins are what movements change, so the location chip borrows the movement
+// (Transfer) hue rather than inventing a colour.
+const MOVEMENT_COLOR = ACTIVITY_KIND_META.Transfer.color;
 
 type Props = NodeProps & {
   data: EntityNodeData & {
@@ -45,6 +49,14 @@ function EntityNodeImpl({ data, selected, id }: Props) {
     (data.stateCount ?? 1) > 1 &&
     entity.status !== "Consumed" &&
     entity.status !== "Rejected";
+  // A lot's chain repeats one headline per state; show it on the first and
+  // current states only. Mid-chain states carry just their bin, which is the
+  // thing that actually changed.
+  const showHeadline =
+    data.stateIndex === undefined ||
+    data.stateIndex === 0 ||
+    data.isCurrentState === true ||
+    selected;
 
   return (
     <div
@@ -165,22 +177,17 @@ function EntityNodeImpl({ data, selected, id }: Props) {
           )}
         </>
       )}
-      {showLabel &&
-        // A lot's chain repeats the same headline per state — label only the
-        // first and current states to keep mid-chain states quiet.
-        (data.stateIndex === undefined ||
-          data.stateIndex === 0 ||
-          data.isCurrentState === true ||
-          selected) && (
-          <div
-            className={cn(
-              "absolute left-1/2 -translate-x-1/2 whitespace-nowrap pointer-events-none select-none flex flex-col items-center",
-              data.isRoot || selected
-                ? "text-foreground"
-                : "text-muted-foreground"
-            )}
-            style={{ top: size + 4 }}
-          >
+      {showLabel && (showHeadline || data.stateLocation) && (
+        <div
+          className={cn(
+            "absolute left-1/2 -translate-x-1/2 whitespace-nowrap pointer-events-none select-none flex flex-col items-center",
+            data.isRoot || selected
+              ? "text-foreground"
+              : "text-muted-foreground"
+          )}
+          style={{ top: size + 4 }}
+        >
+          {showHeadline && (
             <span
               className={cn(
                 "text-[11px] tracking-tight px-1.5 py-px rounded bg-background",
@@ -189,8 +196,25 @@ function EntityNodeImpl({ data, selected, id }: Props) {
             >
               {headline}
             </span>
-          </div>
-        )}
+          )}
+          {data.stateLocation && (
+            // The bin is what distinguishes two states either side of a move —
+            // without it a Pick looks like it changed nothing. Tinted with the
+            // movement/Transfer hue so location reads as "where", tying it to
+            // the blue activities that change it.
+            <span
+              className="mt-0.5 text-[9px] tracking-tight px-1 py-px rounded border"
+              style={{
+                color: MOVEMENT_COLOR,
+                borderColor: `color-mix(in srgb, ${MOVEMENT_COLOR} 35%, transparent)`,
+                backgroundColor: `color-mix(in srgb, ${MOVEMENT_COLOR} 12%, hsl(var(--background)))`
+              }}
+            >
+              {data.stateLocation}
+            </span>
+          )}
+        </div>
+      )}
     </div>
   );
 }

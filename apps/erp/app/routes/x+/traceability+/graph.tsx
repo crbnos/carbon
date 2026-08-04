@@ -13,6 +13,7 @@ import { Link, redirect, useLoaderData, useNavigation } from "react-router";
 import { Empty } from "~/components";
 import type { Activity, TrackedEntity } from "~/modules/inventory";
 import {
+  enrichActivityBinNames,
   fetchContainmentsForEntities,
   fetchJobScopedLineage,
   fetchLineageSubgraph,
@@ -80,7 +81,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       payload.entities.map((e) => e.id)
     );
     return {
-      ...payload,
+      ...(await enrichActivityBinNames(client, payload)),
       containments,
       rootId: trackedEntityId,
       rootType: "entity" as const,
@@ -96,7 +97,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       jobReadableId
     );
     return {
-      ...payload,
+      ...(await enrichActivityBinNames(client, payload)),
       rootId: jobId,
       rootType: "job" as const,
       depth
@@ -167,13 +168,18 @@ export async function loader({ request }: LoaderFunctionArgs) {
   );
 
   return {
-    entities: allEntities,
-    inputs: [...(directInputs?.data || []), ...(additionalInputs?.data || [])],
-    outputs: [
-      ...(directOutputs?.data || []),
-      ...(additionalOutputs?.data || [])
-    ],
-    activities: allActivities,
+    ...(await enrichActivityBinNames(client, {
+      entities: allEntities,
+      inputs: [
+        ...(directInputs?.data || []),
+        ...(additionalInputs?.data || [])
+      ],
+      outputs: [
+        ...(directOutputs?.data || []),
+        ...(additionalOutputs?.data || [])
+      ],
+      activities: allActivities
+    })),
     containments,
     rootId: trackedActivityId!,
     rootType: "activity" as const,
