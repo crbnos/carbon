@@ -6,6 +6,7 @@ import { z } from "https://deno.land/x/zod@v3.21.4/mod.ts";
 import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
 import { corsPreflight, errorResponse, jsonResponse } from "../lib/response.ts";
 import type { Database } from "../lib/types.ts";
+import { buildBatchSplitRecords } from "../shared/batch-split.ts";
 
 const pool = getConnectionPool(1);
 const db = getDatabaseClient<DB>(pool);
@@ -400,133 +401,71 @@ serve(async (req: Request) => {
           const transferQuantity = quantity;
           const inserts: ItemLedgerInsert[] = [];
 
-          // Split the batch when picking less than the whole entity.
+          // Split the batch when picking less than the whole entity: the shelf
+          // entity keeps its id and is decremented; a NEW child entity departs
+          // to the lineside bin carrying the drawn quantity.
+          let pickedEntityId = trackedEntityId;
           if (entityQuantity !== transferQuantity) {
-            const remainingQuantity = entityQuantity - transferQuantity;
-            const newTrackedEntityId = nanoid();
-            splitEntityId = newTrackedEntityId;
+            const childId = nanoid();
+            splitEntityId = childId;
+            pickedEntityId = childId;
 
-            const splitActivityId = nanoid();
+            const split = buildBatchSplitRecords({
+              parent: {
+                id: trackedEntity.id,
+                readableId: trackedEntity.readableId,
+                quantity: entityQuantity,
+                sourceDocument: trackedEntity.sourceDocument,
+                sourceDocumentId: trackedEntity.sourceDocumentId,
+                sourceDocumentReadableId:
+                  trackedEntity.sourceDocumentReadableId,
+                itemId: trackedEntity.itemId ?? null,
+                expirationDate: trackedEntity.expirationDate ?? null,
+                attributes: trackedEntity.attributes as Record<
+                  string,
+                  unknown
+                > | null
+              },
+              drawQuantity: transferQuantity,
+              childId,
+              splitActivityId: nanoid(),
+              activitySourceDocument: "Picking List",
+              activitySourceDocumentId: pickingListId,
+              bin: { storageUnitId: fromStorageUnitId, locationId },
+              itemLedgerItemId: line.itemId,
+              companyId,
+              userId,
+              postingDate: today,
+              childStatus: "Available"
+            });
+
             await trx
               .insertInto("trackedActivity")
-              .values({
-                id: splitActivityId,
-                type: "Split",
-                sourceDocument: "Picking List",
-                sourceDocumentId: pickingListId,
-                attributes: {
-                  "Original Quantity": entityQuantity,
-                  "Transfer Quantity": transferQuantity,
-                  "Remaining Quantity": remainingQuantity,
-                  "Split Entity ID": newTrackedEntityId
-                },
-                companyId,
-                createdBy: userId
-              })
-              .execute();
-
-            await trx
-              .insertInto("trackedActivityInput")
-              .values({
-                trackedActivityId: splitActivityId,
-                trackedEntityId,
-                quantity: entityQuantity,
-                companyId,
-                createdBy: userId
-              })
+              .values(split.activityInsert)
               .execute();
 
             await trx
               .insertInto("trackedEntity")
-              .values({
-                id: newTrackedEntityId,
-                readableId: trackedEntity.readableId,
-                sourceDocument: trackedEntity.sourceDocument,
-                sourceDocumentId: trackedEntity.sourceDocumentId,
-                sourceDocumentReadableId: trackedEntity.sourceDocumentReadableId,
-                quantity: remainingQuantity,
-                status: "Available",
-                attributes: trackedEntity.attributes,
-                itemId: trackedEntity.itemId ?? null,
-                expirationDate: trackedEntity.expirationDate ?? null,
-                companyId,
-                createdBy: userId
-              })
+              .values(split.childEntityInsert)
+              .execute();
+
+            await trx
+              .insertInto("trackedActivityInput")
+              .values(split.activityInputInsert)
               .execute();
 
             await trx
               .insertInto("trackedActivityOutput")
-              .values([
-                {
-                  trackedActivityId: splitActivityId,
-                  trackedEntityId: newTrackedEntityId,
-                  quantity: remainingQuantity,
-                  companyId,
-                  createdBy: userId
-                },
-                {
-                  trackedActivityId: splitActivityId,
-                  trackedEntityId,
-                  quantity: transferQuantity,
-                  companyId,
-                  createdBy: userId
-                }
-              ])
+              .values(split.activityOutputInsert)
               .execute();
 
             await trx
               .updateTable("trackedEntity")
-              .set({
-                quantity: transferQuantity,
-                attributes: {
-                  ...(trackedEntity.attributes as Record<string, unknown>),
-                  "Split Entity ID": newTrackedEntityId
-                }
-              })
+              .set(split.parentUpdate)
               .where("id", "=", trackedEntityId)
               .execute();
 
-            inserts.push(
-              {
-                postingDate: today,
-                itemId: line.itemId,
-                quantity: -entityQuantity,
-                locationId,
-                storageUnitId: fromStorageUnitId,
-                entryType: "Negative Adjmt.",
-                documentType: "Batch Split",
-                documentId: splitActivityId,
-                trackedEntityId,
-                createdBy: userId,
-                companyId
-              },
-              {
-                postingDate: today,
-                itemId: line.itemId,
-                quantity: transferQuantity,
-                locationId,
-                storageUnitId: fromStorageUnitId,
-                entryType: "Positive Adjmt.",
-                documentType: "Batch Split",
-                documentId: splitActivityId,
-                trackedEntityId,
-                createdBy: userId,
-                companyId
-              },
-              {
-                postingDate: today,
-                itemId: line.itemId,
-                quantity: remainingQuantity,
-                locationId,
-                storageUnitId: fromStorageUnitId,
-                entryType: "Positive Adjmt.",
-                documentType: "Batch Split",
-                documentId: splitActivityId,
-                trackedEntityId: newTrackedEntityId,
-                createdBy: userId,
-                companyId
-              }
-            );
+            inserts.push(...split.ledgerInserts);
           }
 
           const activityId = nanoid();
@@ -552,7 +491,7 @@ serve(async (req: Request) => {
             .insertInto("trackedActivityInput")
             .values({
               trackedActivityId: activityId,
-              trackedEntityId,
+              trackedEntityId: pickedEntityId,
               quantity: transferQuantity,
               companyId,
               createdBy: userId
@@ -570,7 +509,7 @@ serve(async (req: Request) => {
               entryType: "Transfer",
               documentType: "Direct Transfer",
               documentId: pickingListId,
-              trackedEntityId,
+              trackedEntityId: pickedEntityId,
               createdBy: userId,
               companyId
             },
@@ -583,7 +522,7 @@ serve(async (req: Request) => {
               entryType: "Transfer",
               documentType: "Direct Transfer",
               documentId: pickingListId,
-              trackedEntityId,
+              trackedEntityId: pickedEntityId,
               createdBy: userId,
               companyId
             }
@@ -605,12 +544,14 @@ serve(async (req: Request) => {
             .execute();
 
           // Record which lot this line picked (drives picked-lot display,
-          // unpick, and the picker's allocation-dedup).
+          // unpick, and the picker's allocation-dedup). On a split the picked
+          // lot is the departing CHILD — the lineside entity the operator
+          // consumes — never the shelf survivor.
           await trx
             .insertInto("pickingListLineTrackedEntity")
             .values({
               pickingListLineId,
-              trackedEntityId,
+              trackedEntityId: pickedEntityId,
               quantity: transferQuantity,
               quantityPicked: transferQuantity
             })
