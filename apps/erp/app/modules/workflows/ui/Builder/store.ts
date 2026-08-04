@@ -11,11 +11,11 @@ import { createStore } from "zustand";
 import type { BuilderEdge, BuilderNode } from "../../types";
 import {
   asWorkflowNode,
+  canConnect,
   createNode,
   fromReactFlow,
   nextNodePosition,
-  toBuilderNode,
-  wouldCreateCycle
+  toBuilderNode
 } from "./graph";
 import { layoutPositions } from "./layout";
 
@@ -115,18 +115,9 @@ export function createBuilderStore(initial: {
     },
 
     onConnect: (connection) => {
-      const { isReadOnly, edges } = get();
+      const { isReadOnly, nodes, edges } = get();
       if (isReadOnly) return;
-      if (!connection.source || !connection.target) return;
-      if (wouldCreateCycle(edges, connection.source, connection.target)) return;
-
-      const duplicate = edges.some(
-        (edge) =>
-          edge.source === connection.source &&
-          edge.sourceHandle === connection.sourceHandle &&
-          edge.target === connection.target
-      );
-      if (duplicate) return;
+      if (!canConnect(nodes, edges, connection)) return;
 
       set({
         edges: addEdge(

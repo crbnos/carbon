@@ -1,4 +1,5 @@
 import { useLingui } from "@lingui/react/macro";
+import { useState } from "react";
 import { Field } from "./Field";
 import { InlineValueEditor } from "./InlineValueEditor";
 import type { ValueFieldProps } from "./types";
@@ -16,6 +17,7 @@ export function TemplateField({
   issue
 }: ValueFieldProps) {
   const { t } = useLingui();
+  const [isFocused, setIsFocused] = useState(false);
   return (
     <Field
       label={label}
@@ -23,7 +25,9 @@ export function TemplateField({
       helpTermId={helpTermId}
       issue={issue}
       hint={
-        hasStrayBrace(value)
+        // Only once the user has moved on: a lone '{' is the first keystroke of
+        // picking a variable, not a mistake yet.
+        hasStrayBrace(value) && !isFocused
           ? t`A plain '{' is sent as-is. Pick a variable from the menu.`
           : undefined
       }
@@ -36,6 +40,7 @@ export function TemplateField({
         context={context}
         hasIssue={!!issue}
         maxRows={10}
+        onFocusChange={setIsFocused}
       />
     </Field>
   );

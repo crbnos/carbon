@@ -1,7 +1,7 @@
 import { Combobox, cn, IconButton } from "@carbon/react";
 import type { Operator } from "@carbon/utils";
 import type { Clause, ValueType, WorkflowIssue } from "@carbon/workflows";
-import { operatorsForType } from "@carbon/workflows";
+import { expectedClauseRightType, operatorsForType } from "@carbon/workflows";
 import { useLingui } from "@lingui/react/macro";
 import type React from "react";
 import { memo, useEffect, useMemo } from "react";
@@ -12,6 +12,7 @@ import { Field } from "../fields/Field";
 import type { FieldContext } from "../fields/types";
 import { ValueField } from "../fields/ValueField";
 import { issueForField } from "../issues";
+import { useValueTypeResolver } from "../useDefinition";
 
 // One row: property, operator, value. `minmax(0,…)` on every track so a long variable
 // chip shrinks its own cell instead of stretching the grid past the card.
@@ -22,11 +23,15 @@ function pickDefaultOp(ops: readonly Operator[]): Operator {
   return ops.includes("eq") ? "eq" : (ops[0] ?? "eq");
 }
 
+/** Module-level, not an inline literal: it reaches the variable menu as `accepts`,
+ * which memoises on identity. */
+const STRING_TYPE: ValueType = { kind: "primitive", of: "string" };
+
 /** A clause always has a left operand, so clearing the field empties it rather
  * than removing it — `clauseSchema.left` is required. */
 const EMPTY_LEFT: Clause["left"] = {
   kind: "literal",
-  type: { kind: "primitive", of: "string" },
+  type: STRING_TYPE,
   value: ""
 };
 
@@ -67,6 +72,7 @@ function ClauseRowImpl({
   const hideLabel = !showLabels;
   const { t } = useLingui();
   const label = useWorkflowLabel();
+  const typeOfValue = useValueTypeResolver(context.nodeId);
 
   // Derive the left operand's type for operator selection
   // `left` is optional here on purpose: a clause mid-edit can be missing it, and a
@@ -80,9 +86,10 @@ function ClauseRowImpl({
       if (!colName || !entity) return undefined;
       return catalog.getEntity(entity)?.properties[colName];
     }
-    // "value" mode: derive from the embedded literal type only
-    return clause.left?.kind === "literal" ? clause.left.type : undefined;
-  }, [leftMode, clause.left, entity]);
+    // "value" mode: a literal carries its own type, but a picked variable is a
+    // reference and has to be resolved against the graph.
+    return clause.left ? typeOfValue(clause.left) : undefined;
+  }, [leftMode, clause.left, entity, typeOfValue]);
 
   const availableOps = useMemo<readonly Operator[]>(
     () => (leftType ? operatorsForType(leftType) : []),
@@ -164,7 +171,7 @@ function ClauseRowImpl({
               label={t`Property`}
               hideLabel={hideLabel}
               placeholder={t`Type '{' for a variable`}
-              type={leftType ?? { kind: "primitive", of: "string" }}
+              type={leftType ?? STRING_TYPE}
               value={clause.left}
               onChange={(next) => {
                 const nextType =
@@ -206,7 +213,7 @@ function ClauseRowImpl({
               label={t`Value`}
               hideLabel={hideLabel}
               placeholder={t`Type '{' for a variable`}
-              type={leftType}
+              type={expectedClauseRightType(leftType, clause.operator)}
               choices={rightChoices}
               value={clause.right}
               onChange={(next) => onChange(index, { right: next })}

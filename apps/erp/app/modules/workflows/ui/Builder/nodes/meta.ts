@@ -9,6 +9,7 @@ import {
   LuSplit,
   LuZap
 } from "react-icons/lu";
+import { NODE_ACCEPTS_INCOMING } from "./kinds";
 
 /** The one place per-kind presentation lives. Palette and node card both read this. */
 export type NodeKindMeta = {
@@ -37,7 +38,7 @@ export const NODE_KIND_META: Record<WorkflowNodeType, NodeKindMeta> = {
     Icon: LuZap,
     description: "Starts the workflow",
     defaultTitle: "When this happens",
-    hasTarget: false,
+    hasTarget: NODE_ACCEPTS_INCOMING.trigger,
     catalogId: (node) =>
       node.type === "trigger" ? node.data.events?.[0] : undefined,
     summary: (node) => {
@@ -55,7 +56,7 @@ export const NODE_KIND_META: Record<WorkflowNodeType, NodeKindMeta> = {
     Icon: LuSplit,
     description: "Sends the run down one path",
     defaultTitle: "Only if",
-    hasTarget: true,
+    hasTarget: NODE_ACCEPTS_INCOMING.condition,
     summary: (node) => {
       if (node.type !== "condition") return undefined;
       const paths = node.data.paths ?? [];
@@ -79,7 +80,7 @@ export const NODE_KIND_META: Record<WorkflowNodeType, NodeKindMeta> = {
     Icon: LuPlay,
     description: "Notifies, sends or calls out",
     defaultTitle: "Do something",
-    hasTarget: true,
+    hasTarget: NODE_ACCEPTS_INCOMING.action,
     catalogId: (node) =>
       node.type === "action" ? node.data.action || undefined : undefined,
     summary: (node) => {
@@ -92,7 +93,7 @@ export const NODE_KIND_META: Record<WorkflowNodeType, NodeKindMeta> = {
     Icon: LuPencilRuler,
     description: "Writes to a record in Carbon",
     defaultTitle: "Create or update a record",
-    hasTarget: true,
+    hasTarget: NODE_ACCEPTS_INCOMING.entity,
     catalogId: (node) =>
       node.type === "entity" ? node.data.operation || undefined : undefined,
     summary: (node) => {
@@ -105,7 +106,7 @@ export const NODE_KIND_META: Record<WorkflowNodeType, NodeKindMeta> = {
     Icon: LuSearch,
     description: "Looks a record up to use later",
     defaultTitle: "Find a record",
-    hasTarget: true,
+    hasTarget: NODE_ACCEPTS_INCOMING.lookup,
     title: (node) =>
       node.type === "lookup" && node.data.entity
         ? `Find ${node.data.entity}`
@@ -125,7 +126,7 @@ export const NODE_KIND_META: Record<WorkflowNodeType, NodeKindMeta> = {
     Icon: LuFilter,
     description: "Keeps only the items that match",
     defaultTitle: "Narrow a list",
-    hasTarget: true,
+    hasTarget: NODE_ACCEPTS_INCOMING.filter,
     summary: (node) => {
       if (node.type !== "filter") return undefined;
       const n = node.data.clauses?.length ?? 0;

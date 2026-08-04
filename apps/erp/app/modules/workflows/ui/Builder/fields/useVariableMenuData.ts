@@ -1,6 +1,7 @@
 import type { ValueType } from "@carbon/workflows";
 import { useCallback, useRef } from "react";
 import { catalog, useWorkflowLabel } from "../catalog";
+import { describeVariable } from "../labelKeys";
 import { useVariablesGetter } from "../useDefinition";
 import type { VariableMenuData } from "./menuBridge";
 import type { FieldContext } from "./types";
@@ -25,12 +26,16 @@ export function useVariableMenuData(
     const opts = {
       accepts,
       inLoop: context.inLoop,
+      batching: context.batching,
       labelFor: (key: string, fallback: string) =>
         labelRef.current(key, fallback)
     };
     return {
       tree: variableTree(variables, catalog, opts),
-      flat: variableMenuItems(variables, catalog, opts)
+      flat: variableMenuItems(variables, catalog, opts),
+      emptyReason: accepts
+        ? `No earlier step produces ${describeVariable(accepts, true, opts.labelFor)}.`
+        : undefined
     };
-  }, [getVariables, accepts, context.inLoop]);
+  }, [getVariables, accepts, context.inLoop, context.batching]);
 }

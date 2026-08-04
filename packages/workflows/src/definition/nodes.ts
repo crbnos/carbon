@@ -12,7 +12,9 @@ import {
 } from "./schema";
 import {
   type Clause,
+  canAssign,
   describeType,
+  expectedClauseRightType,
   operatorsForType,
   typesEqual,
   type ValueOrRef,
@@ -127,9 +129,7 @@ function checkClauses(
 
     const right = ctx.typeOf(clause.right, node.id);
     if (right === undefined) return;
-    // `contains` on a list tests membership, so the right side is one item.
-    const expected =
-      left.kind === "list" && clause.operator === "contains" ? left.of : left;
+    const expected = expectedClauseRightType(left, clause.operator);
     if (!typesEqual(right, expected)) {
       issues.push({
         code: "TYPE_MISMATCH",
@@ -186,7 +186,7 @@ function checkInputs(
     if (type === undefined) continue;
 
     if (declaration.type.kind !== "list" && type.kind === "list") {
-      if (batching && typesEqual(type.of, declaration.type)) continue;
+      if (canAssign(type, declaration.type, { batching })) continue;
       issues.push({
         code: "LIST_INTO_SINGLE",
         nodeId: node.id,

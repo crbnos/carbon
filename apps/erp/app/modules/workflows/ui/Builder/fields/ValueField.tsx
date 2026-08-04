@@ -27,6 +27,7 @@ export function ValueField({
   const { t } = useLingui();
   const store = useBuilderStoreApi();
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
   const control = pickControl(type, value, choices);
   const ref =
     value?.kind === "ref" || value?.kind === "item" ? value : undefined;
@@ -47,7 +48,9 @@ export function ValueField({
         hideLabel={hideLabel}
         issue={issue}
         hint={
-          hasStrayBrace(value)
+          // Only once the user has moved on: a lone '{' is the first keystroke of
+          // picking a variable, not a mistake yet.
+          hasStrayBrace(value) && !isFocused
             ? t`A plain '{' is sent as-is. Pick a variable from the menu.`
             : undefined
         }
@@ -59,6 +62,7 @@ export function ValueField({
           context={context}
           placeholder={placeholder}
           hasIssue={!!issue}
+          onFocusChange={setIsFocused}
         />
       </Field>
     );

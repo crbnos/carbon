@@ -12,21 +12,61 @@ export const actionInputLabelKey = (action: string, input: string) =>
 export const operationInputLabelKey = (operation: string, input: string) =>
   `operation.${operation}.input.${input}`;
 
+/** Resolves a catalog label key to display text. */
+export type LabelFor = (key: string, fallback: string) => string;
+
+const FALLBACK_LABEL: LabelFor = (_key, fallback) => fallback;
+
+/** A step's stored name is a slug (`purchase_order_created`); everywhere it is shown
+ * to a customer it reads as a title. One place, so the card and the picker agree. */
+export function nodeNameLabel(name: string): string {
+  return name
+    .split(/[_-]+/)
+    .filter(Boolean)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+}
+
+/** A change trigger hands out `record`, `before` and `after` — the same row as it is
+ * now, as it was, and as it became. The raw names read as jargon, so name them. */
+const OUTPUT_LABELS: Record<string, string> = {
+  record: "Record",
+  before: "Previous version",
+  after: "Updated version"
+};
+
+/** Display text for a step's output. Unknown outputs keep their own name. */
+export function outputLabel(output: string): string {
+  return OUTPUT_LABELS[output] ?? output;
+}
+
 /**
- * The sub-line under a variable in any menu: what it is, why it might not be
- * there, or why it cannot be picked. One place, so the two menus always agree.
+ * The sub-line under a variable in any menu: what it is, and whether it might be
+ * missing on this path. One place, so the two menus always agree.
  */
 export function describeVariable(
   type: ValueType,
   guaranteed: boolean,
-  incompatibleWith?: ValueType
+  labelFor: LabelFor = FALLBACK_LABEL
 ): string {
-  if (incompatibleWith) {
-    return `This is ${describeValueType(type)}; this field takes ${describeValueType(incompatibleWith)}.`;
-  }
-  return guaranteed
-    ? describeValueType(type)
-    : `${describeValueType(type)} · may be empty on this path`;
+  const described = describeValueType(type, entityLabelOf(type, labelFor));
+  return guaranteed ? described : `${described} · may be empty on this path`;
+}
+
+/** The catalog's name for whichever entity a type refers to, if any. */
+function entityLabelOf(
+  type: ValueType,
+  labelFor: LabelFor
+): string | undefined {
+  const entity =
+    type.kind === "entity"
+      ? type.of
+      : type.kind === "list" && type.of.kind === "entity"
+        ? type.of.of
+        : undefined;
+  return entity === undefined
+    ? undefined
+    : labelFor(entityLabelKey(entity), entity);
 }
 
 /** Human-readable type description for the picker and chips. */
@@ -35,12 +75,13 @@ export function describeValueType(
   entityLabel?: string
 ): string {
   if (type.kind === "entity") {
-    return `one ${entityLabel ?? type.of}`;
+    // "record", not "object" — an ERP user thinks in records.
+    return `${entityLabel ?? type.of} record`;
   }
   if (type.kind === "list") {
-    const inner =
-      type.of.kind === "entity" ? (entityLabel ?? type.of.of) : type.of.of;
-    return `a list of ${inner}`;
+    return type.of.kind === "entity"
+      ? `a list of ${entityLabel ?? type.of.of} records`
+      : `a list of ${type.of.of}`;
   }
   // primitive
   switch (type.of) {

@@ -97,9 +97,11 @@ export type {
   VariableRef
 } from "./definition/types";
 export {
+  canAssign,
   clauseSchema,
   combinatorSchema,
   describeType,
+  expectedClauseRightType,
   itemRefSchema,
   literalSchema,
   literalValueMatchesType,

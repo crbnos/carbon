@@ -5,6 +5,10 @@ export type FieldContext = {
   nodeId: string;
   /** True inside a filter node's clauses or a batch-mode action where `item` is offered. */
   inLoop: boolean;
+  /** The action runs once per item, so a list may fill a single-value input.
+   * Deliberately not `inLoop`: filter clauses set that too, and there the
+   * relaxation must not apply. */
+  batching?: boolean;
 };
 
 export type ValueFieldProps = {

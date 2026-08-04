@@ -16,12 +16,13 @@ export const InlineVariableMenu = forwardRef<
   // and declining here lets the suggestion plugin close its own popup on Escape.
   useImperativeHandle(ref, () => ({ onKeyDown: () => false }));
 
-  const { tree, flat } = readVariableMenuData();
+  const { tree, flat, emptyReason } = readVariableMenuData();
 
   return (
     <VariableTreeMenu
       tree={tree}
       flat={flat}
+      emptyReason={emptyReason}
       query={props.query}
       onSelect={(item) => props.command(item)}
       onClose={() => props.editor.commands.focus()}

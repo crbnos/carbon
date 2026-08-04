@@ -18,6 +18,9 @@ export type VariableTreeMenuProps = {
   onClose: () => void;
   /** Popover host only: Backspace on an empty query pops a level. */
   backspacePops?: boolean;
+  /** Shown instead of the generic empty text when the tree is empty because the
+   * field only accepts one type. */
+  emptyReason?: string;
 };
 
 /** One level of the variable tree at a time, with search that cuts across every level.
@@ -28,7 +31,8 @@ export function VariableTreeMenu({
   query,
   onSelect,
   onClose,
-  backspacePops
+  backspacePops,
+  emptyReason
 }: VariableTreeMenuProps) {
   const { t } = useLingui();
   const [nav, setNav] = useState<NavState>(INITIAL_NAV);
@@ -149,7 +153,7 @@ export function VariableTreeMenu({
         <div className="px-3 py-2 text-sm text-muted-foreground">
           {searching
             ? t`No variable matches ${query}`
-            : t`No variables available`}
+            : (emptyReason ?? t`No variables available`)}
         </div>
       ) : (
         <div

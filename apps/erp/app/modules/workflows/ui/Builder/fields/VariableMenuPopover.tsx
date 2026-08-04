@@ -77,6 +77,7 @@ export function VariableMenuPopover({
           key={open ? "open" : "closed"}
           tree={data?.tree ?? []}
           flat={data?.flat ?? []}
+          emptyReason={data?.emptyReason}
           query={query}
           onSelect={(item) => {
             const ref = decodeTokenId(item.id);

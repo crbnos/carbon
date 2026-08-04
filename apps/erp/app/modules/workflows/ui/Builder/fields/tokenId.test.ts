@@ -45,7 +45,7 @@ describe("refLabel", () => {
       path: ["customer"]
     };
     expect(refLabel(ref, "when-order-created")).toBe(
-      "when-order-created › record › customer"
+      "When Order Created › Record › customer"
     );
   });
 
@@ -56,7 +56,7 @@ describe("refLabel", () => {
       output: "record",
       path: []
     };
-    expect(refLabel(ref, undefined)).toBe("n1 › record");
+    expect(refLabel(ref, undefined)).toBe("n1 › Record");
   });
 
   it("distinguishes two paths off the same output", () => {
@@ -71,7 +71,7 @@ describe("refLeafLabel", () => {
   it("falls back to the output when there is no path", () => {
     expect(
       refLeafLabel({ kind: "ref", nodeId: "n1", output: "record", path: [] })
-    ).toBe("record");
+    ).toBe("Record");
   });
 
   it("returns the last path segment", () => {

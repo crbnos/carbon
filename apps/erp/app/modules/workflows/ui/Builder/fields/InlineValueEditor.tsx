@@ -5,7 +5,7 @@ import {
 } from "@carbon/react/VariableText";
 import type { ValueOrRef, ValueType } from "@carbon/workflows";
 import { useLingui } from "@lingui/react/macro";
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { useBuilderStoreApi } from "../context";
 import { InlineVariableMenu } from "./InlineVariableMenu";
 import { publishVariableMenuData, retractVariableMenuData } from "./menuBridge";
@@ -29,6 +29,9 @@ type Props = {
   hasIssue?: boolean;
   /** Rows tall before the field scrolls. Prose fields want more than the default. */
   maxRows?: number;
+  /** Fires as focus enters and leaves. Lets the field hold back advice about a value
+   * the user is still in the middle of typing. */
+  onFocusChange?: (focused: boolean) => void;
 };
 
 export function InlineValueEditor({
@@ -38,7 +41,8 @@ export function InlineValueEditor({
   context,
   placeholder,
   hasIssue,
-  maxRows
+  maxRows,
+  onFocusChange
 }: Props) {
   const { t } = useLingui();
   const store = useBuilderStoreApi();
@@ -51,20 +55,31 @@ export function InlineValueEditor({
     [store]
   );
 
+  // The bridge is keyed on this function, so its identity must never change: publishing
+  // happens on focus alone, and a re-render that swapped it would retract the slot
+  // mid-edit and leave the next menu empty. Read the live getter through a ref instead.
+  const menuDataRef = useRef(getMenuData);
+  menuDataRef.current = getMenuData;
+  const getData = useCallback(() => menuDataRef.current(), []);
+
   // Hand the bridge over on focus, never on mount: every field on the card mounts an
   // editor, and the last one to mount would otherwise own the slot for all of them.
-  useEffect(() => () => retractVariableMenuData(getMenuData), [getMenuData]);
+  useEffect(() => () => retractVariableMenuData(getData), [getData]);
 
   // The plugin still needs a non-empty list to open the popup at all; the menu does its
   // own searching, so this stays unfiltered.
-  const items = useCallback(() => getMenuData().flat, [getMenuData]);
+  const items = useCallback(() => getData().flat, [getData]);
 
   return (
     // `focusin` bubbles, so this fires for the contenteditable inside — before any
     // keystroke can open the menu.
     <div
       className="min-w-0 flex-1"
-      onFocusCapture={() => publishVariableMenuData(getMenuData)}
+      onFocusCapture={() => {
+        publishVariableMenuData(getData);
+        onFocusChange?.(true);
+      }}
+      onBlurCapture={() => onFocusChange?.(false)}
     >
       <VariableText
         value={toEditorParts(value, nodeName)}

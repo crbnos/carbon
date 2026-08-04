@@ -22,11 +22,47 @@ const variable: AvailableVariable = {
   guaranteed: true
 };
 
+/** What a change trigger really hands out: `record` and `after` are the same row. */
+const changeTriggerVariables: AvailableVariable[] = [
+  variable,
+  { ...variable, output: "before" },
+  { ...variable, output: "after" }
+];
+
+describe("duplicate trigger outputs", () => {
+  it("offers `record` and drops the identical `after`", () => {
+    const outputs = new Set(
+      variableMenuItems(changeTriggerVariables, catalog)
+        .map((item) => decodeTokenId(item.id))
+        .map((ref) => (ref?.kind === "ref" ? ref.output : undefined))
+    );
+    expect(outputs).toContain("record");
+    expect(outputs).toContain("before");
+    expect(outputs).not.toContain("after");
+  });
+
+  it("keeps `after` when the step has no `record` to duplicate", () => {
+    const items = variableMenuItems(
+      [{ ...variable, output: "after" }],
+      catalog
+    );
+    expect(items.length).toBeGreaterThan(0);
+  });
+
+  it("drops it from the tree too, so both menus agree", () => {
+    const labels = variableTree(
+      changeTriggerVariables,
+      catalog
+    )[0].children?.map((child) => child.label);
+    expect(labels).toEqual(["Record", "Previous version"]);
+  });
+});
+
 describe("variableMenuItems", () => {
   it("expands entity properties instead of stopping at the record", () => {
     const items = variableMenuItems([variable], catalog);
     expect(items.length).toBeGreaterThan(1);
-    expect(items[0].label).toBe("when-order-created › record");
+    expect(items[0].label).toBe("When Order Created › Record");
   });
 
   it("gives every entry an id that decodes back to a ref on the same node", () => {
@@ -52,7 +88,7 @@ describe("variableMenuItems", () => {
     });
     expect(items.length).toBeGreaterThan(0);
     // The record itself is an entity, so it must not survive a string filter.
-    expect(items.some((i) => i.label === "when-order-created › record")).toBe(
+    expect(items.some((i) => i.label === "When Order Created › Record")).toBe(
       false
     );
   });
@@ -96,7 +132,7 @@ describe("variableTree", () => {
       catalog
     );
     expect(tree).toHaveLength(1);
-    expect(tree[0].label).toBe("when-order-created");
+    expect(tree[0].label).toBe("When Order Created");
     expect(tree[0].children?.map((c) => c.label)).toEqual(["subject", "body"]);
     expect(tree[0].children?.every((c) => c.item)).toBe(true);
   });
@@ -123,12 +159,41 @@ describe("variableTree", () => {
     }
   });
 
-  it("keeps an incompatible property visible but unpickable, and says why", () => {
+  it("hides properties the field cannot accept", () => {
     const tree = variableTree([variable], catalog, { accepts: number });
-    const strings = flatten(tree).filter(
-      (n) => !n.item && n.helper?.includes("this field takes a number")
-    );
-    expect(strings.length).toBeGreaterThan(0);
+    for (const node of flatten(tree)) {
+      if (!node.item) continue;
+      expect(decodeTokenId(node.item.id)).toBeDefined();
+    }
+    // Every surviving row is either pickable or a door to something pickable.
+    expect(flatten(tree).every((n) => n.item || n.children?.length)).toBe(true);
+  });
+
+  it("drops a step whose outputs are all incompatible", () => {
+    const tree = variableTree([variable], catalog, {
+      accepts: { kind: "entity", of: "nothingMatchesThis" }
+    });
+    expect(tree).toHaveLength(0);
+  });
+
+  it("admits a list into a single-value field only when batching", () => {
+    const listVariable = {
+      ...variable,
+      type: {
+        kind: "list" as const,
+        of: { kind: "primitive" as const, of: "string" as const }
+      }
+    };
+    const single = {
+      kind: "primitive" as const,
+      of: "string" as const
+    };
+    expect(
+      variableTree([listVariable], catalog, { accepts: single })
+    ).toHaveLength(0);
+    expect(
+      variableTree([listVariable], catalog, { accepts: single, batching: true })
+    ).not.toHaveLength(0);
   });
 
   it("offers the current item only inside a loop", () => {

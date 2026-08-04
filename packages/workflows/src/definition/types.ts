@@ -47,6 +47,33 @@ export function typesEqual(a: ValueType, b: ValueType): boolean {
   return false;
 }
 
+/**
+ * Whether a value of type `from` may be supplied where `to` is expected.
+ *
+ * Batching is the one relaxation: a batched action runs once per item, so a list
+ * may fill an input that takes a single value of the list's element type.
+ */
+export function canAssign(
+  from: ValueType,
+  to: ValueType,
+  { batching = false }: { batching?: boolean } = {}
+): boolean {
+  if (typesEqual(from, to)) return true;
+  if (!batching) return false;
+  return to.kind !== "list" && from.kind === "list" && typesEqual(from.of, to);
+}
+
+/**
+ * The type the right-hand side of a clause must have. `contains` on a list tests
+ * membership, so it wants one element, not another list.
+ */
+export function expectedClauseRightType(
+  left: ValueType,
+  operator: Operator
+): ValueType {
+  return left.kind === "list" && operator === "contains" ? left.of : left;
+}
+
 /** Customer-facing rendering of a type, for issue messages. */
 export function describeType(type: ValueType): string {
   if (type.kind === "list") return `a list of ${type.of.of}`;

@@ -66,7 +66,7 @@ function WorkflowEdgeImpl({
           <div
             className="nodrag nopan pointer-events-auto absolute"
             style={{
-              transform: `translate(-50%, -50%) translate(${labelX}px, ${labelY}px)`
+              transform: `translate(-50%, -60%) translate(${labelX}px, ${labelY}px)`
             }}
           >
             <IconButton

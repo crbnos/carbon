@@ -4,8 +4,13 @@ import type {
   VariableRef,
   WorkflowCatalog
 } from "@carbon/workflows";
-import { typesEqual } from "@carbon/workflows";
-import { describeVariable, propertyLabelKey } from "../labelKeys";
+import { canAssign } from "@carbon/workflows";
+import {
+  describeVariable,
+  nodeNameLabel,
+  outputLabel,
+  propertyLabelKey
+} from "../labelKeys";
 import { encodeTokenId, refLabel } from "./tokenId";
 
 export type VariableMenuItem = {
@@ -32,10 +37,29 @@ type Options = {
   /** Omit to accept any type — template fields render anything as text. */
   accepts?: ValueType;
   inLoop?: boolean;
+  /** The action runs once per item, so a list may fill a single-value input. */
+  batching?: boolean;
   /** Resolves a catalog label key to display text. Defaults to the fallback, which is what
    * the tests use — this file must not import the Lingui macro. */
   labelFor?: (key: string, fallback: string) => string;
 };
+
+/**
+ * A change trigger hands out `record` and `after` as the same row in the same state.
+ * Offering both only asks the user to pick between two names for one thing, so the
+ * menus show `record`. An existing reference to `after` still resolves and still
+ * renders — this hides it from the menu, it does not remove it.
+ */
+function withoutDuplicateOutputs(
+  variables: AvailableVariable[]
+): AvailableVariable[] {
+  const hasRecord = new Set(
+    variables.filter((v) => v.output === "record").map((v) => v.nodeId)
+  );
+  return variables.filter(
+    (v) => v.output !== "after" || !hasRecord.has(v.nodeId)
+  );
+}
 
 /**
  * Flattens the variable list into menu entries, expanding entity properties up to
@@ -46,12 +70,18 @@ type Options = {
 export function variableMenuItems(
   variables: AvailableVariable[],
   catalog: WorkflowCatalog,
-  { accepts, inLoop }: Options = {}
+  {
+    accepts,
+    inLoop,
+    batching,
+    labelFor = (_key, fallback) => fallback
+  }: Options = {}
 ): VariableMenuItem[] {
   const items: VariableMenuItem[] = [];
-  const fits = (type: ValueType) => !accepts || typesEqual(type, accepts);
+  const fits = (type: ValueType) =>
+    !accepts || canAssign(type, accepts, { batching });
 
-  for (const variable of variables) {
+  for (const variable of withoutDuplicateOutputs(variables)) {
     const add = (path: string[], type: ValueType) => {
       if (!fits(type)) return;
       const ref: VariableRef = {
@@ -63,7 +93,7 @@ export function variableMenuItems(
       items.push({
         id: encodeTokenId(ref),
         label: refLabel(ref, variable.nodeName),
-        helper: describeVariable(type, variable.guaranteed)
+        helper: describeVariable(type, variable.guaranteed, labelFor)
       });
     };
 
@@ -101,12 +131,19 @@ export function variableMenuItems(
 export function variableTree(
   variables: AvailableVariable[],
   catalog: WorkflowCatalog,
-  { accepts, inLoop, labelFor = (_key, fallback) => fallback }: Options = {}
+  {
+    accepts,
+    inLoop,
+    batching,
+    labelFor = (_key, fallback) => fallback
+  }: Options = {}
 ): VariableTreeNode[] {
-  const fits = (type: ValueType) => !accepts || typesEqual(type, accepts);
+  const fits = (type: ValueType) =>
+    !accepts || canAssign(type, accepts, { batching });
 
-  /** Null for a branch with nothing usable inside. An incompatible leaf is not null — it
-   * stays, disabled, because its helper is what explains the exclusion. */
+  /** Null for a branch with nothing pickable inside — a row you cannot use is a row
+   * that should not be there. An entity with usable properties survives even when the
+   * record itself does not fit. */
   function build(
     variable: AvailableVariable,
     type: ValueType,
@@ -120,11 +157,7 @@ export function variableTree(
       output: variable.output,
       path
     };
-    const helper = describeVariable(
-      type,
-      variable.guaranteed,
-      compatible ? undefined : accepts
-    );
+    const helper = describeVariable(type, variable.guaranteed, labelFor);
     const node: VariableTreeNode = {
       key: `${variable.nodeId}:${variable.output}:${path.join(".")}`,
       label,
@@ -158,6 +191,9 @@ export function variableTree(
       if (!node.item && !children.length) return null;
     }
 
+    // A leaf that does not fit has nothing to offer and nothing to open.
+    if (!node.item && !node.children?.length) return null;
+
     return node;
   }
 
@@ -178,13 +214,22 @@ export function variableTree(
   }
 
   const byNode = new Map<string, VariableTreeNode>();
-  for (const variable of variables) {
+  for (const variable of withoutDuplicateOutputs(variables)) {
     let step = byNode.get(variable.nodeId);
     if (!step) {
-      step = { key: variable.nodeId, label: variable.nodeName, children: [] };
+      step = {
+        key: variable.nodeId,
+        label: nodeNameLabel(variable.nodeName),
+        children: []
+      };
       byNode.set(variable.nodeId, step);
     }
-    const output = build(variable, variable.type, [], variable.output);
+    const output = build(
+      variable,
+      variable.type,
+      [],
+      outputLabel(variable.output)
+    );
     if (output) step.children!.push(output);
   }
 

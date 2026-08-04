@@ -82,7 +82,7 @@ describe("round trip", () => {
   it("shows the node name but stores the node id", () => {
     const [part] = toEditorParts(ref, nodeName);
     if (part.kind !== "token") throw new Error("expected a token");
-    expect(part.label).toContain("when-order-created");
+    expect(part.label).toContain("When Order Created");
     expect(part.label).not.toContain("n1");
     expect(fromEditorParts([part], COLLAPSE)).toEqual(ref);
   });

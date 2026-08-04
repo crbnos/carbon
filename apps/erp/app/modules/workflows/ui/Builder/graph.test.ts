@@ -7,6 +7,7 @@ import {
 import { describe, expect, it } from "vitest";
 import type { BuilderEdge, BuilderNode } from "../../types";
 import {
+  canConnect,
   createNode,
   fromReactFlow,
   nextNodePosition,
@@ -118,6 +119,92 @@ describe("wouldCreateCycle", () => {
       edge("e3", "b", "d")
     ];
     expect(wouldCreateCycle(edges, "c", "d")).toBe(false);
+  });
+});
+
+describe("canConnect", () => {
+  const trigger = createNode("trigger", { x: 0, y: 0 });
+  const action = createNode("action", { x: 0, y: 260 });
+  const second = createNode("action", { x: 0, y: 520 });
+  const nodes = [trigger, action, second] as unknown as BuilderNode[];
+
+  it("allows a plain forward connection", () => {
+    expect(
+      canConnect(nodes, [], {
+        source: trigger.id,
+        sourceHandle: "out",
+        target: action.id
+      })
+    ).toBe(true);
+  });
+
+  it("rejects a missing source or target", () => {
+    expect(
+      canConnect(nodes, [], {
+        source: null,
+        sourceHandle: "out",
+        target: action.id
+      })
+    ).toBe(false);
+    expect(
+      canConnect(nodes, [], {
+        source: trigger.id,
+        sourceHandle: "out",
+        target: null
+      })
+    ).toBe(false);
+  });
+
+  it("rejects a target that is not on the canvas", () => {
+    expect(
+      canConnect(nodes, [], {
+        source: trigger.id,
+        sourceHandle: "out",
+        target: "missing"
+      })
+    ).toBe(false);
+  });
+
+  it("rejects a connection into a trigger", () => {
+    expect(
+      canConnect(nodes, [], {
+        source: action.id,
+        sourceHandle: "out",
+        target: trigger.id
+      })
+    ).toBe(false);
+  });
+
+  it("rejects a duplicate off the same handle but allows another handle", () => {
+    const edges = [edge("e1", trigger.id, action.id)];
+    expect(
+      canConnect(nodes, edges, {
+        source: trigger.id,
+        sourceHandle: "out",
+        target: action.id
+      })
+    ).toBe(false);
+    expect(
+      canConnect(nodes, edges, {
+        source: trigger.id,
+        sourceHandle: "other",
+        target: action.id
+      })
+    ).toBe(true);
+  });
+
+  it("rejects a connection that would close a loop", () => {
+    const edges = [
+      edge("e1", trigger.id, action.id),
+      edge("e2", action.id, second.id)
+    ];
+    expect(
+      canConnect(nodes, edges, {
+        source: second.id,
+        sourceHandle: "out",
+        target: action.id
+      })
+    ).toBe(false);
   });
 });
 

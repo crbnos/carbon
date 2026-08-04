@@ -30,3 +30,15 @@ export const NODE_CARD_HEIGHT: Record<WorkflowNodeType, number> = {
 
 /** Header-only card. Same for every kind — the body is what differs. */
 export const COLLAPSED_NODE_CARD_HEIGHT = 56;
+
+/** Which kinds accept an incoming edge. A trigger starts a run, so nothing may
+ * connect into one. Lives here rather than in `meta.ts` so `graph.ts` and its tests
+ * can read it without pulling in the Lingui macro that `meta.ts` imports. */
+export const NODE_ACCEPTS_INCOMING: Record<WorkflowNodeType, boolean> = {
+  trigger: false,
+  condition: true,
+  action: true,
+  entity: true,
+  lookup: true,
+  filter: true
+};

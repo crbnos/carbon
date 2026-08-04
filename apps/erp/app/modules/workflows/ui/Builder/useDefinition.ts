@@ -1,4 +1,9 @@
-import type { AvailableVariable, WorkflowDefinition } from "@carbon/workflows";
+import type {
+  AvailableVariable,
+  ValueOrRef,
+  ValueType,
+  WorkflowDefinition
+} from "@carbon/workflows";
 import {
   availableVariables,
   createContext,
@@ -25,6 +30,19 @@ export function useAvailableVariables(nodeId: string) {
     () => availableVariables(definition, nodeId, catalog),
     [definition, nodeId]
   );
+}
+
+/** The type of any value a node may hold — a literal, a template, the loop item, or a
+ * reference into an earlier step. The same resolver the validator uses, so an operator
+ * list and a type error can never disagree about what a field holds. */
+export function useValueTypeResolver(
+  nodeId: string
+): (value: ValueOrRef) => ValueType | undefined {
+  const definition = useDefinition();
+  return useMemo(() => {
+    const { context } = createContext(definition, catalog);
+    return (value: ValueOrRef) => context.typeOf(value, nodeId);
+  }, [definition, nodeId]);
 }
 
 /** The same list, computed on demand. Subscribing re-renders every field on every

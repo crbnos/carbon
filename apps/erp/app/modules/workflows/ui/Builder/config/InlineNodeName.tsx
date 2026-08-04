@@ -2,14 +2,7 @@ import { slugifyNodeName } from "@carbon/workflows";
 import { useLingui } from "@lingui/react/macro";
 import { useRef, useState } from "react";
 import { LuPencil } from "react-icons/lu";
-
-function toTitleCase(slug: string): string {
-  return slug
-    .split("_")
-    .filter(Boolean)
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(" ");
-}
+import { nodeNameLabel } from "../labelKeys";
 
 type Props = {
   name: string;
@@ -57,7 +50,7 @@ export function InlineNodeName({ name, isReadOnly, isTaken, onCommit }: Props) {
   if (isReadOnly) {
     return (
       <span className="truncate text-xs font-semibold">
-        {toTitleCase(name)}
+        {nodeNameLabel(name)}
       </span>
     );
   }
@@ -101,7 +94,7 @@ export function InlineNodeName({ name, isReadOnly, isTaken, onCommit }: Props) {
         title={t`Click to rename`}
       >
         <span className="truncate text-xs font-semibold">
-          {toTitleCase(name)}
+          {nodeNameLabel(name)}
         </span>
         <LuPencil className="size-2.5 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover/name:opacity-100" />
       </button>

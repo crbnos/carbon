@@ -48,6 +48,8 @@ type NodeCardProps = {
   /** Already filtered by the caller — a card shows only the problems worth acting on. */
   issues?: string[];
   isSelected?: boolean;
+  /** How this card relates to a connection currently being dragged. */
+  connectionState?: "idle" | "source" | "compatible" | "incompatible";
   isExpanded?: boolean;
   width?: number;
   summary?: string;
@@ -64,6 +66,7 @@ export function NodeCard({
   hasTarget = true,
   issues = [],
   isSelected = false,
+  connectionState = "idle",
   isExpanded = true,
   width = 440,
   summary,
@@ -96,8 +99,12 @@ export function NodeCard({
   return (
     <div
       className={cn(
-        "relative rounded-lg border bg-card shadow-sm transition-shadow",
+        "relative rounded-lg border bg-card shadow-sm transition-[box-shadow,opacity]",
         isSelected && "border-primary ring-2 ring-primary/20",
+        connectionState === "compatible" &&
+          "border-primary ring-2 ring-primary/40",
+        connectionState === "incompatible" && "opacity-40",
+        // Last, so a broken step keeps the more urgent signal mid-drag.
         hasIssues && "border-destructive ring-2 ring-destructive/20"
       )}
       style={{ width }}

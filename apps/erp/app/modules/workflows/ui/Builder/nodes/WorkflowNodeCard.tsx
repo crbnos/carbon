@@ -4,6 +4,7 @@ import { FAILURE_HANDLE } from "@carbon/workflows";
 import { WORKFLOW_LABELS } from "@carbon/workflows/labels";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { NodeProps } from "@xyflow/react";
+import { useConnection } from "@xyflow/react";
 import { memo, useEffect, useState } from "react";
 import {
   LuMaximize2,
@@ -20,7 +21,7 @@ import {
   useBuilderStoreApi,
   useBuilderStoreShallow
 } from "../context";
-import { asWorkflowNode } from "../graph";
+import { asWorkflowNode, canConnect } from "../graph";
 import { NodeCard } from "../NodeCard";
 import { portsFor } from "../ports";
 import {
@@ -54,6 +55,23 @@ function WorkflowNodeCardImpl({ id, type, data, selected }: NodeProps) {
   const cardIssues = isConnected ? nodeIssues : [];
 
   const isReadOnly = useBuilderStore((state) => state.isReadOnly);
+
+  // A string, not an object: the answer only changes when this card flips between
+  // states, so a pointer move mid-drag does not re-render every card on the canvas.
+  // `store.getState()` is safe here — nodes and edges cannot change during a drag.
+  const connectionState = useConnection((connection) => {
+    if (!connection.inProgress) return "idle" as const;
+    if (connection.fromNode.id === id) return "source" as const;
+    const { nodes, edges } = store.getState();
+    return canConnect(nodes, edges, {
+      source: connection.fromNode.id,
+      sourceHandle: connection.fromHandle.id ?? null,
+      target: id
+    })
+      ? ("compatible" as const)
+      : ("incompatible" as const);
+  });
+
   const renameNode = useBuilderStore((state) => state.renameNode);
   const setNodeExpanded = useBuilderStore((state) => state.setNodeExpanded);
   const triggerCount = useBuilderStore(selectTriggerCount);
@@ -149,6 +167,7 @@ function WorkflowNodeCardImpl({ id, type, data, selected }: NodeProps) {
         hasTarget={meta.hasTarget}
         issues={cardIssues.map((issue) => issue.message)}
         isSelected={!!selected}
+        connectionState={connectionState}
         isExpanded={isExpanded}
         width={NODE_CARD_WIDTH[node.type]}
         actions={actionsSlot}

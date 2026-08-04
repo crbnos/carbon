@@ -39,6 +39,10 @@ import { useAvailableVariables } from "../../useDefinition";
 import { FormStack, Section } from "../layout";
 import type { NodeFormProps } from "./index";
 
+/** Module-level, not an inline literal: it reaches the variable menu as `accepts`,
+ * which memoises on identity. */
+const STRING_TYPE: ValueType = { kind: "primitive", of: "string" };
+
 // ── helpers ───────────────────────────────────────────────────────────────────
 
 /** Returns 1 if all required entity inputs for this action are available upstream; 0 if not. */
@@ -204,7 +208,7 @@ function NotifyAboutField({
       {aboutType && (
         <ValueField
           label={t`Record`}
-          type={{ kind: "primitive", of: "string" }}
+          type={STRING_TYPE}
           value={aboutId}
           onChange={(v) => onInputChange("aboutId", v)}
           context={{ nodeId, inLoop }}
@@ -334,7 +338,11 @@ export function ActionForm({ node, issues }: NodeFormProps<"action">) {
     if (!inputDef) return null;
     const inputLabel = label(actionInputLabelKey(actionId, name), name);
     const inputHelp = workflowFieldHelp(actionInputLabelKey(actionId, name));
-    const fieldContext = { nodeId: node.id, inLoop: isBatch };
+    const fieldContext = {
+      nodeId: node.id,
+      inLoop: isBatch,
+      batching: isBatch
+    };
     const fieldIssue = issueForField(issues, name, `inputs.${name}`);
 
     if (inputDef.template) {

@@ -19,7 +19,7 @@ import { BuilderControls } from "./BuilderControls";
 import { NODE_DRAG_TYPE } from "./constants";
 import { useBuilderStore, useBuilderStoreApi } from "./context";
 import { edgeTypes } from "./edges/WorkflowEdge";
-import { wouldCreateCycle } from "./graph";
+import { canConnect } from "./graph";
 import { NodePalette } from "./NodePalette";
 import { nodeTypes } from "./nodes";
 import { useCanvasState } from "./useCanvasState";
@@ -62,12 +62,12 @@ export function WorkflowBuilder({
 
   const isValidConnection = useCallback<IsValidConnection>(
     (connection) => {
-      if (!connection.source || !connection.target) return false;
-      return !wouldCreateCycle(
-        store.getState().edges,
-        connection.source,
-        connection.target
-      );
+      const { nodes, edges } = store.getState();
+      return canConnect(nodes, edges, {
+        source: connection.source,
+        sourceHandle: connection.sourceHandle ?? null,
+        target: connection.target
+      });
     },
     [store]
   );

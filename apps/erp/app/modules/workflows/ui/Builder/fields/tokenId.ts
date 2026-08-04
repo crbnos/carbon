@@ -1,4 +1,5 @@
 import type { ItemRef, VariableRef } from "@carbon/workflows";
+import { nodeNameLabel, outputLabel } from "../labelKeys";
 
 /** The two template parts that are not plain text. */
 export type RefPart = VariableRef | ItemRef;
@@ -56,7 +57,9 @@ export function decodeTokenId(id: string): RefPart | undefined {
 /** `Step › output › property` — display only, so it follows a rename. */
 export function refLabel(ref: RefPart, nodeName?: string): string {
   if (ref.kind === "item") return ["Current item", ...ref.path].join(" › ");
-  return [nodeName ?? ref.nodeId, ref.output, ...ref.path].join(" › ");
+  // Only a real name is titled; the id fallback is not a slug.
+  const step = nodeName === undefined ? ref.nodeId : nodeNameLabel(nodeName);
+  return [step, outputLabel(ref.output), ...ref.path].join(" › ");
 }
 
 /** Just the last segment — what a chip shows when the full path will not fit. `refLabel`
@@ -64,7 +67,7 @@ export function refLabel(ref: RefPart, nodeName?: string): string {
 export function refLeafLabel(ref: RefPart): string {
   const last = ref.path[ref.path.length - 1];
   if (last !== undefined) return last;
-  return ref.kind === "item" ? "Current item" : ref.output;
+  return ref.kind === "item" ? "Current item" : outputLabel(ref.output);
 }
 
 /** The leaf of an already-rendered `refLabel` string. */

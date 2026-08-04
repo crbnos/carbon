@@ -9,7 +9,7 @@ import {
 } from "@carbon/workflows";
 import { nanoid } from "nanoid";
 import type { BuilderEdge, BuilderNode } from "../../types";
-import { MAX_NODE_CARD_WIDTH } from "./nodes/kinds";
+import { MAX_NODE_CARD_WIDTH, NODE_ACCEPTS_INCOMING } from "./nodes/kinds";
 
 const NODE_WIDTH = MAX_NODE_CARD_WIDTH;
 const NODE_HEIGHT = 180;
@@ -107,6 +107,39 @@ export function wouldCreateCycle(
   }
 
   return false;
+}
+
+/**
+ * Every rule that decides whether an edge may exist, in one place. The drag-time
+ * check, the drop handler, and the compatible-target highlight all call this, so a
+ * node cannot read as a valid target and then refuse the drop.
+ */
+export function canConnect(
+  nodes: BuilderNode[],
+  edges: BuilderEdge[],
+  connection: {
+    source: string | null;
+    sourceHandle: string | null;
+    target: string | null;
+  }
+): boolean {
+  const { source, sourceHandle, target } = connection;
+  if (!source || !target) return false;
+
+  const targetNode = nodes.find((node) => node.id === target);
+  if (!targetNode || !nodes.some((node) => node.id === source)) return false;
+  if (!NODE_ACCEPTS_INCOMING[targetNode.type]) return false;
+
+  // The target handle is deliberately ignored: there is only one, id "in".
+  const duplicate = edges.some(
+    (edge) =>
+      edge.source === source &&
+      edge.sourceHandle === sourceHandle &&
+      edge.target === target
+  );
+  if (duplicate) return false;
+
+  return !wouldCreateCycle(edges, source, target);
 }
 
 export function createNode(
