@@ -40,11 +40,11 @@ msgstr "{0} adet tamamlandı"
 
 #. placeholder {0}: rows.length
 msgid "{0} queued"
-msgstr ""
+msgstr "{0} sırada bekleniyor"
 
 #. placeholder {0}: activeWork.length
 msgid "{0} running"
-msgstr ""
+msgstr "{0} çalışıyor"
 
 #. placeholder {0}: item.quantityScrapped
 msgid "{0} Scrapped"
@@ -57,7 +57,7 @@ msgid "{fails} sampled failure(s) are recorded and will NOT be completed — res
 msgstr "{fails} örnek hata(ları) kaydedildi ve tamamlanmayacak — bunları işlemler menüsünden çözün."
 
 msgid "+{overflow} more"
-msgstr ""
+msgstr "+{overflow} daha fazla"
 
 msgid "About"
 msgstr "Hakkında"
@@ -105,7 +105,7 @@ msgid "All"
 msgstr "Tümü"
 
 msgid "All clear"
-msgstr ""
+msgstr "Tamamen temiz"
 
 msgid "All rework"
 msgstr "Tümünü yeniden işle"
@@ -176,7 +176,7 @@ msgid "By signing in, you agree to the <0>Terms of Service</0> and <1>Privacy Po
 msgstr "Oturum açarak <0>Hizmet Şartları</0> ve <1>Gizlilik Politikası</1>'na katılıyorsunuz."
 
 msgid "By?"
-msgstr ""
+msgstr "Tarafından?"
 
 msgid "Cancel"
 msgstr "İptal"
@@ -257,7 +257,7 @@ msgid "Completed"
 msgstr "Tamamlandı"
 
 msgid "Connecting"
-msgstr ""
+msgstr "Bağlanıyor"
 
 msgid "Console"
 msgstr "Konsol"
@@ -270,7 +270,7 @@ msgstr "Tüketilmiş süre dolmuş"
 
 #. placeholder {0}: board.unplannedCost.days
 msgid "Cost of unplanned maintenance, last {0} days"
-msgstr ""
+msgstr "Planlanmamış bakım maliyeti, son {0} gün"
 
 #. placeholder {0}: search.trim() === "" ? (createLabel ?? label) : search
 #. placeholder {0}: search.trim() === "" ? label : search
@@ -287,7 +287,7 @@ msgid "Create Rework"
 msgstr "İşlemi Yeniden Oluştur"
 
 msgid "Current work"
-msgstr ""
+msgstr "Mevcut iş"
 
 msgid "Customer"
 msgstr "Müşteri"
@@ -336,20 +336,20 @@ msgid "Display"
 msgstr "Görüntüleme"
 
 msgid "Displays"
-msgstr ""
+msgstr "Ekranlar"
 
 msgid "Down"
 msgstr "Düşük"
 
 msgid "Down for maintenance"
-msgstr ""
+msgstr "Bakım için kapalı"
 
 #. placeholder {0}: workCenter.blockingDispatchReadableId
 msgid "Down for maintenance · {0}"
-msgstr ""
+msgstr "Bakım için kapalı · {0}"
 
 msgid "Down for planned maintenance"
-msgstr ""
+msgstr "Planlı bakım için kapalı"
 
 msgid "Download"
 msgstr "İndir"
@@ -381,10 +381,10 @@ msgstr "Son Kullanma Tarihi"
 
 #. placeholder {0}: board.dueSoon.days
 msgid "Due in the next {0} days?"
-msgstr ""
+msgstr "Sonraki {0} gün içinde vade bitecek mi?"
 
 msgid "Due today?"
-msgstr ""
+msgstr "Bugün vade bitecek mi?"
 
 msgid "Duplicate batch number"
 msgstr "Tekrarlanan parti numarası"
@@ -399,7 +399,7 @@ msgid "Edit"
 msgstr "Düzenle"
 
 msgid "Elapsed"
-msgstr ""
+msgstr "Geçen süre"
 
 msgid "Email Address"
 msgstr "E-posta Adresi"
@@ -513,7 +513,7 @@ msgid "How many were actually picked?"
 msgstr "Gerçekte kaç tane alındı?"
 
 msgid "How many?"
-msgstr ""
+msgstr "Kaç tane?"
 
 msgid "I understand and want to complete without issuing"
 msgstr "Anladığımı ve çıkarmadan tamamlamak istediğimi anlıyorum"
@@ -525,7 +525,7 @@ msgid "Ideas, suggestions or problems?"
 msgstr "Fikirler, öneriler veya sorunlar?"
 
 msgid "Idle for"
-msgstr ""
+msgstr "Boş olma süresi"
 
 msgid "Impact"
 msgstr "Etki"
@@ -597,7 +597,7 @@ msgid "Labor"
 msgstr "İşgücü"
 
 msgid "Last completed"
-msgstr ""
+msgstr "Son olarak tamamlanan"
 
 msgid "Learn more"
 msgstr "Daha fazla bilgi edinin"
@@ -651,7 +651,7 @@ msgid "Machine"
 msgstr "Makine"
 
 msgid "Machine down for maintenance now?"
-msgstr ""
+msgstr "Makine şu anda bakım için kapalı mı?"
 
 msgid "Maintenance"
 msgstr "Bakım"
@@ -660,7 +660,7 @@ msgid "Maintenance Completed"
 msgstr "Bakım Tamamlandı"
 
 msgid "Maintenance overdue"
-msgstr ""
+msgstr "Bakım vadesi geçmiş"
 
 msgid "Manually add items to inventory"
 msgstr "Envantere öğeler eklemek için manuel olarak"
@@ -727,10 +727,10 @@ msgid "Next"
 msgstr "Sonraki"
 
 msgid "No"
-msgstr ""
+msgstr "Hayır"
 
 msgid "No active job at this work center"
-msgstr ""
+msgstr "Bu iş merkezinde etkin iş yok"
 
 msgid "No active maintenance dispatches"
 msgstr "Aktif bakım sevkıyatı bulunmamaktadır"
@@ -739,7 +739,7 @@ msgid "No active operations"
 msgstr "Aktif işlem yok"
 
 msgid "No active work centers at this location."
-msgstr ""
+msgstr "Bu konumda etkin iş merkezi yok."
 
 msgid "No assigned operations"
 msgstr "Atanmış operasyon yok"
@@ -841,16 +841,16 @@ msgid "No work centers exist"
 msgstr "Çalışma merkezi bulunmamaktadır"
 
 msgid "None"
-msgstr ""
+msgstr "Hiçbiri"
 
 msgid "Notes"
 msgstr "Notlar"
 
 msgid "Nothing running"
-msgstr ""
+msgstr "Hiçbir şey çalışmıyor"
 
 msgid "Nothing scheduled at this work center"
-msgstr ""
+msgstr "Bu iş merkezinde hiçbir şey planlanmadı"
 
 msgid "OEE Impact"
 msgstr "OEE Etkisi"
@@ -872,7 +872,7 @@ msgid "Open"
 msgstr "Açık"
 
 msgid "Open a display on the screen mounted at the work center and leave it running. Each board refreshes on its own."
-msgstr ""
+msgstr "İş merkezine yerleştirilmiş ekranda bir ekran açın ve çalışır durumda bırakın. Her pano kendi kendine yenilenir."
 
 msgid "Open an NCR for MRB disposition"
 msgstr "MRB kararı için NCR aç"
@@ -887,7 +887,7 @@ msgid "Operations ended"
 msgstr "İşlemler sonlandırıldı"
 
 msgid "Operator"
-msgstr ""
+msgstr "Operatör"
 
 msgid "Operator Performed"
 msgstr "Operatör Tarafından Yapıldı"
@@ -899,7 +899,7 @@ msgid "Overall result"
 msgstr "Genel sonuç"
 
 msgid "Overdue PMs?"
-msgstr ""
+msgstr "Vadesi geçmiş PM'ler?"
 
 msgid "Parameters"
 msgstr "Parametreler"
@@ -953,7 +953,7 @@ msgid "Please select an item"
 msgstr "Lütfen bir ürün seçin"
 
 msgid "PM schedule lapsed"
-msgstr ""
+msgstr "PM zamanlaması süresi doldu"
 
 msgid "Prev"
 msgstr "Önceki"
@@ -998,7 +998,7 @@ msgid "Quantity must be greater than 0"
 msgstr "Miktar 0'dan büyük olmalıdır"
 
 msgid "Queue empty"
-msgstr ""
+msgstr "Kuyruk boş"
 
 msgid "Reason for rework"
 msgstr "Yeniden işleme nedeni"
@@ -1050,7 +1050,7 @@ msgid "Rework quantity"
 msgstr "Yeniden işleme miktarı"
 
 msgid "Running"
-msgstr ""
+msgstr "Çalışıyor"
 
 msgid "Sales Order"
 msgstr "Satış Siparişi"
@@ -1337,17 +1337,17 @@ msgid "Unpick {0}"
 msgstr "Çıkart {0}"
 
 msgid "Unplanned downtime"
-msgstr ""
+msgstr "Planlanmamış kesinti"
 
 #. placeholder {0}: board.unplannedCount.days
 msgid "Unplanned maintenance items, last {0} days"
-msgstr ""
+msgstr "Planlanmamış bakım öğeleri, son {0} gün"
 
 msgid "Unsaved changes"
 msgstr "Kaydedilmemiş değişiklikler"
 
 msgid "Up next"
-msgstr ""
+msgstr "Sırada"
 
 msgid "Up to {maxAllocatable} unit(s) can be allocated; the rest is recorded without a posting."
 msgstr "En fazla {maxAllocatable} birim ayrılabilir; geri kalanı deftere kaydedilmeden kaydedilir."
@@ -1357,7 +1357,7 @@ msgstr "Güncelle"
 
 #. placeholder {0}: formatClock(lastUpdated)
 msgid "Updated {0}"
-msgstr ""
+msgstr "{0} tarihinde güncellendi"
 
 msgid "Updated successfully"
 msgstr "Başarıyla güncellendi"
@@ -1386,10 +1386,10 @@ msgid "Work Center"
 msgstr "İş Merkezi"
 
 msgid "Work Center Displays"
-msgstr ""
+msgstr "İş Merkezi Ekranları"
 
 msgid "Yes"
-msgstr ""
+msgstr "Evet"
 
 #. placeholder {0}: new Date(openClockEntry.clockIn).toLocaleString(locale)
 msgid "You clocked in at {0}. You can edit your clock-out time below or acknowledge that you're still working."

@@ -8375,7 +8375,7 @@ msgid "Next Due"
 msgstr "Prochaine échéance"
 
 msgid "Next Due Date"
-msgstr ""
+msgstr "Prochaine date d'échéance"
 
 msgid "Next page"
 msgstr "Page suivante"
@@ -8577,6 +8577,7 @@ msgstr "Aucune correspondance. Tapez pour en créer une."
 
 msgid "No matching bins"
 msgstr "Aucune zone correspondante"
+msgstr "Aucun bac correspondant"
 
 msgid "No new notifications"
 msgstr "Aucune nouvelle notification"

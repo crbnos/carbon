@@ -8375,7 +8375,7 @@ msgid "Next Due"
 msgstr "Próximo Vencimiento"
 
 msgid "Next Due Date"
-msgstr ""
+msgstr "Próxima fecha de vencimiento"
 
 msgid "Next page"
 msgstr "Página siguiente"
@@ -8577,6 +8577,7 @@ msgstr "Sin coincidencias. Escribe para crear una."
 
 msgid "No matching bins"
 msgstr "No hay contenedores coincidentes"
+msgstr "Sin contenedores coincidentes"
 
 msgid "No new notifications"
 msgstr "Sin notificaciones nuevas"

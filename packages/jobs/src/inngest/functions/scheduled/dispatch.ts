@@ -145,6 +145,32 @@ export async function generateDispatchesForSchedule(args: {
       }
     }
 
+    // Guard against duplicate generation. The nightly cron and the
+    // on-create/update trigger can both run for the same schedule; each reads
+    // nextDueAt and creates dispatches, so overlapping runs could insert two
+    // dispatches for the same occurrence. Skip the date if one already exists
+    // for this schedule that day (still advancing nextDueAt past it).
+    const dayStart = new Date(targetDate);
+    dayStart.setHours(0, 0, 0, 0);
+    const dayEnd = new Date(targetDate);
+    dayEnd.setHours(23, 59, 59, 999);
+    const { data: existingForDay } = await serviceRole
+      .from("maintenanceDispatch")
+      .select("id")
+      .eq("companyId", companyId)
+      .eq("maintenanceScheduleId", schedule.id)
+      .gte("plannedStartTime", dayStart.toISOString())
+      .lte("plannedStartTime", dayEnd.toISOString())
+      .limit(1)
+      .maybeSingle();
+    if (existingForDay) {
+      currentNextDueAt = advanceByFrequency(
+        currentNextDueAt,
+        schedule.frequency
+      );
+      continue;
+    }
+
     // Get next sequence number
     const { data: sequenceData, error: sequenceError } = await serviceRole.rpc(
       "get_next_sequence",
@@ -201,25 +227,43 @@ export async function generateDispatchesForSchedule(args: {
       .eq("maintenanceScheduleId", schedule.id);
 
     if (scheduleItems && scheduleItems.length > 0) {
-      await serviceRole.from("maintenanceDispatchItem").insert(
-        scheduleItems.map((item) => ({
-          maintenanceDispatchId: newDispatch.id,
-          itemId: item.itemId,
-          quantity: item.quantity,
-          unitOfMeasureCode: item.unitOfMeasureCode,
-          companyId,
-          createdBy: "system"
-        }))
-      );
+      const { error: itemsError } = await serviceRole
+        .from("maintenanceDispatchItem")
+        .insert(
+          scheduleItems.map((item) => ({
+            maintenanceDispatchId: newDispatch.id,
+            itemId: item.itemId,
+            quantity: item.quantity,
+            unitOfMeasureCode: item.unitOfMeasureCode,
+            companyId,
+            createdBy: "system"
+          }))
+        );
+      if (itemsError) {
+        log.error("Failed to copy schedule items to dispatch", {
+          scheduleId: schedule.id,
+          dispatchId: sequenceData,
+          error: itemsError
+        });
+      }
     }
 
     // Link work center
-    await serviceRole.from("maintenanceDispatchWorkCenter").insert({
-      maintenanceDispatchId: newDispatch.id,
-      workCenterId: schedule.workCenterId,
-      companyId,
-      createdBy: "system"
-    });
+    const { error: workCenterLinkError } = await serviceRole
+      .from("maintenanceDispatchWorkCenter")
+      .insert({
+        maintenanceDispatchId: newDispatch.id,
+        workCenterId: schedule.workCenterId,
+        companyId,
+        createdBy: "system"
+      });
+    if (workCenterLinkError) {
+      log.error("Failed to link work center to dispatch", {
+        scheduleId: schedule.id,
+        dispatchId: sequenceData,
+        error: workCenterLinkError
+      });
+    }
 
     dispatchesCreated++;
     log.info("Created dispatch for schedule", {

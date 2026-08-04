@@ -1,5 +1,5 @@
 {
-  "generated": "2026-08-04T14:07:12.782Z",
+  "generated": "2026-08-04T15:03:19.107Z",
   "totalTools": 1411,
   "modules": 15,
   "tools": [
@@ -32599,7 +32599,7 @@
       "module": "resources",
       "classification": "WRITE",
       "description": "upsert maintenance schedule",
-      "paramCount": 15,
+      "paramCount": 16,
       "serviceParams": [
         "client",
         "schedule"
@@ -32635,6 +32635,9 @@
           },
           "estimatedDuration": {
             "type": "number"
+          },
+          "nextDueAt": {
+            "type": "string"
           },
           "active": {
             "type": "string"

@@ -30,6 +30,17 @@ export async function loader({ request }: LoaderFunctionArgs) {
   return { session: { accessToken, expiresAt, expiresIn } };
 }
 
+/**
+ * The display boards revalidate their own data every 30s. Without this, that
+ * loop would re-run this layout loader too — and `verify: true` calls
+ * `auth.getUser` on every run, hitting the auth server once per screen per tick
+ * for as long as a board hangs on the wall. The session only needs to load
+ * once; `CarbonProvider` owns keeping the token fresh from there.
+ */
+export function shouldRevalidate() {
+  return false;
+}
+
 export default function DisplayLayout() {
   const { session } = useLoaderData<typeof loader>();
 

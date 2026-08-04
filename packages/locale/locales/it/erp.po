@@ -8375,7 +8375,7 @@ msgid "Next Due"
 msgstr "Prossima Scadenza"
 
 msgid "Next Due Date"
-msgstr ""
+msgstr "Data di prossima scadenza"
 
 msgid "Next page"
 msgstr "Pagina successiva"
@@ -8577,6 +8577,7 @@ msgstr "Nessuna corrispondenza. Digita per crearne uno."
 
 msgid "No matching bins"
 msgstr "Nessun bin corrispondente"
+msgstr "Nessun contenitore corrisponde"
 
 msgid "No new notifications"
 msgstr "Nessuna nuova notifica"

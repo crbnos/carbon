@@ -8375,7 +8375,7 @@ msgid "Next Due"
 msgstr "下次到期"
 
 msgid "Next Due Date"
-msgstr ""
+msgstr "下次到期日期"
 
 msgid "Next page"
 msgstr "下一页"
@@ -8577,6 +8577,7 @@ msgstr "无匹配项。输入内容以创建一个。"
 
 msgid "No matching bins"
 msgstr "没有匹配的库位"
+msgstr "无匹配的箱子"
 
 msgid "No new notifications"
 msgstr "没有新通知"
@@ -8806,6 +8807,7 @@ msgstr "备注（可选）"
 #. placeholder {0}: search.trim()
 msgid "Nothing at this location matches \"{0}\"."
 msgstr "此位置处没有与\"{0}\"匹配的任何内容。"
+msgstr "此位置处没有与\"{0}\"匹配的内容。"
 
 msgid "Nothing else at this location has stock to pull from."
 msgstr "此位置没有其他可提取的库存。"

@@ -8375,7 +8375,7 @@ msgid "Next Due"
 msgstr "次回期限"
 
 msgid "Next Due Date"
-msgstr ""
+msgstr "次の期限日"
 
 msgid "Next page"
 msgstr "次のページ"
@@ -8577,6 +8577,7 @@ msgstr "一致するものがありません。作成するには入力してく
 
 msgid "No matching bins"
 msgstr "マッチするビンがありません"
+msgstr "一致するビンがありません"
 
 msgid "No new notifications"
 msgstr "新しい通知はありません"
@@ -8806,6 +8807,7 @@ msgstr "メモ（オプション）"
 #. placeholder {0}: search.trim()
 msgid "Nothing at this location matches \"{0}\"."
 msgstr "この場所に「{0}」に一致するものはありません。"
+msgstr "この場所には\"{0}\"に一致するものはありません。"
 
 msgid "Nothing else at this location has stock to pull from."
 msgstr "この場所には他に引き出す在庫がありません。"

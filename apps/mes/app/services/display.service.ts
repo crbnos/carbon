@@ -127,6 +127,14 @@ export async function getMaintenanceDisplayData(
       .order("nextDueAt", { ascending: true })
   ]);
 
+  // A wall display that reads green because a query silently failed is worse
+  // than one that shows an error: the whole board's status is derived from the
+  // dispatches and schedules, so a partial read could hide a machine that is
+  // down. Fail loud instead — the route lets the error boundary render.
+  const queryError =
+    openDispatches.error ?? recentDispatches.error ?? schedules.error;
+  if (queryError) throw queryError;
+
   const byId = new Map<string, any>();
   for (const row of [
     ...(openDispatches.data ?? []),
@@ -162,6 +170,9 @@ export async function getMaintenanceDisplayData(
       .limit(1)
       .maybeSingle()
   ]);
+
+  if ("error" in items && items.error) throw items.error;
+  if (lastCompleted.error) throw lastCompleted.error;
 
   const unplannedCost = (items.data ?? []).reduce(
     (sum, item) => sum + (item.totalCost ?? 0),

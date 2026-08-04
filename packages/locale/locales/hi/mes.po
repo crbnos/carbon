@@ -40,11 +40,11 @@ msgstr "{0} में से {1} पूर्ण"
 
 #. placeholder {0}: rows.length
 msgid "{0} queued"
-msgstr ""
+msgstr "{0} कतार में"
 
 #. placeholder {0}: activeWork.length
 msgid "{0} running"
-msgstr ""
+msgstr "{0} चल रहा है"
 
 #. placeholder {0}: item.quantityScrapped
 msgid "{0} Scrapped"
@@ -57,7 +57,7 @@ msgid "{fails} sampled failure(s) are recorded and will NOT be completed — res
 msgstr "{fails} नमूना विफलता(एं) दर्ज की गई है और पूर्ण नहीं की जाएगी — उन्हें क्रियाएं मेनू से हल करें।"
 
 msgid "+{overflow} more"
-msgstr ""
+msgstr "+{overflow} अधिक"
 
 msgid "About"
 msgstr "के बारे में"
@@ -105,7 +105,7 @@ msgid "All"
 msgstr "सभी"
 
 msgid "All clear"
-msgstr ""
+msgstr "सब कुछ स्पष्ट"
 
 msgid "All rework"
 msgstr "सभी रीवर्क"
@@ -176,7 +176,7 @@ msgid "By signing in, you agree to the <0>Terms of Service</0> and <1>Privacy Po
 msgstr "साइन इन करके, आप <0>सेवा की शर्तें</0> और <1>गोपनीयता नीति</1> से सहमत हैं।"
 
 msgid "By?"
-msgstr ""
+msgstr "द्वारा?"
 
 msgid "Cancel"
 msgstr "रद्द करें"
@@ -257,7 +257,7 @@ msgid "Completed"
 msgstr "पूर्ण"
 
 msgid "Connecting"
-msgstr ""
+msgstr "जुड़ रहा है"
 
 msgid "Console"
 msgstr "कंसोल"
@@ -270,7 +270,7 @@ msgstr "खपत की गई समाप्त"
 
 #. placeholder {0}: board.unplannedCost.days
 msgid "Cost of unplanned maintenance, last {0} days"
-msgstr ""
+msgstr "अनियोजित रखरखाव की लागत, पिछले {0} दिन"
 
 #. placeholder {0}: search.trim() === "" ? (createLabel ?? label) : search
 #. placeholder {0}: search.trim() === "" ? label : search
@@ -287,7 +287,7 @@ msgid "Create Rework"
 msgstr "रीवर्क बनाएं"
 
 msgid "Current work"
-msgstr ""
+msgstr "वर्तमान कार्य"
 
 msgid "Customer"
 msgstr "ग्राहक"
@@ -336,20 +336,20 @@ msgid "Display"
 msgstr "प्रदर्शन"
 
 msgid "Displays"
-msgstr ""
+msgstr "डिस्प्ले"
 
 msgid "Down"
 msgstr "डाउन"
 
 msgid "Down for maintenance"
-msgstr ""
+msgstr "रखरखाव के लिए बंद"
 
 #. placeholder {0}: workCenter.blockingDispatchReadableId
 msgid "Down for maintenance · {0}"
-msgstr ""
+msgstr "रखरखाव के लिए बंद · {0}"
 
 msgid "Down for planned maintenance"
-msgstr ""
+msgstr "नियोजित रखरखाव के लिए बंद"
 
 msgid "Download"
 msgstr "डाउनलोड"
@@ -381,10 +381,10 @@ msgstr "देय तारीख"
 
 #. placeholder {0}: board.dueSoon.days
 msgid "Due in the next {0} days?"
-msgstr ""
+msgstr "अगले {0} दिनों में देय?"
 
 msgid "Due today?"
-msgstr ""
+msgstr "आज देय?"
 
 msgid "Duplicate batch number"
 msgstr "डुप्लिकेट बैच नंबर"
@@ -399,7 +399,7 @@ msgid "Edit"
 msgstr "संपादित करें"
 
 msgid "Elapsed"
-msgstr ""
+msgstr "बीता हुआ"
 
 msgid "Email Address"
 msgstr "ईमेल पता"
@@ -513,7 +513,7 @@ msgid "How many were actually picked?"
 msgstr "वास्तव में कितने चुने गए?"
 
 msgid "How many?"
-msgstr ""
+msgstr "कितने?"
 
 msgid "I understand and want to complete without issuing"
 msgstr "मैं समझता हूँ और बिना जारी किए पूरा करना चाहता हूँ"
@@ -525,7 +525,7 @@ msgid "Ideas, suggestions or problems?"
 msgstr "विचार, सुझाव या समस्याएं?"
 
 msgid "Idle for"
-msgstr ""
+msgstr "के लिए निष्क्रिय"
 
 msgid "Impact"
 msgstr "प्रभाव"
@@ -597,7 +597,7 @@ msgid "Labor"
 msgstr "श्रम"
 
 msgid "Last completed"
-msgstr ""
+msgstr "अंतिम पूर्ण"
 
 msgid "Learn more"
 msgstr "अधिक जानें"
@@ -651,7 +651,7 @@ msgid "Machine"
 msgstr "मशीन"
 
 msgid "Machine down for maintenance now?"
-msgstr ""
+msgstr "मशीन अब रखरखाव के लिए बंद है?"
 
 msgid "Maintenance"
 msgstr "रखरखाव"
@@ -660,7 +660,7 @@ msgid "Maintenance Completed"
 msgstr "रखरखाव पूर्ण"
 
 msgid "Maintenance overdue"
-msgstr ""
+msgstr "रखरखाव अतिदेय"
 
 msgid "Manually add items to inventory"
 msgstr "इन्वेंटरी में आइटम मैन्युअली जोड़ें"
@@ -727,10 +727,10 @@ msgid "Next"
 msgstr "अगला"
 
 msgid "No"
-msgstr ""
+msgstr "नहीं"
 
 msgid "No active job at this work center"
-msgstr ""
+msgstr "इस कार्य केंद्र पर कोई सक्रिय कार्य नहीं"
 
 msgid "No active maintenance dispatches"
 msgstr "कोई सक्रिय रखरखाव प्रेषण नहीं"
@@ -739,7 +739,7 @@ msgid "No active operations"
 msgstr "कोई सक्रिय संचालन नहीं"
 
 msgid "No active work centers at this location."
-msgstr ""
+msgstr "इस स्थान पर कोई सक्रिय कार्य केंद्र नहीं।"
 
 msgid "No assigned operations"
 msgstr "कोई नियुक्त ऑपरेशन नहीं"
@@ -841,16 +841,16 @@ msgid "No work centers exist"
 msgstr "कोई कार्य केंद्र मौजूद नहीं है"
 
 msgid "None"
-msgstr ""
+msgstr "कोई नहीं"
 
 msgid "Notes"
 msgstr "नोट्स"
 
 msgid "Nothing running"
-msgstr ""
+msgstr "कुछ नहीं चल रहा"
 
 msgid "Nothing scheduled at this work center"
-msgstr ""
+msgstr "इस कार्य केंद्र पर कुछ भी शेड्यूल नहीं है"
 
 msgid "OEE Impact"
 msgstr "OEE प्रभाव"
@@ -872,7 +872,7 @@ msgid "Open"
 msgstr "खुला"
 
 msgid "Open a display on the screen mounted at the work center and leave it running. Each board refreshes on its own."
-msgstr ""
+msgstr "कार्य केंद्र पर लगी स्क्रीन पर एक डिस्प्ले खोलें और इसे चलता रहने दें। प्रत्येक बोर्ड अपने आप ताज़ा हो जाता है।"
 
 msgid "Open an NCR for MRB disposition"
 msgstr "एमआरबी डिस्पोजिशन के लिए एनसीआर खोलें"
@@ -887,7 +887,7 @@ msgid "Operations ended"
 msgstr "संचालन समाप्त"
 
 msgid "Operator"
-msgstr ""
+msgstr "ऑपरेटर"
 
 msgid "Operator Performed"
 msgstr "ऑपरेटर द्वारा निष्पादित"
@@ -899,7 +899,7 @@ msgid "Overall result"
 msgstr "समग्र परिणाम"
 
 msgid "Overdue PMs?"
-msgstr ""
+msgstr "अतिदेय PMs?"
 
 msgid "Parameters"
 msgstr "पैरामीटर"
@@ -953,7 +953,7 @@ msgid "Please select an item"
 msgstr "कृपया एक आइटम चुनें"
 
 msgid "PM schedule lapsed"
-msgstr ""
+msgstr "PM शेड्यूल समाप्त"
 
 msgid "Prev"
 msgstr "पिछला"
@@ -998,7 +998,7 @@ msgid "Quantity must be greater than 0"
 msgstr "मात्रा 0 से अधिक होनी चाहिए"
 
 msgid "Queue empty"
-msgstr ""
+msgstr "कतार खाली"
 
 msgid "Reason for rework"
 msgstr "रीवर्क का कारण"
@@ -1050,7 +1050,7 @@ msgid "Rework quantity"
 msgstr "रीवर्क मात्रा"
 
 msgid "Running"
-msgstr ""
+msgstr "चल रहा है"
 
 msgid "Sales Order"
 msgstr "बिक्रय आदेश"
@@ -1337,17 +1337,17 @@ msgid "Unpick {0}"
 msgstr "अनपिक {0}"
 
 msgid "Unplanned downtime"
-msgstr ""
+msgstr "अनियोजित डाउनटाइम"
 
 #. placeholder {0}: board.unplannedCount.days
 msgid "Unplanned maintenance items, last {0} days"
-msgstr ""
+msgstr "अनियोजित रखरखाव आइटम, पिछले {0} दिन"
 
 msgid "Unsaved changes"
 msgstr "असहेजे परिवर्तन"
 
 msgid "Up next"
-msgstr ""
+msgstr "अगला"
 
 msgid "Up to {maxAllocatable} unit(s) can be allocated; the rest is recorded without a posting."
 msgstr "अधिकतम {maxAllocatable} इकाई(यों) को आवंटित किया जा सकता है; शेष को पोस्टिंग के बिना दर्ज किया जाता है।"
@@ -1357,7 +1357,7 @@ msgstr "अपडेट करें"
 
 #. placeholder {0}: formatClock(lastUpdated)
 msgid "Updated {0}"
-msgstr ""
+msgstr "अपडेट किया गया {0}"
 
 msgid "Updated successfully"
 msgstr "सफलतापूर्वक अपडेट किया गया"
@@ -1386,10 +1386,10 @@ msgid "Work Center"
 msgstr "कार्य केंद्र"
 
 msgid "Work Center Displays"
-msgstr ""
+msgstr "कार्य केंद्र डिस्प्ले"
 
 msgid "Yes"
-msgstr ""
+msgstr "हां"
 
 #. placeholder {0}: new Date(openClockEntry.clockIn).toLocaleString(locale)
 msgid "You clocked in at {0}. You can edit your clock-out time below or acknowledge that you're still working."

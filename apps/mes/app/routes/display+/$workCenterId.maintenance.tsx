@@ -36,15 +36,26 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
   });
   if (!workCenter) throw notFound("Work center not found");
 
-  const [{ dispatches, schedules, unplannedCost, lastCompleted }, company] =
-    await Promise.all([
-      getMaintenanceDisplayData(serviceRole, { workCenterId, companyId }),
-      serviceRole
-        .from("company")
-        .select("baseCurrencyCode")
-        .eq("id", companyId)
-        .maybeSingle()
-    ]);
+  const [
+    { dispatches, schedules, unplannedCost, lastCompleted },
+    company,
+    location
+  ] = await Promise.all([
+    getMaintenanceDisplayData(serviceRole, { workCenterId, companyId }),
+    serviceRole
+      .from("company")
+      .select("baseCurrencyCode")
+      .eq("id", companyId)
+      .maybeSingle(),
+    workCenter.locationId
+      ? serviceRole
+          .from("location")
+          .select("timezone")
+          .eq("id", workCenter.locationId)
+          .eq("companyId", companyId)
+          .maybeSingle()
+      : Promise.resolve({ data: null })
+  ]);
 
   return {
     workCenter,
@@ -52,7 +63,8 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
     schedules,
     unplannedCost,
     lastCompleted,
-    currencyCode: company.data?.baseCurrencyCode ?? "USD"
+    currencyCode: company.data?.baseCurrencyCode ?? "USD",
+    timeZone: location.data?.timezone ?? null
   };
 }
 
@@ -64,7 +76,8 @@ export default function MaintenanceDisplayRoute() {
     schedules,
     unplannedCost,
     lastCompleted,
-    currencyCode
+    currencyCode,
+    timeZone
   } = useLoaderData<typeof loader>();
 
   const state = getMaintenanceDisplayState(dispatches, schedules);
@@ -72,7 +85,8 @@ export default function MaintenanceDisplayRoute() {
     dispatches,
     schedules,
     unplannedCost,
-    lastCompleted
+    lastCompleted,
+    timeZone: timeZone ?? undefined
   });
 
   const alertLabels: Record<MaintenanceAlertReason, string> = {

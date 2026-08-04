@@ -8375,7 +8375,7 @@ msgid "Next Due"
 msgstr "Następny termin"
 
 msgid "Next Due Date"
-msgstr ""
+msgstr "Następna data wymagalności"
 
 msgid "Next page"
 msgstr "Następna strona"

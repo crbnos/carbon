@@ -8375,7 +8375,7 @@ msgid "Next Due"
 msgstr "Sonraki Teslim Tarihi"
 
 msgid "Next Due Date"
-msgstr ""
+msgstr "Sonraki Vade Tarihi"
 
 msgid "Next page"
 msgstr "Sonraki sayfa"
@@ -8806,6 +8806,7 @@ msgstr "Notlar (isteğe bağlı)"
 #. placeholder {0}: search.trim()
 msgid "Nothing at this location matches \"{0}\"."
 msgstr "Bu konumdaki hiçbir şey \"{0}\" ile eşleşmiyor."
+msgstr "Bu konumda \"{0}\" ile eşleşen hiçbir şey yok."
 
 msgid "Nothing else at this location has stock to pull from."
 msgstr "Bu konumda çekilecek başka hiçbir stok yok."

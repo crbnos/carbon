@@ -8,6 +8,8 @@
  * routes stay thin and the thresholds are unit-testable without a database.
  */
 
+import { fromDate } from "@internationalized/date";
+
 export type DisplayStatus = "ok" | "alert";
 
 export type MaintenanceAlertReason =
@@ -158,13 +160,25 @@ export function getWorkDisplayState(args: {
   return { status: reasons.length > 0 ? "alert" : "ok", reasons };
 }
 
-function startOfDay(now: Date): number {
+function startOfDay(now: Date, timeZone?: string): number {
+  if (timeZone) {
+    return fromDate(now, timeZone)
+      .set({ hour: 0, minute: 0, second: 0, millisecond: 0 })
+      .toDate()
+      .getTime();
+  }
   const d = new Date(now);
   d.setHours(0, 0, 0, 0);
   return d.getTime();
 }
 
-function endOfDay(now: Date): number {
+function endOfDay(now: Date, timeZone?: string): number {
+  if (timeZone) {
+    return fromDate(now, timeZone)
+      .set({ hour: 23, minute: 59, second: 59, millisecond: 999 })
+      .toDate()
+      .getTime();
+  }
   const d = new Date(now);
   d.setHours(23, 59, 59, 999);
   return d.getTime();
@@ -199,11 +213,18 @@ export function getMaintenanceScoreboard(args: {
   unplannedCost: number;
   lastCompleted: { completedAt: string | null; by: string | null };
   now?: Date;
+  /**
+   * The work center's location timezone. Day rows ("due today" / "due soon")
+   * are computed from calendar days in this zone so they match the shop floor
+   * rather than the server (during SSR) or a mis-set display clock. Falls back
+   * to the runtime-local day when omitted.
+   */
+  timeZone?: string;
 }): MaintenanceScoreboard {
   const { dispatches, schedules, unplannedCost, lastCompleted } = args;
   const now = args.now ?? new Date();
-  const todayEnd = endOfDay(now);
-  const todayStart = startOfDay(now);
+  const todayEnd = endOfDay(now, args.timeZone);
+  const todayStart = startOfDay(now, args.timeZone);
   const soonEnd = now.getTime() + DUE_SOON_DAYS * 24 * 60 * 60 * 1000;
 
   const openDispatches = dispatches.filter((d) => isOpen(d.status));

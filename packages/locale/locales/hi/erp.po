@@ -8375,7 +8375,7 @@ msgid "Next Due"
 msgstr "अगला देय"
 
 msgid "Next Due Date"
-msgstr ""
+msgstr "अगली देय तारीख"
 
 msgid "Next page"
 msgstr "अगला पृष्ठ"
@@ -8577,6 +8577,7 @@ msgstr "कोई मेल नहीं। एक बनाने के लि
 
 msgid "No matching bins"
 msgstr "कोई मेल खाने वाले बिन नहीं"
+msgstr "कोई मिलान खाना नहीं"
 
 msgid "No new notifications"
 msgstr "कोई नई सूचनाएं नहीं"
@@ -8806,6 +8807,7 @@ msgstr "नोट्स (वैकल्पिक)"
 #. placeholder {0}: search.trim()
 msgid "Nothing at this location matches \"{0}\"."
 msgstr "इस स्थान पर \"{0}\" से कुछ भी मेल नहीं खाता।"
+msgstr "इस स्थान पर कुछ भी \"{0}\" से मेल नहीं खाता।"
 
 msgid "Nothing else at this location has stock to pull from."
 msgstr "इस स्थान पर कोई अन्य स्टॉक नहीं है जहां से खींचा जा सकता है।"

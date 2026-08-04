@@ -8375,7 +8375,7 @@ msgid "Next Due"
 msgstr "Próximo Vencimento"
 
 msgid "Next Due Date"
-msgstr ""
+msgstr "Próxima Data de Vencimento"
 
 msgid "Next page"
 msgstr "Próxima página"
