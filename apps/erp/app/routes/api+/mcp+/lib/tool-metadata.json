@@ -1,6 +1,6 @@
 {
-  "generated": "2026-08-04T13:48:28.781Z",
-  "totalTools": 1413,
+  "generated": "2026-08-04T14:07:12.782Z",
+  "totalTools": 1411,
   "modules": 15,
   "tools": [
     {
@@ -20535,56 +20535,6 @@
         "required": [
           "id",
           "status"
-        ]
-      }
-    },
-    {
-      "name": "production_returnPickedRemaindersForOperation",
-      "module": "production",
-      "classification": "WRITE",
-      "description": "return picked remainders for operation",
-      "paramCount": 1,
-      "serviceParams": [
-        "client",
-        "args"
-      ],
-      "injectAuth": [
-        "companyId"
-      ],
-      "schema": {
-        "type": "object",
-        "properties": {
-          "jobOperationId": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "jobOperationId"
-        ]
-      }
-    },
-    {
-      "name": "production_returnPickedRemaindersForJob",
-      "module": "production",
-      "classification": "WRITE",
-      "description": "return picked remainders for job",
-      "paramCount": 1,
-      "serviceParams": [
-        "client",
-        "args"
-      ],
-      "injectAuth": [
-        "companyId"
-      ],
-      "schema": {
-        "type": "object",
-        "properties": {
-          "jobId": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "jobId"
         ]
       }
     },

@@ -142,7 +142,7 @@ No trigger change, no view change (`update_picking_list_status` untouched;
 
 - 2026-08-04 — Spec written after research + grill (5 questions user-resolved).
   Implementation plan: `.ai/plans/2026-08-04-picked-material-return-timing.md`.
-- 2026-08-04 — Implemented + migration applied + browser-verified end-to-end
+- 2026-08-04 — Implemented + migration applied + partially browser-verified
   (playbook `.ai/playbooks/picked-material-return-timing.md`): op-scope return
   with owed hold-back (job In Progress), job-scope return via MES finish AND the
   ERP Complete button, policy='job' no-op at op-Done, header non-demotion,

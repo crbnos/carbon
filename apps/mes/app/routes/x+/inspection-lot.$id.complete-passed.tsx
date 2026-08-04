@@ -27,6 +27,7 @@ async function sweepIfOperationDone(
     .from("jobOperation")
     .select("status")
     .eq("id", args.jobOperationId)
+    .eq("companyId", args.companyId)
     .maybeSingle();
   if (op.data?.status !== "Done") return;
   await returnPickedRemainders(serviceRole, args);

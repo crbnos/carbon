@@ -222,6 +222,7 @@ export async function returnPickedRemainders(
     .from("jobOperation")
     .select("jobId")
     .eq("id", args.jobOperationId)
+    .eq("companyId", args.companyId)
     .maybeSingle();
   const jobId = op.data?.jobId;
   if (!jobId) return;
@@ -230,6 +231,7 @@ export async function returnPickedRemainders(
     .from("job")
     .select("status")
     .eq("id", jobId)
+    .eq("companyId", args.companyId)
     .maybeSingle();
   if (!job.data) return;
 

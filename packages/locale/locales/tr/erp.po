@@ -1658,13 +1658,13 @@ msgid "At each gate"
 msgstr "Her kapıda"
 
 msgid "At job completion"
-msgstr ""
+msgstr "İş tamamlandığında"
 
 msgid "At least one condition must match"
 msgstr "En az bir koşul eşleşmelidir"
 
 msgid "At operation completion"
-msgstr ""
+msgstr "İşlem tamamlandığında"
 
 msgid "Attach File"
 msgstr "Dosya Ekle"
@@ -3718,7 +3718,7 @@ msgid "Decide what happens when an operator presses Finish on the shop floor wit
 msgstr "Bir operatör, malzeme henüz seçilmemiş olarak üretim alanında Bitir'e bastığında ne olacağını belirleyin."
 
 msgid "Decide when material picked to a work center but not consumed flows back to the warehouse."
-msgstr ""
+msgstr "Bir iş merkezine alınan ancak tüketilmeyen malzemenin depoya geri akışının ne zaman gerçekleşeceğine karar verin."
 
 msgid "Decimal Places"
 msgstr "Ondalık Basamaklar"
@@ -4568,7 +4568,7 @@ msgid "e.g. Zebra 2x1"
 msgstr "örneğin Zebra 2x1"
 
 msgid "Each operation's unused material returns as soon as the operation is done."
-msgstr ""
+msgstr "Her işlemin kullanılmayan malzemesi işlem tamamlandığı anda geri döner."
 
 msgid "Each physical unit gets its own tracked entity and unique number — one entity, one unit."
 msgstr "Her fiziksel birim kendi izlenen varlığını ve benzersiz numarasını alır — bir varlık, bir birim."
@@ -7226,7 +7226,7 @@ msgid "Leftover Parts Detected"
 msgstr "Artık Parçalar Tespit Edildi"
 
 msgid "Leftover staged material returns when the whole job completes."
-msgstr ""
+msgstr "Kalan hazırlanan malzeme tüm iş tamamlandığında geri döner."
 
 msgid "Less manual work"
 msgstr "Daha az manuel çalışma"
@@ -8582,7 +8582,7 @@ msgid "No matches. Type to create one."
 msgstr "Eşleşme yok. Bir tane oluşturmak için yazın."
 
 msgid "No matching bins"
-msgstr ""
+msgstr "Eşleşen kutu yok"
 
 msgid "No new notifications"
 msgstr "Yeni bildirim yok"
@@ -8811,7 +8811,7 @@ msgstr "Notlar (isteğe bağlı)"
 
 #. placeholder {0}: search.trim()
 msgid "Nothing at this location matches \"{0}\"."
-msgstr ""
+msgstr "Bu konumdaki hiçbir şey \"{0}\" ile eşleşmiyor."
 
 msgid "Nothing else at this location has stock to pull from."
 msgstr "Bu konumda çekilecek başka hiçbir stok yok."
@@ -10803,10 +10803,10 @@ msgid "Return Home"
 msgstr "Ana Sayfaya Dön"
 
 msgid "Returned"
-msgstr ""
+msgstr "İade Edildi"
 
 msgid "Returning unused picked material"
-msgstr ""
+msgstr "Kullanılmayan alınan malzeme iade ediliyor"
 
 msgid "Rev {revision}"
 msgstr "Sürüm {revision}"
@@ -13976,7 +13976,7 @@ msgid "Untitled line"
 msgstr "Başlıksız satır"
 
 msgid "Unused picked material flushed back from the work center to the warehouse."
-msgstr ""
+msgstr "İş merkezinden depoya geri gönderilen kullanılmayan alınan malzeme."
 
 msgid "UoM"
 msgstr "Birim"
