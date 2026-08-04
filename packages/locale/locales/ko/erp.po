@@ -563,6 +563,9 @@ msgstr "누적 기간:"
 msgid "Acknowledge & finish"
 msgstr "확인 및 완료"
 
+msgid "Acknowledged"
+msgstr ""
+
 msgid "Acquisition Cost"
 msgstr "취득원가"
 
@@ -712,6 +715,9 @@ msgstr "라인 추가"
 
 msgid "Add Line Item"
 msgstr "라인 항목 추가"
+
+msgid "Add Mapping"
+msgstr ""
 
 msgid "Add Note"
 msgstr "메모 추가"
@@ -2001,6 +2007,9 @@ msgstr "구매 및 제조"
 msgid "Buyer"
 msgstr "구매담당자"
 
+msgid "Buyer Part"
+msgstr ""
+
 msgid "Buyer, Planner"
 msgstr "구매담당자, 계획담당자"
 
@@ -2586,6 +2595,9 @@ msgstr "기본 자본 및 이익잉여금 계정 설정"
 
 msgid "Configure defaults for the quality dashboard."
 msgstr "품질 대시보드의 기본값을 설정하세요."
+
+msgid "Configure electronic data interchange with this trading partner"
+msgstr ""
 
 msgid "Configure how preventative maintenance dispatches are automatically generated from maintenance schedules."
 msgstr "유지보수 일정에서 예방 유지보수 작업지시가 자동 생성되는 방식을 설정하세요."
@@ -3960,6 +3972,9 @@ msgstr "라인 삭제"
 msgid "Delete Location"
 msgstr "위치 삭제"
 
+msgid "Delete location mapping"
+msgstr ""
+
 msgid "Delete Material"
 msgstr "자재 삭제"
 
@@ -4581,6 +4596,12 @@ msgstr "확장이 더 쉬움"
 
 msgid "Economic Operators Registration and Identification number; required for goods crossing customs borders in the EU / UK."
 msgstr "경제운영자 등록 및 식별 번호(EORI)로, EU/영국 국경을 통과하는 재화에 필요합니다."
+
+msgid "EDI"
+msgstr ""
+
+msgid "EDI Documents"
+msgstr ""
 
 msgid "Edit"
 msgstr "수정"
@@ -5226,6 +5247,9 @@ msgstr "스타터의 모든 기능 포함"
 msgid "Exceeds {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB total — remove some attachments to send."
 msgstr "총 {PO_EMAIL_ATTACHMENT_LIMIT_MB}MB를 초과합니다 — 발송하려면 일부 첨부 파일을 제거하세요."
 
+msgid "Exchange documents with this trading partner"
+msgstr ""
+
 msgid "Exchange Rate"
 msgstr "환율"
 
@@ -5385,6 +5409,9 @@ msgstr "총계정원장 보고를 세분화하기 위한 추가 태그"
 
 msgid "Fail"
 msgstr "실패"
+
+msgid "Failed"
+msgstr ""
 
 msgid "Failed features"
 msgstr "부적합 특성"
@@ -7326,6 +7353,9 @@ msgstr "연결된 이슈"
 msgid "Linked PO"
 msgstr "연결된 구매주문"
 
+msgid "Linked Record"
+msgstr ""
+
 msgid "List Options"
 msgstr "목록 옵션"
 
@@ -7379,6 +7409,9 @@ msgstr "위치"
 
 msgid "Location / Item"
 msgstr "위치 / 항목"
+
+msgid "Location Mapping"
+msgstr ""
 
 msgid "Location Name"
 msgstr "위치 이름"
@@ -7606,6 +7639,9 @@ msgstr "제조사 부품 번호"
 msgid "Manufacturing"
 msgstr "제조"
 
+msgid "Map"
+msgstr ""
+
 msgid "Map Extracted Invoice Lines"
 msgstr "추출된 인보이스 라인 매핑"
 
@@ -7614,6 +7650,15 @@ msgstr "추출된 라인 매핑"
 
 msgid "Map Lines Now"
 msgstr "지금 라인 매핑"
+
+msgid "Map partner ship-to codes to customer locations"
+msgstr ""
+
+msgid "Map to item"
+msgstr ""
+
+msgid "Map to location"
+msgstr ""
 
 msgid "Map your current process, systems, and data"
 msgstr "현재 프로세스, 시스템, 데이터를 매핑하세요"
@@ -8058,6 +8103,9 @@ msgstr "작업 필요"
 
 msgid "Needs ordering"
 msgstr "주문 필요"
+
+msgid "Needs Review"
+msgstr ""
 
 msgid "Negative Adjustment"
 msgstr "음수 조정"
@@ -8553,6 +8601,9 @@ msgstr "검사 계획 없음"
 
 msgid "No issue types configured"
 msgstr "설정된 이슈 유형이 없습니다"
+
+msgid "No issues"
+msgstr ""
 
 msgid "No items"
 msgstr "품목 없음"
@@ -9331,6 +9382,12 @@ msgstr "부분"
 msgid "Partner"
 msgstr "파트너"
 
+msgid "Partner Code"
+msgstr ""
+
+msgid "Partner Reference"
+msgstr ""
+
 msgid "Partners"
 msgstr "파트너"
 
@@ -9775,6 +9832,9 @@ msgstr "가격표"
 msgid "Price override"
 msgstr "가격 재설정"
 
+msgid "Price Tolerance"
+msgstr ""
+
 msgid "Prices"
 msgstr "가격"
 
@@ -9970,6 +10030,9 @@ msgstr "교육 시간을 확보하고 참석하세요"
 
 msgid "Provide process knowledge and inputs"
 msgstr "공정 지식과 의견을 제공하세요"
+
+msgid "Provider Partner ID"
+msgstr ""
 
 msgid "Public"
 msgstr "공개"
@@ -10279,6 +10342,9 @@ msgstr "원자재"
 msgid "Raw Materials (default)"
 msgstr "원자재 (기본값)"
 
+msgid "Raw Payload"
+msgstr ""
+
 msgid "Re-keying between quoting, the floor, and finance"
 msgstr "견적, 현장, 재무 간 데이터 재입력"
 
@@ -10534,6 +10600,9 @@ msgstr "릴리스 제어"
 
 msgid "Release Job"
 msgstr "작업 릴리즈"
+
+msgid "Release Mode"
+msgstr ""
 
 msgid "Released"
 msgstr "릴리즈됨"
@@ -11140,6 +11209,9 @@ msgstr "애플리케이션 저장"
 msgid "Save contacts"
 msgstr "연락처 저장"
 
+msgid "Save EDI settings before mapping locations"
+msgstr ""
+
 msgid "Save Method"
 msgstr "저장 방법"
 
@@ -11522,6 +11594,9 @@ msgstr "불량 유닛을 폐기하는 대신 이전 공정작업으로 되돌려
 
 msgid "Sends this document for approval before it can go active."
 msgstr "이 문서를 활성화하기 전에 승인을 위해 전송합니다."
+
+msgid "Sent"
+msgstr ""
 
 msgid "Sequences"
 msgstr "시퀀스"
@@ -14310,6 +14385,9 @@ msgstr "사용자 정의 필드 보기"
 
 msgid "View Customers"
 msgstr "고객 보기"
+
+msgid "View Document"
+msgstr ""
 
 msgid "View Employees"
 msgstr "직원 보기"

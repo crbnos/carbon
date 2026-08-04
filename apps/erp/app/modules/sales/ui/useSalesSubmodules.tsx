@@ -1,5 +1,6 @@
 import { useLingui } from "@lingui/react/macro";
 import {
+  LuArrowRightLeft,
   LuBan,
   LuGlobe,
   LuList,
@@ -49,6 +50,12 @@ export default function useSalesSubmodules() {
           to: path.to.salesOrders,
           icon: <RiProgress8Line />,
           table: "salesOrder"
+        },
+        {
+          name: t`EDI`,
+          to: path.to.ediDocuments,
+          icon: <LuArrowRightLeft />,
+          table: "ediDocument"
         },
         {
           name: t`Portals`,

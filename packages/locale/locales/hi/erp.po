@@ -563,6 +563,9 @@ msgstr "संचय अवधि:"
 msgid "Acknowledge & finish"
 msgstr "स्वीकार करें और समाप्त करें"
 
+msgid "Acknowledged"
+msgstr ""
+
 msgid "Acquisition Cost"
 msgstr "अधिग्रहण लागत"
 
@@ -712,6 +715,9 @@ msgstr "लाइन जोड़ें"
 
 msgid "Add Line Item"
 msgstr "लाइन आइटम जोड़ें"
+
+msgid "Add Mapping"
+msgstr ""
 
 msgid "Add Note"
 msgstr "नोट जोड़ें"
@@ -2001,6 +2007,9 @@ msgstr "खरीदें और बनाएं"
 msgid "Buyer"
 msgstr "क्रेता"
 
+msgid "Buyer Part"
+msgstr ""
+
 msgid "Buyer, Planner"
 msgstr "क्रेता, योजनाकार"
 
@@ -2586,6 +2595,9 @@ msgstr "इक्विटी और प्रतिधारित आय ख�
 
 msgid "Configure defaults for the quality dashboard."
 msgstr "गुणवत्ता डैशबोर्ड के लिए डिफ़ॉल्ट कॉन्फ़िगर करें।"
+
+msgid "Configure electronic data interchange with this trading partner"
+msgstr ""
 
 msgid "Configure how preventative maintenance dispatches are automatically generated from maintenance schedules."
 msgstr "रखरखाव शेड्यूल से निवारक रखरखाव डिस्पैच को स्वचालित रूप से कैसे उत्पन्न किया जाए, इसे कॉन्फ़िगर करें।"
@@ -3960,6 +3972,9 @@ msgstr "लाइन हटाएं"
 msgid "Delete Location"
 msgstr "स्थान हटाएं"
 
+msgid "Delete location mapping"
+msgstr ""
+
 msgid "Delete Material"
 msgstr "सामग्री हटाएं"
 
@@ -4581,6 +4596,12 @@ msgstr "विस्तार करना आसान"
 
 msgid "Economic Operators Registration and Identification number; required for goods crossing customs borders in the EU / UK."
 msgstr "आर्थिक संचालकों पंजीकरण और पहचान संख्या; EU/UK में सीमा शुल्क सीमाओं को पार करने वाली वस्तुओं के लिए आवश्यक।"
+
+msgid "EDI"
+msgstr ""
+
+msgid "EDI Documents"
+msgstr ""
 
 msgid "Edit"
 msgstr "संपादित करें"
@@ -5226,6 +5247,9 @@ msgstr "स्टार्टर से सब कुछ"
 msgid "Exceeds {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB total — remove some attachments to send."
 msgstr "{PO_EMAIL_ATTACHMENT_LIMIT_MB} MB से अधिक है — भेजने के लिए कुछ अटैचमेंट हटाएं।"
 
+msgid "Exchange documents with this trading partner"
+msgstr ""
+
 msgid "Exchange Rate"
 msgstr "विनिमय दर"
 
@@ -5385,6 +5409,9 @@ msgstr "आपकी GL रिपोर्टिंग को स्लाइस
 
 msgid "Fail"
 msgstr "विफल"
+
+msgid "Failed"
+msgstr ""
 
 msgid "Failed features"
 msgstr "विफल विशेषताएँ"
@@ -7326,6 +7353,9 @@ msgstr "जुड़ी समस्या"
 msgid "Linked PO"
 msgstr "लिंक्ड PO"
 
+msgid "Linked Record"
+msgstr ""
+
 msgid "List Options"
 msgstr "सूची विकल्प"
 
@@ -7379,6 +7409,9 @@ msgstr "स्थान"
 
 msgid "Location / Item"
 msgstr "स्थान / आइटम"
+
+msgid "Location Mapping"
+msgstr ""
 
 msgid "Location Name"
 msgstr "स्थान का नाम"
@@ -7606,6 +7639,9 @@ msgstr "निर्माता भाग संख्या"
 msgid "Manufacturing"
 msgstr "विनिर्माण"
 
+msgid "Map"
+msgstr ""
+
 msgid "Map Extracted Invoice Lines"
 msgstr "निकाली गई चालान पंक्तियों को मैप करें"
 
@@ -7614,6 +7650,15 @@ msgstr "निकाली गई लाइनों को मैप करे�
 
 msgid "Map Lines Now"
 msgstr "अभी लाइनें मैप करें"
+
+msgid "Map partner ship-to codes to customer locations"
+msgstr ""
+
+msgid "Map to item"
+msgstr ""
+
+msgid "Map to location"
+msgstr ""
 
 msgid "Map your current process, systems, and data"
 msgstr "अपनी वर्तमान प्रक्रिया, सिस्टम और डेटा को मैप करें"
@@ -8058,6 +8103,9 @@ msgstr "नौकरी की जरूरत है"
 
 msgid "Needs ordering"
 msgstr "ऑर्डर करने की आवश्यकता"
+
+msgid "Needs Review"
+msgstr ""
 
 msgid "Negative Adjustment"
 msgstr "नकारात्मक समायोजन"
@@ -8553,6 +8601,9 @@ msgstr "कोई निरीक्षण योजनाएं नहीं"
 
 msgid "No issue types configured"
 msgstr "कोई समस्या प्रकार कॉन्फ़िगर नहीं किया गया"
+
+msgid "No issues"
+msgstr ""
 
 msgid "No items"
 msgstr "कोई आइटम नहीं"
@@ -9331,6 +9382,12 @@ msgstr "आंशिक"
 msgid "Partner"
 msgstr "साथी"
 
+msgid "Partner Code"
+msgstr ""
+
+msgid "Partner Reference"
+msgstr ""
+
 msgid "Partners"
 msgstr "भागीदार"
 
@@ -9775,6 +9832,9 @@ msgstr "मूल्य सूचियाँ"
 msgid "Price override"
 msgstr "मूल्य ओवरराइड"
 
+msgid "Price Tolerance"
+msgstr ""
+
 msgid "Prices"
 msgstr "कीमतें"
 
@@ -9970,6 +10030,9 @@ msgstr "प्रशिक्षण समय की सुरक्षा क�
 
 msgid "Provide process knowledge and inputs"
 msgstr "प्रक्रिया ज्ञान और इनपुट प्रदान करें"
+
+msgid "Provider Partner ID"
+msgstr ""
 
 msgid "Public"
 msgstr "सार्वजनिक"
@@ -10279,6 +10342,9 @@ msgstr "कच्चा माल"
 msgid "Raw Materials (default)"
 msgstr "कच्चा माल (डिफ़ॉल्ट)"
 
+msgid "Raw Payload"
+msgstr ""
+
 msgid "Re-keying between quoting, the floor, and finance"
 msgstr "उद्धरण, फर्श और वित्त के बीच पुनः-कुंजीकरण"
 
@@ -10534,6 +10600,9 @@ msgstr "जारी करने का नियंत्रण"
 
 msgid "Release Job"
 msgstr "जॉब रिलीज़ करें"
+
+msgid "Release Mode"
+msgstr ""
 
 msgid "Released"
 msgstr "जारी किया गया"
@@ -11140,6 +11209,9 @@ msgstr "आवेदन सहेजें"
 msgid "Save contacts"
 msgstr "संपर्क सहेजें"
 
+msgid "Save EDI settings before mapping locations"
+msgstr ""
+
 msgid "Save Method"
 msgstr "विधि सहेजें"
 
@@ -11522,6 +11594,9 @@ msgstr "दोषपूर्ण इकाइयों को उन्हें
 
 msgid "Sends this document for approval before it can go active."
 msgstr "यह दस्तावेज़ सक्रिय होने से पहले अनुमोदन के लिए भेजता है।"
+
+msgid "Sent"
+msgstr ""
 
 msgid "Sequences"
 msgstr "अनुक्रम"
@@ -14310,6 +14385,9 @@ msgstr "कस्टम फील्ड्स देखें"
 
 msgid "View Customers"
 msgstr "ग्राहकों को देखें"
+
+msgid "View Document"
+msgstr ""
 
 msgid "View Employees"
 msgstr "कर्मचारियों को देखें"

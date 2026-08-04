@@ -563,6 +563,9 @@ msgstr "累积期间："
 msgid "Acknowledge & finish"
 msgstr "确认并完成"
 
+msgid "Acknowledged"
+msgstr ""
+
 msgid "Acquisition Cost"
 msgstr "收购成本"
 
@@ -712,6 +715,9 @@ msgstr "添加行"
 
 msgid "Add Line Item"
 msgstr "添加行项目"
+
+msgid "Add Mapping"
+msgstr ""
 
 msgid "Add Note"
 msgstr "添加备注"
@@ -2001,6 +2007,9 @@ msgstr "购买和制造"
 msgid "Buyer"
 msgstr "采购员"
 
+msgid "Buyer Part"
+msgstr ""
+
 msgid "Buyer, Planner"
 msgstr "采购员、计划员"
 
@@ -2586,6 +2595,9 @@ msgstr "配置默认的股权和留存收益账户"
 
 msgid "Configure defaults for the quality dashboard."
 msgstr "为质量仪表板配置默认值。"
+
+msgid "Configure electronic data interchange with this trading partner"
+msgstr ""
 
 msgid "Configure how preventative maintenance dispatches are automatically generated from maintenance schedules."
 msgstr "配置如何从维护计划自动生成预防性维护派遣。"
@@ -3960,6 +3972,9 @@ msgstr "删除行"
 msgid "Delete Location"
 msgstr "删除位置"
 
+msgid "Delete location mapping"
+msgstr ""
+
 msgid "Delete Material"
 msgstr "删除物料"
 
@@ -4581,6 +4596,12 @@ msgstr "更容易扩展"
 
 msgid "Economic Operators Registration and Identification number; required for goods crossing customs borders in the EU / UK."
 msgstr "经济运营人注册和识别号码; 对于在欧盟/英国关税边界通关的货物必需。"
+
+msgid "EDI"
+msgstr ""
+
+msgid "EDI Documents"
+msgstr ""
 
 msgid "Edit"
 msgstr "编辑"
@@ -5226,6 +5247,9 @@ msgstr "Starter 中的所有功能"
 msgid "Exceeds {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB total — remove some attachments to send."
 msgstr "超过 {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB 总限制 — 请删除一些附件以发送。"
 
+msgid "Exchange documents with this trading partner"
+msgstr ""
+
 msgid "Exchange Rate"
 msgstr "汇率"
 
@@ -5385,6 +5409,9 @@ msgstr "用于切分总账报告的额外标签"
 
 msgid "Fail"
 msgstr "失败"
+
+msgid "Failed"
+msgstr ""
 
 msgid "Failed features"
 msgstr "失效特性"
@@ -7326,6 +7353,9 @@ msgstr "关联问题"
 msgid "Linked PO"
 msgstr "关联采购订单"
 
+msgid "Linked Record"
+msgstr ""
+
 msgid "List Options"
 msgstr "列表选项"
 
@@ -7379,6 +7409,9 @@ msgstr "位置"
 
 msgid "Location / Item"
 msgstr "位置 / 物品"
+
+msgid "Location Mapping"
+msgstr ""
 
 msgid "Location Name"
 msgstr "位置名称"
@@ -7606,6 +7639,9 @@ msgstr "制造商零件号"
 msgid "Manufacturing"
 msgstr "制造"
 
+msgid "Map"
+msgstr ""
+
 msgid "Map Extracted Invoice Lines"
 msgstr "映射提取的发票行项目"
 
@@ -7614,6 +7650,15 @@ msgstr "映射提取的行"
 
 msgid "Map Lines Now"
 msgstr "立即映射行"
+
+msgid "Map partner ship-to codes to customer locations"
+msgstr ""
+
+msgid "Map to item"
+msgstr ""
+
+msgid "Map to location"
+msgstr ""
 
 msgid "Map your current process, systems, and data"
 msgstr "映射您当前的流程、系统和数据"
@@ -8058,6 +8103,9 @@ msgstr "需要工作"
 
 msgid "Needs ordering"
 msgstr "需要订购"
+
+msgid "Needs Review"
+msgstr ""
 
 msgid "Negative Adjustment"
 msgstr "负调整"
@@ -8553,6 +8601,9 @@ msgstr "无检验计划"
 
 msgid "No issue types configured"
 msgstr "未配置问题类型"
+
+msgid "No issues"
+msgstr ""
 
 msgid "No items"
 msgstr "无项目"
@@ -9331,6 +9382,12 @@ msgstr "部分"
 msgid "Partner"
 msgstr "合作伙伴"
 
+msgid "Partner Code"
+msgstr ""
+
+msgid "Partner Reference"
+msgstr ""
+
 msgid "Partners"
 msgstr "合作伙伴"
 
@@ -9775,6 +9832,9 @@ msgstr "价格表"
 msgid "Price override"
 msgstr "价格覆盖"
 
+msgid "Price Tolerance"
+msgstr ""
+
 msgid "Prices"
 msgstr "价格"
 
@@ -9970,6 +10030,9 @@ msgstr "保护培训时间并参加"
 
 msgid "Provide process knowledge and inputs"
 msgstr "提供流程知识和输入"
+
+msgid "Provider Partner ID"
+msgstr ""
 
 msgid "Public"
 msgstr "公开"
@@ -10279,6 +10342,9 @@ msgstr "原材料"
 msgid "Raw Materials (default)"
 msgstr "原材料（默认）"
 
+msgid "Raw Payload"
+msgstr ""
+
 msgid "Re-keying between quoting, the floor, and finance"
 msgstr "在报价、车间和财务之间重复输入数据"
 
@@ -10534,6 +10600,9 @@ msgstr "发布控制"
 
 msgid "Release Job"
 msgstr "发布工作"
+
+msgid "Release Mode"
+msgstr ""
 
 msgid "Released"
 msgstr "已发布"
@@ -11140,6 +11209,9 @@ msgstr "保存应用"
 msgid "Save contacts"
 msgstr "保存联系人"
 
+msgid "Save EDI settings before mapping locations"
+msgstr ""
+
 msgid "Save Method"
 msgstr "保存方法"
 
@@ -11522,6 +11594,9 @@ msgstr "将有缺陷的单位送回较早的操作进行更正，而不是报废
 
 msgid "Sends this document for approval before it can go active."
 msgstr "在文档激活前将其发送以供批准。"
+
+msgid "Sent"
+msgstr ""
 
 msgid "Sequences"
 msgstr "序列"
@@ -14310,6 +14385,9 @@ msgstr "查看自定义字段"
 
 msgid "View Customers"
 msgstr "查看客户"
+
+msgid "View Document"
+msgstr ""
 
 msgid "View Employees"
 msgstr "查看员工"
