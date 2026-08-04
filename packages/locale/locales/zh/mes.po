@@ -63,6 +63,9 @@ msgstr "接收批次？"
 msgid "Account Settings"
 msgstr "账户设置"
 
+msgid "Acknowledge & finish"
+msgstr "确认并完成"
+
 msgid "Active"
 msgstr "活跃"
 
@@ -444,6 +447,9 @@ msgstr "完成 {0}"
 msgid "Finish Anyways"
 msgstr "仍然完成"
 
+msgid "Finish with material unpicked?"
+msgstr "物料未拣选完毕，是否完成？"
+
 msgid "Forgot to Clock Out?"
 msgstr "忘记打卡下班了？"
 
@@ -476,6 +482,9 @@ msgstr "检验物品"
 
 msgid "inspected"
 msgstr "已检验"
+
+msgid "Instructions"
+msgstr "作业指导"
 
 msgid "Insufficient quantity"
 msgstr "数量不足"
@@ -518,6 +527,9 @@ msgstr "工单流转卡"
 
 msgid "Jobs"
 msgstr "工作"
+
+msgid "Keep picking"
+msgstr "继续拣选"
 
 msgid "Kit"
 msgstr "套件"
@@ -1068,6 +1080,9 @@ msgstr "设置下班打卡时间"
 msgid "Setup"
 msgstr "设置"
 
+msgid "short"
+msgstr "短缺"
+
 msgid "Short"
 msgstr "缺货"
 
@@ -1150,9 +1165,8 @@ msgstr "切换操作员"
 msgid "Tag"
 msgstr "标签"
 
-#. placeholder {0}: operation.operationQuantity
-msgid "The completed quantity for this operation is less than the required quantity of {0}."
-msgstr "此工序的完成数量小于所需数量 {0}。"
+msgid "The completed quantity for this operation is less than the required quantity of {targetQuantity}."
+msgstr "此工序的完成数量小于所需数量 {targetQuantity}。"
 
 msgid "The lot will be marked Passed and {remaining} remaining unit(s) will be completed at this operation."
 msgstr "该批次将被标记为\"通过\"，{remaining} 个剩余单位将在此操作中完成。"
@@ -1162,6 +1176,9 @@ msgstr "该批次仍将进行处置，但在至少配置一个问题类型之前
 
 msgid "There are serial or batch tracked materials on the bill of material that have not been fully issued. Completing without issuing may result in incorrect traceability records."
 msgstr "物料清单中有序列号或批次追踪的物料尚未完全发放。不发放即完成可能导致追溯记录不正确。"
+
+msgid "These items still have material to pick. Finishing now marks the list Partial."
+msgstr "这些项目仍有物料需要拣选。现在完成将把列表标记为部分完成。"
 
 msgid "This lot is expired and can't be picked."
 msgstr "此批次已过期，无法领取。"

@@ -149,6 +149,10 @@ export const operationTimerValidator = z.object({
   autoStartOperationTimer: zfd.checkbox()
 });
 
+export const jobTravelerMaterialsValidator = z.object({
+  includeMaterialsOnTraveler: zfd.checkbox()
+});
+
 export const kanbanOutputValidator = z.object({
   kanbanOutput: z.enum(kanbanOutputTypes)
 });
@@ -199,6 +203,32 @@ export const shelfLifeSettingsValidator = z.object({
   // 'BlockWithOverride' rejects unless the caller has inventory:update
   // and supplies an override reason that gets audit-logged.
   expiredEntityPolicy: z.enum(expiredEntityPolicies).default("Block")
+});
+
+// What happens when an operator presses Finish on a picking list that still has
+// unpicked material. 'warn' surfaces the shortfall but lets them acknowledge &
+// continue (the list is flagged Partial); 'error' blocks completion until every
+// line is picked or marked Short. Mirrors the storage-rule severity shape.
+export const incompletePickingListPolicies = ["warn", "error"] as const;
+export type IncompletePickingListPolicy =
+  (typeof incompletePickingListPolicies)[number];
+
+export const incompletePickingListPolicyValidator = z.object({
+  incompletePickingListPolicy: z
+    .enum(incompletePickingListPolicies)
+    .default("warn")
+});
+
+// When un-consumed picked material flushes back from the work-center lineside
+// bin to the warehouse. 'job' (default) returns the remainder when the whole
+// job completes; 'operation' returns each operation's remainder as soon as that
+// operation is Done (holding back what completion-time backflush still needs).
+export const returnPickedMaterialTimings = ["job", "operation"] as const;
+export type ReturnPickedMaterialTiming =
+  (typeof returnPickedMaterialTimings)[number];
+
+export const returnPickedMaterialTimingValidator = z.object({
+  returnPickedMaterialTiming: z.enum(returnPickedMaterialTimings).default("job")
 });
 
 export const updateLeadTimesOnReceiptValidator = z.object({
@@ -289,6 +319,16 @@ export const subsidiaryValidator = z.object({
 
 export const sequenceValidator = z.object({
   table: z.string().min(1, { message: "Table is required" }),
+  prefix: zfd.text(z.string().optional()),
+  suffix: zfd.text(z.string().optional()),
+  next: zfd.numeric(z.number().min(0)),
+  step: zfd.numeric(z.number().min(1)),
+  size: zfd.numeric(z.number().min(1).max(20))
+});
+
+export const itemSerialSequenceValidator = z.object({
+  id: zfd.text(z.string().optional()),
+  itemId: z.string().min(1, { message: "Item is required" }),
   prefix: zfd.text(z.string().optional()),
   suffix: zfd.text(z.string().optional()),
   next: zfd.numeric(z.number().min(0)),

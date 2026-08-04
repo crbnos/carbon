@@ -46,7 +46,7 @@ const Card = forwardRef<HTMLDivElement, CardProps>(
         <div
           ref={ref}
           className={cn(
-            "relative flex flex-col rounded-2xl shadow-button-base dark:shadow-[inset_0_0.5px_0_rgb(255_255_255_/_0.08),_inset_0_0_1px_rgb(255_255_255_/_0.24),_0_0_0_0.5px_rgb(0,0,0,1),0px_0px_4px_rgba(0,_0,_0,_0.08)]  bg-accent dark:bg-card text-card-foreground p-0 w-full",
+            "relative flex flex-col rounded-lg shadow-button-base dark:shadow-[inset_0_0.5px_0_rgb(255_255_255_/_0.08),_inset_0_0_1px_rgb(255_255_255_/_0.24),_0_0_0_0.5px_rgb(0,0,0,1),0px_0px_4px_rgba(0,_0,_0,_0.08)]  bg-accent dark:bg-card text-card-foreground p-0 w-full",
             className
           )}
           {...props}
@@ -198,7 +198,7 @@ const CardContent = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement>>(
       <div
         ref={ref}
         className={cn(
-          "flex flex-col flex-1 p-6 rounded-2xl border border-border bg-card dark:bg-muted/40",
+          "flex flex-col flex-1 p-6 rounded-lg border border-border bg-card dark:bg-muted/40",
           className
         )}
         {...props}

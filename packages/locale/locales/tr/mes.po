@@ -63,6 +63,9 @@ msgstr "Lotu kabul et?"
 msgid "Account Settings"
 msgstr "Hesap Ayarları"
 
+msgid "Acknowledge & finish"
+msgstr "Onayla ve bitir"
+
 msgid "Active"
 msgstr "Aktif"
 
@@ -444,6 +447,9 @@ msgstr "Bitir {0}"
 msgid "Finish Anyways"
 msgstr "Yine de Bitir"
 
+msgid "Finish with material unpicked?"
+msgstr "Malzeme seçilmeden bitir?"
+
 msgid "Forgot to Clock Out?"
 msgstr "Çıkış yapmayı unuttunuz mu?"
 
@@ -476,6 +482,9 @@ msgstr "Ürünü İncele"
 
 msgid "inspected"
 msgstr "incelendi"
+
+msgid "Instructions"
+msgstr "Talimatlar"
 
 msgid "Insufficient quantity"
 msgstr "Yetersiz miktar"
@@ -518,6 +527,9 @@ msgstr "İş Seyir Belgesi"
 
 msgid "Jobs"
 msgstr "İşler"
+
+msgid "Keep picking"
+msgstr "Seçmeye devam et"
 
 msgid "Kit"
 msgstr "Set"
@@ -1068,6 +1080,9 @@ msgstr "Çıkış zamanını ayarla"
 msgid "Setup"
 msgstr "Kurulum"
 
+msgid "short"
+msgstr "kısa"
+
 msgid "Short"
 msgstr "Azalt"
 
@@ -1150,9 +1165,8 @@ msgstr "Operatörü Değiştir"
 msgid "Tag"
 msgstr "Etiket"
 
-#. placeholder {0}: operation.operationQuantity
-msgid "The completed quantity for this operation is less than the required quantity of {0}."
-msgstr "Bu işlem için tamamlanan miktar, gerekli miktar olan {0}'dan azdır."
+msgid "The completed quantity for this operation is less than the required quantity of {targetQuantity}."
+msgstr "Bu işlem için tamamlanan miktar, gerekli miktar olan {targetQuantity}'dan azdır."
 
 msgid "The lot will be marked Passed and {remaining} remaining unit(s) will be completed at this operation."
 msgstr "Lot Passed olarak işaretlenecek ve {remaining} kalan birim(ler) bu operasyonda tamamlanacaktır."
@@ -1162,6 +1176,9 @@ msgstr "Lot yine de işleme tabi tutulacak, ancak en az bir Sorun Türü yapıla
 
 msgid "There are serial or batch tracked materials on the bill of material that have not been fully issued. Completing without issuing may result in incorrect traceability records."
 msgstr "Malzeme listesindeki seri veya parti takipli malzemeler tam olarak verilmemiş. Vermeden tamamlamak, yanlış izlenebilirlik kayıtlarına neden olabilir."
+
+msgid "These items still have material to pick. Finishing now marks the list Partial."
+msgstr "Bu öğelerin hala seçilecek malzemesi var. Şimdi bitirmek listeyi Kısmi olarak işaretler."
 
 msgid "This lot is expired and can't be picked."
 msgstr "Bu parti süresi dolmuş ve alınamaz."

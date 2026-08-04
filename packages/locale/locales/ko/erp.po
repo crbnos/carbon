@@ -120,6 +120,9 @@ msgstr "{count}개 중 {from}–{to}"
 msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
 msgstr "{inserted}개 추가, {updated}개 업데이트, {0}개 수정 필요, {1}개 건너뜀."
 
+msgid "{linesCount, plural, one {# line} other {# lines}}"
+msgstr "{linesCount, plural, one {# 줄} other {# 줄}}"
+
 msgid "{maxSizeMB}MB limit"
 msgstr "{maxSizeMB}MB 제한"
 
@@ -137,6 +140,9 @@ msgstr "귀사가 Carbon을 도입하기까지 {total}단계가 있습니다. �
 
 msgid "{total} phases to go live"
 msgstr "도입까지 {total}단계"
+
+msgid "{totalQuantity, plural, one {# unit} other {# units}}"
+msgstr "{totalQuantity, plural, one {# 단위} other {# 단위}}"
 
 msgid "{uncounted, plural, one {# uncounted line} other {# uncounted lines}}"
 msgstr "미실사 라인 {uncounted}개"
@@ -554,6 +560,9 @@ msgstr "누적 기간(주)"
 msgid "Accumulation Period:"
 msgstr "누적 기간:"
 
+msgid "Acknowledge & finish"
+msgstr "확인 및 완료"
+
 msgid "Acquisition Cost"
 msgstr "취득원가"
 
@@ -773,6 +782,9 @@ msgstr "단계 추가"
 msgid "Add steps to preview the operator view."
 msgstr "운영자 보기를 미리 보기 위해 단계를 추가하세요."
 
+msgid "Add Stock Transfer"
+msgstr "재고 이전 추가"
+
 msgid "Add Supplier"
 msgstr "공급업체 추가"
 
@@ -957,6 +969,9 @@ msgstr "사내 작업장이 아닌 외부 공급업체가 수행하는 공정작
 
 msgid "An operation's position in its work center's queue — the order the floor picks work up — set by reordering cards on the Work Centers board without changing any dates."
 msgstr "작업 센터의 작업 대기열에서 작업의 위치(현장이 작업을 선택하는 순서)로서, 날짜를 변경하지 않고 Work Centers 보드에서 카드를 재정렬하여 설정합니다."
+
+msgid "An unexpected error occurred while connecting to Onshape. Try connecting again."
+msgstr "Onshape에 연결하는 중 예기치 않은 오류가 발생했습니다. 다시 연결해 보세요."
 
 msgid "Anchors the Plan timeline to real dates. Leave blank for a relative, week-numbered timeline. Setting either one fills in the rest."
 msgstr "계획 타임라인을 실제 날짜에 고정합니다. 비워두면 주 번호 기반의 상대적 타임라인이 됩니다. 둘 중 하나를 설정하면 나머지가 자동으로 채워집니다."
@@ -1379,6 +1394,9 @@ msgstr "{0} {1}의 판매주문 라인을 삭제하시겠습니까? 이 작업�
 msgid "Are you sure you want to delete the scrap reason: {0}? This cannot be undone."
 msgstr "스크랩 사유 {0}을(를) 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다."
 
+msgid "Are you sure you want to delete the serial number sequence for {itemLabel}? This cannot be undone."
+msgstr "{itemLabel}의 시리얼 번호 시퀀스를 삭제하시겠습니까? 이 작업은 실행 취소할 수 없습니다."
+
 msgid "Are you sure you want to delete the shift: {name} from {locationName}? This cannot be undone."
 msgstr "{locationName}의 교대 {name}을(를) 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다."
 
@@ -1639,8 +1657,14 @@ msgstr "이 단위를 라인사이드 자재용으로 작업장에 배정하여 
 msgid "At each gate"
 msgstr "각 게이트마다"
 
+msgid "At job completion"
+msgstr "작업 완료 시"
+
 msgid "At least one condition must match"
 msgstr "하나 이상의 조건이 일치해야 합니다"
+
+msgid "At operation completion"
+msgstr "작업 완료 시"
 
 msgid "Attach File"
 msgstr "파일 첨부"
@@ -2304,6 +2328,9 @@ msgstr "배치 번호를 선택하세요"
 msgid "Choose a company"
 msgstr "회사를 선택하세요"
 
+msgid "Choose a row on the left to see where its stock can come from."
+msgstr "왼쪽의 행을 선택하여 해당 재고가 어디서 올 수 있는지 확인하세요."
+
 msgid "Choose a serial number"
 msgstr "일련번호를 선택하세요"
 
@@ -2948,14 +2975,29 @@ msgstr "교육 이름 복사"
 msgid "Copy training unique identifier"
 msgstr "교육 고유 식별자 복사"
 
+msgid "Correct"
+msgstr "수정"
+
 msgid "Correct Answer"
 msgstr "정답"
 
 msgid "Correct Answers"
 msgstr "정답"
 
+msgid "Correct Quantity"
+msgstr "수량 수정"
+
+msgid "Correct Stock Movement"
+msgstr "재고 이동 수정"
+
+msgid "Corrected Quantity"
+msgstr "수정된 수량"
+
 msgid "Correction"
 msgstr "수정"
+
+msgid "Correction {correctionNumber}"
+msgstr "수정 {correctionNumber}"
 
 msgid "Corrections"
 msgstr "수정"
@@ -3022,6 +3064,9 @@ msgstr "분석을 위한 영역 이미지를 준비할 수 없습니다"
 msgid "Could not read the document: {0}"
 msgstr "문서를 읽을 수 없습니다: {0}"
 
+msgid "Couldn't complete the Onshape connection"
+msgstr "Onshape 연결을 완료할 수 없습니다"
+
 msgid "Couldn't load documents"
 msgstr "문서를 불러올 수 없습니다"
 
@@ -3030,6 +3075,9 @@ msgstr "관련 문서를 불러올 수 없습니다. 중복 생성을 방지하�
 
 msgid "Couldn't reschedule the job. Please try again."
 msgstr "작업 일정을 변경할 수 없습니다. 다시 시도하세요."
+
+msgid "Couldn't save the Onshape connection"
+msgstr "Onshape 연결을 저장할 수 없습니다"
 
 msgid "Count"
 msgstr "실사"
@@ -3129,6 +3177,9 @@ msgstr "리비전 생성"
 
 msgid "Create Rule"
 msgstr "규칙 생성"
+
+msgid "Create Transfer"
+msgstr "이전 생성"
 
 msgid "Create User"
 msgstr "사용자 생성"
@@ -3662,6 +3713,12 @@ msgstr "차변"
 
 msgid "Decide what an operator sees if they try to issue a batch or serial that's already expired."
 msgstr "작업자가 이미 만료된 배치 또는 일련번호를 출고하려 할 때 표시할 내용을 결정하세요."
+
+msgid "Decide what happens when an operator presses Finish on the shop floor with material still unpicked."
+msgstr "작업자가 아직 선택되지 않은 재료가 있는 상태에서 현장에서 완료를 누를 때 발생할 사항을 결정하십시오."
+
+msgid "Decide when material picked to a work center but not consumed flows back to the warehouse."
+msgstr "작업장으로 이송했으나 소비하지 않은 재료가 창고로 반환되는 시기를 결정합니다."
 
 msgid "Decimal Places"
 msgstr "소수 자릿수"
@@ -4510,6 +4567,9 @@ msgstr "예: 처음 3~4주"
 msgid "e.g. Zebra 2x1"
 msgstr "예: Zebra 2x1"
 
+msgid "Each operation's unused material returns as soon as the operation is done."
+msgstr "각 작업의 미사용 재료는 해당 작업이 완료되는 즉시 반환됩니다."
+
 msgid "Each physical unit gets its own tracked entity and unique number — one entity, one unit."
 msgstr "각 실물 유닛은 고유한 추적 개체와 번호를 부여받습니다 — 하나의 개체, 하나의 유닛."
 
@@ -4759,6 +4819,9 @@ msgstr "예정된 유지보수 수정"
 msgid "Edit Sequence"
 msgstr "순서 수정"
 
+msgid "Edit Serial Number"
+msgstr "시리얼 번호 편집"
+
 msgid "Edit Service"
 msgstr "서비스 편집"
 
@@ -5001,11 +5064,11 @@ msgstr "1과 {0} 사이의 수량을 입력하세요."
 msgid "Enter and approve vendor bills against a PO (three-way match)"
 msgstr "구매주문(PO)에 대한 공급업체 청구서를 입력하고 승인하세요(3자 대조)"
 
-msgid "Enter or scan serial number"
-msgstr "일련번호를 입력하거나 스캔하세요"
-
 msgid "Enter PO number"
 msgstr "구매주문 번호 입력"
+
+msgid "Enter the quantity this movement should have been. An opposite movement for the difference is posted next to the original, in the original's time period."
+msgstr "이 이동이 있었어야 할 수량을 입력하십시오. 차이에 대한 반대 이동은 원본 옆의 원본의 시간 기간에 게시됩니다."
 
 msgid "Entered At Receipt"
 msgstr "입고 시 입력됨"
@@ -5024,9 +5087,6 @@ msgstr "분리할 개체"
 
 msgid "Entity"
 msgstr "개체"
-
-msgid "Entity is {status}"
-msgstr "개체 상태: {status}"
 
 msgid "Entity Type"
 msgstr "개체 유형"
@@ -5112,9 +5172,6 @@ msgstr "판매 인보이스 라인에서 모델 제거 오류"
 msgid "Error removing model from sales order line"
 msgstr "판매주문 라인에서 모델 제거 오류"
 
-msgid "Error validating serial number"
-msgstr "일련번호 검증 오류"
-
 msgid "Escalate to the project leads"
 msgstr "프로젝트 책임자에게 에스컬레이션"
 
@@ -5174,6 +5231,9 @@ msgstr "환율"
 
 msgid "Exchange Rates"
 msgstr "환율"
+
+msgid "Exchanging the authorization code for an access token failed. Try connecting again."
+msgstr "인증 코드를 액세스 토큰으로 교환하지 못했습니다. 다시 연결해 보세요."
 
 msgid "Excluded"
 msgstr "제외됨"
@@ -5751,6 +5811,9 @@ msgstr "온보딩 완료"
 msgid "Finish To"
 msgstr "종료 시점"
 
+msgid "Finish with material unpicked?"
+msgstr "자재가 선택되지 않은 상태로 완료하시겠습니까?"
+
 msgid "Finished goods"
 msgstr "완제품"
 
@@ -5765,6 +5828,12 @@ msgstr "마감"
 
 msgid "Finishes"
 msgstr "마감"
+
+msgid "Finishing an incomplete pick"
+msgstr "불완전한 픽 완료"
+
+msgid "Finishing is refused until every line is picked or marked Short."
+msgstr "모든 라인이 선택되거나 부족으로 표시될 때까지 완료가 거부됩니다."
 
 msgid "First Name"
 msgstr "이름"
@@ -6403,6 +6472,9 @@ msgstr "ID"
 msgid "Ideas, suggestions or problems?"
 msgstr "아이디어, 제안, 또는 문제가 있으신가요?"
 
+msgid "Identifiers"
+msgstr "식별자"
+
 msgid "IDs and descriptions are generated for raw materials."
 msgstr "원자재에 대한 ID와 설명이 자동으로 생성됩니다."
 
@@ -6453,6 +6525,9 @@ msgstr "가져오기 결과"
 
 msgid "Import your BOM"
 msgstr "BOM 가져오기"
+
+msgid "In Onshape, edit this OAuth application's permissions to include \"Application can write to your documents\", then connect again."
+msgstr "Onshape에서 이 OAuth 애플리케이션의 권한에 \"Application can write to your documents\"를 포함하도록 편집한 후 다시 연결하세요."
 
 msgid "In order to convert this RFQ to a quote, all lines must have an internal part number."
 msgstr "이 RFQ를 견적으로 전환하려면 모든 라인에 내부 품목 번호가 있어야 합니다."
@@ -6511,11 +6586,17 @@ msgstr "입고 검사"
 msgid "Inbox"
 msgstr "받은함"
 
+msgid "Include a materials (bill of materials) section on the job traveler PDF with item numbers and quantities."
+msgstr "작업 이동 PDF에 품목번호와 수량이 포함된 자재(부자재명세서) 섹션을 포함하세요."
+
 msgid "Include extra parts in shipment"
 msgstr "출하에 여분 부품 포함"
 
 msgid "Include Inactive"
 msgstr "비활성 포함"
+
+msgid "Include materials on traveler"
+msgstr "이동 시 자재 포함"
 
 msgid "Included"
 msgstr "포함됨"
@@ -6531,6 +6612,9 @@ msgstr "손익계산서"
 
 msgid "Income/Balance"
 msgstr "손익/재무상태"
+
+msgid "incoming"
+msgstr "입고"
 
 msgid "Incoming"
 msgstr "입고"
@@ -6862,9 +6946,6 @@ msgstr "품목"
 msgid "Item"
 msgstr "품목"
 
-msgid "Item {scannedItem} is not the same as the item {expectedItem}"
-msgstr "품목 {scannedItem}이(가) 품목 {expectedItem}과(와) 일치하지 않습니다"
-
 msgid "Item / Location"
 msgstr "항목 / 위치"
 
@@ -6907,6 +6988,9 @@ msgstr "품목은 선택한 유형과 선택한 그룹을 모두 충족해야 �
 msgid "Item must match a selected type OR a selected group"
 msgstr "품목은 선택한 유형 또는 선택한 그룹 중 하나를 충족해야 합니다"
 
+msgid "Item Name"
+msgstr "품목명"
+
 msgid "Item Scope"
 msgstr "품목 범위"
 
@@ -6930,9 +7014,6 @@ msgstr "품목 및 생산"
 
 msgid "Items inside this window get a yellow badge."
 msgstr "이 기간 내의 항목에는 노란색 배지가 표시됩니다."
-
-msgid "Items whose bill of materials includes this item"
-msgstr "자재명세서에 이 품목을 포함하는 품목"
 
 msgid "Items: item master, BOMs, Bill of Process, engineering changes, CAD"
 msgstr "품목: 품목 마스터, BOM, 공정(BOP), 설계 변경, CAD"
@@ -6960,6 +7041,12 @@ msgstr "작업 공정작업"
 
 msgid "Job Operations"
 msgstr "작업 공정작업"
+
+msgid "Job Traveler Materials"
+msgstr "작업 이동 자재"
+
+msgid "Job traveler settings updated"
+msgstr "작업 이동 설정이 업데이트되었습니다"
 
 msgid "Jobs"
 msgstr "작업"
@@ -7012,6 +7099,9 @@ msgstr "기존 가격은 유지하고 새 품목만 추가"
 
 msgid "Keep Open"
 msgstr "열린 상태 유지"
+
+msgid "Keep picking"
+msgstr "계속 선택"
 
 msgid "Key"
 msgstr "키"
@@ -7126,11 +7216,17 @@ msgstr "정확히 일치시키려면 비워두세요"
 msgid "Leave this page"
 msgstr "이 페이지 나가기"
 
+msgid "Ledger"
+msgstr "원장"
+
 msgid "Left item"
 msgstr "왼쪽 품목"
 
 msgid "Leftover Parts Detected"
 msgstr "잔여 부품 발견됨"
+
+msgid "Leftover staged material returns when the whole job completes."
+msgstr "남은 스테이징 재료는 전체 작업이 완료될 때 반환됩니다."
 
 msgid "Less manual work"
 msgstr "수작업 감소"
@@ -7256,6 +7352,9 @@ msgstr "전환 시점에 마지막으로 불러와 잔액이 최신 상태로 �
 
 msgid "Loading associated jobs..."
 msgstr "연관된 작업을 불러오는 중..."
+
+msgid "Loading current quantity…"
+msgstr "현재 수량 로드 중…"
 
 msgid "Loading item details..."
 msgstr "품목 세부정보를 불러오는 중..."
@@ -8206,6 +8305,9 @@ msgstr "새 판매주문 라인"
 msgid "New Scheduled Maintenance"
 msgstr "새 예정된 유지보수"
 
+msgid "New Serial Number"
+msgstr "새 시리얼 번호"
+
 msgid "New Service"
 msgstr "새 서비스"
 
@@ -8455,8 +8557,14 @@ msgstr "설정된 이슈 유형이 없습니다"
 msgid "No items"
 msgstr "품목 없음"
 
+msgid "No items have inventory activity here yet."
+msgstr "아직 여기에 재고 활동이 있는 항목이 없습니다."
+
 msgid "No lines to map"
 msgstr "매핑할 라인이 없습니다"
+
+msgid "No lines yet"
+msgstr "아직 줄이 없습니다"
 
 msgid "No locations found."
 msgstr "위치가 없습니다."
@@ -8472,6 +8580,9 @@ msgstr "\"{query}\"에 대해 일치하는 항목이 없습니다. 다른 검색
 
 msgid "No matches. Type to create one."
 msgstr "일치하는 항목 없음. 입력하여 새로 만드세요."
+
+msgid "No matching bins"
+msgstr "일치하는 빈이 없습니다"
 
 msgid "No new notifications"
 msgstr "새 알림이 없습니다"
@@ -8499,6 +8610,9 @@ msgstr "옵션이 없습니다."
 
 msgid "No options found."
 msgstr "옵션이 없습니다."
+
+msgid "No other bins hold this item"
+msgstr "다른 보관함에 이 항목이 없습니다"
 
 msgid "No other employees found. Add employees to enable ownership transfer."
 msgstr "다른 직원이 없습니다. 소유권 이전을 활성화하려면 직원을 추가하세요."
@@ -8584,8 +8698,14 @@ msgstr "이 보기에는 정렬이 적용되지 않았습니다"
 msgid "No stock"
 msgstr "재고 없음"
 
+msgid "No stock at this location"
+msgstr "이 위치에 재고가 없습니다"
+
 msgid "No stockout projected in the next 48 weeks"
 msgstr "향후 48주간 재고 소진이 예상되지 않습니다"
+
+msgid "No storage unit"
+msgstr "저장 단위 없음"
 
 msgid "No suppliers yet"
 msgstr "아직 공급업체가 없습니다"
@@ -8689,6 +8809,13 @@ msgstr "메모"
 msgid "Notes (optional)"
 msgstr "메모(선택)"
 
+#. placeholder {0}: search.trim()
+msgid "Nothing at this location matches \"{0}\"."
+msgstr "이 위치에서 \"{0}\"과(와) 일치하는 항목이 없습니다."
+
+msgid "Nothing else at this location has stock to pull from."
+msgstr "이 위치에는 더 이상 가져올 재고가 없습니다."
+
 msgid "Nothing in the archive"
 msgstr "보관함이 비어 있습니다"
 
@@ -8727,6 +8854,9 @@ msgstr "오래된순"
 
 msgid "On cutover day, work the checklist below in order. Acceptance tests come from your in-scope requirements. Support details are at the bottom."
 msgstr "전환일 당일에는 아래 체크리스트를 순서대로 진행하세요. 승인 테스트는 범위 내 요구사항을 기준으로 하며, 지원 관련 세부 정보는 하단에 있습니다."
+
+msgid "on hand"
+msgstr "현재"
 
 msgid "On hand"
 msgstr "보유수량"
@@ -8794,6 +8924,21 @@ msgstr "초안 상태의 절차만 수정할 수 있습니다. 활성 또는 보
 msgid "Only empty, open periods can be deleted."
 msgstr "비어있는 열린 기간만 삭제할 수 있습니다."
 
+msgid "Onshape authorized the connection but saving it failed. Try connecting again."
+msgstr "Onshape가 연결을 승인했지만 저장하지 못했습니다. 다시 연결해 보세요."
+
+msgid "Onshape denied the connection"
+msgstr "Onshape가 연결을 거부했습니다"
+
+msgid "Onshape didn't return an authorization code"
+msgstr "Onshape가 인증 코드를 반환하지 않았습니다"
+
+msgid "Onshape isn't configured"
+msgstr "Onshape가 구성되지 않았습니다"
+
+msgid "Onshape rejected the authorization"
+msgstr "Onshape가 인증을 거부했습니다"
+
 msgid "Onshape Status"
 msgstr "Onshape 상태"
 
@@ -8847,6 +8992,9 @@ msgstr "MES에서 열기"
 
 msgid "Open Issues"
 msgstr "미결 이슈"
+
+msgid "Open job demand plus outstanding transfers out of this bin"
+msgstr "미결 작업 수요에 이 보관함에서 미완료된 이전을 더합니다"
 
 msgid "Open jobs"
 msgstr "미결 작업"
@@ -8931,6 +9079,9 @@ msgstr "작업자에게 경고가 표시됩니다. 재고는 그대로 진행됩
 
 msgid "Operator must pick a different batch/serial."
 msgstr "작업자는 다른 배치/일련번호를 선택해야 합니다."
+
+msgid "Operator sees the missing items, can acknowledge & finish. The list is flagged Partial."
+msgstr "작업자가 누락된 항목을 보고 승인하고 완료할 수 있습니다. 목록은 부분으로 표시됩니다."
 
 msgid "Operators"
 msgstr "작업자"
@@ -9144,6 +9295,9 @@ msgstr "상위 그룹"
 msgid "Parent Item"
 msgstr "상위 품목"
 
+msgid "Parent items. (If you click into one of the parent parts below, you'll see this item included as a component on the bill of material.)"
+msgstr "상위 품목. (아래의 상위 부품 중 하나를 클릭하면, 이 품목이 자재명세서에 구성품으로 포함되어 있는 것을 보실 수 있습니다.)"
+
 msgid "Parent Storage Unit"
 msgstr "상위 저장 단위"
 
@@ -9170,6 +9324,9 @@ msgstr "부품 번호"
 
 msgid "Part Supersession"
 msgstr "부품 대체"
+
+msgid "Partial"
+msgstr "부분"
 
 msgid "Partner"
 msgstr "파트너"
@@ -9351,6 +9508,9 @@ msgstr "피킹 목록"
 msgid "Pick Order"
 msgstr "피킹 순서"
 
+msgid "Pick the bin that needs stock, then pick the bins to pull it from."
+msgstr "재고가 필요한 상자를 선택한 후 가져올 상자를 선택하세요."
+
 msgid "Pick tracked item"
 msgstr "추적 품목 선택"
 
@@ -9525,14 +9685,14 @@ msgstr "전기 일시"
 msgid "Posted By"
 msgstr "전기자"
 
-msgid "Posted once, no rectifications."
-msgstr "1회 게시, 수정 없음."
+msgid "Posted once, corrected {corrections} times."
+msgstr "한 번 게시되었으며 {corrections}번 수정되었습니다."
 
-msgid "Posted once, rectified {rectifications} times."
-msgstr "1회 게시, {rectifications}회 수정됨."
+msgid "Posted once, corrected 1 time."
+msgstr "한 번 게시되었으며 1번 수정되었습니다."
 
-msgid "Posted once, rectified 1 time."
-msgstr "1회 게시, 1회 수정됨."
+msgid "Posted once, no corrections."
+msgstr "한 번 게시되었으며 수정되지 않았습니다."
 
 msgid "Posting"
 msgstr "전기"
@@ -9540,14 +9700,14 @@ msgstr "전기"
 msgid "Posting Date"
 msgstr "전기일"
 
-msgid "Posting Groups"
-msgstr "전기 그룹"
-
 msgid "Potential Data Loss"
 msgstr "데이터 손실 가능성"
 
 msgid "Pre-filled for a new item when expiry is Fixed Duration."
 msgstr "유효기한이 고정 기간일 때 새 품목에 자동으로 미리 입력됩니다."
+
+msgid "Pre-select material without a picking list"
+msgstr "선택 목록 없이 자재를 사전 선택"
 
 msgid "Preferred Supplier"
 msgstr "선호 공급업체"
@@ -10095,9 +10255,6 @@ msgstr "견적일"
 msgid "Quotes"
 msgstr "견적"
 
-msgid "Quoting"
-msgstr "견적"
-
 msgid "Quoting and sales orders"
 msgstr "견적 및 판매주문"
 
@@ -10303,12 +10460,6 @@ msgstr "레코드"
 msgid "Recovery Period"
 msgstr "회수 기간"
 
-msgid "Rectification {rectifyNumber}"
-msgstr "수정 {rectifyNumber}"
-
-msgid "Rectify"
-msgstr "수정"
-
 msgid "Redirecting to verification page..."
 msgstr "인증 페이지로 이동 중..."
 
@@ -10424,8 +10575,8 @@ msgstr "필터 제거"
 msgid "Remove from Price List"
 msgstr "가격표에서 제거"
 
-msgid "Remove item"
-msgstr "품목 제거"
+msgid "Remove line"
+msgstr "줄 제거"
 
 msgid "Remove order"
 msgstr "주문 제거"
@@ -10651,6 +10802,12 @@ msgstr "재시도"
 msgid "Return Home"
 msgstr "홈으로 돌아가기"
 
+msgid "Returned"
+msgstr "반환됨"
+
+msgid "Returning unused picked material"
+msgstr "미사용 선택 재료 반환 중"
+
 msgid "Rev {revision}"
 msgstr "Rev {revision}"
 
@@ -10674,6 +10831,9 @@ msgstr "관련 분개 취소"
 
 msgid "Reversed"
 msgstr "역순됨"
+
+msgid "Review"
+msgstr "검토"
 
 msgid "Review each item's changes, then confirm — releasing can't be undone."
 msgstr "각 항목의 변경 사항을 검토한 후 확인하세요 — 릴리스는 실행 취소할 수 없습니다."
@@ -10995,6 +11155,12 @@ msgstr "스캔"
 msgid "Scan a label or search by item ID or tracking ID."
 msgstr "라벨을 스캔하거나 품목 ID 또는 추적 ID로 검색하세요."
 
+msgid "Scan or choose a batch number"
+msgstr "배치 번호를 스캔하거나 선택하세요"
+
+msgid "Scan or choose a serial number"
+msgstr "일련 번호를 스캔하거나 선택하세요"
+
 msgid "Scan or enter tracked entity ID, serial, or batch"
 msgstr "추적 개체 ID, 일련번호 또는 배치를 스캔하거나 입력하세요"
 
@@ -11006,9 +11172,6 @@ msgstr "스캔 또는 검색..."
 
 msgid "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
 msgstr "이 로트에서 추적 엔티티를 스캔하거나 선택하여 샘플 열로 추가한 후 그리드에 결과를 기록하세요."
-
-msgid "Scan the tracking ID for this line"
-msgstr "이 라인의 추적 ID를 스캔하세요"
 
 msgid "SCAR"
 msgstr "SCAR"
@@ -11109,6 +11272,9 @@ msgstr "필드 검색..."
 msgid "Search for existing or create a new one"
 msgstr "기존 항목을 검색하거나 새로 생성하세요"
 
+msgid "Search items or bins"
+msgstr "항목 또는 보관함 검색"
+
 msgid "Search Job"
 msgstr "작업 검색"
 
@@ -11150,6 +11316,9 @@ msgstr "담당자 선택"
 
 msgid "Select a default approver"
 msgstr "기본 승인자 선택"
+
+msgid "Select a destination"
+msgstr "목적지 선택"
 
 msgid "Select a document"
 msgstr "문서 선택"
@@ -11369,11 +11538,14 @@ msgstr "일련번호 품목에는 판매주문이 필요합니다"
 msgid "Serial Number"
 msgstr "일련번호"
 
-msgid "Serial number not found"
-msgstr "일련번호를 찾을 수 없습니다"
-
 msgid "Serial Number:"
 msgstr "일련번호:"
+
+msgid "Serial Numbers"
+msgstr "시리얼 번호"
+
+msgid "Serial numbers are only generated for serial- or batch-tracked items."
+msgstr "시리얼 번호는 시리얼 또는 배치 추적 항목에만 생성됩니다."
 
 msgid "Serial or Batch Tracking Required"
 msgstr "일련번호 또는 배치 추적 필요"
@@ -11640,6 +11812,9 @@ msgstr "현장 앱 및 일정 관리"
 msgid "Shop-floor configuration."
 msgstr "현장 설정."
 
+msgid "short"
+msgstr "부족"
+
 msgid "Short"
 msgstr "짧게"
 
@@ -11676,6 +11851,10 @@ msgstr "공급업체 ID 표시"
 msgid "Show sync options"
 msgstr "동기화 옵션 표시"
 
+#. placeholder {0}: data.length
+msgid "Showing {0} of {totalCount} — refine your search"
+msgstr "{0}개/총 {totalCount}개 표시 — 검색 범위 좁혀보기"
+
 msgid "Shown as a faint background behind every page of generated PDFs"
 msgstr "생성된 PDF의 모든 페이지 배경에 옅게 표시됩니다"
 
@@ -11705,6 +11884,9 @@ msgstr "이 이슈를 종료하기 전에 기록해야 하는 서명으로, 워�
 
 msgid "Signed in as {name}"
 msgstr "{name}(으)로 로그인됨"
+
+msgid "Signed quantity — negative for outbound movements"
+msgstr "서명된 수량 — 아웃바운드 이동의 경우 음수"
 
 msgid "Sites & locations"
 msgstr "사이트 및 위치"
@@ -11949,6 +12131,9 @@ msgstr "단계는 조립 지시사항에서 상속됩니다."
 
 msgid "Steps are inherited from the inspection plan."
 msgstr "단계는 검사 계획에서 상속됩니다."
+
+msgid "Stock movement corrected"
+msgstr "재고 이동 수정됨"
 
 msgid "Stock Transfer ID"
 msgstr "재고 이동 ID"
@@ -12493,6 +12678,9 @@ msgstr "계산 방법 기준일로부터 결제 기한까지의 일수"
 msgid "The append-only record of every stock movement; on-hand is the sum of its signed entries and the source of truth."
 msgstr "모든 재고 이동을 추가 전용으로 기록한 원장으로, 보유 수량은 부호가 있는 항목들의 합이며 최종 근거 데이터입니다."
 
+msgid "The authorization was refused in Onshape. Try connecting again."
+msgstr "Onshape에서 인증이 거부되었습니다. 다시 연결해 보세요."
+
 msgid "The book of all posted journal lines, summed by account — written only when the company has accounting enabled."
 msgstr "전기된 모든 분개 라인을 계정별로 합산한 장부로, 회사에서 회계 기능이 활성화된 경우에만 기록됩니다."
 
@@ -12968,6 +13156,9 @@ msgstr "{0} {1}의 남은 수량은 더 이상 예상되지 않습니다. 주문
 msgid "The residual WIP a job has left at close, swept to a Production Variance account — the only variance Carbon books for a job."
 msgstr "작업 마감 시 남은 재공품(WIP)으로, 생산 차이 계정으로 이관됩니다 — Carbon이 작업에 대해 계상하는 유일한 차이 항목입니다."
 
+msgid "The response from Onshape was missing required parameters. Try connecting again."
+msgstr "Onshape의 응답에 필수 매개변수가 없습니다. 다시 연결해 보세요."
+
 msgid "The revision number of the part"
 msgstr "품목의 리비전 번호"
 
@@ -13157,11 +13348,17 @@ msgstr "이 이메일 주소는 공급업체에 발송되는 모든 이메일(�
 msgid "These email addresses will be automatically CC'd on all quote emails sent to customers."
 msgstr "이 이메일 주소는 고객에게 발송되는 모든 견적 이메일에 자동으로 참조(CC)됩니다."
 
+msgid "These items still have material to pick. Finishing now marks the list Partial."
+msgstr "이 항목들은 여전히 선택할 자재가 있습니다. 지금 완료하면 목록이 부분으로 표시됩니다."
+
 msgid "These jobs have operations assigned to this work center:"
 msgstr "다음 작업에 이 작업장이 지정된 공정작업이 있습니다:"
 
 msgid "These journal entries are still Draft, so their debits and credits aren't in the ledger for this period. Post each one, or re-date it into a later open period."
 msgstr "이 분개들은 아직 임시이므로 그 차변과 대변이 이 기간의 총계정원장에 없습니다. 각각을 전기하거나 나중의 개방된 기간으로 재날짜하세요."
+
+msgid "This Carbon instance is missing its Onshape OAuth credentials. Ask an administrator to set them."
+msgstr "이 Carbon 인스턴스에 Onshape OAuth 자격 증명이 없습니다. 관리자에게 설정을 요청하세요."
 
 msgid "This change notice is being implemented, so its changes are locked. Reopen it to edit."
 msgstr "이 변경 사항은 구현 중이므로 변경 사항이 잠겨 있습니다. 편집하려면 다시 열어주세요."
@@ -13204,6 +13401,9 @@ msgstr "회계연도가 시작되는 월입니다."
 
 msgid "This is the month your tax year starts."
 msgstr "세무연도가 시작되는 월입니다."
+
+msgid "this item"
+msgstr "이 항목"
 
 msgid "This item is built via a configurator and resolves its components per-order; jobs created for it inherit the configurator's resolved BOM."
 msgstr "이 품목은 컨피규레이터를 통해 제작되며 구성품을 주문별로 결정합니다. 이를 위해 생성된 작업은 컨피규레이터가 결정한 BOM을 상속받습니다."
@@ -13540,9 +13740,6 @@ msgstr "추적 개체"
 msgid "Tracked Entity"
 msgstr "추적 개체"
 
-msgid "Tracked entity already picked"
-msgstr "이미 피킹된 추적 개체입니다"
-
 msgid "Tracked entity ID is required but none was found"
 msgstr "추적 개체 ID가 필요하지만 찾을 수 없습니다"
 
@@ -13777,6 +13974,9 @@ msgstr "제목 없는 다이어그램"
 
 msgid "Untitled line"
 msgstr "제목 없는 라인"
+
+msgid "Unused picked material flushed back from the work center to the warehouse."
+msgstr "작업장에서 창고로 반환된 미사용 선택 재료."
 
 msgid "UoM"
 msgstr "UoM"
@@ -14506,6 +14706,9 @@ msgstr "켜면 가격 규칙(수량 할인, 프로모션)이 이 재정의 위�
 msgid "When on, scanning this process's operation barcode reports all remaining open quantity as complete in one action; turn off when operators routinely report partials."
 msgstr "켜면 이 공정의 공정작업 바코드를 스캔할 때 남은 미완료 수량 전체가 한 번에 완료 처리됩니다. 작업자가 부분 완료를 자주 보고하는 경우에는 꺼두세요."
 
+msgid "When on, the traveler PDF lists the job's required materials."
+msgstr "활성화되면 이동 PDF는 작업의 필수 자재를 나열합니다."
+
 msgid "When on, this party's invoices skip tax calculation; the party is responsible for keeping the exemption certificate current."
 msgstr "켜면 이 거래처의 인보이스는 세금 계산을 건너뜁니다. 면세 증명서를 최신 상태로 유지하는 것은 해당 거래처의 책임입니다."
 
@@ -14514,6 +14717,9 @@ msgstr "켜면 이 가격 재정의가 일치하는 주문에 적용됩니다. �
 
 msgid "When on, this rule fires for every target of its type. Assignment rows are ignored but preserved."
 msgstr "켜면 이 규칙이 해당 유형의 모든 대상에 대해 적용됩니다. 배정 행은 무시되지만 보존됩니다."
+
+msgid "When on, tracked material is pre-selected by pick order (FEFO) even without a picking list. When off, operators start on the Scan tab."
+msgstr "켜짐 상태에서 추적된 자재는 선택 목록이 없어도 선택 순서(FEFO)에 따라 사전 선택됩니다. 꺼짐 상태에서 작업자는 스캔 탭에서 시작합니다."
 
 msgid "When supplier responses are expected back; suppliers see this date on the RFQ portal and Carbon stops accepting late responses after it (configurable)."
 msgstr "공급업체 응답이 도착할 것으로 예상되는 시점입니다. 공급업체는 RFQ 포털에서 이 날짜를 확인하며, Carbon은 이 날짜 이후의 지연 응답을 받지 않습니다(설정 가능)."

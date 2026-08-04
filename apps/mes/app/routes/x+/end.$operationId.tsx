@@ -10,8 +10,10 @@ import type { LoaderFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import {
   finishJobOperation,
+  getNextIncompleteSerialEntity,
   getTrackedEntitiesByMakeMethodId,
-  insertProductionQuantity
+  insertProductionQuantity,
+  isSerialEntityIncompleteForOperation
 } from "~/services/operations.service";
 import { path } from "~/utils/path";
 
@@ -160,9 +162,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
           jobOperation.data.jobMakeMethodId
         );
 
-        if (trackedEntities.data && trackedEntities.data.length > 0) {
-          trackedEntityId =
-            trackedEntities.data[trackedEntities.data.length - 1].id;
+        // Complete the next incomplete serial unit for this operation (createdAt
+        // asc), falling back to the last entity when every unit is complete.
+        const nextTrackedEntity = getNextIncompleteSerialEntity(
+          trackedEntities.data ?? [],
+          operationId
+        );
+        if (nextTrackedEntity) {
+          trackedEntityId = nextTrackedEntity.id;
         }
       }
 
@@ -213,6 +220,25 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
               ...success("Operation finished successfully"),
               flash: "success"
             })
+          );
+        }
+
+        // Pre-split flow: the issue function did not spawn a new entity (all
+        // units already exist), so advance to the next incomplete serial unit
+        // for this operation. When none remain, fall through to the shared
+        // "operation complete" redirect below.
+        const remainingTrackedEntities = await getTrackedEntitiesByMakeMethodId(
+          serviceRole,
+          jobOperation.data.jobMakeMethodId
+        );
+        const nextTrackedEntity = (remainingTrackedEntities.data ?? []).find(
+          (entity) => isSerialEntityIncompleteForOperation(entity, operationId)
+        );
+        if (nextTrackedEntity) {
+          return redirect(
+            `${path.to.operation(
+              operationId
+            )}?trackedEntityId=${nextTrackedEntity.id}`
           );
         }
       } else if (jobMakeMethod.data.requiresBatchTracking) {

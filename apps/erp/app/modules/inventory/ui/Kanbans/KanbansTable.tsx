@@ -45,6 +45,7 @@ import {
 import { Link } from "react-router";
 import {
   EmployeeAvatar,
+  exportOnlyColumn,
   Hyperlink,
   ItemThumbnail,
   MethodItemTypeIcon,
@@ -121,9 +122,17 @@ const KanbansTable = memo(
                 label: item.readableIdWithRevision
               }))
             },
-            icon: <LuBlocks />
+            icon: <LuBlocks />,
+            // Without this the exporter substitutes the item's name for the id
+            // (Download.tsx idNameMaps), losing the readable id.
+            exportValue: (row) => row.readableIdWithRevision ?? null
           }
         },
+        exportOnlyColumn<Kanban>({
+          id: "itemName",
+          header: t`Item Name`,
+          value: (row) => row.name ?? null
+        }),
         {
           id: "job",
           header: "",

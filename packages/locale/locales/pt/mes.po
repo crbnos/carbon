@@ -63,6 +63,9 @@ msgstr "Aceitar lote?"
 msgid "Account Settings"
 msgstr "Configurações da Conta"
 
+msgid "Acknowledge & finish"
+msgstr "Confirmar e finalizar"
+
 msgid "Active"
 msgstr "Ativo"
 
@@ -444,6 +447,9 @@ msgstr "Terminar {0}"
 msgid "Finish Anyways"
 msgstr "Terminar Mesmo Assim"
 
+msgid "Finish with material unpicked?"
+msgstr "Finalizar com material não selecionado?"
+
 msgid "Forgot to Clock Out?"
 msgstr "Esqueceu de Registrar Saída?"
 
@@ -476,6 +482,9 @@ msgstr "Inspecionar Item"
 
 msgid "inspected"
 msgstr "inspecionado"
+
+msgid "Instructions"
+msgstr "Instruções"
 
 msgid "Insufficient quantity"
 msgstr "Quantidade insuficiente"
@@ -518,6 +527,9 @@ msgstr "Folha de Processo"
 
 msgid "Jobs"
 msgstr "Trabalhos"
+
+msgid "Keep picking"
+msgstr "Continuar selecionando"
 
 msgid "Kit"
 msgstr "Kit"
@@ -1068,6 +1080,9 @@ msgstr "Definir horário de saída"
 msgid "Setup"
 msgstr "Setup"
 
+msgid "short"
+msgstr "curto"
+
 msgid "Short"
 msgstr "Falta"
 
@@ -1150,9 +1165,8 @@ msgstr "Trocar Operador"
 msgid "Tag"
 msgstr "Etiqueta"
 
-#. placeholder {0}: operation.operationQuantity
-msgid "The completed quantity for this operation is less than the required quantity of {0}."
-msgstr "A quantidade concluída para esta operação é menor que a quantidade requerida de {0}."
+msgid "The completed quantity for this operation is less than the required quantity of {targetQuantity}."
+msgstr "A quantidade concluída para esta operação é menor que a quantidade requerida de {targetQuantity}."
 
 msgid "The lot will be marked Passed and {remaining} remaining unit(s) will be completed at this operation."
 msgstr "O lote será marcado como Aprovado e {remaining} unidade(s) restante(s) será(ão) concluída(s) nesta operação."
@@ -1162,6 +1176,9 @@ msgstr "O lote ainda será disposicionado, mas um NCR não pode ser criado até 
 
 msgid "There are serial or batch tracked materials on the bill of material that have not been fully issued. Completing without issuing may result in incorrect traceability records."
 msgstr "Existem materiais rastreados por série ou lote na lista de materiais que não foram totalmente emitidos. Concluir sem emitir pode resultar em registros de rastreabilidade incorretos."
+
+msgid "These items still have material to pick. Finishing now marks the list Partial."
+msgstr "Estes itens ainda têm material para selecionar. Finalizar agora marca a lista como Parcial."
 
 msgid "This lot is expired and can't be picked."
 msgstr "Este lote expirou e não pode ser selecionado."

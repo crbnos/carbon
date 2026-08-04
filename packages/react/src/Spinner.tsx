@@ -1,28 +1,33 @@
-import type { ComponentProps } from "react";
 import { cn } from "./utils/cn";
 
-const Spinner = ({
-  className,
-  size = 24,
-  ...props
-}: ComponentProps<"svg"> & { size?: number }) => {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={cn("animate-spin", className)}
-      {...props}
-    >
-      <path d="M21 12a9 9 0 1 1-6.219-8.56"></path>
-    </svg>
-  );
-};
+interface SpinnerProps {
+  /** Diameter of the spinner in pixels */
+  size?: number;
+  className?: string;
+}
 
-export { Spinner };
+const BARS = Array.from({ length: 12 });
+
+export function Spinner({ size = 18, className }: SpinnerProps) {
+  return (
+    <div
+      role="status"
+      aria-label="Loading"
+      className={cn("relative inline-block", className)}
+      style={{ width: size, height: size }}
+    >
+      {BARS.map((_, i) => (
+        <div
+          key={i}
+          className="absolute left-1/2 top-0 h-[24%] w-[8%] -translate-x-1/2 animate-spinner rounded-full bg-current"
+          style={{
+            transformOrigin: `center ${size / 2}px`,
+            transform: `rotate(${i * 30}deg)`,
+            animationDelay: `${-(11 - i) * (1 / 12)}s`
+          }}
+        />
+      ))}
+      <span className="sr-only">Loading</span>
+    </div>
+  );
+}

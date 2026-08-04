@@ -3,13 +3,41 @@ import { nanoid } from "https://deno.land/x/nanoid@v3.0.0/mod.ts";
 import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
 
 import z from "npm:zod@^3.24.1";
-import { corsHeaders } from "../lib/headers.ts";
+import { corsPreflight, errorResponse, jsonResponse } from "../lib/response.ts";
 import { requirePermissions } from "../lib/supabase.ts";
 import { Database } from "../lib/types.ts";
 import { getNextSequence } from "../shared/get-next-sequence.ts";
 
 const pool = getConnectionPool(1);
 const db = getDatabaseClient<DB>(pool);
+
+// Resolves a fallback location when a caller omits locationId, so creating a
+// blank shipment degrades gracefully instead of failing payload validation.
+// Prefers the creating user's assigned employeeJob location, then the company's
+// earliest-created location. Only safe where locationId does not scope which
+// source-document lines are shipped (i.e. shipmentDefault).
+async function getFallbackLocationId(
+  client: Awaited<ReturnType<typeof requirePermissions>>,
+  companyId: string,
+  userId: string,
+): Promise<string | null> {
+  const employeeJob = await client
+    .from("employeeJob")
+    .select("locationId")
+    .eq("id", userId)
+    .eq("companyId", companyId)
+    .maybeSingle();
+  if (employeeJob.data?.locationId) return employeeJob.data.locationId;
+
+  const location = await client
+    .from("location")
+    .select("id")
+    .eq("companyId", companyId)
+    .order("createdAt", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+  return location.data?.id ?? null;
+}
 
 const payloadValidator = z.discriminatedUnion("type", [
   z.object({
@@ -64,7 +92,7 @@ const payloadValidator = z.discriminatedUnion("type", [
   }),
   z.object({
     type: z.literal("shipmentDefault"),
-    locationId: z.string(),
+    locationId: z.string().optional(),
     companyId: z.string(),
     userId: z.string(),
   }),
@@ -114,9 +142,9 @@ const payloadValidator = z.discriminatedUnion("type", [
   }),
 ]);
 serve(async (req: Request) => {
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
-  }
+  const preflight = corsPreflight(req);
+  if (preflight) return preflight;
+  try {
   const payload = await req.json();
 
   const { type, companyId, userId } = payloadValidator.parse(payload);
@@ -379,21 +407,9 @@ serve(async (req: Request) => {
           }
         });
       } catch (error) {
-        console.error(error);
-        return new Response(error.message, {
-          status: 500,
-          headers: corsHeaders,
-        });
+        return errorResponse(error, 500);
       }
-      return new Response(
-        JSON.stringify({
-          success: true,
-        }),
-        {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 200,
-        }
-      );
+      return jsonResponse({ success: true });
     }
 
     case "purchaseOrderFromJob": {
@@ -707,22 +723,10 @@ serve(async (req: Request) => {
           });
         }
       } catch (err) {
-        console.error(err);
-        return new Response(JSON.stringify(err), {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 500,
-        });
+        return errorResponse(err, 500);
       }
 
-      return new Response(
-        JSON.stringify({
-          success: true,
-        }),
-        {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 200,
-        }
-      );
+      return jsonResponse({ success: true });
     }
     case "receiptDefault": {
       const { locationId } = payload;
@@ -752,21 +756,9 @@ serve(async (req: Request) => {
           if (!createdDocumentId) throw new Error("Failed to create receipt");
         });
 
-        return new Response(
-          JSON.stringify({
-            id: createdDocumentId,
-          }),
-          {
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-            status: 201,
-          }
-        );
+        return jsonResponse({ id: createdDocumentId }, 201);
       } catch (err) {
-        console.error(err);
-        return new Response(JSON.stringify(err), {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 500,
-        });
+        return errorResponse(err, 500);
       }
     }
     case "receiptFromPurchaseOrder": {
@@ -1030,21 +1022,9 @@ serve(async (req: Request) => {
           }
         });
 
-        return new Response(
-          JSON.stringify({
-            id: receiptId,
-          }),
-          {
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-            status: 201,
-          }
-        );
+        return jsonResponse({ id: receiptId }, 201);
       } catch (err) {
-        console.error(err);
-        return new Response(JSON.stringify(err), {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 500,
-        });
+        return errorResponse(err, 500);
       }
     }
     case "receiptFromInboundTransfer": {
@@ -1209,16 +1189,9 @@ serve(async (req: Request) => {
           return { id };
         });
 
-        return new Response(JSON.stringify(result, null, 2), {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 201,
-        });
+        return jsonResponse(result, 201);
       } catch (err) {
-        console.error(err);
-        return new Response(JSON.stringify(err), {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 500,
-        });
+        return errorResponse(err, 500);
       }
     }
     case "receiptFromWarehouseTransfer": {
@@ -1390,15 +1363,9 @@ serve(async (req: Request) => {
           return { id };
         });
 
-        return new Response(JSON.stringify(result), {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+        return jsonResponse(result);
       } catch (err) {
-        console.error(err);
-        return new Response(JSON.stringify(err), {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 500,
-        });
+        return errorResponse(err, 500);
       }
     }
     case "receiptLineSplit": {
@@ -1519,21 +1486,9 @@ serve(async (req: Request) => {
           }
         });
 
-        return new Response(
-          JSON.stringify({
-            id: receiptLineId,
-          }),
-          {
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-            status: 201,
-          }
-        );
+        return jsonResponse({ id: receiptLineId }, 201);
       } catch (err) {
-        console.error(err);
-        return new Response(JSON.stringify(err), {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 500,
-        });
+        return errorResponse(err, 500);
       }
     }
     case "shipmentDefault": {
@@ -1547,6 +1502,9 @@ serve(async (req: Request) => {
         userId,
       });
       try {
+        const effectiveLocationId =
+          locationId ?? (await getFallbackLocationId(client, companyId, userId));
+
         await db.transaction().execute(async (trx) => {
           createdDocumentId = await getNextSequence(trx, "shipment", companyId);
 
@@ -1555,7 +1513,7 @@ serve(async (req: Request) => {
             .values({
               shipmentId: createdDocumentId,
               companyId: companyId,
-              locationId: locationId,
+              locationId: effectiveLocationId,
               createdBy: userId,
             })
             .returning(["id", "shipmentId"])
@@ -1565,21 +1523,9 @@ serve(async (req: Request) => {
           if (!createdDocumentId) throw new Error("Failed to create shipment");
         });
 
-        return new Response(
-          JSON.stringify({
-            id: createdDocumentId,
-          }),
-          {
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-            status: 201,
-          }
-        );
+        return jsonResponse({ id: createdDocumentId }, 201);
       } catch (err) {
-        console.error(err);
-        return new Response(JSON.stringify(err), {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 500,
-        });
+        return errorResponse(err, 500);
       }
     }
     case "shipmentFromWarehouseTransfer": {
@@ -1742,16 +1688,9 @@ serve(async (req: Request) => {
           return { id };
         });
 
-        return new Response(JSON.stringify(result, null, 2), {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 201,
-        });
+        return jsonResponse(result, 201);
       } catch (err) {
-        console.error(err);
-        return new Response(JSON.stringify(err), {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 500,
-        });
+        return errorResponse(err, 500);
       }
     }
     case "shipmentFromPurchaseOrder": {
@@ -1943,21 +1882,9 @@ serve(async (req: Request) => {
           }
         });
 
-        return new Response(
-          JSON.stringify({
-            id: shipmentId,
-          }),
-          {
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-            status: 201,
-          }
-        );
+        return jsonResponse({ id: shipmentId }, 201);
       } catch (err) {
-        console.error(err);
-        return new Response(JSON.stringify(err), {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 500,
-        });
+        return errorResponse(err, 500);
       }
     }
     case "shipmentFromSalesOrder": {
@@ -2303,21 +2230,9 @@ serve(async (req: Request) => {
           }
         });
 
-        return new Response(
-          JSON.stringify({
-            id: shipmentId,
-          }),
-          {
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-            status: 201,
-          }
-        );
+        return jsonResponse({ id: shipmentId }, 201);
       } catch (err) {
-        console.error(err);
-        return new Response(JSON.stringify(err), {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 500,
-        });
+        return errorResponse(err, 500);
       }
     }
     case "shipmentFromSalesOrderLine": {
@@ -2576,21 +2491,9 @@ serve(async (req: Request) => {
           }
         });
 
-        return new Response(
-          JSON.stringify({
-            id: shipmentId,
-          }),
-          {
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-            status: 201,
-          }
-        );
+        return jsonResponse({ id: shipmentId }, 201);
       } catch (err) {
-        console.error(err);
-        return new Response(JSON.stringify(err), {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 500,
-        });
+        return errorResponse(err, 500);
       }
     }
     case "shipmentLineSplit": {
@@ -2645,21 +2548,9 @@ serve(async (req: Request) => {
             .execute();
         });
 
-        return new Response(
-          JSON.stringify({
-            id: shipmentLineId,
-          }),
-          {
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-            status: 201,
-          }
-        );
+        return jsonResponse({ id: shipmentLineId }, 201);
       } catch (err) {
-        console.error(err);
-        return new Response(JSON.stringify(err), {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 500,
-        });
+        return errorResponse(err, 500);
       }
     }
     case "journalEntry": {
@@ -2690,28 +2581,17 @@ serve(async (req: Request) => {
             throw new Error("Failed to create journal entry");
         });
 
-        return new Response(
-          JSON.stringify({
-            id: createdDocumentId,
-          }),
-          {
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-            status: 201,
-          }
-        );
+        return jsonResponse({ id: createdDocumentId }, 201);
       } catch (err) {
-        console.error(err);
-        return new Response(JSON.stringify(err), {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 500,
-        });
+        return errorResponse(err, 500);
       }
     }
     default:
-      return new Response(JSON.stringify({ error: "Invalid document type" }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 400,
-      });
+      return errorResponse("Invalid document type", 400);
+  }
+  } catch (err) {
+    if (err instanceof z.ZodError) return errorResponse("Invalid payload", 400);
+    return errorResponse(err, 500);
   }
 });
 

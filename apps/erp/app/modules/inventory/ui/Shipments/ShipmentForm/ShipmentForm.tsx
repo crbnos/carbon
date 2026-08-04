@@ -98,6 +98,7 @@ const ShipmentForm = ({
   const { t } = useLingui();
   const {
     locationId,
+    sourceDocument,
     sourceDocuments,
     customerId,
     setLocationId,
@@ -279,6 +280,7 @@ const ShipmentForm = ({
                   isReadOnly={isPosted}
                 />
                 <Combobox
+                  key={sourceDocument}
                   name="sourceDocumentId"
                   label={t`Source Document ID`}
                   termId="shipment-source-document-id"

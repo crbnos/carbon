@@ -45,6 +45,7 @@ export const pickingListStatus = [
   "Draft",
   "In Progress",
   "Completed",
+  "Partial",
   "Cancelled"
 ] as const;
 
@@ -61,12 +62,15 @@ export const pickQuantityValidator = z.object({
   markShort: zfd.text(z.string().optional())
 });
 
-// A picking list locks once Completed or Cancelled. Reopening is ERP-only
-// (requires the inventory `delete` permission), so MES must never unlock one.
+// A picking list locks once Completed, Partial, or Cancelled — all terminal
+// outcomes. Reopening is ERP-only (requires the inventory `delete` permission),
+// so MES must never unlock one.
 export function isPickingListLocked(
   status: string | null | undefined
 ): boolean {
-  return status === "Completed" || status === "Cancelled";
+  return (
+    status === "Completed" || status === "Partial" || status === "Cancelled"
+  );
 }
 
 export const maintenanceDispatchPriority = [

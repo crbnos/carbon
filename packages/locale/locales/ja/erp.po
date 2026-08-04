@@ -120,6 +120,9 @@ msgstr "{from}–{to} / {count}"
 msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
 msgstr "{inserted}件挿入、{updated}件更新、{0}件修正が必要、{1}件スキップ。"
 
+msgid "{linesCount, plural, one {# line} other {# lines}}"
+msgstr "{linesCount, plural, one {# 行} other {# 行}}"
+
 msgid "{maxSizeMB}MB limit"
 msgstr "{maxSizeMB}MB制限"
 
@@ -137,6 +140,9 @@ msgstr "{total}個のフェーズでお客様の企業をCarbonで稼働させ�
 
 msgid "{total} phases to go live"
 msgstr "{total}個のフェーズをライブにする"
+
+msgid "{totalQuantity, plural, one {# unit} other {# units}}"
+msgstr "{totalQuantity, plural, one {# 個} other {# 個}}"
 
 msgid "{uncounted, plural, one {# uncounted line} other {# uncounted lines}}"
 msgstr "{uncounted, plural, one {# 未計数行} other {# 未計数行}}"
@@ -554,6 +560,9 @@ msgstr "蓄積期間（週）"
 msgid "Accumulation Period:"
 msgstr "蓄積期間:"
 
+msgid "Acknowledge & finish"
+msgstr "認めて完了"
+
 msgid "Acquisition Cost"
 msgstr "取得原価"
 
@@ -773,6 +782,9 @@ msgstr "ステップを追加"
 msgid "Add steps to preview the operator view."
 msgstr "オペレータビューをプレビューするステップを追加してください。"
 
+msgid "Add Stock Transfer"
+msgstr "在庫移動を追加"
+
 msgid "Add Supplier"
 msgstr "サプライヤーを追加"
 
@@ -957,6 +969,9 @@ msgstr "社内の作業センターではなく、外部の仕入先によって
 
 msgid "An operation's position in its work center's queue — the order the floor picks work up — set by reordering cards on the Work Centers board without changing any dates."
 msgstr "作業センターのキューの中での操作の位置。フロアが仕事を取り上げる順序。作業センター ボード上のカードを並べ替えることで設定され、日付は変更されません。"
+
+msgid "An unexpected error occurred while connecting to Onshape. Try connecting again."
+msgstr "Onshape への接続中に予期しないエラーが発生しました。もう一度接続してください。"
 
 msgid "Anchors the Plan timeline to real dates. Leave blank for a relative, week-numbered timeline. Setting either one fills in the rest."
 msgstr "計画のタイムラインを実際の日付に固定します。相対的な週番号付きタイムラインの場合は空白のままにしてください。どちらか一方を設定すると、残りが自動的に入力されます。"
@@ -1379,6 +1394,9 @@ msgstr "本当に販売注文行 {0} {1} を削除してもよろしいですか
 msgid "Are you sure you want to delete the scrap reason: {0}? This cannot be undone."
 msgstr "スクラップ理由「{0}」を削除してもよろしいですか？この操作は取り消せません。"
 
+msgid "Are you sure you want to delete the serial number sequence for {itemLabel}? This cannot be undone."
+msgstr "{itemLabel} 用のシリアル番号シーケンスを削除してもよろしいですか？この操作は取り消すことができません。"
+
 msgid "Are you sure you want to delete the shift: {name} from {locationName}? This cannot be undone."
 msgstr "シフト「{name}」を{locationName}から削除してもよろしいですか？この操作は取り消せません。"
 
@@ -1639,8 +1657,14 @@ msgstr "このユニットを作業センターに割り当ててラインサイ
 msgid "At each gate"
 msgstr "各ゲートで"
 
+msgid "At job completion"
+msgstr "ジョブ完了時"
+
 msgid "At least one condition must match"
 msgstr "少なくとも1つの条件が一致する必要があります"
+
+msgid "At operation completion"
+msgstr "操作完了時"
 
 msgid "Attach File"
 msgstr "ファイルを添付"
@@ -2304,6 +2328,9 @@ msgstr "バッチ番号を選択"
 msgid "Choose a company"
 msgstr "会社を選択"
 
+msgid "Choose a row on the left to see where its stock can come from."
+msgstr "左側の行を選択して、在庫がどこから来るかを確認します。"
+
 msgid "Choose a serial number"
 msgstr "シリアル番号を選択"
 
@@ -2948,14 +2975,29 @@ msgstr "トレーニング名をコピー"
 msgid "Copy training unique identifier"
 msgstr "トレーニングの一意の識別子をコピー"
 
+msgid "Correct"
+msgstr "訂正"
+
 msgid "Correct Answer"
 msgstr "正解"
 
 msgid "Correct Answers"
 msgstr "正解"
 
+msgid "Correct Quantity"
+msgstr "数量を訂正"
+
+msgid "Correct Stock Movement"
+msgstr "在庫移動を訂正"
+
+msgid "Corrected Quantity"
+msgstr "訂正された数量"
+
 msgid "Correction"
 msgstr "修正"
+
+msgid "Correction {correctionNumber}"
+msgstr "訂正 {correctionNumber}"
 
 msgid "Corrections"
 msgstr "修正"
@@ -3022,6 +3064,9 @@ msgstr "分析用の領域画像を準備できませんでした"
 msgid "Could not read the document: {0}"
 msgstr "ドキュメントを読み込めませんでした: {0}"
 
+msgid "Couldn't complete the Onshape connection"
+msgstr "Onshape 接続を完了できませんでした"
+
 msgid "Couldn't load documents"
 msgstr "ドキュメントを読み込めませんでした"
 
@@ -3030,6 +3075,9 @@ msgstr "関連ドキュメントを読み込めませんでした。重複を避
 
 msgid "Couldn't reschedule the job. Please try again."
 msgstr "ジョブを再スケジュールできませんでした。もう一度お試しください。"
+
+msgid "Couldn't save the Onshape connection"
+msgstr "Onshape 接続を保存できませんでした"
 
 msgid "Count"
 msgstr "数"
@@ -3129,6 +3177,9 @@ msgstr "リビジョンを作成"
 
 msgid "Create Rule"
 msgstr "ルールを作成"
+
+msgid "Create Transfer"
+msgstr "移動を作成"
 
 msgid "Create User"
 msgstr "ユーザーを作成"
@@ -3662,6 +3713,12 @@ msgstr "デビット"
 
 msgid "Decide what an operator sees if they try to issue a batch or serial that's already expired."
 msgstr "オペレーターが既に期限切れのバッチまたはシリアルを発行しようとした場合に表示される内容を決定します。"
+
+msgid "Decide what happens when an operator presses Finish on the shop floor with material still unpicked."
+msgstr "オペレーターが店舗の床で材料がまだピックされていない状態で「完了」を押すとどうなるかを決定します。"
+
+msgid "Decide when material picked to a work center but not consumed flows back to the warehouse."
+msgstr "作業センターに仕分けされたが消費されなかった材料が倉庫に戻る時期を決定します。"
 
 msgid "Decimal Places"
 msgstr "小数位数"
@@ -4510,6 +4567,9 @@ msgstr "例：最初の3～4週間"
 msgid "e.g. Zebra 2x1"
 msgstr "例：Zebra 2x1"
 
+msgid "Each operation's unused material returns as soon as the operation is done."
+msgstr "各操作の未使用材料は操作が完了するとすぐに戻されます。"
+
 msgid "Each physical unit gets its own tracked entity and unique number — one entity, one unit."
 msgstr "各物理ユニットは独自の追跡エンティティと一意の番号を取得します — 1つのエンティティ、1つのユニット。"
 
@@ -4759,6 +4819,9 @@ msgstr "スケジュール済みメンテナンスを編集"
 msgid "Edit Sequence"
 msgstr "シーケンスを編集"
 
+msgid "Edit Serial Number"
+msgstr "シリアル番号を編集"
+
 msgid "Edit Service"
 msgstr "サービスを編集"
 
@@ -5001,11 +5064,11 @@ msgstr "1～{0}の数量を入力してください。"
 msgid "Enter and approve vendor bills against a PO (three-way match)"
 msgstr "ベンダー請求書をPOに対して入力および承認する（3者間照合）"
 
-msgid "Enter or scan serial number"
-msgstr "シリアル番号を入力またはスキャンしてください"
-
 msgid "Enter PO number"
 msgstr "PO番号を入力"
+
+msgid "Enter the quantity this movement should have been. An opposite movement for the difference is posted next to the original, in the original's time period."
+msgstr "この移動がどの数量であるべきかを入力します。差分の反対の移動は、オリジナルの横に、オリジナルの期間に投稿されます。"
 
 msgid "Entered At Receipt"
 msgstr "受領時に入力"
@@ -5024,9 +5087,6 @@ msgstr "分割するエンティティ"
 
 msgid "Entity"
 msgstr "エンティティ"
-
-msgid "Entity is {status}"
-msgstr "エンティティは {status} です"
 
 msgid "Entity Type"
 msgstr "エンティティタイプ"
@@ -5112,9 +5172,6 @@ msgstr "販売請求書行からモデルを削除するエラー"
 msgid "Error removing model from sales order line"
 msgstr "販売注文行からモデルを削除するエラー"
 
-msgid "Error validating serial number"
-msgstr "シリアル番号の検証エラー"
-
 msgid "Escalate to the project leads"
 msgstr "プロジェクトリーダーにエスカレートする"
 
@@ -5174,6 +5231,9 @@ msgstr "為替レート"
 
 msgid "Exchange Rates"
 msgstr "為替レート"
+
+msgid "Exchanging the authorization code for an access token failed. Try connecting again."
+msgstr "認可コードとアクセストークンの交換に失敗しました。もう一度接続してください。"
 
 msgid "Excluded"
 msgstr "除外"
@@ -5751,6 +5811,9 @@ msgstr "オンボーディングを完了"
 msgid "Finish To"
 msgstr "完成先"
 
+msgid "Finish with material unpicked?"
+msgstr "ピッキングされていない材料のまま完了しますか？"
+
 msgid "Finished goods"
 msgstr "フィニッシュ"
 
@@ -5765,6 +5828,12 @@ msgstr "通常のMACRSスケジュールが始まる前に取られた初年度�
 
 msgid "Finishes"
 msgstr "仕上げ"
+
+msgid "Finishing an incomplete pick"
+msgstr "不完全なピックの完了"
+
+msgid "Finishing is refused until every line is picked or marked Short."
+msgstr "すべてのラインがピックされるか「短い」とマークされるまで、完了は拒否されます。"
 
 msgid "First Name"
 msgstr "名"
@@ -6403,6 +6472,9 @@ msgstr "ID"
 msgid "Ideas, suggestions or problems?"
 msgstr "アイデア、提案、または問題はありますか？"
 
+msgid "Identifiers"
+msgstr "識別子"
+
 msgid "IDs and descriptions are generated for raw materials."
 msgstr "IDと説明は原材料に対して生成されます。"
 
@@ -6453,6 +6525,9 @@ msgstr "インポート結果"
 
 msgid "Import your BOM"
 msgstr "BOMをインポート"
+
+msgid "In Onshape, edit this OAuth application's permissions to include \"Application can write to your documents\", then connect again."
+msgstr "Onshape でこの OAuth アプリケーションの権限を編集し、「Application can write to your documents」を含めてから、もう一度接続してください。"
 
 msgid "In order to convert this RFQ to a quote, all lines must have an internal part number."
 msgstr "このRFQを見積に変換するには、すべての行に内部部品番号が必要です。"
@@ -6511,11 +6586,17 @@ msgstr "受入検査"
 msgid "Inbox"
 msgstr "受信トレイ"
 
+msgid "Include a materials (bill of materials) section on the job traveler PDF with item numbers and quantities."
+msgstr "ジョブトラベラーPDFに品目番号と数量を含む材料（部品表）セクションを含める。"
+
 msgid "Include extra parts in shipment"
 msgstr "出荷に追加部品を含める"
 
 msgid "Include Inactive"
 msgstr "非アクティブを含める"
+
+msgid "Include materials on traveler"
+msgstr "トラベラーに材料を含める"
 
 msgid "Included"
 msgstr "含まれています"
@@ -6531,6 +6612,9 @@ msgstr "損益計算書"
 
 msgid "Income/Balance"
 msgstr "収入/残高"
+
+msgid "incoming"
+msgstr "入庫"
 
 msgid "Incoming"
 msgstr "入荷予定"
@@ -6862,9 +6946,6 @@ msgstr "アイテム"
 msgid "Item"
 msgstr "アイテム"
 
-msgid "Item {scannedItem} is not the same as the item {expectedItem}"
-msgstr "アイテム {scannedItem} は、アイテム {expectedItem} と同じではありません"
-
 msgid "Item / Location"
 msgstr "品目 / 場所"
 
@@ -6907,6 +6988,9 @@ msgstr "アイテムは選択されたタイプと選択されたグループの
 msgid "Item must match a selected type OR a selected group"
 msgstr "アイテムは選択されたタイプまたは選択されたグループと一致する必要があります"
 
+msgid "Item Name"
+msgstr "品目名"
+
 msgid "Item Scope"
 msgstr "アイテムスコープ"
 
@@ -6930,9 +7014,6 @@ msgstr "アイテムと生産"
 
 msgid "Items inside this window get a yellow badge."
 msgstr "このウィンドウ内のアイテムは黄色いバッジが表示されます。"
-
-msgid "Items whose bill of materials includes this item"
-msgstr "このアイテムが部品表に含まれるアイテム"
 
 msgid "Items: item master, BOMs, Bill of Process, engineering changes, CAD"
 msgstr "アイテム: アイテムマスター、BOM、プロセス仕様書、エンジニアリング変更、CAD"
@@ -6960,6 +7041,12 @@ msgstr "作業操作"
 
 msgid "Job Operations"
 msgstr "ジョブ操作"
+
+msgid "Job Traveler Materials"
+msgstr "ジョブトラベラーの材料"
+
+msgid "Job traveler settings updated"
+msgstr "ジョブトラベラーの設定が更新されました"
 
 msgid "Jobs"
 msgstr "ジョブ"
@@ -7012,6 +7099,9 @@ msgstr "既存の価格を保持し、新しい項目のみを追加"
 
 msgid "Keep Open"
 msgstr "開いたままにする"
+
+msgid "Keep picking"
+msgstr "ピッキングを続ける"
 
 msgid "Key"
 msgstr "キー"
@@ -7126,11 +7216,17 @@ msgstr "正確な一致のために空のままにしてください"
 msgid "Leave this page"
 msgstr "このページを離れる"
 
+msgid "Ledger"
+msgstr "元帳"
+
 msgid "Left item"
 msgstr "左側の項目"
 
 msgid "Leftover Parts Detected"
 msgstr "余剰部品が検出されました"
+
+msgid "Leftover staged material returns when the whole job completes."
+msgstr "ジョブ全体が完了したときに、ステージングされたままの材料が戻されます。"
 
 msgid "Less manual work"
 msgstr "手作業を減らす"
@@ -7256,6 +7352,9 @@ msgstr "最後に読み込まれ、カットオーバー時に残高が最新の
 
 msgid "Loading associated jobs..."
 msgstr "関連するジョブを読み込み中..."
+
+msgid "Loading current quantity…"
+msgstr "現在の数量を読み込み中…"
 
 msgid "Loading item details..."
 msgstr "アイテムの詳細を読み込み中..."
@@ -8206,6 +8305,9 @@ msgstr "新しい販売注文行"
 msgid "New Scheduled Maintenance"
 msgstr "新しいスケジュール済みメンテナンス"
 
+msgid "New Serial Number"
+msgstr "新しいシリアル番号"
+
 msgid "New Service"
 msgstr "新規サービス"
 
@@ -8455,8 +8557,14 @@ msgstr "問題タイプが設定されていません"
 msgid "No items"
 msgstr "アイテムなし"
 
+msgid "No items have inventory activity here yet."
+msgstr "ここにはまだアイテムの在庫活動がありません。"
+
 msgid "No lines to map"
 msgstr "マップするラインがありません"
+
+msgid "No lines yet"
+msgstr "行がまだありません"
 
 msgid "No locations found."
 msgstr "ロケーションが見つかりません。"
@@ -8472,6 +8580,9 @@ msgstr "\"{query}\"に一致するものがありません。別の検索用語�
 
 msgid "No matches. Type to create one."
 msgstr "一致するものがありません。作成するには入力してください。"
+
+msgid "No matching bins"
+msgstr "マッチするビンがありません"
 
 msgid "No new notifications"
 msgstr "新しい通知はありません"
@@ -8499,6 +8610,9 @@ msgstr "オプションが見つかりません。"
 
 msgid "No options found."
 msgstr "オプションが見つかりません。"
+
+msgid "No other bins hold this item"
+msgstr "他のビンはこのアイテムを保持していません"
 
 msgid "No other employees found. Add employees to enable ownership transfer."
 msgstr "他の従業員が見つかりません。所有権の譲渡を有効にするために従業員を追加してください。"
@@ -8584,8 +8698,14 @@ msgstr "このビューに適用されたソートはありません"
 msgid "No stock"
 msgstr "在庫なし"
 
+msgid "No stock at this location"
+msgstr "この場所には在庫がありません"
+
 msgid "No stockout projected in the next 48 weeks"
 msgstr "今後48週間の在庫切れは予測されていません"
+
+msgid "No storage unit"
+msgstr "ストレージユニットがありません"
 
 msgid "No suppliers yet"
 msgstr "まだサプライヤーがありません"
@@ -8689,6 +8809,13 @@ msgstr "メモ"
 msgid "Notes (optional)"
 msgstr "メモ（オプション）"
 
+#. placeholder {0}: search.trim()
+msgid "Nothing at this location matches \"{0}\"."
+msgstr "この場所に「{0}」に一致するものはありません。"
+
+msgid "Nothing else at this location has stock to pull from."
+msgstr "この場所には他に引き出す在庫がありません。"
+
 msgid "Nothing in the archive"
 msgstr "アーカイブに何もありません"
 
@@ -8727,6 +8854,9 @@ msgstr "最も古いものから"
 
 msgid "On cutover day, work the checklist below in order. Acceptance tests come from your in-scope requirements. Support details are at the bottom."
 msgstr "カットオーバー当日は、以下のチェックリストを順番に実行してください。受け入れテストはスコープ内の要件から実施されます。サポートの詳細は下部にあります。"
+
+msgid "on hand"
+msgstr "手元在庫"
 
 msgid "On hand"
 msgstr "手持在庫"
@@ -8794,6 +8924,21 @@ msgstr "編集可能なのは下書き手順のみです。アクティブまた
 msgid "Only empty, open periods can be deleted."
 msgstr "空のオープン期間のみ削除できます。"
 
+msgid "Onshape authorized the connection but saving it failed. Try connecting again."
+msgstr "Onshape は接続を承認しましたが、保存に失敗しました。もう一度接続してください。"
+
+msgid "Onshape denied the connection"
+msgstr "Onshape が接続を拒否しました"
+
+msgid "Onshape didn't return an authorization code"
+msgstr "Onshape が認可コードを返しませんでした"
+
+msgid "Onshape isn't configured"
+msgstr "Onshape が構成されていません"
+
+msgid "Onshape rejected the authorization"
+msgstr "Onshape が認可を拒否しました"
+
 msgid "Onshape Status"
 msgstr "Onshape ステータス"
 
@@ -8847,6 +8992,9 @@ msgstr "MESで開く"
 
 msgid "Open Issues"
 msgstr "未解決の問題"
+
+msgid "Open job demand plus outstanding transfers out of this bin"
+msgstr "オープンジョブの需要とこのビンからの未決済移動"
 
 msgid "Open jobs"
 msgstr "未処理ジョブ"
@@ -8931,6 +9079,9 @@ msgstr "オペレーターに警告が表示されます。在庫はそのまま
 
 msgid "Operator must pick a different batch/serial."
 msgstr "オペレーターは別のバッチ/シリアルを選択する必要があります。"
+
+msgid "Operator sees the missing items, can acknowledge & finish. The list is flagged Partial."
+msgstr "オペレーターは不足アイテムを確認でき、承認して完了できます。リストは「部分」フラグが付けられます。"
 
 msgid "Operators"
 msgstr "オペレーター"
@@ -9144,6 +9295,9 @@ msgstr "親グループ"
 msgid "Parent Item"
 msgstr "親アイテム"
 
+msgid "Parent items. (If you click into one of the parent parts below, you'll see this item included as a component on the bill of material.)"
+msgstr "親アイテム。(下の親部品のいずれかをクリックすると、このアイテムが部品表に含まれているのが見えます。)"
+
 msgid "Parent Storage Unit"
 msgstr "親保管ユニット"
 
@@ -9170,6 +9324,9 @@ msgstr "部品番号"
 
 msgid "Part Supersession"
 msgstr "パーツの廃止予定"
+
+msgid "Partial"
+msgstr "部分"
 
 msgid "Partner"
 msgstr "パートナー"
@@ -9351,6 +9508,9 @@ msgstr "ピッキングリスト"
 msgid "Pick Order"
 msgstr "ピック順序"
 
+msgid "Pick the bin that needs stock, then pick the bins to pull it from."
+msgstr "在庫が必要なビンを選択してから、引き出すビンを選択します。"
+
 msgid "Pick tracked item"
 msgstr "追跡品目をピック"
 
@@ -9525,14 +9685,14 @@ msgstr "投稿日時"
 msgid "Posted By"
 msgstr "投稿者"
 
-msgid "Posted once, no rectifications."
-msgstr "1回投稿され、修正がありません。"
+msgid "Posted once, corrected {corrections} times."
+msgstr "1回投稿され、{corrections}回訂正されました。"
 
-msgid "Posted once, rectified {rectifications} times."
-msgstr "1回投稿され、{rectifications}回修正されました。"
+msgid "Posted once, corrected 1 time."
+msgstr "1回投稿され、1回訂正されました。"
 
-msgid "Posted once, rectified 1 time."
-msgstr "1回投稿され、1回修正されました。"
+msgid "Posted once, no corrections."
+msgstr "1回投稿され、訂正はありません。"
 
 msgid "Posting"
 msgstr "前払金"
@@ -9540,14 +9700,14 @@ msgstr "前払金"
 msgid "Posting Date"
 msgstr "投稿日"
 
-msgid "Posting Groups"
-msgstr "転記グループ"
-
 msgid "Potential Data Loss"
 msgstr "潜在的データ損失"
 
 msgid "Pre-filled for a new item when expiry is Fixed Duration."
 msgstr "有効期限が固定期間の場合、新しい品目に対して事前入力されます。"
+
+msgid "Pre-select material without a picking list"
+msgstr "ピックリストなしで材料を事前選択"
 
 msgid "Preferred Supplier"
 msgstr "優先仕入先"
@@ -10095,9 +10255,6 @@ msgstr "見積日"
 msgid "Quotes"
 msgstr "見積"
 
-msgid "Quoting"
-msgstr "見積"
-
 msgid "Quoting and sales orders"
 msgstr "見積と販売注文"
 
@@ -10303,12 +10460,6 @@ msgstr "記録"
 msgid "Recovery Period"
 msgstr "登録"
 
-msgid "Rectification {rectifyNumber}"
-msgstr "修正 {rectifyNumber}"
-
-msgid "Rectify"
-msgstr "修正"
-
 msgid "Redirecting to verification page..."
 msgstr "検証ページにリダイレクト中..."
 
@@ -10424,8 +10575,8 @@ msgstr "フィルターを削除"
 msgid "Remove from Price List"
 msgstr "価格リストから削除"
 
-msgid "Remove item"
-msgstr "アイテムを削除"
+msgid "Remove line"
+msgstr "行を削除"
 
 msgid "Remove order"
 msgstr "注文を削除"
@@ -10651,6 +10802,12 @@ msgstr "再試行"
 msgid "Return Home"
 msgstr "ホームに戻る"
 
+msgid "Returned"
+msgstr "返却"
+
+msgid "Returning unused picked material"
+msgstr "未使用の仕分け材料を返却中"
+
 msgid "Rev {revision}"
 msgstr "Rev {revision}"
 
@@ -10674,6 +10831,9 @@ msgstr "関連する仕訳エントリを取り消す"
 
 msgid "Reversed"
 msgstr "反転"
+
+msgid "Review"
+msgstr "確認"
 
 msgid "Review each item's changes, then confirm — releasing can't be undone."
 msgstr "各アイテムの変更をレビューしてから確認してください。リリースは取り消せません。"
@@ -10995,6 +11155,12 @@ msgstr "スキャン"
 msgid "Scan a label or search by item ID or tracking ID."
 msgstr "ラベルをスキャンするか、アイテムIDまたはトラッキングIDで検索してください。"
 
+msgid "Scan or choose a batch number"
+msgstr "バッチ番号をスキャンまたは選択"
+
+msgid "Scan or choose a serial number"
+msgstr "シリアル番号をスキャンまたは選択"
+
 msgid "Scan or enter tracked entity ID, serial, or batch"
 msgstr "スキャンするか、追跡対象エンティティID、シリアル番号、またはバッチ番号を入力してください"
 
@@ -11006,9 +11172,6 @@ msgstr "スキャンまたは検索..."
 
 msgid "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
 msgstr "このロットから追跡対象エンティティをスキャンまたは選択してサンプル列として追加し、グリッドにその結果を記録します。"
-
-msgid "Scan the tracking ID for this line"
-msgstr "このラインのトラッキングIDをスキャンしてください"
 
 msgid "SCAR"
 msgstr "SCAR"
@@ -11109,6 +11272,9 @@ msgstr "フィールドを検索..."
 msgid "Search for existing or create a new one"
 msgstr "既存のものを検索するか、新しいものを作成してください"
 
+msgid "Search items or bins"
+msgstr "アイテムまたはビンを検索"
+
 msgid "Search Job"
 msgstr "ジョブを検索"
 
@@ -11150,6 +11316,9 @@ msgstr "担当者を選択"
 
 msgid "Select a default approver"
 msgstr "デフォルト承認者を選択"
+
+msgid "Select a destination"
+msgstr "宛先を選択"
 
 msgid "Select a document"
 msgstr "ドキュメントを選択"
@@ -11369,11 +11538,14 @@ msgstr "シリアル品は販売注文が必要です"
 msgid "Serial Number"
 msgstr "シリアル番号"
 
-msgid "Serial number not found"
-msgstr "シリアル番号が見つかりません"
-
 msgid "Serial Number:"
 msgstr "シリアル番号:"
+
+msgid "Serial Numbers"
+msgstr "シリアル番号"
+
+msgid "Serial numbers are only generated for serial- or batch-tracked items."
+msgstr "シリアル番号は、シリアルまたはバッチ追跡アイテムに対してのみ生成されます。"
 
 msgid "Serial or Batch Tracking Required"
 msgstr "シリアルまたはバッチ追跡が必要です"
@@ -11640,6 +11812,9 @@ msgstr "ショップフロアアプリとスケジューリング"
 msgid "Shop-floor configuration."
 msgstr "生産現場の構成。"
 
+msgid "short"
+msgstr "短い"
+
 msgid "Short"
 msgstr "不足"
 
@@ -11676,6 +11851,10 @@ msgstr "仕入先IDを表示"
 msgid "Show sync options"
 msgstr "同期オプションを表示"
 
+#. placeholder {0}: data.length
+msgid "Showing {0} of {totalCount} — refine your search"
+msgstr "{0} / {totalCount} を表示中 — 検索を絞り込みます"
+
 msgid "Shown as a faint background behind every page of generated PDFs"
 msgstr "生成されたPDFの各ページの背景に薄く表示されます"
 
@@ -11705,6 +11884,9 @@ msgstr "この問題を閉じる前に記録する必要があるサインオフ
 
 msgid "Signed in as {name}"
 msgstr "{name}としてサインインしています"
+
+msgid "Signed quantity — negative for outbound movements"
+msgstr "署名された数量 — アウトバウンド移動の場合は負数"
 
 msgid "Sites & locations"
 msgstr "サイトと場所"
@@ -11949,6 +12131,9 @@ msgstr "ステップは組立指示から継承されます。"
 
 msgid "Steps are inherited from the inspection plan."
 msgstr "ステップは検査計画から継承されます。"
+
+msgid "Stock movement corrected"
+msgstr "在庫移動が訂正されました"
 
 msgid "Stock Transfer ID"
 msgstr "在庫移動ID"
@@ -12493,6 +12678,9 @@ msgstr "計算方法の後の支払い期日までの日数"
 msgid "The append-only record of every stock movement; on-hand is the sum of its signed entries and the source of truth."
 msgstr "すべての在庫移動の追加専用レコード。手持在庫はその署名付きエントリの合計であり、信頼できる情報源です。"
 
+msgid "The authorization was refused in Onshape. Try connecting again."
+msgstr "Onshape で認可が拒否されました。もう一度接続してください。"
+
 msgid "The book of all posted journal lines, summed by account — written only when the company has accounting enabled."
 msgstr "投稿されたすべての仕訳行のブック（勘定ごとに合計）。会社で会計が有効な場合にのみ記入されます。"
 
@@ -12968,6 +13156,9 @@ msgstr "残りの{0}{1}は期待されなくなります。発注済み供給と
 msgid "The residual WIP a job has left at close, swept to a Production Variance account — the only variance Carbon books for a job."
 msgstr "ジョブがクローズ時に残した残留WIP。生産差異勘定に削除されます—Carbonがジョブのために記録する唯一の差異。"
 
+msgid "The response from Onshape was missing required parameters. Try connecting again."
+msgstr "Onshape からの応答に必須パラメーターが含まれていませんでした。もう一度接続してください。"
+
 msgid "The revision number of the part"
 msgstr "部品のリビジョン番号"
 
@@ -13157,11 +13348,17 @@ msgstr "これらのメールアドレスは、サプライヤーに送信され
 msgid "These email addresses will be automatically CC'd on all quote emails sent to customers."
 msgstr "これらのメールアドレスは、顧客に送信されるすべての見積メールに自動的にCC送信されます。"
 
+msgid "These items still have material to pick. Finishing now marks the list Partial."
+msgstr "これらのアイテムはまだピッキングすべき材料があります。今完了するとリストが部分的になります。"
+
 msgid "These jobs have operations assigned to this work center:"
 msgstr "これらのジョブにはこのワークセンターに割り当てられた操作があります:"
 
 msgid "These journal entries are still Draft, so their debits and credits aren't in the ledger for this period. Post each one, or re-date it into a later open period."
 msgstr "これらの仕訳はまだ下書きであるため、それらの借方と貸方は当期の元帳に含まれていません。各仕訳を転記するか、後の開いている期間に再度日付を付け直してください。"
+
+msgid "This Carbon instance is missing its Onshape OAuth credentials. Ask an administrator to set them."
+msgstr "この Carbon インスタンスには Onshape の OAuth 認証情報がありません。管理者に設定を依頼してください。"
 
 msgid "This change notice is being implemented, so its changes are locked. Reopen it to edit."
 msgstr "この変更通知は実装中であるため、変更がロックされています。編集するために再度開いてください。"
@@ -13204,6 +13401,9 @@ msgstr "これはあなたの会計年度が始まる月です。"
 
 msgid "This is the month your tax year starts."
 msgstr "これはあなたの税務年度が始まる月です。"
+
+msgid "this item"
+msgstr "このアイテム"
 
 msgid "This item is built via a configurator and resolves its components per-order; jobs created for it inherit the configurator's resolved BOM."
 msgstr "このアイテムはコンフィグレータを使用して構築され、注文ごとにコンポーネントを解決します。このために作成されたジョブは、コンフィグレータの解決されたBOMを継承します。"
@@ -13540,9 +13740,6 @@ msgstr "追跡されたエンティティ"
 msgid "Tracked Entity"
 msgstr "追跡対象エンティティ"
 
-msgid "Tracked entity already picked"
-msgstr "既に追跡対象が選択されています"
-
 msgid "Tracked entity ID is required but none was found"
 msgstr "追跡対象エンティティIDが必要ですが、見つかりませんでした"
 
@@ -13777,6 +13974,9 @@ msgstr "無題の図"
 
 msgid "Untitled line"
 msgstr "無題の行"
+
+msgid "Unused picked material flushed back from the work center to the warehouse."
+msgstr "作業センターから倉庫に戻された未使用の仕分け材料。"
 
 msgid "UoM"
 msgstr "UoM"
@@ -14506,6 +14706,9 @@ msgstr "有効にすると、価格設定ルール(ボリュームディスカ�
 msgid "When on, scanning this process's operation barcode reports all remaining open quantity as complete in one action; turn off when operators routinely report partials."
 msgstr "有効にすると、このプロセスの操作バーコードをスキャンすると、残りのすべての未処理数量が1つのアクションで完了としてレポートされます。オペレータが定期的に部分を報告する場合は無効にします。"
 
+msgid "When on, the traveler PDF lists the job's required materials."
+msgstr "有効にすると、トラベラーPDFにジョブで必要な材料が一覧表示されます。"
+
 msgid "When on, this party's invoices skip tax calculation; the party is responsible for keeping the exemption certificate current."
 msgstr "有効にすると、この当事者の請求書は税計算をスキップします。当事者は免税証明書を最新の状態に保つ責任があります。"
 
@@ -14514,6 +14717,9 @@ msgstr "有効にすると、この価格オーバーライドは一致する注
 
 msgid "When on, this rule fires for every target of its type. Assignment rows are ignored but preserved."
 msgstr "オンの場合、このルールはそのタイプのすべてのターゲットに対して発火します。割り当て行は無視されますが保持されます。"
+
+msgid "When on, tracked material is pre-selected by pick order (FEFO) even without a picking list. When off, operators start on the Scan tab."
+msgstr "オンの場合、追跡材料はピックリストがなくても、ピック順序（FEFO）で事前選択されます。オフの場合、オペレーターはスキャンタブで開始します。"
 
 msgid "When supplier responses are expected back; suppliers see this date on the RFQ portal and Carbon stops accepting late responses after it (configurable)."
 msgstr "サプライヤーの応答が期待される場合。サプライヤーはRFQポータルでこの日付を確認でき、Carbonはその後の遅い応答を受け付けません(設定可能)。"

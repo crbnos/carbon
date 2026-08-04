@@ -30,11 +30,12 @@ export interface BookAdjustmentArgs {
     // itemLedgerDocumentType — manual adjustments stay NULL (ledger rows keep
     // today's shape; 'Inventory Adjustment' exists only on journalLineDocumentType).
     // Non-Conformance / Inbound Inspection tag NCR-disposition & inspection-reject
-    // write-offs (these also flow to the journal line's documentType).
+    // write-offs (these also flow to the journal line's documentType). The full
+    // enum is accepted because stock-movement corrections copy the ORIGINAL
+    // movement's documentType so document-scoped movement views keep including
+    // the fix.
     documentType?:
-      | "Inventory Count"
-      | "Non-Conformance"
-      | "Inbound Inspection"
+      | Database["public"]["Enums"]["itemLedgerDocumentType"]
       | null;
     documentId?: string | null;
     correctionOfItemLedgerId?: string | null;
@@ -84,6 +85,24 @@ export interface BookAdjustmentArgs {
   // value: ledger row only — no cost layers, no journal
   skipValuation?: boolean;
 }
+
+// itemLedgerDocumentType values that also exist on journalLineDocumentType.
+// The journal line falls back to 'Inventory Adjustment' for ledger documentType
+// values the journal enum doesn't carry (e.g. 'Sales Invoice', 'Direct
+// Transfer', 'Posted Assembly') — inserting those would fail the enum cast.
+const JOURNAL_LINE_SAFE_DOCUMENT_TYPES: ReadonlySet<string> = new Set([
+  "Sales Shipment",
+  "Purchase Receipt",
+  "Purchase Invoice",
+  "Transfer Shipment",
+  "Job Consumption",
+  "Job Receipt",
+  "Batch Split",
+  "Maintenance Consumption",
+  "Inventory Count",
+  "Non-Conformance",
+  "Inbound Inspection",
+]);
 
 export interface BookAdjustmentResult {
   itemLedgerId: string;
@@ -291,7 +310,12 @@ export async function bookAdjustment(
     accounting.accountDefaults
   );
   const journalLineReference = nanoid();
-  const journalLineDocumentType = ledger.documentType ?? "Inventory Adjustment";
+  const journalLineDocumentType = (
+    ledger.documentType &&
+    JOURNAL_LINE_SAFE_DOCUMENT_TYPES.has(ledger.documentType)
+      ? ledger.documentType
+      : "Inventory Adjustment"
+  ) as Database["public"]["Enums"]["journalLineDocumentType"];
   const isGain = ledger.quantity > 0;
 
   const journalLines = await trx

@@ -63,6 +63,9 @@ msgstr "ロットを受け入れますか？"
 msgid "Account Settings"
 msgstr "アカウント設定"
 
+msgid "Acknowledge & finish"
+msgstr "確認して完了"
+
 msgid "Active"
 msgstr "アクティブ"
 
@@ -444,6 +447,9 @@ msgstr "完了 {0}"
 msgid "Finish Anyways"
 msgstr "とにかく完了"
 
+msgid "Finish with material unpicked?"
+msgstr "材料がピッキングされていない状態で終了しますか?"
+
 msgid "Forgot to Clock Out?"
 msgstr "退勤打刻を忘れましたか？"
 
@@ -476,6 +482,9 @@ msgstr "アイテムを検査"
 
 msgid "inspected"
 msgstr "検査済み"
+
+msgid "Instructions"
+msgstr "作業手順"
 
 msgid "Insufficient quantity"
 msgstr "数量が不足しています"
@@ -518,6 +527,9 @@ msgstr "ジョブトラベラー"
 
 msgid "Jobs"
 msgstr "ジョブ"
+
+msgid "Keep picking"
+msgstr "ピッキングを続ける"
 
 msgid "Kit"
 msgstr "キット"
@@ -1068,6 +1080,9 @@ msgstr "退勤時間を設定"
 msgid "Setup"
 msgstr "段取り"
 
+msgid "short"
+msgstr "短縮"
+
 msgid "Short"
 msgstr "不足"
 
@@ -1150,9 +1165,8 @@ msgstr "オペレーターを切替"
 msgid "Tag"
 msgstr "タグ"
 
-#. placeholder {0}: operation.operationQuantity
-msgid "The completed quantity for this operation is less than the required quantity of {0}."
-msgstr "この工程の完了数量が必要数量 {0} を下回っています。"
+msgid "The completed quantity for this operation is less than the required quantity of {targetQuantity}."
+msgstr "この工程の完了数量が必要数量 {targetQuantity} を下回っています。"
 
 msgid "The lot will be marked Passed and {remaining} remaining unit(s) will be completed at this operation."
 msgstr "ロットは「合格」とマークされ、{remaining}個の残りユニットがこの工程で完了します。"
@@ -1162,6 +1176,9 @@ msgstr "ロットは引き続き処分されますが、少なくとも1つの�
 
 msgid "There are serial or batch tracked materials on the bill of material that have not been fully issued. Completing without issuing may result in incorrect traceability records."
 msgstr "部品表にシリアルまたはバッチ追跡対象の材料が完全に払い出されていません。払出なしで完了すると、トレーサビリティ記録が不正確になる可能性があります。"
+
+msgid "These items still have material to pick. Finishing now marks the list Partial."
+msgstr "これらのアイテムにはまだピッキング対象の材料があります。今完了すると、リストは部分的としてマークされます。"
 
 msgid "This lot is expired and can't be picked."
 msgstr "このロットは期限切れであり、ピックできません。"

@@ -30,6 +30,34 @@ export function parseMentionsFromDocument(content: JSONContent): string[] {
   return Array.from(mentionIds);
 }
 
+/**
+ * True when a TipTap/ProseMirror JSON document contains at least one image node
+ * (`image` or `updatedImage`). Reference imagery is often the entire content of a
+ * step description with no accompanying text, so a plain text/mention check alone
+ * (see {@link parseMentionsFromDocument}) reports such a description as empty.
+ */
+export function documentHasImages(
+  content: JSONContent | null | undefined
+): boolean {
+  if (!content) return false;
+
+  function traverse(node: JSONContent): boolean {
+    if (!node) return false;
+
+    if (Array.isArray(node)) {
+      return node.some(traverse);
+    }
+
+    if (node.type === "image" || node.type === "updatedImage") {
+      return true;
+    }
+
+    return node.content ? traverse(node.content) : false;
+  }
+
+  return traverse(content);
+}
+
 export const textToTiptap = (text: string) => {
   const lines = text.split("\n");
   const content = lines.map((line) =>

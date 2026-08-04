@@ -70,9 +70,16 @@ export function SetupMapView() {
   const { toggleFlag, toggleFlags } = useHubActions();
   const resolveScreenUrl = useResolveScreenUrl();
 
-  const visibleRows = SETUP_GROUPS.flatMap((g) =>
-    filterByModule(g.rows, exclusions.modules)
-  );
+  // Groups whose module is excluded drop out entirely (e.g. Accounting when the
+  // company has no accounting). The badge number is the group's position among
+  // the *visible* groups — deriving it here keeps the list reading 1, 2, 3… with
+  // no gaps. `group.n` stays the stable identity (anchor + board-task key), which
+  // must NOT be positional or excluding a module would reshuffle every key.
+  const visibleGroups = SETUP_GROUPS.map((group) => ({
+    group,
+    rows: filterByModule(group.rows, exclusions.modules)
+  })).filter(({ rows }) => rows.length > 0);
+  const visibleRows = visibleGroups.flatMap(({ rows }) => rows);
   const configured = visibleRows.filter(
     (r) => map.get(configuredKey(r.key)) === "1"
   ).length;
@@ -91,9 +98,7 @@ export function SetupMapView() {
         }
       />
 
-      {SETUP_GROUPS.map((group) => {
-        const rows = filterByModule(group.rows, exclusions.modules);
-        if (rows.length === 0) return null;
+      {visibleGroups.map(({ group, rows }, index) => {
         const allConfigured = rows.every(
           (r) => map.get(configuredKey(r.key)) === "1"
         );
@@ -102,7 +107,7 @@ export function SetupMapView() {
             key={group.n}
             id={setupAnchorId(setupGroupKey(group.n))}
             className="scroll-mt-6"
-            number={group.n}
+            number={index + 1}
             title={i18n._(group.title)}
             subtitle={i18n._(group.desc)}
             aside={

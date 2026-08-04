@@ -9,6 +9,7 @@ import { json2csv } from "json-2-csv";
 import { useCallback, useMemo } from "react";
 import { LuDownload } from "react-icons/lu";
 import { useCustomers, useItems, usePeople, useSuppliers } from "~/stores";
+import { selectExportColumns } from "../utils";
 
 type DownloadProps = {
   data: object[];
@@ -64,21 +65,16 @@ const Download = ({
     [items, suppliers, people, customers]
   );
 
-  // The visible columns, in the current view's order. The column id doubles as
-  // the data accessor key; columns absent from columnAccessors (selection,
-  // expand, actions) are dropped.
-  const exportColumns = useMemo(() => {
-    const order = columnOrder.length
-      ? columnOrder
-      : Object.keys(columnAccessors);
-    return order.filter(
-      (id) =>
-        id in columnAccessors &&
-        // Export-only columns export regardless of grid visibility; everything
-        // else follows the visible-in-the-current-view rule.
-        (exportOnlyColumns.includes(id) || columnVisibility[id] !== false)
-    );
-  }, [columnOrder, columnVisibility, columnAccessors, exportOnlyColumns]);
+  const exportColumns = useMemo(
+    () =>
+      selectExportColumns({
+        columnAccessors,
+        columnOrder,
+        columnVisibility,
+        exportOnlyColumns
+      }),
+    [columnOrder, columnVisibility, columnAccessors, exportOnlyColumns]
+  );
 
   const onClick = useCallback(() => {
     if (!data?.length) {

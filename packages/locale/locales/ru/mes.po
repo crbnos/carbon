@@ -63,6 +63,9 @@ msgstr "Принять партию?"
 msgid "Account Settings"
 msgstr "Настройки аккаунта"
 
+msgid "Acknowledge & finish"
+msgstr "Подтвердить и завершить"
+
 msgid "Active"
 msgstr "Активные"
 
@@ -444,6 +447,9 @@ msgstr "Завершить {0}"
 msgid "Finish Anyways"
 msgstr "Завершить в любом случае"
 
+msgid "Finish with material unpicked?"
+msgstr "Завершить с неподобранным материалом?"
+
 msgid "Forgot to Clock Out?"
 msgstr "Забыли отметить уход?"
 
@@ -476,6 +482,9 @@ msgstr "Проверить элемент"
 
 msgid "inspected"
 msgstr "проверенный"
+
+msgid "Instructions"
+msgstr "Инструкции"
 
 msgid "Insufficient quantity"
 msgstr "Недостаточное количество"
@@ -518,6 +527,9 @@ msgstr "Маршрутный лист"
 
 msgid "Jobs"
 msgstr "Работы"
+
+msgid "Keep picking"
+msgstr "Продолжить сбор"
 
 msgid "Kit"
 msgstr "Комплект"
@@ -1068,6 +1080,9 @@ msgstr "Установить время ухода"
 msgid "Setup"
 msgstr "Наладка"
 
+msgid "short"
+msgstr "короткий"
+
 msgid "Short"
 msgstr "Недостача"
 
@@ -1150,9 +1165,8 @@ msgstr "Сменить оператора"
 msgid "Tag"
 msgstr "Тег"
 
-#. placeholder {0}: operation.operationQuantity
-msgid "The completed quantity for this operation is less than the required quantity of {0}."
-msgstr "Количество готовой продукции по этой операции меньше требуемого количества {0}."
+msgid "The completed quantity for this operation is less than the required quantity of {targetQuantity}."
+msgstr "Количество готовой продукции по этой операции меньше требуемого количества {targetQuantity}."
 
 msgid "The lot will be marked Passed and {remaining} remaining unit(s) will be completed at this operation."
 msgstr "Партия будет отмечена как Пройдена, и {remaining} оставшихся единиц будут завершены в этой операции."
@@ -1162,6 +1176,9 @@ msgstr "Партия все еще будет распределена, но NCR
 
 msgid "There are serial or batch tracked materials on the bill of material that have not been fully issued. Completing without issuing may result in incorrect traceability records."
 msgstr "В спецификации есть материалы с серийным или партионным учётом, которые не были полностью выданы. Завершение без выдачи может привести к некорректным записям прослеживаемости."
+
+msgid "These items still have material to pick. Finishing now marks the list Partial."
+msgstr "Эти позиции содержат материал для подбора. Завершение отметит список как Неполный."
 
 msgid "This lot is expired and can't be picked."
 msgstr "Эта партия истекла и не может быть выбрана."

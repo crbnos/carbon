@@ -2,7 +2,7 @@ import { serve } from "https://deno.land/std@0.175.0/http/server.ts";
 import { format } from "https://deno.land/std@0.205.0/datetime/mod.ts";
 import { z } from "https://deno.land/x/zod@v3.21.4/mod.ts";
 import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
-import { corsHeaders } from "../lib/headers.ts";
+import { corsPreflight, errorResponse, jsonResponse } from "../lib/response.ts";
 import { getFunctionLogger } from "../lib/logging.ts";
 import { requirePermissions } from "../lib/supabase.ts";
 import type { Database } from "../lib/types.ts";
@@ -49,9 +49,9 @@ class SerialQuantityError extends InvalidLinesError {
 // applied on top of it). Each variance books through the shared posting core:
 // item ledger + cost layers + (when companySettings.accountingEnabled) a GL
 // journal against the inventory adjustment variance account.
-// (Rectify re-snapshots `systemQuantity` to current live on-hand first, so for a
-// correction the same formula resolves to "set to counted". A correction is a
-// NEW movement valued at posting-time cost — the original journal is immutable.)
+// A count posts exactly once (Posted is terminal). Fixing a posted movement
+// happens per-movement via the correct-stock-movement edge function, which
+// links the fix through itemLedger.correctionOfItemLedgerId.
 const payloadValidator = z.object({
   type: z.literal("post"),
   inventoryCountId: z.string(),
@@ -60,9 +60,8 @@ const payloadValidator = z.object({
 });
 
 serve(async (req: Request) => {
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
-  }
+  const preflight = corsPreflight(req);
+  if (preflight) return preflight;
 
   const payload = await req.json();
 
@@ -294,11 +293,6 @@ serve(async (req: Request) => {
             entryType: delta > 0 ? "Positive Adjmt." : "Negative Adjmt.",
             documentType: "Inventory Count",
             documentId: inventoryCountId,
-            // In-place rectify: if this line already posted a movement (the count
-            // was rectified), link the new fix movement back to that prior one so
-            // both stay visible and linked in the movements screens. Null on the
-            // first post.
-            correctionOfItemLedgerId: line.postedItemLedgerId ?? null,
             comment,
             companyId,
             createdBy: userId
@@ -355,9 +349,7 @@ serve(async (req: Request) => {
       }
     });
 
-    return new Response(JSON.stringify({ success: true }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" }
-    });
+    return jsonResponse({ success: true });
   } catch (err) {
     logger.error("post-inventory-count failed", {
       error: String((err as Error).stack ?? err)
@@ -377,15 +369,6 @@ serve(async (req: Request) => {
     // real outages surface in monitoring instead of hiding as a 400.
     const isValidationError = err instanceof InvalidLinesError;
     const invalidLineIds = isValidationError ? err.lineIds : undefined;
-    return new Response(
-      JSON.stringify({
-        message: (err as Error).message,
-        ...(invalidLineIds ? { invalidLineIds } : {})
-      }),
-      {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: isValidationError ? 400 : 500
-      }
-    );
+    return errorResponse(err, isValidationError ? 400 : 500, { invalidLineIds });
   }
 });

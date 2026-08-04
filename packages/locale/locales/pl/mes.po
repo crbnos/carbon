@@ -63,6 +63,9 @@ msgstr "Zaakceptuj partię?"
 msgid "Account Settings"
 msgstr "Ustawienia konta"
 
+msgid "Acknowledge & finish"
+msgstr "Potwierdź i zakończ"
+
 msgid "Active"
 msgstr "Aktywne"
 
@@ -444,6 +447,9 @@ msgstr "Zakończ {0}"
 msgid "Finish Anyways"
 msgstr "Zakończ mimo wszystko"
 
+msgid "Finish with material unpicked?"
+msgstr "Zakończyć bez wybranego materiału?"
+
 msgid "Forgot to Clock Out?"
 msgstr "Zapomniałeś zakończyć zmianę?"
 
@@ -476,6 +482,9 @@ msgstr "Zbadaj artykuł"
 
 msgid "inspected"
 msgstr "zbadane"
+
+msgid "Instructions"
+msgstr "Instrukcje"
 
 msgid "Insufficient quantity"
 msgstr "Niewystarczająca ilość"
@@ -518,6 +527,9 @@ msgstr "Karta obiegowa zlecenia"
 
 msgid "Jobs"
 msgstr "Zadania"
+
+msgid "Keep picking"
+msgstr "Kontynuuj wybieranie"
 
 msgid "Kit"
 msgstr "Zestaw"
@@ -1068,6 +1080,9 @@ msgstr "Ustaw czas zakończenia zmiany"
 msgid "Setup"
 msgstr "Ustawienie"
 
+msgid "short"
+msgstr "krótkie"
+
 msgid "Short"
 msgstr "Brakuje"
 
@@ -1150,9 +1165,8 @@ msgstr "Zmień operatora"
 msgid "Tag"
 msgstr "Tag"
 
-#. placeholder {0}: operation.operationQuantity
-msgid "The completed quantity for this operation is less than the required quantity of {0}."
-msgstr "Ukończona ilość dla tej operacji jest mniejsza niż wymagana ilość {0}."
+msgid "The completed quantity for this operation is less than the required quantity of {targetQuantity}."
+msgstr "Ukończona ilość dla tej operacji jest mniejsza niż wymagana ilość {targetQuantity}."
 
 msgid "The lot will be marked Passed and {remaining} remaining unit(s) will be completed at this operation."
 msgstr "Partia zostanie oznaczona jako Zaakceptowana i {remaining} pozostałych jednostek zostanie ukończonych w tej operacji."
@@ -1162,6 +1176,9 @@ msgstr "Partia będzie nadal dyspozycjonowana, ale nie można utworzyć NCR, dop
 
 msgid "There are serial or batch tracked materials on the bill of material that have not been fully issued. Completing without issuing may result in incorrect traceability records."
 msgstr "Na liście materiałowej znajdują się materiały śledzone seryjnie lub partiami, które nie zostały w pełni wydane. Ukończenie bez wydania może skutkować nieprawidłowymi rekordami śledzenia."
+
+msgid "These items still have material to pick. Finishing now marks the list Partial."
+msgstr "Te pozycje mają jeszcze materiał do wybrania. Zakończenie teraz oznaczy listę jako Częściowa."
 
 msgid "This lot is expired and can't be picked."
 msgstr "Ta partia wygasła i nie można jej pobrać."

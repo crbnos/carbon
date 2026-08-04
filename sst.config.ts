@@ -44,6 +44,8 @@ export default $config({
         memoryUtilization: 80,
       },
       environment: {
+        ASSEMBLER_SERVICE_API_KEY: process.env.ASSEMBLER_SERVICE_API_KEY,
+        ASSEMBLER_SERVICE_URL: process.env.ASSEMBLER_SERVICE_URL,
         AUTH_PROVIDERS: process.env.AUTH_PROVIDERS,
         CARBON_EDITION: process.env.CARBON_EDITION,
         CLOUDFLARE_TURNSTILE_SECRET_KEY:
@@ -141,6 +143,8 @@ export default $config({
         memoryUtilization: 80,
       },
       environment: {
+        ASSEMBLER_SERVICE_API_KEY: process.env.ASSEMBLER_SERVICE_API_KEY,
+        ASSEMBLER_SERVICE_URL: process.env.ASSEMBLER_SERVICE_URL,
         AUTH_PROVIDERS: process.env.AUTH_PROVIDERS,
         CARBON_EDITION: process.env.CARBON_EDITION,
         CLOUDFLARE_TURNSTILE_SECRET_KEY:

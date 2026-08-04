@@ -146,3 +146,16 @@ p.is-editor-empty:first-child:before {
 .tiptap.ProseMirror-selectedNode div[data-video-embed] {
   @apply ring-2 ring-primary cursor-move p-2 rounded-lg;
 }
+
+@keyframes spinner-fade {
+  0% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.15;
+  }
+}
+
+.animate-spinner {
+  animation: spinner-fade 1.2s linear infinite;
+}

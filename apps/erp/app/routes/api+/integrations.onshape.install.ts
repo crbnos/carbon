@@ -16,13 +16,20 @@ export async function loader({ request }: LoaderFunctionArgs) {
     client_id: ONSHAPE_CLIENT_ID,
     redirect_uri: ONSHAPE_OAUTH_REDIRECT_URL,
     response_type: "code",
-    // Read for models/revisions/documents; Write to create translation (STEP/PDF
-    // export) jobs and manage the release webhook subscription.
-    scope: "OAuth2Read OAuth2Write",
     state
   });
 
-  const url = `https://oauth.onshape.com/oauth/authorize?${params}`;
+  // Read for models/revisions/documents; Write to create translation (GLTF/PDF
+  // export) jobs and manage the release webhook subscription. Both scopes must be
+  // granted to the OAuth application in the Onshape dev portal, or Onshape refuses
+  // the authorization and redirects back with `error` instead of `code`.
+  //
+  // Appended outside URLSearchParams so the delimiter is `%20`: RFC 6749 scope is
+  // space-delimited, and URLSearchParams serializes a space as `+`, which only
+  // means "space" under form-encoding rules a query string doesn't guarantee.
+  const scope = ["OAuth2Read", "OAuth2Write"].join("%20");
+
+  const url = `https://oauth.onshape.com/oauth/authorize?${params}&scope=${scope}`;
 
   return { url };
 }

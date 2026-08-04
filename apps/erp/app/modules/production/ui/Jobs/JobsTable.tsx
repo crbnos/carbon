@@ -42,6 +42,7 @@ import { useFetcher, useNavigate } from "react-router";
 import {
   CustomerAvatar,
   EmployeeAvatar,
+  exportOnlyColumn,
   Hyperlink,
   ItemThumbnail,
   New,
@@ -224,6 +225,11 @@ const JobsTable = memo(({ data, count, tags }: JobsTableProps) => {
           icon: <AiOutlinePartition />
         }
       },
+      exportOnlyColumn<Job>({
+        id: "itemName",
+        header: t`Item Name`,
+        value: (row) => row.name ?? null
+      }),
       {
         id: "trackedEntityId",
         header: t`Tracking`,

@@ -96,6 +96,7 @@ export default function LocationRoute() {
   const initialValues = {
     id: location.id,
     name: location.name,
+    code: location.code ?? undefined,
     addressLine1: location.addressLine1 ?? undefined,
     addressLine2: location.addressLine2 ?? undefined,
     city: location.city ?? undefined,

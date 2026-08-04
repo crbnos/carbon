@@ -45,6 +45,19 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
+  if (!salesOrderLine.data.locationId) {
+    throw redirect(
+      path.to.salesOrderLine(orderId, lineId),
+      await flash(
+        request,
+        error(
+          null,
+          "Set a location on this sales order line before creating a shipment"
+        )
+      )
+    );
+  }
+
   const salesOrderShipment = await serviceRole.functions.invoke<{
     id: string;
   }>("create", {

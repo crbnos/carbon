@@ -1,6 +1,6 @@
 {
-  "generated": "2026-07-29T07:49:59.284Z",
-  "totalTools": 1397,
+  "generated": "2026-08-04T18:03:17.982Z",
+  "totalTools": 1413,
   "modules": 15,
   "tools": [
     {
@@ -6151,6 +6151,57 @@
       }
     },
     {
+      "name": "inventory_getStockMovementEffectiveQuantity",
+      "module": "inventory",
+      "classification": "READ",
+      "description": "get stock movement effective quantity",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "itemLedgerId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "itemLedgerId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "itemLedgerId"
+        ]
+      }
+    },
+    {
+      "name": "inventory_correctStockMovement",
+      "module": "inventory",
+      "classification": "WRITE",
+      "description": "correct stock movement",
+      "paramCount": 2,
+      "serviceParams": [
+        "client",
+        "correction"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "correctedQuantity": {
+            "type": "number"
+          },
+          "comment": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    {
       "name": "inventory_getInventoryCounts",
       "module": "inventory",
       "classification": "READ",
@@ -6420,29 +6471,6 @@
         "required": [
           "inventoryCountId",
           "locationId"
-        ]
-      }
-    },
-    {
-      "name": "inventory_rectifyInventoryCount",
-      "module": "inventory",
-      "classification": "WRITE",
-      "description": "rectify inventory count",
-      "paramCount": 1,
-      "serviceParams": [
-        "db",
-        "args"
-      ],
-      "injectAuth": [
-        "companyId"
-      ],
-      "schema": {
-        "type": "object",
-        "properties": {
-          "args": {}
-        },
-        "required": [
-          "args"
         ]
       }
     },
@@ -7589,6 +7617,32 @@
       }
     },
     {
+      "name": "inventory_getUnresolvedPickingListLines",
+      "module": "inventory",
+      "classification": "READ",
+      "description": "get unresolved picking list lines",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "pickingListId",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "pickingListId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "pickingListId"
+        ]
+      }
+    },
+    {
       "name": "inventory_updatePickingListStatus",
       "module": "inventory",
       "classification": "WRITE",
@@ -7987,6 +8041,31 @@
         },
         "required": [
           "id"
+        ]
+      }
+    },
+    {
+      "name": "invoicing_computeInvoiceDateDue",
+      "module": "invoicing",
+      "classification": "READ",
+      "description": "compute invoice date due",
+      "paramCount": 2,
+      "serviceParams": [
+        "client",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "dateIssued": {},
+          "paymentTermId": {}
+        },
+        "required": [
+          "dateIssued",
+          "paymentTermId"
         ]
       }
     },
@@ -22205,6 +22284,89 @@
       }
     },
     {
+      "name": "production_getAssemblyInstructionVersions",
+      "module": "production",
+      "classification": "READ",
+      "description": "get assembly instruction versions",
+      "paramCount": 2,
+      "serviceParams": [
+        "client",
+        "instruction"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "rootInstructionId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "id"
+        ]
+      }
+    },
+    {
+      "name": "production_copyAssemblyInstructionAsVersion",
+      "module": "production",
+      "classification": "WRITE",
+      "description": "copy assembly instruction as version",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId",
+        "createdBy",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "copyFromId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "copyFromId"
+        ]
+      }
+    },
+    {
+      "name": "production_activateAssemblyInstructionVersion",
+      "module": "production",
+      "classification": "WRITE",
+      "description": "activate assembly instruction version",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      }
+    },
+    {
       "name": "production_deleteAssemblyInstruction",
       "module": "production",
       "classification": "DESTRUCTIVE",
@@ -28012,6 +28174,36 @@
         },
         "required": [
           "nonConformanceTypeId"
+        ]
+      }
+    },
+    {
+      "name": "quality_getIssueTypeByName",
+      "module": "quality",
+      "classification": "READ",
+      "description": "get issue type by name",
+      "paramCount": 2,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "name",
+        "excludeId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "excludeId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
         ]
       }
     },
@@ -39366,6 +39558,168 @@
       }
     },
     {
+      "name": "settings_getItemSerialSequences",
+      "module": "settings",
+      "classification": "READ",
+      "description": "get item serial sequences",
+      "paramCount": 3,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "args": {
+            "type": "object",
+            "properties": {
+              "limit": {
+                "type": "integer",
+                "default": 100
+              },
+              "offset": {
+                "type": "integer",
+                "default": 0
+              },
+              "search": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "settings_getItemSerialSequence",
+      "module": "settings",
+      "classification": "READ",
+      "description": "get item serial sequence",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "id",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      }
+    },
+    {
+      "name": "settings_getItemSerialSequenceByItemId",
+      "module": "settings",
+      "classification": "READ",
+      "description": "get item serial sequence by item id",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "itemId",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "itemId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "itemId"
+        ]
+      }
+    },
+    {
+      "name": "settings_upsertItemSerialSequence",
+      "module": "settings",
+      "classification": "WRITE",
+      "description": "upsert item serial sequence",
+      "paramCount": 7,
+      "serviceParams": [
+        "client",
+        "itemSerialSequence"
+      ],
+      "injectAuth": [
+        "companyId",
+        "createdBy",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "itemId": {
+            "type": "string"
+          },
+          "prefix": {
+            "type": "string"
+          },
+          "suffix": {
+            "type": "string"
+          },
+          "next": {
+            "type": "number"
+          },
+          "step": {
+            "type": "number"
+          },
+          "size": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "itemId"
+        ]
+      }
+    },
+    {
+      "name": "settings_deleteItemSerialSequence",
+      "module": "settings",
+      "classification": "DESTRUCTIVE",
+      "description": "delete item serial sequence",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "id",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      }
+    },
+    {
       "name": "settings_getSubsidiaries",
       "module": "settings",
       "classification": "READ",
@@ -40526,6 +40880,33 @@
       }
     },
     {
+      "name": "settings_updateIncludeMaterialsOnTravelerSetting",
+      "module": "settings",
+      "classification": "WRITE",
+      "description": "update include materials on traveler setting",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "includeMaterialsOnTraveler"
+      ],
+      "injectAuth": [
+        "companyId",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "includeMaterialsOnTraveler": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "includeMaterialsOnTraveler"
+        ]
+      }
+    },
+    {
       "name": "settings_updateAccountsPayableAddressSetting",
       "module": "settings",
       "classification": "WRITE",
@@ -40919,6 +41300,95 @@
         },
         "required": [
           "showCustomerReadableId"
+        ]
+      }
+    },
+    {
+      "name": "settings_updateAutoSelectMaterialWithoutPickingListSetting",
+      "module": "settings",
+      "classification": "WRITE",
+      "description": "update auto select material without picking list setting",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "autoSelectMaterialWithoutPickingList"
+      ],
+      "injectAuth": [
+        "companyId",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "autoSelectMaterialWithoutPickingList": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "autoSelectMaterialWithoutPickingList"
+        ]
+      }
+    },
+    {
+      "name": "settings_updateIncompletePickingListPolicySetting",
+      "module": "settings",
+      "classification": "WRITE",
+      "description": "update incomplete picking list policy setting",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "incompletePickingListPolicy"
+      ],
+      "injectAuth": [
+        "companyId",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "incompletePickingListPolicy": {
+            "type": "string",
+            "enum": [
+              "warn",
+              "error"
+            ]
+          }
+        },
+        "required": [
+          "incompletePickingListPolicy"
+        ]
+      }
+    },
+    {
+      "name": "settings_updateReturnPickedMaterialTimingSetting",
+      "module": "settings",
+      "classification": "WRITE",
+      "description": "update return picked material timing setting",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "returnPickedMaterialTiming"
+      ],
+      "injectAuth": [
+        "companyId",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "returnPickedMaterialTiming": {
+            "type": "string",
+            "enum": [
+              "job",
+              "operation"
+            ]
+          }
+        },
+        "required": [
+          "returnPickedMaterialTiming"
         ]
       }
     },

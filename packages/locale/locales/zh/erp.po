@@ -120,6 +120,9 @@ msgstr "{from}–{to} 共 {count}"
 msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
 msgstr "{inserted}条插入，{updated}条更新，{0}条需要修复，{1}条跳过。"
 
+msgid "{linesCount, plural, one {# line} other {# lines}}"
+msgstr "{linesCount, plural, one {# 行} other {# 行}}"
+
 msgid "{maxSizeMB}MB limit"
 msgstr "{maxSizeMB}MB 限制"
 
@@ -137,6 +140,9 @@ msgstr "{total}个阶段让您的公司在Carbon上线。每个阶段都以检�
 
 msgid "{total} phases to go live"
 msgstr "{total} 个阶段即可上线"
+
+msgid "{totalQuantity, plural, one {# unit} other {# units}}"
+msgstr "{totalQuantity, plural, one {# 件} other {# 件}}"
 
 msgid "{uncounted, plural, one {# uncounted line} other {# uncounted lines}}"
 msgstr "{uncounted, plural, one {# 未计数行} other {# 未计数行}}"
@@ -554,6 +560,9 @@ msgstr "累积期（周）"
 msgid "Accumulation Period:"
 msgstr "累积期间："
 
+msgid "Acknowledge & finish"
+msgstr "确认并完成"
+
 msgid "Acquisition Cost"
 msgstr "收购成本"
 
@@ -773,6 +782,9 @@ msgstr "添加步骤"
 msgid "Add steps to preview the operator view."
 msgstr "添加步骤以预览操作员视图。"
 
+msgid "Add Stock Transfer"
+msgstr "添加库存转移"
+
 msgid "Add Supplier"
 msgstr "添加供应商"
 
@@ -957,6 +969,9 @@ msgstr "由外部供应商而不是内部工作中心执行的操作，由分包
 
 msgid "An operation's position in its work center's queue — the order the floor picks work up — set by reordering cards on the Work Centers board without changing any dates."
 msgstr "一个操作在其工作中心队列中的位置——车间拿起工作的顺序——通过在工作中心板上重新排序卡片来设置，无需更改任何日期。"
+
+msgid "An unexpected error occurred while connecting to Onshape. Try connecting again."
+msgstr "连接 Onshape 时发生意外错误。请重新连接。"
 
 msgid "Anchors the Plan timeline to real dates. Leave blank for a relative, week-numbered timeline. Setting either one fills in the rest."
 msgstr "将计划时间表锚定到实际日期。留空以获得相对的、按周编号的时间表。设置其中任何一个会填充其余部分。"
@@ -1379,6 +1394,9 @@ msgstr "您确定要删除销售订单行 {0} {1} 吗？此操作无法撤销。
 msgid "Are you sure you want to delete the scrap reason: {0}? This cannot be undone."
 msgstr "您确定要删除废料原因：{0}？此操作无法撤销。"
 
+msgid "Are you sure you want to delete the serial number sequence for {itemLabel}? This cannot be undone."
+msgstr "你确定要删除 {itemLabel} 的序列号序列吗？这无法撤销。"
+
 msgid "Are you sure you want to delete the shift: {name} from {locationName}? This cannot be undone."
 msgstr "您确定要删除班次：{name} 从 {locationName}？此操作无法撤销。"
 
@@ -1639,8 +1657,14 @@ msgstr "将此单元分配给工作中心以用于线边材料，以便操作员
 msgid "At each gate"
 msgstr "在每个关卡"
 
+msgid "At job completion"
+msgstr "在工作完成时"
+
 msgid "At least one condition must match"
 msgstr "至少一个条件必须匹配"
+
+msgid "At operation completion"
+msgstr "在操作完成时"
 
 msgid "Attach File"
 msgstr "附加文件"
@@ -2304,6 +2328,9 @@ msgstr "选择批号"
 msgid "Choose a company"
 msgstr "选择公司"
 
+msgid "Choose a row on the left to see where its stock can come from."
+msgstr "选择左侧的行以查看其库存可能来自何处。"
+
 msgid "Choose a serial number"
 msgstr "选择序列号"
 
@@ -2948,14 +2975,29 @@ msgstr "复制培训名称"
 msgid "Copy training unique identifier"
 msgstr "复制培训唯一标识符"
 
+msgid "Correct"
+msgstr "修正"
+
 msgid "Correct Answer"
 msgstr "正确答案"
 
 msgid "Correct Answers"
 msgstr "正确答案"
 
+msgid "Correct Quantity"
+msgstr "修正数量"
+
+msgid "Correct Stock Movement"
+msgstr "修正库存移动"
+
+msgid "Corrected Quantity"
+msgstr "已修正数量"
+
 msgid "Correction"
 msgstr "纠正"
+
+msgid "Correction {correctionNumber}"
+msgstr "修正 {correctionNumber}"
 
 msgid "Corrections"
 msgstr "纠正"
@@ -3022,6 +3064,9 @@ msgstr "无法准备区域图像以进行分析"
 msgid "Could not read the document: {0}"
 msgstr "无法读取文档：{0}"
 
+msgid "Couldn't complete the Onshape connection"
+msgstr "无法完成 Onshape 连接"
+
 msgid "Couldn't load documents"
 msgstr "无法加载文档"
 
@@ -3030,6 +3075,9 @@ msgstr "无法加载相关文档。创建新文档前请先刷新以避免重复
 
 msgid "Couldn't reschedule the job. Please try again."
 msgstr "无法重新安排作业。请重试。"
+
+msgid "Couldn't save the Onshape connection"
+msgstr "无法保存 Onshape 连接"
 
 msgid "Count"
 msgstr "数量"
@@ -3129,6 +3177,9 @@ msgstr "创建修订版"
 
 msgid "Create Rule"
 msgstr "创建规则"
+
+msgid "Create Transfer"
+msgstr "创建转移"
 
 msgid "Create User"
 msgstr "创建用户"
@@ -3662,6 +3713,12 @@ msgstr "借方"
 
 msgid "Decide what an operator sees if they try to issue a batch or serial that's already expired."
 msgstr "决定操作员在尝试发放已过期的批次或序列号时看到的内容。"
+
+msgid "Decide what happens when an operator presses Finish on the shop floor with material still unpicked."
+msgstr "决定当操作员在车间按下完成时但材料仍未拣选时会发生什么。"
+
+msgid "Decide when material picked to a work center but not consumed flows back to the warehouse."
+msgstr "决定当物料拣配到工作中心但未消耗时何时流回仓库。"
 
 msgid "Decimal Places"
 msgstr "小数位数"
@@ -4510,6 +4567,9 @@ msgstr "例如前3到4周"
 msgid "e.g. Zebra 2x1"
 msgstr "例如 Zebra 2x1"
 
+msgid "Each operation's unused material returns as soon as the operation is done."
+msgstr "每个操作的未使用物料在操作完成后立即返回。"
+
 msgid "Each physical unit gets its own tracked entity and unique number — one entity, one unit."
 msgstr "每个物理单位都获得自己的跟踪实体和唯一编号 — 一个实体、一个单位。"
 
@@ -4759,6 +4819,9 @@ msgstr "编辑计划维护"
 msgid "Edit Sequence"
 msgstr "编辑序列"
 
+msgid "Edit Serial Number"
+msgstr "编辑序列号"
+
 msgid "Edit Service"
 msgstr "编辑服务"
 
@@ -5001,11 +5064,11 @@ msgstr "请输入 1 至 {0} 之间的数量。"
 msgid "Enter and approve vendor bills against a PO (three-way match)"
 msgstr "输入并批准针对采购订单的供应商账单（三方匹配）"
 
-msgid "Enter or scan serial number"
-msgstr "输入或扫描序列号"
-
 msgid "Enter PO number"
 msgstr "输入采购订单号"
+
+msgid "Enter the quantity this movement should have been. An opposite movement for the difference is posted next to the original, in the original's time period."
+msgstr "输入此移动应该的数量。差异的相反移动将在原始时期内的原始移动旁发布。"
 
 msgid "Entered At Receipt"
 msgstr "在收货时输入"
@@ -5024,9 +5087,6 @@ msgstr "要分割的实体"
 
 msgid "Entity"
 msgstr "实体"
-
-msgid "Entity is {status}"
-msgstr "实体为 {status}"
 
 msgid "Entity Type"
 msgstr "实体类型"
@@ -5112,9 +5172,6 @@ msgstr "从销售发票行中删除模型时出错"
 msgid "Error removing model from sales order line"
 msgstr "从销售订单行中删除模型时出错"
 
-msgid "Error validating serial number"
-msgstr "验证序列号时出错"
-
 msgid "Escalate to the project leads"
 msgstr "升级到项目负责人"
 
@@ -5174,6 +5231,9 @@ msgstr "汇率"
 
 msgid "Exchange Rates"
 msgstr "汇率"
+
+msgid "Exchanging the authorization code for an access token failed. Try connecting again."
+msgstr "用授权代码交换访问令牌失败。请重新连接。"
 
 msgid "Excluded"
 msgstr "已排除"
@@ -5751,6 +5811,9 @@ msgstr "完成入职"
 msgid "Finish To"
 msgstr "完成至"
 
+msgid "Finish with material unpicked?"
+msgstr "完成但物料未领取？"
+
 msgid "Finished goods"
 msgstr "表面处理"
 
@@ -5765,6 +5828,12 @@ msgstr "在常规MACRS计划开始之前采取的第一年额外扣除。"
 
 msgid "Finishes"
 msgstr "表面处理"
+
+msgid "Finishing an incomplete pick"
+msgstr "完成不完整的拣选"
+
+msgid "Finishing is refused until every line is picked or marked Short."
+msgstr "拒绝完成，直到每一行都被拣选或标记为缺少。"
 
 msgid "First Name"
 msgstr "名字"
@@ -6403,6 +6472,9 @@ msgstr "ID"
 msgid "Ideas, suggestions or problems?"
 msgstr "想法、建议或问题？"
 
+msgid "Identifiers"
+msgstr "标识符"
+
 msgid "IDs and descriptions are generated for raw materials."
 msgstr "ID 和描述是为原材料生成的。"
 
@@ -6453,6 +6525,9 @@ msgstr "导入结果"
 
 msgid "Import your BOM"
 msgstr "导入您的物料清单"
+
+msgid "In Onshape, edit this OAuth application's permissions to include \"Application can write to your documents\", then connect again."
+msgstr "请在 Onshape 中编辑此 OAuth 应用的权限，加入“Application can write to your documents”，然后重新连接。"
 
 msgid "In order to convert this RFQ to a quote, all lines must have an internal part number."
 msgstr "为了将此RFQ转换为报价，所有行必须具有内部零件编号。"
@@ -6511,11 +6586,17 @@ msgstr "入站检验"
 msgid "Inbox"
 msgstr "收件箱"
 
+msgid "Include a materials (bill of materials) section on the job traveler PDF with item numbers and quantities."
+msgstr "在工作单据 PDF 中包含物料清单（BOM）部分，列出物料号和数量。"
+
 msgid "Include extra parts in shipment"
 msgstr "在发货中包含额外零件"
 
 msgid "Include Inactive"
 msgstr "包括不活跃"
+
+msgid "Include materials on traveler"
+msgstr "在工作单据上包含物料"
 
 msgid "Included"
 msgstr "已包含"
@@ -6531,6 +6612,9 @@ msgstr "利润表"
 
 msgid "Income/Balance"
 msgstr "收入/余额"
+
+msgid "incoming"
+msgstr "来货"
 
 msgid "Incoming"
 msgstr "传入"
@@ -6862,9 +6946,6 @@ msgstr "项"
 msgid "Item"
 msgstr "物品"
 
-msgid "Item {scannedItem} is not the same as the item {expectedItem}"
-msgstr "项目 {scannedItem} 与项目 {expectedItem} 不相同"
-
 msgid "Item / Location"
 msgstr "物品 / 位置"
 
@@ -6907,6 +6988,9 @@ msgstr "项目必须匹配选定的类型和选定的组"
 msgid "Item must match a selected type OR a selected group"
 msgstr "项目必须匹配选定的类型或选定的组"
 
+msgid "Item Name"
+msgstr "物料名称"
+
 msgid "Item Scope"
 msgstr "物品范围"
 
@@ -6930,9 +7014,6 @@ msgstr "项目与生产"
 
 msgid "Items inside this window get a yellow badge."
 msgstr "此窗口内的项目会获得黄色徽章。"
-
-msgid "Items whose bill of materials includes this item"
-msgstr "物料清单中包含此物品的物品"
 
 msgid "Items: item master, BOMs, Bill of Process, engineering changes, CAD"
 msgstr "项目：项目主数据、物料清单、工艺流程、工程变更、CAD"
@@ -6960,6 +7041,12 @@ msgstr "工作操作"
 
 msgid "Job Operations"
 msgstr "工作操作"
+
+msgid "Job Traveler Materials"
+msgstr "工作单据物料"
+
+msgid "Job traveler settings updated"
+msgstr "工作单据设置已更新"
 
 msgid "Jobs"
 msgstr "工作"
@@ -7012,6 +7099,9 @@ msgstr "保留现有定价，仅添加新项目"
 
 msgid "Keep Open"
 msgstr "保持开放"
+
+msgid "Keep picking"
+msgstr "继续领取"
 
 msgid "Key"
 msgstr "钥匙"
@@ -7126,11 +7216,17 @@ msgstr "留空以精确匹配"
 msgid "Leave this page"
 msgstr "离开此页面"
 
+msgid "Ledger"
+msgstr "总账"
+
 msgid "Left item"
 msgstr "左项"
 
 msgid "Leftover Parts Detected"
 msgstr "检测到剩余零件"
+
+msgid "Leftover staged material returns when the whole job completes."
+msgstr "当整个工作完成时，剩余的暂存物料返回。"
 
 msgid "Less manual work"
 msgstr "更少的手动工作"
@@ -7256,6 +7352,9 @@ msgstr "最后加载，在切换时进行，以便余额是最新的。"
 
 msgid "Loading associated jobs..."
 msgstr "正在加载关联的工作..."
+
+msgid "Loading current quantity…"
+msgstr "正在加载当前数量…"
 
 msgid "Loading item details..."
 msgstr "正在加载项目详情..."
@@ -8206,6 +8305,9 @@ msgstr "新销售订单行"
 msgid "New Scheduled Maintenance"
 msgstr "新的定期维护"
 
+msgid "New Serial Number"
+msgstr "新序列号"
+
 msgid "New Service"
 msgstr "新服务"
 
@@ -8455,8 +8557,14 @@ msgstr "未配置问题类型"
 msgid "No items"
 msgstr "无项目"
 
+msgid "No items have inventory activity here yet."
+msgstr "此处尚无项目的库存活动。"
+
 msgid "No lines to map"
 msgstr "没有行需要映射"
+
+msgid "No lines yet"
+msgstr "还没有行"
 
 msgid "No locations found."
 msgstr "未找到位置。"
@@ -8472,6 +8580,9 @@ msgstr "没有匹配\"{query}\"的结果。请尝试不同的搜索词。"
 
 msgid "No matches. Type to create one."
 msgstr "无匹配项。输入内容以创建一个。"
+
+msgid "No matching bins"
+msgstr "没有匹配的库位"
 
 msgid "No new notifications"
 msgstr "没有新通知"
@@ -8499,6 +8610,9 @@ msgstr "未找到选项。"
 
 msgid "No options found."
 msgstr "未找到选项。"
+
+msgid "No other bins hold this item"
+msgstr "其他地点没有此项目"
 
 msgid "No other employees found. Add employees to enable ownership transfer."
 msgstr "未找到其他员工。添加员工以启用所有权转移。"
@@ -8584,8 +8698,14 @@ msgstr "此视图未应用排序"
 msgid "No stock"
 msgstr "无库存"
 
+msgid "No stock at this location"
+msgstr "此位置没有库存"
+
 msgid "No stockout projected in the next 48 weeks"
 msgstr "未来48周内未预测到库存短缺"
+
+msgid "No storage unit"
+msgstr "无存储单元"
 
 msgid "No suppliers yet"
 msgstr "还没有供应商"
@@ -8689,6 +8809,13 @@ msgstr "备注"
 msgid "Notes (optional)"
 msgstr "备注（可选）"
 
+#. placeholder {0}: search.trim()
+msgid "Nothing at this location matches \"{0}\"."
+msgstr "此位置处没有与\"{0}\"匹配的任何内容。"
+
+msgid "Nothing else at this location has stock to pull from."
+msgstr "此位置没有其他可提取的库存。"
+
 msgid "Nothing in the archive"
 msgstr "存档中没有任何内容"
 
@@ -8727,6 +8854,9 @@ msgstr "最早优先"
 
 msgid "On cutover day, work the checklist below in order. Acceptance tests come from your in-scope requirements. Support details are at the bottom."
 msgstr "在切换日期，按顺序完成下面的检查清单。验收测试来自您的范围内需求。支持详情在下方。"
+
+msgid "on hand"
+msgstr "现有库存"
 
 msgid "On hand"
 msgstr "现有"
@@ -8794,6 +8924,21 @@ msgstr "只有草稿程序可以编辑。创建新版本以更改活动或已归
 msgid "Only empty, open periods can be deleted."
 msgstr "仅可删除空白的开放期间。"
 
+msgid "Onshape authorized the connection but saving it failed. Try connecting again."
+msgstr "Onshape 已授权此连接，但保存失败。请重新连接。"
+
+msgid "Onshape denied the connection"
+msgstr "Onshape 拒绝了连接"
+
+msgid "Onshape didn't return an authorization code"
+msgstr "Onshape 未返回授权代码"
+
+msgid "Onshape isn't configured"
+msgstr "尚未配置 Onshape"
+
+msgid "Onshape rejected the authorization"
+msgstr "Onshape 拒绝了授权"
+
 msgid "Onshape Status"
 msgstr "Onshape 状态"
 
@@ -8847,6 +8992,9 @@ msgstr "在MES中打开"
 
 msgid "Open Issues"
 msgstr "未解决的问题"
+
+msgid "Open job demand plus outstanding transfers out of this bin"
+msgstr "未完成工作需求加上此地点的未完成转移"
 
 msgid "Open jobs"
 msgstr "未结工单"
@@ -8931,6 +9079,9 @@ msgstr "操作员收到警告。库存仍然可以通过。"
 
 msgid "Operator must pick a different batch/serial."
 msgstr "操作员必须选择不同的批次/序列号。"
+
+msgid "Operator sees the missing items, can acknowledge & finish. The list is flagged Partial."
+msgstr "操作员看到缺失的项目，可以确认并完成。列表被标记为部分。"
 
 msgid "Operators"
 msgstr "操作员"
@@ -9144,6 +9295,9 @@ msgstr "上级组"
 msgid "Parent Item"
 msgstr "父项目"
 
+msgid "Parent items. (If you click into one of the parent parts below, you'll see this item included as a component on the bill of material.)"
+msgstr "上级物品。(如果您点击下方其中一个上级零件，您将看到此物品作为组件包含在物料清单中。)"
+
 msgid "Parent Storage Unit"
 msgstr "父存储单元"
 
@@ -9170,6 +9324,9 @@ msgstr "零件编号"
 
 msgid "Part Supersession"
 msgstr "零件取代"
+
+msgid "Partial"
+msgstr "部分"
 
 msgid "Partner"
 msgstr "合作伙伴"
@@ -9351,6 +9508,9 @@ msgstr "拣货单"
 msgid "Pick Order"
 msgstr "拣选顺序"
 
+msgid "Pick the bin that needs stock, then pick the bins to pull it from."
+msgstr "先选择需要库存的箱，再选择要从中提取库存的箱。"
+
 msgid "Pick tracked item"
 msgstr "拣选追踪项目"
 
@@ -9525,14 +9685,14 @@ msgstr "发布于"
 msgid "Posted By"
 msgstr "发布者"
 
-msgid "Posted once, no rectifications."
-msgstr "已过账一次，无纠正。"
+msgid "Posted once, corrected {corrections} times."
+msgstr "发布一次，修正了 {corrections} 次。"
 
-msgid "Posted once, rectified {rectifications} times."
-msgstr "已过账一次，已纠正 {rectifications} 次。"
+msgid "Posted once, corrected 1 time."
+msgstr "发布一次，修正了 1 次。"
 
-msgid "Posted once, rectified 1 time."
-msgstr "已过账一次，已纠正 1 次。"
+msgid "Posted once, no corrections."
+msgstr "发布一次，无修正。"
 
 msgid "Posting"
 msgstr "预付款"
@@ -9540,14 +9700,14 @@ msgstr "预付款"
 msgid "Posting Date"
 msgstr "过账日期"
 
-msgid "Posting Groups"
-msgstr "过账组"
-
 msgid "Potential Data Loss"
 msgstr "潜在数据丢失"
 
 msgid "Pre-filled for a new item when expiry is Fixed Duration."
 msgstr "当过期时间设置为固定期限时，为新项目预填充。"
+
+msgid "Pre-select material without a picking list"
+msgstr "不带拣选单预先选择材料"
 
 msgid "Preferred Supplier"
 msgstr "首选供应商"
@@ -10095,9 +10255,6 @@ msgstr "报价日期"
 msgid "Quotes"
 msgstr "报价"
 
-msgid "Quoting"
-msgstr "报价"
-
 msgid "Quoting and sales orders"
 msgstr "报价和销售订单"
 
@@ -10303,12 +10460,6 @@ msgstr "记录"
 msgid "Recovery Period"
 msgstr "注册"
 
-msgid "Rectification {rectifyNumber}"
-msgstr "纠正 {rectifyNumber}"
-
-msgid "Rectify"
-msgstr "纠正"
-
 msgid "Redirecting to verification page..."
 msgstr "正在重定向到验证页面..."
 
@@ -10424,8 +10575,8 @@ msgstr "移除筛选"
 msgid "Remove from Price List"
 msgstr "从价格列表中移除"
 
-msgid "Remove item"
-msgstr "删除项目"
+msgid "Remove line"
+msgstr "删除行"
 
 msgid "Remove order"
 msgstr "删除订单"
@@ -10651,6 +10802,12 @@ msgstr "重试"
 msgid "Return Home"
 msgstr "返回首页"
 
+msgid "Returned"
+msgstr "已返回"
+
+msgid "Returning unused picked material"
+msgstr "返回未使用的拣配物料"
+
 msgid "Rev {revision}"
 msgstr "Rev {revision}"
 
@@ -10674,6 +10831,9 @@ msgstr "反转相关日记账分录"
 
 msgid "Reversed"
 msgstr "已冲销"
+
+msgid "Review"
+msgstr "查看"
 
 msgid "Review each item's changes, then confirm — releasing can't be undone."
 msgstr "审查每个项目的更改，然后确认 — 发布无法撤销。"
@@ -10995,6 +11155,12 @@ msgstr "扫描"
 msgid "Scan a label or search by item ID or tracking ID."
 msgstr "扫描标签或按项目 ID 或跟踪 ID 搜索。"
 
+msgid "Scan or choose a batch number"
+msgstr "扫描或选择批号"
+
+msgid "Scan or choose a serial number"
+msgstr "扫描或选择序列号"
+
 msgid "Scan or enter tracked entity ID, serial, or batch"
 msgstr "扫描或输入跟踪实体ID、序列号或批次号"
 
@@ -11006,9 +11172,6 @@ msgstr "扫描或搜索..."
 
 msgid "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
 msgstr "从此批次扫描或选择被追踪的实体以将其作为样本列添加，然后在网格中记录其结果。"
-
-msgid "Scan the tracking ID for this line"
-msgstr "扫描此行的跟踪ID"
 
 msgid "SCAR"
 msgstr "SCAR"
@@ -11109,6 +11272,9 @@ msgstr "搜索字段..."
 msgid "Search for existing or create a new one"
 msgstr "搜索现有问题或创建新问题"
 
+msgid "Search items or bins"
+msgstr "搜索项目或位置"
+
 msgid "Search Job"
 msgstr "搜索任务"
 
@@ -11150,6 +11316,9 @@ msgstr "选择受理人"
 
 msgid "Select a default approver"
 msgstr "选择默认审批人"
+
+msgid "Select a destination"
+msgstr "选择目标位置"
 
 msgid "Select a document"
 msgstr "选择文件"
@@ -11369,11 +11538,14 @@ msgstr "序列项目需要销售订单"
 msgid "Serial Number"
 msgstr "序列号"
 
-msgid "Serial number not found"
-msgstr "序列号未找到"
-
 msgid "Serial Number:"
 msgstr "序列号："
+
+msgid "Serial Numbers"
+msgstr "序列号"
+
+msgid "Serial numbers are only generated for serial- or batch-tracked items."
+msgstr "序列号仅为序列号或批次跟踪的物料生成。"
 
 msgid "Serial or Batch Tracking Required"
 msgstr "序列号或批次跟踪必需"
@@ -11640,6 +11812,9 @@ msgstr "车间应用和排程"
 msgid "Shop-floor configuration."
 msgstr "车间配置。"
 
+msgid "short"
+msgstr "短缺"
+
 msgid "Short"
 msgstr "缺货"
 
@@ -11676,6 +11851,10 @@ msgstr "显示供应商ID"
 msgid "Show sync options"
 msgstr "显示同步选项"
 
+#. placeholder {0}: data.length
+msgid "Showing {0} of {totalCount} — refine your search"
+msgstr "显示 {0} 个，共 {totalCount} 个 — 优化搜索"
+
 msgid "Shown as a faint background behind every page of generated PDFs"
 msgstr "作为淡色背景显示在每个生成的PDF页面后面"
 
@@ -11705,6 +11884,9 @@ msgstr "在关闭此问题之前必须记录的签署；除了工作流程所需
 
 msgid "Signed in as {name}"
 msgstr "以 {name} 身份登录"
+
+msgid "Signed quantity — negative for outbound movements"
+msgstr "有符号数量 — 出站移动为负"
 
 msgid "Sites & locations"
 msgstr "站点和位置"
@@ -11949,6 +12131,9 @@ msgstr "步骤继承自装配说明。"
 
 msgid "Steps are inherited from the inspection plan."
 msgstr "步骤继承自检验计划。"
+
+msgid "Stock movement corrected"
+msgstr "库存移动已修正"
 
 msgid "Stock Transfer ID"
 msgstr "库存转移ID"
@@ -12493,6 +12678,9 @@ msgstr "计算方法后的天数，在该天数后付款到期"
 msgid "The append-only record of every stock movement; on-hand is the sum of its signed entries and the source of truth."
 msgstr "每个库存变动的追加专用记录；在手数量是其带符号条目的总和，也是单一信息源。"
 
+msgid "The authorization was refused in Onshape. Try connecting again."
+msgstr "授权在 Onshape 中被拒绝。请重新连接。"
+
 msgid "The book of all posted journal lines, summed by account — written only when the company has accounting enabled."
 msgstr "所有已记账的日记账行书，按账户汇总 - 仅在公司启用会计时编写。"
 
@@ -12968,6 +13156,9 @@ msgstr "剩余的 {0} {1} 将不再被预期。在途供应和 MRP 将停止计�
 msgid "The residual WIP a job has left at close, swept to a Production Variance account — the only variance Carbon books for a job."
 msgstr "工作在关闭时留下的残余在制品，扫至生产差异帐户 - Carbon为工作记录的唯一差异。"
 
+msgid "The response from Onshape was missing required parameters. Try connecting again."
+msgstr "Onshape 的响应缺少必需的参数。请重新连接。"
+
 msgid "The revision number of the part"
 msgstr "零件的修订号"
 
@@ -13157,11 +13348,17 @@ msgstr "这些电子邮件地址将自动抄送到发送给供应商的所有电
 msgid "These email addresses will be automatically CC'd on all quote emails sent to customers."
 msgstr "这些电子邮件地址将自动抄送到发送给客户的所有报价电子邮件中。"
 
+msgid "These items still have material to pick. Finishing now marks the list Partial."
+msgstr "这些物料仍需领取。现在完成将标记列表为部分。"
+
 msgid "These jobs have operations assigned to this work center:"
 msgstr "这些工作有分配给此工作中心的操作："
 
 msgid "These journal entries are still Draft, so their debits and credits aren't in the ledger for this period. Post each one, or re-date it into a later open period."
 msgstr "这些日记账条目仍为草稿状态，因此其借贷金额不在本期分类账中。过账每一份，或将其重新标记日期至较晚的开放期间。"
+
+msgid "This Carbon instance is missing its Onshape OAuth credentials. Ask an administrator to set them."
+msgstr "此 Carbon 实例缺少 Onshape 的 OAuth 凭据。请让管理员进行设置。"
 
 msgid "This change notice is being implemented, so its changes are locked. Reopen it to edit."
 msgstr "此变更通知正在实施中，因此其更改已锁定。重新打开它进行编辑。"
@@ -13204,6 +13401,9 @@ msgstr "这是您的财政年度开始的月份。"
 
 msgid "This is the month your tax year starts."
 msgstr "这是您的税务年度开始的月份。"
+
+msgid "this item"
+msgstr "此物料"
 
 msgid "This item is built via a configurator and resolves its components per-order; jobs created for it inherit the configurator's resolved BOM."
 msgstr "该项目通过配置器构建，并按订单解析其组件；为其创建的工作继承配置器的解析BOM。"
@@ -13540,9 +13740,6 @@ msgstr "跟踪的实体"
 msgid "Tracked Entity"
 msgstr "追踪实体"
 
-msgid "Tracked entity already picked"
-msgstr "已追踪实体已被拣选"
-
 msgid "Tracked entity ID is required but none was found"
 msgstr "已跟踪实体ID是必需的，但未找到"
 
@@ -13777,6 +13974,9 @@ msgstr "未命名图表"
 
 msgid "Untitled line"
 msgstr "未命名行"
+
+msgid "Unused picked material flushed back from the work center to the warehouse."
+msgstr "未使用的拣配物料从工作中心冲回仓库。"
 
 msgid "UoM"
 msgstr "计量单位"
@@ -14506,6 +14706,9 @@ msgstr "启用后,定价规则(批量折扣、促销)仍适用于此覆盖;禁�
 msgid "When on, scanning this process's operation barcode reports all remaining open quantity as complete in one action; turn off when operators routinely report partials."
 msgstr "启用后,扫描此流程的操作条形码会在一个操作中将所有剩余的未处理数量报告为已完成;当操作员定期报告部分时禁用。"
 
+msgid "When on, the traveler PDF lists the job's required materials."
+msgstr "启用后，工作单据 PDF 将列出工作所需的物料。"
+
 msgid "When on, this party's invoices skip tax calculation; the party is responsible for keeping the exemption certificate current."
 msgstr "启用后,该方的发票会跳过税计算;该方负责使豁免证书保持最新。"
 
@@ -14514,6 +14717,9 @@ msgstr "启用后,此价格覆盖适用于匹配的订单;禁用时,覆盖被保
 
 msgid "When on, this rule fires for every target of its type. Assignment rows are ignored but preserved."
 msgstr "启用时，此规则对其类型的每个目标都会触发。分配行被忽略但保留。"
+
+msgid "When on, tracked material is pre-selected by pick order (FEFO) even without a picking list. When off, operators start on the Scan tab."
+msgstr "启用时，即使没有拣选单，跟踪的材料也会根据拣选顺序（FEFO）预先选择。禁用时，操作员从扫描选项卡开始。"
 
 msgid "When supplier responses are expected back; suppliers see this date on the RFQ portal and Carbon stops accepting late responses after it (configurable)."
 msgstr "何时预期供应商回复;供应商在RFQ门户上看到该日期,Carbon在之后停止接受迟到的回复(可配置)。"

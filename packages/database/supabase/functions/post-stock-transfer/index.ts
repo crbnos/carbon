@@ -4,7 +4,7 @@ import { getLocalTimeZone, parseDate, today } from "npm:@internationalized/date"
 import { nanoid } from "https://deno.land/x/nanoid@v3.0.0/nanoid.ts";
 import { z } from "https://deno.land/x/zod@v3.21.4/mod.ts";
 import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
-import { corsHeaders } from "../lib/headers.ts";
+import { corsPreflight, errorResponse, jsonResponse } from "../lib/response.ts";
 import type { Database } from "../lib/types.ts";
 
 const pool = getConnectionPool(1);
@@ -121,9 +121,8 @@ const payloadValidator = z.discriminatedUnion("type", [
 ]);
 
 serve(async (req: Request) => {
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
-  }
+  const preflight = corsPreflight(req);
+  if (preflight) return preflight;
 
   const payload = await req.json();
   const today = format(new Date(), "yyyy-MM-dd");
@@ -327,7 +326,9 @@ serve(async (req: Request) => {
                 "Stock Transfer Line": stockTransferLineId,
                 "From Location": locationId,
                 "To Location": locationId,
-                "From Shelf": stockTransferLine.fromStorageUnitId,
+                // The line's own column is overwritten with this same payload
+                // value later in the transaction — read the payload directly.
+                "From Shelf": fromStorageUnitId,
                 "To Shelf": stockTransferLine.toStorageUnitId,
               },
               companyId,
@@ -601,7 +602,9 @@ serve(async (req: Request) => {
                 "Stock Transfer Line": stockTransferLineId,
                 "From Location": locationId,
                 "To Location": locationId,
-                "From Shelf": stockTransferLine.fromStorageUnitId,
+                // The line's own column is overwritten with this same payload
+                // value later in the transaction — read the payload directly.
+                "From Shelf": fromStorageUnitId,
                 "To Shelf": stockTransferLine.toStorageUnitId,
               },
               companyId,
@@ -621,14 +624,8 @@ serve(async (req: Request) => {
             })
             .execute();
 
-          // Update tracked entity status to consumed
-          await trx
-            .updateTable("trackedEntity")
-            .set({
-              status: "Consumed",
-            })
-            .where("id", "=", trackedEntityId)
-            .execute();
+          // A transfer MOVES the batch between bins — it stays Available
+          // (consumed at production). Matches the serial case and post-picking.
 
           // Create item ledger entries for transfer
           itemLedgerInserts.push(
@@ -1061,22 +1058,12 @@ serve(async (req: Request) => {
       }
     }
 
-    return new Response(
-      JSON.stringify({
-        success: true,
-        warning: expiredWarning,
-        splitEntityId,
-      }),
-      {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200,
-      }
-    );
-  } catch (err) {
-    console.error(err);
-    return new Response(JSON.stringify(err), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 500,
+    return jsonResponse({
+      success: true,
+      warning: expiredWarning,
+      splitEntityId,
     });
+  } catch (err) {
+    return errorResponse(err, 500);
   }
 });

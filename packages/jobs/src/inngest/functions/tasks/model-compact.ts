@@ -7,11 +7,12 @@ import { inngest } from "../../client";
 import {
   ASSEMBLER_CONCURRENCY,
   assemblerEnabled,
+  copyRawToDurable,
   internalizeStorageUrl,
-  moveRawToDurable,
   RAW_STAGING_BUCKET,
   resolveModelSourceBucket,
-  runAssemblerJob
+  runAssemblerJob,
+  signSourceUrl
 } from "./assembler-client";
 
 const SIGNED_URL_EXPIRY = 60 * 60; // seconds — the source (read) URL only.
@@ -25,16 +26,22 @@ const MAX_COMPACT_WAIT_MS = 15 * 60 * 1000;
  *
  *  - When the assembler is available and the source is a compactable mesh: compacts
  *    it (STEP → OCCT BinXCAF `{id}.xbf.zst`; mesh → `{id}.{ext}.zst`), then
- *    relocates the compacted `.zst` to `private` if it fits the 50 MB served cap.
+ *    COPIES the compacted `.zst` to `private` if it fits the 50 MB served cap.
  *  - The customer's ORIGINAL bytes always survive. xbf compaction is a format
  *    conversion (no CAD tool opens `.xbf`), so the original STEP is kept alongside
- *    it — relocated to `private` when ≤ 50 MB, else left in staging tracked by
+ *    it — copied to `private` when ≤ 50 MB, else staging-only, tracked by
  *    `modelUpload.originalPath` (the staged-raw sweep spares both columns). zstd
  *    compaction is pure compression (the `.zst` decompresses byte-identical), so
  *    the `.zst` replaces the original and `originalPath` is cleared.
- *  - Otherwise (assembler off, non-mesh, or already `.zst`): relocates the raw
+ *  - Otherwise (assembler off, non-mesh, or already `.zst`): copies the raw
  *    as-is to `private` if it fits; oversized raws stay in staging (never pruned —
  *    they may be the only copy of the customer's file).
+ *
+ * This function DELETES NOTHING from staging: an instant move/remove races any
+ * concurrent optimize/convert/plan that resolved `temp-staging` as its source
+ * bucket moments earlier ("Object not found" → Failed run, zombie viewer). The
+ * scheduled cleanup sweep owns staging deletion: stale objects with a durable
+ * copy, or referenced by no modelUpload, are pruned after the TTL.
  *
  * Fired after model-optimize settles (success, failure, or assembler-off skip), so
  * a failed/skipped optimise still gets its raw persisted. Own retries.
@@ -109,16 +116,18 @@ export const modelCompactFunction = inngest.createFunction(
         : {};
 
     if (!canCompact) {
-      // No compaction possible — relocate the raw AS-IS to durable storage. Same
+      // No compaction possible — COPY the raw AS-IS to durable storage. Same
       // key, so `modelPath` (path-only) is unchanged; the artifacts route resolves
-      // the bucket by probing.
+      // the bucket by probing. The staged copy is left for the cleanup sweep —
+      // deleting it here races concurrent jobs that resolved `temp-staging`
+      // before the copy landed.
       return await step.run("relocate", async () => {
         const client = getCarbonServiceRole();
         const rawSize = model.size;
         if (rawSize != null && rawSize <= MODEL_RAW_KEEP_MAX_BYTES) {
-          const err = await moveRawToDurable(client, model.modelPath);
+          const err = await copyRawToDurable(client, model.modelPath);
           if (err) throw new Error(`relocate raw to durable: ${err}`);
-          logger.info("raw relocated to durable", {
+          logger.info("raw copied to durable", {
             modelUploadId,
             modelPath: model.modelPath
           });
@@ -154,14 +163,14 @@ export const modelCompactFunction = inngest.createFunction(
       logger,
       buildBody: async () => {
         const client = getCarbonServiceRole();
-        const source = await client.storage
-          .from(RAW_STAGING_BUCKET)
-          .createSignedUrl(model.modelPath, SIGNED_URL_EXPIRY);
-        if (source.error) {
-          throw new Error(`sign source: ${source.error.message}`);
-        }
+        const signedUrl = await signSourceUrl(
+          client,
+          RAW_STAGING_BUCKET,
+          model.modelPath,
+          SIGNED_URL_EXPIRY
+        );
         return {
-          source: { url: internalizeStorageUrl(source.data.signedUrl) },
+          source: { url: internalizeStorageUrl(signedUrl) },
           mode,
           // The assembler writes the compacted output to staging first; we
           // relocate it to durable storage (or prune) once we know its size.
@@ -194,17 +203,18 @@ export const modelCompactFunction = inngest.createFunction(
       // and `originalPath` is cleared.
       const isXbf = mode === "xbf";
 
-      // Where the retained original ends up (xbf only): `private` when it fits
-      // the served cap, else it stays in staging — referenced via `originalPath`
-      // so the staged-raw sweep won't prune it.
+      // Where the retained original ends up (xbf only): COPIED to `private`
+      // when it fits the served cap, else staging only — referenced via
+      // `originalPath` either way, so the staged-raw sweep won't prune the
+      // only copy.
       const retainOriginal = async () => {
         const rawSize = model.originalSize ?? model.size;
         if (rawSize != null && rawSize <= MODEL_RAW_KEEP_MAX_BYTES) {
-          const err = await moveRawToDurable(client, model.modelPath);
+          const err = await copyRawToDurable(client, model.modelPath);
           // Non-fatal: on failure the original stays in staging, still tracked
           // by `originalPath` (the download route probes both buckets).
           if (err) {
-            logger.warn("original raw not relocated — staying in staging", {
+            logger.warn("original raw not copied to durable — staging only", {
               modelUploadId,
               originalPath: model.modelPath,
               error: err
@@ -214,13 +224,17 @@ export const modelCompactFunction = inngest.createFunction(
       };
 
       if (fits) {
-        // Relocate the compacted raw to durable storage and repoint `modelPath`
-        // at it. xbf: also retain the original; zstd: drop the fat original
-        // (the `.zst` IS the original, compressed). `size` stays the
-        // AS-UPLOADED bytes — it feeds every "modelSize" view/RPC and the file
-        // lists, which must show the customer's file, not an internal artifact.
-        const err = await moveRawToDurable(client, compactPath);
-        if (err) throw new Error(`relocate compacted raw to durable: ${err}`);
+        // COPY the compacted raw to durable storage and repoint `modelPath` at
+        // it. xbf: also retain the original; zstd: the `.zst` IS the original,
+        // compressed, so `originalPath` clears. NOTHING is deleted from staging
+        // here — an instant delete races concurrent jobs that resolved
+        // `temp-staging` as their source bucket before this landed; the
+        // scheduled cleanup prunes stale staged copies instead. `size` stays
+        // the AS-UPLOADED bytes — it feeds every "modelSize" view/RPC and the
+        // file lists, which must show the customer's file, not an internal
+        // artifact.
+        const err = await copyRawToDurable(client, compactPath);
+        if (err) throw new Error(`copy compacted raw to durable: ${err}`);
         if (isXbf) await retainOriginal();
         await client
           .from("modelUpload")
@@ -230,12 +244,7 @@ export const modelCompactFunction = inngest.createFunction(
             ...originalSizeUpdate
           })
           .eq("id", modelUploadId);
-        if (!isXbf) {
-          await client.storage
-            .from(RAW_STAGING_BUCKET)
-            .remove([model.modelPath]);
-        }
-        logger.info("raw compacted and relocated to durable", {
+        logger.info("raw compacted and copied to durable", {
           modelUploadId,
           compactPath,
           mode
@@ -245,22 +254,25 @@ export const modelCompactFunction = inngest.createFunction(
 
       if (hasGlb) {
         // Compacted output still exceeds the durable cap, but the GLB preview
-        // survives → prune the compacted artifact (it is derived and can be
-        // regenerated). The ORIGINAL stays in staging, still referenced by
-        // `modelPath` (never repointed on this branch), so downloads and a
-        // later re-compact keep working.
-        await client.storage.from(RAW_STAGING_BUCKET).remove([compactPath]);
-        logger.info("oversized compacted artifact pruned (original kept)", {
-          modelUploadId,
-          compactPath
-        });
+        // survives → drop the derived artifact (regenerable). Left in staging
+        // unreferenced; the scheduled cleanup sweeps it. The ORIGINAL stays in
+        // staging, still referenced by `modelPath` (never repointed on this
+        // branch), so downloads and a later re-compact keep working.
+        logger.info(
+          "oversized compacted artifact left for the sweep (original kept)",
+          {
+            modelUploadId,
+            compactPath
+          }
+        );
         return { modelUploadId, status: "KeptInStaging" as const };
       }
 
       // Too big for durable AND no GLB — keep the compacted `.zst` in staging
       // (best available for the viewer/plan) and repoint. xbf: the original also
       // stays in staging (tracked by `originalPath` for the sweep + downloads);
-      // zstd: drop the fat original (the `.zst` has the bytes).
+      // zstd: the fat original goes unreferenced and the scheduled cleanup
+      // sweeps it (the `.zst` has the bytes).
       await client
         .from("modelUpload")
         .update({
@@ -269,9 +281,6 @@ export const modelCompactFunction = inngest.createFunction(
           ...originalSizeUpdate
         })
         .eq("id", modelUploadId);
-      if (!isXbf) {
-        await client.storage.from(RAW_STAGING_BUCKET).remove([model.modelPath]);
-      }
       logger.warn("oversized compacted raw with no GLB kept in staging", {
         modelUploadId,
         compactPath

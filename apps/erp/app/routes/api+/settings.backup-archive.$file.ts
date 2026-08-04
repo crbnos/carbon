@@ -1,9 +1,9 @@
 import { createGzip } from "node:zlib";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { isInternalEmail } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { LoaderFunctionArgs } from "react-router";
 import { pack as tarPack } from "tar-stream";
+import { canAccessBackups } from "~/utils/backups";
 
 /** List every object under a storage prefix, returning paths relative to it. */
 async function listRelative(
@@ -44,7 +44,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId, email } = await requirePermissions(request, {
     view: "settings"
   });
-  if (!isInternalEmail(email)) throw new Response("Not found", { status: 404 });
+  if (!canAccessBackups(email))
+    throw new Response("Not found", { status: 404 });
 
   const name = params.file ?? "";
   if (!name || name.includes("/")) {

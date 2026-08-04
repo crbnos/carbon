@@ -3,7 +3,7 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { PAGE_COPY } from "../content";
 import { ROLES } from "../content/roles";
 import type { Owner } from "../types";
-import { OWNER_TOKENS } from "./primitives";
+import { OWNER_TOKENS, Section, SectionList } from "./primitives";
 
 export function RolesView() {
   const { i18n } = useLingui();
@@ -37,7 +37,7 @@ export function RolesView() {
         </div>
       </header>
 
-      <section className="rounded-2xl border border-emerald-500/30 bg-emerald-500/5 shadow-button-base p-5">
+      <section className="rounded-lg border border-emerald-500/30 bg-emerald-500/5 shadow-button-base p-5">
         <h2 className="text-sm font-semibold mb-3 flex items-center gap-2">
           <span className="size-2 rounded-full bg-emerald-500" />
           <Trans>What you need to do</Trans>
@@ -63,16 +63,8 @@ export function RolesView() {
 
       <div className="flex flex-col gap-4">
         {ROLES.map((step) => (
-          <div
-            key={step.stepKey}
-            className="rounded-2xl border bg-card shadow-button-base overflow-hidden"
-          >
-            <div className="px-5 py-3 border-b">
-              <span className="text-sm font-semibold">
-                {i18n._(step.title)}
-              </span>
-            </div>
-            <ul className="divide-y">
+          <Section key={step.stepKey} title={i18n._(step.title)}>
+            <SectionList>
               {step.lines.map((line, i) => (
                 <li key={i} className="flex items-center gap-3 px-5 py-3">
                   <span className="flex-1 text-sm">{i18n._(line.label)}</span>
@@ -92,8 +84,8 @@ export function RolesView() {
                   </span>
                 </li>
               ))}
-            </ul>
-          </div>
+            </SectionList>
+          </Section>
         ))}
       </div>
     </div>

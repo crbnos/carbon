@@ -63,6 +63,9 @@ msgstr "Accepter lot ?"
 msgid "Account Settings"
 msgstr "Paramètres du compte"
 
+msgid "Acknowledge & finish"
+msgstr "Reconnaître et terminer"
+
 msgid "Active"
 msgstr "Actif"
 
@@ -444,6 +447,9 @@ msgstr "Terminer {0}"
 msgid "Finish Anyways"
 msgstr "Terminer quand même"
 
+msgid "Finish with material unpicked?"
+msgstr "Terminer avec du matériel non prélevé?"
+
 msgid "Forgot to Clock Out?"
 msgstr "Oubli de pointer la sortie ?"
 
@@ -476,6 +482,9 @@ msgstr "Inspecter l'article"
 
 msgid "inspected"
 msgstr "inspecté"
+
+msgid "Instructions"
+msgstr "Instructions"
 
 msgid "Insufficient quantity"
 msgstr "Quantité insuffisante"
@@ -518,6 +527,9 @@ msgstr "Fiche suiveuse"
 
 msgid "Jobs"
 msgstr "Emplois"
+
+msgid "Keep picking"
+msgstr "Continuer le prélèvement"
 
 msgid "Kit"
 msgstr "Kit"
@@ -1068,6 +1080,9 @@ msgstr "Définir l'heure de sortie"
 msgid "Setup"
 msgstr "Réglage"
 
+msgid "short"
+msgstr "court"
+
 msgid "Short"
 msgstr "Manquant"
 
@@ -1150,9 +1165,8 @@ msgstr "Changer d'opérateur"
 msgid "Tag"
 msgstr "Étiquette"
 
-#. placeholder {0}: operation.operationQuantity
-msgid "The completed quantity for this operation is less than the required quantity of {0}."
-msgstr "La quantité produite pour cette opération est inférieure à la quantité requise de {0}."
+msgid "The completed quantity for this operation is less than the required quantity of {targetQuantity}."
+msgstr "La quantité produite pour cette opération est inférieure à la quantité requise de {targetQuantity}."
 
 msgid "The lot will be marked Passed and {remaining} remaining unit(s) will be completed at this operation."
 msgstr "Le lot sera marqué comme Réussi et {remaining} unité(s) restante(s) seront complétées à cette opération."
@@ -1162,6 +1176,9 @@ msgstr "Le lot sera toujours dispositionné, mais un NCR ne peut pas être cré�
 
 msgid "There are serial or batch tracked materials on the bill of material that have not been fully issued. Completing without issuing may result in incorrect traceability records."
 msgstr "Il existe des matériaux suivis par numéro de série ou par lot dans la nomenclature qui n'ont pas été entièrement distribués. Terminer sans distribuer peut entraîner des enregistrements de traçabilité incorrects."
+
+msgid "These items still have material to pick. Finishing now marks the list Partial."
+msgstr "Ces articles ont encore du matériel à prélever. L'arrêt maintenant marque la liste comme Partielle."
 
 msgid "This lot is expired and can't be picked."
 msgstr "Ce lot est expiré et ne peut pas être prélevé."

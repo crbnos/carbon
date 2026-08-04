@@ -210,7 +210,7 @@ const AvailableCreditsTable = ({
       </CardHeader>
       <CardContent>
         {openInvoices.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-border py-10 px-6 text-center">
+          <div className="rounded-lg border border-dashed border-border py-10 px-6 text-center">
             <p className="text-sm font-medium text-foreground">
               <Trans>No open invoices</Trans>
             </p>

@@ -6,7 +6,8 @@ import {
   assemblerEnabled,
   internalizeStorageUrl,
   resolveModelSourceBucket,
-  runAssemblerJob
+  runAssemblerJob,
+  signSourceUrl
 } from "./assembler-client";
 
 const SIGNED_URL_EXPIRY = 60 * 60; // seconds — the source (read) URL only.
@@ -130,12 +131,12 @@ export const assemblyConvertFunction = inngest.createFunction(
           client,
           job.modelPath
         );
-        const source = await client.storage
-          .from(sourceBucket)
-          .createSignedUrl(job.modelPath, SIGNED_URL_EXPIRY);
-        if (source.error) {
-          throw new Error(`Failed to sign source URL: ${source.error.message}`);
-        }
+        const signedUrl = await signSourceUrl(
+          client,
+          sourceBucket,
+          job.modelPath,
+          SIGNED_URL_EXPIRY
+        );
 
         // Content identity for the service's result cache: with a contentHash a
         // repeat convert of unchanged bytes is served without re-downloading the
@@ -156,7 +157,7 @@ export const assemblyConvertFunction = inngest.createFunction(
 
         return {
           source: {
-            url: internalizeStorageUrl(source.data.signedUrl),
+            url: internalizeStorageUrl(signedUrl),
             format: "step",
             ...(contentHash ? { contentHash } : {})
           },

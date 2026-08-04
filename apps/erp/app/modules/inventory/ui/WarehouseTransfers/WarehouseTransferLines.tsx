@@ -150,12 +150,10 @@ function WarehouseTransferLineListItem({
               <ItemThumbnail
                 size="sm"
                 thumbnailPath={line.item?.thumbnailPath}
-                // @ts-expect-error TS2339 - TODO: fix type
                 type={(item.type as "Part") ?? "Part"}
               />
               <VStack spacing={0}>
                 <span className="text-sm font-medium truncate">
-                  {/* @ts-expect-error TS2339 */}
                   {item.name}
                 </span>
                 <span className="text-xs text-muted-foreground truncate">

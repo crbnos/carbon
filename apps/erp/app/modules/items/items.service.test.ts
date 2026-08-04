@@ -202,6 +202,32 @@ describe("diffMethod — operations", () => {
     });
     expect(operations[0].status).toBe("unchanged");
   });
+
+  it("records process type, assembly instruction, and inspection plan changes", () => {
+    const { operations } = diffMethod({
+      ...EMPTY,
+      baseOperations: [
+        baseOperation({
+          operationType: "Process",
+          assemblyInstructionId: "ai_1",
+          inspectionDocumentId: "doc_1"
+        })
+      ],
+      targetOperations: [
+        stagedOperation({
+          operationType: "Assembly",
+          assemblyInstructionId: "ai_2",
+          inspectionDocumentId: "doc_2"
+        })
+      ]
+    });
+    expect(operations[0].status).toBe("modified");
+    expect(operations[0].changedFields).toEqual({
+      operationType: { before: "Process", after: "Assembly" },
+      assemblyInstructionId: { before: "ai_1", after: "ai_2" },
+      inspectionDocumentId: { before: "doc_1", after: "doc_2" }
+    });
+  });
 });
 
 describe("diffMethod — operation children", () => {
