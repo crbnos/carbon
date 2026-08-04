@@ -175,5 +175,3 @@ export const WORKFLOW_ACTIONS = {
     batchable: true
   })
 } satisfies Record<string, ActionDeclarationLike>;
-
-export type WorkflowActionId = keyof typeof WORKFLOW_ACTIONS;

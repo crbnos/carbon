@@ -4,10 +4,9 @@ import { Trans } from "@lingui/react/macro";
 type Props = {
   value: "and" | "or";
   onChange: (v: "and" | "or") => void;
-  isDisabled?: boolean;
 };
 
-export function CombinatorToggle({ value, onChange, isDisabled }: Props) {
+export function CombinatorToggle({ value, onChange }: Props) {
   return (
     <ToggleGroup
       type="single"
@@ -15,10 +14,7 @@ export function CombinatorToggle({ value, onChange, isDisabled }: Props) {
       onValueChange={(v) => {
         if (v === "and" || v === "or") onChange(v);
       }}
-      className={cn(
-        "nodrag nopan gap-0 rounded-md border text-[10px]",
-        isDisabled && "pointer-events-none opacity-50"
-      )}
+      className={cn("nodrag nopan gap-0 rounded-md border text-[10px]")}
     >
       <ToggleGroupItem
         value="and"

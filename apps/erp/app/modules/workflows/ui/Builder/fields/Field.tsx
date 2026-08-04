@@ -11,8 +11,6 @@ type FieldProps = {
   issue?: string;
   /** Advisory text shown only when there is no issue to report. */
   hint?: string;
-  /** Repeated rows label their columns once, up top. Kept as `aria-label` here. */
-  hideLabel?: boolean;
   children: ReactNode;
 };
 
@@ -23,19 +21,13 @@ export function Field({
   helpTermId,
   issue,
   hint,
-  hideLabel,
   children
 }: FieldProps) {
   return (
     <div className="flex w-full min-w-0 flex-col gap-1">
       {/* Still rendered when hidden: an `aria-label` on a plain div is ignored. */}
-      <label
-        className={cn(
-          "text-sm font-medium text-foreground",
-          hideLabel && "sr-only"
-        )}
-      >
-        <LabelWithHelp termId={hideLabel ? undefined : helpTermId}>
+      <label className={cn("text-sm font-medium text-foreground")}>
+        <LabelWithHelp termId={helpTermId}>
           {label}
           {required && <span className="ml-0.5 text-destructive">*</span>}
         </LabelWithHelp>

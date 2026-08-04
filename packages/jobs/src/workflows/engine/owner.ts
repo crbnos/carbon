@@ -13,8 +13,6 @@ const log = getLogger("workflows");
 
 export type OwnerPermissions = Record<string, Permission>;
 
-export type { PermissionAction } from "@carbon/workflows";
-
 /** A fresh five-minute connection as the owner. Call inside every step, never once per run. */
 export async function getOwnerClient(
   ownerId: string,

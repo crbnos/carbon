@@ -25,7 +25,6 @@ export const InlineVariableMenu = forwardRef<
       emptyReason={emptyReason}
       query={props.query}
       onSelect={(item) => props.command(item)}
-      onClose={() => props.editor.commands.focus()}
       // Backspace has to delete the `{` the user just typed.
       backspacePops={false}
     />

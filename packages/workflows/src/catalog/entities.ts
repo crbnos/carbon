@@ -280,8 +280,6 @@ export const WORKFLOW_ENTITY_REGISTRY = {
   })
 } as const;
 
-export type RegistryEntityName = keyof typeof WORKFLOW_ENTITY_REGISTRY;
-
 /** The registry widened for iteration; `as const` above makes `Object.values` a union. */
 export const REGISTRY_ENTRIES: Record<string, RegistryEntry> =
   WORKFLOW_ENTITY_REGISTRY;

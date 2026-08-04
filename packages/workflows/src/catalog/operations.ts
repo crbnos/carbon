@@ -110,5 +110,3 @@ export const WORKFLOW_OPERATIONS = {
     t.number
   )
 } satisfies Record<string, OperationDeclarationLike>;
-
-export type WorkflowOperationId = keyof typeof WORKFLOW_OPERATIONS;

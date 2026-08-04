@@ -199,21 +199,6 @@ export async function updateWorkflowCanvasState(
     .eq("companyId", companyId);
 }
 
-export async function updateWorkflowOwner(
-  client: SupabaseClient<Database>,
-  { id, companyId, userId }: { id: string; companyId: string; userId: string }
-) {
-  return client
-    .from("workflow")
-    .update({
-      ownerId: userId,
-      updatedBy: userId,
-      updatedAt: new Date().toISOString()
-    })
-    .eq("id", id)
-    .eq("companyId", companyId);
-}
-
 export async function deleteWorkflow(
   client: SupabaseClient<Database>,
   id: string,
@@ -223,18 +208,6 @@ export async function deleteWorkflow(
     .from("workflow")
     .delete()
     .eq("id", id)
-    .eq("companyId", companyId);
-}
-
-export async function deleteWorkflowVersion(
-  client: SupabaseClient<Database>,
-  versionId: string,
-  companyId: string
-) {
-  return client
-    .from("workflowVersion")
-    .delete()
-    .eq("id", versionId)
     .eq("companyId", companyId);
 }
 
@@ -332,10 +305,6 @@ export type WorkflowDetail = NonNullable<
 export type WorkflowVersionSummary = NonNullable<
   Awaited<ReturnType<typeof getWorkflowVersions>>["data"]
 >[number];
-
-export type WorkflowVersionRow = NonNullable<
-  Awaited<ReturnType<typeof getWorkflowVersion>>["data"]
->;
 
 export type WorkflowRun = NonNullable<
   Awaited<ReturnType<typeof getWorkflowRuns>>["data"]

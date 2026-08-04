@@ -56,7 +56,6 @@ export function LookupForm({ node, issues }: NodeFormProps<"lookup">) {
   const entityOptions = useMemo(
     () =>
       Object.entries(REGISTRY_ENTRIES)
-        .filter(([, entry]) => entry.permission !== undefined)
         .map(([name]) => ({
           label: label(entityLabelKey(name), name),
           value: name

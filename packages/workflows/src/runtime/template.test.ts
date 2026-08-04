@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { Template } from "../definition/types";
 import { createRuntimeContext } from "./fixtures";
-import { renderTemplate } from "./template";
+import { renderTemplate } from "./resolve";
 import { entityValue, nullValue, primitiveValue } from "./values";
 
 const template = (...parts: Template["parts"]): Template => ({

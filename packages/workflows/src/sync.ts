@@ -208,13 +208,3 @@ export async function syncWorkflowTriggers(
     };
   });
 }
-
-/** Repair entry: reconcile subscriptions from existing trigger rows, touching no workflow. */
-export async function syncWorkflowSubscriptions(
-  db: Kysely<KyselyDatabase>,
-  companyId: string
-): Promise<{ tables: string[] }> {
-  return db
-    .transaction()
-    .execute(async (trx) => reconcileWorkflowSubscriptions(trx, companyId));
-}

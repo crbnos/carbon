@@ -107,7 +107,6 @@ function SortableClauseItem({
         onRemove={onRemove}
         context={context}
         grip={grip}
-        showLabels
         fieldPath={fieldPath}
         issues={issues}
       />

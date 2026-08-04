@@ -3592,9 +3592,6 @@ msgstr "Crear un nuevo despacho de mantenimiento para rastrear reparaciones de e
 msgid "Create a new production job to fulfill the sales order"
 msgstr "Crear un nuevo trabajo de producción para cumplir con el pedido de venta"
 
-msgid "Create a new version to make changes."
-msgstr ""
-
 msgid "Create a purchase order"
 msgstr ""
 
@@ -9097,9 +9094,6 @@ msgstr "Nueva Línea de Transferencia"
 
 msgid "New Unit of Measure"
 msgstr "Nueva Unidad de Medida"
-
-msgid "New version"
-msgstr ""
 
 msgid "New Version"
 msgstr "Nueva Versión"
@@ -14607,9 +14601,6 @@ msgid "This version belongs to change notice <0>{0}</0>. Edit it there."
 msgstr "Esta versión pertenece al aviso de cambio <0>{0}</0>. Edítala allí."
 
 msgid "This version cannot be opened"
-msgstr ""
-
-msgid "This version is live"
 msgstr ""
 
 msgid "This version is live. Create a new version to edit."

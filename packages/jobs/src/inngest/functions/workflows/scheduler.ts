@@ -88,16 +88,3 @@ export const workflowSchedulerBackstopFunction = inngest.createFunction(
     return { revived: true };
   }
 );
-
-/**
- * Starts the chain if it has gone quiet. The activation route calls this after
- * syncWorkflowTriggers returns { scheduled: true }, so switching a scheduled workflow on fires
- * within minutes instead of waiting up to an hour for the backstop.
- */
-export async function ensureSchedulerChain(): Promise<void> {
-  if (!(await chainIsStale(new Date()))) return;
-  await inngest.send({
-    name: "carbon/workflow-scheduler.wake",
-    data: { bookedFor: null }
-  });
-}

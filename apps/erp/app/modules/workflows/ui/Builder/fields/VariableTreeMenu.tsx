@@ -15,7 +15,6 @@ export type VariableTreeMenuProps = {
   flat: VariableMenuItem[];
   query: string;
   onSelect: (item: VariableMenuItem) => void;
-  onClose: () => void;
   /** Popover host only: Backspace on an empty query pops a level. */
   backspacePops?: boolean;
   /** Shown instead of the generic empty text when the tree is empty because the
@@ -30,7 +29,6 @@ export function VariableTreeMenu({
   flat,
   query,
   onSelect,
-  onClose,
   backspacePops,
   emptyReason
 }: VariableTreeMenuProps) {
@@ -83,15 +81,11 @@ export function VariableTreeMenu({
       queryEmpty: !searching
     });
     if (!result.handled) return false;
-    if ("close" in result) {
-      onClose();
-      return true;
-    }
     if ("select" in result) {
       onSelect(result.select);
       return true;
     }
-    setNav(result.state);
+    if ("state" in result) setNav(result.state);
     return true;
   };
 

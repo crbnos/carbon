@@ -86,7 +86,6 @@ export function VariableMenuPopover({
             onChange(ref);
             onOpenChange(false);
           }}
-          onClose={() => onOpenChange(false)}
           backspacePops
         />
       </PopoverContent>

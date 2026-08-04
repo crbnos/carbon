@@ -27,7 +27,6 @@ export function workflowFieldHelp(key: string): TermId | undefined {
 export {
   actionInputLabelKey,
   describeValueType,
-  describeVariable,
   entityLabelKey,
   operationInputLabelKey,
   propertyLabelKey

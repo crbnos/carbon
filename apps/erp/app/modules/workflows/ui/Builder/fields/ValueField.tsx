@@ -20,7 +20,6 @@ export function ValueField({
   value,
   onChange,
   context,
-  hideLabel,
   placeholder,
   issue,
   partIssues
@@ -46,7 +45,6 @@ export function ValueField({
         label={label}
         required={required}
         helpTermId={helpTermId}
-        hideLabel={hideLabel}
         issue={issue}
         hint={
           // Only once the user has moved on: a lone '{' is the first keystroke of
@@ -82,7 +80,6 @@ export function ValueField({
       label={label}
       required={required}
       helpTermId={helpTermId}
-      hideLabel={hideLabel}
       issue={issue}
     >
       {/* The popup anchors to the control itself. A field is either a value you write
@@ -135,5 +132,3 @@ export function ValueField({
     </Field>
   );
 }
-
-export type { FieldContext, ValueFieldProps } from "./types";

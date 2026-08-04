@@ -130,11 +130,4 @@ export function RuntimeValueView({
     }
     return <ListValue items={value.items} depth={depth} />;
   }
-
-  // Shouldn't reach here, but fallback
-  return (
-    <pre className="overflow-auto rounded bg-muted px-2 py-1 text-xs font-mono whitespace-pre-wrap max-h-48">
-      {JSON.stringify(value, null, 2)}
-    </pre>
-  );
 }

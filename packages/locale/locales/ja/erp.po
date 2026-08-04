@@ -3592,9 +3592,6 @@ msgstr "新しい保守ディスパッチを作成して、機器の修理と保
 msgid "Create a new production job to fulfill the sales order"
 msgstr "販売注文を履行するための新しい生産ジョブを作成します"
 
-msgid "Create a new version to make changes."
-msgstr ""
-
 msgid "Create a purchase order"
 msgstr ""
 
@@ -9097,9 +9094,6 @@ msgstr "新しい転送ライン"
 
 msgid "New Unit of Measure"
 msgstr "新しい測定単位"
-
-msgid "New version"
-msgstr ""
 
 msgid "New Version"
 msgstr "新しいバージョン"
@@ -14607,9 +14601,6 @@ msgid "This version belongs to change notice <0>{0}</0>. Edit it there."
 msgstr "このバージョンは変更通知<0>{0}</0>に属しています。そこで編集してください。"
 
 msgid "This version cannot be opened"
-msgstr ""
-
-msgid "This version is live"
 msgstr ""
 
 msgid "This version is live. Create a new version to edit."

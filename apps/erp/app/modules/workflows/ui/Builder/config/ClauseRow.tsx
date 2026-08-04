@@ -48,8 +48,6 @@ type ClauseRowProps = {
   entity?: string;
   /** Optional drag grip element rendered before the clause body */
   grip?: React.ReactNode;
-  /** Only the first row of a clause list names its columns; the rest align under it. */
-  showLabels?: boolean;
   /** Validator field path for this row, e.g. `clauses.0` or `paths.<id>.clauses.0`. */
   fieldPath: string;
   issues?: WorkflowIssue[];
@@ -65,11 +63,9 @@ function ClauseRowImpl({
   leftMode = "value",
   entity,
   grip,
-  showLabels = true,
   fieldPath,
   issues
 }: ClauseRowProps) {
-  const hideLabel = !showLabels;
   const { t } = useLingui();
   const label = useWorkflowLabel();
   const typeOfValue = useValueTypeResolver(context.nodeId);
@@ -141,7 +137,7 @@ function ClauseRowImpl({
       <div className="min-w-0 flex-1">
         <div className={CLAUSE_GRID_CLASS}>
           {leftMode === "column" ? (
-            <Field label={t`Property`} hideLabel={hideLabel}>
+            <Field label={t`Property`}>
               <Combobox
                 size="md"
                 placeholder={t`Pick a property`}
@@ -169,7 +165,6 @@ function ClauseRowImpl({
           ) : (
             <ValueField
               label={t`Property`}
-              hideLabel={hideLabel}
               placeholder={t`Type '{' for a variable`}
               type={leftType ?? STRING_TYPE}
               value={clause.left}
@@ -199,7 +194,7 @@ function ClauseRowImpl({
             />
           )}
 
-          <Field label={t`Operator`} hideLabel={hideLabel}>
+          <Field label={t`Operator`}>
             <OperatorCombobox
               value={clause.operator}
               onChange={(op: Operator) =>
@@ -216,7 +211,6 @@ function ClauseRowImpl({
           {leftType ? (
             <ValueField
               label={t`Value`}
-              hideLabel={hideLabel}
               placeholder={t`Type '{' for a variable`}
               type={expectedClauseRightType(leftType, clause.operator)}
               choices={rightChoices}
@@ -235,7 +229,7 @@ function ClauseRowImpl({
               )}
             />
           ) : (
-            <Field label={t`Value`} hideLabel={hideLabel}>
+            <Field label={t`Value`}>
               <div className="flex h-9 items-center rounded-md border border-dashed border-border px-3 text-xs text-muted-foreground">
                 {t`Pick a property first`}
               </div>

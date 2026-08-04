@@ -180,6 +180,5 @@ export {
   deriveWorkflowSubscriptions,
   deriveWorkflowTriggerRows,
   findTriggerSchedule,
-  syncWorkflowSubscriptions,
   syncWorkflowTriggers
 } from "./sync";
