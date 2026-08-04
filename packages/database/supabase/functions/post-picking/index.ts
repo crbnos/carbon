@@ -3,6 +3,7 @@ import { format } from "https://deno.land/std@0.205.0/datetime/mod.ts";
 import { getLocalTimeZone, today as getToday } from "npm:@internationalized/date";
 import { nanoid } from "https://deno.land/x/nanoid@v3.0.0/nanoid.ts";
 import { z } from "https://deno.land/x/zod@v3.21.4/mod.ts";
+import { sql } from "kysely";
 import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
 import { corsPreflight, errorResponse, jsonResponse } from "../lib/response.ts";
 import type { Database } from "../lib/types.ts";
@@ -574,8 +575,7 @@ serve(async (req: Request) => {
         break;
       }
 
-      case "unpickSerial":
-      case "unpickBatch": {
+      case "unpickSerial": {
         const {
           pickingListId,
           pickingListLineId,
@@ -662,6 +662,237 @@ serve(async (req: Request) => {
               quantityPicked: Math.max(
                 0,
                 Number(line.quantityPicked ?? 0) - qty
+              ),
+              status: "Pending",
+              updatedBy: userId,
+              updatedAt: new Date().toISOString()
+            })
+            .where("id", "=", pickingListLineId)
+            .where("companyId", "=", companyId)
+            .execute();
+
+          // Drop the recorded lot so it's pickable again + display clears.
+          await trx
+            .deleteFrom("pickingListLineTrackedEntity")
+            .where("pickingListLineId", "=", pickingListLineId)
+            .where("trackedEntityId", "=", trackedEntityId)
+            .execute();
+
+          await restoreJobMaterialSource(trx, line, userId);
+        });
+        break;
+      }
+
+      case "unpickBatch": {
+        const {
+          pickingListId,
+          pickingListLineId,
+          trackedEntityId,
+          locationId,
+          userId,
+          companyId
+        } = validatedPayload;
+
+        await db.transaction().execute(async (trx) => {
+          const line = await trx
+            .selectFrom("pickingListLine")
+            .where("id", "=", pickingListLineId)
+            .where("companyId", "=", companyId)
+            .selectAll()
+            .executeTakeFirstOrThrow();
+
+          const trackedEntity = await trx
+            .selectFrom("trackedEntity")
+            .where("id", "=", trackedEntityId)
+            .where("companyId", "=", companyId)
+            .selectAll()
+            .executeTakeFirstOrThrow();
+
+          // The unpick quantity is what THIS line picked of the entity — from
+          // the allocation row, never trackedEntity.quantity: post-flip the
+          // allocated entity is the departing child, and once consumption
+          // starts its current quantity no longer equals what was picked.
+          const allocation = await trx
+            .selectFrom("pickingListLineTrackedEntity")
+            .where("pickingListLineId", "=", pickingListLineId)
+            .where("trackedEntityId", "=", trackedEntityId)
+            .selectAll()
+            .executeTakeFirst();
+
+          if (!allocation) {
+            throw new Error(
+              `Cannot unpick batch: no allocation row for picking list line ${pickingListLineId} and tracked entity ${trackedEntityId}`
+            );
+          }
+
+          const unpickQuantity = Number(allocation.quantityPicked);
+
+          const activity = await trx
+            .selectFrom("trackedActivity")
+            .innerJoin(
+              "trackedActivityInput",
+              "trackedActivity.id",
+              "trackedActivityInput.trackedActivityId"
+            )
+            .where("trackedActivity.type", "=", "Pick")
+            .where("trackedActivity.sourceDocument", "=", "Picking List")
+            .where("trackedActivity.sourceDocumentId", "=", pickingListId)
+            .where("trackedActivityInput.trackedEntityId", "=", trackedEntityId)
+            .where("trackedActivity.companyId", "=", companyId)
+            .selectAll("trackedActivity")
+            .executeTakeFirstOrThrow();
+
+          // Reverse the Transfer pair at the picked magnitude.
+          const inserts: ItemLedgerInsert[] = [
+            {
+              postingDate: today,
+              itemId: line.itemId,
+              quantity: -unpickQuantity,
+              locationId,
+              storageUnitId: line.toStorageUnitId,
+              entryType: "Transfer",
+              documentType: "Direct Transfer",
+              documentId: pickingListId,
+              trackedEntityId,
+              createdBy: userId,
+              companyId
+            },
+            {
+              postingDate: today,
+              itemId: line.itemId,
+              quantity: unpickQuantity,
+              locationId,
+              storageUnitId: line.storageUnitId,
+              entryType: "Transfer",
+              documentType: "Direct Transfer",
+              documentId: pickingListId,
+              trackedEntityId,
+              createdBy: userId,
+              companyId
+            }
+          ];
+
+          // Merge-back undo: post-flip the picked entity is a Split child
+          // whose parent stayed on the shelf. Fold the quantity back into the
+          // parent and delete the Split so genealogy reads as if the pick
+          // never happened. Legacy allocations (no Split From pointer, or a
+          // parent that no longer matches) skip this — the entity simply
+          // returns to the source bin as its own lot, today's behavior.
+          const attrs = (trackedEntity.attributes ?? {}) as Record<
+            string,
+            unknown
+          >;
+          const parentId = attrs["Split From Entity ID"];
+          if (typeof parentId === "string" && parentId) {
+            const parent = await trx
+              .selectFrom("trackedEntity")
+              .where("id", "=", parentId)
+              .where("companyId", "=", companyId)
+              .selectAll()
+              .executeTakeFirst();
+
+            if (parent && parent.readableId === trackedEntity.readableId) {
+              const childRemaining =
+                Number(trackedEntity.quantity) - unpickQuantity;
+              if (childRemaining < 0) {
+                throw new Error(
+                  `Cannot unpick batch: entity ${trackedEntityId} holds ${trackedEntity.quantity} but ${unpickQuantity} was picked — partial consumption must be unconsumed first`
+                );
+              }
+
+              const splitActivity = await trx
+                .selectFrom("trackedActivity")
+                .where("type", "=", "Split")
+                .where(
+                  sql<boolean>`attributes->>'Split Entity ID' = ${trackedEntityId}`
+                )
+                .where("companyId", "=", companyId)
+                .selectAll()
+                .executeTakeFirst();
+
+              await trx
+                .updateTable("trackedEntity")
+                .set({ quantity: Number(parent.quantity) + unpickQuantity })
+                .where("id", "=", parent.id)
+                .execute();
+
+              await trx
+                .updateTable("trackedEntity")
+                .set(
+                  childRemaining === 0
+                    ? { quantity: 0, status: "Consumed" }
+                    : { quantity: childRemaining }
+                )
+                .where("id", "=", trackedEntityId)
+                .execute();
+
+              // Net out the original split pair at the source bin. Keep the
+              // child's entity row — itemLedger.trackedEntityId history stays
+              // intact (the FK is ON DELETE SET NULL; deleting would null it).
+              inserts.push(
+                {
+                  postingDate: today,
+                  itemId: line.itemId,
+                  quantity: -unpickQuantity,
+                  locationId,
+                  storageUnitId: line.storageUnitId,
+                  entryType: "Negative Adjmt.",
+                  documentType: "Batch Split",
+                  documentId: splitActivity?.id ?? pickingListId,
+                  trackedEntityId,
+                  createdBy: userId,
+                  companyId
+                },
+                {
+                  postingDate: today,
+                  itemId: line.itemId,
+                  quantity: unpickQuantity,
+                  locationId,
+                  storageUnitId: line.storageUnitId,
+                  entryType: "Positive Adjmt.",
+                  documentType: "Batch Split",
+                  documentId: splitActivity?.id ?? pickingListId,
+                  trackedEntityId: parent.id,
+                  createdBy: userId,
+                  companyId
+                }
+              );
+
+              // Clean undo: the Split never happened.
+              if (splitActivity) {
+                await trx
+                  .deleteFrom("trackedActivityOutput")
+                  .where("trackedActivityId", "=", splitActivity.id!)
+                  .execute();
+                await trx
+                  .deleteFrom("trackedActivityInput")
+                  .where("trackedActivityId", "=", splitActivity.id!)
+                  .execute();
+                await trx
+                  .deleteFrom("trackedActivity")
+                  .where("id", "=", splitActivity.id!)
+                  .execute();
+              }
+            }
+          }
+
+          await trx.insertInto("itemLedger").values(inserts).execute();
+
+          await trx
+            .deleteFrom("trackedActivityInput")
+            .where("trackedActivityId", "=", activity.id!)
+            .execute();
+          await trx
+            .deleteFrom("trackedActivity")
+            .where("id", "=", activity.id!)
+            .execute();
+
+          await trx
+            .updateTable("pickingListLine")
+            .set({
+              quantityPicked: Math.max(
+                0,
+                Number(line.quantityPicked ?? 0) - unpickQuantity
               ),
               status: "Pending",
               updatedBy: userId,
