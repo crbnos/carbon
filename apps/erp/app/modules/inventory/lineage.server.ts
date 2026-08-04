@@ -461,6 +461,16 @@ export function toGraphData(payload: LineagePayload): GraphData {
     }))
   ];
 
+  // Historical split survivors are recorded as both input and output of their
+  // own Split activity. Drop the output half of that self-loop so the graph
+  // doesn't render the survivor as produced by its own split; the input edge
+  // stays (it carries the drawn quantity).
+  const inputPairs = new Set(
+    payload.inputs.map(
+      (input) => `${input.trackedActivityId}::${input.trackedEntityId}`
+    )
+  );
+
   const links = [
     ...payload.inputs.map((input) => ({
       source: input.trackedEntityId,
@@ -468,12 +478,19 @@ export function toGraphData(payload: LineagePayload): GraphData {
       type: "input" as const,
       quantity: input.quantity
     })),
-    ...payload.outputs.map((output) => ({
-      source: output.trackedActivityId,
-      target: output.trackedEntityId,
-      type: "output" as const,
-      quantity: output.quantity
-    }))
+    ...payload.outputs
+      .filter(
+        (output) =>
+          !inputPairs.has(
+            `${output.trackedActivityId}::${output.trackedEntityId}`
+          )
+      )
+      .map((output) => ({
+        source: output.trackedActivityId,
+        target: output.trackedEntityId,
+        type: "output" as const,
+        quantity: output.quantity
+      }))
   ];
 
   return { nodes, links };

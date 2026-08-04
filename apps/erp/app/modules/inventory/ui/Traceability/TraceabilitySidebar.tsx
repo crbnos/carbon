@@ -74,57 +74,85 @@ export function TraceabilitySidebar({
     entity?.sourceDocumentReadableId ?? activity?.sourceDocumentReadableId;
   const sourceHref = sourceLinkHref(sourceDoc, sourceDocId);
 
-  const { producedBy, consumedBy, movedBy, inputs, outputs } = useMemo(() => {
-    if (!payload) {
-      return {
-        producedBy: [] as RelatedActivity[],
-        consumedBy: [] as RelatedActivity[],
-        movedBy: [] as RelatedActivity[],
-        inputs: [] as RelatedEntity[],
-        outputs: [] as RelatedEntity[]
-      };
-    }
-    const activityById = new Map(payload.activities.map((a) => [a.id, a]));
-    const entityById = new Map(payload.entities.map((e) => [e.id, e]));
-
-    const producedBy: RelatedActivity[] = [];
-    const consumedBy: RelatedActivity[] = [];
-    const movedBy: RelatedActivity[] = [];
-    const inputs: RelatedEntity[] = [];
-    const outputs: RelatedEntity[] = [];
-
-    if (entity) {
-      for (const o of payload.outputs) {
-        if (o.trackedEntityId !== entity.id) continue;
-        const a = activityById.get(o.trackedActivityId);
-        if (a) producedBy.push({ activity: a, quantity: o.quantity });
+  const { producedBy, consumedBy, movedBy, splits, inputs, outputs } =
+    useMemo(() => {
+      if (!payload) {
+        return {
+          producedBy: [] as RelatedActivity[],
+          consumedBy: [] as RelatedActivity[],
+          movedBy: [] as RelatedActivity[],
+          splits: [] as RelatedActivity[],
+          inputs: [] as RelatedEntity[],
+          outputs: [] as RelatedEntity[]
+        };
       }
-      for (const i of payload.inputs) {
-        if (i.trackedEntityId !== entity.id) continue;
-        const a = activityById.get(i.trackedActivityId);
-        if (!a) continue;
-        // A transfer/pick relocated the lot — it did not consume it.
-        if (isMovementActivity(a.type)) {
-          movedBy.push({ activity: a, quantity: i.quantity });
-        } else {
-          consumedBy.push({ activity: a, quantity: i.quantity });
+      const activityById = new Map(payload.activities.map((a) => [a.id, a]));
+      const entityById = new Map(payload.entities.map((e) => [e.id, e]));
+
+      const producedBy: RelatedActivity[] = [];
+      const consumedBy: RelatedActivity[] = [];
+      const movedBy: RelatedActivity[] = [];
+      const splits: RelatedActivity[] = [];
+      const inputs: RelatedEntity[] = [];
+      const outputs: RelatedEntity[] = [];
+
+      if (entity) {
+        // A historical split survivor is recorded as both input and output of
+        // its own Split activity. That self-loop is neither production nor
+        // consumption — surface it as a Split instead of lying on both sides.
+        const inputActivityIds = new Set(
+          payload.inputs
+            .filter((i) => i.trackedEntityId === entity.id)
+            .map((i) => i.trackedActivityId)
+        );
+        const selfLoopActivityIds = new Set(
+          payload.outputs
+            .filter(
+              (o) =>
+                o.trackedEntityId === entity.id &&
+                inputActivityIds.has(o.trackedActivityId)
+            )
+            .map((o) => o.trackedActivityId)
+        );
+
+        for (const o of payload.outputs) {
+          if (o.trackedEntityId !== entity.id) continue;
+          const a = activityById.get(o.trackedActivityId);
+          if (!a) continue;
+          if (selfLoopActivityIds.has(o.trackedActivityId)) {
+            // The output row's quantity is what the entity kept.
+            splits.push({ activity: a, quantity: o.quantity });
+          } else {
+            producedBy.push({ activity: a, quantity: o.quantity });
+          }
+        }
+        for (const i of payload.inputs) {
+          if (i.trackedEntityId !== entity.id) continue;
+          if (selfLoopActivityIds.has(i.trackedActivityId)) continue;
+          const a = activityById.get(i.trackedActivityId);
+          if (!a) continue;
+          // A transfer/pick relocated the lot — it did not consume it.
+          if (isMovementActivity(a.type)) {
+            movedBy.push({ activity: a, quantity: i.quantity });
+          } else {
+            consumedBy.push({ activity: a, quantity: i.quantity });
+          }
+        }
+      } else if (activity) {
+        for (const i of payload.inputs) {
+          if (i.trackedActivityId !== activity.id) continue;
+          const e = entityById.get(i.trackedEntityId);
+          if (e) inputs.push({ entity: e, quantity: i.quantity });
+        }
+        for (const o of payload.outputs) {
+          if (o.trackedActivityId !== activity.id) continue;
+          const e = entityById.get(o.trackedEntityId);
+          if (e) outputs.push({ entity: e, quantity: o.quantity });
         }
       }
-    } else if (activity) {
-      for (const i of payload.inputs) {
-        if (i.trackedActivityId !== activity.id) continue;
-        const e = entityById.get(i.trackedEntityId);
-        if (e) inputs.push({ entity: e, quantity: i.quantity });
-      }
-      for (const o of payload.outputs) {
-        if (o.trackedActivityId !== activity.id) continue;
-        const e = entityById.get(o.trackedEntityId);
-        if (e) outputs.push({ entity: e, quantity: o.quantity });
-      }
-    }
 
-    return { producedBy, consumedBy, movedBy, inputs, outputs };
-  }, [payload, entity, activity]);
+      return { producedBy, consumedBy, movedBy, splits, inputs, outputs };
+    }, [payload, entity, activity]);
 
   const stepRecordsFetcher = useFetcher<{ stepRecords: StepRecord[] }>();
   const lastLoadedActivityIdRef = useRef<string | null>(null);
@@ -312,6 +340,19 @@ export function TraceabilitySidebar({
           <Section title="Produced by" count={producedBy.length}>
             <ul className="divide-y divide-border/30">
               {producedBy.map((item) => (
+                <RelatedActivityRow
+                  key={item.activity.id}
+                  item={item}
+                  onSelect={onSelect}
+                />
+              ))}
+            </ul>
+          </Section>
+        )}
+        {splits.length > 0 && (
+          <Section title="Splits" count={splits.length}>
+            <ul className="divide-y divide-border/30">
+              {splits.map((item) => (
                 <RelatedActivityRow
                   key={item.activity.id}
                   item={item}
