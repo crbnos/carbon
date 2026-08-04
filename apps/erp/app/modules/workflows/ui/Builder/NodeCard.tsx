@@ -104,8 +104,9 @@ export function NodeCard({
         connectionState === "compatible" &&
           "border-primary ring-2 ring-primary/40",
         connectionState === "incompatible" && "opacity-40",
-        // Last, so a broken step keeps the more urgent signal mid-drag.
-        hasIssues && "border-destructive ring-2 ring-destructive/20"
+        // Last, so a broken step keeps the more urgent signal mid-drag. One border
+        // and no ring — the footer already spells the problem out.
+        hasIssues && "border-destructive"
       )}
       style={{ width }}
     >

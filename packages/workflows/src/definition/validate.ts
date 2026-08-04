@@ -330,6 +330,22 @@ function checkGraph(definition: WorkflowDefinition): WorkflowIssue[] {
   return issues;
 }
 
+/**
+ * Layer 5 on its own, for the builder to run as the user edits. A reference breaks
+ * because of a change made elsewhere, so it is the one class of problem worth
+ * reporting unasked. A definition that does not parse reports nothing — mid-edit it
+ * is often incomplete, and layer 1 is publish's job.
+ */
+export function referenceIssues(
+  definition: unknown,
+  catalog: WorkflowCatalog
+): WorkflowIssue[] {
+  const parsed = workflowDefinitionSchema.safeParse(definition);
+  if (!parsed.success) return [];
+  const { context } = createContext(parsed.data, catalog);
+  return checkReferences(parsed.data, context);
+}
+
 /** Layer 5 — every variable names a real upstream value, and items are only read inside a loop. */
 function checkReferences(
   definition: WorkflowDefinition,

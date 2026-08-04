@@ -17,3 +17,27 @@ export function issueForField(
     );
   })?.message;
 }
+
+/**
+ * The same issues, split by which variable inside the field they belong to. A
+ * sentence can hold several variables and only one of them be broken, so the field's
+ * single message is not enough to colour the right one.
+ */
+export function partIssuesForField(
+  issues: WorkflowIssue[] | undefined,
+  ...paths: string[]
+): Record<number, string> | undefined {
+  let parts: Record<number, string> | undefined;
+  for (const issue of issues ?? []) {
+    const field = issue.field;
+    if (field === undefined) continue;
+    for (const path of paths) {
+      if (!field.startsWith(`${path}.parts.`)) continue;
+      const index = Number(field.slice(`${path}.parts.`.length));
+      if (!Number.isInteger(index)) continue;
+      parts ??= {};
+      parts[index] ??= issue.message;
+    }
+  }
+  return parts;
+}

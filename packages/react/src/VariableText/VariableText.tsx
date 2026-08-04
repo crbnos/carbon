@@ -26,7 +26,8 @@ import { createVariableChip } from "./VariableChip";
 export type VariableTextToken = { id: string; label: string };
 export type VariableTextPart =
   | { kind: "text"; text: string }
-  | { kind: "token"; id: string; label: string };
+  /** `invalid` draws the token in red — for a reference whose target has gone away. */
+  | { kind: "token"; id: string; label: string; invalid?: boolean };
 
 export type VariableTextSuggestion = VariableTextToken & { helper?: string };
 
@@ -64,7 +65,10 @@ function partsToDoc(parts: VariableTextPart[]): JSONContent {
       (p): JSONContent =>
         p.kind === "text"
           ? { type: "text", text: p.text }
-          : { type: "variable", attrs: { id: p.id, label: p.label } }
+          : {
+              type: "variable",
+              attrs: { id: p.id, label: p.label, invalid: p.invalid === true }
+            }
     )
     .filter((n) => n.type !== "text" || Boolean(n.text));
 
@@ -89,7 +93,8 @@ function docToParts(doc: JSONContent): VariableTextPart[] {
         parts.push({
           kind: "token",
           id: node.attrs.id as string,
-          label: node.attrs.label as string
+          label: node.attrs.label as string,
+          invalid: node.attrs.invalid === true
         });
       }
     }
@@ -98,12 +103,15 @@ function docToParts(doc: JSONContent): VariableTextPart[] {
 }
 
 /** Content identity for reconciliation. Labels are display, so a renamed token
- * must not count as a content change and reset the caret. */
+ * must not count as a content change and reset the caret. Validity does count —
+ * it is drawn from an attribute, so the document has to be rewritten to show it. */
 function contentKey(parts: VariableTextPart[]): string {
   return JSON.stringify(
     parts
       .filter((p) => p.kind !== "text" || p.text !== "")
-      .map((p) => (p.kind === "text" ? p.text : p.id))
+      .map((p) =>
+        p.kind === "text" ? p.text : `${p.id}${p.invalid ? "!" : ""}`
+      )
   );
 }
 

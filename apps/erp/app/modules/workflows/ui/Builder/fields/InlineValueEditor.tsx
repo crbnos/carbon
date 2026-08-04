@@ -27,6 +27,8 @@ type Props = {
   /** Short wording for narrow columns; the full sentence does not fit a clause cell. */
   placeholder?: string;
   hasIssue?: boolean;
+  /** Which variables in this value are broken, keyed by position. Those tokens go red. */
+  partIssues?: Record<number, string>;
   /** Rows tall before the field scrolls. Prose fields want more than the default. */
   maxRows?: number;
   /** Fires as focus enters and leaves. Lets the field hold back advice about a value
@@ -41,6 +43,7 @@ export function InlineValueEditor({
   context,
   placeholder,
   hasIssue,
+  partIssues,
   maxRows,
   onFocusChange
 }: Props) {
@@ -82,7 +85,7 @@ export function InlineValueEditor({
       onBlurCapture={() => onFocusChange?.(false)}
     >
       <VariableText
-        value={toEditorParts(value, nodeName)}
+        value={toEditorParts(value, nodeName, partIssues)}
         onChange={(next: VariableTextPart[]) =>
           onChange(
             fromEditorParts(next, { collapseSingleRef: accepts !== undefined })

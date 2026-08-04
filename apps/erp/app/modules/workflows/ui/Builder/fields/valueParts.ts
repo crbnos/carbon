@@ -5,9 +5,11 @@ import { decodeTokenId, encodeTokenId, refLabel } from "./tokenId";
 /** What the editor shows for a stored value. Labels are resolved here and nowhere else. */
 export function toEditorParts(
   value: ValueOrRef | undefined,
-  nodeName: (id: string) => string | undefined
+  nodeName: (id: string) => string | undefined,
+  /** Keyed by position in a template's parts; a bare reference is position 0. */
+  partIssues?: Record<number, string>
 ): VariableTextPart[] {
-  const token = (part: TemplatePart): VariableTextPart => {
+  const token = (part: TemplatePart, index: number): VariableTextPart => {
     if (part.kind === "text") return { kind: "text", text: part.text };
     return {
       kind: "token",
@@ -15,13 +17,14 @@ export function toEditorParts(
       label: refLabel(
         part,
         part.kind === "ref" ? nodeName(part.nodeId) : undefined
-      )
+      ),
+      invalid: partIssues?.[index] !== undefined
     };
   };
 
   if (!value) return [];
   if (value.kind === "template") return value.parts.map(token);
-  if (value.kind === "ref" || value.kind === "item") return [token(value)];
+  if (value.kind === "ref" || value.kind === "item") return [token(value, 0)];
   const text = value.value == null ? "" : String(value.value);
   return text ? [{ kind: "text", text }] : [];
 }

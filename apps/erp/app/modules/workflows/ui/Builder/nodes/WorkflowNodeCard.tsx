@@ -13,6 +13,7 @@ import {
   LuTriangleAlert,
   LuX
 } from "react-icons/lu";
+import { catalog } from "../catalog";
 import type { AnyNodeForm } from "../config/forms/index";
 import { NODE_FORMS } from "../config/forms/index";
 import { InlineNodeName } from "../config/InlineNodeName";
@@ -28,8 +29,10 @@ import {
   selectHasEdgeFrom,
   selectIsConnected,
   selectNode,
+  selectNodeIssues,
   selectTriggerCount
 } from "../selectors";
+import { BatchToggle } from "./BatchToggle";
 import { NODE_CARD_WIDTH } from "./kinds";
 import { NODE_KIND_META } from "./meta";
 
@@ -44,9 +47,7 @@ function WorkflowNodeCardImpl({ id, type, data, selected }: NodeProps) {
   const builderNode = useBuilderStore(selectNode(id));
   const isExpanded = builderNode?.expanded ?? true;
 
-  const nodeIssues = useBuilderStoreShallow((state) =>
-    state.issues.filter((issue) => issue.nodeId === id)
-  );
+  const nodeIssues = useBuilderStoreShallow(selectNodeIssues(id));
 
   // A node wired to nothing is a draft the user parked on the canvas, not a broken
   // step — the run can't reach it, so flagging it would only be noise. The forms
@@ -124,20 +125,33 @@ function WorkflowNodeCardImpl({ id, type, data, selected }: NodeProps) {
     </span>
   );
 
+  const batchSlot =
+    node.type === "action" && catalog.getAction(node.data.action)?.batchable ? (
+      <BatchToggle
+        nodeId={id}
+        isBatch={node.data.batch}
+        isReadOnly={isReadOnly}
+        hasIssue={nodeIssues.some((issue) => issue.field === "batch")}
+      />
+    ) : null;
+
   const actionsSlot =
-    !isReadOnly && builderNode ? (
+    builderNode && (!isReadOnly || batchSlot) ? (
       <div className="nodrag nopan flex shrink-0 items-center gap-0.5">
-        <IconButton
-          aria-label={isExpanded ? t`Collapse` : t`Expand`}
-          icon={isExpanded ? <LuMinimize2 /> : <LuMaximize2 />}
-          variant="ghost"
-          size="sm"
-          onClick={(e) => {
-            e.stopPropagation();
-            setNodeExpanded(id, !isExpanded);
-          }}
-        />
-        {canDelete && (
+        {batchSlot}
+        {!isReadOnly && (
+          <IconButton
+            aria-label={isExpanded ? t`Collapse` : t`Expand`}
+            icon={isExpanded ? <LuMinimize2 /> : <LuMaximize2 />}
+            variant="ghost"
+            size="sm"
+            onClick={(e) => {
+              e.stopPropagation();
+              setNodeExpanded(id, !isExpanded);
+            }}
+          />
+        )}
+        {!isReadOnly && canDelete && (
           <IconButton
             aria-label={armed ? t`Confirm delete` : t`Delete step`}
             icon={armed ? <LuTrash2 /> : <LuX />}

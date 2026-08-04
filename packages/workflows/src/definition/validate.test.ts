@@ -7,7 +7,7 @@ import {
   type WorkflowDefinition,
   workflowDefinitionSchema
 } from "./schema";
-import { validateDefinition } from "./validate";
+import { referenceIssues, validateDefinition } from "./validate";
 
 const catalog = createFixtureCatalog();
 
@@ -366,6 +366,42 @@ describe("references", () => {
         action("a1", {
           action: "createIssue",
           inputs: { title: ref("trigger", "purchaseOrder", ["nickname"]) }
+        })
+      ],
+      [edge("e1", "trigger", "out", "a1")]
+    );
+    expect(codes(definition)).toEqual(["UNKNOWN_VARIABLE"]);
+  });
+
+  it("referenceIssues reports a broken variable the layers above would hide", () => {
+    // Unreachable, so `validateDefinition` stops at layer 4 and never looks at values.
+    const definition = define(
+      [
+        trigger(),
+        action("a1", {
+          action: "createIssue",
+          inputs: { title: ref("ghost", "result") }
+        })
+      ],
+      []
+    );
+    expect(codes(definition)).toEqual(["UNREACHABLE_NODE"]);
+    expect(referenceIssues(definition, catalog).map((i) => i.code)).toEqual([
+      "UNKNOWN_VARIABLE"
+    ]);
+  });
+
+  it("referenceIssues says nothing about a definition it cannot read", () => {
+    expect(referenceIssues({ nodes: "not a list" }, catalog)).toEqual([]);
+  });
+
+  it("reports UNKNOWN_VARIABLE for an output the step no longer hands out", () => {
+    const definition = define(
+      [
+        trigger(),
+        action("a1", {
+          action: "createIssue",
+          inputs: { title: ref("trigger", "salesOrder") }
         })
       ],
       [edge("e1", "trigger", "out", "a1")]

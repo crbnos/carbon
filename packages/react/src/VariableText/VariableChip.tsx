@@ -1,4 +1,7 @@
-import { MENTION_CHIP_TONE_CLASS } from "@carbon/tiptap";
+import {
+  MENTION_CHIP_INVALID_TONE_CLASS,
+  MENTION_CHIP_TONE_CLASS
+} from "@carbon/tiptap";
 import { NodeViewWrapper, type ReactNodeViewProps } from "@tiptap/react";
 import type { ComponentType } from "react";
 import { LuX } from "react-icons/lu";
@@ -19,6 +22,7 @@ export function createVariableChip(
     deleteNode
   }: ReactNodeViewProps) {
     const full = (node.attrs.label as string | null) ?? node.attrs.id ?? "";
+    const invalid = node.attrs.invalid === true;
     return (
       <Tooltip>
         <TooltipTrigger asChild>
@@ -29,7 +33,9 @@ export function createVariableChip(
             // flex container itself.
             className={cn(
               "inline-flex max-w-[14rem] items-center gap-0.5 align-middle",
-              MENTION_CHIP_TONE_CLASS
+              invalid
+                ? MENTION_CHIP_INVALID_TONE_CLASS
+                : MENTION_CHIP_TONE_CLASS
             )}
           >
             <span className="min-w-0 overflow-hidden text-ellipsis whitespace-nowrap">

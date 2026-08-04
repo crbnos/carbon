@@ -367,7 +367,7 @@ msgstr ""
 msgid "A job's status changes"
 msgstr ""
 
-msgid "A list is wired into this action."
+msgid "A list is wired into this step, which runs once. Turn on repeat mode to work through it."
 msgstr ""
 
 msgid "A Make to Order component that gets its own job and routing inside the parent's build."
@@ -11591,6 +11591,12 @@ msgstr "Politica di Riordino"
 msgid "Reorders dispatch sequence and work center only — does not reschedule. Change dates on the Dates board."
 msgstr "Riordina solo la sequenza di spedizione e il centro di lavoro — non ripianifica. Cambia le date nella bacheca delle date."
 
+msgid "Repeat for each item"
+msgstr ""
+
+msgid "Repeats for each item in the list"
+msgstr ""
+
 msgid "Replace drawing?"
 msgstr "Sostituire il disegno?"
 
@@ -11936,12 +11942,6 @@ msgstr "ID Esecuzione"
 msgid "Run month-end close and standard reconciliations"
 msgstr "Esegui la chiusura di fine mese e le riconciliazioni standard"
 
-msgid "Run once per item"
-msgstr ""
-
-msgid "Run once per item in the list"
-msgstr ""
-
 msgid "Run payment batches and track aging"
 msgstr "Esegui batch di pagamento e traccia l'invecchiamento"
 
@@ -11964,6 +11964,9 @@ msgid "Running Total"
 msgstr "Totale Progressivo"
 
 msgid "Runs"
+msgstr ""
+
+msgid "Runs once — lists are not accepted"
 msgstr ""
 
 msgid "S-1 (coarsest special)"

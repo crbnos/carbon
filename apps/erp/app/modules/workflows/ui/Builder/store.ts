@@ -25,7 +25,11 @@ export type BuilderState = {
   nodes: BuilderNode[];
   edges: BuilderEdge[];
   selectedNodeId: string | null;
+  /** What the last publish attempt found. Only replaced by another attempt. */
   issues: WorkflowIssue[];
+  /** Broken variables, recomputed as the graph is edited. Kept apart from `issues`
+   * so a publish attempt and a live edit never overwrite each other's findings. */
+  liveIssues: WorkflowIssue[];
   saveState: SaveState;
   isReadOnly: boolean;
   baseline: string;
@@ -38,6 +42,7 @@ export type BuilderState = {
   ) => void;
   setSelected: (id: string | null) => void;
   setIssues: (issues: WorkflowIssue[]) => void;
+  setLiveIssues: (issues: WorkflowIssue[]) => void;
   setSaveState: (state: SaveState) => void;
   rebaseline: () => void;
   /** Merge a patch into one node's `data`. The only way node configuration changes. */
@@ -81,6 +86,7 @@ export function createBuilderStore(initial: {
     edges: initial.edges,
     selectedNodeId: null,
     issues: [],
+    liveIssues: [],
     saveState: "idle",
     isReadOnly: initial.isReadOnly,
     baseline: snapshot(initial.nodes, initial.edges),
@@ -183,6 +189,13 @@ export function createBuilderStore(initial: {
 
     setSelected: (id) => set({ selectedNodeId: id }),
     setIssues: (issues) => set({ issues }),
+    setLiveIssues: (liveIssues) => {
+      // Identity matters: every card subscribes to this list, so a fresh empty array
+      // on every keystroke would re-render the whole canvas for nothing.
+      const current = get().liveIssues;
+      if (current.length === 0 && liveIssues.length === 0) return;
+      set({ liveIssues });
+    },
     setSaveState: (saveState) => set({ saveState }),
     rebaseline: () => {
       const { nodes, edges } = get();

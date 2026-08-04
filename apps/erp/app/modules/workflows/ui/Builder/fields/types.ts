@@ -27,4 +27,7 @@ export type ValueFieldProps = {
   placeholder?: string;
   /** Message from a publish issue whose `field` path resolves here. */
   issue?: string;
+  /** Per-variable messages, keyed by the variable's position in the value. Only the
+   * broken one goes red; a sentence's other variables are left alone. */
+  partIssues?: Record<number, string>;
 };

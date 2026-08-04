@@ -31,6 +31,7 @@ import { WorkflowBuilderProvider } from "~/modules/workflows/ui/Builder/context"
 import WorkflowEdgeStyle from "~/modules/workflows/ui/Builder/edges/workflow-edge.css?url";
 import { toReactFlow } from "~/modules/workflows/ui/Builder/graph";
 import { IssuesPanel } from "~/modules/workflows/ui/Builder/IssuesPanel";
+import { LiveValidation } from "~/modules/workflows/ui/Builder/LiveValidation";
 import { WorkflowBuilder } from "~/modules/workflows/ui/Builder/WorkflowBuilder";
 import type { Handle } from "~/utils/handle";
 import { detailBreadcrumb } from "~/utils/handle";
@@ -189,6 +190,7 @@ export default function WorkflowBuilderRoute() {
             )}
           </div>
           <Autosave workflowId={workflow.id} versionId={versionId} />
+          <LiveValidation />
         </div>
       </WorkflowBuilderProvider>
     </ReactFlowProvider>

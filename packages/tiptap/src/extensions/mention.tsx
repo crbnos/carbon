@@ -191,6 +191,10 @@ export interface CreateMentionExtensionOptions {
 export const MENTION_CHIP_TONE_CLASS =
   "rounded-full px-1.5 py-0 text-[0.8125rem] font-medium leading-5 bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-400";
 
+/** The same pill for a token that no longer points at anything. */
+export const MENTION_CHIP_INVALID_TONE_CLASS =
+  "rounded-full px-1.5 py-0 text-[0.8125rem] font-medium leading-5 bg-destructive text-destructive-foreground";
+
 /**
  * The chip styling, exported so a non-editable rendition of the same token matches.
  * `inline-block`, not `inline-flex` — `text-overflow: ellipsis` never applies to a flex
@@ -264,6 +268,20 @@ export function createMentionExtension({
     })
   }).extend({
     name,
+    // The base extension declares `id` and `label` only; an undeclared attribute is
+    // dropped on the way into the document.
+    addAttributes() {
+      return {
+        ...this.parent?.(),
+        invalid: {
+          default: false,
+          parseHTML: (element) =>
+            element.getAttribute("data-invalid") === "true",
+          renderHTML: (attributes) =>
+            attributes.invalid ? { "data-invalid": "true" } : {}
+        }
+      };
+    },
     // `as: "span"` — the default container is a div, which would break the line inside
     // the paragraph the chip sits in.
     ...(chipComponent && {

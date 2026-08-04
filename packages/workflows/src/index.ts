@@ -13,6 +13,7 @@ export type {
 } from "./definition/catalog";
 export { createFixtureCatalog, walkPath } from "./definition/catalog";
 export type { WorkflowIssue, WorkflowIssueCode } from "./definition/issues";
+export { REFERENCE_ISSUE_CODES } from "./definition/issues";
 export {
   nextNodeName,
   slugifyNodeName,
@@ -121,7 +122,7 @@ export {
   variableRefSchema,
   WORKFLOW_OPERATORS
 } from "./definition/types";
-export { validateDefinition } from "./definition/validate";
+export { referenceIssues, validateDefinition } from "./definition/validate";
 export type {
   AvailableVariable,
   DefinitionContext

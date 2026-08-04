@@ -2,11 +2,12 @@ import { IconButton } from "@carbon/react";
 import { Trans } from "@lingui/react/macro";
 import { useReactFlow } from "@xyflow/react";
 import { LuX } from "react-icons/lu";
-import { useBuilderStore } from "./context";
+import { useBuilderStore, useBuilderStoreShallow } from "./context";
+import { selectAllIssues } from "./selectors";
 
 export function IssuesPanel({ onDismiss }: { onDismiss: () => void }) {
   const { setCenter } = useReactFlow();
-  const issues = useBuilderStore((state) => state.issues);
+  const issues = useBuilderStoreShallow(selectAllIssues);
   const nodes = useBuilderStore((state) => state.nodes);
   const setSelected = useBuilderStore((state) => state.setSelected);
 

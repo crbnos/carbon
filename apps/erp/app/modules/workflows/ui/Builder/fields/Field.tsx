@@ -40,14 +40,9 @@ export function Field({
           {required && <span className="ml-0.5 text-destructive">*</span>}
         </LabelWithHelp>
       </label>
-      <div
-        className={cn(
-          "flex items-center gap-1",
-          issue && "rounded-md ring-2 ring-destructive ring-offset-1"
-        )}
-      >
-        {children}
-      </div>
+      {/* No ring here: the control draws its own destructive border, and the two
+          together read as a thick red slab. */}
+      <div className="flex items-center gap-1">{children}</div>
       {issue ? (
         <p className="text-xs text-destructive">{issue}</p>
       ) : (

@@ -14,7 +14,8 @@ export function TemplateField({
   value,
   onChange,
   context,
-  issue
+  issue,
+  partIssues
 }: ValueFieldProps) {
   const { t } = useLingui();
   const [isFocused, setIsFocused] = useState(false);
@@ -39,6 +40,7 @@ export function TemplateField({
         onChange={onChange}
         context={context}
         hasIssue={!!issue}
+        partIssues={partIssues}
         maxRows={10}
         onFocusChange={setIsFocused}
       />

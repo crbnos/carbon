@@ -11,7 +11,7 @@ import { catalog, propertyLabelKey, useWorkflowLabel } from "../catalog";
 import { Field } from "../fields/Field";
 import type { FieldContext } from "../fields/types";
 import { ValueField } from "../fields/ValueField";
-import { issueForField } from "../issues";
+import { issueForField, partIssuesForField } from "../issues";
 import { useValueTypeResolver } from "../useDefinition";
 
 // One row: property, operator, value. `minmax(0,…)` on every track so a long variable
@@ -191,6 +191,11 @@ function ClauseRowImpl({
                 `${fieldPath}.left`,
                 `${fieldPath}.field`
               )}
+              partIssues={partIssuesForField(
+                issues,
+                `${fieldPath}.left`,
+                `${fieldPath}.field`
+              )}
             />
           )}
 
@@ -219,6 +224,11 @@ function ClauseRowImpl({
               onChange={(next) => onChange(index, { right: next })}
               context={context}
               issue={issueForField(
+                issues,
+                `${fieldPath}.right`,
+                `${fieldPath}.value`
+              )}
+              partIssues={partIssuesForField(
                 issues,
                 `${fieldPath}.right`,
                 `${fieldPath}.value`

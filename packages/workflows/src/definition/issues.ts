@@ -24,6 +24,16 @@ export type WorkflowIssueCode =
   | "UNKNOWN_ENTITY"
   | "INCOMPLETE_CONFIG";
 
+/**
+ * What `referenceIssues` can produce. The builder recomputes these as the user edits,
+ * so it drops the copy a publish attempt left behind rather than showing both.
+ */
+export const REFERENCE_ISSUE_CODES: readonly WorkflowIssueCode[] = [
+  "UNKNOWN_VARIABLE",
+  "REF_NOT_UPSTREAM",
+  "ITEM_OUTSIDE_LOOP"
+];
+
 export interface WorkflowIssue {
   code: WorkflowIssueCode;
   /** Customer-facing. */

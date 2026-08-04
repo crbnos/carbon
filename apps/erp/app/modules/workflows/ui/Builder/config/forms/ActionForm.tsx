@@ -1,5 +1,4 @@
 import {
-  Checkbox,
   Command,
   CommandEmpty,
   CommandGroup,
@@ -34,7 +33,7 @@ import {
 import { useBuilderStore } from "../../context";
 import { TemplateField } from "../../fields/TemplateField";
 import { ValueField } from "../../fields/ValueField";
-import { issueForField } from "../../issues";
+import { issueForField, partIssuesForField } from "../../issues";
 import { useAvailableVariables } from "../../useDefinition";
 import { FormStack, Section } from "../layout";
 import type { NodeFormProps } from "./index";
@@ -344,6 +343,7 @@ export function ActionForm({ node, issues }: NodeFormProps<"action">) {
       batching: isBatch
     };
     const fieldIssue = issueForField(issues, name, `inputs.${name}`);
+    const fieldParts = partIssuesForField(issues, name, `inputs.${name}`);
 
     if (inputDef.template) {
       return (
@@ -357,6 +357,7 @@ export function ActionForm({ node, issues }: NodeFormProps<"action">) {
           onChange={(v) => handleInputChange(name, v)}
           context={fieldContext}
           issue={fieldIssue}
+          partIssues={fieldParts}
         />
       );
     }
@@ -373,6 +374,7 @@ export function ActionForm({ node, issues }: NodeFormProps<"action">) {
         onChange={(v) => handleInputChange(name, v)}
         context={fieldContext}
         issue={fieldIssue}
+        partIssues={fieldParts}
       />
     );
   }
@@ -465,35 +467,24 @@ export function ActionForm({ node, issues }: NodeFormProps<"action">) {
             </div>
           )}
 
-          {/* Batch toggle — only shown for batchable actions */}
-          {isBatchable && (
-            <label className="nodrag nopan flex cursor-pointer items-center gap-2">
-              <Checkbox
-                checked={isBatch}
-                onCheckedChange={(checked) =>
-                  updateNodeData(node.id, { batch: checked === true })
-                }
-              />
-              <span className="text-sm">
-                <Trans>Run once per item in the list</Trans>
-              </span>
-            </label>
-          )}
-
-          {/* Batch: list-mismatch suggestion */}
-          {!isBatch && listMismatches.length > 0 && (
+          {/* The toggle itself lives on the card header; this is the only thing that
+              explains why a list was rejected, so it stays. */}
+          {isBatchable && !isBatch && listMismatches.length > 0 && (
             <div className="flex items-start gap-2 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm dark:border-amber-800 dark:bg-amber-950">
               <LuListOrdered className="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
               <div className="flex flex-col gap-1">
                 <p className="text-amber-800 dark:text-amber-200">
-                  <Trans>A list is wired into this action.</Trans>
+                  <Trans>
+                    A list is wired into this step, which runs once. Turn on
+                    repeat mode to work through it.
+                  </Trans>
                 </p>
                 <button
                   type="button"
                   className="self-start text-xs font-medium text-amber-700 underline underline-offset-2 hover:text-amber-900 dark:text-amber-300 dark:hover:text-amber-100"
                   onClick={() => updateNodeData(node.id, { batch: true })}
                 >
-                  <Trans>Run once per item</Trans>
+                  <Trans>Repeat for each item</Trans>
                 </button>
               </div>
             </div>

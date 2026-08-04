@@ -22,7 +22,8 @@ export function ValueField({
   context,
   hideLabel,
   placeholder,
-  issue
+  issue,
+  partIssues
 }: ValueFieldProps) {
   const { t } = useLingui();
   const store = useBuilderStoreApi();
@@ -62,6 +63,14 @@ export function ValueField({
           context={context}
           placeholder={placeholder}
           hasIssue={!!issue}
+          // A lone variable is stored bare, so the field's own message is about it.
+          partIssues={
+            value?.kind === "template"
+              ? partIssues
+              : issue !== undefined
+                ? { 0: issue }
+                : undefined
+          }
           onFocusChange={setIsFocused}
         />
       </Field>
@@ -96,6 +105,7 @@ export function ValueField({
                   <VariableChip
                     variable={ref}
                     nodeTitle={nodeTitle}
+                    invalid={issue}
                     onRemove={() => onChange(undefined)}
                     onReopen={() => setPickerOpen(true)}
                   />

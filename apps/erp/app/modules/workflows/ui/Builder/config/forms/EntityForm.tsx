@@ -25,7 +25,7 @@ import {
 } from "../../catalog";
 import { useBuilderStore } from "../../context";
 import { ValueField } from "../../fields/ValueField";
-import { issueForField } from "../../issues";
+import { issueForField, partIssuesForField } from "../../issues";
 import { FormStack, Section } from "../layout";
 import type { NodeFormProps } from "./index";
 
@@ -195,6 +195,7 @@ export function EntityForm({ node, issues }: NodeFormProps<"entity">) {
                 onChange={(v) => handleInputChange(name, v)}
                 context={{ nodeId: node.id, inLoop: false }}
                 issue={issueForField(issues, name, `inputs.${name}`)}
+                partIssues={partIssuesForField(issues, name, `inputs.${name}`)}
               />
             );
           })}
