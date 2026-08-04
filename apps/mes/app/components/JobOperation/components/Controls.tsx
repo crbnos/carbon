@@ -41,7 +41,7 @@ export function Controls({
   return (
     <div
       className={cn(
-        "flex flex-col relative z-[40] md:absolute p-2 md:top-[calc(var(--header-height)*2-2px)] md:right-0 w-full md:w-[var(--controls-width)] md:min-h-[180px] bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 md:border-l border-y md:rounded-bl-lg",
+        "flex flex-col relative z-[40] lg:absolute p-2 lg:top-[calc(var(--header-height)*2-2px)] lg:right-0 w-full lg:w-[var(--controls-width)] lg:min-h-[180px] bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 lg:border-l border-y lg:rounded-bl-lg",
         className
       )}
     >
@@ -61,7 +61,7 @@ export function Times({
     <TooltipProvider>
       <div
         className={cn(
-          "flex flex-col md:absolute p-2 bottom-2 md:left-1/2 md:transform md:-translate-x-1/2 w-full md:w-[calc(100%-2rem)] z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b md:border md:rounded-lg",
+          "flex flex-col lg:absolute p-2 bottom-2 lg:left-4 lg:right-[calc(var(--controls-gutter,0px)+1rem)] w-full lg:w-auto z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b lg:border lg:rounded-lg",
           className
         )}
       >
@@ -104,7 +104,7 @@ export function IconButtonWithTooltip({
       tooltip={tooltip}
       disabled={disabled}
       className={cn(
-        "size-16 text-xl md:text-lg md:size-[8dvh] flex flex-row items-center gap-2 justify-center bg-accent rounded-full shadow-lg hover:cursor-pointer hover:shadow-xl hover:accent hover:scale-105 transition-all disabled:cursor-not-allowed disabled:bg-muted disabled:opacity-30 text-accent-foreground group-hover:text-accent-foreground/80",
+        "size-16 text-xl lg:text-lg lg:size-[8dvh] flex flex-row items-center gap-2 justify-center bg-accent rounded-full shadow-lg hover:cursor-pointer hover:shadow-xl hover:accent hover:scale-105 transition-all disabled:cursor-not-allowed disabled:bg-muted disabled:opacity-30 text-accent-foreground group-hover:text-accent-foreground/80",
         variant === "success" &&
           "bg-emerald-500 !text-white hover:bg-emerald-600 hover:text-white",
         variant === "destructive" &&
@@ -362,7 +362,7 @@ export function FloatingActionMenu({ items }: { items: FABItem[] }) {
       <AnimatePresence initial={false}>
         {isOpen && (
           <motion.div
-            className="flex flex-row md:flex-col items-center gap-2 mb-2"
+            className="flex flex-row lg:flex-col items-center gap-2 mb-2"
             initial="closed"
             animate="open"
             exit="closed"
@@ -401,7 +401,7 @@ export function FloatingActionMenu({ items }: { items: FABItem[] }) {
         type="button"
         onClick={toggle}
         className={cn(
-          "size-16 text-xl md:text-lg md:size-[8dvh] flex items-center justify-center rounded-full shadow-lg transition-[transform,background-color] duration-200 active:scale-[0.96]",
+          "size-16 text-xl lg:text-lg lg:size-[8dvh] flex items-center justify-center rounded-full shadow-lg transition-[transform,background-color] duration-200 active:scale-[0.96]",
           isOpen
             ? "bg-muted-foreground text-background"
             : "bg-accent text-accent-foreground hover:bg-accent/80"
