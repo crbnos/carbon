@@ -20,7 +20,7 @@ export function useCanvasState({
   canPersist: boolean;
 }) {
   const { submit } = useFetcher<{ ok?: boolean }>();
-  const [panOnScroll, setPanOnScroll] = useState(initial?.panOnScroll ?? false);
+  const [panOnScroll, setPanOnScroll] = useState(initial?.panOnScroll ?? true);
 
   // Refs, not state: a viewport change must not re-render the canvas, and the
   // debounced write reads both values long after the event that scheduled it.
