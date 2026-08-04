@@ -33,6 +33,17 @@ export type VariableTreeNode = {
  * this, so both menus offer exactly the same set. */
 export const MAX_PATH = 2;
 
+/** What the menu filters by, which is not always the type the field renders: a clause's
+ * left side renders as text but must offer every variable. `undefined` is the "no filter"
+ * signal below, so `"any"` is how a caller asks for it. */
+export function pickAccepts(
+  type: ValueType,
+  accepts: ValueType | "any" | undefined
+): ValueType | undefined {
+  if (accepts === "any") return undefined;
+  return accepts ?? type;
+}
+
 type Options = {
   /** Omit to accept any type — template fields render anything as text. */
   accepts?: ValueType;
@@ -197,22 +208,6 @@ export function variableTree(
     return node;
   }
 
-  /** A level with one child and nothing to pick at this level is a level the user would
-   * have to walk through for no information. Hoist it. */
-  function collapse(node: VariableTreeNode): VariableTreeNode {
-    const children = node.children?.map(collapse);
-    if (!node.item && children?.length === 1) {
-      const only = children[0]!;
-      return collapse({
-        ...node,
-        item: only.item,
-        helper: only.helper,
-        children: only.children
-      });
-    }
-    return children ? { ...node, children } : node;
-  }
-
   const byNode = new Map<string, VariableTreeNode>();
   for (const variable of withoutDuplicateOutputs(variables)) {
     let step = byNode.get(variable.nodeId);
@@ -233,9 +228,11 @@ export function variableTree(
     if (output) step.children!.push(output);
   }
 
-  const roots = [...byNode.values()]
-    .map(collapse)
-    .filter((step) => step.item || step.children?.length);
+  // A lone output is not hoisted into its step's row: the chip names the output, so the
+  // row the user clicks has to name it too.
+  const roots = [...byNode.values()].filter(
+    (step) => step.item || step.children?.length
+  );
 
   if (inLoop) {
     const ref = { kind: "item" as const, path: [] };

@@ -10,10 +10,12 @@ import { VariableChip } from "./VariableChip";
 import { VariableMenuPopover } from "./VariableMenuPopover";
 import { VariablePickControl } from "./VariablePickControl";
 import { hasStrayBrace } from "./valueParts";
+import { pickAccepts } from "./variableMenu";
 
 export function ValueField({
   label,
   type,
+  accepts,
   required,
   helpTermId,
   choices,
@@ -29,6 +31,7 @@ export function ValueField({
   const [pickerOpen, setPickerOpen] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
   const control = pickControl(type, value, choices);
+  const acceptsFilter = pickAccepts(type, accepts);
   const ref =
     value?.kind === "ref" || value?.kind === "item" ? value : undefined;
 
@@ -55,7 +58,7 @@ export function ValueField({
         }
       >
         <InlineValueEditor
-          accepts={type}
+          accepts={acceptsFilter}
           value={value}
           onChange={onChange}
           context={context}
@@ -85,7 +88,7 @@ export function ValueField({
       {/* The popup anchors to the control itself. A field is either a value you write
           or a variable you pick — never a box with a second way in bolted to its edge. */}
       <VariableMenuPopover
-        accepts={type}
+        accepts={acceptsFilter}
         context={context}
         onChange={onChange}
         open={pickerOpen}

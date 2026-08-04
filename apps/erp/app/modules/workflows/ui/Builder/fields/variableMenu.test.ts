@@ -3,6 +3,7 @@ import { createWorkflowCatalog } from "@carbon/workflows";
 import { describe, expect, it } from "vitest";
 import { decodeTokenId } from "./tokenId";
 import {
+  pickAccepts,
   type VariableTreeNode,
   variableMenuItems,
   variableTree
@@ -114,6 +115,33 @@ describe("variableMenuItems", () => {
 const text = { kind: "primitive", of: "string" } as const;
 const number = { kind: "primitive", of: "number" } as const;
 
+describe("pickAccepts", () => {
+  it("filters by the field's own type when nothing overrides it", () => {
+    expect(pickAccepts(text, undefined)).toEqual(text);
+  });
+
+  it("filters by the override when one is given", () => {
+    expect(pickAccepts(text, number)).toEqual(number);
+  });
+
+  // A clause's left side starts as an empty string literal, so filtering by the rendered
+  // type hid every non-string output upstream. An override of `undefined` cannot say that
+  // — it reads as an absent prop and falls back to `type`.
+  it("drops the filter entirely for 'any', so every variable survives", () => {
+    expect(pickAccepts(text, "any")).toBeUndefined();
+    expect(
+      variableMenuItems([output("result", number)], catalog, {
+        accepts: pickAccepts(text, "any")
+      })
+    ).toHaveLength(1);
+    expect(
+      variableMenuItems([output("result", number)], catalog, {
+        accepts: pickAccepts(text, undefined)
+      })
+    ).toHaveLength(0);
+  });
+});
+
 const output = (name: string, type: AvailableVariable["type"]) => ({
   ...variable,
   output: name,
@@ -137,17 +165,19 @@ describe("variableTree", () => {
     expect(tree[0].children?.every((c) => c.item)).toBe(true);
   });
 
-  it("collapses a step with a single output into one row", () => {
+  // Hoisting meant clicking the step's name inserted a variable called something else.
+  it("keeps a lone output on its own row instead of hoisting it", () => {
     const tree = variableTree([output("subject", text)], catalog);
     expect(tree).toHaveLength(1);
-    expect(tree[0].item).toBeDefined();
-    expect(tree[0].children).toBeUndefined();
+    expect(tree[0].item).toBeUndefined();
+    expect(tree[0].children?.map((c) => c.label)).toEqual(["subject"]);
+    expect(tree[0].children?.[0].item).toBeDefined();
   });
 
   it("opens an entity output into its properties", () => {
-    const tree = variableTree([variable], catalog);
-    expect(tree[0].item).toBeDefined();
-    expect(tree[0].children?.length).toBeGreaterThan(1);
+    const [record] = variableTree([variable], catalog)[0].children ?? [];
+    expect(record.item).toBeDefined();
+    expect(record.children?.length).toBeGreaterThan(1);
   });
 
   it("never offers a path deeper than the flat menu allows", () => {
@@ -206,9 +236,10 @@ describe("variableTree", () => {
   });
 
   it("labels properties through the resolver, not the raw column name", () => {
-    const tree = variableTree([variable], catalog, {
-      labelFor: (key) => `L:${key}`
-    });
-    expect(tree[0].children?.every((c) => c.label.startsWith("L:"))).toBe(true);
+    const [record] =
+      variableTree([variable], catalog, {
+        labelFor: (key) => `L:${key}`
+      })[0].children ?? [];
+    expect(record.children?.every((c) => c.label.startsWith("L:"))).toBe(true);
   });
 });

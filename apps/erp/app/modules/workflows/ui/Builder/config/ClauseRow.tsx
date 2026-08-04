@@ -167,6 +167,7 @@ function ClauseRowImpl({
               label={t`Property`}
               placeholder={t`Type '{' for a variable`}
               type={leftType ?? STRING_TYPE}
+              accepts="any"
               value={clause.left}
               onChange={(next) => {
                 const nextType =

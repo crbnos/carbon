@@ -14,6 +14,10 @@ export type FieldContext = {
 export type ValueFieldProps = {
   label: string;
   type: ValueType;
+  /** Overrides `type` for the variable-picker filter; `"any"` shows every variable.
+   * Spelled as a value rather than `undefined` because an omitted prop has to keep
+   * meaning "filter by `type`". */
+  accepts?: ValueType | "any";
   required?: boolean;
   /** Glossary term for the ⓘ hover next to the label. */
   helpTermId?: TermId;
