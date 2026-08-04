@@ -1,7 +1,6 @@
 import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
@@ -102,21 +101,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
       );
     }
 
-    const splitEntities = issue.data?.splitEntities || [];
-    if (splitEntities.length > 0) {
-      try {
-        for (const split of splitEntities) {
-          await trigger("print-job", {
-            sourceDocument: "Split",
-            sourceDocumentId: split.newId,
-            companyId,
-            userId
-          });
-        }
-      } catch (e) {
-        logger.error("Auto-print for split entities failed", { error: e });
-      }
-    }
+    // No label print on issue splits: the split child is CONSUMED into the
+    // dispatch and consumed portions get no label; the surviving entity keeps
+    // its existing label.
   } else {
     // Inventory item
     const issue = await serviceRole.functions.invoke("issue", {

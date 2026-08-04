@@ -58,16 +58,17 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       ) ?? [];
   }
 
+  // Labels are for the RETAINED shelf lots, not the shipped portions. New
+  // convention: the shipped child carries "Split From Entity ID" → its parent
+  // is the retained lot. Legacy rows: the shipped original carries
+  // "Split Entity ID" → the remainder it points at is the retained lot.
   const itemEntityIds = filteredTracking
-    ?.filter(
-      (tracking) =>
-        "Split Entity ID" in (tracking.attributes as TrackedEntityAttributes)
-    )
-    ?.map(
-      (tracking) =>
-        (tracking.attributes as TrackedEntityAttributes)["Split Entity ID"] ??
-        ""
-    )
+    ?.flatMap((tracking) => {
+      const attributes = (tracking.attributes ?? {}) as TrackedEntityAttributes;
+      const retainedId =
+        attributes["Split From Entity ID"] ?? attributes["Split Entity ID"];
+      return retainedId ? [retainedId] : [];
+    })
     .sort((a, b) => a.localeCompare(b))
     .filter(Boolean);
 
