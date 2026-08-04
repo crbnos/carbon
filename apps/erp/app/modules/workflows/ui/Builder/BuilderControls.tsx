@@ -19,6 +19,7 @@ import {
   LuPlus
 } from "react-icons/lu";
 import { useBuilderStore, useBuilderStoreApi } from "./context";
+import { FIT_VIEW_OPTIONS } from "./useCanvasState";
 
 type Props = {
   panOnScroll: boolean;
@@ -53,7 +54,9 @@ export function BuilderControls({ panOnScroll, onTogglePanOnScroll }: Props) {
   const autoArrange = () => {
     store.getState().arrangeNodes();
     // Let the moved cards paint before framing them.
-    requestAnimationFrame(() => fitView({ duration: 300 }));
+    requestAnimationFrame(() =>
+      fitView({ ...FIT_VIEW_OPTIONS, duration: 300 })
+    );
   };
 
   // A boolean selector only re-renders when the answer flips, so subscribing here
@@ -81,7 +84,7 @@ export function BuilderControls({ panOnScroll, onTogglePanOnScroll }: Props) {
         <ControlButton
           aria-label={t`Fit view`}
           icon={<LuMaximize />}
-          onClick={() => fitView({ duration: 300 })}
+          onClick={() => fitView({ ...FIT_VIEW_OPTIONS, duration: 300 })}
         />
         <div className="mx-0.5 h-4 w-px bg-border" />
         <ControlButton

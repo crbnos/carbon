@@ -8,6 +8,10 @@ const DEBOUNCE_MS = 800;
 
 export const DEFAULT_VIEWPORT: Viewport = { x: 0, y: 0, zoom: 1 };
 
+/** Fitting a two-node workflow would otherwise blow the cards up to 200%. Centre it,
+ * but never zoom past life size. */
+export const FIT_VIEW_OPTIONS = { maxZoom: DEFAULT_VIEWPORT.zoom };
+
 /** Remembers where the canvas was left — viewport and pan/select mode — on the
  * workflow row. Writes are debounced; a wheel-zoom fires `onMoveEnd` per tick. */
 export function useCanvasState({

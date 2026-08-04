@@ -22,7 +22,7 @@ import { edgeTypes } from "./edges/WorkflowEdge";
 import { canConnect } from "./graph";
 import { NodePalette } from "./NodePalette";
 import { nodeTypes } from "./nodes";
-import { useCanvasState } from "./useCanvasState";
+import { FIT_VIEW_OPTIONS, useCanvasState } from "./useCanvasState";
 
 const proOptions = { hideAttribution: true };
 
@@ -143,6 +143,7 @@ export function WorkflowBuilder({
             proOptions={proOptions}
             minZoom={0.25}
             maxZoom={2}
+            fitViewOptions={FIT_VIEW_OPTIONS}
             {...(initialViewport
               ? { defaultViewport: initialViewport }
               : { fitView: true })}
