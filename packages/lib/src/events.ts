@@ -433,6 +433,30 @@ export type Events = {
     };
   };
 
+  // EDI: event-system handler dispatch (batched) + outbound send task
+  "carbon/event-edi": {
+    data: {
+      records: Array<{
+        event: {
+          table: string;
+          recordId: string;
+          operation: "INSERT" | "UPDATE" | "DELETE";
+          [key: string]: unknown;
+        };
+        companyId: string;
+      }>;
+    };
+  };
+
+  "carbon/edi.send-document": {
+    data: {
+      companyId: string;
+      table: "salesOrder" | "shipment" | "salesInvoice";
+      recordId: string;
+      documentType: string;
+    };
+  };
+
   // Print job events
   "carbon/print-job": {
     data: {
