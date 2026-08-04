@@ -2587,9 +2587,6 @@ msgstr "配置默认的股权和留存收益账户"
 msgid "Configure defaults for the quality dashboard."
 msgstr "为质量仪表板配置默认值。"
 
-msgid "Configure how preventative maintenance dispatches are automatically generated from maintenance schedules."
-msgstr "配置如何从维护计划自动生成预防性维护派遣。"
-
 msgid "Configure Item"
 msgstr "配置项目"
 
@@ -3651,9 +3648,6 @@ msgstr "到期天数"
 
 msgid "Days from ordering a part to having it available; planning offsets demand backward by this much."
 msgstr "从订购零件到可用之间的天数; 规划将需求向后偏移此数量。"
-
-msgid "Days in advance to generate dispatches"
-msgstr "提前生成派遣单的天数"
 
 msgid "Days Off"
 msgstr "休息日"
@@ -7519,9 +7513,6 @@ msgstr "维护费用 (默认)"
 msgid "Maintenance Schedules"
 msgstr "维护计划"
 
-msgid "Maintenance Scheduling"
-msgstr "维护计划"
-
 msgid "Maintenance Type"
 msgstr "维护类型"
 
@@ -8383,6 +8374,9 @@ msgstr "下一个日期"
 msgid "Next Due"
 msgstr "下次到期"
 
+msgid "Next Due Date"
+msgstr "下次到期日期"
+
 msgid "Next page"
 msgstr "下一页"
 
@@ -8582,7 +8576,7 @@ msgid "No matches. Type to create one."
 msgstr "无匹配项。输入内容以创建一个。"
 
 msgid "No matching bins"
-msgstr "没有匹配的库位"
+msgstr "无匹配的箱子"
 
 msgid "No new notifications"
 msgstr "没有新通知"
@@ -8811,7 +8805,7 @@ msgstr "备注（可选）"
 
 #. placeholder {0}: search.trim()
 msgid "Nothing at this location matches \"{0}\"."
-msgstr "此位置处没有与\"{0}\"匹配的任何内容。"
+msgstr "此位置处没有与\"{0}\"匹配的内容。"
 
 msgid "Nothing else at this location has stock to pull from."
 msgstr "此位置没有其他可提取的库存。"

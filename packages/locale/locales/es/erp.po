@@ -2587,9 +2587,6 @@ msgstr "Configurar cuentas predeterminadas de patrimonio y ganancias retenidas"
 msgid "Configure defaults for the quality dashboard."
 msgstr "Configura los valores predeterminados para el panel de calidad."
 
-msgid "Configure how preventative maintenance dispatches are automatically generated from maintenance schedules."
-msgstr "Configura cómo se generan automáticamente los despachos de mantenimiento preventivo a partir de los cronogramas de mantenimiento."
-
 msgid "Configure Item"
 msgstr "Configurar Artículo"
 
@@ -3651,9 +3648,6 @@ msgstr "Días Vencidos"
 
 msgid "Days from ordering a part to having it available; planning offsets demand backward by this much."
 msgstr "Días desde ordenar una pieza hasta tenerla disponible; la planificación compensa la demanda hacia atrás por esta cantidad."
-
-msgid "Days in advance to generate dispatches"
-msgstr "Días de anticipación para generar despachos"
 
 msgid "Days Off"
 msgstr "Días libres"
@@ -7519,9 +7513,6 @@ msgstr "Gasto de Mantenimiento (predeterminado)"
 msgid "Maintenance Schedules"
 msgstr "Calendarios de Mantenimiento"
 
-msgid "Maintenance Scheduling"
-msgstr "Programación de Mantenimiento"
-
 msgid "Maintenance Type"
 msgstr "Tipo de Mantenimiento"
 
@@ -8383,6 +8374,9 @@ msgstr "Siguiente fecha"
 msgid "Next Due"
 msgstr "Próximo Vencimiento"
 
+msgid "Next Due Date"
+msgstr "Próxima fecha de vencimiento"
+
 msgid "Next page"
 msgstr "Página siguiente"
 
@@ -8582,7 +8576,7 @@ msgid "No matches. Type to create one."
 msgstr "Sin coincidencias. Escribe para crear una."
 
 msgid "No matching bins"
-msgstr "No hay contenedores coincidentes"
+msgstr "Sin contenedores coincidentes"
 
 msgid "No new notifications"
 msgstr "Sin notificaciones nuevas"

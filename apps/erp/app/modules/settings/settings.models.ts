@@ -235,11 +235,6 @@ export const updateLeadTimesOnReceiptValidator = z.object({
   updateLeadTimesOnReceipt: zfd.checkbox()
 });
 
-export const maintenanceSettingsValidator = z.object({
-  maintenanceGenerateInAdvance: zfd.checkbox(),
-  maintenanceAdvanceDays: zfd.numeric(z.number().min(1).max(90).default(7))
-});
-
 export const materialIdsValidator = z.object({
   materialGeneratedIds: zfd.checkbox()
 });

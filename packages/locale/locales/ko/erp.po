@@ -2587,9 +2587,6 @@ msgstr "기본 자본 및 이익잉여금 계정 설정"
 msgid "Configure defaults for the quality dashboard."
 msgstr "품질 대시보드의 기본값을 설정하세요."
 
-msgid "Configure how preventative maintenance dispatches are automatically generated from maintenance schedules."
-msgstr "유지보수 일정에서 예방 유지보수 작업지시가 자동 생성되는 방식을 설정하세요."
-
 msgid "Configure Item"
 msgstr "품목 설정"
 
@@ -3651,9 +3648,6 @@ msgstr "만기 일수"
 
 msgid "Days from ordering a part to having it available; planning offsets demand backward by this much."
 msgstr "부품을 주문한 시점부터 사용 가능해지기까지의 일수로, 계획 시 이 기간만큼 수요를 앞당겨 반영합니다."
-
-msgid "Days in advance to generate dispatches"
-msgstr "작업지시를 사전 생성할 일수"
 
 msgid "Days Off"
 msgstr "휴무일"
@@ -7519,9 +7513,6 @@ msgstr "유지보수 비용(기본값)"
 msgid "Maintenance Schedules"
 msgstr "유지보수 일정"
 
-msgid "Maintenance Scheduling"
-msgstr "유지보수 일정 관리"
-
 msgid "Maintenance Type"
 msgstr "유지보수 유형"
 
@@ -8383,6 +8374,9 @@ msgstr "다음 날짜"
 msgid "Next Due"
 msgstr "다음 예정일"
 
+msgid "Next Due Date"
+msgstr "다음 만료 날짜"
+
 msgid "Next page"
 msgstr "다음 페이지"
 
@@ -8811,7 +8805,7 @@ msgstr "메모(선택)"
 
 #. placeholder {0}: search.trim()
 msgid "Nothing at this location matches \"{0}\"."
-msgstr "이 위치에서 \"{0}\"과(와) 일치하는 항목이 없습니다."
+msgstr "이 위치에서 \"{0}\"와 일치하는 항목이 없습니다."
 
 msgid "Nothing else at this location has stock to pull from."
 msgstr "이 위치에는 더 이상 가져올 재고가 없습니다."

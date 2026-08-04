@@ -247,6 +247,7 @@ export const maintenanceScheduleValidator = z.object({
   frequency: z.enum(maintenanceFrequency),
   priority: z.enum(maintenanceDispatchPriority),
   estimatedDuration: zfd.numeric(z.number().optional()),
+  nextDueAt: zfd.text(z.string().optional()),
   active: zfd.checkbox(),
   // Day-of-week fields for daily frequency
   monday: zfd.checkbox(),

@@ -50,6 +50,7 @@ import {
   LuLogOut,
   LuMapPin,
   LuMonitor,
+  LuMonitorPlay,
   LuMoon,
   LuPackageCheck,
   LuShieldCheck,
@@ -304,9 +305,33 @@ export function ToolsNav() {
           <SidebarMenuItem>
             <Suggestion />
           </SidebarMenuItem>
+
+          <SidebarMenuItem>
+            <DisplaysLink />
+          </SidebarMenuItem>
         </SidebarMenu>
       </SidebarGroup>
     </>
+  );
+}
+
+/**
+ * Entry point to the wall displays. Opens in a new tab: the operator's own
+ * session stays where it was, and the display gets a window that can be thrown
+ * full-screen onto the screen at the machine.
+ */
+function DisplaysLink() {
+  const { t } = useLingui();
+
+  return (
+    <SidebarMenuButton tooltip={t`Displays`} asChild>
+      <a href={path.to.displays} target="_blank" rel="noreferrer">
+        <LuMonitorPlay />
+        <span>
+          <Trans>Displays</Trans>
+        </span>
+      </a>
+    </SidebarMenuButton>
   );
 }
 

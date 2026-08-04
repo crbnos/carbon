@@ -2587,9 +2587,6 @@ msgstr "Skonfiguruj domyślne konta kapitału i zysków zatrzymanych"
 msgid "Configure defaults for the quality dashboard."
 msgstr "Skonfiguruj ustawienia domyślne dla pulpitu jakości."
 
-msgid "Configure how preventative maintenance dispatches are automatically generated from maintenance schedules."
-msgstr "Skonfiguruj sposób automatycznego generowania dyspozycji konserwacji zapobiegawczej z harmonogramów konserwacji."
-
 msgid "Configure Item"
 msgstr "Konfiguruj element"
 
@@ -3651,9 +3648,6 @@ msgstr "Dni do zapłaty"
 
 msgid "Days from ordering a part to having it available; planning offsets demand backward by this much."
 msgstr "Dni od zamówienia części do jej dostępności; planowanie przesunięcia wstecz popytu o tę ilość."
-
-msgid "Days in advance to generate dispatches"
-msgstr "Dni z wyprzedzeniem do wygenerowania wysyłek"
 
 msgid "Days Off"
 msgstr "Dni wolne"
@@ -7519,9 +7513,6 @@ msgstr "Wydatek na Konserwację (domyślne)"
 msgid "Maintenance Schedules"
 msgstr "Harmonogramy konserwacji"
 
-msgid "Maintenance Scheduling"
-msgstr "Planowanie konserwacji"
-
 msgid "Maintenance Type"
 msgstr "Typ konserwacji"
 
@@ -8382,6 +8373,9 @@ msgstr "Następna data"
 
 msgid "Next Due"
 msgstr "Następny termin"
+
+msgid "Next Due Date"
+msgstr "Następna data wymagalności"
 
 msgid "Next page"
 msgstr "Następna strona"

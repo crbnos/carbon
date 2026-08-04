@@ -2587,9 +2587,6 @@ msgstr "Configurar contas padrão de patrimônio líquido e lucros retidos"
 msgid "Configure defaults for the quality dashboard."
 msgstr "Configure padrões para o painel de qualidade."
 
-msgid "Configure how preventative maintenance dispatches are automatically generated from maintenance schedules."
-msgstr "Configure como os despachos de manutenção preventiva são gerados automaticamente a partir dos cronogramas de manutenção."
-
 msgid "Configure Item"
 msgstr "Configurar Item"
 
@@ -3651,9 +3648,6 @@ msgstr "Dias Vencidos"
 
 msgid "Days from ordering a part to having it available; planning offsets demand backward by this much."
 msgstr "Dias desde o pedido de uma peça até ter disponível; o planejamento compensa a demanda para trás por este período."
-
-msgid "Days in advance to generate dispatches"
-msgstr "Dias de antecedência para gerar despachos"
 
 msgid "Days Off"
 msgstr "Dias de Folga"
@@ -7519,9 +7513,6 @@ msgstr "Despesa de Manutenção (padrão)"
 msgid "Maintenance Schedules"
 msgstr "Cronogramas de Manutenção"
 
-msgid "Maintenance Scheduling"
-msgstr "Agendamento de Manutenção"
-
 msgid "Maintenance Type"
 msgstr "Tipo de Manutenção"
 
@@ -8382,6 +8373,9 @@ msgstr "Próxima Data"
 
 msgid "Next Due"
 msgstr "Próximo Vencimento"
+
+msgid "Next Due Date"
+msgstr "Próxima Data de Vencimento"
 
 msgid "Next page"
 msgstr "Próxima página"

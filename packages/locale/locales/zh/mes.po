@@ -38,6 +38,14 @@ msgstr "{0} / {1} 已完成"
 msgid "{0} of {1} completed"
 msgstr "{0} / {1} 已完成"
 
+#. placeholder {0}: rows.length
+msgid "{0} queued"
+msgstr "已排队 {0} 个"
+
+#. placeholder {0}: activeWork.length
+msgid "{0} running"
+msgstr "运行中 {0} 个"
+
 #. placeholder {0}: item.quantityScrapped
 msgid "{0} Scrapped"
 msgstr "{0} 已报废"
@@ -47,6 +55,9 @@ msgstr "{completions} 个合格单位将被完成。"
 
 msgid "{fails} sampled failure(s) are recorded and will NOT be completed — resolve them from the actions menu."
 msgstr "{fails} 个抽样失败已记录，将不会完成 — 请从操作菜单中解决。"
+
+msgid "+{overflow} more"
+msgstr "还有 +{overflow} 个"
 
 msgid "About"
 msgstr "关于"
@@ -92,6 +103,9 @@ msgstr "添加备件"
 
 msgid "All"
 msgstr "全部"
+
+msgid "All clear"
+msgstr "一切正常"
 
 msgid "All rework"
 msgstr "全部返工"
@@ -160,6 +174,9 @@ msgstr "但别担心。您可以使用忘记密码流程来请求新的魔法链
 
 msgid "By signing in, you agree to the <0>Terms of Service</0> and <1>Privacy Policy.</1>"
 msgstr "登录即表示您同意<0>服务条款</0>和<1>隐私政策。</1>"
+
+msgid "By?"
+msgstr "谁？"
 
 msgid "Cancel"
 msgstr "取消"
@@ -239,6 +256,9 @@ msgstr "完成已通过"
 msgid "Completed"
 msgstr "已完成"
 
+msgid "Connecting"
+msgstr "连接中"
+
 msgid "Console"
 msgstr "控制台"
 
@@ -247,6 +267,10 @@ msgstr "控制台模式"
 
 msgid "Consumed expired"
 msgstr "已消耗过期"
+
+#. placeholder {0}: board.unplannedCost.days
+msgid "Cost of unplanned maintenance, last {0} days"
+msgstr "过去 {0} 天的计划外维护成本"
 
 #. placeholder {0}: search.trim() === "" ? (createLabel ?? label) : search
 #. placeholder {0}: search.trim() === "" ? label : search
@@ -261,6 +285,9 @@ msgstr "创建质量问题"
 
 msgid "Create Rework"
 msgstr "创建返工"
+
+msgid "Current work"
+msgstr "当前工作"
 
 msgid "Customer"
 msgstr "客户"
@@ -308,8 +335,21 @@ msgstr "未找到工单"
 msgid "Display"
 msgstr "显示"
 
+msgid "Displays"
+msgstr "显示屏"
+
 msgid "Down"
 msgstr "停机"
+
+msgid "Down for maintenance"
+msgstr "正在维护"
+
+#. placeholder {0}: workCenter.blockingDispatchReadableId
+msgid "Down for maintenance · {0}"
+msgstr "正在维护 · {0}"
+
+msgid "Down for planned maintenance"
+msgstr "计划维护中"
 
 msgid "Download"
 msgstr "下载"
@@ -339,6 +379,13 @@ msgstr "截止 {0}"
 msgid "Due Date"
 msgstr "截止日期"
 
+#. placeholder {0}: board.dueSoon.days
+msgid "Due in the next {0} days?"
+msgstr "在接下来的 {0} 天内到期？"
+
+msgid "Due today?"
+msgstr "今天到期？"
+
 msgid "Duplicate batch number"
 msgstr "重复的批次号"
 
@@ -350,6 +397,9 @@ msgstr "时长"
 
 msgid "Edit"
 msgstr "编辑"
+
+msgid "Elapsed"
+msgstr "已用时长"
 
 msgid "Email Address"
 msgstr "电子邮箱"
@@ -437,6 +487,9 @@ msgstr "与工单和商机行相关的文件。"
 msgid "Filter"
 msgstr "筛选"
 
+msgid "Filter by location"
+msgstr "按位置筛选"
+
 msgid "Finish"
 msgstr "完成"
 
@@ -459,6 +512,9 @@ msgstr "返回操作"
 msgid "How many were actually picked?"
 msgstr "实际上捡了多少个？"
 
+msgid "How many?"
+msgstr "多少个？"
+
 msgid "I understand and want to complete without issuing"
 msgstr "我理解并希望在不发放物料的情况下完成"
 
@@ -467,6 +523,9 @@ msgstr "我还在工作"
 
 msgid "Ideas, suggestions or problems?"
 msgstr "有想法、建议或问题？"
+
+msgid "Idle for"
+msgstr "闲置时间"
 
 msgid "Impact"
 msgstr "影响"
@@ -537,6 +596,9 @@ msgstr "套件"
 msgid "Labor"
 msgstr "人工"
 
+msgid "Last completed"
+msgstr "最后完成"
+
 msgid "Learn more"
 msgstr "了解更多"
 
@@ -588,11 +650,17 @@ msgstr "批次"
 msgid "Machine"
 msgstr "机器"
 
+msgid "Machine down for maintenance now?"
+msgstr "机器现在正在维护吗？"
+
 msgid "Maintenance"
 msgstr "维护"
 
 msgid "Maintenance Completed"
 msgstr "维护已完成"
+
+msgid "Maintenance overdue"
+msgstr "维护逾期"
 
 msgid "Manually add items to inventory"
 msgstr "手动添加物料到库存"
@@ -658,11 +726,20 @@ msgstr "最新优先"
 msgid "Next"
 msgstr "下一个"
 
+msgid "No"
+msgstr "否"
+
+msgid "No active job at this work center"
+msgstr "该工作中心没有活跃作业"
+
 msgid "No active maintenance dispatches"
 msgstr "无活跃的维护工单"
 
 msgid "No active operations"
 msgstr "无活跃工序"
+
+msgid "No active work centers at this location."
+msgstr "该位置没有活跃工作中心。"
 
 msgid "No assigned operations"
 msgstr "无已分配工序"
@@ -763,8 +840,17 @@ msgstr "无工作中心被阻塞"
 msgid "No work centers exist"
 msgstr "无工作中心"
 
+msgid "None"
+msgstr "无"
+
 msgid "Notes"
 msgstr "备注"
+
+msgid "Nothing running"
+msgstr "没有运行"
+
+msgid "Nothing scheduled at this work center"
+msgstr "该工作中心没有计划任务"
 
 msgid "OEE Impact"
 msgstr "OEE 影响"
@@ -785,6 +871,9 @@ msgstr "抱歉，您不应该看到此页面。此页面最终将成为首页。
 msgid "Open"
 msgstr "打开"
 
+msgid "Open a display on the screen mounted at the work center and leave it running. Each board refreshes on its own."
+msgstr "在安装在工作中心的屏幕上打开显示，然后让其运行。每个面板都会自动刷新。"
+
 msgid "Open an NCR for MRB disposition"
 msgstr "为 MRB 处置打开 NCR"
 
@@ -797,6 +886,9 @@ msgstr "工序"
 msgid "Operations ended"
 msgstr "工序已结束"
 
+msgid "Operator"
+msgstr "操作员"
+
 msgid "Operator Performed"
 msgstr "操作员执行"
 
@@ -805,6 +897,9 @@ msgstr "可选"
 
 msgid "Overall result"
 msgstr "总体结果"
+
+msgid "Overdue PMs?"
+msgstr "逾期的 PM？"
 
 msgid "Parameters"
 msgstr "参数"
@@ -857,6 +952,9 @@ msgstr "请在关闭前记录此工序的所有步骤。"
 msgid "Please select an item"
 msgstr "请选择一个物料"
 
+msgid "PM schedule lapsed"
+msgstr "PM 计划已过期"
+
 msgid "Prev"
 msgstr "上一个"
 
@@ -898,6 +996,9 @@ msgstr "数量"
 
 msgid "Quantity must be greater than 0"
 msgstr "数量必须大于 0"
+
+msgid "Queue empty"
+msgstr "队列为空"
 
 msgid "Reason for rework"
 msgstr "返工原因"
@@ -947,6 +1048,9 @@ msgstr "返工创建成功"
 
 msgid "Rework quantity"
 msgstr "返工数量"
+
+msgid "Running"
+msgstr "运行中"
 
 msgid "Sales Order"
 msgstr "销售订单"
@@ -1232,14 +1336,28 @@ msgstr "取消拣选"
 msgid "Unpick {0}"
 msgstr "取消拣选 {0}"
 
+msgid "Unplanned downtime"
+msgstr "非计划停机时间"
+
+#. placeholder {0}: board.unplannedCount.days
+msgid "Unplanned maintenance items, last {0} days"
+msgstr "过去 {0} 天的非计划维护项目"
+
 msgid "Unsaved changes"
 msgstr "未保存的更改"
+
+msgid "Up next"
+msgstr "下一个"
 
 msgid "Up to {maxAllocatable} unit(s) can be allocated; the rest is recorded without a posting."
 msgstr "最多可分配 {maxAllocatable} 个单位；其余的将被记录而不进行过账。"
 
 msgid "Update"
 msgstr "更新"
+
+#. placeholder {0}: formatClock(lastUpdated)
+msgid "Updated {0}"
+msgstr "更新于 {0}"
 
 msgid "Updated successfully"
 msgstr "更新成功"
@@ -1266,6 +1384,12 @@ msgstr "在制品"
 
 msgid "Work Center"
 msgstr "工作中心"
+
+msgid "Work Center Displays"
+msgstr "工作中心显示屏"
+
+msgid "Yes"
+msgstr "是"
 
 #. placeholder {0}: new Date(openClockEntry.clockIn).toLocaleString(locale)
 msgid "You clocked in at {0}. You can edit your clock-out time below or acknowledge that you're still working."

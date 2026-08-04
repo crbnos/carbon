@@ -2587,9 +2587,6 @@ msgstr "デフォルトのエクイティと留保利益勘定を構成する"
 msgid "Configure defaults for the quality dashboard."
 msgstr "品質ダッシュボードのデフォルトを設定します。"
 
-msgid "Configure how preventative maintenance dispatches are automatically generated from maintenance schedules."
-msgstr "予防保全ディスパッチが保全スケジュールから自動的に生成される方法を設定します。"
-
 msgid "Configure Item"
 msgstr "アイテムを構成"
 
@@ -3651,9 +3648,6 @@ msgstr "支払期日"
 
 msgid "Days from ordering a part to having it available; planning offsets demand backward by this much."
 msgstr "部品の注文から利用可能になるまでの日数; 計画はこの量だけ需要を後方にオフセットします。"
-
-msgid "Days in advance to generate dispatches"
-msgstr "事前に生成するディスパッチの日数"
 
 msgid "Days Off"
 msgstr "休日"
@@ -7519,9 +7513,6 @@ msgstr "保守経費 (デフォルト)"
 msgid "Maintenance Schedules"
 msgstr "メンテナンススケジュール"
 
-msgid "Maintenance Scheduling"
-msgstr "メンテナンススケジューリング"
-
 msgid "Maintenance Type"
 msgstr "メンテナンスタイプ"
 
@@ -8383,6 +8374,9 @@ msgstr "次の日付"
 msgid "Next Due"
 msgstr "次回期限"
 
+msgid "Next Due Date"
+msgstr "次の期限日"
+
 msgid "Next page"
 msgstr "次のページ"
 
@@ -8582,7 +8576,7 @@ msgid "No matches. Type to create one."
 msgstr "一致するものがありません。作成するには入力してください。"
 
 msgid "No matching bins"
-msgstr "マッチするビンがありません"
+msgstr "一致するビンがありません"
 
 msgid "No new notifications"
 msgstr "新しい通知はありません"
@@ -8811,7 +8805,7 @@ msgstr "メモ（オプション）"
 
 #. placeholder {0}: search.trim()
 msgid "Nothing at this location matches \"{0}\"."
-msgstr "この場所に「{0}」に一致するものはありません。"
+msgstr "この場所には\"{0}\"に一致するものはありません。"
 
 msgid "Nothing else at this location has stock to pull from."
 msgstr "この場所には他に引き出す在庫がありません。"

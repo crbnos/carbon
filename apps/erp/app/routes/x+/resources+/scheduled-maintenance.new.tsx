@@ -2,6 +2,7 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import { trigger } from "@carbon/jobs";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { redirect, useLoaderData, useNavigate } from "react-router";
 import {
@@ -63,6 +64,15 @@ export async function action({ request }: ActionFunctionArgs) {
         );
   }
 
+  // Generate this schedule's dispatches + next-due date now, so it appears on
+  // the maintenance displays immediately instead of after the next nightly run.
+  if (insertSchedule.data?.id) {
+    await trigger("generate-maintenance", {
+      companyId,
+      scheduleId: insertSchedule.data.id
+    });
+  }
+
   return modal
     ? insertSchedule
     : redirect(
@@ -81,6 +91,7 @@ export default function NewMaintenanceScheduleRoute() {
     frequency: "Weekly" as const,
     priority: "Medium" as const,
     estimatedDuration: undefined,
+    nextDueAt: undefined,
     active: true,
     // Day-of-week defaults (all days enabled by default)
     monday: true,

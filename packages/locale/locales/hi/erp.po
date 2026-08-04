@@ -2587,9 +2587,6 @@ msgstr "इक्विटी और प्रतिधारित आय ख�
 msgid "Configure defaults for the quality dashboard."
 msgstr "गुणवत्ता डैशबोर्ड के लिए डिफ़ॉल्ट कॉन्फ़िगर करें।"
 
-msgid "Configure how preventative maintenance dispatches are automatically generated from maintenance schedules."
-msgstr "रखरखाव शेड्यूल से निवारक रखरखाव डिस्पैच को स्वचालित रूप से कैसे उत्पन्न किया जाए, इसे कॉन्फ़िगर करें।"
-
 msgid "Configure Item"
 msgstr "आइटम कॉन्फ़िगर करें"
 
@@ -3651,9 +3648,6 @@ msgstr "देय दिन"
 
 msgid "Days from ordering a part to having it available; planning offsets demand backward by this much."
 msgstr "किसी हिस्से को ऑर्डर करने से लेकर इसके उपलब्ध होने तक के दिन; योजना इस राशि से पिछड़े की ओर मांग को ऑफसेट करती है।"
-
-msgid "Days in advance to generate dispatches"
-msgstr "डिस्पैच जेनरेट करने के लिए दिनों में अग्रिम"
 
 msgid "Days Off"
 msgstr "दिन बंद"
@@ -7519,9 +7513,6 @@ msgstr "रखरखाव व्यय (डिफ़ॉल्ट)"
 msgid "Maintenance Schedules"
 msgstr "रखरखाव शेड्यूल"
 
-msgid "Maintenance Scheduling"
-msgstr "रखरखाव शेड्यूलिंग"
-
 msgid "Maintenance Type"
 msgstr "रखरखाव प्रकार"
 
@@ -8383,6 +8374,9 @@ msgstr "अगली तारीख"
 msgid "Next Due"
 msgstr "अगला देय"
 
+msgid "Next Due Date"
+msgstr "अगली देय तारीख"
+
 msgid "Next page"
 msgstr "अगला पृष्ठ"
 
@@ -8582,7 +8576,7 @@ msgid "No matches. Type to create one."
 msgstr "कोई मेल नहीं। एक बनाने के लिए टाइप करें।"
 
 msgid "No matching bins"
-msgstr "कोई मेल खाने वाले बिन नहीं"
+msgstr "कोई मिलान बिन नहीं"
 
 msgid "No new notifications"
 msgstr "कोई नई सूचनाएं नहीं"
@@ -8811,7 +8805,7 @@ msgstr "नोट्स (वैकल्पिक)"
 
 #. placeholder {0}: search.trim()
 msgid "Nothing at this location matches \"{0}\"."
-msgstr "इस स्थान पर \"{0}\" से कुछ भी मेल नहीं खाता।"
+msgstr "इस स्थान पर कुछ भी \"{0}\" से मेल नहीं खाता।"
 
 msgid "Nothing else at this location has stock to pull from."
 msgstr "इस स्थान पर कोई अन्य स्टॉक नहीं है जहां से खींचा जा सकता है।"

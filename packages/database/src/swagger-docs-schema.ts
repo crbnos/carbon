@@ -82915,12 +82915,6 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.supplierQuoteNotificationGroup"
           },
           {
-            $ref: "#/parameters/rowFilter.companySettings.maintenanceGenerateInAdvance"
-          },
-          {
-            $ref: "#/parameters/rowFilter.companySettings.maintenanceAdvanceDays"
-          },
-          {
             $ref: "#/parameters/rowFilter.companySettings.maintenanceDispatchNotificationGroup"
           },
           {
@@ -83115,12 +83109,6 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.supplierQuoteNotificationGroup"
           },
           {
-            $ref: "#/parameters/rowFilter.companySettings.maintenanceGenerateInAdvance"
-          },
-          {
-            $ref: "#/parameters/rowFilter.companySettings.maintenanceAdvanceDays"
-          },
-          {
             $ref: "#/parameters/rowFilter.companySettings.maintenanceDispatchNotificationGroup"
           },
           {
@@ -83267,12 +83255,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.supplierQuoteNotificationGroup"
-          },
-          {
-            $ref: "#/parameters/rowFilter.companySettings.maintenanceGenerateInAdvance"
-          },
-          {
-            $ref: "#/parameters/rowFilter.companySettings.maintenanceAdvanceDays"
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.maintenanceDispatchNotificationGroup"
@@ -134386,8 +134368,6 @@ export default {
         "gaugeCalibrationExpiredNotificationGroup",
         "purchasePriceUpdateTiming",
         "supplierQuoteNotificationGroup",
-        "maintenanceGenerateInAdvance",
-        "maintenanceAdvanceDays",
         "qualityIssueTarget",
         "consoleEnabled",
         "timeCardEnabled",
@@ -134496,16 +134476,6 @@ export default {
             type: "string"
           },
           type: "array"
-        },
-        maintenanceGenerateInAdvance: {
-          default: true,
-          format: "boolean",
-          type: "boolean"
-        },
-        maintenanceAdvanceDays: {
-          default: 3,
-          format: "integer",
-          type: "integer"
         },
         maintenanceDispatchNotificationGroup: {
           format: "text[]",
@@ -179417,18 +179387,6 @@ export default {
     },
     "rowFilter.companySettings.supplierQuoteNotificationGroup": {
       name: "supplierQuoteNotificationGroup",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.companySettings.maintenanceGenerateInAdvance": {
-      name: "maintenanceGenerateInAdvance",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.companySettings.maintenanceAdvanceDays": {
-      name: "maintenanceAdvanceDays",
       required: false,
       in: "query",
       type: "string"

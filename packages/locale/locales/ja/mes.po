@@ -38,6 +38,14 @@ msgstr "{0} / {1} 完了"
 msgid "{0} of {1} completed"
 msgstr "{0} / {1} 完了済み"
 
+#. placeholder {0}: rows.length
+msgid "{0} queued"
+msgstr "{0} 待機中"
+
+#. placeholder {0}: activeWork.length
+msgid "{0} running"
+msgstr "{0} 実行中"
+
 #. placeholder {0}: item.quantityScrapped
 msgid "{0} Scrapped"
 msgstr "{0} スクラップ"
@@ -47,6 +55,9 @@ msgstr "{completions}個の合格ユニットが完了します。"
 
 msgid "{fails} sampled failure(s) are recorded and will NOT be completed — resolve them from the actions menu."
 msgstr "{fails}件のサンプル不良が記録されており、完了されません — アクションメニューから対応してください。"
+
+msgid "+{overflow} more"
+msgstr "+{overflow} その他"
 
 msgid "About"
 msgstr "バージョン情報"
@@ -92,6 +103,9 @@ msgstr "スペアパーツを追加"
 
 msgid "All"
 msgstr "すべて"
+
+msgid "All clear"
+msgstr "異常なし"
 
 msgid "All rework"
 msgstr "すべて再加工"
@@ -160,6 +174,9 @@ msgstr "ご心配なく。パスワード忘却フローを使用して新しい
 
 msgid "By signing in, you agree to the <0>Terms of Service</0> and <1>Privacy Policy.</1>"
 msgstr "サインインすることにより、<0>利用規約</0>および<1>プライバシーポリシー</1>に同意したものとみなされます。"
+
+msgid "By?"
+msgstr "誰が?"
 
 msgid "Cancel"
 msgstr "キャンセル"
@@ -239,6 +256,9 @@ msgstr "完了済みを完了"
 msgid "Completed"
 msgstr "完了済み"
 
+msgid "Connecting"
+msgstr "接続中"
+
 msgid "Console"
 msgstr "コンソール"
 
@@ -247,6 +267,10 @@ msgstr "コンソールモード"
 
 msgid "Consumed expired"
 msgstr "消費期限切れ"
+
+#. placeholder {0}: board.unplannedCost.days
+msgid "Cost of unplanned maintenance, last {0} days"
+msgstr "計画外メンテナンスのコスト（過去{0}日間）"
 
 #. placeholder {0}: search.trim() === "" ? (createLabel ?? label) : search
 #. placeholder {0}: search.trim() === "" ? label : search
@@ -261,6 +285,9 @@ msgstr "品質問題を作成"
 
 msgid "Create Rework"
 msgstr "リワーク作成"
+
+msgid "Current work"
+msgstr "現在の作業"
 
 msgid "Customer"
 msgstr "顧客"
@@ -308,8 +335,21 @@ msgstr "ディスパッチが見つかりません"
 msgid "Display"
 msgstr "表示"
 
+msgid "Displays"
+msgstr "表示"
+
 msgid "Down"
 msgstr "停止"
+
+msgid "Down for maintenance"
+msgstr "メンテナンスのため停止中"
+
+#. placeholder {0}: workCenter.blockingDispatchReadableId
+msgid "Down for maintenance · {0}"
+msgstr "メンテナンスのため停止中 · {0}"
+
+msgid "Down for planned maintenance"
+msgstr "計画的メンテナンスのため停止中"
 
 msgid "Download"
 msgstr "ダウンロード"
@@ -339,6 +379,13 @@ msgstr "期限 {0}"
 msgid "Due Date"
 msgstr "納期"
 
+#. placeholder {0}: board.dueSoon.days
+msgid "Due in the next {0} days?"
+msgstr "次の{0}日以内に納期があるか?"
+
+msgid "Due today?"
+msgstr "本日が納期か?"
+
 msgid "Duplicate batch number"
 msgstr "バッチ番号が重複しています"
 
@@ -350,6 +397,9 @@ msgstr "時間"
 
 msgid "Edit"
 msgstr "編集"
+
+msgid "Elapsed"
+msgstr "経過時間"
 
 msgid "Email Address"
 msgstr "メールアドレス"
@@ -437,6 +487,9 @@ msgstr "ジョブおよび案件明細に関連するファイル。"
 msgid "Filter"
 msgstr "フィルター"
 
+msgid "Filter by location"
+msgstr "ロケーションで絞り込む"
+
 msgid "Finish"
 msgstr "完了"
 
@@ -459,6 +512,9 @@ msgstr "操作に戻る"
 msgid "How many were actually picked?"
 msgstr "実際にはいくつ選ばれましたか？"
 
+msgid "How many?"
+msgstr "いくつ?"
+
 msgid "I understand and want to complete without issuing"
 msgstr "理解した上で払出なしで完了します"
 
@@ -467,6 +523,9 @@ msgstr "まだ作業中です"
 
 msgid "Ideas, suggestions or problems?"
 msgstr "アイデア、提案、または問題はありますか？"
+
+msgid "Idle for"
+msgstr "待機時間"
 
 msgid "Impact"
 msgstr "影響"
@@ -537,6 +596,9 @@ msgstr "キット"
 msgid "Labor"
 msgstr "作業"
 
+msgid "Last completed"
+msgstr "最後に完了"
+
 msgid "Learn more"
 msgstr "詳細情報"
 
@@ -588,11 +650,17 @@ msgstr "ロット"
 msgid "Machine"
 msgstr "機械"
 
+msgid "Machine down for maintenance now?"
+msgstr "マシンは今メンテナンスのため停止しているか?"
+
 msgid "Maintenance"
 msgstr "メンテナンス"
 
 msgid "Maintenance Completed"
 msgstr "メンテナンス完了"
+
+msgid "Maintenance overdue"
+msgstr "メンテナンス期限超過"
 
 msgid "Manually add items to inventory"
 msgstr "手動で在庫に品目を追加"
@@ -658,11 +726,20 @@ msgstr "最新順"
 msgid "Next"
 msgstr "次へ"
 
+msgid "No"
+msgstr "いいえ"
+
+msgid "No active job at this work center"
+msgstr "このワークセンターにアクティブなジョブはありません"
+
 msgid "No active maintenance dispatches"
 msgstr "アクティブなメンテナンスディスパッチはありません"
 
 msgid "No active operations"
 msgstr "アクティブな工程はありません"
+
+msgid "No active work centers at this location."
+msgstr "この場所にはアクティブなワークセンターがありません。"
 
 msgid "No assigned operations"
 msgstr "割り当てられた工程はありません"
@@ -763,8 +840,17 @@ msgstr "ブロックされているワークセンターはありません"
 msgid "No work centers exist"
 msgstr "ワークセンターがありません"
 
+msgid "None"
+msgstr "なし"
+
 msgid "Notes"
 msgstr "備考"
+
+msgid "Nothing running"
+msgstr "稼働中の作業はありません"
+
+msgid "Nothing scheduled at this work center"
+msgstr "このワークセンターにはスケジュールされたものはありません"
 
 msgid "OEE Impact"
 msgstr "OEE影響度"
@@ -785,6 +871,9 @@ msgstr "このページは表示されないはずです。最終的にはラン
 msgid "Open"
 msgstr "未対応"
 
+msgid "Open a display on the screen mounted at the work center and leave it running. Each board refreshes on its own."
+msgstr "ワークセンターに取り付けられた画面にディスプレイを開き、実行し続けます。各ボードは自動的に更新されます。"
+
 msgid "Open an NCR for MRB disposition"
 msgstr "MRB処分用のNCRを開く"
 
@@ -797,6 +886,9 @@ msgstr "工程"
 msgid "Operations ended"
 msgstr "工程が終了しました"
 
+msgid "Operator"
+msgstr "オペレーター"
+
 msgid "Operator Performed"
 msgstr "オペレーター実施"
 
@@ -805,6 +897,9 @@ msgstr "オプション"
 
 msgid "Overall result"
 msgstr "全体的な結果"
+
+msgid "Overdue PMs?"
+msgstr "期限超過のPM?"
 
 msgid "Parameters"
 msgstr "パラメーター"
@@ -857,6 +952,9 @@ msgstr "クローズする前にこの工程のすべてのステップを記録
 msgid "Please select an item"
 msgstr "品目を選択してください"
 
+msgid "PM schedule lapsed"
+msgstr "PM スケジュール失効"
+
 msgid "Prev"
 msgstr "前へ"
 
@@ -898,6 +996,9 @@ msgstr "数量"
 
 msgid "Quantity must be greater than 0"
 msgstr "数量は0より大きい値を入力してください"
+
+msgid "Queue empty"
+msgstr "キューが空です"
 
 msgid "Reason for rework"
 msgstr "リワークの理由"
@@ -947,6 +1048,9 @@ msgstr "リワーク作成に成功しました"
 
 msgid "Rework quantity"
 msgstr "リワーク数量"
+
+msgid "Running"
+msgstr "実行中"
 
 msgid "Sales Order"
 msgstr "受注"
@@ -1232,14 +1336,28 @@ msgstr "ピッキング解除"
 msgid "Unpick {0}"
 msgstr "ピック解除 {0}"
 
+msgid "Unplanned downtime"
+msgstr "計画外のダウンタイム"
+
+#. placeholder {0}: board.unplannedCount.days
+msgid "Unplanned maintenance items, last {0} days"
+msgstr "計画外メンテナンス項目（過去{0}日間）"
+
 msgid "Unsaved changes"
 msgstr "未保存の変更"
+
+msgid "Up next"
+msgstr "次は"
 
 msgid "Up to {maxAllocatable} unit(s) can be allocated; the rest is recorded without a posting."
 msgstr "最大 {maxAllocatable} 個のユニットを割り当てることができます。残りは転記なしで記録されます。"
 
 msgid "Update"
 msgstr "更新"
+
+#. placeholder {0}: formatClock(lastUpdated)
+msgid "Updated {0}"
+msgstr "{0} に更新"
 
 msgid "Updated successfully"
 msgstr "正常に更新されました"
@@ -1266,6 +1384,12 @@ msgstr "仕掛品"
 
 msgid "Work Center"
 msgstr "ワークセンター"
+
+msgid "Work Center Displays"
+msgstr "ワークセンター ディスプレイ"
+
+msgid "Yes"
+msgstr "はい"
 
 #. placeholder {0}: new Date(openClockEntry.clockIn).toLocaleString(locale)
 msgid "You clocked in at {0}. You can edit your clock-out time below or acknowledge that you're still working."

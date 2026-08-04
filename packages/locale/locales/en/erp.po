@@ -2587,9 +2587,6 @@ msgstr "Configure default equity and retained earnings accounts"
 msgid "Configure defaults for the quality dashboard."
 msgstr "Configure defaults for the quality dashboard."
 
-msgid "Configure how preventative maintenance dispatches are automatically generated from maintenance schedules."
-msgstr "Configure how preventative maintenance dispatches are automatically generated from maintenance schedules."
-
 msgid "Configure Item"
 msgstr "Configure Item"
 
@@ -3651,9 +3648,6 @@ msgstr "Days Due"
 
 msgid "Days from ordering a part to having it available; planning offsets demand backward by this much."
 msgstr "Days from ordering a part to having it available; planning offsets demand backward by this much."
-
-msgid "Days in advance to generate dispatches"
-msgstr "Days in advance to generate dispatches"
 
 msgid "Days Off"
 msgstr "Days Off"
@@ -7519,9 +7513,6 @@ msgstr "Maintenance Expense (default)"
 msgid "Maintenance Schedules"
 msgstr "Maintenance Schedules"
 
-msgid "Maintenance Scheduling"
-msgstr "Maintenance Scheduling"
-
 msgid "Maintenance Type"
 msgstr "Maintenance Type"
 
@@ -8382,6 +8373,9 @@ msgstr "Next Date"
 
 msgid "Next Due"
 msgstr "Next Due"
+
+msgid "Next Due Date"
+msgstr "Next Due Date"
 
 msgid "Next page"
 msgstr "Next page"
