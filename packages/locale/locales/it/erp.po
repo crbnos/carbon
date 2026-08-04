@@ -8576,7 +8576,6 @@ msgid "No matches. Type to create one."
 msgstr "Nessuna corrispondenza. Digita per crearne uno."
 
 msgid "No matching bins"
-msgstr "Nessun bin corrispondente"
 msgstr "Nessun contenitore corrisponde"
 
 msgid "No new notifications"

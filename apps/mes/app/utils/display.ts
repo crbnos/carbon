@@ -8,7 +8,7 @@
  * routes stay thin and the thresholds are unit-testable without a database.
  */
 
-import { fromDate } from "@internationalized/date";
+import { fromDate, getLocalTimeZone } from "@internationalized/date";
 
 export type DisplayStatus = "ok" | "alert";
 
@@ -160,28 +160,18 @@ export function getWorkDisplayState(args: {
   return { status: reasons.length > 0 ? "alert" : "ok", reasons };
 }
 
-function startOfDay(now: Date, timeZone?: string): number {
-  if (timeZone) {
-    return fromDate(now, timeZone)
-      .set({ hour: 0, minute: 0, second: 0, millisecond: 0 })
-      .toDate()
-      .getTime();
-  }
-  const d = new Date(now);
-  d.setHours(0, 0, 0, 0);
-  return d.getTime();
+function startOfDay(now: Date, timeZone: string = getLocalTimeZone()): number {
+  return fromDate(now, timeZone)
+    .set({ hour: 0, minute: 0, second: 0, millisecond: 0 })
+    .toDate()
+    .getTime();
 }
 
-function endOfDay(now: Date, timeZone?: string): number {
-  if (timeZone) {
-    return fromDate(now, timeZone)
-      .set({ hour: 23, minute: 59, second: 59, millisecond: 999 })
-      .toDate()
-      .getTime();
-  }
-  const d = new Date(now);
-  d.setHours(23, 59, 59, 999);
-  return d.getTime();
+function endOfDay(now: Date, timeZone: string = getLocalTimeZone()): number {
+  return fromDate(now, timeZone)
+    .set({ hour: 23, minute: 59, second: 59, millisecond: 999 })
+    .toDate()
+    .getTime();
 }
 
 function daysAgo(now: Date, days: number): number {

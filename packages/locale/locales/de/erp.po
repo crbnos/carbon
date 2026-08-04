@@ -8576,7 +8576,6 @@ msgid "No matches. Type to create one."
 msgstr "Keine Übereinstimmungen. Geben Sie ein, um eine zu erstellen."
 
 msgid "No matching bins"
-msgstr "Keine übereinstimmenden Behälter"
 msgstr "Keine übereinstimmenden Lagerfächer"
 
 msgid "No new notifications"
@@ -8806,7 +8805,6 @@ msgstr "Notizen (optional)"
 
 #. placeholder {0}: search.trim()
 msgid "Nothing at this location matches \"{0}\"."
-msgstr "Nichts an diesem Ort entspricht \"{0}\"."
 msgstr "Nichts an diesem Ort stimmt mit \"{0}\" überein."
 
 msgid "Nothing else at this location has stock to pull from."

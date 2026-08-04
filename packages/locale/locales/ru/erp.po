@@ -8805,7 +8805,6 @@ msgstr "Примечания (опционально)"
 
 #. placeholder {0}: search.trim()
 msgid "Nothing at this location matches \"{0}\"."
-msgstr "На этом месте нет совпадений с \"{0}\"."
 msgstr "В этом месте нет ничего, соответствующего \"{0}\"."
 
 msgid "Nothing else at this location has stock to pull from."

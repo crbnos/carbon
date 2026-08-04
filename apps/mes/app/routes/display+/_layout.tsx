@@ -22,23 +22,19 @@ import { userMiddleware } from "~/middleware/user";
 export const middleware: MiddlewareFunction[] = [userMiddleware];
 
 export async function loader({ request }: LoaderFunctionArgs) {
+  // `verify: false` skips the `auth.getUser` round-trip on every load. The
+  // display boards revalidate their own data every 30s, which re-runs this
+  // loader too, so verifying here would hit the auth server once per screen per
+  // tick for a board that hangs on the wall for months. `requireAuthSession`
+  // still refreshes the token when it is expiring, and `CarbonProvider` (below)
+  // renews it client-side — so the cheap revalidation keeps `expiresAt` fresh
+  // and the session refreshes silently rather than reloading the page.
   const { accessToken, expiresAt, expiresIn } = await requireAuthSession(
     request,
-    { verify: true }
+    { verify: false }
   );
 
   return { session: { accessToken, expiresAt, expiresIn } };
-}
-
-/**
- * The display boards revalidate their own data every 30s. Without this, that
- * loop would re-run this layout loader too — and `verify: true` calls
- * `auth.getUser` on every run, hitting the auth server once per screen per tick
- * for as long as a board hangs on the wall. The session only needs to load
- * once; `CarbonProvider` owns keeping the token fresh from there.
- */
-export function shouldRevalidate() {
-  return false;
 }
 
 export default function DisplayLayout() {

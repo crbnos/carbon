@@ -1,14 +1,16 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { getLogger } from "@carbon/logger";
 import { NotificationEvent } from "@carbon/notifications";
-import { getLocalTimeZone, now } from "@internationalized/date";
+import {
+  getDayOfWeek,
+  now,
+  parseAbsolute,
+  toCalendarDate,
+  type ZonedDateTime
+} from "@internationalized/date";
 import { inngest } from "../../client";
 
 const log = getLogger("jobs", "dispatch");
-
-// How many days ahead we pre-create preventive maintenance dispatches and
-// advance each schedule's nextDueAt. Standardized for all companies.
-const MAINTENANCE_ADVANCE_DAYS = 7;
 
 // Day of week mapping (0 = Sunday, 1 = Monday, etc.)
 const dayOfWeekFields = [
@@ -43,22 +45,25 @@ interface MaintenanceSchedule {
 // Check if a date is enabled for the schedule based on day-of-week settings
 function isDayEnabledForSchedule(
   schedule: MaintenanceSchedule,
-  targetDate: Date
+  targetDate: ZonedDateTime
 ): boolean {
   // Only check day-of-week for Daily frequency
   if (schedule.frequency !== "Daily") {
     return true;
   }
 
-  const dayOfWeek = targetDate.getDay(); // 0 = Sunday, 1 = Monday, etc.
+  // en-US so the returned index is 0 = Sunday … 6 = Saturday, matching
+  // dayOfWeekFields (independent of the runtime locale's first day of week).
+  const dayOfWeek = getDayOfWeek(targetDate, "en-US");
   const dayField = dayOfWeekFields[dayOfWeek]!;
   return schedule[dayField] === true;
 }
 
-// Check if a date is a holiday for the company
-async function isHoliday(companyId: string, date: Date): Promise<boolean> {
-  const dateString = date.toISOString().split("T")[0]!; // YYYY-MM-DD format
-
+// Check if a date (YYYY-MM-DD) is a holiday for the company
+async function isHoliday(
+  companyId: string,
+  dateString: string
+): Promise<boolean> {
   const serviceRole = getCarbonServiceRole();
   const { data: holiday, error } = await serviceRole
     .from("holiday")
@@ -76,17 +81,22 @@ async function isHoliday(companyId: string, date: Date): Promise<boolean> {
 }
 
 /**
- * Create every preventive-maintenance dispatch for one schedule that falls
- * inside the advance window, then advance the schedule's `nextDueAt` past it.
+ * Catch up a schedule's preventive-maintenance dispatches: create one for every
+ * occurrence that is already due (`nextDueAt` on or before now), then advance
+ * `nextDueAt` to the next future occurrence.
  *
- * A `nextDueAt` of `null` means the schedule has never been generated (freshly
- * created), so generation starts from now. This is shared by the nightly cron
- * (which fans it out over every due schedule) and the on-create/on-update
- * trigger (which runs it for a single schedule immediately, so the schedule is
- * live on the maintenance displays right away instead of after the next cron).
+ * Catch-up only — it never pre-creates a future occurrence or advances a future
+ * `nextDueAt`. A schedule whose next date is still in the future is left exactly
+ * as-is, so saving a schedule (or setting its Next Due Date) does not push the
+ * date around. Shared by the nightly cron (fans out over every due schedule) and
+ * the on-create/on-update trigger (runs for one schedule immediately).
  *
- * Idempotent within the window: a second run finds `nextDueAt` already past
- * `futureDate`, creates nothing, and re-writes the same value.
+ * A `nextDueAt` of `null` (never generated) seeds one interval out, so a
+ * brand-new schedule gets a future due date for the displays without creating an
+ * immediately-overdue dispatch.
+ *
+ * Idempotent: a run whose `nextDueAt` is already in the future creates nothing
+ * and re-writes the same value.
  */
 export async function generateDispatchesForSchedule(args: {
   serviceRole: ReturnType<typeof getCarbonServiceRole>;
@@ -95,34 +105,28 @@ export async function generateDispatchesForSchedule(args: {
   currentDateTime: ReturnType<typeof now>;
 }): Promise<number> {
   const { serviceRole, schedule, companyId, currentDateTime } = args;
-  const futureDate = currentDateTime.add({ days: MAINTENANCE_ADVANCE_DAYS });
-  const horizon = new Date(futureDate.toAbsoluteString());
+  const timeZone = currentDateTime.timeZone;
 
   let dispatchesCreated = 0;
 
-  // Track current nextDueAt for this schedule (advanced as we create dispatches).
-  // A never-generated schedule (nextDueAt null) starts one interval out rather
-  // than "now": seeding at the current instant would create a dispatch whose
-  // planned start is immediately in the past, so a brand-new schedule would show
-  // as overdue the moment it is created.
   let currentNextDueAt = schedule.nextDueAt
-    ? new Date(schedule.nextDueAt)
-    : advanceByFrequency(new Date(), schedule.frequency);
+    ? parseAbsolute(schedule.nextDueAt, timeZone)
+    : advanceByFrequency(currentDateTime, schedule.frequency);
 
-  // Loop to create dispatches for all dates within the advance window
-  while (currentNextDueAt <= horizon) {
+  // Create dispatches only for occurrences that are already due (<= now).
+  while (currentNextDueAt.compare(currentDateTime) <= 0) {
     const targetDate = currentNextDueAt;
+    const targetDateString = toCalendarDate(targetDate).toString();
 
     // For Daily schedules, check if this day of week is enabled
     if (!isDayEnabledForSchedule(schedule, targetDate)) {
       log.info("Skipping schedule - day of week not enabled", {
         schedule: schedule.name,
-        date: targetDate.toISOString().split("T")[0]
+        date: targetDateString
       });
       // Advance to next day for daily schedules
       if (schedule.frequency === "Daily") {
-        currentNextDueAt = new Date(currentNextDueAt);
-        currentNextDueAt.setDate(currentNextDueAt.getDate() + 1);
+        currentNextDueAt = currentNextDueAt.add({ days: 1 });
         continue;
       }
       break;
@@ -130,11 +134,11 @@ export async function generateDispatchesForSchedule(args: {
 
     // Check if this date is a holiday and skipHolidays is enabled
     if (schedule.skipHolidays) {
-      const isHolidayDate = await isHoliday(companyId, targetDate);
+      const isHolidayDate = await isHoliday(companyId, targetDateString);
       if (isHolidayDate) {
         log.info("Skipping schedule - holiday", {
           schedule: schedule.name,
-          date: targetDate.toISOString().split("T")[0]
+          date: targetDateString
         });
         // Advance to next occurrence based on frequency
         currentNextDueAt = advanceByFrequency(
@@ -150,17 +154,25 @@ export async function generateDispatchesForSchedule(args: {
     // nextDueAt and creates dispatches, so overlapping runs could insert two
     // dispatches for the same occurrence. Skip the date if one already exists
     // for this schedule that day (still advancing nextDueAt past it).
-    const dayStart = new Date(targetDate);
-    dayStart.setHours(0, 0, 0, 0);
-    const dayEnd = new Date(targetDate);
-    dayEnd.setHours(23, 59, 59, 999);
+    const dayStart = targetDate.set({
+      hour: 0,
+      minute: 0,
+      second: 0,
+      millisecond: 0
+    });
+    const dayEnd = targetDate.set({
+      hour: 23,
+      minute: 59,
+      second: 59,
+      millisecond: 999
+    });
     const { data: existingForDay } = await serviceRole
       .from("maintenanceDispatch")
       .select("id")
       .eq("companyId", companyId)
       .eq("maintenanceScheduleId", schedule.id)
-      .gte("plannedStartTime", dayStart.toISOString())
-      .lte("plannedStartTime", dayEnd.toISOString())
+      .gte("plannedStartTime", dayStart.toAbsoluteString())
+      .lte("plannedStartTime", dayEnd.toAbsoluteString())
       .limit(1)
       .maybeSingle();
     if (existingForDay) {
@@ -205,7 +217,12 @@ export async function generateDispatchesForSchedule(args: {
         locationId: schedule.locationId,
         maintenanceScheduleId: schedule.id,
         procedureId: schedule.procedureId,
-        plannedStartTime: targetDate.toISOString(),
+        // A scheduled PM is a due *date*, not a time. Anchor it to noon UTC so
+        // it renders as the intended day in every timezone — midnight UTC would
+        // show a day earlier for anyone behind UTC.
+        plannedStartTime: targetDate
+          .set({ hour: 12, minute: 0, second: 0, millisecond: 0 })
+          .toAbsoluteString(),
         companyId,
         createdBy: "system"
       })
@@ -269,7 +286,7 @@ export async function generateDispatchesForSchedule(args: {
     log.info("Created dispatch for schedule", {
       dispatchId: sequenceData,
       schedule: schedule.name,
-      date: targetDate.toISOString().split("T")[0]
+      date: targetDateString
     });
 
     // Get employees assigned to this work center to notify them
@@ -307,34 +324,33 @@ export async function generateDispatchesForSchedule(args: {
     .from("maintenanceSchedule")
     .update({
       lastGeneratedAt: currentDateTime.toAbsoluteString(),
-      nextDueAt: currentNextDueAt.toISOString()
+      nextDueAt: currentNextDueAt.toAbsoluteString()
     })
     .eq("id", schedule.id);
 
   return dispatchesCreated;
 }
 
-// Advance a date to the next occurrence for a given frequency.
-function advanceByFrequency(from: Date, frequency: string): Date {
-  const next = new Date(from);
+// Advance a date to the next occurrence for a given frequency. `add` clamps
+// month-ends (e.g. Jan 31 + 1 month → Feb 28), unlike a raw Date.
+function advanceByFrequency(
+  from: ZonedDateTime,
+  frequency: string
+): ZonedDateTime {
   switch (frequency) {
     case "Daily":
-      next.setDate(next.getDate() + 1);
-      break;
+      return from.add({ days: 1 });
     case "Weekly":
-      next.setDate(next.getDate() + 7);
-      break;
+      return from.add({ days: 7 });
     case "Monthly":
-      next.setMonth(next.getMonth() + 1);
-      break;
+      return from.add({ months: 1 });
     case "Quarterly":
-      next.setMonth(next.getMonth() + 3);
-      break;
+      return from.add({ months: 3 });
     case "Annual":
-      next.setFullYear(next.getFullYear() + 1);
-      break;
+      return from.add({ years: 1 });
+    default:
+      return from;
   }
-  return next;
 }
 
 export const dispatchFunction = inngest.createFunction(
@@ -344,7 +360,7 @@ export const dispatchFunction = inngest.createFunction(
     const serviceRole = getCarbonServiceRole();
 
     return await step.run("generate-maintenance-dispatches", async () => {
-      const currentDateTime = now(getLocalTimeZone());
+      const currentDateTime = now("UTC");
       logger.info("Starting maintenance dispatch generation", {
         startedAt: currentDateTime.toString()
       });
@@ -369,10 +385,8 @@ export const dispatchFunction = inngest.createFunction(
         let totalDispatchesCreated = 0;
 
         for (const settings of companiesWithSettings ?? []) {
-          const advanceDays = MAINTENANCE_ADVANCE_DAYS;
-          const futureDate = currentDateTime.add({ days: advanceDays });
-
-          // Get active schedules that are due
+          // Active schedules that are already due (or never generated).
+          // Generation is catch-up only, so future-dated schedules are skipped.
           const { data: dueSchedules, error: schedulesError } =
             await serviceRole
               .from("maintenanceSchedule")
@@ -380,7 +394,7 @@ export const dispatchFunction = inngest.createFunction(
               .eq("companyId", settings.id)
               .eq("active", true)
               .or(
-                `nextDueAt.is.null,nextDueAt.lte.${futureDate.toAbsoluteString()}`
+                `nextDueAt.is.null,nextDueAt.lte.${currentDateTime.toAbsoluteString()}`
               );
 
           if (schedulesError) {
@@ -440,7 +454,7 @@ export const generateMaintenanceForScheduleFunction = inngest.createFunction(
 
     return await step.run("generate-schedule-dispatches", async () => {
       const serviceRole = getCarbonServiceRole();
-      const currentDateTime = now(getLocalTimeZone());
+      const currentDateTime = now("UTC");
 
       const { data: schedule, error } = await serviceRole
         .from("maintenanceSchedule")
