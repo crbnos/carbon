@@ -138,6 +138,7 @@ export function parseOrderfulWebhook(body: unknown): ParsedEdiWebhook | null {
     kind: "transaction",
     externalId: tx.transactionId,
     documentType,
+    partnerExternalId: tx.partnerId,
     payload: tx.content ? toCanonicalOrder(tx).payload : undefined
   };
 }

@@ -110,6 +110,7 @@ export type ParsedEdiWebhook =
       kind: "transaction";
       externalId: string;
       documentType: EdiDocumentType;
+      partnerExternalId?: string; // provider partnership id → ediTradingPartner.externalId
       payload?: EdiOrderPayload; // present when the webhook embeds the full transaction
     }
   | {

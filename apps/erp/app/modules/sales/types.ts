@@ -8,6 +8,9 @@ import type {
   getCustomerStatuses,
   getCustomers,
   getCustomerTypes,
+  getEdiDocument,
+  getEdiDocuments,
+  getEdiTradingPartner,
   getNoQuoteReasons,
   getOpportunity,
   getPricingRule,
@@ -30,6 +33,19 @@ import type {
   getSalesRFQs,
   priceSourceTypes
 } from "./sales.service";
+
+// EDI types
+export type EdiTradingPartner = NonNullable<
+  Awaited<ReturnType<typeof getEdiTradingPartner>>["data"]
+>;
+
+export type EdiDocument = NonNullable<
+  Awaited<ReturnType<typeof getEdiDocument>>["data"]
+>;
+
+export type EdiDocumentListItem = NonNullable<
+  Awaited<ReturnType<typeof getEdiDocuments>>["data"]
+>[number];
 
 // Pricing types
 export type MatchedRule = {

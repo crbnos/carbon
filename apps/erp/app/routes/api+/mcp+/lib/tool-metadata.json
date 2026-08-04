@@ -1,6 +1,6 @@
 {
-  "generated": "2026-08-04T14:07:12.782Z",
-  "totalTools": 1411,
+  "generated": "2026-08-04T17:17:10.846Z",
+  "totalTools": 1425,
   "modules": 15,
   "tools": [
     {
@@ -38807,6 +38807,438 @@
         "required": [
           "id",
           "sortOrder"
+        ]
+      }
+    },
+    {
+      "name": "sales_getEdiTradingPartner",
+      "module": "sales",
+      "classification": "READ",
+      "description": "get edi trading partner",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "customerId",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "customerId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "customerId"
+        ]
+      }
+    },
+    {
+      "name": "sales_getEdiTradingPartners",
+      "module": "sales",
+      "classification": "READ",
+      "description": "get edi trading partners",
+      "paramCount": 3,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "args": {
+            "type": "object",
+            "properties": {
+              "limit": {
+                "type": "integer",
+                "default": 100
+              },
+              "offset": {
+                "type": "integer",
+                "default": 0
+              },
+              "search": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "sales_getEdiDocuments",
+      "module": "sales",
+      "classification": "READ",
+      "description": "get edi documents",
+      "paramCount": 5,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "args": {
+            "type": "object",
+            "properties": {
+              "limit": {
+                "type": "integer",
+                "default": 100
+              },
+              "offset": {
+                "type": "integer",
+                "default": 0
+              },
+              "search": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "status": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "type": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "sales_getEdiDocument",
+      "module": "sales",
+      "classification": "READ",
+      "description": "get edi document",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "id",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      }
+    },
+    {
+      "name": "sales_upsertEdiTradingPartner",
+      "module": "sales",
+      "classification": "WRITE",
+      "description": "upsert edi trading partner",
+      "paramCount": 6,
+      "serviceParams": [
+        "client",
+        "partner"
+      ],
+      "injectAuth": [
+        "companyId",
+        "createdBy",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "customerId": {
+            "type": "string"
+          },
+          "externalId": {
+            "type": "string"
+          },
+          "active": {
+            "type": "string"
+          },
+          "releaseMode": {
+            "type": "string"
+          },
+          "priceTolerancePercent": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "customerId",
+          "active",
+          "releaseMode"
+        ]
+      }
+    },
+    {
+      "name": "sales_upsertEdiTradingPartnerDocuments",
+      "module": "sales",
+      "classification": "WRITE",
+      "description": "upsert edi trading partner documents",
+      "paramCount": 2,
+      "serviceParams": [
+        "client",
+        "tradingPartnerId",
+        "companyId",
+        "documents",
+        "userId"
+      ],
+      "injectAuth": [
+        "companyId",
+        "createdBy",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "tradingPartnerId": {
+            "type": "string"
+          },
+          "documents": {}
+        },
+        "required": [
+          "tradingPartnerId",
+          "documents"
+        ]
+      }
+    },
+    {
+      "name": "sales_upsertEdiTradingPartnerLocation",
+      "module": "sales",
+      "classification": "WRITE",
+      "description": "upsert edi trading partner location",
+      "paramCount": 3,
+      "serviceParams": [
+        "client",
+        "location"
+      ],
+      "injectAuth": [
+        "companyId",
+        "createdBy",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "externalCode": {
+            "type": "string"
+          },
+          "customerLocationId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "externalCode",
+          "customerLocationId"
+        ]
+      }
+    },
+    {
+      "name": "sales_deleteEdiTradingPartnerLocation",
+      "module": "sales",
+      "classification": "DESTRUCTIVE",
+      "description": "delete edi trading partner location",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "id",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      }
+    },
+    {
+      "name": "sales_ensureEdiEventSubscriptions",
+      "module": "sales",
+      "classification": "WRITE",
+      "description": "ensure edi event subscriptions",
+      "paramCount": 0,
+      "serviceParams": [
+        "client",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    {
+      "name": "sales_processInboundEdiTransaction",
+      "module": "sales",
+      "classification": "WRITE",
+      "description": "process inbound edi transaction",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "parsed": {}
+        },
+        "required": [
+          "parsed"
+        ]
+      }
+    },
+    {
+      "name": "sales_releaseEdiDocument",
+      "module": "sales",
+      "classification": "WRITE",
+      "description": "release edi document",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      }
+    },
+    {
+      "name": "sales_refreshEdiDocumentIssues",
+      "module": "sales",
+      "classification": "WRITE",
+      "description": "refresh edi document issues",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      }
+    },
+    {
+      "name": "sales_rejectEdiDocument",
+      "module": "sales",
+      "classification": "WRITE",
+      "description": "reject edi document",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      }
+    },
+    {
+      "name": "sales_applyEdiAcknowledgment",
+      "module": "sales",
+      "classification": "WRITE",
+      "description": "apply edi acknowledgment",
+      "paramCount": 3,
+      "serviceParams": [
+        "client",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "externalId": {
+            "type": "string"
+          },
+          "accepted": {
+            "type": "boolean"
+          },
+          "reasons": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "externalId",
+          "accepted",
+          "reasons"
         ]
       }
     },

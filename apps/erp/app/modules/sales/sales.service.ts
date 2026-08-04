@@ -1,6 +1,18 @@
 import type { Database, Json } from "@carbon/database";
 import { fetchAllFromTable } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
+import { createEventSystemSubscription } from "@carbon/database/event";
+import type {
+  EdiIssue,
+  EdiOrderPayload,
+  ParsedEdiWebhook
+} from "@carbon/ee/edi";
+import {
+  checkDuplicateReference,
+  checkPrices,
+  checkShipTo,
+  resolveOrderLines
+} from "@carbon/ee/edi";
 import { getLogger } from "@carbon/logger";
 import type { PickPartial } from "@carbon/utils";
 import { getLocalTimeZone, now, today } from "@internationalized/date";
@@ -35,6 +47,8 @@ import type {
   customerTaxValidator,
   customerTypeValidator,
   customerValidator,
+  ediTradingPartnerLocationValidator,
+  ediTradingPartnerValidator,
   getMethodValidator,
   noQuoteReasonValidator,
   pricingRuleValidator,
@@ -5883,4 +5897,812 @@ export async function updateSalesRFQLineOrder(
         .execute();
     }
   });
+}
+
+// ---------------------------------------------------------------------------
+// EDI (Electronic Data Interchange) — sell-side trading partners + documents
+// ---------------------------------------------------------------------------
+
+type EdiDocumentStatusEnum = Database["public"]["Enums"]["ediDocumentStatus"];
+type EdiDocumentTypeEnum = Database["public"]["Enums"]["ediDocumentType"];
+type EdiReleaseModeEnum = Database["public"]["Enums"]["ediReleaseMode"];
+// The validator's line-type union (excludes DB-only "Fixture"), matching what
+// insertSalesOrderLines accepts.
+type SalesOrderLineTypeEnum = z.infer<
+  typeof salesOrderLineValidator
+>["salesOrderLineType"];
+type MethodTypeEnum = Database["public"]["Enums"]["methodType"];
+
+// itemTypes that can become a sales-order line (Fixture is not sellable).
+const EDI_SELLABLE_ITEM_TYPES = new Set([
+  "Part",
+  "Service",
+  "Material",
+  "Tool",
+  "Consumable"
+]);
+
+export async function getEdiTradingPartner(
+  client: SupabaseClient<Database>,
+  customerId: string,
+  companyId: string
+) {
+  return client
+    .from("ediTradingPartner")
+    .select("*, ediTradingPartnerDocument(*), ediTradingPartnerLocation(*)")
+    .eq("customerId", customerId)
+    .eq("companyId", companyId)
+    .maybeSingle();
+}
+
+export async function getEdiTradingPartners(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: GenericQueryFilters & { search?: string | null }
+) {
+  let query = client
+    .from("ediTradingPartner")
+    .select("*", { count: "exact" })
+    .eq("companyId", companyId);
+
+  if (args.search) {
+    query = query.ilike("externalId", `%${args.search}%`);
+  }
+
+  query = setGenericQueryFilters(query, args, [
+    { column: "createdAt", ascending: false }
+  ]);
+  return query;
+}
+
+export async function getEdiDocuments(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: GenericQueryFilters & {
+    search?: string | null;
+    status?: string | null;
+    type?: string | null;
+  }
+) {
+  let query = client
+    .from("ediDocument")
+    .select("*, ediTradingPartner(customerId, customer(name))", {
+      count: "exact"
+    })
+    .eq("companyId", companyId);
+
+  if (args.search) {
+    query = query.ilike("partnerReference", `%${args.search}%`);
+  }
+  if (args.status) {
+    query = query.eq("status", args.status as EdiDocumentStatusEnum);
+  }
+  if (args.type) {
+    query = query.eq("documentType", args.type as EdiDocumentTypeEnum);
+  }
+
+  query = setGenericQueryFilters(query, args, [
+    { column: "createdAt", ascending: false }
+  ]);
+  return query;
+}
+
+export async function getEdiDocument(
+  client: SupabaseClient<Database>,
+  id: string,
+  companyId: string
+) {
+  return client
+    .from("ediDocument")
+    .select("*, ediTradingPartner(customerId, customer(name))")
+    .eq("id", id)
+    .eq("companyId", companyId)
+    .single();
+}
+
+export async function upsertEdiTradingPartner(
+  client: SupabaseClient<Database>,
+  partner:
+    | (Omit<z.infer<typeof ediTradingPartnerValidator>, "id" | "documents"> & {
+        companyId: string;
+        createdBy: string;
+      })
+    | (Omit<z.infer<typeof ediTradingPartnerValidator>, "id" | "documents"> & {
+        id: string;
+        updatedBy: string;
+      })
+) {
+  if ("createdBy" in partner) {
+    return client
+      .from("ediTradingPartner")
+      .insert([partner])
+      .select("id")
+      .single();
+  }
+  return client
+    .from("ediTradingPartner")
+    .update({
+      ...sanitize(partner),
+      updatedAt: today(getLocalTimeZone()).toString()
+    })
+    .eq("id", partner.id)
+    .select("id")
+    .single();
+}
+
+export async function upsertEdiTradingPartnerDocuments(
+  client: SupabaseClient<Database>,
+  tradingPartnerId: string,
+  companyId: string,
+  documents: Array<{
+    documentType: EdiDocumentTypeEnum;
+    direction: "Inbound" | "Outbound";
+    enabled: boolean;
+  }>,
+  userId: string
+) {
+  // Config rows carry no history — delete-and-reinsert within the partner.
+  const del = await client
+    .from("ediTradingPartnerDocument")
+    .delete()
+    .eq("tradingPartnerId", tradingPartnerId)
+    .eq("companyId", companyId);
+  if (del.error || documents.length === 0) return del;
+
+  return client.from("ediTradingPartnerDocument").insert(
+    documents.map((d) => ({
+      tradingPartnerId,
+      companyId,
+      documentType: d.documentType,
+      direction: d.direction,
+      enabled: d.enabled,
+      createdBy: userId
+    }))
+  );
+}
+
+export async function upsertEdiTradingPartnerLocation(
+  client: SupabaseClient<Database>,
+  location:
+    | (Omit<z.infer<typeof ediTradingPartnerLocationValidator>, "id"> & {
+        tradingPartnerId: string;
+        companyId: string;
+        createdBy: string;
+      })
+    | (Omit<z.infer<typeof ediTradingPartnerLocationValidator>, "id"> & {
+        id: string;
+        updatedBy: string;
+      })
+) {
+  if ("createdBy" in location) {
+    return client
+      .from("ediTradingPartnerLocation")
+      .insert([location])
+      .select("id")
+      .single();
+  }
+  return client
+    .from("ediTradingPartnerLocation")
+    .update({
+      ...sanitize(location),
+      updatedAt: today(getLocalTimeZone()).toString()
+    })
+    .eq("id", location.id)
+    .select("id")
+    .single();
+}
+
+export async function deleteEdiTradingPartnerLocation(
+  client: SupabaseClient<Database>,
+  id: string,
+  companyId: string
+) {
+  return client
+    .from("ediTradingPartnerLocation")
+    .delete()
+    .eq("id", id)
+    .eq("companyId", companyId);
+}
+
+// Idempotently create the three outbound EDI event subscriptions for a company.
+// Tolerates the unique-name violation when a subscription already exists.
+export async function ensureEdiEventSubscriptions(
+  client: SupabaseClient<Database>,
+  companyId: string
+): Promise<{ data: { ok: true } | null; error: PostgrestError | null }> {
+  const subscriptions: Array<{
+    name: string;
+    table: string;
+    operations: ("INSERT" | "UPDATE" | "DELETE")[];
+    filter: Record<string, unknown>;
+  }> = [
+    {
+      name: "edi-sales-order",
+      table: "salesOrder",
+      operations: ["UPDATE"],
+      filter: {}
+    },
+    {
+      name: "edi-shipment",
+      table: "shipment",
+      operations: ["UPDATE"],
+      filter: { status: "Posted" }
+    },
+    {
+      name: "edi-sales-invoice",
+      table: "salesInvoice",
+      operations: ["UPDATE"],
+      filter: { status: "Submitted" }
+    }
+  ];
+
+  for (const sub of subscriptions) {
+    try {
+      await createEventSystemSubscription(client, {
+        name: sub.name,
+        table: sub.table,
+        companyId,
+        operations: sub.operations,
+        type: "EDI",
+        filter: sub.filter
+      });
+    } catch {
+      // Subscription already exists (unique name per company) → treat as success.
+    }
+  }
+  return { data: { ok: true }, error: null };
+}
+
+// Internal resolver — pure DB reads, no writes. Resolves partner, ship-to, parts,
+// and price deviations against the stored payload, returning issues + resolved
+// lines. Callers persist the result (message-as-truth: the payload is untouched).
+async function resolveEdiOrderDocument(
+  client: SupabaseClient<Database>,
+  args: {
+    companyId: string;
+    tradingPartnerId: string | null;
+    payload: EdiOrderPayload;
+    externalId: string;
+  }
+): Promise<{
+  issues: EdiIssue[];
+  resolvedLines: Array<{
+    itemId: string;
+    quantity: number;
+    unitPrice: number;
+    unitOfMeasureCode: string;
+    salesOrderLineType: SalesOrderLineTypeEnum;
+    methodType: MethodTypeEnum;
+  }>;
+  customerLocationId: string | null;
+  partner: {
+    id: string;
+    customerId: string;
+    releaseMode: EdiReleaseModeEnum;
+    priceTolerancePercent: number;
+  } | null;
+}> {
+  const { companyId, tradingPartnerId, payload } = args;
+  const issues: EdiIssue[] = [];
+
+  // 1. Partner
+  let partner: {
+    id: string;
+    customerId: string;
+    releaseMode: EdiReleaseModeEnum;
+    priceTolerancePercent: number;
+  } | null = null;
+  if (tradingPartnerId) {
+    const { data } = await client
+      .from("ediTradingPartner")
+      .select("id, customerId, releaseMode, priceTolerancePercent")
+      .eq("id", tradingPartnerId)
+      .eq("companyId", companyId)
+      .maybeSingle();
+    partner = data ?? null;
+  }
+  if (!partner) {
+    issues.push({
+      code: "unknown-partner",
+      message: "Trading partner could not be resolved for this document"
+    });
+    return {
+      issues,
+      resolvedLines: [],
+      customerLocationId: null,
+      partner: null
+    };
+  }
+
+  const customerId = partner.customerId;
+
+  // 2. Ship-to location
+  const { data: locations } = await client
+    .from("ediTradingPartnerLocation")
+    .select("externalCode, customerLocationId")
+    .eq("tradingPartnerId", partner.id)
+    .eq("companyId", companyId);
+  const shipTo = checkShipTo(
+    payload.shipTo.code,
+    (locations ?? []).map((l) => ({
+      externalCode: l.externalCode,
+      customerLocationId: l.customerLocationId
+    }))
+  );
+  issues.push(...shipTo.issues);
+
+  // 3. Parts — customer cross-reference then readableId fallback
+  const { data: partRows } = await client
+    .from("customerPartToItem")
+    .select("customerPartId, customerPartRevision, itemId")
+    .eq("customerId", customerId)
+    .eq("companyId", companyId);
+  const readableIds = payload.lines.map((l) => l.partnerPartId);
+  const { data: fallbackItems } = await client
+    .from("item")
+    .select("id, readableId, type, defaultMethodType")
+    .eq("companyId", companyId)
+    .in("readableId", readableIds);
+  const itemsByReadableId: Record<string, string> = {};
+  const itemById: Record<
+    string,
+    { type: string; defaultMethodType: MethodTypeEnum }
+  > = {};
+  for (const it of fallbackItems ?? []) {
+    itemsByReadableId[it.readableId] = it.id;
+    itemById[it.id] = {
+      type: it.type,
+      defaultMethodType: it.defaultMethodType ?? "Pull from Inventory"
+    };
+  }
+  const partResolution = resolveOrderLines(payload, {
+    partMappings: (partRows ?? []).map((p) => ({
+      customerPartId: p.customerPartId,
+      customerPartRevision: p.customerPartRevision ?? "",
+      itemId: p.itemId
+    })),
+    itemsByReadableId
+  });
+  issues.push(...partResolution.issues);
+
+  // Fetch item metadata for cross-reference-resolved items we haven't loaded yet.
+  const resolvedItemIds = partResolution.lines
+    .map((l) => l.itemId)
+    .filter((x): x is string => !!x);
+  const missingItemIds = resolvedItemIds.filter((id) => !(id in itemById));
+  if (missingItemIds.length > 0) {
+    const { data: moreItems } = await client
+      .from("item")
+      .select("id, type, defaultMethodType")
+      .eq("companyId", companyId)
+      .in("id", missingItemIds);
+    for (const it of moreItems ?? []) {
+      itemById[it.id] = {
+        type: it.type,
+        defaultMethodType: it.defaultMethodType ?? "Pull from Inventory"
+      };
+    }
+  }
+
+  // 4. Duplicate buyer PO number (other inbound documents for this partner)
+  const { data: priors } = await client
+    .from("ediDocument")
+    .select("partnerReference")
+    .eq("companyId", companyId)
+    .eq("tradingPartnerId", partner.id)
+    .eq("direction", "Inbound")
+    .neq("externalId", args.externalId);
+  const existingRefs = (priors ?? [])
+    .map((p) => p.partnerReference)
+    .filter((r): r is string => !!r);
+  issues.push(
+    ...checkDuplicateReference(payload.partnerReference, existingRefs)
+  );
+
+  // 5. Resolved lines + price checks
+  const priceCheckInputs: Array<{
+    itemId: string;
+    unitPrice: number;
+    expectedPrice: number | null;
+  }> = [];
+  const resolvedLines: Array<{
+    itemId: string;
+    quantity: number;
+    unitPrice: number;
+    unitOfMeasureCode: string;
+    salesOrderLineType: SalesOrderLineTypeEnum;
+    methodType: MethodTypeEnum;
+  }> = [];
+  for (const { line, itemId } of partResolution.lines) {
+    if (!itemId) continue; // already flagged unknown-part
+    const meta = itemById[itemId];
+    if (!meta || !EDI_SELLABLE_ITEM_TYPES.has(meta.type)) {
+      issues.push({
+        code: "unknown-part",
+        message: `Item for buyer part ${line.partnerPartId} is not a sellable line type`,
+        context: { itemId }
+      });
+      continue;
+    }
+    const price = await resolvePrice(client, companyId, {
+      customerId,
+      itemId,
+      quantity: line.quantity
+    });
+    // Only enforce tolerance when Carbon actually has a configured base price.
+    const expectedPrice = price.basePrice > 0 ? price.finalPrice : null;
+    priceCheckInputs.push({ itemId, unitPrice: line.unitPrice, expectedPrice });
+    resolvedLines.push({
+      itemId,
+      quantity: line.quantity,
+      unitPrice: line.unitPrice,
+      unitOfMeasureCode: line.unitOfMeasure,
+      salesOrderLineType: meta.type as SalesOrderLineTypeEnum,
+      methodType: meta.defaultMethodType
+    });
+  }
+  issues.push(...checkPrices(priceCheckInputs, partner.priceTolerancePercent));
+
+  return {
+    issues,
+    resolvedLines,
+    customerLocationId: shipTo.customerLocationId,
+    partner
+  };
+}
+
+// Ingest a parsed provider webhook: stage the document, resolve it, and either
+// auto-release (clean + Automatic) or hold for review.
+export async function processInboundEdiTransaction(
+  client: SupabaseClient<Database>,
+  args: { companyId: string; parsed: ParsedEdiWebhook }
+): Promise<{
+  data: {
+    documentId?: string;
+    duplicate?: boolean;
+    acknowledged?: boolean;
+  } | null;
+  error: PostgrestError | null;
+}> {
+  const { companyId, parsed } = args;
+
+  if (parsed.kind === "acknowledgment") {
+    const ack = await applyEdiAcknowledgment(client, {
+      companyId,
+      externalId: parsed.externalId,
+      accepted: parsed.accepted,
+      reasons: parsed.reasons
+    });
+    return {
+      data: ack.data ? { acknowledged: ack.data.acknowledged } : null,
+      error: ack.error
+    };
+  }
+
+  if (!parsed.payload) {
+    return {
+      data: null,
+      error: {
+        message: "EDI transaction webhook did not include a payload"
+      } as PostgrestError
+    };
+  }
+  const payload = parsed.payload;
+
+  // Resolve the partner from the provider partnership id (company-scoped).
+  let tradingPartnerId: string | null = null;
+  if (parsed.partnerExternalId) {
+    const { data: partner } = await client
+      .from("ediTradingPartner")
+      .select("id")
+      .eq("companyId", companyId)
+      .eq("externalId", parsed.partnerExternalId)
+      .maybeSingle();
+    tradingPartnerId = partner?.id ?? null;
+  }
+
+  const insert = await client
+    .from("ediDocument")
+    .insert({
+      companyId,
+      tradingPartnerId,
+      direction: "Inbound",
+      documentType: parsed.documentType,
+      status: "Received",
+      externalId: parsed.externalId,
+      partnerReference: payload.partnerReference,
+      payload: payload as unknown as Json,
+      createdBy: "system"
+    })
+    .select("id")
+    .single();
+
+  if (insert.error) {
+    // Unique (companyId, externalId) → provider redelivery is idempotent.
+    if (insert.error.code === "23505") {
+      return { data: { duplicate: true }, error: null };
+    }
+    return { data: null, error: insert.error };
+  }
+  const documentId = insert.data.id;
+
+  const resolution = await resolveEdiOrderDocument(client, {
+    companyId,
+    tradingPartnerId,
+    payload,
+    externalId: parsed.externalId
+  });
+
+  const isClean = resolution.issues.length === 0 && resolution.partner !== null;
+  if (isClean && resolution.partner?.releaseMode === "Automatic") {
+    const release = await releaseEdiDocument(client, {
+      id: documentId,
+      companyId,
+      userId: "system"
+    });
+    if (release.error) return { data: null, error: release.error };
+    return { data: { documentId }, error: null };
+  }
+
+  const update = await client
+    .from("ediDocument")
+    .update({
+      status: "Needs Review",
+      tradingPartnerId: resolution.partner?.id ?? tradingPartnerId,
+      issues: resolution.issues as unknown as Json,
+      updatedBy: "system",
+      updatedAt: new Date().toISOString()
+    })
+    .eq("id", documentId)
+    .eq("companyId", companyId);
+  if (update.error) return { data: null, error: update.error };
+
+  return { data: { documentId }, error: null };
+}
+
+// Re-run resolution on the unchanged stored payload; create the sales order when
+// clean, otherwise refresh the issues and stay in review.
+export async function releaseEdiDocument(
+  client: SupabaseClient<Database>,
+  args: { id: string; companyId: string; userId: string }
+): Promise<{
+  data: { salesOrderId?: string; issues?: EdiIssue[] } | null;
+  error: PostgrestError | null;
+}> {
+  const { id, companyId, userId } = args;
+  const doc = await client
+    .from("ediDocument")
+    .select("*")
+    .eq("id", id)
+    .eq("companyId", companyId)
+    .single();
+  if (doc.error) return { data: null, error: doc.error };
+  if (
+    doc.data.direction !== "Inbound" ||
+    doc.data.documentType !== "Purchase Order"
+  ) {
+    return {
+      data: null,
+      error: {
+        message: "Only inbound purchase orders can be released"
+      } as PostgrestError
+    };
+  }
+
+  const payload = doc.data.payload as unknown as EdiOrderPayload;
+  const resolution = await resolveEdiOrderDocument(client, {
+    companyId,
+    tradingPartnerId: doc.data.tradingPartnerId,
+    payload,
+    externalId: doc.data.externalId ?? ""
+  });
+
+  if (resolution.issues.length > 0 || !resolution.partner) {
+    await client
+      .from("ediDocument")
+      .update({
+        status: "Needs Review",
+        tradingPartnerId: resolution.partner?.id ?? doc.data.tradingPartnerId,
+        issues: resolution.issues as unknown as Json,
+        updatedBy: userId,
+        updatedAt: new Date().toISOString()
+      })
+      .eq("id", id)
+      .eq("companyId", companyId);
+    return { data: { issues: resolution.issues }, error: null };
+  }
+
+  const company = await client
+    .from("company")
+    .select("companyGroupId")
+    .eq("id", companyId)
+    .single();
+  const companyGroupId = company.data?.companyGroupId ?? "";
+
+  const so = await insertSalesOrder(client, {
+    customerId: resolution.partner.customerId,
+    companyId,
+    companyGroupId,
+    createdBy: userId,
+    customerReference: payload.partnerReference,
+    customerLocationId: resolution.customerLocationId ?? undefined,
+    orderDate: payload.orderDate || undefined
+  });
+  if (so.error || !so.data) {
+    return { data: null, error: so.error };
+  }
+  const salesOrderRowId = so.data.id;
+
+  const soRow = await client
+    .from("salesOrder")
+    .select("locationId")
+    .eq("id", salesOrderRowId)
+    .single();
+  const lineLocationId = soRow.data?.locationId ?? "";
+
+  const lines = await insertSalesOrderLines(
+    client,
+    resolution.resolvedLines.map((rl) => ({
+      salesOrderId: salesOrderRowId,
+      salesOrderLineType: rl.salesOrderLineType,
+      itemId: rl.itemId,
+      methodType: rl.methodType,
+      saleQuantity: rl.quantity,
+      unitPrice: rl.unitPrice,
+      unitOfMeasureCode: rl.unitOfMeasureCode,
+      locationId: lineLocationId,
+      taxPercent: 0,
+      companyId,
+      createdBy: userId
+    }))
+  );
+  if (lines.error) {
+    // All-or-nothing: undo the created order header.
+    await deleteSalesOrder(client, salesOrderRowId);
+    return { data: null, error: lines.error };
+  }
+
+  const update = await client
+    .from("ediDocument")
+    .update({
+      status: "Posted",
+      tradingPartnerId: resolution.partner.id,
+      issues: [] as unknown as Json,
+      sourceDocument: "Sales Order",
+      sourceDocumentId: salesOrderRowId,
+      sourceDocumentReadableId: so.data.salesOrderId,
+      releasedBy: userId,
+      releasedAt: new Date().toISOString(),
+      updatedBy: userId,
+      updatedAt: new Date().toISOString()
+    })
+    .eq("id", id)
+    .eq("companyId", companyId);
+  if (update.error) return { data: null, error: update.error };
+
+  return { data: { salesOrderId: salesOrderRowId }, error: null };
+}
+
+// Re-run resolution without releasing — used by the queue to refresh issues after
+// an operator adds a cross-reference.
+export async function refreshEdiDocumentIssues(
+  client: SupabaseClient<Database>,
+  args: { id: string; companyId: string; userId: string }
+): Promise<{
+  data: { issues: EdiIssue[] } | null;
+  error: PostgrestError | null;
+}> {
+  const { id, companyId, userId } = args;
+  const doc = await client
+    .from("ediDocument")
+    .select("*")
+    .eq("id", id)
+    .eq("companyId", companyId)
+    .single();
+  if (doc.error) return { data: null, error: doc.error };
+  const payload = doc.data.payload as unknown as EdiOrderPayload;
+  const resolution = await resolveEdiOrderDocument(client, {
+    companyId,
+    tradingPartnerId: doc.data.tradingPartnerId,
+    payload,
+    externalId: doc.data.externalId ?? ""
+  });
+  const update = await client
+    .from("ediDocument")
+    .update({
+      tradingPartnerId: resolution.partner?.id ?? doc.data.tradingPartnerId,
+      issues: resolution.issues as unknown as Json,
+      updatedBy: userId,
+      updatedAt: new Date().toISOString()
+    })
+    .eq("id", id)
+    .eq("companyId", companyId);
+  if (update.error) return { data: null, error: update.error };
+  return { data: { issues: resolution.issues }, error: null };
+}
+
+export async function rejectEdiDocument(
+  client: SupabaseClient<Database>,
+  args: { id: string; companyId: string; userId: string }
+) {
+  const { id, companyId, userId } = args;
+  const doc = await client
+    .from("ediDocument")
+    .select("status")
+    .eq("id", id)
+    .eq("companyId", companyId)
+    .single();
+  if (doc.error) return doc;
+  if (doc.data.status !== "Needs Review" && doc.data.status !== "Received") {
+    return {
+      data: null,
+      error: {
+        message: `Cannot reject a document in status ${doc.data.status}`
+      } as PostgrestError
+    };
+  }
+  return client
+    .from("ediDocument")
+    .update({
+      status: "Rejected",
+      updatedBy: userId,
+      updatedAt: new Date().toISOString()
+    })
+    .eq("id", id)
+    .eq("companyId", companyId)
+    .select("id")
+    .single();
+}
+
+// Apply an inbound 997 to the matching outbound document.
+export async function applyEdiAcknowledgment(
+  client: SupabaseClient<Database>,
+  args: {
+    companyId: string;
+    externalId: string;
+    accepted: boolean;
+    reasons: string[];
+  }
+): Promise<{
+  data: { acknowledged: boolean } | null;
+  error: PostgrestError | null;
+}> {
+  const { companyId, externalId, accepted, reasons } = args;
+  const doc = await client
+    .from("ediDocument")
+    .select("id")
+    .eq("companyId", companyId)
+    .eq("externalId", externalId)
+    .eq("direction", "Outbound")
+    .maybeSingle();
+  if (doc.error) return { data: null, error: doc.error };
+  if (!doc.data) return { data: null, error: null }; // no matching outbound document
+
+  if (accepted) {
+    const upd = await client
+      .from("ediDocument")
+      .update({
+        status: "Acknowledged",
+        acknowledgedAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      })
+      .eq("id", doc.data.id)
+      .eq("companyId", companyId);
+    return { data: { acknowledged: true }, error: upd.error };
+  }
+
+  const issues: EdiIssue[] = reasons.map((r) => ({
+    code: "provider-rejected",
+    message: r
+  }));
+  const upd = await client
+    .from("ediDocument")
+    .update({
+      status: "Failed",
+      issues: issues as unknown as Json,
+      updatedAt: new Date().toISOString()
+    })
+    .eq("id", doc.data.id)
+    .eq("companyId", companyId);
+  return { data: { acknowledged: false }, error: upd.error };
 }
