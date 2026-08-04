@@ -151,7 +151,9 @@ export function WorkflowBuilder({
             nodesDraggable={!isReadOnly}
             nodesConnectable={!isReadOnly}
             elementsSelectable
-            deleteKeyCode={isReadOnly ? null : ["Backspace", "Delete"]}
+            // Delete only. Backspace is too easy to hit by accident, and there
+            // is no undo — autosave persists the deletion a second later.
+            deleteKeyCode={isReadOnly ? null : ["Delete"]}
             onlyRenderVisibleElements
             defaultEdgeOptions={{ type: "workflow" }}
             panOnScroll={panOnScroll}
