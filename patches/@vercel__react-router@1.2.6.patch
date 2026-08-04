@@ -1,5 +1,5 @@
 diff --git a/edge/entry.server.js b/edge/entry.server.js
-index 7d18c72..19af3fd 100644
+index 7d18c72..de8c399 100644
 --- a/edge/entry.server.js
 +++ b/edge/entry.server.js
 @@ -4,9 +4,66 @@ import { renderToReadableStream, } from 'react-dom/server';
@@ -70,7 +70,7 @@ index 7d18c72..19af3fd 100644
          url: request.url,
          nonce: options?.nonce,
      }), {
-@@ -21,6 +78,12 @@ export async function handleRequest(request, responseStatusCode, responseHeaders
+@@ -21,8 +78,14 @@ export async function handleRequest(request, responseStatusCode, responseHeaders
          await body.allReady;
      }
      responseHeaders.set('Content-Type', 'text/html');
@@ -81,10 +81,13 @@ index 7d18c72..19af3fd 100644
 +    // responses CDN-cacheable, which doesn't apply to Carbon's authenticated,
 +    // per-user SSR responses.
      if (vercelSkewProtectionEnabled && vercelDeploymentId) {
-         responseHeaders.append('Set-Cookie', `__vdpl=${vercelDeploymentId}; HttpOnly`);
+-        responseHeaders.append('Set-Cookie', `__vdpl=${vercelDeploymentId}; HttpOnly`);
++        responseHeaders.append('Set-Cookie', `__vdpl=${vercelDeploymentId}; Path=/; HttpOnly`);
      }
+     return new Response(body, {
+         headers: responseHeaders,
 diff --git a/entry.server.js b/entry.server.js
-index 5b6ab35..92b92a2 100644
+index 5b6ab35..5c666c5 100644
 --- a/entry.server.js
 +++ b/entry.server.js
 @@ -7,17 +7,74 @@ import { ServerRouter } from 'react-router';
@@ -163,7 +166,7 @@ index 5b6ab35..92b92a2 100644
              url: request.url,
              nonce: options?.nonce,
          }), {
-@@ -27,6 +84,13 @@ export function handleRequest(request, responseStatusCode, responseHeaders, rout
+@@ -27,8 +84,15 @@ export function handleRequest(request, responseStatusCode, responseHeaders, rout
                  const body = new PassThrough();
                  const stream = createReadableStreamFromReadable(body);
                  responseHeaders.set('Content-Type', 'text/html');
@@ -175,5 +178,8 @@ index 5b6ab35..92b92a2 100644
 +                // CDN-cacheable, which doesn't apply to Carbon's authenticated,
 +                // per-user SSR responses.
                  if (vercelSkewProtectionEnabled && vercelDeploymentId) {
-                     responseHeaders.append('Set-Cookie', `__vdpl=${vercelDeploymentId}; HttpOnly`);
+-                    responseHeaders.append('Set-Cookie', `__vdpl=${vercelDeploymentId}; HttpOnly`);
++                    responseHeaders.append('Set-Cookie', `__vdpl=${vercelDeploymentId}; Path=/; HttpOnly`);
                  }
+                 resolve(new Response(stream, {
+                     headers: responseHeaders,
