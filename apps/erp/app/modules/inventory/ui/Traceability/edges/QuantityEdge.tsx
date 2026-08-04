@@ -70,7 +70,7 @@ function QuantityEdgeImpl({
           fill: "none"
         }}
       />
-      {!dimmed && data?.quantity != null && (
+      {!dimmed && data?.quantity != null && !data.hideLabel && (
         <EdgeLabelRenderer>
           <div
             style={{

@@ -37,6 +37,12 @@ export type LineageNode = Node<EntityNodeData | ActivityNodeData>;
 export type LineageEdgeData = {
   kind: "input" | "output" | "movement";
   quantity: number;
+  /**
+   * Suppress the quantity pill. Movement dangles set this — their quantity
+   * always equals the state they hang off, and a second labeled out-edge
+   * reads as stock fanning out of the lot twice.
+   */
+  hideLabel?: boolean;
   dimmed: boolean;
   weight?: number;
   isReject?: boolean;
@@ -356,7 +362,8 @@ export function payloadToFlow(
     source: string,
     target: string,
     kind: LineageEdgeData["kind"],
-    quantity: number
+    quantity: number,
+    hideLabel = false
   ) => {
     if (seenEdgeIds.has(id)) return;
     seenEdgeIds.add(id);
@@ -365,7 +372,7 @@ export function payloadToFlow(
       type: "quantity",
       source,
       target,
-      data: { kind, quantity, dimmed: false }
+      data: { kind, quantity, hideLabel, dimmed: false }
     });
   };
 
@@ -379,7 +386,10 @@ export function payloadToFlow(
           stateNodeId(entityId, w.beforeState),
           w.activityId,
           w.movement ? "movement" : "input",
-          w.beforeQty
+          w.beforeQty,
+          // A movement dangle carries exactly the state's quantity — labeling
+          // it makes the state look like it fans out twice.
+          w.movement
         );
       }
       if (w.afterState !== null && w.afterQty !== null) {
