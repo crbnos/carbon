@@ -21,7 +21,11 @@ import type { Activity, TrackedEntity } from "~/modules/inventory";
 import { capitalize, copyToClipboard } from "~/utils/string";
 import { AttributeList, hasRenderedAttributes } from "./attributeRenderers";
 import { ContainmentList } from "./ContainmentList";
-import { ACTIVITY_KIND_META, activityKindFor } from "./metadata";
+import {
+  ACTIVITY_KIND_META,
+  activityKindFor,
+  isMovementActivity
+} from "./metadata";
 import { StepRecordsList } from "./StepRecordsList";
 import TrackedEntityStatus from "./TrackedEntityStatus";
 import {
@@ -70,11 +74,12 @@ export function TraceabilitySidebar({
     entity?.sourceDocumentReadableId ?? activity?.sourceDocumentReadableId;
   const sourceHref = sourceLinkHref(sourceDoc, sourceDocId);
 
-  const { producedBy, consumedBy, inputs, outputs } = useMemo(() => {
+  const { producedBy, consumedBy, movedBy, inputs, outputs } = useMemo(() => {
     if (!payload) {
       return {
         producedBy: [] as RelatedActivity[],
         consumedBy: [] as RelatedActivity[],
+        movedBy: [] as RelatedActivity[],
         inputs: [] as RelatedEntity[],
         outputs: [] as RelatedEntity[]
       };
@@ -84,6 +89,7 @@ export function TraceabilitySidebar({
 
     const producedBy: RelatedActivity[] = [];
     const consumedBy: RelatedActivity[] = [];
+    const movedBy: RelatedActivity[] = [];
     const inputs: RelatedEntity[] = [];
     const outputs: RelatedEntity[] = [];
 
@@ -96,7 +102,13 @@ export function TraceabilitySidebar({
       for (const i of payload.inputs) {
         if (i.trackedEntityId !== entity.id) continue;
         const a = activityById.get(i.trackedActivityId);
-        if (a) consumedBy.push({ activity: a, quantity: i.quantity });
+        if (!a) continue;
+        // A transfer/pick relocated the lot — it did not consume it.
+        if (isMovementActivity(a.type)) {
+          movedBy.push({ activity: a, quantity: i.quantity });
+        } else {
+          consumedBy.push({ activity: a, quantity: i.quantity });
+        }
       }
     } else if (activity) {
       for (const i of payload.inputs) {
@@ -111,7 +123,7 @@ export function TraceabilitySidebar({
       }
     }
 
-    return { producedBy, consumedBy, inputs, outputs };
+    return { producedBy, consumedBy, movedBy, inputs, outputs };
   }, [payload, entity, activity]);
 
   const stepRecordsFetcher = useFetcher<{ stepRecords: StepRecord[] }>();
@@ -300,6 +312,19 @@ export function TraceabilitySidebar({
           <Section title="Produced by" count={producedBy.length}>
             <ul className="divide-y divide-border/30">
               {producedBy.map((item) => (
+                <RelatedActivityRow
+                  key={item.activity.id}
+                  item={item}
+                  onSelect={onSelect}
+                />
+              ))}
+            </ul>
+          </Section>
+        )}
+        {movedBy.length > 0 && (
+          <Section title="Moved by" count={movedBy.length}>
+            <ul className="divide-y divide-border/30">
+              {movedBy.map((item) => (
                 <RelatedActivityRow
                   key={item.activity.id}
                   item={item}

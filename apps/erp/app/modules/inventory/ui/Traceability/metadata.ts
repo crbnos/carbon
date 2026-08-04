@@ -110,3 +110,10 @@ export function activityKindFor(type: string | undefined | null): ActivityKind {
     return "Manufacturing";
   return "Other";
 }
+
+// A move relocates an entity without transforming it — same id, still Available.
+// Such activities record only an input, so they read as a consumption unless
+// callers distinguish them. Shipments don't qualify: those really do consume.
+export function isMovementActivity(type: string | null | undefined): boolean {
+  return activityKindFor(type) === "Transfer";
+}

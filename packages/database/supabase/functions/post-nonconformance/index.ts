@@ -2,7 +2,7 @@ import { format } from "https://deno.land/std@0.205.0/datetime/mod.ts";
 import { serve } from "https://deno.land/std@0.175.0/http/server.ts";
 import { z } from "https://deno.land/x/zod@v3.21.4/mod.ts";
 import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
-import { corsHeaders } from "../lib/headers.ts";
+import { corsPreflight, errorResponse, jsonResponse } from "../lib/response.ts";
 import { getFunctionLogger } from "../lib/logging.ts";
 import { requirePermissions } from "../lib/supabase.ts";
 import { Database } from "../lib/types.ts";
@@ -52,9 +52,8 @@ const payloadValidator = z.object({
 });
 
 serve(async (req: Request) => {
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
-  }
+  const preflight = corsPreflight(req);
+  if (preflight) return preflight;
 
   try {
     const payload = await req.json();
@@ -77,10 +76,7 @@ serve(async (req: Request) => {
     // Only movements that actually move stock post anything.
     const effectiveMovements = movements.filter((m) => m.quantity !== 0);
     if (effectiveMovements.length === 0) {
-      return new Response(JSON.stringify({ success: true, journalId: null }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200,
-      });
+      return jsonResponse({ success: true, journalId: null });
     }
 
     const itemIds = [...new Set(effectiveMovements.map((m) => m.itemId))];
@@ -283,17 +279,11 @@ serve(async (req: Request) => {
       }
     });
 
-    return new Response(JSON.stringify({ success: true, journalId }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 200,
-    });
+    return jsonResponse({ success: true, journalId });
   } catch (err) {
     logger.error("post-nonconformance failed", {
       error: String((err as Error).stack ?? err),
     });
-    return new Response(JSON.stringify({ error: (err as Error).message }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 500,
-    });
+    return errorResponse(err, 500);
   }
 });

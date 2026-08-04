@@ -1,5 +1,11 @@
-import type { SnapshotFieldEntry } from "@carbon/database/audit.config";
-import { fkDisplayRegistry } from "@carbon/database/audit.config";
+import type {
+  FkDisplayHop,
+  SnapshotFieldEntry
+} from "@carbon/database/audit.config";
+import {
+  fkDisplayHops,
+  fkDisplayRegistry
+} from "@carbon/database/audit.config";
 
 /**
  * FK topology for the audited tables, discovered from the schema via the
@@ -40,11 +46,16 @@ export function parseFkMapRows(
 /**
  * What to snapshot for one diff column: the FK target table, the display
  * columns to freeze, and whether the lookup can be tenant-scoped.
+ *
+ * When `hop` is set, `table` is a junction with no displayable columns of
+ * its own: the handler reads `hop.column` off the junction row, then fetches
+ * `displayColumns` from `hop.table` (tenant-scoped iff `hop.hasCompanyId`).
  */
 export type SnapshotSpec = {
   table: string;
   displayColumns: readonly string[];
   hasCompanyId: boolean;
+  hop?: { column: string; table: string; hasCompanyId: boolean };
 };
 
 /**
@@ -54,10 +65,12 @@ export type SnapshotSpec = {
  * Precedence:
  * 1. A per-column `snapshotFields` override on the table config — explicit
  *    display columns for this one FK.
- * 2. Schema-discovered FK (fkMap) whose target table is in
- *    `fkDisplayRegistry` — the automatic path covering every FK.
+ * 2. Schema-discovered FK (fkMap) whose target is a junction in
+ *    `fkDisplayHops` — two-stage resolution through the junction.
+ * 3. Schema-discovered FK whose target table is in `fkDisplayRegistry` —
+ *    the automatic path covering every direct FK.
  *
- * Nested diff keys ("notes.content") and non-FK columns miss both and
+ * Nested diff keys ("notes.content") and non-FK columns miss all three and
  * resolve to null — the diff keeps its raw values.
  */
 export function resolveSnapshotSpec(
@@ -73,16 +86,36 @@ export function resolveSnapshotSpec(
     return {
       table: override.table,
       displayColumns: override.displayColumns,
-      // The override's target may differ from the schema FK's target (or the
-      // fkMap may be unavailable); only trust the fkMap's tenancy flag when
-      // it describes the same target table. Default to tenant-scoped — the
-      // behavior overrides always had.
+      // The override's column may have no schema FK at all (overrides exist
+      // precisely for constraint-less columns), so fall back to the tenancy
+      // of ANY schema FK referencing the same target table — a global table
+      // like "user" is global no matter which column points at it. Default
+      // to tenant-scoped only when the fkMap has no knowledge of the target.
       hasCompanyId:
-        fk && fk.targetTable === override.table ? fk.targetHasCompanyId : true
+        fk && fk.targetTable === override.table
+          ? fk.targetHasCompanyId
+          : (targetTenancy(fkMap, override.table) ?? true)
     };
   }
 
   if (!fk) return null;
+
+  const hop = (fkDisplayHops as Record<string, FkDisplayHop | undefined>)[
+    fk.targetTable
+  ];
+  if (hop) {
+    return {
+      table: fk.targetTable,
+      displayColumns: hop.displayColumns,
+      hasCompanyId: fk.targetHasCompanyId,
+      hop: {
+        column: hop.column,
+        table: hop.table,
+        hasCompanyId: targetTenancy(fkMap, hop.table) ?? true
+      }
+    };
+  }
+
   const displayColumns = (
     fkDisplayRegistry as Record<string, readonly string[] | undefined>
   )[fk.targetTable];
@@ -93,4 +126,16 @@ export function resolveSnapshotSpec(
     displayColumns,
     hasCompanyId: fk.targetHasCompanyId
   };
+}
+
+/**
+ * Tenancy of a target table according to any schema FK that references it,
+ * regardless of which column does the referencing. Undefined when no FK in
+ * the map points at the table.
+ */
+function targetTenancy(fkMap: FkMap, table: string): boolean | undefined {
+  for (const entry of fkMap.values()) {
+    if (entry.targetTable === table) return entry.targetHasCompanyId;
+  }
+  return undefined;
 }

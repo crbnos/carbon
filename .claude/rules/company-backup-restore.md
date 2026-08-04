@@ -30,11 +30,16 @@ User-facing rules of the feature: backups require `settings` update permission
 route and the `export-company` edge function), exclude secrets, and a restore is
 reversible via an auto-snapshot.
 
-**Currently internal-only** (`isInternalEmail`, `@carbon/utils`) while the
-multi-tenant caveats below are unhardened: the nav entry is in `internalOnlyRoutes`
-(`useSettingsSubmodules.tsx`), and `requireInternal` (route loader/action) plus both
-`api+/settings.backup-*` loaders 404/redirect non-internal users. Internal =
-`@carbon.ms` / `@carbon.us.org`. Drop the gates to ship publicly.
+**Internal-only in real deployments, open to everyone on a local dev stack**,
+while the multi-tenant caveats below are unhardened. One gate:
+`canAccessBackups(email)` (`apps/erp/app/utils/backups.ts`) = `IS_LOCAL_DEV ||
+isInternalEmail(email)`. `IS_LOCAL_DEV` (`packages/env`) is true only when neither
+`NODE_ENV` nor `VERCEL_ENV` is `production`/`preview` — so prod, preview, and
+self-hosted (all `NODE_ENV=production`) stay internal-only. Used by
+`requireBackupAccess` (route loader/action), every `api+/settings.backup-*`
+loader/action (404), and the nav (`localOrInternalRoutes` in
+`useSettingsSubmodules.tsx`, via `useFlags().isLocalDev`). Internal =
+`@carbon.ms` / `@carbon.us.org`. Drop `canAccessBackups` entirely to ship publicly.
 
 ## Shared engine — `company-backup.ts`
 
@@ -211,7 +216,7 @@ snapshotPath, foreign, includeGroup }`. `revert` reads the marker and reloads
   `finalizeCompanyRestore`, `revertCompanyRestore`) plus
   `dismissCompanyExportFailure` (service-role delete of the failed export
   marker) — kept off the client to avoid `Buffer`-in-client.
-- `routes/x+/settings+/backups.tsx` — **internal-gated** (`requireInternal`)
+- `routes/x+/settings+/backups.tsx` — **access-gated** (`requireBackupAccess`)
   loader/action (export / restore / keep / dismiss / revert / delete /
   dismissExportFailure intents). `filePath` is forced under `exports/`. Export is
   **non-blocking, row-first** (Supabase-style): clicking "Create backup" does NOT

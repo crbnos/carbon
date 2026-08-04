@@ -120,6 +120,9 @@ msgstr "{from}–{to} 共 {count}"
 msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
 msgstr "{inserted}条插入，{updated}条更新，{0}条需要修复，{1}条跳过。"
 
+msgid "{linesCount, plural, one {# line} other {# lines}}"
+msgstr "{linesCount, plural, one {# 行} other {# 行}}"
+
 msgid "{maxSizeMB}MB limit"
 msgstr "{maxSizeMB}MB 限制"
 
@@ -137,6 +140,9 @@ msgstr "{total}个阶段让您的公司在Carbon上线。每个阶段都以检�
 
 msgid "{total} phases to go live"
 msgstr "{total} 个阶段即可上线"
+
+msgid "{totalQuantity, plural, one {# unit} other {# units}}"
+msgstr "{totalQuantity, plural, one {# 件} other {# 件}}"
 
 msgid "{uncounted, plural, one {# uncounted line} other {# uncounted lines}}"
 msgstr "{uncounted, plural, one {# 未计数行} other {# 未计数行}}"
@@ -776,6 +782,9 @@ msgstr "添加步骤"
 msgid "Add steps to preview the operator view."
 msgstr "添加步骤以预览操作员视图。"
 
+msgid "Add Stock Transfer"
+msgstr "添加库存转移"
+
 msgid "Add Supplier"
 msgstr "添加供应商"
 
@@ -1385,6 +1394,9 @@ msgstr "您确定要删除销售订单行 {0} {1} 吗？此操作无法撤销。
 msgid "Are you sure you want to delete the scrap reason: {0}? This cannot be undone."
 msgstr "您确定要删除废料原因：{0}？此操作无法撤销。"
 
+msgid "Are you sure you want to delete the serial number sequence for {itemLabel}? This cannot be undone."
+msgstr "你确定要删除 {itemLabel} 的序列号序列吗？这无法撤销。"
+
 msgid "Are you sure you want to delete the shift: {name} from {locationName}? This cannot be undone."
 msgstr "您确定要删除班次：{name} 从 {locationName}？此操作无法撤销。"
 
@@ -1645,8 +1657,14 @@ msgstr "将此单元分配给工作中心以用于线边材料，以便操作员
 msgid "At each gate"
 msgstr "在每个关卡"
 
+msgid "At job completion"
+msgstr "在工作完成时"
+
 msgid "At least one condition must match"
 msgstr "至少一个条件必须匹配"
+
+msgid "At operation completion"
+msgstr "在操作完成时"
 
 msgid "Attach File"
 msgstr "附加文件"
@@ -2309,6 +2327,9 @@ msgstr "选择批号"
 
 msgid "Choose a company"
 msgstr "选择公司"
+
+msgid "Choose a row on the left to see where its stock can come from."
+msgstr "选择左侧的行以查看其库存可能来自何处。"
 
 msgid "Choose a serial number"
 msgstr "选择序列号"
@@ -3157,6 +3178,9 @@ msgstr "创建修订版"
 msgid "Create Rule"
 msgstr "创建规则"
 
+msgid "Create Transfer"
+msgstr "创建转移"
+
 msgid "Create User"
 msgstr "创建用户"
 
@@ -3692,6 +3716,9 @@ msgstr "决定操作员在尝试发放已过期的批次或序列号时看到的
 
 msgid "Decide what happens when an operator presses Finish on the shop floor with material still unpicked."
 msgstr "决定当操作员在车间按下完成时但材料仍未拣选时会发生什么。"
+
+msgid "Decide when material picked to a work center but not consumed flows back to the warehouse."
+msgstr "决定当物料拣配到工作中心但未消耗时何时流回仓库。"
 
 msgid "Decimal Places"
 msgstr "小数位数"
@@ -4540,6 +4567,9 @@ msgstr "例如前3到4周"
 msgid "e.g. Zebra 2x1"
 msgstr "例如 Zebra 2x1"
 
+msgid "Each operation's unused material returns as soon as the operation is done."
+msgstr "每个操作的未使用物料在操作完成后立即返回。"
+
 msgid "Each physical unit gets its own tracked entity and unique number — one entity, one unit."
 msgstr "每个物理单位都获得自己的跟踪实体和唯一编号 — 一个实体、一个单位。"
 
@@ -4789,6 +4819,9 @@ msgstr "编辑计划维护"
 msgid "Edit Sequence"
 msgstr "编辑序列"
 
+msgid "Edit Serial Number"
+msgstr "编辑序列号"
+
 msgid "Edit Service"
 msgstr "编辑服务"
 
@@ -5031,9 +5064,6 @@ msgstr "请输入 1 至 {0} 之间的数量。"
 msgid "Enter and approve vendor bills against a PO (three-way match)"
 msgstr "输入并批准针对采购订单的供应商账单（三方匹配）"
 
-msgid "Enter or scan serial number"
-msgstr "输入或扫描序列号"
-
 msgid "Enter PO number"
 msgstr "输入采购订单号"
 
@@ -5057,9 +5087,6 @@ msgstr "要分割的实体"
 
 msgid "Entity"
 msgstr "实体"
-
-msgid "Entity is {status}"
-msgstr "实体为 {status}"
 
 msgid "Entity Type"
 msgstr "实体类型"
@@ -5144,9 +5171,6 @@ msgstr "从销售发票行中删除模型时出错"
 
 msgid "Error removing model from sales order line"
 msgstr "从销售订单行中删除模型时出错"
-
-msgid "Error validating serial number"
-msgstr "验证序列号时出错"
 
 msgid "Escalate to the project leads"
 msgstr "升级到项目负责人"
@@ -6589,6 +6613,9 @@ msgstr "利润表"
 msgid "Income/Balance"
 msgstr "收入/余额"
 
+msgid "incoming"
+msgstr "来货"
+
 msgid "Incoming"
 msgstr "传入"
 
@@ -6919,9 +6946,6 @@ msgstr "项"
 msgid "Item"
 msgstr "物品"
 
-msgid "Item {scannedItem} is not the same as the item {expectedItem}"
-msgstr "项目 {scannedItem} 与项目 {expectedItem} 不相同"
-
 msgid "Item / Location"
 msgstr "物品 / 位置"
 
@@ -7200,6 +7224,9 @@ msgstr "左项"
 
 msgid "Leftover Parts Detected"
 msgstr "检测到剩余零件"
+
+msgid "Leftover staged material returns when the whole job completes."
+msgstr "当整个工作完成时，剩余的暂存物料返回。"
 
 msgid "Less manual work"
 msgstr "更少的手动工作"
@@ -8278,6 +8305,9 @@ msgstr "新销售订单行"
 msgid "New Scheduled Maintenance"
 msgstr "新的定期维护"
 
+msgid "New Serial Number"
+msgstr "新序列号"
+
 msgid "New Service"
 msgstr "新服务"
 
@@ -8527,8 +8557,14 @@ msgstr "未配置问题类型"
 msgid "No items"
 msgstr "无项目"
 
+msgid "No items have inventory activity here yet."
+msgstr "此处尚无项目的库存活动。"
+
 msgid "No lines to map"
 msgstr "没有行需要映射"
+
+msgid "No lines yet"
+msgstr "还没有行"
 
 msgid "No locations found."
 msgstr "未找到位置。"
@@ -8544,6 +8580,9 @@ msgstr "没有匹配\"{query}\"的结果。请尝试不同的搜索词。"
 
 msgid "No matches. Type to create one."
 msgstr "无匹配项。输入内容以创建一个。"
+
+msgid "No matching bins"
+msgstr "没有匹配的库位"
 
 msgid "No new notifications"
 msgstr "没有新通知"
@@ -8571,6 +8610,9 @@ msgstr "未找到选项。"
 
 msgid "No options found."
 msgstr "未找到选项。"
+
+msgid "No other bins hold this item"
+msgstr "其他地点没有此项目"
 
 msgid "No other employees found. Add employees to enable ownership transfer."
 msgstr "未找到其他员工。添加员工以启用所有权转移。"
@@ -8656,8 +8698,14 @@ msgstr "此视图未应用排序"
 msgid "No stock"
 msgstr "无库存"
 
+msgid "No stock at this location"
+msgstr "此位置没有库存"
+
 msgid "No stockout projected in the next 48 weeks"
 msgstr "未来48周内未预测到库存短缺"
+
+msgid "No storage unit"
+msgstr "无存储单元"
 
 msgid "No suppliers yet"
 msgstr "还没有供应商"
@@ -8761,6 +8809,13 @@ msgstr "备注"
 msgid "Notes (optional)"
 msgstr "备注（可选）"
 
+#. placeholder {0}: search.trim()
+msgid "Nothing at this location matches \"{0}\"."
+msgstr "此位置处没有与\"{0}\"匹配的任何内容。"
+
+msgid "Nothing else at this location has stock to pull from."
+msgstr "此位置没有其他可提取的库存。"
+
 msgid "Nothing in the archive"
 msgstr "存档中没有任何内容"
 
@@ -8799,6 +8854,9 @@ msgstr "最早优先"
 
 msgid "On cutover day, work the checklist below in order. Acceptance tests come from your in-scope requirements. Support details are at the bottom."
 msgstr "在切换日期，按顺序完成下面的检查清单。验收测试来自您的范围内需求。支持详情在下方。"
+
+msgid "on hand"
+msgstr "现有库存"
 
 msgid "On hand"
 msgstr "现有"
@@ -8934,6 +8992,9 @@ msgstr "在MES中打开"
 
 msgid "Open Issues"
 msgstr "未解决的问题"
+
+msgid "Open job demand plus outstanding transfers out of this bin"
+msgstr "未完成工作需求加上此地点的未完成转移"
 
 msgid "Open jobs"
 msgstr "未结工单"
@@ -9446,6 +9507,9 @@ msgstr "拣货单"
 
 msgid "Pick Order"
 msgstr "拣选顺序"
+
+msgid "Pick the bin that needs stock, then pick the bins to pull it from."
+msgstr "先选择需要库存的箱，再选择要从中提取库存的箱。"
 
 msgid "Pick tracked item"
 msgstr "拣选追踪项目"
@@ -10511,8 +10575,8 @@ msgstr "移除筛选"
 msgid "Remove from Price List"
 msgstr "从价格列表中移除"
 
-msgid "Remove item"
-msgstr "删除项目"
+msgid "Remove line"
+msgstr "删除行"
 
 msgid "Remove order"
 msgstr "删除订单"
@@ -10738,6 +10802,12 @@ msgstr "重试"
 msgid "Return Home"
 msgstr "返回首页"
 
+msgid "Returned"
+msgstr "已返回"
+
+msgid "Returning unused picked material"
+msgstr "返回未使用的拣配物料"
+
 msgid "Rev {revision}"
 msgstr "Rev {revision}"
 
@@ -10761,6 +10831,9 @@ msgstr "反转相关日记账分录"
 
 msgid "Reversed"
 msgstr "已冲销"
+
+msgid "Review"
+msgstr "查看"
 
 msgid "Review each item's changes, then confirm — releasing can't be undone."
 msgstr "审查每个项目的更改，然后确认 — 发布无法撤销。"
@@ -11082,6 +11155,12 @@ msgstr "扫描"
 msgid "Scan a label or search by item ID or tracking ID."
 msgstr "扫描标签或按项目 ID 或跟踪 ID 搜索。"
 
+msgid "Scan or choose a batch number"
+msgstr "扫描或选择批号"
+
+msgid "Scan or choose a serial number"
+msgstr "扫描或选择序列号"
+
 msgid "Scan or enter tracked entity ID, serial, or batch"
 msgstr "扫描或输入跟踪实体ID、序列号或批次号"
 
@@ -11093,9 +11172,6 @@ msgstr "扫描或搜索..."
 
 msgid "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
 msgstr "从此批次扫描或选择被追踪的实体以将其作为样本列添加，然后在网格中记录其结果。"
-
-msgid "Scan the tracking ID for this line"
-msgstr "扫描此行的跟踪ID"
 
 msgid "SCAR"
 msgstr "SCAR"
@@ -11196,6 +11272,9 @@ msgstr "搜索字段..."
 msgid "Search for existing or create a new one"
 msgstr "搜索现有问题或创建新问题"
 
+msgid "Search items or bins"
+msgstr "搜索项目或位置"
+
 msgid "Search Job"
 msgstr "搜索任务"
 
@@ -11237,6 +11316,9 @@ msgstr "选择受理人"
 
 msgid "Select a default approver"
 msgstr "选择默认审批人"
+
+msgid "Select a destination"
+msgstr "选择目标位置"
 
 msgid "Select a document"
 msgstr "选择文件"
@@ -11456,11 +11538,14 @@ msgstr "序列项目需要销售订单"
 msgid "Serial Number"
 msgstr "序列号"
 
-msgid "Serial number not found"
-msgstr "序列号未找到"
-
 msgid "Serial Number:"
 msgstr "序列号："
+
+msgid "Serial Numbers"
+msgstr "序列号"
+
+msgid "Serial numbers are only generated for serial- or batch-tracked items."
+msgstr "序列号仅为序列号或批次跟踪的物料生成。"
 
 msgid "Serial or Batch Tracking Required"
 msgstr "序列号或批次跟踪必需"
@@ -11765,6 +11850,10 @@ msgstr "显示供应商ID"
 
 msgid "Show sync options"
 msgstr "显示同步选项"
+
+#. placeholder {0}: data.length
+msgid "Showing {0} of {totalCount} — refine your search"
+msgstr "显示 {0} 个，共 {totalCount} 个 — 优化搜索"
 
 msgid "Shown as a faint background behind every page of generated PDFs"
 msgstr "作为淡色背景显示在每个生成的PDF页面后面"
@@ -13313,6 +13402,9 @@ msgstr "这是您的财政年度开始的月份。"
 msgid "This is the month your tax year starts."
 msgstr "这是您的税务年度开始的月份。"
 
+msgid "this item"
+msgstr "此物料"
+
 msgid "This item is built via a configurator and resolves its components per-order; jobs created for it inherit the configurator's resolved BOM."
 msgstr "该项目通过配置器构建，并按订单解析其组件；为其创建的工作继承配置器的解析BOM。"
 
@@ -13648,9 +13740,6 @@ msgstr "跟踪的实体"
 msgid "Tracked Entity"
 msgstr "追踪实体"
 
-msgid "Tracked entity already picked"
-msgstr "已追踪实体已被拣选"
-
 msgid "Tracked entity ID is required but none was found"
 msgstr "已跟踪实体ID是必需的，但未找到"
 
@@ -13885,6 +13974,9 @@ msgstr "未命名图表"
 
 msgid "Untitled line"
 msgstr "未命名行"
+
+msgid "Unused picked material flushed back from the work center to the warehouse."
+msgstr "未使用的拣配物料从工作中心冲回仓库。"
 
 msgid "UoM"
 msgstr "计量单位"

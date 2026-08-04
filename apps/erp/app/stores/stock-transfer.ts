@@ -8,23 +8,32 @@ export type StockTransferWizardLine = {
   itemReadableId: string;
   description: string;
   thumbnailPath: string;
-  fromStorageUnitId: string;
-  fromStorageUnitName: string;
-  toStorageUnitId: string;
-  toStorageUnitName: string;
+  // Nullable: ledger rows can record stock against the location rather than a
+  // bin, and the server validator accepts `nullish()` for both.
+  fromStorageUnitId: string | null;
+  fromStorageUnitName: string | null;
+  toStorageUnitId: string | null;
+  toStorageUnitName: string | null;
   quantityAvailable: number;
   quantity?: number;
   requiresSerialTracking: boolean;
   requiresBatchTracking: boolean;
 };
 
+export type StockTransferDestination = {
+  itemId: string;
+  storageUnitId: string | null;
+};
+
 export type StockTransferWizardState = {
-  selectedToItemStorageUnitIds: Set<string>; // Set of "itemId:storageUnitId" composite keys selected in the "to" table
+  // The destination row (item + bin) stock is being pulled into. Focus only —
+  // changing it never mutates lines, so lines accumulate across destinations.
+  activeDestination: StockTransferDestination | null;
   lines: StockTransferWizardLine[];
 };
 
 const $wizardStore = atom<StockTransferWizardState>({
-  selectedToItemStorageUnitIds: new Set(),
+  activeDestination: null,
   lines: []
 });
 
@@ -33,49 +42,37 @@ const $wizardLinesCount = computed(
   (wizard) => wizard.lines.filter((line) => (line.quantity ?? 0) > 0).length
 );
 
+const $wizardTotalQuantity = computed($wizardStore, (wizard) =>
+  wizard.lines.reduce((sum, line) => sum + (line.quantity ?? 0), 0)
+);
+
 export const useStockTransferWizard = () =>
   useNanoStore<StockTransferWizardState>($wizardStore, "wizard");
 export const useStockTransferWizardLinesCount = () =>
   useValue($wizardLinesCount);
+export const useStockTransferWizardTotalQuantity = () =>
+  useValue($wizardTotalQuantity);
 
 // Stock Transfer Wizard actions
-export const toggleToItemStorageUnitSelection = (
-  itemId: string,
-  storageUnitId: string
+
+// Focus a destination (item + bin) to pull stock into. Clicking the active one
+// again clears focus. Lines are never touched — removal is always explicit.
+export const setActiveDestination = (
+  destination: StockTransferDestination | null
 ) => {
   const currentWizard = $wizardStore.get();
-  const compositeKey = `${itemId}:${storageUnitId}`;
-  const newSelectedToItemStorageUnitIds = new Set(
-    currentWizard.selectedToItemStorageUnitIds
-  );
-
-  if (newSelectedToItemStorageUnitIds.has(compositeKey)) {
-    newSelectedToItemStorageUnitIds.delete(compositeKey);
-    // Remove all lines that have this itemId and toStorageUnitId
-    const updatedLines = currentWizard.lines.filter(
-      (line) =>
-        !(line.itemId === itemId && line.toStorageUnitId === storageUnitId)
-    );
-    $wizardStore.set({
-      selectedToItemStorageUnitIds: newSelectedToItemStorageUnitIds,
-      lines: updatedLines
-    });
-  } else {
-    newSelectedToItemStorageUnitIds.add(compositeKey);
-    $wizardStore.set({
-      ...currentWizard,
-      selectedToItemStorageUnitIds: newSelectedToItemStorageUnitIds
-    });
-  }
+  $wizardStore.set({ ...currentWizard, activeDestination: destination });
 };
 
-export const isToItemStorageUnitSelected = (
+export const isActiveDestination = (
   itemId: string,
-  storageUnitId: string
+  storageUnitId: string | null
 ) => {
-  const currentWizard = $wizardStore.get();
-  const compositeKey = `${itemId}:${storageUnitId}`;
-  return currentWizard.selectedToItemStorageUnitIds.has(compositeKey);
+  const { activeDestination } = $wizardStore.get();
+  return (
+    activeDestination?.itemId === itemId &&
+    activeDestination?.storageUnitId === storageUnitId
+  );
 };
 
 export const addTransferLine = (line: StockTransferWizardLine) => {
@@ -108,8 +105,8 @@ export const addTransferLine = (line: StockTransferWizardLine) => {
 
 export const removeTransferLine = (
   itemId: string,
-  fromStorageUnitId: string,
-  toStorageUnitId: string
+  fromStorageUnitId: string | null,
+  toStorageUnitId: string | null
 ) => {
   const currentWizard = $wizardStore.get();
   const updatedLines = currentWizard.lines.filter(
@@ -123,37 +120,10 @@ export const removeTransferLine = (
   $wizardStore.set({ ...currentWizard, lines: updatedLines });
 };
 
-export const hasTransferLine = (
-  itemId: string,
-  fromStorageUnitId: string,
-  toStorageUnitId: string
-) => {
-  const currentWizard = $wizardStore.get();
-  return currentWizard.lines.some(
-    (line) =>
-      line.itemId === itemId &&
-      line.fromStorageUnitId === fromStorageUnitId &&
-      line.toStorageUnitId === toStorageUnitId
-  );
-};
-
-export const hasTransferLinesToItemStorageUnit = (
-  itemId: string,
-  storageUnitId: string
-) => {
-  const currentWizard = $wizardStore.get();
-  return currentWizard.lines.some(
-    (line) =>
-      line.itemId === itemId &&
-      line.toStorageUnitId === storageUnitId &&
-      (line.quantity ?? 0) > 0
-  );
-};
-
 export const updateTransferLineQuantity = (
   itemId: string,
-  fromStorageUnitId: string,
-  toStorageUnitId: string,
+  fromStorageUnitId: string | null,
+  toStorageUnitId: string | null,
   quantity: number
 ) => {
   const currentWizard = $wizardStore.get();
@@ -176,15 +146,12 @@ export const updateTransferLineQuantity = (
 
 export const clearStockTransferWizard = () => {
   $wizardStore.set({
-    selectedToItemStorageUnitIds: new Set(),
+    activeDestination: null,
     lines: []
   });
 };
 
-export const clearSelectedToItemStorageUnits = () => {
+export const clearTransferLines = () => {
   const currentWizard = $wizardStore.get();
-  $wizardStore.set({
-    ...currentWizard,
-    selectedToItemStorageUnitIds: new Set()
-  });
+  $wizardStore.set({ ...currentWizard, lines: [] });
 };

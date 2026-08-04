@@ -1,4 +1,12 @@
-import { Badge, Button, cn, DatePicker, Input } from "@carbon/react";
+import {
+  Badge,
+  Button,
+  CardContent,
+  cn,
+  DatePicker,
+  Input,
+  Card as UICard
+} from "@carbon/react";
 import type { MessageDescriptor } from "@lingui/core";
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -250,17 +258,19 @@ function Card({
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-lg border bg-card shadow-button-base p-5">
-      <h2 className="text-sm font-semibold">{title}</h2>
-      {subtitle ? (
-        <p className="text-xs text-muted-foreground mt-1 mb-4 max-w-xl">
-          {subtitle}
-        </p>
-      ) : (
-        <div className="mb-4" />
-      )}
-      {children}
-    </section>
+    <UICard>
+      <CardContent className="p-5 border-0">
+        <h2 className="text-sm font-semibold">{title}</h2>
+        {subtitle ? (
+          <p className="text-xs text-muted-foreground mt-1 mb-4 max-w-xl">
+            {subtitle}
+          </p>
+        ) : (
+          <div className="mb-4" />
+        )}
+        {children}
+      </CardContent>
+    </UICard>
   );
 }
 

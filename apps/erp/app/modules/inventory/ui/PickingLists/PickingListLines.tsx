@@ -282,6 +282,9 @@ function PickingListLineItem({
       : null;
   const quantityToPick = Number(line.quantityToPick ?? 0);
   const quantityPicked = Number(line.quantityPicked ?? 0);
+  const quantityReturned = Number(
+    (line as { quantityReturned?: number | null }).quantityReturned ?? 0
+  );
   const isPicked = quantityToPick > 0 && quantityPicked >= quantityToPick;
   const isShort = line.status === "Short";
   const isResolved = isPicked || isShort;
@@ -396,6 +399,25 @@ function PickingListLineItem({
               </Badge>
             ))}
           </HStack>
+        )}
+        {quantityReturned > 0 && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Badge
+                variant="secondary"
+                className="gap-1 tabular-nums cursor-default"
+              >
+                <LuUndo2 />
+                <Trans>Returned</Trans> {quantityReturned}
+              </Badge>
+            </TooltipTrigger>
+            <TooltipContent className="max-w-[240px]">
+              <Trans>
+                Unused picked material flushed back from the work center to the
+                warehouse.
+              </Trans>
+            </TooltipContent>
+          </Tooltip>
         )}
         {isTracked ? (
           <Badge

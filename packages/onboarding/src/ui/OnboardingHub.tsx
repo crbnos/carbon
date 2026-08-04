@@ -1,4 +1,12 @@
-import { Badge, Button, cn } from "@carbon/react";
+import {
+  Badge,
+  Button,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  cn
+} from "@carbon/react";
 import { Plural, Trans, useLingui } from "@lingui/react/macro";
 import { useEffect, useRef } from "react";
 import {
@@ -131,7 +139,7 @@ export function OnboardingHub({
       ) : null}
 
       {done === total ? (
-        <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-6 flex items-center gap-4 motion-safe:animate-in motion-safe:fade-in-50 motion-safe:zoom-in-95 motion-safe:duration-500">
+        <Card className="flex-row items-center gap-4 p-6 border border-emerald-500/30 bg-emerald-500/5 dark:bg-emerald-500/5 motion-safe:animate-in motion-safe:fade-in-50 motion-safe:zoom-in-95 motion-safe:duration-500">
           <div className="shrink-0 size-12 rounded-lg bg-emerald-500/15 flex items-center justify-center">
             <LuPartyPopper className="text-2xl text-emerald-600 dark:text-emerald-400" />
           </div>
@@ -151,16 +159,16 @@ export function OnboardingHub({
               <Trans>Finish onboarding</Trans>
             </Button>
           ) : null}
-        </div>
+        </Card>
       ) : null}
 
-      <div className="rounded-lg border bg-card overflow-hidden">
-        <div className="flex items-end justify-between gap-4 flex-wrap p-6 pb-4 border-b">
-          <div className="text-base font-medium tracking-tight">
+      <Card className="overflow-hidden">
+        <CardHeader className="flex-row items-end justify-between gap-4 flex-wrap border-b border-border">
+          <CardTitle className="line-clamp-none">
             <Trans>
               {done} of {total} phases complete
             </Trans>
-          </div>
+          </CardTitle>
           <span className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground">
             <span
               className={cn(
@@ -170,50 +178,51 @@ export function OnboardingHub({
             />
             {stateText}
           </span>
-        </div>
-
-        <div className="flex gap-1.5 px-6 py-4">
-          {spine.map((step) => {
-            const st = effectiveGateStatus(
-              step,
-              map,
-              signals,
-              stepTaskProgress(tasks, step.key, map)
-            );
-            return (
-              <div
-                key={step.key}
-                className={cn(
-                  "flex-1 h-2.5 rounded-full transition-colors",
-                  st === "done"
-                    ? "bg-emerald-500"
-                    : st === "prog"
-                      ? "bg-primary"
-                      : "bg-border"
-                )}
-              />
-            );
-          })}
-        </div>
-
-        <ul className="divide-y">
-          {spine.map((step) => (
-            <GateRow
-              key={step.key}
-              step={step}
-              tier={tier}
-              status={effectiveGateStatus(
+        </CardHeader>
+        <CardContent className="p-0 border-0">
+          <div className="flex gap-1.5 px-6 py-4">
+            {spine.map((step) => {
+              const st = effectiveGateStatus(
                 step,
                 map,
                 signals,
                 stepTaskProgress(tasks, step.key, map)
-              )}
-              progress={stepTaskProgress(tasks, step.key, map)}
-              onOpenInPlan={onOpenInPlan}
-            />
-          ))}
-        </ul>
-      </div>
+              );
+              return (
+                <div
+                  key={step.key}
+                  className={cn(
+                    "flex-1 h-2.5 rounded-full transition-colors",
+                    st === "done"
+                      ? "bg-emerald-500"
+                      : st === "prog"
+                        ? "bg-primary"
+                        : "bg-border"
+                  )}
+                />
+              );
+            })}
+          </div>
+
+          <ul className="divide-y">
+            {spine.map((step) => (
+              <GateRow
+                key={step.key}
+                step={step}
+                tier={tier}
+                status={effectiveGateStatus(
+                  step,
+                  map,
+                  signals,
+                  stepTaskProgress(tasks, step.key, map)
+                )}
+                progress={stepTaskProgress(tasks, step.key, map)}
+                onOpenInPlan={onOpenInPlan}
+              />
+            ))}
+          </ul>
+        </CardContent>
+      </Card>
 
       {tier === "self_serve" && onContactExpert ? (
         <GuidedUpsellCard onContactExpert={onContactExpert} />
@@ -244,63 +253,65 @@ function NextStepCard({
     : undefined;
 
   return (
-    <div className="rounded-lg border border-border bg-card p-5 flex items-start gap-4 motion-safe:animate-in motion-safe:fade-in-50 motion-safe:slide-in-from-bottom-2 motion-safe:duration-300">
-      <div className="shrink-0 size-9 rounded-xl bg-primary/15 flex items-center justify-center text-sm font-medium tabular-nums">
-        {action.gateNumber}
-      </div>
-      <div className="flex-1 min-w-0">
-        <div className="text-xxs uppercase text-muted-foreground tracking-wide font-medium">
-          <Trans>Next step</Trans>
+    <Card className="motion-safe:animate-in motion-safe:fade-in-50 motion-safe:slide-in-from-bottom-2 motion-safe:duration-300">
+      <CardContent className="flex-row items-start gap-4 p-5 border-0">
+        <div className="shrink-0 size-9 rounded-xl bg-primary/15 flex items-center justify-center text-sm font-medium tabular-nums">
+          {action.gateNumber}
         </div>
-        <div className="text-base font-medium tracking-tight mt-0.5">
-          {i18n._(action.title)}
-        </div>
-        {action.detail ? (
-          <p className="text-sm text-muted-foreground mt-1">
-            {i18n._(action.detail)}
-          </p>
-        ) : null}
-        <div className="flex items-center gap-2 mt-3 flex-wrap">
-          {product ? (
-            <Button
-              leftIcon={<LuArrowRight />}
-              onClick={() => onOpenProduct(product.key)}
-            >
-              {product.cta ? i18n._(product.cta) : t`Open in Carbon`}
-            </Button>
-          ) : (
-            <Button
-              leftIcon={<LuArrowRight />}
-              onClick={() => onOpenPage(action.refSlug)}
-            >
-              <Trans>Go to {i18n._(action.refTitle)}</Trans>
-            </Button>
-          )}
-          {videoUrl ? (
-            <Button
-              variant="secondary"
-              size="sm"
-              leftIcon={<LuPlay />}
-              onClick={() => window.open(videoUrl, "_blank", "noopener")}
-            >
-              <Trans>Watch</Trans>
-            </Button>
+        <div className="flex-1 min-w-0">
+          <div className="text-xxs uppercase text-muted-foreground tracking-wide font-medium">
+            <Trans>Next step</Trans>
+          </div>
+          <div className="text-base font-medium tracking-tight mt-0.5">
+            {i18n._(action.title)}
+          </div>
+          {action.detail ? (
+            <p className="text-sm text-muted-foreground mt-1">
+              {i18n._(action.detail)}
+            </p>
           ) : null}
-          {product?.docsUrl ? (
-            <Button
-              variant="secondary"
-              size="sm"
-              leftIcon={<LuArrowUpRight />}
-              onClick={() =>
-                window.open(product.docsUrl, "_blank", "noopener,noreferrer")
-              }
-            >
-              <Trans>Docs</Trans>
-            </Button>
-          ) : null}
+          <div className="flex items-center gap-2 mt-3 flex-wrap">
+            {product ? (
+              <Button
+                leftIcon={<LuArrowRight />}
+                onClick={() => onOpenProduct(product.key)}
+              >
+                {product.cta ? i18n._(product.cta) : t`Open in Carbon`}
+              </Button>
+            ) : (
+              <Button
+                leftIcon={<LuArrowRight />}
+                onClick={() => onOpenPage(action.refSlug)}
+              >
+                <Trans>Go to {i18n._(action.refTitle)}</Trans>
+              </Button>
+            )}
+            {videoUrl ? (
+              <Button
+                variant="secondary"
+                size="sm"
+                leftIcon={<LuPlay />}
+                onClick={() => window.open(videoUrl, "_blank", "noopener")}
+              >
+                <Trans>Watch</Trans>
+              </Button>
+            ) : null}
+            {product?.docsUrl ? (
+              <Button
+                variant="secondary"
+                size="sm"
+                leftIcon={<LuArrowUpRight />}
+                onClick={() =>
+                  window.open(product.docsUrl, "_blank", "noopener,noreferrer")
+                }
+              >
+                <Trans>Docs</Trans>
+              </Button>
+            ) : null}
+          </div>
         </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 }
 

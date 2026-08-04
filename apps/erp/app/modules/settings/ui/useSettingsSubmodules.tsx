@@ -17,6 +17,7 @@ import {
   LuLayoutDashboard,
   LuNetwork,
   LuPrinter,
+  LuScanBarcode,
   LuSheet,
   LuShoppingCart,
   LuUsers,
@@ -29,15 +30,16 @@ import { useFlags } from "~/hooks/useFlags";
 import type { AuthenticatedRouteGroup, Role } from "~/types";
 import { path } from "~/utils/path";
 
-const internalOnlyRoutes = new Set<string>([
-  path.to.companies,
-  path.to.backups
-]);
+const internalOnlyRoutes = new Set<string>([path.to.companies]);
+
+// Internal-only in real deployments, but usable by anyone on a local dev stack —
+// mirrors `canAccessBackups`, which gates the route and the backup APIs.
+const localOrInternalRoutes = new Set<string>([path.to.backups]);
 
 export default function useSettingsSubmodules() {
   const { t } = useLingui();
   const permissions = usePermissions();
-  const { isCloud, isInternal } = useFlags();
+  const { isCloud, isInternal, isLocalDev } = useFlags();
 
   const settingsRoutes: AuthenticatedRouteGroup<{
     requiresOwnership?: boolean;
@@ -192,6 +194,12 @@ export default function useSettingsSubmodules() {
             icon: <LuSheet />
           },
           {
+            name: t`Serial Numbers`,
+            to: path.to.serialNumberSequences,
+            role: "employee",
+            icon: <LuScanBarcode />
+          },
+          {
             name: t`Webhooks`,
             to: path.to.webhooks,
             role: "employee",
@@ -213,6 +221,8 @@ export default function useSettingsSubmodules() {
     if (route.requiresOwnership && !permissions.isOwner()) return false;
     if (route.requiresCloudEnvironment && !isCloud) return false;
     if (!isInternal && internalOnlyRoutes.has(route.to)) return false;
+    if (!isInternal && !isLocalDev && localOrInternalRoutes.has(route.to))
+      return false;
     return true;
   };
 

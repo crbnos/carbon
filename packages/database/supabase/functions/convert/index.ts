@@ -9,7 +9,7 @@ import { z } from "npm:zod@^3.24.1";
 import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
 
 import { format } from "https://deno.land/std@0.205.0/datetime/format.ts";
-import { corsHeaders } from "../lib/headers.ts";
+import { corsPreflight, errorResponse, jsonResponse } from "../lib/response.ts";
 import { requirePermissions } from "../lib/supabase.ts";
 import { Database } from "../lib/types.ts";
 import { getNextSequence } from "../shared/get-next-sequence.ts";
@@ -131,9 +131,8 @@ const payloadValidator = z.discriminatedUnion("type", [
 ]);
 
 serve(async (req: Request) => {
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
-  }
+  const preflight = corsPreflight(req);
+  if (preflight) return preflight;
   const payload = await req.json();
   let convertedId = "";
   try {
@@ -441,14 +440,11 @@ serve(async (req: Request) => {
             .execute();
         });
 
-        return new Response(
-          JSON.stringify({
-            id: purchaseInvoiceId,
-          }),
+        return jsonResponse(
           {
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-            status: 201,
-          }
+            id: purchaseInvoiceId,
+          },
+          201
         );
       }
       case "quoteToSalesOrder": {
@@ -943,14 +939,11 @@ serve(async (req: Request) => {
           }
         });
 
-        return new Response(
-          JSON.stringify({
-            id: salesInvoiceId,
-          }),
+        return jsonResponse(
           {
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-            status: 201,
-          }
+            id: salesInvoiceId,
+          },
+          201
         );
       }
       case "salesRfqToQuote": {
@@ -1536,14 +1529,11 @@ serve(async (req: Request) => {
           }
         });
 
-        return new Response(
-          JSON.stringify({
-            id: salesInvoiceId,
-          }),
+        return jsonResponse(
           {
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-            status: 201,
-          }
+            id: salesInvoiceId,
+          },
+          201
         );
       }
       case "supplierQuoteToPurchaseOrder": {
@@ -2034,28 +2024,10 @@ serve(async (req: Request) => {
         throw new Error(`Invalid type  ${type}`);
     }
 
-    return new Response(
-      JSON.stringify({
-        convertedId,
-      }),
-      {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200,
-      }
-    );
+    return jsonResponse({
+      convertedId,
+    });
   } catch (err) {
-    console.error(err);
-    // JSON.stringify(err) → "{}" for Errors (non-enumerable properties); use .message
-    // duck-typing. Omit key when empty so the caller's fallback string wins.
-    const message = (err as { message?: unknown })?.message;
-    return new Response(
-      JSON.stringify(
-        typeof message === "string" && message !== "" ? { message } : {}
-      ),
-      {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 500,
-      }
-    );
+    return errorResponse(err, 500);
   }
 });

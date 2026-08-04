@@ -397,6 +397,16 @@ export const VERCEL_ENV =
     isSecret: false
   }) ?? NODE_ENV;
 
+// True only on a developer's local stack — never in prod, preview, or a
+// self-hosted deployment (those all run NODE_ENV=production). Gates features
+// that stay internal-only in real deployments but should be exercisable by
+// anyone locally. Derived from vars already in `getBrowserEnv()`, so it is
+// correct client-side too.
+export const IS_LOCAL_DEV =
+  NODE_ENV !== "production" &&
+  VERCEL_ENV !== "production" &&
+  VERCEL_ENV !== "preview";
+
 export const POSTHOG_API_HOST = getEnv("POSTHOG_API_HOST", {
   isSecret: false
 });

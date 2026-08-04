@@ -34,6 +34,18 @@ export async function action({ request }: ActionFunctionArgs) {
 
   switch (sourceDocument) {
     case "Sales Order":
+      if (!defaults.data?.locationId) {
+        throw redirect(
+          path.to.salesOrder(sourceDocumentId),
+          await flash(
+            request,
+            error(
+              null,
+              "Set a default location in your settings before creating a shipment"
+            )
+          )
+        );
+      }
       const salesOrderShipment = await serviceRole.functions.invoke<{
         id: string;
       }>("create", {
@@ -67,6 +79,18 @@ export async function action({ request }: ActionFunctionArgs) {
 
       throw redirect(path.to.shipmentDetails(salesOrderShipment.data.id));
     case "Purchase Order":
+      if (!defaults.data?.locationId) {
+        throw redirect(
+          path.to.purchaseOrder(sourceDocumentId),
+          await flash(
+            request,
+            error(
+              null,
+              "Set a default location in your settings before creating a shipment"
+            )
+          )
+        );
+      }
       const purchaseOrderShipment = await serviceRole.functions.invoke<{
         id: string;
       }>("create", {

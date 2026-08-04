@@ -1165,9 +1165,8 @@ msgstr "Switch Operator"
 msgid "Tag"
 msgstr "Tag"
 
-#. placeholder {0}: operation.operationQuantity
-msgid "The completed quantity for this operation is less than the required quantity of {0}."
-msgstr "The completed quantity for this operation is less than the required quantity of {0}."
+msgid "The completed quantity for this operation is less than the required quantity of {targetQuantity}."
+msgstr "The completed quantity for this operation is less than the required quantity of {targetQuantity}."
 
 msgid "The lot will be marked Passed and {remaining} remaining unit(s) will be completed at this operation."
 msgstr "The lot will be marked Passed and {remaining} remaining unit(s) will be completed at this operation."

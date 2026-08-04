@@ -782,6 +782,8 @@ export const path = {
       generatePath(`${x}/shared/views/delete/${id}`),
     deleteScrapReason: (id: string) =>
       generatePath(`${x}/production/scrap-reasons/delete/${id}`),
+    deleteSerialNumberSequence: (id: string) =>
+      generatePath(`${x}/settings/serial-numbers/delete/${id}`),
     deleteShift: (id: string) =>
       generatePath(`${x}/people/shifts/delete/${id}`),
     deleteShipment: (id: string) => generatePath(`${x}/shipment/${id}/delete`),
@@ -1543,6 +1545,7 @@ export const path = {
     newSalesRFQ: `${x}/sales-rfq/new`,
     newSalesRFQLine: (id: string) => generatePath(`${x}/sales-rfq/${id}/new`),
     newScrapReason: `${x}/production/scrap-reasons/new`,
+    newSerialNumberSequence: `${x}/settings/serial-numbers/new`,
     newService: `${x}/service/new`,
     newServiceSupplier: (id: string) =>
       generatePath(`${x}/service/${id}/purchasing/new`),
@@ -1941,6 +1944,9 @@ export const path = {
     sequences: `${x}/settings/sequences`,
     serialNumber: (id: string) =>
       generatePath(`${x}/inventory/serial-numbers/${id}`),
+    serialNumberSequence: (id: string) =>
+      generatePath(`${x}/settings/serial-numbers/${id}`),
+    serialNumberSequences: `${x}/settings/serial-numbers`,
     serialNumbers: `${x}/inventory/serial-numbers`,
     service: (id: string) => generatePath(`${x}/service/${id}`),
     serviceCosting: (id: string) => generatePath(`${x}/service/${id}/costing`),

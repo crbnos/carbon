@@ -38,6 +38,7 @@ function QuantityEdgeImpl({
 
   const isReject = !!data?.isReject;
   const isBackEdge = !!data?.isBackEdge;
+  const isMovement = data?.kind === "movement";
   const dimmed = !!data?.dimmed;
   const highlighted = !!data?.highlighted;
   const strokeWidth = highlighted ? 2.5 : isReject ? 1.5 : 1;
@@ -64,7 +65,8 @@ function QuantityEdgeImpl({
           stroke,
           strokeWidth,
           opacity: dimmed ? 0.08 : baseOpacity,
-          strokeDasharray: isBackEdge ? "8 4" : undefined,
+          // Movement edges dash to read as "passed through", not "ended here".
+          strokeDasharray: isBackEdge ? "8 4" : isMovement ? "4 3" : undefined,
           fill: "none"
         }}
       />

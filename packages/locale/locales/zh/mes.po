@@ -1165,9 +1165,8 @@ msgstr "切换操作员"
 msgid "Tag"
 msgstr "标签"
 
-#. placeholder {0}: operation.operationQuantity
-msgid "The completed quantity for this operation is less than the required quantity of {0}."
-msgstr "此工序的完成数量小于所需数量 {0}。"
+msgid "The completed quantity for this operation is less than the required quantity of {targetQuantity}."
+msgstr "此工序的完成数量小于所需数量 {targetQuantity}。"
 
 msgid "The lot will be marked Passed and {remaining} remaining unit(s) will be completed at this operation."
 msgstr "该批次将被标记为\"通过\"，{remaining} 个剩余单位将在此操作中完成。"

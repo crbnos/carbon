@@ -567,3 +567,49 @@ Format: `Context → Problem → Rule → Applies to`
 **Rule:** A `.refine` predicate must return a **boolean** (`false` = invalid). To attach a path/message, either pass the second `{ message, path }` argument to `.refine` and return `false` on failure, or use `.superRefine((data, ctx) => ctx.addIssue({ path, message }))` when you need per-field errors. Never return an object/array from a `.refine` callback expecting it to be an error map.
 
 **Applies to:** all `apps/erp/app/modules/**/*.models.ts` (and `apps/mes/app/services/models.ts`) zod schemas using `.refine`.
+
+## The design-system `Card` is a gray tray + shadow edge — the white surface is `CardContent`, and a tint on the shell needs a `dark:` variant
+
+**Context:** Building card surfaces with `@carbon/react`'s `Card` family (`packages/react/src/Card.tsx`), e.g. the onboarding Implementation Hub (`packages/onboarding/src/ui/**`). Three separate traps hit in sequence while converting hand-rolled `rounded-lg border bg-card` blocks to the design system.
+
+**Problem:**
+1. `Card` is `bg-accent dark:bg-card` — a **muted gray tray** in light mode, not a white card. Putting content directly in `<Card>` reads gray. The white surface (`bg-card`) comes from `CardContent`; the canonical composition is `Card > CardHeader + CardContent` (see `MetricCard.tsx`, `ActionTaskList.tsx`).
+2. `Card`'s `shadow-button-base` already draws the crisp outer edge (a `0 0 0 1px` ring + inset highlights). A `CardContent` `border` sitting on top of that shadow ring reads as a **blurry double line**.
+3. Overriding the shell background with an **un-prefixed** color (`bg-emerald-500/5`) leaves `Card`'s base `dark:bg-card` in the class list; `.dark .dark:bg-card` out-specifies `.bg-emerald-500/5`, so the tint **silently disappears in dark mode** (border/icon still show, so it degrades quietly).
+
+**Rule:**
+- Single-surface white card: `Card > CardContent` (not content directly in `Card`).
+- Titled card: heading in `CardHeader` over `CardContent`; the shell shadow is the outer edge, so use `CardContent className="border-0"` and put the header/body divider on the `CardHeader` (`border-b border-border`) — never a full `CardContent` border on top of the shadow.
+- Colored callout on a `Card`: always pair the tint with its `dark:` variant (`bg-emerald-500/5 dark:bg-emerald-500/5`). `cn`/twMerge then drops the base `dark:bg-card`. Verify by checking the rendered class list no longer contains `dark:bg-card`.
+
+**Applies to:** any UI composing `@carbon/react` `Card`/`CardContent`/`CardHeader`; the `Section`/`Panel` primitives in `packages/onboarding/src/ui/primitives/Section.tsx` centralize this composition for the hub.
+
+## react-aria compares `formatOptions` by reference — an inline literal wipes half-typed numbers
+
+**Context:** Any `NumberField` / `Number` / `NumberControlled` field that passes `formatOptions={{ ... }}` at the call site (real case: the MES Log Completed quantity in `apps/mes/app/components/JobOperation/components/QuantityModal.tsx`, where operators could not enter `1.5`).
+
+**Problem:** `useNumberFieldState` (`@react-stately/numberfield`) guards with `formatOptions !== prevFormatOptions` — a **reference** check — and on a change calls `setInputValue(format(numberValue))`, replacing whatever is in the input with the last *committed* number. `react-aria-components`' `NumberField` spreads caller props straight through, so an inline object literal is a new reference every render. Any parent re-render while the user is mid-edit destroys the in-progress text. Commit only happens on blur/Enter/stepper, so a single digit usually survives but a decimal (`1.` → `1.5`, two-plus keystrokes) reliably does not. It reads as "the field doesn't support decimals" even though the format options, the zod validator, and the numeric DB column all allow them.
+
+**Rule:** Never let an unstable `Intl.NumberFormatOptions` reference reach react-aria. `packages/react/src/Number.tsx`'s `NumberField` now stabilizes it via `useStableFormatOptions` / `areNumberFormatOptionsEqual` (shallow value compare — exact, since the options are all primitives), so call sites are free to pass literals. If you build another react-aria wrapper that forwards `formatOptions`, do the same; do not "fix" this class of bug by only adding/adjusting `formatOptions` at the call site — that is what introduced it here. Also note the same trap for any react-aria prop compared by identity.
+
+**Applies to:** `packages/react/src/Number.tsx`; every `formatOptions={{ ... }}` call site in `apps/erp` / `apps/mes` (~144); `packages/form/src/components/{Number,NumberControlled,ArrayNumeric}.tsx`, whose `rest.formatOptions ?? ({ ... })` default also allocates a fresh object each render.
+
+## Returns must not decrement pickingListLine.quantityPicked — the status trigger demotes terminal headers
+
+**Context:** Building the picked-material return sweep (spec `.ai/specs/2026-08-04-picked-material-return-timing.md`). The original `returnPickedRemainder` case in `post-picking` decremented `pickingListLine.quantityPicked` when flushing un-consumed staged stock back to the warehouse at job complete.
+
+**Problem:** `update_picking_list_status` (AFTER UPDATE ROW on `pickingListLine`, newest body `20260728120100`) fires on any `quantityPicked` change. After the decrement the line satisfies `quantityPicked < quantityToPick`, so the trigger's work-remains branch moves a `Completed`/`Partial` picking-list header back to **In Progress** — the automatic job-complete sweep was silently reopening completed picking lists. The demotion is CORRECT for an operator unpick (work regression); it is wrong for a post-completion return.
+
+**Rule:** Book returns on `pickingListLine.quantityReturned` (added `20260804111631`) and leave `quantityPicked` as gross-picked; net staged at lineside = `quantityPicked − quantityReturned`. Only genuine unpicks (operator reversing work) may decrement `quantityPicked`. Any new writer of `pickingListLine.quantityPicked`/`status` must first check what `update_picking_list_status` will do with the change. `pickingListLineTrackedEntity` allocations are different — returns DO decrement those (availability RPCs net them out; no trigger watches that table).
+
+**Applies to:** `packages/database/supabase/functions/post-picking/index.ts` (all return/unpick cases), `update_picking_list_status` migrations, any code mutating `pickingListLine` quantities.
+
+## Audit FK snapshots: constraint-less columns are invisible to schema discovery; junction targets need hops
+
+**Context:** Audit-log diffs resolve FK ids into frozen display names ("Location: Chicago → Dallas") via `get_foreign_key_map` + `fkDisplayRegistry` (`packages/database/src/audit.config.ts`, handler in `packages/jobs/src/inngest/functions/events/{audit,fk-snapshots}.ts`). Found while fixing "audit log shows location id instead of name" (2026-08).
+
+**Problem:** Three distinct shapes made raw ids reach the UI. (1) `get_foreign_key_map` reads `pg_constraint`, so reference columns **without a real FK constraint** are invisible to it — no snapshot no matter what the registry says. This schema has many: `salesOrder.salesPersonId`, `salesInvoice.assignee`, line-level `locationId`s on `purchaseOrderLine`/`salesOrderLine`/`salesInvoiceShipment`, `inventoryCountLine.storageUnitId`, etc. (2) Junction targets (`customerContact`/`supplierContact`, `opportunity`, `fulfillment`…) have no displayable columns of their own — the name lives one hop away (`contact.fullName`), which single-hop resolution can't reach. (3) A target table simply missing from `fkDisplayRegistry` silently degrades to the raw id — no error anywhere.
+
+**Rule:** When adding a reference column to an audited table, either give it a real FK constraint (registry/hops then cover it automatically) or declare a per-column `snapshotFields` override on that table's audit config. For targets whose display value lives on another table, use `fkDisplayHops` (two-stage batched lookup). Resolution precedence is override > hop > registry; hops and registry must stay disjoint, and overrides must not target hop tables — both invariants are enforced by tests in `fk-snapshots.test.ts`. Snapshots are frozen at write time: config changes never backfill existing audit rows.
+
+**Applies to:** `packages/database/src/audit.config.ts` (`fkDisplayRegistry`, `fkDisplayHops`, `snapshotFields`), `packages/jobs/src/inngest/functions/events/fk-snapshots.ts` + `audit.ts`, and any migration adding reference columns to tables listed in `auditConfig.entities`.

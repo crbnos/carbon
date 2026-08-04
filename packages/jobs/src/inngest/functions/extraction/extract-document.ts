@@ -71,6 +71,12 @@ export const extractDocumentFunction = inngest.createFunction(
         const uint8Array = new Uint8Array(buffer);
         // @ts-ignore pdfjs-dist legacy build lacks type declarations
         const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
+        // Preload the worker: importing it self-registers globalThis.pdfjsWorker,
+        // which pdfjs uses instead of importing pdf.worker.mjs by a runtime path.
+        // That path isn't traceable by the serverless bundler, so the file is
+        // absent in the Lambda bundle ("Setting up fake worker failed").
+        // @ts-ignore no type declarations for the worker entry
+        await import("pdfjs-dist/legacy/build/pdf.worker.mjs");
         const pdf = await pdfjs.getDocument({ data: uint8Array }).promise;
         let pdfText = "";
         for (let i = 1; i <= pdf.numPages; i++) {

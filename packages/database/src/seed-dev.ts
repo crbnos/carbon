@@ -508,8 +508,8 @@ async function seedDev() {
       // Seed default location (required for inventory, jobs, etc.)
       // Must be after accountDefaults since location trigger copies from accountDefaults
       const locationResult = await client.query(
-        `INSERT INTO location (name, "addressLine1", city, "stateProvince", "postalCode", "countryCode", timezone, "companyId", "createdBy")
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'system') RETURNING id`,
+        `INSERT INTO location (name, "code", "addressLine1", city, "stateProvince", "postalCode", "countryCode", timezone, "companyId", "createdBy")
+         VALUES ($1, 'HQ', $2, $3, $4, $5, $6, $7, $8, 'system') RETURNING id`,
         [
           defaultLocation.name,
           defaultLocation.addressLine1,

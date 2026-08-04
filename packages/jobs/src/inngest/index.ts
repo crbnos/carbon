@@ -1,3 +1,7 @@
+// Must load before any function module pulls in pdfjs (extract-document), whose
+// init runs `new DOMMatrix()` — undefined in the Node worker without this shim.
+import "@carbon/lib/shims";
+
 // Re-export the inngest client and helpers
 export { inngest } from "./client.ts";
 

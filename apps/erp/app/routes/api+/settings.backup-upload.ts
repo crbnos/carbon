@@ -1,8 +1,8 @@
 import { Readable } from "node:stream";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { isInternalEmail } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { unpackBackupArchive } from "~/modules/settings/backups-archive.server";
+import { canAccessBackups } from "~/utils/backups";
 
 /**
  * Unpack an uploaded `.carbon.tar.gz` (a whole backup folder) into a fresh
@@ -17,7 +17,8 @@ export async function action({ request }: ActionFunctionArgs) {
   const { client, companyId, email } = await requirePermissions(request, {
     update: "settings"
   });
-  if (!isInternalEmail(email)) throw new Response("Not found", { status: 404 });
+  if (!canAccessBackups(email))
+    throw new Response("Not found", { status: 404 });
   if (request.method !== "POST" || !request.body) {
     throw new Response("Expected a tar.gz body", { status: 400 });
   }

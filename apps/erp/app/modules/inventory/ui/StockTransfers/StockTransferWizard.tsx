@@ -10,15 +10,10 @@ import {
   Drawer,
   DrawerBody,
   DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
   DrawerHeader,
   DrawerTitle,
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuLabel,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
   Heading,
   HStack,
   IconButton,
@@ -28,66 +23,83 @@ import {
   NumberField,
   NumberInput,
   NumberInputGroup,
-  PulsingDot,
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+  ResizableHandle,
+  ResizablePanel,
+  ResizablePanelGroup,
   ScrollArea,
   Spinner,
-  Table as TableBase,
-  Tbody,
-  Td,
-  Th,
-  Thead,
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-  Tr,
   toast,
   useMount,
-  usePrettifyShortcut,
   VStack
 } from "@carbon/react";
-import { Trans, useLingui } from "@lingui/react/macro";
+import { Plural, Trans, useLingui } from "@lingui/react/macro";
 import { useNumberFormatter } from "@react-aria/i18n";
 import type { ColumnDef } from "@tanstack/react-table";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  flexRender,
-  getCoreRowModel,
-  useReactTable
-} from "@tanstack/react-table";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { BsChevronLeft, BsChevronRight } from "react-icons/bs";
-import {
-  LuArrowLeft,
   LuArrowRight,
-  LuCheckCheck,
   LuFlag,
-  LuMaximize2,
-  LuMinus,
+  LuInfo,
+  LuMousePointerClick,
+  LuPackageSearch,
   LuSearch,
-  LuTrash2,
-  LuTriangleAlert,
-  LuTruck,
-  LuX
+  LuTrash2
 } from "react-icons/lu";
-import { ItemThumbnail } from "~/components";
-import { getAccessorKey } from "~/components/Table/utils";
+import { ItemThumbnail, Table } from "~/components";
 import { useUser } from "~/hooks";
+import type {
+  StockTransferDestination,
+  StockTransferWizardLine
+} from "~/stores";
 import {
   addTransferLine,
-  clearSelectedToItemStorageUnits,
   clearStockTransferWizard,
-  hasTransferLine,
-  hasTransferLinesToItemStorageUnit,
-  isToItemStorageUnitSelected,
+  clearTransferLines,
   removeTransferLine,
-  toggleToItemStorageUnitSelection,
+  setActiveDestination,
   updateTransferLineQuantity,
-  useItems,
   useStockTransferWizard,
-  useStockTransferWizardLinesCount
+  useStockTransferWizardLinesCount,
+  useStockTransferWizardTotalQuantity
 } from "~/stores";
 import { path } from "~/utils/path";
 
 const logger = getLogger("erp", "stocktransferwizard");
+
+// The RPC returns every item×bin with activity at the location. There's no
+// server-side paging and the shared Table doesn't virtualize, so cap the DOM
+// and say so when the list is truncated.
+const MAX_VISIBLE_DESTINATIONS = 250;
+
+// Pull-based: start from the bin that needs stock (1), then choose the bins to
+// pull it from (2).
+function StepBadge({ step, active }: { step: number; active: boolean }) {
+  return (
+    <span
+      className={cn(
+        "flex items-center justify-center size-5 rounded-full text-[11px] font-semibold flex-shrink-0",
+        active
+          ? "bg-primary text-primary-foreground"
+          : "bg-muted text-muted-foreground"
+      )}
+    >
+      {step}
+    </span>
+  );
+}
+
+// Ledger rows can carry a null storageUnitId (stock recorded against the
+// location, not a bin). Those are real, transferable rows — label them rather
+// than rendering a blank cell.
+function binLabel(name: string | null, unassigned: string) {
+  return name?.trim() ? name : unassigned;
+}
 
 export function StockTransferWizard({
   locationId,
@@ -104,578 +116,769 @@ export function StockTransferWizard({
       }}
     >
       <DrawerContent size="full">
-        <DrawerHeader className="px-4">
+        <DrawerHeader className="px-4 flex-shrink-0">
           <DrawerTitle>
             <Trans>Stock Transfer Wizard</Trans>
           </DrawerTitle>
+          <DrawerDescription className="sr-only">
+            <Trans>
+              Pick the bin that needs stock, then pick the bins to pull it from.
+            </Trans>
+          </DrawerDescription>
         </DrawerHeader>
-        <DrawerBody className="w-full h-full p-0">
-          <TransferGrid locationId={locationId} />
-        </DrawerBody>
+        <TransferGrid locationId={locationId} />
       </DrawerContent>
     </Drawer>
   );
 }
 
-type TransferTableRow = {
+type BinRow = {
   itemId: string;
   itemReadableId: string;
   description: string;
   thumbnailPath: string;
+  itemTrackingType: string | null;
+  unitOfMeasureCode: string | null;
   quantityOnHand: number;
   quantityRequired: number;
   quantityAvailable: number;
   quantityIncoming: number;
   storageUnitId: string | null;
   storageUnitName: string | null;
+  isDefaultStorageUnit: boolean;
 };
+
+// Both requirements RPCs share a row shape, so both panes map it the same way.
+// Note `quantityAvailable` is derived here — the RPC doesn't return it.
+function mapBinRow(row: Record<string, any>): BinRow {
+  return {
+    itemId: row.itemId,
+    itemReadableId: row.itemReadableId,
+    description: row.description,
+    thumbnailPath: row.thumbnailPath,
+    itemTrackingType: row.itemTrackingType ?? null,
+    unitOfMeasureCode: row.unitOfMeasureCode ?? null,
+    quantityOnHand: row.quantityOnHandInStorageUnit,
+    quantityRequired: row.quantityRequiredByStorageUnit,
+    quantityAvailable:
+      row.quantityOnHandInStorageUnit - row.quantityRequiredByStorageUnit,
+    quantityIncoming: row.quantityIncoming,
+    storageUnitId: row.storageUnitId,
+    storageUnitName: row.storageUnitName,
+    isDefaultStorageUnit: row.isDefaultStorageUnit ?? false
+  };
+}
 
 function TransferGrid({ locationId }: { locationId: string }) {
   const { t } = useLingui();
-  const [pageSize, setPageSize] = useState(100);
-  const formatter = useNumberFormatter();
-
   const { carbon } = useCarbon();
   const {
     company: { id: companyId }
   } = useUser();
 
   const [wizard] = useStockTransferWizard();
+  const activeDestination = wizard.activeDestination;
 
-  const [transferTo, setTransferTo] = useState<TransferTableRow[]>([]);
-  const [allTransferToData, setAllTransferToData] = useState<
-    TransferTableRow[]
-  >([]);
-  const [transferToSearch, setTransferToSearch] = useState("");
-  const [transferToOffset, setTransferToOffset] = useState(0);
-  const [transferToIsLoading, setTransferToIsLoading] = useState(false);
+  const [destinationRows, setDestinationRows] = useState<BinRow[]>([]);
+  const [destinationsLoading, setDestinationsLoading] = useState(false);
+  const [search, setSearch] = useState("");
 
-  const [transferFrom, setTransferFrom] = useState<TransferTableRow[]>([]);
-  const [allTransferFromData, setAllTransferFromData] = useState<
-    TransferTableRow[]
-  >([]);
-  const [transferFromSearch, setTransferFromSearch] = useState("");
-  const [transferFromOffset, setTransferFromOffset] = useState(0);
-  const [transferFromIsLoading, setTransferFromIsLoading] = useState(false);
+  const [sourceRows, setSourceRows] = useState<BinRow[]>([]);
+  const [sourcesLoading, setSourcesLoading] = useState(false);
 
-  const transferToQuery = useCallback(async () => {
-    if (!carbon) return;
-    setTransferToIsLoading(true);
-    const { data, error } = await carbon.rpc(
-      "get_item_storage_unit_requirements_by_location",
-      {
-        company_id: companyId,
-        location_id: locationId
+  useMount(() => {
+    const load = async () => {
+      if (!carbon) return;
+      setDestinationsLoading(true);
+      const { data, error } = await carbon.rpc(
+        "get_item_storage_unit_requirements_by_location",
+        { company_id: companyId, location_id: locationId }
+      );
+      if (error) {
+        toast.error(error.message);
+        setDestinationRows([]);
+      } else {
+        setDestinationRows((data ?? []).map(mapBinRow));
       }
-    );
+      setDestinationsLoading(false);
+    };
+    load();
+  });
 
-    if (error) {
-      toast.error(error.message);
-      setAllTransferToData([]);
-    } else {
-      const mappedData =
-        data?.map((item) => ({
-          itemId: item.itemId,
-          itemReadableId: item.itemReadableId,
-          description: item.description,
-          thumbnailPath: item.thumbnailPath,
-          quantityOnHand: item.quantityOnHandInStorageUnit,
-          quantityRequired: item.quantityRequiredByStorageUnit,
-          quantityAvailable:
-            item.quantityOnHandInStorageUnit -
-            item.quantityRequiredByStorageUnit,
-          quantityIncoming: item.quantityIncoming,
-          storageUnitId: item.storageUnitId,
-          storageUnitName: item.storageUnitName
-        })) ?? [];
-      setAllTransferToData(mappedData);
-    }
-
-    setTransferToIsLoading(false);
-  }, [carbon, companyId, locationId]);
-
-  const transferFromQuery = useCallback(async () => {
-    if (!carbon || wizard.selectedToItemStorageUnitIds.size === 0) {
-      setAllTransferFromData([]);
-      return;
-    }
-
-    setTransferFromIsLoading(true);
-
-    // Get the selected "to" items to extract their itemIds
-    const selectedToItems = allTransferToData.filter((item) =>
-      wizard.selectedToItemStorageUnitIds.has(
-        `${item.itemId}:${item.storageUnitId}`
-      )
-    );
-
-    // Fetch data for each selected item
-    const fromDataPromises = selectedToItems.map(async (toItem) => {
+  // Sources are scoped to the active destination's item. One call, not N.
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      if (!carbon || !activeDestination) {
+        setSourceRows([]);
+        return;
+      }
+      setSourcesLoading(true);
       const { data, error } = await carbon.rpc(
         "get_item_storage_unit_requirements_by_location_and_item",
         {
           company_id: companyId,
           location_id: locationId,
-          item_id: toItem.itemId
+          item_id: activeDestination.itemId
         }
       );
-
+      if (cancelled) return;
       if (error) {
         logger.error(error);
-        return [];
+        toast.error(error.message);
+        setSourceRows([]);
+      } else {
+        // The RPC returns every bin for the item, including the destination.
+        setSourceRows(
+          (data ?? [])
+            .map(mapBinRow)
+            .filter(
+              (bin) => bin.storageUnitId !== activeDestination.storageUnitId
+            )
+        );
       }
+      setSourcesLoading(false);
+    };
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, [carbon, companyId, locationId, activeDestination]);
 
-      // Filter out the selected "to" storage unit
-      return (
-        data
-          ?.filter((item) => item.storageUnitId !== toItem.storageUnitId)
-          .map((item) => ({
-            itemId: item.itemId,
-            itemReadableId: item.itemReadableId,
-            description: item.description,
-            thumbnailPath: item.thumbnailPath,
-            quantityOnHand: item.quantityOnHandInStorageUnit,
-            quantityRequired: item.quantityRequiredByStorageUnit,
-            quantityAvailable:
-              item.quantityOnHandInStorageUnit -
-              item.quantityRequiredByStorageUnit,
-            quantityIncoming: item.quantityIncoming,
-            storageUnitId: item.storageUnitId,
-            storageUnitName: item.storageUnitName
-          })) ?? []
-      );
-    });
+  const filteredDestinations = useMemo(() => {
+    const term = search.trim().toLowerCase();
+    const rows = term
+      ? destinationRows.filter(
+          (row) =>
+            row.itemReadableId.toLowerCase().includes(term) ||
+            (row.description ?? "").toLowerCase().includes(term) ||
+            (row.storageUnitName ?? "").toLowerCase().includes(term)
+        )
+      : destinationRows;
+    // The RPC already orders neediest-first (net available ascending), which is
+    // exactly the order a destination picker wants — don't re-sort.
+    return rows;
+  }, [destinationRows, search]);
 
-    const fromDataArrays = await Promise.all(fromDataPromises);
-    const flattenedFromData = fromDataArrays.flat();
-
-    setAllTransferFromData(flattenedFromData);
-    setTransferFromIsLoading(false);
-  }, [
-    carbon,
-    companyId,
-    locationId,
-    wizard.selectedToItemStorageUnitIds,
-    allTransferToData
-  ]);
-
-  useMount(() => {
-    transferToQuery();
-  });
-
-  // Refresh "from" data when selected "to" items change
-  useEffect(() => {
-    transferFromQuery();
-  }, [transferFromQuery]);
-
-  // Reset offsets when page size changes
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
-  useEffect(() => {
-    setTransferToOffset(0);
-    setTransferFromOffset(0);
-  }, [pageSize]);
-
-  // Deselect active item/storage unit when "to" table page changes
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
-  useEffect(() => {
-    clearSelectedToItemStorageUnits();
-  }, [transferToOffset]);
-
-  // Client-side filtering and pagination for "to" table
-  useEffect(() => {
-    let filtered = allTransferToData;
-
-    if (transferToSearch) {
-      filtered = filtered.filter((item) =>
-        item.itemReadableId
-          .toLowerCase()
-          .includes(transferToSearch.toLowerCase())
-      );
-    }
-
-    setTransferTo(filtered);
-    setTransferToOffset(0); // Reset to first page when data changes
-  }, [allTransferToData, transferToSearch]);
-
-  // Client-side filtering and pagination for "from" table
-  useEffect(() => {
-    let filtered = allTransferFromData;
-
-    if (transferFromSearch) {
-      filtered = filtered.filter((item) =>
-        item.itemReadableId
-          .toLowerCase()
-          .includes(transferFromSearch.toLowerCase())
-      );
-    }
-
-    setTransferFrom(filtered);
-    setTransferFromOffset(0); // Reset to first page when data changes
-  }, [allTransferFromData, transferFromSearch]);
-
-  // Pagination logic for "to" table
-  const paginatedTransferTo = useMemo(
-    () => transferTo.slice(transferToOffset, transferToOffset + pageSize),
-    [transferTo, transferToOffset, pageSize]
+  const visibleDestinations = useMemo(
+    () => filteredDestinations.slice(0, MAX_VISIBLE_DESTINATIONS),
+    [filteredDestinations]
   );
 
-  const canPreviousPageTo = transferToOffset > 0;
-  const canNextPageTo = transferToOffset + pageSize < transferTo.length;
-
-  const handlePreviousPageTo = useCallback(() => {
-    setTransferToOffset((prev) => Math.max(0, prev - pageSize));
-  }, [pageSize]);
-
-  const handleNextPageTo = useCallback(() => {
-    setTransferToOffset((prev) => {
-      const newOffset = prev + pageSize;
-      return newOffset < transferTo.length ? newOffset : prev;
-    });
-  }, [pageSize, transferTo.length]);
-
-  // Pagination logic for "from" table
-  const paginatedTransferFrom = useMemo(
-    () => transferFrom.slice(transferFromOffset, transferFromOffset + pageSize),
-    [transferFrom, transferFromOffset, pageSize]
+  const activeDestinationRow = useMemo(
+    () =>
+      destinationRows.find(
+        (row) =>
+          row.itemId === activeDestination?.itemId &&
+          row.storageUnitId === activeDestination?.storageUnitId
+      ) ?? null,
+    [destinationRows, activeDestination]
   );
 
-  const canPreviousPageFrom = transferFromOffset > 0;
-  const canNextPageFrom = transferFromOffset + pageSize < transferFrom.length;
+  return (
+    <>
+      <DrawerBody className="w-full p-0 min-h-0 overflow-y-hidden">
+        <ResizablePanelGroup
+          direction="horizontal"
+          className="h-full w-full min-h-0"
+        >
+          <ResizablePanel
+            defaultSize={60}
+            minSize={35}
+            className="flex flex-col min-h-0 overflow-hidden"
+          >
+            <DestinationTable
+              data={visibleDestinations}
+              totalCount={filteredDestinations.length}
+              isLoading={destinationsLoading}
+              search={search}
+              onSearchChange={setSearch}
+              activeDestination={activeDestination}
+              lines={wizard.lines}
+            />
+          </ResizablePanel>
+          <ResizableHandle withHandle />
+          <ResizablePanel
+            defaultSize={40}
+            minSize={25}
+            className="flex flex-col min-h-0 overflow-hidden"
+          >
+            <SourceBinList
+              destination={activeDestinationRow}
+              bins={sourceRows}
+              isLoading={sourcesLoading}
+              lines={wizard.lines}
+              emptyTitle={
+                activeDestinationRow
+                  ? t`No other bins hold this item`
+                  : t`Select a destination`
+              }
+              emptyHint={
+                activeDestinationRow
+                  ? t`Nothing else at this location has stock to pull from.`
+                  : t`Choose a row on the left to see where its stock can come from.`
+              }
+            />
+          </ResizablePanel>
+        </ResizablePanelGroup>
+      </DrawerBody>
+      <WizardFooter locationId={locationId} />
+    </>
+  );
+}
 
-  const handlePreviousPageFrom = useCallback(() => {
-    setTransferFromOffset((prev) => Math.max(0, prev - pageSize));
-  }, [pageSize]);
+// "Required" is not a min/max stocking level — it's open-job demand plus
+// outstanding outbound transfers, per the requirements RPC.
+function RequiredHeader() {
+  return (
+    <HStack spacing={1} className="items-center">
+      <span>
+        <Trans>Required</Trans>
+      </span>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span className="inline-flex">
+            <LuInfo className="size-3.5 text-muted-foreground" />
+          </span>
+        </TooltipTrigger>
+        <TooltipContent>
+          <Trans>
+            Open job demand plus outstanding transfers out of this bin
+          </Trans>
+        </TooltipContent>
+      </Tooltip>
+    </HStack>
+  );
+}
 
-  const handleNextPageFrom = useCallback(() => {
-    setTransferFromOffset((prev) => {
-      const newOffset = prev + pageSize;
-      return newOffset < transferFrom.length ? newOffset : prev;
-    });
-  }, [pageSize, transferFrom.length]);
+function DestinationTable({
+  data,
+  totalCount,
+  isLoading,
+  search,
+  onSearchChange,
+  activeDestination,
+  lines
+}: {
+  data: BinRow[];
+  totalCount: number;
+  isLoading: boolean;
+  search: string;
+  onSearchChange: (value: string) => void;
+  activeDestination: StockTransferDestination | null;
+  lines: StockTransferWizardLine[];
+}) {
+  const { t } = useLingui();
+  const formatter = useNumberFormatter();
 
-  const columnsTo = useMemo<ColumnDef<TransferTableRow>[]>(() => {
-    return [
+  // Quantity arriving in this bin across every line built so far.
+  const incomingFor = useCallback(
+    (row: BinRow) =>
+      lines
+        .filter(
+          (line) =>
+            line.itemId === row.itemId &&
+            line.toStorageUnitId === row.storageUnitId
+        )
+        .reduce((sum, line) => sum + (line.quantity ?? 0), 0),
+    [lines]
+  );
+
+  const columns = useMemo<ColumnDef<BinRow>[]>(
+    () => [
       {
         accessorKey: "itemReadableId",
+        header: t`Item`,
         cell: ({ row }) => (
           <HStack spacing={2}>
             <ItemThumbnail
               thumbnailPath={row.original.thumbnailPath}
               type="Part"
             />
-            <VStack spacing={0} className="max-w-[200px] truncate">
-              <div className="text-sm font-medium text-wrap">
+            <VStack spacing={0} className="min-w-0">
+              <span className="text-sm font-medium truncate">
                 {row.original.itemReadableId}
-              </div>
-              <div className="text-xs text-muted-foreground">
+              </span>
+              <span className="text-xs text-muted-foreground truncate">
                 {row.original.description}
-              </div>
+              </span>
             </VStack>
           </HStack>
-        ),
-        header: t`Item ID`
+        )
       },
       {
         accessorKey: "storageUnitName",
-        cell: ({ row }) => row.original.storageUnitName,
-        header: t`Storage Unit`
+        header: t`Storage Unit`,
+        cell: ({ row }) => (
+          <HStack spacing={2}>
+            <span
+              className={cn(
+                !row.original.storageUnitName && "text-muted-foreground italic"
+              )}
+            >
+              {binLabel(row.original.storageUnitName, t`No storage unit`)}
+            </span>
+            {row.original.isDefaultStorageUnit && (
+              <Badge variant="secondary">
+                <Trans>Default</Trans>
+              </Badge>
+            )}
+          </HStack>
+        )
       },
       {
         accessorKey: "quantityOnHand",
-        cell: ({ row }) => {
-          // Calculate total quantity being transferred to this specific item/storage unit combination
-          const transferLinesToThisItemStorageUnit = wizard.lines.filter(
-            (line) =>
-              line.itemId === row.original.itemId &&
-              line.toStorageUnitId === row.original.storageUnitId
-          );
-          const totalTransferQuantity =
-            transferLinesToThisItemStorageUnit.reduce(
-              (sum, line) => sum + (line.quantity ?? 0),
-              0
-            );
-
-          const adjustedQuantity =
-            row.original.quantityOnHand + totalTransferQuantity;
-
-          return (
-            <div className="flex flex-col">
-              <span
-                className={
-                  totalTransferQuantity > 0
-                    ? "text-muted-foreground line-through text-xs"
-                    : ""
-                }
-              >
-                {formatter.format(row.original.quantityOnHand)}
-              </span>
-              {totalTransferQuantity > 0 && (
-                <span className="font-medium">
-                  {formatter.format(adjustedQuantity)}
-                </span>
-              )}
-            </div>
-          );
-        },
-        header: t`On Storage Unit`
+        header: t`On Storage Unit`,
+        cell: ({ row }) => (
+          <QuantityDelta
+            base={row.original.quantityOnHand}
+            delta={incomingFor(row.original)}
+            formatter={formatter}
+          />
+        )
       },
       {
         accessorKey: "quantityRequired",
-        cell: ({ row }) => formatter.format(row.original.quantityRequired),
-        header: t`Required`
+        header: () => <RequiredHeader />,
+        cell: ({ row }) => (
+          <span className="tabular-nums">
+            {formatter.format(row.original.quantityRequired)}
+          </span>
+        )
       },
-
       {
         accessorKey: "quantityAvailable",
+        header: t`Available`,
         cell: ({ row }) => {
-          // Calculate total quantity being transferred to this specific item/storage unit combination
-          const transferLinesToThisItemStorageUnit = wizard.lines.filter(
-            (line) =>
-              line.itemId === row.original.itemId &&
-              line.toStorageUnitId === row.original.storageUnitId
-          );
-          const totalTransferQuantity =
-            transferLinesToThisItemStorageUnit.reduce(
-              (sum, line) => sum + (line.quantity ?? 0),
-              0
-            );
-
-          // Calculate total available including incoming quantities
-          const totalAvailableWithIncoming =
-            row.original.quantityAvailable + row.original.quantityIncoming;
-
-          const adjustedAvailable =
-            totalAvailableWithIncoming + totalTransferQuantity;
-
-          // Check if we have enough to cover requirements (including incoming)
-          const hasEnoughWithIncoming =
-            totalAvailableWithIncoming >= row.original.quantityRequired;
-
+          // Flag a bin that open demand still outruns even counting incoming
+          // supply — the shortage this wizard exists to close.
+          const short =
+            row.original.quantityAvailable + row.original.quantityIncoming <
+            row.original.quantityRequired;
           return (
-            <div className="flex flex-col">
-              <span
-                className={
-                  totalTransferQuantity > 0
-                    ? "text-muted-foreground line-through text-xs"
-                    : ""
-                }
-              >
-                {!hasEnoughWithIncoming ? (
-                  <HStack>
-                    <span className="text-red-500">
-                      {formatter.format(row.original.quantityAvailable)}
-                    </span>
-                    <LuFlag className="text-red-500" />
-                  </HStack>
-                ) : (
-                  <span>
-                    {formatter.format(row.original.quantityAvailable)}
-                  </span>
-                )}
-              </span>
-              {totalTransferQuantity > 0 && (
-                <span
-                  className={`font-medium ${
-                    adjustedAvailable < 0 ? "text-red-500" : ""
-                  }`}
-                >
-                  {adjustedAvailable < 0 ? (
-                    <HStack>
-                      <span>{formatter.format(adjustedAvailable)}</span>
-                      <LuFlag className="text-red-500" />
-                    </HStack>
-                  ) : (
-                    formatter.format(adjustedAvailable)
-                  )}
-                </span>
-              )}
-            </div>
+            <QuantityDelta
+              base={row.original.quantityAvailable}
+              delta={incomingFor(row.original)}
+              formatter={formatter}
+              flagged={short}
+            />
           );
-        },
-        header: t`Available`
+        }
       },
       {
         accessorKey: "quantityIncoming",
-        cell: ({ row }) => formatter.format(row.original.quantityIncoming),
-        header: t`Incoming`
+        header: t`Incoming`,
+        cell: ({ row }) => (
+          <span className="tabular-nums">
+            {formatter.format(row.original.quantityIncoming)}
+          </span>
+        )
       },
       {
-        id: "actions",
+        id: "destination",
+        header: "",
         cell: ({ row }) => {
-          const isSelected = isToItemStorageUnitSelected(
-            row.original.itemId,
-            row.original.storageUnitId!
-          );
-          const hasTransfers = hasTransferLinesToItemStorageUnit(
-            row.original.itemId,
-            row.original.storageUnitId!
-          );
+          const isActive =
+            activeDestination?.itemId === row.original.itemId &&
+            activeDestination?.storageUnitId === row.original.storageUnitId;
+          const lineCount = lines.filter(
+            (line) =>
+              line.itemId === row.original.itemId &&
+              line.toStorageUnitId === row.original.storageUnitId &&
+              (line.quantity ?? 0) > 0
+          ).length;
+
           return (
-            <div className="flex justify-end">
+            <HStack spacing={2} className="justify-end">
+              {lineCount > 0 && <Count count={lineCount} />}
               <Button
-                variant={isSelected ? "primary" : "secondary"}
-                onClick={() => {
-                  if (isSelected) {
-                    // If already selected, deselect it
-                    toggleToItemStorageUnitSelection(
-                      row.original.itemId,
-                      row.original.storageUnitId!
-                    );
-                  } else {
-                    // If not selected, clear selection and select only this one
-                    clearSelectedToItemStorageUnits();
-                    toggleToItemStorageUnitSelection(
-                      row.original.itemId,
-                      row.original.storageUnitId!
-                    );
-                  }
-                }}
+                variant={isActive ? "primary" : "secondary"}
+                rightIcon={<LuArrowRight />}
+                onClick={() =>
+                  setActiveDestination(
+                    isActive
+                      ? null
+                      : {
+                          itemId: row.original.itemId,
+                          storageUnitId: row.original.storageUnitId
+                        }
+                  )
+                }
               >
-                {hasTransfers ? (
-                  <HStack>
-                    <PulsingDot />
-                    <span>Transfer</span>
-                  </HStack>
-                ) : (
-                  "Transfer"
-                )}
+                {t`Select`}
               </Button>
-            </div>
+            </HStack>
           );
-        },
-        header: ""
+        }
       }
-    ];
-  }, [formatter, wizard.lines, t]);
+    ],
+    [t, formatter, activeDestination, lines, incomingFor]
+  );
 
-  const [items] = useItems();
+  return (
+    <VStack spacing={0} className="h-full min-h-0 overflow-hidden bg-card">
+      <div className="flex-1 min-h-0 overflow-hidden w-full px-4">
+        <Table<BinRow>
+          compact
+          data={data}
+          columns={columns}
+          title={t`Transfer To`}
+          titleBadge={<StepBadge step={1} active />}
+          // Every URL-param-driven feature is off: this table lives in a drawer
+          // stacked over the stock-transfers list, which is itself a Table
+          // reading the same `search`/`sort`/`limit` params. Leaving them on
+          // would filter the page underneath and leave it mutated on close.
+          withPagination={false}
+          withSearch={false}
+          withSavedView={false}
+          withSimpleSorting={false}
+          sort={null}
+          // The trigger toggles the app sidebar — meaningless inside a drawer.
+          withSidebarTrigger={false}
+          // The action column must stay reachable while scrolling horizontally.
+          defaultColumnPinning={{ left: [], right: ["destination"] }}
+          headerActions={
+            <InputGroup size="sm">
+              <InputLeftElement>
+                <LuSearch className="text-muted-foreground w-3.5 h-3.5 mt-[-2px]" />
+              </InputLeftElement>
+              <Input
+                value={search}
+                onChange={(e) => onSearchChange(e.target.value)}
+                placeholder={t`Search items or bins`}
+                className="w-[140px] sm:w-[220px] text-sm"
+              />
+            </InputGroup>
+          }
+          // The search below is local state, not a URL param — tell the table so
+          // it keeps the toolbar (and this input) mounted when a search matches
+          // nothing. Otherwise the search box unmounts and the term is stuck.
+          isFiltered={search.trim().length > 0}
+          emptyState={
+            isLoading ? (
+              <div className="flex w-full items-center justify-center py-16">
+                <Spinner className="size-8" />
+              </div>
+            ) : search.trim() ? (
+              <WizardEmptyState
+                icon={<LuPackageSearch className="h-6 w-6 flex-shrink-0" />}
+                title={t`No matching bins`}
+                hint={t`Nothing at this location matches "${search.trim()}".`}
+                action={
+                  <Button
+                    variant="secondary"
+                    onClick={() => onSearchChange("")}
+                  >
+                    {t`Clear search`}
+                  </Button>
+                }
+              />
+            ) : (
+              <WizardEmptyState
+                icon={<LuPackageSearch className="h-6 w-6 flex-shrink-0" />}
+                title={t`No stock at this location`}
+                hint={t`No items have inventory activity here yet.`}
+              />
+            )
+          }
+        />
+        {totalCount > data.length && (
+          <p className="text-xs text-muted-foreground pb-3">
+            <Trans>
+              Showing {data.length} of {totalCount} — refine your search
+            </Trans>
+          </p>
+        )}
+      </div>
+    </VStack>
+  );
+}
 
-  const columnsFrom = useMemo<ColumnDef<TransferTableRow>[]>(() => {
-    return [
-      {
-        id: "actions",
-        cell: ({ row }) => {
-          // Find the corresponding "to" item
-          const toItem = allTransferToData.find(
-            (item) =>
-              item.itemId === row.original.itemId &&
-              wizard.selectedToItemStorageUnitIds.has(
-                `${item.itemId}:${item.storageUnitId}`
+function QuantityDelta({
+  base,
+  delta,
+  formatter,
+  flagged = false
+}: {
+  base: number;
+  delta: number;
+  formatter: Intl.NumberFormat;
+  flagged?: boolean;
+}) {
+  const changed = delta !== 0;
+  const adjusted = base + delta;
+  return (
+    <VStack spacing={0}>
+      <HStack spacing={1}>
+        <span
+          className={cn(
+            "tabular-nums",
+            changed && "text-muted-foreground line-through text-xs"
+          )}
+        >
+          {formatter.format(base)}
+        </span>
+        {flagged && !changed && (
+          <LuFlag className="size-3.5 text-muted-foreground" />
+        )}
+      </HStack>
+      {changed && (
+        <HStack spacing={1}>
+          <span className="font-medium tabular-nums">
+            {formatter.format(adjusted)}
+          </span>
+          {flagged && <LuFlag className="size-3.5 text-destructive" />}
+        </HStack>
+      )}
+    </VStack>
+  );
+}
+
+function WizardEmptyState({
+  icon,
+  title,
+  hint,
+  action
+}: {
+  icon: React.ReactNode;
+  title: string;
+  hint?: string;
+  action?: React.ReactNode;
+}) {
+  return (
+    <VStack
+      spacing={4}
+      className="w-full items-center justify-center py-16 px-6 text-center"
+    >
+      <div className="flex justify-center items-center h-12 w-12 rounded-full bg-muted text-muted-foreground">
+        {icon}
+      </div>
+      <span className="text-xs font-mono font-light text-foreground uppercase">
+        {title}
+      </span>
+      {hint && (
+        <span className="text-xs text-muted-foreground max-w-[32ch]">
+          {hint}
+        </span>
+      )}
+      {action}
+    </VStack>
+  );
+}
+
+function SourceBinList({
+  destination,
+  bins,
+  isLoading,
+  lines,
+  emptyTitle,
+  emptyHint
+}: {
+  destination: BinRow | null;
+  bins: BinRow[];
+  isLoading: boolean;
+  lines: StockTransferWizardLine[];
+  emptyTitle: string;
+  emptyHint: string;
+}) {
+  const { t } = useLingui();
+
+  // Default bin first, then most stock — the bins worth pulling from.
+  const sorted = useMemo(
+    () =>
+      [...bins].sort((a, b) => {
+        if (a.isDefaultStorageUnit !== b.isDefaultStorageUnit) {
+          return a.isDefaultStorageUnit ? -1 : 1;
+        }
+        return b.quantityAvailable - a.quantityAvailable;
+      }),
+    [bins]
+  );
+
+  return (
+    <VStack spacing={0} className="h-full min-h-0 overflow-hidden bg-card">
+      <HStack
+        spacing={2}
+        className="px-4 py-3 border-b w-full flex-shrink-0 items-center"
+      >
+        <StepBadge step={2} active={!!destination} />
+        <Heading size="h4">
+          <Trans>Transfer From</Trans>
+        </Heading>
+      </HStack>
+
+      {destination && (
+        <HStack
+          spacing={2}
+          className="px-4 py-3 border-b w-full flex-shrink-0 bg-primary/5"
+        >
+          <ItemThumbnail
+            thumbnailPath={destination.thumbnailPath}
+            type="Part"
+            size="sm"
+          />
+          <VStack spacing={0} className="min-w-0">
+            <span className="text-sm font-medium truncate">
+              {destination.itemReadableId}
+            </span>
+            <span className="text-xs text-muted-foreground truncate">
+              {destination.description}
+            </span>
+          </VStack>
+          <HStack spacing={1} className="flex-shrink-0 ml-auto">
+            <LuArrowRight className="size-3.5 text-muted-foreground" />
+            <Badge variant="outline">
+              {binLabel(destination.storageUnitName, t`No storage unit`)}
+            </Badge>
+          </HStack>
+        </HStack>
+      )}
+
+      <div className="flex-1 min-h-0 w-full">
+        {isLoading ? (
+          <div className="flex h-full w-full items-center justify-center">
+            <Spinner className="size-8" />
+          </div>
+        ) : sorted.length === 0 || !destination ? (
+          <WizardEmptyState
+            icon={
+              destination ? (
+                <LuPackageSearch className="h-6 w-6 flex-shrink-0" />
+              ) : (
+                <LuMousePointerClick className="h-6 w-6 flex-shrink-0" />
               )
-          );
+            }
+            title={emptyTitle}
+            hint={emptyHint}
+          />
+        ) : (
+          <ScrollArea className="h-full w-full">
+            <VStack spacing={0} className="p-4">
+              {sorted.map((bin) => (
+                <SourceBinRow
+                  key={bin.storageUnitId}
+                  bin={bin}
+                  destination={destination}
+                  lines={lines}
+                />
+              ))}
+            </VStack>
+          </ScrollArea>
+        )}
+      </div>
+    </VStack>
+  );
+}
 
-          if (!toItem) return null;
+function SourceBinRow({
+  bin,
+  destination,
+  lines
+}: {
+  bin: BinRow;
+  destination: BinRow;
+  lines: StockTransferWizardLine[];
+}) {
+  const { t } = useLingui();
+  const formatter = useNumberFormatter();
 
-          const isLineAdded = hasTransferLine(
-            row.original.itemId,
-            row.original.storageUnitId!,
-            toItem.storageUnitId!
-          );
+  const line = lines.find(
+    (l) =>
+      l.itemId === destination.itemId &&
+      l.fromStorageUnitId === bin.storageUnitId &&
+      l.toStorageUnitId === destination.storageUnitId
+  );
+  const isAdded = !!line;
+  // You can't pull more than this source bin holds — and the cap is the
+  // capacity *remaining* after the other destinations already drawing on it,
+  // or N destinations could each claim the full amount.
+  const allocatedElsewhere = lines
+    .filter(
+      (l) =>
+        l.itemId === destination.itemId &&
+        l.fromStorageUnitId === bin.storageUnitId &&
+        l.toStorageUnitId !== destination.storageUnitId
+    )
+    .reduce((sum, l) => sum + (l.quantity ?? 0), 0);
+  const maxQuantity = Math.max(0, bin.quantityAvailable - allocatedElsewhere);
+  // How short the destination is — what this transfer is trying to close.
+  const shortfall = Math.max(
+    0,
+    destination.quantityRequired - destination.quantityOnHand
+  );
 
-          return (
-            <div className="flex justify-end">
-              <Button
-                leftIcon={<LuArrowLeft />}
-                variant={isLineAdded ? "primary" : "secondary"}
-                onClick={() => {
-                  if (isLineAdded) {
-                    removeTransferLine(
-                      row.original.itemId,
-                      row.original.storageUnitId!,
-                      toItem.storageUnitId!
-                    );
-                  } else {
-                    // Calculate default quantity:
-                    // Amount needed to bring "to" shelve to 0 available (fulfill requirements)
-                    // Capped by what's available in "from" shelve
-                    const quantityNeeded = Math.max(
-                      0,
-                      toItem.quantityRequired - toItem.quantityOnHand
-                    );
-                    const defaultQuantity = Math.min(
-                      quantityNeeded,
-                      row.original.quantityAvailable
-                    );
+  const onAdd = () => {
+    // Prefer the destination's shortfall, but `Required` is open-job demand and
+    // is zero on most rows — defaulting to 0 would make Add look like a no-op.
+    // With no demand, seed whatever capacity this source bin has left.
+    const defaultQuantity =
+      shortfall > 0 ? Math.min(shortfall, maxQuantity) : maxQuantity;
+    addTransferLine({
+      itemId: destination.itemId,
+      itemReadableId: destination.itemReadableId,
+      description: destination.description,
+      thumbnailPath: destination.thumbnailPath,
+      fromStorageUnitId: bin.storageUnitId,
+      fromStorageUnitName: bin.storageUnitName,
+      toStorageUnitId: destination.storageUnitId,
+      toStorageUnitName: destination.storageUnitName,
+      quantityAvailable: bin.quantityAvailable,
+      quantity: defaultQuantity,
+      requiresSerialTracking: destination.itemTrackingType === "Serial",
+      requiresBatchTracking: destination.itemTrackingType === "Batch"
+    });
+  };
 
-                    const item = items.find(
-                      (item) => item.id === row.original.itemId
-                    );
+  return (
+    <div
+      className={cn(
+        "w-full rounded-lg border p-3 mb-2 transition-colors",
+        isAdded ? "border-primary/40 bg-primary/5" : "hover:bg-muted/40"
+      )}
+    >
+      <HStack spacing={3} className="justify-between items-start w-full">
+        <VStack spacing={0} className="min-w-0">
+          <HStack spacing={2}>
+            <span
+              className={cn(
+                "text-sm font-medium truncate",
+                !bin.storageUnitName && "text-muted-foreground italic"
+              )}
+            >
+              {binLabel(bin.storageUnitName, t`No storage unit`)}
+            </span>
+            {bin.isDefaultStorageUnit && (
+              <Badge variant="secondary">
+                <Trans>Default</Trans>
+              </Badge>
+            )}
+          </HStack>
+          <span className="text-xs text-muted-foreground tabular-nums">
+            {formatter.format(bin.quantityAvailable)} {t`available`} ·{" "}
+            {formatter.format(bin.quantityOnHand)} {t`on hand`}
+            {bin.quantityIncoming > 0 && (
+              <>
+                {" · "}
+                {formatter.format(bin.quantityIncoming)} {t`incoming`}
+              </>
+            )}
+          </span>
+        </VStack>
 
-                    const trackingType = item?.itemTrackingType ?? "Inventory";
-
-                    addTransferLine({
-                      itemId: row.original.itemId,
-                      itemReadableId: row.original.itemReadableId,
-                      description: row.original.description,
-                      thumbnailPath: row.original.thumbnailPath,
-                      fromStorageUnitId: row.original.storageUnitId!,
-                      fromStorageUnitName: row.original.storageUnitName!,
-                      toStorageUnitId: toItem.storageUnitId!,
-                      toStorageUnitName: toItem.storageUnitName!,
-                      quantityAvailable: row.original.quantityAvailable,
-                      quantity: defaultQuantity,
-                      requiresSerialTracking: trackingType === "Serial",
-                      requiresBatchTracking: trackingType === "Batch"
-                    });
-                  }
-                }}
-              >
-                Transfer
-              </Button>
-            </div>
-          );
-        },
-        header: ""
-      },
-      {
-        id: "quantity",
-        cell: ({ row }) => {
-          // Find the corresponding "to" item
-          const toItem = allTransferToData.find(
-            (item) =>
-              item.itemId === row.original.itemId &&
-              wizard.selectedToItemStorageUnitIds.has(
-                `${item.itemId}:${item.storageUnitId}`
-              )
-          );
-
-          if (!toItem) return null;
-
-          const isLineAdded = hasTransferLine(
-            row.original.itemId,
-            row.original.storageUnitId!,
-            toItem.storageUnitId!
-          );
-
-          if (!isLineAdded) return null;
-
-          // Find the line to get the current quantity
-          const line = wizard.lines.find(
-            (l) =>
-              l.itemId === row.original.itemId &&
-              l.fromStorageUnitId === row.original.storageUnitId! &&
-              l.toStorageUnitId === toItem.storageUnitId!
-          );
-
-          return (
+        <HStack spacing={2} className="flex-shrink-0">
+          {isAdded && (
             <NumberField
               value={Math.max(0, line?.quantity ?? 0)}
               minValue={0}
+              maxValue={maxQuantity}
               onChange={(value: number) => {
-                if (value !== null && !isNaN(value)) {
-                  const clampedValue = Math.min(
-                    Math.max(0, value),
-                    row.original.quantityAvailable +
-                      row.original.quantityIncoming
-                  );
-
-                  updateTransferLineQuantity(
-                    row.original.itemId,
-                    row.original.storageUnitId!,
-                    toItem.storageUnitId!,
-                    clampedValue
-                  );
-                }
+                if (value === null || Number.isNaN(value)) return;
+                updateTransferLineQuantity(
+                  destination.itemId,
+                  bin.storageUnitId,
+                  destination.storageUnitId,
+                  Math.min(Math.max(0, value), maxQuantity)
+                );
               }}
               className="w-24"
             >
@@ -683,789 +886,149 @@ function TransferGrid({ locationId }: { locationId: string }) {
                 <NumberInput size="sm" />
               </NumberInputGroup>
             </NumberField>
-          );
-        },
-        header: t`Quantity`
-      },
-      {
-        accessorKey: "itemReadableId",
-        cell: ({ row }) => (
-          <HStack spacing={2}>
-            <ItemThumbnail
-              thumbnailPath={row.original.thumbnailPath}
-              type="Part"
-            />
-            <VStack spacing={0} className="max-w-[200px] truncate">
-              <div className="text-sm font-medium text-wrap">
-                {row.original.itemReadableId}
-              </div>
-              <div className="text-xs text-muted-foreground">
-                {row.original.description}
-              </div>
-            </VStack>
-          </HStack>
-        ),
-        header: t`Item ID`
-      },
-      {
-        accessorKey: "storageUnitName",
-        cell: ({ row }) => row.original.storageUnitName,
-        header: t`Storage Unit`
-      },
-      {
-        accessorKey: "quantityOnHand",
-        cell: ({ row }) => {
-          // Find the corresponding "to" item
-          const toItem = allTransferToData.find(
-            (item) =>
-              item.itemId === row.original.itemId &&
-              wizard.selectedToItemStorageUnitIds.has(
-                `${item.itemId}:${item.storageUnitId}`
-              )
-          );
-
-          if (!toItem) return formatter.format(row.original.quantityOnHand);
-
-          // Find the transfer line to get the quantity being transferred
-          const transferLine = wizard.lines.find(
-            (l) =>
-              l.itemId === row.original.itemId &&
-              l.fromStorageUnitId === row.original.storageUnitId! &&
-              l.toStorageUnitId === toItem.storageUnitId!
-          );
-
-          const transferQuantity = transferLine?.quantity ?? 0;
-          const adjustedQuantity =
-            row.original.quantityOnHand - transferQuantity;
-
-          return (
-            <div className="flex flex-col">
-              <span
-                className={
-                  transferQuantity > 0
-                    ? "text-muted-foreground line-through text-xs"
-                    : ""
-                }
-              >
-                {formatter.format(row.original.quantityOnHand)}
-              </span>
-              {transferQuantity > 0 && (
-                <span className="font-medium">
-                  {formatter.format(adjustedQuantity)}
-                </span>
-              )}
-            </div>
-          );
-        },
-        header: t`On Storage Unit`
-      },
-      {
-        accessorKey: "quantityAvailable",
-        cell: ({ row }) => {
-          // Find the corresponding "to" item
-          const toItem = allTransferToData.find(
-            (item) =>
-              item.itemId === row.original.itemId &&
-              wizard.selectedToItemStorageUnitIds.has(
-                `${item.itemId}:${item.storageUnitId}`
-              )
-          );
-
-          // Calculate total available including incoming quantities
-          const totalAvailableWithIncoming =
-            row.original.quantityAvailable + row.original.quantityIncoming;
-
-          if (!toItem) {
-            // Check if we have enough to cover requirements (including incoming)
-            const hasEnoughWithIncoming =
-              totalAvailableWithIncoming >= row.original.quantityRequired;
-
-            return !hasEnoughWithIncoming ? (
-              <HStack>
-                <span className="text-red-500">
-                  {formatter.format(row.original.quantityAvailable)}
-                </span>
-                <LuFlag className="text-red-500" />
-              </HStack>
-            ) : (
-              <span>{formatter.format(row.original.quantityAvailable)}</span>
-            );
-          }
-
-          // Find the transfer line to get the quantity being transferred
-          const transferLine = wizard.lines.find(
-            (l) =>
-              l.itemId === row.original.itemId &&
-              l.fromStorageUnitId === row.original.storageUnitId! &&
-              l.toStorageUnitId === toItem.storageUnitId!
-          );
-
-          const transferQuantity = transferLine?.quantity ?? 0;
-          const adjustedAvailable =
-            totalAvailableWithIncoming - transferQuantity;
-
-          // Check if we have enough to cover requirements (including incoming)
-          const hasEnoughWithIncoming =
-            totalAvailableWithIncoming >= row.original.quantityRequired;
-
-          return (
-            <div className="flex flex-col">
-              <span
-                className={
-                  transferQuantity > 0
-                    ? "text-muted-foreground line-through text-xs"
-                    : ""
-                }
-              >
-                {!hasEnoughWithIncoming ? (
-                  <HStack>
-                    <span className="text-red-500">
-                      {formatter.format(row.original.quantityAvailable)}
-                    </span>
-                    <LuFlag className="text-red-500" />
-                  </HStack>
-                ) : (
-                  <span>
-                    {formatter.format(row.original.quantityAvailable)}
-                  </span>
-                )}
-              </span>
-              {transferQuantity > 0 && (
-                <span
-                  className={`font-medium ${
-                    adjustedAvailable < 0 ? "text-red-500" : ""
-                  }`}
-                >
-                  {adjustedAvailable < 0 ? (
-                    <HStack>
-                      <span>{formatter.format(adjustedAvailable)}</span>
-                      <LuFlag className="text-red-500" />
-                    </HStack>
-                  ) : (
-                    formatter.format(adjustedAvailable)
-                  )}
-                </span>
-              )}
-            </div>
-          );
-        },
-        header: t`Available`
-      },
-      {
-        accessorKey: "quantityRequired",
-        cell: ({ row }) => formatter.format(row.original.quantityRequired),
-        header: t`Required`
-      },
-      {
-        accessorKey: "quantityIncoming",
-        cell: ({ row }) => formatter.format(row.original.quantityIncoming),
-        header: t`Incoming`
-      }
-    ];
-  }, [
-    allTransferToData,
-    wizard.selectedToItemStorageUnitIds,
-    wizard.lines,
-    items,
-    formatter,
-    t
-  ]);
-
-  return (
-    <>
-      <div className="grid grid-cols-2 gap-0 h-full w-full">
-        <div className="flex flex-col">
-          <div className="flex-1 border-r">
-            <TransferTable
-              title={t`Transfer To`}
-              data={paginatedTransferTo}
-              isLoading={transferToIsLoading}
-              columns={columnsTo}
-              count={transferTo.length}
-              offset={transferToOffset}
-              canPreviousPage={canPreviousPageTo}
-              canNextPage={canNextPageTo}
-              handlePreviousPage={handlePreviousPageTo}
-              handleNextPage={handleNextPageTo}
-              pageSize={pageSize}
-              setPageSize={setPageSize}
-              search={transferToSearch}
-              onSearchChange={setTransferToSearch}
-              isRowSelected={(row) =>
-                isToItemStorageUnitSelected(row.itemId, row.storageUnitId!)
-              }
-            />
-          </div>
-        </div>
-        <div className="flex flex-col">
-          <div className="flex-1">
-            <TransferTable
-              title={t`Transfer From`}
-              data={paginatedTransferFrom}
-              isLoading={transferFromIsLoading}
-              columns={columnsFrom}
-              count={transferFrom.length}
-              offset={transferFromOffset}
-              canPreviousPage={canPreviousPageFrom}
-              canNextPage={canNextPageFrom}
-              handlePreviousPage={handlePreviousPageFrom}
-              handleNextPage={handleNextPageFrom}
-              pageSize={pageSize}
-              setPageSize={setPageSize}
-              search={transferFromSearch}
-              onSearchChange={setTransferFromSearch}
-              isRowSelected={(row) => {
-                const toItem = allTransferToData.find(
-                  (item) =>
-                    item.itemId === row.itemId &&
-                    wizard.selectedToItemStorageUnitIds.has(
-                      `${item.itemId}:${item.storageUnitId}`
-                    )
-                );
-                return toItem
-                  ? hasTransferLine(
-                      row.itemId,
-                      row.storageUnitId!,
-                      toItem.storageUnitId!
-                    )
-                  : false;
-              }}
-            />
-          </div>
-        </div>
-      </div>
-      <StockTransferWizardWidget locationId={locationId} />
-    </>
-  );
-}
-
-function TransferTable({
-  title,
-  data,
-  columns,
-  count,
-  isLoading,
-  offset,
-  pageSize,
-  setPageSize,
-  canPreviousPage,
-  canNextPage,
-  handlePreviousPage,
-  handleNextPage,
-  search,
-  onSearchChange,
-  isRowSelected
-}: {
-  title: string;
-  data: TransferTableRow[];
-  isLoading: boolean;
-  columns: ColumnDef<TransferTableRow>[];
-  count: number;
-  offset: number;
-  pageSize: number;
-  setPageSize: (size: number) => void;
-  canPreviousPage: boolean;
-  canNextPage: boolean;
-  handlePreviousPage: () => void;
-  handleNextPage: () => void;
-  search: string;
-  onSearchChange: (value: string) => void;
-  isRowSelected?: (row: TransferTableRow) => boolean;
-}) {
-  const { t } = useLingui();
-  const pageSizes = [20, 100, 500, 1000];
-  if (!pageSizes.includes(pageSize)) {
-    pageSizes.push(pageSize);
-    pageSizes.sort();
-  }
-
-  const table = useReactTable({
-    data: data,
-    columns: columns,
-    getCoreRowModel: getCoreRowModel()
-  });
-
-  const rows = table.getRowModel().rows;
-  const tableRef = useRef<HTMLTableElement>(null);
-
-  return (
-    <VStack spacing={0} className="h-full bg-card flex flex-col w-full px-0">
-      <HStack className="px-4 py-2 justify-between bg-card border-b  w-full">
-        <HStack spacing={4} className="w-full justify-between">
-          <Heading size="h4" className="flex-shrink-0">
-            {title}
-          </Heading>
-          <div>
-            <InputGroup size="sm">
-              <InputLeftElement>
-                <LuSearch className="text-muted-foreground w-3.5 h-3.5 mt-[-2px]" />
-              </InputLeftElement>
-              <Input
-                value={search}
-                onChange={(e) => {
-                  onSearchChange(e.target.value);
-                }}
-                placeholder={t`Search`}
-                className="w-[100px] sm:w-[200px] text-sm"
-              />
-            </InputGroup>
-          </div>
-        </HStack>
-      </HStack>
-      <div
-        id="table-container"
-        className="w-full h-full overflow-x-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent"
-        style={{ contain: "strict" }}
-      >
-        <div className="flex max-w-full h-full">
-          {isLoading ? (
-            <div className="flex h-full w-full items-center justify-center">
-              <Spinner className="size-8" />
-            </div>
-          ) : rows.length === 0 ? (
-            <div className="flex flex-col w-full h-full items-center justify-center gap-4">
-              <div className="flex justify-center items-center h-12 w-12 rounded-full bg-foreground text-background -mt-[10dvh]">
-                <LuTriangleAlert className="h-6 w-6 flex-shrink-0" />
-              </div>
-              <span className="text-xs font-mono font-light text-foreground uppercase">
-                No storage units exist
-              </span>
-            </div>
-          ) : (
-            <TableBase
-              ref={tableRef}
-              full
-              className="relative border-collapse border-spacing-0"
-            >
-              <Thead className="sticky top-0 z-10">
-                {table.getHeaderGroups().map((headerGroup) => (
-                  <Tr key={headerGroup.id} className="h-10">
-                    {headerGroup.headers.map((header) => {
-                      const accessorKey = getAccessorKey(
-                        header.column.columnDef
-                      );
-
-                      const sortable =
-                        accessorKey &&
-                        !accessorKey.endsWith(".id") &&
-                        header.column.columnDef.enableSorting !== false;
-
-                      return (
-                        <Th
-                          key={header.id}
-                          colSpan={header.colSpan}
-                          id={`header-${header.id}`}
-                          className={cn(
-                            "px-4 py-3 whitespace-nowrap",
-                            sortable && "cursor-pointer"
-                          )}
-                          style={{
-                            width: header.getSize()
-                          }}
-                        >
-                          {!header.isPlaceholder && (
-                            <div className="flex justify-start items-center gap-2">
-                              {header.column.columnDef.meta?.icon}
-                              {flexRender(
-                                header.column.columnDef.header,
-                                header.getContext()
-                              )}
-                            </div>
-                          )}
-                        </Th>
-                      );
-                    })}
-                  </Tr>
-                ))}
-              </Thead>
-              <Tbody>
-                {rows.map((row) => {
-                  const selected = isRowSelected?.(row.original) ?? false;
-                  return (
-                    <Tr
-                      key={row.id}
-                      className={cn(
-                        "border-b border-border transition-colors",
-                        selected && "bg-primary/10 hover:bg-primary/15"
-                      )}
-                    >
-                      {row.getVisibleCells().map((cell, columnIndex) => {
-                        return (
-                          <Td
-                            key={cell.id}
-                            className="relative px-4 py-2 whitespace-nowrap text-sm outline-none"
-                          >
-                            <div>
-                              {flexRender(
-                                cell.column.columnDef.cell,
-                                cell.getContext()
-                              )}
-                            </div>
-                          </Td>
-                        );
-                      })}
-                    </Tr>
-                  );
-                })}
-              </Tbody>
-            </TableBase>
           )}
-        </div>
-      </div>
-      <hr className="m-0 h-px w-full border-none bg-gradient-to-r from-zinc-200/0 via-zinc-500/30 to-zinc-200/0" />
-      <HStack
-        className="text-center bg-card justify-between py-4 w-full z-[1] px-4"
-        spacing={6}
-      >
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="secondary">{pageSize} rows</Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="w-48">
-            <DropdownMenuLabel>Results per page</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuRadioGroup value={`${pageSize}`}>
-              {pageSizes.map((size) => (
-                <DropdownMenuRadioItem
-                  key={`${size}`}
-                  value={`${size}`}
-                  onClick={() => {
-                    setPageSize(size);
-                  }}
-                >
-                  {size}
-                </DropdownMenuRadioItem>
-              ))}
-            </DropdownMenuRadioGroup>
-          </DropdownMenuContent>
-        </DropdownMenu>
-        <HStack>
-          <PaginationButtons
-            count={count}
-            offset={offset}
-            pageSize={pageSize}
-            canPreviousPage={canPreviousPage}
-            canNextPage={canNextPage}
-            handlePreviousPage={handlePreviousPage}
-            handleNextPage={handleNextPage}
-          />
+          <Button
+            variant={isAdded ? "secondary" : "primary"}
+            onClick={() =>
+              isAdded
+                ? removeTransferLine(
+                    destination.itemId,
+                    bin.storageUnitId,
+                    destination.storageUnitId
+                  )
+                : onAdd()
+            }
+          >
+            {isAdded ? t`Remove` : t`Add`}
+          </Button>
         </HStack>
       </HStack>
-    </VStack>
+    </div>
   );
 }
 
-function PaginationButtons({
-  count,
-  offset,
-  pageSize,
-  canPreviousPage,
-  canNextPage,
-  handlePreviousPage,
-  handleNextPage
-}: {
-  count: number;
-  offset: number;
-  pageSize: number;
-  canPreviousPage: boolean;
-  canNextPage: boolean;
-  handlePreviousPage: () => void;
-  handleNextPage: () => void;
-}) {
-  const prettifyShortcut = usePrettifyShortcut();
-  return (
-    <>
-      <div className="text-foreground text-sm font-medium align-center hidden lg:flex">
-        {count > 0 ? offset + 1 : 0} - {Math.min(offset + pageSize, count)} of{" "}
-        {count}
-      </div>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button
-            variant="secondary"
-            isDisabled={!canPreviousPage}
-            onClick={handlePreviousPage}
-            leftIcon={<BsChevronLeft />}
-          >
-            Previous
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent>
-          <HStack>{prettifyShortcut("ArrowLeft")}</HStack>
-        </TooltipContent>
-      </Tooltip>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button
-            variant="secondary"
-            isDisabled={!canNextPage}
-            onClick={handleNextPage}
-            rightIcon={<BsChevronRight />}
-          >
-            Next
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent>
-          <HStack>{prettifyShortcut("ArrowRight")}</HStack>
-        </TooltipContent>
-      </Tooltip>
-    </>
-  );
-}
-
-const StockTransferWizardWidget = ({ locationId }: { locationId: string }) => {
+function WizardFooter({ locationId }: { locationId: string }) {
   const { t } = useLingui();
-  // Item Rule pre-flight on Create Transfer (auto-released → stock-commit
-  // gate sits at the wizard click). Modal surfaces violations before the
-  // transfer is created.
+  const [wizard] = useStockTransferWizard();
+  const linesCount = useStockTransferWizardLinesCount();
+  const totalQuantity = useStockTransferWizardTotalQuantity();
+
+  // Item Rule pre-flight on Create Transfer (auto-released → the stock-commit
+  // gate sits here). The modal surfaces violations before the transfer exists.
   const createRules = useStorageRuleViolations<Result>({
     action: path.to.newStockTransfer,
     onSuccess: () => clearStockTransferWizard()
   });
   const fetcher = createRules.fetcher;
 
-  const [wizard] = useStockTransferWizard();
-  const linesCount = useStockTransferWizardLinesCount();
+  const activeLines = useMemo(
+    () => wizard.lines.filter((line) => (line.quantity ?? 0) > 0),
+    [wizard.lines]
+  );
 
-  const [isExpanded, setIsExpanded] = useState(false);
-  const [isMinimized, setIsMinimized] = useState(false);
+  const submit = useCallback(() => {
+    const fd = new FormData();
+    fd.set("locationId", locationId);
+    fd.set("lines", JSON.stringify(activeLines));
+    createRules.submit(fd);
+  }, [activeLines, createRules, locationId]);
 
-  // Filter out lines with quantity 0
-  const activeLines = wizard.lines.filter((line) => (line.quantity ?? 0) > 0);
-
-  const onRemoveItem = (
-    itemId: string,
-    fromStorageUnitId: string,
-    toStorageUnitId: string
-  ) => {
-    removeTransferLine(itemId, fromStorageUnitId, toStorageUnitId);
-  };
-
-  if (linesCount === 0) {
-    return null;
-  }
-
-  if (isMinimized) {
-    return (
-      <div className="fixed bottom-6 right-6 z-50">
-        <button
-          onClick={() => setIsMinimized(false)}
-          className="relative flex items-center justify-center w-16 h-16 bg-card border-2 border-border rounded-full shadow-2xl hover:scale-105 transition-transform duration-200"
-        >
-          <LuTruck className="w-6 h-6 text-foreground" />
-          {activeLines.length > 0 && (
-            <Badge className="absolute -top-2 -right-2 h-7 w-7 flex items-center justify-center p-0 border-2 border-background">
-              {activeLines.length}
-            </Badge>
-          )}
-        </button>
-      </div>
-    );
-  }
+  const isSubmitting = fetcher.state !== "idle";
 
   return (
-    <div className="fixed bottom-6 right-6 z-[9999]">
-      <div
-        className={`bg-card border-2 border-border rounded-lg shadow-2xl transition-all duration-300 ease-in-out ${
-          isExpanded ? "w-96 h-[32rem]" : "w-80 h-auto"
-        }`}
-      >
-        {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b-2 border-border">
-          <div className="flex items-center gap-3">
-            <div className="flex items-center justify-center w-10 h-10 bg-primary rounded-lg">
-              <LuCheckCheck className="w-5 h-5 text-primary-foreground" />
-            </div>
-            <div>
-              <h3 className="font-semibold text-card-foreground text-base">
-                Transfer Lines
-              </h3>
-              <p className="text-xs text-muted-foreground">
-                {activeLines.length}{" "}
-                {activeLines.length === 1 ? "item" : "items"}
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-1">
-            <IconButton
-              variant="ghost"
-              aria-label={isExpanded ? "Minimize" : "Expand"}
-              icon={
-                isExpanded ? (
-                  <LuMinus className="size-4" />
-                ) : (
-                  <LuMaximize2 className="size-4" />
-                )
-              }
-              onClick={() => setIsExpanded(!isExpanded)}
-            />
-            <IconButton
-              variant="ghost"
-              aria-label={t`Close`}
-              icon={<LuX className="size-4" />}
-              onClick={() => setIsMinimized(true)}
-            />
-          </div>
-        </div>
-
-        {/* Content */}
-        {isExpanded ? (
-          <div className="flex flex-col h-[calc(32rem-5rem)]">
-            <ScrollArea className="flex-1 p-4">
-              {activeLines.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-full text-center py-12">
-                  <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
-                    <LuTruck className="w-8 h-8 text-muted-foreground" />
-                  </div>
-                  <p className="text-sm text-muted-foreground">
-                    No transfer lines yet
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Start adding items to transfer
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {activeLines.map((line) => (
-                    <div
-                      key={`${line.itemId}-${line.fromStorageUnitId}-${line.toStorageUnitId}`}
-                      className="group bg-secondary/50 border border-border rounded-lg p-3 hover:bg-secondary transition-colors"
-                    >
-                      <div className="flex items-start justify-between gap-3 mb-2">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <ItemThumbnail
-                              thumbnailPath={line.thumbnailPath}
-                              type="Part"
-                              size="sm"
-                            />
-                            <div className="flex-1">
-                              <span className="font-mono text-xs font-semibold block">
-                                {line.itemReadableId}
-                              </span>
-                              <p className="text-xs text-muted-foreground truncate">
-                                {line.description}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                        <IconButton
-                          variant="secondary"
-                          aria-label={t`Remove item`}
-                          icon={<LuTrash2 />}
-                          size="sm"
-                          onClick={() =>
-                            onRemoveItem(
-                              line.itemId,
-                              line.fromStorageUnitId,
-                              line.toStorageUnitId
-                            )
-                          }
-                        />
-                      </div>
-                      <div className="space-y-1 text-xs">
-                        <HStack
-                          className="items-center justify-start"
-                          spacing={1}
-                        >
-                          <Badge variant="outline">
-                            {line.fromStorageUnitName}
-                          </Badge>
-                          <LuArrowRight className="size-4" />
-                          <Count count={line.quantity ?? 0} />
-                          <LuArrowRight className="size-4" />
-                          <Badge variant="outline">
-                            {line.toStorageUnitName}
-                          </Badge>
-                        </HStack>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </ScrollArea>
-
-            {/* Footer */}
-            {activeLines.length > 0 && (
-              <div className="p-4 border-t-2 border-border space-y-2">
-                <Button
-                  type="button"
-                  isLoading={fetcher.state !== "idle"}
-                  isDisabled={fetcher.state !== "idle"}
-                  size="lg"
-                  className="w-full"
-                  onClick={() => {
-                    const fd = new FormData();
-                    fd.set("locationId", locationId);
-                    fd.set("lines", JSON.stringify(activeLines));
-                    createRules.submit(fd);
-                  }}
-                >
-                  Create Transfer
-                </Button>
-                <Button
-                  variant="ghost"
-                  className="w-full"
-                  onClick={clearStockTransferWizard}
-                >
-                  Clear All
-                </Button>
-              </div>
-            )}
-          </div>
+    <DrawerFooter
+      data-wizard-footer
+      className="flex-shrink-0 border-t bg-card sm:justify-between items-center"
+    >
+      <span className="text-sm text-muted-foreground tabular-nums">
+        {linesCount === 0 ? (
+          <Trans>No lines yet</Trans>
         ) : (
-          <div className="p-4 space-y-4">
-            {activeLines.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-2">
-                No transfer lines yet
-              </p>
-            ) : (
-              <div className="space-y-2">
-                {activeLines.slice(0, 3).map((line) => (
-                  <div
-                    key={`${line.itemId}-${line.fromStorageUnitId}-${line.toStorageUnitId}`}
-                    className="flex items-center justify-between text-sm"
-                  >
-                    <span className="font-mono text-xs truncate flex-1">
-                      {line.itemReadableId}
-                    </span>
-                    <HStack spacing={1}>
-                      <Count count={line.quantity ?? 0} />
-                      <LuArrowRight className="size-4" />
-                      <Badge variant="outline" className="ml-2">
-                        {line.toStorageUnitName}
-                      </Badge>
-                    </HStack>
-                  </div>
-                ))}
-                {activeLines.length > 3 && (
-                  <p className="text-xs text-muted-foreground text-center pt-1">
-                    +{activeLines.length - 3} more
-                  </p>
-                )}
-              </div>
-            )}
-            {activeLines.length > 0 && (
-              <Button
-                type="button"
-                isLoading={fetcher.state !== "idle"}
-                isDisabled={fetcher.state !== "idle"}
-                size="lg"
-                className="w-full"
-                onClick={() => {
-                  const fd = new FormData();
-                  fd.set("locationId", locationId);
-                  fd.set("lines", JSON.stringify(activeLines));
-                  createRules.submit(fd);
-                }}
-              >
-                Create Transfer
-              </Button>
-            )}
-          </div>
+          <>
+            <Plural value={linesCount} one="# line" other="# lines" />
+            {" · "}
+            <Plural value={totalQuantity} one="# unit" other="# units" />
+          </>
         )}
-      </div>
+      </span>
+
+      <HStack spacing={2}>
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant="secondary" isDisabled={activeLines.length === 0}>
+              {t`Review`}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent
+            align="end"
+            className="w-[380px] p-0"
+            // A popover portals outside the drawer, where react-remove-scroll's
+            // document listener swallows wheel events. See conventions-ui.md.
+            onWheel={(e) => e.stopPropagation()}
+            onTouchMove={(e) => e.stopPropagation()}
+          >
+            <ScrollArea className="max-h-[50dvh] w-full">
+              <VStack spacing={0} className="p-2">
+                {activeLines.map((line) => (
+                  <HStack
+                    key={`${line.itemId}-${line.fromStorageUnitId}-${line.toStorageUnitId}`}
+                    className="w-full justify-between gap-2 rounded-md p-2 hover:bg-muted/50"
+                  >
+                    <VStack spacing={0} className="min-w-0">
+                      <span className="font-mono text-xs font-semibold truncate">
+                        {line.itemReadableId}
+                      </span>
+                      <HStack spacing={1} className="text-xs">
+                        <Badge variant="outline">
+                          {binLabel(
+                            line.fromStorageUnitName,
+                            t`No storage unit`
+                          )}
+                        </Badge>
+                        <LuArrowRight className="size-3 text-muted-foreground" />
+                        <Count count={line.quantity ?? 0} />
+                        <LuArrowRight className="size-3 text-muted-foreground" />
+                        <Badge variant="outline">
+                          {binLabel(line.toStorageUnitName, t`No storage unit`)}
+                        </Badge>
+                      </HStack>
+                    </VStack>
+                    <IconButton
+                      aria-label={t`Remove line`}
+                      variant="ghost"
+                      size="sm"
+                      icon={<LuTrash2 />}
+                      onClick={() =>
+                        removeTransferLine(
+                          line.itemId,
+                          line.fromStorageUnitId,
+                          line.toStorageUnitId
+                        )
+                      }
+                    />
+                  </HStack>
+                ))}
+              </VStack>
+            </ScrollArea>
+          </PopoverContent>
+        </Popover>
+
+        <Button
+          variant="ghost"
+          isDisabled={activeLines.length === 0 || isSubmitting}
+          onClick={clearTransferLines}
+        >
+          {t`Clear`}
+        </Button>
+        <Button
+          isLoading={isSubmitting}
+          isDisabled={activeLines.length === 0 || isSubmitting}
+          onClick={submit}
+        >
+          {t`Create Transfer`}
+        </Button>
+      </HStack>
       <createRules.ViolationModal />
-    </div>
+    </DrawerFooter>
   );
-};
+}

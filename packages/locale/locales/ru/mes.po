@@ -1165,9 +1165,8 @@ msgstr "Сменить оператора"
 msgid "Tag"
 msgstr "Тег"
 
-#. placeholder {0}: operation.operationQuantity
-msgid "The completed quantity for this operation is less than the required quantity of {0}."
-msgstr "Количество готовой продукции по этой операции меньше требуемого количества {0}."
+msgid "The completed quantity for this operation is less than the required quantity of {targetQuantity}."
+msgstr "Количество готовой продукции по этой операции меньше требуемого количества {targetQuantity}."
 
 msgid "The lot will be marked Passed and {remaining} remaining unit(s) will be completed at this operation."
 msgstr "Партия будет отмечена как Пройдена, и {remaining} оставшихся единиц будут завершены в этой операции."

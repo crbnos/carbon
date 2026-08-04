@@ -3,6 +3,7 @@ import puppeteer from "https://deno.land/x/puppeteer@16.2.0/mod.ts";
 import { z } from "npm:zod@^3.24.1";
 import { Buffer } from "node:buffer";
 import { corsHeaders } from "../lib/headers.ts";
+import { corsPreflight, errorResponse } from "../lib/response.ts";
 
 import {
   ImageMagick,
@@ -30,9 +31,8 @@ const browserWSEndpoint =
   `ws://5.161.255.30?token=59ecf910-aaa8-4c7e-aedb-7c18b34e266e`;
 
 serve(async (req: Request) => {
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
-  }
+  const preflight = corsPreflight(req);
+  if (preflight) return preflight;
 
   let browser;
   try {
@@ -91,11 +91,7 @@ serve(async (req: Request) => {
       status: 200,
     });
   } catch (err) {
-    console.error(err);
-    return new Response(JSON.stringify(err), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 400,
-    });
+    return errorResponse(err, 400);
   } finally {
     if (browser) {
       await browser.close();
