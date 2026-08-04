@@ -2581,9 +2581,6 @@ msgstr "Настроить счета капитала и накопленной
 msgid "Configure defaults for the quality dashboard."
 msgstr "Настройте значения по умолчанию для панели качества."
 
-msgid "Configure how preventative maintenance dispatches are automatically generated from maintenance schedules."
-msgstr "Настройте способ автоматического создания плановых заявок на техническое обслуживание на основе графиков обслуживания."
-
 msgid "Configure Item"
 msgstr "Настроить элемент"
 
@@ -3645,9 +3642,6 @@ msgstr "Дни до оплаты"
 
 msgid "Days from ordering a part to having it available; planning offsets demand backward by this much."
 msgstr "Дни от заказа детали до её наличия; планирование смещает спрос назад на эту величину."
-
-msgid "Days in advance to generate dispatches"
-msgstr "Дни заранее для создания заявок"
 
 msgid "Days Off"
 msgstr "Выходные дни"
@@ -7504,9 +7498,6 @@ msgstr "Расходы на техническое обслуживание (п�
 msgid "Maintenance Schedules"
 msgstr "Графики обслуживания"
 
-msgid "Maintenance Scheduling"
-msgstr "Планирование техническое обслуживание"
-
 msgid "Maintenance Type"
 msgstr "Тип обслуживания"
 
@@ -8367,6 +8358,9 @@ msgstr "Следующая дата"
 
 msgid "Next Due"
 msgstr "Следующий срок"
+
+msgid "Next Due Date"
+msgstr ""
 
 msgid "Next page"
 msgstr "Следующая страница"

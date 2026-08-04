@@ -26,7 +26,8 @@ export function ScoreboardRow({
   detailLabel,
   detailValue,
   tone = "neutral",
-  emphasis = false
+  emphasis = false,
+  detailWide = false
 }: {
   question: React.ReactNode;
   answer: React.ReactNode;
@@ -35,13 +36,24 @@ export function ScoreboardRow({
   tone?: AnswerTone;
   /** Draw the whole row hot — used when the row is the reason the board is red. */
   emphasis?: boolean;
+  /**
+   * Drop the label + fixed-width value cells for a single full-width value
+   * cell. Use for a detail that is an identifier rather than a count — e.g. a
+   * dispatch number, which is too wide for the 6ch value column and would clip.
+   * The answer column keeps its minimum width so it still lines up down the board.
+   */
+  detailWide?: boolean;
 }) {
   return (
     <div
       className={cn(
         "grid min-h-0 flex-1 items-center gap-[1.5vw] px-[2vw]",
-        // question | answer | detail label | detail value
-        "grid-cols-[minmax(0,1fr)_auto] sm:grid-cols-[minmax(0,1fr)_9ch_auto_6ch]",
+        detailWide
+          ? // question | answer | value (packed right beside the answer, like
+            // the label+value pair on the count rows)
+            "grid-cols-[minmax(0,1fr)_auto] sm:grid-cols-[minmax(0,1fr)_minmax(9ch,auto)_auto]"
+          : // question | answer | detail label | detail value
+            "grid-cols-[minmax(0,1fr)_auto] sm:grid-cols-[minmax(0,1fr)_minmax(9ch,auto)_auto_6ch]",
         emphasis && "bg-red-950/60"
       )}
     >
@@ -55,18 +67,29 @@ export function ScoreboardRow({
 
       <AnswerCell tone={tone}>{answer}</AnswerCell>
 
-      <div
-        className="hidden truncate text-right font-medium uppercase tracking-wide text-white/45 sm:block"
-        style={{ fontSize: "clamp(0.7rem, 1.2vw, 1.5rem)" }}
-      >
-        {detailLabel}
-      </div>
-      <div
-        className="hidden text-right font-bold tabular-nums text-white sm:block"
-        style={{ fontSize: "clamp(0.8rem, 1.9vw, 2.4rem)" }}
-      >
-        {detailValue}
-      </div>
+      {detailWide ? (
+        <div
+          className="hidden truncate text-right font-bold tabular-nums text-white sm:block"
+          style={{ fontSize: "clamp(0.8rem, 1.9vw, 2.4rem)" }}
+        >
+          {detailValue}
+        </div>
+      ) : (
+        <>
+          <div
+            className="hidden truncate text-right font-medium uppercase tracking-wide text-white/45 sm:block"
+            style={{ fontSize: "clamp(0.7rem, 1.2vw, 1.5rem)" }}
+          >
+            {detailLabel}
+          </div>
+          <div
+            className="hidden text-right font-bold tabular-nums text-white sm:block"
+            style={{ fontSize: "clamp(0.8rem, 1.9vw, 2.4rem)" }}
+          >
+            {detailValue}
+          </div>
+        </>
+      )}
     </div>
   );
 }

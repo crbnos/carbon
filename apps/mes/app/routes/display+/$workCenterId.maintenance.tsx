@@ -121,8 +121,10 @@ export default function MaintenanceDisplayRoute() {
           answer={yesNo(board.downNow.active)}
           tone={board.downNow.active ? "danger" : "neutral"}
           emphasis={board.downNow.active}
-          detailLabel={board.downNow.active ? <Trans>Dispatch</Trans> : null}
-          detailValue={board.downNow.dispatchId ?? "—"}
+          detailWide
+          detailValue={
+            board.downNow.active ? (board.downNow.dispatchId ?? "—") : null
+          }
         />
         <ScoreboardRow
           question={

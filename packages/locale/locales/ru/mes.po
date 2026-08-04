@@ -329,9 +329,6 @@ msgstr "Описание"
 msgid "Details"
 msgstr "Детали"
 
-msgid "Dispatch"
-msgstr ""
-
 msgid "Dispatch not found"
 msgstr "Наряд не найден"
 
@@ -489,6 +486,9 @@ msgstr "Файлы, связанные с заданием и позицией �
 
 msgid "Filter"
 msgstr "Фильтр"
+
+msgid "Filter by location"
+msgstr "Фильтр по расположению"
 
 msgid "Finish"
 msgstr "Завершить"

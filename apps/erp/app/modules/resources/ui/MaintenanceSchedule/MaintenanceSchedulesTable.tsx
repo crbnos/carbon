@@ -99,9 +99,7 @@ const MaintenanceSchedulesTable = memo(
           accessorKey: "name",
           header: t`Schedule Name`,
           cell: ({ row }) => (
-            <Hyperlink to={row.original.id!}>
-              <Enumerable value={row.original.name} />
-            </Hyperlink>
+            <Hyperlink to={row.original.id!}>{row.original.name}</Hyperlink>
           )
         },
         {

@@ -329,9 +329,6 @@ msgstr "Açıklama"
 msgid "Details"
 msgstr "Detaylar"
 
-msgid "Dispatch"
-msgstr ""
-
 msgid "Dispatch not found"
 msgstr "Görevlendirme bulunamadı"
 
@@ -489,6 +486,9 @@ msgstr "İş ve fırsat hattıyla ilgili dosyalar."
 
 msgid "Filter"
 msgstr "Filtrele"
+
+msgid "Filter by location"
+msgstr "Konuma göre filtrele"
 
 msgid "Finish"
 msgstr "Bitir"

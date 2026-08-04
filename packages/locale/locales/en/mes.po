@@ -329,9 +329,6 @@ msgstr "Description"
 msgid "Details"
 msgstr "Details"
 
-msgid "Dispatch"
-msgstr "Dispatch"
-
 msgid "Dispatch not found"
 msgstr "Dispatch not found"
 
@@ -489,6 +486,9 @@ msgstr "Files related to the job and the opportunity line."
 
 msgid "Filter"
 msgstr "Filter"
+
+msgid "Filter by location"
+msgstr "Filter by location"
 
 msgid "Finish"
 msgstr "Finish"

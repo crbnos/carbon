@@ -2581,9 +2581,6 @@ msgstr "Varsayılan öz sermaye ve birikmiş karlar hesaplarını yapılandırı
 msgid "Configure defaults for the quality dashboard."
 msgstr "Kalite panosu için varsayılan ayarları yapılandırın."
 
-msgid "Configure how preventative maintenance dispatches are automatically generated from maintenance schedules."
-msgstr "Önleyici bakım sevklerinin bakım programlarından otomatik olarak nasıl oluşturulacağını yapılandırın."
-
 msgid "Configure Item"
 msgstr "Öğe Yapılandır"
 
@@ -3645,9 +3642,6 @@ msgstr "Vade Tarihi"
 
 msgid "Days from ordering a part to having it available; planning offsets demand backward by this much."
 msgstr "Bir parça sipariş etmekten elde edilebilir olana kadar geçen günler; planlama talebi bu kadar geriye kaydırır."
-
-msgid "Days in advance to generate dispatches"
-msgstr "Gönderileri oluşturmak için kaç gün önceden"
 
 msgid "Days Off"
 msgstr "İzin Günleri"
@@ -7504,9 +7498,6 @@ msgstr "Bakım Gideri (varsayılan)"
 msgid "Maintenance Schedules"
 msgstr "Bakım Programları"
 
-msgid "Maintenance Scheduling"
-msgstr "Bakım Planlaması"
-
 msgid "Maintenance Type"
 msgstr "Bakım Türü"
 
@@ -8367,6 +8358,9 @@ msgstr "Sonraki Tarih"
 
 msgid "Next Due"
 msgstr "Sonraki Teslim Tarihi"
+
+msgid "Next Due Date"
+msgstr ""
 
 msgid "Next page"
 msgstr "Sonraki sayfa"

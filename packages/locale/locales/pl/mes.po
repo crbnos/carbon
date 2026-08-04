@@ -329,9 +329,6 @@ msgstr "Opis"
 msgid "Details"
 msgstr "Szczegóły"
 
-msgid "Dispatch"
-msgstr ""
-
 msgid "Dispatch not found"
 msgstr "Nie znaleziono zlecenia"
 
@@ -489,6 +486,9 @@ msgstr "Pliki powiązane ze zleceniem i pozycją zapytania."
 
 msgid "Filter"
 msgstr "Filtr"
+
+msgid "Filter by location"
+msgstr "Filtruj według lokalizacji"
 
 msgid "Finish"
 msgstr "Zakończ"

@@ -329,9 +329,6 @@ msgstr "विवरण"
 msgid "Details"
 msgstr "विवरण"
 
-msgid "Dispatch"
-msgstr ""
-
 msgid "Dispatch not found"
 msgstr "डिस्पैच नहीं मिला"
 
@@ -489,6 +486,9 @@ msgstr "नौकरी और अवसर लाइन से संबंध�
 
 msgid "Filter"
 msgstr "फ़िल्टर"
+
+msgid "Filter by location"
+msgstr "स्थान के अनुसार फ़िल्टर करें"
 
 msgid "Finish"
 msgstr "समाप्त करें"

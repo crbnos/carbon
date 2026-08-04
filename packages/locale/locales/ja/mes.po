@@ -329,9 +329,6 @@ msgstr "説明"
 msgid "Details"
 msgstr "詳細"
 
-msgid "Dispatch"
-msgstr ""
-
 msgid "Dispatch not found"
 msgstr "ディスパッチが見つかりません"
 
@@ -489,6 +486,9 @@ msgstr "ジョブおよび案件明細に関連するファイル。"
 
 msgid "Filter"
 msgstr "フィルター"
+
+msgid "Filter by location"
+msgstr "ロケーションで絞り込む"
 
 msgid "Finish"
 msgstr "完了"

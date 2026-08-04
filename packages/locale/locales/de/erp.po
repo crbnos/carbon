@@ -2581,9 +2581,6 @@ msgstr "Konfigurieren Sie die Standard-Eigenkapital- und Gewinnrücklagenkonten"
 msgid "Configure defaults for the quality dashboard."
 msgstr "Konfigurieren Sie die Standardeinstellungen für das Qualitätsdashboard."
 
-msgid "Configure how preventative maintenance dispatches are automatically generated from maintenance schedules."
-msgstr "Konfigurieren Sie, wie vorbeugende Wartungseinsätze automatisch aus Wartungsplänen generiert werden."
-
 msgid "Configure Item"
 msgstr "Artikel konfigurieren"
 
@@ -3645,9 +3642,6 @@ msgstr "Fälligkeitstage"
 
 msgid "Days from ordering a part to having it available; planning offsets demand backward by this much."
 msgstr "Tage vom Bestellen eines Teils bis zu seiner Verfügbarkeit; die Planung verschiebt die Nachfrage um diesen Betrag nach hinten."
-
-msgid "Days in advance to generate dispatches"
-msgstr "Tage im Voraus zum Generieren von Einsätzen"
 
 msgid "Days Off"
 msgstr "Tage frei"
@@ -7504,9 +7498,6 @@ msgstr "Wartungskosten (Standard)"
 msgid "Maintenance Schedules"
 msgstr "Wartungspläne"
 
-msgid "Maintenance Scheduling"
-msgstr "Wartungsplanung"
-
 msgid "Maintenance Type"
 msgstr "Wartungstyp"
 
@@ -8367,6 +8358,9 @@ msgstr "Nächstes Datum"
 
 msgid "Next Due"
 msgstr "Nächste Fälligkeit"
+
+msgid "Next Due Date"
+msgstr ""
 
 msgid "Next page"
 msgstr "Nächste Seite"

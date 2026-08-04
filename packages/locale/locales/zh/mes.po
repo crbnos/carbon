@@ -329,9 +329,6 @@ msgstr "描述"
 msgid "Details"
 msgstr "详情"
 
-msgid "Dispatch"
-msgstr ""
-
 msgid "Dispatch not found"
 msgstr "未找到工单"
 
@@ -489,6 +486,9 @@ msgstr "与工单和商机行相关的文件。"
 
 msgid "Filter"
 msgstr "筛选"
+
+msgid "Filter by location"
+msgstr "按位置筛选"
 
 msgid "Finish"
 msgstr "完成"
