@@ -114,10 +114,18 @@ order sort in the app (MES `sortLotsByPickMethod` in `apps/mes/app/services/allo
 posts a negative Consumption row and, on partial use, **splits** the entity — the un-consumed
 remainder becomes a NEW `trackedEntity` (a Split descendant), NOT the originally-picked one, and
 `pickingListLineTrackedEntity` is not updated. Consumption/split rows are booked against the
-entity's actual on-hand bin (`resolveTrackedEntityBin`), not an arbitrary ledger row. At job
-complete, `post-picking` `returnPickedRemainder` walks the picked entity's split lineage and
-transfers each lineage entity's remaining lineside on-hand back to source (decrementing
-`pickingListLineTrackedEntity`/`pickingListLine.quantityPicked`).
+entity's actual on-hand bin (`resolveTrackedEntityBin`), not an arbitrary ledger row. The
+**return** of the un-consumed remainder runs via `post-picking`'s sweep cases
+`returnJobRemainders` (at job complete — both policies) / `returnOperationRemainders` (at
+operation Done, only when `companySettings.returnPickedMaterialTiming = 'operation'`): the
+tracked path walks the picked entity's split lineage and transfers each lineage entity's
+remaining lineside on-hand back to source, decrementing the `pickingListLineTrackedEntity`
+allocation but booking the line-level return on **`pickingListLine.quantityReturned`** (NOT
+decrementing `quantityPicked` — that would fire `update_picking_list_status` and demote a
+Completed/Partial header). Untracked materials return per jobMaterial:
+`max(0, Σ(picked − returned) − max(quantityIssued, owed))`, newest-line-first — never a bin
+sweep (the lineside bin is shared per work center). Spec:
+`.ai/specs/2026-08-04-picked-material-return-timing.md`.
 
 **Gotcha:** the older `get_item_quantities_by_tracking_id` (`20260101163400`) still emits
 legacy `shelfId` / `shelfName` and joins the `shelf` table — both column sets exist; check
