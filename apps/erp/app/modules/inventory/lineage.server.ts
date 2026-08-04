@@ -468,9 +468,14 @@ export function toGraphData(payload: LineagePayload): GraphData {
   // own Split activity. Drop the output half of that self-loop so the graph
   // doesn't render the survivor as produced by its own split; the input edge
   // stays (it carries the drawn quantity).
+  const splitActivityIds = new Set(
+    payload.activities.filter((a) => a?.type === "Split").map((a) => a.id)
+  );
   const inputPairs = new Set(
     pluckUnique(
-      payload.inputs,
+      payload.inputs.filter((input) =>
+        splitActivityIds.has(input.trackedActivityId)
+      ),
       (input) => `${input.trackedActivityId}::${input.trackedEntityId}`
     )
   );
@@ -503,7 +508,7 @@ export function toGraphData(payload: LineagePayload): GraphData {
 /**
  * Resolve the storage-unit ids that movement activities carry in their
  * attributes ("From Shelf" / "To Shelf") into names, written back as
- * "From Shelf Name" / "To Shelf Name".
+ * "From Storage Unit Name" / "To Storage Unit Name".
  *
  * The graph renders a lot as a chain of states; a movement produces two states
  * with the SAME quantity, so the bin is the only thing that distinguishes
@@ -551,8 +556,8 @@ export async function enrichActivityBinNames(
         ...activity,
         attributes: {
           ...(attrs ?? {}),
-          ...(fromName ? { "From Shelf Name": fromName } : {}),
-          ...(toName ? { "To Shelf Name": toName } : {})
+          ...(fromName ? { "From Storage Unit Name": fromName } : {}),
+          ...(toName ? { "To Storage Unit Name": toName } : {})
         }
       };
     })

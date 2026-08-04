@@ -275,8 +275,9 @@ export function payloadToFlow(
         createdAt: (activity?.createdAt as string | undefined) ?? "",
         inQty: null,
         outQty: null,
-        fromBin: (attrs?.["From Shelf Name"] as string | undefined) ?? null,
-        toBin: (attrs?.["To Shelf Name"] as string | undefined) ?? null
+        fromBin:
+          (attrs?.["From Storage Unit Name"] as string | undefined) ?? null,
+        toBin: (attrs?.["To Storage Unit Name"] as string | undefined) ?? null
       };
       events.set(activityId, ev);
     }

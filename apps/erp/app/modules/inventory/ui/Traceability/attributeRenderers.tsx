@@ -45,8 +45,8 @@ const SKIPPED_ATTRIBUTE_KEYS = new Set([
   "expiryOverrides",
   // Injected by the lineage loader for the graph's edge badges; the stored
   // "From Shelf"/"To Shelf" ids already render as "From/To Storage Unit".
-  "From Shelf Name",
-  "To Shelf Name"
+  "From Storage Unit Name",
+  "To Storage Unit Name"
 ]);
 
 // The edge functions still write "Shelf" keys into trackedActivity/trackedEntity

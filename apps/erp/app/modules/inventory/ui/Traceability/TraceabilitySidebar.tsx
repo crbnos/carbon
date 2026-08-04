@@ -194,6 +194,12 @@ export function TraceabilitySidebar({
   // an input. Bin names are enriched server-side (enrichActivityBinNames).
   const storageUnit = useMemo(() => {
     if (!entity || !payload) return null;
+    // A fully consumed lot was last moved somewhere, but nothing is there now —
+    // showing a bin would read as "the stock is in here". Rejected and On Hold
+    // lots still physically occupy a bin, so they keep the row.
+    if (entity.status === "Consumed" || !(Number(entity.quantity) > 0)) {
+      return null;
+    }
     const activityById = indexBy(payload.activities, (a) => a.id);
     let latest: { at: string; bin: string } | null = null;
     for (const i of payload.inputs) {
@@ -201,7 +207,7 @@ export function TraceabilitySidebar({
       const activity = activityById.get(i.trackedActivityId);
       if (!activity || !isMovementActivity(activity.type)) continue;
       const bin = (activity.attributes as Record<string, unknown> | null)?.[
-        "To Shelf Name"
+        "To Storage Unit Name"
       ];
       if (typeof bin !== "string" || !bin) continue;
       const at = (activity.createdAt as string | undefined) ?? "";
