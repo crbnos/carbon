@@ -12170,9 +12170,6 @@ msgstr "Stoffe"
 msgid "substituted from"
 msgstr "ersetzt durch"
 
-msgid "Substituted from {substitutedFrom}"
-msgstr "Ersetzt durch {substitutedFrom}"
-
 msgid "Subtotal"
 msgstr "Zwischensumme"
 

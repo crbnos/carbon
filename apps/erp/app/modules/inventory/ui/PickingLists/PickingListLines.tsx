@@ -275,7 +275,10 @@ function PickingListLineItem({
   ).jobMaterial;
   const substitutedFrom =
     sourceMaterial?.itemId && sourceMaterial.itemId !== line.itemId
-      ? (sourceMaterial.item?.readableId ?? null)
+      ? (items.find((i) => i.id === sourceMaterial.itemId)
+          ?.readableIdWithRevision ??
+        sourceMaterial.item?.readableId ??
+        sourceMaterial.itemId)
       : null;
   const quantityToPick = Number(line.quantityToPick ?? 0);
   const quantityPicked = Number(line.quantityPicked ?? 0);
@@ -345,8 +348,8 @@ function PickingListLineItem({
             {item?.readableIdWithRevision ?? line.item?.readableId}
           </p>
           {substitutedFrom && (
-            <p className="truncate text-sm text-muted-foreground sm:text-xs">
-              <Trans>Substituted from {substitutedFrom}</Trans>
+            <p className="truncate text-sm text-blue-700 dark:text-blue-300 sm:text-xs">
+              ↩ <Trans>substituted from</Trans> {substitutedFrom}
             </p>
           )}
           {isTracked && !isPicked && (

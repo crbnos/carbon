@@ -12170,9 +12170,6 @@ msgstr "物質"
 msgid "substituted from"
 msgstr "代替元"
 
-msgid "Substituted from {substitutedFrom}"
-msgstr "{substitutedFrom}から代替されました"
-
 msgid "Subtotal"
 msgstr "小計"
 

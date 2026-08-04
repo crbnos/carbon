@@ -12170,9 +12170,6 @@ msgstr "Madde Maddeleri"
 msgid "substituted from"
 msgstr "yerine konulan"
 
-msgid "Substituted from {substitutedFrom}"
-msgstr "Şu kaynaktan değiştirildi: {substitutedFrom}"
-
 msgid "Subtotal"
 msgstr "Ara Toplamı"
 

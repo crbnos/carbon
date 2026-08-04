@@ -12170,9 +12170,6 @@ msgstr "재질"
 msgid "substituted from"
 msgstr "다음에서 대체됨"
 
-msgid "Substituted from {substitutedFrom}"
-msgstr "{substitutedFrom}에서 대체됨"
-
 msgid "Subtotal"
 msgstr "소계"
 

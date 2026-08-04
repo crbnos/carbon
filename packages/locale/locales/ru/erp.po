@@ -12170,9 +12170,6 @@ msgstr "Вещества"
 msgid "substituted from"
 msgstr "заменено с"
 
-msgid "Substituted from {substitutedFrom}"
-msgstr "Заменено с {substitutedFrom}"
-
 msgid "Subtotal"
 msgstr "Промежуточный итог"
 

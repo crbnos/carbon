@@ -12170,9 +12170,6 @@ msgstr "Substances"
 msgid "substituted from"
 msgstr "substituted from"
 
-msgid "Substituted from {substitutedFrom}"
-msgstr "Substituted from {substitutedFrom}"
-
 msgid "Subtotal"
 msgstr "Subtotal"
 

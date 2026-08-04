@@ -12170,9 +12170,6 @@ msgstr "पदार्थ"
 msgid "substituted from"
 msgstr "से प्रतिस्थापित"
 
-msgid "Substituted from {substitutedFrom}"
-msgstr "{substitutedFrom} से प्रतिस्थापित"
-
 msgid "Subtotal"
 msgstr "उप-कुल"
 
