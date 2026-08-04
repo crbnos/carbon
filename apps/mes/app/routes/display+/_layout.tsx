@@ -1,5 +1,7 @@
-import type { MiddlewareFunction } from "react-router";
-import { Outlet } from "react-router";
+import { CarbonProvider } from "@carbon/auth";
+import { requireAuthSession } from "@carbon/auth/session.server";
+import type { LoaderFunctionArgs, MiddlewareFunction } from "react-router";
+import { Outlet, useLoaderData } from "react-router";
 import { userMiddleware } from "~/middleware/user";
 
 /**
@@ -9,9 +11,31 @@ import { userMiddleware } from "~/middleware/user";
  * the sidebar, pin-in overlay, console pill and time-card warning, none of
  * which belong on a screen nobody touches. Reusing `userMiddleware` keeps the
  * same auth, company and location scoping without inheriting that chrome.
+ *
+ * `CarbonProvider` is the one piece of `/x` that IS load-bearing here. It is
+ * the only thing in the app that renews the auth session — it polls each
+ * minute and refreshes ten minutes before the access token expires. Without it
+ * a display would authenticate once, run until the token lapsed roughly an
+ * hour later, and then redirect to the login page and sit there. These screens
+ * are meant to hang on a wall for months, so an hour of uptime is no uptime.
  */
 export const middleware: MiddlewareFunction[] = [userMiddleware];
 
+export async function loader({ request }: LoaderFunctionArgs) {
+  const { accessToken, expiresAt, expiresIn } = await requireAuthSession(
+    request,
+    { verify: true }
+  );
+
+  return { session: { accessToken, expiresAt, expiresIn } };
+}
+
 export default function DisplayLayout() {
-  return <Outlet />;
+  const { session } = useLoaderData<typeof loader>();
+
+  return (
+    <CarbonProvider session={session}>
+      <Outlet />
+    </CarbonProvider>
+  );
 }
