@@ -7,7 +7,11 @@ import { sql } from "kysely";
 import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
 import { corsPreflight, errorResponse, jsonResponse } from "../lib/response.ts";
 import type { Database } from "../lib/types.ts";
-import { buildBatchSplitRecords } from "../shared/batch-split.ts";
+import { resolveTrackedEntityBin } from "../issue/resolve-tracked-entity-bin.ts";
+import {
+  buildBatchSplitRecords,
+  buildMergeRecords
+} from "../shared/batch-split.ts";
 
 const pool = getConnectionPool(1);
 const db = getDatabaseClient<DB>(pool);
@@ -1197,8 +1201,11 @@ async function returnTrackedAllocationRemainder(
     frontier = next;
   }
 
-  // Transfer each lineage entity's remaining lineside on-hand back to
-  // the warehouse source bin.
+  // Transfer each lineage entity's remaining lineside on-hand back to the
+  // warehouse source bin. A split child whose parent still sits Available at
+  // the source bin MERGES back into the parent (no standalone fragment);
+  // anything ineligible falls back to today's standalone return — never
+  // block a return on merge eligibility.
   const inserts: ItemLedgerInsert[] = [];
   let totalReturned = 0;
   for (const entityId of lineage) {
@@ -1212,20 +1219,124 @@ async function returnTrackedAllocationRemainder(
       .executeTakeFirst();
     const onHand = Number(onHandRow?.qty ?? 0);
     if (onHand <= 0) continue;
-    inserts.push(
-      ...transferPair({
-        today,
-        itemId: line.itemId,
-        quantity: onHand,
-        locationId,
-        fromStorageUnitId: lineside,
-        toStorageUnitId: source,
-        documentId: line.pickingListId,
-        trackedEntityId: entityId,
-        userId,
-        companyId
-      })
-    );
+
+    const entity = await trx
+      .selectFrom("trackedEntity")
+      .where("id", "=", entityId)
+      .where("companyId", "=", companyId)
+      .selectAll()
+      .executeTakeFirst();
+    const parentId = ((entity?.attributes ?? {}) as Record<string, unknown>)[
+      "Split From Entity ID"
+    ];
+
+    let merged = false;
+    if (entity && typeof parentId === "string" && parentId) {
+      const parent = await trx
+        .selectFrom("trackedEntity")
+        .where("id", "=", parentId)
+        .where("companyId", "=", companyId)
+        .selectAll()
+        .executeTakeFirst();
+
+      if (
+        parent &&
+        parent.status === "Available" &&
+        parent.readableId === entity.readableId &&
+        onHand <= Number(entity.quantity)
+      ) {
+        const parentLedgers = await trx
+          .selectFrom("itemLedger")
+          .where("trackedEntityId", "=", parent.id)
+          .where("companyId", "=", companyId)
+          .select(["trackedEntityId", "storageUnitId", "quantity"])
+          .execute();
+
+        if (resolveTrackedEntityBin(parentLedgers, parent.id) === source) {
+          const merge = buildMergeRecords({
+            child: { id: entity.id, quantity: Number(entity.quantity) },
+            parent: { id: parent.id, quantity: Number(parent.quantity) },
+            mergeQuantity: onHand,
+            mergeActivityId: nanoid(),
+            companyId,
+            userId
+          });
+
+          // Physical move: −r on the child at lineside, +r on the parent at
+          // the source bin — same Transfer shape the sweep books today.
+          inserts.push(
+            {
+              postingDate: today,
+              itemId: line.itemId,
+              quantity: -onHand,
+              locationId,
+              storageUnitId: lineside,
+              entryType: "Transfer",
+              documentType: "Direct Transfer",
+              documentId: line.pickingListId,
+              trackedEntityId: entity.id,
+              createdBy: userId,
+              companyId
+            },
+            {
+              postingDate: today,
+              itemId: line.itemId,
+              quantity: onHand,
+              locationId,
+              storageUnitId: source,
+              entryType: "Transfer",
+              documentType: "Direct Transfer",
+              documentId: line.pickingListId,
+              trackedEntityId: parent.id,
+              createdBy: userId,
+              companyId
+            }
+          );
+
+          await trx
+            .insertInto("trackedActivity")
+            .values(merge.activityInsert)
+            .execute();
+          await trx
+            .insertInto("trackedActivityInput")
+            .values(merge.activityInputInsert)
+            .execute();
+          await trx
+            .insertInto("trackedActivityOutput")
+            .values(merge.activityOutputInsert)
+            .execute();
+          await trx
+            .updateTable("trackedEntity")
+            .set(merge.parentUpdate)
+            .where("id", "=", parent.id)
+            .execute();
+          await trx
+            .updateTable("trackedEntity")
+            .set(merge.childUpdate)
+            .where("id", "=", entity.id)
+            .execute();
+
+          merged = true;
+        }
+      }
+    }
+
+    if (!merged) {
+      inserts.push(
+        ...transferPair({
+          today,
+          itemId: line.itemId,
+          quantity: onHand,
+          locationId,
+          fromStorageUnitId: lineside,
+          toStorageUnitId: source,
+          documentId: line.pickingListId,
+          trackedEntityId: entityId,
+          userId,
+          companyId
+        })
+      );
+    }
     totalReturned += onHand;
   }
 
