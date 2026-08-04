@@ -1,3 +1,4 @@
+import { toast } from "@carbon/react";
 import { useEffect, useRef } from "react";
 import { useFetcher } from "react-router";
 import { path } from "~/utils/path";
@@ -15,7 +16,7 @@ export function Autosave({
   versionId: string;
 }) {
   const store = useBuilderStoreApi();
-  const fetcher = useFetcher<{ ok?: boolean }>();
+  const fetcher = useFetcher<{ ok?: boolean; error?: string }>();
   const { submit } = fetcher;
   const savedRef = useRef(false);
 
@@ -60,6 +61,7 @@ export function Autosave({
       state.setSaveState("saved");
     } else {
       state.setSaveState("error");
+      toast.error(fetcher.data?.error ?? "Could not save workflow");
     }
   }, [fetcher.data, fetcher.state, store]);
 

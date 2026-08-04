@@ -193,19 +193,25 @@ export const valueOrRefSchema = z
   });
 export type ValueOrRef = z.infer<typeof valueOrRefSchema>;
 
-/** One comparison. Shared by condition, lookup and filter nodes. */
+/**
+ * One comparison. Shared by condition, lookup and filter nodes.
+ * `right` is optional so a half-filled draft still saves; publish rejects it.
+ */
 export const clauseSchema = z.object({
   left: valueOrRefSchema,
   operator: operatorSchema,
-  right: valueOrRefSchema
+  right: valueOrRefSchema.optional()
 });
 export type Clause = z.infer<typeof clauseSchema>;
 
-/** A lookup names a property of the record it is searching, not a value on both sides. */
+/**
+ * A lookup names a property of the record it is searching, not a value on both sides.
+ * `field`/`value` may be blank mid-edit for the same reason as `clauseSchema.right`.
+ */
 export const lookupMatchSchema = z.object({
-  field: z.string().min(1),
+  field: z.string(),
   operator: operatorSchema,
-  value: valueOrRefSchema
+  value: valueOrRefSchema.optional()
 });
 export type LookupMatch = z.infer<typeof lookupMatchSchema>;
 

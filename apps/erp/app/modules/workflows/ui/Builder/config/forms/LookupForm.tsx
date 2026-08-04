@@ -1,6 +1,6 @@
 import { Combobox, cn } from "@carbon/react";
 import type { Operator } from "@carbon/utils";
-import type { Clause, LookupMatch, ValueOrRef } from "@carbon/workflows";
+import type { Clause, LookupMatch } from "@carbon/workflows";
 import { REGISTRY_ENTRIES } from "@carbon/workflows";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useCallback, useMemo } from "react";
@@ -15,10 +15,8 @@ import ClauseRow from "../ClauseRow";
 import { FormStack, Section } from "../layout";
 import type { NodeFormProps } from "./index";
 
-/** The shared match, with `value` allowed to be absent mid-edit. Derived, never re-declared. */
-type WorkingMatch = Omit<LookupMatch, "value"> & {
-  value: ValueOrRef | undefined;
-};
+/** `value` is already optional on the shared match. Derived, never re-declared. */
+type WorkingMatch = LookupMatch;
 
 function matchToClause(m: WorkingMatch): Clause {
   return {
@@ -28,8 +26,7 @@ function matchToClause(m: WorkingMatch): Clause {
       value: m.field
     },
     operator: m.operator,
-    // `right` is required in Clause; cast is safe because ValueField accepts undefined
-    right: m.value as ValueOrRef
+    right: m.value
   };
 }
 

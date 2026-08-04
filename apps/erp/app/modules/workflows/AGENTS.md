@@ -74,6 +74,7 @@ Routes split in two trees: `x+/workflows+/` (list, create, rename, delete, with 
 - One zustand store per builder instance, vanilla `createStore` in a ref behind a context — the `DocumentTemplateEditor` idiom. React Flow keeps viewport and interaction state.
 - **No undo.** Deliberate; recovery is via versions.
 - Autosave is a 1s debounce posting to `$id.save.tsx`. The route exports `shouldRevalidate` returning false for `/save` — without it every autosave re-seeds the canvas from server state mid-edit.
+- **A draft saves half-filled; only publishing demands completeness.** `clauseSchema.right` and `lookupMatchSchema.value` are optional and `lookupMatchSchema.field` may be `""`, so a node the user is still filling in round-trips through `workflowDefinitionSchema` (and therefore `readWorkflowVersion`) instead of failing autosave. `validateDefinition`'s config layer is what reports each gap as `INCOMPLETE_CONFIG` and blocks publish. Never re-tighten those three fields to make a runtime path simpler — the runtime skips with a reason (`compare.ts`, `lookup.ts`) precisely so it does not have to. When `/save` does return `ok: false`, `Autosave.tsx` raises the server's `error` string as a toast and the route logs the zod issues.
 - Drawn loops are blocked at connection time by `isValidConnection` + `wouldCreateCycle`. The validator's `CYCLE` check stays as the backstop.
 - Converging edges are allowed: the engine is a first-arrival OR-join by design.
 - The trigger node cannot be deleted — `onNodesChange` filters its `remove` change.

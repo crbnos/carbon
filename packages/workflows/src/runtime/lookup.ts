@@ -32,6 +32,13 @@ export const lookupExecutor: NodeExecutor<LookupNode> = {
 
     const criteria: SearchCriterion[] = [];
     for (const rule of node.data.match) {
+      // Publishing blocks a half-filled rule; a draft that reached here skips.
+      if (rule.field === "" || rule.value === undefined) {
+        return {
+          status: "Skipped",
+          reason: "This lookup has a match rule that was never filled in."
+        };
+      }
       const resolved = await resolveValue(rule.value, ctx);
       if (!resolved.ok) return { status: "Skipped", reason: resolved.reason };
       criteria.push({

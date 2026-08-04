@@ -49,9 +49,25 @@ export async function action({ request }: ActionFunctionArgs) {
     return data({ ok: false, error: "Malformed definition" }, { status: 400 });
   }
 
+  // A half-filled node parses fine — publishing is what rejects it. Reaching here
+  // means the canvas sent something genuinely corrupt, so name the field.
   const definition = workflowDefinitionSchema.safeParse(parsed);
   if (!definition.success) {
-    return data({ ok: false, error: "Invalid definition" }, { status: 400 });
+    console.error(
+      "[workflow save] invalid definition",
+      JSON.stringify(definition.error.issues, null, 2)
+    );
+    const first = definition.error.issues[0];
+    const where = first?.path.join(".");
+    return data(
+      {
+        ok: false,
+        error: first
+          ? `Invalid definition${where ? ` at ${where}` : ""}: ${first.message}`
+          : "Invalid definition"
+      },
+      { status: 400 }
+    );
   }
 
   // Always write the constant — the SQL column default is a stale 1.

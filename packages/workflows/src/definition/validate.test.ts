@@ -829,6 +829,91 @@ describe("configuration", () => {
   });
 });
 
+// A draft is saved as-is, so these shapes reach the validator. Each must parse
+// (so autosave never fails) and block publishing (so no half-filled node runs).
+describe("half-filled drafts", () => {
+  it("parses a condition clause with no right-hand side, but blocks publishing", () => {
+    const definition = define(
+      [
+        trigger(),
+        condition("check", [
+          {
+            id: "over",
+            kind: "if",
+            combinator: "and",
+            clauses: [
+              {
+                left: ref("trigger", "purchaseOrder", ["amount"]),
+                operator: "gt"
+              }
+            ]
+          }
+        ]),
+        action("notify", {
+          action: "notify",
+          inputs: {
+            recipient: ref("trigger", "purchaseOrder", ["assignee", "manager"]),
+            message: literal("string", "This order is over $10,000.")
+          }
+        })
+      ],
+      [
+        edge("e1", "trigger", "out", "check"),
+        edge("e2", "check", "over", "notify")
+      ]
+    );
+    expect(workflowDefinitionSchema.safeParse(definition).success).toBe(true);
+
+    const issues = validateDefinition(definition, catalog);
+    expect(issues.map((i) => i.code)).toEqual(["INCOMPLETE_CONFIG"]);
+    expect(issues[0]?.field).toBe("paths.over.clauses.0.right");
+  });
+
+  it("parses a lookup match with a blank field, but blocks publishing", () => {
+    const definition = define(
+      [
+        trigger(),
+        {
+          ...lookup("l1", "part", "one"),
+          data: {
+            entity: "part",
+            returns: "one",
+            match: [{ field: "", operator: "eq" }]
+          }
+        }
+      ],
+      [edge("e1", "trigger", "out", "l1")]
+    );
+    expect(workflowDefinitionSchema.safeParse(definition).success).toBe(true);
+
+    const issues = validateDefinition(definition, catalog);
+    expect(issues.map((i) => i.code)).toEqual(["INCOMPLETE_CONFIG"]);
+    expect(issues[0]?.field).toBe("match.0.field");
+  });
+
+  it("parses a lookup match with a named field but no value, but blocks publishing", () => {
+    const definition = define(
+      [
+        trigger(),
+        {
+          ...lookup("l1", "part", "one"),
+          data: {
+            entity: "part",
+            returns: "one",
+            match: [{ field: "name", operator: "eq" }]
+          }
+        }
+      ],
+      [edge("e1", "trigger", "out", "l1")]
+    );
+    expect(workflowDefinitionSchema.safeParse(definition).success).toBe(true);
+
+    const issues = validateDefinition(definition, catalog);
+    expect(issues.map((i) => i.code)).toEqual(["INCOMPLETE_CONFIG"]);
+    expect(issues[0]?.field).toBe("match.0.value");
+  });
+});
+
 describe("the current item", () => {
   const item = (path: string[] = []) => ({ kind: "item" as const, path });
 

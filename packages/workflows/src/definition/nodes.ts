@@ -71,8 +71,29 @@ interface NodeKind<N extends WorkflowNode> {
 function clauseValues(clauses: Clause[], prefix: string): ValueSite[] {
   return clauses.flatMap((clause, index) => [
     { value: clause.left, field: `${prefix}.${index}.left` },
-    { value: clause.right, field: `${prefix}.${index}.right` }
+    ...(clause.right === undefined
+      ? []
+      : [{ value: clause.right, field: `${prefix}.${index}.right` }])
   ]);
+}
+
+/** A draft may save a clause with no right-hand side; publishing one may not. */
+function clauseConfigIssues(
+  node: WorkflowNode,
+  clauses: Clause[],
+  prefix: string
+): WorkflowIssue[] {
+  return clauses.flatMap((clause, index) =>
+    clause.right === undefined
+      ? [
+          incomplete(
+            node,
+            `${prefix}.${index}.right`,
+            "Choose what to compare this against."
+          )
+        ]
+      : []
+  );
 }
 
 function inputValues(inputs: Record<string, ValueOrRef>): ValueSite[] {
@@ -127,6 +148,8 @@ function checkClauses(
       return;
     }
 
+    // An absent right-hand side is a completeness problem, not a type one.
+    if (clause.right === undefined) return;
     const right = ctx.typeOf(clause.right, node.id);
     if (right === undefined) return;
     const expected = expectedClauseRightType(left, clause.operator);
@@ -309,7 +332,7 @@ export const NODE_KINDS: {
           incomplete(node, "paths", "Add at least one branch to this check.")
         ];
       }
-      return node.data.paths
+      const empty = node.data.paths
         .filter((path) => path.kind !== "else" && path.clauses.length === 0)
         .map((path) =>
           incomplete(
@@ -318,6 +341,10 @@ export const NODE_KINDS: {
             "This branch has nothing to check."
           )
         );
+      if (empty.length > 0) return empty;
+      return node.data.paths.flatMap((path) =>
+        clauseConfigIssues(node, path.clauses, `paths.${path.id}.clauses`)
+      );
     }
   },
 
@@ -359,10 +386,11 @@ export const NODE_KINDS: {
   lookup: {
     handles: () => [SUCCESS_HANDLE, FAILURE_HANDLE],
     values: (node) =>
-      node.data.match.map((rule, index) => ({
-        value: rule.value,
-        field: `match.${index}.value`
-      })),
+      node.data.match.flatMap((rule, index) =>
+        rule.value === undefined
+          ? []
+          : [{ value: rule.value, field: `match.${index}.value` }]
+      ),
     outputs: (node, ctx) => {
       const entity = ctx.catalog.getEntity(node.data.entity);
       if (entity === undefined) return undefined;
@@ -382,6 +410,8 @@ export const NODE_KINDS: {
 
       node.data.match.forEach((rule, index) => {
         const field = `match.${index}`;
+        // A blank rule is reported by `checkConfig`; typing it would be noise.
+        if (rule.field === "" || rule.value === undefined) return;
         const property = entity.properties[rule.field];
         if (property === undefined) {
           issues.push({
@@ -440,6 +470,26 @@ export const NODE_KINDS: {
       }
       const issues: WorkflowIssue[] = [];
       node.data.match.forEach((rule, index) => {
+        if (rule.field === "") {
+          issues.push(
+            incomplete(
+              node,
+              `match.${index}.field`,
+              "Choose which property to match on."
+            )
+          );
+          return;
+        }
+        if (rule.value === undefined) {
+          issues.push(
+            incomplete(
+              node,
+              `match.${index}.value`,
+              "Choose what to match this property against."
+            )
+          );
+          return;
+        }
         const choices = ctx.catalog.getEnum(node.data.entity, rule.field);
         if (
           choices !== undefined &&
@@ -493,7 +543,7 @@ export const NODE_KINDS: {
     checkConfig: (node) =>
       node.data.source === undefined
         ? [incomplete(node, "source", "Choose the list to filter.")]
-        : []
+        : clauseConfigIssues(node, node.data.clauses, "clauses")
   },
 
   action: {

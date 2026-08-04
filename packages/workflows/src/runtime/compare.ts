@@ -109,6 +109,20 @@ export async function evaluateClauses(
       return { ok: false, reason: left.reason, evaluations };
     }
 
+    // Publishing blocks an absent right-hand side, so this only guards a draft
+    // that somehow reached the runtime — skip with a reason, never throw.
+    if (clause.right === undefined) {
+      const reason = "This comparison has nothing to compare against.";
+      evaluations.push({
+        left: left.value,
+        operator: clause.operator,
+        right: null,
+        passed: null,
+        reason
+      });
+      return { ok: false, reason, evaluations };
+    }
+
     const right = await resolveValue(clause.right, ctx);
     if (!right.ok) {
       evaluations.push({

@@ -2121,6 +2121,9 @@ msgstr "Automate"
 msgid "Automate quality flags and notifications"
 msgstr "Automate quality flags and notifications"
 
+msgid "Automate your business processes with event-driven workflows that trigger actions when things happen in Carbon."
+msgstr "Automate your business processes with event-driven workflows that trigger actions when things happen in Carbon."
+
 msgid "Automatic Cost Updates"
 msgstr "Automatic Cost Updates"
 
