@@ -348,7 +348,8 @@ const TOKEN_RE =
 
 const CONDITION_TOKEN_RE = /^condition\[(\d+)\]\.(field|operator|value|name)$/;
 
-const OPERATOR_LABELS: Record<Operator, string> = {
+/** Customer-facing wording for each operator. Shared by storage rules and workflows. */
+export const OPERATOR_LABELS: Record<Operator, string> = {
   eq: "equals",
   neq: "not equals",
   in: "is one of",

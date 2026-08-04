@@ -1,3 +1,4 @@
+import { OPERATOR_LABELS } from "@carbon/utils";
 import type { WorkflowNode, WorkflowNodeType } from "@carbon/workflows";
 import { WORKFLOW_LABELS } from "@carbon/workflows/labels";
 import type { IconType } from "react-icons";
@@ -9,6 +10,7 @@ import {
   LuSplit,
   LuZap
 } from "react-icons/lu";
+import { camelCaseToWords } from "~/utils/string";
 import { NODE_ACCEPTS_INCOMING } from "./kinds";
 
 /** The one place per-kind presentation lives. Palette and node card both read this. */
@@ -25,6 +27,12 @@ export type NodeKindMeta = {
 
 const count = (n: number, one: string, many: string) =>
   `${n} ${n === 1 ? one : many}`;
+
+/** `orderTotal` -> `Order total`. Used wherever a raw field name reaches a label. */
+export function humanizeField(name: string): string {
+  const words = camelCaseToWords(name).trim().toLowerCase();
+  return words.charAt(0).toUpperCase() + words.slice(1);
+}
 
 /** Resolve a catalog label key to its English source string without calling hooks. */
 export function labelText(key: string): string | undefined {
@@ -65,11 +73,12 @@ export const NODE_KIND_META: Record<WorkflowNodeType, NodeKindMeta> = {
       const clause = first?.clauses?.[0];
       if (clause) {
         const left = clause.left;
+        const op = OPERATOR_LABELS[clause.operator] ?? clause.operator;
         if (left.kind === "ref" && left.path.length > 0) {
-          return `If ${left.path.join(".")} ${clause.operator} …`;
+          return `If ${humanizeField(left.path[left.path.length - 1])} ${op} …`;
         }
         if (left.kind === "literal") {
-          return `If ${String(left.value)} ${clause.operator} …`;
+          return `If ${String(left.value)} ${op} …`;
         }
       }
       return count(paths.length, "path", "paths");

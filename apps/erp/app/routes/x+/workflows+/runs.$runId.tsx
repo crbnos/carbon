@@ -64,7 +64,7 @@ export default function WorkflowRunDetailRoute() {
         if (!open) navigate(path.to.workflowRuns);
       }}
     >
-      <DrawerContent size="full">
+      <DrawerContent size="xl">
         <DrawerHeader>
           <DrawerTitle>
             <Trans>Run Details</Trans>

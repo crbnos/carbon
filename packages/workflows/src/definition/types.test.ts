@@ -1,5 +1,11 @@
+import { OPERATOR_LABELS } from "@carbon/utils";
 import { describe, expect, it } from "vitest";
-import { canAssign, expectedClauseRightType, t } from "./types";
+import {
+  canAssign,
+  expectedClauseRightType,
+  t,
+  WORKFLOW_OPERATORS
+} from "./types";
 
 const stringList = t.list({ kind: "primitive", of: "string" });
 
@@ -40,5 +46,12 @@ describe("expectedClauseRightType", () => {
 
   it("leaves a list alone for every other operator", () => {
     expect(expectedClauseRightType(stringList, "eq")).toEqual(stringList);
+  });
+});
+
+describe("operator wording", () => {
+  it("has customer-facing wording for every workflow operator", () => {
+    const missing = WORKFLOW_OPERATORS.filter((op) => !(op in OPERATOR_LABELS));
+    expect(missing).toEqual([]);
   });
 });

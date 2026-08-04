@@ -1,6 +1,7 @@
 import { Badge } from "@carbon/react";
 import { Trans } from "@lingui/react/macro";
 import { useState } from "react";
+import { humanizeField } from "../Builder/nodes/meta";
 import { EntityRecordLink } from "./EntityRecordLink";
 
 const MAX_DEPTH = 5;
@@ -56,6 +57,35 @@ function ListValue({ items, depth }: { items: unknown[]; depth: number }) {
         </ul>
       )}
     </span>
+  );
+}
+
+/** A step's inputs/outputs are a map of named values, not one value. */
+export function ValueMap({ value }: { value: unknown }) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return <RuntimeValueView value={value} />;
+  }
+  const entries = Object.entries(value as Record<string, unknown>);
+  if (entries.length === 0) {
+    return (
+      <span className="text-muted-foreground italic text-xs">
+        <Trans>Nothing</Trans>
+      </span>
+    );
+  }
+  return (
+    <dl className="space-y-1">
+      {entries.map(([key, val]) => (
+        <div key={key} className="flex items-start gap-2">
+          <dt className="text-xs text-muted-foreground shrink-0">
+            {humanizeField(key)}
+          </dt>
+          <dd className="min-w-0">
+            <RuntimeValueView value={val} />
+          </dd>
+        </div>
+      ))}
+    </dl>
   );
 }
 

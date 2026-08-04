@@ -1,4 +1,4 @@
-import type { WorkflowDefinition } from "@carbon/workflows";
+import type { WorkflowDefinition, WorkflowNode } from "@carbon/workflows";
 import { topologicalNodeOrder } from "@carbon/workflows";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
@@ -7,7 +7,7 @@ import type { WorkflowRunStep } from "../../workflows.service";
 import { NODE_KIND_META } from "../Builder/nodes/meta";
 import { ConditionDetail } from "./ConditionDetail";
 import { StepStatus } from "./RunStatus";
-import { RuntimeValueView } from "./RuntimeValueView";
+import { ValueMap } from "./RuntimeValueView";
 
 type WorkflowRunStepsProps = {
   steps: WorkflowRunStep[];
@@ -54,23 +54,37 @@ function ExpandedSection({
 function StepRow({
   step,
   nodeTitle,
-  nodeIcon
+  nodeIcon,
+  nodeKind,
+  notReachedReason,
+  defaultExpanded = false,
+  node
 }: {
   step: WorkflowRunStep | null;
   nodeTitle: string;
   nodeIcon: React.ReactNode;
+  nodeKind?: string;
+  notReachedReason?: string;
+  defaultExpanded?: boolean;
+  node?: WorkflowNode;
 }) {
   const { t } = useLingui();
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(defaultExpanded);
+  const [raw, setRaw] = useState(false);
   const isNotReached = step === null;
 
   if (isNotReached) {
     return (
-      <div className="flex items-center gap-3 py-2 px-3 border-b border-border/50 opacity-40">
+      <div className="flex items-center gap-3 py-3 px-3 border-b border-border/50 border-l-2 border-dashed border-border">
         <span className="text-muted-foreground">{nodeIcon}</span>
         <span className="text-sm text-muted-foreground">{nodeTitle}</span>
+        {nodeKind && (
+          <span className="text-xs text-muted-foreground shrink-0">
+            {nodeKind}
+          </span>
+        )}
         <span className="ml-auto text-xs text-muted-foreground italic">
-          <Trans>Not reached</Trans>
+          {notReachedReason ?? t`Not reached`}
         </span>
       </div>
     );
@@ -84,7 +98,7 @@ function StepRow({
     <div className="border-b border-border/50">
       <button
         type="button"
-        className="w-full flex items-center gap-3 py-2 px-3 hover:bg-muted/50 transition-colors text-left"
+        className="w-full flex items-center gap-3 py-3 px-3 hover:bg-muted/50 transition-colors text-left"
         onClick={() => hasDetail && setExpanded((p) => !p)}
         disabled={!hasDetail}
       >
@@ -98,19 +112,26 @@ function StepRow({
           <span className="size-3.5 shrink-0" />
         )}
         <span className="text-muted-foreground shrink-0">{nodeIcon}</span>
-        <span className="text-sm font-medium truncate min-w-0">
-          {nodeTitle}
-        </span>
-        {step.statusReason && (
-          <span className="text-xs text-muted-foreground truncate min-w-0">
-            {step.statusReason}
-          </span>
-        )}
-        {listCount !== null && (
-          <span className="ml-1 text-xs bg-muted text-muted-foreground rounded px-1.5 py-0.5 shrink-0">
-            {listCount} {listCount === 1 ? t`item` : t`items`}
-          </span>
-        )}
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="text-sm font-medium truncate min-w-0">
+              {nodeTitle}
+            </span>
+            {nodeKind && (
+              <span className="text-xs text-muted-foreground shrink-0">
+                {nodeKind}
+              </span>
+            )}
+            {listCount !== null && (
+              <span className="text-xs bg-muted text-muted-foreground rounded px-1.5 py-0.5 shrink-0">
+                {listCount} {listCount === 1 ? t`item` : t`items`}
+              </span>
+            )}
+          </div>
+          {step.statusReason && (
+            <p className="text-xs text-muted-foreground">{step.statusReason}</p>
+          )}
+        </div>
         <div className="ml-auto flex items-center gap-2 shrink-0">
           <span className="text-xs text-muted-foreground tabular-nums">
             {durationLabel(step.durationMs)}
@@ -121,20 +142,46 @@ function StepRow({
 
       {expanded && hasDetail && (
         <div className="px-10 pb-3 space-y-3">
-          {step.input !== null && (
-            <ExpandedSection label={t`Input`}>
-              <RuntimeValueView value={step.input} />
-            </ExpandedSection>
-          )}
-          {step.output !== null && (
-            <ExpandedSection label={t`Output`}>
-              <RuntimeValueView value={step.output} />
-            </ExpandedSection>
-          )}
-          {step.detail !== null && (
-            <ExpandedSection label={t`Why`}>
-              <ConditionDetail detail={step.detail} />
-            </ExpandedSection>
+          <button
+            type="button"
+            className="text-xs text-muted-foreground underline underline-offset-2"
+            onClick={() => setRaw((p) => !p)}
+          >
+            {raw ? t`Show summary` : t`Show raw`}
+          </button>
+          {raw ? (
+            <pre className="overflow-auto rounded bg-muted px-2 py-1 text-xs font-mono whitespace-pre-wrap max-h-96">
+              {JSON.stringify(
+                {
+                  input: step.input,
+                  output: step.output,
+                  detail: step.detail
+                },
+                null,
+                2
+              )}
+            </pre>
+          ) : (
+            <>
+              {step.input !== null && (
+                <ExpandedSection label={t`Input`}>
+                  <ValueMap value={step.input} />
+                </ExpandedSection>
+              )}
+              {step.output !== null && (
+                <ExpandedSection label={t`Output`}>
+                  <ValueMap value={step.output} />
+                </ExpandedSection>
+              )}
+              {step.detail !== null && (
+                <ExpandedSection label={t`Why`}>
+                  <ConditionDetail
+                    detail={step.detail}
+                    node={node?.type === "condition" ? node : undefined}
+                  />
+                </ExpandedSection>
+              )}
+            </>
           )}
         </div>
       )}
@@ -151,6 +198,7 @@ function stepRowFromType(step: WorkflowRunStep) {
       step={step}
       nodeTitle={meta?.defaultTitle ?? step.nodeType}
       nodeIcon={Icon ? <Icon className="size-3.5" /> : null}
+      nodeKind={meta?.name}
     />
   );
 }
@@ -170,6 +218,21 @@ export function WorkflowRunSteps({
       </div>
     );
   }
+
+  // Run-level, not per-node: a precise per-node reachability walk is not worth
+  // the complexity when one cause explains every unreached step in practice.
+  const nodeSteps = steps.filter((s) => !s.itemKey || s.itemKey === "");
+  const notReachedReason = nodeSteps.some((s) => s.branchTaken === "none")
+    ? "Skipped — the check above didn't match"
+    : nodeSteps.some((s) => s.status === "Failed")
+      ? "Skipped — an earlier step failed"
+      : "Not reached";
+
+  const focusStep =
+    nodeSteps.find((s) => s.status === "Failed") ??
+    nodeSteps.find((s) => s.branchTaken === "none") ??
+    nodeSteps.find((s) => s.status === "Skipped") ??
+    null;
 
   // Group steps by nodeId, picking the node-level row (itemKey === "")
   const stepsByNode = new Map<string, WorkflowRunStep>();
@@ -224,6 +287,7 @@ export function WorkflowRunSteps({
               | string
               | undefined) ??
             meta.title?.(node) ??
+            meta.summary?.(node) ??
             meta.defaultTitle;
 
           return (
@@ -232,6 +296,12 @@ export function WorkflowRunSteps({
               step={step}
               nodeTitle={nodeTitle}
               nodeIcon={<Icon className="size-3.5" />}
+              nodeKind={meta.name}
+              notReachedReason={notReachedReason}
+              defaultExpanded={
+                step?.nodeId === focusStep?.nodeId && focusStep !== null
+              }
+              node={node}
             />
           );
         })}

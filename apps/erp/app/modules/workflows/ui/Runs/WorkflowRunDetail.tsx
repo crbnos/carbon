@@ -1,4 +1,4 @@
-import { Alert, AlertDescription, AlertTitle, Badge } from "@carbon/react";
+import { Alert, AlertDescription, AlertTitle, Badge, cn } from "@carbon/react";
 import { formatDateTime, formatDurationMilliseconds } from "@carbon/utils";
 import { readWorkflowVersion } from "@carbon/workflows";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -14,6 +14,7 @@ import { labelText } from "../Builder/nodes/meta";
 import { EntityRecordLink } from "./EntityRecordLink";
 import { RunLiveUpdates } from "./RunLiveUpdates";
 import { RunStatus } from "./RunStatus";
+import { runOutcome } from "./runOutcome";
 import { WorkflowRunSteps } from "./WorkflowRunSteps";
 
 type WorkflowRunDetailProps = {
@@ -67,6 +68,7 @@ export function WorkflowRunDetail({
   const isInFlight = run.status === "Queued" || run.status === "Running";
   const compacted = run.compactedAt !== null;
   const stepsPurged = steps.length === 0 && run.compactedAt !== null;
+  const outcome = runOutcome(run, steps, definition);
 
   return (
     <div className="flex flex-col h-full overflow-auto">
@@ -87,6 +89,17 @@ export function WorkflowRunDetail({
           )}
           <RunStatus status={run.status} />
         </div>
+
+        <p
+          className={cn(
+            "text-sm",
+            outcome.tone === "danger" && "text-destructive",
+            outcome.tone === "warning" && "text-foreground",
+            outcome.tone === "neutral" && "text-muted-foreground"
+          )}
+        >
+          {outcome.text}
+        </p>
 
         {readResult && !readResult.ok && (
           <p className="text-xs text-muted-foreground italic">

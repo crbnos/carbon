@@ -37,7 +37,11 @@ const WorkflowRunsTable = memo(({ data, count }: WorkflowRunsTableProps) => {
       {
         accessorKey: "status",
         header: t`Status`,
-        cell: ({ row }) => <RunStatus status={row.original.status} />,
+        cell: ({ row }) => (
+          <Hyperlink to={path.to.workflowRun(row.original.id)}>
+            <RunStatus status={row.original.status} />
+          </Hyperlink>
+        ),
         meta: { icon: <LuHash /> }
       },
       {
