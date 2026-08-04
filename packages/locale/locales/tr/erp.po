@@ -10057,9 +10057,6 @@ msgstr "Eşleşen kutu yok"
 msgid "No matching part"
 msgstr ""
 
-msgid "No matching part"
-msgstr ""
-
 msgid "No new notifications"
 msgstr "Yeni bildirim yok"
 

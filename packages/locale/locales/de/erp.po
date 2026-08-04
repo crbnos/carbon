@@ -10057,9 +10057,6 @@ msgstr "Keine übereinstimmenden Lagerfächer"
 msgid "No matching part"
 msgstr ""
 
-msgid "No matching part"
-msgstr ""
-
 msgid "No new notifications"
 msgstr "Keine neuen Benachrichtigungen"
 
