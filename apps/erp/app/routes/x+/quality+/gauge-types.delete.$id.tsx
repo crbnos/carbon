@@ -35,8 +35,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { id } = params;
   if (!id) {
     throw redirect(
-      `${path.to.issueTypes}?${getParams(request)}`,
-      await flash(request, error(params, "Failed to get an gauge id"))
+      `${path.to.gaugeTypes}?${getParams(request)}`,
+      await flash(request, error(params, "Failed to get a gauge type id"))
     );
   }
 
@@ -48,14 +48,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
         : "Failed to delete gauge type";
 
     throw redirect(
-      `${path.to.issueTypes}?${getParams(request)}`,
+      `${path.to.gaugeTypes}?${getParams(request)}`,
       await flash(request, error(deleteGaugeTypeError, errorMessage))
     );
   }
 
   throw redirect(
-    `${path.to.issueTypes}?${getParams(request)}`,
-    await flash(request, success("Successfully deleted scrap reason"))
+    `${path.to.gaugeTypes}?${getParams(request)}`,
+    await flash(request, success("Successfully deleted gauge type"))
   );
 }
 

@@ -127,7 +127,10 @@ Reviewers managed in `ReviewersList.tsx` (`nonConformanceReviewerValidator` = ju
   `nonConformanceWorkflowId`, `nonConformanceTypeId`, `content JSON`, `locationId`,
   `openDate`/`dueDate`/`closeDate`, `quantity`, `assignee`, audit. (`itemId` was
   dropped `20250905122922` → moved to junction.)
-- `nonConformanceType`, `nonConformanceWorkflow`, `nonConformanceRequiredAction`.
+- `nonConformanceType` (name case-insensitively unique per company — unique
+  index on `("companyId", LOWER("name"))` since `20260804134212`; the
+  issue-type routes also pre-check case-insensitively via `getIssueTypeByName`),
+  `nonConformanceWorkflow`, `nonConformanceRequiredAction`.
 - Tasks: `nonConformanceActionTask` (`actionTypeId`→requiredAction, `sortOrder`,
   `status`, `supplierId` (`20251114222648`), `dueDate`), `nonConformanceApprovalTask`
   (`approvalType`), `nonConformanceReviewer` (`title`, `status`).

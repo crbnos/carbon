@@ -7,6 +7,7 @@ import { corsPreflight, errorResponse, jsonResponse } from "../lib/response.ts";
 import { requirePermissions } from "../lib/supabase.ts";
 import type { Database } from "../lib/types.ts";
 import { credit, debit, journalReference } from "../lib/utils.ts";
+import { calculateDueDate } from "../shared/calculate-due-date.ts";
 import { getCurrentAccountingPeriod } from "../shared/get-accounting-period.ts";
 import {
   allocateVarianceAcrossLayers,
@@ -2015,10 +2016,26 @@ serve(async (req: Request) => {
           .execute();
       }
 
+      // Posting keeps the supplier's dateIssued, so only fill dateDue when it
+      // is empty — a manually entered due date from the supplier's invoice wins.
+      const paymentTerm =
+        !purchaseInvoice.data?.dateDue && purchaseInvoice.data?.paymentTermId
+          ? await trx
+              .selectFrom("paymentTerm")
+              .select(["daysDue", "calculationMethod"])
+              .where("id", "=", purchaseInvoice.data.paymentTermId)
+              .where("companyId", "=", companyId)
+              .executeTakeFirst()
+          : undefined;
+      const dateDue = paymentTerm
+        ? calculateDueDate(purchaseInvoice.data?.dateIssued ?? today, paymentTerm)
+        : null;
+
       await trx
         .updateTable("purchaseInvoice")
         .set({
           datePaid: today, // TODO: remove this once we have payments working
+          ...(dateDue ? { dateDue } : {}),
           postingDate: today,
           status: "Open",
         })

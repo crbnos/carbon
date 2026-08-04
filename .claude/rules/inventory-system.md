@@ -54,7 +54,18 @@ Key service functions (verified):
 - Tracking: `getTrackedEntities`, `getAvailableTrackedEntities` (RPC `get_available_tracked_entities`),
   `getSerialNumbersForItem`, `getBatchNumbersForItem`, `getShelfLifeForItems`, `getPickOrder` (FEFO/FIFO).
 - Picking: `generatePickingList`, `getPickingListAvailability` (RPC `get_picking_list_availability`),
-  `getPickingSchedule` (RPC `get_picking_schedule`).
+  `getPickingSchedule` (RPC `get_picking_schedule`). These honor `itemSupersession`
+  (`20260730143512_picking-supersession.sql` + `inventory/supersession-pick.ts`
+  `resolvePickTarget`): `Prefer New`/`Stock Only` redirect a pick to the effective successor
+  (× `conversionFactor`); `Consume First` redirects only when the predecessor is out of warehouse
+  stock; `No Stock` (and `Stock Only` without an effective successor) is dropped from the schedule
+  and skipped in generation. Note picking's redirect rules differ from the MRP/job-creation map
+  (`functions/lib/supersession-pick.ts`, which redirects only `Consume First`/`Prefer New`) —
+  for picking, `Stock Only` must not be picked for production. A substituted line's `itemId`
+  differs from its `jobMaterial.itemId` (no new column); the availability RPC reports the
+  line's OWN pick item's warehouse on-hand with NO successor fold-in — a substituted line
+  already targets the successor, and folding successor stock into a line still targeting the
+  predecessor would mask a real shortage and double-count the successor.
 
 Validators in `inventory.models.ts`: `inventoryAdjustmentValidator`, `receiptValidator`,
 `shipmentValidator`, `stockTransferValidator`, `warehouseTransferValidator`, `storageUnitValidator`,
