@@ -18,6 +18,8 @@ import {
 import { extractDocumentFunction } from "./functions/extraction";
 import {
   accountingBackfillFunction,
+  ediReconcileAcksFunction,
+  ediSendDocumentFunction,
   jiraSyncFunction,
   linearSyncFunction,
   onshapeBackfillFunction,
@@ -111,6 +113,8 @@ export const functions = [
   notificationDigestFunction,
   notificationPurgeFunction,
   // Integrations
+  ediSendDocumentFunction,
+  ediReconcileAcksFunction,
   jiraSyncFunction,
   linearSyncFunction,
   paperlessPartsFunction,

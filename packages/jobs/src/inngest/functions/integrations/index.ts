@@ -1,4 +1,8 @@
 export { accountingBackfillFunction } from "./accounting-backfill";
+export {
+  ediReconcileAcksFunction,
+  ediSendDocumentFunction
+} from "./edi";
 export { jiraSyncFunction, syncIssueFromJiraSchema } from "./jira";
 export { linearSyncFunction, syncIssueFromLinearSchema } from "./linear";
 export { onshapeBackfillFunction } from "./onshape-backfill";
