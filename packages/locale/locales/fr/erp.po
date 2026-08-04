@@ -564,7 +564,7 @@ msgid "Acknowledge & finish"
 msgstr "Confirmer et terminer"
 
 msgid "Acknowledged"
-msgstr ""
+msgstr "Confirmé"
 
 msgid "Acquisition Cost"
 msgstr "Coût d'acquisition"
@@ -717,7 +717,7 @@ msgid "Add Line Item"
 msgstr "Ajouter un article de ligne"
 
 msgid "Add Mapping"
-msgstr ""
+msgstr "Ajouter un mappage"
 
 msgid "Add Note"
 msgstr "Ajouter une note"
@@ -2008,7 +2008,7 @@ msgid "Buyer"
 msgstr "Acheteur"
 
 msgid "Buyer Part"
-msgstr ""
+msgstr "Référence fournisseur"
 
 msgid "Buyer, Planner"
 msgstr "Acheteur, Planificateur"
@@ -2597,7 +2597,7 @@ msgid "Configure defaults for the quality dashboard."
 msgstr "Configurez les paramètres par défaut du tableau de bord qualité."
 
 msgid "Configure electronic data interchange with this trading partner"
-msgstr ""
+msgstr "Configurer l'échange de données informatisé avec ce partenaire commercial"
 
 msgid "Configure how preventative maintenance dispatches are automatically generated from maintenance schedules."
 msgstr "Configurez la façon dont les ordres de travail de maintenance préventive sont générés automatiquement à partir des calendriers de maintenance."
@@ -3973,7 +3973,7 @@ msgid "Delete Location"
 msgstr "Supprimer l'emplacement"
 
 msgid "Delete location mapping"
-msgstr ""
+msgstr "Supprimer le mappage de localisation"
 
 msgid "Delete Material"
 msgstr "Supprimer le matériau"
@@ -4598,10 +4598,10 @@ msgid "Economic Operators Registration and Identification number; required for g
 msgstr "Numéro d'Enregistrement et d'Identification des Opérateurs Économiques; requis pour les marchandises franchissant les frontières douanières dans l'UE/Royaume-Uni."
 
 msgid "EDI"
-msgstr ""
+msgstr "EDI"
 
 msgid "EDI Documents"
-msgstr ""
+msgstr "Documents EDI"
 
 msgid "Edit"
 msgstr "Modifier"
@@ -5248,7 +5248,7 @@ msgid "Exceeds {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB total — remove some attachmen
 msgstr "Dépasse {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB au total — supprimez certaines pièces jointes pour envoyer."
 
 msgid "Exchange documents with this trading partner"
-msgstr ""
+msgstr "Échanger des documents avec ce partenaire commercial"
 
 msgid "Exchange Rate"
 msgstr "Taux de change"
@@ -5411,7 +5411,7 @@ msgid "Fail"
 msgstr "Échouer"
 
 msgid "Failed"
-msgstr ""
+msgstr "Échoué"
 
 msgid "Failed features"
 msgstr "Caractéristiques échouées"
@@ -7354,7 +7354,7 @@ msgid "Linked PO"
 msgstr "Bon de commande lié"
 
 msgid "Linked Record"
-msgstr ""
+msgstr "Enregistrement lié"
 
 msgid "List Options"
 msgstr "Options de liste"
@@ -7411,7 +7411,7 @@ msgid "Location / Item"
 msgstr "Emplacement / Article"
 
 msgid "Location Mapping"
-msgstr ""
+msgstr "Mappage de localisation"
 
 msgid "Location Name"
 msgstr "Nom du lieu"
@@ -7640,7 +7640,7 @@ msgid "Manufacturing"
 msgstr "Fabrication"
 
 msgid "Map"
-msgstr ""
+msgstr "Mapper"
 
 msgid "Map Extracted Invoice Lines"
 msgstr "Mapper les lignes de facture extraites"
@@ -7652,13 +7652,13 @@ msgid "Map Lines Now"
 msgstr "Mapper les lignes maintenant"
 
 msgid "Map partner ship-to codes to customer locations"
-msgstr ""
+msgstr "Mapper les codes livraison du partenaire aux localisations client"
 
 msgid "Map to item"
-msgstr ""
+msgstr "Mapper à l'article"
 
 msgid "Map to location"
-msgstr ""
+msgstr "Mapper à la localisation"
 
 msgid "Map your current process, systems, and data"
 msgstr "Cartographiez votre processus actuel, vos systèmes et vos données"
@@ -8105,7 +8105,7 @@ msgid "Needs ordering"
 msgstr "À commander"
 
 msgid "Needs Review"
-msgstr ""
+msgstr "Nécessite un examen"
 
 msgid "Negative Adjustment"
 msgstr "Ajustement Négatif"
@@ -8603,7 +8603,7 @@ msgid "No issue types configured"
 msgstr "Aucun type de problème configuré"
 
 msgid "No issues"
-msgstr ""
+msgstr "Aucun problème"
 
 msgid "No items"
 msgstr "Aucun article"
@@ -9383,10 +9383,10 @@ msgid "Partner"
 msgstr "Partenaire"
 
 msgid "Partner Code"
-msgstr ""
+msgstr "Code partenaire"
 
 msgid "Partner Reference"
-msgstr ""
+msgstr "Référence partenaire"
 
 msgid "Partners"
 msgstr "Partenaires"
@@ -9833,7 +9833,7 @@ msgid "Price override"
 msgstr "Remplacement du prix"
 
 msgid "Price Tolerance"
-msgstr ""
+msgstr "Tolérance de prix"
 
 msgid "Prices"
 msgstr "Prix"
@@ -10032,7 +10032,7 @@ msgid "Provide process knowledge and inputs"
 msgstr "Fournir les connaissances et les données du processus"
 
 msgid "Provider Partner ID"
-msgstr ""
+msgstr "ID partenaire fournisseur"
 
 msgid "Public"
 msgstr "Public"
@@ -10343,7 +10343,7 @@ msgid "Raw Materials (default)"
 msgstr "Matières Premières (par défaut)"
 
 msgid "Raw Payload"
-msgstr ""
+msgstr "Charge utile brute"
 
 msgid "Re-keying between quoting, the floor, and finance"
 msgstr "Ressaisie entre les devis, l'atelier et la finance"
@@ -10602,7 +10602,7 @@ msgid "Release Job"
 msgstr "Lancer le travail"
 
 msgid "Release Mode"
-msgstr ""
+msgstr "Mode de libération"
 
 msgid "Released"
 msgstr "Libéré"
@@ -11210,7 +11210,7 @@ msgid "Save contacts"
 msgstr "Enregistrer les contacts"
 
 msgid "Save EDI settings before mapping locations"
-msgstr ""
+msgstr "Enregistrer les paramètres EDI avant de mapper les localisations"
 
 msgid "Save Method"
 msgstr "Enregistrer la méthode"
@@ -11596,7 +11596,7 @@ msgid "Sends this document for approval before it can go active."
 msgstr "Envoie ce document pour approbation avant qu'il ne puisse devenir actif."
 
 msgid "Sent"
-msgstr ""
+msgstr "Envoyé"
 
 msgid "Sequences"
 msgstr "Séquences"
@@ -14387,7 +14387,7 @@ msgid "View Customers"
 msgstr "Afficher les clients"
 
 msgid "View Document"
-msgstr ""
+msgstr "Afficher le document"
 
 msgid "View Employees"
 msgstr "Afficher les employés"

@@ -564,7 +564,7 @@ msgid "Acknowledge & finish"
 msgstr "Onayla ve Bitir"
 
 msgid "Acknowledged"
-msgstr ""
+msgstr "Kabul Edildi"
 
 msgid "Acquisition Cost"
 msgstr "Satın alma maliyeti"
@@ -717,7 +717,7 @@ msgid "Add Line Item"
 msgstr "Satır Ekle"
 
 msgid "Add Mapping"
-msgstr ""
+msgstr "Eşleme Ekle"
 
 msgid "Add Note"
 msgstr "Not Ekle"
@@ -2008,7 +2008,7 @@ msgid "Buyer"
 msgstr "Satın Alan"
 
 msgid "Buyer Part"
-msgstr ""
+msgstr "Alıcı Parçası"
 
 msgid "Buyer, Planner"
 msgstr "Alıcı, Planlayıcı"
@@ -2597,7 +2597,7 @@ msgid "Configure defaults for the quality dashboard."
 msgstr "Kalite panosu için varsayılan ayarları yapılandırın."
 
 msgid "Configure electronic data interchange with this trading partner"
-msgstr ""
+msgstr "Bu ticari ortakla elektronik veri alışverişini yapılandırın"
 
 msgid "Configure how preventative maintenance dispatches are automatically generated from maintenance schedules."
 msgstr "Önleyici bakım sevklerinin bakım programlarından otomatik olarak nasıl oluşturulacağını yapılandırın."
@@ -3973,7 +3973,7 @@ msgid "Delete Location"
 msgstr "Konumu Sil"
 
 msgid "Delete location mapping"
-msgstr ""
+msgstr "Konum eşlemesini sil"
 
 msgid "Delete Material"
 msgstr "Malzemeyi Sil"
@@ -4598,10 +4598,10 @@ msgid "Economic Operators Registration and Identification number; required for g
 msgstr "Ekonomik Operatörlerin Kayıt ve Kimlik Numarası; AB/İngiltere'de gümrük sınırlarını geçen mallar için gereklidir."
 
 msgid "EDI"
-msgstr ""
+msgstr "EDI"
 
 msgid "EDI Documents"
-msgstr ""
+msgstr "EDI Belgeleri"
 
 msgid "Edit"
 msgstr "Düzenle"
@@ -5248,7 +5248,7 @@ msgid "Exceeds {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB total — remove some attachmen
 msgstr "Toplamda {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB'ı aşıyor — göndermek için bazı ekler kaldırın."
 
 msgid "Exchange documents with this trading partner"
-msgstr ""
+msgstr "Bu ticari ortakla belgeleri alışveriş yapın"
 
 msgid "Exchange Rate"
 msgstr "Döviz Kuru"
@@ -5411,7 +5411,7 @@ msgid "Fail"
 msgstr "Başarısız"
 
 msgid "Failed"
-msgstr ""
+msgstr "Başarısız"
 
 msgid "Failed features"
 msgstr "Başarısız özellikler"
@@ -7354,7 +7354,7 @@ msgid "Linked PO"
 msgstr "Bağlantılı Sipariş"
 
 msgid "Linked Record"
-msgstr ""
+msgstr "Bağlantılı Kayıt"
 
 msgid "List Options"
 msgstr "Liste Seçenekleri"
@@ -7411,7 +7411,7 @@ msgid "Location / Item"
 msgstr "Konum / Ürün"
 
 msgid "Location Mapping"
-msgstr ""
+msgstr "Konum Eşlemesi"
 
 msgid "Location Name"
 msgstr "Konum Adı"
@@ -7640,7 +7640,7 @@ msgid "Manufacturing"
 msgstr "Üretim"
 
 msgid "Map"
-msgstr ""
+msgstr "Eşle"
 
 msgid "Map Extracted Invoice Lines"
 msgstr "Çıkarılan Fatura Satırlarını Eşle"
@@ -7652,13 +7652,13 @@ msgid "Map Lines Now"
 msgstr "Satırları Şimdi Eşle"
 
 msgid "Map partner ship-to codes to customer locations"
-msgstr ""
+msgstr "Ortak gemi kodlarını müşteri konumlarına eşle"
 
 msgid "Map to item"
-msgstr ""
+msgstr "Öğeye eşle"
 
 msgid "Map to location"
-msgstr ""
+msgstr "Konuma eşle"
 
 msgid "Map your current process, systems, and data"
 msgstr "Mevcut sürecinizi, sistemlerinizi ve verilerinizi eşleyin"
@@ -8105,7 +8105,7 @@ msgid "Needs ordering"
 msgstr "Sipariş gerekli"
 
 msgid "Needs Review"
-msgstr ""
+msgstr "İnceleme Gerekli"
 
 msgid "Negative Adjustment"
 msgstr "Negatif Ayarlama"
@@ -8603,7 +8603,7 @@ msgid "No issue types configured"
 msgstr "Hiçbir sorun türü yapılandırılmamış"
 
 msgid "No issues"
-msgstr ""
+msgstr "Sorun yok"
 
 msgid "No items"
 msgstr "Öğe yok"
@@ -9383,10 +9383,10 @@ msgid "Partner"
 msgstr "İş Ortağı"
 
 msgid "Partner Code"
-msgstr ""
+msgstr "Ortak Kodu"
 
 msgid "Partner Reference"
-msgstr ""
+msgstr "Ortak Referansı"
 
 msgid "Partners"
 msgstr "Ortaklar"
@@ -9833,7 +9833,7 @@ msgid "Price override"
 msgstr "Fiyat geçersiz kılma"
 
 msgid "Price Tolerance"
-msgstr ""
+msgstr "Fiyat Toleransı"
 
 msgid "Prices"
 msgstr "Fiyatlar"
@@ -10032,7 +10032,7 @@ msgid "Provide process knowledge and inputs"
 msgstr "Süreç bilgisi ve girdileri sağlayın"
 
 msgid "Provider Partner ID"
-msgstr ""
+msgstr "Sağlayıcı Ortak Kimliği"
 
 msgid "Public"
 msgstr "Herkese açık"
@@ -10343,7 +10343,7 @@ msgid "Raw Materials (default)"
 msgstr "Ham Maddeler (varsayılan)"
 
 msgid "Raw Payload"
-msgstr ""
+msgstr "Ham Yük"
 
 msgid "Re-keying between quoting, the floor, and finance"
 msgstr "Tekliflendirme, üretim ve muhasebe arasında veri yeniden girişi"
@@ -10602,7 +10602,7 @@ msgid "Release Job"
 msgstr "İşi Yayınla"
 
 msgid "Release Mode"
-msgstr ""
+msgstr "Yayın Modu"
 
 msgid "Released"
 msgstr "Yayınlandı"
@@ -11210,7 +11210,7 @@ msgid "Save contacts"
 msgstr "Kişileri kaydet"
 
 msgid "Save EDI settings before mapping locations"
-msgstr ""
+msgstr "Konumları eşlemeden önce EDI ayarlarını kaydedin"
 
 msgid "Save Method"
 msgstr "Yöntemi Kaydet"
@@ -11596,7 +11596,7 @@ msgid "Sends this document for approval before it can go active."
 msgstr "Bu belge aktif hale gelmeden önce onay için gönderilir."
 
 msgid "Sent"
-msgstr ""
+msgstr "Gönderildi"
 
 msgid "Sequences"
 msgstr "Sıralamalar"
@@ -14387,7 +14387,7 @@ msgid "View Customers"
 msgstr "Müşterileri Görüntüle"
 
 msgid "View Document"
-msgstr ""
+msgstr "Belgeyi Görüntüle"
 
 msgid "View Employees"
 msgstr "Çalışanları Görüntüle"

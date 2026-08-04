@@ -564,7 +564,7 @@ msgid "Acknowledge & finish"
 msgstr "認めて完了"
 
 msgid "Acknowledged"
-msgstr ""
+msgstr "確認済み"
 
 msgid "Acquisition Cost"
 msgstr "取得原価"
@@ -717,7 +717,7 @@ msgid "Add Line Item"
 msgstr "ラインアイテムを追加"
 
 msgid "Add Mapping"
-msgstr ""
+msgstr "マッピングを追加"
 
 msgid "Add Note"
 msgstr "ノートを追加"
@@ -2008,7 +2008,7 @@ msgid "Buyer"
 msgstr "購入者"
 
 msgid "Buyer Part"
-msgstr ""
+msgstr "買い手部品"
 
 msgid "Buyer, Planner"
 msgstr "購買者、プランナー"
@@ -2597,7 +2597,7 @@ msgid "Configure defaults for the quality dashboard."
 msgstr "品質ダッシュボードのデフォルトを設定します。"
 
 msgid "Configure electronic data interchange with this trading partner"
-msgstr ""
+msgstr "このトレーディングパートナーと電子データ交換を設定"
 
 msgid "Configure how preventative maintenance dispatches are automatically generated from maintenance schedules."
 msgstr "予防保全ディスパッチが保全スケジュールから自動的に生成される方法を設定します。"
@@ -3973,7 +3973,7 @@ msgid "Delete Location"
 msgstr "ロケーションを削除"
 
 msgid "Delete location mapping"
-msgstr ""
+msgstr "位置マッピングを削除"
 
 msgid "Delete Material"
 msgstr "材料を削除"
@@ -4598,10 +4598,10 @@ msgid "Economic Operators Registration and Identification number; required for g
 msgstr "経済オペレーターの登録と識別番号; EU/UKの税関境界線を超える商品に必要です。"
 
 msgid "EDI"
-msgstr ""
+msgstr "EDI"
 
 msgid "EDI Documents"
-msgstr ""
+msgstr "EDIドキュメント"
 
 msgid "Edit"
 msgstr "編集"
@@ -5248,7 +5248,7 @@ msgid "Exceeds {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB total — remove some attachmen
 msgstr "{PO_EMAIL_ATTACHMENT_LIMIT_MB} MB を超えています — 送信するには添付ファイルを削除してください。"
 
 msgid "Exchange documents with this trading partner"
-msgstr ""
+msgstr "このトレーディングパートナーとドキュメントを交換"
 
 msgid "Exchange Rate"
 msgstr "為替レート"
@@ -5411,7 +5411,7 @@ msgid "Fail"
 msgstr "不合格"
 
 msgid "Failed"
-msgstr ""
+msgstr "失敗"
 
 msgid "Failed features"
 msgstr "失敗した機能"
@@ -7354,7 +7354,7 @@ msgid "Linked PO"
 msgstr "リンク済みPO"
 
 msgid "Linked Record"
-msgstr ""
+msgstr "リンクされたレコード"
 
 msgid "List Options"
 msgstr "リストオプション"
@@ -7411,7 +7411,7 @@ msgid "Location / Item"
 msgstr "場所 / 品目"
 
 msgid "Location Mapping"
-msgstr ""
+msgstr "位置マッピング"
 
 msgid "Location Name"
 msgstr "ロケーション名"
@@ -7640,7 +7640,7 @@ msgid "Manufacturing"
 msgstr "製造"
 
 msgid "Map"
-msgstr ""
+msgstr "マップ"
 
 msgid "Map Extracted Invoice Lines"
 msgstr "抽出された請求書行をマップする"
@@ -7652,13 +7652,13 @@ msgid "Map Lines Now"
 msgstr "今すぐラインをマップ"
 
 msgid "Map partner ship-to codes to customer locations"
-msgstr ""
+msgstr "パートナーの配送先コードを顧客位置にマップ"
 
 msgid "Map to item"
-msgstr ""
+msgstr "アイテムにマップ"
 
 msgid "Map to location"
-msgstr ""
+msgstr "位置にマップ"
 
 msgid "Map your current process, systems, and data"
 msgstr "現在のプロセス、システム、データをマップする"
@@ -8105,7 +8105,7 @@ msgid "Needs ordering"
 msgstr "発注が必要"
 
 msgid "Needs Review"
-msgstr ""
+msgstr "レビューが必要"
 
 msgid "Negative Adjustment"
 msgstr "負の調整"
@@ -8603,7 +8603,7 @@ msgid "No issue types configured"
 msgstr "問題タイプが設定されていません"
 
 msgid "No issues"
-msgstr ""
+msgstr "問題なし"
 
 msgid "No items"
 msgstr "アイテムなし"
@@ -9383,10 +9383,10 @@ msgid "Partner"
 msgstr "パートナー"
 
 msgid "Partner Code"
-msgstr ""
+msgstr "パートナーコード"
 
 msgid "Partner Reference"
-msgstr ""
+msgstr "パートナー参照"
 
 msgid "Partners"
 msgstr "パートナー"
@@ -9833,7 +9833,7 @@ msgid "Price override"
 msgstr "価格オーバーライド"
 
 msgid "Price Tolerance"
-msgstr ""
+msgstr "価格許容度"
 
 msgid "Prices"
 msgstr "価格"
@@ -10032,7 +10032,7 @@ msgid "Provide process knowledge and inputs"
 msgstr "プロセスの知識と入力を提供する"
 
 msgid "Provider Partner ID"
-msgstr ""
+msgstr "プロバイダーパートナーID"
 
 msgid "Public"
 msgstr "公開"
@@ -10343,7 +10343,7 @@ msgid "Raw Materials (default)"
 msgstr "原材料（デフォルト）"
 
 msgid "Raw Payload"
-msgstr ""
+msgstr "生のペイロード"
 
 msgid "Re-keying between quoting, the floor, and finance"
 msgstr "見積、現場、財務間での再入力"
@@ -10602,7 +10602,7 @@ msgid "Release Job"
 msgstr "ジョブをリリース"
 
 msgid "Release Mode"
-msgstr ""
+msgstr "リリースモード"
 
 msgid "Released"
 msgstr "リリース済み"
@@ -11210,7 +11210,7 @@ msgid "Save contacts"
 msgstr "連絡先を保存"
 
 msgid "Save EDI settings before mapping locations"
-msgstr ""
+msgstr "位置マッピングの前にEDI設定を保存"
 
 msgid "Save Method"
 msgstr "メソッドを保存"
@@ -11596,7 +11596,7 @@ msgid "Sends this document for approval before it can go active."
 msgstr "このドキュメントを承認のために送信してから、アクティブにすることができます。"
 
 msgid "Sent"
-msgstr ""
+msgstr "送信済み"
 
 msgid "Sequences"
 msgstr "シーケンス"
@@ -14387,7 +14387,7 @@ msgid "View Customers"
 msgstr "顧客を表示"
 
 msgid "View Document"
-msgstr ""
+msgstr "ドキュメントを表示"
 
 msgid "View Employees"
 msgstr "従業員を表示"

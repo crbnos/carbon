@@ -564,7 +564,7 @@ msgid "Acknowledge & finish"
 msgstr "Подтвердить и завершить"
 
 msgid "Acknowledged"
-msgstr ""
+msgstr "Подтверждено"
 
 msgid "Acquisition Cost"
 msgstr "Первоначальная стоимость"
@@ -717,7 +717,7 @@ msgid "Add Line Item"
 msgstr "Добавить позицию"
 
 msgid "Add Mapping"
-msgstr ""
+msgstr "Добавить сопоставление"
 
 msgid "Add Note"
 msgstr "Добавить примечание"
@@ -2008,7 +2008,7 @@ msgid "Buyer"
 msgstr "Покупатель"
 
 msgid "Buyer Part"
-msgstr ""
+msgstr "Деталь покупателя"
 
 msgid "Buyer, Planner"
 msgstr "Покупатель, Планировщик"
@@ -2597,7 +2597,7 @@ msgid "Configure defaults for the quality dashboard."
 msgstr "Настройте значения по умолчанию для панели качества."
 
 msgid "Configure electronic data interchange with this trading partner"
-msgstr ""
+msgstr "Настроить электронный обмен данными с этим торговым партнером"
 
 msgid "Configure how preventative maintenance dispatches are automatically generated from maintenance schedules."
 msgstr "Настройте способ автоматического создания плановых заявок на техническое обслуживание на основе графиков обслуживания."
@@ -3973,7 +3973,7 @@ msgid "Delete Location"
 msgstr "Удалить местоположение"
 
 msgid "Delete location mapping"
-msgstr ""
+msgstr "Удалить сопоставление местоположения"
 
 msgid "Delete Material"
 msgstr "Удалить материал"
@@ -4598,10 +4598,10 @@ msgid "Economic Operators Registration and Identification number; required for g
 msgstr "Номер регистрации и идентификации экономических операторов; требуется для товаров, пересекающих таможенные границы в ЕС/Великобритании."
 
 msgid "EDI"
-msgstr ""
+msgstr "ЭДИ"
 
 msgid "EDI Documents"
-msgstr ""
+msgstr "Документы ЭДИ"
 
 msgid "Edit"
 msgstr "Редактировать"
@@ -5248,7 +5248,7 @@ msgid "Exceeds {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB total — remove some attachmen
 msgstr "Превышает {PO_EMAIL_ATTACHMENT_LIMIT_MB} МБ всего — удалите некоторые вложения для отправки."
 
 msgid "Exchange documents with this trading partner"
-msgstr ""
+msgstr "Обмениваться документами с этим торговым партнером"
 
 msgid "Exchange Rate"
 msgstr "Курс обмена"
@@ -5411,7 +5411,7 @@ msgid "Fail"
 msgstr "Не пройти"
 
 msgid "Failed"
-msgstr ""
+msgstr "Ошибка"
 
 msgid "Failed features"
 msgstr "Отказавшие элементы"
@@ -7354,7 +7354,7 @@ msgid "Linked PO"
 msgstr "Связанный ПО"
 
 msgid "Linked Record"
-msgstr ""
+msgstr "Связанная запись"
 
 msgid "List Options"
 msgstr "Параметры списка"
@@ -7411,7 +7411,7 @@ msgid "Location / Item"
 msgstr "Местоположение / Товар"
 
 msgid "Location Mapping"
-msgstr ""
+msgstr "Сопоставление местоположения"
 
 msgid "Location Name"
 msgstr "Название местоположения"
@@ -7640,7 +7640,7 @@ msgid "Manufacturing"
 msgstr "Производство"
 
 msgid "Map"
-msgstr ""
+msgstr "Сопоставить"
 
 msgid "Map Extracted Invoice Lines"
 msgstr "Сопоставить извлеченные строки счета"
@@ -7652,13 +7652,13 @@ msgid "Map Lines Now"
 msgstr "Сопоставить строки сейчас"
 
 msgid "Map partner ship-to codes to customer locations"
-msgstr ""
+msgstr "Сопоставить коды доставки партнера с местоположениями клиентов"
 
 msgid "Map to item"
-msgstr ""
+msgstr "Сопоставить с позицией"
 
 msgid "Map to location"
-msgstr ""
+msgstr "Сопоставить с местоположением"
 
 msgid "Map your current process, systems, and data"
 msgstr "Сопоставьте ваш текущий процесс, системы и данные"
@@ -8105,7 +8105,7 @@ msgid "Needs ordering"
 msgstr "Требуется заказ"
 
 msgid "Needs Review"
-msgstr ""
+msgstr "Требует проверки"
 
 msgid "Negative Adjustment"
 msgstr "Отрицательная корректировка"
@@ -8603,7 +8603,7 @@ msgid "No issue types configured"
 msgstr "Типы проблем не настроены"
 
 msgid "No issues"
-msgstr ""
+msgstr "Нет проблем"
 
 msgid "No items"
 msgstr "Нет позиций"
@@ -9383,10 +9383,10 @@ msgid "Partner"
 msgstr "Партнер"
 
 msgid "Partner Code"
-msgstr ""
+msgstr "Код партнера"
 
 msgid "Partner Reference"
-msgstr ""
+msgstr "Ссылка на партнера"
 
 msgid "Partners"
 msgstr "Партнеры"
@@ -9833,7 +9833,7 @@ msgid "Price override"
 msgstr "Переопределение цены"
 
 msgid "Price Tolerance"
-msgstr ""
+msgstr "Допуск по цене"
 
 msgid "Prices"
 msgstr "Цены"
@@ -10032,7 +10032,7 @@ msgid "Provide process knowledge and inputs"
 msgstr "Предоставить знания о процессе и входные данные"
 
 msgid "Provider Partner ID"
-msgstr ""
+msgstr "ID партнера-поставщика"
 
 msgid "Public"
 msgstr "Публичный"
@@ -10343,7 +10343,7 @@ msgid "Raw Materials (default)"
 msgstr "Сырьё и материалы (по умолчанию)"
 
 msgid "Raw Payload"
-msgstr ""
+msgstr "Исходные данные"
 
 msgid "Re-keying between quoting, the floor, and finance"
 msgstr "Повторный ввод данных между расчётом, цехом и финансами"
@@ -10602,7 +10602,7 @@ msgid "Release Job"
 msgstr "Выпустить задание"
 
 msgid "Release Mode"
-msgstr ""
+msgstr "Режим выпуска"
 
 msgid "Released"
 msgstr "Выпущено"
@@ -11210,7 +11210,7 @@ msgid "Save contacts"
 msgstr "Сохранить контакты"
 
 msgid "Save EDI settings before mapping locations"
-msgstr ""
+msgstr "Сохраните параметры ЭДИ перед сопоставлением местоположений"
 
 msgid "Save Method"
 msgstr "Сохранить метод"
@@ -11596,7 +11596,7 @@ msgid "Sends this document for approval before it can go active."
 msgstr "Отправляет этот документ на утверждение перед тем, как он сможет стать активным."
 
 msgid "Sent"
-msgstr ""
+msgstr "Отправлено"
 
 msgid "Sequences"
 msgstr "Последовательности"
@@ -14387,7 +14387,7 @@ msgid "View Customers"
 msgstr "Просмотр клиентов"
 
 msgid "View Document"
-msgstr ""
+msgstr "Просмотреть документ"
 
 msgid "View Employees"
 msgstr "Просмотр сотрудников"

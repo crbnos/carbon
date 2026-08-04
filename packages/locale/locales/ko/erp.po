@@ -564,7 +564,7 @@ msgid "Acknowledge & finish"
 msgstr "확인 및 완료"
 
 msgid "Acknowledged"
-msgstr ""
+msgstr "승인됨"
 
 msgid "Acquisition Cost"
 msgstr "취득원가"
@@ -717,7 +717,7 @@ msgid "Add Line Item"
 msgstr "라인 항목 추가"
 
 msgid "Add Mapping"
-msgstr ""
+msgstr "매핑 추가"
 
 msgid "Add Note"
 msgstr "메모 추가"
@@ -2008,7 +2008,7 @@ msgid "Buyer"
 msgstr "구매담당자"
 
 msgid "Buyer Part"
-msgstr ""
+msgstr "구매자 부품"
 
 msgid "Buyer, Planner"
 msgstr "구매담당자, 계획담당자"
@@ -2597,7 +2597,7 @@ msgid "Configure defaults for the quality dashboard."
 msgstr "품질 대시보드의 기본값을 설정하세요."
 
 msgid "Configure electronic data interchange with this trading partner"
-msgstr ""
+msgstr "이 거래처와의 전자 데이터 교환 구성"
 
 msgid "Configure how preventative maintenance dispatches are automatically generated from maintenance schedules."
 msgstr "유지보수 일정에서 예방 유지보수 작업지시가 자동 생성되는 방식을 설정하세요."
@@ -3973,7 +3973,7 @@ msgid "Delete Location"
 msgstr "위치 삭제"
 
 msgid "Delete location mapping"
-msgstr ""
+msgstr "위치 매핑 삭제"
 
 msgid "Delete Material"
 msgstr "자재 삭제"
@@ -4598,10 +4598,10 @@ msgid "Economic Operators Registration and Identification number; required for g
 msgstr "경제운영자 등록 및 식별 번호(EORI)로, EU/영국 국경을 통과하는 재화에 필요합니다."
 
 msgid "EDI"
-msgstr ""
+msgstr "EDI"
 
 msgid "EDI Documents"
-msgstr ""
+msgstr "EDI 문서"
 
 msgid "Edit"
 msgstr "수정"
@@ -5248,7 +5248,7 @@ msgid "Exceeds {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB total — remove some attachmen
 msgstr "총 {PO_EMAIL_ATTACHMENT_LIMIT_MB}MB를 초과합니다 — 발송하려면 일부 첨부 파일을 제거하세요."
 
 msgid "Exchange documents with this trading partner"
-msgstr ""
+msgstr "이 거래처와 문서 교환"
 
 msgid "Exchange Rate"
 msgstr "환율"
@@ -5411,7 +5411,7 @@ msgid "Fail"
 msgstr "실패"
 
 msgid "Failed"
-msgstr ""
+msgstr "실패"
 
 msgid "Failed features"
 msgstr "부적합 특성"
@@ -7354,7 +7354,7 @@ msgid "Linked PO"
 msgstr "연결된 구매주문"
 
 msgid "Linked Record"
-msgstr ""
+msgstr "연결된 레코드"
 
 msgid "List Options"
 msgstr "목록 옵션"
@@ -7411,7 +7411,7 @@ msgid "Location / Item"
 msgstr "위치 / 항목"
 
 msgid "Location Mapping"
-msgstr ""
+msgstr "위치 매핑"
 
 msgid "Location Name"
 msgstr "위치 이름"
@@ -7640,7 +7640,7 @@ msgid "Manufacturing"
 msgstr "제조"
 
 msgid "Map"
-msgstr ""
+msgstr "매핑"
 
 msgid "Map Extracted Invoice Lines"
 msgstr "추출된 인보이스 라인 매핑"
@@ -7652,13 +7652,13 @@ msgid "Map Lines Now"
 msgstr "지금 라인 매핑"
 
 msgid "Map partner ship-to codes to customer locations"
-msgstr ""
+msgstr "거래처 배송지 코드를 고객 위치에 매핑"
 
 msgid "Map to item"
-msgstr ""
+msgstr "항목에 매핑"
 
 msgid "Map to location"
-msgstr ""
+msgstr "위치에 매핑"
 
 msgid "Map your current process, systems, and data"
 msgstr "현재 프로세스, 시스템, 데이터를 매핑하세요"
@@ -8105,7 +8105,7 @@ msgid "Needs ordering"
 msgstr "주문 필요"
 
 msgid "Needs Review"
-msgstr ""
+msgstr "검토 필요"
 
 msgid "Negative Adjustment"
 msgstr "음수 조정"
@@ -8603,7 +8603,7 @@ msgid "No issue types configured"
 msgstr "설정된 이슈 유형이 없습니다"
 
 msgid "No issues"
-msgstr ""
+msgstr "문제 없음"
 
 msgid "No items"
 msgstr "품목 없음"
@@ -9383,10 +9383,10 @@ msgid "Partner"
 msgstr "파트너"
 
 msgid "Partner Code"
-msgstr ""
+msgstr "거래처 코드"
 
 msgid "Partner Reference"
-msgstr ""
+msgstr "거래처 참조"
 
 msgid "Partners"
 msgstr "파트너"
@@ -9833,7 +9833,7 @@ msgid "Price override"
 msgstr "가격 재설정"
 
 msgid "Price Tolerance"
-msgstr ""
+msgstr "가격 허용 오차"
 
 msgid "Prices"
 msgstr "가격"
@@ -10032,7 +10032,7 @@ msgid "Provide process knowledge and inputs"
 msgstr "공정 지식과 의견을 제공하세요"
 
 msgid "Provider Partner ID"
-msgstr ""
+msgstr "공급자 거래처 ID"
 
 msgid "Public"
 msgstr "공개"
@@ -10343,7 +10343,7 @@ msgid "Raw Materials (default)"
 msgstr "원자재 (기본값)"
 
 msgid "Raw Payload"
-msgstr ""
+msgstr "원본 페이로드"
 
 msgid "Re-keying between quoting, the floor, and finance"
 msgstr "견적, 현장, 재무 간 데이터 재입력"
@@ -10602,7 +10602,7 @@ msgid "Release Job"
 msgstr "작업 릴리즈"
 
 msgid "Release Mode"
-msgstr ""
+msgstr "릴리스 모드"
 
 msgid "Released"
 msgstr "릴리즈됨"
@@ -11210,7 +11210,7 @@ msgid "Save contacts"
 msgstr "연락처 저장"
 
 msgid "Save EDI settings before mapping locations"
-msgstr ""
+msgstr "위치 매핑 전에 EDI 설정 저장"
 
 msgid "Save Method"
 msgstr "저장 방법"
@@ -11596,7 +11596,7 @@ msgid "Sends this document for approval before it can go active."
 msgstr "이 문서를 활성화하기 전에 승인을 위해 전송합니다."
 
 msgid "Sent"
-msgstr ""
+msgstr "전송됨"
 
 msgid "Sequences"
 msgstr "시퀀스"
@@ -14387,7 +14387,7 @@ msgid "View Customers"
 msgstr "고객 보기"
 
 msgid "View Document"
-msgstr ""
+msgstr "문서 보기"
 
 msgid "View Employees"
 msgstr "직원 보기"
