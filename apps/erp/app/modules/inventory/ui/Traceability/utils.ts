@@ -24,14 +24,15 @@ export type EntityNodeData = {
   stateCount?: number;
   /** Last state of the chain — this is where the lot's stock sits today. */
   isCurrentState?: boolean;
-  /** Bin this state sits in — what makes two states either side of a move differ. */
-  stateLocation?: string | null;
 };
 
 export type ActivityNodeData = {
   kind: "activity";
   activity: Activity;
   dimmed: boolean;
+  /** Amount moved, for Pick / Transfer. Their edges carry the bins instead, so
+   * the quantity lives on the node. */
+  movementQuantity?: number;
 };
 
 export type LineageNode = Node<EntityNodeData | ActivityNodeData>;
@@ -39,12 +40,9 @@ export type LineageNode = Node<EntityNodeData | ActivityNodeData>;
 export type LineageEdgeData = {
   kind: "input" | "output" | "movement";
   quantity: number;
-  /**
-   * Suppress the quantity pill. Movement dangles set this — their quantity
-   * always equals the state they hang off, and a second labeled out-edge
-   * reads as stock fanning out of the lot twice.
-   */
-  hideLabel?: boolean;
+  /** Rendered instead of the quantity. Movement edges use it for the from/to
+   * bin — for a move, where matters more than how much. */
+  labelText?: string;
   dimmed: boolean;
   weight?: number;
   isReject?: boolean;
@@ -128,6 +126,8 @@ type LotEvent = {
 type LotEventWiring = {
   activityId: string;
   movement: boolean;
+  fromBin: string | null;
+  toBin: string | null;
   /** State feeding the activity (input side); null for creation events. */
   beforeState: number | null;
   beforeQty: number | null;
@@ -138,8 +138,6 @@ type LotEventWiring = {
 
 type LotTimeline = {
   stateQuantities: number[];
-  /** Bin each state sits in, when a movement made it knowable. */
-  stateLocations: (string | null)[];
   wiring: LotEventWiring[];
 };
 
@@ -216,21 +214,14 @@ function buildLotTimeline(
     }
   }
 
-  // Forward pass: assign state indexes and track where the lot sits. A
-  // movement is the only event that tells us a bin, so locations stay null
-  // until one appears, then carry forward.
   const stateQuantities: number[] = [];
-  const stateLocations: (string | null)[] = [];
   const wiring: LotEventWiring[] = [];
-  let location: string | null = null;
   for (let i = 0; i < events.length; i++) {
     const ev = events[i];
     let beforeState: number | null = null;
     if (before[i] !== null) {
       if (stateQuantities.length === 0) {
-        location = ev.movement ? ev.fromBin : null;
         stateQuantities.push(before[i]!);
-        stateLocations.push(location);
       } else if (
         Math.abs(stateQuantities[stateQuantities.length - 1] - before[i]!) >
         QTY_EPSILON
@@ -238,23 +229,17 @@ function buildLotTimeline(
         return null;
       }
       beforeState = stateQuantities.length - 1;
-      // A later movement names the bin the lot was already sitting in —
-      // backfill it so the pre-move state isn't left blank.
-      if (ev.movement && ev.fromBin && stateLocations[beforeState] === null) {
-        stateLocations[beforeState] = ev.fromBin;
-        if (beforeState === stateQuantities.length - 1) location = ev.fromBin;
-      }
     }
     let afterState: number | null = null;
     if (after[i] !== null) {
-      if (ev.movement && ev.toBin) location = ev.toBin;
       stateQuantities.push(after[i]!);
-      stateLocations.push(location);
       afterState = stateQuantities.length - 1;
     }
     wiring.push({
       activityId: ev.activityId,
       movement: ev.movement,
+      fromBin: ev.fromBin,
+      toBin: ev.toBin,
       beforeState,
       beforeQty: before[i],
       afterState,
@@ -262,7 +247,7 @@ function buildLotTimeline(
     });
   }
   if (stateQuantities.length === 0) return null;
-  return { stateQuantities, stateLocations, wiring };
+  return { stateQuantities, wiring };
 }
 
 export function payloadToFlow(
@@ -356,10 +341,18 @@ export function payloadToFlow(
           stateQuantity: stateQuantities[k],
           stateIndex: k,
           stateCount: stateQuantities.length,
-          isCurrentState: k === stateQuantities.length - 1,
-          stateLocation: timeline?.stateLocations[k] ?? null
+          isCurrentState: k === stateQuantities.length - 1
         }
       });
+    }
+  }
+
+  const movementQtyByActivity = new Map<string, number>();
+  for (const timeline of timelines.values()) {
+    for (const w of timeline.wiring) {
+      if (!w.movement) continue;
+      const qty = w.beforeQty ?? w.afterQty;
+      if (qty !== null) movementQtyByActivity.set(w.activityId, qty);
     }
   }
 
@@ -373,7 +366,12 @@ export function payloadToFlow(
       width: NODE_SIZE,
       height: NODE_SIZE,
       measured: { width: NODE_SIZE, height: NODE_SIZE },
-      data: { kind: "activity", activity, dimmed: false }
+      data: {
+        kind: "activity",
+        activity,
+        dimmed: false,
+        movementQuantity: movementQtyByActivity.get(activity.id)
+      }
     });
   }
 
@@ -385,7 +383,7 @@ export function payloadToFlow(
     target: string,
     kind: LineageEdgeData["kind"],
     quantity: number,
-    hideLabel = false
+    labelText?: string
   ) => {
     if (seenEdgeIds.has(id)) return;
     seenEdgeIds.add(id);
@@ -394,7 +392,7 @@ export function payloadToFlow(
       type: "quantity",
       source,
       target,
-      data: { kind, quantity, hideLabel, dimmed: false }
+      data: { kind, quantity, labelText, dimmed: false }
     });
   };
 
@@ -409,9 +407,7 @@ export function payloadToFlow(
           w.activityId,
           w.movement ? "movement" : "input",
           w.beforeQty,
-          // A movement dangle carries exactly the state's quantity — labeling
-          // it makes the state look like it fans out twice.
-          w.movement
+          w.movement ? (w.fromBin ?? undefined) : undefined
         );
       }
       if (w.afterState !== null && w.afterQty !== null) {
@@ -420,7 +416,8 @@ export function payloadToFlow(
           w.activityId,
           stateNodeId(entityId, w.afterState),
           w.movement ? "movement" : "output",
-          w.afterQty
+          w.afterQty,
+          w.movement ? (w.toBin ?? undefined) : undefined
         );
       }
     }
@@ -667,6 +664,10 @@ export function sourceLinkHref(
       return `/x/purchase-order/${id}`;
     case "Sales Order":
       return `/x/sales-order/${id}`;
+    case "Picking List":
+      return `/x/picking-list/${id}`;
+    case "Stock Transfer":
+      return `/x/stock-transfer/${id}`;
     default:
       return null;
   }

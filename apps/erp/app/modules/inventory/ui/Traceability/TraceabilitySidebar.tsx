@@ -190,6 +190,26 @@ export function TraceabilitySidebar({
     );
   }, [activity, stepRecordsFetcher.data]);
 
+  // Where the lot sits now: destination of the latest movement that took it as
+  // an input. Bin names are enriched server-side (enrichActivityBinNames).
+  const storageUnit = useMemo(() => {
+    if (!entity || !payload) return null;
+    const activityById = indexBy(payload.activities, (a) => a.id);
+    let latest: { at: string; bin: string } | null = null;
+    for (const i of payload.inputs) {
+      if (i.trackedEntityId !== entity.id) continue;
+      const activity = activityById.get(i.trackedActivityId);
+      if (!activity || !isMovementActivity(activity.type)) continue;
+      const bin = (activity.attributes as Record<string, unknown> | null)?.[
+        "To Shelf Name"
+      ];
+      if (typeof bin !== "string" || !bin) continue;
+      const at = (activity.createdAt as string | undefined) ?? "";
+      if (!latest || at >= latest.at) latest = { at, bin };
+    }
+    return latest?.bin ?? null;
+  }, [entity, payload]);
+
   const containmentsForEntity = useMemo(() => {
     if (!entity || !payload?.containments?.length) return [];
     return payload.containments.filter((c) => c.trackedEntityId === entity.id);
@@ -325,6 +345,11 @@ export function TraceabilitySidebar({
                       <span className="text-sm font-mono">
                         {entity.readableId}
                       </span>
+                    </PropRow>
+                  )}
+                  {storageUnit && (
+                    <PropRow label="Storage Unit">
+                      <span className="text-sm font-medium">{storageUnit}</span>
                     </PropRow>
                   )}
                 </>
