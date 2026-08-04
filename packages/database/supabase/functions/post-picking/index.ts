@@ -88,6 +88,24 @@ const payloadValidator = z.discriminatedUnion("type", [
     locationId: z.string(),
     userId: z.string(),
     companyId: z.string()
+  }),
+  // Sweep every picking-list line of one operation (policy-gated: no-ops unless
+  // companySettings.returnPickedMaterialTiming = 'operation') or of one job
+  // (runs under both policies; requires job.status = 'Completed'). Tracked lines
+  // return via the split-lineage walk; untracked lines return
+  // picked − returned − max(issued, owed) per job material, where `owed` holds
+  // back what completion-time backflush still needs.
+  z.object({
+    type: z.literal("returnOperationRemainders"),
+    jobOperationId: z.string(),
+    userId: z.string(),
+    companyId: z.string()
+  }),
+  z.object({
+    type: z.literal("returnJobRemainders"),
+    jobId: z.string(),
+    userId: z.string(),
+    companyId: z.string()
   })
 ]);
 
@@ -725,14 +743,8 @@ serve(async (req: Request) => {
       }
 
       case "returnPickedRemainder": {
-        const {
-          pickingListId,
-          pickingListLineId,
-          trackedEntityId,
-          locationId,
-          userId,
-          companyId
-        } = validatedPayload;
+        const { pickingListLineId, trackedEntityId, locationId, userId, companyId } =
+          validatedPayload;
 
         await db.transaction().execute(async (trx) => {
           const line = await trx
@@ -742,164 +754,88 @@ serve(async (req: Request) => {
             .selectAll()
             .executeTakeFirstOrThrow();
 
-          const lineside = line.toStorageUnitId;
+          const totalReturned = await returnTrackedAllocationRemainder(trx, {
+            today,
+            line,
+            trackedEntityId,
+            locationId,
+            userId,
+            companyId
+          });
 
-          // Return target = the bin this lot was actually PICKED from, recorded
-          // on its Pick trackedActivity at pick time — not the line's stale
-          // generation-time source bin, which can be wrong per-lot and is null
-          // for a shortage line that later got picked anyway.
-          const pickActivities = await trx
-            .selectFrom("trackedActivity as ta")
-            .innerJoin(
-              "trackedActivityInput as tai",
-              "tai.trackedActivityId",
-              "ta.id"
-            )
-            .where("ta.type", "=", "Pick")
-            .where("ta.sourceDocument", "=", "Picking List")
-            .where("ta.sourceDocumentId", "=", line.pickingListId)
-            .where("tai.trackedEntityId", "=", trackedEntityId)
-            .where("ta.companyId", "=", companyId)
-            .where("tai.companyId", "=", companyId)
-            .orderBy("ta.createdAt", "desc")
-            .select("ta.attributes")
-            .execute();
-
-          // Use the LATEST pick for this line (activities are newest-first). Its
-          // "From Shelf" is the current truth — even if null (picked from an
-          // unassigned bin), fall through to the line bin rather than reusing an
-          // older pick's stale shelf.
-          const latestPickForLine = pickActivities
-            .map((a) => a.attributes as Record<string, unknown> | null)
-            // Disambiguate if the same entity was picked on multiple lines.
-            .find((a) => a?.["Picking List Line"] === pickingListLineId);
-          const pickedFromShelf = latestPickForLine?.["From Shelf"] as
-            | string
-            | null
-            | undefined;
-
-          const source = pickedFromShelf ?? line.storageUnitId;
-          // No lineside stage or no source to return to → nothing to do.
-          if (!lineside || !source) return;
-
-          // Walk the picked entity's split lineage (picked entity + every split
-          // descendant). A partial consume splits the un-consumed remainder into
-          // a new entity, so the leftover stock at lineside sits under a
-          // descendant, not the originally-picked entity.
-          const lineage = new Set<string>([trackedEntityId]);
-          let frontier: string[] = [trackedEntityId];
-          while (frontier.length > 0) {
-            const rows = await trx
-              .selectFrom("trackedActivityInput as tai")
-              .innerJoin(
-                "trackedActivityOutput as tao",
-                "tao.trackedActivityId",
-                "tai.trackedActivityId"
-              )
-              .where("tai.trackedEntityId", "in", frontier)
-              .where("tai.companyId", "=", companyId)
-              .whereRef("tao.trackedEntityId", "<>", "tai.trackedEntityId")
-              .select("tao.trackedEntityId as id")
-              .distinct()
-              .execute();
-            const next: string[] = [];
-            for (const r of rows) {
-              if (r.id && !lineage.has(r.id)) {
-                lineage.add(r.id);
-                next.push(r.id);
-              }
-            }
-            frontier = next;
+          // Legacy single-allocation call: restore the consumption pointer
+          // only when something actually returned (matching the original
+          // early-return behavior). The sweep cases decide per material.
+          if (totalReturned > 0) {
+            await restoreJobMaterialSource(trx, line, userId);
           }
+        });
+        break;
+      }
 
-          // Transfer each lineage entity's remaining lineside on-hand back to
-          // the warehouse source bin.
-          const inserts: ItemLedgerInsert[] = [];
-          let totalReturned = 0;
-          for (const entityId of lineage) {
-            const onHandRow = await trx
-              .selectFrom("itemLedger")
-              .where("trackedEntityId", "=", entityId)
-              .where("storageUnitId", "=", lineside)
-              .where("itemId", "=", line.itemId)
-              .where("companyId", "=", companyId)
-              .select((eb) => eb.fn.sum<number>("quantity").as("qty"))
-              .executeTakeFirst();
-            const onHand = Number(onHandRow?.qty ?? 0);
-            if (onHand <= 0) continue;
-            inserts.push(
-              ...transferPair({
-                today,
-                itemId: line.itemId,
-                quantity: onHand,
-                locationId,
-                fromStorageUnitId: lineside,
-                toStorageUnitId: source,
-                documentId: pickingListId,
-                trackedEntityId: entityId,
-                userId,
-                companyId
-              })
-            );
-            totalReturned += onHand;
-          }
+      case "returnOperationRemainders": {
+        const { jobOperationId, userId, companyId } = validatedPayload;
 
-          if (totalReturned <= 0) return;
-
-          await trx.insertInto("itemLedger").values(inserts).execute();
-
-          // Decrement the recorded picked qty by what was returned so the lot is
-          // re-allocatable and the picked/to-pick display reflects reality.
-          const allocation = await trx
-            .selectFrom("pickingListLineTrackedEntity")
-            .where("pickingListLineId", "=", pickingListLineId)
-            .where("trackedEntityId", "=", trackedEntityId)
-            .selectAll()
+        await db.transaction().execute(async (trx) => {
+          const settings = await trx
+            .selectFrom("companySettings")
+            .where("id", "=", companyId)
+            .select("returnPickedMaterialTiming")
             .executeTakeFirst();
-          if (allocation) {
-            const nextQuantity = Math.max(
-              0,
-              Number(allocation.quantity ?? 0) - totalReturned
-            );
-            const nextPicked = Math.max(
-              0,
-              Number(allocation.quantityPicked ?? 0) - totalReturned
-            );
-            if (nextPicked <= 0) {
-              await trx
-                .deleteFrom("pickingListLineTrackedEntity")
-                .where("pickingListLineId", "=", pickingListLineId)
-                .where("trackedEntityId", "=", trackedEntityId)
-                .execute();
-            } else {
-              await trx
-                .updateTable("pickingListLineTrackedEntity")
-                .set({ quantity: nextQuantity, quantityPicked: nextPicked })
-                .where("pickingListLineId", "=", pickingListLineId)
-                .where("trackedEntityId", "=", trackedEntityId)
-                .execute();
-            }
-          }
+          // The policy gate lives here (not at call sites) so every op-Done
+          // path can invoke unconditionally.
+          if (settings?.returnPickedMaterialTiming !== "operation") return;
 
-          const nextLinePicked = Math.max(
-            0,
-            Number(line.quantityPicked ?? 0) - totalReturned
-          );
-          await trx
-            .updateTable("pickingListLine")
-            .set({
-              quantityPicked: nextLinePicked,
-              // Fully returned → the line is no longer picked; mirror unpick's
-              // reset so status doesn't linger on 'Picked' with 0 picked qty.
-              ...(nextLinePicked <= 0 ? { status: "Pending" as const } : {}),
-              updatedBy: userId,
-              updatedAt: new Date().toISOString()
-            })
-            .where("id", "=", pickingListLineId)
+          const op = await trx
+            .selectFrom("jobOperation")
+            .where("id", "=", jobOperationId)
             .where("companyId", "=", companyId)
-            .execute();
+            .select(["id", "jobId", "quantityComplete"])
+            .executeTakeFirstOrThrow();
+          if (!op.jobId) return;
 
-          await restoreJobMaterialSource(trx, line, userId);
+          const job = await trx
+            .selectFrom("job")
+            .where("id", "=", op.jobId)
+            .where("companyId", "=", companyId)
+            .select(["id", "quantity", "locationId", "status"])
+            .executeTakeFirstOrThrow();
+          if (!job.locationId) return;
+
+          await runReturnSweep(trx, {
+            scope: "operation",
+            job: { id: job.id, quantity: job.quantity, locationId: job.locationId },
+            opId: op.id,
+            opQuantityComplete: Number(op.quantityComplete ?? 0),
+            today,
+            userId,
+            companyId
+          });
+        });
+        break;
+      }
+
+      case "returnJobRemainders": {
+        const { jobId, userId, companyId } = validatedPayload;
+
+        await db.transaction().execute(async (trx) => {
+          const job = await trx
+            .selectFrom("job")
+            .where("id", "=", jobId)
+            .where("companyId", "=", companyId)
+            .select(["id", "quantity", "locationId", "status"])
+            .executeTakeFirstOrThrow();
+          // Job scope is the final catch-all: only a completed job's remainder
+          // is provably surplus (completion-time backflush has already run).
+          if (job.status !== "Completed" || !job.locationId) return;
+
+          await runReturnSweep(trx, {
+            scope: "job",
+            job: { id: job.id, quantity: job.quantity, locationId: job.locationId },
+            today,
+            userId,
+            companyId
+          });
         });
         break;
       }
@@ -976,4 +912,478 @@ async function restoreJobMaterialSource(
     })
     .where("id", "=", line.jobMaterialId)
     .execute();
+}
+
+type ReturnSweepLine = {
+  id: string;
+  pickingListId: string;
+  jobMaterialId: string;
+  jobOperationId: string | null;
+  itemId: string;
+  quantityPicked: number | string | null;
+  quantityReturned: number | string | null;
+  storageUnitId: string | null;
+  toStorageUnitId: string | null;
+  createdAt: string | Date | null;
+};
+
+// Return the un-consumed remainder of ONE tracked (batch/serial) allocation from
+// the lineside shelf back to the warehouse source. Walks the picked entity's
+// split lineage and moves whatever is still physically on hand at the lineside
+// bin (a partial consume splits the remainder into a NEW entity the picking line
+// never references). Idempotent: nothing on hand → nothing moves.
+//
+// Books the return on pickingListLine.quantityReturned instead of decrementing
+// quantityPicked — the update_picking_list_status trigger reacts to
+// quantityPicked/status changes and would demote a Completed/Partial header back
+// to In Progress. quantityPicked stays gross-picked; net staged at lineside is
+// quantityPicked - quantityReturned. The allocation row keeps its historical
+// decrement/delete-at-0 so the lot becomes re-allocatable (the availability RPCs
+// net allocations out of on-hand). Does NOT repoint jobMaterial.storageUnitId —
+// callers decide that per material.
+async function returnTrackedAllocationRemainder(
+  trx: any,
+  args: {
+    today: string;
+    line: {
+      id: string;
+      pickingListId: string;
+      itemId: string;
+      storageUnitId: string | null;
+      toStorageUnitId: string | null;
+    };
+    trackedEntityId: string;
+    locationId: string;
+    userId: string;
+    companyId: string;
+  }
+): Promise<number> {
+  const { today, line, trackedEntityId, locationId, userId, companyId } = args;
+  const lineside = line.toStorageUnitId;
+
+  // Return target = the bin this lot was actually PICKED from, recorded
+  // on its Pick trackedActivity at pick time — not the line's stale
+  // generation-time source bin, which can be wrong per-lot and is null
+  // for a shortage line that later got picked anyway.
+  const pickActivities = await trx
+    .selectFrom("trackedActivity as ta")
+    .innerJoin("trackedActivityInput as tai", "tai.trackedActivityId", "ta.id")
+    .where("ta.type", "=", "Pick")
+    .where("ta.sourceDocument", "=", "Picking List")
+    .where("ta.sourceDocumentId", "=", line.pickingListId)
+    .where("tai.trackedEntityId", "=", trackedEntityId)
+    .where("ta.companyId", "=", companyId)
+    .where("tai.companyId", "=", companyId)
+    .orderBy("ta.createdAt", "desc")
+    .select("ta.attributes")
+    .execute();
+
+  // Use the LATEST pick for this line (activities are newest-first). Its
+  // "From Shelf" is the current truth — even if null (picked from an
+  // unassigned bin), fall through to the line bin rather than reusing an
+  // older pick's stale shelf.
+  const latestPickForLine = pickActivities
+    .map((a: { attributes: unknown }) => a.attributes as Record<string, unknown> | null)
+    // Disambiguate if the same entity was picked on multiple lines.
+    .find((a: Record<string, unknown> | null) => a?.["Picking List Line"] === line.id);
+  const pickedFromShelf = latestPickForLine?.["From Shelf"] as
+    | string
+    | null
+    | undefined;
+
+  const source = pickedFromShelf ?? line.storageUnitId;
+  // No lineside stage or no source to return to → nothing to do.
+  if (!lineside || !source) return 0;
+
+  // Walk the picked entity's split lineage (picked entity + every split
+  // descendant). A partial consume splits the un-consumed remainder into
+  // a new entity, so the leftover stock at lineside sits under a
+  // descendant, not the originally-picked entity.
+  const lineage = new Set<string>([trackedEntityId]);
+  let frontier: string[] = [trackedEntityId];
+  while (frontier.length > 0) {
+    const rows = await trx
+      .selectFrom("trackedActivityInput as tai")
+      .innerJoin(
+        "trackedActivityOutput as tao",
+        "tao.trackedActivityId",
+        "tai.trackedActivityId"
+      )
+      .where("tai.trackedEntityId", "in", frontier)
+      .where("tai.companyId", "=", companyId)
+      .whereRef("tao.trackedEntityId", "<>", "tai.trackedEntityId")
+      .select("tao.trackedEntityId as id")
+      .distinct()
+      .execute();
+    const next: string[] = [];
+    for (const r of rows) {
+      if (r.id && !lineage.has(r.id)) {
+        lineage.add(r.id);
+        next.push(r.id);
+      }
+    }
+    frontier = next;
+  }
+
+  // Transfer each lineage entity's remaining lineside on-hand back to
+  // the warehouse source bin.
+  const inserts: ItemLedgerInsert[] = [];
+  let totalReturned = 0;
+  for (const entityId of lineage) {
+    const onHandRow = await trx
+      .selectFrom("itemLedger")
+      .where("trackedEntityId", "=", entityId)
+      .where("storageUnitId", "=", lineside)
+      .where("itemId", "=", line.itemId)
+      .where("companyId", "=", companyId)
+      .select((eb: any) => eb.fn.sum<number>("quantity").as("qty"))
+      .executeTakeFirst();
+    const onHand = Number(onHandRow?.qty ?? 0);
+    if (onHand <= 0) continue;
+    inserts.push(
+      ...transferPair({
+        today,
+        itemId: line.itemId,
+        quantity: onHand,
+        locationId,
+        fromStorageUnitId: lineside,
+        toStorageUnitId: source,
+        documentId: line.pickingListId,
+        trackedEntityId: entityId,
+        userId,
+        companyId
+      })
+    );
+    totalReturned += onHand;
+  }
+
+  if (totalReturned <= 0) return 0;
+
+  await trx.insertInto("itemLedger").values(inserts).execute();
+
+  // Decrement the recorded allocation by what was returned so the lot is
+  // re-allocatable.
+  const allocation = await trx
+    .selectFrom("pickingListLineTrackedEntity")
+    .where("pickingListLineId", "=", line.id)
+    .where("trackedEntityId", "=", trackedEntityId)
+    .selectAll()
+    .executeTakeFirst();
+  if (allocation) {
+    const nextQuantity = Math.max(
+      0,
+      Number(allocation.quantity ?? 0) - totalReturned
+    );
+    const nextPicked = Math.max(
+      0,
+      Number(allocation.quantityPicked ?? 0) - totalReturned
+    );
+    if (nextPicked <= 0) {
+      await trx
+        .deleteFrom("pickingListLineTrackedEntity")
+        .where("pickingListLineId", "=", line.id)
+        .where("trackedEntityId", "=", trackedEntityId)
+        .execute();
+    } else {
+      await trx
+        .updateTable("pickingListLineTrackedEntity")
+        .set({ quantity: nextQuantity, quantityPicked: nextPicked })
+        .where("pickingListLineId", "=", line.id)
+        .where("trackedEntityId", "=", trackedEntityId)
+        .execute();
+    }
+  }
+
+  await trx
+    .updateTable("pickingListLine")
+    .set((eb: any) => ({
+      quantityReturned: eb("quantityReturned", "+", totalReturned),
+      updatedBy: userId,
+      updatedAt: new Date().toISOString()
+    }))
+    .where("id", "=", line.id)
+    .where("companyId", "=", companyId)
+    .execute();
+
+  return totalReturned;
+}
+
+// Return the un-consumed remainder of an UNTRACKED job material. There is no
+// per-line consumption attribution (jobMaterial.quantityIssued is one counter
+// across N lines), so the remainder is computed per material —
+//   returnable = max(0, Σ(line.picked − line.returned) − max(issued, owed))
+// — and allocated back across the material's lines newest-first. `owed` is what
+// completion-time backflush is still entitled to draw from lineside; holding it
+// back is what keeps the top-up suppliable (never derived from bin on-hand: the
+// lineside bin is shared per work center across jobs).
+async function returnUntrackedMaterialRemainder(
+  trx: any,
+  args: {
+    today: string;
+    material: { id: string; itemId: string; quantityIssued: number | string | null };
+    lines: ReturnSweepLine[];
+    owed: number;
+    locationId: string;
+    userId: string;
+    companyId: string;
+  }
+): Promise<number> {
+  const { today, material, lines, owed, locationId, userId, companyId } = args;
+
+  const staged = lines
+    .map((l) => ({
+      ...l,
+      stagedNet: Math.max(
+        0,
+        Number(l.quantityPicked ?? 0) - Number(l.quantityReturned ?? 0)
+      )
+    }))
+    .filter((l) => l.stagedNet > 0 && l.toStorageUnitId);
+  if (staged.length === 0) return 0;
+
+  const totalStaged = staged.reduce((sum, l) => sum + l.stagedNet, 0);
+  const issued = Number(material.quantityIssued ?? 0);
+  let returnable = Math.max(0, totalStaged - Math.max(issued, owed));
+  if (returnable <= 0) return 0;
+
+  // Newest-first: return the most recently staged stock, deterministic.
+  staged.sort(
+    (a, b) =>
+      new Date(b.createdAt ?? 0).getTime() - new Date(a.createdAt ?? 0).getTime()
+  );
+
+  // Lazy fallback bin for lines picked from an unassigned source.
+  let fallbackBin: string | null | undefined;
+  const resolveFallbackBin = async () => {
+    if (fallbackBin !== undefined) return fallbackBin;
+    const pickMethod = await trx
+      .selectFrom("pickMethod")
+      .where("itemId", "=", material.itemId)
+      .where("locationId", "=", locationId)
+      .where("companyId", "=", companyId)
+      .select("defaultStorageUnitId")
+      .executeTakeFirst();
+    fallbackBin = pickMethod?.defaultStorageUnitId ?? null;
+    return fallbackBin;
+  };
+
+  const inserts: ItemLedgerInsert[] = [];
+  let totalReturned = 0;
+  for (const line of staged) {
+    if (returnable <= 0) break;
+    const quantity = Math.min(line.stagedNet, returnable);
+    // Return target: the line's source bin, else the item's default pick bin,
+    // else location-level unassigned stock (mirrors picks from unassigned bins;
+    // never strands the return).
+    const target = line.storageUnitId ?? (await resolveFallbackBin());
+
+    const base = {
+      postingDate: today,
+      itemId: line.itemId,
+      locationId,
+      entryType: "Transfer" as const,
+      documentType: "Direct Transfer" as const,
+      documentId: line.pickingListId,
+      createdBy: userId,
+      companyId
+    };
+    inserts.push(
+      { ...base, quantity: -quantity, storageUnitId: line.toStorageUnitId },
+      { ...base, quantity, storageUnitId: target }
+    );
+
+    await trx
+      .updateTable("pickingListLine")
+      .set((eb: any) => ({
+        quantityReturned: eb("quantityReturned", "+", quantity),
+        updatedBy: userId,
+        updatedAt: new Date().toISOString()
+      }))
+      .where("id", "=", line.id)
+      .where("companyId", "=", companyId)
+      .execute();
+
+    returnable -= quantity;
+    totalReturned += quantity;
+  }
+
+  if (totalReturned <= 0) return 0;
+  await trx.insertInto("itemLedger").values(inserts).execute();
+  return totalReturned;
+}
+
+// Sweep every live picking-list line of one operation (scope "operation") or of
+// one whole job (scope "job"), returning each material's un-consumed remainder
+// and repointing jobMaterial.storageUnitId back at the warehouse source when
+// nothing staged remains to consume.
+async function runReturnSweep(
+  trx: any,
+  args: {
+    scope: "operation" | "job";
+    job: { id: string; quantity: number | string | null; locationId: string };
+    opId?: string;
+    opQuantityComplete?: number;
+    today: string;
+    userId: string;
+    companyId: string;
+  }
+) {
+  const { scope, job, opId, opQuantityComplete, today, userId, companyId } = args;
+
+  let lineQuery = trx
+    .selectFrom("pickingListLine as pll")
+    .innerJoin("pickingList as pl", "pl.id", "pll.pickingListId")
+    .where("pll.companyId", "=", companyId)
+    .where("pll.jobId", "=", job.id)
+    .where("pll.status", "<>", "Cancelled")
+    .where("pl.status", "not in", ["Draft", "Cancelled"])
+    .select([
+      "pll.id",
+      "pll.pickingListId",
+      "pll.jobMaterialId",
+      "pll.jobOperationId",
+      "pll.itemId",
+      "pll.quantityPicked",
+      "pll.quantityReturned",
+      "pll.storageUnitId",
+      "pll.toStorageUnitId",
+      "pll.createdAt"
+    ]);
+  if (scope === "operation") {
+    lineQuery = lineQuery.where("pll.jobOperationId", "=", opId);
+  }
+  const lines: ReturnSweepLine[] = await lineQuery.execute();
+  if (lines.length === 0) return;
+
+  const materialIds = [...new Set(lines.map((l) => l.jobMaterialId))];
+  const materials = await trx
+    .selectFrom("jobMaterial")
+    .where("id", "in", materialIds)
+    .where("companyId", "=", companyId)
+    .select([
+      "id",
+      "itemId",
+      "jobOperationId",
+      "quantityIssued",
+      "estimatedQuantity",
+      "requiresBatchTracking",
+      "requiresSerialTracking"
+    ])
+    .execute();
+
+  const jobQuantity = Number(job.quantity ?? 0);
+
+  for (const material of materials) {
+    const materialLines = lines.filter((l) => l.jobMaterialId === material.id);
+    const tracked =
+      Boolean(material.requiresBatchTracking) ||
+      Boolean(material.requiresSerialTracking);
+
+    // What completion-time backflush is still entitled to consume from lineside.
+    // Op scope, material owned by the completing op: its completed quantity is
+    // final, so owed = (estimatedQuantity ÷ job quantity) × op completed — the
+    // estimated ratio keeps the scrap allowance staged. A material owned by a
+    // DIFFERENT (possibly not-yet-run) op has no final quantity yet: hold its
+    // full estimate. Job scope: backflush already ran inside
+    // complete_job_to_inventory, nothing further is owed.
+    let owed = 0;
+    if (scope === "operation") {
+      const estimated = Number(material.estimatedQuantity ?? 0);
+      if (material.jobOperationId === opId && jobQuantity > 0) {
+        owed = (estimated / jobQuantity) * Number(opQuantityComplete ?? 0);
+      } else {
+        owed = estimated;
+      }
+    }
+
+    if (tracked) {
+      for (const line of materialLines) {
+        const allocations = await trx
+          .selectFrom("pickingListLineTrackedEntity")
+          .where("pickingListLineId", "=", line.id)
+          .select("trackedEntityId")
+          .execute();
+        for (const allocation of allocations) {
+          await returnTrackedAllocationRemainder(trx, {
+            today,
+            line,
+            trackedEntityId: allocation.trackedEntityId,
+            locationId: job.locationId,
+            userId,
+            companyId
+          });
+        }
+      }
+    } else {
+      await returnUntrackedMaterialRemainder(trx, {
+        today,
+        material,
+        lines: materialLines,
+        owed,
+        locationId: job.locationId,
+        userId,
+        companyId
+      });
+    }
+
+    await maybeRestoreJobMaterialSource(trx, {
+      scope,
+      material: { id: material.id, quantityIssued: material.quantityIssued },
+      userId,
+      companyId
+    });
+  }
+}
+
+// Repoint jobMaterial.storageUnitId back at the warehouse source once nothing
+// staged remains for it to consume at lineside. Job scope: the job is done —
+// always restore. Op scope: restore only when net staged (Σ picked − returned
+// across ALL live lines of the material) is covered by what was already issued —
+// otherwise the held-back (owed) stock must stay consumable at lineside by the
+// completion-time backflush. Skips the restore when no line has a source bin,
+// rather than nulling the pointer.
+async function maybeRestoreJobMaterialSource(
+  trx: any,
+  args: {
+    scope: "operation" | "job";
+    material: { id: string; quantityIssued: number | string | null };
+    userId: string;
+    companyId: string;
+  }
+) {
+  const { scope, material, userId, companyId } = args;
+
+  const liveLines = await trx
+    .selectFrom("pickingListLine as pll")
+    .innerJoin("pickingList as pl", "pl.id", "pll.pickingListId")
+    .where("pll.jobMaterialId", "=", material.id)
+    .where("pll.companyId", "=", companyId)
+    .where("pll.status", "<>", "Cancelled")
+    .where("pl.status", "not in", ["Draft", "Cancelled"])
+    .select(["pll.storageUnitId", "pll.quantityPicked", "pll.quantityReturned", "pll.createdAt"])
+    .execute();
+
+  if (scope === "operation") {
+    const netStaged = liveLines.reduce(
+      (sum: number, l: ReturnSweepLine) =>
+        sum +
+        Math.max(0, Number(l.quantityPicked ?? 0) - Number(l.quantityReturned ?? 0)),
+      0
+    );
+    if (netStaged - Number(material.quantityIssued ?? 0) > 0) return;
+  }
+
+  const sourceLine = liveLines
+    .filter((l: ReturnSweepLine) => l.storageUnitId)
+    .sort(
+      (a: ReturnSweepLine, b: ReturnSweepLine) =>
+        new Date(b.createdAt ?? 0).getTime() - new Date(a.createdAt ?? 0).getTime()
+    )[0];
+  if (!sourceLine) return;
+
+  await restoreJobMaterialSource(
+    trx,
+    { jobMaterialId: material.id, storageUnitId: sourceLine.storageUnitId },
+    userId
+  );
 }

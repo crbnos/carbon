@@ -1657,8 +1657,14 @@ msgstr "Assigns this unit to a work center for lineside material, so operators s
 msgid "At each gate"
 msgstr "At each gate"
 
+msgid "At job completion"
+msgstr "At job completion"
+
 msgid "At least one condition must match"
 msgstr "At least one condition must match"
+
+msgid "At operation completion"
+msgstr "At operation completion"
 
 msgid "Attach File"
 msgstr "Attach File"
@@ -3711,6 +3717,9 @@ msgstr "Decide what an operator sees if they try to issue a batch or serial that
 msgid "Decide what happens when an operator presses Finish on the shop floor with material still unpicked."
 msgstr "Decide what happens when an operator presses Finish on the shop floor with material still unpicked."
 
+msgid "Decide when material picked to a work center but not consumed flows back to the warehouse."
+msgstr "Decide when material picked to a work center but not consumed flows back to the warehouse."
+
 msgid "Decimal Places"
 msgstr "Decimal Places"
 
@@ -4557,6 +4566,9 @@ msgstr "e.g. the first 3 to 4 weeks"
 
 msgid "e.g. Zebra 2x1"
 msgstr "e.g. Zebra 2x1"
+
+msgid "Each operation's unused material returns as soon as the operation is done."
+msgstr "Each operation's unused material returns as soon as the operation is done."
 
 msgid "Each physical unit gets its own tracked entity and unique number — one entity, one unit."
 msgstr "Each physical unit gets its own tracked entity and unique number — one entity, one unit."
@@ -7212,6 +7224,9 @@ msgstr "Left item"
 
 msgid "Leftover Parts Detected"
 msgstr "Leftover Parts Detected"
+
+msgid "Leftover staged material returns when the whole job completes."
+msgstr "Leftover staged material returns when the whole job completes."
 
 msgid "Less manual work"
 msgstr "Less manual work"
@@ -10787,6 +10802,12 @@ msgstr "Retry"
 msgid "Return Home"
 msgstr "Return Home"
 
+msgid "Returned"
+msgstr "Returned"
+
+msgid "Returning unused picked material"
+msgstr "Returning unused picked material"
+
 msgid "Rev {revision}"
 msgstr "Rev {revision}"
 
@@ -13953,6 +13974,9 @@ msgstr "Untitled Diagram"
 
 msgid "Untitled line"
 msgstr "Untitled line"
+
+msgid "Unused picked material flushed back from the work center to the warehouse."
+msgstr "Unused picked material flushed back from the work center to the warehouse."
 
 msgid "UoM"
 msgstr "UoM"

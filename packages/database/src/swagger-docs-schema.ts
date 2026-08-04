@@ -45154,6 +45154,9 @@ export default {
             $ref: "#/parameters/rowFilter.pickingListLine.customFields"
           },
           {
+            $ref: "#/parameters/rowFilter.pickingListLine.quantityReturned"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -45267,6 +45270,9 @@ export default {
             $ref: "#/parameters/rowFilter.pickingListLine.customFields"
           },
           {
+            $ref: "#/parameters/rowFilter.pickingListLine.quantityReturned"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -45332,6 +45338,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.pickingListLine.customFields"
+          },
+          {
+            $ref: "#/parameters/rowFilter.pickingListLine.quantityReturned"
           },
           {
             $ref: "#/parameters/body.pickingListLine"
@@ -82999,6 +83008,9 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.includeMaterialsOnTraveler"
           },
           {
+            $ref: "#/parameters/rowFilter.companySettings.returnPickedMaterialTiming"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -83196,6 +83208,9 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.includeMaterialsOnTraveler"
           },
           {
+            $ref: "#/parameters/rowFilter.companySettings.returnPickedMaterialTiming"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -83345,6 +83360,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.includeMaterialsOnTraveler"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.returnPickedMaterialTiming"
           },
           {
             $ref: "#/parameters/body.companySettings"
@@ -116446,7 +116464,8 @@ export default {
         "status",
         "companyId",
         "createdBy",
-        "createdAt"
+        "createdAt",
+        "quantityReturned"
       ],
       properties: {
         id: {
@@ -116545,6 +116564,11 @@ export default {
         },
         customFields: {
           format: "jsonb"
+        },
+        quantityReturned: {
+          default: 0,
+          format: "numeric",
+          type: "number"
         }
       },
       type: "object"
@@ -134379,7 +134403,8 @@ export default {
         "plmReleaseControl",
         "autoSelectMaterialWithoutPickingList",
         "incompletePickingListPolicy",
-        "includeMaterialsOnTraveler"
+        "includeMaterialsOnTraveler",
+        "returnPickedMaterialTiming"
       ],
       properties: {
         id: {
@@ -134630,6 +134655,11 @@ export default {
           default: false,
           format: "boolean",
           type: "boolean"
+        },
+        returnPickedMaterialTiming: {
+          default: "job",
+          format: "text",
+          type: "string"
         }
       },
       type: "object"
@@ -159409,6 +159439,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.pickingListLine.quantityReturned": {
+      name: "quantityReturned",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.storageType": {
       name: "storageType",
       description: "storageType",
@@ -179567,6 +179603,12 @@ export default {
     },
     "rowFilter.companySettings.includeMaterialsOnTraveler": {
       name: "includeMaterialsOnTraveler",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.companySettings.returnPickedMaterialTiming": {
+      name: "returnPickedMaterialTiming",
       required: false,
       in: "query",
       type: "string"

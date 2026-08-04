@@ -6757,6 +6757,7 @@ export type Database = {
           qualityDispatchNotificationGroup: string[] | null
           qualityIssueTarget: number
           quoteLineCategoryMarkups: Json | null
+          returnPickedMaterialTiming: string
           rfqReadyNotificationGroup: string[]
           salesJobCompletedNotificationGroup: string[]
           samplingStandard: Database["public"]["Enums"]["samplingStandard"]
@@ -6805,6 +6806,7 @@ export type Database = {
           qualityDispatchNotificationGroup?: string[] | null
           qualityIssueTarget?: number
           quoteLineCategoryMarkups?: Json | null
+          returnPickedMaterialTiming?: string
           rfqReadyNotificationGroup?: string[]
           salesJobCompletedNotificationGroup?: string[]
           samplingStandard?: Database["public"]["Enums"]["samplingStandard"]
@@ -6853,6 +6855,7 @@ export type Database = {
           qualityDispatchNotificationGroup?: string[] | null
           qualityIssueTarget?: number
           quoteLineCategoryMarkups?: Json | null
+          returnPickedMaterialTiming?: string
           rfqReadyNotificationGroup?: string[]
           salesJobCompletedNotificationGroup?: string[]
           samplingStandard?: Database["public"]["Enums"]["samplingStandard"]
@@ -35311,6 +35314,7 @@ export type Database = {
           outstandingQuantity: number | null
           pickingListId: string
           quantityPicked: number
+          quantityReturned: number
           quantityToPick: number
           status: Database["public"]["Enums"]["pickingListLineStatus"]
           storageUnitId: string | null
@@ -35331,6 +35335,7 @@ export type Database = {
           outstandingQuantity?: number | null
           pickingListId: string
           quantityPicked?: number
+          quantityReturned?: number
           quantityToPick: number
           status?: Database["public"]["Enums"]["pickingListLineStatus"]
           storageUnitId?: string | null
@@ -35351,6 +35356,7 @@ export type Database = {
           outstandingQuantity?: number | null
           pickingListId?: string
           quantityPicked?: number
+          quantityReturned?: number
           quantityToPick?: number
           status?: Database["public"]["Enums"]["pickingListLineStatus"]
           storageUnitId?: string | null
@@ -66770,14 +66776,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["supplierCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["supplierCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -70717,14 +70723,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["paymentCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["paymentCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]

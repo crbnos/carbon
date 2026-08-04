@@ -1515,6 +1515,17 @@ export async function updateIncompletePickingListPolicySetting(
     .eq("id", companyId);
 }
 
+export async function updateReturnPickedMaterialTimingSetting(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  returnPickedMaterialTiming: "job" | "operation"
+) {
+  return client
+    .from("companySettings")
+    .update(sanitize({ returnPickedMaterialTiming }))
+    .eq("id", companyId);
+}
+
 export async function upsertWebhook(
   client: SupabaseClient<Database>,
   webhook:
