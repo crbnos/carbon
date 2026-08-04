@@ -7589,6 +7589,9 @@ msgstr "Название проблемы"
 msgid "Issue Trend"
 msgstr "Тренд проблем"
 
+msgid "Issue type"
+msgstr ""
+
 msgid "Issue Type"
 msgstr "Тип проблемы"
 
@@ -12875,6 +12878,12 @@ msgstr "Показать один номер инвентаря, котором�
 
 msgid "Show parent items"
 msgstr "Показать родительские элементы"
+
+msgid "Show raw"
+msgstr ""
+
+msgid "Show summary"
+msgstr ""
 
 msgid "Show Supplier IDs"
 msgstr "Показать ID поставщиков"

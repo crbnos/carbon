@@ -7589,6 +7589,9 @@ msgstr "समस्या शीर्षक"
 msgid "Issue Trend"
 msgstr "समस्या प्रवृत्ति"
 
+msgid "Issue type"
+msgstr ""
+
 msgid "Issue Type"
 msgstr "समस्या प्रकार"
 
@@ -12875,6 +12878,12 @@ msgstr "एक इन्वेंटरी नंबर दिखाएं ज�
 
 msgid "Show parent items"
 msgstr "माता-पिता की वस्तुओं को दिखाएं"
+
+msgid "Show raw"
+msgstr ""
+
+msgid "Show summary"
+msgstr ""
 
 msgid "Show Supplier IDs"
 msgstr "आपूर्तिकर्ता आईडी दिखाएं"

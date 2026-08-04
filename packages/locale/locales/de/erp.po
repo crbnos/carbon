@@ -7589,6 +7589,9 @@ msgstr "Problemtitel"
 msgid "Issue Trend"
 msgstr "Problemtrend"
 
+msgid "Issue type"
+msgstr ""
+
 msgid "Issue Type"
 msgstr "Problemtyp"
 
@@ -12875,6 +12878,12 @@ msgstr "Zeige eine Bestandsnummer an, der Werkstatt und Büro beide vertrauen"
 
 msgid "Show parent items"
 msgstr "Übergeordnete Elemente anzeigen"
+
+msgid "Show raw"
+msgstr ""
+
+msgid "Show summary"
+msgstr ""
 
 msgid "Show Supplier IDs"
 msgstr "Lieferanten-IDs anzeigen"

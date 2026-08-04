@@ -263,6 +263,11 @@ export const WORKFLOW_ENTITY_REGISTRY = {
     label: "Job operation",
     permission: "production"
   }),
+  nonConformanceType: entity({
+    table: "nonConformanceType",
+    label: "Issue type",
+    permission: "quality"
+  }),
   salesInvoice: entity({
     table: "salesInvoice",
     label: "Sales invoice",

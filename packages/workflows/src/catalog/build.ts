@@ -69,6 +69,12 @@ export interface BuiltActionInput {
   required: boolean;
   choices?: readonly string[];
   template?: boolean;
+  /** Table a non-entity foreign key points at, so the update executor can scope the
+   * value to the company. Resolved here so a dropped fk note fails CI rather than
+   * silently disabling that check at run time. */
+  scopeTable?: string;
+  /** The column rejects null, so an input resolving to nothing is skipped, not written. */
+  notNull?: boolean;
 }
 
 export interface BuiltAction {
@@ -192,6 +198,11 @@ function propertyType(
   return primitiveFor(property.type);
 }
 
+/** The table a column's foreign key points at, whether or not it is a registry entity. */
+function fkTableOf(property: SwaggerProperty): string | undefined {
+  return FK_TARGET.exec(property.description ?? "")?.[1];
+}
+
 /** The registry entity a column resolves to, if any. */
 function refFor(
   property: SwaggerProperty,
@@ -199,8 +210,24 @@ function refFor(
   byTable: Map<string, string>
 ): string | undefined {
   if (declaredRef !== undefined) return declaredRef;
-  const fkTable = FK_TARGET.exec(property.description ?? "")?.[1];
+  const fkTable = fkTableOf(property);
   return fkTable === undefined ? undefined : byTable.get(fkTable);
+}
+
+/** A foreign key the update executor can scope to the company: one whose target is a
+ * real table carrying its own `companyId`, and which is not already a registry entity
+ * (those are scoped through the entity path). */
+function scopeTableFor(
+  schema: SwaggerSchema,
+  property: SwaggerProperty,
+  entityRef: string | undefined
+): string | undefined {
+  if (entityRef !== undefined) return undefined;
+  const target = fkTableOf(property);
+  if (target === undefined) return undefined;
+  return schema.definitions[target]?.properties?.companyId === undefined
+    ? undefined
+    : target;
 }
 
 /** Collects every problem rather than throwing on the first. */
@@ -448,12 +475,19 @@ export function buildCatalog(
       const inputs: Record<string, BuiltActionInput> = {
         [name]: { type: t.entity(name), required: true }
       };
+      const notNullColumns = new Set(
+        schema.definitions[entry.table]?.required ?? []
+      );
       for (const [column, spec] of writable) {
         const property = definition.properties[column];
         if (property === undefined) continue;
+        const entityRef = refFor(property, spec?.ref, byTable);
+        const scopeTable = scopeTableFor(schema, property, entityRef);
         inputs[column] = {
-          type: propertyType(property, refFor(property, spec?.ref, byTable)),
-          required: false
+          type: propertyType(property, entityRef),
+          required: false,
+          ...(scopeTable === undefined ? {} : { scopeTable }),
+          ...(notNullColumns.has(column) ? { notNull: true } : {})
         };
         const enumValues = enumFor(schema, entry.table, column);
         if (enumValues !== undefined && enumValues.length > 0) {

@@ -1064,7 +1064,7 @@ export const WORKFLOW_ENTITIES: Record<string, Record<string, ValueType>> = {
     nonConformanceWorkflowId: { kind: "primitive", of: "string" },
     content: { kind: "primitive", of: "string" },
     locationId: { kind: "entity", of: "location" },
-    nonConformanceTypeId: { kind: "primitive", of: "string" },
+    nonConformanceTypeId: { kind: "entity", of: "nonConformanceType" },
     openDate: { kind: "primitive", of: "date" },
     dueDate: { kind: "primitive", of: "date" },
     closeDate: { kind: "primitive", of: "date" },
@@ -1074,6 +1074,12 @@ export const WORKFLOW_ENTITIES: Record<string, Record<string, ValueType>> = {
     createdAt: { kind: "primitive", of: "date" },
     createdBy: { kind: "entity", of: "user" },
     requiredActionIds: { kind: "list", of: { kind: "primitive", of: "string" } }
+  },
+  nonConformanceType: {
+    id: { kind: "primitive", of: "string" },
+    name: { kind: "primitive", of: "string" },
+    createdAt: { kind: "primitive", of: "date" },
+    createdBy: { kind: "entity", of: "user" }
   },
   purchaseInvoice: {
     id: { kind: "primitive", of: "string" },

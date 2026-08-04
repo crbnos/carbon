@@ -91,18 +91,55 @@ for (const problem of validateCatalogInputs(
   fail(problem);
 }
 
-const toolNames = new Set<string>(
+type ToolMeta = {
+  name: string;
+  injectAuth?: string[];
+  schema?: { required?: string[]; properties?: Record<string, unknown> };
+};
+
+const tools = new Map<string, ToolMeta>(
   (
     JSON.parse(fs.readFileSync(TOOL_METADATA_FILE, "utf8")) as {
-      tools: { name: string }[];
+      tools: ToolMeta[];
     }
-  ).tools.map((tool) => tool.name)
+  ).tools.map((tool) => [tool.name, tool])
 );
+
+/** A nested `{ input: {...} }` schema describes the wrapper, not the fields the
+ * action supplies; unwrap so the required list is comparable. */
+function requiredParamsOf(tool: ToolMeta): string[] {
+  const outer = tool.schema;
+  const inner = outer?.properties?.input as ToolMeta["schema"] | undefined;
+  return (inner?.required ?? outer?.required ?? []) as string[];
+}
+
 for (const [id, declaration] of Object.entries(WORKFLOW_ACTIONS)) {
   const call = (declaration as { call?: string }).call;
-  if (call !== undefined && !toolNames.has(call)) {
+  if (call === undefined) continue;
+  const tool = tools.get(call);
+  if (tool === undefined) {
     fail(
       `Action "${id}" calls "${call}", which is not a tool in tool-metadata.json. Run pnpm run generate:mcp.`
+    );
+    continue;
+  }
+
+  // Only inputs the builder forces are guaranteed to arrive, plus what the dispatcher
+  // stamps. Counting optional ones would repeat the shape of the bug this exists to catch.
+  const inputs = (declaration as { inputs: Record<string, { required: boolean }> })
+    .inputs;
+  const supplied = new Set([
+    ...Object.entries(inputs)
+      .filter(([, spec]) => spec.required)
+      .map(([name]) => name),
+    ...(tool.injectAuth ?? [])
+  ]);
+  const missing = requiredParamsOf(tool).filter((p) => !supplied.has(p));
+  if (missing.length > 0) {
+    fail(
+      `Action "${id}" calls "${call}", which requires ${missing
+        .map((p) => `"${p}"`)
+        .join(", ")} — not declared as an input and not injected.`
     );
   }
 }

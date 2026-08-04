@@ -29,6 +29,10 @@ export interface CatalogInput {
   choices?: readonly string[];
   /** Prose that may interleave text and variables; the builder renders a chip editor. */
   template?: boolean;
+  /** Table a non-entity foreign key points at, so the write can be scoped to the company. */
+  scopeTable?: string;
+  /** The column rejects null; an input resolving to nothing is skipped, not written. */
+  notNull?: boolean;
 }
 
 export interface CatalogAction {

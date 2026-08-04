@@ -1,4 +1,4 @@
-import { insertId, insertRow } from "../sql.ts";
+import { insertId, insertRow, one } from "../sql.ts";
 import type { Ctx } from "../types.ts";
 import {
   buildSeedWorkflows,
@@ -69,7 +69,17 @@ export async function runTier11(ctx: Ctx): Promise<void> {
   const { userId } = ctx;
   const allEventIds: string[] = [];
 
-  for (const workflow of buildSeedWorkflows(userId)) {
+  // The issue-creating workflow names a type, which is NOT NULL on the table.
+  const issueType = await one<{ id: string }>(
+    ctx.client,
+    `SELECT id FROM "nonConformanceType" WHERE "companyId" = $1 LIMIT 1`,
+    [ctx.companyId]
+  );
+
+  for (const workflow of buildSeedWorkflows({
+    ownerId: userId,
+    issueTypeId: issueType.id
+  })) {
     ctx.log(`workflow — ${workflow.name}${workflow.active ? "" : " (off)"}`);
 
     const workflowId = await insertId(ctx, "workflow", {

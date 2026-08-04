@@ -16,6 +16,7 @@ export const WORKFLOW_FIELD_HELP: Record<string, TermId> = {
   "action.job.update.input.dueDate": "job-due-date",
   "action.job.update.input.job": "job",
   "action.job.update.input.priority": "job-priority",
+  "action.nonConformance.create.input.nonConformanceTypeId": "issue-issue-type",
   "action.nonConformance.update.input.assignee": "assignee",
   "action.nonConformance.update.input.nonConformance": "nonconformance",
   "action.nonConformance.update.input.nonConformanceTypeId": "issue-issue-type",

@@ -7589,6 +7589,9 @@ msgstr "이슈 제목"
 msgid "Issue Trend"
 msgstr "이슈 추이"
 
+msgid "Issue type"
+msgstr ""
+
 msgid "Issue Type"
 msgstr "이슈 유형"
 
@@ -12875,6 +12878,12 @@ msgstr "현장과 사무실이 모두 신뢰할 수 있는 하나의 재고 수�
 
 msgid "Show parent items"
 msgstr "상위 품목 표시"
+
+msgid "Show raw"
+msgstr ""
+
+msgid "Show summary"
+msgstr ""
 
 msgid "Show Supplier IDs"
 msgstr "공급업체 ID 표시"

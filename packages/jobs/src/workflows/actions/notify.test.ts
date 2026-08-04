@@ -10,7 +10,6 @@ vi.mock("@carbon/lib/trigger", () => ({ trigger: triggerMock }));
 function run(inputs: Record<string, RuntimeValue>) {
   return runNotifyAction({
     companyId: "cmp_1",
-    ownerId: "usr_owner",
     runId: "run_1",
     inputs
   });
@@ -37,11 +36,19 @@ describe("runNotifyAction", () => {
       "notify",
       expect.objectContaining({
         event: NotificationEvent.Workflow,
-        from: "usr_owner",
         recipient: { type: "group", groupIds: ["usr_1"] },
         title: "Order held"
       })
     );
+  });
+
+  // The notify job drops the sender from the recipients so nobody hears about their own
+  // action. Naming the owner here made "notify me when X happens" — the common case —
+  // deliver nothing while the step still reported success.
+  it("names no sender, so the owner can be notified by their own workflow", async () => {
+    await run({ user: entityValue("user", "usr_owner"), subject });
+
+    expect(triggerMock.mock.calls[0]?.[1]).not.toHaveProperty("from");
   });
 
   it("sends one event carrying both ids when a user and a role are given", async () => {

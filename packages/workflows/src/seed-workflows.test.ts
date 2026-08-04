@@ -9,7 +9,10 @@ import { validateDefinition } from "./definition/validate";
 // import this package, but this package already dev-depends on it.
 
 const catalog = createWorkflowCatalog();
-const workflows = buildSeedWorkflows("usr_seed_owner");
+const workflows = buildSeedWorkflows({
+  ownerId: "usr_seed_owner",
+  issueTypeId: "nct_seed_type"
+});
 
 describe("dev seed workflows", () => {
   it("ships exactly one active workflow", () => {

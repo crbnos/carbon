@@ -56,24 +56,35 @@ export const WORKFLOW_ACTIONS = {
     },
     outputs: { record: t.entity("job") },
     batchable: true,
-    call: "production_upsertJob"
+    call: "production_insertJob"
   }),
   "nonConformance.create": action({
     label: "Create an issue",
     permission: { module: "quality", action: "create" },
+    // `locationId`, `nonConformanceTypeId` and `source` are NOT NULL on the table with no
+    // default, so they are required here however optional they look on the issue form.
     inputs: {
       name: { type: t.string, required: true, label: "title" },
       description: { type: t.string, required: false, label: "description" },
-      priority: { type: t.string, required: false, label: "priority" },
+      priority: { type: t.string, required: true, label: "priority" },
+      source: { type: t.string, required: true, label: "source" },
       locationId: {
         type: t.entity("location"),
-        required: false,
+        required: true,
         label: "location"
-      }
+      },
+      nonConformanceTypeId: {
+        type: t.entity("nonConformanceType"),
+        required: true,
+        label: "type",
+        help: "issue-issue-type"
+      },
+      // Optional so a customer can backdate; `insertIssue` stamps today otherwise.
+      openDate: { type: t.date, required: false, label: "open date" }
     },
     outputs: { record: t.entity("nonConformance") },
     batchable: true,
-    call: "quality_upsertIssue"
+    call: "quality_insertIssue"
   }),
   "purchaseOrder.create": action({
     label: "Create a purchase order",
@@ -94,7 +105,7 @@ export const WORKFLOW_ACTIONS = {
     },
     outputs: { record: t.entity("purchaseOrder") },
     batchable: true,
-    call: "purchasing_upsertPurchaseOrder"
+    call: "purchasing_insertPurchaseOrder"
   }),
   "salesOrder.create": action({
     label: "Create a sales order",
@@ -115,7 +126,7 @@ export const WORKFLOW_ACTIONS = {
     },
     outputs: { record: t.entity("salesOrder") },
     batchable: true,
-    call: "sales_upsertSalesOrder"
+    call: "sales_insertSalesOrder"
   }),
   notify: action({
     label: "Notify someone",

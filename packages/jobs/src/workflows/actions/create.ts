@@ -4,7 +4,7 @@ import {
   type RuntimeValue
 } from "@carbon/workflows";
 import type { DispatchContext, WorkflowDispatch } from "./dispatcher";
-import { toPlainValue } from "./update";
+import { toPlainValue } from "./values";
 
 const UNREADABLE = "The record was created but could not be read back.";
 const FAILED = "That record could not be created.";
@@ -47,7 +47,9 @@ export async function runCreateAction(params: {
 
   const args: Record<string, unknown> = {};
   for (const [name, value] of Object.entries(inputs)) {
-    args[name] = toPlainValue(value);
+    const plain = toPlainValue(value);
+    if (plain === null || plain === undefined) continue;
+    args[name] = plain;
   }
 
   // companyId, createdBy and updatedBy are stamped by the dispatcher.

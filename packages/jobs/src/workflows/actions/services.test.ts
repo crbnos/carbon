@@ -58,7 +58,6 @@ describe("runAction routing", () => {
     expect(runNotifyAction).toHaveBeenCalledWith(
       expect.objectContaining({
         companyId: "co1",
-        ownerId: "u1",
         runId: "run1"
       })
     );
@@ -90,7 +89,7 @@ describe("runAction routing", () => {
     await services().runAction("job.create", {});
     expect(runCreateAction).toHaveBeenCalledWith(
       expect.objectContaining({
-        call: "production_upsertJob",
+        call: "production_insertJob",
         entity: "job",
         dispatch,
         context: {

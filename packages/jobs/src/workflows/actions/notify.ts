@@ -18,11 +18,10 @@ function text(value: RuntimeValue | undefined): string | undefined {
 /** `subject` and `message` arrive already rendered, so nothing here reads a template. */
 export async function runNotifyAction(params: {
   companyId: string;
-  ownerId: string;
   runId: string;
   inputs: Record<string, RuntimeValue>;
 }): Promise<ActionOutcome> {
-  const { companyId, inputs, ownerId, runId } = params;
+  const { companyId, inputs, runId } = params;
 
   // A role IS a group, and every user has an identity group whose id is their user
   // id — so one group recipient covers both inputs without branching.
@@ -47,7 +46,9 @@ export async function runNotifyAction(params: {
       ? { documentType: aboutType as ApprovalDocumentType }
       : {}),
     event: NotificationEvent.Workflow,
-    from: ownerId,
+    // No `from`: the notify job drops the sender from the recipients, and a workflow is
+    // not the owner acting — it merely runs as them. Naming them here silently delivered
+    // nothing for "notify me when X happens" while still reporting success.
     recipient: { type: "group", groupIds },
     title: text(inputs.subject)
   });

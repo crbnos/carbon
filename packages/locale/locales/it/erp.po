@@ -7589,6 +7589,9 @@ msgstr "Titolo del problema"
 msgid "Issue Trend"
 msgstr "Tendenza dei problemi"
 
+msgid "Issue type"
+msgstr ""
+
 msgid "Issue Type"
 msgstr "Tipo di Problema"
 
@@ -12875,6 +12878,12 @@ msgstr "Mostra un numero di inventario unico in cui sia il reparto che l'ufficio
 
 msgid "Show parent items"
 msgstr "Mostra elementi padre"
+
+msgid "Show raw"
+msgstr ""
+
+msgid "Show summary"
+msgstr ""
 
 msgid "Show Supplier IDs"
 msgstr "Mostra ID Fornitore"

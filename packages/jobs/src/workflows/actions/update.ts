@@ -1,5 +1,4 @@
 import type { Database } from "@carbon/database";
-import swaggerDocsSchema from "@carbon/database/swagger-docs-schema";
 import {
   type ActionOutcome,
   type CatalogAction,
@@ -8,22 +7,7 @@ import {
   type RuntimeValue
 } from "@carbon/workflows";
 import type { SupabaseClient } from "@supabase/supabase-js";
-
-/** The slice of the generated swagger document this file reads. */
-interface ColumnSchema {
-  enum?: readonly string[];
-}
-
-interface SwaggerDefinitions {
-  definitions: Record<
-    string,
-    { properties?: Record<string, ColumnSchema | undefined> } | undefined
-  >;
-}
-
-// Cast rather than annotate: structurally checking a 180k-line literal is not free.
-const DEFINITIONS = (swaggerDocsSchema as unknown as SwaggerDefinitions)
-  .definitions;
+import { toPlainValue } from "./values";
 
 /** `user` carries no companyId — membership lives on `userToCompany`. */
 const MEMBERSHIP: Record<
@@ -33,27 +17,17 @@ const MEMBERSHIP: Record<
   user: { table: "userToCompany", column: "userId" }
 };
 
-/** A RuntimeValue as the plain value a column or a service function expects.
- * Exported so the create action converts identically. */
-export function toPlainValue(value: RuntimeValue): unknown {
-  if (value.kind === "entity") return value.id;
-  if (value.kind === "list") return value.items.map(toPlainValue);
-  // A date primitive already carries its ISO string; see runtime `fromColumn`.
-  return value.value;
-}
-
 /** Reads through the owner's client, so RLS-refused and absent are one answer. */
 async function existsInCompany(params: {
   client: SupabaseClient;
-  entity: string;
+  table: string;
   id: string;
   companyId: string;
 }): Promise<boolean> {
-  const { client, entity, id, companyId } = params;
+  const { client, id, companyId } = params;
 
-  const membership = MEMBERSHIP[entity];
-  const table = membership?.table ?? REGISTRY_ENTRIES[entity]?.table;
-  if (table === undefined) return false;
+  const membership = MEMBERSHIP[params.table];
+  const table = membership?.table ?? params.table;
   const column = membership?.column ?? "id";
 
   const { data, error } = await client
@@ -92,24 +66,28 @@ export async function runUpdateAction(params: {
 
   const found = await existsInCompany({
     client,
-    entity,
+    table,
     id: target.id,
     companyId
   });
   if (!found) return { ok: false, error: `That ${entity} could not be read.` };
 
-  const properties = DEFINITIONS[table]?.properties ?? {};
   const fields: Record<string, unknown> = {};
 
   for (const [column, value] of Object.entries(inputs)) {
     if (column === entity) continue;
+    const spec = action.inputs[column];
     const raw = toPlainValue(value);
 
-    const allowed = properties[column]?.enum;
+    if (raw === undefined) continue;
+    // Blanking a column the customer can legitimately clear is a real edit; blanking one
+    // the table rejects is not, so an unresolved value there means "leave it alone".
+    if (raw === null && spec?.notNull) continue;
+
     if (
       raw !== null &&
-      allowed !== undefined &&
-      !allowed.includes(String(raw))
+      spec?.choices !== undefined &&
+      !spec.choices.includes(String(raw))
     ) {
       return { ok: false, error: `"${String(raw)}" is not a valid ${column}.` };
     }
@@ -120,12 +98,17 @@ export async function runUpdateAction(params: {
   // The tenancy guarantee: a reference must belong to this company, whatever
   // supplied it. Skipping it would let a workflow point at another tenant's row.
   for (const [column, raw] of Object.entries(fields)) {
-    const type = action.inputs[column]?.type;
-    if (type === undefined || type.kind !== "entity" || raw === null) continue;
+    if (raw === null) continue;
+    const spec = action.inputs[column];
+    const scope =
+      spec?.type.kind === "entity"
+        ? REGISTRY_ENTRIES[spec.type.of]?.table
+        : spec?.scopeTable;
+    if (scope === undefined) continue;
 
     const belongs = await existsInCompany({
       client,
-      entity: type.of,
+      table: scope,
       id: String(raw),
       companyId
     });

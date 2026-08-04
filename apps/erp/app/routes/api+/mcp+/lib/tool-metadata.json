@@ -1,5 +1,5 @@
 {
-  "generated": "2026-08-04T11:02:54.100Z",
+  "generated": "2026-08-04T13:46:30.258Z",
   "totalTools": 1405,
   "modules": 15,
   "tools": [
@@ -29295,8 +29295,7 @@
           "priority",
           "source",
           "locationId",
-          "nonConformanceTypeId",
-          "openDate"
+          "nonConformanceTypeId"
         ]
       }
     },

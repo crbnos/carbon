@@ -47,7 +47,7 @@ export function createWorkflowServices(params: {
     inputs: Record<string, RuntimeValue>
   ): Promise<ActionOutcome> {
     if (actionId === "notify") {
-      return runNotifyAction({ companyId, ownerId, runId, inputs });
+      return runNotifyAction({ companyId, runId, inputs });
     }
     if (actionId === "webhook") {
       return runWebhookAction({ client, companyId, workflowId, inputs });

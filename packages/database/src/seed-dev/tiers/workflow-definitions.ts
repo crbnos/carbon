@@ -75,6 +75,7 @@ const literal = (type: unknown, value: unknown) => ({
 const str = { kind: "primitive", of: "string" };
 const num = { kind: "primitive", of: "number" };
 const user = { kind: "entity", of: "user" };
+const issueType = { kind: "entity", of: "nonConformanceType" };
 
 function edge(
   id: string,
@@ -85,7 +86,11 @@ function edge(
   return { id, source, target, sourceHandle, targetHandle: "in" };
 }
 
-export function buildSeedWorkflows(ownerId: string): SeedWorkflow[] {
+export function buildSeedWorkflows(refs: {
+  ownerId: string;
+  issueTypeId: string;
+}): SeedWorkflow[] {
+  const { ownerId, issueTypeId } = refs;
   return [
     {
       name: "Assign new sales orders",
@@ -477,7 +482,9 @@ export function buildSeedWorkflows(ownerId: string): SeedWorkflow[] {
                 text(" to Voided. Record what happened and who was told.")
               ]),
               priority: literal(str, "Medium"),
-              locationId: ref("trigger_shipment", "record", ["locationId"])
+              source: literal(str, "Internal"),
+              locationId: ref("trigger_shipment", "record", ["locationId"]),
+              nonConformanceTypeId: literal(issueType, issueTypeId)
             },
             batch: false
           }

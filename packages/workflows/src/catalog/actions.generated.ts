@@ -13,7 +13,8 @@ export const WORKFLOW_ACTION_CATALOG: Record<string, BuiltAction> = {
       assignee: { type: { kind: "entity", of: "user" }, required: false },
       customerTypeId: {
         type: { kind: "primitive", of: "string" },
-        required: false
+        required: false,
+        scopeTable: "customerType"
       }
     },
     outputs: { record: { kind: "entity", of: "customer" } },
@@ -24,7 +25,11 @@ export const WORKFLOW_ACTION_CATALOG: Record<string, BuiltAction> = {
   "item.update": {
     inputs: {
       item: { type: { kind: "entity", of: "item" }, required: true },
-      name: { type: { kind: "primitive", of: "string" }, required: false },
+      name: {
+        type: { kind: "primitive", of: "string" },
+        required: false,
+        notNull: true
+      },
       assignee: { type: { kind: "entity", of: "user" }, required: false }
     },
     outputs: { record: { kind: "entity", of: "item" } },
@@ -45,7 +50,7 @@ export const WORKFLOW_ACTION_CATALOG: Record<string, BuiltAction> = {
     outputs: { record: { kind: "entity", of: "job" } },
     batchable: true,
     permission: { module: "production", action: "create" },
-    call: "production_upsertJob"
+    call: "production_insertJob"
   },
   "job.update": {
     inputs: {
@@ -53,10 +58,15 @@ export const WORKFLOW_ACTION_CATALOG: Record<string, BuiltAction> = {
       dueDate: { type: { kind: "primitive", of: "date" }, required: false },
       startDate: { type: { kind: "primitive", of: "date" }, required: false },
       assignee: { type: { kind: "entity", of: "user" }, required: false },
-      priority: { type: { kind: "primitive", of: "number" }, required: false },
+      priority: {
+        type: { kind: "primitive", of: "number" },
+        required: false,
+        notNull: true
+      },
       deadlineType: {
         type: { kind: "primitive", of: "string" },
         required: false,
+        notNull: true,
         choices: ["No Deadline", "ASAP", "Soft Deadline", "Hard Deadline"]
       }
     },
@@ -74,15 +84,25 @@ export const WORKFLOW_ACTION_CATALOG: Record<string, BuiltAction> = {
       },
       priority: {
         type: { kind: "primitive", of: "string" },
-        required: false,
+        required: true,
         choices: ["Low", "Medium", "High", "Critical"]
       },
-      locationId: { type: { kind: "entity", of: "location" }, required: false }
+      source: {
+        type: { kind: "primitive", of: "string" },
+        required: true,
+        choices: ["Internal", "External"]
+      },
+      locationId: { type: { kind: "entity", of: "location" }, required: true },
+      nonConformanceTypeId: {
+        type: { kind: "entity", of: "nonConformanceType" },
+        required: true
+      },
+      openDate: { type: { kind: "primitive", of: "date" }, required: false }
     },
     outputs: { record: { kind: "entity", of: "nonConformance" } },
     batchable: true,
     permission: { module: "quality", action: "create" },
-    call: "quality_upsertIssue"
+    call: "quality_insertIssue"
   },
   "nonConformance.update": {
     inputs: {
@@ -98,8 +118,9 @@ export const WORKFLOW_ACTION_CATALOG: Record<string, BuiltAction> = {
       },
       dueDate: { type: { kind: "primitive", of: "date" }, required: false },
       nonConformanceTypeId: {
-        type: { kind: "primitive", of: "string" },
-        required: false
+        type: { kind: "entity", of: "nonConformanceType" },
+        required: false,
+        notNull: true
       }
     },
     outputs: { record: { kind: "entity", of: "nonConformance" } },
@@ -141,7 +162,7 @@ export const WORKFLOW_ACTION_CATALOG: Record<string, BuiltAction> = {
     outputs: { record: { kind: "entity", of: "purchaseOrder" } },
     batchable: true,
     permission: { module: "purchasing", action: "create" },
-    call: "purchasing_upsertPurchaseOrder"
+    call: "purchasing_insertPurchaseOrder"
   },
   "purchaseOrder.update": {
     inputs: {
@@ -204,7 +225,7 @@ export const WORKFLOW_ACTION_CATALOG: Record<string, BuiltAction> = {
     outputs: { record: { kind: "entity", of: "salesOrder" } },
     batchable: true,
     permission: { module: "sales", action: "create" },
-    call: "sales_upsertSalesOrder"
+    call: "sales_insertSalesOrder"
   },
   "salesOrder.update": {
     inputs: {
@@ -235,7 +256,8 @@ export const WORKFLOW_ACTION_CATALOG: Record<string, BuiltAction> = {
       assignee: { type: { kind: "entity", of: "user" }, required: false },
       shippingMethodId: {
         type: { kind: "primitive", of: "string" },
-        required: false
+        required: false,
+        scopeTable: "shippingMethod"
       }
     },
     outputs: { record: { kind: "entity", of: "shipment" } },
@@ -253,7 +275,8 @@ export const WORKFLOW_ACTION_CATALOG: Record<string, BuiltAction> = {
       assignee: { type: { kind: "entity", of: "user" }, required: false },
       supplierTypeId: {
         type: { kind: "primitive", of: "string" },
-        required: false
+        required: false,
+        scopeTable: "supplierType"
       }
     },
     outputs: { record: { kind: "entity", of: "supplier" } },

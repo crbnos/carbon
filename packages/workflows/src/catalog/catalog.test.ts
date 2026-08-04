@@ -119,7 +119,7 @@ describe("createWorkflowCatalog — WorkflowCatalog conformance", () => {
       ["user", "role"]
     ]);
     expect(getActionRoute("job.create")).toEqual({
-      call: "production_upsertJob"
+      call: "production_insertJob"
     });
     expect(getActionRoute("purchaseOrder.update")).toEqual({
       update: { entity: "purchaseOrder" }

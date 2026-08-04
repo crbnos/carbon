@@ -7589,6 +7589,9 @@ msgstr "課題のタイトル"
 msgid "Issue Trend"
 msgstr "問題トレンド"
 
+msgid "Issue type"
+msgstr ""
+
 msgid "Issue Type"
 msgstr "問題タイプ"
 
@@ -12875,6 +12878,12 @@ msgstr "床と事務所の両方が信頼できる1つの在庫番号を表示�
 
 msgid "Show parent items"
 msgstr "親アイテムを表示"
+
+msgid "Show raw"
+msgstr ""
+
+msgid "Show summary"
+msgstr ""
 
 msgid "Show Supplier IDs"
 msgstr "仕入先IDを表示"

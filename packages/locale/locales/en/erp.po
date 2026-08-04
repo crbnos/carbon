@@ -7589,6 +7589,9 @@ msgstr "Issue title"
 msgid "Issue Trend"
 msgstr "Issue Trend"
 
+msgid "Issue type"
+msgstr "Issue type"
+
 msgid "Issue Type"
 msgstr "Issue Type"
 
@@ -12875,6 +12878,12 @@ msgstr "Show one inventory number the floor and office both trust"
 
 msgid "Show parent items"
 msgstr "Show parent items"
+
+msgid "Show raw"
+msgstr "Show raw"
+
+msgid "Show summary"
+msgstr "Show summary"
 
 msgid "Show Supplier IDs"
 msgstr "Show Supplier IDs"

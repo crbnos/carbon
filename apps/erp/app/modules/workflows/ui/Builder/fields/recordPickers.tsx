@@ -1,6 +1,8 @@
 import { CreatableCombobox } from "@carbon/react";
 import type { ComponentType } from "react";
 import { useMemo } from "react";
+import { Enumerable } from "~/components/Enumerable";
+import { useIssueTypes } from "~/components/Form/IssueType";
 import { useLocations } from "~/components/Form/Location";
 import { UserSelect } from "~/components/Selectors";
 import type { IndividualOrGroup } from "~/components/Selectors/UserSelect/types";
@@ -95,6 +97,29 @@ const LocationPicker = ({ value, onChange, isDisabled }: RecordPickerProps) => {
   );
 };
 
+// ── Issue type ───────────────────────────────────────────────────────────────
+
+const IssueTypePicker = ({
+  value,
+  onChange,
+  isDisabled
+}: RecordPickerProps) => {
+  const options = useIssueTypes();
+  return (
+    <CreatableCombobox
+      options={options.map((o) => ({
+        value: o.value,
+        label: <Enumerable value={o.label} />
+      }))}
+      value={value}
+      isClearable
+      isReadOnly={isDisabled}
+      placeholder="Select issue type…"
+      onChange={(id) => onChange(id || undefined)}
+    />
+  );
+};
+
 // ── User (employees only, single-select) ─────────────────────────────────────
 
 function handleUserChange(
@@ -142,6 +167,7 @@ export const RECORD_PICKERS: Partial<
   supplier: SupplierPicker,
   item: ItemPicker,
   location: LocationPicker,
+  nonConformanceType: IssueTypePicker,
   user: UserPicker,
   group: GroupPicker
 };

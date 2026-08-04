@@ -7589,6 +7589,9 @@ msgstr "Sorun başlığı"
 msgid "Issue Trend"
 msgstr "Sorun Eğilimi"
 
+msgid "Issue type"
+msgstr ""
+
 msgid "Issue Type"
 msgstr "Sorun Türü"
 
@@ -12875,6 +12878,12 @@ msgstr "Tüm tarafların güvendiği tek bir envanter numarası göster"
 
 msgid "Show parent items"
 msgstr "Üst öğeleri göster"
+
+msgid "Show raw"
+msgstr ""
+
+msgid "Show summary"
+msgstr ""
 
 msgid "Show Supplier IDs"
 msgstr "Tedarikçi Kimliklerini Göster"

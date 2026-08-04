@@ -7589,6 +7589,9 @@ msgstr "Tytuł problemu"
 msgid "Issue Trend"
 msgstr "Trend Problemów"
 
+msgid "Issue type"
+msgstr ""
+
 msgid "Issue Type"
 msgstr "Typ problemu"
 
@@ -12875,6 +12878,12 @@ msgstr "Wyświetl jeden numer inwentaryzacji, któremu ufają zarówno hala, jak
 
 msgid "Show parent items"
 msgstr "Pokaż elementy nadrzędne"
+
+msgid "Show raw"
+msgstr ""
+
+msgid "Show summary"
+msgstr ""
 
 msgid "Show Supplier IDs"
 msgstr "Pokaż identyfikatory dostawców"

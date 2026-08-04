@@ -7589,6 +7589,9 @@ msgstr "问题标题"
 msgid "Issue Trend"
 msgstr "问题趋势"
 
+msgid "Issue type"
+msgstr ""
+
 msgid "Issue Type"
 msgstr "问题类型"
 
@@ -12875,6 +12878,12 @@ msgstr "显示一个车间和办公室都信任的库存数字"
 
 msgid "Show parent items"
 msgstr "显示父项"
+
+msgid "Show raw"
+msgstr ""
+
+msgid "Show summary"
+msgstr ""
 
 msgid "Show Supplier IDs"
 msgstr "显示供应商ID"
