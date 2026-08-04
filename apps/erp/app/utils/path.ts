@@ -278,6 +278,8 @@ export const path = {
         generatePath(
           `${api}/users/select/search?q=${encodeURIComponent(q)}&type=${type ?? ""}`
         ),
+      webhookEdi: (companyId: string) =>
+        generatePath(`${api}/webhook/edi/${companyId}`),
       webhookStripe: `${api}/webhook/stripe`,
       webhookTables: `${api}/webhook/tables`,
       workCenters: `${api}/resources/work-centers`,
@@ -495,6 +497,7 @@ export const path = {
       generatePath(`${x}/customer/${id}/contacts`),
     customerDetails: (id: string) =>
       generatePath(`${x}/customer/${id}/details`),
+    customerEdi: (id: string) => generatePath(`${x}/customer/${id}/edi`),
     customerLocation: (customerId: string, id: string) =>
       generatePath(`${x}/customer/${customerId}/locations/${id}`),
     customerLocations: (id: string) =>
@@ -862,6 +865,8 @@ export const path = {
     duplicateMethodOperationStep: (id: string) =>
       generatePath(`${x}/items/methods/operation/step/duplicate/${id}`),
     duplicatePriceList: `${x}/sales/price-list/duplicate`,
+    ediDocument: (id: string) => generatePath(`${x}/sales/edi/${id}`),
+    ediDocuments: `${x}/sales/edi`,
     editMaintenanceDispatchEvent: (dispatchId: string, eventId: string) =>
       generatePath(`${x}/maintenance/${dispatchId}/event/${eventId}`),
     employeeAbility: (abilityId: string, id: string) =>
