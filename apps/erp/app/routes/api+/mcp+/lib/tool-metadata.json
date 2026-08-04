@@ -1,6 +1,6 @@
 {
-  "generated": "2026-08-04T13:52:01.098Z",
-  "totalTools": 1411,
+  "generated": "2026-08-04T14:48:40.596Z",
+  "totalTools": 1412,
   "modules": 15,
   "tools": [
     {
@@ -41333,6 +41333,37 @@
         },
         "required": [
           "incompletePickingListPolicy"
+        ]
+      }
+    },
+    {
+      "name": "settings_updateReturnPickedMaterialTimingSetting",
+      "module": "settings",
+      "classification": "WRITE",
+      "description": "update return picked material timing setting",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "returnPickedMaterialTiming"
+      ],
+      "injectAuth": [
+        "companyId",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "returnPickedMaterialTiming": {
+            "type": "string",
+            "enum": [
+              "job",
+              "operation"
+            ]
+          }
+        },
+        "required": [
+          "returnPickedMaterialTiming"
         ]
       }
     },

@@ -1657,8 +1657,14 @@ msgstr "이 단위를 라인사이드 자재용으로 작업장에 배정하여 
 msgid "At each gate"
 msgstr "각 게이트마다"
 
+msgid "At job completion"
+msgstr "작업 완료 시"
+
 msgid "At least one condition must match"
 msgstr "하나 이상의 조건이 일치해야 합니다"
+
+msgid "At operation completion"
+msgstr "작업 완료 시"
 
 msgid "Attach File"
 msgstr "파일 첨부"
@@ -3711,6 +3717,9 @@ msgstr "작업자가 이미 만료된 배치 또는 일련번호를 출고하려
 msgid "Decide what happens when an operator presses Finish on the shop floor with material still unpicked."
 msgstr "작업자가 아직 선택되지 않은 재료가 있는 상태에서 현장에서 완료를 누를 때 발생할 사항을 결정하십시오."
 
+msgid "Decide when material picked to a work center but not consumed flows back to the warehouse."
+msgstr "작업장으로 이송했으나 소비하지 않은 재료가 창고로 반환되는 시기를 결정합니다."
+
 msgid "Decimal Places"
 msgstr "소수 자릿수"
 
@@ -4557,6 +4566,9 @@ msgstr "예: 처음 3~4주"
 
 msgid "e.g. Zebra 2x1"
 msgstr "예: Zebra 2x1"
+
+msgid "Each operation's unused material returns as soon as the operation is done."
+msgstr "각 작업의 미사용 재료는 해당 작업이 완료되는 즉시 반환됩니다."
 
 msgid "Each physical unit gets its own tracked entity and unique number — one entity, one unit."
 msgstr "각 실물 유닛은 고유한 추적 개체와 번호를 부여받습니다 — 하나의 개체, 하나의 유닛."
@@ -7213,6 +7225,9 @@ msgstr "왼쪽 품목"
 msgid "Leftover Parts Detected"
 msgstr "잔여 부품 발견됨"
 
+msgid "Leftover staged material returns when the whole job completes."
+msgstr "남은 스테이징 재료는 전체 작업이 완료될 때 반환됩니다."
+
 msgid "Less manual work"
 msgstr "수작업 감소"
 
@@ -8567,7 +8582,7 @@ msgid "No matches. Type to create one."
 msgstr "일치하는 항목 없음. 입력하여 새로 만드세요."
 
 msgid "No matching bins"
-msgstr ""
+msgstr "일치하는 빈이 없습니다"
 
 msgid "No new notifications"
 msgstr "새 알림이 없습니다"
@@ -8796,7 +8811,7 @@ msgstr "메모(선택)"
 
 #. placeholder {0}: search.trim()
 msgid "Nothing at this location matches \"{0}\"."
-msgstr ""
+msgstr "이 위치에서 \"{0}\"과(와) 일치하는 항목이 없습니다."
 
 msgid "Nothing else at this location has stock to pull from."
 msgstr "이 위치에는 더 이상 가져올 재고가 없습니다."
@@ -10786,6 +10801,12 @@ msgstr "재시도"
 
 msgid "Return Home"
 msgstr "홈으로 돌아가기"
+
+msgid "Returned"
+msgstr "반환됨"
+
+msgid "Returning unused picked material"
+msgstr "미사용 선택 재료 반환 중"
 
 msgid "Rev {revision}"
 msgstr "Rev {revision}"
@@ -13953,6 +13974,9 @@ msgstr "제목 없는 다이어그램"
 
 msgid "Untitled line"
 msgstr "제목 없는 라인"
+
+msgid "Unused picked material flushed back from the work center to the warehouse."
+msgstr "작업장에서 창고로 반환된 미사용 선택 재료."
 
 msgid "UoM"
 msgstr "UoM"

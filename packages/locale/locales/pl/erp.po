@@ -1657,8 +1657,14 @@ msgstr "Przypisuje tę jednostkę do centrum pracy do materiałów liniesidowych
 msgid "At each gate"
 msgstr "Na każdej bramce"
 
+msgid "At job completion"
+msgstr "Po zakończeniu zadania"
+
 msgid "At least one condition must match"
 msgstr "Co najmniej jeden warunek musi się zgadzać"
+
+msgid "At operation completion"
+msgstr "Po zakończeniu operacji"
 
 msgid "Attach File"
 msgstr "Dolacz plik"
@@ -3711,6 +3717,9 @@ msgstr "Zdecyduj, co operator widzi, jeśli spróbuje wydać partię lub numer s
 msgid "Decide what happens when an operator presses Finish on the shop floor with material still unpicked."
 msgstr "Zdecyduj, co się stanie, gdy operator naciśnie Zakończ na hali produkcji z materiałem, który wciąż nie został pobrany."
 
+msgid "Decide when material picked to a work center but not consumed flows back to the warehouse."
+msgstr "Zdecyduj, kiedy materiał pobrany do stanowiska pracy, ale nie zużyty, wraca do magazynu."
+
 msgid "Decimal Places"
 msgstr "Miejsca Dziesiętne"
 
@@ -4557,6 +4566,9 @@ msgstr "np. pierwsze 3 do 4 tygodnie"
 
 msgid "e.g. Zebra 2x1"
 msgstr "np. Zebra 2x1"
+
+msgid "Each operation's unused material returns as soon as the operation is done."
+msgstr "Nieużywany materiał każdej operacji wraca natychmiast po zakończeniu operacji."
 
 msgid "Each physical unit gets its own tracked entity and unique number — one entity, one unit."
 msgstr "Każda jednostka fizyczna otrzymuje swoją własną jednostkę śledzenia i unikalny numer — jedna jednostka, jedna jednostka."
@@ -7213,6 +7225,9 @@ msgstr "Element po lewej stronie"
 msgid "Leftover Parts Detected"
 msgstr "Wykryte nadmiarowe części"
 
+msgid "Leftover staged material returns when the whole job completes."
+msgstr "Pozostały materiał przygotowany wraca, gdy całe zadanie się zakończy."
+
 msgid "Less manual work"
 msgstr "Mniej pracy ręcznej"
 
@@ -8567,7 +8582,7 @@ msgid "No matches. Type to create one."
 msgstr "Brak dopasowań. Wpisz, aby utworzyć jeden."
 
 msgid "No matching bins"
-msgstr ""
+msgstr "Brak pasujących pojemników"
 
 msgid "No new notifications"
 msgstr "Brak nowych powiadomień"
@@ -8796,7 +8811,7 @@ msgstr "Notatki (opcjonalnie)"
 
 #. placeholder {0}: search.trim()
 msgid "Nothing at this location matches \"{0}\"."
-msgstr ""
+msgstr "Nic w tej lokalizacji nie pasuje do \"{0}\"."
 
 msgid "Nothing else at this location has stock to pull from."
 msgstr "W tym miejscu nic innego nie ma zapasów do pobrania."
@@ -10786,6 +10801,12 @@ msgstr "Ponów"
 
 msgid "Return Home"
 msgstr "Wróć do domu"
+
+msgid "Returned"
+msgstr "Zwrócone"
+
+msgid "Returning unused picked material"
+msgstr "Zwracanie nieużywanego pobranego materiału"
 
 msgid "Rev {revision}"
 msgstr "Wer. {revision}"
@@ -13953,6 +13974,9 @@ msgstr "Diagram bez tytułu"
 
 msgid "Untitled line"
 msgstr "Linia bez tytułu"
+
+msgid "Unused picked material flushed back from the work center to the warehouse."
+msgstr "Nieużywany pobrany materiał odprowadzony z powrotem od stanowiska pracy do magazynu."
 
 msgid "UoM"
 msgstr "UoM"

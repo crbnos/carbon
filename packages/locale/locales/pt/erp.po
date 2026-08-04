@@ -1657,8 +1657,14 @@ msgstr "Atribui esta unidade a um centro de trabalho para material ao lado da li
 msgid "At each gate"
 msgstr "Em cada etapa"
 
+msgid "At job completion"
+msgstr "Na conclusão do trabalho"
+
 msgid "At least one condition must match"
 msgstr "Pelo menos uma condição deve corresponder"
+
+msgid "At operation completion"
+msgstr "Na conclusão da operação"
 
 msgid "Attach File"
 msgstr "Anexar Arquivo"
@@ -3711,6 +3717,9 @@ msgstr "Decida o que um operador vê se tentar emitir um lote ou série que já 
 msgid "Decide what happens when an operator presses Finish on the shop floor with material still unpicked."
 msgstr "Decida o que acontece quando um operador pressiona Concluir no piso de produção com material ainda não colhido."
 
+msgid "Decide when material picked to a work center but not consumed flows back to the warehouse."
+msgstr "Decida quando o material coletado para um centro de trabalho, mas não consumido, flui de volta para o armazém."
+
 msgid "Decimal Places"
 msgstr "Casas Decimais"
 
@@ -4557,6 +4566,9 @@ msgstr "p.ex. as primeiras 3 a 4 semanas"
 
 msgid "e.g. Zebra 2x1"
 msgstr "p.ex. Zebra 2x1"
+
+msgid "Each operation's unused material returns as soon as the operation is done."
+msgstr "O material não utilizado de cada operação retorna assim que a operação é concluída."
 
 msgid "Each physical unit gets its own tracked entity and unique number — one entity, one unit."
 msgstr "Cada unidade física obtém sua própria entidade rastreada e número único — uma entidade, uma unidade."
@@ -7213,6 +7225,9 @@ msgstr "Item esquerdo"
 msgid "Leftover Parts Detected"
 msgstr "Peças Excedentes Detectadas"
 
+msgid "Leftover staged material returns when the whole job completes."
+msgstr "O material preparado restante retorna quando todo o trabalho é concluído."
+
 msgid "Less manual work"
 msgstr "Menos trabalho manual"
 
@@ -8567,7 +8582,7 @@ msgid "No matches. Type to create one."
 msgstr "Nenhuma correspondência. Digite para criar uma."
 
 msgid "No matching bins"
-msgstr ""
+msgstr "Nenhuma caixa correspondente"
 
 msgid "No new notifications"
 msgstr "Sem notificações novas"
@@ -8796,7 +8811,7 @@ msgstr "Notas (opcional)"
 
 #. placeholder {0}: search.trim()
 msgid "Nothing at this location matches \"{0}\"."
-msgstr ""
+msgstr "Nada neste local corresponde a \"{0}\"."
 
 msgid "Nothing else at this location has stock to pull from."
 msgstr "Nada mais neste local tem estoque para puxar."
@@ -10786,6 +10801,12 @@ msgstr "Tentar novamente"
 
 msgid "Return Home"
 msgstr "Voltar para Início"
+
+msgid "Returned"
+msgstr "Retornado"
+
+msgid "Returning unused picked material"
+msgstr "Retornando material coletado não utilizado"
 
 msgid "Rev {revision}"
 msgstr "Rev {revision}"
@@ -13953,6 +13974,9 @@ msgstr "Diagrama sem título"
 
 msgid "Untitled line"
 msgstr "Linha sem título"
+
+msgid "Unused picked material flushed back from the work center to the warehouse."
+msgstr "Material coletado não utilizado devolvido do centro de trabalho para o armazém."
 
 msgid "UoM"
 msgstr "UoM"

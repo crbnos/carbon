@@ -189,28 +189,28 @@ export async function finishJobOperation(
 
     // The status='Done' write fires the sync_finish_job_operation trigger, which
     // completes the job to inventory (job.status → 'Completed') when this was the
-    // last operation. At that point, return any picking-list-allocated batch/serial
-    // stock that was staged to lineside but not consumed back to its warehouse
-    // source — the SQL trigger can't call edge functions, so we orchestrate it here.
-    await returnAllocatedRemaindersAtJobComplete(client, args);
+    // last operation. Return any picked-but-unconsumed stock staged at lineside
+    // back to its warehouse source — the SQL trigger can't call edge functions,
+    // so we orchestrate it here.
+    await returnPickedRemainders(client, args);
   }
 
   return result;
 }
 
 /**
- * When a job has just completed, sweep its tracked (batch/serial) picking-list
- * allocations and return the un-consumed remainder of each from the lineside
- * shelf back to the warehouse source (so it's re-allocatable, and inventory
- * reflects only what was actually consumed). No-op unless the job is 'Completed'.
- * Idempotent: `returnPickedRemainder` returns nothing once lineside on-hand is 0.
+ * Flush un-consumed picked material (tracked AND untracked) from the lineside
+ * shelf back to the warehouse via the post-picking sweep cases. Job just
+ * completed → sweep the whole job (runs under both returnPickedMaterialTiming
+ * policies). Otherwise → sweep this operation's lines; the edge function itself
+ * no-ops unless the company policy is 'operation'. Both sweeps are idempotent.
  *
  * Uses the client `finishJobOperation` is given — every caller passes a
- * service-role client, so the picking allocations (an inventory table the
- * finishing operator may not have RLS access to) are always readable and the
- * returns aren't silently skipped for production-only roles.
+ * service-role client, so the picking lines (an inventory table the finishing
+ * operator may not have RLS access to) are always readable and the returns
+ * aren't silently skipped for production-only roles.
  */
-async function returnAllocatedRemaindersAtJobComplete(
+export async function returnPickedRemainders(
   client: SupabaseClient<Database>,
   args: {
     jobOperationId: string;
@@ -222,57 +222,44 @@ async function returnAllocatedRemaindersAtJobComplete(
     .from("jobOperation")
     .select("jobId")
     .eq("id", args.jobOperationId)
+    .eq("companyId", args.companyId)
     .maybeSingle();
   const jobId = op.data?.jobId;
   if (!jobId) return;
 
   const job = await client
     .from("job")
-    .select("status, locationId")
+    .select("status")
     .eq("id", jobId)
+    .eq("companyId", args.companyId)
     .maybeSingle();
-  const locationId = job.data?.locationId;
-  if (job.data?.status !== "Completed" || !locationId) return;
+  if (!job.data) return;
 
-  const { data: lines } = await client
-    .from("pickingListLine")
-    .select("id, pickingListId, pickingListLineTrackedEntity(trackedEntityId)")
-    .eq("jobId", jobId)
-    .neq("status", "Cancelled");
-  if (!lines?.length) return;
-
-  const returns = lines.flatMap((line) => {
-    const allocations =
-      (line.pickingListLineTrackedEntity as Array<{
-        trackedEntityId: string;
-      }> | null) ?? [];
-    return allocations.map((allocation) =>
-      client.functions.invoke("post-picking", {
-        body: {
-          type: "returnPickedRemainder",
-          pickingListId: line.pickingListId,
-          pickingListLineId: line.id,
-          trackedEntityId: allocation.trackedEntityId,
-          locationId,
+  const body =
+    job.data.status === "Completed"
+      ? {
+          type: "returnJobRemainders" as const,
+          jobId,
           userId: args.userId,
           companyId: args.companyId
         }
-      })
-    );
-  });
+      : {
+          type: "returnOperationRemainders" as const,
+          jobOperationId: args.jobOperationId,
+          userId: args.userId,
+          companyId: args.companyId
+        };
 
-  // `functions.invoke` resolves to `{ data, error }` rather than rejecting, so a
-  // failed return never surfaces through Promise.all — inspect each result and log
-  // it, otherwise a stranded lineside remainder is lost silently.
-  const results = await Promise.all(returns);
-  for (const { error } of results) {
-    if (error) {
-      log.error("returnPickedRemainder failed at job complete", {
-        error,
-        jobId,
-        companyId: args.companyId
-      });
-    }
+  // `functions.invoke` resolves to `{ data, error }` rather than rejecting —
+  // inspect and log, otherwise a stranded lineside remainder is lost silently.
+  const { error } = await client.functions.invoke("post-picking", { body });
+  if (error) {
+    log.error("picked-material return sweep failed", {
+      error,
+      jobId,
+      scope: body.type,
+      companyId: args.companyId
+    });
   }
 }
 

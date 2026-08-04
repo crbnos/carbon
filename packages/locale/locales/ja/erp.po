@@ -1657,8 +1657,14 @@ msgstr "このユニットを作業センターに割り当ててラインサイ
 msgid "At each gate"
 msgstr "各ゲートで"
 
+msgid "At job completion"
+msgstr "ジョブ完了時"
+
 msgid "At least one condition must match"
 msgstr "少なくとも1つの条件が一致する必要があります"
+
+msgid "At operation completion"
+msgstr "操作完了時"
 
 msgid "Attach File"
 msgstr "ファイルを添付"
@@ -3711,6 +3717,9 @@ msgstr "オペレーターが既に期限切れのバッチまたはシリアル
 msgid "Decide what happens when an operator presses Finish on the shop floor with material still unpicked."
 msgstr "オペレーターが店舗の床で材料がまだピックされていない状態で「完了」を押すとどうなるかを決定します。"
 
+msgid "Decide when material picked to a work center but not consumed flows back to the warehouse."
+msgstr "作業センターに仕分けされたが消費されなかった材料が倉庫に戻る時期を決定します。"
+
 msgid "Decimal Places"
 msgstr "小数位数"
 
@@ -4557,6 +4566,9 @@ msgstr "例：最初の3～4週間"
 
 msgid "e.g. Zebra 2x1"
 msgstr "例：Zebra 2x1"
+
+msgid "Each operation's unused material returns as soon as the operation is done."
+msgstr "各操作の未使用材料は操作が完了するとすぐに戻されます。"
 
 msgid "Each physical unit gets its own tracked entity and unique number — one entity, one unit."
 msgstr "各物理ユニットは独自の追跡エンティティと一意の番号を取得します — 1つのエンティティ、1つのユニット。"
@@ -7213,6 +7225,9 @@ msgstr "左側の項目"
 msgid "Leftover Parts Detected"
 msgstr "余剰部品が検出されました"
 
+msgid "Leftover staged material returns when the whole job completes."
+msgstr "ジョブ全体が完了したときに、ステージングされたままの材料が戻されます。"
+
 msgid "Less manual work"
 msgstr "手作業を減らす"
 
@@ -8567,7 +8582,7 @@ msgid "No matches. Type to create one."
 msgstr "一致するものがありません。作成するには入力してください。"
 
 msgid "No matching bins"
-msgstr ""
+msgstr "マッチするビンがありません"
 
 msgid "No new notifications"
 msgstr "新しい通知はありません"
@@ -8796,7 +8811,7 @@ msgstr "メモ（オプション）"
 
 #. placeholder {0}: search.trim()
 msgid "Nothing at this location matches \"{0}\"."
-msgstr ""
+msgstr "この場所に「{0}」に一致するものはありません。"
 
 msgid "Nothing else at this location has stock to pull from."
 msgstr "この場所には他に引き出す在庫がありません。"
@@ -10786,6 +10801,12 @@ msgstr "再試行"
 
 msgid "Return Home"
 msgstr "ホームに戻る"
+
+msgid "Returned"
+msgstr "返却"
+
+msgid "Returning unused picked material"
+msgstr "未使用の仕分け材料を返却中"
 
 msgid "Rev {revision}"
 msgstr "Rev {revision}"
@@ -13953,6 +13974,9 @@ msgstr "無題の図"
 
 msgid "Untitled line"
 msgstr "無題の行"
+
+msgid "Unused picked material flushed back from the work center to the warehouse."
+msgstr "作業センターから倉庫に戻された未使用の仕分け材料。"
 
 msgid "UoM"
 msgstr "UoM"

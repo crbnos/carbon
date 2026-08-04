@@ -355,9 +355,10 @@ export type JobMaterialPickedQuantity = {
  * How much of each job material has been picked, summed across every live picking-list
  * line that references it. A job material can legitimately span several picking lists,
  * so we sum per `jobMaterialId`. We only count lines whose parent list is actually being
- * worked ("In Progress"/"Completed"): cancelling or drafting a list does NOT cascade a
- * status down to its lines, so a Cancelled/Draft list would otherwise inflate the
- * to-pick total with stale lines. Picking is optional — materials with no picking
+ * worked ("In Progress"/"Completed"/"Partial"): cancelling or drafting a list does NOT
+ * cascade a status down to its lines, so a Cancelled/Draft list would otherwise inflate
+ * the to-pick total with stale lines. Quantities are net of returns (picked − returned —
+ * what is still staged at lineside). Picking is optional — materials with no picking
  * activity simply have no entry in the returned map. Never throws (returns {}).
  */
 export async function getPickedQuantitiesByJobMaterial(
@@ -370,11 +371,11 @@ export async function getPickedQuantitiesByJobMaterial(
   const { data, error } = await client
     .from("pickingListLine")
     .select(
-      "jobMaterialId, quantityToPick, quantityPicked, pickingList!inner(status)"
+      "jobMaterialId, quantityToPick, quantityPicked, quantityReturned, pickingList!inner(status)"
     )
     .in("jobMaterialId", jobMaterialIds)
     .neq("status", "Cancelled")
-    .in("pickingList.status", ["In Progress", "Completed"]);
+    .in("pickingList.status", ["In Progress", "Completed", "Partial"]);
 
   if (error || !data) return picked;
 
@@ -384,7 +385,13 @@ export async function getPickedQuantitiesByJobMaterial(
       quantityPicked: 0,
       quantityToPick: 0
     });
-    entry.quantityPicked += Number(line.quantityPicked ?? 0);
+    // Net of returns: quantityPicked is gross (returns book quantityReturned
+    // instead of decrementing it), and consumers of this map reason about what
+    // is still staged at lineside.
+    entry.quantityPicked += Math.max(
+      0,
+      Number(line.quantityPicked ?? 0) - Number(line.quantityReturned ?? 0)
+    );
     entry.quantityToPick += Number(line.quantityToPick ?? 0);
   }
 
@@ -414,7 +421,7 @@ export async function getPickedTrackedEntitiesForMaterial(
     .eq("jobMaterialId", args.jobMaterialId)
     .eq("companyId", args.companyId)
     .neq("status", "Cancelled")
-    .in("pickingList.status", ["In Progress", "Completed"]);
+    .in("pickingList.status", ["In Progress", "Completed", "Partial"]);
 
   if (error || !data) return [];
 

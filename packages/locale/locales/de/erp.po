@@ -1657,8 +1657,14 @@ msgstr "Weist diese Einheit einem Arbeitsplatz für Linienside-Material zu, dami
 msgid "At each gate"
 msgstr "Bei jedem Gate"
 
+msgid "At job completion"
+msgstr "Nach Auftragsabschluss"
+
 msgid "At least one condition must match"
 msgstr "Mindestens eine Bedingung muss erfüllt sein"
+
+msgid "At operation completion"
+msgstr "Nach Vorgangsabschluss"
 
 msgid "Attach File"
 msgstr "Datei anhängen"
@@ -3711,6 +3717,9 @@ msgstr "Entscheiden Sie, was ein Bediener sieht, wenn er versucht, einen Batch o
 msgid "Decide what happens when an operator presses Finish on the shop floor with material still unpicked."
 msgstr "Legen Sie fest, was passiert, wenn ein Bediener auf dem Shopfloor die Funktion \"Fertig\" drückt, während Material noch nicht kommissioniert ist."
 
+msgid "Decide when material picked to a work center but not consumed flows back to the warehouse."
+msgstr "Entscheiden Sie, wann Material, das zu einem Arbeitszentrum gepickt, aber nicht verbraucht wurde, ins Lager zurückfließt."
+
 msgid "Decimal Places"
 msgstr "Dezimalstellen"
 
@@ -4557,6 +4566,9 @@ msgstr "z.B. die ersten 3 bis 4 Wochen"
 
 msgid "e.g. Zebra 2x1"
 msgstr "z.B. Zebra 2x1"
+
+msgid "Each operation's unused material returns as soon as the operation is done."
+msgstr "Das ungenutzte Material jedes Vorgangs wird sofort nach Abschluss des Vorgangs zurückgegeben."
 
 msgid "Each physical unit gets its own tracked entity and unique number — one entity, one unit."
 msgstr "Jede physische Einheit erhält ihre eigene nachverfocgte Einheit und eindeutige Nummer — eine Einheit, eine Einheit."
@@ -7213,6 +7225,9 @@ msgstr "Linkes Element"
 msgid "Leftover Parts Detected"
 msgstr "Überschüssige Teile erkannt"
 
+msgid "Leftover staged material returns when the whole job completes."
+msgstr "Überschüssiges bereitgestelltes Material wird zurückgegeben, wenn der gesamte Auftrag abgeschlossen ist."
+
 msgid "Less manual work"
 msgstr "Weniger manuelle Arbeit"
 
@@ -8567,7 +8582,7 @@ msgid "No matches. Type to create one."
 msgstr "Keine Übereinstimmungen. Geben Sie ein, um eine zu erstellen."
 
 msgid "No matching bins"
-msgstr ""
+msgstr "Keine übereinstimmenden Behälter"
 
 msgid "No new notifications"
 msgstr "Keine neuen Benachrichtigungen"
@@ -8796,7 +8811,7 @@ msgstr "Notizen (optional)"
 
 #. placeholder {0}: search.trim()
 msgid "Nothing at this location matches \"{0}\"."
-msgstr ""
+msgstr "Nichts an diesem Ort entspricht \"{0}\"."
 
 msgid "Nothing else at this location has stock to pull from."
 msgstr "Keine anderen Artikel an diesem Ort haben Bestand zum Entnehmen."
@@ -10786,6 +10801,12 @@ msgstr "Erneut versuchen"
 
 msgid "Return Home"
 msgstr "Zur Startseite zurück"
+
+msgid "Returned"
+msgstr "Zurückgegeben"
+
+msgid "Returning unused picked material"
+msgstr "Rückgabe ungenutzten Pickmaterials"
 
 msgid "Rev {revision}"
 msgstr "Rev {revision}"
@@ -13953,6 +13974,9 @@ msgstr "Unbenanntes Diagramm"
 
 msgid "Untitled line"
 msgstr "Unbenannte Zeile"
+
+msgid "Unused picked material flushed back from the work center to the warehouse."
+msgstr "Ungenutztes Pickmaterial aus dem Arbeitszentrum zurück ins Lager gespült."
 
 msgid "UoM"
 msgstr "UoM"
