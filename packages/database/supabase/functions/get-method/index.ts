@@ -4831,7 +4831,11 @@ serve(async (req: Request) => {
         // Track estimated quantities for each make method to set on operations
         const quoteMakeMethodIdToQuantities: Record<
           string,
-          { targetQuantity: number; estimatedQuantity: number }
+          {
+            targetQuantity: number;
+            estimatedQuantity: number;
+            totalWithScrap: number;
+          }
         > = {};
 
         await db.transaction().execute(async (trx) => {
@@ -5063,6 +5067,16 @@ serve(async (req: Request) => {
               // Get quantities for this operation's make method
               const opQuantities =
                 quoteMakeMethodIdToQuantities[op.quoteMakeMethodId ?? ""];
+              // The traversal stores quantities for every make method in the
+              // tree, so a miss means the operation references an orphaned
+              // make method. Fail the conversion (rolls back the transaction)
+              // instead of silently inserting a zero-quantity operation with
+              // a NULL jobMakeMethodId.
+              if (!opQuantities) {
+                throw new Error(
+                  `No quantities found for quote make method ${op.quoteMakeMethodId} referenced by operation ${op.id} — the quote method tree and its operations are out of sync`
+                );
+              }
               return {
                 jobId,
                 jobMakeMethodId:
@@ -5092,10 +5106,10 @@ serve(async (req: Request) => {
                 operationUnitCost: op.operationUnitCost ?? 0,
                 tags: op.tags ?? [],
                 workInstruction: parts.workInstructions ? op.workInstruction : {},
-                targetQuantity: opQuantities?.targetQuantity ?? 0,
+                targetQuantity: opQuantities.targetQuantity,
                 // Operation/production counts stay whole even when material
                 // quantities are fractional
-                operationQuantity: Math.ceil(opQuantities?.totalWithScrap ?? 0),
+                operationQuantity: Math.ceil(opQuantities.totalWithScrap),
                 companyId,
                 createdBy: userId,
                 customFields: {},
