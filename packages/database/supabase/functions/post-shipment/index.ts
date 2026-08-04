@@ -1457,12 +1457,12 @@ serve(async (req: Request) => {
 
                 const trackedActivityId = trackedActivity[0].id;
 
-                const itemLedgerInserts: Database["public"]["Tables"]["itemLedger"]["Insert"][] =
-                  [];
-
                 // Handle batch splits first: the shelf entity keeps its id
                 // and is decremented; the SHIPPED portion departs as a new
-                // Consumed child carrying the shipment attributes.
+                // Consumed child carrying the shipment attributes. This PO-
+                // sourced path posts NO itemLedger for the split (matching the
+                // pre-flip behavior — a PO/subcontract shipment's inventory
+                // movement is not booked here); only genealogy + quantities.
                 for await (const splitInfo of Object.values(
                   trackedEntitySplits
                 )) {
@@ -1554,8 +1554,6 @@ serve(async (req: Request) => {
                     .where("id", "=", splitInfo.originalEntityId)
                     .execute();
 
-                  itemLedgerInserts.push(...split.ledgerInserts);
-
                   if (trackedActivityId) {
                     await trx
                       .insertInto("trackedActivityInput")
@@ -1573,13 +1571,6 @@ serve(async (req: Request) => {
                   // Auto-print/labels retarget to the RETAINED parent (its
                   // quantity changed); the shipped child needs no label.
                   splitEntityIds.push(splitInfo.originalEntityId);
-                }
-
-                if (itemLedgerInserts.length > 0) {
-                  await trx
-                    .insertInto("itemLedger")
-                    .values(itemLedgerInserts)
-                    .execute();
                 }
 
                 // Now handle the shipment consumption (full-quantity lots)
