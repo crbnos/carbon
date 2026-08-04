@@ -72,7 +72,10 @@ export const useTraceabilityStore = create<TraceabilityState>()(
           return { additionalRootIds: next };
         }),
 
-      clearAdditionalRoots: () => set({ additionalRootIds: new Set() }),
+      clearAdditionalRoots: () =>
+        set((s) =>
+          s.additionalRootIds.size === 0 ? {} : { additionalRootIds: new Set() }
+        ),
 
       addExpansion: (originId, payload) =>
         set((s) => {
@@ -115,7 +118,13 @@ export const useTraceabilityStore = create<TraceabilityState>()(
           return { excludedIds: next };
         }),
 
-      clearExcluded: () => set({ excludedIds: new Set() }),
+      // Keep the same Set when there's nothing to clear. Every plain node click
+      // calls this, and a fresh empty Set is a new identity — enough to re-run
+      // the async selection pathfinder and repaint the graph for nothing.
+      clearExcluded: () =>
+        set((s) =>
+          s.excludedIds.size === 0 ? {} : { excludedIds: new Set() }
+        ),
 
       setDirection: (next) => set({ direction: next }),
       setView: (next) => set({ view: next }),
