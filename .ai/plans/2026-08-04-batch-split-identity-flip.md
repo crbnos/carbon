@@ -27,7 +27,7 @@ survive anywhere. Serial paths never split — do not touch `case "serial"` /
 - [x] Task 10: Flip issue maintenanceDispatchTrackedEntities
 - [x] Task 11: Flip post-stock-transfer batch + unpick merge-back redetect
 - [x] Task 12: Flip post-shipment SO + PO splits, retained-parent label ids
-- [ ] Task 13: Align quality-disposition subdivideBatchEntity
+- [x] Task 13: Align quality-disposition subdivideBatchEntity
 - [x] Task 14: Reader filters — root-entity queries + serial assignment + newest-live audit
   (audit log: issue:1165 filters by Operation marker, acts on caller id — left; MES
   getTrackedEntitiesByJobMakeMethodIds + JobsTable map make-method→readableId, invariant
@@ -44,19 +44,23 @@ survive anywhere. Serial paths never split — do not touch `case "serial"` /
   i.e. the process view with a picking allocation.)
 - [x] Task 16: ERP routes — label print retargeting (stock transfer, shipment, maintenance)
 - [x] Task 17: Validation gates (lint ✓, scoped typechecks ×4 ✓, deno tests 12+5 ✓, lingui extract + 24 translations filled ✓)
-- [~] Task 18: Browser verification — PARTIAL. Verified: dev stack boots (crbn-managed
-  Docker + a session-launched erp dev server on port 51832 via .claude/launch.json with
-  NODE_EXTRA_CA_CERTS pointed at ~/.portless/ca.pem — the CA env is what the crbn wrapper
-  injects; without it the app 502s on Supabase TLS), login via DEV_BYPASS_EMAIL, batch
-  part creation, inventory list + item-detail drawer + inventory-adjustment modal all
-  render without error after the changes. NOT executed: the pick/issue/complete/unpick/
-  transfer/traceability acceptance flows — the local DB has zero tracked entities, so every
-  flow needs a lot + job + picking-list seeded through the UI from an empty tenant, and the
-  portaled combobox in the adjustment modal doesn't expose its options as automation refs
-  (pointer clicks land on the backdrop and dismiss the modal), making the multi-entity
-  fixture build impractical in this session. Core writer invariant is instead proven by the
-  12 Deno unit tests in Task 5. Recommend the user run /test (or seed a lot) to exercise the
-  live flows.
+- [~] Task 18: Browser verification — PARTIAL but core writers PROVEN e2e (2026-08-05,
+  real Chrome via chrome MCP against erp.batch-split-identity-flip.dev). Seeded lot 2026/09
+  = 8 @ BIN-A via the real post-inventory-adjustment edge fn; added BATCH-TEST-01 (Pull
+  from Inventory) to job J000005, generated picking list PL000004, and exercised the live
+  edge functions:
+  • PICK 6-of-8 (post-picking `case "batch"`, Task 6): shelf entity kept its id decremented
+    8→2 (no `Split Entity ID` on it), new child qty 6 carries `Split From Entity ID`=parent,
+    ledger 2-row Batch Split nets zero + Transfer pair books on the CHILD, allocation →
+    CHILD, Split genealogy input parent@6 → ONE output child@6. Every invariant held.
+  • UNPICK (post-picking `unpickBatch`, Task 7): shelf restored 2→8, child drained to 0/
+    Consumed, Split activity deleted, allocation deleted, on-hand reconciles. Clean merge-back.
+  Evidence + queries recorded in `.ai/playbooks/batch-split-identity-flip.md`. Earlier
+  blocker (in-app pane's portaled combobox) was resolved by using the real Chrome MCP
+  (1:1 coords). NOT yet exercised live: issue partial-consume (Task 9), complete→merge
+  sweep (Task 8), stock transfer (Task 11 — new wizard is demand-driven, needs a WC-1
+  demand), shipment (Task 12 — no SO), NCR disposition (Task 13). Those share the same
+  verified `buildBatchSplitRecords` builder; cover per the playbook checklist.
 
 ## Dependencies
 - Tasks 1–3 independent of everything (PR A; ship first).
