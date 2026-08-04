@@ -83,7 +83,8 @@ export const eventQueueFunction = inngest.createFunction(
             SYNC: [],
             SEARCH: [],
             AUDIT: [],
-            EMBEDDING: []
+            EMBEDDING: [],
+            EDI: []
           };
 
           for (const job of jobs) {
@@ -204,7 +205,23 @@ export const eventQueueFunction = inngest.createFunction(
         }
       }
 
-      // 9. Delete processed messages from PGMQ
+      // 9. Dispatch EDI (chunked)
+      if (grouped.EDI.length > 0) {
+        const records = grouped.EDI.map((job) => ({
+          event: job.message.event,
+          companyId: job.message.companyId
+        }));
+
+        const chunks = chunk(records, CHUNK_SIZE);
+        for (let i = 0; i < chunks.length; i++) {
+          await step.sendEvent(`dispatch-edi-${pass}-${i}`, {
+            name: "carbon/event-edi" as const,
+            data: { records: chunks[i] }
+          });
+        }
+      }
+
+      // 10. Delete processed messages from PGMQ
       await step.run(`delete-processed-${pass}`, async () => {
         const pg = getDatabaseClient(1);
         await sql`SELECT pgmq.delete(${QUEUE_NAME}, id::bigint) FROM unnest(${allIds}::bigint[]) AS id`.execute(

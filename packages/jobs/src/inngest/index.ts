@@ -7,6 +7,7 @@ export { inngest } from "./client.ts";
 
 import {
   auditFunction,
+  ediEventFunction,
   embeddingFunction,
   eventQueueFunction,
   searchFunction,
@@ -74,6 +75,7 @@ export const functions = [
   sendSlackFunction,
   // Event handlers
   auditFunction,
+  ediEventFunction,
   eventQueueFunction,
   searchFunction,
   syncFunction,
