@@ -315,7 +315,7 @@ export function TraceabilitySidebar({
                   <PropRow label="Status">
                     <TrackedEntityStatus status={entity?.status} />
                   </PropRow>
-                  <PropRow label="Quantity">
+                  <PropRow label="Current Quantity">
                     <span className="text-sm font-medium tabular-nums">
                       {entity?.quantity}
                     </span>

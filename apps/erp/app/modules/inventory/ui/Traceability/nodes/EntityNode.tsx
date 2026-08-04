@@ -4,7 +4,7 @@ import { memo } from "react";
 import { LuChevronDown, LuChevronUp, LuMinus } from "react-icons/lu";
 import { NODE_RADIUS, NODE_SIZE } from "../constants";
 import { entityStatusMeta } from "../metadata";
-import { type EntityNodeData, entityHeadline } from "../utils";
+import { type EntityNodeData, entityHeadline, formatQuantity } from "../utils";
 
 type Props = NodeProps & {
   data: EntityNodeData & {
@@ -33,6 +33,18 @@ function EntityNodeImpl({ data, selected, id }: Props) {
   const radius = NODE_RADIUS;
   const size = NODE_SIZE;
   const iconSize = 18;
+
+  // Lot-state graph: each node is the lot AT A MOMENT — the badge shows the
+  // quantity it held then. The last state is where the stock sits today and
+  // gets a dashed halo. Collapsed (non-replayable) entities have no state
+  // fields and fall back to the live quantity.
+  const stateQuantity = data.stateQuantity ?? Number(entity.quantity);
+  const isHistorical = data.isCurrentState === false;
+  const showCurrentRing =
+    data.isCurrentState === true &&
+    (data.stateCount ?? 1) > 1 &&
+    entity.status !== "Consumed" &&
+    entity.status !== "Rejected";
 
   return (
     <div
@@ -90,11 +102,26 @@ function EntityNodeImpl({ data, selected, id }: Props) {
             strokeDasharray="3 3"
           />
         )}
+        {!isRejected && !containmentStatus && showCurrentRing && (
+          <circle
+            cx={radius}
+            cy={radius}
+            r={radius + 3}
+            fill="none"
+            stroke={meta.color}
+            strokeWidth={1.5}
+            strokeDasharray="4 3"
+            opacity={0.9}
+          />
+        )}
         <circle
           cx={radius}
           cy={radius}
           r={radius}
           fill={meta.color}
+          // Historical states read as the lot's past — faded next to the
+          // current state that holds today's stock.
+          opacity={isHistorical ? 0.55 : 1}
           stroke={
             selected || data.isRoot ? "hsl(var(--foreground))" : "transparent"
           }
@@ -105,10 +132,17 @@ function EntityNodeImpl({ data, selected, id }: Props) {
         <Icon style={{ width: iconSize, height: iconSize }} />
       </div>
       <div
-        className="absolute -top-1 -right-1 rounded-full bg-card border border-border text-[9px] tabular-nums px-1 leading-tight pointer-events-none"
-        title={`Quantity ${entity.quantity}`}
+        className={cn(
+          "absolute -top-1 -right-1 rounded-full bg-card border border-border text-[9px] tabular-nums px-1 leading-tight pointer-events-none",
+          isHistorical && "opacity-70"
+        )}
+        title={
+          isHistorical
+            ? `Quantity at this step: ${stateQuantity} (current: ${entity.quantity})`
+            : `Current quantity: ${stateQuantity}`
+        }
       >
-        {formatQuantity(entity.quantity)}
+        {formatQuantity(stateQuantity)}
       </div>
       {data.isExpanded ? (
         <NodeExpandToggle
@@ -131,34 +165,34 @@ function EntityNodeImpl({ data, selected, id }: Props) {
           )}
         </>
       )}
-      {showLabel && (
-        <div
-          className={cn(
-            "absolute left-1/2 -translate-x-1/2 whitespace-nowrap pointer-events-none select-none flex flex-col items-center",
-            data.isRoot || selected
-              ? "text-foreground"
-              : "text-muted-foreground"
-          )}
-          style={{ top: size + 4 }}
-        >
-          <span
+      {showLabel &&
+        // A lot's chain repeats the same headline per state — label only the
+        // first and current states to keep mid-chain states quiet.
+        (data.stateIndex === undefined ||
+          data.stateIndex === 0 ||
+          data.isCurrentState === true ||
+          selected) && (
+          <div
             className={cn(
-              "text-[11px] tracking-tight px-1.5 py-px rounded bg-background",
-              (data.isRoot || selected) && "font-medium"
+              "absolute left-1/2 -translate-x-1/2 whitespace-nowrap pointer-events-none select-none flex flex-col items-center",
+              data.isRoot || selected
+                ? "text-foreground"
+                : "text-muted-foreground"
             )}
+            style={{ top: size + 4 }}
           >
-            {headline}
-          </span>
-        </div>
-      )}
+            <span
+              className={cn(
+                "text-[11px] tracking-tight px-1.5 py-px rounded bg-background",
+                (data.isRoot || selected) && "font-medium"
+              )}
+            >
+              {headline}
+            </span>
+          </div>
+        )}
     </div>
   );
-}
-
-function formatQuantity(q: number): string {
-  if (q >= 1000) return `${(q / 1000).toFixed(1)}k`;
-  if (Number.isInteger(q)) return String(q);
-  return q.toFixed(1);
 }
 
 const TOGGLE_META = {

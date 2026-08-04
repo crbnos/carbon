@@ -21,6 +21,7 @@ import {
 import { clampDepth } from "~/modules/inventory/ui/Traceability/constants";
 import { TraceabilityGraph } from "~/modules/inventory/ui/Traceability/TraceabilityGraph";
 import { TraceabilitySidebar } from "~/modules/inventory/ui/Traceability/TraceabilitySidebar";
+import { stateEntityId } from "~/modules/inventory/ui/Traceability/utils";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -359,9 +360,13 @@ function TraceabilityRouteInner() {
     [setNodes]
   );
 
+  // Lot-state nodes carry an `::sN` suffix — the sidebar always shows the
+  // underlying entity, whichever of its states is selected.
+  const sidebarEntityId = stateEntityId(sidebarId);
   const selectedEntity =
-    (entities.find((e) => e?.id === sidebarId) as TrackedEntity | undefined) ??
-    null;
+    (entities.find((e) => e?.id === sidebarEntityId) as
+      | TrackedEntity
+      | undefined) ?? null;
   const selectedActivity =
     (activities.find((a) => a?.id === sidebarId) as Activity | undefined) ??
     null;
