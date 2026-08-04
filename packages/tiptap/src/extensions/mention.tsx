@@ -187,13 +187,16 @@ export interface CreateMentionExtensionOptions {
   chipComponent?: ComponentType<ReactNodeViewProps>;
 }
 
+/** Colour and shape alone, for a chip that lays its own contents out. */
+export const MENTION_CHIP_TONE_CLASS =
+  "rounded-full px-1.5 py-0 text-[0.8125rem] font-medium leading-5 bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-400";
+
 /**
  * The chip styling, exported so a non-editable rendition of the same token matches.
  * `inline-block`, not `inline-flex` — `text-overflow: ellipsis` never applies to a flex
  * container's anonymous item, so a long label used to overflow onto the line below.
  */
-export const MENTION_CHIP_CLASS =
-  "inline-block max-w-[14rem] overflow-hidden text-ellipsis whitespace-nowrap align-middle rounded-full px-1.5 py-0 text-[0.8125rem] font-medium leading-5 bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-400";
+export const MENTION_CHIP_CLASS = `inline-block max-w-[14rem] overflow-hidden text-ellipsis whitespace-nowrap align-middle ${MENTION_CHIP_TONE_CLASS}`;
 
 /**
  * Creates a configured mention extension for a specific type of mention.

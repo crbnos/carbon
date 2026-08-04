@@ -86,18 +86,21 @@ export function ValueField({
         onOpenChange={setPickerOpen}
       >
         <div className="flex min-w-0 flex-1 items-center">
-          {control === "chip" && ref ? (
-            <VariableChip
-              variable={ref}
-              nodeTitle={nodeTitle}
-              onRemove={() => onChange(undefined)}
-              onReopen={() => setPickerOpen(true)}
-            />
-          ) : control === "pick" ? (
+          {control === "chip" || control === "pick" ? (
             <VariablePickControl
               placeholder={placeholder}
               hasIssue={!!issue}
               onOpen={() => setPickerOpen(true)}
+              chip={
+                control === "chip" && ref ? (
+                  <VariableChip
+                    variable={ref}
+                    nodeTitle={nodeTitle}
+                    onRemove={() => onChange(undefined)}
+                    onReopen={() => setPickerOpen(true)}
+                  />
+                ) : undefined
+              }
             />
           ) : (
             <LiteralControl

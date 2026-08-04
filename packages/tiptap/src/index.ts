@@ -39,6 +39,7 @@ export {
   InputRule,
   MarkdownExtension,
   MENTION_CHIP_CLASS,
+  MENTION_CHIP_TONE_CLASS,
   Mention,
   type MentionListComponent,
   type MentionSuggestion,

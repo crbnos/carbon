@@ -5,6 +5,8 @@ export type {
   MentionListProps as VariableTextMenuProps,
   MentionListRef as VariableTextMenuHandle
 } from "@carbon/tiptap";
+// The token's pill styling, so a chip drawn outside the editor matches the one inside it.
+export { MENTION_CHIP_TONE_CLASS as VARIABLE_TEXT_CHIP_CLASS } from "@carbon/tiptap";
 export type {
   VariableTextHandle,
   VariableTextPart,
