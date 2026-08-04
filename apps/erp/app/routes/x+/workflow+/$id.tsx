@@ -1,4 +1,5 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { requirePlan } from "@carbon/ee/plan.server";
 import {
   Alert,
   AlertDescription,
@@ -60,6 +61,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
     view: "workflows",
     role: "employee"
+  });
+  await requirePlan({
+    request,
+    client,
+    companyId,
+    feature: "WORKFLOWS",
+    redirectTo: path.to.workflows
   });
 
   const { id } = params;

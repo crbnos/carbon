@@ -2,6 +2,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { VStack } from "@carbon/react";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
+import { usePlanGate } from "~/hooks/usePlanGate";
 import type { WorkflowLastRun } from "~/modules/workflows";
 import {
   getWorkflowLastRuns,
@@ -9,6 +10,7 @@ import {
   getWorkflowVersionNumbers
 } from "~/modules/workflows";
 import WorkflowsTable from "~/modules/workflows/ui/WorkflowsTable";
+import WorkflowsUpgradeOverlay from "~/modules/workflows/ui/WorkflowsUpgradeOverlay";
 import { getGenericQueryFilters } from "~/utils/query";
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -68,6 +70,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
 export default function WorkflowsIndexRoute() {
   const { data, count, versionNumbers, lastRuns } =
     useLoaderData<typeof loader>();
+  const { isGated } = usePlanGate({ feature: "WORKFLOWS" });
+
+  if (isGated) {
+    return <WorkflowsUpgradeOverlay />;
+  }
 
   return (
     <VStack spacing={0} className="h-full">

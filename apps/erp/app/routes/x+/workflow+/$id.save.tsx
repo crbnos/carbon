@@ -1,6 +1,7 @@
 import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import type { Json } from "@carbon/database";
+import { requirePlan } from "@carbon/ee/plan.server";
 import { validationError, validator } from "@carbon/form";
 import {
   CURRENT_DEFINITION_FORMAT_VERSION,
@@ -13,11 +14,19 @@ import {
   workflowDefinitionSaveValidator
 } from "~/modules/workflows";
 import { checkWorkflowVersionLock } from "~/modules/workflows/workflows.server";
+import { path } from "~/utils/path";
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId, userId } = await requirePermissions(request, {
     update: "workflows"
+  });
+  await requirePlan({
+    request,
+    client,
+    companyId,
+    feature: "WORKFLOWS",
+    redirectTo: path.to.workflows
   });
 
   const formData = await request.formData();

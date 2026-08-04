@@ -1,11 +1,13 @@
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { requirePlan } from "@carbon/ee/plan.server";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { workflowToggleValidator } from "~/modules/workflows";
 import { setWorkflowActive } from "~/modules/workflows/workflows.server";
+import { path } from "~/utils/path";
 
 // The one route both the list switch and the header switch post to, so there is
 // exactly one place that has to remember to re-sync the trigger rows.
@@ -13,6 +15,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId, userId } = await requirePermissions(request, {
     update: "workflows"
+  });
+  await requirePlan({
+    request,
+    client,
+    companyId,
+    feature: "WORKFLOWS",
+    redirectTo: path.to.workflows
   });
 
   const { id } = params;
