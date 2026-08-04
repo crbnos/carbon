@@ -3580,6 +3580,9 @@ importers:
       '@carbon/database':
         specifier: workspace:*
         version: link:../database
+      '@carbon/glossary':
+        specifier: workspace:*
+        version: link:../glossary
       kysely:
         specifier: 'catalog:'
         version: 0.28.15

@@ -1,3 +1,4 @@
+import type { TermId } from "@carbon/glossary";
 import type { EventMatch, RequiredPermission } from "../definition/catalog";
 import { t, type ValueType } from "../definition/types";
 import type { ActionDeclarationLike } from "./actions";
@@ -32,11 +33,15 @@ export interface WritableColumnLike {
   label: string;
   /** Registry entity this column points at; needed only when the schema has no fk note. */
   ref?: string;
+  /** Glossary term whose definition explains this field. Rendered as the ⓘ hover. */
+  help?: TermId;
 }
 
 export interface RegistryEntry {
   table: string;
   label: string;
+  /** Glossary term for the entity itself. Reused for every field that IS this record. */
+  help?: TermId;
   /** Lowercase permission module; must be an existing family. */
   permission: string;
   /** Overrides the derived "A"/"An" where the vowel test gets it wrong. */
@@ -87,6 +92,8 @@ export interface BuiltCatalog {
   events: Record<string, BuiltEvent>;
   /** English label text per event, action and operation id; the generator wraps these in msg``. */
   labels: Record<string, string>;
+  /** Glossary term id per input key, for the builder's ⓘ hover. Same key shape as `labels`. */
+  help: Record<string, string>;
   entities: Record<string, Record<string, ValueType>>;
   /** Allowed values per entity + property, only for enum columns. */
   enums: Record<string, Record<string, readonly string[]>>;
@@ -129,6 +136,23 @@ function humanizeColumn(column: string): string {
   const withoutId = column.replace(/Id$/, "");
   const spaced = withoutId.replace(/([a-z0-9])([A-Z])/g, "$1 $2").toLowerCase();
   return spaced.charAt(0).toUpperCase() + spaced.slice(1);
+}
+
+/** One label per column, shared by `entity.<name>.<column>` and `<name>.update`'s inputs. */
+function columnLabel(entry: RegistryEntry, column: string): string {
+  const rawLabel = entry.watch?.[column]?.label ?? entry.write?.[column]?.label;
+  return rawLabel === undefined
+    ? humanizeColumn(column)
+    : rawLabel.charAt(0).toUpperCase() + rawLabel.slice(1);
+}
+
+/** Labels are spliced into a msg`` template literal, so these would break the emit. */
+function assertLabelIsSafe(key: string, label: string): void {
+  if (label.includes("`") || label.includes("${")) {
+    throw new Error(
+      `Label for ${key} contains a backtick or template literal: "${label}"`
+    );
+  }
 }
 
 /** The vowel test is wrong for u-words ("a user"), so an entry can override it. */
@@ -378,6 +402,7 @@ export function buildCatalog(
   const byTable = indexByTable(registry);
   const events: Record<string, BuiltEvent> = {};
   const labels: Record<string, string> = {};
+  const help: Record<string, string> = {};
   const entities: Record<string, Record<string, ValueType>> = {};
   const enums: Record<string, Record<string, readonly string[]>> = {};
   const actions: Record<string, BuiltAction> = {};
@@ -408,19 +433,10 @@ export function buildCatalog(
     // entity.<name>.<column> labels for all non-dropped properties
     for (const [column] of Object.entries(definition.properties)) {
       if (DROPPED_COLUMNS.has(column)) continue;
-      const watchedLabel = entry.watch?.[column]?.label;
-      const writableLabel = entry.write?.[column]?.label;
-      const rawLabel = watchedLabel ?? writableLabel;
-      const label =
-        rawLabel !== undefined
-          ? rawLabel.charAt(0).toUpperCase() + rawLabel.slice(1)
-          : humanizeColumn(column);
-      if (label.includes("`") || label.includes("${")) {
-        throw new Error(
-          `Label for entity.${name}.${column} contains a backtick or template literal: "${label}"`
-        );
-      }
-      labels[`entity.${name}.${column}`] = label;
+      const key = `entity.${name}.${column}`;
+      const label = columnLabel(entry, column);
+      assertLabelIsSafe(key, label);
+      labels[key] = label;
     }
 
     const writable = Object.entries(entry.write ?? {}).filter(
@@ -453,6 +469,19 @@ export function buildCatalog(
       };
       labels[id] =
         `Update ${article(lowerFirst(entry.label), entry.article).toLowerCase()} ${lowerFirst(entry.label)}`;
+
+      // Without these the builder falls back to the raw column name (`accountManagerId`).
+      labels[`action.${id}.input.${name}`] = entry.label;
+      if (entry.help !== undefined)
+        help[`action.${id}.input.${name}`] = entry.help;
+      for (const [column, spec] of writable) {
+        if (definition.properties[column] === undefined) continue;
+        const key = `action.${id}.input.${column}`;
+        const label = columnLabel(entry, column);
+        assertLabelIsSafe(key, label);
+        labels[key] = label;
+        if (spec?.help !== undefined) help[key] = spec.help;
+      }
     }
 
     if (entry.watch === undefined) continue;
@@ -531,14 +560,11 @@ export function buildCatalog(
     };
     labels[id] = declaration.label;
     for (const [input, spec] of Object.entries(declaration.inputs)) {
-      const rawLabel = spec.label;
-      const label = rawLabel.charAt(0).toUpperCase() + rawLabel.slice(1);
-      if (label.includes("`") || label.includes("${")) {
-        throw new Error(
-          `Label for action.${id}.input.${input} contains a backtick or template literal: "${label}"`
-        );
-      }
-      labels[`action.${id}.input.${input}`] = label;
+      const key = `action.${id}.input.${input}`;
+      const label = spec.label.charAt(0).toUpperCase() + spec.label.slice(1);
+      assertLabelIsSafe(key, label);
+      labels[key] = label;
+      if (spec.help !== undefined) help[key] = spec.help;
     }
   }
 
@@ -555,11 +581,20 @@ export function buildCatalog(
     };
     labels[id] = declaration.label;
     for (const [input, spec] of Object.entries(declaration.inputs)) {
-      const rawLabel = spec.label;
-      const label = rawLabel.charAt(0).toUpperCase() + rawLabel.slice(1);
-      labels[`operation.${id}.input.${input}`] = label;
+      const key = `operation.${id}.input.${input}`;
+      const label = spec.label.charAt(0).toUpperCase() + spec.label.slice(1);
+      assertLabelIsSafe(key, label);
+      labels[key] = label;
+      if (spec.help !== undefined) {
+        help[key] = spec.help;
+      } else if (input === declaration.entity) {
+        // Every operation's one input is the entity record itself (see the
+        // `operation()` helper), so it inherits that entity's term.
+        const entityHelp = registry[declaration.entity]?.help;
+        if (entityHelp !== undefined) help[key] = entityHelp;
+      }
     }
   }
 
-  return { events, labels, entities, enums, actions, operations };
+  return { events, labels, help, entities, enums, actions, operations };
 }

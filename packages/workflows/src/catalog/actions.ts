@@ -1,3 +1,4 @@
+import type { TermId } from "@carbon/glossary";
 import type { RequiredPermission } from "../definition/catalog";
 import { t, type ValueType } from "../definition/types";
 
@@ -6,6 +7,8 @@ export interface ActionInputLike {
   required: boolean;
   label: string;
   template?: boolean;
+  /** Glossary term whose definition explains this field. Rendered as the ⓘ hover. */
+  help?: TermId;
 }
 
 export interface ActionDeclarationLike {
@@ -31,13 +34,24 @@ export const WORKFLOW_ACTIONS = {
     label: "Create a job",
     permission: { module: "production", action: "create" },
     inputs: {
-      itemId: { type: t.entity("item"), required: true, label: "item" },
+      itemId: {
+        type: t.entity("item"),
+        required: true,
+        label: "item",
+        help: "item"
+      },
       quantity: { type: t.number, required: true, label: "quantity" },
-      dueDate: { type: t.date, required: false, label: "due date" },
+      dueDate: {
+        type: t.date,
+        required: false,
+        label: "due date",
+        help: "job-due-date"
+      },
       salesOrderLineId: {
         type: t.string,
         required: false,
-        label: "sales order line"
+        label: "sales order line",
+        help: "job-sales-order-line"
       }
     },
     outputs: { record: t.entity("job") },
@@ -74,7 +88,8 @@ export const WORKFLOW_ACTIONS = {
       supplierReference: {
         type: t.string,
         required: false,
-        label: "supplier reference"
+        label: "supplier reference",
+        help: "purchase-order-supplier-order-number"
       }
     },
     outputs: { record: t.entity("purchaseOrder") },
@@ -94,7 +109,8 @@ export const WORKFLOW_ACTIONS = {
       customerReference: {
         type: t.string,
         required: false,
-        label: "customer reference"
+        label: "customer reference",
+        help: "customer-document-reference"
       }
     },
     outputs: { record: t.entity("salesOrder") },
@@ -120,8 +136,18 @@ export const WORKFLOW_ACTIONS = {
         template: true
       },
       // The value model has no "any record" type, so the record is named in two parts.
-      aboutId: { type: t.string, required: false, label: "about" },
-      aboutType: { type: t.string, required: false, label: "kind of record" }
+      aboutId: {
+        type: t.string,
+        required: false,
+        label: "about",
+        help: "workflow-notify-about-record"
+      },
+      aboutType: {
+        type: t.string,
+        required: false,
+        label: "kind of record",
+        help: "workflow-notify-about-record"
+      }
     },
     outputs: {},
     batchable: true,
@@ -131,8 +157,19 @@ export const WORKFLOW_ACTIONS = {
     label: "Call an outside URL",
     permission: { module: "workflows", action: "update" },
     inputs: {
-      url: { type: t.string, required: true, label: "URL" },
-      body: { type: t.string, required: false, label: "body", template: true }
+      url: {
+        type: t.string,
+        required: true,
+        label: "URL",
+        help: "workflow-webhook-url"
+      },
+      body: {
+        type: t.string,
+        required: false,
+        label: "body",
+        template: true,
+        help: "workflow-webhook-body"
+      }
     },
     outputs: { status: t.number },
     batchable: true

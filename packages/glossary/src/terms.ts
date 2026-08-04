@@ -898,6 +898,10 @@ export const terms = {
   },
 
   // ── Shipping methods (ShippingMethodForm) ───────────────────────────────
+  "shipping-method": {
+    term: msg`Shipping Method`,
+    definition: msg`The carrier and service a shipment goes out on, supplying the tracking-URL template that turns a tracking number into a link and the account freight charges post to.`
+  },
   "shipping-method-carrier-account": {
     term: msg`Carrier Account`,
     definition: msg`The GL account charges for this carrier post to (freight expense, freight in/out).`
@@ -976,6 +980,10 @@ export const terms = {
   },
 
   // ── Items: core (Part/Tool/Material/Consumable/Item forms) ──────────────
+  item: {
+    term: msg`Item`,
+    definition: msg`Carbon's single record for anything with a part number — Part, Material, Tool, Service, Consumable, or Fixture — that jobs, methods, orders, and inventory all point at.`
+  },
   "item-tracking-type": {
     term: msg`Tracking Type`,
     definition: msg`Whether Carbon follows each unit (Serial), each lot (Batch), the quantity (Inventory), or no tracking (Non-Inventory).`
@@ -1279,6 +1287,18 @@ export const terms = {
   "job-deadline-type": {
     term: msg`Deadline Type`,
     definition: msg`How strict the Due Date is — Hard Deadline blocks scheduling past it, Soft Deadline lets planning push out with a warning, No Deadline ignores it entirely.`
+  },
+  "job-due-date": {
+    term: msg`Due Date (job)`,
+    definition: msg`The date a job's quantity is needed, which together with Deadline Type sets the job's place in its location's schedule queue.`
+  },
+  "job-priority": {
+    term: msg`Job Priority`,
+    definition: msg`The job's position in its location's schedule queue — a fractional number Carbon computes from the due date and deadline type, not a Low/High rating.`
+  },
+  "job-sales-order-line": {
+    term: msg`Sales Order Line (job)`,
+    definition: msg`The sales order line this job was created to supply, tying the job to the customer demand behind it.`
   },
   "job-bulk-total-quantity": {
     term: msg`Total Quantity`,
@@ -1947,5 +1967,23 @@ export const terms = {
     term: msg`Notification`,
     definition: msg`An alert that something needs a person's attention, fanned out from a carbon/notify event to the in-app inbox plus optional email and Slack, muteable per topic per user.`,
     href: "/docs/reference/notifications"
+  },
+
+  // ── Workflows & cross-cutting record fields ─────────────────────────────
+  assignee: {
+    term: msg`Assignee`,
+    definition: msg`The Carbon user currently responsible for working this record, set per record and independent of ownership fields like Account Manager or Sales Person.`
+  },
+  "workflow-notify-about-record": {
+    term: msg`About (notification)`,
+    definition: msg`The record a workflow notification points at, named as an id plus its kind; leave it empty and the notification links to the workflow run itself.`
+  },
+  "workflow-webhook-url": {
+    term: msg`Webhook URL`,
+    definition: msg`The https address a workflow's webhook step posts to — plain http, redirects, and hosts resolving to private or link-local addresses are refused, and the call gives up after ten seconds.`
+  },
+  "workflow-webhook-body": {
+    term: msg`Webhook Body`,
+    definition: msg`The request body sent verbatim as the POST payload with a JSON content type, after workflow variables inside it are substituted.`
   }
 } as const satisfies Record<string, GlossaryEntry>;

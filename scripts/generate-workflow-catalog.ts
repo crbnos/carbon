@@ -1,7 +1,7 @@
 /**
- * Builds events.generated.ts, actions.generated.ts and labels.generated.ts from
- * entities.ts, moments.ts, actions.ts, operations.ts and the database swagger
- * schema. Run: pnpm run generate:workflow-catalog
+ * Builds events.generated.ts, actions.generated.ts, labels.generated.ts and
+ * help.generated.ts from entities.ts, moments.ts, actions.ts, operations.ts and
+ * the database swagger schema. Run: pnpm run generate:workflow-catalog
  *
  * Labels are a separate file because `msg` is a build-time macro that throws when
  * plain Node imports it. Emitted source is unformatted; the script pipes it
@@ -79,14 +79,25 @@ const labels = [
   ``
 ].join("\n");
 
+// A plain object, not a macro file — so unlike labels this one is safe to import
+// from plain Node, which check-workflow-catalog.ts relies on.
+const help = [
+  HEADER,
+  `import type { TermId } from "@carbon/glossary";`,
+  ``,
+  `export const WORKFLOW_FIELD_HELP: Record<string, TermId> = ${JSON.stringify(sorted(built.help))};`,
+  ``
+].join("\n");
+
 fs.writeFileSync(path.join(CATALOG_DIR, "events.generated.ts"), events);
 fs.writeFileSync(path.join(CATALOG_DIR, "actions.generated.ts"), actions);
 fs.writeFileSync(path.join(CATALOG_DIR, "labels.generated.ts"), labels);
+fs.writeFileSync(path.join(CATALOG_DIR, "help.generated.ts"), help);
 
 console.log(
   `generate-workflow-catalog: ${Object.keys(built.events).length} events, ${
     Object.keys(built.entities).length
   } entities, ${Object.keys(built.actions).length} actions, ${
     Object.keys(built.operations).length
-  } operations`
+  } operations, ${Object.keys(built.help).length} help terms`
 );

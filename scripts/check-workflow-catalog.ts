@@ -19,6 +19,8 @@ import {
   WORKFLOW_ENTITIES,
   WORKFLOW_EVENTS
 } from "../packages/workflows/src/catalog/events.generated";
+// Direct import, unlike labels: this file has no `msg` macro, so plain Node can read it.
+import { WORKFLOW_FIELD_HELP } from "../packages/workflows/src/catalog/help.generated";
 import { WORKFLOW_MOMENTS } from "../packages/workflows/src/catalog/moments";
 import { WORKFLOW_OPERATIONS } from "../packages/workflows/src/catalog/operations";
 
@@ -155,6 +157,12 @@ if (failures.length === 0) {
     assert.deepStrictEqual(WORKFLOW_OPERATION_CATALOG, rebuilt.operations);
   } catch {
     fail(`${stale} An operation's entity, inputs or output changed.`);
+  }
+
+  try {
+    assert.deepStrictEqual(WORKFLOW_FIELD_HELP, rebuilt.help);
+  } catch {
+    fail(`${stale} A field's glossary help term changed.`);
   }
 
   // Read as text, not imported: the untransformed `msg` macro throws in plain Node.

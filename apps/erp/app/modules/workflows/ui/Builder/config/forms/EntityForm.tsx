@@ -20,7 +20,8 @@ import {
   describeValueType,
   entityLabelKey,
   operationInputLabelKey,
-  useWorkflowLabel
+  useWorkflowLabel,
+  workflowFieldHelp
 } from "../../catalog";
 import { useBuilderStore } from "../../context";
 import { ValueField } from "../../fields/ValueField";
@@ -179,10 +180,14 @@ export function EntityForm({ node, issues }: NodeFormProps<"entity">) {
               operationInputLabelKey(operationId, name),
               name
             );
+            const inputHelp = workflowFieldHelp(
+              operationInputLabelKey(operationId, name)
+            );
             return (
               <ValueField
                 key={name}
                 label={inputLabel}
+                helpTermId={inputHelp}
                 type={inputDef.type}
                 required={inputDef.required}
                 choices={inputDef.choices}

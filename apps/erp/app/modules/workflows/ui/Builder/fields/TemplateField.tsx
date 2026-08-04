@@ -9,6 +9,7 @@ import { hasStrayBrace } from "./valueParts";
 export function TemplateField({
   label,
   required,
+  helpTermId,
   value,
   onChange,
   context,
@@ -19,6 +20,7 @@ export function TemplateField({
     <Field
       label={label}
       required={required}
+      helpTermId={helpTermId}
       issue={issue}
       hint={
         hasStrayBrace(value)

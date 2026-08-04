@@ -14,8 +14,8 @@ import {
 } from "@carbon/react";
 import type { WorkflowIssue } from "@carbon/workflows";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useEffect } from "react";
-import { LuLock } from "react-icons/lu";
+import { useEffect, useRef, useState } from "react";
+import { LuLock, LuPencil } from "react-icons/lu";
 import { useFetcher } from "react-router";
 import { VersionMenu } from "~/components";
 import { usePermissions } from "~/hooks";
@@ -48,6 +48,82 @@ function SaveMarker() {
         <Trans>Could not save</Trans>
       )}
     </span>
+  );
+}
+
+// Renaming is a property of the workflow, not of the version being viewed, so a
+// live (read-only) version is still renameable — only the permission gates it.
+function WorkflowTitle({ workflow }: { workflow: WorkflowDetail }) {
+  const { t } = useLingui();
+  const permissions = usePermissions();
+  const fetcher = useFetcher<{ success: boolean }>();
+  const [isEditing, setIsEditing] = useState(false);
+  // Prevents onBlur from re-submitting after Enter or Escape already resolved
+  const settled = useRef(false);
+
+  // Show the in-flight name so the title never flickers back before revalidation.
+  const pending = fetcher.formData?.get("name");
+  const name = typeof pending === "string" && pending ? pending : workflow.name;
+
+  function commit(raw: string) {
+    if (settled.current) return;
+    settled.current = true;
+    setIsEditing(false);
+
+    const next = raw.trim();
+    if (!next || next === workflow.name) return;
+
+    const formData = new FormData();
+    formData.set("id", workflow.id);
+    formData.set("name", next);
+    formData.set("description", workflow.description ?? "");
+    formData.set("type", "inline");
+    fetcher.submit(formData, {
+      method: "post",
+      action: path.to.workflowRename(workflow.id)
+    });
+  }
+
+  if (!permissions.can("update", "workflows")) {
+    return <h1 className="truncate text-sm font-semibold">{name}</h1>;
+  }
+
+  if (isEditing) {
+    return (
+      <input
+        autoFocus
+        aria-label={t`Workflow name`}
+        className="w-64 max-w-full bg-transparent text-sm font-semibold focus:outline-none"
+        defaultValue={name}
+        onFocus={(e) => e.currentTarget.select()}
+        onBlur={(e) => commit(e.currentTarget.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            commit(e.currentTarget.value);
+          } else if (e.key === "Escape") {
+            e.preventDefault();
+            settled.current = true;
+            setIsEditing(false);
+          }
+        }}
+      />
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      className="group/title flex min-w-0 items-center gap-1.5 text-left"
+      title={t`Click to rename`}
+      onClick={() => {
+        settled.current = false;
+        setIsEditing(true);
+      }}
+    >
+      <h1 className="truncate text-sm font-semibold">{name}</h1>
+      <LuPencil className="size-3 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover/title:opacity-100" />
+    </button>
   );
 }
 
@@ -94,7 +170,7 @@ export function BuilderHeader({
 
   return (
     <header className="flex h-[49px] shrink-0 items-center gap-3 border-b px-4">
-      <h1 className="truncate text-sm font-semibold">{workflow.name}</h1>
+      <WorkflowTitle workflow={workflow} />
 
       {isReadOnly && (
         <Tooltip>
@@ -113,9 +189,8 @@ export function BuilderHeader({
         </Tooltip>
       )}
 
-      <SaveMarker />
-
       <div className="ml-auto flex items-center gap-2">
+        <SaveMarker />
         <VersionMenu
           versions={versions}
           currentVersionId={versionId}

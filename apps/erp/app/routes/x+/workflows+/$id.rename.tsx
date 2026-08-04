@@ -19,6 +19,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!id) throw new Error("id is not found");
 
   const formData = await request.formData();
+  // The builder header renames in place — it must stay on the canvas, so it opts
+  // out of the list redirect with `type=inline`.
+  const inline = formData.get("type") === "inline";
   const validation = await validator(workflowValidator).validate(formData);
 
   if (validation.error) {
@@ -39,6 +42,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
       await flash(request, error(update.error, "Failed to update workflow"))
     );
   }
+
+  if (inline) return data({ success: true });
 
   throw redirect(
     path.to.workflows,

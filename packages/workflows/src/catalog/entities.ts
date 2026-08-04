@@ -20,6 +20,7 @@ export const WORKFLOW_ENTITY_REGISTRY = {
   purchaseOrder: entity({
     table: "purchaseOrder",
     label: "Purchase order",
+    help: "purchase-order",
     permission: "purchasing",
     watch: {
       status: { label: "status" },
@@ -32,14 +33,18 @@ export const WORKFLOW_ENTITY_REGISTRY = {
       tags: { label: "tags" }
     },
     write: {
-      supplierReference: { label: "supplier reference" },
+      supplierReference: {
+        label: "supplier reference",
+        help: "purchase-order-supplier-order-number"
+      },
       orderDate: { label: "order date" },
-      assignee: { label: "assignee", ref: "user" }
+      assignee: { label: "assignee", ref: "user", help: "assignee" }
     }
   }),
   salesOrder: entity({
     table: "salesOrder",
     label: "Sales order",
+    help: "sales-order",
     permission: "sales",
     watch: {
       status: { label: "status" },
@@ -52,15 +57,19 @@ export const WORKFLOW_ENTITY_REGISTRY = {
       completedDate: { label: "completed date" }
     },
     write: {
-      customerReference: { label: "customer reference" },
+      customerReference: {
+        label: "customer reference",
+        help: "customer-document-reference"
+      },
       orderDate: { label: "order date" },
-      assignee: { label: "assignee", ref: "user" },
+      assignee: { label: "assignee", ref: "user", help: "assignee" },
       salesPersonId: { label: "salesperson", ref: "user" }
     }
   }),
   job: entity({
     table: "job",
     label: "Job",
+    help: "job",
     permission: "production",
     watch: {
       status: { label: "status" },
@@ -73,16 +82,17 @@ export const WORKFLOW_ENTITY_REGISTRY = {
       scrapQuantity: { label: "scrap quantity" }
     },
     write: {
-      dueDate: { label: "due date" },
+      dueDate: { label: "due date", help: "job-due-date" },
       startDate: { label: "start date" },
-      assignee: { label: "assignee", ref: "user" },
-      priority: { label: "priority" },
-      deadlineType: { label: "deadline type" }
+      assignee: { label: "assignee", ref: "user", help: "assignee" },
+      priority: { label: "priority", help: "job-priority" },
+      deadlineType: { label: "deadline type", help: "job-deadline-type" }
     }
   }),
   item: entity({
     table: "item",
     label: "Item",
+    help: "item",
     permission: "parts",
     watch: {
       active: { label: "active" },
@@ -96,12 +106,13 @@ export const WORKFLOW_ENTITY_REGISTRY = {
     },
     write: {
       name: { label: "name" },
-      assignee: { label: "assignee", ref: "user" }
+      assignee: { label: "assignee", ref: "user", help: "assignee" }
     }
   }),
   receipt: entity({
     table: "receipt",
     label: "Receipt",
+    help: "receipt",
     permission: "inventory",
     watch: {
       status: { label: "status" },
@@ -112,11 +123,12 @@ export const WORKFLOW_ENTITY_REGISTRY = {
       invoiced: { label: "invoiced" },
       sourceDocument: { label: "source document" }
     },
-    write: { assignee: { label: "assignee", ref: "user" } }
+    write: { assignee: { label: "assignee", ref: "user", help: "assignee" } }
   }),
   shipment: entity({
     table: "shipment",
     label: "Shipment",
+    help: "shipment",
     permission: "inventory",
     watch: {
       status: { label: "status" },
@@ -129,13 +141,14 @@ export const WORKFLOW_ENTITY_REGISTRY = {
     },
     write: {
       trackingNumber: { label: "tracking number" },
-      assignee: { label: "assignee", ref: "user" },
-      shippingMethodId: { label: "shipping method" }
+      assignee: { label: "assignee", ref: "user", help: "assignee" },
+      shippingMethodId: { label: "shipping method", help: "shipping-method" }
     }
   }),
   quote: entity({
     table: "quote",
     label: "Quote",
+    help: "quote",
     permission: "sales",
     watch: {
       status: { label: "status" },
@@ -148,12 +161,18 @@ export const WORKFLOW_ENTITY_REGISTRY = {
       completedDate: { label: "completed date" }
     },
     write: {
-      expirationDate: { label: "expiration date" },
+      expirationDate: {
+        label: "expiration date",
+        help: "quote-expiration-date"
+      },
       dueDate: { label: "due date" },
-      assignee: { label: "assignee", ref: "user" },
+      assignee: { label: "assignee", ref: "user", help: "assignee" },
       estimatorId: { label: "estimator", ref: "user" },
       salesPersonId: { label: "salesperson", ref: "user" },
-      customerReference: { label: "customer reference" }
+      customerReference: {
+        label: "customer reference",
+        help: "customer-document-reference"
+      }
     }
   }),
   supplier: entity({
@@ -170,9 +189,13 @@ export const WORKFLOW_ENTITY_REGISTRY = {
       taxPercent: { label: "tax percent" }
     },
     write: {
-      accountManagerId: { label: "account manager", ref: "user" },
-      assignee: { label: "assignee", ref: "user" },
-      supplierTypeId: { label: "type" }
+      accountManagerId: {
+        label: "account manager",
+        ref: "user",
+        help: "supplier-account-manager"
+      },
+      assignee: { label: "assignee", ref: "user", help: "assignee" },
+      supplierTypeId: { label: "type", help: "supplier-type-field" }
     }
   }),
   customer: entity({
@@ -189,14 +212,19 @@ export const WORKFLOW_ENTITY_REGISTRY = {
       salesContactId: { label: "sales contact" }
     },
     write: {
-      accountManagerId: { label: "account manager", ref: "user" },
-      assignee: { label: "assignee", ref: "user" },
-      customerTypeId: { label: "type" }
+      accountManagerId: {
+        label: "account manager",
+        ref: "user",
+        help: "customer-account-manager"
+      },
+      assignee: { label: "assignee", ref: "user", help: "assignee" },
+      customerTypeId: { label: "type", help: "customer-type-field" }
     }
   }),
   nonConformance: entity({
     table: "nonConformance",
     label: "Issue",
+    help: "nonconformance",
     permission: "quality",
     watch: {
       status: { label: "status" },
@@ -210,10 +238,10 @@ export const WORKFLOW_ENTITY_REGISTRY = {
       quantity: { label: "quantity" }
     },
     write: {
-      assignee: { label: "assignee", ref: "user" },
+      assignee: { label: "assignee", ref: "user", help: "assignee" },
       priority: { label: "priority" },
       dueDate: { label: "due date" },
-      nonConformanceTypeId: { label: "type" }
+      nonConformanceTypeId: { label: "type", help: "issue-issue-type" }
     }
   }),
 

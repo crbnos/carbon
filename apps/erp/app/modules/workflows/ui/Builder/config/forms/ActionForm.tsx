@@ -28,7 +28,8 @@ import {
   actionInputLabelKey,
   catalog,
   entityLabelKey,
-  useWorkflowLabel
+  useWorkflowLabel,
+  workflowFieldHelp
 } from "../../catalog";
 import { useBuilderStore } from "../../context";
 import { TemplateField } from "../../fields/TemplateField";
@@ -332,6 +333,7 @@ export function ActionForm({ node, issues }: NodeFormProps<"action">) {
     const inputDef = actionDef?.inputs[name];
     if (!inputDef) return null;
     const inputLabel = label(actionInputLabelKey(actionId, name), name);
+    const inputHelp = workflowFieldHelp(actionInputLabelKey(actionId, name));
     const fieldContext = { nodeId: node.id, inLoop: isBatch };
     const fieldIssue = issueForField(issues, name, `inputs.${name}`);
 
@@ -340,6 +342,7 @@ export function ActionForm({ node, issues }: NodeFormProps<"action">) {
         <TemplateField
           key={name}
           label={inputLabel}
+          helpTermId={inputHelp}
           type={inputDef.type}
           required={inputDef.required}
           value={inputs[name]}
@@ -354,6 +357,7 @@ export function ActionForm({ node, issues }: NodeFormProps<"action">) {
       <ValueField
         key={name}
         label={inputLabel}
+        helpTermId={inputHelp}
         type={inputDef.type}
         required={inputDef.required}
         choices={inputDef.choices}

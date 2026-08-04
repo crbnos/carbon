@@ -67,7 +67,9 @@ export function InlineNodeName({ name, isReadOnly, isTaken, onCommit }: Props) {
       <div className="nodrag nopan min-w-0">
         <input
           autoFocus
-          className="w-full bg-transparent text-xs font-semibold focus:outline-none"
+          // `block`: an inline-block input adds a baseline descender gap that the
+          // static label's flex box has not, which nudged the whole card down.
+          className="block h-4 w-full bg-transparent text-xs font-semibold leading-4 focus:outline-none"
           defaultValue={name}
           onFocus={(e) => e.currentTarget.select()}
           onBlur={(e) => tryCommit(e.currentTarget.value)}
@@ -89,10 +91,12 @@ export function InlineNodeName({ name, isReadOnly, isTaken, onCommit }: Props) {
   }
 
   return (
-    <div className="nodrag nopan min-w-0">
+    // `nodrag` sits on the button, not the row: the empty space beside a short
+    // name belongs to the card and has to stay draggable.
+    <div className="flex min-w-0">
       <button
         type="button"
-        className="group/name flex min-w-0 items-center gap-1 text-left"
+        className="nodrag nopan group/name flex min-w-0 items-center gap-1 text-left"
         onClick={startEditing}
         title={t`Click to rename`}
       >

@@ -5,6 +5,7 @@
   "sideEffects": false,
   "exports": {
     ".": "./src/index.ts",
+    "./help": "./src/catalog/help.generated.ts",
     "./labels": "./src/catalog/labels.generated.ts"
   },
   "scripts": {
@@ -22,6 +23,7 @@
   "devDependencies": {
     "@carbon/config": "workspace:*",
     "@carbon/database": "workspace:*",
+    "@carbon/glossary": "workspace:*",
     "kysely": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"

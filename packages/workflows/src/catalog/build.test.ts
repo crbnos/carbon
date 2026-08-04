@@ -623,7 +623,8 @@ describe("buildCatalog — the real hand-written inputs", () => {
     expect(Object.keys(built.operations)).toHaveLength(15);
     // 106 events + 16 actions + 15 operations + 16 entity labels + 94 column labels
     // + 22 action input labels + 15 operation input labels
-    expect(Object.keys(built.labels)).toHaveLength(284);
+    // + 44 generated update-action input labels (10 record inputs + 34 writable columns)
+    expect(Object.keys(built.labels)).toHaveLength(328);
   });
 
   it("sets template: true on inputs marked as templates", () => {
