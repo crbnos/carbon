@@ -569,6 +569,12 @@ msgstr "सामग्री जारी करें"
 msgid "Issue Type"
 msgstr "समस्या प्रकार"
 
+msgid "Issued {issuedQuantity} of {lotLabel}"
+msgstr "{issuedQuantity} का {lotLabel} जारी किया"
+
+msgid "Issued {issuedQuantity} of {lotLabel} — {remainingQuantity} remains"
+msgstr "{issuedQuantity} का {lotLabel} जारी किया — {remainingQuantity} बाकी है"
+
 msgid "Item"
 msgstr "वस्तु"
 

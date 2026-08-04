@@ -569,6 +569,12 @@ msgstr "Issue Material"
 msgid "Issue Type"
 msgstr "Issue Type"
 
+msgid "Issued {issuedQuantity} of {lotLabel}"
+msgstr "Issued {issuedQuantity} of {lotLabel}"
+
+msgid "Issued {issuedQuantity} of {lotLabel} — {remainingQuantity} remains"
+msgstr "Issued {issuedQuantity} of {lotLabel} — {remainingQuantity} remains"
+
 msgid "Item"
 msgstr "Item"
 

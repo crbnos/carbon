@@ -39,6 +39,7 @@ import {
 } from "@carbon/react";
 import { getItemReadableId } from "@carbon/utils";
 import { getLocalTimeZone, parseDate, today } from "@internationalized/date";
+import { useLingui } from "@lingui/react/macro";
 import { useNumberFormatter } from "@react-aria/i18n";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -123,6 +124,7 @@ export function IssueMaterialModal({
   onClose: () => void;
 }) {
   const { carbon } = useCarbon();
+  const { t } = useLingui();
   const [items] = useItems();
   const numberFormatter = useNumberFormatter({ maximumFractionDigits: 4 });
 
@@ -1057,10 +1059,15 @@ export function IssueMaterialModal({
               split.readableId ||
               getItemReadableId(items, material?.itemId) ||
               "batch";
-            toast.success(
+            const issuedQuantity = numberFormatter.format(split.quantity);
+            const remainingQuantity =
               split.remainingQuantity !== undefined
-                ? `Issued ${numberFormatter.format(split.quantity)} of ${lotLabel} — ${numberFormatter.format(split.remainingQuantity)} remains`
-                : `Issued ${numberFormatter.format(split.quantity)} of ${lotLabel}`
+                ? numberFormatter.format(split.remainingQuantity)
+                : null;
+            toast.success(
+              remainingQuantity !== null
+                ? t`Issued ${issuedQuantity} of ${lotLabel} — ${remainingQuantity} remains`
+                : t`Issued ${issuedQuantity} of ${lotLabel}`
             );
           }
           onClose();
@@ -1080,7 +1087,8 @@ export function IssueMaterialModal({
     onClose,
     items,
     material?.itemId,
-    numberFormatter
+    numberFormatter,
+    t
   ]);
 
   useEffect(() => {

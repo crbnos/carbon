@@ -569,6 +569,12 @@ msgstr "Distribuer le matériau"
 msgid "Issue Type"
 msgstr "Type de problème"
 
+msgid "Issued {issuedQuantity} of {lotLabel}"
+msgstr "Émis {issuedQuantity} sur {lotLabel}"
+
+msgid "Issued {issuedQuantity} of {lotLabel} — {remainingQuantity} remains"
+msgstr "Émis {issuedQuantity} sur {lotLabel} — {remainingQuantity} reste"
+
 msgid "Item"
 msgstr "Article"
 

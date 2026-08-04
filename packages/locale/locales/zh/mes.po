@@ -569,6 +569,12 @@ msgstr "发放物料"
 msgid "Issue Type"
 msgstr "问题类型"
 
+msgid "Issued {issuedQuantity} of {lotLabel}"
+msgstr "已发放 {issuedQuantity} 个 {lotLabel}"
+
+msgid "Issued {issuedQuantity} of {lotLabel} — {remainingQuantity} remains"
+msgstr "已发放 {issuedQuantity} 个 {lotLabel} — 还剩 {remainingQuantity} 件"
+
 msgid "Item"
 msgstr "物料"
 

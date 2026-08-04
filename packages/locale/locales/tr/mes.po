@@ -569,6 +569,12 @@ msgstr "Malzeme Çıkart"
 msgid "Issue Type"
 msgstr "Sorun Türü"
 
+msgid "Issued {issuedQuantity} of {lotLabel}"
+msgstr "Çıkış Yapılan {issuedQuantity} / {lotLabel}"
+
+msgid "Issued {issuedQuantity} of {lotLabel} — {remainingQuantity} remains"
+msgstr "Çıkış Yapılan {issuedQuantity} / {lotLabel} — {remainingQuantity} Kaldı"
+
 msgid "Item"
 msgstr "Ürün"
 
