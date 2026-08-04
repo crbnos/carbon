@@ -1,4 +1,5 @@
 import type { Database } from "@carbon/database";
+import { pluckUnique } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type {
   Activity,
@@ -466,7 +467,8 @@ export function toGraphData(payload: LineagePayload): GraphData {
   // doesn't render the survivor as produced by its own split; the input edge
   // stays (it carries the drawn quantity).
   const inputPairs = new Set(
-    payload.inputs.map(
+    pluckUnique(
+      payload.inputs,
       (input) => `${input.trackedActivityId}::${input.trackedEntityId}`
     )
   );

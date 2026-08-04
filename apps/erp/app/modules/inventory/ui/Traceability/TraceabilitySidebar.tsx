@@ -7,6 +7,7 @@ import {
   TooltipContent,
   TooltipTrigger
 } from "@carbon/react";
+import { indexBy, pluckUnique } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import { useEffect, useMemo, useRef } from "react";
 import {
@@ -86,8 +87,8 @@ export function TraceabilitySidebar({
           outputs: [] as RelatedEntity[]
         };
       }
-      const activityById = new Map(payload.activities.map((a) => [a.id, a]));
-      const entityById = new Map(payload.entities.map((e) => [e.id, e]));
+      const activityById = indexBy(payload.activities, (a) => a.id);
+      const entityById = indexBy(payload.entities, (e) => e.id);
 
       const producedBy: RelatedActivity[] = [];
       const consumedBy: RelatedActivity[] = [];
@@ -101,18 +102,17 @@ export function TraceabilitySidebar({
         // its own Split activity. That self-loop is neither production nor
         // consumption — surface it as a Split instead of lying on both sides.
         const inputActivityIds = new Set(
-          payload.inputs
-            .filter((i) => i.trackedEntityId === entity.id)
-            .map((i) => i.trackedActivityId)
+          pluckUnique(payload.inputs, (i) =>
+            i.trackedEntityId === entity.id ? i.trackedActivityId : null
+          )
         );
         const selfLoopActivityIds = new Set(
-          payload.outputs
-            .filter(
-              (o) =>
-                o.trackedEntityId === entity.id &&
-                inputActivityIds.has(o.trackedActivityId)
-            )
-            .map((o) => o.trackedActivityId)
+          pluckUnique(payload.outputs, (o) =>
+            o.trackedEntityId === entity.id &&
+            inputActivityIds.has(o.trackedActivityId)
+              ? o.trackedActivityId
+              : null
+          )
         );
 
         for (const o of payload.outputs) {

@@ -38,7 +38,7 @@ import {
   useDisclosure,
   VStack
 } from "@carbon/react";
-import { formatDate } from "@carbon/utils";
+import { formatDate, groupBy } from "@carbon/utils";
 import { getLocalTimeZone, today } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
@@ -118,20 +118,14 @@ const InventoryStorageUnits = ({
   // same bin collapse into a group row with the summed quantity, expandable to
   // the underlying tracked entities.
   const storageUnitGroups = useMemo(() => {
-    const groups = new Map<string, ItemStorageUnitQuantities[]>();
-    visibleStorageUnitQuantities.forEach((item, index) => {
+    const grouped = groupBy(
+      visibleStorageUnitQuantities.map((item, index) => ({ item, index })),
       // Untracked/unnumbered rows get a per-row key so they stay singletons.
-      const lotKey = item.readableId ?? item.trackedEntityId ?? `row-${index}`;
-      const key = `${item.storageUnitId}::${lotKey}`;
-      const members = groups.get(key);
-      if (members) {
-        members.push(item);
-      } else {
-        groups.set(key, [item]);
-      }
-    });
-    return Array.from(groups.entries())
-      .map(([key, members]) => ({ key, members }))
+      ({ item, index }) =>
+        `${item.storageUnitId}::${item.readableId ?? item.trackedEntityId ?? `row-${index}`}`
+    );
+    return Object.entries(grouped)
+      .map(([key, rows]) => ({ key, members: rows.map((r) => r.item) }))
       .sort((a, b) => {
         const unitA = a.members[0].storageUnitName ?? "";
         const unitB = b.members[0].storageUnitName ?? "";
