@@ -176,7 +176,7 @@ msgid "By signing in, you agree to the <0>Terms of Service</0> and <1>Privacy Po
 msgstr "登录即表示您同意<0>服务条款</0>和<1>隐私政策。</1>"
 
 msgid "By?"
-msgstr "按？"
+msgstr "谁？"
 
 msgid "Cancel"
 msgstr "取消"

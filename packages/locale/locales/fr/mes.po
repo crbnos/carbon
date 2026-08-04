@@ -176,7 +176,7 @@ msgid "By signing in, you agree to the <0>Terms of Service</0> and <1>Privacy Po
 msgstr "En vous connectant, vous acceptez les <0>Conditions d'utilisation</0> et la <1>Politique de confidentialité.</1>"
 
 msgid "By?"
-msgstr "Par?"
+msgstr "Par qui ?"
 
 msgid "Cancel"
 msgstr "Annuler"
@@ -381,10 +381,10 @@ msgstr "Date d'échéance"
 
 #. placeholder {0}: board.dueSoon.days
 msgid "Due in the next {0} days?"
-msgstr "Dû dans les {0} prochains jours?"
+msgstr "Dû dans les {0} prochains jours ?"
 
 msgid "Due today?"
-msgstr "Dû aujourd'hui?"
+msgstr "Dû aujourd'hui ?"
 
 msgid "Duplicate batch number"
 msgstr "Numéro de lot en double"
@@ -513,7 +513,7 @@ msgid "How many were actually picked?"
 msgstr "Combien ont réellement été prélevés ?"
 
 msgid "How many?"
-msgstr "Combien?"
+msgstr "Combien ?"
 
 msgid "I understand and want to complete without issuing"
 msgstr "Je comprends et souhaite terminer sans distribuer"
@@ -651,7 +651,7 @@ msgid "Machine"
 msgstr "Machine"
 
 msgid "Machine down for maintenance now?"
-msgstr "Machine arrêtée pour maintenance actuellement?"
+msgstr "Machine arrêtée pour maintenance actuellement ?"
 
 msgid "Maintenance"
 msgstr "Maintenance"
@@ -899,7 +899,7 @@ msgid "Overall result"
 msgstr "Résultat global"
 
 msgid "Overdue PMs?"
-msgstr "PM en retard?"
+msgstr "PM en retard ?"
 
 msgid "Parameters"
 msgstr "Paramètres"
@@ -1337,7 +1337,7 @@ msgid "Unpick {0}"
 msgstr "Dépicker {0}"
 
 msgid "Unplanned downtime"
-msgstr "Arrêt imprevu"
+msgstr "Arrêt imprévu"
 
 #. placeholder {0}: board.unplannedCount.days
 msgid "Unplanned maintenance items, last {0} days"

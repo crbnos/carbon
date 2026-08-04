@@ -30,7 +30,7 @@ must not do.
 | `new Date(str).toLocaleDateString(locale)` | `formatDate(str, options?, locale)` (`@carbon/utils`) |
 | `new Date(str)` to parse a timestamp | `parseAbsolute(str, timeZone)` → `ZonedDateTime` |
 | `new Date(str)` to parse a `YYYY-MM-DD` | `parseDate(str)` → `CalendarDate` |
-| `d.setDate/​setMonth/​setFullYear(...)` | `zdt.add({ days | months | years })` (clamps month-ends) |
+| `d.setDate/​setMonth/​setFullYear(...)` | `zdt.add({ days })` / `.add({ months })` / `.add({ years })` (clamps month-ends) |
 | `d.setHours(0,0,0,0)` for start-of-day | `fromDate(d, tz).set({ hour: 0, minute: 0, second: 0, millisecond: 0 })` |
 | `d1 <= d2` on `Date`s | `a.compare(b) <= 0` on `ZonedDateTime`/`CalendarDate` |
 | `d.getDay()` | `getDayOfWeek(date, "en-US")` (0 = Sun … 6 = Sat) |

@@ -176,7 +176,7 @@ msgid "By signing in, you agree to the <0>Terms of Service</0> and <1>Privacy Po
 msgstr "로그인하면 <0>서비스 약관</0> 및 <1>개인정보 처리방침</1>에 동의하는 것으로 간주됩니다."
 
 msgid "By?"
-msgstr "기준?"
+msgstr "누가?"
 
 msgid "Cancel"
 msgstr "취소"
@@ -349,7 +349,7 @@ msgid "Down for maintenance · {0}"
 msgstr "유지보수 중단됨 · {0}"
 
 msgid "Down for planned maintenance"
-msgstr "계획된 유지보수로 중단됨"
+msgstr "계획된 유지보수로 가동 중단"
 
 msgid "Download"
 msgstr "다운로드"
@@ -651,7 +651,7 @@ msgid "Machine"
 msgstr "기계"
 
 msgid "Machine down for maintenance now?"
-msgstr "현재 유지보수 중?"
+msgstr "현재 유지보수로 가동 중단?"
 
 msgid "Maintenance"
 msgstr "유지보수"
@@ -660,7 +660,7 @@ msgid "Maintenance Completed"
 msgstr "유지보수 완료"
 
 msgid "Maintenance overdue"
-msgstr "유지보수 연체됨"
+msgstr "기한이 지난 유지보수"
 
 msgid "Manually add items to inventory"
 msgstr "재고에 품목을 수동으로 추가"
@@ -899,7 +899,7 @@ msgid "Overall result"
 msgstr "전체 결과"
 
 msgid "Overdue PMs?"
-msgstr "연체된 PM?"
+msgstr "기한이 지난 PM?"
 
 msgid "Parameters"
 msgstr "파라미터"

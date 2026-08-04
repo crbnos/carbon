@@ -105,7 +105,7 @@ msgid "All"
 msgstr "すべて"
 
 msgid "All clear"
-msgstr "すべてクリア"
+msgstr "異常なし"
 
 msgid "All rework"
 msgstr "すべて再加工"
@@ -847,7 +847,7 @@ msgid "Notes"
 msgstr "備考"
 
 msgid "Nothing running"
-msgstr "何も実行していません"
+msgstr "稼働中の作業はありません"
 
 msgid "Nothing scheduled at this work center"
 msgstr "このワークセンターにはスケジュールされたものはありません"
@@ -1357,7 +1357,7 @@ msgstr "更新"
 
 #. placeholder {0}: formatClock(lastUpdated)
 msgid "Updated {0}"
-msgstr "{0} で更新されました"
+msgstr "{0} に更新"
 
 msgid "Updated successfully"
 msgstr "正常に更新されました"

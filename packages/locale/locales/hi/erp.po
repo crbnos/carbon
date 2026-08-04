@@ -8576,7 +8576,7 @@ msgid "No matches. Type to create one."
 msgstr "कोई मेल नहीं। एक बनाने के लिए टाइप करें।"
 
 msgid "No matching bins"
-msgstr "कोई मिलान खाना नहीं"
+msgstr "कोई मिलान बिन नहीं"
 
 msgid "No new notifications"
 msgstr "कोई नई सूचनाएं नहीं"

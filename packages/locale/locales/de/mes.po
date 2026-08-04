@@ -349,7 +349,7 @@ msgid "Down for maintenance · {0}"
 msgstr "Wartung läuft · {0}"
 
 msgid "Down for planned maintenance"
-msgstr "Geplante Wartung läuft"
+msgstr "Wegen geplanter Wartung außer Betrieb"
 
 msgid "Download"
 msgstr "Herunterladen"

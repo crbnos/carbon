@@ -176,7 +176,7 @@ msgid "By signing in, you agree to the <0>Terms of Service</0> and <1>Privacy Po
 msgstr "Выполняя вход, вы соглашаетесь с <0>Условиями использования</0> и <1>Политикой конфиденциальности.</1>"
 
 msgid "By?"
-msgstr "По?"
+msgstr "Кем?"
 
 msgid "Cancel"
 msgstr "Отмена"

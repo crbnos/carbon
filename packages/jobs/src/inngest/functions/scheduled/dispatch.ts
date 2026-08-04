@@ -447,7 +447,15 @@ export const dispatchFunction = inngest.createFunction(
  * displays immediately instead of waiting until the next 6am run.
  */
 export const generateMaintenanceForScheduleFunction = inngest.createFunction(
-  { id: "generate-maintenance", retries: 2 },
+  {
+    id: "generate-maintenance",
+    retries: 2,
+    // Serialize runs for the same schedule (rapid saves / retries) so two
+    // overlapping runs can't race to create the same dispatch. Combined with the
+    // per-day existence check in generateDispatchesForSchedule, this keeps
+    // generation idempotent per occurrence.
+    concurrency: { limit: 1, key: "event.data.scheduleId" }
+  },
   { event: "carbon/generate-maintenance" },
   async ({ event, step, logger }) => {
     const { companyId, scheduleId } = event.data;
