@@ -221,7 +221,10 @@ function buildLotTimeline(
       beforeState = stateQuantities.length - 1;
     }
     let afterState: number | null = null;
-    if (after[i] !== null) {
+    // Movements relocate the lot without transforming it — same id, same
+    // quantity. They dangle off the live state as an event marker instead of
+    // minting an identical-looking successor state.
+    if (after[i] !== null && !ev.movement) {
       stateQuantities.push(after[i]!);
       afterState = stateQuantities.length - 1;
     }
