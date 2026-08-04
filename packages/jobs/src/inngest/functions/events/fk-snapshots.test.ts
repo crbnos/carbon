@@ -1,5 +1,13 @@
-import type { SnapshotFieldEntry } from "@carbon/database/audit.config";
-import { fkDisplayRegistry } from "@carbon/database/audit.config";
+import type {
+  SnapshotFieldEntry,
+  TableConfig
+} from "@carbon/database/audit.config";
+import {
+  auditConfig,
+  fkDisplayHops,
+  fkDisplayRegistry,
+  getSnapshotFields
+} from "@carbon/database/audit.config";
 import { describe, expect, it } from "vitest";
 import type { FkMapRow } from "./fk-snapshots";
 import { fkMapKey, parseFkMapRows, resolveSnapshotSpec } from "./fk-snapshots";
@@ -100,6 +108,56 @@ describe("resolveSnapshotSpec — automatic path (schema FK + registry)", () => 
   });
 });
 
+describe("resolveSnapshotSpec — junction hops (fkDisplayHops)", () => {
+  it("resolves a contact-junction FK to a two-stage hop spec", () => {
+    // invoiceSupplierContactId → supplierContact (a link row with no name);
+    // the display value is contact.fullName, one hop away.
+    const fkMap = fkMapOf({
+      tableName: "purchaseInvoice",
+      columnName: "invoiceSupplierContactId",
+      targetTable: "supplierContact",
+      targetHasCompanyId: true
+    });
+    expect(
+      resolveSnapshotSpec(
+        "purchaseInvoice",
+        "invoiceSupplierContactId",
+        NO_OVERRIDES,
+        fkMap
+      )
+    ).toEqual({
+      table: "supplierContact",
+      displayColumns: ["fullName"],
+      hasCompanyId: true,
+      // "contact" has no FK entry in this map, so tenancy defaults to
+      // scoped — correct, contact is tenant-scoped.
+      hop: { column: "contactId", table: "contact", hasCompanyId: true }
+    });
+  });
+
+  it("prefers a per-column override over the hop", () => {
+    const override: SnapshotFieldEntry = {
+      column: "customerContactId",
+      table: "customerContact",
+      displayColumns: ["id"]
+    };
+    const fkMap = fkMapOf({
+      tableName: "salesOrder",
+      columnName: "customerContactId",
+      targetTable: "customerContact",
+      targetHasCompanyId: true
+    });
+    const spec = resolveSnapshotSpec(
+      "salesOrder",
+      "customerContactId",
+      new Map([["customerContactId", override]]),
+      fkMap
+    );
+    expect(spec?.hop).toBeUndefined();
+    expect(spec?.displayColumns).toEqual(["id"]);
+  });
+});
+
 describe("resolveSnapshotSpec — overrides (declared snapshotFields)", () => {
   const override: SnapshotFieldEntry = {
     column: "supplierId",
@@ -134,6 +192,36 @@ describe("resolveSnapshotSpec — overrides (declared snapshotFields)", () => {
     });
   });
 
+  it("derives tenancy from other FKs to the same target when the override column has no constraint", () => {
+    // salesOrder.salesPersonId has no FK constraint, but "user" appears as
+    // the target of other schema FKs (createdBy etc.) — the override must
+    // inherit its global (non-tenant) tenancy or the snapshot lookup would
+    // filter "user" by a companyId column it doesn't have.
+    const userOverride: SnapshotFieldEntry = {
+      column: "salesPersonId",
+      table: "user",
+      displayColumns: ["fullName"]
+    };
+    const fkMap = fkMapOf({
+      tableName: "salesOrder",
+      columnName: "createdBy",
+      targetTable: "user",
+      targetHasCompanyId: false
+    });
+    expect(
+      resolveSnapshotSpec(
+        "salesOrder",
+        "salesPersonId",
+        new Map([["salesPersonId", userOverride]]),
+        fkMap
+      )
+    ).toEqual({
+      table: "user",
+      displayColumns: ["fullName"],
+      hasCompanyId: false
+    });
+  });
+
   it("defaults to tenant-scoped when the override target disagrees with the schema FK", () => {
     const fkMap = fkMapOf({
       tableName: "purchaseOrder",
@@ -149,6 +237,38 @@ describe("resolveSnapshotSpec — overrides (declared snapshotFields)", () => {
     );
     expect(spec?.table).toBe("supplier");
     expect(spec?.hasCompanyId).toBe(true);
+  });
+});
+
+describe("fkDisplayHops / fkDisplayRegistry invariants", () => {
+  const hopTables = Object.keys(fkDisplayHops);
+
+  it("no table appears in both the hops and the registry", () => {
+    // Resolution checks hops before the registry, so a table in both would
+    // leave the registry entry as silently-dead config.
+    for (const table of hopTables) {
+      expect(
+        (fkDisplayRegistry as Record<string, unknown>)[table],
+        `"${table}" is in fkDisplayHops AND fkDisplayRegistry — hops win, so the registry entry is dead config; remove one of the two`
+      ).toBeUndefined();
+    }
+  });
+
+  it("no snapshotFields override targets a hop table", () => {
+    // Overrides are single-hop: one pointing at a junction would freeze the
+    // junction's raw columns, and its column set could collide with the
+    // hop's in the same batched lookup. Point overrides at tables whose
+    // display columns are reachable in one hop.
+    for (const entity of Object.values(auditConfig.entities)) {
+      for (const [tableName, tableConfig] of Object.entries(entity.tables)) {
+        for (const snap of getSnapshotFields(tableConfig as TableConfig)) {
+          expect(
+            hopTables,
+            `snapshotFields override ${tableName}.${snap.column} targets hop table "${snap.table}"`
+          ).not.toContain(snap.table);
+        }
+      }
+    }
   });
 });
 
