@@ -140,7 +140,7 @@ Standing rules for every task:
       already surfaces the batch membership.)*
 - Verify: typecheck green; browser-verify inbox filter + batch expansion.
 
-### 1.8 Completeness service (foundation for tie-out)
+### 1.8 Completeness service (foundation for tie-out) ✅ (dd741436d)
 - Files: `apps/erp/app/modules/accounting/accounting.service.ts`
 - [ ] `getJournalSyncCompleteness(client, { companyId, integrationId, periodId? })` — posted
       journals since posting-sync start LEFT JOIN operations; returns unaccounted journal

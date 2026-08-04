@@ -94,6 +94,11 @@ msgstr "{0} dostawców z saldem"
 msgid "{0} un-sampled entities will be released to Available. Sampled passes stay Available and sampled failures stay Rejected."
 msgstr "{0} nieprzetestowane jednostki zostaną zwolnione do Dostępne. Przebadane pozytywne pozostają Dostępne, a przebadane negatywne pozostają Odrzucone."
 
+#. placeholder {0}: unmapped.length
+#. placeholder {1}: chart.length
+msgid "{0} unmapped accounts will be matched against {1} provider accounts."
+msgstr "{0} niezamapowane konta zostaną dopasowane do {1} kont dostawcy."
+
 #. placeholder {0}: task.autoCheck.count
 msgid "{0} unposted documents"
 msgstr "{0} nieopublikowanych dokumentów"
@@ -873,6 +878,9 @@ msgstr "Uzgodnij zakres"
 msgid "Agree who owns what and set a working rhythm"
 msgstr "Uzgodnij, kto za co odpowiada i ustal rytm pracy"
 
+msgid "AI couldn't confidently match any accounts"
+msgstr "AI nie potrafił pewnie dopasować żadnych kont"
+
 msgid "AI Tokens"
 msgstr "Tokeny AI"
 
@@ -1115,6 +1123,9 @@ msgstr "Zastosuj reguły cenowe"
 
 msgid "Apply Rules On Top"
 msgstr "Zastosuj reguły na górze"
+
+msgid "Apply suggestions"
+msgstr "Zastosuj sugestie"
 
 msgid "Apply To"
 msgstr "Zastosuj do"
@@ -2222,6 +2233,10 @@ msgstr "Tylko Carbon"
 
 msgid "Carbon Value"
 msgstr "Wartość Carbon"
+
+#. placeholder {0}: unmapped.length
+msgid "Carbon will use AI to guess a provider account for each of your {0} unmapped accounts. Suggestions are a starting point — you can review them before anything is saved."
+msgstr "Carbon będzie używać AI do zgadywania konta dostawcy dla każdego z Twoich {0} niezamapowanych kont. Sugestie są punktem wyjścia — możesz je przejrzeć przed zapisaniem czegokolwiek."
 
 msgid "Carbon-only"
 msgstr "Tylko dla Carbon"
@@ -6095,6 +6110,9 @@ msgstr "Wygenerowane identyfikatory są wyłączone"
 
 msgid "Generated IDs are enabled"
 msgstr "Wygenerowane identyfikatory są włączone"
+
+msgid "Generating suggestions…"
+msgstr "Generowanie sugestii…"
 
 msgid "Get live on Carbon: one system running quoting, purchasing, the shop floor, inventory, and finance, replacing the current tools."
 msgstr "Uruchom Carbon: jeden system obsługujący wycenę, zakupy, halę produkcyjną, magazyn i finanse, zastępujący obecne narzędzia."
@@ -10949,6 +10967,9 @@ msgstr "Przejrzyj zmiany każdego elementu, a następnie potwierdź — wydanie 
 msgid "Review the period's balance sheet and income statement and confirm the figures look right. This is a manual sign-off — mark it done once you have reviewed them."
 msgstr "Przejrzyj bilans i rachunek zysków i strat okresu i potwierdź, że liczby wyglądają prawidłowo. To jest ręczne zatwierdzenie — oznacz jako gotowe po ich przejrzeniu."
 
+msgid "Review the suggested matches before applying. These are a best guess — confirm each is correct."
+msgstr "Przejrzyj sugerowane dopasowania przed zastosowaniem. To są najlepsze zgadywanki — potwierdź, że każde jest poprawne."
+
 msgid "Review the warnings below, then post the count to apply the adjustments."
 msgstr "Przejrzyj ostrzeżenia poniżej, a następnie opublikuj liczenie, aby zastosować korekty."
 
@@ -12383,6 +12404,15 @@ msgstr "Część następcza"
 
 msgid "Suffix"
 msgstr "Sufiks"
+
+msgid "Suggest mappings"
+msgstr "Zasugeruj mapowania"
+
+msgid "Suggest mappings with AI"
+msgstr "Zasugeruj mapowania przy pomocy AI"
+
+msgid "Suggest with AI"
+msgstr "Zasugeruj przy pomocy AI"
 
 msgid "Suggested orders you haven't placed yet."
 msgstr "Sugerowane zamówienia, które jeszcze nie złożyłeś."

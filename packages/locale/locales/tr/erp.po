@@ -94,6 +94,11 @@ msgstr "{0} bakiyesi olan tedarikçi"
 msgid "{0} un-sampled entities will be released to Available. Sampled passes stay Available and sampled failures stay Rejected."
 msgstr "{0} örneklenmemiş varlıklar Kullanılabilir'e bırakılacaktır. Örneklenen başarılılar Kullanılabilir ve örneklenen başarısızlar Reddedilmiş olarak kalır."
 
+#. placeholder {0}: unmapped.length
+#. placeholder {1}: chart.length
+msgid "{0} unmapped accounts will be matched against {1} provider accounts."
+msgstr "{0} eşleştirilmemiş hesap, {1} sağlayıcı hesabı ile eşleştirilecektir."
+
 #. placeholder {0}: task.autoCheck.count
 msgid "{0} unposted documents"
 msgstr "{0} deftere geçmemiş belge"
@@ -873,6 +878,9 @@ msgstr "Kapsamda anlaş"
 msgid "Agree who owns what and set a working rhythm"
 msgstr "Kimin neyi sahip olduğunu belirleyin ve çalışma ritmi oluşturun"
 
+msgid "AI couldn't confidently match any accounts"
+msgstr "Yapay Zeka herhangi bir hesapı emin bir şekilde eşleştiremedi"
+
 msgid "AI Tokens"
 msgstr "Yapay Zeka Jetonları"
 
@@ -1115,6 +1123,9 @@ msgstr "Fiyatlandırma kurallarını uygula"
 
 msgid "Apply Rules On Top"
 msgstr "Kuralları üste uygula"
+
+msgid "Apply suggestions"
+msgstr "Önerileri Uygula"
 
 msgid "Apply To"
 msgstr "Uygulanacak Alan"
@@ -2222,6 +2233,10 @@ msgstr "Yalnızca Carbon"
 
 msgid "Carbon Value"
 msgstr "Carbon Değeri"
+
+#. placeholder {0}: unmapped.length
+msgid "Carbon will use AI to guess a provider account for each of your {0} unmapped accounts. Suggestions are a starting point — you can review them before anything is saved."
+msgstr "Carbon, {0} eşleştirilmemiş hesabınızın her biri için bir sağlayıcı hesabını tahmin etmek için Yapay Zeka kullanacaktır. Öneriler başlangıç noktasıdır — herhangi bir şey kaydedilmeden önce bunları gözden geçirebilirsiniz."
 
 msgid "Carbon-only"
 msgstr "Yalnızca Carbon"
@@ -6095,6 +6110,9 @@ msgstr "Oluşturulan kimlikler devre dışı"
 
 msgid "Generated IDs are enabled"
 msgstr "Oluşturulan Kimlikler etkinleştirilmiş"
+
+msgid "Generating suggestions…"
+msgstr "Öneriler oluşturuluyor…"
 
 msgid "Get live on Carbon: one system running quoting, purchasing, the shop floor, inventory, and finance, replacing the current tools."
 msgstr "Carbon'da canlı yayına geçin: alıntı alma, satın alma, atölye tabanı, envanter ve finansmanı çalıştıran ve mevcut araçları değiştiren tek bir sistem."
@@ -10949,6 +10967,9 @@ msgstr "Her ürünün değişikliklerini gözden geçirin, sonra onaylayın — 
 msgid "Review the period's balance sheet and income statement and confirm the figures look right. This is a manual sign-off — mark it done once you have reviewed them."
 msgstr "Dönemin bilançosunu ve gelir tablosunu gözden geçirin ve rakamların doğru göründüğünü doğrulayın. Bu manuel bir onay — bunları gözden geçirdikten sonra bitti olarak işaretleyin."
 
+msgid "Review the suggested matches before applying. These are a best guess — confirm each is correct."
+msgstr "Uygulamadan önce önerilen eşleşmeleri gözden geçirin. Bunlar en iyi tahmindir — her birini onaylayın."
+
 msgid "Review the warnings below, then post the count to apply the adjustments."
 msgstr "Aşağıdaki uyarıları gözden geçirin, ardından ayarlamaları uygulamak için sayımı gönderin."
 
@@ -12383,6 +12404,15 @@ msgstr "Halef Parça"
 
 msgid "Suffix"
 msgstr "Sonek"
+
+msgid "Suggest mappings"
+msgstr "Eşlemeleri Öner"
+
+msgid "Suggest mappings with AI"
+msgstr "Yapay Zeka ile Eşlemeleri Öner"
+
+msgid "Suggest with AI"
+msgstr "Yapay Zeka ile Öner"
 
 msgid "Suggested orders you haven't placed yet."
 msgstr "Henüz yerleştirmediğiniz önerilen siparişler."

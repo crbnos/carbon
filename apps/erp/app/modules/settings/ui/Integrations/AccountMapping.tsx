@@ -9,6 +9,14 @@ import {
   DrawerHeader,
   DrawerTitle,
   HStack,
+  Modal,
+  ModalBody,
+  ModalContent,
+  ModalDescription,
+  ModalFooter,
+  ModalHeader,
+  ModalTitle,
+  Spinner,
   Table,
   Tbody,
   Td,
@@ -19,7 +27,7 @@ import {
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { LuArrowRight, LuLink } from "react-icons/lu";
+import { LuArrowRight, LuLink, LuSparkles } from "react-icons/lu";
 import { useFetcher } from "react-router";
 import { usePermissions } from "~/hooks";
 import { accountMappingUpsertValidator } from "~/modules/settings/settings.models";
@@ -84,6 +92,7 @@ export function AccountMapping({
   const permissions = usePermissions();
   const canUpdate = permissions.can("update", "settings");
   const [showMatchDrawer, setShowMatchDrawer] = useState(false);
+  const [showAiModal, setShowAiModal] = useState(false);
 
   const chartById = useMemo(
     () => new Map(chart.map((account) => [account.id, account])),
@@ -110,14 +119,27 @@ export function AccountMapping({
             </Trans>
           </p>
           {chart.length > 0 && (
-            <Button
-              size="sm"
-              variant="secondary"
-              leftIcon={<LuLink />}
-              onClick={() => setShowMatchDrawer(true)}
-            >
-              <Trans>Match by code</Trans>
-            </Button>
+            <HStack spacing={2}>
+              {unmapped.length > 0 && (
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  leftIcon={<LuSparkles />}
+                  isDisabled={!canUpdate}
+                  onClick={() => setShowAiModal(true)}
+                >
+                  <Trans>Suggest with AI</Trans>
+                </Button>
+              )}
+              <Button
+                size="sm"
+                variant="secondary"
+                leftIcon={<LuLink />}
+                onClick={() => setShowMatchDrawer(true)}
+              >
+                <Trans>Match by code</Trans>
+              </Button>
+            </HStack>
           )}
         </div>
 
@@ -180,6 +202,15 @@ export function AccountMapping({
           proposals={proposals}
           canUpdate={canUpdate}
           onClose={() => setShowMatchDrawer(false)}
+        />
+      )}
+
+      {showAiModal && (
+        <AiSuggestModal
+          unmapped={unmapped}
+          chart={chart}
+          canUpdate={canUpdate}
+          onClose={() => setShowAiModal(false)}
         />
       )}
     </>
@@ -479,5 +510,194 @@ function MatchByCodeDrawer({
         </DrawerFooter>
       </DrawerContent>
     </Drawer>
+  );
+}
+
+/**
+ * "Suggest with AI" confirmation modal. Confirming ships the unmapped
+ * Carbon accounts + the provider chart to the `ai-suggest-account-mappings`
+ * action (gpt-4o best-guess pairing), then previews the returned proposals
+ * so the user can review before applying. Applying reuses the same
+ * `bulk-upsert-account-mappings` confirm path as Match-by-code — the AI
+ * step itself writes nothing.
+ */
+function AiSuggestModal({
+  unmapped,
+  chart,
+  canUpdate,
+  onClose
+}: {
+  unmapped: UnmappedAccountRow[];
+  chart: AccountMappingChartAccount[];
+  canUpdate: boolean;
+  onClose: () => void;
+}) {
+  const suggestFetcher = useFetcher<{
+    proposals?: AccountMatchProposalRow[];
+  }>();
+  const applyFetcher = useFetcher();
+  const appliedRef = useRef(false);
+
+  const isSuggesting = suggestFetcher.state !== "idle";
+  const isApplying = applyFetcher.state !== "idle";
+  const proposals = suggestFetcher.data?.proposals;
+  const hasSuggested = proposals !== undefined;
+
+  // Close once the apply POST settles; revalidation has already refreshed
+  // the sections behind the modal.
+  useEffect(() => {
+    if (appliedRef.current && applyFetcher.state === "idle") {
+      onClose();
+    }
+  }, [applyFetcher.state, onClose]);
+
+  const suggest = () => {
+    const formData = new FormData();
+    formData.append("intent", "ai-suggest-account-mappings");
+    formData.append("accounts", JSON.stringify(unmapped));
+    formData.append("providerAccounts", JSON.stringify(chart));
+    suggestFetcher.submit(formData, { method: "post" });
+  };
+
+  const applyAll = () => {
+    if (!proposals || proposals.length === 0) return;
+    const formData = new FormData();
+    formData.append("intent", "bulk-upsert-account-mappings");
+    for (const proposal of proposals) {
+      formData.append(
+        "mappings",
+        JSON.stringify({
+          accountId: proposal.accountId,
+          externalId: proposal.externalId,
+          ...(proposal.externalCode
+            ? { externalCode: proposal.externalCode }
+            : {}),
+          ...(proposal.externalName
+            ? { externalName: proposal.externalName }
+            : {})
+        })
+      );
+    }
+    appliedRef.current = true;
+    applyFetcher.submit(formData, { method: "post" });
+  };
+
+  return (
+    <Modal
+      open
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+    >
+      <ModalContent size="large">
+        <ModalHeader>
+          <ModalTitle>
+            <Trans>Suggest mappings with AI</Trans>
+          </ModalTitle>
+          <ModalDescription>
+            {hasSuggested ? (
+              <Trans>
+                Review the suggested matches before applying. These are a best
+                guess — confirm each is correct.
+              </Trans>
+            ) : (
+              <Trans>
+                Carbon will use AI to guess a provider account for each of your{" "}
+                {unmapped.length} unmapped accounts. Suggestions are a starting
+                point — you can review them before anything is saved.
+              </Trans>
+            )}
+          </ModalDescription>
+        </ModalHeader>
+        <ModalBody>
+          {isSuggesting ? (
+            <div className="flex w-full items-center justify-center gap-2 py-16 text-sm text-muted-foreground">
+              <Spinner className="size-4" />
+              <Trans>Generating suggestions…</Trans>
+            </div>
+          ) : !hasSuggested ? (
+            <div className="flex w-full items-center justify-center py-8 text-sm text-muted-foreground">
+              <Trans>
+                {unmapped.length} unmapped accounts will be matched against{" "}
+                {chart.length} provider accounts.
+              </Trans>
+            </div>
+          ) : proposals.length === 0 ? (
+            <div className="flex w-full items-center justify-center py-16 text-sm text-muted-foreground">
+              <Trans>AI couldn't confidently match any accounts</Trans>
+            </div>
+          ) : (
+            <div className="w-full rounded-lg border border-border">
+              <Table>
+                <Thead>
+                  <Tr>
+                    <Th className="px-4">
+                      <Trans>Carbon account</Trans>
+                    </Th>
+                    <Th className="px-4">
+                      <Trans>Provider account</Trans>
+                    </Th>
+                  </Tr>
+                </Thead>
+                <Tbody>
+                  {proposals.map((proposal) => (
+                    <Tr key={proposal.accountId}>
+                      <Td className="px-4">
+                        <div className="flex flex-col py-1">
+                          <span className="text-sm font-medium">
+                            {proposal.accountName}
+                          </span>
+                          <span className="font-mono text-xs text-muted-foreground">
+                            {proposal.accountNumber}
+                          </span>
+                        </div>
+                      </Td>
+                      <Td className="px-4">
+                        <div className="flex flex-col py-1">
+                          <span className="text-sm font-medium">
+                            {proposal.externalName ?? proposal.externalCode}
+                          </span>
+                          <span className="font-mono text-xs text-muted-foreground">
+                            {proposal.externalCode}
+                          </span>
+                        </div>
+                      </Td>
+                    </Tr>
+                  ))}
+                </Tbody>
+              </Table>
+            </div>
+          )}
+        </ModalBody>
+        <ModalFooter>
+          <HStack>
+            {!hasSuggested ? (
+              <Button
+                leftIcon={<LuSparkles />}
+                isDisabled={!canUpdate || isSuggesting}
+                isLoading={isSuggesting}
+                onClick={suggest}
+              >
+                <Trans>Suggest mappings</Trans>
+              </Button>
+            ) : (
+              proposals.length > 0 && (
+                <Button
+                  leftIcon={<LuLink />}
+                  isDisabled={!canUpdate || isApplying}
+                  isLoading={isApplying}
+                  onClick={applyAll}
+                >
+                  <Trans>Apply suggestions</Trans>
+                </Button>
+              )
+            )}
+            <Button variant="solid" onClick={onClose}>
+              <Trans>Cancel</Trans>
+            </Button>
+          </HStack>
+        </ModalFooter>
+      </ModalContent>
+    </Modal>
   );
 }

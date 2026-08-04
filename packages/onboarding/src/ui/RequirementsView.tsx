@@ -1,4 +1,4 @@
-import { cn, IconButton } from "@carbon/react";
+import { Badge, cn, IconButton } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { LuTrash } from "react-icons/lu";
 import { COLLECTIONS, PAGE_COPY, REQUIREMENTS } from "../content";
@@ -52,9 +52,7 @@ export function RequirementsView() {
           key={module.code}
           title={
             <span className="flex items-center gap-2">
-              <span className="text-xs font-mono font-semibold rounded bg-foreground text-background px-1.5 py-0.5">
-                {module.code}
-              </span>
+              <Badge className="font-mono">{module.code}</Badge>
               {i18n._(module.name)}
             </span>
           }

@@ -94,6 +94,11 @@ msgstr "잔액이 있는 공급업체 {0}곳"
 msgid "{0} un-sampled entities will be released to Available. Sampled passes stay Available and sampled failures stay Rejected."
 msgstr "샘플링되지 않은 개체 {0}개가 사용 가능 상태로 전환됩니다. 샘플링에서 합격한 항목은 사용 가능 상태를 유지하고, 불합격한 항목은 반려 상태를 유지합니다."
 
+#. placeholder {0}: unmapped.length
+#. placeholder {1}: chart.length
+msgid "{0} unmapped accounts will be matched against {1} provider accounts."
+msgstr "{0}개의 매핑되지 않은 계정이 {1}개의 공급자 계정과 매칭됩니다."
+
 #. placeholder {0}: task.autoCheck.count
 msgid "{0} unposted documents"
 msgstr "{0}건의 미전기 문서"
@@ -873,6 +878,9 @@ msgstr "범위에 합의"
 msgid "Agree who owns what and set a working rhythm"
 msgstr "역할 분담에 합의하고 업무 리듬을 설정하세요"
 
+msgid "AI couldn't confidently match any accounts"
+msgstr "AI가 계정을 확실하게 매칭하지 못했습니다"
+
 msgid "AI Tokens"
 msgstr "AI 토큰"
 
@@ -1115,6 +1123,9 @@ msgstr "가격 규칙 적용"
 
 msgid "Apply Rules On Top"
 msgstr "규칙을 우선 적용"
+
+msgid "Apply suggestions"
+msgstr "제안 적용"
 
 msgid "Apply To"
 msgstr "적용 대상"
@@ -2222,6 +2233,10 @@ msgstr "Carbon 전용"
 
 msgid "Carbon Value"
 msgstr "Carbon Value"
+
+#. placeholder {0}: unmapped.length
+msgid "Carbon will use AI to guess a provider account for each of your {0} unmapped accounts. Suggestions are a starting point — you can review them before anything is saved."
+msgstr "Carbon은 AI를 사용하여 {0}개의 매핑되지 않은 계정 각각에 대한 공급자 계정을 추측합니다. 제안은 시작점입니다 — 저장하기 전에 검토할 수 있습니다."
 
 msgid "Carbon-only"
 msgstr "Carbon 전용"
@@ -6095,6 +6110,9 @@ msgstr "자동 생성 ID가 비활성화됨"
 
 msgid "Generated IDs are enabled"
 msgstr "자동 생성 ID가 활성화됨"
+
+msgid "Generating suggestions…"
+msgstr "제안 생성 중…"
 
 msgid "Get live on Carbon: one system running quoting, purchasing, the shop floor, inventory, and finance, replacing the current tools."
 msgstr "Carbon으로 전환하세요: 견적, 구매, 현장, 재고, 재무를 하나의 시스템에서 운영하여 기존 도구들을 대체합니다."
@@ -10949,6 +10967,9 @@ msgstr "각 항목의 변경 사항을 검토한 후 확인하세요 — 릴리�
 msgid "Review the period's balance sheet and income statement and confirm the figures look right. This is a manual sign-off — mark it done once you have reviewed them."
 msgstr "기간의 대차대조표와 손익계산서를 검토하고 수치가 올바른지 확인하세요. 이것은 수동 승인입니다. 검토가 끝나면 완료로 표시하세요."
 
+msgid "Review the suggested matches before applying. These are a best guess — confirm each is correct."
+msgstr "적용하기 전에 제안된 매칭을 검토하세요. 이는 최선의 추측입니다 — 각 항목이 올바른지 확인하세요."
+
 msgid "Review the warnings below, then post the count to apply the adjustments."
 msgstr "아래의 경고를 검토한 후 계산을 게시하여 조정을 적용하세요."
 
@@ -12383,6 +12404,15 @@ msgstr "후속 품목"
 
 msgid "Suffix"
 msgstr "접미사"
+
+msgid "Suggest mappings"
+msgstr "매핑 제안"
+
+msgid "Suggest mappings with AI"
+msgstr "AI로 매핑 제안"
+
+msgid "Suggest with AI"
+msgstr "AI로 제안"
 
 msgid "Suggested orders you haven't placed yet."
 msgstr "아직 발주하지 않은 제안 주문입니다."

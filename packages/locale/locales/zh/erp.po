@@ -94,6 +94,11 @@ msgstr "{0}个有余额的供应商"
 msgid "{0} un-sampled entities will be released to Available. Sampled passes stay Available and sampled failures stay Rejected."
 msgstr "{0} 个未采样的实体将被释放到可用状态。已采样的合格品保持可用状态，已采样的不合格品保持被拒绝状态。"
 
+#. placeholder {0}: unmapped.length
+#. placeholder {1}: chart.length
+msgid "{0} unmapped accounts will be matched against {1} provider accounts."
+msgstr "{0} 个未映射的账户将与 {1} 个提供商账户相匹配。"
+
 #. placeholder {0}: task.autoCheck.count
 msgid "{0} unposted documents"
 msgstr "{0} 份未过账单据"
@@ -873,6 +878,9 @@ msgstr "就范围达成一致"
 msgid "Agree who owns what and set a working rhythm"
 msgstr "同意谁拥有什么并设定工作节奏"
 
+msgid "AI couldn't confidently match any accounts"
+msgstr "AI 无法自信地匹配任何账户"
+
 msgid "AI Tokens"
 msgstr "AI 代币"
 
@@ -1115,6 +1123,9 @@ msgstr "应用定价规则"
 
 msgid "Apply Rules On Top"
 msgstr "在顶部应用规则"
+
+msgid "Apply suggestions"
+msgstr "应用建议"
 
 msgid "Apply To"
 msgstr "应用于"
@@ -2222,6 +2233,10 @@ msgstr "仅限 Carbon"
 
 msgid "Carbon Value"
 msgstr "碳值"
+
+#. placeholder {0}: unmapped.length
+msgid "Carbon will use AI to guess a provider account for each of your {0} unmapped accounts. Suggestions are a starting point — you can review them before anything is saved."
+msgstr "Carbon 将使用 AI 为您的每个 {0} 个未映射的账户猜测一个提供商账户。建议是一个起点 — 您可以在保存任何内容之前审查它们。"
 
 msgid "Carbon-only"
 msgstr "仅限Carbon"
@@ -6095,6 +6110,9 @@ msgstr "生成的ID已禁用"
 
 msgid "Generated IDs are enabled"
 msgstr "生成的ID已启用"
+
+msgid "Generating suggestions…"
+msgstr "正在生成建议…"
 
 msgid "Get live on Carbon: one system running quoting, purchasing, the shop floor, inventory, and finance, replacing the current tools."
 msgstr "在 Carbon 上线：一个系统运行报价、采购、车间、库存和财务，替代当前工具。"
@@ -10949,6 +10967,9 @@ msgstr "审查每个项目的更改，然后确认 — 发布无法撤销。"
 msgid "Review the period's balance sheet and income statement and confirm the figures look right. This is a manual sign-off — mark it done once you have reviewed them."
 msgstr "审查期间的资产负债表和损益表，并确认数字正确。这是手动签核 — 审查后标记为完成。"
 
+msgid "Review the suggested matches before applying. These are a best guess — confirm each is correct."
+msgstr "在应用之前审查建议的匹配项。这些是最佳猜测 — 确认每个都是正确的。"
+
 msgid "Review the warnings below, then post the count to apply the adjustments."
 msgstr "查看下面的警告，然后过账盘点以应用调整。"
 
@@ -12383,6 +12404,15 @@ msgstr "后继零件"
 
 msgid "Suffix"
 msgstr "后缀"
+
+msgid "Suggest mappings"
+msgstr "建议映射"
+
+msgid "Suggest mappings with AI"
+msgstr "使用 AI 建议映射"
+
+msgid "Suggest with AI"
+msgstr "使用 AI 建议"
 
 msgid "Suggested orders you haven't placed yet."
 msgstr "您尚未下达的建议订单。"

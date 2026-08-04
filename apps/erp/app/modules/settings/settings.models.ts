@@ -427,6 +427,54 @@ export const accountMappingBulkUpsertValidator = z.object({
 });
 
 /**
+ * "Suggest with AI" from the Account Mapping tab. The unmapped Carbon
+ * accounts and the provider chart already sit in the loaded tab data, so
+ * the client ships them back as two JSON-encoded hidden fields instead of
+ * the action re-fetching the provider chart. The AI step only proposes
+ * matches (nothing is written) — proposals are confirmed through the same
+ * `bulk-upsert-account-mappings` path.
+ */
+const jsonArrayField = <T extends z.ZodTypeAny>(element: T) =>
+  z.string().transform((value, ctx) => {
+    try {
+      const parsed = JSON.parse(value);
+      const result = z.array(element).safeParse(parsed);
+      if (!result.success) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Invalid account list payload"
+        });
+        return z.NEVER;
+      }
+      return result.data;
+    } catch {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Invalid account list payload"
+      });
+      return z.NEVER;
+    }
+  });
+
+export const accountMappingAiSuggestValidator = z.object({
+  intent: z.literal("ai-suggest-account-mappings"),
+  accounts: jsonArrayField(
+    z.object({
+      id: z.string().min(1),
+      number: z.string().nullable(),
+      name: z.string()
+    })
+  ),
+  providerAccounts: jsonArrayField(
+    z.object({
+      id: z.string().min(1),
+      code: z.string().nullable().optional(),
+      name: z.string().nullable().optional()
+    })
+  )
+});
+
+/**
  * Posting-sync settings persisted (deep-merged) at
  * companyIntegration.metadata.settings.postingSync in the v3 shape. Field
  * semantics mirror @carbon/ee/accounting's PostingSyncSettingsSchema:

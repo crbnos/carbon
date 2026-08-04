@@ -94,6 +94,11 @@ msgstr "{0} आपूर्तिकर्ता शेष के साथ"
 msgid "{0} un-sampled entities will be released to Available. Sampled passes stay Available and sampled failures stay Rejected."
 msgstr "{0} नमूना न किए गए इकाइयों को उपलब्ध में जारी किया जाएगा। नमूना किए गए पास उपलब्ध रहेंगे और नमूना किए गए विफलताएं अस्वीकृत रहेंगी।"
 
+#. placeholder {0}: unmapped.length
+#. placeholder {1}: chart.length
+msgid "{0} unmapped accounts will be matched against {1} provider accounts."
+msgstr "{0} असंगत खातों को {1} प्रदाता खातों के विरुद्ध मिलाया जाएगा।"
+
 #. placeholder {0}: task.autoCheck.count
 msgid "{0} unposted documents"
 msgstr "{0} अपोस्ट किए गए दस्तावेज़"
@@ -873,6 +878,9 @@ msgstr "दायरे पर सहमति दें"
 msgid "Agree who owns what and set a working rhythm"
 msgstr "सहमत हों कि कौन क्या मालिक है और एक कार्य लय निर्धारित करें"
 
+msgid "AI couldn't confidently match any accounts"
+msgstr "एआई किसी भी खातों को आत्मविश्वास से मिलाने में असमर्थ रहा"
+
 msgid "AI Tokens"
 msgstr "एआई टोकन"
 
@@ -1115,6 +1123,9 @@ msgstr "मूल्य निर्धारण नियम लागू क�
 
 msgid "Apply Rules On Top"
 msgstr "शीर्ष पर नियम लागू करें"
+
+msgid "Apply suggestions"
+msgstr "सुझाव लागू करें"
 
 msgid "Apply To"
 msgstr "लागू करें"
@@ -2222,6 +2233,10 @@ msgstr "केवल कार्बन"
 
 msgid "Carbon Value"
 msgstr "कार्बन मान"
+
+#. placeholder {0}: unmapped.length
+msgid "Carbon will use AI to guess a provider account for each of your {0} unmapped accounts. Suggestions are a starting point — you can review them before anything is saved."
+msgstr "कार्बन आपके {0} असंगत खातों में से प्रत्येक के लिए एक प्रदाता खाता अनुमान लगाने के लिए एआई का उपयोग करेगा। सुझाव एक शुरुआती बिंदु हैं — आप कुछ भी सहेजने से पहले उनकी समीक्षा कर सकते हैं।"
 
 msgid "Carbon-only"
 msgstr "कार्बन-केवल"
@@ -6095,6 +6110,9 @@ msgstr "जेनरेट की गई आईडी अक्षम हैं"
 
 msgid "Generated IDs are enabled"
 msgstr "जेनरेट की गई आईडी सक्षम हैं"
+
+msgid "Generating suggestions…"
+msgstr "सुझाव उत्पन्न जा रहे हैं…"
 
 msgid "Get live on Carbon: one system running quoting, purchasing, the shop floor, inventory, and finance, replacing the current tools."
 msgstr "Carbon पर लाइव जाएं: एक सिस्टम जो कोटिंग, खरीद, शॉप फ्लोर, इन्वेंटरी और वित्त चलाता है, वर्तमान उपकरणों को प्रतिस्थापित करता है।"
@@ -10949,6 +10967,9 @@ msgstr "प्रत्येक आइटम के परिवर्तनो
 msgid "Review the period's balance sheet and income statement and confirm the figures look right. This is a manual sign-off — mark it done once you have reviewed them."
 msgstr "अवधि की बैलेंस शीट और आय विवरण की समीक्षा करें और पुष्टि करें कि आंकड़े सही लगते हैं। यह एक मैनुअल साइन-ऑफ है — एक बार समीक्षा करने के बाद इसे पूर्ण चिह्नित करें।"
 
+msgid "Review the suggested matches before applying. These are a best guess — confirm each is correct."
+msgstr "लागू करने से पहले सुझाए गए मिलानों की समीक्षा करें। ये एक सर्वोत्तम अनुमान हैं — प्रत्येक की पुष्टि करें कि यह सही है।"
+
 msgid "Review the warnings below, then post the count to apply the adjustments."
 msgstr "नीचे दी गई चेतावनियों की समीक्षा करें, फिर समायोजन लागू करने के लिए गणना पोस्ट करें।"
 
@@ -12383,6 +12404,15 @@ msgstr "उत्तराधिकारी भाग"
 
 msgid "Suffix"
 msgstr "प्रत्यय"
+
+msgid "Suggest mappings"
+msgstr "मैपिंग सुझाएं"
+
+msgid "Suggest mappings with AI"
+msgstr "एआई के साथ मैपिंग सुझाएं"
+
+msgid "Suggest with AI"
+msgstr "एआई के साथ सुझाएं"
 
 msgid "Suggested orders you haven't placed yet."
 msgstr "सुझाए गए ऑर्डर जो आपने अभी तक नहीं दिए हैं।"

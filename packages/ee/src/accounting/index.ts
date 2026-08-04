@@ -1,4 +1,5 @@
 export * from "./core/account-mapping";
+export * from "./core/account-mapping-ai";
 export * from "./core/external-mapping";
 export * from "./core/models";
 export * from "./core/operations";

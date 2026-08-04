@@ -94,6 +94,11 @@ msgstr "{0} поставщиков с остатком"
 msgid "{0} un-sampled entities will be released to Available. Sampled passes stay Available and sampled failures stay Rejected."
 msgstr "{0} необследованных объектов будут отпущены в статус Available. Проверенные успешные остаются Available, а проверенные отказы остаются Rejected."
 
+#. placeholder {0}: unmapped.length
+#. placeholder {1}: chart.length
+msgid "{0} unmapped accounts will be matched against {1} provider accounts."
+msgstr "{0} неотображенных счетов будут сопоставлены с {1} счетами поставщика."
+
 #. placeholder {0}: task.autoCheck.count
 msgid "{0} unposted documents"
 msgstr "{0} неопубликованных документов"
@@ -873,6 +878,9 @@ msgstr "Согласовать область охвата"
 msgid "Agree who owns what and set a working rhythm"
 msgstr "Согласуйте, кто за что отвечает, и установите рабочий ритм"
 
+msgid "AI couldn't confidently match any accounts"
+msgstr "ИИ не смог уверенно сопоставить ни один счет"
+
 msgid "AI Tokens"
 msgstr "Токены ИИ"
 
@@ -1115,6 +1123,9 @@ msgstr "Применять правила ценообразования"
 
 msgid "Apply Rules On Top"
 msgstr "Применить правила выше"
+
+msgid "Apply suggestions"
+msgstr "Применить предложения"
 
 msgid "Apply To"
 msgstr "Применить к"
@@ -2222,6 +2233,10 @@ msgstr "Только Carbon"
 
 msgid "Carbon Value"
 msgstr "Значение Carbon"
+
+#. placeholder {0}: unmapped.length
+msgid "Carbon will use AI to guess a provider account for each of your {0} unmapped accounts. Suggestions are a starting point — you can review them before anything is saved."
+msgstr "Carbon будет использовать ИИ для подбора счета поставщика для каждого из ваших {0} неотображенных счетов. Предложения — это отправная точка — вы можете проверить их перед сохранением."
 
 msgid "Carbon-only"
 msgstr "Только для Carbon"
@@ -6095,6 +6110,9 @@ msgstr "Сгенерированные ID отключены"
 
 msgid "Generated IDs are enabled"
 msgstr "Сгенерированные ID включены"
+
+msgid "Generating suggestions…"
+msgstr "Создание предложений…"
 
 msgid "Get live on Carbon: one system running quoting, purchasing, the shop floor, inventory, and finance, replacing the current tools."
 msgstr "Запустить Carbon: одна система для котировок, закупок, производственного цеха, управления запасами и финансов, заменяющая текущие инструменты."
@@ -10949,6 +10967,9 @@ msgstr "Просмотрите изменения каждого элемент�
 msgid "Review the period's balance sheet and income statement and confirm the figures look right. This is a manual sign-off — mark it done once you have reviewed them."
 msgstr "Проверьте балансовый лист и отчёт о прибылях и убытках за период и подтвердите, что цифры выглядят правильно. Это ручное утверждение — отметьте как завершённое после их проверки."
 
+msgid "Review the suggested matches before applying. These are a best guess — confirm each is correct."
+msgstr "Проверьте предложенные совпадения перед применением. Это лучшее предположение — подтвердите, что каждое из них верно."
+
 msgid "Review the warnings below, then post the count to apply the adjustments."
 msgstr "Просмотрите предупреждения ниже, а затем опубликуйте подсчет для применения корректировок."
 
@@ -12383,6 +12404,15 @@ msgstr "Часть-преемник"
 
 msgid "Suffix"
 msgstr "Суффикс"
+
+msgid "Suggest mappings"
+msgstr "Предложить сопоставления"
+
+msgid "Suggest mappings with AI"
+msgstr "Предложить сопоставления с помощью ИИ"
+
+msgid "Suggest with AI"
+msgstr "Предложить с помощью ИИ"
 
 msgid "Suggested orders you haven't placed yet."
 msgstr "Предложенные заказы, которые вы еще не разместили."

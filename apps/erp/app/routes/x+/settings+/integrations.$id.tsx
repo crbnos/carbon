@@ -19,6 +19,7 @@ import {
   type SyncOperation,
   type SyncOperationStatus,
   SyncOperationStatusSchema,
+  suggestAccountMatchesWithAI,
   transitionOperation,
   upsertAccountMapping,
   type XeroProvider
@@ -48,6 +49,7 @@ import {
   syncOperationTransitionValidator
 } from "~/modules/settings";
 import {
+  accountMappingAiSuggestValidator,
   accountMappingBulkUpsertValidator,
   accountMappingUpsertValidator,
   postingSyncSettingsValidator
@@ -659,6 +661,39 @@ export async function action({ request, params }: ActionFunctionArgs) {
     }
 
     return data({}, await flash(request, success("Saved account mapping")));
+  }
+
+  // "Suggest with AI" from the Account Mapping tab: ask gpt-4o for a
+  // best-guess pairing of the still-unmapped Carbon accounts to the
+  // provider chart. Writes nothing — returns proposals for the confirm
+  // step, which posts them back as `bulk-upsert-account-mappings`.
+  if (formData.get("intent") === "ai-suggest-account-mappings") {
+    const validation = await validator(
+      accountMappingAiSuggestValidator
+    ).validate(formData);
+
+    if (validation.error) {
+      return validationError(validation.error);
+    }
+
+    const { accounts, providerAccounts } = validation.data;
+
+    const result = await suggestAccountMatchesWithAI({
+      accounts,
+      providerAccounts
+    });
+
+    if (result.error || !result.data) {
+      return data(
+        {},
+        await flash(
+          request,
+          error(result.error, "Failed to suggest account mappings")
+        )
+      );
+    }
+
+    return data({ proposals: result.data });
   }
 
   // Confirm-all from the match-by-code drawer: repeated JSON-encoded

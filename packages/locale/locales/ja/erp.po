@@ -94,6 +94,11 @@ msgstr "{0}件の残高のある仕入先"
 msgid "{0} un-sampled entities will be released to Available. Sampled passes stay Available and sampled failures stay Rejected."
 msgstr "{0}個の未サンプリングエンティティが利用可能にリリースされます。サンプリング済みの合格品は利用可能なままで、サンプリング済みの不合格品は却下されたままです。"
 
+#. placeholder {0}: unmapped.length
+#. placeholder {1}: chart.length
+msgid "{0} unmapped accounts will be matched against {1} provider accounts."
+msgstr "{0}個のマッピングされていないアカウントが{1}個のプロバイダーアカウントと照合されます。"
+
 #. placeholder {0}: task.autoCheck.count
 msgid "{0} unposted documents"
 msgstr "{0}件の未転記書類"
@@ -873,6 +878,9 @@ msgstr "スコープに同意する"
 msgid "Agree who owns what and set a working rhythm"
 msgstr "誰が何を所有するかを合意し、作業リズムを設定する"
 
+msgid "AI couldn't confidently match any accounts"
+msgstr "AIは確実にアカウントを照合できませんでした"
+
 msgid "AI Tokens"
 msgstr "AIトークン"
 
@@ -1115,6 +1123,9 @@ msgstr "価格設定ルールを適用"
 
 msgid "Apply Rules On Top"
 msgstr "上にルールを適用"
+
+msgid "Apply suggestions"
+msgstr "提案を適用"
 
 msgid "Apply To"
 msgstr "適用対象"
@@ -2222,6 +2233,10 @@ msgstr "Carbonのみ"
 
 msgid "Carbon Value"
 msgstr "カーボン値"
+
+#. placeholder {0}: unmapped.length
+msgid "Carbon will use AI to guess a provider account for each of your {0} unmapped accounts. Suggestions are a starting point — you can review them before anything is saved."
+msgstr "Carbonはあなたの{0}個のマッピングされていないアカウントのそれぞれに対してAIを使用してプロバイダーアカウントを推測します。提案は出発点です—何かが保存される前にそれらを確認することができます。"
 
 msgid "Carbon-only"
 msgstr "Carbon専用"
@@ -6095,6 +6110,9 @@ msgstr "生成されたIDは無効です"
 
 msgid "Generated IDs are enabled"
 msgstr "生成されたIDが有効です"
+
+msgid "Generating suggestions…"
+msgstr "提案を生成中…"
 
 msgid "Get live on Carbon: one system running quoting, purchasing, the shop floor, inventory, and finance, replacing the current tools."
 msgstr "Carbonで本番稼働：見積、購買、生産現場、在庫、財務を実行する1つのシステムで、現在のツールを置き換えます。"
@@ -10949,6 +10967,9 @@ msgstr "各アイテムの変更をレビューしてから確認してくださ
 msgid "Review the period's balance sheet and income statement and confirm the figures look right. This is a manual sign-off — mark it done once you have reviewed them."
 msgstr "当期の貸借対照表と損益計算書を確認し、数字が正しいことを確認してください。これは手動による認可です。確認後、完了とマークしてください。"
 
+msgid "Review the suggested matches before applying. These are a best guess — confirm each is correct."
+msgstr "適用する前に提案されたマッチを確認します。これらは最良の推測です—各マッチが正しいことを確認します。"
+
 msgid "Review the warnings below, then post the count to apply the adjustments."
 msgstr "下の警告を確認してから、カウントを投稿して調整を適用してください。"
 
@@ -12383,6 +12404,15 @@ msgstr "後継部品"
 
 msgid "Suffix"
 msgstr "サフィックス"
+
+msgid "Suggest mappings"
+msgstr "マッピングを提案"
+
+msgid "Suggest mappings with AI"
+msgstr "AIでマッピングを提案"
+
+msgid "Suggest with AI"
+msgstr "AIで提案"
 
 msgid "Suggested orders you haven't placed yet."
 msgstr "まだ発注していない推奨注文。"
