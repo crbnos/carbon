@@ -1512,11 +1512,17 @@ function getActionColumn<T>(
       header: () => (
         <span className="sr-only">{translateLabel("Actions")}</span>
       ),
-      cell: (item) => (
-        <div className="flex justify-end">
-          <ActionMenu>{renderContextMenu(item.row.original)}</ActionMenu>
-        </div>
-      ),
+      cell: (item) => {
+        // No trigger for rows with no actions (mirrors the expand column's
+        // no-chevron rule) — an empty menu reads as a bug, not a state.
+        const contextMenu = renderContextMenu(item.row.original);
+        if (!contextMenu) return null;
+        return (
+          <div className="flex justify-end">
+            <ActionMenu>{contextMenu}</ActionMenu>
+          </div>
+        );
+      },
       size: 60
     }
   ];
