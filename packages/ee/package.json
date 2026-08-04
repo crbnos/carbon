@@ -8,6 +8,8 @@
     "./action-task-entity": "./src/lib/actionTaskEntity.ts",
     "./storage-rules": "./src/storage-rules/index.ts",
     "./storage-rules.server": "./src/storage-rules/server.ts",
+    "./edi": "./src/edi/lib/index.ts",
+    "./edi.server": "./src/edi/lib/index.server.ts",
     "./exchange-rates.server": "./src/exchange-rates/exchange-rates.server.ts",
     "./jira": "./src/jira/lib/index.ts",
     "./jira.server": "./src/jira/lib/index.server.ts",
