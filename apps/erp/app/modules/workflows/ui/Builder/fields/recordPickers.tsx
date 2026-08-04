@@ -133,6 +133,8 @@ const GroupPicker = ({ value, onChange, isDisabled }: RecordPickerProps) => (
  * nonConformance, jobOperation, salesInvoice, purchaseInvoice) fall back to a
  * plain text Input in LiteralControl — no store is available for those.
  */
+export const hasRecordPicker = (entity: string) => entity in RECORD_PICKERS;
+
 export const RECORD_PICKERS: Partial<
   Record<string, ComponentType<RecordPickerProps>>
 > = {

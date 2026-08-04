@@ -1,9 +1,12 @@
-import { cn } from "@carbon/react";
+import type { TermId } from "@carbon/glossary";
+import { cn, LabelWithHelp } from "@carbon/react";
 import type { ReactNode } from "react";
 
 type FieldProps = {
   label: string;
   required?: boolean;
+  /** Glossary term for the ⓘ hover. Absent => no icon, same layout. */
+  helpTermId?: TermId;
   /** Message from a validation issue whose `field` path resolves here. */
   issue?: string;
   /** Advisory text shown only when there is no issue to report. */
@@ -17,6 +20,7 @@ type FieldProps = {
 export function Field({
   label,
   required,
+  helpTermId,
   issue,
   hint,
   hideLabel,
@@ -31,8 +35,10 @@ export function Field({
           hideLabel && "sr-only"
         )}
       >
-        {label}
-        {required && <span className="ml-0.5 text-destructive">*</span>}
+        <LabelWithHelp termId={hideLabel ? undefined : helpTermId}>
+          {label}
+          {required && <span className="ml-0.5 text-destructive">*</span>}
+        </LabelWithHelp>
       </label>
       <div
         className={cn(

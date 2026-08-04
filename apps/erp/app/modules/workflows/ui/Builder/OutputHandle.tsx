@@ -3,8 +3,10 @@ import type { AvailableVariable } from "@carbon/workflows";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { Handle, Position } from "@xyflow/react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useBuilderStore } from "./context";
 import { handleClass, PortLabel } from "./handles";
 import type { BuilderPort } from "./ports";
+import { selectHasEdgeFrom } from "./selectors";
 import { type HandlePreview, useHandlePreviewGetter } from "./useDefinition";
 
 const HOVER_DELAY_MS = 1000;
@@ -78,6 +80,7 @@ export function OutputHandle({
   showLabel?: boolean;
 }) {
   const { t } = useLingui();
+  const isConnected = useBuilderStore(selectHasEdgeFrom(nodeId, port.id));
   const anchor = useRef<HTMLDivElement>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [preview, setPreview] = useState<HandlePreview | null>(null);
@@ -109,7 +112,9 @@ export function OutputHandle({
         onMouseEnter={open}
         onMouseLeave={close}
       />
-      {showLabel && <PortLabel label={port.label} tone={port.tone} />}
+      {showLabel && (
+        <PortLabel label={port.label} tone={port.tone} lifted={isConnected} />
+      )}
       <PopoverContent
         side="right"
         align="center"

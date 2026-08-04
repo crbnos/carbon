@@ -712,6 +712,9 @@ msgstr "क्षमता"
 msgid "About"
 msgstr "के बारे में"
 
+msgid "About (notification)"
+msgstr ""
+
 msgid "Absorption"
 msgstr "अवशोषण"
 
@@ -2085,6 +2088,9 @@ msgstr "प्रमाणीकरण त्रुटि"
 msgid "Auto apply"
 msgstr "स्वचालित रूप से लागू करें"
 
+msgid "Auto arrange"
+msgstr ""
+
 msgid "Auto Release"
 msgstr "ऑटो रिलीज़"
 
@@ -2604,6 +2610,9 @@ msgstr "कार्बन का उत्पादन आदेश — एक 
 msgid "Carbon's shop-floor app where operators run operations, report quantities, issue material, and log time against released jobs in real time."
 msgstr "कार्बन का शॉप-फ्लोर ऐप जहां ऑपरेटर ऑपरेशन चलाते हैं, मात्रा की रिपोर्ट करते हैं, सामग्री जारी करते हैं, और रिलीज की गई नौकरियों के विरुद्ध रीयल टाइम में समय लॉग करते हैं।"
 
+msgid "Carbon's single record for anything with a part number — Part, Material, Tool, Service, Consumable, or Fixture — that jobs, methods, orders, and inventory all point at."
+msgstr ""
+
 msgid "Cards"
 msgstr "कार्ड"
 
@@ -2690,9 +2699,6 @@ msgstr "प्रकार परिवर्तित करें"
 
 msgid "Change Type"
 msgstr "प्रकार बदलें"
-
-msgid "Change variable"
-msgstr ""
 
 msgid "Changed By"
 msgstr "द्वारा परिवर्तित"
@@ -5015,6 +5021,9 @@ msgstr ""
 msgid "Due Date"
 msgstr "देय तारीख"
 
+msgid "Due Date (job)"
+msgstr ""
+
 msgid "Due Date of First Job"
 msgstr "पहली जॉब की देय तारीख"
 
@@ -5613,9 +5622,6 @@ msgstr ""
 
 msgid "Enter PO number"
 msgstr "PO नंबर दर्ज करें"
-
-msgid "Enter record id…"
-msgstr ""
 
 msgid "Enter text…"
 msgstr ""
@@ -7711,6 +7717,9 @@ msgstr "जॉब ऑपरेशन"
 
 msgid "Job Operations"
 msgstr "कार्य संचालन"
+
+msgid "Job Priority"
+msgstr ""
 
 msgid "Job readable"
 msgstr ""
@@ -10345,9 +10354,6 @@ msgstr "उनकी मूल्य निर्धारण देखने �
 msgid "Pick a date or leave blank to clear it."
 msgstr "एक तारीख चुनें या इसे साफ करने के लिए खाली छोड़ें।"
 
-msgid "Pick a list from an earlier step"
-msgstr ""
-
 msgid "Pick a list variable…"
 msgstr ""
 
@@ -10360,7 +10366,10 @@ msgstr ""
 msgid "Pick a record type…"
 msgstr ""
 
-msgid "Pick a variable"
+msgid "Pick a value from an earlier step"
+msgstr ""
+
+msgid "Pick a variable…"
 msgstr ""
 
 msgid "Pick List"
@@ -12044,6 +12053,9 @@ msgstr ""
 
 msgid "Sales Order Line"
 msgstr "बिक्रय आदेश पंक्ति"
+
+msgid "Sales Order Line (job)"
+msgstr ""
 
 msgid "Sales Order Location"
 msgstr "बिक्रय आदेश स्थान"
@@ -13775,6 +13787,9 @@ msgstr "वह बाल्टियाँ जिनके विरुद्ध
 msgid "The capital assets you own and depreciate"
 msgstr "पूंजीगत संपत्ति जिसे आप मालिक हैं और मूल्यह्रास करते हैं"
 
+msgid "The Carbon user currently responsible for working this record, set per record and independent of ownership fields like Account Manager or Sales Person."
+msgstr ""
+
 msgid "The Carbon user responsible for this customer relationship; emails and reminders about this customer route to them."
 msgstr "Carbon उपयोगकर्ता जो इस ग्राहक संबंध के लिए जिम्मेदार है; इस ग्राहक के बारे में ईमेल और अनुस्मारक उन्हें रूट किए जाते हैं।"
 
@@ -13783,6 +13798,9 @@ msgstr "Carbon उपयोगकर्ता जो इस आपूर्त�
 
 msgid "The Carbon user who owns this RFQ; supplier responses and reminders route to them."
 msgstr "Carbon उपयोगकर्ता जो इस RFQ का मालिक है; आपूर्तिकर्ता प्रतिक्रिया और अनुस्मारक उन्हें रूट किए जाते हैं।"
+
+msgid "The carrier and service a shipment goes out on, supplying the tracking-URL template that turns a tracking number into a link and the account freight charges post to."
+msgstr ""
 
 msgid "The carrier that delivers goods from this supplier, when different from the supplier itself (e.g. supplier sells, FedEx ships)."
 msgstr "वह वाहक जो इस आपूर्तिकर्ता से सामान की डिलीवरी करता है, जब आपूर्तिकर्ता स्वयं से अलग हो (जैसे आपूर्तिकर्ता बेचता है, FedEx शिप करता है)।"
@@ -13861,6 +13879,9 @@ msgstr "जिन ग्राहकों को आप बेचते और 
 
 msgid "The dashed threshold you don't want inventory to fall below."
 msgstr "डैश्ड थ्रेसहोल्ड जिसके नीचे आप इन्वेंटरी नहीं गिरना चाहते।"
+
+msgid "The date a job's quantity is needed, which together with Deadline Type sets the job's place in its location's schedule queue."
+msgstr ""
 
 msgid "The date depreciation begins for this asset; usually the in-service date."
 msgstr "वह तारीख जब इस संपत्ति के लिए मूल्यह्रास शुरू होता है; आमतौर पर सेवा शुरुआत की तारीख।"
@@ -13982,6 +14003,9 @@ msgstr "इस कार्य केंद्र पर मशीनरी च�
 msgid "The hourly indirect-cost burden applied to this work center; the difference between labor + machine and the full quoting rate is what overhead absorbs."
 msgstr "इस कार्य केंद्र पर लागू प्रति घंटा अप्रत्यक्ष-लागत बोझ; श्रम + मशीन और पूर्ण उद्धरण दर के बीच का अंतर वह है जो ओवरहेड अवशोषित करता है।"
 
+msgid "The https address a workflow's webhook step posts to — plain http, redirects, and hosts resolving to private or link-local addresses are refused, and the call gives up after ten seconds."
+msgstr ""
+
 msgid "The human-readable document number (like J000001 or ECO-000001) minted from a sequence and stored on the record, distinct from its internal id."
 msgstr "मानव-पठनीय दस्तावेज़ संख्या (जैसे J000001 या ECO-000001) जो एक अनुक्रम से बनाई गई है और रिकॉर्ड पर संग्रहीत है, इसके आंतरिक id से अलग।"
 
@@ -14014,6 +14038,9 @@ msgstr "MACRS के तहत इस संपत्ति के लिए IRS
 
 msgid "The job whose operation this outside-processing line covers; the line's receipt closes the operation against this job."
 msgstr "वह काम जिसका संचालन यह बाहरी-प्रसंस्करण लाइन कवर करता है; लाइन की रसीद इस काम के विरुद्ध संचालन को बंद करती है।"
+
+msgid "The job's position in its location's schedule queue — a fractional number Carbon computes from the due date and deadline type, not a Low/High rating."
+msgstr ""
 
 msgid "The kind of adjustment this rule applies — discount, surcharge, or fixed override; combined with Amount Type to compute the actual delta on each line."
 msgstr "प्रकार का समायोजन जो यह नियम लागू करता है - छूट, अधिभार, या निश्चित ओवरराइड; प्रत्येक पंक्ति पर वास्तविक डेल्टा की गणना करने के लिए राशि प्रकार के साथ संयुक्त।"
@@ -14219,6 +14246,9 @@ msgstr "वह कारण जो आप रिकॉर्ड करते ह
 msgid "The reasons you record when you decline an RFQ"
 msgstr "वह कारण जो आप RFQ को अस्वीकार करते समय दर्ज करते हैं"
 
+msgid "The record a workflow notification points at, named as an id plus its kind; leave it empty and the notification links to the workflow run itself."
+msgstr ""
+
 msgid "The record that applies a payment or memo to an invoice, carrying the applied, discount, and write-off amounts."
 msgstr "वह रिकॉर्ड जो एक भुगतान या ज्ञापन को एक चालान पर लागू करता है, लागू, छूट और लिखित-बंद राशि ले जाता है।"
 
@@ -14238,6 +14268,9 @@ msgstr "शेष {0} {1} फिर से अपेक्षित होगा
 msgid "The remaining {0} {1} will no longer be expected. On-order supply and MRP will stop counting it. The ordered quantity and pricing are unchanged."
 msgstr "शेष {0} {1} अब अपेक्षित नहीं होगा। ऑन-ऑर्डर आपूर्ति और MRP इसे गिनना बंद कर देंगे। ऑर्डर की गई मात्रा और मूल्य निर्धारण अपरिवर्तित हैं।"
 
+msgid "The request body sent verbatim as the POST payload with a JSON content type, after workflow variables inside it are substituted."
+msgstr ""
+
 msgid "The residual WIP a job has left at close, swept to a Production Variance account — the only variance Carbon books for a job."
 msgstr "अवशिष्ट WIP जो एक काम को बंद करने पर छोड़ गया है, उत्पादन विचरण खाते में स्वेप किया गया - एक काम के लिए कार्बन पुस्तकें का एकमात्र विचरण।"
 
@@ -14246,6 +14279,9 @@ msgstr "Onshape की प्रतिक्रिया में आवश्�
 
 msgid "The revision number of the part"
 msgstr "भाग की संशोधन संख्या"
+
+msgid "The sales order line this job was created to supply, tying the job to the customer demand behind it."
+msgstr ""
 
 msgid "The schedule used to spread this asset's cost over its useful life (straight-line, declining balance, units of production)."
 msgstr "अनुसूची का उपयोग इस संपत्ति की लागत को इसके उपयोगी जीवन पर फैलाने के लिए (सीधी पंक्ति, घटता शेष, उत्पादन की इकाइयां)।"
@@ -14549,9 +14585,6 @@ msgstr "इस बिक्रय आदेश के संबंधित क�
 
 msgid "This sales order has lines that require jobs to be created"
 msgstr "इस बिक्रय आदेश में ऐसी पंक्तियाँ हैं जिनके लिए नौकरियाँ बनाई जानी आवश्यक हैं"
-
-msgid "This step chooses which path runs next — it doesn't produce values of its own. Reference earlier steps further down each path."
-msgstr ""
 
 #. placeholder {0}: usageCount === 1 ? "" : "s"
 msgid "This storage type is currently used by {usageCount} storage unit{0}."
@@ -15721,6 +15754,9 @@ msgstr "हमने आपके खाते में साइन इन क
 msgid "Webhook"
 msgstr "वेबहुक"
 
+msgid "Webhook Body"
+msgstr ""
+
 msgid "Webhook Documentation"
 msgstr "वेबहुक दस्तावेज़"
 
@@ -16180,6 +16216,9 @@ msgstr "कार्य पारी ट्रैकिंग सक्रिय
 
 msgid "Workflow"
 msgstr "वर्कफ़्लो"
+
+msgid "Workflow name"
+msgstr ""
 
 msgid "Workflows"
 msgstr ""

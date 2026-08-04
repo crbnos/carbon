@@ -372,6 +372,9 @@ export default function useUserSelect(props: UserSelectProps) {
 
   useOutsideClick({
     ref: containerRef,
+    // Close on the press, like every Radix dropdown in the app. Waiting for the release
+    // strands this one open inside the workflow canvas, which never lets the mouseup out.
+    immediate: true,
     handler: () => {
       clear();
       commit();

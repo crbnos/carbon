@@ -16,19 +16,19 @@ export function CombinatorToggle({ value, onChange, isDisabled }: Props) {
         if (v === "and" || v === "or") onChange(v);
       }}
       className={cn(
-        "nodrag nopan gap-0 rounded-md border text-xs",
+        "nodrag nopan gap-0 rounded-md border text-[10px]",
         isDisabled && "pointer-events-none opacity-50"
       )}
     >
       <ToggleGroupItem
         value="and"
-        className="h-6 rounded-l-md rounded-r-none border-r px-2 text-xs data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
+        className="h-5 rounded-l-md rounded-r-none border-r px-1.5 text-[10px] data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
       >
         <Trans>AND</Trans>
       </ToggleGroupItem>
       <ToggleGroupItem
         value="or"
-        className="h-6 rounded-l-none rounded-r-md px-2 text-xs data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
+        className="h-5 rounded-l-none rounded-r-md px-1.5 text-[10px] data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
       >
         <Trans>OR</Trans>
       </ToggleGroupItem>

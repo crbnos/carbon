@@ -1,3 +1,4 @@
+import type { TermId } from "@carbon/glossary";
 import type { ValueOrRef, ValueType } from "@carbon/workflows";
 
 export type FieldContext = {
@@ -10,6 +11,8 @@ export type ValueFieldProps = {
   label: string;
   type: ValueType;
   required?: boolean;
+  /** Glossary term for the ⓘ hover next to the label. */
+  helpTermId?: TermId;
   choices?: readonly string[];
   value: ValueOrRef | undefined;
   onChange: (next: ValueOrRef | undefined) => void;

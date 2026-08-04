@@ -4,7 +4,8 @@ import type {
 } from "@tiptap/extension-mention";
 import Mention from "@tiptap/extension-mention";
 import type { Node as ProseMirrorNode } from "@tiptap/pm/model";
-import { ReactRenderer } from "@tiptap/react";
+import type { ReactNodeViewProps } from "@tiptap/react";
+import { ReactNodeViewRenderer, ReactRenderer } from "@tiptap/react";
 import type {
   SuggestionKeyDownProps,
   SuggestionProps
@@ -179,6 +180,11 @@ export interface CreateMentionExtensionOptions {
    * list behaviour (grouping, drill-down, its own search). Defaults to `MentionList`.
    */
   listComponent?: MentionListComponent;
+  /**
+   * Draws the chip itself as a React node view instead of static markup. Use when it
+   * needs behaviour — a tooltip for a truncated label, say.
+   */
+  chipComponent?: ComponentType<ReactNodeViewProps>;
 }
 
 /**
@@ -223,7 +229,8 @@ export function createMentionExtension({
   renderLabel,
   allowedPrefixes,
   onActiveChange,
-  listComponent
+  listComponent,
+  chipComponent
 }: CreateMentionExtensionOptions) {
   const text = renderLabel
     ? ({ node }: { node: ProseMirrorNode }) =>
@@ -246,19 +253,19 @@ export function createMentionExtension({
     }),
     ...(text && {
       renderText: text,
-      // `HTMLAttributes` in `configure` is static, so the per-node title — the full label, for
-      // when the chip is truncated — has to be merged here.
       renderHTML: ({ node, options }) => [
         "span",
-        {
-          ...options.HTMLAttributes,
-          title: node.attrs.label ?? node.attrs.id
-        },
+        { ...options.HTMLAttributes },
         text({ node })
       ]
     })
   }).extend({
-    name
+    name,
+    // `as: "span"` — the default container is a div, which would break the line inside
+    // the paragraph the chip sits in.
+    ...(chipComponent && {
+      addNodeView: () => ReactNodeViewRenderer(chipComponent, { as: "span" })
+    })
   });
 }
 

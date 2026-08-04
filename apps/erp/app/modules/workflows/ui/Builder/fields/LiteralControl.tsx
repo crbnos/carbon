@@ -1,4 +1,5 @@
 import {
+  DatePicker,
   Input,
   NumberDecrementStepper,
   NumberField,
@@ -14,21 +15,31 @@ import {
   Switch
 } from "@carbon/react";
 import type { ValueOrRef, ValueType } from "@carbon/workflows";
+import { parseDate } from "@internationalized/date";
 import { useLingui } from "@lingui/react/macro";
-import type { ReactNode } from "react";
+import type { KeyboardEvent, ReactNode } from "react";
 import { LuChevronDown, LuChevronUp } from "react-icons/lu";
 import { RECORD_PICKERS } from "./recordPickers";
+
+/** Stored dates are the `YYYY-MM-DD` the picker itself writes. Anything else is a
+ * value from elsewhere, and an empty picker beats a crash. */
+function asCalendarDate(value: unknown) {
+  if (typeof value !== "string" || !value) return null;
+  try {
+    return parseDate(value.slice(0, 10));
+  } catch {
+    return null;
+  }
+}
 
 type LiteralControlProps = {
   type: ValueType;
   choices?: readonly string[];
   value: string | number | boolean | null | undefined;
   onChange: (next: ValueOrRef | undefined) => void;
-  /** Opens the variable menu. Text-entry controls call it on `{`; the rest render the
-   * affordance button. */
+  /** Opens the variable menu. Every control here has two modes, and `{` is the one
+   * way into the second. */
   onRequestVariable: () => void;
-  /** Rendered inside the control's trailing edge for controls with no text entry. */
-  affordance: ReactNode;
 };
 
 export function LiteralControl({
@@ -36,8 +47,7 @@ export function LiteralControl({
   choices,
   value,
   onChange,
-  onRequestVariable,
-  affordance
+  onRequestVariable
 }: LiteralControlProps) {
   const { t } = useLingui();
 
@@ -49,39 +59,39 @@ export function LiteralControl({
     }
   }
 
-  // `min-w-0` so the control can shrink inside a flex row instead of forcing its
-  // content width onto the card; `relative` positions the affordance.
-  const shell = (children: ReactNode) => (
-    <div className="relative min-w-0 flex-1">{children}</div>
-  );
-
-  // A `{` in a text-entry control opens the menu rather than landing in the buffer.
-  const braceOpens = (e: { key: string; preventDefault: () => void }) => {
+  // A `{` opens the menu rather than landing in the buffer. On the shell rather than
+  // each input, so a dropdown and a switch answer the key the same way a text box does.
+  const braceOpens = (e: KeyboardEvent) => {
     if (e.key === "{") {
       e.preventDefault();
       onRequestVariable();
     }
   };
 
+  // `min-w-0` so the control can shrink inside a flex row instead of forcing its
+  // content width onto the card.
+  const shell = (children: ReactNode) => (
+    <div className="min-w-0 flex-1" onKeyDown={braceOpens}>
+      {children}
+    </div>
+  );
+
   // 1. Choices → Select
   if (choices && choices.length > 0) {
     const strValue = typeof value === "string" ? value : "";
     return shell(
-      <>
-        <Select value={strValue} onValueChange={(v) => emit(v || undefined)}>
-          <SelectTrigger>
-            <SelectValue className="truncate" placeholder={t`Select…`} />
-          </SelectTrigger>
-          <SelectContent>
-            {choices.map((c) => (
-              <SelectItem key={c} value={c}>
-                {c}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        {affordance}
-      </>
+      <Select value={strValue} onValueChange={(v) => emit(v || undefined)}>
+        <SelectTrigger>
+          <SelectValue className="truncate" placeholder={t`Select…`} />
+        </SelectTrigger>
+        <SelectContent>
+          {choices.map((c) => (
+            <SelectItem key={c} value={c}>
+              {c}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
     );
   }
 
@@ -92,18 +102,14 @@ export function LiteralControl({
       case "string": {
         const strValue = typeof value === "string" ? value : "";
         return shell(
-          <>
-            <Input
-              size="md"
-              type="text"
-              className="truncate"
-              value={strValue}
-              onChange={(e) => emit(e.target.value)}
-              onKeyDown={braceOpens}
-              placeholder={t`Enter text…`}
-            />
-            {affordance}
-          </>
+          <Input
+            size="md"
+            type="text"
+            className="truncate"
+            value={strValue}
+            onChange={(e) => emit(e.target.value)}
+            placeholder={t`Enter text…`}
+          />
         );
       }
 
@@ -126,7 +132,6 @@ export function LiteralControl({
               <NumberInput
                 className="truncate"
                 placeholder={t`Enter number…`}
-                onKeyDown={braceOpens}
               />
               <NumberInputStepper>
                 <NumberIncrementStepper>
@@ -144,27 +149,20 @@ export function LiteralControl({
       case "boolean": {
         const boolValue = typeof value === "boolean" ? value : false;
         return shell(
-          <>
-            <Switch
-              checked={boolValue}
-              onCheckedChange={(checked) => emit(checked)}
-              aria-label={t`Toggle`}
-            />
-            {affordance}
-          </>
+          <Switch
+            checked={boolValue}
+            onCheckedChange={(checked) => emit(checked)}
+            aria-label={t`Toggle`}
+          />
         );
       }
 
       case "date": {
-        const strValue = typeof value === "string" ? value : "";
         return shell(
-          <Input
-            size="md"
-            type="date"
-            className="truncate"
-            value={strValue}
-            onChange={(e) => emit(e.target.value || undefined)}
-            onKeyDown={braceOpens}
+          <DatePicker
+            value={asCalendarDate(value)}
+            onChange={(date) => emit(date?.toString() ?? undefined)}
+            aria-label={t`Date`}
           />
         );
       }
@@ -174,43 +172,26 @@ export function LiteralControl({
     }
   }
 
-  // 3. Entity → Carbon selector when available, otherwise plain id input
+  // 3. Entity → the Carbon selector for that record
   if (type.kind === "entity") {
     const Picker = RECORD_PICKERS[type.of];
     if (Picker) {
       const strValue = typeof value === "string" ? value : undefined;
       return shell(
-        <>
-          <Picker value={strValue} onChange={(id) => emit(id ?? undefined)} />
-          {affordance}
-        </>
+        <Picker value={strValue} onChange={(id) => emit(id ?? undefined)} />
       );
     }
-    return shell(
-      <>
-        <Input
-          size="md"
-          type="text"
-          className="truncate"
-          placeholder={t`Enter record id…`}
-          disabled
-        />
-        {affordance}
-      </>
-    );
   }
 
-  // 4. List → prompt
+  // A record with no picker, or a list: `pickControl` sends both to the variable
+  // select before they reach here. Kept so this stays total over ValueType.
   return shell(
-    <>
-      <Input
-        size="md"
-        type="text"
-        className="truncate"
-        placeholder={t`Pick a list from an earlier step`}
-        disabled
-      />
-      {affordance}
-    </>
+    <Input
+      size="md"
+      type="text"
+      className="truncate"
+      placeholder={t`Pick a value from an earlier step`}
+      disabled
+    />
   );
 }

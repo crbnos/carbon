@@ -712,6 +712,9 @@ msgstr "功能"
 msgid "About"
 msgstr "关于"
 
+msgid "About (notification)"
+msgstr ""
+
 msgid "Absorption"
 msgstr "吸收"
 
@@ -2085,6 +2088,9 @@ msgstr "身份验证错误"
 msgid "Auto apply"
 msgstr "自动应用"
 
+msgid "Auto arrange"
+msgstr ""
+
 msgid "Auto Release"
 msgstr "自动发放"
 
@@ -2604,6 +2610,9 @@ msgstr "Carbon的生产订单 — 一个作业从其复制的方法和路由构�
 msgid "Carbon's shop-floor app where operators run operations, report quantities, issue material, and log time against released jobs in real time."
 msgstr "Carbon 的车间应用，操作员在其中运行操作、报告数量、发放材料并实时记录时间以对抗已发放的工作。"
 
+msgid "Carbon's single record for anything with a part number — Part, Material, Tool, Service, Consumable, or Fixture — that jobs, methods, orders, and inventory all point at."
+msgstr ""
+
 msgid "Cards"
 msgstr "卡片"
 
@@ -2690,9 +2699,6 @@ msgstr "变更类型"
 
 msgid "Change Type"
 msgstr "更改类型"
-
-msgid "Change variable"
-msgstr ""
 
 msgid "Changed By"
 msgstr "更改者"
@@ -5015,6 +5021,9 @@ msgstr ""
 msgid "Due Date"
 msgstr "到期日期"
 
+msgid "Due Date (job)"
+msgstr ""
+
 msgid "Due Date of First Job"
 msgstr "第一个工作的截止日期"
 
@@ -5613,9 +5622,6 @@ msgstr ""
 
 msgid "Enter PO number"
 msgstr "输入采购订单号"
-
-msgid "Enter record id…"
-msgstr ""
 
 msgid "Enter text…"
 msgstr ""
@@ -7711,6 +7717,9 @@ msgstr "工作操作"
 
 msgid "Job Operations"
 msgstr "工作操作"
+
+msgid "Job Priority"
+msgstr ""
 
 msgid "Job readable"
 msgstr ""
@@ -10345,9 +10354,6 @@ msgstr "选择客户或客户类型以查看其定价。"
 msgid "Pick a date or leave blank to clear it."
 msgstr "选择日期或留空以清除。"
 
-msgid "Pick a list from an earlier step"
-msgstr ""
-
 msgid "Pick a list variable…"
 msgstr ""
 
@@ -10360,7 +10366,10 @@ msgstr ""
 msgid "Pick a record type…"
 msgstr ""
 
-msgid "Pick a variable"
+msgid "Pick a value from an earlier step"
+msgstr ""
+
+msgid "Pick a variable…"
 msgstr ""
 
 msgid "Pick List"
@@ -12044,6 +12053,9 @@ msgstr ""
 
 msgid "Sales Order Line"
 msgstr "销售订单行"
+
+msgid "Sales Order Line (job)"
+msgstr ""
 
 msgid "Sales Order Location"
 msgstr "销售订单位置"
@@ -13775,6 +13787,9 @@ msgstr "您用来追踪成本的分类"
 msgid "The capital assets you own and depreciate"
 msgstr "您拥有并折旧的固定资产"
 
+msgid "The Carbon user currently responsible for working this record, set per record and independent of ownership fields like Account Manager or Sales Person."
+msgstr ""
+
 msgid "The Carbon user responsible for this customer relationship; emails and reminders about this customer route to them."
 msgstr "负责此客户关系的Carbon用户；关于此客户的电子邮件和提醒会路由给他们。"
 
@@ -13783,6 +13798,9 @@ msgstr "负责此供应商关系的Carbon用户；关于此供应商的电子邮
 
 msgid "The Carbon user who owns this RFQ; supplier responses and reminders route to them."
 msgstr "拥有此RFQ的Carbon用户；供应商响应和提醒会路由给他们。"
+
+msgid "The carrier and service a shipment goes out on, supplying the tracking-URL template that turns a tracking number into a link and the account freight charges post to."
+msgstr ""
 
 msgid "The carrier that delivers goods from this supplier, when different from the supplier itself (e.g. supplier sells, FedEx ships)."
 msgstr "从此供应商交付商品的承运人，当不同于供应商本身时（例如，供应商销售，FedEx配送）。"
@@ -13861,6 +13879,9 @@ msgstr "您销售和运送的客户"
 
 msgid "The dashed threshold you don't want inventory to fall below."
 msgstr "不希望库存低于的虚线阈值。"
+
+msgid "The date a job's quantity is needed, which together with Deadline Type sets the job's place in its location's schedule queue."
+msgstr ""
 
 msgid "The date depreciation begins for this asset; usually the in-service date."
 msgstr "资产开始折旧的日期；通常是投入使用日期。"
@@ -13982,6 +14003,9 @@ msgstr "此工作中心运行机械的每小时成本；与记录的机器小时
 msgid "The hourly indirect-cost burden applied to this work center; the difference between labor + machine and the full quoting rate is what overhead absorbs."
 msgstr "应用于此工作中心的每小时间接成本负担；劳动+机器与完整报价率之间的差异就是间接费用吸收的内容。"
 
+msgid "The https address a workflow's webhook step posts to — plain http, redirects, and hosts resolving to private or link-local addresses are refused, and the call gives up after ten seconds."
+msgstr ""
+
 msgid "The human-readable document number (like J000001 or ECO-000001) minted from a sequence and stored on the record, distinct from its internal id."
 msgstr "从序列生成并存储在记录上的人类可读的文档编号（如J000001或ECO-000001），与其内部ID不同。"
 
@@ -14014,6 +14038,9 @@ msgstr "根据MACRS，该资产的国税局回收期类别（3、5、7、10、15
 
 msgid "The job whose operation this outside-processing line covers; the line's receipt closes the operation against this job."
 msgstr "该外部处理行所涵盖的操作工作；行的收据关闭对该工作的操作。"
+
+msgid "The job's position in its location's schedule queue — a fractional number Carbon computes from the due date and deadline type, not a Low/High rating."
+msgstr ""
 
 msgid "The kind of adjustment this rule applies — discount, surcharge, or fixed override; combined with Amount Type to compute the actual delta on each line."
 msgstr "该规则应用的调整类型 - 折扣、附加费或固定覆盖；与金额类型结合以计算每行的实际增量。"
@@ -14219,6 +14246,9 @@ msgstr "零件报废时记录的原因"
 msgid "The reasons you record when you decline an RFQ"
 msgstr "您拒绝询价单时记录的原因"
 
+msgid "The record a workflow notification points at, named as an id plus its kind; leave it empty and the notification links to the workflow run itself."
+msgstr ""
+
 msgid "The record that applies a payment or memo to an invoice, carrying the applied, discount, and write-off amounts."
 msgstr "将付款或备忘录应用于发票的记录，包含应用、折扣和核销金额。"
 
@@ -14238,6 +14268,9 @@ msgstr "剩余的 {0} {1} 将被再次预期并计入传入供应。"
 msgid "The remaining {0} {1} will no longer be expected. On-order supply and MRP will stop counting it. The ordered quantity and pricing are unchanged."
 msgstr "剩余的 {0} {1} 将不再被预期。在途供应和 MRP 将停止计算它。订购数量和价格保持不变。"
 
+msgid "The request body sent verbatim as the POST payload with a JSON content type, after workflow variables inside it are substituted."
+msgstr ""
+
 msgid "The residual WIP a job has left at close, swept to a Production Variance account — the only variance Carbon books for a job."
 msgstr "工作在关闭时留下的残余在制品，扫至生产差异帐户 - Carbon为工作记录的唯一差异。"
 
@@ -14246,6 +14279,9 @@ msgstr "Onshape 的响应缺少必需的参数。请重新连接。"
 
 msgid "The revision number of the part"
 msgstr "零件的修订号"
+
+msgid "The sales order line this job was created to supply, tying the job to the customer demand behind it."
+msgstr ""
 
 msgid "The schedule used to spread this asset's cost over its useful life (straight-line, declining balance, units of production)."
 msgstr "用于在资产的使用寿命内分配该资产成本的折旧方法（直线法、递减余额法、生产单位法）。"
@@ -14549,9 +14585,6 @@ msgstr "此销售订单有关联的工作。选择如何处理它们。"
 
 msgid "This sales order has lines that require jobs to be created"
 msgstr "此销售订单有需要创建工作的行项目"
-
-msgid "This step chooses which path runs next — it doesn't produce values of its own. Reference earlier steps further down each path."
-msgstr ""
 
 #. placeholder {0}: usageCount === 1 ? "" : "s"
 msgid "This storage type is currently used by {usageCount} storage unit{0}."
@@ -15721,6 +15754,9 @@ msgstr "我们已向您发送了一个魔法链接以登录您的账户。"
 msgid "Webhook"
 msgstr "Webhook"
 
+msgid "Webhook Body"
+msgstr ""
+
 msgid "Webhook Documentation"
 msgstr "Webhook 文档"
 
@@ -16180,6 +16216,9 @@ msgstr "工作班次跟踪处于活跃状态。"
 
 msgid "Workflow"
 msgstr "工作流"
+
+msgid "Workflow name"
+msgstr ""
 
 msgid "Workflows"
 msgstr ""

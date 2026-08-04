@@ -712,6 +712,9 @@ msgstr "возможность"
 msgid "About"
 msgstr "О программе"
 
+msgid "About (notification)"
+msgstr ""
+
 msgid "Absorption"
 msgstr "Абсорбция"
 
@@ -2085,6 +2088,9 @@ msgstr "Ошибка аутентификации"
 msgid "Auto apply"
 msgstr "Автоматически применить"
 
+msgid "Auto arrange"
+msgstr ""
+
 msgid "Auto Release"
 msgstr "Автоматический выпуск"
 
@@ -2604,6 +2610,9 @@ msgstr "Производственный заказ Carbon — одна рабо
 msgid "Carbon's shop-floor app where operators run operations, report quantities, issue material, and log time against released jobs in real time."
 msgstr "Приложение Carbon для цеха, где операторы выполняют операции, сообщают количества, выдают материалы и регистрируют время по выпущенным работам в реальном времени."
 
+msgid "Carbon's single record for anything with a part number — Part, Material, Tool, Service, Consumable, or Fixture — that jobs, methods, orders, and inventory all point at."
+msgstr ""
+
 msgid "Cards"
 msgstr "Карточки"
 
@@ -2690,9 +2699,6 @@ msgstr "Тип изменения"
 
 msgid "Change Type"
 msgstr "Изменить тип"
-
-msgid "Change variable"
-msgstr ""
 
 msgid "Changed By"
 msgstr "Изменено"
@@ -5015,6 +5021,9 @@ msgstr ""
 msgid "Due Date"
 msgstr "Дата платежа"
 
+msgid "Due Date (job)"
+msgstr ""
+
 msgid "Due Date of First Job"
 msgstr "Дата выполнения первого задания"
 
@@ -5613,9 +5622,6 @@ msgstr ""
 
 msgid "Enter PO number"
 msgstr "Введите номер ПО"
-
-msgid "Enter record id…"
-msgstr ""
 
 msgid "Enter text…"
 msgstr ""
@@ -7711,6 +7717,9 @@ msgstr "Операция задания"
 
 msgid "Job Operations"
 msgstr "Операции задания"
+
+msgid "Job Priority"
+msgstr ""
 
 msgid "Job readable"
 msgstr ""
@@ -10345,9 +10354,6 @@ msgstr "Выберите клиента или тип клиента для пр
 msgid "Pick a date or leave blank to clear it."
 msgstr "Выберите дату или оставьте пустым, чтобы очистить."
 
-msgid "Pick a list from an earlier step"
-msgstr ""
-
 msgid "Pick a list variable…"
 msgstr ""
 
@@ -10360,7 +10366,10 @@ msgstr ""
 msgid "Pick a record type…"
 msgstr ""
 
-msgid "Pick a variable"
+msgid "Pick a value from an earlier step"
+msgstr ""
+
+msgid "Pick a variable…"
 msgstr ""
 
 msgid "Pick List"
@@ -12044,6 +12053,9 @@ msgstr ""
 
 msgid "Sales Order Line"
 msgstr "Строка заказа продажи"
+
+msgid "Sales Order Line (job)"
+msgstr ""
 
 msgid "Sales Order Location"
 msgstr "Местоположение заказа на продажу"
@@ -13775,6 +13787,9 @@ msgstr "Корзины, по которым вы отслеживаете зат
 msgid "The capital assets you own and depreciate"
 msgstr "Основные средства, которыми вы владеете и амортизируете"
 
+msgid "The Carbon user currently responsible for working this record, set per record and independent of ownership fields like Account Manager or Sales Person."
+msgstr ""
+
 msgid "The Carbon user responsible for this customer relationship; emails and reminders about this customer route to them."
 msgstr "Пользователь Carbon, ответственный за взаимоотношения с клиентом; электронные письма и напоминания об этом клиенте направляются им."
 
@@ -13783,6 +13798,9 @@ msgstr "Пользователь Carbon, ответственный за вза�
 
 msgid "The Carbon user who owns this RFQ; supplier responses and reminders route to them."
 msgstr "Пользователь Carbon, который владеет этой RFQ; ответы поставщика и напоминания направляются им."
+
+msgid "The carrier and service a shipment goes out on, supplying the tracking-URL template that turns a tracking number into a link and the account freight charges post to."
+msgstr ""
 
 msgid "The carrier that delivers goods from this supplier, when different from the supplier itself (e.g. supplier sells, FedEx ships)."
 msgstr "Перевозчик, который доставляет товары от этого поставщика, когда отличается от самого поставщика (например, поставщик продает, FedEx доставляет)."
@@ -13861,6 +13879,9 @@ msgstr "Клиенты, которым вы продаете и отправля
 
 msgid "The dashed threshold you don't want inventory to fall below."
 msgstr "Пунктирный порог, ниже которого вы не хотите, чтобы опускался инвентарь."
+
+msgid "The date a job's quantity is needed, which together with Deadline Type sets the job's place in its location's schedule queue."
+msgstr ""
 
 msgid "The date depreciation begins for this asset; usually the in-service date."
 msgstr "Дата начала амортизации данного основного средства; обычно дата ввода в эксплуатацию."
@@ -13982,6 +14003,9 @@ msgstr "Почасовая стоимость работы механизмов 
 msgid "The hourly indirect-cost burden applied to this work center; the difference between labor + machine and the full quoting rate is what overhead absorbs."
 msgstr "Почасовая нагрузка косвенных затрат, применяемая к этому рабочему центру; разница между трудом + машиной и полной ставкой котировки - это то, что поглощает накладные расходы."
 
+msgid "The https address a workflow's webhook step posts to — plain http, redirects, and hosts resolving to private or link-local addresses are refused, and the call gives up after ten seconds."
+msgstr ""
+
 msgid "The human-readable document number (like J000001 or ECO-000001) minted from a sequence and stored on the record, distinct from its internal id."
 msgstr "Понятный номер документа (например J000001 или ECO-000001), сгенерированный из последовательности и сохранённый в записи, отличный от его внутреннего ID."
 
@@ -14014,6 +14038,9 @@ msgstr "Класс периода восстановления IRS для это
 
 msgid "The job whose operation this outside-processing line covers; the line's receipt closes the operation against this job."
 msgstr "Работа, операция которой охватывает эту строку внешней обработки; квитанция по строке закрывает операцию для этой работы."
+
+msgid "The job's position in its location's schedule queue — a fractional number Carbon computes from the due date and deadline type, not a Low/High rating."
+msgstr ""
 
 msgid "The kind of adjustment this rule applies — discount, surcharge, or fixed override; combined with Amount Type to compute the actual delta on each line."
 msgstr "Тип корректировки, которую применяет это правило — скидка, доплата или фиксированное переопределение; в сочетании с типом суммы для расчета фактической дельты в каждой строке."
@@ -14219,6 +14246,9 @@ msgstr "Причины, которые вы записываете, когда �
 msgid "The reasons you record when you decline an RFQ"
 msgstr "Причины, которые вы записываете, когда отклоняете РФП"
 
+msgid "The record a workflow notification points at, named as an id plus its kind; leave it empty and the notification links to the workflow run itself."
+msgstr ""
+
 msgid "The record that applies a payment or memo to an invoice, carrying the applied, discount, and write-off amounts."
 msgstr "Запись, которая применяет платёж или памятку к счёту-фактуре, содержащая применённые, дисконтные и списанные суммы."
 
@@ -14238,6 +14268,9 @@ msgstr "Оставшиеся {0} {1} будут ожидаться вновь и
 msgid "The remaining {0} {1} will no longer be expected. On-order supply and MRP will stop counting it. The ordered quantity and pricing are unchanged."
 msgstr "Оставшиеся {0} {1} больше не будут ожидаться. Входящие поставки и MRP прекратят их учет. Заказанное количество и цены остаются неизменными."
 
+msgid "The request body sent verbatim as the POST payload with a JSON content type, after workflow variables inside it are substituted."
+msgstr ""
+
 msgid "The residual WIP a job has left at close, swept to a Production Variance account — the only variance Carbon books for a job."
 msgstr "Остаточное незавершенное производство, оставленное заданием при закрытии, перемещено на счет производственного отклонения — единственное отклонение, которое Carbon регистрирует для задания."
 
@@ -14246,6 +14279,9 @@ msgstr "В ответе Onshape отсутствовали обязательн�
 
 msgid "The revision number of the part"
 msgstr "Номер редакции детали"
+
+msgid "The sales order line this job was created to supply, tying the job to the customer demand behind it."
+msgstr ""
 
 msgid "The schedule used to spread this asset's cost over its useful life (straight-line, declining balance, units of production)."
 msgstr "Метод амортизации, используемый для распределения стоимости этого актива в течение его полезного срока действия (прямолинейный, убывающий баланс, единицы производства)."
@@ -14549,9 +14585,6 @@ msgstr "Этот заказ на продажу имеет связанные р
 
 msgid "This sales order has lines that require jobs to be created"
 msgstr "Этот заказ на продажу содержит строки, для которых необходимо создать задания"
-
-msgid "This step chooses which path runs next — it doesn't produce values of its own. Reference earlier steps further down each path."
-msgstr ""
 
 #. placeholder {0}: usageCount === 1 ? "" : "s"
 msgid "This storage type is currently used by {usageCount} storage unit{0}."
@@ -15721,6 +15754,9 @@ msgstr "Мы отправили вам волшебную ссылку для в
 msgid "Webhook"
 msgstr "Вебхук"
 
+msgid "Webhook Body"
+msgstr ""
+
 msgid "Webhook Documentation"
 msgstr "Документация по вебхукам"
 
@@ -16180,6 +16216,9 @@ msgstr "Отслеживание рабочих смен активно."
 
 msgid "Workflow"
 msgstr "Рабочий процесс"
+
+msgid "Workflow name"
+msgstr ""
 
 msgid "Workflows"
 msgstr ""

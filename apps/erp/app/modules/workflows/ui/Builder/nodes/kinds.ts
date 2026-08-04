@@ -16,3 +16,17 @@ export const NODE_CARD_WIDTH: Record<WorkflowNodeType, number> = {
 
 /** Widest card, so auto-placement clears whatever kind it lands beside. */
 export const MAX_NODE_CARD_WIDTH = Math.max(...Object.values(NODE_CARD_WIDTH));
+
+/** Rough expanded heights, used only when a card has no measured size yet —
+ * `onlyRenderVisibleElements` leaves anything never scrolled into view unmeasured. */
+export const NODE_CARD_HEIGHT: Record<WorkflowNodeType, number> = {
+  trigger: 180,
+  condition: 320,
+  action: 260,
+  entity: 260,
+  lookup: 280,
+  filter: 280
+};
+
+/** Header-only card. Same for every kind — the body is what differs. */
+export const COLLAPSED_NODE_CARD_HEIGHT = 56;

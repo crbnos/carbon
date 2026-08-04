@@ -17,6 +17,7 @@ import {
   toBuilderNode,
   wouldCreateCycle
 } from "./graph";
+import { layoutPositions } from "./layout";
 
 export type SaveState = "idle" | "saving" | "saved" | "error";
 
@@ -45,9 +46,27 @@ export type BuilderState = {
   renameNode: (id: string, name: string) => void;
   /** Expand or collapse a node. Persists on the node itself, not in data. */
   setNodeExpanded: (id: string, expanded: boolean) => void;
+  /** Expand or collapse every node at once. */
+  setAllNodesExpanded: (expanded: boolean) => void;
+  /** Re-flow the columns for the cards' current sizes. */
+  arrangeNodes: () => void;
+  /** Move nodes in bulk — how auto-arrange applies a computed layout. */
+  setNodePositions: (
+    positions: Record<string, { x: number; y: number }>
+  ) => void;
   /** Delete a node and its edges. Refuses if it's the last trigger node. */
   removeNode: (id: string) => void;
 };
+
+/**
+ * Runs `arrange` once the cards have been re-measured. A card's real height only
+ * lands a frame or two after it expands, and arranging before then packs the
+ * columns against a guessed height — which is where the extra gaps came from.
+ */
+function afterMeasure(arrange: () => void) {
+  if (typeof requestAnimationFrame !== "function") return arrange();
+  requestAnimationFrame(() => requestAnimationFrame(arrange));
+}
 
 export const snapshot = (nodes: BuilderNode[], edges: BuilderEdge[]) =>
   JSON.stringify(fromReactFlow(nodes, edges));
@@ -199,10 +218,35 @@ export function createBuilderStore(initial: {
         };
       }),
 
-    setNodeExpanded: (id, expanded) =>
+    setNodeExpanded: (id, expanded) => {
       set(({ nodes }) => ({
         nodes: nodes.map((n) => (n.id === id ? { ...n, expanded } : n))
-      })),
+      }));
+      afterMeasure(get().arrangeNodes);
+    },
+
+    setAllNodesExpanded: (expanded) => {
+      set(({ nodes }) => ({
+        nodes: nodes.map((n) => ({ ...n, expanded }))
+      }));
+      afterMeasure(get().arrangeNodes);
+    },
+
+    arrangeNodes: () => {
+      const { nodes, edges, isReadOnly, setNodePositions } = get();
+      if (isReadOnly) return;
+      setNodePositions(layoutPositions(nodes, edges));
+    },
+
+    setNodePositions: (positions) => {
+      const { isReadOnly, nodes } = get();
+      if (isReadOnly) return;
+      set({
+        nodes: nodes.map((n) =>
+          positions[n.id] ? { ...n, position: positions[n.id] } : n
+        )
+      });
+    },
 
     removeNode: (id) => {
       const { nodes, edges, selectedNodeId } = get();

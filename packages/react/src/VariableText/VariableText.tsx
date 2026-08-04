@@ -21,6 +21,7 @@ import {
   useRef
 } from "react";
 import { cn } from "../utils/cn";
+import { createVariableChip } from "./VariableChip";
 
 export type VariableTextToken = { id: string; label: string };
 export type VariableTextPart =
@@ -174,6 +175,9 @@ export const VariableText = forwardRef<VariableTextHandle, VariableTextProps>(
             const full = label ?? id ?? "";
             return `{${renderTokenLabelRef.current?.(full) ?? full}}`;
           },
+          chipComponent: createVariableChip(
+            (label) => renderTokenLabelRef.current?.(label) ?? label
+          ),
           onActiveChange: (active) => {
             menuOpen.current = active;
           }

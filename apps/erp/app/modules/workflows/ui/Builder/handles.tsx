@@ -32,15 +32,20 @@ const LABEL_TONE: Record<PortTone, string> = {
 // incoming edge. Anchors on a zero-width box sitting on the card's right border.
 export function PortLabel({
   label,
-  tone = "default"
+  tone = "default",
+  lifted = false
 }: {
   label: string;
   tone?: PortTone;
+  /** Nudged above the centre line so an edge leaving this handle runs clear
+   * underneath. Only worth it when there is an edge — otherwise it looks crooked. */
+  lifted?: boolean;
 }) {
   return (
     <span
       className={cn(
-        "pointer-events-none absolute right-0 top-1/2 -translate-y-1/2 translate-x-[calc(100%+0.75rem)] whitespace-nowrap rounded bg-background/80 px-1 text-[10px] font-medium",
+        "pointer-events-none absolute right-0 top-1/2 translate-x-[calc(100%+0.75rem)] whitespace-nowrap rounded bg-background/80 px-1 text-[10px] font-medium",
+        lifted ? "-translate-y-[115%]" : "-translate-y-1/2",
         LABEL_TONE[tone]
       )}
     >

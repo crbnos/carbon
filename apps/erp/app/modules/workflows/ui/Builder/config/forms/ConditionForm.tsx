@@ -1,4 +1,4 @@
-import { Alert, AlertDescription, Button, IconButton } from "@carbon/react";
+import { Button, IconButton } from "@carbon/react";
 import type { Clause, ConditionPath, WorkflowIssue } from "@carbon/workflows";
 import {
   closestCenter,
@@ -17,7 +17,7 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { nanoid } from "nanoid";
-import { LuGripVertical, LuInfo, LuPlus, LuX } from "react-icons/lu";
+import { LuGripVertical, LuPlus, LuX } from "react-icons/lu";
 import { useBuilderStore } from "../../context";
 import { OutputHandle } from "../../OutputHandle";
 import { conditionPathLabel } from "../../ports";
@@ -112,7 +112,7 @@ function SortableClauseItem({
         issues={issues}
       />
       {!isLast && (
-        <div className="flex justify-center py-1.5">
+        <div className="flex justify-center py-3">
           <CombinatorToggle value={combinator} onChange={onCombinatorChange} />
         </div>
       )}
@@ -211,16 +211,6 @@ export function ConditionForm({ node, issues }: NodeFormProps<"condition">) {
 
   return (
     <FormStack spacing={4}>
-      <Alert>
-        <LuInfo />
-        <AlertDescription>
-          <Trans>
-            This step chooses which path runs next — it doesn't produce values
-            of its own. Reference earlier steps further down each path.
-          </Trans>
-        </AlertDescription>
-      </Alert>
-
       {paths.map((path) => {
         const isElse = path.kind === "else";
         const isIf = path.kind === "if";

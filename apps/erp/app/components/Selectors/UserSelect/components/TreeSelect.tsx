@@ -26,6 +26,10 @@ const UserTreeSelect = () => {
       aria-multiselectable={isMulti}
       ref={listBoxRef}
       onMouseOver={onMouseOver}
+      // Or the surrounding surface eats the wheel: a drawer's scroll lock swallows it,
+      // and the workflow canvas zooms instead of scrolling this list.
+      onWheel={(e) => e.stopPropagation()}
+      onTouchMove={(e) => e.stopPropagation()}
       className="overflow-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent max-h-[300px] my-1 flex flex-col gap-1"
     >
       {loading ? (

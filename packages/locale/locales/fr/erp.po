@@ -712,6 +712,9 @@ msgstr "capacité"
 msgid "About"
 msgstr "À propos"
 
+msgid "About (notification)"
+msgstr ""
+
 msgid "Absorption"
 msgstr "Absorption"
 
@@ -2085,6 +2088,9 @@ msgstr "Erreur d'authentification"
 msgid "Auto apply"
 msgstr "Appliquer automatiquement"
 
+msgid "Auto arrange"
+msgstr ""
+
 msgid "Auto Release"
 msgstr "Libération automatique"
 
@@ -2604,6 +2610,9 @@ msgstr "Commande de production de Carbon — une tâche fabrique une quantité d
 msgid "Carbon's shop-floor app where operators run operations, report quantities, issue material, and log time against released jobs in real time."
 msgstr "L'application d'atelier de Carbon où les opérateurs exécutent les opérations, signalent les quantités, éditent les matériaux et enregistrent le temps par rapport aux tâches libérées en temps réel."
 
+msgid "Carbon's single record for anything with a part number — Part, Material, Tool, Service, Consumable, or Fixture — that jobs, methods, orders, and inventory all point at."
+msgstr ""
+
 msgid "Cards"
 msgstr "Cartes"
 
@@ -2690,9 +2699,6 @@ msgstr "Modifier le type"
 
 msgid "Change Type"
 msgstr "Changer le type"
-
-msgid "Change variable"
-msgstr ""
 
 msgid "Changed By"
 msgstr "Modifié par"
@@ -5015,6 +5021,9 @@ msgstr ""
 msgid "Due Date"
 msgstr "Date d'échéance"
 
+msgid "Due Date (job)"
+msgstr ""
+
 msgid "Due Date of First Job"
 msgstr "Date d'échéance du premier travail"
 
@@ -5613,9 +5622,6 @@ msgstr ""
 
 msgid "Enter PO number"
 msgstr "Entrez le numéro de bon de commande"
-
-msgid "Enter record id…"
-msgstr ""
 
 msgid "Enter text…"
 msgstr ""
@@ -7711,6 +7717,9 @@ msgstr "Opération de travail"
 
 msgid "Job Operations"
 msgstr "Opérations de travail"
+
+msgid "Job Priority"
+msgstr ""
 
 msgid "Job readable"
 msgstr ""
@@ -10345,9 +10354,6 @@ msgstr "Sélectionnez un client ou un type de client pour afficher leurs tarifs.
 msgid "Pick a date or leave blank to clear it."
 msgstr "Choisissez une date ou laissez vide pour l'effacer."
 
-msgid "Pick a list from an earlier step"
-msgstr ""
-
 msgid "Pick a list variable…"
 msgstr ""
 
@@ -10360,7 +10366,10 @@ msgstr ""
 msgid "Pick a record type…"
 msgstr ""
 
-msgid "Pick a variable"
+msgid "Pick a value from an earlier step"
+msgstr ""
+
+msgid "Pick a variable…"
 msgstr ""
 
 msgid "Pick List"
@@ -12044,6 +12053,9 @@ msgstr ""
 
 msgid "Sales Order Line"
 msgstr "Ligne de commande client"
+
+msgid "Sales Order Line (job)"
+msgstr ""
 
 msgid "Sales Order Location"
 msgstr "Localisation de la commande client"
@@ -13775,6 +13787,9 @@ msgstr "Les compartiments par rapport auxquels vous suivez les coûts"
 msgid "The capital assets you own and depreciate"
 msgstr "Les immobilisations que vous possédez et dépréciiez"
 
+msgid "The Carbon user currently responsible for working this record, set per record and independent of ownership fields like Account Manager or Sales Person."
+msgstr ""
+
 msgid "The Carbon user responsible for this customer relationship; emails and reminders about this customer route to them."
 msgstr "L'utilisateur Carbon responsable de cette relation client; les e-mails et les rappels à propos de ce client leur sont acheminés."
 
@@ -13783,6 +13798,9 @@ msgstr "L'utilisateur Carbon responsable de cette relation fournisseur; les e-ma
 
 msgid "The Carbon user who owns this RFQ; supplier responses and reminders route to them."
 msgstr "L'utilisateur Carbon qui possède cette RFQ; les réponses des fournisseurs et les rappels leur sont acheminés."
+
+msgid "The carrier and service a shipment goes out on, supplying the tracking-URL template that turns a tracking number into a link and the account freight charges post to."
+msgstr ""
 
 msgid "The carrier that delivers goods from this supplier, when different from the supplier itself (e.g. supplier sells, FedEx ships)."
 msgstr "Le transporteur qui livre les marchandises de ce fournisseur, quand différent du fournisseur lui-même (par exemple, le fournisseur vend, FedEx expédie)."
@@ -13861,6 +13879,9 @@ msgstr "Les clients à qui vous vendez et livrez"
 
 msgid "The dashed threshold you don't want inventory to fall below."
 msgstr "Le seuil pointillé en dessous duquel vous ne voulez pas que l'inventaire tombe."
+
+msgid "The date a job's quantity is needed, which together with Deadline Type sets the job's place in its location's schedule queue."
+msgstr ""
 
 msgid "The date depreciation begins for this asset; usually the in-service date."
 msgstr "La date à laquelle la dépréciation de cet actif commence; généralement la date de mise en service."
@@ -13982,6 +14003,9 @@ msgstr "Le coût horaire de fonctionnement de la machinerie à ce centre de trav
 msgid "The hourly indirect-cost burden applied to this work center; the difference between labor + machine and the full quoting rate is what overhead absorbs."
 msgstr "La charge de coût indirect horaire appliquée à ce centre de travail; la différence entre main-d'œuvre + machine et le taux de devis complet est ce que les frais généraux absorbent."
 
+msgid "The https address a workflow's webhook step posts to — plain http, redirects, and hosts resolving to private or link-local addresses are refused, and the call gives up after ten seconds."
+msgstr ""
+
 msgid "The human-readable document number (like J000001 or ECO-000001) minted from a sequence and stored on the record, distinct from its internal id."
 msgstr "Le numéro de document lisible (comme J000001 ou ECO-000001) généré à partir d'une séquence et stocké dans l'enregistrement, distinct de son ID interne."
 
@@ -14014,6 +14038,9 @@ msgstr "La classe de période de récupération IRS pour cet actif selon MACRS (
 
 msgid "The job whose operation this outside-processing line covers; the line's receipt closes the operation against this job."
 msgstr "Le travail dont l'opération couvre cette ligne de traitement externe; le reçu de la ligne ferme l'opération contre ce travail."
+
+msgid "The job's position in its location's schedule queue — a fractional number Carbon computes from the due date and deadline type, not a Low/High rating."
+msgstr ""
 
 msgid "The kind of adjustment this rule applies — discount, surcharge, or fixed override; combined with Amount Type to compute the actual delta on each line."
 msgstr "Le type d'ajustement que cette règle applique - remise, majoration ou dépassement fixe; combiné avec Type de Montant pour calculer le delta réel sur chaque ligne."
@@ -14219,6 +14246,9 @@ msgstr "Les raisons que vous enregistrez lorsque des pièces sont mises au rebut
 msgid "The reasons you record when you decline an RFQ"
 msgstr "Les raisons que vous enregistrez lorsque vous refusez une demande de devis"
 
+msgid "The record a workflow notification points at, named as an id plus its kind; leave it empty and the notification links to the workflow run itself."
+msgstr ""
+
 msgid "The record that applies a payment or memo to an invoice, carrying the applied, discount, and write-off amounts."
 msgstr "L'enregistrement qui applique un paiement ou une note à une facture, portant les montants appliqués, les remises et les annulations."
 
@@ -14238,6 +14268,9 @@ msgstr "Les {0} {1} restants seront attendus à nouveau et comptabilisés comme 
 msgid "The remaining {0} {1} will no longer be expected. On-order supply and MRP will stop counting it. The ordered quantity and pricing are unchanged."
 msgstr "Les {0} {1} restants ne seront plus attendus. L'approvisionnement en commande et l'MRP cesseront de les compter. La quantité commandée et la tarification restent inchangées."
 
+msgid "The request body sent verbatim as the POST payload with a JSON content type, after workflow variables inside it are substituted."
+msgstr ""
+
 msgid "The residual WIP a job has left at close, swept to a Production Variance account — the only variance Carbon books for a job."
 msgstr "Le WIP résiduel qu'un travail a laissé à la fermeture, balayé sur un compte de variance de production - la seule variance que Carbon enregistre pour une tâche."
 
@@ -14246,6 +14279,9 @@ msgstr "La réponse d'Onshape ne contenait pas les paramètres requis. Réessaye
 
 msgid "The revision number of the part"
 msgstr "Le numéro de révision de la pièce"
+
+msgid "The sales order line this job was created to supply, tying the job to the customer demand behind it."
+msgstr ""
 
 msgid "The schedule used to spread this asset's cost over its useful life (straight-line, declining balance, units of production)."
 msgstr "L'échéance utilisée pour répartir le coût de cet actif sur sa durée de vie utile (ligne droite, solde décroissant, unités de production)."
@@ -14549,9 +14585,6 @@ msgstr "Cette commande client a des tâches associées. Choisissez ce que vous s
 
 msgid "This sales order has lines that require jobs to be created"
 msgstr "Cette commande client contient des lignes qui nécessitent la création de tâches"
-
-msgid "This step chooses which path runs next — it doesn't produce values of its own. Reference earlier steps further down each path."
-msgstr ""
 
 #. placeholder {0}: usageCount === 1 ? "" : "s"
 msgid "This storage type is currently used by {usageCount} storage unit{0}."
@@ -15721,6 +15754,9 @@ msgstr "Nous vous avons envoyé un lien magique pour vous connecter à votre com
 msgid "Webhook"
 msgstr "Webhook"
 
+msgid "Webhook Body"
+msgstr ""
+
 msgid "Webhook Documentation"
 msgstr "Documentation des webhooks"
 
@@ -16180,6 +16216,9 @@ msgstr "Le suivi des quarts de travail est actif."
 
 msgid "Workflow"
 msgstr "Flux de travail"
+
+msgid "Workflow name"
+msgstr ""
 
 msgid "Workflows"
 msgstr ""

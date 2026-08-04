@@ -712,6 +712,9 @@ msgstr "能力"
 msgid "About"
 msgstr "について"
 
+msgid "About (notification)"
+msgstr ""
+
 msgid "Absorption"
 msgstr "吸収"
 
@@ -2085,6 +2088,9 @@ msgstr "認証エラー"
 msgid "Auto apply"
 msgstr "自動適用"
 
+msgid "Auto arrange"
+msgstr ""
+
 msgid "Auto Release"
 msgstr "自動リリース"
 
@@ -2604,6 +2610,9 @@ msgstr "Carbonの生産指示 — 1つのジョブは、コピーされたメソ
 msgid "Carbon's shop-floor app where operators run operations, report quantities, issue material, and log time against released jobs in real time."
 msgstr "オペレーターが操作を実行し、数量をレポートし、材料を払い出し、リリースされたジョブに対してリアルタイムで時間をログするCarbon のショップフロア アプリ。"
 
+msgid "Carbon's single record for anything with a part number — Part, Material, Tool, Service, Consumable, or Fixture — that jobs, methods, orders, and inventory all point at."
+msgstr ""
+
 msgid "Cards"
 msgstr "カード"
 
@@ -2690,9 +2699,6 @@ msgstr "種類を変更"
 
 msgid "Change Type"
 msgstr "タイプを変更"
-
-msgid "Change variable"
-msgstr ""
 
 msgid "Changed By"
 msgstr "変更者"
@@ -5015,6 +5021,9 @@ msgstr ""
 msgid "Due Date"
 msgstr "支払期日"
 
+msgid "Due Date (job)"
+msgstr ""
+
 msgid "Due Date of First Job"
 msgstr "最初のジョブの期日"
 
@@ -5613,9 +5622,6 @@ msgstr ""
 
 msgid "Enter PO number"
 msgstr "PO番号を入力"
-
-msgid "Enter record id…"
-msgstr ""
 
 msgid "Enter text…"
 msgstr ""
@@ -7711,6 +7717,9 @@ msgstr "作業操作"
 
 msgid "Job Operations"
 msgstr "ジョブ操作"
+
+msgid "Job Priority"
+msgstr ""
 
 msgid "Job readable"
 msgstr ""
@@ -10345,9 +10354,6 @@ msgstr "顧客または顧客タイプを選択して、その価格を表示し
 msgid "Pick a date or leave blank to clear it."
 msgstr "日付を選択するか、空白のままにしてクリアしてください。"
 
-msgid "Pick a list from an earlier step"
-msgstr ""
-
 msgid "Pick a list variable…"
 msgstr ""
 
@@ -10360,7 +10366,10 @@ msgstr ""
 msgid "Pick a record type…"
 msgstr ""
 
-msgid "Pick a variable"
+msgid "Pick a value from an earlier step"
+msgstr ""
+
+msgid "Pick a variable…"
 msgstr ""
 
 msgid "Pick List"
@@ -12044,6 +12053,9 @@ msgstr ""
 
 msgid "Sales Order Line"
 msgstr "販売注文行"
+
+msgid "Sales Order Line (job)"
+msgstr ""
 
 msgid "Sales Order Location"
 msgstr "販売注文の場所"
@@ -13775,6 +13787,9 @@ msgstr "コストを追跡するバケット"
 msgid "The capital assets you own and depreciate"
 msgstr "所有・減価償却する固定資産"
 
+msgid "The Carbon user currently responsible for working this record, set per record and independent of ownership fields like Account Manager or Sales Person."
+msgstr ""
+
 msgid "The Carbon user responsible for this customer relationship; emails and reminders about this customer route to them."
 msgstr "この顧客関係を担当するCarbonユーザー。この顧客に関するメールとリマインダーが彼らにルーティングされます。"
 
@@ -13783,6 +13798,9 @@ msgstr "このサプライヤー関係を担当するCarbonユーザー。この
 
 msgid "The Carbon user who owns this RFQ; supplier responses and reminders route to them."
 msgstr "このRFQを所有するCarbonユーザー。サプライヤーの応答とリマインダーが彼らにルーティングされます。"
+
+msgid "The carrier and service a shipment goes out on, supplying the tracking-URL template that turns a tracking number into a link and the account freight charges post to."
+msgstr ""
 
 msgid "The carrier that delivers goods from this supplier, when different from the supplier itself (e.g. supplier sells, FedEx ships)."
 msgstr "このサプライヤーからの商品を配送する運送会社（サプライヤー自体と異なる場合）（例：サプライヤーが販売、FedExが配送）。"
@@ -13861,6 +13879,9 @@ msgstr "あなたが販売および配送する顧客"
 
 msgid "The dashed threshold you don't want inventory to fall below."
 msgstr "在庫が下回らないようにしたいダッシュ付きの閾値。"
+
+msgid "The date a job's quantity is needed, which together with Deadline Type sets the job's place in its location's schedule queue."
+msgstr ""
 
 msgid "The date depreciation begins for this asset; usually the in-service date."
 msgstr "このアセットの減価償却が開始される日付。通常は償却開始日です。"
@@ -13982,6 +14003,9 @@ msgstr "このワークセンターの機械の実行の時間当たり費用。
 msgid "The hourly indirect-cost burden applied to this work center; the difference between labor + machine and the full quoting rate is what overhead absorbs."
 msgstr "このワークセンターに適用される時間当たりの間接費負荷。労働+機械と完全な見積もり率の差は、オーバーヘッドが吸収するものです。"
 
+msgid "The https address a workflow's webhook step posts to — plain http, redirects, and hosts resolving to private or link-local addresses are refused, and the call gives up after ten seconds."
+msgstr ""
+
 msgid "The human-readable document number (like J000001 or ECO-000001) minted from a sequence and stored on the record, distinct from its internal id."
 msgstr "シーケンスから生成され、レコードに保存された人間が読める形式のドキュメント番号（J000001またはECO-000001など）で、内部IDとは異なります。"
 
@@ -14014,6 +14038,9 @@ msgstr "MACRS（3、5、7、10、15、20、27.5、39年）に基づくこのア�
 
 msgid "The job whose operation this outside-processing line covers; the line's receipt closes the operation against this job."
 msgstr "この外部加工明細が対象とする作業。行の受領はこの作業に対して操作を閉じます。"
+
+msgid "The job's position in its location's schedule queue — a fractional number Carbon computes from the due date and deadline type, not a Low/High rating."
+msgstr ""
 
 msgid "The kind of adjustment this rule applies — discount, surcharge, or fixed override; combined with Amount Type to compute the actual delta on each line."
 msgstr "このルールが適用する調整の種類 - 割引、割増料金、または固定オーバーライド。各行の実際のデルタを計算するために金額タイプと組み合わせられます。"
@@ -14219,6 +14246,9 @@ msgstr "部品がスクラップされたときに記録する理由"
 msgid "The reasons you record when you decline an RFQ"
 msgstr "RFQを辞退した理由を記録する"
 
+msgid "The record a workflow notification points at, named as an id plus its kind; leave it empty and the notification links to the workflow run itself."
+msgstr ""
+
 msgid "The record that applies a payment or memo to an invoice, carrying the applied, discount, and write-off amounts."
 msgstr "請求書に支払いまたはメモを適用するレコード、適用額、割引額、および償却額を含みます。"
 
@@ -14238,6 +14268,9 @@ msgstr "残りの{0}{1}は再び期待され、入荷供給としてカウント
 msgid "The remaining {0} {1} will no longer be expected. On-order supply and MRP will stop counting it. The ordered quantity and pricing are unchanged."
 msgstr "残りの{0}{1}は期待されなくなります。発注済み供給とMRPはそれをカウント対象から外します。注文数量と価格は変更されません。"
 
+msgid "The request body sent verbatim as the POST payload with a JSON content type, after workflow variables inside it are substituted."
+msgstr ""
+
 msgid "The residual WIP a job has left at close, swept to a Production Variance account — the only variance Carbon books for a job."
 msgstr "ジョブがクローズ時に残した残留WIP。生産差異勘定に削除されます—Carbonがジョブのために記録する唯一の差異。"
 
@@ -14246,6 +14279,9 @@ msgstr "Onshape からの応答に必須パラメーターが含まれていま�
 
 msgid "The revision number of the part"
 msgstr "部品のリビジョン番号"
+
+msgid "The sales order line this job was created to supply, tying the job to the customer demand behind it."
+msgstr ""
 
 msgid "The schedule used to spread this asset's cost over its useful life (straight-line, declining balance, units of production)."
 msgstr "このアセットの費用を耐用年数にわたって分散するために使用される償却方法（定額法、減額法、生産単位）。"
@@ -14549,9 +14585,6 @@ msgstr "この販売注文には関連するジョブがあります。それら
 
 msgid "This sales order has lines that require jobs to be created"
 msgstr "この販売注文には、ジョブを作成する必要があるラインがあります"
-
-msgid "This step chooses which path runs next — it doesn't produce values of its own. Reference earlier steps further down each path."
-msgstr ""
 
 #. placeholder {0}: usageCount === 1 ? "" : "s"
 msgid "This storage type is currently used by {usageCount} storage unit{0}."
@@ -15721,6 +15754,9 @@ msgstr "あなたのアカウントにサインインするためのマジック
 msgid "Webhook"
 msgstr "ウェブフック"
 
+msgid "Webhook Body"
+msgstr ""
+
 msgid "Webhook Documentation"
 msgstr "Webhook ドキュメント"
 
@@ -16180,6 +16216,9 @@ msgstr "勤務シフト追跡がアクティブです。"
 
 msgid "Workflow"
 msgstr "ワークフロー"
+
+msgid "Workflow name"
+msgstr ""
 
 msgid "Workflows"
 msgstr ""

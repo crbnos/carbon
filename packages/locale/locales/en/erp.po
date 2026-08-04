@@ -712,6 +712,9 @@ msgstr "ability"
 msgid "About"
 msgstr "About"
 
+msgid "About (notification)"
+msgstr "About (notification)"
+
 msgid "Absorption"
 msgstr "Absorption"
 
@@ -2085,6 +2088,9 @@ msgstr "Authentication Error"
 msgid "Auto apply"
 msgstr "Auto apply"
 
+msgid "Auto arrange"
+msgstr "Auto arrange"
+
 msgid "Auto Release"
 msgstr "Auto Release"
 
@@ -2604,6 +2610,9 @@ msgstr "Carbon's production order — one job builds a quantity of one item from
 msgid "Carbon's shop-floor app where operators run operations, report quantities, issue material, and log time against released jobs in real time."
 msgstr "Carbon's shop-floor app where operators run operations, report quantities, issue material, and log time against released jobs in real time."
 
+msgid "Carbon's single record for anything with a part number — Part, Material, Tool, Service, Consumable, or Fixture — that jobs, methods, orders, and inventory all point at."
+msgstr "Carbon's single record for anything with a part number — Part, Material, Tool, Service, Consumable, or Fixture — that jobs, methods, orders, and inventory all point at."
+
 msgid "Cards"
 msgstr "Cards"
 
@@ -2690,9 +2699,6 @@ msgstr "Change type"
 
 msgid "Change Type"
 msgstr "Change Type"
-
-msgid "Change variable"
-msgstr "Change variable"
 
 msgid "Changed By"
 msgstr "Changed By"
@@ -5015,6 +5021,9 @@ msgstr "Due date"
 msgid "Due Date"
 msgstr "Due Date"
 
+msgid "Due Date (job)"
+msgstr "Due Date (job)"
+
 msgid "Due Date of First Job"
 msgstr "Due Date of First Job"
 
@@ -5613,9 +5622,6 @@ msgstr "Enter number…"
 
 msgid "Enter PO number"
 msgstr "Enter PO number"
-
-msgid "Enter record id…"
-msgstr "Enter record id…"
 
 msgid "Enter text…"
 msgstr "Enter text…"
@@ -7711,6 +7717,9 @@ msgstr "Job Operation"
 
 msgid "Job Operations"
 msgstr "Job Operations"
+
+msgid "Job Priority"
+msgstr "Job Priority"
 
 msgid "Job readable"
 msgstr "Job readable"
@@ -10345,9 +10354,6 @@ msgstr "Pick a customer or customer type to view their pricing."
 msgid "Pick a date or leave blank to clear it."
 msgstr "Pick a date or leave blank to clear it."
 
-msgid "Pick a list from an earlier step"
-msgstr "Pick a list from an earlier step"
-
 msgid "Pick a list variable…"
 msgstr "Pick a list variable…"
 
@@ -10360,8 +10366,11 @@ msgstr "Pick a property first"
 msgid "Pick a record type…"
 msgstr "Pick a record type…"
 
-msgid "Pick a variable"
-msgstr "Pick a variable"
+msgid "Pick a value from an earlier step"
+msgstr "Pick a value from an earlier step"
+
+msgid "Pick a variable…"
+msgstr "Pick a variable…"
 
 msgid "Pick List"
 msgstr "Pick List"
@@ -12044,6 +12053,9 @@ msgstr "Sales order line"
 
 msgid "Sales Order Line"
 msgstr "Sales Order Line"
+
+msgid "Sales Order Line (job)"
+msgstr "Sales Order Line (job)"
 
 msgid "Sales Order Location"
 msgstr "Sales Order Location"
@@ -13775,6 +13787,9 @@ msgstr "The buckets you track costs against"
 msgid "The capital assets you own and depreciate"
 msgstr "The capital assets you own and depreciate"
 
+msgid "The Carbon user currently responsible for working this record, set per record and independent of ownership fields like Account Manager or Sales Person."
+msgstr "The Carbon user currently responsible for working this record, set per record and independent of ownership fields like Account Manager or Sales Person."
+
 msgid "The Carbon user responsible for this customer relationship; emails and reminders about this customer route to them."
 msgstr "The Carbon user responsible for this customer relationship; emails and reminders about this customer route to them."
 
@@ -13783,6 +13798,9 @@ msgstr "The Carbon user responsible for this supplier relationship; emails and r
 
 msgid "The Carbon user who owns this RFQ; supplier responses and reminders route to them."
 msgstr "The Carbon user who owns this RFQ; supplier responses and reminders route to them."
+
+msgid "The carrier and service a shipment goes out on, supplying the tracking-URL template that turns a tracking number into a link and the account freight charges post to."
+msgstr "The carrier and service a shipment goes out on, supplying the tracking-URL template that turns a tracking number into a link and the account freight charges post to."
 
 msgid "The carrier that delivers goods from this supplier, when different from the supplier itself (e.g. supplier sells, FedEx ships)."
 msgstr "The carrier that delivers goods from this supplier, when different from the supplier itself (e.g. supplier sells, FedEx ships)."
@@ -13861,6 +13879,9 @@ msgstr "The customers you sell and ship to"
 
 msgid "The dashed threshold you don't want inventory to fall below."
 msgstr "The dashed threshold you don't want inventory to fall below."
+
+msgid "The date a job's quantity is needed, which together with Deadline Type sets the job's place in its location's schedule queue."
+msgstr "The date a job's quantity is needed, which together with Deadline Type sets the job's place in its location's schedule queue."
 
 msgid "The date depreciation begins for this asset; usually the in-service date."
 msgstr "The date depreciation begins for this asset; usually the in-service date."
@@ -13982,6 +14003,9 @@ msgstr "The hourly cost of running the machinery on this work center; combined w
 msgid "The hourly indirect-cost burden applied to this work center; the difference between labor + machine and the full quoting rate is what overhead absorbs."
 msgstr "The hourly indirect-cost burden applied to this work center; the difference between labor + machine and the full quoting rate is what overhead absorbs."
 
+msgid "The https address a workflow's webhook step posts to — plain http, redirects, and hosts resolving to private or link-local addresses are refused, and the call gives up after ten seconds."
+msgstr "The https address a workflow's webhook step posts to — plain http, redirects, and hosts resolving to private or link-local addresses are refused, and the call gives up after ten seconds."
+
 msgid "The human-readable document number (like J000001 or ECO-000001) minted from a sequence and stored on the record, distinct from its internal id."
 msgstr "The human-readable document number (like J000001 or ECO-000001) minted from a sequence and stored on the record, distinct from its internal id."
 
@@ -14014,6 +14038,9 @@ msgstr "The IRS recovery-period class for this asset under MACRS (3, 5, 7, 10, 1
 
 msgid "The job whose operation this outside-processing line covers; the line's receipt closes the operation against this job."
 msgstr "The job whose operation this outside-processing line covers; the line's receipt closes the operation against this job."
+
+msgid "The job's position in its location's schedule queue — a fractional number Carbon computes from the due date and deadline type, not a Low/High rating."
+msgstr "The job's position in its location's schedule queue — a fractional number Carbon computes from the due date and deadline type, not a Low/High rating."
 
 msgid "The kind of adjustment this rule applies — discount, surcharge, or fixed override; combined with Amount Type to compute the actual delta on each line."
 msgstr "The kind of adjustment this rule applies — discount, surcharge, or fixed override; combined with Amount Type to compute the actual delta on each line."
@@ -14219,6 +14246,9 @@ msgstr "The reasons you record when parts get scrapped"
 msgid "The reasons you record when you decline an RFQ"
 msgstr "The reasons you record when you decline an RFQ"
 
+msgid "The record a workflow notification points at, named as an id plus its kind; leave it empty and the notification links to the workflow run itself."
+msgstr "The record a workflow notification points at, named as an id plus its kind; leave it empty and the notification links to the workflow run itself."
+
 msgid "The record that applies a payment or memo to an invoice, carrying the applied, discount, and write-off amounts."
 msgstr "The record that applies a payment or memo to an invoice, carrying the applied, discount, and write-off amounts."
 
@@ -14238,6 +14268,9 @@ msgstr "The remaining {0} {1} will be expected again and counted as incoming sup
 msgid "The remaining {0} {1} will no longer be expected. On-order supply and MRP will stop counting it. The ordered quantity and pricing are unchanged."
 msgstr "The remaining {0} {1} will no longer be expected. On-order supply and MRP will stop counting it. The ordered quantity and pricing are unchanged."
 
+msgid "The request body sent verbatim as the POST payload with a JSON content type, after workflow variables inside it are substituted."
+msgstr "The request body sent verbatim as the POST payload with a JSON content type, after workflow variables inside it are substituted."
+
 msgid "The residual WIP a job has left at close, swept to a Production Variance account — the only variance Carbon books for a job."
 msgstr "The residual WIP a job has left at close, swept to a Production Variance account — the only variance Carbon books for a job."
 
@@ -14246,6 +14279,9 @@ msgstr "The response from Onshape was missing required parameters. Try connectin
 
 msgid "The revision number of the part"
 msgstr "The revision number of the part"
+
+msgid "The sales order line this job was created to supply, tying the job to the customer demand behind it."
+msgstr "The sales order line this job was created to supply, tying the job to the customer demand behind it."
 
 msgid "The schedule used to spread this asset's cost over its useful life (straight-line, declining balance, units of production)."
 msgstr "The schedule used to spread this asset's cost over its useful life (straight-line, declining balance, units of production)."
@@ -14549,9 +14585,6 @@ msgstr "This sales order has associated jobs. Choose what to do with them."
 
 msgid "This sales order has lines that require jobs to be created"
 msgstr "This sales order has lines that require jobs to be created"
-
-msgid "This step chooses which path runs next — it doesn't produce values of its own. Reference earlier steps further down each path."
-msgstr "This step chooses which path runs next — it doesn't produce values of its own. Reference earlier steps further down each path."
 
 #. placeholder {0}: usageCount === 1 ? "" : "s"
 msgid "This storage type is currently used by {usageCount} storage unit{0}."
@@ -15721,6 +15754,9 @@ msgstr "We've sent you a magic link to sign in to your account."
 msgid "Webhook"
 msgstr "Webhook"
 
+msgid "Webhook Body"
+msgstr "Webhook Body"
+
 msgid "Webhook Documentation"
 msgstr "Webhook Documentation"
 
@@ -16180,6 +16216,9 @@ msgstr "Work shift tracking is active."
 
 msgid "Workflow"
 msgstr "Workflow"
+
+msgid "Workflow name"
+msgstr "Workflow name"
 
 msgid "Workflows"
 msgstr "Workflows"

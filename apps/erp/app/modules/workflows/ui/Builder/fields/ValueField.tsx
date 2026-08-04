@@ -6,15 +6,16 @@ import { Field } from "./Field";
 import { InlineValueEditor } from "./InlineValueEditor";
 import { LiteralControl } from "./LiteralControl";
 import type { ValueFieldProps } from "./types";
-import { VariableAffordance } from "./VariableAffordance";
 import { VariableChip } from "./VariableChip";
 import { VariableMenuPopover } from "./VariableMenuPopover";
+import { VariablePickControl } from "./VariablePickControl";
 import { hasStrayBrace } from "./valueParts";
 
 export function ValueField({
   label,
   type,
   required,
+  helpTermId,
   choices,
   value,
   onChange,
@@ -42,6 +43,7 @@ export function ValueField({
       <Field
         label={label}
         required={required}
+        helpTermId={helpTermId}
         hideLabel={hideLabel}
         issue={issue}
         hint={
@@ -66,11 +68,12 @@ export function ValueField({
     <Field
       label={label}
       required={required}
+      helpTermId={helpTermId}
       hideLabel={hideLabel}
       issue={issue}
     >
-      {/* The popup anchors to the control itself — there is no separate picker button
-          any more, so every field reaches variables the same way. */}
+      {/* The popup anchors to the control itself. A field is either a value you write
+          or a variable you pick — never a box with a second way in bolted to its edge. */}
       <VariableMenuPopover
         accepts={type}
         context={context}
@@ -85,6 +88,12 @@ export function ValueField({
               nodeTitle={nodeTitle}
               onRemove={() => onChange(undefined)}
               onReopen={() => setPickerOpen(true)}
+            />
+          ) : control === "pick" ? (
+            <VariablePickControl
+              placeholder={placeholder}
+              hasIssue={!!issue}
+              onOpen={() => setPickerOpen(true)}
             />
           ) : (
             <LiteralControl
@@ -102,12 +111,6 @@ export function ValueField({
               }
               onChange={onChange}
               onRequestVariable={() => setPickerOpen(true)}
-              affordance={
-                <VariableAffordance
-                  title={ref ? t`Change variable` : t`Pick a variable`}
-                  onClick={() => setPickerOpen(true)}
-                />
-              }
             />
           )}
         </div>
