@@ -1,7 +1,12 @@
 import type { ValueOrRef } from "@carbon/workflows";
+import { operatorsForType } from "@carbon/workflows";
 import { describe, expect, it } from "vitest";
 import { encodeTokenId } from "./tokenId";
-import { fromEditorParts, toEditorParts } from "./valueParts";
+import {
+  fromEditorParts,
+  toEditorParts,
+  withoutTrailingSpace
+} from "./valueParts";
 
 const names: Record<string, string> = { n1: "when-order-created" };
 const nodeName = (id: string) => names[id];
@@ -93,6 +98,61 @@ describe("round trip", () => {
     expect(fromEditorParts(after, COLLAPSE)).toEqual(
       fromEditorParts(before, COLLAPSE)
     );
+  });
+});
+
+// A template always reads as text, so collapsing is what decides whether a clause can
+// still offer "greater than" / "less than" on a number.
+describe("what collapsing costs a clause", () => {
+  const token = {
+    kind: "token" as const,
+    id: encodeTokenId(ref),
+    label: "total"
+  };
+
+  it("offers number comparisons only when the lone variable stays bare", () => {
+    const bare = fromEditorParts([token], COLLAPSE);
+    expect(bare).toEqual(ref);
+
+    const wrapped = fromEditorParts([token], { collapseSingleRef: false });
+    expect(wrapped).toEqual({ kind: "template", parts: [ref] });
+    // A template has no type to resolve against the graph — it is text by construction.
+    expect(operatorsForType({ kind: "primitive", of: "string" })).not.toContain(
+      "gt"
+    );
+    expect(operatorsForType({ kind: "primitive", of: "number" })).toContain(
+      "gt"
+    );
+  });
+});
+
+describe("withoutTrailingSpace", () => {
+  const token = {
+    kind: "token" as const,
+    id: encodeTokenId(ref),
+    label: "total"
+  };
+  const space = { kind: "text" as const, text: " " };
+
+  it("collapses to a bare ref once the trailing space is gone", () => {
+    const parts = withoutTrailingSpace([token, space]);
+    expect(fromEditorParts(parts, COLLAPSE)).toEqual(ref);
+  });
+
+  it("keeps the words before it", () => {
+    expect(
+      withoutTrailingSpace([token, { kind: "text", text: " kg  " }])
+    ).toEqual([token, { kind: "text", text: " kg" }]);
+  });
+
+  it("returns the same array when there is nothing to trim", () => {
+    const parts = [token];
+    expect(withoutTrailingSpace(parts)).toBe(parts);
+  });
+
+  it("leaves plain text alone, where a trailing space may be deliberate", () => {
+    const parts = [{ kind: "text" as const, text: "Note: " }];
+    expect(withoutTrailingSpace(parts)).toBe(parts);
   });
 });
 

@@ -40,6 +40,24 @@ export type SerializeOptions = {
   collapseSingleRef: boolean;
 };
 
+/**
+ * Drops the space the picker leaves after a token — only meaningful on blur, since until
+ * then it is the gap before the next word. While it survives, a lone variable stays a
+ * template and the clause loses the variable's own type. Returns the same array when
+ * there is nothing to trim, so callers can skip the write.
+ */
+export function withoutTrailingSpace(
+  parts: VariableTextPart[]
+): VariableTextPart[] {
+  // Trailing space in a field with no variable in it may well be deliberate.
+  if (!parts.some((part) => part.kind === "token")) return parts;
+  const last = parts[parts.length - 1];
+  if (last?.kind !== "text") return parts;
+  const text = last.text.replace(/\s+$/, "");
+  if (text === last.text) return parts;
+  return text ? [...parts.slice(0, -1), { ...last, text }] : parts.slice(0, -1);
+}
+
 /** Plain text stays a literal; mixed content is a template. */
 export function fromEditorParts(
   parts: VariableTextPart[],

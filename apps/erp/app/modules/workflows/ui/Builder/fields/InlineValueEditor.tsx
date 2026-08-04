@@ -12,15 +12,22 @@ import { publishVariableMenuData, retractVariableMenuData } from "./menuBridge";
 import { leafOfLabel } from "./tokenId";
 import type { FieldContext } from "./types";
 import { useVariableMenuData } from "./useVariableMenuData";
-import { fromEditorParts, toEditorParts } from "./valueParts";
+import {
+  fromEditorParts,
+  toEditorParts,
+  withoutTrailingSpace
+} from "./valueParts";
 
 /** Typing this opens the variable menu. The closing brace is drawn by the chip. */
 const TRIGGER = "{";
 
 type Props = {
-  /** Restricts the menu, and marks this as a field that type-checks a bare
-   * reference. Omit on template fields, which take any type as text. */
+  /** Restricts the menu. Omit to offer every variable. */
   accepts?: ValueType;
+  /** Store a lone variable as a bare reference rather than a one-token template.
+   * Not inferred from `accepts`: a clause's left side offers every type and still
+   * needs the bare ref, or its operators fall back to the template's string. */
+  collapseSingleRef: boolean;
   value: ValueOrRef | undefined;
   onChange: (next: ValueOrRef | undefined) => void;
   context: FieldContext;
@@ -38,6 +45,7 @@ type Props = {
 
 export function InlineValueEditor({
   accepts,
+  collapseSingleRef,
   value,
   onChange,
   context,
@@ -82,14 +90,21 @@ export function InlineValueEditor({
         publishVariableMenuData(getData);
         onFocusChange?.(true);
       }}
-      onBlurCapture={() => onFocusChange?.(false)}
+      onBlurCapture={() => {
+        onFocusChange?.(false);
+        const parts = toEditorParts(value, nodeName);
+        const trimmed = withoutTrailingSpace(parts);
+        // Same array back means nothing to trim; writing anyway dirties the workflow
+        // on every focus change.
+        if (trimmed !== parts) {
+          onChange(fromEditorParts(trimmed, { collapseSingleRef }));
+        }
+      }}
     >
       <VariableText
         value={toEditorParts(value, nodeName, partIssues)}
         onChange={(next: VariableTextPart[]) =>
-          onChange(
-            fromEditorParts(next, { collapseSingleRef: accepts !== undefined })
-          )
+          onChange(fromEditorParts(next, { collapseSingleRef }))
         }
         placeholder={placeholder ?? t`Type ${TRIGGER} to insert a variable`}
         multiline={false}

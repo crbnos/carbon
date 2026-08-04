@@ -36,6 +36,7 @@ export function TemplateField({
       {/* These are the prose inputs — a subject, a message body, a webhook payload.
           Five rows is too short for any of them. */}
       <InlineValueEditor
+        collapseSingleRef={false}
         value={value}
         onChange={onChange}
         context={context}

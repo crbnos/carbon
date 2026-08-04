@@ -59,6 +59,7 @@ export function ValueField({
       >
         <InlineValueEditor
           accepts={acceptsFilter}
+          collapseSingleRef
           value={value}
           onChange={onChange}
           context={context}
