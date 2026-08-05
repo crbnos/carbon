@@ -87,6 +87,30 @@ Because a procedure is keyed by process, you author it once and every operation 
 Revising a procedure bumps its version. A job already released keeps the version it was built with, so a change to the master never rewrites instructions on work in flight. Each step is captured as the operator fills it in, giving the finished job a recorded answer for every one it was built with.
 </Callout>
 
+## Documents
+
+### Job traveler PDF
+
+The job traveler is a printable document that accompanies the job on the floor, showing operations, quantities, and tracking information. By default, it includes:
+
+- Job header (item, quantity, due date)
+- Operation list
+- Signature blocks
+- Custom template blocks
+
+An **opt-in materials section** can be enabled under **Settings → Production → Job Traveler Materials**. When on, the traveler includes a bill-of-materials table showing:
+
+- Item number
+- Description
+- Method type (Make to Order, Purchase to Order, Pull from Inventory)
+- Quantity per the job's method
+
+This is useful when floor workers need to see the full material list without leaving the traveler, but it is **off by default** to keep the document concise.
+
+<Callout type="note">
+Materials are only shown when the setting is enabled and the job has a method with bill-of-materials lines. The setting is company-wide — once on, all travelers include the materials section.
+</Callout>
+
 ## Make to order vs. make to stock
 
 A job is identical whichever way it's raised. Only its source differs. A **<Term id="make-to-order">make-to-order</Term>** job links back to a sales order line; a **make-to-stock** job comes from <Term id="mrp">planning</Term> with no order behind it. Either way the job completes into inventory first, and the sale (if any) ships from stock — the job never ships directly to a customer.

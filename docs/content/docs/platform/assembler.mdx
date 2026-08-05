@@ -1,0 +1,46 @@
+---
+title: Assembler service
+description: How Carbon processes and optimizes 3D models for rendering and storage.
+---
+
+The **Assembler** is a Rust-based service that processes 3D CAD models (STEP, glTF) uploaded through Carbon. It handles tessellation, simplification, and optimizes models for web rendering and storage efficiency.
+
+## Optimization policy
+
+The Assembler applies a **measure-and-predict auto optimize policy** by default. Instead of guessing an error budget from the input's byte weight (which could decimate models unnecessarily), it:
+
+1. **Measures first** — Pass 1 is lossless (weld + reorder + encode only). If the result fits under the storage and render gates, the model ships untouched.
+2. **Predicts from measurement** — If Pass 1 fails, its real numbers predict the exact keep ratio needed. Both gate metrics (~linear in triangle count) inform the target.
+3. **Converges accurately** — Convergence re-anchors on what each pass actually achieved, accounting for topology-preserving simplification limits. When legal edge collapses run out, it escalates to sloppy positional simplification.
+4. **Fails fast when impossible** — If the JSON structure alone exceeds the output cap, the job fails immediately with that exact reason — no amount of triangle removal can ever fit it.
+
+This results in higher-fidelity models: real-world tests show STEP models 0.4–30 MB now shipping lossless under production gates, while a 27.5M-triangle vehicle exceeding both gates lands at 51.0 MB against a 52.4 MB cap — the most fidelity the gate permits, found without walking a ladder.
+
+### Caller overrides
+
+Explicit caller quality knobs (`ladder`, `simplify`, `tolerance`, `auto_error`) bypass the measure-and-predict policy unchanged. Use these when you need precise control:
+
+- `ladder` — Walk a quality ladder
+- `simplify` — Direct simplification
+- `tolerance` — Target error tolerance
+- `auto_error` — Automatic error budgeting (legacy)
+
+## Storage
+
+Optimized models are stored in the company's storage bucket. The service maintains:
+
+- **Render-weight gate** — Maximum size for rendering (default 400 MiB)
+- **Output gate** — Maximum output file size (default 50 MiB)
+
+Models exceeding these limits after optimization are rejected with a clear error message indicating which gate was hit and by how much.
+
+## Related
+
+<Cards>
+  <Card title="CAD integration" href="/docs/integrations/cad">
+    How Carbon connects to Onshape and other CAD systems.
+  </Card>
+  <Card title="Assembly instructions" href="/docs/reference/methods#assembly-instructions">
+    The step-by-step build instructions that use 3D models.
+  </Card>
+</Cards>
