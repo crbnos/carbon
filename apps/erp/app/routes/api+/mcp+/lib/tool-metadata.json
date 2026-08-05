@@ -1,5 +1,5 @@
 {
-  "generated": "2026-08-05T06:32:00.750Z",
+  "generated": "2026-08-05T17:20:27.949Z",
   "totalTools": 1413,
   "modules": 15,
   "tools": [
@@ -36353,7 +36353,7 @@
       "description": "upsert customer item price override",
       "paramCount": 10,
       "serviceParams": [
-        "client",
+        "db",
         "companyId",
         "userId",
         "data"

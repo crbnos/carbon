@@ -9,6 +9,7 @@ import type {
   PostgrestSingleResponse,
   SupabaseClient
 } from "@supabase/supabase-js";
+import { sql } from "kysely";
 import type { z } from "zod";
 import { getSupplierPriceBreaksForItems } from "~/modules/items/items.service";
 import { getEmployeeJob } from "~/modules/people";
@@ -2654,7 +2655,7 @@ export async function upsertCustomer(
 }
 
 export async function upsertCustomerItemPriceOverride(
-  client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   companyId: string,
   userId: string,
   data: {
@@ -2687,146 +2688,145 @@ export async function upsertCustomerItemPriceOverride(
     applyRulesOnTop: data.applyRulesOnTop
   };
 
-  let parentId: string | null = null;
-  let parentError: unknown = null;
-
-  if (data.id) {
-    const { data: row, error } = await client
-      .from("customerItemPriceOverride")
-      .update({
-        ...parentFields,
-        customerId: data.customerId ?? null,
-        customerTypeId: data.customerTypeId ?? null,
-        itemId: data.itemId,
-        updatedBy: userId,
-        updatedAt: new Date().toISOString()
-      })
-      .eq("id", data.id)
-      .eq("companyId", companyId)
-      .select("id")
-      .single();
-    parentId = row?.id ?? null;
-    parentError = error;
-  } else {
-    // Collapse onto an existing (scope, item) row if one exists — the partial
-    // unique indexes would reject a duplicate insert anyway.
-    const lookup = client
-      .from("customerItemPriceOverride")
-      .select("id")
-      .eq("itemId", data.itemId)
-      .eq("companyId", companyId);
-
-    const scopedLookup = data.customerId
-      ? lookup.eq("customerId", data.customerId)
-      : data.customerTypeId
-        ? lookup.eq("customerTypeId", data.customerTypeId)
-        : lookup.is("customerId", null).is("customerTypeId", null);
-    const { data: existing } = await scopedLookup.maybeSingle();
-
-    if (existing) {
-      const { data: row, error } = await client
-        .from("customerItemPriceOverride")
-        .update({
-          ...parentFields,
-          updatedBy: userId,
-          updatedAt: new Date().toISOString()
-        })
-        .eq("id", existing.id)
-        .select("id")
-        .single();
-      parentId = row?.id ?? null;
-      parentError = error;
-    } else {
-      const { data: row, error } = await client
-        .from("customerItemPriceOverride")
-        .insert({
-          ...parentFields,
-          customerId: data.customerId ?? null,
-          customerTypeId: data.customerTypeId ?? null,
-          itemId: data.itemId,
-          companyId,
-          createdBy: userId
-        })
-        .select("id")
-        .single();
-      parentId = row?.id ?? null;
-      parentError = error;
-    }
-  }
-
-  if (parentError || !parentId) {
-    return { data: null, error: parentError };
-  }
-
-  // Identity-preserving sync so the audit log shows one UPDATE per actually-
-  // changed rung instead of a churn of DELETE+INSERT on every save. The form
-  // round-trips each break's id — rows with known ids update in place, rows
-  // without ids insert, rows missing from the submission delete.
-  const { data: existingRows, error: fetchExistingError } = await client
-    .from("customerItemPriceOverrideBreak")
-    .select("id")
-    .eq("customerItemPriceOverrideId", parentId)
-    .eq("companyId", companyId);
-  if (fetchExistingError) {
-    return { data: null, error: fetchExistingError };
-  }
-
-  const existingIds = new Set((existingRows ?? []).map((r) => r.id));
-  const submittedIds = new Set(
-    sortedBreaks
-      .map((b) => b.id)
-      .filter((id): id is string => typeof id === "string")
-  );
-
-  const toDelete = [...existingIds].filter((id) => !submittedIds.has(id));
-  if (toDelete.length > 0) {
-    const { error } = await client
-      .from("customerItemPriceOverrideBreak")
-      .delete()
-      .in("id", toDelete)
-      .eq("companyId", companyId);
-    if (error) return { data: null, error };
-  }
-
-  // Updates go one-at-a-time. Edge case: if the user swaps quantities between
-  // two existing rungs (A 5↔10 B), the mid-batch state transiently violates
-  // the (parent, quantity) UNIQUE constraint. In that narrow case the save
-  // returns an error and the user saves again. Worth it for the clean audit.
-  const updateTimestamp = new Date().toISOString();
-  for (const b of sortedBreaks) {
-    if (!b.id || !existingIds.has(b.id)) continue;
-    const { error } = await client
-      .from("customerItemPriceOverrideBreak")
-      .update({
-        quantity: b.quantity,
-        overridePrice: b.overridePrice,
-        active: b.active,
-        updatedBy: userId,
-        updatedAt: updateTimestamp
-      })
-      .eq("id", b.id)
-      .eq("companyId", companyId);
-    if (error) return { data: null, error };
-  }
-
-  const toInsert = sortedBreaks.filter((b) => !b.id || !existingIds.has(b.id));
-  if (toInsert.length > 0) {
-    const { error } = await client
-      .from("customerItemPriceOverrideBreak")
-      .insert(
-        toInsert.map((b) => ({
-          customerItemPriceOverrideId: parentId as string,
-          quantity: b.quantity,
-          overridePrice: b.overridePrice,
-          active: b.active,
-          companyId,
-          createdBy: userId
-        }))
+  // Parent + break rungs in one transaction. Breaks sync by id (update in place,
+  // insert new, delete missing) to keep the audit log to one UPDATE per rung.
+  // The (parent, quantity) UNIQUE is deferred to commit so shifting the ladder
+  // one rung at a time doesn't trip a transient duplicate mid-transaction.
+  const timestamp = new Date().toISOString();
+  try {
+    return await db.transaction().execute(async (trx) => {
+      await sql`SET CONSTRAINTS "customerItemPriceOverrideBreak_override_qty_uq" DEFERRED`.execute(
+        trx
       );
-    if (error) return { data: null, error };
-  }
 
-  return { data: { id: parentId }, error: null };
+      let parentId: string;
+
+      if (data.id) {
+        const row = await trx
+          .updateTable("customerItemPriceOverride")
+          .set({
+            ...parentFields,
+            customerId: data.customerId ?? null,
+            customerTypeId: data.customerTypeId ?? null,
+            itemId: data.itemId,
+            updatedBy: userId,
+            updatedAt: timestamp
+          })
+          .where("id", "=", data.id)
+          .where("companyId", "=", companyId)
+          .returning("id")
+          .executeTakeFirstOrThrow();
+        parentId = row.id;
+      } else {
+        // Collapse onto an existing (scope, item) row if one exists — the partial
+        // unique indexes would reject a duplicate insert anyway.
+        let lookup = trx
+          .selectFrom("customerItemPriceOverride")
+          .select("id")
+          .where("itemId", "=", data.itemId)
+          .where("companyId", "=", companyId);
+
+        lookup = data.customerId
+          ? lookup.where("customerId", "=", data.customerId)
+          : data.customerTypeId
+            ? lookup.where("customerTypeId", "=", data.customerTypeId)
+            : lookup
+                .where("customerId", "is", null)
+                .where("customerTypeId", "is", null);
+        const existing = await lookup.executeTakeFirst();
+
+        if (existing) {
+          const row = await trx
+            .updateTable("customerItemPriceOverride")
+            .set({ ...parentFields, updatedBy: userId, updatedAt: timestamp })
+            .where("id", "=", existing.id)
+            .where("companyId", "=", companyId)
+            .returning("id")
+            .executeTakeFirstOrThrow();
+          parentId = row.id;
+        } else {
+          const row = await trx
+            .insertInto("customerItemPriceOverride")
+            .values({
+              ...parentFields,
+              customerId: data.customerId ?? null,
+              customerTypeId: data.customerTypeId ?? null,
+              itemId: data.itemId,
+              companyId,
+              createdBy: userId
+            })
+            .returning("id")
+            .executeTakeFirstOrThrow();
+          parentId = row.id;
+        }
+      }
+
+      const existingRows = await trx
+        .selectFrom("customerItemPriceOverrideBreak")
+        .select("id")
+        .where("customerItemPriceOverrideId", "=", parentId)
+        .where("companyId", "=", companyId)
+        .execute();
+
+      const existingIds = new Set(existingRows.map((r) => r.id));
+      const submittedIds = new Set(
+        sortedBreaks
+          .map((b) => b.id)
+          .filter((id): id is string => typeof id === "string")
+      );
+
+      const toDelete = [...existingIds].filter((id) => !submittedIds.has(id));
+      if (toDelete.length > 0) {
+        await trx
+          .deleteFrom("customerItemPriceOverrideBreak")
+          .where("id", "in", toDelete)
+          .where("companyId", "=", companyId)
+          .execute();
+      }
+
+      for (const b of sortedBreaks) {
+        if (!b.id || !existingIds.has(b.id)) continue;
+        await trx
+          .updateTable("customerItemPriceOverrideBreak")
+          .set({
+            quantity: b.quantity,
+            overridePrice: b.overridePrice,
+            active: b.active,
+            updatedBy: userId,
+            updatedAt: timestamp
+          })
+          .where("id", "=", b.id)
+          .where("companyId", "=", companyId)
+          .execute();
+      }
+
+      const toInsert = sortedBreaks.filter(
+        (b) => !b.id || !existingIds.has(b.id)
+      );
+      if (toInsert.length > 0) {
+        await trx
+          .insertInto("customerItemPriceOverrideBreak")
+          .values(
+            toInsert.map((b) => ({
+              customerItemPriceOverrideId: parentId,
+              quantity: b.quantity,
+              overridePrice: b.overridePrice,
+              active: b.active,
+              companyId,
+              createdBy: userId
+            }))
+          )
+          .execute();
+      }
+
+      return { data: { id: parentId }, error: null };
+    });
+  } catch (err) {
+    return {
+      data: null,
+      error: err instanceof Error ? err : { message: String(err) }
+    };
+  }
 }
 
 export async function deleteCustomerItemPriceOverride(
