@@ -16,6 +16,10 @@ const NO_URL = "This step needs a web address to call.";
 const REDIRECTED = "That address redirected, which is not allowed.";
 const UNREACHABLE = "The address could not be reached.";
 
+/** Same pattern as ledger.ts — keys whose values should never appear in logs. */
+const SECRET_HEADER_NAME =
+  /secret|token|password|passwd|credential|signature|authorization|apikey|api_key|client_secret|clientsecret|private_key|privatekey|bearer|cookie/i;
+
 /** What every webhook published before the method input existed relied on. */
 const DEFAULT_METHOD = "POST";
 const METHODS_WITH_BODY = new Set(["POST", "PUT", "PATCH"]);
@@ -107,6 +111,16 @@ export async function runWebhookAction(params: {
     excerpt = (await response.text()).slice(0, MAX_EXCERPT_BYTES).trim();
   } catch {
     excerpt = "";
+  }
+
+  // Scrub any secret-header values from the response excerpt before logging.
+  // An echo-style endpoint may bounce received headers back in its response body.
+  if (excerpt.length > 0) {
+    for (const [name, value] of Object.entries(headers)) {
+      if (SECRET_HEADER_NAME.test(name) && value.length > 0) {
+        excerpt = excerpt.split(value).join("[REDACTED]");
+      }
+    }
   }
 
   return {

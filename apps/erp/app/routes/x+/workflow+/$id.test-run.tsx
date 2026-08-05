@@ -1,5 +1,6 @@
 import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { fkDisplayRegistry } from "@carbon/database/audit.config";
 import { requirePlan } from "@carbon/ee/plan.server";
 import { validator } from "@carbon/form";
@@ -165,7 +166,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const built = await buildTrigger({
     event,
     input,
-    client: gate.client,
     companyId: gate.companyId,
     previousValue
   });
@@ -205,7 +205,6 @@ type BuildTriggerArgs = {
   /** Absent for a schedule trigger. */
   event: ReturnType<ReturnType<typeof createWorkflowCatalog>["getEvent"]>;
   input: unknown;
-  client: Awaited<ReturnType<typeof requirePermissions>>["client"];
   companyId: string;
   previousValue: string | undefined;
 };
@@ -215,7 +214,7 @@ type BuildTriggerArgs = {
 async function buildTrigger(
   args: BuildTriggerArgs
 ): Promise<{ trigger: RunTrigger } | { error: string }> {
-  const { event, input, client, companyId, previousValue } = args;
+  const { event, input, companyId, previousValue } = args;
 
   if (event === undefined || event.match === undefined) {
     return { trigger: { kind: "schedule", dueAt: new Date().toISOString() } };
@@ -243,7 +242,10 @@ async function buildTrigger(
   }
   const recordId = (input as { recordId: string }).recordId;
 
-  const row = await client
+  // Service role bypasses RLS so the lookup works regardless of whether the caller
+  // authenticated via session or API key. requirePermissions already verified the
+  // company scope; the companyId filter here ensures cross-tenant safety.
+  const row = await getCarbonServiceRole()
     .from(match.table as never)
     .select("*")
     .eq("id", recordId)
