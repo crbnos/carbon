@@ -299,6 +299,7 @@ export const JobOperation = ({
     events,
     trackedEntities,
     isFirstOperation,
+    requiresSerialTracking: !!parentIsSerial,
     pauseInterval: isModalOpen,
     procedure,
     // First operation only (no labels to scan yet): auto-select the next unit.

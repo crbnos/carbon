@@ -31,6 +31,7 @@ export function useOperation({
   events,
   trackedEntities,
   isFirstOperation,
+  requiresSerialTracking,
   pauseInterval,
   procedure,
   onAdvanceToUnit
@@ -41,6 +42,10 @@ export function useOperation({
   // The first operation in the routing has no printed labels yet, so units are
   // auto-selected; later operations require the operator to scan/select.
   isFirstOperation: boolean;
+  // The scan/select serial flow only applies to serial-tracked parts. Batch and
+  // non-tracked make-methods must never see the serial picker, even though a
+  // batch make-method carries a seed trackedEntity row.
+  requiresSerialTracking: boolean;
   pauseInterval: boolean;
   procedure: Promise<{
     attributes: JobOperationStep[];
@@ -285,6 +290,9 @@ export function useOperation({
   //    in the URL) and again after each completion.
   // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   useEffect(() => {
+    // Only serial-tracked parts have per-unit labels to scan/select. Batch and
+    // non-tracked make-methods must never surface the serial picker.
+    if (!requiresSerialTracking) return;
     const uncompletedEntities = trackedEntities.filter((entity) =>
       isSerialEntityIncompleteForOperation(entity, operationId ?? "")
     );
@@ -323,7 +331,13 @@ export function useOperation({
       serialModal.onOpen();
     }
     // causes an infinite loop on navigation
-  }, [trackedEntities, trackedEntityParam, operationId, isFirstOperation]);
+  }, [
+    trackedEntities,
+    trackedEntityParam,
+    operationId,
+    isFirstOperation,
+    requiresSerialTracking
+  ]);
 
   return {
     active,
