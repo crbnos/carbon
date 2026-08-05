@@ -23,6 +23,10 @@ A count moves through three statuses in order. Posting is atomic, so a count is 
 
 Posting is final — a Posted count is never reopened. If a posted movement turns out to be wrong, correct that **movement** from the stock-movements screen: enter the quantity it should have been, and Carbon books an opposite movement for the difference, linked to the original and dated with the original's posting date. The original count and its fix both stay visible in the stock-movement screens, in the right time period.
 
+<Callout type="note" title="Posted counts are terminal — no rectification workflow.">
+Prior to August 2026, inventory counts could be "rectified" after posting (Posted → Draft → re-post). That workflow no longer exists. A posted count stays posted; any fix is made as a correction **to the movement**, not by reopening the count. This approach keeps the audit trail clear and treats corrections as first-class ledger entries.
+</Callout>
+
 ## Creating a count
 
 Every count is scoped to one **location**. From there you can narrow it two ways, both optional:

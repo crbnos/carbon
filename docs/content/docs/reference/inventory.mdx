@@ -28,13 +28,40 @@ Read on-hand from the **ledger**, not the cached quantity table. The ledger is t
 On hand can go **negative**. Shipping, issuing to a job, and picking all post their movements without first checking availability. Carbon would rather let the work proceed and reconcile later than block the floor. Only manual negative adjustments are guarded against overdraw.
 </Callout>
 
-## Movements
+## Transfers
 
 Two kinds of transfer move stock. A **warehouse transfer** moves it between locations, and is carried out as a <Term id="shipment">shipment</Term> out of one and a receipt into the other. A **stock transfer** moves it within a single location, between storage units. A manual **adjustment** posts a positive or negative entry to the ledger, or a *Set Quantity* that books the difference to a target. When accounting is enabled, every adjustment also posts a <Term id="journal">journal</Term>: a loss debits the inventory adjustment account and credits inventory, a gain is the mirror image, valued at the item's current cost. Inventory count variances post the same way. Moving stock between storage units posts no journal, because the value never left the location.
 
+### Stock transfers are pull-based
+
+Stock transfers follow a **pull model**: you start from the bin that needs stock and pull it from somewhere. The transfer wizard reflects this ordering:
+
+1. **Transfer To** — the destination bin (step 1, the master)
+2. **Transfer From** — the source bin (step 2, the detail)
+
+The master's delta preview shows stock **arriving** at the destination, matching what the wizard exists to close. The Available flag surfaces when demand at the destination outruns available stock plus incoming transfers — the shortage you're trying to resolve.
+
+<Callout type="info">
+A stock transfer line's lot can be selected from a list or scanned. The picker offers **Scan** and **Select** tabs, showing available lots with expiry warnings or blocks based on the company's near-expiry warning days and expired-entity policy. A lot already picked onto another line of the same transfer is filtered out.
+</Callout>
+
+### Traceability links
+
+In traceability views, stock transfers surface with resolved, clickable links:
+
+- **Storage Unit** keys display as the bin name, linking through to the quantities screen pre-filtered to that bin
+- **Stock Transfer** resolves to the readable transfer id and links to the transfer document
+- A direct transfer that writes two ledger rows (out of the source, into the destination) collapses into a single "from X to Y" activity entry, keyed on document + item + tracked entity + createdAt
+
+This makes movement history readable: you see "10 units moved from Bin A to Bin B" rather than two separate entries.
+
 ## Correcting a movement
 
-The ledger is append-only — a posted movement is never edited or deleted. To fix one, use **"Correct Quantity"** on the movement in the Stock Movements screen and enter the quantity it should have been. Carbon books one **opposite movement for the difference**, linked to the original and dated with the original's posting date, so both sit in the right time period. The correction appears as its own row, flagged with a **Correction** badge that links it back to the movement it fixes. The journal for the correction posts into the original's accounting period. A **locked** period refuses the correction until it's unlocked; a **closed** period is permanent — once a movement's period has closed, it can no longer be corrected. Correcting the same movement again measures against what it currently nets to, so repeated corrections converge instead of stacking.
+The ledger is append-only — a posted movement is never edited or deleted. To fix one, use **"Correct Quantity"** on the movement in the Stock Movements screen and enter the quantity it should have been. Carbon books one **opposite movement for the difference**, linked to the original and dated with the original's posting date, so both sit in the right time period. The correction appears as its own row, flagged with a **Correction** badge that links it back to the movement it fixes. The journal for the correction posts into the original's accounting period. A **locked** period refuses the correction until it's unlocked; a **closed** period is permanent — once a movement's period has closed, it can no longer be corrected. Correcting the same movement again measures against what it currently nets to (original plus any prior corrections), so repeated corrections converge instead of stacking.
+
+<Callout type="info" title="Corrections replace count rectification.">
+Prior to August 2026, inventory counts could be "rectified" after posting (Posted → Draft → re-post). That workflow is removed — a posted count is now terminal. Corrections are made per-movement instead, directly from the Stock Movements screen. This approach keeps the original count fixed and treats corrections as first-class, auditable movements.
+</Callout>
 
 ## Value
 

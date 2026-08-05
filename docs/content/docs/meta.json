@@ -2,6 +2,7 @@
   "pages": [
     "index",
     "glossary",
+    "changelog",
     "platform",
     "reference",
     "building",

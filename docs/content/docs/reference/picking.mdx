@@ -53,6 +53,23 @@ Picking lists are generated and managed from the ERP, and the same lists are wor
 Once a list is **"Completed"** or **"Cancelled"** it locks: no further picks or unpicks. **Reopening is ERP-only** — it needs the inventory delete permission, so the floor can't reopen a closed list. The MES surface tells the operator to reopen it from the ERP instead. This keeps a finalized pick from being quietly reworked at the station.
 </Callout>
 
+## Incomplete-pick policy
+
+When materials can't be fully picked, Carbon enforces a company-wide policy on how to proceed: **Warn** or **Error**. The policy (`incompletePickingListPolicy`) is configured under **Settings → Inventory**.
+
+| Policy | Behavior |
+| --- | --- |
+| **Warn** (default) | Opens an acknowledge modal when a short pick is detected. The operator reviews and confirms. |
+| **Error** | Blocks completion until the shortage is resolved or explicitly cancelled. |
+
+A new **Partial** status marks a picking list that completed with acknowledged short picks, visible in both ERP and MES badges and filterable. This status is a locked terminal state, distinct from **Completed** (all lines fully picked) and **Cancelled** (abandoned).
+
+## Pre-select material setting
+
+When issuing material on the MES shop floor without a picking list, Carbon can automatically pre-select the best lot using FEFO (first-expired, first-out) ordering. This behavior is opt-in, configured under **Settings → Production** as **"Auto-select material without picking list"**.
+
+When enabled, the FEFO suggestion auto-fills when there's a single parent entity (a genealogy guard). When disabled, the operator manually selects the lot each time. This setting preserves the single-parent genealogy guard from FEFO pre-selection: the suggestion only seeds when the parent is a single entity.
+
 ## What posting a pick does to stock
 
 A pick is a **transfer**, never a consumption. Posting one writes two balanced <Term id="item-ledger">item-ledger</Term> entries: a negative at the warehouse source bin and an equal positive at the operation's lineside bin. On-hand doesn't drop; it just relocates to the point of use. Carbon also repoints the job material at the lineside bin, so when production backflushes or issues the material, it draws from where the pick just put it.

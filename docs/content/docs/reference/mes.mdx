@@ -69,6 +69,12 @@ Good, bad, and reworked units are reported separately, so yield stays honest:
   <Field name="Log Rework">Records units reworked in place at this operation, without sending them anywhere.</Field>
 </FieldTable>
 
+The quantity modal accepts **fractional quantities** (up to two decimal places) for items where partial units make sense. This prevents rounding errors on items measured by weight, length, or volume.
+
+<Callout type="warn" title="Double-count protection.">
+The modal guards against double-counting: the quantity entered is validated against what's already complete, ensuring the sum never exceeds the operation's total. If the previous complete quantity was logged in error, use **"Correct"** to adjust it rather than re-entering the full amount.
+</Callout>
+
 Reworking *in place* is different from sending a unit back upstream. **"Create Rework"** does the latter: pick an operation under **"Go back to operation"**, give a **"Reason for rework"**, and Carbon re-runs every operation from that point forward to the current one.
 
 Closing the operation is a distinct action. **"Finish"** ends any open events and flips the operation to `Done`. If quantities or steps aren't satisfied Carbon warns (**"Insufficient quantity"**, **"Steps are missing"**) and offers **"Finish Anyways"**. A guard also fires when tracked material was never issued; the operator must acknowledge **"I understand and want to complete without issuing"** to proceed.

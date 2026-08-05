@@ -55,6 +55,33 @@ Methods are versioned: **Draft**, **Active**, or **Archived**. Only a Draft is e
 is frozen so jobs already running against it don't shift mid-build.
 </Callout>
 
+## Assembly instructions
+
+Assembly operations execute step-by-step instructions that guide the operator through each build motion. These **work instructions** are stored as **assembly instructions** records attached to an operation type's method operation, carrying an ordered list of steps, each with materials, tools, slides, and reference images scoped to that step.
+
+### Versioning
+
+Assembly instructions are versioned, not edited in place. When you need to revise a published instruction, you:
+
+1. **Create a new version** — copies the current Draft or Published instruction into a fresh Draft, complete with all steps, materials, slides, and tools
+2. **Edit the Draft** — adjust steps, reorder materials, add reference images
+3. **Activate the Draft** — publishes it, archives the prior Published version (if any), and repoints all in-flight work
+
+Each version row carries a `rootInstructionId` that groups the version family together. The table shows a "Version N" subtitle plus a Versions hover card listing all versions in the group. A version switcher in the header lets you navigate between them.
+
+<Callout type="note" title="Activating a version updates in-flight work.">
+When you activate a version, Carbon automatically repoints all active job operations on active jobs to the newly published instruction. This ensures that work already on the floor builds from the current definition, not a stale one. The action is gated behind a confirmation dialog since it archives the prior version.
+</Callout>
+
+### Change-notice diffs
+
+When an assembly instruction is part of a change notice, the diff viewer surfaces the changes in context. The diff resolves and labels:
+
+- The method operation's **assembly instruction** (instead of hiding it or showing a raw UUID)
+- Its **inspection plan** and **operation type**
+
+This makes the review concrete: you see exactly what instruction changed, not just that something on the operation was modified.
+
 ## Related
 
 <Cards>
