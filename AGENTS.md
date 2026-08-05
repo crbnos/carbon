@@ -26,6 +26,7 @@ Carbon is a manufacturing ERP/MES/QMS. It contains apps for ERP, MES, academy, a
 ## Never
 
 - Never use `npm` — always `pnpm`.
+- Never use JavaScript `Date` for parsing, formatting, or arithmetic — use `@internationalized/date` + `@carbon/utils` `formatDate` (see `.claude/rules/date-handling.md`).
 - Never expose cross-tenant data or skip `companyId` scoping.
 - Never hand-edit generated DB types (`@carbon/database` types).
 - Never scatter service/models files — one `{module}.service.ts` and one `{module}.models.ts` per module.
@@ -102,6 +103,7 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 | Redis (shared dev) | `.claude/rules/dev-shared-redis.md` |
 | **Architecture** | |
 | General coding conventions | `.claude/rules/coding-conventions.md` |
+| Date & time handling (no JS `Date`) | `.claude/rules/date-handling.md` |
 | Project overview | `.claude/rules/project-overview.md` |
 | Customer/supplier DB schema | `.claude/rules/customer-supplier-database-schema.md` |
 | User/employee/job relationships | `.claude/rules/user-employee-job-relationships.md` |

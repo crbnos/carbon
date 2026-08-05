@@ -38,6 +38,14 @@ msgstr "{0} sur {1} terminé(s)"
 msgid "{0} of {1} completed"
 msgstr "{0} sur {1} terminé(s)"
 
+#. placeholder {0}: rows.length
+msgid "{0} queued"
+msgstr "{0} en file d'attente"
+
+#. placeholder {0}: activeWork.length
+msgid "{0} running"
+msgstr "{0} en cours"
+
 #. placeholder {0}: item.quantityScrapped
 msgid "{0} Scrapped"
 msgstr "{0} Rebuté(s)"
@@ -47,6 +55,9 @@ msgstr "{completions} unité(s) acceptée(s) sera/seront complétée(s)."
 
 msgid "{fails} sampled failure(s) are recorded and will NOT be completed — resolve them from the actions menu."
 msgstr "{fails} défaut(s) échantillonné(s) enregistré(s) et ne seront PAS complété(s) — résolvez-les à partir du menu des actions."
+
+msgid "+{overflow} more"
+msgstr "+{overflow} autres"
 
 msgid "About"
 msgstr "À propos"
@@ -92,6 +103,9 @@ msgstr "Ajouter une pièce de rechange"
 
 msgid "All"
 msgstr "Tout"
+
+msgid "All clear"
+msgstr "Tout est correct"
 
 msgid "All rework"
 msgstr "Tous les retouches"
@@ -160,6 +174,9 @@ msgstr "Mais ne vous inquiétez pas. Vous pouvez utiliser la procédure de réin
 
 msgid "By signing in, you agree to the <0>Terms of Service</0> and <1>Privacy Policy.</1>"
 msgstr "En vous connectant, vous acceptez les <0>Conditions d'utilisation</0> et la <1>Politique de confidentialité.</1>"
+
+msgid "By?"
+msgstr "Par qui ?"
 
 msgid "Cancel"
 msgstr "Annuler"
@@ -239,6 +256,9 @@ msgstr "Terminer les réussis"
 msgid "Completed"
 msgstr "Terminé"
 
+msgid "Connecting"
+msgstr "Connexion..."
+
 msgid "Console"
 msgstr "Console"
 
@@ -247,6 +267,10 @@ msgstr "Mode console"
 
 msgid "Consumed expired"
 msgstr "Consommé expiré"
+
+#. placeholder {0}: board.unplannedCost.days
+msgid "Cost of unplanned maintenance, last {0} days"
+msgstr "Coût de la maintenance imprévue, {0} derniers jours"
 
 #. placeholder {0}: search.trim() === "" ? (createLabel ?? label) : search
 #. placeholder {0}: search.trim() === "" ? label : search
@@ -261,6 +285,9 @@ msgstr "Créer un problème de qualité"
 
 msgid "Create Rework"
 msgstr "Créer une retouche"
+
+msgid "Current work"
+msgstr "Travail actuel"
 
 msgid "Customer"
 msgstr "Client"
@@ -308,8 +335,21 @@ msgstr "Intervention non trouvée"
 msgid "Display"
 msgstr "Affichage"
 
+msgid "Displays"
+msgstr "Affichages"
+
 msgid "Down"
 msgstr "En panne"
+
+msgid "Down for maintenance"
+msgstr "Arrêt pour maintenance"
+
+#. placeholder {0}: workCenter.blockingDispatchReadableId
+msgid "Down for maintenance · {0}"
+msgstr "Arrêt pour maintenance · {0}"
+
+msgid "Down for planned maintenance"
+msgstr "Arrêt pour maintenance planifiée"
 
 msgid "Download"
 msgstr "Télécharger"
@@ -339,6 +379,13 @@ msgstr "Échéance {0}"
 msgid "Due Date"
 msgstr "Date d'échéance"
 
+#. placeholder {0}: board.dueSoon.days
+msgid "Due in the next {0} days?"
+msgstr "Dû dans les {0} prochains jours ?"
+
+msgid "Due today?"
+msgstr "Dû aujourd'hui ?"
+
 msgid "Duplicate batch number"
 msgstr "Numéro de lot en double"
 
@@ -350,6 +397,9 @@ msgstr "Durée"
 
 msgid "Edit"
 msgstr "Modifier"
+
+msgid "Elapsed"
+msgstr "Durée écoulée"
 
 msgid "Email Address"
 msgstr "Adresse e-mail"
@@ -437,6 +487,9 @@ msgstr "Fichiers liés à l'ordre de fabrication et à la ligne d'opportunité."
 msgid "Filter"
 msgstr "Filtre"
 
+msgid "Filter by location"
+msgstr "Filtrer par emplacement"
+
 msgid "Finish"
 msgstr "Terminer"
 
@@ -459,6 +512,9 @@ msgstr "Revenir à l'opération"
 msgid "How many were actually picked?"
 msgstr "Combien ont réellement été prélevés ?"
 
+msgid "How many?"
+msgstr "Combien ?"
+
 msgid "I understand and want to complete without issuing"
 msgstr "Je comprends et souhaite terminer sans distribuer"
 
@@ -467,6 +523,9 @@ msgstr "Je travaille encore"
 
 msgid "Ideas, suggestions or problems?"
 msgstr "Des idées, suggestions ou problèmes ?"
+
+msgid "Idle for"
+msgstr "Inactif depuis"
 
 msgid "Impact"
 msgstr "Impact"
@@ -510,6 +569,12 @@ msgstr "Distribuer le matériau"
 msgid "Issue Type"
 msgstr "Type de problème"
 
+msgid "Issued {issuedQuantity} of {lotLabel}"
+msgstr "Émis {issuedQuantity} sur {lotLabel}"
+
+msgid "Issued {issuedQuantity} of {lotLabel} — {remainingQuantity} remains"
+msgstr "Émis {issuedQuantity} sur {lotLabel} — {remainingQuantity} reste"
+
 msgid "Item"
 msgstr "Article"
 
@@ -536,6 +601,9 @@ msgstr "Kit"
 
 msgid "Labor"
 msgstr "Main-d'œuvre"
+
+msgid "Last completed"
+msgstr "Dernier complété"
 
 msgid "Learn more"
 msgstr "En savoir plus"
@@ -588,11 +656,17 @@ msgstr "Lot"
 msgid "Machine"
 msgstr "Machine"
 
+msgid "Machine down for maintenance now?"
+msgstr "Machine arrêtée pour maintenance actuellement ?"
+
 msgid "Maintenance"
 msgstr "Maintenance"
 
 msgid "Maintenance Completed"
 msgstr "Maintenance terminée"
+
+msgid "Maintenance overdue"
+msgstr "Maintenance en retard"
 
 msgid "Manually add items to inventory"
 msgstr "Ajouter manuellement des articles au stock"
@@ -658,11 +732,20 @@ msgstr "Plus récent d'abord"
 msgid "Next"
 msgstr "Suivant"
 
+msgid "No"
+msgstr "Non"
+
+msgid "No active job at this work center"
+msgstr "Aucun travail actif à ce centre de travail"
+
 msgid "No active maintenance dispatches"
 msgstr "Aucune intervention de maintenance active"
 
 msgid "No active operations"
 msgstr "Aucune opération active"
+
+msgid "No active work centers at this location."
+msgstr "Aucun centre de travail actif à cet emplacement."
 
 msgid "No assigned operations"
 msgstr "Aucune opération assignée"
@@ -763,8 +846,17 @@ msgstr "Aucun poste de travail n'est bloqué"
 msgid "No work centers exist"
 msgstr "Aucun poste de travail n'existe"
 
+msgid "None"
+msgstr "Aucun"
+
 msgid "Notes"
 msgstr "Notes"
+
+msgid "Nothing running"
+msgstr "Rien en cours"
+
+msgid "Nothing scheduled at this work center"
+msgstr "Rien de planifié à ce centre de travail"
 
 msgid "OEE Impact"
 msgstr "Impact TRS"
@@ -785,6 +877,9 @@ msgstr "Oups. Vous ne devriez pas voir cette page. Elle deviendra éventuellemen
 msgid "Open"
 msgstr "Ouvert"
 
+msgid "Open a display on the screen mounted at the work center and leave it running. Each board refreshes on its own."
+msgstr "Ouvrez un affichage sur l'écran monté au centre de travail et laissez-le fonctionner. Chaque tableau s'actualise automatiquement."
+
 msgid "Open an NCR for MRB disposition"
 msgstr "Ouvrir un NCR pour la disposition MRB"
 
@@ -797,6 +892,9 @@ msgstr "Opérations"
 msgid "Operations ended"
 msgstr "Opérations terminées"
 
+msgid "Operator"
+msgstr "Opérateur"
+
 msgid "Operator Performed"
 msgstr "Effectué par l'opérateur"
 
@@ -805,6 +903,9 @@ msgstr "Optionnel"
 
 msgid "Overall result"
 msgstr "Résultat global"
+
+msgid "Overdue PMs?"
+msgstr "PM en retard ?"
 
 msgid "Parameters"
 msgstr "Paramètres"
@@ -857,6 +958,9 @@ msgstr "Veuillez enregistrer toutes les étapes de cette opération avant de la 
 msgid "Please select an item"
 msgstr "Veuillez sélectionner un article"
 
+msgid "PM schedule lapsed"
+msgstr "Calendrier PM dépassé"
+
 msgid "Prev"
 msgstr "Précédent"
 
@@ -898,6 +1002,9 @@ msgstr "Quantité"
 
 msgid "Quantity must be greater than 0"
 msgstr "La quantité doit être supérieure à 0"
+
+msgid "Queue empty"
+msgstr "File d'attente vide"
 
 msgid "Reason for rework"
 msgstr "Raison du rétravail"
@@ -947,6 +1054,9 @@ msgstr "Rework créé avec succès"
 
 msgid "Rework quantity"
 msgstr "Quantité de retouche"
+
+msgid "Running"
+msgstr "En cours"
 
 msgid "Sales Order"
 msgstr "Commande client"
@@ -1232,14 +1342,28 @@ msgstr "Dépicker"
 msgid "Unpick {0}"
 msgstr "Dépicker {0}"
 
+msgid "Unplanned downtime"
+msgstr "Arrêt imprévu"
+
+#. placeholder {0}: board.unplannedCount.days
+msgid "Unplanned maintenance items, last {0} days"
+msgstr "Articles de maintenance imprévue, {0} derniers jours"
+
 msgid "Unsaved changes"
 msgstr "Modifications non enregistrées"
+
+msgid "Up next"
+msgstr "Suivant"
 
 msgid "Up to {maxAllocatable} unit(s) can be allocated; the rest is recorded without a posting."
 msgstr "Jusqu'à {maxAllocatable} unité(s) peut/peuvent être allouée(s) ; le reste est enregistré sans comptabilisation."
 
 msgid "Update"
 msgstr "Mettre à jour"
+
+#. placeholder {0}: formatClock(lastUpdated)
+msgid "Updated {0}"
+msgstr "Mis à jour {0}"
 
 msgid "Updated successfully"
 msgstr "Mis à jour avec succès"
@@ -1266,6 +1390,12 @@ msgstr "En-cours"
 
 msgid "Work Center"
 msgstr "Poste de travail"
+
+msgid "Work Center Displays"
+msgstr "Affichages du Centre de Travail"
+
+msgid "Yes"
+msgstr "Oui"
 
 #. placeholder {0}: new Date(openClockEntry.clockIn).toLocaleString(locale)
 msgid "You clocked in at {0}. You can edit your clock-out time below or acknowledge that you're still working."

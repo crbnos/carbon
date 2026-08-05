@@ -36,12 +36,17 @@ function InlineLink({
 
 const SKIPPED_ATTRIBUTE_KEYS = new Set([
   "Job Material",
+  "Picking List Line",
   "Purchase Order Line",
   "Receipt Line",
   "Sales Order Line",
   "Shipment Line",
   "Inventory Adjustment",
-  "expiryOverrides"
+  "expiryOverrides",
+  // Injected by the lineage loader for the graph's edge badges; the stored
+  // "From Shelf"/"To Shelf" ids already render as "From/To Storage Unit".
+  "From Storage Unit Name",
+  "To Storage Unit Name"
 ]);
 
 // The edge functions still write "Shelf" keys into trackedActivity/trackedEntity
@@ -134,6 +139,10 @@ export function AttributeList({ attrs }: { attrs: Record<string, any> }) {
                   operationId={value}
                 />
               );
+            case "Picking List":
+              return <PickingListAttribute key={key} pickingListId={value} />;
+            case "Picking List Line":
+              return null;
             case "Purchase Order":
               return (
                 <PurchaseOrderAttribute key={key} purchaseOrderId={value} />
@@ -218,6 +227,32 @@ function Row({
         {children}
       </dd>
     </div>
+  );
+}
+
+function PickingListAttribute({ pickingListId }: { pickingListId: string }) {
+  const [readableId, setReadableId] = useState<string | null>(null);
+  const { carbon } = useCarbon();
+
+  const getPickingList = async () => {
+    const response = await carbon
+      ?.from("pickingList")
+      .select("pickingListId")
+      .eq("id", pickingListId)
+      .single();
+    setReadableId(response?.data?.pickingListId ?? null);
+  };
+
+  useMount(() => {
+    getPickingList();
+  });
+
+  return (
+    <Row label="Picking List">
+      <InlineLink to={path.to.pickingList(pickingListId)}>
+        {readableId ?? pickingListId}
+      </InlineLink>
+    </Row>
   );
 }
 

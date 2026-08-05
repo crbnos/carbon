@@ -1657,8 +1657,14 @@ msgstr "Назначает эту единицу рабочему центру �
 msgid "At each gate"
 msgstr "На каждом этапе"
 
+msgid "At job completion"
+msgstr "При завершении работы"
+
 msgid "At least one condition must match"
 msgstr "По крайней мере одно условие должно совпадать"
+
+msgid "At operation completion"
+msgstr "При завершении операции"
 
 msgid "Attach File"
 msgstr "Прикрепить файл"
@@ -2580,9 +2586,6 @@ msgstr "Настроить счета капитала и накопленной
 
 msgid "Configure defaults for the quality dashboard."
 msgstr "Настройте значения по умолчанию для панели качества."
-
-msgid "Configure how preventative maintenance dispatches are automatically generated from maintenance schedules."
-msgstr "Настройте способ автоматического создания плановых заявок на техническое обслуживание на основе графиков обслуживания."
 
 msgid "Configure Item"
 msgstr "Настроить элемент"
@@ -3646,9 +3649,6 @@ msgstr "Дни до оплаты"
 msgid "Days from ordering a part to having it available; planning offsets demand backward by this much."
 msgstr "Дни от заказа детали до её наличия; планирование смещает спрос назад на эту величину."
 
-msgid "Days in advance to generate dispatches"
-msgstr "Дни заранее для создания заявок"
-
 msgid "Days Off"
 msgstr "Выходные дни"
 
@@ -3710,6 +3710,9 @@ msgstr "Решите, что видит оператор при попытке �
 
 msgid "Decide what happens when an operator presses Finish on the shop floor with material still unpicked."
 msgstr "Решите, что произойдет, когда оператор нажмет кнопку 'Завершить' на производстве с неподобранным материалом."
+
+msgid "Decide when material picked to a work center but not consumed flows back to the warehouse."
+msgstr "Решение о том, когда материал, отобранный в рабочий центр, но не использованный, поступает обратно на склад."
 
 msgid "Decimal Places"
 msgstr "Десятичные разряды"
@@ -4557,6 +4560,9 @@ msgstr "например, первые 3-4 недели"
 
 msgid "e.g. Zebra 2x1"
 msgstr "например Zebra 2x1"
+
+msgid "Each operation's unused material returns as soon as the operation is done."
+msgstr "Неиспользованный материал каждой операции возвращается сразу после завершения операции."
 
 msgid "Each physical unit gets its own tracked entity and unique number — one entity, one unit."
 msgstr "Каждая физическая единица получает свою собственную отслеживаемую сущность и уникальный номер — одна сущность, одна единица."
@@ -7213,6 +7219,9 @@ msgstr "Левый элемент"
 msgid "Leftover Parts Detected"
 msgstr "Обнаружены лишние детали"
 
+msgid "Leftover staged material returns when the whole job completes."
+msgstr "Оставшийся подготовленный материал возвращается по завершении всей работы."
+
 msgid "Less manual work"
 msgstr "Меньше ручной работы"
 
@@ -7503,9 +7512,6 @@ msgstr "Расходы на техническое обслуживание (п�
 
 msgid "Maintenance Schedules"
 msgstr "Графики обслуживания"
-
-msgid "Maintenance Scheduling"
-msgstr "Планирование техническое обслуживание"
 
 msgid "Maintenance Type"
 msgstr "Тип обслуживания"
@@ -8368,6 +8374,9 @@ msgstr "Следующая дата"
 msgid "Next Due"
 msgstr "Следующий срок"
 
+msgid "Next Due Date"
+msgstr "Следующая дата платежа"
+
 msgid "Next page"
 msgstr "Следующая страница"
 
@@ -8568,6 +8577,7 @@ msgstr "Совпадений не найдено. Введите текст дл
 
 msgid "No matching bins"
 msgstr "Нет совпадающих ячеек"
+msgstr "Нет подходящих ячеек"
 
 msgid "No new notifications"
 msgstr "Нет новых уведомлений"
@@ -8797,6 +8807,7 @@ msgstr "Примечания (опционально)"
 #. placeholder {0}: search.trim()
 msgid "Nothing at this location matches \"{0}\"."
 msgstr "Ничего на этом месте не соответствует \"{0}\"."
+msgstr "В этом месте нет ничего, соответствующего \"{0}\"."
 
 msgid "Nothing else at this location has stock to pull from."
 msgstr "На этом месте больше нечего извлекать из запаса."
@@ -10786,6 +10797,12 @@ msgstr "Повторить"
 
 msgid "Return Home"
 msgstr "Вернуться на главную"
+
+msgid "Returned"
+msgstr "Возвращено"
+
+msgid "Returning unused picked material"
+msgstr "Возврат неиспользованного отобранного материала"
 
 msgid "Rev {revision}"
 msgstr "Ред. {revision}"
@@ -13956,6 +13973,9 @@ msgstr "Безымянная диаграмма"
 
 msgid "Untitled line"
 msgstr "Безымянная строка"
+
+msgid "Unused picked material flushed back from the work center to the warehouse."
+msgstr "Неиспользованный отобранный материал поступает обратно из рабочего центра на склад."
 
 msgid "UoM"
 msgstr "УИ"

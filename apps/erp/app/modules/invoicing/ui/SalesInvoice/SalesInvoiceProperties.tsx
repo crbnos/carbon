@@ -303,6 +303,7 @@ const SalesInvoiceProperties = () => {
           name="dateIssued"
           label={t`Date Issued`}
           inline
+          value={routeData?.salesInvoice?.dateIssued ?? ""}
           onChange={(date) => {
             onUpdate("dateIssued", date);
           }}
@@ -322,6 +323,7 @@ const SalesInvoiceProperties = () => {
           name="dateDue"
           label={t`Date Due`}
           inline
+          value={routeData?.salesInvoice?.dateDue ?? ""}
           onChange={(date) => {
             onUpdate("dateDue", date);
           }}
@@ -341,6 +343,7 @@ const SalesInvoiceProperties = () => {
           name="datePaid"
           label={t`Date Paid`}
           inline
+          value={routeData?.salesInvoice?.datePaid ?? ""}
           onChange={(date) => {
             onUpdate("datePaid", date);
           }}

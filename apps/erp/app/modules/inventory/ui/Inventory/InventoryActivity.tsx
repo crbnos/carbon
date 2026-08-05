@@ -27,6 +27,10 @@ export type CollapsedItemLedger = ItemLedger & {
 export function collapseTransferPairs(
   rows: ItemLedger[]
 ): CollapsedItemLedger[] {
+  // Batch Split rows are internal net-zero bookkeeping — the Transfer/
+  // Consumption rows tell the real story, so they never reach the feed.
+  rows = rows.filter((row) => row.documentType !== "Batch Split");
+
   const pairKey = (row: ItemLedger) =>
     [row.documentId, row.itemId, row.trackedEntityId ?? "", row.createdAt].join(
       "|"
@@ -63,11 +67,17 @@ export function collapseTransferPairs(
   }, []);
 }
 
-const getActivityText = (ledgerRecord: CollapsedItemLedger) => {
+const getActivityText = (
+  ledgerRecord: CollapsedItemLedger,
+  trackingNoun: "batch" | "serial" | null
+) => {
   // Prefer the entity's readable serial/batch number; fall back to the raw
   // tracked-entity id when it has none (e.g. unnumbered receipt batches).
-  const trackedEntityLabel =
-    ledgerRecord.trackedEntity?.readableId || ledgerRecord.trackedEntityId;
+  // The tracked-entity clause is omitted entirely when the item isn't
+  // serial/batch tracked (trackingNoun null).
+  const trackedEntityLabel = trackingNoun
+    ? ledgerRecord.trackedEntity?.readableId || ledgerRecord.trackedEntityId
+    : null;
 
   switch (ledgerRecord.documentType) {
     case "Purchase Receipt":
@@ -76,11 +86,7 @@ const getActivityText = (ledgerRecord: CollapsedItemLedger) => {
           ? ` to ${ledgerRecord.storageUnit.name}`
           : ""
       }${
-        trackedEntityLabel
-          ? ` from ${
-              Math.abs(ledgerRecord.quantity) > 1 ? "batch" : "serial"
-            } ${trackedEntityLabel}`
-          : ""
+        trackedEntityLabel ? ` of ${trackingNoun} ${trackedEntityLabel}` : ""
       }`;
     case "Purchase Invoice":
       return `invoiced ${ledgerRecord.quantity} units${
@@ -94,9 +100,7 @@ const getActivityText = (ledgerRecord: CollapsedItemLedger) => {
           ? ` from ${ledgerRecord.storageUnit.name}`
           : ""
       }${
-        trackedEntityLabel
-          ? ` of ${Math.abs(ledgerRecord.quantity) > 1 ? "batch" : "serial"} ${trackedEntityLabel}`
-          : ""
+        trackedEntityLabel ? ` of ${trackingNoun} ${trackedEntityLabel}` : ""
       }`;
     case "Sales Invoice":
       return `invoiced ${ledgerRecord.quantity} units for sale${
@@ -197,8 +201,7 @@ const getActivityText = (ledgerRecord: CollapsedItemLedger) => {
             : ""}
           {trackedEntityLabel ? (
             <>
-              from {Math.abs(ledgerRecord.quantity) > 1 ? "batch" : "serial"}{" "}
-              {trackedEntityLabel}{" "}
+              of {trackingNoun} {trackedEntityLabel}{" "}
             </>
           ) : null}
           {ledgerRecord.documentLineId && ledgerRecord.documentId ? (
@@ -241,8 +244,7 @@ const getActivityText = (ledgerRecord: CollapsedItemLedger) => {
             : ""}
           {trackedEntityLabel ? (
             <>
-              from {Math.abs(ledgerRecord.quantity) > 1 ? "batch" : "serial"}{" "}
-              {trackedEntityLabel}{" "}
+              of {trackingNoun} {trackedEntityLabel}{" "}
             </>
           ) : null}
           {ledgerRecord.documentId ? (
@@ -293,9 +295,7 @@ const getActivityText = (ledgerRecord: CollapsedItemLedger) => {
           ? ` to ${ledgerRecord.storageUnit?.name}`
           : ""
       }${
-        trackedEntityLabel
-          ? ` for ${Math.abs(ledgerRecord.quantity) > 1 ? "batch" : "serial"} ${trackedEntityLabel}`
-          : ""
+        trackedEntityLabel ? ` for ${trackingNoun} ${trackedEntityLabel}` : ""
       }`;
     case "Negative Adjmt.":
       return `made a negative adjustment of ${-1 * ledgerRecord.quantity}${
@@ -303,9 +303,7 @@ const getActivityText = (ledgerRecord: CollapsedItemLedger) => {
           ? ` to ${ledgerRecord.storageUnit.name}`
           : ""
       }${
-        trackedEntityLabel
-          ? ` for ${Math.abs(ledgerRecord.quantity) > 1 ? "batch" : "serial"} ${trackedEntityLabel}`
-          : ""
+        trackedEntityLabel ? ` for ${trackingNoun} ${trackedEntityLabel}` : ""
       }`;
     default:
       return "";
@@ -329,14 +327,21 @@ const getActivityIcon = (ledgerRecord: ItemLedger) => {
 type InventoryActivityProps = {
   item: CollapsedItemLedger;
   highlightId?: string;
+  itemTrackingType?: string | null;
 };
 
 const InventoryActivity = memo(
-  ({ item, highlightId }: InventoryActivityProps) => {
+  ({ item, highlightId, itemTrackingType }: InventoryActivityProps) => {
+    const trackingNoun =
+      itemTrackingType === "Serial"
+        ? ("serial" as const)
+        : itemTrackingType === "Batch"
+          ? ("batch" as const)
+          : null;
     return (
       <Activity
         employeeId={item.createdBy}
-        activityMessage={getActivityText(item)}
+        activityMessage={getActivityText(item, trackingNoun)}
         activityTime={item.createdAt}
         activityIcon={getActivityIcon(item)}
         comment={item.comment}

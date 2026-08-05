@@ -219,13 +219,20 @@ export const incompletePickingListPolicyValidator = z.object({
     .default("warn")
 });
 
-export const updateLeadTimesOnReceiptValidator = z.object({
-  updateLeadTimesOnReceipt: zfd.checkbox()
+// When un-consumed picked material flushes back from the work-center lineside
+// bin to the warehouse. 'job' (default) returns the remainder when the whole
+// job completes; 'operation' returns each operation's remainder as soon as that
+// operation is Done (holding back what completion-time backflush still needs).
+export const returnPickedMaterialTimings = ["job", "operation"] as const;
+export type ReturnPickedMaterialTiming =
+  (typeof returnPickedMaterialTimings)[number];
+
+export const returnPickedMaterialTimingValidator = z.object({
+  returnPickedMaterialTiming: z.enum(returnPickedMaterialTimings).default("job")
 });
 
-export const maintenanceSettingsValidator = z.object({
-  maintenanceGenerateInAdvance: zfd.checkbox(),
-  maintenanceAdvanceDays: zfd.numeric(z.number().min(1).max(90).default(7))
+export const updateLeadTimesOnReceiptValidator = z.object({
+  updateLeadTimesOnReceipt: zfd.checkbox()
 });
 
 export const materialIdsValidator = z.object({

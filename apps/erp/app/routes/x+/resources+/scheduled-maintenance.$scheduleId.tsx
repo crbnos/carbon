@@ -2,6 +2,7 @@ import { assertIsPost, error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import { trigger } from "@carbon/jobs";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, redirect, useLoaderData, useNavigate } from "react-router";
 import {
@@ -40,7 +41,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  const { client, companyId, userId } = await requirePermissions(request, {
     update: "resources"
   });
 
@@ -72,6 +73,10 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
+  // Re-run generation so any change (frequency, active, day-of-week) is
+  // reflected on the maintenance displays without waiting for the nightly run.
+  await trigger("generate-maintenance", { companyId, scheduleId: id });
+
   throw redirect(
     path.to.maintenanceSchedules,
     await flash(request, success("Updated maintenance schedule"))
@@ -90,6 +95,7 @@ export default function EditMaintenanceScheduleRoute() {
     frequency: schedule.frequency ?? ("Weekly" as const),
     priority: schedule.priority ?? ("Medium" as const),
     estimatedDuration: schedule.estimatedDuration ?? undefined,
+    nextDueAt: schedule.nextDueAt ? schedule.nextDueAt.slice(0, 10) : undefined,
     active: schedule.active ?? true,
     // Day-of-week settings
     monday: schedule.monday ?? true,

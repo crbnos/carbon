@@ -1657,8 +1657,14 @@ msgstr "このユニットを作業センターに割り当ててラインサイ
 msgid "At each gate"
 msgstr "各ゲートで"
 
+msgid "At job completion"
+msgstr "ジョブ完了時"
+
 msgid "At least one condition must match"
 msgstr "少なくとも1つの条件が一致する必要があります"
+
+msgid "At operation completion"
+msgstr "操作完了時"
 
 msgid "Attach File"
 msgstr "ファイルを添付"
@@ -2580,9 +2586,6 @@ msgstr "デフォルトのエクイティと留保利益勘定を構成する"
 
 msgid "Configure defaults for the quality dashboard."
 msgstr "品質ダッシュボードのデフォルトを設定します。"
-
-msgid "Configure how preventative maintenance dispatches are automatically generated from maintenance schedules."
-msgstr "予防保全ディスパッチが保全スケジュールから自動的に生成される方法を設定します。"
 
 msgid "Configure Item"
 msgstr "アイテムを構成"
@@ -3646,9 +3649,6 @@ msgstr "支払期日"
 msgid "Days from ordering a part to having it available; planning offsets demand backward by this much."
 msgstr "部品の注文から利用可能になるまでの日数; 計画はこの量だけ需要を後方にオフセットします。"
 
-msgid "Days in advance to generate dispatches"
-msgstr "事前に生成するディスパッチの日数"
-
 msgid "Days Off"
 msgstr "休日"
 
@@ -3710,6 +3710,9 @@ msgstr "オペレーターが既に期限切れのバッチまたはシリアル
 
 msgid "Decide what happens when an operator presses Finish on the shop floor with material still unpicked."
 msgstr "オペレーターが店舗の床で材料がまだピックされていない状態で「完了」を押すとどうなるかを決定します。"
+
+msgid "Decide when material picked to a work center but not consumed flows back to the warehouse."
+msgstr "作業センターに仕分けされたが消費されなかった材料が倉庫に戻る時期を決定します。"
 
 msgid "Decimal Places"
 msgstr "小数位数"
@@ -4557,6 +4560,9 @@ msgstr "例：最初の3～4週間"
 
 msgid "e.g. Zebra 2x1"
 msgstr "例：Zebra 2x1"
+
+msgid "Each operation's unused material returns as soon as the operation is done."
+msgstr "各操作の未使用材料は操作が完了するとすぐに戻されます。"
 
 msgid "Each physical unit gets its own tracked entity and unique number — one entity, one unit."
 msgstr "各物理ユニットは独自の追跡エンティティと一意の番号を取得します — 1つのエンティティ、1つのユニット。"
@@ -7213,6 +7219,9 @@ msgstr "左側の項目"
 msgid "Leftover Parts Detected"
 msgstr "余剰部品が検出されました"
 
+msgid "Leftover staged material returns when the whole job completes."
+msgstr "ジョブ全体が完了したときに、ステージングされたままの材料が戻されます。"
+
 msgid "Less manual work"
 msgstr "手作業を減らす"
 
@@ -7503,9 +7512,6 @@ msgstr "保守経費 (デフォルト)"
 
 msgid "Maintenance Schedules"
 msgstr "メンテナンススケジュール"
-
-msgid "Maintenance Scheduling"
-msgstr "メンテナンススケジューリング"
 
 msgid "Maintenance Type"
 msgstr "メンテナンスタイプ"
@@ -8368,6 +8374,9 @@ msgstr "次の日付"
 msgid "Next Due"
 msgstr "次回期限"
 
+msgid "Next Due Date"
+msgstr "次の期限日"
+
 msgid "Next page"
 msgstr "次のページ"
 
@@ -8568,6 +8577,7 @@ msgstr "一致するものがありません。作成するには入力してく
 
 msgid "No matching bins"
 msgstr "一致するビンはありません"
+msgstr "一致するビンがありません"
 
 msgid "No new notifications"
 msgstr "新しい通知はありません"
@@ -8797,6 +8807,7 @@ msgstr "メモ（オプション）"
 #. placeholder {0}: search.trim()
 msgid "Nothing at this location matches \"{0}\"."
 msgstr "この場所には\"{0}\"と一致するものがありません。"
+msgstr "この場所には\"{0}\"に一致するものはありません。"
 
 msgid "Nothing else at this location has stock to pull from."
 msgstr "この場所には他に引き出す在庫がありません。"
@@ -10786,6 +10797,12 @@ msgstr "再試行"
 
 msgid "Return Home"
 msgstr "ホームに戻る"
+
+msgid "Returned"
+msgstr "返却"
+
+msgid "Returning unused picked material"
+msgstr "未使用の仕分け材料を返却中"
 
 msgid "Rev {revision}"
 msgstr "Rev {revision}"
@@ -13956,6 +13973,9 @@ msgstr "無題の図"
 
 msgid "Untitled line"
 msgstr "無題の行"
+
+msgid "Unused picked material flushed back from the work center to the warehouse."
+msgstr "作業センターから倉庫に戻された未使用の仕分け材料。"
 
 msgid "UoM"
 msgstr "UoM"

@@ -1,0 +1,185 @@
+diff --git a/edge/entry.server.js b/edge/entry.server.js
+index 7d18c72..de8c399 100644
+--- a/edge/entry.server.js
++++ b/edge/entry.server.js
+@@ -4,9 +4,66 @@ import { renderToReadableStream, } from 'react-dom/server';
+ import { ServerRouter } from 'react-router';
+ const vercelDeploymentId = process.env.VERCEL_DEPLOYMENT_ID;
+ const vercelSkewProtectionEnabled = process.env.VERCEL_SKEW_PROTECTION_ENABLED === '1';
++/**
++ * Appends `?dpl=<deploymentId>` to an asset URL so Vercel's edge can route
++ * the request to the deployment that produced the asset, preventing 404s
++ * when a cached HTML page references assets from a previous deployment.
++ */
++function appendDpl(url, deploymentId) {
++    if (!url || url.includes('?dpl=') || url.includes('&dpl=')) {
++        return url;
++    }
++    return url.includes('?')
++        ? `${url}&dpl=${deploymentId}`
++        : `${url}?dpl=${deploymentId}`;
++}
++/**
++ * Returns a new `AssetsManifest` where every script module URL, import URL,
++ * CSS URL, and the manifest's own URL have `?dpl=<deploymentId>` appended.
++ *
++ * This ensures that `<Scripts>` and `<Links>` emitted by `<ServerRouter>` all
++ * carry the deployment ID, allowing Vercel's Skew Protection to serve them
++ * from the correct deployment. Unlike the browser-global `__vdpl` cookie
++ * (which a newer tab overwrites), the pinned URLs are baked into each page,
++ * so a stale page keeps resolving its own deployment's assets.
++ */
++function pinManifestAssets(manifest, deploymentId) {
++    const pin = (url) => appendDpl(url, deploymentId);
++    return {
++        ...manifest,
++        entry: {
++            ...manifest.entry,
++            module: pin(manifest.entry.module),
++            imports: manifest.entry.imports.map(pin),
++        },
++        routes: Object.fromEntries(Object.entries(manifest.routes).map(([id, route]) => [
++            id,
++            route
++                ? {
++                    ...route,
++                    module: pin(route.module),
++                    imports: route.imports?.map(pin),
++                    css: route.css?.map(pin),
++                }
++                : route,
++        ])),
++        // Pin the manifest's own resource URL for skew protection
++        url: pin(manifest.url),
++    };
++}
+ export async function handleRequest(request, responseStatusCode, responseHeaders, routerContext, _loadContext, options) {
++    // When Vercel Skew Protection is enabled, pin all asset URLs in the
++    // manifest to the current deployment via `?dpl=<deploymentId>`, so
++    // stale HTML pages can resolve their assets against the deployment
++    // they were generated from.
++    const effectiveContext = vercelSkewProtectionEnabled && vercelDeploymentId
++        ? {
++            ...routerContext,
++            manifest: pinManifestAssets(routerContext.manifest, vercelDeploymentId),
++        }
++        : routerContext;
+     const body = await renderToReadableStream(createElement(ServerRouter, {
+-        context: routerContext,
++        context: effectiveContext,
+         url: request.url,
+         nonce: options?.nonce,
+     }), {
+@@ -21,8 +78,14 @@ export async function handleRequest(request, responseStatusCode, responseHeaders
+         await body.allReady;
+     }
+     responseHeaders.set('Content-Type', 'text/html');
++    // Carbon divergence from vercel/vercel#16649: keep the __vdpl cookie
++    // alongside query pinning. Query pinning only covers manifest-derived
++    // asset URLs; the cookie is what pins single-fetch `.data` loader/action
++    // requests to the matching deployment. Upstream dropped it to keep SSR
++    // responses CDN-cacheable, which doesn't apply to Carbon's authenticated,
++    // per-user SSR responses.
+     if (vercelSkewProtectionEnabled && vercelDeploymentId) {
+-        responseHeaders.append('Set-Cookie', `__vdpl=${vercelDeploymentId}; HttpOnly`);
++        responseHeaders.append('Set-Cookie', `__vdpl=${vercelDeploymentId}; Path=/; HttpOnly`);
+     }
+     return new Response(body, {
+         headers: responseHeaders,
+diff --git a/entry.server.js b/entry.server.js
+index 5b6ab35..5c666c5 100644
+--- a/entry.server.js
++++ b/entry.server.js
+@@ -7,17 +7,74 @@ import { ServerRouter } from 'react-router';
+ export const streamTimeout = 5_000;
+ const vercelDeploymentId = process.env.VERCEL_DEPLOYMENT_ID;
+ const vercelSkewProtectionEnabled = process.env.VERCEL_SKEW_PROTECTION_ENABLED === '1';
++/**
++ * Appends `?dpl=<deploymentId>` to an asset URL so Vercel's edge can route
++ * the request to the deployment that produced the asset, preventing 404s
++ * when a cached HTML page references assets from a previous deployment.
++ */
++function appendDpl(url, deploymentId) {
++    if (!url || url.includes('?dpl=') || url.includes('&dpl=')) {
++        return url;
++    }
++    return url.includes('?')
++        ? `${url}&dpl=${deploymentId}`
++        : `${url}?dpl=${deploymentId}`;
++}
++/**
++ * Returns a new `AssetsManifest` where every script module URL, import URL,
++ * CSS URL, and the manifest's own URL have `?dpl=<deploymentId>` appended.
++ *
++ * This ensures that `<Scripts>` and `<Links>` emitted by `<ServerRouter>` all
++ * carry the deployment ID, allowing Vercel's Skew Protection to serve them
++ * from the correct deployment. Unlike the browser-global `__vdpl` cookie
++ * (which a newer tab overwrites), the pinned URLs are baked into each page,
++ * so a stale page keeps resolving its own deployment's assets.
++ */
++function pinManifestAssets(manifest, deploymentId) {
++    const pin = (url) => appendDpl(url, deploymentId);
++    return {
++        ...manifest,
++        entry: {
++            ...manifest.entry,
++            module: pin(manifest.entry.module),
++            imports: manifest.entry.imports.map(pin),
++        },
++        routes: Object.fromEntries(Object.entries(manifest.routes).map(([id, route]) => [
++            id,
++            route
++                ? {
++                    ...route,
++                    module: pin(route.module),
++                    imports: route.imports?.map(pin),
++                    css: route.css?.map(pin),
++                }
++                : route,
++        ])),
++        // Pin the manifest's own resource URL for skew protection
++        url: pin(manifest.url),
++    };
++}
+ export function handleRequest(request, responseStatusCode, responseHeaders, routerContext, _loadContext, options) {
+     return new Promise((resolve, reject) => {
+         let shellRendered = false;
+         const userAgent = request.headers.get('user-agent');
++        // When Vercel Skew Protection is enabled, pin all asset URLs in the
++        // manifest to the current deployment via `?dpl=<deploymentId>`, so
++        // stale HTML pages can resolve their assets against the deployment
++        // they were generated from.
++        const effectiveContext = vercelSkewProtectionEnabled && vercelDeploymentId
++            ? {
++                ...routerContext,
++                manifest: pinManifestAssets(routerContext.manifest, vercelDeploymentId),
++            }
++            : routerContext;
+         // Ensure requests from bots and SPA Mode renders wait for all content to load before responding
+         // https://react.dev/reference/react-dom/server/renderToPipeableStream#waiting-for-all-content-to-load-for-crawlers-and-static-generation
+         const readyOption = (userAgent && isbot(userAgent)) || routerContext.isSpaMode
+             ? 'onAllReady'
+             : 'onShellReady';
+         const { pipe, abort } = renderToPipeableStream(createElement(ServerRouter, {
+-            context: routerContext,
++            context: effectiveContext,
+             url: request.url,
+             nonce: options?.nonce,
+         }), {
+@@ -27,8 +84,15 @@ export function handleRequest(request, responseStatusCode, responseHeaders, rout
+                 const body = new PassThrough();
+                 const stream = createReadableStreamFromReadable(body);
+                 responseHeaders.set('Content-Type', 'text/html');
++                // Carbon divergence from vercel/vercel#16649: keep the __vdpl
++                // cookie alongside query pinning. Query pinning only covers
++                // manifest-derived asset URLs; the cookie is what pins
++                // single-fetch `.data` loader/action requests to the matching
++                // deployment. Upstream dropped it to keep SSR responses
++                // CDN-cacheable, which doesn't apply to Carbon's authenticated,
++                // per-user SSR responses.
+                 if (vercelSkewProtectionEnabled && vercelDeploymentId) {
+-                    responseHeaders.append('Set-Cookie', `__vdpl=${vercelDeploymentId}; HttpOnly`);
++                    responseHeaders.append('Set-Cookie', `__vdpl=${vercelDeploymentId}; Path=/; HttpOnly`);
+                 }
+                 resolve(new Response(stream, {
+                     headers: responseHeaders,
