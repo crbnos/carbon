@@ -14,7 +14,7 @@ import type { ValueOrRef } from "@carbon/workflows";
 import { WORKFLOW_OPERATION_CATALOG } from "@carbon/workflows";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useMemo, useState } from "react";
-import { LuCheck, LuChevronsUpDown } from "react-icons/lu";
+import { LuCheck, LuChevronsUpDown, LuListOrdered } from "react-icons/lu";
 import {
   catalog,
   describeValueType,
@@ -26,6 +26,7 @@ import {
 import { useBuilderStore } from "../../context";
 import { ValueField } from "../../fields/ValueField";
 import { issueForField, partIssuesForField } from "../../issues";
+import { useEntityBatchInput } from "../../useDefinition";
 import { FormStack, Section } from "../layout";
 import type { NodeFormProps } from "./index";
 
@@ -123,6 +124,7 @@ export function EntityForm({ node, issues }: NodeFormProps<"entity">) {
   const { operation: operationId, inputs } = node.data;
 
   const opDef = operationId ? catalog.getOperation(operationId) : undefined;
+  const batchInput = useEntityBatchInput(node.id, operationId, inputs);
 
   // Inputs ordered required-first, then optional (preserving catalog order within each)
   const orderedInputNames = useMemo(() => {
@@ -199,6 +201,24 @@ export function EntityForm({ node, issues }: NodeFormProps<"entity">) {
               />
             );
           })}
+        </div>
+      )}
+
+      {/* Batch mode note — shown when a list is wired into a single-value input */}
+      {batchInput && opDef && (
+        <div className="flex items-start gap-2 rounded-md border bg-muted/50 p-3 text-sm">
+          <LuListOrdered className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+          <p className="text-muted-foreground">
+            <Trans>
+              A list is wired into{" "}
+              {label(
+                operationInputLabelKey(operationId, batchInput),
+                batchInput
+              )}
+              , so this step runs once for each item and returns a list of
+              results.
+            </Trans>
+          </p>
         </div>
       )}
 

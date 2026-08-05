@@ -65,10 +65,6 @@ msgstr "{0} deleted successfully"
 msgid "{0} draft journal entries"
 msgstr "{0} draft journal entries"
 
-#. placeholder {0}: selected.length
-msgid "{0} events"
-msgstr "{0} events"
-
 #. placeholder {0}: mappings.length
 msgid "{0} lines to map"
 msgstr "{0} lines to map"
@@ -366,6 +362,10 @@ msgstr "A job's start date changes"
 
 msgid "A job's status changes"
 msgstr "A job's status changes"
+
+#. placeholder {0}: label( operationInputLabelKey(operationId, batchInput), batchInput )
+msgid "A list is wired into {0}, so this step runs once for each item and returns a list of results."
+msgstr "A list is wired into {0}, so this step runs once for each item and returns a list of results."
 
 #. placeholder {0}: label( actionInputLabelKey(actionId, batch.input), batch.input )
 msgid "A list is wired into {0}, so this step runs once for each item in it — up to {MAX_LIST_ITEMS}."
@@ -9188,9 +9188,6 @@ msgstr "Next Date"
 msgid "Next Due"
 msgstr "Next Due"
 
-msgid "Next fires at:"
-msgstr "Next fires at:"
-
 msgid "Next page"
 msgstr "Next page"
 
@@ -12477,6 +12474,9 @@ msgstr "Select an action…"
 msgid "Select an assignee"
 msgstr "Select an assignee"
 
+msgid "Select an event…"
+msgstr "Select an event…"
+
 msgid "Select an issue type"
 msgstr "Select an issue type"
 
@@ -12518,9 +12518,6 @@ msgstr "Select Employee"
 
 msgid "Select Employee Type"
 msgstr "Select Employee Type"
-
-msgid "Select events…"
-msgstr "Select events…"
 
 msgid "Select field"
 msgstr "Select field"

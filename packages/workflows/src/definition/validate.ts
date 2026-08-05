@@ -211,6 +211,15 @@ function checkOneTrigger(trigger: TriggerNode): WorkflowIssue[] {
   const { events, schedule } = trigger.data;
   const hasEvents = events.length > 0;
 
+  if (events.length > 1) {
+    return [
+      {
+        code: "MULTIPLE_TRIGGER_EVENTS",
+        nodeId: trigger.id,
+        message: "A trigger can only watch one event. Remove all but one."
+      }
+    ];
+  }
   if (hasEvents && schedule !== undefined) {
     return [
       {

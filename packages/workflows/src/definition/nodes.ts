@@ -5,6 +5,7 @@ import {
   type ActionNode,
   DEFAULT_HANDLE,
   DEFAULT_OUTPUT,
+  type EntityNode,
   FAILURE_HANDLE,
   type FilterNode,
   SUCCESS_HANDLE,
@@ -17,6 +18,7 @@ import {
   describeType,
   expectedClauseRightType,
   operatorsForType,
+  type ScalarType,
   typesEqual,
   type ValueOrRef,
   type ValueType
@@ -122,6 +124,24 @@ function filterLoopList(node: FilterNode, ctx: NodeContext): LoopList {
     return { type: source.type };
   }
   return { failure: "unconfigured" };
+}
+
+/** The first operation input wired to a list where the operation expects a single value.
+ * When set, the entity node runs the operation once per list item and returns a list. */
+function entityBatchInput(
+  node: EntityNode,
+  ctx: NodeContext
+): string | undefined {
+  const operation = ctx.catalog.getOperation(node.data.operation);
+  if (operation === undefined) return undefined;
+  for (const [name, inputDecl] of Object.entries(operation.inputs)) {
+    if (inputDecl.type.kind === "list") continue; // already expects a list
+    const supplied = node.data.inputs[name];
+    if (supplied === undefined || supplied.kind === "item") continue;
+    const resolved = ctx.resolveValue(supplied, node.id);
+    if ("type" in resolved && resolved.type.kind === "list") return name;
+  }
+  return undefined;
 }
 
 /** The wiring decides whether an action repeats; nothing is stored. */
@@ -372,16 +392,6 @@ const incomplete = (
   message
 });
 
-/** Only outputs every event supplies at the same type; the rest may be absent at run time. */
-function intersectOutputs(a: NodeOutputs, b: NodeOutputs): NodeOutputs {
-  const shared: NodeOutputs = {};
-  for (const [name, type] of Object.entries(a)) {
-    const other = b[name];
-    if (other !== undefined && typesEqual(type, other)) shared[name] = type;
-  }
-  return shared;
-}
-
 export const NODE_KINDS: {
   [K in WorkflowNodeType]: NodeKind<Extract<WorkflowNode, { type: K }>>;
 } = {
@@ -390,15 +400,11 @@ export const NODE_KINDS: {
     values: () => [],
     outputs: (node, ctx) => {
       if (node.data.schedule !== undefined) return {};
-      const events = node.data.events.map((id) => ctx.catalog.getEvent(id));
-      const [first, ...rest] = events;
-      if (first === undefined) return undefined;
-      let shared = { ...first.outputs };
-      for (const event of rest) {
-        if (event === undefined) return undefined;
-        shared = intersectOutputs(shared, event.outputs);
-      }
-      return shared;
+      const eventId = node.data.events[0];
+      if (eventId === undefined) return undefined;
+      const event = ctx.catalog.getEvent(eventId);
+      if (event === undefined) return undefined;
+      return { ...event.outputs };
     },
     loopList: () => undefined,
     configured: (node, ctx) =>
@@ -457,18 +463,36 @@ export const NODE_KINDS: {
     values: (node) => inputValues(node.data.inputs),
     outputs: (node, ctx) => {
       const operation = ctx.catalog.getOperation(node.data.operation);
-      return operation === undefined
-        ? undefined
-        : { [DEFAULT_OUTPUT]: operation.output };
+      if (operation === undefined) return undefined;
+      const batchInput = entityBatchInput(node, ctx);
+      if (batchInput !== undefined && operation.output.kind !== "list") {
+        return {
+          [DEFAULT_OUTPUT]: { kind: "list", of: operation.output as ScalarType }
+        };
+      }
+      return { [DEFAULT_OUTPUT]: operation.output };
     },
-    loopList: () => undefined,
+    loopList: (node, ctx) => {
+      const operation = ctx.catalog.getOperation(node.data.operation);
+      if (operation === undefined) return { failure: "unconfigured" };
+      const batchInput = entityBatchInput(node, ctx);
+      if (batchInput === undefined || operation.output.kind === "list")
+        return undefined;
+      return { type: { kind: "list", of: operation.output as ScalarType } };
+    },
     configured: (node, ctx) =>
       ctx.catalog.getOperation(node.data.operation) !== undefined,
     checkTypes: (node, ctx) => {
       const operation = ctx.catalog.getOperation(node.data.operation);
-      return operation === undefined
-        ? []
-        : checkInputs(node, node.data.inputs, operation.inputs, false, ctx);
+      if (operation === undefined) return [];
+      const batchInput = entityBatchInput(node, ctx);
+      return checkInputs(
+        node,
+        node.data.inputs,
+        operation.inputs,
+        batchInput !== undefined,
+        ctx
+      );
     },
     checkConfig: (node, ctx) => {
       if (node.data.operation.length === 0) {

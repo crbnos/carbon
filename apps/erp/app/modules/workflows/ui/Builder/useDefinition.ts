@@ -100,6 +100,30 @@ export function useActionBatchPlan(
   }, [actionId, inputs, typeOf]);
 }
 
+/** The name of the entity operation input that is wired to a list, or undefined when
+ * the node runs once. The form uses this to show the batch note. */
+export function useEntityBatchInput(
+  nodeId: string,
+  operationId: string,
+  inputs: Record<string, ValueOrRef>
+): string | undefined {
+  const typeOf = useValueTypeResolver(nodeId);
+  return useMemo(() => {
+    const operation = operationId
+      ? catalog.getOperation(operationId)
+      : undefined;
+    if (operation === undefined) return undefined;
+    for (const [name, decl] of Object.entries(operation.inputs)) {
+      if (decl.type.kind === "list") continue;
+      const supplied = inputs[name];
+      if (supplied === undefined || supplied.kind === "item") continue;
+      const type = typeOf(supplied);
+      if (type?.kind === "list") return name;
+    }
+    return undefined;
+  }, [operationId, inputs, typeOf]);
+}
+
 export type HandlePreview = {
   variables: AvailableVariable[];
   /** The node adds nothing of its own — it only routes what reaches it. */

@@ -21,11 +21,7 @@ import {
 } from "@carbon/react";
 import { timezones } from "@carbon/utils";
 import type { Origin, Schedule } from "@carbon/workflows";
-import {
-  nextOccurrenceAfter,
-  WORKFLOW_ENTITY_REGISTRY,
-  WORKFLOW_EVENTS
-} from "@carbon/workflows";
+import { WORKFLOW_ENTITY_REGISTRY, WORKFLOW_EVENTS } from "@carbon/workflows";
 import { getLocalTimeZone } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useMemo, useState } from "react";
@@ -86,8 +82,8 @@ function defaultSchedule(): Schedule {
 type EntityGroup = { entity: string; ids: string[] };
 
 type EventPickerProps = {
-  selected: string[];
-  onToggle: (id: string) => void;
+  selected: string;
+  onSelect: (id: string) => void;
   entityGroups: EntityGroup[];
   momentIds: string[];
   label: (key: string) => string;
@@ -95,7 +91,7 @@ type EventPickerProps = {
 
 function EventPicker({
   selected,
-  onToggle,
+  onSelect,
   entityGroups,
   momentIds,
   label
@@ -103,12 +99,7 @@ function EventPicker({
   const { t } = useLingui();
   const [open, setOpen] = useState(false);
 
-  const summary =
-    selected.length === 0
-      ? t`Select events…`
-      : selected.length === 1
-        ? label(selected[0])
-        : t`${selected.length} events`;
+  const summary = selected ? label(selected) : t`Select an event…`;
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -118,10 +109,7 @@ function EventPicker({
           className="flex w-full items-center justify-between rounded-md border bg-background px-3 py-2 text-sm hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
           <span
-            className={cn(
-              "truncate",
-              selected.length === 0 && "text-muted-foreground"
-            )}
+            className={cn("truncate", !selected && "text-muted-foreground")}
           >
             {summary}
           </span>
@@ -149,12 +137,15 @@ function EventPicker({
                   <CommandItem
                     key={id}
                     value={id}
-                    onSelect={() => onToggle(id)}
+                    onSelect={() => {
+                      onSelect(id);
+                      setOpen(false);
+                    }}
                   >
                     <LuCheck
                       className={cn(
                         "mr-2 h-4 w-4 shrink-0",
-                        selected.includes(id) ? "opacity-100" : "opacity-0"
+                        selected === id ? "opacity-100" : "opacity-0"
                       )}
                     />
                     {label(id)}
@@ -168,12 +159,15 @@ function EventPicker({
                   <CommandItem
                     key={id}
                     value={id}
-                    onSelect={() => onToggle(id)}
+                    onSelect={() => {
+                      onSelect(id);
+                      setOpen(false);
+                    }}
                   >
                     <LuCheck
                       className={cn(
                         "mr-2 h-4 w-4 shrink-0",
-                        selected.includes(id) ? "opacity-100" : "opacity-0"
+                        selected === id ? "opacity-100" : "opacity-0"
                       )}
                     />
                     {label(id)}
@@ -415,12 +409,9 @@ export function TriggerForm({ node }: NodeFormProps<"trigger">) {
     });
   }
 
-  // Event toggle
-  function toggleEvent(id: string) {
-    const next = events.includes(id)
-      ? events.filter((e) => e !== id)
-      : [...events, id];
-    updateNodeData(node.id, { events: next });
+  // Event selection — single event only
+  function selectEvent(id: string) {
+    updateNodeData(node.id, { events: [id] });
   }
 
   // Schedule patch
@@ -428,16 +419,6 @@ export function TriggerForm({ node }: NodeFormProps<"trigger">) {
     if (!schedule) return;
     updateNodeData(node.id, { schedule: { ...schedule, ...patch } });
   }
-
-  // Next-fire preview
-  const nextFire = useMemo(() => {
-    if (!schedule) return null;
-    try {
-      return nextOccurrenceAfter(schedule, new Date());
-    } catch {
-      return null;
-    }
-  }, [schedule]);
 
   return (
     <FormStack spacing={4}>
@@ -479,35 +460,15 @@ export function TriggerForm({ node }: NodeFormProps<"trigger">) {
           {/* Event selection */}
           <div className="space-y-2">
             <Section>
-              <Trans>Events</Trans>
+              <Trans>Event</Trans>
             </Section>
             <EventPicker
-              selected={events}
-              onToggle={toggleEvent}
+              selected={events[0] ?? ""}
+              onSelect={selectEvent}
               entityGroups={entityGroups}
               momentIds={momentIds}
               label={label}
             />
-            {events.length > 0 && (
-              <div className="flex flex-wrap gap-1 pt-1">
-                {events.map((id) => (
-                  <span
-                    key={id}
-                    className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-xs"
-                  >
-                    {label(id)}
-                    <button
-                      type="button"
-                      aria-label={`Remove ${label(id)}`}
-                      className="ml-0.5 text-muted-foreground hover:text-foreground"
-                      onClick={() => toggleEvent(id)}
-                    >
-                      ×
-                    </button>
-                  </span>
-                ))}
-              </div>
-            )}
           </div>
 
           {/* Origin selector */}
@@ -548,14 +509,6 @@ export function TriggerForm({ node }: NodeFormProps<"trigger">) {
         <>
           {schedule && (
             <ScheduleEditor schedule={schedule} onChange={patchSchedule} />
-          )}
-          {nextFire && (
-            <p className="text-xs text-muted-foreground">
-              <Trans>Next fires at:</Trans>{" "}
-              <span className="font-medium text-foreground tabular-nums">
-                {nextFire.toLocaleString()}
-              </span>
-            </p>
           )}
         </>
       )}

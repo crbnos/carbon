@@ -233,8 +233,9 @@ describe("validateDefinition against the real catalog", () => {
     ).toEqual([]);
   });
 
-  it("exposes only the intersection when a trigger lists two events", () => {
-    // jobReleased hands out job + releasedBy; jobHeld hands out job + heldBy.
+  it("rejects a trigger that lists more than one event", () => {
+    // A trigger with two events is now invalid — the variables it would expose
+    // depend on which event fired, so downstream nodes cannot be typed safely.
     const definition = define(
       [
         trigger(["production.jobReleased", "production.jobHeld"]),
@@ -248,23 +249,8 @@ describe("validateDefinition against the real catalog", () => {
       ],
       [edge("e1", "trigger", "out", "check")]
     );
-    expect(validateDefinition(definition, catalog)).toEqual([]);
-
-    const onlyOne = define(
-      [
-        trigger(["production.jobReleased", "production.jobHeld"]),
-        condition("check", [
-          {
-            left: ref("trigger", "releasedBy", ["email"]),
-            operator: "eq",
-            right: literal("string", "a@b.c")
-          }
-        ])
-      ],
-      [edge("e1", "trigger", "out", "check")]
-    );
-    expect(validateDefinition(onlyOne, catalog).map((i) => i.code)).toEqual([
-      "UNKNOWN_VARIABLE"
-    ]);
+    expect(
+      validateDefinition(definition, catalog).map((i) => i.code)
+    ).toContain("MULTIPLE_TRIGGER_EVENTS");
   });
 });
