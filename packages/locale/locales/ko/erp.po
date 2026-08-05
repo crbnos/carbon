@@ -12096,6 +12096,9 @@ msgstr "이 페이지에 머무르기"
 msgid "Step"
 msgstr "단계"
 
+msgid "Step added"
+msgstr ""
+
 msgid "Step Records"
 msgstr "단계 기록"
 

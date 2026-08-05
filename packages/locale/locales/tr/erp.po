@@ -12096,6 +12096,9 @@ msgstr "Bu sayfada kal"
 msgid "Step"
 msgstr "Adım"
 
+msgid "Step added"
+msgstr ""
+
 msgid "Step Records"
 msgstr "Adım Kayıtları"
 

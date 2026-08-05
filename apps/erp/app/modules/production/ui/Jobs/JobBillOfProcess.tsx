@@ -1110,6 +1110,7 @@ function StepsForm({
   const [type, setType] = useState<OperationStep["type"]>("Task");
   const [description, setDescription] = useState<JSONContent>({});
   const [numericControls, setNumericControls] = useState<string[]>([]);
+  const toastedStepId = useRef<string | null>(null);
 
   // Initialize sort order state based on existing steps
   const [sortOrder, setSortOrder] = useState<string[]>(() =>
@@ -1422,10 +1423,7 @@ function StepsForm({
   }
 
   return (
-    <Loading
-      className="flex flex-col gap-6"
-      isLoading={fetcher.state !== "idle"}
-    >
+    <div className="flex flex-col gap-6">
       {disclosure.isOpen ? (
         <div className="p-6 border rounded-lg bg-card mb-6">
           <ValidatedForm
@@ -1449,8 +1447,17 @@ function StepsForm({
               operationId
             }}
             onSubmit={() => {
-              setType("Value");
+              setType("Task");
               setDescription({});
+              setNumericControls([]);
+            }}
+            onAfterSubmit={() => {
+              const newStepId = (
+                fetcher.data as { id?: string | null } | undefined
+              )?.id;
+              if (!newStepId || newStepId === toastedStepId.current) return;
+              toastedStepId.current = newStepId;
+              toast.success(t`Step added`);
             }}
             className="w-full"
           >
@@ -1669,7 +1676,7 @@ function StepsForm({
           </Reorder.Group>
         </div>
       )}
-    </Loading>
+    </div>
   );
 }
 

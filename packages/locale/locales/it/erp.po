@@ -12096,6 +12096,9 @@ msgstr "Rimani su questa pagina"
 msgid "Step"
 msgstr "Passaggio"
 
+msgid "Step added"
+msgstr ""
+
 msgid "Step Records"
 msgstr "Registri dei Passaggi"
 

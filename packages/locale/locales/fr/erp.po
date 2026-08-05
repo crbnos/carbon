@@ -12096,6 +12096,9 @@ msgstr "Rester sur cette page"
 msgid "Step"
 msgstr "Étape"
 
+msgid "Step added"
+msgstr ""
+
 msgid "Step Records"
 msgstr "Enregistrements d'étapes"
 

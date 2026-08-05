@@ -12096,6 +12096,9 @@ msgstr "留在此页面"
 msgid "Step"
 msgstr "步骤"
 
+msgid "Step added"
+msgstr ""
+
 msgid "Step Records"
 msgstr "步骤记录"
 

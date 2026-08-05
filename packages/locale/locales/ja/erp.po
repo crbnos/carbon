@@ -12096,6 +12096,9 @@ msgstr "このページに留まる"
 msgid "Step"
 msgstr "ステップ"
 
+msgid "Step added"
+msgstr ""
+
 msgid "Step Records"
 msgstr "ステップレコード"
 
