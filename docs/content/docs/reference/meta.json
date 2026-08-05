@@ -61,6 +61,8 @@
     "onboarding",
     "sharing",
     "agent",
+    "workflows",
+    "workflow-runs",
     "notifications"
   ]
 }

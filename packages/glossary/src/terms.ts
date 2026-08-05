@@ -1970,6 +1970,26 @@ export const terms = {
   },
 
   // ── Workflows & cross-cutting record fields ─────────────────────────────
+  workflow: {
+    term: msg`Workflow`,
+    definition: msg`An automation you build on a canvas: one trigger, then steps that check conditions, look records up, and act — notifying someone, creating or updating a record, or calling an outside URL.`,
+    href: "/docs/reference/workflows"
+  },
+  "business-moment": {
+    term: msg`Business moment`,
+    definition: msg`A point in one of Carbon's own flows that a workflow can watch — a job released, a quote accepted, a shipment posted — as opposed to a raw field change; it hands the workflow the records involved by id.`,
+    href: "/docs/reference/workflows#what-starts-a-workflow"
+  },
+  "workflow-run": {
+    term: msg`Workflow run`,
+    definition: msg`One firing of a workflow, recorded step by step with the values each step used and produced, acting throughout with the permissions of the workflow's owner.`,
+    href: "/docs/reference/workflow-runs"
+  },
+  webhook: {
+    term: msg`Webhook`,
+    definition: msg`An https request Carbon sends to a system of yours when a workflow reaches that step, carrying whatever headers and body you configured.`,
+    href: "/docs/reference/workflows#calling-an-outside-url"
+  },
   assignee: {
     term: msg`Assignee`,
     definition: msg`The Carbon user currently responsible for working this record, set per record and independent of ownership fields like Account Manager or Sales Person.`
@@ -1988,7 +2008,7 @@ export const terms = {
   },
   "workflow-webhook-method": {
     term: msg`Webhook Method`,
-    definition: msg`Which kind of request to send — GET reads something, POST creates, PUT and PATCH update, DELETE removes — defaulting to POST when left empty.`
+    definition: msg`Which kind of request to send: GET reads something, POST creates, PUT and PATCH update, DELETE removes. A new step starts at GET, and only POST, PUT, and PATCH carry a body.`
   },
   "workflow-webhook-headers": {
     term: msg`Webhook Headers`,

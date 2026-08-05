@@ -419,6 +419,9 @@ msgstr "품목(Part)은 구매하거나 제조할 수 있는 특정 아이템에
 msgid "A physical pull signal — a printed card or QR code living with the stock — that raises a purchase order or a job the moment it's scanned to refill a bin."
 msgstr "재고와 함께 있는 인쇄된 카드 또는 QR 코드인 물리적 풀 신호로서, 스캔된 순간 구매 주문 또는 작업을 발생시켜 빈을 보충합니다."
 
+msgid "A point in one of Carbon's own flows that a workflow can watch — a job released, a quote accepted, a shipment posted — as opposed to a raw field change; it hands the workflow the records involved by id."
+msgstr ""
+
 msgid "A posted accounting entry: a header plus balanced debit and credit lines against GL accounts."
 msgstr "전기된 회계 전표로, 헤더와 총계정원장 계정에 대한 차변/대변 라인으로 구성됩니다."
 
@@ -1267,8 +1270,14 @@ msgstr "부적합 사항에 대한 승인 요구 사항으로서, 검토자(씨�
 msgid "An asset's acquisition cost minus accumulated depreciation — what it's still worth on the books, and the figure it's disposed at."
 msgstr "자산의 취득원가에서 감가상각누계액을 뺀 값 — 장부상 남은 가치이며 처분 시 사용되는 금액입니다."
 
+msgid "An automation you build on a canvas: one trigger, then steps that check conditions, look records up, and act — notifying someone, creating or updating a record, or calling an outside URL."
+msgstr ""
+
 msgid "An engineering change: the affected items whose methods are revised on a draft and released together, superseding the versions they replace."
 msgstr "엔지니어링 변경: 초안에서 방법이 수정되고 함께 릴리스되는 영향받는 항목으로, 이들이 대체하는 버전을 무효화합니다."
+
+msgid "An https request Carbon sends to a system of yours when a workflow reaches that step, carrying whatever headers and body you configured."
+msgstr ""
 
 msgid "An integration or a custom change — the small slice that's actually custom."
 msgstr "연동이나 커스텀 변경 — 실제로 커스텀인 작은 부분."
@@ -2400,6 +2409,9 @@ msgstr "일괄 가져오기"
 
 msgid "Bulk Jobs"
 msgstr "일괄 작업"
+
+msgid "Business moment"
+msgstr ""
 
 msgid "Business moments"
 msgstr ""
@@ -6479,6 +6491,9 @@ msgstr "회계연도"
 msgid "Fit view"
 msgstr ""
 
+msgid "Fix the problems with this workflow before testing it"
+msgstr ""
+
 msgid "Fixed"
 msgstr "고정"
 
@@ -9482,6 +9497,9 @@ msgstr "견적 불가 사유"
 msgid "No receivables"
 msgstr "매출채권이 없습니다"
 
+msgid "No records found"
+msgstr ""
+
 msgid "No reference image"
 msgstr "참조 이미지 없음"
 
@@ -9761,6 +9779,9 @@ msgstr "구매한 재고 및 부품(구매품)의 현재 재고 가치"
 
 msgid "On-time delivery"
 msgstr "정시 납품"
+
+msgid "One firing of a workflow, recorded step by step with the values each step used and produced, acting throughout with the permissions of the workflow's owner."
+msgstr ""
 
 msgid "One serial unit or one batch that Carbon follows individually, carrying its own status and attributes such as an expiry date."
 msgstr "Carbon이 개별적으로 추적하는 하나의 일련번호 유닛 또는 배치로, 유효기한과 같은 자체 상태와 속성을 가집니다."
@@ -10678,6 +10699,10 @@ msgstr "이전 페이지"
 
 msgid "Previous step"
 msgstr "이전 단계"
+
+#. placeholder {0}: humanizeField(watchedField)
+msgid "Previous value of {0}"
+msgstr ""
 
 msgid "Price break actions"
 msgstr "가격 구간 작업"
@@ -11997,6 +12022,9 @@ msgstr "월마감 및 표준 조정 작업을 수행하세요"
 msgid "Run payment batches and track aging"
 msgstr "결제 배치를 실행하고 연체 기간을 추적하세요"
 
+msgid "Run test"
+msgstr ""
+
 msgid "Run Test"
 msgstr "테스트 실행"
 
@@ -12006,6 +12034,9 @@ msgstr "인수 체크리스트를 통과할 때까지 진행하세요"
 msgid "Run the floor on tablets: clock labor, report progress, see instructions"
 msgstr "태블릿으로 현장을 운영하세요: 근무 시간 기록, 진행 상황 보고, 작업 지시 확인"
 
+msgid "Run this workflow now?"
+msgstr ""
+
 msgid "Running"
 msgstr ""
 
@@ -12014,6 +12045,9 @@ msgstr "매주 공급과 수요를 반영해 갱신되는 재고 — 그 라인�
 
 msgid "Running Total"
 msgstr "누계"
+
+msgid "Running…"
+msgstr ""
 
 msgid "Runs"
 msgstr ""
@@ -12345,6 +12379,9 @@ msgstr "부품 검색..."
 
 msgid "Search processes..."
 msgstr "공정 검색..."
+
+msgid "Search records…"
+msgstr ""
 
 msgid "Search related items..."
 msgstr "관련 품목 검색..."
@@ -13790,6 +13827,15 @@ msgstr "이용약관"
 msgid "Test"
 msgstr "테스트"
 
+msgid "Test run"
+msgstr ""
+
+msgid "Test run — results are not saved to the Runs page"
+msgstr ""
+
+msgid "Test runs are not saved. Close this panel and the result is gone."
+msgstr ""
+
 msgid "Test Value"
 msgstr "테스트 값"
 
@@ -14338,6 +14384,9 @@ msgstr "작업 마감 시 남은 재공품(WIP)으로, 생산 차이 계정으�
 msgid "The response from Onshape was missing required parameters. Try connecting again."
 msgstr "Onshape의 응답에 필수 매개변수가 없습니다. 다시 연결해 보세요."
 
+msgid "The result will not appear on the Runs page."
+msgstr ""
+
 msgid "The revision number of the part"
 msgstr "품목의 리비전 번호"
 
@@ -14646,6 +14695,9 @@ msgstr "이 개정본이 릴리스되었습니다(프로덕션). 변경 사항�
 
 msgid "This revision is released (Production). Open a change notice to modify it."
 msgstr "이 개정본이 릴리스되었습니다(프로덕션). 수정하려면 변경 공지를 열어주십시오."
+
+msgid "This runs the workflow for real. It will create records, send notifications and call any webhooks exactly as a live run would. This cannot be undone."
+msgstr ""
 
 msgid "This sales order has associated jobs. Choose what to do with them."
 msgstr "이 판매주문에는 연결된 작업이 있습니다. 처리 방법을 선택하세요."
@@ -15943,6 +15995,9 @@ msgstr "이 차원이 허용 값을 가져오는 소스입니다(사용자 정�
 msgid "What the due-date countdown starts from (invoice date, end of month, etc.)."
 msgstr "만기일 카운트다운이 시작되는 기준입니다(인보이스 날짜, 월말 등)."
 
+msgid "What this field held before the change. Leave blank for nothing."
+msgstr ""
+
 msgid "What this receipt is fulfilling — a purchase order, a return, an inbound transfer, or a manual receipt with no parent."
 msgstr "이 입고가 이행하는 대상입니다 — 구매주문, 반품, 입고 이동, 또는 상위 항목이 없는 수동 입고 중 하나입니다."
 
@@ -16141,7 +16196,7 @@ msgstr "선택한 권한을 각 사용자가 이미 가진 권한에 추가할�
 msgid "Which document drives each inspection flow for this item."
 msgstr "이 항목에 대한 각 검사 흐름을 운영하는 문서입니다."
 
-msgid "Which kind of request to send — GET reads something, POST creates, PUT and PATCH update, DELETE removes — defaulting to POST when left empty."
+msgid "Which kind of request to send: GET reads something, POST creates, PUT and PATCH update, DELETE removes. A new step starts at GET, and only POST, PUT, and PATCH carry a body."
 msgstr ""
 
 msgid "Which manufacturing event starts the shelf-life clock — for example, fill, seal, or final QC."
@@ -16294,6 +16349,9 @@ msgid "Workflow"
 msgstr "워크플로"
 
 msgid "Workflow name"
+msgstr ""
+
+msgid "Workflow run"
 msgstr ""
 
 msgid "Workflows"

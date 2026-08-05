@@ -419,6 +419,9 @@ msgstr "Una parte contiene le informazioni su un articolo specifico che può ess
 msgid "A physical pull signal — a printed card or QR code living with the stock — that raises a purchase order or a job the moment it's scanned to refill a bin."
 msgstr "Un segnale di prelievo fisico, una carta stampata o un codice QR che rimane con lo stock, che genera un ordine d'acquisto o un lavoro nel momento in cui viene scansionato per riempire un contenitore."
 
+msgid "A point in one of Carbon's own flows that a workflow can watch — a job released, a quote accepted, a shipment posted — as opposed to a raw field change; it hands the workflow the records involved by id."
+msgstr ""
+
 msgid "A posted accounting entry: a header plus balanced debit and credit lines against GL accounts."
 msgstr "Una voce contabile registrata: un'intestazione più righe di debito e credito bilanciate contro i conti GL."
 
@@ -1267,8 +1270,14 @@ msgstr "Un requisito di approvazione su una non conformità i cui revisori (seed
 msgid "An asset's acquisition cost minus accumulated depreciation — what it's still worth on the books, and the figure it's disposed at."
 msgstr "Il costo di acquisizione di un asset meno l'ammortamento cumulato — quello che vale ancora sui libri e l'importo a cui viene ceduto."
 
+msgid "An automation you build on a canvas: one trigger, then steps that check conditions, look records up, and act — notifying someone, creating or updating a record, or calling an outside URL."
+msgstr ""
+
 msgid "An engineering change: the affected items whose methods are revised on a draft and released together, superseding the versions they replace."
 msgstr "Una modifica ingegneristica: gli elementi interessati i cui metodi vengono rivisti in una bozza e rilasciati insieme, sostituendo le versioni che sostituiscono."
+
+msgid "An https request Carbon sends to a system of yours when a workflow reaches that step, carrying whatever headers and body you configured."
+msgstr ""
 
 msgid "An integration or a custom change — the small slice that's actually custom."
 msgstr "Un'integrazione o una modifica personalizzata — la piccola parte che è effettivamente personalizzata."
@@ -2400,6 +2409,9 @@ msgstr "Importazione in blocco"
 
 msgid "Bulk Jobs"
 msgstr "Lavori in Blocco"
+
+msgid "Business moment"
+msgstr ""
 
 msgid "Business moments"
 msgstr ""
@@ -6479,6 +6491,9 @@ msgstr "Anni Fiscali"
 msgid "Fit view"
 msgstr ""
 
+msgid "Fix the problems with this workflow before testing it"
+msgstr ""
+
 msgid "Fixed"
 msgstr "Fisso"
 
@@ -9482,6 +9497,9 @@ msgstr "Nessun motivo di mancata offerta"
 msgid "No receivables"
 msgstr "Nessun credito"
 
+msgid "No records found"
+msgstr ""
+
 msgid "No reference image"
 msgstr "Nessuna immagine di riferimento"
 
@@ -9761,6 +9779,9 @@ msgstr "Valore disponibile delle scorte acquistate e dei componenti (articoli Bu
 
 msgid "On-time delivery"
 msgstr "Consegna puntuale"
+
+msgid "One firing of a workflow, recorded step by step with the values each step used and produced, acting throughout with the permissions of the workflow's owner."
+msgstr ""
 
 msgid "One serial unit or one batch that Carbon follows individually, carrying its own status and attributes such as an expiry date."
 msgstr "Un'unità seriale o un lotto che Carbon segue individualmente, portando il suo stato e gli attributi propri come una data di scadenza."
@@ -10678,6 +10699,10 @@ msgstr "Pagina precedente"
 
 msgid "Previous step"
 msgstr "Passaggio precedente"
+
+#. placeholder {0}: humanizeField(watchedField)
+msgid "Previous value of {0}"
+msgstr ""
 
 msgid "Price break actions"
 msgstr "Azioni di scaglione di prezzo"
@@ -11997,6 +12022,9 @@ msgstr "Esegui la chiusura di fine mese e le riconciliazioni standard"
 msgid "Run payment batches and track aging"
 msgstr "Esegui batch di pagamento e traccia l'invecchiamento"
 
+msgid "Run test"
+msgstr ""
+
 msgid "Run Test"
 msgstr "Esegui Test"
 
@@ -12006,6 +12034,9 @@ msgstr "Esegui la checklist di accettazione fino al superamento"
 msgid "Run the floor on tablets: clock labor, report progress, see instructions"
 msgstr "Gestisci il reparto su tablet: registra il lavoro, segnala i progressi, visualizza le istruzioni"
 
+msgid "Run this workflow now?"
+msgstr ""
+
 msgid "Running"
 msgstr ""
 
@@ -12014,6 +12045,9 @@ msgstr "Inventario aggiornato dopo la domanda e l'offerta di ogni settimana — 
 
 msgid "Running Total"
 msgstr "Totale Progressivo"
+
+msgid "Running…"
+msgstr ""
 
 msgid "Runs"
 msgstr ""
@@ -12345,6 +12379,9 @@ msgstr "Cerca parti…"
 
 msgid "Search processes..."
 msgstr "Cerca processi..."
+
+msgid "Search records…"
+msgstr ""
 
 msgid "Search related items..."
 msgstr "Cerca elementi correlati..."
@@ -13790,6 +13827,15 @@ msgstr "Termini di Servizio"
 msgid "Test"
 msgstr "Prova"
 
+msgid "Test run"
+msgstr ""
+
+msgid "Test run — results are not saved to the Runs page"
+msgstr ""
+
+msgid "Test runs are not saved. Close this panel and the result is gone."
+msgstr ""
+
 msgid "Test Value"
 msgstr "Valore di Test"
 
@@ -14338,6 +14384,9 @@ msgstr "Il WIP residuo che un lavoro ha lasciato alla chiusura, spazzato via in 
 msgid "The response from Onshape was missing required parameters. Try connecting again."
 msgstr "Nella risposta di Onshape mancavano i parametri richiesti. Riprova a connetterti."
 
+msgid "The result will not appear on the Runs page."
+msgstr ""
+
 msgid "The revision number of the part"
 msgstr "Il numero di revisione della parte"
 
@@ -14646,6 +14695,9 @@ msgstr "Questa revisione è rilasciata (Produzione). I cambiamenti dovrebbero no
 
 msgid "This revision is released (Production). Open a change notice to modify it."
 msgstr "Questa revisione è rilasciata (Produzione). Apri un avviso di modifica per modificarla."
+
+msgid "This runs the workflow for real. It will create records, send notifications and call any webhooks exactly as a live run would. This cannot be undone."
+msgstr ""
 
 msgid "This sales order has associated jobs. Choose what to do with them."
 msgstr "Questo ordine di vendita ha processi associati. Scegli cosa fare con loro."
@@ -15943,6 +15995,9 @@ msgstr "Da quale fonte questa dimensione attinge i suoi valori consentiti (elenc
 msgid "What the due-date countdown starts from (invoice date, end of month, etc.)."
 msgstr "Da cosa inizia il conto alla rovescia della data di scadenza (data della fattura, fine del mese, ecc.)."
 
+msgid "What this field held before the change. Leave blank for nothing."
+msgstr ""
+
 msgid "What this receipt is fulfilling — a purchase order, a return, an inbound transfer, or a manual receipt with no parent."
 msgstr "Ciò che questo ricevimento sta soddisfacendo — un ordine di acquisto, un reso, un trasferimento in entrata o una ricevuta manuale senza padre."
 
@@ -16141,7 +16196,7 @@ msgstr "Se le autorizzazioni selezionate vengono Aggiunte sopra ciò che ogni ut
 msgid "Which document drives each inspection flow for this item."
 msgstr "Quale documento gestisce ogni flusso di ispezione per questo articolo."
 
-msgid "Which kind of request to send — GET reads something, POST creates, PUT and PATCH update, DELETE removes — defaulting to POST when left empty."
+msgid "Which kind of request to send: GET reads something, POST creates, PUT and PATCH update, DELETE removes. A new step starts at GET, and only POST, PUT, and PATCH carry a body."
 msgstr ""
 
 msgid "Which manufacturing event starts the shelf-life clock — for example, fill, seal, or final QC."
@@ -16294,6 +16349,9 @@ msgid "Workflow"
 msgstr "Flusso di lavoro"
 
 msgid "Workflow name"
+msgstr ""
+
+msgid "Workflow run"
 msgstr ""
 
 msgid "Workflows"

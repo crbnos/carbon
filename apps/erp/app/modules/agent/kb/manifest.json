@@ -1498,6 +1498,34 @@
       ]
     },
     {
+      "slug": "docs/reference/workflow-runs",
+      "title": "Workflow runs",
+      "description": "Every firing of a workflow is recorded step by step. What the run list and run detail show, what each status means, how repeating steps are summarised, and how long history is kept.",
+      "keywords": ["workflow", "runs", "docs", "reference"],
+      "headings": [
+        "The run list",
+        "Inside a run",
+        "Run statuses",
+        "Steps that repeat",
+        "Chains and loop protection",
+        "How long history is kept"
+      ]
+    },
+    {
+      "slug": "docs/reference/workflows",
+      "title": "Workflows",
+      "description": "Build an automation on a canvas — one trigger, conditions, and steps that notify people, update records, or call an outside service. Triggers, values, publishing, and versions.",
+      "keywords": ["workflows", "docs", "reference"],
+      "headings": [
+        "What starts a workflow",
+        "The steps you can add",
+        "Filling in a step",
+        "Calling an outside URL",
+        "Saving, publishing, and versions",
+        "Who can do what"
+      ]
+    },
+    {
       "slug": "guides/build",
       "title": "Inside the build",
       "description": "How each robot part is made or bought.",

@@ -419,6 +419,9 @@ msgstr "Bir parça, satın alınabilir veya üretilebilir belirli bir öğe hakk
 msgid "A physical pull signal — a printed card or QR code living with the stock — that raises a purchase order or a job the moment it's scanned to refill a bin."
 msgstr "Stokla yaşayan fiziksel bir çekme sinyali — basılı bir kart veya QR kodu — bir bin'i doldurmak için tarandığı anda bir satın alma siparişi veya iş oluşturur."
 
+msgid "A point in one of Carbon's own flows that a workflow can watch — a job released, a quote accepted, a shipment posted — as opposed to a raw field change; it hands the workflow the records involved by id."
+msgstr ""
+
 msgid "A posted accounting entry: a header plus balanced debit and credit lines against GL accounts."
 msgstr "Deftere geçirilen muhasebe girişi: GL hesaplarına karşı dengeli debit ve kredi satırları artı başlık."
 
@@ -1267,8 +1270,14 @@ msgstr "Sorun kapanmadan önce gözden geçirenler (Mühendislik ve Kalite) onay
 msgid "An asset's acquisition cost minus accumulated depreciation — what it's still worth on the books, and the figure it's disposed at."
 msgstr "Bir varlığın satın alma maliyeti eksi birikmiş amortisman — kitaplarda halen değeri olan ve imha edildiği tutar."
 
+msgid "An automation you build on a canvas: one trigger, then steps that check conditions, look records up, and act — notifying someone, creating or updating a record, or calling an outside URL."
+msgstr ""
+
 msgid "An engineering change: the affected items whose methods are revised on a draft and released together, superseding the versions they replace."
 msgstr "Bir mühendislik değişikliği: yöntemleri taslak üzerinde revize edilen ve birlikte yayınlanan, yerini aldıkları sürümlerin yerine geçen etkilenen öğeler."
+
+msgid "An https request Carbon sends to a system of yours when a workflow reaches that step, carrying whatever headers and body you configured."
+msgstr ""
 
 msgid "An integration or a custom change — the small slice that's actually custom."
 msgstr "Bir entegrasyon veya özel bir değişiklik — aslında özel olan küçük dilim."
@@ -2400,6 +2409,9 @@ msgstr "Toplu İçe Aktarma"
 
 msgid "Bulk Jobs"
 msgstr "Toplu İşler"
+
+msgid "Business moment"
+msgstr ""
 
 msgid "Business moments"
 msgstr ""
@@ -6479,6 +6491,9 @@ msgstr "Mali Yıllar"
 msgid "Fit view"
 msgstr ""
 
+msgid "Fix the problems with this workflow before testing it"
+msgstr ""
+
 msgid "Fixed"
 msgstr "Sabit"
 
@@ -9482,6 +9497,9 @@ msgstr "Teklif Nedeni Yok"
 msgid "No receivables"
 msgstr "Alacak yok"
 
+msgid "No records found"
+msgstr ""
+
 msgid "No reference image"
 msgstr "Referans resim yok"
 
@@ -9761,6 +9779,9 @@ msgstr "Satın alınan stok ve bileşenlerin (Satın alma ürünleri) eldeki de�
 
 msgid "On-time delivery"
 msgstr "Zamanında teslimat"
+
+msgid "One firing of a workflow, recorded step by step with the values each step used and produced, acting throughout with the permissions of the workflow's owner."
+msgstr ""
 
 msgid "One serial unit or one batch that Carbon follows individually, carrying its own status and attributes such as an expiry date."
 msgstr "Carbon'un bireysel olarak takip ettiği bir seri birim veya bir batch, sona erme tarihi gibi kendi durumu ve öznitelikleri taşıyan."
@@ -10678,6 +10699,10 @@ msgstr "Önceki sayfa"
 
 msgid "Previous step"
 msgstr "Önceki adım"
+
+#. placeholder {0}: humanizeField(watchedField)
+msgid "Previous value of {0}"
+msgstr ""
 
 msgid "Price break actions"
 msgstr "Fiyat kırılımı işlemleri"
@@ -11997,6 +12022,9 @@ msgstr "Ay sonu kapanışını ve standart mutabakatları çalıştırın"
 msgid "Run payment batches and track aging"
 msgstr "Ödeme partilerini çalıştırın ve yaşlandırmayı izleyin"
 
+msgid "Run test"
+msgstr ""
+
 msgid "Run Test"
 msgstr "Testi Çalıştır"
 
@@ -12006,6 +12034,9 @@ msgstr "Kabul kontrol listesini başarıyla tamamlayın"
 msgid "Run the floor on tablets: clock labor, report progress, see instructions"
 msgstr "Tabletlerde üretim katını yönetin: işçi saatini kaydedin, ilerlemeyi bildirin, talimatları görüntüleyin"
 
+msgid "Run this workflow now?"
+msgstr ""
+
 msgid "Running"
 msgstr ""
 
@@ -12014,6 +12045,9 @@ msgstr "Her haftalık arz ve talep sonrası çalışan envanter — satır."
 
 msgid "Running Total"
 msgstr "Kümülatif Toplam"
+
+msgid "Running…"
+msgstr ""
 
 msgid "Runs"
 msgstr ""
@@ -12345,6 +12379,9 @@ msgstr "Parça ara..."
 
 msgid "Search processes..."
 msgstr "Süreçleri ara..."
+
+msgid "Search records…"
+msgstr ""
 
 msgid "Search related items..."
 msgstr "İlgili öğeleri ara..."
@@ -13790,6 +13827,15 @@ msgstr "Hizmet Şartları"
 msgid "Test"
 msgstr "Test"
 
+msgid "Test run"
+msgstr ""
+
+msgid "Test run — results are not saved to the Runs page"
+msgstr ""
+
+msgid "Test runs are not saved. Close this panel and the result is gone."
+msgstr ""
+
 msgid "Test Value"
 msgstr "Test Değeri"
 
@@ -14338,6 +14384,9 @@ msgstr "Bir işin kapatmada bıraktığı artık WIP, bir üretim varyans hesab�
 msgid "The response from Onshape was missing required parameters. Try connecting again."
 msgstr "Onshape'ten gelen yanıtta gerekli parametreler eksikti. Yeniden bağlanmayı deneyin."
 
+msgid "The result will not appear on the Runs page."
+msgstr ""
+
 msgid "The revision number of the part"
 msgstr "Parçanın revizyon numarası"
 
@@ -14646,6 +14695,9 @@ msgstr "Bu revizyon yayınlanmıştır (Üretim). Değişiklikler normalde bir d
 
 msgid "This revision is released (Production). Open a change notice to modify it."
 msgstr "Bu revizyon yayınlanmıştır (Üretim). Bunu değiştirmek için bir değişiklik bildirisi açın."
+
+msgid "This runs the workflow for real. It will create records, send notifications and call any webhooks exactly as a live run would. This cannot be undone."
+msgstr ""
 
 msgid "This sales order has associated jobs. Choose what to do with them."
 msgstr "Bu satış siparişi ilgili işlere sahiptir. Onlarla ne yapılacağına karar verin."
@@ -15943,6 +15995,9 @@ msgstr "Bu boyut izin verilen değerlerini hangi kaynaktan alır (özel liste ve
 msgid "What the due-date countdown starts from (invoice date, end of month, etc.)."
 msgstr "Vade tarihinin geri sayımı nereden başlıyor (fatura tarihi, ay sonu, vb.)."
 
+msgid "What this field held before the change. Leave blank for nothing."
+msgstr ""
+
 msgid "What this receipt is fulfilling — a purchase order, a return, an inbound transfer, or a manual receipt with no parent."
 msgstr "Bu makbuzun yerine getirdiği — satın alma siparişi, geri dönüş, gelen transfer veya ebeveynleri olmayan manuel makbuz."
 
@@ -16141,7 +16196,7 @@ msgstr "Seçilen izinlerin her kullanıcının zaten sahip olduğu şeylerin üs
 msgid "Which document drives each inspection flow for this item."
 msgstr "Bu öğe için her inceleme akışını hangi belge yönlendirir."
 
-msgid "Which kind of request to send — GET reads something, POST creates, PUT and PATCH update, DELETE removes — defaulting to POST when left empty."
+msgid "Which kind of request to send: GET reads something, POST creates, PUT and PATCH update, DELETE removes. A new step starts at GET, and only POST, PUT, and PATCH carry a body."
 msgstr ""
 
 msgid "Which manufacturing event starts the shelf-life clock — for example, fill, seal, or final QC."
@@ -16294,6 +16349,9 @@ msgid "Workflow"
 msgstr "İş Akışı"
 
 msgid "Workflow name"
+msgstr ""
+
+msgid "Workflow run"
 msgstr ""
 
 msgid "Workflows"

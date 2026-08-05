@@ -20,12 +20,13 @@ falls into one of three shapes:
   - **Assignments**: Someone is put on a record: a job, job operation, sales order, purchase order, RFQ, purchase invoice, supplier quote, issue, risk, procedure, picking list, stock transfer, maintenance dispatch, or training. The assignee is the recipient.
   - **State changes & responses**: A record's state moved in a way someone should know about: an approval was **requested**, **approved**, or **rejected**; a job **completed**; a change notice entered a new stage; a quote **expired**; a customer or supplier responded to a digital quote or supplier quote.
   - **Expirations & reminders**: Time-driven, raised by scheduled jobs rather than a user action: a **gauge calibration expired**, a **maintenance dispatch** was auto-created for a work center, or a weekly **training reminder** rolls up a person's outstanding trainings.
+  - **Workflow**: A `docs/reference/workflows` reached a **"Notify someone"** step. You write the subject and message yourself, and address it to a user or a group; it lands under the **General** topic with a **View details** button pointing at whichever record the step named.
 
 The full set of event types lives in `NotificationEvent` (`packages/notifications/src/index.ts:7`). Adding a
-notification anywhere in Carbon means dispatching one of these — there's no free-form "send a message"
-path.
+notification anywhere in Carbon means dispatching one of these — the workflow step is the only path that
+lets you compose the wording yourself.
 
-Notifications are informational, not a workflow. Marking one read doesn't change any record, and there's no
+Notifications are informational, never an approval step. Marking one read doesn't change any record, and there's no
 "acknowledge" or "accept" on a notification itself. The action lives on the underlying document (approve the
 PO, complete the job) — the notification just points you there.
 
@@ -48,7 +49,7 @@ channel opt-outs. There are twelve, and the mapping is fixed in code
 | Training | Training and procedure assignments, resource training, training reminder |
 | Suggestion | Suggestion response |
 | Items | Change notice started / in implementation / complete |
-| General | Anything without a specific bucket |
+| General | Workflow notifications, and anything without a specific bucket |
 
 The topic string is **stored** on every notification (`notification.topic`). It's what a user's opt-out row
 matches on, so a topic is not just a label — it's the grouping key for muting. Eleven of the twelve topics are

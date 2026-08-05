@@ -221,6 +221,16 @@ export const GAUGE_CALIBRATION_STATUS_COLOR_MAP = {
   "Out-of-Calibration": "red"
 } as const satisfies Record<string, StatusColor>;
 
+/* Step rows use the same names, minus Queued and Blocked, so one map covers both. */
+export const WORKFLOW_RUN_STATUS_COLOR_MAP = {
+  Queued: "gray",
+  Running: "blue",
+  Succeeded: "green",
+  Failed: "red",
+  Blocked: "orange",
+  Skipped: "purple"
+} as const satisfies Record<string, StatusColor>;
+
 export const GAUGE_ROLE_COLOR_MAP = {
   Master: "blue",
   Standard: "gray"
@@ -239,7 +249,8 @@ export const statusColorMaps = {
   maintenanceDispatch: MAINTENANCE_DISPATCH_STATUS_COLOR_MAP,
   fixedAsset: FIXED_ASSET_STATUS_COLOR_MAP,
   trackedEntity: TRACKED_ENTITY_STATUS_COLOR_MAP,
-  supplierQuote: SUPPLIER_QUOTE_STATUS_COLOR_MAP
+  supplierQuote: SUPPLIER_QUOTE_STATUS_COLOR_MAP,
+  workflowRun: WORKFLOW_RUN_STATUS_COLOR_MAP
 } as const;
 
 export type StatusEntity = keyof typeof statusColorMaps;

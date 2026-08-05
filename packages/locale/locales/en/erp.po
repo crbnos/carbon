@@ -419,6 +419,9 @@ msgstr "A part contains the information about a specific item that can be purcha
 msgid "A physical pull signal — a printed card or QR code living with the stock — that raises a purchase order or a job the moment it's scanned to refill a bin."
 msgstr "A physical pull signal — a printed card or QR code living with the stock — that raises a purchase order or a job the moment it's scanned to refill a bin."
 
+msgid "A point in one of Carbon's own flows that a workflow can watch — a job released, a quote accepted, a shipment posted — as opposed to a raw field change; it hands the workflow the records involved by id."
+msgstr "A point in one of Carbon's own flows that a workflow can watch — a job released, a quote accepted, a shipment posted — as opposed to a raw field change; it hands the workflow the records involved by id."
+
 msgid "A posted accounting entry: a header plus balanced debit and credit lines against GL accounts."
 msgstr "A posted accounting entry: a header plus balanced debit and credit lines against GL accounts."
 
@@ -1267,8 +1270,14 @@ msgstr "An approval requirement on a non-conformance whose reviewers (seeded Eng
 msgid "An asset's acquisition cost minus accumulated depreciation — what it's still worth on the books, and the figure it's disposed at."
 msgstr "An asset's acquisition cost minus accumulated depreciation — what it's still worth on the books, and the figure it's disposed at."
 
+msgid "An automation you build on a canvas: one trigger, then steps that check conditions, look records up, and act — notifying someone, creating or updating a record, or calling an outside URL."
+msgstr "An automation you build on a canvas: one trigger, then steps that check conditions, look records up, and act — notifying someone, creating or updating a record, or calling an outside URL."
+
 msgid "An engineering change: the affected items whose methods are revised on a draft and released together, superseding the versions they replace."
 msgstr "An engineering change: the affected items whose methods are revised on a draft and released together, superseding the versions they replace."
+
+msgid "An https request Carbon sends to a system of yours when a workflow reaches that step, carrying whatever headers and body you configured."
+msgstr "An https request Carbon sends to a system of yours when a workflow reaches that step, carrying whatever headers and body you configured."
 
 msgid "An integration or a custom change — the small slice that's actually custom."
 msgstr "An integration or a custom change — the small slice that's actually custom."
@@ -2400,6 +2409,9 @@ msgstr "Bulk Import"
 
 msgid "Bulk Jobs"
 msgstr "Bulk Jobs"
+
+msgid "Business moment"
+msgstr "Business moment"
 
 msgid "Business moments"
 msgstr "Business moments"
@@ -6479,6 +6491,9 @@ msgstr "Fiscal Years"
 msgid "Fit view"
 msgstr "Fit view"
 
+msgid "Fix the problems with this workflow before testing it"
+msgstr "Fix the problems with this workflow before testing it"
+
 msgid "Fixed"
 msgstr "Fixed"
 
@@ -9482,6 +9497,9 @@ msgstr "No Quote Reasons"
 msgid "No receivables"
 msgstr "No receivables"
 
+msgid "No records found"
+msgstr "No records found"
+
 msgid "No reference image"
 msgstr "No reference image"
 
@@ -9761,6 +9779,9 @@ msgstr "On-hand value of purchased stock and components (Buy items)"
 
 msgid "On-time delivery"
 msgstr "On-time delivery"
+
+msgid "One firing of a workflow, recorded step by step with the values each step used and produced, acting throughout with the permissions of the workflow's owner."
+msgstr "One firing of a workflow, recorded step by step with the values each step used and produced, acting throughout with the permissions of the workflow's owner."
 
 msgid "One serial unit or one batch that Carbon follows individually, carrying its own status and attributes such as an expiry date."
 msgstr "One serial unit or one batch that Carbon follows individually, carrying its own status and attributes such as an expiry date."
@@ -10678,6 +10699,10 @@ msgstr "Previous page"
 
 msgid "Previous step"
 msgstr "Previous step"
+
+#. placeholder {0}: humanizeField(watchedField)
+msgid "Previous value of {0}"
+msgstr "Previous value of {0}"
 
 msgid "Price break actions"
 msgstr "Price break actions"
@@ -11997,6 +12022,9 @@ msgstr "Run month-end close and standard reconciliations"
 msgid "Run payment batches and track aging"
 msgstr "Run payment batches and track aging"
 
+msgid "Run test"
+msgstr "Run test"
+
 msgid "Run Test"
 msgstr "Run Test"
 
@@ -12006,6 +12034,9 @@ msgstr "Run the acceptance checklist to a pass"
 msgid "Run the floor on tablets: clock labor, report progress, see instructions"
 msgstr "Run the floor on tablets: clock labor, report progress, see instructions"
 
+msgid "Run this workflow now?"
+msgstr "Run this workflow now?"
+
 msgid "Running"
 msgstr "Running"
 
@@ -12014,6 +12045,9 @@ msgstr "Running inventory after each week's supply and demand — the line."
 
 msgid "Running Total"
 msgstr "Running Total"
+
+msgid "Running…"
+msgstr "Running…"
 
 msgid "Runs"
 msgstr "Runs"
@@ -12345,6 +12379,9 @@ msgstr "Search parts..."
 
 msgid "Search processes..."
 msgstr "Search processes..."
+
+msgid "Search records…"
+msgstr "Search records…"
 
 msgid "Search related items..."
 msgstr "Search related items..."
@@ -13790,6 +13827,15 @@ msgstr "Terms of Service"
 msgid "Test"
 msgstr "Test"
 
+msgid "Test run"
+msgstr "Test run"
+
+msgid "Test run — results are not saved to the Runs page"
+msgstr "Test run — results are not saved to the Runs page"
+
+msgid "Test runs are not saved. Close this panel and the result is gone."
+msgstr "Test runs are not saved. Close this panel and the result is gone."
+
 msgid "Test Value"
 msgstr "Test Value"
 
@@ -14338,6 +14384,9 @@ msgstr "The residual WIP a job has left at close, swept to a Production Variance
 msgid "The response from Onshape was missing required parameters. Try connecting again."
 msgstr "The response from Onshape was missing required parameters. Try connecting again."
 
+msgid "The result will not appear on the Runs page."
+msgstr "The result will not appear on the Runs page."
+
 msgid "The revision number of the part"
 msgstr "The revision number of the part"
 
@@ -14646,6 +14695,9 @@ msgstr "This revision is released (Production). Changes should normally flow thr
 
 msgid "This revision is released (Production). Open a change notice to modify it."
 msgstr "This revision is released (Production). Open a change notice to modify it."
+
+msgid "This runs the workflow for real. It will create records, send notifications and call any webhooks exactly as a live run would. This cannot be undone."
+msgstr "This runs the workflow for real. It will create records, send notifications and call any webhooks exactly as a live run would. This cannot be undone."
 
 msgid "This sales order has associated jobs. Choose what to do with them."
 msgstr "This sales order has associated jobs. Choose what to do with them."
@@ -15943,6 +15995,9 @@ msgstr "What source this dimension pulls its allowed values from (custom list or
 msgid "What the due-date countdown starts from (invoice date, end of month, etc.)."
 msgstr "What the due-date countdown starts from (invoice date, end of month, etc.)."
 
+msgid "What this field held before the change. Leave blank for nothing."
+msgstr "What this field held before the change. Leave blank for nothing."
+
 msgid "What this receipt is fulfilling — a purchase order, a return, an inbound transfer, or a manual receipt with no parent."
 msgstr "What this receipt is fulfilling — a purchase order, a return, an inbound transfer, or a manual receipt with no parent."
 
@@ -16141,8 +16196,8 @@ msgstr "Whether to Add the selected permissions on top of what each user already
 msgid "Which document drives each inspection flow for this item."
 msgstr "Which document drives each inspection flow for this item."
 
-msgid "Which kind of request to send — GET reads something, POST creates, PUT and PATCH update, DELETE removes — defaulting to POST when left empty."
-msgstr "Which kind of request to send — GET reads something, POST creates, PUT and PATCH update, DELETE removes — defaulting to POST when left empty."
+msgid "Which kind of request to send: GET reads something, POST creates, PUT and PATCH update, DELETE removes. A new step starts at GET, and only POST, PUT, and PATCH carry a body."
+msgstr "Which kind of request to send: GET reads something, POST creates, PUT and PATCH update, DELETE removes. A new step starts at GET, and only POST, PUT, and PATCH carry a body."
 
 msgid "Which manufacturing event starts the shelf-life clock — for example, fill, seal, or final QC."
 msgstr "Which manufacturing event starts the shelf-life clock — for example, fill, seal, or final QC."
@@ -16295,6 +16350,9 @@ msgstr "Workflow"
 
 msgid "Workflow name"
 msgstr "Workflow name"
+
+msgid "Workflow run"
+msgstr "Workflow run"
 
 msgid "Workflows"
 msgstr "Workflows"
