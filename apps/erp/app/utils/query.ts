@@ -1,6 +1,7 @@
-import { badRequest, parseNumberFromUrlParam } from "@carbon/auth";
+import { badRequest } from "@carbon/auth";
 import type { PostgrestFilterBuilder } from "@supabase/postgrest-js";
 import type { GenericSchema } from "@supabase/supabase-js/dist/module/lib/types";
+import { getPageOffset, getPageSize } from "./pagination";
 
 export type Sort = {
   sortBy: string;
@@ -23,8 +24,8 @@ export interface GenericQueryFilters {
 export function getGenericQueryFilters(
   params: URLSearchParams
 ): GenericQueryFilters {
-  const limit = parseNumberFromUrlParam(params, "limit", 100);
-  const offset = parseNumberFromUrlParam(params, "offset", 0);
+  const limit = getPageSize(params);
+  const offset = getPageOffset(params);
 
   const sortParams = params.getAll("sort");
   const sorts: Sort[] =
