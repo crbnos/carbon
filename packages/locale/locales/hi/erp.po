@@ -8567,7 +8567,7 @@ msgid "No matches. Type to create one."
 msgstr "कोई मेल नहीं। एक बनाने के लिए टाइप करें।"
 
 msgid "No matching bins"
-msgstr ""
+msgstr "कोई मिलती-जुलती बिन नहीं"
 
 msgid "No new notifications"
 msgstr "कोई नई सूचनाएं नहीं"
@@ -8796,7 +8796,7 @@ msgstr "नोट्स (वैकल्पिक)"
 
 #. placeholder {0}: search.trim()
 msgid "Nothing at this location matches \"{0}\"."
-msgstr ""
+msgstr "इस स्थान पर कुछ भी \"{0}\" से मेल नहीं खाता है।"
 
 msgid "Nothing else at this location has stock to pull from."
 msgstr "इस स्थान पर कोई अन्य स्टॉक नहीं है जहां से खींचा जा सकता है।"
@@ -12097,7 +12097,7 @@ msgid "Step"
 msgstr "चरण"
 
 msgid "Step added"
-msgstr ""
+msgstr "चरण जोड़ा गया"
 
 msgid "Step Records"
 msgstr "चरण रिकॉर्ड"

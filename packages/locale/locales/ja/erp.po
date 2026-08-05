@@ -8567,7 +8567,7 @@ msgid "No matches. Type to create one."
 msgstr "一致するものがありません。作成するには入力してください。"
 
 msgid "No matching bins"
-msgstr ""
+msgstr "一致するビンはありません"
 
 msgid "No new notifications"
 msgstr "新しい通知はありません"
@@ -8796,7 +8796,7 @@ msgstr "メモ（オプション）"
 
 #. placeholder {0}: search.trim()
 msgid "Nothing at this location matches \"{0}\"."
-msgstr ""
+msgstr "この場所には\"{0}\"と一致するものがありません。"
 
 msgid "Nothing else at this location has stock to pull from."
 msgstr "この場所には他に引き出す在庫がありません。"
@@ -12097,7 +12097,7 @@ msgid "Step"
 msgstr "ステップ"
 
 msgid "Step added"
-msgstr ""
+msgstr "ステップが追加されました"
 
 msgid "Step Records"
 msgstr "ステップレコード"

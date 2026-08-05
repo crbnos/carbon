@@ -8567,7 +8567,7 @@ msgid "No matches. Type to create one."
 msgstr "일치하는 항목 없음. 입력하여 새로 만드세요."
 
 msgid "No matching bins"
-msgstr ""
+msgstr "일치하는 빈이 없습니다"
 
 msgid "No new notifications"
 msgstr "새 알림이 없습니다"
@@ -8796,7 +8796,7 @@ msgstr "메모(선택)"
 
 #. placeholder {0}: search.trim()
 msgid "Nothing at this location matches \"{0}\"."
-msgstr ""
+msgstr "이 위치에서 \"{0}\"과(와) 일치하는 것이 없습니다."
 
 msgid "Nothing else at this location has stock to pull from."
 msgstr "이 위치에는 더 이상 가져올 재고가 없습니다."
@@ -12097,7 +12097,7 @@ msgid "Step"
 msgstr "단계"
 
 msgid "Step added"
-msgstr ""
+msgstr "단계 추가됨"
 
 msgid "Step Records"
 msgstr "단계 기록"

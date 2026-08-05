@@ -8567,7 +8567,7 @@ msgid "No matches. Type to create one."
 msgstr "Aucune correspondance. Tapez pour en créer une."
 
 msgid "No matching bins"
-msgstr ""
+msgstr "Aucun bac correspondant"
 
 msgid "No new notifications"
 msgstr "Aucune nouvelle notification"
@@ -8796,7 +8796,7 @@ msgstr "Notes (facultatif)"
 
 #. placeholder {0}: search.trim()
 msgid "Nothing at this location matches \"{0}\"."
-msgstr ""
+msgstr "Rien à cet emplacement ne correspond à \"{0}\"."
 
 msgid "Nothing else at this location has stock to pull from."
 msgstr "Aucun autre article à cet endroit n'a de stock à prélever."
@@ -12097,7 +12097,7 @@ msgid "Step"
 msgstr "Étape"
 
 msgid "Step added"
-msgstr ""
+msgstr "Étape ajoutée"
 
 msgid "Step Records"
 msgstr "Enregistrements d'étapes"

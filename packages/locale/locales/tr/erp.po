@@ -8567,7 +8567,7 @@ msgid "No matches. Type to create one."
 msgstr "Eşleşme yok. Bir tane oluşturmak için yazın."
 
 msgid "No matching bins"
-msgstr ""
+msgstr "Eşleşen bin yok"
 
 msgid "No new notifications"
 msgstr "Yeni bildirim yok"
@@ -8796,7 +8796,7 @@ msgstr "Notlar (isteğe bağlı)"
 
 #. placeholder {0}: search.trim()
 msgid "Nothing at this location matches \"{0}\"."
-msgstr ""
+msgstr "Bu konumda \"{0}\" ile eşleşen hiçbir şey yok."
 
 msgid "Nothing else at this location has stock to pull from."
 msgstr "Bu konumda çekilecek başka hiçbir stok yok."
@@ -12097,7 +12097,7 @@ msgid "Step"
 msgstr "Adım"
 
 msgid "Step added"
-msgstr ""
+msgstr "Adım eklendi"
 
 msgid "Step Records"
 msgstr "Adım Kayıtları"
