@@ -807,7 +807,7 @@ export function aggregateJournalEntriesForDate(args: {
   for (const line of allLines) {
     const accountId = line.accountId ?? null;
     const tupleKey = getDimensionTupleKey(line.dimensions, slottedDimensionIds);
-    const key = `${accountId ?? ""} ${tupleKey}`;
+    const key = `${accountId ?? ""}\u0000${tupleKey}`;
     const existing = groups.get(key);
     const cents = Math.round(line.amount * 100);
     if (existing) {

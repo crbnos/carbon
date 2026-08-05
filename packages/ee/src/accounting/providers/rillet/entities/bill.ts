@@ -1,6 +1,12 @@
+import {
+  buildDimensionValueMappingEntityId,
+  loadJournalLineDimensions
+} from "../../../core/dimension-mapping";
 import { createMappingService } from "../../../core/external-mapping";
 import {
+  collectUnmappedDimensionValues,
   JournalEntrySyncError,
+  type JournalLineDimensionRef,
   toDebitSignedAmount,
   toPostingDateString
 } from "../../../core/posting";
@@ -10,7 +16,8 @@ import type {
   RilletBillCreate,
   RilletTransactionWriteOmit
 } from "../models";
-import { buildRilletIdempotencyKey } from "../provider";
+import { buildRilletIdempotencyKey, parseRilletFieldTarget } from "../provider";
+import type { RilletJournalDimensionArgs } from "./journal-entry";
 import {
   carbonCompanyExternalReference,
   carbonExternalReference,
@@ -96,7 +103,24 @@ export type BillPostingJournalLine = {
   /** Debit-signed (already converted from Carbon's natural-balance sign). */
   amount: number;
   description: string | null;
+  /** journalLineDimension rows — bill items inherit them as Field refs. */
+  dimensions?: JournalLineDimensionRef[];
 };
+
+/**
+ * The posting journal lines that become bill items: everything except the
+ * AP control line(s) — Rillet re-books the payable through its own bill
+ * mechanics. Shared by the mapper and the syncer's dimension pre-flight
+ * (only costing lines push, so only their dimension values matter).
+ */
+export function filterBillCostingLines(
+  lines: BillPostingJournalLine[],
+  payablesAccountId: string | null
+): BillPostingJournalLine[] {
+  return lines.filter(
+    (line) => line.accountId === null || line.accountId !== payablesAccountId
+  );
+}
 
 export function mapBillToRilletBill(args: {
   bill: Accounting.Bill;
@@ -108,6 +132,13 @@ export function mapBillToRilletBill(args: {
   postingJournalLines: BillPostingJournalLine[];
   /** accountDefault.payablesAccount — the AP control line(s) to exclude. */
   payablesAccountId: string | null;
+  /**
+   * Slot config + resolved Field-value ids (same contract as the journal
+   * mapper's RilletJournalDimensionArgs). Slotted line dimensions with no
+   * resolvable value are OMITTED — the warn policy parks in the syncer
+   * before mapping, so an unresolved value here is the recorded drop path.
+   */
+  dimensions?: RilletJournalDimensionArgs;
 }): RilletBillCreate {
   const { bill } = args;
   const currency = bill.currencyCode;
@@ -121,9 +152,9 @@ export function mapBillToRilletBill(args: {
     });
   }
 
-  const costingLines = args.postingJournalLines.filter(
-    (line) =>
-      line.accountId === null || line.accountId !== args.payablesAccountId
+  const costingLines = filterBillCostingLines(
+    args.postingJournalLines,
+    args.payablesAccountId
   );
 
   const unmapped = new Set<string>();
@@ -162,11 +193,34 @@ export function mapBillToRilletBill(args: {
     });
   }
 
-  const items: Rillet.BillItem[] = costingLines.map((line) => ({
-    account_code: args.accountCodesById.get(line.accountId!)!,
-    amount: toRilletMoney(line.amount, currency),
-    ...(line.description ? { description: line.description } : {})
-  }));
+  const items: Rillet.BillItem[] = costingLines.map((line) => {
+    const fieldRefs: Rillet.ItemFieldRef[] = [];
+    if (args.dimensions) {
+      for (const slot of args.dimensions.slots) {
+        const fieldId = parseRilletFieldTarget(slot.target);
+        if (!fieldId) continue;
+        const dimension = line.dimensions?.find(
+          (candidate) => candidate.dimensionId === slot.dimensionId
+        );
+        if (!dimension) continue;
+        const fieldValueId = args.dimensions.fieldValueIdsByValue.get(
+          buildDimensionValueMappingEntityId(
+            dimension.dimensionId,
+            dimension.valueId
+          )
+        );
+        if (!fieldValueId) continue; // drop policy — recorded by the caller
+        fieldRefs.push({ field_id: fieldId, field_value_id: fieldValueId });
+      }
+    }
+
+    return {
+      account_code: args.accountCodesById.get(line.accountId!)!,
+      amount: toRilletMoney(line.amount, currency),
+      ...(line.description ? { description: line.description } : {}),
+      ...(fieldRefs.length > 0 ? { fields: fieldRefs } : {})
+    };
+  });
 
   const billDate = toPostingDateString(
     bill.dateIssued ?? new Date().toISOString()
@@ -400,14 +454,67 @@ export class RilletBillSyncer extends RilletTransactionSyncer<
       );
     }
 
+    const postingJournalLines = await this.fetchPostingJournalLines(local.id);
+    const payablesAccountId = await this.getPayablesAccountId();
+
+    // Dimension slots (same flow as the journal syncer): resolve the
+    // value-mapping lookup and upsert missing Field values (autoCreate
+    // default ON for Rillet), then apply the onUnmappedDimensionValue
+    // policy over the COSTING lines — the AP control line never pushes,
+    // so its dimensions never park a bill
+    const settings = await this.getPostingSyncSettings();
+    let dimensionValueMappings: Map<string, string> | undefined;
+    if (settings.dimensionSlots.length > 0) {
+      const costingLines = filterBillCostingLines(
+        postingJournalLines,
+        payablesAccountId
+      );
+      dimensionValueMappings = await this.getDimensionValueMappings();
+      await this.ensureAutoCreatedDimensionValues(
+        costingLines,
+        settings,
+        dimensionValueMappings
+      );
+
+      const unmappedDimensionValues = collectUnmappedDimensionValues(
+        costingLines,
+        settings.dimensionSlots,
+        dimensionValueMappings
+      );
+      if (unmappedDimensionValues.length > 0) {
+        if (settings.onUnmappedDimensionValue === "warn") {
+          throw new JournalEntrySyncError({
+            errorCode: "UNMAPPED_DIMENSION_VALUES",
+            message: `Bill ${local.invoiceId} carries ${unmappedDimensionValues.length} slotted dimension value(s) with no provider option mapping. Map the value(s) on the integration settings page (or enable auto-create on the slot), then retry.`,
+            warning: true,
+            metadata: { unmappedDimensionValues }
+          });
+        }
+        // "drop" policy: pushed without these dimensions. The drain has
+        // no success-metadata channel yet, so the record lives in the logs.
+        console.warn("[RilletBillSyncer] dropped unmapped dimension values", {
+          billId: local.id,
+          droppedDimensionValues: unmappedDimensionValues
+        });
+      }
+    }
+
     return mapBillToRilletBill({
       bill: local,
       vendorRemoteId,
       accountCodesById: await this.getAccountCodesById(),
       subsidiaryId: this.rilletProvider.subsidiaryId,
       companyId: this.companyId,
-      postingJournalLines: await this.fetchPostingJournalLines(local.id),
-      payablesAccountId: await this.getPayablesAccountId()
+      postingJournalLines,
+      payablesAccountId,
+      ...(dimensionValueMappings
+        ? {
+            dimensions: {
+              slots: settings.dimensionSlots,
+              fieldValueIdsByValue: dimensionValueMappings
+            }
+          }
+        : {})
     });
   }
 
@@ -438,12 +545,21 @@ export class RilletBillSyncer extends RilletTransactionSyncer<
       .orderBy("journalLine.journalLineReference", "asc")
       .execute();
 
-    return rows.map((row) => ({
-      id: row.id,
-      accountId: row.accountId ?? null,
-      amount: toDebitSignedAmount(row.accountClass, Number(row.amount) || 0),
-      description: row.description ?? null
-    }));
+    const dimensionsByLine = await loadJournalLineDimensions(this.database, {
+      companyId: this.companyId,
+      journalLineIds: rows.map((row) => row.id)
+    });
+
+    return rows.map((row) => {
+      const dimensions = dimensionsByLine.get(row.id);
+      return {
+        id: row.id,
+        accountId: row.accountId ?? null,
+        amount: toDebitSignedAmount(row.accountClass, Number(row.amount) || 0),
+        description: row.description ?? null,
+        ...(dimensions ? { dimensions } : {})
+      };
+    });
   }
 
   /** accountDefault.payablesAccount — the AP control line to exclude. */

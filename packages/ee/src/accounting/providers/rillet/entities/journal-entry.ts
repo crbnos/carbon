@@ -1,11 +1,6 @@
 import {
   buildDimensionValueMappingEntityId,
-  buildDimensionValueMappingLookup,
-  ensureDimensionValueExternalIds,
-  getDimensionValueMappings,
-  loadJournalLineDimensions,
-  resolveDimensionValueLabels,
-  upsertDimensionValueMapping
+  loadJournalLineDimensions
 } from "../../../core/dimension-mapping";
 import type { PostingSyncDimensionSlot } from "../../../core/models";
 import {
@@ -13,7 +8,6 @@ import {
   JournalEntrySyncError,
   type PostingSyncSettings,
   parseJournalEntrySyncEntityId,
-  resolvePostingSyncSettings,
   roundCurrency,
   runJournalEntryPreflight,
   toDebitSignedAmount,
@@ -209,117 +203,20 @@ export class RilletJournalEntrySyncer extends RilletTransactionSyncer<
   RilletWriteOmit
 > {
   // Per-instance caches — a drain reuses one syncer across its claimed
-  // operations, so settings, account codes, control accounts, the base
-  // currency and the dimension-value lookup are each fetched at most once
-  // per drain
-  private postingSyncSettingsPromise?: Promise<PostingSyncSettings>;
+  // operations, so account codes, control accounts and the base currency
+  // are each fetched at most once per drain (settings + dimension-value
+  // lookup are cached by RilletTransactionSyncer)
   private accountCodesByIdPromise?: Promise<Map<string, string>>;
   private controlAccountIdsPromise?: Promise<Set<string>>;
   private baseCurrencyPromise?: Promise<string>;
-  private dimensionValueMappingsPromise?: Promise<Map<string, string>>;
 
   protected get pushOnlyEntityLabel(): string {
     return "Journal entries";
   }
 
-  /**
-   * `<dimensionId>:<valueId>` → Rillet field_value uuid from the
-   * dimension-value mapping rows (entityType "dimensionValue"). Mutated
-   * in place by the autoCreate flow so later pushes in the same drain
-   * reuse the upserted values.
-   */
-  public getDimensionValueMappings(): Promise<Map<string, string>> {
-    if (!this.dimensionValueMappingsPromise) {
-      this.dimensionValueMappingsPromise = (async () => {
-        const mappings = await getDimensionValueMappings(this.database, {
-          companyId: this.companyId,
-          integration: this.provider.id
-        });
-        if (mappings.error) {
-          throw new Error(
-            `Failed to load dimension value mappings: ${mappings.error}`
-          );
-        }
-        return buildDimensionValueMappingLookup(mappings.data ?? []);
-      })();
-    }
-    return this.dimensionValueMappingsPromise;
-  }
-
-  /**
-   * autoCreate — default ON for Rillet slots (Fields are dimension-native
-   * and value upsert is the expected flow): upsert missing Field values
-   * BY NAME — the value's resolved READABLE label (part readable id for
-   * items, name for everything else) — then store the mapping and update
-   * the lookup in place. Rillet's upsert-by-name returns the full Field,
-   * so re-pushing an existing name reuses its uuid instead of duplicating.
-   */
-  private async ensureAutoCreatedDimensionValues(
-    journal: Accounting.JournalEntry,
-    settings: PostingSyncSettings,
-    mappings: Map<string, string>
-  ): Promise<void> {
-    await ensureDimensionValueExternalIds({
-      lines: journal.lines,
-      slots: settings.dimensionSlots,
-      defaultAutoCreate: true, // Rillet: Field-value upsert is the expected flow
-      mappings,
-      resolveLabels: (values) =>
-        resolveDimensionValueLabels(this.database, { values }),
-      createExternalValue: async (slot, label) => {
-        const fieldId = parseRilletFieldTarget(slot.target);
-        if (!fieldId) {
-          throw new Error(`Unknown Rillet dimension target "${slot.target}"`);
-        }
-        const value = await this.rilletProvider.upsertFieldValue(
-          fieldId,
-          label
-        );
-        return value.id;
-      },
-      persistMapping: async (value, externalId, label) => {
-        const persisted = await upsertDimensionValueMapping(this.database, {
-          companyId: this.companyId,
-          integration: this.provider.id,
-          dimensionId: value.dimensionId,
-          valueId: value.valueId,
-          externalId,
-          externalName: label
-        });
-        if (persisted.error) {
-          throw new Error(
-            `Failed to store dimension value mapping: ${persisted.error}`
-          );
-        }
-      }
-    });
-  }
-
   // =================================================================
   // 1. SETTINGS + PRE-FLIGHT INPUTS (cached per instance)
   // =================================================================
-
-  /**
-   * Per-company posting-sync settings from
-   * `companyIntegration.metadata.settings.postingSync`. Public so the
-   * drain can gate on `consolidation` ("daily" journals wait for the
-   * consolidation cron instead of draining individually).
-   */
-  public getPostingSyncSettings(): Promise<PostingSyncSettings> {
-    if (!this.postingSyncSettingsPromise) {
-      this.postingSyncSettingsPromise = (async () => {
-        const integration = await this.database
-          .selectFrom("companyIntegration")
-          .select("metadata")
-          .where("id", "=", this.provider.id)
-          .where("companyId", "=", this.companyId)
-          .executeTakeFirst();
-
-        return resolvePostingSyncSettings(integration?.metadata);
-      })();
-    }
-    return this.postingSyncSettingsPromise;
-  }
 
   /**
    * Carbon account.id → Rillet account code, from the account-mapping
@@ -554,7 +451,7 @@ export class RilletJournalEntrySyncer extends RilletTransactionSyncer<
     if (settings.dimensionSlots.length > 0) {
       dimensionValueMappings = await this.getDimensionValueMappings();
       await this.ensureAutoCreatedDimensionValues(
-        local,
+        local.lines,
         settings,
         dimensionValueMappings
       );

@@ -266,7 +266,8 @@ export namespace Rillet {
     account_code: z.string(),
     amount: MonetaryAmountSchema,
     description: z.string().optional(),
-    tax_rate: z.number().optional()
+    tax_rate: z.number().optional(),
+    fields: z.array(ItemFieldRefSchema).optional()
   });
 
   export type BillItem = z.infer<typeof BillItemSchema>;

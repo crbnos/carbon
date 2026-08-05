@@ -161,3 +161,101 @@ describe("mapBillToRilletBill (journal-derived costing)", () => {
     );
   });
 });
+
+describe("mapBillToRilletBill — dimensions (Fields)", () => {
+  const LOCATION_DIM = "dim_loc";
+  const LOCATION_FIELD_ID = "f1d10000-0000-0000-0000-000000000001";
+
+  const dimensionedLines: BillPostingJournalLine[] = [
+    {
+      id: "jl-1",
+      accountId: "acct_grir",
+      amount: 300,
+      description: "GR/IR Clearing",
+      dimensions: [{ dimensionId: LOCATION_DIM, valueId: "loc_hq" }]
+    },
+    {
+      id: "jl-2",
+      accountId: "acct_ap",
+      amount: -300,
+      description: "Accounts Payable",
+      // AP control line dimensions never push (the line itself is excluded)
+      dimensions: [{ dimensionId: LOCATION_DIM, valueId: "loc_other" }]
+    }
+  ];
+
+  const slots = [
+    { dimensionId: LOCATION_DIM, target: `field:${LOCATION_FIELD_ID}` }
+  ];
+
+  it("attaches uuid field refs to items from their posting journal line dimensions", () => {
+    const payload = mapBillToRilletBill({
+      bill: bill(),
+      vendorRemoteId: "vendor-remote-1",
+      accountCodesById: codes,
+      subsidiaryId: null,
+      companyId: "company-1",
+      postingJournalLines: dimensionedLines,
+      payablesAccountId: "acct_ap",
+      dimensions: {
+        slots,
+        fieldValueIdsByValue: new Map([["dim_loc:loc_hq", "fv-hq"]])
+      }
+    });
+
+    expect(payload.items).toHaveLength(1);
+    expect(payload.items[0]?.fields).toEqual([
+      { field_id: LOCATION_FIELD_ID, field_value_id: "fv-hq" }
+    ]);
+  });
+
+  it("omits fields for unmapped values (drop path) and when no dimension args are passed", () => {
+    const dropped = mapBillToRilletBill({
+      bill: bill(),
+      vendorRemoteId: "vendor-remote-1",
+      accountCodesById: codes,
+      subsidiaryId: null,
+      companyId: "company-1",
+      postingJournalLines: dimensionedLines,
+      payablesAccountId: "acct_ap",
+      dimensions: { slots, fieldValueIdsByValue: new Map() }
+    });
+    expect(dropped.items[0]?.fields).toBeUndefined();
+
+    const withoutArgs = mapBillToRilletBill({
+      bill: bill(),
+      vendorRemoteId: "vendor-remote-1",
+      accountCodesById: codes,
+      subsidiaryId: null,
+      companyId: "company-1",
+      postingJournalLines: dimensionedLines,
+      payablesAccountId: "acct_ap"
+    });
+    expect(withoutArgs.items[0]?.fields).toBeUndefined();
+  });
+
+  it("ignores dimensions outside the slot config", () => {
+    const payload = mapBillToRilletBill({
+      bill: bill(),
+      vendorRemoteId: "vendor-remote-1",
+      accountCodesById: codes,
+      subsidiaryId: null,
+      companyId: "company-1",
+      postingJournalLines: [
+        {
+          id: "jl-1",
+          accountId: "acct_grir",
+          amount: 300,
+          description: "GR/IR Clearing",
+          dimensions: [{ dimensionId: "dim_unslotted", valueId: "v1" }]
+        }
+      ],
+      payablesAccountId: "acct_ap",
+      dimensions: {
+        slots,
+        fieldValueIdsByValue: new Map([["dim_unslotted:v1", "fv-x"]])
+      }
+    });
+    expect(payload.items[0]?.fields).toBeUndefined();
+  });
+});
