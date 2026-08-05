@@ -100,7 +100,12 @@ export default function ProcessRoute() {
     // @ts-ignore
     suppliers: (process.suppliers ?? []).map((s) => s.id) ?? [],
     ...getCustomFields(process.customFields),
-    completeAllOnScan: process.completeAllOnScan ?? false
+    completeAllOnScan: process.completeAllOnScan ?? false,
+    isCuttingProcess: process.isCuttingProcess ?? false,
+    defaultKerf: process.defaultKerf ?? undefined,
+    defaultEndTrim: process.defaultEndTrim ?? undefined,
+    defaultGripMargin: process.defaultGripMargin ?? undefined,
+    defaultMinRemnantLength: process.defaultMinRemnantLength ?? undefined
   };
 
   return <ProcessForm initialValues={initialValues} onClose={onClose} />;

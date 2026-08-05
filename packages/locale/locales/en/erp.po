@@ -3621,6 +3621,9 @@ msgstr "Cutover step"
 msgid "Cutover support"
 msgstr "Cutover support"
 
+msgid "Cuts stock to length"
+msgstr "Cuts stock to length"
+
 msgid "Cutting Process"
 msgstr "Cutting Process"
 
@@ -3818,6 +3821,9 @@ msgstr "Default cash account for transactions in your base currency."
 msgid "Default CC Recipients"
 msgstr "Default CC Recipients"
 
+msgid "Default end trim"
+msgstr "Default end trim"
+
 msgid "Default GL account credited when a fixed-asset disposal results in a gain."
 msgstr "Default GL account credited when a fixed-asset disposal results in a gain."
 
@@ -3833,6 +3839,12 @@ msgstr "Default GL expense account for equipment and facility maintenance."
 msgid "Default GL expense account for periodic depreciation runs."
 msgstr "Default GL expense account for periodic depreciation runs."
 
+msgid "Default grip margin"
+msgstr "Default grip margin"
+
+msgid "Default kerf"
+msgstr "Default kerf"
+
 msgid "Default Method"
 msgstr "Default Method"
 
@@ -3841,6 +3853,9 @@ msgstr "Default method that pre-fills on new assets in this class (still editabl
 
 msgid "Default Method Type"
 msgstr "Default Method Type"
+
+msgid "Default minimum remnant"
+msgstr "Default minimum remnant"
 
 msgid "Default Permissions"
 msgstr "Default Permissions"
@@ -3877,6 +3892,9 @@ msgstr "Default useful life that pre-fills on new assets in this class."
 
 msgid "Defaults"
 msgstr "Defaults"
+
+msgid "Defaults for new cut lists on this machine. Use the same unit your stock is measured in."
+msgstr "Defaults for new cut lists on this machine. Use the same unit your stock is measured in."
 
 msgid "Deferred Tax Expense"
 msgstr "Deferred Tax Expense"
@@ -7325,6 +7343,9 @@ msgstr "Length of one piece — drives cut lists"
 
 msgid "Length the clamp holds and cannot cut"
 msgstr "Length the clamp holds and cannot cut"
+
+msgid "Length the clamp or pusher holds and cannot cut"
+msgstr "Length the clamp or pusher holds and cannot cut"
 
 msgid "Less manual work"
 msgstr "Less manual work"
@@ -14014,6 +14035,9 @@ msgstr "Tuesday"
 
 msgid "Turn on the built-in pieces"
 msgstr "Turn on the built-in pieces"
+
+msgid "Turn this on for saws, tube cutters, and lasers. Operations on this process can feed cut lists."
+msgstr "Turn this on for saws, tube cutters, and lasers. Operations on this process can feed cut lists."
 
 msgid "Type"
 msgstr "Type"

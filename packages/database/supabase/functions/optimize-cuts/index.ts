@@ -6,6 +6,7 @@ import { corsPreflight, errorResponse, jsonResponse } from "../lib/response.ts";
 import { requirePermissions } from "../lib/supabase.ts";
 import type { CutDemand, StockUnit } from "../lib/cutting/ffd.ts";
 import { optimizeCuts1D } from "../lib/cutting/ffd.ts";
+import { convertLength } from "../lib/cutting/units.ts";
 
 const pool = getConnectionPool(1);
 const db = getDatabaseClient<DB>(pool);
@@ -67,14 +68,31 @@ serve(async (req: Request) => {
         .selectFrom("itemStockDimension")
         .where("itemId", "in", itemIds)
         .where("companyId", "=", companyId)
-        .select(["itemId", "stockLength"])
+        .select(["itemId", "stockLength", "unitOfDimension"])
         .execute();
 
-      const lengthByItem = new Map(
-        stockDimensions
-          .filter((d) => d.stockLength !== null)
-          .map((d) => [d.itemId, Number(d.stockLength)])
-      );
+      // A material's stock length is recorded in the material's own unit,
+      // which need not match this cut list's. Convert into the cut list's unit
+      // once, here, so every length downstream is directly comparable.
+      const cutListUnit = cutList.unitOfDimension ?? "in";
+      const lengthByItem = new Map<string, number>();
+      const itemsWithUnknownUnit = new Set<string>();
+
+      for (const dimension of stockDimensions) {
+        if (dimension.stockLength === null) continue;
+        const converted = convertLength(
+          Number(dimension.stockLength),
+          dimension.unitOfDimension,
+          cutListUnit
+        );
+        if (converted === null) {
+          // Unknown unit: refuse to guess. Treating it as a bare number would
+          // silently plan against a length that means something else.
+          itemsWithUnknownUnit.add(dimension.itemId);
+          continue;
+        }
+        lengthByItem.set(dimension.itemId, converted);
+      }
 
       const entities = await trx
         .selectFrom("trackedEntity")
@@ -95,7 +113,12 @@ serve(async (req: Request) => {
         const isRemnant = attributes.Remnant === true;
 
         if (isRemnant) {
-          const length = Number(attributes.Length ?? 0);
+          const length =
+            convertLength(
+              Number(attributes.Length ?? 0),
+              typeof attributes.Unit === "string" ? attributes.Unit : cutListUnit,
+              cutListUnit
+            ) ?? 0;
           if (length > 0) {
             stock.push({
               stockId: entity.itemId,
@@ -186,7 +209,8 @@ serve(async (req: Request) => {
         yieldPct: plan.yieldPct,
         unplaced: plan.unplaced,
         stockUnitsConsidered: stock.length,
-        itemsMissingStockDimensions: [...itemsMissingDimensions]
+        itemsMissingStockDimensions: [...itemsMissingDimensions],
+        itemsWithUnknownUnit: [...itemsWithUnknownUnit]
       };
     });
 

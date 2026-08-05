@@ -302,7 +302,15 @@ export const processValidator = z
     workCenters: z
       .array(z.string().min(1, { message: "Invalid work center" }))
       .optional(),
-    completeAllOnScan: zfd.checkbox()
+    completeAllOnScan: zfd.checkbox(),
+    // Cut lists: a saw/laser process cuts stock to length. The flag lives on
+    // the process, not the part — a bracket is cut on the saw and formed on the
+    // brake. The four defaults seed every new cut list's parameters.
+    isCuttingProcess: zfd.checkbox(),
+    defaultKerf: zfd.numeric(z.number().min(0).optional()),
+    defaultEndTrim: zfd.numeric(z.number().min(0).optional()),
+    defaultGripMargin: zfd.numeric(z.number().min(0).optional()),
+    defaultMinRemnantLength: zfd.numeric(z.number().min(0).optional())
   })
   .refine((data) => {
     if (data.processType !== "Outside Processing" && !data.workCenters) {

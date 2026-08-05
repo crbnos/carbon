@@ -37,6 +37,7 @@ import {
   CustomFormFields,
   Hidden,
   Input,
+  Number,
   Select,
   StandardFactor,
   Submit
@@ -153,6 +154,7 @@ const ProcessForm = ({
                   termId="process-complete-all-on-scan"
                   bordered
                 />
+                <CuttingParameters />
                 <CustomFormFields table="process" />
               </VStack>
             </ModalDrawerBody>
@@ -174,6 +176,59 @@ const ProcessForm = ({
 };
 
 export default ProcessForm;
+
+/**
+ * Saw parameters for a cutting process (see .claude/rules/cut-list-system.md).
+ * Hidden until the process is marked as cutting — most processes never cut
+ * stock, and four extra number fields on every process form would be noise.
+ * The values seed each new cut list, which can still override them per run.
+ */
+function CuttingParameters() {
+  const { t } = useLingui();
+  const [isCuttingProcess] = useControlField<boolean>("isCuttingProcess");
+
+  return (
+    <>
+      <Boolean
+        name="isCuttingProcess"
+        label={t`Cuts stock to length`}
+        description={t`Turn this on for saws, tube cutters, and lasers. Operations on this process can feed cut lists.`}
+        bordered
+      />
+      {isCuttingProcess && (
+        <div className="flex flex-col gap-4 w-full rounded-md border border-border p-4">
+          <p className="text-xs text-muted-foreground">
+            {t`Defaults for new cut lists on this machine. Use the same unit your stock is measured in.`}
+          </p>
+          <Number
+            name="defaultKerf"
+            label={t`Default kerf`}
+            minValue={0}
+            helperText={t`Material the blade destroys on every cut`}
+          />
+          <Number
+            name="defaultEndTrim"
+            label={t`Default end trim`}
+            minValue={0}
+            helperText={t`Cut off the end of a new stock unit before the first piece`}
+          />
+          <Number
+            name="defaultGripMargin"
+            label={t`Default grip margin`}
+            minValue={0}
+            helperText={t`Length the clamp or pusher holds and cannot cut`}
+          />
+          <Number
+            name="defaultMinRemnantLength"
+            label={t`Default minimum remnant`}
+            minValue={0}
+            helperText={t`Shorter drops are scrapped instead of returned to stock`}
+          />
+        </div>
+      )}
+    </>
+  );
+}
 
 function SupplierProcesses({ processId }: { processId?: string }) {
   const { t } = useLingui();

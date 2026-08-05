@@ -64621,6 +64621,21 @@ export default {
             $ref: "#/parameters/rowFilter.processes.active"
           },
           {
+            $ref: "#/parameters/rowFilter.processes.isCuttingProcess"
+          },
+          {
+            $ref: "#/parameters/rowFilter.processes.defaultKerf"
+          },
+          {
+            $ref: "#/parameters/rowFilter.processes.defaultEndTrim"
+          },
+          {
+            $ref: "#/parameters/rowFilter.processes.defaultGripMargin"
+          },
+          {
+            $ref: "#/parameters/rowFilter.processes.defaultMinRemnantLength"
+          },
+          {
             $ref: "#/parameters/rowFilter.processes.workCenters"
           },
           {
@@ -101873,7 +101888,7 @@ export default {
       properties: {
         id: {
           description:
-            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
+            "Note:\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
           format: "text",
           type: "string"
         },
@@ -101922,7 +101937,7 @@ export default {
         },
         supplierLocationId: {
           description:
-            "Note:\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
           format: "text",
           type: "string"
         },
@@ -126724,6 +126739,26 @@ export default {
         active: {
           format: "boolean",
           type: "boolean"
+        },
+        isCuttingProcess: {
+          format: "boolean",
+          type: "boolean"
+        },
+        defaultKerf: {
+          format: "numeric",
+          type: "number"
+        },
+        defaultEndTrim: {
+          format: "numeric",
+          type: "number"
+        },
+        defaultGripMargin: {
+          format: "numeric",
+          type: "number"
+        },
+        defaultMinRemnantLength: {
+          format: "numeric",
+          type: "number"
         },
         workCenters: {
           format: "text[]",
@@ -171253,6 +171288,36 @@ export default {
     },
     "rowFilter.processes.active": {
       name: "active",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.processes.isCuttingProcess": {
+      name: "isCuttingProcess",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.processes.defaultKerf": {
+      name: "defaultKerf",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.processes.defaultEndTrim": {
+      name: "defaultEndTrim",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.processes.defaultGripMargin": {
+      name: "defaultGripMargin",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.processes.defaultMinRemnantLength": {
+      name: "defaultMinRemnantLength",
       required: false,
       in: "query",
       type: "string"

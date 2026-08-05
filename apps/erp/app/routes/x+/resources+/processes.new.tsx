@@ -77,7 +77,8 @@ export default function NewProcessRoute() {
     name: "",
     processType: "Process" as const,
     defaultStandardFactor: "Minutes/Piece" as const,
-    completeAllOnScan: false
+    completeAllOnScan: false,
+    isCuttingProcess: false
   };
 
   return <ProcessForm initialValues={initialValues} onClose={onClose} />;

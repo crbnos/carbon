@@ -3621,6 +3621,9 @@ msgstr "カットオーバーステップ"
 msgid "Cutover support"
 msgstr "カットオーバーサポート"
 
+msgid "Cuts stock to length"
+msgstr ""
+
 msgid "Cutting Process"
 msgstr "カッティングプロセス"
 
@@ -3818,6 +3821,9 @@ msgstr "あなたの基本通貨での取引のためのデフォルト現金勘
 msgid "Default CC Recipients"
 msgstr "デフォルトCC受信者"
 
+msgid "Default end trim"
+msgstr ""
+
 msgid "Default GL account credited when a fixed-asset disposal results in a gain."
 msgstr "固定資産の処分により利益が発生した場合に貸方に計上される既定の一般勘定科目。"
 
@@ -3833,6 +3839,12 @@ msgstr "機器および施設のメンテナンス用のデフォルトGL支出�
 msgid "Default GL expense account for periodic depreciation runs."
 msgstr "定期的な減価償却実行のためのデフォルトGL支出勘定。"
 
+msgid "Default grip margin"
+msgstr ""
+
+msgid "Default kerf"
+msgstr ""
+
 msgid "Default Method"
 msgstr "デフォルト方法"
 
@@ -3841,6 +3853,9 @@ msgstr "このクラスの新しい資産に事前入力されるデフォルト
 
 msgid "Default Method Type"
 msgstr "デフォルトメソッドタイプ"
+
+msgid "Default minimum remnant"
+msgstr ""
 
 msgid "Default Permissions"
 msgstr "デフォルト権限"
@@ -3877,6 +3892,9 @@ msgstr "このクラスの新しい資産に事前入力されるデフォルト
 
 msgid "Defaults"
 msgstr "デフォルト"
+
+msgid "Defaults for new cut lists on this machine. Use the same unit your stock is measured in."
+msgstr ""
 
 msgid "Deferred Tax Expense"
 msgstr "繰延税金費用"
@@ -7325,6 +7343,9 @@ msgstr "1つのピースの長さ—カットリストを駆動します"
 
 msgid "Length the clamp holds and cannot cut"
 msgstr "クランプが保持して切断できない長さ"
+
+msgid "Length the clamp or pusher holds and cannot cut"
+msgstr ""
 
 msgid "Less manual work"
 msgstr "手作業を減らす"
@@ -14014,6 +14035,9 @@ msgstr "火曜日"
 
 msgid "Turn on the built-in pieces"
 msgstr "組み込み機能をオンにする"
+
+msgid "Turn this on for saws, tube cutters, and lasers. Operations on this process can feed cut lists."
+msgstr ""
 
 msgid "Type"
 msgstr "種類"

@@ -3621,6 +3621,9 @@ msgstr "전환 단계"
 msgid "Cutover support"
 msgstr "전환 지원"
 
+msgid "Cuts stock to length"
+msgstr ""
+
 msgid "Cutting Process"
 msgstr "절단 프로세스"
 
@@ -3818,6 +3821,9 @@ msgstr "기준 통화 거래에 사용할 기본 현금 계정입니다."
 msgid "Default CC Recipients"
 msgstr "기본 참조(CC) 수신자"
 
+msgid "Default end trim"
+msgstr ""
+
 msgid "Default GL account credited when a fixed-asset disposal results in a gain."
 msgstr "고정자산 처분으로 이익이 발생할 때 입금되는 기본 GL 계정입니다."
 
@@ -3833,6 +3839,12 @@ msgstr "장비 및 설비 유지보수에 대한 기본 총계정원장 비용 �
 msgid "Default GL expense account for periodic depreciation runs."
 msgstr "정기 감가상각 처리에 대한 기본 총계정원장 비용 계정입니다."
 
+msgid "Default grip margin"
+msgstr ""
+
+msgid "Default kerf"
+msgstr ""
+
 msgid "Default Method"
 msgstr "기본 방법"
 
@@ -3841,6 +3853,9 @@ msgstr "이 분류의 신규 자산에 미리 채워지는 기본 방법입니�
 
 msgid "Default Method Type"
 msgstr "기본 방법 유형"
+
+msgid "Default minimum remnant"
+msgstr ""
 
 msgid "Default Permissions"
 msgstr "기본 권한"
@@ -3877,6 +3892,9 @@ msgstr "이 분류의 신규 자산에 미리 채워지는 기본 내용연수�
 
 msgid "Defaults"
 msgstr "기본값"
+
+msgid "Defaults for new cut lists on this machine. Use the same unit your stock is measured in."
+msgstr ""
 
 msgid "Deferred Tax Expense"
 msgstr "이연법인세비용"
@@ -7325,6 +7343,9 @@ msgstr "한 부품의 길이 — 절단 목록 결정"
 
 msgid "Length the clamp holds and cannot cut"
 msgstr "클램프가 잡고 있어 절단할 수 없는 길이"
+
+msgid "Length the clamp or pusher holds and cannot cut"
+msgstr ""
 
 msgid "Less manual work"
 msgstr "수작업 감소"
@@ -14014,6 +14035,9 @@ msgstr "화요일"
 
 msgid "Turn on the built-in pieces"
 msgstr "내장 기능을 켜세요"
+
+msgid "Turn this on for saws, tube cutters, and lasers. Operations on this process can feed cut lists."
+msgstr ""
 
 msgid "Type"
 msgstr "유형"

@@ -3621,6 +3621,9 @@ msgstr "Paso de transición"
 msgid "Cutover support"
 msgstr "Soporte de transición"
 
+msgid "Cuts stock to length"
+msgstr ""
+
 msgid "Cutting Process"
 msgstr "Proceso de Corte"
 
@@ -3818,6 +3821,9 @@ msgstr "Cuenta de efectivo predeterminada para transacciones en su moneda base."
 msgid "Default CC Recipients"
 msgstr "Destinatarios CC predeterminados"
 
+msgid "Default end trim"
+msgstr ""
+
 msgid "Default GL account credited when a fixed-asset disposal results in a gain."
 msgstr "Cuenta contable predeterminada acreditada cuando la disposición de un activo fijo genera una ganancia."
 
@@ -3833,6 +3839,12 @@ msgstr "Cuenta GL de gastos predeterminada para mantenimiento de equipos e insta
 msgid "Default GL expense account for periodic depreciation runs."
 msgstr "Cuenta GL de gastos predeterminada para corridas de depreciación periódica."
 
+msgid "Default grip margin"
+msgstr ""
+
+msgid "Default kerf"
+msgstr ""
+
 msgid "Default Method"
 msgstr "Método Predeterminado"
 
@@ -3841,6 +3853,9 @@ msgstr "Método predeterminado que se completa previamente en nuevos activos en 
 
 msgid "Default Method Type"
 msgstr "Tipo de Método Predeterminado"
+
+msgid "Default minimum remnant"
+msgstr ""
 
 msgid "Default Permissions"
 msgstr "Permisos Predeterminados"
@@ -3877,6 +3892,9 @@ msgstr "Vida útil predeterminada que se completa previamente en nuevos activos 
 
 msgid "Defaults"
 msgstr "Valores predeterminados"
+
+msgid "Defaults for new cut lists on this machine. Use the same unit your stock is measured in."
+msgstr ""
 
 msgid "Deferred Tax Expense"
 msgstr "Gasto Fiscal Diferido"
@@ -7325,6 +7343,9 @@ msgstr "Largo de una pieza — determina listas de corte"
 
 msgid "Length the clamp holds and cannot cut"
 msgstr "Largo que sujeta la abrazadera y no se puede cortar"
+
+msgid "Length the clamp or pusher holds and cannot cut"
+msgstr ""
 
 msgid "Less manual work"
 msgstr "Menos trabajo manual"
@@ -14014,6 +14035,9 @@ msgstr "Martes"
 
 msgid "Turn on the built-in pieces"
 msgstr "Activa las piezas integradas"
+
+msgid "Turn this on for saws, tube cutters, and lasers. Operations on this process can feed cut lists."
+msgstr ""
 
 msgid "Type"
 msgstr "Tipo"
