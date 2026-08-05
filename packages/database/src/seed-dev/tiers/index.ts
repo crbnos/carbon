@@ -10,6 +10,7 @@ import { runTier8 } from "./08-change-orders.ts";
 import { runTier9 } from "./09-accounting.ts";
 import { runTier10 } from "./10-ops.ts";
 import { runTier11 } from "./11-workflows.ts";
+import { runTier12 } from "./12-planning.ts";
 
 export const TIERS: Tier[] = [
   { n: 1, name: "Foundation", run: runTier1 },
@@ -22,7 +23,8 @@ export const TIERS: Tier[] = [
   { n: 8, name: "Change orders", run: runTier8 },
   { n: 9, name: "Accounting + fixed assets", run: runTier9 },
   { n: 10, name: "Ops / misc", run: runTier10 },
-  { n: 11, name: "Workflows", run: runTier11 }
+  { n: 11, name: "Workflows", run: runTier11 },
+  { n: 12, name: "Planning prerequisites", run: runTier12 }
 ];
 
 export function selectTiers(only: number[] | null): Tier[] {
