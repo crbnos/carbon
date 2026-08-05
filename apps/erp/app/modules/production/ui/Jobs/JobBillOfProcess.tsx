@@ -1328,8 +1328,10 @@ function StepsForm({
     const newStepId = (fetcher.data as { id?: string | null } | undefined)?.id;
     if (!newStepId || draftSlides.length === 0 || !carbon) return;
     let cancelled = false;
+    // Snapshot the batch so anything added for the next step survives this save.
+    const batch = draftSlides;
     (async () => {
-      const slideRows = draftSlides.map((slide, index) => ({
+      const slideRows = batch.map((slide, index) => ({
         stepId: newStepId,
         imagePath: slide.imagePath,
         modelUploadId: slide.modelUploadId,
@@ -1348,7 +1350,8 @@ function StepsForm({
         toast.error(t`Failed to save slides`);
         return;
       }
-      setDraftSlides([]);
+      const savedIds = new Set(batch.map((slide) => slide.id));
+      setDraftSlides((prev) => prev.filter((slide) => !savedIds.has(slide.id)));
       revalidator.revalidate();
     })();
     return () => {
@@ -1362,9 +1365,10 @@ function StepsForm({
     const newStepId = (fetcher.data as { id?: string | null } | undefined)?.id;
     if (!newStepId || draftParts.length === 0 || !carbon) return;
     let cancelled = false;
+    const batch = draftParts;
     (async () => {
       const { error } = await carbon.from("jobMaterialStep").insert(
-        draftParts.map((jobMaterialId) => ({
+        batch.map((jobMaterialId) => ({
           jobMaterialId,
           jobOperationStepId: newStepId
         }))
@@ -1374,7 +1378,8 @@ function StepsForm({
         toast.error(t`Failed to save parts`);
         return;
       }
-      setDraftParts([]);
+      const savedIds = new Set(batch);
+      setDraftParts((prev) => prev.filter((id) => !savedIds.has(id)));
       revalidator.revalidate();
     })();
     return () => {
@@ -1388,9 +1393,10 @@ function StepsForm({
     const newStepId = (fetcher.data as { id?: string | null } | undefined)?.id;
     if (!newStepId || draftTools.length === 0 || !carbon) return;
     let cancelled = false;
+    const batch = draftTools;
     (async () => {
       const { error } = await carbon.from("jobOperationToolStep").insert(
-        draftTools.map((jobOperationToolId) => ({
+        batch.map((jobOperationToolId) => ({
           jobOperationToolId,
           jobOperationStepId: newStepId
         }))
@@ -1400,7 +1406,8 @@ function StepsForm({
         toast.error(t`Failed to save tools`);
         return;
       }
-      setDraftTools([]);
+      const savedIds = new Set(batch);
+      setDraftTools((prev) => prev.filter((id) => !savedIds.has(id)));
       revalidator.revalidate();
     })();
     return () => {
@@ -1446,17 +1453,16 @@ function StepsForm({
                 1,
               operationId
             }}
-            onSubmit={() => {
-              setType("Task");
-              setDescription({});
-              setNumericControls([]);
-            }}
             onAfterSubmit={() => {
               const newStepId = (
                 fetcher.data as { id?: string | null } | undefined
               )?.id;
               if (!newStepId || newStepId === toastedStepId.current) return;
               toastedStepId.current = newStepId;
+              // Only clear the controlled fields once the step actually saved.
+              setType("Task");
+              setDescription({});
+              setNumericControls([]);
               toast.success(t`Step added`);
             }}
             className="w-full"
