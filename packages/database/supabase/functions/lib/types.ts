@@ -10614,8 +10614,10 @@ export type Database = {
           itemId: string
           jobId: string | null
           jobMaterialId: string | null
+          jobOperationId: string | null
           order: number
           pieceLength: number
+          piecesPerParent: number
           pieceWidth: number | null
           quantity: number
           quantityCut: number
@@ -10631,8 +10633,10 @@ export type Database = {
           itemId: string
           jobId?: string | null
           jobMaterialId?: string | null
+          jobOperationId?: string | null
           order?: number
           pieceLength: number
+          piecesPerParent?: number
           pieceWidth?: number | null
           quantity: number
           quantityCut?: number
@@ -10648,8 +10652,10 @@ export type Database = {
           itemId?: string
           jobId?: string | null
           jobMaterialId?: string | null
+          jobOperationId?: string | null
           order?: number
           pieceLength?: number
+          piecesPerParent?: number
           pieceWidth?: number | null
           quantity?: number
           quantityCut?: number
@@ -10816,6 +10822,27 @@ export type Database = {
             columns: ["jobMaterialId"]
             isOneToOne: false
             referencedRelation: "openJobMaterialLines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cutListLine_jobOperationId_fkey"
+            columns: ["jobOperationId"]
+            isOneToOne: false
+            referencedRelation: "jobOperation"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cutListLine_jobOperationId_fkey"
+            columns: ["jobOperationId"]
+            isOneToOne: false
+            referencedRelation: "jobOperationsWithDependencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cutListLine_jobOperationId_fkey"
+            columns: ["jobOperationId"]
+            isOneToOne: false
+            referencedRelation: "jobOperationsWithMakeMethods"
             referencedColumns: ["id"]
           },
           {

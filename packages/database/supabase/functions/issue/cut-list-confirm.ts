@@ -22,10 +22,14 @@ export type ConfirmLineInput = {
 export type ConfirmLineRow = {
   id: string;
   jobId: string | null;
+  /** the cutting operation this demand came from, when the BOM line was pinned to one */
+  jobOperationId: string | null;
   itemId: string;
   pieceLength: number;
   quantity: number;
   quantityCut: number;
+  /** pieces of this material consumed by one finished part */
+  piecesPerParent: number;
 };
 
 export type ConsumedInput = {
@@ -56,6 +60,15 @@ export type JobAllocation = {
   nestedLength: number;
 };
 
+export type OperationCompletion = {
+  jobOperationId: string;
+  jobId: string | null;
+  /** pieces of material cut for this operation in this confirmation */
+  piecesCut: number;
+  /** finished parts those pieces complete — what the operation is credited with */
+  partsComplete: number;
+};
+
 export type CutListPostingPlan = {
   /** per-line quantityCut after this confirmation */
   lineUpdates: { id: string; quantityCut: number }[];
@@ -65,6 +78,8 @@ export type CutListPostingPlan = {
   remnants: RemnantInput[];
   /** drops too short to keep, plus any explicit scrap */
   scrap: ScrapInput[];
+  /** production to post against each served operation, closing the work orders */
+  operationCompletions: OperationCompletion[];
   /** Completed once every line is fully cut; otherwise the run stays open */
   status: "In Progress" | "Completed";
   /** used length / consumed length, as a percentage */
@@ -121,6 +136,51 @@ export function buildCutListPostingPlan(
     lineUpdates.push({
       id: line.id,
       quantityCut: line.quantityCut + applied
+    });
+  }
+
+  // Credit each served operation with the parts its pieces complete.
+  //
+  // Counting from the cumulative total, not this run's slice, is what makes
+  // partial confirmations add up: at 4 pieces per part, cutting 6 then 6 is
+  // 3 parts, but flooring each slice on its own would credit 1 + 1 and quietly
+  // lose the third.
+  const operationCompletions: OperationCompletion[] = [];
+  const byOperation = new Map<
+    string,
+    { jobId: string | null; before: number; after: number; perParent: number; piecesCut: number }
+  >();
+
+  for (const entry of cutThisRun) {
+    const operationId = entry.line.jobOperationId;
+    if (!operationId) continue;
+    const perParent = entry.line.piecesPerParent > 0 ? entry.line.piecesPerParent : 1;
+    const existing = byOperation.get(operationId);
+    if (existing) {
+      existing.before += entry.line.quantityCut;
+      existing.after += entry.line.quantityCut + entry.quantity;
+      existing.piecesCut += entry.quantity;
+    } else {
+      byOperation.set(operationId, {
+        jobId: entry.line.jobId,
+        before: entry.line.quantityCut,
+        after: entry.line.quantityCut + entry.quantity,
+        perParent,
+        piecesCut: entry.quantity
+      });
+    }
+  }
+
+  for (const [jobOperationId, entry] of byOperation) {
+    const partsComplete =
+      Math.floor(entry.after / entry.perParent) -
+      Math.floor(entry.before / entry.perParent);
+    if (partsComplete <= 0) continue;
+    operationCompletions.push({
+      jobOperationId,
+      jobId: entry.jobId,
+      piecesCut: entry.piecesCut,
+      partsComplete
     });
   }
 
@@ -218,6 +278,7 @@ export function buildCutListPostingPlan(
     allocations,
     remnants: keptRemnants,
     scrap: derivedScrap,
+    operationCompletions,
     status: isComplete ? "Completed" : "In Progress",
     actualYieldPct,
     totalConsumed

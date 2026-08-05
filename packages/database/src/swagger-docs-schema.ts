@@ -73783,6 +73783,12 @@ export default {
             $ref: "#/parameters/rowFilter.cutListLine.updatedAt"
           },
           {
+            $ref: "#/parameters/rowFilter.cutListLine.jobOperationId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.cutListLine.piecesPerParent"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -73887,6 +73893,12 @@ export default {
             $ref: "#/parameters/rowFilter.cutListLine.updatedAt"
           },
           {
+            $ref: "#/parameters/rowFilter.cutListLine.jobOperationId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.cutListLine.piecesPerParent"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -73943,6 +73955,12 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.cutListLine.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.cutListLine.jobOperationId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.cutListLine.piecesPerParent"
           },
           {
             $ref: "#/parameters/body.cutListLine"
@@ -131031,7 +131049,8 @@ export default {
         "quantityCut",
         "order",
         "createdBy",
-        "createdAt"
+        "createdAt",
+        "piecesPerParent"
       ],
       properties: {
         id: {
@@ -131110,6 +131129,17 @@ export default {
         updatedAt: {
           format: "timestamp with time zone",
           type: "string"
+        },
+        jobOperationId: {
+          description:
+            "Note:\nThis is a Foreign Key to `jobOperation.id`.<fk table='jobOperation' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        piecesPerParent: {
+          default: 1,
+          format: "numeric",
+          type: "number"
         }
       },
       type: "object"
@@ -176202,6 +176232,18 @@ export default {
     },
     "rowFilter.cutListLine.updatedAt": {
       name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.cutListLine.jobOperationId": {
+      name: "jobOperationId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.cutListLine.piecesPerParent": {
+      name: "piecesPerParent",
       required: false,
       in: "query",
       type: "string"

@@ -24,7 +24,7 @@ Research (~60 primary sources): `.ai/research/2026-08-04-cut-lists.md`.
 | Table | Purpose |
 |---|---|
 | `cutList` | The stateful document. Saw parameters (`kerf`, `endTrim`, `gripMargin`, `minRemnantLength`, `unitOfDimension`) live on the header, seeded from the process defaults but editable per run. `status` enum `cutListStatus`. `plannedYieldPct` / `actualYieldPct`. Readable id `CL000001` from the `cutList` sequence. |
-| `cutListLine` | Demand: N pieces of one `pieceLength` (+ `pieceWidth` for 2D). Carries `jobId` + `jobMaterialId` — the **demand pedigree** that lets one run serve many jobs and still settle cost and traceability per job. |
+| `cutListLine` | Demand: N pieces of one `pieceLength` (+ `pieceWidth` for 2D). Carries `jobId` + `jobMaterialId` + **`jobOperationId`** — the **demand pedigree** that lets one run serve many jobs and still settle cost, traceability, *and operation completion* per job. `piecesPerParent` (snapshotted from the BOM line) converts pieces to finished parts: 4-per-part means 40 pieces completes 10 parts, not 40. |
 | `cutPattern` | One stock unit's cut sequence, produced by the optimizer. `pattern` JSONB is `[{ cutListLineId, pieceLength }]` in cut order. **Rewritten wholesale** on every optimize run — never hold a long-lived reference to a pattern id. |
 | `itemStockDimension` | 1:1 with a material size-item: `stockLength` / `stockWidth` / `stockThickness` + `unitOfDimension`. Without a row here an item contributes **no stock** to the optimizer (it can't know whether a piece fits). |
 | `cutLists` (view) | List read: joins location/process/work center names and aggregates line counts. |
@@ -101,6 +101,15 @@ edge-function case does the I/O. What it gets right:
 4. **Below-minimum drops post as scrap**, not inventory.
 5. Partial confirmations leave the run `In Progress`; it completes only when
    every line is fully cut.
+6. **The run closes the work orders it served.** For every line carrying a
+   `jobOperationId`, confirmation inserts a `productionQuantity` (`Production`)
+   for the parts those pieces complete; Carbon's existing
+   `sync_update_job_operation_quantities` trigger then advances
+   `quantityComplete` and flips the operation to `Done`. Do **not** hand-roll
+   operation completion — post the quantity and let the trigger run. Parts are
+   counted from the line's cumulative cut, not this run's slice, so partial
+   confirmations across a part boundary don't lose one (4-per-part, 6 then 6 =
+   3 parts, not 1 + 1).
 
 Yield counts only material actually used up: a returned drop is still stock, so
 200" of parts from a 240" bar with a 40" returned drop is **100%**, not 83%.

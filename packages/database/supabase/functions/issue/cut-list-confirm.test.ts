@@ -9,8 +9,18 @@ const line = (
   jobId: string | null,
   pieceLength: number,
   quantity: number,
-  quantityCut = 0
-) => ({ id, jobId, itemId: "item-bar", pieceLength, quantity, quantityCut });
+  quantityCut = 0,
+  extra: { jobOperationId?: string | null; piecesPerParent?: number } = {}
+) => ({
+  id,
+  jobId,
+  jobOperationId: extra.jobOperationId ?? null,
+  itemId: "item-bar",
+  pieceLength,
+  quantity,
+  quantityCut,
+  piecesPerParent: extra.piecesPerParent ?? 1
+});
 
 Deno.test("splits consumption across jobs by nested length", () => {
   // Job A takes 2 x 10 = 20; Job B takes 1 x 10 = 10. A pays 2/3, B pays 1/3.
@@ -226,4 +236,99 @@ Deno.test("a remnant with no parent heat number omits the key", () => {
 
   assertEquals("Heat Number" in attributes, false);
   assertEquals(attributes.Remnant, true);
+});
+
+// --- Operation stitching -------------------------------------------------
+//
+// Brad's framing: a cut list is work-order stitching. Grouping the material is
+// only half of it — the run has to close the operations it served, or every
+// job's saw step sits at Todo and the operator signs into each one anyway.
+
+Deno.test("credits each served operation with the parts its pieces complete", () => {
+  const plan = buildCutListPostingPlan({
+    lines: [
+      line("l1", "jobA", 10, 5, 0, { jobOperationId: "opA" }),
+      line("l2", "jobB", 10, 7, 0, { jobOperationId: "opB" })
+    ],
+    inputs: [
+      { cutListLineId: "l1", quantityCut: 5 },
+      { cutListLineId: "l2", quantityCut: 7 }
+    ],
+    consumed: [{ trackedEntityId: "lot1", quantityConsumed: 1 }],
+    remnants: [],
+    scrap: [],
+    minRemnantLength: 0
+  });
+
+  assertEquals(plan.operationCompletions.length, 2);
+  const byOperation = Object.fromEntries(
+    plan.operationCompletions.map((c) => [c.jobOperationId, c.partsComplete])
+  );
+  assertEquals(byOperation.opA, 5);
+  assertEquals(byOperation.opB, 7);
+});
+
+Deno.test("pieces convert to parts at the BOM's pieces-per-parent", () => {
+  // 4 pieces of bar per finished part: 40 pieces completes 10 parts, not 40.
+  const plan = buildCutListPostingPlan({
+    lines: [line("l1", "jobA", 10, 40, 0, { jobOperationId: "opA", piecesPerParent: 4 })],
+    inputs: [{ cutListLineId: "l1", quantityCut: 40 }],
+    consumed: [{ trackedEntityId: "lot1", quantityConsumed: 1 }],
+    remnants: [],
+    scrap: [],
+    minRemnantLength: 0
+  });
+
+  assertEquals(plan.operationCompletions[0].partsComplete, 10);
+  assertEquals(plan.operationCompletions[0].piecesCut, 40);
+});
+
+Deno.test("partial confirmations add up across the part boundary", () => {
+  // 4 per part, cut 6 then 6. Flooring each slice on its own credits 1 + 1 and
+  // silently loses the third part; counting from the cumulative total gives 3.
+  const first = buildCutListPostingPlan({
+    lines: [line("l1", "jobA", 10, 12, 0, { jobOperationId: "opA", piecesPerParent: 4 })],
+    inputs: [{ cutListLineId: "l1", quantityCut: 6 }],
+    consumed: [{ trackedEntityId: "lot1", quantityConsumed: 1 }],
+    remnants: [],
+    scrap: [],
+    minRemnantLength: 0
+  });
+  const second = buildCutListPostingPlan({
+    lines: [line("l1", "jobA", 10, 12, 6, { jobOperationId: "opA", piecesPerParent: 4 })],
+    inputs: [{ cutListLineId: "l1", quantityCut: 6 }],
+    consumed: [{ trackedEntityId: "lot1", quantityConsumed: 1 }],
+    remnants: [],
+    scrap: [],
+    minRemnantLength: 0
+  });
+
+  assertEquals(first.operationCompletions[0].partsComplete, 1);
+  assertEquals(second.operationCompletions[0].partsComplete, 2);
+});
+
+Deno.test("a line cut to stock credits no operation", () => {
+  const plan = buildCutListPostingPlan({
+    lines: [line("l1", null, 10, 12)],
+    inputs: [{ cutListLineId: "l1", quantityCut: 12 }],
+    consumed: [{ trackedEntityId: "lot1", quantityConsumed: 1 }],
+    remnants: [],
+    scrap: [],
+    minRemnantLength: 0
+  });
+
+  assertEquals(plan.operationCompletions.length, 0);
+});
+
+Deno.test("less than one part's worth credits nothing yet", () => {
+  const plan = buildCutListPostingPlan({
+    lines: [line("l1", "jobA", 10, 12, 0, { jobOperationId: "opA", piecesPerParent: 4 })],
+    inputs: [{ cutListLineId: "l1", quantityCut: 3 }],
+    consumed: [{ trackedEntityId: "lot1", quantityConsumed: 1 }],
+    remnants: [],
+    scrap: [],
+    minRemnantLength: 0
+  });
+
+  assertEquals(plan.operationCompletions.length, 0);
 });

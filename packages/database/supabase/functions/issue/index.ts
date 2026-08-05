@@ -3913,6 +3913,8 @@ serve(async (req: Request) => {
             lines: lineRows.map((line) => ({
               id: line.id,
               jobId: line.jobId ?? null,
+              jobOperationId: line.jobOperationId ?? null,
+              piecesPerParent: Number(line.piecesPerParent ?? 1),
               itemId: line.itemId,
               pieceLength: Number(line.pieceLength),
               quantity: Number(line.quantity),
@@ -4210,6 +4212,27 @@ serve(async (req: Request) => {
               .execute();
           }
 
+          // 5. Close the work orders this run served. Posting a production
+          //    quantity is all that is needed — sync_update_job_operation_quantities
+          //    advances quantityComplete and flips the operation to Done once
+          //    complete + scrapped covers the target.
+          let operationsCredited = 0;
+          for (const completion of plan.operationCompletions) {
+            await trx
+              .insertInto("productionQuantity")
+              .values({
+                id: nanoid(),
+                jobOperationId: completion.jobOperationId,
+                type: "Production",
+                quantity: completion.partsComplete,
+                notes: `Cut list ${cutList.cutListId}`,
+                companyId,
+                createdBy: userId,
+              })
+              .execute();
+            operationsCredited += 1;
+          }
+
           await trx
             .updateTable("cutList")
             .set({
@@ -4231,6 +4254,7 @@ serve(async (req: Request) => {
             actualYieldPct: plan.actualYieldPct,
             allocations: plan.allocations.length,
             scrapped: plan.scrap.length,
+            operationsCredited,
           };
         });
 

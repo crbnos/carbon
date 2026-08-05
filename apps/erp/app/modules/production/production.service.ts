@@ -7629,6 +7629,8 @@ export async function upsertCutListLine(
     | (Omit<z.infer<typeof cutListLineValidator>, "id"> & {
         companyId: string;
         createdBy: string;
+        jobOperationId?: string | null;
+        piecesPerParent?: number;
       })
     | (Omit<z.infer<typeof cutListLineValidator>, "id"> & {
         id: string;
@@ -7755,9 +7757,11 @@ export async function getOpenCutDemand(
     .from("jobMaterial")
     .select(
       `id, jobId, itemId, cutLength, cutWidth, grainLocked, estimatedQuantity,
-       quantityIssued, quantityToIssue, unitOfMeasureCode, description,
+       quantity, quantityIssued, quantityToIssue, unitOfMeasureCode, description,
+       jobOperationId,
        job!inner(jobId, status, locationId, dueDate),
-       item(readableIdWithRevision, name)`
+       item(readableIdWithRevision, name),
+       jobOperation(id, description, status, processId)`
     )
     .eq("companyId", companyId)
     .not("cutLength", "is", null)

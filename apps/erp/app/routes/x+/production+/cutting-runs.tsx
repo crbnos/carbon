@@ -154,6 +154,13 @@ export async function action({ request }: ActionFunctionArgs) {
       pieceLength: Number(row.cutLength),
       pieceWidth: row.cutWidth === null ? undefined : Number(row.cutWidth),
       quantity: Math.ceil(Number(row.quantityToIssue ?? 0)),
+      // The operation this demand feeds. Carrying it is what makes the run
+      // stitch work orders: confirming the cut posts production against each
+      // served operation instead of leaving every job's saw step at Todo.
+      jobOperationId: row.jobOperationId ?? null,
+      // Pieces of this material per finished part — 4 per part means 40 pieces
+      // completes 10 parts, not 40.
+      piecesPerParent: Number(row.quantity ?? 1) || 1,
       companyId,
       createdBy: userId
     });
