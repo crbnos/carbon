@@ -1,0 +1,151 @@
+---
+title: August 2026
+description: Assembly instructions versioning, per-movement stock corrections, transfer wizard redesign, material picking settings, and job traveler materials.
+---
+
+# August 5, 2026
+
+This release introduces versioned assembly instructions, replaces the count-level rectify workflow with per-movement stock corrections, redesigns the transfer wizard for pull-based workflows, adds configurable material picking behavior, and introduces an opt-in materials section for job traveler PDFs.
+
+## Assembly instructions versioning
+
+Assembly instructions now support versioning with a self-referential `rootInstructionId` that groups version families together. Each version is a separate row in `assemblyInstruction`, linked through `rootInstructionId` (null for the root, set to the root's `id` for subsequent versions).
+
+When you revise a published instruction, you create a new Draft version that carries all steps, materials, slides, and tools. Activating that Draft:
+
+- Archives the prior Published version
+- Repoints all in-flight job operations (active jobs only) to the new instruction
+- Requires a confirmation dialog (archives the old one)
+
+The instructions table shows a "Version N" subtitle plus a Versions hover card listing all versions in the group. A version switcher in the header navigates between them. Change-notice diffs now resolve and label the assembly instruction, inspection plan, and operation type instead of showing raw UUIDs.
+
+**Migration**: Existing assembly instructions receive `rootInstructionId = id`. No action required.
+
+<Callout type="note" title="Activating a version updates in-flight work.">
+When you activate a version, Carbon automatically repoints all active job operations on active jobs to the newly published instruction. This ensures that work already on the floor builds from the current definition, not a stale one.
+</Callout>
+
+---
+
+## Stock movement corrections
+
+The count-level "Rectify" workflow (Posted → Draft → re-post) is removed. Posted inventory counts are now terminal. Corrections work per-movement instead.
+
+### New workflow
+
+1. Open the movement in **Stock Movements**
+2. Click **Correct Quantity**
+3. Enter the quantity it should have been
+4. Carbon books one opposite movement for the difference
+
+The correction links back to the original via `correctionOfItemLedgerId` on `itemLedger`. Re-correcting measures against the effective quantity (original + prior corrections), so corrections converge instead of stacking. The correction posts its journal into the original movement's accounting period. Locked periods refuse corrections; closed periods are permanent.
+
+**Migration**: The `rectify` route and its workflow are removed. Existing `correctionOfItemLedgerId` rows continue unchanged.
+
+<Callout type="info" title="Accounting period handling">
+The correction posts its journal into the original movement's accounting period. Locked periods refuse corrections until unlocked. Closed periods are permanent — corrections are blocked.
+</Callout>
+
+---
+
+## Transfer wizard redesign
+
+The stock transfer wizard now reflects the **pull model**: you start from the bin that needs stock and pull it from somewhere.
+
+- **Transfer To** is the master (step 1, destination)
+- **Transfer From** is now the detail (step 2, source)
+- Delta preview shows stock arriving at the destination
+- Available flag surfaces when demand outruns available + incoming
+- Lot picker offers **Scan** and **Select** tabs (no longer scan-only)
+- Expired lots warn or block per the company's expiry policy
+
+Traceability attributes now display "Storage Unit" instead of "Shelf" and resolve to the bin name, linking to the quantities screen pre-filtered. Direct transfers (two ledger rows) collapse into a single "from X to Y" activity entry.
+
+---
+
+## Material picking behavior
+
+Two new company settings control how material is picked and how short picks are handled.
+
+### Auto-select material without picking list
+
+**Location**: Settings → Production → Shop Floor
+
+When enabled, the MES issue-material screen auto-fills the FEFO lot suggestion for materials not on a picking list. The genealogy guard (single-parent check) still applies.
+
+### Incomplete-pick policy
+
+**Location**: Settings → Inventory → Picking
+
+| Policy | Behavior |
+| --- | --- |
+| **Warn** (default) | Acknowledge modal when a short pick is detected |
+| **Error** | Block completion until the shortage is resolved |
+
+A new **Partial** status marks picking lists that completed with acknowledged short picks. The status is a locked terminal state — you cannot resume picking after acknowledging partial completion.
+
+---
+
+## MES quantity modal improvements
+
+The quantity modal (Complete/Scrap/Rework) now:
+
+- Accepts fractional quantities (up to two decimal places) for items measured by weight, length, or volume
+- Guards against double-counting by validating against what's already complete
+- Caps entry at two decimals to prevent floating-point accumulation
+
+<Callout type="note" title="Fractional vs discrete units">
+The underlying `operationQuantity` still uses `Math.ceil` for discrete units. If you need fractional job quantities, the modal now reads `targetQuantity` instead, preserving the exact amount for weight/length/volume items.
+</Callout>
+
+---
+
+## Job traveler materials
+
+A new opt-in setting adds a materials (bill-of-materials) section to the job traveler PDF.
+
+**Location**: Settings → Production → Job Traveler Materials
+
+When enabled, the traveler includes:
+
+- Item number
+- Description
+- Method type (Make, Purchase, Pull from Inventory)
+- Quantity per the job's method
+
+Off by default to keep travelers concise.
+
+---
+
+## UI and theme refinements
+
+- **Surface radius**: Cards, panels, overlays moved from `rounded-2xl`/`rounded-xl` to `rounded-lg`
+- **Dark mode**: Better contrast and surface backgrounds across palettes
+- **Fonts**: Documentation site uses Archivo + JetBrains Mono
+
+---
+
+## Assembler service improvements
+
+The auto optimize policy now measures first, predicts second. Pass 1 is lossless; if the model fits the gates, it ships untouched. Failing passes predict the exact keep ratio needed. Models 0.4–30 MB now ship lossless under production gates.
+
+The compaction sweep now owns staging deletion; no concurrent optimize/convert/plan can lose the source file.
+
+---
+
+## Commits included
+
+38 commits from 2026-07-29 to 2026-08-05. Key commits:
+
+- `a8fe78952` — feat: version assembly instructions + surface them in change-notice diffs
+- `9efa3ae58` — feat(inventory): replace count rectification with per-movement stock movement corrections
+- `2b1ef4bce` — feat(inventory): flat correction rows, auto from-to comments
+- `509c001e8` — fix(inventory): stop bin-to-bin batch transfers consuming the lot + redesign the transfer wizard
+- `f5cede995` — fix(inventory): pull-based transfer wizard, lot picker, and traceability links
+- `4b09bf5b9` — feat(mes,inventory): material-picking behavior — opt-in pre-select + incomplete-pick policy
+- `4fee66fe8` — fix(mes): allow fractional quantities in the job operation quantity modal
+- `6b82bec27` — feat(production): opt-in materials section on job traveler PDF
+- `aa8a471cf` — feat(assembler): measure-and-predict auto optimize policy
+- `e3464d23d` — refactor(edge-functions): centralize HTTP response construction into lib/response.ts
+- `edfcdd65e` — ui-nit: reduce global radius and scale rounded-2xl with theme radius
+- `c238af5f5` — feat(docs): switch site fonts to Archivo + JetBrains Mono
