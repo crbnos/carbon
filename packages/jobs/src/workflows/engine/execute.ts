@@ -14,12 +14,18 @@ import {
   resolveValue,
   SUCCESS_HANDLE,
   type WorkflowCatalog,
+  type WorkflowDefinition,
   type WorkflowNode
 } from "@carbon/workflows";
 import { NonRetriableError } from "inngest";
-import { getJobDatabaseClient } from "../../db";
+import { getJobDatabaseClient, type JobDatabase } from "../../db";
 import { createWorkflowServices } from "../actions";
-import { claimStep, failInterruptedSteps, settleStep } from "./ledger";
+import {
+  claimStep,
+  failInterruptedSteps,
+  type RunLedger,
+  settleStep
+} from "./ledger";
 import { createEntityLoader, type EntityCache, triggerOutputs } from "./loader";
 import { claimRun, finishRun, loadRunContext } from "./log";
 import {
@@ -70,6 +76,23 @@ function noAccess(module: string): string {
   return `The owner of this workflow no longer has access to ${area}.`;
 }
 
+/** The durable ledger: the two run-log tables, with the run's scope folded in. Lives
+ * here rather than in `ledger.ts` so that module keeps exporting only free functions. */
+function createDatabaseLedger(
+  db: JobDatabase,
+  scope: { runId: string; companyId: string }
+): RunLedger {
+  return {
+    claimStep: (input) => claimStep(db, { ...input, ...scope }),
+    settleStep: (input) =>
+      settleStep(db, { ...input, companyId: scope.companyId }),
+    failInterruptedSteps: () =>
+      failInterruptedSteps(db, scope.runId, scope.companyId),
+    finishRun: (input) => finishRun(db, { ...input, ...scope }),
+    records: () => []
+  };
+}
+
 interface StepOutcome {
   status: NodeResult["status"];
   handle: string | null;
@@ -80,6 +103,7 @@ interface StepOutcome {
 
 interface NodeArgs {
   payload: RunPayload;
+  ledger: RunLedger;
   node: WorkflowNode;
   sequence: number;
   outputs: Record<string, Record<string, RuntimeValue>>;
@@ -155,15 +179,12 @@ async function recordStep(
     record: (key: string, value: RuntimeValue) => void
   ) => Promise<NodeResult>
 ): Promise<StepOutcome> {
-  const { payload, node } = args;
-  const db = getJobDatabaseClient();
+  const { node, ledger } = args;
   const startedAt = new Date().toISOString();
 
   // Claim before acting: at most once, on purpose. An interrupted step settles
   // as Failed at the end of the run rather than silently retrying.
-  const claim = await claimStep(db, {
-    runId: payload.runId,
-    companyId: payload.companyId,
+  const claim = await ledger.claimStep({
     nodeId: node.id,
     nodeType: node.type,
     itemKey,
@@ -181,9 +202,8 @@ async function recordStep(
     resolved[key] = value;
   });
 
-  await settleStep(db, {
+  await ledger.settleStep({
     stepRunId: claim.stepRunId,
-    companyId: payload.companyId,
     status: result.status,
     statusReason:
       result.status === "Skipped"
@@ -370,16 +390,60 @@ export async function executeWorkflowRun(params: {
 
   const { definition, startedAt, companyGroupId } = loaded;
 
+  const ledger = createDatabaseLedger(getJobDatabaseClient(), {
+    runId: payload.runId,
+    companyId: payload.companyId
+  });
+
+  const walked = await walkWorkflow({
+    payload,
+    definition,
+    companyGroupId,
+    startedAt,
+    step,
+    ledger,
+    catalog,
+    logger
+  });
+
+  return { runId: payload.runId, status: walked.status, steps: walked.steps };
+}
+
+/** Everything after the run row exists: the permission gate, the trigger's own step,
+ * the walk and the finish. The ledger decides whether any of it is durable, so why a
+ * run failed comes back here rather than only through `finishRun`. */
+export async function walkWorkflow(params: {
+  payload: RunPayload;
+  definition: WorkflowDefinition;
+  companyGroupId: string;
+  startedAt: string;
+  step: EngineStep;
+  ledger: RunLedger;
+  catalog: WorkflowCatalog;
+  logger: EngineLogger;
+  /** Which trigger to start from, when the caller knows. */
+  triggerNodeId?: string;
+}): Promise<{
+  status: "Succeeded" | "Failed";
+  steps: number;
+  error: string | null;
+}> {
+  const {
+    payload,
+    definition,
+    companyGroupId,
+    startedAt,
+    step,
+    ledger,
+    catalog,
+    logger,
+    triggerNodeId
+  } = params;
+
   const granted = await step.run("permissions", async () => {
     const refuse = async (error: string) => {
-      await finishRun(getJobDatabaseClient(), {
-        runId: payload.runId,
-        companyId: payload.companyId,
-        status: "Failed",
-        error,
-        startedAt
-      });
-      return { ok: false as const };
+      await ledger.finishRun({ status: "Failed", error, startedAt });
+      return { ok: false as const, error };
     };
 
     const client = await getOwnerClient(payload.ownerId, payload.runId);
@@ -404,12 +468,16 @@ export async function executeWorkflowRun(params: {
   });
 
   if (!granted.ok) {
-    return { runId: payload.runId, status: "Failed", steps: 0 };
+    return { status: "Failed", steps: 0, error: granted.error };
   }
 
   const cache: EntityCache = new Map();
   const outputs: Record<string, Record<string, RuntimeValue>> = {};
-  const trigger = findTriggerNodeForEvent(definition, payload.eventId);
+  const trigger = findTriggerNodeForEvent(
+    definition,
+    payload.eventId,
+    triggerNodeId
+  );
   if (trigger !== undefined) {
     outputs[trigger.id] = triggerOutputs({
       eventId: payload.eventId,
@@ -424,23 +492,19 @@ export async function executeWorkflowRun(params: {
   // step that was skipped.
   if (trigger !== undefined) {
     await step.run(`node:${trigger.id}`, async () => {
-      const db = getJobDatabaseClient();
-      const startedAt = new Date().toISOString();
-      const claim = await claimStep(db, {
-        runId: payload.runId,
-        companyId: payload.companyId,
+      const claimedAt = new Date().toISOString();
+      const claim = await ledger.claimStep({
         nodeId: trigger.id,
         nodeType: "trigger",
         itemKey: "",
         sequence: 0
       });
       if (!claim.claimed) return null;
-      await settleStep(db, {
+      await ledger.settleStep({
         stepRunId: claim.stepRunId,
-        companyId: payload.companyId,
         status: "Succeeded",
         output: outputs[trigger.id] ?? {},
-        startedAt
+        startedAt: claimedAt
       });
       return null;
     });
@@ -470,6 +534,7 @@ export async function executeWorkflowRun(params: {
 
     const args: NodeArgs = {
       payload,
+      ledger,
       node,
       sequence: state.sequence,
       outputs,
@@ -495,31 +560,21 @@ export async function executeWorkflowRun(params: {
     advance(state, definition, nodeId, outcome.handle);
   }
 
-  const status = await step.run("finish", async () => {
-    const db = getJobDatabaseClient();
-    const interrupted = await failInterruptedSteps(
-      db,
-      payload.runId,
-      payload.companyId
-    );
+  const finished = await step.run("finish", async () => {
+    const interrupted = await ledger.failInterruptedSteps();
     const settled =
       failed || capped || interrupted > 0
         ? ("Failed" as const)
         : ("Succeeded" as const);
+    const error = capped ? TOO_MANY_STEPS : null;
 
-    await finishRun(db, {
-      runId: payload.runId,
-      companyId: payload.companyId,
-      status: settled,
-      error: capped ? TOO_MANY_STEPS : null,
-      startedAt
-    });
-    return settled;
+    await ledger.finishRun({ status: settled, error, startedAt });
+    return { status: settled, error };
   });
 
   logger.info(
-    `Workflow run ${payload.runId} ${status.toLowerCase()} after ${executions} steps`
+    `Workflow run ${payload.runId} ${finished.status.toLowerCase()} after ${executions} steps`
   );
 
-  return { runId: payload.runId, status, steps: executions };
+  return { ...finished, steps: executions };
 }

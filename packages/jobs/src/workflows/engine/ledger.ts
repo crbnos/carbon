@@ -1,6 +1,7 @@
 import type { KyselyDatabase } from "@carbon/database/client";
 import type { Updateable } from "kysely";
 import type { JobDatabase } from "../../db";
+import type { FinishRunInput } from "./log";
 
 const INTERRUPTED = "This step was interrupted and did not finish.";
 
@@ -70,21 +71,36 @@ export function redactText(value: string | null | undefined): string | null {
   return redactForLog(value) as string;
 }
 
+export type ClaimStepInput = {
+  runId: string;
+  companyId: string;
+  nodeId: string;
+  nodeType: string;
+  itemKey: string;
+  sequence: number;
+  /** The step's configuration, written before it acts. The values it actually
+   * resolved arrive later, via `settleStep`. */
+  input?: unknown;
+};
+
+export type SettleStepInput = {
+  stepRunId: string;
+  companyId: string;
+  status: "Succeeded" | "Failed" | "Skipped";
+  statusReason?: string | null;
+  error?: string | null;
+  output?: unknown;
+  input?: unknown;
+  detail?: unknown;
+  branchTaken?: string | null;
+  startedAt: string;
+};
+
 /** The unique constraint makes the claim atomic. Losing it means a previous
  * attempt already started this step, so the caller must not act. */
 export async function claimStep(
   db: JobDatabase,
-  params: {
-    runId: string;
-    companyId: string;
-    nodeId: string;
-    nodeType: string;
-    itemKey: string;
-    sequence: number;
-    /** The step's configuration, written before it acts. The values it actually
-     * resolved arrive later, via `settleStep`. */
-    input?: unknown;
-  }
+  params: ClaimStepInput
 ): Promise<StepClaim> {
   const inserted = await db
     .insertInto("workflowStepRun")
@@ -114,18 +130,7 @@ export async function claimStep(
 /** Closes a claimed step. `statusReason` carries a skip, `error` a failure. */
 export async function settleStep(
   db: JobDatabase,
-  params: {
-    stepRunId: string;
-    companyId: string;
-    status: "Succeeded" | "Failed" | "Skipped";
-    statusReason?: string | null;
-    error?: string | null;
-    output?: unknown;
-    input?: unknown;
-    detail?: unknown;
-    branchTaken?: string | null;
-    startedAt: string;
-  }
+  params: SettleStepInput
 ): Promise<void> {
   const completedAt = new Date();
   const patch: Updateable<KyselyDatabase["workflowStepRun"]> = {
@@ -170,4 +175,95 @@ export async function failInterruptedSteps(
     .executeTakeFirst();
 
   return Number(result.numUpdatedRows ?? 0);
+}
+
+/** One in-memory step record, shaped for the columns the run-detail UI renders. */
+export type StepRecord = {
+  sequence: number;
+  nodeId: string;
+  nodeType: string;
+  itemKey: string;
+  status: string;
+  statusReason: string | null;
+  error: string | null;
+  input: unknown;
+  output: unknown;
+  detail: unknown;
+  branchTaken: string | null;
+  durationMs: number | null;
+};
+
+/** Where a run's steps and final status go. The durable one writes the two run-log
+ * tables; the memory one keeps them for a manual test run and writes nothing. */
+export interface RunLedger {
+  claimStep(
+    input: Omit<ClaimStepInput, "runId" | "companyId">
+  ): Promise<StepClaim>;
+  settleStep(input: Omit<SettleStepInput, "companyId">): Promise<void>;
+  failInterruptedSteps(): Promise<number>;
+  finishRun(input: Omit<FinishRunInput, "runId" | "companyId">): Promise<void>;
+  /** Empty for the durable ledger; the collected rows for the memory one. */
+  records(): StepRecord[];
+}
+
+/** Holds a run's steps in memory for a manual test run. Nothing is written, but the
+ * same redaction applies — a test run displays webhook headers and action inputs. */
+export function createMemoryLedger(): RunLedger {
+  const records: StepRecord[] = [];
+  const byId = new Map<string, StepRecord>();
+  let next = 0;
+
+  return {
+    claimStep: async (input) => {
+      const stepRunId = String(++next);
+      const record: StepRecord = {
+        sequence: input.sequence,
+        nodeId: input.nodeId,
+        nodeType: input.nodeType,
+        itemKey: input.itemKey,
+        status: "Running",
+        statusReason: null,
+        error: null,
+        input: input.input === undefined ? null : redactForLog(input.input),
+        output: null,
+        detail: null,
+        branchTaken: null,
+        durationMs: null
+      };
+      records.push(record);
+      byId.set(stepRunId, record);
+      return { claimed: true, stepRunId };
+    },
+    settleStep: async (input) => {
+      const record = byId.get(input.stepRunId);
+      if (record === undefined) return;
+      record.status = input.status;
+      record.statusReason = redactText(input.statusReason);
+      record.error = redactText(input.error);
+      record.branchTaken = input.branchTaken ?? null;
+      record.durationMs = Math.max(
+        0,
+        Date.now() - new Date(input.startedAt).getTime()
+      );
+      if (input.input !== undefined) record.input = redactForLog(input.input);
+      if (input.output !== undefined)
+        record.output = redactForLog(input.output);
+      if (input.detail !== undefined) record.detail = input.detail;
+    },
+    failInterruptedSteps: async () => {
+      let changed = 0;
+      for (const record of records) {
+        if (record.status !== "Running") continue;
+        record.status = "Failed";
+        record.error = INTERRUPTED;
+        changed += 1;
+      }
+      return changed;
+    },
+    // Nothing to close: there is no `workflowRun` row for a manual test run.
+    finishRun: async () => {
+      return;
+    },
+    records: () => records
+  };
 }

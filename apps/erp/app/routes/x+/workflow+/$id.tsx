@@ -33,6 +33,7 @@ import WorkflowEdgeStyle from "~/modules/workflows/ui/Builder/edges/workflow-edg
 import { toReactFlow } from "~/modules/workflows/ui/Builder/graph";
 import { IssuesPanel } from "~/modules/workflows/ui/Builder/IssuesPanel";
 import { LiveValidation } from "~/modules/workflows/ui/Builder/LiveValidation";
+import { TestRunDialog } from "~/modules/workflows/ui/Builder/TestRun/TestRunDialog";
 import { WorkflowBuilder } from "~/modules/workflows/ui/Builder/WorkflowBuilder";
 import type { Handle } from "~/utils/handle";
 import { detailBreadcrumb } from "~/utils/handle";
@@ -58,7 +59,7 @@ export function shouldRevalidate({ formAction }: ShouldRevalidateFunctionArgs) {
 }
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const { client, companyId, userId } = await requirePermissions(request, {
     view: "workflows",
     role: "employee"
   });
@@ -99,6 +100,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!versionId) {
     return {
       workflow,
+      userId,
       canvasState,
       versions: all,
       versionId: null,
@@ -119,6 +121,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!read.ok) {
     return {
       workflow,
+      userId,
       canvasState,
       versions: all,
       versionId,
@@ -131,6 +134,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   return {
     workflow,
+    userId,
     canvasState,
     versions: all,
     versionId,
@@ -146,6 +150,7 @@ export default function WorkflowBuilderRoute() {
   const issuesDisclosure = useDisclosure();
   const {
     workflow,
+    userId,
     canvasState,
     versions,
     versionId,
@@ -155,6 +160,7 @@ export default function WorkflowBuilderRoute() {
   } = useLoaderData<typeof loader>();
 
   const isReadOnly = isLiveVersion || !permissions.can("update", "workflows");
+  const isOwner = workflow.ownerId === userId;
 
   if (!definition || !versionId) {
     return (
@@ -175,10 +181,11 @@ export default function WorkflowBuilderRoute() {
   return (
     <ReactFlowProvider>
       <WorkflowBuilderProvider
-        key={`${versionId}:${isReadOnly}`}
+        key={`${versionId}:${isReadOnly}:${isOwner}`}
         nodes={nodes}
         edges={edges}
         isReadOnly={isReadOnly}
+        isOwner={isOwner}
       >
         <div className="flex h-[calc(100dvh-49px)] w-full flex-col">
           <BuilderHeader
@@ -199,6 +206,7 @@ export default function WorkflowBuilderRoute() {
           </div>
           <Autosave workflowId={workflow.id} versionId={versionId} />
           <LiveValidation />
+          <TestRunDialog workflowId={workflow.id} />
         </div>
       </WorkflowBuilderProvider>
     </ReactFlowProvider>

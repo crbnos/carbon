@@ -42,6 +42,7 @@ type WorkflowBuilderProviderProps = {
   nodes: BuilderNode[];
   edges: BuilderEdge[];
   isReadOnly: boolean;
+  isOwner: boolean;
 };
 
 export function WorkflowBuilderProvider({

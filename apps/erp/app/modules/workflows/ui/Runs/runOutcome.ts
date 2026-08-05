@@ -1,11 +1,9 @@
 import type { WorkflowDefinition } from "@carbon/workflows";
-import type {
-  WorkflowRunDetail,
-  WorkflowRunStep
-} from "../../workflows.service";
+import type { WorkflowRunDetail } from "../../workflows.service";
 import type { LabelFor } from "../Builder/labelKeys";
 import { nodeTitle } from "../Builder/labelKeys";
 import { NODE_KIND_META } from "../Builder/nodes/meta";
+import type { RunStepView } from "./WorkflowRunSteps";
 
 export type RunOutcome = {
   tone: "neutral" | "warning" | "danger";
@@ -18,7 +16,7 @@ const UNTRANSLATED: LabelFor = (_key, fallback) => fallback;
 /** The title a step should be described by in the outcome sentence. Same rule as
  * the step rows use, so the sentence and the list never name a step differently. */
 function stepTitle(
-  step: WorkflowRunStep,
+  step: RunStepView,
   definition: WorkflowDefinition | null,
   labelFor: LabelFor
 ): string {
@@ -45,8 +43,8 @@ function stepTitle(
  * `conditionExecutor` in `packages/workflows/src/runtime/condition.ts`.
  */
 export function runOutcome(
-  run: WorkflowRunDetail,
-  steps: WorkflowRunStep[],
+  run: Pick<WorkflowRunDetail, "status" | "error" | "statusReason">,
+  steps: RunStepView[],
   definition: WorkflowDefinition | null,
   labelFor: LabelFor = UNTRANSLATED
 ): RunOutcome {

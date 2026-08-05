@@ -10,7 +10,6 @@ export type WorkflowIssueCode =
   | "DANGLING_EDGE"
   | "UNKNOWN_HANDLE"
   | "CYCLE"
-  | "UNREACHABLE_NODE"
   | "MISSING_INPUT"
   | "UNKNOWN_INPUT"
   | "TYPE_MISMATCH"

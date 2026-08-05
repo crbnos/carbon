@@ -13,6 +13,7 @@ import { addEdge, applyEdgeChanges, applyNodeChanges } from "@xyflow/react";
 import { nanoid } from "nanoid";
 import { createStore } from "zustand";
 import type { BuilderEdge, BuilderNode } from "../../types";
+import type { RunStepView } from "../Runs/WorkflowRunSteps";
 import {
   asWorkflowNode,
   canConnect,
@@ -24,6 +25,16 @@ import {
 import { layoutPositions } from "./layout";
 
 export type SaveState = "idle" | "saving" | "saved" | "error";
+
+export type TestRunResult = {
+  status: "Succeeded" | "Failed";
+  steps: RunStepView[];
+  /** Why it failed — a refused request, or a run that failed before any step ran. */
+  error: string | null;
+  /** What has to be fixed before it can run at all. Listed in the run panel, not the
+   * publish one — the author asked to run, not to publish. */
+  issues: WorkflowIssue[];
+};
 
 export type BuilderState = {
   nodes: BuilderNode[];
@@ -39,6 +50,12 @@ export type BuilderState = {
   batchPlans: Record<string, BatchPlan>;
   saveState: SaveState;
   isReadOnly: boolean;
+  /** The viewer owns this workflow, so they may fire a test run. */
+  isOwner: boolean;
+  /** The trigger node whose test-run dialog is open, or null. */
+  testRunFor: string | null;
+  testRunStatus: "idle" | "running";
+  testRunResult: TestRunResult | null;
   baseline: string;
   onNodesChange: (changes: NodeChange<BuilderNode>[]) => void;
   onEdgesChange: (changes: EdgeChange<BuilderEdge>[]) => void;
@@ -52,6 +69,10 @@ export type BuilderState = {
   setLiveIssues: (issues: WorkflowIssue[]) => void;
   setBatchPlans: (plans: Record<string, BatchPlan>) => void;
   setSaveState: (state: SaveState) => void;
+  openTestRun: (nodeId: string) => void;
+  closeTestRun: () => void;
+  setTestRunStatus: (status: "idle" | "running") => void;
+  setTestRunResult: (result: TestRunResult | null) => void;
   rebaseline: () => void;
   /** Merge a patch into one node's `data`. The only way node configuration changes. */
   updateNodeData: (id: string, patch: Record<string, unknown>) => void;
@@ -88,6 +109,7 @@ export function createBuilderStore(initial: {
   nodes: BuilderNode[];
   edges: BuilderEdge[];
   isReadOnly: boolean;
+  isOwner: boolean;
 }) {
   return createStore<BuilderState>((set, get) => ({
     nodes: initial.nodes,
@@ -98,6 +120,10 @@ export function createBuilderStore(initial: {
     batchPlans: {},
     saveState: "idle",
     isReadOnly: initial.isReadOnly,
+    isOwner: initial.isOwner,
+    testRunFor: null,
+    testRunStatus: "idle",
+    testRunResult: null,
     baseline: snapshot(initial.nodes, initial.edges),
 
     onNodesChange: (changes) => {
@@ -218,6 +244,12 @@ export function createBuilderStore(initial: {
       set({ batchPlans: plans });
     },
     setSaveState: (saveState) => set({ saveState }),
+    openTestRun: (nodeId) => set({ testRunFor: nodeId }),
+    // Deliberately keeps `testRunResult` — dismissing the dialog must not throw
+    // away a result the author is still reading.
+    closeTestRun: () => set({ testRunFor: null }),
+    setTestRunStatus: (testRunStatus) => set({ testRunStatus }),
+    setTestRunResult: (testRunResult) => set({ testRunResult }),
     rebaseline: () => {
       const { nodes, edges } = get();
       set({ baseline: snapshot(nodes, edges) });

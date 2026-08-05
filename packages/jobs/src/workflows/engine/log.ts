@@ -130,16 +130,18 @@ export async function failCrashedRun(
   });
 }
 
+export type FinishRunInput = {
+  runId: string;
+  companyId: string;
+  status: "Succeeded" | "Failed" | "Skipped";
+  statusReason?: string | null;
+  error?: string | null;
+  startedAt: string;
+};
+
 export async function finishRun(
   db: JobDatabase,
-  params: {
-    runId: string;
-    companyId: string;
-    status: "Succeeded" | "Failed" | "Skipped";
-    statusReason?: string | null;
-    error?: string | null;
-    startedAt: string;
-  }
+  params: FinishRunInput
 ): Promise<void> {
   const completedAt = new Date();
   const durationMs = Math.max(

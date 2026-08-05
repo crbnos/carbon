@@ -22,6 +22,7 @@ import { edgeTypes } from "./edges/WorkflowEdge";
 import { canConnect } from "./graph";
 import { NodePalette } from "./NodePalette";
 import { nodeTypes } from "./nodes";
+import { TestRunPanel } from "./TestRun/TestRunPanel";
 import { FIT_VIEW_OPTIONS, useCanvasState } from "./useCanvasState";
 
 const proOptions = { hideAttribution: true };
@@ -54,6 +55,9 @@ export function WorkflowBuilder({
   const nodes = useBuilderStore((state) => state.nodes);
   const edges = useBuilderStore((state) => state.edges);
   const isReadOnly = useBuilderStore((state) => state.isReadOnly);
+  const showResults = useBuilderStore(
+    (state) => state.testRunStatus === "running" || state.testRunResult !== null
+  );
   const onNodesChange = useBuilderStore((state) => state.onNodesChange);
   const onEdgesChange = useBuilderStore((state) => state.onEdgesChange);
   const onConnect = useBuilderStore((state) => state.onConnect);
@@ -167,6 +171,12 @@ export function WorkflowBuilder({
           </ReactFlow>
         </div>
       </ResizablePanel>
+      {showResults && <ResizableHandle withHandle />}
+      {showResults && (
+        <ResizablePanel id="results" order={3} defaultSize={24} minSize={18}>
+          <TestRunPanel />
+        </ResizablePanel>
+      )}
     </ResizablePanelGroup>
   );
 }

@@ -45,27 +45,55 @@ export function validateDefinition(
   const duplicates = checkDuplicateIds(parsed.data);
   if (duplicates.length > 0) return duplicates;
 
-  const duplicateNames = checkDuplicateNames(parsed.data);
-  if (duplicateNames.length > 0) return duplicateNames;
-
   const trigger = checkTrigger(parsed.data);
   if (trigger.length > 0) return trigger;
 
   const edges = checkEdges(parsed.data);
   if (edges.length > 0) return edges;
 
-  const graph = checkGraph(parsed.data);
+  // From here on, only the live graph. A step no trigger reaches is not part of the
+  // workflow — the engine never runs it, so a half-finished one parked on the canvas
+  // is not a problem to report.
+  const live = liveDefinition(parsed.data);
+
+  const duplicateNames = checkDuplicateNames(live);
+  if (duplicateNames.length > 0) return duplicateNames;
+
+  const graph = checkGraph(live);
   if (graph.length > 0) return graph;
 
-  const { context } = createContext(parsed.data, catalog);
+  const { context } = createContext(live, catalog);
 
-  const references = checkReferences(parsed.data, context);
+  const references = checkReferences(live, context);
   if (references.length > 0) return references;
 
-  const types = checkTypes(parsed.data, context);
+  const types = checkTypes(live, context);
   if (types.length > 0) return types;
 
-  return checkConfig(parsed.data, context);
+  return checkConfig(live, context);
+}
+
+/** The workflow as the engine sees it: every trigger, everything they reach, and the
+ * edges between those. */
+export function liveDefinition(
+  definition: WorkflowDefinition
+): WorkflowDefinition {
+  const adjacency = buildAdjacency(definition, "forward");
+  const live = new Set<string>();
+  for (const node of definition.nodes) {
+    if (node.type !== "trigger") continue;
+    for (const id of reachableFrom(node.id, adjacency)) live.add(id);
+  }
+
+  if (live.size === definition.nodes.length) return definition;
+
+  return {
+    ...definition,
+    nodes: definition.nodes.filter((node) => live.has(node.id)),
+    edges: definition.edges.filter(
+      (edge) => live.has(edge.source) && live.has(edge.target)
+    )
+  };
 }
 
 function checkDuplicateIds(definition: WorkflowDefinition): WorkflowIssue[] {
@@ -279,7 +307,7 @@ function checkEdges(definition: WorkflowDefinition): WorkflowIssue[] {
   return issues;
 }
 
-/** Layer 4 — steps only ever flow forward, and every step can be reached. */
+/** Layer 4 — steps only ever flow forward. */
 function checkGraph(definition: WorkflowDefinition): WorkflowIssue[] {
   const adjacency = buildAdjacency(definition, "forward");
   const issues: WorkflowIssue[] = [];
@@ -315,24 +343,6 @@ function checkGraph(definition: WorkflowDefinition): WorkflowIssue[] {
     return issues;
   }
 
-  const triggers = definition.nodes.filter((node) => node.type === "trigger");
-  if (triggers.length === 0) return issues;
-
-  const reachable = new Set<string>();
-  for (const trigger of triggers) {
-    for (const id of reachableFrom(trigger.id, adjacency)) reachable.add(id);
-  }
-  for (const node of definition.nodes) {
-    if (node.type === "trigger") continue;
-    if (!reachable.has(node.id)) {
-      issues.push({
-        code: "UNREACHABLE_NODE",
-        nodeId: node.id,
-        message: "Nothing connects to this step, so it would never run."
-      });
-    }
-  }
-
   return issues;
 }
 
@@ -348,8 +358,9 @@ export function referenceIssues(
 ): WorkflowIssue[] {
   const parsed = workflowDefinitionSchema.safeParse(definition);
   if (!parsed.success) return [];
-  const { context } = createContext(parsed.data, catalog);
-  return checkReferences(parsed.data, context);
+  const live = liveDefinition(parsed.data);
+  const { context } = createContext(live, catalog);
+  return checkReferences(live, context);
 }
 
 /** Layer 5 — every variable names a real upstream value, and items are only read inside a loop. */

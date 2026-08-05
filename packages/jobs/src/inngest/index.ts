@@ -11,6 +11,11 @@ export type {
   WorkflowDispatch
 } from "../workflows/actions/dispatcher.ts";
 export { setWorkflowDispatch } from "../workflows/actions/dispatcher.ts";
+export type {
+  ManualRunResult,
+  StepRecord
+} from "../workflows/engine/index.ts";
+export { executeManualWorkflowRun } from "../workflows/engine/index.ts";
 export { inngest } from "./client.ts";
 
 import {

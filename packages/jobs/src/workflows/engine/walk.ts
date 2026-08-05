@@ -14,17 +14,25 @@ export function findTriggerNode(
   );
 }
 
-/** The trigger that listed this event, or the first one when nothing matches
- * (a scheduled run carries no catalog event id). */
+/** The trigger the caller named, else the one that listed this event, else the first
+ * (a scheduled run carries no catalog event id). A test run names one: two triggers
+ * can list the same event, and the author picked which of them to fire. */
 export function findTriggerNodeForEvent(
   definition: WorkflowDefinition,
-  eventId: string
+  eventId: string,
+  triggerNodeId?: string
 ): TriggerNode | undefined {
   const triggers = definition.nodes.filter(
     (node): node is TriggerNode => node.type === "trigger"
   );
+  const named =
+    triggerNodeId === undefined
+      ? undefined
+      : triggers.find((node) => node.id === triggerNodeId);
   return (
-    triggers.find((node) => node.data.events.includes(eventId)) ?? triggers[0]
+    named ??
+    triggers.find((node) => node.data.events.includes(eventId)) ??
+    triggers[0]
   );
 }
 

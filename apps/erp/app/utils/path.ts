@@ -2156,6 +2156,8 @@ export const path = {
     workflowRuns: `${x}/workflows/runs`,
     workflowSave: (id: string) => generatePath(`${x}/workflow/${id}/save`),
     workflows: `${x}/workflows`,
+    workflowTestRun: (id: string) =>
+      generatePath(`${x}/workflow/${id}/test-run`),
     workflowToggle: (id: string) => generatePath(`${x}/workflow/${id}/toggle`),
     workflowVersionNew: (id: string) =>
       generatePath(`${x}/workflow/${id}/version/new`)

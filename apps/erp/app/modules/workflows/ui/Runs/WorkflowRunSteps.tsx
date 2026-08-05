@@ -16,8 +16,24 @@ import { StepStatus } from "./RunStatus";
 import { ValueMap } from "./RuntimeValueView";
 import { useNodeLabel } from "./useNodeLabel";
 
+/** Only the columns this component renders, so an unsaved test run can feed it too. */
+export type RunStepView = Pick<
+  WorkflowRunStep,
+  | "sequence"
+  | "nodeId"
+  | "nodeType"
+  | "itemKey"
+  | "status"
+  | "statusReason"
+  | "input"
+  | "output"
+  | "detail"
+  | "branchTaken"
+  | "durationMs"
+>;
+
 type WorkflowRunStepsProps = {
-  steps: WorkflowRunStep[];
+  steps: RunStepView[];
   definition: WorkflowDefinition | null;
   compacted: boolean;
   stepsPurged: boolean;
@@ -107,7 +123,7 @@ function StepRow({
   node,
   recordNames
 }: {
-  step: WorkflowRunStep | null;
+  step: RunStepView | null;
   nodeTitle: string;
   nodeSubtitle?: string;
   nodeIcon: React.ReactNode;
@@ -262,7 +278,7 @@ function StepRow({
 }
 
 function stepRowFromType(
-  step: WorkflowRunStep,
+  step: RunStepView,
   recordNames: Record<string, string>
 ) {
   const meta = NODE_KIND_META[step.nodeType as keyof typeof NODE_KIND_META];
@@ -314,7 +330,7 @@ export function WorkflowRunSteps({
     null;
 
   // Group steps by nodeId, picking the node-level row (itemKey === "")
-  const stepsByNode = new Map<string, WorkflowRunStep>();
+  const stepsByNode = new Map<string, RunStepView>();
   for (const step of steps) {
     if (!step.itemKey || step.itemKey === "") {
       stepsByNode.set(step.nodeId, step);

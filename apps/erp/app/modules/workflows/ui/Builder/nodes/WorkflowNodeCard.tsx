@@ -1,4 +1,10 @@
-import { cn, IconButton } from "@carbon/react";
+import {
+  cn,
+  IconButton,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger
+} from "@carbon/react";
 import type { WorkflowNodeType } from "@carbon/workflows";
 import { FAILURE_HANDLE } from "@carbon/workflows";
 import { WORKFLOW_LABELS } from "@carbon/workflows/labels";
@@ -9,6 +15,7 @@ import { memo, useEffect, useState } from "react";
 import {
   LuMaximize2,
   LuMinimize2,
+  LuPlay,
   LuTrash2,
   LuTriangleAlert,
   LuX
@@ -57,6 +64,14 @@ function WorkflowNodeCardImpl({ id, type, data, selected }: NodeProps) {
   const cardIssues = isConnected ? nodeIssues : [];
 
   const isReadOnly = useBuilderStore((state) => state.isReadOnly);
+
+  const isOwner = useBuilderStore((state) => state.isOwner);
+  const openTestRun = useBuilderStore((state) => state.openTestRun);
+  // A boolean, not the arrays: the answer only flips when the graph goes in or
+  // out of a valid state, so this survives the per-edit issue churn.
+  const hasIssues = useBuilderStore(
+    (state) => state.liveIssues.length > 0 || state.issues.length > 0
+  );
 
   // A string, not an object: the answer only changes when this card flips between
   // states, so a pointer move mid-drag does not re-render every card on the canvas.
@@ -131,9 +146,35 @@ function WorkflowNodeCardImpl({ id, type, data, selected }: NodeProps) {
       <BatchBadge action={node.data.action} input={batchPlan.input} />
     ) : null;
 
+  // Running a workflow doesn't modify its definition, so read-only must not hide this.
+  const testSlot =
+    node.type === "trigger" && isOwner ? (
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <IconButton
+            aria-label={t`Test run`}
+            icon={<LuPlay />}
+            variant="ghost"
+            size="sm"
+            isDisabled={hasIssues}
+            onClick={(e) => {
+              e.stopPropagation();
+              openTestRun(id);
+            }}
+          />
+        </TooltipTrigger>
+        <TooltipContent side="top">
+          {hasIssues
+            ? t`Fix the problems with this workflow before testing it`
+            : t`Test run — results are not saved to the Runs page`}
+        </TooltipContent>
+      </Tooltip>
+    ) : null;
+
   const actionsSlot =
-    builderNode && (!isReadOnly || batchSlot) ? (
+    builderNode && (!isReadOnly || batchSlot || testSlot) ? (
       <div className="nodrag nopan flex shrink-0 items-center gap-0.5">
+        {testSlot}
         {batchSlot}
         {!isReadOnly && (
           <IconButton

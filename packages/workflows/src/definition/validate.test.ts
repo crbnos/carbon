@@ -53,14 +53,20 @@ describe("shape", () => {
   });
 
   it("reports DUPLICATE_NODE_NAME for two nodes with the same name", () => {
-    const definition = define([
-      trigger(),
-      {
-        ...condition("cond_a", [{ id: "p1", kind: "if", clauses: [] }]),
-        name: "shared"
-      },
-      { ...action("cond_b"), name: "shared" }
-    ]);
+    const definition = define(
+      [
+        trigger(),
+        {
+          ...condition("cond_a", [{ id: "p1", kind: "if", clauses: [] }]),
+          name: "shared"
+        },
+        { ...action("cond_b"), name: "shared" }
+      ],
+      [
+        edge("e1", "trigger", "out", "cond_a"),
+        edge("e2", "trigger", "out", "cond_b")
+      ]
+    );
     const issues = validateDefinition(definition, catalog);
     expect(issues.map((i) => i.code)).toEqual([
       "DUPLICATE_NODE_NAME",
@@ -243,11 +249,13 @@ describe("graph", () => {
     expect(codes(definition)).toEqual(["CYCLE"]);
   });
 
-  it("reports UNREACHABLE_NODE for a step with no path from the trigger", () => {
-    const definition = define([trigger(), action("a1")]);
-    const issues = validateDefinition(definition, catalog);
-    expect(issues.map((i) => i.code)).toEqual(["UNREACHABLE_NODE"]);
-    expect(issues[0]?.nodeId).toBe("a1");
+  // A step parked on the canvas is not part of the workflow — the engine never runs it.
+  it("ignores a step with no path from the trigger, however broken", () => {
+    const definition = define([
+      trigger(),
+      action("a1", { action: "createIssue", inputs: {} })
+    ]);
+    expect(validateDefinition(definition, catalog)).toEqual([]);
   });
 
   it("accepts a fan-out of two actions off one handle", () => {
@@ -374,18 +382,23 @@ describe("references", () => {
   });
 
   it("referenceIssues reports a broken variable the layers above would hide", () => {
-    // Unreachable, so `validateDefinition` stops at layer 4 and never looks at values.
+    // A cycle, so `validateDefinition` stops at layer 4 and never looks at values.
     const definition = define(
       [
         trigger(),
         action("a1", {
           action: "createIssue",
           inputs: { title: ref("ghost", "result") }
-        })
+        }),
+        action("a2")
       ],
-      []
+      [
+        edge("e1", "trigger", "out", "a1"),
+        edge("e2", "a1", "success", "a2"),
+        edge("e3", "a2", "success", "a1")
+      ]
     );
-    expect(codes(definition)).toEqual(["UNREACHABLE_NODE"]);
+    expect(codes(definition)).toEqual(["CYCLE"]);
     expect(referenceIssues(definition, catalog).map((i) => i.code)).toEqual([
       "UNKNOWN_VARIABLE"
     ]);
