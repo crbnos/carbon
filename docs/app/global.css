@@ -13,12 +13,16 @@
 /* Scan the docs app's own files for utility classes */
 @source "../";
 
-/* Swap the site typeface to DM Sans / Fira Code (matches the editorial Guide), self-hosted
- * via next/font (see app/layout.tsx). This overrides Carbon theme.css's Geist font utilities
- * site-wide. The --font-dm-sans / --font-fira-code vars are set on <html> by next/font. */
+/* Swap the site typeface to Archivo / JetBrains Mono, self-hosted via next/font
+ * (see app/layout.tsx). This overrides Carbon theme.css's Geist font utilities site-wide.
+ * The --font-archivo / --font-jetbrains-mono vars are set on <html> by next/font.
+ *   font-sans    → Archivo (body / UI text)
+ *   font-display → Archivo (headings, big display type — use bold weights)
+ *   font-mono    → JetBrains Mono (mono labels, eyebrows, code) */
 @theme {
-  --font-sans: var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif;
-  --font-mono: var(--font-fira-code), ui-monospace, monospace;
+  --font-sans: var(--font-archivo), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-archivo), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains-mono), ui-monospace, monospace;
 }
 
 /* Raw token values for the default "Modern" (zinc) theme, baked in because a
@@ -144,7 +148,7 @@
   --color-ed-blue-deep: #17729b;
   --color-ed-brown: #a76451;
 
-  /* Editorial DM Sans weights between Tailwind's normal(400)/medium(500)/semibold(600). */
+  /* Editorial Archivo weights between Tailwind's normal(400)/medium(500)/semibold(600). */
   --font-weight-book: 460;
   --font-weight-demi: 530;
   --font-weight-semi: 560;
@@ -249,13 +253,13 @@
   .guide-prose h1 {
     font-size: clamp(2.25rem, 5vw, 2.75rem);
     line-height: 1.1;
-    letter-spacing: -0.03em;
+    letter-spacing: -0.025em;
     font-weight: 600;
   }
   .guide-prose h2 {
     margin-top: 3rem;
     font-size: 1.5rem;
-    letter-spacing: -0.02em;
+    letter-spacing: -0.025em;
     font-weight: 600;
   }
 

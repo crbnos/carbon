@@ -50,7 +50,7 @@ const DetailTopbar = ({
   );
 
   return (
-    <div className="inline-flex h-9 items-center justify-center rounded-md bg-muted p-1 text-muted-foreground shadow-[inset_0_1px_2px_rgba(0,0,0,0.15)]  border-b border-border">
+    <div className="inline-flex h-9 items-center justify-center rounded-[0.5rem] bg-muted p-1 text-muted-foreground shadow-[inset_0_1px_2px_rgba(0,0,0,0.15)]  border-b border-border">
       {links.map((route) => {
         const isActive = route.isActive
           ? route.isActive(location.pathname)

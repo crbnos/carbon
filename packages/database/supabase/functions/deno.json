@@ -1,5 +1,9 @@
 {
   "lock": false,
+  "tasks": {
+    "test": "deno test --no-lock",
+    "check:response": "deno check --no-lock lib/response.ts lib/response.test.ts"
+  },
   "imports": {
     "kysely": "npm:kysely@0.26.3",
     "pg": "https://deno.land/x/postgres@v0.17.0/mod.ts",

@@ -7,7 +7,8 @@ import {
   assemblerEnabled,
   internalizeStorageUrl,
   resolveModelSourceBucket,
-  runAssemblerJob
+  runAssemblerJob,
+  signSourceUrl
 } from "./assembler-client";
 
 const SIGNED_URL_EXPIRY = 60 * 60; // seconds — the source (read) URL only.
@@ -168,14 +169,14 @@ export const modelOptimizeFunction = inngest.createFunction(
       buildBody: async () => {
         const client = getCarbonServiceRole();
         // Optimised artifacts are written to `private` (50 MB served cap) below.
-        const source = await client.storage
-          .from(model.sourceBucket)
-          .createSignedUrl(model.modelPath, SIGNED_URL_EXPIRY);
-        if (source.error) {
-          throw new Error(`Failed to sign source URL: ${source.error.message}`);
-        }
+        const signedUrl = await signSourceUrl(
+          client,
+          model.sourceBucket,
+          model.modelPath,
+          SIGNED_URL_EXPIRY
+        );
         return {
-          source: { url: internalizeStorageUrl(source.data.signedUrl), format },
+          source: { url: internalizeStorageUrl(signedUrl), format },
           output: { path: optimizedPath }
           // quality omitted → the service applies its size-adaptive policy: codec
           // meshopt, merge on, normal quant on, and an auto simplify budget that

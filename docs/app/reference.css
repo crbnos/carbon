@@ -1,6 +1,6 @@
 /* ───────────────────────────────────────────────────────────────────────────
  * Editorial skin for the Reference (Fumadocs /docs) — make it read like the Guide:
- * warm paper, DM Sans, IBM Plex Mono warm-pill code, custom dot bullets, editorial
+ * warm paper, Archivo, JetBrains Mono warm-pill code, custom dot bullets, editorial
  * tables/cards/callouts, and a calmer brand-accented sidebar + TOC. The Fumadocs
  * `--fd-*` tokens are already mapped to the warm palette in global.css; this layers
  * the editorial *feel* on top. Content rules are scoped to `.prose` (Reference only);
@@ -12,8 +12,8 @@
   font-family: var(--font-sans);
   font-size: clamp(2rem, 4vw, 2.5rem) !important;
   line-height: 1.12 !important;
-  letter-spacing: -0.005em;
-  font-weight: 530 !important;
+  letter-spacing: -0.025em;
+  font-weight: 600 !important;
   color: #262323;
 }
 .reference-desc {
@@ -26,14 +26,15 @@
 .prose :where(h2):not(:where([class~="not-prose"] *)) {
   font-family: var(--font-sans);
   font-size: 1.5rem;
-  font-weight: 560;
-  letter-spacing: 0.005em;
+  font-weight: 600;
+  letter-spacing: -0.025em;
   color: #262323;
   margin-top: 3rem;
 }
 .prose :where(h3):not(:where([class~="not-prose"] *)) {
   font-size: 1.125rem;
-  font-weight: 560;
+  font-weight: 600;
+  letter-spacing: -0.025em;
   color: #262323;
 }
 

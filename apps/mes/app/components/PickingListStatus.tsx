@@ -26,6 +26,12 @@ export function PickingListStatus({ status }: Props) {
           <Trans>Completed</Trans>
         </Badge>
       );
+    case "Partial":
+      return (
+        <Badge variant="orange">
+          <Trans>Partial</Trans>
+        </Badge>
+      );
     case "Cancelled":
       return (
         <Badge variant="destructive">

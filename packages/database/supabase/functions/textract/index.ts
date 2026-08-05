@@ -10,7 +10,7 @@ import {
 } from "https://deno.land/x/aws_sdk@v3.32.0-1/client-textract/mod.ts";
 
 import z from "npm:zod@^3.24.1";
-import { corsHeaders } from "../lib/headers.ts";
+import { corsPreflight, errorResponse, jsonResponse } from "../lib/response.ts";
 import { getSupabaseServiceRole } from "../lib/supabase.ts";
 
 const AWS_REGION = Deno.env.get("AWS_REGION");
@@ -48,9 +48,8 @@ const payloadValidator = z.object({
 });
 
 serve(async (req: Request) => {
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
-  }
+  const preflight = corsPreflight(req);
+  if (preflight) return preflight;
 
   const payload = await req.json();
 
@@ -114,21 +113,11 @@ serve(async (req: Request) => {
       })
     );
 
-    return new Response(
-      JSON.stringify({
-        success: true,
-        analysis: textractResponse,
-      }),
-      {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200,
-      }
-    );
-  } catch (err) {
-    console.error(err);
-    return new Response(JSON.stringify(err), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 500,
+    return jsonResponse({
+      success: true,
+      analysis: textractResponse,
     });
+  } catch (err) {
+    return errorResponse(err, 500);
   }
 });

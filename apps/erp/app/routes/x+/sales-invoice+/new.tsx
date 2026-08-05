@@ -16,6 +16,7 @@ import {
   salesInvoiceValidator
 } from "~/modules/invoicing";
 import SalesInvoiceForm from "~/modules/invoicing/ui/SalesInvoice/SalesInvoiceForm";
+import { getEdgeFunctionErrorMessage } from "~/utils/error";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -54,7 +55,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
           request.headers.get("Referer") ?? path.to.salesOrders,
           await flash(
             request,
-            error(result.error, "Failed to create sales invoice")
+            error(
+              result.error,
+              await getEdgeFunctionErrorMessage(
+                result.error,
+                "Failed to create sales invoice"
+              )
+            )
           )
         );
       }
@@ -75,7 +82,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
           request.headers.get("Referer") ?? path.to.shipment(sourceDocumentId),
           await flash(
             request,
-            error(result.error, "Failed to create sales invoice")
+            error(
+              result.error,
+              await getEdgeFunctionErrorMessage(
+                result.error,
+                "Failed to create sales invoice"
+              )
+            )
           )
         );
       }

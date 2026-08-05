@@ -28,6 +28,7 @@ import type {
   accountsReceivableBillingAddressValidator,
   apiKeyValidator,
   companyValidator,
+  itemSerialSequenceValidator,
   kanbanOutputTypes,
   purchasePriceUpdateTimingTypes,
   sequenceValidator,
@@ -459,6 +460,103 @@ export async function getSequencesList(
     .eq("table", table)
     .eq("companyId", companyId)
     .order("table");
+}
+
+export async function getItemSerialSequences(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: GenericQueryFilters & {
+    search: string | null;
+  }
+) {
+  let query = client
+    .from("itemSerialSequences")
+    .select("*", {
+      count: "exact"
+    })
+    .eq("companyId", companyId);
+
+  if (args.search) {
+    // Strip PostgREST filter-grammar characters so a search term can't alter the
+    // `or` expression or filter unintended columns (mirrors inventory.service.ts).
+    const search = args.search.replace(/[,()\\]/g, " ");
+    query = query.or(
+      `itemReadableId.ilike.%${search}%,itemName.ilike.%${search}%`
+    );
+  }
+
+  query = setGenericQueryFilters(query, args, [
+    { column: "itemReadableId", ascending: true }
+  ]);
+  return query;
+}
+
+export async function getItemSerialSequence(
+  client: SupabaseClient<Database>,
+  id: string,
+  companyId: string
+) {
+  return client
+    .from("itemSerialSequences")
+    .select("*")
+    .eq("id", id)
+    .eq("companyId", companyId)
+    .single();
+}
+
+export async function getItemSerialSequenceByItemId(
+  client: SupabaseClient<Database>,
+  itemId: string,
+  companyId: string
+) {
+  return client
+    .from("itemSerialSequence")
+    .select("*")
+    .eq("itemId", itemId)
+    .eq("companyId", companyId)
+    .maybeSingle();
+}
+
+export async function upsertItemSerialSequence(
+  client: SupabaseClient<Database>,
+  itemSerialSequence:
+    | (Omit<z.infer<typeof itemSerialSequenceValidator>, "id"> & {
+        companyId: string;
+        createdBy: string;
+      })
+    | (Omit<z.infer<typeof itemSerialSequenceValidator>, "id"> & {
+        id: string;
+        companyId: string;
+        updatedBy: string;
+      })
+) {
+  if ("createdBy" in itemSerialSequence) {
+    return client
+      .from("itemSerialSequence")
+      .insert([itemSerialSequence])
+      .select("id")
+      .single();
+  }
+  const { id, companyId, ...update } = itemSerialSequence;
+  return client
+    .from("itemSerialSequence")
+    .update(sanitize(update))
+    .eq("id", id)
+    .eq("companyId", companyId)
+    .select("id")
+    .single();
+}
+
+export async function deleteItemSerialSequence(
+  client: SupabaseClient<Database>,
+  id: string,
+  companyId: string
+) {
+  return client
+    .from("itemSerialSequence")
+    .delete()
+    .eq("id", id)
+    .eq("companyId", companyId);
 }
 
 export async function getSubsidiaries(
@@ -1054,6 +1152,19 @@ export async function updateLeadTimesOnReceiptSetting(
     .eq("id", companyId);
 }
 
+export async function updateIncludeMaterialsOnTravelerSetting(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  includeMaterialsOnTraveler: boolean
+) {
+  // Cast: the includeMaterialsOnTraveler column is added by migration
+  // 20260728151742 but isn't in the generated types until they're regenerated
+  // against the migrated DB (mirrors updateLeadTimesOnReceiptSetting).
+  return (client.from("companySettings") as any)
+    .update(sanitize({ includeMaterialsOnTraveler }))
+    .eq("id", companyId);
+}
+
 export async function updateAccountsPayableAddressSetting(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1379,6 +1490,39 @@ export async function updateShowCustomerReadableIdSetting(
   return client
     .from("companySettings")
     .update(sanitize({ showCustomerReadableId }))
+    .eq("id", companyId);
+}
+
+export async function updateAutoSelectMaterialWithoutPickingListSetting(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  autoSelectMaterialWithoutPickingList: boolean
+) {
+  return client
+    .from("companySettings")
+    .update(sanitize({ autoSelectMaterialWithoutPickingList }))
+    .eq("id", companyId);
+}
+
+export async function updateIncompletePickingListPolicySetting(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  incompletePickingListPolicy: "warn" | "error"
+) {
+  return client
+    .from("companySettings")
+    .update(sanitize({ incompletePickingListPolicy }))
+    .eq("id", companyId);
+}
+
+export async function updateReturnPickedMaterialTimingSetting(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  returnPickedMaterialTiming: "job" | "operation"
+) {
+  return client
+    .from("companySettings")
+    .update(sanitize({ returnPickedMaterialTiming }))
     .eq("id", companyId);
 }
 

@@ -7565,7 +7565,9 @@ const OPERATION_REF_FIELDS = [
   "processId",
   "workCenterId",
   "procedureId",
-  "operationSupplierProcessId"
+  "operationSupplierProcessId",
+  "assemblyInstructionId",
+  "inspectionDocumentId"
 ] as const;
 const OPERATION_REF_FIELD_SET = new Set<string>(OPERATION_REF_FIELDS);
 
@@ -7579,7 +7581,9 @@ async function stampOperationRefNames(
     processId: new Set(),
     workCenterId: new Set(),
     procedureId: new Set(),
-    operationSupplierProcessId: new Set()
+    operationSupplierProcessId: new Set(),
+    assemblyInstructionId: new Set(),
+    inspectionDocumentId: new Set()
   };
   const addFrom = (row: Row | null) => {
     if (!row) return;
@@ -7601,7 +7605,7 @@ async function stampOperationRefNames(
 
   const names = new Map<string, string>(); // id → display name (any ref type)
   const load = async (
-    table: "process" | "workCenter" | "procedure",
+    table: "process" | "workCenter" | "procedure" | "assemblyInstruction",
     ids: Set<string>
   ) => {
     const unique = [...ids];
@@ -7637,8 +7641,23 @@ async function stampOperationRefNames(
   await Promise.all([
     load("process", collected.processId),
     load("workCenter", collected.workCenterId),
-    load("procedure", collected.procedureId)
+    load("procedure", collected.procedureId),
+    load("assemblyInstruction", collected.assemblyInstructionId)
   ]);
+
+  // Inspection documents have no "name" column — label them by drawing/file name.
+  const inspectionDocumentIds = [...collected.inspectionDocumentId];
+  if (inspectionDocumentIds.length > 0) {
+    const docs = await client
+      .from("inspectionDocument")
+      .select("id, drawingNumber, fileName")
+      .in("id", inspectionDocumentIds)
+      .eq("companyId", companyId);
+    for (const d of docs.data ?? []) {
+      if (d.id) names.set(d.id, d.drawingNumber || d.fileName || d.id);
+    }
+  }
+
   for (const [spId, processId] of supplierProcessToProcess) {
     const name = names.get(processId);
     if (name) names.set(spId, name);

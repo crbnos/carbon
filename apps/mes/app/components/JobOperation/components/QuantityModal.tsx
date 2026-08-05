@@ -20,7 +20,7 @@ import {
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { LuTriangleAlert } from "react-icons/lu";
 import { useFetcher } from "react-router";
 import {
@@ -36,6 +36,13 @@ import type {
 } from "~/services/types";
 import { path } from "~/utils/path";
 import ScrapReason from "./ScrapReason";
+
+// Fractional quantities for weight/length UoMs, capped at the 2 decimals
+// jobOperation.quantityComplete/Scrapped/Reworked store.
+const QUANTITY_FORMAT_OPTIONS: Intl.NumberFormatOptions = {
+  minimumFractionDigits: 0,
+  maximumFractionDigits: 2
+};
 
 export function QuantityModal({
   allStepsRecorded = true,
@@ -68,6 +75,17 @@ export function QuantityModal({
   const [confirmedUnissued, setConfirmedUnissued] = useState(false);
   const submitted = useRef(false);
   const isSubmitting = fetcher.state !== "idle";
+  // `operation` is live-patched via realtime; after submit it already includes what we
+  // just logged, so snapshot at submit time — not mount — to avoid double-counting.
+  const [submittedBaseline, setSubmittedBaseline] = useState<{
+    complete: number;
+    reworked: number;
+  } | null>(null);
+
+  const baseline = submittedBaseline ?? {
+    complete: operation.quantityComplete,
+    reworked: operation.quantityReworked ?? 0
+  };
 
   useEffect(() => {
     if (submitted.current && fetcher.state === "idle") {
@@ -82,8 +100,12 @@ export function QuantityModal({
     finish: t`Finish ${operation.itemReadableId}`
   };
 
-  const isOperationComplete =
-    operation.quantityComplete >= operation.operationQuantity;
+  // operationQuantity is Math.ceil'd upstream (recalculate/get-method), so a 1.5-unit
+  // job reports 2. Matches how x+/complete.tsx decides willBeFinished.
+  const targetQuantity =
+    operation.targetQuantity ?? operation.operationQuantity ?? 0;
+
+  const isOperationComplete = baseline.complete >= targetQuantity;
 
   const descriptionMap = {
     scrap: t`Select a scrap quantity and reason`,
@@ -113,25 +135,17 @@ export function QuantityModal({
     finish: finishValidator
   };
 
-  const hasUnissuedTrackedMaterials = useMemo(() => {
-    const totalPartsAfterCompletion = parentIsSerial
-      ? 1
-      : operation.quantityComplete + quantity;
+  const totalPartsAfterCompletion = parentIsSerial
+    ? 1
+    : baseline.complete + quantity;
 
-    return materials.some(
-      (material) =>
-        (material.requiresSerialTracking || material.requiresBatchTracking) &&
-        material.jobOperationId === operation.id &&
-        (material?.quantityIssued ?? 0) <
-          (material?.quantity ?? 0) * totalPartsAfterCompletion
-    );
-  }, [
-    materials,
-    operation.id,
-    operation.quantityComplete,
-    quantity,
-    parentIsSerial
-  ]);
+  const hasUnissuedTrackedMaterials = materials.some(
+    (material) =>
+      (material.requiresSerialTracking || material.requiresBatchTracking) &&
+      material.jobOperationId === operation.id &&
+      (material?.quantityIssued ?? 0) <
+        (material?.quantity ?? 0) * totalPartsAfterCompletion
+  );
 
   return (
     <Modal
@@ -161,6 +175,10 @@ export function QuantityModal({
           fetcher={fetcher}
           onSubmit={() => {
             submitted.current = true;
+            setSubmittedBaseline({
+              complete: operation.quantityComplete,
+              reworked: operation.quantityReworked ?? 0
+            });
           }}
         >
           <ModalHeader>
@@ -220,7 +238,7 @@ export function QuantityModal({
                   <AlertDescription>
                     <Trans>
                       The completed quantity for this operation is less than the
-                      required quantity of {operation.operationQuantity}.
+                      required quantity of {targetQuantity}.
                     </Trans>
                   </AlertDescription>
                 </Alert>
@@ -248,6 +266,7 @@ export function QuantityModal({
                       onChange={setQuantity}
                       isReadOnly={parentIsSerial}
                       minValue={0}
+                      formatOptions={QUANTITY_FORMAT_OPTIONS}
                       size="lg"
                     />
                   </div>
@@ -258,9 +277,7 @@ export function QuantityModal({
                       className="h-12"
                       onClick={() =>
                         setQuantity(
-                          operation.operationQuantity -
-                            operation.quantityComplete -
-                            (operation.quantityReworked ?? 0)
+                          targetQuantity - baseline.complete - baseline.reworked
                         )
                       }
                     >
@@ -283,12 +300,13 @@ export function QuantityModal({
                   <NumberControlled
                     name="totalQuantity"
                     label={t`Total Quantity`}
+                    formatOptions={QUANTITY_FORMAT_OPTIONS}
                     size="lg"
                     value={
                       quantity +
                       (type === "rework"
-                        ? operation.quantityReworked
-                        : operation.quantityComplete)
+                        ? baseline.reworked
+                        : baseline.complete)
                     }
                     isReadOnly
                   />

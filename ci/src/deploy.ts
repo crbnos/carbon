@@ -107,6 +107,8 @@ async function deploy(): Promise<void> {
       console.log(`✅ 🥚 Migrating ${workspace.id}`);
       const {
         anon_key,
+        assembler_api_key,
+        assembler_domain,
         auth_providers,
         aws_account_id,
         aws_region,
@@ -254,12 +256,22 @@ async function deploy(): Promise<void> {
 
       console.log(`✅ 🔑 Setting up environment for ${workspace.id}`);
 
+      // Normalize the assembler domain into a full URL, tolerating a value that
+      // already includes a scheme (avoids "https://https://...").
+      const assembler_service_url = assembler_domain
+        ? /^https?:\/\//.test(assembler_domain)
+          ? assembler_domain
+          : `https://${assembler_domain}`
+        : undefined;
+
       const $$ = $({
         // @ts-ignore
         env: {
           AWS_ACCOUNT_ID: aws_account_id,
           AWS_REGION: aws_region,
           IMAGE_TAG: imageTag,
+          ASSEMBLER_SERVICE_API_KEY: assembler_api_key ?? undefined,
+          ASSEMBLER_SERVICE_URL: assembler_service_url,
           AUTH_PROVIDERS: auth_providers ?? undefined,
           CARBON_EDITION: carbon_edition ?? "enterprise",
           CERT_ARN_ERP: cert_arn_erp,

@@ -9,7 +9,9 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { Onshape } from "@carbon/ee";
 import { getLogger } from "@carbon/logger";
 import type { LoaderFunctionArgs } from "react-router";
-import { data, redirect } from "react-router";
+import { redirect } from "react-router";
+import type { IntegrationErrorCode } from "~/modules/settings/integration-errors";
+import { integrationErrorSearch } from "~/modules/settings/integration-errors";
 import { upsertCompanyIntegration } from "~/modules/settings/settings.server";
 import { oAuthCallbackSchema } from "~/modules/shared";
 import { path } from "~/utils/path";
@@ -20,6 +22,33 @@ export const config = {
 
 const logger = getLogger("erp", "onshape", "oauth");
 
+/** Absolute integrations-page URL on this request's origin. */
+function integrationsUrl(request: Request) {
+  const requestUrl = new URL(request.url);
+
+  if (!VERCEL_URL || VERCEL_URL.includes("localhost")) {
+    requestUrl.protocol = "http";
+  }
+
+  return `${requestUrl.origin}${path.to.integrations}`;
+}
+
+/**
+ * Onshape reaches this loader by redirecting the user's browser, so a failure has
+ * to render as something they can act on. Returning `data({ error })` produced a
+ * bare `{"error":"…"}` JSON document — dead end, no navigation, no next step. Send
+ * them back to the integrations page, which turns the code into a toast. Only a
+ * code crosses the URL; `integrationErrors` owns the copy.
+ */
+function connectionFailed(
+  request: Request,
+  reason: IntegrationErrorCode<"onshape">
+) {
+  return redirect(
+    `${integrationsUrl(request)}${integrationErrorSearch("onshape", reason)}`
+  );
+}
+
 export async function loader({ request }: LoaderFunctionArgs) {
   const { userId, companyId } = await requirePermissions(request, {
     update: "settings"
@@ -28,16 +57,42 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const url = new URL(request.url);
   const searchParams = Object.fromEntries(url.searchParams.entries());
 
+  // Onshape reports a refused authorization by redirecting here with `error` (and
+  // usually `error_description`) in place of `code` — e.g. `invalid_scope` when the
+  // OAuth application in the Onshape dev portal isn't granted a scope install.ts
+  // asked for. Parsing for `code` first collapsed every one of those into an opaque
+  // "Invalid Onshape auth response", so surface it instead.
+  if (searchParams.error) {
+    logger.error("Onshape authorization refused", {
+      error: searchParams.error,
+      errorDescription: searchParams.error_description
+    });
+
+    // `invalid_scope` means the OAuth application isn't granted a scope we asked
+    // for. In practice that's `OAuth2Write` — labelled "Application can write to
+    // your documents" in the Onshape dev portal — so the UI can name the exact fix
+    // instead of echoing Onshape's wording, which never says which scope is missing.
+    return connectionFailed(
+      request,
+      searchParams.error === "invalid_scope" ? "write-permission" : "denied"
+    );
+  }
+
   const authResponse = oAuthCallbackSchema.safeParse(searchParams);
 
   if (!authResponse.success) {
-    return data({ error: "Invalid Onshape auth response" }, { status: 400 });
+    // Log the parameter names (never the values — `code` is a live credential)
+    // so a malformed callback is diagnosable from the logs.
+    logger.error("Invalid Onshape auth response", {
+      params: Object.keys(searchParams)
+    });
+    return connectionFailed(request, "invalid-response");
   }
 
   const { data: params } = authResponse;
 
   if (!params.state) {
-    return data({ error: "Invalid state parameter" }, { status: 400 });
+    return connectionFailed(request, "invalid-response");
   }
 
   if (
@@ -45,7 +100,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     !ONSHAPE_CLIENT_SECRET ||
     !ONSHAPE_OAUTH_REDIRECT_URL
   ) {
-    return data({ error: "Onshape OAuth not configured" }, { status: 500 });
+    return connectionFailed(request, "not-configured");
   }
 
   try {
@@ -68,19 +123,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
         status: tokenResponse.status,
         body: await tokenResponse.text()
       });
-      return data(
-        { error: "Failed to exchange code for token" },
-        { status: 500 }
-      );
+      return connectionFailed(request, "token-exchange");
     }
 
     const tokenData = await tokenResponse.json();
 
     if (!tokenData.access_token) {
-      return data(
-        { error: "No access token in Onshape response" },
-        { status: 500 }
-      );
+      logger.error("Onshape token response had no access token");
+      return connectionFailed(request, "token-exchange");
     }
 
     const serviceRole = getCarbonServiceRole();
@@ -112,29 +162,15 @@ export async function loader({ request }: LoaderFunctionArgs) {
       // the integration settings save + ensureOnshapeReleaseWebhook), not on
       // connect — asset sync is off by default, so there's nothing to subscribe
       // to yet at this point.
-      const requestUrl = new URL(request.url);
-
-      if (!VERCEL_URL || VERCEL_URL.includes("localhost")) {
-        requestUrl.protocol = "http";
-      }
-
-      const redirectUrl = `${requestUrl.origin}${path.to.integrations}`;
-
-      return redirect(redirectUrl);
+      return redirect(integrationsUrl(request));
     } else {
       logger.error("Failed to save Onshape integration", {
         createdIntegration
       });
-      return data(
-        { error: "Failed to save Onshape integration" },
-        { status: 500 }
-      );
+      return connectionFailed(request, "save-failed");
     }
   } catch (err) {
     logger.error("Onshape OAuth Error", { error: err });
-    return data(
-      { error: "Failed to exchange code for token" },
-      { status: 500 }
-    );
+    return connectionFailed(request, "unexpected");
   }
 }

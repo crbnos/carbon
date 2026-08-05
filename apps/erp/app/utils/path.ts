@@ -291,6 +291,8 @@ export const path = {
       generatePath(`${x}/settings/approval-rules/${id}`),
     approvalRules: `${x}/settings/approval-rules`,
     assemblyInstruction: (id: string) => generatePath(`${x}/assembly/${id}`),
+    assemblyInstructionActivate: (id: string) =>
+      generatePath(`${x}/assembly/${id}/activate`),
     assemblyInstructionStatus: (id: string) =>
       generatePath(`${x}/assembly/${id}/status`),
     assemblyInstructionStep: (id: string, stepId: string) =>
@@ -306,6 +308,8 @@ export const path = {
     assemblyInstructionStepStatus: (id: string, stepId: string) =>
       generatePath(`${x}/assembly/${id}/steps/status/${stepId}`),
     assemblyInstructions: `${x}/production/assemblies`,
+    assemblyInstructionVersionNew: (id: string) =>
+      generatePath(`${x}/assembly/${id}/version/new`),
     assemblyJobsCancel: (id: string) =>
       generatePath(`${x}/assembly/${id}/jobs/cancel`),
     assemblyModelConvert: (id: string) =>
@@ -778,6 +782,8 @@ export const path = {
       generatePath(`${x}/shared/views/delete/${id}`),
     deleteScrapReason: (id: string) =>
       generatePath(`${x}/production/scrap-reasons/delete/${id}`),
+    deleteSerialNumberSequence: (id: string) =>
+      generatePath(`${x}/settings/serial-numbers/delete/${id}`),
     deleteShift: (id: string) =>
       generatePath(`${x}/people/shifts/delete/${id}`),
     deleteShipment: (id: string) => generatePath(`${x}/shipment/${id}/delete`),
@@ -1162,8 +1168,6 @@ export const path = {
     inventoryCountLineUpdate: `${x}/inventory-count/lines/update`,
     inventoryCountPost: (id: string) =>
       generatePath(`${x}/inventory-count/${id}/post`),
-    inventoryCountRectify: (id: string) =>
-      generatePath(`${x}/inventory-count/${id}/rectify`),
     inventoryCountReopen: (id: string) =>
       generatePath(`${x}/inventory-count/${id}/reopen`),
     inventoryCounts: `${x}/inventory/inventory-count`,
@@ -1541,6 +1545,7 @@ export const path = {
     newSalesRFQ: `${x}/sales-rfq/new`,
     newSalesRFQLine: (id: string) => generatePath(`${x}/sales-rfq/${id}/new`),
     newScrapReason: `${x}/production/scrap-reasons/new`,
+    newSerialNumberSequence: `${x}/settings/serial-numbers/new`,
     newService: `${x}/service/new`,
     newServiceSupplier: (id: string) =>
       generatePath(`${x}/service/${id}/purchasing/new`),
@@ -1939,6 +1944,9 @@ export const path = {
     sequences: `${x}/settings/sequences`,
     serialNumber: (id: string) =>
       generatePath(`${x}/inventory/serial-numbers/${id}`),
+    serialNumberSequence: (id: string) =>
+      generatePath(`${x}/settings/serial-numbers/${id}`),
+    serialNumberSequences: `${x}/settings/serial-numbers`,
     serialNumbers: `${x}/inventory/serial-numbers`,
     service: (id: string) => generatePath(`${x}/service/${id}`),
     serviceCosting: (id: string) => generatePath(`${x}/service/${id}/costing`),
@@ -1972,6 +1980,8 @@ export const path = {
       generatePath(`${x}/inventory/shipping-methods/${id}`),
     shippingMethods: `${x}/inventory/shipping-methods`,
     splitIssueItem: `${x}/issue/item/split`,
+    stockMovementCorrect: (id: string) =>
+      generatePath(`${x}/inventory/stock-movements/${id}/correct`),
     stockMovements: `${x}/inventory/stock-movements`,
     stockTransfer: (id: string) => generatePath(`${x}/stock-transfer/${id}`),
     stockTransferComplete: (id: string) =>

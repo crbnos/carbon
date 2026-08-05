@@ -40,6 +40,7 @@ import {
 } from "react-icons/lu";
 import { Link, useFetcher } from "react-router";
 import {
+  exportOnlyColumn,
   ItemThumbnail,
   MethodItemTypeIcon,
   SupplierAvatar,
@@ -382,6 +383,11 @@ const PlanningTable = memo(
             icon: <LuBookMarked />
           }
         },
+        exportOnlyColumn<PurchasingPlanningItem>({
+          id: "itemName",
+          header: t`Item Name`,
+          value: (row) => row.name ?? null
+        }),
         {
           accessorKey: "unitOfMeasureCode",
           header: "",

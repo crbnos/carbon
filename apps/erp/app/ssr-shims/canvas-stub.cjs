@@ -45,17 +45,14 @@ function createCanvas() {
   };
 }
 
-const DOMMatrixStub =
-  typeof globalThis.DOMMatrix !== "undefined"
-    ? globalThis.DOMMatrix
-    : class DOMMatrixStubInner {
-        constructor() {}
-      };
-
 const api = {
   createCanvas,
   Image: ImageStub,
-  DOMMatrix: DOMMatrixStub
+  // Provided by `@carbon/lib/shims`, imported at the app root before Konva's SSR
+  // graph loads. Getter defers resolution past this module's eval order.
+  get DOMMatrix() {
+    return globalThis.DOMMatrix;
+  }
 };
 
 module.exports = api;

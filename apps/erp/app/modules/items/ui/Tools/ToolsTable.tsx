@@ -46,6 +46,7 @@ import { TbTargetArrow } from "react-icons/tb";
 import { Link, useFetcher, useNavigate } from "react-router";
 import {
   EmployeeAvatar,
+  exportOnlyColumn,
   Hyperlink,
   ItemLifecycleBadge,
   ItemThumbnail,
@@ -137,9 +138,17 @@ const ToolsTable = memo(({ data, tags, count }: ToolsTableProps) => {
           </HStack>
         ),
         meta: {
-          icon: <LuBookMarked />
+          icon: <LuBookMarked />,
+          // The accessor is the raw item id — export the readable id
+          // the cell shows instead of a UUID.
+          exportValue: (row) => row.readableIdWithRevision ?? null
         }
       },
+      exportOnlyColumn<Tool>({
+        id: "itemName",
+        header: t`Item Name`,
+        value: (row) => row.name ?? null
+      }),
       {
         accessorKey: "description",
         header: t`Description`,

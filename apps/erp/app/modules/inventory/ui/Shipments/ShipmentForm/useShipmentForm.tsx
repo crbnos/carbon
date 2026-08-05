@@ -122,6 +122,7 @@ export default function useShipmentForm({
     error,
     locationId,
     customerId,
+    sourceDocument,
     sourceDocuments,
     setLocationId,
     setSourceDocument,

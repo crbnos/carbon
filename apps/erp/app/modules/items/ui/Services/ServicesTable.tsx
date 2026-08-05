@@ -44,6 +44,7 @@ import { RxCodesandboxLogo } from "react-icons/rx";
 import { Link, useFetcher, useNavigate } from "react-router";
 import {
   EmployeeAvatar,
+  exportOnlyColumn,
   Hyperlink,
   ItemLifecycleBadge,
   ItemThumbnail,
@@ -120,9 +121,17 @@ const ServicesTable = memo(({ data, tags, count }: ServicesTableProps) => {
           </HStack>
         ),
         meta: {
-          icon: <LuBookMarked />
+          icon: <LuBookMarked />,
+          // The accessor is the raw item id — export the readable id
+          // the cell shows instead of a UUID.
+          exportValue: (row) => row.readableIdWithRevision ?? null
         }
       },
+      exportOnlyColumn<Service>({
+        id: "itemName",
+        header: t`Item Name`,
+        value: (row) => row.name ?? null
+      }),
       {
         accessorKey: "description",
         header: t`Description`,

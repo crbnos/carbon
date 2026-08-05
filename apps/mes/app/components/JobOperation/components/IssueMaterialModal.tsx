@@ -90,6 +90,7 @@ export function IssueMaterialModal({
   parentUnitCount,
   issuePerUnit = false,
   expiredEntityPolicy = "Block",
+  autoSelectMaterialWithoutPickingList = false,
   locationId,
   workCenterId,
   material,
@@ -118,6 +119,7 @@ export function IssueMaterialModal({
   // Serial parents always behave this way regardless of this flag.
   issuePerUnit?: boolean;
   expiredEntityPolicy?: ExpiredEntityPolicy;
+  autoSelectMaterialWithoutPickingList?: boolean;
   locationId?: string;
   workCenterId?: string;
   material?: JobMaterial;
@@ -364,20 +366,34 @@ export function IssueMaterialModal({
   //      (`suggestedAllocation`, netted + FEFO/FIFO sorted).
   // A material can be on a picking list (quantityToPick > 0) with nothing picked
   // yet — e.g. a multi-line list where other lines were picked first. In that
-  // state `pickedAllocation` is empty, so we still surface the suggestion as
-  // the fallback rather than leaving the operator with the default first lot.
+  // state `pickedAllocation` is empty, so we must still surface the suggestion
+  // rather than leaving the operator with the default first lot. Hence the
+  // suggestion is ALWAYS loaded, not gated off whenever a picking allocation
+  // merely exists. Whether the suggestion actually SEEDS the rows when there is
+  // no picking list is gated by `autoSelectMaterialWithoutPickingList` (see
+  // `seedAllocation` below).
   const pickedOverlay = material as
     | { quantityToPick?: number | null; quantityPicked?: number | null }
     | undefined;
   const hasPickingAllocation =
     Number(pickedOverlay?.quantityToPick ?? 0) > 0 ||
     Number(pickedOverlay?.quantityPicked ?? 0) > 0;
-  const canPrefill =
-    allowPrefill &&
-    hasPickingAllocation &&
-    (!parentIdIsSerialized || parentUnitCount === 1);
+  // The genealogy safety gate: a seed is only trustworthy when the whole pick
+  // provably belongs to ONE parent — the call site opted in (`allowPrefill`) and
+  // the parent is a single entity (not a serialized multi-unit operation).
+  const parentSafe =
+    allowPrefill && (!parentIdIsSerialized || parentUnitCount === 1);
+  // Picking-list seeding (picked lots): always requires a real allocation.
+  const canPrefill = parentSafe && hasPickingAllocation;
+  // No-picking-list FEFO seeding: opt-in per company via
+  // `autoSelectMaterialWithoutPickingList`, still bound by the same parent
+  // safety. Relaxes ONLY the picking-allocation requirement, never the
+  // single-parent genealogy guard.
+  const canSuggestWithoutList =
+    parentSafe && autoSelectMaterialWithoutPickingList;
+  const canSeedSuggestion = canPrefill || canSuggestWithoutList;
   const shouldSuggestAllocation =
-    canPrefill &&
+    canSeedSuggestion &&
     !!material &&
     !!selectedItemId &&
     !!locationId &&
@@ -404,12 +420,21 @@ export function IssueMaterialModal({
   // Wait for the picked-allocation request to resolve before falling back, so a
   // faster suggestion response can't be seeded and then locked in ahead of the
   // real picked lots.
+  //
+  // Seed the FEFO suggestion whenever seeding is allowed (`canSeedSuggestion`):
+  // that's a real picking allocation (allocated-but-not-yet-picked) OR the
+  // no-picking-list opt-in setting. Picked lots always seed. When there's no
+  // picking list and the setting is off, `canSeedSuggestion` is false → the
+  // operator stays on the Scan tab. This does NOT affect the Select-tab option
+  // ordering or the add-row remainder fill below.
   const seedAllocation =
     shouldLoadPickedAllocation && !pickedAllocationResolved
       ? []
       : pickedAllocation.length
         ? pickedAllocation
-        : suggestedAllocation;
+        : canSeedSuggestion
+          ? suggestedAllocation
+          : [];
   const hasSeededSuggestionRef = useRef(false);
   useEffect(() => {
     if (hasSeededSuggestionRef.current) return;
@@ -616,7 +641,7 @@ export function IssueMaterialModal({
       // the picker's default FEFO/FIFO order once the suggestion is exhausted.
       // When prefill is off, the row starts empty — auto-picking a tracked
       // entity the operator never chose is a traceability hazard.
-      if (!canPrefill) {
+      if (!canSeedSuggestion) {
         return [...prev, { index: prev.length, id: "" }];
       }
       const used = new Set(prev.map((s) => s.id).filter(Boolean));
@@ -628,7 +653,7 @@ export function IssueMaterialModal({
         : serialOptions.find((o) => !used.has(o.value) && !o.isExpired);
       return [...prev, { index: prev.length, id: next?.value ?? "" }];
     });
-  }, [serialOptions, seedAllocation, canPrefill]);
+  }, [serialOptions, seedAllocation, canSeedSuggestion]);
 
   const removeSerialNumber = useCallback((indexToRemove: number) => {
     setSelectedSerialNumbers((prev) => {
@@ -671,7 +696,7 @@ export function IssueMaterialModal({
       // FEFO/FIFO order once the suggestion is exhausted. Default qty is
       // clamped to the lot's on-hand. When prefill is off, the row starts
       // empty — auto-picking a tracked entity is a traceability hazard.
-      if (!canPrefill) {
+      if (!canSeedSuggestion) {
         return [...prev, { index: prev.length, id: "", quantity: 1 }];
       }
       const used = new Set(prev.map((b) => b.id).filter(Boolean));
@@ -690,7 +715,7 @@ export function IssueMaterialModal({
         }
       ];
     });
-  }, [batchOptions, seedAllocation, canPrefill]);
+  }, [batchOptions, seedAllocation, canSeedSuggestion]);
 
   const removeBatchNumber = useCallback((indexToRemove: number) => {
     setSelectedBatchNumbers((prev) => {

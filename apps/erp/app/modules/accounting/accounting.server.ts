@@ -1,39 +1,7 @@
-import type { Kysely, KyselyDatabase, KyselyTx } from "@carbon/database/client";
+import type { Kysely, KyselyDatabase } from "@carbon/database/client";
+import { getNextSequence } from "@carbon/database/sequence";
 import { toStoredAmount } from "@carbon/utils";
-import { interpolateSequenceDate } from "~/utils/string";
 import { acquisitionLines } from "./accounting.utils";
-
-async function getNextSequence(
-  trx: KyselyTx,
-  tableName: string,
-  companyId: string
-) {
-  const sequence = await trx
-    .selectFrom("sequence")
-    .selectAll()
-    .where("table", "=", tableName)
-    .where("companyId", "=", companyId)
-    .executeTakeFirstOrThrow();
-
-  const { prefix, suffix, next, size, step } = sequence;
-  if (!Number.isInteger(next)) throw new Error("Next is not an integer");
-  if (!Number.isInteger(step)) throw new Error("Step is not an integer");
-  if (!Number.isInteger(size)) throw new Error("Size is not an integer");
-
-  const nextValue = next! + step!;
-  const nextSequence = nextValue.toString().padStart(size!, "0");
-  const derivedPrefix = interpolateSequenceDate(prefix);
-  const derivedSuffix = interpolateSequenceDate(suffix);
-
-  await trx
-    .updateTable("sequence")
-    .set({ next: nextValue, updatedBy: "system" })
-    .where("table", "=", tableName)
-    .where("companyId", "=", companyId)
-    .execute();
-
-  return `${derivedPrefix}${nextSequence}${derivedSuffix}`;
-}
 
 export async function postDisposal(
   db: Kysely<KyselyDatabase>,

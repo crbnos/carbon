@@ -146,7 +146,7 @@ const LineItems = ({
                           </Link>
                         </Button>
                       </HStack>
-                      <span className="text-muted-foreground text-base truncate">
+                      <span className="text-muted-foreground text-sm truncate">
                         {isGlAccount
                           ? (accounts.find((a) => a.id === line.accountId)
                               ?.name ?? "Indirect Expense")
@@ -485,7 +485,7 @@ const PurchaseOrderSummary = ({
               supplierId={routeData?.purchaseOrder.supplierId ?? null}
             />
             {routeData?.purchaseOrder?.orderDate && (
-              <span className="text-muted-foreground text-sm">
+              <span className="text-xs text-muted-foreground tracking-tight">
                 Ordered {formatDate(routeData?.purchaseOrder.orderDate)}
               </span>
             )}
@@ -503,7 +503,7 @@ const PurchaseOrderSummary = ({
         />
 
         <VStack spacing={2} className="mt-8">
-          <HStack className="justify-between text-base text-muted-foreground w-full">
+          <HStack className="justify-between text-sm text-muted-foreground w-full">
             <span>Subtotal:</span>
             <VStack spacing={0} className="items-end">
               <span>{formatter.format(subtotal)}</span>
@@ -514,7 +514,7 @@ const PurchaseOrderSummary = ({
               )}
             </VStack>
           </HStack>
-          <HStack className="justify-between text-base text-muted-foreground w-full">
+          <HStack className="justify-between text-sm text-muted-foreground w-full">
             <span>Tax:</span>
             <VStack spacing={0} className="items-end">
               <span>{formatter.format(tax)}</span>
@@ -526,7 +526,7 @@ const PurchaseOrderSummary = ({
             </VStack>
           </HStack>
 
-          <HStack className="justify-between text-base text-muted-foreground w-full">
+          <HStack className="justify-between text-sm text-muted-foreground w-full">
             {shippingCost > 0 ? (
               <>
                 <VStack spacing={0}>
@@ -557,7 +557,7 @@ const PurchaseOrderSummary = ({
               <Button
                 variant="link"
                 size="sm"
-                className="text-muted-foreground"
+                className="text-primary"
                 onClick={onEditShippingCost}
               >
                 <Trans>Add Shipping</Trans>
@@ -565,7 +565,7 @@ const PurchaseOrderSummary = ({
             ) : null}
           </HStack>
 
-          <HStack className="justify-between text-xl font-bold w-full">
+          <HStack className="justify-between text-xl font-semibold w-full">
             <span>Total:</span>
             <VStack spacing={0} className="items-end">
               <span>{formatter.format(total)}</span>

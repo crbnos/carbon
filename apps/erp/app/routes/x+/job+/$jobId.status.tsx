@@ -122,6 +122,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
     }
   }
 
+  // A direct POST of status=Completed here bypasses complete_job_to_inventory
+  // (no inventory receipt, no backflush) and therefore also skips the
+  // picked-material return sweep. The UI never sends Completed to this route —
+  // the Complete button uses $jobId.complete.tsx, which runs both.
   const update = await updateJobStatus(client, {
     id,
     status,

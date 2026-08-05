@@ -6,7 +6,7 @@ import { z } from "npm:zod@^3.24.1";
 import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
 
 import { nanoid } from "https://deno.land/x/nanoid@v3.0.0/nanoid.ts";
-import { corsHeaders } from "../lib/headers.ts";
+import { corsPreflight, errorResponse, jsonResponse } from "../lib/response.ts";
 import {
   getStorageUnitWithHighestQuantity,
   updatePickMethodDefaultStorageUnitIfNeeded,
@@ -17,6 +17,7 @@ import { TrackedEntityAttributes, credit, debit, journalReference } from "../lib
 
 import { getCurrentAccountingPeriod } from "../shared/get-accounting-period.ts";
 import { getNextSequence } from "../shared/get-next-sequence.ts";
+import { getNextSerialNumbers } from "../shared/get-next-serial-number.ts";
 import {
   getDefaultPostingGroup,
   resolveInventoryAccount,
@@ -936,9 +937,8 @@ const payloadValidator = z.discriminatedUnion("type", [
 ]);
 
 serve(async (req: Request) => {
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
-  }
+  const preflight = corsPreflight(req);
+  if (preflight) return preflight;
   const payload = await req.json();
   console.log({ payload });
 
@@ -1145,15 +1145,9 @@ serve(async (req: Request) => {
           });
         });
 
-        return new Response(
-          JSON.stringify({
-            success: true,
-          }),
-          {
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-            status: 200,
-          }
-        );
+        return jsonResponse({
+          success: true,
+        });
       }
       case "jobOperationSerialComplete": {
         const { trackedEntityId, companyId, userId, ...row } = validatedPayload;
@@ -1287,6 +1281,47 @@ serve(async (req: Request) => {
             trackedEntities.data.length <
             (jobOperation.data.operationQuantity ?? 0)
           ) {
+            // Number this lazily-spawned unit from the item's serial sequence, if
+            // one is configured. This unit wasn't part of the initial pre-split at
+            // job creation (e.g. the job quantity was increased afterwards, or the
+            // sequence was configured later), so it would otherwise be created with
+            // a null readableId. Resolve the job's location for the %{location}
+            // token; the reservation runs in this transaction, atomic with the spawn.
+            let spawnReadableId: string | null = null;
+            if (trackedEntity.itemId) {
+              let locationCode: string | null = null;
+              let locationName: string | null = null;
+              const jobIdForLocation = (
+                trackedEntity.attributes as Record<string, unknown>
+              ).Job;
+              if (typeof jobIdForLocation === "string") {
+                const jobRow = await client
+                  .from("job")
+                  .select("locationId")
+                  .eq("id", jobIdForLocation)
+                  .eq("companyId", companyId)
+                  .single();
+                if (jobRow.data?.locationId) {
+                  const loc = await client
+                    .from("location")
+                    .select("code, name")
+                    .eq("id", jobRow.data.locationId)
+                    .eq("companyId", companyId)
+                    .single();
+                  locationCode = loc.data?.code ?? null;
+                  locationName = loc.data?.name ?? null;
+                }
+              }
+              const spawnSerials = await getNextSerialNumbers(trx, {
+                itemId: trackedEntity.itemId,
+                companyId,
+                count: 1,
+                locationCode,
+                locationName,
+              });
+              spawnReadableId = spawnSerials[0] ?? null;
+            }
+
             // Create a new trackedEntity with the same attributes but status = Reserved
             const newTrackedEntityResult = await trx
               .insertInto("trackedEntity")
@@ -1300,6 +1335,7 @@ serve(async (req: Request) => {
                 attributes: trackedEntity.attributes,
                 itemId: trackedEntity.itemId ?? null,
                 expirationDate: trackedEntity.expirationDate ?? null,
+                readableId: spawnReadableId,
                 companyId,
                 createdBy: userId,
               })
@@ -1322,16 +1358,10 @@ serve(async (req: Request) => {
           });
         });
 
-        return new Response(
-          JSON.stringify({
-            success: true,
-            newTrackedEntityId: newEntityId,
-          }),
-          {
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-            status: 200,
-          }
-        );
+        return jsonResponse({
+          success: true,
+          newTrackedEntityId: newEntityId,
+        });
       }
       case "partToOperation": {
         const {
@@ -1815,15 +1845,9 @@ serve(async (req: Request) => {
             .execute();
         });
 
-        return new Response(
-          JSON.stringify({
-            success: true,
-          }),
-          {
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-            status: 200,
-          }
-        );
+        return jsonResponse({
+          success: true,
+        });
       }
       case "trackedEntitiesToOperation": {
         const {
@@ -2443,17 +2467,11 @@ serve(async (req: Request) => {
           return splitEntities;
         });
 
-        return new Response(
-          JSON.stringify({
-            success: true,
-            splitEntities,
-            warning: expiredWarning,
-          }),
-          {
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-            status: 200,
-          }
-        );
+        return jsonResponse({
+          success: true,
+          splitEntities,
+          warning: expiredWarning,
+        });
       }
       case "unconsumeTrackedEntities": {
         const {
@@ -2962,17 +2980,11 @@ serve(async (req: Request) => {
           };
         });
 
-        return new Response(
-          JSON.stringify({
-            success: true,
-            message: "Entity converted successfully",
-            convertedEntity,
-          }),
-          {
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-            status: 200,
-          }
-        );
+        return jsonResponse({
+          success: true,
+          message: "Entity converted successfully",
+          convertedEntity,
+        });
       }
       case "maintenanceDispatchInventory": {
         const {
@@ -3056,16 +3068,10 @@ serve(async (req: Request) => {
           }
         });
 
-        return new Response(
-          JSON.stringify({
-            success: true,
-            message: "Material issued successfully",
-          }),
-          {
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-            status: 200,
-          }
-        );
+        return jsonResponse({
+          success: true,
+          message: "Material issued successfully",
+        });
       }
       case "maintenanceDispatchTrackedEntities": {
         const {
@@ -3449,18 +3455,12 @@ serve(async (req: Request) => {
           return splitEntities;
         });
 
-        return new Response(
-          JSON.stringify({
-            success: true,
-            message: "Material issued successfully",
-            splitEntities,
-            warning: expiredWarning,
-          }),
-          {
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-            status: 200,
-          }
-        );
+        return jsonResponse({
+          success: true,
+          message: "Material issued successfully",
+          splitEntities,
+          warning: expiredWarning,
+        });
       }
       case "maintenanceDispatchUnconsume": {
         const { maintenanceDispatchItemId, children, companyId, userId } =
@@ -3651,16 +3651,10 @@ serve(async (req: Request) => {
             .execute();
         });
 
-        return new Response(
-          JSON.stringify({
-            success: true,
-            message: "Material unconsumed successfully",
-          }),
-          {
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-            status: 200,
-          }
-        );
+        return jsonResponse({
+          success: true,
+          message: "Material unconsumed successfully",
+        });
       }
       case "maintenanceDispatchUnissue": {
         const { maintenanceDispatchItemId, companyId, userId } =
@@ -3848,47 +3842,18 @@ serve(async (req: Request) => {
             .execute();
         });
 
-        return new Response(
-          JSON.stringify({
-            success: true,
-            message: "Item unissued and removed successfully",
-          }),
-          {
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-            status: 200,
-          }
-        );
+        return jsonResponse({
+          success: true,
+          message: "Item unissued and removed successfully",
+        });
       }
     }
 
-    return new Response(
-      JSON.stringify({
-        success: true,
-        message: "x",
-      }),
-      {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200,
-      }
-    );
+    return jsonResponse({
+      success: true,
+      message: "x",
+    });
   } catch (err) {
-    console.error(err);
-    // Error.prototype properties (message, name, stack) aren't enumerable,
-    // so a plain JSON.stringify(err) produces "{}" and clients lose the
-    // actual reason (e.g. "Cannot consume expired tracked entity ...").
-    // Pull the message out explicitly.
-    const message =
-      err instanceof Error
-        ? err.message
-        : typeof err === "string"
-          ? err
-          : "Unexpected error";
-    return new Response(
-      JSON.stringify({ success: false, message }),
-      {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 400,
-      }
-    );
+    return errorResponse(err, 400);
   }
 });

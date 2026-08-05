@@ -25,7 +25,8 @@
   :root {
     --header-height: 50px;
     --filters-height: 38px;
-    --controls-width: 240px;
+    /* Side control panel; only in play at lg+ (below that it stacks inline). */
+    --controls-width: 220px;
     --sidebar-width: 240px;
 
     --sidebar-background: 0 0% 98%;
@@ -55,6 +56,12 @@
       0px 2px 2px -1px rgb(0 0 0 / 0.08), 0px 0px 0px 1px rgb(0 0 0 / 0.06),
       inset 0px 1px 0px #fff, inset 0px 1px 2px 1px #fff,
       inset 0px 1px 2px rgb(0 0 0 / 0.06);
+  }
+
+  @media (min-width: 1280px) {
+    :root {
+      --controls-width: 260px;
+    }
   }
 
   .dark {
@@ -136,4 +143,17 @@ p.is-editor-empty:first-child:before {
 
 .mention {
   @apply inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-400;
+}
+
+@keyframes spinner-fade {
+  0% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.15;
+  }
+}
+
+.animate-spinner {
+  animation: spinner-fade 1.2s linear infinite;
 }

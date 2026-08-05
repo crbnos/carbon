@@ -36,12 +36,14 @@ redirects kinds it does not serve (no loops).
   `productionQuantity` (end calls `finishJobOperation`).
 - **`finishJobOperation`** (`operations.service.ts`) flips the op to `Done` (firing
   the `sync_finish_job_operation` trigger that completes the job to inventory when
-  it's the last op). It then runs `returnAllocatedRemaindersAtJobComplete`: once
-  `job.status='Completed'`, it sweeps the job's tracked (batch/serial) picking-list
-  allocations and invokes the `post-picking` `returnPickedRemainder` case (via the
-  service-role client) to return each un-consumed lineside remainder to its
-  warehouse source. The SQL trigger can't call edge functions, so this is
-  orchestrated in TS.
+  it's the last op). It then runs `returnPickedRemainders`: one `post-picking`
+  sweep invoke (via the service-role client) — `returnJobRemainders` when
+  `job.status='Completed'`, else `returnOperationRemainders` (which itself no-ops
+  unless `companySettings.returnPickedMaterialTiming = 'operation'`). The sweep
+  returns un-consumed lineside remainders (tracked AND untracked) to their
+  warehouse source, booking `pickingListLine.quantityReturned`. The SQL trigger
+  can't call edge functions, so this is orchestrated in TS. See
+  `.ai/specs/2026-08-04-picked-material-return-timing.md`.
 
 ## Components
 
