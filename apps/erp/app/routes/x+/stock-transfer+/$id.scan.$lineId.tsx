@@ -192,14 +192,18 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   if (transferResult?.splitEntityId) {
     try {
+      // Post-flip, splitEntityId is the DEPARTING child that physically
+      // arrives at the destination bin — it gets a fresh Entity label. The
+      // payload entity is the shelf parent whose quantity changed — reprint.
+      // (Under legacy deploy skew the roles invert, but both entities still
+      // need Entity labels, so printing both ids is role-agnostic.)
       await trigger("print-job", {
-        sourceDocument: "Split",
+        sourceDocument: "Entity",
         sourceDocumentId: transferResult.splitEntityId,
         companyId,
         userId,
         locationId: locationId || undefined
       });
-      // Reprint the original batch too — its quantity changed in the split
       if (trackedEntityId) {
         await trigger("print-job", {
           sourceDocument: "Entity",

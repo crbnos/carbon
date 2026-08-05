@@ -569,6 +569,12 @@ msgstr "Выдать материал"
 msgid "Issue Type"
 msgstr "Тип проблемы"
 
+msgid "Issued {issuedQuantity} of {lotLabel}"
+msgstr "Выпущено {issuedQuantity} из {lotLabel}"
+
+msgid "Issued {issuedQuantity} of {lotLabel} — {remainingQuantity} remains"
+msgstr "Выпущено {issuedQuantity} из {lotLabel} — осталось {remainingQuantity}"
+
 msgid "Item"
 msgstr "Номенклатура"
 

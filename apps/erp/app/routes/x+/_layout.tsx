@@ -139,7 +139,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
     getUserClaims(userId, companyId),
     getUserGroups(client, userId),
     getUserDefaults(client, userId, companyId),
-    isAuditLogEnabled(client, companyId),
+    // Throws, unlike the {data, error} services around it — unguarded, a
+    // transient timeout on this flag 500s every page under /x.
+    isAuditLogEnabled(client, companyId).catch(() => false),
     getModulePreferences(client, userId, companyId),
     getPrinterRoutes(client, companyId),
     getImplementationHub(client, companyId),

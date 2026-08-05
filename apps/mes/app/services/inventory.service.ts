@@ -405,9 +405,11 @@ export async function getPickedQuantitiesByJobMaterial(
  * as `getPickedQuantitiesByJobMaterial`: only "In Progress"/"Completed" lists, and
  * never a Cancelled line. Shaped as `SuggestedAllocationLot[]` so the Issue modal
  * can seed it through the same path the no-picking-list suggestion uses. On a
- * partial-batch pick the original entity keeps the picked qty on the lineside
- * shelf (still `Available`), so these ids are valid picker options. Never throws
- * (returns []).
+ * partial-batch pick the SHELF entity keeps its id and the allocation records the
+ * departing CHILD staged at the lineside bin (Available, tagged
+ * "Split From Entity ID" = shelf parent) — so these ids are the lineside lots the
+ * operator actually consumes, and `splitFromEntityId` lets the Issue modal map a
+ * scanned shelf label to its allocated child. Never throws (returns []).
  */
 export async function getPickedTrackedEntitiesForMaterial(
   client: SupabaseClient<Database>,
@@ -416,7 +418,7 @@ export async function getPickedTrackedEntitiesForMaterial(
   const { data, error } = await client
     .from("pickingListLine")
     .select(
-      "companyId, pickingList!inner(status), pickingListLineTrackedEntity(trackedEntityId, quantityPicked, trackedEntity(readableId, expirationDate))"
+      "companyId, pickingList!inner(status), pickingListLineTrackedEntity(trackedEntityId, quantityPicked, trackedEntity(readableId, expirationDate, attributes))"
     )
     .eq("jobMaterialId", args.jobMaterialId)
     .eq("companyId", args.companyId)
@@ -437,14 +439,17 @@ export async function getPickedTrackedEntitiesForMaterial(
         const entity = picked.trackedEntity as {
           readableId: string | null;
           expirationDate: string | null;
+          attributes: Record<string, unknown> | null;
         } | null;
+        const splitFrom = entity?.attributes?.["Split From Entity ID"];
         byEntity.set(picked.trackedEntityId, {
           trackedEntityId: picked.trackedEntityId,
           readableId: entity?.readableId ?? null,
           quantity,
           expirationDate: entity?.expirationDate ?? null,
           storageUnitId: null,
-          storageUnitName: null
+          storageUnitName: null,
+          splitFromEntityId: typeof splitFrom === "string" ? splitFrom : null
         });
       }
     }

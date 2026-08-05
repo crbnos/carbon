@@ -13,6 +13,7 @@ export interface TrackedEntityAttributes {
   "Shipment Line"?: string;
   Shipment?: string;
   "Split Entity ID"?: string;
+  "Split From Entity ID"?: string;
   Shelf?: string;
 }
 

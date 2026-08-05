@@ -569,6 +569,12 @@ msgstr "Emitir material"
 msgid "Issue Type"
 msgstr "Tipo de Problema"
 
+msgid "Issued {issuedQuantity} of {lotLabel}"
+msgstr "Emitido {issuedQuantity} de {lotLabel}"
+
+msgid "Issued {issuedQuantity} of {lotLabel} — {remainingQuantity} remains"
+msgstr "Emitido {issuedQuantity} de {lotLabel} — quedan {remainingQuantity}"
+
 msgid "Item"
 msgstr "Artículo"
 

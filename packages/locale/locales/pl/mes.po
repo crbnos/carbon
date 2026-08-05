@@ -569,6 +569,12 @@ msgstr "Wydaj materiał"
 msgid "Issue Type"
 msgstr "Typ problemu"
 
+msgid "Issued {issuedQuantity} of {lotLabel}"
+msgstr "Wydane {issuedQuantity} z {lotLabel}"
+
+msgid "Issued {issuedQuantity} of {lotLabel} — {remainingQuantity} remains"
+msgstr "Wydane {issuedQuantity} z {lotLabel} — pozostaje {remainingQuantity}"
+
 msgid "Item"
 msgstr "Pozycja"
 

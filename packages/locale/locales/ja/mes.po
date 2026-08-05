@@ -569,6 +569,12 @@ msgstr "材料払出"
 msgid "Issue Type"
 msgstr "問題タイプ"
 
+msgid "Issued {issuedQuantity} of {lotLabel}"
+msgstr "{lotLabel} から {issuedQuantity} を発行しました"
+
+msgid "Issued {issuedQuantity} of {lotLabel} — {remainingQuantity} remains"
+msgstr "{lotLabel} から {issuedQuantity} を発行しました — {remainingQuantity} が残っています"
+
 msgid "Item"
 msgstr "品目"
 

@@ -70,7 +70,7 @@ function QuantityEdgeImpl({
           fill: "none"
         }}
       />
-      {!dimmed && data?.quantity != null && (
+      {!dimmed && (data?.labelText || data?.quantity != null) && (
         <EdgeLabelRenderer>
           <div
             style={{
@@ -81,7 +81,9 @@ function QuantityEdgeImpl({
               textAlign: "center",
               zIndex: 1000
             }}
-            className={`text-[11px] font-medium tabular-nums leading-none px-2 py-1 rounded-full border-2 ${
+            className={`text-[11px] font-medium leading-none px-2 py-1 rounded-full border-2 ${
+              data.labelText ? "" : "tabular-nums"
+            } ${
               isReject
                 ? "bg-background text-[hsl(0_72%_55%)] border-[hsl(0_72%_55%)]"
                 : highlighted
@@ -91,7 +93,7 @@ function QuantityEdgeImpl({
                     : "bg-background text-foreground border-border"
             }`}
           >
-            {data.quantity}
+            {data.labelText ?? data.quantity}
           </div>
         </EdgeLabelRenderer>
       )}

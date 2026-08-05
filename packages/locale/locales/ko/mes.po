@@ -569,6 +569,12 @@ msgstr "자재 출고"
 msgid "Issue Type"
 msgstr "이슈 유형"
 
+msgid "Issued {issuedQuantity} of {lotLabel}"
+msgstr "{issuedQuantity}를 {lotLabel}에서 발급함"
+
+msgid "Issued {issuedQuantity} of {lotLabel} — {remainingQuantity} remains"
+msgstr "{issuedQuantity}를 {lotLabel}에서 발급함 — {remainingQuantity}가 남음"
+
 msgid "Item"
 msgstr "품목"
 

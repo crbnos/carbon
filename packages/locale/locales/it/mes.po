@@ -569,6 +569,12 @@ msgstr "Preleva Materiale"
 msgid "Issue Type"
 msgstr "Tipo di Problema"
 
+msgid "Issued {issuedQuantity} of {lotLabel}"
+msgstr "Emesso {issuedQuantity} di {lotLabel}"
+
+msgid "Issued {issuedQuantity} of {lotLabel} — {remainingQuantity} remains"
+msgstr "Emesso {issuedQuantity} di {lotLabel} — restano {remainingQuantity}"
+
 msgid "Item"
 msgstr "Articolo"
 

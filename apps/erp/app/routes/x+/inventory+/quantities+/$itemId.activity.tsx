@@ -8,12 +8,13 @@ import { LuChevronUp } from "react-icons/lu";
 import type { LoaderFunctionArgs } from "react-router";
 import { redirect, useLoaderData } from "react-router";
 import InfiniteScroll from "~/components/InfiniteScroll";
-import type { ItemLedger } from "~/modules/inventory";
+import type { CollapsedItemLedger, ItemLedger } from "~/modules/inventory";
 import {
   collapseTransferPairs,
   getItemLedgerActivity,
   InventoryActivity
 } from "~/modules/inventory";
+import { getItem } from "~/modules/items";
 import { getLocationsList } from "~/modules/resources";
 import { getUserDefaults } from "~/modules/users/users.server";
 import { path } from "~/utils/path";
@@ -77,7 +78,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   // The activity page and the "is there anything newer than the anchor?"
   // existence check both depend only on `anchorEntryNumber`, not on each other —
   // run them in parallel to save a roundtrip on highlight navigations.
-  const [itemLedgerRecords, newer] = await Promise.all([
+  const [itemLedgerRecords, newer, item] = await Promise.all([
     getItemLedgerActivity(client, {
       itemId,
       companyId,
@@ -95,7 +96,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
           .eq("locationId", locationId)
           .gt("entryNumber", anchorEntryNumber)
           .limit(1)
-      : Promise.resolve({ data: [] as { id: string }[] })
+      : Promise.resolve({ data: [] as { id: string }[] }),
+    getItem(client, itemId)
   ]);
   if (itemLedgerRecords.error) {
     throw redirect(
@@ -117,7 +119,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     locationId,
     highlightId,
     hasOlder: itemLedgerRecords.hasMore,
-    hasNewer
+    hasNewer,
+    itemTrackingType: item.data?.itemTrackingType ?? null
   };
 }
 
@@ -129,7 +132,8 @@ export default function ItemInventoryActivityRoute() {
     locationId,
     highlightId,
     hasOlder: initialHasOlder,
-    hasNewer: initialHasNewer
+    hasNewer: initialHasNewer,
+    itemTrackingType
   } = useLoaderData<typeof loader>();
 
   const { carbon } = useCarbon();
@@ -141,6 +145,28 @@ export default function ItemInventoryActivityRoute() {
   const activityItems = useMemo(
     () => collapseTransferPairs(itemLedgers),
     [itemLedgers]
+  );
+  // InfiniteScroll only forwards { item, highlightId } — close over the item's
+  // tracking type so rows label their tracked entity from the item, not a
+  // quantity heuristic.
+  const ActivityItem = useMemo(
+    () =>
+      function ActivityItem({
+        item,
+        highlightId: rowHighlightId
+      }: {
+        item: CollapsedItemLedger;
+        highlightId?: string;
+      }) {
+        return (
+          <InventoryActivity
+            item={item}
+            highlightId={rowHighlightId}
+            itemTrackingType={itemTrackingType}
+          />
+        );
+      },
+    [itemTrackingType]
   );
   const [hasOlder, setHasOlder] = useState(initialHasOlder);
   const [hasNewer, setHasNewer] = useState(initialHasNewer);
@@ -228,7 +254,7 @@ export default function ItemInventoryActivityRoute() {
       )}
 
       <InfiniteScroll
-        component={InventoryActivity}
+        component={ActivityItem}
         items={activityItems}
         loadMore={loadOlder}
         hasMore={hasOlder}

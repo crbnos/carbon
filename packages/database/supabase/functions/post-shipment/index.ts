@@ -7,6 +7,7 @@ import { corsPreflight, errorResponse, jsonResponse } from "../lib/response.ts";
 import { requirePermissions } from "../lib/supabase.ts";
 import type { Database, Json } from "../lib/types.ts";
 import { TrackedEntityAttributes, credit, debit, journalReference } from "../lib/utils.ts";
+import { buildBatchSplitRecords } from "../shared/batch-split.ts";
 import { calculateCOGS } from "../shared/calculate-cogs.ts";
 import { getCurrentAccountingPeriod } from "../shared/get-accounting-period.ts";
 import { getNextSequence } from "../shared/get-next-sequence.ts";
@@ -740,7 +741,10 @@ serve(async (req: Request) => {
                   trackedEntity.quantity !== undefined &&
                   shipmentLine.shippedQuantity < trackedEntity.quantity
                 ) {
-                  // Need to split the batch
+                  // Partial shipment → split. The shelf entity keeps its id
+                  // and is only decremented (split loop below); the SHIPPED
+                  // portion departs as a new Consumed child. No Consumed
+                  // update on the parent here.
                   trackedEntitySplits[trackedEntity.id] = {
                     originalEntityId: trackedEntity.id,
                     originalQuantity: trackedEntity.quantity,
@@ -758,6 +762,7 @@ serve(async (req: Request) => {
                     itemId: trackedEntity.itemId ?? null,
                     expirationDate: trackedEntity.expirationDate ?? null,
                   };
+                  return acc;
                 }
 
                 acc[trackedEntity.id] = {
@@ -843,7 +848,10 @@ serve(async (req: Request) => {
                 .where("id", "=", shipmentId)
                 .execute();
 
-              if (Object.keys(trackedEntityUpdates).length > 0) {
+              if (
+                Object.keys(trackedEntityUpdates).length > 0 ||
+                Object.keys(trackedEntitySplits).length > 0
+              ) {
                 const trackedActivity = await trx
                   .insertInto("trackedActivity")
                   .values({
@@ -864,214 +872,133 @@ serve(async (req: Request) => {
 
                 const trackedActivityId = trackedActivity[0].id;
 
-                // Handle batch splits first
+                // Handle batch splits first: the shelf entity keeps its id
+                // and is decremented; the SHIPPED portion departs as a new
+                // Consumed child carrying the shipment attributes.
                 for await (const splitInfo of Object.values(
                   trackedEntitySplits
                 )) {
-                  // Create a split activity
-                  const splitActivity = await trx
-                    .insertInto("trackedActivity")
-                    .values({
-                      type: "Split",
-                      sourceDocument: "Shipment",
-                      sourceDocumentId: shipmentId,
-                      sourceDocumentReadableId: shipment.data.shipmentId,
-                      attributes: {
-                        "Original Quantity": splitInfo.originalQuantity,
-                        "Shipped Quantity": splitInfo.shippedQuantity,
-                        "Remaining Quantity": splitInfo.remainingQuantity,
-                      },
-                      companyId: splitInfo.companyId,
-                      createdBy: userId,
-                      createdAt: today,
-                    })
-                    .returning(["id"])
-                    .execute();
+                  const shipmentLine = shipmentLines.data.find(
+                    (sl) =>
+                      sl.id ===
+                      (splitInfo.attributes as TrackedEntityAttributes)?.[
+                        "Shipment Line"
+                      ]
+                  );
 
-                  const splitActivityId = splitActivity[0].id!;
+                  const shippedChildId = nanoid();
+                  const parentAttributes = (splitInfo.attributes ??
+                    {}) as Record<string, unknown>;
 
-                  // Record the original entity as input to the split
-                  await trx
-                    .insertInto("trackedActivityInput")
-                    .values({
-                      trackedActivityId: splitActivityId,
-                      trackedEntityId: splitInfo.originalEntityId,
-                      quantity: splitInfo.originalQuantity,
-                      companyId: splitInfo.companyId,
-                      createdBy: userId,
-                      createdAt: today,
-                    })
-                    .execute();
-
-                  // Create a new tracked entity for the remaining quantity
-                  const newTrackedEntity = await trx
-                    .insertInto("trackedEntity")
-                    .values({
+                  const split = buildBatchSplitRecords({
+                    parent: {
+                      id: splitInfo.originalEntityId,
                       readableId: splitInfo.readableId,
-                      quantity: splitInfo.remainingQuantity,
-                      status: "Available",
+                      quantity: splitInfo.originalQuantity,
                       sourceDocument: splitInfo.sourceDocument,
                       sourceDocumentId: splitInfo.sourceDocumentId,
                       sourceDocumentReadableId:
                         splitInfo.sourceDocumentReadableId,
-                      attributes: splitInfo.attributes as unknown as Json,
                       itemId: splitInfo.itemId,
                       expirationDate: splitInfo.expirationDate,
-                      companyId: splitInfo.companyId,
-                      createdBy: userId,
+                      attributes: parentAttributes,
+                    },
+                    drawQuantity: splitInfo.shippedQuantity,
+                    childId: shippedChildId,
+                    splitActivityId: nanoid(),
+                    activitySourceDocument: "Shipment",
+                    activitySourceDocumentId: shipmentId,
+                    bin: {
+                      storageUnitId: shipmentLine?.storageUnitId ?? null,
+                      locationId,
+                    },
+                    itemLedgerItemId: shipmentLine?.itemId ?? null,
+                    companyId: splitInfo.companyId,
+                    userId,
+                    postingDate: today,
+                    childStatus: "Consumed",
+                  });
+
+                  await trx
+                    .insertInto("trackedActivity")
+                    .values({
+                      ...split.activityInsert,
+                      attributes: split.activityInsert
+                        .attributes as unknown as Json,
+                      sourceDocumentReadableId: shipment.data.shipmentId,
                       createdAt: today,
                     })
-                    .returning(["id"])
                     .execute();
 
-                  const newTrackedEntityId = newTrackedEntity[0].id!;
-                  splitEntityIds.push(newTrackedEntityId);
+                  await trx
+                    .insertInto("trackedEntity")
+                    .values({
+                      ...split.childEntityInsert,
+                      attributes: split.childEntityInsert
+                        .attributes as unknown as Json,
+                      createdAt: today,
+                    })
+                    .execute();
 
-                  // Update the original entity's attributes to include the split entity ID
-                  const originalEntity = await trx
-                    .selectFrom("trackedEntity")
-                    .select(["attributes"])
+                  await trx
+                    .insertInto("trackedActivityInput")
+                    .values({ ...split.activityInputInsert, createdAt: today })
+                    .execute();
+
+                  await trx
+                    .insertInto("trackedActivityOutput")
+                    .values({ ...split.activityOutputInsert, createdAt: today })
+                    .execute();
+
+                  // The retained parent is only decremented and LOSES the
+                  // shipment attributes — they belong to the shipped child.
+                  const retainedAttributes = { ...parentAttributes };
+                  delete retainedAttributes["Shipment"];
+                  delete retainedAttributes["Shipment Line"];
+                  delete retainedAttributes["Shipment Line Index"];
+
+                  await trx
+                    .updateTable("trackedEntity")
+                    .set({
+                      quantity: split.parentUpdate.quantity,
+                      attributes: retainedAttributes as unknown as Json,
+                    })
                     .where("id", "=", splitInfo.originalEntityId)
-                    .executeTakeFirst();
+                    .execute();
 
-                  if (originalEntity) {
-                    const updatedAttributes = {
-                      ...((originalEntity.attributes as TrackedEntityAttributes) ||
-                        {}),
-                      "Split Entity ID": newTrackedEntityId,
-                    };
+                  itemLedgerInserts.push(...split.ledgerInserts);
 
-                    // Remove Shipment and Shipment Line attributes from the new entity
-                    const updatedAttributesObj = {
-                      ...((originalEntity.attributes as TrackedEntityAttributes) ||
-                        {}),
-                    };
+                  // The shipment's own ledger rows (built per line above)
+                  // and its activity input book against the shipped child.
+                  for (const ledger of itemLedgerInserts) {
+                    if (
+                      ledger.documentType === "Sales Shipment" &&
+                      ledger.trackedEntityId === splitInfo.originalEntityId
+                    ) {
+                      ledger.trackedEntityId = shippedChildId;
+                    }
+                  }
 
-                    // Delete shipment-related attributes
-                    delete updatedAttributesObj["Shipment"];
-                    delete updatedAttributesObj["Shipment Line"];
-                    delete updatedAttributesObj["Shipment Line Index"];
-
-                    // Add the split entity reference
-                    updatedAttributesObj["Split Entity ID"] =
-                      newTrackedEntityId;
-
-                    // Update the original entity with the reference to the new split entity
+                  if (trackedActivityId) {
                     await trx
-                      .updateTable("trackedEntity")
-                      .set({
-                        attributes: updatedAttributes,
+                      .insertInto("trackedActivityInput")
+                      .values({
+                        trackedActivityId,
+                        trackedEntityId: shippedChildId,
+                        quantity: splitInfo.shippedQuantity,
+                        companyId,
+                        createdBy: userId,
+                        createdAt: today,
                       })
-                      .where("id", "=", splitInfo.originalEntityId)
                       .execute();
                   }
 
-                  // Record the new entity as output from the split
-                  await trx
-                    .insertInto("trackedActivityOutput")
-                    .values({
-                      trackedActivityId: splitActivityId,
-                      trackedEntityId: newTrackedEntityId,
-                      quantity: splitInfo.remainingQuantity,
-                      companyId: splitInfo.companyId,
-                      createdBy: userId,
-                      createdAt: today,
-                    })
-                    .execute();
-
-                  // Record the shipped portion as output (will be consumed by shipment)
-                  await trx
-                    .insertInto("trackedActivityOutput")
-                    .values({
-                      trackedActivityId: splitActivityId,
-                      trackedEntityId: splitInfo.originalEntityId,
-                      quantity: splitInfo.shippedQuantity,
-                      companyId: splitInfo.companyId,
-                      createdBy: userId,
-                      createdAt: today,
-                    })
-                    .execute();
-
-                  itemLedgerInserts.push({
-                    postingDate: today,
-                    itemId: shipmentLines.data.find(
-                      (sl) =>
-                        sl.id ===
-                        (splitInfo.attributes as TrackedEntityAttributes)?.[
-                          "Shipment Line"
-                        ]
-                    )?.itemId!,
-                    quantity: -splitInfo.originalQuantity,
-                    locationId: locationId,
-                    storageUnitId: shipmentLines.data.find(
-                      (sl) =>
-                        sl.id ===
-                        (splitInfo.attributes as TrackedEntityAttributes)?.[
-                          "Shipment Line"
-                        ]
-                    )?.storageUnitId,
-                    entryType: "Negative Adjmt.",
-                    documentType: "Batch Split",
-                    documentId: splitActivityId,
-                    trackedEntityId: splitInfo.originalEntityId,
-                    createdBy: userId,
-                    companyId,
-                  });
-
-                  itemLedgerInserts.push({
-                    postingDate: today,
-                    itemId: shipmentLines.data.find(
-                      (sl) =>
-                        sl.id ===
-                        (splitInfo.attributes as TrackedEntityAttributes)?.[
-                          "Shipment Line"
-                        ]
-                    )?.itemId!,
-                    quantity: splitInfo.shippedQuantity,
-                    locationId: locationId,
-                    storageUnitId: shipmentLines.data.find(
-                      (sl) =>
-                        sl.id ===
-                        (splitInfo.attributes as TrackedEntityAttributes)?.[
-                          "Shipment Line"
-                        ]
-                    )?.storageUnitId,
-                    entryType: "Positive Adjmt.",
-                    documentType: "Batch Split",
-                    documentId: splitActivityId,
-                    trackedEntityId: splitInfo.originalEntityId,
-                    createdBy: userId,
-                    companyId,
-                  });
-
-                  itemLedgerInserts.push({
-                    postingDate: today,
-                    itemId: shipmentLines.data.find(
-                      (sl) =>
-                        sl.id ===
-                        (splitInfo.attributes as TrackedEntityAttributes)?.[
-                          "Shipment Line"
-                        ]
-                    )?.itemId!,
-                    quantity: splitInfo.remainingQuantity,
-                    locationId: locationId,
-                    storageUnitId: shipmentLines.data.find(
-                      (sl) =>
-                        sl.id ===
-                        (splitInfo.attributes as TrackedEntityAttributes)?.[
-                          "Shipment Line"
-                        ]
-                    )?.storageUnitId,
-                    entryType: "Positive Adjmt.",
-                    documentType: "Batch Split",
-                    documentId: splitActivityId,
-                    trackedEntityId: newTrackedEntityId,
-                    createdBy: userId,
-                    companyId,
-                  });
+                  // Auto-print/labels retarget to the RETAINED parent (its
+                  // quantity changed); the shipped child needs no label.
+                  splitEntityIds.push(splitInfo.originalEntityId);
                 }
 
-                // Now handle the shipment consumption
+                // Now handle the shipment consumption (full-quantity lots)
                 for await (const [id, update] of Object.entries(
                   trackedEntityUpdates
                 )) {
@@ -1453,7 +1380,10 @@ serve(async (req: Request) => {
                   trackedEntity.quantity !== undefined &&
                   shipmentLine.shippedQuantity < trackedEntity.quantity
                 ) {
-                  // Need to split the batch
+                  // Partial shipment → split. The shelf entity keeps its id
+                  // and is only decremented (split loop below); the SHIPPED
+                  // portion departs as a new Consumed child. No update on
+                  // the parent here.
                   trackedEntitySplits[trackedEntity.id] = {
                     originalEntityId: trackedEntity.id,
                     originalQuantity: trackedEntity.quantity,
@@ -1471,6 +1401,7 @@ serve(async (req: Request) => {
                     itemId: trackedEntity.itemId ?? null,
                     expirationDate: trackedEntity.expirationDate ?? null,
                   };
+                  return acc;
                 }
 
                 acc[trackedEntity.id] = {
@@ -1502,7 +1433,10 @@ serve(async (req: Request) => {
                 .where("id", "=", shipmentId)
                 .execute();
 
-              if (Object.keys(trackedEntityUpdates).length > 0) {
+              if (
+                Object.keys(trackedEntityUpdates).length > 0 ||
+                Object.keys(trackedEntitySplits).length > 0
+              ) {
                 const trackedActivity = await trx
                   .insertInto("trackedActivity")
                   .values({
@@ -1523,136 +1457,123 @@ serve(async (req: Request) => {
 
                 const trackedActivityId = trackedActivity[0].id;
 
-                // Handle batch splits first
+                // Handle batch splits first: the shelf entity keeps its id
+                // and is decremented; the SHIPPED portion departs as a new
+                // Consumed child carrying the shipment attributes. This PO-
+                // sourced path posts NO itemLedger for the split (matching the
+                // pre-flip behavior — a PO/subcontract shipment's inventory
+                // movement is not booked here); only genealogy + quantities.
                 for await (const splitInfo of Object.values(
                   trackedEntitySplits
                 )) {
-                  // Create a split activity
-                  const splitActivity = await trx
-                    .insertInto("trackedActivity")
-                    .values({
-                      type: "Split",
-                      sourceDocument: "Shipment",
-                      sourceDocumentId: shipmentId,
-                      sourceDocumentReadableId: shipment.data.shipmentId,
-                      attributes: {
-                        "Original Quantity": splitInfo.originalQuantity,
-                        "Shipped Quantity": splitInfo.shippedQuantity,
-                        "Remaining Quantity": splitInfo.remainingQuantity,
-                      },
-                      companyId: splitInfo.companyId,
-                      createdBy: userId,
-                      createdAt: today,
-                    })
-                    .returning(["id"])
-                    .execute();
+                  const shipmentLine = shipmentLines.data.find(
+                    (sl) =>
+                      sl.id ===
+                      (splitInfo.attributes as TrackedEntityAttributes)?.[
+                        "Shipment Line"
+                      ]
+                  );
 
-                  const splitActivityId = splitActivity[0].id!;
+                  const shippedChildId = nanoid();
+                  const parentAttributes = (splitInfo.attributes ??
+                    {}) as Record<string, unknown>;
 
-                  // Record the original entity as input to the split
-                  await trx
-                    .insertInto("trackedActivityInput")
-                    .values({
-                      trackedActivityId: splitActivityId,
-                      trackedEntityId: splitInfo.originalEntityId,
-                      quantity: splitInfo.originalQuantity,
-                      companyId: splitInfo.companyId,
-                      createdBy: userId,
-                      createdAt: today,
-                    })
-                    .execute();
-
-                  // Create a new tracked entity for the remaining quantity
-                  const newTrackedEntity = await trx
-                    .insertInto("trackedEntity")
-                    .values({
+                  const split = buildBatchSplitRecords({
+                    parent: {
+                      id: splitInfo.originalEntityId,
                       readableId: splitInfo.readableId,
-                      quantity: splitInfo.remainingQuantity,
-                      status: "Available",
+                      quantity: splitInfo.originalQuantity,
                       sourceDocument: splitInfo.sourceDocument,
                       sourceDocumentId: splitInfo.sourceDocumentId,
                       sourceDocumentReadableId:
                         splitInfo.sourceDocumentReadableId,
-                      attributes: splitInfo.attributes as unknown as Json,
                       itemId: splitInfo.itemId,
                       expirationDate: splitInfo.expirationDate,
-                      companyId: splitInfo.companyId,
-                      createdBy: userId,
+                      attributes: parentAttributes,
+                    },
+                    drawQuantity: splitInfo.shippedQuantity,
+                    childId: shippedChildId,
+                    splitActivityId: nanoid(),
+                    activitySourceDocument: "Shipment",
+                    activitySourceDocumentId: shipmentId,
+                    bin: {
+                      storageUnitId: shipmentLine?.storageUnitId ?? null,
+                      locationId: shipment.data.locationId,
+                    },
+                    itemLedgerItemId: shipmentLine?.itemId ?? null,
+                    companyId: splitInfo.companyId,
+                    userId,
+                    postingDate: today,
+                    childStatus: "Consumed",
+                  });
+
+                  await trx
+                    .insertInto("trackedActivity")
+                    .values({
+                      ...split.activityInsert,
+                      attributes: split.activityInsert
+                        .attributes as unknown as Json,
+                      sourceDocumentReadableId: shipment.data.shipmentId,
                       createdAt: today,
                     })
-                    .returning(["id"])
                     .execute();
 
-                  const newTrackedEntityId = newTrackedEntity[0].id!;
-                  splitEntityIds.push(newTrackedEntityId);
+                  await trx
+                    .insertInto("trackedEntity")
+                    .values({
+                      ...split.childEntityInsert,
+                      attributes: split.childEntityInsert
+                        .attributes as unknown as Json,
+                      createdAt: today,
+                    })
+                    .execute();
 
-                  // Update the original entity's attributes to include the split entity ID
-                  const originalEntity = await trx
-                    .selectFrom("trackedEntity")
-                    .select(["attributes"])
+                  await trx
+                    .insertInto("trackedActivityInput")
+                    .values({ ...split.activityInputInsert, createdAt: today })
+                    .execute();
+
+                  await trx
+                    .insertInto("trackedActivityOutput")
+                    .values({ ...split.activityOutputInsert, createdAt: today })
+                    .execute();
+
+                  // The retained parent is only decremented and LOSES the
+                  // shipment attributes — they belong to the shipped child.
+                  const retainedAttributes = { ...parentAttributes };
+                  delete retainedAttributes["Shipment"];
+                  delete retainedAttributes["Shipment Line"];
+                  delete retainedAttributes["Shipment Line Index"];
+
+                  await trx
+                    .updateTable("trackedEntity")
+                    .set({
+                      quantity: split.parentUpdate.quantity,
+                      attributes: retainedAttributes as unknown as Json,
+                    })
                     .where("id", "=", splitInfo.originalEntityId)
-                    .executeTakeFirst();
+                    .execute();
 
-                  if (originalEntity) {
-                    const updatedAttributes = {
-                      ...((originalEntity.attributes as TrackedEntityAttributes) ||
-                        {}),
-                      "Split Entity ID": newTrackedEntityId,
-                    };
-
-                    // Remove Shipment and Shipment Line attributes from the new entity
-                    const updatedAttributesObj = {
-                      ...((originalEntity.attributes as TrackedEntityAttributes) ||
-                        {}),
-                    };
-
-                    // Delete shipment-related attributes
-                    delete updatedAttributesObj["Shipment"];
-                    delete updatedAttributesObj["Shipment Line"];
-                    delete updatedAttributesObj["Shipment Line Index"];
-
-                    // Add the split entity reference
-                    updatedAttributesObj["Split Entity ID"] =
-                      newTrackedEntityId;
-
-                    // Update the original entity with the reference to the new split entity
+                  if (trackedActivityId) {
                     await trx
-                      .updateTable("trackedEntity")
-                      .set({
-                        attributes: updatedAttributes,
+                      .insertInto("trackedActivityInput")
+                      .values({
+                        trackedActivityId,
+                        trackedEntityId: shippedChildId,
+                        quantity: splitInfo.shippedQuantity,
+                        companyId,
+                        createdBy: userId,
+                        createdAt: today,
                       })
-                      .where("id", "=", splitInfo.originalEntityId)
                       .execute();
                   }
 
-                  // Record the new entity as output from the split
-                  await trx
-                    .insertInto("trackedActivityOutput")
-                    .values({
-                      trackedActivityId: splitActivityId,
-                      trackedEntityId: newTrackedEntityId,
-                      quantity: splitInfo.remainingQuantity,
-                      companyId: splitInfo.companyId,
-                      createdBy: userId,
-                      createdAt: today,
-                    })
-                    .execute();
-
-                  // Record the shipped portion as output (will be consumed by shipment)
-                  await trx
-                    .insertInto("trackedActivityOutput")
-                    .values({
-                      trackedActivityId: splitActivityId,
-                      trackedEntityId: splitInfo.originalEntityId,
-                      quantity: splitInfo.shippedQuantity,
-                      companyId: splitInfo.companyId,
-                      createdBy: userId,
-                      createdAt: today,
-                    })
-                    .execute();
+                  // Auto-print/labels retarget to the RETAINED parent (its
+                  // quantity changed); the shipped child needs no label.
+                  splitEntityIds.push(splitInfo.originalEntityId);
                 }
 
-                // Now handle the shipment consumption
+                // Now handle the shipment consumption (full-quantity lots)
                 for await (const [id, update] of Object.entries(
                   trackedEntityUpdates
                 )) {
