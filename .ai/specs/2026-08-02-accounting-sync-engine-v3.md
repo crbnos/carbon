@@ -715,3 +715,26 @@ spelling — sync code must not "correct" it.
   required mapping set pattern-based from the live row (schema-driven, `scrapAccount` et
   al. covered automatically); added the suffix-naming convention + a Phase 1 totality test
   to keep it that way.
+
+## Changelog addendum — Rillet Fields v4 surface VERIFIED (2026-08-04, task 2.7 gate)
+
+Verified against docs.api.rillet.com + the live sandbox:
+
+- `GET /fields` — field definitions + pick-list values:
+  `{ fields: [{ id (uuid), name, values: [{ id (uuid), name, deactivated }],
+  settings: { EXPENSES?: {mandatory, display}, REVENUE?: {mandatory, display} },
+  updated_at }] }`. `display` is STANDALONE (single-select) or FREE_TAG.
+  Applicability: EXPENSES = bills/manual entries; REVENUE = customers/
+  contracts/invoices/credit memos. Supports `updated.gt`.
+- `POST /fields` — CREATE a field definition via API (better than assumed:
+  full auto-provisioning of slots is possible, not just values).
+- `POST /fields/{id}/values` `{ name }` — value upsert-by-name; returns the
+  full Field including the new value's uuid.
+- Item references (journal/bill/invoice `fields` arrays) are UUID pairs:
+  `[{ field_id, field_value_id }]` — ids, never names.
+- Unlike external-reference TYPES (dashboard-only), Fields are fully
+  API-manageable. autoCreate-on-push for Rillet slots is confirmed viable.
+
+Carbon-side capture (Phase 1) is live: `journalLineDimension` rows exist on
+real posted journals (Item/Supplier/Location observed on the sandbox
+company's receipt + purchase-invoice journals).

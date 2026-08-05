@@ -3,6 +3,7 @@ import type { Accounting } from "../../../core/types";
 import type { Rillet, RilletProductWrite, RilletWriteOmit } from "../models";
 import { buildRilletIdempotencyKey } from "../provider";
 import {
+  carbonCompanyExternalReference,
   carbonExternalReference,
   loadCompanyBaseCurrency,
   loadRilletAccountCodesById,
@@ -103,7 +104,10 @@ export function mapItemToRilletProduct(args: {
     revenue_pattern: "EVEN_PERIOD",
     account_code: accountCode,
     status: "ACTIVE",
-    external_references: [carbonExternalReference(item.id)]
+    external_references: [
+      carbonExternalReference(item.id),
+      carbonCompanyExternalReference(item.companyId)
+    ]
   };
 }
 

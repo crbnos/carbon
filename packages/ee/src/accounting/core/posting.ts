@@ -281,6 +281,51 @@ function decideDocumentFamily(args: {
  * decision's job to surface; the backstop's job is never pushing a
  * doc-backed or family-off journal.
  */
+/**
+ * Convert a Carbon journalLine amount to the engine's debit-signed
+ * convention (positive = debit, negative = credit).
+ *
+ * Carbon's post-* edge functions sign amounts by the account's NATURAL
+ * balance (`credit("liability", x)` stores +x; `debit("liability", x)`
+ * stores -x — see functions/lib/utils.ts), so a Carbon journal balances
+ * as debits == credits, not as a signed sum of zero. The engine's
+ * preflight, netting, consolidation and provider mappers all assume
+ * debit-signed amounts, so every journal fetch converts at the edge using
+ * the line's account class: Asset/Expense amounts keep their sign (natural
+ * balance IS debit), Liability/Equity/Revenue amounts negate. A missing
+ * class (no account on the line) passes through unchanged — those lines
+ * already fail preflight as unmapped.
+ */
+/**
+ * Normalize a journal.postingDate read through Kysely to YYYY-MM-DD. The
+ * pg driver parses DATE columns into JS Date objects at LOCAL midnight, so
+ * local components (not toISOString, which can shift a calendar day by the
+ * runtime timezone) recover the stored date; strings pass through sliced.
+ */
+export function toPostingDateString(value: unknown): string {
+  if (typeof value === "string") return value.slice(0, 10);
+  if (value instanceof Date) {
+    const month = String(value.getMonth() + 1).padStart(2, "0");
+    const day = String(value.getDate()).padStart(2, "0");
+    return `${value.getFullYear()}-${month}-${day}`;
+  }
+  return String(value);
+}
+
+export function toDebitSignedAmount(
+  accountClass: string | null | undefined,
+  amount: number
+): number {
+  switch (accountClass) {
+    case "Liability":
+    case "Equity":
+    case "Revenue":
+      return -amount;
+    default:
+      return amount;
+  }
+}
+
 export function getPostingSyncSourceTypeSkipReason(
   sourceType: string | null | undefined,
   settings: PostingSyncSettings,

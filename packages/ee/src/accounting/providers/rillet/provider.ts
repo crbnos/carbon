@@ -164,8 +164,18 @@ export function throwRilletApiError(
 export function isRilletUnknownExternalReferenceTypeError(
   error: unknown
 ): boolean {
+  if (!(error instanceof AccountingApiError)) return false;
+  // Rillet's RFC 9457 type URI is the stable signal; the message text is a
+  // fallback for older responses that only carried the detail.
+  if (
+    typeof error.details.providerErrorType === "string" &&
+    error.details.providerErrorType.endsWith(
+      "/exception/external_reference_type_not_found"
+    )
+  ) {
+    return true;
+  }
   return (
-    error instanceof AccountingApiError &&
     typeof error.details.providerMessage === "string" &&
     error.details.providerMessage.includes(
       "External reference type does not exist"

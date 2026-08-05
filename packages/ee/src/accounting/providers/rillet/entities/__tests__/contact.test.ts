@@ -67,7 +67,10 @@ describe("mapContactToRilletCustomer", () => {
         country: "US"
       },
       payment_terms: 30,
-      external_references: [{ type: "carbon", id: "cust-1" }]
+      external_references: [
+        { type: "carbon", id: "cust-1" },
+        { type: "carbon-company", id: "company-1" }
+      ]
     });
   });
 
@@ -78,7 +81,10 @@ describe("mapContactToRilletCustomer", () => {
 
     expect(payload).toEqual({
       name: "Acme Manufacturing",
-      external_references: [{ type: "carbon", id: "cust-1" }]
+      external_references: [
+        { type: "carbon", id: "cust-1" },
+        { type: "carbon-company", id: "company-1" }
+      ]
     });
   });
 
@@ -171,7 +177,10 @@ describe("mapContactToRilletVendor", () => {
       },
       payment_terms: 45,
       tax_id: "12-3456789",
-      external_references: [{ type: "carbon", id: "supp-1" }]
+      external_references: [
+        { type: "carbon", id: "supp-1" },
+        { type: "carbon-company", id: "company-1" }
+      ]
     });
   });
 
@@ -201,7 +210,10 @@ describe("mapContactToRilletVendor", () => {
 
     expect(payload).toEqual({
       name: "Acme Manufacturing",
-      external_references: [{ type: "carbon", id: "cust-1" }]
+      external_references: [
+        { type: "carbon", id: "cust-1" },
+        { type: "carbon-company", id: "company-1" }
+      ]
     });
   });
 });

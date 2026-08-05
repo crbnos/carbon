@@ -7,7 +7,9 @@ import {
   parseJournalEntrySyncEntityId,
   resolvePostingSyncSettings,
   roundCurrency,
-  runJournalEntryPreflight
+  runJournalEntryPreflight,
+  toDebitSignedAmount,
+  toPostingDateString
 } from "../../../core/posting";
 import {
   type Accounting,
@@ -306,7 +308,14 @@ export class JournalEntrySyncer extends BaseEntitySyncer<
 
     const lines = await this.database
       .selectFrom("journalLine")
-      .select(["id", "accountId", "amount", "description"])
+      .leftJoin("account", "account.id", "journalLine.accountId")
+      .select([
+        "journalLine.id",
+        "journalLine.accountId",
+        "journalLine.amount",
+        "journalLine.description",
+        "account.class as accountClass"
+      ])
       .where("journalId", "=", journalId)
       .where("companyId", "=", this.companyId)
       .orderBy("journalLineReference", "asc")
@@ -317,7 +326,7 @@ export class JournalEntrySyncer extends BaseEntitySyncer<
       companyId: journal.companyId,
       journalEntryId: journal.journalEntryId,
       description: journal.description ?? null,
-      postingDate: journal.postingDate,
+      postingDate: toPostingDateString(journal.postingDate),
       status: journal.status,
       sourceType: journal.sourceType ?? null,
       reversalOfId: journal.reversalOfId ?? null,
@@ -326,7 +335,12 @@ export class JournalEntrySyncer extends BaseEntitySyncer<
       lines: lines.map((line) => ({
         id: line.id,
         accountId: line.accountId ?? null,
-        amount: Number(line.amount) || 0,
+        // Carbon stores natural-balance-signed amounts; the engine expects
+        // debit-signed (see toDebitSignedAmount)
+        amount: toDebitSignedAmount(
+          line.accountClass,
+          Number(line.amount) || 0
+        ),
         description: line.description ?? null
       })),
       updatedAt: journal.updatedAt ?? journal.postedAt ?? journal.createdAt

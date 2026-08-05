@@ -2,6 +2,7 @@ import type { Accounting } from "../../../core/types";
 import type { Rillet, RilletVendorWrite, RilletWriteOmit } from "../models";
 import { buildRilletIdempotencyKey } from "../provider";
 import {
+  carbonCompanyExternalReference,
   carbonExternalReference,
   mapContactAddressToRilletAddress,
   mapPaymentTermsToRilletDays,
@@ -60,7 +61,8 @@ type SupplierRow = {
  * - payment_terms maps only from a bare integer day count within
  *   Rillet's 0-180 vendor range.
  * - tax_id from the Carbon supplier tax id when present.
- * - external_references always carries `{ type: "carbon", id }`.
+ * - external_references carry the carbon (entity id) and
+ *   carbon-company (owning Carbon instance) tags.
  */
 export function mapContactToRilletVendor(
   local: Accounting.Contact
@@ -76,7 +78,10 @@ export function mapContactToRilletVendor(
     ...(address ? { address } : {}),
     ...(paymentTerms !== undefined ? { payment_terms: paymentTerms } : {}),
     ...(local.taxId ? { tax_id: local.taxId } : {}),
-    external_references: [carbonExternalReference(local.id)]
+    external_references: [
+      carbonExternalReference(local.id),
+      carbonCompanyExternalReference(local.companyId)
+    ]
   };
 }
 

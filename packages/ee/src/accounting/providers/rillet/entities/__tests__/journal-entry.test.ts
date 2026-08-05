@@ -69,7 +69,7 @@ describe("mapJournalEntryToRilletJournalEntry", () => {
       pushDate: "2026-07-01"
     });
 
-    expect(payload.name).toBe("Carbon JE000042 je_123");
+    expect(payload.name).toBe("Receipt posting");
     expect(payload.date).toBe("2026-07-01");
     expect(payload.currency).toBe("USD");
     expect(payload.subsidiary_id).toBeUndefined();
@@ -185,7 +185,7 @@ describe("mapJournalEntryToRilletJournalEntry", () => {
       pushDate: "2026-07-01"
     });
 
-    expect(payload.name).toBe("Carbon reversal of JE000042");
+    expect(payload.name).toBe("Reversal of Receipt posting");
     expect(payload.items.map((item) => item.side)).toEqual([
       "CREDIT",
       "CREDIT",
@@ -198,6 +198,18 @@ describe("mapJournalEntryToRilletJournalEntry", () => {
     ]);
   });
 
+  it("falls back to the readable journal number when the description is empty", () => {
+    const payload = mapJournalEntryToRilletJournalEntry({
+      journal: { ...makeJournal(), description: null },
+      accountCodesById: ACCOUNT_CODES,
+      currency: "USD",
+      subsidiaryId: null,
+      pushDate: "2026-07-01"
+    });
+
+    expect(payload.name).toBe("Carbon JE000042");
+  });
+
   it("appends the original date to the name when the push was re-dated", () => {
     const payload = mapJournalEntryToRilletJournalEntry({
       journal: makeJournal(),
@@ -208,9 +220,7 @@ describe("mapJournalEntryToRilletJournalEntry", () => {
       redatedFromDate: "2026-07-01"
     });
 
-    expect(payload.name).toBe(
-      "Carbon JE000042 je_123 | original date 2026-07-01"
-    );
+    expect(payload.name).toBe("Receipt posting | original date 2026-07-01");
     expect(payload.date).toBe("2026-07-02");
   });
 

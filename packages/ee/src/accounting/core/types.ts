@@ -491,6 +491,7 @@ export abstract class BaseEntitySyncer<
       return {
         status: "skipped",
         action: "none",
+        localId: entityId,
         error: "Sync disabled in config"
       };
     }
@@ -588,6 +589,7 @@ export abstract class BaseEntitySyncer<
       return {
         status: "skipped",
         action: "none",
+        remoteId,
         error: "Sync disabled in config"
       };
     }

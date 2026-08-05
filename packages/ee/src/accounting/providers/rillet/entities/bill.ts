@@ -1,5 +1,9 @@
 import { createMappingService } from "../../../core/external-mapping";
-import { JournalEntrySyncError } from "../../../core/posting";
+import {
+  JournalEntrySyncError,
+  toDebitSignedAmount,
+  toPostingDateString
+} from "../../../core/posting";
 import type { Accounting } from "../../../core/types";
 import type {
   Rillet,
@@ -73,24 +77,58 @@ type BillLineRow = {
 
 /**
  * Map a Carbon bill to the Rillet bill create payload. Pure — exported
- * for tests. Throws the structured UNMAPPED_ACCOUNTS Warning when any
- * line has no account or an unmapped account (same
- * unmappedAccountIds/lineIdsWithoutAccount metadata contract as the
- * journal pre-flight).
+ * for tests.
+ *
+ * Rillet bill items are ACCOUNT-COSTED, but Carbon purchase-invoice lines
+ * often carry no explicit G/L account — item-backed lines resolve their
+ * accounts at POSTING time (GR/IR clearing for received goods, variance
+ * accounts, tax, ...). The posted "Purchase Invoice" journal is therefore
+ * the source of truth for the bill's costing: its lines minus the AP
+ * control line ARE the bill items (debit-signed amounts), and by
+ * construction they always sum to the AP amount Rillet re-books through
+ * its own bill mechanics. Throws structured Warnings when the journal is
+ * missing (invoice not posted / accounting off) or an account is
+ * unmapped.
  */
+export type BillPostingJournalLine = {
+  id: string;
+  accountId: string | null;
+  /** Debit-signed (already converted from Carbon's natural-balance sign). */
+  amount: number;
+  description: string | null;
+};
+
 export function mapBillToRilletBill(args: {
   bill: Accounting.Bill;
   vendorRemoteId: string;
   accountCodesById: ReadonlyMap<string, string>;
   subsidiaryId: string | null;
   companyId: string;
+  /** Lines of the bill's posted Purchase Invoice journal(s), debit-signed. */
+  postingJournalLines: BillPostingJournalLine[];
+  /** accountDefault.payablesAccount — the AP control line(s) to exclude. */
+  payablesAccountId: string | null;
 }): RilletBillCreate {
   const { bill } = args;
   const currency = bill.currencyCode;
 
+  if (args.postingJournalLines.length === 0) {
+    throw new JournalEntrySyncError({
+      errorCode: "UNMAPPED_ACCOUNTS",
+      message: `Cannot sync bill ${bill.invoiceId}: no posted Purchase Invoice journal found — the bill's G/L costing comes from its posting journal. Post the invoice (with accounting enabled), then retry.`,
+      warning: true,
+      metadata: { billId: bill.id }
+    });
+  }
+
+  const costingLines = args.postingJournalLines.filter(
+    (line) =>
+      line.accountId === null || line.accountId !== args.payablesAccountId
+  );
+
   const unmapped = new Set<string>();
   const lineIdsWithoutAccount: string[] = [];
-  for (const line of bill.lines) {
+  for (const line of costingLines) {
     if (!line.accountId) {
       lineIdsWithoutAccount.push(line.id);
       continue;
@@ -107,7 +145,7 @@ export function mapBillToRilletBill(args: {
     }
     if (lineIdsWithoutAccount.length > 0) {
       parts.push(
-        `${lineIdsWithoutAccount.length} line(s) have no G/L account (Rillet bill items are account-costed)`
+        `${lineIdsWithoutAccount.length} posting journal line(s) have no account`
       );
     }
     throw new JournalEntrySyncError({
@@ -124,20 +162,22 @@ export function mapBillToRilletBill(args: {
     });
   }
 
-  const items: Rillet.BillItem[] = bill.lines.map((line) => ({
+  const items: Rillet.BillItem[] = costingLines.map((line) => ({
     account_code: args.accountCodesById.get(line.accountId!)!,
-    amount: toRilletMoney(line.totalAmount, currency),
+    amount: toRilletMoney(line.amount, currency),
     ...(line.description ? { description: line.description } : {})
   }));
 
-  const billDate = (bill.dateIssued ?? new Date().toISOString()).slice(0, 10);
+  const billDate = toPostingDateString(
+    bill.dateIssued ?? new Date().toISOString()
+  );
 
   return {
     vendor_id: args.vendorRemoteId,
     expense_number: bill.invoiceId,
     bill_date: billDate,
     // due_date is REQUIRED by Rillet — fall back to the bill date
-    due_date: (bill.dateDue ?? billDate).slice(0, 10),
+    due_date: toPostingDateString(bill.dateDue ?? billDate),
     items,
     ...(args.subsidiaryId ? { subsidiary_id: args.subsidiaryId } : {}),
     external_references: [
@@ -365,8 +405,55 @@ export class RilletBillSyncer extends RilletTransactionSyncer<
       vendorRemoteId,
       accountCodesById: await this.getAccountCodesById(),
       subsidiaryId: this.rilletProvider.subsidiaryId,
-      companyId: this.companyId
+      companyId: this.companyId,
+      postingJournalLines: await this.fetchPostingJournalLines(local.id),
+      payablesAccountId: await this.getPayablesAccountId()
     });
+  }
+
+  /**
+   * Lines of the bill's posted "Purchase Invoice" journal(s), debit-signed
+   * — the source of truth for the bill's G/L costing (item-backed invoice
+   * lines carry no account of their own; posting resolves GR/IR clearing,
+   * variances and tax).
+   */
+  private async fetchPostingJournalLines(
+    billId: string
+  ): Promise<BillPostingJournalLine[]> {
+    const rows = await this.database
+      .selectFrom("journalLine")
+      .innerJoin("journal", "journal.id", "journalLine.journalId")
+      .leftJoin("account", "account.id", "journalLine.accountId")
+      .select([
+        "journalLine.id",
+        "journalLine.accountId",
+        "journalLine.amount",
+        "journalLine.description",
+        "account.class as accountClass"
+      ])
+      .where("journalLine.documentId", "=", billId)
+      .where("journal.sourceType", "=", "Purchase Invoice")
+      .where("journal.status", "=", "Posted")
+      .where("journal.companyId", "=", this.companyId)
+      .orderBy("journalLine.journalLineReference", "asc")
+      .execute();
+
+    return rows.map((row) => ({
+      id: row.id,
+      accountId: row.accountId ?? null,
+      amount: toDebitSignedAmount(row.accountClass, Number(row.amount) || 0),
+      description: row.description ?? null
+    }));
+  }
+
+  /** accountDefault.payablesAccount — the AP control line to exclude. */
+  private async getPayablesAccountId(): Promise<string | null> {
+    const defaults = await this.database
+      .selectFrom("accountDefault")
+      .select("payablesAccount")
+      .where("companyId", "=", this.companyId)
+      .executeTakeFirst();
+    return defaults?.payablesAccount ?? null;
   }
 
   // =================================================================

@@ -235,6 +235,7 @@ export abstract class RilletEntitySyncer<
       return {
         status: "skipped",
         action: "none",
+        localId: entityId,
         error: "Sync disabled in config"
       };
     }
@@ -432,6 +433,7 @@ export abstract class RilletTransactionSyncer<
       return {
         status: "skipped",
         action: "none",
+        localId: entityId,
         error: "Sync disabled in config"
       };
     }

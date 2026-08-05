@@ -5,7 +5,9 @@ import {
   parseJournalEntrySyncEntityId,
   resolvePostingSyncSettings,
   roundCurrency,
-  runJournalEntryPreflight
+  runJournalEntryPreflight,
+  toDebitSignedAmount,
+  toPostingDateString
 } from "../../../core/posting";
 import type { Accounting, ShouldSyncContext } from "../../../core/types";
 import type {
@@ -132,9 +134,14 @@ export function mapJournalEntryToRilletJournalEntry(args: {
     };
   });
 
-  let name = journal.reversal
-    ? `Carbon reversal of ${journal.journalEntryId}`
-    : `Carbon ${journal.journalEntryId} ${journal.id}`;
+  // Human-first naming: the Carbon journal description (e.g. "Purchase
+  // Receipt RE000001") when present, else the readable journal number.
+  // Traceability lives in the mapping table (Sync Activity shows the
+  // Rillet id) — Rillet journal entries accept no external_references, so
+  // nothing is lost by keeping the name clean.
+  const baseName =
+    journal.description?.trim() || `Carbon ${journal.journalEntryId}`;
+  let name = journal.reversal ? `Reversal of ${baseName}` : baseName;
   if (args.redatedFromDate) {
     name += ` | original date ${args.redatedFromDate}`;
   }
@@ -277,7 +284,14 @@ export class RilletJournalEntrySyncer extends RilletTransactionSyncer<
 
     const lines = await this.database
       .selectFrom("journalLine")
-      .select(["id", "accountId", "amount", "description"])
+      .leftJoin("account", "account.id", "journalLine.accountId")
+      .select([
+        "journalLine.id",
+        "journalLine.accountId",
+        "journalLine.amount",
+        "journalLine.description",
+        "account.class as accountClass"
+      ])
       .where("journalId", "=", journalId)
       .where("companyId", "=", this.companyId)
       .orderBy("journalLineReference", "asc")
@@ -288,7 +302,7 @@ export class RilletJournalEntrySyncer extends RilletTransactionSyncer<
       companyId: journal.companyId,
       journalEntryId: journal.journalEntryId,
       description: journal.description ?? null,
-      postingDate: journal.postingDate,
+      postingDate: toPostingDateString(journal.postingDate),
       status: journal.status,
       sourceType: journal.sourceType ?? null,
       reversalOfId: journal.reversalOfId ?? null,
@@ -297,7 +311,12 @@ export class RilletJournalEntrySyncer extends RilletTransactionSyncer<
       lines: lines.map((line) => ({
         id: line.id,
         accountId: line.accountId ?? null,
-        amount: Number(line.amount) || 0,
+        // Carbon stores natural-balance-signed amounts; the engine expects
+        // debit-signed (see toDebitSignedAmount)
+        amount: toDebitSignedAmount(
+          line.accountClass,
+          Number(line.amount) || 0
+        ),
         description: line.description ?? null
       })),
       updatedAt: journal.updatedAt ?? journal.postedAt ?? journal.createdAt

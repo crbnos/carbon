@@ -1,4 +1,7 @@
-import { JournalEntrySyncError } from "../../../core/posting";
+import {
+  JournalEntrySyncError,
+  toPostingDateString
+} from "../../../core/posting";
 import type { Accounting, ShouldSyncContext } from "../../../core/types";
 import type {
   Rillet,
@@ -131,9 +134,8 @@ export function mapSalesInvoiceToRilletInvoice(args: {
     };
   });
 
-  const invoiceDate = (invoice.dateIssued ?? new Date().toISOString()).slice(
-    0,
-    10
+  const invoiceDate = toPostingDateString(
+    invoice.dateIssued ?? new Date().toISOString()
   );
 
   return {
@@ -142,7 +144,9 @@ export function mapSalesInvoiceToRilletInvoice(args: {
     invoice_number: invoice.invoiceId,
     invoice_date: invoiceDate,
     // Rillet defaults due_date to invoice_date when omitted
-    ...(invoice.dateDue ? { due_date: invoice.dateDue.slice(0, 10) } : {}),
+    ...(invoice.dateDue
+      ? { due_date: toPostingDateString(invoice.dateDue) }
+      : {}),
     ...(invoice.totalTax > 0
       ? { tax_amount: toRilletMoney(invoice.totalTax, currency) }
       : {}),

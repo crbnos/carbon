@@ -5,7 +5,8 @@ import {
   getPostingSyncSourceTypeSkipReason,
   JournalEntrySyncError,
   netJournalLinesPerAccount,
-  resolvePostingSyncSettings
+  resolvePostingSyncSettings,
+  toDebitSignedAmount
 } from "./posting";
 import type { Accounting } from "./types";
 
@@ -275,5 +276,39 @@ describe("getPostingSyncSourceTypeSkipReason", () => {
     expect(
       getPostingSyncSourceTypeSkipReason("Not A Source Type", settings)
     ).toContain("not enabled");
+  });
+});
+
+// ── Natural-balance → debit-signed conversion ───────────────────────────────
+// Carbon's post-* edge functions sign journalLine.amount by the account's
+// NATURAL balance (credit("liability", x) stores +x), so the engine converts
+// at fetch time; see toDebitSignedAmount.
+
+describe("toDebitSignedAmount", () => {
+  it("keeps Asset/Expense signs (natural balance is debit)", () => {
+    expect(toDebitSignedAmount("Asset", 300)).toBe(300);
+    expect(toDebitSignedAmount("Expense", 42.5)).toBe(42.5);
+    expect(toDebitSignedAmount("Asset", -300)).toBe(-300);
+  });
+
+  it("negates Liability/Equity/Revenue (natural balance is credit)", () => {
+    expect(toDebitSignedAmount("Liability", 300)).toBe(-300);
+    expect(toDebitSignedAmount("Equity", 100)).toBe(-100);
+    expect(toDebitSignedAmount("Revenue", 50)).toBe(-50);
+    expect(toDebitSignedAmount("Liability", -300)).toBe(300);
+  });
+
+  it("passes unknown/missing classes through unchanged", () => {
+    expect(toDebitSignedAmount(null, 10)).toBe(10);
+    expect(toDebitSignedAmount(undefined, 10)).toBe(10);
+  });
+
+  it("balances a real receipt journal: inventory debit + GR/IR credit", () => {
+    // As stored by post-receipt: both lines +300 (natural balance)
+    const converted = [
+      toDebitSignedAmount("Asset", 300), // Raw Materials
+      toDebitSignedAmount("Liability", 300) // Goods Received Not Invoiced
+    ];
+    expect(converted.reduce((a, b) => a + b, 0)).toBe(0);
   });
 });

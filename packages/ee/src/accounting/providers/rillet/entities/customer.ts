@@ -2,6 +2,7 @@ import type { Accounting } from "../../../core/types";
 import type { Rillet, RilletCustomerWrite, RilletWriteOmit } from "../models";
 import { buildRilletIdempotencyKey } from "../provider";
 import {
+  carbonCompanyExternalReference,
   carbonExternalReference,
   mapContactAddressToRilletAddress,
   mapPaymentTermsToRilletDays,
@@ -57,7 +58,8 @@ type CustomerRow = {
  * - The address maps only when Rillet's all-or-nothing group is complete
  *   (line1/city/state/zip/country).
  * - payment_terms maps only from a bare non-negative integer day count.
- * - external_references always carries `{ type: "carbon", id }`.
+ * - external_references carry the carbon (entity id) and
+ *   carbon-company (owning Carbon instance) tags.
  */
 export function mapContactToRilletCustomer(
   local: Accounting.Contact
@@ -72,7 +74,10 @@ export function mapContactToRilletCustomer(
       : {}),
     ...(address ? { address } : {}),
     ...(paymentTerms !== undefined ? { payment_terms: paymentTerms } : {}),
-    external_references: [carbonExternalReference(local.id)]
+    external_references: [
+      carbonExternalReference(local.id),
+      carbonCompanyExternalReference(local.companyId)
+    ]
   };
 }
 
