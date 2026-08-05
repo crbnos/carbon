@@ -1,3 +1,4 @@
+import { type BatchPlan, batchPlan } from "./batch";
 import type { CatalogInput, WorkflowCatalog } from "./catalog";
 import type { WorkflowIssue } from "./issues";
 import {
@@ -110,19 +111,30 @@ function filterLoopList(node: FilterNode, ctx: NodeContext): LoopList {
   return { failure: "unconfigured" };
 }
 
-/** Item-reading inputs are skipped, so resolving the item never recurses. */
+/** The wiring decides whether an action repeats; nothing is stored. */
+function actionBatchPlan(node: ActionNode, ctx: NodeContext): BatchPlan {
+  const action = ctx.catalog.getAction(node.data.action);
+  if (action === undefined) return { kind: "none" };
+  return batchPlan(action, node.data.inputs, (name) => {
+    const supplied = node.data.inputs[name];
+    return supplied === undefined ? undefined : ctx.typeOf(supplied, node.id);
+  });
+}
+
 function actionLoopList(
   node: ActionNode,
   ctx: NodeContext
 ): LoopList | undefined {
-  if (!node.data.batch) return undefined;
-  const lists = Object.values(node.data.inputs).flatMap((input) => {
-    if (input.kind === "item") return [];
-    const type = ctx.typeOf(input, node.id);
-    return type !== undefined && type.kind === "list" ? [type] : [];
-  });
-  const only = lists.length === 1 ? lists[0] : undefined;
-  return only === undefined ? { failure: "unconfigured" } : { type: only };
+  // With no catalog entry there is nothing to read the wiring against. `unconfigured`
+  // is suppressed, so an item ref reports the missing action rather than piling on.
+  if (ctx.catalog.getAction(node.data.action) === undefined) {
+    return { failure: "unconfigured" };
+  }
+  const plan = actionBatchPlan(node, ctx);
+  if (plan.kind === "none") return undefined;
+  return plan.kind === "repeats"
+    ? { type: plan.type }
+    : { failure: "unconfigured" };
 }
 
 function checkClauses(
@@ -214,7 +226,7 @@ function checkInputs(
         code: "LIST_INTO_SINGLE",
         nodeId: node.id,
         field: name,
-        message: `"${name}" takes one ${describeType(declaration.type)}, but this is ${describeType(type)}. Turn on batch mode to run once per item.`
+        message: `"${name}" takes one ${describeType(declaration.type)}, but this is ${describeType(type)}. This step cannot work through a list.`
       });
       continue;
     }
@@ -555,15 +567,11 @@ export const NODE_KINDS: {
       ctx.catalog.getAction(node.data.action) !== undefined,
     checkTypes: (node, ctx) => {
       const action = ctx.catalog.getAction(node.data.action);
-      return action === undefined
-        ? []
-        : checkInputs(
-            node,
-            node.data.inputs,
-            action.inputs,
-            node.data.batch && action.batchable,
-            ctx
-          );
+      if (action === undefined) return [];
+      // Ambiguity counts as batching here so two wired lists raise the one issue that
+      // explains them, rather than that issue plus a rejection of each list.
+      const batching = actionBatchPlan(node, ctx).kind !== "none";
+      return checkInputs(node, node.data.inputs, action.inputs, batching, ctx);
     },
     checkConfig: (node, ctx) => {
       if (node.data.action.length === 0) {
@@ -579,17 +587,16 @@ export const NODE_KINDS: {
           }
         ];
       }
-      if (node.data.batch) {
-        const loop = ctx.loopListOf(node.id);
-        if (loop === undefined || !("type" in loop)) {
-          return [
-            incomplete(
-              node,
-              "batch",
-              "A step that repeats needs exactly one list to repeat over."
-            )
-          ];
-        }
+      const plan = actionBatchPlan(node, ctx);
+      if (plan.kind === "ambiguous") {
+        return [
+          incomplete(
+            node,
+            // Blamed on the second list, since the first was already working.
+            plan.second,
+            `Lists are wired into both "${plan.first}" and "${plan.second}", so this step cannot tell which one to repeat over.`
+          )
+        ];
       }
       const action = ctx.catalog.getAction(node.data.action);
       for (const group of action?.requireOneOf ?? []) {

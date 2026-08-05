@@ -33,7 +33,7 @@ const action = (id: string) =>
     name: id,
     type: "action" as const,
     position: { x: 0, y: 0 },
-    data: { action: "", inputs: {}, batch: false }
+    data: { action: "", inputs: {} }
   }) satisfies WorkflowDefinition["nodes"][number];
 
 const edge = (

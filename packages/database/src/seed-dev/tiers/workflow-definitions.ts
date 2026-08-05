@@ -117,8 +117,7 @@ export function buildSeedWorkflows(refs: {
             inputs: {
               salesOrder: ref("trigger_order", "record"),
               assignee: literal(user, ownerId)
-            },
-            batch: false
+            }
           }
         }
       ],
@@ -198,8 +197,7 @@ export function buildSeedWorkflows(refs: {
               ]),
               aboutId: ref("trigger_priority", "record", ["id"]),
               aboutType: literal(str, "nonConformance")
-            },
-            batch: false
+            }
           }
         }
       ],
@@ -280,8 +278,7 @@ export function buildSeedWorkflows(refs: {
               ]),
               aboutId: ref("trigger_po_status", "record", ["id"]),
               aboutType: literal(str, "purchaseOrder")
-            },
-            batch: false
+            }
           }
         }
       ],
@@ -363,8 +360,7 @@ export function buildSeedWorkflows(refs: {
             inputs: {
               job: ref("filter_stalled", "result"),
               assignee: literal(user, ownerId)
-            },
-            batch: true
+            }
           }
         }
       ],
@@ -413,8 +409,7 @@ export function buildSeedWorkflows(refs: {
               ]),
               aboutId: ref("trigger_released", "job", ["id"]),
               aboutType: literal(str, "job")
-            },
-            batch: false
+            }
           }
         }
       ],
@@ -485,8 +480,7 @@ export function buildSeedWorkflows(refs: {
               source: literal(str, "Internal"),
               locationId: ref("trigger_shipment", "record", ["locationId"]),
               nonConformanceTypeId: literal(issueType, issueTypeId)
-            },
-            batch: false
+            }
           }
         }
       ],
@@ -551,8 +545,7 @@ export function buildSeedWorkflows(refs: {
                 ref("trigger_supplier", "after", ["supplierStatus"]),
                 text('"}')
               ])
-            },
-            batch: false
+            }
           }
         }
       ],

@@ -367,8 +367,9 @@ msgstr "A job's start date changes"
 msgid "A job's status changes"
 msgstr "A job's status changes"
 
-msgid "A list is wired into this step, which runs once. Turn on repeat mode to work through it."
-msgstr "A list is wired into this step, which runs once. Turn on repeat mode to work through it."
+#. placeholder {0}: label( actionInputLabelKey(actionId, batch.input), batch.input )
+msgid "A list is wired into {0}, so this step runs once for each item in it — up to {MAX_LIST_ITEMS}."
+msgstr "A list is wired into {0}, so this step runs once for each item in it — up to {MAX_LIST_ITEMS}."
 
 msgid "A Make to Order component that gets its own job and routing inside the parent's build."
 msgstr "A Make to Order component that gets its own job and routing inside the parent's build."
@@ -8071,6 +8072,11 @@ msgstr "List Options"
 msgid "List Parameters"
 msgstr "List Parameters"
 
+#. placeholder {0}: label( actionInputLabelKey(actionId, batch.first), batch.first )
+#. placeholder {1}: label( actionInputLabelKey(actionId, batch.second), batch.second )
+msgid "Lists are wired into both {0} and {1}, so this step cannot tell which one to repeat over. Leave a list on only one of them."
+msgstr "Lists are wired into both {0} and {1}, so this step cannot tell which one to repeat over. Leave a list on only one of them."
+
 msgid "Live"
 msgstr "Live"
 
@@ -11622,11 +11628,8 @@ msgstr "Reordering Policy"
 msgid "Reorders dispatch sequence and work center only — does not reschedule. Change dates on the Dates board."
 msgstr "Reorders dispatch sequence and work center only — does not reschedule. Change dates on the Dates board."
 
-msgid "Repeat for each item"
-msgstr "Repeat for each item"
-
-msgid "Repeats for each item in the list"
-msgstr "Repeats for each item in the list"
+msgid "Repeats once for each item in {inputLabel}"
+msgstr "Repeats once for each item in {inputLabel}"
 
 msgid "Replace drawing?"
 msgstr "Replace drawing?"
@@ -12002,9 +12005,6 @@ msgstr "Running Total"
 
 msgid "Runs"
 msgstr "Runs"
-
-msgid "Runs once — lists are not accepted"
-msgstr "Runs once — lists are not accepted"
 
 msgid "S-1 (coarsest special)"
 msgstr "S-1 (coarsest special)"

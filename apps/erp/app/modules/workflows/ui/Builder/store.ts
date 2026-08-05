@@ -1,4 +1,8 @@
-import type { WorkflowIssue, WorkflowNodeType } from "@carbon/workflows";
+import type {
+  BatchPlan,
+  WorkflowIssue,
+  WorkflowNodeType
+} from "@carbon/workflows";
 import {
   getNodeHandles,
   slugifyNodeName,
@@ -30,6 +34,9 @@ export type BuilderState = {
   /** Broken variables, recomputed as the graph is edited. Kept apart from `issues`
    * so a publish attempt and a live edit never overwrite each other's findings. */
   liveIssues: WorkflowIssue[];
+  /** Which action steps repeat and over what, by node id — derived from the wiring
+   * alongside `liveIssues`, and absent for a step that runs once. */
+  batchPlans: Record<string, BatchPlan>;
   saveState: SaveState;
   isReadOnly: boolean;
   baseline: string;
@@ -43,6 +50,7 @@ export type BuilderState = {
   setSelected: (id: string | null) => void;
   setIssues: (issues: WorkflowIssue[]) => void;
   setLiveIssues: (issues: WorkflowIssue[]) => void;
+  setBatchPlans: (plans: Record<string, BatchPlan>) => void;
   setSaveState: (state: SaveState) => void;
   rebaseline: () => void;
   /** Merge a patch into one node's `data`. The only way node configuration changes. */
@@ -87,6 +95,7 @@ export function createBuilderStore(initial: {
     selectedNodeId: null,
     issues: [],
     liveIssues: [],
+    batchPlans: {},
     saveState: "idle",
     isReadOnly: initial.isReadOnly,
     baseline: snapshot(initial.nodes, initial.edges),
@@ -195,6 +204,18 @@ export function createBuilderStore(initial: {
       const current = get().liveIssues;
       if (current.length === 0 && liveIssues.length === 0) return;
       set({ liveIssues });
+    },
+    setBatchPlans: (plans) => {
+      // Same identity rule as `liveIssues`: most graphs have no repeating step, and a
+      // fresh empty object every 250 ms would re-render every card that reads one.
+      const current = get().batchPlans;
+      if (
+        Object.keys(current).length === 0 &&
+        Object.keys(plans).length === 0
+      ) {
+        return;
+      }
+      set({ batchPlans: plans });
     },
     setSaveState: (saveState) => set({ saveState }),
     rebaseline: () => {

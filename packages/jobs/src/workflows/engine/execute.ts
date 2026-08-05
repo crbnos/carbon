@@ -1,4 +1,5 @@
 import {
+  batchCandidates,
   createWorkflowCatalog,
   executorFor,
   FAILURE_HANDLE,
@@ -62,7 +63,6 @@ const NO_PERMISSIONS =
   "The permissions for the owner of this workflow could not be read.";
 const NOT_AVAILABLE = "This kind of step is not available yet.";
 const TOO_MANY_STEPS = "This workflow ran too many steps.";
-const NOTHING_TO_BATCH = "This step has no list to work through.";
 const NOTHING_TO_RUN = "That list was empty, so there was nothing to do.";
 
 function noAccess(module: string): string {
@@ -200,24 +200,30 @@ async function recordStep(
 
 type BatchPlan = { items: RuntimeValue[]; dropped: number } | { skip: string };
 
-/** `undefined` for a node that does not batch. Otherwise the one list it works
- * through — the same single-list rule the validator enforces. */
+/** `undefined` for a node that runs once. Otherwise the one list it works through —
+ * the same wiring rule the validator reads, so the two cannot pick different lists. */
 async function resolveBatchItems(
   args: NodeArgs
 ): Promise<BatchPlan | undefined> {
   const { node } = args;
-  if (node.type !== "action" || !node.data.batch) return undefined;
+  if (node.type !== "action") return undefined;
+  const action = args.catalog.getAction(node.data.action);
+  if (action === undefined) return undefined;
+
+  const candidates = batchCandidates(action, node.data.inputs);
+  if (candidates.length === 0) return undefined;
 
   const ctx = await contextFor(args);
-  for (const value of Object.values(node.data.inputs)) {
-    // Item-reading inputs are skipped, so resolving the list never recurses.
-    if (value.kind === "item") continue;
+  for (const name of candidates) {
+    const value = node.data.inputs[name];
+    if (value === undefined) continue;
     const resolved = await resolveValue(value, ctx);
     if (!resolved.ok) return { skip: resolved.reason };
     if (resolved.value.kind === "list") return planBatch(resolved.value);
   }
 
-  return { skip: NOTHING_TO_BATCH };
+  // Nothing turned out to be a list, so there is nothing to repeat: run once.
+  return undefined;
 }
 
 function batchSummary(ran: number, dropped: number, failed: number): string {

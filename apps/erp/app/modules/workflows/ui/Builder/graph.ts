@@ -209,7 +209,7 @@ export function createNode(
         type,
         position,
         expanded: true,
-        data: { action: "", inputs: {}, batch: false }
+        data: { action: "", inputs: {} }
       };
   }
 }

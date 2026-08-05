@@ -52,7 +52,7 @@ describe("deriveWorkflowTriggerRows", () => {
         name: "a1",
         position: { x: 0, y: 0 },
         type: "action",
-        data: { action: "send-email", inputs: {}, batch: false }
+        data: { action: "send-email", inputs: {} }
       },
       triggerNode(["purchaseOrder.created"])
     ]);

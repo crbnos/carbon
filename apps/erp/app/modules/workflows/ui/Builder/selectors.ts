@@ -14,6 +14,11 @@ export const selectHasEdgeFrom =
   (id: string, handle: string) => (s: BuilderState) =>
     s.edges.some((e) => e.source === id && e.sourceHandle === handle);
 
+/** How this step repeats, or undefined when it runs once. Read straight out of the map
+ * so the reference stays stable between the debounced re-derivations. */
+export const selectNodeBatchPlan = (id: string) => (s: BuilderState) =>
+  s.batchPlans[id];
+
 /** Wired to anything at all, either direction. A node with no edges is not part of
  * the workflow yet, so its problems are noise rather than something to fix. */
 export const selectIsConnected = (id: string) => (s: BuilderState) =>

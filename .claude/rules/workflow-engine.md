@@ -138,15 +138,24 @@ later read. This is what makes `before.orderTotal <= 10000` mean what it says.
   terminal, so a replay does not reuse that row's output. Known divergence from
   the phase-4 spec, deliberately left in place.
 
-## Batch mode
+## Repeating steps
 
-An action node with `batch: true` works through the one list among its inputs —
-the same single-list rule the validator enforces. `execute.ts` resolves that list
-outside the durable steps, runs `planBatch` (capped at `MAX_LIST_ITEMS`, 100),
-then runs one `` `node:${nodeId}:${itemKeyFor(item)}` `` step per item, each
-claiming under that item key. The action executor itself handles **one item
-only**: `ctx.item` is the turn's item, and the input that resolved to a list is
-replaced by it.
+Nothing is stored on a node saying "repeat". An action node works through a list
+when a list is wired into an input the catalog declares as taking a **single**
+value. `batchCandidates` + `batchPlan` in
+`packages/workflows/src/definition/batch.ts` are the only place that rule lives,
+so `execute.ts` and the validator cannot pick different lists. Candidates are the
+action's supplied, declared-scalar inputs in **declaration order**; an input
+already reading the loop item is skipped, or resolving it would recurse. Two
+lists wired in is `INCOMPLETE_CONFIG` at validation time, never a guess.
+
+`resolveBatchItems` resolves that list outside the durable steps, runs
+`planBatch` (capped at `MAX_LIST_ITEMS`, 100), then runs one
+`` `node:${nodeId}:${itemKeyFor(item)}` `` step per item, each claiming under
+that item key. The action executor itself handles **one item only**: `ctx.item`
+is the turn's item, and the input that resolved to a list is replaced by it. When
+no candidate resolves to a list the node simply runs once, at
+`` `node:${nodeId}` ``.
 
 Afterwards one aggregate row is written under `` `node:${nodeId}` `` with
 `itemKey: ""`. It succeeds if **at least one item succeeded**, and its handle is

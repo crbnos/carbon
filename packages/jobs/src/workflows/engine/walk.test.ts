@@ -36,7 +36,7 @@ function action(id: string): WorkflowNode {
     name: id,
     type: "action",
     position,
-    data: { action: "purchaseOrder.release", inputs: {}, batch: false }
+    data: { action: "purchaseOrder.release", inputs: {} }
   };
 }
 

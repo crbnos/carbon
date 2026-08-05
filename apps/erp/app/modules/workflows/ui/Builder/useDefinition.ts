@@ -1,11 +1,13 @@
 import type {
   AvailableVariable,
+  BatchPlan,
   ValueOrRef,
   ValueType,
   WorkflowDefinition
 } from "@carbon/workflows";
 import {
   availableVariables,
+  batchPlan,
   createContext,
   variablesFromHandle
 } from "@carbon/workflows";
@@ -53,6 +55,49 @@ export function useVariablesGetter(nodeId: string): () => AvailableVariable[] {
     const { nodes, edges } = store.getState();
     return availableVariables(fromReactFlow(nodes, edges), nodeId, catalog);
   }, [store, nodeId]);
+}
+
+/**
+ * Every action step's repeat plan, in one pass over the graph. The cards read the result
+ * out of the store rather than each deriving its own: subscribing a card to the whole
+ * definition would rebuild it on every drag frame, once per card.
+ */
+export function batchPlansFor(
+  definition: WorkflowDefinition
+): Record<string, BatchPlan> {
+  const { context } = createContext(definition, catalog);
+  const plans: Record<string, BatchPlan> = {};
+  for (const node of definition.nodes) {
+    if (node.type !== "action") continue;
+    const action = catalog.getAction(node.data.action);
+    if (action === undefined) continue;
+    const plan = batchPlan(action, node.data.inputs, (name) => {
+      const supplied = node.data.inputs[name];
+      return supplied === undefined
+        ? undefined
+        : context.typeOf(supplied, node.id);
+    });
+    if (plan.kind !== "none") plans[node.id] = plan;
+  }
+  return plans;
+}
+
+/** Whether one action step repeats, read off its wiring — there is no stored flag. The
+ * form and the card both ask here, so neither can describe the step differently. */
+export function useActionBatchPlan(
+  nodeId: string,
+  actionId: string,
+  inputs: Record<string, ValueOrRef>
+): BatchPlan {
+  const typeOf = useValueTypeResolver(nodeId);
+  return useMemo(() => {
+    const action = actionId ? catalog.getAction(actionId) : undefined;
+    if (action === undefined) return { kind: "none" };
+    return batchPlan(action, inputs, (name) => {
+      const supplied = inputs[name];
+      return supplied === undefined ? undefined : typeOf(supplied);
+    });
+  }, [actionId, inputs, typeOf]);
 }
 
 export type HandlePreview = {

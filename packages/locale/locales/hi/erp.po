@@ -367,7 +367,8 @@ msgstr ""
 msgid "A job's status changes"
 msgstr ""
 
-msgid "A list is wired into this step, which runs once. Turn on repeat mode to work through it."
+#. placeholder {0}: label( actionInputLabelKey(actionId, batch.input), batch.input )
+msgid "A list is wired into {0}, so this step runs once for each item in it — up to {MAX_LIST_ITEMS}."
 msgstr ""
 
 msgid "A Make to Order component that gets its own job and routing inside the parent's build."
@@ -8071,6 +8072,11 @@ msgstr "सूची विकल्प"
 msgid "List Parameters"
 msgstr "सूची पैरामीटर"
 
+#. placeholder {0}: label( actionInputLabelKey(actionId, batch.first), batch.first )
+#. placeholder {1}: label( actionInputLabelKey(actionId, batch.second), batch.second )
+msgid "Lists are wired into both {0} and {1}, so this step cannot tell which one to repeat over. Leave a list on only one of them."
+msgstr ""
+
 msgid "Live"
 msgstr ""
 
@@ -11622,10 +11628,7 @@ msgstr "पुनः ऑर्डर करने की नीति"
 msgid "Reorders dispatch sequence and work center only — does not reschedule. Change dates on the Dates board."
 msgstr "केवल प्रेषण अनुक्रम और कार्य केंद्र को पुनः क्रमबद्ध करता है — पुनर्निर्धारण नहीं करता। तिथि बोर्ड पर तिथियां बदलें।"
 
-msgid "Repeat for each item"
-msgstr ""
-
-msgid "Repeats for each item in the list"
+msgid "Repeats once for each item in {inputLabel}"
 msgstr ""
 
 msgid "Replace drawing?"
@@ -12001,9 +12004,6 @@ msgid "Running Total"
 msgstr "कुल चल रहा है"
 
 msgid "Runs"
-msgstr ""
-
-msgid "Runs once — lists are not accepted"
 msgstr ""
 
 msgid "S-1 (coarsest special)"

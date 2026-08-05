@@ -10,7 +10,7 @@ import {
 
 export const CURRENT_DEFINITION_FORMAT_VERSION = 3;
 
-/** Cap on batch-mode iterations. */
+/** Cap on the items one repeating step works through. */
 export const MAX_LIST_ITEMS = 100;
 /** Hop cap, shared with the matcher. */
 export const MAX_CHAIN_DEPTH = 10;
@@ -89,10 +89,10 @@ const filterNode = z.object({
 const actionNode = z.object({
   ...nodeBase,
   type: z.literal("action"),
+  // No `batch` flag: whether the step repeats is read off the wiring. See `batch.ts`.
   data: z.object({
     action: z.string(),
-    inputs: z.record(valueOrRefSchema).default({}),
-    batch: z.boolean().default(false)
+    inputs: z.record(valueOrRefSchema).default({})
   })
 });
 

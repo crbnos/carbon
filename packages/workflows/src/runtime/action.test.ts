@@ -17,14 +17,13 @@ const title = {
 
 const node = (
   action = "createIssue",
-  inputs: ActionNode["data"]["inputs"] = { title },
-  batch = false
+  inputs: ActionNode["data"]["inputs"] = { title }
 ): ActionNode => ({
   id: "act",
   name: "act",
   type: "action",
   position: { x: 0, y: 0 },
-  data: { action, inputs, batch }
+  data: { action, inputs }
 });
 
 const recipients = listValue({ kind: "entity", of: "user" }, [
@@ -115,19 +114,15 @@ describe("actionExecutor", () => {
     });
 
     const result = await actionExecutor.execute(
-      node(
-        "notify",
-        {
-          recipient: {
-            kind: "ref",
-            nodeId: "find",
-            output: "result",
-            path: []
-          },
-          message: { kind: "literal", type: t.string, value: "Please review" }
+      node("notify", {
+        recipient: {
+          kind: "ref",
+          nodeId: "find",
+          output: "result",
+          path: []
         },
-        true
-      ),
+        message: { kind: "literal", type: t.string, value: "Please review" }
+      }),
       ctx
     );
 

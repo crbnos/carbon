@@ -26,7 +26,7 @@ Specs: `.ai/specs/2026-07-30-workflows-foundation.md` (schema, validator, runtim
   enough to need upgrading cannot satisfy the current schema, so migrating after that parse could
   never run. It carries one upgrade today: v1 → v2 resets a lookup node's `match` to `[]` because
   its shape changed, which discards nothing (no v1 lookup could be activated).
-- Bump `CURRENT_DEFINITION_FORMAT_VERSION` (now **2**, in `src/definition/schema.ts`) when the
+- Bump `CURRENT_DEFINITION_FORMAT_VERSION` (now **3**, in `src/definition/schema.ts`) when the
   stored shape changes, and add the upgrade to `migrateDefinition` in the same change.
 - Pass a `WorkflowCatalog` into `validateDefinition`. `createWorkflowCatalog()` in
   `src/catalog/catalog.ts` is the real one — events, entities, actions and operations behind one
@@ -82,6 +82,7 @@ src/definition/
 ├── types.ts      # value types, operators, refs, literals, templates, clauses, schedules
 ├── issues.ts     # WorkflowIssueCode + WorkflowIssue
 ├── schema.ts     # node/edge/definition schemas, format version, handle names, caps
+├── batch.ts      # batchCandidates + batchPlan — whether an action repeats, read off the wiring
 ├── nodes.ts      # NODE_KINDS — what each node type declares about itself
 ├── normalize.ts  # readWorkflowVersion + the migrateDefinition seam
 ├── catalog.ts    # WorkflowCatalog + RequiredPermission + walkPath + createFixtureCatalog
@@ -223,10 +224,11 @@ config checks — lives in its single `NODE_KINDS` entry, seven members the mapp
 mandatory. `validate.ts` owns only the cross-cutting layers below; it never switches on a node type.
 
 `loopList` is where "which single list does this step work through" is answered **once**: a filter's
-source, a batched action's one list-typed input, and `undefined` for every other kind. A filter's
-outputs are its loop list; the item a `{kind:"item"}` value reads is that list's `of`; the batch
-config check is that list failing to settle. Inputs that are themselves `{kind:"item"}` are skipped
-when looking for it, which is what stops the item type asking for itself.
+source, the one list wired into an action's single-value input, and `undefined` for every other
+kind. A filter's outputs are its loop list; the item a `{kind:"item"}` value reads is that list's
+`of`. Inputs that are themselves `{kind:"item"}` are skipped when looking for it, which is what
+stops the item type asking for itself. An action's answer comes from `batchPlan` in `batch.ts` —
+nothing is stored, so the only failure is two lists leaving it ambiguous.
 
 ## `validateDefinition`
 
@@ -241,12 +243,13 @@ previous passed, so a customer is never shown type errors that are really a brok
    upstream value with a resolvable property path, and "the current item" is only read inside a step
    that works through a list.
 6. Types — required inputs supplied, types match, a `list<T>` never feeds a single-`T` input unless
-   the action is in batch mode, and an input the catalog does not declare is `UNKNOWN_INPUT` (a
+   the action is `batchable` (in which case that wiring is what makes it repeat), and an input the
+   catalog does not declare is `UNKNOWN_INPUT` (a
    lookup rule naming a property the entity does not have uses the same code). Without that check a
    definition could quietly carry a field the executor would silently drop.
-7. Configuration — every event/action/operation/entity id exists; a batching action has settled on
-   exactly one list; every `requireOneOf` group has at least one of its inputs supplied; nothing
-   left half-configured.
+7. Configuration — every event/action/operation/entity id exists; no action has lists wired into two
+   of its single-value inputs; every `requireOneOf` group has at least one of its inputs supplied;
+   nothing left half-configured.
 
 There is **one** resolver and one failure vocabulary (`ResolveFailure`): layer 5 walks every value,
 whatever form it takes, and every layer's type question goes through it. Adding a second private

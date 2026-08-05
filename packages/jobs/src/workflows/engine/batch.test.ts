@@ -53,7 +53,6 @@ const definition = {
       position: { x: 0, y: 2 },
       data: {
         action: "job.update",
-        batch: true,
         inputs: { job: { kind: "ref", nodeId: "look", output: "result" } }
       }
     }
@@ -180,6 +179,26 @@ beforeEach(() => {
 });
 
 describe("batch mode", () => {
+  // Nothing on the node says "repeat" — the list arriving at a slot that takes one
+  // record is the whole decision, here and in the validator.
+  it("runs once when the same wiring delivers a single record", async () => {
+    const { ids, step } = harness();
+    withServices({
+      found: entityValue("job", "j1"),
+      runAction: (job) => ({ ok: true, outputs: { record: job } })
+    });
+
+    await executeWorkflowRun({ payload, step, logger });
+
+    expect(ids).toEqual([
+      "load",
+      "permissions",
+      "node:look",
+      "node:act",
+      "finish"
+    ]);
+  });
+
   it("runs one durable step per item, keyed by the record", async () => {
     const { ids, step } = harness();
     const { runAction } = withServices({

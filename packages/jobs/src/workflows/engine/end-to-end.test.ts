@@ -198,7 +198,6 @@ describe("a workflow end to end", () => {
           position: { x: 0, y: 3 },
           data: {
             action: "notify",
-            batch: false,
             inputs: {
               role: {
                 kind: "literal",
@@ -294,7 +293,6 @@ describe("a workflow end to end", () => {
           position: { x: 0, y: 1 },
           data: {
             action: "salesOrder.create",
-            batch: false,
             inputs: {
               customerId: {
                 kind: "literal",
@@ -310,7 +308,6 @@ describe("a workflow end to end", () => {
           position: { x: 0, y: 2 },
           data: {
             action: "notify",
-            batch: false,
             inputs: {
               user: {
                 kind: "literal",
@@ -457,7 +454,6 @@ describe("a workflow end to end", () => {
           position: { x: 0, y: 3 },
           data: {
             action: "job.update",
-            batch: true,
             inputs: {
               job: { kind: "ref", nodeId: "keep", output: "result" },
               priority: {
@@ -596,7 +592,6 @@ describe("a workflow end to end", () => {
           position: { x: 0, y: 3 },
           data: {
             action: "nonConformance.create",
-            batch: false,
             inputs: {
               name: {
                 kind: "template",

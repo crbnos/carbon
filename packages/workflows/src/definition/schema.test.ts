@@ -61,17 +61,18 @@ describe("node defaults", () => {
     expect(parsed.data.origin).toBe("Both");
   });
 
-  it("defaults an action's batch flag to false", () => {
+  // Repeating used to be a stored flag, and rows written then still carry it. Reading
+  // one has to drop it rather than fail, or those workflows become unopenable.
+  it("drops the batch flag an older row still carries", () => {
     const parsed = nodeSchema.parse({
       id: "n2",
       name: "action_0",
       type: "action",
       position: { x: 0, y: 0 },
-      data: { action: "notify" }
+      data: { action: "notify", batch: true }
     });
     if (parsed.type !== "action") throw new Error("expected an action node");
-    expect(parsed.data.batch).toBe(false);
-    expect(parsed.data.inputs).toEqual({});
+    expect(parsed.data).toEqual({ action: "notify", inputs: {} });
   });
 
   it("round-trips a node with a name", () => {

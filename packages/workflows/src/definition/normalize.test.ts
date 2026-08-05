@@ -253,7 +253,7 @@ describe("readWorkflowVersion", () => {
             id: "n1",
             type: "action",
             position: { x: 0, y: 0 },
-            data: { action: "", inputs: {}, batch: false },
+            data: { action: "", inputs: {} },
             title: "Check Order"
           }
         ],
@@ -272,14 +272,14 @@ describe("readWorkflowVersion", () => {
             id: "n1",
             type: "action",
             position: { x: 0, y: 0 },
-            data: { action: "", inputs: {}, batch: false },
+            data: { action: "", inputs: {} },
             title: "Check"
           },
           {
             id: "n2",
             type: "action",
             position: { x: 1, y: 0 },
-            data: { action: "", inputs: {}, batch: false },
+            data: { action: "", inputs: {} },
             title: "Check"
           }
         ],
@@ -324,7 +324,7 @@ describe("readWorkflowVersion", () => {
             id: "n2",
             type: "action",
             position: { x: 1, y: 0 },
-            data: { action: "", inputs: {}, batch: false }
+            data: { action: "", inputs: {} }
           }
         ],
         edges: []

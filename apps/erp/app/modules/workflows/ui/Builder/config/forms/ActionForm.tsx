@@ -17,6 +17,7 @@ import {
 } from "@carbon/react";
 import type { ValueOrRef, ValueType } from "@carbon/workflows";
 import {
+  MAX_LIST_ITEMS,
   WORKFLOW_ACTION_CATALOG,
   WORKFLOW_ENTITY_REGISTRY
 } from "@carbon/workflows";
@@ -34,7 +35,7 @@ import { useBuilderStore } from "../../context";
 import { TemplateField } from "../../fields/TemplateField";
 import { ValueField } from "../../fields/ValueField";
 import { issueForField, partIssuesForField } from "../../issues";
-import { useAvailableVariables } from "../../useDefinition";
+import { useActionBatchPlan, useAvailableVariables } from "../../useDefinition";
 import { FormStack, Section } from "../layout";
 import type { NodeFormProps } from "./index";
 
@@ -223,10 +224,11 @@ export function ActionForm({ node, issues }: NodeFormProps<"action">) {
   const updateNodeData = useBuilderStore((s) => s.updateNodeData);
   const label = useWorkflowLabel();
 
-  const { action: actionId, inputs, batch: isBatch } = node.data;
+  const { action: actionId, inputs } = node.data;
 
   const actionDef = actionId ? catalog.getAction(actionId) : undefined;
-  const isBatchable = !!actionDef?.batchable;
+  const batch = useActionBatchPlan(node.id, actionId, inputs);
+  const isBatch = batch.kind === "repeats";
 
   // Upstream entity types for soft-ranking the action list
   const vars = useAvailableVariables(node.id);
@@ -276,29 +278,10 @@ export function ActionForm({ node, issues }: NodeFormProps<"action">) {
   const isNotify = actionId === "notify";
   const skipInputs = new Set(isNotify ? ["aboutId", "aboutType"] : []);
 
-  // Detect list-type mismatches for batch suggestion
-  const listMismatches = useMemo((): string[] => {
-    if (!actionDef || isBatch) return [];
-    const varMap = new Map(
-      vars.map((v) => [`${v.nodeId}:${v.output}`, v.type as ValueType])
-    );
-    const mismatched: string[] = [];
-    for (const [name, inputDef] of Object.entries(actionDef.inputs)) {
-      const val = inputs[name];
-      if (!val || val.kind !== "ref") continue;
-      const varType = varMap.get(`${val.nodeId}:${val.output}`);
-      if (!varType) continue;
-      if (varType.kind === "list" && inputDef.type.kind !== "list") {
-        mismatched.push(name);
-      }
-    }
-    return mismatched;
-  }, [actionDef, isBatch, vars, inputs]);
-
   // ── event handlers ──────────────────────────────────────────────────────────
 
   function handleActionSelect(id: string) {
-    updateNodeData(node.id, { action: id, inputs: {}, batch: false });
+    updateNodeData(node.id, { action: id, inputs: {} });
     // Reset group selections for the new action
     const newDef = catalog.getAction(id);
     const newGroups = newDef?.requireOneOf ?? [];
@@ -467,26 +450,44 @@ export function ActionForm({ node, issues }: NodeFormProps<"action">) {
             </div>
           )}
 
-          {/* The toggle itself lives on the card header; this is the only thing that
-              explains why a list was rejected, so it stays. */}
-          {isBatchable && !isBatch && listMismatches.length > 0 && (
-            <div className="flex items-start gap-2 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm dark:border-amber-800 dark:bg-amber-950">
-              <LuListOrdered className="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
-              <div className="flex flex-col gap-1">
-                <p className="text-amber-800 dark:text-amber-200">
-                  <Trans>
-                    A list is wired into this step, which runs once. Turn on
-                    repeat mode to work through it.
-                  </Trans>
-                </p>
-                <button
-                  type="button"
-                  className="self-start text-xs font-medium text-amber-700 underline underline-offset-2 hover:text-amber-900 dark:text-amber-300 dark:hover:text-amber-100"
-                  onClick={() => updateNodeData(node.id, { batch: true })}
-                >
-                  <Trans>Repeat for each item</Trans>
-                </button>
-              </div>
+          {/* Repeating is not a setting — it is what wiring a list into a
+              single-value input means. So this reports, it does not ask. */}
+          {batch.kind === "repeats" && (
+            <div className="flex items-start gap-2 rounded-md border bg-muted/50 p-3 text-sm">
+              <LuListOrdered className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+              <p className="text-muted-foreground">
+                <Trans>
+                  A list is wired into{" "}
+                  {label(
+                    actionInputLabelKey(actionId, batch.input),
+                    batch.input
+                  )}
+                  , so this step runs once for each item in it — up to{" "}
+                  {MAX_LIST_ITEMS}.
+                </Trans>
+              </p>
+            </div>
+          )}
+
+          {batch.kind === "ambiguous" && (
+            <div className="flex items-start gap-2 rounded-md border border-destructive/50 bg-destructive/10 p-3 text-sm">
+              <LuListOrdered className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
+              <p className="text-destructive">
+                <Trans>
+                  Lists are wired into both{" "}
+                  {label(
+                    actionInputLabelKey(actionId, batch.first),
+                    batch.first
+                  )}{" "}
+                  and{" "}
+                  {label(
+                    actionInputLabelKey(actionId, batch.second),
+                    batch.second
+                  )}
+                  , so this step cannot tell which one to repeat over. Leave a
+                  list on only one of them.
+                </Trans>
+              </p>
             </div>
           )}
         </>

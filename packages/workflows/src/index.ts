@@ -1,4 +1,6 @@
 export * from "./catalog";
+export type { BatchPlan } from "./definition/batch";
+export { batchCandidates, batchPlan } from "./definition/batch";
 export type {
   CatalogAction,
   CatalogEntity,

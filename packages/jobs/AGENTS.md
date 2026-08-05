@@ -82,8 +82,9 @@ minted per step and always carrying the run tag. `getJobDatabaseClient()` is all
 the engine only for the two run-log tables — a business read through it bypasses the
 owner's permissions. See `.claude/rules/workflow-engine.md`.
 
-Step ids are deterministic. An ordinary node is `` `node:${nodeId}` ``; an action node with
-`batch: true` resolves its one list outside the durable steps, then runs one step per item as
+Step ids are deterministic. An ordinary node is `` `node:${nodeId}` ``; an action node fed a list
+where the catalog declares a single value (`batchPlan` in `@carbon/workflows` — there is no stored
+flag) resolves that list outside the durable steps, then runs one step per item as
 `` `node:${nodeId}:${itemKey}` ``, followed by **one aggregate row** under `` `node:${nodeId}` ``
 (`itemKey: ""`) whose handle is what the walk follows and whose `statusReason` is where a dropped
 or failed item becomes visible. The aggregate succeeds if at least one item did; a failed item

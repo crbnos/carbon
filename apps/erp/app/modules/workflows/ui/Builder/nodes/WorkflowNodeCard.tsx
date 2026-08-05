@@ -13,7 +13,6 @@ import {
   LuTriangleAlert,
   LuX
 } from "react-icons/lu";
-import { catalog } from "../catalog";
 import type { AnyNodeForm } from "../config/forms/index";
 import { NODE_FORMS } from "../config/forms/index";
 import { InlineNodeName } from "../config/InlineNodeName";
@@ -29,10 +28,11 @@ import {
   selectHasEdgeFrom,
   selectIsConnected,
   selectNode,
+  selectNodeBatchPlan,
   selectNodeIssues,
   selectTriggerCount
 } from "../selectors";
-import { BatchToggle } from "./BatchToggle";
+import { BatchBadge } from "./BatchBadge";
 import { NODE_CARD_WIDTH } from "./kinds";
 import { NODE_KIND_META } from "./meta";
 
@@ -48,6 +48,7 @@ function WorkflowNodeCardImpl({ id, type, data, selected }: NodeProps) {
   const isExpanded = builderNode?.expanded ?? true;
 
   const nodeIssues = useBuilderStoreShallow(selectNodeIssues(id));
+  const batchPlan = useBuilderStore(selectNodeBatchPlan(id));
 
   // A node wired to nothing is a draft the user parked on the canvas, not a broken
   // step — the run can't reach it, so flagging it would only be noise. The forms
@@ -126,13 +127,8 @@ function WorkflowNodeCardImpl({ id, type, data, selected }: NodeProps) {
   );
 
   const batchSlot =
-    node.type === "action" && catalog.getAction(node.data.action)?.batchable ? (
-      <BatchToggle
-        nodeId={id}
-        isBatch={node.data.batch}
-        isReadOnly={isReadOnly}
-        hasIssue={nodeIssues.some((issue) => issue.field === "batch")}
-      />
+    batchPlan?.kind === "repeats" && node.type === "action" ? (
+      <BatchBadge action={node.data.action} input={batchPlan.input} />
     ) : null;
 
   const actionsSlot =

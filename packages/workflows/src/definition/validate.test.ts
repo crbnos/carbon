@@ -512,15 +512,17 @@ describe("types", () => {
     expect(issues[0]?.field).toBe("paths.p1.clauses.0.right");
   });
 
-  function listIntoSingle(batch: boolean): WorkflowDefinition {
+  function listIntoSingle(
+    actionId: string,
+    inputName: string
+  ): WorkflowDefinition {
     return define(
       [
         trigger(),
         lookup("find", "part", "list"),
         action("a1", {
-          action: "updatePart",
-          batch,
-          inputs: { part: ref("find", "result") }
+          action: actionId,
+          inputs: { [inputName]: ref("find", "result") }
         })
       ],
       [
@@ -530,14 +532,45 @@ describe("types", () => {
     );
   }
 
-  it("reports LIST_INTO_SINGLE when a list feeds a single-item input", () => {
-    const issues = validateDefinition(listIntoSingle(false), catalog);
+  it("reports LIST_INTO_SINGLE when a list feeds a step that cannot repeat", () => {
+    const issues = validateDefinition(
+      listIntoSingle("createIssue", "title"),
+      catalog
+    );
     expect(issues.map((i) => i.code)).toEqual(["LIST_INTO_SINGLE"]);
-    expect(issues[0]?.field).toBe("part");
+    expect(issues[0]?.field).toBe("title");
   });
 
-  it("accepts the same wiring when the action is in batch mode", () => {
-    expect(validateDefinition(listIntoSingle(true), catalog)).toEqual([]);
+  it("accepts the same wiring when the action can repeat", () => {
+    expect(
+      validateDefinition(listIntoSingle("updatePart", "part"), catalog)
+    ).toEqual([]);
+  });
+
+  it("reports INCOMPLETE_CONFIG when two lists leave the repeat ambiguous", () => {
+    const definition = define(
+      [
+        trigger(),
+        lookup("parts", "part", "list"),
+        lookup("users", "user", "list"),
+        action("a1", {
+          action: "assignPart",
+          inputs: {
+            part: ref("parts", "result"),
+            user: ref("users", "result")
+          }
+        })
+      ],
+      [
+        edge("e1", "trigger", "out", "parts"),
+        edge("e2", "parts", "success", "users"),
+        edge("e3", "users", "success", "a1")
+      ]
+    );
+    const issues = validateDefinition(definition, catalog);
+    expect(issues.map((i) => i.code)).toEqual(["INCOMPLETE_CONFIG"]);
+    // Blamed on the second list; neither list is also rejected on its own.
+    expect(issues[0]?.field).toBe("user");
   });
 
   it("reports TYPE_MISMATCH when a filter's source is not a list", () => {
@@ -1023,14 +1056,13 @@ describe("the current item", () => {
     expect(issues[0]?.field).toBe("source");
   });
 
-  it("reports only UNKNOWN_ACTION when a batched action's action is gone", () => {
+  it("reports only UNKNOWN_ACTION when a repeating action's action is gone", () => {
     const thin = createFixtureCatalog({ omitActions: ["updatePart"] });
     const definition = define(
       [
         trigger(),
         action("a1", {
           action: "updatePart",
-          batch: true,
           inputs: { name: item(["name"]) }
         })
       ],
@@ -1041,14 +1073,13 @@ describe("the current item", () => {
     ]);
   });
 
-  it("reports INCOMPLETE_CONFIG for a batch action with no list to repeat over", () => {
+  it("accepts a step fed one record, with nothing to repeat", () => {
     const definition = define(
       [
         trigger(),
         lookup("find", "part", "one"),
         action("a1", {
           action: "updatePart",
-          batch: true,
           inputs: { part: ref("find", "result") }
         })
       ],
@@ -1057,9 +1088,7 @@ describe("the current item", () => {
         edge("e2", "find", "success", "a1")
       ]
     );
-    const issues = validateDefinition(definition, catalog);
-    expect(issues.map((i) => i.code)).toEqual(["INCOMPLETE_CONFIG"]);
-    expect(issues[0]?.field).toBe("batch");
+    expect(validateDefinition(definition, catalog)).toEqual([]);
   });
 });
 

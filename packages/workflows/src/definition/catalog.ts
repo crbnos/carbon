@@ -153,6 +153,18 @@ const FIXTURE_ACTIONS: CatalogAction[] = [
     permission: { module: "parts", action: "update" }
   },
   {
+    // Two entity inputs, so a list can be wired to each — the shape that makes
+    // "which one does this step repeat over?" unanswerable.
+    id: "assignPart",
+    inputs: {
+      part: { type: t.entity("part"), required: true },
+      user: { type: t.entity("user"), required: true }
+    },
+    outputs: { part: t.entity("part") },
+    batchable: true,
+    permission: { module: "parts", action: "update" }
+  },
+  {
     id: "createIssue",
     inputs: { title: { type: t.string, required: true } },
     outputs: { issue: t.entity("issue") },
