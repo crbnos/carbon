@@ -5,10 +5,15 @@ import type {
   RilletInvoiceCreate,
   RilletTransactionWriteOmit
 } from "../models";
-import { buildRilletIdempotencyKey } from "../provider";
+import {
+  buildRilletIdempotencyKey,
+  isRilletUnknownExternalReferenceTypeError
+} from "../provider";
 import {
   carbonCompanyExternalReference,
   carbonExternalReference,
+  RILLET_CARBON_COMPANY_REFERENCE_TYPE,
+  RILLET_CARBON_REFERENCE_TYPE,
   RilletTransactionSyncer,
   toRilletMoney
 } from "./shared";
@@ -361,15 +366,30 @@ export class RilletSalesInvoiceSyncer extends RilletTransactionSyncer<
     data: RilletInvoiceCreate,
     localId: string
   ): Promise<string> {
-    const created = await this.rilletProvider.createInvoice(
-      data,
-      buildRilletIdempotencyKey({
-        companyId: this.companyId,
-        operation: "invoice",
-        localId,
-        payload: data
-      })
-    );
-    return created.id;
+    try {
+      const created = await this.rilletProvider.createInvoice(
+        data,
+        buildRilletIdempotencyKey({
+          companyId: this.companyId,
+          operation: "invoice",
+          localId,
+          payload: data
+        })
+      );
+      return created.id;
+    } catch (error) {
+      // AR_ONLY invoices REQUIRE external_references, so the optional-
+      // reference strip fallback the master-data syncers use cannot apply —
+      // registering the slugs in the Rillet dashboard is the only fix.
+      if (isRilletUnknownExternalReferenceTypeError(error)) {
+        throw new JournalEntrySyncError({
+          errorCode: "EXTERNAL_REFERENCE_TYPE_MISSING",
+          message: `Cannot sync invoice: Rillet requires external references on AR_ONLY invoices, and this organization has no "${RILLET_CARBON_REFERENCE_TYPE}" / "${RILLET_CARBON_COMPANY_REFERENCE_TYPE}" reference types registered. Add them under Rillet Settings → External References, then retry.`,
+          warning: true,
+          metadata: { invoiceId: localId }
+        });
+      }
+      throw error;
+    }
   }
 }

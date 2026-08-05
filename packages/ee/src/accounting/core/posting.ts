@@ -361,7 +361,11 @@ export const JOURNAL_ENTRY_SYNC_ERROR_CODES = [
   // family modes diverge.
   "DOC_SYNC_DISABLED",
   "DOUBLE_REPRESENTATION",
-  "PAYMENT_FAMILY_UNRESOLVED"
+  "PAYMENT_FAMILY_UNRESOLVED",
+  // Rillet requires external_references on AR_ONLY invoices, and every
+  // reference type must be a slug pre-registered (dashboard-only) under
+  // Rillet Settings → External References — user-fixable there.
+  "EXTERNAL_REFERENCE_TYPE_MISSING"
 ] as const;
 
 export type JournalEntrySyncErrorCode =

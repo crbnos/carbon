@@ -9,7 +9,10 @@ import {
 } from "../../../core/types";
 import { withTriggersDisabled } from "../../../core/utils";
 import { parseRilletDate, type Rillet } from "../models";
-import type { RilletProvider } from "../provider";
+import {
+  isRilletUnknownExternalReferenceTypeError,
+  type RilletProvider
+} from "../provider";
 
 /**
  * Shared plumbing for the Rillet entity syncers:
@@ -47,6 +50,39 @@ export function carbonCompanyExternalReference(
   companyId: string
 ): Rillet.ExternalReference {
   return { type: RILLET_CARBON_COMPANY_REFERENCE_TYPE, id: companyId };
+}
+
+/**
+ * Run a Rillet write, and when the org hasn't registered Carbon's
+ * external-reference type slugs (dashboard-only setup: Rillet Settings →
+ * External References), retry once WITHOUT the optional
+ * external_references so the push still lands — the reference is audit
+ * metadata, not required data. Only for payloads where references are
+ * optional; AR_ONLY invoices (references required) surface a structured
+ * Warning instead.
+ */
+export async function writeDroppingUnregisteredReferences<
+  TPayload extends { external_references?: unknown },
+  TResult
+>(
+  payload: TPayload,
+  write: (payload: TPayload) => Promise<TResult>
+): Promise<TResult> {
+  try {
+    return await write(payload);
+  } catch (error) {
+    if (
+      !isRilletUnknownExternalReferenceTypeError(error) ||
+      payload.external_references === undefined
+    ) {
+      throw error;
+    }
+    console.warn(
+      `[Rillet] external-reference type slugs are not registered for this organization (Rillet Settings → External References: add "${RILLET_CARBON_REFERENCE_TYPE}" and "${RILLET_CARBON_COMPANY_REFERENCE_TYPE}"); retrying without references`
+    );
+    const { external_references: _dropped, ...stripped } = payload;
+    return await write(stripped as TPayload);
+  }
 }
 
 /** Format a number as Rillet money — a 2-dp decimal STRING plus currency. */

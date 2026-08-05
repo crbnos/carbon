@@ -1,3 +1,5 @@
+import { Copy, Input, InputGroup, InputRightElement } from "@carbon/react";
+import { isBrowser } from "@carbon/utils";
 import type { ComponentProps } from "react";
 import { z } from "zod";
 import { defineIntegration } from "../fns";
@@ -15,6 +17,7 @@ export const Rillet = defineIntegration({
   active: true,
   category: "Accounting",
   logo: Logo,
+  setupInstructions: SetupInstructions,
   description:
     "Integrating Carbon with Rillet posts your production and inventory journal entries, sales invoices, and bills into Rillet's multi-entity general ledger, keeps customers and vendors in sync, and applies invoice payments recorded in Rillet back to Carbon.",
   shortDescription:
@@ -76,7 +79,7 @@ export const Rillet = defineIntegration({
       name: "webhookToken",
       label: "Webhook token",
       description:
-        "Paste the Webhook Token from Rillet → Organization Settings → Webhooks after creating a webhook pointed at https://<your-carbon-host>/api/webhook/rillet/<your company ID>, subscribed to invoice payment events. Payments stay off until this is set.",
+        "The per-webhook token from step 3. Inbound payments stay off until this is set.",
       group: "Webhooks",
       type: "secret" as const,
       required: false,
@@ -85,6 +88,41 @@ export const Rillet = defineIntegration({
   ],
   schema: RilletSettingsSchema
 });
+
+function SetupInstructions({ companyId }: { companyId: string }) {
+  const webhookUrl = isBrowser
+    ? `${window.location.origin}/api/webhook/rillet/${companyId}`
+    : "";
+  return (
+    <>
+      <p className="text-sm text-muted-foreground">
+        1. Create an API key in Rillet under Organization Settings → API access
+        (keys are environment-specific) and paste it below.
+      </p>
+      <p className="mt-3 text-sm text-muted-foreground">
+        2. In Rillet under Settings → External References, add two reference
+        types with the slugs <span className="font-mono">carbon</span> and{" "}
+        <span className="font-mono">carbon-company</span>. Rillet has no API for
+        this step. It is required before invoices can post (Rillet mandates
+        external references on AR-only invoices); without it, customers,
+        vendors, products, and bills still sync but are not tagged with their
+        Carbon ids.
+      </p>
+      <p className="mt-3 text-sm text-muted-foreground">
+        3. To pull invoice payments back into Carbon, create a webhook in Rillet
+        under Organization Settings → Webhooks pointed at the URL below,
+        subscribed to invoice payment events, and paste its Webhook Token into
+        the field at the bottom of this form.
+      </p>
+      <InputGroup className="mb-8">
+        <Input value={webhookUrl} />
+        <InputRightElement>
+          <Copy text={webhookUrl} />
+        </InputRightElement>
+      </InputGroup>
+    </>
+  );
+}
 
 function Logo(props: ComponentProps<"svg">) {
   return (

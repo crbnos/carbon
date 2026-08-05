@@ -5,7 +5,8 @@ import {
   carbonExternalReference,
   mapContactAddressToRilletAddress,
   mapPaymentTermsToRilletDays,
-  RilletEntitySyncer
+  RilletEntitySyncer,
+  writeDroppingUnregisteredReferences
 } from "./shared";
 
 /**
@@ -243,21 +244,24 @@ export class RilletCustomerSyncer extends RilletEntitySyncer<
     const existingRemoteId = await this.getRemoteId(localId);
 
     if (existingRemoteId) {
-      const updated = await this.rilletProvider.updateCustomer(
-        existingRemoteId,
-        data
+      const updated = await writeDroppingUnregisteredReferences(
+        data,
+        (payload) =>
+          this.rilletProvider.updateCustomer(existingRemoteId, payload)
       );
       return updated.id ?? existingRemoteId;
     }
 
-    const created = await this.rilletProvider.createCustomer(
-      data,
-      buildRilletIdempotencyKey({
-        companyId: this.companyId,
-        operation: "customer",
-        localId,
-        payload: data
-      })
+    const created = await writeDroppingUnregisteredReferences(data, (payload) =>
+      this.rilletProvider.createCustomer(
+        payload,
+        buildRilletIdempotencyKey({
+          companyId: this.companyId,
+          operation: "customer",
+          localId,
+          payload
+        })
+      )
     );
     return created.id;
   }

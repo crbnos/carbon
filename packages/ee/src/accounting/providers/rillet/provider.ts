@@ -154,6 +154,26 @@ export function throwRilletApiError(
 }
 
 /**
+ * True when Rillet rejected a write because an external_references entry
+ * uses a type slug the organization hasn't registered. Reference types are
+ * dashboard-only configuration (Rillet Settings → External References) —
+ * there is no API to create them — so callers degrade: optional references
+ * are stripped and the write retried; required ones (AR_ONLY invoices)
+ * surface a user-fixable Warning.
+ */
+export function isRilletUnknownExternalReferenceTypeError(
+  error: unknown
+): boolean {
+  return (
+    error instanceof AccountingApiError &&
+    typeof error.details.providerMessage === "string" &&
+    error.details.providerMessage.includes(
+      "External reference type does not exist"
+    )
+  );
+}
+
+/**
  * Deterministic Idempotency-Key for a Rillet create POST (Rillet replays
  * the stored response for 24h): the same company + operation + local
  * entity + payload always produces the same key, so a retried push cannot

@@ -12,7 +12,8 @@ import {
   carbonExternalReference,
   loadRilletAccountCodesById,
   RilletTransactionSyncer,
-  toRilletMoney
+  toRilletMoney,
+  writeDroppingUnregisteredReferences
 } from "./shared";
 
 /**
@@ -377,14 +378,16 @@ export class RilletBillSyncer extends RilletTransactionSyncer<
     data: RilletBillCreate,
     localId: string
   ): Promise<string> {
-    const created = await this.rilletProvider.createBill(
-      data,
-      buildRilletIdempotencyKey({
-        companyId: this.companyId,
-        operation: "bill",
-        localId,
-        payload: data
-      })
+    const created = await writeDroppingUnregisteredReferences(data, (payload) =>
+      this.rilletProvider.createBill(
+        payload,
+        buildRilletIdempotencyKey({
+          companyId: this.companyId,
+          operation: "bill",
+          localId,
+          payload
+        })
+      )
     );
     return created.id;
   }

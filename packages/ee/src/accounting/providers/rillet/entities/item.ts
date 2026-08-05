@@ -7,7 +7,8 @@ import {
   loadCompanyBaseCurrency,
   loadRilletAccountCodesById,
   RilletEntitySyncer,
-  toRilletMoney
+  toRilletMoney,
+  writeDroppingUnregisteredReferences
 } from "./shared";
 
 /**
@@ -302,21 +303,24 @@ export class RilletItemSyncer extends RilletEntitySyncer<
     const existingRemoteId = await this.getRemoteId(localId);
 
     if (existingRemoteId) {
-      const updated = await this.rilletProvider.updateProduct(
-        existingRemoteId,
-        data
+      const updated = await writeDroppingUnregisteredReferences(
+        data,
+        (payload) =>
+          this.rilletProvider.updateProduct(existingRemoteId, payload)
       );
       return updated.id ?? existingRemoteId;
     }
 
-    const created = await this.rilletProvider.createProduct(
-      data,
-      buildRilletIdempotencyKey({
-        companyId: this.companyId,
-        operation: "product",
-        localId,
-        payload: data
-      })
+    const created = await writeDroppingUnregisteredReferences(data, (payload) =>
+      this.rilletProvider.createProduct(
+        payload,
+        buildRilletIdempotencyKey({
+          companyId: this.companyId,
+          operation: "product",
+          localId,
+          payload
+        })
+      )
     );
     return created.id;
   }

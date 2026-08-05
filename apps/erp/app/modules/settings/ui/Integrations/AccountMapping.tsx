@@ -1,4 +1,4 @@
-import { Select, Submit, ValidatedForm } from "@carbon/form";
+import { Combobox, Submit, ValidatedForm } from "@carbon/form";
 import {
   Button,
   Drawer,
@@ -344,7 +344,7 @@ function AccountMappingRowForm({
       </div>
       <LuArrowRight className="size-4 shrink-0 text-muted-foreground" />
       <div className="w-[260px] shrink-0">
-        <Select
+        <Combobox
           name="externalId"
           options={options}
           placeholder={t`Select provider account`}

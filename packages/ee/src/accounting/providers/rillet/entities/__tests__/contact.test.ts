@@ -1,7 +1,11 @@
 import { describe, expect, it } from "vitest";
 import type { Accounting } from "../../../../core/types";
+import { AccountingApiError } from "../../../../core/utils";
 import { mapContactToRilletCustomer } from "../customer";
-import { mapPaymentTermsToRilletDays } from "../shared";
+import {
+  mapPaymentTermsToRilletDays,
+  writeDroppingUnregisteredReferences
+} from "../shared";
 import {
   mapContactToRilletVendor,
   RILLET_VENDOR_MAX_PAYMENT_TERMS_DAYS
@@ -213,5 +217,56 @@ describe("mapPaymentTermsToRilletDays", () => {
     expect(mapPaymentTermsToRilletDays("0")).toBe(0);
     expect(mapPaymentTermsToRilletDays("240", { max: 180 })).toBeUndefined();
     expect(mapPaymentTermsToRilletDays("180", { max: 180 })).toBe(180);
+  });
+});
+
+describe("writeDroppingUnregisteredReferences", () => {
+  const referenceError = new AccountingApiError("rillet", "create vendor", {
+    statusCode: 400,
+    statusText: "Bad Request",
+    providerMessage:
+      "External reference type does not exist: carbon. The existing external reference types are: . Please ensure that you are using an existing type or add a new type in the Rillet settings."
+  });
+
+  it("retries without external_references when the org has no registered types", async () => {
+    const calls: unknown[] = [];
+    const result = await writeDroppingUnregisteredReferences(
+      { name: "MyVendor", external_references: [{ type: "carbon", id: "x" }] },
+      async (payload) => {
+        calls.push(payload);
+        if ("external_references" in payload) throw referenceError;
+        return { id: "vendor-1" };
+      }
+    );
+
+    expect(result).toEqual({ id: "vendor-1" });
+    expect(calls).toHaveLength(2);
+    expect(calls[1]).toEqual({ name: "MyVendor" });
+  });
+
+  it("rethrows other errors untouched", async () => {
+    const otherError = new AccountingApiError("rillet", "create vendor", {
+      statusCode: 500,
+      statusText: "Server Error"
+    });
+    await expect(
+      writeDroppingUnregisteredReferences(
+        { name: "MyVendor", external_references: [] },
+        async () => {
+          throw otherError;
+        }
+      )
+    ).rejects.toBe(otherError);
+  });
+
+  it("rethrows when the payload carries no references to strip", async () => {
+    const payload: { name: string; external_references?: unknown } = {
+      name: "MyVendor"
+    };
+    await expect(
+      writeDroppingUnregisteredReferences(payload, async () => {
+        throw referenceError;
+      })
+    ).rejects.toBe(referenceError);
   });
 });
