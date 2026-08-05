@@ -119,9 +119,11 @@ function contentKey(parts: VariableTextPart[]): string {
 const NO_TRIGGER = "\0";
 
 /** The editor shell, exported so a read-only rendition of the same value matches.
- * No `min-h-*`: the height range is computed from `minRows`/`maxRows` below. */
+ * No `min-h-*`: the height range is computed from `minRows`/`maxRows` below.
+ * `select-text` is load-bearing: React Flow puts `user-select: none` on every node,
+ * and an inherited `none` stops a click placing the caret inside a contenteditable. */
 export const VARIABLE_TEXT_SHELL_CLASS =
-  "cursor-text overflow-y-auto overscroll-contain break-words rounded-md border border-input bg-background px-3 py-2 text-sm";
+  "select-text cursor-text overflow-y-auto overscroll-contain break-words rounded-md border border-input bg-background px-3 py-2 text-sm";
 
 // A `text-sm` line box plus `py-2`, so one row is 2.5rem — the old fixed floor.
 const ROW_REM = 1.25;

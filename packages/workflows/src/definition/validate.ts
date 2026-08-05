@@ -13,9 +13,10 @@ import {
 import {
   type TriggerNode,
   type WorkflowDefinition,
+  type WorkflowNode,
   workflowDefinitionSchema
 } from "./schema";
-import type { ValueOrRef } from "./types";
+import { describeType, rendersAsText, type ValueOrRef } from "./types";
 import { buildAdjacency, createContext, reachableFrom } from "./variables";
 
 /**
@@ -433,7 +434,37 @@ function checkTypes(
 ): WorkflowIssue[] {
   return definition.nodes
     .filter((node) => isNodeConfigured(node, ctx))
-    .flatMap((node) => checkNodeTypes(node, ctx));
+    .flatMap((node) => [
+      ...checkNodeTypes(node, ctx),
+      ...checkTemplateParts(node, ctx)
+    ]);
+}
+
+/**
+ * Layer 6, second half — a record dropped into a sentence has no reading, so it is
+ * rejected here rather than silently flattened to an id at run time. This lives in
+ * one place for every template: an action's message, an entity's field, a clause.
+ */
+function checkTemplateParts(
+  node: WorkflowNode,
+  ctx: NodeContext
+): WorkflowIssue[] {
+  const issues: WorkflowIssue[] = [];
+  for (const site of getNodeValues(node)) {
+    if (site.value.kind !== "template") continue;
+    site.value.parts.forEach((part, index) => {
+      if (part.kind === "text") return;
+      const type = ctx.typeOf(part, node.id);
+      if (type === undefined || rendersAsText(type)) return;
+      issues.push({
+        code: "TYPE_MISMATCH",
+        nodeId: node.id,
+        field: `${site.field}.parts.${index}`,
+        message: `This puts ${describeType(type)} into text. Pick one of its properties instead, such as its name.`
+      });
+    });
+  }
+  return issues;
 }
 
 /** Layer 7 — nothing is left half-configured, and every id is one we know. */

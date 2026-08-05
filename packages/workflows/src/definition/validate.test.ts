@@ -462,6 +462,53 @@ describe("types", () => {
     expect(codesFound).toContain("TYPE_MISMATCH");
   });
 
+  it("reports TYPE_MISMATCH for a record written into a sentence", () => {
+    const definition = define(
+      [
+        trigger(),
+        action("a1", {
+          action: "createIssue",
+          inputs: {
+            title: {
+              kind: "template",
+              parts: [
+                { kind: "text", text: "Check " },
+                ref("trigger", "purchaseOrder")
+              ]
+            }
+          }
+        })
+      ],
+      [edge("e1", "trigger", "out", "a1")]
+    );
+    const issues = validateDefinition(definition, catalog);
+    expect(issues.map((i) => i.code)).toEqual(["TYPE_MISMATCH"]);
+    // The part index, so the builder can redden that one token and not the field.
+    expect(issues[0]?.field).toBe("title.parts.1");
+  });
+
+  it("accepts a property of that record in the same sentence", () => {
+    const definition = define(
+      [
+        trigger(),
+        action("a1", {
+          action: "createIssue",
+          inputs: {
+            title: {
+              kind: "template",
+              parts: [
+                { kind: "text", text: "Check " },
+                ref("trigger", "purchaseOrder", ["status"])
+              ]
+            }
+          }
+        })
+      ],
+      [edge("e1", "trigger", "out", "a1")]
+    );
+    expect(validateDefinition(definition, catalog)).toEqual([]);
+  });
+
   it("reports TYPE_MISMATCH for an operator that does not fit the type", () => {
     const definition = define(
       [

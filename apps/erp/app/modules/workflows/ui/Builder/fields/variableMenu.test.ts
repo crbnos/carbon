@@ -235,6 +235,20 @@ describe("variableTree", () => {
     ).toBe(false);
   });
 
+  it("hides the record itself from a text field but keeps its properties", () => {
+    const [record] =
+      variableTree([variable], catalog, { textOnly: true })[0].children ?? [];
+    expect(record.item).toBeUndefined();
+    expect(record.children?.length).toBeGreaterThan(0);
+    expect(
+      variableMenuItems([variable], catalog, { textOnly: true }).map((item) =>
+        decodeTokenId(item.id)
+      )
+    ).not.toContainEqual(
+      expect.objectContaining({ output: "record", path: [] })
+    );
+  });
+
   it("labels properties through the resolver, not the raw column name", () => {
     const [record] =
       variableTree([variable], catalog, {

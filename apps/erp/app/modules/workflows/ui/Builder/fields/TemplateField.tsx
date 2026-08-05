@@ -5,8 +5,8 @@ import { InlineValueEditor } from "./InlineValueEditor";
 import type { ValueFieldProps } from "./types";
 import { hasStrayBrace } from "./valueParts";
 
-/** A field that always mixes text and variables. Accepts any type — everything
- * reads as text once it is inside a sentence. */
+/** A field that always mixes text and variables. Accepts any type that has a reading
+ * as text — a whole record does not, so the menu offers its properties instead. */
 export function TemplateField({
   label,
   required,
@@ -36,6 +36,7 @@ export function TemplateField({
       {/* These are the prose inputs — a subject, a message body, a webhook payload.
           Five rows is too short for any of them. */}
       <InlineValueEditor
+        textOnly
         collapseSingleRef={false}
         value={value}
         onChange={onChange}

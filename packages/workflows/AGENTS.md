@@ -217,6 +217,13 @@ can only be text. Its parts are checked one at a time so a bad variable names it
 `renderTemplate` (in `src/runtime/resolve.ts`, re-exported from `template.ts` to avoid an import
 cycle) fails the **whole** template if any part fails to resolve — a blank would be a silent lie.
 
+What a part may hold is narrower than what a value may be: `rendersAsText` (`definition/types.ts`)
+rejects a record and a list of records, and `checkTemplateParts` in `validate.ts` raises a
+`TYPE_MISMATCH` at `<field>.parts.<n>` for one. A record has no reading as text — it would flatten
+to whichever column looked name-ish, or to a raw id — so the property is what the customer meant.
+The builder's variable menu passes `textOnly` for the same reason: it hides the record row and
+still drills into it.
+
 ## Node kinds
 
 Everything one node type does — handles, values, outputs, the list it loops over, type checks,

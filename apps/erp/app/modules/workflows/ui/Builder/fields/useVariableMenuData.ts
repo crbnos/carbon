@@ -11,7 +11,8 @@ import { variableMenuItems, variableTree } from "./variableMenu";
  * not a value — re-creating the suggestion extension mid-keystroke tears the editor down. */
 export function useVariableMenuData(
   context: FieldContext,
-  accepts: ValueType | undefined
+  accepts: ValueType | undefined,
+  textOnly?: boolean
 ): () => VariableMenuData {
   const getVariables = useVariablesGetter(context.nodeId);
 
@@ -25,6 +26,7 @@ export function useVariableMenuData(
     const variables = getVariables();
     const opts = {
       accepts,
+      textOnly,
       inLoop: context.inLoop,
       batching: context.batching,
       labelFor: (key: string, fallback: string) =>
@@ -37,5 +39,5 @@ export function useVariableMenuData(
         ? `No earlier step produces ${describeVariable(accepts, true, opts.labelFor)}.`
         : undefined
     };
-  }, [getVariables, accepts, context.inLoop, context.batching]);
+  }, [getVariables, accepts, textOnly, context.inLoop, context.batching]);
 }

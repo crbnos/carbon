@@ -113,6 +113,7 @@ export {
   operatorSchema,
   operatorsForType,
   primitiveKindSchema,
+  rendersAsText,
   scalarTypeSchema,
   scheduleSchema,
   t,

@@ -24,6 +24,9 @@ const TRIGGER = "{";
 type Props = {
   /** Restricts the menu. Omit to offer every variable. */
   accepts?: ValueType;
+  /** The value is written into a sentence, so a whole record is not offered — only
+   * the properties inside it, which are what reads as text. */
+  textOnly?: boolean;
   /** Store a lone variable as a bare reference rather than a one-token template.
    * Not inferred from `accepts`: a clause's left side offers every type and still
    * needs the bare ref, or its operators fall back to the template's string. */
@@ -45,6 +48,7 @@ type Props = {
 
 export function InlineValueEditor({
   accepts,
+  textOnly,
   collapseSingleRef,
   value,
   onChange,
@@ -57,7 +61,7 @@ export function InlineValueEditor({
 }: Props) {
   const { t } = useLingui();
   const store = useBuilderStoreApi();
-  const getMenuData = useVariableMenuData(context, accepts);
+  const getMenuData = useVariableMenuData(context, accepts, textOnly);
 
   // Read without subscribing: `nodes` is replaced on every drag frame. Names are
   // display-only here, so a rename elsewhere lands on the next render.

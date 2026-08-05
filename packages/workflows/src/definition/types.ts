@@ -74,6 +74,16 @@ export function expectedClauseRightType(
   return left.kind === "list" && operator === "contains" ? left.of : left;
 }
 
+/**
+ * Whether a value of this type has a reading inside a sentence. A record does not —
+ * it would flatten to whichever column happened to look name-ish, or to its raw id.
+ * The property the user meant is one hop further in.
+ */
+export function rendersAsText(type: ValueType): boolean {
+  if (type.kind === "entity") return false;
+  return type.kind !== "list" || type.of.kind !== "entity";
+}
+
 /** Customer-facing rendering of a type, for issue messages. */
 export function describeType(type: ValueType): string {
   if (type.kind === "list") return `a list of ${type.of.of}`;

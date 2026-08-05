@@ -4,7 +4,7 @@ import type {
   VariableRef,
   WorkflowCatalog
 } from "@carbon/workflows";
-import { canAssign } from "@carbon/workflows";
+import { canAssign, rendersAsText } from "@carbon/workflows";
 import {
   describeVariable,
   nodeNameLabel,
@@ -45,8 +45,11 @@ export function pickAccepts(
 }
 
 type Options = {
-  /** Omit to accept any type — template fields render anything as text. */
+  /** Omit to accept any type. */
   accepts?: ValueType;
+  /** For fields that write into a sentence. A record has no reading as text, so it is
+   * not offered; drilling into it still is, which is where its name lives. */
+  textOnly?: boolean;
   inLoop?: boolean;
   /** The action runs once per item, so a list may fill a single-value input. */
   batching?: boolean;
@@ -83,6 +86,7 @@ export function variableMenuItems(
   catalog: WorkflowCatalog,
   {
     accepts,
+    textOnly,
     inLoop,
     batching,
     labelFor = (_key, fallback) => fallback
@@ -90,7 +94,8 @@ export function variableMenuItems(
 ): VariableMenuItem[] {
   const items: VariableMenuItem[] = [];
   const fits = (type: ValueType) =>
-    !accepts || canAssign(type, accepts, { batching });
+    (!textOnly || rendersAsText(type)) &&
+    (!accepts || canAssign(type, accepts, { batching }));
 
   for (const variable of withoutDuplicateOutputs(variables)) {
     const add = (path: string[], type: ValueType) => {
@@ -144,13 +149,15 @@ export function variableTree(
   catalog: WorkflowCatalog,
   {
     accepts,
+    textOnly,
     inLoop,
     batching,
     labelFor = (_key, fallback) => fallback
   }: Options = {}
 ): VariableTreeNode[] {
   const fits = (type: ValueType) =>
-    !accepts || canAssign(type, accepts, { batching });
+    (!textOnly || rendersAsText(type)) &&
+    (!accepts || canAssign(type, accepts, { batching }));
 
   /** Null for a branch with nothing pickable inside — a row you cannot use is a row
    * that should not be there. An entity with usable properties survives even when the
