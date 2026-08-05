@@ -65,6 +65,10 @@ msgstr "{0}が正常に削除されました"
 msgid "{0} draft journal entries"
 msgstr "{0}件の下書き仕訳"
 
+#. placeholder {0}: scrapDrops.length
+msgid "{0} drop(s) below the {minRemnantLength} {unitOfDimension} minimum will post as scrap."
+msgstr ""
+
 #. placeholder {0}: mappings.length
 msgid "{0} lines to map"
 msgstr "{0}件のラインをマップします"
@@ -76,6 +80,10 @@ msgstr "{0}件の注文"
 #. placeholder {0}: selectedProcesses.length
 msgid "{0} Processes"
 msgstr "{0}個のプロセス"
+
+#. placeholder {0}: patterns.length
+msgid "{0} stock unit(s), in cut order"
+msgstr ""
 
 #. placeholder {0}: ap.count
 msgid "{0} suppliers with a balance"
@@ -620,6 +628,9 @@ msgstr "実際"
 msgid "Actual Cost"
 msgstr "実際のコスト"
 
+msgid "Actual drop"
+msgstr ""
+
 msgid "Actual End"
 msgstr "実際の終了"
 
@@ -739,6 +750,9 @@ msgstr "部品を追加"
 
 msgid "Add Permissions"
 msgstr "権限を追加"
+
+msgid "Add Piece"
+msgstr ""
 
 msgid "Add Printer"
 msgstr "プリンターを追加"
@@ -1226,9 +1240,9 @@ msgstr "{0}をこの操作から削除してもよろしいですか?これは�
 msgid "Are you sure you want to delete {0}?"
 msgstr "{0}を削除してもよろしいですか？"
 
+#. placeholder {0}: cutList.cutListId
 #. placeholder {0}: initialValues.memoId
 #. placeholder {0}: initialValues.paymentId
-#. placeholder {0}: pickingList.pickingListId
 msgid "Are you sure you want to delete {0}? This cannot be undone."
 msgstr "本当に{0}を削除してもよろしいですか？この操作は取り消せません。"
 
@@ -2524,6 +2538,9 @@ msgstr "すべて完了"
 msgid "Complete all quantities on barcode scan"
 msgstr "バーコードスキャン時にすべての数量を完了"
 
+msgid "Complete cut list"
+msgstr ""
+
 msgid "Complete Job"
 msgstr "ジョブを完了"
 
@@ -2725,6 +2742,9 @@ msgstr "消耗品"
 
 msgid "Consumables"
 msgstr "消耗品"
+
+msgid "Consume"
+msgstr ""
 
 msgid "Consumed"
 msgstr "消費済み"
@@ -3145,6 +3165,9 @@ msgstr "監査証跡エントリを作成"
 msgid "Create Change Notice"
 msgstr "変更通知を作成"
 
+msgid "Create cut list"
+msgstr ""
+
 msgid "Create Issue"
 msgstr "問題を作成"
 
@@ -3556,11 +3579,38 @@ msgstr "カスタマイズ"
 msgid "Customize the layout of your PDF documents — reorder sections, hide what you don't need, and add your own blocks."
 msgstr "PDFドキュメントのレイアウトをカスタマイズ — セクションを並べ替え、不要な部分を非表示にし、独自のブロックを追加できます。"
 
+msgid "Cut"
+msgstr ""
+
+msgid "Cut length"
+msgstr ""
+
+msgid "Cut Length"
+msgstr ""
+
+msgid "Cut List"
+msgstr ""
+
+msgid "Cut Lists"
+msgstr ""
+
+msgid "Cut now"
+msgstr ""
+
+msgid "Cut off the end of a new stock unit before the first piece"
+msgstr ""
+
 msgid "Cut over to Carbon and freeze the old system"
 msgstr "Carbonに切り替えて古いシステムを凍結する"
 
 msgid "Cut over, freeze the old system, and confirm you're live on Carbon."
 msgstr "切り替え、旧システムをフリーズし、Carbonで稼働していることを確認します。"
+
+msgid "Cut plan"
+msgstr ""
+
+msgid "Cut Width"
+msgstr ""
 
 msgid "Cutover checklist"
 msgstr "カットオーバーチェックリスト"
@@ -3570,6 +3620,12 @@ msgstr "カットオーバーステップ"
 
 msgid "Cutover support"
 msgstr "カットオーバーサポート"
+
+msgid "Cutting Process"
+msgstr ""
+
+msgid "Cutting Runs"
+msgstr ""
 
 msgid "Cycle count and adjust with an audit trail"
 msgstr "サイクルカウントを実施し、監査証跡で調整"
@@ -4246,6 +4302,9 @@ msgstr "ディメンション"
 msgid "Dimension"
 msgstr "寸法"
 
+msgid "Dimension Unit"
+msgstr ""
+
 msgid "dimensions"
 msgstr "ディメンション"
 
@@ -4442,6 +4501,15 @@ msgstr "図面番号"
 
 msgid "Drawing replaced. Balloon placements were removed; feature rows are unchanged."
 msgstr "図面が置き換わりました。バルーン配置は削除されました。機能行は変更されていません。"
+
+msgid "drop"
+msgstr ""
+
+msgid "Drop"
+msgstr ""
+
+msgid "Drop length"
+msgstr ""
 
 msgid "Drop Shipment"
 msgstr "ドロップシップメント"
@@ -4651,6 +4719,9 @@ msgstr "顧客ステータスを編集"
 msgid "Edit Customer Type"
 msgstr "顧客タイプを編集"
 
+msgid "Edit Cut List"
+msgstr ""
+
 msgid "Edit Department"
 msgstr "部門を編集"
 
@@ -4758,6 +4829,9 @@ msgstr "編集権限"
 
 msgid "Edit Picking List"
 msgstr "ピッキングリストを編集"
+
+msgid "Edit Piece"
+msgstr ""
 
 msgid "Edit Portal"
 msgstr "ポータルを編集"
@@ -5013,6 +5087,9 @@ msgstr "前四半期末"
 
 msgid "End Time"
 msgstr "終了時刻"
+
+msgid "End trim"
+msgstr ""
 
 msgid "Ending"
 msgstr "終了"
@@ -5561,6 +5638,9 @@ msgstr "ジョブ操作の読み込みに失敗しました"
 
 msgid "Failed to load jobs"
 msgstr "ジョブの読み込みに失敗しました"
+
+msgid "Failed to load material properties"
+msgstr ""
 
 msgid "Failed to load purchase order lines"
 msgstr "購買注文行の読み込みに失敗しました"
@@ -6250,6 +6330,15 @@ msgstr "グレード"
 msgid "Grades"
 msgstr "等級"
 
+msgid "Grain Locked"
+msgstr ""
+
+msgid "Grip"
+msgstr ""
+
+msgid "Grip margin"
+msgstr ""
+
 msgid "Group"
 msgstr "グループ"
 
@@ -6279,6 +6368,9 @@ msgstr "最初の3～4週間のハンズオン、迅速対応サポート"
 
 msgid "Hard to see true cost or margin on a job"
 msgstr "ジョブの真の原価またはマージンを確認するのが難しい"
+
+msgid "Heat"
+msgstr ""
 
 msgid "Help"
 msgstr "ヘルプ"
@@ -7097,6 +7189,9 @@ msgstr "開いたままにする"
 msgid "Keep picking"
 msgstr "ピッキングを続ける"
 
+msgid "Kerf"
+msgstr ""
+
 msgid "Key"
 msgstr "キー"
 
@@ -7222,6 +7317,15 @@ msgstr "余剰部品が検出されました"
 msgid "Leftover staged material returns when the whole job completes."
 msgstr "ジョブ全体が完了したときに、ステージングされたままの材料が戻されます。"
 
+msgid "Length"
+msgstr ""
+
+msgid "Length of one piece — drives cut lists"
+msgstr ""
+
+msgid "Length the clamp holds and cannot cut"
+msgstr ""
+
 msgid "Less manual work"
 msgstr "手作業を減らす"
 
@@ -7278,6 +7382,9 @@ msgstr "行オプション"
 
 msgid "Line Status"
 msgstr "ラインステータス"
+
+msgid "line(s)"
+msgstr ""
 
 msgid "Linear Team"
 msgstr "Linear Team"
@@ -7745,6 +7852,9 @@ msgstr "材料物質"
 msgid "Material Substances"
 msgstr "材料物質"
 
+msgid "Material the blade destroys on every cut"
+msgstr ""
+
 msgid "material type"
 msgstr "材料タイプ"
 
@@ -7865,6 +7975,9 @@ msgstr "初年度控除を決定する中月/四半期中/半年の慣例。"
 msgid "Migrate data"
 msgstr "データを移行"
 
+msgid "Min drop"
+msgstr ""
+
 msgid "Min Qty"
 msgstr "最小数量"
 
@@ -7882,6 +7995,9 @@ msgstr "最小注文数量"
 
 msgid "Minimum Order:"
 msgstr "最小注文数:"
+
+msgid "Minimum remnant"
+msgstr ""
 
 msgid "Minimum Reserve Quantity"
 msgstr "最小予備数量"
@@ -8121,6 +8237,9 @@ msgstr "新規顧客"
 
 msgid "New Customer Part"
 msgstr "新しい顧客部品"
+
+msgid "New Cut List"
+msgstr ""
 
 msgid "New Department"
 msgstr "新しい部門"
@@ -8446,6 +8565,9 @@ msgstr "利用可能なフィルターがありません"
 msgid "No available tracked entities found"
 msgstr "利用可能な追跡対象エンティティが見つかりません"
 
+msgid "No batch-tracked stock on hand for these materials. Remnants need batch tracking to keep their lot identity."
+msgstr ""
+
 msgid "No BOM input has a shelf-life policy"
 msgstr "BOMインプットに棚卸資産有効期限ポリシーがありません"
 
@@ -8475,6 +8597,9 @@ msgstr "変換は不要です"
 
 msgid "No cost history found"
 msgstr "コスト履歴が見つかりません"
+
+msgid "No cutting processes yet — mark a process as a cutting process in Resources."
+msgstr ""
 
 msgid "No Data"
 msgstr "データなし"
@@ -8584,6 +8709,9 @@ msgstr "新しい通知はありません"
 msgid "No notes"
 msgstr "ノートなし"
 
+msgid "No open cut demand. A job material needs a cut length before it shows up here."
+msgstr ""
+
 msgid "No open invoices"
 msgstr "未処理の請求書がありません"
 
@@ -8632,6 +8760,9 @@ msgstr "支払い義務なし"
 msgid "No payments yet."
 msgstr "まだ支払いはありません。"
 
+msgid "No pieces yet. Add one, or build this list from open job demand."
+msgstr ""
+
 msgid "No planning data"
 msgstr "計画データなし"
 
@@ -8646,6 +8777,9 @@ msgstr "プリンターが設定されていません"
 
 msgid "No printers configured. Click \"Add Printer\" to create one."
 msgstr "プリンターが設定されていません。「プリンターを追加」をクリックして作成してください。"
+
+msgid "No process"
+msgstr ""
 
 msgid "No process selected"
 msgstr "プロセスが選択されていません"
@@ -8966,6 +9100,9 @@ msgstr "監査ログを開く"
 msgid "Open change notices affecting this part"
 msgstr "このパーツに影響する開いた変更通知を開く"
 
+msgid "Open cut demand across released jobs. Pick what runs together on one machine."
+msgstr ""
+
 msgid "Open Date"
 msgstr "開始日"
 
@@ -9085,6 +9222,9 @@ msgstr "オペレーターはPIN認証を使用して共有ワークステーシ
 
 msgid "Opportunity"
 msgstr "機会"
+
+msgid "Optimize"
+msgstr ""
 
 msgid "Optimized for fast previews — downloads always serve the original uploaded file"
 msgstr "高速プレビューに最適化されています — ダウンロードは常にアップロードされたオリジナルファイルを提供します"
@@ -9535,6 +9675,27 @@ msgstr "ピッキングリスト"
 msgid "Picking offers tracked entities earliest-expiry-first, so the soonest-to-expire stock leaves first by default."
 msgstr "計画済み"
 
+msgid "Piece"
+msgstr ""
+
+msgid "Piece length ({unitOfDimension})"
+msgstr ""
+
+msgid "Piece width ({unitOfDimension})"
+msgstr ""
+
+msgid "pieces"
+msgstr ""
+
+msgid "Pieces"
+msgstr ""
+
+msgid "Pieces cut"
+msgstr ""
+
+msgid "Pieces owed"
+msgstr ""
+
 msgid "Pieces/Hour"
 msgstr "個/時間"
 
@@ -9550,11 +9711,17 @@ msgstr "ピン留め"
 msgid "Plan"
 msgstr "計画"
 
+msgid "Plan a cutting run"
+msgstr ""
+
 msgid "Plan the work"
 msgstr "作業を計画する"
 
 msgid "Plan Type"
 msgstr "計画タイプ"
+
+msgid "planned"
+msgstr ""
 
 msgid "Planned"
 msgstr "転記"
@@ -10439,6 +10606,9 @@ msgstr "レコード削除済み"
 msgid "Record inspections tied to a part and a job"
 msgstr "部品とジョブに関連付けられた検査を記録する"
 
+msgid "Record what was actually cut and what drop goes back to stock."
+msgstr ""
+
 msgid "Recorded on a calibration that the gauge needs repair before its readings can be trusted."
 msgstr "キャリブレーション時に、ゲージの読み値を信頼できるようになる前に修理が必要であることが記録されました。"
 
@@ -10546,6 +10716,12 @@ msgstr "分割後の残りは元の行に留まります。"
 
 msgid "Remember this PIN. You will need it to exit console mode on MES terminals."
 msgstr "このPINを覚えておいてください。MES端末でコンソールモードを終了するために必要になります。"
+
+msgid "remnant"
+msgstr ""
+
+msgid "Remnant {remnant} {unitOfDimension}"
+msgstr ""
 
 msgid "Remove"
 msgstr "削除"
@@ -11821,6 +11997,9 @@ msgstr "短いピック {itemName}"
 msgid "Shortcuts"
 msgstr "ショートカット"
 
+msgid "Shorter drops are scrapped instead of returned to stock"
+msgstr ""
+
 msgid "Show a readable Customer ID column on the customer list, customer forms, and dropdowns. Customers are still identified internally either way."
 msgstr "顧客リスト、顧客フォーム、ドロップダウンに読みやすい顧客IDカラムを表示します。顧客は内部的にはどちらの方法でも識別されます。"
 
@@ -12129,8 +12308,17 @@ msgstr "ステップは組立指示から継承されます。"
 msgid "Steps are inherited from the inspection plan."
 msgstr "ステップは検査計画から継承されます。"
 
+msgid "Stock consumed"
+msgstr ""
+
+msgid "Stock Length"
+msgstr ""
+
 msgid "Stock movement corrected"
 msgstr "在庫移動が訂正されました"
+
+msgid "Stock Thickness"
+msgstr ""
 
 msgid "Stock Transfer ID"
 msgstr "在庫移動ID"
@@ -12146,6 +12334,9 @@ msgstr "在庫転送ウィザード"
 
 msgid "Stock Transfers"
 msgstr "在庫移動"
+
+msgid "Stock Width"
+msgstr ""
 
 #. placeholder {0}: successorItem.readableIdWithRevision
 msgid "Stocked for spares only — successor: <0>{0}</0>"
@@ -13815,6 +14006,9 @@ msgstr "試算表"
 msgid "Triggers"
 msgstr "トリガー"
 
+msgid "Trim"
+msgstr ""
+
 msgid "Tuesday"
 msgstr "火曜日"
 
@@ -15029,6 +15223,9 @@ msgstr "はい、拒否します"
 
 msgid "Yes, Update IDs"
 msgstr "はい、IDを更新"
+
+msgid "Yield"
+msgstr ""
 
 msgid "You"
 msgstr "あなた"

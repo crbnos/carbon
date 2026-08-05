@@ -66,6 +66,7 @@ import {
 import { ConfigurationEditor } from "~/components/Configurator/ConfigurationEditor";
 import type { Configuration } from "~/components/Configurator/types";
 import {
+  Boolean,
   DefaultMethodType,
   Hidden,
   Item,
@@ -863,6 +864,18 @@ function MaterialForm({
               : undefined
           }
         />
+        {itemType === "Material" && (
+          <>
+            {/* Cut demand for saw/laser work — see the cut-lists module. */}
+            <Number
+              name="cutLength"
+              label={t`Cut Length`}
+              isConfigured={rulesByField.has(key("cutLength"))}
+            />
+            <Number name="cutWidth" label={t`Cut Width`} />
+            <Boolean name="grainLocked" label={t`Grain Locked`} />
+          </>
+        )}
       </div>
       {itemData.itemReplenishmentSystem === "Buy and Make" && (
         <div className="border border-border rounded-md shadow-sm p-4 flex flex-col gap-4 w-full">

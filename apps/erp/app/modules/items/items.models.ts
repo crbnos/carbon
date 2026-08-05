@@ -416,7 +416,14 @@ export const materialValidator = applyStorageAndShelfLifeRefines(
       finishId: zfd.text(z.string().optional()),
       gradeId: zfd.text(z.string().optional()),
       dimensionId: zfd.text(z.string().optional()),
-      sizes: z.array(z.string()).optional()
+      sizes: z.array(z.string()).optional(),
+      // Numeric stock size for the cut-list optimizer: how long one bar of
+      // this material actually is. The free-text `sizes` above still names the
+      // revisions; this is the machine-readable number.
+      stockLength: zfd.numeric(z.number().positive().optional()),
+      stockWidth: zfd.numeric(z.number().positive().optional()),
+      stockThickness: zfd.numeric(z.number().positive().optional()),
+      unitOfDimension: zfd.text(z.string().optional())
     })
   )
 );
@@ -429,7 +436,11 @@ export const materialValidatorWithGeneratedIds = z.object({
   finishId: zfd.text(z.string().optional()),
   gradeId: zfd.text(z.string().optional()),
   dimensionId: zfd.text(z.string().optional()),
-  sizes: z.array(z.string()).optional()
+  sizes: z.array(z.string()).optional(),
+  stockLength: zfd.numeric(z.number().positive().optional()),
+  stockWidth: zfd.numeric(z.number().positive().optional()),
+  stockThickness: zfd.numeric(z.number().positive().optional()),
+  unitOfDimension: zfd.text(z.string().optional())
 });
 
 export const methodMaterialValidator = z.object({
@@ -465,7 +476,13 @@ export const methodMaterialValidator = z.object({
     } catch {
       return {};
     }
-  })
+  }),
+  // Cut list demand: length of ONE piece. Quantity stays the piece count, so
+  // 4 pieces of 5.7" is quantity 4 + cutLength 5.7 — never 22.8 smeared into
+  // quantity, which loses the piece count the saw actually needs.
+  cutLength: zfd.numeric(z.number().positive().optional()),
+  cutWidth: zfd.numeric(z.number().positive().optional()),
+  grainLocked: zfd.checkbox()
 });
 
 export const methodOperationValidator = z

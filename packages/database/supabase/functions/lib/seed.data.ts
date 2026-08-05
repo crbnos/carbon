@@ -239,6 +239,15 @@ export const sequences = [
     step: 1
   },
   {
+    table: "cutList",
+    name: "Cut List",
+    prefix: "CL",
+    suffix: null,
+    next: 0,
+    size: 6,
+    step: 1
+  },
+  {
     table: "gauge",
     name: "Gauge",
     prefix: "G",

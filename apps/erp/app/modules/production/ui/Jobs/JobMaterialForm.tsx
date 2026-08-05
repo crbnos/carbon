@@ -17,6 +17,7 @@ import { useEffect, useState } from "react";
 import { useFetcher, useLocation, useNavigate, useParams } from "react-router";
 import type { z } from "zod";
 import {
+  Boolean,
   DefaultMethodType,
   Hidden,
   InputControlled,
@@ -222,6 +223,21 @@ const JobMaterialForm = ({
                 label={t`Quantity per Parent`}
                 termId="job-material-quantity-per-parent"
               />
+              {itemType === "Material" && (
+                <>
+                  {/* Cut demand: length of ONE piece. Quantity above stays the
+                      piece count, so 4 pieces of 5.7" reads as 4 x 5.7 rather
+                      than 22.8 of nothing in particular. */}
+                  <Number
+                    name="cutLength"
+                    label={t`Cut Length`}
+                    minValue={0}
+                    helperText={t`Length of one piece — drives cut lists`}
+                  />
+                  <Number name="cutWidth" label={t`Cut Width`} minValue={0} />
+                  <Boolean name="grainLocked" label={t`Grain Locked`} />
+                </>
+              )}
               <UnitOfMeasure
                 name="unitOfMeasureCode"
                 value={itemData.unitOfMeasureCode}

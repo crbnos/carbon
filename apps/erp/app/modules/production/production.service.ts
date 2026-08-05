@@ -45,6 +45,8 @@ import {
 import type {
   assemblyInstructionStatuses,
   assemblyStepStatuses,
+  cutListLineValidator,
+  cutListValidator,
   deadlineTypes,
   failureModeValidator,
   inspectionDocumentSamplingValidator,
@@ -7524,5 +7526,304 @@ export async function saveInspectionDocumentAtomic(
     p_default_page_height: args.defaultPageHeight ?? null,
     p_features: args.features,
     p_balloons: args.balloons
+  });
+}
+
+// --- Cut Lists ----------------------------------------------------------
+
+export async function getCutLists(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args?: GenericQueryFilters & { search: string | null }
+) {
+  let query = client
+    .from("cutLists")
+    .select("*", { count: "exact" })
+    .eq("companyId", companyId);
+
+  if (args?.search) {
+    query = query.ilike("cutListId", `%${args.search}%`);
+  }
+
+  if (args) {
+    query = setGenericQueryFilters(query, args, [
+      { column: "createdAt", ascending: false }
+    ]);
+  }
+
+  return query;
+}
+
+export async function getCutList(
+  client: SupabaseClient<Database>,
+  id: string,
+  companyId: string
+) {
+  return client
+    .from("cutLists")
+    .select("*")
+    .eq("id", id)
+    .eq("companyId", companyId)
+    .single();
+}
+
+export async function getCutListLines(
+  client: SupabaseClient<Database>,
+  cutListId: string,
+  companyId: string
+) {
+  // Embed by target table name — cutListLine references cutList with a
+  // composite FK, and the alias:fkColumn form 500s on those (PGRST200).
+  return client
+    .from("cutListLine")
+    .select("*, item(readableIdWithRevision, name), job(jobId)")
+    .eq("cutListId", cutListId)
+    .eq("companyId", companyId)
+    .order("order", { ascending: true });
+}
+
+export async function getCutPatterns(
+  client: SupabaseClient<Database>,
+  cutListId: string,
+  companyId: string
+) {
+  return client
+    .from("cutPattern")
+    .select("*, item(readableIdWithRevision, name), trackedEntity(readableId)")
+    .eq("cutListId", cutListId)
+    .eq("companyId", companyId)
+    .order("sequence", { ascending: true });
+}
+
+export async function upsertCutList(
+  client: SupabaseClient<Database>,
+  cutList:
+    | (Omit<z.infer<typeof cutListValidator>, "id"> & {
+        cutListId: string;
+        companyId: string;
+        createdBy: string;
+        customFields?: Json;
+      })
+    | (Omit<z.infer<typeof cutListValidator>, "id"> & {
+        id: string;
+        companyId: string;
+        updatedBy: string;
+        customFields?: Json;
+      })
+) {
+  if ("createdBy" in cutList) {
+    return client.from("cutList").insert([cutList]).select("id").single();
+  }
+  return client
+    .from("cutList")
+    .update(sanitize(cutList))
+    .eq("id", cutList.id)
+    .eq("companyId", cutList.companyId)
+    .select("id")
+    .single();
+}
+
+export async function upsertCutListLine(
+  client: SupabaseClient<Database>,
+  cutListLine:
+    | (Omit<z.infer<typeof cutListLineValidator>, "id"> & {
+        companyId: string;
+        createdBy: string;
+      })
+    | (Omit<z.infer<typeof cutListLineValidator>, "id"> & {
+        id: string;
+        companyId: string;
+        updatedBy: string;
+      })
+) {
+  if ("createdBy" in cutListLine) {
+    return client
+      .from("cutListLine")
+      .insert([cutListLine])
+      .select("id")
+      .single();
+  }
+  return client
+    .from("cutListLine")
+    .update(sanitize(cutListLine))
+    .eq("id", cutListLine.id)
+    .eq("companyId", cutListLine.companyId)
+    .select("id")
+    .single();
+}
+
+export async function deleteCutList(
+  client: SupabaseClient<Database>,
+  id: string,
+  companyId: string
+) {
+  return client
+    .from("cutList")
+    .delete()
+    .eq("id", id)
+    .eq("companyId", companyId);
+}
+
+export async function deleteCutListLine(
+  client: SupabaseClient<Database>,
+  id: string,
+  companyId: string
+) {
+  return client
+    .from("cutListLine")
+    .delete()
+    .eq("id", id)
+    .eq("companyId", companyId);
+}
+
+export async function updateCutListStatus(
+  client: SupabaseClient<Database>,
+  args: {
+    id: string;
+    companyId: string;
+    status: Database["public"]["Enums"]["cutListStatus"];
+    updatedBy: string;
+  }
+) {
+  const { id, companyId, status, updatedBy } = args;
+  return client
+    .from("cutList")
+    .update({
+      status,
+      updatedBy,
+      updatedAt: new Date().toISOString(),
+      // Completion is what stamps the date; reopening is not a supported
+      // transition, so this only ever moves forward.
+      ...(status === "Completed"
+        ? { completedDate: new Date().toISOString() }
+        : {})
+    })
+    .eq("id", id)
+    .eq("companyId", companyId)
+    .select("id")
+    .single();
+}
+
+/**
+ * Saw defaults for a process, used to seed a new cut list's parameters.
+ * A blank process (or one with no defaults set) yields zeros, which is a
+ * legitimate configuration — a laser has no kerf worth modeling at this scale.
+ */
+export async function getCuttingProcessDefaults(
+  client: SupabaseClient<Database>,
+  processId: string,
+  companyId: string
+) {
+  return client
+    .from("process")
+    .select(
+      "id, name, isCuttingProcess, defaultKerf, defaultEndTrim, defaultGripMargin, defaultMinRemnantLength"
+    )
+    .eq("id", processId)
+    .eq("companyId", companyId)
+    .single();
+}
+
+export async function getCuttingProcessesList(
+  client: SupabaseClient<Database>,
+  companyId: string
+) {
+  return client
+    .from("process")
+    .select(
+      "id, name, defaultKerf, defaultEndTrim, defaultGripMargin, defaultMinRemnantLength"
+    )
+    .eq("companyId", companyId)
+    .eq("isCuttingProcess", true)
+    .eq("active", true)
+    .order("name", { ascending: true });
+}
+
+/**
+ * Open cut demand across released jobs — the input to a cutting run.
+ *
+ * A job material qualifies when it carries a cutLength and still owes
+ * quantity. Lines already covered by an open cut list are netted off in the
+ * caller (the builder route), which knows which cut lists to exclude.
+ */
+export async function getOpenCutDemand(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args?: { locationId?: string | null }
+) {
+  let query = client
+    .from("jobMaterial")
+    .select(
+      `id, jobId, itemId, cutLength, cutWidth, grainLocked, estimatedQuantity,
+       quantityIssued, quantityToIssue, unitOfMeasureCode, description,
+       job!inner(jobId, status, locationId, dueDate),
+       item(readableIdWithRevision, name)`
+    )
+    .eq("companyId", companyId)
+    .not("cutLength", "is", null)
+    .gt("quantityToIssue", 0)
+    .in("job.status", ["Ready", "In Progress", "Paused", "Planned"]);
+
+  if (args?.locationId) {
+    query = query.eq("job.locationId", args.locationId);
+  }
+
+  return query.order("cutLength", { ascending: false });
+}
+
+/**
+ * Runs the 1D optimizer over a cut list's demand and available stock.
+ * Rewrites every cutPattern for the list — see the optimize-cuts function.
+ */
+export async function runCutOptimization(
+  client: SupabaseClient<Database>,
+  params: {
+    cutListId: string;
+    companyId: string;
+    userId: string;
+  }
+) {
+  return client.functions.invoke("optimize-cuts", {
+    body: {
+      ...params
+    }
+  });
+}
+
+/**
+ * Posts a cut list confirmation: consumes stock, splits remnants back into
+ * inventory with their heat genealogy, and books consumption per served job.
+ */
+export async function confirmCutList(
+  client: SupabaseClient<Database>,
+  params: {
+    cutListId: string;
+    companyId: string;
+    userId: string;
+    lines: { cutListLineId: string; quantityCut: number }[];
+    consumed: { trackedEntityId: string; quantityConsumed: number }[];
+    untrackedConsumed: {
+      itemId: string;
+      quantity: number;
+      storageUnitId?: string;
+    }[];
+    remnants: {
+      fromTrackedEntityId: string;
+      length: number;
+      storageUnitId?: string;
+    }[];
+    scrap: {
+      fromTrackedEntityId?: string;
+      itemId?: string;
+      quantity: number;
+      scrapReasonId?: string;
+    }[];
+  }
+) {
+  return client.functions.invoke("issue", {
+    body: {
+      type: "cutListComplete",
+      ...params
+    }
   });
 }

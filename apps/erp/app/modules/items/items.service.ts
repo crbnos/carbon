@@ -7866,3 +7866,67 @@ export async function getChangeNoticeDiff(
 
   return { data: { items }, error: null };
 }
+
+// --- Stock dimensions ---------------------------------------------------
+
+/**
+ * Numeric stock size for a material size-item (the 20 ft in "1/2\" 4140 round
+ * bar x 20 ft"). One row per item; the cut-list optimizer reads these to know
+ * how much bar it actually has to cut from.
+ */
+export async function getItemStockDimension(
+  client: SupabaseClient<Database>,
+  itemId: string,
+  companyId: string
+) {
+  return client
+    .from("itemStockDimension")
+    .select("*")
+    .eq("itemId", itemId)
+    .eq("companyId", companyId)
+    .maybeSingle();
+}
+
+export async function getItemStockDimensions(
+  client: SupabaseClient<Database>,
+  itemIds: string[],
+  companyId: string
+) {
+  return client
+    .from("itemStockDimension")
+    .select("*")
+    .in("itemId", itemIds)
+    .eq("companyId", companyId);
+}
+
+export async function upsertItemStockDimension(
+  client: SupabaseClient<Database>,
+  stockDimension: {
+    itemId: string;
+    companyId: string;
+    stockLength?: number | null;
+    stockWidth?: number | null;
+    stockThickness?: number | null;
+    unitOfDimension: string;
+    createdBy: string;
+    updatedBy?: string;
+  }
+) {
+  return client
+    .from("itemStockDimension")
+    .upsert([stockDimension], { onConflict: "itemId,companyId" })
+    .select("id")
+    .single();
+}
+
+export async function deleteItemStockDimension(
+  client: SupabaseClient<Database>,
+  itemId: string,
+  companyId: string
+) {
+  return client
+    .from("itemStockDimension")
+    .delete()
+    .eq("itemId", itemId)
+    .eq("companyId", companyId);
+}

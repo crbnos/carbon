@@ -3,7 +3,9 @@ import { IoBalloonOutline } from "react-icons/io5";
 import {
   LuChartLine,
   LuCirclePlay,
+  LuLayoutList,
   LuListChecks,
+  LuScissors,
   LuSquareChartGantt,
   LuSquareKanban,
   LuStepForward,
@@ -27,6 +29,17 @@ export default function useProductionSubmodules() {
           to: path.to.jobs,
           icon: <LuCirclePlay />,
           table: "job"
+        },
+        {
+          name: t`Cut Lists`,
+          to: path.to.cutLists,
+          icon: <LuScissors />,
+          table: "cutList"
+        },
+        {
+          name: t`Cutting Runs`,
+          to: path.to.cuttingRuns,
+          icon: <LuLayoutList />
         }
       ]
     },

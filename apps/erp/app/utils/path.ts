@@ -527,6 +527,17 @@ export const path = {
     customFields: `${x}/settings/custom-fields`,
     customFieldsTable: (table: string) =>
       generatePath(`${x}/settings/custom-fields/${table}`),
+    cutList: (id: string) => generatePath(`${x}/cut-list/${id}`),
+    cutListComplete: (id: string) =>
+      generatePath(`${x}/cut-list/${id}/complete`),
+    cutListLine: (cutListId: string, lineId: string) =>
+      generatePath(`${x}/cut-list/${cutListId}/lines/${lineId}`),
+    cutListOptimize: (id: string) =>
+      generatePath(`${x}/cut-list/${id}/optimize`),
+    cutListPdf: (id: string) => generatePath(`${file}/cut-list/${id}.pdf`),
+    cutListStatus: (id: string) => generatePath(`${x}/cut-list/${id}/status`),
+    cutLists: `${x}/production/cut-lists`,
+    cuttingRuns: `${x}/production/cutting-runs`,
 
     deactivateUsers: `${x}/users/deactivate`,
     defaultRevision: (id: string) =>
@@ -608,6 +619,9 @@ export const path = {
       generatePath(`${x}/sales/customer-types/delete/${id}`),
     deleteCustomField: (tableId: string, id: string) =>
       generatePath(`${x}/settings/custom-fields/${tableId}/delete/${id}`),
+    deleteCutList: (id: string) => generatePath(`${x}/cut-list/delete/${id}`),
+    deleteCutListLine: (cutListId: string, lineId: string) =>
+      generatePath(`${x}/cut-list/${cutListId}/lines/delete/${lineId}`),
     deleteDemandProjections: (itemId: string, locationId: string) =>
       generatePath(
         `${x}/production/projections/delete/${itemId}/${locationId}`
@@ -1426,6 +1440,9 @@ export const path = {
     newCustomerType: `${x}/sales/customer-types/new`,
     newCustomField: (tableId: string) =>
       generatePath(`${x}/settings/custom-fields/${tableId}/new`),
+    newCutList: `${x}/production/cut-lists/new`,
+    newCutListLine: (cutListId: string) =>
+      generatePath(`${x}/cut-list/${cutListId}/lines/new`),
     newDemandProjection: `${x}/production/projections/new`,
     newDepartment: `${x}/people/departments/new`,
     newDepreciationRun: `${x}/accounting/depreciation-runs/new`,

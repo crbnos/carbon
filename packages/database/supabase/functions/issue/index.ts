@@ -16,6 +16,10 @@ import { Database } from "../lib/types.ts";
 import { TrackedEntityAttributes, credit, debit, journalReference } from "../lib/utils.ts";
 
 import { buildBatchSplitRecords } from "../shared/batch-split.ts";
+import {
+  buildCutListPostingPlan,
+  buildRemnantAttributes,
+} from "./cut-list-confirm.ts";
 import { getCurrentAccountingPeriod } from "../shared/get-accounting-period.ts";
 import { getNextSequence } from "../shared/get-next-sequence.ts";
 import { getNextSerialNumbers } from "../shared/get-next-serial-number.ts";
@@ -932,6 +936,59 @@ const payloadValidator = z.discriminatedUnion("type", [
   z.object({
     type: z.literal("maintenanceDispatchUnissue"),
     maintenanceDispatchItemId: z.string(),
+    companyId: z.string(),
+    userId: z.string(),
+  }),
+  z.object({
+    type: z.literal("cutListComplete"),
+    cutListId: z.string(),
+    // What the operator actually cut, per demand line.
+    lines: z.array(
+      z.object({
+        cutListLineId: z.string(),
+        quantityCut: z.number().int().min(0),
+      })
+    ),
+    // Stock burned on this run. Batch-tracked path.
+    consumed: z
+      .array(
+        z.object({
+          trackedEntityId: z.string(),
+          quantityConsumed: z.number().positive(),
+        })
+      )
+      .default([]),
+    // Untracked materials have no lot identity — quantity only.
+    untrackedConsumed: z
+      .array(
+        z.object({
+          itemId: z.string(),
+          quantity: z.number().positive(),
+          storageUnitId: z.string().optional(),
+        })
+      )
+      .default([]),
+    // Usable drops going back on the rack, with the length that makes them
+    // findable next time.
+    remnants: z
+      .array(
+        z.object({
+          fromTrackedEntityId: z.string(),
+          length: z.number().positive(),
+          storageUnitId: z.string().optional(),
+        })
+      )
+      .default([]),
+    scrap: z
+      .array(
+        z.object({
+          fromTrackedEntityId: z.string().optional(),
+          itemId: z.string().optional(),
+          quantity: z.number().positive(),
+          scrapReasonId: z.string().optional(),
+        })
+      )
+      .default([]),
     companyId: z.string(),
     userId: z.string(),
   }),
@@ -3735,6 +3792,455 @@ serve(async (req: Request) => {
         return jsonResponse({
           success: true,
           message: "Item unissued and removed successfully",
+        });
+      }
+      case "cutListComplete": {
+        const {
+          cutListId,
+          lines: lineInputs,
+          consumed,
+          untrackedConsumed,
+          remnants,
+          scrap,
+          companyId,
+          userId,
+        } = validatedPayload;
+
+        const client = await requirePermissions(req, companyId, userId, {
+          update: "production",
+        });
+
+        const postingDate = new Date().toISOString().slice(0, 10);
+
+        const outcome = await db.transaction().execute(async (trx) => {
+          const cutList = await trx
+            .selectFrom("cutList")
+            .where("id", "=", cutListId)
+            .where("companyId", "=", companyId)
+            .selectAll()
+            .executeTakeFirst();
+
+          if (!cutList) throw new Error("Cut list not found");
+          if (cutList.status === "Completed" || cutList.status === "Cancelled") {
+            throw new Error(`A ${cutList.status} cut list cannot be confirmed`);
+          }
+
+          const lineRows = await trx
+            .selectFrom("cutListLine")
+            .where("cutListId", "=", cutListId)
+            .where("companyId", "=", companyId)
+            .selectAll()
+            .execute();
+
+          const consumedIds = consumed.map((c) => c.trackedEntityId);
+          const remnantParentIds = remnants.map((r) => r.fromTrackedEntityId);
+          const entityIds = [
+            ...new Set([...consumedIds, ...remnantParentIds]),
+          ];
+
+          const entities = entityIds.length
+            ? await trx
+                .selectFrom("trackedEntity")
+                .where("id", "in", entityIds)
+                .where("companyId", "=", companyId)
+                .selectAll()
+                .execute()
+            : [];
+
+          const entityById = new Map(entities.map((e) => [e.id, e]));
+
+          for (const entry of consumed) {
+            const entity = entityById.get(entry.trackedEntityId);
+            if (!entity) {
+              throw new Error(
+                `Tracked entity ${entry.trackedEntityId} not found`
+              );
+            }
+            if (Number(entity.quantity) < entry.quantityConsumed) {
+              throw new Error(
+                `Cannot consume ${entry.quantityConsumed} from lot ${entity.readableId ?? entity.id} — only ${entity.quantity} on hand`
+              );
+            }
+          }
+
+          // Bin resolution must come from net on-hand, never the first ledger
+          // row: a picked lot has rows in both its source and lineside bins.
+          const itemLedgers = entityIds.length
+            ? await trx
+                .selectFrom("itemLedger")
+                .where("trackedEntityId", "in", entityIds)
+                .selectAll()
+                .execute()
+            : [];
+
+          // Physical length of each consumed lot, for the yield figure. A
+          // remnant carries its own length; a full bar takes the item's
+          // stock dimension.
+          const itemIds = [
+            ...new Set(lineRows.map((line) => line.itemId).filter(Boolean)),
+          ] as string[];
+          const stockDimensions = itemIds.length
+            ? await trx
+                .selectFrom("itemStockDimension")
+                .where("itemId", "in", itemIds)
+                .where("companyId", "=", companyId)
+                .select(["itemId", "stockLength"])
+                .execute()
+            : [];
+          const lengthByItem = new Map(
+            stockDimensions
+              .filter((d) => d.stockLength !== null)
+              .map((d) => [d.itemId, Number(d.stockLength)])
+          );
+
+          const stockLengthByEntity: Record<string, number> = {};
+          for (const entry of consumed) {
+            const entity = entityById.get(entry.trackedEntityId);
+            if (!entity) continue;
+            const attributes = (entity.attributes ?? {}) as Record<
+              string,
+              unknown
+            >;
+            const perUnit =
+              attributes.Remnant === true
+                ? Number(attributes.Length ?? 0)
+                : (lengthByItem.get(entity.itemId ?? "") ?? 0);
+            stockLengthByEntity[entry.trackedEntityId] =
+              perUnit * entry.quantityConsumed;
+          }
+
+          const plan = buildCutListPostingPlan({
+            lines: lineRows.map((line) => ({
+              id: line.id,
+              jobId: line.jobId ?? null,
+              itemId: line.itemId,
+              pieceLength: Number(line.pieceLength),
+              quantity: Number(line.quantity),
+              quantityCut: Number(line.quantityCut ?? 0),
+            })),
+            inputs: lineInputs,
+            consumed,
+            remnants,
+            scrap,
+            minRemnantLength: Number(cutList.minRemnantLength ?? 0),
+            stockLengthByEntity,
+          });
+
+          const itemLedgerInserts: Database["public"]["Tables"]["itemLedger"]["Insert"][] =
+            [];
+
+          // 1. Consume the stock, split across the jobs this run served.
+          const consumedByItem = new Map<string, number>();
+          for (const entry of consumed) {
+            const entity = entityById.get(entry.trackedEntityId);
+            if (!entity?.itemId) continue;
+            consumedByItem.set(
+              entity.itemId,
+              (consumedByItem.get(entity.itemId) ?? 0) + entry.quantityConsumed
+            );
+          }
+
+          for (const entry of consumed) {
+            const entity = entityById.get(entry.trackedEntityId)!;
+            const bin = resolveTrackedEntityBin(
+              itemLedgers,
+              entry.trackedEntityId
+            );
+            const isFullDraw =
+              Number(entity.quantity) === entry.quantityConsumed;
+
+            // A partial draw splits the lot: the parent keeps its id and is
+            // decremented, a child carries the consumed quantity.
+            let consumedEntityId = entry.trackedEntityId;
+            if (!isFullDraw) {
+              const childId = nanoid();
+              consumedEntityId = childId;
+              const split = buildBatchSplitRecords({
+                parent: {
+                  id: entity.id,
+                  readableId: entity.readableId,
+                  quantity: Number(entity.quantity),
+                  sourceDocument: entity.sourceDocument,
+                  sourceDocumentId: entity.sourceDocumentId,
+                  sourceDocumentReadableId: entity.sourceDocumentReadableId,
+                  itemId: entity.itemId ?? entity.sourceDocumentId,
+                  expirationDate: entity.expirationDate ?? null,
+                  attributes: entity.attributes as Record<
+                    string,
+                    unknown
+                  > | null,
+                },
+                drawQuantity: entry.quantityConsumed,
+                childId,
+                splitActivityId: nanoid(),
+                activitySourceDocument: "Cut List",
+                activitySourceDocumentId: cutListId,
+                bin: { storageUnitId: bin, locationId: cutList.locationId },
+                itemLedgerItemId: entity.itemId ?? entity.sourceDocumentId,
+                companyId,
+                userId,
+                postingDate,
+                childStatus: "Available",
+              });
+
+              await trx
+                .insertInto("trackedActivity")
+                .values(split.activityInsert)
+                .execute();
+              await trx
+                .insertInto("trackedEntity")
+                .values(split.childEntityInsert)
+                .execute();
+              await trx
+                .insertInto("trackedActivityInput")
+                .values(split.activityInputInsert)
+                .execute();
+              await trx
+                .insertInto("trackedActivityOutput")
+                .values(split.activityOutputInsert)
+                .execute();
+              await trx
+                .updateTable("trackedEntity")
+                .set(split.parentUpdate)
+                .where("id", "=", entity.id)
+                .execute();
+
+              itemLedgerInserts.push(...split.ledgerInserts);
+            }
+
+            await trx
+              .updateTable("trackedEntity")
+              .set({ status: "Consumed" })
+              .where("id", "=", consumedEntityId)
+              .execute();
+
+            // Book the consumption against each job that took material from
+            // this run, proportional to the length it took.
+            const itemAllocations = plan.allocations.filter(
+              (allocation) => allocation.itemId === entity.itemId
+            );
+            const itemTotal = consumedByItem.get(entity.itemId ?? "") ?? 0;
+            const share =
+              itemTotal > 0 ? entry.quantityConsumed / itemTotal : 1;
+
+            if (itemAllocations.length === 0) {
+              itemLedgerInserts.push({
+                entryType: "Consumption",
+                documentType: "Cut List Consumption",
+                documentId: cutListId,
+                companyId,
+                itemId: entity.itemId,
+                quantity: -entry.quantityConsumed,
+                locationId: cutList.locationId,
+                storageUnitId: bin,
+                trackedEntityId: consumedEntityId,
+                postingDate,
+                createdBy: userId,
+              });
+            } else {
+              for (const allocation of itemAllocations) {
+                itemLedgerInserts.push({
+                  entryType: "Consumption",
+                  documentType: "Cut List Consumption",
+                  documentId: allocation.jobId ?? cutListId,
+                  documentLineId: cutListId,
+                  companyId,
+                  itemId: entity.itemId,
+                  quantity: -(allocation.quantity * share),
+                  locationId: cutList.locationId,
+                  storageUnitId: bin,
+                  trackedEntityId: consumedEntityId,
+                  postingDate,
+                  createdBy: userId,
+                });
+              }
+            }
+          }
+
+          // 2. Untracked stock: quantity only, no lot identity to preserve.
+          for (const entry of untrackedConsumed) {
+            itemLedgerInserts.push({
+              entryType: "Consumption",
+              documentType: "Cut List Consumption",
+              documentId: cutListId,
+              companyId,
+              itemId: entry.itemId,
+              quantity: -entry.quantity,
+              locationId: cutList.locationId,
+              storageUnitId: entry.storageUnitId ?? null,
+              postingDate,
+              createdBy: userId,
+            });
+          }
+
+          // 3. Drops go back on the rack as their own dimensioned lots,
+          //    carrying the parent's heat so the chain survives the cut.
+          let remnantsCreated = 0;
+          for (const remnant of plan.remnants) {
+            const parent = entityById.get(remnant.fromTrackedEntityId);
+            if (!parent) continue;
+
+            const remnantId = nanoid();
+            const activityId = nanoid();
+            const bin =
+              remnant.storageUnitId ??
+              resolveTrackedEntityBin(itemLedgers, remnant.fromTrackedEntityId);
+
+            const parentAttributes = (parent.attributes ?? {}) as Record<
+              string,
+              unknown
+            >;
+            const {
+              "Split Entity ID": _staleForward,
+              "Split From Entity ID": _staleBack,
+              ...inherited
+            } = parentAttributes;
+
+            await trx
+              .insertInto("trackedEntity")
+              .values({
+                id: remnantId,
+                readableId: parent.readableId,
+                sourceDocument: parent.sourceDocument,
+                sourceDocumentId: parent.sourceDocumentId,
+                sourceDocumentReadableId: parent.sourceDocumentReadableId,
+                itemId: parent.itemId,
+                expirationDate: parent.expirationDate ?? null,
+                quantity: 1,
+                status: "Available",
+                attributes: {
+                  ...inherited,
+                  ...buildRemnantAttributes({
+                    length: remnant.length,
+                    unitOfDimension: cutList.unitOfDimension ?? "in",
+                    parentAttributes,
+                    cutListReadableId: cutList.cutListId,
+                  }),
+                  "Split From Entity ID": parent.id,
+                },
+                companyId,
+                createdBy: userId,
+              })
+              .execute();
+
+            await trx
+              .insertInto("trackedActivity")
+              .values({
+                id: activityId,
+                type: "Split",
+                sourceDocument: "Cut List",
+                sourceDocumentId: cutListId,
+                sourceDocumentReadableId: cutList.cutListId,
+                attributes: {
+                  "Remnant Length": remnant.length,
+                  "Split Entity ID": remnantId,
+                },
+                companyId,
+                createdBy: userId,
+              })
+              .execute();
+
+            await trx
+              .insertInto("trackedActivityInput")
+              .values({
+                trackedActivityId: activityId,
+                trackedEntityId: parent.id,
+                quantity: 1,
+                companyId,
+                createdBy: userId,
+              })
+              .execute();
+
+            await trx
+              .insertInto("trackedActivityOutput")
+              .values({
+                trackedActivityId: activityId,
+                trackedEntityId: remnantId,
+                quantity: 1,
+                companyId,
+                createdBy: userId,
+              })
+              .execute();
+
+            itemLedgerInserts.push({
+              entryType: "Positive Adjmt.",
+              documentType: "Cut List Consumption",
+              documentId: cutListId,
+              companyId,
+              itemId: parent.itemId,
+              quantity: 1,
+              locationId: cutList.locationId,
+              storageUnitId: bin,
+              trackedEntityId: remnantId,
+              postingDate,
+              createdBy: userId,
+            });
+
+            remnantsCreated += 1;
+          }
+
+          if (itemLedgerInserts.length > 0) {
+            await trx
+              .insertInto("itemLedger")
+              .values(itemLedgerInserts)
+              .execute();
+          }
+
+          // 4. Record what got cut, and close the run if nothing is left.
+          for (const update of plan.lineUpdates) {
+            await trx
+              .updateTable("cutListLine")
+              .set({
+                quantityCut: update.quantityCut,
+                updatedBy: userId,
+                updatedAt: new Date().toISOString(),
+              })
+              .where("id", "=", update.id)
+              .where("companyId", "=", companyId)
+              .execute();
+          }
+
+          for (const remnant of plan.remnants) {
+            await trx
+              .updateTable("cutPattern")
+              .set({ actualRemnant: remnant.length, isComplete: true })
+              .where("cutListId", "=", cutListId)
+              .where("companyId", "=", companyId)
+              .where("trackedEntityId", "=", remnant.fromTrackedEntityId)
+              .execute();
+          }
+
+          await trx
+            .updateTable("cutList")
+            .set({
+              status: plan.status,
+              actualYieldPct: plan.actualYieldPct,
+              updatedBy: userId,
+              updatedAt: new Date().toISOString(),
+              ...(plan.status === "Completed"
+                ? { completedDate: new Date().toISOString() }
+                : {}),
+            })
+            .where("id", "=", cutListId)
+            .where("companyId", "=", companyId)
+            .execute();
+
+          return {
+            status: plan.status,
+            remnantsCreated,
+            actualYieldPct: plan.actualYieldPct,
+            allocations: plan.allocations.length,
+            scrapped: plan.scrap.length,
+          };
+        });
+
+        return jsonResponse({
+          success: true,
+          message:
+            outcome.status === "Completed"
+              ? "Cut list completed"
+              : "Cut list progress recorded",
+          ...outcome,
         });
       }
     }

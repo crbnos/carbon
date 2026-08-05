@@ -44,9 +44,10 @@ pnpm --filter @carbon/erp test
 |---|---|
 | `item` | Universal item master: readableId, name, type, tracking, replenishment, UoM |
 | `part` / `material` / `tool` / `consumable` / `service` | Type-specific extensions |
-| `materialForm` / `materialSubstance` / `materialType` / `materialGrade` / `materialFinish` / `materialDimension` | Material taxonomy (global or company-scoped) |
+| `materialForm` / `materialSubstance` / `materialType` / `materialGrade` / `materialFinish` / `materialDimension` | Material taxonomy (global or company-scoped). `materialForm.dimensionality` (`1D` bar/tube vs `2D` sheet/plate) drives which cut fields apply and which optimizer runs |
+| `itemStockDimension` | Numeric stock size for a material size-item (`stockLength`/`stockWidth`/`stockThickness` + `unitOfDimension`). 1:1 with `item`, `parts_*` RLS. The cut-list optimizer reads it to know how long one bar actually is — an item without a row contributes no cut stock. Distinct from the free-text `material.sizes[]`, which only names the revisions |
 | `makeMethod` | Versioned manufacturing method header (Draft/Active/Archived) |
-| `methodMaterial` / `methodOperation` / `methodOperationStep` / `methodOperationParameter` / `methodOperationTool` | BOM lines, routing steps, and work instruction details |
+| `methodMaterial` / `methodOperation` / `methodOperationStep` / `methodOperationParameter` / `methodOperationTool` | BOM lines, routing steps, and work instruction details. `methodMaterial.cutLength`/`cutWidth`/`grainLocked` carry cut-list demand — `cutLength` is the length of ONE piece, with `quantity` staying the piece count; they flow to jobs via `get_method_tree` + the `get-method` copy sites |
 | `itemCost` / `costLedger` | Standard/average costs and cost history |
 | `itemReplenishment` / `itemPlanning` | Manufacturing settings (lot size, lead time, scrap %) and planning params |
 | `itemPostingGroup` | Maps item categories to GL accounts |
@@ -62,6 +63,7 @@ pnpm --filter @carbon/erp test
 - `getItem` / `getPart` / `getMaterial` / `getConsumable` / `getTool` / `getService` — item reads by type (RPCs `get_part_details`, `get_material_details`, `get_service_details`, etc.)
 - `upsertService` — creates/updates a Service item; always `itemTrackingType = 'Non-Inventory'` (never shipped/received/stocked), replenishment `Buy` or `Make` only. The `service` row is keyed by `item.readableId` (like tool/material). Legacy `service.serviceType` is defaulted and no longer read.
 - `upsertMaterial` — creates/updates material with taxonomy FKs and `item`/`material` linkage
+- `getItemStockDimension` / `getItemStockDimensions` / `upsertItemStockDimension` / `deleteItemStockDimension` — numeric stock sizes for cut lists; the material routes write these alongside the material upsert
 - `getMakeMethods` / `getMethodMaterials` / `getMethodOperations` / `getMethodTreeArray` — BOM/routing reads
 - `copyItem` / `copyMakeMethod` — duplicates via edge function
 - `createRevision` / `activateMethodVersion` — revision and version management
@@ -144,3 +146,4 @@ Change-order code follows the one-service/models/server-per-module convention �
 
 - `.claude/rules/material-tables.md` — material taxonomy schema, linkage, and the `material.id = item.readableId` gotcha
 - `.claude/rules/method-material-sourcing.md` — how methods determine Buy/Make/Pull sourcing and cascade rules
+- `.claude/rules/cut-list-system.md` — stock dimensions, cut lengths on BOM lines, and the cut-list optimizer

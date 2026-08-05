@@ -1,4 +1,5 @@
 import type { JobTravelerMaterial } from "./blocks/jobTraveler";
+import CutListPDF from "./CutListPDF";
 import { Footer } from "./components";
 import { ensureFont, getSafeFontFamily, registerDocumentFonts } from "./fonts";
 import IssuePDF from "./IssuePDF";
@@ -20,6 +21,7 @@ import { SAMPLE_SALES_INVOICE } from "./samples";
 import { SAMPLE_TRACKING_LABEL } from "./trackingLabel.samples";
 export type { JobTravelerMaterial };
 export {
+  CutListPDF,
   DOCUMENT_PDFS,
   ensureFont,
   Footer,

@@ -65,6 +65,10 @@ msgstr "{0} başarıyla silindi"
 msgid "{0} draft journal entries"
 msgstr "{0} taslak muhasebe kaydı"
 
+#. placeholder {0}: scrapDrops.length
+msgid "{0} drop(s) below the {minRemnantLength} {unitOfDimension} minimum will post as scrap."
+msgstr ""
+
 #. placeholder {0}: mappings.length
 msgid "{0} lines to map"
 msgstr "{0} satır eşlenecek"
@@ -76,6 +80,10 @@ msgstr "{0} sipariş"
 #. placeholder {0}: selectedProcesses.length
 msgid "{0} Processes"
 msgstr "{0} Süreçler"
+
+#. placeholder {0}: patterns.length
+msgid "{0} stock unit(s), in cut order"
+msgstr ""
 
 #. placeholder {0}: ap.count
 msgid "{0} suppliers with a balance"
@@ -620,6 +628,9 @@ msgstr "Gerçek"
 msgid "Actual Cost"
 msgstr "Gerçek Maliyet"
 
+msgid "Actual drop"
+msgstr ""
+
 msgid "Actual End"
 msgstr "Gerçek Bitiş"
 
@@ -739,6 +750,9 @@ msgstr "Parça ekle"
 
 msgid "Add Permissions"
 msgstr "İzin Ekle"
+
+msgid "Add Piece"
+msgstr ""
 
 msgid "Add Printer"
 msgstr "Yazıcı Ekle"
@@ -1226,9 +1240,9 @@ msgstr "Bu işlemden {0}'ı silmek istediğinizden emin misiniz? Bu geri alınam
 msgid "Are you sure you want to delete {0}?"
 msgstr "{0} öğesini silmek istediğinizden emin misiniz?"
 
+#. placeholder {0}: cutList.cutListId
 #. placeholder {0}: initialValues.memoId
 #. placeholder {0}: initialValues.paymentId
-#. placeholder {0}: pickingList.pickingListId
 msgid "Are you sure you want to delete {0}? This cannot be undone."
 msgstr "Emin misiniz ki {0}'ı silmek istiyorsunuz? Bu geri alınamaz."
 
@@ -2524,6 +2538,9 @@ msgstr "Tümünü Tamamla"
 msgid "Complete all quantities on barcode scan"
 msgstr "Barkod taramasında tüm miktarları tamamla"
 
+msgid "Complete cut list"
+msgstr ""
+
 msgid "Complete Job"
 msgstr "İşi Tamamla"
 
@@ -2725,6 +2742,9 @@ msgstr "tüketilirler"
 
 msgid "Consumables"
 msgstr "Sarflar"
+
+msgid "Consume"
+msgstr ""
 
 msgid "Consumed"
 msgstr "Tüketildi"
@@ -3145,6 +3165,9 @@ msgstr "Denetim izi girdileri oluştur"
 msgid "Create Change Notice"
 msgstr "Değişiklik Bildirisi Oluştur"
 
+msgid "Create cut list"
+msgstr ""
+
 msgid "Create Issue"
 msgstr "Sorun Oluştur"
 
@@ -3556,11 +3579,38 @@ msgstr "Özelleştir"
 msgid "Customize the layout of your PDF documents — reorder sections, hide what you don't need, and add your own blocks."
 msgstr "PDF belgelerinizin düzenini özelleştirin — bölümleri yeniden sıralayın, ihtiyacınız olmayanları gizleyin ve kendi bloklarınızı ekleyin."
 
+msgid "Cut"
+msgstr ""
+
+msgid "Cut length"
+msgstr ""
+
+msgid "Cut Length"
+msgstr ""
+
+msgid "Cut List"
+msgstr ""
+
+msgid "Cut Lists"
+msgstr ""
+
+msgid "Cut now"
+msgstr ""
+
+msgid "Cut off the end of a new stock unit before the first piece"
+msgstr ""
+
 msgid "Cut over to Carbon and freeze the old system"
 msgstr "Carbon'a geçiş yapın ve eski sistemi dondurun"
 
 msgid "Cut over, freeze the old system, and confirm you're live on Carbon."
 msgstr "Geçiş yapın, eski sistemi dondurun ve Carbon'da canlı olduğunuzu doğrulayın."
+
+msgid "Cut plan"
+msgstr ""
+
+msgid "Cut Width"
+msgstr ""
 
 msgid "Cutover checklist"
 msgstr "Geçiş kontrol listesi"
@@ -3570,6 +3620,12 @@ msgstr "Geçiş adımı"
 
 msgid "Cutover support"
 msgstr "Geçiş desteği"
+
+msgid "Cutting Process"
+msgstr ""
+
+msgid "Cutting Runs"
+msgstr ""
 
 msgid "Cycle count and adjust with an audit trail"
 msgstr "Dönem sayımı yapın ve denetim izlemesiyle ayarlayın"
@@ -4246,6 +4302,9 @@ msgstr "boyut"
 msgid "Dimension"
 msgstr "Boyut"
 
+msgid "Dimension Unit"
+msgstr ""
+
 msgid "dimensions"
 msgstr "boyutlar"
 
@@ -4442,6 +4501,15 @@ msgstr "Çizim Numarası"
 
 msgid "Drawing replaced. Balloon placements were removed; feature rows are unchanged."
 msgstr "Çizim değiştirildi. Balon yerleşimleri kaldırıldı; özellik satırları değişmedi."
+
+msgid "drop"
+msgstr ""
+
+msgid "Drop"
+msgstr ""
+
+msgid "Drop length"
+msgstr ""
 
 msgid "Drop Shipment"
 msgstr "Sevkiyatı Başka Bir Yere Gönderme"
@@ -4651,6 +4719,9 @@ msgstr "Müşteri Durumunu Düzenle"
 msgid "Edit Customer Type"
 msgstr "Müşteri Tipini Düzenle"
 
+msgid "Edit Cut List"
+msgstr ""
+
 msgid "Edit Department"
 msgstr "Departmanı Düzenle"
 
@@ -4758,6 +4829,9 @@ msgstr "Düzenleme İzinleri"
 
 msgid "Edit Picking List"
 msgstr "Seçilen Sipariş Listesini Düzenle"
+
+msgid "Edit Piece"
+msgstr ""
 
 msgid "Edit Portal"
 msgstr "Portal Düzenle"
@@ -5013,6 +5087,9 @@ msgstr "Son Çeyreğin Sonu"
 
 msgid "End Time"
 msgstr "Bitiş Saati"
+
+msgid "End trim"
+msgstr ""
 
 msgid "Ending"
 msgstr "Son"
@@ -5561,6 +5638,9 @@ msgstr "İşlem yüklenemedi"
 
 msgid "Failed to load jobs"
 msgstr "İşleri yüklenemedi"
+
+msgid "Failed to load material properties"
+msgstr ""
 
 msgid "Failed to load purchase order lines"
 msgstr "Satın alma sipariş satırları yüklenemedi"
@@ -6250,6 +6330,15 @@ msgstr "sınıflar"
 msgid "Grades"
 msgstr "Dereceler"
 
+msgid "Grain Locked"
+msgstr ""
+
+msgid "Grip"
+msgstr ""
+
+msgid "Grip margin"
+msgstr ""
+
 msgid "Group"
 msgstr "Grup"
 
@@ -6279,6 +6368,9 @@ msgstr "İlk 3–4 hafta boyunca uygulamalı, hızlı yanıt veren destek"
 
 msgid "Hard to see true cost or margin on a job"
 msgstr "Bir işte gerçek maliyeti veya marjı görmek zor"
+
+msgid "Heat"
+msgstr ""
 
 msgid "Help"
 msgstr "Yardım"
@@ -7097,6 +7189,9 @@ msgstr "Açık Tut"
 msgid "Keep picking"
 msgstr "Seçmeye Devam Et"
 
+msgid "Kerf"
+msgstr ""
+
 msgid "Key"
 msgstr "Anahtar"
 
@@ -7222,6 +7317,15 @@ msgstr "Artık Parçalar Tespit Edildi"
 msgid "Leftover staged material returns when the whole job completes."
 msgstr "Kalan hazırlanan malzeme tüm iş tamamlandığında geri döner."
 
+msgid "Length"
+msgstr ""
+
+msgid "Length of one piece — drives cut lists"
+msgstr ""
+
+msgid "Length the clamp holds and cannot cut"
+msgstr ""
+
 msgid "Less manual work"
 msgstr "Daha az manuel çalışma"
 
@@ -7278,6 +7382,9 @@ msgstr "Satır seçenekleri"
 
 msgid "Line Status"
 msgstr "Satır Durumu"
+
+msgid "line(s)"
+msgstr ""
 
 msgid "Linear Team"
 msgstr "Lineer Takım"
@@ -7745,6 +7852,9 @@ msgstr "Malzeme Maddesi"
 msgid "Material Substances"
 msgstr "Malzeme Maddeleri"
 
+msgid "Material the blade destroys on every cut"
+msgstr ""
+
 msgid "material type"
 msgstr "Malzeme Türü"
 
@@ -7865,6 +7975,9 @@ msgstr "Ay ortası / çeyrek ortası / yarı yıl kuralı, ilk yıl kesintisini 
 msgid "Migrate data"
 msgstr "Verileri Taşı"
 
+msgid "Min drop"
+msgstr ""
+
 msgid "Min Qty"
 msgstr "Min Miktar"
 
@@ -7882,6 +7995,9 @@ msgstr "Minimum Sipariş Miktarı"
 
 msgid "Minimum Order:"
 msgstr "Minimum Siparişi:"
+
+msgid "Minimum remnant"
+msgstr ""
 
 msgid "Minimum Reserve Quantity"
 msgstr "Minimum Rezerv Miktarı"
@@ -8121,6 +8237,9 @@ msgstr "Yeni Müşteri"
 
 msgid "New Customer Part"
 msgstr "Yeni Müşteri Parçası"
+
+msgid "New Cut List"
+msgstr ""
 
 msgid "New Department"
 msgstr "Yeni Departman"
@@ -8446,6 +8565,9 @@ msgstr "Kullanılabilir filtre yok"
 msgid "No available tracked entities found"
 msgstr "Kullanılabilir izlenen varlık bulunamadı"
 
+msgid "No batch-tracked stock on hand for these materials. Remnants need batch tracking to keep their lot identity."
+msgstr ""
+
 msgid "No BOM input has a shelf-life policy"
 msgstr "Hiçbir BOM girdisi raf ömrü politikasına sahip değil"
 
@@ -8475,6 +8597,9 @@ msgstr "Dönüşüm gerekmiyor"
 
 msgid "No cost history found"
 msgstr "Hiç maliyet geçmişi bulunamadı"
+
+msgid "No cutting processes yet — mark a process as a cutting process in Resources."
+msgstr ""
 
 msgid "No Data"
 msgstr "Veri Yok"
@@ -8584,6 +8709,9 @@ msgstr "Yeni bildirim yok"
 msgid "No notes"
 msgstr "Notlar yok"
 
+msgid "No open cut demand. A job material needs a cut length before it shows up here."
+msgstr ""
+
 msgid "No open invoices"
 msgstr "Açık fatura yok"
 
@@ -8632,6 +8760,9 @@ msgstr "Ödeme yükümlülüğü yok"
 msgid "No payments yet."
 msgstr "Henüz ödeme yok."
 
+msgid "No pieces yet. Add one, or build this list from open job demand."
+msgstr ""
+
 msgid "No planning data"
 msgstr "Planlama verisi yok"
 
@@ -8646,6 +8777,9 @@ msgstr "Yazıcı yapılandırılmadı"
 
 msgid "No printers configured. Click \"Add Printer\" to create one."
 msgstr "Yapılandırılmış yazıcı yok. Bir tane oluşturmak için \"Yazıcı Ekle\"'ye tıklayın."
+
+msgid "No process"
+msgstr ""
 
 msgid "No process selected"
 msgstr "Hiçbir işlem seçilmedi"
@@ -8966,6 +9100,9 @@ msgstr "Denetim Kaydını Aç"
 msgid "Open change notices affecting this part"
 msgstr "Bu parçayı etkileyen açık değişiklik bildirimlerini aç"
 
+msgid "Open cut demand across released jobs. Pick what runs together on one machine."
+msgstr ""
+
 msgid "Open Date"
 msgstr "Açılış Tarihi"
 
@@ -9085,6 +9222,9 @@ msgstr "Operatörler, PIN kimlik doğrulaması ile ortak iş istasyonlarını ku
 
 msgid "Opportunity"
 msgstr "Fırsat"
+
+msgid "Optimize"
+msgstr ""
 
 msgid "Optimized for fast previews — downloads always serve the original uploaded file"
 msgstr "Hızlı önizlemeler için optimize edildi — indirmeler her zaman yüklenen orijinal dosyayı sunar"
@@ -9535,6 +9675,27 @@ msgstr "Toplu Alma Listeleri"
 msgid "Picking offers tracked entities earliest-expiry-first, so the soonest-to-expire stock leaves first by default."
 msgstr "Planlı"
 
+msgid "Piece"
+msgstr ""
+
+msgid "Piece length ({unitOfDimension})"
+msgstr ""
+
+msgid "Piece width ({unitOfDimension})"
+msgstr ""
+
+msgid "pieces"
+msgstr ""
+
+msgid "Pieces"
+msgstr ""
+
+msgid "Pieces cut"
+msgstr ""
+
+msgid "Pieces owed"
+msgstr ""
+
 msgid "Pieces/Hour"
 msgstr "Adet/Saat"
 
@@ -9550,11 +9711,17 @@ msgstr "Sabitlenmiş"
 msgid "Plan"
 msgstr "Plan"
 
+msgid "Plan a cutting run"
+msgstr ""
+
 msgid "Plan the work"
 msgstr "Çalışmayı planlayın"
 
 msgid "Plan Type"
 msgstr "Plan Türü"
+
+msgid "planned"
+msgstr ""
 
 msgid "Planned"
 msgstr "Deftere Kayıt"
@@ -10439,6 +10606,9 @@ msgstr "Kayıt silindi"
 msgid "Record inspections tied to a part and a job"
 msgstr "Bir parça ve bir işe bağlı muayeneleri kaydedin"
 
+msgid "Record what was actually cut and what drop goes back to stock."
+msgstr ""
+
 msgid "Recorded on a calibration that the gauge needs repair before its readings can be trusted."
 msgstr "Ölçü aletiyle ilgili kalibrasyonda, okumaları güvenilir olması için aletin onarılması gerektiği kaydedilmiştir."
 
@@ -10546,6 +10716,12 @@ msgstr "Bölme sonrası kalan orijinal satırda kalır."
 
 msgid "Remember this PIN. You will need it to exit console mode on MES terminals."
 msgstr "Bu PIN'i hatırlayın. MES terminallerinde konsol modundan çıkmak için buna ihtiyacınız olacak."
+
+msgid "remnant"
+msgstr ""
+
+msgid "Remnant {remnant} {unitOfDimension}"
+msgstr ""
 
 msgid "Remove"
 msgstr "Kaldır"
@@ -11821,6 +11997,9 @@ msgstr "Kısmi toplama {itemName}"
 msgid "Shortcuts"
 msgstr "Kısayollar"
 
+msgid "Shorter drops are scrapped instead of returned to stock"
+msgstr ""
+
 msgid "Show a readable Customer ID column on the customer list, customer forms, and dropdowns. Customers are still identified internally either way."
 msgstr "Müşteri listesinde, müşteri formlarında ve açılır menülerde okunabilir bir Müşteri Kimliği sütunu gösterir. Müşteriler her iki durumda da dahili olarak tanımlanmaya devam eder."
 
@@ -12129,8 +12308,17 @@ msgstr "Adımlar montaj talimatından devralınır."
 msgid "Steps are inherited from the inspection plan."
 msgstr "Adımlar muayene planından devralınır."
 
+msgid "Stock consumed"
+msgstr ""
+
+msgid "Stock Length"
+msgstr ""
+
 msgid "Stock movement corrected"
 msgstr "Stok hareketi düzeltildi"
+
+msgid "Stock Thickness"
+msgstr ""
 
 msgid "Stock Transfer ID"
 msgstr "Stok Transfer Kimliği"
@@ -12146,6 +12334,9 @@ msgstr "Stok Transfer Sihirbazı"
 
 msgid "Stock Transfers"
 msgstr "Stok Transferleri"
+
+msgid "Stock Width"
+msgstr ""
 
 #. placeholder {0}: successorItem.readableIdWithRevision
 msgid "Stocked for spares only — successor: <0>{0}</0>"
@@ -13815,6 +14006,9 @@ msgstr "Mizan"
 msgid "Triggers"
 msgstr "Tetikleyiciler"
 
+msgid "Trim"
+msgstr ""
+
 msgid "Tuesday"
 msgstr "Salı"
 
@@ -15029,6 +15223,9 @@ msgstr "Evet, Reddet"
 
 msgid "Yes, Update IDs"
 msgstr "Evet, Kimlikleri Güncelle"
+
+msgid "Yield"
+msgstr ""
 
 msgid "You"
 msgstr "Sen"

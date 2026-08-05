@@ -1,6 +1,6 @@
 {
-  "generated": "2026-08-05T06:32:00.750Z",
-  "totalTools": 1413,
+  "generated": "2026-08-05T16:24:23.771Z",
+  "totalTools": 1431,
   "modules": 15,
   "tools": [
     {
@@ -16130,6 +16130,136 @@
       }
     },
     {
+      "name": "items_getItemStockDimension",
+      "module": "items",
+      "classification": "READ",
+      "description": "get item stock dimension",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "itemId",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "itemId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "itemId"
+        ]
+      }
+    },
+    {
+      "name": "items_getItemStockDimensions",
+      "module": "items",
+      "classification": "READ",
+      "description": "get item stock dimensions",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "itemIds",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "itemIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "itemIds"
+        ]
+      }
+    },
+    {
+      "name": "items_upsertItemStockDimension",
+      "module": "items",
+      "classification": "WRITE",
+      "description": "upsert item stock dimension",
+      "paramCount": 5,
+      "serviceParams": [
+        "client",
+        "stockDimension"
+      ],
+      "injectAuth": [
+        "companyId",
+        "createdBy",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "itemId": {
+            "type": "string"
+          },
+          "stockLength": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "stockWidth": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "stockThickness": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "unitOfDimension": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "itemId",
+          "unitOfDimension"
+        ]
+      }
+    },
+    {
+      "name": "items_deleteItemStockDimension",
+      "module": "items",
+      "classification": "DESTRUCTIVE",
+      "description": "delete item stock dimension",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "itemId",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "itemId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "itemId"
+        ]
+      }
+    },
+    {
       "name": "people_deleteAttribute",
       "module": "people",
       "classification": "DESTRUCTIVE",
@@ -23956,6 +24086,471 @@
           "inspectionDocumentId",
           "features",
           "balloons"
+        ]
+      }
+    },
+    {
+      "name": "production_getCutLists",
+      "module": "production",
+      "classification": "READ",
+      "description": "get cut lists",
+      "paramCount": 3,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "args": {
+            "type": "object",
+            "properties": {
+              "limit": {
+                "type": "integer",
+                "default": 100
+              },
+              "offset": {
+                "type": "integer",
+                "default": 0
+              },
+              "search": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "production_getCutList",
+      "module": "production",
+      "classification": "READ",
+      "description": "get cut list",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "id",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      }
+    },
+    {
+      "name": "production_getCutListLines",
+      "module": "production",
+      "classification": "READ",
+      "description": "get cut list lines",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "cutListId",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "cutListId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "cutListId"
+        ]
+      }
+    },
+    {
+      "name": "production_getCutPatterns",
+      "module": "production",
+      "classification": "READ",
+      "description": "get cut patterns",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "cutListId",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "cutListId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "cutListId"
+        ]
+      }
+    },
+    {
+      "name": "production_upsertCutList",
+      "module": "production",
+      "classification": "WRITE",
+      "description": "upsert cut list",
+      "paramCount": 9,
+      "serviceParams": [
+        "client",
+        "cutList"
+      ],
+      "injectAuth": [
+        "companyId",
+        "createdBy",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "locationId": {
+            "type": "string"
+          },
+          "processId": {
+            "type": "string"
+          },
+          "workCenterId": {
+            "type": "string"
+          },
+          "kerf": {
+            "type": "number"
+          },
+          "endTrim": {
+            "type": "number"
+          },
+          "gripMargin": {
+            "type": "number"
+          },
+          "minRemnantLength": {
+            "type": "number"
+          },
+          "unitOfDimension": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    {
+      "name": "production_upsertCutListLine",
+      "module": "production",
+      "classification": "WRITE",
+      "description": "upsert cut list line",
+      "paramCount": 8,
+      "serviceParams": [
+        "client",
+        "cutListLine"
+      ],
+      "injectAuth": [
+        "companyId",
+        "createdBy",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "cutListId": {
+            "type": "string"
+          },
+          "jobId": {
+            "type": "string"
+          },
+          "jobMaterialId": {
+            "type": "string"
+          },
+          "itemId": {
+            "type": "string"
+          },
+          "pieceLength": {
+            "type": "number"
+          },
+          "pieceWidth": {
+            "type": "number"
+          },
+          "quantity": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "cutListId",
+          "itemId"
+        ]
+      }
+    },
+    {
+      "name": "production_deleteCutList",
+      "module": "production",
+      "classification": "DESTRUCTIVE",
+      "description": "delete cut list",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "id",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      }
+    },
+    {
+      "name": "production_deleteCutListLine",
+      "module": "production",
+      "classification": "DESTRUCTIVE",
+      "description": "delete cut list line",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "id",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      }
+    },
+    {
+      "name": "production_updateCutListStatus",
+      "module": "production",
+      "classification": "WRITE",
+      "description": "update cut list status",
+      "paramCount": 2,
+      "serviceParams": [
+        "client",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "status": {}
+        },
+        "required": [
+          "id",
+          "status"
+        ]
+      }
+    },
+    {
+      "name": "production_getCuttingProcessDefaults",
+      "module": "production",
+      "classification": "READ",
+      "description": "get cutting process defaults",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "processId",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "processId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "processId"
+        ]
+      }
+    },
+    {
+      "name": "production_getCuttingProcessesList",
+      "module": "production",
+      "classification": "READ",
+      "description": "get cutting processes list",
+      "paramCount": 0,
+      "serviceParams": [
+        "client",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    {
+      "name": "production_getOpenCutDemand",
+      "module": "production",
+      "classification": "READ",
+      "description": "get open cut demand",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "locationId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "production_runCutOptimization",
+      "module": "production",
+      "classification": "WRITE",
+      "description": "run cut optimization",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "params"
+      ],
+      "injectAuth": [
+        "companyId",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "cutListId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "cutListId"
+        ]
+      }
+    },
+    {
+      "name": "production_confirmCutList",
+      "module": "production",
+      "classification": "WRITE",
+      "description": "confirm cut list",
+      "paramCount": 6,
+      "serviceParams": [
+        "client",
+        "params"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "cutListId": {
+            "type": "string"
+          },
+          "lines": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "cutListLineId": {
+                  "type": "string"
+                },
+                "quantityCut": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "cutListLineId",
+                "quantityCut"
+              ]
+            }
+          },
+          "consumed": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "trackedEntityId": {
+                  "type": "string"
+                },
+                "quantityConsumed": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "trackedEntityId",
+                "quantityConsumed"
+              ]
+            }
+          },
+          "untrackedConsumed: {\n      itemId: string;\n      quantity: number;\n      storageUnitId": {
+            "type": "array",
+            "items": {}
+          },
+          "remnants: {\n      fromTrackedEntityId: string;\n      length: number;\n      storageUnitId": {
+            "type": "array",
+            "items": {}
+          },
+          "scrap: {\n      fromTrackedEntityId": {
+            "type": "array",
+            "items": {}
+          }
+        },
+        "required": [
+          "cutListId",
+          "lines",
+          "consumed"
         ]
       }
     },

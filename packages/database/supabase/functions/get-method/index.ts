@@ -1125,6 +1125,10 @@ serve(async (req: Request) => {
                 quantity,
                 scrapQuantity: childScrapQuantity,
                 estimatedQuantity: childEstimatedQuantity,
+                // Cut list demand rides along with the BOM line.
+                cutLength: child.data.cutLength ?? null,
+                cutWidth: child.data.cutWidth ?? null,
+                grainLocked: child.data.grainLocked ?? false,
                 storageUnitId: locationId
                   ? await getStorageUnitId(
                       trx,
@@ -1815,6 +1819,10 @@ serve(async (req: Request) => {
                 quantity: child.data.quantity,
                 scrapQuantity: childScrapQuantity,
                 estimatedQuantity: childEstimatedQuantity,
+                // Cut list demand rides along with the BOM line.
+                cutLength: child.data.cutLength ?? null,
+                cutWidth: child.data.cutWidth ?? null,
+                grainLocked: child.data.grainLocked ?? false,
                 requiresBatchTracking: child.data.itemTrackingType === "Batch",
                 requiresSerialTracking:
                   child.data.itemTrackingType === "Serial",
@@ -4975,6 +4983,9 @@ serve(async (req: Request) => {
                   quantity: child.data.quantity,
                   scrapQuantity: childScrapQuantity,
                   estimatedQuantity: childEstimatedQuantity,
+                  cutLength: child.data.cutLength ?? null,
+                  cutWidth: child.data.cutWidth ?? null,
+                  grainLocked: child.data.grainLocked ?? false,
                   itemScrapPercentage,
                   storageUnitId: await getStorageUnitId(
                     trx,

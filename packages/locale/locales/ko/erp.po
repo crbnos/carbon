@@ -65,6 +65,10 @@ msgstr "{0}이(가) 삭제되었습니다"
 msgid "{0} draft journal entries"
 msgstr "{0}건의 임시 분개"
 
+#. placeholder {0}: scrapDrops.length
+msgid "{0} drop(s) below the {minRemnantLength} {unitOfDimension} minimum will post as scrap."
+msgstr ""
+
 #. placeholder {0}: mappings.length
 msgid "{0} lines to map"
 msgstr "매핑할 라인 {0}개"
@@ -76,6 +80,10 @@ msgstr "주문 {0}건"
 #. placeholder {0}: selectedProcesses.length
 msgid "{0} Processes"
 msgstr "공정 {0}개"
+
+#. placeholder {0}: patterns.length
+msgid "{0} stock unit(s), in cut order"
+msgstr ""
 
 #. placeholder {0}: ap.count
 msgid "{0} suppliers with a balance"
@@ -620,6 +628,9 @@ msgstr "실제"
 msgid "Actual Cost"
 msgstr "실제원가"
 
+msgid "Actual drop"
+msgstr ""
+
 msgid "Actual End"
 msgstr "실제 종료"
 
@@ -739,6 +750,9 @@ msgstr "부품 추가"
 
 msgid "Add Permissions"
 msgstr "권한 추가"
+
+msgid "Add Piece"
+msgstr ""
 
 msgid "Add Printer"
 msgstr "프린터 추가"
@@ -1226,9 +1240,9 @@ msgstr "이 공정작업에서 {0}을(를) 삭제하시겠습니까? 이 작업�
 msgid "Are you sure you want to delete {0}?"
 msgstr "{0}을(를) 삭제하시겠습니까?"
 
+#. placeholder {0}: cutList.cutListId
 #. placeholder {0}: initialValues.memoId
 #. placeholder {0}: initialValues.paymentId
-#. placeholder {0}: pickingList.pickingListId
 msgid "Are you sure you want to delete {0}? This cannot be undone."
 msgstr "{0}을(를) 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다."
 
@@ -2524,6 +2538,9 @@ msgstr "모두 완료"
 msgid "Complete all quantities on barcode scan"
 msgstr "바코드 스캔 시 모든 수량 완료 처리"
 
+msgid "Complete cut list"
+msgstr ""
+
 msgid "Complete Job"
 msgstr "작업 완료"
 
@@ -2725,6 +2742,9 @@ msgstr "소모품"
 
 msgid "Consumables"
 msgstr "소모품"
+
+msgid "Consume"
+msgstr ""
 
 msgid "Consumed"
 msgstr "소진됨"
@@ -3145,6 +3165,9 @@ msgstr "감사 추적 항목 생성"
 msgid "Create Change Notice"
 msgstr "변경 공지 만들기"
 
+msgid "Create cut list"
+msgstr ""
+
 msgid "Create Issue"
 msgstr "이슈 생성"
 
@@ -3556,11 +3579,38 @@ msgstr "사용자 지정"
 msgid "Customize the layout of your PDF documents — reorder sections, hide what you don't need, and add your own blocks."
 msgstr "PDF 문서의 레이아웃을 사용자 지정하세요 — 섹션 순서를 변경하고, 필요 없는 항목을 숨기고, 원하는 블록을 추가할 수 있습니다."
 
+msgid "Cut"
+msgstr ""
+
+msgid "Cut length"
+msgstr ""
+
+msgid "Cut Length"
+msgstr ""
+
+msgid "Cut List"
+msgstr ""
+
+msgid "Cut Lists"
+msgstr ""
+
+msgid "Cut now"
+msgstr ""
+
+msgid "Cut off the end of a new stock unit before the first piece"
+msgstr ""
+
 msgid "Cut over to Carbon and freeze the old system"
 msgstr "Carbon으로 전환하고 기존 시스템을 동결하세요"
 
 msgid "Cut over, freeze the old system, and confirm you're live on Carbon."
 msgstr "전환하고, 기존 시스템을 동결한 뒤, Carbon 운영 전환을 확인하세요."
+
+msgid "Cut plan"
+msgstr ""
+
+msgid "Cut Width"
+msgstr ""
 
 msgid "Cutover checklist"
 msgstr "전환 체크리스트"
@@ -3570,6 +3620,12 @@ msgstr "전환 단계"
 
 msgid "Cutover support"
 msgstr "전환 지원"
+
+msgid "Cutting Process"
+msgstr ""
+
+msgid "Cutting Runs"
+msgstr ""
 
 msgid "Cycle count and adjust with an audit trail"
 msgstr "감사 추적과 함께 순환 재고조사 및 조정"
@@ -4246,6 +4302,9 @@ msgstr "치수"
 msgid "Dimension"
 msgstr "치수"
 
+msgid "Dimension Unit"
+msgstr ""
+
 msgid "dimensions"
 msgstr "치수"
 
@@ -4442,6 +4501,15 @@ msgstr "도면 번호"
 
 msgid "Drawing replaced. Balloon placements were removed; feature rows are unchanged."
 msgstr "도면이 교체되었습니다. 벌룬 배치는 제거되었으며, 피처 행은 변경되지 않습니다."
+
+msgid "drop"
+msgstr ""
+
+msgid "Drop"
+msgstr ""
+
+msgid "Drop length"
+msgstr ""
 
 msgid "Drop Shipment"
 msgstr "직송 출하"
@@ -4651,6 +4719,9 @@ msgstr "고객 상태 수정"
 msgid "Edit Customer Type"
 msgstr "고객 유형 수정"
 
+msgid "Edit Cut List"
+msgstr ""
+
 msgid "Edit Department"
 msgstr "부서 수정"
 
@@ -4758,6 +4829,9 @@ msgstr "권한 수정"
 
 msgid "Edit Picking List"
 msgstr "피킹 리스트 수정"
+
+msgid "Edit Piece"
+msgstr ""
 
 msgid "Edit Portal"
 msgstr "포털 수정"
@@ -5013,6 +5087,9 @@ msgstr "지난 분기 말"
 
 msgid "End Time"
 msgstr "종료 시간"
+
+msgid "End trim"
+msgstr ""
 
 msgid "Ending"
 msgstr "종료"
@@ -5561,6 +5638,9 @@ msgstr "작업 공정작업을 불러오지 못했습니다"
 
 msgid "Failed to load jobs"
 msgstr "작업을 불러오지 못했습니다"
+
+msgid "Failed to load material properties"
+msgstr ""
 
 msgid "Failed to load purchase order lines"
 msgstr "구매주문 라인을 불러오지 못했습니다"
@@ -6250,6 +6330,15 @@ msgstr "등급"
 msgid "Grades"
 msgstr "등급"
 
+msgid "Grain Locked"
+msgstr ""
+
+msgid "Grip"
+msgstr ""
+
+msgid "Grip margin"
+msgstr ""
+
 msgid "Group"
 msgstr "그룹"
 
@@ -6279,6 +6368,9 @@ msgstr "첫 3–4주간 밀착형으로 신속하게 대응하는 지원"
 
 msgid "Hard to see true cost or margin on a job"
 msgstr "작업의 실제 원가나 마진을 파악하기 어려움"
+
+msgid "Heat"
+msgstr ""
 
 msgid "Help"
 msgstr "도움말"
@@ -7097,6 +7189,9 @@ msgstr "열린 상태 유지"
 msgid "Keep picking"
 msgstr "계속 선택"
 
+msgid "Kerf"
+msgstr ""
+
 msgid "Key"
 msgstr "키"
 
@@ -7222,6 +7317,15 @@ msgstr "잔여 부품 발견됨"
 msgid "Leftover staged material returns when the whole job completes."
 msgstr "남은 스테이징 재료는 전체 작업이 완료될 때 반환됩니다."
 
+msgid "Length"
+msgstr ""
+
+msgid "Length of one piece — drives cut lists"
+msgstr ""
+
+msgid "Length the clamp holds and cannot cut"
+msgstr ""
+
 msgid "Less manual work"
 msgstr "수작업 감소"
 
@@ -7278,6 +7382,9 @@ msgstr "라인 옵션"
 
 msgid "Line Status"
 msgstr "라인 상태"
+
+msgid "line(s)"
+msgstr ""
 
 msgid "Linear Team"
 msgstr "Linear 팀"
@@ -7745,6 +7852,9 @@ msgstr "자재 재질"
 msgid "Material Substances"
 msgstr "자재 재질"
 
+msgid "Material the blade destroys on every cut"
+msgstr ""
+
 msgid "material type"
 msgstr "자재 유형"
 
@@ -7865,6 +7975,9 @@ msgstr "1차년도 공제액을 결정하는 월중/분기중/반기 컨벤션�
 msgid "Migrate data"
 msgstr "데이터 마이그레이션"
 
+msgid "Min drop"
+msgstr ""
+
 msgid "Min Qty"
 msgstr "최소 수량"
 
@@ -7882,6 +7995,9 @@ msgstr "최소 주문 수량"
 
 msgid "Minimum Order:"
 msgstr "최소 주문:"
+
+msgid "Minimum remnant"
+msgstr ""
 
 msgid "Minimum Reserve Quantity"
 msgstr "최소 예비 수량"
@@ -8121,6 +8237,9 @@ msgstr "신규 고객"
 
 msgid "New Customer Part"
 msgstr "신규 고객 부품"
+
+msgid "New Cut List"
+msgstr ""
 
 msgid "New Department"
 msgstr "신규 부서"
@@ -8446,6 +8565,9 @@ msgstr "사용 가능한 필터가 없습니다"
 msgid "No available tracked entities found"
 msgstr "사용 가능한 추적 개체가 없습니다"
 
+msgid "No batch-tracked stock on hand for these materials. Remnants need batch tracking to keep their lot identity."
+msgstr ""
+
 msgid "No BOM input has a shelf-life policy"
 msgstr "BOM 투입 항목 중 유효기간 정책이 설정된 항목이 없습니다"
 
@@ -8475,6 +8597,9 @@ msgstr "변환이 필요하지 않습니다"
 
 msgid "No cost history found"
 msgstr "원가 이력이 없습니다"
+
+msgid "No cutting processes yet — mark a process as a cutting process in Resources."
+msgstr ""
 
 msgid "No Data"
 msgstr "데이터 없음"
@@ -8584,6 +8709,9 @@ msgstr "새 알림이 없습니다"
 msgid "No notes"
 msgstr "메모 없음"
 
+msgid "No open cut demand. A job material needs a cut length before it shows up here."
+msgstr ""
+
 msgid "No open invoices"
 msgstr "미결 인보이스가 없습니다"
 
@@ -8632,6 +8760,9 @@ msgstr "매입채무가 없습니다"
 msgid "No payments yet."
 msgstr "아직 결제가 없습니다."
 
+msgid "No pieces yet. Add one, or build this list from open job demand."
+msgstr ""
+
 msgid "No planning data"
 msgstr "계획 데이터가 없습니다"
 
@@ -8646,6 +8777,9 @@ msgstr "설정된 프린터가 없습니다"
 
 msgid "No printers configured. Click \"Add Printer\" to create one."
 msgstr "설정된 프린터가 없습니다. \"프린터 추가\"를 클릭하여 생성하세요."
+
+msgid "No process"
+msgstr ""
 
 msgid "No process selected"
 msgstr "프로세스를 선택하지 않았습니다"
@@ -8966,6 +9100,9 @@ msgstr "감사 로그 열기"
 msgid "Open change notices affecting this part"
 msgstr "이 부품에 영향을 주는 미완료 변경 공지 열기"
 
+msgid "Open cut demand across released jobs. Pick what runs together on one machine."
+msgstr ""
+
 msgid "Open Date"
 msgstr "개설일"
 
@@ -9085,6 +9222,9 @@ msgstr "작업자는 PIN 인증을 통해 공유 워크스테이션을 사용할
 
 msgid "Opportunity"
 msgstr "기회"
+
+msgid "Optimize"
+msgstr ""
 
 msgid "Optimized for fast previews — downloads always serve the original uploaded file"
 msgstr "빠른 미리보기에 최적화됨 — 다운로드는 항상 원본 업로드 파일을 제공합니다."
@@ -9535,6 +9675,27 @@ msgstr "피킹 목록"
 msgid "Picking offers tracked entities earliest-expiry-first, so the soonest-to-expire stock leaves first by default."
 msgstr "피킹 시 추적 개체를 유효기한이 빠른 순으로 제시하여, 기본적으로 유효기한이 가장 임박한 재고가 먼저 출고됩니다."
 
+msgid "Piece"
+msgstr ""
+
+msgid "Piece length ({unitOfDimension})"
+msgstr ""
+
+msgid "Piece width ({unitOfDimension})"
+msgstr ""
+
+msgid "pieces"
+msgstr ""
+
+msgid "Pieces"
+msgstr ""
+
+msgid "Pieces cut"
+msgstr ""
+
+msgid "Pieces owed"
+msgstr ""
+
 msgid "Pieces/Hour"
 msgstr "개/시간"
 
@@ -9550,11 +9711,17 @@ msgstr "고정됨"
 msgid "Plan"
 msgstr "계획"
 
+msgid "Plan a cutting run"
+msgstr ""
+
 msgid "Plan the work"
 msgstr "작업 계획 수립"
 
 msgid "Plan Type"
 msgstr "계획 유형"
+
+msgid "planned"
+msgstr ""
 
 msgid "Planned"
 msgstr "계획됨"
@@ -10439,6 +10606,9 @@ msgstr "레코드가 삭제됨"
 msgid "Record inspections tied to a part and a job"
 msgstr "품목과 작업에 연결된 검사를 기록"
 
+msgid "Record what was actually cut and what drop goes back to stock."
+msgstr ""
+
 msgid "Recorded on a calibration that the gauge needs repair before its readings can be trusted."
 msgstr "게이지의 읽음값을 신뢰하기 전에 수리가 필요하다는 것이 교정에 기록됨."
 
@@ -10546,6 +10716,12 @@ msgstr "분할 후 남은 수량은 원래 행에 유지됩니다."
 
 msgid "Remember this PIN. You will need it to exit console mode on MES terminals."
 msgstr "이 PIN을 기억해 두세요. MES 단말기에서 콘솔 모드를 종료할 때 필요합니다."
+
+msgid "remnant"
+msgstr ""
+
+msgid "Remnant {remnant} {unitOfDimension}"
+msgstr ""
 
 msgid "Remove"
 msgstr "제거"
@@ -11821,6 +11997,9 @@ msgstr "{itemName} 부족 피킹"
 msgid "Shortcuts"
 msgstr "단축키"
 
+msgid "Shorter drops are scrapped instead of returned to stock"
+msgstr ""
+
 msgid "Show a readable Customer ID column on the customer list, customer forms, and dropdowns. Customers are still identified internally either way."
 msgstr "고객 목록, 고객 양식, 드롭다운에 읽기 쉬운 고객 ID 열을 표시합니다. 어느 쪽이든 고객은 내부적으로 동일하게 식별됩니다."
 
@@ -12129,8 +12308,17 @@ msgstr "단계는 조립 지시사항에서 상속됩니다."
 msgid "Steps are inherited from the inspection plan."
 msgstr "단계는 검사 계획에서 상속됩니다."
 
+msgid "Stock consumed"
+msgstr ""
+
+msgid "Stock Length"
+msgstr ""
+
 msgid "Stock movement corrected"
 msgstr "재고 이동 수정됨"
+
+msgid "Stock Thickness"
+msgstr ""
 
 msgid "Stock Transfer ID"
 msgstr "재고 이동 ID"
@@ -12146,6 +12334,9 @@ msgstr "재고 이동 마법사"
 
 msgid "Stock Transfers"
 msgstr "재고 이동"
+
+msgid "Stock Width"
+msgstr ""
 
 #. placeholder {0}: successorItem.readableIdWithRevision
 msgid "Stocked for spares only — successor: <0>{0}</0>"
@@ -13815,6 +14006,9 @@ msgstr "시산표"
 msgid "Triggers"
 msgstr "트리거"
 
+msgid "Trim"
+msgstr ""
+
 msgid "Tuesday"
 msgstr "화요일"
 
@@ -15029,6 +15223,9 @@ msgstr "예, 반려"
 
 msgid "Yes, Update IDs"
 msgstr "예, ID 업데이트"
+
+msgid "Yield"
+msgstr ""
 
 msgid "You"
 msgstr "나"

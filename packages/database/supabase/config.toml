@@ -241,3 +241,8 @@ entrypoint = "./functions/embedding/index.ts"
 enabled = true
 verify_jwt = true
 entrypoint = "./functions/assign-serial-numbers/index.ts"
+
+[functions.optimize-cuts]
+enabled = true
+verify_jwt = true
+entrypoint = "./functions/optimize-cuts/index.ts"

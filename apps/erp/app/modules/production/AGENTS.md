@@ -13,6 +13,7 @@ Work orders (jobs), scheduling, routings (operations), bill of materials, proced
 - **Procedure** — versioned work instructions linked to operations via `processId`. Statuses: Draft/Active/Archived.
 - **Assembly Instructions** — 3D animated work instructions, available to all users. (Previously gated to Carbon-internal emails via `requireAssembliesInternal` / `useFlags().isInternal`; that gate was removed to ship publicly.) **Versioned** (Draft/Published/Archived) as **row-per-version**, not an in-place counter: sibling versions are grouped by a self-referential `assemblyInstruction.rootInstructionId` (NULL = "I am the root"; group root = `rootInstructionId ?? id`, siblings = `id = root OR rootInstructionId = root`). `copyAssemblyInstructionAsVersion` spins a new editable **Draft** as a perfect copy (`version = max+1`, deep-copies steps with `parentStepId` remapped + each step's materials/slides/tools). `activateAssemblyInstructionVersion` makes a version active: publishes it, **archives the prior Published sibling**, and repoints `jobOperation.assemblyInstructionId` from other group versions to it — but only for active operations (status ≠ Done/Canceled) on active jobs (`!isJobLocked`). Only Draft is editable; the header exposes a "Versions" switcher + Make Active / New Version. `updateAssemblyInstructionStatus` no longer bumps `version`. The **list** (`getAssemblyInstructions`) reads the `assemblyInstructions` **view** (not the base table): it collapses each group to its latest version (`WHERE version = MAX(version)` per `rootInstructionId ?? id`) and rolls every sibling into a `versions` jsonb array, mirroring the `procedures` view — the table shows a `Version N` subtitle on the name plus a "Versions" hover card. Migration `20260730153412_assembly-instructions-view.sql`.
 - **Maintenance Dispatch** — reactive/scheduled repair for work centers with comments, events, items, and linked work centers.
+- **Cut List** — saw/laser work order for raw stock: which pieces to cut, at what length, from which bar/sheet. Statuses Draft → Released → In Progress → Completed (or Cancelled); `isCutListEditable` (Draft only) gates line edits and re-optimization. Every line carries `jobId`/`jobMaterialId` so one run can serve many jobs and still settle cost + traceability per job. Confirmation consumes stock, returns dimensioned remnants (heat number inherited), and posts `Cut List Consumption` ledger rows. See `.claude/rules/cut-list-system.md`.
 - **Scheduling** — infinite-capacity backward scheduling via `schedule` edge function. MUST use `triggerJobSchedule` to reschedule, never direct date writes.
 
 ## Safety
@@ -61,6 +62,7 @@ pnpm --filter @carbon/erp test
 | `assemblyComponentMapping` / `assemblyUnit` / `assemblyPlanJob` | Geometry↔BOM item mapping, authored planner units (model-scoped "plan as one component" overrides), and geometry-service plan/convert job tracking. Planning is LAZY — conversion does not chain a plan run; the first "Generate Steps" click (or an explicit re-plan) starts it, pre-creating a Queued `assemblyPlanJob` row the worker adopts via `planJobId`. The clicking tab polls and auto-generates the steps when the plan lands |
 | `maintenanceDispatch` / `maintenanceSchedule` | Equipment maintenance tracking |
 | `demandForecast` / `demandProjection` | Demand planning data |
+| `cutList` / `cutListLine` / `cutPattern` | Cut list header (saw params: kerf, end trim, grip margin, min remnant), demand lines (piece length × quantity, with job pedigree), and optimizer output (one pattern per stock unit; `pattern` JSONB is the ordered cuts). `cutLists` view adds names + line rollups |
 | `scrapReason` / `maintenanceFailureMode` | Reference data for production and maintenance |
 
 ## Key Service Functions
@@ -74,6 +76,9 @@ pnpm --filter @carbon/erp test
 - `triggerJobSchedule` — fires the scheduling engine via Inngest
 - `runMRP` — triggers Material Requirements Planning via `mrp` edge function
 - `calculateJobPriority` — computes priority from deadline type and due date
+- `getCutLists` / `getCutList` / `getCutListLines` / `getCutPatterns` / `upsertCutList` / `upsertCutListLine` / `updateCutListStatus` — cut list CRUD; `getOpenCutDemand` feeds the cutting-run board (released-job materials with a `cutLength` still owing quantity); `getCuttingProcessesList` / `getCuttingProcessDefaults` resolve saw parameters from the machine
+- `runCutOptimization` — invokes the `optimize-cuts` edge function (1D best-fit-decreasing with kerf/trim/grip/min-remnant); rewrites every `cutPattern` for the list and stamps `plannedYieldPct`
+- `confirmCutList` — invokes `issue` with `type: "cutListComplete"`: consumes stock split across served jobs by nested length, creates remnant lots carrying the parent's heat number, scraps sub-minimum drops
 - `getActiveJobOperationsByLocation` — schedule board data (RPC `get_active_job_operations_by_location`)
 - `getProductionPlanning` — MRP-driven production planning (RPC `get_production_planning`)
 - `upsertMaintenanceDispatch` / `upsertMaintenanceSchedule` — maintenance management
@@ -108,3 +113,4 @@ import { jobValidator, isJobLocked, jobStatus } from "~/modules/production";
 - `.claude/rules/scheduling-data-structures.md` — scheduling engine architecture, trigger chain, RPCs
 - `.claude/rules/mrp-system.md` — MRP run flow, planning data model, and planning UI
 - `.claude/rules/method-material-sourcing.md` — how material methodType drives procurement
+- `.claude/rules/cut-list-system.md` — cut lists, the 1D optimizer, remnant/heat genealogy

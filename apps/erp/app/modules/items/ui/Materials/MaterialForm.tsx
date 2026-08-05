@@ -327,6 +327,40 @@ const MaterialForm = ({
                 />
                 <Array name="sizes" label={t`Sizes`} termId="material-sizes" />
 
+                {/* Stock dimensions: what one purchased unit measures. Cut
+                    lists need a real number here — a bar labelled "20ft" in a
+                    free-text size can't tell an optimizer whether a 63" piece
+                    fits. Width and thickness apply to sheet and plate. */}
+                <Number
+                  name="stockLength"
+                  label={t`Stock Length`}
+                  minValue={0}
+                  isOptional
+                />
+                <Number
+                  name="stockWidth"
+                  label={t`Stock Width`}
+                  minValue={0}
+                  isOptional
+                />
+                <Number
+                  name="stockThickness"
+                  label={t`Stock Thickness`}
+                  minValue={0}
+                  isOptional
+                />
+                <Select
+                  name="unitOfDimension"
+                  label={t`Dimension Unit`}
+                  options={[
+                    { value: "in", label: "in" },
+                    { value: "ft", label: "ft" },
+                    { value: "mm", label: "mm" },
+                    { value: "cm", label: "cm" },
+                    { value: "m", label: "m" }
+                  ]}
+                />
+
                 <ItemStorageFields />
 
                 <CustomFormFields table="material" tags={initialValues.tags} />

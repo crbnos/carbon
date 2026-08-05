@@ -11,6 +11,10 @@ import type {
   getAssemblyInstructionVersions,
   getAssemblyUnits,
   getBalloons,
+  getCutList,
+  getCutListLines,
+  getCutLists,
+  getCutPatterns,
   getFailureMode,
   getFailureModes,
   getInspectionDocument,
@@ -31,6 +35,7 @@ import type {
   getMaintenanceSchedule,
   getMaintenanceScheduleItems,
   getMaintenanceSchedules,
+  getOpenCutDemand,
   getProcedure,
   getProcedureParameters,
   getProcedureSteps,
@@ -194,6 +199,34 @@ export type ProductionPlanningItem = NonNullable<
 export type ScrapReason = NonNullable<
   Awaited<ReturnType<typeof getScrapReasons>>["data"]
 >[number];
+
+// --- Cut Lists ----------------------------------------------------------
+
+export type CutList = NonNullable<
+  Awaited<ReturnType<typeof getCutLists>>["data"]
+>[number];
+
+export type CutListDetail = NonNullable<
+  Awaited<ReturnType<typeof getCutList>>["data"]
+>;
+
+export type CutListLine = NonNullable<
+  Awaited<ReturnType<typeof getCutListLines>>["data"]
+>[number];
+
+export type CutPattern = NonNullable<
+  Awaited<ReturnType<typeof getCutPatterns>>["data"]
+>[number];
+
+export type OpenCutDemand = NonNullable<
+  Awaited<ReturnType<typeof getOpenCutDemand>>["data"]
+>[number];
+
+/** One cut in a pattern's ordered `pattern` JSONB array. */
+export type CutPatternCut = {
+  cutListLineId: string;
+  pieceLength: number;
+};
 
 // --- Assembly Instructions ---------------------------------------------
 

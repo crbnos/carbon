@@ -5,7 +5,11 @@ import { validationError, validator } from "@carbon/form";
 import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs } from "react-router";
 import { data, redirect } from "react-router";
-import { materialValidator, upsertMaterial } from "~/modules/items";
+import {
+  materialValidator,
+  upsertItemStockDimension,
+  upsertMaterial
+} from "~/modules/items";
 import { MaterialForm } from "~/modules/items/ui/Materials";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
@@ -32,8 +36,16 @@ export async function action({ request }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
+  const {
+    stockLength,
+    stockWidth,
+    stockThickness,
+    unitOfDimension,
+    ...materialData
+  } = validation.data;
+
   const createMaterial = await upsertMaterial(client, {
-    ...validation.data,
+    ...materialData,
     companyId,
     customFields: setCustomFields(formData),
     createdBy: userId
@@ -58,6 +70,20 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const itemId = createMaterial.data?.id;
   if (!itemId) throw new Error("Material ID not found");
+
+  // Stock dimensions live in their own 1:1 row so the cut-list optimizer can
+  // query them. Best-effort: a material without them is simply not cut stock.
+  if (stockLength || stockWidth || stockThickness) {
+    await upsertItemStockDimension(client, {
+      itemId,
+      companyId,
+      stockLength: stockLength ?? null,
+      stockWidth: stockWidth ?? null,
+      stockThickness: stockThickness ?? null,
+      unitOfDimension: unitOfDimension || "in",
+      createdBy: userId
+    });
+  }
 
   return modal
     ? data(createMaterial, { status: 201 })

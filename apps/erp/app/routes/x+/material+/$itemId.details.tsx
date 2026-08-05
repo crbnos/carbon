@@ -9,7 +9,11 @@ import { redirect, useParams } from "react-router";
 import { DeferredFiles } from "~/components";
 import { usePermissions, useRouteData } from "~/hooks";
 import type { ItemFile, MaterialSummary } from "~/modules/items";
-import { materialValidator, upsertMaterial } from "~/modules/items";
+import {
+  materialValidator,
+  upsertItemStockDimension,
+  upsertMaterial
+} from "~/modules/items";
 import {
   ItemDocuments,
   ItemNotes,
@@ -20,7 +24,7 @@ import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  const { client, companyId, userId } = await requirePermissions(request, {
     update: "parts"
   });
 
@@ -34,8 +38,16 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
+  const {
+    stockLength,
+    stockWidth,
+    stockThickness,
+    unitOfDimension,
+    ...materialData
+  } = validation.data;
+
   const updateMaterial = await upsertMaterial(client, {
-    ...validation.data,
+    ...materialData,
     id: itemId,
     customFields: setCustomFields(formData),
     updatedBy: userId
@@ -48,6 +60,19 @@ export async function action({ request, params }: ActionFunctionArgs) {
         error(updateMaterial.error, "Failed to update material")
       )
     );
+  }
+
+  if (stockLength || stockWidth || stockThickness) {
+    await upsertItemStockDimension(client, {
+      itemId,
+      companyId,
+      stockLength: stockLength ?? null,
+      stockWidth: stockWidth ?? null,
+      stockThickness: stockThickness ?? null,
+      unitOfDimension: unitOfDimension || "in",
+      createdBy: userId,
+      updatedBy: userId
+    });
   }
 
   throw redirect(

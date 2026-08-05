@@ -723,7 +723,13 @@ const baseMaterialValidator = z.object({
   unitOfMeasureCode: z
     .string()
     .min(1, { message: "Unit of Measure is required" }),
-  storageUnitId: zfd.text(z.string().optional())
+  storageUnitId: zfd.text(z.string().optional()),
+  // Cut list demand: length of ONE piece. Quantity stays the piece count, so
+  // 4 pieces of 5.7" is quantity 4 + cutLength 5.7 — never 22.8 smeared into
+  // quantity, which loses the piece count the saw actually needs.
+  cutLength: zfd.numeric(z.number().positive().optional()),
+  cutWidth: zfd.numeric(z.number().positive().optional()),
+  grainLocked: zfd.checkbox()
 });
 
 export const jobMaterialValidator = baseMaterialValidator
@@ -979,6 +985,125 @@ export const scheduleJobUpdateValidator = z.object({
 export const scrapReasonValidator = z.object({
   id: zfd.text(z.string().optional()),
   name: z.string().min(1, { message: "Name is required" })
+});
+
+// --- Cut Lists ----------------------------------------------------------
+
+export const cutListStatus = [
+  "Draft",
+  "Released",
+  "In Progress",
+  "Completed",
+  "Cancelled"
+] as const;
+
+export type CutListStatus = (typeof cutListStatus)[number];
+
+/** Units a cut list can be dimensioned in. Mirrors the DB CHECK constraint. */
+export const dimensionUnits = ["in", "ft", "mm", "cm", "m"] as const;
+export type DimensionUnit = (typeof dimensionUnits)[number];
+
+/**
+ * A cut list locks once it leaves Draft: its saw parameters and demand lines
+ * are what the operator is working from, so editing them mid-run would
+ * silently invalidate the patterns already on the floor.
+ */
+export function isCutListLocked(status?: CutListStatus | null) {
+  return (
+    status === "Completed" || status === "Cancelled" || status === "In Progress"
+  );
+}
+
+/** Only Draft accepts line edits and re-optimization. */
+export function isCutListEditable(status?: CutListStatus | null) {
+  return status === "Draft";
+}
+
+export const cutListValidator = z.object({
+  id: zfd.text(z.string().optional()),
+  locationId: zfd.text(z.string().optional()),
+  processId: zfd.text(z.string().optional()),
+  workCenterId: zfd.text(z.string().optional()),
+  kerf: zfd.numeric(z.number().min(0)),
+  endTrim: zfd.numeric(z.number().min(0)),
+  gripMargin: zfd.numeric(z.number().min(0)),
+  minRemnantLength: zfd.numeric(z.number().min(0)),
+  unitOfDimension: z.enum(dimensionUnits, {
+    errorMap: () => ({ message: "Unit is required" })
+  }),
+  assignee: zfd.text(z.string().optional())
+});
+
+export const cutListLineValidator = z.object({
+  id: zfd.text(z.string().optional()),
+  cutListId: z.string().min(1, { message: "Cut list is required" }),
+  jobId: zfd.text(z.string().optional()),
+  jobMaterialId: zfd.text(z.string().optional()),
+  itemId: z.string().min(1, { message: "Material is required" }),
+  pieceLength: zfd.numeric(
+    z.number().positive({ message: "Piece length must be greater than zero" })
+  ),
+  pieceWidth: zfd.numeric(z.number().positive().optional()),
+  quantity: zfd.numeric(
+    z.number().int().positive({ message: "Quantity must be greater than zero" })
+  )
+});
+
+export const cutListStatusValidator = z.object({
+  status: z.enum(cutListStatus, {
+    errorMap: () => ({ message: "Status is required" })
+  })
+});
+
+/**
+ * Confirmation payload. Quantities cut per line, the stock consumed, the drops
+ * that go back on the rack, and anything too short to keep.
+ */
+export const cutListCompleteValidator = z.object({
+  lines: z
+    .array(
+      z.object({
+        cutListLineId: z.string().min(1),
+        quantityCut: z.number().int().min(0)
+      })
+    )
+    .min(1, { message: "At least one line is required" }),
+  consumed: z
+    .array(
+      z.object({
+        trackedEntityId: z.string().min(1),
+        quantityConsumed: z.number().positive()
+      })
+    )
+    .default([]),
+  untrackedConsumed: z
+    .array(
+      z.object({
+        itemId: z.string().min(1),
+        quantity: z.number().positive(),
+        storageUnitId: z.string().optional()
+      })
+    )
+    .default([]),
+  remnants: z
+    .array(
+      z.object({
+        fromTrackedEntityId: z.string().min(1),
+        length: z.number().positive(),
+        storageUnitId: z.string().optional()
+      })
+    )
+    .default([]),
+  scrap: z
+    .array(
+      z.object({
+        fromTrackedEntityId: z.string().optional(),
+        itemId: z.string().optional(),
+        quantity: z.number().positive(),
+        scrapReasonId: z.string().optional()
+      })
+    )
+    .default([])
 });
 
 export const failureModeValidator = z.object({
