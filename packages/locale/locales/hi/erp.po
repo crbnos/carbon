@@ -67,7 +67,7 @@ msgstr "{0} ड्राफ्ट जर्नल प्रविष्टिय
 
 #. placeholder {0}: scrapDrops.length
 msgid "{0} drop(s) below the {minRemnantLength} {unitOfDimension} minimum will post as scrap."
-msgstr ""
+msgstr "{0} ड्रॉप्स जो {minRemnantLength} {unitOfDimension} न्यूनतम से नीचे हैं वे स्क्रैप के रूप में पोस्ट किए जाएंगे।"
 
 #. placeholder {0}: mappings.length
 msgid "{0} lines to map"
@@ -83,7 +83,7 @@ msgstr "{0} प्रक्रियाएं"
 
 #. placeholder {0}: patterns.length
 msgid "{0} stock unit(s), in cut order"
-msgstr ""
+msgstr "{0} स्टॉक यूनिट(स), कट ऑर्डर में"
 
 #. placeholder {0}: ap.count
 msgid "{0} suppliers with a balance"
@@ -629,7 +629,7 @@ msgid "Actual Cost"
 msgstr "वास्तविक लागत"
 
 msgid "Actual drop"
-msgstr ""
+msgstr "वास्तविक ड्रॉप"
 
 msgid "Actual End"
 msgstr "वास्तविक अंत"
@@ -752,7 +752,7 @@ msgid "Add Permissions"
 msgstr "अनुमतियां जोड़ें"
 
 msgid "Add Piece"
-msgstr ""
+msgstr "टुकड़ा जोड़ें"
 
 msgid "Add Printer"
 msgstr "प्रिंटर जोड़ें"
@@ -2539,7 +2539,7 @@ msgid "Complete all quantities on barcode scan"
 msgstr "बारकोड स्कैन पर सभी मात्राएं पूर्ण करें"
 
 msgid "Complete cut list"
-msgstr ""
+msgstr "पूर्ण कट सूची"
 
 msgid "Complete Job"
 msgstr "नौकरी पूरी करें"
@@ -2744,7 +2744,7 @@ msgid "Consumables"
 msgstr "उपभोग्य"
 
 msgid "Consume"
-msgstr ""
+msgstr "उपभोग करें"
 
 msgid "Consumed"
 msgstr "उपभोग किया गया"
@@ -3166,7 +3166,7 @@ msgid "Create Change Notice"
 msgstr "परिवर्तन सूचना बनाएं"
 
 msgid "Create cut list"
-msgstr ""
+msgstr "कट सूची बनाएं"
 
 msgid "Create Issue"
 msgstr "समस्या बनाएं"
@@ -3580,25 +3580,25 @@ msgid "Customize the layout of your PDF documents — reorder sections, hide wha
 msgstr "अपने PDF दस्तावेज़ों के लेआउट को कस्टमाइज़ करें — अनुभागों को पुनः व्यवस्थित करें, जो आपको आवश्यकता नहीं है उसे छिपाएं, और अपने स्वयं के ब्लॉक जोड़ें।"
 
 msgid "Cut"
-msgstr ""
+msgstr "कट"
 
 msgid "Cut length"
-msgstr ""
+msgstr "कट की लंबाई"
 
 msgid "Cut Length"
-msgstr ""
+msgstr "कट की लंबाई"
 
 msgid "Cut List"
-msgstr ""
+msgstr "कट सूची"
 
 msgid "Cut Lists"
-msgstr ""
+msgstr "कट सूचियां"
 
 msgid "Cut now"
-msgstr ""
+msgstr "अभी कट करें"
 
 msgid "Cut off the end of a new stock unit before the first piece"
-msgstr ""
+msgstr "पहले टुकड़े से पहले एक नई स्टॉक यूनिट के अंत को काटें"
 
 msgid "Cut over to Carbon and freeze the old system"
 msgstr "कार्बन में स्विच करें और पुरानी प्रणाली को फ्रीज करें"
@@ -3607,10 +3607,10 @@ msgid "Cut over, freeze the old system, and confirm you're live on Carbon."
 msgstr "पुरानी प्रणाली को बंद करें, फ्रीज करें, और पुष्टि करें कि आप Carbon पर लाइव हैं।"
 
 msgid "Cut plan"
-msgstr ""
+msgstr "कट योजना"
 
 msgid "Cut Width"
-msgstr ""
+msgstr "कट की चौड़ाई"
 
 msgid "Cutover checklist"
 msgstr "कटओवर चेकलिस्ट"
@@ -3622,10 +3622,10 @@ msgid "Cutover support"
 msgstr "कटओवर सहायता"
 
 msgid "Cutting Process"
-msgstr ""
+msgstr "कटिंग प्रक्रिया"
 
 msgid "Cutting Runs"
-msgstr ""
+msgstr "कटिंग रन्स"
 
 msgid "Cycle count and adjust with an audit trail"
 msgstr "चक्र गणना करें और ऑडिट ट्रेल के साथ समायोजित करें"
@@ -4303,7 +4303,7 @@ msgid "Dimension"
 msgstr "आयाम"
 
 msgid "Dimension Unit"
-msgstr ""
+msgstr "आयाम यूनिट"
 
 msgid "dimensions"
 msgstr "आयाम"
@@ -4503,13 +4503,13 @@ msgid "Drawing replaced. Balloon placements were removed; feature rows are uncha
 msgstr "ड्राइंग बदल दी गई। बैलून प्लेसमेंट हटा दिए गए; फीचर पंक्तियां अपरिवर्तित हैं।"
 
 msgid "drop"
-msgstr ""
+msgstr "ड्रॉप"
 
 msgid "Drop"
-msgstr ""
+msgstr "ड्रॉप"
 
 msgid "Drop length"
-msgstr ""
+msgstr "ड्रॉप की लंबाई"
 
 msgid "Drop Shipment"
 msgstr "ड्रॉप शिपमेंट"
@@ -4720,7 +4720,7 @@ msgid "Edit Customer Type"
 msgstr "ग्राहक प्रकार संपादित करें"
 
 msgid "Edit Cut List"
-msgstr ""
+msgstr "कट सूची संपादित करें"
 
 msgid "Edit Department"
 msgstr "विभाग संपादित करें"
@@ -4831,7 +4831,7 @@ msgid "Edit Picking List"
 msgstr "पिकिंग सूची संपादित करें"
 
 msgid "Edit Piece"
-msgstr ""
+msgstr "टुकड़ा संपादित करें"
 
 msgid "Edit Portal"
 msgstr "पोर्टल संपादित करें"
@@ -5089,7 +5089,7 @@ msgid "End Time"
 msgstr "समाप्ति समय"
 
 msgid "End trim"
-msgstr ""
+msgstr "अंत ट्रिम"
 
 msgid "Ending"
 msgstr "समाप्त"
@@ -5640,7 +5640,7 @@ msgid "Failed to load jobs"
 msgstr "नौकरियां लोड करने में विफल"
 
 msgid "Failed to load material properties"
-msgstr ""
+msgstr "सामग्री गुण लोड करने में विफल"
 
 msgid "Failed to load purchase order lines"
 msgstr "क्रय आदेश लाइनें लोड करने में विफल"
@@ -6331,13 +6331,13 @@ msgid "Grades"
 msgstr "ग्रेड"
 
 msgid "Grain Locked"
-msgstr ""
+msgstr "अनाज बंद"
 
 msgid "Grip"
-msgstr ""
+msgstr "पकड़"
 
 msgid "Grip margin"
-msgstr ""
+msgstr "पकड़ मार्जिन"
 
 msgid "Group"
 msgstr "समूह"
@@ -6370,7 +6370,7 @@ msgid "Hard to see true cost or margin on a job"
 msgstr "किसी काम पर सच्ची लागत या मार्जिन देखना मुश्किल है"
 
 msgid "Heat"
-msgstr ""
+msgstr "ताप"
 
 msgid "Help"
 msgstr "मदद"
@@ -7190,7 +7190,7 @@ msgid "Keep picking"
 msgstr "चुनते रहें"
 
 msgid "Kerf"
-msgstr ""
+msgstr "केर्फ"
 
 msgid "Key"
 msgstr "कुंजी"
@@ -7318,13 +7318,13 @@ msgid "Leftover staged material returns when the whole job completes."
 msgstr "बची हुई सामग्री पूरी जॉब पूरी होने पर वापस आती है।"
 
 msgid "Length"
-msgstr ""
+msgstr "लंबाई"
 
 msgid "Length of one piece — drives cut lists"
-msgstr ""
+msgstr "एक टुकड़े की लंबाई — कट सूचियों को चलाता है"
 
 msgid "Length the clamp holds and cannot cut"
-msgstr ""
+msgstr "क्लैम्प जो लंबाई पकड़ता है और काट नहीं सकता"
 
 msgid "Less manual work"
 msgstr "कम मैनुअल काम"
@@ -7384,7 +7384,7 @@ msgid "Line Status"
 msgstr "लाइन स्थिति"
 
 msgid "line(s)"
-msgstr ""
+msgstr "लाइन(ें)"
 
 msgid "Linear Team"
 msgstr "Linear Team"
@@ -7853,7 +7853,7 @@ msgid "Material Substances"
 msgstr "सामग्री पदार्थ"
 
 msgid "Material the blade destroys on every cut"
-msgstr ""
+msgstr "सामग्री जो ब्लेड हर कट पर नष्ट करता है"
 
 msgid "material type"
 msgstr "सामग्री प्रकार"
@@ -7976,7 +7976,7 @@ msgid "Migrate data"
 msgstr "डेटा माइग्रेट करें"
 
 msgid "Min drop"
-msgstr ""
+msgstr "न्यूनतम ड्रॉप"
 
 msgid "Min Qty"
 msgstr "न्यूनतम मात्रा"
@@ -7997,7 +7997,7 @@ msgid "Minimum Order:"
 msgstr "न्यूनतम ऑर्डर:"
 
 msgid "Minimum remnant"
-msgstr ""
+msgstr "न्यूनतम अवशेष"
 
 msgid "Minimum Reserve Quantity"
 msgstr "न्यूनतम आरक्षित मात्रा"
@@ -8239,7 +8239,7 @@ msgid "New Customer Part"
 msgstr "नया ग्राहक भाग"
 
 msgid "New Cut List"
-msgstr ""
+msgstr "नई कट सूची"
 
 msgid "New Department"
 msgstr "नया विभाग"
@@ -8566,7 +8566,7 @@ msgid "No available tracked entities found"
 msgstr "कोई उपलब्ध ट्रैक किए गए इकाइयां नहीं मिलीं"
 
 msgid "No batch-tracked stock on hand for these materials. Remnants need batch tracking to keep their lot identity."
-msgstr ""
+msgstr "इन सामग्रियों के लिए हाथ में कोई बैच-ट्रैक किया गया स्टॉक नहीं है। अवशेषों को उनकी लॉट पहचान रखने के लिए बैच ट्रैकिंग की आवश्यकता है।"
 
 msgid "No BOM input has a shelf-life policy"
 msgstr "कोई BOM इनपुट शेल्फ-लाइफ नीति नहीं है"
@@ -8599,7 +8599,7 @@ msgid "No cost history found"
 msgstr "कोई लागत इतिहास नहीं मिला"
 
 msgid "No cutting processes yet — mark a process as a cutting process in Resources."
-msgstr ""
+msgstr "अभी कोई कटिंग प्रक्रिया नहीं है — संसाधनों में एक प्रक्रिया को कटिंग प्रक्रिया के रूप में चिह्नित करें।"
 
 msgid "No Data"
 msgstr "कोई डेटा नहीं"
@@ -8710,7 +8710,7 @@ msgid "No notes"
 msgstr "कोई नोट नहीं"
 
 msgid "No open cut demand. A job material needs a cut length before it shows up here."
-msgstr ""
+msgstr "कोई खुली कट डिमांड नहीं है। एक जॉब सामग्री को यहां दिखाई देने से पहले एक कट लंबाई की आवश्यकता है।"
 
 msgid "No open invoices"
 msgstr "कोई खुले चालान नहीं"
@@ -8761,7 +8761,7 @@ msgid "No payments yet."
 msgstr "अभी तक कोई भुगतान नहीं।"
 
 msgid "No pieces yet. Add one, or build this list from open job demand."
-msgstr ""
+msgstr "अभी कोई पीस नहीं है। एक जोड़ें, या खुली जॉब डिमांड से यह सूची बनाएं।"
 
 msgid "No planning data"
 msgstr "कोई योजना डेटा नहीं"
@@ -8779,7 +8779,7 @@ msgid "No printers configured. Click \"Add Printer\" to create one."
 msgstr "कोई प्रिंटर कॉन्फ़िगर नहीं किया गया है। एक बनाने के लिए \"प्रिंटर जोड़ें\" पर क्लिक करें।"
 
 msgid "No process"
-msgstr ""
+msgstr "कोई प्रक्रिया नहीं"
 
 msgid "No process selected"
 msgstr "कोई प्रक्रिया चयनित नहीं है"
@@ -9101,7 +9101,7 @@ msgid "Open change notices affecting this part"
 msgstr "इस भाग को प्रभावित करने वाली परिवर्तन सूचनाएं खोलें"
 
 msgid "Open cut demand across released jobs. Pick what runs together on one machine."
-msgstr ""
+msgstr "जारी किए गए जॉब्स में खुली कट डिमांड। चुनें कि एक मशीन पर क्या एक साथ चलता है।"
 
 msgid "Open Date"
 msgstr "खुली तारीख"
@@ -9224,7 +9224,7 @@ msgid "Opportunity"
 msgstr "अवसर"
 
 msgid "Optimize"
-msgstr ""
+msgstr "अनुकूलित करें"
 
 msgid "Optimized for fast previews — downloads always serve the original uploaded file"
 msgstr "तेज़ पूर्वावलोकन के लिए अनुकूलित — डाउनलोड हमेशा मूल अपलोड की गई फ़ाइल देते हैं"
@@ -9676,25 +9676,25 @@ msgid "Picking offers tracked entities earliest-expiry-first, so the soonest-to-
 msgstr "नियोजित"
 
 msgid "Piece"
-msgstr ""
+msgstr "पीस"
 
 msgid "Piece length ({unitOfDimension})"
-msgstr ""
+msgstr "पीस की लंबाई ({unitOfDimension})"
 
 msgid "Piece width ({unitOfDimension})"
-msgstr ""
+msgstr "पीस की चौड़ाई ({unitOfDimension})"
 
 msgid "pieces"
-msgstr ""
+msgstr "पीस"
 
 msgid "Pieces"
-msgstr ""
+msgstr "पीस"
 
 msgid "Pieces cut"
-msgstr ""
+msgstr "कटे हुए पीस"
 
 msgid "Pieces owed"
-msgstr ""
+msgstr "देय पीस"
 
 msgid "Pieces/Hour"
 msgstr "Pieces/Hour"
@@ -9712,7 +9712,7 @@ msgid "Plan"
 msgstr "योजना"
 
 msgid "Plan a cutting run"
-msgstr ""
+msgstr "एक कटिंग रन की योजना बनाएं"
 
 msgid "Plan the work"
 msgstr "काम की योजना बनाएं"
@@ -9721,7 +9721,7 @@ msgid "Plan Type"
 msgstr "योजना प्रकार"
 
 msgid "planned"
-msgstr ""
+msgstr "योजनाबद्ध"
 
 msgid "Planned"
 msgstr "पोस्टिंग"
@@ -10607,7 +10607,7 @@ msgid "Record inspections tied to a part and a job"
 msgstr "एक भाग और एक कार्य से जुड़े निरीक्षण रिकॉर्ड करें"
 
 msgid "Record what was actually cut and what drop goes back to stock."
-msgstr ""
+msgstr "रिकॉर्ड करें कि वास्तव में क्या कटा गया और क्या ड्रॉप स्टॉक में वापस जाता है।"
 
 msgid "Recorded on a calibration that the gauge needs repair before its readings can be trusted."
 msgstr "कैलिब्रेशन पर दर्ज किया गया है कि गेज को मरम्मत की आवश्यकता है इससे पहले कि इसकी रीडिंग पर विश्वास किया जा सके।"
@@ -10718,10 +10718,10 @@ msgid "Remember this PIN. You will need it to exit console mode on MES terminals
 msgstr "इस PIN को याद रखें। MES टर्मिनल पर कंसोल मोड से बाहर निकलने के लिए आपको इसकी आवश्यकता होगी।"
 
 msgid "remnant"
-msgstr ""
+msgstr "अवशेष"
 
 msgid "Remnant {remnant} {unitOfDimension}"
-msgstr ""
+msgstr "अवशेष {remnant} {unitOfDimension}"
 
 msgid "Remove"
 msgstr "हटाएं"
@@ -11998,7 +11998,7 @@ msgid "Shortcuts"
 msgstr "शॉर्टकट"
 
 msgid "Shorter drops are scrapped instead of returned to stock"
-msgstr ""
+msgstr "छोटी ड्रॉप को स्टॉक में वापस करने के बजाय स्क्रैप किया जाता है"
 
 msgid "Show a readable Customer ID column on the customer list, customer forms, and dropdowns. Customers are still identified internally either way."
 msgstr "ग्राहक सूची, ग्राहक फॉर्म और ड्रॉपडाउन पर एक पठनीय ग्राहक आईडी कॉलम दिखाएं। ग्राहकों की पहचान आंतरिक रूप से किसी भी तरह से की जाती है।"
@@ -12309,16 +12309,16 @@ msgid "Steps are inherited from the inspection plan."
 msgstr "चरण निरीक्षण योजना से विरासत में मिले हैं।"
 
 msgid "Stock consumed"
-msgstr ""
+msgstr "उपयोग किया गया स्टॉक"
 
 msgid "Stock Length"
-msgstr ""
+msgstr "स्टॉक की लंबाई"
 
 msgid "Stock movement corrected"
 msgstr "स्टॉक आंदोलन सही किया गया"
 
 msgid "Stock Thickness"
-msgstr ""
+msgstr "स्टॉक की मोटाई"
 
 msgid "Stock Transfer ID"
 msgstr "स्टॉक ट्रांसफर आईडी"
@@ -12336,7 +12336,7 @@ msgid "Stock Transfers"
 msgstr "स्टॉक ट्रांसफर"
 
 msgid "Stock Width"
-msgstr ""
+msgstr "स्टॉक की चौड़ाई"
 
 #. placeholder {0}: successorItem.readableIdWithRevision
 msgid "Stocked for spares only — successor: <0>{0}</0>"
@@ -14007,7 +14007,7 @@ msgid "Triggers"
 msgstr "ट्रिगर"
 
 msgid "Trim"
-msgstr ""
+msgstr "ट्रिम करें"
 
 msgid "Tuesday"
 msgstr "मंगलवार"
@@ -15225,7 +15225,7 @@ msgid "Yes, Update IDs"
 msgstr "हाँ, आईडी अपडेट करें"
 
 msgid "Yield"
-msgstr ""
+msgstr "उपज"
 
 msgid "You"
 msgstr "आप"

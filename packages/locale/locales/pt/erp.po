@@ -67,7 +67,7 @@ msgstr "{0} lançamentos de diário em rascunho"
 
 #. placeholder {0}: scrapDrops.length
 msgid "{0} drop(s) below the {minRemnantLength} {unitOfDimension} minimum will post as scrap."
-msgstr ""
+msgstr "{0} retalho(s) abaixo do mínimo de {minRemnantLength} {unitOfDimension} será(ão) registrado(s) como refugo."
 
 #. placeholder {0}: mappings.length
 msgid "{0} lines to map"
@@ -83,7 +83,7 @@ msgstr "{0} Processos"
 
 #. placeholder {0}: patterns.length
 msgid "{0} stock unit(s), in cut order"
-msgstr ""
+msgstr "{0} unidade(s) de estoque, em ordem de corte"
 
 #. placeholder {0}: ap.count
 msgid "{0} suppliers with a balance"
@@ -629,7 +629,7 @@ msgid "Actual Cost"
 msgstr "Custo Real"
 
 msgid "Actual drop"
-msgstr ""
+msgstr "Retalho real"
 
 msgid "Actual End"
 msgstr "Fim Real"
@@ -752,7 +752,7 @@ msgid "Add Permissions"
 msgstr "Adicionar Permissões"
 
 msgid "Add Piece"
-msgstr ""
+msgstr "Adicionar peça"
 
 msgid "Add Printer"
 msgstr "Adicionar Impressora"
@@ -2539,7 +2539,7 @@ msgid "Complete all quantities on barcode scan"
 msgstr "Completar todas as quantidades na leitura do código de barras"
 
 msgid "Complete cut list"
-msgstr ""
+msgstr "Completar lista de corte"
 
 msgid "Complete Job"
 msgstr "Concluir Trabalho"
@@ -2744,7 +2744,7 @@ msgid "Consumables"
 msgstr "Consumíveis"
 
 msgid "Consume"
-msgstr ""
+msgstr "Consumir"
 
 msgid "Consumed"
 msgstr "Consumido"
@@ -3166,7 +3166,7 @@ msgid "Create Change Notice"
 msgstr "Criar Aviso de Mudança"
 
 msgid "Create cut list"
-msgstr ""
+msgstr "Criar lista de corte"
 
 msgid "Create Issue"
 msgstr "Criar Problema"
@@ -3580,25 +3580,25 @@ msgid "Customize the layout of your PDF documents — reorder sections, hide wha
 msgstr "Personalize o layout dos seus documentos PDF — reordene seções, oculte o que não precisa e adicione seus próprios blocos."
 
 msgid "Cut"
-msgstr ""
+msgstr "Corte"
 
 msgid "Cut length"
-msgstr ""
+msgstr "Comprimento do corte"
 
 msgid "Cut Length"
-msgstr ""
+msgstr "Comprimento do Corte"
 
 msgid "Cut List"
-msgstr ""
+msgstr "Lista de Corte"
 
 msgid "Cut Lists"
-msgstr ""
+msgstr "Listas de Corte"
 
 msgid "Cut now"
-msgstr ""
+msgstr "Cortar agora"
 
 msgid "Cut off the end of a new stock unit before the first piece"
-msgstr ""
+msgstr "Cortar o fim de uma nova unidade de estoque antes da primeira peça"
 
 msgid "Cut over to Carbon and freeze the old system"
 msgstr "Migrar para o Carbon e congelar o sistema antigo"
@@ -3607,10 +3607,10 @@ msgid "Cut over, freeze the old system, and confirm you're live on Carbon."
 msgstr "Migre, congele o sistema antigo e confirme que você está ativo no Carbon."
 
 msgid "Cut plan"
-msgstr ""
+msgstr "Plano de corte"
 
 msgid "Cut Width"
-msgstr ""
+msgstr "Largura do Corte"
 
 msgid "Cutover checklist"
 msgstr "Lista de verificação de transição"
@@ -3622,10 +3622,10 @@ msgid "Cutover support"
 msgstr "Suporte de transição"
 
 msgid "Cutting Process"
-msgstr ""
+msgstr "Processo de Corte"
 
 msgid "Cutting Runs"
-msgstr ""
+msgstr "Execuções de Corte"
 
 msgid "Cycle count and adjust with an audit trail"
 msgstr "Contagem cíclica e ajuste com trilha de auditoria"
@@ -4303,7 +4303,7 @@ msgid "Dimension"
 msgstr "Dimensão"
 
 msgid "Dimension Unit"
-msgstr ""
+msgstr "Unidade de Dimensão"
 
 msgid "dimensions"
 msgstr "dimensões"
@@ -4503,13 +4503,13 @@ msgid "Drawing replaced. Balloon placements were removed; feature rows are uncha
 msgstr "Desenho substituído. Os posicionamentos de balões foram removidos; as linhas de recursos permanecem inalteradas."
 
 msgid "drop"
-msgstr ""
+msgstr "retalho"
 
 msgid "Drop"
-msgstr ""
+msgstr "Retalho"
 
 msgid "Drop length"
-msgstr ""
+msgstr "Comprimento do retalho"
 
 msgid "Drop Shipment"
 msgstr "Envio Direto"
@@ -4720,7 +4720,7 @@ msgid "Edit Customer Type"
 msgstr "Editar Tipo de Cliente"
 
 msgid "Edit Cut List"
-msgstr ""
+msgstr "Editar Lista de Corte"
 
 msgid "Edit Department"
 msgstr "Editar Departamento"
@@ -4831,7 +4831,7 @@ msgid "Edit Picking List"
 msgstr "Editar Lista de Coleta"
 
 msgid "Edit Piece"
-msgstr ""
+msgstr "Editar Peça"
 
 msgid "Edit Portal"
 msgstr "Editar Portal"
@@ -5089,7 +5089,7 @@ msgid "End Time"
 msgstr "Hora de Término"
 
 msgid "End trim"
-msgstr ""
+msgstr "Aparação final"
 
 msgid "Ending"
 msgstr "Fim"
@@ -5640,7 +5640,7 @@ msgid "Failed to load jobs"
 msgstr "Falha ao carregar trabalhos"
 
 msgid "Failed to load material properties"
-msgstr ""
+msgstr "Falha ao carregar propriedades do material"
 
 msgid "Failed to load purchase order lines"
 msgstr "Falha ao carregar linhas de ordem de compra"
@@ -6331,13 +6331,13 @@ msgid "Grades"
 msgstr "Graus"
 
 msgid "Grain Locked"
-msgstr ""
+msgstr "Grã Bloqueada"
 
 msgid "Grip"
-msgstr ""
+msgstr "Preensão"
 
 msgid "Grip margin"
-msgstr ""
+msgstr "Margem de preensão"
 
 msgid "Group"
 msgstr "Grupo"
@@ -6370,7 +6370,7 @@ msgid "Hard to see true cost or margin on a job"
 msgstr "Difícil ver o custo real ou margem em um trabalho"
 
 msgid "Heat"
-msgstr ""
+msgstr "Calor"
 
 msgid "Help"
 msgstr "Ajuda"
@@ -7190,7 +7190,7 @@ msgid "Keep picking"
 msgstr "Continuar coletando"
 
 msgid "Kerf"
-msgstr ""
+msgstr "Queimadura de corte"
 
 msgid "Key"
 msgstr "Chave"
@@ -7318,13 +7318,13 @@ msgid "Leftover staged material returns when the whole job completes."
 msgstr "O material preparado restante retorna quando todo o trabalho é concluído."
 
 msgid "Length"
-msgstr ""
+msgstr "Comprimento"
 
 msgid "Length of one piece — drives cut lists"
-msgstr ""
+msgstr "Comprimento de uma peça — orienta as listas de corte"
 
 msgid "Length the clamp holds and cannot cut"
-msgstr ""
+msgstr "Comprimento que a braçadeira segura e não consegue cortar"
 
 msgid "Less manual work"
 msgstr "Menos trabalho manual"
@@ -7384,7 +7384,7 @@ msgid "Line Status"
 msgstr "Status da Linha"
 
 msgid "line(s)"
-msgstr ""
+msgstr "linha(s)"
 
 msgid "Linear Team"
 msgstr "Equipe Linear"
@@ -7853,7 +7853,7 @@ msgid "Material Substances"
 msgstr "Substâncias Materiais"
 
 msgid "Material the blade destroys on every cut"
-msgstr ""
+msgstr "Material que a lâmina destrói a cada corte"
 
 msgid "material type"
 msgstr "Tipo de Material"
@@ -7976,7 +7976,7 @@ msgid "Migrate data"
 msgstr "Migrar dados"
 
 msgid "Min drop"
-msgstr ""
+msgstr "Retalho mínimo"
 
 msgid "Min Qty"
 msgstr "Qtd Mín"
@@ -7997,7 +7997,7 @@ msgid "Minimum Order:"
 msgstr "Pedido Mínimo:"
 
 msgid "Minimum remnant"
-msgstr ""
+msgstr "Retalho mínimo"
 
 msgid "Minimum Reserve Quantity"
 msgstr "Quantidade Mínima de Reserva"
@@ -8239,7 +8239,7 @@ msgid "New Customer Part"
 msgstr "Nova Peça de Cliente"
 
 msgid "New Cut List"
-msgstr ""
+msgstr "Nova Lista de Corte"
 
 msgid "New Department"
 msgstr "Novo Departamento"
@@ -8566,7 +8566,7 @@ msgid "No available tracked entities found"
 msgstr "Nenhuma entidade rastreada disponível encontrada"
 
 msgid "No batch-tracked stock on hand for these materials. Remnants need batch tracking to keep their lot identity."
-msgstr ""
+msgstr "Nenhum estoque rastreado por lote disponível para esses materiais. Retalhos precisam de rastreamento de lote para manter sua identidade de lote."
 
 msgid "No BOM input has a shelf-life policy"
 msgstr "Nenhuma entrada de BOM tem uma política de vida útil"
@@ -8599,7 +8599,7 @@ msgid "No cost history found"
 msgstr "Nenhum histórico de custos encontrado"
 
 msgid "No cutting processes yet — mark a process as a cutting process in Resources."
-msgstr ""
+msgstr "Nenhum processo de corte ainda — marque um processo como um processo de corte em Resources."
 
 msgid "No Data"
 msgstr "Sem Dados"
@@ -8710,7 +8710,7 @@ msgid "No notes"
 msgstr "Sem notas"
 
 msgid "No open cut demand. A job material needs a cut length before it shows up here."
-msgstr ""
+msgstr "Nenhuma demanda de corte aberta. Um material de trabalho precisa de um comprimento de corte antes de aparecer aqui."
 
 msgid "No open invoices"
 msgstr "Nenhuma fatura aberta"
@@ -8761,7 +8761,7 @@ msgid "No payments yet."
 msgstr "Nenhum pagamento ainda."
 
 msgid "No pieces yet. Add one, or build this list from open job demand."
-msgstr ""
+msgstr "Nenhuma peça ainda. Adicione uma, ou construa esta lista a partir da demanda aberta de trabalho."
 
 msgid "No planning data"
 msgstr "Sem dados de planejamento"
@@ -8779,7 +8779,7 @@ msgid "No printers configured. Click \"Add Printer\" to create one."
 msgstr "Nenhuma impressora configurada. Clique em \"Adicionar Impressora\" para criar uma."
 
 msgid "No process"
-msgstr ""
+msgstr "Nenhum processo"
 
 msgid "No process selected"
 msgstr "Nenhum processo selecionado"
@@ -9101,7 +9101,7 @@ msgid "Open change notices affecting this part"
 msgstr "Abrir avisos de mudança que afetam esta parte"
 
 msgid "Open cut demand across released jobs. Pick what runs together on one machine."
-msgstr ""
+msgstr "Demanda de corte aberta em trabalhos liberados. Escolha o que corre junto em uma máquina."
 
 msgid "Open Date"
 msgstr "Data de Abertura"
@@ -9224,7 +9224,7 @@ msgid "Opportunity"
 msgstr "Oportunidade"
 
 msgid "Optimize"
-msgstr ""
+msgstr "Otimizar"
 
 msgid "Optimized for fast previews — downloads always serve the original uploaded file"
 msgstr "Otimizado para visualizações rápidas — downloads sempre servem o arquivo original enviado"
@@ -9676,25 +9676,25 @@ msgid "Picking offers tracked entities earliest-expiry-first, so the soonest-to-
 msgstr "Planejado"
 
 msgid "Piece"
-msgstr ""
+msgstr "Peça"
 
 msgid "Piece length ({unitOfDimension})"
-msgstr ""
+msgstr "Comprimento da peça ({unitOfDimension})"
 
 msgid "Piece width ({unitOfDimension})"
-msgstr ""
+msgstr "Largura da peça ({unitOfDimension})"
 
 msgid "pieces"
-msgstr ""
+msgstr "peças"
 
 msgid "Pieces"
-msgstr ""
+msgstr "Peças"
 
 msgid "Pieces cut"
-msgstr ""
+msgstr "Peças cortadas"
 
 msgid "Pieces owed"
-msgstr ""
+msgstr "Peças devidas"
 
 msgid "Pieces/Hour"
 msgstr "Peças/Hora"
@@ -9712,7 +9712,7 @@ msgid "Plan"
 msgstr "Plano"
 
 msgid "Plan a cutting run"
-msgstr ""
+msgstr "Planejar uma execução de corte"
 
 msgid "Plan the work"
 msgstr "Planejar o trabalho"
@@ -9721,7 +9721,7 @@ msgid "Plan Type"
 msgstr "Tipo de Plano"
 
 msgid "planned"
-msgstr ""
+msgstr "planejado"
 
 msgid "Planned"
 msgstr "Lançamento"
@@ -10607,7 +10607,7 @@ msgid "Record inspections tied to a part and a job"
 msgstr "Registar inspeções vinculadas a uma peça e um trabalho"
 
 msgid "Record what was actually cut and what drop goes back to stock."
-msgstr ""
+msgstr "Registre o que foi realmente cortado e o que sobra volta ao estoque."
 
 msgid "Recorded on a calibration that the gauge needs repair before its readings can be trusted."
 msgstr "Registrado em uma calibração que o medidor precisa de reparo antes de suas leituras poderem ser confiáveis."
@@ -10718,10 +10718,10 @@ msgid "Remember this PIN. You will need it to exit console mode on MES terminals
 msgstr "Lembre-se deste PIN. Você precisará dele para sair do modo console nos terminais MES."
 
 msgid "remnant"
-msgstr ""
+msgstr "remanescente"
 
 msgid "Remnant {remnant} {unitOfDimension}"
-msgstr ""
+msgstr "Remanescente {remnant} {unitOfDimension}"
 
 msgid "Remove"
 msgstr "Remover"
@@ -11998,7 +11998,7 @@ msgid "Shortcuts"
 msgstr "Atalhos"
 
 msgid "Shorter drops are scrapped instead of returned to stock"
-msgstr ""
+msgstr "Gotas mais curtas são sucatadas em vez de serem devolvidas ao estoque"
 
 msgid "Show a readable Customer ID column on the customer list, customer forms, and dropdowns. Customers are still identified internally either way."
 msgstr "Mostrar uma coluna de ID de Cliente legível na lista de clientes, formulários de clientes e menus suspensos. Os clientes ainda são identificados internamente de qualquer forma."
@@ -12309,16 +12309,16 @@ msgid "Steps are inherited from the inspection plan."
 msgstr "As etapas são herdadas do plano de inspeção."
 
 msgid "Stock consumed"
-msgstr ""
+msgstr "Estoque consumido"
 
 msgid "Stock Length"
-msgstr ""
+msgstr "Comprimento do Estoque"
 
 msgid "Stock movement corrected"
 msgstr "Movimento de estoque corrigido"
 
 msgid "Stock Thickness"
-msgstr ""
+msgstr "Espessura do Estoque"
 
 msgid "Stock Transfer ID"
 msgstr "ID de Transferência de Estoque"
@@ -12336,7 +12336,7 @@ msgid "Stock Transfers"
 msgstr "Transferências de Estoque"
 
 msgid "Stock Width"
-msgstr ""
+msgstr "Largura do Estoque"
 
 #. placeholder {0}: successorItem.readableIdWithRevision
 msgid "Stocked for spares only — successor: <0>{0}</0>"
@@ -14007,7 +14007,7 @@ msgid "Triggers"
 msgstr "Acionadores"
 
 msgid "Trim"
-msgstr ""
+msgstr "Aparar"
 
 msgid "Tuesday"
 msgstr "Terça-feira"
@@ -15225,7 +15225,7 @@ msgid "Yes, Update IDs"
 msgstr "Sim, Atualizar IDs"
 
 msgid "Yield"
-msgstr ""
+msgstr "Rendimento"
 
 msgid "You"
 msgstr "Você"

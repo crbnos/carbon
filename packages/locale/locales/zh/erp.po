@@ -67,7 +67,7 @@ msgstr "{0} 份草稿日记账条目"
 
 #. placeholder {0}: scrapDrops.length
 msgid "{0} drop(s) below the {minRemnantLength} {unitOfDimension} minimum will post as scrap."
-msgstr ""
+msgstr "{0}根掉料低于{minRemnantLength}{unitOfDimension}最小值将被记录为废料。"
 
 #. placeholder {0}: mappings.length
 msgid "{0} lines to map"
@@ -83,7 +83,7 @@ msgstr "{0} 个流程"
 
 #. placeholder {0}: patterns.length
 msgid "{0} stock unit(s), in cut order"
-msgstr ""
+msgstr "{0}个库存单位，按切割顺序"
 
 #. placeholder {0}: ap.count
 msgid "{0} suppliers with a balance"
@@ -629,7 +629,7 @@ msgid "Actual Cost"
 msgstr "实际成本"
 
 msgid "Actual drop"
-msgstr ""
+msgstr "实际掉料"
 
 msgid "Actual End"
 msgstr "实际结束"
@@ -752,7 +752,7 @@ msgid "Add Permissions"
 msgstr "添加权限"
 
 msgid "Add Piece"
-msgstr ""
+msgstr "添加件"
 
 msgid "Add Printer"
 msgstr "添加打印机"
@@ -2539,7 +2539,7 @@ msgid "Complete all quantities on barcode scan"
 msgstr "在条形码扫描时完成所有数量"
 
 msgid "Complete cut list"
-msgstr ""
+msgstr "完成切割清单"
 
 msgid "Complete Job"
 msgstr "完成工作"
@@ -2744,7 +2744,7 @@ msgid "Consumables"
 msgstr "消耗品"
 
 msgid "Consume"
-msgstr ""
+msgstr "消耗"
 
 msgid "Consumed"
 msgstr "已消耗"
@@ -3166,7 +3166,7 @@ msgid "Create Change Notice"
 msgstr "创建更改单"
 
 msgid "Create cut list"
-msgstr ""
+msgstr "创建切割清单"
 
 msgid "Create Issue"
 msgstr "创建问题"
@@ -3580,25 +3580,25 @@ msgid "Customize the layout of your PDF documents — reorder sections, hide wha
 msgstr "自定义您的 PDF 文档布局 — 重新排列部分、隐藏不需要的内容，并添加您自己的块。"
 
 msgid "Cut"
-msgstr ""
+msgstr "切割"
 
 msgid "Cut length"
-msgstr ""
+msgstr "切割长度"
 
 msgid "Cut Length"
-msgstr ""
+msgstr "切割长度"
 
 msgid "Cut List"
-msgstr ""
+msgstr "切割清单"
 
 msgid "Cut Lists"
-msgstr ""
+msgstr "切割清单"
 
 msgid "Cut now"
-msgstr ""
+msgstr "立即切割"
 
 msgid "Cut off the end of a new stock unit before the first piece"
-msgstr ""
+msgstr "在第一件之前切掉新库存单位的末端"
 
 msgid "Cut over to Carbon and freeze the old system"
 msgstr "切换到 Carbon 并冻结旧系统"
@@ -3607,10 +3607,10 @@ msgid "Cut over, freeze the old system, and confirm you're live on Carbon."
 msgstr "切换系统，冻结旧系统，并确认您已在 Carbon 上线。"
 
 msgid "Cut plan"
-msgstr ""
+msgstr "切割计划"
 
 msgid "Cut Width"
-msgstr ""
+msgstr "切割宽度"
 
 msgid "Cutover checklist"
 msgstr "转换检查清单"
@@ -3622,10 +3622,10 @@ msgid "Cutover support"
 msgstr "转换支持"
 
 msgid "Cutting Process"
-msgstr ""
+msgstr "切割过程"
 
 msgid "Cutting Runs"
-msgstr ""
+msgstr "切割批次"
 
 msgid "Cycle count and adjust with an audit trail"
 msgstr "循环盘点并通过审计跟踪进行调整"
@@ -4303,7 +4303,7 @@ msgid "Dimension"
 msgstr "尺寸"
 
 msgid "Dimension Unit"
-msgstr ""
+msgstr "尺寸单位"
 
 msgid "dimensions"
 msgstr "维度"
@@ -4503,13 +4503,13 @@ msgid "Drawing replaced. Balloon placements were removed; feature rows are uncha
 msgstr "图纸已替换。气球位置已移除；功能行保持不变。"
 
 msgid "drop"
-msgstr ""
+msgstr "掉料"
 
 msgid "Drop"
-msgstr ""
+msgstr "掉料"
 
 msgid "Drop length"
-msgstr ""
+msgstr "掉料长度"
 
 msgid "Drop Shipment"
 msgstr "直运"
@@ -4720,7 +4720,7 @@ msgid "Edit Customer Type"
 msgstr "编辑客户类型"
 
 msgid "Edit Cut List"
-msgstr ""
+msgstr "编辑切割清单"
 
 msgid "Edit Department"
 msgstr "编辑部门"
@@ -4831,7 +4831,7 @@ msgid "Edit Picking List"
 msgstr "编辑拣货单"
 
 msgid "Edit Piece"
-msgstr ""
+msgstr "编辑件"
 
 msgid "Edit Portal"
 msgstr "编辑门户"
@@ -5089,7 +5089,7 @@ msgid "End Time"
 msgstr "结束时间"
 
 msgid "End trim"
-msgstr ""
+msgstr "末端修剪"
 
 msgid "Ending"
 msgstr "结束"
@@ -5640,7 +5640,7 @@ msgid "Failed to load jobs"
 msgstr "加载工作失败"
 
 msgid "Failed to load material properties"
-msgstr ""
+msgstr "加载材料属性失败"
 
 msgid "Failed to load purchase order lines"
 msgstr "加载采购订单行失败"
@@ -6331,13 +6331,13 @@ msgid "Grades"
 msgstr "等级"
 
 msgid "Grain Locked"
-msgstr ""
+msgstr "纹理锁定"
 
 msgid "Grip"
-msgstr ""
+msgstr "夹持"
 
 msgid "Grip margin"
-msgstr ""
+msgstr "夹持边距"
 
 msgid "Group"
 msgstr "组"
@@ -6370,7 +6370,7 @@ msgid "Hard to see true cost or margin on a job"
 msgstr "难以看清工作的真实成本或利润"
 
 msgid "Heat"
-msgstr ""
+msgstr "热"
 
 msgid "Help"
 msgstr "帮助"
@@ -7190,7 +7190,7 @@ msgid "Keep picking"
 msgstr "继续领取"
 
 msgid "Kerf"
-msgstr ""
+msgstr "锯缝"
 
 msgid "Key"
 msgstr "钥匙"
@@ -7318,13 +7318,13 @@ msgid "Leftover staged material returns when the whole job completes."
 msgstr "当整个工作完成时，剩余的暂存物料返回。"
 
 msgid "Length"
-msgstr ""
+msgstr "长度"
 
 msgid "Length of one piece — drives cut lists"
-msgstr ""
+msgstr "一件的长度——驱动切割清单"
 
 msgid "Length the clamp holds and cannot cut"
-msgstr ""
+msgstr "夹具保持且无法切割的长度"
 
 msgid "Less manual work"
 msgstr "更少的手动工作"
@@ -7384,7 +7384,7 @@ msgid "Line Status"
 msgstr "行状态"
 
 msgid "line(s)"
-msgstr ""
+msgstr "行"
 
 msgid "Linear Team"
 msgstr "Linear 团队"
@@ -7853,7 +7853,7 @@ msgid "Material Substances"
 msgstr "物质材料"
 
 msgid "Material the blade destroys on every cut"
-msgstr ""
+msgstr "刀片每次切割摧毁的材料"
 
 msgid "material type"
 msgstr "材料类型"
@@ -7976,7 +7976,7 @@ msgid "Migrate data"
 msgstr "迁移数据"
 
 msgid "Min drop"
-msgstr ""
+msgstr "最小掉料"
 
 msgid "Min Qty"
 msgstr "最小数量"
@@ -7997,7 +7997,7 @@ msgid "Minimum Order:"
 msgstr "最小订单:"
 
 msgid "Minimum remnant"
-msgstr ""
+msgstr "最小残余"
 
 msgid "Minimum Reserve Quantity"
 msgstr "最小储备数量"
@@ -8239,7 +8239,7 @@ msgid "New Customer Part"
 msgstr "新客户零件"
 
 msgid "New Cut List"
-msgstr ""
+msgstr "新切割清单"
 
 msgid "New Department"
 msgstr "新部门"
@@ -8566,7 +8566,7 @@ msgid "No available tracked entities found"
 msgstr "未找到可用的追踪实体"
 
 msgid "No batch-tracked stock on hand for these materials. Remnants need batch tracking to keep their lot identity."
-msgstr ""
+msgstr "这些材料没有批次跟踪的库存。残余物需要批次跟踪以保持其批次身份。"
 
 msgid "No BOM input has a shelf-life policy"
 msgstr "没有物料清单输入具有保质期政策"
@@ -8599,7 +8599,7 @@ msgid "No cost history found"
 msgstr "未找到成本历史记录"
 
 msgid "No cutting processes yet — mark a process as a cutting process in Resources."
-msgstr ""
+msgstr "还没有裁切工艺 — 在资源中将一个工艺标记为裁切工艺。"
 
 msgid "No Data"
 msgstr "无数据"
@@ -8710,7 +8710,7 @@ msgid "No notes"
 msgstr "没有备注"
 
 msgid "No open cut demand. A job material needs a cut length before it shows up here."
-msgstr ""
+msgstr "没有待处理的裁切需求。工作物料需要有裁切长度才能显示在这里。"
 
 msgid "No open invoices"
 msgstr "没有未结发票"
@@ -8761,7 +8761,7 @@ msgid "No payments yet."
 msgstr "还没有付款。"
 
 msgid "No pieces yet. Add one, or build this list from open job demand."
-msgstr ""
+msgstr "还没有件数。添加一个，或从待处理的工作需求构建此列表。"
 
 msgid "No planning data"
 msgstr "没有规划数据"
@@ -8779,7 +8779,7 @@ msgid "No printers configured. Click \"Add Printer\" to create one."
 msgstr "未配置打印机。点击\"添加打印机\"创建一个。"
 
 msgid "No process"
-msgstr ""
+msgstr "无工艺"
 
 msgid "No process selected"
 msgstr "未选择工艺"
@@ -9101,7 +9101,7 @@ msgid "Open change notices affecting this part"
 msgstr "打开影响此零件的更改单"
 
 msgid "Open cut demand across released jobs. Pick what runs together on one machine."
-msgstr ""
+msgstr "已发放工作中的待处理裁切需求。选择在一台机器上一起运行的内容。"
 
 msgid "Open Date"
 msgstr "开放日期"
@@ -9224,7 +9224,7 @@ msgid "Opportunity"
 msgstr "机会"
 
 msgid "Optimize"
-msgstr ""
+msgstr "优化"
 
 msgid "Optimized for fast previews — downloads always serve the original uploaded file"
 msgstr "针对快速预览优化 — 下载始终提供原始上载的文件"
@@ -9676,25 +9676,25 @@ msgid "Picking offers tracked entities earliest-expiry-first, so the soonest-to-
 msgstr "计划"
 
 msgid "Piece"
-msgstr ""
+msgstr "件"
 
 msgid "Piece length ({unitOfDimension})"
-msgstr ""
+msgstr "件长度 ({unitOfDimension})"
 
 msgid "Piece width ({unitOfDimension})"
-msgstr ""
+msgstr "件宽度 ({unitOfDimension})"
 
 msgid "pieces"
-msgstr ""
+msgstr "件"
 
 msgid "Pieces"
-msgstr ""
+msgstr "件"
 
 msgid "Pieces cut"
-msgstr ""
+msgstr "裁切的件数"
 
 msgid "Pieces owed"
-msgstr ""
+msgstr "欠缺的件数"
 
 msgid "Pieces/Hour"
 msgstr "件/小时"
@@ -9712,7 +9712,7 @@ msgid "Plan"
 msgstr "计划"
 
 msgid "Plan a cutting run"
-msgstr ""
+msgstr "计划裁切运行"
 
 msgid "Plan the work"
 msgstr "规划工作"
@@ -9721,7 +9721,7 @@ msgid "Plan Type"
 msgstr "计划类型"
 
 msgid "planned"
-msgstr ""
+msgstr "已计划"
 
 msgid "Planned"
 msgstr "过账"
@@ -10607,7 +10607,7 @@ msgid "Record inspections tied to a part and a job"
 msgstr "记录与零件和工作相关的检验"
 
 msgid "Record what was actually cut and what drop goes back to stock."
-msgstr ""
+msgstr "记录实际裁切的内容和返回库存的废料。"
 
 msgid "Recorded on a calibration that the gauge needs repair before its readings can be trusted."
 msgstr "在校准记录中标记该量具需要修理才能使其读数可信。"
@@ -10718,10 +10718,10 @@ msgid "Remember this PIN. You will need it to exit console mode on MES terminals
 msgstr "记住此PIN。您需要它来退出MES终端上的控制台模式。"
 
 msgid "remnant"
-msgstr ""
+msgstr "余料"
 
 msgid "Remnant {remnant} {unitOfDimension}"
-msgstr ""
+msgstr "余料 {remnant} {unitOfDimension}"
 
 msgid "Remove"
 msgstr "移除"
@@ -11998,7 +11998,7 @@ msgid "Shortcuts"
 msgstr "快捷键"
 
 msgid "Shorter drops are scrapped instead of returned to stock"
-msgstr ""
+msgstr "较短的废料被报废而不是返回库存"
 
 msgid "Show a readable Customer ID column on the customer list, customer forms, and dropdowns. Customers are still identified internally either way."
 msgstr "在客户列表、客户表单和下拉菜单上显示可读的客户ID列。无论哪种方式，客户在内部仍然可以被识别。"
@@ -12309,16 +12309,16 @@ msgid "Steps are inherited from the inspection plan."
 msgstr "步骤继承自检验计划。"
 
 msgid "Stock consumed"
-msgstr ""
+msgstr "消耗的库存"
 
 msgid "Stock Length"
-msgstr ""
+msgstr "库存长度"
 
 msgid "Stock movement corrected"
 msgstr "库存移动已修正"
 
 msgid "Stock Thickness"
-msgstr ""
+msgstr "库存厚度"
 
 msgid "Stock Transfer ID"
 msgstr "库存转移ID"
@@ -12336,7 +12336,7 @@ msgid "Stock Transfers"
 msgstr "库存转移"
 
 msgid "Stock Width"
-msgstr ""
+msgstr "库存宽度"
 
 #. placeholder {0}: successorItem.readableIdWithRevision
 msgid "Stocked for spares only — successor: <0>{0}</0>"
@@ -14007,7 +14007,7 @@ msgid "Triggers"
 msgstr "触发器"
 
 msgid "Trim"
-msgstr ""
+msgstr "修剪"
 
 msgid "Tuesday"
 msgstr "星期二"
@@ -15225,7 +15225,7 @@ msgid "Yes, Update IDs"
 msgstr "是的，更新 ID"
 
 msgid "Yield"
-msgstr ""
+msgstr "产出率"
 
 msgid "You"
 msgstr "你"
