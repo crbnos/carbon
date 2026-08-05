@@ -16,7 +16,12 @@ import {
   type WorkflowNode,
   workflowDefinitionSchema
 } from "./schema";
-import { describeType, rendersAsText, type ValueOrRef } from "./types";
+import {
+  describeType,
+  rendersAsText,
+  type Template,
+  type ValueOrRef
+} from "./types";
 import { buildAdjacency, createContext, reachableFrom } from "./variables";
 
 /**
@@ -368,8 +373,17 @@ function checkReferences(
   return issues;
 }
 
-/** A template's variables are checked one by one, so a bad one names its own place. */
+/** A template's variables are checked one by one, so a bad one names its own place.
+ * Named rows flatten the same way, then recurse so a row holding a template expands too. */
 function expandTemplate(site: ValueSite): ValueSite[] {
+  if (site.value.kind === "pairs") {
+    return site.value.entries.flatMap((entry, index) =>
+      expandTemplate({
+        value: entry.value,
+        field: `${site.field}.entries.${index}`
+      })
+    );
+  }
   if (site.value.kind !== "template") return [site];
   return site.value.parts.flatMap((part, index) =>
     part.kind === "text"
@@ -450,18 +464,36 @@ function checkTemplateParts(
   ctx: NodeContext
 ): WorkflowIssue[] {
   const issues: WorkflowIssue[] = [];
-  for (const site of getNodeValues(node)) {
-    if (site.value.kind !== "template") continue;
-    site.value.parts.forEach((part, index) => {
+
+  const check = (value: ValueOrRef, field: string): void => {
+    const type = ctx.typeOf(value, node.id);
+    if (type === undefined || rendersAsText(type)) return;
+    issues.push({
+      code: "TYPE_MISMATCH",
+      nodeId: node.id,
+      field,
+      message: `This puts ${describeType(type)} into text. Pick one of its properties instead, such as its name.`
+    });
+  };
+
+  const checkTemplate = (template: Template, field: string): void => {
+    template.parts.forEach((part, index) => {
       if (part.kind === "text") return;
-      const type = ctx.typeOf(part, node.id);
-      if (type === undefined || rendersAsText(type)) return;
-      issues.push({
-        code: "TYPE_MISMATCH",
-        nodeId: node.id,
-        field: `${site.field}.parts.${index}`,
-        message: `This puts ${describeType(type)} into text. Pick one of its properties instead, such as its name.`
-      });
+      check(part, `${field}.parts.${index}`);
+    });
+  };
+
+  for (const site of getNodeValues(node)) {
+    if (site.value.kind === "template") {
+      checkTemplate(site.value, site.field);
+      continue;
+    }
+    if (site.value.kind !== "pairs") continue;
+    site.value.entries.forEach((entry, index) => {
+      const field = `${site.field}.entries.${index}`;
+      // A row's value is written into a header, which is text like any sentence.
+      if (entry.value.kind === "template") checkTemplate(entry.value, field);
+      else check(entry.value, field);
     });
   }
   return issues;

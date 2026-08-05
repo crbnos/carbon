@@ -1296,3 +1296,185 @@ describe("regressions", () => {
     expect(issues.every((i) => i.code === "MALFORMED_DEFINITION")).toBe(true);
   });
 });
+
+describe("pairs and showWhen", () => {
+  const literal = (value: string) => ({
+    kind: "literal",
+    type: { kind: "primitive", of: "string" },
+    value
+  });
+
+  const callUrl = (inputs: Record<string, unknown>) =>
+    define(
+      [trigger(), action("call", { action: "callUrl", inputs })],
+      [edge("e1", "trigger", "out", "call")]
+    );
+
+  const issuesFor = (inputs: Record<string, unknown>) =>
+    validateDefinition(callUrl(inputs), catalog);
+
+  it("accepts named rows on an input declared for them", () => {
+    expect(
+      issuesFor({
+        url: literal("https://example.com"),
+        method: literal("POST"),
+        body: literal("hi"),
+        headers: {
+          kind: "pairs",
+          entries: [{ name: "X-Company-Key", value: literal("abc") }]
+        }
+      })
+    ).toEqual([]);
+  });
+
+  it("rejects named rows on an input that does not take them", () => {
+    const issues = issuesFor({
+      url: { kind: "pairs", entries: [] },
+      method: literal("GET")
+    });
+    expect(issues[0]?.code).toBe("TYPE_MISMATCH");
+    expect(issues[0]?.message).toMatch(
+      /does not take a list of names and values/
+    );
+  });
+
+  it("rejects a plain value on an input that takes named rows", () => {
+    const issues = issuesFor({
+      url: literal("https://example.com"),
+      method: literal("GET"),
+      headers: literal("nope")
+    });
+    expect(issues[0]?.code).toBe("TYPE_MISMATCH");
+    expect(issues[0]?.message).toMatch(/takes a list of names and values/);
+  });
+
+  it("reports a row with no name", () => {
+    const issues = issuesFor({
+      url: literal("https://example.com"),
+      method: literal("GET"),
+      headers: { kind: "pairs", entries: [{ name: "  ", value: literal("a") }] }
+    });
+    expect(issues[0]?.code).toBe("INCOMPLETE_CONFIG");
+    expect(issues[0]?.field).toBe("headers.entries.0");
+    expect(issues[0]?.message).toBe("This row needs a name.");
+  });
+
+  it("refuses a header name Carbon sets itself", () => {
+    const issues = issuesFor({
+      url: literal("https://example.com"),
+      method: literal("GET"),
+      headers: {
+        kind: "pairs",
+        entries: [{ name: "Host", value: literal("evil.example") }]
+      }
+    });
+    expect(issues[0]?.code).toBe("INCOMPLETE_CONFIG");
+    expect(issues[0]?.message).toMatch(/is set by Carbon/);
+  });
+
+  it("reports the same name set twice, ignoring case", () => {
+    const issues = issuesFor({
+      url: literal("https://example.com"),
+      method: literal("GET"),
+      headers: {
+        kind: "pairs",
+        entries: [
+          { name: "X-Key", value: literal("a") },
+          { name: "x-key", value: literal("b") }
+        ]
+      }
+    });
+    expect(issues[0]?.code).toBe("INCOMPLETE_CONFIG");
+    expect(issues[0]?.field).toBe("headers.entries.1");
+    expect(issues[0]?.message).toMatch(/is set twice/);
+  });
+
+  it("does not require a gated-off input", () => {
+    expect(
+      issuesFor({ url: literal("https://example.com"), method: literal("GET") })
+    ).toEqual([]);
+  });
+
+  it("requires a gated-on input", () => {
+    const issues = issuesFor({
+      url: literal("https://example.com"),
+      method: literal("POST")
+    });
+    expect(issues[0]?.code).toBe("MISSING_INPUT");
+    expect(issues[0]?.field).toBe("body");
+  });
+
+  it("reports a value left behind on a gated-off input", () => {
+    const issues = issuesFor({
+      url: literal("https://example.com"),
+      method: literal("GET"),
+      body: literal("leftover")
+    });
+    expect(issues[0]?.code).toBe("INCOMPLETE_CONFIG");
+    expect(issues[0]?.message).toBe(
+      '"body" does not apply when method is "GET". Clear it to continue.'
+    );
+  });
+
+  it("opens the gate when the gating input holds a variable", () => {
+    const issues = issuesFor({
+      url: literal("https://example.com"),
+      method: {
+        kind: "ref",
+        nodeId: "trigger",
+        output: "purchaseOrder",
+        path: ["status"]
+      }
+    });
+    expect(issues[0]?.code).toBe("MISSING_INPUT");
+    expect(issues[0]?.field).toBe("body");
+  });
+
+  it("reports a reference to a missing step inside a row", () => {
+    const issues = issuesFor({
+      url: literal("https://example.com"),
+      method: literal("GET"),
+      headers: {
+        kind: "pairs",
+        entries: [
+          {
+            name: "X-Key",
+            value: { kind: "ref", nodeId: "gone", output: "record", path: [] }
+          }
+        ]
+      }
+    });
+    expect(issues[0]?.code).toBe("UNKNOWN_VARIABLE");
+    expect(issues[0]?.field).toBe("headers.entries.0");
+  });
+
+  it("refuses a whole record as a row's value", () => {
+    const issues = issuesFor({
+      url: literal("https://example.com"),
+      method: literal("GET"),
+      headers: {
+        kind: "pairs",
+        entries: [
+          {
+            name: "X-Key",
+            value: {
+              kind: "ref",
+              nodeId: "trigger",
+              output: "purchaseOrder",
+              path: []
+            }
+          }
+        ]
+      }
+    });
+    expect(issues[0]?.code).toBe("TYPE_MISMATCH");
+    expect(issues[0]?.field).toBe("headers.entries.0");
+    expect(issues[0]?.message).toMatch(/into text/);
+  });
+
+  it("leaves an already-published webhook with only url and body alone", () => {
+    expect(
+      issuesFor({ url: literal("https://example.com"), body: literal("hi") })
+    ).toEqual([]);
+  });
+});

@@ -152,6 +152,30 @@ export const templateSchema = z.object({
 });
 export type Template = z.infer<typeof templateSchema>;
 
+/** A row's value: the four simple forms. Deliberately not `valueOrRefSchema` — a set of
+ * name/value rows nested inside another one has no meaning, so it is unrepresentable
+ * rather than merely invalid, and no recursive schema is needed. */
+export const pairValueSchema = z.discriminatedUnion("kind", [
+  literalSchema,
+  variableRefSchema,
+  itemRefSchema,
+  templateSchema
+]);
+export type PairValue = z.infer<typeof pairValueSchema>;
+
+export const pairEntrySchema = z.object({
+  name: z.string(),
+  value: pairValueSchema
+});
+export type PairEntry = z.infer<typeof pairEntrySchema>;
+
+/** Named rows — request headers today. Only valid where a catalog input sets `pairs`. */
+export const pairsSchema = z.object({
+  kind: z.literal("pairs"),
+  entries: z.array(pairEntrySchema).default([])
+});
+export type Pairs = z.infer<typeof pairsSchema>;
+
 function scalarValueMatches(type: ScalarType, value: unknown): boolean {
   if (type.kind === "entity") return typeof value === "string";
   switch (type.of) {
@@ -189,7 +213,8 @@ export const valueOrRefSchema = z
     literalSchema,
     variableRefSchema,
     itemRefSchema,
-    templateSchema
+    templateSchema,
+    pairsSchema
   ])
   .superRefine((value, ctx) => {
     if (value.kind !== "literal") return;

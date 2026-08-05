@@ -36,6 +36,19 @@ export type ResolvedRef = { type: ValueType } | { failure: ResolveFailure };
 
 type ListType = Extract<ValueType, { kind: "list" }>;
 
+/** Names that frame the request rather than describe it. Letting a customer set one
+ * changes how the message is delivered, not what it says. */
+const RESERVED_HEADER_NAMES = new Set([
+  "host",
+  "content-length",
+  "connection",
+  "transfer-encoding",
+  "upgrade",
+  "te",
+  "keep-alive",
+  "proxy-authorization"
+]);
+
 /** The list a looping node works through, or why it is not settled. */
 export type LoopList = { type: ListType } | { failure: ResolveFailure };
 
@@ -187,8 +200,32 @@ function checkInputs(
 ): WorkflowIssue[] {
   const issues: WorkflowIssue[] = [];
 
+  /** Literal-only: a gate whose target holds a variable cannot be read here, so it opens. */
+  const gateValue = (declaration: CatalogInput): string | undefined => {
+    const gate = declaration.showWhen;
+    if (gate === undefined) return undefined;
+    const target = inputs[gate.input];
+    if (target === undefined || target.kind !== "literal") return undefined;
+    if (typeof target.value !== "string") return undefined;
+    return gate.equals.includes(target.value) ? undefined : target.value;
+  };
+
   for (const [name, declaration] of Object.entries(declared)) {
     const supplied = inputs[name];
+
+    const closedBy = gateValue(declaration);
+    if (closedBy !== undefined) {
+      if (supplied !== undefined) {
+        issues.push({
+          code: "INCOMPLETE_CONFIG",
+          nodeId: node.id,
+          field: name,
+          message: `"${name}" does not apply when ${declaration.showWhen?.input} is "${closedBy}". Clear it to continue.`
+        });
+      }
+      continue;
+    }
+
     if (supplied === undefined) {
       if (declaration.required) {
         issues.push({
@@ -198,6 +235,61 @@ function checkInputs(
           message: `"${name}" needs a value before this step can run.`
         });
       }
+      continue;
+    }
+
+    if (supplied.kind === "pairs" || declaration.pairs === true) {
+      if (supplied.kind !== "pairs") {
+        issues.push({
+          code: "TYPE_MISMATCH",
+          nodeId: node.id,
+          field: name,
+          message: `"${name}" takes a list of names and values.`
+        });
+        continue;
+      }
+      if (declaration.pairs !== true) {
+        issues.push({
+          code: "TYPE_MISMATCH",
+          nodeId: node.id,
+          field: name,
+          message: `"${name}" does not take a list of names and values.`
+        });
+        continue;
+      }
+      const seen = new Set<string>();
+      supplied.entries.forEach((entry, index) => {
+        const field = `${name}.entries.${index}`;
+        const key = entry.name.trim().toLowerCase();
+        if (key === "") {
+          issues.push({
+            code: "INCOMPLETE_CONFIG",
+            nodeId: node.id,
+            field,
+            message: "This row needs a name."
+          });
+          return;
+        }
+        if (RESERVED_HEADER_NAMES.has(key)) {
+          issues.push({
+            code: "INCOMPLETE_CONFIG",
+            nodeId: node.id,
+            field,
+            message: `"${entry.name}" is set by Carbon and cannot be changed here.`
+          });
+          return;
+        }
+        if (seen.has(key)) {
+          issues.push({
+            code: "INCOMPLETE_CONFIG",
+            nodeId: node.id,
+            field,
+            message: `"${entry.name}" is set twice.`
+          });
+          return;
+        }
+        seen.add(key);
+      });
       continue;
     }
 

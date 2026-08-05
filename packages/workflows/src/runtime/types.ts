@@ -19,7 +19,11 @@ export type RuntimeValue =
     }
   // `row` holds a snapshot the loader cannot produce: "before" shares its id with "after".
   | { kind: "entity"; of: string; id: string; row?: Record<string, unknown> }
-  | { kind: "list"; of: ScalarType; items: RuntimeValue[] };
+  | { kind: "list"; of: ScalarType; items: RuntimeValue[] }
+  /** Named rows, resolved. Runtime only — nothing declares it as a `ValueType`, so it is
+   * never compared, looped over, or produced as a step output. It exists so a resolved
+   * header set stays recognisable to the log redactor. */
+  | { kind: "pairs"; entries: { name: string; value: RuntimeValue }[] };
 
 /** `reason` is customer-facing text. */
 export type Resolution =

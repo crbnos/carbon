@@ -27,12 +27,22 @@ export interface CatalogInput {
   required: boolean;
   /** Allowed literal values, where the underlying column is an enum. */
   choices?: readonly string[];
+  /** What the builder seeds a new node with. Must be one of `choices` when both are set.
+   * Stored like any other value — nothing reads it at run time. */
+  defaultValue?: string;
   /** Prose that may interleave text and variables; the builder renders a chip editor. */
   template?: boolean;
   /** Table a non-entity foreign key points at, so the write can be scoped to the company. */
   scopeTable?: string;
   /** The column rejects null; an input resolving to nothing is skipped, not written. */
   notNull?: boolean;
+  /** The value is a set of name/value rows; the builder renders an editable list.
+   * Only a `pairs` value is legal here, and a `pairs` value is legal nowhere else. */
+  pairs?: boolean;
+  /** Show — and only then require — this input while another input holds one of these
+   * values. Evaluated on literals only: a variable-valued gate cannot be read at build
+   * time, so it opens rather than guessing and hiding the user's work. */
+  showWhen?: { input: string; equals: readonly string[] };
 }
 
 export interface CatalogAction {
@@ -185,6 +195,28 @@ const FIXTURE_ACTIONS: CatalogAction[] = [
     batchable: false,
     permission: { module: "users", action: "view" },
     requireOneOf: [["user", "role"]]
+  },
+  {
+    // The shape the webhook action uses: named rows, plus an input gated on a dropdown.
+    id: "callUrl",
+    inputs: {
+      url: { type: t.string, required: true },
+      method: {
+        type: t.string,
+        required: false,
+        choices: ["GET", "POST"]
+      },
+      headers: { type: t.string, required: false, pairs: true },
+      body: {
+        type: t.string,
+        required: true,
+        template: true,
+        showWhen: { input: "method", equals: ["POST"] }
+      }
+    },
+    outputs: { status: t.number },
+    batchable: true,
+    permission: { module: "workflows", action: "update" }
   }
 ];
 

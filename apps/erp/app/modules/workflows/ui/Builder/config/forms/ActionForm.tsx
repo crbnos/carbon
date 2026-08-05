@@ -32,9 +32,14 @@ import {
   workflowFieldHelp
 } from "../../catalog";
 import { useBuilderStore } from "../../context";
+import { PairsField } from "../../fields/PairsField";
 import { TemplateField } from "../../fields/TemplateField";
 import { ValueField } from "../../fields/ValueField";
-import { issueForField, partIssuesForField } from "../../issues";
+import {
+  issueForField,
+  partIssuesForField,
+  rowIssuesForField
+} from "../../issues";
 import { useActionBatchPlan, useAvailableVariables } from "../../useDefinition";
 import { FormStack, Section } from "../layout";
 import type { NodeFormProps } from "./index";
@@ -44,6 +49,32 @@ import type { NodeFormProps } from "./index";
 const STRING_TYPE: ValueType = { kind: "primitive", of: "string" };
 
 // ── helpers ───────────────────────────────────────────────────────────────────
+
+type Gate = { input: string; equals: readonly string[] } | undefined;
+
+/** Whether a gated input applies right now. Literals only: a gate whose target holds a
+ * variable cannot be read here, so it opens rather than hide work the user has done. */
+function isGateOpen(gate: Gate, inputs: Record<string, ValueOrRef>): boolean {
+  if (gate === undefined) return true;
+  const target = inputs[gate.input];
+  if (target?.kind !== "literal") return true;
+  if (typeof target.value !== "string") return true;
+  return gate.equals.includes(target.value);
+}
+
+function seededInputs(actionId: string): Record<string, ValueOrRef> {
+  const seeded: Record<string, ValueOrRef> = {};
+  const def = catalog.getAction(actionId);
+  for (const [name, input] of Object.entries(def?.inputs ?? {})) {
+    if (input.defaultValue === undefined) continue;
+    seeded[name] = {
+      kind: "literal",
+      type: input.type,
+      value: input.defaultValue
+    };
+  }
+  return seeded;
+}
 
 /** Returns 1 if all required entity inputs for this action are available upstream; 0 if not. */
 function actionRank(id: string, upstream: Set<string>): number {
@@ -281,7 +312,7 @@ export function ActionForm({ node, issues }: NodeFormProps<"action">) {
   // ── event handlers ──────────────────────────────────────────────────────────
 
   function handleActionSelect(id: string) {
-    updateNodeData(node.id, { action: id, inputs: {} });
+    updateNodeData(node.id, { action: id, inputs: seededInputs(id) });
     // Reset group selections for the new action
     const newDef = catalog.getAction(id);
     const newGroups = newDef?.requireOneOf ?? [];
@@ -299,6 +330,11 @@ export function ActionForm({ node, issues }: NodeFormProps<"action">) {
       delete next[name];
     } else {
       next[name] = value;
+    }
+    // A value whose gate just closed would still publish, so it goes with the gate.
+    for (const [other, def] of Object.entries(actionDef?.inputs ?? {})) {
+      if (def.showWhen?.input !== name) continue;
+      if (!isGateOpen(def.showWhen, next)) delete next[other];
     }
     updateNodeData(node.id, { inputs: next });
   }
@@ -318,6 +354,8 @@ export function ActionForm({ node, issues }: NodeFormProps<"action">) {
   function renderInput(name: string) {
     const inputDef = actionDef?.inputs[name];
     if (!inputDef) return null;
+    // Also guarded in the list below; a requireOneOf member reaches here without it.
+    if (!isGateOpen(inputDef.showWhen, inputs)) return null;
     const inputLabel = label(actionInputLabelKey(actionId, name), name);
     const inputHelp = workflowFieldHelp(actionInputLabelKey(actionId, name));
     const fieldContext = {
@@ -327,6 +365,23 @@ export function ActionForm({ node, issues }: NodeFormProps<"action">) {
     };
     const fieldIssue = issueForField(issues, name, `inputs.${name}`);
     const fieldParts = partIssuesForField(issues, name, `inputs.${name}`);
+
+    if (inputDef.pairs) {
+      return (
+        <PairsField
+          key={name}
+          label={inputLabel}
+          helpTermId={inputHelp}
+          type={inputDef.type}
+          required={inputDef.required}
+          value={inputs[name]}
+          onChange={(v) => handleInputChange(name, v)}
+          context={fieldContext}
+          issue={fieldIssue}
+          partIssues={rowIssuesForField(issues, name, `inputs.${name}`)}
+        />
+      );
+    }
 
     if (inputDef.template) {
       return (
@@ -369,11 +424,12 @@ export function ActionForm({ node, issues }: NodeFormProps<"action">) {
     const optional: string[] = [];
     for (const [name, inputDef] of Object.entries(actionDef.inputs)) {
       if (hiddenInputs.has(name) || skipInputs.has(name)) continue;
+      if (!isGateOpen(inputDef.showWhen, inputs)) continue;
       if (inputDef.required) required.push(name);
       else optional.push(name);
     }
     return [...required, ...optional];
-  }, [actionDef, hiddenInputs, skipInputs]);
+  }, [actionDef, hiddenInputs, skipInputs, inputs]);
 
   // ── render ──────────────────────────────────────────────────────────────────
 

@@ -287,10 +287,22 @@ export const WORKFLOW_ACTION_CATALOG: Record<string, BuiltAction> = {
   webhook: {
     inputs: {
       url: { type: { kind: "primitive", of: "string" }, required: true },
+      method: {
+        type: { kind: "primitive", of: "string" },
+        required: true,
+        choices: ["GET", "POST", "PUT", "PATCH", "DELETE"],
+        defaultValue: "GET"
+      },
+      headers: {
+        type: { kind: "primitive", of: "string" },
+        required: false,
+        pairs: true
+      },
       body: {
         type: { kind: "primitive", of: "string" },
         required: false,
-        template: true
+        template: true,
+        showWhen: { input: "method", equals: ["POST", "PUT", "PATCH"] }
       }
     },
     outputs: { status: { kind: "primitive", of: "number" } },

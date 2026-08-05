@@ -52,7 +52,7 @@ export function compare(
 
   if (operator === "eq") return equals(left, right);
   if (operator === "neq") return !equals(left, right);
-  if (left.kind === "entity") return false;
+  if (left.kind === "entity" || left.kind === "pairs") return false;
 
   switch (operator) {
     case "contains":

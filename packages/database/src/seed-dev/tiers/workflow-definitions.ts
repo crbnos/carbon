@@ -538,6 +538,7 @@ export function buildSeedWorkflows(refs: {
             action: "webhook",
             inputs: {
               url: literal(str, "https://example.com/carbon/supplier-approved"),
+              method: literal(str, "POST"),
               body: template([
                 text('{"supplier":"'),
                 ref("trigger_supplier", "record", ["name"]),

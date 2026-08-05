@@ -1,6 +1,6 @@
 import dns from "node:dns";
 import type { Database } from "@carbon/database";
-import { primitiveValue } from "@carbon/workflows";
+import { pairsValue, primitiveValue } from "@carbon/workflows";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { runWebhookAction } from "./webhook";
@@ -9,7 +9,14 @@ function fakeClient() {
   return {} as unknown as SupabaseClient<Database>;
 }
 
-function run(overrides: { body?: string; url?: string } = {}) {
+function run(
+  overrides: {
+    body?: string;
+    url?: string;
+    method?: string;
+    headers?: [string, string][];
+  } = {}
+) {
   return runWebhookAction({
     client: fakeClient(),
     companyId: "c1",
@@ -19,11 +26,30 @@ function run(overrides: { body?: string; url?: string } = {}) {
         "string",
         overrides.url ?? "https://example.com/hook"
       ),
+      ...(overrides.method === undefined
+        ? {}
+        : { method: primitiveValue("string", overrides.method) }),
+      ...(overrides.headers === undefined
+        ? {}
+        : {
+            headers: pairsValue(
+              overrides.headers.map(([name, value]) => ({
+                name,
+                value: primitiveValue("string", value)
+              }))
+            )
+          }),
       ...(overrides.body === undefined
         ? {}
         : { body: primitiveValue("string", overrides.body) })
     }
   });
+}
+
+/** The request `fetch` was actually handed. */
+function sent() {
+  const init = fetchMock.mock.calls[0]?.[1] as RequestInit;
+  return { init, headers: init.headers as Record<string, string> };
 }
 
 let fetchMock: ReturnType<typeof vi.fn>;
@@ -42,14 +68,89 @@ afterEach(() => {
 });
 
 describe("runWebhookAction", () => {
-  it("sends no signing headers", async () => {
+  it("posts with a JSON content type when no method was chosen", async () => {
     const outcome = await run({ body: '{"hello":"world"}' });
     expect(outcome.ok).toBe(true);
 
-    const init = fetchMock.mock.calls[0]?.[1] as RequestInit;
-    const headers = init.headers as Record<string, string>;
+    const { init, headers } = sent();
+    expect(init.method).toBe("POST");
+    expect(headers["Content-Type"]).toBe("application/json");
+    expect(init.body).toBe('{"hello":"world"}');
+  });
+
+  it("sends no signing headers", async () => {
+    await run({ body: "{}" });
+    const { headers } = sent();
     expect(headers["Carbon-Signature"]).toBeUndefined();
     expect(headers["Carbon-Timestamp"]).toBeUndefined();
+  });
+
+  it("sends a GET with no body and no content type", async () => {
+    await run({ method: "GET", body: "ignored" });
+    const { init, headers } = sent();
+    expect(init.method).toBe("GET");
+    expect("body" in init).toBe(false);
+    expect(headers["Content-Type"]).toBeUndefined();
+  });
+
+  it.each([
+    "PUT",
+    "PATCH",
+    "DELETE"
+  ])("sends a %s as itself", async (method) => {
+    await run({ method });
+    expect(sent().init.method).toBe(method);
+  });
+
+  it("lets a chosen content type win over the default", async () => {
+    await run({
+      method: "POST",
+      body: "hi",
+      headers: [["content-type", "text/plain"]]
+    });
+    const { headers } = sent();
+    expect(headers["content-type"]).toBe("text/plain");
+    expect(headers["Content-Type"]).toBeUndefined();
+  });
+
+  it("sends the headers the customer set", async () => {
+    await run({ method: "GET", headers: [["Authorization", "Bearer abc"]] });
+    expect(sent().headers.Authorization).toBe("Bearer abc");
+  });
+
+  it("drops the headers Carbon sets itself", async () => {
+    await run({
+      method: "GET",
+      headers: [
+        ["Host", "evil.example"],
+        ["content-length", "9"],
+        ["X-Keep", "yes"]
+      ]
+    });
+    expect(sent().headers).toEqual({ "X-Keep": "yes" });
+  });
+
+  it("drops a row with no name and a row with no value", async () => {
+    await run({
+      method: "GET",
+      headers: [
+        ["  ", "orphan"],
+        ["X-Empty", ""],
+        ["X-Keep", "yes"]
+      ]
+    });
+    expect(sent().headers).toEqual({ "X-Keep": "yes" });
+  });
+
+  it("lets a later row replace an earlier one of the same name", async () => {
+    await run({
+      method: "GET",
+      headers: [
+        ["X-Key", "first"],
+        ["x-key", "second"]
+      ]
+    });
+    expect(sent().headers).toEqual({ "x-key": "second" });
   });
 
   it("hands back the status and an excerpt of the answer", async () => {

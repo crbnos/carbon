@@ -1,9 +1,6 @@
-import { useLingui } from "@lingui/react/macro";
-import { useState } from "react";
 import { Field } from "./Field";
 import { InlineValueEditor } from "./InlineValueEditor";
 import type { ValueFieldProps } from "./types";
-import { hasStrayBrace } from "./valueParts";
 
 /** A field that always mixes text and variables. Accepts any type that has a reading
  * as text — a whole record does not, so the menu offers its properties instead. */
@@ -17,24 +14,16 @@ export function TemplateField({
   issue,
   partIssues
 }: ValueFieldProps) {
-  const { t } = useLingui();
-  const [isFocused, setIsFocused] = useState(false);
   return (
     <Field
       label={label}
       required={required}
       helpTermId={helpTermId}
       issue={issue}
-      hint={
-        // Only once the user has moved on: a lone '{' is the first keystroke of
-        // picking a variable, not a mistake yet.
-        hasStrayBrace(value) && !isFocused
-          ? t`A plain '{' is sent as-is. Pick a variable from the menu.`
-          : undefined
-      }
     >
       {/* These are the prose inputs — a subject, a message body, a webhook payload.
-          Five rows is too short for any of them. */}
+          They open at a few rows and take line breaks, so a JSON payload can be
+          written the way it is read. */}
       <InlineValueEditor
         textOnly
         collapseSingleRef={false}
@@ -43,8 +32,9 @@ export function TemplateField({
         context={context}
         hasIssue={!!issue}
         partIssues={partIssues}
-        maxRows={10}
-        onFocusChange={setIsFocused}
+        multiline
+        minRows={4}
+        maxRows={12}
       />
     </Field>
   );

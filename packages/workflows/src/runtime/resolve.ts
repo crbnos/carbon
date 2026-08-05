@@ -1,11 +1,18 @@
 import type {
   ItemRef,
+  Pairs,
   Template,
   ValueOrRef,
   VariableRef
 } from "../definition/types";
 import type { Resolution, RuntimeContext, RuntimeValue } from "./types";
-import { fromColumn, fromLiteral, isNull, primitiveValue } from "./values";
+import {
+  fromColumn,
+  fromLiteral,
+  isNull,
+  pairsValue,
+  primitiveValue
+} from "./values";
 
 export async function resolveValue(
   value: ValueOrRef,
@@ -14,6 +21,7 @@ export async function resolveValue(
   if (value.kind === "literal") return { ok: true, value: fromLiteral(value) };
   if (value.kind === "item") return resolveItem(value, ctx);
   if (value.kind === "template") return renderTemplate(value, ctx);
+  if (value.kind === "pairs") return resolvePairs(value, ctx);
   return resolveRef(value, ctx);
 }
 
@@ -27,6 +35,8 @@ export function renderValue(value: RuntimeValue): string {
       ? value.id
       : String(readable);
   }
+  // Rows have no reading as a sentence; nothing writes one into text.
+  if (value.kind === "pairs") return "";
   return value.value === null ? "" : String(value.value);
 }
 
@@ -49,6 +59,22 @@ export async function renderTemplate(
     pieces.push(renderValue(resolved.value));
   }
   return { ok: true, value: primitiveValue("string", pieces.join("")) };
+}
+
+/** One unresolvable row fails the whole set, exactly as one bad part fails a template:
+ * a request sent with a header quietly missing is worse than one not sent at all. */
+export async function resolvePairs(
+  pairs: Pairs,
+  ctx: RuntimeContext
+): Promise<Resolution> {
+  const entries: { name: string; value: RuntimeValue }[] = [];
+  for (const entry of pairs.entries) {
+    if (entry.name.trim() === "") continue;
+    const resolved = await resolveValue(entry.value, ctx);
+    if (!resolved.ok) return resolved;
+    entries.push({ name: entry.name.trim(), value: resolved.value });
+  }
+  return { ok: true, value: pairsValue(entries) };
 }
 
 export async function resolveRef(

@@ -419,9 +419,6 @@ msgstr "パーツには、購入または製造できる特定の品目に関す
 msgid "A physical pull signal — a printed card or QR code living with the stock — that raises a purchase order or a job the moment it's scanned to refill a bin."
 msgstr "物理的なプル信号 (在庫と一緒に保管される印刷されたカードまたは QR コード)。スキャンされてビンを補充する瞬間に、購買注文またはジョブを起動します。"
 
-msgid "A plain '{' is sent as-is. Pick a variable from the menu."
-msgstr ""
-
 msgid "A posted accounting entry: a header plus balanced debit and credit lines against GL accounts."
 msgstr "投稿されたエントリ：GLアカウントに対してバランスの取れたヘッダープラスデビットおよびクレジットラインのペアリング。"
 
@@ -994,6 +991,9 @@ msgstr "ライブラリから追加…"
 
 msgid "Add Group"
 msgstr "グループを追加"
+
+msgid "Add header"
+msgstr ""
 
 msgid "Add Item"
 msgstr "アイテムを追加"
@@ -5985,6 +5985,9 @@ msgstr "外部参照"
 msgid "Extra fields to capture data Carbon doesn't track by default"
 msgstr "Carbonがデフォルトで追跡しないデータをキャプチャするための追加フィールド"
 
+msgid "Extra information sent with the request, such as an authorization key; header values are hidden in run history, though the names stay readable."
+msgstr ""
+
 msgid "Extra tags for slicing your GL reporting"
 msgstr "GL レポートをスライスするための追加タグ"
 
@@ -6910,6 +6913,9 @@ msgid "Hard to see true cost or margin on a job"
 msgstr "ジョブの真の原価またはマージンを確認するのが難しい"
 
 msgid "Has conflict"
+msgstr ""
+
+msgid "Headers"
 msgstr ""
 
 msgid "Help"
@@ -11564,6 +11570,9 @@ msgstr "部品を削除"
 msgid "Remove path"
 msgstr ""
 
+msgid "Remove row"
+msgstr ""
+
 msgid "Remove slide"
 msgstr "スライドを削除"
 
@@ -14320,7 +14329,7 @@ msgstr "残りの{0}{1}は再び期待され、入荷供給としてカウント
 msgid "The remaining {0} {1} will no longer be expected. On-order supply and MRP will stop counting it. The ordered quantity and pricing are unchanged."
 msgstr "残りの{0}{1}は期待されなくなります。発注済み供給とMRPはそれをカウント対象から外します。注文数量と価格は変更されません。"
 
-msgid "The request body sent verbatim as the POST payload with a JSON content type, after workflow variables inside it are substituted."
+msgid "The request body sent verbatim with a JSON content type after workflow variables inside it are substituted, on the methods that carry one."
 msgstr ""
 
 msgid "The residual WIP a job has left at close, swept to a Production Variance account — the only variance Carbon books for a job."
@@ -15818,6 +15827,12 @@ msgstr ""
 msgid "Webhook Documentation"
 msgstr "Webhook ドキュメント"
 
+msgid "Webhook Headers"
+msgstr ""
+
+msgid "Webhook Method"
+msgstr ""
+
 msgid "Webhook URL"
 msgstr "Webhook URL"
 
@@ -16125,6 +16140,9 @@ msgstr "選択されたアクセス許可が各ユーザーが既に持ってい
 
 msgid "Which document drives each inspection flow for this item."
 msgstr "このアイテムの各検査フローを駆動するドキュメント。"
+
+msgid "Which kind of request to send — GET reads something, POST creates, PUT and PATCH update, DELETE removes — defaulting to POST when left empty."
+msgstr ""
 
 msgid "Which manufacturing event starts the shelf-life clock — for example, fill, seal, or final QC."
 msgstr "どの製造イベントが保存期間時計を開始するか — たとえば、塗りつぶし、シール、または最終QC。"

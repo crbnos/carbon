@@ -30,6 +30,27 @@ export function compactForLog(value: unknown, depth = 0): unknown {
     if (record.kind === "entity") {
       return { kind: record.kind, of: record.of, id: record.id };
     }
+    // Named rows shrink like a list: cap the entries, recurse into each value.
+    if (record.kind === "pairs" && Array.isArray(record.entries)) {
+      const rows = record.entries as Record<string, unknown>[];
+      const kept = rows.slice(0, MAX_LIST_ITEMS).map((row) => ({
+        name: row?.name,
+        value: compactForLog(row?.value, depth + 1)
+      }));
+      return {
+        kind: "pairs",
+        entries:
+          rows.length <= MAX_LIST_ITEMS
+            ? kept
+            : [
+                ...kept,
+                {
+                  name: "…",
+                  value: `… ${rows.length - MAX_LIST_ITEMS} more items`
+                }
+              ]
+      };
+    }
     const entries = Object.entries(record);
     const kept: Record<string, unknown> = {};
     for (const [key, entry] of entries.slice(0, MAX_OBJECT_KEYS)) {

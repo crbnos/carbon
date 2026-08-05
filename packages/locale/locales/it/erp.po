@@ -419,9 +419,6 @@ msgstr "Una parte contiene le informazioni su un articolo specifico che può ess
 msgid "A physical pull signal — a printed card or QR code living with the stock — that raises a purchase order or a job the moment it's scanned to refill a bin."
 msgstr "Un segnale di prelievo fisico, una carta stampata o un codice QR che rimane con lo stock, che genera un ordine d'acquisto o un lavoro nel momento in cui viene scansionato per riempire un contenitore."
 
-msgid "A plain '{' is sent as-is. Pick a variable from the menu."
-msgstr ""
-
 msgid "A posted accounting entry: a header plus balanced debit and credit lines against GL accounts."
 msgstr "Una voce contabile registrata: un'intestazione più righe di debito e credito bilanciate contro i conti GL."
 
@@ -994,6 +991,9 @@ msgstr "Aggiungi dalla libreria…"
 
 msgid "Add Group"
 msgstr "Aggiungi Gruppo"
+
+msgid "Add header"
+msgstr ""
 
 msgid "Add Item"
 msgstr "Aggiungi Articolo"
@@ -5985,6 +5985,9 @@ msgstr "Riferimento Esterno"
 msgid "Extra fields to capture data Carbon doesn't track by default"
 msgstr "Campi aggiuntivi per acquisire dati che Carbon non traccia per impostazione predefinita"
 
+msgid "Extra information sent with the request, such as an authorization key; header values are hidden in run history, though the names stay readable."
+msgstr ""
+
 msgid "Extra tags for slicing your GL reporting"
 msgstr "Tag aggiuntivi per suddividere i tuoi report GL"
 
@@ -6910,6 +6913,9 @@ msgid "Hard to see true cost or margin on a job"
 msgstr "Difficile vedere il vero costo o margine su un lavoro"
 
 msgid "Has conflict"
+msgstr ""
+
+msgid "Headers"
 msgstr ""
 
 msgid "Help"
@@ -11564,6 +11570,9 @@ msgstr "Rimuovi parte"
 msgid "Remove path"
 msgstr ""
 
+msgid "Remove row"
+msgstr ""
+
 msgid "Remove slide"
 msgstr "Rimuovi diapositiva"
 
@@ -14320,7 +14329,7 @@ msgstr "I rimanenti {0} {1} saranno previsti di nuovo e conteggiati come fornitu
 msgid "The remaining {0} {1} will no longer be expected. On-order supply and MRP will stop counting it. The ordered quantity and pricing are unchanged."
 msgstr "I rimanenti {0} {1} non saranno più previsti. La fornitura ordinata e l'MRP smetteranno di contarla. La quantità ordinata e i prezzi rimangono invariati."
 
-msgid "The request body sent verbatim as the POST payload with a JSON content type, after workflow variables inside it are substituted."
+msgid "The request body sent verbatim with a JSON content type after workflow variables inside it are substituted, on the methods that carry one."
 msgstr ""
 
 msgid "The residual WIP a job has left at close, swept to a Production Variance account — the only variance Carbon books for a job."
@@ -15818,6 +15827,12 @@ msgstr ""
 msgid "Webhook Documentation"
 msgstr "Documentazione Webhook"
 
+msgid "Webhook Headers"
+msgstr ""
+
+msgid "Webhook Method"
+msgstr ""
+
 msgid "Webhook URL"
 msgstr "URL Webhook"
 
@@ -16125,6 +16140,9 @@ msgstr "Se le autorizzazioni selezionate vengono Aggiunte sopra ciò che ogni ut
 
 msgid "Which document drives each inspection flow for this item."
 msgstr "Quale documento gestisce ogni flusso di ispezione per questo articolo."
+
+msgid "Which kind of request to send — GET reads something, POST creates, PUT and PATCH update, DELETE removes — defaulting to POST when left empty."
+msgstr ""
 
 msgid "Which manufacturing event starts the shelf-life clock — for example, fill, seal, or final QC."
 msgstr "Quale evento di produzione avvia l'orologio della vita di magazzino — ad esempio, riempimento, sigillatura o QC finale."

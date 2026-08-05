@@ -59,36 +59,56 @@ export type VariableTextHandle = {
 
 // --- helpers ---
 
+/** A newline is a paragraph break in the document and a "\n" in the value, so a
+ * multiline field round-trips its line breaks instead of quietly losing them. */
 function partsToDoc(parts: VariableTextPart[]): JSONContent {
-  const nodes = parts
-    .map(
-      (p): JSONContent =>
-        p.kind === "text"
-          ? { type: "text", text: p.text }
-          : {
-              type: "variable",
-              attrs: { id: p.id, label: p.label, invalid: p.invalid === true }
-            }
-    )
-    .filter((n) => n.type !== "text" || Boolean(n.text));
+  const paragraphs: JSONContent[][] = [[]];
+  const current = () => paragraphs[paragraphs.length - 1] as JSONContent[];
+
+  for (const part of parts) {
+    if (part.kind === "token") {
+      current().push({
+        type: "variable",
+        attrs: {
+          id: part.id,
+          label: part.label,
+          invalid: part.invalid === true
+        }
+      });
+      continue;
+    }
+    const lines = part.text.split("\n");
+    for (let i = 0; i < lines.length; i++) {
+      if (i > 0) paragraphs.push([]);
+      const line = lines[i];
+      if (line) current().push({ type: "text", text: line });
+    }
+  }
 
   return {
     type: "doc",
-    content: [{ type: "paragraph", content: nodes.length ? nodes : undefined }]
+    content: paragraphs.map((nodes) => ({
+      type: "paragraph",
+      content: nodes.length ? nodes : undefined
+    }))
   };
 }
 
 function docToParts(doc: JSONContent): VariableTextPart[] {
   const parts: VariableTextPart[] = [];
+  const pushText = (text: string) => {
+    const last = parts[parts.length - 1];
+    if (last?.kind === "text") last.text += text;
+    else parts.push({ kind: "text", text });
+  };
+
+  let first = true;
   for (const para of doc.content ?? []) {
+    if (!first) pushText("\n");
+    first = false;
     for (const node of para.content ?? []) {
       if (node.type === "text" && node.text) {
-        const last = parts[parts.length - 1];
-        if (last?.kind === "text") {
-          last.text += node.text;
-        } else {
-          parts.push({ kind: "text", text: node.text });
-        }
+        pushText(node.text);
       } else if (node.type === "variable" && node.attrs) {
         parts.push({
           kind: "token",

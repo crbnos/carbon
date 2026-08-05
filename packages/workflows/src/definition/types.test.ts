@@ -4,6 +4,7 @@ import {
   canAssign,
   expectedClauseRightType,
   t,
+  valueOrRefSchema,
   WORKFLOW_OPERATORS
 } from "./types";
 
@@ -53,5 +54,34 @@ describe("operator wording", () => {
   it("has customer-facing wording for every workflow operator", () => {
     const missing = WORKFLOW_OPERATORS.filter((op) => !(op in OPERATOR_LABELS));
     expect(missing).toEqual([]);
+  });
+});
+
+describe("pairs", () => {
+  const header = {
+    name: "X-A",
+    value: { kind: "literal", type: t.string, value: "1" }
+  };
+
+  it("round-trips a set of named rows", () => {
+    expect(
+      valueOrRefSchema.parse({ kind: "pairs", entries: [header] })
+    ).toEqual({ kind: "pairs", entries: [header] });
+  });
+
+  it("defaults entries to empty", () => {
+    expect(valueOrRefSchema.parse({ kind: "pairs" })).toEqual({
+      kind: "pairs",
+      entries: []
+    });
+  });
+
+  it("rejects rows nested inside rows", () => {
+    expect(
+      valueOrRefSchema.safeParse({
+        kind: "pairs",
+        entries: [{ name: "X-A", value: { kind: "pairs", entries: [] } }]
+      }).success
+    ).toBe(false);
   });
 });

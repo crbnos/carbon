@@ -27,17 +27,39 @@ export function partIssuesForField(
   issues: WorkflowIssue[] | undefined,
   ...paths: string[]
 ): Record<number, string> | undefined {
-  let parts: Record<number, string> | undefined;
+  return indexedIssues(issues, "parts", paths);
+}
+
+/**
+ * The same issues, split by which row of a name/value set they belong to. A set of
+ * headers reports as `<field>.entries.<n>`, which is a different shape from the
+ * `.parts.<n>` a template's variables use.
+ */
+export function rowIssuesForField(
+  issues: WorkflowIssue[] | undefined,
+  ...paths: string[]
+): Record<number, string> | undefined {
+  return indexedIssues(issues, "entries", paths);
+}
+
+function indexedIssues(
+  issues: WorkflowIssue[] | undefined,
+  segment: string,
+  paths: string[]
+): Record<number, string> | undefined {
+  let found: Record<number, string> | undefined;
   for (const issue of issues ?? []) {
     const field = issue.field;
     if (field === undefined) continue;
     for (const path of paths) {
-      if (!field.startsWith(`${path}.parts.`)) continue;
-      const index = Number(field.slice(`${path}.parts.`.length));
+      const prefix = `${path}.${segment}.`;
+      if (!field.startsWith(prefix)) continue;
+      // Leading segment only: a variable inside a row reports one level deeper again.
+      const index = Number(field.slice(prefix.length).split(".")[0]);
       if (!Number.isInteger(index)) continue;
-      parts ??= {};
-      parts[index] ??= issue.message;
+      found ??= {};
+      found[index] ??= issue.message;
     }
   }
-  return parts;
+  return found;
 }

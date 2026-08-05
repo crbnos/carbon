@@ -35,5 +35,6 @@ export {
   isNull,
   listValue,
   nullValue,
+  pairsValue,
   primitiveValue
 } from "./values";

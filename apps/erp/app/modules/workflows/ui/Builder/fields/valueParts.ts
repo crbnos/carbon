@@ -25,6 +25,8 @@ export function toEditorParts(
   if (!value) return [];
   if (value.kind === "template") return value.parts.map(token);
   if (value.kind === "ref" || value.kind === "item") return [token(value, 0)];
+  // A set of rows is edited row by row, never as one stretch of text.
+  if (value.kind === "pairs") return [];
   const text = value.value == null ? "" : String(value.value);
   return text ? [{ kind: "text", text }] : [];
 }
@@ -85,15 +87,4 @@ export function fromEditorParts(
     };
   }
   return { kind: "template", parts: result };
-}
-
-/** A brace left as plain text is not a variable — it would ship literally, which
- * is a wrong result rather than an error. Callers surface it as a field hint. */
-export function hasStrayBrace(value: ValueOrRef | undefined): boolean {
-  if (!value) return false;
-  if (value.kind === "literal") return String(value.value ?? "").includes("{");
-  if (value.kind === "template") {
-    return value.parts.some((p) => p.kind === "text" && p.text.includes("{"));
-  }
-  return false;
 }

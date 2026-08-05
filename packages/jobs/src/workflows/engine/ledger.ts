@@ -21,6 +21,16 @@ const SECRET_KEY =
 const MAX_STRING_LENGTH = 4096;
 const REDACTED = "[REDACTED]";
 
+/** Both the definition and runtime `pairs` shapes: same discriminator, same entry shape. */
+function isPairsShape(
+  value: object
+): value is { kind: "pairs"; entries: unknown[] } {
+  return (
+    (value as { kind?: unknown }).kind === "pairs" &&
+    Array.isArray((value as { entries?: unknown }).entries)
+  );
+}
+
 /** Replaces anything secret-looking and caps long strings, before it reaches the
  * run log. The key is kept and its value replaced: a dropped key is
  * indistinguishable from a field that was genuinely absent, and telling those two
@@ -33,6 +43,17 @@ export function redactForLog(value: unknown): unknown {
   }
   if (Array.isArray(value)) return value.map(redactForLog);
   if (value !== null && typeof value === "object") {
+    // Rows carry secrets in the value, not the key, and a name like `X-Company-Key`
+    // matches no pattern. Mask by shape so no header name can escape it.
+    if (isPairsShape(value)) {
+      return {
+        ...value,
+        entries: value.entries.map((entry) => ({
+          name: (entry as { name?: unknown } | null)?.name,
+          value: REDACTED
+        }))
+      };
+    }
     const kept: Record<string, unknown> = {};
     for (const [key, entry] of Object.entries(value)) {
       kept[key] = SECRET_KEY.test(key) ? REDACTED : redactForLog(entry);

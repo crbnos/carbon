@@ -28,6 +28,8 @@ export function batchCandidates(
   // Declaration order, so the validator and the engine always agree on "the first one".
   return Object.keys(action.inputs).filter((name) => {
     if (action.inputs[name]?.type.kind === "list") return false;
+    // Rows are never the list a step repeats over.
+    if (action.inputs[name]?.pairs) return false;
     const supplied = inputs[name];
     return supplied !== undefined && supplied.kind !== "item";
   });

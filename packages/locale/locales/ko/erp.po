@@ -419,9 +419,6 @@ msgstr "품목(Part)은 구매하거나 제조할 수 있는 특정 아이템에
 msgid "A physical pull signal — a printed card or QR code living with the stock — that raises a purchase order or a job the moment it's scanned to refill a bin."
 msgstr "재고와 함께 있는 인쇄된 카드 또는 QR 코드인 물리적 풀 신호로서, 스캔된 순간 구매 주문 또는 작업을 발생시켜 빈을 보충합니다."
 
-msgid "A plain '{' is sent as-is. Pick a variable from the menu."
-msgstr ""
-
 msgid "A posted accounting entry: a header plus balanced debit and credit lines against GL accounts."
 msgstr "전기된 회계 전표로, 헤더와 총계정원장 계정에 대한 차변/대변 라인으로 구성됩니다."
 
@@ -994,6 +991,9 @@ msgstr "라이브러리에서 추가…"
 
 msgid "Add Group"
 msgstr "그룹 추가"
+
+msgid "Add header"
+msgstr ""
 
 msgid "Add Item"
 msgstr "품목 추가"
@@ -5985,6 +5985,9 @@ msgstr "외부 참조"
 msgid "Extra fields to capture data Carbon doesn't track by default"
 msgstr "Carbon이 기본적으로 추적하지 않는 데이터를 담기 위한 추가 필드"
 
+msgid "Extra information sent with the request, such as an authorization key; header values are hidden in run history, though the names stay readable."
+msgstr ""
+
 msgid "Extra tags for slicing your GL reporting"
 msgstr "총계정원장 보고를 세분화하기 위한 추가 태그"
 
@@ -6910,6 +6913,9 @@ msgid "Hard to see true cost or margin on a job"
 msgstr "작업의 실제 원가나 마진을 파악하기 어려움"
 
 msgid "Has conflict"
+msgstr ""
+
+msgid "Headers"
 msgstr ""
 
 msgid "Help"
@@ -11564,6 +11570,9 @@ msgstr "부품 제거"
 msgid "Remove path"
 msgstr ""
 
+msgid "Remove row"
+msgstr ""
+
 msgid "Remove slide"
 msgstr "슬라이드 제거"
 
@@ -14320,7 +14329,7 @@ msgstr "{0} {1}의 남은 수량이 다시 예상되고 수입 공급으로 계�
 msgid "The remaining {0} {1} will no longer be expected. On-order supply and MRP will stop counting it. The ordered quantity and pricing are unchanged."
 msgstr "{0} {1}의 남은 수량은 더 이상 예상되지 않습니다. 주문 공급 및 MRP 계산이 중단됩니다. 주문 수량 및 가격은 변경되지 않습니다."
 
-msgid "The request body sent verbatim as the POST payload with a JSON content type, after workflow variables inside it are substituted."
+msgid "The request body sent verbatim with a JSON content type after workflow variables inside it are substituted, on the methods that carry one."
 msgstr ""
 
 msgid "The residual WIP a job has left at close, swept to a Production Variance account — the only variance Carbon books for a job."
@@ -15818,6 +15827,12 @@ msgstr ""
 msgid "Webhook Documentation"
 msgstr "웹훅 문서"
 
+msgid "Webhook Headers"
+msgstr ""
+
+msgid "Webhook Method"
+msgstr ""
+
 msgid "Webhook URL"
 msgstr "웹훅 URL"
 
@@ -16125,6 +16140,9 @@ msgstr "선택한 권한을 각 사용자가 이미 가진 권한에 추가할�
 
 msgid "Which document drives each inspection flow for this item."
 msgstr "이 항목에 대한 각 검사 흐름을 운영하는 문서입니다."
+
+msgid "Which kind of request to send — GET reads something, POST creates, PUT and PATCH update, DELETE removes — defaulting to POST when left empty."
+msgstr ""
 
 msgid "Which manufacturing event starts the shelf-life clock — for example, fill, seal, or final QC."
 msgstr "유효기간 계산이 시작되는 제조 이벤트 — 예를 들어 충전, 밀봉, 또는 최종 품질검사."

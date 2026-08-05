@@ -419,9 +419,6 @@ msgstr "零件包含可以购买或制造的特定项目的信息。"
 msgid "A physical pull signal — a printed card or QR code living with the stock — that raises a purchase order or a job the moment it's scanned to refill a bin."
 msgstr "一个物理拉取信号——一张与库存一起放置的印刷卡片或二维码——在扫描以补充容器时立即生成采购订单或工作。"
 
-msgid "A plain '{' is sent as-is. Pick a variable from the menu."
-msgstr ""
-
 msgid "A posted accounting entry: a header plus balanced debit and credit lines against GL accounts."
 msgstr "已过帐的会计分录：针对总账账户的收支平衡的标题加借贷行。"
 
@@ -994,6 +991,9 @@ msgstr "从库中添加…"
 
 msgid "Add Group"
 msgstr "添加组"
+
+msgid "Add header"
+msgstr ""
 
 msgid "Add Item"
 msgstr "添加项目"
@@ -5985,6 +5985,9 @@ msgstr "外部参考"
 msgid "Extra fields to capture data Carbon doesn't track by default"
 msgstr "用于捕获 Carbon 默认不跟踪的额外数据的字段"
 
+msgid "Extra information sent with the request, such as an authorization key; header values are hidden in run history, though the names stay readable."
+msgstr ""
+
 msgid "Extra tags for slicing your GL reporting"
 msgstr "用于切分总账报告的额外标签"
 
@@ -6910,6 +6913,9 @@ msgid "Hard to see true cost or margin on a job"
 msgstr "难以看清工作的真实成本或利润"
 
 msgid "Has conflict"
+msgstr ""
+
+msgid "Headers"
 msgstr ""
 
 msgid "Help"
@@ -11564,6 +11570,9 @@ msgstr "移除零件"
 msgid "Remove path"
 msgstr ""
 
+msgid "Remove row"
+msgstr ""
+
 msgid "Remove slide"
 msgstr "移除幻灯片"
 
@@ -14320,7 +14329,7 @@ msgstr "剩余的 {0} {1} 将被再次预期并计入传入供应。"
 msgid "The remaining {0} {1} will no longer be expected. On-order supply and MRP will stop counting it. The ordered quantity and pricing are unchanged."
 msgstr "剩余的 {0} {1} 将不再被预期。在途供应和 MRP 将停止计算它。订购数量和价格保持不变。"
 
-msgid "The request body sent verbatim as the POST payload with a JSON content type, after workflow variables inside it are substituted."
+msgid "The request body sent verbatim with a JSON content type after workflow variables inside it are substituted, on the methods that carry one."
 msgstr ""
 
 msgid "The residual WIP a job has left at close, swept to a Production Variance account — the only variance Carbon books for a job."
@@ -15818,6 +15827,12 @@ msgstr ""
 msgid "Webhook Documentation"
 msgstr "Webhook 文档"
 
+msgid "Webhook Headers"
+msgstr ""
+
+msgid "Webhook Method"
+msgstr ""
+
 msgid "Webhook URL"
 msgstr "Webhook URL"
 
@@ -16125,6 +16140,9 @@ msgstr "是否将选定的权限添加到每个用户已有的权限之上,或�
 
 msgid "Which document drives each inspection flow for this item."
 msgstr "哪份文件驱动此物料的每个检验流程。"
+
+msgid "Which kind of request to send — GET reads something, POST creates, PUT and PATCH update, DELETE removes — defaulting to POST when left empty."
+msgstr ""
 
 msgid "Which manufacturing event starts the shelf-life clock — for example, fill, seal, or final QC."
 msgstr "哪个制造事件启动保质期时钟 — 例如填充、密封或最终QC。"

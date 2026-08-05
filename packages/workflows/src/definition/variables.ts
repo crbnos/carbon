@@ -143,6 +143,8 @@ export function createContext(
     if (value.kind === "item") return resolveItem(value, atNodeId);
     // A template always reads as text; its parts are checked in layer 5.
     if (value.kind === "template") return { type: t.string };
+    // Rows have no type of their own; each entry is checked in its own right.
+    if (value.kind === "pairs") return { failure: "unknown" };
     return resolveRef(value, atNodeId);
   };
 

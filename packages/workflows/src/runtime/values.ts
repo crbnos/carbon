@@ -51,6 +51,12 @@ export function listValue(
   };
 }
 
+export function pairsValue(
+  entries: { name: string; value: RuntimeValue }[]
+): RuntimeValue {
+  return { kind: "pairs", entries };
+}
+
 export function isNull(value: RuntimeValue): boolean {
   return value.kind === "primitive" && value.value === null;
 }

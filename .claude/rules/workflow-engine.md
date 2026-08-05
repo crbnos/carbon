@@ -137,7 +137,12 @@ later read. This is what makes `before.orderTotal <= 10000` mean what it says.
   `/secret|token|password|passwd|credential|signature|authorization|apikey|api_key|client_secret|clientsecret|private_key|privatekey|bearer|cookie/i`
   and truncates strings over 4 KB. `itemKey`, `authorizedBy`, `keyword`, and
   `sessionId` are deliberately excluded — over-redaction in a debugging tool is a
-  failure too. Anything new that lands in those columns goes through it. The
+  failure too. Redaction is by key name **and** by value shape: a `pairs` value
+  (the webhook action's request headers) has every entry's value replaced and every
+  entry's name kept, so a header called `X-Company-Key` is protected as well as
+  `Authorization` — no header name has to match a pattern to be safe. One guard
+  covers both the definition-side and the runtime-side `pairs`, which are logged at
+  different moments. Anything new that lands in those columns goes through it. The
   `detail` column holds per-clause condition evaluation diagnostics (never node
   data), written only on Succeeded/Skipped; Failed nodes leave it null.
 - A **lost claim always returns `Skipped`**, even when the existing row is

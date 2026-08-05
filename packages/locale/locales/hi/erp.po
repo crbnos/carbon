@@ -419,9 +419,6 @@ msgstr "एक पार्ट में एक विशिष्ट आइट�
 msgid "A physical pull signal — a printed card or QR code living with the stock — that raises a purchase order or a job the moment it's scanned to refill a bin."
 msgstr "एक भौतिक पुल सिग्नल — एक मुद्रित कार्ड या क्यूआर कोड जो स्टॉक के साथ रहता है — जो एक खरीद आदेश या नौकरी को उठाता है जैसे ही इसे बिन को फिर से भरने के लिए स्कैन किया जाता है।"
 
-msgid "A plain '{' is sent as-is. Pick a variable from the menu."
-msgstr ""
-
 msgid "A posted accounting entry: a header plus balanced debit and credit lines against GL accounts."
 msgstr "एक पोस्ट की गई लेखांकन प्रविष्टि: एक हेडर प्लस GL खातों के विरुद्ध संतुलित डेबिट और क्रेडिट लाইनें।"
 
@@ -994,6 +991,9 @@ msgstr "लाइब्रेरी से जोड़ें…"
 
 msgid "Add Group"
 msgstr "समूह जोड़ें"
+
+msgid "Add header"
+msgstr ""
 
 msgid "Add Item"
 msgstr "आइटम जोड़ें"
@@ -5985,6 +5985,9 @@ msgstr "बाहरी संदर्भ"
 msgid "Extra fields to capture data Carbon doesn't track by default"
 msgstr "कार्बन डिफ़ॉल्ट रूप से ट्रैक नहीं करता है ऐसा डेटा कैप्चर करने के लिए अतिरिक्त फ़ील्ड"
 
+msgid "Extra information sent with the request, such as an authorization key; header values are hidden in run history, though the names stay readable."
+msgstr ""
+
 msgid "Extra tags for slicing your GL reporting"
 msgstr "आपकी GL रिपोर्टिंग को स्लाइस करने के लिए अतिरिक्त टैग"
 
@@ -6910,6 +6913,9 @@ msgid "Hard to see true cost or margin on a job"
 msgstr "किसी काम पर सच्ची लागत या मार्जिन देखना मुश्किल है"
 
 msgid "Has conflict"
+msgstr ""
+
+msgid "Headers"
 msgstr ""
 
 msgid "Help"
@@ -11564,6 +11570,9 @@ msgstr "पुर्जा हटाएँ"
 msgid "Remove path"
 msgstr ""
 
+msgid "Remove row"
+msgstr ""
+
 msgid "Remove slide"
 msgstr "स्लाइड हटाएँ"
 
@@ -14320,7 +14329,7 @@ msgstr "शेष {0} {1} फिर से अपेक्षित होगा
 msgid "The remaining {0} {1} will no longer be expected. On-order supply and MRP will stop counting it. The ordered quantity and pricing are unchanged."
 msgstr "शेष {0} {1} अब अपेक्षित नहीं होगा। ऑन-ऑर्डर आपूर्ति और MRP इसे गिनना बंद कर देंगे। ऑर्डर की गई मात्रा और मूल्य निर्धारण अपरिवर्तित हैं।"
 
-msgid "The request body sent verbatim as the POST payload with a JSON content type, after workflow variables inside it are substituted."
+msgid "The request body sent verbatim with a JSON content type after workflow variables inside it are substituted, on the methods that carry one."
 msgstr ""
 
 msgid "The residual WIP a job has left at close, swept to a Production Variance account — the only variance Carbon books for a job."
@@ -15818,6 +15827,12 @@ msgstr ""
 msgid "Webhook Documentation"
 msgstr "वेबहुक दस्तावेज़"
 
+msgid "Webhook Headers"
+msgstr ""
+
+msgid "Webhook Method"
+msgstr ""
+
 msgid "Webhook URL"
 msgstr "वेबहुक URL"
 
@@ -16125,6 +16140,9 @@ msgstr "चाहे चयनित अनुमतियां जोड़ी
 
 msgid "Which document drives each inspection flow for this item."
 msgstr "कौन सा दस्तावेज़ इस आइटम के लिए प्रत्येक निरीक्षण प्रवाह को चलाता है।"
+
+msgid "Which kind of request to send — GET reads something, POST creates, PUT and PATCH update, DELETE removes — defaulting to POST when left empty."
+msgstr ""
 
 msgid "Which manufacturing event starts the shelf-life clock — for example, fill, seal, or final QC."
 msgstr "कौन सी विनिर्माण घटना शेल्फ-जीवन घड़ी शुरू करती है — उदाहरण के लिए, भरना, सील करना, या अंतिम क्यूसी।"

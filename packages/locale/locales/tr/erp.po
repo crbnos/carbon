@@ -419,9 +419,6 @@ msgstr "Bir parça, satın alınabilir veya üretilebilir belirli bir öğe hakk
 msgid "A physical pull signal — a printed card or QR code living with the stock — that raises a purchase order or a job the moment it's scanned to refill a bin."
 msgstr "Stokla yaşayan fiziksel bir çekme sinyali — basılı bir kart veya QR kodu — bir bin'i doldurmak için tarandığı anda bir satın alma siparişi veya iş oluşturur."
 
-msgid "A plain '{' is sent as-is. Pick a variable from the menu."
-msgstr ""
-
 msgid "A posted accounting entry: a header plus balanced debit and credit lines against GL accounts."
 msgstr "Deftere geçirilen muhasebe girişi: GL hesaplarına karşı dengeli debit ve kredi satırları artı başlık."
 
@@ -994,6 +991,9 @@ msgstr "Kütüphaneden ekle…"
 
 msgid "Add Group"
 msgstr "Grup Ekle"
+
+msgid "Add header"
+msgstr ""
 
 msgid "Add Item"
 msgstr "Öğe Ekle"
@@ -5985,6 +5985,9 @@ msgstr "Harici Referans"
 msgid "Extra fields to capture data Carbon doesn't track by default"
 msgstr "Carbon'ın varsayılan olarak izlemediği verileri yakalamak için ekstra alanlar"
 
+msgid "Extra information sent with the request, such as an authorization key; header values are hidden in run history, though the names stay readable."
+msgstr ""
+
 msgid "Extra tags for slicing your GL reporting"
 msgstr "GL raporlamanızı dilimlemek için ekstra etiketler"
 
@@ -6910,6 +6913,9 @@ msgid "Hard to see true cost or margin on a job"
 msgstr "Bir işte gerçek maliyeti veya marjı görmek zor"
 
 msgid "Has conflict"
+msgstr ""
+
+msgid "Headers"
 msgstr ""
 
 msgid "Help"
@@ -11564,6 +11570,9 @@ msgstr "Parçayı kaldır"
 msgid "Remove path"
 msgstr ""
 
+msgid "Remove row"
+msgstr ""
+
 msgid "Remove slide"
 msgstr "Slaytı kaldır"
 
@@ -14320,7 +14329,7 @@ msgstr "Kalan {0} {1} yeniden beklenir ve gelen arz olarak sayılır."
 msgid "The remaining {0} {1} will no longer be expected. On-order supply and MRP will stop counting it. The ordered quantity and pricing are unchanged."
 msgstr "Kalan {0} {1} artık beklenmeyecektir. Sipariş edilen arz ve MRP bunu saymayı durduracaktır. Sipariş edilen miktar ve fiyatlandırma değişmemiştir."
 
-msgid "The request body sent verbatim as the POST payload with a JSON content type, after workflow variables inside it are substituted."
+msgid "The request body sent verbatim with a JSON content type after workflow variables inside it are substituted, on the methods that carry one."
 msgstr ""
 
 msgid "The residual WIP a job has left at close, swept to a Production Variance account — the only variance Carbon books for a job."
@@ -15818,6 +15827,12 @@ msgstr ""
 msgid "Webhook Documentation"
 msgstr "Web Kancası Dokümantasyonu"
 
+msgid "Webhook Headers"
+msgstr ""
+
+msgid "Webhook Method"
+msgstr ""
+
 msgid "Webhook URL"
 msgstr "Web kancası URL'si"
 
@@ -16125,6 +16140,9 @@ msgstr "Seçilen izinlerin her kullanıcının zaten sahip olduğu şeylerin üs
 
 msgid "Which document drives each inspection flow for this item."
 msgstr "Bu öğe için her inceleme akışını hangi belge yönlendirir."
+
+msgid "Which kind of request to send — GET reads something, POST creates, PUT and PATCH update, DELETE removes — defaulting to POST when left empty."
+msgstr ""
 
 msgid "Which manufacturing event starts the shelf-life clock — for example, fill, seal, or final QC."
 msgstr "Hangi üretim olayı raf ömrü saatini başlatır — örneğin, doldurma, mühürleme veya nihai QC."

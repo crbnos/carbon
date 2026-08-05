@@ -602,6 +602,64 @@ describe("validateCatalogInputs", () => {
     expect(problems).toHaveLength(1);
     expect(problems[0]).toMatch(/is a template but is not a string/);
   });
+
+  const gated = (
+    showWhen: { input: string; equals: readonly string[] },
+    methodChoices?: readonly string[]
+  ) =>
+    validateCatalogInputs(
+      registry,
+      {},
+      {
+        "order.archive": {
+          label: "Archive an order",
+          permission: { module: "purchasing", action: "update" },
+          call: "purchasing_archiveOrder",
+          inputs: {
+            method: {
+              type: { kind: "primitive", of: "string" },
+              required: false,
+              label: "method",
+              ...(methodChoices ? { choices: methodChoices } : {})
+            },
+            body: {
+              type: { kind: "primitive", of: "string" },
+              required: false,
+              label: "body",
+              showWhen
+            }
+          },
+          outputs: {},
+          batchable: false
+        }
+      },
+      {},
+      schema
+    );
+
+  it("rejects a showWhen naming an input the action does not have", () => {
+    const problems = gated({ input: "verb", equals: ["POST"] }, ["POST"]);
+    expect(problems).toHaveLength(1);
+    expect(problems[0]).toMatch(/not an input of "order.archive"/);
+  });
+
+  it("rejects a showWhen against an input with no fixed set of values", () => {
+    const problems = gated({ input: "method", equals: ["POST"] });
+    expect(problems).toHaveLength(1);
+    expect(problems[0]).toMatch(/has no fixed set of values/);
+  });
+
+  it("rejects a showWhen expecting a value the gating input cannot hold", () => {
+    const problems = gated({ input: "method", equals: ["TRACE"] }, ["POST"]);
+    expect(problems).toHaveLength(1);
+    expect(problems[0]).toMatch(/which is not one of its values/);
+  });
+
+  it("accepts a well-formed showWhen", () => {
+    expect(
+      gated({ input: "method", equals: ["POST"] }, ["POST", "GET"])
+    ).toEqual([]);
+  });
 });
 
 describe("buildCatalog — the real hand-written inputs", () => {
@@ -622,9 +680,9 @@ describe("buildCatalog — the real hand-written inputs", () => {
     expect(Object.keys(built.actions)).toHaveLength(16);
     expect(Object.keys(built.operations)).toHaveLength(15);
     // 106 events + 16 actions + 15 operations + 17 entity labels + 95 column labels
-    // + 25 action input labels + 15 operation input labels
+    // + 27 action input labels + 15 operation input labels
     // + 44 generated update-action input labels (10 record inputs + 34 writable columns)
-    expect(Object.keys(built.labels)).toHaveLength(333);
+    expect(Object.keys(built.labels)).toHaveLength(335);
   });
 
   it("sets template: true on inputs marked as templates", () => {
@@ -718,6 +776,51 @@ describe("buildCatalog — actions and operations", () => {
   it("generates no update action for an entity with no write allowlist", () => {
     const built = buildCatalog(registry, {}, {}, {}, schema);
     expect(built.actions["order.update"]).toBeUndefined();
+  });
+
+  it("carries a hand-written choices, pairs and showWhen into the built action", () => {
+    const built = buildCatalog(
+      registry,
+      {},
+      {
+        "order.archive": {
+          label: "Archive an order",
+          permission: { module: "purchasing", action: "update" },
+          call: "purchasing_archiveOrder",
+          inputs: {
+            method: {
+              type: { kind: "primitive", of: "string" },
+              required: false,
+              label: "method",
+              choices: ["GET", "POST"]
+            },
+            headers: {
+              type: { kind: "primitive", of: "string" },
+              required: false,
+              label: "headers",
+              pairs: true
+            },
+            body: {
+              type: { kind: "primitive", of: "string" },
+              required: false,
+              label: "body",
+              showWhen: { input: "method", equals: ["POST"] }
+            }
+          },
+          outputs: {},
+          batchable: false
+        }
+      },
+      {},
+      schema
+    );
+    const inputs = built.actions["order.archive"]?.inputs;
+    expect(inputs?.method?.choices).toEqual(["GET", "POST"]);
+    expect(inputs?.headers?.pairs).toBe(true);
+    expect(inputs?.body?.showWhen).toEqual({
+      input: "method",
+      equals: ["POST"]
+    });
   });
 
   it("throws when a hand-written action collides with a generated one", () => {

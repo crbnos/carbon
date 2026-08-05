@@ -47,6 +47,8 @@ export const WORKFLOW_FIELD_HELP: Record<string, TermId> = {
   "action.supplier.update.input.assignee": "assignee",
   "action.supplier.update.input.supplierTypeId": "supplier-type-field",
   "action.webhook.input.body": "workflow-webhook-body",
+  "action.webhook.input.headers": "workflow-webhook-headers",
+  "action.webhook.input.method": "workflow-webhook-method",
   "action.webhook.input.url": "workflow-webhook-url",
   "operation.item.quantityOnHand.input.item": "item",
   "operation.job.earliestOperationStart.input.job": "job",

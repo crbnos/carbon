@@ -209,7 +209,7 @@ implementation needs; nothing here executes anything.
 
 ## Values a customer can plug in
 
-`valueOrRefSchema` is a flat union of four forms: a `literal`, a `{kind:"variable"}` ref, the
+`valueOrRefSchema` is a flat union of five forms: a `literal`, a `{kind:"variable"}` ref, the
 `{kind:"item"}` current item, and a `{kind:"template"}` — text with variable and item parts
 interleaved, which is how a customer writes "Order {record.readableId} needs attention". A template
 is **only** valid where a `string` is expected; anywhere else is a `TYPE_MISMATCH` saying a message
@@ -223,6 +223,27 @@ rejects a record and a list of records, and `checkTemplateParts` in `validate.ts
 to whichever column looked name-ish, or to a raw id — so the property is what the customer meant.
 The builder's variable menu passes `textOnly` for the same reason: it hides the record row and
 still drills into it.
+
+The fifth form is `{kind:"pairs"}` — named rows, carrying the webhook action's request headers.
+It is legal **only** where a catalog input sets `pairs: true`, and such an input accepts nothing
+else; both directions are a `TYPE_MISMATCH` in `checkInputs`. A row's value is a `PairValue`, the
+four simple forms — a `pairs` inside a `pairs` is unrepresentable rather than merely invalid, so no
+recursive schema is needed. Rows flatten to `<field>.entries.<n>` sites in `expandTemplate`, so a
+bad reference or a record dropped into a header value reports at its own row.
+
+`CatalogInput.showWhen` (`{ input, equals }`) gates both **visibility and requiredness**: a
+gated-off input is never `MISSING_INPUT`, and a value left behind on one is `INCOMPLETE_CONFIG`.
+It reads literals only — a gate whose target holds a variable cannot be read at build time, so it
+opens rather than hiding the customer's work. `buildCatalog` refuses a `showWhen` naming an unknown
+input, one whose target has no `choices`, or one expecting a value outside them.
+
+`CatalogInput.defaultValue` is what the builder seeds a new node's input with; nothing reads it at
+run time, and `buildCatalog` refuses one outside the input's `choices`. It is not a fallback — a
+required input with a default is still `MISSING_INPUT` when a stored node omits it.
+
+`RuntimeValue` has a matching fourth kind, `{kind:"pairs"}`, which is **runtime-only**: no
+`ValueType` names it, so it is never compared, looped over, or produced as a step output. It exists
+so a resolved header set stays recognisable to the run log's redactor.
 
 ## Node kinds
 

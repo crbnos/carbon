@@ -1984,6 +1984,14 @@ export const terms = {
   },
   "workflow-webhook-body": {
     term: msg`Webhook Body`,
-    definition: msg`The request body sent verbatim as the POST payload with a JSON content type, after workflow variables inside it are substituted.`
+    definition: msg`The request body sent verbatim with a JSON content type after workflow variables inside it are substituted, on the methods that carry one.`
+  },
+  "workflow-webhook-method": {
+    term: msg`Webhook Method`,
+    definition: msg`Which kind of request to send — GET reads something, POST creates, PUT and PATCH update, DELETE removes — defaulting to POST when left empty.`
+  },
+  "workflow-webhook-headers": {
+    term: msg`Webhook Headers`,
+    definition: msg`Extra information sent with the request, such as an authorization key; header values are hidden in run history, though the names stay readable.`
   }
 } as const satisfies Record<string, GlossaryEntry>;

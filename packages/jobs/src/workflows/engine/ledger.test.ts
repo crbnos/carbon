@@ -88,6 +88,84 @@ describe("redactForLog", () => {
     expect(redacted.resolved?.authorization).toBe("[REDACTED]");
     expect(JSON.stringify(redacted)).not.toContain("sk-live-123");
   });
+
+  it("masks every value of a definition-shaped pairs, keeping the names", () => {
+    const result = redactForLog({
+      headers: {
+        kind: "pairs",
+        entries: [
+          {
+            name: "X-Company-Key",
+            value: { kind: "literal", value: "sk-live-123" }
+          },
+          { name: "Authorization", value: { kind: "ref", nodeId: "n1" } }
+        ]
+      }
+    }) as {
+      headers: { kind: string; entries: { name: string; value: unknown }[] };
+    };
+    expect(result.headers.kind).toBe("pairs");
+    expect(result.headers.entries).toEqual([
+      { name: "X-Company-Key", value: "[REDACTED]" },
+      { name: "Authorization", value: "[REDACTED]" }
+    ]);
+    expect(JSON.stringify(result)).not.toContain("sk-live-123");
+  });
+
+  it("masks every value of a runtime-shaped pairs, keeping the names", () => {
+    const result = redactForLog({
+      resolved: {
+        headers: {
+          kind: "pairs",
+          entries: [
+            {
+              name: "X-Company-Key",
+              value: { kind: "primitive", of: "string", value: "sk-live-456" }
+            },
+            {
+              name: "Authorization",
+              value: {
+                kind: "primitive",
+                of: "string",
+                value: "Bearer sk-live-789"
+              }
+            }
+          ]
+        }
+      }
+    }) as {
+      resolved: {
+        headers: { kind: string; entries: { name: string; value: unknown }[] };
+      };
+    };
+    expect(result.resolved.headers.entries).toEqual([
+      { name: "X-Company-Key", value: "[REDACTED]" },
+      { name: "Authorization", value: "[REDACTED]" }
+    ]);
+    expect(JSON.stringify(result)).not.toContain("sk-live-");
+  });
+
+  it("masks a pairs nested inside an array", () => {
+    const result = redactForLog([
+      {
+        kind: "pairs",
+        entries: [{ name: "X-Company-Key", value: "sk-live-abc" }]
+      }
+    ]) as { entries: { name: string; value: unknown }[] }[];
+    expect(result[0]?.entries).toEqual([
+      { name: "X-Company-Key", value: "[REDACTED]" }
+    ]);
+  });
+
+  it("leaves an object that only looks like pairs alone", () => {
+    const result = redactForLog({
+      kind: "pairs",
+      entries: "not-an-array",
+      name: "keep me"
+    }) as Record<string, unknown>;
+    expect(result.entries).toBe("not-an-array");
+    expect(result.name).toBe("keep me");
+  });
 });
 
 describe("redactText", () => {

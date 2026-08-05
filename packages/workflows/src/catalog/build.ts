@@ -68,6 +68,8 @@ export interface BuiltActionInput {
   type: ValueType;
   required: boolean;
   choices?: readonly string[];
+  /** What the builder seeds a new node with. Nothing reads it at run time. */
+  defaultValue?: string;
   template?: boolean;
   /** Table a non-entity foreign key points at, so the update executor can scope the
    * value to the company. Resolved here so a dropped fk note fails CI rather than
@@ -75,6 +77,10 @@ export interface BuiltActionInput {
   scopeTable?: string;
   /** The column rejects null, so an input resolving to nothing is skipped, not written. */
   notNull?: boolean;
+  /** The value is a set of name/value rows. */
+  pairs?: boolean;
+  /** Only shown, and only required, while `input` holds one of `equals`. */
+  showWhen?: { input: string; equals: readonly string[] };
 }
 
 export interface BuiltAction {
@@ -360,6 +366,37 @@ export function validateCatalogInputs(
       ) {
         problems.push(`${id}.${input} is a template but is not a string.`);
       }
+      if (
+        spec.defaultValue !== undefined &&
+        spec.choices !== undefined &&
+        !spec.choices.includes(spec.defaultValue)
+      ) {
+        problems.push(
+          `${id}.${input} defaults to "${spec.defaultValue}", which is not one of its values.`
+        );
+      }
+      const gate = spec.showWhen;
+      if (gate !== undefined) {
+        const target = declaration.inputs[gate.input];
+        if (target === undefined) {
+          problems.push(
+            `${id}.${input} is shown when "${gate.input}" is set, but that is not an input of "${id}".`
+          );
+        } else if (target.choices === undefined) {
+          // A gate against an open set cannot be reasoned about at build time.
+          problems.push(
+            `${id}.${input} is gated on "${gate.input}", which has no fixed set of values.`
+          );
+        } else {
+          for (const value of gate.equals) {
+            if (!target.choices.includes(value)) {
+              problems.push(
+                `${id}.${input} is gated on "${gate.input}" being "${value}", which is not one of its values.`
+              );
+            }
+          }
+        }
+      }
     }
     for (const [output, type] of Object.entries(declaration.outputs)) {
       checkEntityType(`Action "${id}"`, `output "${output}"`, type);
@@ -570,7 +607,11 @@ export function buildCatalog(
       inputs[input] = {
         type: spec.type,
         required: spec.required,
-        ...(spec.template ? { template: true } : {})
+        ...(spec.choices ? { choices: spec.choices } : {}),
+        ...(spec.defaultValue ? { defaultValue: spec.defaultValue } : {}),
+        ...(spec.template ? { template: true } : {}),
+        ...(spec.pairs ? { pairs: true } : {}),
+        ...(spec.showWhen ? { showWhen: spec.showWhen } : {})
       };
       const [entityPrefix] = id.split(".");
       const table =

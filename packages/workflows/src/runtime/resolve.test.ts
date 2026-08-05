@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { createRuntimeContext } from "./fixtures";
 import { resolveItem, resolveRef, resolveValue } from "./resolve";
-import { entityValue, primitiveValue } from "./values";
+import { entityValue, pairsValue, primitiveValue } from "./values";
 
 const po = entityValue("purchaseOrder", "po1");
 
@@ -136,6 +136,116 @@ describe("resolveValue", () => {
     expect(result).toEqual({
       ok: true,
       value: primitiveValue("number", 10000)
+    });
+  });
+});
+
+describe("resolvePairs", () => {
+  it("resolves every row, literal and reference alike", async () => {
+    const ctx = createRuntimeContext({
+      outputs: { trigger: { record: po } },
+      rows: { "purchaseOrder:po1": { status: "Planned" } }
+    });
+    const result = await resolveValue(
+      {
+        kind: "pairs",
+        entries: [
+          {
+            name: "Content-Type",
+            value: {
+              kind: "literal",
+              type: { kind: "primitive", of: "string" },
+              value: "application/json"
+            }
+          },
+          {
+            name: "X-Order-Status",
+            value: {
+              kind: "ref",
+              nodeId: "trigger",
+              output: "record",
+              path: ["status"]
+            }
+          }
+        ]
+      },
+      ctx
+    );
+    expect(result).toEqual({
+      ok: true,
+      value: pairsValue([
+        {
+          name: "Content-Type",
+          value: primitiveValue("string", "application/json")
+        },
+        { name: "X-Order-Status", value: primitiveValue("string", "Planned") }
+      ])
+    });
+  });
+
+  it("fails the whole set when one row cannot be resolved", async () => {
+    const result = await resolveValue(
+      {
+        kind: "pairs",
+        entries: [
+          {
+            name: "Content-Type",
+            value: {
+              kind: "literal",
+              type: { kind: "primitive", of: "string" },
+              value: "application/json"
+            }
+          },
+          {
+            name: "Authorization",
+            value: {
+              kind: "ref",
+              nodeId: "find",
+              output: "token",
+              path: []
+            }
+          }
+        ]
+      },
+      createRuntimeContext()
+    );
+    expect(result).toEqual({
+      ok: false,
+      reason: "The step that produces this value did not run."
+    });
+  });
+
+  it("drops a row that was never named", async () => {
+    const result = await resolveValue(
+      {
+        kind: "pairs",
+        entries: [
+          {
+            name: "  ",
+            value: {
+              kind: "ref",
+              nodeId: "find",
+              output: "token",
+              path: []
+            }
+          },
+          {
+            name: "  X-Kept  ",
+            value: {
+              kind: "literal",
+              type: { kind: "primitive", of: "string" },
+              value: "yes"
+            }
+          }
+        ]
+      },
+      createRuntimeContext()
+    );
+    expect(result).toEqual({
+      ok: true,
+      value: pairsValue([
+        { name: "X-Kept", value: primitiveValue("string", "yes") }
+      ])
     });
   });
 });

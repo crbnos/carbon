@@ -201,9 +201,40 @@ rendered — nothing here reads a template. When the customer named no record, t
 
 ## The webhook action
 
-`actions/webhook.ts`. POSTs the body as-is to the configured URL. No signing —
-if a customer needs request verification they can add an auth header in the action
-inputs. `redirect: "manual"` and a 10s `AbortSignal.timeout`. A 3xx is refused
+`actions/webhook.ts`. Four inputs, `url` and `method` required:
+
+| Input | Shape |
+|---|---|
+| `url` | https address, guarded (below) |
+| `method` | `choices: ["GET","POST","PUT","PATCH","DELETE"]`, `defaultValue: "GET"` |
+| `headers` | a `pairs` value — named rows, each value a literal, reference or template |
+| `body` | a template, `showWhen: { input: "method", equals: ["POST","PUT","PATCH"] }` |
+
+`defaultValue` is a builder-side seed only: `ActionForm` writes it into `inputs` the moment
+the action is picked, and nothing reads it at run time. `webhook.ts` still falls back to
+`POST` when `method` is absent, which is what a definition saved before the input existed
+relies on — and, since `method` is now required, is the only way an absent method reaches
+the runtime at all.
+
+Only `POST`, `PUT` and `PATCH` carry a body: for any other method the `body` property is
+**absent from the `fetch` init object entirely**, because `fetch` throws on a GET with a
+body and this file collapses a throw into `"The address could not be reached."`, which
+would read as a network fault. `Content-Type: application/json` is added only on those
+three methods, and only when the customer set no content type of their own.
+
+Eight header names are refused — `Host`, `Content-Length`, `Connection`,
+`Transfer-Encoding`, `Upgrade`, `TE`, `Keep-Alive`, `Proxy-Authorization`. They frame the
+request rather than describe it, so setting one changes how the message is delivered, not
+what it says. The list is enforced **twice**: in `nodes.ts` at validation time (so the
+builder reddens the row) and again in `webhook.ts` at run time, because a definition saved
+as a draft is never validated. A row with a blank name or an empty value is dropped, and a
+later row replaces an earlier one of the same name whatever its casing.
+
+**Header values are masked in run history** — `redactForLog` masks a `pairs` by shape, so
+every value is `[REDACTED]` while every name stays readable. See `workflow-engine.md`.
+
+No signing — if a customer needs request verification they add an auth header.
+`redirect: "manual"` and a 10s `AbortSignal.timeout`. A 3xx is refused
 (`"That address redirected, which is not allowed."`) — following it would leave
 the guard behind. Non-2xx reports the status. On success the action outputs
 `status` and puts up to 2048 bytes of the response body in the step summary.

@@ -16,10 +16,49 @@ const NO_URL = "This step needs a web address to call.";
 const REDIRECTED = "That address redirected, which is not allowed.";
 const UNREACHABLE = "The address could not be reached.";
 
+/** What every webhook published before the method input existed relied on. */
+const DEFAULT_METHOD = "POST";
+const METHODS_WITH_BODY = new Set(["POST", "PUT", "PATCH"]);
+/** Framing headers: they change how the request is delivered, not what it says. */
+const RESERVED_HEADERS = new Set([
+  "host",
+  "content-length",
+  "connection",
+  "transfer-encoding",
+  "upgrade",
+  "te",
+  "keep-alive",
+  "proxy-authorization"
+]);
+
 function asText(value: RuntimeValue | undefined): string | undefined {
   if (value === undefined || isNull(value)) return undefined;
   if (value.kind !== "primitive") return undefined;
   return value.value === null ? undefined : String(value.value);
+}
+
+function keyMatching(
+  headers: Record<string, string>,
+  name: string
+): string | undefined {
+  const wanted = name.toLowerCase();
+  return Object.keys(headers).find((key) => key.toLowerCase() === wanted);
+}
+
+function headersFrom(value: RuntimeValue | undefined): Record<string, string> {
+  const headers: Record<string, string> = {};
+  if (value === undefined || value.kind !== "pairs") return headers;
+  for (const entry of value.entries) {
+    const name = entry.name.trim();
+    if (name === "" || RESERVED_HEADERS.has(name.toLowerCase())) continue;
+    const text = asText(entry.value);
+    if (text === undefined || text === "") continue;
+    // A later row replaces an earlier one of the same name, whatever its casing.
+    const existing = keyMatching(headers, name);
+    if (existing !== undefined) delete headers[existing];
+    headers[name] = text;
+  }
+  return headers;
 }
 
 export async function runWebhookAction(params: {
@@ -36,14 +75,20 @@ export async function runWebhookAction(params: {
   const verdict = await checkOutboundUrl(rawUrl);
   if (!verdict.ok) return { ok: false, error: verdict.reason };
 
-  const rawBody = asText(inputs.body) ?? "";
+  const method = asText(inputs.method)?.trim().toUpperCase() || DEFAULT_METHOD;
+  const headers = headersFrom(inputs.headers);
+  const carriesBody = METHODS_WITH_BODY.has(method);
+  if (carriesBody && keyMatching(headers, "content-type") === undefined) {
+    headers["Content-Type"] = "application/json";
+  }
 
   let response: Response;
   try {
     response = await fetch(verdict.url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: rawBody,
+      method,
+      headers,
+      // `fetch` throws on a GET carrying a body, which would read as a network fault.
+      ...(carriesBody ? { body: asText(inputs.body) ?? "" } : {}),
       redirect: "manual",
       signal: AbortSignal.timeout(TIMEOUT_MS)
     });

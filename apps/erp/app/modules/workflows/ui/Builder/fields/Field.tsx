@@ -9,8 +9,6 @@ type FieldProps = {
   helpTermId?: TermId;
   /** Message from a validation issue whose `field` path resolves here. */
   issue?: string;
-  /** Advisory text shown only when there is no issue to report. */
-  hint?: string;
   children: ReactNode;
 };
 
@@ -20,7 +18,6 @@ export function Field({
   required,
   helpTermId,
   issue,
-  hint,
   children
 }: FieldProps) {
   return (
@@ -35,13 +32,7 @@ export function Field({
       {/* No ring here: the control draws its own destructive border, and the two
           together read as a thick red slab. */}
       <div className="flex items-center gap-1">{children}</div>
-      {issue ? (
-        <p className="text-xs text-destructive">{issue}</p>
-      ) : (
-        hint && (
-          <p className="text-xs text-amber-600 dark:text-amber-400">{hint}</p>
-        )
-      )}
+      {issue && <p className="text-xs text-destructive">{issue}</p>}
     </div>
   );
 }

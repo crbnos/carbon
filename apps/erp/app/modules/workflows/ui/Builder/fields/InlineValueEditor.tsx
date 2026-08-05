@@ -41,6 +41,10 @@ type Props = {
   partIssues?: Record<number, string>;
   /** Rows tall before the field scrolls. Prose fields want more than the default. */
   maxRows?: number;
+  /** Rows tall when empty, so a field meant for a payload looks like one. */
+  minRows?: number;
+  /** Let Enter start a new line. A one-line field keeps swallowing it. */
+  multiline?: boolean;
   /** Fires as focus enters and leaves. Lets the field hold back advice about a value
    * the user is still in the middle of typing. */
   onFocusChange?: (focused: boolean) => void;
@@ -57,6 +61,8 @@ export function InlineValueEditor({
   hasIssue,
   partIssues,
   maxRows,
+  minRows,
+  multiline,
   onFocusChange
 }: Props) {
   const { t } = useLingui();
@@ -111,12 +117,13 @@ export function InlineValueEditor({
           onChange(fromEditorParts(next, { collapseSingleRef }))
         }
         placeholder={placeholder ?? t`Type ${TRIGGER} to insert a variable`}
-        multiline={false}
+        multiline={multiline === true}
         suggestionChar={TRIGGER}
         suggestionItems={items}
         menuComponent={InlineVariableMenu}
         renderTokenLabel={leafOfLabel}
         maxRows={maxRows}
+        minRows={minRows}
         className={cn("w-full", hasIssue && "border-destructive")}
       />
     </div>

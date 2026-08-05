@@ -1,4 +1,3 @@
-import { useLingui } from "@lingui/react/macro";
 import { useState } from "react";
 import { useBuilderStoreApi } from "../context";
 import { pickControl } from "./control";
@@ -9,7 +8,6 @@ import type { ValueFieldProps } from "./types";
 import { VariableChip } from "./VariableChip";
 import { VariableMenuPopover } from "./VariableMenuPopover";
 import { VariablePickControl } from "./VariablePickControl";
-import { hasStrayBrace } from "./valueParts";
 import { pickAccepts } from "./variableMenu";
 
 export function ValueField({
@@ -26,10 +24,8 @@ export function ValueField({
   issue,
   partIssues
 }: ValueFieldProps) {
-  const { t } = useLingui();
   const store = useBuilderStoreApi();
   const [pickerOpen, setPickerOpen] = useState(false);
-  const [isFocused, setIsFocused] = useState(false);
   const control = pickControl(type, value, choices);
   const acceptsFilter = pickAccepts(type, accepts);
   const ref =
@@ -49,13 +45,6 @@ export function ValueField({
         required={required}
         helpTermId={helpTermId}
         issue={issue}
-        hint={
-          // Only once the user has moved on: a lone '{' is the first keystroke of
-          // picking a variable, not a mistake yet.
-          hasStrayBrace(value) && !isFocused
-            ? t`A plain '{' is sent as-is. Pick a variable from the menu.`
-            : undefined
-        }
       >
         <InlineValueEditor
           accepts={acceptsFilter}
@@ -73,7 +62,6 @@ export function ValueField({
                 ? { 0: issue }
                 : undefined
           }
-          onFocusChange={setIsFocused}
         />
       </Field>
     );

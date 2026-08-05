@@ -26,13 +26,17 @@ function isCompactionMarker(value: unknown): boolean {
 type RuntimeValue =
   | { kind: "primitive"; of: string; value: string | number | boolean | null }
   | { kind: "entity"; of: string; id: string; row?: Record<string, unknown> }
-  | { kind: "list"; of: unknown; items: unknown[] };
+  | { kind: "list"; of: unknown; items: unknown[] }
+  | { kind: "pairs"; entries: unknown[] };
 
 function isRuntimeValue(v: unknown): v is RuntimeValue {
   if (v === null || typeof v !== "object") return false;
   const obj = v as Record<string, unknown>;
   return (
-    obj.kind === "primitive" || obj.kind === "entity" || obj.kind === "list"
+    obj.kind === "primitive" ||
+    obj.kind === "entity" ||
+    obj.kind === "list" ||
+    obj.kind === "pairs"
   );
 }
 
@@ -189,6 +193,37 @@ export function RuntimeValueView({
     }
     return (
       <ListValue items={value.items} depth={depth} recordNames={recordNames} />
+    );
+  }
+
+  if (value.kind === "pairs") {
+    if (!value.entries || value.entries.length === 0) {
+      return (
+        <span className="text-muted-foreground italic text-xs">
+          <Trans>Nothing</Trans>
+        </span>
+      );
+    }
+    return (
+      <dl className="grid grid-cols-[minmax(0,7rem)_minmax(0,1fr)] gap-x-3 gap-y-1.5 items-baseline">
+        {value.entries.map((entry, i) => {
+          const row = (entry ?? {}) as { name?: unknown; value?: unknown };
+          return (
+            <Fragment key={`pair-${i}`}>
+              <dt className="text-xs text-muted-foreground text-left break-words">
+                {String(row.name ?? "")}
+              </dt>
+              <dd className="min-w-0">
+                <RuntimeValueView
+                  value={row.value}
+                  depth={depth + 1}
+                  recordNames={recordNames}
+                />
+              </dd>
+            </Fragment>
+          );
+        })}
+      </dl>
     );
   }
 }

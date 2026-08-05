@@ -72,6 +72,8 @@ export const WORKFLOW_LABELS: Record<string, MessageDescriptor> = {
   "action.supplier.update.input.supplier": msg`Supplier`,
   "action.supplier.update.input.supplierTypeId": msg`Type`,
   "action.webhook.input.body": msg`Body`,
+  "action.webhook.input.headers": msg`Headers`,
+  "action.webhook.input.method": msg`Method`,
   "action.webhook.input.url": msg`URL`,
   "customer.accountManagerId.changed": msg`A customer's account manager changes`,
   "customer.assignee.changed": msg`A customer's assignee changes`,

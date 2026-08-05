@@ -7,6 +7,15 @@ export interface ActionInputLike {
   required: boolean;
   label: string;
   template?: boolean;
+  /** Allowed literal values. The generated side infers these from the database schema;
+   * a hand-written action is not a schema entity, so it must say so here. */
+  choices?: readonly string[];
+  /** What the builder seeds a new node with. Nothing reads it at run time. */
+  defaultValue?: string;
+  /** The value is a set of name/value rows. */
+  pairs?: boolean;
+  /** Only shown, and only required, while `input` holds one of `equals`. */
+  showWhen?: { input: string; equals: readonly string[] };
   /** Glossary term whose definition explains this field. Rendered as the ⓘ hover. */
   help?: TermId;
 }
@@ -174,11 +183,27 @@ export const WORKFLOW_ACTIONS = {
         label: "URL",
         help: "workflow-webhook-url"
       },
+      method: {
+        type: t.string,
+        required: true,
+        choices: ["GET", "POST", "PUT", "PATCH", "DELETE"],
+        defaultValue: "GET",
+        label: "method",
+        help: "workflow-webhook-method"
+      },
+      headers: {
+        type: t.string,
+        required: false,
+        pairs: true,
+        label: "headers",
+        help: "workflow-webhook-headers"
+      },
       body: {
         type: t.string,
         required: false,
-        label: "body",
         template: true,
+        showWhen: { input: "method", equals: ["POST", "PUT", "PATCH"] },
+        label: "body",
         help: "workflow-webhook-body"
       }
     },
