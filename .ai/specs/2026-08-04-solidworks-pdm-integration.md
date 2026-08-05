@@ -32,9 +32,9 @@ Supported: PDM **Professional** with the Web API server reachable from Carbon's 
 
 In the item BOM explorer (`apps/erp/app/modules/items/ui/Item/BoMExplorer.tsx`), when the `solidworks-pdm` integration is active, a `SolidWorksPdmSync` widget (clone of `OnshapeSync.tsx`) lets the user:
 
-1. Search the vault for a file (filename search via `GET /api/{v}/search`, filtered client-side to `.sldasm`/`.sldprt`), pick one.
+1. Search the vault for a file. `POST /api/{v}/search` returns only `[{ Id, Type }]` (research §7), so the loader hydrates the first 200 file-type ids via bulk `POST files/info`, filters to `.sldasm`/`.sldprt`, and returns at most 50 candidates. Pick one.
 2. Pick a configuration (`GET files/{fileId}/{version}/configurations`, defaulting to the active configuration).
-3. Fetch the **computed BOM** for that configuration at the latest checked-in version (`GET files/{fileId}/bominfo` → `GET bom/{bomTypeId}/{fileId}/{version}/{folderId}/computed?configId=`), normalized app-side into rows `{ partNumber, description, revision, quantity, unitOfMeasure, level, fileId, configId, folderId }` using the configured `partNumberVariable`/`revisionVariable` column names. Preview the tree.
+3. Fetch the **computed BOM** for that configuration at the latest checked-in version (`GET files/{fileId}/bominfo` → `GET bom/{bomTypeId}/{fileId}/{version}/{folderId}/computed?configId=`), normalized app-side into rows `{ partNumber, description, revision, quantity, unitOfMeasure, level, fileId, configId, folderId }` using the configured `partNumberVariable`/`revisionVariable` column names. The normalizer **rejects malformed responses before any sync**: exactly one case-insensitive column must match `partNumberVariable` (zero or multiple → error), the revision column must resolve, every quantity must be a finite non-negative number, and tree nesting must be consistent — a later validator cannot repair a wrong column pick or a mis-flattened tree. Preview the tree.
 4. Sync: POST to `/api/integrations/solidworks-pdm/sync`, which invokes the `sync` edge function (`packages/database/supabase/functions/sync/index.ts`) with a new `type: "solidworks-pdm"` discriminated-union variant. The edge function reuses the existing tree-building logic (create/update `item` + `part`, build the `makeMethod`/`methodMaterial` tree) and writes `externalIntegrationMapping` rows: integration `"solidworks-pdm"` on the root item (`{ fileId, configId, folderId }`) and `"solidworksPdmData"` per item (raw normalized BOM row as metadata) — the same two-mapping pattern as `"onshape"`/`"onshapeData"`.
 
 The widget stores/reads its saved file + configuration and `lastSyncedAt` from `externalIntegrationMapping`, exactly like `OnshapeSync.tsx` does.
@@ -44,25 +44,27 @@ The widget stores/reads its saved file + configuration and `lastSyncedAt` from `
 Link-only: never creates items. Three triggers feed one per-company poll job, which fans out per file:
 
 - **Cron** `solidworks-pdm-release-cron` (`{ cron: "*/30 * * * *" }`, pattern: `update-exchange-rates.ts`): iterates `companyIntegration` rows where `id = 'solidworks-pdm'`, `active = true`, and `metadata.assetSyncEnabled = true`, and sends one `carbon/solidworks-pdm-release-poll` event per company.
-- **Webhook receiver** `apps/erp/app/routes/api+/webhook.solidworks-pdm.$companyId.ts` (pattern: `webhook.onshape.$companyId.ts`): accepts the PDM 2025+ `OnPostChangeState` webhook. Because payloads are unsigned, the payload is never trusted — a valid-looking event on an active, asset-sync-enabled company just triggers `carbon/solidworks-pdm-release-poll` (`mode: "incremental"`). Everything else is acked 200.
+- **Webhook receiver** `apps/erp/app/routes/api+/webhook.solidworks-pdm.$companyId.ts` (pattern: `webhook.onshape.$companyId.ts`): accepts the PDM 2025+ `OnPostChangeState` webhook. Because payloads are unsigned, the payload is never trusted — a valid-looking event on an active, asset-sync-enabled company just triggers `carbon/solidworks-pdm-release-poll` (`mode: "incremental"`). Response contract (matches the Onshape receiver): unknown or inactive company → 400 "Integration not configured"; active + asset-sync-enabled company with a parseable JSON body → 200 (poll triggered); non-JSON body → 400.
 - **Backfill action** — an `actions` entry on the integration config (`enabledWhenSetting: "assetSyncEnabled"`, pattern: Onshape's backfill) POSTs `/api/integrations/solidworks-pdm/backfill`, which triggers the poll with `mode: "backfill"` (ignores the cursor).
 
 **Poll job** `solidworks-pdm-release-poll` (per company; concurrency key `companyId` limit 1; retries 10 like `onshape-backfill`):
 
-1. Find candidate files currently in the configured released state, modified since `metadata.lastReleaseSyncAt` minus a 60-minute overlap (backfill mode: no lower bound). Primary path: the search endpoint with workflow-state + modified-date criteria; if the Web API's search cannot filter by state (undocumented — research §8), fall back to a recursive folder sweep (`folders/{id}/browse` + bulk `POST files/info`) filtered on current state. Which path works is recorded once per company as `metadata.searchCapability` (`"state-search" | "folder-sweep"`).
-2. For each candidate, send `carbon/solidworks-pdm-file-sync` (concurrency key `fileId` limit 1; idempotency key `{companyId}:{fileId}:{version}`).
-3. On success, advance `metadata.lastReleaseSyncAt` to the sweep start time.
+1. Enumerate files **currently in** the configured released state. Default path (`metadata.searchCapability` unset or `"folder-sweep"`): recursive folder sweep (`folders/{id}/browse` + bulk `POST files/info`) filtered on current state. The search endpoint's workflow-state criteria (`"state-search"`) is an opt-in optimization used only when `metadata.searchCapability` is **explicitly** set to `"state-search"` after live-vault validation — never inferred at runtime, because its criteria syntax is undocumented and a silently-empty result would be indistinguishable from "nothing released" (research §8).
+2. Dedupe against the `"solidworks-pdm-release-*"` mapping rows (written only by a *successful* file-sync, below): a candidate fans out only if no mapping already records its `{ fileId, version }`. There is **no modified-date cursor** — a release that doesn't bump the file's modified date is still caught, and a failed file-sync self-heals on the next sweep because its mapping row was never written. `metadata.lastReleaseSyncAt` is informational only (last completed sweep time), never a correctness gate.
+3. For each new candidate, send `carbon/solidworks-pdm-file-sync` (concurrency key `fileId` limit 1; idempotency key `{companyId}:{fileId}:{version}`).
+
+`mode: "backfill"` (the settings action) and `mode: "incremental"` (cron/webhook) run the same sweep — dedupe makes it idempotent; backfill exists as the manual "sweep now" trigger. This is **current-state synchronization, best-effort by design**: a file that is released and then transitions onward between sweeps is not seen (per-file transition history exists in the API but is prohibitively chatty to poll); the backfill action plus the next release of that file are the recovery paths, and the docs state this.
 
 **File-sync job** `solidworks-pdm-file-sync` (per file; pattern: `onshape-revision-sync.ts` + `onshape-sync-element.ts` + `onshape-attach.ts`):
 
-1. Read the file's per-configuration data-card variables (`GET files/{fileId}/{version}/variables`); take the **active configuration's** values (fall back to the `@` tab) for `partNumberVariable` and `revisionVariable`.
+1. Resolve the active configuration id via `GET files/{fileId}/{version}/ActiveConfig`, then read the per-configuration data-card variables (`GET files/{fileId}/{version}/variables`) and select the `ConfigInfo` whose `ConfigurationId` matches; any variable missing there falls back to the `@` tab entry. Extract `partNumberVariable` and `revisionVariable`; the resolved `configId` is carried into the mapping metadata.
 2. Match to a Carbon item on `readableIdWithRevision` using the same key convention as `onshape-matching.ts` (`releaseKey`); for drawings (`.slddrw`), also apply the shared-number-suffix heuristic (`sharedNumberSuffix`). No match → skip (logged, not an error).
-3. Idempotency check: an `externalIntegrationMapping` row (integration `"solidworks-pdm-release"`, entityType `"item"`) records the last-synced `{ fileId, version }` per item; if unchanged, skip.
+3. Idempotency check, **keyed per file class** so a released part and its drawing (which match the same item) never clobber each other: integration `"solidworks-pdm-release-model"` (`.sldprt`/`.sldasm`) or `"solidworks-pdm-release-drawing"` (`.slddrw`), entityType `"item"` — the table's uniqueness is `(entityType, entityId, integration, companyId)`, so the two classes coexist as two rows. Skip when the incoming `version` is **≤** the recorded version (guards both replays and out-of-order polls overwriting newer state with older).
 4. Attach (mirroring `onshape-attach.ts`):
    - `.sldprt`/`.sldasm`: co-located converted model — a file in the same folder with the same base name and `.step`/`.stp` extension (produced by the customer's PDM convert task, research §6) → download (size-capped like `downloadExternalDataToFile`) → `modelUpload` on the item → send `carbon/model-optimize`; API thumbnail (`GET files/{fileId}/{version}/thumbnails`) → `modelUpload.thumbnailPath`, with `carbon/model-thumbnail` as fallback.
    - `.slddrw`: co-located `.pdf` with the same base name → attach as item `document` (sourceDocument identifies SolidWorks PDM).
    - Native SOLIDWORKS files are **never** downloaded (Carbon can't render them; no translation API exists in PDM).
-5. Upsert the `"solidworks-pdm-release"` mapping row with `lastSyncedAt`/`remoteUpdatedAt`.
+5. Upsert the class-specific `"solidworks-pdm-release-*"` mapping row with metadata `{ fileId, version, configId, fileName, stateName: releasedStateName }` plus `lastSyncedAt`/`remoteUpdatedAt` — `stateName` is what the UI status badge renders.
 
 ### Integration registration & settings
 
@@ -82,7 +84,7 @@ Link-only: never creates items. Three triggers feed one per-company poll job, wh
   | `assetSyncEnabled` | switch | no | `false` |
 - `actions`: the backfill button (above).
 - Server hooks in `packages/ee/src/hooks.server.ts` registry:
-  - `onInstall`: verify connectivity (authenticate + `GET api/{v}/info`); record `metadata.webApiVersion` (`GET api/version/webapi`); if `assetSyncEnabled` and version ≥ 2025, best-effort register the `OnPostChangeState` webhook at `/api/webhook/solidworks-pdm/{companyId}` (`POST configuration/hooks/url`) — failure logs and continues (polling covers it).
+  - `onInstall`: verify connectivity (authenticate + `GET api/{v}/info`); record `metadata.webApiVersion` (`GET api/version/webapi`); if `assetSyncEnabled` and version ≥ 2025, best-effort register the `OnPostChangeState` webhook at `/api/webhook/solidworks-pdm/{companyId}` (`POST configuration/hooks/url`) — failure logs and continues (polling covers it). Note: hook registration requires the PDM **"Can administrate add-ins"** permission on the service account, which Viewer/Contributor seats do not imply — the docs list it as an *optional* extra grant for webhook acceleration; vault data flow remains read-only PDM → Carbon regardless.
   - `onUninstall`: best-effort webhook deregistration.
   - `onHealthcheck`: authenticate + vault info (cached via the existing Redis health cache).
 
@@ -109,7 +111,7 @@ Keys are flat (not nested under `credentials`) because the generic `IntegrationF
 
 ### Client
 
-`packages/ee/src/solidworks-pdm/lib/client.ts` (pattern: `onshape/lib/client.ts`): `SolidWorksPdmClient` (axios, JWT held in-memory, single re-auth retry on 401), error types `SolidWorksPdmApiError` / `SolidWorksPdmAssetTooLargeError`, and factory `getSolidWorksPdmClient(client, companyId)` reading `companyIntegration` (returns `{ client, error }`, never throws). Methods: `authenticate`, `getWebApiVersion`, `getVaultInfo`, `search`, `getFilesInfo` (bulk POST), `getFileConfigurations`, `getFileVariables`, `getBomInfo`, `getComputedBom`, `browseFolder`, `getThumbnail`, `downloadFileToTemp` (streamed, `maxBytes` cap), `registerWebhook`/`getWebhooks`/`deleteWebhook`. Exported from the `@carbon/ee` barrel as `SolidWorksPdm` + `SolidWorksPdmLogo`, client via subpath (mirroring `@carbon/ee/onshape`).
+`packages/ee/src/solidworks-pdm/lib/client.ts` (pattern: `onshape/lib/client.ts`): `SolidWorksPdmClient` (axios, JWT held in-memory, single re-auth retry on 401), error types `SolidWorksPdmApiError` / `SolidWorksPdmAssetTooLargeError`, and factory `getSolidWorksPdmClient(client, companyId)` reading `companyIntegration` (returns `{ client, error }`, never throws). Methods: `authenticate`, `getWebApiVersion`, `getVaultInfo`, `search`, `getFilesInfo` (bulk POST), `getFileConfigurations`, `getActiveConfig`, `getFileVariables`, `getBomInfo`, `getComputedBom`, `browseFolder`, `getThumbnail` (follows the redirect; enforces the same `maxBytes` cap as downloads since the bytes are buffered), `downloadFileToTemp` (streamed, `maxBytes` cap), `registerWebhook`/`getWebhooks`/`deleteWebhook`. Exported from the `@carbon/ee` barrel as `SolidWorksPdm` + `SolidWorksPdmLogo`, client via subpath (mirroring `@carbon/ee/onshape`).
 
 ### Design Decisions
 
@@ -117,7 +119,7 @@ Keys are flat (not nested under `credentials`) because the generic `IntegrationF
 |----------|--------|-----------|
 | Connectivity | Cloud-direct to the customer-exposed PDM Web API over HTTPS | Mirrors the Onshape architecture the user asked for; zero installed software. The industry-standard on-prem COM agent (CADLink pattern, research §2) is a separate Windows-service product — deferred, and the client/matching/attach layers built here are reusable by it |
 | Auth | Vault service-account username/password in `companyIntegration.metadata`; JWT fetched lazily, one re-auth retry on 401 | PDM Web API has no OAuth; token TTL is undocumented (research §1.2). Same storage pattern as every other Carbon integration's secrets |
-| Release detection | Inngest cron poll every 30 min is ground truth; PDM 2025+ webhook only triggers an immediate poll | Webhooks are 2025+-only, unsigned, 15 s timeout, and unproven for desktop-originated transitions (research §4). Poll-with-overlap + idempotent attach is safe regardless |
+| Release detection | Inngest cron poll every 30 min is ground truth; PDM 2025+ webhook only triggers an immediate poll | Webhooks are 2025+-only, unsigned, 15 s timeout, and unproven for desktop-originated transitions (research §4). Mapping-based dedupe + idempotent attach makes the poll safe to re-run regardless |
 | Sync direction | PDM → Carbon only; Carbon never writes to the vault | Matches Onshape and the CAD→ERP release-push semantics every competitor connector implements (research §9) |
 | Asset-sync matching | Data-card `partNumberVariable` + `revisionVariable` (active configuration) → `item.readableIdWithRevision`; link-only, never creates items | Exact mirror of Onshape feature B's contract (`onshape-matching.ts` `releaseKey`/`sharedNumberSuffix` reused) |
 | Item creation | Only via manual BOM sync (feature A), through the existing `sync` edge function with a new union variant | Mirrors Onshape feature A; keeps privileged item/make-method creation in the one existing edge function |
@@ -126,7 +128,7 @@ Keys are flat (not nested under `credentials`) because the generic `IntegrationF
 | BOM type | Computed BOM at latest checked-in version, `configId`-scoped | Named-BOM support deferred; computed is always present and is what the `bominfo` → `computed` endpoints serve directly |
 | PDM Standard | Unsupported | No Web API exists for Standard (research §1.1); only reachable via the deferred agent |
 | Data model | No new tables — `integration` catalog seed row + `companyIntegration.metadata` + `externalIntegrationMapping` | The Onshape integration proves the existing plumbing suffices; keeps DB footprint to one idempotent seed migration |
-| Idempotency | `externalIntegrationMapping` (integration `"solidworks-pdm-release"`) records last-synced `{fileId, version}` per item | Makes polls and the folder-sweep fallback re-runnable and cheap; Onshape didn't need this (webhook-driven) but polling does |
+| Idempotency | `externalIntegrationMapping` rows per file class (`"solidworks-pdm-release-model"` / `"-drawing"`) record last-synced `{fileId, version}` per item, with a version-≤ skip guard; mapping presence (not a date cursor) is what dedupes the poll | Makes sweeps re-runnable and self-healing (failed syncs retry next sweep), lets a part and its drawing coexist on one item, and blocks out-of-order overwrites; Onshape didn't need this (webhook-driven) but polling does |
 | Heuristic 1 (multi-tenancy) | N/A — no new tables; every touched row (`companyIntegration`, `externalIntegrationMapping`, `document`, `modelUpload`) already carries `companyId` | Existing schema |
 | Heuristic 2 (service shape) | `getSolidWorksPdmClient` returns `{ client, error }`; route loaders/actions use existing settings service fns (`getIntegration`, `upsertCompanyIntegration`) | Convention |
 | Heuristic 3 (RLS) | N/A — no new tables | Existing policies cover all touched tables |
@@ -168,7 +170,7 @@ ON CONFLICT ("id") DO UPDATE SET "jsonschema" = EXCLUDED."jsonschema";
 
 (Verified: since `20241006185904_integration-refactor.sql` the `integration` table has exactly two columns, `id` and `jsonschema` — the INSERT above matches.)
 
-`externalIntegrationMapping` gains rows with integration values `"solidworks-pdm"`, `"solidworksPdmData"`, `"solidworks-pdm-release"` — the column is free TEXT; no migration needed.
+`externalIntegrationMapping` gains rows with integration values `"solidworks-pdm"`, `"solidworksPdmData"`, `"solidworks-pdm-release-model"`, `"solidworks-pdm-release-drawing"` — the column is free TEXT; no migration needed.
 
 ## API / Service Changes
 
@@ -195,7 +197,7 @@ New files (all patterns are the Onshape counterparts):
 
 - `apps/erp/app/components/SolidWorksPdmSync.tsx` — clone of `apps/erp/app/components/OnshapeSync.tsx` (file search combobox → configuration combobox → BOM preview tree → Fetch/Sync/Save buttons).
 - `apps/erp/app/modules/items/ui/Item/BoMExplorer.tsx` — mount `SolidWorksPdmSync` beside the existing `OnshapeSync` mount, each gated on its integration being active.
-- Status badge: `apps/erp/app/components/Icons.tsx` gains `SolidWorksPdmStatus` (renders the PDM workflow state from `solidworksPdmData` mapping metadata), mirroring `OnshapeStatus`.
+- Status badge: `apps/erp/app/components/Icons.tsx` gains `SolidWorksPdmStatus`, mirroring `OnshapeStatus`. Source of truth for its fields: `stateName` comes from the `"solidworks-pdm-release-*"` mapping metadata (the only producer that persists workflow state — see file-sync step 5); `revision` comes from the `solidworksPdmData` BOM-row metadata. When no release mapping exists yet, the badge shows revision only.
 - Integration settings page needs **no custom UI** — the generic `IntegrationsList`/`IntegrationForm` renders the fields, groups, and backfill action from the config.
 
 ## Acceptance Criteria
@@ -205,7 +207,8 @@ New files (all patterns are the Onshape counterparts):
 - [ ] `POST /api/integrations/solidworks-pdm/backfill` returns 200 and triggers the poll event when `assetSyncEnabled = true`; returns 400 when disabled.
 - [ ] `POST /api/webhook/solidworks-pdm/{companyId}` returns 200 and triggers a poll for a `ChangeState`-shaped payload on an active company; returns 400 for an unknown company; never trusts payload contents (no attach happens without a poll).
 - [ ] With the integration active, the SolidWorks PDM sync widget renders in the item BOM explorer; with it inactive, it does not.
-- [ ] `solidworks-pdm-file-sync`, given a released `.sldprt` whose active-config part number + revision matches an item, attaches thumbnail + co-located STEP as `modelUpload` and sends `carbon/model-optimize`; a second run with the same `{fileId, version}` skips (mapping-row idempotency). Given a `.slddrw` with a co-located PDF, the PDF lands as an item document. No matching item → skip without error. (Proven by unit tests over the matching/attach decision logic; live-vault proof is flagged as environment-gated.)
+- [ ] `solidworks-pdm-file-sync`, given a released `.sldprt` whose active-config part number + revision matches an item, attaches thumbnail + co-located STEP as `modelUpload` and sends `carbon/model-optimize`; a second run with the same `{fileId, version}` skips, and a run with an *older* version also skips (version-≤ guard). A released part and its drawing targeting the same item produce two coexisting mapping rows (`-model` / `-drawing`) without clobbering each other. Given a `.slddrw` with a co-located PDF, the PDF lands as an item document. No matching item → skip without error. (Proven by unit tests over the matching/attach decision logic; live-vault proof is flagged as environment-gated.)
+- [ ] The BOM normalizer rejects malformed computed-BOM responses — zero or multiple part-number column matches, non-finite quantities, inconsistent nesting — with an error surfaced in the picker, and the sync edge function is never invoked with such data (unit-tested).
 - [ ] `pnpm --filter @carbon/jobs test` passes with new `solidworks-pdm-matching.test.ts` covering: release-key matching, drawing shared-suffix matching, co-located-file basename convention, BOM row normalization, and idempotency skip.
 - [ ] Scoped typechecks pass: `@carbon/ee`, `@carbon/jobs`, `erp`; the `sync` edge function's own-file deno errors do not increase.
 - [ ] The `sync` edge function accepts a `type: "solidworks-pdm"` payload and produces the same item/make-method tree shape as an equivalent Onshape payload (unit-level or fixture-level proof).
@@ -214,12 +217,13 @@ New files (all patterns are the Onshape counterparts):
 
 | Risk | Severity | Mitigation |
 |------|----------|------------|
-| Web API search may not filter by workflow state/date (docs don't say) | High | Capability probe on first poll; `folder-sweep` fallback path is designed in from day one; `searchCapability` recorded per company |
+| Web API search may not filter by workflow state/date (docs don't say) | High | `folder-sweep` is the default and the only auto-selected path; `state-search` is opt-in per company (`searchCapability` set explicitly after live-vault validation), so an undocumented search quirk can never silently drop releases |
+| Current-state polling misses a file that is released and transitions onward between sweeps | Low | Documented as best-effort current-state sync; per-file transition history is too chatty to poll; backfill + the file's next release are the recovery paths |
 | No live vault available for development/verification | High | All matching/normalization/idempotency logic is pure and unit-tested; gating/settings/webhook paths verified via fixture rows (Onshape playbook pattern); live sync explicitly flagged environment-gated in the PR |
 | JWT TTL undocumented | Low | Single re-auth retry on 401 built into the client |
 | Customer exposes plain HTTP (PDM default is HTTP:65453) | Med | zod rejects non-HTTPS `baseUrl` (localhost exempt for dev); docs state the HTTPS requirement |
 | Unsigned PDM webhooks could be spoofed | Med | Receiver treats payloads as poll-now hints only; all real data comes from authenticated API calls |
-| Poll sweep cost on very large vaults (N+1: search → info → variables) | Med | Bulk `POST files/info`, cursor + overlap window, per-company concurrency 1, 30-min cadence; backfill retries 10 to ride out slowness |
+| Poll sweep cost on very large vaults (N+1: browse → info → variables, full sweep every cycle since dedupe is mapping-based) | Med | Bulk `POST files/info`, mapping dedupe keeps fan-out to new releases only, per-company concurrency 1, 30-min cadence; backfill retries 10 to ride out slowness |
 | PDM license seat consumption by the service account is undocumented | Low | Documented prerequisite: one dedicated Viewer/Contributor seat; surfaced in the integration description/docs |
 | Customer PDM version skew (webhooks 2025+, Web API maturity varies) | Low | `webApiVersion` capability flag; webhook registration best-effort; polling works on all Web-API-era versions |
 | Plaintext service-account password in `companyIntegration.metadata` | Med | Same trust model as every existing integration's tokens (RLS-guarded settings scopes, JSON column); flagged for a future integration-wide secrets encryption pass |
@@ -241,3 +245,4 @@ New files (all patterns are the Onshape counterparts):
 ## Changelog
 
 - 2026-08-04: Created. Combined spec+plan request; all open questions resolved autonomously (recommendation-accepted mode) and listed above for veto. Research at `.ai/research/solidworks-pdm-integration.md`; plan at `.ai/plans/2026-08-04-solidworks-pdm-integration.md`.
+- 2026-08-04: Revised per CodeRabbit review (PR #1331): poll dedupe is mapping-based (no modified-date cursor — releases without a modified-date bump are no longer missable, failed file-syncs self-heal); `folder-sweep` is the default discovery path with `state-search` strictly opt-in; release mappings split per file class (`-model`/`-drawing`) with a version-≤ skip guard; active-config resolution pinned to `GET /ActiveConfig` + `@`-tab fallback; picker hydrates search ids via bulk `files/info` with result caps; BOM normalizer must reject malformed responses pre-sync; `getThumbnail` gets the `maxBytes` cap; `SolidWorksPdmStatus` source of truth defined (`stateName` from release mappings); webhook registration privilege ("Can administrate add-ins") documented; webhook receiver response contract made explicit.
