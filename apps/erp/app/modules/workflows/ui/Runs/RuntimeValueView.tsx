@@ -1,6 +1,6 @@
 import { Badge } from "@carbon/react";
 import { Trans } from "@lingui/react/macro";
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import { humanizeField } from "../Builder/nodes/meta";
 import { EntityRecordLink } from "./EntityRecordLink";
 
@@ -36,7 +36,15 @@ function isRuntimeValue(v: unknown): v is RuntimeValue {
   );
 }
 
-function ListValue({ items, depth }: { items: unknown[]; depth: number }) {
+function ListValue({
+  items,
+  depth,
+  recordNames
+}: {
+  items: unknown[];
+  depth: number;
+  recordNames: Record<string, string>;
+}) {
   const [expanded, setExpanded] = useState(false);
   return (
     <span>
@@ -51,7 +59,11 @@ function ListValue({ items, depth }: { items: unknown[]; depth: number }) {
         <ul className="mt-1 ml-3 list-disc space-y-0.5">
           {items.map((item, i) => (
             <li key={`item-${i}`}>
-              <RuntimeValueView value={item} depth={depth + 1} />
+              <RuntimeValueView
+                value={item}
+                depth={depth + 1}
+                recordNames={recordNames}
+              />
             </li>
           ))}
         </ul>
@@ -61,9 +73,17 @@ function ListValue({ items, depth }: { items: unknown[]; depth: number }) {
 }
 
 /** A step's inputs/outputs are a map of named values, not one value. */
-export function ValueMap({ value }: { value: unknown }) {
+export function ValueMap({
+  value,
+  recordNames = {},
+  labelFor
+}: {
+  value: unknown;
+  recordNames?: Record<string, string>;
+  labelFor?: (key: string) => string;
+}) {
   if (!value || typeof value !== "object" || Array.isArray(value)) {
-    return <RuntimeValueView value={value} />;
+    return <RuntimeValueView value={value} recordNames={recordNames} />;
   }
   const entries = Object.entries(value as Record<string, unknown>);
   if (entries.length === 0) {
@@ -73,17 +93,18 @@ export function ValueMap({ value }: { value: unknown }) {
       </span>
     );
   }
+  // A fixed label column, so every value starts on the same line down the page.
   return (
-    <dl className="space-y-1">
+    <dl className="grid grid-cols-[minmax(0,7rem)_minmax(0,1fr)] gap-x-3 gap-y-1.5 items-baseline">
       {entries.map(([key, val]) => (
-        <div key={key} className="flex items-start gap-2">
-          <dt className="text-xs text-muted-foreground shrink-0">
-            {humanizeField(key)}
+        <Fragment key={key}>
+          <dt className="text-xs text-muted-foreground text-left break-words">
+            {labelFor ? labelFor(key) : humanizeField(key)}
           </dt>
           <dd className="min-w-0">
-            <RuntimeValueView value={val} />
+            <RuntimeValueView value={val} recordNames={recordNames} />
           </dd>
-        </div>
+        </Fragment>
       ))}
     </dl>
   );
@@ -91,10 +112,12 @@ export function ValueMap({ value }: { value: unknown }) {
 
 export function RuntimeValueView({
   value,
-  depth = 0
+  depth = 0,
+  recordNames = {}
 }: {
   value: unknown;
   depth?: number;
+  recordNames?: Record<string, string>;
 }) {
   if (depth >= MAX_DEPTH)
     return <span className="text-muted-foreground">…</span>;
@@ -146,7 +169,13 @@ export function RuntimeValueView({
 
   if (value.kind === "entity") {
     return (
-      <EntityRecordLink table={value.of} id={value.id} className="text-xs" />
+      <EntityRecordLink
+        table={value.of}
+        id={value.id}
+        className="text-xs"
+        name={recordNames[`${value.of}:${value.id}`]}
+        row={value.row}
+      />
     );
   }
 
@@ -158,6 +187,8 @@ export function RuntimeValueView({
         </span>
       );
     }
-    return <ListValue items={value.items} depth={depth} />;
+    return (
+      <ListValue items={value.items} depth={depth} recordNames={recordNames} />
+    );
   }
 }

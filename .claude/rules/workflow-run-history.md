@@ -29,6 +29,21 @@ as a greyed "Not reached" row. Step rows whose `nodeId` is not in `order` (defin
 post-run) are appended at the end in `sequence` order. Use the node id as the React key — never
 the array index (re-ordering on live revalidate would move rows under the cursor).
 
+The trigger has a real step row. `execute.ts` writes it directly (`claimStep` + `settleStep`,
+`nodeType: "trigger"`, always `Succeeded`, output = `triggerOutputs`) before the walk starts —
+it is recorded, never executed, since `EXECUTORS` has no `trigger` entry. Its `sequence` is `0`,
+which ties with the first real node, so the no-definition fallback sort breaks that tie in the
+trigger's favour.
+
+## Naming a step row
+
+`useNodeLabel()` (`ui/Runs/useNodeLabel.ts`) is the one place that decides. It returns the
+user's node `name` as the title, humanised — falling back to what the step does when the name
+is still the auto-generated `action_0` form (`isDefaultNodeName` / `nodeTitle` in
+`ui/Builder/labelKeys.ts`). `runOutcome` takes the same resolver as an argument so the outcome
+sentence and the step list can never name one step two ways. Note `node.data.title` no longer
+exists — it was dropped in definition format v3.
+
 ## The `detail` column contract
 
 `workflowStepRun.detail` is diagnostics, never node data. It holds the per-clause condition

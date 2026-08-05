@@ -124,9 +124,15 @@ later read. This is what makes `before.orderTotal <= 10000` mean what it says.
 - Every `step.run` id must be deterministic: `"load"`, `"permissions"`,
   `` `node:${nodeId}` ``, `` `node:${nodeId}:${itemKey}` ``, `"finish"`. Never a
   timestamp or a counter.
-- `claimStep` writes the step's `input` through `redactForLog`; `settleStep`
-  applies the same function to `output`, `detail`, `error`, and `statusReason`
-  (via `redactText`). `redactForLog` keeps the key and replaces the value with
+- `claimStep` writes the step's configuration to `input` through `redactForLog`;
+  `settleStep` applies the same function to `input`, `output`, `detail`, `error`, and
+  `statusReason` (via `redactText`). `settleStep` rewrites `input` only when the step
+  resolved something, merging `{ ...claim-time config, resolved }` — so a value that
+  only materialises at resolution time (an `authorization` header assembled from a
+  reference) is redacted too. Executors report those values through the optional
+  `record` callback on `RuntimeContext`, not on `NodeResult`: three of them can reject
+  rather than return, and a rejection would lose the values on the one path a customer
+  most needs them. `redactForLog` keeps the key and replaces the value with
   `"[REDACTED]"` for any key matching
   `/secret|token|password|passwd|credential|signature|authorization|apikey|api_key|client_secret|clientsecret|private_key|privatekey|bearer|cookie/i`
   and truncates strings over 4 KB. `itemKey`, `authorizedBy`, `keyword`, and

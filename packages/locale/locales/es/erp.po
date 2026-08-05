@@ -6918,6 +6918,9 @@ msgstr "Ayuda"
 msgid "Hide"
 msgstr "Ocultar"
 
+msgid "Hide raw"
+msgstr ""
+
 msgid "Hide system quantities until the review step"
 msgstr "Ocultar cantidades del sistema hasta el paso de revisión"
 
@@ -13061,9 +13064,6 @@ msgstr "ID de Documento de Origen"
 msgid "Source document readable"
 msgstr ""
 
-msgid "Source event"
-msgstr ""
-
 msgid "Source Item"
 msgstr "Artículo de origen"
 
@@ -14385,6 +14385,9 @@ msgstr "El estado de esta línea de cotización - Borrador, Sin Cotización, Com
 
 msgid "The statement bucket all accounts under this group will use."
 msgstr "El grupo de estados que utilizan todos los cuentas bajo este grupo."
+
+msgid "The step's settings — this run predates recording the values it used."
+msgstr ""
 
 msgid "The stock sizes this material is purchased and held in; each size becomes a separate selectable variant on jobs and POs."
 msgstr "Los tamaños de stock en los que se compran y se mantienen este material; cada tamaño se convierte en una variante seleccionable separada en trabajos y POs."

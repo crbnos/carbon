@@ -32,6 +32,7 @@ export const filterExecutor: NodeExecutor<FilterNode> = {
     if (source.value.kind !== "list") {
       return { status: "Skipped", reason: "This step expected a list." };
     }
+    ctx.record?.("source", source.value);
 
     const items = source.value.items;
     const kept: RuntimeValue[] = [];

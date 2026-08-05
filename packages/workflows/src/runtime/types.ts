@@ -76,6 +76,9 @@ export interface RuntimeContext {
   outputs: Record<string, Record<string, RuntimeValue>>;
   /** The item a looping node is on; absent outside a loop. */
   item?: RuntimeValue;
+  /** Called as each input resolves, so a step can report the values it used even
+   * when the work it hands them to throws. The engine supplies it; tests may omit it. */
+  record?: (key: string, value: RuntimeValue) => void;
 }
 
 /** What a single clause resolved to. `null` values mean it could not be read. */

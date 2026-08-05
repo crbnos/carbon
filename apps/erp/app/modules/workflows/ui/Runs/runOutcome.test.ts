@@ -38,13 +38,18 @@ const step = (overrides: Partial<WorkflowRunStep> = {}): WorkflowRunStep =>
   }) as unknown as WorkflowRunStep;
 
 const definition = (
-  nodes: { id: string; type: string; data?: Record<string, unknown> }[]
+  nodes: {
+    id: string;
+    type: string;
+    name?: string;
+    data?: Record<string, unknown>;
+  }[]
 ): WorkflowDefinition =>
   ({
     formatVersion: 3,
     nodes: nodes.map((n) => ({
       id: n.id,
-      name: n.id,
+      name: n.name ?? n.id,
       type: n.type,
       position: { x: 0, y: 0 },
       data: n.data ?? {}
@@ -75,6 +80,29 @@ describe("runOutcome", () => {
     expect(outcome.tone).toBe("danger");
     expect(outcome.text).toContain("Failed at");
     expect(outcome.text).toContain("boom");
+  });
+
+  it("names the failing step by the name the user gave it, not its node id", () => {
+    const outcome = runOutcome(
+      run({ status: "Failed", error: "boom" }),
+      [
+        step({ id: "s1", nodeId: "n1", nodeType: "trigger" }),
+        step({
+          id: "s2",
+          nodeId: "n2",
+          nodeType: "action",
+          sequence: 2,
+          status: "Failed"
+        })
+      ],
+      definition([
+        { id: "n1", type: "trigger" },
+        { id: "n2", type: "action", name: "flag_large_po" }
+      ])
+    );
+
+    expect(outcome.text).toContain('Failed at "Flag Large Po"');
+    expect(outcome.text).not.toContain("n2");
   });
 
   it("describes a blocked run with its reason", () => {

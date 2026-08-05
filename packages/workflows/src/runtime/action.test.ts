@@ -141,4 +141,35 @@ describe("actionExecutor", () => {
       ]
     ]);
   });
+
+  it("records each resolved input as it resolves, even when the service fails", async () => {
+    const recorded: Record<string, RuntimeValue> = {};
+    const ctx = {
+      ...contextWith(async () => ({
+        ok: false as const,
+        error: "The message could not be sent."
+      })),
+      record: (key: string, value: RuntimeValue) => {
+        recorded[key] = value;
+      }
+    };
+
+    const result = await actionExecutor.execute(
+      node("notify", {
+        recipient: { kind: "ref", nodeId: "find", output: "result", path: [] },
+        message: { kind: "literal", type: t.string, value: "Please review" }
+      }),
+      ctx
+    );
+
+    expect(result).toEqual({
+      status: "Failed",
+      error: "The message could not be sent.",
+      handle: "failure"
+    });
+    expect(recorded).toEqual({
+      recipient: recipients,
+      message: primitiveValue("string", "Please review")
+    });
+  });
 });

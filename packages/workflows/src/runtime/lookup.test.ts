@@ -4,7 +4,7 @@ import type { LookupNode } from "../definition/schema";
 import { t } from "../definition/types";
 import { createRuntimeContext } from "./fixtures";
 import { lookupExecutor } from "./lookup";
-import type { SearchOutcome, WorkflowServices } from "./types";
+import type { RuntimeValue, SearchOutcome, WorkflowServices } from "./types";
 import { entityValue, listValue, nullValue, primitiveValue } from "./values";
 
 type SearchParams = Parameters<WorkflowServices["search"]>[0];
@@ -182,5 +182,32 @@ describe("lookupExecutor", () => {
         ]
       }
     ]);
+  });
+
+  it("records each resolved match value, disambiguating a repeated field", async () => {
+    const recorded: Record<string, RuntimeValue> = {};
+    const ctx = {
+      ...contextWith({ ok: true, value: orders(1), matched: 1, dropped: 0 }),
+      record: (key: string, value: RuntimeValue) => {
+        recorded[key] = value;
+      }
+    };
+
+    await lookupExecutor.execute(
+      node("list", [
+        isOpen,
+        {
+          field: "status",
+          operator: "neq" as const,
+          value: { kind: "literal" as const, type: t.string, value: "Closed" }
+        }
+      ]),
+      ctx
+    );
+
+    expect(recorded).toEqual({
+      status: primitiveValue("string", "Open"),
+      "status #2": primitiveValue("string", "Closed")
+    });
   });
 });

@@ -193,6 +193,8 @@ describe("batch mode", () => {
     expect(ids).toEqual([
       "load",
       "permissions",
+      // The trigger is recorded before the walk starts at its successors.
+      "node:t1",
       "node:look",
       "node:act",
       "finish"
@@ -211,6 +213,7 @@ describe("batch mode", () => {
     expect(ids).toEqual([
       "load",
       "permissions",
+      "node:t1",
       "node:look",
       "node:act:j1",
       "node:act:j2",

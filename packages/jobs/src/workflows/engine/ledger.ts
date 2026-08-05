@@ -60,7 +60,8 @@ export async function claimStep(
     nodeType: string;
     itemKey: string;
     sequence: number;
-    /** The resolved inputs — the only durable record of what the workflow saw. */
+    /** The step's configuration, written before it acts. The values it actually
+     * resolved arrive later, via `settleStep`. */
     input?: unknown;
   }
 ): Promise<StepClaim> {
@@ -99,6 +100,7 @@ export async function settleStep(
     statusReason?: string | null;
     error?: string | null;
     output?: unknown;
+    input?: unknown;
     detail?: unknown;
     branchTaken?: string | null;
     startedAt: string;
@@ -114,6 +116,8 @@ export async function settleStep(
     durationMs: completedAt.getTime() - new Date(params.startedAt).getTime()
   };
 
+  if (params.input !== undefined)
+    patch.input = toJson(redactForLog(params.input));
   if (params.output !== undefined)
     patch.output = toJson(redactForLog(params.output));
   if (params.detail !== undefined) patch.detail = toJson(params.detail);

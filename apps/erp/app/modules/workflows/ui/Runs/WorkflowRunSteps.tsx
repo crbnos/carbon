@@ -4,16 +4,25 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
 import { LuChevronDown, LuChevronRight } from "react-icons/lu";
 import type { WorkflowRunStep } from "../../workflows.service";
-import { NODE_KIND_META } from "../Builder/nodes/meta";
+import { useWorkflowLabel } from "../Builder/catalog";
+import {
+  actionInputLabelKey,
+  operationInputLabelKey,
+  outputLabel
+} from "../Builder/labelKeys";
+import { humanizeField, NODE_KIND_META } from "../Builder/nodes/meta";
 import { ConditionDetail } from "./ConditionDetail";
 import { StepStatus } from "./RunStatus";
 import { ValueMap } from "./RuntimeValueView";
+import { useNodeLabel } from "./useNodeLabel";
 
 type WorkflowRunStepsProps = {
   steps: WorkflowRunStep[];
   definition: WorkflowDefinition | null;
   compacted: boolean;
   stepsPurged: boolean;
+  /** Record ids resolved to the name a person recognises, keyed `${table}:${id}`. */
+  recordNames: Record<string, string>;
 };
 
 function durationLabel(ms: number | null): string {
@@ -38,37 +47,78 @@ function getListCount(output: unknown): number | null {
 
 function ExpandedSection({
   label,
+  note,
   children
 }: {
   label: string;
+  note?: string;
   children: React.ReactNode;
 }) {
   return (
     <div className="space-y-1">
       <p className="text-xs font-medium text-muted-foreground">{label}</p>
+      {note && <p className="text-xs text-muted-foreground italic">{note}</p>}
       <div className="pl-2">{children}</div>
     </div>
   );
 }
 
+/** New runs record the values a step actually used under `resolved`; older runs only
+ * ever stored its configuration. Tell them apart so neither is mislabelled. */
+function stepInputView(input: unknown): { value: unknown; resolved: boolean } {
+  if (input === null || typeof input !== "object" || Array.isArray(input)) {
+    return { value: input, resolved: false };
+  }
+  const obj = input as Record<string, unknown>;
+  if (obj.resolved !== undefined)
+    return { value: obj.resolved, resolved: true };
+  if (obj.inputs !== undefined) return { value: obj.inputs, resolved: false };
+  return { value: input, resolved: false };
+}
+
+/** An action or record step names its inputs in the catalog ("Title", "Assignee");
+ * every other kind has no catalog entry, so its keys keep the humanised form. */
+function inputLabelResolver(
+  node: WorkflowNode | undefined,
+  label: (key: string, fallback?: string) => string
+): ((key: string) => string) | undefined {
+  if (node === undefined) return undefined;
+  const catalogId = NODE_KIND_META[node.type].catalogId?.(node);
+  if (catalogId === undefined) return undefined;
+  if (node.type === "action") {
+    return (key) =>
+      label(actionInputLabelKey(catalogId, key), humanizeField(key));
+  }
+  if (node.type === "entity") {
+    return (key) =>
+      label(operationInputLabelKey(catalogId, key), humanizeField(key));
+  }
+  return undefined;
+}
+
 function StepRow({
   step,
   nodeTitle,
+  nodeSubtitle,
   nodeIcon,
   nodeKind,
   notReachedReason,
   defaultExpanded = false,
-  node
+  node,
+  recordNames
 }: {
   step: WorkflowRunStep | null;
   nodeTitle: string;
+  nodeSubtitle?: string;
   nodeIcon: React.ReactNode;
   nodeKind?: string;
   notReachedReason?: string;
   defaultExpanded?: boolean;
   node?: WorkflowNode;
+  recordNames: Record<string, string>;
 }) {
   const { t } = useLingui();
+  const label = useWorkflowLabel();
   const [expanded, setExpanded] = useState(defaultExpanded);
   const [raw, setRaw] = useState(false);
   const isNotReached = step === null;
@@ -93,6 +143,8 @@ function StepRow({
   const hasDetail =
     step.input !== null || step.output !== null || step.detail !== null;
   const listCount = getListCount(step.output);
+  const input = stepInputView(step.input);
+  const inputLabelFor = inputLabelResolver(node, label);
 
   return (
     <div className="border-b border-border/50">
@@ -128,6 +180,11 @@ function StepRow({
               </span>
             )}
           </div>
+          {nodeSubtitle && (
+            <p className="text-xs text-muted-foreground truncate">
+              {nodeSubtitle}
+            </p>
+          )}
           {step.statusReason && (
             <p className="text-xs text-muted-foreground">{step.statusReason}</p>
           )}
@@ -164,13 +221,28 @@ function StepRow({
           ) : (
             <>
               {step.input !== null && (
-                <ExpandedSection label={t`Input`}>
-                  <ValueMap value={step.input} />
+                <ExpandedSection
+                  label={t`Input`}
+                  note={
+                    input.resolved
+                      ? undefined
+                      : t`The step's settings — this run predates recording the values it used.`
+                  }
+                >
+                  <ValueMap
+                    value={input.value}
+                    labelFor={inputLabelFor}
+                    recordNames={recordNames}
+                  />
                 </ExpandedSection>
               )}
               {step.output !== null && (
                 <ExpandedSection label={t`Output`}>
-                  <ValueMap value={step.output} />
+                  <ValueMap
+                    value={step.output}
+                    labelFor={outputLabel}
+                    recordNames={recordNames}
+                  />
                 </ExpandedSection>
               )}
               {step.detail !== null && (
@@ -189,7 +261,10 @@ function StepRow({
   );
 }
 
-function stepRowFromType(step: WorkflowRunStep) {
+function stepRowFromType(
+  step: WorkflowRunStep,
+  recordNames: Record<string, string>
+) {
   const meta = NODE_KIND_META[step.nodeType as keyof typeof NODE_KIND_META];
   const Icon = meta?.Icon;
   return (
@@ -199,6 +274,7 @@ function stepRowFromType(step: WorkflowRunStep) {
       nodeTitle={meta?.defaultTitle ?? step.nodeType}
       nodeIcon={Icon ? <Icon className="size-3.5" /> : null}
       nodeKind={meta?.name}
+      recordNames={recordNames}
     />
   );
 }
@@ -207,8 +283,11 @@ export function WorkflowRunSteps({
   steps,
   definition,
   compacted,
-  stepsPurged
+  stepsPurged,
+  recordNames
 }: WorkflowRunStepsProps) {
+  const nodeLabel = useNodeLabel();
+
   if (stepsPurged) {
     return (
       <div className="py-6 px-4 text-sm text-muted-foreground text-center">
@@ -246,10 +325,16 @@ export function WorkflowRunSteps({
   if (!definition) {
     const sorted = [...steps]
       .filter((s) => !s.itemKey || s.itemKey === "")
-      .sort((a, b) => a.sequence - b.sequence);
+      // The trigger row shares `sequence: 0` with the first real node, so break the
+      // tie in its favour — a run always starts at its trigger.
+      .sort((a, b) =>
+        a.sequence === b.sequence
+          ? Number(b.nodeType === "trigger") - Number(a.nodeType === "trigger")
+          : a.sequence - b.sequence
+      );
     return (
       <div className="divide-y-0">
-        {sorted.map((step) => stepRowFromType(step))}
+        {sorted.map((step) => stepRowFromType(step, recordNames))}
       </div>
     );
   }
@@ -282,30 +367,26 @@ export function WorkflowRunSteps({
           const meta = NODE_KIND_META[node.type];
           const Icon = meta.Icon;
           const step = stepsByNode.get(nodeId) ?? null;
-          const nodeTitle =
-            ((node.data as Record<string, unknown>).title as
-              | string
-              | undefined) ??
-            meta.title?.(node) ??
-            meta.summary?.(node) ??
-            meta.defaultTitle;
+          const { title, subtitle, kind } = nodeLabel(node);
 
           return (
             <StepRow
               key={nodeId}
               step={step}
-              nodeTitle={nodeTitle}
+              nodeTitle={title}
+              nodeSubtitle={subtitle === "" ? undefined : subtitle}
               nodeIcon={<Icon className="size-3.5" />}
-              nodeKind={meta.name}
+              nodeKind={kind}
               notReachedReason={notReachedReason}
               defaultExpanded={
                 step?.nodeId === focusStep?.nodeId && focusStep !== null
               }
               node={node}
+              recordNames={recordNames}
             />
           );
         })}
-        {orphanSteps.map((step) => stepRowFromType(step))}
+        {orphanSteps.map((step) => stepRowFromType(step, recordNames))}
       </div>
     </div>
   );

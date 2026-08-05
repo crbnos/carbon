@@ -13,8 +13,10 @@ import { useLoaderData, useNavigate } from "react-router";
 import {
   getWorkflowRun,
   getWorkflowRunChain,
+  getWorkflowRunRecordNames,
   getWorkflowRunSteps
 } from "~/modules/workflows";
+import { collectEntityRefs } from "~/modules/workflows/ui/Runs/entityRefs";
 import { WorkflowRunDetail } from "~/modules/workflows/ui/Runs/WorkflowRunDetail";
 import { path } from "~/utils/path";
 
@@ -41,6 +43,15 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const stepsResult = await getWorkflowRunSteps(client, runId, companyId);
   const steps = stepsResult.data ?? [];
 
+  const refs = collectEntityRefs([
+    ...steps.map((s) => s.input),
+    ...steps.map((s) => s.output)
+  ]);
+  if (run.triggerTable && run.triggerRecordId) {
+    refs.push({ table: run.triggerTable, id: run.triggerRecordId });
+  }
+  const recordNames = await getWorkflowRunRecordNames(client, companyId, refs);
+
   let chain = null;
   if (run.rootRunId) {
     const chainResult = await getWorkflowRunChain(
@@ -51,11 +62,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     chain = chainResult.data ?? null;
   }
 
-  return { run, steps, chain };
+  return { run, steps, chain, recordNames };
 }
 
 export default function WorkflowRunDetailRoute() {
-  const { run, steps, chain } = useLoaderData<typeof loader>();
+  const { run, steps, chain, recordNames } = useLoaderData<typeof loader>();
   const navigate = useNavigate();
   return (
     <Drawer
@@ -71,7 +82,12 @@ export default function WorkflowRunDetailRoute() {
           </DrawerTitle>
         </DrawerHeader>
         <DrawerBody className="p-0">
-          <WorkflowRunDetail run={run} steps={steps} chain={chain} />
+          <WorkflowRunDetail
+            run={run}
+            steps={steps}
+            chain={chain}
+            recordNames={recordNames}
+          />
         </DrawerBody>
       </DrawerContent>
     </Drawer>

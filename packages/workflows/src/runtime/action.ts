@@ -27,6 +27,7 @@ export const actionExecutor: NodeExecutor<ActionNode> = {
         ctx.item !== undefined && resolved.value.kind === "list"
           ? ctx.item
           : resolved.value;
+      ctx.record?.(name, inputs[name]);
     }
 
     const outcome = await ctx.services.runAction(node.data.action, inputs);

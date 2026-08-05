@@ -71,6 +71,23 @@ describe("redactForLog", () => {
     const exact = "y".repeat(4096);
     expect(redactForLog(exact)).toBe(exact);
   });
+
+  it("redacts a secret-looking key inside resolved inputs", () => {
+    const redacted = redactForLog({
+      inputs: {
+        authorization: { kind: "primitive", of: "string", value: "tpl" }
+      },
+      resolved: {
+        authorization: {
+          kind: "primitive",
+          of: "string",
+          value: "Bearer sk-live-123"
+        }
+      }
+    }) as Record<string, Record<string, unknown>>;
+    expect(redacted.resolved?.authorization).toBe("[REDACTED]");
+    expect(JSON.stringify(redacted)).not.toContain("sk-live-123");
+  });
 });
 
 describe("redactText", () => {

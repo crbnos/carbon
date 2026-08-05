@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { describeValueType, nodeNameLabel, outputLabel } from "./labelKeys";
+import {
+  describeValueType,
+  isDefaultNodeName,
+  nodeNameLabel,
+  nodeTitle,
+  outputLabel
+} from "./labelKeys";
 
 describe("nodeNameLabel", () => {
   it("titles a stored slug", () => {
@@ -55,5 +61,40 @@ describe("describeValueType", () => {
   it("leaves primitives as plain words", () => {
     expect(describeValueType({ kind: "primitive", of: "string" })).toBe("text");
     expect(describeValueType({ kind: "primitive", of: "date" })).toBe("a date");
+  });
+});
+
+describe("nodeTitle", () => {
+  it("uses the name the user typed", () => {
+    expect(nodeTitle("flag_large_po", "Create an issue")).toBe("Flag Large Po");
+  });
+
+  it("falls back for an untouched auto-generated name", () => {
+    expect(nodeTitle("action_0", "Create an issue")).toBe("Create an issue");
+    expect(nodeTitle("trigger_12", "A purchase order is created")).toBe(
+      "A purchase order is created"
+    );
+  });
+
+  it("falls back for a missing or empty name", () => {
+    expect(nodeTitle(undefined, "Only if")).toBe("Only if");
+    expect(nodeTitle("", "Only if")).toBe("Only if");
+  });
+});
+
+describe("isDefaultNodeName", () => {
+  it("recognises every auto-generated prefix", () => {
+    for (const kind of [
+      "trigger",
+      "action",
+      "condition",
+      "entity",
+      "lookup",
+      "filter"
+    ]) {
+      expect(isDefaultNodeName(`${kind}_0`)).toBe(true);
+    }
+    expect(isDefaultNodeName("flag_large_po")).toBe(false);
+    expect(isDefaultNodeName("action_zero")).toBe(false);
   });
 });

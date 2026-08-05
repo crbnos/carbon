@@ -32,7 +32,7 @@ vi.mock("../actions", () => ({ createWorkflowServices: vi.fn() }));
 
 const { executeWorkflowRun } = await import("./execute");
 const { loadRunContext } = await import("./log");
-const { claimStep } = await import("./ledger");
+const { claimStep, settleStep } = await import("./ledger");
 const { createWorkflowServices } = await import("../actions");
 
 const logger = { info: vi.fn(), error: vi.fn() };
@@ -275,6 +275,45 @@ describe("a workflow end to end", () => {
     expect(callTo(runAction, "notify")?.subject).toEqual(
       primitiveValue("string", "Purchase order PO-1042 is over $10,000")
     );
+
+    // The trigger is recorded, never executed — without its row the run reads as
+    // beginning nowhere and the first real step looks skipped.
+    const triggerIndex = vi
+      .mocked(claimStep)
+      .mock.calls.findIndex(([, params]) => params.nodeType === "trigger");
+    expect(triggerIndex).toBeGreaterThanOrEqual(0);
+    expect(vi.mocked(claimStep).mock.calls[triggerIndex]?.[1].nodeId).toBe(
+      "t1"
+    );
+
+    const triggerSettle = vi
+      .mocked(settleStep)
+      .mock.calls.find(
+        ([, params]) => params.stepRunId === `s${triggerIndex + 1}`
+      )?.[1];
+    expect(triggerSettle?.status).toBe("Succeeded");
+    expect(
+      (triggerSettle?.output as Record<string, RuntimeValue>).record
+    ).toEqual(entityValue("purchaseOrder", "po1", record));
+
+    // The values a step finished with are what a person needs to debug it; the
+    // stored templates are not. Both survive, under separate keys.
+    const tellIndex = vi
+      .mocked(claimStep)
+      .mock.calls.findIndex(([, params]) => params.nodeId === "tell");
+    const actionSettle = vi
+      .mocked(settleStep)
+      .mock.calls.find(
+        ([, params]) => params.stepRunId === `s${tellIndex + 1}`
+      )?.[1];
+    const actionInput = actionSettle?.input as {
+      inputs?: unknown;
+      resolved?: Record<string, RuntimeValue>;
+    };
+    expect(actionInput?.resolved?.subject).toEqual(
+      primitiveValue("string", "Purchase order PO-1042 is over $10,000")
+    );
+    expect(actionInput?.inputs).toBeDefined();
   });
 
   it("hands a created record on to the next step", async () => {

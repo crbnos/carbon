@@ -3,6 +3,8 @@ import type {
   WorkflowRunDetail,
   WorkflowRunStep
 } from "../../workflows.service";
+import type { LabelFor } from "../Builder/labelKeys";
+import { nodeTitle } from "../Builder/labelKeys";
 import { NODE_KIND_META } from "../Builder/nodes/meta";
 
 export type RunOutcome = {
@@ -10,10 +12,15 @@ export type RunOutcome = {
   text: string;
 };
 
-/** The title a step should be described by in the outcome sentence. */
+/** This module is pure, so callers with hook access pass a translator in. */
+const UNTRANSLATED: LabelFor = (_key, fallback) => fallback;
+
+/** The title a step should be described by in the outcome sentence. Same rule as
+ * the step rows use, so the sentence and the list never name a step differently. */
 function stepTitle(
   step: WorkflowRunStep,
-  definition: WorkflowDefinition | null
+  definition: WorkflowDefinition | null,
+  labelFor: LabelFor
 ): string {
   const node = definition?.nodes.find((n) => n.id === step.nodeId);
   if (!node) {
@@ -23,13 +30,13 @@ function stepTitle(
     );
   }
   const meta = NODE_KIND_META[node.type];
-  const explicit = (node.data as Record<string, unknown>).title;
-  return (
-    (typeof explicit === "string" && explicit !== "" ? explicit : undefined) ??
+  const catalogId = meta.catalogId?.(node);
+  const describes =
+    (catalogId === undefined ? undefined : labelFor(catalogId, catalogId)) ??
     meta.title?.(node) ??
     meta.summary?.(node) ??
-    meta.defaultTitle
-  );
+    meta.defaultTitle;
+  return nodeTitle(node.name, describes);
 }
 
 /**
@@ -40,13 +47,16 @@ function stepTitle(
 export function runOutcome(
   run: WorkflowRunDetail,
   steps: WorkflowRunStep[],
-  definition: WorkflowDefinition | null
+  definition: WorkflowDefinition | null,
+  labelFor: LabelFor = UNTRANSLATED
 ): RunOutcome {
   const nodeSteps = steps.filter((s) => !s.itemKey || s.itemKey === "");
 
   if (run.status === "Failed") {
     const failed = nodeSteps.find((s) => s.status === "Failed");
-    const where = failed ? ` at "${stepTitle(failed, definition)}"` : "";
+    const where = failed
+      ? ` at "${stepTitle(failed, definition, labelFor)}"`
+      : "";
     const why = run.error ? `: ${run.error}` : ".";
     return { tone: "danger", text: `Failed${where}${why}` };
   }
@@ -79,7 +89,7 @@ export function runOutcome(
 
   const noMatch = nodeSteps.find((s) => s.branchTaken === "none");
   if (noMatch) {
-    const title = stepTitle(noMatch, definition);
+    const title = stepTitle(noMatch, definition, labelFor);
     if (definition) {
       const notRun = definition.nodes.length - nodeSteps.length;
       if (notRun > 0) {
@@ -97,7 +107,7 @@ export function runOutcome(
 
   const skipped = nodeSteps.find((s) => s.status === "Skipped");
   if (skipped) {
-    const title = stepTitle(skipped, definition);
+    const title = stepTitle(skipped, definition, labelFor);
     const why = skipped.statusReason ? `: ${skipped.statusReason}` : ".";
     return {
       tone: "warning",

@@ -6918,6 +6918,9 @@ msgstr "Aide"
 msgid "Hide"
 msgstr "Masquer"
 
+msgid "Hide raw"
+msgstr ""
+
 msgid "Hide system quantities until the review step"
 msgstr "Masquer les quantités du système jusqu'à l'étape d'examen"
 
@@ -13061,9 +13064,6 @@ msgstr "ID du document source"
 msgid "Source document readable"
 msgstr ""
 
-msgid "Source event"
-msgstr ""
-
 msgid "Source Item"
 msgstr "Élément source"
 
@@ -14385,6 +14385,9 @@ msgstr "L'état de cette ligne de devis - Brouillon, Pas de Devis, Complet; Pas 
 
 msgid "The statement bucket all accounts under this group will use."
 msgstr "Le groupe d'états que tous les comptes sous ce groupe utiliseront."
+
+msgid "The step's settings — this run predates recording the values it used."
+msgstr ""
 
 msgid "The stock sizes this material is purchased and held in; each size becomes a separate selectable variant on jobs and POs."
 msgstr "Les tailles de stock dans lesquelles ce matériau est acheté et stocké; chaque taille devient une variante sélectionnable distincte sur les travaux et les POs."

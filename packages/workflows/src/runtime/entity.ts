@@ -22,6 +22,7 @@ export const entityExecutor: NodeExecutor<EntityNode> = {
       // Missing data is a skip with a reason, never an error.
       if (!resolved.ok) return { status: "Skipped", reason: resolved.reason };
       inputs[name] = resolved.value;
+      ctx.record?.(name, resolved.value);
     }
 
     const outcome = await ctx.services.runOperation(

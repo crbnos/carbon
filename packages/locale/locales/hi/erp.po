@@ -6918,6 +6918,9 @@ msgstr "मदद"
 msgid "Hide"
 msgstr "छिपाएं"
 
+msgid "Hide raw"
+msgstr ""
+
 msgid "Hide system quantities until the review step"
 msgstr "समीक्षा चरण तक सिस्टम मात्रा को छिपाएं"
 
@@ -13061,9 +13064,6 @@ msgstr "स्रोत दस्तावेज़ ID"
 msgid "Source document readable"
 msgstr ""
 
-msgid "Source event"
-msgstr ""
-
 msgid "Source Item"
 msgstr "स्रोत आइटम"
 
@@ -14385,6 +14385,9 @@ msgstr "इस उद्धरण पंक्ति की स्थिति -
 
 msgid "The statement bucket all accounts under this group will use."
 msgstr "विवरण बाल्टी जो इस समूह के सभी खाते उपयोग करेंगे।"
+
+msgid "The step's settings — this run predates recording the values it used."
+msgstr ""
 
 msgid "The stock sizes this material is purchased and held in; each size becomes a separate selectable variant on jobs and POs."
 msgstr "स्टॉक आकार जिनमें यह सामग्री खरीदी और आयोजित की जाती है; प्रत्येक आकार नौकरियों और POs पर एक अलग चयनयोग्य संस्करण बन जाता है।"

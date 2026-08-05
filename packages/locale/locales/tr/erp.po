@@ -6918,6 +6918,9 @@ msgstr "Yardım"
 msgid "Hide"
 msgstr "Gizle"
 
+msgid "Hide raw"
+msgstr ""
+
 msgid "Hide system quantities until the review step"
 msgstr "Sistem miktarlarını inceleme adımına kadar gizle"
 
@@ -13061,9 +13064,6 @@ msgstr "Kaynak Belge Kimliği"
 msgid "Source document readable"
 msgstr ""
 
-msgid "Source event"
-msgstr ""
-
 msgid "Source Item"
 msgstr "Kaynak Ürün"
 
@@ -14385,6 +14385,9 @@ msgstr "Bu alıntı satırının durumu - Taslak, Alıntı Yok, Tamamlandı; Al�
 
 msgid "The statement bucket all accounts under this group will use."
 msgstr "Bu grup altındaki tüm hesapların kullanacağı beyan grubu."
+
+msgid "The step's settings — this run predates recording the values it used."
+msgstr ""
 
 msgid "The stock sizes this material is purchased and held in; each size becomes a separate selectable variant on jobs and POs."
 msgstr "Bu malzemenin satın alındığı ve tutulduğu stok boyutları; her boyut işler ve PO'lar üzerinde ayrı bir seçilebilir varyant haline gelir."

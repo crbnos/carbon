@@ -6918,6 +6918,9 @@ msgstr "帮助"
 msgid "Hide"
 msgstr "隐藏"
 
+msgid "Hide raw"
+msgstr ""
+
 msgid "Hide system quantities until the review step"
 msgstr "隐藏系统数量直到审核步骤"
 
@@ -13061,9 +13064,6 @@ msgstr "源单据ID"
 msgid "Source document readable"
 msgstr ""
 
-msgid "Source event"
-msgstr ""
-
 msgid "Source Item"
 msgstr "源项目"
 
@@ -14385,6 +14385,9 @@ msgstr "此报价行的状态 - 草稿、无报价、完成；无报价显示原
 
 msgid "The statement bucket all accounts under this group will use."
 msgstr "此组下所有帐户将使用的报表组。"
+
+msgid "The step's settings — this run predates recording the values it used."
+msgstr ""
 
 msgid "The stock sizes this material is purchased and held in; each size becomes a separate selectable variant on jobs and POs."
 msgstr "购买和保持此材料的库存尺寸；每个尺寸在工作和采购单上成为单独的可选变体。"

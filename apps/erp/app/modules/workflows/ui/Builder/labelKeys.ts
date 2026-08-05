@@ -97,3 +97,21 @@ export function describeValueType(
       return type.of;
   }
 }
+
+/** Matches the auto-generated names `nextNodeName` hands out (`action_0`, `trigger_1`).
+ * A name the user never changed carries no meaning, so callers fall back instead. */
+const DEFAULT_NODE_NAME =
+  /^(trigger|action|condition|entity|lookup|filter)_\d+$/;
+
+export function isDefaultNodeName(name: string): boolean {
+  return DEFAULT_NODE_NAME.test(name);
+}
+
+/** What a step row is called: the name the user typed, or — when they never renamed
+ * it — what the step actually does. Never "Action 0". */
+export function nodeTitle(name: string | undefined, fallback: string): string {
+  if (name === undefined || name === "" || isDefaultNodeName(name)) {
+    return fallback;
+  }
+  return nodeNameLabel(name);
+}

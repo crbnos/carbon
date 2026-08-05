@@ -46,6 +46,14 @@ export const lookupExecutor: NodeExecutor<LookupNode> = {
         operator: rule.operator,
         value: resolved.value
       });
+      // `field` is not unique across rules (two rules may bracket one date), so the
+      // index disambiguates without hiding either value.
+      ctx.record?.(
+        criteria.filter((c) => c.field === rule.field).length > 1
+          ? `${rule.field} #${criteria.length}`
+          : rule.field,
+        resolved.value
+      );
     }
 
     const outcome = await ctx.services.search({

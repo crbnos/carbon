@@ -89,6 +89,7 @@ interface NodeArgs {
   companyGroupId: string;
   /** The item a batched node is on; unset outside a batch. */
   item?: RuntimeValue;
+  record?: (key: string, value: RuntimeValue) => void;
 }
 
 // A fresh five-minute connection per step, always tagged with the run.
@@ -101,6 +102,7 @@ async function contextFor(args: NodeArgs): Promise<RuntimeContext> {
     loader: createEntityLoader({ client, companyId: payload.companyId, cache }),
     outputs: args.outputs,
     ...(args.item === undefined ? {} : { item: args.item }),
+    ...(args.record === undefined ? {} : { record: args.record }),
     services: createWorkflowServices({
       client,
       catalog,
@@ -136,8 +138,8 @@ async function runExecutor(args: NodeArgs): Promise<NodeResult> {
   return executor.execute(node, await contextFor(args));
 }
 
-/** Claim-before-acting means the resolved inputs do not exist yet, so what is
- * durable is the configuration this turn ran with, plus its item. */
+/** What is durable at claim time: the configuration this turn ran with, plus its
+ * item. The values it resolves are merged in later by `settleStep`. */
 function stepInput(args: NodeArgs): unknown {
   const data = args.node.data as { inputs?: unknown };
   const input: Record<string, unknown> = {};
@@ -149,7 +151,9 @@ function stepInput(args: NodeArgs): unknown {
 async function recordStep(
   args: NodeArgs,
   itemKey: string,
-  produce: () => Promise<NodeResult>
+  produce: (
+    record: (key: string, value: RuntimeValue) => void
+  ) => Promise<NodeResult>
 ): Promise<StepOutcome> {
   const { payload, node } = args;
   const db = getJobDatabaseClient();
@@ -171,7 +175,11 @@ async function recordStep(
     return { status: "Skipped", handle: null, outputs: null };
   }
 
-  const result = await produce();
+  // Filled in as values resolve, so a step that throws still reports what it used.
+  const resolved: Record<string, RuntimeValue> = {};
+  const result = await produce((key, value) => {
+    resolved[key] = value;
+  });
 
   await settleStep(db, {
     stepRunId: claim.stepRunId,
@@ -185,6 +193,10 @@ async function recordStep(
           : null,
     error: result.status === "Failed" ? result.error : null,
     output: result.status === "Succeeded" ? result.outputs : null,
+    input:
+      Object.keys(resolved).length === 0
+        ? undefined
+        : { ...((stepInput(args) as object | undefined) ?? {}), resolved },
     detail: result.status === "Failed" ? undefined : result.detail,
     branchTaken:
       result.status === "Succeeded" ? (result.branchTaken ?? null) : null,
@@ -253,8 +265,8 @@ async function runBatchedNode(
     const itemKey = itemKeyFor(item);
     results.push(
       await step.run(`node:${node.id}:${itemKey}`, () =>
-        recordStep({ ...args, item }, itemKey, () =>
-          runExecutor({ ...args, item })
+        recordStep({ ...args, item }, itemKey, (record) =>
+          runExecutor({ ...args, item, record })
         )
       )
     );
@@ -407,6 +419,33 @@ export async function executeWorkflowRun(params: {
     });
   }
 
+  // The trigger is recorded, never executed: the walk starts at its successors, so
+  // without this row the run appears to begin nowhere and the first row reads as a
+  // step that was skipped.
+  if (trigger !== undefined) {
+    await step.run(`node:${trigger.id}`, async () => {
+      const db = getJobDatabaseClient();
+      const startedAt = new Date().toISOString();
+      const claim = await claimStep(db, {
+        runId: payload.runId,
+        companyId: payload.companyId,
+        nodeId: trigger.id,
+        nodeType: "trigger",
+        itemKey: "",
+        sequence: 0
+      });
+      if (!claim.claimed) return null;
+      await settleStep(db, {
+        stepRunId: claim.stepRunId,
+        companyId: payload.companyId,
+        status: "Succeeded",
+        output: outputs[trigger.id] ?? {},
+        startedAt
+      });
+      return null;
+    });
+  }
+
   const byId = new Map(definition.nodes.map((node) => [node.id, node]));
   const state = createWalkState(definition, trigger?.id);
   let executions = 0;
@@ -444,7 +483,7 @@ export async function executeWorkflowRun(params: {
     const outcome =
       plan === undefined
         ? await step.run(`node:${nodeId}`, () =>
-            recordStep(args, "", () => runExecutor(args))
+            recordStep(args, "", (record) => runExecutor({ ...args, record }))
           )
         : await runBatchedNode(step, args, plan);
 

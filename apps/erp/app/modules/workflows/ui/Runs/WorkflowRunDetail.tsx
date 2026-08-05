@@ -2,6 +2,7 @@ import { Alert, AlertDescription, AlertTitle, Badge, cn } from "@carbon/react";
 import { formatDateTime, formatDurationMilliseconds } from "@carbon/utils";
 import { readWorkflowVersion } from "@carbon/workflows";
 import { Trans, useLingui } from "@lingui/react/macro";
+import { useState } from "react";
 import { LuCircleAlert, LuCircleSlash, LuTriangle } from "react-icons/lu";
 import { EmployeeAvatar, Hyperlink } from "~/components";
 import { path } from "~/utils/path";
@@ -10,7 +11,7 @@ import type {
   WorkflowRunDetail as WorkflowRunDetailType,
   WorkflowRunStep
 } from "../../workflows.service";
-import { labelText } from "../Builder/nodes/meta";
+import { useWorkflowLabel } from "../Builder/catalog";
 import { EntityRecordLink } from "./EntityRecordLink";
 import { RunLiveUpdates } from "./RunLiveUpdates";
 import { RunStatus } from "./RunStatus";
@@ -21,6 +22,8 @@ type WorkflowRunDetailProps = {
   run: WorkflowRunDetailType;
   steps: WorkflowRunStep[];
   chain: WorkflowRunChainEntry[] | null;
+  /** Record ids resolved to the name a person recognises, keyed `${table}:${id}`. */
+  recordNames: Record<string, string>;
 };
 
 function HeaderRow({
@@ -38,10 +41,39 @@ function HeaderRow({
   );
 }
 
+/** The ids only support needs. `sourceEventId` is the queue's dedupe key — it means
+ * nothing to a customer, so it lives behind a toggle rather than in the header. */
+function RunIdentifiers({ run }: { run: WorkflowRunDetailType }) {
+  const { t } = useLingui();
+  const [raw, setRaw] = useState(false);
+
+  return (
+    <div className="space-y-1">
+      <button
+        type="button"
+        className="text-xs text-muted-foreground underline underline-offset-2"
+        onClick={() => setRaw((p) => !p)}
+      >
+        {raw ? t`Hide raw` : t`Show raw`}
+      </button>
+      {raw && (
+        <pre className="overflow-auto rounded bg-muted px-2 py-1 text-xs font-mono whitespace-pre-wrap max-h-96 select-all">
+          {JSON.stringify(
+            { runId: run.id, sourceEventId: run.sourceEventId ?? null },
+            null,
+            2
+          )}
+        </pre>
+      )}
+    </div>
+  );
+}
+
 export function WorkflowRunDetail({
   run,
   steps,
-  chain
+  chain,
+  recordNames
 }: WorkflowRunDetailProps) {
   const { t } = useLingui();
 
@@ -61,14 +93,13 @@ export function WorkflowRunDetail({
   const workflowName =
     (run.workflow as { name?: string } | null)?.name ?? run.workflowId;
 
-  const eventLabel = run.eventId
-    ? (labelText(run.eventId) ?? run.eventId)
-    : null;
+  const label = useWorkflowLabel();
+  const eventLabel = run.eventId ? label(run.eventId, run.eventId) : null;
 
   const isInFlight = run.status === "Queued" || run.status === "Running";
   const compacted = run.compactedAt !== null;
   const stepsPurged = steps.length === 0 && run.compactedAt !== null;
-  const outcome = runOutcome(run, steps, definition);
+  const outcome = runOutcome(run, steps, definition, label);
 
   return (
     <div className="flex flex-col h-full overflow-auto">
@@ -134,18 +165,13 @@ export function WorkflowRunDetail({
               <EntityRecordLink
                 table={run.triggerTable}
                 id={run.triggerRecordId}
+                name={recordNames[`${run.triggerTable}:${run.triggerRecordId}`]}
               />
             </HeaderRow>
           )}
-
-          {run.sourceEventId && (
-            <HeaderRow label={t`Source event`}>
-              <span className="font-mono text-xs select-all">
-                {run.sourceEventId}
-              </span>
-            </HeaderRow>
-          )}
         </div>
+
+        <RunIdentifiers run={run} />
       </div>
 
       {/* Banners */}
@@ -240,6 +266,7 @@ export function WorkflowRunDetail({
           definition={definition}
           compacted={compacted}
           stepsPurged={stepsPurged}
+          recordNames={recordNames}
         />
       </div>
     </div>

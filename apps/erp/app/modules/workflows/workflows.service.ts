@@ -1,4 +1,5 @@
 import type { Database, Json } from "@carbon/database";
+import { fkDisplayRegistry } from "@carbon/database/audit.config";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { z } from "zod";
 import type { GenericQueryFilters } from "~/utils/query";
@@ -292,6 +293,62 @@ export async function getWorkflowLastRuns(
     .select("workflowId, runId, status, createdAt, completedAt, durationMs")
     .in("workflowId", workflowIds)
     .eq("companyId", companyId);
+}
+
+/** Resolves record ids to the name a person recognises. Keyed `${table}:${id}`.
+ * Tables absent from `fkDisplayRegistry` resolve to nothing and keep their raw id —
+ * a missing name is better than a wrong one. */
+export async function getWorkflowRunRecordNames(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  refs: Array<{ table: string; id: string }>
+): Promise<Record<string, string>> {
+  const names: Record<string, string> = {};
+  if (refs.length === 0) return names;
+
+  const registry = fkDisplayRegistry as Record<
+    string,
+    readonly string[] | undefined
+  >;
+
+  const byTable = new Map<string, Set<string>>();
+  for (const ref of refs) {
+    if (!ref.table || !ref.id) continue;
+    if (registry[ref.table] === undefined) continue;
+    const ids = byTable.get(ref.table) ?? new Set<string>();
+    ids.add(ref.id);
+    byTable.set(ref.table, ids);
+  }
+  if (byTable.size === 0) return names;
+
+  await Promise.all(
+    [...byTable.entries()].map(async ([table, ids]) => {
+      const columns = registry[table];
+      if (columns === undefined || columns.length === 0) return;
+      const rows = await client
+        // Table names come only from `fkDisplayRegistry`, never from user input.
+        .from(table as never)
+        .select(["id", ...columns].join(", "))
+        .in("id", [...ids])
+        .eq("companyId", companyId);
+
+      for (const row of (rows.data ?? []) as unknown as Array<
+        Record<string, unknown>
+      >) {
+        const id = row.id;
+        if (typeof id !== "string") continue;
+        const display = columns
+          .map((column) => row[column])
+          .filter(
+            (value) => value !== null && value !== undefined && value !== ""
+          )
+          .join(" ");
+        if (display !== "") names[`${table}:${id}`] = display;
+      }
+    })
+  );
+
+  return names;
 }
 
 export type Workflow = NonNullable<

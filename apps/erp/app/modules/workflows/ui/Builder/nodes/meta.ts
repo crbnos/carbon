@@ -34,10 +34,14 @@ export function humanizeField(name: string): string {
   return words.charAt(0).toUpperCase() + words.slice(1);
 }
 
-/** Resolve a catalog label key to its English source string without calling hooks. */
+/** Resolve a catalog label key to its English source string without calling hooks.
+ * The Lingui macro compiles `msg` to `{ id: <hash>, message: <text> }` — `id` is a
+ * generated hash, never the label, so this must read `message`. */
 export function labelText(key: string): string | undefined {
-  const descriptor = WORKFLOW_LABELS[key as keyof typeof WORKFLOW_LABELS];
-  return descriptor?.id;
+  const descriptor = WORKFLOW_LABELS[key as keyof typeof WORKFLOW_LABELS] as
+    | { id?: string; message?: string }
+    | undefined;
+  return descriptor?.message ?? descriptor?.id;
 }
 
 export const NODE_KIND_META: Record<WorkflowNodeType, NodeKindMeta> = {
