@@ -10,9 +10,13 @@ export async function action({ request }: ActionFunctionArgs) {
   });
 
   const formData = await request.formData();
-  const id = formData.get("id") as string;
+  const id = formData.get("id") as string | null;
+  const ids = [
+    ...formData.getAll("ids").map(String),
+    ...(id ? [id] : [])
+  ].filter(Boolean);
 
-  if (!id) {
+  if (ids.length === 0) {
     return data(
       { error: "Operation ID is required" },
       {
@@ -21,14 +25,13 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  // Fetch the operation's quoteId/quoteLineId before deleting
-  const op = await client
+  // Fetch the operations' quoteId/quoteLineId before deleting
+  const ops = await client
     .from("quoteOperation")
     .select("quoteId, quoteLineId")
-    .eq("id", id)
-    .single();
+    .in("id", ids);
 
-  const { error } = await client.from("quoteOperation").delete().eq("id", id);
+  const { error } = await client.from("quoteOperation").delete().in("id", ids);
 
   if (error) {
     return data(
@@ -39,12 +42,13 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  if (op.data) {
+  if (ops.data && ops.data.length > 0) {
     const serviceRole = getCarbonServiceRole();
+    // All operations in a bulk delete belong to the same quote line
     await recalculateQuoteLinePrices(
       serviceRole,
-      op.data.quoteId,
-      op.data.quoteLineId,
+      ops.data[0].quoteId,
+      ops.data[0].quoteLineId,
       userId
     );
   }

@@ -3843,6 +3843,9 @@ msgstr "Definire distinte base multi-livello e Bill of Process (metodi di produz
 msgid "Delete"
 msgstr "Elimina"
 
+msgid "Delete ({selectedCount})"
+msgstr "Elimina ({selectedCount})"
+
 msgid "Delete {name}"
 msgstr "Elimina {name}"
 
@@ -4224,6 +4227,9 @@ msgstr "Descrizione della Modifica"
 
 msgid "Description of Issue"
 msgstr "Descrizione del Problema"
+
+msgid "Deselect all"
+msgstr "Deseleziona tutto"
 
 msgid "Detail"
 msgstr "Dettagli"

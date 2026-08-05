@@ -3843,6 +3843,9 @@ msgstr "Определите многоуровневые спецификаци
 msgid "Delete"
 msgstr "Удалить"
 
+msgid "Delete ({selectedCount})"
+msgstr "Удалить ({selectedCount})"
+
 msgid "Delete {name}"
 msgstr "Удалить {name}"
 
@@ -4224,6 +4227,9 @@ msgstr "Описание изменения"
 
 msgid "Description of Issue"
 msgstr "Описание проблемы"
+
+msgid "Deselect all"
+msgstr "Снять выделение"
 
 msgid "Detail"
 msgstr "Подробности"

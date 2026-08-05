@@ -3843,6 +3843,9 @@ msgstr "定义多级物料清单和工艺流程（制造方法）"
 msgid "Delete"
 msgstr "删除"
 
+msgid "Delete ({selectedCount})"
+msgstr "删除 ({selectedCount})"
+
 msgid "Delete {name}"
 msgstr "删除 {name}"
 
@@ -4224,6 +4227,9 @@ msgstr "变更说明"
 
 msgid "Description of Issue"
 msgstr "问题描述"
+
+msgid "Deselect all"
+msgstr "取消全选"
 
 msgid "Detail"
 msgstr "详情"

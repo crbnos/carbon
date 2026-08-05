@@ -3843,6 +3843,9 @@ msgstr "다단계 자재명세서(BOM)와 공정(BOP)을 정의하세요(제작 
 msgid "Delete"
 msgstr "삭제"
 
+msgid "Delete ({selectedCount})"
+msgstr "삭제 ({selectedCount})"
+
 msgid "Delete {name}"
 msgstr "{name} 삭제"
 
@@ -4224,6 +4227,9 @@ msgstr "변경 설명"
 
 msgid "Description of Issue"
 msgstr "이슈 설명"
+
+msgid "Deselect all"
+msgstr "모두 선택 해제"
 
 msgid "Detail"
 msgstr "상세"

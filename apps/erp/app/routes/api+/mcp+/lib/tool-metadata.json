@@ -1,5 +1,5 @@
 {
-  "generated": "2026-08-04T18:59:18.405Z",
+  "generated": "2026-08-05T04:03:29.944Z",
   "totalTools": 1413,
   "modules": 15,
   "tools": [
@@ -10752,7 +10752,8 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "string"
+            "type": "array",
+            "items": {}
           }
         },
         "required": [
@@ -17690,7 +17691,8 @@
         "type": "object",
         "properties": {
           "jobMaterialId": {
-            "type": "string"
+            "type": "array",
+            "items": {}
           }
         },
         "required": [
@@ -33517,7 +33519,8 @@
         "type": "object",
         "properties": {
           "quoteMaterialId": {
-            "type": "string"
+            "type": "array",
+            "items": {}
           }
         },
         "required": [

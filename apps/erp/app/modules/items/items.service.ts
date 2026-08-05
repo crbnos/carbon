@@ -380,9 +380,12 @@ export async function deleteMaterialSubstance(
 
 export async function deleteMethodMaterial(
   client: SupabaseClient<Database>,
-  id: string
+  id: string | string[]
 ) {
-  return client.from("methodMaterial").delete().eq("id", id);
+  return client
+    .from("methodMaterial")
+    .delete()
+    .in("id", Array.isArray(id) ? id : [id]);
 }
 
 export async function assertMethodOperationIsDraft(

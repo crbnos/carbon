@@ -3843,6 +3843,9 @@ msgstr "Définir les nomenclatures multi-niveaux et la gamme de fabrication (mé
 msgid "Delete"
 msgstr "Supprimer"
 
+msgid "Delete ({selectedCount})"
+msgstr "Supprimer ({selectedCount})"
+
 msgid "Delete {name}"
 msgstr "Supprimer {name}"
 
@@ -4224,6 +4227,9 @@ msgstr "Description du changement"
 
 msgid "Description of Issue"
 msgstr "Description du problème"
+
+msgid "Deselect all"
+msgstr "Tout désélectionner"
 
 msgid "Detail"
 msgstr "Détail"

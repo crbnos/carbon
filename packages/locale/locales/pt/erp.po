@@ -3843,6 +3843,9 @@ msgstr "Definir BOMs multi-nível e Bill of Process (métodos de fabricação)"
 msgid "Delete"
 msgstr "Eliminar"
 
+msgid "Delete ({selectedCount})"
+msgstr "Eliminar ({selectedCount})"
+
 msgid "Delete {name}"
 msgstr "Eliminar {name}"
 
@@ -4224,6 +4227,9 @@ msgstr "Descrição da Alteração"
 
 msgid "Description of Issue"
 msgstr "Descrição do Problema"
+
+msgid "Deselect all"
+msgstr "Desmarcar tudo"
 
 msgid "Detail"
 msgstr "Detalhe"

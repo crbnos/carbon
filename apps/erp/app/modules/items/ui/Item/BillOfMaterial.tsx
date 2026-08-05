@@ -86,7 +86,8 @@ import {
   SortableList,
   SortableListItem,
   SortableListItemPanel,
-  SortableListItemToggle
+  SortableListItemToggle,
+  SortableListSelectionActions
 } from "~/components/SortableList";
 import { usePermissions, useUrlParams, useUser } from "~/hooks";
 import type {
@@ -274,6 +275,62 @@ const BillOfMaterial = ({
       ...prev,
       [id]: !prev[id]
     }));
+  };
+
+  const onSelectAll = () => {
+    if (isReadOnly) return;
+    setCheckedState(
+      materials.reduce<CheckedState>((acc, material) => {
+        acc[material.id] = true;
+        return acc;
+      }, {})
+    );
+  };
+
+  const onDeselectAll = () => {
+    setCheckedState({});
+  };
+
+  const onDeleteSelected = () => {
+    if (isReadOnly) return;
+    const checkedIds = materials
+      .filter((material) => material.checked)
+      .map((material) => material.id);
+    if (checkedIds.length === 0) return;
+
+    const temporaryIds = checkedIds.filter((id) => temporaryItems[id]);
+    const persistedIds = checkedIds.filter((id) => !temporaryItems[id]);
+
+    if (temporaryIds.length > 0) {
+      setTemporaryItems((prev) => {
+        const next = { ...prev };
+        temporaryIds.forEach((id) => {
+          delete next[id];
+        });
+        return next;
+      });
+    }
+
+    if (persistedIds.length > 0) {
+      const formData = new FormData();
+      persistedIds.forEach((id) => {
+        formData.append("ids", id);
+      });
+      fetcher.submit(formData, {
+        method: "post",
+        action: path.to.methodMaterialsDelete
+      });
+    }
+
+    setSelectedItemId(null);
+    setCheckedState({});
+    setOrderState((prev) => {
+      const next = { ...prev };
+      checkedIds.forEach((id) => {
+        delete next[id];
+      });
+      return next;
+    });
   };
 
   const onAddItem = () => {
@@ -538,6 +595,15 @@ const BillOfMaterial = ({
       <CardContent>
         {isProductionRevision && (
           <ReleaseLockAlert isLocked={isReleaseLocked} className="mb-4" />
+        )}
+        {!isReadOnly && (
+          <SortableListSelectionActions
+            selectedCount={materials.filter((m) => m.checked).length}
+            totalCount={materials.length}
+            onSelectAll={onSelectAll}
+            onDeselectAll={onDeselectAll}
+            onDeleteSelected={onDeleteSelected}
+          />
         )}
         <ScrollArea type="auto" className="max-h-[60dvh]">
           <SortableList

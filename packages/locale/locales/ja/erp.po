@@ -3843,6 +3843,9 @@ msgstr "複数レベルのBOMおよびプロセス表(製造方法)を定義す�
 msgid "Delete"
 msgstr "削除"
 
+msgid "Delete ({selectedCount})"
+msgstr "削除 ({selectedCount})"
+
 msgid "Delete {name}"
 msgstr "{name}を削除"
 
@@ -4224,6 +4227,9 @@ msgstr "変更の説明"
 
 msgid "Description of Issue"
 msgstr "問題の説明"
+
+msgid "Deselect all"
+msgstr "すべて選択解除"
 
 msgid "Detail"
 msgstr "詳細"

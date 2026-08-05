@@ -377,9 +377,15 @@ export async function deleteQuoteLine(
 
 export async function deleteQuoteMaterial(
   client: SupabaseClient<Database>,
-  quoteMaterialId: string
+  quoteMaterialId: string | string[]
 ) {
-  return client.from("quoteMaterial").delete().eq("id", quoteMaterialId);
+  return client
+    .from("quoteMaterial")
+    .delete()
+    .in(
+      "id",
+      Array.isArray(quoteMaterialId) ? quoteMaterialId : [quoteMaterialId]
+    );
 }
 
 export async function deleteQuoteOperation(

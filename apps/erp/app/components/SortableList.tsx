@@ -121,7 +121,7 @@ function SortableListItem<T>({
                         id={`checkbox-${item.id}`}
                         aria-label={t`Mark to delete`}
                         onCheckedChange={() => onToggleItem(item.id)}
-                        className="border-foreground/20 bg-background/30 data-[state=checked]:bg-background data-[state=checked]:text-red-200 flex flex-shrink-0 "
+                        className="border-foreground/20 bg-background/30 data-[state=checked]:border-red-500 data-[state=checked]:bg-red-500 dark:data-[state=checked]:bg-red-500 data-[state=checked]:text-white flex flex-shrink-0"
                       />
                     )}
                     {/* List Order */}
@@ -262,6 +262,61 @@ export function SortableListItemPanel({
         </motion.div>
       ) : null}
     </AnimatePresence>
+  );
+}
+
+const selectionActionClasses =
+  "inline-flex h-5 items-center rounded px-1.5 text-[11px] font-normal text-muted-foreground/80 transition-colors hover:bg-muted/60 hover:text-foreground disabled:pointer-events-none disabled:opacity-40";
+
+export function SortableListSelectionActions({
+  selectedCount,
+  totalCount,
+  onSelectAll,
+  onDeselectAll,
+  onDeleteSelected,
+  className
+}: {
+  selectedCount: number;
+  totalCount: number;
+  onSelectAll: () => void;
+  onDeselectAll: () => void;
+  onDeleteSelected: () => void;
+  className?: string;
+}) {
+  const { t } = useLingui();
+
+  if (totalCount === 0) return null;
+
+  return (
+    <div className={cn("flex items-center justify-end gap-1 pb-2", className)}>
+      <button
+        type="button"
+        className={selectionActionClasses}
+        disabled={selectedCount === totalCount}
+        onClick={onSelectAll}
+      >
+        {t`Select all`}
+      </button>
+      <button
+        type="button"
+        className={selectionActionClasses}
+        disabled={selectedCount === 0}
+        onClick={onDeselectAll}
+      >
+        {t`Deselect all`}
+      </button>
+      <button
+        type="button"
+        className={cn(
+          selectionActionClasses,
+          "text-red-500/80 hover:bg-red-500/10 hover:text-red-500"
+        )}
+        disabled={selectedCount === 0}
+        onClick={onDeleteSelected}
+      >
+        {selectedCount > 0 ? t`Delete (${selectedCount})` : t`Delete`}
+      </button>
+    </div>
   );
 }
 

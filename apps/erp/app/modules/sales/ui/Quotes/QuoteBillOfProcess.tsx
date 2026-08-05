@@ -96,7 +96,8 @@ import {
   SortableList,
   SortableListItem,
   SortableListItemPanel,
-  SortableListItemToggle
+  SortableListItemToggle,
+  SortableListSelectionActions
 } from "~/components/SortableList";
 import {
   useDateFormatter,
@@ -437,6 +438,60 @@ const QuoteBillOfProcess = ({
       ...prev,
       [id]: !prev[id]
     }));
+  };
+
+  const onSelectAll = () => {
+    if (!permissions.can("update", "sales") || isDisabled) return;
+    setCheckedState(
+      items.reduce<CheckedState>((acc, item) => {
+        acc[item.id] = true;
+        return acc;
+      }, {})
+    );
+  };
+
+  const onDeselectAll = () => {
+    setCheckedState({});
+  };
+
+  const onDeleteSelected = () => {
+    if (!permissions.can("update", "sales") || isDisabled) return;
+    const checkedIds = items.filter((item) => item.checked).map((i) => i.id);
+    if (checkedIds.length === 0) return;
+
+    const temporaryIds = checkedIds.filter((id) => temporaryItems[id]);
+    const persistedIds = checkedIds.filter((id) => !temporaryItems[id]);
+
+    if (temporaryIds.length > 0) {
+      setTemporaryItems((prev) => {
+        const next = { ...prev };
+        temporaryIds.forEach((id) => {
+          delete next[id];
+        });
+        return next;
+      });
+    }
+
+    if (persistedIds.length > 0) {
+      const formData = new FormData();
+      persistedIds.forEach((id) => {
+        formData.append("ids", id);
+      });
+      deleteOperationFetcher.submit(formData, {
+        method: "post",
+        action: path.to.quoteOperationsDelete
+      });
+    }
+
+    setSelectedItemId(null);
+    setCheckedState({});
+    setOrderState((prev) => {
+      const next = { ...prev };
+      checkedIds.forEach((id) => {
+        delete next[id];
+      });
+      return next;
+    });
   };
 
   // we create a temporary item and append it to the list
@@ -831,6 +886,15 @@ const QuoteBillOfProcess = ({
         </CardAction>
       </HStack>
       <CardContent>
+        {permissions.can("update", "sales") && !isDisabled && (
+          <SortableListSelectionActions
+            selectedCount={items.filter((i) => i.checked).length}
+            totalCount={items.length}
+            onSelectAll={onSelectAll}
+            onDeselectAll={onDeselectAll}
+            onDeleteSelected={onDeleteSelected}
+          />
+        )}
         <ScrollArea type="auto" className="max-h-[60dvh]">
           <SortableList
             items={items}

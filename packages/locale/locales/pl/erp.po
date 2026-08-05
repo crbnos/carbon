@@ -3843,6 +3843,9 @@ msgstr "Definiuj wielopoziomowe BOM i Bill of Process (metody produkcji)"
 msgid "Delete"
 msgstr "Usuń"
 
+msgid "Delete ({selectedCount})"
+msgstr "Usuń ({selectedCount})"
+
 msgid "Delete {name}"
 msgstr "Usuń {name}"
 
@@ -4224,6 +4227,9 @@ msgstr "Opis Zmiany"
 
 msgid "Description of Issue"
 msgstr "Opis problemu"
+
+msgid "Deselect all"
+msgstr "Odznacz wszystko"
 
 msgid "Detail"
 msgstr "Szczegóły"

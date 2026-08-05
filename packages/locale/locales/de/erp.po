@@ -3843,6 +3843,9 @@ msgstr "Definieren Sie mehrstufige Stücklisten und Bill of Process (Herstellung
 msgid "Delete"
 msgstr "Löschen"
 
+msgid "Delete ({selectedCount})"
+msgstr "Löschen ({selectedCount})"
+
 msgid "Delete {name}"
 msgstr "Löschen {name}"
 
@@ -4224,6 +4227,9 @@ msgstr "Änderungsbeschreibung"
 
 msgid "Description of Issue"
 msgstr "Problembeschreibung"
+
+msgid "Deselect all"
+msgstr "Alle abwählen"
 
 msgid "Detail"
 msgstr "Detail"

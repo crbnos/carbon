@@ -21,8 +21,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
   const formData = await request.formData();
-  const id = formData.get("id") as string;
-  if (!id) {
+  const id = formData.get("id") as string | null;
+  const ids = [
+    ...formData.getAll("ids").map(String),
+    ...(id ? [id] : [])
+  ].filter(Boolean);
+  if (ids.length === 0) {
     return data(
       { error: "Operation ID is required" },
       {
@@ -34,7 +38,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const events = await client
     .from("productionEvent")
     .select("id", { count: "exact", head: true })
-    .eq("jobOperationId", id);
+    .in("jobOperationId", ids);
   if (events.error) {
     return data(
       {
@@ -54,7 +58,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const { error } = await client.from("jobOperation").delete().eq("id", id);
+  const { error } = await client.from("jobOperation").delete().in("id", ids);
 
   if (error) {
     return data(

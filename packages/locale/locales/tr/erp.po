@@ -3843,6 +3843,9 @@ msgstr "Çok seviyeli BOM'ları ve Bill of Process'i (üretim yöntemlerini) tan
 msgid "Delete"
 msgstr "Sil"
 
+msgid "Delete ({selectedCount})"
+msgstr "Sil ({selectedCount})"
+
 msgid "Delete {name}"
 msgstr "{name} sil"
 
@@ -4224,6 +4227,9 @@ msgstr "Değişiklimin Açıklaması"
 
 msgid "Description of Issue"
 msgstr "Sorun Açıklaması"
+
+msgid "Deselect all"
+msgstr "Tüm seçimleri kaldır"
 
 msgid "Detail"
 msgstr "Detay"

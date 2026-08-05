@@ -3843,6 +3843,9 @@ msgstr "Define multi-level BOMs and Bill of Process (make methods)"
 msgid "Delete"
 msgstr "Delete"
 
+msgid "Delete ({selectedCount})"
+msgstr "Delete ({selectedCount})"
+
 msgid "Delete {name}"
 msgstr "Delete {name}"
 
@@ -4224,6 +4227,9 @@ msgstr "Description of Change"
 
 msgid "Description of Issue"
 msgstr "Description of Issue"
+
+msgid "Deselect all"
+msgstr "Deselect all"
 
 msgid "Detail"
 msgstr "Detail"

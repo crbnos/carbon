@@ -11,9 +11,13 @@ export async function action({ request }: ActionFunctionArgs) {
   });
 
   const formData = await request.formData();
-  const id = formData.get("id") as string;
+  const id = formData.get("id") as string | null;
+  const ids = [
+    ...formData.getAll("ids").map(String),
+    ...(id ? [id] : [])
+  ].filter(Boolean);
 
-  if (!id) {
+  if (ids.length === 0) {
     return data(
       { error: "Operation ID is required" },
       {
@@ -23,21 +27,27 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   // Release-lock gate: enforce -> block; warn -> proceed + flash; off -> no-op.
-  const lock = await checkRevisionLock(client, {
-    kind: "operation",
-    id,
-    companyId
-  });
-  if (!lock.ok) {
-    return data(
-      { success: false, error: lock.message },
-      {
-        status: 400
-      }
-    );
+  let lockWarning: string | null = null;
+  for (const operationId of ids) {
+    const lock = await checkRevisionLock(client, {
+      kind: "operation",
+      id: operationId,
+      companyId
+    });
+    if (!lock.ok) {
+      return data(
+        { success: false, error: lock.message },
+        {
+          status: 400
+        }
+      );
+    }
+    if (lock.warn) {
+      lockWarning = lock.message;
+    }
   }
 
-  const { error } = await client.from("methodOperation").delete().eq("id", id);
+  const { error } = await client.from("methodOperation").delete().in("id", ids);
 
   if (error) {
     return data(
@@ -48,8 +58,8 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  if (lock.warn) {
-    return data({ success: true }, await flash(request, success(lock.message)));
+  if (lockWarning) {
+    return data({ success: true }, await flash(request, success(lockWarning)));
   }
 
   return { success: true };

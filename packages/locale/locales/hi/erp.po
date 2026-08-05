@@ -3843,6 +3843,9 @@ msgstr "बहु-स्तरीय BOMs और Bill of Process (make methods) 
 msgid "Delete"
 msgstr "हटाएं"
 
+msgid "Delete ({selectedCount})"
+msgstr "हटाएं ({selectedCount})"
+
 msgid "Delete {name}"
 msgstr "{name} को हटाएं"
 
@@ -4224,6 +4227,9 @@ msgstr "परिवर्तन का विवरण"
 
 msgid "Description of Issue"
 msgstr "समस्या का विवरण"
+
+msgid "Deselect all"
+msgstr "सभी का चयन हटाएँ"
 
 msgid "Detail"
 msgstr "विवरण"

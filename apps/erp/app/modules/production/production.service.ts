@@ -524,9 +524,12 @@ export async function deleteJob(
 
 export async function deleteJobMaterial(
   client: SupabaseClient<Database>,
-  jobMaterialId: string
+  jobMaterialId: string | string[]
 ) {
-  return client.from("jobMaterial").delete().eq("id", jobMaterialId);
+  return client
+    .from("jobMaterial")
+    .delete()
+    .in("id", Array.isArray(jobMaterialId) ? jobMaterialId : [jobMaterialId]);
 }
 
 export async function deleteJobOperation(
