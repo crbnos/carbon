@@ -62,6 +62,47 @@ export namespace Rillet {
 
   export type RelatedEntity = z.infer<typeof RelatedEntitySchema>;
 
+  /**
+   * One pick-list value of a Rillet Field (GET /fields → fields[].values).
+   * `id` is the uuid journal/bill/invoice items reference via
+   * `fields[].field_value_id`.
+   */
+  export const FieldValueSchema = z.object({
+    id: z.string(),
+    name: z.string(),
+    deactivated: z.boolean().nullish()
+  });
+
+  export type FieldValue = z.infer<typeof FieldValueSchema>;
+
+  /**
+   * A Rillet Field definition (verified v4 surface, 2026-08-04): the
+   * dimension-native analytics field. `settings` describes applicability
+   * per area (EXPENSES = bills/manual entries; REVENUE = customers/
+   * contracts/invoices/credit memos) with `{ mandatory, display }` where
+   * display is STANDALONE (single-select) or FREE_TAG — kept lenient.
+   */
+  export const FieldSchema = z.object({
+    id: z.string(),
+    name: z.string(),
+    values: z.array(FieldValueSchema).default([]),
+    settings: z.record(z.unknown()).nullish(),
+    updated_at: z.string().nullish()
+  });
+
+  export type Field = z.infer<typeof FieldSchema>;
+
+  /**
+   * Field reference on a journal/bill/invoice item: uuid pairs, never
+   * names (`fields: [{ field_id, field_value_id }]`).
+   */
+  export const ItemFieldRefSchema = z.object({
+    field_id: z.string(),
+    field_value_id: z.string()
+  });
+
+  export type ItemFieldRef = z.infer<typeof ItemFieldRefSchema>;
+
   /** Journal item: unsigned money + explicit side (unlike Xero's signed lines). */
   export const JournalEntryItemSchema = z.object({
     /** Server-assigned on reads. */
@@ -73,7 +114,9 @@ export namespace Rillet {
     side: z.enum(["DEBIT", "CREDIT"]),
     description: z.string().optional(),
     vat_code: z.string().optional(),
-    vat_type: z.string().optional()
+    vat_type: z.string().optional(),
+    /** Dimension refs (Rillet Fields) — uuid pairs. */
+    fields: z.array(ItemFieldRefSchema).optional()
   });
 
   export type JournalEntryItem = z.infer<typeof JournalEntryItemSchema>;

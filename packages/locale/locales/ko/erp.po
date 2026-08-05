@@ -78,6 +78,10 @@ msgstr "매핑할 라인 {0}개"
 msgid "{0} of {1} posting accounts mapped"
 msgstr "{0}개의 {1} 게시 계정 매핑됨"
 
+#. placeholder {0}: rows.length
+msgid "{0} of {maxSlots} provider slots used"
+msgstr "{0}개 중 {maxSlots}개 제공자 슬롯 사용됨"
+
 #. placeholder {0}: history.length
 msgid "{0} orders"
 msgstr "주문 {0}건"
@@ -106,6 +110,11 @@ msgstr "{0}건의 미전기 문서"
 #. placeholder {0}: file.name
 msgid "{0} uploaded successfully"
 msgstr "{0}이(가) 업로드되었습니다"
+
+#. placeholder {0}: dimension.valueCount
+#. placeholder {0}: selectedDimension?.valueCount
+msgid "{0} values"
+msgstr "{0}개 값"
 
 #. placeholder {0}: unmatchedValues.length
 msgid "{0} values missing"
@@ -808,6 +817,9 @@ msgstr "출하 추가"
 msgid "Add Shipping"
 msgstr "배송비 추가"
 
+msgid "Add slot"
+msgstr "슬롯 추가"
+
 msgid "Add Spare Part"
 msgstr "예비 부품 추가"
 
@@ -940,6 +952,9 @@ msgstr "모든 게시 계정이 매핑됨"
 
 msgid "All rows imported — {inserted} inserted, {updated} updated."
 msgstr "모든 행을 가져왔습니다 — {inserted}개 추가, {updated}개 업데이트."
+
+msgid "All slotted dimension values are mapped"
+msgstr "모든 슬롯된 차원 값이 매핑되었습니다"
 
 msgid "All Suppliers"
 msgstr "모든 공급업체"
@@ -1779,6 +1794,9 @@ msgstr "작업을 자동으로 시작하려면 자동 릴리즈가 활성화되�
 msgid "Auto Start Job"
 msgstr "작업 자동 시작"
 
+msgid "Auto-create"
+msgstr "자동 생성"
+
 msgid "Auto-generated QR Code"
 msgstr "자동 생성된 QR 코드"
 
@@ -2248,6 +2266,9 @@ msgstr "Carbon 로고"
 
 msgid "Carbon only"
 msgstr "Carbon 전용"
+
+msgid "Carbon value"
+msgstr "Carbon 값"
 
 msgid "Carbon Value"
 msgstr "Carbon Value"
@@ -3141,6 +3162,9 @@ msgstr "문서를 불러올 수 없습니다"
 
 msgid "Couldn't load related documents. Refresh before creating a new one to avoid duplicates."
 msgstr "관련 문서를 불러올 수 없습니다. 중복 생성을 방지하려면 새로 만들기 전에 새로고침하세요."
+
+msgid "Couldn't load the provider's dimension targets — check the connection and reload."
+msgstr "제공자의 차원 대상을 로드할 수 없습니다 — 연결을 확인하고 다시 로드하세요."
 
 msgid "Couldn't reschedule the job. Please try again."
 msgstr "작업 일정을 변경할 수 없습니다. 다시 시도하세요."
@@ -4321,6 +4345,12 @@ msgstr "치수"
 msgid "Dimension"
 msgstr "치수"
 
+msgid "Dimension slots"
+msgstr "차원 슬롯"
+
+msgid "Dimension values on posted journals that have no provider mapping yet."
+msgstr "아직 제공자 매핑이 없는 게시된 저널의 차원 값입니다."
+
 msgid "dimensions"
 msgstr "치수"
 
@@ -5321,6 +5351,9 @@ msgstr "면세 사유"
 
 msgid "Existing mappings. Pick a different provider account to re-map."
 msgstr "기존 매핑입니다. 다시 매핑하려면 다른 공급자 계정을 선택하세요."
+
+msgid "Existing mappings. Pick a different provider option to re-map."
+msgstr "기존 매핑입니다. 다시 매핑하려면 다른 제공자 옵션을 선택하세요."
 
 msgid "Expand"
 msgstr "펼치기"
@@ -7723,6 +7756,9 @@ msgstr "현재 프로세스, 시스템, 데이터를 매핑하세요"
 msgid "Mapped accounts"
 msgstr "매핑된 계정"
 
+msgid "Mapped values"
+msgstr "매핑된 값"
+
 #. placeholder {0}: i18n._(step.gate)
 msgid "Mark \"{0}\" as passed?"
 msgstr "\"{0}\"을(를) 합격으로 표시하시겠습니까?"
@@ -7795,6 +7831,9 @@ msgstr "하나라도 일치(OR)"
 
 msgid "Match by code"
 msgstr "코드로 일치"
+
+msgid "Match by name"
+msgstr "이름으로 일치"
 
 msgid "Match none"
 msgstr "일치 안 함"
@@ -8621,6 +8660,12 @@ msgstr "예정된 휴무가 없습니다"
 msgid "No default attachments yet."
 msgstr "아직 기본 첨부파일이 없습니다."
 
+msgid "No dimension slots configured"
+msgstr "구성된 차원 슬롯이 없습니다"
+
+msgid "No dimension values mapped yet"
+msgstr "아직 매핑된 차원 값이 없습니다"
+
 msgid "No draft make method for this item yet."
 msgstr "이 항목에 대한 초안 제작 방법이 아직 없습니다."
 
@@ -8854,6 +8899,9 @@ msgstr "이 기간에 거래가 없습니다"
 
 msgid "No unmapped accounts match a provider code"
 msgstr "매핑되지 않은 계정이 공급자 코드와 일치하지 않음"
+
+msgid "No unmapped values match a provider option name"
+msgstr "제공자 옵션 이름과 일치하는 매핑되지 않은 값이 없습니다"
 
 msgid "No value needed"
 msgstr "값이 필요하지 않습니다"
@@ -9443,6 +9491,9 @@ msgstr "유형별 파레토"
 msgid "Park as error"
 msgstr "오류로 보관"
 
+msgid "Park the journal with a warning until the value is mapped"
+msgstr "값이 매핑될 때까지 경고와 함께 저널을 보류합니다"
+
 msgid "part"
 msgstr "품목"
 
@@ -9637,6 +9688,9 @@ msgstr "배정 가능한 실물 프린터입니다."
 
 msgid "Pick"
 msgstr "피킹"
+
+msgid "Pick a Carbon dimension and the provider target it posts to. Auto-create adds missing provider options by name at push time."
+msgstr "Carbon 차원과 게시할 제공자 대상을 선택하세요. 자동 생성은 푸시 시간에 이름으로 누락된 제공자 옵션을 추가합니다."
 
 msgid "Pick a column to sort by"
 msgstr "정렬할 열을 선택하세요"
@@ -10113,6 +10167,9 @@ msgstr "속성"
 msgid "Proposed matches where the Carbon account number equals the provider account code exactly."
 msgstr "Carbon 계정 번호가 공급자 계정 코드와 정확히 일치하는 제안된 일치 항목입니다."
 
+msgid "Proposed matches where the Carbon dimension value's name equals a provider option name exactly."
+msgstr "Carbon 차원 값의 이름이 제공자 옵션 이름과 정확히 일치하는 제안된 일치 항목입니다."
+
 msgid "Protect the go-live date"
 msgstr "도입일을 사수하세요"
 
@@ -10127,6 +10184,9 @@ msgstr "공급자"
 
 msgid "Provider account"
 msgstr "공급자 계정"
+
+msgid "Provider option"
+msgstr "제공자 옵션"
 
 msgid "Public"
 msgstr "공개"
@@ -10271,6 +10331,9 @@ msgstr "활성화된 소스 유형에 대한 전기 분개를 회계 공급자�
 
 msgid "Push record changes to external systems the moment they happen."
 msgstr "레코드 변경 사항이 발생하는 즉시 외부 시스템으로 전송합니다."
+
+msgid "Push the journal without the dimension"
+msgstr "차원 없이 저널을 푸시합니다"
 
 msgid "Push to accounting"
 msgstr "회계로 푸시"
@@ -10780,6 +10843,9 @@ msgstr "부품 제거"
 msgid "Remove slide"
 msgstr "슬라이드 제거"
 
+msgid "Remove slot"
+msgstr "슬롯 제거"
+
 msgid "Remove sort by column"
 msgstr "열 정렬 제거"
 
@@ -11089,6 +11155,9 @@ msgstr "RFQ 번호"
 msgid "RFQs"
 msgstr "RFQ"
 
+msgid "Ride Carbon dimensions along on pushed journals. Each slot maps one Carbon dimension to one provider analytics target; the value mapping below pairs individual dimension values with provider options."
+msgstr "게시된 저널에 Carbon 차원을 함께 탑승하세요. 각 슬롯은 하나의 Carbon 차원을 하나의 제공자 분석 대상에 매핑합니다. 아래 값 매핑은 개별 차원 값을 제공자 옵션과 쌍으로 만듭니다."
+
 msgid "Right item"
 msgstr "올바른 품목"
 
@@ -11335,6 +11404,9 @@ msgstr "애플리케이션 저장"
 
 msgid "Save contacts"
 msgstr "연락처 저장"
+
+msgid "Save dimension settings"
+msgstr "차원 설정 저장"
 
 msgid "Save Method"
 msgstr "저장 방법"
@@ -11601,6 +11673,9 @@ msgstr "고객 유형 선택"
 msgid "Select customers"
 msgstr "고객 선택"
 
+msgid "Select dimension"
+msgstr "차원 선택"
+
 msgid "Select Employee"
 msgstr "직원 선택"
 
@@ -11639,6 +11714,12 @@ msgstr "프린터 선택"
 
 msgid "Select provider account"
 msgstr "공급자 계정 선택"
+
+msgid "Select provider target"
+msgstr "제공자 대상 선택"
+
+msgid "Select provider value"
+msgstr "제공자 값 선택"
 
 msgid "Select Quantities"
 msgstr "수량 선택"
@@ -13327,6 +13408,9 @@ msgstr "이 유지보수를 수행할 때 기술자가 따르는 절차입니다
 msgid "The processes this work center can run; appears in process-pickers when scheduling operations, and limits which jobs can route through this work center."
 msgstr "이 작업장에서 수행할 수 있는 공정입니다. 공정작업을 예약할 때 공정 선택 목록에 표시되며, 이 작업장을 경유할 수 있는 작업을 제한합니다."
 
+msgid "The provider offers no dimension targets. Enable the feature in the provider first (e.g. tracking categories, class tracking, or fields)."
+msgstr "제공자가 차원 대상을 제공하지 않습니다. 먼저 제공자에서 기능을 활성화하세요(예: 추적 카테고리, 클래스 추적 또는 필드)."
+
 msgid "The quantity breakpoints this line is priced at; each column carries its own per-unit price for buyer–supplier negotiation and for converting to downstream documents."
 msgstr "이 라인의 가격이 책정되는 수량 구간입니다. 각 열은 구매자-공급업체 협상 및 후속 문서 전환을 위한 자체 단가를 갖습니다."
 
@@ -14164,8 +14248,14 @@ msgstr "잠금 해제"
 msgid "Unmapped accounts"
 msgstr "매핑되지 않은 계정"
 
+msgid "Unmapped dimension values"
+msgstr "매핑되지 않은 차원 값"
+
 msgid "Unmapped Extracted Lines"
 msgstr "매핑되지 않은 추출 라인"
+
+msgid "Unmapped values"
+msgstr "매핑되지 않은 값"
 
 msgid "Unmatched"
 msgstr "일치하지 않음"

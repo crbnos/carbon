@@ -78,6 +78,10 @@ msgstr "{0} строк для сопоставления"
 msgid "{0} of {1} posting accounts mapped"
 msgstr "{0} из {1} счетов сопоставлено"
 
+#. placeholder {0}: rows.length
+msgid "{0} of {maxSlots} provider slots used"
+msgstr "{0} из {maxSlots} слотов провайдера используется"
+
 #. placeholder {0}: history.length
 msgid "{0} orders"
 msgstr "{0} заказов"
@@ -106,6 +110,11 @@ msgstr "{0} неопубликованных документов"
 #. placeholder {0}: file.name
 msgid "{0} uploaded successfully"
 msgstr "{0} успешно загружен"
+
+#. placeholder {0}: dimension.valueCount
+#. placeholder {0}: selectedDimension?.valueCount
+msgid "{0} values"
+msgstr "{0} значений"
 
 #. placeholder {0}: unmatchedValues.length
 msgid "{0} values missing"
@@ -808,6 +817,9 @@ msgstr "Добавить отправку"
 msgid "Add Shipping"
 msgstr "Добавить доставку"
 
+msgid "Add slot"
+msgstr "Добавить слот"
+
 msgid "Add Spare Part"
 msgstr "Добавить запасную часть"
 
@@ -940,6 +952,9 @@ msgstr "Все счета проводок сопоставлены"
 
 msgid "All rows imported — {inserted} inserted, {updated} updated."
 msgstr "Все строки импортированы — {inserted} вставлено, {updated} обновлено."
+
+msgid "All slotted dimension values are mapped"
+msgstr "Все значения размерности слотов отображены"
 
 msgid "All Suppliers"
 msgstr "Все поставщики"
@@ -1779,6 +1794,9 @@ msgstr "Автоматический выпуск должен быть вклю
 msgid "Auto Start Job"
 msgstr "Автоматический запуск задания"
 
+msgid "Auto-create"
+msgstr "Автоматическое создание"
+
 msgid "Auto-generated QR Code"
 msgstr "Автоматически созданный QR-код"
 
@@ -2248,6 +2266,9 @@ msgstr "Логотип Carbon"
 
 msgid "Carbon only"
 msgstr "Только Carbon"
+
+msgid "Carbon value"
+msgstr "Значение Carbon"
 
 msgid "Carbon Value"
 msgstr "Значение Carbon"
@@ -3141,6 +3162,9 @@ msgstr "Не удалось загрузить документы"
 
 msgid "Couldn't load related documents. Refresh before creating a new one to avoid duplicates."
 msgstr "Не удалось загрузить связанные документы. Обновите страницу перед созданием нового, чтобы избежать дублирования."
+
+msgid "Couldn't load the provider's dimension targets — check the connection and reload."
+msgstr "Не удалось загрузить цели размерности провайдера — проверьте соединение и перезагрузите страницу."
 
 msgid "Couldn't reschedule the job. Please try again."
 msgstr "Не удалось перепланировать задание. Пожалуйста, попробуйте еще раз."
@@ -4321,6 +4345,12 @@ msgstr "измерение"
 msgid "Dimension"
 msgstr "Размер"
 
+msgid "Dimension slots"
+msgstr "Слоты размерности"
+
+msgid "Dimension values on posted journals that have no provider mapping yet."
+msgstr "Значения размерности в опубликованных журналах, которые еще не имеют отображения провайдера."
+
 msgid "dimensions"
 msgstr "измерения"
 
@@ -5321,6 +5351,9 @@ msgstr "Причина освобождения"
 
 msgid "Existing mappings. Pick a different provider account to re-map."
 msgstr "Существующие сопоставления. Выберите другой счет системы для переассоциации."
+
+msgid "Existing mappings. Pick a different provider option to re-map."
+msgstr "Существующие отображения. Выберите другой вариант провайдера для переотображения."
 
 msgid "Expand"
 msgstr "Развернуть"
@@ -7723,6 +7756,9 @@ msgstr "Сопоставьте ваш текущий процесс, систе�
 msgid "Mapped accounts"
 msgstr "Сопоставленные счета"
 
+msgid "Mapped values"
+msgstr "Отображенные значения"
+
 #. placeholder {0}: i18n._(step.gate)
 msgid "Mark \"{0}\" as passed?"
 msgstr "Отметить \"{0}\" как пройденный?"
@@ -7795,6 +7831,9 @@ msgstr "Совпадать с любым (ИЛИ)"
 
 msgid "Match by code"
 msgstr "Совпадение по коду"
+
+msgid "Match by name"
+msgstr "Совпадение по имени"
 
 msgid "Match none"
 msgstr "Не совпадает ни одно"
@@ -8621,6 +8660,12 @@ msgstr "Нет запланированных выходных"
 msgid "No default attachments yet."
 msgstr "Пока нет вложений по умолчанию."
 
+msgid "No dimension slots configured"
+msgstr "Нет настроенных слотов размерности"
+
+msgid "No dimension values mapped yet"
+msgstr "Значения размерности еще не отображены"
+
 msgid "No draft make method for this item yet."
 msgstr "Пока нет чернового метода производства для этого элемента."
 
@@ -8854,6 +8899,9 @@ msgstr "Нет транзакций в этом периоде"
 
 msgid "No unmapped accounts match a provider code"
 msgstr "Ни один несопоставленный счет не совпадает с кодом системы"
+
+msgid "No unmapped values match a provider option name"
+msgstr "Никакие неотображенные значения не совпадают с названием параметра провайдера"
 
 msgid "No value needed"
 msgstr "Значение не требуется"
@@ -9443,6 +9491,9 @@ msgstr "Парето по типам"
 msgid "Park as error"
 msgstr "Припарковать как ошибку"
 
+msgid "Park the journal with a warning until the value is mapped"
+msgstr "Припаркуйте журнал с предупреждением до отображения значения"
+
 msgid "part"
 msgstr "детали"
 
@@ -9637,6 +9688,9 @@ msgstr "Физические принтеры, доступные для наз�
 
 msgid "Pick"
 msgstr "Выбрать"
+
+msgid "Pick a Carbon dimension and the provider target it posts to. Auto-create adds missing provider options by name at push time."
+msgstr "Выберите размерность Carbon и цель провайдера, на которую она отправляется. Автоматическое создание добавляет отсутствующие параметры провайдера по имени во время отправки."
 
 msgid "Pick a column to sort by"
 msgstr "Выберите столбец для сортировки"
@@ -10113,6 +10167,9 @@ msgstr "Свойства"
 msgid "Proposed matches where the Carbon account number equals the provider account code exactly."
 msgstr "Предложенные совпадения, где номер счета Carbon точно совпадает с кодом счета системы."
 
+msgid "Proposed matches where the Carbon dimension value's name equals a provider option name exactly."
+msgstr "Предложенные совпадения, где имя значения размерности Carbon точно соответствует имени параметра провайдера."
+
 msgid "Protect the go-live date"
 msgstr "Защитите дату запуска"
 
@@ -10127,6 +10184,9 @@ msgstr "Система"
 
 msgid "Provider account"
 msgstr "Счет провайдера"
+
+msgid "Provider option"
+msgstr "Параметр провайдера"
 
 msgid "Public"
 msgstr "Публичный"
@@ -10271,6 +10331,9 @@ msgstr "Отправить опубликованные журналы для в
 
 msgid "Push record changes to external systems the moment they happen."
 msgstr "Отправляйте изменения записей во внешние системы в момент их возникновения."
+
+msgid "Push the journal without the dimension"
+msgstr "Отправить журнал без размерности"
 
 msgid "Push to accounting"
 msgstr "Отправить в учет"
@@ -10780,6 +10843,9 @@ msgstr "Удалить деталь"
 msgid "Remove slide"
 msgstr "Удалить слайд"
 
+msgid "Remove slot"
+msgstr "Удалить слот"
+
 msgid "Remove sort by column"
 msgstr "Удалить сортировку по столбцу"
 
@@ -11089,6 +11155,9 @@ msgstr "Номер РФП"
 msgid "RFQs"
 msgstr "РФЗ"
 
+msgid "Ride Carbon dimensions along on pushed journals. Each slot maps one Carbon dimension to one provider analytics target; the value mapping below pairs individual dimension values with provider options."
+msgstr "Передайте размерности Carbon вместе с отправленными журналами. Каждый слот отображает одну размерность Carbon в одну цель аналитики провайдера; приведенное ниже отображение значений связывает отдельные значения размерности с параметрами провайдера."
+
 msgid "Right item"
 msgstr "Правый элемент"
 
@@ -11335,6 +11404,9 @@ msgstr "Сохранить применения"
 
 msgid "Save contacts"
 msgstr "Сохранить контакты"
+
+msgid "Save dimension settings"
+msgstr "Сохранить настройки размерности"
 
 msgid "Save Method"
 msgstr "Сохранить метод"
@@ -11601,6 +11673,9 @@ msgstr "Выберите типы клиентов"
 msgid "Select customers"
 msgstr "Выберите клиентов"
 
+msgid "Select dimension"
+msgstr "Выбрать размерность"
+
 msgid "Select Employee"
 msgstr "Выберите сотрудника"
 
@@ -11639,6 +11714,12 @@ msgstr "Выберите принтер"
 
 msgid "Select provider account"
 msgstr "Выбрать счет провайдера"
+
+msgid "Select provider target"
+msgstr "Выбрать цель провайдера"
+
+msgid "Select provider value"
+msgstr "Выбрать значение провайдера"
 
 msgid "Select Quantities"
 msgstr "Выберите количества"
@@ -13327,6 +13408,9 @@ msgstr "Процедура, которой следуют техники при 
 msgid "The processes this work center can run; appears in process-pickers when scheduling operations, and limits which jobs can route through this work center."
 msgstr "Процессы, которые может выполнять этот рабочий центр; отображается в селекторах процессов при планировании операций и ограничивает, какие задания могут маршрутизироваться через этот рабочий центр."
 
+msgid "The provider offers no dimension targets. Enable the feature in the provider first (e.g. tracking categories, class tracking, or fields)."
+msgstr "Провайдер не предлагает цели размерности. Сначала включите функцию в провайдере (например, категории отслеживания, отслеживание класса или поля)."
+
 msgid "The quantity breakpoints this line is priced at; each column carries its own per-unit price for buyer–supplier negotiation and for converting to downstream documents."
 msgstr "Точки разрыва количества, по которым эта строка оценивается; каждый столбец имеет собственную цену за единицу для переговоров между покупателем и поставщиком и для преобразования в нижние документы."
 
@@ -14164,8 +14248,14 @@ msgstr "Разблокировать"
 msgid "Unmapped accounts"
 msgstr "Несопоставленные счета"
 
+msgid "Unmapped dimension values"
+msgstr "Неотображенные значения размерности"
+
 msgid "Unmapped Extracted Lines"
 msgstr "Неотображённые извлечённые строки"
+
+msgid "Unmapped values"
+msgstr "Неотображенные значения"
 
 msgid "Unmatched"
 msgstr "Несопоставленный"

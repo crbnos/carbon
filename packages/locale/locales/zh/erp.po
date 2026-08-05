@@ -78,6 +78,10 @@ msgstr "{0} 行待映射"
 msgid "{0} of {1} posting accounts mapped"
 msgstr "{0} / {1} 个过账科目已映射"
 
+#. placeholder {0}: rows.length
+msgid "{0} of {maxSlots} provider slots used"
+msgstr "{0} / {maxSlots} 个提供商插槽已使用"
+
 #. placeholder {0}: history.length
 msgid "{0} orders"
 msgstr "{0} 个订单"
@@ -106,6 +110,11 @@ msgstr "{0} 份未过账单据"
 #. placeholder {0}: file.name
 msgid "{0} uploaded successfully"
 msgstr "{0} 上传成功"
+
+#. placeholder {0}: dimension.valueCount
+#. placeholder {0}: selectedDimension?.valueCount
+msgid "{0} values"
+msgstr "{0} 个值"
 
 #. placeholder {0}: unmatchedValues.length
 msgid "{0} values missing"
@@ -808,6 +817,9 @@ msgstr "添加发货"
 msgid "Add Shipping"
 msgstr "添加运费"
 
+msgid "Add slot"
+msgstr "添加插槽"
+
 msgid "Add Spare Part"
 msgstr "添加备件"
 
@@ -940,6 +952,9 @@ msgstr "所有过账账户已映射"
 
 msgid "All rows imported — {inserted} inserted, {updated} updated."
 msgstr "所有行已导入—{inserted}行插入，{updated}行更新。"
+
+msgid "All slotted dimension values are mapped"
+msgstr "所有分配维度的值都已映射"
 
 msgid "All Suppliers"
 msgstr "所有供应商"
@@ -1779,6 +1794,9 @@ msgstr "必须启用自动发布才能自动启动作业"
 msgid "Auto Start Job"
 msgstr "自动启动作业"
 
+msgid "Auto-create"
+msgstr "自动创建"
+
 msgid "Auto-generated QR Code"
 msgstr "自动生成的二维码"
 
@@ -2248,6 +2266,9 @@ msgstr "Carbon 标志"
 
 msgid "Carbon only"
 msgstr "仅限 Carbon"
+
+msgid "Carbon value"
+msgstr "Carbon 值"
 
 msgid "Carbon Value"
 msgstr "碳值"
@@ -3141,6 +3162,9 @@ msgstr "无法加载文档"
 
 msgid "Couldn't load related documents. Refresh before creating a new one to avoid duplicates."
 msgstr "无法加载相关文档。创建新文档前请先刷新以避免重复。"
+
+msgid "Couldn't load the provider's dimension targets — check the connection and reload."
+msgstr "无法加载提供商的维度目标 — 检查连接并重新加载。"
 
 msgid "Couldn't reschedule the job. Please try again."
 msgstr "无法重新安排作业。请重试。"
@@ -4321,6 +4345,12 @@ msgstr "维度"
 msgid "Dimension"
 msgstr "尺寸"
 
+msgid "Dimension slots"
+msgstr "维度插槽"
+
+msgid "Dimension values on posted journals that have no provider mapping yet."
+msgstr "已发布日记账上尚未映射到提供商的维度值。"
+
 msgid "dimensions"
 msgstr "维度"
 
@@ -5321,6 +5351,9 @@ msgstr "豁免原因"
 
 msgid "Existing mappings. Pick a different provider account to re-map."
 msgstr "现有映射。选择不同的提供商账户以重新映射。"
+
+msgid "Existing mappings. Pick a different provider option to re-map."
+msgstr "现有映射。选择不同的提供商选项以重新映射。"
 
 msgid "Expand"
 msgstr "展开"
@@ -7723,6 +7756,9 @@ msgstr "映射您当前的流程、系统和数据"
 msgid "Mapped accounts"
 msgstr "已映射账户"
 
+msgid "Mapped values"
+msgstr "已映射的值"
+
 #. placeholder {0}: i18n._(step.gate)
 msgid "Mark \"{0}\" as passed?"
 msgstr "将\"{0}\"标记为已通过？"
@@ -7795,6 +7831,9 @@ msgstr "匹配任意项 (OR)"
 
 msgid "Match by code"
 msgstr "按代码匹配"
+
+msgid "Match by name"
+msgstr "按名称匹配"
 
 msgid "Match none"
 msgstr "不匹配任何条件"
@@ -8621,6 +8660,12 @@ msgstr "未安排休息日"
 msgid "No default attachments yet."
 msgstr "还没有默认附件。"
 
+msgid "No dimension slots configured"
+msgstr "未配置维度插槽"
+
+msgid "No dimension values mapped yet"
+msgstr "尚未映射维度值"
+
 msgid "No draft make method for this item yet."
 msgstr "此项目还没有草稿制造方法。"
 
@@ -8854,6 +8899,9 @@ msgstr "此期间无交易"
 
 msgid "No unmapped accounts match a provider code"
 msgstr "没有未映射的账户与提供商代码匹配"
+
+msgid "No unmapped values match a provider option name"
+msgstr "没有未映射的值与提供商选项名称匹配"
 
 msgid "No value needed"
 msgstr "不需要值"
@@ -9443,6 +9491,9 @@ msgstr "按类型的帕累托"
 msgid "Park as error"
 msgstr "停靠为错误"
 
+msgid "Park the journal with a warning until the value is mapped"
+msgstr "将日记账停放，并显示警告，直到该值被映射"
+
 msgid "part"
 msgstr "零件"
 
@@ -9637,6 +9688,9 @@ msgstr "可用于分配的物理打印机。"
 
 msgid "Pick"
 msgstr "拣选"
+
+msgid "Pick a Carbon dimension and the provider target it posts to. Auto-create adds missing provider options by name at push time."
+msgstr "选择一个 Carbon 维度和它发布到的提供商目标。自动创建在推送时按名称添加缺失的提供商选项。"
 
 msgid "Pick a column to sort by"
 msgstr "选择要排序的列"
@@ -10113,6 +10167,9 @@ msgstr "属性"
 msgid "Proposed matches where the Carbon account number equals the provider account code exactly."
 msgstr "提议的匹配项，其中 Carbon 账户编号与提供商账户代码完全相等。"
 
+msgid "Proposed matches where the Carbon dimension value's name equals a provider option name exactly."
+msgstr "建议的匹配，其中 Carbon 维度值的名称与提供商选项名称完全相同。"
+
 msgid "Protect the go-live date"
 msgstr "保护上线日期"
 
@@ -10127,6 +10184,9 @@ msgstr "提供商"
 
 msgid "Provider account"
 msgstr "提供商账户"
+
+msgid "Provider option"
+msgstr "提供商选项"
 
 msgid "Public"
 msgstr "公开"
@@ -10271,6 +10331,9 @@ msgstr "将已过账日记账的启用源类型推送到会计提供商。"
 
 msgid "Push record changes to external systems the moment they happen."
 msgstr "将记录更改实时推送到外部系统。"
+
+msgid "Push the journal without the dimension"
+msgstr "推送不包含维度的日记账"
 
 msgid "Push to accounting"
 msgstr "推送到会计系统"
@@ -10780,6 +10843,9 @@ msgstr "移除零件"
 msgid "Remove slide"
 msgstr "移除幻灯片"
 
+msgid "Remove slot"
+msgstr "移除插槽"
+
 msgid "Remove sort by column"
 msgstr "删除按列排序"
 
@@ -11089,6 +11155,9 @@ msgstr "询价单号"
 msgid "RFQs"
 msgstr "询价单"
 
+msgid "Ride Carbon dimensions along on pushed journals. Each slot maps one Carbon dimension to one provider analytics target; the value mapping below pairs individual dimension values with provider options."
+msgstr "在推送的日记账上附加 Carbon 维度。每个插槽将一个 Carbon 维度映射到一个提供商分析目标；下面的值映射将单个维度值与提供商选项配对。"
+
 msgid "Right item"
 msgstr "右项"
 
@@ -11335,6 +11404,9 @@ msgstr "保存应用"
 
 msgid "Save contacts"
 msgstr "保存联系人"
+
+msgid "Save dimension settings"
+msgstr "保存维度设置"
 
 msgid "Save Method"
 msgstr "保存方法"
@@ -11601,6 +11673,9 @@ msgstr "选择客户类型"
 msgid "Select customers"
 msgstr "选择客户"
 
+msgid "Select dimension"
+msgstr "选择维度"
+
 msgid "Select Employee"
 msgstr "选择员工"
 
@@ -11639,6 +11714,12 @@ msgstr "选择打印机"
 
 msgid "Select provider account"
 msgstr "选择提供商账户"
+
+msgid "Select provider target"
+msgstr "选择提供商目标"
+
+msgid "Select provider value"
+msgstr "选择提供商值"
 
 msgid "Select Quantities"
 msgstr "选择数量"
@@ -13327,6 +13408,9 @@ msgstr "技术人员在执行此维护时遵循的程序；在已生成计划之
 msgid "The processes this work center can run; appears in process-pickers when scheduling operations, and limits which jobs can route through this work center."
 msgstr "该工作中心可以运行的流程；在安排操作时显示在流程选择器中，并限制哪些工作可以通过该工作中心路由。"
 
+msgid "The provider offers no dimension targets. Enable the feature in the provider first (e.g. tracking categories, class tracking, or fields)."
+msgstr "提供商不提供维度目标。首先在提供商中启用该功能（例如跟踪类别、类跟踪或字段）。"
+
 msgid "The quantity breakpoints this line is priced at; each column carries its own per-unit price for buyer–supplier negotiation and for converting to downstream documents."
 msgstr "此行定价的数量断点；每列为买卖方谈判和转换为下游文件的自己的单价。"
 
@@ -14164,8 +14248,14 @@ msgstr "解锁"
 msgid "Unmapped accounts"
 msgstr "未映射的账户"
 
+msgid "Unmapped dimension values"
+msgstr "未映射的维度值"
+
 msgid "Unmapped Extracted Lines"
 msgstr "未映射的提取行"
+
+msgid "Unmapped values"
+msgstr "未映射的值"
 
 msgid "Unmatched"
 msgstr "未匹配"

@@ -104,7 +104,8 @@ describe("QboProvider base URL", () => {
     expect(provider.capabilities).toEqual({
       transport: "rest",
       supportsWebhooks: false,
-      supportsJournalPush: true
+      supportsJournalPush: true,
+      maxJournalDimensionSlots: 2
     });
   });
 });

@@ -1,20 +1,31 @@
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import type { Json } from "@carbon/database";
+import type { Database, Json } from "@carbon/database";
 import { integrations as availableIntegrations } from "@carbon/ee";
 import {
+  buildDimensionValueMappingEntityId,
+  buildRilletFieldTarget,
+  buildXeroTrackingTarget,
   getAccountingIntegration,
   getAccountMappings,
+  getDimensionValueMappings,
   getProviderIntegration,
   getSyncOperations,
   getUnmappedPostingAccounts,
+  getUnmappedSlottedDimensionValues,
   JOURNAL_ENTRY_SOURCE_TYPES,
   matchAccountsByCode,
+  matchDimensionValuesByName,
   POSTING_POLICY,
   ProviderID,
+  QBO_DIMENSION_TARGET_CLASS,
+  QBO_DIMENSION_TARGET_DEPARTMENT,
   type QboProvider,
+  // Aliased: the PostingSyncSettings component is imported below.
+  type PostingSyncSettings as ResolvedPostingSyncSettings,
   type RilletProvider,
+  resolveDimensionValueLabels,
   resolvePostingSyncSettings,
   type SyncOperation,
   type SyncOperationStatus,
@@ -22,6 +33,9 @@ import {
   suggestAccountMatchesWithAI,
   transitionOperation,
   upsertAccountMapping,
+  upsertDimensionValueMapping,
+  validateDimensionSlots,
+  XERO_MAX_JOURNAL_DIMENSION_SLOTS,
   type XeroProvider
 } from "@carbon/ee/accounting";
 import {
@@ -34,6 +48,7 @@ import { requirePlan } from "@carbon/ee/plan.server";
 import { validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
 import { Trans } from "@lingui/react/macro";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import {
   data,
@@ -42,6 +57,10 @@ import {
   useNavigate,
   useSearchParams
 } from "react-router";
+// Deep service import (not the ~/modules/accounting barrel) to keep this
+// route's type graph light — see the TS2589 note in
+// ~/modules/settings/ui/Integrations/index.ts.
+import { getActiveDimensionsWithValues } from "~/modules/accounting/accounting.service";
 import {
   getIntegration,
   IntegrationForm,
@@ -52,6 +71,9 @@ import {
   accountMappingAiSuggestValidator,
   accountMappingBulkUpsertValidator,
   accountMappingUpsertValidator,
+  dimensionSlotsUpdateValidator,
+  dimensionValueMappingBulkUpsertValidator,
+  dimensionValueMappingUpsertValidator,
   postingSyncSettingsValidator
 } from "~/modules/settings/settings.models";
 import {
@@ -59,6 +81,7 @@ import {
   upsertCompanyIntegration
 } from "~/modules/settings/settings.server";
 import { AccountMapping } from "~/modules/settings/ui/Integrations/AccountMapping";
+import { DimensionMapping } from "~/modules/settings/ui/Integrations/DimensionMapping";
 import type { IntegrationFormTab } from "~/modules/settings/ui/Integrations/IntegrationForm";
 import { PostingSyncSettings } from "~/modules/settings/ui/Integrations/PostingSyncSettings";
 import type { SyncReconciliationReport } from "~/modules/settings/ui/Integrations/SyncActivity";
@@ -271,10 +294,286 @@ async function getAccountMappingTabData(
   };
 }
 
-export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    update: "settings"
+/** One provider analytics target with its selectable option values. */
+type DimensionTargetWithValues = {
+  id: string;
+  label: string;
+  capacity: number;
+  values: { id: string; name: string }[];
+};
+
+/**
+ * Provider journal-dimension targets with their selectable values, for
+ * the Dimensions tab and the slot-save validation. Guarded on the
+ * provider actually implementing `journalDimensionTargets`; option values
+ * come from the provider's list methods (Rillet Fields carry their values
+ * inline; QBO Classes/Departments and Xero tracking options are the
+ * target's own list). A provider API failure degrades to an empty target
+ * list + `targetsError` so the settings drawer never blocks on a provider
+ * outage.
+ */
+async function getProviderDimensionTargets(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  integrationId: string
+): Promise<{
+  supported: boolean;
+  targets: DimensionTargetWithValues[];
+  maxSlots: number | null;
+  targetsError: boolean;
+}> {
+  const unsupported = {
+    supported: false,
+    targets: [],
+    maxSlots: null,
+    targetsError: false
+  };
+
+  const providerId = (Object.values(ProviderID) as string[]).includes(
+    integrationId
+  )
+    ? (integrationId as ProviderID)
+    : null;
+  if (!providerId) return unsupported;
+
+  try {
+    const accountingIntegration = await getAccountingIntegration(
+      client,
+      companyId,
+      providerId
+    );
+    const provider = getProviderIntegration(
+      client,
+      companyId,
+      providerId,
+      accountingIntegration.metadata
+    );
+
+    if (typeof provider.journalDimensionTargets !== "function") {
+      return unsupported;
+    }
+
+    if (providerId === ProviderID.RILLET) {
+      // One GET /fields serves both the targets and their values (calling
+      // journalDimensionTargets() separately would hit the same endpoint
+      // twice); target ids come from the engine's composite-id helper.
+      const fields = await (provider as RilletProvider).listFields();
+      return {
+        supported: true,
+        targets: fields.map((field) => ({
+          id: buildRilletFieldTarget(field.id),
+          label: field.name,
+          capacity: 1,
+          values: (field.values ?? [])
+            .filter((value) => !value.deactivated)
+            .map((value) => ({ id: value.id, name: value.name }))
+        })),
+        maxSlots: provider.capabilities?.maxJournalDimensionSlots ?? null,
+        targetsError: false
+      };
+    }
+
+    if (providerId === ProviderID.QUICKBOOKS) {
+      // journalDimensionTargets() probes the Intuit feature gates, so an
+      // org without class/location tracking sees a reduced target list;
+      // the values then load from the matching list method.
+      const qbo = provider as QboProvider;
+      const declared = await qbo.journalDimensionTargets();
+      const targets: DimensionTargetWithValues[] = [];
+      for (const target of declared) {
+        const options =
+          target.id === QBO_DIMENSION_TARGET_CLASS
+            ? await qbo.listClasses()
+            : target.id === QBO_DIMENSION_TARGET_DEPARTMENT
+              ? await qbo.listDepartments()
+              : [];
+        targets.push({
+          id: target.id,
+          label: target.label,
+          capacity: target.capacity ?? 1,
+          values: options.map((option) => ({
+            id: option.Id,
+            name: option.Name
+          }))
+        });
+      }
+      return {
+        supported: true,
+        targets,
+        maxSlots: qbo.capabilities?.maxJournalDimensionSlots ?? null,
+        targetsError: false
+      };
+    }
+
+    // Xero: one target per active tracking category, options inline.
+    const categories = await (
+      provider as XeroProvider
+    ).listTrackingCategories();
+    return {
+      supported: true,
+      targets: categories.map((category) => ({
+        id: buildXeroTrackingTarget(category.TrackingCategoryID),
+        label: category.Name,
+        capacity: 1,
+        values: (category.Options ?? [])
+          .filter(
+            (option) =>
+              option.Status === "ACTIVE" || option.Status === undefined
+          )
+          .map((option) => ({ id: option.TrackingOptionID, name: option.Name }))
+      })),
+      maxSlots: XERO_MAX_JOURNAL_DIMENSION_SLOTS,
+      targetsError: false
+    };
+  } catch (err) {
+    console.error("Failed to load provider dimension targets:", err);
+    return { supported: true, targets: [], maxSlots: null, targetsError: true };
+  }
+}
+
+/**
+ * Dimension-sync data for the integration drawer's Dimensions tab: the
+ * provider targets (+ values), the company's dimensions with value counts
+ * (high-cardinality warning), the stored slot config, the per-slot value
+ * mappings with resolved Carbon labels, the unmapped slotted values, and
+ * exact name-match proposals. Returns null when the provider doesn't
+ * implement journalDimensionTargets (no tab). The dimension-mapping
+ * services are Kysely-based (RLS bypassed) — same auth stance as
+ * getAccountMappingTabData.
+ */
+async function getDimensionSyncTabData(
+  client: SupabaseClient<Database>,
+  args: {
+    companyId: string;
+    companyGroupId: string;
+    integrationId: string;
+    settings: ResolvedPostingSyncSettings;
+  }
+) {
+  const { companyId, companyGroupId, integrationId, settings } = args;
+
+  const providerTargets = await getProviderDimensionTargets(
+    client,
+    companyId,
+    integrationId
+  );
+  if (!providerTargets.supported) return null;
+
+  const db = getDatabaseClient();
+  const slots = settings.dimensionSlots;
+
+  const [dimensionsResult, mappingsResult, unmappedResult] = await Promise.all([
+    getActiveDimensionsWithValues(client, companyGroupId, companyId),
+    getDimensionValueMappings(db, { companyId, integration: integrationId }),
+    getUnmappedSlottedDimensionValues(db, {
+      companyId,
+      integration: integrationId,
+      slots
+    })
+  ]);
+
+  // Don't block the settings drawer on a load failure — render what
+  // loaded and log the cause.
+  for (const result of [dimensionsResult, mappingsResult, unmappedResult]) {
+    if (result.error) {
+      console.error("Failed to load dimension sync data:", result.error);
+    }
+  }
+
+  const dimensions = (dimensionsResult.error ? [] : dimensionsResult.data).map(
+    (dimension) => ({
+      id: dimension.dimensionId,
+      name: dimension.dimensionName,
+      entityType: String(dimension.entityType),
+      valueCount: dimension.values.length
+    })
+  );
+
+  const mappingRows = mappingsResult.data ?? [];
+
+  // Readable Carbon labels for the mapped rows (engine-resolved per the
+  // dimension's entityType). A resolution failure degrades to raw ids.
+  let mappedLabels = new Map<string, string>();
+  try {
+    mappedLabels = await resolveDimensionValueLabels(db, {
+      values: mappingRows.map(({ dimensionId, valueId }) => ({
+        dimensionId,
+        valueId
+      }))
+    });
+  } catch (err) {
+    console.error("Failed to resolve dimension value labels:", err);
+  }
+
+  const mappings = mappingRows.map((mapping) => ({
+    id: mapping.id,
+    dimensionId: mapping.dimensionId,
+    valueId: mapping.valueId,
+    label:
+      mappedLabels.get(
+        buildDimensionValueMappingEntityId(mapping.dimensionId, mapping.valueId)
+      ) ?? null,
+    externalId: mapping.externalId,
+    externalName: mapping.externalName
+  }));
+
+  const unmapped = unmappedResult.data ?? [];
+
+  // Exact name-match proposals, per slot: each slot pairs one dimension's
+  // unmapped values with its provider target's option list. Provider
+  // options already used by a mapping on the SAME dimension are excluded
+  // (an option may legitimately back several dimensions).
+  const targetsById = new Map(
+    providerTargets.targets.map((target) => [target.id, target])
+  );
+  const mappedValueKeys = mappingRows
+    .filter((mapping) => mapping.externalId)
+    .map((mapping) =>
+      buildDimensionValueMappingEntityId(mapping.dimensionId, mapping.valueId)
+    );
+  const proposals = slots.flatMap((slot) => {
+    const target = targetsById.get(slot.target);
+    if (!target) return [];
+    const values = unmapped.filter(
+      (value) => value.dimensionId === slot.dimensionId
+    );
+    if (values.length === 0) return [];
+    const mappedExternalIds = mappingRows.flatMap((mapping) =>
+      mapping.dimensionId === slot.dimensionId && mapping.externalId
+        ? [mapping.externalId]
+        : []
+    );
+    return matchDimensionValuesByName({
+      values,
+      providerOptions: target.values,
+      mappedValueKeys,
+      mappedExternalIds
+    });
   });
+
+  return {
+    targets: providerTargets.targets,
+    targetsError: providerTargets.targetsError,
+    maxSlots: providerTargets.maxSlots,
+    // Rillet's Field-value upsert flow defaults auto-create ON; QBO/Xero
+    // stay opt-in (see resolveDimensionSlotAutoCreate in @carbon/ee).
+    autoCreateDefault: integrationId === ProviderID.RILLET,
+    dimensions,
+    slots,
+    onUnmappedDimensionValue: settings.onUnmappedDimensionValue,
+    mappings,
+    unmapped,
+    proposals
+  };
+}
+
+export async function loader({ request, params }: LoaderFunctionArgs) {
+  const { client, companyId, companyGroupId } = await requirePermissions(
+    request,
+    {
+      update: "settings"
+    }
+  );
 
   const { id: integrationId } = params;
   if (!integrationId) throw new Error("Integration ID not found");
@@ -295,7 +594,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       dynamicOptions: {},
       syncActivity: null,
       accountMapping: null,
-      postingSync: null
+      postingSync: null,
+      dimensionSync: null
     };
   }
 
@@ -522,13 +822,25 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       }
     : null;
 
+  // Dimension-sync tab data — accounting integrations whose provider
+  // implements journalDimensionTargets (guarded inside the helper).
+  const dimensionSync = resolvedPostingSettings
+    ? await getDimensionSyncTabData(client, {
+        companyId,
+        companyGroupId,
+        integrationId,
+        settings: resolvedPostingSettings
+      })
+    : null;
+
   return {
     installed: integrationData.data.active,
     metadata: flattenedMetadata,
     dynamicOptions,
     syncActivity,
     accountMapping,
-    postingSync
+    postingSync,
+    dimensionSync
   };
 }
 
@@ -744,6 +1056,221 @@ export async function action({ request, params }: ActionFunctionArgs) {
         ? "account mapping"
         : `${mappings.length} account mappings`;
     return data({}, await flash(request, success(`Saved ${mappingNoun}`)));
+  }
+
+  // Save the dimension-slot configuration (Dimensions tab): validate the
+  // slots against the provider's declared targets server-side, then
+  // read-modify-write the postingSync fragment. Unlike the Posting intent,
+  // the v2 shim-marker keys are deliberately LEFT in place — this intent
+  // doesn't write the v3 sourceTypes record, so stripping the markers here
+  // would make the schema shim lose the stored v2 enabled set on the next
+  // read. Stays on the page so the tab revalidates in place.
+  if (formData.get("intent") === "update-dimension-slots") {
+    const validation = await validator(dimensionSlotsUpdateValidator).validate(
+      formData
+    );
+
+    if (validation.error) {
+      return validationError(validation.error);
+    }
+
+    const { slots, onUnmappedDimensionValue } = validation.data;
+
+    const providerTargets = await getProviderDimensionTargets(
+      client,
+      companyId,
+      integrationId
+    );
+    if (!providerTargets.supported) {
+      return data(
+        {},
+        await flash(
+          request,
+          error(
+            "unsupported integration",
+            "This integration does not support dimension sync"
+          )
+        )
+      );
+    }
+    // Clearing every slot is always allowed; validating a non-empty config
+    // against a failed target fetch would reject every target as unknown.
+    if (slots.length > 0 && providerTargets.targetsError) {
+      return data(
+        {},
+        await flash(
+          request,
+          error(
+            "provider targets unavailable",
+            "Couldn't load the provider's dimension targets — try again"
+          )
+        )
+      );
+    }
+    const slotErrors = validateDimensionSlots({
+      slots,
+      targets: providerTargets.targets,
+      maxSlots: providerTargets.maxSlots ?? undefined
+    });
+    if (slotErrors.length > 0) {
+      return data(
+        {},
+        await flash(
+          request,
+          error(slotErrors.join(" "), "Invalid dimension slot configuration")
+        )
+      );
+    }
+
+    const existing = await getIntegration(client, integrationId, companyId);
+    if (existing.error || !existing.data) {
+      return data(
+        {},
+        await flash(
+          request,
+          error(existing.error, "Failed to load integration settings")
+        )
+      );
+    }
+
+    const existingMetadata =
+      (existing.data.metadata as Record<string, unknown>) ?? {};
+    const existingSettings =
+      (existingMetadata.settings as Record<string, unknown> | undefined) ?? {};
+    const existingPostingSync =
+      (existingSettings.postingSync as Record<string, unknown> | undefined) ??
+      {};
+
+    const metadata = {
+      ...existingMetadata,
+      settings: {
+        ...existingSettings,
+        postingSync: {
+          ...existingPostingSync,
+          dimensionSlots: slots,
+          onUnmappedDimensionValue
+        }
+      }
+    };
+
+    const update = await upsertCompanyIntegration(client, {
+      id: integrationId,
+      active: existing.data.active ?? true,
+      metadata: metadata as Json,
+      companyId,
+      updatedBy: userId
+    });
+
+    if (update.error) {
+      return data(
+        {},
+        await flash(
+          request,
+          error(update.error, "Failed to update dimension sync settings")
+        )
+      );
+    }
+
+    await invalidateIntegrationHealthCache(integrationId, companyId);
+
+    return data(
+      {},
+      await flash(request, success("Updated dimension sync settings"))
+    );
+  }
+
+  // Save one dimension-value mapping row (Dimensions tab). The mapping
+  // services are Kysely-based (RLS bypassed) — requirePermissions above +
+  // companyId scoping is the auth gate. Stays on the page so the tab
+  // revalidates in place.
+  if (formData.get("intent") === "upsert-dimension-value-mapping") {
+    const validation = await validator(
+      dimensionValueMappingUpsertValidator
+    ).validate(formData);
+
+    if (validation.error) {
+      return validationError(validation.error);
+    }
+
+    const { dimensionId, valueId, externalId, externalName } = validation.data;
+
+    const result = await upsertDimensionValueMapping(getDatabaseClient(), {
+      companyId,
+      integration: integrationId,
+      dimensionId,
+      valueId,
+      externalId,
+      externalName,
+      userId
+    });
+
+    if (result.error) {
+      return data(
+        {},
+        await flash(
+          request,
+          error(result.error, "Failed to save dimension value mapping")
+        )
+      );
+    }
+
+    return data(
+      {},
+      await flash(request, success("Saved dimension value mapping"))
+    );
+  }
+
+  // Confirm-all from the match-by-name drawer: repeated JSON-encoded
+  // `mappings` fields, one upsert per proposal.
+  if (formData.get("intent") === "bulk-upsert-dimension-value-mappings") {
+    const validation = await validator(
+      dimensionValueMappingBulkUpsertValidator
+    ).validate(formData);
+
+    if (validation.error) {
+      return validationError(validation.error);
+    }
+
+    const { mappings } = validation.data;
+    const db = getDatabaseClient();
+    const failures: string[] = [];
+
+    for (const mapping of mappings) {
+      const result = await upsertDimensionValueMapping(db, {
+        companyId,
+        integration: integrationId,
+        ...mapping,
+        userId
+      });
+      if (result.error) {
+        failures.push(result.error);
+      }
+    }
+
+    if (failures.length > 0) {
+      const succeeded = mappings.length - failures.length;
+      return data(
+        {},
+        await flash(
+          request,
+          error(
+            failures[0],
+            succeeded > 0
+              ? `Saved ${succeeded} of ${mappings.length} dimension value mappings`
+              : "Failed to save dimension value mappings"
+          )
+        )
+      );
+    }
+
+    const dimensionMappingNoun =
+      mappings.length === 1
+        ? "dimension value mapping"
+        : `${mappings.length} dimension value mappings`;
+    return data(
+      {},
+      await flash(request, success(`Saved ${dimensionMappingNoun}`))
+    );
   }
 
   // Persist posting-sync settings (Posting tab): read-modify-write the
@@ -1052,7 +1579,8 @@ export default function IntegrationRoute() {
     dynamicOptions,
     syncActivity,
     accountMapping,
-    postingSync
+    postingSync,
+    dimensionSync
   } = useLoaderData<typeof loader>();
 
   const navigate = useNavigate();
@@ -1087,6 +1615,27 @@ export default function IntegrationRoute() {
           settings={postingSync.settings}
           policy={postingSync.policy}
           mappingReadiness={postingSync.mappingReadiness}
+        />
+      )
+    });
+  }
+  if (dimensionSync) {
+    tabs.push({
+      value: "dimensions",
+      label: <Trans>Dimensions</Trans>,
+      content: (tabBar) => (
+        <DimensionMapping
+          tabs={tabBar}
+          targets={dimensionSync.targets}
+          targetsError={dimensionSync.targetsError}
+          maxSlots={dimensionSync.maxSlots}
+          autoCreateDefault={dimensionSync.autoCreateDefault}
+          dimensions={dimensionSync.dimensions}
+          slots={dimensionSync.slots}
+          onUnmappedDimensionValue={dimensionSync.onUnmappedDimensionValue}
+          mappings={dimensionSync.mappings}
+          unmapped={dimensionSync.unmapped}
+          proposals={dimensionSync.proposals}
         />
       )
     });

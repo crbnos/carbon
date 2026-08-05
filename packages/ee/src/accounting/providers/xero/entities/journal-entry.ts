@@ -1,6 +1,16 @@
 import type { KyselyTx } from "@carbon/database/client";
 import { getAccountMappings } from "../../../core/account-mapping";
 import {
+  buildDimensionValueMappingEntityId,
+  buildDimensionValueMappingLookup,
+  ensureDimensionValueExternalIds,
+  getDimensionValueMappings,
+  loadJournalLineDimensions,
+  resolveDimensionValueLabels,
+  upsertDimensionValueMapping
+} from "../../../core/dimension-mapping";
+import type { PostingSyncDimensionSlot } from "../../../core/models";
+import {
   getPostingSyncSourceTypeSkipReason,
   JournalEntrySyncError,
   type PostingSyncSettings,
@@ -20,7 +30,7 @@ import {
 } from "../../../core/types";
 import { withTriggersDisabled } from "../../../core/utils";
 import { parseDotnetDate, type Xero } from "../models";
-import type { XeroProvider } from "../provider";
+import { parseXeroTrackingTarget, type XeroProvider } from "../provider";
 
 /**
  * JournalEntrySyncer — pushes Posted Carbon journals (`journal` +
@@ -77,12 +87,28 @@ import type { XeroProvider } from "../provider";
  *   " | original date <postingDate>" appended when the period-lock redate
  *   policy moved the push date.
  */
+/**
+ * Slot config + resolved option ids for the Xero journal mapper: `slots`
+ * carry `tracking:<TrackingCategoryID>` targets; `optionIdsByValue`
+ * resolves `<dimensionId>:<valueId>` → TrackingOptionID. Slotted line
+ * dimensions with no resolvable option are OMITTED — the warn policy
+ * parks in pre-flight before mapping, so an unresolved value here is the
+ * recorded drop path.
+ */
+export type XeroJournalDimensionArgs = {
+  slots: ReadonlyArray<
+    Pick<PostingSyncDimensionSlot, "dimensionId" | "target">
+  >;
+  optionIdsByValue: ReadonlyMap<string, string>;
+};
+
 export function mapJournalEntryToManualJournal(args: {
   journal: Accounting.JournalEntry;
   accountCodesById: ReadonlyMap<string, string>;
   pushDate: string;
   redatedFromDate?: string;
   existingRemoteId?: string | null;
+  dimensions?: XeroJournalDimensionArgs;
 }): Omit<Xero.ManualJournal, "UpdatedDateUTC"> {
   const { journal } = args;
   const sign = journal.reversal ? -1 : 1;
@@ -107,11 +133,35 @@ export function mapJournalEntryToManualJournal(args: {
       });
     }
 
+    const tracking: Xero.ManualJournalTracking[] = [];
+    if (args.dimensions) {
+      for (const slot of args.dimensions.slots) {
+        const trackingCategoryId = parseXeroTrackingTarget(slot.target);
+        if (!trackingCategoryId) continue;
+        const dimension = line.dimensions?.find(
+          (candidate) => candidate.dimensionId === slot.dimensionId
+        );
+        if (!dimension) continue;
+        const trackingOptionId = args.dimensions.optionIdsByValue.get(
+          buildDimensionValueMappingEntityId(
+            dimension.dimensionId,
+            dimension.valueId
+          )
+        );
+        if (!trackingOptionId) continue; // drop policy — recorded by the caller
+        tracking.push({
+          TrackingCategoryID: trackingCategoryId,
+          TrackingOptionID: trackingOptionId
+        });
+      }
+    }
+
     return {
       LineAmount: roundCurrency(sign * line.amount),
       AccountCode: accountCode,
       Description: line.description ?? journal.description ?? undefined,
-      TaxType: "NONE"
+      TaxType: "NONE",
+      ...(tracking.length > 0 ? { Tracking: tracking } : {})
     };
   });
 
@@ -143,9 +193,81 @@ export class JournalEntrySyncer extends BaseEntitySyncer<
   private accountCodesByIdPromise?: Promise<Map<string, string>>;
   private controlAccountIdsPromise?: Promise<Set<string>>;
   private lockDatePromise?: Promise<string | null>;
+  private dimensionValueMappingsPromise?: Promise<Map<string, string>>;
 
   private get xeroProvider(): XeroProvider {
     return this.provider as XeroProvider;
+  }
+
+  /**
+   * `<dimensionId>:<valueId>` → Xero TrackingOptionID from the
+   * dimension-value mapping rows (entityType "dimensionValue"). Mutated
+   * in place by the autoCreate flow so later pushes in the same drain
+   * reuse the created options.
+   */
+  public getDimensionValueMappings(): Promise<Map<string, string>> {
+    if (!this.dimensionValueMappingsPromise) {
+      this.dimensionValueMappingsPromise = (async () => {
+        const mappings = await getDimensionValueMappings(this.database, {
+          companyId: this.companyId,
+          integration: this.provider.id
+        });
+        if (mappings.error) {
+          throw new Error(
+            `Failed to load dimension value mappings: ${mappings.error}`
+          );
+        }
+        return buildDimensionValueMappingLookup(mappings.data ?? []);
+      })();
+    }
+    return this.dimensionValueMappingsPromise;
+  }
+
+  /**
+   * autoCreate (opt-in per slot for Xero): create missing tracking
+   * options BY NAME — the value's resolved READABLE label — under the
+   * slot's tracking category, then store the mapping and update the
+   * lookup in place.
+   */
+  private async ensureAutoCreatedDimensionValues(
+    journal: Accounting.JournalEntry,
+    settings: PostingSyncSettings,
+    mappings: Map<string, string>
+  ): Promise<void> {
+    await ensureDimensionValueExternalIds({
+      lines: journal.lines,
+      slots: settings.dimensionSlots,
+      defaultAutoCreate: false, // Xero: opt-in avoids surprise list writes
+      mappings,
+      resolveLabels: (values) =>
+        resolveDimensionValueLabels(this.database, { values }),
+      createExternalValue: async (slot, label) => {
+        const trackingCategoryId = parseXeroTrackingTarget(slot.target);
+        if (!trackingCategoryId) {
+          throw new Error(`Unknown Xero dimension target "${slot.target}"`);
+        }
+        const created = await this.xeroProvider.createTrackingOption(
+          trackingCategoryId,
+          label
+        );
+        return created.TrackingOptionID;
+      },
+      persistMapping: async (value, externalId, label) => {
+        const persisted = await upsertDimensionValueMapping(this.database, {
+          companyId: this.companyId,
+          integration: this.provider.id,
+          dimensionId: value.dimensionId,
+          valueId: value.valueId,
+          externalId,
+          externalName: label
+        });
+        if (persisted.error) {
+          throw new Error(
+            `Failed to store dimension value mapping: ${persisted.error}`
+          );
+        }
+      }
+    });
   }
 
   // =================================================================
@@ -321,6 +443,11 @@ export class JournalEntrySyncer extends BaseEntitySyncer<
       .orderBy("journalLineReference", "asc")
       .execute();
 
+    const dimensionsByLine = await loadJournalLineDimensions(this.database, {
+      companyId: this.companyId,
+      journalLineIds: lines.map((line) => line.id)
+    });
+
     return {
       id: journal.id,
       companyId: journal.companyId,
@@ -332,17 +459,21 @@ export class JournalEntrySyncer extends BaseEntitySyncer<
       reversalOfId: journal.reversalOfId ?? null,
       reversedById: journal.reversedById ?? null,
       reversal,
-      lines: lines.map((line) => ({
-        id: line.id,
-        accountId: line.accountId ?? null,
-        // Carbon stores natural-balance-signed amounts; the engine expects
-        // debit-signed (see toDebitSignedAmount)
-        amount: toDebitSignedAmount(
-          line.accountClass,
-          Number(line.amount) || 0
-        ),
-        description: line.description ?? null
-      })),
+      lines: lines.map((line) => {
+        const dimensions = dimensionsByLine.get(line.id);
+        return {
+          id: line.id,
+          accountId: line.accountId ?? null,
+          // Carbon stores natural-balance-signed amounts; the engine expects
+          // debit-signed (see toDebitSignedAmount)
+          amount: toDebitSignedAmount(
+            line.accountClass,
+            Number(line.amount) || 0
+          ),
+          description: line.description ?? null,
+          ...(dimensions ? { dimensions } : {})
+        };
+      }),
       updatedAt: journal.updatedAt ?? journal.postedAt ?? journal.createdAt
     };
   }
@@ -439,23 +570,54 @@ export class JournalEntrySyncer extends BaseEntitySyncer<
     const controlAccountIds = await this.getControlAccountIds();
     const lockDate = await this.getLockDate(settings);
 
+    // Dimension slots: resolve the value-mapping lookup and auto-create
+    // missing tracking options (opt-in per slot) BEFORE pre-flight so
+    // freshly created options never park as unmapped
+    let dimensionValueMappings: Map<string, string> | undefined;
+    if (settings.dimensionSlots.length > 0) {
+      dimensionValueMappings = await this.getDimensionValueMappings();
+      await this.ensureAutoCreatedDimensionValues(
+        local,
+        settings,
+        dimensionValueMappings
+      );
+    }
+
     const preflight = runJournalEntryPreflight({
       journal: local,
       accountCodesById,
       controlAccountIds,
       lockDate,
-      settings
+      settings,
+      dimensionValueMappings
     });
 
     if (preflight.failure) {
       throw new JournalEntrySyncError(preflight.failure);
     }
 
+    if (preflight.droppedDimensionValues?.length) {
+      // "drop" policy: pushed without these dimensions. The drain has no
+      // success-metadata channel yet, so the record lives in the logs.
+      console.warn("[JournalEntrySyncer] dropped unmapped dimension values", {
+        journalId: local.id,
+        droppedDimensionValues: preflight.droppedDimensionValues
+      });
+    }
+
     return mapJournalEntryToManualJournal({
       journal: local,
       accountCodesById,
       pushDate: preflight.pushDate,
-      redatedFromDate: preflight.redatedFromDate
+      redatedFromDate: preflight.redatedFromDate,
+      ...(dimensionValueMappings
+        ? {
+            dimensions: {
+              slots: settings.dimensionSlots,
+              optionIdsByValue: dimensionValueMappings
+            }
+          }
+        : {})
     });
   }
 

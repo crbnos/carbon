@@ -78,6 +78,10 @@ msgstr "{0} लाइनें मैप करने के लिए"
 msgid "{0} of {1} posting accounts mapped"
 msgstr "{0} में से {1} पोस्टिंग खातों को मैप किया गया"
 
+#. placeholder {0}: rows.length
+msgid "{0} of {maxSlots} provider slots used"
+msgstr "{0} में से {maxSlots} प्रदाता स्लॉट उपयोग किए गए"
+
 #. placeholder {0}: history.length
 msgid "{0} orders"
 msgstr "{0} ऑर्डर"
@@ -106,6 +110,11 @@ msgstr "{0} अपोस्ट किए गए दस्तावेज़"
 #. placeholder {0}: file.name
 msgid "{0} uploaded successfully"
 msgstr "{0} सफलतापूर्वक अपलोड हो गया"
+
+#. placeholder {0}: dimension.valueCount
+#. placeholder {0}: selectedDimension?.valueCount
+msgid "{0} values"
+msgstr "{0} मान"
 
 #. placeholder {0}: unmatchedValues.length
 msgid "{0} values missing"
@@ -808,6 +817,9 @@ msgstr "शिपमेंट जोड़ें"
 msgid "Add Shipping"
 msgstr "शिपिंग जोड़ें"
 
+msgid "Add slot"
+msgstr "स्लॉट जोड़ें"
+
 msgid "Add Spare Part"
 msgstr "स्पेयर पार्ट जोड़ें"
 
@@ -940,6 +952,9 @@ msgstr "सभी पोस्टिंग खाते मैप किए ग�
 
 msgid "All rows imported — {inserted} inserted, {updated} updated."
 msgstr "सभी पंक्तियाँ आयात की गईं — {inserted} डाली गईं, {updated} अपडेट की गईं।"
+
+msgid "All slotted dimension values are mapped"
+msgstr "सभी स्लॉटेड आयाम मान मैप किए गए हैं"
 
 msgid "All Suppliers"
 msgstr "सभी आपूर्तिकर्ता"
@@ -1779,6 +1794,9 @@ msgstr "नौकरी को स्वचालित रूप से शु�
 msgid "Auto Start Job"
 msgstr "ऑटो स्टार्ट जॉब"
 
+msgid "Auto-create"
+msgstr "स्वचालित-निर्माण"
+
 msgid "Auto-generated QR Code"
 msgstr "स्वचालित रूप से उत्पन्न QR कोड"
 
@@ -2248,6 +2266,9 @@ msgstr "कार्बन लोगो"
 
 msgid "Carbon only"
 msgstr "केवल कार्बन"
+
+msgid "Carbon value"
+msgstr "Carbon मान"
 
 msgid "Carbon Value"
 msgstr "कार्बन मान"
@@ -3141,6 +3162,9 @@ msgstr "दस्तावेज़ लोड नहीं हो सके"
 
 msgid "Couldn't load related documents. Refresh before creating a new one to avoid duplicates."
 msgstr "संबंधित दस्तावेज़ लोड नहीं हो सके। डुप्लीकेट से बचने के लिए नया बनाने से पहले रीफ्रेश करें।"
+
+msgid "Couldn't load the provider's dimension targets — check the connection and reload."
+msgstr "प्रदाता के आयाम लक्ष्य लोड नहीं कर सके — कनेक्शन जांचें और फिर से लोड करें।"
 
 msgid "Couldn't reschedule the job. Please try again."
 msgstr "कार्य पुनर्निर्धारित नहीं हो सका। कृपया पुनः प्रयास करें।"
@@ -4321,6 +4345,12 @@ msgstr "आयाम"
 msgid "Dimension"
 msgstr "आयाम"
 
+msgid "Dimension slots"
+msgstr "आयाम स्लॉट"
+
+msgid "Dimension values on posted journals that have no provider mapping yet."
+msgstr "पोस्ट की गई पत्रिकाओं पर आयाम मान जिनके पास अभी तक कोई प्रदाता मैपिंग नहीं है।"
+
 msgid "dimensions"
 msgstr "आयाम"
 
@@ -5321,6 +5351,9 @@ msgstr "छूट कारण"
 
 msgid "Existing mappings. Pick a different provider account to re-map."
 msgstr "मौजूदा मानचित्रण। पुनः मानचित्रण के लिए एक अलग प्रदाता खाता चुनें।"
+
+msgid "Existing mappings. Pick a different provider option to re-map."
+msgstr "मौजूदा मैपिंग। पुनः-मैप करने के लिए एक अलग प्रदाता विकल्प चुनें।"
 
 msgid "Expand"
 msgstr "विस्तार करें"
@@ -7723,6 +7756,9 @@ msgstr "अपनी वर्तमान प्रक्रिया, सि�
 msgid "Mapped accounts"
 msgstr "मैप किए गए खाते"
 
+msgid "Mapped values"
+msgstr "मैप किए गए मान"
+
 #. placeholder {0}: i18n._(step.gate)
 msgid "Mark \"{0}\" as passed?"
 msgstr "\"{0}\" को पास के रूप में चिह्नित करें?"
@@ -7795,6 +7831,9 @@ msgstr "किसी भी को मिलाएं (OR)"
 
 msgid "Match by code"
 msgstr "कोड से मेल खाएं"
+
+msgid "Match by name"
+msgstr "नाम से मेल खाएं"
 
 msgid "Match none"
 msgstr "कोई भी मेल न खाएं"
@@ -8621,6 +8660,12 @@ msgstr "कोई दिन बंद निर्धारित नहीं �
 msgid "No default attachments yet."
 msgstr "अभी तक कोई डिफ़ॉल्ट अटैचमेंट नहीं है।"
 
+msgid "No dimension slots configured"
+msgstr "कोई आयाम स्लॉट कॉन्फ़िगर नहीं किया गया"
+
+msgid "No dimension values mapped yet"
+msgstr "अभी तक कोई आयाम मान मैप नहीं किया गया"
+
 msgid "No draft make method for this item yet."
 msgstr "इस आइटम के लिए अभी तक कोई ड्राफ्ट विधि नहीं।"
 
@@ -8854,6 +8899,9 @@ msgstr "इस अवधि में कोई लेनदेन नहीं"
 
 msgid "No unmapped accounts match a provider code"
 msgstr "कोई भी अनमैप किया गया खाता प्रदाता कोड से मेल नहीं खाता"
+
+msgid "No unmapped values match a provider option name"
+msgstr "कोई भी अनमैप्ड मान प्रदाता विकल्प नाम से मेल नहीं खाता"
 
 msgid "No value needed"
 msgstr "कोई मान आवश्यक नहीं"
@@ -9443,6 +9491,9 @@ msgstr "प्रकार के अनुसार पेरेटो"
 msgid "Park as error"
 msgstr "त्रुटि के रूप में पार्क करें"
 
+msgid "Park the journal with a warning until the value is mapped"
+msgstr "पत्रिका को चेतावनी के साथ पार्क करें जब तक मान मैप न हो जाए"
+
 msgid "part"
 msgstr "भाग"
 
@@ -9637,6 +9688,9 @@ msgstr "असाइनमेंट के लिए उपलब्ध भौ�
 
 msgid "Pick"
 msgstr "चुनें"
+
+msgid "Pick a Carbon dimension and the provider target it posts to. Auto-create adds missing provider options by name at push time."
+msgstr "एक Carbon आयाम चुनें और प्रदाता लक्ष्य चुनें जहां यह पोस्ट करता है। स्वचालित-निर्माण पुश समय पर नाम से लापता प्रदाता विकल्प जोड़ता है।"
 
 msgid "Pick a column to sort by"
 msgstr "सॉर्ट करने के लिए एक कॉलम चुनें"
@@ -10113,6 +10167,9 @@ msgstr "गुण"
 msgid "Proposed matches where the Carbon account number equals the provider account code exactly."
 msgstr "प्रस्तावित मेल जहां कार्बन खाता संख्या प्रदाता खाता कोड के बिल्कुल बराबर है।"
 
+msgid "Proposed matches where the Carbon dimension value's name equals a provider option name exactly."
+msgstr "प्रस्तावित मेल जहां Carbon आयाम मान का नाम प्रदाता विकल्प नाम के बिल्कुल बराबर है।"
+
 msgid "Protect the go-live date"
 msgstr "गो-लाइव की तारीख की सुरक्षा करें"
 
@@ -10127,6 +10184,9 @@ msgstr "प्रदाता"
 
 msgid "Provider account"
 msgstr "प्रदाता खाता"
+
+msgid "Provider option"
+msgstr "प्रदाता विकल्प"
 
 msgid "Public"
 msgstr "सार्वजनिक"
@@ -10271,6 +10331,9 @@ msgstr "सक्षम स्रोत प्रकारों के लि�
 
 msgid "Push record changes to external systems the moment they happen."
 msgstr "रिकॉर्ड परिवर्तनों को बाहरी सिस्टम में तुरंत भेजें जब वे होते हैं।"
+
+msgid "Push the journal without the dimension"
+msgstr "आयाम के बिना पत्रिका को पुश करें"
 
 msgid "Push to accounting"
 msgstr "लेखांकन को धकेलें"
@@ -10780,6 +10843,9 @@ msgstr "पुर्जा हटाएँ"
 msgid "Remove slide"
 msgstr "स्लाइड हटाएँ"
 
+msgid "Remove slot"
+msgstr "स्लॉट हटाएं"
+
 msgid "Remove sort by column"
 msgstr "कॉलम द्वारा सॉर्ट हटाएं"
 
@@ -11089,6 +11155,9 @@ msgstr "RFQ संख्या"
 msgid "RFQs"
 msgstr "आरएफक्यू"
 
+msgid "Ride Carbon dimensions along on pushed journals. Each slot maps one Carbon dimension to one provider analytics target; the value mapping below pairs individual dimension values with provider options."
+msgstr "पुश की गई पत्रिकाओं पर Carbon आयाम साथ रखें। प्रत्येक स्लॉट एक Carbon आयाम को एक प्रदाता विश्लेषण लक्ष्य के लिए मैप करता है; नीचे मान मैपिंग व्यक्तिगत आयाम मान को प्रदाता विकल्प के साथ जोड़ता है।"
+
 msgid "Right item"
 msgstr "दाहिनी वस्तु"
 
@@ -11335,6 +11404,9 @@ msgstr "आवेदन सहेजें"
 
 msgid "Save contacts"
 msgstr "संपर्क सहेजें"
+
+msgid "Save dimension settings"
+msgstr "आयाम सेटिंग्स सहेजें"
 
 msgid "Save Method"
 msgstr "विधि सहेजें"
@@ -11601,6 +11673,9 @@ msgstr "ग्राहक प्रकार चुनें"
 msgid "Select customers"
 msgstr "ग्राहकों का चयन करें"
 
+msgid "Select dimension"
+msgstr "आयाम चुनें"
+
 msgid "Select Employee"
 msgstr "कर्मचारी चुनें"
 
@@ -11639,6 +11714,12 @@ msgstr "प्रिंटर चुनें"
 
 msgid "Select provider account"
 msgstr "प्रदाता खाता चुनें"
+
+msgid "Select provider target"
+msgstr "प्रदाता लक्ष्य चुनें"
+
+msgid "Select provider value"
+msgstr "प्रदाता मान चुनें"
 
 msgid "Select Quantities"
 msgstr "मात्रा चुनें"
@@ -13327,6 +13408,9 @@ msgstr "प्रक्रिया जो तकनीशियन इस र�
 msgid "The processes this work center can run; appears in process-pickers when scheduling operations, and limits which jobs can route through this work center."
 msgstr "प्रक्रियाएं जो यह कार्य केंद्र चला सकता है; संचालन निर्धारण करते समय प्रक्रिया-पिकर्स में दिखाई देता है, और इस कार्य केंद्र के माध्यम से कौन से नौकरियां रूट कर सकती हैं।"
 
+msgid "The provider offers no dimension targets. Enable the feature in the provider first (e.g. tracking categories, class tracking, or fields)."
+msgstr "प्रदाता कोई आयाम लक्ष्य प्रदान नहीं करता है। पहले प्रदाता में सुविधा सक्षम करें (जैसे ट्रैकिंग श्रेणियां, कक्षा ट्रैकिंग, या फ़ील्ड)।"
+
 msgid "The quantity breakpoints this line is priced at; each column carries its own per-unit price for buyer–supplier negotiation and for converting to downstream documents."
 msgstr "मात्रा विभाजन बिंदु जिन पर इस पंक्ति की कीमत है; प्रत्येक कॉलम क्रेता-आपूर्तिकर्ता बातचीत और डाउनस्ट्रीम दस्तावेजों में परिवर्तित करने के लिए अपनी स्वयं की प्रति-यूनिट कीमत रखता है।"
 
@@ -14164,8 +14248,14 @@ msgstr "अनलॉक करें"
 msgid "Unmapped accounts"
 msgstr "असंबद्ध खाते"
 
+msgid "Unmapped dimension values"
+msgstr "अनमैप्ड आयाम मान"
+
 msgid "Unmapped Extracted Lines"
 msgstr "अनमैप किए गए निकाली गई लाइनें"
+
+msgid "Unmapped values"
+msgstr "अनमैप्ड मान"
 
 msgid "Unmatched"
 msgstr "बेमेल"

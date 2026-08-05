@@ -245,6 +245,35 @@ export namespace Xero {
   >;
   export type PurchaseOrderContact = z.infer<typeof PurchaseOrderContactSchema>;
 
+  // Tracking category schemas for the Xero TrackingCategories endpoint —
+  // Xero's journal analytics (org-wide limit: 2 active categories)
+  export const TrackingOptionSchema = z.object({
+    TrackingOptionID: z.string().uuid(),
+    Name: z.string(),
+    Status: z.enum(["ACTIVE", "ARCHIVED", "DELETED"]).optional()
+  });
+
+  export type TrackingOption = z.infer<typeof TrackingOptionSchema>;
+
+  export const TrackingCategorySchema = z.object({
+    TrackingCategoryID: z.string().uuid(),
+    Name: z.string(),
+    Status: z.enum(["ACTIVE", "ARCHIVED", "DELETED"]).optional(),
+    Options: z.array(TrackingOptionSchema).optional()
+  });
+
+  export type TrackingCategory = z.infer<typeof TrackingCategorySchema>;
+
+  /** Tracking assignment on a manual-journal line (ids, never names). */
+  export const ManualJournalTrackingSchema = z.object({
+    TrackingCategoryID: z.string(),
+    TrackingOptionID: z.string()
+  });
+
+  export type ManualJournalTracking = z.infer<
+    typeof ManualJournalTrackingSchema
+  >;
+
   // Manual Journal schemas for Xero Accounting API ManualJournals endpoint
   export const ManualJournalLineSchema = z.object({
     LineAmount: z.number(),
@@ -252,6 +281,8 @@ export namespace Xero {
     Description: z.string().optional(),
     TaxType: z.string().optional(),
     TaxAmount: z.number().optional(),
+    /** Max 2 entries (one per active tracking category). */
+    Tracking: z.array(ManualJournalTrackingSchema).optional(),
     IsBlank: z.boolean().optional()
   });
 

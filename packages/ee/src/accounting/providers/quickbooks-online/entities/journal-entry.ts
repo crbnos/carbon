@@ -1,5 +1,15 @@
 import type { KyselyTx } from "@carbon/database/client";
 import {
+  buildDimensionValueMappingEntityId,
+  buildDimensionValueMappingLookup,
+  ensureDimensionValueExternalIds,
+  getDimensionValueMappings,
+  loadJournalLineDimensions,
+  resolveDimensionValueLabels,
+  upsertDimensionValueMapping
+} from "../../../core/dimension-mapping";
+import type { PostingSyncDimensionSlot } from "../../../core/models";
+import {
   getPostingSyncSourceTypeSkipReason,
   JournalEntrySyncError,
   type PostingSyncSettings,
@@ -21,6 +31,8 @@ import { withTriggersDisabled } from "../../../core/utils";
 import { parseQboDate, type Qbo, type QboCreatePayload } from "../models";
 import {
   isQboAccountPeriodClosedError,
+  QBO_DIMENSION_TARGET_CLASS,
+  QBO_DIMENSION_TARGET_DEPARTMENT,
   QBO_FAULT_CODES,
   type QboProvider
 } from "../provider";
@@ -136,11 +148,27 @@ export function toQboPeriodClosedError(
  *   " | original date <postingDate>" appended when the period-lock redate
  *   policy moved the push date.
  */
+/**
+ * Slot config + resolved value refs for the QBO journal mapper: `slots`
+ * are the company's dimension slots (targets "class" / "department");
+ * `refsByValue` resolves `<dimensionId>:<valueId>` → QBO entity ref.
+ * Slotted line dimensions with no resolvable ref are OMITTED — the warn
+ * policy parks in pre-flight before mapping, so an unresolved value here
+ * is the recorded drop path.
+ */
+export type QboJournalDimensionArgs = {
+  slots: ReadonlyArray<
+    Pick<PostingSyncDimensionSlot, "dimensionId" | "target">
+  >;
+  refsByValue: ReadonlyMap<string, Qbo.Ref>;
+};
+
 export function mapJournalEntryToQboJournalEntry(args: {
   journal: Accounting.JournalEntry;
   accountRefsById: ReadonlyMap<string, Qbo.Ref>;
   pushDate: string;
   redatedFromDate?: string;
+  dimensions?: QboJournalDimensionArgs;
 }): QboCreatePayload<Qbo.JournalEntry> {
   const { journal } = args;
   const sign = journal.reversal ? -1 : 1;
@@ -167,14 +195,37 @@ export function mapJournalEntryToQboJournalEntry(args: {
 
     const signedAmount = sign * line.amount;
 
+    const detail: Qbo.JournalEntryLineDetail = {
+      PostingType: signedAmount > 0 ? "Debit" : "Credit",
+      AccountRef: accountRef
+    };
+
+    if (args.dimensions) {
+      for (const slot of args.dimensions.slots) {
+        const dimension = line.dimensions?.find(
+          (candidate) => candidate.dimensionId === slot.dimensionId
+        );
+        if (!dimension) continue;
+        const ref = args.dimensions.refsByValue.get(
+          buildDimensionValueMappingEntityId(
+            dimension.dimensionId,
+            dimension.valueId
+          )
+        );
+        if (!ref) continue; // drop policy — recorded by the caller
+        if (slot.target === QBO_DIMENSION_TARGET_CLASS) {
+          detail.ClassRef = ref;
+        } else if (slot.target === QBO_DIMENSION_TARGET_DEPARTMENT) {
+          detail.DepartmentRef = ref;
+        }
+      }
+    }
+
     return {
       Amount: roundCurrency(Math.abs(signedAmount)),
       DetailType: "JournalEntryLineDetail",
       Description: line.description ?? journal.description ?? undefined,
-      JournalEntryLineDetail: {
-        PostingType: signedAmount > 0 ? "Debit" : "Credit",
-        AccountRef: accountRef
-      }
+      JournalEntryLineDetail: detail
     };
   });
 
@@ -204,11 +255,12 @@ export class QboJournalEntrySyncer extends BaseEntitySyncer<
   QboWriteOmit
 > {
   // Per-instance caches — a drain reuses one syncer across its claimed
-  // operations, so settings, account refs and control accounts are each
-  // fetched at most once per drain
+  // operations, so settings, account refs, control accounts and the
+  // dimension-value lookup are each fetched at most once per drain
   private postingSyncSettingsPromise?: Promise<PostingSyncSettings>;
   private accountRefsByIdPromise?: Promise<Map<string, Qbo.Ref>>;
   private controlAccountIdsPromise?: Promise<Set<string>>;
+  private dimensionValueMappingsPromise?: Promise<Map<string, string>>;
 
   private get qboProvider(): QboProvider {
     return this.provider as QboProvider;
@@ -282,6 +334,80 @@ export class QboJournalEntrySyncer extends BaseEntitySyncer<
     return this.controlAccountIdsPromise;
   }
 
+  /**
+   * `<dimensionId>:<valueId>` → QBO Class/Department id from the
+   * dimension-value mapping rows (entityType "dimensionValue"). Mutated
+   * in place by the autoCreate flow so later pushes in the same drain
+   * reuse the created ids.
+   */
+  public getDimensionValueMappings(): Promise<Map<string, string>> {
+    if (!this.dimensionValueMappingsPromise) {
+      this.dimensionValueMappingsPromise = (async () => {
+        const mappings = await getDimensionValueMappings(this.database, {
+          companyId: this.companyId,
+          integration: this.provider.id
+        });
+        if (mappings.error) {
+          throw new Error(
+            `Failed to load dimension value mappings: ${mappings.error}`
+          );
+        }
+        return buildDimensionValueMappingLookup(mappings.data ?? []);
+      })();
+    }
+    return this.dimensionValueMappingsPromise;
+  }
+
+  /**
+   * autoCreate (opt-in per slot for QBO): create missing Classes /
+   * Departments BY NAME — the value's resolved READABLE label — then
+   * store the mapping and update the lookup in place.
+   */
+  private async ensureAutoCreatedDimensionValues(
+    journal: Accounting.JournalEntry,
+    settings: PostingSyncSettings,
+    mappings: Map<string, string>
+  ): Promise<void> {
+    await ensureDimensionValueExternalIds({
+      lines: journal.lines,
+      slots: settings.dimensionSlots,
+      defaultAutoCreate: false, // QBO: opt-in avoids surprise list writes
+      mappings,
+      resolveLabels: (values) =>
+        resolveDimensionValueLabels(this.database, { values }),
+      createExternalValue: async (slot, label) => {
+        if (slot.target === QBO_DIMENSION_TARGET_CLASS) {
+          const created = await this.qboProvider.createClass({ Name: label });
+          return created.Id;
+        }
+        if (slot.target === QBO_DIMENSION_TARGET_DEPARTMENT) {
+          const created = await this.qboProvider.createDepartment({
+            Name: label
+          });
+          return created.Id;
+        }
+        throw new Error(
+          `Unknown QuickBooks Online dimension target "${slot.target}"`
+        );
+      },
+      persistMapping: async (value, externalId, label) => {
+        const persisted = await upsertDimensionValueMapping(this.database, {
+          companyId: this.companyId,
+          integration: this.provider.id,
+          dimensionId: value.dimensionId,
+          valueId: value.valueId,
+          externalId,
+          externalName: label
+        });
+        if (persisted.error) {
+          throw new Error(
+            `Failed to store dimension value mapping: ${persisted.error}`
+          );
+        }
+      }
+    });
+  }
+
   // =================================================================
   // 2. TIMESTAMP EXTRACTION
   // =================================================================
@@ -334,6 +460,11 @@ export class QboJournalEntrySyncer extends BaseEntitySyncer<
       .orderBy("journalLineReference", "asc")
       .execute();
 
+    const dimensionsByLine = await loadJournalLineDimensions(this.database, {
+      companyId: this.companyId,
+      journalLineIds: lines.map((line) => line.id)
+    });
+
     return {
       id: journal.id,
       companyId: journal.companyId,
@@ -345,17 +476,21 @@ export class QboJournalEntrySyncer extends BaseEntitySyncer<
       reversalOfId: journal.reversalOfId ?? null,
       reversedById: journal.reversedById ?? null,
       reversal,
-      lines: lines.map((line) => ({
-        id: line.id,
-        accountId: line.accountId ?? null,
-        // Carbon stores natural-balance-signed amounts; the engine expects
-        // debit-signed (see toDebitSignedAmount)
-        amount: toDebitSignedAmount(
-          line.accountClass,
-          Number(line.amount) || 0
-        ),
-        description: line.description ?? null
-      })),
+      lines: lines.map((line) => {
+        const dimensions = dimensionsByLine.get(line.id);
+        return {
+          id: line.id,
+          accountId: line.accountId ?? null,
+          // Carbon stores natural-balance-signed amounts; the engine expects
+          // debit-signed (see toDebitSignedAmount)
+          amount: toDebitSignedAmount(
+            line.accountClass,
+            Number(line.amount) || 0
+          ),
+          description: line.description ?? null,
+          ...(dimensions ? { dimensions } : {})
+        };
+      }),
       updatedAt: journal.updatedAt ?? journal.postedAt ?? journal.createdAt
     };
   }
@@ -460,23 +595,61 @@ export class QboJournalEntrySyncer extends BaseEntitySyncer<
       )
     );
 
+    // Dimension slots: resolve the value-mapping lookup and auto-create
+    // missing Classes/Departments (opt-in per slot) BEFORE pre-flight so
+    // freshly created options never park as unmapped
+    let dimensionValueMappings: Map<string, string> | undefined;
+    if (settings.dimensionSlots.length > 0) {
+      dimensionValueMappings = await this.getDimensionValueMappings();
+      await this.ensureAutoCreatedDimensionValues(
+        local,
+        settings,
+        dimensionValueMappings
+      );
+    }
+
     const preflight = runJournalEntryPreflight({
       journal: local,
       accountCodesById: accountIdsByCarbonId,
       controlAccountIds,
       lockDate,
-      settings
+      settings,
+      dimensionValueMappings
     });
 
     if (preflight.failure) {
       throw new JournalEntrySyncError(preflight.failure);
     }
 
+    if (preflight.droppedDimensionValues?.length) {
+      // "drop" policy: pushed without these dimensions. The drain has no
+      // success-metadata channel yet, so the record lives in the logs.
+      console.warn(
+        "[QboJournalEntrySyncer] dropped unmapped dimension values",
+        {
+          journalId: local.id,
+          droppedDimensionValues: preflight.droppedDimensionValues
+        }
+      );
+    }
+
     return mapJournalEntryToQboJournalEntry({
       journal: local,
       accountRefsById,
       pushDate: preflight.pushDate,
-      redatedFromDate: preflight.redatedFromDate
+      redatedFromDate: preflight.redatedFromDate,
+      ...(dimensionValueMappings
+        ? {
+            dimensions: {
+              slots: settings.dimensionSlots,
+              refsByValue: new Map(
+                [...dimensionValueMappings].map(
+                  ([key, externalId]) => [key, { value: externalId }] as const
+                )
+              )
+            }
+          }
+        : {})
     });
   }
 

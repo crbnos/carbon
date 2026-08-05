@@ -462,8 +462,19 @@ export const PostingSyncDimensionSlotSchema = z.object({
   dimensionId: z.string(),
   /** Provider-specific target id (e.g. "class", "tracking:<id>", "field:<id>"). */
   target: z.string(),
-  autoCreate: z.boolean().default(false)
+  /**
+   * Create missing provider options by name at push time. Optional so a
+   * stored slot without the flag resolves to the PROVIDER default at the
+   * point of use (Rillet: on — Field-value upsert is the expected flow;
+   * QBO/Xero: off — opt-in avoids surprise writes to their lists). See
+   * resolveDimensionSlotAutoCreate (core/dimension-mapping.ts).
+   */
+  autoCreate: z.boolean().optional()
 });
+
+export type PostingSyncDimensionSlot = z.infer<
+  typeof PostingSyncDimensionSlotSchema
+>;
 
 const PostingSyncSourceTypeConfigSchema = z.object({
   enabled: z.boolean(),
@@ -1103,12 +1114,27 @@ export const InventoryAdjustmentSchema = z.object({
 // JOURNAL ENTRY (posting sync — journal + journalLine, push-only)
 // ============================================================================
 
+/**
+ * One analytical dimension stamped on a journal line
+ * (`journalLineDimension` row). `valueId` is Carbon's INTERNAL id and is
+ * polymorphic across entity-typed dimensions (location.id, supplier.id,
+ * item.id, dimensionValue.id, …) — what crosses the wire to a provider is
+ * always the RESOLVED provider option id from the dimension value mapping
+ * (entityType "dimensionValue"), never this id.
+ */
+export const JournalEntryLineDimensionSchema = z.object({
+  dimensionId: z.string(),
+  valueId: z.string()
+});
+
 export const JournalEntryLineSchema = z.object({
   id: z.string(),
   accountId: withNullable(z.string()),
   /** Signed: positive = debit, negative = credit. */
   amount: z.number(),
-  description: withNullable(z.string())
+  description: withNullable(z.string()),
+  /** Line dimensions (absent when the line carries none). */
+  dimensions: z.array(JournalEntryLineDimensionSchema).optional()
 });
 
 export const JournalEntrySchema = z.object({

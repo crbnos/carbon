@@ -78,6 +78,10 @@ msgstr "{0} righe da mappare"
 msgid "{0} of {1} posting accounts mapped"
 msgstr "{0} di {1} conti di registrazione mappati"
 
+#. placeholder {0}: rows.length
+msgid "{0} of {maxSlots} provider slots used"
+msgstr "{0} di {maxSlots} slot provider utilizzati"
+
 #. placeholder {0}: history.length
 msgid "{0} orders"
 msgstr "{0} ordini"
@@ -106,6 +110,11 @@ msgstr "{0} documenti non registrati"
 #. placeholder {0}: file.name
 msgid "{0} uploaded successfully"
 msgstr "{0} caricato con successo"
+
+#. placeholder {0}: dimension.valueCount
+#. placeholder {0}: selectedDimension?.valueCount
+msgid "{0} values"
+msgstr "{0} valori"
 
 #. placeholder {0}: unmatchedValues.length
 msgid "{0} values missing"
@@ -808,6 +817,9 @@ msgstr "Aggiungi Spedizione"
 msgid "Add Shipping"
 msgstr "Aggiungi Spedizione"
 
+msgid "Add slot"
+msgstr "Aggiungi slot"
+
 msgid "Add Spare Part"
 msgstr "Aggiungi Pezzo di Ricambio"
 
@@ -940,6 +952,9 @@ msgstr "Tutti i conti di posting sono mappati"
 
 msgid "All rows imported — {inserted} inserted, {updated} updated."
 msgstr "Tutte le righe importate — {inserted} inserite, {updated} aggiornate."
+
+msgid "All slotted dimension values are mapped"
+msgstr "Tutti i valori di dimensione assegnati sono mappati"
 
 msgid "All Suppliers"
 msgstr "Tutti i fornitori"
@@ -1779,6 +1794,9 @@ msgstr "Il rilascio automatico deve essere abilitato per avviare un lavoro autom
 msgid "Auto Start Job"
 msgstr "Avvia automaticamente il lavoro"
 
+msgid "Auto-create"
+msgstr "Crea automaticamente"
+
 msgid "Auto-generated QR Code"
 msgstr "Codice QR generato automaticamente"
 
@@ -2248,6 +2266,9 @@ msgstr "Logo Carbon"
 
 msgid "Carbon only"
 msgstr "Solo Carbon"
+
+msgid "Carbon value"
+msgstr "Valore Carbon"
 
 msgid "Carbon Value"
 msgstr "Valore Carbon"
@@ -3141,6 +3162,9 @@ msgstr "Impossibile caricare i documenti"
 
 msgid "Couldn't load related documents. Refresh before creating a new one to avoid duplicates."
 msgstr "Impossibile caricare i documenti correlati. Aggiorna prima di crearne uno nuovo per evitare duplicati."
+
+msgid "Couldn't load the provider's dimension targets — check the connection and reload."
+msgstr "Impossibile caricare i target di dimensione del provider — verifica la connessione e ricarica."
 
 msgid "Couldn't reschedule the job. Please try again."
 msgstr "Impossibile ripianificare il lavoro. Riprova."
@@ -4321,6 +4345,12 @@ msgstr "dimensione"
 msgid "Dimension"
 msgstr "Dimensione"
 
+msgid "Dimension slots"
+msgstr "Slot dimensionali"
+
+msgid "Dimension values on posted journals that have no provider mapping yet."
+msgstr "Valori di dimensione nei journal contabilizzati che non hanno ancora un mapping provider."
+
 msgid "dimensions"
 msgstr "dimensioni"
 
@@ -5321,6 +5351,9 @@ msgstr "Motivo dell'Esenzione"
 
 msgid "Existing mappings. Pick a different provider account to re-map."
 msgstr "Mappature esistenti. Seleziona un conto provider diverso per rimappare."
+
+msgid "Existing mappings. Pick a different provider option to re-map."
+msgstr "Mapping esistenti. Scegli un'opzione provider diversa per rimappare."
 
 msgid "Expand"
 msgstr "Espandi"
@@ -7723,6 +7756,9 @@ msgstr "Mappa il tuo processo attuale, i sistemi e i dati"
 msgid "Mapped accounts"
 msgstr "Conti mappati"
 
+msgid "Mapped values"
+msgstr "Valori mappati"
+
 #. placeholder {0}: i18n._(step.gate)
 msgid "Mark \"{0}\" as passed?"
 msgstr "Contrassegna \"{0}\" come superato?"
@@ -7795,6 +7831,9 @@ msgstr "Corrisponde a uno qualsiasi (OR)"
 
 msgid "Match by code"
 msgstr "Abbina per codice"
+
+msgid "Match by name"
+msgstr "Corrispondi per nome"
 
 msgid "Match none"
 msgstr "Non corrispondere a nessuno"
@@ -8621,6 +8660,12 @@ msgstr "Nessun giorno libero programmato"
 msgid "No default attachments yet."
 msgstr "Nessun allegato predefinito ancora."
 
+msgid "No dimension slots configured"
+msgstr "Nessuno slot dimensionale configurato"
+
+msgid "No dimension values mapped yet"
+msgstr "Nessun valore di dimensione mappato ancora"
+
 msgid "No draft make method for this item yet."
 msgstr "Nessun metodo di creazione della bozza per questo elemento ancora."
 
@@ -8854,6 +8899,9 @@ msgstr "Nessuna transazione in questo periodo"
 
 msgid "No unmapped accounts match a provider code"
 msgstr "Nessun conto non mappato corrisponde a un codice provider"
+
+msgid "No unmapped values match a provider option name"
+msgstr "Nessun valore non mappato corrisponde al nome di un'opzione provider"
 
 msgid "No value needed"
 msgstr "Nessun valore necessario"
@@ -9443,6 +9491,9 @@ msgstr "Pareto per Tipo"
 msgid "Park as error"
 msgstr "Parcheggia come errore"
 
+msgid "Park the journal with a warning until the value is mapped"
+msgstr "Parcheggia il journal con un avvertimento fino a quando il valore non è mappato"
+
 msgid "part"
 msgstr "pezzi"
 
@@ -9637,6 +9688,9 @@ msgstr "Stampanti fisiche disponibili per l'assegnazione."
 
 msgid "Pick"
 msgstr "Preleva"
+
+msgid "Pick a Carbon dimension and the provider target it posts to. Auto-create adds missing provider options by name at push time."
+msgstr "Scegli una dimensione Carbon e il target provider su cui viene contabilizzato. La creazione automatica aggiunge le opzioni provider mancanti per nome al momento del push."
 
 msgid "Pick a column to sort by"
 msgstr "Scegli una colonna per ordinare"
@@ -10113,6 +10167,9 @@ msgstr "Proprietà"
 msgid "Proposed matches where the Carbon account number equals the provider account code exactly."
 msgstr "Abbinamenti proposti in cui il numero di conto Carbon corrisponde esattamente al codice conto provider."
 
+msgid "Proposed matches where the Carbon dimension value's name equals a provider option name exactly."
+msgstr "Corrispondenze proposte in cui il nome del valore di dimensione Carbon è esattamente uguale al nome di un'opzione provider."
+
 msgid "Protect the go-live date"
 msgstr "Proteggi la data di go-live"
 
@@ -10127,6 +10184,9 @@ msgstr "Provider"
 
 msgid "Provider account"
 msgstr "Account provider"
+
+msgid "Provider option"
+msgstr "Opzione provider"
 
 msgid "Public"
 msgstr "Pubblico"
@@ -10271,6 +10331,9 @@ msgstr "Invia i giornali registrati per i tipi di origine abilitati al provider 
 
 msgid "Push record changes to external systems the moment they happen."
 msgstr "Invia le modifiche dei record ai sistemi esterni nel momento in cui si verificano."
+
+msgid "Push the journal without the dimension"
+msgstr "Contabilizza il journal senza la dimensione"
 
 msgid "Push to accounting"
 msgstr "Invia alla contabilità"
@@ -10780,6 +10843,9 @@ msgstr "Rimuovi parte"
 msgid "Remove slide"
 msgstr "Rimuovi diapositiva"
 
+msgid "Remove slot"
+msgstr "Rimuovi slot"
+
 msgid "Remove sort by column"
 msgstr "Rimuovi ordinamento per colonna"
 
@@ -11089,6 +11155,9 @@ msgstr "Numero RFQ"
 msgid "RFQs"
 msgstr "RFQ"
 
+msgid "Ride Carbon dimensions along on pushed journals. Each slot maps one Carbon dimension to one provider analytics target; the value mapping below pairs individual dimension values with provider options."
+msgstr "Trasporta le dimensioni Carbon insieme nei journal contabilizzati. Ogni slot mappa una dimensione Carbon a un target di analisi provider; il mapping dei valori sottostante associa i singoli valori di dimensione alle opzioni provider."
+
 msgid "Right item"
 msgstr "Elemento destro"
 
@@ -11335,6 +11404,9 @@ msgstr "Salva applicazioni"
 
 msgid "Save contacts"
 msgstr "Salva contatti"
+
+msgid "Save dimension settings"
+msgstr "Salva impostazioni dimensionali"
 
 msgid "Save Method"
 msgstr "Salva Metodo"
@@ -11601,6 +11673,9 @@ msgstr "Seleziona tipi di cliente"
 msgid "Select customers"
 msgstr "Seleziona clienti"
 
+msgid "Select dimension"
+msgstr "Seleziona dimensione"
+
 msgid "Select Employee"
 msgstr "Seleziona Dipendente"
 
@@ -11639,6 +11714,12 @@ msgstr "Seleziona Stampante"
 
 msgid "Select provider account"
 msgstr "Seleziona account provider"
+
+msgid "Select provider target"
+msgstr "Seleziona target provider"
+
+msgid "Select provider value"
+msgstr "Seleziona valore provider"
 
 msgid "Select Quantities"
 msgstr "Seleziona Quantità"
@@ -13327,6 +13408,9 @@ msgstr "La procedura che i tecnici seguono quando viene eseguita questa manutenz
 msgid "The processes this work center can run; appears in process-pickers when scheduling operations, and limits which jobs can route through this work center."
 msgstr "I processi che questo centro di lavoro può eseguire; appare nei selezionatori di processo durante la programmazione delle operazioni e limita quali lavori possono instradare attraverso questo centro di lavoro."
 
+msgid "The provider offers no dimension targets. Enable the feature in the provider first (e.g. tracking categories, class tracking, or fields)."
+msgstr "Il provider non offre target di dimensione. Abilita prima la funzione nel provider (ad es. categorie di tracciamento, tracciamento di classe o campi)."
+
 msgid "The quantity breakpoints this line is priced at; each column carries its own per-unit price for buyer–supplier negotiation and for converting to downstream documents."
 msgstr "I punti di interruzione della quantità a cui è quotata questa riga; ogni colonna porta il suo prezzo unitario per la negoziazione acquirente-fornitore e la conversione ai documenti a valle."
 
@@ -14164,8 +14248,14 @@ msgstr "Sblocca"
 msgid "Unmapped accounts"
 msgstr "Account non mappati"
 
+msgid "Unmapped dimension values"
+msgstr "Valori di dimensione non mappati"
+
 msgid "Unmapped Extracted Lines"
 msgstr "Linee Estratte Non Mappate"
+
+msgid "Unmapped values"
+msgstr "Valori non mappati"
 
 msgid "Unmatched"
 msgstr "Non abbinato"

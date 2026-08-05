@@ -3,6 +3,7 @@ import { ProviderID } from "../../core/models";
 import type {
   AccountingEntityType,
   AuthProvider,
+  DimensionTarget,
   GlobalSyncConfig,
   ListChangesResult,
   ProviderCapabilities,
@@ -40,6 +41,20 @@ export const RILLET_API_VERSION = "4";
 
 /** Rillet's page-size cap for cursor-paginated list endpoints. */
 export const RILLET_PAGE_SIZE = 100;
+
+/** Dimension slot target prefix: `field:<fieldId>` (Rillet Field uuid). */
+const RILLET_FIELD_TARGET_PREFIX = "field:";
+
+export function buildRilletFieldTarget(fieldId: string): string {
+  return `${RILLET_FIELD_TARGET_PREFIX}${fieldId}`;
+}
+
+/** The Field uuid inside a `field:<id>` target; null otherwise. */
+export function parseRilletFieldTarget(target: string): string | null {
+  if (!target.startsWith(RILLET_FIELD_TARGET_PREFIX)) return null;
+  const fieldId = target.slice(RILLET_FIELD_TARGET_PREFIX.length);
+  return fieldId.length > 0 ? fieldId : null;
+}
 
 // /********************************************************\
 // *              RFC 9457 problem parsing                  *
@@ -536,6 +551,93 @@ export class RilletProvider extends BaseProvider {
       console.error("Failed to fetch Rillet subsidiaries:", error);
       return [];
     }
+  }
+
+  // =================================================================
+  // Fields (dimensions) — verified v4 surface (spec changelog 2026-08-04)
+  // =================================================================
+
+  /**
+   * Fetch the Rillet Field definitions with their pick-list values
+   * (GET /fields → `{ fields: [...] }`). The endpoint is documented
+   * unpaginated, but a cursor is followed defensively if one ever
+   * appears. Throws a structured error on API failure.
+   */
+  async listFields(): Promise<Rillet.Field[]> {
+    const fields: Rillet.Field[] = [];
+    let cursor: string | undefined;
+
+    do {
+      const url = `/fields${
+        cursor ? `?cursor=${encodeURIComponent(cursor)}` : ""
+      }`;
+      const response = await this.request<Record<string, unknown>>("GET", url);
+      if (response.error) {
+        throwRilletApiError("list fields", response);
+      }
+
+      const data = response.data ?? {};
+      fields.push(...((data.fields as Rillet.Field[] | undefined) ?? []));
+
+      const pagination = (
+        data as { pagination?: { next_cursor?: string | null } }
+      ).pagination;
+      cursor = pagination?.next_cursor ?? undefined;
+    } while (cursor);
+
+    return fields;
+  }
+
+  /**
+   * The journal dimension targets this org supports: one
+   * `field:<fieldId>` target per Rillet Field (dimension-native — no
+   * structural cap). Returns [] on failure, mirroring the forgiving
+   * settings-surface contract of listChartOfAccounts.
+   */
+  async journalDimensionTargets(): Promise<DimensionTarget[]> {
+    try {
+      const fields = await this.listFields();
+      return fields.map((field) => ({
+        id: buildRilletFieldTarget(field.id),
+        label: field.name,
+        capacity: 1
+      }));
+    } catch (error) {
+      console.error("Failed to fetch Rillet fields:", error);
+      return [];
+    }
+  }
+
+  /**
+   * Upsert a Field pick-list value BY NAME
+   * (POST /fields/{id}/values `{ name }`) — Rillet returns the FULL Field
+   * including the (created or pre-existing) value's uuid. Naturally
+   * idempotent, so no Idempotency-Key is needed. Returns the value; throws
+   * when Rillet accepts the write but the value cannot be found on the
+   * returned Field (contract drift — fail loud, not with a broken ref).
+   */
+  async upsertFieldValue(
+    fieldId: string,
+    name: string
+  ): Promise<Rillet.FieldValue> {
+    const field = await this.writeEntity<Rillet.Field>({
+      method: "POST",
+      path: `/fields/${fieldId}/values`,
+      envelopeKey: "field",
+      operation: "upsert field value",
+      payload: { name }
+    });
+
+    const value = (field.values ?? []).find(
+      (candidate) => candidate.name === name
+    );
+    if (!value) {
+      throw new Error(
+        `Rillet accepted the field-value upsert but "${name}" is not on the returned field ${fieldId}`
+      );
+    }
+
+    return value;
   }
 
   /** All Rillet customers (cursor-drained). Throws on API failure. */

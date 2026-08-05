@@ -213,7 +213,11 @@ export namespace Qbo {
   export const JournalEntryLineDetailSchema = z.object({
     /** QBO journal lines are unsigned; the side lives here. */
     PostingType: z.enum(["Debit", "Credit"]),
-    AccountRef: RefSchema
+    AccountRef: RefSchema,
+    /** Dimension slot target "class" (QBO Class entity). */
+    ClassRef: RefSchema.optional(),
+    /** Dimension slot target "department" (QBO Department entity). */
+    DepartmentRef: RefSchema.optional()
   });
 
   export type JournalEntryLineDetail = z.infer<
@@ -242,6 +246,34 @@ export namespace Qbo {
   });
 
   export type JournalEntry = z.infer<typeof JournalEntrySchema>;
+
+  /**
+   * QBO Class — the class-tracking analytics entity journal lines
+   * reference via `JournalEntryLineDetail.ClassRef`. Feature-gated by the
+   * Intuit plan; orgs without class tracking reject the query.
+   */
+  export const ClassSchema = z.object({
+    Id: z.string(),
+    SyncToken: z.string(),
+    Name: z.string(),
+    FullyQualifiedName: z.string().optional(),
+    Active: z.boolean().optional(),
+    MetaData: MetaDataSchema.optional()
+  });
+
+  export type Class = z.infer<typeof ClassSchema>;
+
+  /** QBO Department (a.k.a. Location) — referenced via `DepartmentRef`. */
+  export const DepartmentSchema = z.object({
+    Id: z.string(),
+    SyncToken: z.string(),
+    Name: z.string(),
+    FullyQualifiedName: z.string().optional(),
+    Active: z.boolean().optional(),
+    MetaData: MetaDataSchema.optional()
+  });
+
+  export type Department = z.infer<typeof DepartmentSchema>;
 
   /**
    * Chart-of-accounts entry. `AcctNum` is optional in QBO — the account

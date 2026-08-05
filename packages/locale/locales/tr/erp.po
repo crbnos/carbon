@@ -78,6 +78,10 @@ msgstr "{0} satır eşlenecek"
 msgid "{0} of {1} posting accounts mapped"
 msgstr "{0} / {1} deftere nakil hesapları eşlendi"
 
+#. placeholder {0}: rows.length
+msgid "{0} of {maxSlots} provider slots used"
+msgstr "{0}/{maxSlots} sağlayıcı yuvası kullanıldı"
+
 #. placeholder {0}: history.length
 msgid "{0} orders"
 msgstr "{0} sipariş"
@@ -106,6 +110,11 @@ msgstr "{0} deftere geçmemiş belge"
 #. placeholder {0}: file.name
 msgid "{0} uploaded successfully"
 msgstr "{0} başarıyla yüklendi"
+
+#. placeholder {0}: dimension.valueCount
+#. placeholder {0}: selectedDimension?.valueCount
+msgid "{0} values"
+msgstr "{0} değer"
 
 #. placeholder {0}: unmatchedValues.length
 msgid "{0} values missing"
@@ -808,6 +817,9 @@ msgstr "Sevkiyat Ekle"
 msgid "Add Shipping"
 msgstr "Nakliye Ekle"
 
+msgid "Add slot"
+msgstr "Yuva ekle"
+
 msgid "Add Spare Part"
 msgstr "Yedek Parça Ekle"
 
@@ -940,6 +952,9 @@ msgstr "Tüm deftere nakil hesapları haritalanmış"
 
 msgid "All rows imported — {inserted} inserted, {updated} updated."
 msgstr "{inserted} eklendi, {updated} güncellendi — tüm satırlar içe aktarıldı."
+
+msgid "All slotted dimension values are mapped"
+msgstr "Tüm boyut değerleri eşlendi"
 
 msgid "All Suppliers"
 msgstr "Tüm Tedarikçiler"
@@ -1779,6 +1794,9 @@ msgstr "Bir işi otomatik olarak başlatmak için Otomatik Serbest Bırakma etki
 msgid "Auto Start Job"
 msgstr "Otomatik İş Başlatma"
 
+msgid "Auto-create"
+msgstr "Otomatik oluştur"
+
 msgid "Auto-generated QR Code"
 msgstr "Otomatik oluşturulan QR kodu"
 
@@ -2248,6 +2266,9 @@ msgstr "Carbon Logosu"
 
 msgid "Carbon only"
 msgstr "Yalnızca Carbon"
+
+msgid "Carbon value"
+msgstr "Carbon değeri"
 
 msgid "Carbon Value"
 msgstr "Carbon Değeri"
@@ -3141,6 +3162,9 @@ msgstr "Belgeler yüklenemedi"
 
 msgid "Couldn't load related documents. Refresh before creating a new one to avoid duplicates."
 msgstr "İlgili belgeler yüklenemedi. Yeni bir tane oluşturmadan önce yenileyerek tekrarları önleyin."
+
+msgid "Couldn't load the provider's dimension targets — check the connection and reload."
+msgstr "Sağlayıcının boyut hedefleri yüklenemedi — bağlantıyı kontrol edin ve sayfayı yeniden yükleyin."
 
 msgid "Couldn't reschedule the job. Please try again."
 msgstr "İş yeniden planlanamadı. Lütfen tekrar deneyin."
@@ -4321,6 +4345,12 @@ msgstr "boyut"
 msgid "Dimension"
 msgstr "Boyut"
 
+msgid "Dimension slots"
+msgstr "Boyut yuvaları"
+
+msgid "Dimension values on posted journals that have no provider mapping yet."
+msgstr "Henüz sağlayıcı eşlemesi olmayan defterlerdeki boyut değerleri."
+
 msgid "dimensions"
 msgstr "boyutlar"
 
@@ -5321,6 +5351,9 @@ msgstr "İstisnai Nedeni"
 
 msgid "Existing mappings. Pick a different provider account to re-map."
 msgstr "Mevcut haritalamalar. Yeniden haritalamak için farklı bir sağlayıcı hesabı seçin."
+
+msgid "Existing mappings. Pick a different provider option to re-map."
+msgstr "Mevcut eşlemeler. Yeniden eşlemek için farklı bir sağlayıcı seçeneği seçin."
 
 msgid "Expand"
 msgstr "Genişlet"
@@ -7723,6 +7756,9 @@ msgstr "Mevcut sürecinizi, sistemlerinizi ve verilerinizi eşleyin"
 msgid "Mapped accounts"
 msgstr "Haritalanan hesaplar"
 
+msgid "Mapped values"
+msgstr "Eşlenen değerler"
+
 #. placeholder {0}: i18n._(step.gate)
 msgid "Mark \"{0}\" as passed?"
 msgstr "\"{0}\" olarak işaretlensin mi?"
@@ -7795,6 +7831,9 @@ msgstr "Herhangi bir eşleşme (VEYA)"
 
 msgid "Match by code"
 msgstr "Koda göre eşleştir"
+
+msgid "Match by name"
+msgstr "Ada göre eşleştir"
 
 msgid "Match none"
 msgstr "Hiçbiriyle eşleşme"
@@ -8621,6 +8660,12 @@ msgstr "Planlanmış izin yok"
 msgid "No default attachments yet."
 msgstr "Henüz varsayılan ek dosya yok."
 
+msgid "No dimension slots configured"
+msgstr "Yapılandırılmış boyut yuvası yok"
+
+msgid "No dimension values mapped yet"
+msgstr "Henüz hiçbir boyut değeri eşlenmedi"
+
 msgid "No draft make method for this item yet."
 msgstr "Bu öğe için henüz taslak yapım yöntemi yok."
 
@@ -8854,6 +8899,9 @@ msgstr "Bu dönemde işlem yok"
 
 msgid "No unmapped accounts match a provider code"
 msgstr "Haritalanmamış hesaplar sağlayıcı kodundan herhangi biriyle uyuşmıyor"
+
+msgid "No unmapped values match a provider option name"
+msgstr "Eşlenmemiş değerler hiçbir sağlayıcı seçeneğinin adıyla eşleşmiyor"
 
 msgid "No value needed"
 msgstr "Değer gerekmiyor"
@@ -9443,6 +9491,9 @@ msgstr "Tür Tipine Göre Pareto"
 msgid "Park as error"
 msgstr "Hata olarak kaydet"
 
+msgid "Park the journal with a warning until the value is mapped"
+msgstr "Değer eşlenene kadar defterin uyarıyla beklet"
+
 msgid "part"
 msgstr "parçalar"
 
@@ -9637,6 +9688,9 @@ msgstr "Atama için kullanılabilecek fiziksel yazıcılar."
 
 msgid "Pick"
 msgstr "Topla"
+
+msgid "Pick a Carbon dimension and the provider target it posts to. Auto-create adds missing provider options by name at push time."
+msgstr "Bir Carbon boyutu ve gönderdiği sağlayıcı hedefini seçin. Otomatik oluştur, gönderim sırasında eksik sağlayıcı seçeneklerini ada göre ekler."
 
 msgid "Pick a column to sort by"
 msgstr "Sıralamak için bir sütun seçin"
@@ -10113,6 +10167,9 @@ msgstr "Özellikler"
 msgid "Proposed matches where the Carbon account number equals the provider account code exactly."
 msgstr "Carbon hesap numarasının sağlayıcı hesap koduyla tam olarak eşleştiği önerilen eşleşmeler."
 
+msgid "Proposed matches where the Carbon dimension value's name equals a provider option name exactly."
+msgstr "Carbon boyut değerinin adı sağlayıcı seçeneğinin adıyla tamamen eşleştiği önerilen eşlemeler."
+
 msgid "Protect the go-live date"
 msgstr "Go-live tarihini koruyun"
 
@@ -10127,6 +10184,9 @@ msgstr "Sağlayıcı"
 
 msgid "Provider account"
 msgstr "Sağlayıcı hesabı"
+
+msgid "Provider option"
+msgstr "Sağlayıcı seçeneği"
 
 msgid "Public"
 msgstr "Herkese açık"
@@ -10271,6 +10331,9 @@ msgstr "Etkinleştirilen kaynak türleri için yayınlanan günlükleri muhasebe
 
 msgid "Push record changes to external systems the moment they happen."
 msgstr "Kayıt değişikliklerini gerçekleştiği anda harici sistemlere gönderin."
+
+msgid "Push the journal without the dimension"
+msgstr "Boyutu olmadan defterin gönder"
 
 msgid "Push to accounting"
 msgstr "Muhasebede gönder"
@@ -10780,6 +10843,9 @@ msgstr "Parçayı kaldır"
 msgid "Remove slide"
 msgstr "Slaytı kaldır"
 
+msgid "Remove slot"
+msgstr "Yuva kaldır"
+
 msgid "Remove sort by column"
 msgstr "Sıralamayı kaldır"
 
@@ -11089,6 +11155,9 @@ msgstr "Teklif Numarası"
 msgid "RFQs"
 msgstr "Teklif Talepleri"
 
+msgid "Ride Carbon dimensions along on pushed journals. Each slot maps one Carbon dimension to one provider analytics target; the value mapping below pairs individual dimension values with provider options."
+msgstr "Carbon boyutlarını gönderilen defterlerle birlikte taşıyın. Her yuva bir Carbon boyutunu bir sağlayıcı analitik hedefine eşler; aşağıdaki değer eşlemesi bireysel boyut değerlerini sağlayıcı seçenekleriyle eşleştirir."
+
 msgid "Right item"
 msgstr "Sağ öğe"
 
@@ -11335,6 +11404,9 @@ msgstr "Uygulamaları kaydet"
 
 msgid "Save contacts"
 msgstr "Kişileri kaydet"
+
+msgid "Save dimension settings"
+msgstr "Boyut ayarlarını kaydet"
 
 msgid "Save Method"
 msgstr "Yöntemi Kaydet"
@@ -11601,6 +11673,9 @@ msgstr "Müşteri türü seçin"
 msgid "Select customers"
 msgstr "Müşterileri seçin"
 
+msgid "Select dimension"
+msgstr "Boyut seç"
+
 msgid "Select Employee"
 msgstr "Çalışan Seç"
 
@@ -11639,6 +11714,12 @@ msgstr "Yazıcı Seçin"
 
 msgid "Select provider account"
 msgstr "Sağlayıcı hesabı seç"
+
+msgid "Select provider target"
+msgstr "Sağlayıcı hedefini seç"
+
+msgid "Select provider value"
+msgstr "Sağlayıcı değerini seç"
 
 msgid "Select Quantities"
 msgstr "Miktarları Seçin"
@@ -13327,6 +13408,9 @@ msgstr "Teknikerin bu bakım gerçekleştirildiğinde izlediği prosedür; krono
 msgid "The processes this work center can run; appears in process-pickers when scheduling operations, and limits which jobs can route through this work center."
 msgstr "Bu iş merkezinin çalıştırabileceği süreçler; işlem planlanırken işlem seçicilerinde görünür ve hangi işlerin bu iş merkezi aracılığıyla yönlendirilebileceğini sınırlar."
 
+msgid "The provider offers no dimension targets. Enable the feature in the provider first (e.g. tracking categories, class tracking, or fields)."
+msgstr "Sağlayıcı boyut hedefleri sunmaz. Önce sağlayıcıda özelliği etkinleştirin (örneğin, izleme kategorileri, sınıf izleme veya alanlar)."
+
 msgid "The quantity breakpoints this line is priced at; each column carries its own per-unit price for buyer–supplier negotiation and for converting to downstream documents."
 msgstr "Bu satırın fiyatlandırıldığı miktar kırılım noktaları; her sütun, alıcı-tedarikçi müzakere ve aşağı akış belgelere dönüştürme için kendi birim fiyatını taşır."
 
@@ -14164,8 +14248,14 @@ msgstr "Kilidi Aç"
 msgid "Unmapped accounts"
 msgstr "Eşleştirilmemiş hesaplar"
 
+msgid "Unmapped dimension values"
+msgstr "Eşlenmemiş boyut değerleri"
+
 msgid "Unmapped Extracted Lines"
 msgstr "Eşlenmemiş Çıkarılan Satırlar"
+
+msgid "Unmapped values"
+msgstr "Eşlenmemiş değerler"
 
 msgid "Unmatched"
 msgstr "Eşleşmemiş"

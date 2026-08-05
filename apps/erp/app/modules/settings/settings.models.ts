@@ -520,6 +520,93 @@ export const postingSyncSettingsValidator = z.object({
   lockDate: zfd.text(z.string().optional())
 });
 
+/**
+ * Saves the dimension-slot configuration (Dimensions tab): which Carbon
+ * dimensions ride along on pushed journals and which provider analytics
+ * target each one maps to. `slots` is a repeated JSON-encoded hidden field
+ * (per the bulk account-mapping precedent); zero slots is a valid save
+ * (dimension sync off). The action re-validates the slots against the
+ * provider's declared targets via validateDimensionSlots before writing.
+ */
+const dimensionSlotEntrySchema = z.object({
+  dimensionId: z.string().min(1),
+  target: z.string().min(1),
+  autoCreate: z.boolean().optional()
+});
+
+export const dimensionSlotsUpdateValidator = z.object({
+  intent: z.literal("update-dimension-slots"),
+  onUnmappedDimensionValue: z.enum(["warn", "drop"]),
+  slots: zfd.repeatable(
+    z.array(
+      z
+        .string()
+        .transform((value, ctx) => {
+          try {
+            return JSON.parse(value);
+          } catch {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              message: "Invalid dimension slot payload"
+            });
+            return z.NEVER;
+          }
+        })
+        .pipe(dimensionSlotEntrySchema)
+    )
+  )
+});
+
+/**
+ * Saves one dimension-value mapping row (Carbon `<dimensionId>:<valueId>`
+ * → provider option id) from the Dimensions tab. externalName is display
+ * metadata captured from the selected provider option, mirroring the
+ * account-mapping upsert.
+ */
+export const dimensionValueMappingUpsertValidator = z.object({
+  intent: z.literal("upsert-dimension-value-mapping"),
+  dimensionId: z.string().min(1, { message: "Dimension is required" }),
+  valueId: z.string().min(1, { message: "Value is required" }),
+  externalId: z.string().min(1, { message: "Provider value is required" }),
+  externalName: zfd.text(z.string().optional())
+});
+
+const dimensionValueMappingEntrySchema = z.object({
+  dimensionId: z.string().min(1),
+  valueId: z.string().min(1),
+  externalId: z.string().min(1),
+  externalName: z.string().optional()
+});
+
+/**
+ * Confirm-all from the match-by-name drawer. `mappings` is a repeated
+ * JSON-encoded form field — the same shape/precedent as
+ * accountMappingBulkUpsertValidator.
+ */
+export const dimensionValueMappingBulkUpsertValidator = z.object({
+  intent: z.literal("bulk-upsert-dimension-value-mappings"),
+  mappings: zfd.repeatable(
+    z
+      .array(
+        z
+          .string()
+          .transform((value, ctx) => {
+            try {
+              return JSON.parse(value);
+            } catch {
+              ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: "Invalid dimension value mapping payload"
+              });
+              return z.NEVER;
+            }
+          })
+          .pipe(dimensionValueMappingEntrySchema)
+      )
+      .min(1, { message: "No dimension value mappings to save" })
+  )
+});
+
 export const quoteLineCategoryMarkupsSettingsValidator = z.object({
   materialCost: zfd.numeric(z.number().min(0).default(0)),
   partCost: zfd.numeric(z.number().min(0).default(0)),

@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { validateDimensionSlots } from "../../../core/dimension-mapping";
 import {
   POSTING_SYNC_DEFAULT_SOURCE_TYPES,
   POSTING_SYNC_EXCLUDED_SOURCE_TYPES
@@ -18,6 +19,11 @@ import {
   runJournalEntryPreflight
 } from "../../../core/posting";
 import type { Accounting } from "../../../core/types";
+import {
+  buildXeroTrackingTarget,
+  parseXeroTrackingTarget,
+  XERO_MAX_JOURNAL_DIMENSION_SLOTS
+} from "../provider";
 import { mapJournalEntryToManualJournal } from "./journal-entry";
 
 // 3-line balanced fixture: Dr Inventory 150.00, Dr Freight 25.50,
@@ -520,5 +526,143 @@ describe("isBalancedJournal", () => {
       false
     );
     expect(isBalancedJournal([])).toBe(true);
+  });
+});
+
+// ── Dimension slots → line Tracking (Phase 2) ────────────────────────────────
+
+describe("mapJournalEntryToManualJournal — dimensions", () => {
+  const LOCATION_DIM = "dim_loc";
+  const COST_CENTER_DIM = "dim_cc";
+  const REGION_CATEGORY = "11111111-1111-1111-1111-111111111111";
+  const CC_CATEGORY = "22222222-2222-2222-2222-222222222222";
+
+  const dimensionedJournal = makeJournal({
+    lines: [
+      {
+        id: "line-1",
+        accountId: "acc-inventory",
+        amount: 150,
+        description: "Inventory",
+        dimensions: [
+          { dimensionId: LOCATION_DIM, valueId: "loc_atl" },
+          { dimensionId: COST_CENTER_DIM, valueId: "cc_ops" }
+        ]
+      },
+      {
+        id: "line-2",
+        accountId: "acc-accrual",
+        amount: -150,
+        description: null,
+        dimensions: [{ dimensionId: LOCATION_DIM, valueId: "loc_bos" }]
+      }
+    ]
+  });
+
+  // Two slots — Xero's org-wide cap on active tracking categories
+  const slots = [
+    { dimensionId: LOCATION_DIM, target: `tracking:${REGION_CATEGORY}` },
+    { dimensionId: COST_CENTER_DIM, target: `tracking:${CC_CATEGORY}` }
+  ];
+
+  it("attaches Tracking (category id + option id) per slotted dimension (golden fixture, 2 categories)", () => {
+    const payload = mapJournalEntryToManualJournal({
+      journal: dimensionedJournal,
+      accountCodesById: ACCOUNT_CODES,
+      pushDate: "2026-07-01",
+      dimensions: {
+        slots,
+        optionIdsByValue: new Map([
+          ["dim_loc:loc_atl", "opt-atl"],
+          ["dim_loc:loc_bos", "opt-bos"],
+          ["dim_cc:cc_ops", "opt-ops"]
+        ])
+      }
+    });
+
+    expect(payload.JournalLines?.[0]?.Tracking).toEqual([
+      { TrackingCategoryID: REGION_CATEGORY, TrackingOptionID: "opt-atl" },
+      { TrackingCategoryID: CC_CATEGORY, TrackingOptionID: "opt-ops" }
+    ]);
+    expect(payload.JournalLines?.[1]?.Tracking).toEqual([
+      { TrackingCategoryID: REGION_CATEGORY, TrackingOptionID: "opt-bos" }
+    ]);
+  });
+
+  it("omits Tracking for unmapped values (drop path) and when no dimension args are passed", () => {
+    const dropped = mapJournalEntryToManualJournal({
+      journal: dimensionedJournal,
+      accountCodesById: ACCOUNT_CODES,
+      pushDate: "2026-07-01",
+      dimensions: {
+        slots,
+        optionIdsByValue: new Map([["dim_loc:loc_atl", "opt-atl"]])
+      }
+    });
+    expect(dropped.JournalLines?.[0]?.Tracking).toEqual([
+      { TrackingCategoryID: REGION_CATEGORY, TrackingOptionID: "opt-atl" }
+    ]);
+    expect(dropped.JournalLines?.[1]?.Tracking).toBeUndefined();
+
+    const legacy = mapJournalEntryToManualJournal({
+      journal: dimensionedJournal,
+      accountCodesById: ACCOUNT_CODES,
+      pushDate: "2026-07-01"
+    });
+    expect(legacy.JournalLines?.[0]?.Tracking).toBeUndefined();
+  });
+
+  it("ignores slots whose target is not a tracking target", () => {
+    const payload = mapJournalEntryToManualJournal({
+      journal: dimensionedJournal,
+      accountCodesById: ACCOUNT_CODES,
+      pushDate: "2026-07-01",
+      dimensions: {
+        slots: [{ dimensionId: LOCATION_DIM, target: "class" }],
+        optionIdsByValue: new Map([["dim_loc:loc_atl", "opt-atl"]])
+      }
+    });
+    expect(payload.JournalLines?.[0]?.Tracking).toBeUndefined();
+  });
+});
+
+describe("Xero dimension slot capacity", () => {
+  it("caps slots at Xero's 2 active tracking categories via validateDimensionSlots", () => {
+    const targets = [
+      { id: "tracking:cat-1", label: "Region", capacity: 1 },
+      { id: "tracking:cat-2", label: "Cost Center", capacity: 1 },
+      { id: "tracking:cat-3", label: "Extra", capacity: 1 }
+    ];
+
+    expect(
+      validateDimensionSlots({
+        slots: [
+          { dimensionId: "dim_a", target: "tracking:cat-1" },
+          { dimensionId: "dim_b", target: "tracking:cat-2" }
+        ],
+        targets,
+        maxSlots: XERO_MAX_JOURNAL_DIMENSION_SLOTS
+      })
+    ).toEqual([]);
+
+    const errors = validateDimensionSlots({
+      slots: [
+        { dimensionId: "dim_a", target: "tracking:cat-1" },
+        { dimensionId: "dim_b", target: "tracking:cat-2" },
+        { dimensionId: "dim_c", target: "tracking:cat-3" }
+      ],
+      targets,
+      maxSlots: XERO_MAX_JOURNAL_DIMENSION_SLOTS
+    });
+    expect(errors.some((error) => error.includes("at most 2"))).toBe(true);
+  });
+});
+
+describe("Xero tracking targets", () => {
+  it("builds and parses tracking:<categoryId> targets", () => {
+    expect(buildXeroTrackingTarget("cat-1")).toBe("tracking:cat-1");
+    expect(parseXeroTrackingTarget("tracking:cat-1")).toBe("cat-1");
+    expect(parseXeroTrackingTarget("class")).toBeNull();
+    expect(parseXeroTrackingTarget("tracking:")).toBeNull();
   });
 });

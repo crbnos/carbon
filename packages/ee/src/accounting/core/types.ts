@@ -83,6 +83,33 @@ export interface ProviderCapabilities {
   supportsWebhooks: boolean;
   /** Whether Carbon journals can be pushed as provider journal entries. */
   supportsJournalPush: boolean;
+  /**
+   * Structural cap on how many dimension slots the provider's journal
+   * lines can carry (QBO: 2 — one ClassRef + one DepartmentRef; Xero: 2 —
+   * org-wide tracking-category limit). Absent = no structural cap
+   * (Rillet Fields are dimension-native).
+   */
+  maxJournalDimensionSlots?: number;
+}
+
+/**
+ * One analytics field a provider can carry on pushed journal lines — a
+ * QBO Class/Department, a Xero tracking category, a Rillet Field. The
+ * settings UI offers only targets the provider actually declares (via
+ * `journalDimensionTargets()`), so slot config can never point at a
+ * feature the org doesn't have.
+ */
+export interface DimensionTarget {
+  /**
+   * Provider-specific target id stored on the dimension slot:
+   * QBO `"class"` / `"department"`, Xero `"tracking:<categoryId>"`,
+   * Rillet `"field:<fieldId>"`.
+   */
+  id: string;
+  /** Human label for the settings UI (e.g. the tracking category name). */
+  label: string;
+  /** Max slots that may use this target. Absent = 1. */
+  capacity?: number;
 }
 
 /**
@@ -151,6 +178,13 @@ export abstract class BaseProvider {
 
   protected creds?: ProviderCredentials;
   public auth!: AuthProvider;
+
+  /**
+   * Optional: the journal-line analytics targets this provider offers for
+   * dimension slots (see DimensionTarget). Absent = the provider carries
+   * no journal dimensions.
+   */
+  journalDimensionTargets?(): Promise<DimensionTarget[]>;
 
   abstract getSyncConfig<T extends AccountingEntityType>(
     entity: T

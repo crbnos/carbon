@@ -1,11 +1,14 @@
 import { describe, expect, it } from "vitest";
 import {
   aggregateJournalEntriesForDate,
+  collectUnmappedDimensionValues,
   getDailyConsolidationNarration,
+  getDimensionTupleKey,
   getPostingSyncSourceTypeSkipReason,
   JournalEntrySyncError,
   netJournalLinesPerAccount,
   resolvePostingSyncSettings,
+  runJournalEntryPreflight,
   toDebitSignedAmount
 } from "./posting";
 import type { Accounting } from "./types";
@@ -17,7 +20,11 @@ import type { Accounting } from "./types";
 function journal(
   id: string,
   postingDate: string,
-  lines: Array<{ accountId: string | null; amount: number }>
+  lines: Array<{
+    accountId: string | null;
+    amount: number;
+    dimensions?: Array<{ dimensionId: string; valueId: string }>;
+  }>
 ): Accounting.JournalEntry {
   return {
     id,
@@ -34,7 +41,8 @@ function journal(
       id: `${id}-line-${index}`,
       accountId: line.accountId,
       amount: line.amount,
-      description: null
+      description: null,
+      ...(line.dimensions ? { dimensions: line.dimensions } : {})
     })),
     updatedAt: "2026-07-08T12:00:00.000Z"
   };
@@ -310,5 +318,301 @@ describe("toDebitSignedAmount", () => {
       toDebitSignedAmount("Liability", 300) // Goods Received Not Invoiced
     ];
     expect(converted.reduce((a, b) => a + b, 0)).toBe(0);
+  });
+});
+
+// ── Dimension pre-flight (Phase 2, spec §3) ─────────────────────────────────
+
+const LOCATION_DIM = "dim_loc";
+const ATLANTA = { dimensionId: LOCATION_DIM, valueId: "loc_atl" };
+const BOSTON = { dimensionId: LOCATION_DIM, valueId: "loc_bos" };
+
+function dimensionSettings(onUnmapped: "warn" | "drop") {
+  return resolvePostingSyncSettings({
+    settings: {
+      postingSync: {
+        enabled: true,
+        dimensionSlots: [{ dimensionId: LOCATION_DIM, target: "class" }],
+        onUnmappedDimensionValue: onUnmapped
+      }
+    }
+  });
+}
+
+describe("collectUnmappedDimensionValues", () => {
+  const slots = [{ dimensionId: LOCATION_DIM }];
+
+  it("returns distinct slotted values with no provider mapping", () => {
+    const unmapped = collectUnmappedDimensionValues(
+      [
+        { dimensions: [ATLANTA] },
+        { dimensions: [ATLANTA, BOSTON] }, // Atlanta repeats — reported once
+        { dimensions: undefined }
+      ],
+      slots,
+      new Map()
+    );
+
+    expect(unmapped).toEqual([ATLANTA, BOSTON]);
+  });
+
+  it("ignores mapped values and unslotted dimensions entirely", () => {
+    const unmapped = collectUnmappedDimensionValues(
+      [
+        {
+          dimensions: [
+            ATLANTA,
+            { dimensionId: "dim_unslotted", valueId: "x" } // not slotted → untouched
+          ]
+        }
+      ],
+      slots,
+      new Map([["dim_loc:loc_atl", "opt-1"]])
+    );
+
+    expect(unmapped).toEqual([]);
+  });
+
+  it("returns [] when no slots are configured", () => {
+    expect(
+      collectUnmappedDimensionValues([{ dimensions: [ATLANTA] }], [], new Map())
+    ).toEqual([]);
+  });
+});
+
+describe("runJournalEntryPreflight — dimension rule", () => {
+  const accountCodesById = new Map([
+    ["acct_a", "1400"],
+    ["acct_b", "2100"]
+  ]);
+  const baseArgs = {
+    accountCodesById,
+    controlAccountIds: new Set<string>(),
+    lockDate: null
+  };
+  const dimensionedJournal = journal("j1", "2026-07-08", [
+    { accountId: "acct_a", amount: 100, dimensions: [ATLANTA] },
+    { accountId: "acct_b", amount: -100 }
+  ]);
+
+  it("parks with UNMAPPED_DIMENSION_VALUES (Warning) under the warn policy", () => {
+    const result = runJournalEntryPreflight({
+      ...baseArgs,
+      journal: dimensionedJournal,
+      settings: dimensionSettings("warn"),
+      dimensionValueMappings: new Map()
+    });
+
+    expect(result.failure?.errorCode).toBe("UNMAPPED_DIMENSION_VALUES");
+    expect(result.failure?.warning).toBe(true);
+    expect(result.failure?.metadata).toEqual({
+      unmappedDimensionValues: [ATLANTA]
+    });
+  });
+
+  it("passes and reports the dropped values under the drop policy (recorded, never silent)", () => {
+    const result = runJournalEntryPreflight({
+      ...baseArgs,
+      journal: dimensionedJournal,
+      settings: dimensionSettings("drop"),
+      dimensionValueMappings: new Map()
+    });
+
+    expect(result.failure).toBeNull();
+    if (result.failure === null) {
+      expect(result.pushDate).toBe("2026-07-08");
+      expect(result.droppedDimensionValues).toEqual([ATLANTA]);
+    }
+  });
+
+  it("passes cleanly when every slotted value is mapped", () => {
+    const result = runJournalEntryPreflight({
+      ...baseArgs,
+      journal: dimensionedJournal,
+      settings: dimensionSettings("warn"),
+      dimensionValueMappings: new Map([["dim_loc:loc_atl", "opt-1"]])
+    });
+
+    expect(result.failure).toBeNull();
+    if (result.failure === null) {
+      expect(result.droppedDimensionValues).toBeUndefined();
+    }
+  });
+
+  it("skips the rule entirely for callers that do not load dimension mappings", () => {
+    const result = runJournalEntryPreflight({
+      ...baseArgs,
+      journal: dimensionedJournal,
+      settings: dimensionSettings("warn")
+      // no dimensionValueMappings — legacy path
+    });
+
+    expect(result.failure).toBeNull();
+  });
+});
+
+// ── Dimension-tuple grouping + rounding residue (spec §4) ───────────────────
+
+describe("getDimensionTupleKey", () => {
+  it("is canonical: sorted by dimensionId, independent of input order", () => {
+    const a = getDimensionTupleKey([
+      { dimensionId: "dim_b", valueId: "2" },
+      { dimensionId: "dim_a", valueId: "1" }
+    ]);
+    const b = getDimensionTupleKey([
+      { dimensionId: "dim_a", valueId: "1" },
+      { dimensionId: "dim_b", valueId: "2" }
+    ]);
+    expect(a).toBe(b);
+    expect(a).toBe("dim_a=1|dim_b=2");
+  });
+
+  it("restricts to the slotted dimensions when provided", () => {
+    const key = getDimensionTupleKey(
+      [ATLANTA, { dimensionId: "dim_unslotted", valueId: "x" }],
+      new Set([LOCATION_DIM])
+    );
+    expect(key).toBe("dim_loc=loc_atl");
+  });
+
+  it("returns the empty tuple for lines without dimensions", () => {
+    expect(getDimensionTupleKey(undefined)).toBe("");
+    expect(getDimensionTupleKey([])).toBe("");
+  });
+});
+
+describe("aggregateJournalEntriesForDate — dimension tuples", () => {
+  it("groups by (accountId, dimension tuple): two locations produce two lines on the same account", () => {
+    const aggregate = aggregateJournalEntriesForDate({
+      batchId: "daily:xero:production-event:2026-07-08",
+      companyId: "co_1",
+      postingDate: "2026-07-08",
+      sourceType: "Production Event",
+      journals: [
+        journal("j1", "2026-07-08", [
+          { accountId: "acct_a", amount: 100, dimensions: [ATLANTA] },
+          { accountId: "acct_b", amount: -100 }
+        ]),
+        journal("j2", "2026-07-08", [
+          { accountId: "acct_a", amount: 50, dimensions: [BOSTON] },
+          { accountId: "acct_b", amount: -50 }
+        ]),
+        journal("j3", "2026-07-08", [
+          { accountId: "acct_a", amount: 25, dimensions: [ATLANTA] },
+          { accountId: "acct_b", amount: -25 }
+        ])
+      ],
+      slottedDimensionIds: [LOCATION_DIM]
+    });
+
+    expect(aggregate.journal.lines).toEqual([
+      expect.objectContaining({
+        accountId: "acct_a",
+        amount: 125,
+        dimensions: [ATLANTA]
+      }),
+      expect.objectContaining({
+        accountId: "acct_a",
+        amount: 50,
+        dimensions: [BOSTON]
+      }),
+      expect.objectContaining({ accountId: "acct_b", amount: -175 })
+    ]);
+    expect(
+      aggregate.journal.lines.reduce(
+        (sum, line) => sum + Math.round(line.amount * 100),
+        0
+      )
+    ).toBe(0);
+  });
+
+  it("keeps unslotted dimensions out of the tuple when slottedDimensionIds is provided", () => {
+    const aggregate = aggregateJournalEntriesForDate({
+      batchId: "daily:xero:2026-07-08",
+      companyId: "co_1",
+      postingDate: "2026-07-08",
+      journals: [
+        journal("j1", "2026-07-08", [
+          {
+            accountId: "acct_a",
+            amount: 100,
+            dimensions: [{ dimensionId: "dim_item", valueId: "item_1" }]
+          },
+          {
+            accountId: "acct_a",
+            amount: 50,
+            dimensions: [{ dimensionId: "dim_item", valueId: "item_2" }]
+          },
+          { accountId: "acct_b", amount: -150 }
+        ])
+      ],
+      slottedDimensionIds: [LOCATION_DIM]
+    });
+
+    // Both item-dimensioned lines collapse into one per-account bucket
+    expect(aggregate.journal.lines).toEqual([
+      expect.objectContaining({ accountId: "acct_a", amount: 150 }),
+      expect.objectContaining({ accountId: "acct_b", amount: -150 })
+    ]);
+  });
+
+  it("books post-2dp rounding residue to the rounding account when provided", () => {
+    const aggregate = aggregateJournalEntriesForDate({
+      batchId: "daily:xero:2026-07-08",
+      companyId: "co_1",
+      postingDate: "2026-07-08",
+      journals: [
+        // Sub-cent input: +10.005 rounds to 10.01, -10.004 rounds to -10.00
+        journal("j1", "2026-07-08", [
+          { accountId: "acct_a", amount: 10.005 },
+          { accountId: "acct_b", amount: -10.004 }
+        ])
+      ],
+      roundingAccountId: "acct_rounding"
+    });
+
+    const roundingLine = aggregate.journal.lines.find(
+      (line) => line.accountId === "acct_rounding"
+    );
+    expect(roundingLine?.amount).toBe(-0.01);
+    expect(
+      aggregate.journal.lines.reduce(
+        (sum, line) => sum + Math.round(line.amount * 100),
+        0
+      )
+    ).toBe(0);
+  });
+
+  it("still throws UNBALANCED_JOURNAL without a rounding account (legacy behavior)", () => {
+    expect(() =>
+      aggregateJournalEntriesForDate({
+        batchId: "daily:xero:2026-07-08",
+        companyId: "co_1",
+        postingDate: "2026-07-08",
+        journals: [
+          journal("j1", "2026-07-08", [
+            { accountId: "acct_a", amount: 10.005 },
+            { accountId: "acct_b", amount: -10.004 }
+          ])
+        ]
+      })
+    ).toThrowError(JournalEntrySyncError);
+  });
+
+  it("refuses to bury a real imbalance in the rounding account (residue cap: half a cent per line)", () => {
+    expect(() =>
+      aggregateJournalEntriesForDate({
+        batchId: "daily:xero:2026-07-08",
+        companyId: "co_1",
+        postingDate: "2026-07-08",
+        journals: [
+          journal("j1", "2026-07-08", [
+            { accountId: "acct_a", amount: 100 },
+            { accountId: "acct_b", amount: -95 }
+          ])
+        ],
+        roundingAccountId: "acct_rounding"
+      })
+    ).toThrowError(JournalEntrySyncError);
   });
 });

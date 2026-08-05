@@ -1,4 +1,14 @@
 import {
+  buildDimensionValueMappingEntityId,
+  buildDimensionValueMappingLookup,
+  ensureDimensionValueExternalIds,
+  getDimensionValueMappings,
+  loadJournalLineDimensions,
+  resolveDimensionValueLabels,
+  upsertDimensionValueMapping
+} from "../../../core/dimension-mapping";
+import type { PostingSyncDimensionSlot } from "../../../core/models";
+import {
   getPostingSyncSourceTypeSkipReason,
   JournalEntrySyncError,
   type PostingSyncSettings,
@@ -15,7 +25,7 @@ import type {
   RilletJournalEntryCreate,
   RilletWriteOmit
 } from "../models";
-import { buildRilletIdempotencyKey } from "../provider";
+import { buildRilletIdempotencyKey, parseRilletFieldTarget } from "../provider";
 import {
   loadCompanyBaseCurrency,
   loadRilletAccountCodesById,
@@ -90,6 +100,22 @@ export function getRilletLockDate(
  * - `currency` is the company base currency (Carbon journals are
  *   base-currency); `subsidiary_id` only when configured.
  */
+/**
+ * Slot config + resolved Field-value ids for the Rillet journal mapper:
+ * `slots` carry `field:<fieldId>` targets; `fieldValueIdsByValue`
+ * resolves `<dimensionId>:<valueId>` → Rillet field_value uuid. Item
+ * refs are uuid pairs (`fields: [{ field_id, field_value_id }]`) — ids,
+ * never names. Slotted line dimensions with no resolvable value are
+ * OMITTED — the warn policy parks in pre-flight before mapping, so an
+ * unresolved value here is the recorded drop path.
+ */
+export type RilletJournalDimensionArgs = {
+  slots: ReadonlyArray<
+    Pick<PostingSyncDimensionSlot, "dimensionId" | "target">
+  >;
+  fieldValueIdsByValue: ReadonlyMap<string, string>;
+};
+
 export function mapJournalEntryToRilletJournalEntry(args: {
   journal: Accounting.JournalEntry;
   accountCodesById: ReadonlyMap<string, string>;
@@ -97,6 +123,7 @@ export function mapJournalEntryToRilletJournalEntry(args: {
   subsidiaryId: string | null;
   pushDate: string;
   redatedFromDate?: string;
+  dimensions?: RilletJournalDimensionArgs;
 }): RilletJournalEntryCreate {
   const { journal } = args;
   const sign = journal.reversal ? -1 : 1;
@@ -123,6 +150,26 @@ export function mapJournalEntryToRilletJournalEntry(args: {
 
     const signedAmount = sign * line.amount;
 
+    const fieldRefs: Rillet.ItemFieldRef[] = [];
+    if (args.dimensions) {
+      for (const slot of args.dimensions.slots) {
+        const fieldId = parseRilletFieldTarget(slot.target);
+        if (!fieldId) continue;
+        const dimension = line.dimensions?.find(
+          (candidate) => candidate.dimensionId === slot.dimensionId
+        );
+        if (!dimension) continue;
+        const fieldValueId = args.dimensions.fieldValueIdsByValue.get(
+          buildDimensionValueMappingEntityId(
+            dimension.dimensionId,
+            dimension.valueId
+          )
+        );
+        if (!fieldValueId) continue; // drop policy — recorded by the caller
+        fieldRefs.push({ field_id: fieldId, field_value_id: fieldValueId });
+      }
+    }
+
     return {
       account_code: accountCode,
       amount: {
@@ -130,7 +177,8 @@ export function mapJournalEntryToRilletJournalEntry(args: {
         currency: args.currency
       },
       side: signedAmount > 0 ? ("DEBIT" as const) : ("CREDIT" as const),
-      description: line.description ?? journal.description ?? undefined
+      description: line.description ?? journal.description ?? undefined,
+      ...(fieldRefs.length > 0 ? { fields: fieldRefs } : {})
     };
   });
 
@@ -161,15 +209,90 @@ export class RilletJournalEntrySyncer extends RilletTransactionSyncer<
   RilletWriteOmit
 > {
   // Per-instance caches — a drain reuses one syncer across its claimed
-  // operations, so settings, account codes, control accounts and the base
-  // currency are each fetched at most once per drain
+  // operations, so settings, account codes, control accounts, the base
+  // currency and the dimension-value lookup are each fetched at most once
+  // per drain
   private postingSyncSettingsPromise?: Promise<PostingSyncSettings>;
   private accountCodesByIdPromise?: Promise<Map<string, string>>;
   private controlAccountIdsPromise?: Promise<Set<string>>;
   private baseCurrencyPromise?: Promise<string>;
+  private dimensionValueMappingsPromise?: Promise<Map<string, string>>;
 
   protected get pushOnlyEntityLabel(): string {
     return "Journal entries";
+  }
+
+  /**
+   * `<dimensionId>:<valueId>` → Rillet field_value uuid from the
+   * dimension-value mapping rows (entityType "dimensionValue"). Mutated
+   * in place by the autoCreate flow so later pushes in the same drain
+   * reuse the upserted values.
+   */
+  public getDimensionValueMappings(): Promise<Map<string, string>> {
+    if (!this.dimensionValueMappingsPromise) {
+      this.dimensionValueMappingsPromise = (async () => {
+        const mappings = await getDimensionValueMappings(this.database, {
+          companyId: this.companyId,
+          integration: this.provider.id
+        });
+        if (mappings.error) {
+          throw new Error(
+            `Failed to load dimension value mappings: ${mappings.error}`
+          );
+        }
+        return buildDimensionValueMappingLookup(mappings.data ?? []);
+      })();
+    }
+    return this.dimensionValueMappingsPromise;
+  }
+
+  /**
+   * autoCreate — default ON for Rillet slots (Fields are dimension-native
+   * and value upsert is the expected flow): upsert missing Field values
+   * BY NAME — the value's resolved READABLE label (part readable id for
+   * items, name for everything else) — then store the mapping and update
+   * the lookup in place. Rillet's upsert-by-name returns the full Field,
+   * so re-pushing an existing name reuses its uuid instead of duplicating.
+   */
+  private async ensureAutoCreatedDimensionValues(
+    journal: Accounting.JournalEntry,
+    settings: PostingSyncSettings,
+    mappings: Map<string, string>
+  ): Promise<void> {
+    await ensureDimensionValueExternalIds({
+      lines: journal.lines,
+      slots: settings.dimensionSlots,
+      defaultAutoCreate: true, // Rillet: Field-value upsert is the expected flow
+      mappings,
+      resolveLabels: (values) =>
+        resolveDimensionValueLabels(this.database, { values }),
+      createExternalValue: async (slot, label) => {
+        const fieldId = parseRilletFieldTarget(slot.target);
+        if (!fieldId) {
+          throw new Error(`Unknown Rillet dimension target "${slot.target}"`);
+        }
+        const value = await this.rilletProvider.upsertFieldValue(
+          fieldId,
+          label
+        );
+        return value.id;
+      },
+      persistMapping: async (value, externalId, label) => {
+        const persisted = await upsertDimensionValueMapping(this.database, {
+          companyId: this.companyId,
+          integration: this.provider.id,
+          dimensionId: value.dimensionId,
+          valueId: value.valueId,
+          externalId,
+          externalName: label
+        });
+        if (persisted.error) {
+          throw new Error(
+            `Failed to store dimension value mapping: ${persisted.error}`
+          );
+        }
+      }
+    });
   }
 
   // =================================================================
@@ -297,6 +420,11 @@ export class RilletJournalEntrySyncer extends RilletTransactionSyncer<
       .orderBy("journalLineReference", "asc")
       .execute();
 
+    const dimensionsByLine = await loadJournalLineDimensions(this.database, {
+      companyId: this.companyId,
+      journalLineIds: lines.map((line) => line.id)
+    });
+
     return {
       id: journal.id,
       companyId: journal.companyId,
@@ -308,17 +436,21 @@ export class RilletJournalEntrySyncer extends RilletTransactionSyncer<
       reversalOfId: journal.reversalOfId ?? null,
       reversedById: journal.reversedById ?? null,
       reversal,
-      lines: lines.map((line) => ({
-        id: line.id,
-        accountId: line.accountId ?? null,
-        // Carbon stores natural-balance-signed amounts; the engine expects
-        // debit-signed (see toDebitSignedAmount)
-        amount: toDebitSignedAmount(
-          line.accountClass,
-          Number(line.amount) || 0
-        ),
-        description: line.description ?? null
-      })),
+      lines: lines.map((line) => {
+        const dimensions = dimensionsByLine.get(line.id);
+        return {
+          id: line.id,
+          accountId: line.accountId ?? null,
+          // Carbon stores natural-balance-signed amounts; the engine expects
+          // debit-signed (see toDebitSignedAmount)
+          amount: toDebitSignedAmount(
+            line.accountClass,
+            Number(line.amount) || 0
+          ),
+          description: line.description ?? null,
+          ...(dimensions ? { dimensions } : {})
+        };
+      }),
       updatedAt: journal.updatedAt ?? journal.postedAt ?? journal.createdAt
     };
   }
@@ -415,16 +547,42 @@ export class RilletJournalEntrySyncer extends RilletTransactionSyncer<
     const controlAccountIds = await this.getControlAccountIds();
     const lockDate = getRilletLockDate(settings);
 
+    // Dimension slots: resolve the value-mapping lookup and upsert
+    // missing Field values (autoCreate default ON for Rillet) BEFORE
+    // pre-flight so freshly upserted values never park as unmapped
+    let dimensionValueMappings: Map<string, string> | undefined;
+    if (settings.dimensionSlots.length > 0) {
+      dimensionValueMappings = await this.getDimensionValueMappings();
+      await this.ensureAutoCreatedDimensionValues(
+        local,
+        settings,
+        dimensionValueMappings
+      );
+    }
+
     const preflight = runJournalEntryPreflight({
       journal: local,
       accountCodesById,
       controlAccountIds,
       lockDate,
-      settings
+      settings,
+      dimensionValueMappings
     });
 
     if (preflight.failure) {
       throw new JournalEntrySyncError(preflight.failure);
+    }
+
+    if (preflight.droppedDimensionValues?.length) {
+      // "drop" policy: pushed without these dimensions. The drain has no
+      // success-metadata channel yet, so the record lives in the logs.
+      console.warn(
+        "[RilletJournalEntrySyncer] dropped unmapped dimension values",
+        {
+          journalId: local.id,
+          droppedDimensionValues: preflight.droppedDimensionValues
+        }
+      );
     }
 
     return mapJournalEntryToRilletJournalEntry({
@@ -433,7 +591,15 @@ export class RilletJournalEntrySyncer extends RilletTransactionSyncer<
       currency: await this.getBaseCurrency(),
       subsidiaryId: this.rilletProvider.subsidiaryId,
       pushDate: preflight.pushDate,
-      redatedFromDate: preflight.redatedFromDate
+      redatedFromDate: preflight.redatedFromDate,
+      ...(dimensionValueMappings
+        ? {
+            dimensions: {
+              slots: settings.dimensionSlots,
+              fieldValueIdsByValue: dimensionValueMappings
+            }
+          }
+        : {})
     });
   }
 

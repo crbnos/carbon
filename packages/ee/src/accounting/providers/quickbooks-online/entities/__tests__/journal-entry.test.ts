@@ -244,6 +244,128 @@ describe("mapJournalEntryToQboJournalEntry", () => {
   });
 });
 
+// ── Dimension slots → ClassRef / DepartmentRef (Phase 2) ─────────────────────
+
+describe("mapJournalEntryToQboJournalEntry — dimensions", () => {
+  const LOCATION_DIM = "dim_loc";
+  const COST_CENTER_DIM = "dim_cc";
+
+  const dimensionedJournal = makeJournal({
+    lines: [
+      {
+        id: "line-1",
+        accountId: "acc-inventory",
+        amount: 150,
+        description: "Inventory",
+        dimensions: [
+          { dimensionId: LOCATION_DIM, valueId: "loc_atl" },
+          { dimensionId: COST_CENTER_DIM, valueId: "cc_ops" }
+        ]
+      },
+      {
+        id: "line-2",
+        accountId: "acc-accrual",
+        amount: -150,
+        description: null,
+        dimensions: [{ dimensionId: LOCATION_DIM, valueId: "loc_bos" }]
+      }
+    ]
+  });
+
+  const slots = [
+    { dimensionId: LOCATION_DIM, target: "class" },
+    { dimensionId: COST_CENTER_DIM, target: "department" }
+  ];
+
+  it("attaches ClassRef and DepartmentRef from the value mappings (golden fixture)", () => {
+    const payload = mapJournalEntryToQboJournalEntry({
+      journal: dimensionedJournal,
+      accountRefsById: ACCOUNT_REFS,
+      pushDate: "2026-07-01",
+      dimensions: {
+        slots,
+        refsByValue: new Map([
+          ["dim_loc:loc_atl", { value: "300", name: "Atlanta" }],
+          ["dim_loc:loc_bos", { value: "301", name: "Boston" }],
+          ["dim_cc:cc_ops", { value: "500", name: "Operations" }]
+        ])
+      }
+    });
+
+    expect(payload.Line[0]?.JournalEntryLineDetail).toEqual({
+      PostingType: "Debit",
+      AccountRef: { value: "84", name: "Inventory Asset" },
+      ClassRef: { value: "300", name: "Atlanta" },
+      DepartmentRef: { value: "500", name: "Operations" }
+    });
+    expect(payload.Line[1]?.JournalEntryLineDetail).toEqual({
+      PostingType: "Credit",
+      AccountRef: { value: "86", name: "GRNI Accrual" },
+      ClassRef: { value: "301", name: "Boston" }
+    });
+  });
+
+  it("omits refs for unmapped values (drop path) and for unslotted dimensions", () => {
+    const payload = mapJournalEntryToQboJournalEntry({
+      journal: dimensionedJournal,
+      accountRefsById: ACCOUNT_REFS,
+      pushDate: "2026-07-01",
+      dimensions: {
+        slots: [{ dimensionId: LOCATION_DIM, target: "class" }],
+        // Boston is unmapped → its line pushes without a ClassRef
+        refsByValue: new Map([["dim_loc:loc_atl", { value: "300" }]])
+      }
+    });
+
+    expect(payload.Line[0]?.JournalEntryLineDetail.ClassRef).toEqual({
+      value: "300"
+    });
+    // cost-center dim is not slotted → never a DepartmentRef
+    expect(
+      payload.Line[0]?.JournalEntryLineDetail.DepartmentRef
+    ).toBeUndefined();
+    expect(payload.Line[1]?.JournalEntryLineDetail.ClassRef).toBeUndefined();
+  });
+
+  it("leaves lines untouched when no dimension args are passed (legacy callers)", () => {
+    const payload = mapJournalEntryToQboJournalEntry({
+      journal: dimensionedJournal,
+      accountRefsById: ACCOUNT_REFS,
+      pushDate: "2026-07-01"
+    });
+
+    expect(payload.Line[0]?.JournalEntryLineDetail.ClassRef).toBeUndefined();
+    expect(
+      payload.Line[0]?.JournalEntryLineDetail.DepartmentRef
+    ).toBeUndefined();
+  });
+
+  it("parks with UNMAPPED_DIMENSION_VALUES in pre-flight before the mapper runs (warn policy)", () => {
+    const settings = makeSettings({
+      dimensionSlots: [{ dimensionId: LOCATION_DIM, target: "class" }],
+      onUnmappedDimensionValue: "warn"
+    });
+
+    const preflight = runJournalEntryPreflight({
+      journal: dimensionedJournal,
+      accountCodesById: accountIdsByCarbonId,
+      controlAccountIds: new Set(),
+      lockDate: null,
+      settings,
+      dimensionValueMappings: new Map([["dim_loc:loc_atl", "300"]])
+    });
+
+    expect(preflight.failure?.errorCode).toBe("UNMAPPED_DIMENSION_VALUES");
+    expect(preflight.failure?.warning).toBe(true);
+    expect(preflight.failure?.metadata).toEqual({
+      unmappedDimensionValues: [
+        { dimensionId: LOCATION_DIM, valueId: "loc_bos" }
+      ]
+    });
+    expect(isJournalEntrySyncFailure(preflight.failure)).toBe(true);
+  });
+});
+
 describe("getQboLockDate (closed-books source)", () => {
   it("returns ONLY the manual settings.lockDate, normalized to YYYY-MM-DD", () => {
     expect(getQboLockDate(makeSettings({ lockDate: "2026-06-30" }))).toBe(

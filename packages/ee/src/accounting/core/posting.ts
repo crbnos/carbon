@@ -1,5 +1,6 @@
 import type z from "zod";
 import {
+  type JournalEntryLineDimensionSchema,
   type JournalEntrySourceType,
   POSTING_POLICY,
   type PostingDecisionReasonCode,
@@ -7,6 +8,10 @@ import {
   PostingSyncSettingsSchema
 } from "./models";
 import type { Accounting } from "./types";
+
+export type JournalLineDimensionRef = z.infer<
+  typeof JournalEntryLineDimensionSchema
+>;
 
 /**
  * Shared posting-sync helpers (Phase B journal push, reused by every
@@ -391,6 +396,11 @@ export function parseJournalEntrySyncEntityId(entityId: string): {
 
 export const JOURNAL_ENTRY_SYNC_ERROR_CODES = [
   "UNMAPPED_ACCOUNTS",
+  // A slot-configured dimension value on a journal line has no provider
+  // option mapping (and autoCreate did not resolve it) while the company's
+  // onUnmappedDimensionValue policy is "warn" — user-fixable by mapping
+  // the value on the integration settings page, then Retry.
+  "UNMAPPED_DIMENSION_VALUES",
   "CONTROL_ACCOUNT_LINE",
   "PERIOD_LOCKED",
   "UNBALANCED_JOURNAL",
@@ -516,6 +526,52 @@ export function collectUnmappedJournalAccounts(
 }
 
 /**
+ * Composite key for a dimension value: `<dimensionId>:<valueId>` — the
+ * SAME key the dimension value mappings use as entityId (valueId is
+ * polymorphic across entity-typed dimensions, so the composite is
+ * required). Kept in sync with buildDimensionValueMappingEntityId
+ * (core/dimension-mapping.ts) — duplicated here so this import-light
+ * module stays free of DB-facing imports.
+ */
+function dimensionValueKey(value: JournalLineDimensionRef): string {
+  return `${value.dimensionId}:${value.valueId}`;
+}
+
+/**
+ * Distinct slotted dimension values on the journal's lines that have no
+ * provider option mapping. Only SLOT-CONFIGURED dimensions participate —
+ * unslotted dimensions don't sync and are untouched by pre-flight.
+ * `mappings` is the dimension-value lookup keyed `<dimensionId>:<valueId>`
+ * → provider option id.
+ */
+export function collectUnmappedDimensionValues(
+  lines: ReadonlyArray<Pick<Accounting.JournalEntryLine, "dimensions">>,
+  slots: ReadonlyArray<{ dimensionId: string }>,
+  mappings: ReadonlyMap<string, string>
+): JournalLineDimensionRef[] {
+  if (slots.length === 0) return [];
+
+  const slottedDimensionIds = new Set(slots.map((slot) => slot.dimensionId));
+  const unmapped = new Map<string, JournalLineDimensionRef>();
+
+  for (const line of lines) {
+    for (const dimension of line.dimensions ?? []) {
+      if (!slottedDimensionIds.has(dimension.dimensionId)) continue;
+      const key = dimensionValueKey(dimension);
+      if (mappings.get(key)) continue;
+      if (!unmapped.has(key)) {
+        unmapped.set(key, {
+          dimensionId: dimension.dimensionId,
+          valueId: dimension.valueId
+        });
+      }
+    }
+  }
+
+  return [...unmapped.values()];
+}
+
+/**
  * Line ids whose account is an AR/AP control account
  * (accountDefault.receivablesAccount / payablesAccount). Control-account
  * lines never push: the AR/AP balance in the provider is owned by the
@@ -629,14 +685,42 @@ export type DailyJournalEntryAggregate = {
 };
 
 /**
+ * Canonical grouping key for a line's dimension tuple: slotted dimensions
+ * only (when `slottedDimensionIds` is provided), sorted by dimensionId.
+ * Empty tuple → "" (the legacy per-account bucket).
+ */
+export function getDimensionTupleKey(
+  dimensions: ReadonlyArray<JournalLineDimensionRef> | null | undefined,
+  slottedDimensionIds?: ReadonlySet<string>
+): string {
+  if (!dimensions || dimensions.length === 0) return "";
+  return dimensions
+    .filter(
+      (dimension) =>
+        !slottedDimensionIds || slottedDimensionIds.has(dimension.dimensionId)
+    )
+    .map((dimension) => `${dimension.dimensionId}=${dimension.valueId}`)
+    .sort()
+    .join("|");
+}
+
+/**
  * Build ONE aggregated journal for a posting date from its member journals
  * (daily-consolidation cron). Pure:
  *
- * - sums signed line amounts per account across every member (cents math);
- * - drops accounts that net to zero;
+ * - sums signed line amounts per (account, dimension tuple) across every
+ *   member (cents math) — summaries preserve exactly the analytical
+ *   granularity the provider will see (spec §4). The tuple covers the
+ *   dimensions in `slottedDimensionIds` when provided, else every
+ *   dimension present on the lines; lines without dimensions keep the
+ *   legacy per-account bucket;
+ * - drops groups that net to zero;
+ * - books post-2dp rounding residue (per-line cents rounding of sub-cent
+ *   amounts) to `roundingAccountId` when provided — capped at half a cent
+ *   per input line, beyond which the input is corrupt, not rounding;
  * - throws JournalEntrySyncError UNBALANCED_JOURNAL (Failed, not Warning)
- *   when the combined lines do not sum to zero — balanced inputs always
- *   aggregate to a balanced output, so this only fires on corrupt input;
+ *   when the combined lines do not sum to zero and no rounding account
+ *   can absorb the residue;
  * - throws a plain Error on misuse (no members, or a member dated off the
  *   batch date) — programmer error, not a sync failure.
  *
@@ -653,6 +737,19 @@ export function aggregateJournalEntriesForDate(args: {
   /** Source type shared by the batch's members (v3 per-source-type partitions); null for legacy mixed batches. */
   sourceType?: string | null;
   journals: Accounting.JournalEntry[];
+  /**
+   * Slot-configured dimension ids: the tuple is restricted to these so
+   * summaries group only by dimensions that actually cross the wire.
+   * Absent = group by every dimension present on the lines (a superset of
+   * the mapped tuple — never coarser than what the provider will see).
+   */
+  slottedDimensionIds?: Iterable<string>;
+  /**
+   * accountDefault.roundingAccount — when provided, post-2dp rounding
+   * residue books here (mapped like any account) instead of failing the
+   * batch. Absent = residue throws UNBALANCED_JOURNAL (legacy behavior).
+   */
+  roundingAccountId?: string | null;
 }): DailyJournalEntryAggregate {
   const postingDay = args.postingDate.slice(0, 10);
   const journalIds = args.journals.map((journal) => journal.id);
@@ -671,13 +768,26 @@ export function aggregateJournalEntriesForDate(args: {
     }
   }
 
+  const slottedDimensionIds = args.slottedDimensionIds
+    ? new Set(args.slottedDimensionIds)
+    : undefined;
+
   const allLines = args.journals.flatMap((journal) => journal.lines);
   const totalCents = allLines.reduce(
     (sum, line) => sum + Math.round(line.amount * 100),
     0
   );
 
-  if (totalCents !== 0) {
+  // Post-2dp residue: per-line cents rounding of sub-cent amounts can
+  // shift the total by at most half a cent per line. Anything larger is
+  // corrupt input, not rounding — refuse to bury it in roundingAccount.
+  const residueCapCents = Math.ceil(allLines.length / 2);
+  const bookableResidue =
+    totalCents !== 0 &&
+    Boolean(args.roundingAccountId) &&
+    Math.abs(totalCents) <= residueCapCents;
+
+  if (totalCents !== 0 && !bookableResidue) {
     throw new JournalEntrySyncError({
       errorCode: "UNBALANCED_JOURNAL",
       message: `Daily summary for ${postingDay} does not balance across its ${args.journals.length} member journal(s) (signed line amounts must sum to zero); refusing to push.`,
@@ -686,16 +796,59 @@ export function aggregateJournalEntriesForDate(args: {
     });
   }
 
-  const netted = netJournalLinesPerAccount(allLines);
-  const lines: Accounting.JournalEntryLine[] = [...netted.entries()]
-    .filter(([, amount]) => amount !== 0)
-    .sort(([a], [b]) => String(a ?? "").localeCompare(String(b ?? "")))
-    .map(([accountId, amount]) => ({
-      id: `${args.batchId}:${accountId ?? "no-account"}`,
-      accountId,
-      amount,
-      description: null
+  // Net cents per (account, dimension tuple)
+  type Group = {
+    accountId: string | null;
+    tupleKey: string;
+    dimensions: JournalLineDimensionRef[];
+    cents: number;
+  };
+  const groups = new Map<string, Group>();
+  for (const line of allLines) {
+    const accountId = line.accountId ?? null;
+    const tupleKey = getDimensionTupleKey(line.dimensions, slottedDimensionIds);
+    const key = `${accountId ?? ""} ${tupleKey}`;
+    const existing = groups.get(key);
+    const cents = Math.round(line.amount * 100);
+    if (existing) {
+      existing.cents += cents;
+    } else {
+      const dimensions = (line.dimensions ?? [])
+        .filter(
+          (dimension) =>
+            !slottedDimensionIds ||
+            slottedDimensionIds.has(dimension.dimensionId)
+        )
+        .sort((a, b) => a.dimensionId.localeCompare(b.dimensionId));
+      groups.set(key, { accountId, tupleKey, dimensions, cents });
+    }
+  }
+
+  const lines: Accounting.JournalEntryLine[] = [...groups.values()]
+    .filter((group) => group.cents !== 0)
+    .sort(
+      (a, b) =>
+        String(a.accountId ?? "").localeCompare(String(b.accountId ?? "")) ||
+        a.tupleKey.localeCompare(b.tupleKey)
+    )
+    .map((group) => ({
+      id: `${args.batchId}:${group.accountId ?? "no-account"}${
+        group.tupleKey ? `:${group.tupleKey}` : ""
+      }`,
+      accountId: group.accountId,
+      amount: group.cents / 100,
+      description: null,
+      ...(group.dimensions.length > 0 ? { dimensions: group.dimensions } : {})
     }));
+
+  if (bookableResidue) {
+    lines.push({
+      id: `${args.batchId}:rounding`,
+      accountId: args.roundingAccountId ?? null,
+      amount: -totalCents / 100,
+      description: "Rounding residue"
+    });
+  }
 
   const narration = getDailyConsolidationNarration(
     postingDay,
@@ -725,13 +878,32 @@ export function aggregateJournalEntriesForDate(args: {
 
 export type JournalEntryPreflightResult =
   | { failure: JournalEntrySyncFailure }
-  | { failure: null; pushDate: string; redatedFromDate?: string };
+  | {
+      failure: null;
+      pushDate: string;
+      redatedFromDate?: string;
+      /**
+       * Slotted dimension values the push proceeds WITHOUT
+       * (onUnmappedDimensionValue "drop"): unmapped values whose
+       * dimensions the mapper will omit. Recorded by the caller — I3:
+       * degradation is recorded, never silent.
+       */
+      droppedDimensionValues?: JournalLineDimensionRef[];
+    };
 
 /**
  * Run every pre-flight rule for one journal push. Returns either the
  * structured failure to record (no provider call happens) or the push date
  * to use — `redatedFromDate` is set when the redate policy moved the date,
  * so the mapper can append the original date to the narration.
+ *
+ * Dimension rule (opt-in): when `dimensionValueMappings` is provided and
+ * the settings carry dimension slots, every slotted dimension value on the
+ * lines must resolve through the mapping lookup. Unmapped values follow
+ * `settings.onUnmappedDimensionValue`: "warn" → UNMAPPED_DIMENSION_VALUES
+ * Warning (park); "drop" → pass, with the dropped values reported on the
+ * success branch. Callers that don't load dimension mappings (legacy
+ * paths) omit the arg and skip the rule entirely.
  */
 export function runJournalEntryPreflight(args: {
   journal: Accounting.JournalEntry;
@@ -739,6 +911,7 @@ export function runJournalEntryPreflight(args: {
   controlAccountIds: ReadonlySet<string>;
   lockDate: string | null;
   settings: PostingSyncSettings;
+  dimensionValueMappings?: ReadonlyMap<string, string>;
 }): JournalEntryPreflightResult {
   const { journal } = args;
 
@@ -785,6 +958,33 @@ export function runJournalEntryPreflight(args: {
     };
   }
 
+  let droppedDimensionValues: JournalLineDimensionRef[] | undefined;
+  if (
+    args.dimensionValueMappings !== undefined &&
+    args.settings.dimensionSlots.length > 0
+  ) {
+    const unmappedDimensionValues = collectUnmappedDimensionValues(
+      journal.lines,
+      args.settings.dimensionSlots,
+      args.dimensionValueMappings
+    );
+
+    if (unmappedDimensionValues.length > 0) {
+      if (args.settings.onUnmappedDimensionValue === "warn") {
+        return {
+          failure: {
+            errorCode: "UNMAPPED_DIMENSION_VALUES",
+            message: `Journal ${journal.journalEntryId} carries ${unmappedDimensionValues.length} slotted dimension value(s) with no provider option mapping. Map the value(s) on the integration settings page (or enable auto-create on the slot), then retry.`,
+            warning: true,
+            metadata: { unmappedDimensionValues }
+          }
+        };
+      }
+      // "drop": push without those dimensions, recorded — never silent
+      droppedDimensionValues = unmappedDimensionValues;
+    }
+  }
+
   if (!isBalancedJournal(journal.lines)) {
     return {
       failure: {
@@ -820,9 +1020,14 @@ export function runJournalEntryPreflight(args: {
     return {
       failure: null,
       pushDate: lock.pushDate,
-      redatedFromDate: journal.postingDate
+      redatedFromDate: journal.postingDate,
+      ...(droppedDimensionValues ? { droppedDimensionValues } : {})
     };
   }
 
-  return { failure: null, pushDate: journal.postingDate.slice(0, 10) };
+  return {
+    failure: null,
+    pushDate: journal.postingDate.slice(0, 10),
+    ...(droppedDimensionValues ? { droppedDimensionValues } : {})
+  };
 }

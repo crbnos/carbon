@@ -246,6 +246,122 @@ describe("mapJournalEntryToRilletJournalEntry", () => {
   });
 });
 
+// ── Dimension slots → item field refs (Phase 2, Rillet Fields) ───────────────
+
+describe("mapJournalEntryToRilletJournalEntry — dimensions (Fields)", () => {
+  const LOCATION_DIM = "dim_loc";
+  const DEPARTMENT_FIELD_ID = "f1d10000-0000-0000-0000-000000000001";
+
+  const dimensionedJournal = makeJournal({
+    lines: [
+      {
+        id: "line-1",
+        accountId: "acc-inventory",
+        amount: 150,
+        description: "Inventory",
+        dimensions: [{ dimensionId: LOCATION_DIM, valueId: "loc_atl" }]
+      },
+      {
+        id: "line-2",
+        accountId: "acc-accrual",
+        amount: -150,
+        description: null,
+        dimensions: [{ dimensionId: LOCATION_DIM, valueId: "loc_bos" }]
+      }
+    ]
+  });
+
+  const slots = [
+    { dimensionId: LOCATION_DIM, target: `field:${DEPARTMENT_FIELD_ID}` }
+  ];
+
+  it("attaches uuid field refs (field_id + field_value_id — ids, never names) per slotted dimension", () => {
+    const payload = mapJournalEntryToRilletJournalEntry({
+      journal: dimensionedJournal,
+      accountCodesById: ACCOUNT_CODES,
+      currency: "USD",
+      subsidiaryId: null,
+      pushDate: "2026-07-01",
+      dimensions: {
+        slots,
+        fieldValueIdsByValue: new Map([
+          ["dim_loc:loc_atl", "fv-atl"],
+          ["dim_loc:loc_bos", "fv-bos"]
+        ])
+      }
+    });
+
+    expect(payload.items[0]?.fields).toEqual([
+      { field_id: DEPARTMENT_FIELD_ID, field_value_id: "fv-atl" }
+    ]);
+    expect(payload.items[1]?.fields).toEqual([
+      { field_id: DEPARTMENT_FIELD_ID, field_value_id: "fv-bos" }
+    ]);
+  });
+
+  it("omits fields for unmapped values (drop path) and when no dimension args are passed", () => {
+    const dropped = mapJournalEntryToRilletJournalEntry({
+      journal: dimensionedJournal,
+      accountCodesById: ACCOUNT_CODES,
+      currency: "USD",
+      subsidiaryId: null,
+      pushDate: "2026-07-01",
+      dimensions: {
+        slots,
+        fieldValueIdsByValue: new Map([["dim_loc:loc_atl", "fv-atl"]])
+      }
+    });
+    expect(dropped.items[0]?.fields).toEqual([
+      { field_id: DEPARTMENT_FIELD_ID, field_value_id: "fv-atl" }
+    ]);
+    expect(dropped.items[1]?.fields).toBeUndefined();
+
+    const legacy = mapJournalEntryToRilletJournalEntry({
+      journal: dimensionedJournal,
+      accountCodesById: ACCOUNT_CODES,
+      currency: "USD",
+      subsidiaryId: null,
+      pushDate: "2026-07-01"
+    });
+    expect(legacy.items[0]?.fields).toBeUndefined();
+  });
+
+  it("reuses upserted value ids on later pushes: an updated lookup resolves without re-creating", () => {
+    // Simulates the autoCreate flow: the ensure step upserted Boston and
+    // added it to the shared lookup — the mapper then resolves both values
+    const lookup = new Map([["dim_loc:loc_atl", "fv-atl"]]);
+    lookup.set("dim_loc:loc_bos", "fv-bos-upserted");
+
+    const payload = mapJournalEntryToRilletJournalEntry({
+      journal: dimensionedJournal,
+      accountCodesById: ACCOUNT_CODES,
+      currency: "USD",
+      subsidiaryId: null,
+      pushDate: "2026-07-01",
+      dimensions: { slots, fieldValueIdsByValue: lookup }
+    });
+
+    expect(payload.items[1]?.fields).toEqual([
+      { field_id: DEPARTMENT_FIELD_ID, field_value_id: "fv-bos-upserted" }
+    ]);
+  });
+
+  it("ignores slots whose target is not a field target", () => {
+    const payload = mapJournalEntryToRilletJournalEntry({
+      journal: dimensionedJournal,
+      accountCodesById: ACCOUNT_CODES,
+      currency: "USD",
+      subsidiaryId: null,
+      pushDate: "2026-07-01",
+      dimensions: {
+        slots: [{ dimensionId: LOCATION_DIM, target: "class" }],
+        fieldValueIdsByValue: new Map([["dim_loc:loc_atl", "fv-atl"]])
+      }
+    });
+    expect(payload.items[0]?.fields).toBeUndefined();
+  });
+});
+
 describe("getRilletLockDate (closed-books source)", () => {
   it("returns ONLY the manual settings.lockDate, normalized to YYYY-MM-DD", () => {
     expect(getRilletLockDate(makeSettings({ lockDate: "2026-06-30" }))).toBe(

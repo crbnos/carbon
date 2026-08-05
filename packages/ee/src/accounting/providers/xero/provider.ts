@@ -4,6 +4,7 @@ import type {
   AccountingEntityType,
   AuthProvider,
   BaseProvider,
+  DimensionTarget,
   GlobalSyncConfig,
   ProviderCapabilities,
   ProviderConfig,
@@ -46,6 +47,28 @@ export interface ListItemsResponse {
 export interface XeroSettings {
   defaultSalesAccountCode?: string;
   defaultPurchaseAccountCode?: string;
+}
+
+/**
+ * Xero's org-wide limit: at most 2 ACTIVE tracking categories, so at most
+ * 2 dimension slots. Kept as an exported constant (not on `capabilities`)
+ * because XeroProvider deliberately leaves `capabilities` undeclared —
+ * absent capabilities = legacy REST provider for the drain.
+ */
+export const XERO_MAX_JOURNAL_DIMENSION_SLOTS = 2;
+
+/** Dimension slot target prefix: `tracking:<TrackingCategoryID>`. */
+const XERO_TRACKING_TARGET_PREFIX = "tracking:";
+
+export function buildXeroTrackingTarget(trackingCategoryId: string): string {
+  return `${XERO_TRACKING_TARGET_PREFIX}${trackingCategoryId}`;
+}
+
+/** The TrackingCategoryID inside a `tracking:<id>` target; null otherwise. */
+export function parseXeroTrackingTarget(target: string): string | null {
+  if (!target.startsWith(XERO_TRACKING_TARGET_PREFIX)) return null;
+  const categoryId = target.slice(XERO_TRACKING_TARGET_PREFIX.length);
+  return categoryId.length > 0 ? categoryId : null;
 }
 
 function getOAuth2Credentials(
@@ -267,6 +290,71 @@ export class XeroProvider implements BaseProvider {
     return (response.data?.Accounts ?? []).filter(
       (account) => account.Status === "ACTIVE"
     );
+  }
+
+  /**
+   * Fetch the Xero tracking categories with their options (the journal
+   * analytics surface; org-wide limit of 2 active categories). Returns
+   * ACTIVE categories only, [] on failure — a settings-surface read, same
+   * forgiving contract as listChartOfAccounts.
+   */
+  async listTrackingCategories(): Promise<Xero.TrackingCategory[]> {
+    const response = await this.request<{
+      TrackingCategories: Xero.TrackingCategory[];
+    }>("GET", "/TrackingCategories");
+
+    if (response.error) {
+      logger.error("Failed to fetch Xero tracking categories", { response });
+      return [];
+    }
+
+    return (response.data?.TrackingCategories ?? []).filter(
+      (category) =>
+        category.Status === "ACTIVE" || category.Status === undefined
+    );
+  }
+
+  /**
+   * Create a tracking option under a category by NAME (dimension
+   * autoCreate: PUT /TrackingCategories/{id}/Options). Throws an
+   * AccountingApiError when Xero rejects it (e.g. option cap reached).
+   */
+  async createTrackingOption(
+    trackingCategoryId: string,
+    name: string
+  ): Promise<Xero.TrackingOption> {
+    const response = await this.request<{
+      Options: Xero.TrackingOption[];
+    }>("PUT", `/TrackingCategories/${trackingCategoryId}/Options`, {
+      body: JSON.stringify({ Name: name })
+    });
+
+    if (response.error) {
+      throwXeroApiError("create tracking option", response);
+    }
+
+    const created = response.data?.Options?.[0];
+    if (!created?.TrackingOptionID) {
+      throw new Error(
+        "Xero API returned success but no TrackingOptionID was returned"
+      );
+    }
+
+    return created;
+  }
+
+  /**
+   * The journal dimension targets this org supports: one
+   * `tracking:<categoryId>` target per active tracking category (at most
+   * XERO_MAX_JOURNAL_DIMENSION_SLOTS org-wide).
+   */
+  async journalDimensionTargets(): Promise<DimensionTarget[]> {
+    const categories = await this.listTrackingCategories();
+    return categories.map((category) => ({
+      id: buildXeroTrackingTarget(category.TrackingCategoryID),
+      label: category.Name,
+      capacity: 1
+    }));
   }
 
   /**

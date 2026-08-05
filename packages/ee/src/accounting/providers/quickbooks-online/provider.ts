@@ -2,6 +2,7 @@ import { z } from "zod";
 import { ProviderID } from "../../core/models";
 import type {
   AccountingEntityType,
+  DimensionTarget,
   GlobalSyncConfig,
   ListChangesResult,
   ProviderCapabilities,
@@ -37,6 +38,14 @@ export const QBO_MINOR_VERSION = "75";
 
 /** QBO's hard upper bound for MAXRESULTS on /query. */
 export const QBO_QUERY_MAX_RESULTS = 1000;
+
+/**
+ * Dimension slot target ids (stored on
+ * settings.postingSync.dimensionSlots[].target): a slotted Carbon
+ * dimension maps to the journal line's ClassRef or DepartmentRef.
+ */
+export const QBO_DIMENSION_TARGET_CLASS = "class";
+export const QBO_DIMENSION_TARGET_DEPARTMENT = "department";
 
 export type QboEnvironment = "sandbox" | "production";
 
@@ -274,7 +283,9 @@ export class QboProvider extends BaseProvider {
   readonly capabilities: ProviderCapabilities = {
     transport: "rest",
     supportsWebhooks: false,
-    supportsJournalPush: true
+    supportsJournalPush: true,
+    // One ClassRef + one DepartmentRef per journal line — 2 fixed slots
+    maxJournalDimensionSlots: 2
   };
 
   http: HTTPClient;
@@ -683,6 +694,94 @@ export class QboProvider extends BaseProvider {
       "create journal entry",
       journalEntry
     );
+  }
+
+  // =================================================================
+  // Dimensions (Class / Department)
+  // =================================================================
+
+  /**
+   * Active QBO Classes. Class tracking is feature-gated by the Intuit
+   * plan — a query failure means the org doesn't have the feature, so
+   * this returns [] instead of hard-failing (the settings UI then offers
+   * no "class" target).
+   */
+  async listClasses(): Promise<Qbo.Class[]> {
+    try {
+      return await this.query<Qbo.Class>("Class", "Active = true");
+    } catch (error) {
+      console.warn(
+        "Failed to fetch QuickBooks Online classes (class tracking likely unavailable on this plan):",
+        error
+      );
+      return [];
+    }
+  }
+
+  /**
+   * Active QBO Departments (a.k.a. Locations). Same forgiving contract
+   * as listClasses — [] when the feature is off.
+   */
+  async listDepartments(): Promise<Qbo.Department[]> {
+    try {
+      return await this.query<Qbo.Department>("Department", "Active = true");
+    } catch (error) {
+      console.warn(
+        "Failed to fetch QuickBooks Online departments (location tracking likely unavailable on this plan):",
+        error
+      );
+      return [];
+    }
+  }
+
+  /** Create a QBO Class by name (dimension autoCreate). Throws on failure. */
+  async createClass(payload: QboCreatePayload<Qbo.Class>): Promise<Qbo.Class> {
+    return this.writeEntity("class", "Class", "create class", payload);
+  }
+
+  /** Create a QBO Department by name (dimension autoCreate). Throws on failure. */
+  async createDepartment(
+    payload: QboCreatePayload<Qbo.Department>
+  ): Promise<Qbo.Department> {
+    return this.writeEntity(
+      "department",
+      "Department",
+      "create department",
+      payload
+    );
+  }
+
+  /**
+   * The journal dimension targets this org actually supports: `class`
+   * and/or `department`, each verified by a probe query so orgs without
+   * the Intuit feature see an empty (or reduced) target list instead of a
+   * push-time failure. A feature that is on but has no values yet still
+   * yields its target.
+   */
+  async journalDimensionTargets(): Promise<DimensionTarget[]> {
+    const targets: DimensionTarget[] = [];
+
+    try {
+      await this.query<Qbo.Class>("Class", "Active = true", 1, 1);
+      targets.push({ id: QBO_DIMENSION_TARGET_CLASS, label: "Class" });
+    } catch (error) {
+      console.warn("QBO class tracking unavailable; omitting target:", error);
+    }
+
+    try {
+      await this.query<Qbo.Department>("Department", "Active = true", 1, 1);
+      targets.push({
+        id: QBO_DIMENSION_TARGET_DEPARTMENT,
+        label: "Department"
+      });
+    } catch (error) {
+      console.warn(
+        "QBO department tracking unavailable; omitting target:",
+        error
+      );
+    }
+
+    return targets;
   }
 
   // =================================================================

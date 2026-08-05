@@ -78,6 +78,10 @@ msgstr "{0}件のラインをマップします"
 msgid "{0} of {1} posting accounts mapped"
 msgstr "{0} 件 / {1} 件の仕訳勘定がマップされています"
 
+#. placeholder {0}: rows.length
+msgid "{0} of {maxSlots} provider slots used"
+msgstr "{0}個の{maxSlots}プロバイダースロットが使用されています"
+
 #. placeholder {0}: history.length
 msgid "{0} orders"
 msgstr "{0}件の注文"
@@ -106,6 +110,11 @@ msgstr "{0}件の未転記書類"
 #. placeholder {0}: file.name
 msgid "{0} uploaded successfully"
 msgstr "{0}が正常にアップロードされました"
+
+#. placeholder {0}: dimension.valueCount
+#. placeholder {0}: selectedDimension?.valueCount
+msgid "{0} values"
+msgstr "{0}個の値"
 
 #. placeholder {0}: unmatchedValues.length
 msgid "{0} values missing"
@@ -808,6 +817,9 @@ msgstr "配送を追加"
 msgid "Add Shipping"
 msgstr "配送を追加"
 
+msgid "Add slot"
+msgstr "スロットを追加"
+
 msgid "Add Spare Part"
 msgstr "スペアパーツを追加"
 
@@ -940,6 +952,9 @@ msgstr "すべての転記勘定科目がマップされています"
 
 msgid "All rows imported — {inserted} inserted, {updated} updated."
 msgstr "すべての行をインポート—{inserted}行挿入、{updated}行更新。"
+
+msgid "All slotted dimension values are mapped"
+msgstr "すべてのスロット化されたディメンション値がマップされています"
 
 msgid "All Suppliers"
 msgstr "すべてのサプライヤー"
@@ -1779,6 +1794,9 @@ msgstr "ジョブを自動的に開始するには、自動リリースを有効
 msgid "Auto Start Job"
 msgstr "自動ジョブ開始"
 
+msgid "Auto-create"
+msgstr "自動作成"
+
 msgid "Auto-generated QR Code"
 msgstr "自動生成されたQRコード"
 
@@ -2248,6 +2266,9 @@ msgstr "Carbonロゴ"
 
 msgid "Carbon only"
 msgstr "Carbonのみ"
+
+msgid "Carbon value"
+msgstr "Carbon値"
 
 msgid "Carbon Value"
 msgstr "カーボン値"
@@ -3141,6 +3162,9 @@ msgstr "ドキュメントを読み込めませんでした"
 
 msgid "Couldn't load related documents. Refresh before creating a new one to avoid duplicates."
 msgstr "関連ドキュメントを読み込めませんでした。重複を避けるため、新規作成前に更新してください。"
+
+msgid "Couldn't load the provider's dimension targets — check the connection and reload."
+msgstr "プロバイダーのディメンションターゲットを読み込めませんでした。接続を確認して再度読み込んでください。"
 
 msgid "Couldn't reschedule the job. Please try again."
 msgstr "ジョブを再スケジュールできませんでした。もう一度お試しください。"
@@ -4321,6 +4345,12 @@ msgstr "ディメンション"
 msgid "Dimension"
 msgstr "寸法"
 
+msgid "Dimension slots"
+msgstr "ディメンションスロット"
+
+msgid "Dimension values on posted journals that have no provider mapping yet."
+msgstr "まだプロバイダーマッピングがない投稿済みジャーナルのディメンション値。"
+
 msgid "dimensions"
 msgstr "ディメンション"
 
@@ -5321,6 +5351,9 @@ msgstr "免除理由"
 
 msgid "Existing mappings. Pick a different provider account to re-map."
 msgstr "既存のマッピング。再マップするには別のプロバイダー勘定科目を選択してください。"
+
+msgid "Existing mappings. Pick a different provider option to re-map."
+msgstr "既存のマッピング。異なるプロバイダーオプションを選択して再マップしてください。"
 
 msgid "Expand"
 msgstr "展開"
@@ -7723,6 +7756,9 @@ msgstr "現在のプロセス、システム、データをマップする"
 msgid "Mapped accounts"
 msgstr "マップ済み勘定科目"
 
+msgid "Mapped values"
+msgstr "マップされた値"
+
 #. placeholder {0}: i18n._(step.gate)
 msgid "Mark \"{0}\" as passed?"
 msgstr "\"{0}\"をパスしたとしてマークしますか？"
@@ -7795,6 +7831,9 @@ msgstr "任意に一致 (OR)"
 
 msgid "Match by code"
 msgstr "コードで一致"
+
+msgid "Match by name"
+msgstr "名前で一致"
 
 msgid "Match none"
 msgstr "いずれにも一致しない"
@@ -8621,6 +8660,12 @@ msgstr "休暇の予定がありません"
 msgid "No default attachments yet."
 msgstr "まだデフォルト添付ファイルがありません。"
 
+msgid "No dimension slots configured"
+msgstr "ディメンションスロットが構成されていません"
+
+msgid "No dimension values mapped yet"
+msgstr "まだディメンション値がマップされていません"
+
 msgid "No draft make method for this item yet."
 msgstr "このアイテムのドラフト製造方法はまだありません。"
 
@@ -8854,6 +8899,9 @@ msgstr "この期間に取引がありません"
 
 msgid "No unmapped accounts match a provider code"
 msgstr "マップされていない勘定科目でプロバイダーコードと一致するものがありません"
+
+msgid "No unmapped values match a provider option name"
+msgstr "マップされていない値がプロバイダーオプション名と一致しません"
 
 msgid "No value needed"
 msgstr "値が不要です"
@@ -9443,6 +9491,9 @@ msgstr "タイプ別パレート"
 msgid "Park as error"
 msgstr "エラーとして保留"
 
+msgid "Park the journal with a warning until the value is mapped"
+msgstr "値がマップされるまで、ジャーナルに警告を付けて保留します"
+
 msgid "part"
 msgstr "部品"
 
@@ -9637,6 +9688,9 @@ msgstr "割り当て可能な物理プリンター。"
 
 msgid "Pick"
 msgstr "ピック"
+
+msgid "Pick a Carbon dimension and the provider target it posts to. Auto-create adds missing provider options by name at push time."
+msgstr "Carbonディメンションと、それを投稿するプロバイダーターゲットを選択します。自動作成は、プッシュ時に不足しているプロバイダーオプションを名前で追加します。"
 
 msgid "Pick a column to sort by"
 msgstr "ソート対象の列を選択"
@@ -10113,6 +10167,9 @@ msgstr "プロパティ"
 msgid "Proposed matches where the Carbon account number equals the provider account code exactly."
 msgstr "Carbon勘定科目番号がプロバイダー勘定科目コードと正確に一致する提案されたマッチ。"
 
+msgid "Proposed matches where the Carbon dimension value's name equals a provider option name exactly."
+msgstr "Carbonディメンション値の名前がプロバイダーオプション名と完全に一致する提案されたマッチ。"
+
 msgid "Protect the go-live date"
 msgstr "ゴーライブ日を保護する"
 
@@ -10127,6 +10184,9 @@ msgstr "プロバイダー"
 
 msgid "Provider account"
 msgstr "プロバイダアカウント"
+
+msgid "Provider option"
+msgstr "プロバイダーオプション"
 
 msgid "Public"
 msgstr "公開"
@@ -10271,6 +10331,9 @@ msgstr "有効なソースタイプの転記済みジャーナルを会計プロ
 
 msgid "Push record changes to external systems the moment they happen."
 msgstr "レコードの変更が発生した瞬間に外部システムにプッシュします。"
+
+msgid "Push the journal without the dimension"
+msgstr "ディメンションなしでジャーナルをプッシュ"
 
 msgid "Push to accounting"
 msgstr "会計にプッシュ"
@@ -10780,6 +10843,9 @@ msgstr "部品を削除"
 msgid "Remove slide"
 msgstr "スライドを削除"
 
+msgid "Remove slot"
+msgstr "スロットを削除"
+
 msgid "Remove sort by column"
 msgstr "列でソートを削除"
 
@@ -11089,6 +11155,9 @@ msgstr "RFQ番号"
 msgid "RFQs"
 msgstr "RFQ"
 
+msgid "Ride Carbon dimensions along on pushed journals. Each slot maps one Carbon dimension to one provider analytics target; the value mapping below pairs individual dimension values with provider options."
+msgstr "プッシュされたジャーナルに沿ってCarbonディメンションを含める。各スロットは1つのCarbonディメンションを1つのプロバイダー分析ターゲットにマップします。以下の値マッピングは個々のディメンション値をプロバイダーオプションとペアリングします。"
+
 msgid "Right item"
 msgstr "右側の項目"
 
@@ -11335,6 +11404,9 @@ msgstr "アプリケーションを保存"
 
 msgid "Save contacts"
 msgstr "連絡先を保存"
+
+msgid "Save dimension settings"
+msgstr "ディメンション設定を保存"
 
 msgid "Save Method"
 msgstr "メソッドを保存"
@@ -11601,6 +11673,9 @@ msgstr "顧客タイプを選択"
 msgid "Select customers"
 msgstr "顧客を選択"
 
+msgid "Select dimension"
+msgstr "ディメンションを選択"
+
 msgid "Select Employee"
 msgstr "従業員を選択"
 
@@ -11639,6 +11714,12 @@ msgstr "プリンターを選択"
 
 msgid "Select provider account"
 msgstr "プロバイダアカウントを選択"
+
+msgid "Select provider target"
+msgstr "プロバイダーターゲットを選択"
+
+msgid "Select provider value"
+msgstr "プロバイダー値を選択"
 
 msgid "Select Quantities"
 msgstr "数量を選択"
@@ -13327,6 +13408,9 @@ msgstr "このメンテナンスが実行されるときにテクニシャンが
 msgid "The processes this work center can run; appears in process-pickers when scheduling operations, and limits which jobs can route through this work center."
 msgstr "このワークセンターが実行できるプロセス。オペレーションをスケジュールするときのプロセスピッカーに表示され、このワークセンターを通じてルーティングできるジョブを制限します。"
 
+msgid "The provider offers no dimension targets. Enable the feature in the provider first (e.g. tracking categories, class tracking, or fields)."
+msgstr "プロバイダーはディメンションターゲットを提供していません。最初にプロバイダーで機能を有効にしてください(例:追跡カテゴリ、クラス追跡、またはフィールド)。"
+
 msgid "The quantity breakpoints this line is priced at; each column carries its own per-unit price for buyer–supplier negotiation and for converting to downstream documents."
 msgstr "この行が価格設定される数量ブレークポイント。各列は、買い手-サプライヤー交渉とダウンストリーム文書への変換のための独自の単価を行います。"
 
@@ -14164,8 +14248,14 @@ msgstr "ロック解除"
 msgid "Unmapped accounts"
 msgstr "マップされていないアカウント"
 
+msgid "Unmapped dimension values"
+msgstr "マップされていないディメンション値"
+
 msgid "Unmapped Extracted Lines"
 msgstr "マップされていない抽出行"
+
+msgid "Unmapped values"
+msgstr "マップされていない値"
 
 msgid "Unmatched"
 msgstr "不一致"
