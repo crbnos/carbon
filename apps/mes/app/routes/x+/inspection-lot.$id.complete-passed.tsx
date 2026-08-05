@@ -6,6 +6,7 @@ import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import { inspectionCompletePassedValidator } from "~/services/models";
+import { returnPickedRemainders } from "~/services/operations.service";
 import {
   getInspectionOutcomeState,
   getSerialCompletionCandidates,
@@ -13,6 +14,24 @@ import {
   postSerialCompletions
 } from "~/services/quality.server";
 import { path } from "~/utils/path";
+
+// Completions posted here insert productionQuantity rows, whose SQL interceptor
+// can auto-flip the operation to 'Done' (and complete the job) inside the DB —
+// no app hook fires on that path, so the picked-material return sweep is
+// orchestrated here after the postings land.
+async function sweepIfOperationDone(
+  serviceRole: Awaited<ReturnType<typeof getCarbonServiceRole>>,
+  args: { jobOperationId: string; userId: string; companyId: string }
+) {
+  const op = await serviceRole
+    .from("jobOperation")
+    .select("status")
+    .eq("id", args.jobOperationId)
+    .eq("companyId", args.companyId)
+    .maybeSingle();
+  if (op.data?.status !== "Done") return;
+  await returnPickedRemainders(serviceRole, args);
+}
 
 // Progressive completion while the lot stays open: any unit that passed
 // inspection can move on immediately, without waiting for the disposition.
@@ -93,6 +112,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
         `Completing units failed after ${completions.completed} of ${candidates.length}`
       );
     }
+    await sweepIfOperationDone(serviceRole, {
+      jobOperationId: state.jobOperationId,
+      userId,
+      companyId
+    });
     throw redirect(
       returnTo,
       await flash(
@@ -125,6 +149,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
       completion.message ?? "Failed to complete units"
     );
   }
+
+  await sweepIfOperationDone(serviceRole, {
+    jobOperationId: state.jobOperationId,
+    userId,
+    companyId
+  });
 
   throw redirect(
     returnTo,

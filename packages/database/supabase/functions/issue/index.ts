@@ -6,7 +6,7 @@ import { z } from "npm:zod@^3.24.1";
 import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
 
 import { nanoid } from "https://deno.land/x/nanoid@v3.0.0/nanoid.ts";
-import { corsHeaders } from "../lib/headers.ts";
+import { corsPreflight, errorResponse, jsonResponse } from "../lib/response.ts";
 import {
   getStorageUnitWithHighestQuantity,
   updatePickMethodDefaultStorageUnitIfNeeded,
@@ -15,8 +15,10 @@ import { requirePermissions } from "../lib/supabase.ts";
 import { Database } from "../lib/types.ts";
 import { TrackedEntityAttributes, credit, debit, journalReference } from "../lib/utils.ts";
 
+import { buildBatchSplitRecords } from "../shared/batch-split.ts";
 import { getCurrentAccountingPeriod } from "../shared/get-accounting-period.ts";
 import { getNextSequence } from "../shared/get-next-sequence.ts";
+import { getNextSerialNumbers } from "../shared/get-next-serial-number.ts";
 import {
   getDefaultPostingGroup,
   resolveInventoryAccount,
@@ -936,9 +938,8 @@ const payloadValidator = z.discriminatedUnion("type", [
 ]);
 
 serve(async (req: Request) => {
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
-  }
+  const preflight = corsPreflight(req);
+  if (preflight) return preflight;
   const payload = await req.json();
   console.log({ payload });
 
@@ -1145,15 +1146,9 @@ serve(async (req: Request) => {
           });
         });
 
-        return new Response(
-          JSON.stringify({
-            success: true,
-          }),
-          {
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-            status: 200,
-          }
-        );
+        return jsonResponse({
+          success: true,
+        });
       }
       case "jobOperationSerialComplete": {
         const { trackedEntityId, companyId, userId, ...row } = validatedPayload;
@@ -1287,6 +1282,47 @@ serve(async (req: Request) => {
             trackedEntities.data.length <
             (jobOperation.data.operationQuantity ?? 0)
           ) {
+            // Number this lazily-spawned unit from the item's serial sequence, if
+            // one is configured. This unit wasn't part of the initial pre-split at
+            // job creation (e.g. the job quantity was increased afterwards, or the
+            // sequence was configured later), so it would otherwise be created with
+            // a null readableId. Resolve the job's location for the %{location}
+            // token; the reservation runs in this transaction, atomic with the spawn.
+            let spawnReadableId: string | null = null;
+            if (trackedEntity.itemId) {
+              let locationCode: string | null = null;
+              let locationName: string | null = null;
+              const jobIdForLocation = (
+                trackedEntity.attributes as Record<string, unknown>
+              ).Job;
+              if (typeof jobIdForLocation === "string") {
+                const jobRow = await client
+                  .from("job")
+                  .select("locationId")
+                  .eq("id", jobIdForLocation)
+                  .eq("companyId", companyId)
+                  .single();
+                if (jobRow.data?.locationId) {
+                  const loc = await client
+                    .from("location")
+                    .select("code, name")
+                    .eq("id", jobRow.data.locationId)
+                    .eq("companyId", companyId)
+                    .single();
+                  locationCode = loc.data?.code ?? null;
+                  locationName = loc.data?.name ?? null;
+                }
+              }
+              const spawnSerials = await getNextSerialNumbers(trx, {
+                itemId: trackedEntity.itemId,
+                companyId,
+                count: 1,
+                locationCode,
+                locationName,
+              });
+              spawnReadableId = spawnSerials[0] ?? null;
+            }
+
             // Create a new trackedEntity with the same attributes but status = Reserved
             const newTrackedEntityResult = await trx
               .insertInto("trackedEntity")
@@ -1300,6 +1336,7 @@ serve(async (req: Request) => {
                 attributes: trackedEntity.attributes,
                 itemId: trackedEntity.itemId ?? null,
                 expirationDate: trackedEntity.expirationDate ?? null,
+                readableId: spawnReadableId,
                 companyId,
                 createdBy: userId,
               })
@@ -1322,16 +1359,10 @@ serve(async (req: Request) => {
           });
         });
 
-        return new Response(
-          JSON.stringify({
-            success: true,
-            newTrackedEntityId: newEntityId,
-          }),
-          {
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-            status: 200,
-          }
-        );
+        return jsonResponse({
+          success: true,
+          newTrackedEntityId: newEntityId,
+        });
       }
       case "partToOperation": {
         const {
@@ -1815,15 +1846,9 @@ serve(async (req: Request) => {
             .execute();
         });
 
-        return new Response(
-          JSON.stringify({
-            success: true,
-          }),
-          {
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-            status: 200,
-          }
-        );
+        return jsonResponse({
+          success: true,
+        });
       }
       case "trackedEntitiesToOperation": {
         const {
@@ -2163,6 +2188,7 @@ serve(async (req: Request) => {
             newId: string;
             readableId: string;
             quantity: number;
+            remainingQuantity: number;
           }> = [];
 
           // Process each child tracked entity
@@ -2175,174 +2201,117 @@ serve(async (req: Request) => {
             }
             const { trackedEntityId, quantity } = child;
 
-            // If quantities don't match, split the batch
+            // Partial consume → split: the lineside entity keeps its id and
+            // is decremented; a NEW child entity carries the consumed
+            // quantity. EVERYTHING below (Consumed status, Consume input,
+            // Consumption ledger) books against the child — flipping the
+            // entity half without the ledger half would double-count on-hand.
+            let consumedEntityId = trackedEntityId;
             if (Number(trackedEntity.quantity) !== quantity) {
-              const remainingQuantity =
-                Number(trackedEntity.quantity) - quantity;
-              const newTrackedEntityId = nanoid();
+              const consumedChildId = nanoid();
+              consumedEntityId = consumedChildId;
 
-              console.log("Split quantities:", {
-                childQuantity: Number(trackedEntity.quantity),
-                availableQuantity: quantity,
-                remainingQuantity,
-              });
-
-              // Track split entity for return
-              splitEntities.push({
-                originalId: trackedEntityId,
-                newId: newTrackedEntityId,
-                readableId: trackedEntity.sourceDocumentReadableId ?? "",
-                quantity: remainingQuantity,
-              });
-
-              // Create split activity
-              const splitActivityId = nanoid();
-              await trx
-                .insertInto("trackedActivity")
-                .values({
-                  id: splitActivityId,
-                  type: "Split",
-                  sourceDocument: "Job Material",
-                  sourceDocumentId: actualMaterialId,
-                  attributes: {
-                    "Original Quantity": Number(trackedEntity.quantity),
-                    "Consumed Quantity": quantity,
-                    "Remaining Quantity": remainingQuantity,
-                    "Split Entity ID": newTrackedEntityId,
-                  },
-                  companyId,
-                  createdBy: userId,
-                })
-                .execute();
-
-              // Record original entity as input
-              await trx
-                .insertInto("trackedActivityInput")
-                .values({
-                  trackedActivityId: splitActivityId,
-                  trackedEntityId: trackedEntity.id!,
-                  quantity: Number(trackedEntity.quantity),
-                  companyId,
-                  createdBy: userId,
-                })
-                .execute();
-
-              // Create new tracked entity for remaining quantity
-              await trx
-                .insertInto("trackedEntity")
-                .values({
-                  id: newTrackedEntityId,
+              const split = buildBatchSplitRecords({
+                parent: {
+                  id: trackedEntity.id!,
                   readableId: trackedEntity.readableId,
+                  quantity: Number(trackedEntity.quantity),
+                  sourceDocument: trackedEntity.sourceDocument,
                   sourceDocumentId: trackedEntity.sourceDocumentId,
-                  sourceDocument: "Item",
                   sourceDocumentReadableId:
                     trackedEntity.sourceDocumentReadableId,
-                  quantity: remainingQuantity,
-                  status: trackedEntity.status ?? "Available",
-                  attributes: trackedEntity.attributes,
-                  itemId: trackedEntity.itemId ?? trackedEntity.sourceDocumentId,
+                  itemId:
+                    trackedEntity.itemId ?? trackedEntity.sourceDocumentId,
                   expirationDate: trackedEntity.expirationDate ?? null,
-                  companyId,
-                  createdBy: userId,
-                })
+                  attributes: trackedEntity.attributes as Record<
+                    string,
+                    unknown
+                  > | null
+                },
+                drawQuantity: quantity,
+                childId: consumedChildId,
+                splitActivityId: nanoid(),
+                activitySourceDocument: "Job Material",
+                activitySourceDocumentId: actualMaterialId,
+                bin: {
+                  storageUnitId: resolveTrackedEntityBin(
+                    itemLedgers,
+                    trackedEntityId
+                  ),
+                  locationId: job?.locationId ?? null
+                },
+                itemLedgerItemId: trackedEntity.sourceDocumentId,
+                companyId,
+                userId,
+                postingDate: new Date().toISOString().slice(0, 10),
+                // Created Available; the shared status update below flips the
+                // child to Consumed in the same transaction.
+                childStatus: "Available",
+                extraChildAttributes: {
+                  ...(jobOperationStepId
+                    ? { "Job Operation Step": jobOperationStepId }
+                    : {}),
+                  ...(unitNumber !== undefined ? { Unit: unitNumber } : {})
+                }
+              });
+
+              // Track split entity for the MES confirmation: quantity = what
+              // was consumed (the child), remainingQuantity = what the
+              // surviving lineside entity still holds.
+              splitEntities.push({
+                originalId: trackedEntityId,
+                newId: consumedChildId,
+                readableId: trackedEntity.sourceDocumentReadableId ?? "",
+                quantity,
+                remainingQuantity: split.parentUpdate.quantity,
+              });
+
+              await trx
+                .insertInto("trackedActivity")
+                .values(split.activityInsert)
                 .execute();
 
-              // Update original entity attributes with split reference
+              await trx
+                .insertInto("trackedEntity")
+                .values(split.childEntityInsert)
+                .execute();
+
+              await trx
+                .insertInto("trackedActivityInput")
+                .values(split.activityInputInsert)
+                .execute();
+
+              await trx
+                .insertInto("trackedActivityOutput")
+                .values(split.activityOutputInsert)
+                .execute();
+
               await trx
                 .updateTable("trackedEntity")
-                .set({
-                  quantity: quantity,
-                  attributes: {
-                    ...((trackedEntity.attributes as Record<string, unknown>) ??
-                      {}),
-                    "Split Entity ID": newTrackedEntityId,
-                  },
-                })
+                .set(split.parentUpdate)
                 .where("id", "=", trackedEntityId)
                 .execute();
 
-              // Record outputs from split
-              await trx
-                .insertInto("trackedActivityOutput")
-                .values([
-                  {
-                    trackedActivityId: splitActivityId!,
-                    trackedEntityId: newTrackedEntityId!,
-                    quantity: remainingQuantity,
-                    companyId,
-                    createdBy: userId,
-                  },
-                  {
-                    trackedActivityId: splitActivityId!,
-                    trackedEntityId: trackedEntity.id!,
-                    quantity: quantity,
-                    companyId,
-                    createdBy: userId,
-                  },
-                ])
-                .execute();
-
-              // Create item ledger entries for split
-              console.log("Item ledger split entries:", {
-                parentQuantity: -Number(trackedEntity.quantity),
-                quantity,
-                remainingQuantity,
-              });
-
+              // MTO skips ONLY the ledger inserts; entity/activity writes
+              // above still happen.
               if (jobMaterial?.methodType !== "Make to Order") {
-                itemLedgerInserts.push(
-                  {
-                    entryType: "Negative Adjmt.",
-                    documentType: "Batch Split",
-                    documentId: splitActivityId,
-                    companyId,
-                    itemId: trackedEntity.sourceDocumentId,
-                    quantity: -Number(trackedEntity.quantity),
-                    locationId: job?.locationId,
-                    storageUnitId: resolveTrackedEntityBin(itemLedgers, trackedEntityId),
-                    trackedEntityId: trackedEntity.id!,
-                    createdBy: userId,
-                  },
-                  {
-                    entryType: "Positive Adjmt.",
-                    documentType: "Batch Split",
-                    documentId: splitActivityId,
-                    companyId,
-                    itemId: trackedEntity.sourceDocumentId,
-                    quantity: quantity,
-                    locationId: job?.locationId,
-                    storageUnitId: resolveTrackedEntityBin(itemLedgers, trackedEntityId),
-                    trackedEntityId: trackedEntity.id!,
-                    createdBy: userId,
-                  },
-                  {
-                    entryType: "Positive Adjmt.",
-                    documentType: "Batch Split",
-                    documentId: splitActivityId,
-                    companyId,
-                    itemId: trackedEntity.sourceDocumentId,
-                    quantity: remainingQuantity,
-                    locationId: job?.locationId,
-                    storageUnitId: resolveTrackedEntityBin(itemLedgers, trackedEntityId),
-                    trackedEntityId: newTrackedEntityId,
-                    createdBy: userId,
-                  }
-                );
+                itemLedgerInserts.push(...split.ledgerInserts);
               }
             }
 
-            // Update tracked entity status to consumed
+            // Consume the drawn entity — the split child, or the whole
+            // entity on a full draw.
             await trx
               .updateTable("trackedEntity")
               .set({
                 status: "Consumed",
               })
-              .where("id", "=", trackedEntityId)
+              .where("id", "=", consumedEntityId)
               .execute();
 
             trackedActivityInputs.push({
               trackedActivityId: activityId,
-              trackedEntityId,
+              trackedEntityId: consumedEntityId,
               quantity,
               companyId,
               createdBy: userId,
@@ -2357,8 +2326,10 @@ serve(async (req: Request) => {
                 itemId: trackedEntity.sourceDocumentId,
                 quantity: -quantity,
                 locationId: job?.locationId,
+                // The split child has no rows in the pre-transaction ledger
+                // snapshot — it sits at the parent's resolved bin.
                 storageUnitId: resolveTrackedEntityBin(itemLedgers, trackedEntityId),
-                trackedEntityId,
+                trackedEntityId: consumedEntityId,
                 createdBy: userId,
               });
             }
@@ -2443,17 +2414,11 @@ serve(async (req: Request) => {
           return splitEntities;
         });
 
-        return new Response(
-          JSON.stringify({
-            success: true,
-            splitEntities,
-            warning: expiredWarning,
-          }),
-          {
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-            status: 200,
-          }
-        );
+        return jsonResponse({
+          success: true,
+          splitEntities,
+          warning: expiredWarning,
+        });
       }
       case "unconsumeTrackedEntities": {
         const {
@@ -2962,17 +2927,11 @@ serve(async (req: Request) => {
           };
         });
 
-        return new Response(
-          JSON.stringify({
-            success: true,
-            message: "Entity converted successfully",
-            convertedEntity,
-          }),
-          {
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-            status: 200,
-          }
-        );
+        return jsonResponse({
+          success: true,
+          message: "Entity converted successfully",
+          convertedEntity,
+        });
       }
       case "maintenanceDispatchInventory": {
         const {
@@ -3056,16 +3015,10 @@ serve(async (req: Request) => {
           }
         });
 
-        return new Response(
-          JSON.stringify({
-            success: true,
-            message: "Material issued successfully",
-          }),
-          {
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-            status: 200,
-          }
-        );
+        return jsonResponse({
+          success: true,
+          message: "Material issued successfully",
+        });
       }
       case "maintenanceDispatchTrackedEntities": {
         const {
@@ -3209,6 +3162,7 @@ serve(async (req: Request) => {
             newId: string;
             readableId: string;
             quantity: number;
+            remainingQuantity: number;
           }> = [];
 
           // Process each child tracked entity
@@ -3221,164 +3175,109 @@ serve(async (req: Request) => {
             }
             const { trackedEntityId, quantity } = child;
 
-            // If quantities don't match, split the batch
+            // Book against the entity's ACTUAL bin (net on-hand), not an
+            // arbitrary first ledger row — aligns with the job-consumption
+            // path above.
+            const entityBin = resolveTrackedEntityBin(
+              itemLedgers,
+              trackedEntityId
+            );
+
+            // Partial consume → split: the lineside entity keeps its id and
+            // is decremented; a NEW child entity carries the consumed
+            // quantity. EVERYTHING below (Consumed status, Consume input,
+            // Maintenance Consumption ledger, junction row) books against
+            // the child.
+            let consumedEntityId = trackedEntityId;
             if (Number(trackedEntity.quantity) !== quantity) {
-              const remainingQuantity =
-                Number(trackedEntity.quantity) - quantity;
-              const newTrackedEntityId = nanoid();
+              const consumedChildId = nanoid();
+              consumedEntityId = consumedChildId;
 
-              // Track split entity for return
-              splitEntities.push({
-                originalId: trackedEntityId,
-                newId: newTrackedEntityId,
-                readableId: trackedEntity.sourceDocumentReadableId ?? "",
-                quantity: remainingQuantity,
-              });
-
-              // Create split activity
-              const splitActivityId = nanoid();
-              await trx
-                .insertInto("trackedActivity")
-                .values({
-                  id: splitActivityId,
-                  type: "Split",
-                  sourceDocument: "Maintenance Dispatch Item",
-                  sourceDocumentId: maintenanceDispatchItemId,
-                  attributes: {
-                    "Original Quantity": Number(trackedEntity.quantity),
-                    "Consumed Quantity": quantity,
-                    "Remaining Quantity": remainingQuantity,
-                    "Split Entity ID": newTrackedEntityId,
-                  },
-                  companyId,
-                  createdBy: userId,
-                })
-                .execute();
-
-              // Record original entity as input
-              await trx
-                .insertInto("trackedActivityInput")
-                .values({
-                  trackedActivityId: splitActivityId,
-                  trackedEntityId: trackedEntity.id!,
-                  quantity: Number(trackedEntity.quantity),
-                  companyId,
-                  createdBy: userId,
-                })
-                .execute();
-
-              // Create new tracked entity for remaining quantity
-              await trx
-                .insertInto("trackedEntity")
-                .values({
-                  id: newTrackedEntityId,
+              const split = buildBatchSplitRecords({
+                parent: {
+                  id: trackedEntity.id!,
                   readableId: trackedEntity.readableId,
+                  quantity: Number(trackedEntity.quantity),
+                  sourceDocument: trackedEntity.sourceDocument,
                   sourceDocumentId: trackedEntity.sourceDocumentId,
-                  sourceDocument: "Item",
                   sourceDocumentReadableId:
                     trackedEntity.sourceDocumentReadableId,
-                  quantity: remainingQuantity,
-                  status: trackedEntity.status ?? "Available",
-                  attributes: trackedEntity.attributes,
-                  itemId: trackedEntity.itemId ?? trackedEntity.sourceDocumentId,
+                  itemId:
+                    trackedEntity.itemId ?? trackedEntity.sourceDocumentId,
                   expirationDate: trackedEntity.expirationDate ?? null,
-                  companyId,
-                  createdBy: userId,
-                })
+                  attributes: trackedEntity.attributes as Record<
+                    string,
+                    unknown
+                  > | null
+                },
+                drawQuantity: quantity,
+                childId: consumedChildId,
+                splitActivityId: nanoid(),
+                activitySourceDocument: "Maintenance Dispatch Item",
+                activitySourceDocumentId: maintenanceDispatchItemId,
+                bin: {
+                  storageUnitId: entityBin,
+                  locationId
+                },
+                itemLedgerItemId: trackedEntity.sourceDocumentId,
+                companyId,
+                userId,
+                postingDate: new Date().toISOString().slice(0, 10),
+                // Created Available; the shared status update below flips the
+                // child to Consumed in the same transaction.
+                childStatus: "Available"
+              });
+
+              splitEntities.push({
+                originalId: trackedEntityId,
+                newId: consumedChildId,
+                readableId: trackedEntity.sourceDocumentReadableId ?? "",
+                quantity,
+                remainingQuantity: split.parentUpdate.quantity,
+              });
+
+              await trx
+                .insertInto("trackedActivity")
+                .values(split.activityInsert)
                 .execute();
 
-              // Update original entity quantity
+              await trx
+                .insertInto("trackedEntity")
+                .values(split.childEntityInsert)
+                .execute();
+
+              await trx
+                .insertInto("trackedActivityInput")
+                .values(split.activityInputInsert)
+                .execute();
+
+              await trx
+                .insertInto("trackedActivityOutput")
+                .values(split.activityOutputInsert)
+                .execute();
+
               await trx
                 .updateTable("trackedEntity")
-                .set({
-                  quantity: quantity,
-                  attributes: {
-                    ...((trackedEntity.attributes as Record<string, unknown>) ??
-                      {}),
-                    "Split Entity ID": newTrackedEntityId,
-                  },
-                })
+                .set(split.parentUpdate)
                 .where("id", "=", trackedEntityId)
                 .execute();
 
-              // Record outputs from split
-              await trx
-                .insertInto("trackedActivityOutput")
-                .values([
-                  {
-                    trackedActivityId: splitActivityId,
-                    trackedEntityId: newTrackedEntityId,
-                    quantity: remainingQuantity,
-                    companyId,
-                    createdBy: userId,
-                  },
-                  {
-                    trackedActivityId: splitActivityId,
-                    trackedEntityId: trackedEntity.id!,
-                    quantity: quantity,
-                    companyId,
-                    createdBy: userId,
-                  },
-                ])
-                .execute();
-
-              // Create item ledger entries for split
-              const existingLedger = itemLedgers.find(
-                (l) => l.trackedEntityId === trackedEntityId
-              );
-
-              itemLedgerInserts.push(
-                {
-                  entryType: "Negative Adjmt.",
-                  documentType: "Batch Split",
-                  documentId: splitActivityId,
-                  companyId,
-                  itemId: trackedEntity.sourceDocumentId,
-                  quantity: -Number(trackedEntity.quantity),
-                  locationId,
-                  storageUnitId: existingLedger?.storageUnitId,
-                  trackedEntityId: trackedEntity.id!,
-                  createdBy: userId,
-                },
-                {
-                  entryType: "Positive Adjmt.",
-                  documentType: "Batch Split",
-                  documentId: splitActivityId,
-                  companyId,
-                  itemId: trackedEntity.sourceDocumentId,
-                  quantity: quantity,
-                  locationId,
-                  storageUnitId: existingLedger?.storageUnitId,
-                  trackedEntityId: trackedEntity.id!,
-                  createdBy: userId,
-                },
-                {
-                  entryType: "Positive Adjmt.",
-                  documentType: "Batch Split",
-                  documentId: splitActivityId,
-                  companyId,
-                  itemId: trackedEntity.sourceDocumentId,
-                  quantity: remainingQuantity,
-                  locationId,
-                  storageUnitId: existingLedger?.storageUnitId,
-                  trackedEntityId: newTrackedEntityId,
-                  createdBy: userId,
-                }
-              );
+              itemLedgerInserts.push(...split.ledgerInserts);
             }
 
-            // Update tracked entity status to consumed
+            // Consume the drawn entity — the split child, or the whole
+            // entity on a full draw.
             await trx
               .updateTable("trackedEntity")
               .set({
                 status: "Consumed",
               })
-              .where("id", "=", trackedEntityId)
+              .where("id", "=", consumedEntityId)
               .execute();
 
             trackedActivityInputs.push({
               trackedActivityId: activityId,
-              trackedEntityId,
+              trackedEntityId: consumedEntityId,
               quantity,
               companyId,
               createdBy: userId,
@@ -3387,16 +3286,11 @@ serve(async (req: Request) => {
             // Add junction table entry
             junctionInserts.push({
               maintenanceDispatchItemId,
-              trackedEntityId,
+              trackedEntityId: consumedEntityId,
               quantity,
               companyId,
               createdBy: userId,
             });
-
-            // Create consumption item ledger entry
-            const existingLedger = itemLedgers.find(
-              (l) => l.trackedEntityId === trackedEntityId
-            );
 
             itemLedgerInserts.push({
               entryType: "Consumption",
@@ -3407,8 +3301,10 @@ serve(async (req: Request) => {
               itemId: trackedEntity.sourceDocumentId,
               quantity: -quantity,
               locationId,
-              storageUnitId: existingLedger?.storageUnitId,
-              trackedEntityId,
+              // The split child has no rows in the pre-transaction ledger
+              // snapshot — it sits at the parent's resolved bin.
+              storageUnitId: entityBin,
+              trackedEntityId: consumedEntityId,
               createdBy: userId,
             });
           }
@@ -3449,18 +3345,12 @@ serve(async (req: Request) => {
           return splitEntities;
         });
 
-        return new Response(
-          JSON.stringify({
-            success: true,
-            message: "Material issued successfully",
-            splitEntities,
-            warning: expiredWarning,
-          }),
-          {
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-            status: 200,
-          }
-        );
+        return jsonResponse({
+          success: true,
+          message: "Material issued successfully",
+          splitEntities,
+          warning: expiredWarning,
+        });
       }
       case "maintenanceDispatchUnconsume": {
         const { maintenanceDispatchItemId, children, companyId, userId } =
@@ -3651,16 +3541,10 @@ serve(async (req: Request) => {
             .execute();
         });
 
-        return new Response(
-          JSON.stringify({
-            success: true,
-            message: "Material unconsumed successfully",
-          }),
-          {
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-            status: 200,
-          }
-        );
+        return jsonResponse({
+          success: true,
+          message: "Material unconsumed successfully",
+        });
       }
       case "maintenanceDispatchUnissue": {
         const { maintenanceDispatchItemId, companyId, userId } =
@@ -3848,47 +3732,18 @@ serve(async (req: Request) => {
             .execute();
         });
 
-        return new Response(
-          JSON.stringify({
-            success: true,
-            message: "Item unissued and removed successfully",
-          }),
-          {
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-            status: 200,
-          }
-        );
+        return jsonResponse({
+          success: true,
+          message: "Item unissued and removed successfully",
+        });
       }
     }
 
-    return new Response(
-      JSON.stringify({
-        success: true,
-        message: "x",
-      }),
-      {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200,
-      }
-    );
+    return jsonResponse({
+      success: true,
+      message: "x",
+    });
   } catch (err) {
-    console.error(err);
-    // Error.prototype properties (message, name, stack) aren't enumerable,
-    // so a plain JSON.stringify(err) produces "{}" and clients lose the
-    // actual reason (e.g. "Cannot consume expired tracked entity ...").
-    // Pull the message out explicitly.
-    const message =
-      err instanceof Error
-        ? err.message
-        : typeof err === "string"
-          ? err
-          : "Unexpected error";
-    return new Response(
-      JSON.stringify({ success: false, message }),
-      {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 400,
-      }
-    );
+    return errorResponse(err, 400);
   }
 });

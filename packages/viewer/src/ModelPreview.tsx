@@ -59,6 +59,10 @@ export type ModelPreviewProps = {
   rawFile?: File | null;
   /** Filename for the download-GLB action (defaults to the URL basename). */
   downloadName?: string;
+  /** The source file no longer exists in storage (legacy delete, or the upload
+   *  never completed) — nothing can render or regenerate. The settled state
+   *  says so instead of the generate-on-demand invitation. */
+  sourceMissing?: boolean;
   /** Re-run optimise when the model settled with no GLB (shows a Retry button). */
   onRetry?: () => void;
   /** Label for the retry action — e.g. "Load Preview" when the model was never
@@ -92,6 +96,7 @@ export function ModelPreview({
   optimizeFailed = false,
   rawFile = null,
   downloadName,
+  sourceMissing = false,
   onRetry,
   retryLabel = "Retry",
   onCancelWait,
@@ -339,6 +344,29 @@ export function ModelPreview({
           >
             Cancel
           </button>
+        </div>
+      ) : inView && sourceMissing ? (
+        // The source file is gone from storage — no tier can render and no
+        // regenerate can succeed. Say so plainly (a bare "3D preview" card
+        // with no action reads as broken) and offer removal when the host
+        // allows it, so the dead reference can be cleared.
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 p-4 text-center">
+          <div className="flex size-11 items-center justify-center rounded-full bg-muted/60">
+            <LuBox className="size-5 text-muted-foreground" />
+          </div>
+          <div className="flex flex-col gap-1">
+            <p className="text-sm font-medium text-foreground">
+              Model file unavailable
+            </p>
+            <p className="text-xs text-muted-foreground">
+              The source file no longer exists in storage.
+            </p>
+          </div>
+          {onDelete && (
+            <Button variant="secondary" onClick={onDelete}>
+              Remove model
+            </Button>
+          )}
         </div>
       ) : inView ? (
         // Settled with no renderable tier. Framed as an invitation, not a

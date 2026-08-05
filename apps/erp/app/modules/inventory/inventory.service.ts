@@ -24,6 +24,7 @@ import type {
   receiptValidator,
   shipmentValidator,
   shippingMethodValidator,
+  stockMovementCorrectionValidator,
   stockTransferLineValidator,
   stockTransferValidator,
   storageTypeValidator,
@@ -34,6 +35,11 @@ import {
   isPickingListLocked,
   reconcileReceiptLineSerials
 } from "./inventory.models";
+import {
+  effectiveSuccessorId,
+  type PickSupersession,
+  resolvePickTarget
+} from "./supersession-pick";
 
 export async function deleteBatchProperty(
   client: SupabaseClient<Database>,
@@ -1583,6 +1589,96 @@ export async function insertManualInventoryAdjustment(
   return { data: result.data?.itemLedger ?? null, error: null };
 }
 
+// Authoritative effective quantity for a movement's correction group: resolve
+// the ultimate root by walking correctionOfItemLedgerId, then sum the root and
+// every correction in the group (BFS — historical count corrections chained
+// fix→fix). Mirrors the walk inside the correct-stock-movement edge function;
+// the modal pre-fills from this so the user never submits a value derived from
+// an incomplete page of movements.
+export async function getStockMovementEffectiveQuantity(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  itemLedgerId: string
+) {
+  const original = await client
+    .from("itemLedger")
+    .select("id, quantity, correctionOfItemLedgerId")
+    .eq("id", itemLedgerId)
+    .eq("companyId", companyId)
+    .maybeSingle();
+  if (original.error || !original.data) {
+    return { data: null, error: original.error ?? "Stock movement not found" };
+  }
+
+  let root = original.data;
+  for (let depth = 0; root.correctionOfItemLedgerId && depth < 100; depth++) {
+    const parent = await client
+      .from("itemLedger")
+      .select("id, quantity, correctionOfItemLedgerId")
+      .eq("id", root.correctionOfItemLedgerId)
+      .eq("companyId", companyId)
+      .maybeSingle();
+    if (parent.error) return { data: null, error: parent.error };
+    if (!parent.data) break;
+    root = parent.data;
+  }
+
+  let effectiveQuantity = Number(root.quantity);
+  let frontier = [root.id];
+  const seen = new Set<string>([root.id]);
+  while (frontier.length > 0) {
+    const children = await client
+      .from("itemLedger")
+      .select("id, quantity")
+      .in("correctionOfItemLedgerId", frontier)
+      .eq("companyId", companyId);
+    if (children.error) return { data: null, error: children.error };
+    frontier = [];
+    for (const child of children.data ?? []) {
+      if (seen.has(child.id)) continue;
+      seen.add(child.id);
+      effectiveQuantity += Number(child.quantity);
+      frontier.push(child.id);
+    }
+  }
+
+  return { data: { rootId: root.id, effectiveQuantity }, error: null };
+}
+
+// Thin wrapper over the correct-stock-movement edge function: books ONE
+// opposite (delta) movement linked to the corrected movement via
+// correctionOfItemLedgerId, dated with the original's postingDate and posted
+// into the original's accounting period.
+export async function correctStockMovement(
+  client: SupabaseClient<Database>,
+  correction: z.infer<typeof stockMovementCorrectionValidator> & {
+    itemLedgerId: string;
+    companyId: string;
+    createdBy: string;
+  }
+) {
+  const { companyId, createdBy, ...rest } = correction;
+
+  const result = await client.functions.invoke<{
+    success: boolean;
+    itemLedger: { id: string } | null;
+  }>("correct-stock-movement", {
+    body: { ...rest, companyId, userId: createdBy }
+  });
+
+  if (result.error) {
+    return {
+      data: null,
+      error: await getEdgeFunctionErrorMessage(
+        result.error,
+        "Failed to correct stock movement"
+      )
+    };
+  }
+
+  return { data: result.data?.itemLedger ?? null, error: null };
+}
+
 // ===========================================================================
 // Inventory Count / Cycle Count
 // ===========================================================================
@@ -1681,9 +1777,10 @@ export async function getInventoryCountLineSummary(
   };
 }
 
-// Every item-ledger adjustment a count posted (including rectify corrections),
-// found via the movement's `documentType`/`documentId` back-reference. Used to
-// show a posted count what it actually did to inventory. Chronological.
+// Every item-ledger adjustment a count posted (including stock-movement
+// corrections, which copy the count's documentType/documentId), found via the
+// movement's `documentType`/`documentId` back-reference. Used to show a posted
+// count what it actually did to inventory. Chronological.
 export async function getInventoryCountMovements(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1863,130 +1960,6 @@ export async function generateInventoryCountLines(
       .execute();
 
     return buckets.length;
-  });
-}
-
-// Refresh a count's frozen `systemQuantity` to the current live on-hand WITHOUT
-// touching the entered `countedQuantity`. Used by Rectify: reopening a Posted
-// count re-baselines the snapshot to now, so re-posting applies the corrected
-// count on top of current stock. A full regenerate would wipe the counts; this
-// only moves the baseline forward. The calling route guards status; re-stamps
-// `snapshotAt`.
-type ResnapshotInventoryCountArgs = {
-  inventoryCountId: string;
-  companyId: string;
-  locationId: string;
-  updatedBy: string;
-};
-
-// Re-baseline each line's `systemQuantity` to fresh live on-hand, inside a
-// caller-supplied transaction. A `Transaction` is a `Kysely`, so callers pass
-// `trx`; this never opens its own transaction, letting a caller (rectify) bundle
-// it with a status guard + status flip atomically.
-async function resnapshotInventoryCountLinesInTrx(
-  trx: Kysely<KyselyDatabase>,
-  args: ResnapshotInventoryCountArgs
-) {
-  const { inventoryCountId, companyId, locationId, updatedBy } = args;
-
-  const bucketKey = (
-    itemId: string,
-    storageUnitId: string | null,
-    trackedEntityId: string | null
-  ) => `${itemId}|${storageUnitId ?? ""}|${trackedEntityId ?? ""}`;
-
-  const lines = await trx
-    .selectFrom("inventoryCountLine")
-    .select(["id", "itemId", "storageUnitId", "trackedEntityId"])
-    .where("inventoryCountId", "=", inventoryCountId)
-    .where("companyId", "=", companyId)
-    .execute();
-
-  // Fresh status-aware on-hand for the location, grouped by bucket (matches
-  // `generateInventoryCountLines`): exclude Rejected and Consumed lots.
-  const onHandRows = await trx
-    .selectFrom("itemLedger")
-    .select(["itemId", "storageUnitId", "trackedEntityId"])
-    .select((eb) => eb.fn.sum<number>("quantity").as("quantity"))
-    .where("companyId", "=", companyId)
-    .where("locationId", "=", locationId)
-    .where((eb) =>
-      eb.or([
-        eb("trackedEntityStatus", "is", null),
-        eb("trackedEntityStatus", "not in", ["Rejected", "Consumed"])
-      ])
-    )
-    .groupBy(["itemId", "storageUnitId", "trackedEntityId"])
-    .execute();
-
-  const onHandByBucket = new Map(
-    onHandRows.map((r) => [
-      bucketKey(r.itemId, r.storageUnitId, r.trackedEntityId),
-      Number(r.quantity ?? 0)
-    ])
-  );
-
-  const now = new Date().toISOString();
-  for (const line of lines) {
-    await trx
-      .updateTable("inventoryCountLine")
-      .set({
-        systemQuantity:
-          onHandByBucket.get(
-            bucketKey(line.itemId, line.storageUnitId, line.trackedEntityId)
-          ) ?? 0,
-        updatedBy,
-        updatedAt: now
-      })
-      .where("id", "=", line.id)
-      .where("companyId", "=", companyId)
-      .execute();
-  }
-
-  await trx
-    .updateTable("inventoryCount")
-    .set({ snapshotAt: now, updatedBy, updatedAt: now })
-    .where("id", "=", inventoryCountId)
-    .where("companyId", "=", companyId)
-    .execute();
-
-  return lines.length;
-}
-
-// Rectify a posted count in one transaction: lock the row, verify it is still
-// Posted, re-baseline the lines, and flip it back to Draft — all-or-nothing.
-// This closes the race the previous two-step route left open (a count could be
-// re-snapshotted while remaining Posted if the second write failed or a
-// concurrent request slipped in between). Throws on rollback; the route maps it
-// to a flash. Kysely bypasses RLS — authorize at the route first.
-export async function rectifyInventoryCount(
-  db: Kysely<KyselyDatabase>,
-  args: ResnapshotInventoryCountArgs
-) {
-  const { inventoryCountId, companyId, updatedBy } = args;
-  return db.transaction().execute(async (trx) => {
-    const locked = await trx
-      .selectFrom("inventoryCount")
-      .select(["id", "status"])
-      .where("id", "=", inventoryCountId)
-      .where("companyId", "=", companyId)
-      .forUpdate()
-      .executeTakeFirst();
-
-    if (!locked) throw new Error("Inventory count not found");
-    if (locked.status !== "Posted") {
-      throw new Error("Only a posted count can be rectified");
-    }
-
-    await resnapshotInventoryCountLinesInTrx(trx, args);
-
-    await trx
-      .updateTable("inventoryCount")
-      .set({ status: "Draft", updatedBy, updatedAt: new Date().toISOString() })
-      .where("id", "=", inventoryCountId)
-      .where("companyId", "=", companyId)
-      .where("status", "=", "Posted")
-      .execute();
   });
 }
 
@@ -2747,7 +2720,7 @@ export async function getPickingListLines(
   return client
     .from("pickingListLine")
     .select(
-      "*, item(name, readableId, itemTrackingType), job(jobId), jobOperation(order, processId, workCenterId, process:process(name), workCenter:workCenter(name)), storageUnit:storageUnit!pickingListLine_storageUnitId_fkey(name, locationId), toStorageUnit:storageUnit!pickingListLine_toStorageUnitId_fkey(name, locationId), trackedEntities:pickingListLineTrackedEntity(trackedEntityId, quantity, quantityPicked, trackedEntity(readableId))"
+      "*, item(name, readableId, itemTrackingType), jobMaterial(itemId, item(readableId)), job(jobId), jobOperation(order, processId, workCenterId, process:process(name), workCenter:workCenter(name)), storageUnit:storageUnit!pickingListLine_storageUnitId_fkey(name, locationId), toStorageUnit:storageUnit!pickingListLine_toStorageUnitId_fkey(name, locationId), trackedEntities:pickingListLineTrackedEntity(trackedEntityId, quantity, quantityPicked, trackedEntity(readableId))"
     )
     .eq("pickingListId", pickingListId)
     .order("jobOperationId")
@@ -3016,6 +2989,60 @@ export async function upsertPickingList(
     .single();
 }
 
+export type UnresolvedPickingListLine = {
+  itemName: string;
+  outstanding: number;
+};
+
+// Lines still owing material when Finish is pressed. "Unresolved" = a line the
+// operator neither fully picked, cancelled, nor explicitly marked Short — i.e.
+// silently left behind. `hasShort` reports whether any acknowledged shortfall
+// exists, which forces the final header status to Partial rather than Completed.
+export async function getUnresolvedPickingListLines(
+  client: SupabaseClient<Database>,
+  pickingListId: string,
+  companyId: string
+): Promise<{
+  unresolved: UnresolvedPickingListLine[];
+  hasShort: boolean;
+  error: unknown;
+}> {
+  const { data, error } = await client
+    .from("pickingListLine")
+    .select(
+      "status, quantityToPick, quantityPicked, item:item(name, readableId)"
+    )
+    .eq("pickingListId", pickingListId)
+    .eq("companyId", companyId);
+
+  if (error) return { unresolved: [], hasShort: false, error };
+
+  const lines = data ?? [];
+  const hasShort = lines.some((line) => line.status === "Short");
+
+  const unresolved = lines
+    .filter(
+      (line) =>
+        line.status !== "Cancelled" &&
+        line.status !== "Short" &&
+        Number(line.quantityPicked ?? 0) < Number(line.quantityToPick ?? 0)
+    )
+    .map((line) => {
+      const item = line.item as
+        | { name?: string | null; readableId?: string | null }
+        | { name?: string | null; readableId?: string | null }[]
+        | null;
+      const itemRecord = Array.isArray(item) ? item[0] : item;
+      return {
+        itemName: itemRecord?.name ?? itemRecord?.readableId ?? "Material",
+        outstanding:
+          Number(line.quantityToPick ?? 0) - Number(line.quantityPicked ?? 0)
+      };
+    });
+
+  return { unresolved, hasShort, error: null };
+}
+
 export async function updatePickingListStatus(
   client: SupabaseClient<Database>,
   pickingListId: string,
@@ -3148,6 +3175,55 @@ async function resolveWarehouseSource(
   return null;
 }
 
+/**
+ * Whether an item has any WAREHOUSE (non-lineside) on-hand at a location,
+ * INCLUDING the unassigned (null storage unit) bin.
+ *
+ * This is the stock *test*, deliberately decoupled from `resolveWarehouseSource`
+ * (which selects a concrete source shelf and so cannot see null-bin stock). The
+ * picking UI (`PickingListLines`) likewise treats unassigned-bin on-hand as real
+ * stock, so a `Consume First` predecessor must not be judged "out of stock"
+ * merely because all of its on-hand sits in the unassigned bin — that would
+ * spuriously redirect the pick to the successor and leave predecessor stock
+ * unused.
+ */
+async function hasWarehouseStock(
+  client: SupabaseClient<Database>,
+  args: { itemId: string; locationId: string; companyId: string }
+): Promise<boolean> {
+  const quantities = await getItemStorageUnitQuantities(
+    client,
+    args.itemId,
+    args.companyId,
+    args.locationId
+  );
+
+  const perUnit = new Map<string, number>();
+  let unassignedQty = 0;
+  for (const row of quantities.data ?? []) {
+    const unitId = (row as { storageUnitId?: string | null }).storageUnitId;
+    const qty = Number((row as { quantity?: number | null }).quantity ?? 0);
+    // The unassigned (null) bin is warehouse stock — it has no work center.
+    if (!unitId) {
+      unassignedQty += qty;
+    } else {
+      perUnit.set(unitId, (perUnit.get(unitId) ?? 0) + qty);
+    }
+  }
+  if (unassignedQty > 0) return true;
+
+  for (const [storageUnitId, qty] of perUnit) {
+    if (qty <= 0) continue;
+    const effectiveWc = await client.rpc("get_effective_work_center_id", {
+      p_storage_unit_id: storageUnitId
+    });
+    // Any non-lineside bin with on-hand counts as available warehouse stock.
+    if (!effectiveWc.data) return true;
+  }
+
+  return false;
+}
+
 export async function generatePickingList(
   client: SupabaseClient<Database>,
   args: {
@@ -3258,6 +3334,52 @@ export async function generatePickingList(
     return { data: null, error: materials.error };
   }
 
+  // Supersession config for every demanded material, so a pick can honor an
+  // item's supersession: redirect to an effective successor (Prefer New /
+  // Stock Only) or, for Consume First, when the predecessor is out of stock.
+  // Mirrors get_picking_schedule's SQL resolution.
+  const materialItemIds = Array.from(
+    new Set((materials.data ?? []).map((m) => m.itemId))
+  );
+  const supersessionByItem = new Map<string, PickSupersession>();
+  if (materialItemIds.length > 0) {
+    const supersessions = await client
+      .from("itemSupersession")
+      .select(
+        "itemId, supersessionMode, successorItemId, successorEffectivityDate, conversionFactor"
+      )
+      .eq("companyId", args.companyId)
+      .in("itemId", materialItemIds);
+    if (supersessions.error) {
+      await client.from("pickingList").delete().eq("id", plId);
+      return { data: null, error: supersessions.error };
+    }
+    for (const row of supersessions.data ?? []) {
+      supersessionByItem.set(row.itemId, row);
+    }
+  }
+  // Business date for supersession effectivity. Uses UTC to match the SQL
+  // schedule/availability path — get_picking_schedule and
+  // get_picking_list_availability compare successorEffectivityDate against the
+  // UTC calendar date ((now() AT TIME ZONE 'UTC')::date) — so generation and
+  // those RPCs never resolve a different effective successor at a timezone
+  // boundary.
+  const asOfDate = today("UTC").toString();
+
+  // Cache per-item on-hand-by-bin so a supersession redirect doesn't refetch.
+  const onHandCache = new Map<string, Map<string, number>>();
+  const onHandFor = async (itemId: string): Promise<Map<string, number>> => {
+    const cached = onHandCache.get(itemId);
+    if (cached) return cached;
+    const map = await getItemOnHandByStorageUnit(client, {
+      itemId,
+      locationId: args.locationId,
+      companyId: args.companyId
+    });
+    onHandCache.set(itemId, map);
+    return map;
+  };
+
   // Lazily resolve (and cache) the lineside destination per work center. A
   // pick is a transfer from the warehouse source to this lineside shelf;
   // production later consumes from it.
@@ -3314,49 +3436,88 @@ export async function generatePickingList(
     // 5. Resolve the destination: the operation's work-center lineside shelf.
     const toStorageUnitId = await resolveLineside(opWorkCenterId);
 
-    // On-hand of this item per bin at the location (computed once, reused below
-    // for both the already-staged skip and warehouse-source resolution).
-    const onHandByUnit = await getItemOnHandByStorageUnit(client, {
-      itemId: mat.itemId,
-      locationId: args.locationId,
-      companyId: args.companyId
-    });
+    // 6. Honor supersession: decide which item this pick targets. Consume First
+    // needs to know whether the predecessor is out of warehouse stock (and the
+    // successor has stock), so probe those sources first — for that mode only.
+    // The stock TEST uses total non-lineside on-hand (including the unassigned
+    // bin) rather than a resolvable concrete source, so predecessor stock sitting
+    // only in the unassigned bin still blocks a spurious successor redirect.
+    const supersession = supersessionByItem.get(mat.itemId);
+    let predecessorInStock = true;
+    let successorInStock = true;
+    if (supersession?.supersessionMode === "Consume First") {
+      predecessorInStock = await hasWarehouseStock(client, {
+        itemId: mat.itemId,
+        locationId: args.locationId,
+        companyId: args.companyId
+      });
+      const successorId = effectiveSuccessorId(supersession, asOfDate);
+      if (successorId && !predecessorInStock) {
+        successorInStock = await hasWarehouseStock(client, {
+          itemId: successorId,
+          locationId: args.locationId,
+          companyId: args.companyId
+        });
+      }
+    }
 
-    // Skip when the op's lineside bin already stocks enough to cover the issue —
-    // it's already staged here, so there's nothing to pick. We test the ACTUAL
-    // on-hand at that bin, not merely whether the jobMaterial's recorded shelf
-    // points there: a part can be line-stocked at this work center while the
-    // jobMaterial still points at the warehouse (or another line).
+    const target = resolvePickTarget({
+      itemId: mat.itemId,
+      supersession,
+      predecessorInStock,
+      successorInStock,
+      asOfDate
+    });
+    // Nothing valid to pick for production (No Stock, or Stock Only without an
+    // effective successor) — drop it, matching get_picking_schedule.
+    if (target.kind === "skip") continue;
+
+    const pickItemId = target.itemId;
+    const quantityToPick = quantityToIssue * target.factor;
+
+    // On-hand of the resolved PICK item per bin at the location (reused for the
+    // already-staged skip and warehouse-source resolution).
+    const onHandByUnit = await onHandFor(pickItemId);
+
+    // Skip when the op's lineside bin already stocks enough of the pick item to
+    // cover the (converted) quantity — it's already staged here, so there's
+    // nothing to pick. We test the ACTUAL on-hand at that bin, not merely
+    // whether the jobMaterial's recorded shelf points there: a part can be
+    // line-stocked at this work center while the jobMaterial still points at the
+    // warehouse (or another line).
     if (
       toStorageUnitId &&
-      (onHandByUnit.get(toStorageUnitId) ?? 0) >= quantityToIssue
+      (onHandByUnit.get(toStorageUnitId) ?? 0) >= quantityToPick
     ) {
       continue;
     }
 
-    // 6. Determine the source (warehouse) shelf. Use the jobMaterial's shelf
-    // only when it's a warehouse (non-lineside) shelf; otherwise resolve a
-    // warehouse source by on-hand — never rob another work center's lineside.
-    // A null source = a shortage the kitter/planner must resolve.
-    let materialEffectiveWc: string | null = null;
-    if (mat.storageUnitId) {
+    // 7. Determine the source (warehouse) shelf. The jobMaterial's recorded
+    // shelf is only meaningful when we're picking that same item (the
+    // predecessor); for a substituted successor, resolve a warehouse source by
+    // on-hand. Use the recorded shelf only when it's a warehouse (non-lineside)
+    // shelf; otherwise resolve by on-hand — never rob another work center's
+    // lineside. A null source = a shortage the kitter/planner must resolve.
+    let sourceStorageUnitId: string | null;
+    if (pickItemId === mat.itemId && mat.storageUnitId) {
       const effectiveWc = await client.rpc("get_effective_work_center_id", {
         p_storage_unit_id: mat.storageUnitId
       });
-      materialEffectiveWc = (effectiveWc.data as string | null) ?? null;
+      const materialEffectiveWc = (effectiveWc.data as string | null) ?? null;
+      sourceStorageUnitId = materialEffectiveWc
+        ? await resolveWarehouseSource(client, onHandByUnit)
+        : mat.storageUnitId;
+    } else {
+      sourceStorageUnitId = await resolveWarehouseSource(client, onHandByUnit);
     }
-    const sourceStorageUnitId =
-      mat.storageUnitId && !materialEffectiveWc
-        ? mat.storageUnitId
-        : await resolveWarehouseSource(client, onHandByUnit);
 
     lineRows.push({
       pickingListId: plId,
       jobId: mat.jobId,
       jobMaterialId: mat.id,
       jobOperationId: effectiveOperationId,
-      itemId: mat.itemId,
-      quantityToPick: quantityToIssue,
+      itemId: pickItemId,
+      quantityToPick,
       storageUnitId: sourceStorageUnitId,
       toStorageUnitId,
       companyId: args.companyId,

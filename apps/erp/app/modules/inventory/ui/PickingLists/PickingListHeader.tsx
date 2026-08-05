@@ -10,22 +10,36 @@ import {
   Heading,
   HStack,
   IconButton,
+  Modal,
+  ModalBody,
+  ModalContent,
+  ModalFooter,
+  ModalHeader,
+  ModalOverlay,
+  ModalTitle,
   useDisclosure
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
+import { useEffect, useState } from "react";
 import {
   LuCircleCheck,
   LuCirclePlay,
   LuCircleStop,
   LuEllipsisVertical,
   LuLoaderCircle,
-  LuTrash
+  LuTrash,
+  LuTriangleAlert
 } from "react-icons/lu";
 import { useFetcher, useParams } from "react-router";
 import Assignee, { useOptimisticAssignment } from "~/components/Assignee";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
 import { usePermissions, useRouteData } from "~/hooks";
-import type { getPickingList, getPickingListLines } from "~/modules/inventory";
+import type {
+  getPickingList,
+  getPickingListLines,
+  UnresolvedPickingListLine
+} from "~/modules/inventory";
+import { isPickingListLocked } from "~/modules/inventory";
 import { path } from "~/utils/path";
 import PickingListStatus from "./PickingListStatus";
 
@@ -52,9 +66,24 @@ const PickingListHeader = () => {
   const { t } = useLingui();
   const permissions = usePermissions();
   const deleteModal = useDisclosure();
-  const statusFetcher = useFetcher();
+  const statusFetcher = useFetcher<{
+    needsAcknowledgement?: boolean;
+    unresolvedLines?: UnresolvedPickingListLine[];
+  }>();
+  const [acknowledgeLines, setAcknowledgeLines] = useState<
+    UnresolvedPickingListLine[] | null
+  >(null);
 
-  const isClosed = ["Completed", "Cancelled"].includes(status);
+  useEffect(() => {
+    if (
+      statusFetcher.data?.needsAcknowledgement &&
+      statusFetcher.data.unresolvedLines
+    ) {
+      setAcknowledgeLines(statusFetcher.data.unresolvedLines);
+    }
+  }, [statusFetcher.data]);
+
+  const isClosed = isPickingListLocked(status);
   const hasPickedLines = (routeData.pickingListLines ?? []).some(
     (l) => Number(l.quantityPicked ?? 0) > 0
   );
@@ -68,9 +97,10 @@ const PickingListHeader = () => {
       ? optimisticAssignment
       : pickingList.assignee;
 
-  const submitStatus = (next: string) => {
+  const submitStatus = (next: string, acknowledged?: boolean) => {
+    if (acknowledged !== true) setAcknowledgeLines(null);
     statusFetcher.submit(
-      { status: next },
+      acknowledged ? { status: next, acknowledged: "true" } : { status: next },
       { method: "post", action: path.to.pickingListStatus(pickingListId) }
     );
   };
@@ -186,6 +216,70 @@ const PickingListHeader = () => {
           </HStack>
         </HStack>
       </div>
+
+      {acknowledgeLines && (
+        <Modal
+          open
+          onOpenChange={(open) => {
+            if (!open) setAcknowledgeLines(null);
+          }}
+        >
+          <ModalOverlay />
+          <ModalContent>
+            <ModalHeader>
+              <ModalTitle>
+                <span className="flex items-center gap-2">
+                  <LuTriangleAlert className="text-amber-500 h-5 w-5" />
+                  <Trans>Finish with material unpicked?</Trans>
+                </span>
+              </ModalTitle>
+            </ModalHeader>
+            <ModalBody>
+              <div className="flex flex-col gap-3 text-sm">
+                <p className="text-muted-foreground">
+                  <Trans>
+                    These items still have material to pick. Finishing now marks
+                    the list Partial.
+                  </Trans>
+                </p>
+                <ul className="flex flex-col gap-1">
+                  {acknowledgeLines.map((line, index) => (
+                    <li
+                      key={`${line.itemName}-${index}`}
+                      className="flex items-center justify-between gap-4 rounded-md border px-3 py-2"
+                    >
+                      <span className="font-medium">{line.itemName}</span>
+                      <span className="text-muted-foreground tabular-nums">
+                        {line.outstanding} <Trans>short</Trans>
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </ModalBody>
+            <ModalFooter>
+              <Button
+                variant="secondary"
+                onClick={() => setAcknowledgeLines(null)}
+                isDisabled={statusFetcher.state !== "idle"}
+              >
+                <Trans>Keep picking</Trans>
+              </Button>
+              <Button
+                variant="solid"
+                onClick={() => {
+                  setAcknowledgeLines(null);
+                  submitStatus("Completed", true);
+                }}
+                isLoading={statusFetcher.state !== "idle"}
+                isDisabled={statusFetcher.state !== "idle"}
+              >
+                <Trans>Acknowledge & finish</Trans>
+              </Button>
+            </ModalFooter>
+          </ModalContent>
+        </Modal>
+      )}
 
       {deleteModal.isOpen && (
         <ConfirmDelete

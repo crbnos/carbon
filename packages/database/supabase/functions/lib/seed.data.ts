@@ -955,6 +955,7 @@ export const periodCloseTaskDefinitions = [
  */
 export const defaultLocation = {
   name: "Headquarters",
+  code: "HQ",
   addressLine1: "123 Main Street",
   city: "Austin",
   stateProvince: "TX",

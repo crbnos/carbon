@@ -53,7 +53,8 @@ Other config knobs:
 - `retentionDays: 30`
 - `archivePath: "audit-logs/{companyId}/{year}/{month}.jsonl.gz"` and `archiveBucket: "private"`.
 - `createFields` (allowlist of columns surfaced on INSERT) is declared per table.
-- `fkDisplayRegistry` — display columns per FK *target* table (e.g. `supplier: ["name"]`, `user: ["fullName"]`). FK columns are discovered from the schema at runtime via the `get_foreign_key_map` RPC (reads `pg_constraint`; only FKs referencing the target's `id`; returns `targetHasCompanyId` so non-tenant targets like `user` skip the companyId filter). Any changed FK column whose target is in the registry gets its display values frozen into the diff automatically; targets missing from the registry degrade to showing the raw id. Per-column `snapshotFields` on a table config still exist as overrides and win over the registry.
+- `fkDisplayRegistry` — display columns per FK *target* table (e.g. `supplier: ["name"]`, `user: ["fullName"]`, ~64 targets). FK columns are discovered from the schema at runtime via the `get_foreign_key_map` RPC (reads `pg_constraint`; only FKs referencing the target's `id`; returns `targetHasCompanyId` so non-tenant targets like `user` skip the companyId filter). Any changed FK column whose target is in the registry gets its display values frozen into the diff automatically; targets missing from the registry degrade to showing the raw id. Per-column `snapshotFields` on a table config still exist as overrides and win over the registry — they're REQUIRED for columns with no FK constraint in the DB (e.g. `salesOrder.salesPersonId`, several line-level `locationId`s), which `get_foreign_key_map` cannot see. An override target's tenancy is inherited from any schema FK referencing the same table (so a `user` override is correctly unscoped).
+- `fkDisplayHops` — junction targets whose display value lives one hop away (`customerContact`/`supplierContact` → `contact.fullName`). The handler resolves these in two batched lookups (junction id → hop column → display row); hops win over the registry for the same target.
 
 Types live in `audit.types.ts`: `AuditLogEntry`, `CreateAuditLogEntry`, `AuditDiff`, `AuditDiffEntry`,
 `AuditMetadata`, `AuditOperation`, `AuditLogFilters`, `AuditLogResponse`, `AuditLogArchive`, `AuditLogConfig`.
@@ -100,7 +101,10 @@ than from config.
   Unknown prefixes render as plain text.
 - `.../AuditLog/AuditLogSettings.tsx` — enable/disable + archive download list.
 - `apps/erp/app/components/AuditLog/` — per-entity history `AuditLogDrawer.tsx` + `useAuditLog.tsx` hook,
-  fetching `api+/audit-log.ts` by `entityType`/`entityId`/`recordId`.
+  fetching `api+/audit-log.ts` by `entityType`/`entityId`/`recordId`. `AuditLogDrawer.tsx` also exports
+  `ChangeRow`, the snapshot-aware diff-row renderer (FK name from `diff[col].snapshot`, raw id on hover)
+  used by BOTH the drawer and the global `AuditLogTable` expanded rows — don't render `change.old/new`
+  raw or FKs regress to bare ids.
 - Actor column: `<EmployeeAvatar employeeId={actorId} />` linked to `path.to.employeeAccount`; null actor → "System".
   (`actorName` column was removed; the UI resolves names from `actorId`.)
 

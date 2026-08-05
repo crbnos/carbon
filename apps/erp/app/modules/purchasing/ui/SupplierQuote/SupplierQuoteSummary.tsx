@@ -156,7 +156,7 @@ const LineItems = ({
                       </motion.div>
                     </HStack>
                   </div>
-                  <span className="text-muted-foreground text-base truncate">
+                  <span className="text-muted-foreground text-sm truncate">
                     {isGlAccount
                       ? (accounts.find((a) => a.id === line.accountId)?.name ??
                         "G/L Account")
@@ -335,7 +335,7 @@ const SupplierQuoteSummary = () => {
           <div className="flex flex-col gap-1 items-end">
             <SupplierAvatar supplierId={routeData?.quote.supplierId ?? null} />
             {routeData?.quote?.expirationDate && (
-              <span className="text-muted-foreground text-sm">
+              <span className="text-xs text-muted-foreground tracking-tight">
                 Expires {formatDate(routeData?.quote.expirationDate)}
               </span>
             )}

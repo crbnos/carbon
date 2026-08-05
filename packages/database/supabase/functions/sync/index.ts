@@ -3,7 +3,7 @@ import { Transaction } from "npm:kysely";
 import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
 
 import z from "npm:zod@^3.24.1";
-import { corsHeaders } from "../lib/headers.ts";
+import { corsPreflight, errorResponse, jsonResponse } from "../lib/response.ts";
 import { requirePermissions } from "../lib/supabase.ts";
 import { getReadableIdWithRevision } from "../lib/utils.ts";
 
@@ -165,9 +165,8 @@ async function copyMakeMethodOperations(
 }
 
 serve(async (req: Request) => {
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
-  }
+  const preflight = corsPreflight(req);
+  if (preflight) return preflight;
   const payload = await req.json();
 
   const { type, companyId, userId } = payloadValidator.parse(payload);
@@ -743,23 +742,13 @@ serve(async (req: Request) => {
           }
         });
       } catch (err) {
-        console.error(err);
-        return new Response(JSON.stringify(err), {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 500,
-        });
+        return errorResponse(err, 500);
       }
 
-      return new Response(
-        JSON.stringify({
-          success: true,
-          makeMethodId: activeMakeMethodId,
-        }),
-        {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 200,
-        }
-      );
+      return jsonResponse({
+        success: true,
+        makeMethodId: activeMakeMethodId,
+      });
     }
   }
 });

@@ -104,7 +104,10 @@ function formatCurrency(value: number): string {
 
 function formatPercent(value: number): string {
   if (!Number.isFinite(value)) return "-";
-  return `${value.toFixed(1)}%`;
+  return `${value.toLocaleString(undefined, {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 2
+  })}%`;
 }
 
 /** Normal-debit accounts: positive balance = debit */
@@ -191,24 +194,24 @@ const TrialBalanceTree = memo(
           <div className="flex-1 px-4">
             <Trans>Account</Trans>
           </div>
-          <span className="w-28 text-right px-4">
+          <span className="w-28 text-right px-2">
             <Trans>Beginning</Trans>
           </span>
-          <span className="w-28 text-right px-4">
+          <span className="w-28 text-right px-2">
             <Trans>Debits</Trans>
           </span>
-          <span className="w-28 text-right px-4">
+          <span className="w-28 text-right px-2">
             <Trans>Credits</Trans>
           </span>
-          <span className="w-28 text-right px-4">
+          <span className="w-28 text-right px-2">
             <Trans>Ending</Trans>
           </span>
           {showTranslated && (
-            <span className="w-28 text-right px-4">
+            <span className="w-28 text-right px-2">
               {t`Ending (${parentCurrency ?? "Translated"})`}
             </span>
           )}
-          <span className="w-16 text-right px-4">
+          <span className="w-20 text-right px-2">
             <Trans>Ratio</Trans>
           </span>
         </div>
@@ -308,24 +311,24 @@ const TrialBalanceTree = memo(
                 </div>
 
                 {/* Beginning Balance */}
-                <span className="w-28 text-right tabular-nums shrink-0 text-muted-foreground">
+                <span className="w-28 text-right tabular-nums shrink-0 px-2 text-muted-foreground">
                   {formatCurrency(beginningBalance)}
                 </span>
 
                 {/* Debits */}
-                <span className="w-28 text-right tabular-nums shrink-0 text-muted-foreground">
+                <span className="w-28 text-right tabular-nums shrink-0 px-2 text-muted-foreground">
                   {formatCurrency(debit)}
                 </span>
 
                 {/* Credits */}
-                <span className="w-28 text-right tabular-nums shrink-0 text-muted-foreground">
+                <span className="w-28 text-right tabular-nums shrink-0 px-2 text-muted-foreground">
                   {formatCurrency(credit)}
                 </span>
 
                 {/* Ending Balance */}
                 <span
                   className={cn(
-                    "w-28 text-right tabular-nums shrink-0 text-muted-foreground",
+                    "w-28 text-right tabular-nums shrink-0 px-2 text-muted-foreground",
                     isDrillable &&
                       "group-hover/row:text-foreground group-hover/row:underline underline-offset-2 decoration-border"
                   )}
@@ -335,7 +338,7 @@ const TrialBalanceTree = memo(
 
                 {/* Translated Ending Balance */}
                 {showTranslated && (
-                  <span className="w-28 text-right tabular-nums shrink-0 text-muted-foreground">
+                  <span className="w-28 text-right tabular-nums shrink-0 px-2 text-muted-foreground">
                     {account.translatedBalance != null
                       ? formatCurrency(account.translatedBalance)
                       : "-"}
@@ -343,7 +346,7 @@ const TrialBalanceTree = memo(
                 )}
 
                 {/* Ratio */}
-                <span className="w-16 text-right tabular-nums shrink-0 text-muted-foreground">
+                <span className="w-20 text-right tabular-nums shrink-0 px-2 text-muted-foreground">
                   {node.parentId ? formatPercent(ratio) : ""}
                 </span>
               </div>

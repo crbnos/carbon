@@ -27,6 +27,7 @@
     "./events": "./src/events.ts",
     "./inngest": "./src/inngest/client.ts",
     "./resend.server": "./src/resend.server.ts",
+    "./shims": "./src/shims.ts",
     "./slack.server": "./src/slack.server.ts",
     "./trigger": "./src/trigger.ts",
     "./twenty.server": "./src/twenty.server.ts"
@@ -38,6 +39,8 @@
     "lint": "biome lint --write ",
     "typecheck": "tsgo --noEmit"
   },
-  "sideEffects": false,
+  "sideEffects": [
+    "./src/shims.ts"
+  ],
   "version": "0.0.0"
 }

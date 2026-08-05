@@ -10,11 +10,74 @@ import Activity from "~/components/Activity";
 import { path } from "~/utils/path";
 import type { ItemLedger } from "../../types";
 
-const getActivityText = (ledgerRecord: ItemLedger) => {
+// A Direct Transfer writes two ledger rows in one transaction — the negative
+// out of the source bin and the positive into the destination — so the feed
+// renders the same move twice. Collapse each pair into the inbound row and hang
+// the source bin off it.
+//
+// The pair is identified by document + item + tracked entity + `createdAt`:
+// Postgres NOW() is transaction time, so both rows share it exactly. Keying on
+// the timestamp keeps repeat picks of the same line as separate entries, and
+// makes the merge idempotent, so it's safe to re-run over the accumulated list
+// as infinite scroll appends pages.
+export type CollapsedItemLedger = ItemLedger & {
+  transferFromStorageUnitName?: string | null;
+};
+
+export function collapseTransferPairs(
+  rows: ItemLedger[]
+): CollapsedItemLedger[] {
+  // Batch Split rows are internal net-zero bookkeeping — the Transfer/
+  // Consumption rows tell the real story, so they never reach the feed.
+  rows = rows.filter((row) => row.documentType !== "Batch Split");
+
+  const pairKey = (row: ItemLedger) =>
+    [row.documentId, row.itemId, row.trackedEntityId ?? "", row.createdAt].join(
+      "|"
+    );
+
+  const outboundByKey = new Map<string, ItemLedger>();
+  for (const row of rows) {
+    if (row.documentType !== "Direct Transfer" || row.quantity >= 0) continue;
+    outboundByKey.set(pairKey(row), row);
+  }
+
+  return rows.reduce<CollapsedItemLedger[]>((acc, row) => {
+    if (row.documentType !== "Direct Transfer") return [...acc, row];
+    const outbound = outboundByKey.get(pairKey(row));
+    // Drop the outbound half only when its inbound partner is present to
+    // absorb it — otherwise (destination page not loaded yet) keep it, so a
+    // transfer never vanishes from the feed.
+    if (row.quantity < 0) {
+      const hasInbound = rows.some(
+        (r) =>
+          r.documentType === "Direct Transfer" &&
+          r.quantity > 0 &&
+          pairKey(r) === pairKey(row)
+      );
+      return hasInbound ? acc : [...acc, row];
+    }
+    return [
+      ...acc,
+      {
+        ...row,
+        transferFromStorageUnitName: outbound?.storageUnit?.name ?? null
+      }
+    ];
+  }, []);
+}
+
+const getActivityText = (
+  ledgerRecord: CollapsedItemLedger,
+  trackingNoun: "batch" | "serial" | null
+) => {
   // Prefer the entity's readable serial/batch number; fall back to the raw
   // tracked-entity id when it has none (e.g. unnumbered receipt batches).
-  const trackedEntityLabel =
-    ledgerRecord.trackedEntity?.readableId || ledgerRecord.trackedEntityId;
+  // The tracked-entity clause is omitted entirely when the item isn't
+  // serial/batch tracked (trackingNoun null).
+  const trackedEntityLabel = trackingNoun
+    ? ledgerRecord.trackedEntity?.readableId || ledgerRecord.trackedEntityId
+    : null;
 
   switch (ledgerRecord.documentType) {
     case "Purchase Receipt":
@@ -23,11 +86,7 @@ const getActivityText = (ledgerRecord: ItemLedger) => {
           ? ` to ${ledgerRecord.storageUnit.name}`
           : ""
       }${
-        trackedEntityLabel
-          ? ` from ${
-              Math.abs(ledgerRecord.quantity) > 1 ? "batch" : "serial"
-            } ${trackedEntityLabel}`
-          : ""
+        trackedEntityLabel ? ` of ${trackingNoun} ${trackedEntityLabel}` : ""
       }`;
     case "Purchase Invoice":
       return `invoiced ${ledgerRecord.quantity} units${
@@ -41,9 +100,7 @@ const getActivityText = (ledgerRecord: ItemLedger) => {
           ? ` from ${ledgerRecord.storageUnit.name}`
           : ""
       }${
-        trackedEntityLabel
-          ? ` of ${Math.abs(ledgerRecord.quantity) > 1 ? "batch" : "serial"} ${trackedEntityLabel}`
-          : ""
+        trackedEntityLabel ? ` of ${trackingNoun} ${trackedEntityLabel}` : ""
       }`;
     case "Sales Invoice":
       return `invoiced ${ledgerRecord.quantity} units for sale${
@@ -63,14 +120,18 @@ const getActivityText = (ledgerRecord: ItemLedger) => {
           ? ` to ${ledgerRecord.storageUnit.name}`
           : ""
       } from transfer`;
-    case "Direct Transfer":
+    case "Direct Transfer": {
+      // Collapsed rows carry both ends; an uncollapsed half names only its own.
+      const from =
+        ledgerRecord.quantity > 0
+          ? ledgerRecord.transferFromStorageUnitName
+          : ledgerRecord.storageUnit?.name;
+      const to =
+        ledgerRecord.quantity > 0 ? ledgerRecord.storageUnit?.name : null;
       return `transferred ${Math.abs(ledgerRecord.quantity)} units${
-        ledgerRecord.storageUnit?.name
-          ? ` ${ledgerRecord.quantity > 0 ? "to" : "from"} ${
-              ledgerRecord.storageUnit.name
-            }`
-          : ""
-      }`;
+        from ? ` from ${from}` : ""
+      }${to ? ` to ${to}` : ""}`;
+    }
     case "Inventory Receipt":
       return `received ${ledgerRecord.quantity} units into inventory${
         ledgerRecord.storageUnit?.name
@@ -140,8 +201,7 @@ const getActivityText = (ledgerRecord: ItemLedger) => {
             : ""}
           {trackedEntityLabel ? (
             <>
-              from {Math.abs(ledgerRecord.quantity) > 1 ? "batch" : "serial"}{" "}
-              {trackedEntityLabel}{" "}
+              of {trackingNoun} {trackedEntityLabel}{" "}
             </>
           ) : null}
           {ledgerRecord.documentLineId && ledgerRecord.documentId ? (
@@ -184,8 +244,7 @@ const getActivityText = (ledgerRecord: ItemLedger) => {
             : ""}
           {trackedEntityLabel ? (
             <>
-              from {Math.abs(ledgerRecord.quantity) > 1 ? "batch" : "serial"}{" "}
-              {trackedEntityLabel}{" "}
+              of {trackingNoun} {trackedEntityLabel}{" "}
             </>
           ) : null}
           {ledgerRecord.documentId ? (
@@ -236,9 +295,7 @@ const getActivityText = (ledgerRecord: ItemLedger) => {
           ? ` to ${ledgerRecord.storageUnit?.name}`
           : ""
       }${
-        trackedEntityLabel
-          ? ` for ${Math.abs(ledgerRecord.quantity) > 1 ? "batch" : "serial"} ${trackedEntityLabel}`
-          : ""
+        trackedEntityLabel ? ` for ${trackingNoun} ${trackedEntityLabel}` : ""
       }`;
     case "Negative Adjmt.":
       return `made a negative adjustment of ${-1 * ledgerRecord.quantity}${
@@ -246,9 +303,7 @@ const getActivityText = (ledgerRecord: ItemLedger) => {
           ? ` to ${ledgerRecord.storageUnit.name}`
           : ""
       }${
-        trackedEntityLabel
-          ? ` for ${Math.abs(ledgerRecord.quantity) > 1 ? "batch" : "serial"} ${trackedEntityLabel}`
-          : ""
+        trackedEntityLabel ? ` for ${trackingNoun} ${trackedEntityLabel}` : ""
       }`;
     default:
       return "";
@@ -270,16 +325,23 @@ const getActivityIcon = (ledgerRecord: ItemLedger) => {
 };
 
 type InventoryActivityProps = {
-  item: ItemLedger;
+  item: CollapsedItemLedger;
   highlightId?: string;
+  itemTrackingType?: string | null;
 };
 
 const InventoryActivity = memo(
-  ({ item, highlightId }: InventoryActivityProps) => {
+  ({ item, highlightId, itemTrackingType }: InventoryActivityProps) => {
+    const trackingNoun =
+      itemTrackingType === "Serial"
+        ? ("serial" as const)
+        : itemTrackingType === "Batch"
+          ? ("batch" as const)
+          : null;
     return (
       <Activity
         employeeId={item.createdBy}
-        activityMessage={getActivityText(item)}
+        activityMessage={getActivityText(item, trackingNoun)}
         activityTime={item.createdAt}
         activityIcon={getActivityIcon(item)}
         comment={item.comment}

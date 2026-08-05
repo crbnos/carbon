@@ -49,6 +49,7 @@ export interface TrackedEntityAttributes {
   "Shipment Line"?: string;
   Shipment?: string;
   "Split Entity ID"?: string;
+  "Split From Entity ID"?: string;
   "Stock Transfer Line"?: string;
   "Stock Transfer"?: string;
   expirationDate?: string;
@@ -64,6 +65,8 @@ export interface TrackedActivityAttributes {
   // attributed per-unit even though every unit shares one lot entity.
   Unit?: number;
   "Original Quantity"?: number;
+  "Picking List"?: string;
+  "Picking List Line"?: string;
   "Production Event"?: string;
   "Receipt Line"?: string;
   "Remaining Quantity"?: number;

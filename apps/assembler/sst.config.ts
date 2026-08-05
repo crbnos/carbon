@@ -65,13 +65,15 @@ export default $config({
         ],
       }),
     });
+    // Derive the partition so managed-policy ARNs resolve on GovCloud
+    // (`aws-us-gov`) / China (`aws-cn`), not just the commercial `aws` partition.
+    const partition = aws.getPartitionOutput().partition;
     new aws.iam.RolePolicyAttachment("AssemblerLambdaLogs", {
       role: lambdaRole.name,
       // CloudWatch logs only — image pull is handled by the Lambda service + the
       // ECR repo policy; the function makes no other AWS calls (storage I/O is via
       // caller-provided signed URLs).
-      policyArn:
-        "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+      policyArn: $interpolate`arn:${partition}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole`,
     });
 
     const fn = new aws.lambda.Function("Assembler", {

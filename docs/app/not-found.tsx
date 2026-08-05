@@ -64,7 +64,7 @@ export default function NotFound() {
           >
             404
           </span>
-          <h1 className="relative m-0 text-[clamp(34px,6vw,52px)] font-normal leading-[110%] text-ink">
+          <h1 className="relative m-0 text-[clamp(34px,6vw,52px)] font-semibold tracking-tight leading-[110%] text-ink">
             This page isn’t here
           </h1>
         </div>

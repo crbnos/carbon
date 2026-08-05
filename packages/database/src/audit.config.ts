@@ -241,10 +241,32 @@ export const auditConfig = {
     salesOrder: {
       label: "Sales Order",
       tables: {
-        salesOrder: { role: "root" },
-        salesOrderLine: { entityIdColumn: "salesOrderId" },
+        salesOrder: {
+          role: "root",
+          snapshotFields: {
+            // No FK constraint on this column, so the schema-discovered map
+            // can't resolve it — declare the target explicitly.
+            salesPersonId: { table: "user", displayColumns: ["fullName"] }
+          }
+        },
+        salesOrderLine: {
+          entityIdColumn: "salesOrderId",
+          snapshotFields: {
+            locationId: { table: "location", displayColumns: ["name"] },
+            modelUploadId: { table: "modelUpload", displayColumns: ["name"] }
+          }
+        },
         salesOrderPayment: { role: "extension" }, // PK = salesOrderId
-        salesOrderShipment: { role: "extension" } // PK = salesOrderId
+        salesOrderShipment: {
+          role: "extension", // PK = salesOrderId
+          snapshotFields: {
+            supplierId: { table: "supplier", displayColumns: ["name"] },
+            supplierLocationId: {
+              table: "supplierLocation",
+              displayColumns: ["name"]
+            }
+          }
+        }
       }
     },
 
@@ -261,7 +283,13 @@ export const auditConfig = {
             }
           }
         },
-        purchaseOrderLine: { entityIdColumn: "purchaseOrderId" },
+        purchaseOrderLine: {
+          entityIdColumn: "purchaseOrderId",
+          snapshotFields: {
+            // No FK constraint on this column — resolve explicitly.
+            locationId: { table: "location", displayColumns: ["name"] }
+          }
+        },
         purchaseOrderPayment: {
           role: "extension", // PK = purchaseOrderId
           snapshotFields: {
@@ -298,9 +326,26 @@ export const auditConfig = {
     salesInvoice: {
       label: "Sales Invoice",
       tables: {
-        salesInvoice: { role: "root" },
+        salesInvoice: {
+          role: "root",
+          // No FK constraint on this column — resolve explicitly.
+          snapshotFields: {
+            assignee: { table: "user", displayColumns: ["fullName"] }
+          }
+        },
         salesInvoiceLine: { entityIdColumn: "invoiceId" },
-        salesInvoiceShipment: { role: "extension" } // PK = salesInvoiceId
+        salesInvoiceShipment: {
+          role: "extension", // PK = salesInvoiceId
+          // These columns have no FK constraints — resolve explicitly.
+          snapshotFields: {
+            locationId: { table: "location", displayColumns: ["name"] },
+            shippingMethodId: {
+              table: "shippingMethod",
+              displayColumns: ["name"]
+            },
+            shippingTermId: { table: "shippingTerm", displayColumns: ["name"] }
+          }
+        }
       }
     },
 
@@ -308,7 +353,13 @@ export const auditConfig = {
       label: "Purchase Invoice",
       tables: {
         purchaseInvoice: { role: "root" },
-        purchaseInvoiceLine: { entityIdColumn: "invoiceId" }
+        purchaseInvoiceLine: {
+          entityIdColumn: "invoiceId",
+          // No FK constraint on this column — resolve explicitly.
+          snapshotFields: {
+            assetId: { table: "fixedAsset", displayColumns: ["name"] }
+          }
+        }
       }
     },
 
@@ -331,9 +382,25 @@ export const auditConfig = {
     productionJob: {
       label: "Job",
       tables: {
-        job: { role: "root" },
+        job: {
+          role: "root",
+          // No FK constraints on these columns — resolve explicitly.
+          snapshotFields: {
+            modelUploadId: { table: "modelUpload", displayColumns: ["name"] },
+            quoteLineId: { table: "quoteLine", displayColumns: ["description"] }
+          }
+        },
         jobOperation: { entityIdColumn: "jobId" },
-        jobMaterial: { entityIdColumn: "jobId" },
+        jobMaterial: {
+          entityIdColumn: "jobId",
+          snapshotFields: {
+            // No FK constraint on this column — resolve explicitly.
+            substitutedFromItemId: {
+              table: "item",
+              displayColumns: ["readableId"]
+            }
+          }
+        },
         jobMakeMethod: { entityIdColumn: "jobId" }
       }
     },
@@ -412,7 +479,18 @@ export const auditConfig = {
         inventoryCount: { role: "root" },
         // Line INSERTs (bulk snapshot generation) are auto-skipped for non-root
         // tables; only UPDATE/DELETE on a counted line are logged.
-        inventoryCountLine: { entityIdColumn: "inventoryCountId" }
+        inventoryCountLine: {
+          entityIdColumn: "inventoryCountId",
+          // These columns have no FK constraints — resolve explicitly.
+          snapshotFields: {
+            locationId: { table: "location", displayColumns: ["name"] },
+            storageUnitId: { table: "storageUnit", displayColumns: ["name"] },
+            trackedEntityId: {
+              table: "trackedEntity",
+              displayColumns: ["readableId"]
+            }
+          }
+        }
       }
     },
 
@@ -603,27 +681,140 @@ export const auditConfig = {
 export const fkDisplayRegistry: {
   [T in TableName]?: readonly ColumnOf<T>[];
 } = {
+  ability: ["name"],
+  account: ["number", "name"],
   address: ["addressLine1", "city"],
+  assemblyInstruction: ["name"],
+  changeOrder: ["changeOrderId"],
+  changeOrderRequiredAction: ["name"],
+  changeOrderType: ["name"],
+  company: ["name"],
   contact: ["fullName"],
+  costCenter: ["name"],
   customer: ["name"],
   customerLocation: ["name"],
   customerStatus: ["name"],
   customerType: ["name"],
   department: ["name"],
   employeeType: ["name"],
+  fixedAsset: ["name"],
+  fixedAssetClass: ["name"],
+  gauge: ["gaugeId"],
+  gaugeType: ["name"],
+  inspectionDocument: ["fileName"],
+  inventoryCount: ["inventoryCountId"],
   item: ["readableId"],
+  itemPostingGroup: ["name"],
+  job: ["jobId"],
+  jobMaterial: ["description"],
+  jobOperation: ["description"],
   location: ["name"],
+  maintenanceDispatch: ["maintenanceDispatchId"],
+  maintenanceFailureMode: ["name"],
+  maintenanceSchedule: ["name"],
+  modelUpload: ["name"],
+  nonConformance: ["nonConformanceId"],
+  nonConformanceRequiredAction: ["name"],
+  nonConformanceType: ["name"],
+  nonConformanceWorkflow: ["name"],
   paymentTerm: ["name"],
+  pricingRule: ["name"],
+  procedure: ["name"],
   process: ["name"],
+  purchaseInvoice: ["invoiceId"],
+  purchaseOrder: ["purchaseOrderId"],
+  purchaseOrderLine: ["description"],
+  quote: ["quoteId"],
+  receipt: ["receiptId"],
+  rework: ["reason"],
+  salesInvoice: ["invoiceId"],
+  salesOrder: ["salesOrderId"],
+  salesOrderLine: ["description"],
   shift: ["name"],
+  shipment: ["shipmentId"],
   shippingMethod: ["name"],
   shippingTerm: ["name"],
+  stockTransfer: ["stockTransferId"],
+  storageUnit: ["name"],
   supplier: ["name"],
   supplierLocation: ["name"],
+  supplierQuote: ["supplierQuoteId"],
   supplierType: ["name"],
+  trackedEntity: ["readableId"],
   unitOfMeasure: ["name"],
   user: ["fullName"],
+  warehouseTransfer: ["transferId"],
   workCenter: ["name"]
+} as const;
+
+/**
+ * Junction FK targets whose display value lives one hop away, keyed by the
+ * table being pointed at. A column like `invoiceSupplierContactId` references
+ * a `supplierContact` link row, which has no displayable columns of its own —
+ * the person's name is on `contact`, reachable via the junction's `column`.
+ *
+ * The audit handler resolves these in two batched lookups: junction rows
+ * (id → hop column) then display rows (hop id → displayColumns). A junction
+ * table listed here must NOT also appear in `fkDisplayRegistry` — hops take
+ * precedence.
+ */
+export type FkDisplayHop = {
+  /** Column on the junction row holding the display row's id. */
+  column: string;
+  /** Table the display columns are read from. */
+  table: string;
+  displayColumns: readonly string[];
+};
+
+export const fkDisplayHops: {
+  [T in TableName]?: {
+    [D in TableName]: {
+      column: ColumnOf<T>;
+      table: D;
+      displayColumns: readonly ColumnOf<D>[];
+    };
+  }[TableName];
+} = {
+  customerContact: {
+    column: "contactId",
+    table: "contact",
+    displayColumns: ["fullName"]
+  },
+  customerItemPriceOverride: {
+    column: "itemId",
+    table: "item",
+    displayColumns: ["readableId"]
+  },
+  fulfillment: {
+    column: "jobId",
+    table: "job",
+    displayColumns: ["jobId"]
+  },
+  jobMakeMethod: {
+    column: "itemId",
+    table: "item",
+    displayColumns: ["readableId"]
+  },
+  makeMethod: {
+    column: "itemId",
+    table: "item",
+    displayColumns: ["readableId"]
+  },
+  opportunity: {
+    column: "customerId",
+    table: "customer",
+    displayColumns: ["name"]
+  },
+  supplierContact: {
+    column: "contactId",
+    table: "contact",
+    displayColumns: ["fullName"]
+  },
+  supplierInteraction: {
+    column: "supplierId",
+    table: "supplier",
+    displayColumns: ["name"]
+  }
 } as const;
 
 // ---------------------------------------------------------------------------

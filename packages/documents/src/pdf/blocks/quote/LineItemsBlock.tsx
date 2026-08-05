@@ -195,7 +195,7 @@ export function LineItemsBlock({
                                   ))}
                                 {taxPercent > 0 && (
                                   <Text style={tw("text-[8px] text-gray-400")}>
-                                    - Tax ({(taxPercent * 100).toFixed(0)}%)
+                                    - Tax ({(taxPercent * 100).toFixed(2)}%)
                                   </Text>
                                 )}
                               </View>

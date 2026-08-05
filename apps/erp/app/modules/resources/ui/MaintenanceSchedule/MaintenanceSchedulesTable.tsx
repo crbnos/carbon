@@ -6,6 +6,7 @@ import {
   MenuItem,
   Status
 } from "@carbon/react";
+import { formatDate } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import type { ColumnDef } from "@tanstack/react-table";
@@ -99,9 +100,7 @@ const MaintenanceSchedulesTable = memo(
           accessorKey: "name",
           header: t`Schedule Name`,
           cell: ({ row }) => (
-            <Hyperlink to={row.original.id!}>
-              <Enumerable value={row.original.name} />
-            </Hyperlink>
+            <Hyperlink to={row.original.id!}>{row.original.name}</Hyperlink>
           )
         },
         {
@@ -203,9 +202,17 @@ const MaintenanceSchedulesTable = memo(
         {
           accessorKey: "nextDueAt",
           header: t`Next Due`,
+          // nextDueAt is a due *date* stored as midnight UTC. Format the date
+          // portion via `formatDate` (which parses it as a CalendarDate) so the
+          // table matches the form instead of shifting a day back for viewers
+          // behind UTC.
           cell: ({ row }) =>
             row.original.nextDueAt
-              ? new Date(row.original.nextDueAt).toLocaleDateString(locale)
+              ? formatDate(
+                  row.original.nextDueAt.slice(0, 10),
+                  undefined,
+                  locale
+                )
               : "-",
           meta: {
             icon: <LuCalendar />

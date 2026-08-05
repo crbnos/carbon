@@ -88,6 +88,9 @@ type HeaderProps<T> = {
   setEditMode: (editMode: boolean) => void;
   table?: string;
   title?: string;
+  // The trigger toggles the app sidebar, which is meaningless for a Table
+  // rendered inside a drawer or modal. Opt out there.
+  withSidebarTrigger?: boolean;
   titleBadge?: ReactNode;
   withSavedView: boolean;
   withInlineEditing: boolean;
@@ -122,6 +125,7 @@ const TableHeader = <T extends object>({
   setEditMode,
   table,
   title,
+  withSidebarTrigger = true,
   titleBadge,
   withInlineEditing,
   forceEditMode,
@@ -245,7 +249,7 @@ const TableHeader = <T extends object>({
             )}
           >
             <HStack spacing={2}>
-              <CollapsibleSidebarTrigger />
+              {withSidebarTrigger && <CollapsibleSidebarTrigger />}
               {viewTitle && (
                 <Heading size={compact ? "h3" : "h2"}>{viewTitle}</Heading>
               )}

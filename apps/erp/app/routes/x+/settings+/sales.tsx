@@ -33,6 +33,7 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { redirect, useFetcher, useLoaderData } from "react-router";
 import { EmailRecipients, Users } from "~/components/Form";
 import Country from "~/components/Form/Country";
+import SettingsSectionHeader from "~/components/SettingsSectionHeader";
 import {
   accountsReceivableBillingAddressValidator,
   defaultCustomerCcValidator,
@@ -315,9 +316,9 @@ export default function SalesSettingsRoute() {
           <Trans>Sales</Trans>
         </Heading>
 
-        <p className="mt-4 text-xxs text-foreground/70 uppercase font-light tracking-wide">
+        <SettingsSectionHeader>
           <Trans>Documents</Trans>
-        </p>
+        </SettingsSectionHeader>
 
         <Card>
           <ValidatedForm
@@ -441,9 +442,9 @@ export default function SalesSettingsRoute() {
             </ValidatedForm>
           </Card>
         )}
-        <p className="mt-4 text-xxs text-foreground/70 uppercase font-light tracking-wide">
+        <SettingsSectionHeader>
           <Trans>Customers</Trans>
-        </p>
+        </SettingsSectionHeader>
 
         <Card>
           <CardHeader>
@@ -469,9 +470,9 @@ export default function SalesSettingsRoute() {
           </CardHeader>
         </Card>
 
-        <p className="mt-4 text-xxs text-foreground/70 uppercase font-light tracking-wide">
-          <Trans>Quoting</Trans>
-        </p>
+        <SettingsSectionHeader>
+          <Trans>Quotes</Trans>
+        </SettingsSectionHeader>
 
         <Card>
           <ValidatedForm
@@ -546,9 +547,9 @@ export default function SalesSettingsRoute() {
           fetcher={fetcher}
         />
 
-        <p className="mt-4 text-xxs text-foreground/70 uppercase font-light tracking-wide">
+        <SettingsSectionHeader>
           <Trans>Notifications</Trans>
-        </p>
+        </SettingsSectionHeader>
 
         <Card>
           <ValidatedForm

@@ -318,6 +318,7 @@ const PurchaseInvoiceProperties = () => {
           label={t`Date Issued`}
           inline
           isDisabled={!canUpdate}
+          value={routeData?.purchaseInvoice?.dateIssued ?? ""}
           onChange={(date) => {
             onUpdate("dateIssued", date);
           }}
@@ -338,6 +339,7 @@ const PurchaseInvoiceProperties = () => {
           label={t`Date Due`}
           inline
           isDisabled={!canUpdate}
+          value={routeData?.purchaseInvoice?.dateDue ?? ""}
           onChange={(date) => {
             onUpdate("dateDue", date);
           }}
@@ -358,6 +360,7 @@ const PurchaseInvoiceProperties = () => {
           label={t`Date Paid`}
           inline
           isDisabled={!canUpdate}
+          value={routeData?.purchaseInvoice?.datePaid ?? ""}
           onChange={(date) => {
             onUpdate("datePaid", date);
           }}

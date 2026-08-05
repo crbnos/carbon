@@ -20,7 +20,8 @@ import {
   useDisclosure,
   VStack
 } from "@carbon/react";
-import { getSalesOrderJobStatus } from "@carbon/utils";
+import type { SalesOrderForProductionCheck } from "@carbon/utils";
+import { getSalesOrderJobStatus, hasLinesRequiringJobs } from "@carbon/utils";
 import {
   getLocalTimeZone,
   isSameDay,
@@ -123,10 +124,10 @@ const SalesOrderSummary = ({
   const total = subtotal + tax + convertedShippingCost;
   const permissions = usePermissions();
 
-  // Check if there are any lines with "Make" method type that would require jobs
-  const hasMakeItems =
-    routeData?.lines?.some((line) => line.methodType === "Make to Order") ??
-    false;
+  const linesRequireJobs = hasLinesRequiringJobs({
+    jobs: routeData?.salesOrder?.jobs as SalesOrderForProductionCheck["jobs"],
+    lines: routeData?.salesOrder?.lines as SalesOrderForProductionCheck["lines"]
+  });
 
   // Services never ship, so an all-service order confirms straight to
   // "To Invoice" (getSalesOrderStatus counts Service lines as shipped) and
@@ -150,8 +151,7 @@ const SalesOrderSummary = ({
       {jobsCardStatusMatches &&
         permissions.can("create", "production") &&
         permissions.is("employee") &&
-        !routeData?.salesOrder?.jobs &&
-        hasMakeItems && (
+        linesRequireJobs && (
           <Card>
             <CardHeader>
               <CardTitle className="flex flex-row gap-2">
@@ -194,13 +194,13 @@ const SalesOrderSummary = ({
                 customerId={routeData?.salesOrder.customerId ?? null}
               />
               {routeData?.salesOrder?.orderDate && (
-                <span className="text-muted-foreground text-sm">
+                <span className="text-xs text-muted-foreground tracking-tight">
                   <Trans>Ordered</Trans>{" "}
                   {formatDate(routeData?.salesOrder.orderDate)}
                 </span>
               )}
               {routeData?.quote?.digitalQuoteAcceptedBy && (
-                <span className="text-muted-foreground text-sm flex flex-row items-center gap-x-1">
+                <span className="text-xs text-muted-foreground tracking-tight flex flex-row items-center gap-x-1">
                   <Trans>via Digital Quote</Trans>
                   <Tooltip>
                     <TooltipTrigger>
@@ -230,7 +230,7 @@ const SalesOrderSummary = ({
           />
 
           <VStack spacing={2} className="mt-8">
-            <HStack className="justify-between text-base text-muted-foreground w-full">
+            <HStack className="justify-between text-sm text-muted-foreground w-full">
               <span>
                 <Trans>Subtotal:</Trans>
               </span>
@@ -243,7 +243,7 @@ const SalesOrderSummary = ({
                 locales={locale}
               />
             </HStack>
-            <HStack className="justify-between text-base text-muted-foreground w-full">
+            <HStack className="justify-between text-sm text-muted-foreground w-full">
               <span>
                 <Trans>Tax:</Trans>
               </span>
@@ -256,7 +256,7 @@ const SalesOrderSummary = ({
                 locales={locale}
               />
             </HStack>
-            <HStack className="justify-between text-base text-muted-foreground w-full">
+            <HStack className="justify-between text-sm text-muted-foreground w-full">
               {convertedShippingCost > 0 ? (
                 <>
                   <VStack spacing={0}>
@@ -285,14 +285,14 @@ const SalesOrderSummary = ({
                 <Button
                   variant="link"
                   size="sm"
-                  className="text-muted-foreground"
+                  className="text-primary"
                   onClick={onEditShippingCost}
                 >
                   <Trans>Add Shipping</Trans>
                 </Button>
               ) : null}
             </HStack>
-            <HStack className="justify-between text-xl font-bold w-full">
+            <HStack className="justify-between text-xl font-semibold w-full">
               <span>
                 <Trans>Total:</Trans>
               </span>
@@ -306,7 +306,7 @@ const SalesOrderSummary = ({
               />
             </HStack>
             <div className="h-px bg-border my-2 w-full" />
-            <HStack className="justify-between text-base text-muted-foreground w-full">
+            <HStack className="justify-between text-sm text-muted-foreground w-full">
               <span>
                 <Trans>Invoiced Amount:</Trans>
               </span>
@@ -319,7 +319,7 @@ const SalesOrderSummary = ({
                 locales={locale}
               />
             </HStack>
-            <HStack className="justify-between text-base text-muted-foreground w-full">
+            <HStack className="justify-between text-sm text-muted-foreground w-full">
               <span>
                 <Trans>Paid Amount:</Trans>
               </span>
@@ -439,7 +439,7 @@ function LineItems({
                           </Link>
                         </Button>
                       </HStack>
-                      <span className="text-muted-foreground text-base truncate">
+                      <span className="text-muted-foreground text-sm truncate">
                         {line.description}
                       </span>
                     </VStack>

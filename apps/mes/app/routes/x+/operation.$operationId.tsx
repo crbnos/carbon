@@ -15,12 +15,14 @@ import {
   getJobOperationById,
   getJobOperationProcedure,
   getKanbanByJobId,
+  getNextIncompleteSerialEntity,
   getNonConformanceActions,
   getProductionEventsForJobOperation,
   getProductionQuantitiesForJobOperation,
   getThumbnailPathByItemId,
   getTrackedEntitiesByMakeMethodId,
-  getWorkCenter
+  getWorkCenter,
+  isSerialEntityIncompleteForOperation
 } from "~/services/operations.service";
 import type { OperationWithDetails } from "~/services/types";
 
@@ -106,24 +108,49 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     null) as { expiredEntityPolicy?: ExpiredEntityPolicy } | null;
   const expiredEntityPolicy: ExpiredEntityPolicy =
     inventoryShelfLife?.expiredEntityPolicy ?? "Block";
+  const autoSelectMaterialWithoutPickingList =
+    companySettings.data?.autoSelectMaterialWithoutPickingList ?? false;
 
-  // If no trackedEntityId is provided in the URL but trackedEntities exist,
-  // redirect to the same URL with the last trackedEntityId as a search param
+  // Is this the first operation in the routing? A serial unit only earns a
+  // printed label when it is completed at its first operation, so:
+  //  - first operation: no labels exist yet → the operator flows unit-by-unit
+  //    (auto-select here on arrival, and in the client after each completion);
+  //  - later operations: every unit already has a label → the operator
+  //    scans/selects each unit (no auto-select, here or in the client).
+  // An operation is "first" when nothing precedes it in the routing — i.e. it has
+  // no jobOperationDependency (a row means this op depends on / comes after
+  // another). `order` is only a display/sort field and isn't a reliable
+  // precedence signal, so it's not used here. A first op has no printed labels
+  // yet (they print on its completion), so its units are auto-selected; later
+  // ops already have labels, so the operator scans/selects.
+  const priorDependency = await serviceRole
+    .from("jobOperationDependency")
+    .select("operationId")
+    .eq("operationId", operationId)
+    .limit(1)
+    .maybeSingle();
+  // Fail closed: a query error also returns null data, so treat an errored lookup
+  // as "not first" — later ops require scan/select, which is the safe default when
+  // we can't confirm the operation has no predecessor.
+  const isFirstOperation = !priorDependency.error && !priorDependency.data;
+
+  // On the first operation only, auto-select the first incomplete unit when none
+  // is in the URL. Later operations leave it unset so the client presents the
+  // scan/select picker for every unit (including the first one picked up).
   if (
     !trackedEntityId &&
+    isFirstOperation &&
     trackedEntities.data &&
-    trackedEntities.data.length > 0 &&
-    // Check if any tracked entity has an attribute for this operation
-    !trackedEntities.data.every((entity) => {
-      const attributes = entity.attributes as Record<string, unknown>;
-      return Object.keys(attributes).some((key) => key.startsWith(`Operation`));
-    })
+    trackedEntities.data.length > 0
   ) {
-    const lastTrackedEntity =
-      trackedEntities.data[trackedEntities.data.length - 1];
-    const redirectUrl = new URL(request.url);
-    redirectUrl.searchParams.set("trackedEntityId", lastTrackedEntity.id);
-    throw redirect(`${redirectUrl.pathname}${redirectUrl.search}`);
+    const nextTrackedEntity = trackedEntities.data.find((entity) =>
+      isSerialEntityIncompleteForOperation(entity, operationId)
+    );
+    if (nextTrackedEntity) {
+      const redirectUrl = new URL(request.url);
+      redirectUrl.searchParams.set("trackedEntityId", nextTrackedEntity.id);
+      throw redirect(`${redirectUrl.pathname}${redirectUrl.search}`);
+    }
   }
 
   return {
@@ -148,11 +175,15 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     files: getJobFiles(serviceRole, companyId, job.data, operation.data),
     materials: getJobMaterialsByOperationId(serviceRole, {
       operation: operation.data?.[0],
-      trackedEntityId: trackedEntityId ?? trackedEntities?.data?.[0]?.id,
+      trackedEntityId:
+        trackedEntityId ??
+        getNextIncompleteSerialEntity(trackedEntities.data ?? [], operationId)
+          ?.id,
       requiresSerialTracking:
         jobMakeMethod.data?.requiresSerialTracking ?? false
     }),
     trackedEntities: trackedEntities.data ?? [],
+    isFirstOperation,
     nonConformanceActions: getNonConformanceActions(serviceRole, {
       itemId: operation.data?.[0].itemId,
       processId: operation.data?.[0].processId,
@@ -160,6 +191,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     }),
     operation: makeDurations(operation.data?.[0]) as OperationWithDetails,
     expiredEntityPolicy,
+    autoSelectMaterialWithoutPickingList,
     procedure: getJobOperationProcedure(serviceRole, operation.data?.[0].id),
     workCenter: getWorkCenter(
       serviceRole,
@@ -184,6 +216,7 @@ export default function OperationRoute() {
   const {
     events,
     expiredEntityPolicy,
+    autoSelectMaterialWithoutPickingList,
     files,
     job,
     jobMakeMethod,
@@ -193,6 +226,7 @@ export default function OperationRoute() {
     procedure,
     thumbnailPath,
     trackedEntities,
+    isFirstOperation,
     workCenter,
     nonConformanceActions
   } = useLoaderData<typeof loader>();
@@ -202,11 +236,15 @@ export default function OperationRoute() {
       key={`job-operation-${operationId}`}
       events={events}
       expiredEntityPolicy={expiredEntityPolicy}
+      autoSelectMaterialWithoutPickingList={
+        autoSelectMaterialWithoutPickingList
+      }
       files={files}
       kanban={kanban}
       materials={materials}
       method={jobMakeMethod}
       trackedEntities={trackedEntities}
+      isFirstOperation={isFirstOperation}
       nonConformanceActions={nonConformanceActions}
       operation={operation}
       procedure={procedure}

@@ -1,5 +1,6 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import type { JobTravelerMaterial } from "@carbon/documents/pdf";
 import {
   ensureFont,
   Footer,
@@ -34,6 +35,7 @@ import {
 } from "~/modules/production/production.service";
 import {
   getCompany,
+  getCompanySettings,
   getDocumentTemplate,
   resolveSections
 } from "~/modules/settings";
@@ -81,6 +83,21 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     logger.error("Failed to load company", { error: company.error });
     throw new Error("Failed to load company");
   }
+
+  // Opt-in company setting: render a materials (BOM) section on the traveler.
+  const companySettings = await getCompanySettings(serviceRole, companyId);
+  if (companySettings.error) {
+    logger.error("Failed to load company settings", {
+      error: companySettings.error
+    });
+    throw new Error("Failed to load company settings");
+  }
+  const includeMaterials =
+    (
+      companySettings.data as {
+        includeMaterialsOnTraveler?: boolean | null;
+      } | null
+    )?.includeMaterialsOnTraveler ?? false;
 
   const customer = await serviceRole
     .from("customer")
@@ -150,12 +167,45 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         }
       }
 
+      // Only load BOM lines when the company has opted into the materials
+      // section — otherwise this query is wasted work.
+      let materials: JobTravelerMaterial[] = [];
+      if (includeMaterials) {
+        const jobMaterials = await serviceRole
+          .from("jobMaterial")
+          .select(
+            "id, description, quantity, unitOfMeasureCode, methodType, item(readableIdWithRevision)"
+          )
+          .eq("jobMakeMethodId", makeMethod.id)
+          .eq("companyId", companyId)
+          .order("order", { ascending: true });
+
+        if (jobMaterials.error) {
+          logger.error("Failed to load job materials", {
+            error: jobMaterials.error
+          });
+          throw new Error(
+            `Failed to load materials for make method ${makeMethod.id}`
+          );
+        }
+
+        materials = (jobMaterials.data ?? []).map((material) => ({
+          id: material.id,
+          itemReadableId: material.item?.readableIdWithRevision,
+          description: material.description,
+          quantity: material.quantity,
+          unitOfMeasureCode: material.unitOfMeasureCode,
+          methodType: material.methodType
+        }));
+      }
+
       return {
         makeMethod,
         operations: operations.data,
         item: item.data,
         thumbnail,
         batchNumber,
+        materials,
         bomId: bomIdMap.get(makeMethod.id)
       };
     })
@@ -221,6 +271,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
             locale={locale}
             notes={index === 0 ? jobNotes : undefined}
             thumbnail={data.thumbnail}
+            includeMaterials={includeMaterials}
+            materials={data.materials}
             methodRevision={data.makeMethod.version?.toString()}
             template={templateConfig}
             sections={sections}

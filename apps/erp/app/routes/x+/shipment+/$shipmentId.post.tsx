@@ -305,13 +305,16 @@ export async function action({ request, params }: ActionFunctionArgs) {
       logger.error("Auto-print failed", { error: e });
     }
 
-    // Auto-print labels for batch split entities
+    // Auto-print labels for batch split entities. splitEntityIds carries the
+    // RETAINED shelf lots (their quantity changed in the split) — existing
+    // entities being reprinted, hence sourceDocument "Entity". The shipped
+    // child departed Consumed and gets no label.
     const splitEntityIds = postShipment.data?.splitEntityIds || [];
     if (splitEntityIds.length > 0) {
       try {
         for (const entityId of splitEntityIds) {
           await trigger("print-job", {
-            sourceDocument: "Split",
+            sourceDocument: "Entity",
             sourceDocumentId: entityId,
             companyId,
             userId

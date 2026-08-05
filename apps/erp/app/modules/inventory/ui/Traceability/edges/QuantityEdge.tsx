@@ -38,6 +38,7 @@ function QuantityEdgeImpl({
 
   const isReject = !!data?.isReject;
   const isBackEdge = !!data?.isBackEdge;
+  const isMovement = data?.kind === "movement";
   const dimmed = !!data?.dimmed;
   const highlighted = !!data?.highlighted;
   const strokeWidth = highlighted ? 2.5 : isReject ? 1.5 : 1;
@@ -64,11 +65,12 @@ function QuantityEdgeImpl({
           stroke,
           strokeWidth,
           opacity: dimmed ? 0.08 : baseOpacity,
-          strokeDasharray: isBackEdge ? "8 4" : undefined,
+          // Movement edges dash to read as "passed through", not "ended here".
+          strokeDasharray: isBackEdge ? "8 4" : isMovement ? "4 3" : undefined,
           fill: "none"
         }}
       />
-      {!dimmed && data?.quantity != null && (
+      {!dimmed && (data?.labelText || data?.quantity != null) && (
         <EdgeLabelRenderer>
           <div
             style={{
@@ -79,7 +81,9 @@ function QuantityEdgeImpl({
               textAlign: "center",
               zIndex: 1000
             }}
-            className={`text-[11px] font-medium tabular-nums leading-none px-2 py-1 rounded-full border-2 ${
+            className={`text-[11px] font-medium leading-none px-2 py-1 rounded-full border-2 ${
+              data.labelText ? "" : "tabular-nums"
+            } ${
               isReject
                 ? "bg-background text-[hsl(0_72%_55%)] border-[hsl(0_72%_55%)]"
                 : highlighted
@@ -89,7 +93,7 @@ function QuantityEdgeImpl({
                     : "bg-background text-foreground border-border"
             }`}
           >
-            {data.quantity}
+            {data.labelText ?? data.quantity}
           </div>
         </EdgeLabelRenderer>
       )}

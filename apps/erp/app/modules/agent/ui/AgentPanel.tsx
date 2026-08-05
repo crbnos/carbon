@@ -65,7 +65,7 @@ export function AgentPanel() {
 
   return (
     <div
-      className={`fixed right-4 z-40 flex flex-col w-100 max-w-[calc(100vw-2rem)] rounded-xl border bg-background shadow-lg overflow-hidden animate-in slide-in-from-top-4 fade-in duration-200 ${
+      className={`fixed right-4 z-40 flex flex-col w-100 max-w-[calc(100vw-2rem)] rounded-lg border bg-background shadow-lg overflow-hidden animate-in slide-in-from-top-4 fade-in duration-200 ${
         expanded ? "top-14 bottom-4" : "top-14 h-[45vh]"
       }`}
     >

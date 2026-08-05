@@ -31,6 +31,7 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { redirect, useFetcher, useLoaderData } from "react-router";
 import { z } from "zod";
 import { Users } from "~/components/Form";
+import SettingsSectionHeader from "~/components/SettingsSectionHeader";
 import { getCompanySettings } from "~/modules/settings";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -206,6 +207,10 @@ export default function QualitySettingsRoute() {
           <Trans>Quality</Trans>
         </Heading>
 
+        <SettingsSectionHeader>
+          <Trans>Notifications</Trans>
+        </SettingsSectionHeader>
+
         <Card>
           <ValidatedForm
             method="post"
@@ -252,6 +257,11 @@ export default function QualitySettingsRoute() {
             </CardFooter>
           </ValidatedForm>
         </Card>
+
+        <SettingsSectionHeader>
+          <Trans>Dashboard</Trans>
+        </SettingsSectionHeader>
+
         <Card>
           <ValidatedForm
             method="post"
@@ -297,6 +307,11 @@ export default function QualitySettingsRoute() {
             </CardFooter>
           </ValidatedForm>
         </Card>
+
+        <SettingsSectionHeader>
+          <Trans>Inspections</Trans>
+        </SettingsSectionHeader>
+
         <Card>
           <CardHeader>
             <HStack className="justify-between items-center">
