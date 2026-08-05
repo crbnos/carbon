@@ -73,6 +73,10 @@ msgstr "{0} damla(ları) {minRemnantLength} {unitOfDimension} minimumundan aşa�
 msgid "{0} lines to map"
 msgstr "{0} satır eşlenecek"
 
+#. placeholder {0}: new Set(rows.map((row) => row.itemId)).size
+msgid "{0} material(s) in this group"
+msgstr ""
+
 #. placeholder {0}: history.length
 msgid "{0} orders"
 msgstr "{0} sipariş"
@@ -6359,6 +6363,9 @@ msgstr "Tutuş marjı"
 
 msgid "Group"
 msgstr "Grup"
+
+msgid "Group by"
+msgstr ""
 
 msgid "Group Members"
 msgstr "Üye Grupları"

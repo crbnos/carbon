@@ -73,6 +73,10 @@ msgstr "{0}個のドロップが{minRemnantLength} {unitOfDimension}の最小値
 msgid "{0} lines to map"
 msgstr "{0}件のラインをマップします"
 
+#. placeholder {0}: new Set(rows.map((row) => row.itemId)).size
+msgid "{0} material(s) in this group"
+msgstr ""
+
 #. placeholder {0}: history.length
 msgid "{0} orders"
 msgstr "{0}件の注文"
@@ -6359,6 +6363,9 @@ msgstr "グリップマージン"
 
 msgid "Group"
 msgstr "グループ"
+
+msgid "Group by"
+msgstr ""
 
 msgid "Group Members"
 msgstr "グループメンバー"

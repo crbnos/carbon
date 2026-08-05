@@ -28,6 +28,7 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, redirect, useFetcher, useLoaderData } from "react-router";
 import {
   getCuttingProcessesList,
+  getMaterialCharacteristics,
   getOpenCutDemand,
   runCutOptimization,
   upsertCutList,
@@ -53,8 +54,44 @@ export async function loader({ request }: LoaderFunctionArgs) {
     getCuttingProcessesList(client, companyId)
   ]);
 
+  // Attach material characteristics so the board can group by substance, shape,
+  // grade or size — not only by the exact item. `material` is keyed by
+  // item.readableId, so map through that.
+  const readableIds = [
+    ...new Set(
+      (demand.data ?? [])
+        .map((row) => (row.item as { readableId?: string } | null)?.readableId)
+        .filter((id): id is string => Boolean(id))
+    )
+  ];
+  const characteristics = await getMaterialCharacteristics(
+    client,
+    readableIds,
+    companyId
+  );
+  const characteristicsByReadableId = new Map(
+    (characteristics.data ?? []).map((row) => [row.id, row])
+  );
+
+  const enriched = (demand.data ?? []).map((row) => {
+    const readableId = (row.item as { readableId?: string } | null)?.readableId;
+    const material = readableId
+      ? characteristicsByReadableId.get(readableId)
+      : undefined;
+    const name = (value: unknown) =>
+      (value as { name?: string } | null)?.name ?? null;
+    return {
+      ...row,
+      substance: name(material?.materialSubstance),
+      shape: name(material?.materialForm),
+      grade: name(material?.materialGrade),
+      size: name(material?.materialDimension),
+      finish: name(material?.materialFinish)
+    };
+  });
+
   return {
-    demand: demand.data ?? [],
+    demand: enriched,
     processes: processes.data ?? []
   };
 }
@@ -186,6 +223,53 @@ export async function action({ request }: ActionFunctionArgs) {
   );
 }
 
+/**
+ * What a planner can pool demand by. Material is the common case but not the
+ * only one — grouping by substance pools every 4130 regardless of diameter,
+ * by shape pools all round tube, by size pools one wall thickness across grades.
+ */
+const GROUP_BY_OPTIONS = [
+  { value: "itemId", label: "Material" },
+  { value: "substance", label: "Substance" },
+  { value: "shape", label: "Shape" },
+  { value: "grade", label: "Grade" },
+  { value: "size", label: "Size" },
+  { value: "finish", label: "Finish" }
+] as const;
+
+type GroupByKey = (typeof GROUP_BY_OPTIONS)[number]["value"];
+
+type DemandRow = {
+  itemId: string;
+  item?: { readableIdWithRevision?: string | null } | null;
+  substance?: string | null;
+  shape?: string | null;
+  grade?: string | null;
+  size?: string | null;
+  finish?: string | null;
+};
+
+/**
+ * Rows with no value for the chosen characteristic bucket under an explicit
+ * "Unspecified" heading rather than vanishing — a planner needs to see that a
+ * material has no grade recorded, not silently lose its demand.
+ */
+function groupKeyFor(
+  row: DemandRow,
+  groupBy: GroupByKey
+): { key: string; label: string } {
+  if (groupBy === "itemId") {
+    return {
+      key: row.itemId,
+      label: row.item?.readableIdWithRevision ?? row.itemId
+    };
+  }
+  const value = row[groupBy];
+  return value
+    ? { key: `${groupBy}:${value}`, label: value }
+    : { key: `${groupBy}:__none__`, label: "Unspecified" };
+}
+
 export default function PlanCuttingRunRoute() {
   const { demand, processes } = useLoaderData<typeof loader>();
   const { t } = useLingui();
@@ -193,17 +277,25 @@ export default function PlanCuttingRunRoute() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [processId, setProcessId] = useState<string>("");
 
-  // Group demand the way every system in the industry does: by material, so a
-  // planner sees "everything on the saw in 1/2-inch 4140" in one block.
+  // Group by a chosen characteristic, not always the exact item. A planner
+  // wants "everything on the saw in 1/2-inch 4140" some days and "everything in
+  // 4130, whatever the diameter" on others — the material itself is only one
+  // characteristic among several.
+  const [groupBy, setGroupBy] = useState<GroupByKey>("itemId");
+
   const groups = useMemo(() => {
-    const byItem = new Map<string, typeof demand>();
+    const buckets = new Map<string, { label: string; rows: typeof demand }>();
     for (const row of demand) {
-      const list = byItem.get(row.itemId) ?? [];
-      list.push(row);
-      byItem.set(row.itemId, list);
+      const { key, label } = groupKeyFor(row, groupBy);
+      const bucket = buckets.get(key) ?? { label, rows: [] };
+      bucket.rows.push(row);
+      buckets.set(key, bucket);
     }
-    return [...byItem.entries()];
-  }, [demand]);
+    // Biggest blocks first — the runs most worth batching.
+    return [...buckets.entries()].sort(
+      (a, b) => b[1].rows.length - a[1].rows.length
+    );
+  }, [demand, groupBy]);
 
   const toggle = (id: string) => {
     setSelected((prev) => {
@@ -244,6 +336,24 @@ export default function PlanCuttingRunRoute() {
         </VStack>
         <HStack>
           <select
+            aria-label={t`Group by`}
+            className="h-9 rounded-md border border-input bg-background px-3 text-sm"
+            value={groupBy}
+            onChange={(event) => {
+              setGroupBy(event.target.value as GroupByKey);
+              // Selection is keyed by demand row, not by bucket, so it stays
+              // valid across a regroup — but clearing avoids a half-selected
+              // group reading as a whole one.
+              setSelected(new Set());
+            }}
+          >
+            {GROUP_BY_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {t`Group by`}: {option.label}
+              </option>
+            ))}
+          </select>
+          <select
             className="h-9 rounded-md border border-input bg-background px-3 text-sm"
             value={processId}
             onChange={(event) => setProcessId(event.target.value)}
@@ -276,14 +386,15 @@ export default function PlanCuttingRunRoute() {
           </CardContent>
         </Card>
       ) : (
-        groups.map(([itemId, rows]) => {
+        groups.map(([groupKey, group]) => {
+          const rows = group.rows;
           const item = rows[0].item as {
             readableIdWithRevision?: string | null;
             name?: string | null;
           } | null;
           const allSelected = rows.every((row) => selected.has(row.id));
           return (
-            <Card key={itemId} className="w-full">
+            <Card key={groupKey} className="w-full">
               <CardHeader>
                 <CardTitle>
                   <HStack>
@@ -291,13 +402,17 @@ export default function PlanCuttingRunRoute() {
                       checked={allSelected}
                       onCheckedChange={() => toggleGroup(rows)}
                     />
-                    <span>{item?.readableIdWithRevision ?? itemId}</span>
+                    <span>{group.label}</span>
                     <Badge variant="secondary">
                       {rows.length} {t`line(s)`}
                     </Badge>
                   </HStack>
                 </CardTitle>
-                <CardDescription>{item?.name ?? ""}</CardDescription>
+                <CardDescription>
+                  {groupBy === "itemId"
+                    ? (item?.name ?? "")
+                    : t`${new Set(rows.map((row) => row.itemId)).size} material(s) in this group`}
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 <Table>
@@ -305,6 +420,7 @@ export default function PlanCuttingRunRoute() {
                     <Tr>
                       <Th className="w-10" />
                       <Th>{t`Job`}</Th>
+                      {groupBy !== "itemId" && <Th>{t`Material`}</Th>}
                       <Th>{t`Due`}</Th>
                       <Th className="text-right">{t`Cut length`}</Th>
                       <Th className="text-right">{t`Pieces owed`}</Th>
@@ -325,6 +441,15 @@ export default function PlanCuttingRunRoute() {
                             />
                           </Td>
                           <Td>{job?.jobId ?? "—"}</Td>
+                          {groupBy !== "itemId" && (
+                            <Td className="text-muted-foreground">
+                              {(
+                                row.item as {
+                                  readableIdWithRevision?: string | null;
+                                } | null
+                              )?.readableIdWithRevision ?? "—"}
+                            </Td>
+                          )}
                           <Td className="text-muted-foreground">
                             {job?.dueDate ?? "—"}
                           </Td>

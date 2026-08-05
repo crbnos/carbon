@@ -73,6 +73,10 @@ msgstr "{0} drop(s) below the {minRemnantLength} {unitOfDimension} minimum will 
 msgid "{0} lines to map"
 msgstr "{0} lines to map"
 
+#. placeholder {0}: new Set(rows.map((row) => row.itemId)).size
+msgid "{0} material(s) in this group"
+msgstr "{0} material(s) in this group"
+
 #. placeholder {0}: history.length
 msgid "{0} orders"
 msgstr "{0} orders"
@@ -6359,6 +6363,9 @@ msgstr "Grip margin"
 
 msgid "Group"
 msgstr "Group"
+
+msgid "Group by"
+msgstr "Group by"
 
 msgid "Group Members"
 msgstr "Group Members"

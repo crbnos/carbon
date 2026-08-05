@@ -73,6 +73,10 @@ msgstr "{0} rimanenza(e) sotto il minimo di {minRemnantLength} {unitOfDimension}
 msgid "{0} lines to map"
 msgstr "{0} righe da mappare"
 
+#. placeholder {0}: new Set(rows.map((row) => row.itemId)).size
+msgid "{0} material(s) in this group"
+msgstr ""
+
 #. placeholder {0}: history.length
 msgid "{0} orders"
 msgstr "{0} ordini"
@@ -6359,6 +6363,9 @@ msgstr "Margine di presa"
 
 msgid "Group"
 msgstr "Gruppo"
+
+msgid "Group by"
+msgstr ""
 
 msgid "Group Members"
 msgstr "Membri del Gruppo"

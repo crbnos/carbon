@@ -73,6 +73,10 @@ msgstr "{0}根掉料低于{minRemnantLength}{unitOfDimension}最小值将被记�
 msgid "{0} lines to map"
 msgstr "{0} 行待映射"
 
+#. placeholder {0}: new Set(rows.map((row) => row.itemId)).size
+msgid "{0} material(s) in this group"
+msgstr ""
+
 #. placeholder {0}: history.length
 msgid "{0} orders"
 msgstr "{0} 个订单"
@@ -6359,6 +6363,9 @@ msgstr "夹持边距"
 
 msgid "Group"
 msgstr "组"
+
+msgid "Group by"
+msgstr ""
 
 msgid "Group Members"
 msgstr "群组成员"

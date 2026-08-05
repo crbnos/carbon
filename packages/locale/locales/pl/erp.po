@@ -73,6 +73,10 @@ msgstr "{0} obcinki poniżej minimum {minRemnantLength} {unitOfDimension} będą
 msgid "{0} lines to map"
 msgstr "{0} linii do mapowania"
 
+#. placeholder {0}: new Set(rows.map((row) => row.itemId)).size
+msgid "{0} material(s) in this group"
+msgstr ""
+
 #. placeholder {0}: history.length
 msgid "{0} orders"
 msgstr "{0} zamówień"
@@ -6359,6 +6363,9 @@ msgstr "Marża uchwytu"
 
 msgid "Group"
 msgstr "Grupa"
+
+msgid "Group by"
+msgstr ""
 
 msgid "Group Members"
 msgstr "Członkowie grupy"

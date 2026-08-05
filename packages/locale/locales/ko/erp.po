@@ -73,6 +73,10 @@ msgstr "{0}개의 드롭이 {minRemnantLength} {unitOfDimension} 최소값 아�
 msgid "{0} lines to map"
 msgstr "매핑할 라인 {0}개"
 
+#. placeholder {0}: new Set(rows.map((row) => row.itemId)).size
+msgid "{0} material(s) in this group"
+msgstr ""
+
 #. placeholder {0}: history.length
 msgid "{0} orders"
 msgstr "주문 {0}건"
@@ -6359,6 +6363,9 @@ msgstr "그립 여백"
 
 msgid "Group"
 msgstr "그룹"
+
+msgid "Group by"
+msgstr ""
 
 msgid "Group Members"
 msgstr "그룹 구성원"

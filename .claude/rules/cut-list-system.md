@@ -119,7 +119,7 @@ Yield counts only material actually used up: a returned drop is still stock, so
 | Route | Purpose |
 |---|---|
 | `x+/production+/cut-lists.tsx` (+ `.new`) | List + create modal |
-| `x+/production+/cutting-runs.tsx` | Cross-job planning board: open cut demand grouped by material, select → create + auto-optimize |
+| `x+/production+/cutting-runs.tsx` | Cross-job planning board. Demand pools by a **selectable characteristic** — material, substance, shape, grade, size or finish — so a planner can batch "everything in 4130" across diameters, not only exact-item matches. Rows with no value for the characteristic bucket under "Unspecified" rather than disappearing. Select → create + auto-optimize. |
 | `x+/cut-list+/$id.tsx` | Full-screen detail: header, actions, lines, pattern diagram |
 | `x+/cut-list+/$id.{status,optimize,complete}.tsx` | Action-only routes |
 | `x+/cut-list+/$id.lines.*` | Line CRUD |

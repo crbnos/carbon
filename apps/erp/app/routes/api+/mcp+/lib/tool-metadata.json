@@ -1,6 +1,6 @@
 {
-  "generated": "2026-08-05T19:54:37.803Z",
-  "totalTools": 1431,
+  "generated": "2026-08-05T20:13:10.758Z",
+  "totalTools": 1432,
   "modules": 15,
   "tools": [
     {
@@ -24451,6 +24451,35 @@
             ]
           }
         }
+      }
+    },
+    {
+      "name": "production_getMaterialCharacteristics",
+      "module": "production",
+      "classification": "READ",
+      "description": "get material characteristics",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "readableIds",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "readableIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "readableIds"
+        ]
       }
     },
     {

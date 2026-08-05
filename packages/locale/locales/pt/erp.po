@@ -73,6 +73,10 @@ msgstr "{0} retalho(s) abaixo do mínimo de {minRemnantLength} {unitOfDimension}
 msgid "{0} lines to map"
 msgstr "{0} linhas para mapear"
 
+#. placeholder {0}: new Set(rows.map((row) => row.itemId)).size
+msgid "{0} material(s) in this group"
+msgstr ""
+
 #. placeholder {0}: history.length
 msgid "{0} orders"
 msgstr "{0} pedidos"
@@ -6359,6 +6363,9 @@ msgstr "Margem de preensão"
 
 msgid "Group"
 msgstr "Grupo"
+
+msgid "Group by"
+msgstr ""
 
 msgid "Group Members"
 msgstr "Membros do Grupo"

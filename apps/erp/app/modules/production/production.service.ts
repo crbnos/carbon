@@ -7760,7 +7760,7 @@ export async function getOpenCutDemand(
        quantity, quantityIssued, quantityToIssue, unitOfMeasureCode, description,
        jobOperationId,
        job!inner(jobId, status, locationId, dueDate),
-       item(readableIdWithRevision, name),
+       item(readableIdWithRevision, name, readableId),
        jobOperation(id, description, status, processId)`
     )
     .eq("companyId", companyId)
@@ -7773,6 +7773,34 @@ export async function getOpenCutDemand(
   }
 
   return query.order("cutLength", { ascending: false });
+}
+
+/**
+ * Material characteristics for a set of items, so cut demand can be grouped by
+ * something other than the exact item — "all 4130", "all round tube", "all
+ * 2.0 mm wall". Brad's framing: group by a characteristic, of which the
+ * material itself is only one example.
+ *
+ * `material` is a property sidecar keyed by `item.readableId` (NOT item.id) —
+ * every revision of a size shares one taxonomy row.
+ */
+export async function getMaterialCharacteristics(
+  client: SupabaseClient<Database>,
+  readableIds: string[],
+  companyId: string
+) {
+  if (readableIds.length === 0) {
+    return { data: [], error: null };
+  }
+  return client
+    .from("material")
+    .select(
+      `id, materialSubstanceId, materialFormId, gradeId, dimensionId, finishId,
+       materialSubstance(name), materialForm(name), materialGrade(name),
+       materialDimension(name), materialFinish(name)`
+    )
+    .in("id", readableIds)
+    .eq("companyId", companyId);
 }
 
 /**
