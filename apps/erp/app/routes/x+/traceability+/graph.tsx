@@ -13,6 +13,7 @@ import { Link, redirect, useLoaderData, useNavigation } from "react-router";
 import { Empty } from "~/components";
 import type { Activity, TrackedEntity } from "~/modules/inventory";
 import {
+  enrichActivityBinNames,
   fetchContainmentsForEntities,
   fetchJobScopedLineage,
   fetchLineageSubgraph,
@@ -21,6 +22,7 @@ import {
 import { clampDepth } from "~/modules/inventory/ui/Traceability/constants";
 import { TraceabilityGraph } from "~/modules/inventory/ui/Traceability/TraceabilityGraph";
 import { TraceabilitySidebar } from "~/modules/inventory/ui/Traceability/TraceabilitySidebar";
+import { stateEntityId } from "~/modules/inventory/ui/Traceability/utils";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -79,7 +81,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       payload.entities.map((e) => e.id)
     );
     return {
-      ...payload,
+      ...(await enrichActivityBinNames(client, payload)),
       containments,
       rootId: trackedEntityId,
       rootType: "entity" as const,
@@ -95,7 +97,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       jobReadableId
     );
     return {
-      ...payload,
+      ...(await enrichActivityBinNames(client, payload)),
       rootId: jobId,
       rootType: "job" as const,
       depth
@@ -166,13 +168,18 @@ export async function loader({ request }: LoaderFunctionArgs) {
   );
 
   return {
-    entities: allEntities,
-    inputs: [...(directInputs?.data || []), ...(additionalInputs?.data || [])],
-    outputs: [
-      ...(directOutputs?.data || []),
-      ...(additionalOutputs?.data || [])
-    ],
-    activities: allActivities,
+    ...(await enrichActivityBinNames(client, {
+      entities: allEntities,
+      inputs: [
+        ...(directInputs?.data || []),
+        ...(additionalInputs?.data || [])
+      ],
+      outputs: [
+        ...(directOutputs?.data || []),
+        ...(additionalOutputs?.data || [])
+      ],
+      activities: allActivities
+    })),
     containments,
     rootId: trackedActivityId!,
     rootType: "activity" as const,
@@ -359,9 +366,13 @@ function TraceabilityRouteInner() {
     [setNodes]
   );
 
+  // Lot-state nodes carry an `::sN` suffix — the sidebar always shows the
+  // underlying entity, whichever of its states is selected.
+  const sidebarEntityId = stateEntityId(sidebarId);
   const selectedEntity =
-    (entities.find((e) => e?.id === sidebarId) as TrackedEntity | undefined) ??
-    null;
+    (entities.find((e) => e?.id === sidebarEntityId) as
+      | TrackedEntity
+      | undefined) ?? null;
   const selectedActivity =
     (activities.find((a) => a?.id === sidebarId) as Activity | undefined) ??
     null;

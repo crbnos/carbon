@@ -37,6 +37,13 @@ import type {
 import { path } from "~/utils/path";
 import ScrapReason from "./ScrapReason";
 
+// Fractional quantities for weight/length UoMs, capped at the 2 decimals
+// jobOperation.quantityComplete/Scrapped/Reworked store.
+const QUANTITY_FORMAT_OPTIONS: Intl.NumberFormatOptions = {
+  minimumFractionDigits: 0,
+  maximumFractionDigits: 2
+};
+
 export function QuantityModal({
   allStepsRecorded = true,
   laborProductionEvent,
@@ -93,7 +100,12 @@ export function QuantityModal({
     finish: t`Finish ${operation.itemReadableId}`
   };
 
-  const isOperationComplete = baseline.complete >= operation.operationQuantity;
+  // operationQuantity is Math.ceil'd upstream (recalculate/get-method), so a 1.5-unit
+  // job reports 2. Matches how x+/complete.tsx decides willBeFinished.
+  const targetQuantity =
+    operation.targetQuantity ?? operation.operationQuantity ?? 0;
+
+  const isOperationComplete = baseline.complete >= targetQuantity;
 
   const descriptionMap = {
     scrap: t`Select a scrap quantity and reason`,
@@ -226,7 +238,7 @@ export function QuantityModal({
                   <AlertDescription>
                     <Trans>
                       The completed quantity for this operation is less than the
-                      required quantity of {operation.operationQuantity}.
+                      required quantity of {targetQuantity}.
                     </Trans>
                   </AlertDescription>
                 </Alert>
@@ -254,13 +266,7 @@ export function QuantityModal({
                       onChange={setQuantity}
                       isReadOnly={parentIsSerial}
                       minValue={0}
-                      // Allow fractional quantities (weight/length UoMs), capped
-                      // at 2 decimals. Without formatOptions, NumberControlled
-                      // inherits react-aria's 3-decimal default.
-                      formatOptions={{
-                        minimumFractionDigits: 0,
-                        maximumFractionDigits: 2
-                      }}
+                      formatOptions={QUANTITY_FORMAT_OPTIONS}
                       size="lg"
                     />
                   </div>
@@ -271,9 +277,7 @@ export function QuantityModal({
                       className="h-12"
                       onClick={() =>
                         setQuantity(
-                          operation.operationQuantity -
-                            baseline.complete -
-                            baseline.reworked
+                          targetQuantity - baseline.complete - baseline.reworked
                         )
                       }
                     >
@@ -296,6 +300,7 @@ export function QuantityModal({
                   <NumberControlled
                     name="totalQuantity"
                     label={t`Total Quantity`}
+                    formatOptions={QUANTITY_FORMAT_OPTIONS}
                     size="lg"
                     value={
                       quantity +

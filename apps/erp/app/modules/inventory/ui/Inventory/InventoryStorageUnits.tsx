@@ -38,14 +38,16 @@ import {
   useDisclosure,
   VStack
 } from "@carbon/react";
-import { formatDate } from "@carbon/utils";
+import { formatDate, groupBy } from "@carbon/utils";
 import { getLocalTimeZone, today } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import { nanoid } from "nanoid";
-import { useMemo, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 import {
   LuCheck,
+  LuChevronDown,
+  LuChevronRight,
   LuEllipsisVertical,
   LuPencil,
   LuPrinter,
@@ -111,6 +113,44 @@ const InventoryStorageUnits = ({
     () => itemStorageUnitQuantities.filter((item) => item.quantity !== 0),
     [itemStorageUnitQuantities]
   );
+
+  // One visual row per (storage unit, lot): fragments of the same batch in the
+  // same bin collapse into a group row with the summed quantity, expandable to
+  // the underlying tracked entities.
+  const storageUnitGroups = useMemo(() => {
+    const grouped = groupBy(
+      visibleStorageUnitQuantities.map((item, index) => ({ item, index })),
+      // Untracked/unnumbered rows get a per-row key so they stay singletons.
+      ({ item, index }) =>
+        `${item.storageUnitId}::${item.readableId ?? item.trackedEntityId ?? `row-${index}`}`
+    );
+    return Object.entries(grouped)
+      .map(([key, rows]) => ({ key, members: rows.map((r) => r.item) }))
+      .sort((a, b) => {
+        const unitA = a.members[0].storageUnitName ?? "";
+        const unitB = b.members[0].storageUnitName ?? "";
+        if (unitA !== unitB) return unitA.localeCompare(unitB);
+        return (a.members[0].readableId ?? "").localeCompare(
+          b.members[0].readableId ?? ""
+        );
+      });
+  }, [visibleStorageUnitQuantities]);
+
+  const [expandedGroupKeys, setExpandedGroupKeys] = useState<Set<string>>(
+    new Set()
+  );
+
+  const toggleGroup = (key: string) => {
+    setExpandedGroupKeys((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) {
+        next.delete(key);
+      } else {
+        next.add(key);
+      }
+      return next;
+    });
+  };
 
   const showExpirationColumn = useMemo(
     () =>
@@ -218,6 +258,83 @@ const InventoryStorageUnits = ({
     setPendingPrintEntityId(null);
   };
 
+  const renderStorageUnitRow = (
+    item: ItemStorageUnitQuantities,
+    key: string
+  ) => (
+    <Tr key={key}>
+      <Td>
+        {storageUnits.find((s) => s.value === item.storageUnitId)?.label ||
+          item.storageUnitName ||
+          item.storageUnitId}
+      </Td>
+
+      <Td>
+        <span>{item.quantity}</span>
+      </Td>
+      <Td>
+        {item.trackedEntityId && (
+          <HStack>
+            {item.readableId && <span>{item.readableId}</span>}
+            <Copy
+              icon={<LuQrCode />}
+              text={item.trackedEntityId}
+              withTextInTooltip
+            />
+          </HStack>
+        )}
+      </Td>
+      {showExpirationColumn && (
+        <Td>
+          {item.trackedEntityId &&
+            trackedEntityExpirations[item.trackedEntityId] && (
+              <span>
+                {formatDate(
+                  trackedEntityExpirations[item.trackedEntityId],
+                  undefined,
+                  locale
+                )}
+              </span>
+            )}
+        </Td>
+      )}
+      <Td className="flex flex-shrink-0 justify-end items-center">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <IconButton
+              aria-label={t`Actions`}
+              variant="ghost"
+              icon={<LuEllipsisVertical />}
+            />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent className="w-56">
+            <DropdownMenuItem
+              onClick={() =>
+                openAdjustmentModal(
+                  item.storageUnitId,
+                  item.trackedEntityId,
+                  item.readableId,
+                  item.quantity
+                )
+              }
+            >
+              <DropdownMenuIcon icon={<LuPencil />} />
+              <Trans>Update Quantity</Trans>
+            </DropdownMenuItem>
+            {item.trackedEntityId && (
+              <DropdownMenuItem
+                onClick={() => handlePrintLabel(item.trackedEntityId!)}
+              >
+                <DropdownMenuIcon icon={<LuPrinter />} />
+                <Trans>Print Label</Trans>
+              </DropdownMenuItem>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </Td>
+    </Tr>
+  );
+
   return (
     <>
       <Card className="w-full">
@@ -265,82 +382,87 @@ const InventoryStorageUnits = ({
               </Tr>
             </Thead>
             <Tbody>
-              {visibleStorageUnitQuantities.map((item, index) => (
-                <Tr key={index}>
-                  <Td>
-                    {storageUnits.find((s) => s.value === item.storageUnitId)
-                      ?.label ||
-                      item.storageUnitName ||
-                      item.storageUnitId}
-                  </Td>
-
-                  <Td>
-                    <span>{item.quantity}</span>
-                  </Td>
-                  <Td>
-                    {item.trackedEntityId && (
-                      <HStack>
-                        {item.readableId && <span>{item.readableId}</span>}
-                        <Copy
-                          icon={<LuQrCode />}
-                          text={item.trackedEntityId}
-                          withTextInTooltip
-                        />
-                      </HStack>
-                    )}
-                  </Td>
-                  {showExpirationColumn && (
-                    <Td>
-                      {item.trackedEntityId &&
-                        trackedEntityExpirations[item.trackedEntityId] && (
-                          <span>
-                            {formatDate(
-                              trackedEntityExpirations[item.trackedEntityId],
-                              undefined,
-                              locale
-                            )}
-                          </span>
-                        )}
-                    </Td>
-                  )}
-                  <Td className="flex flex-shrink-0 justify-end items-center">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <IconButton
-                          aria-label={t`Actions`}
-                          variant="ghost"
-                          icon={<LuEllipsisVertical />}
-                        />
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent className="w-56">
-                        <DropdownMenuItem
-                          onClick={() =>
-                            openAdjustmentModal(
-                              item.storageUnitId,
-                              item.trackedEntityId,
-                              item.readableId,
-                              item.quantity
-                            )
-                          }
-                        >
-                          <DropdownMenuIcon icon={<LuPencil />} />
-                          <Trans>Update Quantity</Trans>
-                        </DropdownMenuItem>
-                        {item.trackedEntityId && (
-                          <DropdownMenuItem
-                            onClick={() =>
-                              handlePrintLabel(item.trackedEntityId!)
+              {storageUnitGroups.map((group) => {
+                if (group.members.length === 1) {
+                  return renderStorageUnitRow(group.members[0], group.key);
+                }
+                const isExpanded = expandedGroupKeys.has(group.key);
+                const first = group.members[0];
+                // Batch quantities are decimals — clamp float noise on the sum.
+                const summedQuantity =
+                  Math.round(
+                    group.members.reduce((sum, m) => sum + m.quantity, 0) * 1e6
+                  ) / 1e6;
+                const expirations = group.members
+                  .map((m) =>
+                    m.trackedEntityId
+                      ? trackedEntityExpirations[m.trackedEntityId]
+                      : null
+                  )
+                  .filter((d): d is string => Boolean(d));
+                const earliestExpiration =
+                  expirations.length > 0
+                    ? expirations.reduce((min, d) => (d < min ? d : min))
+                    : null;
+                return (
+                  <Fragment key={group.key}>
+                    <Tr>
+                      <Td>
+                        <HStack className="gap-1">
+                          <IconButton
+                            aria-label={isExpanded ? t`Collapse` : t`Expand`}
+                            variant="ghost"
+                            icon={
+                              isExpanded ? (
+                                <LuChevronDown />
+                              ) : (
+                                <LuChevronRight />
+                              )
                             }
-                          >
-                            <DropdownMenuIcon icon={<LuPrinter />} />
-                            <Trans>Print Label</Trans>
-                          </DropdownMenuItem>
-                        )}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </Td>
-                </Tr>
-              ))}
+                            onClick={() => toggleGroup(group.key)}
+                          />
+                          <span>
+                            {storageUnits.find(
+                              (s) => s.value === first.storageUnitId
+                            )?.label ||
+                              first.storageUnitName ||
+                              first.storageUnitId}
+                          </span>
+                        </HStack>
+                      </Td>
+                      <Td>
+                        <span>{summedQuantity}</span>
+                      </Td>
+                      <Td>
+                        <HStack>
+                          {first.readableId && <span>{first.readableId}</span>}
+                          <span className="text-xs text-muted-foreground">
+                            ×{group.members.length}
+                          </span>
+                        </HStack>
+                      </Td>
+                      {showExpirationColumn && (
+                        <Td>
+                          {earliestExpiration && (
+                            <span>
+                              {formatDate(
+                                earliestExpiration,
+                                undefined,
+                                locale
+                              )}
+                            </span>
+                          )}
+                        </Td>
+                      )}
+                      <Td className="flex flex-shrink-0 justify-end items-center" />
+                    </Tr>
+                    {isExpanded &&
+                      group.members.map((item, index) =>
+                        renderStorageUnitRow(item, `${group.key}:${index}`)
+                      )}
+                  </Fragment>
+                );
+              })}
             </Tbody>
           </Table>
         </CardContent>

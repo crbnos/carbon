@@ -23,7 +23,7 @@ import { groupBy } from "@carbon/utils";
 import { z } from "zod";
 import { inngest } from "../../client";
 import { computeCreateDiff, computeDiff } from "./diff";
-import type { FkMap, FkMapRow } from "./fk-snapshots";
+import type { FkMap, FkMapRow, SnapshotSpec } from "./fk-snapshots";
 import { parseFkMapRows, resolveSnapshotSpec } from "./fk-snapshots";
 
 const log = getLogger("jobs", "audit");
@@ -392,6 +392,7 @@ async function applyFkSnapshots(
   const idsByTable = new Map<string, Set<string>>();
   const colsByTable = new Map<string, Set<string>>();
   const companyScopedByTable = new Map<string, boolean>();
+  const hopByTable = new Map<string, NonNullable<SnapshotSpec["hop"]>>();
   const fkMap = await getFkMap(client);
 
   for (const entry of entries) {
@@ -433,6 +434,7 @@ async function applyFkSnapshots(
       colsByTable.set(spec.table, cols);
 
       companyScopedByTable.set(spec.table, spec.hasCompanyId);
+      if (spec.hop) hopByTable.set(spec.table, spec.hop);
     }
   }
 
@@ -441,37 +443,106 @@ async function applyFkSnapshots(
   // (table, id) → { col: value, ... } — full snapshot row per id
   const lookup = new Map<string, Record<string, unknown>>();
 
-  for (const [table, ids] of idsByTable) {
-    if (ids.size === 0) continue;
-    const cols = colsByTable.get(table);
-    if (!cols || cols.size === 0) continue;
-    const selectClause = ["id", ...cols].join(", ");
-
+  const fetchRows = async (
+    table: string,
+    selectCols: Iterable<string>,
+    ids: readonly string[],
+    tenantScoped: boolean
+  ): Promise<Array<Record<string, unknown>> | null> => {
     try {
       let query = (client as any)
         .from(table)
-        .select(selectClause)
-        .in("id", Array.from(ids));
+        .select(["id", ...selectCols].join(", "))
+        .in("id", ids);
       // Tenant-scope the lookup unless the target table has no companyId
       // (e.g. "user" — global identity).
-      if (companyScopedByTable.get(table) !== false) {
+      if (tenantScoped) {
         query = query.eq("companyId", companyId);
       }
       const { data, error } = await query;
-
-      if (error || !data) continue;
-
-      for (const row of data as Array<Record<string, unknown>>) {
-        const rowId = row?.id;
-        if (typeof rowId !== "string") continue;
-        const snapshot: Record<string, unknown> = {};
-        for (const col of cols) snapshot[col] = row[col];
-        lookup.set(`${table}::${rowId}`, snapshot);
+      if (error || !data) {
+        // A rejected query (e.g. a tenancy filter on a table without
+        // companyId) silently degrades the affected diffs to raw ids —
+        // make that visible.
+        log.error(`FK snapshot lookup failed for table "${table}"`, {
+          error,
+          tenantScoped
+        });
+        return null;
       }
+      return data as Array<Record<string, unknown>>;
     } catch (err) {
       log.error(`FK snapshot lookup failed for table "${table}"`, {
         error: err
       });
+      return null;
+    }
+  };
+
+  for (const [table, ids] of idsByTable) {
+    if (ids.size === 0) continue;
+    const cols = colsByTable.get(table);
+    if (!cols || cols.size === 0) continue;
+    const tenantScoped = companyScopedByTable.get(table) !== false;
+    const hop = hopByTable.get(table);
+
+    if (hop) {
+      // Junction target: the row the FK points at has no display columns of
+      // its own. Stage 1 reads the hop column off the junction rows; stage 2
+      // fetches the display columns from the hop table. Keyed in `lookup` by
+      // the junction id so the ref loop below works unchanged.
+      const junctionRows = await fetchRows(
+        table,
+        [hop.column],
+        Array.from(ids),
+        tenantScoped
+      );
+      if (!junctionRows) continue;
+
+      const displayIds = new Set<string>();
+      for (const row of junctionRows) {
+        const displayId = row[hop.column];
+        if (typeof displayId === "string") displayIds.add(displayId);
+      }
+      if (displayIds.size === 0) continue;
+
+      const displayRows = await fetchRows(
+        hop.table,
+        cols,
+        Array.from(displayIds),
+        hop.hasCompanyId
+      );
+      if (!displayRows) continue;
+
+      const displayById = new Map<string, Record<string, unknown>>();
+      for (const row of displayRows) {
+        if (typeof row.id === "string") displayById.set(row.id, row);
+      }
+
+      for (const junctionRow of junctionRows) {
+        const junctionId = junctionRow.id;
+        const displayId = junctionRow[hop.column];
+        if (typeof junctionId !== "string" || typeof displayId !== "string") {
+          continue;
+        }
+        const display = displayById.get(displayId);
+        if (!display) continue;
+        const snapshot: Record<string, unknown> = {};
+        for (const col of cols) snapshot[col] = display[col];
+        lookup.set(`${table}::${junctionId}`, snapshot);
+      }
+      continue;
+    }
+
+    const data = await fetchRows(table, cols, Array.from(ids), tenantScoped);
+    if (!data) continue;
+
+    for (const row of data) {
+      const rowId = row?.id;
+      if (typeof rowId !== "string") continue;
+      const snapshot: Record<string, unknown> = {};
+      for (const col of cols) snapshot[col] = row[col];
+      lookup.set(`${table}::${rowId}`, snapshot);
     }
   }
 

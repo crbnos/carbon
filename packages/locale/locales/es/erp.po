@@ -137,6 +137,9 @@ msgstr "{from}–{to} de {count} operaciones"
 msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
 msgstr "{inserted} insertados, {updated} actualizados, {0} necesitan corrección, {1} omitidos."
 
+msgid "{linesCount, plural, one {# line} other {# lines}}"
+msgstr "{linesCount, plural, one {# línea} other {# líneas}}"
+
 msgid "{maxSizeMB}MB limit"
 msgstr "{maxSizeMB}MB límite"
 
@@ -163,6 +166,9 @@ msgstr "{total} fases para poner tu empresa en vivo en Carbon. Cada una termina 
 
 msgid "{total} phases to go live"
 msgstr "{total} fases para activar"
+
+msgid "{totalQuantity, plural, one {# unit} other {# units}}"
+msgstr "{totalQuantity, plural, one {# unidad} other {# unidades}}"
 
 msgid "{uncounted, plural, one {# uncounted line} other {# uncounted lines}}"
 msgstr "{uncounted, plural, one {# línea sin contar} other {# líneas sin contar}}"
@@ -811,6 +817,9 @@ msgstr "Agregar paso"
 msgid "Add steps to preview the operator view."
 msgstr "Agregar pasos para obtener una vista previa de la vista del operador."
 
+msgid "Add Stock Transfer"
+msgstr "Agregar Transferencia de Stock"
+
 msgid "Add Supplier"
 msgstr "Agregar Proveedor"
 
@@ -1441,6 +1450,9 @@ msgstr "¿Estás seguro de que deseas eliminar la línea de pedido de venta para
 msgid "Are you sure you want to delete the scrap reason: {0}? This cannot be undone."
 msgstr "¿Estás seguro de que deseas eliminar la razón de rechazo: {0}? Esto no se puede deshacer."
 
+msgid "Are you sure you want to delete the serial number sequence for {itemLabel}? This cannot be undone."
+msgstr "¿Está seguro de que desea eliminar la secuencia de número de serie de {itemLabel}? Esto no se puede deshacer."
+
 msgid "Are you sure you want to delete the shift: {name} from {locationName}? This cannot be undone."
 msgstr "¿Estás seguro de que deseas eliminar el turno: {name} de {locationName}? Esto no se puede deshacer."
 
@@ -1701,8 +1713,14 @@ msgstr "Asigna esta unidad a un centro de trabajo para material en el costado de
 msgid "At each gate"
 msgstr "En cada puerta"
 
+msgid "At job completion"
+msgstr "Al completar el trabajo"
+
 msgid "At least one condition must match"
 msgstr "Al menos una condición debe coincidir"
+
+msgid "At operation completion"
+msgstr "Al completar la operación"
 
 msgid "Attach File"
 msgstr "Adjuntar archivo"
@@ -2379,6 +2397,9 @@ msgstr "Elige un número de lote"
 msgid "Choose a company"
 msgstr "Elige una empresa"
 
+msgid "Choose a row on the left to see where its stock can come from."
+msgstr "Elija una fila a la izquierda para ver de dónde puede provenir su stock."
+
 msgid "Choose a serial number"
 msgstr "Elige un número de serie"
 
@@ -2634,9 +2655,6 @@ msgstr "Configurar cuentas predeterminadas de patrimonio y ganancias retenidas"
 
 msgid "Configure defaults for the quality dashboard."
 msgstr "Configura los valores predeterminados para el panel de calidad."
-
-msgid "Configure how preventative maintenance dispatches are automatically generated from maintenance schedules."
-msgstr "Configura cómo se generan automáticamente los despachos de mantenimiento preventivo a partir de los cronogramas de mantenimiento."
 
 msgid "Configure Item"
 msgstr "Configurar Artículo"
@@ -3229,6 +3247,9 @@ msgstr "Crear Revisión"
 msgid "Create Rule"
 msgstr "Crear Regla"
 
+msgid "Create Transfer"
+msgstr "Crear Transferencia"
+
 msgid "Create User"
 msgstr "Crear Usuario"
 
@@ -3703,9 +3724,6 @@ msgstr "Días Vencidos"
 msgid "Days from ordering a part to having it available; planning offsets demand backward by this much."
 msgstr "Días desde ordenar una pieza hasta tenerla disponible; la planificación compensa la demanda hacia atrás por esta cantidad."
 
-msgid "Days in advance to generate dispatches"
-msgstr "Días de anticipación para generar despachos"
-
 msgid "Days Off"
 msgstr "Días libres"
 
@@ -3767,6 +3785,9 @@ msgstr "Decide qué ve un operador si intenta emitir un lote o número de serie 
 
 msgid "Decide what happens when an operator presses Finish on the shop floor with material still unpicked."
 msgstr "Decidir qué sucede cuando un operador presiona Finalizar en el piso de producción con material aún sin recoger."
+
+msgid "Decide when material picked to a work center but not consumed flows back to the warehouse."
+msgstr "Decide cuándo el material enviado a un centro de trabajo pero no consumido fluye de vuelta al almacén."
 
 msgid "Decimal Places"
 msgstr "Lugares Decimales"
@@ -4618,6 +4639,9 @@ msgstr "p. ej. las primeras 3 a 4 semanas"
 msgid "e.g. Zebra 2x1"
 msgstr "p. ej. Zebra 2x1"
 
+msgid "Each operation's unused material returns as soon as the operation is done."
+msgstr "El material no utilizado de cada operación se devuelve tan pronto como la operación finaliza."
+
 msgid "Each physical unit gets its own tracked entity and unique number — one entity, one unit."
 msgstr "Cada unidad física obtiene su propia entidad rastreada y número único — una entidad, una unidad."
 
@@ -4867,6 +4891,9 @@ msgstr "Editar Mantenimiento Programado"
 msgid "Edit Sequence"
 msgstr "Editar Secuencia"
 
+msgid "Edit Serial Number"
+msgstr "Editar Número de Serie"
+
 msgid "Edit Service"
 msgstr "Editar servicio"
 
@@ -5112,9 +5139,6 @@ msgstr "Ingrese una cantidad entre 1 y {0}."
 msgid "Enter and approve vendor bills against a PO (three-way match)"
 msgstr "Ingresar y aprobar facturas de proveedores contra una OC (coincidencia de tres vías)"
 
-msgid "Enter or scan serial number"
-msgstr "Ingrese o escanee el número de serie"
-
 msgid "Enter PO number"
 msgstr "Ingrese el número de PO"
 
@@ -5138,9 +5162,6 @@ msgstr "Entidades a separar"
 
 msgid "Entity"
 msgstr "Entidad"
-
-msgid "Entity is {status}"
-msgstr "La entidad es {status}"
 
 msgid "Entity Type"
 msgstr "Tipo de Entidad"
@@ -5225,9 +5246,6 @@ msgstr "Error al eliminar el modelo de la línea de factura de venta"
 
 msgid "Error removing model from sales order line"
 msgstr "Error al eliminar el modelo de la línea de orden de venta"
-
-msgid "Error validating serial number"
-msgstr "Error validando número de serie"
 
 msgid "Escalate to the project leads"
 msgstr "Escalar a los líderes del proyecto"
@@ -6685,6 +6703,9 @@ msgstr "Estado de Resultados"
 msgid "Income/Balance"
 msgstr "Ingresos/Saldo"
 
+msgid "incoming"
+msgstr "entrante"
+
 msgid "Incoming"
 msgstr "Entrante"
 
@@ -7015,9 +7036,6 @@ msgstr "artículo"
 msgid "Item"
 msgstr "Artículo"
 
-msgid "Item {scannedItem} is not the same as the item {expectedItem}"
-msgstr "El artículo {scannedItem} no es el mismo que el artículo {expectedItem}"
-
 msgid "Item / Location"
 msgstr "Artículo / Ubicación"
 
@@ -7305,6 +7323,9 @@ msgstr "Elemento izquierdo"
 
 msgid "Leftover Parts Detected"
 msgstr "Piezas Sobrantes Detectadas"
+
+msgid "Leftover staged material returns when the whole job completes."
+msgstr "El material preparado restante se devuelve cuando todo el trabajo se completa."
 
 msgid "Less manual work"
 msgstr "Menos trabajo manual"
@@ -7596,9 +7617,6 @@ msgstr "Gasto de Mantenimiento (predeterminado)"
 
 msgid "Maintenance Schedules"
 msgstr "Calendarios de Mantenimiento"
-
-msgid "Maintenance Scheduling"
-msgstr "Programación de Mantenimiento"
 
 msgid "Maintenance Type"
 msgstr "Tipo de Mantenimiento"
@@ -8404,6 +8422,9 @@ msgstr "Nueva Línea de Orden de Venta"
 msgid "New Scheduled Maintenance"
 msgstr "Nuevo Mantenimiento Programado"
 
+msgid "New Serial Number"
+msgstr "Nuevo Número de Serie"
+
 msgid "New Service"
 msgstr "Nuevo servicio"
 
@@ -8478,6 +8499,9 @@ msgstr "Siguiente fecha"
 
 msgid "Next Due"
 msgstr "Próximo Vencimiento"
+
+msgid "Next Due Date"
+msgstr "Próxima fecha de vencimiento"
 
 msgid "Next page"
 msgstr "Página siguiente"
@@ -8660,8 +8684,14 @@ msgstr "No hay tipos de problemas configurados"
 msgid "No items"
 msgstr "Sin artículos"
 
+msgid "No items have inventory activity here yet."
+msgstr "Aún no hay actividad de inventario de artículos aquí."
+
 msgid "No lines to map"
 msgstr "Sin líneas para mapear"
+
+msgid "No lines yet"
+msgstr "Sin líneas aún"
 
 msgid "No locations found."
 msgstr "No se encontraron ubicaciones."
@@ -8677,6 +8707,9 @@ msgstr "No hay coincidencias para \"{query}\". Intenta un término de búsqueda 
 
 msgid "No matches. Type to create one."
 msgstr "Sin coincidencias. Escribe para crear una."
+
+msgid "No matching bins"
+msgstr "Sin contenedores coincidentes"
 
 msgid "No new notifications"
 msgstr "Sin notificaciones nuevas"
@@ -8704,6 +8737,9 @@ msgstr "No se encontró ninguna opción."
 
 msgid "No options found."
 msgstr "No se encontraron opciones."
+
+msgid "No other bins hold this item"
+msgstr "Ningún otro contenedor contiene este artículo"
 
 msgid "No other employees found. Add employees to enable ownership transfer."
 msgstr "No se encontraron otros empleados. Agregue empleados para habilitar la transferencia de propiedad."
@@ -8789,8 +8825,14 @@ msgstr "No hay ordenamientos aplicados a esta vista"
 msgid "No stock"
 msgstr "Sin stock"
 
+msgid "No stock at this location"
+msgstr "Sin stock en esta ubicación"
+
 msgid "No stockout projected in the next 48 weeks"
 msgstr "No se proyecta falta de inventario en las próximas 48 semanas"
+
+msgid "No storage unit"
+msgstr "Sin unidad de almacenamiento"
 
 msgid "No suppliers yet"
 msgstr "Sin proveedores aún"
@@ -8900,6 +8942,13 @@ msgstr "Notas"
 msgid "Notes (optional)"
 msgstr "Notas (opcional)"
 
+#. placeholder {0}: search.trim()
+msgid "Nothing at this location matches \"{0}\"."
+msgstr "Nada en esta ubicación coincide con \"{0}\"."
+
+msgid "Nothing else at this location has stock to pull from."
+msgstr "Nada más en esta ubicación tiene stock para extraer."
+
 msgid "Nothing in the archive"
 msgstr "Nada en el archivo"
 
@@ -8941,6 +8990,9 @@ msgstr "Más antiguo primero"
 
 msgid "On cutover day, work the checklist below in order. Acceptance tests come from your in-scope requirements. Support details are at the bottom."
 msgstr "En el día de la migración, trabaja la lista de verificación a continuación en orden. Las pruebas de aceptación provienen de tus requisitos dentro del alcance. Los detalles de soporte están en la parte inferior."
+
+msgid "on hand"
+msgstr "en existencia"
 
 msgid "On hand"
 msgstr "En existencia"
@@ -9076,6 +9128,9 @@ msgstr "Abrir en MES"
 
 msgid "Open Issues"
 msgstr "Problemas Abiertos"
+
+msgid "Open job demand plus outstanding transfers out of this bin"
+msgstr "Demanda de trabajo abierto más transferencias pendientes de este contenedor"
 
 msgid "Open jobs"
 msgstr "Trabajos abiertos"
@@ -9597,6 +9652,9 @@ msgstr "Lista de Picking"
 
 msgid "Pick Order"
 msgstr "Orden de Picking"
+
+msgid "Pick the bin that needs stock, then pick the bins to pull it from."
+msgstr "Elija el contenedor que necesita stock, luego elija los contenedores de los que extraerlo."
 
 msgid "Pick tracked item"
 msgstr "Seleccionar artículo rastreado"
@@ -10707,8 +10765,8 @@ msgstr "Eliminar filtros"
 msgid "Remove from Price List"
 msgstr "Eliminar de la Lista de Precios"
 
-msgid "Remove item"
-msgstr "Eliminar artículo"
+msgid "Remove line"
+msgstr "Eliminar línea"
 
 msgid "Remove order"
 msgstr "Eliminar orden"
@@ -10937,6 +10995,12 @@ msgstr "Reintentar todo"
 msgid "Return Home"
 msgstr "Volver al Inicio"
 
+msgid "Returned"
+msgstr "Devuelto"
+
+msgid "Returning unused picked material"
+msgstr "Devolviendo material recogido no utilizado"
+
 msgid "Rev {revision}"
 msgstr "Rev {revision}"
 
@@ -10960,6 +11024,9 @@ msgstr "Revertir los asientos de diario relacionados"
 
 msgid "Reversed"
 msgstr "Revertido"
+
+msgid "Review"
+msgstr "Revisar"
 
 msgid "Review each item's changes, then confirm — releasing can't be undone."
 msgstr "Revisa los cambios de cada elemento y confirma — liberar no se puede deshacer."
@@ -11284,6 +11351,12 @@ msgstr "Escanear"
 msgid "Scan a label or search by item ID or tracking ID."
 msgstr "Escanea una etiqueta o busca por ID de artículo o ID de seguimiento."
 
+msgid "Scan or choose a batch number"
+msgstr "Escanee o elija un número de lote"
+
+msgid "Scan or choose a serial number"
+msgstr "Escanee o elija un número de serie"
+
 msgid "Scan or enter tracked entity ID, serial, or batch"
 msgstr "Escanear o ingresar ID de entidad rastreada, serie o lote"
 
@@ -11295,9 +11368,6 @@ msgstr "Escanear o buscar..."
 
 msgid "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
 msgstr "Escanee o seleccione una entidad rastreada de este lote para agregarla como una columna de muestra, luego registre su resultado en la cuadrícula."
-
-msgid "Scan the tracking ID for this line"
-msgstr "Escanea el ID de seguimiento para esta línea"
 
 msgid "SCAR"
 msgstr "SCAR"
@@ -11398,6 +11468,9 @@ msgstr "Buscar campos..."
 msgid "Search for existing or create a new one"
 msgstr "Buscar uno existente o crear uno nuevo"
 
+msgid "Search items or bins"
+msgstr "Buscar artículos o contenedores"
+
 msgid "Search Job"
 msgstr "Buscar trabajo"
 
@@ -11439,6 +11512,9 @@ msgstr "Seleccionar un asignado"
 
 msgid "Select a default approver"
 msgstr "Selecciona un aprobador predeterminado"
+
+msgid "Select a destination"
+msgstr "Seleccione un destino"
 
 msgid "Select a document"
 msgstr "Selecciona un documento"
@@ -11661,11 +11737,14 @@ msgstr "Los artículos seriales requieren una orden de venta"
 msgid "Serial Number"
 msgstr "Número de Serie"
 
-msgid "Serial number not found"
-msgstr "Número de serie no encontrado"
-
 msgid "Serial Number:"
 msgstr "Número de Serie:"
+
+msgid "Serial Numbers"
+msgstr "Números de Serie"
+
+msgid "Serial numbers are only generated for serial- or batch-tracked items."
+msgstr "Los números de serie se generan solo para artículos con seguimiento de serie o lote."
 
 msgid "Serial or Batch Tracking Required"
 msgstr "Seguimiento Serial o por Lote Requerido"
@@ -11970,6 +12049,10 @@ msgstr "Mostrar IDs de Proveedores"
 
 msgid "Show sync options"
 msgstr "Mostrar opciones de sincronización"
+
+#. placeholder {0}: data.length
+msgid "Showing {0} of {totalCount} — refine your search"
+msgstr "Mostrando {0} de {totalCount} — refine su búsqueda"
 
 msgid "Shown as a faint background behind every page of generated PDFs"
 msgstr "Se muestra como un fondo tenue detrás de cada página de los PDF generados"
@@ -13536,6 +13619,9 @@ msgstr "Este es el mes en que comienza tu año fiscal."
 msgid "This is the month your tax year starts."
 msgstr "Este es el mes en que comienza tu año fiscal."
 
+msgid "this item"
+msgstr "este artículo"
+
 msgid "This item is built via a configurator and resolves its components per-order; jobs created for it inherit the configurator's resolved BOM."
 msgstr "Este artículo se construye a través de un configurador y resuelve sus componentes por pedido; los trabajos creados para él heredan la BOM resuelta del configurador."
 
@@ -13871,9 +13957,6 @@ msgstr "Entidad rastreada"
 msgid "Tracked Entity"
 msgstr "Entidad Rastreada"
 
-msgid "Tracked entity already picked"
-msgstr "Entidad rastreada ya seleccionada"
-
 msgid "Tracked entity ID is required but none was found"
 msgstr "El ID de entidad rastreada es obligatorio pero no se encontró ninguno"
 
@@ -14114,6 +14197,9 @@ msgstr "Diagrama sin título"
 
 msgid "Untitled line"
 msgstr "Línea sin título"
+
+msgid "Unused picked material flushed back from the work center to the warehouse."
+msgstr "Material recogido no utilizado devuelto desde el centro de trabajo al almacén."
 
 msgid "UoM"
 msgstr "UoM"

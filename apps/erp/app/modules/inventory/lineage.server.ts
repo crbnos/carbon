@@ -1,4 +1,5 @@
 import type { Database } from "@carbon/database";
+import { indexByMapped, pluckUnique } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type {
   Activity,
@@ -75,29 +76,31 @@ async function expandActivitySiblings(
       .in("trackedActivityId", activityIds)
   ]);
 
+  // These rows are the AUTHORITATIVE edge quantities — how much actually flowed
+  // through this activity. Always overwrite: the BFS seeds edges from the
+  // traversal RPCs, whose `quantity` column is the neighbour ENTITY's current
+  // quantity (`te."quantity"`), not the edge's. Left as-is, a lot that was later
+  // drawn down paints its post-hoc quantity onto a historical edge (a 6-unit
+  // split reading "4" after 2 were consumed).
   const siblingEntityIds = new Set<string>();
   for (const row of siblingInputs.data ?? []) {
     const key = `${row.trackedActivityId}:${row.trackedEntityId}`;
-    if (!inputs.has(key)) {
-      inputs.set(key, {
-        trackedActivityId: row.trackedActivityId,
-        trackedEntityId: row.trackedEntityId,
-        quantity: row.quantity
-      });
-    }
+    inputs.set(key, {
+      trackedActivityId: row.trackedActivityId,
+      trackedEntityId: row.trackedEntityId,
+      quantity: row.quantity
+    });
     if (!entities.has(row.trackedEntityId)) {
       siblingEntityIds.add(row.trackedEntityId);
     }
   }
   for (const row of siblingOutputs.data ?? []) {
     const key = `${row.trackedActivityId}:${row.trackedEntityId}`;
-    if (!outputs.has(key)) {
-      outputs.set(key, {
-        trackedActivityId: row.trackedActivityId,
-        trackedEntityId: row.trackedEntityId,
-        quantity: row.quantity
-      });
-    }
+    outputs.set(key, {
+      trackedActivityId: row.trackedActivityId,
+      trackedEntityId: row.trackedEntityId,
+      quantity: row.quantity
+    });
     if (!entities.has(row.trackedEntityId)) {
       siblingEntityIds.add(row.trackedEntityId);
     }
@@ -461,6 +464,22 @@ export function toGraphData(payload: LineagePayload): GraphData {
     }))
   ];
 
+  // Historical split survivors are recorded as both input and output of their
+  // own Split activity. Drop the output half of that self-loop so the graph
+  // doesn't render the survivor as produced by its own split; the input edge
+  // stays (it carries the drawn quantity).
+  const splitActivityIds = new Set(
+    payload.activities.filter((a) => a?.type === "Split").map((a) => a.id)
+  );
+  const inputPairs = new Set(
+    pluckUnique(
+      payload.inputs.filter((input) =>
+        splitActivityIds.has(input.trackedActivityId)
+      ),
+      (input) => `${input.trackedActivityId}::${input.trackedEntityId}`
+    )
+  );
+
   const links = [
     ...payload.inputs.map((input) => ({
       source: input.trackedEntityId,
@@ -468,13 +487,79 @@ export function toGraphData(payload: LineagePayload): GraphData {
       type: "input" as const,
       quantity: input.quantity
     })),
-    ...payload.outputs.map((output) => ({
-      source: output.trackedActivityId,
-      target: output.trackedEntityId,
-      type: "output" as const,
-      quantity: output.quantity
-    }))
+    ...payload.outputs
+      .filter(
+        (output) =>
+          !inputPairs.has(
+            `${output.trackedActivityId}::${output.trackedEntityId}`
+          )
+      )
+      .map((output) => ({
+        source: output.trackedActivityId,
+        target: output.trackedEntityId,
+        type: "output" as const,
+        quantity: output.quantity
+      }))
   ];
 
   return { nodes, links };
+}
+
+/**
+ * Resolve the storage-unit ids that movement activities carry in their
+ * attributes ("From Shelf" / "To Shelf") into names, written back as
+ * "From Storage Unit Name" / "To Storage Unit Name".
+ *
+ * The graph renders a lot as a chain of states; a movement produces two states
+ * with the SAME quantity, so the bin is the only thing that distinguishes
+ * them. Without this they render identically and a Pick looks like a no-op.
+ * Enriching here keeps the ids server-side and needs no extra plumbing — the
+ * activities already flow through the payload to the layout worker.
+ */
+export async function enrichActivityBinNames(
+  client: SupabaseClient<Database>,
+  payload: LineagePayload
+): Promise<LineagePayload> {
+  const binIds = new Set<string>();
+  for (const activity of payload.activities) {
+    const attrs = activity.attributes as Record<string, unknown> | null;
+    for (const key of ["From Shelf", "To Shelf"]) {
+      const id = attrs?.[key];
+      if (typeof id === "string" && id) binIds.add(id);
+    }
+  }
+  if (binIds.size === 0) return payload;
+
+  const storageUnits = await client
+    .from("storageUnit")
+    .select("id, name")
+    .in("id", Array.from(binIds));
+  if (storageUnits.error || !storageUnits.data?.length) return payload;
+
+  const nameById = indexByMapped(
+    storageUnits.data,
+    (row) => row.id,
+    (row) => row.name
+  );
+
+  return {
+    ...payload,
+    activities: payload.activities.map((activity) => {
+      const attrs = activity.attributes as Record<string, unknown> | null;
+      const from = attrs?.["From Shelf"];
+      const to = attrs?.["To Shelf"];
+      const fromName =
+        typeof from === "string" ? nameById.get(from) : undefined;
+      const toName = typeof to === "string" ? nameById.get(to) : undefined;
+      if (!fromName && !toName) return activity;
+      return {
+        ...activity,
+        attributes: {
+          ...(attrs ?? {}),
+          ...(fromName ? { "From Storage Unit Name": fromName } : {}),
+          ...(toName ? { "To Storage Unit Name": toName } : {})
+        }
+      };
+    })
+  };
 }

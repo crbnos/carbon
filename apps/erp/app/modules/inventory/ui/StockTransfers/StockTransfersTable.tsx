@@ -265,7 +265,7 @@ const StockTransfersTable = memo(
                   }}
                   leftIcon={<LuCirclePlus />}
                 >
-                  Add Stock Transfer
+                  {t`Add Stock Transfer`}
                 </Button>
               )}
             </div>

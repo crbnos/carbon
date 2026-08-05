@@ -8,6 +8,7 @@ import { requirePermissions } from "../lib/supabase.ts";
 import type { Database } from "../lib/types.ts";
 
 import { credit, debit, journalReference } from "../lib/utils.ts";
+import { calculateDueDate } from "../shared/calculate-due-date.ts";
 import { getCurrentAccountingPeriod } from "../shared/get-accounting-period.ts";
 import { getNextSequence } from "../shared/get-next-sequence.ts";
 import {
@@ -1265,10 +1266,25 @@ serve(async (req: Request) => {
               .execute();
           }
 
+          // Posting stamps dateIssued with today, so recompute dateDue from
+          // the payment term to keep it consistent with the new issue date.
+          const paymentTerm = salesInvoice.data?.paymentTermId
+            ? await trx
+                .selectFrom("paymentTerm")
+                .select(["daysDue", "calculationMethod"])
+                .where("id", "=", salesInvoice.data.paymentTermId)
+                .where("companyId", "=", companyId)
+                .executeTakeFirst()
+            : undefined;
+          const dateDue = paymentTerm
+            ? calculateDueDate(today, paymentTerm)
+            : null;
+
           await trx
             .updateTable("salesInvoice")
             .set({
               dateIssued: today,
+              ...(dateDue ? { dateDue } : {}),
               postingDate: today,
               status: "Submitted",
             })

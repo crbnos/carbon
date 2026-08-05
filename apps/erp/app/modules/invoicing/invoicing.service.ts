@@ -1,6 +1,11 @@
 import type { Database, Json } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
-import { getLocalTimeZone, today } from "@internationalized/date";
+import {
+  endOfMonth,
+  getLocalTimeZone,
+  parseDate,
+  today
+} from "@internationalized/date";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { z } from "zod";
 import {
@@ -31,6 +36,75 @@ import type {
   salesInvoiceStatusType,
   salesInvoiceValidator
 } from "./invoicing.models";
+
+/**
+ * Compute an invoice's Due Date from its Issue Date and Payment Term.
+ * Returns null when either input is missing, the payment term genuinely doesn't
+ * exist for the company, or the stored date can't be parsed — callers fall back
+ * to a plain field update in that case. A payment-term *query failure* is
+ * different: it throws, so callers abort instead of writing the invoice with a
+ * stale dateDue. The read is scoped by companyId for tenant isolation (defense
+ * in depth alongside RLS) and uses maybeSingle so an absent row is data: null
+ * (not an error) — keeping "missing" distinguishable from "failed".
+ *
+ * The term's calculationMethod decides the anchor for daysDue:
+ * - "Net": daysDue days after the issue date.
+ * - "End of Month": daysDue days after the end of the issue month.
+ * - "Day of Month": due on day daysDue of the month — the first occurrence on
+ *   or after the issue date, clamped to the month's length (31 → Feb 28).
+ *
+ * Mirrors calculateDueDate in
+ * packages/database/supabase/functions/shared/calculate-due-date.ts (used when
+ * posting invoices) — keep the two in sync.
+ */
+export async function computeInvoiceDateDue(
+  client: SupabaseClient<Database>,
+  args: {
+    dateIssued: string | null | undefined;
+    paymentTermId: string | null | undefined;
+    companyId: string;
+  }
+): Promise<string | null> {
+  const { dateIssued, paymentTermId, companyId } = args;
+  if (!dateIssued || !paymentTermId) return null;
+
+  const paymentTerm = await client
+    .from("paymentTerm")
+    .select("daysDue, calculationMethod")
+    .eq("id", paymentTermId)
+    .eq("companyId", companyId)
+    .maybeSingle();
+
+  if (paymentTerm.error) {
+    throw new Error(
+      `Failed to load payment term ${paymentTermId} while recomputing invoice due date: ${paymentTerm.error.message}`
+    );
+  }
+  if (!paymentTerm.data) return null;
+
+  const { daysDue, calculationMethod } = paymentTerm.data;
+
+  try {
+    const issued = parseDate(dateIssued);
+    switch (calculationMethod) {
+      case "End of Month":
+        return endOfMonth(issued).add({ days: daysDue }).toString();
+      case "Day of Month": {
+        // set() clamps daysDue to the month's length
+        const sameMonth = issued.set({ day: daysDue });
+        return (
+          sameMonth.compare(issued) >= 0
+            ? sameMonth
+            : issued.add({ months: 1 }).set({ day: daysDue })
+        ).toString();
+      }
+      default:
+        return issued.add({ days: daysDue }).toString();
+    }
+  } catch {
+    return null;
+  }
+}
 
 export async function createPurchaseInvoiceFromPurchaseOrder(
   client: SupabaseClient<Database>,

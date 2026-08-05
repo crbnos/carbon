@@ -328,6 +328,13 @@ export async function convertSalesOrderLinesToJobs(
           }
         });
 
+        await assignJobSerialNumbers(client, {
+          jobId: createJob.data.id,
+          itemId: data.itemId,
+          companyId,
+          userId
+        });
+
         jobsCreated++;
       }
     }
@@ -2234,12 +2241,16 @@ export async function getTrackedEntityByJobId(
     };
   }
 
+  // Survivors carry NEITHER pointer key: the legacy key marks old departed
+  // originals, the new key marks split children — filtering both returns
+  // exactly the live root entity across mixed-convention history.
   const result = await client
     .from("trackedEntity")
     .select("*")
     .eq("attributes ->> Job Make Method", jobMakeMethod.data.id)
     .eq("companyId", jobMakeMethod.data.companyId)
     .is("attributes ->> Split Entity ID", null)
+    .is("attributes ->> Split From Entity ID", null)
     .limit(1);
 
   return {
@@ -2270,7 +2281,8 @@ export async function getTrackedEntitiesByJobId(
     .select("*")
     .eq("attributes ->> Job Make Method", jobMakeMethod.data.id)
     .eq("companyId", jobMakeMethod.data.companyId)
-    .is("attributes ->> Split Entity ID", null);
+    .is("attributes ->> Split Entity ID", null)
+    .is("attributes ->> Split From Entity ID", null);
 }
 
 /**
@@ -2505,6 +2517,72 @@ export async function updateJobOperationStatus(
     .eq("id", id)
     .select()
     .single();
+}
+
+/**
+ * Flush un-consumed picked material staged at lineside back to the warehouse
+ * after an operation went 'Done'. If the operation was the last one, the SQL
+ * interceptor has already completed the job — sweep the whole job (both
+ * returnPickedMaterialTiming policies); otherwise sweep this operation's lines
+ * (the post-picking edge function no-ops unless the policy is 'operation').
+ * Pass a service-role client so the picking lines are readable regardless of
+ * the caller's inventory permissions. Idempotent.
+ */
+export async function returnPickedRemaindersForOperation(
+  client: SupabaseClient<Database>,
+  args: { jobOperationId: string; userId: string; companyId: string }
+) {
+  const op = await client
+    .from("jobOperation")
+    .select("jobId")
+    .eq("id", args.jobOperationId)
+    .eq("companyId", args.companyId)
+    .maybeSingle();
+  const jobId = op.data?.jobId;
+  if (!jobId) return { data: null, error: op.error };
+
+  const job = await client
+    .from("job")
+    .select("status")
+    .eq("id", jobId)
+    .eq("companyId", args.companyId)
+    .maybeSingle();
+  if (!job.data) return { data: null, error: job.error };
+
+  const body =
+    job.data.status === "Completed"
+      ? {
+          type: "returnJobRemainders" as const,
+          jobId,
+          userId: args.userId,
+          companyId: args.companyId
+        }
+      : {
+          type: "returnOperationRemainders" as const,
+          jobOperationId: args.jobOperationId,
+          userId: args.userId,
+          companyId: args.companyId
+        };
+
+  return client.functions.invoke("post-picking", { body });
+}
+
+/**
+ * Job-scope sweep after an explicit job completion (the ERP Complete button).
+ * The edge function guards on job.status = 'Completed' and is idempotent.
+ */
+export async function returnPickedRemaindersForJob(
+  client: SupabaseClient<Database>,
+  args: { jobId: string; userId: string; companyId: string }
+) {
+  return client.functions.invoke("post-picking", {
+    body: {
+      type: "returnJobRemainders",
+      jobId: args.jobId,
+      userId: args.userId,
+      companyId: args.companyId
+    }
+  });
 }
 
 export async function updateJobOperationDueDate(
@@ -2831,6 +2909,14 @@ export async function insertJob(
     }
   }
 
+  // Assign configured serial numbers to the job's tracked entities (best-effort).
+  await assignJobSerialNumbers(client, {
+    jobId: createdJobId,
+    itemId: input.itemId,
+    companyId: input.companyId,
+    userId: input.createdBy
+  });
+
   if (!options?.skipRecalculate) {
     await client.functions.invoke("recalculate", {
       body: {
@@ -2843,6 +2929,46 @@ export async function insertJob(
   }
 
   return { data: { id: createdJobId, jobId }, error: null };
+}
+
+/**
+ * Assign configured serial numbers to a freshly-created job's tracked entities.
+ * Best-effort and cheap: it skips the edge function entirely unless the item has
+ * an `itemSerialSequence` configured. Shared by every job-creation path so serial
+ * numbering is applied consistently (insertJob, sales-order conversion, ...).
+ */
+async function assignJobSerialNumbers(
+  client: SupabaseClient<Database>,
+  args: { jobId: string; itemId: string; companyId: string; userId: string }
+) {
+  const serialSequence = await client
+    .from("itemSerialSequence")
+    .select("id")
+    .eq("itemId", args.itemId)
+    .eq("companyId", args.companyId)
+    .maybeSingle();
+  // A query error (DB/RLS) also returns null data — distinguish it from "no
+  // sequence configured" so a failure can't silently create an unnumbered job.
+  if (serialSequence.error) {
+    logger.error("Failed to check item serial sequence", {
+      error: serialSequence.error,
+      itemId: args.itemId,
+      companyId: args.companyId
+    });
+    return;
+  }
+  if (!serialSequence.data) return;
+
+  const { error } = await client.functions.invoke("assign-serial-numbers", {
+    body: {
+      jobId: args.jobId,
+      companyId: args.companyId,
+      userId: args.userId
+    }
+  });
+  if (error) {
+    logger.error("Failed to assign serial numbers", { error });
+  }
 }
 
 export async function updateJob(

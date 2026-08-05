@@ -21,6 +21,11 @@ type CellProps<T> = {
   isRowSelected: boolean;
   isSelected: boolean;
   pinnedColumns: string;
+  // Render key only: `getPinnedStyles` is a fresh closure every render and is
+  // deliberately excluded from the memo comparator, so without a primitive that
+  // flips with the scroll state, memoized cells never pick up the pinned-edge
+  // shadow. The style itself still comes from `getPinnedStyles`.
+  pinnedShadow?: string;
   getPinnedStyles: (column: Column<any, unknown>) => CSSProperties;
   onClick?: () => void;
   onUpdate?: (updates: Record<string, unknown>) => void;
@@ -137,6 +142,7 @@ const MemoizedCell = memo(
     next.cell.getValue() === prev.cell.getValue() &&
     next.cell.getContext() === prev.cell.getContext() &&
     next.pinnedColumns === prev.pinnedColumns &&
+    next.pinnedShadow === prev.pinnedShadow &&
     next.columnIndex === prev.columnIndex
 ) as typeof Cell;
 
