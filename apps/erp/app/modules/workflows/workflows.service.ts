@@ -295,6 +295,10 @@ export async function getWorkflowLastRuns(
     .eq("companyId", companyId);
 }
 
+/** Tables in `fkDisplayRegistry` that have no `companyId` column; the resolver
+ * skips the tenant filter for these. */
+const CROSS_COMPANY_TABLES = new Set<string>(["user"]);
+
 /** Resolves record ids to the name a person recognises. Keyed `${table}:${id}`.
  * Tables absent from `fkDisplayRegistry` resolve to nothing and keep their raw id —
  * a missing name is better than a wrong one. */
@@ -325,12 +329,14 @@ export async function getWorkflowRunRecordNames(
     [...byTable.entries()].map(async ([table, ids]) => {
       const columns = registry[table];
       if (columns === undefined || columns.length === 0) return;
-      const rows = await client
-        // Table names come only from `fkDisplayRegistry`, never from user input.
+      // Table names come only from `fkDisplayRegistry`, never from user input.
+      const baseQuery = client
         .from(table as never)
         .select(["id", ...columns].join(", "))
-        .in("id", [...ids])
-        .eq("companyId", companyId);
+        .in("id", [...ids]);
+      const rows = CROSS_COMPANY_TABLES.has(table)
+        ? await baseQuery
+        : await baseQuery.eq("companyId", companyId);
 
       for (const row of (rows.data ?? []) as unknown as Array<
         Record<string, unknown>
