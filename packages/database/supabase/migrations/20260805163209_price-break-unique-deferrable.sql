@@ -4,7 +4,7 @@
 -- the break sync opts in with SET CONSTRAINTS ... DEFERRED to move the check to commit.
 
 ALTER TABLE "customerItemPriceOverrideBreak"
-  DROP CONSTRAINT "customerItemPriceOverrideBreak_override_qty_uq";
+  DROP CONSTRAINT IF EXISTS "customerItemPriceOverrideBreak_override_qty_uq";
 
 ALTER TABLE "customerItemPriceOverrideBreak"
   ADD CONSTRAINT "customerItemPriceOverrideBreak_override_qty_uq"

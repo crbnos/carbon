@@ -2695,7 +2695,7 @@ export async function upsertCustomerItemPriceOverride(
   const timestamp = new Date().toISOString();
   try {
     return await db.transaction().execute(async (trx) => {
-      await sql`SET CONSTRAINTS "customerItemPriceOverrideBreak_override_qty_uq" DEFERRED`.execute(
+      await sql`SET CONSTRAINTS "public"."customerItemPriceOverrideBreak_override_qty_uq" DEFERRED`.execute(
         trx
       );
 
