@@ -44,7 +44,8 @@ import {
   type LineageEdge,
   type LineageNode,
   type LineagePayload,
-  mergePayloads
+  mergePayloads,
+  stateEntityId
 } from "./utils";
 import {
   useAsyncLayout,
@@ -358,19 +359,21 @@ function TraceabilityGraphInner({
 
   const onExpandNode = useCallback(
     (id: string, direction: "up" | "down" | "both") => {
-      const cached = probeCacheRef.current.get(id);
+      // Lot-state nodes expand their underlying entity.
+      const entityId = stateEntityId(id);
+      const cached = probeCacheRef.current.get(entityId);
       if (cached) {
-        addExpansion(id, cached);
+        addExpansion(entityId, cached);
         return;
       }
-      expand(id, direction, 1);
+      expand(entityId, direction, 1);
     },
     [expand, addExpansion]
   );
 
   const onCollapseNode = useCallback(
     (id: string) => {
-      removeExpansion(id);
+      removeExpansion(stateEntityId(id));
     },
     [removeExpansion]
   );
@@ -426,20 +429,23 @@ function TraceabilityGraphInner({
   const enrichedNodes = useMemo<Node[]>(() => {
     const isJobRoot = rootType === "job";
     return nodes.map((n) => {
+      // Entity nodes may be lot-STATE nodes (`<entityId>::sN`); expansion,
+      // probing, and containment are all keyed by the underlying entity.
+      const entityId = stateEntityId(n.id);
       const isRoot = !isJobRoot && n.id === rootId;
       const selected = selectedIdSet.has(n.id);
       const excluded = excludedIds.has(n.id);
       const inPath = !excluded && (selectionPath?.nodeIds.has(n.id) ?? false);
       const dimmed = isolated ? !isolated.nodeIds.has(n.id) : false;
-      const isExpanded = expansions.has(n.id);
+      const isExpanded = expansions.has(entityId);
       const isEntity = (n.data as any)?.kind === "entity";
-      const isExpandable = expandable.has(n.id);
+      const isExpandable = expandable.has(entityId);
       const canExpandUp =
         isEntity && isExpandable && !boundaryByNode.incoming.has(n.id);
       const canExpandDown =
         isEntity && isExpandable && !boundaryByNode.outgoing.has(n.id);
       const containmentStatus = isEntity
-        ? containmentByEntity.get(n.id)
+        ? containmentByEntity.get(entityId)
         : undefined;
       return {
         ...n,

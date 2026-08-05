@@ -2599,9 +2599,6 @@ msgstr "Configurez les paramètres par défaut du tableau de bord qualité."
 msgid "Configure electronic data interchange with this trading partner"
 msgstr "Configurer l'échange de données informatisé avec ce partenaire commercial"
 
-msgid "Configure how preventative maintenance dispatches are automatically generated from maintenance schedules."
-msgstr "Configurez la façon dont les ordres de travail de maintenance préventive sont générés automatiquement à partir des calendriers de maintenance."
-
 msgid "Configure Item"
 msgstr "Configurer l'article"
 
@@ -3663,9 +3660,6 @@ msgstr "Jours d'échéance"
 
 msgid "Days from ordering a part to having it available; planning offsets demand backward by this much."
 msgstr "Jours entre la commande d'une pièce et sa disponibilité; la planification décale la demande en arrière de cette quantité."
-
-msgid "Days in advance to generate dispatches"
-msgstr "Jours à l'avance pour générer les dépêches"
 
 msgid "Days Off"
 msgstr "Jours de congé"
@@ -7552,9 +7546,6 @@ msgstr "Frais de Maintenance (par défaut)"
 msgid "Maintenance Schedules"
 msgstr "Calendriers de maintenance"
 
-msgid "Maintenance Scheduling"
-msgstr "Planification de la maintenance"
-
 msgid "Maintenance Type"
 msgstr "Type de maintenance"
 
@@ -8431,6 +8422,9 @@ msgstr "Date suivante"
 msgid "Next Due"
 msgstr "Prochaine échéance"
 
+msgid "Next Due Date"
+msgstr "Prochaine date d'échéance"
+
 msgid "Next page"
 msgstr "Page suivante"
 
@@ -8633,7 +8627,7 @@ msgid "No matches. Type to create one."
 msgstr "Aucune correspondance. Tapez pour en créer une."
 
 msgid "No matching bins"
-msgstr "Aucune zone correspondante"
+msgstr "Aucun bac correspondant"
 
 msgid "No new notifications"
 msgstr "Aucune nouvelle notification"

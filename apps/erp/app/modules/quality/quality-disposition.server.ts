@@ -1,8 +1,9 @@
-import type { Database } from "@carbon/database";
+import type { Database, Json } from "@carbon/database";
 import type { KyselyTx } from "@carbon/database/client";
 import { FunctionRegion, type SupabaseClient } from "@supabase/supabase-js";
-
+import { nanoid } from "nanoid";
 import { getDatabaseClient } from "~/services/database.server";
+import { buildBatchSplitRecords } from "../../../../../packages/database/supabase/functions/shared/batch-split.ts";
 import { isIssueLocked } from "./quality.models";
 import { errResult, type Result } from "./quality.server";
 
@@ -154,13 +155,14 @@ export async function assignEntitiesToIssueItem(args: {
 // Physically subdivides a batch tracked entity, mirroring the MES issue split:
 // creates a new lot for `moveQty` linked to `newRowId`, decrements the original
 // lot to `keepQty` (kept on its existing row), and writes split genealogy
-// (trackedActivity "Split" + inputs/outputs + net-zero "Batch Split" itemLedger,
+// (trackedActivity "Split" + input/output + net-zero "Batch Split" itemLedger,
 // which leaves on-hand unchanged).
 //
-// NOTE: the same lot-subdivision + genealogy also lives in the MES issue edge
-// function (packages/database/supabase/functions/issue/index.ts, case
-// "trackedEntitiesToOperation"). They can't share code across the app/Deno
-// boundary today — keep the two in sync if the genealogy shape changes.
+// NOTE: the split record contract (pointer attribute, edge shape, 2-row ledger
+// pair) is the shared builder at
+// packages/database/supabase/functions/shared/batch-split.ts, imported here
+// directly — the same one the issue/post-picking/post-stock-transfer/
+// post-shipment edge functions use. Don't hand-roll a divergent shape.
 
 // The storage unit a tracked entity currently holds stock in, derived from its
 // item-ledger rows by net on-hand per bin. Batch-split ledger entries MUST be
@@ -236,33 +238,63 @@ async function subdivideBatchEntity(
     nowIso
   } = args;
 
-  const newEntity = await trx
-    .insertInto("trackedEntity")
-    .values({
+  // The bin the source lot actually holds stock in — split ledger entries book
+  // against it so per-storage-unit on-hand stays consistent (see helper note).
+  const sourceLedgerRows = await trx
+    .selectFrom("itemLedger")
+    .select(["storageUnitId", "quantity"])
+    .where("trackedEntityId", "=", source.id)
+    .where("companyId", "=", companyId)
+    .execute();
+  const storageUnitId = resolveHoldingStorageUnit(sourceLedgerRows);
+
+  const split = buildBatchSplitRecords({
+    parent: {
+      id: source.id,
       readableId: source.readableId,
-      sourceDocumentId: source.sourceDocumentId,
+      quantity: entityQty,
+      // Matches what this function always stamped on subdivision lots.
       sourceDocument: "Item",
+      sourceDocumentId: source.sourceDocumentId,
       sourceDocumentReadableId: source.sourceDocumentReadableId,
-      quantity: moveQty,
-      status: source.status ?? "Available",
-      attributes: source.attributes,
       itemId: source.itemId ?? source.sourceDocumentId,
       expirationDate: source.expirationDate ?? null,
-      companyId,
-      createdBy: userId
-    })
-    .returning(["id"])
-    .executeTakeFirstOrThrow();
+      attributes: source.attributes as Record<string, unknown> | null
+    },
+    drawQuantity: moveQty,
+    childId: nanoid(),
+    splitActivityId: nanoid(),
+    activitySourceDocument: "Non-Conformance",
+    activitySourceDocumentId: nonConformanceId,
+    bin: { storageUnitId, locationId },
+    itemLedgerItemId: itemId,
+    companyId,
+    userId,
+    postingDate: nowIso.slice(0, 10),
+    childStatus: "Available"
+  });
+
+  const newEntityId = split.childEntityInsert.id;
 
   await trx
-    .updateTable("trackedEntity")
-    .set({
-      quantity: keepQty,
-      attributes: {
-        ...((source.attributes as Record<string, unknown>) ?? {}),
-        "Split Entity ID": newEntity.id
-      }
+    .insertInto("trackedEntity")
+    .values({
+      ...split.childEntityInsert,
+      // Non-null in the node Insert type; the builder types them nullable.
+      sourceDocument: "Item",
+      sourceDocumentId: source.sourceDocumentId,
+      attributes: split.childEntityInsert.attributes as Json,
+      // NC-linked lots may be On Hold — the subdivided half inherits the
+      // source's status, not a blanket Available.
+      status: source.status ?? "Available"
     })
+    .execute();
+
+  // The retained lot is only decremented — no pointer is written on it; the
+  // child carries "Split From Entity ID" instead.
+  await trx
+    .updateTable("trackedEntity")
+    .set({ quantity: keepQty })
     .where("id", "=", source.id)
     .where("companyId", "=", companyId)
     .execute();
@@ -279,118 +311,46 @@ async function subdivideBatchEntity(
     .values({
       nonConformanceItemId: newRowId,
       nonConformanceId,
-      trackedEntityId: newEntity.id,
+      trackedEntityId: newEntityId,
       quantity: moveQty,
       companyId,
       createdBy: userId
     })
     .execute();
 
-  const activity = await trx
+  await trx
     .insertInto("trackedActivity")
     .values({
-      type: "Split",
-      sourceDocument: "Non-Conformance",
-      sourceDocumentId: nonConformanceId,
+      ...split.activityInsert,
       sourceDocumentReadableId: readableNc,
       attributes: {
+        ...split.activityInsert.attributes,
         "Non-Conformance": nonConformanceId,
-        "Original Quantity": entityQty,
-        "Split Quantity": moveQty,
-        "Remaining Quantity": keepQty,
-        "Split Entity ID": newEntity.id,
         Employee: userId
-      },
-      companyId,
-      createdBy: userId
+      }
     })
-    .returning(["id"])
-    .executeTakeFirstOrThrow();
+    .execute();
 
   await trx
     .insertInto("trackedActivityInput")
-    .values({
-      trackedActivityId: activity.id,
-      trackedEntityId: source.id,
-      quantity: entityQty,
-      companyId,
-      createdBy: userId
-    })
+    .values(split.activityInputInsert)
     .execute();
 
   await trx
     .insertInto("trackedActivityOutput")
-    .values([
-      {
-        trackedActivityId: activity.id,
-        trackedEntityId: source.id,
-        quantity: keepQty,
-        companyId,
-        createdBy: userId
-      },
-      {
-        trackedActivityId: activity.id,
-        trackedEntityId: newEntity.id,
-        quantity: moveQty,
-        companyId,
-        createdBy: userId
-      }
-    ])
+    .values(split.activityOutputInsert)
     .execute();
-
-  // The bin the source lot actually holds stock in — split ledger entries book
-  // against it so per-storage-unit on-hand stays consistent (see helper note).
-  const sourceLedgerRows = await trx
-    .selectFrom("itemLedger")
-    .select(["storageUnitId", "quantity"])
-    .where("trackedEntityId", "=", source.id)
-    .where("companyId", "=", companyId)
-    .execute();
-  const storageUnitId = resolveHoldingStorageUnit(sourceLedgerRows);
 
   await trx
     .insertInto("itemLedger")
-    .values([
-      {
+    .values(
+      split.ledgerInserts.map((ledger) => ({
+        ...ledger,
+        // Non-null in the node Insert type; the builder types it nullable.
         itemId,
-        locationId,
-        storageUnitId,
-        entryType: "Negative Adjmt." as const,
-        documentType: "Batch Split" as const,
-        documentId: activity.id,
-        quantity: -entityQty,
-        trackedEntityId: source.id,
-        companyId,
-        createdBy: userId,
         comment: `NC ${readableNc} batch split`
-      },
-      {
-        itemId,
-        locationId,
-        storageUnitId,
-        entryType: "Positive Adjmt." as const,
-        documentType: "Batch Split" as const,
-        documentId: activity.id,
-        quantity: keepQty,
-        trackedEntityId: source.id,
-        companyId,
-        createdBy: userId,
-        comment: `NC ${readableNc} batch split`
-      },
-      {
-        itemId,
-        locationId,
-        storageUnitId,
-        entryType: "Positive Adjmt." as const,
-        documentType: "Batch Split" as const,
-        documentId: activity.id,
-        quantity: moveQty,
-        trackedEntityId: newEntity.id,
-        companyId,
-        createdBy: userId,
-        comment: `NC ${readableNc} batch split`
-      }
-    ])
+      }))
+    )
     .execute();
 }
 

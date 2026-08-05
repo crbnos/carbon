@@ -1,6 +1,6 @@
 {
-  "generated": "2026-08-04T17:17:10.846Z",
-  "totalTools": 1425,
+  "generated": "2026-08-05T04:34:02.734Z",
+  "totalTools": 1427,
   "modules": 15,
   "tools": [
     {
@@ -8041,6 +8041,31 @@
         },
         "required": [
           "id"
+        ]
+      }
+    },
+    {
+      "name": "invoicing_computeInvoiceDateDue",
+      "module": "invoicing",
+      "classification": "READ",
+      "description": "compute invoice date due",
+      "paramCount": 2,
+      "serviceParams": [
+        "client",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "dateIssued": {},
+          "paymentTermId": {}
+        },
+        "required": [
+          "dateIssued",
+          "paymentTermId"
         ]
       }
     },
@@ -28153,6 +28178,36 @@
       }
     },
     {
+      "name": "quality_getIssueTypeByName",
+      "module": "quality",
+      "classification": "READ",
+      "description": "get issue type by name",
+      "paramCount": 2,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "name",
+        "excludeId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "excludeId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ]
+      }
+    },
+    {
       "name": "quality_getIssueTypes",
       "module": "quality",
       "classification": "READ",
@@ -32599,7 +32654,7 @@
       "module": "resources",
       "classification": "WRITE",
       "description": "upsert maintenance schedule",
-      "paramCount": 15,
+      "paramCount": 16,
       "serviceParams": [
         "client",
         "schedule"
@@ -32635,6 +32690,9 @@
           },
           "estimatedDuration": {
             "type": "number"
+          },
+          "nextDueAt": {
+            "type": "string"
           },
           "active": {
             "type": "string"

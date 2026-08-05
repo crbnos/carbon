@@ -16,6 +16,7 @@ const taskToEvent = {
   "company-restore-finalize": "carbon/company-restore-finalize",
   "company-restore-revert": "carbon/company-restore-revert",
   "edi-send-document": "carbon/edi.send-document",
+  "generate-maintenance": "carbon/generate-maintenance",
   "model-thumbnail": "carbon/model-thumbnail",
   "model-optimize": "carbon/model-optimize",
   notify: "carbon/notify",

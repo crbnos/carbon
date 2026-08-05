@@ -861,6 +861,27 @@ export async function getIssueType(
     .single();
 }
 
+export async function getIssueTypeByName(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  name: string,
+  excludeId?: string
+) {
+  // Case-insensitive exact match — escape LIKE wildcards in the name
+  const pattern = name.replace(/([\\%_])/g, "\\$1");
+  let query = client
+    .from("nonConformanceType")
+    .select("id")
+    .eq("companyId", companyId)
+    .ilike("name", pattern);
+
+  if (excludeId) {
+    query = query.neq("id", excludeId);
+  }
+
+  return query.limit(1).maybeSingle();
+}
+
 export async function getIssueTypes(
   client: SupabaseClient<Database>,
   companyId: string,

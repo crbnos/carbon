@@ -111,7 +111,8 @@
     ],
     "patchedDependencies": {
       "@ai-sdk-tools/store@1.2.0": "patches/@ai-sdk-tools__store@1.2.0.patch",
-      "@react-router/dev@7.15.1": "patches/@react-router__dev@7.15.1.patch"
+      "@react-router/dev@7.15.1": "patches/@react-router__dev@7.15.1.patch",
+      "@vercel/react-router@1.2.6": "patches/@vercel__react-router@1.2.6.patch"
     }
   }
 }

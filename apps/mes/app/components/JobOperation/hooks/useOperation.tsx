@@ -31,6 +31,7 @@ export function useOperation({
   events,
   trackedEntities,
   isFirstOperation,
+  requiresSerialTracking,
   pauseInterval,
   procedure,
   onAdvanceToUnit
@@ -41,6 +42,10 @@ export function useOperation({
   // The first operation in the routing has no printed labels yet, so units are
   // auto-selected; later operations require the operator to scan/select.
   isFirstOperation: boolean;
+  // The scan/select serial flow only applies to serial-tracked parts. Batch and
+  // non-tracked make-methods must never see the serial picker, even though a
+  // batch make-method carries a seed trackedEntity row.
+  requiresSerialTracking: boolean;
   pauseInterval: boolean;
   procedure: Promise<{
     attributes: JobOperationStep[];
@@ -269,6 +274,13 @@ export function useOperation({
   // once-per-mount prompt so we don't re-open the picker while the operator is
   // working a scanned unit.
   const arrivalPromptedRef = useRef(false);
+  // The unit the operator last held. The re-prompt is edge-triggered off this:
+  // the picker reopens when the held unit *becomes* complete, never merely
+  // because nothing is selected. `trackedEntities` gets a fresh identity on
+  // every revalidation (realtime job updates, any start/stop/record fetcher), so
+  // a level-triggered "no unit selected → open" would re-open the picker on each
+  // one and the operator could never dismiss it.
+  const heldEntityRef = useRef<string | null>(null);
   // Select / advance the serial unit the operator works on. This is the single
   // advancement authority — complete.tsx no longer redirects to a next unit.
   //  - First operation: no labels have been printed yet, so there is nothing to
@@ -278,6 +290,9 @@ export function useOperation({
   //    in the URL) and again after each completion.
   // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   useEffect(() => {
+    // Only serial-tracked parts have per-unit labels to scan/select. Batch and
+    // non-tracked make-methods must never surface the serial picker.
+    if (!requiresSerialTracking) return;
     const uncompletedEntities = trackedEntities.filter((entity) =>
       isSerialEntityIncompleteForOperation(entity, operationId ?? "")
     );
@@ -295,16 +310,34 @@ export function useOperation({
 
     // Prompt scan/select once on arrival — even when a stale/auto-seeded
     // ?trackedEntityId is present, which would otherwise read as "already working
-    // a unit". After that, only re-open once the selected unit is complete; stay
-    // quiet while the operator works a scanned, still-incomplete unit.
+    // a unit".
     if (!arrivalPromptedRef.current) {
       arrivalPromptedRef.current = true;
+      heldEntityRef.current = selectedIsIncomplete ? trackedEntityParam : null;
       serialModal.onOpen();
       return;
     }
-    if (!selectedIsIncomplete) serialModal.onOpen();
+
+    if (selectedIsIncomplete) {
+      heldEntityRef.current = trackedEntityParam;
+      return;
+    }
+
+    // The held unit just completed — prompt for the next one. If the operator is
+    // holding nothing (they dismissed the picker), stay quiet; the Scan button in
+    // the Serial Numbers section reopens it on demand.
+    if (heldEntityRef.current) {
+      heldEntityRef.current = null;
+      serialModal.onOpen();
+    }
     // causes an infinite loop on navigation
-  }, [trackedEntities, trackedEntityParam, operationId, isFirstOperation]);
+  }, [
+    trackedEntities,
+    trackedEntityParam,
+    operationId,
+    isFirstOperation,
+    requiresSerialTracking
+  ]);
 
   return {
     active,

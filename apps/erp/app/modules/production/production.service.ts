@@ -2241,12 +2241,16 @@ export async function getTrackedEntityByJobId(
     };
   }
 
+  // Survivors carry NEITHER pointer key: the legacy key marks old departed
+  // originals, the new key marks split children — filtering both returns
+  // exactly the live root entity across mixed-convention history.
   const result = await client
     .from("trackedEntity")
     .select("*")
     .eq("attributes ->> Job Make Method", jobMakeMethod.data.id)
     .eq("companyId", jobMakeMethod.data.companyId)
     .is("attributes ->> Split Entity ID", null)
+    .is("attributes ->> Split From Entity ID", null)
     .limit(1);
 
   return {
@@ -2277,7 +2281,8 @@ export async function getTrackedEntitiesByJobId(
     .select("*")
     .eq("attributes ->> Job Make Method", jobMakeMethod.data.id)
     .eq("companyId", jobMakeMethod.data.companyId)
-    .is("attributes ->> Split Entity ID", null);
+    .is("attributes ->> Split Entity ID", null)
+    .is("attributes ->> Split From Entity ID", null);
 }
 
 /**

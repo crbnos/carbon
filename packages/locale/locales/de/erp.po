@@ -2599,9 +2599,6 @@ msgstr "Konfigurieren Sie die Standardeinstellungen für das Qualitätsdashboard
 msgid "Configure electronic data interchange with this trading partner"
 msgstr "Elektronischen Datenaustausch mit diesem Handelspartner konfigurieren"
 
-msgid "Configure how preventative maintenance dispatches are automatically generated from maintenance schedules."
-msgstr "Konfigurieren Sie, wie vorbeugende Wartungseinsätze automatisch aus Wartungsplänen generiert werden."
-
 msgid "Configure Item"
 msgstr "Artikel konfigurieren"
 
@@ -3663,9 +3660,6 @@ msgstr "Fälligkeitstage"
 
 msgid "Days from ordering a part to having it available; planning offsets demand backward by this much."
 msgstr "Tage vom Bestellen eines Teils bis zu seiner Verfügbarkeit; die Planung verschiebt die Nachfrage um diesen Betrag nach hinten."
-
-msgid "Days in advance to generate dispatches"
-msgstr "Tage im Voraus zum Generieren von Einsätzen"
 
 msgid "Days Off"
 msgstr "Tage frei"
@@ -7552,9 +7546,6 @@ msgstr "Wartungskosten (Standard)"
 msgid "Maintenance Schedules"
 msgstr "Wartungspläne"
 
-msgid "Maintenance Scheduling"
-msgstr "Wartungsplanung"
-
 msgid "Maintenance Type"
 msgstr "Wartungstyp"
 
@@ -8431,6 +8422,9 @@ msgstr "Nächstes Datum"
 msgid "Next Due"
 msgstr "Nächste Fälligkeit"
 
+msgid "Next Due Date"
+msgstr "Nächstes Fälligkeitsdatum"
+
 msgid "Next page"
 msgstr "Nächste Seite"
 
@@ -8633,7 +8627,7 @@ msgid "No matches. Type to create one."
 msgstr "Keine Übereinstimmungen. Geben Sie ein, um eine zu erstellen."
 
 msgid "No matching bins"
-msgstr "Keine übereinstimmenden Behälter"
+msgstr "Keine übereinstimmenden Lagerfächer"
 
 msgid "No new notifications"
 msgstr "Keine neuen Benachrichtigungen"
@@ -8862,7 +8856,7 @@ msgstr "Notizen (optional)"
 
 #. placeholder {0}: search.trim()
 msgid "Nothing at this location matches \"{0}\"."
-msgstr "Nichts an diesem Ort entspricht \"{0}\"."
+msgstr "Nichts an diesem Ort stimmt mit \"{0}\" überein."
 
 msgid "Nothing else at this location has stock to pull from."
 msgstr "Keine anderen Artikel an diesem Ort haben Bestand zum Entnehmen."

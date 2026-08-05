@@ -441,7 +441,7 @@ function classifyFunction(
   name: string
 ): "READ" | "WRITE" | "DESTRUCTIVE" {
   if (/^delete/.test(name)) return "DESTRUCTIVE";
-  if (/^(get|list|fetch|search|find|count|check|is|has)/.test(name))
+  if (/^(get|list|fetch|search|find|count|check|is|has|compute)/.test(name))
     return "READ";
   return "WRITE";
 }

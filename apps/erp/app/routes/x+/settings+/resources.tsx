@@ -1,13 +1,7 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import {
-  Boolean,
-  Number,
-  Submit,
-  ValidatedForm,
-  validator
-} from "@carbon/form";
+import { Submit, ValidatedForm, validator } from "@carbon/form";
 import {
   Card,
   CardContent,
@@ -23,7 +17,7 @@ import {
 } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { redirect, useFetcher, useLoaderData } from "react-router";
 import { Users } from "~/components/Form";
@@ -32,7 +26,6 @@ import {
   getCompany,
   getCompanySettings,
   maintenanceDispatchNotificationValidator,
-  maintenanceSettingsValidator,
   suggestionNotificationValidator,
   updateMaintenanceDispatchNotificationSettings,
   updateSuggestionNotificationSetting
@@ -80,29 +73,6 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const formData = await request.formData();
   const intent = formData.get("intent");
-
-  if (intent === "maintenance") {
-    const validation = await validator(maintenanceSettingsValidator).validate(
-      formData
-    );
-
-    if (validation.error) {
-      return { success: false, message: "Invalid form data" };
-    }
-
-    const update = await client
-      .from("companySettings")
-      .update({
-        maintenanceGenerateInAdvance:
-          validation.data.maintenanceGenerateInAdvance,
-        maintenanceAdvanceDays: validation.data.maintenanceAdvanceDays
-      })
-      .eq("id", companyId);
-
-    if (update.error) return { success: false, message: update.error.message };
-
-    return { success: true, message: "Maintenance settings updated" };
-  }
 
   if (intent === "suggestions") {
     const validation = await validator(
@@ -166,8 +136,6 @@ export default function ResourcesSettingsRoute() {
   const { t } = useLingui();
   const { company, companySettings } = useLoaderData<typeof loader>();
   const fetcher = useFetcher<typeof action>();
-  const [maintenanceGenerateInAdvance, setMaintenanceGenerateInAdvance] =
-    useState(companySettings.maintenanceGenerateInAdvance ?? false);
 
   useEffect(() => {
     if (fetcher.data?.success === true && fetcher?.data?.message) {
@@ -188,71 +156,6 @@ export default function ResourcesSettingsRoute() {
         <Heading size="h3">
           <Trans>Resources</Trans>
         </Heading>
-
-        <SettingsSectionHeader>
-          <Trans>Maintenance</Trans>
-        </SettingsSectionHeader>
-
-        <Card>
-          <ValidatedForm
-            method="post"
-            validator={maintenanceSettingsValidator}
-            defaultValues={{
-              maintenanceGenerateInAdvance:
-                companySettings.maintenanceGenerateInAdvance ?? false,
-              maintenanceAdvanceDays:
-                companySettings.maintenanceAdvanceDays ?? 7
-            }}
-            fetcher={fetcher}
-          >
-            <input type="hidden" name="intent" value="maintenance" />
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Trans>Maintenance Scheduling</Trans>
-              </CardTitle>
-              <CardDescription>
-                <Trans>
-                  Configure how preventative maintenance dispatches are
-                  automatically generated from maintenance schedules.
-                </Trans>
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-col gap-6 max-w-[400px]">
-                <div className="flex flex-col gap-2">
-                  <Boolean
-                    name="maintenanceGenerateInAdvance"
-                    description="Create maintenance dispatches in advance"
-                    value={maintenanceGenerateInAdvance}
-                    onChange={setMaintenanceGenerateInAdvance}
-                    bordered
-                  />
-                </div>
-                {maintenanceGenerateInAdvance && (
-                  <div className="flex flex-col gap-2">
-                    <Number
-                      name="maintenanceAdvanceDays"
-                      label={t`Days in advance to generate dispatches`}
-                      minValue={1}
-                      maxValue={365}
-                    />
-                  </div>
-                )}
-              </div>
-            </CardContent>
-            <CardFooter>
-              <Submit
-                isDisabled={fetcher.state !== "idle"}
-                isLoading={
-                  fetcher.state !== "idle" &&
-                  fetcher.formData?.get("intent") === "maintenance"
-                }
-              >
-                <Trans>Save</Trans>
-              </Submit>
-            </CardFooter>
-          </ValidatedForm>
-        </Card>
 
         <SettingsSectionHeader>
           <Trans>Notifications</Trans>

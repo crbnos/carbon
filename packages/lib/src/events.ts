@@ -242,6 +242,15 @@ export type Events = {
     };
   };
 
+  // Generate preventive-maintenance dispatches for one schedule on demand
+  // (fired when a maintenance schedule is created or updated).
+  "carbon/generate-maintenance": {
+    data: {
+      companyId: string;
+      scheduleId: string;
+    };
+  };
+
   // User administration
   "carbon/user-admin": {
     data:

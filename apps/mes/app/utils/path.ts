@@ -7,6 +7,9 @@ export const MES_URL = getMESUrl();
 const x = "/x";
 const api = "/api";
 const file = `/file`;
+// Wall-mounted work center displays live outside `/x` so they don't inherit the
+// operator chrome (sidebar, pin-in overlay, time-card warning).
+const display = "/display";
 
 export const path = {
   to: {
@@ -51,6 +54,7 @@ export const path = {
     consolePinOut: `${x}/console/pin-out`,
     consoleToggle: `${x}/console/toggle`,
     convertEntity: (id: string) => generatePath(`${x}/entity/${id}/convert`),
+    displays: display,
     endOperation: (id: string) => generatePath(`${x}/end/${id}`),
     endShift: `${x}/end-shift`,
     file: {
@@ -152,6 +156,8 @@ export const path = {
     maintenanceDetail: (id: string) => generatePath(`${x}/dispatch/${id}`),
     maintenanceDispatchItem: (id: string) =>
       generatePath(`${x}/dispatch/${id}/item`),
+    maintenanceDisplay: (workCenterId: string) =>
+      generatePath(`${display}/${workCenterId}/maintenance`),
     maintenanceEvent: `${x}/maintenance-event`,
     manualPrint: `${x}/print`,
     messagingNotify: `${x}/proxy/api/messaging/notify`,
@@ -193,7 +199,9 @@ export const path = {
     triggerRework: `${x}/trigger-rework`,
     unconsume: `${x}/unconsume`,
     workCenter: (workCenter: string) =>
-      generatePath(`${x}/operations/${workCenter}`)
+      generatePath(`${x}/operations/${workCenter}`),
+    workDisplay: (workCenterId: string) =>
+      generatePath(`${display}/${workCenterId}/work`)
   }
 } as const;
 

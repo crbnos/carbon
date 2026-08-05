@@ -109,20 +109,39 @@ takes `p_sort_method` (`Default|FEFO|FIFO|LIFO`) — but its internal `ORDER BY`
 guaranteed through PostgREST (SQL-function inlining), so callers that need a specific
 order sort in the app (MES `sortLotsByPickMethod` in `apps/mes/app/services/allocation.ts`).
 
+**Split identity convention (batch only; spec `.ai/specs/2026-08-04-batch-split-identity-flip.md`):**
+on a partial batch draw of quantity `q` from `parent`, the **shelf/source entity KEEPS its id**
+and is decremented by `q`; a **NEW `child` entity** (same `readableId`, attributes cloned +
+`"Split From Entity ID": parent.id`) holds `q` and is what departs (lineside / other bin /
+consumed / shipped). The Split activity records input `parent`@`q` → output `child`@`q` (no
+survivor self-loop), and the ledger gets exactly **two** net-zero `Batch Split` rows
+(−`q` parent, +`q` child) at the parent's `resolveTrackedEntityBin` bin. The legacy pre-flip
+convention (original departs, `"Split Entity ID"` tagged on the survivor) still exists on
+historical rows — filters that isolate the live root entity exclude BOTH pointer keys. The
+shared record builder is `functions/shared/batch-split.ts` (`buildBatchSplitRecords` /
+`buildMergeRecords`), used by every writer: `post-picking` (batch), `issue`
+(`trackedEntitiesToOperation` + `maintenanceDispatchTrackedEntities`), `post-stock-transfer`
+(batch), `post-shipment` (SO + PO — PO posts genealogy only, no ledger), and ERP
+`quality-disposition.subdivideBatchEntity`. Serial paths never split. Exception: the
+PO-sourced `post-shipment` split posts no `itemLedger` (matches pre-flip behavior).
+
 **Pick → consume → return lifecycle (batch/serial):** a **pick** (`post-picking`) is an
-`itemLedger` Transfer warehouse→lineside; **consumption** (`issue` `trackedEntitiesToOperation`)
-posts a negative Consumption row and, on partial use, **splits** the entity — the un-consumed
-remainder becomes a NEW `trackedEntity` (a Split descendant), NOT the originally-picked one, and
-`pickingListLineTrackedEntity` is not updated. Consumption/split rows are booked against the
-entity's actual on-hand bin (`resolveTrackedEntityBin`), not an arbitrary ledger row. The
-**return** of the un-consumed remainder runs via `post-picking`'s sweep cases
-`returnJobRemainders` (at job complete — both policies) / `returnOperationRemainders` (at
-operation Done, only when `companySettings.returnPickedMaterialTiming = 'operation'`): the
-tracked path walks the picked entity's split lineage and transfers each lineage entity's
-remaining lineside on-hand back to source, decrementing the `pickingListLineTrackedEntity`
-allocation but booking the line-level return on **`pickingListLine.quantityReturned`** (NOT
-decrementing `quantityPicked` — that would fire `update_picking_list_status` and demote a
-Completed/Partial header). Untracked materials return per jobMaterial:
+`itemLedger` Transfer warehouse→lineside (the departing lineside lot is the split CHILD, and
+`pickingListLineTrackedEntity` records the CHILD id); **consumption** (`issue`
+`trackedEntitiesToOperation`) posts a negative Consumption row and, on partial use, **splits**
+the entity — the CONSUMED portion becomes the NEW `child` (`status: 'Consumed'`), the survivor
+keeps its id at lineside. Consumption/split rows are booked against the entity's actual on-hand
+bin (`resolveTrackedEntityBin`), not an arbitrary ledger row. The **return** of the un-consumed
+remainder runs via `post-picking`'s sweep cases `returnJobRemainders` (at job complete — both
+policies) / `returnOperationRemainders` (at operation Done, only when
+`companySettings.returnPickedMaterialTiming = 'operation'`): the tracked path walks the picked
+entity's split lineage and, for each lineage entity with lineside on-hand, **merges** it back
+into its `"Split From Entity ID"` parent when the parent is Available/same-lot/same-bin (a
+`type: 'Merge'` activity + net Transfer), else transfers it back as a standalone lot. It
+decrements the `pickingListLineTrackedEntity` allocation but books the line-level return on
+**`pickingListLine.quantityReturned`** (NOT decrementing `quantityPicked` — that would fire
+`update_picking_list_status` and demote a Completed/Partial header). Untracked materials return
+per jobMaterial:
 `max(0, Σ(picked − returned) − max(quantityIssued, owed))`, newest-line-first — never a bin
 sweep (the lineside bin is shared per work center). Spec:
 `.ai/specs/2026-08-04-picked-material-return-timing.md`.

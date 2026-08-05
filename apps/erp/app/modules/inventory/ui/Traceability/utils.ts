@@ -12,12 +12,27 @@ export type EntityNodeData = {
   kind: "entity";
   entity: TrackedEntity;
   dimmed: boolean;
+  /**
+   * Lot-state fields. The graph renders each entity as a CHAIN of states —
+   * quantity at each point in time — so a split reads as a real branch
+   * (parent-before → Split → child + parent-after) instead of a pass-through.
+   * Absent (undefined) when the entity's history couldn't be replayed and it
+   * collapsed to a single current-quantity node.
+   */
+  stateQuantity?: number;
+  stateIndex?: number;
+  stateCount?: number;
+  /** Last state of the chain — this is where the lot's stock sits today. */
+  isCurrentState?: boolean;
 };
 
 export type ActivityNodeData = {
   kind: "activity";
   activity: Activity;
   dimmed: boolean;
+  /** Amount moved, for Pick / Transfer. Their edges carry the bins instead, so
+   * the quantity lives on the node. */
+  movementQuantity?: number;
 };
 
 export type LineageNode = Node<EntityNodeData | ActivityNodeData>;
@@ -25,6 +40,9 @@ export type LineageNode = Node<EntityNodeData | ActivityNodeData>;
 export type LineageEdgeData = {
   kind: "input" | "output" | "movement";
   quantity: number;
+  /** Rendered instead of the quantity. Movement edges use it for the from/to
+   * bin — for a move, where matters more than how much. */
+  labelText?: string;
   dimmed: boolean;
   weight?: number;
   isReject?: boolean;
@@ -75,84 +93,368 @@ export type LineagePayload = {
   containments?: IssueContainment[];
 };
 
+// Delimiter between an entity id and its state index in node ids. Entity ids
+// are nanoids (A-Za-z0-9_-), so "::s" can never occur inside one.
+const STATE_DELIMITER = "::s";
+
+/** Node id → the tracked entity id it represents (state nodes included). */
+export function stateEntityId(nodeId: string): string {
+  const i = nodeId.indexOf(STATE_DELIMITER);
+  return i === -1 ? nodeId : nodeId.slice(0, i);
+}
+
+function stateNodeId(entityId: string, stateIndex: number): string {
+  // State 0 keeps the bare entity id so URLs, root highlighting, and search
+  // selection keep working without translation.
+  return stateIndex === 0
+    ? entityId
+    : `${entityId}${STATE_DELIMITER}${stateIndex}`;
+}
+
+type LotEvent = {
+  activityId: string;
+  type: string | null;
+  movement: boolean;
+  createdAt: string;
+  inQty: number | null;
+  outQty: number | null;
+  /** Bin names, enriched server-side onto movement activities. */
+  fromBin: string | null;
+  toBin: string | null;
+};
+
+type LotEventWiring = {
+  activityId: string;
+  movement: boolean;
+  fromBin: string | null;
+  toBin: string | null;
+  /** State feeding the activity (input side); null for creation events. */
+  beforeState: number | null;
+  beforeQty: number | null;
+  /** State the activity produces for THIS entity; null for terminal events. */
+  afterState: number | null;
+  afterQty: number | null;
+};
+
+type LotTimeline = {
+  stateQuantities: number[];
+  wiring: LotEventWiring[];
+};
+
+const QTY_EPSILON = 1e-6;
+
+/**
+ * Replay an entity's visible events backward from its current quantity to
+ * recover the quantity at every point in time, then wire each event to
+ * before/after states. Returns null when the history can't be reconciled
+ * (legacy or partially-recorded data) — the caller collapses that entity to a
+ * single current-quantity node instead of guessing.
+ *
+ * Rules per event shape:
+ * - input+output (legacy split self-loop): before = input qty, after = output qty
+ * - output only, first event: creation — after = output qty, no before state
+ * - output only, later (e.g. merge gain): after = before + output qty
+ * - input only, movement: after = before (relocation, quantity carried)
+ * - input only, Split/Merge draw: after = before − input qty
+ * - input only, otherwise (consume/ship): terminal — the state ends here
+ */
+function buildLotTimeline(
+  entity: TrackedEntity,
+  events: LotEvent[]
+): LotTimeline | null {
+  const current = Number(entity.quantity);
+  if (!Number.isFinite(current)) return null;
+
+  const before: (number | null)[] = new Array(events.length).fill(null);
+  const after: (number | null)[] = new Array(events.length).fill(null);
+
+  let cur = current;
+  for (let i = events.length - 1; i >= 0; i--) {
+    const ev = events[i];
+    if (ev.inQty !== null && ev.outQty !== null) {
+      if (Math.abs(cur - ev.outQty) > QTY_EPSILON) return null;
+      after[i] = ev.outQty;
+      before[i] = ev.inQty;
+      cur = ev.inQty;
+    } else if (ev.outQty !== null) {
+      if (i === 0) {
+        // Creation: the produced quantity must be what flowed forward.
+        if (Math.abs(cur - ev.outQty) > QTY_EPSILON) return null;
+        after[i] = ev.outQty;
+        before[i] = null;
+      } else {
+        after[i] = cur;
+        before[i] = cur - ev.outQty;
+        cur = before[i]!;
+      }
+    } else if (ev.inQty !== null) {
+      if (ev.movement) {
+        after[i] = cur;
+        before[i] = cur;
+      } else if (ev.type === "Split" || ev.type === "Merge") {
+        after[i] = cur;
+        before[i] = cur + ev.inQty;
+        cur = before[i]!;
+      } else {
+        // Terminal consumption/shipment. Must be the last event — anything
+        // after a full consume means the history doesn't replay.
+        if (i !== events.length - 1) return null;
+        after[i] = null;
+        before[i] = ev.inQty;
+        cur = ev.inQty;
+      }
+    } else {
+      return null;
+    }
+    if (
+      before[i] !== null &&
+      (before[i]! < -QTY_EPSILON || !Number.isFinite(before[i]!))
+    ) {
+      return null;
+    }
+  }
+
+  const stateQuantities: number[] = [];
+  const wiring: LotEventWiring[] = [];
+  for (let i = 0; i < events.length; i++) {
+    const ev = events[i];
+    let beforeState: number | null = null;
+    if (before[i] !== null) {
+      if (stateQuantities.length === 0) {
+        stateQuantities.push(before[i]!);
+      } else if (
+        Math.abs(stateQuantities[stateQuantities.length - 1] - before[i]!) >
+        QTY_EPSILON
+      ) {
+        return null;
+      }
+      beforeState = stateQuantities.length - 1;
+    }
+    let afterState: number | null = null;
+    if (after[i] !== null) {
+      stateQuantities.push(after[i]!);
+      afterState = stateQuantities.length - 1;
+    }
+    wiring.push({
+      activityId: ev.activityId,
+      movement: ev.movement,
+      fromBin: ev.fromBin,
+      toBin: ev.toBin,
+      beforeState,
+      beforeQty: before[i],
+      afterState,
+      afterQty: after[i]
+    });
+  }
+  if (stateQuantities.length === 0) return null;
+  return { stateQuantities, wiring };
+}
+
 export function payloadToFlow(
   payload: LineagePayload,
   positions: Map<string, { x: number; y: number }> = new Map()
 ): { nodes: LineageNode[]; edges: LineageEdge[] } {
+  const activityById = new Map(payload.activities.map((a) => [a.id, a]));
+
+  // Gather each entity's events from the junction rows.
+  const eventsByEntity = new Map<string, Map<string, LotEvent>>();
+  const eventFor = (entityId: string, activityId: string): LotEvent => {
+    let events = eventsByEntity.get(entityId);
+    if (events === undefined) {
+      events = new Map();
+      eventsByEntity.set(entityId, events);
+    }
+    let ev = events.get(activityId);
+    if (ev === undefined) {
+      const activity = activityById.get(activityId);
+      const attrs = activity?.attributes as Record<string, unknown> | undefined;
+      ev = {
+        activityId,
+        type: activity?.type ?? null,
+        movement: isMovementActivity(activity?.type),
+        createdAt: (activity?.createdAt as string | undefined) ?? "",
+        inQty: null,
+        outQty: null,
+        fromBin:
+          (attrs?.["From Storage Unit Name"] as string | undefined) ?? null,
+        toBin: (attrs?.["To Storage Unit Name"] as string | undefined) ?? null
+      };
+      events.set(activityId, ev);
+    }
+    return ev;
+  };
+  for (const input of payload.inputs) {
+    eventFor(input.trackedEntityId, input.trackedActivityId).inQty = Number(
+      input.quantity
+    );
+  }
+  for (const output of payload.outputs) {
+    eventFor(output.trackedEntityId, output.trackedActivityId).outQty = Number(
+      output.quantity
+    );
+  }
+
+  // Replay every entity; entities whose history doesn't reconcile collapse to
+  // a single current-quantity node with the raw recorded edges (legacy data).
+  const timelines = new Map<string, LotTimeline>();
+  const seenEntityIds = new Set<string>();
+  for (const entity of payload.entities) {
+    if (!entity?.id || seenEntityIds.has(entity.id)) continue;
+    seenEntityIds.add(entity.id);
+    const events = Array.from(
+      eventsByEntity.get(entity.id)?.values() ?? []
+    ).sort(
+      (a, b) =>
+        a.createdAt.localeCompare(b.createdAt) ||
+        // Same-transaction activities share a timestamp; the event that
+        // creates the entity (output-only) precedes the ones that draw on it.
+        Number(a.outQty === null) - Number(b.outQty === null) ||
+        a.activityId.localeCompare(b.activityId)
+    );
+    if (events.length === 0) continue;
+    const timeline = buildLotTimeline(entity, events);
+    if (timeline) timelines.set(entity.id, timeline);
+  }
+
+  const nodes: LineageNode[] = [];
   const seenNodeIds = new Set<string>();
 
-  const entityNodes: LineageNode[] = payload.entities
-    .filter((e) => {
-      if (!e?.id || seenNodeIds.has(e.id)) return false;
-      seenNodeIds.add(e.id);
-      return true;
-    })
-    .map((entity) => ({
-      id: entity.id,
-      type: "entity",
-      position: positions.get(entity.id) ?? { x: 0, y: 0 },
-      width: NODE_SIZE,
-      height: NODE_SIZE,
-      measured: { width: NODE_SIZE, height: NODE_SIZE },
-      data: { kind: "entity", entity, dimmed: false }
-    }));
+  for (const entity of payload.entities) {
+    if (!entity?.id || seenNodeIds.has(entity.id)) continue;
+    seenNodeIds.add(entity.id);
+    const timeline = timelines.get(entity.id);
+    const stateQuantities = timeline?.stateQuantities ?? [
+      Number(entity.quantity)
+    ];
+    for (let k = 0; k < stateQuantities.length; k++) {
+      const id = stateNodeId(entity.id, k);
+      nodes.push({
+        id,
+        type: "entity",
+        position: positions.get(id) ?? { x: 0, y: 0 },
+        width: NODE_SIZE,
+        height: NODE_SIZE,
+        measured: { width: NODE_SIZE, height: NODE_SIZE },
+        data: {
+          kind: "entity",
+          entity,
+          dimmed: false,
+          stateQuantity: stateQuantities[k],
+          stateIndex: k,
+          stateCount: stateQuantities.length,
+          isCurrentState: k === stateQuantities.length - 1
+        }
+      });
+    }
+  }
 
-  const activityNodes: LineageNode[] = payload.activities
-    .filter((a) => {
-      if (!a?.id || seenNodeIds.has(a.id)) return false;
-      seenNodeIds.add(a.id);
-      return true;
-    })
-    .map((activity) => ({
+  const movementQtyByActivity = new Map<string, number>();
+  for (const timeline of timelines.values()) {
+    for (const w of timeline.wiring) {
+      if (!w.movement) continue;
+      const qty = w.beforeQty ?? w.afterQty;
+      if (qty !== null) movementQtyByActivity.set(w.activityId, qty);
+    }
+  }
+
+  for (const activity of payload.activities) {
+    if (!activity?.id || seenNodeIds.has(activity.id)) continue;
+    seenNodeIds.add(activity.id);
+    nodes.push({
       id: activity.id,
       type: "activity",
       position: positions.get(activity.id) ?? { x: 0, y: 0 },
       width: NODE_SIZE,
       height: NODE_SIZE,
       measured: { width: NODE_SIZE, height: NODE_SIZE },
-      data: { kind: "activity", activity, dimmed: false }
-    }));
+      data: {
+        kind: "activity",
+        activity,
+        dimmed: false,
+        movementQuantity: movementQtyByActivity.get(activity.id)
+      }
+    });
+  }
 
   const seenEdgeIds = new Set<string>();
   const edges: LineageEdge[] = [];
+  const pushEdge = (
+    id: string,
+    source: string,
+    target: string,
+    kind: LineageEdgeData["kind"],
+    quantity: number,
+    labelText?: string
+  ) => {
+    if (seenEdgeIds.has(id)) return;
+    seenEdgeIds.add(id);
+    edges.push({
+      id,
+      type: "quantity",
+      source,
+      target,
+      data: { kind, quantity, labelText, dimmed: false }
+    });
+  };
 
+  // Timeline-driven edges: each entity wires its own input/creation/
+  // continuation edges, labeled with the quantity at that moment.
+  for (const [entityId, timeline] of timelines) {
+    for (const w of timeline.wiring) {
+      if (w.beforeState !== null && w.beforeQty !== null) {
+        pushEdge(
+          `in:${w.activityId}:${entityId}@${w.beforeState}`,
+          stateNodeId(entityId, w.beforeState),
+          w.activityId,
+          w.movement ? "movement" : "input",
+          w.beforeQty,
+          w.movement ? (w.fromBin ?? undefined) : undefined
+        );
+      }
+      if (w.afterState !== null && w.afterQty !== null) {
+        pushEdge(
+          `out:${w.activityId}:${entityId}@${w.afterState}`,
+          w.activityId,
+          stateNodeId(entityId, w.afterState),
+          w.movement ? "movement" : "output",
+          w.afterQty,
+          w.movement ? (w.toBin ?? undefined) : undefined
+        );
+      }
+    }
+  }
+
+  // Raw edges for collapsed entities (no timeline) — today's rendering.
   const activityTypeById = new Map(
     payload.activities.map((a) => [a.id, a.type])
   );
-
   for (const input of payload.inputs) {
-    const id = `in:${input.trackedActivityId}:${input.trackedEntityId}`;
-    if (seenEdgeIds.has(id)) continue;
-    seenEdgeIds.add(id);
-    // A move consumes nothing — the entity keeps its id and stays Available.
+    if (timelines.has(input.trackedEntityId)) continue;
     const kind = isMovementActivity(
       activityTypeById.get(input.trackedActivityId)
     )
       ? "movement"
       : "input";
-    edges.push({
-      id,
-      type: "quantity",
-      source: input.trackedEntityId,
-      target: input.trackedActivityId,
-      data: { kind, quantity: input.quantity, dimmed: false }
-    });
+    pushEdge(
+      `in:${input.trackedActivityId}:${input.trackedEntityId}`,
+      input.trackedEntityId,
+      input.trackedActivityId,
+      kind,
+      input.quantity
+    );
   }
-
   for (const output of payload.outputs) {
-    const id = `out:${output.trackedActivityId}:${output.trackedEntityId}`;
-    if (seenEdgeIds.has(id)) continue;
-    seenEdgeIds.add(id);
-    edges.push({
-      id,
-      type: "quantity",
-      source: output.trackedActivityId,
-      target: output.trackedEntityId,
-      data: { kind: "output", quantity: output.quantity, dimmed: false }
-    });
+    if (timelines.has(output.trackedEntityId)) continue;
+    pushEdge(
+      `out:${output.trackedActivityId}:${output.trackedEntityId}`,
+      output.trackedActivityId,
+      output.trackedEntityId,
+      "output",
+      output.quantity
+    );
   }
 
-  return { nodes: [...entityNodes, ...activityNodes], edges };
+  return { nodes, edges };
 }
 
 export function mergePayloads(
@@ -363,6 +665,10 @@ export function sourceLinkHref(
       return `/x/purchase-order/${id}`;
     case "Sales Order":
       return `/x/sales-order/${id}`;
+    case "Picking List":
+      return `/x/picking-list/${id}`;
+    case "Stock Transfer":
+      return `/x/stock-transfer/${id}`;
     default:
       return null;
   }
@@ -387,8 +693,16 @@ export function annotateEdgeWeights(
       data: {
         ...(e.data as LineageEdgeData),
         weight,
-        isReject: rejectIds.has(e.target)
+        // rejectIds hold entity ids; edge targets may be state nodes.
+        isReject: rejectIds.has(stateEntityId(e.target))
       }
     };
   });
+}
+
+// Compact quantity for node badges/stubs, where horizontal space is tight.
+export function formatQuantity(q: number): string {
+  if (q >= 1000) return `${(q / 1000).toFixed(1)}k`;
+  if (Number.isInteger(q)) return String(q);
+  return q.toFixed(1);
 }

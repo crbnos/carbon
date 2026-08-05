@@ -58,7 +58,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   throw redirect(
     `${path.to.issueTypes}?${getParams(request)}`,
-    await flash(request, success("Successfully deleted scrap reason"))
+    await flash(request, success("Successfully deleted issue type"))
   );
 }
 

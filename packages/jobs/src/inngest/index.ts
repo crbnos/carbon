@@ -42,6 +42,7 @@ import {
   auditArchiveFunction,
   cleanupFunction,
   dispatchFunction,
+  generateMaintenanceForScheduleFunction,
   mrpFunction,
   notificationDigestFunction,
   notificationPurgeFunction,
@@ -106,6 +107,7 @@ export const functions = [
   // Scheduled
   cleanupFunction,
   dispatchFunction,
+  generateMaintenanceForScheduleFunction,
   auditArchiveFunction,
   mrpFunction,
   weeklyFunction,
