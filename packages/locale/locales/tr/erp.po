@@ -8576,7 +8576,6 @@ msgid "No matches. Type to create one."
 msgstr "Eşleşme yok. Bir tane oluşturmak için yazın."
 
 msgid "No matching bins"
-msgstr "Eşleşen bin yok"
 msgstr "Eşleşen kutu yok"
 
 msgid "No new notifications"

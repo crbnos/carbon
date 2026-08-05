@@ -8576,7 +8576,6 @@ msgid "No matches. Type to create one."
 msgstr "Nenhuma correspondência. Digite para criar uma."
 
 msgid "No matching bins"
-msgstr "Nenhum contentor correspondente"
 msgstr "Nenhuma caixa correspondente"
 
 msgid "No new notifications"
@@ -8806,7 +8805,6 @@ msgstr "Notas (opcional)"
 
 #. placeholder {0}: search.trim()
 msgid "Nothing at this location matches \"{0}\"."
-msgstr "Nada nesta localização corresponde a \"{0}\"."
 msgstr "Nada neste local corresponde a \"{0}\"."
 
 msgid "Nothing else at this location has stock to pull from."

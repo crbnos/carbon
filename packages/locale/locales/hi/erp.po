@@ -8576,7 +8576,6 @@ msgid "No matches. Type to create one."
 msgstr "कोई मेल नहीं। एक बनाने के लिए टाइप करें।"
 
 msgid "No matching bins"
-msgstr "कोई मिलती-जुलती बिन नहीं"
 msgstr "कोई मिलान बिन नहीं"
 
 msgid "No new notifications"
@@ -8806,7 +8805,6 @@ msgstr "नोट्स (वैकल्पिक)"
 
 #. placeholder {0}: search.trim()
 msgid "Nothing at this location matches \"{0}\"."
-msgstr "इस स्थान पर कुछ भी \"{0}\" से मेल नहीं खाता है।"
 msgstr "इस स्थान पर कुछ भी \"{0}\" से मेल नहीं खाता।"
 
 msgid "Nothing else at this location has stock to pull from."

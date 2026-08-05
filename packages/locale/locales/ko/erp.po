@@ -8805,7 +8805,6 @@ msgstr "메모(선택)"
 
 #. placeholder {0}: search.trim()
 msgid "Nothing at this location matches \"{0}\"."
-msgstr "이 위치에서 \"{0}\"과(와) 일치하는 것이 없습니다."
 msgstr "이 위치에서 \"{0}\"와 일치하는 항목이 없습니다."
 
 msgid "Nothing else at this location has stock to pull from."

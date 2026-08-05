@@ -8576,7 +8576,6 @@ msgid "No matches. Type to create one."
 msgstr "Совпадений не найдено. Введите текст для создания."
 
 msgid "No matching bins"
-msgstr "Нет совпадающих ячеек"
 msgstr "Нет подходящих ячеек"
 
 msgid "No new notifications"
@@ -8806,7 +8805,6 @@ msgstr "Примечания (опционально)"
 
 #. placeholder {0}: search.trim()
 msgid "Nothing at this location matches \"{0}\"."
-msgstr "Ничего на этом месте не соответствует \"{0}\"."
 msgstr "В этом месте нет ничего, соответствующего \"{0}\"."
 
 msgid "Nothing else at this location has stock to pull from."

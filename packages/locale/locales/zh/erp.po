@@ -8576,7 +8576,6 @@ msgid "No matches. Type to create one."
 msgstr "无匹配项。输入内容以创建一个。"
 
 msgid "No matching bins"
-msgstr "没有匹配的仓位"
 msgstr "无匹配的箱子"
 
 msgid "No new notifications"
@@ -8806,7 +8805,6 @@ msgstr "备注（可选）"
 
 #. placeholder {0}: search.trim()
 msgid "Nothing at this location matches \"{0}\"."
-msgstr "此位置没有与\"{0}\"相匹配的内容。"
 msgstr "此位置处没有与\"{0}\"匹配的内容。"
 
 msgid "Nothing else at this location has stock to pull from."
